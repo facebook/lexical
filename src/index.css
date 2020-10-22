@@ -1,0 +1,49 @@
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, '.SFNSText-Regular', sans-serif;
+  font-weight: 500;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: #eee;
+}
+
+h1 {
+  text-align: center;
+  color: #333;
+}
+
+.editor-shell {
+  background: #fff;
+  margin: 20px auto 20px auto;
+  border-radius: 2px;
+  max-width: 600px;
+  color: #000;
+  position: relative;
+  line-height: 20px;
+}
+
+.editor-shell div.outline-editor {
+  min-height: 150px;
+  border: 0;
+  resize: none;
+  word-break: break-word;
+  cursor: text;
+  font-size: 15px;
+  caret-color: rgb(5, 5, 5);
+  display: block;
+}
+
+.editor-shell div.outline-editor > div {
+  margin: 0 0 15px 0;
+  position: relative;
+}
+
+pre {
+  margin: 20px auto 20px auto;
+  max-width: 580px;
+  background: #222;
+  color: #fff;
+  padding: 10px;
+  font-size: 12px;
+  overflow: hidden;
+}

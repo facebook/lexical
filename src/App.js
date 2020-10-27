@@ -1,11 +1,8 @@
 import React from "react";
-import { useState, useMemo } from "react";
-import { Editor } from "./outline";
-import EmojiPlugin from "./outline/plugins/EmojiPlugin";
-import PlainTextPlugin from "./outline/plugins/PlainTextPlugin";
+import { useState } from "react";
+import Editor from "./Editor";
 
 function App() {
-  const plugins = useMemo(() => [PlainTextPlugin, EmojiPlugin], []);
   const [viewModel, setViewModel] = useState(null);
 
   return (
@@ -13,7 +10,6 @@ function App() {
       <h1>OutlineJS Demo</h1>
       <div className="editor-shell">
         <Editor
-          plugins={plugins}
           onChange={setViewModel}
         />
       </div>

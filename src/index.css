@@ -22,7 +22,7 @@ h1 {
   line-height: 20px;
 }
 
-.editor-shell div.outline-editor {
+.editor-shell div.editor {
   min-height: 150px;
   border: 0;
   resize: none;
@@ -33,7 +33,7 @@ h1 {
   display: block;
 }
 
-.editor-shell div.outline-editor > div {
+.editor-shell div.editor > div {
   margin: 0 0 15px 0;
   position: relative;
 }

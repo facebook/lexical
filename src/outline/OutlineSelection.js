@@ -122,7 +122,7 @@ Object.assign(Selection.prototype, {
     } else {
       const lastIndex = selectedNodesLength - 1;
       const lastNode = selectedNodes[lastIndex];
-      const isBefore = firstNode.isBefore(lastNode);
+      const isBefore = firstNode === this.getAnchorNode();
       const endOffset = isBefore ? focusOffset : anchorOffset;
       let removeFirstNode = false;
       startOffset = isBefore ? anchorOffset : focusOffset;

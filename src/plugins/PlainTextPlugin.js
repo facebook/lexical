@@ -11,7 +11,7 @@ import {
   useEvent,
 } from "./PluginShared";
 
-function onBeforeInput(event, viewModel, state, editor) {
+function onBeforeInput(event, view, state, editor) {
   const inputType = event.inputType;
 
   if (
@@ -25,28 +25,28 @@ function onBeforeInput(event, viewModel, state, editor) {
     case "insertFromComposition": {
       const data = event.data;
       if (data) {
-        insertText(event.data, viewModel, state, true);
+        insertText(event.data, view, state, true);
       }
       break;
     }
     case "insertFromPaste": {
-      onInsertFromPaste(event, viewModel, state, editor);
+      onInsertFromPaste(event, view, state, editor);
       break;
     }
     case "insertLineBreak": {
-      insertText("\n", viewModel, state, false);
+      insertText("\n", view, state, false);
       break;
     }
     case "insertText": {
-      insertText(event.data, viewModel, state, false);
+      insertText(event.data, view, state, false);
       break;
     }
     case "deleteContentBackward": {
-      removeText(true, viewModel, state);
+      removeText(true, view, state);
       break;
     }
     case "deleteContentForward": {
-      removeText(false, viewModel, state);
+      removeText(false, view, state);
       break;
     }
     default: {

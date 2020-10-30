@@ -310,6 +310,17 @@ Object.assign(Node.prototype, {
     }
     return getNodeByKey(parent);
   },
+  getParentBefore(target) {
+    let node = this;
+    while (node !== null) {
+      const parent = node.getParent();
+      if (parent._key === target._key) {
+        return node;
+      }
+      node = parent
+    }
+    return null;
+  },
   getParentBlock() {
     let node = this;
     while (node !== null) {
@@ -591,8 +602,8 @@ Object.assign(Node.prototype, {
     return writableSelf;
   },
   spliceText(offset, delCount, newText, restoreSelection, fromComposition) {
-    if (!this.isText()) {
-      throw new Error("spliceText: can only be used on text nodes");
+    if (!this.isText() || this.isImmutable()) {
+      throw new Error("spliceText: can only be used on non-immutable text nodes");
     }
     const writableSelf = getWritableNode(this);
     const text = writableSelf._children;

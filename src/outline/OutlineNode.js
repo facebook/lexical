@@ -612,8 +612,6 @@ Object.assign(Node.prototype, {
       let newOffset = offset;
       if (!fromComposition) {
         newOffset = offset + newTextLength;
-      } else {
-        newOffset = offset + 1;
       }
       selection._anchorKey = key;
       selection._anchorOffset = newOffset;

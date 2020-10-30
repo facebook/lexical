@@ -197,9 +197,7 @@ function spliceTextAtRange(
 }
 
 export function insertText(text, viewModel, state, fromComposition) {
-  const selection = viewModel.getSelection();
-
-  selection.insertText(text, {
+  viewModel.getSelection().insertText(text, {
     bold: state.isBoldMode,
     italic: state.isItalicMode,
     underline: state.isUnderlineMode,

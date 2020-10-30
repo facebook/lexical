@@ -61,11 +61,11 @@ export function getNextSiblings(startNode) {
   return siblings;
 }
 
-export function createTextWithStyling(text, viewModel, state, targetToClone) {
+export function createTextWithStyling(text, view, state, targetToClone) {
   const textNode =
     targetToClone && !targetToClone.isImmutable()
-      ? viewModel.cloneText(targetToClone, text)
-      : viewModel.createText(text);
+      ? view.cloneText(targetToClone, text)
+      : view.createText(text);
   if (state.isBoldMode) {
     textNode.makeBold();
   } else {
@@ -80,7 +80,7 @@ export function spliceTextAtCusor(
   delCount,
   text,
   fromComposition,
-  viewModel,
+  view,
   state
 ) {
   if (selectedNode.isImmutable()) {
@@ -90,7 +90,7 @@ export function spliceTextAtCusor(
     if (caretOffset === 0) {
       const textNode = createTextWithStyling(
         text,
-        viewModel,
+        view,
         state,
         selectedNode
       );
@@ -101,7 +101,7 @@ export function spliceTextAtCusor(
       if (nextSibling === null) {
         const textNode = createTextWithStyling(
           text,
-          viewModel,
+          view,
           state,
           selectedNode
         );
@@ -110,7 +110,7 @@ export function spliceTextAtCusor(
       } else {
         const textNode = createTextWithStyling(
           text,
-          viewModel,
+          view,
           state,
           selectedNode
         );
@@ -138,7 +138,7 @@ export function spliceTextAtCusor(
       }
       const replacementNode = createTextWithStyling(
         text,
-        viewModel,
+        view,
         state,
         selectedNode
       );
@@ -153,14 +153,14 @@ function spliceTextAtRange(
   selection,
   selectedNodes,
   fromComposition,
-  viewModel,
+  view,
   state
 ) {
   const [firstNode, ...nodesToRemove] = selectedNodes;
   if (firstNode.isImmutable()) {
     const ancestor = getParentBeforeBlock(firstNode);
     const currentBlock = ancestor.getParent();
-    const textNode = viewModel.createText(text);
+    const textNode = view.createText(text);
     ancestor.insertBefore(textNode);
     textNode.select();
     selectedNodes.forEach((node) => {
@@ -190,14 +190,14 @@ function spliceTextAtRange(
       delCount,
       text,
       fromComposition,
-      viewModel,
+      view,
       state
     );
   }
 }
 
-export function insertText(text, viewModel, state, fromComposition) {
-  viewModel.getSelection().insertText(text, {
+export function insertText(text, view, state, fromComposition) {
+  view.getSelection().insertText(text, {
     bold: state.isBoldMode,
     italic: state.isItalicMode,
     underline: state.isUnderlineMode,
@@ -206,11 +206,11 @@ export function insertText(text, viewModel, state, fromComposition) {
   });
 }
 
-function removeBlock(blockToRemove, previousBlock, viewModel) {
+function removeBlock(blockToRemove, previousBlock, view) {
   const firstNode = blockToRemove.getFirstChild();
   const siblings = getNextSiblings(firstNode);
   siblings.unshift(firstNode);
-  const textNode = viewModel.createText("");
+  const textNode = view.createText("");
   previousBlock.getLastChild().insertAfter(textNode);
   textNode.select(0, 0);
   let nodeToInsertAfter = textNode;
@@ -222,8 +222,8 @@ function removeBlock(blockToRemove, previousBlock, viewModel) {
   previousBlock.normalizeTextNodes(true);
 }
 
-export function removeText(backward, viewModel, state) {
-  const selection = viewModel.getSelection();
+export function removeText(backward, view, state) {
+  const selection = view.getSelection();
   const selectedNodes = selection.getNodes();
 
   if (selection.isCaret()) {
@@ -236,9 +236,9 @@ export function removeText(backward, viewModel, state) {
 
     if (firstNode.isImmutable()) {
       if (caretOffset === 0 && previousBlock !== null) {
-        removeBlock(currentBlock, previousBlock, viewModel);
+        removeBlock(currentBlock, previousBlock, view);
       } else {
-        const textNode = viewModel.createText("");
+        const textNode = view.createText("");
         ancestor.insertBefore(textNode);
         textNode.select();
         ancestor.remove();
@@ -251,15 +251,15 @@ export function removeText(backward, viewModel, state) {
           caretOffset === firstNode.getTextContent().length;
         if (backward || !offsetAtEnd) {
           const offset = backward ? caretOffset - 1 : caretOffset;
-          spliceTextAtCusor(firstNode, offset, 1, "", false, viewModel, state);
+          spliceTextAtCusor(firstNode, offset, 1, "", false, view, state);
         } else {
           const nextSibling = firstNode.getNextSibling();
           if (nextSibling === null) {
             if (nextBlock !== null) {
-              removeBlock(nextBlock, currentBlock, viewModel);
+              removeBlock(nextBlock, currentBlock, view);
             }
           } else {
-            const textNode = viewModel.createText("");
+            const textNode = view.createText("");
             nextSibling.insertAfter(textNode);
             textNode.select();
             if (nextSibling.isImmutable()) {
@@ -272,10 +272,10 @@ export function removeText(backward, viewModel, state) {
         const prevSibling = firstNode.getPreviousSibling();
         if (prevSibling === null) {
           if (previousBlock !== null) {
-            removeBlock(currentBlock, previousBlock, viewModel);
+            removeBlock(currentBlock, previousBlock, view);
           }
         } else {
-          const textNode = viewModel.createText("");
+          const textNode = view.createText("");
           prevSibling.insertAfter(textNode);
           textNode.select();
           if (prevSibling.isImmutable()) {
@@ -290,7 +290,7 @@ export function removeText(backward, viewModel, state) {
           1,
           "",
           false,
-          viewModel,
+          view,
           state
         );
       }
@@ -304,7 +304,7 @@ export function removeText(backward, viewModel, state) {
       const firstNode = selectedNodes[0];
       if (firstNode.isImmutable()) {
         const ancestor = getParentBeforeBlock(firstNode);
-        const textNode = viewModel.createText("");
+        const textNode = view.createText("");
         ancestor.insertBefore(textNode);
         textNode.select();
         ancestor.remove();
@@ -315,30 +315,30 @@ export function removeText(backward, viewModel, state) {
           offsetDifference,
           "",
           false,
-          viewModel,
+          view,
           state
         );
       }
     } else {
-      spliceTextAtRange("", selection, selectedNodes, false, viewModel, state);
+      spliceTextAtRange("", selection, selectedNodes, false, view, state);
     }
   }
 }
 
-export function onCompositionStart(event, viewModel, state) {
+export function onCompositionStart(event, view, state) {
   state.isComposing = true;
 }
 
-export function onCompositionEnd(event, viewModel, state) {
+export function onCompositionEnd(event, view, state) {
   const data = event.data;
   // Only do this for Chrome
   state.isComposing = false;
   if (data && !isBrowserSafari && !isBrowserFirefox) {
-    insertText(data, viewModel, state, true);
+    insertText(data, view, state, true);
   }
 }
 
-export function onInsertFromPaste(event, viewModel, state, editor) {
+export function onInsertFromPaste(event, view, state, editor) {
   const items = event.dataTransfer.items;
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
@@ -384,6 +384,11 @@ export function useEvent(outlineEditor, eventName, handler, pluginStateRef) {
         const viewModel = outlineEditor.createViewModel((editor) =>
           handler(event, editor, state, outlineEditor)
         );
+        // Uncomment to see how diffs might work:
+        // if (viewModel !== outlineEditor.getCurrentViewModel()) {
+        //   const diff = outlineEditor.getDiffFromViewModel(viewModel);
+        //   debugger;
+        // }
         outlineEditor.update(viewModel);
       };
       target.addEventListener(eventName, wrapper);

@@ -55,7 +55,6 @@ export function createViewModel(currentViewModel, callbackFn, outlineEditor) {
     activeViewModel = null;
   }
   const canUseExistingModel = dirtyNodes.size === 0;
-  viewModel._dirtyNodes = null;
   return canUseExistingModel ? currentViewModel : viewModel;
 }
 
@@ -84,6 +83,7 @@ export function applyTextTransforms(viewModel, outlineEditor) {
 
 export function updateViewModel(viewModel, outlineEditor) {
   const onChange = outlineEditor._onChange;
+  viewModel._dirtyNodes = null;
   // We shouldn't need to set activeViewModel again here,
   // but because we access getNextSibling() to find out if
   // a text node should add a new line, we re-use it.

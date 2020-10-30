@@ -17,8 +17,8 @@ import {
   useEvent,
 } from "./PluginShared";
 
-function onInsertParagraph(event, viewModel, state) {
-  const selection = viewModel.getSelection();
+function onInsertParagraph(event, view, state) {
+  const selection = view.getSelection();
 
   if (selection.isCaret()) {
     const [startOffset] = normalizeCursorSelectionOffsets(selection);
@@ -34,7 +34,7 @@ function onInsertParagraph(event, viewModel, state) {
         currentText.length - startOffset,
         "",
         false,
-        viewModel,
+        view,
         state
       );
     }
@@ -42,9 +42,9 @@ function onInsertParagraph(event, viewModel, state) {
     const ancestor = getParentBeforeBlock(anchorNode);
     const siblings = getNextSiblings(ancestor);
     const textNode = anchorNode.isImmutable()
-      ? viewModel.createText(text)
-      : viewModel.cloneText(anchorNode, text);
-    const paragraph = viewModel.createBlock().append(textNode);
+      ? view.createText(text)
+      : view.cloneText(anchorNode, text);
+    const paragraph = view.createBlock().append(textNode);
     currentBlock.insertAfter(paragraph);
     let nodeToInsertAfter = textNode;
     siblings.forEach((sibling) => {
@@ -57,9 +57,9 @@ function onInsertParagraph(event, viewModel, state) {
   }
 }
 
-function formatBold(evet, viewModel, state) {
+function formatBold(evet, view, state) {
   state.isBoldMode = !state.isBoldMode;
-  viewModel.getSelection().formatText({
+  view.getSelection().formatText({
     bold: state.isBoldMode,
     italic: state.isItalicMode,
     underline: state.isUnderlineMode,
@@ -67,7 +67,7 @@ function formatBold(evet, viewModel, state) {
   });
   return;
 
-  const selection = viewModel.getSelection();
+  const selection = view.getSelection();
   const selectedNodes = selection.getNodes();
   const [startOffset, difference] = normalizeCursorSelectionOffsets(selection);
 
@@ -91,7 +91,7 @@ function formatBold(evet, viewModel, state) {
         const textContent = nodeToReplace.getTextContent();
         const replacement = createTextWithStyling(
           textContent,
-          viewModel,
+          view,
           state,
           nodeToReplace
         );
@@ -105,7 +105,7 @@ function formatBold(evet, viewModel, state) {
   }
 }
 
-function onBeforeInput(event, viewModel, state, editor) {
+function onBeforeInput(event, view, state, editor) {
   const inputType = event.inputType;
 
   if (
@@ -117,38 +117,38 @@ function onBeforeInput(event, viewModel, state, editor) {
 
   switch (inputType) {
     case "formatBold": {
-      formatBold(event, viewModel, state);
+      formatBold(event, view, state);
       break;
     }
     case "insertFromComposition": {
       const data = event.data;
       if (data) {
-        insertText(event.data, viewModel, state, true);
+        insertText(event.data, view, state, true);
       }
       break;
     }
     case "insertFromPaste": {
-      onInsertFromPaste(event, viewModel, state, editor);
+      onInsertFromPaste(event, view, state, editor);
       break;
     }
     case "insertLineBreak": {
-      insertText("\n", viewModel, state, false);
+      insertText("\n", view, state, false);
       break;
     }
     case "insertParagraph": {
-      onInsertParagraph(event, viewModel, state);
+      onInsertParagraph(event, view, state);
       break;
     }
     case "insertText": {
-      insertText(event.data, viewModel, state, false);
+      insertText(event.data, view, state, false);
       break;
     }
     case "deleteContentBackward": {
-      removeText(true, viewModel, state);
+      removeText(true, view, state);
       break;
     }
     case "deleteContentForward": {
-      removeText(false, viewModel, state);
+      removeText(false, view, state);
       break;
     }
     default: {

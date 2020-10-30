@@ -55,13 +55,17 @@ Object.assign(OutlineEditor.prototype, {
     const dirtyNodes = viewModel._dirtyNodes;
     const nodeMap = viewModel.nodeMap;
 
-    if (dirtyNodes === null || dirtySubTrees === null){
-      throw new Error('getDiffFromViewModel: unable to get diff from view mode')
+    if (dirtyNodes === null || dirtySubTrees === null) {
+      throw new Error(
+        "getDiffFromViewModel: unable to get diff from view mode"
+      );
     }
     return {
       dirtySubTrees: dirtySubTrees,
-      diff: Array.from(dirtyNodes).map(nodeKey => nodeMap[nodeKey]),
-    }
+      nodes: Array.from(dirtyNodes).map((nodeKey) => nodeMap[nodeKey]),
+      selection: { ...viewModel.selection },
+      timeStamp: Date.now(),
+    };
   },
   createViewModel(callbackFn) {
     return createViewModel(this._viewModel, callbackFn, this);

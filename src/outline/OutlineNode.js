@@ -97,8 +97,8 @@ function combineAdjacentTextNodes(textNodes, restoreSelection) {
 }
 
 function splitText(node, splitOffsets) {
-  if (!node.isText()) {
-    throw new Error("splitText: can only be used on text nodes");
+  if (!node.isText() || node.isImmutable()) {
+    throw new Error("splitText: can only be used on non-immutable text nodes");
   }
   const textContent = node.getTextContent();
   const key = node._key;
@@ -126,7 +126,7 @@ function splitText(node, splitOffsets) {
   const writableNode = getWritableNode(node);
   const parentKey = writableNode._parent;
   const firstPart = parts[0];
-  const type = writableNode.getType();
+  const flags = writableNode._flags;
   writableNode._children = firstPart;
 
   // Handle selection
@@ -139,7 +139,8 @@ function splitText(node, splitOffsets) {
   for (let i = 1; i < partsLength; i++) {
     const part = parts[i];
     const partSize = part.length;
-    const sibling = getWritableNode(createTextNode(part, null, type));
+    const sibling = getWritableNode(createTextNode(part));
+    sibling._flags = flags;
     const siblingKey = sibling._key;
     const nextTextSize = textLength + partSize;
 
@@ -205,21 +206,6 @@ Object.assign(Node.prototype, {
       }
     }
     return childrenNodes;
-  },
-  getChildrenDeep() {
-    if (this.isText()) {
-      throw new Error("getChildrenDeep: can only be used on body/block nodes");
-    }
-    const deepChildren = [];
-    const children = this.getChildren();
-    for (let i = 0; i < children.length; i++) {
-      const child = children[i];
-      deepChildren.push(child);
-      if ((child._flags & IS_TEXT) === 0) {
-        deepChildren.push(...child.getChildrenDeep());
-      }
-    }
-    return deepChildren;
   },
   getTextContent() {
     const self = this.getLatest();
@@ -317,7 +303,7 @@ Object.assign(Node.prototype, {
       if (parent._key === target._key) {
         return node;
       }
-      node = parent
+      node = parent;
     }
     return null;
   },
@@ -603,7 +589,9 @@ Object.assign(Node.prototype, {
   },
   spliceText(offset, delCount, newText, restoreSelection, fromComposition) {
     if (!this.isText() || this.isImmutable()) {
-      throw new Error("spliceText: can only be used on non-immutable text nodes");
+      throw new Error(
+        "spliceText: can only be used on non-immutable text nodes"
+      );
     }
     const writableSelf = getWritableNode(this);
     const text = writableSelf._children;
@@ -622,11 +610,9 @@ Object.assign(Node.prototype, {
       const key = writableSelf._key;
       const selection = getSelection();
       let newOffset = offset;
-      if (delCount === 0) {
-        if (!fromComposition) {
-          newOffset = offset + newTextLength;
-        }
-      } else if (newTextLength > 0) {
+      if (!fromComposition) {
+        newOffset = offset + newTextLength;
+      } else {
         newOffset = offset + 1;
       }
       selection._anchorKey = key;
@@ -639,18 +625,18 @@ Object.assign(Node.prototype, {
   normalizeTextNodes(restoreSelection) {
     const children = this.getChildren();
     let toNormalize = [];
-    let lastTextNodeType = null;
+    let lastTextNodeFlags = null;
     for (let i = 0; i < children.length; i++) {
-      const child = children[i];
+      const child = children[i].getLatest();
+      const flags = child._flags;
 
       if (child.isText() && !child.isImmutable()) {
-        const childType = child.getType();
-        if (lastTextNodeType === null || childType === lastTextNodeType) {
+        if (lastTextNodeFlags === null || flags === lastTextNodeFlags) {
           toNormalize.push(child);
         } else {
           toNormalize = [];
         }
-        lastTextNodeType = childType;
+        lastTextNodeFlags = flags;
       } else {
         if (toNormalize.length > 1) {
           combineAdjacentTextNodes(toNormalize, restoreSelection);

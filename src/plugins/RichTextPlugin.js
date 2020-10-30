@@ -58,11 +58,19 @@ function onInsertParagraph(event, viewModel, state) {
 }
 
 function formatBold(evet, viewModel, state) {
+  state.isBoldMode = !state.isBoldMode;
+  viewModel.getSelection().formatText({
+    bold: state.isBoldMode,
+    italic: state.isItalicMode,
+    underline: state.isUnderlineMode,
+    strikeThrough: state.isStrikeThroughMode,
+  });
+  return;
+
   const selection = viewModel.getSelection();
   const selectedNodes = selection.getNodes();
   const [startOffset, difference] = normalizeCursorSelectionOffsets(selection);
 
-  state.isBoldMode = !state.isBoldMode;
 
   if (!selection.isCaret()) {
     if (selectedNodes.length === 1) {

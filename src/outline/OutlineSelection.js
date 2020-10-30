@@ -54,6 +54,26 @@ Object.assign(Selection.prototype, {
   getFocusNode() {
     return getNodeByKey(this._focusKey);
   },
+  formatText(options = {}) {
+    const { bold, italic, underline, strikeThrough } = options;
+    const selectedNodes = this.getNodes();
+    const selectedNodesLength = selectedNodes.length;
+    const lastIndex = selectedNodesLength - 1;
+    const firstNode = selectedNodes[0];
+    const lastNode = selectedNodes[lastIndex];
+
+    if (selectedNodesLength === 1) {
+
+    } else {
+      const isBefore = firstNode.isBefore(lastNode);;
+
+      for (let i = 1; i < lastIndex; i++) {
+        const selectedNode = selectedNodes[i];
+  
+        debugger
+      }
+    }
+  },
   insertText(text, options = {}) {
     const { bold, italic, underline, strikeThrough, fromComposition } = options;
     const selectedNodes = this.getNodes();
@@ -67,10 +87,11 @@ Object.assign(Selection.prototype, {
     const currentBlock = firstNode.getParentBlock();
     const ancestor = firstNode.getParentBefore(currentBlock);
     let startOffset;
+    let endOffset;
     let skipFormatting = false;
 
     if (selectedNodesLength === 1) {
-      if (firstNode.isImmutable()) {
+      if (firstNode.isImmutable() || !firstNode.isText()) {
         const textNode = createTextNode(text);
         textNode._flags = nextFlags;
 
@@ -87,7 +108,8 @@ Object.assign(Selection.prototype, {
         skipFormatting = true;
       } else {
         startOffset = anchorOffset > focusOffset ? focusOffset : anchorOffset;
-        const delCount = this.isCaret() ? 0 : firstNodeTextLength - startOffset;
+        endOffset = anchorOffset > focusOffset ? anchorOffset : focusOffset;
+        const delCount = endOffset - startOffset;
 
         firstNode.spliceText(
           startOffset,
@@ -117,9 +139,11 @@ Object.assign(Selection.prototype, {
           fromComposition
         );
       }
-      if (!firstNode.isImmutable()) {
+      if (!firstNode.isImmutable() && lastNode.isText()) {
         lastNode.spliceText(0, endOffset, "", false);
         firstNode.insertAfter(lastNode);
+      } else if (!lastNode.isParentOf(firstNode)) {
+        lastNode.remove();
       }
 
       for (let i = 1; i < lastIndex; i++) {

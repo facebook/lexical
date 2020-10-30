@@ -199,58 +199,13 @@ function spliceTextAtRange(
 export function insertText(text, viewModel, state, fromComposition) {
   const selection = viewModel.getSelection();
 
-  // selection.insertText(text, {
-  //   bold: state.isBoldMode,
-  //   italic: state.isItalicMode,
-  //   underline: state.isUnderlineMode,
-  //   strikeThrough: state.isStrikeThroughMode,
-  //   fromComposition,
-  // });
-  // return;
-  const selectedNodes = selection.getNodes();
-
-  if (selection.isCaret()) {
-    const caretOffset = selection.getCaretOffset();
-    spliceTextAtCusor(
-      selectedNodes[0],
-      caretOffset,
-      0,
-      text,
-      fromComposition,
-      viewModel,
-      state
-    );
-  } else {
-    const [startOffset, offsetDifference] = normalizeCursorSelectionOffsets(
-      selection
-    );
-    // We're selecting a single node treat it like a cursor
-    if (selectedNodes.length === 1) {
-      const firstNode = selectedNodes[0];
-      spliceTextAtCusor(
-        firstNode,
-        startOffset,
-        offsetDifference,
-        text,
-        fromComposition,
-        viewModel,
-        state
-      );
-      if (firstNode.isImmutable()) {
-        const ancestor = getParentBeforeBlock(firstNode);
-        ancestor.remove();
-      }
-    } else {
-      spliceTextAtRange(
-        text,
-        selection,
-        selectedNodes,
-        fromComposition,
-        viewModel,
-        state
-      );
-    }
-  }
+  selection.insertText(text, {
+    bold: state.isBoldMode,
+    italic: state.isItalicMode,
+    underline: state.isUnderlineMode,
+    strikeThrough: state.isStrikeThroughMode,
+    fromComposition,
+  });
 }
 
 function removeBlock(blockToRemove, previousBlock, viewModel) {

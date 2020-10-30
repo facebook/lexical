@@ -1,5 +1,13 @@
 import { getActiveViewModel } from "./OutlineView";
-import { getNodeByKey, IS_BOLD, IS_ITALIC, IS_STRIKETHROUGH, IS_TEXT, IS_UNDERLINE } from "./OutlineNode";
+import {
+  createTextNode,
+  getNodeByKey,
+  IS_BOLD,
+  IS_ITALIC,
+  IS_STRIKETHROUGH,
+  IS_TEXT,
+  IS_UNDERLINE,
+} from "./OutlineNode";
 import { getNodeKeyFromDOM } from "./OutlineReconciler";
 
 function Selection(
@@ -57,33 +65,62 @@ Object.assign(Selection.prototype, {
     const firstNodeText = firstNode.getTextContent();
     const firstNodeTextLength = firstNodeText.length;
     const currentBlock = firstNode.getParentBlock();
+    const ancestor = firstNode.getParentBefore(currentBlock);
     let startOffset;
+    let skipFormatting = false;
 
     if (selectedNodesLength === 1) {
-      startOffset = anchorOffset > focusOffset ? focusOffset : anchorOffset;
-      firstNode.spliceText(
-        startOffset,
-        firstNodeTextLength - startOffset,
-        text,
-        true,
-        fromComposition
-      );
+      if (firstNode.isImmutable()) {
+        const textNode = createTextNode(text);
+        textNode._flags = nextFlags;
+
+        if (focusOffset === 0) {
+          ancestor.insertBefore(textNode);
+        } else {
+          ancestor.insertAfter(textNode);
+        }
+        if (!this.isCaret()) {
+          firstNode.remove();
+        }
+
+        textNode.select();
+        skipFormatting = true;
+      } else {
+        startOffset = anchorOffset > focusOffset ? focusOffset : anchorOffset;
+        const delCount = this.isCaret() ? 0 : firstNodeTextLength - startOffset;
+
+        firstNode.spliceText(
+          startOffset,
+          delCount,
+          text,
+          true,
+          fromComposition
+        );
+      }
     } else {
       const lastIndex = selectedNodesLength - 1;
       const lastNode = selectedNodes[lastIndex];
       const isBefore = firstNode.isBefore(lastNode);
       const endOffset = isBefore ? focusOffset : anchorOffset;
+      let removeFirstNode = false;
       startOffset = isBefore ? anchorOffset : focusOffset;
 
-      firstNode.spliceText(
-        startOffset,
-        firstNodeTextLength - startOffset,
-        text,
-        true,
-        fromComposition
-      );
-      lastNode.spliceText(0, endOffset, "", false);
-      firstNode.insertAfter(lastNode);
+      if (firstNode.isImmutable()) {
+        removeFirstNode = true;
+        skipFormatting = true;
+      } else {
+        firstNode.spliceText(
+          startOffset,
+          firstNodeTextLength - startOffset,
+          text,
+          true,
+          fromComposition
+        );
+      }
+      if (!firstNode.isImmutable()) {
+        lastNode.spliceText(0, endOffset, "", false);
+        firstNode.insertAfter(lastNode);
+      }
 
       for (let i = 1; i < lastIndex; i++) {
         const selectedNode = selectedNodes[i];
@@ -91,14 +128,23 @@ Object.assign(Selection.prototype, {
           selectedNode.remove();
         }
       }
+      if (removeFirstNode) {
+        const textNode = createTextNode(text);
+        ancestor.insertBefore(textNode);
+        firstNode.remove();
+        textNode.select();
+      }
     }
 
-    if (firstNode._flags !== nextFlags) {
+    if (!skipFormatting && firstNode._flags !== nextFlags) {
       let targetNode = firstNode;
 
       if (anchorOffset > 0) {
         const textLength = text.length;
-        [, targetNode] = firstNode.splitText(startOffset, startOffset + textLength);
+        [, targetNode] = firstNode.splitText(
+          startOffset,
+          startOffset + textLength
+        );
       }
       if (bold) {
         targetNode.makeBold();
@@ -107,7 +153,7 @@ Object.assign(Selection.prototype, {
       }
       targetNode.select();
     }
-    currentBlock.normalizeTextNodes();
+    currentBlock.normalizeTextNodes(true);
   },
 });
 

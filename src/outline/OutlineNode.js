@@ -71,8 +71,8 @@ function combineAdjacentTextNodes(textNodes, restoreSelection) {
   const selection = getSelection();
   const anchorOffset = selection._anchorOffset;
   const focusOffset = selection._focusOffset;
-  const anchorKey = selection._anchorKey;
-  const focusKey = selection._focusKey;
+  const anchorKey = selection.anchorKey;
+  const focusKey = selection.focusKey;
   // Merge all text nodes into the first node
   const writableMergeToNode = getWritableNode(textNodes[0]);
   let textLength = writableMergeToNode.getTextContent().length;
@@ -508,8 +508,10 @@ Object.assign(Node.prototype, {
     const selection = getSelection();
     const text = this.getTextContent();
     const key = this._key;
-    selection._anchorKey = key;
-    selection._focusKey = key;
+    selection.anchorKey = key;
+    selection.focusKey = key;
+    selection.anchorNode = this;
+    selection.focusNode = this;
     if (typeof text === "string") {
       const lastOffset = text.length;
       if (anchorOffset === undefined) {
@@ -522,9 +524,9 @@ Object.assign(Node.prototype, {
       anchorOffset = 0;
       focusOffset = 0;
     }
-    selection._anchorOffset = anchorOffset;
-    selection._focusOffset = focusOffset;
-    selection._isCollapsed = isCollapsed;
+    selection.anchorOffset = anchorOffset;
+    selection.focusOffset = focusOffset;
+    selection.isCollapsed = isCollapsed;
     return selection;
   },
   splitText(...splitOffsets) {
@@ -587,7 +589,7 @@ Object.assign(Node.prototype, {
     writableSelf._children.push(writableNodeToAppend._key);
     return writableSelf;
   },
-  spliceText(offset, delCount, newText, restoreSelection, fromComposition) {
+  spliceText(offset, delCount, newText, restoreSelection) {
     if (!this.isText() || this.isImmutable()) {
       throw new Error(
         "spliceText: can only be used on non-immutable text nodes"
@@ -609,14 +611,13 @@ Object.assign(Node.prototype, {
     if (restoreSelection) {
       const key = writableSelf._key;
       const selection = getSelection();
-      let newOffset = offset;
-      if (!fromComposition) {
-        newOffset = offset + newTextLength;
-      }
-      selection._anchorKey = key;
-      selection._anchorOffset = newOffset;
-      selection._focusKey = key;
-      selection._focusOffset = newOffset;
+      const newOffset = offset + newTextLength;
+      selection.anchorKey = key;
+      selection.anchorOffset = newOffset;
+      selection.anchorNode = writableSelf;
+      selection.focusKey = key;
+      selection.focusOffset = newOffset;
+      selection.focusNode = writableSelf;
     }
     return writableSelf;
   },

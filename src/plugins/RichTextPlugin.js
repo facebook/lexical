@@ -22,7 +22,7 @@ function onInsertParagraph(event, view, state) {
 
   if (selection.isCaret()) {
     const [startOffset] = normalizeCursorSelectionOffsets(selection);
-    const anchorNode = selection.getAnchorNode();
+    const anchorNode = selection.anchorNode;
     let text = "";
 
     if (anchorNode.isText()) {
@@ -33,7 +33,6 @@ function onInsertParagraph(event, view, state) {
         startOffset,
         currentText.length - startOffset,
         "",
-        false,
         view,
         state
       );
@@ -71,13 +70,12 @@ function formatBold(evet, view, state) {
   const selectedNodes = selection.getNodes();
   const [startOffset, difference] = normalizeCursorSelectionOffsets(selection);
 
-
   if (!selection.isCaret()) {
     if (selectedNodes.length === 1) {
       const firstNode = selectedNodes[0];
 
       if (firstNode.isText()) {
-        const anchorNode = selection.getAnchorNode();
+        const anchorNode = selection.anchorNode;
         const currentBlock = getParentBlock(anchorNode);
         const splitNodes = firstNode.splitText(
           startOffset,
@@ -123,7 +121,7 @@ function onBeforeInput(event, view, state, editor) {
     case "insertFromComposition": {
       const data = event.data;
       if (data) {
-        insertText(event.data, view, state, true);
+        insertText(event.data, view, state);
       }
       break;
     }
@@ -132,7 +130,7 @@ function onBeforeInput(event, view, state, editor) {
       break;
     }
     case "insertLineBreak": {
-      insertText("\n", view, state, false);
+      insertText("\n", view, state);
       break;
     }
     case "insertParagraph": {
@@ -140,7 +138,7 @@ function onBeforeInput(event, view, state, editor) {
       break;
     }
     case "insertText": {
-      insertText(event.data, view, state, false);
+      insertText(event.data, view, state);
       break;
     }
     case "deleteContentBackward": {

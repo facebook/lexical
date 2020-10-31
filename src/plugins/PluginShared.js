@@ -19,8 +19,8 @@ export function normalizeCursorSelectionOffsets(selection) {
 
 export function normalizeRangeSelectionOffsets(selection) {
   const [anchorOffset, focusOffset] = selection.getRangeOffsets();
-  const anchorNode = selection.getAnchorNode();
-  const focusNode = selection.getFocusNode();
+  const anchorNode = selection.anchorNode;
+  const focusNode = selection.focusNode;
   if (anchorNode.isBefore(focusNode)) {
     return [anchorOffset, focusOffset];
   } else {
@@ -79,7 +79,6 @@ export function spliceTextAtCusor(
   caretOffset,
   delCount,
   text,
-  fromComposition,
   view,
   state
 ) {
@@ -88,32 +87,17 @@ export function spliceTextAtCusor(
     const currentBlock = ancestor.getParent();
 
     if (caretOffset === 0) {
-      const textNode = createTextWithStyling(
-        text,
-        view,
-        state,
-        selectedNode
-      );
+      const textNode = createTextWithStyling(text, view, state, selectedNode);
       ancestor.insertBefore(textNode);
       textNode.select();
     } else {
       const nextSibling = ancestor.getNextSibling();
       if (nextSibling === null) {
-        const textNode = createTextWithStyling(
-          text,
-          view,
-          state,
-          selectedNode
-        );
+        const textNode = createTextWithStyling(text, view, state, selectedNode);
         ancestor.insertAfter(textNode);
         textNode.select();
       } else {
-        const textNode = createTextWithStyling(
-          text,
-          view,
-          state,
-          selectedNode
-        );
+        const textNode = createTextWithStyling(text, view, state, selectedNode);
         nextSibling.insertBefore(textNode);
         textNode.select();
       }
@@ -148,14 +132,7 @@ export function spliceTextAtCusor(
   }
 }
 
-function spliceTextAtRange(
-  text,
-  selection,
-  selectedNodes,
-  fromComposition,
-  view,
-  state
-) {
+function spliceTextAtRange(text, selection, selectedNodes, view, state) {
   const [firstNode, ...nodesToRemove] = selectedNodes;
   if (firstNode.isImmutable()) {
     const ancestor = getParentBeforeBlock(firstNode);
@@ -184,25 +161,16 @@ function spliceTextAtRange(
     if (lastNode.isText()) {
       text += lastNode.getTextContent().slice(endOffset);
     }
-    spliceTextAtCusor(
-      firstNode,
-      startOffset,
-      delCount,
-      text,
-      fromComposition,
-      view,
-      state
-    );
+    spliceTextAtCusor(firstNode, startOffset, delCount, text, view, state);
   }
 }
 
-export function insertText(text, view, state, fromComposition) {
+export function insertText(text, view, state) {
   view.getSelection().insertText(text, {
     bold: state.isBoldMode,
     italic: state.isItalicMode,
     underline: state.isUnderlineMode,
     strikeThrough: state.isStrikeThroughMode,
-    fromComposition,
   });
 }
 
@@ -228,7 +196,7 @@ export function removeText(backward, view, state) {
 
   if (selection.isCaret()) {
     const firstNode = selectedNodes[0];
-    const caretOffset = selection.getCaretOffset();
+    const caretOffset = selection.anchorOffset;
     const currentBlock = getParentBlock(firstNode);
     const previousBlock = currentBlock.getPreviousSibling();
     const nextBlock = currentBlock.getNextSibling();
@@ -251,7 +219,7 @@ export function removeText(backward, view, state) {
           caretOffset === firstNode.getTextContent().length;
         if (backward || !offsetAtEnd) {
           const offset = backward ? caretOffset - 1 : caretOffset;
-          spliceTextAtCusor(firstNode, offset, 1, "", false, view, state);
+          spliceTextAtCusor(firstNode, offset, 1, "", view, state);
         } else {
           const nextSibling = firstNode.getNextSibling();
           if (nextSibling === null) {
@@ -284,15 +252,7 @@ export function removeText(backward, view, state) {
           currentBlock.normalizeTextNodes(true);
         }
       } else {
-        spliceTextAtCusor(
-          firstNode,
-          caretOffset,
-          1,
-          "",
-          false,
-          view,
-          state
-        );
+        spliceTextAtCusor(firstNode, caretOffset, 1, "", view, state);
       }
     }
   } else {
@@ -314,13 +274,12 @@ export function removeText(backward, view, state) {
           startOffset,
           offsetDifference,
           "",
-          false,
           view,
           state
         );
       }
     } else {
-      spliceTextAtRange("", selection, selectedNodes, false, view, state);
+      spliceTextAtRange("", selection, selectedNodes, view, state);
     }
   }
 }

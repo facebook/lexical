@@ -25,7 +25,7 @@ function onBeforeInput(event, view, state, editor) {
     case "insertFromComposition": {
       const data = event.data;
       if (data) {
-        insertText(event.data, view, state, true);
+        insertText(event.data, view, state);
       }
       break;
     }
@@ -34,11 +34,11 @@ function onBeforeInput(event, view, state, editor) {
       break;
     }
     case "insertLineBreak": {
-      insertText("\n", view, state, false);
+      insertText("\n", view, state);
       break;
     }
     case "insertText": {
-      insertText(event.data, view, state, false);
+      insertText(event.data, view, state);
       break;
     }
     case "deleteContentBackward": {
@@ -72,10 +72,15 @@ export function usePlainTextPlugin(outlineEditor, isReadOnly = false) {
     }
   }, [isReadOnly]);
 
-  useEvent(outlineEditor, 'beforeinput', onBeforeInput, pluginStateRef)
-  useEvent(outlineEditor, 'focusin', onFocusIn, pluginStateRef)
-  useEvent(outlineEditor, 'compositionstart', onCompositionStart, pluginStateRef)
-  useEvent(outlineEditor, 'compositionend', onCompositionEnd, pluginStateRef)
-  useEvent(outlineEditor, 'keydown', onKeyDown, pluginStateRef)
-  useEvent(outlineEditor, 'selectionchange', onSelectionChange, pluginStateRef)
+  useEvent(outlineEditor, "beforeinput", onBeforeInput, pluginStateRef);
+  useEvent(outlineEditor, "focusin", onFocusIn, pluginStateRef);
+  useEvent(
+    outlineEditor,
+    "compositionstart",
+    onCompositionStart,
+    pluginStateRef
+  );
+  useEvent(outlineEditor, "compositionend", onCompositionEnd, pluginStateRef);
+  useEvent(outlineEditor, "keydown", onKeyDown, pluginStateRef);
+  useEvent(outlineEditor, "selectionchange", onSelectionChange, pluginStateRef);
 }

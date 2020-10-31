@@ -13,46 +13,37 @@ import { getNodeKeyFromDOM } from "./OutlineReconciler";
 function Selection(
   anchorKey,
   anchorOffset,
+  anchorNode,
   focusKey,
   focusOffset,
+  focusNode,
   isCollapsed
 ) {
-  this._anchorKey = anchorKey;
-  this._anchorOffset = anchorOffset;
-  this._focusKey = focusKey;
-  this._focusOffset = focusOffset;
-  this._isCollapsed = isCollapsed;
+  this.anchorKey = anchorKey;
+  this.anchorNode = anchorNode;
+  this.anchorOffset = anchorOffset;
+  this.focusKey = focusKey;
+  this.focusNode = focusNode;
+  this.focusOffset = focusOffset;
+  this.isCollapsed = isCollapsed;
 }
 
 Object.assign(Selection.prototype, {
   isCaret() {
     return (
-      this._anchorKey === this._focusKey &&
-      this._anchorOffset === this._focusOffset
+      this.anchorKey === this.focusKey && this.anchorOffset === this.focusOffset
     );
   },
-  isCollapsed() {
-    return this._isCollapsed;
-  },
   getNodes() {
-    const anchorNode = getNodeByKey(this._anchorKey);
-    const focusNode = getNodeByKey(this._focusKey);
+    const anchorNode = this.anchorNode;
+    const focusNode = this.focusNode;
     if (anchorNode === focusNode) {
       return [anchorNode];
     }
     return anchorNode.getNodesBetween(focusNode);
   },
-  getCaretOffset() {
-    return this._anchorOffset;
-  },
   getRangeOffsets() {
-    return [this._anchorOffset, this._focusOffset];
-  },
-  getAnchorNode() {
-    return getNodeByKey(this._anchorKey);
-  },
-  getFocusNode() {
-    return getNodeByKey(this._focusKey);
+    return [this.anchorOffset, this.focusOffset];
   },
   formatText(options = {}) {
     const { bold, italic, underline, strikeThrough } = options;
@@ -63,23 +54,22 @@ Object.assign(Selection.prototype, {
     const lastNode = selectedNodes[lastIndex];
 
     if (selectedNodesLength === 1) {
-
     } else {
-      const isBefore = firstNode.isBefore(lastNode);;
+      const isBefore = firstNode.isBefore(lastNode);
 
       for (let i = 1; i < lastIndex; i++) {
         const selectedNode = selectedNodes[i];
-  
-        debugger
+
+        debugger;
       }
     }
   },
   insertText(text, options = {}) {
-    const { bold, italic, underline, strikeThrough, fromComposition } = options;
+    const { bold, italic, underline, strikeThrough } = options;
     const selectedNodes = this.getNodes();
     const selectedNodesLength = selectedNodes.length;
-    const anchorOffset = this._anchorOffset;
-    const focusOffset = this._focusOffset;
+    const anchorOffset = this.anchorOffset;
+    const focusOffset = this.focusOffset;
     const nextFlags = calculateFlags(bold, italic, underline, strikeThrough);
     const firstNode = selectedNodes[0];
     const firstNodeText = firstNode.getTextContent();
@@ -111,18 +101,12 @@ Object.assign(Selection.prototype, {
         endOffset = anchorOffset > focusOffset ? anchorOffset : focusOffset;
         const delCount = endOffset - startOffset;
 
-        firstNode.spliceText(
-          startOffset,
-          delCount,
-          text,
-          true,
-          fromComposition
-        );
+        firstNode.spliceText(startOffset, delCount, text, true);
       }
     } else {
       const lastIndex = selectedNodesLength - 1;
       const lastNode = selectedNodes[lastIndex];
-      const isBefore = firstNode === this.getAnchorNode();
+      const isBefore = firstNode === this.anchorNode;
       const endOffset = isBefore ? focusOffset : anchorOffset;
       let removeFirstNode = false;
       startOffset = isBefore ? anchorOffset : focusOffset;
@@ -135,8 +119,7 @@ Object.assign(Selection.prototype, {
           startOffset,
           firstNodeTextLength - startOffset,
           text,
-          true,
-          fromComposition
+          true
         );
       }
       if (!firstNode.isImmutable() && lastNode.isText()) {
@@ -203,22 +186,34 @@ export function getSelection() {
   let selection = viewModel.selection;
   if (selection === null) {
     let nodeMap = viewModel.nodeMap;
-    const {
-      anchorNode,
+    let {
+      anchorNode: anchorDOM,
       anchorOffset,
-      focusNode,
+      focusNode: focusDOM,
       focusOffset,
       isCollapsed,
     } = window.getSelection();
     const anchorKey =
-      anchorNode !== null ? getNodeKeyFromDOM(anchorNode, nodeMap) : null;
+      anchorDOM !== null ? getNodeKeyFromDOM(anchorDOM, nodeMap) : null;
     const focusKey =
-      focusNode !== null ? getNodeKeyFromDOM(focusNode, nodeMap) : null;
+      focusDOM !== null ? getNodeKeyFromDOM(focusDOM, nodeMap) : null;
+    const anchorNode = getNodeByKey(anchorKey);
+    const focusNode = getNodeByKey(focusKey);
+
+    if (anchorNode !== null && anchorNode._children === "") {
+      anchorOffset = 0;
+    }
+    if (focusNode !== null && focusNode._children === "") {
+      focusOffset = 0;
+    }
+
     selection = viewModel.selection = new Selection(
       anchorKey,
       anchorOffset,
+      anchorNode,
       focusKey,
       focusOffset,
+      focusNode,
       isCollapsed
     );
   }

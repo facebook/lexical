@@ -3,14 +3,15 @@ import { getNodeType, IS_ITALIC, IS_TEXT } from "./OutlineNode";
 let subTreeTextContent = "";
 let forceTextDirection = null;
 
-var RTL = "\u0591-\u07FF\uFB1D-\uFDFD\uFE70-\uFEFC";
-var LTR =
+const RTL = "\u0591-\u07FF\uFB1D-\uFDFD\uFE70-\uFEFC";
+const LTR =
   "A-Za-z\u00C0-\u00D6\u00D8-\u00F6" +
   "\u00F8-\u02B8\u0300-\u0590\u0800-\u1FFF\u200E\u2C00-\uFB1C" +
   "\uFE00-\uFE6F\uFEFD-\uFFFF";
 
-var rtl = new RegExp("^[^" + LTR + "]*[" + RTL + "]");
-var ltr = new RegExp("^[^" + RTL + "]*[" + LTR + "]");
+const rtl = new RegExp("^[^" + LTR + "]*[" + RTL + "]");
+const ltr = new RegExp("^[^" + RTL + "]*[" + LTR + "]");
+const zeroWidthString = "\uFEFF";
 
 function getTextDirection(text) {
   if (rtl.test(text)) {
@@ -34,13 +35,21 @@ function handleBlockTextDirection(dom) {
 
 function setTextContent(prevText, nextText, dom, node) {
   const firstChild = dom.firstChild;
+  const hasBreakNode = firstChild && firstChild.nextSibling;
   // Check if we are on an empty line
   if (node.getNextSibling() === null) {
     if (nextText === "") {
       if (firstChild === null) {
+        // We use a zero width string so that the browser moves
+        // the cursor into the text node. It won't move the cursor
+        // in if it's empty. This trick makes it seem empty, so
+        // the browser plays along nicely. We use the <br>
+        // to ensure we take up a full line, as we don't have any
+        // characters taking up the full height yet.
+        dom.appendChild(document.createTextNode(zeroWidthString));
         dom.appendChild(document.createElement("br"));
-      } else if (firstChild.nodeType === 3) {
-        dom.removeChild(firstChild);
+      } else if (!hasBreakNode) {
+        firstChild.nodeValue = zeroWidthString;
         dom.appendChild(document.createElement("br"));
       }
       return;
@@ -48,18 +57,8 @@ function setTextContent(prevText, nextText, dom, node) {
       nextText = nextText + "\n";
     }
   }
-  const isBreakElement = firstChild && firstChild.nodeType === 1;
-  if (firstChild === null || isBreakElement) {
-    if (nextText === "") {
-      const textNode = document.createTextNode("");
-      if (isBreakElement) {
-        dom.replaceChild(textNode, firstChild);
-      } else {
-        dom.appendChild(textNode);
-      }
-    } else {
-      dom.textContent = nextText;
-    }
+  if (firstChild === null || hasBreakNode) {
+    dom.textContent = nextText;
   } else if (prevText !== nextText) {
     firstChild.nodeValue = nextText;
   }
@@ -522,9 +521,9 @@ export function reconcileViewModel(nextViewModel, editor) {
     const [startOffset, endOffset] = nextSelection.getRangeOffsets();
     const domSelection = window.getSelection();
     const range = document.createRange();
-    const startElement = getSelectionElement(nextSelection._anchorKey, editor);
-    const endElement = getSelectionElement(nextSelection._focusKey, editor);
-    range.collapse(nextSelection.isCollapsed());
+    const startElement = getSelectionElement(nextSelection.anchorKey, editor);
+    const endElement = getSelectionElement(nextSelection.focusKey, editor);
+    range.collapse(nextSelection.isCollapsed);
     range.setStart(startElement, startOffset);
     range.setEnd(endElement, endOffset);
     domSelection.removeAllRanges();

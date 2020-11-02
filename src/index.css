@@ -38,6 +38,11 @@ h1 {
   position: relative;
 }
 
+.editor-shell div.editor > p {
+  margin: 0 0 15px 0;
+  position: relative;
+}
+
 pre {
   margin: 20px auto 20px auto;
   max-width: 580px;

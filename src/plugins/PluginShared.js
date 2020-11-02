@@ -19,8 +19,8 @@ export function normalizeCursorSelectionOffsets(selection) {
 
 export function normalizeRangeSelectionOffsets(selection) {
   const [anchorOffset, focusOffset] = selection.getRangeOffsets();
-  const anchorNode = selection.anchorNode;
-  const focusNode = selection.focusNode;
+  const anchorNode = selection.getAnchorNode();
+  const focusNode = selection.getFocusNode();
   if (anchorNode.isBefore(focusNode)) {
     return [anchorOffset, focusOffset];
   } else {
@@ -166,12 +166,7 @@ function spliceTextAtRange(text, selection, selectedNodes, view, state) {
 }
 
 export function insertText(text, view, state) {
-  view.getSelection().insertText(text, {
-    bold: state.isBoldMode,
-    italic: state.isItalicMode,
-    underline: state.isUnderlineMode,
-    strikeThrough: state.isStrikeThroughMode,
-  });
+  view.getSelection().insertText(text);
 }
 
 function removeBlock(blockToRemove, previousBlock, view) {
@@ -318,7 +313,7 @@ export function onFocusIn(event, viewModel) {
 
   if (body.getFirstChild() === null) {
     const text = viewModel.createText();
-    body.append(viewModel.createBlock().append(text));
+    body.append(viewModel.createBlock('p').append(text));
     text.select();
   }
 }

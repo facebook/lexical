@@ -1,11 +1,14 @@
 import { getActiveViewModel } from "./OutlineView";
 import {
   createTextNode,
+  FORMAT_BOLD,
+  FORMAT_ITALIC,
+  FORMAT_STRIKETHROUGH,
+  FORMAT_UNDERLINE,
   getNodeByKey,
   IS_BOLD,
   IS_ITALIC,
   IS_STRIKETHROUGH,
-  IS_TEXT,
   IS_UNDERLINE,
 } from "./OutlineNode";
 import { getNodeKeyFromDOM } from "./OutlineReconciler";
@@ -13,17 +16,13 @@ import { getNodeKeyFromDOM } from "./OutlineReconciler";
 function Selection(
   anchorKey,
   anchorOffset,
-  anchorNode,
   focusKey,
   focusOffset,
-  focusNode,
   isCollapsed
 ) {
   this.anchorKey = anchorKey;
-  this.anchorNode = anchorNode;
   this.anchorOffset = anchorOffset;
   this.focusKey = focusKey;
-  this.focusNode = focusNode;
   this.focusOffset = focusOffset;
   this.isCollapsed = isCollapsed;
 }
@@ -34,9 +33,15 @@ Object.assign(Selection.prototype, {
       this.anchorKey === this.focusKey && this.anchorOffset === this.focusOffset
     );
   },
+  getAnchorNode() {
+    return getNodeByKey(this.anchorKey);
+  },
+  getFocusNode() {
+    return getNodeByKey(this.focusKey);
+  },
   getNodes() {
-    const anchorNode = this.anchorNode;
-    const focusNode = this.focusNode;
+    const anchorNode = this.getAnchorNode();
+    const focusNode = this.getFocusNode();
     if (anchorNode === focusNode) {
       return [anchorNode];
     }
@@ -45,32 +50,103 @@ Object.assign(Selection.prototype, {
   getRangeOffsets() {
     return [this.anchorOffset, this.focusOffset];
   },
-  formatText(options = {}) {
-    const { bold, italic, underline, strikeThrough } = options;
+  formatText(formatType) {
     const selectedNodes = this.getNodes();
     const selectedNodesLength = selectedNodes.length;
     const lastIndex = selectedNodesLength - 1;
-    const firstNode = selectedNodes[0];
-    const lastNode = selectedNodes[lastIndex];
+    let firstNode = selectedNodes[0];
+    let lastNode = selectedNodes[lastIndex];
+    const firstNodeText = firstNode.getTextContent();
+    const firstNodeTextLength = firstNodeText.length;
+    const currentBlock = firstNode.getParentBlock();
+    const anchorOffset = this.anchorOffset;
+    const focusOffset = this.focusOffset;
+    const firstNextFlags = getTextNodeFormatFlags(firstNode, formatType, null);
+    let startOffset;
+    let endOffset;
+
+    if (this.isCaret()) {
+      if (firstNodeTextLength === 0) {
+        firstNode.setFlags(firstNextFlags);
+      } else {
+        const textNode = createTextNode("");
+        textNode.setFlags(firstNextFlags);
+        firstNode.insertAfter(textNode);
+        textNode.select();
+      }
+      return;
+    }
 
     if (selectedNodesLength === 1) {
+      if (firstNode.isText() && !firstNode.isImmutable()) {
+        startOffset = anchorOffset > focusOffset ? focusOffset : anchorOffset;
+        endOffset = anchorOffset > focusOffset ? anchorOffset : focusOffset;
+
+        if (startOffset === endOffset) {
+          return;
+        }
+        if (startOffset === 0 && endOffset === firstNodeTextLength) {
+          firstNode.setFlags(firstNextFlags);
+          firstNode.select(startOffset, endOffset);
+        } else {
+          const splitNodes = firstNode.splitText(startOffset, endOffset);
+          const replacement = startOffset === 0 ? splitNodes[0] : splitNodes[1];
+          replacement.setFlags(firstNextFlags);
+          replacement.select(0, endOffset - startOffset);
+        }
+        currentBlock.normalizeTextNodes(true);
+      }
     } else {
-      const isBefore = firstNode.isBefore(lastNode);
+      const isBefore = firstNode === this.getAnchorNode();
+      startOffset = isBefore ? anchorOffset : focusOffset;
+      endOffset = isBefore ? focusOffset : anchorOffset;
+
+      if (firstNode.isText() && !firstNode.isImmutable()) {
+        if (startOffset !== 0) {
+          [, firstNode] = firstNode.splitText(startOffset);
+          startOffset = 0;
+        }
+        firstNode.setFlags(firstNextFlags);
+      }
+      if (lastNode.isText() && !lastNode.isImmutable()) {
+        const lastNextFlags = getTextNodeFormatFlags(
+          lastNode,
+          formatType,
+          firstNextFlags
+        );
+        const lastNodeText = lastNode.getTextContent();
+        const lastNodeTextLength = lastNodeText.length;
+        if (endOffset !== lastNodeTextLength) {
+          [lastNode] = lastNode.splitText(endOffset);
+        }
+        lastNode.setFlags(lastNextFlags);
+      }
 
       for (let i = 1; i < lastIndex; i++) {
         const selectedNode = selectedNodes[i];
-
-        debugger;
+        if (selectedNode.isText() && !selectedNode.isImmutable()) {
+          const selectedNextFlags = getTextNodeFormatFlags(
+            lastNode,
+            formatType,
+            firstNextFlags
+          );
+          selectedNode.setFlags(selectedNextFlags);
+        }
       }
+      this.setRange(
+        firstNode.getKey(),
+        startOffset,
+        lastNode.getKey(),
+        endOffset
+      );
+      currentBlock.normalizeTextNodes(true);
     }
   },
-  insertText(text, options = {}) {
-    const { bold, italic, underline, strikeThrough } = options;
+  insertText(text) {
     const selectedNodes = this.getNodes();
     const selectedNodesLength = selectedNodes.length;
     const anchorOffset = this.anchorOffset;
     const focusOffset = this.focusOffset;
-    const nextFlags = calculateFlags(bold, italic, underline, strikeThrough);
     const firstNode = selectedNodes[0];
     const firstNodeText = firstNode.getTextContent();
     const firstNodeTextLength = firstNodeText.length;
@@ -78,12 +154,10 @@ Object.assign(Selection.prototype, {
     const ancestor = firstNode.getParentBefore(currentBlock);
     let startOffset;
     let endOffset;
-    let skipFormatting = false;
 
     if (selectedNodesLength === 1) {
       if (firstNode.isImmutable() || !firstNode.isText()) {
         const textNode = createTextNode(text);
-        textNode._flags = nextFlags;
 
         if (focusOffset === 0) {
           ancestor.insertBefore(textNode);
@@ -95,7 +169,6 @@ Object.assign(Selection.prototype, {
         }
 
         textNode.select();
-        skipFormatting = true;
       } else {
         startOffset = anchorOffset > focusOffset ? focusOffset : anchorOffset;
         endOffset = anchorOffset > focusOffset ? anchorOffset : focusOffset;
@@ -106,14 +179,13 @@ Object.assign(Selection.prototype, {
     } else {
       const lastIndex = selectedNodesLength - 1;
       const lastNode = selectedNodes[lastIndex];
-      const isBefore = firstNode === this.anchorNode;
+      const isBefore = firstNode === this.getAnchorNode();
       const endOffset = isBefore ? focusOffset : anchorOffset;
-      let removeFirstNode = false;
       startOffset = isBefore ? anchorOffset : focusOffset;
+      let removeFirstNode = false;
 
       if (firstNode.isImmutable()) {
         removeFirstNode = true;
-        skipFormatting = true;
       } else {
         firstNode.spliceText(
           startOffset,
@@ -142,43 +214,69 @@ Object.assign(Selection.prototype, {
         textNode.select();
       }
     }
-
-    if (!skipFormatting && firstNode._flags !== nextFlags) {
-      let targetNode = firstNode;
-
-      if (anchorOffset > 0) {
-        const textLength = text.length;
-        [, targetNode] = firstNode.splitText(
-          startOffset,
-          startOffset + textLength
-        );
-      }
-      if (bold) {
-        targetNode.makeBold();
-      } else {
-        targetNode.makeNormal();
-      }
-      targetNode.select();
-    }
     currentBlock.normalizeTextNodes(true);
+  },
+  setRange(anchorKey, anchorOffset, focusKey, focusOffset) {
+    this.anchorOffset = anchorOffset;
+    this.focusOffset = focusOffset;
+    this.anchorKey = anchorKey;
+    this.focusKey = focusKey;
   },
 });
 
-function calculateFlags(bold, italic, underline, strikeThrough) {
-  let flags = IS_TEXT;
-  if (bold) {
-    flags |= IS_BOLD;
+function getTextNodeFormatFlags(node, type, alignWithFlags) {
+  const nodeFlags = node._flags;
+  let newFlags = nodeFlags;
+
+  switch (type) {
+    case FORMAT_BOLD:
+      if (nodeFlags & IS_BOLD) {
+        if (alignWithFlags === null || (alignWithFlags & IS_BOLD) === 0) {
+          newFlags ^= IS_BOLD;
+        }
+      } else {
+        if (alignWithFlags === null || alignWithFlags & IS_BOLD) {
+          newFlags |= IS_BOLD;
+        }
+      }
+      break;
+    case FORMAT_ITALIC:
+      if (nodeFlags & IS_ITALIC) {
+        if (alignWithFlags === null || (alignWithFlags & IS_ITALIC) === 0) {
+          newFlags ^= IS_ITALIC;
+        }
+      } else {
+        if (alignWithFlags === null || alignWithFlags & IS_ITALIC) {
+          newFlags |= IS_ITALIC;
+        }
+      }
+      break;
+    case FORMAT_STRIKETHROUGH:
+      if (nodeFlags & IS_STRIKETHROUGH) {
+        if (alignWithFlags === null || (alignWithFlags & IS_STRIKETHROUGH) === 0) {
+          newFlags ^= IS_STRIKETHROUGH;
+        }
+      } else {
+        if (alignWithFlags === null || alignWithFlags & IS_STRIKETHROUGH) {
+          newFlags |= IS_STRIKETHROUGH;
+        }
+      }
+      break;
+    case FORMAT_UNDERLINE:
+      if (nodeFlags & IS_UNDERLINE) {
+        if (alignWithFlags === null || (alignWithFlags & IS_UNDERLINE) === 0) {
+          newFlags ^= IS_UNDERLINE;
+        }
+      } else {
+        if (alignWithFlags === null || alignWithFlags & IS_UNDERLINE) {
+          newFlags |= IS_UNDERLINE;
+        }
+      }
+      break;
+    default:
   }
-  if (italic) {
-    flags |= IS_ITALIC;
-  }
-  if (underline) {
-    flags |= IS_UNDERLINE;
-  }
-  if (strikeThrough) {
-    flags |= IS_STRIKETHROUGH;
-  }
-  return flags;
+
+  return newFlags;
 }
 
 export function getSelection() {
@@ -210,10 +308,8 @@ export function getSelection() {
     selection = viewModel.selection = new Selection(
       anchorKey,
       anchorOffset,
-      anchorNode,
       focusKey,
       focusOffset,
-      focusNode,
       isCollapsed
     );
   }

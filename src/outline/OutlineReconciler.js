@@ -1,4 +1,10 @@
-import { getNodeType, IS_ITALIC, IS_TEXT } from "./OutlineNode";
+import {
+  getNodeType,
+  IS_ITALIC,
+  IS_STRIKETHROUGH,
+  IS_TEXT,
+  IS_UNDERLINE,
+} from "./OutlineNode";
 
 let subTreeTextContent = "";
 let forceTextDirection = null;
@@ -160,15 +166,32 @@ function setTextStyling(domStyle, type, prevFlags, nextFlags) {
   if (type === "strong") {
     if (nextFlags & IS_ITALIC) {
       // When prev is not italic, but next is
-      if ((prevFlags && IS_ITALIC) === 0) {
+      if ((prevFlags & IS_ITALIC) === 0) {
         domStyle.setProperty("font-style", "italic");
       }
-    } else {
+    } else if (prevFlags & IS_ITALIC) {
       // When prev was italic, but the next is not
-      if (prevFlags && IS_ITALIC) {
-        domStyle.setProperty("font-style", "normal");
-      }
+      domStyle.setProperty("font-style", "normal");
     }
+  }
+  const prevIsNotStrikeThrough = (prevFlags & IS_STRIKETHROUGH) === 0;
+  const prevIsNotUnderline = (prevFlags & IS_UNDERLINE) === 0;
+  const nextIsStrikeThrough = nextFlags & IS_STRIKETHROUGH;
+  const nextIsUnderline = nextFlags & IS_UNDERLINE;
+  if (nextIsStrikeThrough && nextIsUnderline) {
+    if (prevIsNotStrikeThrough || prevIsNotUnderline) {
+      domStyle.setProperty("text-decoration", "underline line-through");
+    }
+  } else if (nextIsStrikeThrough) {
+    if (prevIsNotStrikeThrough) {
+      domStyle.setProperty("text-decoration", "line-through");
+    }
+  } else if (nextIsUnderline) {
+    if (prevIsNotUnderline) {
+      domStyle.setProperty("text-decoration", "underline");
+    }
+  } else {
+    domStyle.setProperty("text-decoration", "initial");
   }
 }
 

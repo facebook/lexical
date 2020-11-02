@@ -12,6 +12,11 @@ export const IS_ITALIC = 1 << 5;
 export const IS_STRIKETHROUGH = 1 << 6;
 export const IS_UNDERLINE = 1 << 7;
 
+export const FORMAT_BOLD = 0;
+export const FORMAT_ITALIC = 1;
+export const FORMAT_STRIKETHROUGH = 2;
+export const FORMAT_UNDERLINE = 3;
+
 function removeNode(nodeToRemove) {
   const parent = nodeToRemove.getParent();
   if (parent === null) {
@@ -69,8 +74,8 @@ function replaceNode(toReplace, replaceWith) {
 
 function combineAdjacentTextNodes(textNodes, restoreSelection) {
   const selection = getSelection();
-  const anchorOffset = selection._anchorOffset;
-  const focusOffset = selection._focusOffset;
+  const anchorOffset = selection.anchorOffset;
+  const focusOffset = selection.focusOffset;
   const anchorKey = selection.anchorKey;
   const focusKey = selection.focusKey;
   // Merge all text nodes into the first node
@@ -472,9 +477,17 @@ Object.assign(Node.prototype, {
 
   // Setters and mutators
 
+  setFlags(flags) {
+    if (this.isImmutable()) {
+      throw new Error("setFlags: can only be used on non-immutable nodes");
+    }
+    const self = getWritableNode(this);
+    self._flags = flags;
+    return self;
+  },
   setStyle(style) {
     if (this.isImmutable()) {
-      throw new Error("select: can only be used on non-immutable nodes");
+      throw new Error("setStyle: can only be used on non-immutable nodes");
     }
     const self = getWritableNode(this);
     self._style = style;
@@ -482,7 +495,7 @@ Object.assign(Node.prototype, {
   },
   makeBold() {
     if (!this.isText() || this.isImmutable()) {
-      throw new Error("select: can only be used on non-immutable text nodes");
+      throw new Error("makeBold: can only be used on non-immutable text nodes");
     }
     const self = getWritableNode(this);
     self._flags |= IS_BOLD;
@@ -510,8 +523,6 @@ Object.assign(Node.prototype, {
     const key = this._key;
     selection.anchorKey = key;
     selection.focusKey = key;
-    selection.anchorNode = this;
-    selection.focusNode = this;
     if (typeof text === "string") {
       const lastOffset = text.length;
       if (anchorOffset === undefined) {
@@ -614,10 +625,8 @@ Object.assign(Node.prototype, {
       const newOffset = offset + newTextLength;
       selection.anchorKey = key;
       selection.anchorOffset = newOffset;
-      selection.anchorNode = writableSelf;
       selection.focusKey = key;
       selection.focusOffset = newOffset;
-      selection.focusNode = writableSelf;
     }
     return writableSelf;
   },

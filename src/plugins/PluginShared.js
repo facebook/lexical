@@ -292,7 +292,7 @@ export function onCompositionEnd(event, view, state) {
   }
 }
 
-export function onInsertFromPaste(event, view, state, editor) {
+export function insertFromDataTransfer(event, view, state, editor) {
   const items = event.dataTransfer.items;
   for (let i = 0; i < items.length; i++) {
     const item = items[i];

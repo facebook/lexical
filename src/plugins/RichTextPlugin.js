@@ -8,7 +8,7 @@ import {
   onCompositionEnd,
   onCompositionStart,
   onFocusIn,
-  onInsertFromPaste,
+  insertFromDataTransfer,
   onKeyDown,
   onSelectionChange,
   removeText,
@@ -95,7 +95,7 @@ function onBeforeInput(event, view, state, editor) {
       break;
     }
     case "insertFromPaste": {
-      onInsertFromPaste(event, view, state, editor);
+      insertFromDataTransfer(event, view, state, editor);
       break;
     }
     case "insertLineBreak": {
@@ -120,6 +120,10 @@ function onBeforeInput(event, view, state, editor) {
     }
     case "deleteContentForward": {
       removeText(false, view, state);
+      break;
+    }
+    case "insertFromDrop": {
+      insertFromDataTransfer(event, view, state, editor);
       break;
     }
     default: {

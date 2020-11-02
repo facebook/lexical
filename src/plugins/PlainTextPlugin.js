@@ -41,6 +41,10 @@ function onBeforeInput(event, view, state, editor) {
       insertText(event.data, view, state);
       break;
     }
+    case "deleteByCut": {
+      removeText(true, view, state);
+      break;
+    }
     case "deleteContentBackward": {
       removeText(true, view, state);
       break;

@@ -13,16 +13,20 @@ import {
   onSelectionChange,
   removeText,
   spliceTextAtCusor,
-  createTextWithStyling,
   useEvent,
 } from "./PluginShared";
+
+const FORMAT_BOLD = 0;
+const FORMAT_ITALIC = 1;
+const FORMAT_STRIKETHROUGH = 2;
+const FORMAT_UNDERLINE = 3;
 
 function onInsertParagraph(event, view, state) {
   const selection = view.getSelection();
 
   if (selection.isCaret()) {
     const [startOffset] = normalizeCursorSelectionOffsets(selection);
-    const anchorNode = selection.anchorNode;
+    const anchorNode = selection.getAnchorNode();
     let text = "";
 
     if (anchorNode.isText()) {
@@ -43,7 +47,7 @@ function onInsertParagraph(event, view, state) {
     const textNode = anchorNode.isImmutable()
       ? view.createText(text)
       : view.cloneText(anchorNode, text);
-    const paragraph = view.createBlock().append(textNode);
+    const paragraph = view.createBlock('p').append(textNode);
     currentBlock.insertAfter(paragraph);
     let nodeToInsertAfter = textNode;
     siblings.forEach((sibling) => {
@@ -53,53 +57,6 @@ function onInsertParagraph(event, view, state) {
     textNode.select(0, 0);
   } else {
     console.log("TODO");
-  }
-}
-
-function formatBold(evet, view, state) {
-  state.isBoldMode = !state.isBoldMode;
-  view.getSelection().formatText({
-    bold: state.isBoldMode,
-    italic: state.isItalicMode,
-    underline: state.isUnderlineMode,
-    strikeThrough: state.isStrikeThroughMode,
-  });
-  return;
-
-  const selection = view.getSelection();
-  const selectedNodes = selection.getNodes();
-  const [startOffset, difference] = normalizeCursorSelectionOffsets(selection);
-
-  if (!selection.isCaret()) {
-    if (selectedNodes.length === 1) {
-      const firstNode = selectedNodes[0];
-
-      if (firstNode.isText()) {
-        const anchorNode = selection.anchorNode;
-        const currentBlock = getParentBlock(anchorNode);
-        const splitNodes = firstNode.splitText(
-          startOffset,
-          startOffset + difference
-        );
-        const nodeToReplace =
-          splitNodes.length === 1 || startOffset === 0
-            ? splitNodes[0]
-            : splitNodes[1];
-
-        const textContent = nodeToReplace.getTextContent();
-        const replacement = createTextWithStyling(
-          textContent,
-          view,
-          state,
-          nodeToReplace
-        );
-        nodeToReplace.replace(replacement);
-        replacement.select(0, textContent.length);
-        currentBlock.normalizeTextNodes(true);
-      }
-    } else {
-      debugger;
-    }
   }
 }
 
@@ -115,7 +72,19 @@ function onBeforeInput(event, view, state, editor) {
 
   switch (inputType) {
     case "formatBold": {
-      formatBold(event, view, state);
+      view.getSelection().formatText(FORMAT_BOLD);
+      break;
+    }
+    case "formatItalic": {
+      view.getSelection().formatText(FORMAT_ITALIC);
+      break;
+    }
+    case "formatStrikeThrough": {
+      view.getSelection().formatText(FORMAT_STRIKETHROUGH);
+      break;
+    }
+    case "formatUnderline": {
+      view.getSelection().formatText(FORMAT_UNDERLINE);
       break;
     }
     case "insertFromComposition": {
@@ -141,6 +110,10 @@ function onBeforeInput(event, view, state, editor) {
       insertText(event.data, view, state);
       break;
     }
+    case "deleteByCut": {
+      removeText(true, view, state);
+      break;
+    }
     case "deleteContentBackward": {
       removeText(true, view, state);
       break;
@@ -164,10 +137,6 @@ export function useRichTextPlugin(outlineEditor, isReadOnly = false) {
 
     if (pluginsState === null) {
       pluginStateRef.current = {
-        isBoldMode: false,
-        isItalicMode: false,
-        isUnderlineMode: false,
-        isStrikeThroughMode: false,
         isComposing: false,
         isReadOnly,
       };

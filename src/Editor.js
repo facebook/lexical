@@ -1,8 +1,9 @@
 import * as React from "react";
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import { useOutlineEditor } from "./outline/OutlineEditor";
 import { useEmojiPlugin } from "./plugins/EmojiPlugin";
-import { usePlainTextPlugin } from "./plugins/PlainTextPlugin";
+import { useMentionsPlugin } from "./plugins/MentionsPlugin";
+// import { usePlainTextPlugin } from "./plugins/PlainTextPlugin";
 import { useRichTextPlugin } from "./plugins/RichTextPlugin";
 
 const editorStyle = {
@@ -17,20 +18,25 @@ const editorStyle = {
 export default function Editor({ onChange, isReadOnly }) {
   const editorElementRef = useRef(null);
   const outlineEditor = useOutlineEditor(editorElementRef, onChange);
+  const portalTargetElement = useMemo(() => document.getElementById("portal"), []);
 
   // usePlainTextPlugin(outlineEditor, isReadOnly);
   useRichTextPlugin(outlineEditor, isReadOnly);
   useEmojiPlugin(outlineEditor);
+  const mentionsTypeahead = useMentionsPlugin(outlineEditor, portalTargetElement);
 
   return (
-    <div
-      className="editor"
-      contentEditable={isReadOnly === true ? false : true}
-      role="textbox"
-      ref={editorElementRef}
-      spellCheck={true}
-      style={editorStyle}
-      tabIndex={0}
-    />
+    <>
+      <div
+        className="editor"
+        contentEditable={isReadOnly === true ? false : true}
+        role="textbox"
+        ref={editorElementRef}
+        spellCheck={true}
+        style={editorStyle}
+        tabIndex={0}
+      />
+      {mentionsTypeahead}
+    </>
   );
 }

@@ -7,10 +7,11 @@ export const IS_BODY = 1;
 export const IS_BLOCK = 1 << 1;
 export const IS_TEXT = 1 << 2;
 export const IS_IMMUTABLE = 1 << 3;
-export const IS_BOLD = 1 << 4;
-export const IS_ITALIC = 1 << 5;
-export const IS_STRIKETHROUGH = 1 << 6;
-export const IS_UNDERLINE = 1 << 7;
+export const IS_SEGMENTED = 1 << 4;
+export const IS_BOLD = 1 << 5;
+export const IS_ITALIC = 1 << 6;
+export const IS_STRIKETHROUGH = 1 << 7;
+export const IS_UNDERLINE = 1 << 8;
 
 export const FORMAT_BOLD = 0;
 export const FORMAT_ITALIC = 1;
@@ -183,6 +184,7 @@ function splitText(node, splitOffsets) {
 function Node(flags, children) {
   this._type = null;
   this._children = children;
+  this._data = null;
   this._flags = flags;
   this._key = null;
   this._parent = null;
@@ -387,6 +389,9 @@ Object.assign(Node.prototype, {
   isImmutable() {
     return (this.getLatest()._flags & IS_IMMUTABLE) !== 0;
   },
+  isSegmented() {
+    return (this.getLatest()._flags & IS_SEGMENTED) !== 0;
+  },
   isText() {
     return (this.getLatest()._flags & IS_TEXT) !== 0;
   },
@@ -485,6 +490,14 @@ Object.assign(Node.prototype, {
     self._flags = flags;
     return self;
   },
+  setData(data) {
+    if (this.isImmutable()) {
+      throw new Error("setData: can only be used on non-immutable nodes");
+    }
+    const self = getWritableNode(this);
+    self._data = data;
+    return self;
+  },
   setStyle(style) {
     if (this.isImmutable()) {
       throw new Error("setStyle: can only be used on non-immutable nodes");
@@ -504,6 +517,11 @@ Object.assign(Node.prototype, {
   makeImmutable() {
     const self = getWritableNode(this);
     self._flags |= IS_IMMUTABLE;
+    return self;
+  },
+  makeSegmented() {
+    const self = getWritableNode(this);
+    self._flags |= IS_SEGMENTED;
     return self;
   },
   makeNormal() {
@@ -600,6 +618,16 @@ Object.assign(Node.prototype, {
     writableSelf._children.push(writableNodeToAppend._key);
     return writableSelf;
   },
+  setTextContent(text) {
+    if (!this.isText() || this.isImmutable()) {
+      throw new Error(
+        "spliceText: can only be used on non-immutable text nodes"
+      );
+    }
+    const writableSelf = getWritableNode(this);
+    writableSelf._children = text;
+    return writableSelf;
+  },
   spliceText(offset, delCount, newText, restoreSelection) {
     if (!this.isText() || this.isImmutable()) {
       throw new Error(
@@ -680,6 +708,7 @@ export function cloneNode(node) {
   clonedNode._type = node._type;
   clonedNode._style = node._style;
   clonedNode._parent = node._parent;
+  clonedNode._data = node._data;
   clonedNode._key = key;
   return clonedNode;
 }

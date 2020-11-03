@@ -33,7 +33,7 @@ const emojis = {
   "<3": heart,
 };
 
-function textNodeTransform(node, editor) {
+function textNodeTransform(node, view) {
   const text = node.getTextContent();
   for (let i = 0; i < text.length; i++) {
     const possibleEmoji = text.slice(i, i + 2);
@@ -46,7 +46,7 @@ function textNodeTransform(node, editor) {
       } else {
         [, targetNode] = node.splitText(i, i + 2);
       }
-      const emojiInline = editor
+      const emojiInline = view
         .createText(specialSpace)
         .setStyle(emojiStyle)
         .makeImmutable()

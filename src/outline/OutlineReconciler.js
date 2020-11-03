@@ -1,6 +1,7 @@
 import {
   getNodeType,
   IS_ITALIC,
+  IS_SEGMENTED,
   IS_STRIKETHROUGH,
   IS_TEXT,
   IS_UNDERLINE,
@@ -130,6 +131,9 @@ function buildNode(key, parentDOM, insertDOM, nodeMap, editor) {
     setTextContent(null, children, dom, node);
     // add data-text attribute
     dom.setAttribute("data-text", true);
+    if (flags & IS_SEGMENTED) {
+      dom.setAttribute("spellcheck", "false");
+    }
   } else {
     let previousSubTreeTextContent = subTreeTextContent;
     subTreeTextContent = "";
@@ -256,6 +260,15 @@ function reconcileNode(
     setTextStyling(domStyle, nextType, prevFlags, nextFlags);
     subTreeTextContent += nextChildren;
     setTextContent(prevChildren, nextChildren, dom, nextNode);
+    if (nextFlags & IS_SEGMENTED) {
+      if ((prevFlags & IS_SEGMENTED) === 0) {
+        dom.setAttribute("spellcheck", "false");
+      }
+    } else {
+      if (prevFlags & IS_SEGMENTED) {
+        dom.removeAttribute("spellcheck");
+      }
+    }
     return;
   }
 

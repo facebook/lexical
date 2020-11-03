@@ -37,6 +37,9 @@ Object.assign(OutlineEditor.prototype, {
       this._textTransforms.delete(transformFn);
     };
   },
+  isUpdating() {
+    return this._isUpdating;
+  },
   getEditorElement() {
     return this._editorElement;
   },

@@ -156,7 +156,7 @@ Object.assign(Selection.prototype, {
     let endOffset;
 
     if (selectedNodesLength === 1) {
-      if (firstNode.isImmutable() || !firstNode.isText()) {
+      if (firstNode.isImmutable() || firstNode.isSegmented() || !firstNode.isText()) {
         const textNode = createTextNode(text);
 
         if (focusOffset === 0) {

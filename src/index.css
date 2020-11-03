@@ -52,3 +52,32 @@ pre {
   font-size: 12px;
   overflow: hidden;
 }
+
+#mentions-typeahead {
+  position: fixed;
+  background: #fff;
+  box-shadow:  0px 0px 10px rgba(0,0,0, 0.2);
+}
+
+#mentions-typeahead ul {
+  padding: 0;
+  list-style: none;
+  margin: 0;
+}
+
+#mentions-typeahead ul li {
+  padding: 10px 15px;
+  margin: 0;
+  min-width: 180px;
+  font-size: 14px;
+  outline: none;
+  cursor: pointer;
+}
+
+#mentions-typeahead ul li.selected {
+  background: #eee;
+}
+
+#mentions-typeahead ul li.hovered {
+  background: #ddd;
+}

@@ -1,4 +1,4 @@
-import { cloneNode, createBlockNode, createTextNode } from "./OutlineNode";
+import { cloneNode, createBlockNode, createTextNode, getNodeByKey } from "./OutlineNode";
 import { reconcileViewModel } from "./OutlineReconciler";
 import { getSelection } from "./OutlineSelection";
 
@@ -32,14 +32,13 @@ const view = {
   getBody() {
     return getActiveViewModel().body;
   },
+  getNodeByKey,
   getSelection,
 };
 
 export function createViewModel(currentViewModel, callbackFn, outlineEditor) {
-  if (activeViewModel !== null) {
-    throw new Error("TODOL: Should never occur?");
-  }
-  const viewModel = cloneViewModel(currentViewModel);
+  const hasActiveViewModel = activeViewModel !== null;
+  const viewModel = hasActiveViewModel ? activeViewModel : cloneViewModel(currentViewModel);
   activeViewModel = viewModel;
   // Setup the dirty nodes Set, which is required by the
   // view model logic during createViewModel(). This is also used by
@@ -52,7 +51,9 @@ export function createViewModel(currentViewModel, callbackFn, outlineEditor) {
     callbackFn(view);
     applyTextTransforms(viewModel, outlineEditor);
   } finally {
-    activeViewModel = null;
+    if (!hasActiveViewModel) {
+      activeViewModel = null;
+    }
   }
   const canUseExistingModel = dirtyNodes.size === 0;
   return canUseExistingModel ? currentViewModel : viewModel;

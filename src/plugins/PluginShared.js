@@ -301,7 +301,9 @@ export function insertFromDataTransfer(event, view, state, editor) {
         const viewModel = editor.createViewModel((viewModel) => {
           insertText(text, viewModel, state, false);
         });
-        editor.update(viewModel);
+        if (!editor.isUpdating()) {
+          editor.update(viewModel);
+        }
       });
       break;
     }
@@ -326,29 +328,31 @@ export function onSelectionChange(event, helpers) {
   // TODO
 }
 
-export function useEvent(outlineEditor, eventName, handler, pluginStateRef) {
+export function useEvent(editor, eventName, handler, pluginStateRef) {
   useEffect(() => {
-    const state = pluginStateRef.current;
-    if (state !== null && outlineEditor !== null) {
+    const state = pluginStateRef?.current;
+    if (state !== null && editor !== null) {
       const target =
         eventName === "selectionchange"
           ? document
-          : outlineEditor.getEditorElement();
+          : editor.getEditorElement();
       const wrapper = (event) => {
-        const viewModel = outlineEditor.createViewModel((editor) =>
-          handler(event, editor, state, outlineEditor)
+        const viewModel = editor.createViewModel((editor) =>
+          handler(event, editor, state, editor)
         );
         // Uncomment to see how diffs might work:
         // if (viewModel !== outlineEditor.getCurrentViewModel()) {
         //   const diff = outlineEditor.getDiffFromViewModel(viewModel);
         //   debugger;
         // }
-        outlineEditor.update(viewModel);
+        if (!editor.isUpdating()) {
+          editor.update(viewModel);
+        }
       };
       target.addEventListener(eventName, wrapper);
       return () => {
         target.removeEventListener(eventName, wrapper);
       };
     }
-  }, [eventName, handler, outlineEditor, pluginStateRef]);
+  }, [eventName, handler, editor, pluginStateRef]);
 }

@@ -1,18 +1,12 @@
 import { useEffect, useRef } from "react";
 import {
-  getParentBeforeBlock,
-  getParentBlock,
-  getNextSiblings,
   insertText,
-  normalizeCursorSelectionOffsets,
   onCompositionEnd,
   onCompositionStart,
   onFocusIn,
   insertFromDataTransfer,
   onKeyDown,
   onSelectionChange,
-  removeText,
-  spliceTextAtCusor,
   useEvent,
 } from "./PluginShared";
 
@@ -21,44 +15,44 @@ const FORMAT_ITALIC = 1;
 const FORMAT_STRIKETHROUGH = 2;
 const FORMAT_UNDERLINE = 3;
 
-function onInsertParagraph(event, view, state) {
-  const selection = view.getSelection();
+// function onInsertParagraph(event, view, state) {
+//   const selection = view.getSelection();
 
-  if (selection.isCaret()) {
-    const [startOffset] = normalizeCursorSelectionOffsets(selection);
-    const anchorNode = selection.getAnchorNode();
-    let text = "";
+//   if (selection.isCaret()) {
+//     const [startOffset] = normalizeCursorSelectionOffsets(selection);
+//     const anchorNode = selection.getAnchorNode();
+//     let text = "";
 
-    if (anchorNode.isText()) {
-      const currentText = anchorNode.getTextContent();
-      text = currentText.slice(startOffset);
-      spliceTextAtCusor(
-        anchorNode,
-        startOffset,
-        currentText.length - startOffset,
-        "",
-        view,
-        state
-      );
-    }
-    const currentBlock = getParentBlock(anchorNode);
-    const ancestor = getParentBeforeBlock(anchorNode);
-    const siblings = getNextSiblings(ancestor);
-    const textNode = anchorNode.isImmutable()
-      ? view.createText(text)
-      : view.cloneText(anchorNode, text);
-    const paragraph = view.createBlock('p').append(textNode);
-    currentBlock.insertAfter(paragraph);
-    let nodeToInsertAfter = textNode;
-    siblings.forEach((sibling) => {
-      nodeToInsertAfter.insertAfter(sibling);
-      nodeToInsertAfter = sibling;
-    });
-    textNode.select(0, 0);
-  } else {
-    console.log("TODO");
-  }
-}
+//     if (anchorNode.isText()) {
+//       const currentText = anchorNode.getTextContent();
+//       text = currentText.slice(startOffset);
+//       spliceTextAtCusor(
+//         anchorNode,
+//         startOffset,
+//         currentText.length - startOffset,
+//         "",
+//         view,
+//         state
+//       );
+//     }
+//     const currentBlock = getParentBlock(anchorNode);
+//     const ancestor = getParentBeforeBlock(anchorNode);
+//     const siblings = getNextSiblings(ancestor);
+//     const textNode = anchorNode.isImmutable()
+//       ? view.createText(text)
+//       : view.cloneText(anchorNode, text);
+//     const paragraph = view.createBlock('p').append(textNode);
+//     currentBlock.insertAfter(paragraph);
+//     let nodeToInsertAfter = textNode;
+//     siblings.forEach((sibling) => {
+//       nodeToInsertAfter.insertAfter(sibling);
+//       nodeToInsertAfter = sibling;
+//     });
+//     textNode.select(0, 0);
+//   } else {
+//     console.log("TODO");
+//   }
+// }
 
 function onBeforeInput(event, view, state, editor) {
   const inputType = event.inputType;
@@ -69,61 +63,62 @@ function onBeforeInput(event, view, state, editor) {
   ) {
     event.preventDefault();
   }
+  const selection = view.getSelection();
 
   switch (inputType) {
     case "formatBold": {
-      view.getSelection().formatText(FORMAT_BOLD);
+      selection.formatText(FORMAT_BOLD);
       break;
     }
     case "formatItalic": {
-      view.getSelection().formatText(FORMAT_ITALIC);
+      selection.formatText(FORMAT_ITALIC);
       break;
     }
     case "formatStrikeThrough": {
-      view.getSelection().formatText(FORMAT_STRIKETHROUGH);
+      selection.formatText(FORMAT_STRIKETHROUGH);
       break;
     }
     case "formatUnderline": {
-      view.getSelection().formatText(FORMAT_UNDERLINE);
+      selection.formatText(FORMAT_UNDERLINE);
       break;
     }
     case "insertFromComposition": {
       const data = event.data;
       if (data) {
-        insertText(event.data, view, state);
+        selection.insertText(data);
       }
       break;
     }
     case "insertFromPaste": {
-      insertFromDataTransfer(event, view, state, editor);
+      insertFromDataTransfer(event, editor);
       break;
     }
     case "insertLineBreak": {
-      insertText("\n", view, state);
+      selection.insertText('\n');
       break;
     }
     case "insertParagraph": {
-      onInsertParagraph(event, view, state);
+      selection.insertParagraph();
       break;
     }
     case "insertText": {
-      insertText(event.data, view, state);
+      selection.insertText(event.data);
       break;
     }
     case "deleteByCut": {
-      removeText(true, view, state);
+      selection.removeText();
       break;
     }
     case "deleteContentBackward": {
-      removeText(true, view, state);
+      selection.deleteBackward();
       break;
     }
     case "deleteContentForward": {
-      removeText(false, view, state);
+      selection.deleteForward();
       break;
     }
     case "insertFromDrop": {
-      insertFromDataTransfer(event, view, state, editor);
+      insertFromDataTransfer(event, editor);
       break;
     }
     default: {

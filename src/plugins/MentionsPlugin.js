@@ -148,7 +148,7 @@ function MentionsTypeahead({ close, editor, match, nodeKey, registerKeys }) {
 
         return () => {
           mentionsElement.removeAttribute("aria-controls");
-        }
+        };
       }
     }
   }, [editor, nodeKey, results]);
@@ -161,7 +161,7 @@ function MentionsTypeahead({ close, editor, match, nodeKey, registerKeys }) {
         .setTextContent(selectedResult)
         .setStyle(mentionStyle)
         .setData({
-          type: 'MENTION',
+          type: "MENTION",
           name: selectedResult,
         })
         .makeSegmented()
@@ -256,7 +256,7 @@ function MentionsTypeahead({ close, editor, match, nodeKey, registerKeys }) {
       role="listbox"
     >
       <ul>
-        {results.map((result, i) => (
+        {results.slice(0, 5).map((result, i) => (
           <MentionsTypeaheadItem
             index={i}
             isHovered={i === hoveredIndex}
@@ -355,16 +355,20 @@ export function useMentionsPlugin(outlineEditor, portalTargetElement) {
         if (text !== "") {
           const match = getPossibleMentionMatch(text);
           if (match !== null) {
-            const { leadOffset, matchingString, replaceableString } = match;
+            const { leadOffset, replaceableString } = match;
             const splitNodes = node.splitText(
               leadOffset,
-              leadOffset + matchingString.length
+              leadOffset + replaceableString.length
             );
             const target = leadOffset === 0 ? splitNodes[0] : splitNodes[1];
             target.setTextContent(replaceableString);
             target.select();
-            setNodeKey(target.getKey());
-            setMentionMatch(match);
+            // We shouldn't do updates to React until this view is actually
+            // reconciled.
+            window.requestAnimationFrame(() => {
+              setNodeKey(target.getKey());
+              setMentionMatch(match);
+            })
             return;
           }
         }
@@ -389,6 +393,7 @@ export function useMentionsPlugin(outlineEditor, portalTargetElement) {
 
   const closeTypeahead = useCallback(() => {
     setMentionMatch(null);
+    setNodeKey(null);
   }, []);
 
   useEvent(outlineEditor, "keydown", onKeyDown);
@@ -411,7 +416,7 @@ const dummyLookupService = {
   search(string, callback) {
     setTimeout(() => {
       const results = dummyMentionsData.filter((mention) =>
-        mention.includes(string)
+        mention.toLowerCase().includes(string.toLowerCase())
       );
       if (results.length === 0) {
         callback(null);

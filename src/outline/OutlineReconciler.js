@@ -65,7 +65,11 @@ function setTextContent(prevText, nextText, dom, node) {
     }
   }
   if (firstChild === null || hasBreakNode) {
-    dom.textContent = nextText;
+    if (nextText === '') {
+      dom.appendChild(document.createTextNode(zeroWidthString));
+    } else {
+      dom.textContent = nextText;
+    }
   } else if (prevText !== nextText) {
     firstChild.nodeValue = nextText;
   }

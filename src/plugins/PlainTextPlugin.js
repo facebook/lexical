@@ -1,13 +1,11 @@
 import { useEffect, useRef } from "react";
 import {
-  insertText,
   onCompositionEnd,
   onCompositionStart,
   onFocusIn,
   insertFromDataTransfer,
   onKeyDown,
   onSelectionChange,
-  removeText,
   useEvent,
 } from "./PluginShared";
 
@@ -20,41 +18,42 @@ function onBeforeInput(event, view, state, editor) {
   ) {
     event.preventDefault();
   }
+  const selection = view.getSelection()
 
   switch (inputType) {
     case "insertFromComposition": {
       const data = event.data;
       if (data) {
-        insertText(event.data, view, state);
+        selection.insertText(data);
       }
       break;
     }
     case "insertFromPaste": {
-      insertFromDataTransfer(event, view, state, editor);
+      insertFromDataTransfer(event, editor);
       break;
     }
     case "insertLineBreak": {
-      insertText("\n", view, state);
+      selection.insertText('\n');
       break;
     }
     case "insertText": {
-      insertText(event.data, view, state);
+      selection.insertText(event.data);
       break;
     }
     case "deleteByCut": {
-      removeText(true, view, state);
+      selection.removeText();
       break;
     }
     case "deleteContentBackward": {
-      removeText(true, view, state);
+      selection.deleteBackward();
       break;
     }
     case "deleteContentForward": {
-      removeText(false, view, state);
+      selection.deleteForward();
       break;
     }
     case "insertFromDrop": {
-      insertFromDataTransfer(event, view, state, editor);
+      insertFromDataTransfer(event, editor);
       break;
     }
     default: {

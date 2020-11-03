@@ -9,6 +9,7 @@ import {
   IS_BOLD,
   IS_ITALIC,
   IS_STRIKETHROUGH,
+  IS_TEXT,
   IS_UNDERLINE,
 } from "./OutlineNode";
 import { getNodeKeyFromDOM } from "./OutlineReconciler";
@@ -142,6 +143,90 @@ Object.assign(Selection.prototype, {
       currentBlock.normalizeTextNodes(true);
     }
   },
+  insertParagraph() {
+    if (!this.isCaret()) {
+      this.removeText();
+    }
+    throw new Error("TODO");
+  },
+  deleteBackward() {
+    if (!this.isCaret()) {
+      this.removeText();
+      return;
+    }
+    const anchorOffset = this.anchorOffset;
+    const anchorNode = this.getAnchorNode();
+    const currentBlock = anchorNode.getParentBlock();
+    const ancestor = anchorNode.getParentBefore(currentBlock);
+    const prevSibling = ancestor.getPreviousSibling();
+
+    if (anchorOffset === 0) {
+      if (prevSibling === null) {
+        const prevBlock = currentBlock.getPreviousSibling();
+        if (prevBlock !== null) {
+          // Remove block
+          debugger;
+        }
+      } else if (prevSibling.isText()) {
+        if (prevSibling.isImmutable()) {
+          debugger;
+        } else if (prevSibling.isSegmented()) {
+          debugger;
+        } else {
+          const textContent = prevSibling.getTextContent();
+          prevSibling.spliceText(textContent.length - 1, 1, "", true);
+        }
+      } else {
+        throw new Error("TODO");
+      }
+    } else if (anchorNode.isImmutable()) {
+      if (prevSibling === null) {
+        const textNode = createTextNode("");
+        ancestor.insertBefore(textNode);
+        textNode.select();
+        currentBlock.normalizeTextNodes(true);
+      } else if (prevSibling.isText()) {
+        prevSibling.select();
+      } else {
+        throw new Error("TODO");
+      }
+      anchorNode.remove();
+    } else if (anchorNode.isSegmented()) {
+      const textContent = anchorNode.getTextContent();
+      const lastSpaceIndex = textContent.lastIndexOf(" ");
+      if (lastSpaceIndex > -1) {
+        anchorNode.spliceText(
+          lastSpaceIndex,
+          textContent.length - lastSpaceIndex,
+          "",
+          true
+        );
+      } else {
+        const textNode = createTextNode("");
+        ancestor.insertAfter(textNode);
+        anchorNode.remove();
+        textNode.select();
+        currentBlock.normalizeTextNodes(true);
+      }
+    } else {
+      anchorNode.spliceText(anchorOffset - 1, 1, "", true);
+    }
+  },
+  deleteForward() {
+    if (!this.isCaret()) {
+      this.removeText();
+      return;
+    }
+    throw new Error("TODO");
+  },
+  removeText() {
+    const selectedNodes = this.getNodes();
+    const selectedNodesLength = selectedNodes.length;
+
+    if (selectedNodesLength === 1) {
+
+    }
+  },
   insertText(text) {
     const selectedNodes = this.getNodes();
     const selectedNodesLength = selectedNodes.length;
@@ -156,7 +241,11 @@ Object.assign(Selection.prototype, {
     let endOffset;
 
     if (selectedNodesLength === 1) {
-      if (firstNode.isImmutable() || firstNode.isSegmented() || !firstNode.isText()) {
+      if (
+        firstNode.isImmutable() ||
+        !firstNode.isText() ||
+        firstNode.isSegmented()
+      ) {
         const textNode = createTextNode(text);
 
         if (focusOffset === 0) {
@@ -253,7 +342,10 @@ function getTextNodeFormatFlags(node, type, alignWithFlags) {
       break;
     case FORMAT_STRIKETHROUGH:
       if (nodeFlags & IS_STRIKETHROUGH) {
-        if (alignWithFlags === null || (alignWithFlags & IS_STRIKETHROUGH) === 0) {
+        if (
+          alignWithFlags === null ||
+          (alignWithFlags & IS_STRIKETHROUGH) === 0
+        ) {
           newFlags ^= IS_STRIKETHROUGH;
         }
       } else {

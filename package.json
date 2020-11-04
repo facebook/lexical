@@ -1,34 +1,38 @@
 {
-  "name": "outline",
-  "version": "0.1.0",
+  "name": "outline-example",
+  "description": "Outline is a fast, lightweight, rich-text editor for React",
+  "version": "1.0.0",
   "private": true,
-  "dependencies": {
-    "@testing-library/jest-dom": "^4.2.4",
-    "@testing-library/react": "^9.3.2",
-    "@testing-library/user-event": "^7.1.2",
-    "react": "^17.0.1",
-    "react-dom": "^17.0.1",
-    "react-scripts": "4.0.0"
-  },
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "start": "npm run build && npm start --prefix packages/outline-example",
+    "build": "node scripts/build.js",
+    "build-prod": "node scripts/build.js --prod",
+    "watch": "node scripts/build.js --watch"
   },
-  "eslintConfig": {
-    "extends": "react-app"
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+  "devDependencies": {
+    "@babel/plugin-transform-flow-strip-types": "^7.12.1",
+    "@babel/preset-react": "^7.12.5",
+    "@rollup/plugin-babel": "^5.2.1",
+    "@rollup/plugin-node-resolve": "^10.0.0",
+    "confusing-browser-globals": "^1.0.10",
+    "eslint": "^7.12.1",
+    "eslint-config-fbjs": "^3.1.1",
+    "eslint-config-prettier": "^6.15.0",
+    "eslint-plugin-babel": "^5.3.1",
+    "eslint-plugin-flowtype": "^5.2.0",
+    "eslint-plugin-jest": "^24.1.0",
+    "eslint-plugin-jsx-a11y": "^6.4.1",
+    "eslint-plugin-no-for-of-loops": "^1.0.1",
+    "eslint-plugin-no-function-declare-after-return": "^1.1.0",
+    "eslint-plugin-react": "^7.21.5",
+    "flow": "^0.2.3",
+    "google-closure-compiler": "^20201006.0.0",
+    "jest": "26.6.0",
+    "minimist": "^1.2.5",
+    "prettier": "^2.1.2",
+    "rollup": "^2.33.1"
   }
 }

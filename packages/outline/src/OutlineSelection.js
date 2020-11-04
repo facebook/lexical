@@ -1,5 +1,6 @@
-import { getActiveViewModel } from "./OutlineView";
+import {getActiveViewModel} from './OutlineView';
 import {
+  createBlockNode,
   createTextNode,
   FORMAT_BOLD,
   FORMAT_ITALIC,
@@ -9,23 +10,43 @@ import {
   IS_BOLD,
   IS_ITALIC,
   IS_STRIKETHROUGH,
-  IS_TEXT,
   IS_UNDERLINE,
-} from "./OutlineNode";
-import { getNodeKeyFromDOM } from "./OutlineReconciler";
+} from './OutlineNode';
+import {getNodeKeyFromDOM} from './OutlineReconciler';
 
 function Selection(
   anchorKey,
   anchorOffset,
   focusKey,
   focusOffset,
-  isCollapsed
+  isCollapsed,
 ) {
   this.anchorKey = anchorKey;
   this.anchorOffset = anchorOffset;
   this.focusKey = focusKey;
   this.focusOffset = focusOffset;
   this.isCollapsed = isCollapsed;
+}
+
+function removeLastSegment(node) {
+  const currentBlock = node.getParentBlock();
+  const ancestor = node.getParentBefore(currentBlock);
+  const textContent = node.getTextContent();
+  const lastSpaceIndex = textContent.lastIndexOf(' ');
+  if (lastSpaceIndex > -1) {
+    node.spliceText(
+      lastSpaceIndex,
+      textContent.length - lastSpaceIndex,
+      '',
+      true,
+    );
+  } else {
+    const textNode = createTextNode('');
+    ancestor.insertAfter(textNode);
+    node.remove();
+    textNode.select();
+    currentBlock.normalizeTextNodes(true);
+  }
 }
 
 Object.assign(Selection.prototype, {
@@ -70,7 +91,7 @@ Object.assign(Selection.prototype, {
       if (firstNodeTextLength === 0) {
         firstNode.setFlags(firstNextFlags);
       } else {
-        const textNode = createTextNode("");
+        const textNode = createTextNode('');
         textNode.setFlags(firstNextFlags);
         firstNode.insertAfter(textNode);
         textNode.select();
@@ -113,7 +134,7 @@ Object.assign(Selection.prototype, {
         const lastNextFlags = getTextNodeFormatFlags(
           lastNode,
           formatType,
-          firstNextFlags
+          firstNextFlags,
         );
         const lastNodeText = lastNode.getTextContent();
         const lastNodeTextLength = lastNodeText.length;
@@ -129,7 +150,7 @@ Object.assign(Selection.prototype, {
           const selectedNextFlags = getTextNodeFormatFlags(
             lastNode,
             formatType,
-            firstNextFlags
+            firstNextFlags,
           );
           selectedNode.setFlags(selectedNextFlags);
         }
@@ -138,7 +159,7 @@ Object.assign(Selection.prototype, {
         firstNode.getKey(),
         startOffset,
         lastNode.getKey(),
-        endOffset
+        endOffset,
       );
       currentBlock.normalizeTextNodes(true);
     }
@@ -147,7 +168,54 @@ Object.assign(Selection.prototype, {
     if (!this.isCaret()) {
       this.removeText();
     }
-    throw new Error("TODO");
+    const anchorNode = this.getAnchorNode();
+    if (!anchorNode.isText()) {
+      throw new Error('How is this possible?');
+    }
+    const currentBlock = anchorNode.getParentBlock();
+    const textContent = anchorNode.getTextContent();
+    const textContentLength = textContent.length;
+    const nodesToMove = anchorNode.getNextSiblings().reverse();
+    let anchorOffset = this.anchorOffset;
+
+    if (anchorOffset === 0) {
+      nodesToMove.push(anchorNode);
+    } else if (anchorOffset === textContentLength) {
+      const clonedNode = createTextNode('');
+      clonedNode.setFlags(anchorNode.getFlags());
+      nodesToMove.push(clonedNode);
+      anchorOffset = 0;
+    } else if (!anchorNode.isImmutable() && !anchorNode.isSegmented()) {
+      const [, splitNode] = anchorNode.splitText(anchorOffset);
+      nodesToMove.push(splitNode);
+    } else {
+      return;
+    }
+    let nextBlock = currentBlock.getNextSibling();
+
+    if (nextBlock === null) {
+      nextBlock = createBlockNode(currentBlock.getType());
+      currentBlock.insertAfter(nextBlock);
+    }
+    const nodesToMoveLength = nodesToMove.length;
+    let firstChild = nextBlock.getFirstChild();
+
+    for (let i = 0; i < nodesToMoveLength; i++) {
+      const nodeToMove = nodesToMove[i];
+      if (firstChild === null) {
+        nextBlock.append(nodeToMove);
+      } else {
+        firstChild.insertBefore(nodeToMove);
+      }
+      firstChild = nodeToMove;
+    }
+    nodesToMove[nodesToMoveLength - 1].select(anchorOffset, anchorOffset);
+    if (currentBlock.getFirstChild() === null) {
+      const textNode = createTextNode('');
+      currentBlock.append(textNode);
+    }
+    currentBlock.normalizeTextNodes();
+    nextBlock.normalizeTextNodes(true);
   },
   deleteBackward() {
     if (!this.isCaret()) {
@@ -164,52 +232,45 @@ Object.assign(Selection.prototype, {
       if (prevSibling === null) {
         const prevBlock = currentBlock.getPreviousSibling();
         if (prevBlock !== null) {
-          // Remove block
-          debugger;
+          const nodesToMove = [anchorNode, ...anchorNode.getNextSiblings()];
+          let lastChild = prevBlock.getLastChild();
+          for (let i = 0; i < nodesToMove.length; i++) {
+            const nodeToMove = nodesToMove[i];
+            lastChild.insertAfter(nodeToMove);
+            lastChild = nodeToMove;
+          }
+          nodesToMove[0].select(0, 0);
+          currentBlock.remove();
+          prevBlock.normalizeTextNodes(true);
         }
       } else if (prevSibling.isText()) {
         if (prevSibling.isImmutable()) {
-          debugger;
+          prevSibling.remove();
         } else if (prevSibling.isSegmented()) {
-          debugger;
+          removeLastSegment(prevSibling);
         } else {
           const textContent = prevSibling.getTextContent();
-          prevSibling.spliceText(textContent.length - 1, 1, "", true);
+          prevSibling.spliceText(textContent.length - 1, 1, '', true);
         }
       } else {
-        throw new Error("TODO");
+        throw new Error('TODO');
       }
     } else if (anchorNode.isImmutable()) {
       if (prevSibling === null) {
-        const textNode = createTextNode("");
+        const textNode = createTextNode('');
         ancestor.insertBefore(textNode);
         textNode.select();
         currentBlock.normalizeTextNodes(true);
       } else if (prevSibling.isText()) {
         prevSibling.select();
       } else {
-        throw new Error("TODO");
+        throw new Error('TODO');
       }
       anchorNode.remove();
     } else if (anchorNode.isSegmented()) {
-      const textContent = anchorNode.getTextContent();
-      const lastSpaceIndex = textContent.lastIndexOf(" ");
-      if (lastSpaceIndex > -1) {
-        anchorNode.spliceText(
-          lastSpaceIndex,
-          textContent.length - lastSpaceIndex,
-          "",
-          true
-        );
-      } else {
-        const textNode = createTextNode("");
-        ancestor.insertAfter(textNode);
-        anchorNode.remove();
-        textNode.select();
-        currentBlock.normalizeTextNodes(true);
-      }
+      removeLastSegment(anchorNode);
     } else {
-      anchorNode.spliceText(anchorOffset - 1, 1, "", true);
+      anchorNode.spliceText(anchorOffset - 1, 1, '', true);
     }
   },
   deleteForward() {
@@ -217,15 +278,10 @@ Object.assign(Selection.prototype, {
       this.removeText();
       return;
     }
-    throw new Error("TODO");
+    throw new Error('TODO');
   },
   removeText() {
-    const selectedNodes = this.getNodes();
-    const selectedNodesLength = selectedNodes.length;
-
-    if (selectedNodesLength === 1) {
-
-    }
+    this.insertText('');
   },
   insertText(text) {
     const selectedNodes = this.getNodes();
@@ -258,6 +314,7 @@ Object.assign(Selection.prototype, {
         }
 
         textNode.select();
+        currentBlock.normalizeTextNodes(true);
       } else {
         startOffset = anchorOffset > focusOffset ? focusOffset : anchorOffset;
         endOffset = anchorOffset > focusOffset ? anchorOffset : focusOffset;
@@ -269,8 +326,8 @@ Object.assign(Selection.prototype, {
       const lastIndex = selectedNodesLength - 1;
       const lastNode = selectedNodes[lastIndex];
       const isBefore = firstNode === this.getAnchorNode();
-      const endOffset = isBefore ? focusOffset : anchorOffset;
       startOffset = isBefore ? anchorOffset : focusOffset;
+      endOffset = isBefore ? focusOffset : anchorOffset;
       let removeFirstNode = false;
 
       if (firstNode.isImmutable()) {
@@ -280,11 +337,11 @@ Object.assign(Selection.prototype, {
           startOffset,
           firstNodeTextLength - startOffset,
           text,
-          true
+          true,
         );
       }
       if (!firstNode.isImmutable() && lastNode.isText()) {
-        lastNode.spliceText(0, endOffset, "", false);
+        lastNode.spliceText(0, endOffset, '', false);
         firstNode.insertAfter(lastNode);
       } else if (!lastNode.isParentOf(firstNode)) {
         lastNode.remove();
@@ -302,8 +359,8 @@ Object.assign(Selection.prototype, {
         firstNode.remove();
         textNode.select();
       }
+      currentBlock.normalizeTextNodes(true);
     }
-    currentBlock.normalizeTextNodes(true);
   },
   setRange(anchorKey, anchorOffset, focusKey, focusOffset) {
     this.anchorOffset = anchorOffset;
@@ -375,25 +432,26 @@ export function getSelection() {
   const viewModel = getActiveViewModel();
   let selection = viewModel.selection;
   if (selection === null) {
-    let nodeMap = viewModel.nodeMap;
-    let {
-      anchorNode: anchorDOM,
-      anchorOffset,
-      focusNode: focusDOM,
-      focusOffset,
-      isCollapsed,
-    } = window.getSelection();
+    const nodeMap = viewModel.nodeMap;
+    const windowSelection = window.getSelection();
+    const isCollapsed = windowSelection.isCollapsed;
+    const anchorDOM = windowSelection.anchorNode;
+    const focusDOM = windowSelection.focusNode;
+    let anchorOffset = windowSelection.anchorOffset;
+    let focusOffset = windowSelection.focusOffset;
+
     const anchorKey =
       anchorDOM !== null ? getNodeKeyFromDOM(anchorDOM, nodeMap) : null;
     const focusKey =
       focusDOM !== null ? getNodeKeyFromDOM(focusDOM, nodeMap) : null;
+
     const anchorNode = getNodeByKey(anchorKey);
     const focusNode = getNodeByKey(focusKey);
 
-    if (anchorNode !== null && anchorNode._children === "") {
+    if (anchorNode !== null && anchorNode._children === '') {
       anchorOffset = 0;
     }
-    if (focusNode !== null && focusNode._children === "") {
+    if (focusNode !== null && focusNode._children === '') {
       focusOffset = 0;
     }
 
@@ -402,7 +460,7 @@ export function getSelection() {
       anchorOffset,
       focusKey,
       focusOffset,
-      isCollapsed
+      isCollapsed,
     );
   }
   return selection;

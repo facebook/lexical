@@ -1,15 +1,20 @@
-import { cloneNode, createBlockNode, createTextNode, getNodeByKey } from "./OutlineNode";
-import { reconcileViewModel } from "./OutlineReconciler";
-import { getSelection } from "./OutlineSelection";
+import {
+  cloneNode,
+  createBlockNode,
+  createTextNode,
+  getNodeByKey,
+} from './OutlineNode';
+import {reconcileViewModel} from './OutlineReconciler';
+import {getSelection} from './OutlineSelection';
 
 let activeViewModel = null;
 
 export function getActiveViewModel() {
   if (activeViewModel === null) {
     throw new Error(
-      "Unable to find an active draft view model. " +
-        "Editor helpers or node methods can only be used " +
-        "synchronously during the callback of editor.createViewModel()."
+      'Unable to find an active draft view model. ' +
+        'Editor helpers or node methods can only be used ' +
+        'synchronously during the callback of editor.createViewModel().',
     );
   }
   return activeViewModel;
@@ -18,7 +23,7 @@ export function getActiveViewModel() {
 const view = {
   cloneText(node, text) {
     if (node.isImmutable()) {
-      throw new Error('cloneText: cannot clone an immutable node')
+      throw new Error('cloneText: cannot clone an immutable node');
     }
     const clone = cloneNode(node);
     clone._key = null;
@@ -38,7 +43,9 @@ const view = {
 
 export function createViewModel(currentViewModel, callbackFn, outlineEditor) {
   const hasActiveViewModel = activeViewModel !== null;
-  const viewModel = hasActiveViewModel ? activeViewModel : cloneViewModel(currentViewModel);
+  const viewModel = hasActiveViewModel
+    ? activeViewModel
+    : cloneViewModel(currentViewModel);
   activeViewModel = viewModel;
   // Setup the dirty nodes Set, which is required by the
   // view model logic during createViewModel(). This is also used by
@@ -96,7 +103,7 @@ export function updateViewModel(viewModel, outlineEditor) {
   activeViewModel = null;
   outlineEditor._viewModel = viewModel;
   viewModel._dirtySubTrees = null;
-  if (typeof onChange === "function") {
+  if (typeof onChange === 'function') {
     onChange(viewModel);
   }
 }
@@ -113,7 +120,7 @@ export function markParentsAsDirty(parentKey, nodeMap, dirtySubTrees) {
 
 export function cloneViewModel(current) {
   const draft = new ViewModel();
-  draft.nodeMap = { ...current.nodeMap };
+  draft.nodeMap = {...current.nodeMap};
   draft.body = current.body;
   return draft;
 }
@@ -135,4 +142,3 @@ export function ViewModel() {
   // and is remove after being passed to editor.update();
   this._dirtySubTrees = new Set();
 }
-

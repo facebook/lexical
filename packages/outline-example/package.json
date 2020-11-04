@@ -1,0 +1,31 @@
+{
+  "name": "outline-example",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "react": "^17.0.1",
+    "react-dom": "^17.0.1",
+    "react-scripts": "4.0.0",
+    "outline": "1.0.0",
+    "outline-plain-text-plugin": "1.0.0",
+    "outline-rich-text-plugin": "1.0.0",
+    "outline-emoji-plugin": "1.0.0",
+    "outline-mentions-plugin": "1.0.0"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "eject": "react-scripts eject"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

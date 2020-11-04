@@ -1,5 +1,5 @@
-import { getActiveViewModel, markParentsAsDirty } from "./OutlineView";
-import { getSelection } from "./OutlineSelection";
+import {getActiveViewModel, markParentsAsDirty} from './OutlineView';
+import {getSelection} from './OutlineSelection';
 
 let nodeKeyCounter = 0;
 
@@ -8,10 +8,11 @@ export const IS_BLOCK = 1 << 1;
 export const IS_TEXT = 1 << 2;
 export const IS_IMMUTABLE = 1 << 3;
 export const IS_SEGMENTED = 1 << 4;
-export const IS_BOLD = 1 << 5;
-export const IS_ITALIC = 1 << 6;
-export const IS_STRIKETHROUGH = 1 << 7;
-export const IS_UNDERLINE = 1 << 8;
+export const IS_LINK = 1 << 5;
+export const IS_BOLD = 1 << 6;
+export const IS_ITALIC = 1 << 7;
+export const IS_STRIKETHROUGH = 1 << 8;
+export const IS_UNDERLINE = 1 << 9;
 
 export const FORMAT_BOLD = 0;
 export const FORMAT_ITALIC = 1;
@@ -82,8 +83,8 @@ function combineAdjacentTextNodes(textNodes, restoreSelection) {
   // Merge all text nodes into the first node
   const writableMergeToNode = getWritableNode(textNodes[0]);
   let textLength = writableMergeToNode.getTextContent().length;
-  let restoreAnchorOffset = 0;
-  let restoreFocusOffset = 0;
+  let restoreAnchorOffset = anchorOffset;
+  let restoreFocusOffset = focusOffset;
   for (let i = 1; i < textNodes.length; i++) {
     const textNode = textNodes[i];
     const siblingText = textNode.getTextContent();
@@ -104,22 +105,22 @@ function combineAdjacentTextNodes(textNodes, restoreSelection) {
 
 function splitText(node, splitOffsets) {
   if (!node.isText() || node.isImmutable()) {
-    throw new Error("splitText: can only be used on non-immutable text nodes");
+    throw new Error('splitText: can only be used on non-immutable text nodes');
   }
   const textContent = node.getTextContent();
   const key = node._key;
   const offsetsSet = new Set(splitOffsets);
   const parts = [];
   const textLength = textContent.length;
-  let string = "";
+  let string = '';
   for (let i = 0; i < textLength; i++) {
-    if (string !== "" && offsetsSet.has(i)) {
+    if (string !== '' && offsetsSet.has(i)) {
       parts.push(string);
-      string = "";
+      string = '';
     }
     string += textContent[i];
   }
-  if (string !== "") {
+  if (string !== '') {
     parts.push(string);
   }
   const partsLength = parts.length;
@@ -137,7 +138,7 @@ function splitText(node, splitOffsets) {
 
   // Handle selection
   const selection = getSelection();
-  const { anchorKey, anchorOffset, focusKey, focusOffset } = selection;
+  const {anchorKey, anchorOffset, focusKey, focusOffset} = selection;
 
   // Then handle all other parts
   const splitNodes = [writableNode];
@@ -189,6 +190,7 @@ function Node(flags, children) {
   this._key = null;
   this._parent = null;
   this._style = null;
+  this._url = null;
 }
 
 Object.assign(Node.prototype, {
@@ -199,9 +201,13 @@ Object.assign(Node.prototype, {
     const flags = self._flags;
     return getNodeType(self, flags);
   },
+  getFlags() {
+    const self = this.getLatest();
+    return self._flags;
+  },
   getChildren() {
     if (this.isText()) {
-      throw new Error("getChildren: can only be used on body/block nodes");
+      throw new Error('getChildren: can only be used on body/block nodes');
     }
     const self = this.getLatest();
     const children = self._children;
@@ -219,7 +225,7 @@ Object.assign(Node.prototype, {
     if (this.isText()) {
       return self._children;
     }
-    let textContent = "";
+    let textContent = '';
     const children = this.getChildren();
     for (let i = 0; i < children.length; i++) {
       textContent += children[i].getTextContent();
@@ -228,7 +234,7 @@ Object.assign(Node.prototype, {
   },
   getBlockType() {
     if (this.isText()) {
-      throw new Error("getChildrenDeep: can only be used on block nodes");
+      throw new Error('getChildrenDeep: can only be used on block nodes');
     }
     return this.getLatest()._type;
   },
@@ -278,6 +284,12 @@ Object.assign(Node.prototype, {
       return null;
     }
     return getNodeByKey(children[index + 1]);
+  },
+  getNextSiblings() {
+    const parent = this.getParent();
+    const children = parent._children;
+    const index = children.indexOf(this._key);
+    return children.slice(index + 1).map((childKey) => getNodeByKey(childKey));
   },
   getCommonAncestor(node) {
     const a = this.getParents();
@@ -484,7 +496,7 @@ Object.assign(Node.prototype, {
 
   setFlags(flags) {
     if (this.isImmutable()) {
-      throw new Error("setFlags: can only be used on non-immutable nodes");
+      throw new Error('setFlags: can only be used on non-immutable nodes');
     }
     const self = getWritableNode(this);
     self._flags = flags;
@@ -492,7 +504,7 @@ Object.assign(Node.prototype, {
   },
   setData(data) {
     if (this.isImmutable()) {
-      throw new Error("setData: can only be used on non-immutable nodes");
+      throw new Error('setData: can only be used on non-immutable nodes');
     }
     const self = getWritableNode(this);
     self._data = data;
@@ -500,7 +512,7 @@ Object.assign(Node.prototype, {
   },
   setStyle(style) {
     if (this.isImmutable()) {
-      throw new Error("setStyle: can only be used on non-immutable nodes");
+      throw new Error('setStyle: can only be used on non-immutable nodes');
     }
     const self = getWritableNode(this);
     self._style = style;
@@ -508,7 +520,7 @@ Object.assign(Node.prototype, {
   },
   makeBold() {
     if (!this.isText() || this.isImmutable()) {
-      throw new Error("makeBold: can only be used on non-immutable text nodes");
+      throw new Error('makeBold: can only be used on non-immutable text nodes');
     }
     const self = getWritableNode(this);
     self._flags |= IS_BOLD;
@@ -526,7 +538,7 @@ Object.assign(Node.prototype, {
   },
   makeNormal() {
     if (!this.isText() || this.isImmutable()) {
-      throw new Error("select: can only be used on non-immutable text nodes");
+      throw new Error('select: can only be used on non-immutable text nodes');
     }
     const self = getWritableNode(this);
     self._flags = IS_TEXT;
@@ -534,14 +546,14 @@ Object.assign(Node.prototype, {
   },
   select(anchorOffset, focusOffset, isCollapsed = false) {
     if (!this.isText()) {
-      throw new Error("select: can only be used on text nodes");
+      throw new Error('select: can only be used on text nodes');
     }
     const selection = getSelection();
     const text = this.getTextContent();
     const key = this._key;
     selection.anchorKey = key;
     selection.focusKey = key;
-    if (typeof text === "string") {
+    if (typeof text === 'string') {
       const lastOffset = text.length;
       if (anchorOffset === undefined) {
         anchorOffset = lastOffset;
@@ -572,17 +584,17 @@ Object.assign(Node.prototype, {
   insertAfter(nodeToInsert) {
     const writableSelf = getWritableNode(this);
     const writableNodeToInsert = getWritableNode(nodeToInsert);
-    const writableParent = getWritableNode(this.getParent());
-    const nodeToInsertParent = nodeToInsert.getParent();
-    const insertKey = nodeToInsert._key;
-    if (nodeToInsertParent !== null) {
-      const writableNodeToInsertParent = getWritableNode(nodeToInsertParent);
-      const parentChildren = writableNodeToInsertParent._children;
-      const index = parentChildren.indexOf(insertKey);
+    const oldParent = writableNodeToInsert.getParent();
+    if (oldParent !== null) {
+      const writableParent = getWritableNode(oldParent);
+      const children = writableParent._children;
+      const index = children.indexOf(writableNodeToInsert._key);
       if (index > -1) {
-        parentChildren.splice(index, 1);
+        children.splice(index, 1);
       }
     }
+    const writableParent = getWritableNode(this.getParent());
+    const insertKey = nodeToInsert._key;
     writableNodeToInsert._parent = writableSelf._parent;
     const children = writableParent._children;
     const index = children.indexOf(writableSelf._key);
@@ -595,6 +607,15 @@ Object.assign(Node.prototype, {
   insertBefore(nodeToInsert) {
     const writableSelf = getWritableNode(this);
     const writableNodeToInsert = getWritableNode(nodeToInsert);
+    const oldParent = writableNodeToInsert.getParent();
+    if (oldParent !== null) {
+      const writableParent = getWritableNode(oldParent);
+      const children = writableParent._children;
+      const index = children.indexOf(writableNodeToInsert._key);
+      if (index > -1) {
+        children.splice(index, 1);
+      }
+    }
     const writableParent = getWritableNode(this.getParent());
     const insertKey = nodeToInsert._key;
     writableNodeToInsert._parent = writableSelf._parent;
@@ -608,10 +629,20 @@ Object.assign(Node.prototype, {
   // TODO add support for appending multiple nodes?
   append(nodeToAppend) {
     if (this.isText()) {
-      throw new Error("append(): can only used on body/block nodes");
+      throw new Error('append(): can only used on body/block nodes');
     }
     const writableSelf = getWritableNode(this);
     const writableNodeToAppend = getWritableNode(nodeToAppend);
+    // Remove node from previous parent
+    const oldParent = writableNodeToAppend.getParent();
+    if (oldParent !== null) {
+      const writableParent = getWritableNode(oldParent);
+      const children = writableParent._children;
+      const index = children.indexOf(writableNodeToAppend._key);
+      if (index > -1) {
+        children.splice(index, 1);
+      }
+    }
     // Set child parent to self
     writableNodeToAppend._parent = writableSelf._key;
     // Append children.
@@ -621,7 +652,7 @@ Object.assign(Node.prototype, {
   setTextContent(text) {
     if (!this.isText() || this.isImmutable()) {
       throw new Error(
-        "spliceText: can only be used on non-immutable text nodes"
+        'spliceText: can only be used on non-immutable text nodes',
       );
     }
     const writableSelf = getWritableNode(this);
@@ -631,7 +662,7 @@ Object.assign(Node.prototype, {
   spliceText(offset, delCount, newText, restoreSelection) {
     if (!this.isText() || this.isImmutable()) {
       throw new Error(
-        "spliceText: can only be used on non-immutable text nodes"
+        'spliceText: can only be used on non-immutable text nodes',
       );
     }
     const writableSelf = getWritableNode(this);
@@ -689,12 +720,12 @@ Object.assign(Node.prototype, {
 export function getNodeType(node, flags) {
   if (flags & IS_TEXT) {
     if (flags & IS_BOLD) {
-      return "strong";
+      return 'strong';
     }
     if (flags & IS_ITALIC) {
-      return "em";
+      return 'em';
     }
-    return "span";
+    return 'span';
   }
   return node._type;
 }
@@ -709,6 +740,7 @@ export function cloneNode(node) {
   clonedNode._style = node._style;
   clonedNode._parent = node._parent;
   clonedNode._data = node._data;
+  clonedNode._url = node._url;
   clonedNode._key = key;
   return clonedNode;
 }
@@ -749,7 +781,7 @@ function getWritableNode(node, skipKeyGeneration) {
   return mutableNode;
 }
 
-export function createBlockNode(blockType = "div") {
+export function createBlockNode(blockType = 'div') {
   const node = new Node(IS_BLOCK, []);
   node._type = blockType;
   return node;
@@ -757,11 +789,11 @@ export function createBlockNode(blockType = "div") {
 
 export function createBodyNode() {
   const body = new Node(IS_BODY, []);
-  body._key = "body";
+  body._key = 'body';
   return body;
 }
 
-export function createTextNode(text = "") {
+export function createTextNode(text = '') {
   const node = new Node(IS_TEXT);
   node._children = text;
   return node;

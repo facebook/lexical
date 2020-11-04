@@ -1,36 +1,36 @@
 import {useEffect} from 'react';
 
 const baseEmojiStyle =
-  "background-size: 16px 16px;" +
-  "height: 16px;" +
-  "width: 16px;" +
-  "background-position: center;" +
-  "background-repeat: no-repeat;" +
-  "display: inline-block;" +
-  "margin: 0 1px;" +
-  "text-align: center;" +
-  "vertical-align: middle;";
+  'background-size: 16px 16px;' +
+  'height: 16px;' +
+  'width: 16px;' +
+  'background-position: center;' +
+  'background-repeat: no-repeat;' +
+  'display: inline-block;' +
+  'margin: 0 1px;' +
+  'text-align: center;' +
+  'vertical-align: middle;';
 
 const happySmile =
   baseEmojiStyle +
-  "background-image: url(https://static.xx.fbcdn.net/images/emoji.php/v9/t4c/1/16/1f642.png);";
+  'background-image: url(https://static.xx.fbcdn.net/images/emoji.php/v9/t4c/1/16/1f642.png);';
 const veryHappySmile =
   baseEmojiStyle +
-  "background-image: url(https://static.xx.fbcdn.net/images/emoji.php/v9/t51/1/16/1f603.png);";
+  'background-image: url(https://static.xx.fbcdn.net/images/emoji.php/v9/t51/1/16/1f603.png);';
 const unhappySmile =
   baseEmojiStyle +
-  "background-image: url(https://static.xx.fbcdn.net/images/emoji.php/v9/tcb/1/16/1f641.png);";
-  const heart =
+  'background-image: url(https://static.xx.fbcdn.net/images/emoji.php/v9/tcb/1/16/1f641.png);';
+const heart =
   baseEmojiStyle +
-  "background-image: url(https://static.xx.fbcdn.net/images/emoji.php/v9/t6c/1/16/2764.png);";
+  'background-image: url(https://static.xx.fbcdn.net/images/emoji.php/v9/t6c/1/16/2764.png);';
 
-const specialSpace = "　";
+const specialSpace = '　';
 
 const emojis = {
-  ":)": happySmile,
-  ":D": veryHappySmile,
-  ":(": unhappySmile,
-  "<3": heart,
+  ':)': happySmile,
+  ':D': veryHappySmile,
+  ':(': unhappySmile,
+  '<3': heart,
 };
 
 function textNodeTransform(node, view) {
@@ -49,7 +49,7 @@ function textNodeTransform(node, view) {
       const emojiInline = view
         .createText(specialSpace)
         .setStyle(emojiStyle)
-        .makeImmutable()
+        .makeImmutable();
 
       targetNode.replace(emojiInline);
       emojiInline.select();
@@ -62,7 +62,7 @@ function textNodeTransform(node, view) {
 export function useEmojiPlugin(outlineEditor) {
   useEffect(() => {
     if (outlineEditor !== null) {
-      return outlineEditor.addTextTransform(textNodeTransform)
+      return outlineEditor.addTextTransform(textNodeTransform);
     }
-  }, [outlineEditor])
+  }, [outlineEditor]);
 }

@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { createBodyNode } from "./OutlineNode";
-import { createViewModel, updateViewModel, ViewModel } from "./OutlineView";
+import {useEffect, useState} from 'react';
+import {createBodyNode} from './OutlineNode';
+import {createViewModel, updateViewModel, ViewModel} from './OutlineView';
 
 function createOutlineEditor(editorElement, onChange) {
   const viewModel = new ViewModel();
@@ -8,8 +8,8 @@ function createOutlineEditor(editorElement, onChange) {
   viewModel.body = body;
   viewModel.nodeMap.body = body;
   const outlineEditor = new OutlineEditor(editorElement, viewModel, onChange);
-  outlineEditor._keyToDOMMap.set("body", editorElement);
-  if (typeof onChange === "function") {
+  outlineEditor._keyToDOMMap.set('body', editorElement);
+  if (typeof onChange === 'function') {
     onChange(viewModel);
   }
   return outlineEditor;
@@ -46,7 +46,7 @@ Object.assign(OutlineEditor.prototype, {
   getElementByKey(key) {
     const element = this._keyToDOMMap.get(key);
     if (element === undefined) {
-      throw new Error("getElementByKey failed for key " + key);
+      throw new Error('getElementByKey failed for key ' + key);
     }
     return element;
   },
@@ -60,13 +60,13 @@ Object.assign(OutlineEditor.prototype, {
 
     if (dirtyNodes === null || dirtySubTrees === null) {
       throw new Error(
-        "getDiffFromViewModel: unable to get diff from view mode"
+        'getDiffFromViewModel: unable to get diff from view mode',
       );
     }
     return {
       dirtySubTrees: dirtySubTrees,
       nodes: Array.from(dirtyNodes).map((nodeKey) => nodeMap[nodeKey]),
-      selection: { ...viewModel.selection },
+      selection: {...viewModel.selection},
       timeStamp: Date.now(),
     };
   },
@@ -75,7 +75,7 @@ Object.assign(OutlineEditor.prototype, {
   },
   update(viewModel, forceSync) {
     if (this._isUpdating) {
-      throw new Error("TODOL: Should never occur?");
+      throw new Error('TODOL: Should never occur?');
     }
     if (viewModel === this._viewModel) {
       return;

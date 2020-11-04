@@ -5,29 +5,29 @@ import {
   IS_STRIKETHROUGH,
   IS_TEXT,
   IS_UNDERLINE,
-} from "./OutlineNode";
+} from './OutlineNode';
 
-let subTreeTextContent = "";
+let subTreeTextContent = '';
 let forceTextDirection = null;
 
-const RTL = "\u0591-\u07FF\uFB1D-\uFDFD\uFE70-\uFEFC";
+const RTL = '\u0591-\u07FF\uFB1D-\uFDFD\uFE70-\uFEFC';
 const LTR =
-  "A-Za-z\u00C0-\u00D6\u00D8-\u00F6" +
-  "\u00F8-\u02B8\u0300-\u0590\u0800-\u1FFF\u200E\u2C00-\uFB1C" +
-  "\uFE00-\uFE6F\uFEFD-\uFFFF";
+  'A-Za-z\u00C0-\u00D6\u00D8-\u00F6' +
+  '\u00F8-\u02B8\u0300-\u0590\u0800-\u1FFF\u200E\u2C00-\uFB1C' +
+  '\uFE00-\uFE6F\uFEFD-\uFFFF';
 
-const rtl = new RegExp("^[^" + LTR + "]*[" + RTL + "]");
-const ltr = new RegExp("^[^" + RTL + "]*[" + LTR + "]");
-const zeroWidthString = "\uFEFF";
+const rtl = new RegExp('^[^' + LTR + ']*[' + RTL + ']');
+const ltr = new RegExp('^[^' + RTL + ']*[' + LTR + ']');
+const zeroWidthString = '\uFEFF';
 
 function getTextDirection(text) {
   if (rtl.test(text)) {
-    return "rtl";
+    return 'rtl';
   }
   if (ltr.test(text)) {
-    return "ltr";
+    return 'ltr';
   }
-  return "";
+  return '';
 }
 
 function handleBlockTextDirection(dom) {
@@ -45,7 +45,7 @@ function setTextContent(prevText, nextText, dom, node) {
   const hasBreakNode = firstChild && firstChild.nextSibling;
   // Check if we are on an empty line
   if (node.getNextSibling() === null) {
-    if (nextText === "") {
+    if (nextText === '') {
       if (firstChild === null) {
         // We use a zero width string so that the browser moves
         // the cursor into the text node. It won't move the cursor
@@ -54,22 +54,18 @@ function setTextContent(prevText, nextText, dom, node) {
         // to ensure we take up a full line, as we don't have any
         // characters taking up the full height yet.
         dom.appendChild(document.createTextNode(zeroWidthString));
-        dom.appendChild(document.createElement("br"));
+        dom.appendChild(document.createElement('br'));
       } else if (!hasBreakNode) {
         firstChild.nodeValue = zeroWidthString;
-        dom.appendChild(document.createElement("br"));
+        dom.appendChild(document.createElement('br'));
       }
       return;
-    } else if (nextText.endsWith("\n")) {
-      nextText = nextText + "\n";
+    } else if (nextText.endsWith('\n')) {
+      nextText += '\n';
     }
   }
   if (firstChild === null || hasBreakNode) {
-    if (nextText === '') {
-      dom.appendChild(document.createTextNode(zeroWidthString));
-    } else {
-      dom.textContent = nextText;
-    }
+    dom.textContent = nextText === '' ? zeroWidthString : nextText;
   } else if (prevText !== nextText) {
     firstChild.nodeValue = nextText;
   }
@@ -94,7 +90,7 @@ function destroyNode(key, parentDOM, prevNodeMap, nextNodeMap, editor) {
       null,
       prevNodeMap,
       nextNodeMap,
-      editor
+      editor,
     );
   }
 }
@@ -106,7 +102,7 @@ function destroyChildren(
   dom,
   prevNodeMap,
   nextNodeMap,
-  editor
+  editor,
 ) {
   for (; startIndex <= endIndex; ++startIndex) {
     destroyNode(children[startIndex], dom, prevNodeMap, nextNodeMap, editor);
@@ -134,13 +130,13 @@ function buildNode(key, parentDOM, insertDOM, nodeMap, editor) {
     subTreeTextContent += children;
     setTextContent(null, children, dom, node);
     // add data-text attribute
-    dom.setAttribute("data-text", true);
+    dom.setAttribute('data-text', true);
     if (flags & IS_SEGMENTED) {
-      dom.setAttribute("spellcheck", "false");
+      dom.setAttribute('spellcheck', 'false');
     }
   } else {
-    let previousSubTreeTextContent = subTreeTextContent;
-    subTreeTextContent = "";
+    const previousSubTreeTextContent = subTreeTextContent;
+    subTreeTextContent = '';
     const childrenLength = children.length;
     buildChildren(children, 0, childrenLength - 1, dom, null, nodeMap, editor);
     handleBlockTextDirection(dom);
@@ -163,7 +159,7 @@ function buildChildren(
   dom,
   insertDOM,
   nodeMap,
-  editor
+  editor,
 ) {
   for (; startIndex <= endIndex; ++startIndex) {
     buildNode(children[startIndex], dom, insertDOM, nodeMap, editor);
@@ -171,15 +167,15 @@ function buildChildren(
 }
 
 function setTextStyling(domStyle, type, prevFlags, nextFlags) {
-  if (type === "strong") {
+  if (type === 'strong') {
     if (nextFlags & IS_ITALIC) {
       // When prev is not italic, but next is
       if ((prevFlags & IS_ITALIC) === 0) {
-        domStyle.setProperty("font-style", "italic");
+        domStyle.setProperty('font-style', 'italic');
       }
     } else if (prevFlags & IS_ITALIC) {
       // When prev was italic, but the next is not
-      domStyle.setProperty("font-style", "normal");
+      domStyle.setProperty('font-style', 'normal');
     }
   }
   const prevIsNotStrikeThrough = (prevFlags & IS_STRIKETHROUGH) === 0;
@@ -188,18 +184,18 @@ function setTextStyling(domStyle, type, prevFlags, nextFlags) {
   const nextIsUnderline = nextFlags & IS_UNDERLINE;
   if (nextIsStrikeThrough && nextIsUnderline) {
     if (prevIsNotStrikeThrough || prevIsNotUnderline) {
-      domStyle.setProperty("text-decoration", "underline line-through");
+      domStyle.setProperty('text-decoration', 'underline line-through');
     }
   } else if (nextIsStrikeThrough) {
     if (prevIsNotStrikeThrough) {
-      domStyle.setProperty("text-decoration", "line-through");
+      domStyle.setProperty('text-decoration', 'line-through');
     }
   } else if (nextIsUnderline) {
     if (prevIsNotUnderline) {
-      domStyle.setProperty("text-decoration", "underline");
+      domStyle.setProperty('text-decoration', 'underline');
     }
   } else {
-    domStyle.setProperty("text-decoration", "initial");
+    domStyle.setProperty('text-decoration', 'initial');
   }
 }
 
@@ -209,7 +205,7 @@ function reconcileNode(
   prevNodeMap,
   nextNodeMap,
   editor,
-  dirtySubTrees
+  dirtySubTrees,
 ) {
   const prevNode = prevNodeMap[key];
   const nextNode = nextNodeMap[key];
@@ -252,7 +248,7 @@ function reconcileNode(
 
   if (prevStyle !== nextStyle) {
     if (nextStyle === null) {
-      domStyle.cssText = "";
+      domStyle.cssText = '';
     } else {
       domStyle.cssText = nextStyle;
     }
@@ -266,11 +262,11 @@ function reconcileNode(
     setTextContent(prevChildren, nextChildren, dom, nextNode);
     if (nextFlags & IS_SEGMENTED) {
       if ((prevFlags & IS_SEGMENTED) === 0) {
-        dom.setAttribute("spellcheck", "false");
+        dom.setAttribute('spellcheck', 'false');
       }
     } else {
       if (prevFlags & IS_SEGMENTED) {
-        dom.removeAttribute("spellcheck");
+        dom.removeAttribute('spellcheck');
       }
     }
     return;
@@ -281,8 +277,8 @@ function reconcileNode(
   if (childrenAreDifferent || hasDirtySubTree) {
     const prevChildrenLength = prevChildren.length;
     const nextChildrenLength = nextChildren.length;
-    let previousSubTreeTextContent = subTreeTextContent;
-    subTreeTextContent = "";
+    const previousSubTreeTextContent = subTreeTextContent;
+    subTreeTextContent = '';
 
     if (prevChildrenLength === 1 && nextChildrenLength === 1) {
       const prevChildKey = prevChildren[0];
@@ -294,7 +290,7 @@ function reconcileNode(
           prevNodeMap,
           nextNodeMap,
           editor,
-          dirtySubTrees
+          dirtySubTrees,
         );
       } else {
         const lastDOM = editor.getElementByKey(prevChildKey);
@@ -303,7 +299,7 @@ function reconcileNode(
           null,
           null,
           nextNodeMap,
-          editor
+          editor,
         );
         dom.replaceChild(replacementDOM, lastDOM);
         destroyNode(prevChildKey, null, prevNodeMap, nextNodeMap, editor);
@@ -317,7 +313,7 @@ function reconcileNode(
           dom,
           null,
           nextNodeMap,
-          editor
+          editor,
         );
       }
     } else if (nextChildrenLength === 0) {
@@ -329,10 +325,10 @@ function reconcileNode(
           null,
           prevNodeMap,
           nextNodeMap,
-          editor
+          editor,
         );
         // Fast path for removing DOM nodes
-        dom.textContent = "";
+        dom.textContent = '';
       }
     } else {
       reconcileNodeChildren(
@@ -344,7 +340,7 @@ function reconcileNode(
         prevNodeMap,
         nextNodeMap,
         editor,
-        dirtySubTrees
+        dirtySubTrees,
       );
     }
     handleBlockTextDirection(dom);
@@ -368,7 +364,7 @@ function findIndexInPrevChildren(
   targetKey,
   prevChildren,
   startIndex,
-  endIndex
+  endIndex,
 ) {
   for (let i = startIndex; i < endIndex; i++) {
     const c = prevChildren[i];
@@ -390,7 +386,7 @@ function reconcileNodeChildren(
   prevNodeMap,
   nextNodeMap,
   editor,
-  dirtySubTrees
+  dirtySubTrees,
 ) {
   let hasClonedPrevChildren = false;
   let prevStartIndex = 0;
@@ -415,7 +411,7 @@ function reconcileNodeChildren(
         prevNodeMap,
         nextNodeMap,
         editor,
-        dirtySubTrees
+        dirtySubTrees,
       );
       prevStartKey = prevChildren[++prevStartIndex];
       nextStartKey = nextChildren[++nextStartIndex];
@@ -426,7 +422,7 @@ function reconcileNodeChildren(
         prevNodeMap,
         nextNodeMap,
         editor,
-        dirtySubTrees
+        dirtySubTrees,
       );
       prevEndKey = prevChildren[--prevEndIndex];
       nextEndKey = nextChildren[--nextEndIndex];
@@ -437,11 +433,11 @@ function reconcileNodeChildren(
         prevNodeMap,
         nextNodeMap,
         editor,
-        dirtySubTrees
+        dirtySubTrees,
       );
       dom.insertBefore(
         editor.getElementByKey(prevStartKey),
-        editor.getElementByKey(prevEndKey).nextSibling
+        editor.getElementByKey(prevEndKey).nextSibling,
       );
       prevStartKey = prevChildren[++prevStartIndex];
       nextEndKey = nextChildren[--nextEndIndex];
@@ -452,11 +448,11 @@ function reconcileNodeChildren(
         prevNodeMap,
         nextNodeMap,
         editor,
-        dirtySubTrees
+        dirtySubTrees,
       );
       dom.insertBefore(
         editor.getElementByKey(prevEndKey),
-        editor.getElementByKey(prevStartKey)
+        editor.getElementByKey(prevStartKey),
       );
       prevEndKey = prevChildren[--prevEndIndex];
       nextStartKey = nextChildren[++nextStartIndex];
@@ -466,7 +462,7 @@ function reconcileNodeChildren(
         prevKeyToIndexMap = createKeyToIndexMap(
           prevChildren,
           prevStartIndex,
-          prevEndIndex
+          prevEndIndex,
         );
       }
       const indexInPrevChildren =
@@ -476,7 +472,7 @@ function reconcileNodeChildren(
               nextStartKey,
               prevChildren,
               prevStartIndex,
-              prevEndIndex
+              prevEndIndex,
             );
       if (indexInPrevChildren === undefined) {
         buildNode(
@@ -484,7 +480,7 @@ function reconcileNodeChildren(
           dom,
           editor.getElementByKey(prevStartKey),
           nextNodeMap,
-          editor
+          editor,
         );
       } else {
         const keyToMove = prevChildren[indexInPrevChildren];
@@ -495,7 +491,7 @@ function reconcileNodeChildren(
             prevNodeMap,
             nextNodeMap,
             editor,
-            dirtySubTrees
+            dirtySubTrees,
           );
           if (hasClonedPrevChildren) {
             hasClonedPrevChildren = true;
@@ -504,10 +500,10 @@ function reconcileNodeChildren(
           prevChildren[indexInPrevChildren] = undefined;
           dom.insertBefore(
             editor.getElementByKey(keyToMove),
-            editor.getElementByKey(prevStartKey)
+            editor.getElementByKey(prevStartKey),
           );
         } else {
-          throw new Error("TODO: Should this ever happen?");
+          throw new Error('TODO: Should this ever happen?');
         }
       }
       nextStartKey = nextChildren[++nextStartIndex];
@@ -524,7 +520,7 @@ function reconcileNodeChildren(
       dom,
       insertDOM,
       nextNodeMap,
-      editor
+      editor,
     );
   } else if (nextStartIndex > nextEndIndex) {
     destroyChildren(
@@ -534,7 +530,7 @@ function reconcileNodeChildren(
       dom,
       prevNodeMap,
       nextNodeMap,
-      editor
+      editor,
     );
   }
 }
@@ -544,16 +540,16 @@ export function reconcileViewModel(nextViewModel, editor) {
   // TODO: take this value from Editor props, default to null;
   // This will over-ride any sub-tree text direction properties.
   forceTextDirection = null;
-  subTreeTextContent = "";
+  subTreeTextContent = '';
   const dirtySubTrees = nextViewModel._dirtySubTrees;
 
   reconcileNode(
-    "body",
+    'body',
     null,
     prevViewModel.nodeMap,
     nextViewModel.nodeMap,
     editor,
-    dirtySubTrees
+    dirtySubTrees,
   );
 
   const nextSelection = nextViewModel.selection;
@@ -579,7 +575,7 @@ function getSelectionElement(key, editor) {
 
 export function storeDOMWithKey(key, dom, editor) {
   if (key === null) {
-    throw new Error("storeDOMWithNodeKey failed");
+    throw new Error('storeDOMWithNodeKey failed');
   }
   const keyToDOMMap = editor._keyToDOMMap;
   dom.__outlineInternalRef = key;

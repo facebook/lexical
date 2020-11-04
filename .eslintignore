@@ -1,0 +1,3 @@
+packages/**/dist/*.js
+packages/**/config/*.js
+**/node_modules

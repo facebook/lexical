@@ -1,4 +1,5 @@
 import {useCallback, useEffect} from 'react';
+import {createBlock, createText} from 'outline';
 import {canUseBeforeInputEvent, isBrowserFirefox, isBrowserSafari} from './env';
 import {
   isDeleteBackward,
@@ -55,8 +56,8 @@ export function onFocusIn(event, viewModel) {
   const body = viewModel.getBody();
 
   if (body.getFirstChild() === null) {
-    const text = viewModel.createText();
-    body.append(viewModel.createBlock('p').append(text));
+    const text = createText();
+    body.append(createBlock('p').append(text));
     text.select();
   }
 }
@@ -267,6 +268,7 @@ export function useEditorInputEvents(editor, stateRef) {
   }, [
     editor,
     handleCompositionEnd,
+    handleCut,
     handleKeyDown,
     handleNativeBeforeInput,
     handlePaste,

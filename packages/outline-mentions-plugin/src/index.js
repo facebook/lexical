@@ -2,6 +2,7 @@ import React, {useCallback, useLayoutEffect, useMemo, useRef} from 'react';
 import {useEffect, useState} from 'react';
 import {createPortal} from 'react-dom';
 import {useEvent} from 'shared';
+import {TextNode} from 'outline';
 
 const mentionStyle = 'background-color: rgba(24, 119, 232, 0.2)';
 
@@ -157,16 +158,9 @@ function MentionsTypeahead({close, editor, match, nodeKey, registerKeys}) {
   const applyCurrentSelected = useCallback(() => {
     const selectedResult = results[selectedIndex];
     const viewModel = editor.createViewModel((view) => {
-      const mentionsNode = view.getNodeByKey(nodeKey);
-      mentionsNode
-        .setTextContent(selectedResult)
-        .setStyle(mentionStyle)
-        .setData({
-          type: 'MENTION',
-          name: selectedResult,
-        })
-        .makeSegmented()
-        .select();
+      const targetNode = view.getNodeByKey(nodeKey);
+      const mentionNode = createMention(selectedResult);
+      targetNode.replace(mentionNode).select();
     });
     close();
     if (!editor.isUpdating()) {
@@ -352,6 +346,12 @@ export function useMentionsPlugin(outlineEditor, portalTargetElement) {
 
   useEffect(() => {
     if (outlineEditor !== null) {
+      return outlineEditor.addNodeType(MentionNode);
+    }
+  }, [outlineEditor]);
+
+  useEffect(() => {
+    if (outlineEditor !== null) {
       const textNodeTransform = (node, view) => {
         const selection = view.getSelection();
         if (
@@ -422,6 +422,29 @@ export function useMentionsPlugin(outlineEditor, portalTargetElement) {
         />,
         portalTargetElement,
       );
+}
+
+function createMention(mentionName) {
+  return new MentionNode(mentionName).makeSegmented();
+}
+
+class MentionNode extends TextNode {
+  constructor(mentionName) {
+    super(mentionName);
+    this._mention = mentionName;
+    this._type = 'mention';
+  }
+  clone() {
+    const clone = super.clone();
+    clone._mention = this._mention;
+    clone._type = 'mention';
+    return clone;
+  }
+  _create() {
+    const dom = super._create();
+    dom.style.cssText = mentionStyle;
+    return dom;
+  }
 }
 
 const dummyLookupService = {

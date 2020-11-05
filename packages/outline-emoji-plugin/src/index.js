@@ -1,4 +1,5 @@
 import {useEffect} from 'react';
+import {TextNode} from 'outline';
 
 const baseEmojiStyle =
   'background-size: 16px 16px;' +
@@ -46,11 +47,7 @@ function textNodeTransform(node, view) {
       } else {
         [, targetNode] = node.splitText(i, i + 2);
       }
-      const emojiInline = view
-        .createText(specialSpace)
-        .setStyle(emojiStyle)
-        .makeImmutable();
-
+      const emojiInline = createEmoji(emojiStyle);
       targetNode.replace(emojiInline);
       emojiInline.select();
       emojiInline.getParent().normalizeTextNodes(true);
@@ -62,7 +59,35 @@ function textNodeTransform(node, view) {
 export function useEmojiPlugin(outlineEditor) {
   useEffect(() => {
     if (outlineEditor !== null) {
-      return outlineEditor.addTextTransform(textNodeTransform);
+      const removeNodeType = outlineEditor.addNodeType(EmojiNode);
+      const removeTransform = outlineEditor.addTextTransform(textNodeTransform);
+      return () => {
+        removeNodeType();
+        removeTransform();
+      };
     }
   }, [outlineEditor]);
+}
+
+function createEmoji(cssText) {
+  return new EmojiNode(cssText, specialSpace).makeImmutable();
+}
+
+class EmojiNode extends TextNode {
+  constructor(cssText, text) {
+    super(text);
+    this._cssText = cssText;
+    this._type = 'emoji';
+  }
+  clone() {
+    const clone = super.clone();
+    this._cssText = this._cssText;
+    clone._type = 'emoji';
+    return clone;
+  }
+  _create() {
+    const dom = super._create();
+    dom.style.cssText = this._cssText;
+    return dom;
+  }
 }

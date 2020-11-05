@@ -1,11 +1,6 @@
-import {
-  cloneNode,
-  createBlockNode,
-  createTextNode,
-  getNodeByKey,
-} from './OutlineNode';
 import {reconcileViewModel} from './OutlineReconciler';
 import {getSelection} from './OutlineSelection';
+import {getNodeByKey} from './OutlineNode';
 
 let activeViewModel = null;
 
@@ -21,19 +16,19 @@ export function getActiveViewModel() {
 }
 
 const view = {
-  cloneText(node, text) {
-    if (node.isImmutable()) {
-      throw new Error('cloneText: cannot clone an immutable node');
-    }
-    const clone = cloneNode(node);
-    clone._key = null;
-    if (text !== undefined) {
-      clone._children = text;
-    }
-    return clone;
-  },
-  createBlock: createBlockNode,
-  createText: createTextNode,
+  // cloneText(node, text) {
+  //   if (node.isImmutable()) {
+  //     throw new Error('cloneText: cannot clone an immutable node');
+  //   }
+  //   const clone = cloneNode(node);
+  //   clone._key = null;
+  //   if (text !== undefined) {
+  //     clone._children = text;
+  //   }
+  //   return clone;
+  // },
+  // createBlock: createBlockNode,
+  // createText: createTextNode,
   getBody() {
     return getActiveViewModel().body;
   },
@@ -100,7 +95,6 @@ export function updateViewModel(viewModel, outlineEditor) {
   // a text node should add a new line, we re-use it.
   // Ideally we'd instead have a _nextSibling property
   // on the node rather than having to lookup the parent.
-  // We also use it for getType.
   activeViewModel = viewModel;
   reconcileViewModel(viewModel, outlineEditor);
   activeViewModel = null;
@@ -108,16 +102,6 @@ export function updateViewModel(viewModel, outlineEditor) {
   viewModel._dirtySubTrees = null;
   if (typeof onChange === 'function') {
     onChange(viewModel);
-  }
-}
-
-export function markParentsAsDirty(parentKey, nodeMap, dirtySubTrees) {
-  while (parentKey !== null) {
-    if (dirtySubTrees.has(parentKey)) {
-      return;
-    }
-    dirtySubTrees.add(parentKey);
-    parentKey = nodeMap[parentKey]._parent;
   }
 }
 

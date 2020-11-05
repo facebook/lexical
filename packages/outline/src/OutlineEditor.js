@@ -1,5 +1,7 @@
 import {useEffect, useState} from 'react';
-import {createBodyNode} from './OutlineNode';
+import {TextNode} from './nodes/OutlineTextNode';
+import {BlockNode} from './nodes/OutlineBlockNode';
+import {createBodyNode} from './nodes/OutlineBodyNode';
 import {createViewModel, updateViewModel, ViewModel} from './OutlineView';
 
 function createOutlineEditor(editorElement, onChange) {
@@ -15,44 +17,55 @@ function createOutlineEditor(editorElement, onChange) {
   return outlineEditor;
 }
 
-function OutlineEditor(editorElement, viewModel, onChange) {
-  // The editor element associated with this editor
-  this._editorElement = editorElement;
-  // The current view model
-  this._viewModel = viewModel;
-  // Handling of drafts and updates
-  this._isUpdating = false;
-  // Used during reconcilation
-  this._keyToDOMMap = new Map();
-  // onChange callback
-  this._onChange = onChange;
-  // Handling of transform
-  this._textTransforms = new Set();
-}
-
-Object.assign(OutlineEditor.prototype, {
+class OutlineEditor {
+  constructor(editorElement, viewModel, onChange) {
+    // The editor element associated with this editor
+    this._editorElement = editorElement;
+    // The current view model
+    this._viewModel = viewModel;
+    // Handling of drafts and updates
+    this._isUpdating = false;
+    // Used during reconcilation
+    this._keyToDOMMap = new Map();
+    // onChange callback
+    this._onChange = onChange;
+    // Handling of transform
+    this._textTransforms = new Set();
+    // Mapping of types to their nodes
+    this._registeredNodeTypes = new Map([
+      ['block', BlockNode],
+      ['text', TextNode],
+      ['body', BlockNode],
+    ]);
+  }
+  addNodeType(nodeType, Node) {
+    this._registeredNodeTypes.set(nodeType, Node);
+    return () => {
+      this._registeredNodeTypes.delete(nodeType);
+    };
+  }
   addTextTransform(transformFn) {
     this._textTransforms.add(transformFn);
     return () => {
       this._textTransforms.delete(transformFn);
     };
-  },
+  }
   isUpdating() {
     return this._isUpdating;
-  },
+  }
   getEditorElement() {
     return this._editorElement;
-  },
+  }
   getElementByKey(key) {
     const element = this._keyToDOMMap.get(key);
     if (element === undefined) {
       throw new Error('getElementByKey failed for key ' + key);
     }
     return element;
-  },
+  }
   getCurrentViewModel() {
     return this._viewModel;
-  },
+  }
   getDiffFromViewModel(viewModel) {
     const dirtySubTrees = viewModel._dirtySubTrees;
     const dirtyNodes = viewModel._dirtyNodes;
@@ -69,10 +82,10 @@ Object.assign(OutlineEditor.prototype, {
       selection: {...viewModel.selection},
       timeStamp: Date.now(),
     };
-  },
+  }
   createViewModel(callbackFn) {
     return createViewModel(this._viewModel, callbackFn, this);
-  },
+  }
   update(viewModel, forceSync) {
     if (this._isUpdating) {
       throw new Error('TODOL: Should never occur?');
@@ -89,8 +102,8 @@ Object.assign(OutlineEditor.prototype, {
         updateViewModel(viewModel, this);
       });
     }
-  },
-});
+  }
+}
 
 export function useOutlineEditor(editorElementRef, onChange) {
   const [outlineEditor, setOutlineEditor] = useState(null);

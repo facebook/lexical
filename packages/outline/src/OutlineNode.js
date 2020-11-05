@@ -1,23 +1,9 @@
-import {getActiveViewModel, markParentsAsDirty} from './OutlineView';
-import {getSelection} from './OutlineSelection';
+import {getActiveViewModel} from './OutlineView';
 
 let nodeKeyCounter = 0;
 
-export const IS_BODY = 1;
-export const IS_BLOCK = 1 << 1;
-export const IS_TEXT = 1 << 2;
-export const IS_IMMUTABLE = 1 << 3;
-export const IS_SEGMENTED = 1 << 4;
-export const IS_LINK = 1 << 5;
-export const IS_BOLD = 1 << 6;
-export const IS_ITALIC = 1 << 7;
-export const IS_STRIKETHROUGH = 1 << 8;
-export const IS_UNDERLINE = 1 << 9;
-
-export const FORMAT_BOLD = 0;
-export const FORMAT_ITALIC = 1;
-export const FORMAT_STRIKETHROUGH = 2;
-export const FORMAT_UNDERLINE = 3;
+export const IS_IMMUTABLE = 1;
+export const IS_SEGMENTED = 1 << 1;
 
 function removeNode(nodeToRemove) {
   const parent = nodeToRemove.getParent();
@@ -48,229 +34,87 @@ function removeNode(nodeToRemove) {
 }
 
 function replaceNode(toReplace, replaceWith) {
-  const viewModel = getActiveViewModel();
-  const nodeMap = viewModel.nodeMap;
-  const oldKey = replaceWith._key;
-  const newKey = toReplace._key;
-  const writableToReplace = getWritableNode(toReplace);
-  const writableReplaceWith = getWritableNode(replaceWith, true);
-  // Copy over the key and parent pointers
-  writableReplaceWith._parent = writableToReplace._parent;
-  writableReplaceWith._key = newKey;
-  nodeMap[newKey] = writableReplaceWith;
-  // Change children parent pointers
-  if (!replaceWith.isText()) {
-    const children = replaceWith.getChildren();
-    const toReplaceKey = toReplace._key;
-    for (let i = 0; i < children.length; i++) {
-      const child = getWritableNode(children[i]);
-      child._parent = toReplaceKey;
+  const writableReplaceWith = getWritableNode(replaceWith);
+  const oldParent = writableReplaceWith.getParent();
+  if (oldParent !== null) {
+    const writableParent = getWritableNode(oldParent);
+    const children = writableParent._children;
+    const index = children.indexOf(writableReplaceWith._key);
+    if (index > -1) {
+      children.splice(index, 1);
     }
   }
-  writableToReplace._parent = null;
-  writableToReplace._key = null;
-  // Remove the old key
-  delete nodeMap[oldKey];
+  const newParent = toReplace.getParent();
+  const writableParent = getWritableNode(newParent);
+  const children = writableParent._children;
+  const index = children.indexOf(toReplace._key);
+  if (index > -1) {
+    children.splice(index, 0, replaceWith._key);
+  }
+  writableReplaceWith._parent = newParent._key;
+  toReplace.remove();
   return writableReplaceWith;
 }
 
-function combineAdjacentTextNodes(textNodes, restoreSelection) {
-  const selection = getSelection();
-  const anchorOffset = selection.anchorOffset;
-  const focusOffset = selection.focusOffset;
-  const anchorKey = selection.anchorKey;
-  const focusKey = selection.focusKey;
-  // Merge all text nodes into the first node
-  const writableMergeToNode = getWritableNode(textNodes[0]);
-  let textLength = writableMergeToNode.getTextContent().length;
-  let restoreAnchorOffset = anchorOffset;
-  let restoreFocusOffset = focusOffset;
-  for (let i = 1; i < textNodes.length; i++) {
-    const textNode = textNodes[i];
-    const siblingText = textNode.getTextContent();
-    if (restoreSelection && textNode._key === anchorKey) {
-      restoreAnchorOffset = textLength + anchorOffset;
-    }
-    if (restoreSelection && textNode._key === focusKey) {
-      restoreFocusOffset = textLength + focusOffset;
-    }
-    writableMergeToNode.spliceText(textLength, 0, siblingText);
-    textLength += siblingText.length;
-    textNode.remove();
-  }
-  if (restoreSelection) {
-    writableMergeToNode.select(restoreAnchorOffset, restoreFocusOffset);
-  }
-}
-
-function splitText(node, splitOffsets) {
-  if (!node.isText() || node.isImmutable()) {
-    throw new Error('splitText: can only be used on non-immutable text nodes');
-  }
-  const textContent = node.getTextContent();
-  const key = node._key;
-  const offsetsSet = new Set(splitOffsets);
-  const parts = [];
-  const textLength = textContent.length;
-  let string = '';
-  for (let i = 0; i < textLength; i++) {
-    if (string !== '' && offsetsSet.has(i)) {
-      parts.push(string);
-      string = '';
-    }
-    string += textContent[i];
-  }
-  if (string !== '') {
-    parts.push(string);
-  }
-  const partsLength = parts.length;
-  if (partsLength === 0) {
-    return [];
-  } else if (parts[0] === textContent) {
-    return [node];
-  }
-  // For the first part, update the existing node
-  const writableNode = getWritableNode(node);
-  const parentKey = writableNode._parent;
-  const firstPart = parts[0];
-  const flags = writableNode._flags;
-  writableNode._children = firstPart;
-
-  // Handle selection
-  const selection = getSelection();
-  const {anchorKey, anchorOffset, focusKey, focusOffset} = selection;
-
-  // Then handle all other parts
-  const splitNodes = [writableNode];
-  let textSize = firstPart.length;
-  for (let i = 1; i < partsLength; i++) {
-    const part = parts[i];
-    const partSize = part.length;
-    const sibling = getWritableNode(createTextNode(part));
-    sibling._flags = flags;
-    const siblingKey = sibling._key;
-    const nextTextSize = textLength + partSize;
-
-    if (
-      anchorKey === key &&
-      anchorOffset > textSize &&
-      anchorOffset < nextTextSize
-    ) {
-      selection.anchorKey = siblingKey;
-      selection.anchorOffset = anchorOffset - textSize;
-    }
-    if (
-      focusKey === key &&
-      focusOffset > textSize &&
-      focusOffset < nextTextSize
-    ) {
-      selection.focusKey = siblingKey;
-      selection.focusOffset = focusOffset - textSize;
-    }
-    textSize = nextTextSize;
-    sibling._parent = parentKey;
-    splitNodes.push(sibling);
+export class Node {
+  constructor() {
+    this._flags = 0;
+    this._key = null;
+    this._parent = null;
+    this._type = 'node';
   }
 
-  // Insert the nodes into the parent's children
-  const writableParent = getWritableNode(node.getParent());
-  const writableParentChildren = writableParent._children;
-  const insertionIndex = writableParentChildren.indexOf(key);
-  const splitNodesKeys = splitNodes.map((splitNode) => splitNode._key);
-  writableParentChildren.splice(insertionIndex, 1, ...splitNodesKeys);
+  // Getters and Traversors
 
-  return splitNodes;
-}
-
-function Node(flags, children) {
-  this._type = null;
-  this._children = children;
-  this._data = null;
-  this._flags = flags;
-  this._key = null;
-  this._parent = null;
-  this._style = null;
-  this._url = null;
-}
-
-Object.assign(Node.prototype, {
-  // Traversal and gettors
-
-  getType() {
-    const self = this.getLatest();
-    const flags = self._flags;
-    return getNodeType(self, flags);
-  },
   getFlags() {
     const self = this.getLatest();
     return self._flags;
-  },
-  getChildren() {
-    if (this.isText()) {
-      throw new Error('getChildren: can only be used on body/block nodes');
-    }
-    const self = this.getLatest();
-    const children = self._children;
-    const childrenNodes = [];
-    for (let i = 0; i < children.length; i++) {
-      const childNode = getNodeByKey(children[i]);
-      if (childNode !== null) {
-        childrenNodes.push(childNode);
-      }
-    }
-    return childrenNodes;
-  },
-  getTextContent() {
-    const self = this.getLatest();
-    if (this.isText()) {
-      return self._children;
-    }
-    let textContent = '';
-    const children = this.getChildren();
-    const childrenLength = children.length;
-    for (let i = 0; i < childrenLength; i++) {
-      const child = children[i];
-      textContent += child.getTextContent();
-      if (child.isBlock() && i !== childrenLength -1) {
-        textContent += '\n\n';
-      }
-    }
-    return textContent;
-  },
-  getBlockType() {
-    if (this.isText()) {
-      throw new Error('getChildrenDeep: can only be used on block nodes');
-    }
-    return this.getLatest()._type;
-  },
+  }
   getKey() {
-    // Key is the only property that is stable between copies
+    // Key is stable between copies
     return this._key;
-  },
-  getFirstChild() {
-    if (this.isText()) {
+  }
+  getType() {
+    // Type is stable between copies
+    return this._type;
+  }
+  getParent() {
+    const parent = this.getLatest()._parent;
+    if (parent === null) {
       return null;
     }
-    const self = this.getLatest();
-    const children = self._children;
-    const childrenLength = children.length;
-    if (childrenLength === 0) {
-      return null;
+    return getNodeByKey(parent);
+  }
+  getParentBefore(target) {
+    let node = this;
+    while (node !== null) {
+      const parent = node.getParent();
+      if (parent._key === target._key) {
+        return node;
+      }
+      node = parent;
     }
-    return getNodeByKey(children[0]);
-  },
-  getLastChild() {
-    if (this.isText()) {
-      return null;
+    return null;
+  }
+  getParentBlock() {
+    let node = this;
+    while (node !== null) {
+      if (node.isBlock()) {
+        return node;
+      }
+      node = node.getParent();
     }
-    const self = this.getLatest();
-    const children = self._children;
-    const childrenLength = children.length;
-    if (childrenLength === 0) {
-      return null;
+    return null;
+  }
+  getParents() {
+    const parents = [];
+    let node = this.getParent();
+    while (node !== null) {
+      parents.push(node);
+      node = node.getParent();
     }
-    return getNodeByKey(children[childrenLength - 1]);
-  },
+    return parents;
+  }
   getPreviousSibling() {
     const parent = this.getParent();
     const children = parent._children;
@@ -279,7 +123,7 @@ Object.assign(Node.prototype, {
       return null;
     }
     return getNodeByKey(children[index - 1]);
-  },
+  }
   getNextSibling() {
     const parent = this.getParent();
     const children = parent._children;
@@ -289,13 +133,13 @@ Object.assign(Node.prototype, {
       return null;
     }
     return getNodeByKey(children[index + 1]);
-  },
+  }
   getNextSiblings() {
     const parent = this.getParent();
     const children = parent._children;
     const index = children.indexOf(this._key);
     return children.slice(index + 1).map((childKey) => getNodeByKey(childKey));
-  },
+  }
   getCommonAncestor(node) {
     const a = this.getParents();
     const b = node.getParents();
@@ -312,44 +156,7 @@ Object.assign(Node.prototype, {
       }
     }
     return null;
-  },
-  getParent() {
-    const parent = this.getLatest()._parent;
-    if (parent === null) {
-      return null;
-    }
-    return getNodeByKey(parent);
-  },
-  getParentBefore(target) {
-    let node = this;
-    while (node !== null) {
-      const parent = node.getParent();
-      if (parent._key === target._key) {
-        return node;
-      }
-      node = parent;
-    }
-    return null;
-  },
-  getParentBlock() {
-    let node = this;
-    while (node !== null) {
-      if (node.isBlock()) {
-        return node;
-      }
-      node = node.getParent();
-    }
-    return null;
-  },
-  getParents() {
-    const parents = [];
-    let node = this.getParent();
-    while (node !== null) {
-      parents.push(node);
-      node = node.getParent();
-    }
-    return parents;
-  },
+  }
   isBefore(targetNode) {
     const commonAncestor = this.getCommonAncestor(targetNode);
     let indexA = 0;
@@ -373,7 +180,7 @@ Object.assign(Node.prototype, {
       node = parent;
     }
     return indexA < indexB;
-  },
+  }
   isParentOf(targetNode) {
     const key = this._key;
     let node = targetNode;
@@ -384,44 +191,7 @@ Object.assign(Node.prototype, {
       node = node.getParent();
     }
     return false;
-  },
-  isBold() {
-    return (this.getLatest()._flags & IS_BOLD) !== 0;
-  },
-  isItalic() {
-    return (this.getLatest()._flags & IS_ITALIC) !== 0;
-  },
-  isStrikethrough() {
-    return (this.getLatest()._flags & IS_STRIKETHROUGH) !== 0;
-  },
-  isUnderline() {
-    return (this.getLatest()._flags & IS_UNDERLINE) !== 0;
-  },
-  isBody() {
-    return (this.getLatest()._flags & IS_BODY) !== 0;
-  },
-  isBlock() {
-    return (this.getLatest()._flags & IS_BLOCK) !== 0;
-  },
-  isImmutable() {
-    return (this.getLatest()._flags & IS_IMMUTABLE) !== 0;
-  },
-  isSegmented() {
-    return (this.getLatest()._flags & IS_SEGMENTED) !== 0;
-  },
-  isText() {
-    return (this.getLatest()._flags & IS_TEXT) !== 0;
-  },
-  getLatest() {
-    if (this._key === null) {
-      return this;
-    }
-    const latest = getNodeByKey(this._key);
-    if (latest === null) {
-      return this;
-    }
-    return latest;
-  },
+  }
   getNodesBetween(targetNode) {
     const isBefore = this.isBefore(targetNode);
     const nodes = [];
@@ -433,7 +203,7 @@ Object.assign(Node.prototype, {
         if (node === targetNode) {
           break;
         }
-        const child = node.getFirstChild();
+        const child = node.isBlock() ? node.getFirstChild() : null;
         if (child !== null) {
           node = child;
           continue;
@@ -466,7 +236,7 @@ Object.assign(Node.prototype, {
         if (node === targetNode) {
           break;
         }
-        const child = node.getLastChild();
+        const child = node.isBlock() ? node.getLastChild() : null;
         if (child !== null) {
           node = child;
           continue;
@@ -495,7 +265,48 @@ Object.assign(Node.prototype, {
       nodes.reverse();
     }
     return nodes;
-  },
+  }
+  isBody() {
+    return false;
+  }
+  isBlock() {
+    return false;
+  }
+  isText() {
+    return false;
+  }
+  isImmutable() {
+    return (this.getLatest()._flags & IS_IMMUTABLE) !== 0;
+  }
+  isSegmented() {
+    return (this.getLatest()._flags & IS_SEGMENTED) !== 0;
+  }
+  getLatest() {
+    if (this._key === null) {
+      return this;
+    }
+    const latest = getNodeByKey(this._key);
+    if (latest === null) {
+      return this;
+    }
+    return latest;
+  }
+  getTextContent() {
+    if (this.isText()) {
+      return this.getTextContent();
+    }
+    let textContent = '';
+    const children = this.getChildren();
+    const childrenLength = children.length;
+    for (let i = 0; i < childrenLength; i++) {
+      const child = children[i];
+      textContent += child.getTextContent();
+      if (child.isBlock() && i !== childrenLength - 1) {
+        textContent += '\n\n';
+      }
+    }
+    return textContent;
+  }
 
   // Setters and mutators
 
@@ -506,85 +317,24 @@ Object.assign(Node.prototype, {
     const self = getWritableNode(this);
     self._flags = flags;
     return self;
-  },
-  setData(data) {
-    if (this.isImmutable()) {
-      throw new Error('setData: can only be used on non-immutable nodes');
-    }
-    const self = getWritableNode(this);
-    self._data = data;
-    return self;
-  },
-  setStyle(style) {
-    if (this.isImmutable()) {
-      throw new Error('setStyle: can only be used on non-immutable nodes');
-    }
-    const self = getWritableNode(this);
-    self._style = style;
-    return self;
-  },
-  makeBold() {
-    if (!this.isText() || this.isImmutable()) {
-      throw new Error('makeBold: can only be used on non-immutable text nodes');
-    }
-    const self = getWritableNode(this);
-    self._flags |= IS_BOLD;
-    return self;
-  },
+  }
   makeImmutable() {
     const self = getWritableNode(this);
     self._flags |= IS_IMMUTABLE;
     return self;
-  },
+  }
   makeSegmented() {
     const self = getWritableNode(this);
     self._flags |= IS_SEGMENTED;
     return self;
-  },
-  makeNormal() {
-    if (!this.isText() || this.isImmutable()) {
-      throw new Error('select: can only be used on non-immutable text nodes');
-    }
-    const self = getWritableNode(this);
-    self._flags = IS_TEXT;
-    return self;
-  },
-  select(anchorOffset, focusOffset, isCollapsed = false) {
-    if (!this.isText()) {
-      throw new Error('select: can only be used on text nodes');
-    }
-    const selection = getSelection();
-    const text = this.getTextContent();
-    const key = this._key;
-    selection.anchorKey = key;
-    selection.focusKey = key;
-    if (typeof text === 'string') {
-      const lastOffset = text.length;
-      if (anchorOffset === undefined) {
-        anchorOffset = lastOffset;
-      }
-      if (focusOffset === undefined) {
-        focusOffset = lastOffset;
-      }
-    } else {
-      anchorOffset = 0;
-      focusOffset = 0;
-    }
-    selection.anchorOffset = anchorOffset;
-    selection.focusOffset = focusOffset;
-    selection.isCollapsed = isCollapsed;
-    return selection;
-  },
-  splitText(...splitOffsets) {
-    return splitText(this, splitOffsets);
-  },
+  }
   remove() {
     return removeNode(this);
-  },
+  }
   // TODO add support for replacing with multiple nodes?
   replace(targetNode) {
     return replaceNode(this, targetNode);
-  },
+  }
   // TODO add support for inserting multiple nodes?
   insertAfter(nodeToInsert) {
     const writableSelf = getWritableNode(this);
@@ -607,7 +357,7 @@ Object.assign(Node.prototype, {
       children.splice(index + 1, 0, insertKey);
     }
     return writableSelf;
-  },
+  }
   // TODO add support for inserting multiple nodes?
   insertBefore(nodeToInsert) {
     const writableSelf = getWritableNode(this);
@@ -630,138 +380,15 @@ Object.assign(Node.prototype, {
       children.splice(index, 0, insertKey);
     }
     return writableSelf;
-  },
-  // TODO add support for appending multiple nodes?
-  append(nodeToAppend) {
-    if (this.isText()) {
-      throw new Error('append(): can only used on body/block nodes');
-    }
-    const writableSelf = getWritableNode(this);
-    const writableNodeToAppend = getWritableNode(nodeToAppend);
-    // Remove node from previous parent
-    const oldParent = writableNodeToAppend.getParent();
-    if (oldParent !== null) {
-      const writableParent = getWritableNode(oldParent);
-      const children = writableParent._children;
-      const index = children.indexOf(writableNodeToAppend._key);
-      if (index > -1) {
-        children.splice(index, 1);
-      }
-    }
-    // Set child parent to self
-    writableNodeToAppend._parent = writableSelf._key;
-    // Append children.
-    writableSelf._children.push(writableNodeToAppend._key);
-    return writableSelf;
-  },
-  setTextContent(text) {
-    if (!this.isText() || this.isImmutable()) {
-      throw new Error(
-        'spliceText: can only be used on non-immutable text nodes',
-      );
-    }
-    const writableSelf = getWritableNode(this);
-    writableSelf._children = text;
-    return writableSelf;
-  },
-  spliceText(offset, delCount, newText, restoreSelection) {
-    if (!this.isText() || this.isImmutable()) {
-      throw new Error(
-        'spliceText: can only be used on non-immutable text nodes',
-      );
-    }
-    const writableSelf = getWritableNode(this);
-    const text = writableSelf._children;
-    const newTextLength = newText.length;
-    let index = offset;
-    if (index < 0) {
-      index = newTextLength + index;
-      if (index < 0) {
-        index = 0;
-      }
-    }
-    const updatedText =
-      text.slice(0, index) + newText + text.slice(index + delCount);
-    writableSelf._children = updatedText;
-    if (restoreSelection) {
-      const event = window.event;
-      const inCompositionMode = event && event.type === 'compositionend';
-      const key = writableSelf._key;
-      const selection = getSelection();
-      const newOffset =
-        !inCompositionMode || offset === 0 ? offset + newTextLength : offset;
-      selection.anchorKey = key;
-      selection.anchorOffset = newOffset;
-      selection.focusKey = key;
-      selection.focusOffset = newOffset;
-    }
-    return writableSelf;
-  },
-  normalizeTextNodes(restoreSelection) {
-    const children = this.getChildren();
-    let toNormalize = [];
-    let lastTextNodeFlags = null;
-    for (let i = 0; i < children.length; i++) {
-      const child = children[i].getLatest();
-      const flags = child._flags;
-
-      if (child.isText() && !child.isImmutable()) {
-        if (lastTextNodeFlags === null || flags === lastTextNodeFlags) {
-          toNormalize.push(child);
-        } else {
-          toNormalize = [];
-        }
-        lastTextNodeFlags = flags;
-      } else {
-        if (toNormalize.length > 1) {
-          combineAdjacentTextNodes(toNormalize, restoreSelection);
-        }
-        toNormalize = [];
-      }
-    }
-    if (toNormalize.length > 1) {
-      combineAdjacentTextNodes(toNormalize, restoreSelection);
-    }
-  },
-});
-
-export function getNodeType(node, flags) {
-  if (flags & IS_TEXT) {
-    if (flags & IS_BOLD) {
-      return 'strong';
-    }
-    if (flags & IS_ITALIC) {
-      return 'em';
-    }
-    return 'span';
   }
-  return node._type;
 }
 
-export function cloneNode(node) {
-  const flags = node._flags;
-  const children = node._children;
-  const clonedChildren = flags & IS_TEXT ? children : [...children];
-  const clonedNode = new Node(node._flags, clonedChildren);
-  const key = node._key;
-  clonedNode._type = node._type;
-  clonedNode._style = node._style;
-  clonedNode._parent = node._parent;
-  clonedNode._data = node._data;
-  clonedNode._url = node._url;
-  clonedNode._key = key;
-  return clonedNode;
-}
-
-function getWritableNode(node, skipKeyGeneration) {
+export function getWritableNode(node) {
   const viewModel = getActiveViewModel();
   const dirtyNodes = viewModel._dirtyNodes;
   const nodeMap = viewModel.nodeMap;
   const key = node._key;
   if (key === null) {
-    if (skipKeyGeneration) {
-      return node;
-    }
     const newKey = (node._key = nodeKeyCounter++);
     dirtyNodes.add(newKey);
     nodeMap[newKey] = node;
@@ -777,11 +404,17 @@ function getWritableNode(node, skipKeyGeneration) {
   if (dirtyNodes.has(key)) {
     return node;
   }
-  const mutableNode = cloneNode(node);
+  const mutableNode = node.clone();
+  if (mutableNode._type !== node._type) {
+    throw new Error(
+      node.constructor.name +
+        ': "clone" method was either missing or incorrectly implemented.',
+    );
+  }
   mutableNode._key = key;
   // If we're mutating the body node, make sure to update
   // the pointer in state too.
-  if (mutableNode._flags & IS_BODY) {
+  if (mutableNode.isBody()) {
     viewModel.body = mutableNode;
   }
   dirtyNodes.add(key);
@@ -789,22 +422,14 @@ function getWritableNode(node, skipKeyGeneration) {
   return mutableNode;
 }
 
-export function createBlockNode(blockType = 'div') {
-  const node = new Node(IS_BLOCK, []);
-  node._type = blockType;
-  return node;
-}
-
-export function createBodyNode() {
-  const body = new Node(IS_BODY, []);
-  body._key = 'body';
-  return body;
-}
-
-export function createTextNode(text = '') {
-  const node = new Node(IS_TEXT);
-  node._children = text;
-  return node;
+function markParentsAsDirty(parentKey, nodeMap, dirtySubTrees) {
+  while (parentKey !== null) {
+    if (dirtySubTrees.has(parentKey)) {
+      return;
+    }
+    dirtySubTrees.add(parentKey);
+    parentKey = nodeMap[parentKey]._parent;
+  }
 }
 
 export function getNodeByKey(key) {

@@ -41,7 +41,7 @@ const view = {
   getSelection,
 };
 
-export function createViewModel(currentViewModel, callbackFn, outlineEditor) {
+export function createViewModel(currentViewModel, callbackFn, editor) {
   const hasActiveViewModel = activeViewModel !== null;
   const viewModel = hasActiveViewModel
     ? activeViewModel
@@ -54,10 +54,13 @@ export function createViewModel(currentViewModel, callbackFn, outlineEditor) {
   // This is used during reconcilation and is also temporary.
   // We remove it in updateViewModel.
   viewModel._dirtySubTrees = new Set();
+  // This is temporary and is used to assist in selection handling.
+  viewModel._editor = editor;
   try {
     callbackFn(view);
-    applyTextTransforms(viewModel, outlineEditor);
+    applyTextTransforms(viewModel, editor);
   } finally {
+    viewModel._editor = null;
     if (!hasActiveViewModel) {
       activeViewModel = null;
     }
@@ -141,4 +144,6 @@ export function ViewModel() {
   // This field is temporarily created during editor.createViewModel()
   // and is remove after being passed to editor.update();
   this._dirtySubTrees = new Set();
+  // Temporarily store the editor
+  this._editor = null;
 }

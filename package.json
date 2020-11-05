@@ -4,7 +4,8 @@
   "version": "1.0.0",
   "private": true,
   "workspaces": [
-    "packages/*", "shared"
+    "packages/*",
+    "shared"
   ],
   "scripts": {
     "start": "npm run build && npm start --prefix packages/outline-example",
@@ -28,6 +29,7 @@
     "eslint-plugin-no-for-of-loops": "^1.0.1",
     "eslint-plugin-no-function-declare-after-return": "^1.1.0",
     "eslint-plugin-react": "^7.21.5",
+    "eslint-plugin-react-hooks": "^4.2.0",
     "flow": "^0.2.3",
     "google-closure-compiler": "^20201006.0.0",
     "jest": "26.6.0",

@@ -23,8 +23,8 @@ export default function Editor({onChange, isReadOnly}) {
     [],
   );
 
-  // usePlainTextPlugin(outlineEditor, isReadOnly);
-  useRichTextPlugin(outlineEditor, isReadOnly);
+  // const props = usePlainTextPlugin(outlineEditor, isReadOnly);
+  const props = useRichTextPlugin(outlineEditor, isReadOnly);
   useEmojiPlugin(outlineEditor);
   const mentionsTypeahead = useMentionsPlugin(
     outlineEditor,
@@ -34,6 +34,7 @@ export default function Editor({onChange, isReadOnly}) {
   return (
     <>
       <div
+        {...props}
         className="editor"
         contentEditable={isReadOnly !== true}
         role="textbox"

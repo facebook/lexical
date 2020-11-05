@@ -34,12 +34,7 @@ function removeFirstSegment(node) {
   const textContent = node.getTextContent();
   const lastSpaceIndex = textContent.indexOf(' ');
   if (lastSpaceIndex > -1) {
-    node.spliceText(
-      0,
-      lastSpaceIndex + 1,
-      '',
-      true,
-    );
+    node.spliceText(0, lastSpaceIndex + 1, '', true);
   } else {
     const textNode = createTextNode('');
     ancestor.insertAfter(textNode);
@@ -109,7 +104,11 @@ Object.assign(Selection.prototype, {
     let endOffset;
 
     if (this.isCaret()) {
-      if (firstNodeTextLength === 0 && !firstNode.isImmutable() && !firstNode.isSegmented()) {
+      if (
+        firstNodeTextLength === 0 &&
+        !firstNode.isImmutable() &&
+        !firstNode.isSegmented()
+      ) {
         firstNode.setFlags(firstNextFlags);
       } else {
         const textNode = createTextNode('');
@@ -238,6 +237,9 @@ Object.assign(Selection.prototype, {
     }
     currentBlock.normalizeTextNodes();
     nextBlock.normalizeTextNodes(true);
+  },
+  deleteLineBackward() {
+    debugger;
   },
   deleteBackward() {
     if (!this.isCaret()) {
@@ -444,6 +446,10 @@ Object.assign(Selection.prototype, {
     this.anchorKey = anchorKey;
     this.focusKey = focusKey;
   },
+  getTextContent() {
+    const viewModel = getActiveViewModel();
+    return viewModel.body.getTextContent();
+  }
 });
 
 function getTextNodeFormatFlags(node, type, alignWithFlags) {
@@ -504,8 +510,31 @@ function getTextNodeFormatFlags(node, type, alignWithFlags) {
   return newFlags;
 }
 
+function getFirstChildNode(body) {
+  let node = body;
+  while (node !== null) {
+    if (node.isText()) {
+      return node;
+    }
+    node = node.getFirstChild();
+  }
+  return null;
+}
+
+function getLastChildNode(body) {
+  let node = body;
+  while (node !== null) {
+    if (node.isText()) {
+      return node;
+    }
+    node = node.getLastChild();
+  }
+  return null;
+}
+
 export function getSelection() {
   const viewModel = getActiveViewModel();
+  const editor = viewModel._editor;
   let selection = viewModel.selection;
   if (selection === null) {
     const nodeMap = viewModel.nodeMap;
@@ -515,14 +544,29 @@ export function getSelection() {
     const focusDOM = windowSelection.focusNode;
     let anchorOffset = windowSelection.anchorOffset;
     let focusOffset = windowSelection.focusOffset;
+    let anchorNode;
+    let focusNode;
+    let anchorKey;
+    let focusKey;
 
-    const anchorKey =
-      anchorDOM !== null ? getNodeKeyFromDOM(anchorDOM, nodeMap) : null;
-    const focusKey =
-      focusDOM !== null ? getNodeKeyFromDOM(focusDOM, nodeMap) : null;
-
-    const anchorNode = getNodeByKey(anchorKey);
-    const focusNode = getNodeByKey(focusKey);
+    // When selecting all content in FF, it targets the contenteditable.
+    // We need to resolve the first and last text DOM nodes
+    if (anchorDOM === focusDOM && anchorDOM === editor.getEditorElement()) {
+      const body = viewModel.body;
+      anchorNode = getFirstChildNode(body);
+      focusNode = getLastChildNode(body);
+      anchorKey = anchorNode._key;
+      focusKey = focusNode._key;
+      anchorOffset = 0;
+      focusOffset = focusNode.getTextContent().length
+    } else {
+      anchorKey =
+        anchorDOM !== null ? getNodeKeyFromDOM(anchorDOM, nodeMap) : null;
+      focusKey =
+        focusDOM !== null ? getNodeKeyFromDOM(focusDOM, nodeMap) : null;
+      anchorNode = getNodeByKey(anchorKey);
+      focusNode = getNodeByKey(focusKey);
+    }
 
     if (anchorNode !== null && anchorNode._children === '') {
       anchorOffset = 0;

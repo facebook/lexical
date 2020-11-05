@@ -1,6 +1,7 @@
 import React, {useCallback, useLayoutEffect, useMemo, useRef} from 'react';
 import {useEffect, useState} from 'react';
 import {createPortal} from 'react-dom';
+import {useEvent} from 'shared';
 
 const mentionStyle = 'background-color: rgba(24, 119, 232, 0.2)';
 
@@ -333,33 +334,6 @@ function checkForAtSignMentions(text, minMatchLength) {
 function getPossibleMentionMatch(text) {
   const match = checkForAtSignMentions(text, 1);
   return match === null ? checkForCaptitalizedNameMentions(text, 3) : match;
-}
-
-function useEvent(editor, eventName, handler, pluginStateRef) {
-  useEffect(() => {
-    const state = pluginStateRef && pluginStateRef.current;
-    if (state !== null && editor !== null) {
-      const target =
-        eventName === 'selectionchange' ? document : editor.getEditorElement();
-      const wrapper = (event) => {
-        const viewModel = editor.createViewModel((view) =>
-          handler(event, view, state, editor),
-        );
-        // Uncomment to see how diffs might work:
-        // if (viewModel !== outlineEditor.getCurrentViewModel()) {
-        //   const diff = outlineEditor.getDiffFromViewModel(viewModel);
-        //   debugger;
-        // }
-        if (!editor.isUpdating()) {
-          editor.update(viewModel);
-        }
-      };
-      target.addEventListener(eventName, wrapper);
-      return () => {
-        target.removeEventListener(eventName, wrapper);
-      };
-    }
-  }, [eventName, handler, editor, pluginStateRef]);
 }
 
 export function useMentionsPlugin(outlineEditor, portalTargetElement) {

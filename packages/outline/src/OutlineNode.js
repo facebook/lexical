@@ -227,8 +227,13 @@ Object.assign(Node.prototype, {
     }
     let textContent = '';
     const children = this.getChildren();
-    for (let i = 0; i < children.length; i++) {
-      textContent += children[i].getTextContent();
+    const childrenLength = children.length;
+    for (let i = 0; i < childrenLength; i++) {
+      const child = children[i];
+      textContent += child.getTextContent();
+      if (child.isBlock() && i !== childrenLength -1) {
+        textContent += '\n\n';
+      }
     }
     return textContent;
   },
@@ -679,9 +684,12 @@ Object.assign(Node.prototype, {
       text.slice(0, index) + newText + text.slice(index + delCount);
     writableSelf._children = updatedText;
     if (restoreSelection) {
+      const event = window.event;
+      const inCompositionMode = event && event.type === 'compositionend';
       const key = writableSelf._key;
       const selection = getSelection();
-      const newOffset = offset + newTextLength;
+      const newOffset =
+        !inCompositionMode || offset === 0 ? offset + newTextLength : offset;
       selection.anchorKey = key;
       selection.anchorOffset = newOffset;
       selection.focusKey = key;

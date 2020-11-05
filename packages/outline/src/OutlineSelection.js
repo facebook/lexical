@@ -28,6 +28,27 @@ function Selection(
   this.isCollapsed = isCollapsed;
 }
 
+function removeFirstSegment(node) {
+  const currentBlock = node.getParentBlock();
+  const ancestor = node.getParentBefore(currentBlock);
+  const textContent = node.getTextContent();
+  const lastSpaceIndex = textContent.indexOf(' ');
+  if (lastSpaceIndex > -1) {
+    node.spliceText(
+      0,
+      lastSpaceIndex + 1,
+      '',
+      true,
+    );
+  } else {
+    const textNode = createTextNode('');
+    ancestor.insertAfter(textNode);
+    node.remove();
+    textNode.select();
+    currentBlock.normalizeTextNodes(true);
+  }
+}
+
 function removeLastSegment(node) {
   const currentBlock = node.getParentBlock();
   const ancestor = node.getParentBefore(currentBlock);
@@ -88,13 +109,14 @@ Object.assign(Selection.prototype, {
     let endOffset;
 
     if (this.isCaret()) {
-      if (firstNodeTextLength === 0) {
+      if (firstNodeTextLength === 0 && !firstNode.isImmutable() && !firstNode.isSegmented()) {
         firstNode.setFlags(firstNextFlags);
       } else {
         const textNode = createTextNode('');
         textNode.setFlags(firstNextFlags);
         firstNode.insertAfter(textNode);
         textNode.select();
+        currentBlock.normalizeTextNodes(true);
       }
       return;
     }
@@ -278,7 +300,61 @@ Object.assign(Selection.prototype, {
       this.removeText();
       return;
     }
-    throw new Error('TODO');
+    const anchorOffset = this.anchorOffset;
+    const anchorNode = this.getAnchorNode();
+    const currentBlock = anchorNode.getParentBlock();
+    const textContent = anchorNode.getTextContent();
+    const textContentLength = textContent.length;
+    const ancestor = anchorNode.getParentBefore(currentBlock);
+    const nextSibling = ancestor.getNextSibling();
+
+    if (anchorOffset === textContentLength) {
+      if (nextSibling === null) {
+        const nextBlock = currentBlock.getNextSibling();
+        if (nextBlock !== null) {
+          const firstChild = nextBlock.getFirstChild();
+          const nodesToMove = [firstChild, ...firstChild.getNextSiblings()];
+          let target = ancestor;
+          for (let i = 0; i < nodesToMove.length; i++) {
+            const nodeToMove = nodesToMove[i];
+            target.insertAfter(nodeToMove);
+            target = nodeToMove;
+          }
+          nextBlock.remove();
+          currentBlock.normalizeTextNodes(true);
+        }
+      } else if (nextSibling.isText()) {
+        if (nextSibling.isImmutable()) {
+          nextSibling.remove();
+        } else if (nextSibling.isSegmented()) {
+          removeFirstSegment(nextSibling);
+        } else {
+          nextSibling.spliceText(0, 1, '', true);
+        }
+      } else {
+        throw new Error('TODO');
+      }
+    } else if (anchorNode.isImmutable()) {
+      if (nextSibling === null) {
+        const textNode = createTextNode('');
+        ancestor.insertAfter(textNode);
+        textNode.select();
+        currentBlock.normalizeTextNodes(true);
+      } else if (nextSibling.isText()) {
+        nextSibling.select();
+      } else {
+        throw new Error('TODO');
+      }
+      anchorNode.remove();
+    } else if (anchorNode.isSegmented()) {
+      if (anchorOffset === 0) {
+        removeFirstSegment(anchorNode);
+      } else {
+        removeLastSegment(anchorNode);
+      }
+    } else {
+      anchorNode.spliceText(anchorOffset, 1, '', true);
+    }
   },
   removeText() {
     this.insertText('');
@@ -340,7 +416,7 @@ Object.assign(Selection.prototype, {
           true,
         );
       }
-      if (!firstNode.isImmutable() && lastNode.isText()) {
+      if (!lastNode.isImmutable() && lastNode.isText()) {
         lastNode.spliceText(0, endOffset, '', false);
         firstNode.insertAfter(lastNode);
       } else if (!lastNode.isParentOf(firstNode)) {

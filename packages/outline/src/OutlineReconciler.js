@@ -1,12 +1,3 @@
-import {
-  getNodeType,
-  IS_ITALIC,
-  IS_SEGMENTED,
-  IS_STRIKETHROUGH,
-  IS_TEXT,
-  IS_UNDERLINE,
-} from './OutlineNode';
-
 let subTreeTextContent = '';
 let forceTextDirection = null;
 
@@ -18,7 +9,6 @@ const LTR =
 
 const rtl = new RegExp('^[^' + LTR + ']*[' + RTL + ']');
 const ltr = new RegExp('^[^' + RTL + ']*[' + LTR + ']');
-const zeroWidthString = '\uFEFF';
 
 function getTextDirection(text) {
   if (rtl.test(text)) {
@@ -40,40 +30,9 @@ function handleBlockTextDirection(dom) {
   }
 }
 
-function setTextContent(prevText, nextText, dom, node) {
-  const firstChild = dom.firstChild;
-  const hasBreakNode = firstChild && firstChild.nextSibling;
-  // Check if we are on an empty line
-  if (node.getNextSibling() === null) {
-    if (nextText === '') {
-      if (firstChild === null) {
-        // We use a zero width string so that the browser moves
-        // the cursor into the text node. It won't move the cursor
-        // in if it's empty. This trick makes it seem empty, so
-        // the browser plays along nicely. We use the <br>
-        // to ensure we take up a full line, as we don't have any
-        // characters taking up the full height yet.
-        dom.appendChild(document.createTextNode(zeroWidthString));
-        dom.appendChild(document.createElement('br'));
-      } else if (!hasBreakNode) {
-        firstChild.nodeValue = zeroWidthString;
-        dom.appendChild(document.createElement('br'));
-      }
-      return;
-    } else if (nextText.endsWith('\n')) {
-      nextText += '\n';
-    }
-  }
-  if (firstChild === null || hasBreakNode) {
-    dom.textContent = nextText === '' ? zeroWidthString : nextText;
-  } else if (prevText !== nextText) {
-    firstChild.nodeValue = nextText;
-  }
-}
-
 function destroyNode(key, parentDOM, prevNodeMap, nextNodeMap, editor) {
   const node = prevNodeMap[key];
-  const flags = node._flags;
+
   if (parentDOM !== null) {
     const dom = editor.getElementByKey(key);
     parentDOM.removeChild(dom);
@@ -81,7 +40,7 @@ function destroyNode(key, parentDOM, prevNodeMap, nextNodeMap, editor) {
   if (nextNodeMap[key] === undefined) {
     editor._keyToDOMMap.delete(key);
   }
-  if ((flags & IS_TEXT) === 0) {
+  if (node.isBlock()) {
     const children = node._children;
     destroyChildren(
       children,
@@ -109,36 +68,20 @@ function destroyChildren(
   }
 }
 
-function buildNode(key, parentDOM, insertDOM, nodeMap, editor) {
+function createNode(key, parentDOM, insertDOM, nodeMap, editor) {
   const node = nodeMap[key];
-  const children = node._children;
-  const flags = node._flags;
-  const type = getNodeType(node, flags);
-  const dom = document.createElement(type);
-  const domStyle = dom.style;
-
+  const dom = node._create();
   storeDOMWithKey(key, dom, editor);
 
-  const style = node._style;
-
-  if (style !== null) {
-    domStyle.cssText = style;
-  }
-
-  if (flags & IS_TEXT) {
-    setTextStyling(domStyle, type, 0, flags);
-    subTreeTextContent += children;
-    setTextContent(null, children, dom, node);
-    // add data-text attribute
-    dom.setAttribute('data-text', true);
-    if (flags & IS_SEGMENTED) {
-      dom.setAttribute('spellcheck', 'false');
-    }
+  if (node.isText()) {
+    subTreeTextContent += node._text;
   } else {
+    // Handle block children
+    const children = node._children;
     const previousSubTreeTextContent = subTreeTextContent;
     subTreeTextContent = '';
     const childrenLength = children.length;
-    buildChildren(children, 0, childrenLength - 1, dom, null, nodeMap, editor);
+    createChildren(children, 0, childrenLength - 1, dom, null, nodeMap, editor);
     handleBlockTextDirection(dom);
     subTreeTextContent = previousSubTreeTextContent;
   }
@@ -152,7 +95,7 @@ function buildNode(key, parentDOM, insertDOM, nodeMap, editor) {
   return dom;
 }
 
-function buildChildren(
+function createChildren(
   children,
   startIndex,
   endIndex,
@@ -162,40 +105,7 @@ function buildChildren(
   editor,
 ) {
   for (; startIndex <= endIndex; ++startIndex) {
-    buildNode(children[startIndex], dom, insertDOM, nodeMap, editor);
-  }
-}
-
-function setTextStyling(domStyle, type, prevFlags, nextFlags) {
-  if (type === 'strong') {
-    if (nextFlags & IS_ITALIC) {
-      // When prev is not italic, but next is
-      if ((prevFlags & IS_ITALIC) === 0) {
-        domStyle.setProperty('font-style', 'italic');
-      }
-    } else if (prevFlags & IS_ITALIC) {
-      // When prev was italic, but the next is not
-      domStyle.setProperty('font-style', 'normal');
-    }
-  }
-  const prevIsNotStrikeThrough = (prevFlags & IS_STRIKETHROUGH) === 0;
-  const prevIsNotUnderline = (prevFlags & IS_UNDERLINE) === 0;
-  const nextIsStrikeThrough = nextFlags & IS_STRIKETHROUGH;
-  const nextIsUnderline = nextFlags & IS_UNDERLINE;
-  if (nextIsStrikeThrough && nextIsUnderline) {
-    if (prevIsNotStrikeThrough || prevIsNotUnderline) {
-      domStyle.setProperty('text-decoration', 'underline line-through');
-    }
-  } else if (nextIsStrikeThrough) {
-    if (prevIsNotStrikeThrough) {
-      domStyle.setProperty('text-decoration', 'line-through');
-    }
-  } else if (nextIsUnderline) {
-    if (prevIsNotUnderline) {
-      domStyle.setProperty('text-decoration', 'underline');
-    }
-  } else {
-    domStyle.setProperty('text-decoration', 'initial');
+    createNode(children[startIndex], dom, insertDOM, nodeMap, editor);
   }
 }
 
@@ -209,11 +119,9 @@ function reconcileNode(
 ) {
   const prevNode = prevNodeMap[key];
   const nextNode = nextNodeMap[key];
-  const prevFlags = prevNode._flags;
-  const prevIsText = prevFlags & IS_TEXT;
+  const prevIsText = prevNode.isText();
   const hasDirtySubTree =
     dirtySubTrees !== null ? dirtySubTrees.has(key) : true;
-  const nextChildren = nextNode._children;
   const dom = editor.getElementByKey(key);
 
   if (prevNode === nextNode && !hasDirtySubTree) {
@@ -223,57 +131,27 @@ function reconcileNode(
         subTreeTextContent += prevSubTreeTextContent;
       }
     } else {
-      subTreeTextContent += nextChildren;
+      subTreeTextContent += prevNode._text;
     }
     return;
   }
-  const nextFlags = nextNode._flags;
-  const prevType = getNodeType(prevNode, prevFlags);
-  const nextType = getNodeType(nextNode, nextFlags);
-  const nextIsText = nextFlags & IS_TEXT;
-
-  // Handle change in type
-  if (prevType !== nextType) {
-    const replacementDOM = buildNode(key, null, null, nextNodeMap, editor);
+  // Update node. If it returns true, we need to unmount and re-create the node
+  if (nextNode._update(prevNode, dom)) {
+    const replacementDOM = createNode(key, null, null, nextNodeMap, editor);
     parentDOM.replaceChild(replacementDOM, dom);
     destroyNode(key, null, prevNodeMap, nextNodeMap, editor);
     return;
   }
-
-  // Handle styling
-  const domStyle = dom.style;
-
-  const prevStyle = prevNode._style;
-  const nextStyle = nextNode._style;
-
-  if (prevStyle !== nextStyle) {
-    if (nextStyle === null) {
-      domStyle.cssText = '';
-    } else {
-      domStyle.cssText = nextStyle;
-    }
-  }
-
-  const prevChildren = prevNode._children;
-  // Handle text
-  if (nextIsText) {
-    setTextStyling(domStyle, nextType, prevFlags, nextFlags);
-    subTreeTextContent += nextChildren;
-    setTextContent(prevChildren, nextChildren, dom, nextNode);
-    if (nextFlags & IS_SEGMENTED) {
-      if ((prevFlags & IS_SEGMENTED) === 0) {
-        dom.setAttribute('spellcheck', 'false');
-      }
-    } else {
-      if (prevFlags & IS_SEGMENTED) {
-        dom.removeAttribute('spellcheck');
-      }
-    }
+  // Handle text content, for LTR, LTR cases.
+  if (nextNode.isText()) {
+    subTreeTextContent += nextNode._text;
     return;
   }
-
-  // Handle block children
+  // Reconcile block children
+  const prevChildren = prevNode._children;
+  const nextChildren = nextNode._children;
   const childrenAreDifferent = prevChildren !== nextChildren;
+
   if (childrenAreDifferent || hasDirtySubTree) {
     const prevChildrenLength = prevChildren.length;
     const nextChildrenLength = nextChildren.length;
@@ -294,7 +172,7 @@ function reconcileNode(
         );
       } else {
         const lastDOM = editor.getElementByKey(prevChildKey);
-        const replacementDOM = buildNode(
+        const replacementDOM = createNode(
           nextChildKey,
           null,
           null,
@@ -306,7 +184,7 @@ function reconcileNode(
       }
     } else if (prevChildrenLength === 0) {
       if (nextChildrenLength !== 0) {
-        buildChildren(
+        createChildren(
           nextChildren,
           0,
           nextChildrenLength - 1,
@@ -475,7 +353,7 @@ function reconcileNodeChildren(
               prevEndIndex,
             );
       if (indexInPrevChildren === undefined) {
-        buildNode(
+        createNode(
           nextStartKey,
           dom,
           editor.getElementByKey(prevStartKey),
@@ -513,7 +391,7 @@ function reconcileNodeChildren(
     const previousNode = nextChildren[nextEndIndex + 1];
     const insertDOM =
       previousNode === undefined ? null : editor.getElementByKey(previousNode);
-    buildChildren(
+    createChildren(
       nextChildren,
       nextStartIndex,
       nextEndIndex,

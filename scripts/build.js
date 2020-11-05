@@ -7,6 +7,7 @@ const argv = require('minimist')(process.argv.slice(2));
 const babel = require('@rollup/plugin-babel').default;
 const closure = require('./plugins/closure-plugin');
 const nodeResolve = require('@rollup/plugin-node-resolve').default;
+const commonjs = require('@rollup/plugin-commonjs');
 
 const isWatchMode = argv.watch;
 const isProduction = argv.prod;
@@ -31,7 +32,7 @@ async function build(packageFolder) {
   const inputOptions = {
     input: path.resolve(`./packages/${packageFolder}/src/index.js`),
     external(id) {
-      if (id === 'react' || id === 'react-dom') {
+      if (id === 'react' || id === 'react-dom' || id === 'outline') {
         return true;
       }
       // We bundle shared with the different packages
@@ -66,6 +67,7 @@ async function build(packageFolder) {
         presets: ['@babel/preset-react'],
         plugins: ['@babel/plugin-transform-flow-strip-types'],
       }),
+      commonjs(),
       isProduction && closure(closureOptions),
     ],
   };

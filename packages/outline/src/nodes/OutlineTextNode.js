@@ -1,3 +1,5 @@
+// @flow
+
 import {
   FORMAT_BOLD,
   FORMAT_ITALIC,
@@ -14,7 +16,7 @@ const IS_UNDERLINE = 1 << 5;
 
 const zeroWidthString = '\uFEFF';
 
-function getElementTag(node, flags) {
+function getElementTag(node: TextNode, flags: number) {
   if (flags & IS_BOLD) {
     return 'strong';
   }
@@ -24,7 +26,10 @@ function getElementTag(node, flags) {
   return 'span';
 }
 
-function splitText(node, splitOffsets) {
+function splitText(
+  node: TextNode,
+  splitOffsets: Array<number>,
+): Array<TextNode> {
   if (!node.isText() || node.isImmutable()) {
     throw new Error('splitText: can only be used on non-immutable text nodes');
   }
@@ -140,13 +145,18 @@ function setTextStyling(tag, prevFlags, nextFlags, domStyle) {
   }
 }
 
-function setTextContent(prevText, nextText, dom, node) {
+function setTextContent(
+  prevText: null | string,
+  nextText: string,
+  dom: HTMLElement,
+  node: TextNode,
+): void {
   const firstChild = dom.firstChild;
   const hasBreakNode = firstChild && firstChild.nextSibling;
   // Check if we are on an empty line
   if (node.getNextSibling() === null) {
     if (nextText === '') {
-      if (firstChild === null) {
+      if (firstChild == null) {
         // We use a zero width string so that the browser moves
         // the cursor into the text node. It won't move the cursor
         // in if it's empty. This trick makes it seem empty, so
@@ -164,7 +174,7 @@ function setTextContent(prevText, nextText, dom, node) {
       nextText += '\n';
     }
   }
-  if (firstChild === null || hasBreakNode) {
+  if (firstChild == null || hasBreakNode) {
     dom.textContent = nextText === '' ? zeroWidthString : nextText;
   } else if (prevText !== nextText) {
     firstChild.nodeValue = nextText;
@@ -172,38 +182,38 @@ function setTextContent(prevText, nextText, dom, node) {
 }
 
 export class TextNode extends Node {
-  constructor(text) {
+  constructor(text: string) {
     super();
     this._text = text;
     this._type = 'text';
   }
-  clone() {
+  clone(): TextNode {
     const clone = new TextNode(this._text);
     clone._parent = this._parent;
     clone._key = this._key;
     clone._flags = this._flags;
     return clone;
   }
-  isText() {
+  isText(): true {
     return true;
   }
-  isBold() {
+  isBold(): boolean {
     return (this.getLatest()._flags & IS_BOLD) !== 0;
   }
-  isItalic() {
+  isItalic(): boolean {
     return (this.getLatest()._flags & IS_ITALIC) !== 0;
   }
-  isStrikethrough() {
+  isStrikethrough(): boolean {
     return (this.getLatest()._flags & IS_STRIKETHROUGH) !== 0;
   }
-  isUnderline() {
+  isUnderline(): boolean {
     return (this.getLatest()._flags & IS_UNDERLINE) !== 0;
   }
-  getTextContent() {
+  getTextContent(): string {
     const self = this.getLatest();
     return self._text;
   }
-  getTextNodeFormatFlags(type, alignWithFlags) {
+  getTextNodeFormatFlags(type: string, alignWithFlags: null | number): number {
     const self = this.getLatest();
     const nodeFlags = self._flags;
     let newFlags = nodeFlags;
@@ -267,7 +277,7 @@ export class TextNode extends Node {
 
   // View
 
-  _create() {
+  _create(): HTMLElement {
     const flags = this._flags;
     const tag = getElementTag(this, flags);
     const dom = document.createElement(tag);
@@ -277,13 +287,13 @@ export class TextNode extends Node {
     setTextStyling(tag, 0, flags, domStyle);
     setTextContent(null, text, dom, this);
     // add data-text attribute
-    dom.setAttribute('data-text', true);
+    dom.setAttribute('data-text', 'true');
     if (flags & IS_SEGMENTED) {
       dom.setAttribute('spellcheck', 'false');
     }
     return dom;
   }
-  _update(prevNode, dom) {
+  _update(prevNode: TextNode, dom: HTMLElement): boolean {
     const domStyle = dom.style;
     const prevText = prevNode._text;
     const nextText = this._text;
@@ -312,7 +322,7 @@ export class TextNode extends Node {
 
   // Mutators
 
-  setTextContent(text) {
+  setTextContent(text: string): void {
     if (this.isImmutable()) {
       throw new Error(
         'spliceText: can only be used on non-immutable text nodes',
@@ -322,7 +332,11 @@ export class TextNode extends Node {
     writableSelf._text = text;
     return writableSelf;
   }
-  selectAfter(anchorOffset, focusOffset, isCollapsed) {
+  selectAfter(
+    anchorOffset?: number,
+    focusOffset?: number,
+    isCollapsed?: boolean,
+  ): void {
     const nextSibling = this.getNextSibling();
     if (
       nextSibling === null ||
@@ -334,7 +348,11 @@ export class TextNode extends Node {
     }
     nextSibling.select(anchorOffset, focusOffset, isCollapsed);
   }
-  select(anchorOffset, focusOffset, isCollapsed = false) {
+  select(
+    anchorOffset?: number,
+    focusOffset?: number,
+    isCollapsed?: boolean = false,
+  ): void {
     const selection = getSelection();
     const text = this.getTextContent();
     const key = this._key;
@@ -357,7 +375,12 @@ export class TextNode extends Node {
     selection.isCollapsed = isCollapsed;
     return selection;
   }
-  spliceText(offset, delCount, newText, restoreSelection) {
+  spliceText(
+    offset: number,
+    delCount: number,
+    newText: string,
+    restoreSelection?: boolean,
+  ): void {
     if (this.isImmutable()) {
       throw new Error(
         'spliceText: can only be used on non-immutable text nodes',
@@ -390,10 +413,10 @@ export class TextNode extends Node {
     }
     return writableSelf;
   }
-  splitText(...splitOffsets) {
+  splitText(...splitOffsets: Array<number>): Array<TextNode> {
     return splitText(this, splitOffsets);
   }
-  makeBold() {
+  makeBold(): TextNode {
     if (this.isImmutable()) {
       throw new Error('makeBold: can only be used on non-immutable text nodes');
     }
@@ -401,7 +424,7 @@ export class TextNode extends Node {
     self._flags |= IS_BOLD;
     return self;
   }
-  makeNormal() {
+  makeNormal(): TextNode {
     if (this.isImmutable()) {
       throw new Error('select: can only be used on non-immutable text nodes');
     }
@@ -411,6 +434,6 @@ export class TextNode extends Node {
   }
 }
 
-export function createTextNode(text = '') {
+export function createTextNode(text: string = ''): TextNode {
   return new TextNode(text);
 }

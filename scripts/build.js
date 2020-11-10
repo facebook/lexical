@@ -64,7 +64,7 @@ async function build(packageFolder) {
         exclude: '/**/node_modules/**',
         babelrc: false,
         configFile: false,
-        presets: ['@babel/preset-react'],
+        presets: ['@babel/preset-react', '@babel/preset-flow'],
         plugins: ['@babel/plugin-transform-flow-strip-types'],
       }),
       commonjs(),

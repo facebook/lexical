@@ -28,6 +28,7 @@ const view: ViewType = {
   getBody() {
     return getActiveViewModel().body;
   },
+  // $FlowFixMe
   getNodeByKey,
   getSelection,
 };

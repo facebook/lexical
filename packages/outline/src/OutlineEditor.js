@@ -1,10 +1,17 @@
+// @flow
+
+import type {ViewType} from './OutlineView';
+
 import {useEffect, useState} from 'react';
 import {TextNode} from './nodes/OutlineTextNode';
 import {BlockNode} from './nodes/OutlineBlockNode';
 import {createBodyNode} from './nodes/OutlineBodyNode';
 import {createViewModel, updateViewModel, ViewModel} from './OutlineView';
 
-function createOutlineEditor(editorElement, onChange) {
+function createOutlineEditor(
+  editorElement,
+  onChange: onChangeType,
+): OutlineEditor {
   const viewModel = new ViewModel();
   const body = createBodyNode();
   viewModel.body = body;
@@ -17,8 +24,29 @@ function createOutlineEditor(editorElement, onChange) {
   return outlineEditor;
 }
 
-class OutlineEditor {
-  constructor(editorElement, viewModel, onChange) {
+export type onChangeType = ?(viewModel: Object) => void;
+
+export type ViewModelDiffType = {
+  dirtySubTrees: Set<any>,
+  nodes: Array<Object>,
+  selection: Object,
+  timeStamp: number,
+};
+
+export class OutlineEditor {
+  _editorElement: HTMLElement;
+  _viewModel: ViewModel;
+  _isUpdating: boolean;
+  _keyToDOMMap: Map<string, HTMLElement>;
+  _onChange: onChangeType;
+  _textTransforms: Set<(node: Object, view: ViewType) => void>;
+  _registeredNodeTypes: Map<string, Object>;
+
+  constructor(
+    editorElement: HTMLElement,
+    viewModel: Object,
+    onChange: onChangeType,
+  ) {
     // The editor element associated with this editor
     this._editorElement = editorElement;
     // The current view model
@@ -38,35 +66,37 @@ class OutlineEditor {
       ['body', BlockNode],
     ]);
   }
-  addNodeType(nodeType, Node) {
+  addNodeType(nodeType: string, Node: Object): () => void {
     this._registeredNodeTypes.set(nodeType, Node);
     return () => {
       this._registeredNodeTypes.delete(nodeType);
     };
   }
-  addTextTransform(transformFn) {
+  addTextTransform(
+    transformFn: (node: Object, view: ViewType) => void,
+  ): () => void {
     this._textTransforms.add(transformFn);
     return () => {
       this._textTransforms.delete(transformFn);
     };
   }
-  isUpdating() {
+  isUpdating(): boolean {
     return this._isUpdating;
   }
-  getEditorElement() {
+  getEditorElement(): HTMLElement {
     return this._editorElement;
   }
-  getElementByKey(key) {
+  getElementByKey(key: string): HTMLElement {
     const element = this._keyToDOMMap.get(key);
     if (element === undefined) {
       throw new Error('getElementByKey failed for key ' + key);
     }
     return element;
   }
-  getCurrentViewModel() {
+  getCurrentViewModel(): Object {
     return this._viewModel;
   }
-  getDiffFromViewModel(viewModel) {
+  getDiffFromViewModel(viewModel: Object): ViewModelDiffType {
     const dirtySubTrees = viewModel._dirtySubTrees;
     const dirtyNodes = viewModel._dirtyNodes;
     const nodeMap = viewModel.nodeMap;
@@ -83,10 +113,10 @@ class OutlineEditor {
       timeStamp: Date.now(),
     };
   }
-  createViewModel(callbackFn) {
+  createViewModel(callbackFn: (view: ViewType) => void): Object {
     return createViewModel(this._viewModel, callbackFn, this);
   }
-  update(viewModel, forceSync) {
+  update(viewModel: Object, forceSync?: boolean) {
     if (this._isUpdating) {
       throw new Error('TODOL: Should never occur?');
     }
@@ -105,8 +135,13 @@ class OutlineEditor {
   }
 }
 
-export function useOutlineEditor(editorElementRef, onChange) {
-  const [outlineEditor, setOutlineEditor] = useState(null);
+export function useOutlineEditor(
+  editorElementRef: {current: null | HTMLElement},
+  onChange?: onChangeType,
+): OutlineEditor | null {
+  const [outlineEditor, setOutlineEditor] = useState<null | OutlineEditor>(
+    null,
+  );
 
   useEffect(() => {
     const editorElement = editorElementRef.current;

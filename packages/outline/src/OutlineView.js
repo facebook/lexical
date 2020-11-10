@@ -1,10 +1,19 @@
+// @flow
+import type {OutlineEditor} from './OutlineEditor';
+
 import {reconcileViewModel} from './OutlineReconciler';
 import {getSelection} from './OutlineSelection';
 import {getNodeByKey} from './OutlineNode';
 
+export type ViewType = {
+  getBody: () => HTMLElement | null,
+  getNodeByKey: (key: string) => HTMLElement,
+  getSelection: () => Object,
+};
+
 let activeViewModel = null;
 
-export function getActiveViewModel() {
+export function getActiveViewModel(): ViewModel {
   if (activeViewModel === null) {
     throw new Error(
       'Unable to find an active draft view model. ' +
@@ -15,7 +24,7 @@ export function getActiveViewModel() {
   return activeViewModel;
 }
 
-const view = {
+const view: ViewType = {
   getBody() {
     return getActiveViewModel().body;
   },
@@ -23,10 +32,14 @@ const view = {
   getSelection,
 };
 
-export function createViewModel(currentViewModel, callbackFn, editor) {
+export function createViewModel(
+  currentViewModel: ViewModel,
+  callbackFn: (view: ViewType) => void,
+  editor: OutlineEditor,
+): ViewModel {
   const hasActiveViewModel = activeViewModel !== null;
-  const viewModel = hasActiveViewModel
-    ? activeViewModel
+  const viewModel: ViewModel = hasActiveViewModel
+    ? getActiveViewModel()
     : cloneViewModel(currentViewModel);
   activeViewModel = viewModel;
   // Setup the dirty nodes Set, which is required by the
@@ -53,11 +66,15 @@ export function createViewModel(currentViewModel, callbackFn, editor) {
 
 // To optimize things, we only apply transforms to
 // dirty text nodes, rather than all text nodes.
-export function applyTextTransforms(viewModel, outlineEditor) {
+export function applyTextTransforms(
+  viewModel: ViewModel,
+  outlineEditor: OutlineEditor,
+): void {
   const textTransformsSet = outlineEditor._textTransforms;
-  if (textTransformsSet.size > 0) {
+  const dirtyNodes = viewModel._dirtyNodes;
+  if (textTransformsSet.size > 0 && dirtyNodes !== null) {
     const textTransforms = Array.from(textTransformsSet);
-    const mutatedNodeKeys = Array.from(viewModel._dirtyNodes);
+    const mutatedNodeKeys = Array.from(dirtyNodes);
     const nodeMap = viewModel.nodeMap;
 
     for (let s = 0; s < mutatedNodeKeys.length; s++) {
@@ -74,7 +91,10 @@ export function applyTextTransforms(viewModel, outlineEditor) {
   }
 }
 
-export function updateViewModel(viewModel, outlineEditor) {
+export function updateViewModel(
+  viewModel: ViewModel,
+  outlineEditor: OutlineEditor,
+): void {
   const onChange = outlineEditor._onChange;
   viewModel._dirtyNodes = null;
   // We shouldn't need to set activeViewModel again here,
@@ -92,29 +112,38 @@ export function updateViewModel(viewModel, outlineEditor) {
   }
 }
 
-export function cloneViewModel(current) {
+export function cloneViewModel(current: ViewModel): ViewModel {
   const draft = new ViewModel();
   draft.nodeMap = {...current.nodeMap};
   draft.body = current.body;
   return draft;
 }
 
-export function ViewModel() {
-  this.body = null;
-  this.nodeMap = {};
-  this.selection = null;
-  // Dirty nodes are nodes that have been added or updated
-  // in comparison to the previous view model. We also use
-  // this Set for performance optimizations during the
-  // production of a draft view model. This field is
-  // temporarily used during editor.createViewModel().
-  this._dirtyNodes = null;
-  // We make nodes as "dirty" in that their have a child
-  // that is dirty, which means we need to reconcile
-  // the given sub-tree to find the dirty node.
-  // This field is temporarily created during editor.createViewModel()
-  // and is remove after being passed to editor.update();
-  this._dirtySubTrees = new Set();
-  // Temporarily store the editor
-  this._editor = null;
+export class ViewModel {
+  body: null | HTMLElement;
+  nodeMap: {[key: string]: Object};
+  selection: null | Object;
+  _dirtyNodes: null | Set<Object>;
+  _dirtySubTrees: null | Set<Object>;
+  _editor: null | OutlineEditor;
+
+  constructor() {
+    this.body = null;
+    this.nodeMap = {};
+    this.selection = null;
+    // Dirty nodes are nodes that have been added or updated
+    // in comparison to the previous view model. We also use
+    // this Set for performance optimizations during the
+    // production of a draft view model. This field is
+    // temporarily used during editor.createViewModel().
+    this._dirtyNodes = null;
+    // We make nodes as "dirty" in that their have a child
+    // that is dirty, which means we need to reconcile
+    // the given sub-tree to find the dirty node.
+    // This field is temporarily created during editor.createViewModel()
+    // and is remove after being passed to editor.update();
+    this._dirtySubTrees = new Set();
+    // Temporarily store the editor
+    this._editor = null;
+  }
 }

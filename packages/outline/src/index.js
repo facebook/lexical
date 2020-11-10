@@ -1,3 +1,5 @@
+// @flow
+
 import {useOutlineEditor} from './OutlineEditor';
 import {createTextNode as createText, TextNode} from './nodes/OutlineTextNode';
 import {

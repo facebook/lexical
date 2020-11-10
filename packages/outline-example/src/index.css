@@ -43,6 +43,15 @@ h1 {
   position: relative;
 }
 
+.editor-shell div.editor h1 {
+  font-size: 24px;
+  color: rgb(5, 5, 5);
+  font-weight: 400;
+  margin: 0 0 12px 0;
+  padding: 0;
+  text-align: left;
+}
+
 pre {
   margin: 20px auto 20px auto;
   max-width: 580px;

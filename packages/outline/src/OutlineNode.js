@@ -301,6 +301,9 @@ export class Node {
   isBody() {
     return false;
   }
+  isHeader() {
+    return false;
+  }
   isBlock() {
     return false;
   }

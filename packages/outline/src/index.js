@@ -6,5 +6,13 @@ import {
   createBlockNode as createBlock,
   BlockNode,
 } from './nodes/OutlineBlockNode';
+import {createHeaderNode as createHeader} from './nodes/OutlineHeaderNode';
 
-export {createText, createBlock, useOutlineEditor, BlockNode, TextNode};
+export {
+  createText,
+  createBlock,
+  createHeader,
+  useOutlineEditor,
+  BlockNode,
+  TextNode,
+};

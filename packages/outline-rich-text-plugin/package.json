@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "dist/index.js",
   "dependencies": {
+    "outline": "1.0.0",
     "shared": "1.0.0"
   }
 }

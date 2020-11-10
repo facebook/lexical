@@ -322,6 +322,18 @@ export class TextNode extends Node {
     writableSelf._text = text;
     return writableSelf;
   }
+  selectAfter(anchorOffset, focusOffset, isCollapsed) {
+    const nextSibling = this.getNextSibling();
+    if (
+      nextSibling === null ||
+      !nextSibling.isText() ||
+      nextSibling.isImmutable() ||
+      nextSibling.isSegmented()
+    ) {
+      throw new Error('This needs to be fixed');
+    }
+    nextSibling.select(anchorOffset, focusOffset, isCollapsed);
+  }
   select(anchorOffset, focusOffset, isCollapsed = false) {
     const selection = getSelection();
     const text = this.getTextContent();

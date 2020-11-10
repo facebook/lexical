@@ -7,8 +7,11 @@ export class BodyNode extends BlockNode {
     this._type = 'body';
   }
   clone() {
-    const clone = super.clone();
-    clone._type = 'body';
+    const clone = new BodyNode();
+    clone._children = [...this._children];
+    clone._parent = this._parent;
+    clone._key = this._key;
+    clone._flags = this._flags;
     return clone;
   }
   isBody() {

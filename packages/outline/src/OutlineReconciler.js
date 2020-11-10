@@ -1,3 +1,5 @@
+import {IS_IMMUTABLE, IS_SEGMENTED} from './OutlineNode';
+
 let subTreeTextContent = '';
 let forceTextDirection = null;
 
@@ -72,6 +74,10 @@ function createNode(key, parentDOM, insertDOM, nodeMap, editor) {
   const node = nodeMap[key];
   const dom = node._create();
   storeDOMWithKey(key, dom, editor);
+
+  if (node._flags & IS_IMMUTABLE || node._flags & IS_SEGMENTED) {
+    dom.contentEditable = false;
+  }
 
   if (node.isText()) {
     subTreeTextContent += node._text;

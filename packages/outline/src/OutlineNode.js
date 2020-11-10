@@ -1,3 +1,4 @@
+import { createText } from '.';
 import {getActiveViewModel} from './OutlineView';
 
 let nodeKeyCounter = 0;
@@ -54,6 +55,31 @@ function replaceNode(toReplace, replaceWith) {
   writableReplaceWith._parent = newParent._key;
   toReplace.remove();
   return writableReplaceWith;
+}
+
+function wrapInTextNodes(node) {
+  const prevSibling = node.getPreviousSibling();
+  if (
+    prevSibling === null ||
+    !prevSibling.isText() ||
+    prevSibling.isImmutable() ||
+    prevSibling.isSegmented()
+  ) {
+    const text = createText('')
+    node.insertBefore(text);
+  }
+  const nextSibling = node.getNextSibling();
+  if (
+    nextSibling === null ||
+    !nextSibling.isText() ||
+    nextSibling.isImmutable() ||
+    nextSibling.isSegmented()
+  ) {
+    const text = createText('')
+    node.insertAfter(text);
+  }
+  node.getParent().normalizeTextNodes(true);
+  return node;
 }
 
 export class Node {
@@ -123,6 +149,12 @@ export class Node {
       return null;
     }
     return getNodeByKey(children[index - 1]);
+  }
+  getPreviousSiblings() {
+    const parent = this.getParent();
+    const children = parent._children;
+    const index = children.indexOf(this._key);
+    return children.slice(0, index).map((childKey) => getNodeByKey(childKey));
   }
   getNextSibling() {
     const parent = this.getParent();
@@ -330,6 +362,9 @@ export class Node {
   }
   remove() {
     return removeNode(this);
+  }
+  wrapInTextNodes() {
+    return wrapInTextNodes(this);
   }
   // TODO add support for replacing with multiple nodes?
   replace(targetNode) {

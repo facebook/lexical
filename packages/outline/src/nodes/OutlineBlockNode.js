@@ -122,18 +122,20 @@ export class BlockNode extends Node {
       const child = children[i].getLatest();
       const flags = child._flags;
 
-      if (child.isText() && !child.isImmutable()) {
+      if (child.isText() && !child.isImmutable() && !child.isSegmented()) {
         if (lastTextNodeFlags === null || flags === lastTextNodeFlags) {
           toNormalize.push(child);
+          lastTextNodeFlags = flags;
         } else {
           toNormalize = [];
+          lastTextNodeFlags = null;
         }
-        lastTextNodeFlags = flags;
       } else {
         if (toNormalize.length > 1) {
           combineAdjacentTextNodes(toNormalize, restoreSelection);
         }
         toNormalize = [];
+        lastTextNodeFlags = null;
       }
     }
     if (toNormalize.length > 1) {

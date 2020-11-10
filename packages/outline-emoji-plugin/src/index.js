@@ -49,8 +49,8 @@ function textNodeTransform(node, view) {
       }
       const emojiInline = createEmoji(emojiStyle);
       targetNode.replace(emojiInline);
-      emojiInline.select();
-      emojiInline.getParent().normalizeTextNodes(true);
+      emojiInline.wrapInTextNodes()
+      emojiInline.selectAfter(0, 0);
       break;
     }
   }
@@ -80,9 +80,10 @@ class EmojiNode extends TextNode {
     this._type = 'emoji';
   }
   clone() {
-    const clone = super.clone();
-    this._cssText = this._cssText;
-    clone._type = 'emoji';
+    const clone = new EmojiNode(this._cssText, this._cssText);
+    clone._parent = this._parent;
+    clone._key = this._key;
+    clone._flags = this._flags;
     return clone;
   }
   _create() {

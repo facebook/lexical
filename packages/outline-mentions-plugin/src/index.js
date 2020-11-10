@@ -160,7 +160,9 @@ function MentionsTypeahead({close, editor, match, nodeKey, registerKeys}) {
     const viewModel = editor.createViewModel((view) => {
       const targetNode = view.getNodeByKey(nodeKey);
       const mentionNode = createMention(selectedResult);
-      targetNode.replace(mentionNode).select();
+      targetNode.replace(mentionNode);
+      mentionNode.wrapInTextNodes()
+      mentionNode.selectAfter(0, 0);
     });
     close();
     if (!editor.isUpdating()) {
@@ -361,7 +363,7 @@ export function useMentionsPlugin(outlineEditor, portalTargetElement) {
         ) {
           return;
         }
-        const anchorOffset = view.anchorOffset;
+        const anchorOffset = selection.anchorOffset;
         const text = node.getTextContent().slice(0, anchorOffset);
 
         if (text !== '') {
@@ -435,9 +437,10 @@ class MentionNode extends TextNode {
     this._type = 'mention';
   }
   clone() {
-    const clone = super.clone();
-    clone._mention = this._mention;
-    clone._type = 'mention';
+    const clone = new MentionNode(this._mention);
+    clone._parent = this._parent;
+    clone._key = this._key;
+    clone._flags = this._flags;
     return clone;
   }
   _create() {

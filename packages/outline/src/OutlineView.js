@@ -16,19 +16,6 @@ export function getActiveViewModel() {
 }
 
 const view = {
-  // cloneText(node, text) {
-  //   if (node.isImmutable()) {
-  //     throw new Error('cloneText: cannot clone an immutable node');
-  //   }
-  //   const clone = cloneNode(node);
-  //   clone._key = null;
-  //   if (text !== undefined) {
-  //     clone._children = text;
-  //   }
-  //   return clone;
-  // },
-  // createBlock: createBlockNode,
-  // createText: createTextNode,
   getBody() {
     return getActiveViewModel().body;
   },

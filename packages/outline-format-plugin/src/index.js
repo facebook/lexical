@@ -4,7 +4,7 @@ import {createHeader} from 'outline';
 function textNodeTransform(node, view) {
   const block = node.getParentBlock();
 
-  if (node.getPreviousSibling() === null && block !== null && !block.isHeader()) {
+  if (block !== null && node.getPreviousSibling() === null && !block.isHeader()) {
     const textContent = node.getTextContent();
     if (textContent[0] === '#' && textContent[1] === ' ') {
       node.spliceText(0, 2, '', true);

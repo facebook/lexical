@@ -14,6 +14,7 @@ function createOutlineEditor(
 ): OutlineEditor {
   const viewModel = new ViewModel();
   const body = createBodyNode();
+  // $FlowFixMe TODO: Assigning a BodyNode to a HTMLElement? Something is broken here.
   viewModel.body = body;
   viewModel.nodeMap.body = body;
   const outlineEditor = new OutlineEditor(editorElement, viewModel, onChange);

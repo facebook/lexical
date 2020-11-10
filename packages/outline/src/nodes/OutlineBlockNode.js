@@ -34,6 +34,7 @@ function combineAdjacentTextNodes(textNodes, restoreSelection) {
 
 export class BlockNode extends Node {
   _tag: string;
+  _children: Array<Node>;
 
   constructor(tag: string) {
     super();
@@ -99,7 +100,7 @@ export class BlockNode extends Node {
   // Mutators
 
   // TODO add support for appending multiple nodes?
-  append(nodeToAppend: Object): void {
+  append(nodeToAppend: Object): $FlowFixMe {
     const writableSelf = getWritableNode(this);
     const writableNodeToAppend = getWritableNode(nodeToAppend);
     // Remove node from previous parent

@@ -1,5 +1,7 @@
 // @flow
 
+import type {NodeKey} from '../OutlineNode';
+
 import {getWritableNode, Node, getNodeByKey} from '../OutlineNode';
 import {getSelection} from '../OutlineSelection';
 
@@ -34,7 +36,7 @@ function combineAdjacentTextNodes(textNodes, restoreSelection) {
 
 export class BlockNode extends Node {
   _tag: string;
-  _children: Array<Node>;
+  _children: Array<NodeKey>;
 
   constructor(tag: string) {
     super();

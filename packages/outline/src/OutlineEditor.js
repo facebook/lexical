@@ -1,6 +1,8 @@
 // @flow
 
 import type {ViewType} from './OutlineView';
+import type {Node, NodeKey} from './OutlineNode';
+import type {Selection} from './OutlineSelection';
 
 import {useEffect, useState} from 'react';
 import {TextNode} from './nodes/OutlineTextNode';
@@ -12,10 +14,8 @@ function createOutlineEditor(
   editorElement,
   onChange: onChangeType,
 ): OutlineEditor {
-  const viewModel = new ViewModel();
   const body = createBodyNode();
-  // $FlowFixMe TODO: Assigning a BodyNode to a HTMLElement? Something is broken here.
-  viewModel.body = body;
+  const viewModel = new ViewModel(body);
   viewModel.nodeMap.body = body;
   const outlineEditor = new OutlineEditor(editorElement, viewModel, onChange);
   outlineEditor._keyToDOMMap.set('body', editorElement);
@@ -25,12 +25,12 @@ function createOutlineEditor(
   return outlineEditor;
 }
 
-export type onChangeType = ?(viewModel: Object) => void;
+export type onChangeType = ?(viewModel: ViewModel) => void;
 
 export type ViewModelDiffType = {
   dirtySubTrees: Set<any>,
-  nodes: Array<Object>,
-  selection: Object,
+  nodes: Array<Node>,
+  selection: null | Selection,
   timeStamp: number,
 };
 
@@ -38,14 +38,14 @@ export class OutlineEditor {
   _editorElement: HTMLElement;
   _viewModel: ViewModel;
   _isUpdating: boolean;
-  _keyToDOMMap: Map<string, HTMLElement>;
+  _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _onChange: onChangeType;
-  _textTransforms: Set<(node: Object, view: ViewType) => void>;
-  _registeredNodeTypes: Map<string, Object>;
+  _textTransforms: Set<(node: Node, view: ViewType) => void>;
+  _registeredNodeTypes: Map<string, Node>;
 
   constructor(
     editorElement: HTMLElement,
-    viewModel: Object,
+    viewModel: ViewModel,
     onChange: onChangeType,
   ) {
     // The editor element associated with this editor
@@ -67,14 +67,14 @@ export class OutlineEditor {
       ['body', BlockNode],
     ]);
   }
-  addNodeType(nodeType: string, Node: Object): () => void {
-    this._registeredNodeTypes.set(nodeType, Node);
+  addNodeType(nodeType: string, node: Node): () => void {
+    this._registeredNodeTypes.set(nodeType, node);
     return () => {
       this._registeredNodeTypes.delete(nodeType);
     };
   }
   addTextTransform(
-    transformFn: (node: Object, view: ViewType) => void,
+    transformFn: (node: Node, view: ViewType) => void,
   ): () => void {
     this._textTransforms.add(transformFn);
     return () => {
@@ -87,17 +87,17 @@ export class OutlineEditor {
   getEditorElement(): HTMLElement {
     return this._editorElement;
   }
-  getElementByKey(key: string): HTMLElement {
+  getElementByKey(key: NodeKey): HTMLElement {
     const element = this._keyToDOMMap.get(key);
     if (element === undefined) {
       throw new Error('getElementByKey failed for key ' + key);
     }
     return element;
   }
-  getCurrentViewModel(): Object {
+  getCurrentViewModel(): ViewModel {
     return this._viewModel;
   }
-  getDiffFromViewModel(viewModel: Object): ViewModelDiffType {
+  getDiffFromViewModel(viewModel: ViewModel): ViewModelDiffType {
     const dirtySubTrees = viewModel._dirtySubTrees;
     const dirtyNodes = viewModel._dirtyNodes;
     const nodeMap = viewModel.nodeMap;
@@ -110,14 +110,14 @@ export class OutlineEditor {
     return {
       dirtySubTrees: dirtySubTrees,
       nodes: Array.from(dirtyNodes).map((nodeKey) => nodeMap[nodeKey]),
-      selection: {...viewModel.selection},
+      selection: viewModel.selection,
       timeStamp: Date.now(),
     };
   }
-  createViewModel(callbackFn: (view: ViewType) => void): Object {
+  createViewModel(callbackFn: (view: ViewType) => void): ViewModel {
     return createViewModel(this._viewModel, callbackFn, this);
   }
-  update(viewModel: Object, forceSync?: boolean) {
+  update(viewModel: ViewModel, forceSync?: boolean) {
     if (this._isUpdating) {
       throw new Error('TODOL: Should never occur?');
     }

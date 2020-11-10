@@ -1,5 +1,8 @@
 // @flow
 
+import type {NodeKey} from '../OutlineNode'
+import type {Selection} from '../OutlineSelection';
+
 import {
   FORMAT_BOLD,
   FORMAT_ITALIC,
@@ -74,7 +77,7 @@ function splitText(
     const partSize = part.length;
     const sibling = getWritableNode(createTextNode(part));
     sibling._flags = flags;
-    const siblingKey = sibling._key;
+    const siblingKey = ((sibling._key: any): NodeKey);
     const nextTextSize = textLength + partSize;
 
     if (
@@ -99,10 +102,12 @@ function splitText(
   }
 
   // Insert the nodes into the parent's children
-  const writableParent = getWritableNode(node.getParent());
+  const parent = node.getParent(); // $FlowFixMeThisCanBeNull
+  const writableParent = getWritableNode(parent); // $FlowFixMeThisCanBeNull
   const writableParentChildren = writableParent._children;
   const insertionIndex = writableParentChildren.indexOf(key);
   const splitNodesKeys = splitNodes.map((splitNode) => splitNode._key);
+  // $FlowFixMeThisCanBeNull
   writableParentChildren.splice(insertionIndex, 1, ...splitNodesKeys);
 
   return splitNodes;
@@ -182,6 +187,8 @@ function setTextContent(
 }
 
 export class TextNode extends Node {
+  _text: string;
+
   constructor(text: string) {
     super();
     this._text = text;
@@ -213,7 +220,7 @@ export class TextNode extends Node {
     const self = this.getLatest();
     return self._text;
   }
-  getTextNodeFormatFlags(type: string, alignWithFlags: null | number): number {
+  getTextNodeFormatFlags(type: 0 | 1 | 2 | 3, alignWithFlags: null | number): number {
     const self = this.getLatest();
     const nodeFlags = self._flags;
     let newFlags = nodeFlags;
@@ -322,7 +329,7 @@ export class TextNode extends Node {
 
   // Mutators
 
-  setTextContent(text: string): void {
+  setTextContent(text: string): TextNode {
     if (this.isImmutable()) {
       throw new Error(
         'spliceText: can only be used on non-immutable text nodes',
@@ -346,16 +353,19 @@ export class TextNode extends Node {
     ) {
       throw new Error('This needs to be fixed');
     }
-    nextSibling.select(anchorOffset, focusOffset, isCollapsed);
+    ((nextSibling: any): TextNode).select(anchorOffset, focusOffset, isCollapsed);
   }
   select(
     anchorOffset?: number,
     focusOffset?: number,
     isCollapsed?: boolean = false,
-  ): void {
+  ): Selection {
     const selection = getSelection();
     const text = this.getTextContent();
     const key = this._key;
+    if (key === null) {
+      throw new Error('TODO: validate nodes have keys in a more generic way')
+    }
     selection.anchorKey = key;
     selection.focusKey = key;
     if (typeof text === 'string') {
@@ -380,7 +390,7 @@ export class TextNode extends Node {
     delCount: number,
     newText: string,
     restoreSelection?: boolean,
-  ): void {
+  ): TextNode {
     if (this.isImmutable()) {
       throw new Error(
         'spliceText: can only be used on non-immutable text nodes',
@@ -403,6 +413,9 @@ export class TextNode extends Node {
       const event = window.event;
       const inCompositionMode = event && event.type === 'compositionend';
       const key = writableSelf._key;
+      if (key === null) {
+        throw new Error('TODO: validate nodes have keys in a more generic way')
+      }
       const selection = getSelection();
       const newOffset =
         !inCompositionMode || offset === 0 ? offset + newTextLength : offset;

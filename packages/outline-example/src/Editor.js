@@ -5,6 +5,7 @@ import {useEmojiPlugin} from 'outline-emoji-plugin';
 import {useMentionsPlugin} from 'outline-mentions-plugin';
 // import {usePlainTextPlugin} from 'outline-plain-text-plugin';
 import {useRichTextPlugin} from 'outline-rich-text-plugin';
+import {useFormatPlugin} from 'outline-format-plugin';
 
 const editorStyle = {
   outline: 0,
@@ -30,6 +31,7 @@ export default function Editor({onChange, isReadOnly}) {
     outlineEditor,
     portalTargetElement,
   );
+  useFormatPlugin(outlineEditor);
 
   return (
     <>

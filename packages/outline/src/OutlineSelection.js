@@ -199,7 +199,7 @@ Object.assign(Selection.prototype, {
     let nextBlock = currentBlock.getNextSibling();
 
     if (nextBlock === null) {
-      nextBlock = createBlock(currentBlock.getTag());
+      nextBlock = createBlock('p');
       currentBlock.insertAfter(nextBlock);
     }
     const nodesToMoveLength = nodesToMove.length;
@@ -265,7 +265,15 @@ Object.assign(Selection.prototype, {
     if (anchorOffset === 0) {
       if (prevSibling === null) {
         const prevBlock = currentBlock.getPreviousSibling();
-        if (prevBlock !== null) {
+        if (prevBlock === null) {
+          if (currentBlock.isHeader()) {
+            const paragraph = createBlock('p');
+            const children = currentBlock.getChildren();
+            children.forEach(child => paragraph.append(child));
+            currentBlock.replace(paragraph);
+            return;
+          }
+        } else {
           const nodesToMove = [anchorNode, ...anchorNode.getNextSiblings()];
           let lastChild = prevBlock.getLastChild();
           for (let i = 0; i < nodesToMove.length; i++) {

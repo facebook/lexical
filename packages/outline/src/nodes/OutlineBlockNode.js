@@ -1,3 +1,5 @@
+// @flow
+
 import {getWritableNode, Node, getNodeByKey} from '../OutlineNode';
 import {getSelection} from '../OutlineSelection';
 
@@ -31,13 +33,15 @@ function combineAdjacentTextNodes(textNodes, restoreSelection) {
 }
 
 export class BlockNode extends Node {
-  constructor(tag) {
+  _tag: string;
+
+  constructor(tag: string) {
     super();
     this._children = [];
     this._tag = tag;
     this._type = 'block';
   }
-  clone() {
+  clone(): BlockNode {
     const clone = new BlockNode(this._tag);
     clone._children = [...this._children];
     clone._parent = this._parent;
@@ -45,14 +49,14 @@ export class BlockNode extends Node {
     clone._flags = this._flags;
     return clone;
   }
-  isBlock() {
+  isBlock(): true {
     return true;
   }
-  getTag() {
+  getTag(): string {
     const self = this.getLatest();
     return self._tag;
   }
-  getChildren() {
+  getChildren(): Array<Object> {
     const self = this.getLatest();
     const children = self._children;
     const childrenNodes = [];
@@ -64,7 +68,7 @@ export class BlockNode extends Node {
     }
     return childrenNodes;
   }
-  getFirstChild() {
+  getFirstChild(): null | Object {
     const self = this.getLatest();
     const children = self._children;
     const childrenLength = children.length;
@@ -73,7 +77,7 @@ export class BlockNode extends Node {
     }
     return getNodeByKey(children[0]);
   }
-  getLastChild() {
+  getLastChild(): null | Object {
     const self = this.getLatest();
     const children = self._children;
     const childrenLength = children.length;
@@ -85,17 +89,17 @@ export class BlockNode extends Node {
 
   // View
 
-  _create() {
+  _create(): HTMLElement {
     return document.createElement(this._tag);
   }
-  _update() {
+  _update(): boolean {
     return false;
   }
 
   // Mutators
 
   // TODO add support for appending multiple nodes?
-  append(nodeToAppend) {
+  append(nodeToAppend: Object): void {
     const writableSelf = getWritableNode(this);
     const writableNodeToAppend = getWritableNode(nodeToAppend);
     // Remove node from previous parent
@@ -114,7 +118,7 @@ export class BlockNode extends Node {
     writableSelf._children.push(writableNodeToAppend._key);
     return writableSelf;
   }
-  normalizeTextNodes(restoreSelection) {
+  normalizeTextNodes(restoreSelection?: boolean): void {
     const children = this.getChildren();
     let toNormalize = [];
     let lastTextNodeFlags = null;
@@ -144,6 +148,6 @@ export class BlockNode extends Node {
   }
 }
 
-export function createBlockNode(tag = 'div') {
+export function createBlockNode(tag: string = 'div'): BlockNode {
   return new BlockNode(tag);
 }

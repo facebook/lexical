@@ -1,12 +1,16 @@
+// @flow
+
 import {BlockNode} from './OutlineBlockNode';
 
 export class BodyNode extends BlockNode {
+  _type: 'body';
+
   constructor() {
-    super();
+    super('');
     this._key = 'body';
     this._type = 'body';
   }
-  clone() {
+  clone(): BodyNode {
     const clone = new BodyNode();
     clone._children = [...this._children];
     clone._parent = this._parent;
@@ -14,11 +18,11 @@ export class BodyNode extends BlockNode {
     clone._flags = this._flags;
     return clone;
   }
-  isBody() {
+  isBody(): true {
     return true;
   }
 }
 
-export function createBodyNode() {
+export function createBodyNode(): BodyNode {
   return new BodyNode();
 }

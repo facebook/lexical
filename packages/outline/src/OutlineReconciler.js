@@ -1,3 +1,11 @@
+// @flow
+
+import type {NodeKey} from './OutlineNode';
+import type {NodeMapType, ViewModel} from './OutlineView';
+import type {OutlineEditor} from './OutlineEditor';
+import type {BlockNode} from './nodes/OutlineBlockNode';
+import type {TextNode} from './nodes/OutlineTextNode';
+
 import {IS_IMMUTABLE, IS_SEGMENTED} from './OutlineNode';
 
 let subTreeTextContent = '';
@@ -12,27 +20,40 @@ const LTR =
 const rtl = new RegExp('^[^' + LTR + ']*[' + RTL + ']');
 const ltr = new RegExp('^[^' + RTL + ']*[' + LTR + ']');
 
-function getTextDirection(text) {
+function getTextDirection(text: string): 'ltr' | 'rtl' | null {
   if (rtl.test(text)) {
     return 'rtl';
   }
   if (ltr.test(text)) {
     return 'ltr';
   }
-  return '';
+  return null;
 }
 
-function handleBlockTextDirection(dom) {
+function handleBlockTextDirection(dom: HTMLElement): void {
   if (forceTextDirection === null) {
-    const prevSubTreeTextContent = dom.__outlineTextContent;
+    // $FlowFixMe: internal field
+    const prevSubTreeTextContent: string = dom.__outlineTextContent;
     if (prevSubTreeTextContent !== subTreeTextContent) {
-      dom.dir = getTextDirection(subTreeTextContent);
+      const direction = getTextDirection(subTreeTextContent);
+      if (direction === null) {
+        dom.removeAttribute('dir');
+      } else {
+        dom.dir = direction;
+      }
+      // $FlowFixMe: internal field
       dom.__outlineTextContent = subTreeTextContent;
     }
   }
 }
 
-function destroyNode(key, parentDOM, prevNodeMap, nextNodeMap, editor) {
+function destroyNode(
+  key: NodeKey,
+  parentDOM: null | HTMLElement,
+  prevNodeMap: NodeMapType,
+  nextNodeMap: NodeMapType,
+  editor: OutlineEditor,
+): void {
   const node = prevNodeMap[key];
 
   if (parentDOM !== null) {
@@ -43,7 +64,7 @@ function destroyNode(key, parentDOM, prevNodeMap, nextNodeMap, editor) {
     editor._keyToDOMMap.delete(key);
   }
   if (node.isBlock()) {
-    const children = node._children;
+    const children = ((node: any): BlockNode)._children;
     destroyChildren(
       children,
       0,
@@ -57,33 +78,39 @@ function destroyNode(key, parentDOM, prevNodeMap, nextNodeMap, editor) {
 }
 
 function destroyChildren(
-  children,
-  startIndex,
-  endIndex,
-  dom,
-  prevNodeMap,
-  nextNodeMap,
-  editor,
-) {
+  children: Array<NodeKey>,
+  startIndex: number,
+  endIndex: number,
+  dom: null | HTMLElement,
+  prevNodeMap: NodeMapType,
+  nextNodeMap: NodeMapType,
+  editor: OutlineEditor,
+): void {
   for (; startIndex <= endIndex; ++startIndex) {
     destroyNode(children[startIndex], dom, prevNodeMap, nextNodeMap, editor);
   }
 }
 
-function createNode(key, parentDOM, insertDOM, nodeMap, editor) {
+function createNode(
+  key: NodeKey,
+  parentDOM: null | HTMLElement,
+  insertDOM: null | HTMLElement,
+  nodeMap: NodeMapType,
+  editor: OutlineEditor,
+): HTMLElement {
   const node = nodeMap[key];
   const dom = node._create();
   storeDOMWithKey(key, dom, editor);
 
   if (node._flags & IS_IMMUTABLE || node._flags & IS_SEGMENTED) {
-    dom.contentEditable = false;
+    dom.contentEditable = 'false';
   }
 
   if (node.isText()) {
-    subTreeTextContent += node._text;
+    subTreeTextContent += ((node: any): TextNode)._text;
   } else {
     // Handle block children
-    const children = node._children;
+    const children = ((node: any): BlockNode)._children;
     const previousSubTreeTextContent = subTreeTextContent;
     subTreeTextContent = '';
     const childrenLength = children.length;
@@ -102,27 +129,27 @@ function createNode(key, parentDOM, insertDOM, nodeMap, editor) {
 }
 
 function createChildren(
-  children,
-  startIndex,
-  endIndex,
-  dom,
-  insertDOM,
-  nodeMap,
-  editor,
-) {
+  children: Array<NodeKey>,
+  startIndex: number,
+  endIndex: number,
+  dom: null | HTMLElement,
+  insertDOM: null | HTMLElement,
+  nodeMap: NodeMapType,
+  editor: OutlineEditor,
+): void {
   for (; startIndex <= endIndex; ++startIndex) {
     createNode(children[startIndex], dom, insertDOM, nodeMap, editor);
   }
 }
 
 function reconcileNode(
-  key,
-  parentDOM,
-  prevNodeMap,
-  nextNodeMap,
-  editor,
-  dirtySubTrees,
-) {
+  key: NodeKey,
+  parentDOM: HTMLElement | null,
+  prevNodeMap: NodeMapType,
+  nextNodeMap: NodeMapType,
+  editor: OutlineEditor,
+  dirtySubTrees: Set<NodeKey>,
+): void {
   const prevNode = prevNodeMap[key];
   const nextNode = nextNodeMap[key];
   const prevIsText = prevNode.isText();
@@ -132,30 +159,34 @@ function reconcileNode(
 
   if (prevNode === nextNode && !hasDirtySubTree) {
     if (!prevIsText) {
+      // $FlowFixMe: internal field
       const prevSubTreeTextContent = dom.__outlineTextContent;
       if (prevSubTreeTextContent !== undefined) {
         subTreeTextContent += prevSubTreeTextContent;
       }
     } else {
-      subTreeTextContent += prevNode._text;
+      subTreeTextContent += ((prevNode: any): TextNode)._text;
     }
     return;
   }
   // Update node. If it returns true, we need to unmount and re-create the node
   if (nextNode._update(prevNode, dom)) {
     const replacementDOM = createNode(key, null, null, nextNodeMap, editor);
+    if (parentDOM === null) {
+      throw new Error('Should never happen');
+    }
     parentDOM.replaceChild(replacementDOM, dom);
     destroyNode(key, null, prevNodeMap, nextNodeMap, editor);
     return;
   }
   // Handle text content, for LTR, LTR cases.
   if (nextNode.isText()) {
-    subTreeTextContent += nextNode._text;
+    subTreeTextContent += ((nextNode: any): TextNode)._text;
     return;
   }
   // Reconcile block children
-  const prevChildren = prevNode._children;
-  const nextChildren = nextNode._children;
+  const prevChildren = ((prevNode: any): BlockNode)._children;
+  const nextChildren = ((nextNode: any): BlockNode)._children;
   const childrenAreDifferent = prevChildren !== nextChildren;
 
   if (childrenAreDifferent || hasDirtySubTree) {
@@ -245,33 +276,34 @@ function createKeyToIndexMap(children, startIndex, endIndex) {
 }
 
 function findIndexInPrevChildren(
-  targetKey,
-  prevChildren,
-  startIndex,
-  endIndex,
-) {
+  targetKey: NodeKey,
+  prevChildren: Array<NodeKey>,
+  startIndex: number,
+  endIndex: number,
+): number {
   for (let i = startIndex; i < endIndex; i++) {
     const c = prevChildren[i];
     if (c === targetKey) {
       return i;
     }
   }
+  throw new Error('Should never happen');
 }
 
 // Disclaimer: this logic was adapted from Vue (MIT):
 // https://github.com/vuejs/vue/blob/dev/src/core/vdom/patch.js#L404
 
 function reconcileNodeChildren(
-  prevChildren,
-  nextChildren,
-  prevChildrenLength,
-  nextChildrenLength,
-  dom,
-  prevNodeMap,
-  nextNodeMap,
-  editor,
-  dirtySubTrees,
-) {
+  prevChildren: Array<NodeKey>,
+  nextChildren: Array<NodeKey>,
+  prevChildrenLength: number,
+  nextChildrenLength: number,
+  dom: HTMLElement,
+  prevNodeMap: NodeMapType,
+  nextNodeMap: NodeMapType,
+  editor: OutlineEditor,
+  dirtySubTrees: Set<NodeKey>,
+): void {
   let hasClonedPrevChildren = false;
   let prevStartIndex = 0;
   let nextStartIndex = 0;
@@ -381,6 +413,7 @@ function reconcileNodeChildren(
             hasClonedPrevChildren = true;
             prevChildren = [...prevChildren];
           }
+          // $FlowFixMe: TODO fix later
           prevChildren[indexInPrevChildren] = undefined;
           dom.insertBefore(
             editor.getElementByKey(keyToMove),
@@ -419,13 +452,17 @@ function reconcileNodeChildren(
   }
 }
 
-export function reconcileViewModel(nextViewModel, editor) {
+export function reconcileViewModel(
+  nextViewModel: ViewModel,
+  editor: OutlineEditor,
+): void {
   const prevViewModel = editor.getCurrentViewModel();
   // TODO: take this value from Editor props, default to null;
   // This will over-ride any sub-tree text direction properties.
   forceTextDirection = null;
   subTreeTextContent = '';
-  const dirtySubTrees = nextViewModel._dirtySubTrees;
+  // $FlowFixMe: cannot be null
+  const dirtySubTrees: Set<NodeKey> = nextViewModel._dirtySubTrees;
 
   reconcileNode(
     'body',
@@ -438,7 +475,8 @@ export function reconcileViewModel(nextViewModel, editor) {
 
   const nextSelection = nextViewModel.selection;
   if (nextSelection !== null) {
-    const [startOffset, endOffset] = nextSelection.getRangeOffsets();
+    const startOffset = nextSelection.anchorOffset;
+    const endOffset = nextSelection.focusOffset;
     const domSelection = window.getSelection();
     const range = document.createRange();
     const startElement = getSelectionElement(nextSelection.anchorKey, editor);
@@ -451,24 +489,35 @@ export function reconcileViewModel(nextViewModel, editor) {
   }
 }
 
-function getSelectionElement(key, editor) {
+function getSelectionElement(key: NodeKey, editor: OutlineEditor): Node {
   const element = editor.getElementByKey(key);
   const possibleTextNode = element.firstChild;
-  return possibleTextNode.nodeType === 3 ? possibleTextNode : element;
+  return possibleTextNode != null && possibleTextNode.nodeType === 3
+    ? possibleTextNode
+    : element;
 }
 
-export function storeDOMWithKey(key, dom, editor) {
+export function storeDOMWithKey(
+  key: NodeKey,
+  dom: HTMLElement,
+  editor: OutlineEditor,
+): void {
   if (key === null) {
     throw new Error('storeDOMWithNodeKey failed');
   }
   const keyToDOMMap = editor._keyToDOMMap;
+  // $FlowFixMe: internal field
   dom.__outlineInternalRef = key;
   keyToDOMMap.set(key, dom);
 }
 
-export function getNodeKeyFromDOM(dom, nodeMap) {
+export function getNodeKeyFromDOM(
+  dom: HTMLElement,
+  nodeMap: NodeMapType,
+): string | null {
   // Adjust target if dom is a text node
   const target = dom.nodeType === 3 ? dom.parentNode : dom;
-  const key = target.__outlineInternalRef || null;
+  // $FlowFixMe: internal field
+  const key: string | null = target.__outlineInternalRef || null;
   return key;
 }

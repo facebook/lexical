@@ -1,4 +1,8 @@
 // @flow
+
+import type {NodeMapType} from './OutlineView';
+import type {BlockNode} from './nodes/OutlineBlockNode';
+
 import {createText} from '.';
 import {getActiveViewModel} from './OutlineView';
 
@@ -90,7 +94,7 @@ function wrapInTextNodes<N: Node>(node: N): N {
   return node;
 }
 
-type NodeKey = string;
+export type NodeKey = string;
 
 export class Node {
   _flags: number;
@@ -137,7 +141,7 @@ export class Node {
     }
     return null;
   }
-  getParentBlock(): Node | null {
+  getParentBlock(): BlockNode | null {
     let node: $FlowFixMeThisCanBeNull = this;
     while (node !== null) {
       if (node.isBlock()) {
@@ -165,7 +169,7 @@ export class Node {
     }
     return getNodeByKey(children[index - 1]);
   }
-  getPreviousSiblings(): Array<Node> | null {
+  getPreviousSiblings(): Array<Node> {
     const parent = this.getParent();
     const children = (parent: $FlowFixMeThisCanBeNull)._children;
     const index = children.indexOf(this._key);
@@ -243,7 +247,7 @@ export class Node {
     return false;
   }
 
-  getNodesBetween(targetNode: Node): null | Array<Node> {
+  getNodesBetween(targetNode: Node): Array<Node> {
     const isBefore = this.isBefore(targetNode);
     const nodes = [];
 
@@ -266,14 +270,14 @@ export class Node {
         }
         const parent = node.getParent();
         if (parent === null) {
-          return null;
+          throw new Error('This should never happen')
         }
         nodes.push(parent);
         let parentSibling = null;
         let ancestor = parent;
         do {
           if (ancestor === null) {
-            return null;
+            throw new Error('This should never happen')
           }
           parentSibling = ancestor.getNextSibling();
           ancestor = ancestor.getParent();
@@ -299,14 +303,14 @@ export class Node {
         }
         const parent = node.getParent();
         if (parent === null) {
-          return null;
+          throw new Error('This should never happen')
         }
         nodes.push(parent);
         let parentSibling = null;
         let ancestor = parent;
         do {
           if (ancestor === null) {
-            return null;
+            throw new Error('This should never happen')
           }
           parentSibling = ancestor.getPreviousSibling();
           ancestor = ancestor.getParent();
@@ -366,6 +370,15 @@ export class Node {
       }
     }
     return textContent;
+  }
+
+  // View
+
+  _create(): HTMLElement {
+    throw new Error('Should never occur');
+  }
+  _update(prevNode: Node, dom: HTMLElement): boolean {
+    throw new Error('Should never occur');
   }
 
   // Setters and mutators
@@ -502,15 +515,16 @@ export function getWritableNode<N: Node>(node: N): N {
 
 function markParentsAsDirty(
   parentKey: NodeKey,
-  nodeMap,
+  nodeMap: NodeMapType,
   dirtySubTrees: Set<NodeKey>,
 ): void {
-  while (parentKey !== null) {
-    if (dirtySubTrees.has(parentKey)) {
+  let nextParentKey = parentKey;
+  while (nextParentKey !== null) {
+    if (dirtySubTrees.has(nextParentKey)) {
       return;
     }
-    dirtySubTrees.add(parentKey);
-    parentKey = nodeMap[parentKey]._parent;
+    dirtySubTrees.add(nextParentKey);
+    nextParentKey = nodeMap[nextParentKey]._parent;
   }
 }
 

@@ -1,15 +1,21 @@
 // @flow
+
+import type {BodyNode} from './nodes/OutlineBodyNode';
 import type {OutlineEditor} from './OutlineEditor';
+import type {Selection} from './OutlineSelection';
+import type {Node, NodeKey} from './OutlineNode';
 
 import {reconcileViewModel} from './OutlineReconciler';
 import {getSelection} from './OutlineSelection';
 import {getNodeByKey} from './OutlineNode';
 
 export type ViewType = {
-  getBody: () => HTMLElement | null,
-  getNodeByKey: (key: string) => HTMLElement,
-  getSelection: () => Object,
+  getBody: () => BodyNode | null,
+  getNodeByKey: (key: NodeKey) => HTMLElement,
+  getSelection: () => Selection,
 };
+
+export type NodeMapType = {[key: NodeKey]: Node};
 
 let activeViewModel = null;
 
@@ -114,22 +120,21 @@ export function updateViewModel(
 }
 
 export function cloneViewModel(current: ViewModel): ViewModel {
-  const draft = new ViewModel();
+  const draft = new ViewModel(current.body);
   draft.nodeMap = {...current.nodeMap};
-  draft.body = current.body;
   return draft;
 }
 
 export class ViewModel {
-  body: null | HTMLElement;
-  nodeMap: {[key: string]: Object};
-  selection: null | Object;
-  _dirtyNodes: null | Set<Object>;
-  _dirtySubTrees: null | Set<Object>;
+  body: BodyNode;
+  nodeMap: NodeMapType;
+  selection: null | Selection;
+  _dirtyNodes: null | Set<NodeKey>;
+  _dirtySubTrees: null | Set<NodeKey>;
   _editor: null | OutlineEditor;
 
-  constructor() {
-    this.body = null;
+  constructor(body: BodyNode) {
+    this.body = body;
     this.nodeMap = {};
     this.selection = null;
     // Dirty nodes are nodes that have been added or updated

@@ -64,7 +64,7 @@ export class BlockNode extends Node {
     const self = this.getLatest();
     return self._tag;
   }
-  getChildren(): Array<Object> {
+  getChildren(): Array<Node> {
     const self = this.getLatest();
     const children = self._children;
     const childrenNodes = [];
@@ -76,7 +76,7 @@ export class BlockNode extends Node {
     }
     return childrenNodes;
   }
-  getFirstChild(): null | Object {
+  getFirstChild(): null | Node {
     const self = this.getLatest();
     const children = self._children;
     const childrenLength = children.length;
@@ -85,7 +85,7 @@ export class BlockNode extends Node {
     }
     return getNodeByKey(children[0]);
   }
-  getLastChild(): null | Object {
+  getLastChild(): null | Node {
     const self = this.getLatest();
     const children = self._children;
     const childrenLength = children.length;

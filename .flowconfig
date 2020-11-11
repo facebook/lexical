@@ -24,3 +24,7 @@ suppress_type=$FlowExpectedError
 
 [libs]
 ./packages/shared/libdefs/
+
+[strict]
+nonstrict-import
+unclear-type

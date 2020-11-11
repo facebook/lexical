@@ -727,6 +727,7 @@ function getFirstChildNode(body) {
     if (node.isText()) {
       return node;
     }
+    // $FlowFixMe here, we know we're dealing with a node that has children, even if flow doesn't
     node = node.getFirstChild();
   }
   return null;
@@ -738,6 +739,7 @@ function getLastChildNode(body) {
     if (node.isText()) {
       return node;
     }
+    // $FlowFixMe here, we know we're dealing with a node that has children, even if flow doesn't
     node = node.getLastChild();
   }
   return null;

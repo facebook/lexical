@@ -7,6 +7,8 @@ import {
   isLineBreak,
   isMoveBackward,
   isMoveForward,
+  isMoveWordBackward,
+  isMoveWordForward,
   isParagraph,
 } from './hotKeys';
 
@@ -115,6 +117,12 @@ function onKeyDown(event, view, state) {
   } else if (isMoveForward(event)) {
     event.preventDefault();
     selection.moveForward();
+  } else if (isMoveWordBackward(event)) {
+    event.preventDefault();
+    selection.moveWordBackward();
+  } else if (isMoveWordForward(event)) {
+    event.preventDefault();
+    selection.moveWordForward();
   }
 }
 

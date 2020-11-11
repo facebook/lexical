@@ -456,6 +456,107 @@ export class Selection {
       currentBlock.normalizeTextNodes(true);
     }
   }
+  moveWordBackward() {
+    const anchorNode = this.getAnchorNode();
+    const focusNode = this.getFocusNode();
+    if (anchorNode === null || focusNode === null) {
+      return;
+    }
+    const isAnchorBefore = anchorNode.isBefore(focusNode);
+    const anchorOffset = this.anchorOffset;
+    const focusOffset = this.focusOffset;
+    const firstNode = isAnchorBefore ? anchorNode : focusNode;
+    const textContent = firstNode.getTextContent();
+    const textContentLength = textContent.length;
+    let prevSibling = firstNode.getPreviousSibling();
+    let offset = isAnchorBefore ? anchorOffset : focusOffset;
+
+    if (anchorNode === focusNode) {
+      offset = focusOffset > anchorOffset ? anchorOffset : focusOffset;
+    }
+    const trimmedTextContentLength = textContent.trimStart().length;
+
+    if (
+      prevSibling !== null &&
+      (offset === 0 || textContentLength - trimmedTextContentLength > offset)
+    ) {
+      while (prevSibling !== null) {
+        if (
+          prevSibling.isText() &&
+          !prevSibling.isImmutable() &&
+          !prevSibling.isSegmented()
+        ) {
+          break;
+        }
+        prevSibling = prevSibling.getPreviousSibling();
+      }
+      if (prevSibling !== null) {
+        ((prevSibling: any): TextNode).select();
+      }
+    } else {
+      const trimmedContent = textContent.slice(0, offset).trimEnd();
+      let index = trimmedContent.lastIndexOf(' ');
+      if (index === -1) {
+        index = 0;
+      } else {
+        index++;
+      }
+      this.anchorOffset = index;
+      this.focusOffset = index;
+      this.markDirty();
+    }
+  }
+  moveWordForward() {
+    const anchorNode = this.getAnchorNode();
+    const focusNode = this.getFocusNode();
+    if (anchorNode === null || focusNode === null) {
+      return;
+    }
+    const isAnchorBefore = anchorNode.isBefore(focusNode);
+    const anchorOffset = this.anchorOffset;
+    const focusOffset = this.focusOffset;
+    const lastNode = isAnchorBefore ? focusNode : anchorNode;
+    const textContent = lastNode.getTextContent();
+    const textContentLength = textContent.length;
+    let nextSibling = lastNode.getNextSibling();
+    let offset = isAnchorBefore ? focusOffset : anchorOffset;
+
+    if (anchorNode === focusNode) {
+      offset = focusOffset > anchorOffset ? focusOffset : anchorOffset;
+    }
+    let trimmedTextContentLength = textContent.trimEnd().length;
+
+    if (
+      nextSibling !== null &&
+      (offset === textContentLength || offset >= trimmedTextContentLength)
+    ) {
+      while (nextSibling !== null) {
+        if (
+          nextSibling.isText() &&
+          !nextSibling.isImmutable() &&
+          !nextSibling.isSegmented()
+        ) {
+          break;
+        }
+        nextSibling = nextSibling.getNextSibling();
+      }
+      if (nextSibling !== null) {
+        ((nextSibling: any): TextNode).select(0, 0);
+      }
+    } else {
+      const trimmedContent = textContent.slice(offset).trimStart();
+      trimmedTextContentLength = trimmedContent.length;
+      let index = trimmedContent.indexOf(' ');
+      if (index === -1) {
+        index = textContentLength;
+      } else {
+        index = textContentLength - trimmedTextContentLength + index;
+      }
+      this.anchorOffset = index;
+      this.focusOffset = index;
+      this.markDirty();
+    }
+  }
   moveBackward() {
     const anchorNode = this.getAnchorNode();
     const focusNode = this.getFocusNode();

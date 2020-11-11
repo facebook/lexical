@@ -185,9 +185,10 @@ function setTextContent(
         dom.appendChild(document.createElement('br'));
       }
       return;
-    } else if (nextText.endsWith('\n')) {
-      nextText += '\n';
     }
+  }
+  if (nextText.endsWith('\n')) {
+    nextText += '\n';
   }
   if (firstChild == null || hasBreakNode) {
     dom.textContent = nextText === '' ? zeroWidthString : nextText;

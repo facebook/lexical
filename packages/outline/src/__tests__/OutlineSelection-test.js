@@ -175,9 +175,9 @@ describe('OutlineSelection tests', () => {
         insertText('l'),
         insertText('o'),
       ],
-      result:
+      expectedHTML:
         '<div contenteditable="true"><p dir="ltr"><span data-text="true">Hello</span></p></div>',
-      selection: {
+      expectedSelection: {
         anchorPath: [0, 0, 0],
         anchorOffset: 5,
         focusPath: [0, 0, 0],
@@ -196,9 +196,9 @@ describe('OutlineSelection tests', () => {
         insertText('6'),
         deleteForward(),
       ],
-      result:
+      expectedHTML:
         '<div contenteditable="true"><p><span data-text="true">1246</span></p></div>',
-      selection: {
+      expectedSelection: {
         anchorPath: [0, 0, 0],
         anchorOffset: 4,
         focusPath: [0, 0, 0],
@@ -217,9 +217,9 @@ describe('OutlineSelection tests', () => {
         insertText('c'),
         deleteForward(),
       ],
-      result:
+      expectedHTML:
         '<div contenteditable="true"><p dir="ltr"><span data-text="true">abc123</span></p></div>',
-      selection: {
+      expectedSelection: {
         anchorPath: [0, 0, 0],
         anchorOffset: 3,
         focusPath: [0, 0, 0],
@@ -232,11 +232,11 @@ describe('OutlineSelection tests', () => {
     test('Test case #' + (i + 1), () => {
       applySelectionInputs(testUnit.inputs, update, editor);
       // Validate HTML matches
-      expect(sanitizeHTML(container.innerHTML)).toBe(testUnit.result);
+      expect(sanitizeHTML(container.innerHTML)).toBe(testUnit.expectedHTML);
       // Validate selection matches
       const editorElement = editor.getEditorElement();
       const acutalSelection = window.getSelection();
-      const expectedSelection = testUnit.selection;
+      const expectedSelection = testUnit.expectedSelection;
       expect(acutalSelection.anchorNode).toBe(
         getNodeFromPath(expectedSelection.anchorPath, editorElement),
       );

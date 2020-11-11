@@ -177,6 +177,12 @@ describe('OutlineSelection tests', () => {
       ],
       result:
         '<div contenteditable="true"><p dir="ltr"><span data-text="true">Hello</span></p></div>',
+      selection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 5,
+        focusPath: [0, 0, 0],
+        focusOffset: 5,
+      },
     },
     {
       inputs: [
@@ -192,6 +198,12 @@ describe('OutlineSelection tests', () => {
       ],
       result:
         '<div contenteditable="true"><p><span data-text="true">1246</span></p></div>',
+      selection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 4,
+        focusPath: [0, 0, 0],
+        focusOffset: 4,
+      },
     },
     {
       inputs: [
@@ -207,13 +219,32 @@ describe('OutlineSelection tests', () => {
       ],
       result:
         '<div contenteditable="true"><p dir="ltr"><span data-text="true">abc123</span></p></div>',
+      selection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 3,
+        focusPath: [0, 0, 0],
+        focusOffset: 3,
+      },
     },
   ];
 
   suite.forEach((testUnit, i) => {
     test('Test case #' + (i + 1), () => {
       applySelectionInputs(testUnit.inputs, update, editor);
+      // Validate HTML matches
       expect(sanitizeHTML(container.innerHTML)).toBe(testUnit.result);
+      // Validate selection matches
+      const editorElement = editor.getEditorElement();
+      const acutalSelection = window.getSelection();
+      const expectedSelection = testUnit.selection;
+      expect(acutalSelection.anchorNode).toBe(
+        getNodeFromPath(expectedSelection.anchorPath, editorElement),
+      );
+      expect(acutalSelection.anchorOffset).toBe(expectedSelection.anchorOffset);
+      expect(acutalSelection.focusNode).toBe(
+        getNodeFromPath(expectedSelection.focusPath, editorElement),
+      );
+      expect(acutalSelection.focusOffset).toBe(expectedSelection.focusOffset);
     });
   });
 });

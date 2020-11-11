@@ -246,7 +246,15 @@ export class Selection {
     if (nodeToSelect.isText()) {
       ((nodeToSelect: any): TextNode).select(anchorOffset, anchorOffset);
     }
-    if (currentBlock.getFirstChild() === null) {
+    const blockFirstChild = currentBlock.getFirstChild();
+    const blockLastChild = currentBlock.getLastChild();
+    if (
+      blockFirstChild === null ||
+      blockLastChild === null ||
+      blockLastChild.isImmutable() ||
+      blockLastChild.isSegmented() ||
+      !blockLastChild.isText()
+    ) {
       const textNode = createText('');
       currentBlock.append(textNode);
     }
@@ -595,7 +603,26 @@ export class Selection {
         }
         prevSibling = prevSibling.getPreviousSibling();
       }
-      if (prevSibling !== null) {
+      if (prevSibling === null) {
+        const currentBlock = ((anchorNode.getParentBlock(): any): BlockNode);
+        const previousBlock = ((currentBlock.getPreviousSibling(): any): BlockNode | null);
+        if (previousBlock !== null) {
+          let lastChild = previousBlock.getLastChild();
+          while (lastChild !== null) {
+            if (
+              lastChild.isText() &&
+              !lastChild.isImmutable() &&
+              !lastChild.isSegmented()
+            ) {
+              break;
+            }
+            lastChild = lastChild.getPreviousSibling();
+          }
+          if (lastChild !== null) {
+            lastChild.select();
+          }
+        }
+      } else {
         const textContentLength = prevSibling.getTextContent().length;
         ((prevSibling: any): TextNode).select(
           textContentLength,
@@ -648,7 +675,26 @@ export class Selection {
         }
         nextSibling = nextSibling.getNextSibling();
       }
-      if (nextSibling !== null) {
+      if (nextSibling === null) {
+        const currentBlock = ((anchorNode.getParentBlock(): any): BlockNode);
+        const nextBlock = ((currentBlock.getNextSibling(): any): BlockNode | null);
+        if (nextBlock !== null) {
+          let firstChild = nextBlock.getFirstChild();
+          while (firstChild !== null) {
+            if (
+              firstChild.isText() &&
+              !firstChild.isImmutable() &&
+              !firstChild.isSegmented()
+            ) {
+              break;
+            }
+            firstChild = firstChild.getNextSibling();
+          }
+          if (firstChild !== null) {
+            firstChild.select(0, 0);
+          }
+        }
+      } else {
         ((nextSibling: any): TextNode).select(0, 0);
       }
     } else {

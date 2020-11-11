@@ -139,11 +139,21 @@ export class Node {
     }
     return getNodeByKey(parent);
   }
+  getParentOrThrow(): ParentNode {
+    const parent = this.getLatest()._parent;
+    if (parent === null) {
+      throw new Error(`Expected node ${this._key} to have a parent.`);
+    }
+    return getNodeByKeyOrThrow<ParentNode>(parent);
+  }
   getParentBefore(target: Node): Node | null {
     let node = this;
     while (node !== null) {
       const parent = node.getParent();
-      if ((parent: $FlowFixMeThisCanBeNull)._key === target._key) {
+      if (parent === null) {
+        return null;
+      }
+      if (parent._key === target._key) {
         return node;
       }
       node = parent;
@@ -151,9 +161,10 @@ export class Node {
     return null;
   }
   getParentBlock(): BlockNode | null {
-    let node: $FlowFixMeThisCanBeNull = this;
+    let node = this;
     while (node !== null) {
       if (node.isBlock()) {
+        // $FlowFixMe we know this is a block node but flow doesn't
         return node;
       }
       node = node.getParent();
@@ -170,8 +181,8 @@ export class Node {
     return parents;
   }
   getPreviousSibling(): Node | null {
-    const parent = this.getParent();
-    const children = (parent: $FlowFixMeThisCanBeNull)._children;
+    const parent = this.getParentOrThrow();
+    const children = parent._children;
     const index = children.indexOf(this._key);
     if (index <= 0) {
       return null;
@@ -179,14 +190,16 @@ export class Node {
     return getNodeByKey(children[index - 1]);
   }
   getPreviousSiblings(): Array<Node> {
-    const parent = this.getParent();
-    const children = (parent: $FlowFixMeThisCanBeNull)._children;
+    const parent = this.getParentOrThrow();
+    const children = parent._children;
     const index = children.indexOf(this._key);
-    return children.slice(0, index).map((childKey) => getNodeByKey(childKey));
+    return children
+      .slice(0, index)
+      .map((childKey) => getNodeByKeyOrThrow<Node>(childKey));
   }
   getNextSibling(): Node | null {
-    const parent = this.getParent();
-    const children = (parent: $FlowFixMeThisCanBeNull)._children;
+    const parent = this.getParentOrThrow();
+    const children = parent._children;
     const childrenLength = children.length;
     const index = children.indexOf(this._key);
     if (index >= childrenLength - 1) {
@@ -195,10 +208,12 @@ export class Node {
     return getNodeByKey(children[index + 1]);
   }
   getNextSiblings(): Array<Node> {
-    const parent = this.getParent();
-    const children = (parent: $FlowFixMeThisCanBeNull)._children;
+    const parent = this.getParentOrThrow();
+    const children = parent._children;
     const index = children.indexOf(this._key);
-    return children.slice(index + 1).map((childKey) => getNodeByKey(childKey));
+    return children
+      .slice(index + 1)
+      .map((childKey) => getNodeByKeyOrThrow<Node>(childKey));
   }
 
   getCommonAncestor(node: Node): ParentNode | null {
@@ -350,9 +365,7 @@ export class Node {
     return (this.getLatest()._flags & IS_SEGMENTED) !== 0;
   }
 
-  // TODO: Figure out how to type this, since if its called from
-  // a subclass it should return a node of the subclass' type.
-  getLatest(): $FlowFixMe {
+  getLatest(): this {
     if (this._key === null) {
       return this;
     }
@@ -542,5 +555,16 @@ export function getNodeByKey<N: Node>(key: NodeKey): N | null {
   if (node === undefined) {
     return null;
   }
-  return node;
+  return (node: $FlowFixMe);
+}
+
+function getNodeByKeyOrThrow<N: Node>(key: NodeKey): N {
+  const viewModel = getActiveViewModel();
+  const node = viewModel.nodeMap[key];
+  if (node === undefined) {
+    throw new Error(
+      `Expected node with key ${key} to exist but it's not in the nodeMap.`,
+    );
+  }
+  return (node: $FlowFixMe);
 }

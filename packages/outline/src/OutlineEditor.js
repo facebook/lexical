@@ -44,7 +44,7 @@ export class OutlineEditor {
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _onChange: onChangeType;
   _textTransforms: Set<(node: Node, view: ViewType) => void>;
-  _registeredNodeTypes: Map<string, Node>;
+  _registeredNodeTypes: Map<string, Class<Node>>;
 
   constructor(
     editorElement: HTMLElement,
@@ -72,8 +72,8 @@ export class OutlineEditor {
       ['header', HeaderNode],
     ]);
   }
-  addNodeType(nodeType: string, node: Node): () => void {
-    this._registeredNodeTypes.set(nodeType, node);
+  addNodeType(nodeType: string, klass: Class<Node>): () => void {
+    this._registeredNodeTypes.set(nodeType, klass);
     return () => {
       this._registeredNodeTypes.delete(nodeType);
     };

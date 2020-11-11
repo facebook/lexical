@@ -519,7 +519,8 @@ export function storeDOMWithKey(
 }
 
 export function getNodeKeyFromDOM(
-  dom: HTMLElement,
+  // Note that node here refers to a DOM Node, not an Outline Node
+  dom: Node,
   nodeMap: NodeMapType,
 ): string | null {
   // Adjust target if dom is a text node

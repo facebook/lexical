@@ -21,3 +21,6 @@ suppress_type=$FlowIssue
 suppress_type=$FlowFixMe
 suppress_type=$FixMe
 suppress_type=$FlowExpectedError
+
+[libs]
+./packages/shared/libdefs/

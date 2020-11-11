@@ -30,7 +30,7 @@ function deleteForward() {
   };
 }
 
-function setNativeSelection(
+function moveNativeSelection(
   anchorPath,
   anchorOffset,
   focusPath,
@@ -38,7 +38,7 @@ function setNativeSelection(
   isCollapsed = false,
 ) {
   return {
-    type: 'set_native_selection',
+    type: 'move_native_selection',
     anchorPath,
     anchorOffset,
     focusPath,
@@ -55,7 +55,7 @@ function getNodeFromPath(path, editorElement) {
   return node;
 }
 
-function updateNativeSelection(
+function setNativeSelection(
   editorElement,
   anchorPath,
   anchorOffset,
@@ -93,8 +93,8 @@ function applySelectionInputs(inputs, update, editor) {
           selection.deleteForward();
           break;
         }
-        case 'set_native_selection': {
-          updateNativeSelection(
+        case 'move_native_selection': {
+          setNativeSelection(
             editorElement,
             input.anchorPath,
             input.anchorOffset,
@@ -147,7 +147,7 @@ describe('OutlineSelection tests', () => {
     });
 
     // Focus first element
-    updateNativeSelection(ref.current, [0, 0, 0], 0, [0, 0, 0], 0);
+    setNativeSelection(ref.current, [0, 0, 0], 0, [0, 0, 0], 0);
   }
 
   function update(callback) {
@@ -199,7 +199,7 @@ describe('OutlineSelection tests', () => {
         insertText('1'),
         insertText('2'),
         insertText('3'),
-        setNativeSelection([0, 0, 0], 0, [0, 0, 0], 0),
+        moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 0),
         insertText('a'),
         insertText('b'),
         insertText('c'),

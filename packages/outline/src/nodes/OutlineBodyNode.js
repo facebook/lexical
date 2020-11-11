@@ -6,8 +6,7 @@ export class BodyNode extends BlockNode {
   _type: 'body';
 
   constructor() {
-    super('');
-    this._key = 'body';
+    super('', 'body');
     this._type = 'body';
   }
   clone(): BodyNode {

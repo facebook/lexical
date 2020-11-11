@@ -6,10 +6,18 @@ import type {BlockNode} from './nodes/OutlineBlockNode';
 import {createText} from '.';
 import {getActiveViewModel} from './OutlineView';
 
-let nodeKeyCounter = 0;
-
 export const IS_IMMUTABLE = 1;
 export const IS_SEGMENTED = 1 << 1;
+
+let nodeKeyCounter = 0;
+
+function generateKey() {
+  const viewModel = getActiveViewModel();
+  const dirtyNodes: Set<NodeKey> = (viewModel._dirtyNodes: $FlowFixMe);
+  const key = nodeKeyCounter++ + '';
+  dirtyNodes.add(key);
+  return key;
+}
 
 function removeNode(nodeToRemove: Node): void {
   const parent = nodeToRemove.getParent();
@@ -26,7 +34,6 @@ function removeNode(nodeToRemove: Node): void {
   // Detach parent
   const writableNodeToRemove = getWritableNode(nodeToRemove);
   writableNodeToRemove._parent = null;
-  writableNodeToRemove._key = null;
   // Remove children
   if (!nodeToRemove.isText()) {
     // $FlowFixMe refine this. We know the node is not text so it must have children.
@@ -41,7 +48,6 @@ function removeNode(nodeToRemove: Node): void {
 }
 
 type $FlowFixMeThisCanBeNull = $FlowFixMe;
-type $FlowFixMeUsingNumberAsString = $FlowFixMe;
 
 function replaceNode<N: Node>(toReplace: Node, replaceWith: N): N {
   const writableReplaceWith = getWritableNode(replaceWith);
@@ -60,11 +66,15 @@ function replaceNode<N: Node>(toReplace: Node, replaceWith: N): N {
   const writableParent = getWritableNode((newParent: $FlowFixMeThisCanBeNull));
   const children = writableParent._children;
   const index = children.indexOf(toReplace._key);
+  const newKey = replaceWith._key;
   if (index > -1) {
-    children.splice(index, 0, replaceWith._key);
+    children.splice(index, 0, newKey);
   }
   writableReplaceWith._parent = (newParent: $FlowFixMeThisCanBeNull)._key;
   toReplace.remove();
+  // Add node to map
+  const viewModel = getActiveViewModel();
+  viewModel.nodeMap[newKey] = ((writableReplaceWith: any): Node);
   return writableReplaceWith;
 }
 
@@ -97,13 +107,13 @@ export type NodeKey = string;
 
 export class Node {
   _flags: number;
-  _key: null | NodeKey;
+  _key: NodeKey;
   _parent: null | NodeKey;
   // TODO: Figure out how to type "_type".
   _type: any;
-  constructor() {
+  constructor(key?: string) {
     this._flags = 0;
-    this._key = null;
+    this._key = key || generateKey();
     this._parent = null;
     this._type = 'node';
   }
@@ -269,14 +279,14 @@ export class Node {
         }
         const parent = node.getParent();
         if (parent === null) {
-          throw new Error('This should never happen')
+          throw new Error('This should never happen');
         }
         nodes.push(parent);
         let parentSibling = null;
         let ancestor = parent;
         do {
           if (ancestor === null) {
-            throw new Error('This should never happen')
+            throw new Error('This should never happen');
           }
           parentSibling = ancestor.getNextSibling();
           ancestor = ancestor.getParent();
@@ -302,14 +312,14 @@ export class Node {
         }
         const parent = node.getParent();
         if (parent === null) {
-          throw new Error('This should never happen')
+          throw new Error('This should never happen');
         }
         nodes.push(parent);
         let parentSibling = null;
         let ancestor = parent;
         do {
           if (ancestor === null) {
-            throw new Error('This should never happen')
+            throw new Error('This should never happen');
           }
           parentSibling = ancestor.getPreviousSibling();
           ancestor = ancestor.getParent();
@@ -431,8 +441,11 @@ export class Node {
     const children = writableParent._children;
     const index = children.indexOf(writableSelf._key);
     if (index > -1) {
-      children.splice(index + 1, 0, (insertKey: $FlowFixMeThisCanBeNull));
+      children.splice(index + 1, 0, insertKey);
     }
+    // Add node to map
+    const viewModel = getActiveViewModel();
+    viewModel.nodeMap[insertKey] = ((writableNodeToInsert: any): Node);
     return writableSelf;
   }
   // TODO add support for inserting multiple nodes?
@@ -451,13 +464,16 @@ export class Node {
     const writableParent: ParentNode = getWritableNode(
       (this.getParent(): $FlowFixMeThisCanBeNull),
     );
-    const insertKey: $FlowFixMeThisCanBeNull = nodeToInsert._key;
+    const insertKey = nodeToInsert._key;
     writableNodeToInsert._parent = writableSelf._parent;
     const children = writableParent._children;
     const index = children.indexOf(writableSelf._key);
     if (index > -1) {
       children.splice(index, 0, insertKey);
     }
+    // Add node to map
+    const viewModel = getActiveViewModel();
+    viewModel.nodeMap[insertKey] = ((writableNodeToInsert: any): Node);
     return writableSelf;
   }
 }
@@ -470,25 +486,15 @@ declare class ParentNode extends Node {
 
 export function getWritableNode<N: Node>(node: N): N {
   const viewModel = getActiveViewModel();
-  const dirtyNodes: Set<NodeKey> = (viewModel._dirtyNodes: $FlowFixMe);
+  const dirtyNodes = ((viewModel._dirtyNodes: any): Set<NodeKey>);
   const nodeMap = viewModel.nodeMap;
   const key = node._key;
-  if (key === null) {
-    const newKey = (node._key = (nodeKeyCounter++: $FlowFixMeUsingNumberAsString));
-    dirtyNodes.add(newKey);
-    nodeMap[newKey] = node;
-    return node;
-  }
   // Ensure we get the latest node from pending state
   node = node.getLatest();
   const parent = node._parent;
   if (parent !== null) {
-    const dirtySubTrees = viewModel._dirtySubTrees;
-    markParentsAsDirty(
-      parent,
-      nodeMap,
-      (dirtySubTrees: $FlowFixMeThisCanBeNull),
-    );
+    const dirtySubTrees = ((viewModel._dirtySubTrees: any): Set<NodeKey>);
+    markParentsAsDirty(parent, nodeMap, dirtySubTrees);
   }
   if (dirtyNodes.has(key)) {
     return node;
@@ -508,7 +514,10 @@ export function getWritableNode<N: Node>(node: N): N {
     viewModel.body = mutableNode;
   }
   dirtyNodes.add(key);
-  nodeMap[key] = mutableNode;
+  // Update reference in node map
+  if (nodeMap[key] !== undefined) {
+    nodeMap[key] = mutableNode;
+  }
   return mutableNode;
 }
 

@@ -4,6 +4,7 @@ import type {NodeKey} from '../OutlineNode';
 
 import {getWritableNode, Node, getNodeByKey} from '../OutlineNode';
 import {getSelection} from '../OutlineSelection';
+import {getActiveViewModel} from '../OutlineView';
 
 function combineAdjacentTextNodes(textNodes, restoreSelection) {
   const selection = getSelection();
@@ -38,8 +39,8 @@ export class BlockNode extends Node {
   _tag: string;
   _children: Array<NodeKey>;
 
-  constructor(tag: string) {
-    super();
+  constructor(tag: string, key?: string) {
+    super(key);
     this._children = [];
     this._tag = tag;
     this._type = 'block';
@@ -118,7 +119,11 @@ export class BlockNode extends Node {
     // Set child parent to self
     writableNodeToAppend._parent = writableSelf._key;
     // Append children.
-    writableSelf._children.push(writableNodeToAppend._key);
+    const newKey = writableNodeToAppend._key;
+    writableSelf._children.push(newKey);
+    // Add node to map
+    const viewModel = getActiveViewModel();
+    viewModel.nodeMap[newKey] = ((writableNodeToAppend: any): Node);
     return writableSelf;
   }
   normalizeTextNodes(restoreSelection?: boolean): void {

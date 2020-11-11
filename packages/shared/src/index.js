@@ -5,6 +5,8 @@ import {
   isDeleteBackward,
   isDeleteForward,
   isLineBreak,
+  isMoveBackward,
+  isMoveForward,
   isParagraph,
 } from './hotKeys';
 
@@ -89,21 +91,30 @@ function onCompositionEnd(event, view, compositionState) {
   }
 }
 
-function onKeyDownPolyfill(event, view, state) {
+function onKeyDown(event, view, state) {
   const selection = view.getSelection();
 
-  if (isDeleteBackward(event)) {
+  if (!canUseBeforeInputEvent) {
+    if (isDeleteBackward(event)) {
+      event.preventDefault();
+      selection.deleteBackward();
+    } else if (isDeleteForward(event)) {
+      event.preventDefault();
+      selection.deleteForward();
+    } else if (isLineBreak(event)) {
+      event.preventDefault();
+      selection.insertText('\n');
+    } else if (isParagraph(event)) {
+      event.preventDefault();
+      selection.insertParagraph();
+    }
+  }
+  if (isMoveBackward(event)) {
     event.preventDefault();
-    selection.deleteBackward();
-  } else if (isDeleteForward(event)) {
+    selection.moveBackward();
+  } else if (isMoveForward(event)) {
     event.preventDefault();
-    selection.deleteForward();
-  } else if (isLineBreak(event)) {
-    event.preventDefault();
-    selection.insertText('\n');
-  } else if (isParagraph(event)) {
-    event.preventDefault();
-    selection.insertParagraph();
+    selection.moveForward();
   }
 }
 
@@ -227,7 +238,7 @@ export function useEditorInputEvents(editor, stateRef) {
     editor,
     stateRef,
   );
-  const handleKeyDown = useEventWrapper(onKeyDownPolyfill, editor, stateRef);
+  const handleKeyDown = useEventWrapper(onKeyDown, editor, stateRef);
   const handlePaste = useEventWrapper(onPastePolyfill, editor, stateRef);
   const handleCut = useEventWrapper(onCutPolyfill, editor, stateRef);
   const handleCompositionEnd = useEventWrapper(
@@ -238,6 +249,7 @@ export function useEditorInputEvents(editor, stateRef) {
   useEffect(() => {
     if (editor !== null) {
       const target = editor.getEditorElement();
+      target.addEventListener('keydown', handleKeyDown);
 
       if (canUseBeforeInputEvent) {
         target.addEventListener('beforeinput', handleNativeBeforeInput);
@@ -248,18 +260,18 @@ export function useEditorInputEvents(editor, stateRef) {
           target.addEventListener('compositionend', handleCompositionEnd);
         }
       } else {
-        target.addEventListener('keydown', handleKeyDown);
         target.addEventListener('paste', handlePaste);
         target.addEventListener('cut', handleCut);
       }
       return () => {
+        target.removeEventListener('keydown', handleKeyDown);
+
         if (canUseBeforeInputEvent) {
           target.removeEventListener('beforeinput', handleNativeBeforeInput);
           if (!isBrowserSafari && !isBrowserFirefox) {
             target.removeEventListener('compositionend', handleCompositionEnd);
           }
         } else {
-          target.removeEventListener('keydown', handleKeyDown);
           target.removeEventListener('paste', handlePaste);
           target.removeEventListener('cut', handleCut);
         }

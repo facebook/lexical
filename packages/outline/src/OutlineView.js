@@ -67,7 +67,9 @@ export function createViewModel(
       activeViewModel = null;
     }
   }
-  const canUseExistingModel = dirtyNodes.size === 0;
+  const selection = viewModel.selection;
+  const canUseExistingModel =
+    dirtyNodes.size === 0 && (selection === null || !selection._isDirty);
   return canUseExistingModel ? currentViewModel : viewModel;
 }
 
@@ -103,16 +105,11 @@ export function updateViewModel(
   outlineEditor: OutlineEditor,
 ): void {
   const onChange = outlineEditor._onChange;
-  viewModel._dirtyNodes = null;
-  // We shouldn't need to set activeViewModel again here,
-  // but because we access getNextSibling() to find out if
-  // a text node should add a new line, we re-use it.
-  // Ideally we'd instead have a _nextSibling property
-  // on the node rather than having to lookup the parent.
   activeViewModel = viewModel;
   reconcileViewModel(viewModel, outlineEditor);
   activeViewModel = null;
   outlineEditor._viewModel = viewModel;
+  viewModel._dirtyNodes = null;
   viewModel._dirtySubTrees = null;
   if (typeof onChange === 'function') {
     onChange(viewModel);

@@ -2,8 +2,11 @@
 
 import type {NodeKey} from '../OutlineNode'
 import type {Selection} from '../OutlineSelection';
+
+import {IS_IMMUTABLE} from '../OutlineNode'
 import {getWritableNode, IS_SEGMENTED, Node} from '../OutlineNode';
 import {getSelection} from '../OutlineSelection';
+import { BlockNode } from './OutlineBlockNode';
 
 const IS_BOLD = 1 << 2;
 const IS_ITALIC = 1 << 3;
@@ -87,6 +90,7 @@ function splitText(
     ) {
       selection.anchorKey = siblingKey;
       selection.anchorOffset = anchorOffset - textSize;
+      selection.markDirty();
     }
     if (
       focusKey === key &&
@@ -95,6 +99,7 @@ function splitText(
     ) {
       selection.focusKey = siblingKey;
       selection.focusOffset = focusOffset - textSize;
+      selection.markDirty();
     }
     textSize = nextTextSize;
     sibling._parent = parentKey;
@@ -158,8 +163,9 @@ function setTextContent(
 ): void {
   const firstChild = dom.firstChild;
   const hasBreakNode = firstChild && firstChild.nextSibling;
+  const parent = ((node.getParent(): any): BlockNode);
   // Check if we are on an empty line
-  if (node.getNextSibling() === null) {
+  if (parent._children.length === 1) {
     if (nextText === '') {
       if (firstChild == null) {
         // We use a zero width string so that the browser moves
@@ -291,6 +297,10 @@ export class TextNode extends Node {
     const domStyle = dom.style;
     const text = this._text;
 
+    if (flags & IS_IMMUTABLE || flags & IS_SEGMENTED) {
+      dom.contentEditable = 'false';
+    }
+
     setTextStyling(tag, 0, flags, domStyle);
     setTextContent(null, text, dom, this);
     // add data-text attribute
@@ -383,6 +393,7 @@ export class TextNode extends Node {
     selection.anchorOffset = anchorOffset;
     selection.focusOffset = focusOffset;
     selection.isCollapsed = isCollapsed;
+    selection.markDirty();
     return selection;
   }
   spliceText(
@@ -423,6 +434,7 @@ export class TextNode extends Node {
       selection.anchorOffset = newOffset;
       selection.focusKey = key;
       selection.focusOffset = newOffset;
+      selection.markDirty();
     }
     return writableSelf;
   }

@@ -1,6 +1,7 @@
 [ignore]
 .*/scripts/.*
 .*/build/.*
+.*/__tests__/.*
 .*/dist/.*
 .*/.tempUserDataDir/.*
 .*/node_modules/.*

@@ -12,7 +12,9 @@
     "build": "node scripts/build.js",
     "build-prod": "node scripts/build.js --prod",
     "watch": "node scripts/build.js --watch",
-    "flow": "node ./scripts/tasks/flow.js"
+    "flow": "node ./scripts/tasks/flow.js",
+    "test": "jest",
+    "debug-test": "node --inspect-brk node_modules/.bin/jest --runInBand"
   },
   "devDependencies": {
     "@babel/plugin-transform-flow-strip-types": "^7.12.1",
@@ -38,6 +40,7 @@
     "jest": "26.6.0",
     "minimist": "^1.2.5",
     "prettier": "^2.1.2",
+    "react-test-renderer": "^17.0.1",
     "rollup": "^2.33.1"
   }
 }

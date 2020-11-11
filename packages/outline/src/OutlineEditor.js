@@ -7,6 +7,9 @@ import type {Selection} from './OutlineSelection';
 import {useEffect, useState} from 'react';
 import {TextNode} from './nodes/OutlineTextNode';
 import {BlockNode} from './nodes/OutlineBlockNode';
+import {BodyNode} from './nodes/OutlineBodyNode';
+import {HeaderNode} from './nodes/OutlineHeaderNode';
+import {ParagraphNode} from './nodes/OutlineParagraphNode';
 import {createBodyNode} from './nodes/OutlineBodyNode';
 import {createViewModel, updateViewModel, ViewModel} from './OutlineView';
 
@@ -64,7 +67,9 @@ export class OutlineEditor {
     this._registeredNodeTypes = new Map([
       ['block', BlockNode],
       ['text', TextNode],
-      ['body', BlockNode],
+      ['body', BodyNode],
+      ['paragraph', ParagraphNode],
+      ['header', HeaderNode],
     ]);
   }
   addNodeType(nodeType: string, node: Node): () => void {

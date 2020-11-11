@@ -2,13 +2,6 @@
 
 import type {NodeKey} from '../OutlineNode'
 import type {Selection} from '../OutlineSelection';
-
-import {
-  FORMAT_BOLD,
-  FORMAT_ITALIC,
-  FORMAT_STRIKETHROUGH,
-  FORMAT_UNDERLINE,
-} from 'shared';
 import {getWritableNode, IS_SEGMENTED, Node} from '../OutlineNode';
 import {getSelection} from '../OutlineSelection';
 
@@ -16,6 +9,13 @@ const IS_BOLD = 1 << 2;
 const IS_ITALIC = 1 << 3;
 const IS_STRIKETHROUGH = 1 << 4;
 const IS_UNDERLINE = 1 << 5;
+
+// Do not import these from shared, otherwise we will bundle
+// all of shared too.
+const FORMAT_BOLD = 0;
+const FORMAT_ITALIC = 1;
+const FORMAT_STRIKETHROUGH = 2;
+const FORMAT_UNDERLINE = 3;
 
 const zeroWidthString = '\uFEFF';
 

@@ -350,9 +350,7 @@ export class Node {
     return (this.getLatest()._flags & IS_SEGMENTED) !== 0;
   }
 
-  // TODO: Figure out how to type this, since if its called from
-  // a subclass it should return a node of the subclass' type.
-  getLatest(): $FlowFixMe {
+  getLatest(): this {
     if (this._key === null) {
       return this;
     }
@@ -542,5 +540,5 @@ export function getNodeByKey<N: Node>(key: NodeKey): N | null {
   if (node === undefined) {
     return null;
   }
-  return node;
+  return (node: $FlowFixMe);
 }

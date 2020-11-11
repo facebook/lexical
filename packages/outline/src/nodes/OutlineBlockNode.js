@@ -1,12 +1,16 @@
 // @flow
 
+import {TextNode} from '..';
 import type {NodeKey} from '../OutlineNode';
 
 import {getWritableNode, Node, getNodeByKey} from '../OutlineNode';
 import {getSelection} from '../OutlineSelection';
 import {getActiveViewModel} from '../OutlineView';
 
-function combineAdjacentTextNodes(textNodes, restoreSelection) {
+function combineAdjacentTextNodes(
+  textNodes: Array<TextNode>,
+  restoreSelection,
+) {
   const selection = getSelection();
   const anchorOffset = selection.anchorOffset;
   const focusOffset = selection.focusOffset;
@@ -103,7 +107,7 @@ export class BlockNode extends Node {
   // Mutators
 
   // TODO add support for appending multiple nodes?
-  append(nodeToAppend: Object): $FlowFixMe {
+  append(nodeToAppend: Node): BlockNode {
     const writableSelf = getWritableNode(this);
     const writableNodeToAppend = getWritableNode(nodeToAppend);
     // Remove node from previous parent
@@ -123,15 +127,15 @@ export class BlockNode extends Node {
     writableSelf._children.push(newKey);
     // Add node to map
     const viewModel = getActiveViewModel();
-    viewModel.nodeMap[newKey] = ((writableNodeToAppend: any): Node);
+    viewModel.nodeMap[newKey] = writableNodeToAppend;
     return writableSelf;
   }
   normalizeTextNodes(restoreSelection?: boolean): void {
     const children = this.getChildren();
     let toNormalize = [];
-    let lastTextNodeFlags = null;
+    let lastTextNodeFlags: number | null = null;
     for (let i = 0; i < children.length; i++) {
-      const child = children[i].getLatest();
+      const child: Node = children[i].getLatest();
       const flags = child._flags;
 
       if (child.isText() && !child.isImmutable() && !child.isSegmented()) {
@@ -144,14 +148,14 @@ export class BlockNode extends Node {
         }
       } else {
         if (toNormalize.length > 1) {
-          combineAdjacentTextNodes(toNormalize, restoreSelection);
+          combineAdjacentTextNodes((toNormalize: $FlowFixMe), restoreSelection);
         }
         toNormalize = [];
         lastTextNodeFlags = null;
       }
     }
     if (toNormalize.length > 1) {
-      combineAdjacentTextNodes(toNormalize, restoreSelection);
+      combineAdjacentTextNodes((toNormalize: $FlowFixMe), restoreSelection);
     }
   }
 }

@@ -310,9 +310,9 @@ export class TextNode extends Node {
     }
     return dom;
   }
-  _update(prevNode: TextNode, dom: HTMLElement): boolean {
+  _update(prevNode: Node, dom: HTMLElement): boolean {
     const domStyle = dom.style;
-    const prevText = prevNode._text;
+    const prevText = ((prevNode: any): TextNode)._text;
     const nextText = this._text;
     const prevFlags = prevNode._flags;
     const nextFlags = this._flags;

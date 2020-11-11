@@ -11,7 +11,7 @@ import {getNodeByKey} from './OutlineNode';
 
 export type ViewType = {
   getBody: () => BodyNode | null,
-  getNodeByKey: (key: NodeKey) => HTMLElement,
+  getNodeByKey: (key: NodeKey) => null | HTMLElement,
   getSelection: () => Selection,
 };
 
@@ -34,7 +34,6 @@ const view: ViewType = {
   getBody() {
     return getActiveViewModel().body;
   },
-  // $FlowFixMe
   getNodeByKey,
   getSelection,
 };

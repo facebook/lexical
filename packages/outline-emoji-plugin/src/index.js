@@ -80,7 +80,7 @@ class EmojiNode extends TextNode {
     this._type = 'emoji';
   }
   clone() {
-    const clone = new EmojiNode(this._cssText, this._cssText);
+    const clone = new EmojiNode(this._cssText, this._text);
     clone._parent = this._parent;
     clone._key = this._key;
     clone._flags = this._flags;

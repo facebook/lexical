@@ -1,12 +1,13 @@
 // @flow
 
-import type {NodeKey} from '../OutlineNode'
+import type {NodeKey} from '../OutlineNode';
 import type {Selection} from '../OutlineSelection';
 
-import {IS_IMMUTABLE} from '../OutlineNode'
+import {IS_IMMUTABLE} from '../OutlineNode';
 import {getWritableNode, IS_SEGMENTED, Node} from '../OutlineNode';
 import {getSelection} from '../OutlineSelection';
-import { BlockNode } from './OutlineBlockNode';
+import {BlockNode} from './OutlineBlockNode';
+import {getActiveViewModel} from '../OutlineView';
 
 const IS_BOLD = 1 << 2;
 const IS_ITALIC = 1 << 3;
@@ -82,6 +83,9 @@ function splitText(
     sibling._flags = flags;
     const siblingKey = ((sibling._key: any): NodeKey);
     const nextTextSize = textLength + partSize;
+    // Add node to map
+    const viewModel = getActiveViewModel();
+    viewModel.nodeMap[siblingKey] = ((sibling: any): Node);
 
     if (
       anchorKey === key &&
@@ -226,7 +230,10 @@ export class TextNode extends Node {
     const self = this.getLatest();
     return self._text;
   }
-  getTextNodeFormatFlags(type: 0 | 1 | 2 | 3, alignWithFlags: null | number): number {
+  getTextNodeFormatFlags(
+    type: 0 | 1 | 2 | 3,
+    alignWithFlags: null | number,
+  ): number {
     const self = this.getLatest();
     const nodeFlags = self._flags;
     let newFlags = nodeFlags;
@@ -363,7 +370,11 @@ export class TextNode extends Node {
     ) {
       throw new Error('This needs to be fixed');
     }
-    ((nextSibling: any): TextNode).select(anchorOffset, focusOffset, isCollapsed);
+    ((nextSibling: any): TextNode).select(
+      anchorOffset,
+      focusOffset,
+      isCollapsed,
+    );
   }
   select(
     anchorOffset?: number,
@@ -374,7 +385,7 @@ export class TextNode extends Node {
     const text = this.getTextContent();
     const key = this._key;
     if (key === null) {
-      throw new Error('TODO: validate nodes have keys in a more generic way')
+      throw new Error('TODO: validate nodes have keys in a more generic way');
     }
     selection.anchorKey = key;
     selection.focusKey = key;
@@ -425,7 +436,7 @@ export class TextNode extends Node {
       const inCompositionMode = event && event.type === 'compositionend';
       const key = writableSelf._key;
       if (key === null) {
-        throw new Error('TODO: validate nodes have keys in a more generic way')
+        throw new Error('TODO: validate nodes have keys in a more generic way');
       }
       const selection = getSelection();
       const newOffset =

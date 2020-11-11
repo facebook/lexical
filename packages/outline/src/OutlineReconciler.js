@@ -477,10 +477,15 @@ export function reconcileViewModel(
   if (nextSelection !== null) {
     const startOffset = nextSelection.anchorOffset;
     const endOffset = nextSelection.focusOffset;
+    const anchorKey = nextSelection.anchorKey;
+    const focusKey = nextSelection.focusKey;
+    if (anchorKey === null || focusKey === null) {
+      throw new Error('This should never happen');
+    }
     const domSelection = window.getSelection();
     const range = document.createRange();
-    const startElement = getSelectionElement(nextSelection.anchorKey, editor);
-    const endElement = getSelectionElement(nextSelection.focusKey, editor);
+    const startElement = getSelectionElement(anchorKey, editor);
+    const endElement = getSelectionElement(focusKey, editor);
     range.collapse(nextSelection.isCollapsed);
     range.setStart(startElement, startOffset);
     range.setEnd(endElement, endOffset);

@@ -7,7 +7,7 @@ import type {BlockNode} from './nodes/OutlineBlockNode';
 import {getActiveViewModel} from './OutlineView';
 import {getNodeKeyFromDOM} from './OutlineReconciler';
 import {getNodeByKey} from './OutlineNode';
-import {createBlock, createText} from '.';
+import {createText, createParagraph} from '.';
 
 function removeFirstSegment(node: TextNode): void {
   const currentBlock = ((node.getParentBlock(): any): BlockNode);
@@ -222,7 +222,7 @@ export class Selection {
     let nextBlock = ((currentBlock.getNextSibling(): any): BlockNode | null);
 
     if (nextBlock === null) {
-      nextBlock = createBlock('p');
+      nextBlock = createParagraph();
       currentBlock.insertAfter(nextBlock);
     }
     const nodesToMoveLength = nodesToMove.length;
@@ -306,7 +306,7 @@ export class Selection {
         const prevBlock = ((currentBlock.getPreviousSibling(): any): BlockNode | null);
         if (prevBlock === null) {
           if (currentBlock.isHeader()) {
-            const paragraph = createBlock('p');
+            const paragraph = createParagraph();
             const children = currentBlock.getChildren();
             children.forEach((child) => paragraph.append(child));
             currentBlock.replace(paragraph);

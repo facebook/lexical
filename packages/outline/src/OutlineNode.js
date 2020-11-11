@@ -124,7 +124,7 @@ export class Node {
     const self = this.getLatest();
     return self._flags;
   }
-  getKey(): NodeKey | null {
+  getKey(): NodeKey {
     // Key is stable between copies
     return this._key;
   }

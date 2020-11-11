@@ -187,9 +187,9 @@ export class Selection {
         }
       }
       this.setRange(
-        ((firstNode.getKey(): any): NodeKey),
+        (firstNode.getKey(): NodeKey),
         startOffset,
-        ((lastNode.getKey(): any): NodeKey),
+        (lastNode.getKey(): NodeKey),
         endOffset,
       );
       currentBlock.normalizeTextNodes(true);
@@ -749,16 +749,16 @@ export function getSelection(): Selection {
   let selection = viewModel.selection;
   if (selection === null) {
     const nodeMap = viewModel.nodeMap;
-    const windowSelection = window.getSelection();
+    const windowSelection: WindowSelection = window.getSelection();
     const isCollapsed = windowSelection.isCollapsed;
     const anchorDOM = windowSelection.anchorNode;
     const focusDOM = windowSelection.focusNode;
     let anchorOffset = windowSelection.anchorOffset;
     let focusOffset = windowSelection.focusOffset;
-    let anchorNode;
-    let focusNode;
-    let anchorKey;
-    let focusKey;
+    let anchorNode: Node | null = null;
+    let focusNode: Node | null = null;
+    let anchorKey: NodeKey | null = null;
+    let focusKey: NodeKey | null = null;
     let isDirty = false;
 
     if (editor === null) {
@@ -774,8 +774,8 @@ export function getSelection(): Selection {
         throw new Error('Should never happen');
       }
       isDirty = true;
-      anchorKey = ((anchorNode._key: any): string);
-      focusKey = ((focusNode._key: any): string);
+      anchorKey = anchorNode._key;
+      focusKey = focusNode._key;
       anchorOffset = 0;
       focusOffset = focusNode.getTextContent().length;
     } else {

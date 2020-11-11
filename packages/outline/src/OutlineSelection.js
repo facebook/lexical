@@ -47,6 +47,7 @@ export class Selection {
   focusKey: string | null;
   focusOffset: number;
   isCollapsed: boolean;
+  _isDirty: boolean;
 
   constructor(
     anchorKey: string | null,
@@ -60,6 +61,7 @@ export class Selection {
     this.focusKey = focusKey;
     this.focusOffset = focusOffset;
     this.isCollapsed = isCollapsed;
+    this._isDirty = false;
   }
 
   isCaret(): boolean {
@@ -80,6 +82,9 @@ export class Selection {
       return null;
     }
     return ((getNodeByKey(focusKey): any): TextNode | null);
+  }
+  markDirty() {
+    this._isDirty = true;
   }
   getNodes(): Array<Node> {
     const anchorNode = this.getAnchorNode();
@@ -451,6 +456,107 @@ export class Selection {
       currentBlock.normalizeTextNodes(true);
     }
   }
+  moveBackward() {
+    const anchorNode = this.getAnchorNode();
+    const focusNode = this.getFocusNode();
+    if (anchorNode === null || focusNode === null) {
+      return;
+    }
+    const anchorOffset = this.anchorOffset;
+    const focusOffset = this.focusOffset;
+    if (!this.isCaret()) {
+      if (anchorNode === focusNode) {
+        const offset = focusOffset > anchorOffset ? anchorOffset : focusOffset;
+        this.anchorOffset = offset;
+        this.focusOffset = offset;
+      } else {
+        const isAnchorBefore = anchorNode.isBefore(focusNode);
+        if (isAnchorBefore) {
+          this.focusOffset = anchorOffset;
+          this.focusKey = this.anchorKey;
+        } else {
+          this.anchorOffset = focusOffset;
+          this.anchorKey = this.focusKey;
+        }
+      }
+      this.markDirty();
+      return;
+    }
+    if (anchorOffset === 0) {
+      let prevSibling = anchorNode.getPreviousSibling();
+      while (prevSibling !== null) {
+        if (
+          prevSibling.isText() &&
+          !prevSibling.isImmutable() &&
+          !prevSibling.isSegmented()
+        ) {
+          break;
+        }
+        prevSibling = prevSibling.getPreviousSibling();
+      }
+      if (prevSibling !== null) {
+        const textContentLength = prevSibling.getTextContent().length;
+        ((prevSibling: any): TextNode).select(
+          textContentLength,
+          textContentLength,
+        );
+      }
+    } else {
+      const offset = anchorOffset - 1;
+      this.anchorOffset = offset;
+      this.focusOffset = offset;
+      this.markDirty();
+    }
+  }
+  moveForward() {
+    const anchorNode = this.getAnchorNode();
+    const focusNode = this.getFocusNode();
+    if (anchorNode === null || focusNode === null) {
+      return;
+    }
+    const anchorOffset = this.anchorOffset;
+    const focusOffset = this.focusOffset;
+    if (!this.isCaret()) {
+      if (anchorNode === focusNode) {
+        const offset = focusOffset > anchorOffset ? focusOffset : anchorOffset;
+        this.anchorOffset = offset;
+        this.focusOffset = offset;
+      } else {
+        const isAnchorBefore = anchorNode.isBefore(focusNode);
+        if (isAnchorBefore) {
+          this.anchorOffset = focusOffset;
+          this.anchorKey = this.focusKey;
+        } else {
+          this.focusOffset = anchorOffset;
+          this.focusKey = this.anchorKey;
+        }
+      }
+      this.markDirty();
+      return;
+    }
+    const textContentLength = anchorNode.getTextContent().length;
+    if (anchorOffset === textContentLength) {
+      let nextSibling = anchorNode.getNextSibling();
+      while (nextSibling !== null) {
+        if (
+          nextSibling.isText() &&
+          !nextSibling.isImmutable() &&
+          !nextSibling.isSegmented()
+        ) {
+          break;
+        }
+        nextSibling = nextSibling.getNextSibling();
+      }
+      if (nextSibling !== null) {
+        ((nextSibling: any): TextNode).select(0, 0);
+      }
+    } else {
+      const offset = anchorOffset + 1;
+      this.anchorOffset = offset;
+      this.focusOffset = offset;
+      this.markDirty();
+    }
+  }
   setRange(
     anchorKey: string,
     anchorOffset: number,
@@ -506,6 +612,7 @@ export function getSelection(): Selection {
     let focusNode;
     let anchorKey;
     let focusKey;
+    let isDirty = false;
 
     if (editor === null) {
       throw new Error('Should never happen');
@@ -519,6 +626,7 @@ export function getSelection(): Selection {
       if (anchorNode === null || focusNode === null) {
         throw new Error('Should never happen');
       }
+      isDirty = true;
       anchorKey = ((anchorNode._key: any): string);
       focusKey = ((focusNode._key: any): string);
       anchorOffset = 0;
@@ -533,9 +641,11 @@ export function getSelection(): Selection {
     }
 
     if (anchorNode !== null && anchorNode._text === '') {
+      isDirty = true;
       anchorOffset = 0;
     }
     if (focusNode !== null && focusNode._text === '') {
+      isDirty = true;
       focusOffset = 0;
     }
 
@@ -546,6 +656,9 @@ export function getSelection(): Selection {
       focusOffset,
       isCollapsed,
     );
+    if (isDirty) {
+      selection.markDirty();
+    }
   }
   return selection;
 }

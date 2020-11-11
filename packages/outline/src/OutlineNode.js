@@ -16,8 +16,7 @@ function removeNode(nodeToRemove: Node): void {
   if (parent === null) {
     return;
   }
-  // $FlowFixMe too many arguments
-  const writableParent = getWritableNode(parent, true);
+  const writableParent = getWritableNode(parent);
   const parentChildren = writableParent._children;
   const key = nodeToRemove._key;
   const index = parentChildren.indexOf(key);

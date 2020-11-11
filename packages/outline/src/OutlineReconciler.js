@@ -5,8 +5,7 @@ import type {NodeMapType, ViewModel} from './OutlineView';
 import type {OutlineEditor} from './OutlineEditor';
 import type {BlockNode} from './nodes/OutlineBlockNode';
 import type {TextNode} from './nodes/OutlineTextNode';
-
-import {IS_IMMUTABLE, IS_SEGMENTED} from './OutlineNode';
+import type {Selection} from './OutlineSelection';
 
 let subTreeTextContent = '';
 let forceTextDirection = null;
@@ -101,10 +100,6 @@ function createNode(
   const node = nodeMap[key];
   const dom = node._create();
   storeDOMWithKey(key, dom, editor);
-
-  if (node._flags & IS_IMMUTABLE || node._flags & IS_SEGMENTED) {
-    dom.contentEditable = 'false';
-  }
 
   if (node.isText()) {
     subTreeTextContent += ((node: any): TextNode)._text;
@@ -461,37 +456,44 @@ export function reconcileViewModel(
   // This will over-ride any sub-tree text direction properties.
   forceTextDirection = null;
   subTreeTextContent = '';
-  // $FlowFixMe: cannot be null
-  const dirtySubTrees: Set<NodeKey> = nextViewModel._dirtySubTrees;
+  const dirtyNodes = ((nextViewModel._dirtyNodes: any): Set<NodeKey>);
 
-  reconcileNode(
-    'body',
-    null,
-    prevViewModel.nodeMap,
-    nextViewModel.nodeMap,
-    editor,
-    dirtySubTrees,
-  );
+  if (dirtyNodes.size !== 0) {
+    const dirtySubTrees = ((nextViewModel._dirtySubTrees: any): Set<NodeKey>);
+    reconcileNode(
+      'body',
+      null,
+      prevViewModel.nodeMap,
+      nextViewModel.nodeMap,
+      editor,
+      dirtySubTrees,
+    );
+  }
 
   const nextSelection = nextViewModel.selection;
-  if (nextSelection !== null) {
-    const startOffset = nextSelection.anchorOffset;
-    const endOffset = nextSelection.focusOffset;
-    const anchorKey = nextSelection.anchorKey;
-    const focusKey = nextSelection.focusKey;
-    if (anchorKey === null || focusKey === null) {
-      throw new Error('This should never happen');
-    }
-    const domSelection = window.getSelection();
-    const range = document.createRange();
-    const startElement = getSelectionElement(anchorKey, editor);
-    const endElement = getSelectionElement(focusKey, editor);
-    range.collapse(nextSelection.isCollapsed);
-    range.setStart(startElement, startOffset);
-    range.setEnd(endElement, endOffset);
-    domSelection.removeAllRanges();
-    domSelection.addRange(range);
+  if (nextSelection !== null && nextSelection._isDirty) {
+    updateSelection(nextSelection, editor);
+    nextSelection._isDirty = false;
   }
+}
+
+function updateSelection(selection: Selection, editor: OutlineEditor): void {
+  const startOffset = selection.anchorOffset;
+  const endOffset = selection.focusOffset;
+  const anchorKey = selection.anchorKey;
+  const focusKey = selection.focusKey;
+  if (anchorKey === null || focusKey === null) {
+    throw new Error('This should never happen');
+  }
+  const domSelection = window.getSelection();
+  const range = document.createRange();
+  const startElement = getSelectionElement(anchorKey, editor);
+  const endElement = getSelectionElement(focusKey, editor);
+  range.collapse(selection.isCollapsed);
+  range.setStart(startElement, startOffset);
+  range.setEnd(endElement, endOffset);
+  domSelection.removeAllRanges();
+  domSelection.addRange(range);
 }
 
 function getSelectionElement(key: NodeKey, editor: OutlineEditor): Node {

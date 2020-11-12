@@ -4,6 +4,6 @@
   "main": "dist/index.js",
   "dependencies": {
     "outline": "1.0.0",
-    "shared": "1.0.0"
+    "plugin-shared": "1.0.0"
   }
 }

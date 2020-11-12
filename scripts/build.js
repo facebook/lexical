@@ -26,7 +26,7 @@ const closureOptions = {
 };
 
 async function build(packageFolder) {
-  if (packageFolder === 'outline-example' || packageFolder === 'shared') {
+  if (packageFolder === 'outline-example' || packageFolder === 'plugin-shared') {
     return;
   }
   const inputOptions = {
@@ -35,8 +35,8 @@ async function build(packageFolder) {
       if (id === 'react' || id === 'react-dom' || id === 'outline') {
         return true;
       }
-      // We bundle shared with the different packages
-      if (id === 'shared') {
+      // We bundle shared with the the plugin packages
+      if (id === 'plugin-shared') {
         return false;
       }
     },

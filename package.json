@@ -5,7 +5,7 @@
   "private": true,
   "workspaces": [
     "packages/*",
-    "shared"
+    "plugin-shared"
   ],
   "scripts": {
     "start": "npm run build && npm start --prefix packages/outline-example",

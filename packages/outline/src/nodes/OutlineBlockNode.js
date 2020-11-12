@@ -6,7 +6,7 @@ import type {NodeKey} from '../OutlineNode';
 import {getWritableNode, Node, getNodeByKey} from '../OutlineNode';
 import {getSelection} from '../OutlineSelection';
 import {getActiveViewModel} from '../OutlineView';
-import {invariant} from 'shared';
+import {invariant} from '../OutlineUtils';
 
 function combineAdjacentTextNodes(
   textNodes: Array<TextNode>,
@@ -101,7 +101,7 @@ export class BlockNode extends Node {
   _create(): HTMLElement {
     return document.createElement(this._tag);
   }
-  _update(): boolean {
+  _update(prevNode: Node, dom: HTMLElement): boolean {
     return false;
   }
 

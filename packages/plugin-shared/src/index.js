@@ -12,7 +12,6 @@ import {
   isParagraph,
 } from './hotKeys';
 
-export {invariant} from './util';
 export const emptyObject = {};
 
 export const FORMAT_BOLD = 0;

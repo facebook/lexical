@@ -3,7 +3,7 @@ import {
   onFocusIn,
   useEditorInputEvents,
   useEvent,
-} from 'shared';
+} from 'plugin-shared';
 
 export function useRichTextPlugin(outlineEditor, isReadOnly = false) {
   const pluginStateRef = useRef(null);

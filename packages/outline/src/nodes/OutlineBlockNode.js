@@ -159,6 +159,9 @@ export class BlockNode extends Node {
           toNormalize.push(child);
           lastTextNodeFlags = flags;
         } else {
+          if (toNormalize.length > 1) {
+            combineAdjacentTextNodes(toNormalize, restoreSelection);
+          }
           toNormalize = [];
           lastTextNodeFlags = null;
         }

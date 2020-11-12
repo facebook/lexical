@@ -16,6 +16,12 @@ function insertText(text) {
   };
 }
 
+function insertParagraph(text) {
+  return {
+    type: 'insert_paragraph',
+  };
+}
+
 function deleteBackward() {
   return {
     type: 'delete_backward',
@@ -83,6 +89,10 @@ function applySelectionInputs(inputs, update, editor) {
       switch (input.type) {
         case 'insert_text': {
           selection.insertText(input.text);
+          break;
+        }
+        case 'insert_paragraph': {
+          selection.insertParagraph();
           break;
         }
         case 'delete_backward': {
@@ -208,7 +218,7 @@ describe('OutlineSelection tests', () => {
       },
     },
     {
-      name: 'Jump to beggining and insert',
+      name: 'Jump to beginning and insert',
       inputs: [
         insertText('1'),
         insertText('1'),
@@ -277,6 +287,66 @@ describe('OutlineSelection tests', () => {
         anchorOffset: 2,
         focusPath: [0, 0, 0],
         focusOffset: 6,
+      },
+    },
+    {
+      name: 'Inserting a paragraph',
+      inputs: [insertParagraph()],
+      expectedHTML:
+        '<div contenteditable="true"><p><span data-text="true"><br></span></p>' +
+        '<p><span data-text="true"><br></span></p></div>',
+      expectedSelection: {
+        anchorPath: [1, 0, 0],
+        anchorOffset: 0,
+        focusPath: [1, 0, 0],
+        focusOffset: 0,
+      },
+    },
+    {
+      name: 'Inserting a paragraph and then removing it',
+      inputs: [insertParagraph(), deleteBackward()],
+      expectedHTML:
+        '<div contenteditable="true"><p><span data-text="true"><br></span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 0,
+        focusPath: [0, 0, 0],
+        focusOffset: 0,
+      },
+    },
+    {
+      name: 'Inserting a paragraph part way through text',
+      inputs: [
+        insertText('Hello world'),
+        moveNativeSelection([0, 0, 0], 6, [0, 0, 0], 6),
+        insertParagraph(),
+      ],
+      expectedHTML:
+        '<div contenteditable="true"><p dir="ltr"><span data-text="true">Hello </span></p>' +
+        '<p dir="ltr"><span data-text="true">world</span></p></div>',
+      expectedSelection: {
+        anchorPath: [1, 0, 0],
+        anchorOffset: 0,
+        focusPath: [1, 0, 0],
+        focusOffset: 0,
+      },
+    },
+    {
+      name: 'Inserting two paragraphs and then deleting via selection',
+      inputs: [
+        insertText('123'),
+        insertParagraph(),
+        insertText('456'),
+        moveNativeSelection([0, 0, 0], 0, [1, 0, 0], 3),
+        deleteBackward(),
+      ],
+      expectedHTML:
+        '<div contenteditable="true"><p><span data-text="true"><br></span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 0,
+        focusPath: [0, 0, 0],
+        focusOffset: 0,
       },
     },
   ];

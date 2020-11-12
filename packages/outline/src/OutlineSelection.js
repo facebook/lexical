@@ -202,7 +202,7 @@ export class Selection {
       for (let i = 1; i < lastIndex; i++) {
         const selectedNode = selectedNodes[i];
         if (selectedNode instanceof TextNode && !selectedNode.isImmutable()) {
-          const selectedNextFlags = lastNode.getTextNodeFormatFlags(
+          const selectedNextFlags = selectedNode.getTextNodeFormatFlags(
             formatType,
             firstNextFlags,
           );
@@ -210,9 +210,9 @@ export class Selection {
         }
       }
       this.setRange(
-        (firstNode.getKey(): NodeKey),
+        firstNode.getKey(),
         startOffset,
-        (lastNode.getKey(): NodeKey),
+        lastNode.getKey(),
         endOffset,
       );
       currentBlock.normalizeTextNodes(true);
@@ -489,69 +489,74 @@ export class Selection {
     const anchorOffset = this.anchorOffset;
     const focusOffset = this.focusOffset;
     const firstNode = isAnchorBefore ? anchorNode : focusNode;
-    const textContent = firstNode.getTextContent();
-    const textContentLength = textContent.length;
-    let prevSibling = firstNode.getPreviousSibling();
-    let offset = isAnchorBefore ? anchorOffset : focusOffset;
+    const offset = isAnchorBefore ? anchorOffset : focusOffset;
+    let lookAhead = false;
+    let hasChars = false;
+    let hasSpace = false;
+    let hasNewLine = false;
 
-    if (anchorNode === focusNode) {
-      offset = focusOffset > anchorOffset ? anchorOffset : focusOffset;
-    }
-    const trimmedTextContentLength = textContent.trimStart().length;
+    let node = firstNode;
+    while (true) {
+      if (
+        !(node instanceof TextNode) ||
+        node.isImmutable() ||
+        node.isSegmented()
+      ) {
+        if (!lookAhead) {
+          break;
+        }
+      } else {
+        const textContent = node.getTextContent();
+        const endIndex = node === firstNode ? offset : textContent.length;
 
-    if (offset === 0 || textContentLength - trimmedTextContentLength > offset) {
-      if (prevSibling === null) {
-        const currentBlock = anchorNode.getParentBlock();
-        invariant(
-          currentBlock !== null,
-          'moveBackward: currentBlock not found',
-        );
-        const previousBlock = currentBlock.getPreviousSibling();
+        for (let s = endIndex - 1; s >= 0; s--) {
+          const char = textContent[s];
+          const nextOffset = s + 1;
+          const isSpace = char === ' ';
 
-        if (previousBlock instanceof BlockNode) {
-          let lastChild = previousBlock.getLastChild();
-          while (lastChild !== null) {
-            if (
-              lastChild instanceof TextNode &&
-              !lastChild.isImmutable() &&
-              !lastChild.isSegmented()
-            ) {
-              break;
+          if (isSpace) {
+            if (hasChars || lookAhead) {
+              node.select(nextOffset, nextOffset);
+              return;
             }
-            lastChild = lastChild.getPreviousSibling();
-          }
-          if (lastChild instanceof TextNode) {
-            const trimmedTextContent = lastChild.getTextContent().trimEnd();
-            const lastChildOffset = trimmedTextContent.length;
-            lastChild.select(lastChildOffset, lastChildOffset);
+            hasSpace = true;
+          } else if (char === '\n') {
+            if (hasChars) {
+              node.select(nextOffset, nextOffset);
+              return;
+            }
+            hasNewLine = true;
+          } else {
+            if (hasNewLine || lookAhead) {
+              node.select(nextOffset, nextOffset);
+              return;
+            }
+            hasChars = true;
           }
         }
-      } else {
-        while (prevSibling !== null) {
-          if (
-            prevSibling instanceof TextNode &&
-            !prevSibling.isImmutable() &&
-            !prevSibling.isSegmented()
-          ) {
-            break;
-          }
-          prevSibling = prevSibling.getPreviousSibling();
+        if (hasSpace || offset === 0) {
+          lookAhead = true;
         }
-        if (prevSibling instanceof TextNode) {
-          prevSibling.select();
-        }
+        node.select(0, 0);
       }
-    } else {
-      const trimmedContent = textContent.slice(0, offset).trimEnd();
-      let index = trimmedContent.lastIndexOf(' ');
-      if (index === -1) {
-        index = 0;
+      const sibling = node.getPreviousSibling();
+      if (sibling !== null) {
+        node = sibling;
       } else {
-        index++;
+        if (offset === 0) {
+          const currentBlock = node.getParentBlock();
+          invariant(currentBlock !== null, 'currentBlock not found');
+          const prevBlock = currentBlock.getPreviousSibling();
+          if (prevBlock instanceof BlockNode) {
+            const lastChild = prevBlock.getLastChild();
+            if (lastChild !== null) {
+              node = lastChild;
+              continue;
+            }
+          }
+        }
+        return;
       }
-      this.anchorOffset = index;
-      this.focusOffset = index;
-      this.markDirty();
     }
   }
   moveWordForward() {
@@ -564,72 +569,74 @@ export class Selection {
     const anchorOffset = this.anchorOffset;
     const focusOffset = this.focusOffset;
     const lastNode = isAnchorBefore ? focusNode : anchorNode;
-    const textContent = lastNode.getTextContent();
-    const textContentLength = textContent.length;
-    let nextSibling = lastNode.getNextSibling();
-    let offset = isAnchorBefore ? focusOffset : anchorOffset;
+    const offset = isAnchorBefore ? focusOffset : anchorOffset;
+    let lookAhead = false;
+    let hasChars = false;
+    let hasSpace = false;
+    let hasNewLine = false;
 
-    if (anchorNode === focusNode) {
-      offset = focusOffset > anchorOffset ? focusOffset : anchorOffset;
-    }
-    let trimmedTextContentLength = textContent.trimEnd().length;
+    let node = lastNode;
+    while (true) {
+      const textContent = node.getTextContent();
+      const textContentLength = textContent.length;
+      if (
+        !(node instanceof TextNode) ||
+        node.isImmutable() ||
+        node.isSegmented()
+      ) {
+        if (!lookAhead) {
+          break;
+        }
+      } else {
+        const startIndex = node === lastNode ? offset + 1 : 0;
 
-    if (offset === textContentLength || offset >= trimmedTextContentLength) {
-      if (nextSibling === null) {
-        const currentBlock = anchorNode.getParentBlock();
-        invariant(
-          currentBlock !== null,
-          'moveBackward: currentBlock not found',
-        );
-        const nextBlock = currentBlock.getNextSibling();
+        for (let s = startIndex; s < textContentLength; s++) {
+          const char = textContent[s];
+          const isSpace = char === ' ';
 
-        if (nextBlock instanceof BlockNode) {
-          let firstChild = nextBlock.getFirstChild();
-          while (firstChild !== null) {
-            if (
-              firstChild instanceof TextNode &&
-              !firstChild.isImmutable() &&
-              !firstChild.isSegmented()
-            ) {
-              break;
+          if (isSpace) {
+            if (hasChars || lookAhead) {
+              node.select(s, s);
+              return;
             }
-            firstChild = firstChild.getPreviousSibling();
-          }
-          if (firstChild instanceof TextNode) {
-            const firstChildTextContent = firstChild.getTextContent();
-            const trimmedTextContent = firstChildTextContent.trimStart();
-            const firstChildOffset =
-              firstChildTextContent.length - trimmedTextContent.length;
-            firstChild.select(firstChildOffset, firstChildOffset);
+            hasSpace = true;
+          } else if (char === '\n') {
+            if (hasChars) {
+              node.select(s, s);
+              return;
+            }
+            hasNewLine = true;
+          } else {
+            if (hasNewLine || lookAhead) {
+              node.select(s, s);
+              return;
+            }
+            hasChars = true;
           }
         }
-      } else {
-        while (nextSibling !== null) {
-          if (
-            nextSibling instanceof TextNode &&
-            !nextSibling.isImmutable() &&
-            !nextSibling.isSegmented()
-          ) {
-            break;
-          }
-          nextSibling = nextSibling.getNextSibling();
+        if (hasSpace || offset === textContentLength) {
+          lookAhead = true;
         }
-        if (nextSibling instanceof TextNode) {
-          nextSibling.select(0, 0);
-        }
+        node.select();
       }
-    } else {
-      const trimmedContent = textContent.slice(offset).trimStart();
-      trimmedTextContentLength = trimmedContent.length;
-      let index = trimmedContent.indexOf(' ');
-      if (index === -1) {
-        index = textContentLength;
+      const sibling = node.getNextSibling();
+      if (sibling !== null) {
+        node = sibling;
       } else {
-        index = textContentLength - trimmedTextContentLength + index;
+        if (offset === textContentLength) {
+          const currentBlock = node.getParentBlock();
+          invariant(currentBlock !== null, 'currentBlock not found');
+          const nextBlock = currentBlock.getNextSibling();
+          if (nextBlock instanceof BlockNode) {
+            const firstChild = nextBlock.getFirstChild();
+            if (firstChild !== null) {
+              node = firstChild;
+              continue;
+            }
+          }
+        }
+        return;
       }
-      this.anchorOffset = index;
-      this.focusOffset = index;
-      this.markDirty();
     }
   }
   moveBackward() {
@@ -638,74 +645,60 @@ export class Selection {
     if (anchorNode === null || focusNode === null) {
       return;
     }
+    const isAnchorBefore = anchorNode.isBefore(focusNode);
     const anchorOffset = this.anchorOffset;
     const focusOffset = this.focusOffset;
+    const firstNode = isAnchorBefore ? anchorNode : focusNode;
+
     if (!this.isCaret()) {
-      if (anchorNode === focusNode) {
-        const offset = focusOffset > anchorOffset ? anchorOffset : focusOffset;
-        this.anchorOffset = offset;
-        this.focusOffset = offset;
-      } else {
-        const isAnchorBefore = anchorNode.isBefore(focusNode);
-        if (isAnchorBefore) {
-          this.focusOffset = anchorOffset;
-          this.focusKey = this.anchorKey;
-        } else {
-          this.anchorOffset = focusOffset;
-          this.anchorKey = this.focusKey;
-        }
-      }
-      this.markDirty();
+      const offset = anchorOffset > focusOffset ? focusOffset : anchorOffset;
+      firstNode.select(offset, offset);
       return;
     }
-    if (anchorOffset === 0) {
-      let prevSibling = anchorNode.getPreviousSibling();
-      while (prevSibling !== null) {
-        if (
-          prevSibling instanceof TextNode &&
-          !prevSibling.isImmutable() &&
-          !prevSibling.isSegmented()
-        ) {
-          break;
-        }
-        prevSibling = prevSibling.getPreviousSibling();
-      }
-      if (prevSibling === null) {
-        const currentBlock = anchorNode.getParentBlock();
-        invariant(
-          currentBlock !== null,
-          'moveBackward: currentBlock not found',
-        );
-        const previousBlock = currentBlock.getPreviousSibling();
-        if (previousBlock instanceof BlockNode) {
-          let lastChild = previousBlock.getLastChild();
-          while (lastChild !== null) {
-            if (
-              lastChild instanceof TextNode &&
-              !lastChild.isImmutable() &&
-              !lastChild.isSegmented()
-            ) {
-              break;
-            }
-            lastChild = lastChild.getPreviousSibling();
-          }
-          if (lastChild instanceof TextNode) {
-            lastChild.select();
-          }
-        }
+    const offset = isAnchorBefore ? anchorOffset : focusOffset;
+
+    let node = firstNode;
+    let notAdjacent = false;
+    while (true) {
+      if (
+        !(node instanceof TextNode) ||
+        node.isImmutable() ||
+        node.isSegmented()
+      ) {
+        notAdjacent = true;
       } else {
-        const textContentLength = prevSibling.getTextContent().length;
-        invariant(
-          prevSibling instanceof TextNode,
-          'moveBackward: prevSibling not a text node',
-        );
-        prevSibling.select(textContentLength, textContentLength);
+        if (node === firstNode) {
+          if (offset !== 0) {
+            const nextOffset = offset - 1;
+            node.select(nextOffset, nextOffset);
+            return;
+          }
+        } else {
+          const textContentLength = node.getTextContent().length;
+          const nextOffset = notAdjacent
+            ? textContentLength
+            : textContentLength - 1;
+          node.select(nextOffset, nextOffset);
+          return;
+        }
       }
-    } else {
-      const offset = anchorOffset - 1;
-      this.anchorOffset = offset;
-      this.focusOffset = offset;
-      this.markDirty();
+      const sibling = node.getPreviousSibling();
+      if (sibling !== null) {
+        node = sibling;
+      } else {
+        const currentBlock = node.getParentBlock();
+        invariant(currentBlock !== null, 'currentBlock not found');
+        const prevBlock = currentBlock.getPreviousSibling();
+        if (prevBlock instanceof BlockNode) {
+          const lastChild = prevBlock.getLastChild();
+          if (lastChild !== null) {
+            node = lastChild;
+            notAdjacent = true;
+            continue;
+          }
+        }
+        return;
+      }
     }
   }
   moveForward() {
@@ -714,86 +707,70 @@ export class Selection {
     if (anchorNode === null || focusNode === null) {
       return;
     }
+    const isAnchorBefore = anchorNode.isBefore(focusNode);
     const anchorOffset = this.anchorOffset;
     const focusOffset = this.focusOffset;
+    const lastNode = isAnchorBefore ? focusNode : anchorNode;
+
     if (!this.isCaret()) {
-      if (anchorNode === focusNode) {
-        const offset = focusOffset > anchorOffset ? focusOffset : anchorOffset;
-        this.anchorOffset = offset;
-        this.focusOffset = offset;
-      } else {
-        const isAnchorBefore = anchorNode.isBefore(focusNode);
-        if (isAnchorBefore) {
-          this.anchorOffset = focusOffset;
-          this.anchorKey = this.focusKey;
-        } else {
-          this.focusOffset = anchorOffset;
-          this.focusKey = this.anchorKey;
-        }
-      }
-      this.markDirty();
+      const offset = anchorOffset > focusOffset ? anchorOffset : focusOffset;
+      lastNode.select(offset, offset);
       return;
     }
-    const textContentLength = anchorNode.getTextContent().length;
-    if (anchorOffset === textContentLength) {
-      let nextSibling = anchorNode.getNextSibling();
-      while (nextSibling !== null) {
-        if (
-          nextSibling instanceof TextNode &&
-          !nextSibling.isImmutable() &&
-          !nextSibling.isSegmented()
-        ) {
-          break;
+    const offset = isAnchorBefore ? focusOffset : anchorOffset;
+
+    let node = lastNode;
+    let notAdjacent = false;
+    while (true) {
+      if (
+        !(node instanceof TextNode) ||
+        node.isImmutable() ||
+        node.isSegmented()
+      ) {
+        notAdjacent = true;
+      } else {
+        if (node === lastNode) {
+          if (offset !== node.getTextContent().length) {
+            const nextOffset = offset + 1;
+            node.select(nextOffset, nextOffset);
+            return;
+          }
+        } else {
+          const nextOffset = notAdjacent ? 0 : 1;
+          node.select(nextOffset, nextOffset);
+          return;
         }
-        nextSibling = nextSibling.getNextSibling();
       }
-      if (nextSibling === null) {
-        const currentBlock = anchorNode.getParentBlock();
-        invariant(
-          currentBlock !== null,
-          'moveForward: currentBlock not be found',
-        );
+      const sibling = node.getNextSibling();
+      if (sibling !== null) {
+        node = sibling;
+      } else {
+        const currentBlock = node.getParentBlock();
+        invariant(currentBlock !== null, 'currentBlock not found');
         const nextBlock = currentBlock.getNextSibling();
         if (nextBlock instanceof BlockNode) {
-          let firstChild = nextBlock.getFirstChild();
-          while (firstChild !== null) {
-            if (
-              firstChild instanceof TextNode &&
-              !firstChild.isImmutable() &&
-              !firstChild.isSegmented()
-            ) {
-              break;
-            }
-            firstChild = firstChild.getNextSibling();
-          }
-          if (firstChild instanceof TextNode) {
-            firstChild.select(0, 0);
+          const firstChild = nextBlock.getFirstChild();
+          if (firstChild !== null) {
+            node = firstChild;
+            notAdjacent = true;
+            continue;
           }
         }
-      } else {
-        invariant(
-          nextSibling instanceof TextNode,
-          'moveForward: nextSibling not a text node',
-        );
-        nextSibling.select(0, 0);
+        return;
       }
-    } else {
-      const offset = anchorOffset + 1;
-      this.anchorOffset = offset;
-      this.focusOffset = offset;
-      this.markDirty();
     }
   }
   setRange(
-    anchorKey: string,
+    anchorKey: NodeKey,
     anchorOffset: number,
-    focusKey: string,
+    focusKey: NodeKey,
     focusOffset: number,
   ) {
     this.anchorOffset = anchorOffset;
     this.focusOffset = focusOffset;
     this.anchorKey = anchorKey;
     this.focusKey = focusKey;
+    this.markDirty();
   }
   getTextContent(): string {
     const viewModel = getActiveViewModel();

@@ -1,4 +1,4 @@
-// @flow
+// @flow strict-local
 
 import type {BodyNode} from './nodes/OutlineBodyNode';
 import type {OutlineEditor} from './OutlineEditor';

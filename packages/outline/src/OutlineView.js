@@ -8,6 +8,7 @@ import type {Node, NodeKey} from './OutlineNode';
 import {reconcileViewModel} from './OutlineReconciler';
 import {getSelection} from './OutlineSelection';
 import {getNodeByKey} from './OutlineNode';
+import {TextNode} from '.';
 
 export type ViewType = {
   getBody: () => BodyNode | null,
@@ -89,7 +90,7 @@ export function applyTextTransforms(
       const mutatedNodeKey = mutatedNodeKeys[s];
       const node = nodeMap[mutatedNodeKey];
       if (node != null) {
-        if (node.isText()) {
+        if (node instanceof TextNode) {
           for (let i = 0; i < textTransforms.length; i++) {
             textTransforms[i](node, view);
           }

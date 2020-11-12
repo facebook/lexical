@@ -133,6 +133,11 @@ describe('OutlineSelection tests', () => {
     init();
   });
 
+  afterEach(() => {
+    document.body.removeChild(container);
+    container = null;
+  });
+
   let editor = null;
 
   function init() {
@@ -164,11 +169,6 @@ describe('OutlineSelection tests', () => {
     const viewModel = editor.createViewModel(callback);
     editor.update(viewModel, true);
   }
-
-  afterEach(() => {
-    document.body.removeChild(container);
-    container = null;
-  });
 
   test('Expect initial output to be a block with some text', () => {
     expect(sanitizeHTML(container.innerHTML)).toBe(

@@ -44,33 +44,29 @@ function removeNode(nodeToRemove: Node): void {
   }
   // Remove key from node map
   const viewModel = getActiveViewModel();
-  delete viewModel.nodeMap[(key: $FlowFixMeThisCanBeNull)];
+  delete viewModel.nodeMap[key];
 }
-
-type $FlowFixMeThisCanBeNull = $FlowFixMe;
 
 function replaceNode<N: Node>(toReplace: Node, replaceWith: N): N {
   const writableReplaceWith = getWritableNode(replaceWith);
-  const oldParent = writableReplaceWith.getParent();
+  const oldParent = writableReplaceWith.getParentOrThrow();
   if (oldParent !== null) {
-    const writableParent = getWritableNode(
-      (oldParent: $FlowFixMeThisCanBeNull),
-    );
+    const writableParent = getWritableNode(oldParent);
     const children = writableParent._children;
     const index = children.indexOf(writableReplaceWith._key);
     if (index > -1) {
       children.splice(index, 1);
     }
   }
-  const newParent = toReplace.getParent();
-  const writableParent = getWritableNode((newParent: $FlowFixMeThisCanBeNull));
+  const newParent = toReplace.getParentOrThrow();
+  const writableParent = getWritableNode(newParent);
   const children = writableParent._children;
   const index = children.indexOf(toReplace._key);
   const newKey = replaceWith._key;
   if (index > -1) {
     children.splice(index, 0, newKey);
   }
-  writableReplaceWith._parent = (newParent: $FlowFixMeThisCanBeNull)._key;
+  writableReplaceWith._parent = newParent._key;
   toReplace.remove();
   // Add node to map
   const viewModel = getActiveViewModel();
@@ -79,7 +75,7 @@ function replaceNode<N: Node>(toReplace: Node, replaceWith: N): N {
 }
 
 function wrapInTextNodes<N: Node>(node: N): N {
-  const prevSibling: $FlowFixMeThisCanBeNull = node.getPreviousSibling();
+  const prevSibling = node.getPreviousSibling();
   if (
     prevSibling === null ||
     !prevSibling.isText() ||
@@ -89,7 +85,7 @@ function wrapInTextNodes<N: Node>(node: N): N {
     const text = createText('');
     node.insertBefore(text);
   }
-  const nextSibling: $FlowFixMeThisCanBeNull = node.getNextSibling();
+  const nextSibling = node.getNextSibling();
   if (
     nextSibling === null ||
     !nextSibling.isText() ||
@@ -99,7 +95,8 @@ function wrapInTextNodes<N: Node>(node: N): N {
     const text = createText('');
     node.insertAfter(text);
   }
-  (node.getParent(): $FlowFixMeThisCanBeNull).normalizeTextNodes(true);
+  // TODO: This should be getParentBlock probably
+  (node.getParent(): $FlowFixMe).normalizeTextNodes(true);
   return node;
 }
 
@@ -240,7 +237,7 @@ export class Node {
     let indexB = 0;
     let node = this;
     while (true) {
-      const parent = (node: $FlowFixMeThisCanBeNull).getParent();
+      const parent = node.getParentOrThrow();
       if (parent === commonAncestor) {
         indexA = parent._children.indexOf(node._key);
         break;
@@ -249,7 +246,7 @@ export class Node {
     }
     node = targetNode;
     while (true) {
-      const parent = (node: $FlowFixMeThisCanBeNull).getParent();
+      const parent = node.getParentOrThrow();
       if (parent === commonAncestor) {
         indexB = parent._children.indexOf(node._key);
         break;
@@ -261,7 +258,7 @@ export class Node {
 
   isParentOf(targetNode: Node): boolean {
     const key = this._key;
-    let node: $FlowFixMeThisCanBeNull = targetNode;
+    let node = targetNode;
     while (node !== null) {
       if (node._key === key) {
         return true;
@@ -276,13 +273,15 @@ export class Node {
     const nodes = [];
 
     if (isBefore) {
-      let node: $FlowFixMeThisCanBeNull = this;
+      let node = this;
       while (true) {
         nodes.push(node);
         if (node === targetNode) {
           break;
         }
-        const child = node.isBlock() ? node.getFirstChild() : null;
+        const child = node.isBlock()
+          ? (node: $FlowFixMe).getFirstChild()
+          : null;
         if (child !== null) {
           node = child;
           continue;
@@ -309,13 +308,13 @@ export class Node {
         node = parentSibling;
       }
     } else {
-      let node: $FlowFixMeThisCanBeNull = this;
+      let node = this;
       while (true) {
         nodes.push(node);
         if (node === targetNode) {
           break;
         }
-        const child = node.isBlock() ? node.getLastChild() : null;
+        const child = node.isBlock() ? (node: $FlowFixMe).getLastChild() : null;
         if (child !== null) {
           node = child;
           continue;
@@ -446,9 +445,7 @@ export class Node {
         children.splice(index, 1);
       }
     }
-    const writableParent: ParentNode = getWritableNode(
-      (this.getParent(): $FlowFixMeThisCanBeNull),
-    );
+    const writableParent: ParentNode = getWritableNode(this.getParentOrThrow());
     const insertKey = nodeToInsert._key;
     writableNodeToInsert._parent = writableSelf._parent;
     const children = writableParent._children;
@@ -474,9 +471,7 @@ export class Node {
         children.splice(index, 1);
       }
     }
-    const writableParent: ParentNode = getWritableNode(
-      (this.getParent(): $FlowFixMeThisCanBeNull),
-    );
+    const writableParent = getWritableNode(this.getParentOrThrow());
     const insertKey = nodeToInsert._key;
     writableNodeToInsert._parent = writableSelf._parent;
     const children = writableParent._children;

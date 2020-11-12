@@ -619,7 +619,7 @@ export class Selection {
             lastChild = lastChild.getPreviousSibling();
           }
           if (lastChild !== null) {
-            lastChild.select();
+            ((lastChild: any): TextNode).select();
           }
         }
       } else {
@@ -691,7 +691,7 @@ export class Selection {
             firstChild = firstChild.getNextSibling();
           }
           if (firstChild !== null) {
-            firstChild.select(0, 0);
+            ((firstChild: any): TextNode).select(0, 0);
           }
         }
       } else {

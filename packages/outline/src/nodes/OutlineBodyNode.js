@@ -1,4 +1,4 @@
-// @flow
+// @flow strict-local
 
 import {BlockNode} from './OutlineBlockNode';
 
@@ -16,9 +16,6 @@ export class BodyNode extends BlockNode {
     clone._key = this._key;
     clone._flags = this._flags;
     return clone;
-  }
-  isBody(): true {
-    return true;
   }
 }
 

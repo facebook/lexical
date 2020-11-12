@@ -19,9 +19,6 @@ export class HeaderNode extends BlockNode {
     clone._flags = this._flags;
     return clone;
   }
-  isHeader(): true {
-    return true;
-  }
 }
 
 export function createHeaderNode(headerTag: HeaderTagType): HeaderNode {

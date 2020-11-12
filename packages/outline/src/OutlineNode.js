@@ -1,10 +1,10 @@
-// @flow
+// @flow strict-local
 
 import type {NodeMapType} from './OutlineView';
-import type {BlockNode} from './nodes/OutlineBlockNode';
 
-import {createText} from '.';
+import {createText, BodyNode, BlockNode, TextNode} from '.';
 import {getActiveViewModel} from './OutlineView';
+import {invariant} from './OutlineUtils';
 
 export const IS_IMMUTABLE = 1;
 export const IS_SEGMENTED = 1 << 1;
@@ -35,7 +35,7 @@ function removeNode(nodeToRemove: Node): void {
   const writableNodeToRemove = getWritableNode(nodeToRemove);
   writableNodeToRemove._parent = null;
   // Remove children
-  if (!nodeToRemove.isText()) {
+  if (nodeToRemove instanceof BlockNode) {
     // $FlowFixMe refine this. We know the node is not text so it must have children.
     const children = nodeToRemove.getChildren();
     for (let i = 0; i < children.length; i++) {
@@ -49,7 +49,7 @@ function removeNode(nodeToRemove: Node): void {
 
 function replaceNode<N: Node>(toReplace: Node, replaceWith: N): N {
   const writableReplaceWith = getWritableNode(replaceWith);
-  const oldParent = writableReplaceWith.getParentOrThrow();
+  const oldParent = writableReplaceWith.getParent();
   if (oldParent !== null) {
     const writableParent = getWritableNode(oldParent);
     const children = writableParent._children;
@@ -78,7 +78,7 @@ function wrapInTextNodes<N: Node>(node: N): N {
   const prevSibling = node.getPreviousSibling();
   if (
     prevSibling === null ||
-    !prevSibling.isText() ||
+    !(prevSibling instanceof TextNode) ||
     prevSibling.isImmutable() ||
     prevSibling.isSegmented()
   ) {
@@ -88,7 +88,7 @@ function wrapInTextNodes<N: Node>(node: N): N {
   const nextSibling = node.getNextSibling();
   if (
     nextSibling === null ||
-    !nextSibling.isText() ||
+    !(nextSibling instanceof TextNode) ||
     nextSibling.isImmutable() ||
     nextSibling.isSegmented()
   ) {
@@ -106,7 +106,7 @@ export class Node {
   _flags: number;
   _key: NodeKey;
   _parent: null | NodeKey;
-  // TODO: Figure out how to type "_type".
+  // $FlowFixMe: TODO Figure out how to type "_type".
   _type: any;
   constructor(key?: string) {
     this._flags = 0;
@@ -160,8 +160,7 @@ export class Node {
   getParentBlock(): BlockNode | null {
     let node = this;
     while (node !== null) {
-      if (node.isBlock()) {
-        // $FlowFixMe we know this is a block node but flow doesn't
+      if (node instanceof BlockNode) {
         return node;
       }
       node = node.getParent();
@@ -279,9 +278,7 @@ export class Node {
         if (node === targetNode) {
           break;
         }
-        const child = node.isBlock()
-          ? (node: $FlowFixMe).getFirstChild()
-          : null;
+        const child = node instanceof BlockNode ? node.getFirstChild() : null;
         if (child !== null) {
           node = child;
           continue;
@@ -314,7 +311,7 @@ export class Node {
         if (node === targetNode) {
           break;
         }
-        const child = node.isBlock() ? (node: $FlowFixMe).getLastChild() : null;
+        const child = node instanceof BlockNode ? node.getLastChild() : null;
         if (child !== null) {
           node = child;
           continue;
@@ -345,18 +342,6 @@ export class Node {
     return nodes;
   }
 
-  isBody(): boolean {
-    return false;
-  }
-  isHeader(): boolean {
-    return false;
-  }
-  isBlock(): boolean {
-    return false;
-  }
-  isText(): boolean {
-    return false;
-  }
   isImmutable(): boolean {
     return (this.getLatest()._flags & IS_IMMUTABLE) !== 0;
   }
@@ -376,7 +361,7 @@ export class Node {
   }
 
   getTextContent(): string {
-    if (this.isText()) {
+    if (this instanceof TextNode) {
       return this.getTextContent();
     }
     let textContent = '';
@@ -386,7 +371,7 @@ export class Node {
     for (let i = 0; i < childrenLength; i++) {
       const child = children[i];
       textContent += child.getTextContent();
-      if (child.isBlock() && i !== childrenLength - 1) {
+      if (child instanceof BlockNode && i !== childrenLength - 1) {
         textContent += '\n\n';
       }
     }
@@ -490,31 +475,36 @@ export class Node {
 
 export function getWritableNode<N: Node>(node: N): N {
   const viewModel = getActiveViewModel();
-  const dirtyNodes = ((viewModel._dirtyNodes: any): Set<NodeKey>);
+  const dirtyNodes = viewModel._dirtyNodes;
+  invariant(dirtyNodes !== null, 'getWritableNode: dirtyNodes not found');
   const nodeMap = viewModel.nodeMap;
   const key = node._key;
   // Ensure we get the latest node from pending state
-  node = node.getLatest();
+  const latestNode = node.getLatest();
   const parent = node._parent;
   if (parent !== null) {
-    const dirtySubTrees = ((viewModel._dirtySubTrees: any): Set<NodeKey>);
+    const dirtySubTrees = viewModel._dirtySubTrees;
+    invariant(
+      dirtySubTrees !== null,
+      'getWritableNode: dirtySubTrees not found',
+    );
     markParentsAsDirty(parent, nodeMap, dirtySubTrees);
   }
   if (dirtyNodes.has(key)) {
-    return node;
+    return latestNode;
   }
   // $FlowFixMe we don't know that clone() exists
-  const mutableNode = node.clone();
-  if (mutableNode._type !== node._type) {
+  const mutableNode = latestNode.clone();
+  if (mutableNode._type !== latestNode._type) {
     throw new Error(
-      node.constructor.name +
+      latestNode.constructor.name +
         ': "clone" method was either missing or incorrectly implemented.',
     );
   }
   mutableNode._key = key;
   // If we're mutating the body node, make sure to update
   // the pointer in state too.
-  if (mutableNode.isBody()) {
+  if (mutableNode instanceof BodyNode) {
     viewModel.body = mutableNode;
   }
   dirtyNodes.add(key);

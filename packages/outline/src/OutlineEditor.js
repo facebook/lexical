@@ -5,19 +5,21 @@ import type {Node, NodeKey} from './OutlineNode';
 import type {Selection} from './OutlineSelection';
 
 import {useEffect, useState} from 'react';
-import {TextNode} from './nodes/OutlineTextNode';
-import {BlockNode} from './nodes/OutlineBlockNode';
-import {BodyNode} from './nodes/OutlineBodyNode';
-import {HeaderNode} from './nodes/OutlineHeaderNode';
-import {ParagraphNode} from './nodes/OutlineParagraphNode';
-import {createBodyNode} from './nodes/OutlineBodyNode';
+import {
+  createBody,
+  BlockNode,
+  BodyNode,
+  HeaderNode,
+  TextNode,
+  ParagraphNode,
+} from '.';
 import {createViewModel, updateViewModel, ViewModel} from './OutlineView';
 
 function createOutlineEditor(
   editorElement,
   onChange: onChangeType,
 ): OutlineEditor {
-  const body = createBodyNode();
+  const body = createBody();
   const viewModel = new ViewModel(body);
   viewModel.nodeMap.body = body;
   const outlineEditor = new OutlineEditor(editorElement, viewModel, onChange);

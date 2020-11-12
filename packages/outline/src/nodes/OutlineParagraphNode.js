@@ -1,4 +1,4 @@
-// @flow
+// @flow strict-local
 
 import {BlockNode} from './OutlineBlockNode';
 
@@ -16,9 +16,6 @@ export class ParagraphNode extends BlockNode {
     clone._key = this._key;
     clone._flags = this._flags;
     return clone;
-  }
-  isHeader(): true {
-    return true;
   }
 }
 

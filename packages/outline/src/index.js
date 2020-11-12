@@ -6,21 +6,32 @@ import {
   createBlockNode as createBlock,
   BlockNode,
 } from './nodes/OutlineBlockNode';
-import {createHeaderNode as createHeader} from './nodes/OutlineHeaderNode';
-import {createParagraphNode as createParagraph} from './nodes/OutlineParagraphNode';
+import {
+  createHeaderNode as createHeader,
+  HeaderNode,
+} from './nodes/OutlineHeaderNode';
+import {
+  createParagraphNode as createParagraph,
+  ParagraphNode,
+} from './nodes/OutlineParagraphNode';
 import {
   createImageNode as createImage,
   ImageNode,
 } from './nodes/OutlineImageNode';
+import {createBodyNode as createBody, BodyNode} from './nodes/OutlineBodyNode';
 
 export {
-  createText,
+  createBody,
   createBlock,
   createHeader,
   createImage,
   createParagraph,
-  useOutlineEditor,
+  createText,
+  BodyNode,
   BlockNode,
-  TextNode,
+  HeaderNode,
   ImageNode,
+  ParagraphNode,
+  TextNode,
+  useOutlineEditor,
 };

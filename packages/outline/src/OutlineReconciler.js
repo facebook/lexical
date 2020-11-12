@@ -1,11 +1,11 @@
-// @flow
+// @flow strict-local
 
 import type {NodeKey} from './OutlineNode';
 import type {NodeMapType, ViewModel} from './OutlineView';
 import type {OutlineEditor} from './OutlineEditor';
-import type {BlockNode} from './nodes/OutlineBlockNode';
-import type {TextNode} from './nodes/OutlineTextNode';
 import type {Selection} from './OutlineSelection';
+
+import {BlockNode, TextNode} from '.';
 
 let subTreeTextContent = '';
 let forceTextDirection = null;
@@ -62,8 +62,8 @@ function destroyNode(
   if (nextNodeMap[key] === undefined) {
     editor._keyToDOMMap.delete(key);
   }
-  if (node.isBlock()) {
-    const children = ((node: any): BlockNode)._children;
+  if (node instanceof BlockNode) {
+    const children = node._children;
     destroyChildren(
       children,
       0,
@@ -78,13 +78,14 @@ function destroyNode(
 
 function destroyChildren(
   children: Array<NodeKey>,
-  startIndex: number,
+  _startIndex: number,
   endIndex: number,
   dom: null | HTMLElement,
   prevNodeMap: NodeMapType,
   nextNodeMap: NodeMapType,
   editor: OutlineEditor,
 ): void {
+  let startIndex = _startIndex;
   for (; startIndex <= endIndex; ++startIndex) {
     destroyNode(children[startIndex], dom, prevNodeMap, nextNodeMap, editor);
   }
@@ -101,11 +102,11 @@ function createNode(
   const dom = node._create();
   storeDOMWithKey(key, dom, editor);
 
-  if (node.isText()) {
-    subTreeTextContent += ((node: any): TextNode)._text;
-  } else {
+  if (node instanceof TextNode) {
+    subTreeTextContent += node._text;
+  } else if (node instanceof BlockNode) {
     // Handle block children
-    const children = ((node: any): BlockNode)._children;
+    const children = node._children;
     const previousSubTreeTextContent = subTreeTextContent;
     subTreeTextContent = '';
     const childrenLength = children.length;
@@ -125,13 +126,14 @@ function createNode(
 
 function createChildren(
   children: Array<NodeKey>,
-  startIndex: number,
+  _startIndex: number,
   endIndex: number,
   dom: null | HTMLElement,
   insertDOM: null | HTMLElement,
   nodeMap: NodeMapType,
   editor: OutlineEditor,
 ): void {
+  let startIndex = _startIndex;
   for (; startIndex <= endIndex; ++startIndex) {
     createNode(children[startIndex], dom, insertDOM, nodeMap, editor);
   }
@@ -147,20 +149,19 @@ function reconcileNode(
 ): void {
   const prevNode = prevNodeMap[key];
   const nextNode = nextNodeMap[key];
-  const prevIsText = prevNode.isText();
   const hasDirtySubTree =
     dirtySubTrees !== null ? dirtySubTrees.has(key) : true;
   const dom = editor.getElementByKey(key);
 
   if (prevNode === nextNode && !hasDirtySubTree) {
-    if (!prevIsText) {
+    if (prevNode instanceof TextNode) {
+      subTreeTextContent += prevNode._text;
+    } else {
       // $FlowFixMe: internal field
       const prevSubTreeTextContent = dom.__outlineTextContent;
       if (prevSubTreeTextContent !== undefined) {
         subTreeTextContent += prevSubTreeTextContent;
       }
-    } else {
-      subTreeTextContent += ((prevNode: any): TextNode)._text;
     }
     return;
   }
@@ -175,90 +176,95 @@ function reconcileNode(
     return;
   }
   // Handle text content, for LTR, LTR cases.
-  if (nextNode.isText()) {
-    subTreeTextContent += ((nextNode: any): TextNode)._text;
+  if (nextNode instanceof TextNode) {
+    subTreeTextContent += nextNode._text;
     return;
-  }
-  // Reconcile block children
-  const prevChildren = ((prevNode: any): BlockNode)._children;
-  const nextChildren = ((nextNode: any): BlockNode)._children;
-  const childrenAreDifferent = prevChildren !== nextChildren;
+  } else if (prevNode instanceof BlockNode && nextNode instanceof BlockNode) {
+    // Reconcile block children
+    const prevChildren = prevNode._children;
+    const nextChildren = nextNode._children;
+    const childrenAreDifferent = prevChildren !== nextChildren;
 
-  if (childrenAreDifferent || hasDirtySubTree) {
-    const prevChildrenLength = prevChildren.length;
-    const nextChildrenLength = nextChildren.length;
-    const previousSubTreeTextContent = subTreeTextContent;
-    subTreeTextContent = '';
+    if (childrenAreDifferent || hasDirtySubTree) {
+      const prevChildrenLength = prevChildren.length;
+      const nextChildrenLength = nextChildren.length;
+      const previousSubTreeTextContent = subTreeTextContent;
+      subTreeTextContent = '';
 
-    if (prevChildrenLength === 1 && nextChildrenLength === 1) {
-      const prevChildKey = prevChildren[0];
-      const nextChildKey = nextChildren[0];
-      if (prevChildKey === nextChildKey) {
-        reconcileNode(
-          prevChildKey,
+      if (prevChildrenLength === 1 && nextChildrenLength === 1) {
+        const prevChildKey = prevChildren[0];
+        const nextChildKey = nextChildren[0];
+        if (prevChildKey === nextChildKey) {
+          reconcileNode(
+            prevChildKey,
+            dom,
+            prevNodeMap,
+            nextNodeMap,
+            editor,
+            dirtySubTrees,
+          );
+        } else {
+          const lastDOM = editor.getElementByKey(prevChildKey);
+          const replacementDOM = createNode(
+            nextChildKey,
+            null,
+            null,
+            nextNodeMap,
+            editor,
+          );
+          dom.replaceChild(replacementDOM, lastDOM);
+          destroyNode(prevChildKey, null, prevNodeMap, nextNodeMap, editor);
+        }
+      } else if (prevChildrenLength === 0) {
+        if (nextChildrenLength !== 0) {
+          createChildren(
+            nextChildren,
+            0,
+            nextChildrenLength - 1,
+            dom,
+            null,
+            nextNodeMap,
+            editor,
+          );
+        }
+      } else if (nextChildrenLength === 0) {
+        if (prevChildrenLength !== 0) {
+          destroyChildren(
+            prevChildren,
+            0,
+            prevChildrenLength - 1,
+            null,
+            prevNodeMap,
+            nextNodeMap,
+            editor,
+          );
+          // Fast path for removing DOM nodes
+          dom.textContent = '';
+        }
+      } else {
+        reconcileNodeChildren(
+          prevChildren,
+          nextChildren,
+          prevChildrenLength,
+          nextChildrenLength,
           dom,
           prevNodeMap,
           nextNodeMap,
           editor,
           dirtySubTrees,
         );
-      } else {
-        const lastDOM = editor.getElementByKey(prevChildKey);
-        const replacementDOM = createNode(
-          nextChildKey,
-          null,
-          null,
-          nextNodeMap,
-          editor,
-        );
-        dom.replaceChild(replacementDOM, lastDOM);
-        destroyNode(prevChildKey, null, prevNodeMap, nextNodeMap, editor);
       }
-    } else if (prevChildrenLength === 0) {
-      if (nextChildrenLength !== 0) {
-        createChildren(
-          nextChildren,
-          0,
-          nextChildrenLength - 1,
-          dom,
-          null,
-          nextNodeMap,
-          editor,
-        );
-      }
-    } else if (nextChildrenLength === 0) {
-      if (prevChildrenLength !== 0) {
-        destroyChildren(
-          prevChildren,
-          0,
-          prevChildrenLength - 1,
-          null,
-          prevNodeMap,
-          nextNodeMap,
-          editor,
-        );
-        // Fast path for removing DOM nodes
-        dom.textContent = '';
-      }
-    } else {
-      reconcileNodeChildren(
-        prevChildren,
-        nextChildren,
-        prevChildrenLength,
-        nextChildrenLength,
-        dom,
-        prevNodeMap,
-        nextNodeMap,
-        editor,
-        dirtySubTrees,
-      );
+      handleBlockTextDirection(dom);
+      subTreeTextContent = previousSubTreeTextContent;
     }
-    handleBlockTextDirection(dom);
-    subTreeTextContent = previousSubTreeTextContent;
   }
 }
 
-function createKeyToIndexMap(children, startIndex, endIndex) {
+function createKeyToIndexMap(
+  children: Array<NodeKey>,
+  startIndex: number,
+  endIndex: number,
+): Map<NodeKey, number> {
   let i, key;
   const map = new Map();
   for (i = startIndex; i <= endIndex; ++i) {
@@ -289,7 +295,7 @@ function findIndexInPrevChildren(
 // https://github.com/vuejs/vue/blob/dev/src/core/vdom/patch.js#L404
 
 function reconcileNodeChildren(
-  prevChildren: Array<NodeKey>,
+  _prevChildren: Array<NodeKey>,
   nextChildren: Array<NodeKey>,
   prevChildrenLength: number,
   nextChildrenLength: number,
@@ -302,9 +308,11 @@ function reconcileNodeChildren(
   let hasClonedPrevChildren = false;
   let prevStartIndex = 0;
   let nextStartIndex = 0;
+  let prevChildren = _prevChildren;
   let prevEndIndex = prevChildren.length - 1;
   let prevStartKey = prevChildren[0];
-  let prevEndKey = prevChildren[prevEndIndex];
+  // $FlowFixMe: this is never undefined
+  let prevEndKey: NodeKey = prevChildren[prevEndIndex];
   let nextEndIndex = nextChildren.length - 1;
   let nextStartKey = nextChildren[0];
   let nextEndKey = nextChildren[nextEndIndex];
@@ -408,8 +416,8 @@ function reconcileNodeChildren(
             hasClonedPrevChildren = true;
             prevChildren = [...prevChildren];
           }
-          // $FlowFixMe: TODO fix later
-          prevChildren[indexInPrevChildren] = undefined;
+          // $FlowFixMe: figure a way of typing this better
+          prevChildren[indexInPrevChildren] = ((undefined: any): NodeKey);
           dom.insertBefore(
             editor.getElementByKey(keyToMove),
             editor.getElementByKey(prevStartKey),
@@ -456,10 +464,10 @@ export function reconcileViewModel(
   // This will over-ride any sub-tree text direction properties.
   forceTextDirection = null;
   subTreeTextContent = '';
-  const dirtyNodes = ((nextViewModel._dirtyNodes: any): Set<NodeKey>);
+  const dirtyNodes = nextViewModel._dirtyNodes;
+  const dirtySubTrees = nextViewModel._dirtySubTrees;
 
-  if (dirtyNodes.size !== 0) {
-    const dirtySubTrees = ((nextViewModel._dirtySubTrees: any): Set<NodeKey>);
+  if (dirtyNodes !== null && dirtySubTrees !== null && dirtyNodes.size !== 0) {
     reconcileNode(
       'body',
       null,

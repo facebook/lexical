@@ -1,11 +1,10 @@
-// @flow
+// @flow strict-local
 
 import type {Selection} from '../OutlineSelection';
 
 import {IS_IMMUTABLE} from '../OutlineNode';
 import {getWritableNode, IS_SEGMENTED, Node} from '../OutlineNode';
 import {getSelection} from '../OutlineSelection';
-import {BlockNode} from './OutlineBlockNode';
 import {getActiveViewModel} from '../OutlineView';
 
 const IS_BOLD = 1 << 2;
@@ -36,7 +35,7 @@ function splitText(
   node: TextNode,
   splitOffsets: Array<number>,
 ): Array<TextNode> {
-  if (!node.isText() || node.isImmutable()) {
+  if (node.isImmutable()) {
     throw new Error('splitText: can only be used on non-immutable text nodes');
   }
   const textContent = node.getTextContent();
@@ -159,15 +158,16 @@ function setTextStyling(tag, prevFlags, nextFlags, domStyle) {
 
 function setTextContent(
   prevText: null | string,
-  nextText: string,
+  _nextText: string,
   dom: HTMLElement,
   node: TextNode,
 ): void {
+  let nextText = _nextText;
   const firstChild = dom.firstChild;
   const hasBreakNode = firstChild && firstChild.nextSibling;
-  const parent = ((node.getParent(): any): BlockNode);
+  const parent = node.getParent();
   // Check if we are on an empty line
-  if (parent._children.length === 1) {
+  if (parent !== null && parent._children.length === 1) {
     if (nextText === '') {
       if (firstChild == null) {
         // We use a zero width string so that the browser moves
@@ -209,9 +209,6 @@ export class TextNode extends Node {
     clone._key = this._key;
     clone._flags = this._flags;
     return clone;
-  }
-  isText(): true {
-    return true;
   }
   isBold(): boolean {
     return (this.getLatest()._flags & IS_BOLD) !== 0;
@@ -318,7 +315,8 @@ export class TextNode extends Node {
   }
   _update(prevNode: Node, dom: HTMLElement): boolean {
     const domStyle = dom.style;
-    const prevText = ((prevNode: any): TextNode)._text;
+    // $FlowFixMe: prevNode is always a TextNode
+    const prevText: TextNode = prevNode._text;
     const nextText = this._text;
     const prevFlags = prevNode._flags;
     const nextFlags = this._flags;
@@ -330,6 +328,7 @@ export class TextNode extends Node {
     }
 
     setTextStyling(nextTag, prevFlags, nextFlags, domStyle);
+    // $FlowFixMe: prevNode is always a TextNode
     setTextContent(prevText, nextText, dom, this);
     if (nextFlags & IS_SEGMENTED) {
       if ((prevFlags & IS_SEGMENTED) === 0) {
@@ -363,23 +362,21 @@ export class TextNode extends Node {
     const nextSibling = this.getNextSibling();
     if (
       nextSibling === null ||
-      !nextSibling.isText() ||
+      !(nextSibling instanceof TextNode) ||
       nextSibling.isImmutable() ||
       nextSibling.isSegmented()
     ) {
       throw new Error('This needs to be fixed');
     }
-    ((nextSibling: any): TextNode).select(
-      anchorOffset,
-      focusOffset,
-      isCollapsed,
-    );
+    nextSibling.select(anchorOffset, focusOffset, isCollapsed);
   }
   select(
-    anchorOffset?: number,
-    focusOffset?: number,
+    _anchorOffset?: number,
+    _focusOffset?: number,
     isCollapsed?: boolean = false,
   ): Selection {
+    let anchorOffset = _anchorOffset;
+    let focusOffset = _focusOffset;
     const selection = getSelection();
     const text = this.getTextContent();
     const key = this._key;

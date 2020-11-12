@@ -70,7 +70,7 @@ function replaceNode<N: Node>(toReplace: Node, replaceWith: N): N {
   toReplace.remove();
   // Add node to map
   const viewModel = getActiveViewModel();
-  viewModel.nodeMap[newKey] = ((writableReplaceWith: any): Node);
+  viewModel.nodeMap[newKey] = writableReplaceWith;
   return writableReplaceWith;
 }
 
@@ -129,19 +129,19 @@ export class Node {
     // Type is stable between copies
     return this._type;
   }
-  getParent(): ParentNode | null {
+  getParent(): BlockNode | null {
     const parent = this.getLatest()._parent;
     if (parent === null) {
       return null;
     }
     return getNodeByKey(parent);
   }
-  getParentOrThrow(): ParentNode {
+  getParentOrThrow(): BlockNode {
     const parent = this.getLatest()._parent;
     if (parent === null) {
       throw new Error(`Expected node ${this._key} to have a parent.`);
     }
-    return getNodeByKeyOrThrow<ParentNode>(parent);
+    return getNodeByKeyOrThrow<BlockNode>(parent);
   }
   getParentBefore(target: Node): Node | null {
     let node = this;
@@ -168,7 +168,7 @@ export class Node {
     }
     return null;
   }
-  getParents(): Array<ParentNode | null> {
+  getParents(): Array<BlockNode | null> {
     const parents = [];
     let node = this.getParent();
     while (node !== null) {
@@ -213,7 +213,7 @@ export class Node {
       .map((childKey) => getNodeByKeyOrThrow<Node>(childKey));
   }
 
-  getCommonAncestor(node: Node): ParentNode | null {
+  getCommonAncestor(node: Node): BlockNode | null {
     const a = this.getParents();
     const b = node.getParents();
     const aLength = a.length;
@@ -445,7 +445,7 @@ export class Node {
         children.splice(index, 1);
       }
     }
-    const writableParent: ParentNode = getWritableNode(this.getParentOrThrow());
+    const writableParent = getWritableNode(this.getParentOrThrow());
     const insertKey = nodeToInsert._key;
     writableNodeToInsert._parent = writableSelf._parent;
     const children = writableParent._children;
@@ -455,7 +455,7 @@ export class Node {
     }
     // Add node to map
     const viewModel = getActiveViewModel();
-    viewModel.nodeMap[insertKey] = ((writableNodeToInsert: any): Node);
+    viewModel.nodeMap[insertKey] = writableNodeToInsert;
     return writableSelf;
   }
   // TODO add support for inserting multiple nodes?
@@ -481,13 +481,9 @@ export class Node {
     }
     // Add node to map
     const viewModel = getActiveViewModel();
-    viewModel.nodeMap[insertKey] = ((writableNodeToInsert: any): Node);
+    viewModel.nodeMap[insertKey] = writableNodeToInsert;
     return writableSelf;
   }
-}
-
-declare class ParentNode extends Node {
-  _children: Array<NodeKey>;
 }
 
 // NOTE: we could make a mutable node type

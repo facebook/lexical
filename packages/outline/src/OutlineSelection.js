@@ -1,13 +1,14 @@
 // @flow
 
 import type {Node, NodeKey} from './OutlineNode';
-import type {TextNode} from './nodes/OutlineTextNode';
+import {TextNode} from './nodes/OutlineTextNode';
 import type {BlockNode} from './nodes/OutlineBlockNode';
 
 import {getActiveViewModel} from './OutlineView';
 import {getNodeKeyFromDOM} from './OutlineReconciler';
 import {getNodeByKey} from './OutlineNode';
 import {createText, createParagraph} from '.';
+import {invariant} from 'shared';
 
 function removeFirstSegment(node: TextNode): void {
   const currentBlock = ((node.getParentBlock(): any): BlockNode);
@@ -74,14 +75,22 @@ export class Selection {
     if (anchorKey === null) {
       return null;
     }
-    return ((getNodeByKey(anchorKey): any): TextNode | null);
+    const anchorNode = getNodeByKey(anchorKey);
+    if (anchorNode != null && !(anchorNode instanceof TextNode)) {
+      throw new Error("Anchor key doesn't point at a TextNode");
+    }
+    return anchorNode;
   }
   getFocusNode(): null | TextNode {
     const focusKey = this.focusKey;
     if (focusKey === null) {
       return null;
     }
-    return ((getNodeByKey(focusKey): any): TextNode | null);
+    const focusNode = getNodeByKey(focusKey);
+    if (focusNode != null && !(focusNode instanceof TextNode)) {
+      throw new Error("Focus key doesn't point at a TextNode");
+    }
+    return focusNode;
   }
   markDirty() {
     this._isDirty = true;
@@ -338,7 +347,11 @@ export class Selection {
           }
           const nodeToSelect = nodesToMove[0];
           if (nodeToSelect.isText()) {
-            ((nodeToSelect: any): TextNode).select(0, 0);
+            invariant(
+              nodeToSelect instanceof TextNode,
+              "nodeToSelect.isText() is true, but nodeToSelect isn't a TextNode",
+            );
+            nodeToSelect.select(0, 0);
           }
           currentBlock.remove();
           prevBlock.normalizeTextNodes(true);

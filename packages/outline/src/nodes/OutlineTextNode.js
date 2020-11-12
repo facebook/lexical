@@ -1,6 +1,5 @@
 // @flow
 
-import type {NodeKey} from '../OutlineNode';
 import type {Selection} from '../OutlineSelection';
 
 import {IS_IMMUTABLE} from '../OutlineNode';
@@ -81,11 +80,11 @@ function splitText(
     const partSize = part.length;
     const sibling = getWritableNode(createTextNode(part));
     sibling._flags = flags;
-    const siblingKey = ((sibling._key: any): NodeKey);
+    const siblingKey = sibling._key;
     const nextTextSize = textLength + partSize;
     // Add node to map
     const viewModel = getActiveViewModel();
-    viewModel.nodeMap[siblingKey] = ((sibling: any): Node);
+    viewModel.nodeMap[siblingKey] = sibling;
 
     if (
       anchorKey === key &&

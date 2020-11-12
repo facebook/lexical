@@ -6,6 +6,7 @@ import type {NodeKey} from '../OutlineNode';
 import {getWritableNode, Node, getNodeByKey} from '../OutlineNode';
 import {getSelection} from '../OutlineSelection';
 import {getActiveViewModel} from '../OutlineView';
+import {invariant} from 'shared';
 
 function combineAdjacentTextNodes(
   textNodes: Array<TextNode>,
@@ -139,6 +140,11 @@ export class BlockNode extends Node {
       const flags = child._flags;
 
       if (child.isText() && !child.isImmutable() && !child.isSegmented()) {
+        invariant(
+          child instanceof TextNode,
+          'child.isText() passed, but child is not a TextNode',
+        );
+
         if (lastTextNodeFlags === null || flags === lastTextNodeFlags) {
           toNormalize.push(child);
           lastTextNodeFlags = flags;
@@ -148,14 +154,14 @@ export class BlockNode extends Node {
         }
       } else {
         if (toNormalize.length > 1) {
-          combineAdjacentTextNodes((toNormalize: $FlowFixMe), restoreSelection);
+          combineAdjacentTextNodes(toNormalize, restoreSelection);
         }
         toNormalize = [];
         lastTextNodeFlags = null;
       }
     }
     if (toNormalize.length > 1) {
-      combineAdjacentTextNodes((toNormalize: $FlowFixMe), restoreSelection);
+      combineAdjacentTextNodes(toNormalize, restoreSelection);
     }
   }
 }

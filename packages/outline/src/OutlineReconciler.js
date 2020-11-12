@@ -3,10 +3,9 @@
 import type {NodeKey} from './OutlineNode';
 import type {NodeMapType, ViewModel} from './OutlineView';
 import type {OutlineEditor} from './OutlineEditor';
-import {BlockNode} from './nodes/OutlineBlockNode';
+import type {BlockNode} from './nodes/OutlineBlockNode';
 import type {TextNode} from './nodes/OutlineTextNode';
 import type {Selection} from './OutlineSelection';
-import {invariant} from 'shared';
 
 let subTreeTextContent = '';
 let forceTextDirection = null;
@@ -64,11 +63,7 @@ function destroyNode(
     editor._keyToDOMMap.delete(key);
   }
   if (node.isBlock()) {
-    invariant(
-      node instanceof BlockNode,
-      "node isBlock() returned true but node isn't a BlockNode",
-    );
-    const children = node._children;
+    const children = ((node: any): BlockNode)._children;
     destroyChildren(
       children,
       0,

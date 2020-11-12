@@ -168,6 +168,7 @@ describe('OutlineSelection tests', () => {
 
   const suite = [
     {
+      name: 'Simple typing',
       inputs: [
         insertText('H'),
         insertText('e'),
@@ -185,6 +186,7 @@ describe('OutlineSelection tests', () => {
       },
     },
     {
+      name: 'Deletion',
       inputs: [
         insertText('1'),
         insertText('2'),
@@ -206,6 +208,7 @@ describe('OutlineSelection tests', () => {
       },
     },
     {
+      name: 'Jump to beggining and insert',
       inputs: [
         insertText('1'),
         insertText('1'),
@@ -226,10 +229,61 @@ describe('OutlineSelection tests', () => {
         focusOffset: 3,
       },
     },
+    {
+      name: 'Select and replace',
+      inputs: [
+        insertText('Hello draft!'),
+        moveNativeSelection([0, 0, 0], 6, [0, 0, 0], 11),
+        insertText('outline'),
+      ],
+      expectedHTML:
+        '<div contenteditable="true"><p dir="ltr"><span data-text="true">Hello outline!</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 13,
+        focusPath: [0, 0, 0],
+        focusOffset: 13,
+      },
+    },
+    {
+      name: 'Select and replace all',
+      inputs: [
+        insertText('This is broken.'),
+        moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 15),
+        insertText('This works!'),
+      ],
+      expectedHTML:
+        '<div contenteditable="true"><p dir="ltr"><span data-text="true">This works!</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 11,
+        focusPath: [0, 0, 0],
+        focusOffset: 11,
+      },
+    },
+    {
+      name: 'Select and delete',
+      inputs: [
+        insertText('A lion.'),
+        moveNativeSelection([0, 0, 0], 2, [0, 0, 0], 6),
+        deleteForward(),
+        insertText('duck'),
+        moveNativeSelection([0, 0, 0], 2, [0, 0, 0], 6),
+      ],
+      expectedHTML:
+        '<div contenteditable="true"><p dir="ltr"><span data-text="true">A duck.</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 2,
+        focusPath: [0, 0, 0],
+        focusOffset: 6,
+      },
+    },
   ];
 
   suite.forEach((testUnit, i) => {
-    test('Test case #' + (i + 1), () => {
+    const name = testUnit.name || 'Test case';
+    test(name + ` (#${i + 1})`, () => {
       applySelectionInputs(testUnit.inputs, update, editor);
       // Validate HTML matches
       expect(sanitizeHTML(container.innerHTML)).toBe(testUnit.expectedHTML);

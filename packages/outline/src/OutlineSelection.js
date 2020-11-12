@@ -245,23 +245,16 @@ export class Selection {
       anchorOffset = 0;
     }
     invariant(currentBlock !== null, 'insertParagraph: currentBlock not found');
-    let nextBlock = currentBlock.getNextSibling();
+    const paragraph = createParagraph();
+    currentBlock.insertAfter(paragraph);
 
-    if (nextBlock === null) {
-      nextBlock = createParagraph();
-      currentBlock.insertAfter(nextBlock);
-    }
-    invariant(
-      nextBlock instanceof BlockNode,
-      'insertParagraph: nextblock not a block',
-    );
     const nodesToMoveLength = nodesToMove.length;
-    let firstChild = nextBlock.getFirstChild();
+    let firstChild = null;
 
     for (let i = 0; i < nodesToMoveLength; i++) {
       const nodeToMove = nodesToMove[i];
       if (firstChild === null) {
-        nextBlock.append(nodeToMove);
+        paragraph.append(nodeToMove);
       } else {
         firstChild.insertBefore(nodeToMove);
       }
@@ -284,7 +277,6 @@ export class Selection {
       currentBlock.append(textNode);
     }
     currentBlock.normalizeTextNodes();
-    nextBlock.normalizeTextNodes(true);
   }
   deleteLineBackward(): void {
     const anchorNode = this.getAnchorNode();
@@ -507,22 +499,47 @@ export class Selection {
     }
     const trimmedTextContentLength = textContent.trimStart().length;
 
-    if (
-      prevSibling !== null &&
-      (offset === 0 || textContentLength - trimmedTextContentLength > offset)
-    ) {
-      while (prevSibling !== null) {
-        if (
-          prevSibling instanceof TextNode &&
-          !prevSibling.isImmutable() &&
-          !prevSibling.isSegmented()
-        ) {
-          break;
+    if (offset === 0 || textContentLength - trimmedTextContentLength > offset) {
+      if (prevSibling === null) {
+        const currentBlock = anchorNode.getParentBlock();
+        invariant(
+          currentBlock !== null,
+          'moveBackward: currentBlock not found',
+        );
+        const previousBlock = currentBlock.getPreviousSibling();
+
+        if (previousBlock instanceof BlockNode) {
+          let lastChild = previousBlock.getLastChild();
+          while (lastChild !== null) {
+            if (
+              lastChild instanceof TextNode &&
+              !lastChild.isImmutable() &&
+              !lastChild.isSegmented()
+            ) {
+              break;
+            }
+            lastChild = lastChild.getPreviousSibling();
+          }
+          if (lastChild instanceof TextNode) {
+            const trimmedTextContent = lastChild.getTextContent().trimEnd();
+            const lastChildOffset = trimmedTextContent.length;
+            lastChild.select(lastChildOffset, lastChildOffset);
+          }
         }
-        prevSibling = prevSibling.getPreviousSibling();
-      }
-      if (prevSibling instanceof TextNode) {
-        prevSibling.select();
+      } else {
+        while (prevSibling !== null) {
+          if (
+            prevSibling instanceof TextNode &&
+            !prevSibling.isImmutable() &&
+            !prevSibling.isSegmented()
+          ) {
+            break;
+          }
+          prevSibling = prevSibling.getPreviousSibling();
+        }
+        if (prevSibling instanceof TextNode) {
+          prevSibling.select();
+        }
       }
     } else {
       const trimmedContent = textContent.slice(0, offset).trimEnd();
@@ -557,22 +574,49 @@ export class Selection {
     }
     let trimmedTextContentLength = textContent.trimEnd().length;
 
-    if (
-      nextSibling !== null &&
-      (offset === textContentLength || offset >= trimmedTextContentLength)
-    ) {
-      while (nextSibling !== null) {
-        if (
-          nextSibling instanceof TextNode &&
-          !nextSibling.isImmutable() &&
-          !nextSibling.isSegmented()
-        ) {
-          break;
+    if (offset === textContentLength || offset >= trimmedTextContentLength) {
+      if (nextSibling === null) {
+        const currentBlock = anchorNode.getParentBlock();
+        invariant(
+          currentBlock !== null,
+          'moveBackward: currentBlock not found',
+        );
+        const nextBlock = currentBlock.getNextSibling();
+
+        if (nextBlock instanceof BlockNode) {
+          let firstChild = nextBlock.getFirstChild();
+          while (firstChild !== null) {
+            if (
+              firstChild instanceof TextNode &&
+              !firstChild.isImmutable() &&
+              !firstChild.isSegmented()
+            ) {
+              break;
+            }
+            firstChild = firstChild.getPreviousSibling();
+          }
+          if (firstChild instanceof TextNode) {
+            const firstChildTextContent = firstChild.getTextContent();
+            const trimmedTextContent = firstChildTextContent.trimStart();
+            const firstChildOffset =
+              firstChildTextContent.length - trimmedTextContent.length;
+            firstChild.select(firstChildOffset, firstChildOffset);
+          }
         }
-        nextSibling = nextSibling.getNextSibling();
-      }
-      if (nextSibling instanceof TextNode) {
-        nextSibling.select(0, 0);
+      } else {
+        while (nextSibling !== null) {
+          if (
+            nextSibling instanceof TextNode &&
+            !nextSibling.isImmutable() &&
+            !nextSibling.isSegmented()
+          ) {
+            break;
+          }
+          nextSibling = nextSibling.getNextSibling();
+        }
+        if (nextSibling instanceof TextNode) {
+          nextSibling.select(0, 0);
+        }
       }
     } else {
       const trimmedContent = textContent.slice(offset).trimStart();

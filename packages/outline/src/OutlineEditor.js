@@ -1,4 +1,4 @@
-// @flow
+// @flow strict-local
 
 import type {ViewType} from './OutlineView';
 import type {Node, NodeKey} from './OutlineNode';
@@ -31,7 +31,7 @@ function createOutlineEditor(
 export type onChangeType = ?(viewModel: ViewModel) => void;
 
 export type ViewModelDiffType = {
-  dirtySubTrees: Set<any>,
+  dirtySubTrees: Set<NodeKey>,
   nodes: Array<Node>,
   selection: null | Selection,
   timeStamp: number,
@@ -114,7 +114,7 @@ export class OutlineEditor {
     }
     return {
       dirtySubTrees: dirtySubTrees,
-      nodes: Array.from(dirtyNodes).map((nodeKey) => nodeMap[nodeKey]),
+      nodes: Array.from(dirtyNodes).map((nodeKey: NodeKey) => nodeMap[nodeKey]),
       selection: viewModel.selection,
       timeStamp: Date.now(),
     };

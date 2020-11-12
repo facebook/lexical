@@ -187,9 +187,9 @@ export class Selection {
         }
       }
       this.setRange(
-        ((firstNode.getKey(): any): NodeKey),
+        (firstNode.getKey(): NodeKey),
         startOffset,
-        ((lastNode.getKey(): any): NodeKey),
+        (lastNode.getKey(): NodeKey),
         endOffset,
       );
       currentBlock.normalizeTextNodes(true);
@@ -619,7 +619,7 @@ export class Selection {
             lastChild = lastChild.getPreviousSibling();
           }
           if (lastChild !== null) {
-            lastChild.select();
+            ((lastChild: any): TextNode).select();
           }
         }
       } else {
@@ -691,7 +691,7 @@ export class Selection {
             firstChild = firstChild.getNextSibling();
           }
           if (firstChild !== null) {
-            firstChild.select(0, 0);
+            ((firstChild: any): TextNode).select(0, 0);
           }
         }
       } else {
@@ -727,6 +727,7 @@ function getFirstChildNode(body) {
     if (node.isText()) {
       return node;
     }
+    // $FlowFixMe here, we know we're dealing with a node that has children, even if flow doesn't
     node = node.getFirstChild();
   }
   return null;
@@ -738,6 +739,7 @@ function getLastChildNode(body) {
     if (node.isText()) {
       return node;
     }
+    // $FlowFixMe here, we know we're dealing with a node that has children, even if flow doesn't
     node = node.getLastChild();
   }
   return null;
@@ -749,16 +751,16 @@ export function getSelection(): Selection {
   let selection = viewModel.selection;
   if (selection === null) {
     const nodeMap = viewModel.nodeMap;
-    const windowSelection = window.getSelection();
+    const windowSelection: WindowSelection = window.getSelection();
     const isCollapsed = windowSelection.isCollapsed;
     const anchorDOM = windowSelection.anchorNode;
     const focusDOM = windowSelection.focusNode;
     let anchorOffset = windowSelection.anchorOffset;
     let focusOffset = windowSelection.focusOffset;
-    let anchorNode;
-    let focusNode;
-    let anchorKey;
-    let focusKey;
+    let anchorNode: Node | null = null;
+    let focusNode: Node | null = null;
+    let anchorKey: NodeKey | null = null;
+    let focusKey: NodeKey | null = null;
     let isDirty = false;
 
     if (editor === null) {
@@ -774,8 +776,8 @@ export function getSelection(): Selection {
         throw new Error('Should never happen');
       }
       isDirty = true;
-      anchorKey = ((anchorNode._key: any): string);
-      focusKey = ((focusNode._key: any): string);
+      anchorKey = anchorNode._key;
+      focusKey = focusNode._key;
       anchorOffset = 0;
       focusOffset = focusNode.getTextContent().length;
     } else {

@@ -111,12 +111,11 @@ function splitText(
   }
 
   // Insert the nodes into the parent's children
-  const parent = node.getParent(); // $FlowFixMeThisCanBeNull
-  const writableParent = getWritableNode(parent); // $FlowFixMeThisCanBeNull
+  const parent = node.getParentOrThrow();
+  const writableParent = getWritableNode(parent);
   const writableParentChildren = writableParent._children;
   const insertionIndex = writableParentChildren.indexOf(key);
   const splitNodesKeys = splitNodes.map((splitNode) => splitNode._key);
-  // $FlowFixMeThisCanBeNull
   writableParentChildren.splice(insertionIndex, 1, ...splitNodesKeys);
 
   return splitNodes;

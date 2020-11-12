@@ -23,7 +23,7 @@ suppress_type=$FixMe
 suppress_type=$FlowExpectedError
 
 [libs]
-./packages/shared/libdefs/
+./libdefs/
 
 [strict]
 nonstrict-import

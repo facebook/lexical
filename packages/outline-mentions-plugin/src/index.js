@@ -1,7 +1,7 @@
 import React, {useCallback, useLayoutEffect, useMemo, useRef} from 'react';
 import {useEffect, useState} from 'react';
 import {createPortal} from 'react-dom';
-import {useEvent} from 'shared';
+import {useEvent} from 'plugin-shared';
 import {TextNode} from 'outline';
 
 const mentionStyle = 'background-color: rgba(24, 119, 232, 0.2)';

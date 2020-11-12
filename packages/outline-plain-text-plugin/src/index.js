@@ -1,5 +1,5 @@
 import {useEffect, useRef} from 'react';
-import {onFocusIn, useEditorInputEvents, useEvent} from 'shared';
+import {onFocusIn, useEditorInputEvents, useEvent} from 'plugin-shared';
 
 export function usePlainTextPlugin(outlineEditor, isReadOnly = false) {
   const pluginStateRef = useRef(null);

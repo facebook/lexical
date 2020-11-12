@@ -8,7 +8,7 @@ import {getActiveViewModel} from './OutlineView';
 import {getNodeKeyFromDOM} from './OutlineReconciler';
 import {getNodeByKey} from './OutlineNode';
 import {createText, createParagraph} from '.';
-import {invariant} from 'shared';
+import {invariant} from './OutlineUtils';
 
 function removeFirstSegment(node: TextNode): void {
   const currentBlock = ((node.getParentBlock(): any): BlockNode);

@@ -1,3 +1,6 @@
+// @flow
+import type {OutlineEditor} from 'outline';
+
 import {useEffect} from 'react';
 import {createHeader, HeaderNode} from 'outline';
 
@@ -20,7 +23,7 @@ function textNodeTransform(node, view) {
   }
 }
 
-export function useFormatPlugin(outlineEditor) {
+export function useFormatPlugin(outlineEditor: OutlineEditor): void {
   useEffect(() => {
     if (outlineEditor !== null) {
       return outlineEditor.addTextTransform(textNodeTransform);

@@ -35,6 +35,7 @@ const emojis = {
 };
 
 function textNodeTransform(node, view) {
+  console.log('HELLo');
   const text = node.getTextContent();
   for (let i = 0; i < text.length; i++) {
     const possibleEmoji = text.slice(i, i + 2);
@@ -49,7 +50,7 @@ function textNodeTransform(node, view) {
       }
       const emojiInline = createEmoji(emojiStyle);
       targetNode.replace(emojiInline);
-      emojiInline.wrapInTextNodes()
+      emojiInline.wrapInTextNodes();
       emojiInline.selectAfter(0, 0);
       break;
     }

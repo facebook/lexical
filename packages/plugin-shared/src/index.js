@@ -1,3 +1,4 @@
+// @flow
 import {useCallback, useEffect} from 'react';
 import {createBlock, createText} from 'outline';
 import {canUseBeforeInputEvent, isBrowserFirefox, isBrowserSafari} from './env';
@@ -12,14 +13,20 @@ import {
   isParagraph,
 } from './hotKeys';
 
-export const emptyObject = {};
+import type {OutlineEditor, ViewType} from 'outline';
+
+export const emptyObject: {} = {};
 
 export const FORMAT_BOLD = 0;
 export const FORMAT_ITALIC = 1;
 export const FORMAT_STRIKETHROUGH = 2;
 export const FORMAT_UNDERLINE = 3;
 
-function useEventWrapper(handler, editor, stateRef) {
+function useEventWrapper<E>(
+  handler: Function,
+  editor: OutlineEditor,
+  stateRef: Object,
+): (E) => void {
   return useCallback(
     (event) => {
       const state = stateRef && stateRef.current;
@@ -41,32 +48,42 @@ function useEventWrapper(handler, editor, stateRef) {
   );
 }
 
-export function useEvent(editor, eventName, handler, stateRef) {
+export function useEvent(
+  editor: OutlineEditor,
+  eventName: string,
+  handler: Function,
+  stateRef: Object,
+): void {
   const wrapper = useEventWrapper(handler, editor, stateRef);
   useEffect(() => {
     if (editor !== null) {
       const target =
         eventName === 'selectionchange' ? document : editor.getEditorElement();
 
+      // $FlowFixMe
       target.addEventListener(eventName, wrapper);
       return () => {
+        // $FlowFixMe
         target.removeEventListener(eventName, wrapper);
       };
     }
   }, [eventName, editor, wrapper]);
 }
 
-export function onFocusIn(event, viewModel) {
+export function onFocusIn(event: any, viewModel: ViewType) {
   const body = viewModel.getBody();
 
-  if (body.getFirstChild() === null) {
+  if (body != null && body.getFirstChild() === null) {
     const text = createText();
     body.append(createBlock('p').append(text));
     text.select();
   }
 }
 
-export function insertFromDataTransfer(dataTransfer, editor) {
+export function insertFromDataTransfer(
+  dataTransfer: DataTransfer,
+  editor: OutlineEditor,
+) {
   const items = dataTransfer.items;
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
@@ -235,7 +252,10 @@ function onNativeBeforeInput(event, view, state, editor) {
   }
 }
 
-export function useEditorInputEvents(editor, stateRef) {
+export function useEditorInputEvents(
+  editor: OutlineEditor,
+  stateRef: Object,
+): {} | {onBeforeInput: Function} {
   const handleNativeBeforeInput = useEventWrapper(
     onNativeBeforeInput,
     editor,

@@ -16,11 +16,13 @@ untyped-type-import=error
 server.max_workers=4
 esproposal.class_static_fields=enable
 esproposal.class_instance_fields=enable
+module.name_mapper='^outline$' -> '<PROJECT_ROOT>/packages/outline/src/index.js'
 
 suppress_type=$FlowIssue
 suppress_type=$FlowFixMe
 suppress_type=$FixMe
 suppress_type=$FlowExpectedError
+
 
 [libs]
 ./libdefs/

@@ -1,5 +1,10 @@
 // @flow
 
+import type {OutlineEditor} from './OutlineEditor';
+export type {OutlineEditor};
+import type {ViewModel, ViewType} from './OutlineView';
+export type {ViewModel, ViewType};
+
 import {useOutlineEditor} from './OutlineEditor';
 import {createTextNode as createText, TextNode} from './nodes/OutlineTextNode';
 import {

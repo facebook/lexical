@@ -1,3 +1,6 @@
+// @flow
+import type {ViewModel} from 'outline';
+
 import * as React from 'react';
 import {useEffect, useMemo, useRef} from 'react';
 import {useOutlineEditor} from 'outline';
@@ -16,8 +19,13 @@ const editorStyle = {
   whiteSpace: 'pre-wrap',
 };
 
+type Props = {
+  onChange: (ViewModel | null) => void,
+  isReadOnly?: boolean,
+};
+
 // An example of a custom editor using Outline.
-export default function Editor({onChange, isReadOnly}) {
+export default function Editor({onChange, isReadOnly}: Props): React$Node {
   const editorElementRef = useRef(null);
   const outlineEditor = useOutlineEditor(editorElementRef);
   const portalTargetElement = useMemo(

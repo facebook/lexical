@@ -375,7 +375,7 @@ export class Node {
 
   // Setters and mutators
 
-  setFlags(flags: number): Node {
+  setFlags(flags: number): this {
     if (this.isImmutable()) {
       throw new Error('setFlags: can only be used on non-immutable nodes');
     }
@@ -383,12 +383,12 @@ export class Node {
     self._flags = flags;
     return self;
   }
-  makeImmutable(): Node {
+  makeImmutable(): this {
     const self = getWritableNode(this);
     self._flags |= IS_IMMUTABLE;
     return self;
   }
-  makeSegmented(): Node {
+  makeSegmented(): this {
     const self = getWritableNode(this);
     self._flags |= IS_SEGMENTED;
     return self;

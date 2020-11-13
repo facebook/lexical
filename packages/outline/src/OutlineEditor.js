@@ -2,7 +2,6 @@
 
 import type {ViewType} from './OutlineView';
 import type {Node, NodeKey} from './OutlineNode';
-import type {Selection} from './OutlineSelection';
 
 import {useEffect, useState} from 'react';
 import {
@@ -14,10 +13,9 @@ import {
   ParagraphNode,
 } from '.';
 import {createViewModel, updateViewModel, ViewModel} from './OutlineView';
+import {invariant} from './OutlineUtils';
 
-function createOutlineEditor(
-  editorElement,
-): OutlineEditor {
+function createOutlineEditor(editorElement): OutlineEditor {
   const root = createRoot();
   const viewModel = new ViewModel(root);
   viewModel.nodeMap.root = root;
@@ -27,12 +25,6 @@ function createOutlineEditor(
 }
 
 export type onChangeType = (viewModel: ViewModel) => void;
-
-export type ViewModelDiffType = {
-  nodes: Array<Node>,
-  selection: null | Selection,
-  timeStamp: number,
-};
 
 export class OutlineEditor {
   _editorElement: HTMLElement;
@@ -44,10 +36,7 @@ export class OutlineEditor {
   _textTransforms: Set<(node: TextNode, view: ViewType) => void>;
   _registeredNodeTypes: Map<string, Class<Node>>;
 
-  constructor(
-    editorElement: HTMLElement,
-    viewModel: ViewModel,
-  ) {
+  constructor(editorElement: HTMLElement, viewModel: ViewModel) {
     // The editor element associated with this editor
     this._editorElement = editorElement;
     // The current view model
@@ -113,23 +102,11 @@ export class OutlineEditor {
   getCurrentViewModel(): ViewModel {
     return this._viewModel;
   }
-  getDiffFromViewModel(viewModel: ViewModel): ViewModelDiffType {
-    const dirtyNodes = viewModel.dirtyNodes;
-    const nodeMap = viewModel.nodeMap;
-
-    return {
-      nodes: Array.from(dirtyNodes).map((nodeKey: NodeKey) => nodeMap[nodeKey]),
-      selection: viewModel.selection,
-      timeStamp: Date.now(),
-    };
-  }
   createViewModel(callbackFn: (view: ViewType) => void): ViewModel {
     return createViewModel(this._viewModel, callbackFn, this);
   }
   update(viewModel: ViewModel, forceSync?: boolean) {
-    if (this._isUpdating) {
-      throw new Error('TODOL: Should never occur?');
-    }
+    invariant(!this._isUpdating, 'update: cannot proccess a nested update');
     if (viewModel === this._viewModel) {
       return;
     }
@@ -145,12 +122,10 @@ export class OutlineEditor {
   }
 }
 
-export function useOutlineEditor(
-  editorElementRef: {current: null | HTMLElement},
-): OutlineEditor | null {
-  const [editor, setOutlineEditor] = useState<null | OutlineEditor>(
-    null,
-  );
+export function useOutlineEditor(editorElementRef: {
+  current: null | HTMLElement,
+}): OutlineEditor | null {
+  const [editor, setOutlineEditor] = useState<null | OutlineEditor>(null);
 
   useEffect(() => {
     const editorElement = editorElementRef.current;

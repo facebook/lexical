@@ -1,4 +1,4 @@
-// @flow
+// @flow strict-local
 
 import type {OutlineEditor, TextNode, ViewType} from 'outline';
 

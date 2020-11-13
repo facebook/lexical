@@ -31,7 +31,7 @@ const heart =
 
 const specialSpace = '　';
 
-const emojis = {
+const emojis: {[string]: string} = {
   ':)': happySmile,
   ':D': veryHappySmile,
   ':(': unhappySmile,
@@ -73,7 +73,7 @@ export function useEmojiPlugin(editor: null | OutlineEditor): void {
   }, [editor]);
 }
 
-function createEmoji(cssText): TextNode {
+function createEmoji(cssText: string): TextNode {
   // $FlowFixMe: this returns an EmojiNode
   return new EmojiNode(cssText, specialSpace).makeImmutable();
 }
@@ -81,7 +81,7 @@ function createEmoji(cssText): TextNode {
 class EmojiNode extends TextNode {
   _cssText: string;
 
-  constructor(cssText, text) {
+  constructor(cssText: string, text: string) {
     super(text);
     this._cssText = cssText;
     this._type = 'emoji';

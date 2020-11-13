@@ -1,9 +1,13 @@
+// @flow strict-local
+
+import type {ViewModel} from 'outline';
+
 import React from 'react';
 import {useState} from 'react';
 import Editor from './Editor';
 
-function App() {
-  const [viewModel, setViewModel] = useState(null);
+function App(): React$Node {
+  const [viewModel, setViewModel] = useState<ViewModel | null>(null);
 
   return (
     <>

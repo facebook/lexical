@@ -12,7 +12,7 @@ import {TextNode} from '.';
 
 export type ViewType = {
   getRoot: () => RootNode,
-  getNodeByKey: (key: NodeKey) => null | HTMLElement,
+  getNodeByKey: (key: NodeKey) => null | Node,
   getSelection: () => Selection,
 };
 

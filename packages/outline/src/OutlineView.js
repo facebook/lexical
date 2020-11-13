@@ -1,6 +1,6 @@
 // @flow strict-local
 
-import type {BodyNode} from './nodes/OutlineBodyNode';
+import type {RootNode} from './nodes/OutlineRootNode';
 import type {OutlineEditor} from './OutlineEditor';
 import type {Selection} from './OutlineSelection';
 import type {Node, NodeKey} from './OutlineNode';
@@ -11,7 +11,7 @@ import {getNodeByKey} from './OutlineNode';
 import {TextNode} from '.';
 
 export type ViewType = {
-  getBody: () => BodyNode,
+  getRoot: () => RootNode,
   getNodeByKey: (key: NodeKey) => null | HTMLElement,
   getSelection: () => Selection,
 };
@@ -32,8 +32,8 @@ export function getActiveViewModel(): ViewModel {
 }
 
 const view: ViewType = {
-  getBody() {
-    return getActiveViewModel().body;
+  getRoot() {
+    return getActiveViewModel().root;
   },
   getNodeByKey,
   getSelection,
@@ -77,9 +77,9 @@ export function createViewModel(
 // dirty text nodes, rather than all text nodes.
 export function applyTextTransforms(
   viewModel: ViewModel,
-  outlineEditor: OutlineEditor,
+  editor: OutlineEditor,
 ): void {
-  const textTransformsSet = outlineEditor._textTransforms;
+  const textTransformsSet = editor._textTransforms;
   const dirtyNodes = viewModel._dirtyNodes;
   if (textTransformsSet.size > 0 && dirtyNodes !== null) {
     const textTransforms = Array.from(textTransformsSet);
@@ -102,43 +102,51 @@ export function applyTextTransforms(
 
 export function updateViewModel(
   viewModel: ViewModel,
-  outlineEditor: OutlineEditor,
+  editor: OutlineEditor,
 ): void {
-  const onChange = outlineEditor._onChange;
   activeViewModel = viewModel;
-  reconcileViewModel(viewModel, outlineEditor);
+  reconcileViewModel(viewModel, editor);
   activeViewModel = null;
-  outlineEditor._viewModel = viewModel;
+  editor._viewModel = viewModel;
+  triggerOnChange(editor);
   viewModel._dirtyNodes = null;
   viewModel._dirtySubTrees = null;
-  if (typeof onChange === 'function') {
-    onChange(viewModel);
+}
+
+export function triggerOnChange(editor: OutlineEditor): void {
+  const listeners = Array.from(editor._updateListeners);
+  const viewModel = editor.getCurrentViewModel();
+  for (let i = 0; i < listeners.length; i++) {
+    listeners[i](viewModel);
   }
 }
 
 export function cloneViewModel(current: ViewModel): ViewModel {
-  const draft = new ViewModel(current.body);
+  const draft = new ViewModel(current.root);
   draft.nodeMap = {...current.nodeMap};
   return draft;
 }
 
 export class ViewModel {
-  body: BodyNode;
+  root: RootNode;
   nodeMap: NodeMapType;
   selection: null | Selection;
   _dirtyNodes: null | Set<NodeKey>;
   _dirtySubTrees: null | Set<NodeKey>;
   _editor: null | OutlineEditor;
+  _isDirty: boolean;
+  _isHistoric: boolean;
 
-  constructor(body: BodyNode) {
-    this.body = body;
+  constructor(root: RootNode) {
+    this.root = root;
     this.nodeMap = {};
     this.selection = null;
     // Dirty nodes are nodes that have been added or updated
     // in comparison to the previous view model. We also use
     // this Set for performance optimizations during the
-    // production of a draft view model. This field is
-    // temporarily used during editor.createViewModel().
+    // production of a draft view model.
+    // This field is temporarily created during editor.createViewModel()
+    // and is remove after being passed to editor.update();
     this._dirtyNodes = null;
     // We make nodes as "dirty" in that their have a child
     // that is dirty, which means we need to reconcile
@@ -148,5 +156,16 @@ export class ViewModel {
     this._dirtySubTrees = new Set();
     // Temporarily store the editor
     this._editor = null;
+    // Used for undo/redo logic
+    this._isHistoric = false;
+  }
+  hasDirtyNodes(): boolean {
+    return this._dirtyNodes === null || this._dirtyNodes.size > 0;
+  }
+  markHistoric(): void {
+    this._isHistoric = true;
+  }
+  isHistoric(): boolean {
+    return this._isHistoric;
   }
 }

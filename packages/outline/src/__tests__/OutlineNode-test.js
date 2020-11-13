@@ -50,13 +50,13 @@ describe('OutlineSelection tests', () => {
       const paragraph = Outline.createParagraph();
       const text = Outline.createText();
       paragraph.append(text);
-      view.getBody().append(paragraph);
+      view.getRoot().append(paragraph);
     });
   }
 
   test('replaceNode', () => {
     update((view) => {
-      const oldTextNode = view.getBody().getFirstChild().getFirstChild();
+      const oldTextNode = view.getRoot().getFirstChild().getFirstChild();
       const newTextNode = Outline.createText('Replaced node!');
       oldTextNode.replace(newTextNode);
     });
@@ -67,7 +67,7 @@ describe('OutlineSelection tests', () => {
 
   test('removeNode', () => {
     update((view) => {
-      const oldTextNode = view.getBody().getFirstChild().getFirstChild();
+      const oldTextNode = view.getRoot().getFirstChild().getFirstChild();
       oldTextNode.remove();
     });
     expect(sanitizeHTML(container.innerHTML)).toBe(
@@ -77,7 +77,7 @@ describe('OutlineSelection tests', () => {
 
   test('append', () => {
     update((view) => {
-      const paragraph = view.getBody().getFirstChild();
+      const paragraph = view.getRoot().getFirstChild();
       const newTextNode = Outline.createText('New node!');
       paragraph.append(newTextNode);
     });
@@ -89,7 +89,7 @@ describe('OutlineSelection tests', () => {
 
   test('insertAfter', () => {
     update((view) => {
-      const textNode = view.getBody().getFirstChild().getFirstChild();
+      const textNode = view.getRoot().getFirstChild().getFirstChild();
       const newTextNode = Outline.createText('New node!');
       textNode.insertAfter(newTextNode);
     });
@@ -101,7 +101,7 @@ describe('OutlineSelection tests', () => {
 
   test('insertBefore', () => {
     update((view) => {
-      const textNode = view.getBody().getFirstChild().getFirstChild();
+      const textNode = view.getRoot().getFirstChild().getFirstChild();
       const newTextNode = Outline.createText('New node!');
       textNode.insertBefore(newTextNode);
     });
@@ -113,15 +113,15 @@ describe('OutlineSelection tests', () => {
 
   test('isParentOf', () => {
     update((view) => {
-      const textNode = view.getBody().getFirstChild().getFirstChild();
-      expect(view.getBody().isParentOf(textNode));
-      expect(view.getBody().getFirstChild().isParentOf(textNode));
+      const textNode = view.getRoot().getFirstChild().getFirstChild();
+      expect(view.getRoot().isParentOf(textNode));
+      expect(view.getRoot().getFirstChild().isParentOf(textNode));
     });
   });
 
   test('getCommonAncestor', () => {
     update((view) => {
-      const textNode = view.getBody().getFirstChild().getFirstChild();
+      const textNode = view.getRoot().getFirstChild().getFirstChild();
       const textNode2 = Outline.createText('New node!');
       textNode.insertAfter(textNode2);
       // Our common ancestor here isn't the paragraph node, it's a writable clone.
@@ -129,19 +129,19 @@ describe('OutlineSelection tests', () => {
       const secondParagraph = Outline.createParagraph();
       const textNode3 = Outline.createText('Another node!');
       secondParagraph.append(textNode3);
-      view.getBody().getFirstChild().insertAfter(secondParagraph);
+      view.getRoot().getFirstChild().insertAfter(secondParagraph);
       // Structure is now:
-      // body - p - ''
+      // root - p - ''
       //  |     ' - 'New node!'
       //  ' --- p - 'Another node!'
     });
 
     update((view) => {
-      const body = view.getBody();
-      const paragraphNode = body.getFirstChild();
+      const root = view.getRoot();
+      const paragraphNode = root.getFirstChild();
       const textNode = paragraphNode.getFirstChild();
       const textNode2 = paragraphNode.getLastChild();
-      const secondParagraph = body.getLastChild();
+      const secondParagraph = root.getLastChild();
       const textNode3 = secondParagraph.getFirstChild();
 
       expect(textNode.getTextContent()).toBe('');
@@ -149,13 +149,13 @@ describe('OutlineSelection tests', () => {
       expect(textNode3.getTextContent()).toBe('Another node!');
 
       expect(textNode.getCommonAncestor(textNode2)).toBe(paragraphNode);
-      expect(secondParagraph.getCommonAncestor(paragraphNode)).toBe(body);
-      expect(textNode.getCommonAncestor(secondParagraph)).toBe(body);
-      expect(textNode3.getCommonAncestor(textNode2)).toBe(body);
+      expect(secondParagraph.getCommonAncestor(paragraphNode)).toBe(root);
+      expect(textNode.getCommonAncestor(secondParagraph)).toBe(root);
+      expect(textNode3.getCommonAncestor(textNode2)).toBe(root);
 
-      expect(textNode3.getCommonAncestor(secondParagraph)).toBe(body);
-      expect(secondParagraph.getCommonAncestor(body)).toBe(null);
-      expect(textNode.getCommonAncestor(body)).toBe(null);
+      expect(textNode3.getCommonAncestor(secondParagraph)).toBe(root);
+      expect(secondParagraph.getCommonAncestor(root)).toBe(null);
+      expect(textNode.getCommonAncestor(root)).toBe(null);
     });
   });
 });

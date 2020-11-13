@@ -23,20 +23,20 @@ import {
   createImageNode as createImage,
   ImageNode,
 } from './nodes/OutlineImageNode';
-import {createBodyNode as createBody, BodyNode} from './nodes/OutlineBodyNode';
+import {createRootNode as createRoot, RootNode} from './nodes/OutlineRootNode';
 
 export {
-  createBody,
   createBlock,
   createHeader,
   createImage,
   createParagraph,
+  createRoot,
   createText,
-  BodyNode,
   BlockNode,
   HeaderNode,
   ImageNode,
   ParagraphNode,
+  RootNode,
   TextNode,
   useOutlineEditor,
 };

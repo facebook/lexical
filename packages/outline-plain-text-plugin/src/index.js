@@ -6,7 +6,7 @@ import {useEffect, useRef} from 'react';
 import {onFocusIn, useEditorInputEvents, useEvent} from 'plugin-shared';
 
 export function usePlainTextPlugin(
-  outlineEditor: OutlineEditor,
+  editor: null | OutlineEditor,
   isReadOnly: boolean = false,
 ): {} | {onBeforeInput: (SyntheticInputEvent<EventTarget>) => void} {
   const pluginStateRef = useRef<{isReadOnly: boolean, richText: false} | null>(
@@ -27,8 +27,8 @@ export function usePlainTextPlugin(
     }
   }, [isReadOnly]);
 
-  const inputEvents = useEditorInputEvents(outlineEditor, pluginStateRef);
-  useEvent(outlineEditor, 'focusin', onFocusIn, pluginStateRef);
-  // useEvent(outlineEditor, 'selectionchange', onSelectionChange, pluginStateRef);
+  const inputEvents = useEditorInputEvents(editor, pluginStateRef);
+  useEvent(editor, 'focusin', onFocusIn, pluginStateRef);
+  // useEvent(editor, 'selectionchange', onSelectionChange, pluginStateRef);
   return inputEvents;
 }

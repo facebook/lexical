@@ -766,12 +766,12 @@ export class Selection {
   }
   getTextContent(): string {
     const viewModel = getActiveViewModel();
-    return viewModel.body.getTextContent();
+    return viewModel.root.getTextContent();
   }
 }
 
-function getFirstChildNode(body) {
-  let node = body;
+function getFirstChildNode(_node) {
+  let node = _node;
   while (node !== null) {
     if (node instanceof TextNode) {
       return node;
@@ -784,8 +784,8 @@ function getFirstChildNode(body) {
   return null;
 }
 
-function getLastChildNode(body) {
-  let node = body;
+function getLastChildNode(_node) {
+  let node = _node;
   while (node !== null) {
     if (node instanceof TextNode) {
       return node;
@@ -820,9 +820,9 @@ export function getSelection(): Selection {
     // When selecting all content in FF, it targets the contenteditable.
     // We need to resolve the first and last text DOM nodes
     if (anchorDOM === focusDOM && anchorDOM === editor.getEditorElement()) {
-      const body = viewModel.body;
-      anchorNode = getFirstChildNode(body);
-      focusNode = getLastChildNode(body);
+      const root = viewModel.root;
+      anchorNode = getFirstChildNode(root);
+      focusNode = getLastChildNode(root);
       invariant(
         anchorNode !== null && focusNode !== null,
         'getSelection: anchorNode/focusNode not found',

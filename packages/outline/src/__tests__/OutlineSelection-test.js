@@ -195,7 +195,7 @@ describe('OutlineSelection tests', () => {
       const paragraph = Outline.createParagraph();
       const text = Outline.createText();
       paragraph.append(text);
-      view.getBody().append(paragraph);
+      view.getRoot().append(paragraph);
     });
 
     // Focus first element

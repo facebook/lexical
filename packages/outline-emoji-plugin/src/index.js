@@ -60,17 +60,17 @@ function textNodeTransform(node: TextNode, view: ViewType): void {
   }
 }
 
-export function useEmojiPlugin(outlineEditor: OutlineEditor) {
+export function useEmojiPlugin(editor: null | OutlineEditor): void {
   useEffect(() => {
-    if (outlineEditor !== null) {
-      const removeNodeType = outlineEditor.addNodeType('emoji', EmojiNode);
-      const removeTransform = outlineEditor.addTextTransform(textNodeTransform);
+    if (editor !== null) {
+      const removeNodeType = editor.addNodeType('emoji', EmojiNode);
+      const removeTransform = editor.addTextTransform(textNodeTransform);
       return () => {
         removeNodeType();
         removeTransform();
       };
     }
-  }, [outlineEditor]);
+  }, [editor]);
 }
 
 function createEmoji(cssText): TextNode {

@@ -38,13 +38,13 @@ function useEventWrapper<T>(
     state: UnknownState,
     editor: OutlineEditor,
   ) => void,
-  editor: OutlineEditor,
+  editor: null | OutlineEditor,
   stateRef?: RefObject<T>,
 ): (event: UnknownEvent) => void {
   return useCallback(
     (event) => {
       const state = stateRef && stateRef.current;
-      if (state !== null) {
+      if (editor !== null) {
         const viewModel = editor.createViewModel((view) =>
           handler(event, view, state, editor),
         );
@@ -63,7 +63,7 @@ function useEventWrapper<T>(
 }
 
 export function useEvent<T>(
-  editor: OutlineEditor,
+  editor: null | OutlineEditor,
   eventName: string,
   handler: (event: UnknownEvent, view: ViewType) => void,
   stateRef?: RefObject<T>,
@@ -85,11 +85,11 @@ export function useEvent<T>(
 }
 
 export function onFocusIn(event: FocusEvent, view: ViewType) {
-  const body = view.getBody();
+  const root = view.getRoot();
 
-  if (body.getFirstChild() === null) {
+  if (root.getFirstChild() === null) {
     const text = createText();
-    body.append(createBlock('p').append(text));
+    root.append(createBlock('p').append(text));
     text.select();
   }
 }
@@ -119,17 +119,19 @@ function onCompositionStart(
   event: CompositionEvent,
   view: ViewType,
   state: UnknownState,
+  editor: OutlineEditor,
 ): void {
-  state.isComposing = true;
+  editor.setComposing(true);
 }
 
 function onCompositionEnd(
   event: CompositionEvent,
   view: ViewType,
   state: UnknownState,
+  editor: OutlineEditor,
 ): void {
   const data = event.data;
-  state.isComposing = false;
+  editor.setComposing(false);
   if (data) {
     // Handle the fact that Chromium doesn't fire beforeInput composition
     // events properly, so we need to listen to the compositionend event
@@ -144,8 +146,9 @@ function onKeyDown(
   event: KeyboardEvent,
   view: ViewType,
   state: UnknownState,
+  editor: OutlineEditor,
 ): void {
-  if (state.isComposing) {
+  if (editor.isComposing()) {
     return;
   }
   const selection = view.getSelection();
@@ -320,7 +323,7 @@ function onNativeBeforeInput(
 }
 
 export function useEditorInputEvents<T>(
-  editor: OutlineEditor,
+  editor: null | OutlineEditor,
   stateRef: RefObject<T>,
 ): {} | {onBeforeInput: (event: SyntheticInputEvent<T>) => void} {
   const handleNativeBeforeInput = useEventWrapper(

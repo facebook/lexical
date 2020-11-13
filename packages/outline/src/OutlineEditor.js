@@ -14,15 +14,17 @@ import {
   ParagraphNode,
 } from '.';
 import {createViewModel, updateViewModel, ViewModel} from './OutlineView';
-import {invariant} from './OutlineUtils';
+import { invariant } from './OutlineUtils';
 
-function createOutlineEditor(editorElement): OutlineEditor {
+function createOutlineEditor(
+  editorElement,
+): OutlineEditor {
   const root = createRoot();
   const viewModel = new ViewModel(root);
   viewModel.nodeMap.root = root;
-  const outlineEditor = new OutlineEditor(editorElement, viewModel);
-  outlineEditor._keyToDOMMap.set('root', editorElement);
-  return outlineEditor;
+  const editor = new OutlineEditor(editorElement, viewModel);
+  editor._keyToDOMMap.set('root', editorElement);
+  return editor;
 }
 
 export type onChangeType = (viewModel: ViewModel) => void;
@@ -43,7 +45,10 @@ export class OutlineEditor {
   _textTransforms: Set<(node: TextNode, view: ViewType) => void>;
   _registeredNodeTypes: Map<string, Class<Node>>;
 
-  constructor(editorElement: HTMLElement, viewModel: ViewModel) {
+  constructor(
+    editorElement: HTMLElement,
+    viewModel: ViewModel,
+  ) {
     // The editor element associated with this editor
     this._editorElement = editorElement;
     // The current view model
@@ -113,10 +118,7 @@ export class OutlineEditor {
     const dirtyNodes = viewModel._dirtyNodes;
     const nodeMap = viewModel.nodeMap;
 
-    invariant(
-      dirtyNodes !== null,
-      'getDiffFromViewModel: dirtyNodes not found',
-    );
+    invariant(dirtyNodes !== null, 'getDiffFromViewModel: dirtyNodes not found')
     return {
       nodes: Array.from(dirtyNodes).map((nodeKey: NodeKey) => nodeMap[nodeKey]),
       selection: viewModel.selection,
@@ -145,10 +147,10 @@ export class OutlineEditor {
   }
 }
 
-export function useOutlineEditor(editorElementRef: {
-  current: null | HTMLElement,
-}): OutlineEditor | null {
-  const [outlineEditor, setOutlineEditor] = useState<null | OutlineEditor>(
+export function useOutlineEditor(
+  editorElementRef: {current: null | HTMLElement},
+): OutlineEditor | null {
+  const [editor, setOutlineEditor] = useState<null | OutlineEditor>(
     null,
   );
 
@@ -156,14 +158,14 @@ export function useOutlineEditor(editorElementRef: {
     const editorElement = editorElementRef.current;
 
     if (editorElement !== null) {
-      if (outlineEditor === null) {
-        const newOutlineEditor = createOutlineEditor(editorElement);
-        setOutlineEditor(newOutlineEditor);
+      if (editor === null) {
+        const newEditor = createOutlineEditor(editorElement);
+        setOutlineEditor(newEditor);
       }
-    } else if (outlineEditor !== null) {
+    } else if (editor !== null) {
       setOutlineEditor(null);
     }
-  }, [editorElementRef, outlineEditor]);
+  }, [editorElementRef, editor]);
 
-  return outlineEditor;
+  return editor;
 }

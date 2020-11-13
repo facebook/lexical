@@ -164,4 +164,19 @@ export class ViewModel {
     const selection = this.selection;
     return selection !== null && selection._isDirty;
   }
+  getDirtyNodes(): Array<Node> {
+    const dirtyNodes = Array.from(this.dirtyNodes);
+    const nodeMap = this.nodeMap;
+    const nodes = [];
+
+    for (let i = 0; i < dirtyNodes.length; i++) {
+      const dirtyNodeKey = dirtyNodes[i];
+      const dirtyNode = nodeMap[dirtyNodeKey];
+
+      if (dirtyNode !== undefined && dirtyNode._parent !== null) {
+        nodes.push(dirtyNode);
+      }
+    }
+    return nodes;
+  }
 }

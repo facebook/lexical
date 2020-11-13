@@ -25,7 +25,7 @@ export const FORMAT_UNDERLINE = 3;
 function useEventWrapper<E>(
   handler: Function,
   editor: OutlineEditor,
-  stateRef: Object,
+  stateRef: RefObject<mixed>,
 ): (E) => void {
   return useCallback(
     (event) => {
@@ -52,7 +52,7 @@ export function useEvent(
   editor: OutlineEditor,
   eventName: string,
   handler: Function,
-  stateRef: Object,
+  stateRef: RefObject<mixed>,
 ): void {
   const wrapper = useEventWrapper(handler, editor, stateRef);
   useEffect(() => {
@@ -101,7 +101,7 @@ export function insertFromDataTransfer(
   }
 }
 
-function onCompositionEnd(event, view, compositionState) {
+function onCompositionEnd(event, view: ViewType, compositionState) {
   const data = event.data;
   // Only do this for Chrome
   compositionState.isComposing = false;
@@ -110,7 +110,7 @@ function onCompositionEnd(event, view, compositionState) {
   }
 }
 
-function onKeyDown(event, view, state) {
+function onKeyDown(event, view: ViewType, state) {
   const selection = view.getSelection();
 
   if (!canUseBeforeInputEvent) {
@@ -143,12 +143,12 @@ function onKeyDown(event, view, state) {
   }
 }
 
-function onPastePolyfill(event, view, state, editor) {
+function onPastePolyfill(event, view: ViewType, state, editor: OutlineEditor) {
   event.preventDefault();
   insertFromDataTransfer(event.clipboardData, editor);
 }
 
-function onCutPolyfill(event, view, state, editor) {
+function onCutPolyfill(event, view: ViewType, state, editor: OutlineEditor) {
   event.preventDefault();
   const clipboardData = event.clipboardData;
   const selection = view.getSelection();
@@ -156,7 +156,7 @@ function onCutPolyfill(event, view, state, editor) {
   view.getSelection().removeText();
 }
 
-function onPolyfilledBeforeInput(event, view, state) {
+function onPolyfilledBeforeInput(event, view: ViewType, state) {
   event.preventDefault();
   const data = event.data;
   if (data) {
@@ -164,7 +164,12 @@ function onPolyfilledBeforeInput(event, view, state) {
   }
 }
 
-function onNativeBeforeInput(event, view, state, editor) {
+function onNativeBeforeInput(
+  event,
+  view: ViewType,
+  state,
+  editor: OutlineEditor,
+) {
   const inputType = event.inputType;
 
   if (
@@ -254,7 +259,7 @@ function onNativeBeforeInput(event, view, state, editor) {
 
 export function useEditorInputEvents(
   editor: OutlineEditor,
-  stateRef: Object,
+  stateRef: RefObject<mixed>,
 ): {} | {onBeforeInput: Function} {
   const handleNativeBeforeInput = useEventWrapper(
     onNativeBeforeInput,

@@ -143,20 +143,6 @@ export class Node {
     }
     return getNodeByKeyOrThrow<BlockNode>(parent);
   }
-  getParentBefore(target: Node): Node | null {
-    let node = this;
-    while (node !== null) {
-      const parent = node.getParent();
-      if (parent === null) {
-        return null;
-      }
-      if (parent._key === target._key) {
-        return node;
-      }
-      node = parent;
-    }
-    return null;
-  }
   getParentBlock(): BlockNode | null {
     let node = this;
     while (node !== null) {

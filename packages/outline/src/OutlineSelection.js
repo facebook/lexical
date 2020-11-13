@@ -14,15 +14,13 @@ function removeFirstSegment(node: TextNode): void {
     currentBlock !== null,
     'removeFirstSegment: currentBlock not found',
   );
-  const ancestor = node.getParentBefore(currentBlock);
-  invariant(ancestor !== null, 'removeFirstSegment: ancestor not found');
   const textContent = node.getTextContent();
   const lastSpaceIndex = textContent.indexOf(' ');
   if (lastSpaceIndex > -1) {
     node.spliceText(0, lastSpaceIndex + 1, '');
   } else {
     const textNode = createText('');
-    ancestor.insertAfter(textNode);
+    node.insertAfter(textNode);
     node.remove();
     textNode.select();
     currentBlock.normalizeTextNodes(true);
@@ -32,15 +30,13 @@ function removeFirstSegment(node: TextNode): void {
 function removeLastSegment(node: TextNode): void {
   const currentBlock = node.getParentBlock();
   invariant(currentBlock !== null, 'removeLastSegment: currentBlock not found');
-  const ancestor = node.getParentBefore(currentBlock);
-  invariant(ancestor !== null, 'removeLastSegment: ancestor not found');
   const textContent = node.getTextContent();
   const lastSpaceIndex = textContent.lastIndexOf(' ');
   if (lastSpaceIndex > -1) {
     node.spliceText(lastSpaceIndex, textContent.length - lastSpaceIndex, '');
   } else {
     const textNode = createText('');
-    ancestor.insertAfter(textNode);
+    node.insertAfter(textNode);
     node.remove();
     textNode.select();
     currentBlock.normalizeTextNodes(true);
@@ -326,9 +322,7 @@ export class Selection {
     }
     const currentBlock = anchorNode.getParentBlock();
     invariant(currentBlock !== null, 'deleteBackward: currentBlock not found');
-    const ancestor = anchorNode.getParentBefore(currentBlock);
-    invariant(ancestor !== null, 'deleteBackward: ancestor not found');
-    const prevSibling = ancestor.getPreviousSibling();
+    const prevSibling = anchorNode.getPreviousSibling();
 
     if (anchorOffset === 0) {
       if (prevSibling === null) {
@@ -392,9 +386,7 @@ export class Selection {
     invariant(currentBlock !== null, 'deleteForward: currentBlock not found');
     const textContent = anchorNode.getTextContent();
     const textContentLength = textContent.length;
-    const ancestor = anchorNode.getParentBefore(currentBlock);
-    invariant(ancestor !== null, 'deleteForward: ancestor not found');
-    const nextSibling = ancestor.getNextSibling();
+    const nextSibling = anchorNode.getNextSibling();
 
     if (anchorOffset === textContentLength) {
       if (nextSibling === null) {
@@ -403,7 +395,7 @@ export class Selection {
           const firstChild = nextBlock.getFirstChild();
           invariant(firstChild !== null, 'deleteForward: lastChild not found');
           const nodesToMove = [firstChild, ...firstChild.getNextSiblings()];
-          let target = ancestor;
+          let target = anchorNode;
           for (let i = 0; i < nodesToMove.length; i++) {
             const nodeToMove = nodesToMove[i];
             target.insertAfter(nodeToMove);

@@ -13,7 +13,7 @@ let nodeKeyCounter = 0;
 
 function generateKey() {
   const viewModel = getActiveViewModel();
-  const dirtyNodes: Set<NodeKey> = (viewModel._dirtyNodes: $FlowFixMe);
+  const dirtyNodes = viewModel.dirtyNodes;
   const key = nodeKeyCounter++ + '';
   dirtyNodes.add(key);
   return key;
@@ -461,15 +461,14 @@ export class Node {
 
 export function getWritableNode<N: Node>(node: N): N {
   const viewModel = getActiveViewModel();
-  const dirtyNodes = viewModel._dirtyNodes;
-  invariant(dirtyNodes !== null, 'getWritableNode: dirtyNodes not found');
+  const dirtyNodes = viewModel.dirtyNodes;
   const nodeMap = viewModel.nodeMap;
   const key = node._key;
   // Ensure we get the latest node from pending state
   const latestNode = node.getLatest();
   const parent = node._parent;
   if (parent !== null) {
-    const dirtySubTrees = viewModel._dirtySubTrees;
+    const dirtySubTrees = viewModel.dirtySubTrees;
     invariant(
       dirtySubTrees !== null,
       'getWritableNode: dirtySubTrees not found',

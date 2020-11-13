@@ -19,16 +19,28 @@ export type ViewType = {
 export type NodeMapType = {[key: NodeKey]: Node};
 
 let activeViewModel = null;
+let activeEditor = null;
 
 export function getActiveViewModel(): ViewModel {
   if (activeViewModel === null) {
     throw new Error(
-      'Unable to find an active draft view model. ' +
+      'Unable to find an active view model. ' +
         'Editor helpers or node methods can only be used ' +
         'synchronously during the callback of editor.createViewModel().',
     );
   }
   return activeViewModel;
+}
+
+export function getActiveEditor(): OutlineEditor {
+  if (activeEditor === null) {
+    throw new Error(
+      'Unable to find an active editor. ' +
+        'Editor helpers or node methods can only be used ' +
+        'synchronously during the callback of editor.createViewModel().',
+    );
+  }
+  return activeEditor;
 }
 
 const view: ViewType = {
@@ -48,29 +60,23 @@ export function createViewModel(
   const viewModel: ViewModel = hasActiveViewModel
     ? getActiveViewModel()
     : cloneViewModel(currentViewModel);
-  activeViewModel = viewModel;
-  // Setup the dirty nodes Set, which is required by the
-  // view model logic during createViewModel(). This is also used by
-  // text transforms.
-  const dirtyNodes = (viewModel._dirtyNodes = new Set());
-  // This is used during reconcilation and is also temporary.
-  // We remove it in updateViewModel.
-  viewModel._dirtySubTrees = new Set();
-  // This is temporary and is used to assist in selection handling.
-  viewModel._editor = editor;
-  try {
-    callbackFn(view);
-    applyTextTransforms(viewModel, editor);
-  } finally {
-    viewModel._editor = null;
-    if (!hasActiveViewModel) {
-      activeViewModel = null;
-    }
-  }
-  const selection = viewModel.selection;
+  callCallbackWithViewModelScope(callbackFn, viewModel, editor);
   const canUseExistingModel =
-    dirtyNodes.size === 0 && (selection === null || !selection._isDirty);
+    !viewModel.hasDirtyNodes() && !viewModel.hasDirtySelection();
   return canUseExistingModel ? currentViewModel : viewModel;
+}
+
+function callCallbackWithViewModelScope(
+  callbackFn: (view: ViewType) => void,
+  viewModel: ViewModel,
+  editor: OutlineEditor,
+): void {
+  activeViewModel = viewModel;
+  activeEditor = editor;
+  callbackFn(view);
+  applyTextTransforms(viewModel, editor);
+  activeViewModel = null;
+  activeEditor = null;
 }
 
 // To optimize things, we only apply transforms to
@@ -80,7 +86,7 @@ export function applyTextTransforms(
   editor: OutlineEditor,
 ): void {
   const textTransformsSet = editor._textTransforms;
-  const dirtyNodes = viewModel._dirtyNodes;
+  const dirtyNodes = viewModel.dirtyNodes;
   if (textTransformsSet.size > 0 && dirtyNodes !== null) {
     const textTransforms = Array.from(textTransformsSet);
     const mutatedNodeKeys = Array.from(dirtyNodes);
@@ -106,11 +112,10 @@ export function updateViewModel(
 ): void {
   activeViewModel = viewModel;
   reconcileViewModel(viewModel, editor);
+  viewModel.dirtySubTrees = null;
   activeViewModel = null;
   editor._viewModel = viewModel;
   triggerOnChange(editor);
-  viewModel._dirtyNodes = null;
-  viewModel._dirtySubTrees = null;
 }
 
 export function triggerOnChange(editor: OutlineEditor): void {
@@ -131,11 +136,9 @@ export class ViewModel {
   root: RootNode;
   nodeMap: NodeMapType;
   selection: null | Selection;
-  _dirtyNodes: null | Set<NodeKey>;
-  _dirtySubTrees: null | Set<NodeKey>;
-  _editor: null | OutlineEditor;
-  _isDirty: boolean;
-  _isHistoric: boolean;
+  dirtyNodes: Set<NodeKey>;
+  dirtySubTrees: null | Set<NodeKey>;
+  isHistoric: boolean;
 
   constructor(root: RootNode) {
     this.root = root;
@@ -144,28 +147,21 @@ export class ViewModel {
     // Dirty nodes are nodes that have been added or updated
     // in comparison to the previous view model. We also use
     // this Set for performance optimizations during the
-    // production of a draft view model.
-    // This field is temporarily created during editor.createViewModel()
-    // and is remove after being passed to editor.update();
-    this._dirtyNodes = null;
+    // production of a draft view model and during undo/redo.
+    this.dirtyNodes = new Set();
     // We make nodes as "dirty" in that their have a child
     // that is dirty, which means we need to reconcile
-    // the given sub-tree to find the dirty node.
-    // This field is temporarily created during editor.createViewModel()
-    // and is remove after being passed to editor.update();
-    this._dirtySubTrees = new Set();
-    // Temporarily store the editor
-    this._editor = null;
+    // the given sub-tree to find the dirty node. This field
+    // is cleared after the view model is reconciled.
+    this.dirtySubTrees = new Set();
     // Used for undo/redo logic
-    this._isHistoric = false;
+    this.isHistoric = false;
   }
   hasDirtyNodes(): boolean {
-    return this._dirtyNodes === null || this._dirtyNodes.size > 0;
+    return this.dirtyNodes.size > 0;
   }
-  markHistoric(): void {
-    this._isHistoric = true;
-  }
-  isHistoric(): boolean {
-    return this._isHistoric;
+  hasDirtySelection(): boolean {
+    const selection = this.selection;
+    return selection !== null && selection._isDirty;
   }
 }

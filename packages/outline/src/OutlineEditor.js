@@ -6,34 +6,28 @@ import type {Selection} from './OutlineSelection';
 
 import {useEffect, useState} from 'react';
 import {
-  createBody,
+  createRoot,
   BlockNode,
-  BodyNode,
+  RootNode,
   HeaderNode,
   TextNode,
   ParagraphNode,
 } from '.';
 import {createViewModel, updateViewModel, ViewModel} from './OutlineView';
+import {invariant} from './OutlineUtils';
 
-function createOutlineEditor(
-  editorElement,
-  onChange: onChangeType,
-): OutlineEditor {
-  const body = createBody();
-  const viewModel = new ViewModel(body);
-  viewModel.nodeMap.body = body;
-  const outlineEditor = new OutlineEditor(editorElement, viewModel, onChange);
-  outlineEditor._keyToDOMMap.set('body', editorElement);
-  if (typeof onChange === 'function') {
-    onChange(viewModel);
-  }
+function createOutlineEditor(editorElement): OutlineEditor {
+  const root = createRoot();
+  const viewModel = new ViewModel(root);
+  viewModel.nodeMap.root = root;
+  const outlineEditor = new OutlineEditor(editorElement, viewModel);
+  outlineEditor._keyToDOMMap.set('root', editorElement);
   return outlineEditor;
 }
 
-export type onChangeType = ?(viewModel: ViewModel) => void;
+export type onChangeType = (viewModel: ViewModel) => void;
 
 export type ViewModelDiffType = {
-  dirtySubTrees: Set<NodeKey>,
   nodes: Array<Node>,
   selection: null | Selection,
   timeStamp: number,
@@ -43,41 +37,52 @@ export class OutlineEditor {
   _editorElement: HTMLElement;
   _viewModel: ViewModel;
   _isUpdating: boolean;
+  _isComposing: boolean;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
-  _onChange: onChangeType;
+  _updateListeners: Set<onChangeType>;
   _textTransforms: Set<(node: TextNode, view: ViewType) => void>;
   _registeredNodeTypes: Map<string, Class<Node>>;
 
-  constructor(
-    editorElement: HTMLElement,
-    viewModel: ViewModel,
-    onChange: onChangeType,
-  ) {
+  constructor(editorElement: HTMLElement, viewModel: ViewModel) {
     // The editor element associated with this editor
     this._editorElement = editorElement;
     // The current view model
     this._viewModel = viewModel;
     // Handling of drafts and updates
     this._isUpdating = false;
+    // Used to help co-ordinate events through plugins
+    this._isComposing = false;
     // Used during reconcilation
     this._keyToDOMMap = new Map();
-    // onChange callback
-    this._onChange = onChange;
+    // onChange listeners
+    this._updateListeners = new Set();
     // Handling of transform
     this._textTransforms = new Set();
     // Mapping of types to their nodes
     this._registeredNodeTypes = new Map([
       ['block', BlockNode],
       ['text', TextNode],
-      ['body', BodyNode],
+      ['root', RootNode],
       ['paragraph', ParagraphNode],
       ['header', HeaderNode],
     ]);
+  }
+  isComposing(): boolean {
+    return this._isComposing;
+  }
+  setComposing(isComposing: boolean): void {
+    this._isComposing = isComposing;
   }
   addNodeType(nodeType: string, klass: Class<Node>): () => void {
     this._registeredNodeTypes.set(nodeType, klass);
     return () => {
       this._registeredNodeTypes.delete(nodeType);
+    };
+  }
+  addUpdateListener(onChange: onChangeType): () => void {
+    this._updateListeners.add(onChange);
+    return () => {
+      this._updateListeners.delete(onChange);
     };
   }
   addTextTransform(
@@ -105,17 +110,14 @@ export class OutlineEditor {
     return this._viewModel;
   }
   getDiffFromViewModel(viewModel: ViewModel): ViewModelDiffType {
-    const dirtySubTrees = viewModel._dirtySubTrees;
     const dirtyNodes = viewModel._dirtyNodes;
     const nodeMap = viewModel.nodeMap;
 
-    if (dirtyNodes === null || dirtySubTrees === null) {
-      throw new Error(
-        'getDiffFromViewModel: unable to get diff from view mode',
-      );
-    }
+    invariant(
+      dirtyNodes !== null,
+      'getDiffFromViewModel: dirtyNodes not found',
+    );
     return {
-      dirtySubTrees: dirtySubTrees,
       nodes: Array.from(dirtyNodes).map((nodeKey: NodeKey) => nodeMap[nodeKey]),
       selection: viewModel.selection,
       timeStamp: Date.now(),
@@ -143,10 +145,9 @@ export class OutlineEditor {
   }
 }
 
-export function useOutlineEditor(
-  editorElementRef: {current: null | HTMLElement},
-  onChange?: onChangeType,
-): OutlineEditor | null {
+export function useOutlineEditor(editorElementRef: {
+  current: null | HTMLElement,
+}): OutlineEditor | null {
   const [outlineEditor, setOutlineEditor] = useState<null | OutlineEditor>(
     null,
   );
@@ -156,15 +157,13 @@ export function useOutlineEditor(
 
     if (editorElement !== null) {
       if (outlineEditor === null) {
-        const newOutlineEditor = createOutlineEditor(editorElement, onChange);
+        const newOutlineEditor = createOutlineEditor(editorElement);
         setOutlineEditor(newOutlineEditor);
-      } else {
-        outlineEditor._onChange = onChange;
       }
     } else if (outlineEditor !== null) {
       setOutlineEditor(null);
     }
-  }, [editorElementRef, onChange, outlineEditor]);
+  }, [editorElementRef, outlineEditor]);
 
   return outlineEditor;
 }

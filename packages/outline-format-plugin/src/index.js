@@ -1,10 +1,11 @@
 // @flow
-import type {OutlineEditor} from 'outline';
+
+import type {OutlineEditor, TextNode, ViewType} from 'outline';
 
 import {useEffect} from 'react';
 import {createHeader, HeaderNode} from 'outline';
 
-function textNodeTransform(node, view) {
+function textNodeTransform(node: TextNode, view: ViewType): void {
   const block = node.getParentBlock();
 
   if (
@@ -23,10 +24,10 @@ function textNodeTransform(node, view) {
   }
 }
 
-export function useFormatPlugin(outlineEditor: OutlineEditor): void {
+export function useFormatPlugin(editor: null | OutlineEditor): void {
   useEffect(() => {
-    if (outlineEditor !== null) {
-      return outlineEditor.addTextTransform(textNodeTransform);
+    if (editor !== null) {
+      return editor.addTextTransform(textNodeTransform);
     }
-  }, [outlineEditor]);
+  }, [editor]);
 }

@@ -2,7 +2,7 @@
 
 import type {NodeMapType} from './OutlineView';
 
-import {createText, BodyNode, BlockNode, TextNode} from '.';
+import {createText, RootNode, BlockNode, TextNode} from '.';
 import {getActiveViewModel} from './OutlineView';
 import {invariant} from './OutlineUtils';
 
@@ -488,10 +488,10 @@ export function getWritableNode<N: Node>(node: N): N {
     );
   }
   mutableNode._key = key;
-  // If we're mutating the body node, make sure to update
+  // If we're mutating the root node, make sure to update
   // the pointer in state too.
-  if (mutableNode instanceof BodyNode) {
-    viewModel.body = mutableNode;
+  if (mutableNode instanceof RootNode) {
+    viewModel.root = mutableNode;
   }
   dirtyNodes.add(key);
   // Update reference in node map

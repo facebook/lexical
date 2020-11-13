@@ -332,7 +332,7 @@ function getPossibleMentionMatch(text) {
   return match === null ? checkForCaptitalizedNameMentions(text, 3) : match;
 }
 
-export function useMentionsPlugin(outlineEditor, portalTargetElement) {
+export function useMentionsPlugin(editor, portalTargetElement) {
   const [mentionMatch, setMentionMatch] = useState(null);
   const [nodeKey, setNodeKey] = useState(null);
   const registeredKeys = useMemo(() => new Set(), []);
@@ -347,13 +347,13 @@ export function useMentionsPlugin(outlineEditor, portalTargetElement) {
   );
 
   useEffect(() => {
-    if (outlineEditor !== null) {
-      return outlineEditor.addNodeType('mention', MentionNode);
+    if (editor !== null) {
+      return editor.addNodeType('mention', MentionNode);
     }
-  }, [outlineEditor]);
+  }, [editor]);
 
   useEffect(() => {
-    if (outlineEditor !== null) {
+    if (editor !== null) {
       const textNodeTransform = (node, view) => {
         const selection = view.getSelection();
         if (
@@ -388,9 +388,9 @@ export function useMentionsPlugin(outlineEditor, portalTargetElement) {
         }
         setMentionMatch(null);
       };
-      return outlineEditor.addTextTransform(textNodeTransform);
+      return editor.addTextTransform(textNodeTransform);
     }
-  }, [outlineEditor]);
+  }, [editor]);
 
   const onKeyDown = useCallback(
     (event, view) => {
@@ -410,7 +410,7 @@ export function useMentionsPlugin(outlineEditor, portalTargetElement) {
     setNodeKey(null);
   }, []);
 
-  useEvent(outlineEditor, 'keydown', onKeyDown);
+  useEvent(editor, 'keydown', onKeyDown);
 
   return mentionMatch === null || nodeKey === null
     ? null
@@ -419,7 +419,7 @@ export function useMentionsPlugin(outlineEditor, portalTargetElement) {
           close={closeTypeahead}
           match={mentionMatch}
           nodeKey={nodeKey}
-          editor={outlineEditor}
+          editor={editor}
           registerKeys={registerKeys}
         />,
         portalTargetElement,

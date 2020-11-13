@@ -2,15 +2,15 @@
 
 import {BlockNode} from './OutlineBlockNode';
 
-export class BodyNode extends BlockNode {
-  _type: 'body';
+export class RootNode extends BlockNode {
+  _type: 'root';
 
   constructor() {
-    super('', 'body');
-    this._type = 'body';
+    super('', 'root');
+    this._type = 'root';
   }
-  clone(): BodyNode {
-    const clone = new BodyNode();
+  clone(): RootNode {
+    const clone = new RootNode();
     clone._children = [...this._children];
     clone._parent = this._parent;
     clone._key = this._key;
@@ -19,6 +19,6 @@ export class BodyNode extends BlockNode {
   }
 }
 
-export function createBodyNode(): BodyNode {
-  return new BodyNode();
+export function createRootNode(): RootNode {
+  return new RootNode();
 }

@@ -14,7 +14,6 @@ import {
   ParagraphNode,
 } from '.';
 import {createViewModel, updateViewModel, ViewModel} from './OutlineView';
-import { invariant } from './OutlineUtils';
 
 function createOutlineEditor(
   editorElement,
@@ -115,10 +114,9 @@ export class OutlineEditor {
     return this._viewModel;
   }
   getDiffFromViewModel(viewModel: ViewModel): ViewModelDiffType {
-    const dirtyNodes = viewModel._dirtyNodes;
+    const dirtyNodes = viewModel.dirtyNodes;
     const nodeMap = viewModel.nodeMap;
 
-    invariant(dirtyNodes !== null, 'getDiffFromViewModel: dirtyNodes not found')
     return {
       nodes: Array.from(dirtyNodes).map((nodeKey: NodeKey) => nodeMap[nodeKey]),
       selection: viewModel.selection,

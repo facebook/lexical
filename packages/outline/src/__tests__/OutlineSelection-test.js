@@ -69,6 +69,30 @@ function formatUnderline() {
   };
 }
 
+function moveWordBackward() {
+  return {
+    type: 'move_word_backward',
+  };
+}
+
+function moveWordForward() {
+  return {
+    type: 'move_word_forward',
+  };
+}
+
+function moveBackward() {
+  return {
+    type: 'move_backward',
+  };
+}
+
+function moveForward() {
+  return {
+    type: 'move_forward',
+  };
+}
+
 function moveNativeSelection(
   anchorPath,
   anchorOffset,
@@ -138,6 +162,22 @@ function applySelectionInputs(inputs, update, editor) {
         }
         case 'format_text': {
           selection.formatText(input.format);
+          break;
+        }
+        case 'move_backward': {
+          selection.moveBackward();
+          break;
+        }
+        case 'move_forward': {
+          selection.moveForward();
+          break;
+        }
+        case 'move_word_backward': {
+          selection.moveWordBackward();
+          break;
+        }
+        case 'move_word_forward': {
+          selection.moveWordForward();
           break;
         }
         case 'move_native_selection': {
@@ -514,6 +554,47 @@ describe('OutlineSelection tests', () => {
         anchorOffset: 0,
         focusPath: [0, 0, 0],
         focusOffset: 0,
+      },
+    },
+    {
+      name:
+        'Type text, move backward, insert text and move forward and insert more text',
+      inputs: [
+        insertText('ahi'),
+        moveBackward(),
+        moveBackward(),
+        insertText(' bcd'),
+        moveForward(),
+        moveBackward(),
+        insertText(' efg '),
+      ],
+      expectedHTML:
+        '<div contenteditable="true"><p dir="ltr"><span data-text="true">a bcd efg hi</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 10,
+        focusPath: [0, 0, 0],
+        focusOffset: 10,
+      },
+    },
+    {
+      name:
+        'Type text, move word backward, insert text and move word forward and insert more text',
+      inputs: [
+        insertText('world'),
+        moveWordBackward(),
+        insertText('Hello '),
+        moveWordForward(),
+        moveWordForward(),
+        insertText('!'),
+      ],
+      expectedHTML:
+        '<div contenteditable="true"><p dir="ltr"><span data-text="true">Hello world!</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 12,
+        focusPath: [0, 0, 0],
+        focusOffset: 12,
       },
     },
   ];

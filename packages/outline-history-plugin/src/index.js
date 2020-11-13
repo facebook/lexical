@@ -32,7 +32,7 @@ export function useHistoryPlugin(editor: null | OutlineEditor): void {
         if (viewModel === current) {
           return;
         }
-        if (!viewModel.isHistoric() && viewModel.hasDirtyNodes()) {
+        if (!viewModel.isHistoric && viewModel.hasDirtyNodes()) {
           if (redoStack.length !== 0) {
             redoStack = historyState.redoStack = [];
           }
@@ -56,7 +56,7 @@ export function useHistoryPlugin(editor: null | OutlineEditor): void {
             }
             const viewModel = undoStack.pop();
             historyState.current = viewModel;
-            viewModel.markHistoric();
+            viewModel.isHistoric = true;
             editor.update(viewModel);
           }
         } else if (isRedo(event)) {
@@ -68,7 +68,7 @@ export function useHistoryPlugin(editor: null | OutlineEditor): void {
             }
             const viewModel = redoStack.pop();
             historyState.current = viewModel;
-            viewModel.markHistoric();
+            viewModel.isHistoric = true;
             editor.update(viewModel);
           }
         }

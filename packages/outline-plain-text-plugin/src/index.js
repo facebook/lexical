@@ -1,8 +1,16 @@
+// @flow
+import type {OutlineEditor} from 'outline';
+
 import {useEffect, useRef} from 'react';
 import {onFocusIn, useEditorInputEvents, useEvent} from 'plugin-shared';
 
-export function usePlainTextPlugin(outlineEditor, isReadOnly = false) {
-  const pluginStateRef = useRef(null);
+export function usePlainTextPlugin(
+  outlineEditor: OutlineEditor,
+  isReadOnly: boolean = false,
+): any {
+  const pluginStateRef = useRef<{isReadOnly: boolean, richText: false} | null>(
+    null,
+  );
 
   // Handle event plugin state
   useEffect(() => {

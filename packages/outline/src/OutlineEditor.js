@@ -45,7 +45,7 @@ export class OutlineEditor {
   _isUpdating: boolean;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _onChange: onChangeType;
-  _textTransforms: Set<(node: Node, view: ViewType) => void>;
+  _textTransforms: Set<(node: TextNode, view: ViewType) => void>;
   _registeredNodeTypes: Map<string, Class<Node>>;
 
   constructor(
@@ -81,7 +81,7 @@ export class OutlineEditor {
     };
   }
   addTextTransform(
-    transformFn: (node: Node, view: ViewType) => void,
+    transformFn: (node: TextNode, view: ViewType) => void,
   ): () => void {
     this._textTransforms.add(transformFn);
     return () => {

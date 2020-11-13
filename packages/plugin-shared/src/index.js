@@ -22,11 +22,11 @@ export const FORMAT_ITALIC = 1;
 export const FORMAT_STRIKETHROUGH = 2;
 export const FORMAT_UNDERLINE = 3;
 
-function useEventWrapper<E>(
+function useEventWrapper<T>(
   handler: Function,
   editor: OutlineEditor,
-  stateRef: RefObject<mixed>,
-): (E) => void {
+  stateRef: RefObject<T>,
+): (event: any) => void {
   return useCallback(
     (event) => {
       const state = stateRef && stateRef.current;
@@ -48,11 +48,11 @@ function useEventWrapper<E>(
   );
 }
 
-export function useEvent(
+export function useEvent<T>(
   editor: OutlineEditor,
   eventName: string,
   handler: Function,
-  stateRef: RefObject<mixed>,
+  stateRef: RefObject<T>,
 ): void {
   const wrapper = useEventWrapper(handler, editor, stateRef);
   useEffect(() => {
@@ -257,9 +257,9 @@ function onNativeBeforeInput(
   }
 }
 
-export function useEditorInputEvents(
+export function useEditorInputEvents<T>(
   editor: OutlineEditor,
-  stateRef: RefObject<mixed>,
+  stateRef: RefObject<T>,
 ): {} | {onBeforeInput: Function} {
   const handleNativeBeforeInput = useEventWrapper(
     onNativeBeforeInput,

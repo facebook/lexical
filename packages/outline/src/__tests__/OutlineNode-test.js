@@ -110,4 +110,52 @@ describe('OutlineSelection tests', () => {
         '<span data-text="true"></span></p></div>',
     );
   });
+
+  test('isParentOf', () => {
+    update((view) => {
+      const textNode = view.getBody().getFirstChild().getFirstChild();
+      expect(view.getBody().isParentOf(textNode));
+      expect(view.getBody().getFirstChild().isParentOf(textNode));
+    });
+  });
+
+  test('getCommonAncestor', () => {
+    update((view) => {
+      const textNode = view.getBody().getFirstChild().getFirstChild();
+      const textNode2 = Outline.createText('New node!');
+      textNode.insertAfter(textNode2);
+      // Our common ancestor here isn't the paragraph node, it's a writable clone.
+      // Let's commit this update and test getCommonAncestor on a fresh view.
+      const secondParagraph = Outline.createParagraph();
+      const textNode3 = Outline.createText('Another node!');
+      secondParagraph.append(textNode3);
+      view.getBody().getFirstChild().insertAfter(secondParagraph);
+      // Structure is now:
+      // body - p - ''
+      //  |     ' - 'New node!'
+      //  ' --- p - 'Another node!'
+    });
+
+    update((view) => {
+      const body = view.getBody();
+      const paragraphNode = body.getFirstChild();
+      const textNode = paragraphNode.getFirstChild();
+      const textNode2 = paragraphNode.getLastChild();
+      const secondParagraph = body.getLastChild();
+      const textNode3 = secondParagraph.getFirstChild();
+
+      expect(textNode.getTextContent()).toBe('');
+      expect(textNode2.getTextContent()).toBe('New node!');
+      expect(textNode3.getTextContent()).toBe('Another node!');
+
+      expect(textNode.getCommonAncestor(textNode2)).toBe(paragraphNode);
+      expect(secondParagraph.getCommonAncestor(paragraphNode)).toBe(body);
+      expect(textNode.getCommonAncestor(secondParagraph)).toBe(body);
+      expect(textNode3.getCommonAncestor(textNode2)).toBe(body);
+
+      expect(textNode3.getCommonAncestor(secondParagraph)).toBe(body);
+      expect(secondParagraph.getCommonAncestor(body)).toBe(null);
+      expect(textNode.getCommonAncestor(body)).toBe(null);
+    });
+  });
 });

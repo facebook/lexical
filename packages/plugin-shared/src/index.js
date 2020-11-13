@@ -1,7 +1,8 @@
-// @flow
+// @flow strict-local
+
 import {useCallback, useEffect} from 'react';
 import {createBlock, createText} from 'outline';
-import {canUseBeforeInputEvent, isBrowserFirefox, isBrowserSafari} from './env';
+import {CAN_USE_BEFORE_INPUT, IS_FIREFOX, IS_SAFARI} from './env';
 import {
   isDeleteBackward,
   isDeleteForward,
@@ -22,11 +23,24 @@ export const FORMAT_ITALIC = 1;
 export const FORMAT_STRIKETHROUGH = 2;
 export const FORMAT_UNDERLINE = 3;
 
+// FlowFixMe: Flow doesn't know of the CompositionEvent?
+// $FlowFixMe: TODO
+type CompositionEvent = Object;
+// $FlowFixMe: TODO
+type UnknownEvent = Object;
+// $FlowFixMe: TODO
+type UnknownState = Object;
+
 function useEventWrapper<T>(
-  handler: Function,
+  handler: (
+    event: UnknownEvent,
+    view: ViewType,
+    state: UnknownState,
+    editor: OutlineEditor,
+  ) => void,
   editor: OutlineEditor,
-  stateRef: RefObject<T>,
-): (event: any) => void {
+  stateRef?: RefObject<T>,
+): (event: UnknownEvent) => void {
   return useCallback(
     (event) => {
       const state = stateRef && stateRef.current;
@@ -35,8 +49,8 @@ function useEventWrapper<T>(
           handler(event, view, state, editor),
         );
         // Uncomment to see how diffs might work:
-        // if (viewModel !== outlineEditor.getCurrentViewModel()) {
-        //   const diff = outlineEditor.getDiffFromViewModel(viewModel);
+        // if (viewModel !== editor.getCurrentViewModel()) {
+        //   const diff = editor.getDiffFromViewModel(viewModel);
         //   debugger;
         // }
         if (!editor.isUpdating()) {
@@ -51,8 +65,8 @@ function useEventWrapper<T>(
 export function useEvent<T>(
   editor: OutlineEditor,
   eventName: string,
-  handler: Function,
-  stateRef: RefObject<T>,
+  handler: (event: UnknownEvent, view: ViewType) => void,
+  stateRef?: RefObject<T>,
 ): void {
   const wrapper = useEventWrapper(handler, editor, stateRef);
   useEffect(() => {
@@ -70,10 +84,10 @@ export function useEvent<T>(
   }, [eventName, editor, wrapper]);
 }
 
-export function onFocusIn(event: any, viewModel: ViewType) {
-  const body = viewModel.getBody();
+export function onFocusIn(event: FocusEvent, view: ViewType) {
+  const body = view.getBody();
 
-  if (body != null && body.getFirstChild() === null) {
+  if (body.getFirstChild() === null) {
     const text = createText();
     body.append(createBlock('p').append(text));
     text.select();
@@ -83,7 +97,7 @@ export function onFocusIn(event: any, viewModel: ViewType) {
 export function insertFromDataTransfer(
   dataTransfer: DataTransfer,
   editor: OutlineEditor,
-) {
+): void {
   const items = dataTransfer.items;
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
@@ -101,19 +115,42 @@ export function insertFromDataTransfer(
   }
 }
 
-function onCompositionEnd(event, view: ViewType, compositionState) {
+function onCompositionStart(
+  event: CompositionEvent,
+  view: ViewType,
+  state: UnknownState,
+): void {
+  state.isComposing = true;
+}
+
+function onCompositionEnd(
+  event: CompositionEvent,
+  view: ViewType,
+  state: UnknownState,
+): void {
   const data = event.data;
-  // Only do this for Chrome
-  compositionState.isComposing = false;
+  state.isComposing = false;
   if (data) {
-    view.getSelection().insertText(data);
+    // Handle the fact that Chromium doesn't fire beforeInput composition
+    // events properly, so we need to listen to the compositionend event
+    // to apply the composition data.
+    if (!IS_SAFARI && !IS_FIREFOX) {
+      view.getSelection().insertText(data);
+    }
   }
 }
 
-function onKeyDown(event, view: ViewType, state) {
+function onKeyDown(
+  event: KeyboardEvent,
+  view: ViewType,
+  state: UnknownState,
+): void {
+  if (state.isComposing) {
+    return;
+  }
   const selection = view.getSelection();
 
-  if (!canUseBeforeInputEvent) {
+  if (!CAN_USE_BEFORE_INPUT) {
     if (isDeleteBackward(event)) {
       event.preventDefault();
       selection.deleteBackward();
@@ -143,20 +180,39 @@ function onKeyDown(event, view: ViewType, state) {
   }
 }
 
-function onPastePolyfill(event, view: ViewType, state, editor: OutlineEditor) {
+function onPastePolyfill(
+  event: ClipboardEvent,
+  view: ViewType,
+  state: UnknownState,
+  editor: OutlineEditor,
+): void {
   event.preventDefault();
-  insertFromDataTransfer(event.clipboardData, editor);
+  const clipboardData = event.clipboardData;
+  if (clipboardData != null) {
+    insertFromDataTransfer(clipboardData, editor);
+  }
 }
 
-function onCutPolyfill(event, view: ViewType, state, editor: OutlineEditor) {
+function onCutPolyfill(
+  event: ClipboardEvent,
+  view: ViewType,
+  state: UnknownState,
+  editor: OutlineEditor,
+): void {
   event.preventDefault();
   const clipboardData = event.clipboardData;
   const selection = view.getSelection();
-  clipboardData.setData('text/plain', selection.getTextContent());
+  if (clipboardData != null) {
+    clipboardData.setData('text/plain', selection.getTextContent());
+  }
   view.getSelection().removeText();
 }
 
-function onPolyfilledBeforeInput(event, view: ViewType, state) {
+function onPolyfilledBeforeInput(
+  event: SyntheticInputEvent<EventTarget>,
+  view: ViewType,
+  state: UnknownState,
+): void {
   event.preventDefault();
   const data = event.data;
   if (data) {
@@ -165,11 +221,12 @@ function onPolyfilledBeforeInput(event, view: ViewType, state) {
 }
 
 function onNativeBeforeInput(
-  event,
+  event: InputEvent,
   view: ViewType,
-  state,
+  state: UnknownState,
   editor: OutlineEditor,
-) {
+): void {
+  // $FlowFixMe: Flow doesn't know of the inputType field
   const inputType = event.inputType;
 
   if (
@@ -213,8 +270,14 @@ function onNativeBeforeInput(
       }
       break;
     }
+    case 'insertFromDrop':
+    case 'insertReplacementText':
     case 'insertFromPaste': {
-      insertFromDataTransfer(event.dataTransfer, editor);
+      // $FlowFixMe: Flow doesn't know about the dataTransfer field
+      const dataTransfer = event.dataTransfer;
+      if (dataTransfer != null) {
+        insertFromDataTransfer(dataTransfer, editor);
+      }
       break;
     }
     case 'insertLineBreak': {
@@ -228,7 +291,10 @@ function onNativeBeforeInput(
       break;
     }
     case 'insertText': {
-      selection.insertText(event.data);
+      const data = event.data;
+      if (data != null) {
+        selection.insertText(data);
+      }
       break;
     }
     case 'deleteByCut': {
@@ -247,10 +313,6 @@ function onNativeBeforeInput(
       selection.deleteLineBackward();
       break;
     }
-    case 'insertFromDrop': {
-      insertFromDataTransfer(event.dataTransfer, editor);
-      break;
-    }
     default: {
       throw new Error('TODO - ' + inputType);
     }
@@ -260,7 +322,7 @@ function onNativeBeforeInput(
 export function useEditorInputEvents<T>(
   editor: OutlineEditor,
   stateRef: RefObject<T>,
-): {} | {onBeforeInput: Function} {
+): {} | {onBeforeInput: (event: SyntheticInputEvent<T>) => void} {
   const handleNativeBeforeInput = useEventWrapper(
     onNativeBeforeInput,
     editor,
@@ -274,6 +336,11 @@ export function useEditorInputEvents<T>(
   const handleKeyDown = useEventWrapper(onKeyDown, editor, stateRef);
   const handlePaste = useEventWrapper(onPastePolyfill, editor, stateRef);
   const handleCut = useEventWrapper(onCutPolyfill, editor, stateRef);
+  const handleCompositionStart = useEventWrapper(
+    onCompositionStart,
+    editor,
+    stateRef,
+  );
   const handleCompositionEnd = useEventWrapper(
     onCompositionEnd,
     editor,
@@ -281,29 +348,24 @@ export function useEditorInputEvents<T>(
   );
   useEffect(() => {
     if (editor !== null) {
-      const target = editor.getEditorElement();
+      const target: HTMLElement = editor.getEditorElement();
       target.addEventListener('keydown', handleKeyDown);
+      target.addEventListener('compositionstart', handleCompositionStart);
+      target.addEventListener('compositionend', handleCompositionEnd);
 
-      if (canUseBeforeInputEvent) {
+      if (CAN_USE_BEFORE_INPUT) {
         target.addEventListener('beforeinput', handleNativeBeforeInput);
-        // Handle the fact that Chromium doesn't fire beforeInput composition
-        // events properly, so we need to listen to the compositionend event
-        // to apply the composition data.
-        if (!isBrowserSafari && !isBrowserFirefox) {
-          target.addEventListener('compositionend', handleCompositionEnd);
-        }
       } else {
         target.addEventListener('paste', handlePaste);
         target.addEventListener('cut', handleCut);
       }
       return () => {
         target.removeEventListener('keydown', handleKeyDown);
+        target.removeEventListener('compositionstart', handleCompositionStart);
+        target.removeEventListener('compositionend', handleCompositionEnd);
 
-        if (canUseBeforeInputEvent) {
+        if (CAN_USE_BEFORE_INPUT) {
           target.removeEventListener('beforeinput', handleNativeBeforeInput);
-          if (!isBrowserSafari && !isBrowserFirefox) {
-            target.removeEventListener('compositionend', handleCompositionEnd);
-          }
         } else {
           target.removeEventListener('paste', handlePaste);
           target.removeEventListener('cut', handleCut);
@@ -312,6 +374,7 @@ export function useEditorInputEvents<T>(
     }
   }, [
     editor,
+    handleCompositionStart,
     handleCompositionEnd,
     handleCut,
     handleKeyDown,
@@ -319,7 +382,7 @@ export function useEditorInputEvents<T>(
     handlePaste,
   ]);
 
-  return canUseBeforeInputEvent
+  return CAN_USE_BEFORE_INPUT
     ? emptyObject
     : {onBeforeInput: handlePolyfilledBeforeInput};
 }

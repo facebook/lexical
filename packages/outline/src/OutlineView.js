@@ -11,7 +11,7 @@ import {getNodeByKey} from './OutlineNode';
 import {TextNode} from '.';
 
 export type ViewType = {
-  getBody: () => BodyNode | null,
+  getBody: () => BodyNode,
   getNodeByKey: (key: NodeKey) => null | HTMLElement,
   getSelection: () => Selection,
 };

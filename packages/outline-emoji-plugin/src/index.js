@@ -1,3 +1,7 @@
+// @flow strict-local
+
+import type {OutlineEditor, ViewType} from 'outline';
+
 import {useEffect} from 'react';
 import {TextNode} from 'outline';
 
@@ -34,8 +38,7 @@ const emojis = {
   '<3': heart,
 };
 
-function textNodeTransform(node, view) {
-  console.log('HELLo');
+function textNodeTransform(node: TextNode, view: ViewType): void {
   const text = node.getTextContent();
   for (let i = 0; i < text.length; i++) {
     const possibleEmoji = text.slice(i, i + 2);
@@ -57,10 +60,10 @@ function textNodeTransform(node, view) {
   }
 }
 
-export function useEmojiPlugin(outlineEditor) {
+export function useEmojiPlugin(outlineEditor: OutlineEditor) {
   useEffect(() => {
     if (outlineEditor !== null) {
-      const removeNodeType = outlineEditor.addNodeType(EmojiNode);
+      const removeNodeType = outlineEditor.addNodeType('emoji', EmojiNode);
       const removeTransform = outlineEditor.addTextTransform(textNodeTransform);
       return () => {
         removeNodeType();
@@ -70,11 +73,14 @@ export function useEmojiPlugin(outlineEditor) {
   }, [outlineEditor]);
 }
 
-function createEmoji(cssText) {
+function createEmoji(cssText): TextNode {
+  // $FlowFixMe: this returns an EmojiNode
   return new EmojiNode(cssText, specialSpace).makeImmutable();
 }
 
 class EmojiNode extends TextNode {
+  _cssText: string;
+
   constructor(cssText, text) {
     super(text);
     this._cssText = cssText;

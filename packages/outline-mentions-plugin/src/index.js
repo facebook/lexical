@@ -161,7 +161,7 @@ function MentionsTypeahead({close, editor, match, nodeKey, registerKeys}) {
       const targetNode = view.getNodeByKey(nodeKey);
       const mentionNode = createMention(selectedResult);
       targetNode.replace(mentionNode);
-      mentionNode.wrapInTextNodes()
+      mentionNode.wrapInTextNodes();
       mentionNode.selectAfter(0, 0);
     });
     close();
@@ -348,7 +348,7 @@ export function useMentionsPlugin(outlineEditor, portalTargetElement) {
 
   useEffect(() => {
     if (outlineEditor !== null) {
-      return outlineEditor.addNodeType(MentionNode);
+      return outlineEditor.addNodeType('mention', MentionNode);
     }
   }, [outlineEditor]);
 

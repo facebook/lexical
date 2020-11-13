@@ -20,29 +20,21 @@ export const IS_SAFARI: boolean =
   typeof navigator !== 'undefined' &&
   /Version\/[\d\.]+.*Safari/.test(navigator.userAgent);
 
-export const isBrowserFirefox: boolean =
-  typeof navigator !== 'undefined' &&
-  /^(?!.*Seamonkey)(?=.*Firefox).*/i.test(navigator.userAgent);
-
-export const isBrowserSafari: boolean =
-  typeof navigator !== 'undefined' &&
-  /Version\/[\d.]+.*Safari/.test(navigator.userAgent);
-
-export const canUseDOM: boolean =
+export const CAN_USE_DOM: boolean =
   typeof window !== 'undefined' &&
   typeof window.document !== 'undefined' &&
   typeof window.document.createElement !== 'undefined';
 
 let documentMode = null;
-if (canUseDOM && 'documentMode' in document) {
+if (CAN_USE_DOM && 'documentMode' in document) {
   documentMode = document.documentMode;
 }
 
 export const canUseTextInputEvent: boolean =
-  canUseDOM && 'TextEvent' in window && !documentMode;
+  CAN_USE_DOM && 'TextEvent' in window && !documentMode;
 
-export let canUseBeforeInputEvent: boolean = false;
+export let CAN_USE_BEFORE_INPUT: boolean = false;
 
-if (canUseDOM && 'InputEvent' in window && !documentMode) {
-  canUseBeforeInputEvent = 'getTargetRanges' in new window.InputEvent('input');
+if (CAN_USE_DOM && 'InputEvent' in window && !documentMode) {
+  CAN_USE_BEFORE_INPUT = 'getTargetRanges' in new window.InputEvent('input');
 }

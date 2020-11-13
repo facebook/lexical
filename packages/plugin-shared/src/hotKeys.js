@@ -1,3 +1,5 @@
+// @flow
+
 // Disclaimer: this logic was adapted from Slate (MIT) + is-hotkey (MIT):
 // https://github.com/ianstormtaylor/slate/blob/master/packages/slate-react/src/utils/hotkeys.ts
 // https://github.com/ianstormtaylor/is-hotkey/blob/master/src/index.js
@@ -112,7 +114,7 @@ const windowsHotkeys = {
   redo: ['ctrl+y', 'ctrl+shift+z'],
 };
 
-function compareHotkey(object, event) {
+function compareHotkey(object, event: Object) {
   for (const key in object) {
     const expected = object[key];
     let actual;
@@ -218,9 +220,9 @@ const createHotKey = (key: string) => {
   const generic = hotkeys[key];
   const apple = appleHotkeys[key];
   const windows = windowsHotkeys[key];
-  const isGeneric = generic && isKeyHotkey(generic);
-  const isApple = apple && isKeyHotkey(apple);
-  const isWindows = windows && isKeyHotkey(windows);
+  const isGeneric: Function = generic && isKeyHotkey(generic);
+  const isApple: Function = apple && isKeyHotkey(apple);
+  const isWindows: Function = windows && isKeyHotkey(windows);
 
   return (event: KeyboardEvent) => {
     if (isGeneric && isGeneric(event)) return true;
@@ -230,26 +232,64 @@ const createHotKey = (key: string) => {
   };
 };
 
-export const isBold = createHotKey('bold');
-export const isMoveBackward = createHotKey('moveBackward');
-export const isMoveForward = createHotKey('moveForward');
-export const isDeleteBackward = createHotKey('deleteBackward');
-export const isDeleteForward = createHotKey('deleteForward');
-export const isDeleteLineBackward = createHotKey('deleteLineBackward');
-export const isDeleteLineForward = createHotKey('deleteLineForward');
-export const isDeleteWordBackward = createHotKey('deleteWordBackward');
-export const isDeleteWordForward = createHotKey('deleteWordForward');
-export const isExtendBackward = createHotKey('extendBackward');
-export const isExtendForward = createHotKey('extendForward');
-export const isExtendLineBackward = createHotKey('extendLineBackward');
-export const isExtendLineForward = createHotKey('extendLineForward');
-export const isItalic = createHotKey('italic');
-export const isMoveLineBackward = createHotKey('moveLineBackward');
-export const isMoveLineForward = createHotKey('moveLineForward');
-export const isMoveWordBackward = createHotKey('moveWordBackward');
-export const isMoveWordForward = createHotKey('moveWordForward');
-export const isRedo = createHotKey('redo');
-export const isLineBreak = createHotKey('lineBreak');
-export const isParagraph = createHotKey('paragraph');
-export const isTransposeCharacter = createHotKey('transposeCharacter');
-export const isUndo = createHotKey('undo');
+export const isBold: (event: Object) => boolean = createHotKey('bold');
+export const isMoveBackward: (event: Object) => boolean = createHotKey(
+  'moveBackward',
+);
+export const isMoveForward: (event: Object) => boolean = createHotKey(
+  'moveForward',
+);
+export const isDeleteBackward: (event: Object) => boolean = createHotKey(
+  'deleteBackward',
+);
+export const isDeleteForward: (event: Object) => boolean = createHotKey(
+  'deleteForward',
+);
+export const isDeleteLineBackward: (event: Object) => boolean = createHotKey(
+  'deleteLineBackward',
+);
+export const isDeleteLineForward: (event: Object) => boolean = createHotKey(
+  'deleteLineForward',
+);
+export const isDeleteWordBackward: (event: Object) => boolean = createHotKey(
+  'deleteWordBackward',
+);
+export const isDeleteWordForward: (event: Object) => boolean = createHotKey(
+  'deleteWordForward',
+);
+export const isExtendBackward: (event: Object) => boolean = createHotKey(
+  'extendBackward',
+);
+export const isExtendForward: (event: Object) => boolean = createHotKey(
+  'extendForward',
+);
+export const isExtendLineBackward: (event: Object) => boolean = createHotKey(
+  'extendLineBackward',
+);
+export const isExtendLineForward: (event: Object) => boolean = createHotKey(
+  'extendLineForward',
+);
+export const isItalic: (event: Object) => boolean = createHotKey('italic');
+export const isMoveLineBackward: (event: Object) => boolean = createHotKey(
+  'moveLineBackward',
+);
+export const isMoveLineForward: (event: Object) => boolean = createHotKey(
+  'moveLineForward',
+);
+export const isMoveWordBackward: (event: Object) => boolean = createHotKey(
+  'moveWordBackward',
+);
+export const isMoveWordForward: (event: Object) => boolean = createHotKey(
+  'moveWordForward',
+);
+export const isRedo: (event: Object) => boolean = createHotKey('redo');
+export const isLineBreak: (event: Object) => boolean = createHotKey(
+  'lineBreak',
+);
+export const isParagraph: (event: Object) => boolean = createHotKey(
+  'paragraph',
+);
+export const isTransposeCharacter: (event: Object) => boolean = createHotKey(
+  'transposeCharacter',
+);
+export const isUndo: (event: Object) => boolean = createHotKey('undo');

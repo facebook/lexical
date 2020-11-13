@@ -1,4 +1,4 @@
-// @flow
+// @flow strict-local
 
 import type {OutlineEditor, ViewModel} from 'outline';
 import {isRedo, isUndo} from 'plugin-shared/src/hotKeys';

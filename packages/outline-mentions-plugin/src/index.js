@@ -1,5 +1,9 @@
+// @flow
+import type {OutlineEditor, NodeKey} from 'outline';
+
 import React, {useCallback, useLayoutEffect, useMemo, useRef} from 'react';
 import {useEffect, useState} from 'react';
+// $FlowFixMe
 import {createPortal} from 'react-dom';
 import {useEvent} from 'plugin-shared';
 import {TextNode} from 'outline';
@@ -73,7 +77,7 @@ const AtSignMentionsRegexAliasRegex = new RegExp(
 const mentionsCache = new Map();
 
 function useMentionLookupService(mentionString) {
-  const [results, setResults] = useState(null);
+  const [results, setResults] = useState<Array<string> | null>(null);
 
   useEffect(() => {
     const cachedResults = mentionsCache.get(mentionString);
@@ -103,6 +107,14 @@ function MentionsTypeaheadItem({
   onMouseEnter,
   onMouseLeave,
   result,
+}: {
+  index: number,
+  isHovered: boolean,
+  onClick: Function,
+  onMouseEnter: Function,
+  onMouseLeave: Function,
+  result: string,
+  isSelected: boolean,
 }) {
   const liRef = useRef(null);
 
@@ -131,10 +143,22 @@ function MentionsTypeaheadItem({
   );
 }
 
-function MentionsTypeahead({close, editor, match, nodeKey, registerKeys}) {
+function MentionsTypeahead({
+  close,
+  editor,
+  match,
+  nodeKey,
+  registerKeys,
+}: {
+  close: () => void,
+  editor: OutlineEditor,
+  match: MentionMatch,
+  nodeKey: NodeKey,
+  registerKeys: (keys: any) => () => void,
+}) {
   const divRef = useRef(null);
   const results = useMentionLookupService(match.matchingString);
-  const [selectedIndex, setSelectedIndex] = useState(null);
+  const [selectedIndex, setSelectedIndex] = useState<null | number>(null);
   const [hoveredIndex, setHoveredIndex] = useState(null);
 
   useLayoutEffect(() => {
@@ -143,6 +167,7 @@ function MentionsTypeahead({close, editor, match, nodeKey, registerKeys}) {
       const mentionsElement = editor.getElementByKey(nodeKey);
 
       if (mentionsElement !== null && mentionsElement.nodeType === 1) {
+        // $FlowFixMe
         const {x, y} = mentionsElement.getBoundingClientRect();
         div.style.top = `${y + 22}px`;
         div.style.left = `${x}px`;
@@ -156,10 +181,13 @@ function MentionsTypeahead({close, editor, match, nodeKey, registerKeys}) {
   }, [editor, nodeKey, results]);
 
   const applyCurrentSelected = useCallback(() => {
+    // $FlowFixMe
     const selectedResult = results[selectedIndex];
     const viewModel = editor.createViewModel((view) => {
       const targetNode = view.getNodeByKey(nodeKey);
       const mentionNode = createMention(selectedResult);
+
+      // $FlowFixMe
       targetNode.replace(mentionNode);
       mentionNode.wrapInTextNodes();
       mentionNode.selectAfter(0, 0);
@@ -285,7 +313,16 @@ function MentionsTypeahead({close, editor, match, nodeKey, registerKeys}) {
   );
 }
 
-function checkForCaptitalizedNameMentions(text, minMatchLength) {
+type MentionMatch = {
+  leadOffset: number,
+  matchingString: string,
+  replaceableString: string,
+};
+
+function checkForCaptitalizedNameMentions(
+  text,
+  minMatchLength,
+): MentionMatch | null {
   const match = CaptitalizedNameMentionsRegex.exec(text);
   if (match !== null) {
     // The strategy ignores leading whitespace but we need to know it's
@@ -304,7 +341,7 @@ function checkForCaptitalizedNameMentions(text, minMatchLength) {
   return null;
 }
 
-function checkForAtSignMentions(text, minMatchLength) {
+function checkForAtSignMentions(text, minMatchLength): MentionMatch | null {
   let match = AtSignMentionsRegex.exec(text);
 
   if (match === null) {
@@ -327,15 +364,18 @@ function checkForAtSignMentions(text, minMatchLength) {
   return null;
 }
 
-function getPossibleMentionMatch(text) {
+function getPossibleMentionMatch(text): MentionMatch | null {
   const match = checkForAtSignMentions(text, 1);
   return match === null ? checkForCaptitalizedNameMentions(text, 3) : match;
 }
 
-export function useMentionsPlugin(editor, portalTargetElement) {
-  const [mentionMatch, setMentionMatch] = useState(null);
+export function useMentionsPlugin(
+  editor: OutlineEditor | null,
+  portalTargetElement: any,
+): any {
+  const [mentionMatch, setMentionMatch] = useState<MentionMatch | null>(null);
   const [nodeKey, setNodeKey] = useState(null);
-  const registeredKeys = useMemo(() => new Set(), []);
+  const registeredKeys: Set<any> = useMemo(() => new Set(), []);
   const registerKeys = useMemo(
     () => (keys) => {
       registeredKeys.add(keys);
@@ -412,7 +452,7 @@ export function useMentionsPlugin(editor, portalTargetElement) {
 
   useEvent(editor, 'keydown', onKeyDown);
 
-  return mentionMatch === null || nodeKey === null
+  return mentionMatch === null || nodeKey === null || editor === null
     ? null
     : createPortal(
         <MentionsTypeahead
@@ -431,7 +471,8 @@ function createMention(mentionName) {
 }
 
 class MentionNode extends TextNode {
-  constructor(mentionName) {
+  _mention: string;
+  constructor(mentionName: string) {
     super(mentionName);
     this._mention = mentionName;
     this._type = 'mention';
@@ -451,7 +492,10 @@ class MentionNode extends TextNode {
 }
 
 const dummyLookupService = {
-  search(string, callback) {
+  search(
+    string: string,
+    callback: (results: Array<string> | null) => void,
+  ): void {
     setTimeout(() => {
       const results = dummyMentionsData.filter((mention) =>
         mention.toLowerCase().includes(string.toLowerCase()),

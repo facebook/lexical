@@ -17,6 +17,12 @@ server.max_workers=4
 esproposal.class_static_fields=enable
 esproposal.class_instance_fields=enable
 module.name_mapper='^outline$' -> '<PROJECT_ROOT>/packages/outline/src/index.js'
+module.name_mapper='^outline-emoji-plugin$' -> '<PROJECT_ROOT>/packages/outline-emoji-plugin/src/index.js'
+module.name_mapper='^outline-mentions-plugin$' -> '<PROJECT_ROOT>/packages/outline-mentions-plugin/src/index.js'
+module.name_mapper='^outline-plain-text-plugin$' -> '<PROJECT_ROOT>/packages/outline-plain-text-plugin/src/index.js'
+module.name_mapper='^outline-rich-text-plugin$' -> '<PROJECT_ROOT>/packages/outline-rich-text-plugin/src/index.js'
+module.name_mapper='^outline-format-plugin$' -> '<PROJECT_ROOT>/packages/outline-format-plugin/src/index.js'
+module.name_mapper='^outline-history-plugin$' -> '<PROJECT_ROOT>/packages/outline-history-plugin/src/index.js'
 
 suppress_type=$FlowIssue
 suppress_type=$FlowFixMe

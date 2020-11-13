@@ -13,7 +13,7 @@
     "build-prod": "node scripts/build.js --prod",
     "watch": "node scripts/build.js --watch",
     "flow": "node ./scripts/tasks/flow.js",
-    "test": "jest",
+    "test": "npm run build && jest",
     "debug-test": "node --inspect-brk node_modules/.bin/jest --runInBand",
     "prettier": "node ./scripts/prettier.js write-changed"
   },

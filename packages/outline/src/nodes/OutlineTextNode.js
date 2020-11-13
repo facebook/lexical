@@ -135,24 +135,21 @@ function setTextStyling(tag, prevFlags, nextFlags, domStyle) {
   const prevIsNotUnderline = (prevFlags & IS_UNDERLINE) === 0;
   const nextIsStrikeThrough = nextFlags & IS_STRIKETHROUGH;
   const nextIsUnderline = nextFlags & IS_UNDERLINE;
+
   if (nextIsStrikeThrough && nextIsUnderline) {
     if (prevIsNotStrikeThrough || prevIsNotUnderline) {
       domStyle.setProperty('text-decoration', 'underline line-through');
-    } else {
-      domStyle.setProperty('text-decoration', 'initial');
     }
   } else if (nextIsStrikeThrough) {
     if (prevIsNotStrikeThrough) {
       domStyle.setProperty('text-decoration', 'line-through');
-    } else {
-      domStyle.setProperty('text-decoration', 'initial');
     }
   } else if (nextIsUnderline) {
     if (prevIsNotUnderline) {
       domStyle.setProperty('text-decoration', 'underline');
-    } else {
-      domStyle.setProperty('text-decoration', 'initial');
     }
+  } else if (!prevIsNotStrikeThrough || !prevIsNotUnderline) {
+    domStyle.setProperty('text-decoration', 'initial');
   }
 }
 

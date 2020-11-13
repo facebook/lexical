@@ -4,6 +4,11 @@ let ReactDOM;
 let ReactTestUtils;
 let Outline;
 
+const FORMAT_BOLD = 0;
+const FORMAT_ITALIC = 1;
+const FORMAT_STRIKETHROUGH = 2;
+const FORMAT_UNDERLINE = 3;
+
 function sanitizeHTML(html) {
   // Remove the special space characters
   return html.replace(/\uFEFF/g, '');
@@ -33,6 +38,34 @@ function deleteForward() {
   return {
     type: 'delete_forward',
     text: null,
+  };
+}
+
+function formatBold() {
+  return {
+    type: 'format_text',
+    format: FORMAT_BOLD,
+  };
+}
+
+function formatItalic() {
+  return {
+    type: 'format_text',
+    format: FORMAT_ITALIC,
+  };
+}
+
+function formatStrikeThrough() {
+  return {
+    type: 'format_text',
+    format: FORMAT_STRIKETHROUGH,
+  };
+}
+
+function formatUnderline() {
+  return {
+    type: 'format_text',
+    format: FORMAT_UNDERLINE,
   };
 }
 
@@ -101,6 +134,10 @@ function applySelectionInputs(inputs, update, editor) {
         }
         case 'delete_forward': {
           selection.deleteForward();
+          break;
+        }
+        case 'format_text': {
+          selection.formatText(input.format);
           break;
         }
         case 'move_native_selection': {
@@ -196,6 +233,84 @@ describe('OutlineSelection tests', () => {
       },
     },
     {
+      name: 'Simple typing in bold',
+      inputs: [
+        formatBold(),
+        insertText('H'),
+        insertText('e'),
+        insertText('l'),
+        insertText('l'),
+        insertText('o'),
+      ],
+      expectedHTML:
+        '<div contenteditable="true"><p dir="ltr"><strong data-text="true">Hello</strong></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 5,
+        focusPath: [0, 0, 0],
+        focusOffset: 5,
+      },
+    },
+    {
+      name: 'Simple typing in italic',
+      inputs: [
+        formatItalic(),
+        insertText('H'),
+        insertText('e'),
+        insertText('l'),
+        insertText('l'),
+        insertText('o'),
+      ],
+      expectedHTML:
+        '<div contenteditable="true"><p dir="ltr"><em data-text="true">Hello</em></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 5,
+        focusPath: [0, 0, 0],
+        focusOffset: 5,
+      },
+    },
+    {
+      name: 'Simple typing in underline',
+      inputs: [
+        formatUnderline(),
+        insertText('H'),
+        insertText('e'),
+        insertText('l'),
+        insertText('l'),
+        insertText('o'),
+      ],
+      expectedHTML:
+        '<div contenteditable="true"><p dir="ltr">' +
+        '<span data-text="true" style="text-decoration: underline;">Hello</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 5,
+        focusPath: [0, 0, 0],
+        focusOffset: 5,
+      },
+    },
+    {
+      name: 'Simple typing in strikethrough',
+      inputs: [
+        formatStrikeThrough(),
+        insertText('H'),
+        insertText('e'),
+        insertText('l'),
+        insertText('l'),
+        insertText('o'),
+      ],
+      expectedHTML:
+        '<div contenteditable="true"><p dir="ltr">' +
+        '<span data-text="true" style="text-decoration: line-through;">Hello</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 5,
+        focusPath: [0, 0, 0],
+        focusOffset: 5,
+      },
+    },
+    {
       name: 'Deletion',
       inputs: [
         insertText('1'),
@@ -253,6 +368,58 @@ describe('OutlineSelection tests', () => {
         anchorOffset: 13,
         focusPath: [0, 0, 0],
         focusOffset: 13,
+      },
+    },
+    {
+      name: 'Select and bold',
+      inputs: [
+        insertText('Hello draft!'),
+        moveNativeSelection([0, 0, 0], 6, [0, 0, 0], 11),
+        formatBold(),
+      ],
+      expectedHTML:
+        '<div contenteditable="true"><p dir="ltr"><span data-text="true">Hello </span>' +
+        '<strong data-text="true">draft</strong><span data-text="true">!</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 1, 0],
+        anchorOffset: 0,
+        focusPath: [0, 1, 0],
+        focusOffset: 5,
+      },
+    },
+    {
+      name: 'Select and italic',
+      inputs: [
+        insertText('Hello draft!'),
+        moveNativeSelection([0, 0, 0], 6, [0, 0, 0], 11),
+        formatItalic(),
+      ],
+      expectedHTML:
+        '<div contenteditable="true"><p dir="ltr"><span data-text="true">Hello </span>' +
+        '<em data-text="true">draft</em><span data-text="true">!</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 1, 0],
+        anchorOffset: 0,
+        focusPath: [0, 1, 0],
+        focusOffset: 5,
+      },
+    },
+    {
+      name: 'Select and bold + italic',
+      inputs: [
+        insertText('Hello draft!'),
+        moveNativeSelection([0, 0, 0], 6, [0, 0, 0], 11),
+        formatBold(),
+        formatItalic(),
+      ],
+      expectedHTML:
+        '<div contenteditable="true"><p dir="ltr"><span data-text="true">Hello </span>' +
+        '<strong data-text="true" style="font-style: italic;">draft</strong><span data-text="true">!</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 1, 0],
+        anchorOffset: 0,
+        focusPath: [0, 1, 0],
+        focusOffset: 5,
       },
     },
     {

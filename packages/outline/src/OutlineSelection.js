@@ -2,7 +2,7 @@
 
 import type {Node, NodeKey} from './OutlineNode';
 
-import {getActiveViewModel} from './OutlineView';
+import {getActiveEditor, getActiveViewModel} from './OutlineView';
 import {getNodeKeyFromDOM} from './OutlineReconciler';
 import {getNodeByKey} from './OutlineNode';
 import {createText, createParagraph, BlockNode, HeaderNode, TextNode} from '.';
@@ -800,7 +800,7 @@ function getLastChildNode(_node) {
 
 export function getSelection(): Selection {
   const viewModel = getActiveViewModel();
-  const editor = viewModel._editor;
+  const editor = getActiveEditor();
   let selection = viewModel.selection;
   if (selection === null) {
     const nodeMap = viewModel.nodeMap;

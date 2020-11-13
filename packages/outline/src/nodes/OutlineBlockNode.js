@@ -125,7 +125,7 @@ export class BlockNode extends Node {
     const children = writableSelf._children;
     // Because we are appending a node, we need to check if the last
     // child is an empty text node so we can make it as dirty.
-    const dirtySubTrees = viewModel._dirtySubTrees;
+    const dirtySubTrees = viewModel.dirtySubTrees;
     invariant(dirtySubTrees !== null, 'append: dirtySubTrees not found');
     const childrenLength = children.length;
     if (childrenLength > 0) {

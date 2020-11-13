@@ -379,7 +379,7 @@ export function reconcileViewModel(
   editor: OutlineEditor,
 ): void {
   const prevViewModel = editor.getCurrentViewModel();
-  const dirtySubTrees = nextViewModel._dirtySubTrees;
+  const dirtySubTrees = nextViewModel.dirtySubTrees;
   const needsUpdate = dirtySubTrees === null || nextViewModel.hasDirtyNodes();
   const nextSelection = nextViewModel.selection;
 

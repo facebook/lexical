@@ -74,7 +74,6 @@ export function useEmojiPlugin(editor: null | OutlineEditor): void {
 }
 
 function createEmoji(cssText: string): TextNode {
-  // $FlowFixMe: this returns an EmojiNode
   return new EmojiNode(cssText, specialSpace).makeImmutable();
 }
 

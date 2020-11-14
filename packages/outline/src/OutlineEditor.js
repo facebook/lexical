@@ -1,4 +1,4 @@
-// @flow strict-local
+// @flow strict
 
 import type {ViewType} from './OutlineView';
 import type {Node, NodeKey} from './OutlineNode';

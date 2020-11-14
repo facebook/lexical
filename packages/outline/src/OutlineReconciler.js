@@ -1,4 +1,4 @@
-// @flow strict-local
+// @flow strict
 
 import type {NodeKey} from './OutlineNode';
 import type {NodeMapType, ViewModel} from './OutlineView';

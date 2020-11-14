@@ -1,4 +1,4 @@
-// @flow strict-local
+// @flow strict
 
 import {IS_IMMUTABLE} from '../OutlineNode';
 import {getWritableNode, IS_SEGMENTED, Node} from '../OutlineNode';

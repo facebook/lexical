@@ -1,4 +1,4 @@
-// @flow strict-local
+// @flow strict
 
 import type {NodeKey} from './OutlineNode';
 import type {NodeMapType, ViewModel} from './OutlineView';
@@ -251,7 +251,6 @@ function reconcileNodeChildren(
   let prevChildren = _prevChildren;
   let prevEndIndex = prevChildren.length - 1;
   let prevStartKey = prevChildren[0];
-  // $FlowFixMe: this is never undefined
   let prevEndKey: NodeKey = prevChildren[prevEndIndex];
   let nextEndIndex = nextChildren.length - 1;
   let nextStartKey = nextChildren[0];

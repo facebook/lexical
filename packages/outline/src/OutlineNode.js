@@ -4,6 +4,7 @@ import type {NodeMapType} from './OutlineView';
 
 import {createText, RootNode, BlockNode, TextNode} from '.';
 import {getActiveViewModel} from './OutlineView';
+import {invariant} from './OutlineUtils';
 
 export const IS_IMMUTABLE = 1;
 export const IS_SEGMENTED = 1 << 1;

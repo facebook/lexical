@@ -244,24 +244,24 @@ describe('OutlineSelection tests', () => {
   });
 
   const suite = [
-    // {
-    //   name: 'Simple typing',
-    //   inputs: [
-    //     insertText('H'),
-    //     insertText('e'),
-    //     insertText('l'),
-    //     insertText('l'),
-    //     insertText('o'),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true"><p dir="ltr"><span data-text="true">Hello</span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 0, 0],
-    //     anchorOffset: 5,
-    //     focusPath: [0, 0, 0],
-    //     focusOffset: 5,
-    //   },
-    // },
+    {
+      name: 'Simple typing',
+      inputs: [
+        insertText('H'),
+        insertText('e'),
+        insertText('l'),
+        insertText('l'),
+        insertText('o'),
+      ],
+      expectedHTML:
+        '<div contenteditable="true"><p dir="ltr"><span data-text="true">Hello</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 5,
+        focusPath: [0, 0, 0],
+        focusOffset: 5,
+      },
+    },
     {
       name: 'Simple typing in bold',
       inputs: [
@@ -281,312 +281,312 @@ describe('OutlineSelection tests', () => {
         focusOffset: 5,
       },
     },
-    // {
-    //   name: 'Simple typing in italic',
-    //   inputs: [
-    //     formatItalic(),
-    //     insertText('H'),
-    //     insertText('e'),
-    //     insertText('l'),
-    //     insertText('l'),
-    //     insertText('o'),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true"><p dir="ltr"><em data-text="true">Hello</em></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 0, 0],
-    //     anchorOffset: 5,
-    //     focusPath: [0, 0, 0],
-    //     focusOffset: 5,
-    //   },
-    // },
-    // {
-    //   name: 'Simple typing in underline',
-    //   inputs: [
-    //     formatUnderline(),
-    //     insertText('H'),
-    //     insertText('e'),
-    //     insertText('l'),
-    //     insertText('l'),
-    //     insertText('o'),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true"><p dir="ltr">' +
-    //     '<span data-text="true" style="text-decoration: underline;">Hello</span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 0, 0],
-    //     anchorOffset: 5,
-    //     focusPath: [0, 0, 0],
-    //     focusOffset: 5,
-    //   },
-    // },
-    // {
-    //   name: 'Simple typing in strikethrough',
-    //   inputs: [
-    //     formatStrikeThrough(),
-    //     insertText('H'),
-    //     insertText('e'),
-    //     insertText('l'),
-    //     insertText('l'),
-    //     insertText('o'),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true"><p dir="ltr">' +
-    //     '<span data-text="true" style="text-decoration: line-through;">Hello</span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 0, 0],
-    //     anchorOffset: 5,
-    //     focusPath: [0, 0, 0],
-    //     focusOffset: 5,
-    //   },
-    // },
-    // {
-    //   name: 'Deletion',
-    //   inputs: [
-    //     insertText('1'),
-    //     insertText('2'),
-    //     insertText('3'),
-    //     deleteBackward(),
-    //     insertText('4'),
-    //     insertText('5'),
-    //     deleteBackward(),
-    //     insertText('6'),
-    //     deleteForward(),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true"><p><span data-text="true">1246</span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 0, 0],
-    //     anchorOffset: 4,
-    //     focusPath: [0, 0, 0],
-    //     focusOffset: 4,
-    //   },
-    // },
-    // {
-    //   name: 'Jump to beginning and insert',
-    //   inputs: [
-    //     insertText('1'),
-    //     insertText('1'),
-    //     insertText('2'),
-    //     insertText('3'),
-    //     moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 0),
-    //     insertText('a'),
-    //     insertText('b'),
-    //     insertText('c'),
-    //     deleteForward(),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true"><p dir="ltr"><span data-text="true">abc123</span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 0, 0],
-    //     anchorOffset: 3,
-    //     focusPath: [0, 0, 0],
-    //     focusOffset: 3,
-    //   },
-    // },
-    // {
-    //   name: 'Select and replace',
-    //   inputs: [
-    //     insertText('Hello draft!'),
-    //     moveNativeSelection([0, 0, 0], 6, [0, 0, 0], 11),
-    //     insertText('outline'),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true"><p dir="ltr"><span data-text="true">Hello outline!</span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 0, 0],
-    //     anchorOffset: 13,
-    //     focusPath: [0, 0, 0],
-    //     focusOffset: 13,
-    //   },
-    // },
-    // {
-    //   name: 'Select and bold',
-    //   inputs: [
-    //     insertText('Hello draft!'),
-    //     moveNativeSelection([0, 0, 0], 6, [0, 0, 0], 11),
-    //     formatBold(),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true"><p dir="ltr"><span data-text="true">Hello </span>' +
-    //     '<strong data-text="true">draft</strong><span data-text="true">!</span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 1, 0],
-    //     anchorOffset: 0,
-    //     focusPath: [0, 1, 0],
-    //     focusOffset: 5,
-    //   },
-    // },
-    // {
-    //   name: 'Select and italic',
-    //   inputs: [
-    //     insertText('Hello draft!'),
-    //     moveNativeSelection([0, 0, 0], 6, [0, 0, 0], 11),
-    //     formatItalic(),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true"><p dir="ltr"><span data-text="true">Hello </span>' +
-    //     '<em data-text="true">draft</em><span data-text="true">!</span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 1, 0],
-    //     anchorOffset: 0,
-    //     focusPath: [0, 1, 0],
-    //     focusOffset: 5,
-    //   },
-    // },
-    // {
-    //   name: 'Select and bold + italic',
-    //   inputs: [
-    //     insertText('Hello draft!'),
-    //     moveNativeSelection([0, 0, 0], 6, [0, 0, 0], 11),
-    //     formatBold(),
-    //     formatItalic(),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true"><p dir="ltr"><span data-text="true">Hello </span>' +
-    //     '<strong data-text="true" style="font-style: italic;">draft</strong><span data-text="true">!</span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 1, 0],
-    //     anchorOffset: 0,
-    //     focusPath: [0, 1, 0],
-    //     focusOffset: 5,
-    //   },
-    // },
-    // {
-    //   name: 'Select and replace all',
-    //   inputs: [
-    //     insertText('This is broken.'),
-    //     moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 15),
-    //     insertText('This works!'),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true"><p dir="ltr"><span data-text="true">This works!</span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 0, 0],
-    //     anchorOffset: 11,
-    //     focusPath: [0, 0, 0],
-    //     focusOffset: 11,
-    //   },
-    // },
-    // {
-    //   name: 'Select and delete',
-    //   inputs: [
-    //     insertText('A lion.'),
-    //     moveNativeSelection([0, 0, 0], 2, [0, 0, 0], 6),
-    //     deleteForward(),
-    //     insertText('duck'),
-    //     moveNativeSelection([0, 0, 0], 2, [0, 0, 0], 6),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true"><p dir="ltr"><span data-text="true">A duck.</span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 0, 0],
-    //     anchorOffset: 2,
-    //     focusPath: [0, 0, 0],
-    //     focusOffset: 6,
-    //   },
-    // },
-    // {
-    //   name: 'Inserting a paragraph',
-    //   inputs: [insertParagraph()],
-    //   expectedHTML:
-    //     '<div contenteditable="true"><p><span data-text="true"><br></span></p>' +
-    //     '<p><span data-text="true"><br></span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [1, 0, 0],
-    //     anchorOffset: 0,
-    //     focusPath: [1, 0, 0],
-    //     focusOffset: 0,
-    //   },
-    // },
-    // {
-    //   name: 'Inserting a paragraph and then removing it',
-    //   inputs: [insertParagraph(), deleteBackward()],
-    //   expectedHTML:
-    //     '<div contenteditable="true"><p><span data-text="true"><br></span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 0, 0],
-    //     anchorOffset: 0,
-    //     focusPath: [0, 0, 0],
-    //     focusOffset: 0,
-    //   },
-    // },
-    // {
-    //   name: 'Inserting a paragraph part way through text',
-    //   inputs: [
-    //     insertText('Hello world'),
-    //     moveNativeSelection([0, 0, 0], 6, [0, 0, 0], 6),
-    //     insertParagraph(),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true"><p dir="ltr"><span data-text="true">Hello </span></p>' +
-    //     '<p dir="ltr"><span data-text="true">world</span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [1, 0, 0],
-    //     anchorOffset: 0,
-    //     focusPath: [1, 0, 0],
-    //     focusOffset: 0,
-    //   },
-    // },
-    // {
-    //   name: 'Inserting two paragraphs and then deleting via selection',
-    //   inputs: [
-    //     insertText('123'),
-    //     insertParagraph(),
-    //     insertText('456'),
-    //     moveNativeSelection([0, 0, 0], 0, [1, 0, 0], 3),
-    //     deleteBackward(),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true"><p><span data-text="true"><br></span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 0, 0],
-    //     anchorOffset: 0,
-    //     focusPath: [0, 0, 0],
-    //     focusOffset: 0,
-    //   },
-    // },
-    // {
-    //   name:
-    //     'Type text, move backward, insert text and move forward and insert more text',
-    //   inputs: [
-    //     insertText('ahi'),
-    //     moveBackward(),
-    //     moveBackward(),
-    //     insertText(' bcd'),
-    //     moveForward(),
-    //     moveBackward(),
-    //     insertText(' efg '),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true"><p dir="ltr"><span data-text="true">a bcd efg hi</span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 0, 0],
-    //     anchorOffset: 10,
-    //     focusPath: [0, 0, 0],
-    //     focusOffset: 10,
-    //   },
-    // },
-    // {
-    //   name:
-    //     'Type text, move word backward, insert text and move word forward and insert more text',
-    //   inputs: [
-    //     insertText('world'),
-    //     moveWordBackward(),
-    //     insertText('Hello '),
-    //     moveWordForward(),
-    //     moveWordForward(),
-    //     insertText('!'),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true"><p dir="ltr"><span data-text="true">Hello world!</span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 0, 0],
-    //     anchorOffset: 12,
-    //     focusPath: [0, 0, 0],
-    //     focusOffset: 12,
-    //   },
-    // },
+    {
+      name: 'Simple typing in italic',
+      inputs: [
+        formatItalic(),
+        insertText('H'),
+        insertText('e'),
+        insertText('l'),
+        insertText('l'),
+        insertText('o'),
+      ],
+      expectedHTML:
+        '<div contenteditable="true"><p dir="ltr"><em data-text="true">Hello</em></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 5,
+        focusPath: [0, 0, 0],
+        focusOffset: 5,
+      },
+    },
+    {
+      name: 'Simple typing in underline',
+      inputs: [
+        formatUnderline(),
+        insertText('H'),
+        insertText('e'),
+        insertText('l'),
+        insertText('l'),
+        insertText('o'),
+      ],
+      expectedHTML:
+        '<div contenteditable="true"><p dir="ltr">' +
+        '<span data-text="true" style="text-decoration: underline;">Hello</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 5,
+        focusPath: [0, 0, 0],
+        focusOffset: 5,
+      },
+    },
+    {
+      name: 'Simple typing in strikethrough',
+      inputs: [
+        formatStrikeThrough(),
+        insertText('H'),
+        insertText('e'),
+        insertText('l'),
+        insertText('l'),
+        insertText('o'),
+      ],
+      expectedHTML:
+        '<div contenteditable="true"><p dir="ltr">' +
+        '<span data-text="true" style="text-decoration: line-through;">Hello</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 5,
+        focusPath: [0, 0, 0],
+        focusOffset: 5,
+      },
+    },
+    {
+      name: 'Deletion',
+      inputs: [
+        insertText('1'),
+        insertText('2'),
+        insertText('3'),
+        deleteBackward(),
+        insertText('4'),
+        insertText('5'),
+        deleteBackward(),
+        insertText('6'),
+        deleteForward(),
+      ],
+      expectedHTML:
+        '<div contenteditable="true"><p><span data-text="true">1246</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 4,
+        focusPath: [0, 0, 0],
+        focusOffset: 4,
+      },
+    },
+    {
+      name: 'Jump to beginning and insert',
+      inputs: [
+        insertText('1'),
+        insertText('1'),
+        insertText('2'),
+        insertText('3'),
+        moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 0),
+        insertText('a'),
+        insertText('b'),
+        insertText('c'),
+        deleteForward(),
+      ],
+      expectedHTML:
+        '<div contenteditable="true"><p dir="ltr"><span data-text="true">abc123</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 3,
+        focusPath: [0, 0, 0],
+        focusOffset: 3,
+      },
+    },
+    {
+      name: 'Select and replace',
+      inputs: [
+        insertText('Hello draft!'),
+        moveNativeSelection([0, 0, 0], 6, [0, 0, 0], 11),
+        insertText('outline'),
+      ],
+      expectedHTML:
+        '<div contenteditable="true"><p dir="ltr"><span data-text="true">Hello outline!</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 13,
+        focusPath: [0, 0, 0],
+        focusOffset: 13,
+      },
+    },
+    {
+      name: 'Select and bold',
+      inputs: [
+        insertText('Hello draft!'),
+        moveNativeSelection([0, 0, 0], 6, [0, 0, 0], 11),
+        formatBold(),
+      ],
+      expectedHTML:
+        '<div contenteditable="true"><p dir="ltr"><span data-text="true">Hello </span>' +
+        '<strong data-text="true">draft</strong><span data-text="true">!</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 1, 0],
+        anchorOffset: 0,
+        focusPath: [0, 1, 0],
+        focusOffset: 5,
+      },
+    },
+    {
+      name: 'Select and italic',
+      inputs: [
+        insertText('Hello draft!'),
+        moveNativeSelection([0, 0, 0], 6, [0, 0, 0], 11),
+        formatItalic(),
+      ],
+      expectedHTML:
+        '<div contenteditable="true"><p dir="ltr"><span data-text="true">Hello </span>' +
+        '<em data-text="true">draft</em><span data-text="true">!</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 1, 0],
+        anchorOffset: 0,
+        focusPath: [0, 1, 0],
+        focusOffset: 5,
+      },
+    },
+    {
+      name: 'Select and bold + italic',
+      inputs: [
+        insertText('Hello draft!'),
+        moveNativeSelection([0, 0, 0], 6, [0, 0, 0], 11),
+        formatBold(),
+        formatItalic(),
+      ],
+      expectedHTML:
+        '<div contenteditable="true"><p dir="ltr"><span data-text="true">Hello </span>' +
+        '<strong data-text="true" style="font-style: italic;">draft</strong><span data-text="true">!</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 1, 0],
+        anchorOffset: 0,
+        focusPath: [0, 1, 0],
+        focusOffset: 5,
+      },
+    },
+    {
+      name: 'Select and replace all',
+      inputs: [
+        insertText('This is broken.'),
+        moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 15),
+        insertText('This works!'),
+      ],
+      expectedHTML:
+        '<div contenteditable="true"><p dir="ltr"><span data-text="true">This works!</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 11,
+        focusPath: [0, 0, 0],
+        focusOffset: 11,
+      },
+    },
+    {
+      name: 'Select and delete',
+      inputs: [
+        insertText('A lion.'),
+        moveNativeSelection([0, 0, 0], 2, [0, 0, 0], 6),
+        deleteForward(),
+        insertText('duck'),
+        moveNativeSelection([0, 0, 0], 2, [0, 0, 0], 6),
+      ],
+      expectedHTML:
+        '<div contenteditable="true"><p dir="ltr"><span data-text="true">A duck.</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 2,
+        focusPath: [0, 0, 0],
+        focusOffset: 6,
+      },
+    },
+    {
+      name: 'Inserting a paragraph',
+      inputs: [insertParagraph()],
+      expectedHTML:
+        '<div contenteditable="true"><p><span data-text="true"><br></span></p>' +
+        '<p><span data-text="true"><br></span></p></div>',
+      expectedSelection: {
+        anchorPath: [1, 0, 0],
+        anchorOffset: 0,
+        focusPath: [1, 0, 0],
+        focusOffset: 0,
+      },
+    },
+    {
+      name: 'Inserting a paragraph and then removing it',
+      inputs: [insertParagraph(), deleteBackward()],
+      expectedHTML:
+        '<div contenteditable="true"><p><span data-text="true"><br></span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 0,
+        focusPath: [0, 0, 0],
+        focusOffset: 0,
+      },
+    },
+    {
+      name: 'Inserting a paragraph part way through text',
+      inputs: [
+        insertText('Hello world'),
+        moveNativeSelection([0, 0, 0], 6, [0, 0, 0], 6),
+        insertParagraph(),
+      ],
+      expectedHTML:
+        '<div contenteditable="true"><p dir="ltr"><span data-text="true">Hello </span></p>' +
+        '<p dir="ltr"><span data-text="true">world</span></p></div>',
+      expectedSelection: {
+        anchorPath: [1, 0, 0],
+        anchorOffset: 0,
+        focusPath: [1, 0, 0],
+        focusOffset: 0,
+      },
+    },
+    {
+      name: 'Inserting two paragraphs and then deleting via selection',
+      inputs: [
+        insertText('123'),
+        insertParagraph(),
+        insertText('456'),
+        moveNativeSelection([0, 0, 0], 0, [1, 0, 0], 3),
+        deleteBackward(),
+      ],
+      expectedHTML:
+        '<div contenteditable="true"><p><span data-text="true"><br></span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 0,
+        focusPath: [0, 0, 0],
+        focusOffset: 0,
+      },
+    },
+    {
+      name:
+        'Type text, move backward, insert text and move forward and insert more text',
+      inputs: [
+        insertText('ahi'),
+        moveBackward(),
+        moveBackward(),
+        insertText(' bcd'),
+        moveForward(),
+        moveBackward(),
+        insertText(' efg '),
+      ],
+      expectedHTML:
+        '<div contenteditable="true"><p dir="ltr"><span data-text="true">a bcd efg hi</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 10,
+        focusPath: [0, 0, 0],
+        focusOffset: 10,
+      },
+    },
+    {
+      name:
+        'Type text, move word backward, insert text and move word forward and insert more text',
+      inputs: [
+        insertText('world'),
+        moveWordBackward(),
+        insertText('Hello '),
+        moveWordForward(),
+        moveWordForward(),
+        insertText('!'),
+      ],
+      expectedHTML:
+        '<div contenteditable="true"><p dir="ltr"><span data-text="true">Hello world!</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 12,
+        focusPath: [0, 0, 0],
+        focusOffset: 12,
+      },
+    },
   ];
 
   suite.forEach((testUnit, i) => {

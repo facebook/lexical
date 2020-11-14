@@ -796,6 +796,27 @@ function getLastChildNode(_node) {
   return null;
 }
 
+// This is used to make a selection when the existing
+// selection is null, i.e. forcing selection on the editor
+// when it current exists outside the editor.
+export function makeSelection(
+  anchorKey: NodeKey,
+  anchorOffset: number,
+  focusKey: NodeKey,
+  focusOffset: number,
+): Selection {
+  const viewModel = getActiveViewModel();
+  const selection = new Selection(
+    anchorKey,
+    anchorOffset,
+    focusKey,
+    focusOffset,
+  );
+  selection.markDirty();
+  viewModel.selection = selection;
+  return selection;
+}
+
 export function getSelection(): null | Selection {
   const viewModel = getActiveViewModel();
   const editor = getActiveEditor();

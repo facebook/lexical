@@ -1,8 +1,10 @@
 // @flow strict
 
+import type {Selection} from '../OutlineSelection';
+
 import {IS_IMMUTABLE} from '../OutlineNode';
 import {getWritableNode, IS_SEGMENTED, Node} from '../OutlineNode';
-import {getSelection, Selection} from '../OutlineSelection';
+import {getSelection, makeSelection} from '../OutlineSelection';
 import {invariant} from '../OutlineUtils';
 import {getActiveViewModel} from '../OutlineView';
 
@@ -68,8 +70,6 @@ function splitText(
 
   // Handle selection
   const selection = getSelection();
-  invariant(selection !== null, 'splitText: selection not found');
-  const {anchorKey, anchorOffset, focusKey, focusOffset} = selection;
 
   // Then handle all other parts
   const splitNodes = [writableNode];
@@ -85,23 +85,29 @@ function splitText(
     const viewModel = getActiveViewModel();
     viewModel.nodeMap[siblingKey] = sibling;
 
-    if (
-      anchorKey === key &&
-      anchorOffset > textSize &&
-      anchorOffset < nextTextSize
-    ) {
-      selection.anchorKey = siblingKey;
-      selection.anchorOffset = anchorOffset - textSize;
-      selection.markDirty();
-    }
-    if (
-      focusKey === key &&
-      focusOffset > textSize &&
-      focusOffset < nextTextSize
-    ) {
-      selection.focusKey = siblingKey;
-      selection.focusOffset = focusOffset - textSize;
-      selection.markDirty();
+    if (selection !== null) {
+      const anchorOffset = selection.anchorOffset;
+      const focusOffset = selection.focusOffset;
+
+      if (
+        selection !== null &&
+        selection.anchorKey === key &&
+        anchorOffset > textSize &&
+        anchorOffset < nextTextSize
+      ) {
+        selection.anchorKey = siblingKey;
+        selection.anchorOffset = anchorOffset - textSize;
+        selection.markDirty();
+      }
+      if (
+        selection.focusKey === key &&
+        focusOffset > textSize &&
+        focusOffset < nextTextSize
+      ) {
+        selection.focusKey = siblingKey;
+        selection.focusOffset = focusOffset - textSize;
+        selection.markDirty();
+      }
     }
     textSize = nextTextSize;
     sibling._parent = parentKey;
@@ -366,7 +372,7 @@ export class TextNode extends Node {
   select(_anchorOffset?: number, _focusOffset?: number): Selection {
     let anchorOffset = _anchorOffset;
     let focusOffset = _focusOffset;
-    let selection = getSelection();
+    const selection = getSelection();
     const text = this.getTextContent();
     const key = this._key;
     if (key === null) {
@@ -385,7 +391,7 @@ export class TextNode extends Node {
       focusOffset = 0;
     }
     if (selection === null) {
-      selection = new Selection(key, anchorOffset, key, focusOffset);
+      return makeSelection(key, anchorOffset, key, focusOffset);
     } else {
       selection.setRange(key, anchorOffset, key, focusOffset);
     }

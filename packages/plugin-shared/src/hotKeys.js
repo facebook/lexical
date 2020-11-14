@@ -6,14 +6,14 @@
 
 import {IS_APPLE, IS_MAC} from './env';
 
-const modifiers = {
+const modifiers: {[key: string]: string} = {
   alt: 'altKey',
   control: 'ctrlKey',
   meta: 'metaKey',
   shift: 'shiftKey',
 };
 
-const keyAliases = {
+const keyAliases: {[key: string]: string} = {
   add: '+',
   break: 'pause',
   cmd: 'meta',
@@ -37,7 +37,7 @@ const keyAliases = {
   windows: 'meta',
 };
 
-const keyCodes = {
+const keyCodes: {[key: string]: number} = {
   backspace: 8,
   tab: 9,
   enter: 13,
@@ -74,7 +74,7 @@ const keyCodes = {
   "'": 222,
 };
 
-const hotkeys = {
+const hotkeys: {[string]: string | Array<string>} = {
   bold: 'mod+b',
   compose: ['down', 'left', 'right', 'up', 'backspace', 'enter'],
   moveBackward: 'left',
@@ -196,7 +196,7 @@ function parseHotkey(hotkey, options) {
   return ret;
 }
 
-function isHotkey(hotkey, options, event) {
+function isHotkey(hotkey, options: {byKey: boolean} | null, event) {
   if (options && !('byKey' in options)) {
     event = options;
     options = null;
@@ -216,7 +216,7 @@ function isKeyHotkey(hotkey, event) {
   return isHotkey(hotkey, {byKey: true}, event);
 }
 
-const createHotKey = (key: string) => {
+const createHotKey = (key: string): ((event: KeyboardEvent) => boolean) => {
   const generic = hotkeys[key];
   const apple = appleHotkeys[key];
   const windows = windowsHotkeys[key];

@@ -1,4 +1,4 @@
-// @flow strict-local
+// @flow strict
 
 import type {ViewType} from './OutlineView';
 import type {Node, NodeKey} from './OutlineNode';
@@ -15,9 +15,7 @@ import {
 } from '.';
 import {createViewModel, updateViewModel, ViewModel} from './OutlineView';
 
-function createOutlineEditor(
-  editorElement,
-): OutlineEditor {
+function createOutlineEditor(editorElement): OutlineEditor {
   const root = createRoot();
   const viewModel = new ViewModel(root);
   viewModel.nodeMap.root = root;
@@ -44,10 +42,7 @@ export class OutlineEditor {
   _textTransforms: Set<(node: TextNode, view: ViewType) => void>;
   _registeredNodeTypes: Map<string, Class<Node>>;
 
-  constructor(
-    editorElement: HTMLElement,
-    viewModel: ViewModel,
-  ) {
+  constructor(editorElement: HTMLElement, viewModel: ViewModel) {
     // The editor element associated with this editor
     this._editorElement = editorElement;
     // The current view model
@@ -145,12 +140,10 @@ export class OutlineEditor {
   }
 }
 
-export function useOutlineEditor(
-  editorElementRef: {current: null | HTMLElement},
-): OutlineEditor | null {
-  const [editor, setOutlineEditor] = useState<null | OutlineEditor>(
-    null,
-  );
+export function useOutlineEditor(editorElementRef: {
+  current: null | HTMLElement,
+}): OutlineEditor | null {
+  const [editor, setOutlineEditor] = useState<null | OutlineEditor>(null);
 
   useEffect(() => {
     const editorElement = editorElementRef.current;

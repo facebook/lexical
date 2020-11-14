@@ -1,4 +1,4 @@
-// @flow strict-local
+// @flow strict
 
 import {TextNode} from '..';
 import type {NodeKey} from '../OutlineNode';

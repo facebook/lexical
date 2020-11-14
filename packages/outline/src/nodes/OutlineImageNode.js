@@ -1,4 +1,4 @@
-// @flow strict-local
+// @flow strict
 
 import {Node} from '../OutlineNode';
 
@@ -23,7 +23,7 @@ export class ImageNode extends Node {
   isImage(): true {
     return true;
   }
-  
+
   // View
 
   _create(): HTMLElement {

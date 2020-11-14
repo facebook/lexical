@@ -1,4 +1,4 @@
-// @flow
+// @flow strict
 
 import type {OutlineEditor} from './OutlineEditor';
 export type {OutlineEditor};

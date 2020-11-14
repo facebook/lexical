@@ -1,4 +1,4 @@
-// @flow strict-local
+// @flow strict
 
 import type {RootNode} from './nodes/OutlineRootNode';
 import type {OutlineEditor} from './OutlineEditor';

@@ -13,7 +13,7 @@ import {TextNode} from '.';
 export type ViewType = {
   getRoot: () => RootNode,
   getNodeByKey: (key: NodeKey) => null | Node,
-  getSelection: () => Selection,
+  getSelection: () => null | Selection,
 };
 
 export type NodeMapType = {[key: NodeKey]: Node};
@@ -119,7 +119,6 @@ export function updateViewModel(
   reconcileViewModel(viewModel, editor);
   activeViewModel = previousActiveViewModel;
   activeEditor = previousActiveEditor;
-  viewModel.dirtySubTrees = null;
   editor._viewModel = viewModel;
   triggerOnChange(editor);
 }
@@ -143,7 +142,7 @@ export class ViewModel {
   nodeMap: NodeMapType;
   selection: null | Selection;
   dirtyNodes: Set<NodeKey>;
-  dirtySubTrees: null | Set<NodeKey>;
+  dirtySubTrees: Set<NodeKey>;
   isHistoric: boolean;
 
   constructor(root: RootNode) {
@@ -157,8 +156,7 @@ export class ViewModel {
     this.dirtyNodes = new Set();
     // We make nodes as "dirty" in that their have a child
     // that is dirty, which means we need to reconcile
-    // the given sub-tree to find the dirty node. This field
-    // is cleared after the view model is reconciled.
+    // the given sub-tree to find the dirty node.
     this.dirtySubTrees = new Set();
     // Used for undo/redo logic
     this.isHistoric = false;

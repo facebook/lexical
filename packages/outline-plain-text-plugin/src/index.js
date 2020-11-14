@@ -29,6 +29,5 @@ export function usePlainTextPlugin(
 
   const inputEvents = useEditorInputEvents(editor, pluginStateRef);
   useEvent(editor, 'focusin', onFocusIn, pluginStateRef);
-  // useEvent(editor, 'selectionchange', onSelectionChange, pluginStateRef);
   return inputEvents;
 }

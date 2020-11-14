@@ -13,6 +13,10 @@ function combineAdjacentTextNodes(
   restoreSelection,
 ) {
   const selection = getSelection();
+  invariant(
+    selection !== null,
+    'combineAdjacentTextNodes: selection not found',
+  );
   const anchorOffset = selection.anchorOffset;
   const focusOffset = selection.focusOffset;
   const anchorKey = selection.anchorKey;
@@ -126,7 +130,6 @@ export class BlockNode extends Node {
     // Because we are appending a node, we need to check if the last
     // child is an empty text node so we can make it as dirty.
     const dirtySubTrees = viewModel.dirtySubTrees;
-    invariant(dirtySubTrees !== null, 'append: dirtySubTrees not found');
     const childrenLength = children.length;
     if (childrenLength > 0) {
       const lastChildKey = children[childrenLength - 1];

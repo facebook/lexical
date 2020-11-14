@@ -1,10 +1,9 @@
 // @flow strict-local
 
-import type {Selection} from '../OutlineSelection';
-
 import {IS_IMMUTABLE} from '../OutlineNode';
 import {getWritableNode, IS_SEGMENTED, Node} from '../OutlineNode';
-import {getSelection} from '../OutlineSelection';
+import {getSelection, Selection} from '../OutlineSelection';
+import {invariant} from '../OutlineUtils';
 import {getActiveViewModel} from '../OutlineView';
 
 const IS_BOLD = 1 << 2;
@@ -69,6 +68,7 @@ function splitText(
 
   // Handle selection
   const selection = getSelection();
+  invariant(selection !== null, 'splitText: selection not found');
   const {anchorKey, anchorOffset, focusKey, focusOffset} = selection;
 
   // Then handle all other parts
@@ -351,11 +351,7 @@ export class TextNode extends Node {
     writableSelf._text = text;
     return writableSelf;
   }
-  selectAfter(
-    anchorOffset?: number,
-    focusOffset?: number,
-    isCollapsed?: boolean,
-  ): void {
+  selectAfter(anchorOffset?: number, focusOffset?: number): void {
     const nextSibling = this.getNextSibling();
     if (
       nextSibling === null ||
@@ -365,23 +361,17 @@ export class TextNode extends Node {
     ) {
       throw new Error('This needs to be fixed');
     }
-    nextSibling.select(anchorOffset, focusOffset, isCollapsed);
+    nextSibling.select(anchorOffset, focusOffset);
   }
-  select(
-    _anchorOffset?: number,
-    _focusOffset?: number,
-    isCollapsed?: boolean = false,
-  ): Selection {
+  select(_anchorOffset?: number, _focusOffset?: number): Selection {
     let anchorOffset = _anchorOffset;
     let focusOffset = _focusOffset;
-    const selection = getSelection();
+    let selection = getSelection();
     const text = this.getTextContent();
     const key = this._key;
     if (key === null) {
       throw new Error('TODO: validate nodes have keys in a more generic way');
     }
-    selection.anchorKey = key;
-    selection.focusKey = key;
     if (typeof text === 'string') {
       const lastOffset = text.length;
       if (anchorOffset === undefined) {
@@ -394,10 +384,11 @@ export class TextNode extends Node {
       anchorOffset = 0;
       focusOffset = 0;
     }
-    selection.anchorOffset = anchorOffset;
-    selection.focusOffset = focusOffset;
-    selection.isCollapsed = isCollapsed;
-    selection.markDirty();
+    if (selection === null) {
+      selection = new Selection(key, anchorOffset, key, focusOffset);
+    } else {
+      selection.setRange(key, anchorOffset, key, focusOffset);
+    }
     return selection;
   }
   spliceText(
@@ -432,13 +423,10 @@ export class TextNode extends Node {
         throw new Error('TODO: validate nodes have keys in a more generic way');
       }
       const selection = getSelection();
+      invariant(selection !== null, 'spliceText: selection not found');
       const newOffset =
         !inCompositionMode || offset === 0 ? offset + newTextLength : offset;
-      selection.anchorKey = key;
-      selection.anchorOffset = newOffset;
-      selection.focusKey = key;
-      selection.focusOffset = newOffset;
-      selection.markDirty();
+      selection.setRange(key, newOffset, key, newOffset);
     }
     return writableSelf;
   }

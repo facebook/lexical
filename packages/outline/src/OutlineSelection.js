@@ -130,6 +130,7 @@ export class Selection {
     if (this.isCaret()) {
       if (firstNodeTextLength === 0) {
         firstNode.setFlags(firstNextFlags);
+        this.markDirty();
       } else {
         const textNode = createText('');
         textNode.setFlags(firstNextFlags);
@@ -795,14 +796,13 @@ function getLastChildNode(_node) {
   return null;
 }
 
-export function getSelection(): Selection {
+export function getSelection(): null | Selection {
   const viewModel = getActiveViewModel();
   const editor = getActiveEditor();
   let selection = viewModel.selection;
   if (selection === null) {
     const nodeMap = viewModel.nodeMap;
     const windowSelection: WindowSelection = window.getSelection();
-    const isCollapsed = windowSelection.isCollapsed;
     const anchorDOM = windowSelection.anchorNode;
     const focusDOM = windowSelection.focusNode;
     let anchorOffset = windowSelection.anchorOffset;
@@ -811,9 +811,9 @@ export function getSelection(): Selection {
     let focusNode: Node | null = null;
     let anchorKey: NodeKey | null = null;
     let focusKey: NodeKey | null = null;
-    let isDirty = false;
-
-    invariant(editor !== null, 'getSelection: editor not found');
+    if (editor === null || anchorDOM === null || focusDOM === null) {
+      return null;
+    }
     // When selecting all content in FF, it targets the contenteditable.
     // We need to resolve the first and last text DOM nodes
     if (anchorDOM === focusDOM && anchorDOM === editor.getEditorElement()) {
@@ -824,26 +824,24 @@ export function getSelection(): Selection {
         anchorNode !== null && focusNode !== null,
         'getSelection: anchorNode/focusNode not found',
       );
-      isDirty = true;
       anchorKey = anchorNode._key;
       focusKey = focusNode._key;
       anchorOffset = 0;
       focusOffset = focusNode.getTextContent().length;
     } else {
-      anchorKey =
-        anchorDOM !== null ? getNodeKeyFromDOM(anchorDOM, nodeMap) : null;
-      focusKey =
-        focusDOM !== null ? getNodeKeyFromDOM(focusDOM, nodeMap) : null;
-      anchorNode = anchorKey !== null ? getNodeByKey(anchorKey) : null;
-      focusNode = focusKey !== null ? getNodeByKey(focusKey) : null;
+      anchorKey = getNodeKeyFromDOM(anchorDOM, nodeMap);
+      focusKey = getNodeKeyFromDOM(focusDOM, nodeMap);
+      if (anchorKey === null || focusKey === null) {
+        return null;
+      }
+      anchorNode = getNodeByKey(anchorKey);
+      focusNode = getNodeByKey(focusKey);
     }
 
     if (anchorNode !== null && anchorNode._text === '') {
-      isDirty = true;
       anchorOffset = 0;
     }
     if (focusNode !== null && focusNode._text === '') {
-      isDirty = true;
       focusOffset = 0;
     }
 
@@ -852,9 +850,16 @@ export function getSelection(): Selection {
       anchorOffset,
       focusKey,
       focusOffset,
-      isCollapsed,
     );
-    if (isDirty) {
+    const currentViewModel = editor.getCurrentViewModel();
+    const currentSelection = currentViewModel.selection;
+    if (
+      currentSelection !== null &&
+      (currentSelection.focusKey !== selection.focusKey ||
+        currentSelection.anchorKey !== selection.anchorKey ||
+        currentSelection.anchorOffset !== selection.anchorOffset ||
+        currentSelection.focusOffset !== selection.focusOffset)
+    ) {
       selection.markDirty();
     }
   }

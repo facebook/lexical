@@ -71,12 +71,14 @@ function callCallbackWithViewModelScope(
   viewModel: ViewModel,
   editor: OutlineEditor,
 ): void {
+  const previousActiveViewModel = activeViewModel;
+  const previousActiveEditor = activeEditor;
   activeViewModel = viewModel;
   activeEditor = editor;
   callbackFn(view);
   applyTextTransforms(viewModel, editor);
-  activeViewModel = null;
-  activeEditor = null;
+  activeViewModel = previousActiveViewModel;
+  activeEditor = previousActiveEditor;
 }
 
 // To optimize things, we only apply transforms to
@@ -110,10 +112,14 @@ export function updateViewModel(
   viewModel: ViewModel,
   editor: OutlineEditor,
 ): void {
+  const previousActiveViewModel = activeViewModel;
+  const previousActiveEditor = activeEditor;
   activeViewModel = viewModel;
+  activeEditor = editor;
   reconcileViewModel(viewModel, editor);
+  activeViewModel = previousActiveViewModel;
+  activeEditor = previousActiveEditor;
   viewModel.dirtySubTrees = null;
-  activeViewModel = null;
   editor._viewModel = viewModel;
   triggerOnChange(editor);
 }

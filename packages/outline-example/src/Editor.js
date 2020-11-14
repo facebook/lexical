@@ -41,11 +41,11 @@ export default function Editor({onChange, isReadOnly}: Props): React$Node {
   }, [outlineEditor, onChange]);
 
   // Subscribe to changes
-  // useEffect(() => {
-  //   if (outlineEditor !== null) {
-  //     return outlineEditor.addUpdateListener(onChange);
-  //   }
-  // }, [onChange, outlineEditor]);
+  useEffect(() => {
+    if (outlineEditor !== null) {
+      return outlineEditor.addUpdateListener(onChange);
+    }
+  }, [onChange, outlineEditor]);
 
   // const props = usePlainTextPlugin(outlineEditor, isReadOnly);
   const props = useRichTextPlugin(outlineEditor, isReadOnly);

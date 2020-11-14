@@ -48,7 +48,6 @@ export class Selection {
   anchorOffset: number;
   focusKey: string | null;
   focusOffset: number;
-  isCollapsed: boolean;
   _isDirty: boolean;
 
   constructor(
@@ -56,13 +55,11 @@ export class Selection {
     anchorOffset: number,
     focusKey: string | null,
     focusOffset: number,
-    isCollapsed: boolean,
   ) {
     this.anchorKey = anchorKey;
     this.anchorOffset = anchorOffset;
     this.focusKey = focusKey;
     this.focusOffset = focusOffset;
-    this.isCollapsed = isCollapsed;
     this._isDirty = false;
   }
 

@@ -10,9 +10,10 @@ import {BlockNode, TextNode} from '.';
 let subTreeTextContent = '';
 let forceTextDirection = null;
 let activeEditor: OutlineEditor;
-let activeDirtySubTrees: null | Set<NodeKey>;
+let activeDirtySubTrees: Set<NodeKey>;
 let activePrevNodeMap: NodeMapType;
 let activeNextNodeMap: NodeMapType;
+let activeViewModelIsHistoric: boolean = false;
 
 const RTL = '\u0591-\u07FF\uFB1D-\uFDFD\uFE70-\uFEFC';
 const LTR =
@@ -126,7 +127,7 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
   const prevNode = activePrevNodeMap[key];
   const nextNode = activeNextNodeMap[key];
   const hasDirtySubTree =
-    activeDirtySubTrees !== null ? activeDirtySubTrees.has(key) : true;
+    activeViewModelIsHistoric || activeDirtySubTrees.has(key);
   const dom = activeEditor.getElementByKey(key);
 
   if (prevNode === nextNode && !hasDirtySubTree) {
@@ -347,7 +348,7 @@ function reconcileRoot(
   prevViewModel: ViewModel,
   nextViewModel: ViewModel,
   editor: OutlineEditor,
-  dirtySubTrees: null | Set<NodeKey>,
+  dirtySubTrees: Set<NodeKey>,
 ): void {
   // TODO: take this value from Editor props, default to null;
   // This will over-ride any sub-tree text direction properties.
@@ -359,6 +360,7 @@ function reconcileRoot(
   activeDirtySubTrees = dirtySubTrees;
   activePrevNodeMap = prevViewModel.nodeMap;
   activeNextNodeMap = nextViewModel.nodeMap;
+  activeViewModelIsHistoric = nextViewModel.isHistoric;
   reconcileNode('root', null);
   // We don't want a bunch of void checks throughout the scope
   // so instead we make it seem that these values are always set.
@@ -380,7 +382,7 @@ export function reconcileViewModel(
 ): void {
   const prevViewModel = editor.getCurrentViewModel();
   const dirtySubTrees = nextViewModel.dirtySubTrees;
-  const needsUpdate = dirtySubTrees === null || nextViewModel.hasDirtyNodes();
+  const needsUpdate = nextViewModel.isHistoric || nextViewModel.hasDirtyNodes();
   const nextSelection = nextViewModel.selection;
 
   if (needsUpdate) {

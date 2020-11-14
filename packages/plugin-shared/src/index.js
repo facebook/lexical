@@ -99,7 +99,10 @@ export function insertFromDataTransfer(
     if (item.kind === 'string' && item.type === 'text/plain') {
       item.getAsString((text) => {
         const viewModel = editor.createViewModel((view) => {
-          view.getSelection().insertText(text);
+          const selection = view.getSelection();
+          if (selection !== null) {
+            selection.insertText(text);
+          }
         });
         if (!editor.isUpdating()) {
           editor.update(viewModel);
@@ -126,15 +129,20 @@ function onCompositionEnd(
   editor: OutlineEditor,
 ): void {
   const data = event.data;
+  const selection = view.getSelection();
   editor.setComposing(false);
-  if (data) {
+  if (data != null && selection !== null) {
     // Handle the fact that Chromium doesn't fire beforeInput composition
     // events properly, so we need to listen to the compositionend event
     // to apply the composition data.
     if (!IS_SAFARI && !IS_FIREFOX) {
-      view.getSelection().insertText(data);
+      selection.insertText(data);
     }
   }
+}
+
+function onSelectionChange(event, view, state, editor): void {
+  view.getSelection();
 }
 
 function onKeyDown(
@@ -147,6 +155,9 @@ function onKeyDown(
     return;
   }
   const selection = view.getSelection();
+  if (selection === null) {
+    return;
+  }
 
   if (!CAN_USE_BEFORE_INPUT) {
     if (isDeleteBackward(event)) {
@@ -200,10 +211,12 @@ function onCutPolyfill(
   event.preventDefault();
   const clipboardData = event.clipboardData;
   const selection = view.getSelection();
-  if (clipboardData != null) {
-    clipboardData.setData('text/plain', selection.getTextContent());
+  if (selection !== null) {
+    if (clipboardData != null) {
+      clipboardData.setData('text/plain', selection.getTextContent());
+    }
+    selection.removeText();
   }
-  view.getSelection().removeText();
 }
 
 function onPolyfilledBeforeInput(
@@ -212,9 +225,10 @@ function onPolyfilledBeforeInput(
   state: UnknownState,
 ): void {
   event.preventDefault();
+  const selection = view.getSelection();
   const data = event.data;
-  if (data) {
-    view.getSelection().insertText(data);
+  if (data != null && selection !== null) {
+    selection.insertText(data);
   }
 }
 
@@ -235,6 +249,10 @@ function onNativeBeforeInput(
   }
   event.preventDefault();
   const selection = view.getSelection();
+
+  if (selection === null) {
+    return;
+  }
 
   switch (inputType) {
     case 'formatBold': {
@@ -344,12 +362,18 @@ export function useEditorInputEvents<T>(
     editor,
     stateRef,
   );
+  const handleSelectionChange = useEventWrapper(
+    onSelectionChange,
+    editor,
+    stateRef,
+  );
   useEffect(() => {
     if (editor !== null) {
       const target: HTMLElement = editor.getEditorElement();
       target.addEventListener('keydown', handleKeyDown);
       target.addEventListener('compositionstart', handleCompositionStart);
       target.addEventListener('compositionend', handleCompositionEnd);
+      document.addEventListener('selectionchange', handleSelectionChange);
 
       if (CAN_USE_BEFORE_INPUT) {
         target.addEventListener('beforeinput', handleNativeBeforeInput);
@@ -361,6 +385,7 @@ export function useEditorInputEvents<T>(
         target.removeEventListener('keydown', handleKeyDown);
         target.removeEventListener('compositionstart', handleCompositionStart);
         target.removeEventListener('compositionend', handleCompositionEnd);
+        document.removeEventListener('selectionchange', handleSelectionChange);
 
         if (CAN_USE_BEFORE_INPUT) {
           target.removeEventListener('beforeinput', handleNativeBeforeInput);
@@ -378,6 +403,7 @@ export function useEditorInputEvents<T>(
     handleKeyDown,
     handleNativeBeforeInput,
     handlePaste,
+    handleSelectionChange,
   ]);
 
   return CAN_USE_BEFORE_INPUT

@@ -4,7 +4,6 @@ import type {NodeMapType} from './OutlineView';
 
 import {createText, RootNode, BlockNode, TextNode} from '.';
 import {getActiveViewModel} from './OutlineView';
-import {invariant} from './OutlineUtils';
 
 export const IS_IMMUTABLE = 1;
 export const IS_SEGMENTED = 1 << 1;
@@ -469,10 +468,6 @@ export function getWritableNode<N: Node>(node: N): N {
   const parent = node._parent;
   if (parent !== null) {
     const dirtySubTrees = viewModel.dirtySubTrees;
-    invariant(
-      dirtySubTrees !== null,
-      'getWritableNode: dirtySubTrees not found',
-    );
     markParentsAsDirty(parent, nodeMap, dirtySubTrees);
   }
   if (dirtyNodes.has(key)) {

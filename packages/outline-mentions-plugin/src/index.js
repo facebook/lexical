@@ -397,6 +397,7 @@ export function useMentionsPlugin(
       const textNodeTransform = (node, view) => {
         const selection = view.getSelection();
         if (
+          selection === null ||
           selection.getAnchorNode() !== node ||
           node.isImmutable() ||
           node.isSegmented()

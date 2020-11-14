@@ -173,7 +173,7 @@ export class ViewModel {
       const dirtyNodeKey = dirtyNodes[i];
       const dirtyNode = nodeMap[dirtyNodeKey];
 
-      if (dirtyNode !== undefined && dirtyNode._parent !== null) {
+      if (dirtyNode !== undefined) {
         nodes.push(dirtyNode);
       }
     }

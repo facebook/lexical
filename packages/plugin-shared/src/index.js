@@ -48,11 +48,6 @@ function useEventWrapper<T>(
         const viewModel = editor.createViewModel((view) =>
           handler(event, view, state, editor),
         );
-        // Uncomment to see how diffs might work:
-        // if (viewModel !== editor.getCurrentViewModel()) {
-        //   const diff = editor.getDiffFromViewModel(viewModel);
-        //   debugger;
-        // }
         if (!editor.isUpdating()) {
           editor.update(viewModel);
         }

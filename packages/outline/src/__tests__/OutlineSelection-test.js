@@ -93,20 +93,13 @@ function moveForward() {
   };
 }
 
-function moveNativeSelection(
-  anchorPath,
-  anchorOffset,
-  focusPath,
-  focusOffset,
-  isCollapsed = false,
-) {
+function moveNativeSelection(anchorPath, anchorOffset, focusPath, focusOffset) {
   return {
     type: 'move_native_selection',
     anchorPath,
     anchorOffset,
     focusPath,
     focusOffset,
-    isCollapsed,
   };
 }
 
@@ -124,13 +117,11 @@ function setNativeSelection(
   anchorOffset,
   focusPath,
   focusOffset,
-  isCollapsed = false,
 ) {
   const anchorNode = getNodeFromPath(anchorPath, editorElement);
   const focusNode = getNodeFromPath(focusPath, editorElement);
   const domSelection = window.getSelection();
   const range = document.createRange();
-  range.collapse(isCollapsed);
   range.setStart(anchorNode, anchorOffset);
   range.setEnd(focusNode, focusOffset);
   domSelection.removeAllRanges();
@@ -187,7 +178,6 @@ function applySelectionInputs(inputs, update, editor) {
             input.anchorOffset,
             input.focusPath,
             input.focusOffset,
-            input.isCollapsed,
           );
           break;
         }

@@ -73,7 +73,7 @@ export function useEmojiPlugin(editor: null | OutlineEditor): void {
   }, [editor]);
 }
 
-function createEmoji(cssText: string): TextNode {
+function createEmoji(cssText: string): EmojiNode {
   return new EmojiNode(cssText, specialSpace).makeImmutable();
 }
 

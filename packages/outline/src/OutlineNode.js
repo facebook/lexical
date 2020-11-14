@@ -35,7 +35,6 @@ function removeNode(nodeToRemove: Node): void {
   writableNodeToRemove._parent = null;
   // Remove children
   if (nodeToRemove instanceof BlockNode) {
-    // $FlowFixMe refine this. We know the node is not text so it must have children.
     const children = nodeToRemove.getChildren();
     for (let i = 0; i < children.length; i++) {
       children[i].remove();
@@ -107,6 +106,18 @@ export class Node {
   _parent: null | NodeKey;
   // $FlowFixMe: TODO Figure out how to type "_type".
   _type: any;
+
+  clone(): Node {
+    // Flow doesn't support abstract classes unfortunatley, so we can't _force_
+    // subclasses of Node to implement clone. All subclasses of Node should have
+    // a clone method though. We define clone here so we can call it on any Node,
+    // and we throw this error by default since the subclass should provide
+    // their own implementation.
+    throw new Error(
+      `Node type ${this.constructor.name} does not implement .clone().`,
+    );
+  }
+
   constructor(key?: string) {
     this._flags = 0;
     this._key = key || generateKey();
@@ -349,8 +360,9 @@ export class Node {
     if (this instanceof TextNode) {
       return this.getTextContent();
     }
+    // If this isn't a TextNode, it must be a subclass of BlockNode.
+    invariant(this instanceof BlockNode, 'Found non-BlockNode non-TextNode');
     let textContent = '';
-    // $FlowFixMe we don't know that this has getChildren()
     const children = this.getChildren();
     const childrenLength = children.length;
     for (let i = 0; i < childrenLength; i++) {
@@ -473,7 +485,6 @@ export function getWritableNode<N: Node>(node: N): N {
   if (dirtyNodes.has(key)) {
     return latestNode;
   }
-  // $FlowFixMe we don't know that clone() exists
   const mutableNode = latestNode.clone();
   if (mutableNode._type !== latestNode._type) {
     throw new Error(

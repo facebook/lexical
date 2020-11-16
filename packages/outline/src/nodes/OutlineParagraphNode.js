@@ -1,12 +1,12 @@
 // @flow strict
 
-import {BlockNode} from './OutlineBlockNode';
+import {BranchNode} from '../OutlineBranchNode';
 
-export class ParagraphNode extends BlockNode {
+export class ParagraphNode extends BranchNode {
   _type: 'paragraph';
 
   constructor() {
-    super('p');
+    super();
     this._type = 'paragraph';
   }
   clone(): ParagraphNode {
@@ -16,6 +16,16 @@ export class ParagraphNode extends BlockNode {
     clone._key = this._key;
     clone._flags = this._flags;
     return clone;
+  }
+
+  // View
+
+  _create(): HTMLElement {
+    return document.createElement('p');
+  }
+  // $FlowFixMe: prevNode is always a ParagraphNode
+  _update(prevNode: ParagraphNode, dom: HTMLElement): boolean {
+    return false;
   }
 }
 

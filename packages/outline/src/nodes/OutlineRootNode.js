@@ -1,12 +1,12 @@
 // @flow strict
 
-import {BlockNode} from './OutlineBlockNode';
+import {BranchNode} from '../OutlineBranchNode';
 
-export class RootNode extends BlockNode {
+export class RootNode extends BranchNode {
   _type: 'root';
 
   constructor() {
-    super('', 'root');
+    super('root');
     this._type = 'root';
   }
   clone(): RootNode {
@@ -16,6 +16,13 @@ export class RootNode extends BlockNode {
     clone._key = this._key;
     clone._flags = this._flags;
     return clone;
+  }
+
+  // View
+
+  // $FlowFixMe: prevNode is always a RootNode
+  _update(prevNode: RootNode, dom: HTMLElement): boolean {
+    return false;
   }
 }
 

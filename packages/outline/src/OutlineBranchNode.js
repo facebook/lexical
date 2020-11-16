@@ -1,12 +1,12 @@
 // @flow strict
 
-import {TextNode} from '..';
-import type {NodeKey} from '../OutlineNode';
+import {TextNode} from '.';
+import type {NodeKey} from './OutlineNode';
 
-import {getWritableNode, Node, getNodeByKey} from '../OutlineNode';
-import {getSelection} from '../OutlineSelection';
-import {invariant} from '../OutlineUtils';
-import {getActiveViewModel} from '../OutlineView';
+import {getWritableNode, Node, getNodeByKey} from './OutlineNode';
+import {getSelection} from './OutlineSelection';
+import {invariant} from './OutlineUtils';
+import {getActiveViewModel} from './OutlineView';
 
 function combineAdjacentTextNodes(
   textNodes: Array<TextNode>,
@@ -44,27 +44,12 @@ function combineAdjacentTextNodes(
   }
 }
 
-export class BlockNode extends Node {
-  _tag: string;
+export class BranchNode extends Node {
   _children: Array<NodeKey>;
 
-  constructor(tag: string, key?: string) {
+  constructor(key?: string) {
     super(key);
     this._children = [];
-    this._tag = tag;
-    this._type = 'block';
-  }
-  clone(): BlockNode {
-    const clone = new BlockNode(this._tag);
-    clone._children = [...this._children];
-    clone._parent = this._parent;
-    clone._key = this._key;
-    clone._flags = this._flags;
-    return clone;
-  }
-  getTag(): string {
-    const self = this.getLatest();
-    return self._tag;
   }
   getChildren(): Array<Node> {
     const self = this.getLatest();
@@ -97,19 +82,10 @@ export class BlockNode extends Node {
     return getNodeByKey(children[childrenLength - 1]);
   }
 
-  // View
-
-  _create(): HTMLElement {
-    return document.createElement(this._tag);
-  }
-  _update(prevNode: Node, dom: HTMLElement): boolean {
-    return false;
-  }
-
   // Mutators
 
   // TODO add support for appending multiple nodes?
-  append(nodeToAppend: Node): BlockNode {
+  append(nodeToAppend: Node): BranchNode {
     const writableSelf = getWritableNode(this);
     const writableNodeToAppend = getWritableNode(nodeToAppend);
     const viewModel = getActiveViewModel();
@@ -181,8 +157,4 @@ export class BlockNode extends Node {
       combineAdjacentTextNodes(toNormalize, restoreSelection);
     }
   }
-}
-
-export function createBlockNode(tag: string = 'div'): BlockNode {
-  return new BlockNode(tag);
 }

@@ -45,7 +45,7 @@ describe('OutlineSelection tests', () => {
       ReactDOM.render(<TestBase />, container);
     });
 
-    // Insert initial block
+    // Insert initial branch
     update((view) => {
       const paragraph = Outline.createParagraph();
       const text = Outline.createText();

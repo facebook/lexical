@@ -143,6 +143,7 @@ export class BlockNode extends Node {
     children.push(newKey);
     // Add node to map
     nodeMap[newKey] = writableNodeToAppend;
+    viewModel.destroyedNodes.delete(newKey);
     return writableSelf;
   }
   normalizeTextNodes(restoreSelection?: boolean): void {

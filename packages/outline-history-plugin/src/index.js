@@ -1,6 +1,7 @@
 // @flow strict-local
 
 import type {OutlineEditor, ViewModel} from 'outline';
+import {TextNode} from 'outline';
 import {isRedo, isUndo} from 'plugin-shared/src/hotKeys';
 
 import {useEffect, useMemo} from 'react';
@@ -27,7 +28,9 @@ function shouldMerge(
       const prevDirtyNode = prevNodeMap[prevDirtyNodeKey];
       if (
         prevDirtyNode !== undefined &&
-        prevDirtyNode._flags === nextDirtyNode._flags
+        prevDirtyNode instanceof TextNode &&
+        prevDirtyNode._flags === nextDirtyNode._flags &&
+        prevDirtyNode._text !== ''
       ) {
         return true;
       }

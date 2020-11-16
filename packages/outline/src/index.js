@@ -21,6 +21,11 @@ import {
   createParagraphNode as createParagraph,
   ParagraphNode,
 } from './nodes/OutlineParagraphNode';
+import {createListNode as createList, ListNode} from './nodes/OutlineListNode';
+import {
+  createListItemNode as createListItem,
+  ListItemNode,
+} from './nodes/OutlineListItemNode';
 import {
   createImageNode as createImage,
   ImageNode,
@@ -31,12 +36,16 @@ export {
   createBlock,
   createHeader,
   createImage,
+  createList,
+  createListItem,
   createParagraph,
   createRoot,
   createText,
   BlockNode,
   HeaderNode,
   ImageNode,
+  ListNode,
+  ListItemNode,
   ParagraphNode,
   RootNode,
   TextNode,

@@ -39,7 +39,7 @@ h1 {
 }
 
 .editor-shell div.editor > p {
-  margin: 0 0 15px 0;
+  margin: 0 0 8px 0;
   position: relative;
 }
 
@@ -50,6 +50,16 @@ h1 {
   margin: 0 0 12px 0;
   padding: 0;
   text-align: left;
+}
+
+.editor-shell div.editor ul {
+  padding: 0;
+  margin: 0
+}
+
+.editor-shell div.editor ul li {
+  margin: 8px 32px 8px 32px;
+  list-style-type: disc;
 }
 
 pre {

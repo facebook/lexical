@@ -5,7 +5,7 @@ import type {NodeMapType, ViewModel} from './OutlineView';
 import type {OutlineEditor} from './OutlineEditor';
 import type {Selection} from './OutlineSelection';
 
-import {BlockNode, TextNode} from '.';
+import {BlockNode, ListItemNode, TextNode} from '.';
 
 let subTreeTextContent = '';
 let forceTextDirection = null;
@@ -93,12 +93,12 @@ function createNode(
   } else if (node instanceof BlockNode) {
     // Handle block children
     const children = node._children;
-    const previousSubTreeTextContent = subTreeTextContent;
-    subTreeTextContent = '';
-    const childrenLength = children.length;
-    createChildren(children, 0, childrenLength - 1, dom, null);
-    handleBlockTextDirection(dom);
-    subTreeTextContent = previousSubTreeTextContent;
+    const endIndex = children.length - 1;
+    if (node instanceof ListItemNode) {
+      createChildren(children, 0, endIndex, dom, null);
+    } else {
+      createChildrenWithDirection(children, endIndex, dom);
+    }
   }
   if (parentDOM !== null) {
     if (insertDOM !== null) {
@@ -108,6 +108,18 @@ function createNode(
     }
   }
   return dom;
+}
+
+function createChildrenWithDirection(
+  children: Array<NodeKey>,
+  endIndex: number,
+  dom: HTMLElement,
+): void {
+  const previousSubTreeTextContent = subTreeTextContent;
+  subTreeTextContent = '';
+  createChildren(children, 0, endIndex, dom, null);
+  handleBlockTextDirection(dom);
+  subTreeTextContent = previousSubTreeTextContent;
 }
 
 function createChildren(
@@ -120,6 +132,57 @@ function createChildren(
   let startIndex = _startIndex;
   for (; startIndex <= endIndex; ++startIndex) {
     createNode(children[startIndex], dom, insertDOM);
+  }
+}
+
+function reconcileChildrenWithDirection(
+  prevChildren: Array<NodeKey>,
+  nextChildren: Array<NodeKey>,
+  dom: HTMLElement,
+): void {
+  const previousSubTreeTextContent = subTreeTextContent;
+  subTreeTextContent = '';
+  reconcileChildren(prevChildren, nextChildren, dom);
+  handleBlockTextDirection(dom);
+  subTreeTextContent = previousSubTreeTextContent;
+}
+
+function reconcileChildren(
+  prevChildren: Array<NodeKey>,
+  nextChildren: Array<NodeKey>,
+  dom: HTMLElement,
+): void {
+  const prevChildrenLength = prevChildren.length;
+  const nextChildrenLength = nextChildren.length;
+  if (prevChildrenLength === 1 && nextChildrenLength === 1) {
+    const prevChildKey = prevChildren[0];
+    const nextChildKey = nextChildren[0];
+    if (prevChildKey === nextChildKey) {
+      reconcileNode(prevChildKey, dom);
+    } else {
+      const lastDOM = activeEditor.getElementByKey(prevChildKey);
+      const replacementDOM = createNode(nextChildKey, null, null);
+      dom.replaceChild(replacementDOM, lastDOM);
+      destroyNode(prevChildKey, null);
+    }
+  } else if (prevChildrenLength === 0) {
+    if (nextChildrenLength !== 0) {
+      createChildren(nextChildren, 0, nextChildrenLength - 1, dom, null);
+    }
+  } else if (nextChildrenLength === 0) {
+    if (prevChildrenLength !== 0) {
+      destroyChildren(prevChildren, 0, prevChildrenLength - 1, null);
+      // Fast path for removing DOM nodes
+      dom.textContent = '';
+    }
+  } else {
+    reconcileNodeChildren(
+      prevChildren,
+      nextChildren,
+      prevChildrenLength,
+      nextChildrenLength,
+      dom,
+    );
   }
 }
 
@@ -163,43 +226,11 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
     const childrenAreDifferent = prevChildren !== nextChildren;
 
     if (childrenAreDifferent || hasDirtySubTree) {
-      const prevChildrenLength = prevChildren.length;
-      const nextChildrenLength = nextChildren.length;
-      const previousSubTreeTextContent = subTreeTextContent;
-      subTreeTextContent = '';
-
-      if (prevChildrenLength === 1 && nextChildrenLength === 1) {
-        const prevChildKey = prevChildren[0];
-        const nextChildKey = nextChildren[0];
-        if (prevChildKey === nextChildKey) {
-          reconcileNode(prevChildKey, dom);
-        } else {
-          const lastDOM = activeEditor.getElementByKey(prevChildKey);
-          const replacementDOM = createNode(nextChildKey, null, null);
-          dom.replaceChild(replacementDOM, lastDOM);
-          destroyNode(prevChildKey, null);
-        }
-      } else if (prevChildrenLength === 0) {
-        if (nextChildrenLength !== 0) {
-          createChildren(nextChildren, 0, nextChildrenLength - 1, dom, null);
-        }
-      } else if (nextChildrenLength === 0) {
-        if (prevChildrenLength !== 0) {
-          destroyChildren(prevChildren, 0, prevChildrenLength - 1, null);
-          // Fast path for removing DOM nodes
-          dom.textContent = '';
-        }
+      if (nextNode instanceof ListItemNode) {
+        reconcileChildren(prevChildren, nextChildren, dom);
       } else {
-        reconcileNodeChildren(
-          prevChildren,
-          nextChildren,
-          prevChildrenLength,
-          nextChildrenLength,
-          dom,
-        );
+        reconcileChildrenWithDirection(prevChildren, nextChildren, dom);
       }
-      handleBlockTextDirection(dom);
-      subTreeTextContent = previousSubTreeTextContent;
     }
   }
 }

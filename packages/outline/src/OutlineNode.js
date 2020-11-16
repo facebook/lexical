@@ -20,13 +20,18 @@ function generateKey() {
 }
 
 function removeNode(nodeToRemove: Node): void {
+  const viewModel = getActiveViewModel();
+  const key = nodeToRemove._key;
+  const destroyedNodes = viewModel.destroyedNodes;
+  if (destroyedNodes.has(key)) {
+    return;
+  }
   const parent = nodeToRemove.getParent();
   if (parent === null) {
     return;
   }
   const writableParent = getWritableNode(parent);
   const parentChildren = writableParent._children;
-  const key = nodeToRemove._key;
   const index = parentChildren.indexOf(key);
   if (index > -1) {
     parentChildren.splice(index, 1);
@@ -42,8 +47,8 @@ function removeNode(nodeToRemove: Node): void {
     }
   }
   // Remove key from node map
-  const viewModel = getActiveViewModel();
   delete viewModel.nodeMap[key];
+  destroyedNodes.add(key);
 }
 
 function replaceNode<N: Node>(toReplace: Node, replaceWith: N): N {
@@ -70,6 +75,7 @@ function replaceNode<N: Node>(toReplace: Node, replaceWith: N): N {
   // Add node to map
   const viewModel = getActiveViewModel();
   viewModel.nodeMap[newKey] = writableReplaceWith;
+  viewModel.destroyedNodes.delete(newKey);
   return writableReplaceWith;
 }
 
@@ -439,6 +445,7 @@ export class Node {
     // Add node to map
     const viewModel = getActiveViewModel();
     viewModel.nodeMap[insertKey] = writableNodeToInsert;
+    viewModel.destroyedNodes.delete(insertKey);
     return writableSelf;
   }
   // TODO add support for inserting multiple nodes?
@@ -465,6 +472,7 @@ export class Node {
     // Add node to map
     const viewModel = getActiveViewModel();
     viewModel.nodeMap[insertKey] = writableNodeToInsert;
+    viewModel.destroyedNodes.delete(insertKey);
     return writableSelf;
   }
 }

@@ -143,6 +143,7 @@ export class ViewModel {
   selection: null | Selection;
   dirtyNodes: Set<NodeKey>;
   dirtySubTrees: Set<NodeKey>;
+  destroyedNodes: Set<NodeKey>;
   isHistoric: boolean;
 
   constructor(root: RootNode) {
@@ -158,6 +159,8 @@ export class ViewModel {
     // that is dirty, which means we need to reconcile
     // the given sub-tree to find the dirty node.
     this.dirtySubTrees = new Set();
+    // Used to mark nodes that have been deleted
+    this.destroyedNodes = new Set();
     // Used for undo/redo logic
     this.isHistoric = false;
   }

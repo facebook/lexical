@@ -9,7 +9,7 @@ import {
   createListItem,
   createText,
   createParagraph,
-  BlockNode,
+  BranchNode,
   HeaderNode,
   ListNode,
   ListItemNode,
@@ -18,10 +18,10 @@ import {
 import {invariant} from './OutlineUtils';
 
 function removeFirstSegment(node: TextNode): void {
-  const currentBlock = node.getParentBlock();
+  const currentBranch = node.getParentBranch();
   invariant(
-    currentBlock !== null,
-    'removeFirstSegment: currentBlock not found',
+    currentBranch !== null,
+    'removeFirstSegment: currentBranch not found',
   );
   const textContent = node.getTextContent();
   const lastSpaceIndex = textContent.indexOf(' ');
@@ -32,13 +32,16 @@ function removeFirstSegment(node: TextNode): void {
     node.insertAfter(textNode);
     node.remove();
     textNode.select();
-    currentBlock.normalizeTextNodes(true);
+    currentBranch.normalizeTextNodes(true);
   }
 }
 
 function removeLastSegment(node: TextNode): void {
-  const currentBlock = node.getParentBlock();
-  invariant(currentBlock !== null, 'removeLastSegment: currentBlock not found');
+  const currentBranch = node.getParentBranch();
+  invariant(
+    currentBranch !== null,
+    'removeLastSegment: currentBranch not found',
+  );
   const textContent = node.getTextContent();
   const lastSpaceIndex = textContent.lastIndexOf(' ');
   if (lastSpaceIndex > -1) {
@@ -48,7 +51,7 @@ function removeLastSegment(node: TextNode): void {
     node.insertAfter(textNode);
     node.remove();
     textNode.select();
-    currentBlock.normalizeTextNodes(true);
+    currentBranch.normalizeTextNodes(true);
   }
 }
 
@@ -128,8 +131,8 @@ export class Selection {
     );
     const firstNodeText = firstNode.getTextContent();
     const firstNodeTextLength = firstNodeText.length;
-    const currentBlock = firstNode.getParentBlock();
-    invariant(currentBlock !== null, 'formatText: currentBlock not found');
+    const currentBranch = firstNode.getParentBranch();
+    invariant(currentBranch !== null, 'formatText: currentBranch not found');
     const anchorOffset = this.anchorOffset;
     const focusOffset = this.focusOffset;
     const firstNextFlags = firstNode.getTextNodeFormatFlags(formatType, null);
@@ -153,10 +156,10 @@ export class Selection {
         }
         textNode.select();
         invariant(
-          currentBlock !== null,
-          'formatText: currentBlock not be found',
+          currentBranch !== null,
+          'formatText: currentBranch not be found',
         );
-        currentBlock.normalizeTextNodes(true);
+        currentBranch.normalizeTextNodes(true);
       }
       return;
     }
@@ -178,7 +181,7 @@ export class Selection {
           replacement.setFlags(firstNextFlags);
           replacement.select(0, endOffset - startOffset);
         }
-        currentBlock.normalizeTextNodes(true);
+        currentBranch.normalizeTextNodes(true);
       }
     } else {
       const isBefore = firstNode === this.getAnchorNode();
@@ -218,7 +221,7 @@ export class Selection {
         lastNode.getKey(),
         endOffset,
       );
-      currentBlock.normalizeTextNodes(true);
+      currentBranch.normalizeTextNodes(true);
     }
   }
   insertParagraph(): void {
@@ -232,7 +235,7 @@ export class Selection {
     const textContent = anchorNode.getTextContent();
     const textContentLength = textContent.length;
     const nodesToMove = anchorNode.getNextSiblings().reverse();
-    const currentBlock = anchorNode.getParentBlock();
+    const currentBranch = anchorNode.getParentBranch();
     let anchorOffset = this.anchorOffset;
 
     if (anchorOffset === 0) {
@@ -247,28 +250,33 @@ export class Selection {
       nodesToMove.push(splitNode);
       anchorOffset = 0;
     }
-    invariant(currentBlock !== null, 'insertParagraph: currentBlock not found');
-    let newBlock;
-    let targetBlock = currentBlock;
+    invariant(
+      currentBranch !== null,
+      'insertParagraph: currentBranch not found',
+    );
+    let newBranch;
 
-    if (currentBlock instanceof ListItemNode) {
-      const parent = currentBlock.getParent();
+    if (currentBranch instanceof ListItemNode) {
+      const list = currentBranch.getParent();
       if (
         nodesToMove.length === 1 &&
-        currentBlock.getTextContent() === '' &&
-        parent instanceof ListNode
+        currentBranch.getTextContent() === '' &&
+        list instanceof ListNode
       ) {
-        newBlock = createParagraph();
-        currentBlock.remove();
-        targetBlock = parent;
+        newBranch = createParagraph();
+        currentBranch.remove();
+        list.insertAfter(newBranch);
+        if (list.getChildren().length === 0) {
+          list.remove();
+        }
       } else {
-        newBlock = createListItem();
+        newBranch = createListItem();
+        currentBranch.insertAfter(newBranch);
       }
     } else {
-      newBlock = createParagraph();
+      newBranch = createParagraph();
+      currentBranch.insertAfter(newBranch);
     }
-
-    targetBlock.insertAfter(newBlock);
 
     const nodesToMoveLength = nodesToMove.length;
     let firstChild = null;
@@ -276,7 +284,7 @@ export class Selection {
     for (let i = 0; i < nodesToMoveLength; i++) {
       const nodeToMove = nodesToMove[i];
       if (firstChild === null) {
-        newBlock.append(nodeToMove);
+        newBranch.append(nodeToMove);
       } else {
         firstChild.insertBefore(nodeToMove);
       }
@@ -286,19 +294,19 @@ export class Selection {
     if (nodeToSelect instanceof TextNode) {
       nodeToSelect.select(anchorOffset, anchorOffset);
     }
-    const blockFirstChild = currentBlock.getFirstChild();
-    const blockLastChild = currentBlock.getLastChild();
+    const branchFirstChild = currentBranch.getFirstChild();
+    const branchLastChild = currentBranch.getLastChild();
     if (
-      blockFirstChild === null ||
-      blockLastChild === null ||
-      blockLastChild.isImmutable() ||
-      blockLastChild.isSegmented() ||
-      !(blockLastChild instanceof TextNode)
+      branchFirstChild === null ||
+      branchLastChild === null ||
+      branchLastChild.isImmutable() ||
+      branchLastChild.isSegmented() ||
+      !(branchLastChild instanceof TextNode)
     ) {
       const textNode = createText('');
-      currentBlock.append(textNode);
+      currentBranch.append(textNode);
     }
-    currentBlock.normalizeTextNodes();
+    currentBranch.normalizeTextNodes();
   }
   deleteLineBackward(): void {
     const anchorNode = this.getAnchorNode();
@@ -346,49 +354,52 @@ export class Selection {
     if (anchorNode === null) {
       return;
     }
-    const currentBlock = anchorNode.getParentBlock();
-    invariant(currentBlock !== null, 'deleteBackward: currentBlock not found');
+    const currentBranch = anchorNode.getParentBranch();
+    invariant(
+      currentBranch !== null,
+      'deleteBackward: currentBranch not found',
+    );
     const prevSibling = anchorNode.getPreviousSibling();
 
     if (anchorOffset === 0) {
       if (prevSibling === null) {
-        let prevBlock = currentBlock.getPreviousSibling();
-        if (prevBlock === null) {
-          if (currentBlock instanceof HeaderNode) {
+        let prevBranch = currentBranch.getPreviousSibling();
+        if (prevBranch === null) {
+          if (currentBranch instanceof HeaderNode) {
             const paragraph = createParagraph();
-            const children = currentBlock.getChildren();
+            const children = currentBranch.getChildren();
             children.forEach((child) => paragraph.append(child));
-            currentBlock.replace(paragraph);
+            currentBranch.replace(paragraph);
             return;
-          } else if (currentBlock instanceof ListItemNode) {
-            const listNode = currentBlock.getParent();
+          } else if (currentBranch instanceof ListItemNode) {
+            const listNode = currentBranch.getParent();
             invariant(
               listNode instanceof ListNode,
               'deleteBackward: listNode not found',
             );
             const paragraph = createParagraph();
-            const children = currentBlock.getChildren();
+            const children = currentBranch.getChildren();
             children.forEach((child) => paragraph.append(child));
 
             if (listNode.getChildren().length === 1) {
               listNode.replace(paragraph);
             } else {
               listNode.insertBefore(paragraph);
-              currentBlock.remove();
+              currentBranch.remove();
             }
             anchorNode.select(0, 0);
             return;
           }
-        } else if (prevBlock instanceof BlockNode) {
-          if (prevBlock instanceof ListNode) {
-            prevBlock = prevBlock.getLastChild();
+        } else if (prevBranch instanceof BranchNode) {
+          if (prevBranch instanceof ListNode) {
+            prevBranch = prevBranch.getLastChild();
             invariant(
-              prevBlock instanceof ListItemNode,
-              'deleteBackward: prevBlock not found',
+              prevBranch instanceof ListItemNode,
+              'deleteBackward: prevBranch not found',
             );
           }
           const nodesToMove = [anchorNode, ...anchorNode.getNextSiblings()];
-          let lastChild = prevBlock.getLastChild();
+          let lastChild = prevBranch.getLastChild();
           invariant(lastChild !== null, 'deleteBackward: lastChild not found');
           for (let i = 0; i < nodesToMove.length; i++) {
             const nodeToMove = nodesToMove[i];
@@ -399,16 +410,16 @@ export class Selection {
           if (nodeToSelect instanceof TextNode) {
             nodeToSelect.select(0, 0);
           }
-          currentBlock.remove();
-          prevBlock.normalizeTextNodes(true);
+          currentBranch.remove();
+          prevBranch.normalizeTextNodes(true);
         }
       } else if (prevSibling instanceof TextNode) {
         if (prevSibling.isImmutable()) {
           prevSibling.remove();
-          currentBlock.normalizeTextNodes(true);
+          currentBranch.normalizeTextNodes(true);
         } else if (prevSibling.isSegmented()) {
           removeLastSegment(prevSibling);
-          currentBlock.normalizeTextNodes(true);
+          currentBranch.normalizeTextNodes(true);
         } else {
           const textContent = prevSibling.getTextContent();
           const textContentLength = textContent.length;
@@ -433,17 +444,17 @@ export class Selection {
     if (anchorNode === null) {
       return;
     }
-    const currentBlock = anchorNode.getParentBlock();
-    invariant(currentBlock !== null, 'deleteForward: currentBlock not found');
+    const currentBranch = anchorNode.getParentBranch();
+    invariant(currentBranch !== null, 'deleteForward: currentBranch not found');
     const textContent = anchorNode.getTextContent();
     const textContentLength = textContent.length;
     const nextSibling = anchorNode.getNextSibling();
 
     if (anchorOffset === textContentLength) {
       if (nextSibling === null) {
-        const nextBlock = currentBlock.getNextSibling();
-        if (nextBlock instanceof BlockNode) {
-          const firstChild = nextBlock.getFirstChild();
+        const nextBranch = currentBranch.getNextSibling();
+        if (nextBranch instanceof BranchNode) {
+          const firstChild = nextBranch.getFirstChild();
           invariant(firstChild !== null, 'deleteForward: lastChild not found');
           const nodesToMove = [firstChild, ...firstChild.getNextSiblings()];
           let target = anchorNode;
@@ -452,8 +463,8 @@ export class Selection {
             target.insertAfter(nodeToMove);
             target = nodeToMove;
           }
-          nextBlock.remove();
-          currentBlock.normalizeTextNodes(true);
+          nextBranch.remove();
+          currentBranch.normalizeTextNodes(true);
         }
       } else if (nextSibling instanceof TextNode) {
         if (nextSibling.isImmutable()) {
@@ -485,8 +496,8 @@ export class Selection {
     );
     const firstNodeText = firstNode.getTextContent();
     const firstNodeTextLength = firstNodeText.length;
-    const currentBlock = firstNode.getParentBlock();
-    invariant(currentBlock !== null, 'insertText: currentBlock not found');
+    const currentBranch = firstNode.getParentBranch();
+    invariant(currentBranch !== null, 'insertText: currentBranch not found');
     let startOffset;
     let endOffset;
 
@@ -519,7 +530,7 @@ export class Selection {
           selectedNode.remove();
         }
       }
-      currentBlock.normalizeTextNodes(true);
+      currentBranch.normalizeTextNodes(true);
     }
   }
   moveWordBackward() {
@@ -587,11 +598,11 @@ export class Selection {
         node = sibling;
       } else {
         if (offset === 0) {
-          const currentBlock = node.getParentBlock();
-          invariant(currentBlock !== null, 'currentBlock not found');
-          const prevBlock = currentBlock.getPreviousSibling();
-          if (prevBlock instanceof BlockNode) {
-            let lastChild = prevBlock.getLastChild();
+          const currentBranch = node.getParentBranch();
+          invariant(currentBranch !== null, 'currentBranch not found');
+          const prevBranch = currentBranch.getPreviousSibling();
+          if (prevBranch instanceof BranchNode) {
+            let lastChild = prevBranch.getLastChild();
             if (lastChild instanceof ListItemNode) {
               lastChild = lastChild.getFirstChild();
             }
@@ -670,19 +681,19 @@ export class Selection {
         node = sibling;
       } else {
         if (offset === textContentLength) {
-          const currentBlock = node.getParentBlock();
-          invariant(currentBlock !== null, 'currentBlock not found');
-          let nextBlock = currentBlock.getNextSibling();
-          if (nextBlock === null && currentBlock instanceof ListItemNode) {
-            const list = currentBlock.getParent();
+          const currentBranch = node.getParentBranch();
+          invariant(currentBranch !== null, 'currentBranch not found');
+          let nextBranch = currentBranch.getNextSibling();
+          if (nextBranch === null && currentBranch instanceof ListItemNode) {
+            const list = currentBranch.getParent();
             invariant(
               list instanceof ListNode,
               'moveWordForward: list not found',
             );
-            nextBlock = list.getNextSibling();
+            nextBranch = list.getNextSibling();
           }
-          if (nextBlock instanceof BlockNode) {
-            const firstChild = nextBlock.getFirstChild();
+          if (nextBranch instanceof BranchNode) {
+            const firstChild = nextBranch.getFirstChild();
             if (firstChild !== null) {
               node = firstChild;
               continue;
@@ -740,11 +751,11 @@ export class Selection {
       if (sibling !== null) {
         node = sibling;
       } else {
-        const currentBlock = node.getParentBlock();
-        invariant(currentBlock !== null, 'currentBlock not found');
-        const prevBlock = currentBlock.getPreviousSibling();
-        if (prevBlock instanceof BlockNode) {
-          let lastChild = prevBlock.getLastChild();
+        const currentBranch = node.getParentBranch();
+        invariant(currentBranch !== null, 'currentBranch not found');
+        const prevBranch = currentBranch.getPreviousSibling();
+        if (prevBranch instanceof BranchNode) {
+          let lastChild = prevBranch.getLastChild();
           if (lastChild instanceof ListItemNode) {
             lastChild = lastChild.getFirstChild();
           }
@@ -802,16 +813,16 @@ export class Selection {
       if (sibling !== null) {
         node = sibling;
       } else {
-        const currentBlock = node.getParentBlock();
-        invariant(currentBlock !== null, 'currentBlock not found');
-        let nextBlock = currentBlock.getNextSibling();
-        if (nextBlock === null && currentBlock instanceof ListItemNode) {
-          const list = currentBlock.getParent();
+        const currentBranch = node.getParentBranch();
+        invariant(currentBranch !== null, 'currentBranch not found');
+        let nextBranch = currentBranch.getNextSibling();
+        if (nextBranch === null && currentBranch instanceof ListItemNode) {
+          const list = currentBranch.getParent();
           invariant(list instanceof ListNode, 'moveForward: list not found');
-          nextBlock = list.getNextSibling();
+          nextBranch = list.getNextSibling();
         }
-        if (nextBlock instanceof BlockNode) {
-          const firstChild = nextBlock.getFirstChild();
+        if (nextBranch instanceof BranchNode) {
+          const firstChild = nextBranch.getFirstChild();
           if (firstChild !== null) {
             node = firstChild;
             notAdjacent = true;
@@ -845,7 +856,7 @@ function getFirstChildNode(_node) {
   while (node !== null) {
     if (node instanceof TextNode) {
       return node;
-    } else if (node instanceof BlockNode) {
+    } else if (node instanceof BranchNode) {
       node = node.getFirstChild();
     } else {
       break;
@@ -859,7 +870,7 @@ function getLastChildNode(_node) {
   while (node !== null) {
     if (node instanceof TextNode) {
       return node;
-    } else if (node instanceof BlockNode) {
+    } else if (node instanceof BranchNode) {
       node = node.getLastChild();
     } else {
       break;

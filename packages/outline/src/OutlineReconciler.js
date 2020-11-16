@@ -5,7 +5,7 @@ import type {NodeMapType, ViewModel} from './OutlineView';
 import type {OutlineEditor} from './OutlineEditor';
 import type {Selection} from './OutlineSelection';
 
-import {BlockNode, ListItemNode, TextNode} from '.';
+import {BranchNode, ListItemNode, TextNode} from '.';
 
 let subTreeTextContent = '';
 let forceTextDirection = null;
@@ -34,7 +34,7 @@ function getTextDirection(text: string): 'ltr' | 'rtl' | null {
   return null;
 }
 
-function handleBlockTextDirection(dom: HTMLElement): void {
+function handleBranchTextDirection(dom: HTMLElement): void {
   if (forceTextDirection === null) {
     // $FlowFixMe: internal field
     const prevSubTreeTextContent: string = dom.__outlineTextContent;
@@ -61,7 +61,7 @@ function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
   if (activeNextNodeMap[key] === undefined) {
     activeEditor._keyToDOMMap.delete(key);
   }
-  if (node instanceof BlockNode) {
+  if (node instanceof BranchNode) {
     const children = node._children;
     destroyChildren(children, 0, children.length - 1, null);
   }
@@ -90,8 +90,8 @@ function createNode(
 
   if (node instanceof TextNode) {
     subTreeTextContent += node._text;
-  } else if (node instanceof BlockNode) {
-    // Handle block children
+  } else if (node instanceof BranchNode) {
+    // Handle branch children
     const children = node._children;
     const endIndex = children.length - 1;
     if (node instanceof ListItemNode) {
@@ -118,7 +118,7 @@ function createChildrenWithDirection(
   const previousSubTreeTextContent = subTreeTextContent;
   subTreeTextContent = '';
   createChildren(children, 0, endIndex, dom, null);
-  handleBlockTextDirection(dom);
+  handleBranchTextDirection(dom);
   subTreeTextContent = previousSubTreeTextContent;
 }
 
@@ -143,7 +143,7 @@ function reconcileChildrenWithDirection(
   const previousSubTreeTextContent = subTreeTextContent;
   subTreeTextContent = '';
   reconcileChildren(prevChildren, nextChildren, dom);
-  handleBlockTextDirection(dom);
+  handleBranchTextDirection(dom);
   subTreeTextContent = previousSubTreeTextContent;
 }
 
@@ -219,8 +219,8 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
   if (nextNode instanceof TextNode) {
     subTreeTextContent += nextNode._text;
     return;
-  } else if (prevNode instanceof BlockNode && nextNode instanceof BlockNode) {
-    // Reconcile block children
+  } else if (prevNode instanceof BranchNode && nextNode instanceof BranchNode) {
+    // Reconcile branch children
     const prevChildren = prevNode._children;
     const nextChildren = nextNode._children;
     const childrenAreDifferent = prevChildren !== nextChildren;

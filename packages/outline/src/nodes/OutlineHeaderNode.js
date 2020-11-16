@@ -1,14 +1,16 @@
 // @flow strict
 
-import {BlockNode} from './OutlineBlockNode';
+import {BranchNode} from '../OutlineBranchNode';
 
 type HeaderTagType = 'h1' | 'h2' | 'h3' | 'h4' | 'h5';
 
-export class HeaderNode extends BlockNode {
+export class HeaderNode extends BranchNode {
   _type: 'header';
+  _tag: HeaderTagType;
 
-  constructor(tag: string) {
-    super(tag);
+  constructor(tag: HeaderTagType) {
+    super();
+    this._tag = tag;
     this._type = 'header';
   }
   clone(): HeaderNode {
@@ -18,6 +20,16 @@ export class HeaderNode extends BlockNode {
     clone._key = this._key;
     clone._flags = this._flags;
     return clone;
+  }
+
+  // View
+
+  _create(): HTMLElement {
+    return document.createElement(this._tag);
+  }
+  // $FlowFixMe: prevNode is always a HeaderNode
+  _update(prevNode: HeaderNode, dom: HTMLElement): boolean {
+    return false;
   }
 }
 

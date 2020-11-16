@@ -476,6 +476,7 @@ class MentionNode extends TextNode {
   constructor(mentionName: string) {
     super(mentionName);
     this._mention = mentionName;
+    // $FlowFixMe: this is a mention type
     this._type = 'mention';
   }
   clone() {

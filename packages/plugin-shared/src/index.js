@@ -1,7 +1,7 @@
 // @flow strict-local
 
 import {useCallback, useEffect} from 'react';
-import {createBlock, createText} from 'outline';
+import {createParagraph, createText} from 'outline';
 import {CAN_USE_BEFORE_INPUT, IS_FIREFOX, IS_SAFARI} from './env';
 import {
   isDeleteBackward,
@@ -84,7 +84,7 @@ export function onFocusIn(event: FocusEvent, view: ViewType) {
 
   if (root.getFirstChild() === null) {
     const text = createText();
-    root.append(createBlock('p').append(text));
+    root.append(createParagraph().append(text));
     text.select();
   }
 }

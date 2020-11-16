@@ -2,8 +2,8 @@
 
 import type {Selection} from '../OutlineSelection';
 
-import {IS_IMMUTABLE} from '../OutlineNode';
-import {getWritableNode, IS_SEGMENTED, Node} from '../OutlineNode';
+import {LeafNode} from '../OutlineLeafNode';
+import {getWritableNode, IS_IMMUTABLE, IS_SEGMENTED} from '../OutlineNode';
 import {getSelection, makeSelection} from '../OutlineSelection';
 import {invariant} from '../OutlineUtils';
 import {getActiveViewModel} from '../OutlineView';
@@ -198,8 +198,9 @@ function setTextContent(
   }
 }
 
-export class TextNode extends Node {
+export class TextNode extends LeafNode {
   _text: string;
+  _type: 'text';
 
   constructor(text: string) {
     super();
@@ -316,10 +317,10 @@ export class TextNode extends Node {
     }
     return dom;
   }
-  _update(prevNode: Node, dom: HTMLElement): boolean {
+  // $FlowFixMe: fix the type for prevNode
+  _update(prevNode: TextNode, dom: HTMLElement): boolean {
     const domStyle = dom.style;
-    // $FlowFixMe: prevNode is always a TextNode
-    const prevText: TextNode = prevNode._text;
+    const prevText = prevNode._text;
     const nextText = this._text;
     const prevFlags = prevNode._flags;
     const nextFlags = this._flags;

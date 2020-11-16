@@ -2,7 +2,7 @@
 
 import type {NodeMapType} from './OutlineView';
 
-import {createText, RootNode, BlockNode, TextNode} from '.';
+import {createText, RootNode, BranchNode, TextNode} from '.';
 import {getActiveViewModel} from './OutlineView';
 import {invariant} from './OutlineUtils';
 
@@ -40,7 +40,7 @@ function removeNode(nodeToRemove: Node): void {
   const writableNodeToRemove = getWritableNode(nodeToRemove);
   writableNodeToRemove._parent = null;
   // Remove children
-  if (nodeToRemove instanceof BlockNode) {
+  if (nodeToRemove instanceof BranchNode) {
     const children = nodeToRemove.getChildren();
     for (let i = 0; i < children.length; i++) {
       children[i].remove();
@@ -100,7 +100,7 @@ function wrapInTextNodes<N: Node>(node: N): N {
     const text = createText('');
     node.insertAfter(text);
   }
-  // TODO: This should be getParentBlock probably
+  // TODO: This should be getParentBranch probably
   (node.getParent(): $FlowFixMe).normalizeTextNodes(true);
   return node;
 }
@@ -111,8 +111,6 @@ export class Node {
   _flags: number;
   _key: NodeKey;
   _parent: null | NodeKey;
-  // $FlowFixMe: TODO Figure out how to type "_type".
-  _type: any;
 
   clone(): Node {
     // Flow doesn't support abstract classes unfortunatley, so we can't _force_
@@ -129,7 +127,6 @@ export class Node {
     this._flags = 0;
     this._key = key || generateKey();
     this._parent = null;
-    this._type = 'node';
   }
 
   // Getters and Traversors
@@ -142,35 +139,31 @@ export class Node {
     // Key is stable between copies
     return this._key;
   }
-  getType(): string {
-    // Type is stable between copies
-    return this._type;
-  }
-  getParent(): BlockNode | null {
+  getParent(): BranchNode | null {
     const parent = this.getLatest()._parent;
     if (parent === null) {
       return null;
     }
     return getNodeByKey(parent);
   }
-  getParentOrThrow(): BlockNode {
+  getParentOrThrow(): BranchNode {
     const parent = this.getLatest()._parent;
     if (parent === null) {
       throw new Error(`Expected node ${this._key} to have a parent.`);
     }
-    return getNodeByKeyOrThrow<BlockNode>(parent);
+    return getNodeByKeyOrThrow<BranchNode>(parent);
   }
-  getParentBlock(): BlockNode | null {
+  getParentBranch(): BranchNode | null {
     let node = this;
     while (node !== null) {
-      if (node instanceof BlockNode) {
+      if (node instanceof BranchNode) {
         return node;
       }
       node = node.getParent();
     }
     return null;
   }
-  getParents(): Array<BlockNode | null> {
+  getParents(): Array<BranchNode | null> {
     const parents = [];
     let node = this.getParent();
     while (node !== null) {
@@ -215,7 +208,7 @@ export class Node {
       .map((childKey) => getNodeByKeyOrThrow<Node>(childKey));
   }
 
-  getCommonAncestor(node: Node): BlockNode | null {
+  getCommonAncestor(node: Node): BranchNode | null {
     const a = this.getParents();
     const b = node.getParents();
     const aLength = a.length;
@@ -281,7 +274,7 @@ export class Node {
         if (node === targetNode) {
           break;
         }
-        const child = node instanceof BlockNode ? node.getFirstChild() : null;
+        const child = node instanceof BranchNode ? node.getFirstChild() : null;
         if (child !== null) {
           node = child;
           continue;
@@ -314,7 +307,7 @@ export class Node {
         if (node === targetNode) {
           break;
         }
-        const child = node instanceof BlockNode ? node.getLastChild() : null;
+        const child = node instanceof BranchNode ? node.getLastChild() : null;
         if (child !== null) {
           node = child;
           continue;
@@ -367,15 +360,15 @@ export class Node {
     if (this instanceof TextNode) {
       return this.getTextContent();
     }
-    // If this isn't a TextNode, it must be a subclass of BlockNode.
-    invariant(this instanceof BlockNode, 'Found non-BlockNode non-TextNode');
+    // If this isn't a TextNode, it must be a subclass of BranchNode.
+    invariant(this instanceof BranchNode, 'Found non-BranchNode non-TextNode');
     let textContent = '';
     const children = this.getChildren();
     const childrenLength = children.length;
     for (let i = 0; i < childrenLength; i++) {
       const child = children[i];
       textContent += child.getTextContent();
-      if (child instanceof BlockNode && i !== childrenLength - 1) {
+      if (child instanceof BranchNode && i !== childrenLength - 1) {
         textContent += '\n\n';
       }
     }
@@ -495,7 +488,8 @@ export function getWritableNode<N: Node>(node: N): N {
     return latestNode;
   }
   const mutableNode = latestNode.clone();
-  if (mutableNode._type !== latestNode._type) {
+  // TODO this should be a DEV only check
+  if (!mutableNode.constructor.prototype.hasOwnProperty('clone')) {
     throw new Error(
       latestNode.constructor.name +
         ': "clone" method was either missing or incorrectly implemented.',

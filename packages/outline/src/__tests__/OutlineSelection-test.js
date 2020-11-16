@@ -220,7 +220,7 @@ describe('OutlineSelection tests', () => {
     });
     ref.current.focus();
 
-    // Insert initial block
+    // Insert initial branch
     update((view) => {
       const paragraph = Outline.createParagraph();
       const text = Outline.createText();
@@ -237,7 +237,7 @@ describe('OutlineSelection tests', () => {
     editor.update(viewModel, true);
   }
 
-  test('Expect initial output to be a block with some text', () => {
+  test('Expect initial output to be a branch with some text', () => {
     expect(sanitizeHTML(container.innerHTML)).toBe(
       '<div contenteditable="true"><p><span data-text="true"><br></span></p></div>',
     );

@@ -1,14 +1,16 @@
 // @flow strict
 
-import {BlockNode} from './OutlineBlockNode';
+import {BranchNode} from '../OutlineBranchNode';
 
 type ListNodeTagType = 'ul' | 'ol';
 
-export class ListNode extends BlockNode {
+export class ListNode extends BranchNode {
   _type: 'list';
+  _tag: ListNodeTagType;
 
-  constructor(tag: string) {
-    super(tag);
+  constructor(tag: ListNodeTagType) {
+    super();
+    this._tag = tag;
     this._type = 'list';
   }
   clone(): ListNode {
@@ -19,8 +21,18 @@ export class ListNode extends BlockNode {
     clone._flags = this._flags;
     return clone;
   }
+
+  // View
+
+  _create(): HTMLElement {
+    return document.createElement(this._tag);
+  }
+  // $FlowFixMe: prevNode is always a ListNode
+  _update(prevNode: ListNode, dom: HTMLElement): boolean {
+    return false;
+  }
 }
 
-export function createListNode(listTag: ListNodeTagType): ListNode {
-  return new ListNode(listTag);
+export function createListNode(tag: ListNodeTagType): ListNode {
+  return new ListNode(tag);
 }

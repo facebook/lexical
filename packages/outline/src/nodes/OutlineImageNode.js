@@ -1,14 +1,14 @@
 // @flow strict
 
-import {Node} from '../OutlineNode';
+import {LeafNode} from '../OutlineLeafNode';
 
-export class ImageNode extends Node {
+export class ImageNode extends LeafNode {
   _type: 'image';
   _src: string;
   _altText: string;
 
   constructor(src: string, altText: string) {
-    super('div');
+    super();
     this._type = 'image';
     this._src = src;
     this._altText = altText;
@@ -35,17 +35,16 @@ export class ImageNode extends Node {
     dom.appendChild(img);
     return dom;
   }
-  _update(prevNode: Node, dom: HTMLElement): boolean {
-    // $FlowFixMe: this is always a TextNode
-    const prevImageNode: ImageNode = prevNode;
+  // $FlowFixMe: fix the type for prevNode
+  _update(prevNode: ImageNode, dom: HTMLElement): boolean {
     // $FlowFixMe: this is always a HTMLImageElement
     const img: HTMLImageElement = dom.firstChild;
-    const prevAltText = prevImageNode._altText;
+    const prevAltText = prevNode._altText;
     const nextAltText = this._altText;
     if (prevAltText !== nextAltText) {
       img.alt = nextAltText;
     }
-    const prevSrc = prevImageNode._src;
+    const prevSrc = prevNode._src;
     const nextSrc = this._src;
     if (prevSrc !== nextSrc) {
       img.src = nextSrc;

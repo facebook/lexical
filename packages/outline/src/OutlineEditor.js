@@ -4,14 +4,7 @@ import type {ViewType} from './OutlineView';
 import type {Node, NodeKey} from './OutlineNode';
 
 import {useEffect, useState} from 'react';
-import {
-  createRoot,
-  BlockNode,
-  RootNode,
-  HeaderNode,
-  TextNode,
-  ParagraphNode,
-} from '.';
+import {createRoot, RootNode, HeaderNode, TextNode, ParagraphNode} from '.';
 import {createViewModel, updateViewModel, ViewModel} from './OutlineView';
 import {invariant} from './OutlineUtils';
 
@@ -53,7 +46,6 @@ export class OutlineEditor {
     this._textTransforms = new Set();
     // Mapping of types to their nodes
     this._registeredNodeTypes = new Map([
-      ['block', BlockNode],
       ['text', TextNode],
       ['root', RootNode],
       ['paragraph', ParagraphNode],

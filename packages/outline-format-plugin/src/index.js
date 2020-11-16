@@ -13,14 +13,14 @@ import {
 } from 'outline';
 
 function textNodeTransform(node: TextNode, view: ViewType): void {
-  const block = node.getParentBlock();
+  const branch = node.getParentBranch();
 
   if (
-    block !== null &&
+    branch !== null &&
     node.getPreviousSibling() === null &&
-    !(block instanceof HeaderNode) &&
-    !(block instanceof ListItemNode) &&
-    !(block instanceof ListNode)
+    !(branch instanceof HeaderNode) &&
+    !(branch instanceof ListItemNode) &&
+    !(branch instanceof ListNode)
   ) {
     const textContent = node.getTextContent();
     if (textContent.length > 1 && textContent[1] === ' ') {
@@ -28,17 +28,17 @@ function textNodeTransform(node: TextNode, view: ViewType): void {
       if (firstChar === '#') {
         node.spliceText(0, 2, '', true);
         const header = createHeader('h1');
-        const children = block.getChildren();
+        const children = branch.getChildren();
         children.forEach((child) => header.append(child));
-        block.replace(header);
+        branch.replace(header);
       } else if (firstChar === '-' || firstChar === '*') {
         node.spliceText(0, 2, '', true);
         const list = createList('ul');
         const listItem = createListItem();
-        const children = block.getChildren();
+        const children = branch.getChildren();
         children.forEach((child) => listItem.append(child));
         list.append(listItem);
-        block.replace(list);
+        branch.replace(list);
       }
     }
   }

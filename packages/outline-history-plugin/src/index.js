@@ -5,6 +5,37 @@ import {isRedo, isUndo} from 'plugin-shared/src/hotKeys';
 
 import {useEffect, useMemo} from 'react';
 
+function shouldMerge(
+  viewModel: ViewModel,
+  current: null | ViewModel,
+  undoStack: Array<ViewModel>,
+): boolean {
+  if (current === null || undoStack.length === 0) {
+    return false;
+  }
+  const hadDirtyNodes = current.hasDirtyNodes();
+  const hasDirtyNodes = viewModel.hasDirtyNodes();
+  // If we are changing selection between view models, then merge.
+  if (!hadDirtyNodes && !hasDirtyNodes) {
+    return true;
+  } else if (hadDirtyNodes && hasDirtyNodes) {
+    const dirtyNodes = viewModel.getDirtyNodes();
+    if (dirtyNodes.length === 1) {
+      const prevNodeMap = current.nodeMap;
+      const nextDirtyNode = dirtyNodes[0];
+      const prevDirtyNodeKey = nextDirtyNode._key;
+      const prevDirtyNode = prevNodeMap[prevDirtyNodeKey];
+      if (
+        prevDirtyNode !== undefined &&
+        prevDirtyNode._flags === nextDirtyNode._flags
+      ) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 export function useHistoryPlugin(editor: null | OutlineEditor): void {
   const historyState: {
     current: null | ViewModel,
@@ -26,13 +57,15 @@ export function useHistoryPlugin(editor: null | OutlineEditor): void {
       let redoStack = historyState.redoStack;
 
       const applyChange = (viewModel) => {
-        // TODO: merge with previous undo if the same node has changed
         const current = historyState.current;
 
         if (viewModel === current) {
           return;
         }
-        if (!viewModel.isHistoric && viewModel.hasDirtyNodes()) {
+        if (
+          !viewModel.isHistoric &&
+          !shouldMerge(viewModel, current, undoStack)
+        ) {
           if (redoStack.length !== 0) {
             redoStack = historyState.redoStack = [];
           }
@@ -48,10 +81,14 @@ export function useHistoryPlugin(editor: null | OutlineEditor): void {
           return;
         }
         if (isUndo(event)) {
-          if (undoStack.length !== 0) {
-            const current = historyState.current;
+          const undoStackLength = undoStack.length;
+          if (undoStackLength !== 0) {
+            let current = historyState.current;
 
             if (current !== null) {
+              if (undoStackLength !== 1 && !current.hasDirtyNodes()) {
+                current = undoStack.pop();
+              }
               redoStack.push(current);
             }
             const viewModel = undoStack.pop();

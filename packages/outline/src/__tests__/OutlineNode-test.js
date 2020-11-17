@@ -45,7 +45,7 @@ describe('OutlineNode tests', () => {
       ReactDOM.render(<TestBase />, container);
     });
 
-    // Insert initial branch
+    // Insert initial block
     update((view) => {
       const paragraph = Outline.createParagraph();
       const text = Outline.createText();

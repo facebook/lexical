@@ -3,7 +3,7 @@
 import type {Selection} from './OutlineSelection';
 import type {NodeKey} from './OutlineNode';
 
-import {LeafNode} from './OutlineLeafNode';
+import {Node} from './OutlineNode';
 import {
   getWritableNode,
   IS_IMMUTABLE,
@@ -200,7 +200,7 @@ function setTextContent(
   }
 }
 
-export class TextNode extends LeafNode {
+export class TextNode extends Node {
   _text: string;
   _type: 'text';
 

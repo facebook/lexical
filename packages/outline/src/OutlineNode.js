@@ -2,7 +2,7 @@
 
 import type {NodeMapType} from './OutlineView';
 
-import {createText, RootNode, BranchNode, TextNode} from '.';
+import {createText, RootNode, BlockNode, TextNode} from '.';
 import {getActiveViewModel} from './OutlineView';
 import {invariant} from './OutlineUtils';
 
@@ -82,7 +82,7 @@ function wrapInTextNodes<N: Node>(node: N): N {
     const text = createText('');
     node.insertAfter(text);
   }
-  // TODO: This should be getParentBranch probably
+  // TODO: This should be getParentBlock probably
   (node.getParent(): $FlowFixMe).normalizeTextNodes(true);
   return node;
 }
@@ -121,6 +121,9 @@ export class Node {
     const parent = getNodeByKey(parentKey);
     return parent !== null && parent.isAttached();
   }
+  isLeaf(): boolean {
+    return !(this instanceof BlockNode);
+  }
   getFlags(): number {
     const self = this.getLatest();
     return self._flags;
@@ -129,31 +132,31 @@ export class Node {
     // Key is stable between copies
     return this._key;
   }
-  getParent(): BranchNode | null {
+  getParent(): BlockNode | null {
     const parent = this.getLatest()._parent;
     if (parent === null) {
       return null;
     }
     return getNodeByKey(parent);
   }
-  getParentOrThrow(): BranchNode {
+  getParentOrThrow(): BlockNode {
     const parent = this.getLatest()._parent;
     if (parent === null) {
       throw new Error(`Expected node ${this._key} to have a parent.`);
     }
-    return getNodeByKeyOrThrow<BranchNode>(parent);
+    return getNodeByKeyOrThrow<BlockNode>(parent);
   }
-  getParentBranch(): BranchNode | null {
+  getParentBlock(): BlockNode | null {
     let node = this;
     while (node !== null) {
-      if (node instanceof BranchNode) {
+      if (node instanceof BlockNode) {
         return node;
       }
       node = node.getParent();
     }
     return null;
   }
-  getParents(): Array<BranchNode | null> {
+  getParents(): Array<BlockNode | null> {
     const parents = [];
     let node = this.getParent();
     while (node !== null) {
@@ -198,7 +201,7 @@ export class Node {
       .map((childKey) => getNodeByKeyOrThrow<Node>(childKey));
   }
 
-  getCommonAncestor(node: Node): BranchNode | null {
+  getCommonAncestor(node: Node): BlockNode | null {
     const a = this.getParents();
     const b = node.getParents();
     const aLength = a.length;
@@ -264,7 +267,7 @@ export class Node {
         if (node === targetNode) {
           break;
         }
-        const child = node instanceof BranchNode ? node.getFirstChild() : null;
+        const child = node instanceof BlockNode ? node.getFirstChild() : null;
         if (child !== null) {
           node = child;
           continue;
@@ -297,7 +300,7 @@ export class Node {
         if (node === targetNode) {
           break;
         }
-        const child = node instanceof BranchNode ? node.getLastChild() : null;
+        const child = node instanceof BlockNode ? node.getLastChild() : null;
         if (child !== null) {
           node = child;
           continue;
@@ -348,15 +351,15 @@ export class Node {
     if (this instanceof TextNode) {
       return this.getTextContent();
     }
-    // If this isn't a TextNode, it must be a subclass of BranchNode.
-    invariant(this instanceof BranchNode, 'Found non-BranchNode non-TextNode');
+    // If this isn't a TextNode, it must be a subclass of BlockNode.
+    invariant(this instanceof BlockNode, 'Found non-BlockNode non-TextNode');
     let textContent = '';
     const children = this.getChildren();
     const childrenLength = children.length;
     for (let i = 0; i < childrenLength; i++) {
       const child = children[i];
       textContent += child.getTextContent();
-      if (child instanceof BranchNode && i !== childrenLength - 1) {
+      if (child instanceof BlockNode && i !== childrenLength - 1) {
         textContent += '\n\n';
       }
     }

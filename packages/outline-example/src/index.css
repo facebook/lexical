@@ -52,6 +52,16 @@ h1 {
   text-align: left;
 }
 
+.editor-shell div.editor h2 {
+  font-size: 15px;
+  color: rgb(101, 103, 107);
+  font-weight: 700;
+  margin: 10px 0 0 0;
+  padding: 0;
+  text-align: left;
+  text-transform: uppercase;
+}
+
 .editor-shell div.editor ul {
   padding: 0;
   margin: 0

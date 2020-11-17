@@ -13,33 +13,45 @@ import {
 } from 'outline';
 
 function textNodeTransform(node: TextNode, view: ViewType): void {
-  const branch = node.getParentBranch();
+  const block = node.getParentBlock();
 
   if (
-    branch !== null &&
+    block !== null &&
     node.getPreviousSibling() === null &&
-    !(branch instanceof HeaderNode) &&
-    !(branch instanceof ListItemNode) &&
-    !(branch instanceof ListNode)
+    !(block instanceof HeaderNode) &&
+    !(block instanceof ListItemNode) &&
+    !(block instanceof ListNode)
   ) {
     const textContent = node.getTextContent();
-    if (textContent.length > 1 && textContent[1] === ' ') {
-      const firstChar = textContent[0];
+    const firstChar = textContent[0];
+    const secondChar = textContent[1];
+    const thirdChar = textContent[2];
+
+    if (textContent.length > 1 && secondChar === ' ') {
       if (firstChar === '#') {
         node.spliceText(0, 2, '', true);
         const header = createHeader('h1');
-        const children = branch.getChildren();
+        const children = block.getChildren();
         children.forEach((child) => header.append(child));
-        branch.replace(header);
+        block.replace(header);
       } else if (firstChar === '-' || firstChar === '*') {
         node.spliceText(0, 2, '', true);
         const list = createList('ul');
         const listItem = createListItem();
-        const children = branch.getChildren();
+        const children = block.getChildren();
         children.forEach((child) => listItem.append(child));
         list.append(listItem);
-        branch.replace(list);
+        block.replace(list);
       }
+    } else if (textContent.length > 2 && thirdChar === ' ') {
+      if (firstChar === '#' && secondChar === '#') {
+        node.spliceText(0, 2, '', true);
+        const header = createHeader('h2');
+        const children = block.getChildren();
+        children.forEach((child) => header.append(child));
+        block.replace(header);
+      }
+
     }
   }
 }

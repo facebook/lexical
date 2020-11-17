@@ -1,8 +1,8 @@
 // @flow strict
 
-import type {NodeKey} from '../OutlineNode';
+import type {NodeKey} from 'outline';
 
-import {BlockNode} from '../OutlineBlockNode';
+import {BlockNode} from 'outline';
 
 type HeaderTagType = 'h1' | 'h2' | 'h3' | 'h4' | 'h5';
 

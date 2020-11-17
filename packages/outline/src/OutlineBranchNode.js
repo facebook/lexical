@@ -23,24 +23,22 @@ function combineAdjacentTextNodes(
   const focusKey = selection.focusKey;
   // Merge all text nodes into the first node
   const writableMergeToNode = getWritableNode(textNodes[0]);
+  const key = writableMergeToNode._key;
   let textLength = writableMergeToNode.getTextContent().length;
-  let restoreAnchorOffset = anchorOffset;
-  let restoreFocusOffset = focusOffset;
   for (let i = 1; i < textNodes.length; i++) {
     const textNode = textNodes[i];
     const siblingText = textNode.getTextContent();
     if (restoreSelection && textNode._key === anchorKey) {
-      restoreAnchorOffset = textLength + anchorOffset;
+      selection.anchorOffset = textLength + anchorOffset;
+      selection.anchorKey = key;
     }
     if (restoreSelection && textNode._key === focusKey) {
-      restoreFocusOffset = textLength + focusOffset;
+      selection.focusOffset = textLength + focusOffset;
+      selection.focusKey = key;
     }
     writableMergeToNode.spliceText(textLength, 0, siblingText);
     textLength += siblingText.length;
     textNode.remove();
-  }
-  if (restoreSelection) {
-    writableMergeToNode.select(restoreAnchorOffset, restoreFocusOffset);
   }
 }
 

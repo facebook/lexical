@@ -1,19 +1,20 @@
 // @flow strict
 
+import type {NodeKey} from '../OutlineNode';
+
 import {BranchNode} from '../OutlineBranchNode';
 
 export class ParagraphNode extends BranchNode {
   _type: 'paragraph';
 
-  constructor() {
-    super();
+  constructor(key?: NodeKey) {
+    super(key);
     this._type = 'paragraph';
   }
   clone(): ParagraphNode {
-    const clone = new ParagraphNode();
+    const clone = new ParagraphNode(this._key);
     clone._children = [...this._children];
     clone._parent = this._parent;
-    clone._key = this._key;
     clone._flags = this._flags;
     return clone;
   }
@@ -30,5 +31,8 @@ export class ParagraphNode extends BranchNode {
 }
 
 export function createParagraphNode(): ParagraphNode {
-  return new ParagraphNode();
+  const paragraph = new ParagraphNode();
+  // Paragraph nodes align with text direection
+  paragraph.makeDirectioned();
+  return paragraph;
 }

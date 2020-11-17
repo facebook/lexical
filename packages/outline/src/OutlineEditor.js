@@ -4,7 +4,7 @@ import type {ViewType} from './OutlineView';
 import type {Node, NodeKey} from './OutlineNode';
 
 import {useEffect, useState} from 'react';
-import {createRoot, RootNode, HeaderNode, TextNode, ParagraphNode} from '.';
+import {createRoot, RootNode, TextNode, ParagraphNode} from '.';
 import {createViewModel, updateViewModel, ViewModel} from './OutlineView';
 import {invariant} from './OutlineUtils';
 
@@ -49,7 +49,6 @@ export class OutlineEditor {
       ['text', TextNode],
       ['root', RootNode],
       ['paragraph', ParagraphNode],
-      ['header', HeaderNode],
     ]);
   }
   isComposing(): boolean {

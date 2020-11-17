@@ -1,5 +1,7 @@
 // @flow strict
 
+import type {NodeKey} from '../OutlineNode';
+
 import {BranchNode} from '../OutlineBranchNode';
 
 type HeaderTagType = 'h1' | 'h2' | 'h3' | 'h4' | 'h5';
@@ -8,16 +10,15 @@ export class HeaderNode extends BranchNode {
   _type: 'header';
   _tag: HeaderTagType;
 
-  constructor(tag: HeaderTagType) {
-    super();
+  constructor(tag: HeaderTagType, key?: NodeKey) {
+    super(key);
     this._tag = tag;
     this._type = 'header';
   }
   clone(): HeaderNode {
-    const clone = new HeaderNode(this._tag);
+    const clone = new HeaderNode(this._tag, this._key);
     clone._children = [...this._children];
     clone._parent = this._parent;
-    clone._key = this._key;
     clone._flags = this._flags;
     return clone;
   }

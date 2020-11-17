@@ -8,7 +8,7 @@ import type {NodeKey} from './OutlineNode';
 export type {NodeKey};
 
 import {useOutlineEditor} from './OutlineEditor';
-import {createTextNode as createText, TextNode} from './nodes/OutlineTextNode';
+import {createTextNode as createText, TextNode} from './OutlineTextNode';
 import {BranchNode} from './OutlineBranchNode';
 import {
   createHeaderNode as createHeader,
@@ -27,7 +27,7 @@ import {
   createImageNode as createImage,
   ImageNode,
 } from './nodes/OutlineImageNode';
-import {createRootNode as createRoot, RootNode} from './nodes/OutlineRootNode';
+import {createRootNode as createRoot, RootNode} from './OutlineRootNode';
 
 export {
   createHeader,

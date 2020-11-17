@@ -1,6 +1,6 @@
 // @flow strict
 
-import type {RootNode} from './nodes/OutlineRootNode';
+import type {RootNode} from './OutlineRootNode';
 import type {OutlineEditor} from './OutlineEditor';
 import type {Selection} from './OutlineSelection';
 import type {Node, NodeKey} from './OutlineNode';
@@ -76,7 +76,10 @@ function callCallbackWithViewModelScope(
   activeViewModel = viewModel;
   activeEditor = editor;
   callbackFn(view);
-  applyTextTransforms(viewModel, editor);
+  if (viewModel.hasDirtyNodes()) {
+    applyTextTransforms(viewModel, editor);
+    garbageCollectDetachedNodes(viewModel);
+  }
   activeViewModel = previousActiveViewModel;
   activeEditor = previousActiveEditor;
 }
@@ -88,22 +91,38 @@ export function applyTextTransforms(
   editor: OutlineEditor,
 ): void {
   const textTransformsSet = editor._textTransforms;
-  const dirtyNodes = viewModel.dirtyNodes;
-  if (textTransformsSet.size > 0 && dirtyNodes !== null) {
-    const textTransforms = Array.from(textTransformsSet);
-    const mutatedNodeKeys = Array.from(dirtyNodes);
+  if (textTransformsSet.size > 0) {
     const nodeMap = viewModel.nodeMap;
+    const dirtyNodes = Array.from(viewModel.dirtyNodes);
+    const textTransforms = Array.from(textTransformsSet);
 
-    for (let s = 0; s < mutatedNodeKeys.length; s++) {
-      const mutatedNodeKey = mutatedNodeKeys[s];
-      const node = nodeMap[mutatedNodeKey];
-      if (node != null) {
+    for (let s = 0; s < dirtyNodes.length; s++) {
+      const nodeKey = dirtyNodes[s];
+      const node = nodeMap[nodeKey];
+
+      if (node !== undefined && node.isAttached()) {
+        // Apply text transforms
         if (node instanceof TextNode) {
           for (let i = 0; i < textTransforms.length; i++) {
             textTransforms[i](node, view);
           }
         }
       }
+    }
+  }
+}
+
+export function garbageCollectDetachedNodes(viewModel: ViewModel): void {
+  const dirtyNodes = Array.from(viewModel.dirtyNodes);
+  const nodeMap = viewModel.nodeMap;
+
+  for (let s = 0; s < dirtyNodes.length; s++) {
+    const nodeKey = dirtyNodes[s];
+    const node = nodeMap[nodeKey];
+
+    if (node !== undefined && !node.isAttached()) {
+      // Garbage collect node
+      delete nodeMap[nodeKey];
     }
   }
 }
@@ -143,7 +162,6 @@ export class ViewModel {
   selection: null | Selection;
   dirtyNodes: Set<NodeKey>;
   dirtySubTrees: Set<NodeKey>;
-  destroyedNodes: Set<NodeKey>;
   isHistoric: boolean;
 
   constructor(root: RootNode) {
@@ -159,8 +177,6 @@ export class ViewModel {
     // that is dirty, which means we need to reconcile
     // the given sub-tree to find the dirty node.
     this.dirtySubTrees = new Set();
-    // Used to mark nodes that have been deleted
-    this.destroyedNodes = new Set();
     // Used for undo/redo logic
     this.isHistoric = false;
   }

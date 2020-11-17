@@ -13,6 +13,7 @@ export const HAS_DIRECTION = 1 << 2;
 let nodeKeyCounter = 0;
 
 function generateKey(node: Node): NodeKey {
+  shouldErrorOnReadOnly();
   const viewModel = getActiveViewModel();
   const dirtyNodes = viewModel.dirtyNodes;
   const key = nodeKeyCounter++ + '';

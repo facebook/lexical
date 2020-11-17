@@ -9,7 +9,7 @@ function sanitizeHTML(html) {
   return html.replace(/\uFEFF/g, '');
 }
 
-describe('OutlineSelection tests', () => {
+describe('OutlineNode tests', () => {
   beforeEach(() => {
     React = require('react');
     ReactDOM = require('react-dom');

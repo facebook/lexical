@@ -13,20 +13,20 @@ import {BranchNode} from './OutlineBranchNode';
 import {
   createHeaderNode as createHeader,
   HeaderNode,
-} from './nodes/OutlineHeaderNode';
+} from './external-nodes/OutlineHeaderNode';
 import {
   createParagraphNode as createParagraph,
   ParagraphNode,
-} from './nodes/OutlineParagraphNode';
-import {createListNode as createList, ListNode} from './nodes/OutlineListNode';
+} from './external-nodes/OutlineParagraphNode';
+import {createListNode as createList, ListNode} from './external-nodes/OutlineListNode';
 import {
   createListItemNode as createListItem,
   ListItemNode,
-} from './nodes/OutlineListItemNode';
+} from './external-nodes/OutlineListItemNode';
 import {
   createImageNode as createImage,
   ImageNode,
-} from './nodes/OutlineImageNode';
+} from './external-nodes/OutlineImageNode';
 import {createRootNode as createRoot, RootNode} from './OutlineRootNode';
 
 export {

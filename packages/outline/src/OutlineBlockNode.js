@@ -44,7 +44,7 @@ function combineAdjacentTextNodes(
   }
 }
 
-export class BranchNode extends Node {
+export class BlockNode extends Node {
   _children: Array<NodeKey>;
 
   constructor(key?: string) {
@@ -85,7 +85,7 @@ export class BranchNode extends Node {
   // Mutators
 
   // TODO add support for appending multiple nodes?
-  append(nodeToAppend: Node): BranchNode {
+  append(nodeToAppend: Node): BlockNode {
     const writableSelf = getWritableNode(this);
     const writableNodeToAppend = getWritableNode(nodeToAppend);
     const viewModel = getActiveViewModel();

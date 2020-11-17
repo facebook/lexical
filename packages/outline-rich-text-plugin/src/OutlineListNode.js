@@ -1,8 +1,8 @@
 // @flow strict
 
-import type {NodeKey} from '../OutlineNode';
+import type {NodeKey} from 'outline/src/OutlineNode';
 
-import {BlockNode} from '../OutlineBlockNode';
+import {BlockNode} from 'outline';
 
 type ListNodeTagType = 'ul' | 'ol';
 
@@ -36,7 +36,7 @@ export class ListNode extends BlockNode {
 
 export function createListNode(tag: ListNodeTagType): ListNode {
   const list = new ListNode(tag);
-  // List nodes align with text direection
+  // List nodes align with text direction
   list.makeDirectioned();
   return list;
 }

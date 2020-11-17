@@ -2,9 +2,9 @@
 
 import type {NodeKey} from '../OutlineNode';
 
-import {BranchNode} from '../OutlineBranchNode';
+import {BlockNode} from '../OutlineBlockNode';
 
-export class ParagraphNode extends BranchNode {
+export class ParagraphNode extends BlockNode {
   _type: 'paragraph';
 
   constructor(key?: NodeKey) {

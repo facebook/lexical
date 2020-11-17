@@ -5,7 +5,7 @@ import type {NodeMapType, ViewModel} from './OutlineView';
 import type {OutlineEditor} from './OutlineEditor';
 import type {Selection} from './OutlineSelection';
 
-import {BranchNode, TextNode} from '.';
+import {BlockNode, TextNode} from '.';
 
 let subTreeTextContent = '';
 let forceTextDirection = null;
@@ -66,7 +66,7 @@ function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
   if (activeNextNodeMap[key] === undefined) {
     activeEditor._keyToDOMMap.delete(key);
   }
-  if (node instanceof BranchNode) {
+  if (node instanceof BlockNode) {
     const children = node._children;
     destroyChildren(children, 0, children.length - 1, null);
   }
@@ -95,8 +95,8 @@ function createNode(
 
   if (node instanceof TextNode) {
     subTreeTextContent += node._text;
-  } else if (node instanceof BranchNode) {
-    // Handle branch children
+  } else if (node instanceof BlockNode) {
+    // Handle block children
     const children = node._children;
     const endIndex = children.length - 1;
     if (node.hasDirection()) {
@@ -224,8 +224,8 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
   if (nextNode instanceof TextNode) {
     subTreeTextContent += nextNode._text;
     return;
-  } else if (prevNode instanceof BranchNode && nextNode instanceof BranchNode) {
-    // Reconcile branch children
+  } else if (prevNode instanceof BlockNode && nextNode instanceof BlockNode) {
+    // Reconcile block children
     const prevChildren = prevNode._children;
     const nextChildren = nextNode._children;
     const childrenAreDifferent = prevChildren !== nextChildren;

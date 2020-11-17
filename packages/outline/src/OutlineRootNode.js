@@ -1,8 +1,8 @@
 // @flow strict
 
-import {BranchNode} from './OutlineBranchNode';
+import {BlockNode} from './OutlineBlockNode';
 
-export class RootNode extends BranchNode {
+export class RootNode extends BlockNode {
   _type: 'root';
 
   constructor() {

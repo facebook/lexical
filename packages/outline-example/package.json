@@ -12,7 +12,8 @@
     "outline-emoji-plugin": "1.0.0",
     "outline-mentions-plugin": "1.0.0",
     "outline-format-plugin": "1.0.0",
-    "outline-history-plugin": "1.0.0"
+    "outline-history-plugin": "1.0.0",
+    "outline-toolbar-plugin": "1.0.0"
   },
   "scripts": {
     "start": "react-scripts start",

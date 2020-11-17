@@ -22,6 +22,7 @@ export const FORMAT_BOLD = 0;
 export const FORMAT_ITALIC = 1;
 export const FORMAT_STRIKETHROUGH = 2;
 export const FORMAT_UNDERLINE = 3;
+export const FORMAT_CODE = 4;
 
 // FlowFixMe: Flow doesn't know of the CompositionEvent?
 // $FlowFixMe: TODO

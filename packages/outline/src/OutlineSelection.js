@@ -1,8 +1,9 @@
 // @flow strict
 
 import type {Node, NodeKey} from './OutlineNode';
+import type {ViewModel} from './OutlineView';
 
-import {getActiveEditor, getActiveViewModel} from './OutlineView';
+import {getActiveViewModel} from './OutlineView';
 import {getNodeKeyFromDOM} from './OutlineReconciler';
 import {getNodeByKey} from './OutlineNode';
 import {
@@ -16,6 +17,7 @@ import {
   TextNode,
 } from '.';
 import {invariant} from './OutlineUtils';
+import {OutlineEditor} from './OutlineEditor';
 
 function removeFirstSegment(node: TextNode): void {
   const currentBlock = node.getParentBlock();
@@ -38,10 +40,7 @@ function removeFirstSegment(node: TextNode): void {
 
 function removeLastSegment(node: TextNode): void {
   const currentBlock = node.getParentBlock();
-  invariant(
-    currentBlock !== null,
-    'removeLastSegment: currentBlock not found',
-  );
+  invariant(currentBlock !== null, 'removeLastSegment: currentBlock not found');
   const textContent = node.getTextContent();
   const lastSpaceIndex = textContent.lastIndexOf(' ');
   if (lastSpaceIndex > -1) {
@@ -56,23 +55,23 @@ function removeLastSegment(node: TextNode): void {
 }
 
 export class Selection {
-  anchorKey: string | null;
+  anchorKey: string;
   anchorOffset: number;
-  focusKey: string | null;
+  focusKey: string;
   focusOffset: number;
-  _isDirty: boolean;
+  isDirty: boolean;
 
   constructor(
-    anchorKey: string | null,
+    anchorKey: string,
     anchorOffset: number,
-    focusKey: string | null,
+    focusKey: string,
     focusOffset: number,
   ) {
     this.anchorKey = anchorKey;
     this.anchorOffset = anchorOffset;
     this.focusKey = focusKey;
     this.focusOffset = focusOffset;
-    this._isDirty = false;
+    this.isDirty = false;
   }
 
   isCaret(): boolean {
@@ -80,45 +79,33 @@ export class Selection {
       this.anchorKey === this.focusKey && this.anchorOffset === this.focusOffset
     );
   }
-  getAnchorNode(): null | TextNode {
+  getAnchorNode(): TextNode {
     const anchorKey = this.anchorKey;
-    if (anchorKey === null) {
-      return null;
-    }
     const anchorNode = getNodeByKey(anchorKey);
     invariant(
-      anchorNode === null || anchorNode instanceof TextNode,
+      anchorNode instanceof TextNode,
       'getAnchorNode: anchorNode not a text node',
     );
     return anchorNode;
   }
-  getFocusNode(): null | TextNode {
+  getFocusNode(): TextNode {
     const focusKey = this.focusKey;
-    if (focusKey === null) {
-      return null;
-    }
     const focusNode = getNodeByKey(focusKey);
     invariant(
-      focusNode === null || focusNode instanceof TextNode,
+      focusNode instanceof TextNode,
       'getFocusNode: focusNode not a text node',
     );
     return focusNode;
   }
-  markDirty() {
-    this._isDirty = true;
-  }
   getNodes(): Array<Node> {
     const anchorNode = this.getAnchorNode();
     const focusNode = this.getFocusNode();
-    if (anchorNode === null || focusNode === null) {
-      return [];
-    }
     if (anchorNode === focusNode) {
       return [anchorNode];
     }
     return anchorNode.getNodesBetween(focusNode);
   }
-  formatText(formatType: 0 | 1 | 2 | 3): void {
+  formatText(formatType: 0 | 1 | 2 | 3 | 4): void {
     const selectedNodes = this.getNodes();
     const selectedNodesLength = selectedNodes.length;
     const lastIndex = selectedNodesLength - 1;
@@ -142,7 +129,7 @@ export class Selection {
     if (this.isCaret()) {
       if (firstNodeTextLength === 0) {
         firstNode.setFlags(firstNextFlags);
-        this.markDirty();
+        this.isDirty = true;
       } else {
         const textNode = createText('');
         textNode.setFlags(firstNextFlags);
@@ -250,10 +237,7 @@ export class Selection {
       nodesToMove.push(splitNode);
       anchorOffset = 0;
     }
-    invariant(
-      currentBlock !== null,
-      'insertParagraph: currentBlock not found',
-    );
+    invariant(currentBlock !== null, 'insertParagraph: currentBlock not found');
     let newBlock;
 
     if (currentBlock instanceof ListItemNode) {
@@ -355,10 +339,7 @@ export class Selection {
       return;
     }
     const currentBlock = anchorNode.getParentBlock();
-    invariant(
-      currentBlock !== null,
-      'deleteBackward: currentBlock not found',
-    );
+    invariant(currentBlock !== null, 'deleteBackward: currentBlock not found');
     const prevSibling = anchorNode.getPreviousSibling();
 
     if (anchorOffset === 0) {
@@ -536,9 +517,6 @@ export class Selection {
   moveWordBackward() {
     const anchorNode = this.getAnchorNode();
     const focusNode = this.getFocusNode();
-    if (anchorNode === null || focusNode === null) {
-      return;
-    }
     const isAnchorBefore = anchorNode.isBefore(focusNode);
     const anchorOffset = this.anchorOffset;
     const focusOffset = this.focusOffset;
@@ -619,9 +597,6 @@ export class Selection {
   moveWordForward() {
     const anchorNode = this.getAnchorNode();
     const focusNode = this.getFocusNode();
-    if (anchorNode === null || focusNode === null) {
-      return;
-    }
     const isAnchorBefore = anchorNode.isBefore(focusNode);
     const anchorOffset = this.anchorOffset;
     const focusOffset = this.focusOffset;
@@ -707,9 +682,6 @@ export class Selection {
   moveBackward() {
     const anchorNode = this.getAnchorNode();
     const focusNode = this.getFocusNode();
-    if (anchorNode === null || focusNode === null) {
-      return;
-    }
     const isAnchorBefore = anchorNode.isBefore(focusNode);
     const anchorOffset = this.anchorOffset;
     const focusOffset = this.focusOffset;
@@ -772,9 +744,6 @@ export class Selection {
   moveForward() {
     const anchorNode = this.getAnchorNode();
     const focusNode = this.getFocusNode();
-    if (anchorNode === null || focusNode === null) {
-      return;
-    }
     const isAnchorBefore = anchorNode.isBefore(focusNode);
     const anchorOffset = this.anchorOffset;
     const focusOffset = this.focusOffset;
@@ -843,7 +812,7 @@ export class Selection {
     this.focusOffset = focusOffset;
     this.anchorKey = anchorKey;
     this.focusKey = focusKey;
-    this.markDirty();
+    this.isDirty = true;
   }
   getTextContent(): string {
     const viewModel = getActiveViewModel();
@@ -895,77 +864,97 @@ export function makeSelection(
     focusKey,
     focusOffset,
   );
-  selection.markDirty();
+  selection.isDirty = true;
   viewModel.selection = selection;
+  return selection;
+}
+
+export function createSelection(
+  viewModel: ViewModel,
+  editor: OutlineEditor,
+): null | Selection {
+  const windowSelection: WindowSelection = window.getSelection();
+  let anchorDOM = windowSelection.anchorNode;
+  let focusDOM = windowSelection.focusNode;
+  let anchorOffset = windowSelection.anchorOffset;
+  let focusOffset = windowSelection.focusOffset;
+  let anchorNode: Node | null = null;
+  let focusNode: Node | null = null;
+  let anchorKey: NodeKey | null = null;
+  let focusKey: NodeKey | null = null;
+  if (editor === null || anchorDOM === null || focusDOM === null) {
+    return null;
+  }
+  const editorElement = editor.getEditorElement();
+  if (!editorElement.contains(anchorDOM) || !editorElement.contains(focusDOM)) {
+    return null;
+  }
+  // When selecting all content in FF, it targets the contenteditable.
+  // We need to resolve the first and last text DOM nodes
+  if (anchorDOM === focusDOM && anchorDOM === editorElement) {
+    const root = viewModel.root;
+    anchorNode = getFirstChildNode(root);
+    focusNode = getLastChildNode(root);
+    invariant(
+      anchorNode !== null && focusNode !== null,
+      'getSelection: anchorNode/focusNode not found',
+    );
+    anchorKey = anchorNode._key;
+    focusKey = focusNode._key;
+    anchorOffset = 0;
+    focusOffset = focusNode.getTextContent().length;
+  } else {
+    if (anchorDOM.nodeType === 1) {
+      anchorDOM = anchorDOM.firstChild;
+    }
+    if (focusDOM.nodeType === 1) {
+      focusDOM = focusDOM.firstChild;
+    }
+    // If we weren't able to normalize to text nodes,
+    // return null for selection.
+    if (
+      anchorDOM == null ||
+      focusDOM == null ||
+      anchorDOM.nodeType === 1 ||
+      focusDOM.nodeType === 1
+    ) {
+      return null;
+    }
+    const nodeMap = viewModel.nodeMap;
+    anchorKey = getNodeKeyFromDOM(anchorDOM);
+    focusKey = getNodeKeyFromDOM(focusDOM);
+    anchorNode = nodeMap[anchorKey];
+    focusNode = nodeMap[focusKey];
+  }
+
+  if (anchorNode._text === '') {
+    anchorOffset = 0;
+  }
+  if (focusNode._text === '') {
+    focusOffset = 0;
+  }
+
+  const selection = new Selection(
+    anchorKey,
+    anchorOffset,
+    focusKey,
+    focusOffset,
+  );
+  const currentViewModel = editor.getCurrentViewModel();
+  const currentSelection = currentViewModel.selection;
+  if (
+    currentSelection !== null &&
+    (currentSelection.focusKey !== selection.focusKey ||
+      currentSelection.anchorKey !== selection.anchorKey ||
+      currentSelection.anchorOffset !== selection.anchorOffset ||
+      currentSelection.focusOffset !== selection.focusOffset)
+  ) {
+    selection.isDirty = true;
+  }
   return selection;
 }
 
 export function getSelection(): null | Selection {
   const viewModel = getActiveViewModel();
-  const editor = getActiveEditor();
-  let selection = viewModel.selection;
-  if (selection === null) {
-    const nodeMap = viewModel.nodeMap;
-    const windowSelection: WindowSelection = window.getSelection();
-    const anchorDOM = windowSelection.anchorNode;
-    const focusDOM = windowSelection.focusNode;
-    let anchorOffset = windowSelection.anchorOffset;
-    let focusOffset = windowSelection.focusOffset;
-    let anchorNode: Node | null = null;
-    let focusNode: Node | null = null;
-    let anchorKey: NodeKey | null = null;
-    let focusKey: NodeKey | null = null;
-    if (editor === null || anchorDOM === null || focusDOM === null) {
-      return null;
-    }
-    // When selecting all content in FF, it targets the contenteditable.
-    // We need to resolve the first and last text DOM nodes
-    if (anchorDOM === focusDOM && anchorDOM === editor.getEditorElement()) {
-      const root = viewModel.root;
-      anchorNode = getFirstChildNode(root);
-      focusNode = getLastChildNode(root);
-      invariant(
-        anchorNode !== null && focusNode !== null,
-        'getSelection: anchorNode/focusNode not found',
-      );
-      anchorKey = anchorNode._key;
-      focusKey = focusNode._key;
-      anchorOffset = 0;
-      focusOffset = focusNode.getTextContent().length;
-    } else {
-      anchorKey = getNodeKeyFromDOM(anchorDOM, nodeMap);
-      focusKey = getNodeKeyFromDOM(focusDOM, nodeMap);
-      if (anchorKey === null || focusKey === null) {
-        return null;
-      }
-      anchorNode = getNodeByKey(anchorKey);
-      focusNode = getNodeByKey(focusKey);
-    }
-
-    if (anchorNode !== null && anchorNode._text === '') {
-      anchorOffset = 0;
-    }
-    if (focusNode !== null && focusNode._text === '') {
-      focusOffset = 0;
-    }
-
-    selection = viewModel.selection = new Selection(
-      anchorKey,
-      anchorOffset,
-      focusKey,
-      focusOffset,
-    );
-    const currentViewModel = editor.getCurrentViewModel();
-    const currentSelection = currentViewModel.selection;
-    if (
-      currentSelection !== null &&
-      (currentSelection.focusKey !== selection.focusKey ||
-        currentSelection.anchorKey !== selection.anchorKey ||
-        currentSelection.anchorOffset !== selection.anchorOffset ||
-        currentSelection.focusOffset !== selection.focusOffset)
-    ) {
-      selection.markDirty();
-    }
-  }
-  return selection;
+  return viewModel.selection;
 }

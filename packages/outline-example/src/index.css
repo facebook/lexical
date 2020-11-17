@@ -20,6 +20,7 @@ h1 {
   color: #000;
   position: relative;
   line-height: 20px;
+  font-weight: 400;
 }
 
 .editor-shell div.editor {
@@ -67,6 +68,13 @@ h1 {
   margin: 0
 }
 
+.editor-shell div.editor code {
+  background-color: rgb(240, 242, 245);
+  padding: 1px 0.25rem;
+  font-family: Menlo, Consolas, Monaco, monospace;
+  font-size: 94%;
+}
+
 .editor-shell div.editor ul li {
   margin: 8px 32px 8px 32px;
   list-style-type: disc;
@@ -85,7 +93,7 @@ pre {
 #mentions-typeahead {
   position: fixed;
   background: #fff;
-  box-shadow:  0px 0px 10px rgba(0,0,0, 0.2);
+  box-shadow:  0px 3px 10px rgba(0,0,0, 0.3);
 }
 
 #mentions-typeahead ul {
@@ -109,4 +117,74 @@ pre {
 
 #mentions-typeahead ul li.hovered {
   background: #ddd;
+}
+
+#toolbar {
+  padding: 4px;
+  position: absolute;
+  z-index: 1;
+  top: -10000px;
+  left: -10000px;
+  margin-top: -6px;
+  opacity: 0;
+  background-color: #fff;
+  box-shadow:  0px 3px 10px rgba(0,0,0, 0.3);
+  border-radius: 4px;
+  transition: opacity 0.75s;
+}
+
+#toolbar .button {
+  width: 20px;
+  height: 20px;
+  display: inline-block;
+  padding: 4px;
+  border-radius:  4px;
+  cursor: pointer;
+  margin: 0 2px;
+}
+
+#toolbar .button.hovered {
+  width: 20px;
+  height: 20px;
+  display: inline-block;
+  background-color: #eee;
+}
+
+#toolbar .button i {
+  background-image: url('https://static.xx.fbcdn.net/rsrc.php/v3/yB/r/bgFhKO8kopI.png');
+  background-size: auto;
+  background-repeat: no-repeat;
+  display: inline-block;
+  height: 20px;
+  width: 20px;
+  vertical-align: -0.25em;
+  filter: invert(0.39) sepia(0.21) saturate(2) saturate(1.095) hue-rotate(174deg) brightness(0.94) contrast(0.86)
+}
+
+#toolbar .button i.bold {
+  background-position: 0 -154px;
+}
+
+#toolbar .button i.italic {
+  background-position: 0 -238px;
+}
+
+#toolbar .button i.code {
+  background-position: 0 -175px;
+}
+
+#toolbar .button i.strikethrough {
+  background-position: 0 -385px;
+}
+
+#toolbar .button i.link {
+  background-position: 0 -280px;
+}
+
+#toolbar .button.active {
+  background-color: rgb(223, 232, 250);
+}
+
+#toolbar .button.active i {
+  filter: invert(0.39) sepia(0.57) saturate(2) saturate(2) saturate(2) saturate(2) saturate(2) saturate(1.4775) hue-rotate(202deg) brightness(0.97) contrast(0.96)
 }

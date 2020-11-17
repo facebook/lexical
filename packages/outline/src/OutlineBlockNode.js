@@ -31,12 +31,12 @@ function combineAdjacentTextNodes(
     if (restoreSelection && textNode._key === anchorKey) {
       selection.anchorOffset = textLength + anchorOffset;
       selection.anchorKey = key;
-      selection.markDirty();
+      selection.isDirty = true;
     }
     if (restoreSelection && textNode._key === focusKey) {
       selection.focusOffset = textLength + focusOffset;
       selection.focusKey = key;
-      selection.markDirty();
+      selection.isDirty = true;
     }
     writableMergeToNode.spliceText(textLength, 0, siblingText);
     textLength += siblingText.length;

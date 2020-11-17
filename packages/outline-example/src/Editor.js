@@ -2,7 +2,7 @@
 import type {ViewModel} from 'outline';
 
 import * as React from 'react';
-import {useEffect, useMemo, useRef} from 'react';
+import {useEffect, useRef} from 'react';
 import {useOutlineEditor} from 'outline';
 import {useEmojiPlugin} from 'outline-emoji-plugin';
 import {useMentionsPlugin} from 'outline-mentions-plugin';
@@ -10,6 +10,7 @@ import {useMentionsPlugin} from 'outline-mentions-plugin';
 import {useRichTextPlugin} from 'outline-rich-text-plugin';
 import {useFormatPlugin} from 'outline-format-plugin';
 import {useHistoryPlugin} from 'outline-history-plugin';
+import {useToolbarPlugin} from 'outline-toolbar-plugin';
 
 const editorStyle = {
   outline: 0,
@@ -28,10 +29,6 @@ type Props = {
 export default function Editor({onChange, isReadOnly}: Props): React$Node {
   const editorElementRef = useRef(null);
   const outlineEditor = useOutlineEditor(editorElementRef);
-  const portalTargetElement = useMemo(
-    () => document.getElementById('portal'),
-    [],
-  );
 
   // Set the initial state
   useEffect(() => {
@@ -49,11 +46,9 @@ export default function Editor({onChange, isReadOnly}: Props): React$Node {
 
   // const props = usePlainTextPlugin(outlineEditor, isReadOnly);
   const props = useRichTextPlugin(outlineEditor, isReadOnly);
+  const mentionsTypeahead = useMentionsPlugin(outlineEditor);
+  const toolbar = useToolbarPlugin(outlineEditor);
   useEmojiPlugin(outlineEditor);
-  const mentionsTypeahead = useMentionsPlugin(
-    outlineEditor,
-    portalTargetElement,
-  );
   useFormatPlugin(outlineEditor);
   useHistoryPlugin(outlineEditor);
 
@@ -70,6 +65,7 @@ export default function Editor({onChange, isReadOnly}: Props): React$Node {
         tabIndex={0}
       />
       {mentionsTypeahead}
+      {toolbar}
     </>
   );
 }

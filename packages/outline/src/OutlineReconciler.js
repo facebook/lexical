@@ -40,11 +40,11 @@ function handleElementTextDirection(element: HTMLElement): void {
     // $FlowFixMe: internal field
     const prevSubTreeTextContent: string = element.__outlineTextContent;
     if (prevSubTreeTextContent !== subTreeTextContent) {
-      const direction =
-        subTreeTextContent === ''
-          ? currentTextDirection
-          : getTextDirection(subTreeTextContent);
-      if (direction === null) {
+      const hasEmptyTextContent = subTreeTextContent === '';
+      const direction = hasEmptyTextContent
+        ? currentTextDirection
+        : getTextDirection(subTreeTextContent);
+      if (direction === null || (hasEmptyTextContent && direction === 'ltr')) {
         element.removeAttribute('dir');
       } else {
         element.dir = direction;

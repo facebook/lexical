@@ -6,6 +6,7 @@ import type {OutlineEditor} from './OutlineEditor';
 import type {Selection} from './OutlineSelection';
 
 import {BlockNode, TextNode} from '.';
+import {invariant} from './OutlineUtils';
 
 let subTreeTextContent = '';
 let forceTextDirection = null;
@@ -423,7 +424,7 @@ export function reconcileViewModel(
   if (needsUpdate) {
     reconcileRoot(prevViewModel, nextViewModel, editor, dirtySubTrees);
   }
-  if (nextSelection !== null && nextSelection._isDirty) {
+  if (nextSelection !== null && nextSelection.isDirty) {
     reconcileSelection(nextSelection, editor);
   }
 }
@@ -449,10 +450,14 @@ function reconcileSelection(selection: Selection, editor: OutlineEditor): void {
 
 function getSelectionNode(key: NodeKey, editor: OutlineEditor): Node {
   const element = editor.getElementByKey(key);
-  const possibleTextNode = element.firstChild;
-  return possibleTextNode != null && possibleTextNode.nodeType === 3
-    ? possibleTextNode
-    : element;
+  let node = element;
+  while (node != null) {
+    if (node.nodeType === 3) {
+      return node;
+    }
+    node = node.firstChild;
+  }
+  invariant(false, 'Should not happen');
 }
 
 export function storeDOMWithKey(
@@ -472,11 +477,15 @@ export function storeDOMWithKey(
 export function getNodeKeyFromDOM(
   // Note that node here refers to a DOM Node, not an Outline Node
   dom: Node,
-  nodeMap: NodeMapType,
-): string | null {
-  // Adjust target if dom is a text node
-  const target = dom.nodeType === 3 ? dom.parentNode : dom;
-  // $FlowFixMe: internal field
-  const key: string | null = target.__outlineInternalRef || null;
-  return key;
+): NodeKey {
+  let node = dom;
+  while (node != null) {
+    // $FlowFixMe: internal field
+    const key: NodeKey | undefined = node.__outlineInternalRef;
+    if (key !== undefined) {
+      return key;
+    }
+    node = node.parentNode;
+  }
+  invariant(false, 'Should never happen');
 }

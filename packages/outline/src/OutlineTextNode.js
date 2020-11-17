@@ -18,6 +18,7 @@ const IS_BOLD = 1 << 3;
 const IS_ITALIC = 1 << 4;
 const IS_STRIKETHROUGH = 1 << 5;
 const IS_UNDERLINE = 1 << 6;
+const IS_CODE = 1 << 7;
 
 // Do not import these from shared, otherwise we will bundle
 // all of shared too.
@@ -25,10 +26,18 @@ const FORMAT_BOLD = 0;
 const FORMAT_ITALIC = 1;
 const FORMAT_STRIKETHROUGH = 2;
 const FORMAT_UNDERLINE = 3;
+const FORMAT_CODE = 4;
 
 const zeroWidthString = '\uFEFF';
 
-function getElementTag(node: TextNode, flags: number) {
+function getElementOuterTag(node: TextNode, flags: number): string | null {
+  if (flags & IS_CODE) {
+    return 'code';
+  }
+  return null;
+}
+
+function getElementInnerTag(node: TextNode, flags: number): string {
   if (flags & IS_BOLD) {
     return 'strong';
   }
@@ -100,7 +109,7 @@ function splitText(
       ) {
         selection.anchorKey = siblingKey;
         selection.anchorOffset = anchorOffset - textSize;
-        selection.markDirty();
+        selection.isDirty = true;
       }
       if (
         selection.focusKey === key &&
@@ -109,7 +118,7 @@ function splitText(
       ) {
         selection.focusKey = siblingKey;
         selection.focusOffset = focusOffset - textSize;
-        selection.markDirty();
+        selection.isDirty = true;
       }
     }
     textSize = nextTextSize;
@@ -229,12 +238,15 @@ export class TextNode extends Node {
   isUnderline(): boolean {
     return (this.getLatest()._flags & IS_UNDERLINE) !== 0;
   }
+  isCode(): boolean {
+    return (this.getLatest()._flags & IS_CODE) !== 0;
+  }
   getTextContent(): string {
     const self = this.getLatest();
     return self._text;
   }
   getTextNodeFormatFlags(
-    type: 0 | 1 | 2 | 3,
+    type: 0 | 1 | 2 | 3 | 4,
     alignWithFlags: null | number,
   ): number {
     const self = this.getLatest();
@@ -292,6 +304,17 @@ export class TextNode extends Node {
           }
         }
         break;
+      case FORMAT_CODE:
+        if (nodeFlags & IS_CODE) {
+          if (alignWithFlags === null || (alignWithFlags & IS_CODE) === 0) {
+            newFlags ^= IS_CODE;
+          }
+        } else {
+          if (alignWithFlags === null || alignWithFlags & IS_CODE) {
+            newFlags |= IS_CODE;
+          }
+        }
+        break;
       default:
     }
 
@@ -302,48 +325,78 @@ export class TextNode extends Node {
 
   _create(): HTMLElement {
     const flags = this._flags;
-    const tag = getElementTag(this, flags);
+    const outerTag = getElementOuterTag(this, flags);
+    const innerTag = getElementInnerTag(this, flags);
+    const tag = outerTag === null ? innerTag : outerTag;
     const dom = document.createElement(tag);
-    const domStyle = dom.style;
+    let innerDOM = dom;
+    if (outerTag !== null) {
+      innerDOM = document.createElement(innerTag);
+      dom.appendChild(innerDOM);
+    }
+    const domStyle = innerDOM.style;
     const text = this._text;
 
     if (flags & IS_IMMUTABLE || flags & IS_SEGMENTED) {
       dom.contentEditable = 'false';
     }
 
-    setTextStyling(tag, 0, flags, domStyle);
-    setTextContent(null, text, dom, this);
+    setTextStyling(innerTag, 0, flags, domStyle);
+    setTextContent(null, text, innerDOM, this);
     // add data-text attribute
-    dom.setAttribute('data-text', 'true');
+    innerDOM.setAttribute('data-text', 'true');
     if (flags & IS_SEGMENTED) {
-      dom.setAttribute('spellcheck', 'false');
+      innerDOM.setAttribute('spellcheck', 'false');
     }
     return dom;
   }
   // $FlowFixMe: fix the type for prevNode
   _update(prevNode: TextNode, dom: HTMLElement): boolean {
-    const domStyle = dom.style;
     const prevText = prevNode._text;
     const nextText = this._text;
     const prevFlags = prevNode._flags;
     const nextFlags = this._flags;
-    const prevTag = getElementTag(this, prevFlags);
-    const nextTag = getElementTag(this, nextFlags);
+    const prevOuterTag = getElementOuterTag(this, prevFlags);
+    const nextOuterTag = getElementOuterTag(this, nextFlags);
+    const prevInnerTag = getElementInnerTag(this, prevFlags);
+    const nextInnerTag = getElementInnerTag(this, nextFlags);
+    const prevTag = prevOuterTag === null ? prevInnerTag : prevOuterTag;
+    const nextTag = nextOuterTag === null ? nextInnerTag : nextOuterTag;
 
     if (prevTag !== nextTag) {
       return true;
     }
+    let innerDOM: HTMLElement = dom;
+    if (nextOuterTag !== null) {
+      if (prevOuterTag !== null) {
+        // $FlowFixMe: this should not be possible
+        innerDOM = dom.firstChild;
+        invariant(
+          innerDOM != null && innerDOM.nodeType === 1,
+          'Should never happen',
+        );
+      } else {
+        // TODO ensure we can remove this and simpify this block's logic
+        invariant(false, 'Should never happen');
+      }
+    } else {
+      if (prevOuterTag !== null) {
+        // TODO ensure we can remove this and simpify this block's logic
+        invariant(false, 'Should never happen');
+      }
+    }
+    const domStyle = innerDOM.style;
 
-    setTextStyling(nextTag, prevFlags, nextFlags, domStyle);
+    setTextStyling(nextInnerTag, prevFlags, nextFlags, domStyle);
     // $FlowFixMe: prevNode is always a TextNode
-    setTextContent(prevText, nextText, dom, this);
+    setTextContent(prevText, nextText, innerDOM, this);
     if (nextFlags & IS_SEGMENTED) {
       if ((prevFlags & IS_SEGMENTED) === 0) {
-        dom.setAttribute('spellcheck', 'false');
+        innerDOM.setAttribute('spellcheck', 'false');
       }
     } else {
       if (prevFlags & IS_SEGMENTED) {
-        dom.removeAttribute('spellcheck');
+        innerDOM.removeAttribute('spellcheck');
       }
     }
     return false;

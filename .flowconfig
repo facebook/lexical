@@ -23,6 +23,7 @@ module.name_mapper='^outline-plain-text-plugin$' -> '<PROJECT_ROOT>/packages/out
 module.name_mapper='^outline-rich-text-plugin$' -> '<PROJECT_ROOT>/packages/outline-rich-text-plugin/src/index.js'
 module.name_mapper='^outline-format-plugin$' -> '<PROJECT_ROOT>/packages/outline-format-plugin/src/index.js'
 module.name_mapper='^outline-history-plugin$' -> '<PROJECT_ROOT>/packages/outline-history-plugin/src/index.js'
+module.name_mapper='^outline-toolbar-plugin$' -> '<PROJECT_ROOT>/packages/outline-toolbar-plugin/src/index.js'
 
 suppress_type=$FlowIssue
 suppress_type=$FlowFixMe

@@ -2,7 +2,7 @@
 
 import type {RootNode} from './OutlineRootNode';
 import type {OutlineEditor} from './OutlineEditor';
-import type {Selection} from './OutlineSelection';
+import {createSelection, Selection} from './OutlineSelection';
 import type {Node, NodeKey} from './OutlineNode';
 
 import {reconcileViewModel} from './OutlineReconciler';
@@ -20,7 +20,6 @@ export type ViewType = {
 export type NodeMapType = {[key: NodeKey]: Node};
 
 let activeViewModel = null;
-let activeEditor = null;
 let activeReadyOnlyMode = false;
 
 export function shouldErrorOnReadOnly(): void {
@@ -36,17 +35,6 @@ export function getActiveViewModel(): ViewModel {
     );
   }
   return activeViewModel;
-}
-
-export function getActiveEditor(): OutlineEditor {
-  if (activeEditor === null) {
-    throw new Error(
-      'Unable to find an active editor. ' +
-        'Editor helpers or node methods can only be used ' +
-        'synchronously during the callback of editor.draft().',
-    );
-  }
-  return activeEditor;
 }
 
 const view: ViewType = {
@@ -66,6 +54,7 @@ export function draftViewModel(
   const viewModel: ViewModel = hasActiveViewModel
     ? getActiveViewModel()
     : cloneViewModel(currentViewModel);
+  viewModel.selection = createSelection(viewModel, editor);
   callCallbackWithViewModelScope(
     (v: ViewType) => {
       callbackFn(v);
@@ -80,8 +69,25 @@ export function draftViewModel(
   );
 
   const canUseExistingModel =
-    !viewModel.hasDirtyNodes() && !viewModel.hasDirtySelection();
+    !viewModel.hasDirtyNodes() &&
+    !viewModelHasDirtySelection(viewModel, editor);
   return canUseExistingModel ? currentViewModel : viewModel;
+}
+
+function viewModelHasDirtySelection(
+  viewModel: ViewModel,
+  editor: OutlineEditor,
+): boolean {
+  const selection = viewModel.selection;
+  const currentSelection = editor.getCurrentViewModel().selection;
+  if (
+    (currentSelection !== null && selection === null) ||
+    (currentSelection === null && selection !== null)
+  ) {
+    return true;
+  }
+
+  return selection !== null && selection.isDirty;
 }
 
 export function readViewModel(
@@ -103,14 +109,11 @@ function callCallbackWithViewModelScope(
   readOnly: boolean,
 ): void {
   const previousActiveViewModel = activeViewModel;
-  const previousActiveEditor = activeEditor;
   const previousReadyOnlyMode = activeReadyOnlyMode;
   activeViewModel = viewModel;
-  activeEditor = editor;
   activeReadyOnlyMode = readOnly;
   callbackFn(view);
   activeViewModel = previousActiveViewModel;
-  activeEditor = previousActiveEditor;
   activeReadyOnlyMode = previousReadyOnlyMode;
 }
 
@@ -162,19 +165,18 @@ export function updateViewModel(
   editor: OutlineEditor,
 ): void {
   const previousActiveViewModel = activeViewModel;
-  const previousActiveEditor = activeEditor;
   activeViewModel = viewModel;
-  activeEditor = editor;
   reconcileViewModel(viewModel, editor);
   activeViewModel = previousActiveViewModel;
-  activeEditor = previousActiveEditor;
   editor._viewModel = viewModel;
-  triggerOnChange(editor);
+  triggerOnChange(editor, viewModel);
 }
 
-export function triggerOnChange(editor: OutlineEditor): void {
+export function triggerOnChange(
+  editor: OutlineEditor,
+  viewModel: ViewModel,
+): void {
   const listeners = Array.from(editor._updateListeners);
-  const viewModel = editor.getCurrentViewModel();
   for (let i = 0; i < listeners.length; i++) {
     listeners[i](viewModel);
   }
@@ -212,10 +214,6 @@ export class ViewModel {
   }
   hasDirtyNodes(): boolean {
     return this.dirtyNodes.size > 0;
-  }
-  hasDirtySelection(): boolean {
-    const selection = this.selection;
-    return selection !== null && selection._isDirty;
   }
   getDirtyNodes(): Array<Node> {
     const dirtyNodes = Array.from(this.dirtyNodes);

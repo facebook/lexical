@@ -155,7 +155,7 @@ function MentionsTypeahead({
   match: MentionMatch,
   nodeKey: NodeKey,
   registerKeys: (keys: any) => () => void,
-}) {
+}): React$Node {
   const divRef = useRef(null);
   const results = useMentionLookupService(match.matchingString);
   const [selectedIndex, setSelectedIndex] = useState<null | number>(null);
@@ -369,10 +369,7 @@ function getPossibleMentionMatch(text): MentionMatch | null {
   return match === null ? checkForCaptitalizedNameMentions(text, 3) : match;
 }
 
-export function useMentionsPlugin(
-  editor: OutlineEditor | null,
-  portalTargetElement: any,
-): any {
+export function useMentionsPlugin(editor: OutlineEditor | null): React$Node {
   const [mentionMatch, setMentionMatch] = useState<MentionMatch | null>(null);
   const [nodeKey, setNodeKey] = useState(null);
   const registeredKeys: Set<any> = useMemo(() => new Set(), []);
@@ -463,7 +460,7 @@ export function useMentionsPlugin(
           editor={editor}
           registerKeys={registerKeys}
         />,
-        portalTargetElement,
+        document.body,
       );
 }
 

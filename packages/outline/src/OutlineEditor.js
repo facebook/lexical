@@ -5,7 +5,12 @@ import type {Node, NodeKey} from './OutlineNode';
 
 import {useEffect, useState} from 'react';
 import {createRoot, RootNode, TextNode, ParagraphNode} from '.';
-import {createViewModel, updateViewModel, ViewModel} from './OutlineView';
+import {
+  draftViewModel,
+  readViewModel,
+  updateViewModel,
+  ViewModel,
+} from './OutlineView';
 import {invariant} from './OutlineUtils';
 
 function createOutlineEditor(editorElement): OutlineEditor {
@@ -93,8 +98,11 @@ export class OutlineEditor {
   getCurrentViewModel(): ViewModel {
     return this._viewModel;
   }
-  createViewModel(callbackFn: (view: ViewType) => void): ViewModel {
-    return createViewModel(this._viewModel, callbackFn, this);
+  draft(callbackFn: (view: ViewType) => void): ViewModel {
+    return draftViewModel(this._viewModel, callbackFn, this);
+  }
+  read(callbackFn: (view: ViewType) => void): void {
+    readViewModel(this._viewModel, callbackFn, this);
   }
   update(viewModel: ViewModel, forceSync?: boolean) {
     invariant(!this._isUpdating, 'update: cannot proccess a nested update');

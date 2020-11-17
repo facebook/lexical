@@ -3,7 +3,7 @@
 import type {NodeMapType} from './OutlineView';
 
 import {createText, RootNode, BlockNode, TextNode} from '.';
-import {getActiveViewModel} from './OutlineView';
+import {getActiveViewModel, shouldErrorOnReadOnly} from './OutlineView';
 import {invariant} from './OutlineUtils';
 
 export const IS_IMMUTABLE = 1;
@@ -378,6 +378,7 @@ export class Node {
   // Setters and mutators
 
   setFlags(flags: number): this {
+    shouldErrorOnReadOnly();
     if (this.isImmutable()) {
       throw new Error('setFlags: can only be used on non-immutable nodes');
     }
@@ -386,32 +387,39 @@ export class Node {
     return self;
   }
   makeDirectioned(): this {
+    shouldErrorOnReadOnly();
     const self = getWritableNode(this);
     self._flags |= HAS_DIRECTION;
     return self;
   }
   makeImmutable(): this {
+    shouldErrorOnReadOnly();
     const self = getWritableNode(this);
     self._flags |= IS_IMMUTABLE;
     return self;
   }
   makeSegmented(): this {
+    shouldErrorOnReadOnly();
     const self = getWritableNode(this);
     self._flags |= IS_SEGMENTED;
     return self;
   }
   remove(): void {
+    shouldErrorOnReadOnly();
     return removeNode(this);
   }
   wrapInTextNodes(): Node {
+    shouldErrorOnReadOnly();
     return wrapInTextNodes(this);
   }
   // TODO add support for replacing with multiple nodes?
   replace<N: Node>(targetNode: N): N {
+    shouldErrorOnReadOnly();
     return replaceNode(this, targetNode);
   }
   // TODO add support for inserting multiple nodes?
   insertAfter(nodeToInsert: Node): Node {
+    shouldErrorOnReadOnly();
     const writableSelf = getWritableNode(this);
     const writableNodeToInsert = getWritableNode(nodeToInsert);
     const oldParent = writableNodeToInsert.getParent();
@@ -435,6 +443,7 @@ export class Node {
   }
   // TODO add support for inserting multiple nodes?
   insertBefore(nodeToInsert: Node): Node {
+    shouldErrorOnReadOnly();
     const writableSelf = getWritableNode(this);
     const writableNodeToInsert = getWritableNode(nodeToInsert);
     const oldParent = writableNodeToInsert.getParent();
@@ -461,6 +470,8 @@ export class Node {
 // NOTE: we could make a mutable node type
 
 export function getWritableNode<N: Node>(node: N): N {
+  // TODO we don't need this line, it's more for sanity checking
+  shouldErrorOnReadOnly();
   const viewModel = getActiveViewModel();
   const dirtyNodes = viewModel.dirtyNodes;
   const nodeMap = viewModel.nodeMap;

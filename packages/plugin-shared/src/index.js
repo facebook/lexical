@@ -45,7 +45,7 @@ function useEventWrapper<T>(
     (event) => {
       const state = stateRef && stateRef.current;
       if (editor !== null) {
-        const viewModel = editor.createViewModel((view) =>
+        const viewModel = editor.draft((view) =>
           handler(event, view, state, editor),
         );
         if (!editor.isUpdating()) {
@@ -98,7 +98,7 @@ export function insertFromDataTransfer(
     const item = items[i];
     if (item.kind === 'string' && item.type === 'text/plain') {
       item.getAsString((text) => {
-        const viewModel = editor.createViewModel((view) => {
+        const viewModel = editor.draft((view) => {
           const selection = view.getSelection();
           if (selection !== null) {
             selection.insertText(text);

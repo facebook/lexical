@@ -6,7 +6,7 @@ import type {NodeKey} from './OutlineNode';
 import {getWritableNode, Node, getNodeByKey} from './OutlineNode';
 import {getSelection} from './OutlineSelection';
 import {invariant} from './OutlineUtils';
-import {getActiveViewModel} from './OutlineView';
+import {getActiveViewModel, shouldErrorOnReadOnly} from './OutlineView';
 
 function combineAdjacentTextNodes(
   textNodes: Array<TextNode>,
@@ -86,6 +86,7 @@ export class BlockNode extends Node {
 
   // TODO add support for appending multiple nodes?
   append(nodeToAppend: Node): BlockNode {
+    shouldErrorOnReadOnly();
     const writableSelf = getWritableNode(this);
     const writableNodeToAppend = getWritableNode(nodeToAppend);
     const viewModel = getActiveViewModel();
@@ -120,6 +121,7 @@ export class BlockNode extends Node {
     return writableSelf;
   }
   normalizeTextNodes(restoreSelection?: boolean): void {
+    shouldErrorOnReadOnly();
     const children = this.getChildren();
     let toNormalize = [];
     let lastTextNodeFlags: number | null = null;

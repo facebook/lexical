@@ -183,7 +183,7 @@ function MentionsTypeahead({
   const applyCurrentSelected = useCallback(() => {
     // $FlowFixMe
     const selectedResult = results[selectedIndex];
-    const viewModel = editor.createViewModel((view) => {
+    const viewModel = editor.draft((view) => {
       const targetNode = view.getNodeByKey(nodeKey);
       const mentionNode = createMention(selectedResult);
 

@@ -9,6 +9,7 @@ import {reconcileViewModel} from './OutlineReconciler';
 import {getSelection} from './OutlineSelection';
 import {getNodeByKey} from './OutlineNode';
 import {TextNode} from '.';
+import {invariant} from './OutlineUtils';
 
 export type ViewType = {
   getRoot: () => RootNode,
@@ -20,13 +21,18 @@ export type NodeMapType = {[key: NodeKey]: Node};
 
 let activeViewModel = null;
 let activeEditor = null;
+let activeReadyOnlyMode = false;
+
+export function shouldErrorOnReadOnly(): void {
+  invariant(!activeReadyOnlyMode, 'Cannot use method in read-only mode.');
+}
 
 export function getActiveViewModel(): ViewModel {
   if (activeViewModel === null) {
     throw new Error(
       'Unable to find an active view model. ' +
         'Editor helpers or node methods can only be used ' +
-        'synchronously during the callback of editor.createViewModel().',
+        'synchronously during the callback of editor.draft().',
     );
   }
   return activeViewModel;
@@ -37,7 +43,7 @@ export function getActiveEditor(): OutlineEditor {
     throw new Error(
       'Unable to find an active editor. ' +
         'Editor helpers or node methods can only be used ' +
-        'synchronously during the callback of editor.createViewModel().',
+        'synchronously during the callback of editor.draft().',
     );
   }
   return activeEditor;
@@ -51,7 +57,7 @@ const view: ViewType = {
   getSelection,
 };
 
-export function createViewModel(
+export function draftViewModel(
   currentViewModel: ViewModel,
   callbackFn: (view: ViewType) => void,
   editor: OutlineEditor,
@@ -60,28 +66,52 @@ export function createViewModel(
   const viewModel: ViewModel = hasActiveViewModel
     ? getActiveViewModel()
     : cloneViewModel(currentViewModel);
-  callCallbackWithViewModelScope(callbackFn, viewModel, editor);
+  callCallbackWithViewModelScope(
+    (v: ViewType) => {
+      callbackFn(v);
+      if (viewModel.hasDirtyNodes()) {
+        applyTextTransforms(viewModel, editor);
+        garbageCollectDetachedNodes(viewModel);
+      }
+    },
+    viewModel,
+    editor,
+    false,
+  );
+
   const canUseExistingModel =
     !viewModel.hasDirtyNodes() && !viewModel.hasDirtySelection();
   return canUseExistingModel ? currentViewModel : viewModel;
+}
+
+export function readViewModel(
+  viewModel: ViewModel,
+  callbackFn: (view: ViewType) => void,
+  editor: OutlineEditor,
+) {
+  invariant(
+    activeViewModel === null,
+    'read: cannot be used during the creation of a draft',
+  );
+  callCallbackWithViewModelScope(callbackFn, viewModel, editor, true);
 }
 
 function callCallbackWithViewModelScope(
   callbackFn: (view: ViewType) => void,
   viewModel: ViewModel,
   editor: OutlineEditor,
+  readOnly: boolean,
 ): void {
   const previousActiveViewModel = activeViewModel;
   const previousActiveEditor = activeEditor;
+  const previousReadyOnlyMode = activeReadyOnlyMode;
   activeViewModel = viewModel;
   activeEditor = editor;
+  activeReadyOnlyMode = readOnly;
   callbackFn(view);
-  if (viewModel.hasDirtyNodes()) {
-    applyTextTransforms(viewModel, editor);
-    garbageCollectDetachedNodes(viewModel);
-  }
   activeViewModel = previousActiveViewModel;
   activeEditor = previousActiveEditor;
+  activeReadyOnlyMode = previousReadyOnlyMode;
 }
 
 // To optimize things, we only apply transforms to

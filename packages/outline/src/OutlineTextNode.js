@@ -12,6 +12,7 @@ import {
 } from './OutlineNode';
 import {getSelection, makeSelection} from './OutlineSelection';
 import {invariant} from './OutlineUtils';
+import {shouldErrorOnReadOnly} from './OutlineView';
 
 const IS_BOLD = 1 << 3;
 const IS_ITALIC = 1 << 4;
@@ -351,6 +352,7 @@ export class TextNode extends Node {
   // Mutators
 
   setTextContent(text: string): TextNode {
+    shouldErrorOnReadOnly();
     if (this.isImmutable()) {
       throw new Error(
         'spliceText: can only be used on non-immutable text nodes',
@@ -361,6 +363,7 @@ export class TextNode extends Node {
     return writableSelf;
   }
   selectAfter(anchorOffset?: number, focusOffset?: number): void {
+    shouldErrorOnReadOnly();
     const nextSibling = this.getNextSibling();
     if (
       nextSibling === null ||
@@ -373,6 +376,7 @@ export class TextNode extends Node {
     nextSibling.select(anchorOffset, focusOffset);
   }
   select(_anchorOffset?: number, _focusOffset?: number): Selection {
+    shouldErrorOnReadOnly();
     let anchorOffset = _anchorOffset;
     let focusOffset = _focusOffset;
     const selection = getSelection();
@@ -406,6 +410,7 @@ export class TextNode extends Node {
     newText: string,
     restoreSelection?: boolean,
   ): TextNode {
+    shouldErrorOnReadOnly();
     if (this.isImmutable()) {
       throw new Error(
         'spliceText: can only be used on non-immutable text nodes',
@@ -440,23 +445,8 @@ export class TextNode extends Node {
     return writableSelf;
   }
   splitText(...splitOffsets: Array<number>): Array<TextNode> {
+    shouldErrorOnReadOnly();
     return splitText(this, splitOffsets);
-  }
-  makeBold(): TextNode {
-    if (this.isImmutable()) {
-      throw new Error('makeBold: can only be used on non-immutable text nodes');
-    }
-    const self = getWritableNode(this);
-    self._flags |= IS_BOLD;
-    return self;
-  }
-  makeNormal(): TextNode {
-    if (this.isImmutable()) {
-      throw new Error('select: can only be used on non-immutable text nodes');
-    }
-    const self = getWritableNode(this);
-    self._flags = HAS_DIRECTION;
-    return self;
   }
 }
 

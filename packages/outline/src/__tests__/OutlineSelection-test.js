@@ -233,7 +233,7 @@ describe('OutlineSelection tests', () => {
   }
 
   function update(callback) {
-    const viewModel = editor.createViewModel(callback);
+    const viewModel = editor.draft(callback);
     editor.update(viewModel, true);
   }
 

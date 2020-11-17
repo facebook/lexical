@@ -8,24 +8,21 @@ import {invariant} from './OutlineUtils';
 
 export const IS_IMMUTABLE = 1;
 export const IS_SEGMENTED = 1 << 1;
+export const HAS_DIRECTION = 1 << 2;
 
 let nodeKeyCounter = 0;
 
-function generateKey() {
+function generateKey(node: Node): NodeKey {
   const viewModel = getActiveViewModel();
   const dirtyNodes = viewModel.dirtyNodes;
   const key = nodeKeyCounter++ + '';
+  viewModel.nodeMap[key] = node;
   dirtyNodes.add(key);
   return key;
 }
 
 function removeNode(nodeToRemove: Node): void {
-  const viewModel = getActiveViewModel();
   const key = nodeToRemove._key;
-  const destroyedNodes = viewModel.destroyedNodes;
-  if (destroyedNodes.has(key)) {
-    return;
-  }
   const parent = nodeToRemove.getParent();
   if (parent === null) {
     return;
@@ -36,19 +33,8 @@ function removeNode(nodeToRemove: Node): void {
   if (index > -1) {
     parentChildren.splice(index, 1);
   }
-  // Detach parent
   const writableNodeToRemove = getWritableNode(nodeToRemove);
   writableNodeToRemove._parent = null;
-  // Remove children
-  if (nodeToRemove instanceof BranchNode) {
-    const children = nodeToRemove.getChildren();
-    for (let i = 0; i < children.length; i++) {
-      children[i].remove();
-    }
-  }
-  // Remove key from node map
-  delete viewModel.nodeMap[key];
-  destroyedNodes.add(key);
 }
 
 function replaceNode<N: Node>(toReplace: Node, replaceWith: N): N {
@@ -72,10 +58,6 @@ function replaceNode<N: Node>(toReplace: Node, replaceWith: N): N {
   }
   writableReplaceWith._parent = newParent._key;
   toReplace.remove();
-  // Add node to map
-  const viewModel = getActiveViewModel();
-  viewModel.nodeMap[newKey] = writableReplaceWith;
-  viewModel.destroyedNodes.delete(newKey);
   return writableReplaceWith;
 }
 
@@ -125,12 +107,20 @@ export class Node {
 
   constructor(key?: string) {
     this._flags = 0;
-    this._key = key || generateKey();
+    this._key = key || generateKey(this);
     this._parent = null;
   }
 
   // Getters and Traversors
 
+  isAttached(): boolean {
+    const parentKey = this._parent;
+    if (parentKey === null) {
+      return false;
+    }
+    const parent = getNodeByKey(parentKey);
+    return parent !== null && parent.isAttached();
+  }
   getFlags(): number {
     const self = this.getLatest();
     return self._flags;
@@ -338,6 +328,9 @@ export class Node {
     return nodes;
   }
 
+  hasDirection(): boolean {
+    return (this.getLatest()._flags & HAS_DIRECTION) !== 0;
+  }
   isImmutable(): boolean {
     return (this.getLatest()._flags & IS_IMMUTABLE) !== 0;
   }
@@ -346,13 +339,8 @@ export class Node {
   }
 
   getLatest(): this {
-    if (this._key === null) {
-      return this;
-    }
     const latest = getNodeByKey(this._key);
-    if (latest === null) {
-      return this;
-    }
+    invariant(latest !== null, 'getLatest: node not found');
     return latest;
   }
 
@@ -392,6 +380,11 @@ export class Node {
     }
     const self = getWritableNode(this);
     self._flags = flags;
+    return self;
+  }
+  makeDirectioned(): this {
+    const self = getWritableNode(this);
+    self._flags |= HAS_DIRECTION;
     return self;
   }
   makeImmutable(): this {
@@ -435,10 +428,6 @@ export class Node {
     if (index > -1) {
       children.splice(index + 1, 0, insertKey);
     }
-    // Add node to map
-    const viewModel = getActiveViewModel();
-    viewModel.nodeMap[insertKey] = writableNodeToInsert;
-    viewModel.destroyedNodes.delete(insertKey);
     return writableSelf;
   }
   // TODO add support for inserting multiple nodes?
@@ -462,10 +451,6 @@ export class Node {
     if (index > -1) {
       children.splice(index, 0, insertKey);
     }
-    // Add node to map
-    const viewModel = getActiveViewModel();
-    viewModel.nodeMap[insertKey] = writableNodeToInsert;
-    viewModel.destroyedNodes.delete(insertKey);
     return writableSelf;
   }
 }

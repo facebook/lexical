@@ -1,5 +1,7 @@
 // @flow strict
 
+import type {NodeKey} from '../OutlineNode';
+
 import {LeafNode} from '../OutlineLeafNode';
 
 export class ImageNode extends LeafNode {
@@ -7,16 +9,15 @@ export class ImageNode extends LeafNode {
   _src: string;
   _altText: string;
 
-  constructor(src: string, altText: string) {
-    super();
+  constructor(src: string, altText: string, key?: NodeKey) {
+    super(key);
     this._type = 'image';
     this._src = src;
     this._altText = altText;
   }
   clone(): ImageNode {
-    const clone = new ImageNode(this._src, this._altText);
+    const clone = new ImageNode(this._src, this._altText, this._key);
     clone._parent = this._parent;
-    clone._key = this._key;
     clone._flags = this._flags;
     return clone;
   }

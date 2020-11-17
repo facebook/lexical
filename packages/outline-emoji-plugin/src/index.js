@@ -1,6 +1,6 @@
 // @flow strict-local
 
-import type {OutlineEditor, ViewType} from 'outline';
+import type {OutlineEditor, ViewType, NodeKey} from 'outline';
 
 import {useEffect} from 'react';
 import {TextNode} from 'outline';
@@ -80,16 +80,15 @@ function createEmoji(cssText: string): EmojiNode {
 class EmojiNode extends TextNode {
   _cssText: string;
 
-  constructor(cssText: string, text: string) {
-    super(text);
+  constructor(cssText: string, text: string, key?: NodeKey) {
+    super(text, key);
     this._cssText = cssText;
     // $FlowFixMe: this is an emoji type
     this._type = 'emoji';
   }
   clone() {
-    const clone = new EmojiNode(this._cssText, this._text);
+    const clone = new EmojiNode(this._cssText, this._text, this._key);
     clone._parent = this._parent;
-    clone._key = this._key;
     clone._flags = this._flags;
     return clone;
   }

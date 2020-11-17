@@ -5,10 +5,11 @@ import type {NodeMapType, ViewModel} from './OutlineView';
 import type {OutlineEditor} from './OutlineEditor';
 import type {Selection} from './OutlineSelection';
 
-import {BranchNode, ListItemNode, TextNode} from '.';
+import {BranchNode, TextNode} from '.';
 
 let subTreeTextContent = '';
 let forceTextDirection = null;
+let currentTextDirection = null;
 let activeEditor: OutlineEditor;
 let activeDirtySubTrees: Set<NodeKey>;
 let activePrevNodeMap: NodeMapType;
@@ -34,19 +35,23 @@ function getTextDirection(text: string): 'ltr' | 'rtl' | null {
   return null;
 }
 
-function handleBranchTextDirection(dom: HTMLElement): void {
+function handleElementTextDirection(element: HTMLElement): void {
   if (forceTextDirection === null) {
     // $FlowFixMe: internal field
-    const prevSubTreeTextContent: string = dom.__outlineTextContent;
+    const prevSubTreeTextContent: string = element.__outlineTextContent;
     if (prevSubTreeTextContent !== subTreeTextContent) {
-      const direction = getTextDirection(subTreeTextContent);
+      const direction =
+        subTreeTextContent === ''
+          ? currentTextDirection
+          : getTextDirection(subTreeTextContent);
       if (direction === null) {
-        dom.removeAttribute('dir');
+        element.removeAttribute('dir');
       } else {
-        dom.dir = direction;
+        element.dir = direction;
       }
+      currentTextDirection = direction;
       // $FlowFixMe: internal field
-      dom.__outlineTextContent = subTreeTextContent;
+      element.__outlineTextContent = subTreeTextContent;
     }
   }
 }
@@ -94,10 +99,10 @@ function createNode(
     // Handle branch children
     const children = node._children;
     const endIndex = children.length - 1;
-    if (node instanceof ListItemNode) {
-      createChildren(children, 0, endIndex, dom, null);
-    } else {
+    if (node.hasDirection()) {
       createChildrenWithDirection(children, endIndex, dom);
+    } else {
+      createChildren(children, 0, endIndex, dom, null);
     }
   }
   if (parentDOM !== null) {
@@ -118,7 +123,7 @@ function createChildrenWithDirection(
   const previousSubTreeTextContent = subTreeTextContent;
   subTreeTextContent = '';
   createChildren(children, 0, endIndex, dom, null);
-  handleBranchTextDirection(dom);
+  handleElementTextDirection(dom);
   subTreeTextContent = previousSubTreeTextContent;
 }
 
@@ -143,7 +148,7 @@ function reconcileChildrenWithDirection(
   const previousSubTreeTextContent = subTreeTextContent;
   subTreeTextContent = '';
   reconcileChildren(prevChildren, nextChildren, dom);
-  handleBranchTextDirection(dom);
+  handleElementTextDirection(dom);
   subTreeTextContent = previousSubTreeTextContent;
 }
 
@@ -226,10 +231,10 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
     const childrenAreDifferent = prevChildren !== nextChildren;
 
     if (childrenAreDifferent || hasDirtySubTree) {
-      if (nextNode instanceof ListItemNode) {
-        reconcileChildren(prevChildren, nextChildren, dom);
-      } else {
+      if (nextNode.hasDirection()) {
         reconcileChildrenWithDirection(prevChildren, nextChildren, dom);
+      } else {
+        reconcileChildren(prevChildren, nextChildren, dom);
       }
     }
   }

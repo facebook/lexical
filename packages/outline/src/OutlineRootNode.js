@@ -1,6 +1,6 @@
 // @flow strict
 
-import {BranchNode} from '../OutlineBranchNode';
+import {BranchNode} from './OutlineBranchNode';
 
 export class RootNode extends BranchNode {
   _type: 'root';
@@ -16,6 +16,10 @@ export class RootNode extends BranchNode {
     clone._key = this._key;
     clone._flags = this._flags;
     return clone;
+  }
+
+  isAttached(): boolean {
+    return true;
   }
 
   // View

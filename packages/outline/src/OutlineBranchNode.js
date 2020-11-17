@@ -89,7 +89,7 @@ export class BranchNode extends Node {
     const writableSelf = getWritableNode(this);
     const writableNodeToAppend = getWritableNode(nodeToAppend);
     const viewModel = getActiveViewModel();
-    const nodeMap = viewModel.nodeMap;
+
     // Remove node from previous parent
     const oldParent = writableNodeToAppend.getParent();
     if (oldParent !== null) {
@@ -109,7 +109,7 @@ export class BranchNode extends Node {
     const childrenLength = children.length;
     if (childrenLength > 0) {
       const lastChildKey = children[childrenLength - 1];
-      const lastChild = nodeMap[lastChildKey];
+      const lastChild = getNodeByKey(lastChildKey);
       if (lastChild instanceof TextNode && lastChild._text === '') {
         dirtySubTrees.add(lastChildKey);
       }
@@ -117,9 +117,6 @@ export class BranchNode extends Node {
     // Append children.
     const newKey = writableNodeToAppend._key;
     children.push(newKey);
-    // Add node to map
-    nodeMap[newKey] = writableNodeToAppend;
-    viewModel.destroyedNodes.delete(newKey);
     return writableSelf;
   }
   normalizeTextNodes(restoreSelection?: boolean): void {

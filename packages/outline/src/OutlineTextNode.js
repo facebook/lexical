@@ -1,17 +1,22 @@
 // @flow strict
 
-import type {Selection} from '../OutlineSelection';
+import type {Selection} from './OutlineSelection';
+import type {NodeKey} from './OutlineNode';
 
-import {LeafNode} from '../OutlineLeafNode';
-import {getWritableNode, IS_IMMUTABLE, IS_SEGMENTED} from '../OutlineNode';
-import {getSelection, makeSelection} from '../OutlineSelection';
-import {invariant} from '../OutlineUtils';
-import {getActiveViewModel} from '../OutlineView';
+import {LeafNode} from './OutlineLeafNode';
+import {
+  getWritableNode,
+  IS_IMMUTABLE,
+  IS_SEGMENTED,
+  HAS_DIRECTION,
+} from './OutlineNode';
+import {getSelection, makeSelection} from './OutlineSelection';
+import {invariant} from './OutlineUtils';
 
-const IS_BOLD = 1 << 2;
-const IS_ITALIC = 1 << 3;
-const IS_STRIKETHROUGH = 1 << 4;
-const IS_UNDERLINE = 1 << 5;
+const IS_BOLD = 1 << 3;
+const IS_ITALIC = 1 << 4;
+const IS_STRIKETHROUGH = 1 << 5;
+const IS_UNDERLINE = 1 << 6;
 
 // Do not import these from shared, otherwise we will bundle
 // all of shared too.
@@ -81,9 +86,6 @@ function splitText(
     sibling._flags = flags;
     const siblingKey = sibling._key;
     const nextTextSize = textLength + partSize;
-    // Add node to map
-    const viewModel = getActiveViewModel();
-    viewModel.nodeMap[siblingKey] = sibling;
 
     if (selection !== null) {
       const anchorOffset = selection.anchorOffset;
@@ -202,15 +204,15 @@ export class TextNode extends LeafNode {
   _text: string;
   _type: 'text';
 
-  constructor(text: string) {
-    super();
+  constructor(text: string, key?: NodeKey) {
+    super(key);
     this._text = text;
     this._type = 'text';
+    this._flags = HAS_DIRECTION;
   }
   clone(): TextNode {
-    const clone = new TextNode(this._text);
+    const clone = new TextNode(this._text, this._key);
     clone._parent = this._parent;
-    clone._key = this._key;
     clone._flags = this._flags;
     return clone;
   }
@@ -453,7 +455,7 @@ export class TextNode extends LeafNode {
       throw new Error('select: can only be used on non-immutable text nodes');
     }
     const self = getWritableNode(this);
-    self._flags = 0;
+    self._flags = HAS_DIRECTION;
     return self;
   }
 }

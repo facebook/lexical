@@ -444,7 +444,10 @@ export class Selection {
       if (nextSibling === null) {
         const nextBlock = currentBlock.getNextSibling();
         if (nextBlock instanceof BlockNode) {
-          const firstChild = nextBlock.getFirstChild();
+          let firstChild = nextBlock.getFirstChild();
+          if (firstChild instanceof ListItemNode) {
+            firstChild = firstChild.getFirstChild();
+          }
           invariant(firstChild !== null, 'deleteForward: lastChild not found');
           const nodesToMove = [firstChild, ...firstChild.getNextSiblings()];
           let target = anchorNode;
@@ -453,8 +456,18 @@ export class Selection {
             target.insertAfter(nodeToMove);
             target = nodeToMove;
           }
-          nextBlock.remove();
+          if (firstChild instanceof ListItemNode) {
+            firstChild.remove();
+            if (nextBlock.getChildren().length === 0) {
+              nextBlock.remove();
+            }
+          } else {
+            nextBlock.remove();
+          }
           currentBlock.normalizeTextNodes(true);
+        } else if (anchorNode.getFlags() !== HAS_DIRECTION) {
+          // Otherwise just reset the text node flags
+          anchorNode.setFlags(HAS_DIRECTION);
         }
       } else if (nextSibling instanceof TextNode) {
         if (nextSibling.isImmutable()) {

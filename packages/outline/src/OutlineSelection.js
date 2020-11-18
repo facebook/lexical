@@ -105,7 +105,7 @@ export class Selection {
     }
     return anchorNode.getNodesBetween(focusNode);
   }
-  formatText(formatType: 0 | 1 | 2 | 3 | 4): void {
+  formatText(formatType: 0 | 1 | 2 | 3 | 4 | 5, forceFormat?: boolean): void {
     const selectedNodes = this.getNodes();
     const selectedNodesLength = selectedNodes.length;
     const lastIndex = selectedNodesLength - 1;
@@ -122,7 +122,11 @@ export class Selection {
     invariant(currentBlock !== null, 'formatText: currentBlock not found');
     const anchorOffset = this.anchorOffset;
     const focusOffset = this.focusOffset;
-    const firstNextFlags = firstNode.getTextNodeFormatFlags(formatType, null);
+    const firstNextFlags = firstNode.getTextNodeFormatFlags(
+      formatType,
+      null,
+      forceFormat,
+    );
     let startOffset;
     let endOffset;
 
@@ -184,6 +188,7 @@ export class Selection {
       const lastNextFlags = lastNode.getTextNodeFormatFlags(
         formatType,
         firstNextFlags,
+        forceFormat,
       );
       const lastNodeText = lastNode.getTextContent();
       const lastNodeTextLength = lastNodeText.length;
@@ -198,6 +203,7 @@ export class Selection {
           const selectedNextFlags = selectedNode.getTextNodeFormatFlags(
             formatType,
             firstNextFlags,
+            forceFormat,
           );
           selectedNode.setFlags(selectedNextFlags);
         }
@@ -485,6 +491,21 @@ export class Selection {
     if (selectedNodesLength === 1) {
       startOffset = anchorOffset > focusOffset ? focusOffset : anchorOffset;
       endOffset = anchorOffset > focusOffset ? anchorOffset : focusOffset;
+      if (
+        firstNode.isLink() &&
+        this.isCaret() &&
+        (startOffset === 0 || endOffset === firstNodeTextLength)
+      ) {
+        const textNode = createText(text);
+        if (startOffset === 0) {
+          firstNode.insertBefore(textNode);
+        } else {
+          firstNode.insertAfter(textNode);
+        }
+        textNode.select();
+        currentBlock.normalizeTextNodes(true);
+        return;
+      }
       const delCount = endOffset - startOffset;
 
       firstNode.spliceText(startOffset, delCount, text, true);
@@ -646,7 +667,10 @@ export class Selection {
             hasChars = true;
           }
         }
-        if (hasSpace || offset === textContentLength) {
+        if (
+          textContentLength !== 0 &&
+          (hasSpace || offset === textContentLength)
+        ) {
           lookAhead = true;
         }
         node.select();
@@ -704,14 +728,15 @@ export class Selection {
       ) {
         notAdjacent = true;
       } else {
+        const textContent = node.getTextContent();
         if (node === firstNode) {
           if (offset !== 0) {
             const nextOffset = offset - 1;
             node.select(nextOffset, nextOffset);
             return;
           }
-        } else {
-          const textContentLength = node.getTextContent().length;
+        } else if (textContent !== '') {
+          const textContentLength = textContent.length;
           const nextOffset = notAdjacent
             ? textContentLength
             : textContentLength - 1;
@@ -759,15 +784,16 @@ export class Selection {
     let node = lastNode;
     let notAdjacent = false;
     while (true) {
+      const textContent = node.getTextContent();
       if (
         !(node instanceof TextNode) ||
         node.isImmutable() ||
         node.isSegmented()
       ) {
         notAdjacent = true;
-      } else {
+      } else if (textContent !== '') {
         if (node === lastNode) {
-          if (offset !== node.getTextContent().length) {
+          if (offset !== textContent.length) {
             const nextOffset = offset + 1;
             node.select(nextOffset, nextOffset);
             return;

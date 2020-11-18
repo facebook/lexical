@@ -1,14 +1,16 @@
 // @flow
 
-import type {OutlineEditor} from 'outline';
+import type {OutlineEditor, Selection} from 'outline';
 
+import {TextNode} from 'outline';
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 // $FlowFixMe
-import {createPortal} from 'react-dom';
+import {unstable_batchedUpdates, createPortal} from 'react-dom';
 import {
   FORMAT_BOLD,
   FORMAT_CODE,
   FORMAT_ITALIC,
+  FORMAT_LINK,
   FORMAT_STRIKETHROUGH,
 } from 'plugin-shared';
 
@@ -56,7 +58,7 @@ function Button({
   );
 }
 
-function getSelectedNode(selection) {
+function getSelectedNode(selection: Selection): TextNode {
   const anchorNode = selection.getAnchorNode();
   const focusNode = selection.getFocusNode();
   if (anchorNode === focusNode) {
@@ -65,44 +67,134 @@ function getSelectedNode(selection) {
   return anchorNode.isBefore(focusNode) ? anchorNode : focusNode;
 }
 
+function LinkBar({
+  lastSelection,
+  editor,
+  isEditMode,
+  linkUrl,
+  setLinkUrl,
+  setEditMode,
+  updateSelectedLinks,
+}: {
+  lastSelection: null | Selection,
+  editor: null | OutlineEditor,
+  isEditMode: boolean,
+  linkUrl: string,
+  setLinkUrl: (string) => void,
+  setEditMode: (boolean) => void,
+  updateSelectedLinks: (url: string, selection: null | Selection) => void,
+}): React$Node {
+  const inputRef = useRef(null);
+
+  return isEditMode ? (
+    <input
+      ref={inputRef}
+      className="link-input"
+      value={linkUrl}
+      onChange={(event) => {
+        setLinkUrl(event.target.value);
+      }}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          if (editor !== null && lastSelection !== null) {
+            if (linkUrl !== '') {
+              updateSelectedLinks(linkUrl, lastSelection);
+            }
+            setEditMode(false);
+          }
+        }
+      }}
+    />
+  ) : (
+    <div className="link-input">
+      <a href={linkUrl} target="_blank" rel="noopener">
+        {linkUrl}
+      </a>
+      <div
+        className="link-edit"
+        role="button"
+        tabIndex={0}
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={() => {
+          setEditMode(true);
+        }}
+      />
+    </div>
+  );
+}
+
 function Toolbar({editor}: {editor: null | OutlineEditor}): React$Node {
   const toolbarRef = useRef(null);
   const [isBold, setIsBold] = useState(false);
   const [isItalic, setIsItalic] = useState(false);
   const [isStrikethrough, setIsStrikethrough] = useState(false);
   const [isCode, setIsCode] = useState(false);
+  const [isLink, setIsLink] = useState(false);
+  const [linkUrl, setLinkUrl] = useState('');
+  const [isEditMode, setEditMode] = useState(false);
+  const [lastSelection, setLastSelection] = useState(null);
+
+  const moveToolbar = useCallback((selection) => {
+    const toolbar = toolbarRef.current;
+    const nativeSelection = window.getSelection();
+    const activeElement = document.activeElement;
+
+    if (toolbar === null) {
+      return;
+    }
+
+    if (selection !== null && !nativeSelection.isCollapsed) {
+      const domRange = nativeSelection.getRangeAt(0);
+      const rect = domRange.getBoundingClientRect();
+      positionToolbar(toolbar, rect);
+      setLastSelection(selection);
+    } else if (!activeElement || activeElement.className !== 'link-input') {
+      positionToolbar(toolbar, null);
+      setLastSelection(null);
+      setEditMode(false);
+      setLinkUrl('');
+    }
+  }, []);
+
+  useEffect(() => {
+    if (editor !== null) {
+      editor.read((view) => {
+        const selection = view.getSelection();
+        moveToolbar(selection);
+      });
+    }
+  });
 
   useEffect(() => {
     const toolbar = toolbarRef.current;
     if (editor !== null && toolbar !== null) {
       const updateButtonStates = (selection) => {
-        const node = getSelectedNode(selection);
-        setIsBold(node.isBold());
-        setIsItalic(node.isItalic());
-        setIsStrikethrough(node.isStrikethrough());
-        setIsCode(node.isCode());
+        if (selection !== null) {
+          const node = getSelectedNode(selection);
+          unstable_batchedUpdates(() => {
+            setIsBold(node.isBold());
+            setIsItalic(node.isItalic());
+            setIsStrikethrough(node.isStrikethrough());
+            setIsCode(node.isCode());
+            setIsLink(node.isLink());
+            setLinkUrl(node.getURL() || '');
+          });
+        }
       };
 
       const selectionChangeHandler = () => {
         editor.read((view) => {
           const selection = view.getSelection();
-          const nativeSelection = window.getSelection();
-          if (selection !== null && !nativeSelection.isCollapsed) {
-            const domRange = nativeSelection.getRangeAt(0);
-            const rect = domRange.getBoundingClientRect();
-            positionToolbar(toolbar, rect);
-            updateButtonStates(selection);
-          } else {
-            positionToolbar(toolbar, null);
-          }
+          updateButtonStates(selection);
+          moveToolbar(selection);
         });
       };
       const checkForChanges = () => {
         editor.read((view) => {
           const selection = view.getSelection();
-          if (selection !== null) {
-            updateButtonStates(selection);
-          }
+          updateButtonStates(selection);
+          moveToolbar(selection);
         });
       };
 
@@ -116,10 +208,38 @@ function Toolbar({editor}: {editor: null | OutlineEditor}): React$Node {
         removeUpdateListener();
       };
     }
-  }, [editor]);
+  }, [editor, isEditMode, isLink, moveToolbar]);
+
+  const updateSelectedLinks = useCallback(
+    (url: null | string, selection: null | Selection) => {
+      if (editor !== null) {
+        const viewModel = editor.draft((view) => {
+          if (selection !== null) {
+            view.setSelection(selection);
+          }
+          const sel = view.getSelection();
+          if (sel !== null) {
+            const nodes = sel.getNodes();
+            nodes.forEach((node) => {
+              if (node instanceof TextNode && !node.isImmutable()) {
+                node.setURL(url);
+              }
+            });
+            if (url !== null) {
+              sel.formatText(FORMAT_LINK, true);
+            }
+          }
+        });
+        if (!editor.isUpdating()) {
+          editor.update(viewModel, true);
+        }
+      }
+    },
+    [editor],
+  );
 
   const formatText = useCallback(
-    (formatType: 0 | 1 | 2 | 3 | 4) => {
+    (formatType: 0 | 1 | 2 | 3 | 4 | 5) => {
       if (editor !== null) {
         const viewModel = editor.draft((view) => {
           const selection = view.getSelection();
@@ -127,7 +247,9 @@ function Toolbar({editor}: {editor: null | OutlineEditor}): React$Node {
             selection.formatText(formatType);
           }
         });
-        editor.update(viewModel);
+        if (!editor.isUpdating()) {
+          editor.update(viewModel, true);
+        }
       }
     },
     [editor],
@@ -140,8 +262,14 @@ function Toolbar({editor}: {editor: null | OutlineEditor}): React$Node {
     formatText,
   ]);
   const link = useCallback(() => {
-    // TODO
-  }, []);
+    if (!isLink) {
+      setEditMode(true);
+      updateSelectedLinks('http://', null);
+    } else {
+      formatText(FORMAT_LINK);
+      updateSelectedLinks(null, null);
+    }
+  }, [formatText, isLink, updateSelectedLinks]);
 
   return (
     <div ref={toolbarRef} id="toolbar">
@@ -153,7 +281,18 @@ function Toolbar({editor}: {editor: null | OutlineEditor}): React$Node {
         onClick={strikethrough}
         active={isStrikethrough}
       />
-      <Button className="link" onClick={link} active={false} />
+      <Button className="link" onClick={link} active={isLink} />
+      {isLink ? (
+        <LinkBar
+          lastSelection={lastSelection}
+          editor={editor}
+          linkUrl={linkUrl}
+          setLinkUrl={setLinkUrl}
+          isEditMode={isEditMode}
+          setEditMode={setEditMode}
+          updateSelectedLinks={updateSelectedLinks}
+        />
+      ) : null}
     </div>
   );
 }

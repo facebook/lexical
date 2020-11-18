@@ -125,6 +125,7 @@ export class BlockNode extends Node {
     const children = this.getChildren();
     let toNormalize = [];
     let lastTextNodeFlags: number | null = null;
+    let lastURL = null;
     for (let i = 0; i < children.length; i++) {
       const child: Node = children[i].getLatest();
       const flags = child._flags;
@@ -134,15 +135,21 @@ export class BlockNode extends Node {
         !child.isImmutable() &&
         !child.isSegmented()
       ) {
-        if (lastTextNodeFlags === null || flags === lastTextNodeFlags) {
+        const url = child._url;
+        if (
+          (lastTextNodeFlags === null || flags === lastTextNodeFlags) &&
+          (lastURL === null || lastURL === url)
+        ) {
           toNormalize.push(child);
           lastTextNodeFlags = flags;
+          lastURL = url;
         } else {
           if (toNormalize.length > 1) {
             combineAdjacentTextNodes(toNormalize, restoreSelection);
           }
-          toNormalize = [];
-          lastTextNodeFlags = null;
+          toNormalize = [child];
+          lastTextNodeFlags = flags;
+          lastURL = url;
         }
       } else {
         if (toNormalize.length > 1) {

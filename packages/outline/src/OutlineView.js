@@ -15,6 +15,7 @@ export type ViewType = {
   getRoot: () => RootNode,
   getNodeByKey: (key: NodeKey) => null | Node,
   getSelection: () => null | Selection,
+  setSelection: (selection: Selection) => void,
 };
 
 export type NodeMapType = {[key: NodeKey]: Node};
@@ -43,6 +44,10 @@ const view: ViewType = {
   },
   getNodeByKey,
   getSelection,
+  setSelection(selection: Selection): void {
+    const viewModel = getActiveViewModel();
+    viewModel.selection = selection;
+  },
 };
 
 export function draftViewModel(
@@ -95,10 +100,6 @@ export function readViewModel(
   callbackFn: (view: ViewType) => void,
   editor: OutlineEditor,
 ) {
-  invariant(
-    activeViewModel === null,
-    'read: cannot be used during the creation of a draft',
-  );
   callCallbackWithViewModelScope(callbackFn, viewModel, editor, true);
 }
 

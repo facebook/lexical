@@ -19,6 +19,7 @@ const IS_ITALIC = 1 << 4;
 const IS_STRIKETHROUGH = 1 << 5;
 const IS_UNDERLINE = 1 << 6;
 const IS_CODE = 1 << 7;
+const IS_LINK = 1 << 8;
 
 // Do not import these from shared, otherwise we will bundle
 // all of shared too.
@@ -27,6 +28,7 @@ const FORMAT_ITALIC = 1;
 const FORMAT_STRIKETHROUGH = 2;
 const FORMAT_UNDERLINE = 3;
 const FORMAT_CODE = 4;
+const FORMAT_LINK = 5;
 
 const zeroWidthString = '\uFEFF';
 
@@ -200,11 +202,13 @@ function setTextContent(
       return;
     }
   }
-  if (nextText.endsWith('\n')) {
+  if (nextText === '') {
+    nextText = zeroWidthString;
+  } else if (nextText.endsWith('\n')) {
     nextText += '\n';
   }
   if (firstChild == null || hasBreakNode) {
-    dom.textContent = nextText === '' ? zeroWidthString : nextText;
+    dom.textContent = nextText;
   } else if (prevText !== nextText) {
     firstChild.nodeValue = nextText;
   }
@@ -213,17 +217,20 @@ function setTextContent(
 export class TextNode extends Node {
   _text: string;
   _type: 'text';
+  _url: null | string;
 
   constructor(text: string, key?: NodeKey) {
     super(key);
     this._text = text;
     this._type = 'text';
     this._flags = HAS_DIRECTION;
+    this._url = null;
   }
   clone(): TextNode {
     const clone = new TextNode(this._text, this._key);
     clone._parent = this._parent;
     clone._flags = this._flags;
+    clone._url = this._url;
     return clone;
   }
   isBold(): boolean {
@@ -241,13 +248,20 @@ export class TextNode extends Node {
   isCode(): boolean {
     return (this.getLatest()._flags & IS_CODE) !== 0;
   }
+  isLink(): boolean {
+    return (this.getLatest()._flags & IS_LINK) !== 0;
+  }
+  getURL(): null | string {
+    return this._url;
+  }
   getTextContent(): string {
     const self = this.getLatest();
     return self._text;
   }
   getTextNodeFormatFlags(
-    type: 0 | 1 | 2 | 3 | 4,
+    type: 0 | 1 | 2 | 3 | 4 | 5,
     alignWithFlags: null | number,
+    force?: boolean,
   ): number {
     const self = this.getLatest();
     const nodeFlags = self._flags;
@@ -255,7 +269,7 @@ export class TextNode extends Node {
 
     switch (type) {
       case FORMAT_BOLD:
-        if (nodeFlags & IS_BOLD) {
+        if (nodeFlags & IS_BOLD && !force) {
           if (alignWithFlags === null || (alignWithFlags & IS_BOLD) === 0) {
             newFlags ^= IS_BOLD;
           }
@@ -266,7 +280,7 @@ export class TextNode extends Node {
         }
         break;
       case FORMAT_ITALIC:
-        if (nodeFlags & IS_ITALIC) {
+        if (nodeFlags & IS_ITALIC && !force) {
           if (alignWithFlags === null || (alignWithFlags & IS_ITALIC) === 0) {
             newFlags ^= IS_ITALIC;
           }
@@ -277,7 +291,7 @@ export class TextNode extends Node {
         }
         break;
       case FORMAT_STRIKETHROUGH:
-        if (nodeFlags & IS_STRIKETHROUGH) {
+        if (nodeFlags & IS_STRIKETHROUGH && !force) {
           if (
             alignWithFlags === null ||
             (alignWithFlags & IS_STRIKETHROUGH) === 0
@@ -291,7 +305,7 @@ export class TextNode extends Node {
         }
         break;
       case FORMAT_UNDERLINE:
-        if (nodeFlags & IS_UNDERLINE) {
+        if (nodeFlags & IS_UNDERLINE && !force) {
           if (
             alignWithFlags === null ||
             (alignWithFlags & IS_UNDERLINE) === 0
@@ -305,13 +319,24 @@ export class TextNode extends Node {
         }
         break;
       case FORMAT_CODE:
-        if (nodeFlags & IS_CODE) {
+        if (nodeFlags & IS_CODE && !force) {
           if (alignWithFlags === null || (alignWithFlags & IS_CODE) === 0) {
             newFlags ^= IS_CODE;
           }
         } else {
           if (alignWithFlags === null || alignWithFlags & IS_CODE) {
             newFlags |= IS_CODE;
+          }
+        }
+        break;
+      case FORMAT_LINK:
+        if (nodeFlags & IS_LINK && !force) {
+          if (alignWithFlags === null || (alignWithFlags & IS_LINK) === 0) {
+            newFlags ^= IS_LINK;
+          }
+        } else {
+          if (alignWithFlags === null || alignWithFlags & IS_LINK) {
+            newFlags |= IS_LINK;
           }
         }
         break;
@@ -347,6 +372,9 @@ export class TextNode extends Node {
     innerDOM.setAttribute('data-text', 'true');
     if (flags & IS_SEGMENTED) {
       innerDOM.setAttribute('spellcheck', 'false');
+    }
+    if (flags & IS_LINK) {
+      innerDOM.setAttribute('data-link', 'true');
     }
     return dom;
   }
@@ -399,11 +427,29 @@ export class TextNode extends Node {
         innerDOM.removeAttribute('spellcheck');
       }
     }
+    if (nextFlags & IS_LINK) {
+      if ((prevFlags & IS_LINK) === 0) {
+        innerDOM.setAttribute('data-link', 'true');
+      }
+    } else {
+      if (prevFlags & IS_LINK) {
+        innerDOM.removeAttribute('data-link');
+      }
+    }
     return false;
   }
 
   // Mutators
 
+  setURL(url: string | null): TextNode {
+    shouldErrorOnReadOnly();
+    if (this.isImmutable()) {
+      throw new Error('setURL: can only be used on non-immutable text nodes');
+    }
+    const writableSelf = getWritableNode(this);
+    writableSelf._url = url;
+    return writableSelf;
+  }
   setTextContent(text: string): TextNode {
     shouldErrorOnReadOnly();
     if (this.isImmutable()) {

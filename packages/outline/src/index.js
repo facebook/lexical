@@ -6,6 +6,7 @@ import type {ViewModel, ViewType} from './OutlineView';
 export type {ViewModel, ViewType};
 import type {NodeKey} from './OutlineNode';
 export type {NodeKey};
+export type {Selection} from './OutlineSelection';
 
 import {useOutlineEditor} from './OutlineEditor';
 import {createTextNode as createText, TextNode} from './OutlineTextNode';
@@ -18,7 +19,10 @@ import {
   createParagraphNode as createParagraph,
   ParagraphNode,
 } from './external-nodes/OutlineParagraphNode';
-import {createListNode as createList, ListNode} from './external-nodes/OutlineListNode';
+import {
+  createListNode as createList,
+  ListNode,
+} from './external-nodes/OutlineListNode';
 import {
   createListItemNode as createListItem,
   ListItemNode,

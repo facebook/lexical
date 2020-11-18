@@ -78,6 +78,7 @@ describe('OutlineEditor tests', () => {
       _key: '1',
       _parent: '0',
       _type: 'text',
+      _url: null,
     });
   });
 });

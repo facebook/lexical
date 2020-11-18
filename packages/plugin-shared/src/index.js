@@ -23,6 +23,7 @@ export const FORMAT_ITALIC = 1;
 export const FORMAT_STRIKETHROUGH = 2;
 export const FORMAT_UNDERLINE = 3;
 export const FORMAT_CODE = 4;
+export const FORMAT_LINK = 5;
 
 // FlowFixMe: Flow doesn't know of the CompositionEvent?
 // $FlowFixMe: TODO
@@ -49,9 +50,7 @@ function useEventWrapper<T>(
         const viewModel = editor.draft((view) =>
           handler(event, view, state, editor),
         );
-        if (!editor.isUpdating()) {
-          editor.update(viewModel);
-        }
+        editor.update(viewModel);
       }
     },
     [stateRef, editor, handler],

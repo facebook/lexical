@@ -68,6 +68,10 @@ h1 {
   margin: 0
 }
 
+.editor-shell div.editor span[data-link="true"] {
+  color: rgb(33,111,219);
+}
+
 .editor-shell div.editor code {
   background-color: rgb(240, 242, 245);
   padding: 1px 0.25rem;
@@ -93,13 +97,15 @@ pre {
 #mentions-typeahead {
   position: fixed;
   background: #fff;
-  box-shadow:  0px 3px 10px rgba(0,0,0, 0.3);
+  box-shadow:  0px 5px 10px rgba(0,0,0, 0.3);
+  border-radius: 8px;
 }
 
 #mentions-typeahead ul {
   padding: 0;
   list-style: none;
   margin: 0;
+  border-radius: 8px;
 }
 
 #mentions-typeahead ul li {
@@ -109,6 +115,7 @@ pre {
   font-size: 14px;
   outline: none;
   cursor: pointer;
+  border-radius: 8px;
 }
 
 #mentions-typeahead ul li.selected {
@@ -128,8 +135,8 @@ pre {
   margin-top: -6px;
   opacity: 0;
   background-color: #fff;
-  box-shadow:  0px 3px 10px rgba(0,0,0, 0.3);
-  border-radius: 4px;
+  box-shadow:  0px 5px 10px rgba(0,0,0, 0.3);
+  border-radius: 8px;
   transition: opacity 0.75s;
 }
 
@@ -137,8 +144,8 @@ pre {
   width: 20px;
   height: 20px;
   display: inline-block;
-  padding: 4px;
-  border-radius:  4px;
+  padding: 6px;
+  border-radius:  8px;
   cursor: pointer;
   margin: 0 2px;
 }
@@ -187,4 +194,48 @@ pre {
 
 #toolbar .button.active i {
   filter: invert(0.39) sepia(0.57) saturate(2) saturate(2) saturate(2) saturate(2) saturate(2) saturate(1.4775) hue-rotate(202deg) brightness(0.97) contrast(0.96)
+}
+
+#toolbar .link-input {
+  display: inline-block;
+  margin: 0 2px;
+  padding: 8px 12px;
+  border-radius:  15px;
+  background-color: rgb(240, 242, 245);
+  font-size: 15px;
+  color: rgb(5,5,5);
+  min-width: 200px;
+  border: 0;
+  outline: 0;
+  position: relative;
+}
+
+#toolbar div.link-edit {
+  background-image: url('https://static.xx.fbcdn.net/rsrc.php/v3/yu/r/ptCc6bNZqYj.png');
+  background-size: auto;
+  background-repeat: no-repeat;
+  background-position: 0px -3224px;
+  display: inline-block;
+  height: 16px;
+  width: 16px;
+  vertical-align: -0.25em;
+  filter: invert(0.39) sepia(0.21) saturate(2) saturate(1.095) hue-rotate(174deg) brightness(0.94) contrast(0.86);
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  cursor: pointer;
+}
+
+#toolbar div.link-edit:hover {
+  filter: invert(0.39) sepia(0.57) saturate(2) saturate(2) saturate(2) saturate(2) saturate(2) saturate(1.4775) hue-rotate(202deg) brightness(0.97) contrast(0.96)
+}
+
+#toolbar .link-input a {
+  color: rgb(33,111,219);
+  text-decoration: none;
+  display: block;
+}
+
+#toolbar .link-input a:hover {
+  text-decoration: underline;
 }

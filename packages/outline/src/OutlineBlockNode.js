@@ -63,6 +63,30 @@ export class BlockNode extends Node {
     }
     return childrenNodes;
   }
+  getFirstTextNode(): null | TextNode {
+    const children = this.getChildren();
+    for (let i = 0; i < children.length; i++) {
+      const child = children[i];
+      if (child instanceof TextNode) {
+        return child;
+      } else if (child instanceof BlockNode) {
+        return child.getFirstTextNode();
+      }
+    }
+    return null;
+  }
+  getLastTextNode(): null | TextNode {
+    const children = this.getChildren();
+    for (let i = children.length - 1; i >= 0; i--) {
+      const child = children[i];
+      if (child instanceof TextNode) {
+        return child;
+      } else if (child instanceof BlockNode) {
+        return child.getLastTextNode();
+      }
+    }
+    return null;
+  }
   getFirstChild(): null | Node {
     const self = this.getLatest();
     const children = self._children;

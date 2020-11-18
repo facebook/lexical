@@ -134,6 +134,7 @@ function Toolbar({editor}: {editor: null | OutlineEditor}): React$Node {
   const [linkUrl, setLinkUrl] = useState('');
   const [isEditMode, setEditMode] = useState(false);
   const [lastSelection, setLastSelection] = useState(null);
+  const mouseDownRef = useRef(false);
 
   const moveToolbar = useCallback((selection) => {
     const toolbar = toolbarRef.current;
@@ -147,7 +148,9 @@ function Toolbar({editor}: {editor: null | OutlineEditor}): React$Node {
     if (selection !== null && !nativeSelection.isCollapsed) {
       const domRange = nativeSelection.getRangeAt(0);
       const rect = domRange.getBoundingClientRect();
-      positionToolbar(toolbar, rect);
+      if (!mouseDownRef.current) {
+        positionToolbar(toolbar, rect);
+      }
       setLastSelection(selection);
     } else if (!activeElement || activeElement.className !== 'link-input') {
       positionToolbar(toolbar, null);
@@ -197,10 +200,27 @@ function Toolbar({editor}: {editor: null | OutlineEditor}): React$Node {
           moveToolbar(selection);
         });
       };
+      const mouseDownHandler = () => {
+        mouseDownRef.current = true;
+      };
+      const mouseUpHandler = () => {
+        mouseDownRef.current = false;
+        if (editor !== null) {
+          editor.read((view) => {
+            const selection = view.getSelection();
+            console.log(selection);
+            moveToolbar(selection);
+          });
+        }
+      };
 
       document.addEventListener('selectionchange', selectionChangeHandler);
+      document.addEventListener('mousedown', mouseDownHandler);
+      document.addEventListener('mouseup', mouseUpHandler);
       const removeUpdateListener = editor.addUpdateListener(checkForChanges);
       return () => {
+        document.removeEventListener('mousedown', mouseDownHandler);
+        document.removeEventListener('mouseup', mouseUpHandler);
         document.removeEventListener(
           'selectionChangeHandler',
           selectionChangeHandler,

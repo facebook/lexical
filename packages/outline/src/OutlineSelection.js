@@ -846,34 +846,6 @@ export class Selection {
   }
 }
 
-function getFirstChildNode(_node) {
-  let node = _node;
-  while (node !== null) {
-    if (node instanceof TextNode) {
-      return node;
-    } else if (node instanceof BlockNode) {
-      node = node.getFirstChild();
-    } else {
-      break;
-    }
-  }
-  return null;
-}
-
-function getLastChildNode(_node) {
-  let node = _node;
-  while (node !== null) {
-    if (node instanceof TextNode) {
-      return node;
-    } else if (node instanceof BlockNode) {
-      node = node.getLastChild();
-    } else {
-      break;
-    }
-  }
-  return null;
-}
-
 // This is used to make a selection when the existing
 // selection is null, i.e. forcing selection on the editor
 // when it current exists outside the editor.
@@ -900,14 +872,15 @@ export function createSelection(
   editor: OutlineEditor,
 ): null | Selection {
   const windowSelection: WindowSelection = window.getSelection();
-  let anchorDOM = windowSelection.anchorNode;
-  let focusDOM = windowSelection.focusNode;
+  const anchorDOM = windowSelection.anchorNode;
+  const focusDOM = windowSelection.focusNode;
   let anchorOffset = windowSelection.anchorOffset;
   let focusOffset = windowSelection.focusOffset;
   let anchorNode: Node | null = null;
   let focusNode: Node | null = null;
   let anchorKey: NodeKey | null = null;
   let focusKey: NodeKey | null = null;
+
   if (editor === null || anchorDOM === null || focusDOM === null) {
     return null;
   }
@@ -919,8 +892,8 @@ export function createSelection(
   // We need to resolve the first and last text DOM nodes
   if (anchorDOM === focusDOM && anchorDOM === editorElement) {
     const root = viewModel.root;
-    anchorNode = getFirstChildNode(root);
-    focusNode = getLastChildNode(root);
+    anchorNode = root.getFirstTextNode();
+    focusNode = root.getLastTextNode();
     invariant(
       anchorNode !== null && focusNode !== null,
       'getSelection: anchorNode/focusNode not found',
@@ -930,29 +903,33 @@ export function createSelection(
     anchorOffset = 0;
     focusOffset = focusNode.getTextContent().length;
   } else {
-    if (anchorDOM.nodeType === 1) {
-      anchorDOM = anchorDOM.firstChild;
-    }
-    if (focusDOM.nodeType === 1) {
-      focusDOM = focusDOM.firstChild;
-    }
-    // If we weren't able to normalize to text nodes,
-    // return null for selection.
-    if (
-      anchorDOM == null ||
-      focusDOM == null ||
-      anchorDOM.nodeType === 1 ||
-      focusDOM.nodeType === 1
-    ) {
-      return null;
-    }
+    // We try and find the relevant text nodes from the selection.
+    // If we can't do this, we return null.
     const nodeMap = viewModel.nodeMap;
     anchorKey = getNodeKeyFromDOM(anchorDOM);
     focusKey = getNodeKeyFromDOM(focusDOM);
     anchorNode = nodeMap[anchorKey];
     focusNode = nodeMap[focusKey];
+    const isBefore = anchorNode.isBefore(focusNode);
+    if (anchorNode instanceof BlockNode) {
+      anchorNode = isBefore
+        ? anchorNode.getFirstTextNode()
+        : anchorNode.getLastTextNode();
+    }
+    if (focusNode instanceof BlockNode) {
+      focusNode = isBefore
+        ? focusNode.getLastTextNode()
+        : focusNode.getFirstTextNode();
+    }
+    if (anchorNode === null || focusNode === null) {
+      return null;
+    }
+    anchorKey = anchorNode._key;
+    focusKey = focusNode._key;
   }
-
+  // Because we use a special character for whitespace,
+  // we need to adjust offsets to 0 when the text is
+  // really empty.
   if (anchorNode._text === '') {
     anchorOffset = 0;
   }

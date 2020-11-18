@@ -5,7 +5,7 @@ import type {ViewModel} from './OutlineView';
 
 import {getActiveViewModel} from './OutlineView';
 import {getNodeKeyFromDOM} from './OutlineReconciler';
-import {getNodeByKey} from './OutlineNode';
+import {getNodeByKey, HAS_DIRECTION} from './OutlineNode';
 import {
   createListItem,
   createText,
@@ -376,6 +376,9 @@ export class Selection {
             }
             anchorNode.select(0, 0);
             return;
+          } else if (anchorNode.getFlags() !== HAS_DIRECTION) {
+            // Otherwise just reset the text node flags
+            anchorNode.setFlags(HAS_DIRECTION);
           }
         } else if (prevBlock instanceof BlockNode) {
           if (prevBlock instanceof ListNode) {

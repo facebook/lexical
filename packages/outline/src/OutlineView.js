@@ -59,9 +59,9 @@ export function draftViewModel(
   const viewModel: ViewModel = hasActiveViewModel
     ? getActiveViewModel()
     : cloneViewModel(currentViewModel);
-  viewModel.selection = createSelection(viewModel, editor);
   callCallbackWithViewModelScope(
     (v: ViewType) => {
+      viewModel.selection = createSelection(viewModel, editor);
       callbackFn(v);
       if (viewModel.hasDirtyNodes()) {
         applyTextTransforms(viewModel, editor);

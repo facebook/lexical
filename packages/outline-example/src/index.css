@@ -68,7 +68,9 @@ h1 {
   margin: 0
 }
 
-.editor-shell div.editor span[data-link="true"] {
+.editor-shell div.editor span[data-link="true"],
+.editor-shell div.editor strong[data-link="true"],
+.editor-shell div.editor em[data-link="true"] {
   color: rgb(33,111,219);
 }
 

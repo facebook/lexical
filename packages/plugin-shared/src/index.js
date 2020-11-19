@@ -248,6 +248,15 @@ function onNativeBeforeInput(
     return;
   }
 
+  if (!inputType.startsWith('delete') || inputType.startsWith('deleteBy')) {
+    // $FlowFixMe: Flow doens't know of getTargetRanges
+    const targetRange = event.getTargetRanges()[0];
+
+    if (targetRange) {
+      selection.applyDOMRange(targetRange);
+    }
+  }
+
   switch (inputType) {
     case 'formatBold': {
       if (state.richText) {

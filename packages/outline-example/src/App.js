@@ -13,7 +13,9 @@ function App(): React$Node {
     <>
       <h1>OutlineJS Demo</h1>
       <div className="editor-shell">
-        <Editor onChange={setViewModel} />
+        <Editor onChange={(newViewModel) => {
+          requestAnimationFrame(() => setViewModel(newViewModel))
+        }} />
       </div>
       <pre>{JSON.stringify(viewModel, null, 2)}</pre>
     </>

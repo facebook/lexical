@@ -4,8 +4,7 @@ import type {OutlineEditor} from './OutlineEditor';
 export type {OutlineEditor};
 import type {ViewModel, ViewType} from './OutlineView';
 export type {ViewModel, ViewType};
-import type {NodeKey} from './OutlineNode';
-export type {NodeKey};
+export type {NodeKey, NodeTree} from './OutlineNode';
 export type {Selection} from './OutlineSelection';
 
 import {useOutlineEditor} from './OutlineEditor';

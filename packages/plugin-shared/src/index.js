@@ -1,7 +1,9 @@
 // @flow strict-local
 
+import type {Node, Selection} from 'outline';
+
 import {useCallback, useEffect} from 'react';
-import {createParagraph, createText} from 'outline';
+import {BlockNode, createParagraph, createText} from 'outline';
 import {CAN_USE_BEFORE_INPUT, IS_FIREFOX, IS_SAFARI} from './env';
 import {
   isDeleteBackward,
@@ -172,27 +174,7 @@ function onPastePolyfill(
   const selection = view.getSelection();
   const clipboardData = event.clipboardData;
   if (clipboardData != null && selection !== null) {
-    const text = clipboardData.getData('text/plain');
-    if (text != null) {
-      selection.insertText(text);
-    }
-  }
-}
-
-function onCutPolyfill(
-  event: ClipboardEvent,
-  view: ViewType,
-  state: UnknownState,
-  editor: OutlineEditor,
-): void {
-  event.preventDefault();
-  const clipboardData = event.clipboardData;
-  const selection = view.getSelection();
-  if (selection !== null) {
-    if (clipboardData != null) {
-      clipboardData.setData('text/plain', selection.getTextContent());
-    }
-    selection.removeText();
+    insertDataTransfer(clipboardData, selection, state, view, editor);
   }
 }
 
@@ -226,6 +208,106 @@ function onPolyfilledBeforeInput(
   const data = event.data;
   if (data != null && selection !== null) {
     selection.insertText(data);
+  }
+}
+
+function onCut(
+  event: ClipboardEvent,
+  view: ViewType,
+  state: UnknownState,
+  editor: OutlineEditor,
+): void {
+  onCopy(event, view, state, editor);
+  const selection = view.getSelection();
+  if (selection !== null) {
+    selection.removeText();
+  }
+}
+
+function onCopy(
+  event: ClipboardEvent,
+  view: ViewType,
+  state: UnknownState,
+  editor: OutlineEditor,
+): void {
+  event.preventDefault();
+  const clipboardData = event.clipboardData;
+  const selection = view.getSelection();
+  if (selection !== null) {
+    if (clipboardData != null) {
+      const domSelection = window.getSelection();
+      const range = domSelection.getRangeAt(0)
+      if (range) {
+        const container = document.createElement('div');
+        const frag = range.cloneContents();
+        container.appendChild(frag);
+        clipboardData.setData('text/html', container.innerHTML);
+      }
+      clipboardData.setData('text/plain', selection.getTextContent());
+      clipboardData.setData(
+        'application/x-outline-nodes',
+        JSON.stringify(selection.getNodeTree()),
+      );
+    }
+  }
+}
+
+function generateNode(
+  parsedNode,
+  parentKey,
+  parsedNodeMap,
+  editor: OutlineEditor,
+): Node {
+  const type = parsedNode._type;
+  const nodeType = editor._registeredNodeTypes.get(type);
+  if (nodeType === undefined) {
+    throw new Error('generateNode: type "' + type + '" + not found');
+  }
+  const node = nodeType.parse(parsedNode);
+  if (parentKey !== '#root') {
+    node._parent = parentKey;
+  }
+  if (node instanceof BlockNode) {
+    const key = node._key;
+    const parsedChildren = parsedNode._children;
+    for (let i = 0; i < parsedChildren.length; i++) {
+      const parsedChild = parsedNodeMap[parsedChildren[i]];
+      if (parsedChild !== undefined) {
+        const child = generateNode(parsedChild, key, parsedNodeMap, editor);
+        node._children.push(child._key);
+      }
+    }
+  }
+  return node;
+}
+
+function insertDataTransfer(
+  dataTransfer: DataTransfer,
+  selection: Selection,
+  state: UnknownState,
+  view: ViewType,
+  editor: OutlineEditor,
+) {
+  if (state.richText) {
+    const outlineNodesString = dataTransfer.getData(
+      'application/x-outline-nodes',
+    );
+
+    if (outlineNodesString) {
+      const parsedNodeTree = JSON.parse(outlineNodesString);
+      const node = generateNode(
+        parsedNodeTree.root,
+        null,
+        parsedNodeTree.nodeMap,
+        editor,
+      );
+      selection.insertNode(node);
+      return;
+    }
+  }
+  const text = dataTransfer.getData('text/plain');
+  if (text != null) {
+    selection.insertText(text);
   }
 }
 
@@ -298,10 +380,7 @@ function onNativeBeforeInput(
       // $FlowFixMe: Flow doesn't know about the dataTransfer field
       const dataTransfer = event.dataTransfer;
       if (dataTransfer != null) {
-        const text = dataTransfer.getData('text/plain');
-        if (text != null) {
-          selection.insertText(text);
-        }
+        insertDataTransfer(dataTransfer, selection, state, view, editor);
       }
       break;
     }
@@ -360,7 +439,8 @@ export function useEditorInputEvents<T>(
   );
   const handleKeyDown = useEventWrapper(onKeyDown, editor, stateRef);
   const handlePaste = useEventWrapper(onPastePolyfill, editor, stateRef);
-  const handleCut = useEventWrapper(onCutPolyfill, editor, stateRef);
+  const handleCut = useEventWrapper(onCut, editor, stateRef);
+  const handleCopy = useEventWrapper(onCopy, editor, stateRef);
   const handleDrop = useEventWrapper(onDropPolyfill, editor, stateRef);
   const handleDragStart = useEventWrapper(
     onDragStartPolyfill,
@@ -388,13 +468,14 @@ export function useEditorInputEvents<T>(
       target.addEventListener('keydown', handleKeyDown);
       target.addEventListener('compositionstart', handleCompositionStart);
       target.addEventListener('compositionend', handleCompositionEnd);
+      target.addEventListener('cut', handleCut);
+      target.addEventListener('copy', handleCopy);
       document.addEventListener('selectionchange', handleSelectionChange);
 
       if (CAN_USE_BEFORE_INPUT) {
         target.addEventListener('beforeinput', handleNativeBeforeInput);
       } else {
         target.addEventListener('paste', handlePaste);
-        target.addEventListener('cut', handleCut);
         target.addEventListener('drop', handleDrop);
         target.addEventListener('dragstart', handleDragStart);
       }
@@ -402,13 +483,14 @@ export function useEditorInputEvents<T>(
         target.removeEventListener('keydown', handleKeyDown);
         target.removeEventListener('compositionstart', handleCompositionStart);
         target.removeEventListener('compositionend', handleCompositionEnd);
+        target.removeEventListener('cut', handleCut);
+        target.removeEventListener('copy', handleCopy);
         document.removeEventListener('selectionchange', handleSelectionChange);
 
         if (CAN_USE_BEFORE_INPUT) {
           target.removeEventListener('beforeinput', handleNativeBeforeInput);
         } else {
           target.removeEventListener('paste', handlePaste);
-          target.removeEventListener('cut', handleCut);
           target.removeEventListener('drop', handleDrop);
           target.removeEventListener('dragstart', handleDragStart);
         }
@@ -425,6 +507,7 @@ export function useEditorInputEvents<T>(
     handleSelectionChange,
     handleDrop,
     handleDragStart,
+    handleCopy,
   ]);
 
   return CAN_USE_BEFORE_INPUT

@@ -2,8 +2,8 @@
 
 import type {RootNode} from './OutlineRootNode';
 import type {OutlineEditor} from './OutlineEditor';
-import {Selection} from './OutlineSelection';
 import type {Node, NodeKey} from './OutlineNode';
+import type {Selection} from './OutlineSelection';
 
 import {reconcileViewModel} from './OutlineReconciler';
 import {getSelection} from './OutlineSelection';

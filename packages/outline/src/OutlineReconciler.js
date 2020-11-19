@@ -397,7 +397,7 @@ function reconcileRoot(
   activePrevNodeMap = prevViewModel.nodeMap;
   activeNextNodeMap = nextViewModel.nodeMap;
   activeViewModelIsHistoric = nextViewModel.isHistoric;
-  reconcileNode('root', null);
+  reconcileNode('#root', null);
   // We don't want a bunch of void checks throughout the scope
   // so instead we make it seem that these values are always set.
   // We also want to make sure we clear them down, otherwise we

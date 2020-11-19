@@ -226,6 +226,15 @@ export class TextNode extends Node {
     this._flags = HAS_DIRECTION;
     this._url = null;
   }
+  static parse(
+    // $FlowFixMe: TODO: refine
+    data: Object,
+  ): TextNode {
+    const textNode = new TextNode(data._text);
+    textNode._flags = data._flags;
+    textNode._url = data._url;
+    return textNode;
+  }
   clone(): TextNode {
     const clone = new TextNode(this._text, this._key);
     clone._parent = this._parent;

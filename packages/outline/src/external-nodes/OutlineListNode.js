@@ -15,6 +15,14 @@ export class ListNode extends BlockNode {
     this._tag = tag;
     this._type = 'list';
   }
+  static parse(
+    // $FlowFixMe: TODO: refine
+    data: Object,
+  ): ListNode {
+    const header = new ListNode(data._tag);
+    header._flags = data._flags;
+    return header;
+  }
   clone(): ListNode {
     const clone = new ListNode(this._tag, this._key);
     clone._children = [...this._children];

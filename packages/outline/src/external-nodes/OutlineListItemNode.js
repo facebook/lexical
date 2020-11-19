@@ -11,6 +11,14 @@ export class ListItemNode extends BlockNode {
     super(key);
     this._type = 'listitem';
   }
+  static parse(
+    // $FlowFixMe: TODO: refine
+    data: Object,
+  ): ListItemNode {
+    const header = new ListItemNode();
+    header._flags = data._flags;
+    return header;
+  }
   clone(): ListItemNode {
     const clone = new ListItemNode(this._key);
     clone._children = [...this._children];

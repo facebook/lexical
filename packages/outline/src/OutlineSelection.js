@@ -1,6 +1,6 @@
 // @flow strict
 
-import type {Node as OutlineNode, NodeKey} from './OutlineNode';
+import type {Node as OutlineNode, NodeKey, NodeTree} from './OutlineNode';
 import type {ViewModel} from './OutlineView';
 
 import {getActiveViewModel} from './OutlineView';
@@ -14,6 +14,7 @@ import {
   HeaderNode,
   ListNode,
   ListItemNode,
+  RootNode,
   TextNode,
 } from '.';
 import {invariant} from './OutlineUtils';
@@ -104,6 +105,23 @@ export class Selection {
       return [anchorNode];
     }
     return anchorNode.getNodesBetween(focusNode);
+  }
+  getNodeTree(): NodeTree {
+    const anchorNode = this.getAnchorNode();
+    const nodes = this.getNodes();
+    const nodeMap = {};
+    let commonAncestor = anchorNode;
+    for (let i = 0; i < nodes.length; i++) {
+      const node = nodes[i];
+      nodeMap[node._key] = node.getLatest();
+      if (node instanceof BlockNode) {
+        const nextCommonAncestor = node.getCommonAncestor(commonAncestor);
+        if (nextCommonAncestor !== null) {
+          commonAncestor = nextCommonAncestor;
+        }
+      }
+    }
+    return {root: commonAncestor, nodeMap};
   }
   formatText(formatType: 0 | 1 | 2 | 3 | 4 | 5, forceFormat?: boolean): void {
     const selectedNodes = this.getNodes();
@@ -486,6 +504,68 @@ export class Selection {
   }
   removeText(): void {
     this.insertText('');
+  }
+  insertNode(node: OutlineNode): void {
+    if (!this.isCaret()) {
+      this.removeText();
+    }
+    const anchorOffset = this.anchorOffset;
+    const anchorNode = this.getAnchorNode();
+    const textContent = anchorNode.getTextContent();
+    const textContentLength = textContent.length;
+    const currentBlock = anchorNode.getParentBlock();
+
+    if (node instanceof BlockNode) {
+      let target = anchorNode;
+      do {
+        const grandParent = target.getParent();
+        if (grandParent instanceof RootNode) {
+          break;
+        }
+        target = grandParent;
+      } while (target !== null);
+      invariant(target instanceof BlockNode, 'target is not a block');
+      const ancestor = target;
+      if (node instanceof RootNode) {
+        const nodeMap = getActiveViewModel().nodeMap;
+        // We can't use getChildren here or it will reference the real
+        // root;
+        const children = node._children.map((key) => nodeMap[key]);
+        for (let i = 0; i < children.length; i++) {
+          const child = children[i];
+          target.insertAfter(child);
+          target = child;
+        }
+        invariant(target instanceof BlockNode, 'target is not a block');
+        const lastNodeTextNode = target.getLastTextNode();
+        invariant(lastNodeTextNode !== null, 'lastNodeTextNode not found');
+        lastNodeTextNode.select();
+      } else {
+        target.insertAfter(node);
+        const lastNodeTextNode = node.getLastTextNode();
+        invariant(lastNodeTextNode !== null, 'lastNodeTextNode not found');
+        lastNodeTextNode.select();
+      }
+      if (ancestor.getTextContent() === '') {
+        ancestor.remove();
+      }
+    } else if (node instanceof TextNode) {
+      invariant(currentBlock !== null, 'insertNodes: currentBlock not found');
+      if (anchorOffset === 0) {
+        anchorNode.insertBefore(node);
+      } else if (
+        anchorOffset === textContentLength ||
+        anchorNode.isImmutable() ||
+        anchorNode.isImmutable()
+      ) {
+        anchorNode.insertAfter(node);
+      } else {
+        const [, splitNode] = anchorNode.splitText(anchorOffset);
+        splitNode.insertBefore(node);
+      }
+      node.select();
+      currentBlock.normalizeTextNodes(true);
+    }
   }
   insertText(text: string): void {
     const selectedNodes = this.getNodes();
@@ -878,21 +958,36 @@ export class Selection {
     if (anchorKey === null || focusKey === null) {
       throw new Error('Should never happen');
     }
-    const viewModel = getActiveViewModel();
-    this.anchorKey = anchorKey;
-    this.focusKey = focusKey;
-    const nodeMap = viewModel.nodeMap;
-    const anchorNode = nodeMap[anchorKey];
-    const focusNode = nodeMap[focusKey];
+    const [anchorNode, focusNode] = resolveSelectionNodes(anchorKey, focusKey);
     invariant(
       anchorNode instanceof TextNode && focusNode instanceof TextNode,
       'Should never happen',
     );
+    this.anchorKey = anchorNode._key;
+    this.focusKey = focusNode._key;
     this.anchorOffset =
       anchorNode.getTextContent() === '' ? 0 : domRange.startOffset;
     this.focusOffset =
       focusNode.getTextContent() === '' ? 0 : domRange.endOffset;
   }
+}
+
+function resolveSelectionNodes(
+  anchorKey: NodeKey,
+  focusKey: NodeKey,
+): [TextNode | null, TextNode | null] {
+  const viewModel = getActiveViewModel();
+  const nodeMap = viewModel.nodeMap;
+  let anchorNode = nodeMap[anchorKey];
+  let focusNode = nodeMap[focusKey];
+  if (anchorNode instanceof BlockNode) {
+    anchorNode = anchorNode.getFirstTextNode();
+  }
+  if (focusNode instanceof BlockNode) {
+    focusNode = focusNode.getLastTextNode();
+  }
+  // $FlowFixMe: not sure why this doesn't work
+  return [anchorNode, focusNode];
 }
 
 // This is used to make a selection when the existing
@@ -920,11 +1015,11 @@ export function createSelection(
   viewModel: ViewModel,
   editor: OutlineEditor,
 ): null | Selection {
-  const windowSelection: WindowSelection = window.getSelection();
-  const anchorDOM = windowSelection.anchorNode;
-  const focusDOM = windowSelection.focusNode;
-  let anchorOffset = windowSelection.anchorOffset;
-  let focusOffset = windowSelection.focusOffset;
+  const domSelection: WindowSelection = window.getSelection();
+  const anchorDOM = domSelection.anchorNode;
+  const focusDOM = domSelection.focusNode;
+  let anchorOffset = domSelection.anchorOffset;
+  let focusOffset = domSelection.focusOffset;
   let anchorNode: OutlineNode | null = null;
   let focusNode: OutlineNode | null = null;
   let anchorKey: NodeKey | null = null;
@@ -953,22 +1048,9 @@ export function createSelection(
   } else {
     // We try and find the relevant text nodes from the selection.
     // If we can't do this, we return null.
-    const nodeMap = viewModel.nodeMap;
     anchorKey = getNodeKeyFromDOM(anchorDOM);
     focusKey = getNodeKeyFromDOM(focusDOM);
-    anchorNode = nodeMap[anchorKey];
-    focusNode = nodeMap[focusKey];
-    const isBefore = anchorNode.isBefore(focusNode);
-    if (anchorNode instanceof BlockNode) {
-      anchorNode = isBefore
-        ? anchorNode.getFirstTextNode()
-        : anchorNode.getLastTextNode();
-    }
-    if (focusNode instanceof BlockNode) {
-      focusNode = isBefore
-        ? focusNode.getLastTextNode()
-        : focusNode.getFirstTextNode();
-    }
+    [anchorNode, focusNode] = resolveSelectionNodes(anchorKey, focusKey);
     if (anchorNode === null || focusNode === null) {
       return null;
     }

@@ -6,15 +6,18 @@ export class RootNode extends BlockNode {
   _type: 'root';
 
   constructor() {
-    super('root');
+    super('#root');
     this._type = 'root';
+  }
+  static parse(
+    // $FlowFixMe: TODO: refine
+    data: Object,
+  ): RootNode {
+    return new RootNode();
   }
   clone(): RootNode {
     const clone = new RootNode();
     clone._children = [...this._children];
-    clone._parent = this._parent;
-    clone._key = this._key;
-    clone._flags = this._flags;
     return clone;
   }
 

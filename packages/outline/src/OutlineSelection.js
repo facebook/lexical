@@ -1,6 +1,6 @@
 // @flow strict
 
-import type {Node, NodeKey} from './OutlineNode';
+import type {Node as OutlineNode, NodeKey} from './OutlineNode';
 import type {ViewModel} from './OutlineView';
 
 import {getActiveViewModel} from './OutlineView';
@@ -97,7 +97,7 @@ export class Selection {
     );
     return focusNode;
   }
-  getNodes(): Array<Node> {
+  getNodes(): Array<OutlineNode> {
     const anchorNode = this.getAnchorNode();
     const focusNode = this.getFocusNode();
     if (anchorNode === focusNode) {
@@ -849,7 +849,7 @@ export class Selection {
     anchorOffset: number,
     focusKey: NodeKey,
     focusOffset: number,
-  ) {
+  ): void {
     this.anchorOffset = anchorOffset;
     this.focusOffset = focusOffset;
     this.anchorKey = anchorKey;
@@ -859,6 +859,33 @@ export class Selection {
   getTextContent(): string {
     const viewModel = getActiveViewModel();
     return viewModel.root.getTextContent();
+  }
+  applyDOMRange(domRange: {
+    collapsed: boolean,
+    startContainer: Node,
+    endContainer: Node,
+    startOffset: number,
+    endOffset: number,
+  }): void {
+    const anchorKey = getNodeKeyFromDOM(domRange.startContainer);
+    const focusKey = getNodeKeyFromDOM(domRange.endContainer);
+    if (anchorKey === null || focusKey === null) {
+      throw new Error('Should never happen');
+    }
+    const viewModel = getActiveViewModel();
+    this.anchorKey = anchorKey;
+    this.focusKey = focusKey;
+    const nodeMap = viewModel.nodeMap;
+    const anchorNode = nodeMap[anchorKey];
+    const focusNode = nodeMap[focusKey];
+    invariant(
+      anchorNode instanceof TextNode && focusNode instanceof TextNode,
+      'Should never happen',
+    );
+    this.anchorOffset =
+      anchorNode.getTextContent() === '' ? 0 : domRange.startOffset;
+    this.focusOffset =
+      focusNode.getTextContent() === '' ? 0 : domRange.endOffset;
   }
 }
 
@@ -892,8 +919,8 @@ export function createSelection(
   const focusDOM = windowSelection.focusNode;
   let anchorOffset = windowSelection.anchorOffset;
   let focusOffset = windowSelection.focusOffset;
-  let anchorNode: Node | null = null;
-  let focusNode: Node | null = null;
+  let anchorNode: OutlineNode | null = null;
+  let focusNode: OutlineNode | null = null;
   let anchorKey: NodeKey | null = null;
   let focusKey: NodeKey | null = null;
 

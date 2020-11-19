@@ -32,6 +32,11 @@ const FORMAT_LINK = 5;
 
 const zeroWidthString = '\uFEFF';
 
+export type SelectionFragment = {
+  root: Node,
+  nodeMap: {[string]: Node},
+};
+
 function getElementOuterTag(node: TextNode, flags: number): string | null {
   if (flags & IS_CODE) {
     return 'code';

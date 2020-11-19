@@ -1,6 +1,6 @@
 // @flow strict
 
-import type {Node as OutlineNode, NodeKey, NodeTree} from './OutlineNode';
+import type {Node as OutlineNode, NodeKey} from './OutlineNode';
 import type {ViewModel} from './OutlineView';
 
 import {getActiveViewModel} from './OutlineView';
@@ -14,8 +14,8 @@ import {
   HeaderNode,
   ListNode,
   ListItemNode,
-  RootNode,
   TextNode,
+  RootNode,
 } from '.';
 import {invariant} from './OutlineUtils';
 import {OutlineEditor} from './OutlineEditor';
@@ -106,22 +106,78 @@ export class Selection {
     }
     return anchorNode.getNodesBetween(focusNode);
   }
-  getNodeTree(): NodeTree {
+  getNodesInRange(): {range: Array<NodeKey>, nodeMap: {[NodeKey]: Node}} {
     const anchorNode = this.getAnchorNode();
-    const nodes = this.getNodes();
-    const nodeMap = {};
-    let commonAncestor = anchorNode;
-    for (let i = 0; i < nodes.length; i++) {
-      const node = nodes[i];
-      nodeMap[node._key] = node.getLatest();
-      if (node instanceof BlockNode) {
-        const nextCommonAncestor = node.getCommonAncestor(commonAncestor);
-        if (nextCommonAncestor !== null) {
-          commonAncestor = nextCommonAncestor;
-        }
-      }
+    const focusNode = this.getFocusNode();
+    const anchorOffset = this.anchorOffset;
+    const focusOffset = this.focusOffset;
+    let startOffset;
+    let endOffset;
+
+    if (anchorNode === focusNode) {
+      const firstNode = anchorNode.getLatest().clone();
+      invariant(firstNode instanceof TextNode, 'Should never happen');
+      const isBefore = focusOffset > anchorOffset;
+      startOffset = isBefore ? anchorOffset : focusOffset;
+      endOffset = isBefore ? focusOffset : anchorOffset;
+      firstNode._text = firstNode._text.slice(startOffset, endOffset);
+      const key = firstNode._key;
+      return {range: [key], nodeMap: {[key]: firstNode}};
     }
-    return {root: commonAncestor, nodeMap};
+    const nodes = this.getNodes();
+    const isBefore = nodes[0] === this.getAnchorNode();
+    const nodeKeys = [];
+    const nodeMap = {};
+    startOffset = isBefore ? anchorOffset : focusOffset;
+    endOffset = isBefore ? focusOffset : anchorOffset;
+
+    let lastNode = null;
+    const nodesLength = nodes.length;
+    for (let i = 0; i < nodesLength; i++) {
+      let node = nodes[i];
+      if (node instanceof TextNode) {
+        const text = node.getTextContent();
+
+        if (i === 0) {
+          node = node.getLatest().clone();
+          node._text = text.slice(startOffset, text.length);
+        } else if (i === nodesLength - 1) {
+          node = node.getLatest().clone();
+          node._text = text.slice(0, endOffset);
+        }
+      } else if (node.getParent() instanceof RootNode && lastNode !== null) {
+        nodeMap[node._key] = node;
+        node = node.getParent();
+        invariant(
+          node instanceof BlockNode && node === node.getTopParentBlock(),
+          'getNodesInRange: parent block was not top level block',
+        );
+        const lastNodeKey = lastNode._key;
+        if (node._key === lastNodeKey) {
+          continue;
+        }
+        // $FlowFixMe: It's impossible NOT to be a block
+        node = ((node.getLatest().clone(): any): BlockNode);
+        const children = node._children;
+        const index = children.indexOf(lastNodeKey);
+        if (index > -1) {
+          node._children.splice(index, 1);
+        }
+        lastNode = null;
+      }
+      const key = node._key;
+      nodeMap[key] = node;
+
+      if (
+        lastNode === null ||
+        (!node.isParentOf(lastNode) && !lastNode.isParentOf(node))
+      ) {
+        nodeKeys.push(key);
+      }
+
+      lastNode = node;
+    }
+    return {range: nodeKeys, nodeMap};
   }
   formatText(formatType: 0 | 1 | 2 | 3 | 4 | 5, forceFormat?: boolean): void {
     const selectedNodes = this.getNodes();
@@ -505,7 +561,7 @@ export class Selection {
   removeText(): void {
     this.insertText('');
   }
-  insertNode(node: OutlineNode): void {
+  insertNodes(nodes: Array<OutlineNode>): void {
     if (!this.isCaret()) {
       this.removeText();
     }
@@ -513,58 +569,57 @@ export class Selection {
     const anchorNode = this.getAnchorNode();
     const textContent = anchorNode.getTextContent();
     const textContentLength = textContent.length;
-    const currentBlock = anchorNode.getParentBlock();
+    const siblings = [];
+    let target;
 
-    if (node instanceof BlockNode) {
-      let target = anchorNode;
-      do {
-        const grandParent = target.getParent();
-        if (grandParent instanceof RootNode) {
-          break;
-        }
-        target = grandParent;
-      } while (target !== null);
-      invariant(target instanceof BlockNode, 'target is not a block');
-      const ancestor = target;
-      if (node instanceof RootNode) {
-        const nodeMap = getActiveViewModel().nodeMap;
-        // We can't use getChildren here or it will reference the real
-        // root;
-        const children = node._children.map((key) => nodeMap[key]);
-        for (let i = 0; i < children.length; i++) {
-          const child = children[i];
-          target.insertAfter(child);
-          target = child;
-        }
-        invariant(target instanceof BlockNode, 'target is not a block');
-        const lastNodeTextNode = target.getLastTextNode();
-        invariant(lastNodeTextNode !== null, 'lastNodeTextNode not found');
-        lastNodeTextNode.select();
-      } else {
+    if (anchorOffset === 0) {
+      target = createText('');
+      anchorNode.insertBefore(target);
+      siblings.push(anchorNode);
+    } else if (
+      anchorOffset === textContentLength ||
+      anchorNode.isImmutable() ||
+      anchorNode.isSegmented()
+    ) {
+      target = anchorNode;
+    } else {
+      let danglingText;
+      [target, danglingText] = anchorNode.splitText(anchorOffset);
+      siblings.push(danglingText);
+    }
+    const nextSiblings = anchorNode.getNextSiblings();
+    siblings.push(...nextSiblings);
+    const topLevelBlock = anchorNode.getTopParentBlock();
+    invariant(target !== null && topLevelBlock !== null, 'Should never occur');
+
+    for (let i = 0; i < nodes.length; i++) {
+      const node = nodes[i];
+
+      if (node instanceof TextNode) {
         target.insertAfter(node);
-        const lastNodeTextNode = node.getLastTextNode();
-        invariant(lastNodeTextNode !== null, 'lastNodeTextNode not found');
-        lastNodeTextNode.select();
-      }
-      if (ancestor.getTextContent() === '') {
-        ancestor.remove();
-      }
-    } else if (node instanceof TextNode) {
-      invariant(currentBlock !== null, 'insertNodes: currentBlock not found');
-      if (anchorOffset === 0) {
-        anchorNode.insertBefore(node);
-      } else if (
-        anchorOffset === textContentLength ||
-        anchorNode.isImmutable() ||
-        anchorNode.isImmutable()
-      ) {
-        anchorNode.insertAfter(node);
+        target = node;
       } else {
-        const [, splitNode] = anchorNode.splitText(anchorOffset);
-        splitNode.insertBefore(node);
+        if (target instanceof TextNode) {
+          target = topLevelBlock;
+        }
+        target.insertAfter(node);
+        target = node;
       }
-      node.select();
-      currentBlock.normalizeTextNodes(true);
+    }
+    if (target instanceof BlockNode) {
+      const lastChild = target.getLastTextNode();
+      invariant(lastChild instanceof TextNode, 'Should never happen');
+      lastChild.select();
+      if (siblings.length !== 0) {
+        let prevSibling = lastChild;
+        for (let i = 0; i < siblings.length; i++) {
+          const sibling = siblings[i];
+          prevSibling.insertAfter(sibling);
+          prevSibling = sibling;
+        }
+      }
+    } else if (target instanceof TextNode) {
+      target.select();
     }
   }
   insertText(text: string): void {
@@ -618,13 +673,31 @@ export class Selection {
         text,
         true,
       );
+      const lastNodeTextLength = lastNode.getTextContent().length;
+      let lastNodeRemove = false;
+      let firstNodeRemove = false;
 
       if (!lastNode.isParentOf(firstNode)) {
-        lastNode.remove();
+        if (endOffset === lastNodeTextLength) {
+          lastNodeRemove = true;
+          lastNode.remove();
+        } else if (lastNode instanceof TextNode) {
+          lastNode.spliceText(0, endOffset, '', false);
+          if (firstNode.getTextContent() === '') {
+            firstNodeRemove = true;
+            firstNode.remove();
+            lastNode.select(0, 0);
+          } else {
+            firstNode.insertAfter(lastNode);
+          }
+        }
       }
       for (let i = 1; i < lastIndex; i++) {
         const selectedNode = selectedNodes[i];
-        if (!selectedNode.isParentOf(firstNode)) {
+        if (
+          (firstNodeRemove || !selectedNode.isParentOf(firstNode)) &&
+          (lastNodeRemove || !selectedNode.isParentOf(lastNode))
+        ) {
           selectedNode.remove();
         }
       }
@@ -975,7 +1048,7 @@ export class Selection {
 function resolveSelectionNodes(
   anchorKey: NodeKey,
   focusKey: NodeKey,
-): [TextNode | null, TextNode | null] {
+): [TextNode | null, TextNode | null, number] {
   const viewModel = getActiveViewModel();
   const nodeMap = viewModel.nodeMap;
   let anchorNode = nodeMap[anchorKey];

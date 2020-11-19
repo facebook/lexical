@@ -57,24 +57,24 @@ describe('OutlineEditor tests', () => {
     });
 
     expect(root).toEqual({
-      _children: ['0'],
+      _children: ['#0'],
       _flags: 0,
-      _key: 'root',
+      _key: '#root',
       _parent: null,
       _type: 'root',
     });
     expect(paragraph).toEqual({
-      _children: ['1'],
+      _children: ['#1'],
       _flags: 4,
-      _key: '0',
-      _parent: 'root',
+      _key: '#0',
+      _parent: '#root',
       _type: 'paragraph',
     });
     expect(text).toEqual({
       _text: '',
       _flags: 4,
-      _key: '1',
-      _parent: '0',
+      _key: '#1',
+      _parent: '#0',
       _type: 'text',
       _url: null,
     });

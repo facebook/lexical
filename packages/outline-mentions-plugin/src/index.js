@@ -232,7 +232,7 @@ function MentionsTypeahead({
             updateSelectedIndex(selectedIndex + 1);
           }
           event.preventDefault();
-          event.stopPropagation();
+          event.stopImmediatePropagation();
         }
       },
       ArrowUp(event, view) {
@@ -241,7 +241,7 @@ function MentionsTypeahead({
             updateSelectedIndex(selectedIndex - 1);
           }
           event.preventDefault();
-          event.stopPropagation();
+          event.stopImmediatePropagation();
         }
       },
       Escape(event, view) {
@@ -249,21 +249,21 @@ function MentionsTypeahead({
           return;
         }
         event.preventDefault();
-        event.stopPropagation();
+        event.stopImmediatePropagation();
       },
       Tab(event, view) {
         if (results === null || selectedIndex === null) {
           return;
         }
         event.preventDefault();
-        event.stopPropagation();
+        event.stopImmediatePropagation();
       },
       Enter(event, view) {
         if (results === null || selectedIndex === null) {
           return;
         }
         event.preventDefault();
-        event.stopPropagation();
+        event.stopImmediatePropagation();
         applyCurrentSelected();
       },
     });
@@ -430,6 +430,9 @@ export function useMentionsPlugin(editor: OutlineEditor | null): React$Node {
   const onKeyDown = useCallback(
     (event, view) => {
       const key = event.key;
+      if (registeredKeys.size > 0) {
+        console.log('woop');
+      }
       registeredKeys.forEach((registeredKeyMap) => {
         const controlFunction = registeredKeyMap[key];
         if (typeof controlFunction === 'function') {

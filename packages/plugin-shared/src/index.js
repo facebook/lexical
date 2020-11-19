@@ -86,27 +86,6 @@ export function onFocusIn(event: FocusEvent, view: ViewType) {
   }
 }
 
-export function insertFromDataTransfer(
-  dataTransfer: DataTransfer,
-  editor: OutlineEditor,
-): void {
-  const items = dataTransfer.items;
-  for (let i = 0; i < items.length; i++) {
-    const item = items[i];
-    if (item.kind === 'string' && item.type === 'text/plain') {
-      item.getAsString((text) => {
-        editor.update((view) => {
-          const selection = view.getSelection();
-          if (selection !== null) {
-            selection.insertText(text);
-          }
-        });
-      });
-      break;
-    }
-  }
-}
-
 function onCompositionStart(
   event: CompositionEvent,
   view: ViewType,
@@ -190,9 +169,13 @@ function onPastePolyfill(
   editor: OutlineEditor,
 ): void {
   event.preventDefault();
+  const selection = view.getSelection();
   const clipboardData = event.clipboardData;
-  if (clipboardData != null) {
-    insertFromDataTransfer(clipboardData, editor);
+  if (clipboardData != null && selection !== null) {
+    const text = clipboardData.getData('text/plain');
+    if (text != null) {
+      selection.insertText(text);
+    }
   }
 }
 
@@ -211,6 +194,26 @@ function onCutPolyfill(
     }
     selection.removeText();
   }
+}
+
+function onDropPolyfill(
+  event: ClipboardEvent,
+  view: ViewType,
+  state: UnknownState,
+  editor: OutlineEditor,
+) {
+  // TODO
+  event.preventDefault();
+}
+
+function onDragStartPolyfill(
+  event: ClipboardEvent,
+  view: ViewType,
+  state: UnknownState,
+  editor: OutlineEditor,
+) {
+  // TODO: seems to be only FF that supports dragging content
+  event.preventDefault();
 }
 
 function onPolyfilledBeforeInput(
@@ -295,7 +298,10 @@ function onNativeBeforeInput(
       // $FlowFixMe: Flow doesn't know about the dataTransfer field
       const dataTransfer = event.dataTransfer;
       if (dataTransfer != null) {
-        insertFromDataTransfer(dataTransfer, editor);
+        const text = dataTransfer.getData('text/plain');
+        if (text != null) {
+          selection.insertText(text);
+        }
       }
       break;
     }
@@ -355,6 +361,12 @@ export function useEditorInputEvents<T>(
   const handleKeyDown = useEventWrapper(onKeyDown, editor, stateRef);
   const handlePaste = useEventWrapper(onPastePolyfill, editor, stateRef);
   const handleCut = useEventWrapper(onCutPolyfill, editor, stateRef);
+  const handleDrop = useEventWrapper(onDropPolyfill, editor, stateRef);
+  const handleDragStart = useEventWrapper(
+    onDragStartPolyfill,
+    editor,
+    stateRef,
+  );
   const handleCompositionStart = useEventWrapper(
     onCompositionStart,
     editor,
@@ -383,6 +395,8 @@ export function useEditorInputEvents<T>(
       } else {
         target.addEventListener('paste', handlePaste);
         target.addEventListener('cut', handleCut);
+        target.addEventListener('drop', handleDrop);
+        target.addEventListener('dragstart', handleDragStart);
       }
       return () => {
         target.removeEventListener('keydown', handleKeyDown);
@@ -395,6 +409,8 @@ export function useEditorInputEvents<T>(
         } else {
           target.removeEventListener('paste', handlePaste);
           target.removeEventListener('cut', handleCut);
+          target.removeEventListener('drop', handleDrop);
+          target.removeEventListener('dragstart', handleDragStart);
         }
       };
     }
@@ -407,6 +423,8 @@ export function useEditorInputEvents<T>(
     handleNativeBeforeInput,
     handlePaste,
     handleSelectionChange,
+    handleDrop,
+    handleDragStart,
   ]);
 
   return CAN_USE_BEFORE_INPUT

@@ -6,6 +6,11 @@ import {createText, RootNode, BlockNode, TextNode} from '.';
 import {getActiveViewModel, shouldErrorOnReadOnly} from './OutlineView';
 import {invariant} from './OutlineUtils';
 
+export type NodeTree = {
+  root: Node,
+  nodeMap: {[string]: Node},
+};
+
 export const IS_IMMUTABLE = 1;
 export const IS_SEGMENTED = 1 << 1;
 export const HAS_DIRECTION = 1 << 2;
@@ -16,10 +21,25 @@ function generateKey(node: Node): NodeKey {
   shouldErrorOnReadOnly();
   const viewModel = getActiveViewModel();
   const dirtyNodes = viewModel.dirtyNodes;
-  const key = nodeKeyCounter++ + '';
+  const key = '#' + nodeKeyCounter++;
   viewModel.nodeMap[key] = node;
   dirtyNodes.add(key);
   return key;
+}
+
+function makeNodeAsDirty(node: Node): void {
+  const latest = node.getLatest();
+  const viewModel = getActiveViewModel();
+  const dirtyNodes = viewModel.dirtyNodes;
+  dirtyNodes.add(latest._key);
+  if (latest instanceof BlockNode) {
+    const children = latest.getChildren();
+    for (let i = 0; i < children.length; i++) {
+      const child = children[i];
+      dirtyNodes.add(child._key);
+      makeNodeAsDirty(child);
+    }
+  }
 }
 
 function removeNode(nodeToRemove: Node): void {
@@ -36,6 +56,7 @@ function removeNode(nodeToRemove: Node): void {
   }
   const writableNodeToRemove = getWritableNode(nodeToRemove);
   writableNodeToRemove._parent = null;
+  makeNodeAsDirty(writableNodeToRemove);
 }
 
 function replaceNode<N: Node>(toReplace: Node, replaceWith: N): N {
@@ -94,6 +115,15 @@ export class Node {
   _flags: number;
   _key: NodeKey;
   _parent: null | NodeKey;
+
+  static parse(
+    // $FlowFixMe: TODO: refine
+    data: Object,
+  ): Node {
+    throw new Error(
+      `Node type ${this.constructor.name} does not implement .parse().`,
+    );
+  }
 
   clone(): Node {
     // Flow doesn't support abstract classes unfortunatley, so we can't _force_
@@ -439,6 +469,8 @@ export class Node {
     const index = children.indexOf(writableSelf._key);
     if (index > -1) {
       children.splice(index + 1, 0, insertKey);
+    } else {
+      children.push(insertKey);
     }
     return writableSelf;
   }
@@ -463,6 +495,8 @@ export class Node {
     const index = children.indexOf(writableSelf._key);
     if (index > -1) {
       children.splice(index, 0, insertKey);
+    } else {
+      children.push(insertKey);
     }
     return writableSelf;
   }

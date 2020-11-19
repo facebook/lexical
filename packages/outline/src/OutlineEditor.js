@@ -4,7 +4,15 @@ import type {ViewType} from './OutlineView';
 import type {Node, NodeKey} from './OutlineNode';
 
 import {useEffect, useState} from 'react';
-import {createRoot, RootNode, TextNode, ParagraphNode} from '.';
+import {
+  createRoot,
+  RootNode,
+  TextNode,
+  ParagraphNode,
+  HeaderNode,
+  ListNode,
+  ListItemNode,
+} from '.';
 import {
   applyTextTransforms,
   cloneViewModel,
@@ -19,9 +27,9 @@ import {createSelection} from './OutlineSelection';
 function createOutlineEditor(editorElement): OutlineEditor {
   const root = createRoot();
   const viewModel = new ViewModel(root);
-  viewModel.nodeMap.root = root;
+  viewModel.nodeMap['#root'] = root;
   const editor = new OutlineEditor(editorElement, viewModel);
-  editor._keyToDOMMap.set('root', editorElement);
+  editor._keyToDOMMap.set('#root', editorElement);
   return editor;
 }
 
@@ -57,6 +65,9 @@ export class OutlineEditor {
       ['text', TextNode],
       ['root', RootNode],
       ['paragraph', ParagraphNode],
+      ['header', HeaderNode],
+      ['list', ListNode],
+      ['listitem', ListItemNode],
     ]);
   }
   isComposing(): boolean {

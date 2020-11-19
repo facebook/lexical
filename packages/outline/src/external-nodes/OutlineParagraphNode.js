@@ -11,6 +11,14 @@ export class ParagraphNode extends BlockNode {
     super(key);
     this._type = 'paragraph';
   }
+  static parse(
+    // $FlowFixMe: TODO: refine
+    data: Object,
+  ): ParagraphNode {
+    const header = new ParagraphNode();
+    header._flags = data._flags;
+    return header;
+  }
   clone(): ParagraphNode {
     const clone = new ParagraphNode(this._key);
     clone._children = [...this._children];

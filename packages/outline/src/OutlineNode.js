@@ -195,7 +195,7 @@ export class Node {
       if (parent instanceof RootNode && node instanceof BlockNode) {
         return node;
       }
-      node = node.getParent();
+      node = parent;
     }
     return null;
   }

@@ -125,16 +125,24 @@ export class Selection {
       return {range: [key], nodeMap: {[key]: firstNode}};
     }
     const nodes = this.getNodes();
-    const isBefore = nodes[0] === this.getAnchorNode();
+    const firstNode = nodes[0];
+    const isBefore = firstNode === this.getAnchorNode();
     const nodeKeys = [];
     const nodeMap = {};
     startOffset = isBefore ? anchorOffset : focusOffset;
     endOffset = isBefore ? focusOffset : anchorOffset;
 
-    let lastNode = null;
     const nodesLength = nodes.length;
+    const sourceParent = firstNode.getParent();
+    invariant(sourceParent !== null, 'Should not be possible');
+    const sourceParentKey = sourceParent._key;
+    const topLevelNodeKeys = new Set();
+
     for (let i = 0; i < nodesLength; i++) {
       let node = nodes[i];
+      const parent = node.getParent();
+      const nodeKey = node._key;
+
       if (node instanceof TextNode) {
         const text = node.getTextContent();
 
@@ -145,37 +153,58 @@ export class Selection {
           node = node.getLatest().clone();
           node._text = text.slice(0, endOffset);
         }
-      } else if (node.getParent() instanceof RootNode && lastNode !== null) {
-        nodeMap[node._key] = node;
-        node = node.getParent();
-        invariant(
-          node instanceof BlockNode && node === node.getTopParentBlock(),
-          'getNodesInRange: parent block was not top level block',
-        );
-        const lastNodeKey = lastNode._key;
-        if (node._key === lastNodeKey) {
-          continue;
-        }
-        // $FlowFixMe: It's impossible NOT to be a block
-        node = ((node.getLatest().clone(): any): BlockNode);
-        const children = node._children;
-        const index = children.indexOf(lastNodeKey);
-        if (index > -1) {
-          node._children.splice(index, 1);
-        }
-        lastNode = null;
-      }
-      const key = node._key;
-      nodeMap[key] = node;
-
-      if (
-        lastNode === null ||
-        (!node.isParentOf(lastNode) && !lastNode.isParentOf(node))
-      ) {
-        nodeKeys.push(key);
       }
 
-      lastNode = node;
+      if (nodeMap[nodeKey] === undefined) {
+        nodeMap[nodeKey] = node;
+      }
+
+      if (parent === sourceParent && parent !== null) {
+        nodeKeys.push(nodeKey);
+
+        const topLevelBlock = node.getTopParentBlock();
+        invariant(topLevelBlock !== null, 'Should not happen');
+        topLevelNodeKeys.add(topLevelBlock._key);
+      } else {
+        let includeTopLevelBlock = false;
+
+        if (!(parent instanceof RootNode)) {
+          let removeChildren = false;
+
+          while (node !== null) {
+            const currKey = node._key;
+            if (currKey === sourceParentKey) {
+              removeChildren = true;
+            } else if (removeChildren) {
+              // We need to remove any children before out last source
+              // parent key.
+              node = node.getLatest().clone();
+              invariant(node instanceof BlockNode, 'Should not happen');
+              const childrenKeys = node._children;
+              const index = childrenKeys.indexOf(sourceParentKey);
+              invariant(index !== -1, 'Should not happen');
+              childrenKeys.splice(0, index + 1);
+              includeTopLevelBlock = true;
+            }
+            if (nodeMap[currKey] === undefined) {
+              nodeMap[currKey] = node;
+            }
+
+            const nextParent = node.getParent();
+            if (nextParent instanceof RootNode) {
+              break;
+            }
+            node = nextParent;
+          }
+        }
+        if (node !== null) {
+          const key = node._key;
+          if (!topLevelNodeKeys.has(key) || includeTopLevelBlock) {
+            topLevelNodeKeys.add(key);
+            nodeKeys.push(key);
+          }
+        }
+      }
     }
     return {range: nodeKeys, nodeMap};
   }

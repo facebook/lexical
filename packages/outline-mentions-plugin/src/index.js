@@ -476,6 +476,12 @@ class MentionNode extends TextNode {
     // $FlowFixMe: this is a mention type
     this._type = 'mention';
   }
+  // $FlowFixMe: TODO
+  static parse(data: Object): MentionNode {
+    const emoji = new MentionNode(data._mention);
+    emoji._flags = data._flags;
+    return emoji;
+  }
   clone() {
     const clone = new MentionNode(this._mention, this._key);
     clone._parent = this._parent;

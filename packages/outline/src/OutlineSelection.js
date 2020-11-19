@@ -857,8 +857,14 @@ export class Selection {
     this.isDirty = true;
   }
   getTextContent(): string {
-    const viewModel = getActiveViewModel();
-    return viewModel.root.getTextContent();
+    const nodes = this.getNodes();
+    let textContent = '';
+    nodes.forEach((node) => {
+      if (node instanceof TextNode) {
+        textContent += node.getTextContent();
+      }
+    });
+    return textContent;
   }
   applyDOMRange(domRange: {
     collapsed: boolean,
@@ -937,10 +943,9 @@ export function createSelection(
     const root = viewModel.root;
     anchorNode = root.getFirstTextNode();
     focusNode = root.getLastTextNode();
-    invariant(
-      anchorNode !== null && focusNode !== null,
-      'getSelection: anchorNode/focusNode not found',
-    );
+    if (anchorNode === null || focusNode === null) {
+      return null;
+    }
     anchorKey = anchorNode._key;
     focusKey = focusNode._key;
     anchorOffset = 0;

@@ -6,11 +6,6 @@ import {createText, RootNode, BlockNode, TextNode} from '.';
 import {getActiveViewModel, shouldErrorOnReadOnly} from './OutlineView';
 import {invariant} from './OutlineUtils';
 
-export type NodeTree = {
-  root: Node,
-  nodeMap: {[string]: Node},
-};
-
 export const IS_IMMUTABLE = 1;
 export const IS_SEGMENTED = 1 << 1;
 export const HAS_DIRECTION = 1 << 2;
@@ -112,6 +107,8 @@ function wrapInTextNodes<N: Node>(node: N): N {
 export type NodeKey = string;
 
 export class Node {
+  // $FlowFixMe: TODO
+  _type: any;
   _flags: number;
   _key: NodeKey;
   _parent: null | NodeKey;
@@ -137,6 +134,7 @@ export class Node {
   }
 
   constructor(key?: string) {
+    this._type = 'node';
     this._flags = 0;
     this._key = key || generateKey(this);
     this._parent = null;
@@ -144,6 +142,9 @@ export class Node {
 
   // Getters and Traversors
 
+  getType(): string {
+    return this._type;
+  }
   isAttached(): boolean {
     const parentKey = this._parent;
     if (parentKey === null) {
@@ -181,6 +182,17 @@ export class Node {
     let node = this;
     while (node !== null) {
       if (node instanceof BlockNode) {
+        return node;
+      }
+      node = node.getParent();
+    }
+    return null;
+  }
+  getTopParentBlock(): BlockNode | null {
+    let node = this;
+    while (node !== null) {
+      const parent = node.getParent();
+      if (parent instanceof RootNode && node instanceof BlockNode) {
         return node;
       }
       node = node.getParent();

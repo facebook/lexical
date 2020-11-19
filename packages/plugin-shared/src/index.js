@@ -1,6 +1,6 @@
 // @flow strict-local
 
-import type {Node, Selection} from 'outline';
+import type {Node, NodeKey, Selection} from 'outline';
 
 import {useCallback, useEffect} from 'react';
 import {BlockNode, createParagraph, createText} from 'outline';
@@ -236,7 +236,7 @@ function onCopy(
   if (selection !== null) {
     if (clipboardData != null) {
       const domSelection = window.getSelection();
-      const range = domSelection.getRangeAt(0)
+      const range = domSelection.getRangeAt(0);
       if (range) {
         const container = document.createElement('div');
         const frag = range.cloneContents();
@@ -246,39 +246,52 @@ function onCopy(
       clipboardData.setData('text/plain', selection.getTextContent());
       clipboardData.setData(
         'application/x-outline-nodes',
-        JSON.stringify(selection.getNodeTree()),
+        JSON.stringify(selection.getNodesInRange()),
       );
     }
   }
 }
 
 function generateNode(
-  parsedNode,
-  parentKey,
-  parsedNodeMap,
+  key: NodeKey,
+  parentKey: null | NodeKey,
+  nodeMap: {[NodeKey]: Node},
   editor: OutlineEditor,
 ): Node {
-  const type = parsedNode._type;
+  const nodeData = nodeMap[key];
+  const type = nodeData._type;
   const nodeType = editor._registeredNodeTypes.get(type);
   if (nodeType === undefined) {
     throw new Error('generateNode: type "' + type + '" + not found');
   }
-  const node = nodeType.parse(parsedNode);
-  if (parentKey !== '#root') {
-    node._parent = parentKey;
-  }
+  const node = nodeType.parse(nodeData);
+  node._parent = parentKey;
+  const newKey = node._key;
   if (node instanceof BlockNode) {
-    const key = node._key;
-    const parsedChildren = parsedNode._children;
-    for (let i = 0; i < parsedChildren.length; i++) {
-      const parsedChild = parsedNodeMap[parsedChildren[i]];
-      if (parsedChild !== undefined) {
-        const child = generateNode(parsedChild, key, parsedNodeMap, editor);
-        node._children.push(child._key);
-      }
+    // $FlowFixMe: valid code
+    const children = nodeData._children;
+    for (let i = 0; i < children.length; i++) {
+      const childKey = children[i];
+      const child = generateNode(childKey, newKey, nodeMap, editor);
+      const newChildKey = child._key;
+      node._children.push(newChildKey);
     }
   }
   return node;
+}
+
+function generateNodes(
+  nodeRange: {range: Array<NodeKey>, nodeMap: {[NodeKey]: Node}},
+  editor: OutlineEditor,
+): Array<Node> {
+  const {range, nodeMap} = nodeRange;
+  const nodes = [];
+  for (let i = 0; i < range.length; i++) {
+    const key = range[i];
+    const node = generateNode(key, null, nodeMap, editor);
+    nodes.push(node);
+  }
+  return nodes;
 }
 
 function insertDataTransfer(
@@ -294,14 +307,9 @@ function insertDataTransfer(
     );
 
     if (outlineNodesString) {
-      const parsedNodeTree = JSON.parse(outlineNodesString);
-      const node = generateNode(
-        parsedNodeTree.root,
-        null,
-        parsedNodeTree.nodeMap,
-        editor,
-      );
-      selection.insertNode(node);
+      const nodeRange = JSON.parse(outlineNodesString);
+      const nodes = generateNodes(nodeRange, editor);
+      selection.insertNodes(nodes);
       return;
     }
   }

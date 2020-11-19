@@ -36,23 +36,21 @@ describe('OutlineEditor tests', () => {
     });
   }
 
-  test('draft + read works', () => {
-    // Draft some content to the editor
-    const viewModel = editor.draft((view) => {
+  test('update + read works', () => {
+    // Update editor view
+    editor.update((view) => {
       const paragraph = Outline.createParagraph();
       const text = Outline.createText();
       paragraph.append(text);
       view.getRoot().append(paragraph);
-    });
-    // Update editor view
-    editor.update(viewModel, true);
+    }, true);
 
     let root = null;
     let paragraph = null;
     let text = null;
 
     // Read editor model
-    editor.read((view) => {
+    editor.getViewModel().read((view) => {
       root = view.getRoot();
       paragraph = root.getFirstChild();
       text = paragraph.getFirstChild();

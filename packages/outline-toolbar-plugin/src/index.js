@@ -162,7 +162,7 @@ function Toolbar({editor}: {editor: null | OutlineEditor}): React$Node {
 
   useEffect(() => {
     if (editor !== null) {
-      editor.read((view) => {
+      editor.getViewModel().read((view) => {
         const selection = view.getSelection();
         moveToolbar(selection);
       });
@@ -187,14 +187,14 @@ function Toolbar({editor}: {editor: null | OutlineEditor}): React$Node {
       };
 
       const selectionChangeHandler = () => {
-        editor.read((view) => {
+        editor.getViewModel().read((view) => {
           const selection = view.getSelection();
           updateButtonStates(selection);
           moveToolbar(selection);
         });
       };
       const checkForChanges = () => {
-        editor.read((view) => {
+        editor.getViewModel().read((view) => {
           const selection = view.getSelection();
           updateButtonStates(selection);
           moveToolbar(selection);
@@ -206,9 +206,8 @@ function Toolbar({editor}: {editor: null | OutlineEditor}): React$Node {
       const mouseUpHandler = () => {
         mouseDownRef.current = false;
         if (editor !== null) {
-          editor.read((view) => {
+          editor.getViewModel().read((view) => {
             const selection = view.getSelection();
-            console.log(selection);
             moveToolbar(selection);
           });
         }
@@ -233,7 +232,7 @@ function Toolbar({editor}: {editor: null | OutlineEditor}): React$Node {
   const updateSelectedLinks = useCallback(
     (url: null | string, selection: null | Selection) => {
       if (editor !== null) {
-        const viewModel = editor.draft((view) => {
+        editor.update((view) => {
           if (selection !== null) {
             view.setSelection(selection);
           }
@@ -250,9 +249,6 @@ function Toolbar({editor}: {editor: null | OutlineEditor}): React$Node {
             }
           }
         });
-        if (!editor.isUpdating()) {
-          editor.update(viewModel, true);
-        }
       }
     },
     [editor],
@@ -261,15 +257,12 @@ function Toolbar({editor}: {editor: null | OutlineEditor}): React$Node {
   const formatText = useCallback(
     (formatType: 0 | 1 | 2 | 3 | 4 | 5) => {
       if (editor !== null) {
-        const viewModel = editor.draft((view) => {
+        editor.update((view) => {
           const selection = view.getSelection();
           if (selection !== null) {
             selection.formatText(formatType);
           }
         });
-        if (!editor.isUpdating()) {
-          editor.update(viewModel, true);
-        }
       }
     },
     [editor],

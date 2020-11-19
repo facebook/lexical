@@ -33,7 +33,7 @@ export default function Editor({onChange, isReadOnly}: Props): React$Node {
   // Set the initial state
   useEffect(() => {
     if (outlineEditor !== null) {
-      onChange(outlineEditor.getCurrentViewModel());
+      onChange(outlineEditor.getViewModel());
     }
   }, [outlineEditor, onChange]);
 

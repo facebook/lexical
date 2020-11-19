@@ -97,7 +97,7 @@ export function useHistoryPlugin(editor: null | OutlineEditor): void {
             const viewModel = undoStack.pop();
             historyState.current = viewModel;
             viewModel.isHistoric = true;
-            editor.update(viewModel);
+            editor.setViewModel(viewModel);
           }
         } else if (isRedo(event)) {
           if (redoStack.length !== 0) {
@@ -109,7 +109,7 @@ export function useHistoryPlugin(editor: null | OutlineEditor): void {
             const viewModel = redoStack.pop();
             historyState.current = viewModel;
             viewModel.isHistoric = true;
-            editor.update(viewModel);
+            editor.setViewModel(viewModel);
           }
         }
       };

@@ -6,12 +6,15 @@ import type {Node, NodeKey} from './OutlineNode';
 import {useEffect, useState} from 'react';
 import {createRoot, RootNode, TextNode, ParagraphNode} from '.';
 import {
-  draftViewModel,
-  readViewModel,
-  updateViewModel,
+  applyTextTransforms,
+  cloneViewModel,
+  enterViewModelScope,
+  garbageCollectDetachedNodes,
+  viewModelHasDirtySelection,
   ViewModel,
+  updateViewModel,
 } from './OutlineView';
-import {invariant} from './OutlineUtils';
+import {createSelection} from './OutlineSelection';
 
 function createOutlineEditor(editorElement): OutlineEditor {
   const root = createRoot();
@@ -27,7 +30,7 @@ export type onChangeType = (viewModel: ViewModel) => void;
 export class OutlineEditor {
   _editorElement: HTMLElement;
   _viewModel: ViewModel;
-  _isUpdating: boolean;
+  _pendingViewModel: null | ViewModel;
   _isComposing: boolean;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _updateListeners: Set<onChangeType>;
@@ -40,7 +43,7 @@ export class OutlineEditor {
     // The current view model
     this._viewModel = viewModel;
     // Handling of drafts and updates
-    this._isUpdating = false;
+    this._pendingViewModel = null;
     // Used to help co-ordinate events through plugins
     this._isComposing = false;
     // Used during reconcilation
@@ -82,9 +85,6 @@ export class OutlineEditor {
       this._textTransforms.delete(transformFn);
     };
   }
-  isUpdating(): boolean {
-    return this._isUpdating;
-  }
   getEditorElement(): HTMLElement {
     return this._editorElement;
   }
@@ -95,29 +95,55 @@ export class OutlineEditor {
     }
     return element;
   }
-  getCurrentViewModel(): ViewModel {
+  getViewModel(): ViewModel {
     return this._viewModel;
   }
-  draft(callbackFn: (view: ViewType) => void): ViewModel {
-    return draftViewModel(this._viewModel, callbackFn, this);
+  setViewModel(viewModel: ViewModel): void {
+    updateViewModel(viewModel, this);
   }
-  read(callbackFn: (view: ViewType) => void): void {
-    readViewModel(this._viewModel, callbackFn, this);
-  }
-  update(viewModel: ViewModel, forceSync?: boolean) {
-    invariant(!this._isUpdating, 'update: cannot proccess a nested update');
-    if (viewModel === this._viewModel) {
-      return;
+  update(callbackFn: (view: ViewType) => void, forceSync?: boolean): boolean {
+    let _pendingViewModel = this._pendingViewModel;
+    let selectionNeedsInitializing = false;
+
+    if (_pendingViewModel === null) {
+      _pendingViewModel = this._pendingViewModel = cloneViewModel(
+        this._viewModel,
+      );
+      selectionNeedsInitializing = true;
+    }
+    const pendingViewModel = _pendingViewModel;
+    enterViewModelScope(
+      (view: ViewType) => {
+        if (selectionNeedsInitializing) {
+          pendingViewModel.selection = createSelection(pendingViewModel, this);
+        }
+        callbackFn(view);
+        if (pendingViewModel.hasDirtyNodes()) {
+          applyTextTransforms(pendingViewModel, this);
+          garbageCollectDetachedNodes(pendingViewModel);
+        }
+      },
+      pendingViewModel,
+      false,
+    );
+    const shouldUpdate =
+      pendingViewModel.hasDirtyNodes() ||
+      viewModelHasDirtySelection(pendingViewModel, this);
+
+    if (!shouldUpdate) {
+      this._pendingViewModel = null;
+      return false;
     }
     if (forceSync) {
-      updateViewModel(viewModel, this);
+      this._pendingViewModel = null;
+      updateViewModel(pendingViewModel, this);
     } else {
-      this._isUpdating = true;
       Promise.resolve().then(() => {
-        this._isUpdating = false;
-        updateViewModel(viewModel, this);
+        this._pendingViewModel = null;
+        updateViewModel(pendingViewModel, this);
       });
     }
+    return true;
   }
 }
 

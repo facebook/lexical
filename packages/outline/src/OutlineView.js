@@ -31,8 +31,9 @@ export function getActiveViewModel(): ViewModel {
   if (activeViewModel === null) {
     throw new Error(
       'Unable to find an active view model. ' +
-        'Editor helpers or node methods can only be used ' +
-        'synchronously during the callback of editor.draft().',
+        'View methods or node methods can only be used ' +
+        'synchronously during the callback of ' +
+        'editor.update() or viewModel.read().',
     );
   }
   return activeViewModel;

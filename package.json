@@ -11,6 +11,7 @@
     "start": "npm run build && npm start --prefix packages/outline-example",
     "build": "node scripts/build.js",
     "build-prod": "node scripts/build.js --prod",
+    "build-www": "node scripts/build.js --prod --www",
     "watch": "node scripts/build.js --watch",
     "flow": "node ./scripts/tasks/flow.js",
     "test": "npm run build && jest",

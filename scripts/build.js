@@ -9,8 +9,14 @@ const closure = require('./plugins/closure-plugin');
 const nodeResolve = require('@rollup/plugin-node-resolve').default;
 const commonjs = require('@rollup/plugin-commonjs');
 
+const license = ` * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.`;
+
 const isWatchMode = argv.watch;
 const isProduction = argv.prod;
+const isWWW = argv.www;
 
 const closureOptions = {
   compilation_level: 'SIMPLE',
@@ -26,7 +32,10 @@ const closureOptions = {
 };
 
 async function build(packageFolder) {
-  if (packageFolder === 'outline-example' || packageFolder === 'plugin-shared') {
+  if (
+    packageFolder === 'outline-example' ||
+    packageFolder === 'plugin-shared'
+  ) {
     return;
   }
   const inputOptions = {
@@ -69,6 +78,20 @@ async function build(packageFolder) {
       }),
       commonjs(),
       isProduction && closure(closureOptions),
+      isWWW && {
+        renderChunk(source) {
+          return `/**
+${license}
+  *
+  * @noflow
+  * @nolint
+  * @preventMunge
+  * @preserve-invariant-messages
+  */
+
+${source}`;
+        },
+      },
     ],
   };
   const outputOptions = {

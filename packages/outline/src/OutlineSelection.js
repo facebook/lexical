@@ -959,7 +959,7 @@ export function createSelection(
     focusKey,
     focusOffset,
   );
-  const currentViewModel = editor.getCurrentViewModel();
+  const currentViewModel = editor.getViewModel();
   const currentSelection = currentViewModel.selection;
   if (
     currentSelection !== null &&

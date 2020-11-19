@@ -2,7 +2,7 @@
 
 import type {RootNode} from './OutlineRootNode';
 import type {OutlineEditor} from './OutlineEditor';
-import {createSelection, Selection} from './OutlineSelection';
+import {Selection} from './OutlineSelection';
 import type {Node, NodeKey} from './OutlineNode';
 
 import {reconcileViewModel} from './OutlineReconciler';
@@ -50,41 +50,12 @@ const view: ViewType = {
   },
 };
 
-export function draftViewModel(
-  currentViewModel: ViewModel,
-  callbackFn: (view: ViewType) => void,
-  editor: OutlineEditor,
-): ViewModel {
-  const hasActiveViewModel = activeViewModel !== null;
-  const viewModel: ViewModel = hasActiveViewModel
-    ? getActiveViewModel()
-    : cloneViewModel(currentViewModel);
-  callCallbackWithViewModelScope(
-    (v: ViewType) => {
-      viewModel.selection = createSelection(viewModel, editor);
-      callbackFn(v);
-      if (viewModel.hasDirtyNodes()) {
-        applyTextTransforms(viewModel, editor);
-        garbageCollectDetachedNodes(viewModel);
-      }
-    },
-    viewModel,
-    editor,
-    false,
-  );
-
-  const canUseExistingModel =
-    !viewModel.hasDirtyNodes() &&
-    !viewModelHasDirtySelection(viewModel, editor);
-  return canUseExistingModel ? currentViewModel : viewModel;
-}
-
-function viewModelHasDirtySelection(
+export function viewModelHasDirtySelection(
   viewModel: ViewModel,
   editor: OutlineEditor,
 ): boolean {
   const selection = viewModel.selection;
-  const currentSelection = editor.getCurrentViewModel().selection;
+  const currentSelection = editor.getViewModel().selection;
   if (
     (currentSelection !== null && selection === null) ||
     (currentSelection === null && selection !== null)
@@ -95,18 +66,9 @@ function viewModelHasDirtySelection(
   return selection !== null && selection.isDirty;
 }
 
-export function readViewModel(
-  viewModel: ViewModel,
-  callbackFn: (view: ViewType) => void,
-  editor: OutlineEditor,
-) {
-  callCallbackWithViewModelScope(callbackFn, viewModel, editor, true);
-}
-
-function callCallbackWithViewModelScope(
+export function enterViewModelScope(
   callbackFn: (view: ViewType) => void,
   viewModel: ViewModel,
-  editor: OutlineEditor,
   readOnly: boolean,
 ): void {
   const previousActiveViewModel = activeViewModel;
@@ -230,5 +192,8 @@ export class ViewModel {
       }
     }
     return nodes;
+  }
+  read(callbackFn: (view: ViewType) => void) {
+    enterViewModelScope(callbackFn, this, true);
   }
 }

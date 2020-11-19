@@ -183,7 +183,8 @@ function MentionsTypeahead({
   const applyCurrentSelected = useCallback(() => {
     // $FlowFixMe
     const selectedResult = results[selectedIndex];
-    const viewModel = editor.draft((view) => {
+    close();
+    editor.update((view) => {
       const targetNode = view.getNodeByKey(nodeKey);
       const mentionNode = createMention(selectedResult);
 
@@ -192,10 +193,6 @@ function MentionsTypeahead({
       mentionNode.wrapInTextNodes();
       mentionNode.selectAfter(0, 0);
     });
-    close();
-    if (!editor.isUpdating()) {
-      editor.update(viewModel);
-    }
   }, [close, editor, nodeKey, results, selectedIndex]);
 
   const updateSelectedIndex = useCallback(

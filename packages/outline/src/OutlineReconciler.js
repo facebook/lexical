@@ -416,7 +416,7 @@ export function reconcileViewModel(
   nextViewModel: ViewModel,
   editor: OutlineEditor,
 ): void {
-  const prevViewModel = editor.getCurrentViewModel();
+  const prevViewModel = editor.getViewModel();
   const dirtySubTrees = nextViewModel.dirtySubTrees;
   const needsUpdate = nextViewModel.isHistoric || nextViewModel.hasDirtyNodes();
   const nextSelection = nextViewModel.selection;

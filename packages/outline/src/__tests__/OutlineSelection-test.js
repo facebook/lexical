@@ -233,8 +233,7 @@ describe('OutlineSelection tests', () => {
   }
 
   function update(callback) {
-    const viewModel = editor.draft(callback);
-    editor.update(viewModel, true);
+    editor.update(callback, true);
   }
 
   test('Expect initial output to be a block with some text', () => {

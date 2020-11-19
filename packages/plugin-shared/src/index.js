@@ -47,10 +47,7 @@ function useEventWrapper<T>(
     (event) => {
       const state = stateRef && stateRef.current;
       if (editor !== null) {
-        const viewModel = editor.draft((view) =>
-          handler(event, view, state, editor),
-        );
-        editor.update(viewModel);
+        editor.update((view) => handler(event, view, state, editor));
       }
     },
     [stateRef, editor, handler],
@@ -98,15 +95,12 @@ export function insertFromDataTransfer(
     const item = items[i];
     if (item.kind === 'string' && item.type === 'text/plain') {
       item.getAsString((text) => {
-        const viewModel = editor.draft((view) => {
+        editor.update((view) => {
           const selection = view.getSelection();
           if (selection !== null) {
             selection.insertText(text);
           }
         });
-        if (!editor.isUpdating()) {
-          editor.update(viewModel);
-        }
       });
       break;
     }

@@ -48,6 +48,14 @@ function textNodeTransform(node: TextNode, view: ViewType): void {
         const children = block.getChildren();
         children.forEach((child) => header.append(child));
         block.replace(header);
+      } else if (firstChar === '1' && secondChar === '.') {
+        node.spliceText(0, 2, '', true);
+        const list = createList('ol');
+        const listItem = createListItem();
+        const children = block.getChildren();
+        children.forEach((child) => listItem.append(child));
+        list.append(listItem);
+        block.replace(list);
       }
     }
   }

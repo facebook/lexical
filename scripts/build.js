@@ -18,6 +18,7 @@ const isWatchMode = argv.watch;
 const isProduction = argv.prod;
 const isWWW = argv.www;
 const isClean = argv.clean;
+const filter = argv._;
 
 const closureOptions = {
   compilation_level: 'SIMPLE',
@@ -32,7 +33,16 @@ const closureOptions = {
   inject_libraries: false,
 };
 
+const externals = ['outline', 'react', 'react-dom', 'outline-rich-text-plugin'];
+
 async function build(packageFolder) {
+  if (
+    filter.length > 0 &&
+    filter.filter((string) => packageFolder.includes(string)).length === 0
+  ) {
+    console.log(`Skipping ${packageFolder}`);
+    return;
+  }
   const inputFile = path.resolve(`./packages/${packageFolder}/src/index.js`);
   const outputFile = path.resolve(`./packages/${packageFolder}/dist/index.js`);
   if (isClean) {
@@ -48,14 +58,8 @@ async function build(packageFolder) {
   }
   const inputOptions = {
     input: inputFile,
-    external(id) {
-      if (id === 'react' || id === 'react-dom' || id === 'outline') {
-        return true;
-      }
-      // We bundle shared with the the plugin packages
-      if (id === 'plugin-shared') {
-        return false;
-      }
+    external(modulePath, src) {
+      return externals.includes(modulePath);
     },
     onwarn(warning) {
       if (warning.code === 'CIRCULAR_DEPENDENCY') {

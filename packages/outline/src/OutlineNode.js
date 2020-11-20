@@ -12,7 +12,7 @@ export const HAS_DIRECTION = 1 << 2;
 
 let nodeKeyCounter = 0;
 
-function generateKey(node: Node): NodeKey {
+function generateKey(node: OutlineNode): NodeKey {
   shouldErrorOnReadOnly();
   const viewModel = getActiveViewModel();
   const dirtyNodes = viewModel.dirtyNodes;
@@ -22,7 +22,7 @@ function generateKey(node: Node): NodeKey {
   return key;
 }
 
-function makeNodeAsDirty(node: Node): void {
+function makeNodeAsDirty(node: OutlineNode): void {
   const latest = node.getLatest();
   const viewModel = getActiveViewModel();
   const dirtyNodes = viewModel.dirtyNodes;
@@ -37,7 +37,7 @@ function makeNodeAsDirty(node: Node): void {
   }
 }
 
-function removeNode(nodeToRemove: Node): void {
+function removeNode(nodeToRemove: OutlineNode): void {
   const key = nodeToRemove._key;
   const parent = nodeToRemove.getParent();
   if (parent === null) {
@@ -54,7 +54,10 @@ function removeNode(nodeToRemove: Node): void {
   makeNodeAsDirty(writableNodeToRemove);
 }
 
-function replaceNode<N: Node>(toReplace: Node, replaceWith: N): N {
+function replaceNode<N: OutlineNode>(
+  toReplace: OutlineNode,
+  replaceWith: N,
+): N {
   const writableReplaceWith = getWritableNode(replaceWith);
   const oldParent = writableReplaceWith.getParent();
   if (oldParent !== null) {
@@ -78,7 +81,7 @@ function replaceNode<N: Node>(toReplace: Node, replaceWith: N): N {
   return writableReplaceWith;
 }
 
-function wrapInTextNodes<N: Node>(node: N): N {
+function wrapInTextNodes<N: OutlineNode>(node: N): N {
   const prevSibling = node.getPreviousSibling();
   if (
     prevSibling === null ||
@@ -106,7 +109,7 @@ function wrapInTextNodes<N: Node>(node: N): N {
 
 export type NodeKey = string;
 
-export class Node {
+export class OutlineNode {
   // $FlowFixMe: TODO
   _type: any;
   _flags: number;
@@ -116,13 +119,13 @@ export class Node {
   static parse(
     // $FlowFixMe: TODO: refine
     data: Object,
-  ): Node {
+  ): OutlineNode {
     throw new Error(
       `Node type ${this.constructor.name} does not implement .parse().`,
     );
   }
 
-  clone(): Node {
+  clone(): OutlineNode {
     // Flow doesn't support abstract classes unfortunatley, so we can't _force_
     // subclasses of Node to implement clone. All subclasses of Node should have
     // a clone method though. We define clone here so we can call it on any Node,
@@ -208,7 +211,7 @@ export class Node {
     }
     return parents;
   }
-  getPreviousSibling(): Node | null {
+  getPreviousSibling(): OutlineNode | null {
     const parent = this.getParentOrThrow();
     const children = parent._children;
     const index = children.indexOf(this._key);
@@ -217,15 +220,15 @@ export class Node {
     }
     return getNodeByKey(children[index - 1]);
   }
-  getPreviousSiblings(): Array<Node> {
+  getPreviousSiblings(): Array<OutlineNode> {
     const parent = this.getParentOrThrow();
     const children = parent._children;
     const index = children.indexOf(this._key);
     return children
       .slice(0, index)
-      .map((childKey) => getNodeByKeyOrThrow<Node>(childKey));
+      .map((childKey) => getNodeByKeyOrThrow<OutlineNode>(childKey));
   }
-  getNextSibling(): Node | null {
+  getNextSibling(): OutlineNode | null {
     const parent = this.getParentOrThrow();
     const children = parent._children;
     const childrenLength = children.length;
@@ -235,16 +238,16 @@ export class Node {
     }
     return getNodeByKey(children[index + 1]);
   }
-  getNextSiblings(): Array<Node> {
+  getNextSiblings(): Array<OutlineNode> {
     const parent = this.getParentOrThrow();
     const children = parent._children;
     const index = children.indexOf(this._key);
     return children
       .slice(index + 1)
-      .map((childKey) => getNodeByKeyOrThrow<Node>(childKey));
+      .map((childKey) => getNodeByKeyOrThrow<OutlineNode>(childKey));
   }
 
-  getCommonAncestor(node: Node): BlockNode | null {
+  getCommonAncestor(node: OutlineNode): BlockNode | null {
     const a = this.getParents();
     const b = node.getParents();
     const aLength = a.length;
@@ -262,7 +265,7 @@ export class Node {
     return null;
   }
 
-  isBefore(targetNode: Node): boolean {
+  isBefore(targetNode: OutlineNode): boolean {
     const commonAncestor = this.getCommonAncestor(targetNode);
     let indexA = 0;
     let indexB = 0;
@@ -287,7 +290,7 @@ export class Node {
     return indexA < indexB;
   }
 
-  isParentOf(targetNode: Node): boolean {
+  isParentOf(targetNode: OutlineNode): boolean {
     const key = this._key;
     let node = targetNode;
     while (node !== null) {
@@ -299,7 +302,7 @@ export class Node {
     return false;
   }
 
-  getNodesBetween(targetNode: Node): Array<Node> {
+  getNodesBetween(targetNode: OutlineNode): Array<OutlineNode> {
     const isBefore = this.isBefore(targetNode);
     const nodes = [];
 
@@ -414,7 +417,7 @@ export class Node {
   _create(): HTMLElement {
     throw new Error('Should never occur');
   }
-  _update(prevNode: Node, dom: HTMLElement): boolean {
+  _update(prevNode: OutlineNode, dom: HTMLElement): boolean {
     throw new Error('Should never occur');
   }
 
@@ -451,17 +454,17 @@ export class Node {
     shouldErrorOnReadOnly();
     return removeNode(this);
   }
-  wrapInTextNodes(): Node {
+  wrapInTextNodes(): OutlineNode {
     shouldErrorOnReadOnly();
     return wrapInTextNodes(this);
   }
   // TODO add support for replacing with multiple nodes?
-  replace<N: Node>(targetNode: N): N {
+  replace<N: OutlineNode>(targetNode: N): N {
     shouldErrorOnReadOnly();
     return replaceNode(this, targetNode);
   }
   // TODO add support for inserting multiple nodes?
-  insertAfter(nodeToInsert: Node): Node {
+  insertAfter(nodeToInsert: OutlineNode): OutlineNode {
     shouldErrorOnReadOnly();
     const writableSelf = getWritableNode(this);
     const writableNodeToInsert = getWritableNode(nodeToInsert);
@@ -487,7 +490,7 @@ export class Node {
     return writableSelf;
   }
   // TODO add support for inserting multiple nodes?
-  insertBefore(nodeToInsert: Node): Node {
+  insertBefore(nodeToInsert: OutlineNode): OutlineNode {
     shouldErrorOnReadOnly();
     const writableSelf = getWritableNode(this);
     const writableNodeToInsert = getWritableNode(nodeToInsert);
@@ -516,7 +519,7 @@ export class Node {
 
 // NOTE: we could make a mutable node type
 
-export function getWritableNode<N: Node>(node: N): N {
+export function getWritableNode<N: OutlineNode>(node: N): N {
   // TODO we don't need this line, it's more for sanity checking
   shouldErrorOnReadOnly();
   const viewModel = getActiveViewModel();
@@ -570,7 +573,7 @@ function markParentsAsDirty(
   }
 }
 
-export function getNodeByKey<N: Node>(key: NodeKey): N | null {
+export function getNodeByKey<N: OutlineNode>(key: NodeKey): N | null {
   const viewModel = getActiveViewModel();
   const node = viewModel.nodeMap[key];
   if (node === undefined) {
@@ -579,7 +582,7 @@ export function getNodeByKey<N: Node>(key: NodeKey): N | null {
   return (node: $FlowFixMe);
 }
 
-function getNodeByKeyOrThrow<N: Node>(key: NodeKey): N {
+function getNodeByKeyOrThrow<N: OutlineNode>(key: NodeKey): N {
   const viewModel = getActiveViewModel();
   const node = viewModel.nodeMap[key];
   if (node === undefined) {

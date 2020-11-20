@@ -1,7 +1,7 @@
 // @flow strict
 
 import type {ViewType} from './OutlineView';
-import type {Node, NodeKey} from './OutlineNode';
+import type {OutlineNode, NodeKey} from './OutlineNode';
 
 import {useEffect, useState} from 'react';
 import {createRoot, RootNode, TextNode, ParagraphNode, ListItemNode} from '.';
@@ -35,7 +35,7 @@ export class OutlineEditor {
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _updateListeners: Set<onChangeType>;
   _textTransforms: Set<(node: TextNode, view: ViewType) => void>;
-  _registeredNodeTypes: Map<string, Class<Node>>;
+  _registeredNodeTypes: Map<string, Class<OutlineNode>>;
 
   constructor(editorElement: HTMLElement, viewModel: ViewModel) {
     // The editor element associated with this editor
@@ -66,7 +66,7 @@ export class OutlineEditor {
   setComposing(isComposing: boolean): void {
     this._isComposing = isComposing;
   }
-  addNodeType(nodeType: string, klass: Class<Node>): () => void {
+  addNodeType(nodeType: string, klass: Class<OutlineNode>): () => void {
     this._registeredNodeTypes.set(nodeType, klass);
     return () => {
       this._registeredNodeTypes.delete(nodeType);

@@ -2,9 +2,9 @@
 
 import type {NodeKey} from 'outline';
 
-import {Node} from 'outline';
+import {OutlineNode} from 'outline';
 
-export class ImageNode extends Node {
+export class ImageNode extends OutlineNode {
   _type: 'image';
   _src: string;
   _altText: string;

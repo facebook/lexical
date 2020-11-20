@@ -2,7 +2,7 @@
 
 import type {RootNode} from './OutlineRootNode';
 import type {OutlineEditor} from './OutlineEditor';
-import type {Node, NodeKey} from './OutlineNode';
+import type {OutlineNode, NodeKey} from './OutlineNode';
 import type {Selection} from './OutlineSelection';
 
 import {reconcileViewModel} from './OutlineReconciler';
@@ -13,12 +13,12 @@ import {invariant} from './OutlineUtils';
 
 export type ViewType = {
   getRoot: () => RootNode,
-  getNodeByKey: (key: NodeKey) => null | Node,
+  getNodeByKey: (key: NodeKey) => null | OutlineNode,
   getSelection: () => null | Selection,
   setSelection: (selection: Selection) => void,
 };
 
-export type NodeMapType = {[key: NodeKey]: Node};
+export type NodeMapType = {[key: NodeKey]: OutlineNode};
 
 let activeViewModel = null;
 let activeReadyOnlyMode = false;
@@ -179,7 +179,7 @@ export class ViewModel {
   hasDirtyNodes(): boolean {
     return this.dirtyNodes.size > 0;
   }
-  getDirtyNodes(): Array<Node> {
+  getDirtyNodes(): Array<OutlineNode> {
     const dirtyNodes = Array.from(this.dirtyNodes);
     const nodeMap = this.nodeMap;
     const nodes = [];

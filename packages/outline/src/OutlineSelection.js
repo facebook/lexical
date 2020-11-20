@@ -20,11 +20,7 @@ import {invariant} from './OutlineUtils';
 import {OutlineEditor} from './OutlineEditor';
 
 function removeFirstSegment(node: TextNode): void {
-  const currentBlock = node.getParentBlock();
-  invariant(
-    currentBlock !== null,
-    'removeFirstSegment: currentBlock not found',
-  );
+  const currentBlock = node.getParentBlockOrThrow();
   const textContent = node.getTextContent();
   const lastSpaceIndex = textContent.indexOf(' ');
   if (lastSpaceIndex > -1) {
@@ -39,8 +35,7 @@ function removeFirstSegment(node: TextNode): void {
 }
 
 function removeLastSegment(node: TextNode): void {
-  const currentBlock = node.getParentBlock();
-  invariant(currentBlock !== null, 'removeLastSegment: currentBlock not found');
+  const currentBlock = node.getParentBlockOrThrow();
   const textContent = node.getTextContent();
   const lastSpaceIndex = textContent.lastIndexOf(' ');
   if (lastSpaceIndex > -1) {
@@ -132,8 +127,7 @@ export class Selection {
     endOffset = isBefore ? focusOffset : anchorOffset;
 
     const nodesLength = nodes.length;
-    const sourceParent = firstNode.getParent();
-    invariant(sourceParent !== null, 'Should not be possible');
+    const sourceParent = firstNode.getParentOrThrow();
     const sourceParentKey = sourceParent._key;
     const topLevelNodeKeys = new Set();
 
@@ -220,8 +214,7 @@ export class Selection {
     );
     const firstNodeText = firstNode.getTextContent();
     const firstNodeTextLength = firstNodeText.length;
-    const currentBlock = firstNode.getParentBlock();
-    invariant(currentBlock !== null, 'formatText: currentBlock not found');
+    const currentBlock = firstNode.getParentBlockOrThrow();
     const anchorOffset = this.anchorOffset;
     const focusOffset = this.focusOffset;
     const firstNextFlags = firstNode.getTextNodeFormatFlags(
@@ -330,7 +323,7 @@ export class Selection {
     const textContent = anchorNode.getTextContent();
     const textContentLength = textContent.length;
     const nodesToMove = anchorNode.getNextSiblings().reverse();
-    const currentBlock = anchorNode.getParentBlock();
+    const currentBlock = anchorNode.getParentBlockOrThrow();
     let anchorOffset = this.anchorOffset;
 
     if (anchorOffset === 0) {
@@ -345,7 +338,6 @@ export class Selection {
       nodesToMove.push(splitNode);
       anchorOffset = 0;
     }
-    invariant(currentBlock !== null, 'insertParagraph: currentBlock not found');
     let newBlock;
 
     if (currentBlock instanceof ListItemNode) {
@@ -456,8 +448,7 @@ export class Selection {
     if (anchorNode === null) {
       return;
     }
-    const currentBlock = anchorNode.getParentBlock();
-    invariant(currentBlock !== null, 'deleteBackward: currentBlock not found');
+    const currentBlock = anchorNode.getParentBlockOrThrow();
     const prevSibling = anchorNode.getPreviousSibling();
 
     if (anchorOffset === 0) {
@@ -465,11 +456,7 @@ export class Selection {
         let prevBlock = currentBlock.getPreviousSibling();
         if (prevBlock === null) {
           if (currentBlock instanceof ListItemNode) {
-            const listNode = currentBlock.getParent();
-            invariant(
-              listNode instanceof BlockNode,
-              'deleteBackward: listNode not found',
-            );
+            const listNode = currentBlock.getParentOrThrow();
             const paragraph = createParagraph();
             const children = currentBlock.getChildren();
             children.forEach((child) => paragraph.append(child));
@@ -543,8 +530,7 @@ export class Selection {
     if (anchorNode === null) {
       return;
     }
-    const currentBlock = anchorNode.getParentBlock();
-    invariant(currentBlock !== null, 'deleteForward: currentBlock not found');
+    const currentBlock = anchorNode.getParentBlockOrThrow();
     const textContent = anchorNode.getTextContent();
     const textContentLength = textContent.length;
     const nextSibling = anchorNode.getNextSibling();
@@ -669,8 +655,7 @@ export class Selection {
     );
     const firstNodeText = firstNode.getTextContent();
     const firstNodeTextLength = firstNodeText.length;
-    const currentBlock = firstNode.getParentBlock();
-    invariant(currentBlock !== null, 'insertText: currentBlock not found');
+    const currentBlock = firstNode.getParentBlockOrThrow();
     let startOffset;
     let endOffset;
 
@@ -801,8 +786,7 @@ export class Selection {
         node = sibling;
       } else {
         if (offset === 0) {
-          const currentBlock = node.getParentBlock();
-          invariant(currentBlock !== null, 'currentBlock not found');
+          const currentBlock = node.getParentBlockOrThrow();
           const prevBlock = currentBlock.getPreviousSibling();
           if (prevBlock instanceof BlockNode) {
             let lastChild = prevBlock.getLastChild();
@@ -884,15 +868,10 @@ export class Selection {
         node = sibling;
       } else {
         if (offset === textContentLength) {
-          const currentBlock = node.getParentBlock();
-          invariant(currentBlock !== null, 'currentBlock not found');
+          const currentBlock = node.getParentBlockOrThrow();
           let nextBlock = currentBlock.getNextSibling();
           if (nextBlock === null && currentBlock instanceof ListItemNode) {
-            const list = currentBlock.getParent();
-            invariant(
-              list instanceof BlockNode,
-              'moveWordForward: list not found',
-            );
+            const list = currentBlock.getParentOrThrow();
             nextBlock = list.getNextSibling();
           }
           if (nextBlock instanceof BlockNode) {
@@ -952,8 +931,7 @@ export class Selection {
       if (sibling !== null) {
         node = sibling;
       } else {
-        const currentBlock = node.getParentBlock();
-        invariant(currentBlock !== null, 'currentBlock not found');
+        const currentBlock = node.getParentBlockOrThrow();
         const prevBlock = currentBlock.getPreviousSibling();
         if (prevBlock instanceof BlockNode) {
           let lastChild = prevBlock.getLastChild();
@@ -1012,12 +990,10 @@ export class Selection {
       if (sibling !== null) {
         node = sibling;
       } else {
-        const currentBlock = node.getParentBlock();
-        invariant(currentBlock !== null, 'currentBlock not found');
+        const currentBlock = node.getParentBlockOrThrow();
         let nextBlock = currentBlock.getNextSibling();
         if (nextBlock === null && currentBlock instanceof ListItemNode) {
-          const list = currentBlock.getParent();
-          invariant(list instanceof BlockNode, 'moveForward: list not found');
+          const list = currentBlock.getParentOrThrow();
           nextBlock = list.getNextSibling();
         }
         if (nextBlock instanceof BlockNode) {

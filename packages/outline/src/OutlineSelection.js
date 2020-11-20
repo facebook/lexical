@@ -11,7 +11,6 @@ import {
   createText,
   createParagraph,
   BlockNode,
-  ListNode,
   ListItemNode,
   TextNode,
   RootNode,
@@ -350,15 +349,25 @@ export class Selection {
     let newBlock;
 
     if (currentBlock instanceof ListItemNode) {
+      const nextSibling = currentBlock.getNextSibling();
+      const prevSibling = currentBlock.getPreviousSibling();
       const list = currentBlock.getParent();
+
       if (
+        list instanceof BlockNode &&
         nodesToMove.length === 1 &&
         currentBlock.getTextContent() === '' &&
-        list instanceof ListNode
+        (prevSibling === null || nextSibling === null)
       ) {
-        newBlock = createParagraph();
-        currentBlock.remove();
-        list.insertAfter(newBlock);
+        if (nextSibling === null) {
+          newBlock = createParagraph();
+          currentBlock.remove();
+          list.insertAfter(newBlock);
+        } else {
+          newBlock = createParagraph();
+          currentBlock.remove();
+          list.insertBefore(newBlock);
+        }
         if (list.getChildren().length === 0) {
           list.remove();
         }
@@ -458,7 +467,7 @@ export class Selection {
           if (currentBlock instanceof ListItemNode) {
             const listNode = currentBlock.getParent();
             invariant(
-              listNode instanceof ListNode,
+              listNode instanceof BlockNode,
               'deleteBackward: listNode not found',
             );
             const paragraph = createParagraph();
@@ -484,15 +493,12 @@ export class Selection {
             anchorNode.setFlags(HAS_DIRECTION);
           }
         } else if (prevBlock instanceof BlockNode) {
-          if (prevBlock instanceof ListNode) {
-            prevBlock = prevBlock.getLastChild();
-            invariant(
-              prevBlock instanceof ListItemNode,
-              'deleteBackward: prevBlock not found',
-            );
+          let lastChild = prevBlock.getLastChild();
+          if (lastChild instanceof BlockNode) {
+            prevBlock = lastChild;
           }
           const nodesToMove = [anchorNode, ...anchorNode.getNextSiblings()];
-          let lastChild = prevBlock.getLastChild();
+          lastChild = prevBlock.getLastChild();
           invariant(lastChild !== null, 'deleteBackward: lastChild not found');
           for (let i = 0; i < nodesToMove.length; i++) {
             const nodeToMove = nodesToMove[i];
@@ -884,7 +890,7 @@ export class Selection {
           if (nextBlock === null && currentBlock instanceof ListItemNode) {
             const list = currentBlock.getParent();
             invariant(
-              list instanceof ListNode,
+              list instanceof BlockNode,
               'moveWordForward: list not found',
             );
             nextBlock = list.getNextSibling();
@@ -1011,7 +1017,7 @@ export class Selection {
         let nextBlock = currentBlock.getNextSibling();
         if (nextBlock === null && currentBlock instanceof ListItemNode) {
           const list = currentBlock.getParent();
-          invariant(list instanceof ListNode, 'moveForward: list not found');
+          invariant(list instanceof BlockNode, 'moveForward: list not found');
           nextBlock = list.getNextSibling();
         }
         if (nextBlock instanceof BlockNode) {

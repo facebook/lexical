@@ -1,6 +1,6 @@
 // @flow strict
 
-import type {NodeKey} from 'outline/src/OutlineNode';
+import type {NodeKey} from 'outline';
 
 import {BlockNode} from 'outline';
 
@@ -14,6 +14,14 @@ export class ListNode extends BlockNode {
     super(key);
     this._tag = tag;
     this._type = 'list';
+  }
+  static parse(
+    // $FlowFixMe: TODO: refine
+    data: Object,
+  ): ListNode {
+    const header = new ListNode(data._tag);
+    header._flags = data._flags;
+    return header;
   }
   clone(): ListNode {
     const clone = new ListNode(this._tag, this._key);
@@ -36,7 +44,7 @@ export class ListNode extends BlockNode {
 
 export function createListNode(tag: ListNodeTagType): ListNode {
   const list = new ListNode(tag);
-  // List nodes align with text direction
+  // List nodes align with text direection
   list.makeDirectioned();
   return list;
 }

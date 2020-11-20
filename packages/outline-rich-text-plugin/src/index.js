@@ -10,6 +10,8 @@ import {
   HeaderNode,
 } from './OutlineHeaderNode';
 import {createImageNode as createImage, ImageNode} from './OutlineImageNode';
+import {createQuoteNode as createQuote, QuoteNode} from './OutlineQuoteNode';
+import {createListNode as createList, ListNode} from './OutlineListNode';
 
 export function useRichTextPlugin(
   editor: null | OutlineEditor,
@@ -35,7 +37,12 @@ export function useRichTextPlugin(
 
   useEffect(() => {
     if (editor !== null) {
-      return editor.addNodeType('header', HeaderNode);
+      const removeHeaderType = editor.addNodeType('header', HeaderNode);
+      const removeListType = editor.addNodeType('list', ListNode);
+      return () => {
+        removeHeaderType();
+        removeListType();
+      };
     }
   }, [editor]);
 
@@ -44,4 +51,13 @@ export function useRichTextPlugin(
   return inputEvents;
 }
 
-export {createHeader, createImage, HeaderNode, ImageNode};
+export {
+  createHeader,
+  createImage,
+  createList,
+  createQuote,
+  HeaderNode,
+  ImageNode,
+  ListNode,
+  QuoteNode,
+};

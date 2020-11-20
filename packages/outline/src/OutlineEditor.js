@@ -4,14 +4,7 @@ import type {ViewType} from './OutlineView';
 import type {Node, NodeKey} from './OutlineNode';
 
 import {useEffect, useState} from 'react';
-import {
-  createRoot,
-  RootNode,
-  TextNode,
-  ParagraphNode,
-  ListNode,
-  ListItemNode,
-} from '.';
+import {createRoot, RootNode, TextNode, ParagraphNode, ListItemNode} from '.';
 import {
   applyTextTransforms,
   cloneViewModel,
@@ -64,7 +57,6 @@ export class OutlineEditor {
       ['text', TextNode],
       ['root', RootNode],
       ['paragraph', ParagraphNode],
-      ['list', ListNode],
       ['listitem', ListItemNode],
     ]);
   }

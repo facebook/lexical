@@ -14,10 +14,7 @@ import {
   createParagraphNode as createParagraph,
   ParagraphNode,
 } from './OutlineParagraphNode';
-import {
-  createListNode as createList,
-  ListNode,
-} from './external-nodes/OutlineListNode';
+
 import {
   createListItemNode as createListItem,
   ListItemNode,
@@ -26,14 +23,12 @@ import {createRootNode as createRoot, RootNode} from './OutlineRootNode';
 import {Node} from './OutlineNode';
 
 export {
-  createList,
   createListItem,
   createParagraph,
   createRoot,
   createText,
   Node,
   BlockNode,
-  ListNode,
   ListItemNode,
   ParagraphNode,
   RootNode,

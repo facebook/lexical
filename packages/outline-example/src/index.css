@@ -74,6 +74,16 @@ h1 {
   color: rgb(33,111,219);
 }
 
+.editor-shell div.editor blockquote {
+  margin: 20px 0;
+  font-size: 15px;
+  color: rgb(101, 103, 107);
+  border-left-color: rgb(206, 208, 212);
+  border-left-width: 4px;
+  border-left-style: solid;
+  padding-left: 16px;
+}
+
 .editor-shell div.editor code {
   background-color: rgb(240, 242, 245);
   padding: 1px 0.25rem;

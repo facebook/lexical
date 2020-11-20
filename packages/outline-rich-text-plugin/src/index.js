@@ -5,6 +5,12 @@ import type {OutlineEditor} from 'outline';
 import {useEffect, useRef} from 'react';
 import {onFocusIn, useEditorInputEvents, useEvent} from 'plugin-shared';
 
+import {
+  createHeaderNode as createHeader,
+  HeaderNode,
+} from './OutlineHeaderNode';
+import {createImageNode as createImage, ImageNode} from './OutlineImageNode';
+
 export function useRichTextPlugin(
   editor: null | OutlineEditor,
   isReadOnly: boolean = false,
@@ -27,7 +33,15 @@ export function useRichTextPlugin(
     }
   }, [isReadOnly]);
 
+  useEffect(() => {
+    if (editor !== null) {
+      return editor.addNodeType('header', HeaderNode);
+    }
+  }, [editor]);
+
   const inputEvents = useEditorInputEvents(editor, pluginStateRef);
   useEvent(editor, 'focusin', onFocusIn, pluginStateRef);
   return inputEvents;
 }
+
+export {createHeader, createImage, HeaderNode, ImageNode};

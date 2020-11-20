@@ -1,8 +1,8 @@
 // @flow strict
 
-import type {NodeKey} from '../OutlineNode';
+import type {NodeKey} from './OutlineNode';
 
-import {BlockNode} from '../OutlineBlockNode';
+import {BlockNode} from './OutlineBlockNode';
 
 export class ParagraphNode extends BlockNode {
   _type: 'paragraph';

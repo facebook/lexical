@@ -3,14 +3,8 @@
 import type {OutlineEditor, TextNode, ViewType} from 'outline';
 
 import {useEffect} from 'react';
-import {
-  createHeader,
-  createList,
-  createListItem,
-  HeaderNode,
-  ListNode,
-  ListItemNode,
-} from 'outline';
+import {createList, createListItem, ListNode, ListItemNode} from 'outline';
+import {createHeader, HeaderNode} from 'outline-rich-text-plugin';
 
 function textNodeTransform(node: TextNode, view: ViewType): void {
   const block = node.getParentBlock();
@@ -51,7 +45,6 @@ function textNodeTransform(node: TextNode, view: ViewType): void {
         children.forEach((child) => header.append(child));
         block.replace(header);
       }
-
     }
   }
 }

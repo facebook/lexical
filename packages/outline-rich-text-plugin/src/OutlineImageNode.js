@@ -1,8 +1,8 @@
 // @flow strict
 
-import type {NodeKey} from '../OutlineNode';
+import type {NodeKey} from 'outline';
 
-import {Node} from '../OutlineNode';
+import {Node} from 'outline';
 
 export class ImageNode extends Node {
   _type: 'image';

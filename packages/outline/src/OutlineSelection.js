@@ -11,11 +11,11 @@ import {
   createText,
   createParagraph,
   BlockNode,
-  HeaderNode,
   ListNode,
   ListItemNode,
   TextNode,
   RootNode,
+  ParagraphNode,
 } from '.';
 import {invariant} from './OutlineUtils';
 import {OutlineEditor} from './OutlineEditor';
@@ -455,13 +455,7 @@ export class Selection {
       if (prevSibling === null) {
         let prevBlock = currentBlock.getPreviousSibling();
         if (prevBlock === null) {
-          if (currentBlock instanceof HeaderNode) {
-            const paragraph = createParagraph();
-            const children = currentBlock.getChildren();
-            children.forEach((child) => paragraph.append(child));
-            currentBlock.replace(paragraph);
-            return;
-          } else if (currentBlock instanceof ListItemNode) {
+          if (currentBlock instanceof ListItemNode) {
             const listNode = currentBlock.getParent();
             invariant(
               listNode instanceof ListNode,
@@ -478,6 +472,12 @@ export class Selection {
               currentBlock.remove();
             }
             anchorNode.select(0, 0);
+            return;
+          } else if (!(currentBlock instanceof ParagraphNode)) {
+            const paragraph = createParagraph();
+            const children = currentBlock.getChildren();
+            children.forEach((child) => paragraph.append(child));
+            currentBlock.replace(paragraph);
             return;
           } else if (anchorNode.getFlags() !== HAS_DIRECTION) {
             // Otherwise just reset the text node flags

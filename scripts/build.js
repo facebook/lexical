@@ -2,7 +2,7 @@
 
 const rollup = require('rollup');
 const path = require('path');
-const fs = require('fs');
+const fs = require('fs-extra');
 const argv = require('minimist')(process.argv.slice(2));
 const babel = require('@rollup/plugin-babel').default;
 const closure = require('./plugins/closure-plugin');
@@ -17,6 +17,7 @@ const license = ` * Copyright (c) Facebook, Inc. and its affiliates.
 const isWatchMode = argv.watch;
 const isProduction = argv.prod;
 const isWWW = argv.www;
+const isClean = argv.clean;
 
 const closureOptions = {
   compilation_level: 'SIMPLE',
@@ -32,6 +33,13 @@ const closureOptions = {
 };
 
 async function build(packageFolder) {
+  const inputFile = path.resolve(`./packages/${packageFolder}/src/index.js`);
+  const outputFile = path.resolve(`./packages/${packageFolder}/dist/index.js`);
+  if (isClean) {
+    fs.removeSync(outputFile);
+    return;
+  }
+
   if (
     packageFolder === 'outline-example' ||
     packageFolder === 'plugin-shared'
@@ -39,7 +47,7 @@ async function build(packageFolder) {
     return;
   }
   const inputOptions = {
-    input: path.resolve(`./packages/${packageFolder}/src/index.js`),
+    input: inputFile,
     external(id) {
       if (id === 'react' || id === 'react-dom' || id === 'outline') {
         return true;
@@ -95,7 +103,7 @@ ${source}`;
     ],
   };
   const outputOptions = {
-    file: path.resolve(`./packages/${packageFolder}/dist/index.js`),
+    file: outputFile,
     format: 'cjs',
     freeze: false,
     interop: false,

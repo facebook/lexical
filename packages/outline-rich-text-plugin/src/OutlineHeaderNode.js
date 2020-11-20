@@ -15,6 +15,14 @@ export class HeaderNode extends BlockNode {
     this._tag = tag;
     this._type = 'header';
   }
+  static parse(
+    // $FlowFixMe: TODO: refine
+    data: Object,
+  ): HeaderNode {
+    const header = new HeaderNode(data._tag);
+    header._flags = data._flags;
+    return header;
+  }
   clone(): HeaderNode {
     const clone = new HeaderNode(this._tag, this._key);
     clone._children = [...this._children];

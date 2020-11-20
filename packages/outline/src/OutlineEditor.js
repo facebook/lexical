@@ -9,7 +9,6 @@ import {
   RootNode,
   TextNode,
   ParagraphNode,
-  HeaderNode,
   ListNode,
   ListItemNode,
 } from '.';
@@ -65,7 +64,6 @@ export class OutlineEditor {
       ['text', TextNode],
       ['root', RootNode],
       ['paragraph', ParagraphNode],
-      ['header', HeaderNode],
       ['list', ListNode],
       ['listitem', ListItemNode],
     ]);

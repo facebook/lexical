@@ -3,7 +3,7 @@
 import {TextNode} from '.';
 import type {NodeKey} from './OutlineNode';
 
-import {getWritableNode, Node, getNodeByKey} from './OutlineNode';
+import {getWritableNode, OutlineNode, getNodeByKey} from './OutlineNode';
 import {getSelection} from './OutlineSelection';
 import {invariant} from './OutlineUtils';
 import {getActiveViewModel, shouldErrorOnReadOnly} from './OutlineView';
@@ -45,14 +45,14 @@ function combineAdjacentTextNodes(
   }
 }
 
-export class BlockNode extends Node {
+export class BlockNode extends OutlineNode {
   _children: Array<NodeKey>;
 
   constructor(key?: string) {
     super(key);
     this._children = [];
   }
-  getChildren(): Array<Node> {
+  getChildren(): Array<OutlineNode> {
     const self = this.getLatest();
     const children = self._children;
     const childrenNodes = [];
@@ -88,7 +88,7 @@ export class BlockNode extends Node {
     }
     return null;
   }
-  getFirstChild(): null | Node {
+  getFirstChild(): null | OutlineNode {
     const self = this.getLatest();
     const children = self._children;
     const childrenLength = children.length;
@@ -97,7 +97,7 @@ export class BlockNode extends Node {
     }
     return getNodeByKey(children[0]);
   }
-  getLastChild(): null | Node {
+  getLastChild(): null | OutlineNode {
     const self = this.getLatest();
     const children = self._children;
     const childrenLength = children.length;
@@ -110,7 +110,7 @@ export class BlockNode extends Node {
   // Mutators
 
   // TODO add support for appending multiple nodes?
-  append(nodeToAppend: Node): BlockNode {
+  append(nodeToAppend: OutlineNode): BlockNode {
     shouldErrorOnReadOnly();
     const writableSelf = getWritableNode(this);
     const writableNodeToAppend = getWritableNode(nodeToAppend);
@@ -152,7 +152,7 @@ export class BlockNode extends Node {
     let lastTextNodeFlags: number | null = null;
     let lastURL = null;
     for (let i = 0; i < children.length; i++) {
-      const child: Node = children[i].getLatest();
+      const child: OutlineNode = children[i].getLatest();
       const flags = child._flags;
 
       if (

@@ -20,14 +20,14 @@ import {
   ListItemNode,
 } from './external-nodes/OutlineListItemNode';
 import {createRootNode as createRoot, RootNode} from './OutlineRootNode';
-import {Node} from './OutlineNode';
+import {OutlineNode} from './OutlineNode';
 
 export {
   createListItem,
   createParagraph,
   createRoot,
   createText,
-  Node,
+  OutlineNode,
   BlockNode,
   ListItemNode,
   ParagraphNode,

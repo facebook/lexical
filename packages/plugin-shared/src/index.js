@@ -1,6 +1,6 @@
 // @flow strict-local
 
-import type {Node, NodeKey, Selection} from 'outline';
+import type {OutlineNode, NodeKey, Selection} from 'outline';
 
 import {useCallback, useEffect} from 'react';
 import {BlockNode, createParagraph, createText} from 'outline';
@@ -255,9 +255,9 @@ function onCopy(
 function generateNode(
   key: NodeKey,
   parentKey: null | NodeKey,
-  nodeMap: {[NodeKey]: Node},
+  nodeMap: {[NodeKey]: OutlineNode},
   editor: OutlineEditor,
-): Node {
+): OutlineNode {
   const nodeData = nodeMap[key];
   const type = nodeData._type;
   const nodeType = editor._registeredNodeTypes.get(type);
@@ -281,9 +281,9 @@ function generateNode(
 }
 
 function generateNodes(
-  nodeRange: {range: Array<NodeKey>, nodeMap: {[NodeKey]: Node}},
+  nodeRange: {range: Array<NodeKey>, nodeMap: {[NodeKey]: OutlineNode}},
   editor: OutlineEditor,
-): Array<Node> {
+): Array<OutlineNode> {
   const {range, nodeMap} = nodeRange;
   const nodes = [];
   for (let i = 0; i < range.length; i++) {

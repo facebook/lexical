@@ -1,6 +1,6 @@
 // @flow strict
 
-import type {Node as OutlineNode, NodeKey} from './OutlineNode';
+import type {OutlineNode, NodeKey} from './OutlineNode';
 import type {ViewModel} from './OutlineView';
 
 import {getActiveViewModel} from './OutlineView';

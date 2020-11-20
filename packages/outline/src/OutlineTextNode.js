@@ -3,7 +3,7 @@
 import type {Selection} from './OutlineSelection';
 import type {NodeKey} from './OutlineNode';
 
-import {Node} from './OutlineNode';
+import {OutlineNode} from './OutlineNode';
 import {
   getWritableNode,
   IS_IMMUTABLE,
@@ -33,8 +33,8 @@ const FORMAT_LINK = 5;
 const zeroWidthString = '\uFEFF';
 
 export type SelectionFragment = {
-  root: Node,
-  nodeMap: {[string]: Node},
+  root: OutlineNode,
+  nodeMap: {[string]: OutlineNode},
 };
 
 function getElementOuterTag(node: TextNode, flags: number): string | null {
@@ -219,7 +219,7 @@ function setTextContent(
   }
 }
 
-export class TextNode extends Node {
+export class TextNode extends OutlineNode {
   _text: string;
   _type: 'text';
   _url: null | string;

@@ -102,8 +102,7 @@ function wrapInTextNodes<N: OutlineNode>(node: N): N {
     const text = createText('');
     node.insertAfter(text);
   }
-  // TODO: This should be getParentBlock probably
-  (node.getParent(): $FlowFixMe).normalizeTextNodes(true);
+  node.getParentOrThrow().normalizeTextNodes(true);
   return node;
 }
 
@@ -190,6 +189,13 @@ export class OutlineNode {
       node = node.getParent();
     }
     return null;
+  }
+  getParentBlockOrThrow(): BlockNode {
+    const parent = this.getParentBlock();
+    if (parent === null) {
+      throw new Error(`Expected node ${this._key} to have a parent.`);
+    }
+    return parent;
   }
   getTopParentBlock(): BlockNode | null {
     let node = this;
@@ -323,10 +329,7 @@ export class OutlineNode {
           node = nextSibling;
           continue;
         }
-        const parent = node.getParent();
-        if (parent === null) {
-          throw new Error('This should never happen');
-        }
+        const parent = node.getParentOrThrow();
         nodes.push(parent);
         let parentSibling = null;
         let ancestor = parent;
@@ -356,10 +359,7 @@ export class OutlineNode {
           node = prevSibling;
           continue;
         }
-        const parent = node.getParent();
-        if (parent === null) {
-          throw new Error('This should never happen');
-        }
+        const parent = node.getParentOrThrow();
         nodes.push(parent);
         let parentSibling = null;
         let ancestor = parent;

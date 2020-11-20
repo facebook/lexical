@@ -12,6 +12,7 @@
     "build": "node scripts/build.js",
     "build-prod": "node scripts/build.js --prod",
     "build-www": "node scripts/build.js --prod --www",
+    "clean": "node scripts/build.js --clean",
     "watch": "node scripts/build.js --watch",
     "flow": "node ./scripts/tasks/flow.js",
     "test": "npm run build && jest",
@@ -44,5 +45,8 @@
     "prettier": "^2.1.2",
     "react-test-renderer": "^17.0.1",
     "rollup": "^2.33.1"
+  },
+  "dependencies": {
+    "fs-extra": "^9.0.1"
   }
 }

@@ -483,7 +483,7 @@ export function storeDOMWithKey(
 export function getNodeKeyFromDOM(
   // Note that node here refers to a DOM Node, not an Outline Node
   dom: Node,
-): NodeKey {
+): NodeKey | null {
   let node = dom;
   while (node != null) {
     // $FlowFixMe: internal field
@@ -493,5 +493,5 @@ export function getNodeKeyFromDOM(
     }
     node = node.parentNode;
   }
-  invariant(false, 'Should never happen');
+  return null;
 }

@@ -109,7 +109,6 @@ export class OutlineEditor {
 
     if (this._updateTimeStamp !== timeStamp) {
       if (pendingViewModel !== null) {
-        console.log('FOO');
         this._pendingViewModel = null;
         updateViewModel(pendingViewModel, this);
         pendingViewModel = null;

@@ -233,7 +233,7 @@ describe('OutlineSelection tests', () => {
   }
 
   function update(callback) {
-    editor.update(callback, true);
+    editor.update(callback);
   }
 
   test('Expect initial output to be a block with some text', () => {

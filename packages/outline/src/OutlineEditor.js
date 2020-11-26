@@ -34,6 +34,7 @@ export class OutlineEditor {
   _isComposing: boolean;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _updateListeners: Set<onChangeType>;
+  _updateTimeStamp: number;
   _textTransforms: Set<(node: TextNode, view: ViewType) => void>;
   _registeredNodeTypes: Map<string, Class<OutlineNode>>;
 
@@ -50,6 +51,7 @@ export class OutlineEditor {
     this._keyToDOMMap = new Map();
     // onChange listeners
     this._updateListeners = new Set();
+    this._updateTimeStamp = 0;
     // Handling of transform
     this._textTransforms = new Set();
     // Mapping of types to their nodes
@@ -102,26 +104,41 @@ export class OutlineEditor {
   setViewModel(viewModel: ViewModel): void {
     updateViewModel(viewModel, this);
   }
-  update(callbackFn: (view: ViewType) => void, forceSync?: boolean): boolean {
-    let _pendingViewModel = this._pendingViewModel;
+  update(callbackFn: (view: ViewType) => void, timeStamp?: number): boolean {
+    let pendingViewModel = this._pendingViewModel;
+
+    if (this._updateTimeStamp !== timeStamp) {
+      if (pendingViewModel !== null) {
+        this._pendingViewModel = null;
+        updateViewModel(pendingViewModel, this);
+        pendingViewModel = null;
+      }
+      if (timeStamp !== undefined) {
+        this._updateTimeStamp = timeStamp;
+      }
+    }
     let selectionNeedsInitializing = false;
 
-    if (_pendingViewModel === null) {
-      _pendingViewModel = this._pendingViewModel = cloneViewModel(
+    if (pendingViewModel === null) {
+      pendingViewModel = this._pendingViewModel = cloneViewModel(
         this._viewModel,
       );
       selectionNeedsInitializing = true;
     }
-    const pendingViewModel = _pendingViewModel;
+    const currentPendingViewModel = pendingViewModel;
+
     enterViewModelScope(
       (view: ViewType) => {
         if (selectionNeedsInitializing) {
-          pendingViewModel.selection = createSelection(pendingViewModel, this);
+          currentPendingViewModel.selection = createSelection(
+            currentPendingViewModel,
+            this,
+          );
         }
         callbackFn(view);
-        if (pendingViewModel.hasDirtyNodes()) {
-          applyTextTransforms(pendingViewModel, this);
-          garbageCollectDetachedNodes(pendingViewModel);
+        if (currentPendingViewModel.hasDirtyNodes()) {
+          applyTextTransforms(currentPendingViewModel, this);
+          garbageCollectDetachedNodes(currentPendingViewModel);
         }
       },
       pendingViewModel,
@@ -135,13 +152,16 @@ export class OutlineEditor {
       this._pendingViewModel = null;
       return false;
     }
-    if (forceSync) {
+    if (timeStamp === undefined) {
       this._pendingViewModel = null;
       updateViewModel(pendingViewModel, this);
     } else {
       Promise.resolve().then(() => {
-        this._pendingViewModel = null;
-        updateViewModel(pendingViewModel, this);
+        const nextPendingViewModel = this._pendingViewModel;
+        if (nextPendingViewModel !== null) {
+          this._pendingViewModel = null;
+          updateViewModel(nextPendingViewModel, this);
+        }
       });
     }
     return true;

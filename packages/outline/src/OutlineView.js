@@ -159,6 +159,7 @@ export class ViewModel {
   dirtyNodes: Set<NodeKey>;
   dirtySubTrees: Set<NodeKey>;
   isHistoric: boolean;
+  hasContent: boolean;
 
   constructor(root: RootNode) {
     this.root = root;
@@ -175,6 +176,8 @@ export class ViewModel {
     this.dirtySubTrees = new Set();
     // Used for undo/redo logic
     this.isHistoric = false;
+    // A flag to tell if the view model has content
+    this.hasContent = false;
   }
   hasDirtyNodes(): boolean {
     return this.dirtyNodes.size > 0;

@@ -1134,6 +1134,9 @@ export function createSelection(
     // If we can't do this, we return null.
     anchorKey = getNodeKeyFromDOM(anchorDOM);
     focusKey = getNodeKeyFromDOM(focusDOM);
+    if (anchorKey === null || focusKey === null) {
+      return null;
+    }
     [anchorNode, focusNode] = resolveSelectionNodes(anchorKey, focusKey);
     if (anchorNode === null || focusNode === null) {
       return null;

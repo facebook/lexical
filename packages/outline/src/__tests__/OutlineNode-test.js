@@ -27,7 +27,7 @@ describe('OutlineNode tests', () => {
   });
 
   function update(callback) {
-    editor.update(callback, true);
+    editor.update(callback);
   }
 
   let editor = null;

@@ -49,7 +49,10 @@ function useEventWrapper<T>(
     (event) => {
       const state = stateRef && stateRef.current;
       if (editor !== null) {
-        editor.update((view) => handler(event, view, state, editor));
+        editor.update(
+          (view) => handler(event, view, state, editor),
+          event.timeStamp,
+        );
       }
     },
     [stateRef, editor, handler],

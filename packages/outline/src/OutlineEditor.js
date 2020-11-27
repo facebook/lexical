@@ -117,19 +117,19 @@ export class OutlineEditor {
         this._updateTimeStamp = timeStamp;
       }
     }
-    let selectionNeedsInitializing = false;
+    let viewModelWasCloned = false;
 
     if (pendingViewModel === null) {
       pendingViewModel = this._pendingViewModel = cloneViewModel(
         this._viewModel,
       );
-      selectionNeedsInitializing = true;
+      viewModelWasCloned = true;
     }
     const currentPendingViewModel = pendingViewModel;
 
     enterViewModelScope(
       (view: ViewType) => {
-        if (selectionNeedsInitializing) {
+        if (viewModelWasCloned) {
           currentPendingViewModel.selection = createSelection(
             currentPendingViewModel,
             this,
@@ -155,7 +155,7 @@ export class OutlineEditor {
     if (timeStamp === undefined) {
       this._pendingViewModel = null;
       updateViewModel(pendingViewModel, this);
-    } else {
+    } else if (viewModelWasCloned) {
       Promise.resolve().then(() => {
         const nextPendingViewModel = this._pendingViewModel;
         if (nextPendingViewModel !== null) {

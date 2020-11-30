@@ -1164,6 +1164,7 @@ export function createSelection(
   const currentSelection = currentViewModel.selection;
   if (
     currentSelection !== null &&
+    !editor.isComposing() &&
     (currentSelection.focusKey !== selection.focusKey ||
       currentSelection.anchorKey !== selection.anchorKey ||
       currentSelection.anchorOffset !== selection.anchorOffset ||

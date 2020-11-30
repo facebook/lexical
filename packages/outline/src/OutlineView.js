@@ -135,6 +135,9 @@ export function updateViewModel(
   activeViewModel = viewModel;
   reconcileViewModel(viewModel, editor);
   activeViewModel = previousActiveViewModel;
+  if (viewModel.selection === null) {
+    viewModel.selection = editor._viewModel.selection;
+  }
   editor._viewModel = viewModel;
   triggerOnChange(editor, viewModel);
 }

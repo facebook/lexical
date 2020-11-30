@@ -368,7 +368,7 @@ function getPossibleMentionMatch(text): MentionMatch | null {
   return match === null ? checkForCaptitalizedNameMentions(text, 3) : match;
 }
 
-export function useMentionsPlugin(editor: OutlineEditor | null): React$Node {
+export function useMentionsPlugin(editor: OutlineEditor): React$Node {
   const [mentionMatch, setMentionMatch] = useState<MentionMatch | null>(null);
   const [nodeKey, setNodeKey] = useState(null);
   const registeredKeys: Set<any> = useMemo(() => new Set(), []);
@@ -383,50 +383,46 @@ export function useMentionsPlugin(editor: OutlineEditor | null): React$Node {
   );
 
   useEffect(() => {
-    if (editor !== null) {
-      return editor.addNodeType('mention', MentionNode);
-    }
+    return editor.addNodeType('mention', MentionNode);
   }, [editor]);
 
   useEffect(() => {
-    if (editor !== null) {
-      const textNodeTransform = (node, view) => {
-        const selection = view.getSelection();
-        if (
-          selection === null ||
-          selection.getAnchorNode() !== node ||
-          node.isImmutable() ||
-          node.isSegmented()
-        ) {
+    const textNodeTransform = (node, view) => {
+      const selection = view.getSelection();
+      if (
+        selection === null ||
+        selection.getAnchorNode() !== node ||
+        node.isImmutable() ||
+        node.isSegmented()
+      ) {
+        return;
+      }
+      const anchorOffset = selection.anchorOffset;
+      const text = node.getTextContent().slice(0, anchorOffset);
+
+      if (text !== '') {
+        const match = getPossibleMentionMatch(text);
+        if (match !== null) {
+          const {leadOffset, replaceableString} = match;
+          const splitNodes = node.splitText(
+            leadOffset,
+            leadOffset + replaceableString.length,
+          );
+          const target = leadOffset === 0 ? splitNodes[0] : splitNodes[1];
+          target.setTextContent(replaceableString);
+          target.select();
+          // We shouldn't do updates to React until this view is actually
+          // reconciled.
+          window.requestAnimationFrame(() => {
+            setNodeKey(target.getKey());
+            setMentionMatch(match);
+          });
           return;
         }
-        const anchorOffset = selection.anchorOffset;
-        const text = node.getTextContent().slice(0, anchorOffset);
-
-        if (text !== '') {
-          const match = getPossibleMentionMatch(text);
-          if (match !== null) {
-            const {leadOffset, replaceableString} = match;
-            const splitNodes = node.splitText(
-              leadOffset,
-              leadOffset + replaceableString.length,
-            );
-            const target = leadOffset === 0 ? splitNodes[0] : splitNodes[1];
-            target.setTextContent(replaceableString);
-            target.select();
-            // We shouldn't do updates to React until this view is actually
-            // reconciled.
-            window.requestAnimationFrame(() => {
-              setNodeKey(target.getKey());
-              setMentionMatch(match);
-            });
-            return;
-          }
-        }
-        setMentionMatch(null);
-      };
-      return editor.addTextTransform(textNodeTransform);
-    }
+      }
+      setMentionMatch(null);
+    };
+    return editor.addTextTransform(textNodeTransform);
   }, [editor]);
 
   const onKeyDown = useCallback(

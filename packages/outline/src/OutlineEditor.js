@@ -94,8 +94,12 @@ export class OutlineEditor {
   getEditorElement(): null | HTMLElement {
     return this._editorElement;
   }
-  setEditorElement(editorElement: HTMLElement): void {
-    this._keyToDOMMap.set('root', editorElement);
+  setEditorElement(editorElement: null | HTMLElement): void {
+    if (editorElement === null) {
+      this._keyToDOMMap.delete('root');
+    } else {
+      this._keyToDOMMap.set('root', editorElement);
+    }
     this._editorElement = editorElement;
   }
   getElementByKey(key: NodeKey): HTMLElement {

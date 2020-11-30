@@ -42,43 +42,39 @@ function useEventWrapper<T>(
     state: UnknownState,
     editor: OutlineEditor,
   ) => void,
-  editor: null | OutlineEditor,
+  editor: OutlineEditor,
   stateRef?: RefObject<T>,
 ): (event: UnknownEvent) => void {
   return useCallback(
     (event) => {
       const state = stateRef && stateRef.current;
-      if (editor !== null) {
-        editor.update(
-          (view) => handler(event, view, state, editor),
-          event.timeStamp,
-        );
-      }
+      editor.update(
+        (view) => handler(event, view, state, editor),
+        event.timeStamp,
+      );
     },
     [stateRef, editor, handler],
   );
 }
 
 export function useEvent<T>(
-  editor: null | OutlineEditor,
+  editor: OutlineEditor,
   eventName: string,
   handler: (event: UnknownEvent, view: ViewType) => void,
   stateRef?: RefObject<T>,
 ): void {
   const wrapper = useEventWrapper(handler, editor, stateRef);
   useEffect(() => {
-    if (editor !== null) {
-      const target =
-        eventName === 'selectionchange' ? document : editor.getEditorElement();
+    const target =
+      eventName === 'selectionchange' ? document : editor.getEditorElement();
 
-      if (target !== null) {
+    if (target !== null) {
+      // $FlowFixMe
+      target.addEventListener(eventName, wrapper);
+      return () => {
         // $FlowFixMe
-        target.addEventListener(eventName, wrapper);
-        return () => {
-          // $FlowFixMe
-          target.removeEventListener(eventName, wrapper);
-        };
-      }
+        target.removeEventListener(eventName, wrapper);
+      };
     }
   }, [eventName, editor, wrapper]);
 }
@@ -437,7 +433,7 @@ function onNativeBeforeInput(
 }
 
 export function useEditorInputEvents<T>(
-  editor: null | OutlineEditor,
+  editor: OutlineEditor,
   stateRef: RefObject<T>,
 ): {} | {onBeforeInput: (event: SyntheticInputEvent<T>) => void} {
   const handleNativeBeforeInput = useEventWrapper(

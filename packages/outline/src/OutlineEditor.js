@@ -91,7 +91,7 @@ export class OutlineEditor {
       this._textTransforms.delete(transformFn);
     };
   }
-  geEditorKey(): string {
+  getEditorKey(): string {
     return this._key;
   }
   getEditorElement(): HTMLElement {

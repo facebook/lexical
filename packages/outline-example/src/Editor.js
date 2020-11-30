@@ -1,9 +1,9 @@
 // @flow
-import type {ViewModel} from 'outline';
+import type {OutlineEditor, ViewModel} from 'outline';
 
 import * as React from 'react';
-import {useEffect, useRef} from 'react';
-import {useOutlineEditor} from 'outline';
+import {useEffect, useRef, useState} from 'react';
+import {createEditor} from 'outline';
 import {useEmojiPlugin} from 'outline-emoji-plugin';
 import {useMentionsPlugin} from 'outline-mentions-plugin';
 // import {usePlainTextPlugin} from 'outline-plain-text-plugin';
@@ -24,6 +24,28 @@ type Props = {
   onChange: (ViewModel | null) => void,
   isReadOnly?: boolean,
 };
+
+function useOutlineEditor(editorElementRef: {
+  current: null | HTMLElement,
+}): OutlineEditor | null {
+  const [editor, setOutlineEditor] = useState<null | OutlineEditor>(null);
+
+  useEffect(() => {
+    const editorElement = editorElementRef.current;
+
+    if (editorElement !== null) {
+      if (editor === null) {
+        const newEditor = createEditor();
+        newEditor.setEditorElement(editorElement);
+        setOutlineEditor(newEditor);
+      }
+    } else if (editor !== null) {
+      setOutlineEditor(null);
+    }
+  }, [editorElementRef, editor]);
+
+  return editor;
+}
 
 // An example of a custom editor using Outline.
 export default function Editor({onChange, isReadOnly}: Props): React$Node {

@@ -68,7 +68,7 @@ export function viewModelHasDirtySelection(
 }
 
 export function enterViewModelScope<V>(
-  callbackFn: (view: ViewType) => void,
+  callbackFn: (view: ViewType) => V,
   viewModel: ViewModel,
   readOnly: boolean,
 ): V {
@@ -203,7 +203,7 @@ export class ViewModel {
     }
     return nodes;
   }
-  read<V>(callbackFn: (view: ViewType) => V) {
+  read<V>(callbackFn: (view: ViewType) => V): V {
     return enterViewModelScope(callbackFn, this, true);
   }
 }

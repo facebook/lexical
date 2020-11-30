@@ -7,7 +7,7 @@ export type {ViewModel, ViewType};
 export type {NodeKey} from './OutlineNode';
 export type {Selection} from './OutlineSelection';
 
-import {useOutlineEditor} from './OutlineEditor';
+import {createEditor} from './OutlineEditor';
 import {createTextNode as createText, TextNode} from './OutlineTextNode';
 import {BlockNode} from './OutlineBlockNode';
 import {
@@ -23,6 +23,7 @@ import {createRootNode as createRoot, RootNode} from './OutlineRootNode';
 import {OutlineNode} from './OutlineNode';
 
 export {
+  createEditor,
   createListItem,
   createParagraph,
   createRoot,
@@ -33,5 +34,4 @@ export {
   ParagraphNode,
   RootNode,
   TextNode,
-  useOutlineEditor,
 };

@@ -3,7 +3,6 @@
 import type {ViewType} from './OutlineView';
 import type {OutlineNode, NodeKey} from './OutlineNode';
 
-import {useEffect, useState} from 'react';
 import {createRoot, RootNode, TextNode, ParagraphNode, ListItemNode} from '.';
 import {
   applyTextTransforms,
@@ -17,19 +16,17 @@ import {
 import {createSelection} from './OutlineSelection';
 import {generateRandomKey} from './OutlineUtils';
 
-function createOutlineEditor(editorElement): OutlineEditor {
+export function createEditor(): OutlineEditor {
   const root = createRoot();
   const viewModel = new ViewModel(root);
   viewModel.nodeMap.root = root;
-  const editor = new OutlineEditor(editorElement, viewModel);
-  editor._keyToDOMMap.set('root', editorElement);
-  return editor;
+  return new OutlineEditor(viewModel);
 }
 
 export type onChangeType = (viewModel: ViewModel) => void;
 
 export class OutlineEditor {
-  _editorElement: HTMLElement;
+  _editorElement: null | HTMLElement;
   _viewModel: ViewModel;
   _pendingViewModel: null | ViewModel;
   _isComposing: boolean;
@@ -40,9 +37,9 @@ export class OutlineEditor {
   _textTransforms: Set<(node: TextNode, view: ViewType) => void>;
   _registeredNodeTypes: Map<string, Class<OutlineNode>>;
 
-  constructor(editorElement: HTMLElement, viewModel: ViewModel) {
+  constructor(viewModel: ViewModel) {
     // The editor element associated with this editor
-    this._editorElement = editorElement;
+    this._editorElement = null;
     // The current view model
     this._viewModel = viewModel;
     // Handling of drafts and updates
@@ -94,8 +91,12 @@ export class OutlineEditor {
   getEditorKey(): string {
     return this._key;
   }
-  getEditorElement(): HTMLElement {
+  getEditorElement(): null | HTMLElement {
     return this._editorElement;
+  }
+  setEditorElement(editorElement: HTMLElement): void {
+    this._keyToDOMMap.set('root', editorElement);
+    this._editorElement = editorElement;
   }
   getElementByKey(key: NodeKey): HTMLElement {
     const element = this._keyToDOMMap.get(key);
@@ -172,25 +173,4 @@ export class OutlineEditor {
     }
     return true;
   }
-}
-
-export function useOutlineEditor(editorElementRef: {
-  current: null | HTMLElement,
-}): OutlineEditor | null {
-  const [editor, setOutlineEditor] = useState<null | OutlineEditor>(null);
-
-  useEffect(() => {
-    const editorElement = editorElementRef.current;
-
-    if (editorElement !== null) {
-      if (editor === null) {
-        const newEditor = createOutlineEditor(editorElement);
-        setOutlineEditor(newEditor);
-      }
-    } else if (editor !== null) {
-      setOutlineEditor(null);
-    }
-  }, [editorElementRef, editor]);
-
-  return editor;
 }

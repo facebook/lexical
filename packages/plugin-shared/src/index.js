@@ -71,12 +71,14 @@ export function useEvent<T>(
       const target =
         eventName === 'selectionchange' ? document : editor.getEditorElement();
 
-      // $FlowFixMe
-      target.addEventListener(eventName, wrapper);
-      return () => {
+      if (target !== null) {
         // $FlowFixMe
-        target.removeEventListener(eventName, wrapper);
-      };
+        target.addEventListener(eventName, wrapper);
+        return () => {
+          // $FlowFixMe
+          target.removeEventListener(eventName, wrapper);
+        };
+      }
     }
   }, [eventName, editor, wrapper]);
 }
@@ -475,37 +477,46 @@ export function useEditorInputEvents<T>(
   );
   useEffect(() => {
     if (editor !== null) {
-      const target: HTMLElement = editor.getEditorElement();
-      target.addEventListener('keydown', handleKeyDown);
-      target.addEventListener('compositionstart', handleCompositionStart);
-      target.addEventListener('compositionend', handleCompositionEnd);
-      target.addEventListener('cut', handleCut);
-      target.addEventListener('copy', handleCopy);
-      document.addEventListener('selectionchange', handleSelectionChange);
+      const target: null | HTMLElement = editor.getEditorElement();
 
-      if (CAN_USE_BEFORE_INPUT) {
-        target.addEventListener('beforeinput', handleNativeBeforeInput);
-      } else {
-        target.addEventListener('paste', handlePaste);
-        target.addEventListener('drop', handleDrop);
-        target.addEventListener('dragstart', handleDragStart);
-      }
-      return () => {
-        target.removeEventListener('keydown', handleKeyDown);
-        target.removeEventListener('compositionstart', handleCompositionStart);
-        target.removeEventListener('compositionend', handleCompositionEnd);
-        target.removeEventListener('cut', handleCut);
-        target.removeEventListener('copy', handleCopy);
-        document.removeEventListener('selectionchange', handleSelectionChange);
+      if (target !== null) {
+        target.addEventListener('keydown', handleKeyDown);
+        target.addEventListener('compositionstart', handleCompositionStart);
+        target.addEventListener('compositionend', handleCompositionEnd);
+        target.addEventListener('cut', handleCut);
+        target.addEventListener('copy', handleCopy);
+        document.addEventListener('selectionchange', handleSelectionChange);
 
         if (CAN_USE_BEFORE_INPUT) {
-          target.removeEventListener('beforeinput', handleNativeBeforeInput);
+          target.addEventListener('beforeinput', handleNativeBeforeInput);
         } else {
-          target.removeEventListener('paste', handlePaste);
-          target.removeEventListener('drop', handleDrop);
-          target.removeEventListener('dragstart', handleDragStart);
+          target.addEventListener('paste', handlePaste);
+          target.addEventListener('drop', handleDrop);
+          target.addEventListener('dragstart', handleDragStart);
         }
-      };
+        return () => {
+          target.removeEventListener('keydown', handleKeyDown);
+          target.removeEventListener(
+            'compositionstart',
+            handleCompositionStart,
+          );
+          target.removeEventListener('compositionend', handleCompositionEnd);
+          target.removeEventListener('cut', handleCut);
+          target.removeEventListener('copy', handleCopy);
+          document.removeEventListener(
+            'selectionchange',
+            handleSelectionChange,
+          );
+
+          if (CAN_USE_BEFORE_INPUT) {
+            target.removeEventListener('beforeinput', handleNativeBeforeInput);
+          } else {
+            target.removeEventListener('paste', handlePaste);
+            target.removeEventListener('drop', handleDrop);
+            target.removeEventListener('dragstart', handleDragStart);
+          }
+        };
+      }
     }
   }, [
     editor,

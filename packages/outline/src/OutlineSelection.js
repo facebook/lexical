@@ -1113,7 +1113,11 @@ export function createSelection(
     return null;
   }
   const editorElement = editor.getEditorElement();
-  if (!editorElement.contains(anchorDOM) || !editorElement.contains(focusDOM)) {
+  if (
+    editorElement === null ||
+    !editorElement.contains(anchorDOM) ||
+    !editorElement.contains(focusDOM)
+  ) {
     return null;
   }
   // When selecting all content in FF, it targets the contenteditable.

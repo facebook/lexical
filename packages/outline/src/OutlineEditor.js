@@ -20,9 +20,9 @@ import {generateRandomKey} from './OutlineUtils';
 function createOutlineEditor(editorElement): OutlineEditor {
   const root = createRoot();
   const viewModel = new ViewModel(root);
-  viewModel.nodeMap['#root'] = root;
+  viewModel.nodeMap.root = root;
   const editor = new OutlineEditor(editorElement, viewModel);
-  editor._keyToDOMMap.set('#root', editorElement);
+  editor._keyToDOMMap.set('root', editorElement);
   return editor;
 }
 

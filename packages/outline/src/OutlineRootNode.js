@@ -6,7 +6,7 @@ export class RootNode extends BlockNode {
   _type: 'root';
 
   constructor() {
-    super('#root');
+    super('root');
     this._type = 'root';
   }
   static parse(

@@ -67,18 +67,21 @@ export function viewModelHasDirtySelection(
   return selection !== null && selection.isDirty;
 }
 
-export function enterViewModelScope(
+export function enterViewModelScope<V>(
   callbackFn: (view: ViewType) => void,
   viewModel: ViewModel,
   readOnly: boolean,
-): void {
+): V {
   const previousActiveViewModel = activeViewModel;
   const previousReadyOnlyMode = activeReadyOnlyMode;
   activeViewModel = viewModel;
   activeReadyOnlyMode = readOnly;
-  callbackFn(view);
-  activeViewModel = previousActiveViewModel;
-  activeReadyOnlyMode = previousReadyOnlyMode;
+  try {
+    return callbackFn(view);
+  } finally {
+    activeViewModel = previousActiveViewModel;
+    activeReadyOnlyMode = previousReadyOnlyMode;
+  }
 }
 
 // To optimize things, we only apply transforms to
@@ -197,7 +200,7 @@ export class ViewModel {
     }
     return nodes;
   }
-  read(callbackFn: (view: ViewType) => void) {
-    enterViewModelScope(callbackFn, this, true);
+  read<V>(callbackFn: (view: ViewType) => V) {
+    return enterViewModelScope(callbackFn, this, true);
   }
 }

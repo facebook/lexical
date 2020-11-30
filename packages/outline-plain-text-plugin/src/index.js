@@ -6,7 +6,7 @@ import {useEffect, useRef} from 'react';
 import {onFocusIn, useEditorInputEvents, useEvent} from 'plugin-shared';
 
 export function usePlainTextPlugin(
-  editor: null | OutlineEditor,
+  editor: OutlineEditor,
   isReadOnly: boolean = false,
 ): {} | {onBeforeInput: (SyntheticInputEvent<EventTarget>) => void} {
   const pluginStateRef = useRef<{isReadOnly: boolean, richText: false} | null>(

@@ -31,20 +31,12 @@ describe('OutlineNode tests', () => {
   }
 
   function useOutlineEditor(editorElementRef) {
-    const [editor, setOutlineEditor] = React.useState(null);
+    const editor = React.useMemo(() => Outline.createEditor(), []);
 
     React.useEffect(() => {
       const editorElement = editorElementRef.current;
 
-      if (editorElement !== null) {
-        if (editor === null) {
-          const newEditor = Outline.createEditor();
-          newEditor.setEditorElement(editorElement);
-          setOutlineEditor(newEditor);
-        }
-      } else if (editor !== null) {
-        setOutlineEditor(null);
-      }
+      editor.setEditorElement(editorElement);
     }, [editorElementRef, editor]);
 
     return editor;

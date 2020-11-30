@@ -2,7 +2,7 @@
 import type {OutlineEditor, ViewModel} from 'outline';
 
 import * as React from 'react';
-import {useEffect, useRef, useState} from 'react';
+import {useEffect, useMemo, useRef} from 'react';
 import {createEditor} from 'outline';
 import {useEmojiPlugin} from 'outline-emoji-plugin';
 import {useMentionsPlugin} from 'outline-mentions-plugin';
@@ -27,21 +27,13 @@ type Props = {
 
 function useOutlineEditor(editorElementRef: {
   current: null | HTMLElement,
-}): OutlineEditor | null {
-  const [editor, setOutlineEditor] = useState<null | OutlineEditor>(null);
+}): OutlineEditor {
+  const editor = useMemo(() => createEditor(), []);
 
   useEffect(() => {
     const editorElement = editorElementRef.current;
 
-    if (editorElement !== null) {
-      if (editor === null) {
-        const newEditor = createEditor();
-        newEditor.setEditorElement(editorElement);
-        setOutlineEditor(newEditor);
-      }
-    } else if (editor !== null) {
-      setOutlineEditor(null);
-    }
+    editor.setEditorElement(editorElement);
   }, [editorElementRef, editor]);
 
   return editor;

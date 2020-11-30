@@ -39,7 +39,7 @@ function shouldMerge(
   return false;
 }
 
-export function useHistoryPlugin(editor: null | OutlineEditor): void {
+export function useHistoryPlugin(editor: OutlineEditor): void {
   const historyState: {
     current: null | ViewModel,
     redoStack: Array<ViewModel>,
@@ -54,75 +54,73 @@ export function useHistoryPlugin(editor: null | OutlineEditor): void {
   );
 
   useEffect(() => {
-    if (editor !== null) {
-      const undoStack = historyState.undoStack;
-      const editorElement = editor.getEditorElement();
-      if (editorElement === null) {
+    const undoStack = historyState.undoStack;
+    const editorElement = editor.getEditorElement();
+    if (editorElement === null) {
+      return;
+    }
+    let redoStack = historyState.redoStack;
+
+    const applyChange = (viewModel) => {
+      const current = historyState.current;
+
+      if (viewModel === current) {
         return;
       }
-      let redoStack = historyState.redoStack;
-
-      const applyChange = (viewModel) => {
-        const current = historyState.current;
-
-        if (viewModel === current) {
-          return;
+      if (
+        !viewModel.isHistoric &&
+        !shouldMerge(viewModel, current, undoStack)
+      ) {
+        if (redoStack.length !== 0) {
+          redoStack = historyState.redoStack = [];
         }
-        if (
-          !viewModel.isHistoric &&
-          !shouldMerge(viewModel, current, undoStack)
-        ) {
-          if (redoStack.length !== 0) {
-            redoStack = historyState.redoStack = [];
+        if (current !== null) {
+          undoStack.push(current);
+        }
+      }
+      historyState.current = viewModel;
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (editor.isComposing()) {
+        return;
+      }
+      if (isUndo(event)) {
+        const undoStackLength = undoStack.length;
+        if (undoStackLength !== 0) {
+          let current = historyState.current;
+
+          if (current !== null) {
+            if (undoStackLength !== 1 && !current.hasDirtyNodes()) {
+              current = undoStack.pop();
+            }
+            redoStack.push(current);
           }
+          const viewModel = undoStack.pop();
+          historyState.current = viewModel;
+          viewModel.isHistoric = true;
+          editor.setViewModel(viewModel);
+        }
+      } else if (isRedo(event)) {
+        if (redoStack.length !== 0) {
+          const current = historyState.current;
+
           if (current !== null) {
             undoStack.push(current);
           }
+          const viewModel = redoStack.pop();
+          historyState.current = viewModel;
+          viewModel.isHistoric = true;
+          editor.setViewModel(viewModel);
         }
-        historyState.current = viewModel;
-      };
+      }
+    };
 
-      const handleKeyDown = (event: KeyboardEvent) => {
-        if (editor.isComposing()) {
-          return;
-        }
-        if (isUndo(event)) {
-          const undoStackLength = undoStack.length;
-          if (undoStackLength !== 0) {
-            let current = historyState.current;
-
-            if (current !== null) {
-              if (undoStackLength !== 1 && !current.hasDirtyNodes()) {
-                current = undoStack.pop();
-              }
-              redoStack.push(current);
-            }
-            const viewModel = undoStack.pop();
-            historyState.current = viewModel;
-            viewModel.isHistoric = true;
-            editor.setViewModel(viewModel);
-          }
-        } else if (isRedo(event)) {
-          if (redoStack.length !== 0) {
-            const current = historyState.current;
-
-            if (current !== null) {
-              undoStack.push(current);
-            }
-            const viewModel = redoStack.pop();
-            historyState.current = viewModel;
-            viewModel.isHistoric = true;
-            editor.setViewModel(viewModel);
-          }
-        }
-      };
-
-      const removeUpdateListener = editor.addUpdateListener(applyChange);
-      editorElement.addEventListener('keydown', handleKeyDown);
-      return () => {
-        editorElement.removeEventListener('keydown', handleKeyDown);
-        removeUpdateListener();
-      };
-    }
+    const removeUpdateListener = editor.addUpdateListener(applyChange);
+    editorElement.addEventListener('keydown', handleKeyDown);
+    return () => {
+      editorElement.removeEventListener('keydown', handleKeyDown);
+      removeUpdateListener();
+    };
   }, [historyState, editor]);
 }

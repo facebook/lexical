@@ -14,7 +14,7 @@ import {createQuoteNode as createQuote, QuoteNode} from './OutlineQuoteNode';
 import {createListNode as createList, ListNode} from './OutlineListNode';
 
 export function useRichTextPlugin(
-  editor: null | OutlineEditor,
+  editor: OutlineEditor,
   isReadOnly: boolean = false,
 ): {} | {onBeforeInput: (SyntheticInputEvent<EventTarget>) => void} {
   const pluginStateRef = useRef<{isReadOnly: boolean, richText: true} | null>(

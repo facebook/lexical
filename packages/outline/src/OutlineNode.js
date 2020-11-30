@@ -4,19 +4,17 @@ import type {NodeMapType} from './OutlineView';
 
 import {createText, RootNode, BlockNode, TextNode} from '.';
 import {getActiveViewModel, shouldErrorOnReadOnly} from './OutlineView';
-import {invariant} from './OutlineUtils';
+import {generateRandomKey, invariant} from './OutlineUtils';
 
 export const IS_IMMUTABLE = 1;
 export const IS_SEGMENTED = 1 << 1;
 export const HAS_DIRECTION = 1 << 2;
 
-let nodeKeyCounter = 0;
-
 function generateKey(node: OutlineNode): NodeKey {
   shouldErrorOnReadOnly();
   const viewModel = getActiveViewModel();
   const dirtyNodes = viewModel.dirtyNodes;
-  const key = '#' + nodeKeyCounter++;
+  const key = generateRandomKey();
   viewModel.nodeMap[key] = node;
   dirtyNodes.add(key);
   return key;

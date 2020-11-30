@@ -15,6 +15,7 @@ import {
   updateViewModel,
 } from './OutlineView';
 import {createSelection} from './OutlineSelection';
+import {generateRandomKey} from './OutlineUtils';
 
 function createOutlineEditor(editorElement): OutlineEditor {
   const root = createRoot();
@@ -32,6 +33,7 @@ export class OutlineEditor {
   _viewModel: ViewModel;
   _pendingViewModel: null | ViewModel;
   _isComposing: boolean;
+  _key: string;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _updateListeners: Set<onChangeType>;
   _updateTimeStamp: number;
@@ -61,6 +63,7 @@ export class OutlineEditor {
       ['paragraph', ParagraphNode],
       ['listitem', ListItemNode],
     ]);
+    this._key = generateRandomKey();
   }
   isComposing(): boolean {
     return this._isComposing;
@@ -87,6 +90,9 @@ export class OutlineEditor {
     return () => {
       this._textTransforms.delete(transformFn);
     };
+  }
+  geEditorKey(): string {
+    return this._key;
   }
   getEditorElement(): HTMLElement {
     return this._editorElement;

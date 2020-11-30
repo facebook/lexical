@@ -57,6 +57,9 @@ export function useHistoryPlugin(editor: null | OutlineEditor): void {
     if (editor !== null) {
       const undoStack = historyState.undoStack;
       const editorElement = editor.getEditorElement();
+      if (editorElement === null) {
+        return;
+      }
       let redoStack = historyState.redoStack;
 
       const applyChange = (viewModel) => {

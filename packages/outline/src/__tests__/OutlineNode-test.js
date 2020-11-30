@@ -30,13 +30,33 @@ describe('OutlineNode tests', () => {
     editor.update(callback);
   }
 
+  function useOutlineEditor(editorElementRef) {
+    const [editor, setOutlineEditor] = React.useState(null);
+
+    React.useEffect(() => {
+      const editorElement = editorElementRef.current;
+
+      if (editorElement !== null) {
+        if (editor === null) {
+          const newEditor = Outline.createEditor();
+          newEditor.setEditorElement(editorElement);
+          setOutlineEditor(newEditor);
+        }
+      } else if (editor !== null) {
+        setOutlineEditor(null);
+      }
+    }, [editorElementRef, editor]);
+
+    return editor;
+  }
+
   let editor = null;
 
   function init() {
     const ref = React.createRef();
 
     function TestBase() {
-      editor = Outline.useOutlineEditor(ref);
+      editor = useOutlineEditor(ref);
       return <div ref={ref} contentEditable={true} />;
     }
 

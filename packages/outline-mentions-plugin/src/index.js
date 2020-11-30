@@ -198,11 +198,13 @@ function MentionsTypeahead({
   const updateSelectedIndex = useCallback(
     (index) => {
       const editorElem = editor.getEditorElement();
-      editorElem.setAttribute(
-        'aria-activedescendant',
-        'typeahead-item-' + index,
-      );
-      setSelectedIndex(index);
+      if (editorElem !== null) {
+        editorElem.setAttribute(
+          'aria-activedescendant',
+          'typeahead-item-' + index,
+        );
+        setSelectedIndex(index);
+      }
     },
     [editor],
   );

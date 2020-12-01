@@ -1,6 +1,6 @@
 // @flow strict
 
-import {TextNode} from '.';
+import {createText, TextNode} from '.';
 import type {NodeKey} from './OutlineNode';
 
 import {getWritableNode, OutlineNode, getNodeByKey} from './OutlineNode';
@@ -109,6 +109,18 @@ export class BlockNode extends OutlineNode {
 
   // Mutators
 
+  clear(autoRestoreFocus?: boolean): BlockNode {
+    shouldErrorOnReadOnly();
+    const writableSelf = getWritableNode(this);
+    const children = this.getChildren();
+    children.forEach((child) => child.remove());
+    const textNode = createText('');
+    this.append(textNode);
+    if (autoRestoreFocus) {
+      textNode.select(0, 0);
+    }
+    return writableSelf;
+  }
   // TODO add support for appending multiple nodes?
   append(nodeToAppend: OutlineNode): BlockNode {
     shouldErrorOnReadOnly();

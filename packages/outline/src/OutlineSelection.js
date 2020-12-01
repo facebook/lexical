@@ -918,7 +918,11 @@ export class Selection {
             node.select(nextOffset, nextOffset);
             return;
           }
-        } else if (textContent !== '' || node.getPreviousSibling() === null) {
+        } else if (
+          textContent !== '' ||
+          node.getPreviousSibling() === null ||
+          notAdjacent
+        ) {
           const textContentLength = textContent.length;
           const nextOffset = notAdjacent
             ? textContentLength
@@ -973,7 +977,11 @@ export class Selection {
         node.isSegmented()
       ) {
         notAdjacent = true;
-      } else if (textContent !== '' || node.getNextSibling() === null) {
+      } else if (
+        textContent !== '' ||
+        node.getNextSibling() === null ||
+        notAdjacent
+      ) {
         if (node === lastNode) {
           if (offset !== textContent.length) {
             const nextOffset = offset + 1;

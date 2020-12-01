@@ -133,7 +133,9 @@ export function updateViewModel(
 ): void {
   const previousActiveViewModel = activeViewModel;
   activeViewModel = viewModel;
-  reconcileViewModel(viewModel, editor);
+  if (editor._editorElement !== null) {
+    reconcileViewModel(viewModel, editor);
+  }
   activeViewModel = previousActiveViewModel;
   if (viewModel.selection === null) {
     viewModel.selection = editor._viewModel.selection;

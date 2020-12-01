@@ -51,10 +51,11 @@ function textNodeTransform(node: TextNode, view: ViewType): void {
       } else {
         [, targetNode] = node.splitText(i, i + 2);
       }
-      const emojiInline = createEmoji(emojiStyle);
-      targetNode.replace(emojiInline);
-      emojiInline.wrapInTextNodes();
-      emojiInline.selectAfter(0, 0);
+      const emojiNode = createEmoji(emojiStyle);
+      targetNode.replace(emojiNode);
+      emojiNode.wrapInTextNodes();
+      emojiNode.selectAfter(0, 0);
+      emojiNode.getParentOrThrow().normalizeTextNodes(true);
       break;
     }
   }

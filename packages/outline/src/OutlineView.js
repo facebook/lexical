@@ -132,7 +132,7 @@ export function updateViewModel(
   editor: OutlineEditor,
 ): void {
   if (editor._editorElement === null) {
-    this._pendingViewModel = viewModel;
+    editor._pendingViewModel = viewModel;
     return;
   }
   const previousActiveViewModel = activeViewModel;

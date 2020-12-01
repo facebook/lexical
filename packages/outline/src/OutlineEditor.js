@@ -36,6 +36,7 @@ export class OutlineEditor {
   _updateTimeStamp: number;
   _textTransforms: Set<(node: TextNode, view: ViewType) => void>;
   _registeredNodeTypes: Map<string, Class<OutlineNode>>;
+  _needsReconcile: boolean;
 
   constructor(viewModel: ViewModel) {
     // The editor element associated with this editor
@@ -95,12 +96,13 @@ export class OutlineEditor {
     return this._editorElement;
   }
   setEditorElement(editorElement: null | HTMLElement): void {
+    this._editorElement = editorElement;
     if (editorElement === null) {
       this._keyToDOMMap.delete('root');
     } else {
       this._keyToDOMMap.set('root', editorElement);
+      updateViewModel(this._viewModel, this);
     }
-    this._editorElement = editorElement;
   }
   getElementByKey(key: NodeKey): HTMLElement {
     const element = this._keyToDOMMap.get(key);

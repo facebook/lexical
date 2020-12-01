@@ -101,7 +101,11 @@ export class OutlineEditor {
       this._keyToDOMMap.delete('root');
     } else {
       this._keyToDOMMap.set('root', editorElement);
-      updateViewModel(this._viewModel, this);
+      const pendingViewModel = this._pendingViewModel
+      if (pendingViewModel !== null) {
+        this._pendingViewModel = null;
+        updateViewModel(pendingViewModel, this);
+      }
     }
   }
   getElementByKey(key: NodeKey): HTMLElement {

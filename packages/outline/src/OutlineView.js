@@ -131,11 +131,13 @@ export function updateViewModel(
   viewModel: ViewModel,
   editor: OutlineEditor,
 ): void {
+  if (editor._editorElement === null) {
+    this._pendingViewModel = viewModel;
+    return;
+  }
   const previousActiveViewModel = activeViewModel;
   activeViewModel = viewModel;
-  if (editor._editorElement !== null) {
-    reconcileViewModel(viewModel, editor);
-  }
+  reconcileViewModel(viewModel, editor);
   activeViewModel = previousActiveViewModel;
   if (viewModel.selection === null) {
     viewModel.selection = editor._viewModel.selection;

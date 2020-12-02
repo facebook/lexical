@@ -143,16 +143,15 @@ export function updateViewModel(
     viewModel.selection = editor._viewModel.selection;
   }
   editor._viewModel = viewModel;
-  triggerOnChange(editor, viewModel);
+  triggerOnChange(editor);
 }
 
-export function triggerOnChange(
-  editor: OutlineEditor,
-  viewModel: ViewModel,
-): void {
+export function triggerOnChange(editor: OutlineEditor): void {
+  const viewModel = editor._viewModel;
+  const nodeDecorators = editor._nodeDecorators;
   const listeners = Array.from(editor._updateListeners);
   for (let i = 0; i < listeners.length; i++) {
-    listeners[i](viewModel);
+    listeners[i](viewModel, nodeDecorators);
   }
 }
 

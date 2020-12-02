@@ -30,6 +30,8 @@ export type onChangeType = (
   nodeDecorators: {[NodeKey]: ReactNode},
 ) => void;
 
+const NativePromise = window.Promise;
+
 export class OutlineEditor {
   _editorElement: null | HTMLElement;
   _viewModel: ViewModel;
@@ -38,7 +40,6 @@ export class OutlineEditor {
   _key: string;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _updateListeners: Set<onChangeType>;
-  _updateTimeStamp: number;
   _textTransforms: Set<(node: TextNode, view: ViewType) => void>;
   _registeredNodeTypes: Map<string, Class<OutlineNode>>;
   _needsReconcile: boolean;
@@ -58,7 +59,6 @@ export class OutlineEditor {
     this._keyToDOMMap = new Map();
     // onChange listeners
     this._updateListeners = new Set();
-    this._updateTimeStamp = 0;
     // Handling of transform
     this._textTransforms = new Set();
     // Mapping of types to their nodes
@@ -147,17 +147,12 @@ export class OutlineEditor {
     this._pendingViewModel = viewModel;
     commitPendingUpdates(this);
   }
-  update(callbackFn: (view: ViewType) => void, timeStamp?: number): boolean {
+  update(callbackFn: (view: ViewType) => void, sync?: boolean): boolean {
     let pendingViewModel = this._pendingViewModel;
 
-    if (this._updateTimeStamp !== timeStamp) {
-      if (pendingViewModel !== null) {
-        commitPendingUpdates(this);
-        pendingViewModel = null;
-      }
-      if (timeStamp !== undefined) {
-        this._updateTimeStamp = timeStamp;
-      }
+    if (sync && pendingViewModel !== null) {
+      commitPendingUpdates(this);
+      pendingViewModel = null;
     }
     let viewModelWasCloned = false;
 
@@ -194,10 +189,10 @@ export class OutlineEditor {
       this._pendingViewModel = null;
       return false;
     }
-    if (timeStamp === undefined) {
+    if (sync) {
       commitPendingUpdates(this);
     } else if (viewModelWasCloned) {
-      Promise.resolve().then(() => {
+      NativePromise.resolve().then(() => {
         commitPendingUpdates(this);
       });
     }

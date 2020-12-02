@@ -48,10 +48,7 @@ function useEventWrapper<T>(
   return useCallback(
     (event) => {
       const state = stateRef && stateRef.current;
-      editor.update(
-        (view) => handler(event, view, state, editor),
-        event.timeStamp,
-      );
+      editor.update((view) => handler(event, view, state, editor));
     },
     [stateRef, editor, handler],
   );

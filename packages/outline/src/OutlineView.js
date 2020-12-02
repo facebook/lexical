@@ -112,41 +112,57 @@ export function applyTextTransforms(
   }
 }
 
-export function garbageCollectDetachedNodes(viewModel: ViewModel): void {
+export function garbageCollectDetachedNodes(
+  viewModel: ViewModel,
+  editor: OutlineEditor,
+): void {
   const dirtyNodes = Array.from(viewModel.dirtyNodes);
   const nodeMap = viewModel.nodeMap;
+  const nodeDecorators = editor._nodeDecorators;
+  let pendingNodeDecorators;
 
   for (let s = 0; s < dirtyNodes.length; s++) {
     const nodeKey = dirtyNodes[s];
     const node = nodeMap[nodeKey];
 
     if (node !== undefined && !node.isAttached()) {
+      // Remove decorator if needed
+      if (nodeDecorators[nodeKey] !== undefined) {
+        if (pendingNodeDecorators === undefined) {
+          pendingNodeDecorators = {...nodeDecorators};
+          editor._pendingNodeDecorators = pendingNodeDecorators;
+        }
+        delete pendingNodeDecorators[nodeKey];
+      }
       // Garbage collect node
       delete nodeMap[nodeKey];
     }
   }
 }
 
-export function updateViewModel(
-  viewModel: ViewModel,
-  editor: OutlineEditor,
-): void {
-  if (editor._editorElement === null) {
-    editor._pendingViewModel = viewModel;
+export function commitPendingUpdates(editor: OutlineEditor): void {
+  const pendingViewModel = editor._pendingViewModel;
+  if (editor._editorElement === null || pendingViewModel === null) {
     return;
   }
+  editor._pendingViewModel = null;
   const previousActiveViewModel = activeViewModel;
-  activeViewModel = viewModel;
-  reconcileViewModel(viewModel, editor);
+  activeViewModel = pendingViewModel;
+  reconcileViewModel(pendingViewModel, editor);
   activeViewModel = previousActiveViewModel;
-  if (viewModel.selection === null) {
-    viewModel.selection = editor._viewModel.selection;
+  if (pendingViewModel.selection === null) {
+    pendingViewModel.selection = editor._viewModel.selection;
   }
-  editor._viewModel = viewModel;
-  triggerOnChange(editor);
+  editor._viewModel = pendingViewModel;
+  const pendingNodeDecorators = editor._pendingNodeDecorators;
+  if (pendingNodeDecorators !== null) {
+    editor._nodeDecorators = pendingNodeDecorators;
+    editor._pendingNodeDecorators = null;
+  }
+  triggerUpdateListeners(editor);
 }
 
-export function triggerOnChange(editor: OutlineEditor): void {
+export function triggerUpdateListeners(editor: OutlineEditor): void {
   const viewModel = editor._viewModel;
   const nodeDecorators = editor._nodeDecorators;
   const listeners = Array.from(editor._updateListeners);

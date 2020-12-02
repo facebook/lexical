@@ -55,7 +55,7 @@ describe('OutlineEditor tests', () => {
       const text = Outline.createText();
       paragraph.append(text);
       view.getRoot().append(paragraph);
-    });
+    }, true);
 
     let root = null;
     let paragraph = null;

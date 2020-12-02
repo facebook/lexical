@@ -81,7 +81,9 @@ export class OutlineEditor {
     const nodeDecorators = {...this._nodeDecorators};
     nodeDecorators[key] = decorator;
     this._nodeDecorators = nodeDecorators;
-    triggerOnChange(this);
+    if (this._pendingViewModel === null) {
+      triggerOnChange(this);
+    }
   }
   addNodeType(nodeType: string, klass: Class<OutlineNode>): () => void {
     this._registeredNodeTypes.set(nodeType, klass);

@@ -12,8 +12,8 @@ import {
   garbageCollectDetachedNodes,
   viewModelHasDirtySelection,
   ViewModel,
-  updateViewModel,
-  triggerOnChange,
+  commitPendingUpdates,
+  triggerUpdateListeners,
 } from './OutlineView';
 import {createSelection} from './OutlineSelection';
 import {generateRandomKey} from './OutlineUtils';
@@ -43,6 +43,7 @@ export class OutlineEditor {
   _registeredNodeTypes: Map<string, Class<OutlineNode>>;
   _needsReconcile: boolean;
   _nodeDecorators: {[NodeKey]: ReactNode};
+  _pendingNodeDecorators: null | {[NodeKey]: ReactNode};
 
   constructor(viewModel: ViewModel) {
     // The editor element associated with this editor
@@ -70,6 +71,12 @@ export class OutlineEditor {
     this._key = generateRandomKey();
     // React node decorators for portals
     this._nodeDecorators = {};
+    // Outline tries to garbage collect nodes
+    // so if it garbage collects a node with
+    // a decorator, it should set the next
+    // decorators to pending until the update
+    // is complete.
+    this._pendingNodeDecorators = null;
   }
   isComposing(): boolean {
     return this._isComposing;
@@ -82,7 +89,7 @@ export class OutlineEditor {
     nodeDecorators[key] = decorator;
     this._nodeDecorators = nodeDecorators;
     if (this._pendingViewModel === null) {
-      triggerOnChange(this);
+      triggerUpdateListeners(this);
     }
   }
   addNodeType(nodeType: string, klass: Class<OutlineNode>): () => void {
@@ -123,7 +130,7 @@ export class OutlineEditor {
       const pendingViewModel = this._pendingViewModel;
       if (pendingViewModel !== null) {
         this._pendingViewModel = null;
-        updateViewModel(pendingViewModel, this);
+        commitPendingUpdates(this);
       }
     }
   }
@@ -138,15 +145,18 @@ export class OutlineEditor {
     return this._viewModel;
   }
   setViewModel(viewModel: ViewModel): void {
-    updateViewModel(viewModel, this);
+    if (this._pendingViewModel !== null) {
+      commitPendingUpdates(this);
+    }
+    this._pendingViewModel = viewModel;
+    commitPendingUpdates(this);
   }
   update(callbackFn: (view: ViewType) => void, timeStamp?: number): boolean {
     let pendingViewModel = this._pendingViewModel;
 
     if (this._updateTimeStamp !== timeStamp) {
       if (pendingViewModel !== null) {
-        this._pendingViewModel = null;
-        updateViewModel(pendingViewModel, this);
+        commitPendingUpdates(this);
         pendingViewModel = null;
       }
       if (timeStamp !== undefined) {
@@ -174,7 +184,7 @@ export class OutlineEditor {
         callbackFn(view);
         if (currentPendingViewModel.hasDirtyNodes()) {
           applyTextTransforms(currentPendingViewModel, this);
-          garbageCollectDetachedNodes(currentPendingViewModel);
+          garbageCollectDetachedNodes(currentPendingViewModel, this);
         }
       },
       pendingViewModel,
@@ -189,15 +199,10 @@ export class OutlineEditor {
       return false;
     }
     if (timeStamp === undefined) {
-      this._pendingViewModel = null;
-      updateViewModel(pendingViewModel, this);
+      commitPendingUpdates(this);
     } else if (viewModelWasCloned) {
       Promise.resolve().then(() => {
-        const nextPendingViewModel = this._pendingViewModel;
-        if (nextPendingViewModel !== null) {
-          this._pendingViewModel = null;
-          updateViewModel(nextPendingViewModel, this);
-        }
+        commitPendingUpdates(this);
       });
     }
     return true;

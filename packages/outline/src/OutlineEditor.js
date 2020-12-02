@@ -2,6 +2,7 @@
 
 import type {ViewType} from './OutlineView';
 import type {OutlineNode, NodeKey} from './OutlineNode';
+import type {Node as ReactNode} from 'react';
 
 import {createRoot, RootNode, TextNode, ParagraphNode, ListItemNode} from '.';
 import {
@@ -12,6 +13,7 @@ import {
   viewModelHasDirtySelection,
   ViewModel,
   updateViewModel,
+  triggerOnChange,
 } from './OutlineView';
 import {createSelection} from './OutlineSelection';
 import {generateRandomKey} from './OutlineUtils';
@@ -23,7 +25,10 @@ export function createEditor(): OutlineEditor {
   return new OutlineEditor(viewModel);
 }
 
-export type onChangeType = (viewModel: ViewModel) => void;
+export type onChangeType = (
+  viewModel: ViewModel,
+  nodeDecorators: {[NodeKey]: ReactNode},
+) => void;
 
 export class OutlineEditor {
   _editorElement: null | HTMLElement;
@@ -37,6 +42,7 @@ export class OutlineEditor {
   _textTransforms: Set<(node: TextNode, view: ViewType) => void>;
   _registeredNodeTypes: Map<string, Class<OutlineNode>>;
   _needsReconcile: boolean;
+  _nodeDecorators: {[NodeKey]: ReactNode};
 
   constructor(viewModel: ViewModel) {
     // The editor element associated with this editor
@@ -62,12 +68,20 @@ export class OutlineEditor {
       ['listitem', ListItemNode],
     ]);
     this._key = generateRandomKey();
+    // React node decorators for portals
+    this._nodeDecorators = {};
   }
   isComposing(): boolean {
     return this._isComposing;
   }
   setComposing(isComposing: boolean): void {
     this._isComposing = isComposing;
+  }
+  addNodeDecorator(key: NodeKey, decorator: ReactNode): void {
+    const nodeDecorators = {...this._nodeDecorators};
+    nodeDecorators[key] = decorator;
+    this._nodeDecorators = nodeDecorators;
+    triggerOnChange(this);
   }
   addNodeType(nodeType: string, klass: Class<OutlineNode>): () => void {
     this._registeredNodeTypes.set(nodeType, klass);
@@ -89,6 +103,9 @@ export class OutlineEditor {
       this._textTransforms.delete(transformFn);
     };
   }
+  getNodeDecorators(): {[NodeKey]: ReactNode} {
+    return this._nodeDecorators;
+  }
   getEditorKey(): string {
     return this._key;
   }
@@ -101,7 +118,7 @@ export class OutlineEditor {
       this._keyToDOMMap.delete('root');
     } else {
       this._keyToDOMMap.set('root', editorElement);
-      const pendingViewModel = this._pendingViewModel
+      const pendingViewModel = this._pendingViewModel;
       if (pendingViewModel !== null) {
         this._pendingViewModel = null;
         updateViewModel(pendingViewModel, this);

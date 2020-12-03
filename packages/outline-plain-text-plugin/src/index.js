@@ -9,9 +9,11 @@ export function usePlainTextPlugin(
   editor: OutlineEditor,
   isReadOnly: boolean = false,
 ): {} | {onBeforeInput: (SyntheticInputEvent<EventTarget>) => void} {
-  const pluginStateRef = useRef<{isReadOnly: boolean, richText: false} | null>(
-    null,
-  );
+  const pluginStateRef = useRef<{
+    isReadOnly: boolean,
+    richText: false,
+    compositionSelection: null | Selection,
+  } | null>(null);
 
   // Handle event plugin state
   useEffect(() => {
@@ -21,6 +23,7 @@ export function usePlainTextPlugin(
       pluginStateRef.current = {
         isReadOnly,
         richText: false,
+        compositionSelection: null,
       };
     } else {
       pluginsState.isReadOnly = isReadOnly;

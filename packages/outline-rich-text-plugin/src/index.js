@@ -12,14 +12,17 @@ import {
 import {createImageNode as createImage, ImageNode} from './OutlineImageNode';
 import {createQuoteNode as createQuote, QuoteNode} from './OutlineQuoteNode';
 import {createListNode as createList, ListNode} from './OutlineListNode';
+import {Selection} from 'outline/src';
 
 export function useRichTextPlugin(
   editor: OutlineEditor,
   isReadOnly: boolean = false,
 ): {} | {onBeforeInput: (SyntheticInputEvent<EventTarget>) => void} {
-  const pluginStateRef = useRef<{isReadOnly: boolean, richText: true} | null>(
-    null,
-  );
+  const pluginStateRef = useRef<{
+    isReadOnly: boolean,
+    richText: true,
+    compositionSelection: null | Selection,
+  } | null>(null);
 
   // Handle event plugin state
   useEffect(() => {
@@ -29,6 +32,7 @@ export function useRichTextPlugin(
       pluginStateRef.current = {
         isReadOnly,
         richText: true,
+        compositionSelection: null,
       };
     } else {
       pluginsState.isReadOnly = isReadOnly;

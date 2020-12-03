@@ -1,5 +1,7 @@
 // @flow strict
 
+export const emptyFunction = () => {};
+
 let keyCounter = 0;
 
 // inviariant(condition, message) will refine types based on "condition", and

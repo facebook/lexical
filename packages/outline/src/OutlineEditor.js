@@ -16,7 +16,7 @@ import {
   triggerUpdateListeners,
 } from './OutlineView';
 import {createSelection} from './OutlineSelection';
-import {generateRandomKey} from './OutlineUtils';
+import {generateRandomKey, emptyFunction} from './OutlineUtils';
 
 export function createEditor(): OutlineEditor {
   const root = createRoot();
@@ -31,16 +31,6 @@ export type onChangeType = (
 ) => void;
 
 const NativePromise = window.Promise;
-
-function postProcessPendingViewModel(
-  pendingViewModel: ViewModel,
-  editor: OutlineEditor,
-): void {
-  if (pendingViewModel.hasDirtyNodes()) {
-    applyTextTransforms(pendingViewModel, editor);
-    garbageCollectDetachedNodes(pendingViewModel, editor);
-  }
-}
 
 export class OutlineEditor {
   _editorElement: null | HTMLElement;
@@ -118,10 +108,7 @@ export class OutlineEditor {
     transformFn: (node: TextNode, view: ViewType) => void,
   ): () => void {
     this._textTransforms.add(transformFn);
-    const pendingViewModel = this._pendingViewModel;
-    if (pendingViewModel !== null) {
-      postProcessPendingViewModel(pendingViewModel, this);
-    }
+    this.update(emptyFunction);
     return () => {
       this._textTransforms.delete(transformFn);
     };
@@ -187,7 +174,10 @@ export class OutlineEditor {
           );
         }
         callbackFn(view);
-        postProcessPendingViewModel(currentPendingViewModel, this);
+        if (currentPendingViewModel.hasDirtyNodes()) {
+          applyTextTransforms(currentPendingViewModel, this);
+          garbageCollectDetachedNodes(currentPendingViewModel, this);
+        }
       },
       pendingViewModel,
       false,

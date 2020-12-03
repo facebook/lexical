@@ -32,6 +32,67 @@ export type onChangeType = (
 
 const NativePromise = window.Promise;
 
+function updateEditor(
+  editor: OutlineEditor,
+  callbackFn: (view: ViewType) => void,
+  copyDirtyNodes: boolean,
+  sync?: boolean,
+): boolean {
+  let pendingViewModel = editor._pendingViewModel;
+
+  if (sync && pendingViewModel !== null) {
+    commitPendingUpdates(editor);
+    pendingViewModel = null;
+  }
+  let viewModelWasCloned = false;
+
+  if (pendingViewModel === null) {
+    const currentViewModel = editor._viewModel;
+    pendingViewModel = editor._pendingViewModel = cloneViewModel(
+      currentViewModel,
+    );
+    if (copyDirtyNodes) {
+      pendingViewModel.dirtyNodes = currentViewModel.dirtyNodes;
+    }
+    viewModelWasCloned = true;
+  }
+  const currentPendingViewModel = pendingViewModel;
+
+  enterViewModelScope(
+    (view: ViewType) => {
+      if (viewModelWasCloned) {
+        currentPendingViewModel.selection = createSelection(
+          currentPendingViewModel,
+          editor,
+        );
+      }
+      callbackFn(view);
+      if (currentPendingViewModel.hasDirtyNodes()) {
+        applyTextTransforms(currentPendingViewModel, editor);
+        garbageCollectDetachedNodes(currentPendingViewModel, editor);
+      }
+    },
+    pendingViewModel,
+    false,
+  );
+  const shouldUpdate =
+    pendingViewModel.hasDirtyNodes() ||
+    viewModelHasDirtySelection(pendingViewModel, editor);
+
+  if (!shouldUpdate) {
+    editor._pendingViewModel = null;
+    return false;
+  }
+  if (sync) {
+    commitPendingUpdates(editor);
+  } else if (viewModelWasCloned) {
+    NativePromise.resolve().then(() => {
+      commitPendingUpdates(editor);
+    });
+  }
+  return true;
+}
+
 export class OutlineEditor {
   _editorElement: null | HTMLElement;
   _viewModel: ViewModel;
@@ -108,7 +169,7 @@ export class OutlineEditor {
     transformFn: (node: TextNode, view: ViewType) => void,
   ): () => void {
     this._textTransforms.add(transformFn);
-    this.update(emptyFunction);
+    updateEditor(this, emptyFunction, true);
     return () => {
       this._textTransforms.delete(transformFn);
     };
@@ -149,54 +210,6 @@ export class OutlineEditor {
     commitPendingUpdates(this);
   }
   update(callbackFn: (view: ViewType) => void, sync?: boolean): boolean {
-    let pendingViewModel = this._pendingViewModel;
-
-    if (sync && pendingViewModel !== null) {
-      commitPendingUpdates(this);
-      pendingViewModel = null;
-    }
-    let viewModelWasCloned = false;
-
-    if (pendingViewModel === null) {
-      pendingViewModel = this._pendingViewModel = cloneViewModel(
-        this._viewModel,
-      );
-      viewModelWasCloned = true;
-    }
-    const currentPendingViewModel = pendingViewModel;
-
-    enterViewModelScope(
-      (view: ViewType) => {
-        if (viewModelWasCloned) {
-          currentPendingViewModel.selection = createSelection(
-            currentPendingViewModel,
-            this,
-          );
-        }
-        callbackFn(view);
-        if (currentPendingViewModel.hasDirtyNodes()) {
-          applyTextTransforms(currentPendingViewModel, this);
-          garbageCollectDetachedNodes(currentPendingViewModel, this);
-        }
-      },
-      pendingViewModel,
-      false,
-    );
-    const shouldUpdate =
-      pendingViewModel.hasDirtyNodes() ||
-      viewModelHasDirtySelection(pendingViewModel, this);
-
-    if (!shouldUpdate) {
-      this._pendingViewModel = null;
-      return false;
-    }
-    if (sync) {
-      commitPendingUpdates(this);
-    } else if (viewModelWasCloned) {
-      NativePromise.resolve().then(() => {
-        commitPendingUpdates(this);
-      });
-    }
-    return true;
+    return updateEditor(this, callbackFn, false, sync);
   }
 }

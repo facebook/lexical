@@ -1162,7 +1162,11 @@ export function createSelection(
   const event = window.event;
   // To handle composition selection, given the text will already be inserted
   // into the DOM at this point.
-  if (event.type === 'compositionend' && anchorKey === focusKey) {
+  if (
+    event != null &&
+    event.type === 'compositionend' &&
+    anchorKey === focusKey
+  ) {
     const length = event.data.length;
     anchorOffset -= length;
     // If the lengths of the updated DOM and what we have in our model

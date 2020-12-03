@@ -17,6 +17,7 @@ import {
 } from './OutlineView';
 import {createSelection} from './OutlineSelection';
 import {generateRandomKey, emptyFunction} from './OutlineUtils';
+import {getWritableNode} from './OutlineNode';
 
 export function createEditor(): OutlineEditor {
   const root = createRoot();
@@ -35,7 +36,7 @@ const NativePromise = window.Promise;
 function updateEditor(
   editor: OutlineEditor,
   callbackFn: (view: ViewType) => void,
-  copyDirtyNodes: boolean,
+  markAllTextNodesAsDirty: boolean,
   sync?: boolean,
 ): boolean {
   let pendingViewModel = editor._pendingViewModel;
@@ -51,9 +52,6 @@ function updateEditor(
     pendingViewModel = editor._pendingViewModel = cloneViewModel(
       currentViewModel,
     );
-    if (copyDirtyNodes) {
-      pendingViewModel.dirtyNodes = currentViewModel.dirtyNodes;
-    }
     viewModelWasCloned = true;
   }
   const currentPendingViewModel = pendingViewModel;
@@ -67,6 +65,16 @@ function updateEditor(
         );
       }
       callbackFn(view);
+      if (markAllTextNodesAsDirty) {
+        const currentViewModel = editor._viewModel;
+        const nodeMap = currentViewModel.nodeMap;
+        for (const nodeKey in nodeMap) {
+          const node = nodeMap[nodeKey];
+          if (node instanceof TextNode) {
+            getWritableNode(node);
+          }
+        }
+      }
       if (currentPendingViewModel.hasDirtyNodes()) {
         applyTextTransforms(currentPendingViewModel, editor);
         garbageCollectDetachedNodes(currentPendingViewModel, editor);

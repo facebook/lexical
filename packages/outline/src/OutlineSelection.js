@@ -1067,11 +1067,14 @@ export class Selection {
 function resolveSelectionNodes(
   anchorKey: NodeKey,
   focusKey: NodeKey,
-): [TextNode | null, TextNode | null, number] {
+): [TextNode | null, TextNode | null] {
   const viewModel = getActiveViewModel();
   const nodeMap = viewModel.nodeMap;
   let anchorNode = nodeMap[anchorKey];
   let focusNode = nodeMap[focusKey];
+  if (anchorNode === undefined || focusNode === undefined) {
+    return [null, null];
+  }
   if (anchorNode instanceof BlockNode) {
     anchorNode = anchorNode.getFirstTextNode();
   }
@@ -1155,6 +1158,19 @@ export function createSelection(
     }
     anchorKey = anchorNode._key;
     focusKey = focusNode._key;
+  }
+  if (editor.isComposing() && anchorKey === focusKey) {
+    const event = window.event;
+    if (event.type === 'compositionend') {
+      const length = event.data.length;
+      anchorOffset -= length;
+      // If the lengths of the updated DOM and what we have in our model
+      // do not match up, then re-adjust the offset. This means that we'll
+      // replace the existing content as intended with composition.
+      if (anchorDOM.nodeValue.length !== anchorNode._text.length) {
+        focusOffset -= length;
+      }
+    }
   }
   // Because we use a special character for whitespace,
   // we need to adjust offsets to 0 when the text is

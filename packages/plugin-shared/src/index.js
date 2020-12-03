@@ -92,7 +92,17 @@ function onCompositionStart(
   state: UnknownState,
   editor: OutlineEditor,
 ): void {
+  const selection = view.getSelection();
   editor.setComposing(true);
+  if (selection !== null) {
+    selection.removeText();
+    // We only have native beforeinput composition events for
+    // Safari, so we have to apply the composition selection for
+    // other browsers.
+    if (!IS_SAFARI) {
+      state.compositionSelection = selection;
+    }
+  }
 }
 
 function onCompositionEnd(
@@ -105,6 +115,21 @@ function onCompositionEnd(
   const selection = view.getSelection();
   editor.setComposing(false);
   if (data != null && selection !== null) {
+    // We only have native beforeinput composition events for
+    // Safari, so we have to apply the composition selection for
+    // other browsers.
+    if (!IS_SAFARI) {
+      const compositionSelection = state.compositionSelection;
+      state.compositionSelection = null;
+      if (compositionSelection !== null) {
+        selection.setRange(
+          compositionSelection.anchorKey,
+          compositionSelection.anchorOffset,
+          compositionSelection.focusKey,
+          compositionSelection.focusOffset,
+        );
+      }
+    }
     // Handle the fact that Chromium doesn't fire beforeInput composition
     // events properly, so we need to listen to the compositionend event
     // to apply the composition data.

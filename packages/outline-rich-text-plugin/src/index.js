@@ -1,6 +1,6 @@
 // @flow strict-local
 
-import type {OutlineEditor} from 'outline';
+import type {OutlineEditor, Selection} from 'outline';
 
 import {useEffect, useRef} from 'react';
 import {onFocusIn, useEditorInputEvents, useEvent} from 'plugin-shared';
@@ -12,7 +12,6 @@ import {
 import {createImageNode as createImage, ImageNode} from './OutlineImageNode';
 import {createQuoteNode as createQuote, QuoteNode} from './OutlineQuoteNode';
 import {createListNode as createList, ListNode} from './OutlineListNode';
-import {Selection} from 'outline/src';
 
 export function useRichTextPlugin(
   editor: OutlineEditor,

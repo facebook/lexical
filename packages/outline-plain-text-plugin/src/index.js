@@ -1,6 +1,6 @@
 // @flow strict-local
 
-import type {OutlineEditor} from 'outline';
+import type {OutlineEditor, Selection} from 'outline';
 
 import {useEffect, useRef} from 'react';
 import {onFocusIn, useEditorInputEvents, useEvent} from 'plugin-shared';

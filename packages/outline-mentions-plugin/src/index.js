@@ -428,9 +428,6 @@ export function useMentionsPlugin(editor: OutlineEditor): React$Node {
   const onKeyDown = useCallback(
     (event, view) => {
       const key = event.key;
-      if (registeredKeys.size > 0) {
-        console.log('woop');
-      }
       registeredKeys.forEach((registeredKeyMap) => {
         const controlFunction = registeredKeyMap[key];
         if (typeof controlFunction === 'function') {

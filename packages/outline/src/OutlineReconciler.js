@@ -430,11 +430,7 @@ export function reconcileViewModel(
   if (needsUpdate) {
     reconcileRoot(prevViewModel, nextViewModel, editor, dirtySubTrees);
   }
-  if (
-    nextSelection !== null &&
-    nextSelection.isDirty &&
-    !editor.isComposing()
-  ) {
+  if (nextSelection !== null && nextSelection.isDirty) {
     reconcileSelection(nextSelection, editor);
   }
 }

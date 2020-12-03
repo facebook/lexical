@@ -543,16 +543,13 @@ export class TextNode extends OutlineNode {
       text.slice(0, index) + newText + text.slice(index + delCount);
     writableSelf._text = updatedText;
     if (restoreSelection) {
-      const event = window.event;
-      const inCompositionMode = event && event.type === 'compositionend';
       const key = writableSelf._key;
       if (key === null) {
         throw new Error('TODO: validate nodes have keys in a more generic way');
       }
       const selection = getSelection();
       invariant(selection !== null, 'spliceText: selection not found');
-      const newOffset =
-        !inCompositionMode || offset === 0 ? offset + newTextLength : offset;
+      const newOffset = offset + newTextLength;
       selection.setRange(key, newOffset, key, newOffset);
     }
     return writableSelf;

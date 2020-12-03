@@ -373,6 +373,7 @@ function onNativeBeforeInput(
       }
       break;
     }
+    case 'insertText':
     case 'insertFromComposition': {
       const data = event.data;
       if (data) {
@@ -380,6 +381,7 @@ function onNativeBeforeInput(
       }
       break;
     }
+    case 'insertFromYank':
     case 'insertFromDrop':
     case 'insertReplacementText':
     case 'insertFromPaste': {
@@ -400,13 +402,8 @@ function onNativeBeforeInput(
       }
       break;
     }
-    case 'insertText': {
-      const data = event.data;
-      if (data != null) {
-        selection.insertText(data);
-      }
-      break;
-    }
+    case 'deleteByComposition':
+    case 'deleteByDrag':
     case 'deleteByCut': {
       selection.removeText();
       break;
@@ -415,6 +412,7 @@ function onNativeBeforeInput(
       selection.deleteBackward();
       break;
     }
+    case 'deleteContent':
     case 'deleteContentForward': {
       selection.deleteForward();
       break;

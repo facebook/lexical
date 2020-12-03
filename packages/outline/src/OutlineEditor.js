@@ -32,6 +32,16 @@ export type onChangeType = (
 
 const NativePromise = window.Promise;
 
+function postProcessPendingViewModel(
+  pendingViewModel: ViewModel,
+  editor: OutlineEditor,
+): void {
+  if (pendingViewModel.hasDirtyNodes()) {
+    applyTextTransforms(pendingViewModel, editor);
+    garbageCollectDetachedNodes(pendingViewModel, editor);
+  }
+}
+
 export class OutlineEditor {
   _editorElement: null | HTMLElement;
   _viewModel: ViewModel;
@@ -108,6 +118,10 @@ export class OutlineEditor {
     transformFn: (node: TextNode, view: ViewType) => void,
   ): () => void {
     this._textTransforms.add(transformFn);
+    const pendingViewModel = this._pendingViewModel;
+    if (pendingViewModel !== null) {
+      postProcessPendingViewModel(pendingViewModel, this);
+    }
     return () => {
       this._textTransforms.delete(transformFn);
     };
@@ -173,10 +187,7 @@ export class OutlineEditor {
           );
         }
         callbackFn(view);
-        if (currentPendingViewModel.hasDirtyNodes()) {
-          applyTextTransforms(currentPendingViewModel, this);
-          garbageCollectDetachedNodes(currentPendingViewModel, this);
-        }
+        postProcessPendingViewModel(currentPendingViewModel, this);
       },
       pendingViewModel,
       false,

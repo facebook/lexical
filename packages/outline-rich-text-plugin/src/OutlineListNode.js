@@ -36,7 +36,6 @@ export class ListNode extends BlockNode {
   createDOM(): HTMLElement {
     return document.createElement(this._tag);
   }
-  // $FlowFixMe: prevNode is always a ListNode
   updateDOM(prevNode: ListNode, dom: HTMLElement): boolean {
     return false;
   }

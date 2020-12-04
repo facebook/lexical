@@ -29,7 +29,6 @@ export class ParagraphNode extends BlockNode {
   createDOM(): HTMLElement {
     return document.createElement('p');
   }
-  // $FlowFixMe: prevNode is always a ParagraphNode
   updateDOM(prevNode: ParagraphNode, dom: HTMLElement): boolean {
     return false;
   }

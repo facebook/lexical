@@ -24,7 +24,6 @@ export class RootNode extends BlockNode {
 
   // View
 
-  // $FlowFixMe: prevNode is always a RootNode
   updateDOM(prevNode: RootNode, dom: HTMLElement): false {
     return false;
   }

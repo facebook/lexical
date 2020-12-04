@@ -469,7 +469,7 @@ class MentionNode extends TextNode {
   constructor(mentionName: string, key?: NodeKey) {
     super(mentionName, key);
     this.mention = mentionName;
-    // $FlowFixMe: this is a mention type
+    // $FlowFixMe: TODO
     this.type = 'mention';
   }
   // $FlowFixMe: TODO

@@ -36,7 +36,6 @@ export class ImageNode extends OutlineNode {
     dom.appendChild(img);
     return dom;
   }
-  // $FlowFixMe: fix the type for prevNode
   updateDOM(prevNode: ImageNode, dom: HTMLElement): boolean {
     // $FlowFixMe: this is always a HTMLImageElement
     const img: HTMLImageElement = dom.firstChild;

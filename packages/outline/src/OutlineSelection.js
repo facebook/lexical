@@ -155,8 +155,7 @@ export class Selection {
       if (parent === sourceParent && parent !== null) {
         nodeKeys.push(nodeKey);
 
-        const topLevelBlock = node.getTopParentBlock();
-        invariant(topLevelBlock !== null, 'Should not happen');
+        const topLevelBlock = node.getTopParentBlockOrThrow();
         topLevelNodeKeys.add(topLevelBlock.key);
       } else {
         let includeTopLevelBlock = false;
@@ -610,8 +609,7 @@ export class Selection {
     }
     const nextSiblings = anchorNode.getNextSiblings();
     siblings.push(...nextSiblings);
-    const topLevelBlock = anchorNode.getTopParentBlock();
-    invariant(target !== null && topLevelBlock !== null, 'Should never occur');
+    const topLevelBlock = anchorNode.getTopParentBlockOrThrow();
 
     for (let i = 0; i < nodes.length; i++) {
       const node = nodes[i];

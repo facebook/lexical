@@ -437,6 +437,9 @@ export class Selection {
       }
     }
   }
+  deleteLineForward(): void {
+    invariant(false, 'TODO');
+  }
   deleteBackward(): void {
     if (!this.isCaret()) {
       this.removeText();
@@ -722,7 +725,7 @@ export class Selection {
       currentBlock.normalizeTextNodes(true);
     }
   }
-  moveWordBackward() {
+  moveWordBackward(): void {
     const anchorNode = this.getAnchorNode();
     const focusNode = this.getFocusNode();
     const isAnchorBefore = anchorNode.isBefore(focusNode);
@@ -801,7 +804,7 @@ export class Selection {
       }
     }
   }
-  moveWordForward() {
+  moveWordForward(): void {
     const anchorNode = this.getAnchorNode();
     const focusNode = this.getFocusNode();
     const isAnchorBefore = anchorNode.isBefore(focusNode);
@@ -884,7 +887,7 @@ export class Selection {
       }
     }
   }
-  moveBackward() {
+  moveBackward(): void {
     const anchorNode = this.getAnchorNode();
     const focusNode = this.getFocusNode();
     const isAnchorBefore = anchorNode.isBefore(focusNode);
@@ -950,7 +953,7 @@ export class Selection {
       }
     }
   }
-  moveForward() {
+  moveForward(): void {
     const anchorNode = this.getAnchorNode();
     const focusNode = this.getFocusNode();
     const isAnchorBefore = anchorNode.isBefore(focusNode);
@@ -1108,11 +1111,32 @@ export function createSelection(
   viewModel: ViewModel,
   editor: OutlineEditor,
 ): null | Selection {
-  const domSelection: WindowSelection = window.getSelection();
-  const anchorDOM = domSelection.anchorNode;
-  const focusDOM = domSelection.focusNode;
-  let anchorOffset = domSelection.anchorOffset;
-  let focusOffset = domSelection.focusOffset;
+  const event = window.event;
+  const currentViewModel = editor.getViewModel();
+  const lastSelection = currentViewModel.selection;
+  let anchorDOM, focusDOM, anchorOffset, focusOffset;
+  // If we can get the target range from the event, then use that
+  // instead of window selection.
+  if (
+    event == null ||
+    event.type === 'selectionchange' ||
+    event.type === 'compositionstart' ||
+    event.type === 'compositionend' ||
+    lastSelection === null
+  ) {
+    const domSelection: WindowSelection = window.getSelection();
+    anchorDOM = domSelection.anchorNode;
+    focusDOM = domSelection.focusNode;
+    anchorOffset = domSelection.anchorOffset;
+    focusOffset = domSelection.focusOffset;
+  } else {
+    return new Selection(
+      lastSelection.anchorKey,
+      lastSelection.anchorOffset,
+      lastSelection.focusKey,
+      lastSelection.focusOffset,
+    );
+  }
   let anchorNode: OutlineNode | null = null;
   let focusNode: OutlineNode | null = null;
   let anchorKey: NodeKey | null = null;
@@ -1173,15 +1197,13 @@ export function createSelection(
     focusKey,
     focusOffset,
   );
-  const currentViewModel = editor.getViewModel();
-  const currentSelection = currentViewModel.selection;
   if (
-    currentSelection !== null &&
+    lastSelection !== null &&
     !editor.isComposing() &&
-    (currentSelection.focusKey !== selection.focusKey ||
-      currentSelection.anchorKey !== selection.anchorKey ||
-      currentSelection.anchorOffset !== selection.anchorOffset ||
-      currentSelection.focusOffset !== selection.focusOffset)
+    (lastSelection.focusKey !== selection.focusKey ||
+      lastSelection.anchorKey !== selection.anchorKey ||
+      lastSelection.anchorOffset !== selection.anchorOffset ||
+      lastSelection.focusOffset !== selection.focusOffset)
   ) {
     selection.isDirty = true;
   }

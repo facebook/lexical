@@ -442,7 +442,7 @@ export class OutlineNode {
     shouldErrorOnReadOnly();
     return removeNode(this);
   }
-  wrapInTextNodes(): OutlineNode {
+  wrapInTextNodes(): this {
     shouldErrorOnReadOnly();
     return wrapInTextNodes(this);
   }
@@ -452,7 +452,7 @@ export class OutlineNode {
     return replaceNode(this, targetNode);
   }
   // TODO add support for inserting multiple nodes?
-  insertAfter(nodeToInsert: OutlineNode): OutlineNode {
+  insertAfter(nodeToInsert: OutlineNode): this {
     shouldErrorOnReadOnly();
     const writableSelf = getWritableNode(this);
     const writableNodeToInsert = getWritableNode(nodeToInsert);
@@ -478,7 +478,7 @@ export class OutlineNode {
     return writableSelf;
   }
   // TODO add support for inserting multiple nodes?
-  insertBefore(nodeToInsert: OutlineNode): OutlineNode {
+  insertBefore(nodeToInsert: OutlineNode): this {
     shouldErrorOnReadOnly();
     const writableSelf = getWritableNode(this);
     const writableNodeToInsert = getWritableNode(nodeToInsert);

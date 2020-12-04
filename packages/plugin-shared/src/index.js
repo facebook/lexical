@@ -282,22 +282,22 @@ function generateNode(
   editor: OutlineEditor,
 ): OutlineNode {
   const nodeData = nodeMap[key];
-  const type = nodeData._type;
+  const type = nodeData.type;
   const nodeType = editor._registeredNodeTypes.get(type);
   if (nodeType === undefined) {
     throw new Error('generateNode: type "' + type + '" + not found');
   }
   const node = nodeType.parse(nodeData);
-  node._parent = parentKey;
-  const newKey = node._key;
+  node.parent = parentKey;
+  const newKey = node.key;
   if (node instanceof BlockNode) {
     // $FlowFixMe: valid code
-    const children = nodeData._children;
+    const children = nodeData.children;
     for (let i = 0; i < children.length; i++) {
       const childKey = children[i];
       const child = generateNode(childKey, newKey, nodeMap, editor);
-      const newChildKey = child._key;
-      node._children.push(newChildKey);
+      const newChildKey = child.key;
+      node.children.push(newChildKey);
     }
   }
   return node;

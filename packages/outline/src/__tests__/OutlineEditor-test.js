@@ -69,26 +69,26 @@ describe('OutlineEditor tests', () => {
     });
 
     expect(root).toEqual({
-      _children: ['_1'],
-      _flags: 0,
-      _key: 'root',
-      _parent: null,
-      _type: 'root',
+      children: ['_1'],
+      flags: 0,
+      key: 'root',
+      parent: null,
+      type: 'root',
     });
     expect(paragraph).toEqual({
-      _children: ['_2'],
-      _flags: 4,
-      _key: '_1',
-      _parent: 'root',
-      _type: 'paragraph',
+      children: ['_2'],
+      flags: 4,
+      key: '_1',
+      parent: 'root',
+      type: 'paragraph',
     });
     expect(text).toEqual({
-      _text: '',
-      _flags: 4,
-      _key: '_2',
-      _parent: '_1',
-      _type: 'text',
-      _url: null,
+      text: '',
+      flags: 4,
+      key: '_2',
+      parent: '_1',
+      type: 'text',
+      url: null,
     });
   });
 });

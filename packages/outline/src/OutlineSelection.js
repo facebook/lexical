@@ -114,8 +114,8 @@ export class Selection {
       const isBefore = focusOffset > anchorOffset;
       startOffset = isBefore ? anchorOffset : focusOffset;
       endOffset = isBefore ? focusOffset : anchorOffset;
-      firstNode._text = firstNode._text.slice(startOffset, endOffset);
-      const key = firstNode._key;
+      firstNode.text = firstNode.text.slice(startOffset, endOffset);
+      const key = firstNode.key;
       return {range: [key], nodeMap: {[key]: firstNode}};
     }
     const nodes = this.getNodes();
@@ -128,23 +128,23 @@ export class Selection {
 
     const nodesLength = nodes.length;
     const sourceParent = firstNode.getParentOrThrow();
-    const sourceParentKey = sourceParent._key;
+    const sourceParentKey = sourceParent.key;
     const topLevelNodeKeys = new Set();
 
     for (let i = 0; i < nodesLength; i++) {
       let node = nodes[i];
       const parent = node.getParent();
-      const nodeKey = node._key;
+      const nodeKey = node.key;
 
       if (node instanceof TextNode) {
         const text = node.getTextContent();
 
         if (i === 0) {
           node = node.getLatest().clone();
-          node._text = text.slice(startOffset, text.length);
+          node.text = text.slice(startOffset, text.length);
         } else if (i === nodesLength - 1) {
           node = node.getLatest().clone();
-          node._text = text.slice(0, endOffset);
+          node.text = text.slice(0, endOffset);
         }
       }
 
@@ -157,7 +157,7 @@ export class Selection {
 
         const topLevelBlock = node.getTopParentBlock();
         invariant(topLevelBlock !== null, 'Should not happen');
-        topLevelNodeKeys.add(topLevelBlock._key);
+        topLevelNodeKeys.add(topLevelBlock.key);
       } else {
         let includeTopLevelBlock = false;
 
@@ -165,7 +165,7 @@ export class Selection {
           let removeChildren = false;
 
           while (node !== null) {
-            const currKey = node._key;
+            const currKey = node.key;
             if (currKey === sourceParentKey) {
               removeChildren = true;
             } else if (removeChildren) {
@@ -173,7 +173,7 @@ export class Selection {
               // parent key.
               node = node.getLatest().clone();
               invariant(node instanceof BlockNode, 'Should not happen');
-              const childrenKeys = node._children;
+              const childrenKeys = node.children;
               const index = childrenKeys.indexOf(sourceParentKey);
               invariant(index !== -1, 'Should not happen');
               childrenKeys.splice(0, index + 1);
@@ -191,7 +191,7 @@ export class Selection {
           }
         }
         if (node !== null) {
-          const key = node._key;
+          const key = node.key;
           if (!topLevelNodeKeys.has(key) || includeTopLevelBlock) {
             topLevelNodeKeys.add(key);
             nodeKeys.push(key);
@@ -1055,8 +1055,8 @@ export class Selection {
       anchorNode instanceof TextNode && focusNode instanceof TextNode,
       'Should never happen',
     );
-    this.anchorKey = anchorNode._key;
-    this.focusKey = focusNode._key;
+    this.anchorKey = anchorNode.key;
+    this.focusKey = focusNode.key;
     this.anchorOffset =
       anchorNode.getTextContent() === '' ? 0 : domRange.startOffset;
     this.focusOffset =
@@ -1140,8 +1140,8 @@ export function createSelection(
     if (anchorNode === null || focusNode === null) {
       return null;
     }
-    anchorKey = anchorNode._key;
-    focusKey = focusNode._key;
+    anchorKey = anchorNode.key;
+    focusKey = focusNode.key;
     anchorOffset = 0;
     focusOffset = focusNode.getTextContent().length;
   } else {
@@ -1156,16 +1156,16 @@ export function createSelection(
     if (anchorNode === null || focusNode === null) {
       return null;
     }
-    anchorKey = anchorNode._key;
-    focusKey = focusNode._key;
+    anchorKey = anchorNode.key;
+    focusKey = focusNode.key;
   }
   // Because we use a special character for whitespace,
   // we need to adjust offsets to 0 when the text is
   // really empty.
-  if (anchorNode._text === '') {
+  if (anchorNode.text === '') {
     anchorOffset = 0;
   }
-  if (focusNode._text === '') {
+  if (focusNode.text === '') {
     focusOffset = 0;
   }
 

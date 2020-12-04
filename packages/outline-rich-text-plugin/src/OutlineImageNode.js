@@ -11,14 +11,14 @@ export class ImageNode extends OutlineNode {
 
   constructor(src: string, altText: string, key?: NodeKey) {
     super(key);
-    this._type = 'image';
+    this.type = 'image';
     this._src = src;
     this._altText = altText;
   }
   clone(): ImageNode {
-    const clone = new ImageNode(this._src, this._altText, this._key);
-    clone._parent = this._parent;
-    clone._flags = this._flags;
+    const clone = new ImageNode(this._src, this._altText, this.key);
+    clone.parent = this.parent;
+    clone.flags = this.flags;
     return clone;
   }
   isImage(): true {
@@ -27,7 +27,7 @@ export class ImageNode extends OutlineNode {
 
   // View
 
-  _create(): HTMLElement {
+  createDOM(): HTMLElement {
     const dom = document.createElement('div');
     const img = document.createElement('img');
     img.src = this._src;
@@ -37,7 +37,7 @@ export class ImageNode extends OutlineNode {
     return dom;
   }
   // $FlowFixMe: fix the type for prevNode
-  _update(prevNode: ImageNode, dom: HTMLElement): boolean {
+  updateDOM(prevNode: ImageNode, dom: HTMLElement): boolean {
     // $FlowFixMe: this is always a HTMLImageElement
     const img: HTMLImageElement = dom.firstChild;
     const prevAltText = prevNode._altText;

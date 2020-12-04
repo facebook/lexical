@@ -68,7 +68,7 @@ function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
     activeEditor._keyToDOMMap.delete(key);
   }
   if (node instanceof BlockNode) {
-    const children = node._children;
+    const children = node.children;
     destroyChildren(children, 0, children.length - 1, null);
   }
 }
@@ -91,14 +91,14 @@ function createNode(
   insertDOM: null | HTMLElement,
 ): HTMLElement {
   const node = activeNextNodeMap[key];
-  const dom = node._create();
+  const dom = node.createDOM();
   storeDOMWithKey(key, dom, activeEditor);
 
   if (node instanceof TextNode) {
-    subTreeTextContent += node._text;
+    subTreeTextContent += node.text;
   } else if (node instanceof BlockNode) {
     // Handle block children
-    const children = node._children;
+    const children = node.children;
     const endIndex = children.length - 1;
     if (node.hasDirection()) {
       createChildrenWithDirection(children, endIndex, dom);
@@ -196,7 +196,7 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
   const prevNode = activePrevNodeMap[key];
   const nextNode = activeNextNodeMap[key];
   // Some DEV time checking
-  if (nextNode._type !== 'root' && nextNode._parent === null) {
+  if (nextNode.type !== 'root' && nextNode.parent === null) {
     // eslint-disable-next-line no-debugger
     debugger;
     throw new Error('MUST FIX');
@@ -207,7 +207,7 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
 
   if (prevNode === nextNode && !hasDirtySubTree) {
     if (prevNode instanceof TextNode) {
-      subTreeTextContent += prevNode._text;
+      subTreeTextContent += prevNode.text;
     } else {
       // $FlowFixMe: internal field
       const prevSubTreeTextContent = dom.__outlineTextContent;
@@ -218,7 +218,7 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
     return;
   }
   // Update node. If it returns true, we need to unmount and re-create the node
-  if (nextNode._update(prevNode, dom)) {
+  if (nextNode.updateDOM(prevNode, dom)) {
     const replacementDOM = createNode(key, null, null);
     if (parentDOM === null) {
       throw new Error('Should never happen');
@@ -229,12 +229,12 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
   }
   // Handle text content, for LTR, LTR cases.
   if (nextNode instanceof TextNode) {
-    subTreeTextContent += nextNode._text;
+    subTreeTextContent += nextNode.text;
     return;
   } else if (prevNode instanceof BlockNode && nextNode instanceof BlockNode) {
     // Reconcile block children
-    const prevChildren = prevNode._children;
-    const nextChildren = nextNode._children;
+    const prevChildren = prevNode.children;
+    const nextChildren = nextNode.children;
     const childrenAreDifferent = prevChildren !== nextChildren;
 
     if (childrenAreDifferent || hasDirtySubTree) {

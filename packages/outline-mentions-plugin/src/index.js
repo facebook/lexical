@@ -465,27 +465,27 @@ function createMention(mentionName) {
 }
 
 class MentionNode extends TextNode {
-  _mention: string;
+  mention: string;
   constructor(mentionName: string, key?: NodeKey) {
     super(mentionName, key);
-    this._mention = mentionName;
+    this.mention = mentionName;
     // $FlowFixMe: this is a mention type
-    this._type = 'mention';
+    this.type = 'mention';
   }
   // $FlowFixMe: TODO
-  static parse(data: Object): MentionNode {
-    const emoji = new MentionNode(data._mention);
-    emoji._flags = data._flags;
+  static parse(data: {mention: string, flags: number}): MentionNode {
+    const emoji = new MentionNode(data.mention);
+    emoji.flags = data.flags;
     return emoji;
   }
   clone() {
-    const clone = new MentionNode(this._mention, this._key);
-    clone._parent = this._parent;
-    clone._flags = this._flags;
+    const clone = new MentionNode(this.mention, this.key);
+    clone.parent = this.parent;
+    clone.flags = this.flags;
     return clone;
   }
-  _create() {
-    const dom = super._create();
+  createDOM() {
+    const dom = super.createDOM();
     dom.style.cssText = mentionStyle;
     return dom;
   }

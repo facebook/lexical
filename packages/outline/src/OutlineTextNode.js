@@ -560,6 +560,6 @@ export class TextNode extends OutlineNode {
   }
 }
 
-export function createTextNode(text: string = ''): TextNode {
+export function createTextNode(text?: string = ''): TextNode {
   return new TextNode(text);
 }

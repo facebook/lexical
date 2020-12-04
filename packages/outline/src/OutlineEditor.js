@@ -4,7 +4,7 @@ import type {View} from './OutlineView';
 import type {OutlineNode, NodeKey} from './OutlineNode';
 import type {Node as ReactNode} from 'react';
 
-import {createRoot, RootNode, TextNode, ParagraphNode, ListItemNode} from '.';
+import {RootNode, TextNode, ParagraphNode, ListItemNode} from '.';
 import {
   applyTextTransforms,
   cloneViewModel,
@@ -18,6 +18,7 @@ import {
 import {createSelection} from './OutlineSelection';
 import {generateRandomKey, emptyFunction} from './OutlineUtils';
 import {getWritableNode} from './OutlineNode';
+import {createRootNode as createRoot} from './OutlineRootNode';
 
 export function createEditor(): OutlineEditor {
   const root = createRoot();

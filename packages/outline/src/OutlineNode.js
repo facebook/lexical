@@ -156,6 +156,9 @@ export class OutlineNode {
   isLeaf(): boolean {
     return !(this instanceof BlockNode);
   }
+  isText(): boolean {
+    return this instanceof TextNode;
+  }
   getFlags(): number {
     const self = this.getLatest();
     return self.flags;

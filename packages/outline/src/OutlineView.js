@@ -11,7 +11,7 @@ import {getNodeByKey} from './OutlineNode';
 import {TextNode} from '.';
 import {invariant} from './OutlineUtils';
 
-export type ViewType = {
+export type View = {
   getRoot: () => RootNode,
   getNodeByKey: (key: NodeKey) => null | OutlineNode,
   getSelection: () => null | Selection,
@@ -39,7 +39,7 @@ export function getActiveViewModel(): ViewModel {
   return activeViewModel;
 }
 
-const view: ViewType = {
+const view: View = {
   getRoot() {
     return getActiveViewModel().root;
   },
@@ -68,7 +68,7 @@ export function viewModelHasDirtySelection(
 }
 
 export function enterViewModelScope<V>(
-  callbackFn: (view: ViewType) => V,
+  callbackFn: (view: View) => V,
   viewModel: ViewModel,
   readOnly: boolean,
 ): V {
@@ -222,7 +222,7 @@ export class ViewModel {
     }
     return nodes;
   }
-  read<V>(callbackFn: (view: ViewType) => V): V {
+  read<V>(callbackFn: (view: View) => V): V {
     return enterViewModelScope(callbackFn, this, true);
   }
 }

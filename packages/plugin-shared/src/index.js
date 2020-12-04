@@ -17,6 +17,8 @@ import {
 } from './hotKeys';
 
 import type {OutlineEditor, View} from 'outline';
+import {isDeleteLineBackward} from './hotKeys';
+import {isDeleteLineForward} from './hotKeys';
 
 export const emptyObject: {} = {};
 
@@ -95,7 +97,9 @@ function onCompositionStart(
   const selection = view.getSelection();
   editor.setComposing(true);
   if (selection !== null) {
-    selection.removeText();
+    if (!selection.isCaret()) {
+      selection.removeText();
+    }
     // We only have native beforeinput composition events for
     // Safari, so we have to apply the composition selection for
     // other browsers.
@@ -184,6 +188,12 @@ function onKeyDown(
   } else if (isMoveWordForward(event)) {
     event.preventDefault();
     selection.moveWordForward();
+  } else if (isDeleteLineBackward(event)) {
+    event.preventDefault();
+    selection.deleteLineBackward();
+  } else if (isDeleteLineForward(event)) {
+    event.preventDefault();
+    selection.deleteLineForward();
   }
 }
 
@@ -351,6 +361,8 @@ function onNativeBeforeInput(
   // $FlowFixMe: Flow doesn't know of the inputType field
   const inputType = event.inputType;
 
+  // These two types occur while a user is composing text and can't be
+  // cancelled. Let them through and wait for the composition to end.
   if (
     inputType === 'insertCompositionText' ||
     inputType === 'deleteCompositionText'
@@ -364,7 +376,13 @@ function onNativeBeforeInput(
     return;
   }
 
-  if (!inputType.startsWith('delete') || inputType.startsWith('deleteBy')) {
+  // Safari is the only browser where we can reliably use the
+  // target range to update selection without causing bugs around
+  // composition/on-screen keyboard entry.
+  if (
+    (IS_SAFARI && !inputType.startsWith('delete')) ||
+    inputType.startsWith('deleteBy')
+  ) {
     // $FlowFixMe: Flow doens't know of getTargetRanges
     const targetRange = event.getTargetRanges()[0];
 
@@ -444,6 +462,10 @@ function onNativeBeforeInput(
     }
     case 'deleteSoftLineBackward': {
       selection.deleteLineBackward();
+      break;
+    }
+    case 'deleteSoftLineForward': {
+      selection.deleteLineForward();
       break;
     }
     default: {

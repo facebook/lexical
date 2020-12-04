@@ -393,7 +393,6 @@ export class TextNode extends OutlineNode {
     }
     return dom;
   }
-  // $FlowFixMe: fix the type for prevNode
   updateDOM(prevNode: TextNode, dom: HTMLElement): boolean {
     const prevText = prevNode.text;
     const nextText = this.text;
@@ -431,7 +430,6 @@ export class TextNode extends OutlineNode {
     const domStyle = innerDOM.style;
 
     setTextStyling(nextInnerTag, prevFlags, nextFlags, domStyle);
-    // $FlowFixMe: prevNode is always a TextNode
     setTextContent(prevText, nextText, innerDOM, this);
     if (nextFlags & IS_SEGMENTED) {
       if ((prevFlags & IS_SEGMENTED) === 0) {

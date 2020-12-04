@@ -84,7 +84,7 @@ class EmojiNode extends TextNode {
   constructor(cssText: string, text: string, key?: NodeKey) {
     super(text, key);
     this.cssText = cssText;
-    // $FlowFixMe: this is an emoji type
+    // $FlowFixMe: TODO
     this.type = 'emoji';
   }
   // $FlowFixMe: TODO

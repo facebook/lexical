@@ -36,7 +36,6 @@ export class HeaderNode extends BlockNode {
   createDOM(): HTMLElement {
     return document.createElement(this._tag);
   }
-  // $FlowFixMe: prevNode is always a HeaderNode
   updateDOM(prevNode: HeaderNode, dom: HTMLElement): boolean {
     return false;
   }

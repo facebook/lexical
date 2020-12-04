@@ -7,7 +7,7 @@ import {createListItem, ParagraphNode} from 'outline';
 import {createHeader, createList, createQuote} from 'outline-rich-text-plugin';
 
 function textNodeTransform(node: TextNode, view: View): void {
-  const block = node.getParentBlock();
+  const block = node.getParentBlockOrThrow();
 
   if (
     block !== null &&

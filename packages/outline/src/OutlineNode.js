@@ -181,7 +181,7 @@ export class OutlineNode {
     }
     return getNodeByKeyOrThrow<BlockNode>(parent);
   }
-  getParentBlock(): BlockNode | null {
+  getParentBlockOrThrow(): BlockNode {
     let node = this;
     while (node !== null) {
       if (node instanceof BlockNode) {
@@ -189,16 +189,9 @@ export class OutlineNode {
       }
       node = node.getParent();
     }
-    return null;
+    throw new Error(`Expected node ${this.key} to have a parent.`);
   }
-  getParentBlockOrThrow(): BlockNode {
-    const parent = this.getParentBlock();
-    if (parent === null) {
-      throw new Error(`Expected node ${this.key} to have a parent.`);
-    }
-    return parent;
-  }
-  getTopParentBlock(): BlockNode | null {
+  getTopParentBlockOrThrow(): BlockNode {
     let node = this;
     while (node !== null) {
       const parent = node.getParent();
@@ -207,9 +200,9 @@ export class OutlineNode {
       }
       node = parent;
     }
-    return null;
+    throw new Error(`Expected node ${this.key} to have a top parent.`);
   }
-  getParents(): Array<BlockNode | null> {
+  getParents(): Array<BlockNode> {
     const parents = [];
     let node = this.getParent();
     while (node !== null) {
@@ -253,7 +246,6 @@ export class OutlineNode {
       .slice(index + 1)
       .map((childKey) => getNodeByKeyOrThrow<OutlineNode>(childKey));
   }
-
   getCommonAncestor(node: OutlineNode): BlockNode | null {
     const a = this.getParents();
     const b = node.getParents();
@@ -271,7 +263,6 @@ export class OutlineNode {
     }
     return null;
   }
-
   isBefore(targetNode: OutlineNode): boolean {
     const commonAncestor = this.getCommonAncestor(targetNode);
     let indexA = 0;
@@ -296,7 +287,6 @@ export class OutlineNode {
     }
     return indexA < indexB;
   }
-
   isParentOf(targetNode: OutlineNode): boolean {
     const key = this.key;
     let node = targetNode;
@@ -308,7 +298,6 @@ export class OutlineNode {
     }
     return false;
   }
-
   getNodesBetween(targetNode: OutlineNode): Array<OutlineNode> {
     const isBefore = this.isBefore(targetNode);
     const nodes = [];
@@ -377,7 +366,6 @@ export class OutlineNode {
     }
     return nodes;
   }
-
   hasDirection(): boolean {
     return (this.getLatest().flags & HAS_DIRECTION) !== 0;
   }
@@ -387,13 +375,11 @@ export class OutlineNode {
   isSegmented(): boolean {
     return (this.getLatest().flags & IS_SEGMENTED) !== 0;
   }
-
   getLatest(): this {
     const latest = getNodeByKey(this.key);
     invariant(latest !== null, 'getLatest: node not found');
     return latest;
   }
-
   getTextContent(): string {
     if (this instanceof TextNode) {
       return this.getTextContent();
@@ -418,7 +404,8 @@ export class OutlineNode {
   createDOM(): HTMLElement {
     throw new Error('Should never occur');
   }
-  updateDOM(prevNode: OutlineNode, dom: HTMLElement): boolean {
+  // $FlowFixMe: TODO
+  updateDOM(prevNode: any, dom: HTMLElement): boolean {
     throw new Error('Should never occur');
   }
 

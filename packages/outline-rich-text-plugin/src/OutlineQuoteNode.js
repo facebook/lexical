@@ -32,7 +32,6 @@ export class QuoteNode extends BlockNode {
   createDOM(): HTMLElement {
     return document.createElement('blockquote');
   }
-  // $FlowFixMe: prevNode is always a QuoteNode
   updateDOM(prevNode: QuoteNode, dom: HTMLElement): boolean {
     return false;
   }

@@ -1,6 +1,6 @@
 // @flow strict
 
-import type {ViewType} from './OutlineView';
+import type {View} from './OutlineView';
 import type {OutlineNode, NodeKey} from './OutlineNode';
 import type {Node as ReactNode} from 'react';
 
@@ -35,7 +35,7 @@ const NativePromise = window.Promise;
 
 function updateEditor(
   editor: OutlineEditor,
-  callbackFn: (view: ViewType) => void,
+  callbackFn: (view: View) => void,
   markAllTextNodesAsDirty: boolean,
   sync?: boolean,
 ): boolean {
@@ -57,7 +57,7 @@ function updateEditor(
   const currentPendingViewModel = pendingViewModel;
 
   enterViewModelScope(
-    (view: ViewType) => {
+    (view: View) => {
       if (viewModelWasCloned) {
         currentPendingViewModel.selection = createSelection(
           currentPendingViewModel,
@@ -109,7 +109,7 @@ export class OutlineEditor {
   _key: string;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _updateListeners: Set<onChangeType>;
-  _textTransforms: Set<(node: TextNode, view: ViewType) => void>;
+  _textTransforms: Set<(node: TextNode, view: View) => void>;
   _registeredNodeTypes: Map<string, Class<OutlineNode>>;
   _needsReconcile: boolean;
   _nodeDecorators: {[NodeKey]: ReactNode};
@@ -174,7 +174,7 @@ export class OutlineEditor {
     };
   }
   addTextTransform(
-    transformFn: (node: TextNode, view: ViewType) => void,
+    transformFn: (node: TextNode, view: View) => void,
   ): () => void {
     this._textTransforms.add(transformFn);
     updateEditor(this, emptyFunction, true);
@@ -217,7 +217,7 @@ export class OutlineEditor {
     this._pendingViewModel = viewModel;
     commitPendingUpdates(this);
   }
-  update(callbackFn: (view: ViewType) => void, sync?: boolean): boolean {
+  update(callbackFn: (view: View) => void, sync?: boolean): boolean {
     return updateEditor(this, callbackFn, false, sync);
   }
 }

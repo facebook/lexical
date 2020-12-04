@@ -192,6 +192,7 @@ function MentionsTypeahead({
       targetNode.replace(mentionNode);
       mentionNode.wrapInTextNodes();
       mentionNode.selectAfter(0, 0);
+      mentionNode.getParentOrThrow().normalizeTextNodes(true);
     });
   }, [close, editor, nodeKey, results, selectedIndex]);
 

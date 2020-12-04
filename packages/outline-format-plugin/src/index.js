@@ -1,12 +1,12 @@
 // @flow strict-local
 
-import type {OutlineEditor, TextNode, ViewType} from 'outline';
+import type {OutlineEditor, TextNode, View} from 'outline';
 
 import {useEffect} from 'react';
 import {createListItem, ParagraphNode} from 'outline';
 import {createHeader, createList, createQuote} from 'outline-rich-text-plugin';
 
-function textNodeTransform(node: TextNode, view: ViewType): void {
+function textNodeTransform(node: TextNode, view: View): void {
   const block = node.getParentBlock();
 
   if (

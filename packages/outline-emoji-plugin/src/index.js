@@ -1,6 +1,6 @@
 // @flow strict-local
 
-import type {OutlineEditor, ViewType, NodeKey} from 'outline';
+import type {OutlineEditor, View, NodeKey} from 'outline';
 
 import {useEffect} from 'react';
 import {TextNode} from 'outline';
@@ -38,7 +38,7 @@ const emojis: {[string]: string} = {
   '<3': heart,
 };
 
-function textNodeTransform(node: TextNode, view: ViewType): void {
+function textNodeTransform(node: TextNode, view: View): void {
   const text = node.getTextContent();
   for (let i = 0; i < text.length; i++) {
     const possibleEmoji = text.slice(i, i + 2);

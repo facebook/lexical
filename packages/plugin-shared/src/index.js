@@ -16,7 +16,7 @@ import {
   isParagraph,
 } from './hotKeys';
 
-import type {OutlineEditor, ViewType} from 'outline';
+import type {OutlineEditor, View} from 'outline';
 
 export const emptyObject: {} = {};
 
@@ -38,7 +38,7 @@ type UnknownState = Object;
 function useEventWrapper<T>(
   handler: (
     event: UnknownEvent,
-    view: ViewType,
+    view: View,
     state: UnknownState,
     editor: OutlineEditor,
   ) => void,
@@ -57,7 +57,7 @@ function useEventWrapper<T>(
 export function useEvent<T>(
   editor: OutlineEditor,
   eventName: string,
-  handler: (event: UnknownEvent, view: ViewType) => void,
+  handler: (event: UnknownEvent, view: View) => void,
   stateRef?: RefObject<T>,
 ): void {
   const wrapper = useEventWrapper(handler, editor, stateRef);
@@ -76,7 +76,7 @@ export function useEvent<T>(
   }, [eventName, editor, wrapper]);
 }
 
-export function onFocusIn(event: FocusEvent, view: ViewType) {
+export function onFocusIn(event: FocusEvent, view: View) {
   const root = view.getRoot();
 
   if (root.getFirstChild() === null) {
@@ -88,7 +88,7 @@ export function onFocusIn(event: FocusEvent, view: ViewType) {
 
 function onCompositionStart(
   event: CompositionEvent,
-  view: ViewType,
+  view: View,
   state: UnknownState,
   editor: OutlineEditor,
 ): void {
@@ -107,7 +107,7 @@ function onCompositionStart(
 
 function onCompositionEnd(
   event: CompositionEvent,
-  view: ViewType,
+  view: View,
   state: UnknownState,
   editor: OutlineEditor,
 ): void {
@@ -145,7 +145,7 @@ function onSelectionChange(event, view, state, editor): void {
 
 function onKeyDown(
   event: KeyboardEvent,
-  view: ViewType,
+  view: View,
   state: UnknownState,
   editor: OutlineEditor,
 ): void {
@@ -189,7 +189,7 @@ function onKeyDown(
 
 function onPastePolyfill(
   event: ClipboardEvent,
-  view: ViewType,
+  view: View,
   state: UnknownState,
   editor: OutlineEditor,
 ): void {
@@ -203,7 +203,7 @@ function onPastePolyfill(
 
 function onDropPolyfill(
   event: ClipboardEvent,
-  view: ViewType,
+  view: View,
   state: UnknownState,
   editor: OutlineEditor,
 ) {
@@ -213,7 +213,7 @@ function onDropPolyfill(
 
 function onDragStartPolyfill(
   event: ClipboardEvent,
-  view: ViewType,
+  view: View,
   state: UnknownState,
   editor: OutlineEditor,
 ) {
@@ -223,7 +223,7 @@ function onDragStartPolyfill(
 
 function onPolyfilledBeforeInput(
   event: SyntheticInputEvent<EventTarget>,
-  view: ViewType,
+  view: View,
   state: UnknownState,
 ): void {
   event.preventDefault();
@@ -236,7 +236,7 @@ function onPolyfilledBeforeInput(
 
 function onCut(
   event: ClipboardEvent,
-  view: ViewType,
+  view: View,
   state: UnknownState,
   editor: OutlineEditor,
 ): void {
@@ -249,7 +249,7 @@ function onCut(
 
 function onCopy(
   event: ClipboardEvent,
-  view: ViewType,
+  view: View,
   state: UnknownState,
   editor: OutlineEditor,
 ): void {
@@ -321,7 +321,7 @@ function insertDataTransfer(
   dataTransfer: DataTransfer,
   selection: Selection,
   state: UnknownState,
-  view: ViewType,
+  view: View,
   editor: OutlineEditor,
 ) {
   if (state.richText) {
@@ -344,7 +344,7 @@ function insertDataTransfer(
 
 function onNativeBeforeInput(
   event: InputEvent,
-  view: ViewType,
+  view: View,
   state: UnknownState,
   editor: OutlineEditor,
 ): void {

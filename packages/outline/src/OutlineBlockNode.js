@@ -109,14 +109,14 @@ export class BlockNode extends OutlineNode {
 
   // Mutators
 
-  clear(autoRestoreFocus?: boolean): BlockNode {
+  clear(restoreSelection?: boolean): BlockNode {
     shouldErrorOnReadOnly();
     const writableSelf = getWritableNode(this);
     const children = this.getChildren();
     children.forEach((child) => child.remove());
     const textNode = createText('');
     this.append(textNode);
-    if (autoRestoreFocus) {
+    if (restoreSelection) {
       textNode.select(0, 0);
     }
     return writableSelf;

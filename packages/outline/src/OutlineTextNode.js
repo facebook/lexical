@@ -475,7 +475,7 @@ export class TextNode extends OutlineNode {
     writableSelf._text = text;
     return writableSelf;
   }
-  selectAfter(anchorOffset?: number, focusOffset?: number): void {
+  selectAfter(anchorOffset?: number, focusOffset?: number): Selection {
     shouldErrorOnReadOnly();
     const nextSibling = this.getNextSibling();
     if (
@@ -486,7 +486,7 @@ export class TextNode extends OutlineNode {
     ) {
       throw new Error('This needs to be fixed');
     }
-    nextSibling.select(anchorOffset, focusOffset);
+    return nextSibling.select(anchorOffset, focusOffset);
   }
   select(_anchorOffset?: number, _focusOffset?: number): Selection {
     shouldErrorOnReadOnly();

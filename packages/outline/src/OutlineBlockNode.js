@@ -23,16 +23,16 @@ function combineAdjacentTextNodes(
   const focusKey = selection.focusKey;
   // Merge all text nodes into the first node
   const writableMergeToNode = getWritableNode(textNodes[0]);
-  const key = writableMergeToNode._key;
+  const key = writableMergeToNode.key;
   let textLength = writableMergeToNode.getTextContent().length;
   for (let i = 1; i < textNodes.length; i++) {
     const textNode = textNodes[i];
     const siblingText = textNode.getTextContent();
-    if (restoreSelection && textNode._key === anchorKey) {
+    if (restoreSelection && textNode.key === anchorKey) {
       selection.anchorOffset = textLength + anchorOffset;
       selection.anchorKey = key;
     }
-    if (restoreSelection && textNode._key === focusKey) {
+    if (restoreSelection && textNode.key === focusKey) {
       selection.focusOffset = textLength + focusOffset;
       selection.focusKey = key;
     }
@@ -46,15 +46,15 @@ function combineAdjacentTextNodes(
 }
 
 export class BlockNode extends OutlineNode {
-  _children: Array<NodeKey>;
+  children: Array<NodeKey>;
 
   constructor(key?: string) {
     super(key);
-    this._children = [];
+    this.children = [];
   }
   getChildren(): Array<OutlineNode> {
     const self = this.getLatest();
-    const children = self._children;
+    const children = self.children;
     const childrenNodes = [];
     for (let i = 0; i < children.length; i++) {
       const childNode = getNodeByKey(children[i]);
@@ -90,7 +90,7 @@ export class BlockNode extends OutlineNode {
   }
   getFirstChild(): null | OutlineNode {
     const self = this.getLatest();
-    const children = self._children;
+    const children = self.children;
     const childrenLength = children.length;
     if (childrenLength === 0) {
       return null;
@@ -99,7 +99,7 @@ export class BlockNode extends OutlineNode {
   }
   getLastChild(): null | OutlineNode {
     const self = this.getLatest();
-    const children = self._children;
+    const children = self.children;
     const childrenLength = children.length;
     if (childrenLength === 0) {
       return null;
@@ -132,15 +132,15 @@ export class BlockNode extends OutlineNode {
     const oldParent = writableNodeToAppend.getParent();
     if (oldParent !== null) {
       const writableParent = getWritableNode(oldParent);
-      const children = writableParent._children;
-      const index = children.indexOf(writableNodeToAppend._key);
+      const children = writableParent.children;
+      const index = children.indexOf(writableNodeToAppend.key);
       if (index > -1) {
         children.splice(index, 1);
       }
     }
     // Set child parent to self
-    writableNodeToAppend._parent = writableSelf._key;
-    const children = writableSelf._children;
+    writableNodeToAppend.parent = writableSelf.key;
+    const children = writableSelf.children;
     // Because we are appending a node, we need to check if the last
     // child is an empty text node so we can make it as dirty.
     const dirtySubTrees = viewModel.dirtySubTrees;
@@ -148,12 +148,12 @@ export class BlockNode extends OutlineNode {
     if (childrenLength > 0) {
       const lastChildKey = children[childrenLength - 1];
       const lastChild = getNodeByKey(lastChildKey);
-      if (lastChild instanceof TextNode && lastChild._text === '') {
+      if (lastChild instanceof TextNode && lastChild.text === '') {
         dirtySubTrees.add(lastChildKey);
       }
     }
     // Append children.
-    const newKey = writableNodeToAppend._key;
+    const newKey = writableNodeToAppend.key;
     children.push(newKey);
     return writableSelf;
   }
@@ -165,14 +165,14 @@ export class BlockNode extends OutlineNode {
     let lastURL = null;
     for (let i = 0; i < children.length; i++) {
       const child: OutlineNode = children[i].getLatest();
-      const flags = child._flags;
+      const flags = child.flags;
 
       if (
         child instanceof TextNode &&
         !child.isImmutable() &&
         !child.isSegmented()
       ) {
-        const url = child._url;
+        const url = child.url;
         if (
           (lastTextNodeFlags === null || flags === lastTextNodeFlags) &&
           (lastURL === null || lastURL === url)

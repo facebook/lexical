@@ -3,32 +3,29 @@
 import {BlockNode} from './OutlineBlockNode';
 
 export class RootNode extends BlockNode {
-  _type: 'root';
+  type: 'root';
 
   constructor() {
     super('root');
-    this._type = 'root';
+    this.type = 'root';
   }
-  static parse(
-    // $FlowFixMe: TODO: refine
-    data: Object,
-  ): RootNode {
+  static parse(data: {}): RootNode {
     return new RootNode();
   }
   clone(): RootNode {
     const clone = new RootNode();
-    clone._children = [...this._children];
+    clone.children = [...this.children];
     return clone;
   }
 
-  isAttached(): boolean {
+  isAttached(): true {
     return true;
   }
 
   // View
 
   // $FlowFixMe: prevNode is always a RootNode
-  _update(prevNode: RootNode, dom: HTMLElement): boolean {
+  updateDOM(prevNode: RootNode, dom: HTMLElement): false {
     return false;
   }
 }

@@ -79,29 +79,33 @@ function createEmoji(cssText: string): EmojiNode {
 }
 
 class EmojiNode extends TextNode {
-  _cssText: string;
+  cssText: string;
 
   constructor(cssText: string, text: string, key?: NodeKey) {
     super(text, key);
-    this._cssText = cssText;
+    this.cssText = cssText;
     // $FlowFixMe: this is an emoji type
-    this._type = 'emoji';
+    this.type = 'emoji';
   }
   // $FlowFixMe: TODO
-  static parse(data: Object): EmojiNode {
-    const emoji = new EmojiNode(data._cssText, data._text);
-    emoji._flags = data._flags;
+  static parse(data: {
+    cssText: string,
+    text: string,
+    flags: number,
+  }): EmojiNode {
+    const emoji = new EmojiNode(data.cssText, data.text);
+    emoji.flags = data.flags;
     return emoji;
   }
   clone() {
-    const clone = new EmojiNode(this._cssText, this._text, this._key);
-    clone._parent = this._parent;
-    clone._flags = this._flags;
+    const clone = new EmojiNode(this.cssText, this.text, this.key);
+    clone.parent = this.parent;
+    clone.flags = this.flags;
     return clone;
   }
-  _create() {
-    const dom = super._create();
-    dom.style.cssText = this._cssText;
+  createDOM() {
+    const dom = super.createDOM();
+    dom.style.cssText = this.cssText;
     return dom;
   }
 }

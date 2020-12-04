@@ -5,35 +5,32 @@ import type {NodeKey} from './OutlineNode';
 import {BlockNode} from './OutlineBlockNode';
 
 export class ParagraphNode extends BlockNode {
-  _type: 'paragraph';
+  type: 'paragraph';
 
   constructor(key?: NodeKey) {
     super(key);
-    this._type = 'paragraph';
+    this.type = 'paragraph';
   }
-  static parse(
-    // $FlowFixMe: TODO: refine
-    data: Object,
-  ): ParagraphNode {
+  static parse(data: {flags: number}): ParagraphNode {
     const header = new ParagraphNode();
-    header._flags = data._flags;
+    header.flags = data.flags;
     return header;
   }
   clone(): ParagraphNode {
-    const clone = new ParagraphNode(this._key);
-    clone._children = [...this._children];
-    clone._parent = this._parent;
-    clone._flags = this._flags;
+    const clone = new ParagraphNode(this.key);
+    clone.children = [...this.children];
+    clone.parent = this.parent;
+    clone.flags = this.flags;
     return clone;
   }
 
   // View
 
-  _create(): HTMLElement {
+  createDOM(): HTMLElement {
     return document.createElement('p');
   }
   // $FlowFixMe: prevNode is always a ParagraphNode
-  _update(prevNode: ParagraphNode, dom: HTMLElement): boolean {
+  updateDOM(prevNode: ParagraphNode, dom: HTMLElement): boolean {
     return false;
   }
 }

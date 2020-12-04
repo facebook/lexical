@@ -62,7 +62,7 @@ function splitText(
     throw new Error('splitText: can only be used on non-immutable text nodes');
   }
   const textContent = node.getTextContent();
-  const key = node._key;
+  const key = node.key;
   const offsetsSet = new Set(splitOffsets);
   const parts = [];
   const textLength = textContent.length;
@@ -85,10 +85,10 @@ function splitText(
   }
   // For the first part, update the existing node
   const writableNode = getWritableNode(node);
-  const parentKey = writableNode._parent;
+  const parentKey = writableNode.parent;
   const firstPart = parts[0];
-  const flags = writableNode._flags;
-  writableNode._text = firstPart;
+  const flags = writableNode.flags;
+  writableNode.text = firstPart;
 
   // Handle selection
   const selection = getSelection();
@@ -100,8 +100,8 @@ function splitText(
     const part = parts[i];
     const partSize = part.length;
     const sibling = getWritableNode(createTextNode(part));
-    sibling._flags = flags;
-    const siblingKey = sibling._key;
+    sibling.flags = flags;
+    const siblingKey = sibling.key;
     const nextTextSize = textLength + partSize;
 
     if (selection !== null) {
@@ -129,16 +129,16 @@ function splitText(
       }
     }
     textSize = nextTextSize;
-    sibling._parent = parentKey;
+    sibling.parent = parentKey;
     splitNodes.push(sibling);
   }
 
   // Insert the nodes into the parent's children
   const parent = node.getParentOrThrow();
   const writableParent = getWritableNode(parent);
-  const writableParentChildren = writableParent._children;
+  const writableParentChildren = writableParent.children;
   const insertionIndex = writableParentChildren.indexOf(key);
-  const splitNodesKeys = splitNodes.map((splitNode) => splitNode._key);
+  const splitNodesKeys = splitNodes.map((splitNode) => splitNode.key);
   writableParentChildren.splice(insertionIndex, 1, ...splitNodesKeys);
 
   return splitNodes;
@@ -189,7 +189,7 @@ function setTextContent(
   const hasBreakNode = firstChild && firstChild.nextSibling;
   const parent = node.getParent();
   // Check if we are on an empty line
-  if (parent !== null && parent._children.length === 1) {
+  if (parent !== null && parent.children.length === 1) {
     if (nextText === '') {
       if (firstChild == null) {
         // We use a zero width string so that the browser moves
@@ -220,57 +220,58 @@ function setTextContent(
 }
 
 export class TextNode extends OutlineNode {
-  _text: string;
-  _type: 'text';
-  _url: null | string;
+  text: string;
+  type: 'text';
+  url: null | string;
 
   constructor(text: string, key?: NodeKey) {
     super(key);
-    this._text = text;
-    this._type = 'text';
-    this._flags = HAS_DIRECTION;
-    this._url = null;
+    this.text = text;
+    this.type = 'text';
+    this.flags = HAS_DIRECTION;
+    this.url = null;
   }
-  static parse(
-    // $FlowFixMe: TODO: refine
-    data: Object,
-  ): TextNode {
-    const textNode = new TextNode(data._text);
-    textNode._flags = data._flags;
-    textNode._url = data._url;
+  static parse(data: {
+    text: string,
+    url: null | string,
+    flags: number,
+  }): TextNode {
+    const textNode = new TextNode(data.text);
+    textNode.flags = data.flags;
+    textNode.url = data.url;
     return textNode;
   }
   clone(): TextNode {
-    const clone = new TextNode(this._text, this._key);
-    clone._parent = this._parent;
-    clone._flags = this._flags;
-    clone._url = this._url;
+    const clone = new TextNode(this.text, this.key);
+    clone.parent = this.parent;
+    clone.flags = this.flags;
+    clone.url = this.url;
     return clone;
   }
   isBold(): boolean {
-    return (this.getLatest()._flags & IS_BOLD) !== 0;
+    return (this.getLatest().flags & IS_BOLD) !== 0;
   }
   isItalic(): boolean {
-    return (this.getLatest()._flags & IS_ITALIC) !== 0;
+    return (this.getLatest().flags & IS_ITALIC) !== 0;
   }
   isStrikethrough(): boolean {
-    return (this.getLatest()._flags & IS_STRIKETHROUGH) !== 0;
+    return (this.getLatest().flags & IS_STRIKETHROUGH) !== 0;
   }
   isUnderline(): boolean {
-    return (this.getLatest()._flags & IS_UNDERLINE) !== 0;
+    return (this.getLatest().flags & IS_UNDERLINE) !== 0;
   }
   isCode(): boolean {
-    return (this.getLatest()._flags & IS_CODE) !== 0;
+    return (this.getLatest().flags & IS_CODE) !== 0;
   }
   isLink(): boolean {
-    return (this.getLatest()._flags & IS_LINK) !== 0;
+    return (this.getLatest().flags & IS_LINK) !== 0;
   }
   getURL(): null | string {
-    return this._url;
+    return this.url;
   }
   getTextContent(): string {
     const self = this.getLatest();
-    return self._text;
+    return self.text;
   }
   getTextNodeFormatFlags(
     type: 0 | 1 | 2 | 3 | 4 | 5,
@@ -278,7 +279,7 @@ export class TextNode extends OutlineNode {
     force?: boolean,
   ): number {
     const self = this.getLatest();
-    const nodeFlags = self._flags;
+    const nodeFlags = self.flags;
     let newFlags = nodeFlags;
 
     switch (type) {
@@ -362,8 +363,8 @@ export class TextNode extends OutlineNode {
 
   // View
 
-  _create(): HTMLElement {
-    const flags = this._flags;
+  createDOM(): HTMLElement {
+    const flags = this.flags;
     const outerTag = getElementOuterTag(this, flags);
     const innerTag = getElementInnerTag(this, flags);
     const tag = outerTag === null ? innerTag : outerTag;
@@ -374,7 +375,7 @@ export class TextNode extends OutlineNode {
       dom.appendChild(innerDOM);
     }
     const domStyle = innerDOM.style;
-    const text = this._text;
+    const text = this.text;
 
     if (flags & IS_IMMUTABLE || flags & IS_SEGMENTED) {
       dom.contentEditable = 'false';
@@ -393,11 +394,11 @@ export class TextNode extends OutlineNode {
     return dom;
   }
   // $FlowFixMe: fix the type for prevNode
-  _update(prevNode: TextNode, dom: HTMLElement): boolean {
-    const prevText = prevNode._text;
-    const nextText = this._text;
-    const prevFlags = prevNode._flags;
-    const nextFlags = this._flags;
+  updateDOM(prevNode: TextNode, dom: HTMLElement): boolean {
+    const prevText = prevNode.text;
+    const nextText = this.text;
+    const prevFlags = prevNode.flags;
+    const nextFlags = this.flags;
     const prevOuterTag = getElementOuterTag(this, prevFlags);
     const nextOuterTag = getElementOuterTag(this, nextFlags);
     const prevInnerTag = getElementInnerTag(this, prevFlags);
@@ -461,7 +462,7 @@ export class TextNode extends OutlineNode {
       throw new Error('setURL: can only be used on non-immutable text nodes');
     }
     const writableSelf = getWritableNode(this);
-    writableSelf._url = url;
+    writableSelf.url = url;
     return writableSelf;
   }
   setTextContent(text: string): TextNode {
@@ -472,7 +473,7 @@ export class TextNode extends OutlineNode {
       );
     }
     const writableSelf = getWritableNode(this);
-    writableSelf._text = text;
+    writableSelf.text = text;
     return writableSelf;
   }
   selectAfter(anchorOffset?: number, focusOffset?: number): Selection {
@@ -494,7 +495,7 @@ export class TextNode extends OutlineNode {
     let focusOffset = _focusOffset;
     const selection = getSelection();
     const text = this.getTextContent();
-    const key = this._key;
+    const key = this.key;
     if (key === null) {
       throw new Error('TODO: validate nodes have keys in a more generic way');
     }
@@ -530,7 +531,7 @@ export class TextNode extends OutlineNode {
       );
     }
     const writableSelf = getWritableNode(this);
-    const text = writableSelf._text;
+    const text = writableSelf.text;
     const newTextLength = newText.length;
     let index = offset;
     if (index < 0) {
@@ -541,9 +542,9 @@ export class TextNode extends OutlineNode {
     }
     const updatedText =
       text.slice(0, index) + newText + text.slice(index + delCount);
-    writableSelf._text = updatedText;
+    writableSelf.text = updatedText;
     if (restoreSelection) {
-      const key = writableSelf._key;
+      const key = writableSelf.key;
       if (key === null) {
         throw new Error('TODO: validate nodes have keys in a more generic way');
       }

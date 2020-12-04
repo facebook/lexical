@@ -9,31 +9,31 @@ export class ListItemNode extends BlockNode {
 
   constructor(key?: NodeKey) {
     super(key);
-    this._type = 'listitem';
+    this.type = 'listitem';
   }
   static parse(
     // $FlowFixMe: TODO: refine
     data: Object,
   ): ListItemNode {
     const header = new ListItemNode();
-    header._flags = data._flags;
+    header.flags = data.flags;
     return header;
   }
   clone(): ListItemNode {
-    const clone = new ListItemNode(this._key);
-    clone._children = [...this._children];
-    clone._parent = this._parent;
-    clone._flags = this._flags;
+    const clone = new ListItemNode(this.key);
+    clone.children = [...this.children];
+    clone.parent = this.parent;
+    clone.flags = this.flags;
     return clone;
   }
 
   // View
 
-  _create(): HTMLElement {
+  createDOM(): HTMLElement {
     return document.createElement('li');
   }
   // $FlowFixMe: prevNode is always a ListItemNode
-  _update(prevNode: ListItemNode, dom: HTMLElement): boolean {
+  updateDOM(prevNode: ListItemNode, dom: HTMLElement): boolean {
     return false;
   }
 }

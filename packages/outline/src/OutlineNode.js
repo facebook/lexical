@@ -24,31 +24,31 @@ function makeNodeAsDirty(node: OutlineNode): void {
   const latest = node.getLatest();
   const viewModel = getActiveViewModel();
   const dirtyNodes = viewModel.dirtyNodes;
-  dirtyNodes.add(latest._key);
+  dirtyNodes.add(latest.key);
   if (latest instanceof BlockNode) {
     const children = latest.getChildren();
     for (let i = 0; i < children.length; i++) {
       const child = children[i];
-      dirtyNodes.add(child._key);
+      dirtyNodes.add(child.key);
       makeNodeAsDirty(child);
     }
   }
 }
 
 function removeNode(nodeToRemove: OutlineNode): void {
-  const key = nodeToRemove._key;
+  const key = nodeToRemove.key;
   const parent = nodeToRemove.getParent();
   if (parent === null) {
     return;
   }
   const writableParent = getWritableNode(parent);
-  const parentChildren = writableParent._children;
+  const parentChildren = writableParent.children;
   const index = parentChildren.indexOf(key);
   if (index > -1) {
     parentChildren.splice(index, 1);
   }
   const writableNodeToRemove = getWritableNode(nodeToRemove);
-  writableNodeToRemove._parent = null;
+  writableNodeToRemove.parent = null;
   makeNodeAsDirty(writableNodeToRemove);
 }
 
@@ -60,21 +60,21 @@ function replaceNode<N: OutlineNode>(
   const oldParent = writableReplaceWith.getParent();
   if (oldParent !== null) {
     const writableParent = getWritableNode(oldParent);
-    const children = writableParent._children;
-    const index = children.indexOf(writableReplaceWith._key);
+    const children = writableParent.children;
+    const index = children.indexOf(writableReplaceWith.key);
     if (index > -1) {
       children.splice(index, 1);
     }
   }
   const newParent = toReplace.getParentOrThrow();
   const writableParent = getWritableNode(newParent);
-  const children = writableParent._children;
-  const index = children.indexOf(toReplace._key);
-  const newKey = replaceWith._key;
+  const children = writableParent.children;
+  const index = children.indexOf(toReplace.key);
+  const newKey = replaceWith.key;
   if (index > -1) {
     children.splice(index, 0, newKey);
   }
-  writableReplaceWith._parent = newParent._key;
+  writableReplaceWith.parent = newParent.key;
   toReplace.remove();
   return writableReplaceWith;
 }
@@ -108,10 +108,10 @@ export type NodeKey = string;
 
 export class OutlineNode {
   // $FlowFixMe: TODO
-  _type: any;
-  _flags: number;
-  _key: NodeKey;
-  _parent: null | NodeKey;
+  type: any;
+  flags: number;
+  key: NodeKey;
+  parent: null | NodeKey;
 
   static parse(
     // $FlowFixMe: TODO: refine
@@ -134,19 +134,19 @@ export class OutlineNode {
   }
 
   constructor(key?: string) {
-    this._type = 'node';
-    this._flags = 0;
-    this._key = key || generateKey(this);
-    this._parent = null;
+    this.type = 'node';
+    this.flags = 0;
+    this.key = key || generateKey(this);
+    this.parent = null;
   }
 
   // Getters and Traversors
 
   getType(): string {
-    return this._type;
+    return this.type;
   }
   isAttached(): boolean {
-    const parentKey = this._parent;
+    const parentKey = this.parent;
     if (parentKey === null) {
       return false;
     }
@@ -158,23 +158,23 @@ export class OutlineNode {
   }
   getFlags(): number {
     const self = this.getLatest();
-    return self._flags;
+    return self.flags;
   }
   getKey(): NodeKey {
     // Key is stable between copies
-    return this._key;
+    return this.key;
   }
   getParent(): BlockNode | null {
-    const parent = this.getLatest()._parent;
+    const parent = this.getLatest().parent;
     if (parent === null) {
       return null;
     }
     return getNodeByKey(parent);
   }
   getParentOrThrow(): BlockNode {
-    const parent = this.getLatest()._parent;
+    const parent = this.getLatest().parent;
     if (parent === null) {
-      throw new Error(`Expected node ${this._key} to have a parent.`);
+      throw new Error(`Expected node ${this.key} to have a parent.`);
     }
     return getNodeByKeyOrThrow<BlockNode>(parent);
   }
@@ -191,7 +191,7 @@ export class OutlineNode {
   getParentBlockOrThrow(): BlockNode {
     const parent = this.getParentBlock();
     if (parent === null) {
-      throw new Error(`Expected node ${this._key} to have a parent.`);
+      throw new Error(`Expected node ${this.key} to have a parent.`);
     }
     return parent;
   }
@@ -217,8 +217,8 @@ export class OutlineNode {
   }
   getPreviousSibling(): OutlineNode | null {
     const parent = this.getParentOrThrow();
-    const children = parent._children;
-    const index = children.indexOf(this._key);
+    const children = parent.children;
+    const index = children.indexOf(this.key);
     if (index <= 0) {
       return null;
     }
@@ -226,17 +226,17 @@ export class OutlineNode {
   }
   getPreviousSiblings(): Array<OutlineNode> {
     const parent = this.getParentOrThrow();
-    const children = parent._children;
-    const index = children.indexOf(this._key);
+    const children = parent.children;
+    const index = children.indexOf(this.key);
     return children
       .slice(0, index)
       .map((childKey) => getNodeByKeyOrThrow<OutlineNode>(childKey));
   }
   getNextSibling(): OutlineNode | null {
     const parent = this.getParentOrThrow();
-    const children = parent._children;
+    const children = parent.children;
     const childrenLength = children.length;
-    const index = children.indexOf(this._key);
+    const index = children.indexOf(this.key);
     if (index >= childrenLength - 1) {
       return null;
     }
@@ -244,8 +244,8 @@ export class OutlineNode {
   }
   getNextSiblings(): Array<OutlineNode> {
     const parent = this.getParentOrThrow();
-    const children = parent._children;
-    const index = children.indexOf(this._key);
+    const children = parent.children;
+    const index = children.indexOf(this.key);
     return children
       .slice(index + 1)
       .map((childKey) => getNodeByKeyOrThrow<OutlineNode>(childKey));
@@ -277,7 +277,7 @@ export class OutlineNode {
     while (true) {
       const parent = node.getParentOrThrow();
       if (parent === commonAncestor) {
-        indexA = parent._children.indexOf(node._key);
+        indexA = parent.children.indexOf(node.key);
         break;
       }
       node = parent;
@@ -286,7 +286,7 @@ export class OutlineNode {
     while (true) {
       const parent = node.getParentOrThrow();
       if (parent === commonAncestor) {
-        indexB = parent._children.indexOf(node._key);
+        indexB = parent.children.indexOf(node.key);
         break;
       }
       node = parent;
@@ -295,10 +295,10 @@ export class OutlineNode {
   }
 
   isParentOf(targetNode: OutlineNode): boolean {
-    const key = this._key;
+    const key = this.key;
     let node = targetNode;
     while (node !== null) {
-      if (node._key === key) {
+      if (node.key === key) {
         return true;
       }
       node = node.getParent();
@@ -376,17 +376,17 @@ export class OutlineNode {
   }
 
   hasDirection(): boolean {
-    return (this.getLatest()._flags & HAS_DIRECTION) !== 0;
+    return (this.getLatest().flags & HAS_DIRECTION) !== 0;
   }
   isImmutable(): boolean {
-    return (this.getLatest()._flags & IS_IMMUTABLE) !== 0;
+    return (this.getLatest().flags & IS_IMMUTABLE) !== 0;
   }
   isSegmented(): boolean {
-    return (this.getLatest()._flags & IS_SEGMENTED) !== 0;
+    return (this.getLatest().flags & IS_SEGMENTED) !== 0;
   }
 
   getLatest(): this {
-    const latest = getNodeByKey(this._key);
+    const latest = getNodeByKey(this.key);
     invariant(latest !== null, 'getLatest: node not found');
     return latest;
   }
@@ -412,10 +412,10 @@ export class OutlineNode {
 
   // View
 
-  _create(): HTMLElement {
+  createDOM(): HTMLElement {
     throw new Error('Should never occur');
   }
-  _update(prevNode: OutlineNode, dom: HTMLElement): boolean {
+  updateDOM(prevNode: OutlineNode, dom: HTMLElement): boolean {
     throw new Error('Should never occur');
   }
 
@@ -427,25 +427,25 @@ export class OutlineNode {
       throw new Error('setFlags: can only be used on non-immutable nodes');
     }
     const self = getWritableNode(this);
-    self._flags = flags;
+    self.flags = flags;
     return self;
   }
   makeDirectioned(): this {
     shouldErrorOnReadOnly();
     const self = getWritableNode(this);
-    self._flags |= HAS_DIRECTION;
+    self.flags |= HAS_DIRECTION;
     return self;
   }
   makeImmutable(): this {
     shouldErrorOnReadOnly();
     const self = getWritableNode(this);
-    self._flags |= IS_IMMUTABLE;
+    self.flags |= IS_IMMUTABLE;
     return self;
   }
   makeSegmented(): this {
     shouldErrorOnReadOnly();
     const self = getWritableNode(this);
-    self._flags |= IS_SEGMENTED;
+    self.flags |= IS_SEGMENTED;
     return self;
   }
   remove(): void {
@@ -469,17 +469,17 @@ export class OutlineNode {
     const oldParent = writableNodeToInsert.getParent();
     if (oldParent !== null) {
       const writableParent = getWritableNode(oldParent);
-      const children = writableParent._children;
-      const index = children.indexOf(writableNodeToInsert._key);
+      const children = writableParent.children;
+      const index = children.indexOf(writableNodeToInsert.key);
       if (index > -1) {
         children.splice(index, 1);
       }
     }
     const writableParent = getWritableNode(this.getParentOrThrow());
-    const insertKey = nodeToInsert._key;
-    writableNodeToInsert._parent = writableSelf._parent;
-    const children = writableParent._children;
-    const index = children.indexOf(writableSelf._key);
+    const insertKey = nodeToInsert.key;
+    writableNodeToInsert.parent = writableSelf.parent;
+    const children = writableParent.children;
+    const index = children.indexOf(writableSelf.key);
     if (index > -1) {
       children.splice(index + 1, 0, insertKey);
     } else {
@@ -495,17 +495,17 @@ export class OutlineNode {
     const oldParent = writableNodeToInsert.getParent();
     if (oldParent !== null) {
       const writableParent = getWritableNode(oldParent);
-      const children = writableParent._children;
-      const index = children.indexOf(writableNodeToInsert._key);
+      const children = writableParent.children;
+      const index = children.indexOf(writableNodeToInsert.key);
       if (index > -1) {
         children.splice(index, 1);
       }
     }
     const writableParent = getWritableNode(this.getParentOrThrow());
-    const insertKey = nodeToInsert._key;
-    writableNodeToInsert._parent = writableSelf._parent;
-    const children = writableParent._children;
-    const index = children.indexOf(writableSelf._key);
+    const insertKey = nodeToInsert.key;
+    writableNodeToInsert.parent = writableSelf.parent;
+    const children = writableParent.children;
+    const index = children.indexOf(writableSelf.key);
     if (index > -1) {
       children.splice(index, 0, insertKey);
     } else {
@@ -523,10 +523,10 @@ export function getWritableNode<N: OutlineNode>(node: N): N {
   const viewModel = getActiveViewModel();
   const dirtyNodes = viewModel.dirtyNodes;
   const nodeMap = viewModel.nodeMap;
-  const key = node._key;
+  const key = node.key;
   // Ensure we get the latest node from pending state
   const latestNode = node.getLatest();
-  const parent = node._parent;
+  const parent = node.parent;
   if (parent !== null) {
     const dirtySubTrees = viewModel.dirtySubTrees;
     markParentsAsDirty(parent, nodeMap, dirtySubTrees);
@@ -542,7 +542,7 @@ export function getWritableNode<N: OutlineNode>(node: N): N {
         ': "clone" method was either missing or incorrectly implemented.',
     );
   }
-  mutableNode._key = key;
+  mutableNode.key = key;
   // If we're mutating the root node, make sure to update
   // the pointer in state too.
   if (mutableNode instanceof RootNode) {
@@ -567,7 +567,7 @@ function markParentsAsDirty(
       return;
     }
     dirtySubTrees.add(nextParentKey);
-    nextParentKey = nodeMap[nextParentKey]._parent;
+    nextParentKey = nodeMap[nextParentKey].parent;
   }
 }
 

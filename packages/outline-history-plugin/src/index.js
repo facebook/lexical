@@ -24,13 +24,13 @@ function shouldMerge(
     if (dirtyNodes.length === 1) {
       const prevNodeMap = current.nodeMap;
       const nextDirtyNode = dirtyNodes[0];
-      const prevDirtyNodeKey = nextDirtyNode._key;
+      const prevDirtyNodeKey = nextDirtyNode.key;
       const prevDirtyNode = prevNodeMap[prevDirtyNodeKey];
       if (
         prevDirtyNode !== undefined &&
         prevDirtyNode instanceof TextNode &&
-        prevDirtyNode._flags === nextDirtyNode._flags &&
-        prevDirtyNode._text !== ''
+        prevDirtyNode.flags === nextDirtyNode.flags &&
+        prevDirtyNode.text !== ''
       ) {
         return true;
       }

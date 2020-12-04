@@ -9,31 +9,31 @@ export class QuoteNode extends BlockNode {
 
   constructor(key?: NodeKey) {
     super(key);
-    this._type = 'quote';
+    this.type = 'quote';
   }
   static parse(
     // $FlowFixMe: TODO: refine
     data: Object,
   ): QuoteNode {
     const quote = new QuoteNode();
-    quote._flags = data._flags;
+    quote.flags = data.flags;
     return quote;
   }
   clone(): QuoteNode {
     const clone = new QuoteNode();
-    clone._children = [...this._children];
-    clone._parent = this._parent;
-    clone._flags = this._flags;
+    clone.children = [...this.children];
+    clone.parent = this.parent;
+    clone.flags = this.flags;
     return clone;
   }
 
   // View
 
-  _create(): HTMLElement {
+  createDOM(): HTMLElement {
     return document.createElement('blockquote');
   }
   // $FlowFixMe: prevNode is always a QuoteNode
-  _update(prevNode: QuoteNode, dom: HTMLElement): boolean {
+  updateDOM(prevNode: QuoteNode, dom: HTMLElement): boolean {
     return false;
   }
 }

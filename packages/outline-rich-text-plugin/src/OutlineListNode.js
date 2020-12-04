@@ -13,31 +13,31 @@ export class ListNode extends BlockNode {
   constructor(tag: ListNodeTagType, key?: NodeKey) {
     super(key);
     this._tag = tag;
-    this._type = 'list';
+    this.type = 'list';
   }
   static parse(
     // $FlowFixMe: TODO: refine
     data: Object,
   ): ListNode {
     const header = new ListNode(data._tag);
-    header._flags = data._flags;
+    header.flags = data.flags;
     return header;
   }
   clone(): ListNode {
-    const clone = new ListNode(this._tag, this._key);
-    clone._children = [...this._children];
-    clone._parent = this._parent;
-    clone._flags = this._flags;
+    const clone = new ListNode(this._tag, this.key);
+    clone.children = [...this.children];
+    clone.parent = this.parent;
+    clone.flags = this.flags;
     return clone;
   }
 
   // View
 
-  _create(): HTMLElement {
+  createDOM(): HTMLElement {
     return document.createElement(this._tag);
   }
   // $FlowFixMe: prevNode is always a ListNode
-  _update(prevNode: ListNode, dom: HTMLElement): boolean {
+  updateDOM(prevNode: ListNode, dom: HTMLElement): boolean {
     return false;
   }
 }

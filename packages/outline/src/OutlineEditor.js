@@ -107,6 +107,7 @@ export class OutlineEditor {
   _viewModel: ViewModel;
   _pendingViewModel: null | ViewModel;
   _isComposing: boolean;
+  _isKeyDown: boolean;
   _key: string;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _updateListeners: Set<onChangeType>;
@@ -123,8 +124,9 @@ export class OutlineEditor {
     this._viewModel = viewModel;
     // Handling of drafts and updates
     this._pendingViewModel = null;
-    // Used to help co-ordinate events through plugins
+    // Used to help co-ordinate selection and events
     this._isComposing = false;
+    this._isKeyDown = false;
     // Used during reconcilation
     this._keyToDOMMap = new Map();
     // onChange listeners
@@ -151,8 +153,14 @@ export class OutlineEditor {
   isComposing(): boolean {
     return this._isComposing;
   }
+  isKeyDown(): boolean {
+    return this._isKeyDown;
+  }
   setComposing(isComposing: boolean): void {
     this._isComposing = isComposing;
+  }
+  setKeyDown(isKeyDown: boolean): void {
+    this._isKeyDown = isKeyDown;
   }
   addNodeDecorator(key: NodeKey, decorator: ReactNode): void {
     const nodeDecorators = {...this._nodeDecorators};

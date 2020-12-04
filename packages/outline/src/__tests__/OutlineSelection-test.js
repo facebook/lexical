@@ -126,6 +126,7 @@ function setNativeSelection(
   range.setEnd(focusNode, focusOffset);
   domSelection.removeAllRanges();
   domSelection.addRange(range);
+  document.dispatchEvent(new Event('selectionchange'));
 }
 
 function applySelectionInputs(inputs, update, editor) {

@@ -97,14 +97,15 @@ function onCompositionStart(
   const selection = view.getSelection();
   editor.setComposing(true);
   if (selection !== null) {
-    if (!selection.isCaret()) {
+    if (selection.isCaret()) {
+      // We only have native beforeinput composition events for
+      // Safari, so we have to apply the composition selection for
+      // other browsers.
+      if (!IS_SAFARI) {
+        state.compositionSelection = selection;
+      }
+    } else {
       selection.removeText();
-    }
-    // We only have native beforeinput composition events for
-    // Safari, so we have to apply the composition selection for
-    // other browsers.
-    if (!IS_SAFARI) {
-      state.compositionSelection = selection;
     }
   }
 }
@@ -153,6 +154,7 @@ function onKeyDown(
   state: UnknownState,
   editor: OutlineEditor,
 ): void {
+  editor.setKeyDown(true);
   if (editor.isComposing()) {
     return;
   }
@@ -489,6 +491,9 @@ export function useEditorInputEvents<T>(
     stateRef,
   );
   const handleKeyDown = useEventWrapper(onKeyDown, editor, stateRef);
+  const handleKeyUp = useCallback(() => {
+    editor.setKeyDown(false);
+  }, [editor]);
   const handlePaste = useEventWrapper(onPastePolyfill, editor, stateRef);
   const handleCut = useEventWrapper(onCut, editor, stateRef);
   const handleCopy = useEventWrapper(onCopy, editor, stateRef);
@@ -519,6 +524,7 @@ export function useEditorInputEvents<T>(
 
       if (target !== null) {
         target.addEventListener('keydown', handleKeyDown);
+        target.addEventListener('keyup', handleKeyUp);
         target.addEventListener('compositionstart', handleCompositionStart);
         target.addEventListener('compositionend', handleCompositionEnd);
         target.addEventListener('cut', handleCut);
@@ -534,6 +540,7 @@ export function useEditorInputEvents<T>(
         }
         return () => {
           target.removeEventListener('keydown', handleKeyDown);
+          target.removeEventListener('keyup', handleKeyUp);
           target.removeEventListener(
             'compositionstart',
             handleCompositionStart,
@@ -562,6 +569,7 @@ export function useEditorInputEvents<T>(
     handleCompositionEnd,
     handleCut,
     handleKeyDown,
+    handleKeyUp,
     handleNativeBeforeInput,
     handlePaste,
     handleSelectionChange,

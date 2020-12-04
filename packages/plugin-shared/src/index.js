@@ -135,10 +135,12 @@ function onCompositionEnd(
         );
       }
     }
-    // Handle the fact that Chromium doesn't fire beforeInput composition
-    // events properly, so we need to listen to the compositionend event
-    // to apply the composition data.
-    if (!IS_SAFARI && !IS_FIREFOX) {
+    // Handle the fact that Chromium/FF nightly doesn't fire beforeInput's
+    // insertFromComposition/deleteByComposition composition events, so we
+    // need to listen to the compositionend event to apply the composition
+    // data and also handle composition selection. There's no good way of
+    // detecting this, so we'll have to use browser agents.
+    if (!IS_SAFARI && CAN_USE_BEFORE_INPUT) {
       selection.insertText(data);
     }
   }
@@ -492,7 +494,6 @@ export function useEditorInputEvents<T>(
   );
   const handleKeyDown = useEventWrapper(onKeyDown, editor, stateRef);
   const handleKeyUp = useCallback(() => {
-    debugger;
     editor.setKeyDown(false);
   }, [editor]);
   const handlePaste = useEventWrapper(onPastePolyfill, editor, stateRef);

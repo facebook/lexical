@@ -492,6 +492,7 @@ export function useEditorInputEvents<T>(
   );
   const handleKeyDown = useEventWrapper(onKeyDown, editor, stateRef);
   const handleKeyUp = useCallback(() => {
+    debugger;
     editor.setKeyDown(false);
   }, [editor]);
   const handlePaste = useEventWrapper(onPastePolyfill, editor, stateRef);
@@ -524,7 +525,7 @@ export function useEditorInputEvents<T>(
 
       if (target !== null) {
         target.addEventListener('keydown', handleKeyDown);
-        target.addEventListener('keyup', handleKeyUp);
+        window.addEventListener('keyup', handleKeyUp);
         target.addEventListener('compositionstart', handleCompositionStart);
         target.addEventListener('compositionend', handleCompositionEnd);
         target.addEventListener('cut', handleCut);
@@ -540,7 +541,7 @@ export function useEditorInputEvents<T>(
         }
         return () => {
           target.removeEventListener('keydown', handleKeyDown);
-          target.removeEventListener('keyup', handleKeyUp);
+          window.removeEventListener('keyup', handleKeyUp);
           target.removeEventListener(
             'compositionstart',
             handleCompositionStart,

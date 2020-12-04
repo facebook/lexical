@@ -69,6 +69,14 @@ export class Selection {
     this.isDirty = false;
   }
 
+  isEqual(diffSelection: Selection): boolean {
+    return (
+      this.anchorKey === diffSelection.anchorKey &&
+      this.focusKey === diffSelection.focusKey &&
+      this.anchorOffset === diffSelection.anchorOffset &&
+      this.focusOffset === diffSelection.focusOffset
+    );
+  }
   isCaret(): boolean {
     return (
       this.anchorKey === this.focusKey && this.anchorOffset === this.focusOffset
@@ -1114,15 +1122,16 @@ export function createSelection(
   const event = window.event;
   const currentViewModel = editor.getViewModel();
   const lastSelection = currentViewModel.selection;
+  const eventType = event && event.type;
+  const isComposing = eventType === 'compositionstart';
+  const isSelecting = eventType === 'selectionchange';
   let anchorDOM, focusDOM, anchorOffset, focusOffset;
-  // If we can get the target range from the event, then use that
-  // instead of window selection.
+
   if (
     event == null ||
-    event.type === 'selectionchange' ||
-    event.type === 'compositionstart' ||
-    event.type === 'compositionend' ||
-    lastSelection === null
+    lastSelection === null ||
+    isSelecting ||
+    (isComposing && editor.isKeyDown())
   ) {
     const domSelection: WindowSelection = window.getSelection();
     anchorDOM = domSelection.anchorNode;
@@ -1130,12 +1139,16 @@ export function createSelection(
     anchorOffset = domSelection.anchorOffset;
     focusOffset = domSelection.focusOffset;
   } else {
-    return new Selection(
+    const selection = new Selection(
       lastSelection.anchorKey,
       lastSelection.anchorOffset,
       lastSelection.focusKey,
       lastSelection.focusOffset,
     );
+    if (isComposing) {
+      selection.isDirty = true;
+    }
+    return selection;
   }
   let anchorNode: OutlineNode | null = null;
   let focusNode: OutlineNode | null = null;
@@ -1200,10 +1213,7 @@ export function createSelection(
   if (
     lastSelection !== null &&
     !editor.isComposing() &&
-    (lastSelection.focusKey !== selection.focusKey ||
-      lastSelection.anchorKey !== selection.anchorKey ||
-      lastSelection.anchorOffset !== selection.anchorOffset ||
-      lastSelection.focusOffset !== selection.focusOffset)
+    !selection.isEqual(lastSelection)
   ) {
     selection.isDirty = true;
   }

@@ -8,6 +8,7 @@ const babel = require('@rollup/plugin-babel').default;
 const closure = require('./plugins/closure-plugin');
 const nodeResolve = require('@rollup/plugin-node-resolve').default;
 const commonjs = require('@rollup/plugin-commonjs');
+const replace = require('@rollup/plugin-replace');
 
 const license = ` * Copyright (c) Facebook, Inc. and its affiliates.
  *
@@ -33,7 +34,14 @@ const closureOptions = {
   inject_libraries: false,
 };
 
-const externals = ['outline', 'react', 'react-dom', 'outline-rich-text-plugin'];
+const externals = [
+  'outline',
+  'react',
+  'react-dom',
+  'outline-rich-text-plugin',
+  'Outline',
+  'OutlineRichTextPlugin',
+];
 
 async function build(packageFolder) {
   if (
@@ -89,6 +97,11 @@ async function build(packageFolder) {
         plugins: ['@babel/plugin-transform-flow-strip-types'],
       }),
       commonjs(),
+      isWWW &&
+        replace({
+          outline: 'Outline',
+          'outline-rich-text-plugin': 'OutlineRichTextPlugin',
+        }),
       isProduction && closure(closureOptions),
       isWWW && {
         renderChunk(source) {

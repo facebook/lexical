@@ -4,7 +4,7 @@ import type {OutlineNode, NodeKey, Selection} from 'outline';
 
 import {useCallback, useEffect} from 'react';
 import {BlockNode, createParagraph, createText} from 'outline';
-import {CAN_USE_BEFORE_INPUT, IS_FIREFOX, IS_SAFARI} from './env';
+import {CAN_USE_BEFORE_INPUT, IS_SAFARI} from './env';
 import {
   isDeleteBackward,
   isDeleteForward,

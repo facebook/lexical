@@ -8,15 +8,12 @@ export type {NodeKey} from './OutlineNode';
 export type {Selection} from './OutlineSelection';
 
 import {createEditor} from './OutlineEditor';
-import {createTextNode as createText, TextNode} from './OutlineTextNode';
+import {createTextNode, TextNode} from './OutlineTextNode';
 import {BlockNode} from './OutlineBlockNode';
-import {
-  createParagraphNode as createParagraph,
-  ParagraphNode,
-} from './OutlineParagraphNode';
+import {createParagraphNode, ParagraphNode} from './OutlineParagraphNode';
 
 import {
-  createListItemNode as createListItem,
+  createListItemNode,
   ListItemNode,
 } from './external-nodes/OutlineListItemNode';
 import {RootNode} from './OutlineRootNode';
@@ -24,9 +21,9 @@ import {OutlineNode} from './OutlineNode';
 
 export {
   createEditor,
-  createListItem,
-  createParagraph,
-  createText,
+  createListItemNode,
+  createParagraphNode,
+  createTextNode,
   OutlineNode,
   BlockNode,
   ListItemNode,

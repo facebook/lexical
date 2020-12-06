@@ -16,14 +16,22 @@ untyped-type-import=error
 server.max_workers=4
 esproposal.class_static_fields=enable
 esproposal.class_instance_fields=enable
+
 module.name_mapper='^outline$' -> '<PROJECT_ROOT>/packages/outline/src/index.js'
-module.name_mapper='^outline-emoji-plugin$' -> '<PROJECT_ROOT>/packages/outline-emoji-plugin/src/index.js'
-module.name_mapper='^outline-mentions-plugin$' -> '<PROJECT_ROOT>/packages/outline-mentions-plugin/src/index.js'
-module.name_mapper='^outline-plain-text-plugin$' -> '<PROJECT_ROOT>/packages/outline-plain-text-plugin/src/index.js'
-module.name_mapper='^outline-rich-text-plugin$' -> '<PROJECT_ROOT>/packages/outline-rich-text-plugin/src/index.js'
-module.name_mapper='^outline-format-plugin$' -> '<PROJECT_ROOT>/packages/outline-format-plugin/src/index.js'
-module.name_mapper='^outline-history-plugin$' -> '<PROJECT_ROOT>/packages/outline-history-plugin/src/index.js'
-module.name_mapper='^outline-toolbar-plugin$' -> '<PROJECT_ROOT>/packages/outline-toolbar-plugin/src/index.js'
+
+module.name_mapper='^outline-react/useOutlineRichText' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlineRichText.js'
+module.name_mapper='^outline-react/useOutlinePlainText' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlinePlainText.js'
+module.name_mapper='^outline-react/useOutlineEventWrapper' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlineEventWrapper.js'
+module.name_mapper='^outline-react/useOutlineEvent' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlineEvent.js'
+module.name_mapper='^outline-react/useOutlineFocusIn' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlineFocusIn.js'
+module.name_mapper='^outline-react/useOutlineInputEvents' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlineInputEvents.js'
+module.name_mapper='^outline-react/OutlineHotKeys' -> '<PROJECT_ROOT>/packages/outline-react/src/OutlineHotKeys.js'
+module.name_mapper='^outline-react/OutlineEnv' -> '<PROJECT_ROOT>/packages/outline-react/src/OutlineEnv.js'
+
+module.name_mapper='^outline-extensions/HeaderNode' -> '<PROJECT_ROOT>/packages/outline-extensions/src/OutlineHeaderNode.js'
+module.name_mapper='^outline-extensions/ListNode' -> '<PROJECT_ROOT>/packages/outline-extensions/src/OutlineListNode.js'
+module.name_mapper='^outline-extensions/ImageNode' -> '<PROJECT_ROOT>/packages/outline-extensions/src/OutlineImageNode.js'
+module.name_mapper='^outline-extensions/QuoteNode' -> '<PROJECT_ROOT>/packages/outline-extensions/src/OutlineQuoteNode.js'
 
 suppress_type=$FlowIssue
 suppress_type=$FlowFixMe

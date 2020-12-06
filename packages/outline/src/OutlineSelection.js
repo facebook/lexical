@@ -7,9 +7,9 @@ import {getActiveViewModel} from './OutlineView';
 import {getNodeKeyFromDOM} from './OutlineReconciler';
 import {getNodeByKey, HAS_DIRECTION} from './OutlineNode';
 import {
-  createListItem,
-  createText,
-  createParagraph,
+  createListItemNode,
+  createTextNode,
+  createParagraphNode,
   BlockNode,
   ListItemNode,
   TextNode,
@@ -26,7 +26,7 @@ function removeFirstSegment(node: TextNode): void {
   if (lastSpaceIndex > -1) {
     node.spliceText(0, lastSpaceIndex + 1, '');
   } else {
-    const textNode = createText('');
+    const textNode = createTextNode('');
     node.insertAfter(textNode);
     node.remove();
     textNode.select();
@@ -41,7 +41,7 @@ function removeLastSegment(node: TextNode): void {
   if (lastSpaceIndex > -1) {
     node.spliceText(lastSpaceIndex, textContent.length - lastSpaceIndex, '');
   } else {
-    const textNode = createText('');
+    const textNode = createTextNode('');
     node.insertAfter(textNode);
     node.remove();
     textNode.select();
@@ -237,7 +237,7 @@ export class Selection {
         firstNode.setFlags(firstNextFlags);
         this.isDirty = true;
       } else {
-        const textNode = createText('');
+        const textNode = createTextNode('');
         textNode.setFlags(firstNextFlags);
         if (anchorOffset === 0) {
           firstNode.insertBefore(textNode);
@@ -336,7 +336,7 @@ export class Selection {
     if (anchorOffset === 0) {
       nodesToMove.push(anchorNode);
     } else if (anchorOffset === textContentLength) {
-      const clonedNode = createText('');
+      const clonedNode = createTextNode('');
       clonedNode.setFlags(anchorNode.getFlags());
       nodesToMove.push(clonedNode);
       anchorOffset = 0;
@@ -359,11 +359,11 @@ export class Selection {
         (prevSibling === null || nextSibling === null)
       ) {
         if (nextSibling === null) {
-          newBlock = createParagraph();
+          newBlock = createParagraphNode();
           currentBlock.remove();
           list.insertAfter(newBlock);
         } else {
-          newBlock = createParagraph();
+          newBlock = createParagraphNode();
           currentBlock.remove();
           list.insertBefore(newBlock);
         }
@@ -371,11 +371,11 @@ export class Selection {
           list.remove();
         }
       } else {
-        newBlock = createListItem();
+        newBlock = createListItemNode();
         currentBlock.insertAfter(newBlock);
       }
     } else {
-      newBlock = createParagraph();
+      newBlock = createParagraphNode();
       currentBlock.insertAfter(newBlock);
     }
 
@@ -404,7 +404,7 @@ export class Selection {
       blockLastChild.isSegmented() ||
       !(blockLastChild instanceof TextNode)
     ) {
-      const textNode = createText('');
+      const textNode = createTextNode('');
       currentBlock.append(textNode);
     }
     currentBlock.normalizeTextNodes();
@@ -467,7 +467,7 @@ export class Selection {
         if (prevBlock === null) {
           if (currentBlock instanceof ListItemNode) {
             const listNode = currentBlock.getParentOrThrow();
-            const paragraph = createParagraph();
+            const paragraph = createParagraphNode();
             const children = currentBlock.getChildren();
             children.forEach((child) => paragraph.append(child));
 
@@ -480,7 +480,7 @@ export class Selection {
             anchorNode.select(0, 0);
             return;
           } else if (!(currentBlock instanceof ParagraphNode)) {
-            const paragraph = createParagraph();
+            const paragraph = createParagraphNode();
             const children = currentBlock.getChildren();
             children.forEach((child) => paragraph.append(child));
             currentBlock.replace(paragraph);
@@ -604,7 +604,7 @@ export class Selection {
     let target;
 
     if (anchorOffset === 0) {
-      target = createText('');
+      target = createTextNode('');
       anchorNode.insertBefore(target);
       siblings.push(anchorNode);
     } else if (
@@ -676,7 +676,7 @@ export class Selection {
         this.isCaret() &&
         (startOffset === 0 || endOffset === firstNodeTextLength)
       ) {
-        const textNode = createText(text);
+        const textNode = createTextNode(text);
         if (startOffset === 0) {
           firstNode.insertBefore(textNode);
         } else {

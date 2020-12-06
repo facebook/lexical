@@ -105,6 +105,9 @@ export function applyTextTransforms(
         if (node instanceof TextNode) {
           for (let i = 0; i < textTransforms.length; i++) {
             textTransforms[i](node, view);
+            if (!node.isAttached()) {
+              break;
+            }
           }
         }
       }

@@ -2,7 +2,7 @@
 
 import type {NodeMapType} from './OutlineView';
 
-import {createText, RootNode, BlockNode, TextNode} from '.';
+import {createTextNode, RootNode, BlockNode, TextNode} from '.';
 import {getActiveViewModel, shouldErrorOnReadOnly} from './OutlineView';
 import {generateRandomKey, invariant} from './OutlineUtils';
 
@@ -87,7 +87,7 @@ function wrapInTextNodes<N: OutlineNode>(node: N): N {
     prevSibling.isImmutable() ||
     prevSibling.isSegmented()
   ) {
-    const text = createText('');
+    const text = createTextNode('');
     node.insertBefore(text);
   }
   const nextSibling = node.getNextSibling();
@@ -97,7 +97,7 @@ function wrapInTextNodes<N: OutlineNode>(node: N): N {
     nextSibling.isImmutable() ||
     nextSibling.isSegmented()
   ) {
-    const text = createText('');
+    const text = createTextNode('');
     node.insertAfter(text);
   }
   node.getParentOrThrow().normalizeTextNodes(true);

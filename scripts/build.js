@@ -1,8 +1,8 @@
 'use strict';
 
 const rollup = require('rollup');
-const path = require('path');
 const fs = require('fs-extra');
+const path = require('path');
 const argv = require('minimist')(process.argv.slice(2));
 const babel = require('@rollup/plugin-babel').default;
 const closure = require('./plugins/closure-plugin');
@@ -19,7 +19,6 @@ const isWatchMode = argv.watch;
 const isProduction = argv.prod;
 const isWWW = argv.www;
 const isClean = argv.clean;
-const filter = argv._;
 
 const closureOptions = {
   compilation_level: 'SIMPLE',
@@ -34,36 +33,45 @@ const closureOptions = {
   inject_libraries: false,
 };
 
+if (isClean) {
+  fs.removeSync(path.resolve('./packages/outline/dist'));
+}
+
+const wwwMappings = {
+  outline: 'Outline',
+};
+
+const outlineExtensions = fs
+  .readdirSync(path.resolve('./packages/outline-extensions/src'))
+  .map((str) => path.basename(str, '.js'));
+const outlineExtensionsExternals = outlineExtensions.map((node) => {
+  const external = `outline-extensions/${node.replace('Outline', '')}`;
+  wwwMappings[external] = node;
+  return external;
+});
+
+const outlineReactModules = fs
+  .readdirSync(path.resolve('./packages/outline-react/src'))
+  .map((str) => path.basename(str, '.js'));
+const outlineReactModuleExternals = outlineReactModules.map((module) => {
+  const external = `outline-react/${module}`;
+  wwwMappings[external] = module;
+  return external;
+});
+
 const externals = [
   'outline',
-  'react',
-  'react-dom',
-  'outline-rich-text-plugin',
   'Outline',
-  'OutlineRichTextPlugin',
+  'outline-react',
+  'outline-extensions',
+  'react-dom',
+  'react',
+  ...outlineExtensionsExternals,
+  ...outlineReactModuleExternals,
+  ...Object.values(wwwMappings),
 ];
 
-async function build(packageFolder) {
-  if (
-    filter.length > 0 &&
-    filter.filter((string) => packageFolder.includes(string)).length === 0
-  ) {
-    console.log(`Skipping ${packageFolder}`);
-    return;
-  }
-  const inputFile = path.resolve(`./packages/${packageFolder}/src/index.js`);
-  const outputFile = path.resolve(`./packages/${packageFolder}/dist/index.js`);
-  if (isClean) {
-    fs.removeSync(outputFile);
-    return;
-  }
-
-  if (
-    packageFolder === 'outline-example' ||
-    packageFolder === 'plugin-shared'
-  ) {
-    return;
-  }
+async function build(name, inputFile, outputFile) {
   const inputOptions = {
     input: inputFile,
     external(modulePath, src) {
@@ -97,11 +105,7 @@ async function build(packageFolder) {
         plugins: ['@babel/plugin-transform-flow-strip-types'],
       }),
       commonjs(),
-      isWWW &&
-        replace({
-          outline: 'Outline',
-          'outline-rich-text-plugin': 'OutlineRichTextPlugin',
-        }),
+      isWWW && replace(wwwMappings),
       isProduction && closure(closureOptions),
       isWWW && {
         renderChunk(source) {
@@ -126,20 +130,21 @@ ${source}`;
     interop: false,
     esModule: false,
     externalLiveBindings: false,
+    exports: 'auto',
   };
   if (isWatchMode) {
     const watcher = rollup.watch({...inputOptions, output: outputOptions});
     watcher.on('event', async (event) => {
       switch (event.code) {
         case 'BUNDLE_START':
-          console.log(`Building ${packageFolder}...`);
+          console.log(`Building ${name}...`);
           break;
         case 'BUNDLE_END':
-          console.log(`Built ${packageFolder}`);
+          console.log(`Built ${name}`);
           break;
         case 'ERROR':
         case 'FATAL':
-          console.error(`Build failed for ${packageFolder}:\n\n${event.error}`);
+          console.error(`Build failed for ${name}:\n\n${event.error}`);
           break;
       }
     });
@@ -149,4 +154,24 @@ ${source}`;
   }
 }
 
-fs.readdirSync('./packages').forEach(build);
+outlineExtensions.forEach((outlineNode) => {
+  build(
+    `Outline Extensions - ${outlineNode}`,
+    path.resolve(`./packages/outline-extensions/src/${outlineNode}.js`),
+    path.resolve(`./packages/outline-extensions/dist/${outlineNode}.js`),
+  );
+});
+
+build(
+  'Outline',
+  path.resolve('./packages/outline/src/index.js'),
+  path.resolve('./packages/outline/dist/Outline.js'),
+);
+
+outlineReactModules.forEach((outlineReactModule) => {
+  build(
+    `Outline React - ${outlineReactModule}`,
+    path.resolve(`./packages/outline-react/src/${outlineReactModule}.js`),
+    path.resolve(`./packages/outline-react/dist/${outlineReactModule}.js`),
+  );
+});

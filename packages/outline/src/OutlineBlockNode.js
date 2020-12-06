@@ -1,8 +1,8 @@
 // @flow strict
 
-import {createText, TextNode} from '.';
 import type {NodeKey} from './OutlineNode';
 
+import {createTextNode, TextNode} from '.';
 import {getWritableNode, OutlineNode, getNodeByKey} from './OutlineNode';
 import {getSelection} from './OutlineSelection';
 import {invariant} from './OutlineUtils';
@@ -114,7 +114,7 @@ export class BlockNode extends OutlineNode {
     const writableSelf = getWritableNode(this);
     const children = this.getChildren();
     children.forEach((child) => child.remove());
-    const textNode = createText('');
+    const textNode = createTextNode('');
     this.append(textNode);
     if (restoreSelection) {
       textNode.select(0, 0);

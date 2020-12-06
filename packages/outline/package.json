@@ -1,5 +1,8 @@
 {
   "name": "outline",
   "version": "1.0.0", 
-  "main": "dist/index.js"
+  "main": "dist/Outline.js",
+  "dependencies": {
+    "outline": "1.0.0"
+  }
 }

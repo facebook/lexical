@@ -1,0 +1,12 @@
+{
+  "name": "outline-react",
+  "version": "1.0.0",
+  "dependencies": {
+    "outline": "1.0.0",
+    "outline-extensions": "1.0.0"
+  },
+  "peerDependencies": {
+    "react": ">=17.0.1",
+    "react-dom": ">=17.0.1"
+  }
+}

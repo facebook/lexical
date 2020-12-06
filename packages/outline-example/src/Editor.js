@@ -4,13 +4,13 @@ import type {OutlineEditor, ViewModel} from 'outline';
 import * as React from 'react';
 import {useEffect, useMemo, useRef} from 'react';
 import {createEditor} from 'outline';
-import {useEmojiPlugin} from 'outline-emoji-plugin';
-import {useMentionsPlugin} from 'outline-mentions-plugin';
-// import {usePlainTextPlugin} from 'outline-plain-text-plugin';
-import {useRichTextPlugin} from 'outline-rich-text-plugin';
-import {useFormatPlugin} from 'outline-format-plugin';
-import {useHistoryPlugin} from 'outline-history-plugin';
-import {useToolbarPlugin} from 'outline-toolbar-plugin';
+import useOutlineRichText from 'outline-react/useOutlineRichText';
+import useEmojis from './useEmojis';
+import useMentions from './useMentions';
+// import usePlainText from 'outline-react/useOutlinePlainText';
+import useOutlineAutoFormatter from 'outline-react/useOutlineAutoFormatter';
+import useOutlineHistory from 'outline-react/useOutlineHistory';
+import useToolbar from './useToolbar';
 
 const editorStyle = {
   outline: 0,
@@ -59,12 +59,12 @@ export default function Editor({onChange, isReadOnly}: Props): React$Node {
   }, [onChange, outlineEditor]);
 
   // const props = usePlainTextPlugin(outlineEditor, isReadOnly);
-  const mentionsTypeahead = useMentionsPlugin(outlineEditor);
-  const props = useRichTextPlugin(outlineEditor, isReadOnly);
-  const toolbar = useToolbarPlugin(outlineEditor);
-  useEmojiPlugin(outlineEditor);
-  useFormatPlugin(outlineEditor);
-  useHistoryPlugin(outlineEditor);
+  const mentionsTypeahead = useMentions(outlineEditor);
+  const props = useOutlineRichText(outlineEditor, isReadOnly);
+  const toolbar = useToolbar(outlineEditor);
+  useEmojis(outlineEditor);
+  useOutlineAutoFormatter(outlineEditor);
+  useOutlineHistory(outlineEditor);
 
   return (
     <>

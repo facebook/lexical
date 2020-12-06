@@ -51,8 +51,8 @@ describe('OutlineEditor tests', () => {
   test('update + read works', () => {
     // Update editor view
     editor.update((view) => {
-      const paragraph = Outline.createParagraph();
-      const text = Outline.createText();
+      const paragraph = Outline.createParagraphNode();
+      const text = Outline.createTextNode();
       paragraph.append(text);
       view.getRoot().append(paragraph);
     }, true);

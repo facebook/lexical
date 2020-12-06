@@ -235,8 +235,8 @@ describe('OutlineSelection tests', () => {
 
     // Insert initial block
     update((view) => {
-      const paragraph = Outline.createParagraph();
-      const text = Outline.createText();
+      const paragraph = Outline.createParagraphNode();
+      const text = Outline.createTextNode();
       paragraph.append(text);
       view.getRoot().append(paragraph);
     });

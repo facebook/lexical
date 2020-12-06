@@ -58,8 +58,8 @@ describe('OutlineNode tests', () => {
 
     // Insert initial block
     update((view) => {
-      const paragraph = Outline.createParagraph();
-      const text = Outline.createText();
+      const paragraph = Outline.createParagraphNode();
+      const text = Outline.createTextNode();
       paragraph.append(text);
       view.getRoot().append(paragraph);
     });
@@ -68,7 +68,7 @@ describe('OutlineNode tests', () => {
   test('replaceNode', () => {
     update((view) => {
       const oldTextNode = view.getRoot().getFirstChild().getFirstChild();
-      const newTextNode = Outline.createText('Replaced node!');
+      const newTextNode = Outline.createTextNode('Replaced node!');
       oldTextNode.replace(newTextNode);
     });
     expect(sanitizeHTML(container.innerHTML)).toBe(
@@ -89,7 +89,7 @@ describe('OutlineNode tests', () => {
   test('append', () => {
     update((view) => {
       const paragraph = view.getRoot().getFirstChild();
-      const newTextNode = Outline.createText('New node!');
+      const newTextNode = Outline.createTextNode('New node!');
       paragraph.append(newTextNode);
     });
     expect(sanitizeHTML(container.innerHTML)).toBe(
@@ -101,7 +101,7 @@ describe('OutlineNode tests', () => {
   test('insertAfter', () => {
     update((view) => {
       const textNode = view.getRoot().getFirstChild().getFirstChild();
-      const newTextNode = Outline.createText('New node!');
+      const newTextNode = Outline.createTextNode('New node!');
       textNode.insertAfter(newTextNode);
     });
     expect(sanitizeHTML(container.innerHTML)).toBe(
@@ -113,7 +113,7 @@ describe('OutlineNode tests', () => {
   test('insertBefore', () => {
     update((view) => {
       const textNode = view.getRoot().getFirstChild().getFirstChild();
-      const newTextNode = Outline.createText('New node!');
+      const newTextNode = Outline.createTextNode('New node!');
       textNode.insertBefore(newTextNode);
     });
     expect(sanitizeHTML(container.innerHTML)).toBe(
@@ -133,12 +133,12 @@ describe('OutlineNode tests', () => {
   test('getCommonAncestor', () => {
     update((view) => {
       const textNode = view.getRoot().getFirstChild().getFirstChild();
-      const textNode2 = Outline.createText('New node!');
+      const textNode2 = Outline.createTextNode('New node!');
       textNode.insertAfter(textNode2);
       // Our common ancestor here isn't the paragraph node, it's a writable clone.
       // Let's commit this update and test getCommonAncestor on a fresh view.
-      const secondParagraph = Outline.createParagraph();
-      const textNode3 = Outline.createText('Another node!');
+      const secondParagraph = Outline.createParagraphNode();
+      const textNode3 = Outline.createTextNode('Another node!');
       secondParagraph.append(textNode3);
       view.getRoot().getFirstChild().insertAfter(secondParagraph);
       // Structure is now:

@@ -21,6 +21,14 @@ export default function useOutlineEventWrapper<T>(
 ): (event: UnknownEvent) => void {
   return useCallback(
     (event) => {
+      // Fast-path so we don't do unnecessary work
+      if (event.type === 'selectionchange') {
+        const selection = window.getSelection();
+        const editorElement = editor.getEditorElement();
+        if (editorElement && !editorElement.contains(selection.anchorNode)) {
+          return;
+        }
+      }
       const state = stateRef && stateRef.current;
       editor.update((view) => handler(event, view, state, editor));
     },

@@ -74,6 +74,9 @@ const AtSignMentionsRegexAliasRegex = new RegExp(
     ')$',
 );
 
+// At most, 5 suggestions are shown in the popup.
+const SUGGESTION_LIST_LENGTH_LIMIT = 5;
+
 const mentionsCache = new Map();
 
 function useMentionLookupService(mentionString) {
@@ -231,7 +234,10 @@ function MentionsTypeahead({
     return registerKeys({
       ArrowDown(event, view) {
         if (results !== null && selectedIndex !== null) {
-          if (selectedIndex !== results.length - 1) {
+          if (
+            selectedIndex < SUGGESTION_LIST_LENGTH_LIMIT - 1 &&
+            selectedIndex !== results.length - 1
+          ) {
             updateSelectedIndex(selectedIndex + 1);
           }
           event.preventDefault();
@@ -253,6 +259,7 @@ function MentionsTypeahead({
         }
         event.preventDefault();
         event.stopImmediatePropagation();
+        close();
       },
       Tab(event, view) {
         if (results === null || selectedIndex === null) {
@@ -260,6 +267,7 @@ function MentionsTypeahead({
         }
         event.preventDefault();
         event.stopImmediatePropagation();
+        applyCurrentSelected();
       },
       Enter(event, view) {
         if (results === null || selectedIndex === null) {
@@ -289,7 +297,7 @@ function MentionsTypeahead({
       ref={divRef}
       role="listbox">
       <ul>
-        {results.slice(0, 5).map((result, i) => (
+        {results.slice(0, SUGGESTION_LIST_LENGTH_LIMIT).map((result, i) => (
           <MentionsTypeaheadItem
             index={i}
             isHovered={i === hoveredIndex}

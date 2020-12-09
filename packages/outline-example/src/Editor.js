@@ -59,9 +59,9 @@ export default function Editor({onChange, isReadOnly}: Props): React$Node {
   }, [onChange, outlineEditor]);
 
   // const props = usePlainTextPlugin(outlineEditor, isReadOnly);
+  const toolbar = useToolbar(outlineEditor);
   const mentionsTypeahead = useMentions(outlineEditor);
   const props = useOutlineRichText(outlineEditor, isReadOnly);
-  const toolbar = useToolbar(outlineEditor);
   useEmojis(outlineEditor);
   useOutlineAutoFormatter(outlineEditor);
   useOutlineHistory(outlineEditor);

@@ -280,6 +280,7 @@ function MentionsTypeahead({
     });
   }, [
     applyCurrentSelected,
+    close,
     registerKeys,
     results,
     selectedIndex,

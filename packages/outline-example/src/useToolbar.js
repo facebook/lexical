@@ -123,7 +123,7 @@ function LinkBar({
   );
 }
 
-function Toolbar({editor}: {editor: null | OutlineEditor}): React$Node {
+function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
   const toolbarRef = useRef(null);
   const [isBold, setIsBold] = useState(false);
   const [isItalic, setIsItalic] = useState(false);
@@ -135,30 +135,39 @@ function Toolbar({editor}: {editor: null | OutlineEditor}): React$Node {
   const [lastSelection, setLastSelection] = useState(null);
   const mouseDownRef = useRef(false);
 
-  const moveToolbar = useCallback((selection) => {
-    const toolbar = toolbarRef.current;
-    const nativeSelection = window.getSelection();
-    const activeElement = document.activeElement;
+  const moveToolbar = useCallback(
+    (selection) => {
+      const toolbar = toolbarRef.current;
+      const nativeSelection = window.getSelection();
+      const activeElement = document.activeElement;
 
-    if (toolbar === null) {
-      return;
-    }
-
-    if (selection !== null && !nativeSelection.isCollapsed) {
-      const domRange = nativeSelection.getRangeAt(0);
-      const rect = domRange.getBoundingClientRect();
-      if (!mouseDownRef.current) {
-        positionToolbar(toolbar, rect);
+      if (toolbar === null) {
+        return;
       }
-      setLastSelection(selection);
-    } else if (!activeElement || activeElement.className !== 'link-input') {
-      // eslint-disable-next-line no-debugger
-      positionToolbar(toolbar, null);
-      setLastSelection(null);
-      setEditMode(false);
-      setLinkUrl('');
-    }
-  }, []);
+      const editorElement = editor.getEditorElement();
+
+      if (
+        selection !== null &&
+        !nativeSelection.isCollapsed &&
+        editorElement !== null &&
+        editorElement.contains(nativeSelection.anchorNode)
+      ) {
+        const domRange = nativeSelection.getRangeAt(0);
+        const rect = domRange.getBoundingClientRect();
+        if (!mouseDownRef.current) {
+          positionToolbar(toolbar, rect);
+        }
+        setLastSelection(selection);
+      } else if (!activeElement || activeElement.className !== 'link-input') {
+        // eslint-disable-next-line no-debugger
+        positionToolbar(toolbar, null);
+        setLastSelection(null);
+        setEditMode(false);
+        setLinkUrl('');
+      }
+    },
+    [editor],
+  );
 
   useEffect(() => {
     if (editor !== null) {
@@ -314,6 +323,6 @@ function Toolbar({editor}: {editor: null | OutlineEditor}): React$Node {
   );
 }
 
-export default function useToolbar(editor: OutlineEditor | null): React$Node {
+export default function useToolbar(editor: OutlineEditor): React$Node {
   return createPortal(<Toolbar editor={editor} />, document.body);
 }

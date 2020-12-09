@@ -5,7 +5,7 @@ import type {OutlineEditor, Selection} from 'outline';
 import {useEffect, useRef} from 'react';
 import useOutlineInputEvents from 'outline-react/useOutlineInputEvents';
 import useOutlineFocusIn from 'outline-react/useOutlineFocusIn';
-import {HeaderNode} from 'outline-extensions/HeaderNode';
+import {HeadingNode} from 'outline-extensions/HeadingNode';
 import {ListNode} from 'outline-extensions/ListNode';
 import {QuoteNode} from 'outline-extensions/QuoteNode';
 
@@ -36,12 +36,12 @@ export default function useOutlineRichText(
 
   useEffect(() => {
     if (editor !== null) {
-      const removeHeaderType = editor.addNodeType('header', HeaderNode);
+      const removeHeadingType = editor.addNodeType('heading', HeadingNode);
       const removeListType = editor.addNodeType('list', ListNode);
       const removeQuoteType = editor.addNodeType('quote', QuoteNode);
 
       return () => {
-        removeHeaderType();
+        removeHeadingType();
         removeListType();
         removeQuoteType();
       };

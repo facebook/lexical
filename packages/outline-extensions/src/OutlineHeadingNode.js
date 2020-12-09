@@ -4,20 +4,27 @@ import type {NodeKey} from 'outline';
 
 import {BlockNode} from 'outline';
 
-type HeaderTagType = 'h1' | 'h2' | 'h3' | 'h4' | 'h5';
+type HeadingTagType = 'h1' | 'h2' | 'h3' | 'h4' | 'h5';
 
-export class HeaderNode extends BlockNode {
-  _type: 'header';
-  _tag: HeaderTagType;
+export class HeadingNode extends BlockNode {
+  _type: 'heading';
+  _tag: HeadingTagType;
 
-  constructor(tag: HeaderTagType, key?: NodeKey) {
+  constructor(tag: HeadingTagType, key?: NodeKey) {
     super(key);
     this._tag = tag;
-    this.type = 'header';
+    this.type = 'heading';
   }
-
-  clone(): HeaderNode {
-    const clone = new HeaderNode(this._tag, this.key);
+  static parse(
+    // $FlowFixMe: TODO: refine
+    data: Object,
+  ): HeadingNode {
+    const header = new HeadingNode(data._tag);
+    header.flags = data.flags;
+    return header;
+  }
+  clone(): HeadingNode {
+    const clone = new HeadingNode(this._tag, this.key);
     clone.children = [...this.children];
     clone.parent = this.parent;
     clone.flags = this.flags;
@@ -29,11 +36,11 @@ export class HeaderNode extends BlockNode {
   createDOM(): HTMLElement {
     return document.createElement(this._tag);
   }
-  updateDOM(prevNode: HeaderNode, dom: HTMLElement): boolean {
+  updateDOM(prevNode: HeadingNode, dom: HTMLElement): boolean {
     return false;
   }
 }
 
-export function createHeaderNode(headerTag: HeaderTagType): HeaderNode {
-  return new HeaderNode(headerTag);
+export function createHeadingNode(headingTag: HeadingTagType): HeadingNode {
+  return new HeadingNode(headingTag);
 }

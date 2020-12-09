@@ -5,7 +5,7 @@ import type {TextNode} from 'outline';
 
 import {useEffect} from 'react';
 import {createListItemNode, ParagraphNode} from 'outline';
-import {createHeaderNode} from 'outline-extensions/HeaderNode';
+import {createHeadingNode} from 'outline-extensions/HeadingNode';
 import {createListNode} from 'outline-extensions/ListNode';
 import {createQuoteNode} from 'outline-extensions/QuoteNode';
 
@@ -25,10 +25,10 @@ function textNodeTransform(node: TextNode, view: View): void {
     if (textContent.length > 1 && secondChar === ' ') {
       if (firstChar === '#') {
         node.spliceText(0, 2, '', true);
-        const header = createHeaderNode('h1');
+        const heading = createHeadingNode('h1');
         const children = block.getChildren();
-        children.forEach((child) => header.append(child));
-        block.replace(header);
+        children.forEach((child) => heading.append(child));
+        block.replace(heading);
       } else if (firstChar === '>') {
         node.spliceText(0, 2, '', true);
         const quote = createQuoteNode();
@@ -47,10 +47,10 @@ function textNodeTransform(node: TextNode, view: View): void {
     } else if (textContent.length > 2 && thirdChar === ' ') {
       if (firstChar === '#' && secondChar === '#') {
         node.spliceText(0, 2, '', true);
-        const header = createHeaderNode('h2');
+        const heading = createHeadingNode('h2');
         const children = block.getChildren();
-        children.forEach((child) => header.append(child));
-        block.replace(header);
+        children.forEach((child) => heading.append(child));
+        block.replace(heading);
       } else if (firstChar === '1' && secondChar === '.') {
         node.spliceText(0, 2, '', true);
         const list = createListNode('ol');

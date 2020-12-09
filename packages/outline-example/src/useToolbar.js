@@ -152,6 +152,7 @@ function Toolbar({editor}: {editor: null | OutlineEditor}): React$Node {
       }
       setLastSelection(selection);
     } else if (!activeElement || activeElement.className !== 'link-input') {
+      // eslint-disable-next-line no-debugger
       positionToolbar(toolbar, null);
       setLastSelection(null);
       setEditMode(false);
@@ -172,7 +173,11 @@ function Toolbar({editor}: {editor: null | OutlineEditor}): React$Node {
     const toolbar = toolbarRef.current;
     if (editor !== null && toolbar !== null) {
       const updateButtonStates = (selection) => {
-        if (selection !== null) {
+        const activeElement = document.activeElement;
+        if (
+          selection !== null &&
+          (!activeElement || activeElement.className !== 'link-input')
+        ) {
           const node = getSelectedNode(selection);
           unstable_batchedUpdates(() => {
             setIsBold(node.isBold());

@@ -113,15 +113,6 @@ export class OutlineNode {
   key: NodeKey;
   parent: null | NodeKey;
 
-  static parse(
-    // $FlowFixMe: TODO: refine
-    data: Object,
-  ): OutlineNode {
-    throw new Error(
-      `Node type ${this.constructor.name} does not implement .parse().`,
-    );
-  }
-
   clone(): OutlineNode {
     // Flow doesn't support abstract classes unfortunatley, so we can't _force_
     // subclasses of Node to implement clone. All subclasses of Node should have

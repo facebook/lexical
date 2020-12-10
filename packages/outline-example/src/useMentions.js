@@ -481,12 +481,7 @@ class MentionNode extends TextNode {
     // $FlowFixMe: TODO
     this.type = 'mention';
   }
-  // $FlowFixMe: TODO
-  static parse(data: {mention: string, flags: number}): MentionNode {
-    const emoji = new MentionNode(data.mention);
-    emoji.flags = data.flags;
-    return emoji;
-  }
+
   clone() {
     const clone = new MentionNode(this.mention, this.key);
     clone.parent = this.parent;

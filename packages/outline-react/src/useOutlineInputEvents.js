@@ -410,6 +410,15 @@ function onNativeBeforeInput(
       selection.deleteLineForward();
       break;
     }
+    case 'deleteWordBackward':
+    case 'deleteWordForward': {
+      // TODO
+      break;
+    }
+    case 'historyUndo':
+    case 'historyRedo':
+      // Handled with useOutlineHistory
+      break;
     default: {
       throw new Error('TODO - ' + inputType);
     }

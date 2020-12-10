@@ -23,7 +23,7 @@ import {
   isMoveWordForward,
   isParagraph,
 } from 'outline-react/OutlineHotKeys';
-import {BlockNode} from 'outline';
+// import {BlockNode} from 'outline';
 
 // FlowFixMe: Flow doesn't know of the CompositionEvent?
 // $FlowFixMe: TODO
@@ -50,20 +50,21 @@ function generateNode(
   if (nodeType === undefined) {
     throw new Error('generateNode: type "' + type + '" + not found');
   }
-  const node = nodeType.parse(nodeData);
-  node.parent = parentKey;
-  const newKey = node.key;
-  if (node instanceof BlockNode) {
-    // $FlowFixMe: valid code
-    const children = nodeData.children;
-    for (let i = 0; i < children.length; i++) {
-      const childKey = children[i];
-      const child = generateNode(childKey, newKey, nodeMap, editor);
-      const newChildKey = child.key;
-      node.children.push(newChildKey);
-    }
-  }
-  return node;
+  throw new Error('TODO');
+  // const node = nodeType.parse(nodeData);
+  // node.parent = parentKey;
+  // const newKey = node.key;
+  // if (node instanceof BlockNode) {
+  //   // $FlowFixMe: valid code
+  //   const children = nodeData.children;
+  //   for (let i = 0; i < children.length; i++) {
+  //     const childKey = children[i];
+  //     const child = generateNode(childKey, newKey, nodeMap, editor);
+  //     const newChildKey = child.key;
+  //     node.children.push(newChildKey);
+  //   }
+  // }
+  // return node;
 }
 
 function generateNodes(

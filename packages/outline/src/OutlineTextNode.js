@@ -231,16 +231,7 @@ export class TextNode extends OutlineNode {
     this.flags = HAS_DIRECTION;
     this.url = null;
   }
-  static parse(data: {
-    text: string,
-    url: null | string,
-    flags: number,
-  }): TextNode {
-    const textNode = new TextNode(data.text);
-    textNode.flags = data.flags;
-    textNode.url = data.url;
-    return textNode;
-  }
+
   clone(): TextNode {
     const clone = new TextNode(this.text, this.key);
     clone.parent = this.parent;

@@ -11,11 +11,7 @@ export class ParagraphNode extends BlockNode {
     super(key);
     this.type = 'paragraph';
   }
-  static parse(data: {flags: number}): ParagraphNode {
-    const header = new ParagraphNode();
-    header.flags = data.flags;
-    return header;
-  }
+
   clone(): ParagraphNode {
     const clone = new ParagraphNode(this.key);
     clone.children = [...this.children];

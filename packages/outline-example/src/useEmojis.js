@@ -87,16 +87,7 @@ class EmojiNode extends TextNode {
     // $FlowFixMe: TODO
     this.type = 'emoji';
   }
-  // $FlowFixMe: TODO
-  static parse(data: {
-    cssText: string,
-    text: string,
-    flags: number,
-  }): EmojiNode {
-    const emoji = new EmojiNode(data.cssText, data.text);
-    emoji.flags = data.flags;
-    return emoji;
-  }
+
   clone() {
     const clone = new EmojiNode(this.cssText, this.text, this.key);
     clone.parent = this.parent;

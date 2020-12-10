@@ -11,14 +11,7 @@ export class QuoteNode extends BlockNode {
     super(key);
     this.type = 'quote';
   }
-  static parse(
-    // $FlowFixMe: TODO: refine
-    data: Object,
-  ): QuoteNode {
-    const quote = new QuoteNode();
-    quote.flags = data.flags;
-    return quote;
-  }
+
   clone(): QuoteNode {
     const clone = new QuoteNode();
     clone.children = [...this.children];

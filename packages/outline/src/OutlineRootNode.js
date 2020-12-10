@@ -9,9 +9,7 @@ export class RootNode extends BlockNode {
     super('root');
     this.type = 'root';
   }
-  static parse(data: {}): RootNode {
-    return new RootNode();
-  }
+
   clone(): RootNode {
     const clone = new RootNode();
     clone.children = [...this.children];

@@ -524,11 +524,6 @@ export function getWritableNode<N: OutlineNode>(node: N): N {
     );
   }
   mutableNode.key = key;
-  // If we're mutating the root node, make sure to update
-  // the pointer in state too.
-  if (mutableNode instanceof RootNode) {
-    viewModel.root = mutableNode;
-  }
   dirtyNodes.add(key);
   // Update reference in node map
   if (nodeMap[key] !== undefined) {

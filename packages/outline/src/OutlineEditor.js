@@ -22,8 +22,7 @@ import {createRootNode as createRoot} from './OutlineRootNode';
 
 export function createEditor(): OutlineEditor {
   const root = createRoot();
-  const viewModel = new ViewModel(root);
-  viewModel.nodeMap.root = root;
+  const viewModel = new ViewModel({root});
   return new OutlineEditor(viewModel);
 }
 

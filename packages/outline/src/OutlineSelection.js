@@ -1169,7 +1169,7 @@ export function createSelection(
   // When selecting all content in FF, it targets the contenteditable.
   // We need to resolve the first and last text DOM nodes
   if (anchorDOM === focusDOM && anchorDOM === editorElement) {
-    const root = viewModel.root;
+    const root = viewModel.nodeMap.root;
     anchorNode = root.getFirstTextNode();
     focusNode = root.getLastTextNode();
     if (anchorNode === null || focusNode === null) {

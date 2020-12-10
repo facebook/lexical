@@ -1,0 +1,39 @@
+// @flow strict
+
+import type {NodeKey} from 'outline';
+
+import {BlockNode} from 'outline';
+
+type HeadingTagType = 'h1' | 'h2' | 'h3' | 'h4' | 'h5';
+
+export class HeadingNode extends BlockNode {
+  _type: 'heading';
+  _tag: HeadingTagType;
+
+  constructor(tag: HeadingTagType, key?: NodeKey) {
+    super(key);
+    this._tag = tag;
+    this.type = 'heading';
+  }
+
+  clone(): HeadingNode {
+    const clone = new HeadingNode(this._tag, this.key);
+    clone.children = [...this.children];
+    clone.parent = this.parent;
+    clone.flags = this.flags;
+    return clone;
+  }
+
+  // View
+
+  createDOM(): HTMLElement {
+    return document.createElement(this._tag);
+  }
+  updateDOM(prevNode: HeadingNode, dom: HTMLElement): boolean {
+    return false;
+  }
+}
+
+export function createHeadingNode(headingTag: HeadingTagType): HeadingNode {
+  return new HeadingNode(headingTag);
+}

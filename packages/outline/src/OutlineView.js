@@ -18,7 +18,7 @@ export type View = {
   setSelection: (selection: Selection) => void,
 };
 
-export type NodeMapType = {[key: NodeKey]: OutlineNode};
+export type NodeMapType = {root: RootNode, [key: NodeKey]: OutlineNode};
 
 let activeViewModel = null;
 let activeReadyOnlyMode = false;
@@ -41,7 +41,7 @@ export function getActiveViewModel(): ViewModel {
 
 const view: View = {
   getRoot() {
-    return getActiveViewModel().root;
+    return getActiveViewModel().nodeMap.root;
   },
   getNodeByKey,
   getSelection,
@@ -175,13 +175,11 @@ export function triggerUpdateListeners(editor: OutlineEditor): void {
 }
 
 export function cloneViewModel(current: ViewModel): ViewModel {
-  const draft = new ViewModel(current.root);
-  draft.nodeMap = {...current.nodeMap};
+  const draft = new ViewModel({...current.nodeMap});
   return draft;
 }
 
 export class ViewModel {
-  root: RootNode;
   nodeMap: NodeMapType;
   selection: null | Selection;
   dirtyNodes: Set<NodeKey>;
@@ -189,9 +187,8 @@ export class ViewModel {
   isHistoric: boolean;
   hasContent: boolean;
 
-  constructor(root: RootNode) {
-    this.root = root;
-    this.nodeMap = {};
+  constructor(nodeMap: NodeMapType) {
+    this.nodeMap = nodeMap;
     this.selection = null;
     // Dirty nodes are nodes that have been added or updated
     // in comparison to the previous view model. We also use

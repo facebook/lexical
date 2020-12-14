@@ -4,10 +4,11 @@ import type {
   OutlineEditor,
   View,
   NodeKey,
-  OutlineNode,
   Selection,
+  OutlineNode,
 } from 'outline';
 
+import {BlockNode} from 'outline';
 import {useCallback, useEffect} from 'react';
 import useOutlineEventWrapper from 'outline-react/useOutlineEventWrapper';
 import {CAN_USE_BEFORE_INPUT, IS_SAFARI} from 'outline-react/OutlineEnv';
@@ -38,6 +39,17 @@ const FORMAT_ITALIC = 1;
 const FORMAT_STRIKETHROUGH = 2;
 const FORMAT_UNDERLINE = 3;
 
+function createNodeFromNodeData(nodeData: {...}, NodeType): OutlineNode {
+  const node = new NodeType();
+  for (const property in nodeData) {
+    if (property !== 'key' && property !== 'children') {
+      // $FlowFixMe: need to fix this
+      node[property] = nodeData[property];
+    }
+  }
+  return node;
+}
+
 function generateNode(
   key: NodeKey,
   parentKey: null | NodeKey,
@@ -46,25 +58,24 @@ function generateNode(
 ): OutlineNode {
   const nodeData = nodeMap[key];
   const type = nodeData.type;
-  const nodeType = editor._registeredNodeTypes.get(type);
-  if (nodeType === undefined) {
+  const NodeType = editor._registeredNodeTypes.get(type);
+  if (NodeType === undefined) {
     throw new Error('generateNode: type "' + type + '" + not found');
   }
-  throw new Error('TODO');
-  // const node = nodeType.parse(nodeData);
-  // node.parent = parentKey;
-  // const newKey = node.key;
-  // if (node instanceof BlockNode) {
-  //   // $FlowFixMe: valid code
-  //   const children = nodeData.children;
-  //   for (let i = 0; i < children.length; i++) {
-  //     const childKey = children[i];
-  //     const child = generateNode(childKey, newKey, nodeMap, editor);
-  //     const newChildKey = child.key;
-  //     node.children.push(newChildKey);
-  //   }
-  // }
-  // return node;
+  const node = createNodeFromNodeData(nodeData, NodeType);
+  node.parent = parentKey;
+  const newKey = node.key;
+  if (node instanceof BlockNode) {
+    // $FlowFixMe: valid code
+    const children = nodeData.children;
+    for (let i = 0; i < children.length; i++) {
+      const childKey = children[i];
+      const child = generateNode(childKey, newKey, nodeMap, editor);
+      const newChildKey = child.key;
+      node.children.push(newChildKey);
+    }
+  }
+  return node;
 }
 
 function generateNodes(

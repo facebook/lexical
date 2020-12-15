@@ -1124,13 +1124,14 @@ export function createSelection(
   const lastSelection = currentViewModel.selection;
   const eventType = event && event.type;
   const isComposing = eventType === 'compositionstart';
-  const isSelecting = eventType === 'selectionchange';
+  const useDOMSelection =
+    eventType === 'selectionchange' || eventType === 'beforeinput';
   let anchorDOM, focusDOM, anchorOffset, focusOffset;
 
   if (
     event == null ||
     lastSelection === null ||
-    isSelecting ||
+    useDOMSelection ||
     (isComposing && editor.isKeyDown())
   ) {
     const domSelection: WindowSelection = window.getSelection();

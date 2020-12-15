@@ -70,7 +70,7 @@ function updateEditor(
         const nodeMap = currentViewModel.nodeMap;
         for (const nodeKey in nodeMap) {
           const node = nodeMap[nodeKey];
-          if (node instanceof TextNode) {
+          if (node instanceof TextNode && node.isAttached()) {
             getWritableNode(node);
           }
         }

@@ -21,6 +21,7 @@ const isWWW = argv.www;
 const isClean = argv.clean;
 
 const closureOptions = {
+  assume_function_wrapper: true,
   compilation_level: 'SIMPLE',
   language_in: 'ECMASCRIPT_2018',
   language_out: 'ECMASCRIPT_2018',
@@ -106,7 +107,8 @@ async function build(name, inputFile, outputFile) {
       }),
       commonjs(),
       isWWW && replace(wwwMappings),
-      isProduction && closure(closureOptions),
+      isProduction &&
+        closure(isWWW ? {...closureOptions, renaming: false} : closureOptions),
       isWWW && {
         renderChunk(source) {
           return `/**

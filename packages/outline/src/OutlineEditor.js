@@ -68,9 +68,13 @@ function updateEditor(
       if (markAllTextNodesAsDirty) {
         const currentViewModel = editor._viewModel;
         const nodeMap = currentViewModel.nodeMap;
+        const pendingNodeMap = currentPendingViewModel.nodeMap;
         for (const nodeKey in nodeMap) {
           const node = nodeMap[nodeKey];
-          if (node instanceof TextNode && node.isAttached()) {
+          if (
+            node instanceof TextNode &&
+            pendingNodeMap[nodeKey] !== undefined
+          ) {
             getWritableNode(node);
           }
         }

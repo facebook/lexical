@@ -229,10 +229,4 @@ export class OutlineEditor {
   update(callbackFn: (view: View) => void, sync?: boolean): boolean {
     return updateEditor(this, callbackFn, false, sync);
   }
-  forceSelection(): void {
-    const selection = this._viewModel.selection;
-    if (selection !== null) {
-      reconcileSelection(selection, this);
-    }
-  }
 }

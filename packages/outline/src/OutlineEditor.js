@@ -19,6 +19,7 @@ import {createSelection} from './OutlineSelection';
 import {generateRandomKey, emptyFunction} from './OutlineUtils';
 import {getWritableNode} from './OutlineNode';
 import {createRootNode as createRoot} from './OutlineRootNode';
+import {reconcileSelection} from './OutlineReconciler';
 
 export function createEditor(): OutlineEditor {
   const root = createRoot();
@@ -227,5 +228,11 @@ export class OutlineEditor {
   }
   update(callbackFn: (view: View) => void, sync?: boolean): boolean {
     return updateEditor(this, callbackFn, false, sync);
+  }
+  forceSelection(): void {
+    const selection = this._viewModel.selection;
+    if (selection !== null) {
+      reconcileSelection(selection, this);
+    }
   }
 }

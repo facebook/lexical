@@ -435,7 +435,7 @@ export function reconcileViewModel(
   }
 }
 
-export function reconcileSelection(selection: Selection, editor: OutlineEditor): void {
+function reconcileSelection(selection: Selection, editor: OutlineEditor): void {
   const anchorKey = selection.anchorKey;
   const focusKey = selection.focusKey;
   if (anchorKey === null || focusKey === null) {

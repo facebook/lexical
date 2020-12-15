@@ -19,7 +19,6 @@ import {createSelection} from './OutlineSelection';
 import {generateRandomKey, emptyFunction} from './OutlineUtils';
 import {getWritableNode} from './OutlineNode';
 import {createRootNode as createRoot} from './OutlineRootNode';
-import {reconcileSelection} from './OutlineReconciler';
 
 export function createEditor(): OutlineEditor {
   const root = createRoot();

@@ -4,6 +4,7 @@ node_modules
 
 build
 dist
+npm
 .DS_Store
 .env.local
 .env.development.local

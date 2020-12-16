@@ -1,9 +1,9 @@
 {
   "name": "outline-react",
-  "version": "1.0.0",
+  "version": "0.0.4",
   "dependencies": {
-    "outline": "1.0.0",
-    "outline-extensions": "1.0.0"
+    "outline": "0.0.4",
+    "outline-extensions": "0.0.4"
   },
   "peerDependencies": {
     "react": ">=17.0.1",

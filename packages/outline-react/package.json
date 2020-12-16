@@ -1,5 +1,17 @@
 {
   "name": "outline-react",
+  "author": {
+    "name": "Dominic Gannaway",
+    "email": "dg@domgan.com"
+  },
+  "description": "The library provides powerful Outline extensions for React.",
+  "keywords": [
+    "react",
+    "outline",
+    "editor",
+    "rich-text"
+  ],
+  "license": "MIT",
   "version": "0.0.4",
   "dependencies": {
     "outline": "0.0.4",
@@ -8,5 +20,10 @@
   "peerDependencies": {
     "react": ">=17.0.1",
     "react-dom": ">=17.0.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/facebookexternal/Outline",
+    "directory": "packages/outline-react"
   }
 }

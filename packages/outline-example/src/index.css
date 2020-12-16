@@ -47,7 +47,7 @@ h1 {
   position: relative;
 }
 
-.editor-shell div.editor div.outline-placeholder {
+.editor-shell div.editor div.placeholder {
   color: #999;
   overflow: hidden;
   position: absolute;

@@ -1,3 +1,3 @@
-# Outline JS
+# Outline
 
-Outline is a fast, lightweight, rich-text editor library for React.
+Outline is a fast, light-weight, extensible library for building rich text editors on the web.

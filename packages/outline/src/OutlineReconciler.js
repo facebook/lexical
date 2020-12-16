@@ -406,7 +406,7 @@ export function reconcilePlaceholder(editor: OutlineEditor): void {
       return;
     }
     placeholderElement = document.createElement('div');
-    placeholderElement.className = 'outline-placeholder';
+    placeholderElement.className = 'placeholder';
     placeholderElement.contentEditable = 'false';
     editor._placeholderElement = placeholderElement;
     editorElement.appendChild(placeholderElement);

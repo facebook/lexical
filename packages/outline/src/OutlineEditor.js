@@ -19,6 +19,7 @@ import {createSelection} from './OutlineSelection';
 import {generateRandomKey, emptyFunction} from './OutlineUtils';
 import {getWritableNode} from './OutlineNode';
 import {createRootNode as createRoot} from './OutlineRootNode';
+import {reconcilePlaceholder} from './OutlineReconciler';
 
 export function createEditor(): OutlineEditor {
   const root = createRoot();
@@ -119,6 +120,9 @@ export class OutlineEditor {
   _needsReconcile: boolean;
   _nodeDecorators: {[NodeKey]: ReactNode};
   _pendingNodeDecorators: null | {[NodeKey]: ReactNode};
+  _placeholderText: string;
+  _placeholderElement: null | HTMLElement;
+  _textContent: string;
 
   constructor(viewModel: ViewModel) {
     // The editor element associated with this editor
@@ -152,6 +156,11 @@ export class OutlineEditor {
     // decorators to pending until the update
     // is complete.
     this._pendingNodeDecorators = null;
+    // Used for rendering placeholder text
+    this._placeholderText = '';
+    this._placeholderElement = null;
+    // Editor fast-path for text content
+    this._textContent = '';
   }
   isComposing(): boolean {
     return this._isComposing;
@@ -161,6 +170,9 @@ export class OutlineEditor {
   }
   setComposing(isComposing: boolean): void {
     this._isComposing = isComposing;
+    if (isComposing) {
+      reconcilePlaceholder(this);
+    }
   }
   setKeyDown(isKeyDown: boolean): void {
     this._isKeyDown = isKeyDown;
@@ -203,6 +215,9 @@ export class OutlineEditor {
   getEditorElement(): null | HTMLElement {
     return this._editorElement;
   }
+  getTextContent(): string {
+    return this._textContent;
+  }
   setEditorElement(editorElement: null | HTMLElement): void {
     this._editorElement = editorElement;
     if (editorElement === null) {
@@ -231,5 +246,9 @@ export class OutlineEditor {
   }
   update(callbackFn: (view: View) => void, sync?: boolean): boolean {
     return updateEditor(this, callbackFn, false, sync);
+  }
+  setPlaceholder(placeholderText: string): void {
+    this._placeholderText = placeholderText;
+    reconcilePlaceholder(this);
   }
 }

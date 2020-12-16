@@ -1167,34 +1167,36 @@ export function createSelection(
   ) {
     return null;
   }
-  // When selecting all content in FF, it targets the contenteditable.
-  // We need to resolve the first and last text DOM nodes
-  if (anchorDOM === focusDOM && anchorDOM === editorElement) {
-    const root = viewModel.nodeMap.root;
+  const root = viewModel.nodeMap.root;
+  if (anchorDOM === editorElement) {
     anchorNode = root.getFirstTextNode();
-    focusNode = root.getLastTextNode();
-    if (anchorNode === null || focusNode === null) {
+    if (anchorNode === null) {
       return null;
     }
-    anchorKey = anchorNode.key;
-    focusKey = focusNode.key;
     anchorOffset = 0;
-    focusOffset = focusNode.getTextContent().length;
-  } else {
-    // We try and find the relevant text nodes from the selection.
-    // If we can't do this, we return null.
-    anchorKey = getNodeKeyFromDOM(anchorDOM);
-    focusKey = getNodeKeyFromDOM(focusDOM);
-    if (anchorKey === null || focusKey === null) {
-      return null;
-    }
-    [anchorNode, focusNode] = resolveSelectionNodes(anchorKey, focusKey);
-    if (anchorNode === null || focusNode === null) {
-      return null;
-    }
     anchorKey = anchorNode.key;
-    focusKey = focusNode.key;
   }
+  if (focusDOM === editorElement) {
+    focusNode = root.getFirstTextNode();
+    if (focusNode === null) {
+      return null;
+    }
+    focusKey = focusNode.key;
+    focusOffset = focusNode.getTextContent().length;
+  }
+  // We try and find the relevant text nodes from the selection.
+  // If we can't do this, we return null.
+  anchorKey = anchorKey === null ? getNodeKeyFromDOM(anchorDOM) : anchorKey;
+  focusKey = focusKey === null ? getNodeKeyFromDOM(focusDOM) : focusKey;
+  if (anchorKey === null || focusKey === null) {
+    return null;
+  }
+  [anchorNode, focusNode] = resolveSelectionNodes(anchorKey, focusKey);
+  if (anchorNode === null || focusNode === null) {
+    return null;
+  }
+  anchorKey = anchorNode.key;
+  focusKey = focusNode.key;
   // Because we use a special character for whitespace,
   // we need to adjust offsets to 0 when the text is
   // really empty.

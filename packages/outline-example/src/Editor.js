@@ -34,6 +34,7 @@ function useOutlineEditor(editorElementRef: {
     const editorElement = editorElementRef.current;
 
     editor.setEditorElement(editorElement);
+    editor.setPlaceholder('Enter some text...');
   }, [editorElementRef, editor]);
 
   return editor;

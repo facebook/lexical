@@ -27,10 +27,9 @@ export function createEditor(): OutlineEditor {
   return new OutlineEditor(viewModel);
 }
 
-export type onChangeType = (
-  viewModel: ViewModel,
-  nodeDecorators: {[NodeKey]: ReactNode},
-) => void;
+export type UpdateListener = (viewModel: ViewModel) => void;
+
+export type DecoratorListener = (decorator: {[NodeKey]: ReactNode}) => void;
 
 const NativePromise = window.Promise;
 
@@ -114,7 +113,8 @@ export class OutlineEditor {
   _isKeyDown: boolean;
   _key: string;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
-  _updateListeners: Set<onChangeType>;
+  _updateListeners: Set<UpdateListener>;
+  _decoratorListeners: Set<DecoratorListener>;
   _textTransforms: Set<(node: TextNode, view: View) => void>;
   _registeredNodeTypes: Map<string, Class<OutlineNode>>;
   _needsReconcile: boolean;
@@ -138,6 +138,7 @@ export class OutlineEditor {
     this._keyToDOMMap = new Map();
     // onChange listeners
     this._updateListeners = new Set();
+    this._decoratorListeners = new Set();
     // Handling of transform
     this._textTransforms = new Set();
     // Mapping of types to their nodes
@@ -191,10 +192,16 @@ export class OutlineEditor {
       this._registeredNodeTypes.delete(nodeType);
     };
   }
-  addUpdateListener(onChange: onChangeType): () => void {
-    this._updateListeners.add(onChange);
+  addUpdateListener(listener: UpdateListener): () => void {
+    this._updateListeners.add(listener);
     return () => {
-      this._updateListeners.delete(onChange);
+      this._updateListeners.delete(listener);
+    };
+  }
+  addDecoratorListener(listener: DecoratorListener): () => void {
+    this._decoratorListeners.add(listener);
+    return () => {
+      this._decoratorListeners.delete(listener);
     };
   }
   addTextTransform(

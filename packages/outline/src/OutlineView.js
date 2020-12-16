@@ -4,6 +4,7 @@ import type {RootNode} from './OutlineRootNode';
 import type {OutlineEditor} from './OutlineEditor';
 import type {OutlineNode, NodeKey} from './OutlineNode';
 import type {Selection} from './OutlineSelection';
+import type {Node as ReactNode} from 'react';
 
 import {reconcileViewModel} from './OutlineReconciler';
 import {getSelection} from './OutlineSelection';
@@ -161,16 +162,26 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
   if (pendingNodeDecorators !== null) {
     editor._nodeDecorators = pendingNodeDecorators;
     editor._pendingNodeDecorators = null;
+    triggerDecoratorListeners(pendingNodeDecorators, editor);
   }
   triggerUpdateListeners(editor);
 }
 
+export function triggerDecoratorListeners(
+  nodeDecorators: {[NodeKey]: ReactNode},
+  editor: OutlineEditor,
+): void {
+  const listeners = Array.from(editor._decoratorListeners);
+  for (let i = 0; i < listeners.length; i++) {
+    listeners[i](nodeDecorators);
+  }
+}
+
 export function triggerUpdateListeners(editor: OutlineEditor): void {
   const viewModel = editor._viewModel;
-  const nodeDecorators = editor._nodeDecorators;
   const listeners = Array.from(editor._updateListeners);
   for (let i = 0; i < listeners.length; i++) {
-    listeners[i](viewModel, nodeDecorators);
+    listeners[i](viewModel);
   }
 }
 

@@ -255,6 +255,11 @@ export class OutlineEditor {
     return updateEditor(this, callbackFn, false, sync);
   }
   setPlaceholder(placeholderText: string): void {
+    const placeholderElement = this._placeholderElement;
+    if (placeholderElement !== null) {
+      // $FlowFixMe: placeholder elements always have a text node
+      placeholderElement.firstChild.nodeValue = placeholderText;
+    }
     this._placeholderText = placeholderText;
     reconcilePlaceholder(this);
   }

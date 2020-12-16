@@ -1,8 +1,22 @@
 {
   "name": "outline",
-  "version": "1.0.0", 
+  "author": {
+    "name": "Dominic Gannaway",
+    "email": "dg@domgan.com"
+  },
+  "description": "Outline is a fast, lightweight, rich-text editor.",
+  "keywords": [
+    "react",
+    "outline",
+    "editor",
+    "rich-text"
+  ],
+  "license": "MIT",
+  "version": "0.0.4",
   "main": "dist/Outline.js",
-  "dependencies": {
-    "outline": "1.0.0"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/facebookexternal/Outline",
+    "directory": "packages/outline"
   }
 }

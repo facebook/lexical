@@ -23,6 +23,12 @@ h1 {
   font-weight: 400;
 }
 
+.editor-shell .editor-wrapper {
+  position: relative;
+  cursor: text;
+  display: block;
+}
+
 .editor-shell div.editor {
   min-height: 150px;
   border: 0;
@@ -32,11 +38,27 @@ h1 {
   font-size: 15px;
   caret-color: rgb(5, 5, 5);
   display: block;
+  z-index: 2;
+  position: relative;
 }
 
 .editor-shell div.editor > div {
   margin: 0 0 15px 0;
   position: relative;
+}
+
+.editor-shell div.editor div.outline-placeholder {
+  color: #999;
+  overflow: hidden;
+  position: absolute;
+  text-overflow: ellipsis;
+  top: 10px;
+  left: 10px;
+  user-select: none;
+  white-space: 'nowrap';
+  z-index: 1;
+  display: inline-block;
+  pointer-events: none;
 }
 
 .editor-shell div.editor > p {

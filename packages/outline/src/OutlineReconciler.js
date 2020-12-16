@@ -9,6 +9,7 @@ import {BlockNode, TextNode} from '.';
 import {invariant} from './OutlineUtils';
 
 let subTreeTextContent = '';
+let editorTextContent = '';
 let forceTextDirection = null;
 let currentTextDirection = null;
 let activeEditor: OutlineEditor;
@@ -95,7 +96,9 @@ function createNode(
   storeDOMWithKey(key, dom, activeEditor);
 
   if (node instanceof TextNode) {
-    subTreeTextContent += node.text;
+    const text = node.text;
+    subTreeTextContent += text;
+    editorTextContent += text;
   } else if (node instanceof BlockNode) {
     // Handle block children
     const children = node.children;
@@ -207,12 +210,15 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
 
   if (prevNode === nextNode && !hasDirtySubTree) {
     if (prevNode instanceof TextNode) {
-      subTreeTextContent += prevNode.text;
+      const text = prevNode.text;
+      editorTextContent += text;
+      subTreeTextContent += text;
     } else {
       // $FlowFixMe: internal field
       const prevSubTreeTextContent = dom.__outlineTextContent;
       if (prevSubTreeTextContent !== undefined) {
         subTreeTextContent += prevSubTreeTextContent;
+        editorTextContent += prevSubTreeTextContent;
       }
     }
     return;
@@ -229,7 +235,9 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
   }
   // Handle text content, for LTR, LTR cases.
   if (nextNode instanceof TextNode) {
-    subTreeTextContent += nextNode.text;
+    const text = nextNode.text;
+    subTreeTextContent += text;
+    editorTextContent += text;
     return;
   } else if (prevNode instanceof BlockNode && nextNode instanceof BlockNode) {
     // Reconcile block children
@@ -386,6 +394,36 @@ function reconcileNodeChildren(
   }
 }
 
+export function reconcilePlaceholder(editor: OutlineEditor): void {
+  const placeholderText = editor._placeholderText;
+  const editorElement = editor._editorElement;
+  if (editorElement === null) {
+    return;
+  }
+  let placeholderElement = editor._placeholderElement;
+  if (placeholderElement === null) {
+    if (placeholderText === '') {
+      return;
+    }
+    placeholderElement = document.createElement('div');
+    placeholderElement.className = 'outline-placeholder';
+    placeholderElement.id = 'placeholder-' + editor._key;
+    placeholderElement.contentEditable = 'false';
+    editor._placeholderElement = placeholderElement;
+    editorElement.appendChild(placeholderElement);
+  }
+  if (placeholderText === '') {
+    editorElement.removeChild(placeholderElement);
+    return;
+  }
+  const textContent = editor._textContent;
+  if (textContent === '' && !editor._isComposing) {
+    placeholderElement.textContent = placeholderText;
+  } else {
+    placeholderElement.textContent = '';
+  }
+}
+
 function reconcileRoot(
   prevViewModel: ViewModel,
   nextViewModel: ViewModel,
@@ -396,6 +434,7 @@ function reconcileRoot(
   // This will over-ride any sub-tree text direction properties.
   forceTextDirection = null;
   subTreeTextContent = '';
+  editorTextContent = '';
   // Rather than pass around a load of arguments through the stack recursively
   // we instead set them as bindings within the scope of the module.
   activeEditor = editor;
@@ -404,6 +443,8 @@ function reconcileRoot(
   activeNextNodeMap = nextViewModel.nodeMap;
   activeViewModelIsHistoric = nextViewModel.isHistoric;
   reconcileNode('root', null);
+  editor._textContent = editorTextContent;
+  reconcilePlaceholder(editor);
   // We don't want a bunch of void checks throughout the scope
   // so instead we make it seem that these values are always set.
   // We also want to make sure we clear them down, otherwise we

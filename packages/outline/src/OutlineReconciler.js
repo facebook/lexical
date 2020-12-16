@@ -407,7 +407,6 @@ export function reconcilePlaceholder(editor: OutlineEditor): void {
     }
     placeholderElement = document.createElement('div');
     placeholderElement.className = 'outline-placeholder';
-    placeholderElement.id = 'placeholder-' + editor._key;
     placeholderElement.contentEditable = 'false';
     editor._placeholderElement = placeholderElement;
     editorElement.appendChild(placeholderElement);
@@ -418,7 +417,10 @@ export function reconcilePlaceholder(editor: OutlineEditor): void {
   }
   const textContent = editor._textContent;
   if (textContent === '' && !editor._isComposing) {
-    placeholderElement.textContent = placeholderText;
+    const firstChild = placeholderElement.firstChild;
+    if (firstChild == null || firstChild.nodeValue !== placeholderText) {
+      placeholderElement.textContent = placeholderText;
+    }
   } else {
     placeholderElement.textContent = '';
   }

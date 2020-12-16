@@ -32,7 +32,10 @@ function useOutlineEditor(editorElementRef: {
 
   useEffect(() => {
     const editorElement = editorElementRef.current;
-
+    // Clear editorElement if not done already
+    if (editorElement !== null && editorElement.firstChild !== null) {
+      editorElement.textContent = '';
+    }
     editor.setEditorElement(editorElement);
     editor.setPlaceholder('Enter some text...');
   }, [editorElementRef, editor]);

@@ -400,29 +400,23 @@ export function reconcilePlaceholder(editor: OutlineEditor): void {
   if (editorElement === null) {
     return;
   }
+  const noPlaceholderText = placeholderText === '';
   let placeholderElement = editor._placeholderElement;
   if (placeholderElement === null) {
-    if (placeholderText === '') {
+    if (noPlaceholderText) {
       return;
     }
     placeholderElement = document.createElement('div');
     placeholderElement.className = 'placeholder';
     placeholderElement.contentEditable = 'false';
-    editor._placeholderElement = placeholderElement;
+    placeholderElement.appendChild(document.createTextNode(placeholderText));
     editorElement.appendChild(placeholderElement);
+    editor._placeholderElement = placeholderElement;
   }
-  if (placeholderText === '') {
-    editorElement.removeChild(placeholderElement);
-    return;
-  }
-  const textContent = editor._textContent;
-  if (textContent === '' && !editor._isComposing) {
-    const firstChild = placeholderElement.firstChild;
-    if (firstChild == null || firstChild.nodeValue !== placeholderText) {
-      placeholderElement.textContent = placeholderText;
-    }
+  if (editor._textContent !== '' || noPlaceholderText || editor._isComposing) {
+    placeholderElement.style.display = 'none';
   } else {
-    placeholderElement.textContent = '';
+    placeholderElement.style.display = 'block';
   }
 }
 

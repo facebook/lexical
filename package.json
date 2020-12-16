@@ -1,6 +1,6 @@
 {
   "description": "Outline is a fast, lightweight, rich-text editor.",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "license": "MIT",
   "author": {
     "name": "Dominic Gannaway",
@@ -21,7 +21,7 @@
     "test": "npm run build && jest",
     "debug-test": "node --inspect-brk node_modules/.bin/jest --runInBand",
     "prettier": "node ./scripts/prettier.js write-changed",
-    "prepare-release": "node ./scripts/prepare-release.js"
+    "prepare-release": "yarn build --prod && node ./scripts/prepare-release.js"
   },
   "devDependencies": {
     "@babel/plugin-transform-flow-strip-types": "^7.12.1",

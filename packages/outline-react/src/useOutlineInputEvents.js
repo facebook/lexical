@@ -24,6 +24,8 @@ import {
   isDeleteForward,
   isDeleteLineBackward,
   isDeleteLineForward,
+  isDeleteWordBackward,
+  isDeleteWordForward,
   isLineBreak,
   isMoveBackward,
   isMoveForward,
@@ -31,7 +33,6 @@ import {
   isMoveWordForward,
   isParagraph,
 } from 'outline-react/OutlineHotKeys';
-// import {BlockNode} from 'outline';
 
 // FlowFixMe: Flow doesn't know of the CompositionEvent?
 // $FlowFixMe: TODO
@@ -138,40 +139,49 @@ function onKeyDown(
   if (selection === null) {
     return;
   }
+  let shouldPreventDefault = false;
 
-  if (!CAN_USE_BEFORE_INPUT) {
-    if (isDeleteBackward(event)) {
-      event.preventDefault();
-      selection.deleteBackward();
-    } else if (isDeleteForward(event)) {
-      event.preventDefault();
-      selection.deleteForward();
-    } else if (isLineBreak(event)) {
-      event.preventDefault();
-      selection.insertText('\n');
-    } else if (isParagraph(event)) {
-      event.preventDefault();
+  if (isDeleteBackward(event)) {
+    shouldPreventDefault = true;
+    selection.deleteBackward();
+  } else if (isDeleteForward(event)) {
+    shouldPreventDefault = true;
+    selection.deleteForward();
+  } else if (isLineBreak(event)) {
+    shouldPreventDefault = true;
+    selection.insertText('\n');
+  } else if (isParagraph(event)) {
+    shouldPreventDefault = true;
+    if (state.richText) {
       selection.insertParagraph();
     }
-  }
-  if (isMoveBackward(event)) {
-    event.preventDefault();
+  } else if (isMoveBackward(event)) {
+    shouldPreventDefault = true;
     selection.moveBackward();
   } else if (isMoveForward(event)) {
-    event.preventDefault();
+    shouldPreventDefault = true;
     selection.moveForward();
   } else if (isMoveWordBackward(event)) {
-    event.preventDefault();
+    shouldPreventDefault = true;
     selection.moveWordBackward();
   } else if (isMoveWordForward(event)) {
-    event.preventDefault();
+    shouldPreventDefault = true;
     selection.moveWordForward();
   } else if (isDeleteLineBackward(event)) {
-    event.preventDefault();
+    shouldPreventDefault = true;
     selection.deleteLineBackward();
   } else if (isDeleteLineForward(event)) {
-    event.preventDefault();
+    shouldPreventDefault = true;
     selection.deleteLineForward();
+  } else if (isDeleteWordBackward(event)) {
+    shouldPreventDefault = true;
+    selection.deleteWordBackward();
+  } else if (isDeleteWordForward(event)) {
+    shouldPreventDefault = true;
+    selection.deleteWordForward();
+  }
+  if (shouldPreventDefault) {
+    event.preventDefault();
   }
 }
 
@@ -395,44 +405,27 @@ function onNativeBeforeInput(
       }
       break;
     }
-    case 'insertLineBreak': {
-      selection.insertText('\n');
-      break;
-    }
-    case 'insertParagraph': {
-      if (state.richText) {
-        selection.insertParagraph();
-      }
-      break;
-    }
     case 'deleteByComposition':
     case 'deleteByDrag':
     case 'deleteByCut': {
       selection.removeText();
       break;
     }
-    case 'deleteContentBackward': {
-      selection.deleteBackward();
-      break;
-    }
-    case 'deleteContent':
-    case 'deleteContentForward': {
-      selection.deleteForward();
-      break;
-    }
-    case 'deleteSoftLineBackward': {
-      selection.deleteLineBackward();
-      break;
-    }
-    case 'deleteSoftLineForward': {
-      selection.deleteLineForward();
-      break;
-    }
-    case 'deleteWordBackward':
-    case 'deleteWordForward': {
-      // TODO
-      break;
-    }
+    // These are handled in onKeyDown, so we don't need to do
+    // anything here. So if we get an issue with these occuring here
+    // then we need to re-visit adding logic for these event types
+    // again.
+
+    // case 'insertLineBreak':
+    // case 'insertParagraph':
+    // case 'deleteContentBackward':
+    // case 'deleteContent':
+    // case 'deleteContentForward':
+    // case 'deleteSoftLineBackward':
+    // case 'deleteSoftLineForward':
+    // case 'deleteWordBackward':
+    // case 'deleteWordForward':
+
     case 'historyUndo':
     case 'historyRedo':
       // Handled with useOutlineHistory

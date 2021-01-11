@@ -453,7 +453,13 @@ export class Selection {
     }
   }
   deleteLineForward(): void {
-    invariant(false, 'TODO');
+    invariant(false, 'deleteLineForward TODO');
+  }
+  deleteWordBackward(): void {
+    invariant(false, 'deleteWordBackward TODO');
+  }
+  deleteWordForward(): void {
+    invariant(false, 'deleteWordForward TODO');
   }
   deleteBackward(): void {
     if (!this.isCaret()) {

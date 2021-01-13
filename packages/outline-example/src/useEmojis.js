@@ -6,6 +6,7 @@ import {useEffect} from 'react';
 import {TextNode} from 'outline';
 
 const baseEmojiStyle =
+  'color: transparent;' +
   'background-size: 16px 16px;' +
   'height: 16px;' +
   'width: 16px;' +
@@ -29,29 +30,28 @@ const heart =
   baseEmojiStyle +
   'background-image: url(https://static.xx.fbcdn.net/images/emoji.php/v9/t6c/1/16/2764.png);';
 
-const specialSpace = '　';
-
-const emojis: {[string]: string} = {
-  ':)': happySmile,
-  ':D': veryHappySmile,
-  ':(': unhappySmile,
-  '<3': heart,
+const emojis: {[string]: [string, string]} = {
+  ':)': [happySmile, '🙂'],
+  ':D': [veryHappySmile, '😀'],
+  ':(': [unhappySmile, '🙁'],
+  '<3': [heart, '❤'],
 };
 
 function textNodeTransform(node: TextNode, view: View): void {
   const text = node.getTextContent();
   for (let i = 0; i < text.length; i++) {
     const possibleEmoji = text.slice(i, i + 2);
-    const emojiStyle = emojis[possibleEmoji];
+    const emojiData = emojis[possibleEmoji];
 
-    if (emojiStyle !== undefined) {
+    if (emojiData !== undefined) {
+      const [emojiStyle, emojiText] = emojiData;
       let targetNode;
       if (i === 0) {
         [targetNode] = node.splitText(i + 2);
       } else {
         [, targetNode] = node.splitText(i, i + 2);
       }
-      const emojiNode = createEmoji(emojiStyle);
+      const emojiNode = createEmoji(emojiStyle, emojiText);
       targetNode.replace(emojiNode);
       emojiNode.wrapInTextNodes();
       emojiNode.selectAfter(0, 0);
@@ -74,8 +74,8 @@ export default function useEmojis(editor: null | OutlineEditor): void {
   }, [editor]);
 }
 
-function createEmoji(cssText: string): EmojiNode {
-  return new EmojiNode(cssText, specialSpace).makeImmutable();
+function createEmoji(cssText: string, emojiText: string): EmojiNode {
+  return new EmojiNode(cssText, emojiText).makeImmutable();
 }
 
 class EmojiNode extends TextNode {

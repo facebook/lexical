@@ -97,6 +97,7 @@ class EmojiNode extends TextNode {
   createDOM() {
     const dom = super.createDOM();
     dom.style.cssText = this.cssText;
+    dom.tabIndex = -1;
     return dom;
   }
 }

@@ -491,6 +491,7 @@ class MentionNode extends TextNode {
   createDOM() {
     const dom = super.createDOM();
     dom.style.cssText = mentionStyle;
+    dom.tabIndex = -1;
     return dom;
   }
 }

@@ -67,7 +67,7 @@ h1 {
 }
 
 .editor-shell div.editor > p span {
-  display: inline-block;
+  display: inline;
 }
 
 .editor-shell div.editor h1 {

@@ -217,7 +217,7 @@ function setTextContent(
   if (nextText === '') {
     nextText = zeroWidthString;
   } else if (nextText.endsWith('\n')) {
-    nextText += '\n';
+    nextText += zeroWidthString;
   }
   if (firstChild == null || hasBreakNode) {
     dom.textContent = nextText;

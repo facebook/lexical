@@ -487,6 +487,9 @@ export class TextNode extends OutlineNode {
   }
   select(_anchorOffset?: number, _focusOffset?: number): Selection {
     shouldErrorOnReadOnly();
+    if (this.isImmutable() || this.isSegmented()) {
+      return super.select();
+    }
     let anchorOffset = _anchorOffset;
     let focusOffset = _focusOffset;
     const selection = getSelection();

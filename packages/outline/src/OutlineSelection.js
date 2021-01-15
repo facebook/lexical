@@ -487,17 +487,22 @@ export class Selection {
         return;
       } else if (node instanceof TextNode) {
         const textContent = node.getTextContent();
-        const textContentLength = textContent.length;
-        const endIndex = node === anchorNode ? anchorOffset : textContentLength;
+        const endIndex =
+          node === anchorNode ? anchorOffset : textContent.length;
+        let foundNonWhitespace = false;
 
         for (let s = endIndex - 1; s >= 0; s--) {
           const char = textContent[s];
           if (char === ' ') {
-            node.spliceText(s, textContentLength - s, '', true);
-            return;
+            if (foundNonWhitespace) {
+              node.spliceText(s, endIndex - s, '', true);
+              return;
+            }
           } else if (char === '\n') {
-            node.spliceText(s + 1, textContentLength - s + 1, '', true);
+            node.spliceText(s + 1, endIndex - s + 1, '', true);
             return;
+          } else {
+            foundNonWhitespace = true;
           }
         }
         if (prevSibling === null) {

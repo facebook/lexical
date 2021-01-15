@@ -465,6 +465,15 @@ export class Selection {
     if (anchorNode === null) {
       return;
     }
+    // Handle removing block
+    if (
+      anchorNode.getPreviousSibling() === null &&
+      anchorNode.getTextContent() === ''
+    ) {
+      this.deleteBackward();
+      return;
+    }
+
     const currentBlock = anchorNode.getParentBlockOrThrow();
     let node = anchorNode;
 

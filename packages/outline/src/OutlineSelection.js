@@ -493,13 +493,13 @@ export class Selection {
         }
         if (prevSibling === null) {
           node.setTextContent('');
+          node.select();
         } else {
           node.remove();
           currentBlock.normalizeTextNodes(true);
         }
       }
       if (prevSibling === null) {
-        node.select();
         return;
       }
       node = prevSibling;

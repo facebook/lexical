@@ -456,7 +456,54 @@ export class Selection {
     invariant(false, 'deleteLineForward TODO');
   }
   deleteWordBackward(): void {
-    invariant(false, 'deleteWordBackward TODO');
+    if (!this.isCaret()) {
+      this.removeText();
+      return;
+    }
+    const anchorOffset = this.anchorOffset;
+    const anchorNode = this.getAnchorNode();
+    if (anchorNode === null) {
+      return;
+    }
+    const currentBlock = anchorNode.getParentBlockOrThrow();
+    let node = anchorNode;
+
+    while (true) {
+      const prevSibling = node.getPreviousSibling();
+      if (node.isImmutable() || node.isSegmented()) {
+        node.remove();
+        invariant(prevSibling !== null, 'Should never happen');
+        prevSibling.select();
+        currentBlock.normalizeTextNodes(true);
+        return;
+      } else if (node instanceof TextNode) {
+        const textContent = node.getTextContent();
+        const textContentLength = textContent.length;
+        const endIndex = node === anchorNode ? anchorOffset : textContentLength;
+
+        for (let s = endIndex - 1; s >= 0; s--) {
+          const char = textContent[s];
+          if (char === ' ') {
+            node.spliceText(s, textContentLength - s, '', true);
+            return;
+          } else if (char === '\n') {
+            node.spliceText(s + 1, textContentLength - s + 1, '', true);
+            return;
+          }
+        }
+        if (prevSibling === null) {
+          node.setTextContent('');
+        } else {
+          node.remove();
+          currentBlock.normalizeTextNodes(true);
+        }
+      }
+      if (prevSibling === null) {
+        node.select();
+        return;
+      }
+      node = prevSibling;
+    }
   }
   deleteWordForward(): void {
     invariant(false, 'deleteWordForward TODO');
@@ -781,7 +828,7 @@ export class Selection {
         }
       } else {
         const textContent = node.getTextContent();
-        const endIndex = node === firstNode ? offset : textContent.length;
+        const endIndex = node === firstNode ? offset - 1 : textContent.length;
 
         for (let s = endIndex - 1; s >= 0; s--) {
           const char = textContent[s];

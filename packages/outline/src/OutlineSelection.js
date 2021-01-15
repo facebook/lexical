@@ -919,6 +919,77 @@ export class Selection {
       }
     }
   }
+  moveLineBackward(): void {
+    const anchorNode = this.getAnchorNode();
+    const focusNode = this.getFocusNode();
+    const isAnchorBefore = anchorNode.isBefore(focusNode);
+    const anchorOffset = this.anchorOffset;
+    const focusOffset = this.focusOffset;
+    const firstNode = isAnchorBefore ? anchorNode : focusNode;
+    const offset = isAnchorBefore ? anchorOffset : focusOffset;
+
+    let node = firstNode;
+    while (true) {
+      const prevSibling = node.getPreviousSibling();
+
+      if (node instanceof TextNode) {
+        const textContent = node.getTextContent();
+        const endIndex = node === firstNode ? offset : textContent.length;
+
+        for (let s = endIndex - 1; s >= 0; s--) {
+          const char = textContent[s];
+          if (char === '\n') {
+            node.select(s + 1, s + 1);
+            return;
+          }
+        }
+        if (prevSibling === null) {
+          node.select(0, 0);
+          return;
+        }
+      }
+      if (prevSibling === null) {
+        invariant(false, 'Should never happen');
+      }
+      node = prevSibling;
+    }
+  }
+  moveLineForward(): void {
+    const anchorNode = this.getAnchorNode();
+    const focusNode = this.getFocusNode();
+    const isAnchorBefore = anchorNode.isBefore(focusNode);
+    const anchorOffset = this.anchorOffset;
+    const focusOffset = this.focusOffset;
+    const lastNode = isAnchorBefore ? focusNode : anchorNode;
+    const offset = isAnchorBefore ? focusOffset : anchorOffset;
+
+    let node = lastNode;
+    while (true) {
+      const nextSibling = node.getNextSibling();
+
+      if (node instanceof TextNode) {
+        const textContent = node.getTextContent();
+        const textContentLength = textContent.length;
+        const startIndex = node === lastNode ? offset : 0;
+
+        for (let s = startIndex; s < textContentLength; s++) {
+          const char = textContent[s];
+          if (char === '\n') {
+            node.select(s, s);
+            return;
+          }
+        }
+        if (nextSibling === null) {
+          node.select();
+          return;
+        }
+      }
+      if (nextSibling === null) {
+        invariant(false, 'Should never happen');
+      }
+      node = nextSibling;
+    }
+  }
   moveBackward(): void {
     const anchorNode = this.getAnchorNode();
     const focusNode = this.getFocusNode();

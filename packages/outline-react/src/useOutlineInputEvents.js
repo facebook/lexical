@@ -31,6 +31,8 @@ import {
   isMoveForward,
   isMoveWordBackward,
   isMoveWordForward,
+  isMoveLineBackward,
+  isMoveLineForward,
   isParagraph,
 } from 'outline-react/OutlineHotKeys';
 
@@ -167,6 +169,12 @@ function onKeyDown(
   } else if (isMoveWordForward(event)) {
     shouldPreventDefault = true;
     selection.moveWordForward();
+  } else if (isMoveLineBackward(event)) {
+    shouldPreventDefault = true;
+    selection.moveLineBackward();
+  } else if (isMoveLineForward(event)) {
+    shouldPreventDefault = true;
+    selection.moveLineForward();
   } else if (isDeleteLineBackward(event)) {
     shouldPreventDefault = true;
     selection.deleteLineBackward();

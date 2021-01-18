@@ -12,6 +12,7 @@
   ],
   "scripts": {
     "start": "npm run build && npm start --prefix packages/outline-example",
+    "dev": "concurrently \"npm:watch\" \"npm start --prefix packages/outline-example\"",
     "build": "node scripts/build.js",
     "build-prod": "node scripts/build.js --prod",
     "build-www": "node scripts/build.js --prod --www",
@@ -32,6 +33,7 @@
     "@rollup/plugin-node-resolve": "^10.0.0",
     "@rollup/plugin-replace": "^2.3.4",
     "child-process-promise": "^2.2.1",
+    "concurrently": "^5.3.0",
     "confusing-browser-globals": "^1.0.10",
     "eslint": "^7.12.1",
     "eslint-config-fbjs": "^3.1.1",
@@ -56,6 +58,8 @@
     "fs-extra": "^9.0.1"
   },
   "jest": {
-    "modulePathIgnorePatterns": ["<rootDir>/packages/outline/npm"]
+    "modulePathIgnorePatterns": [
+      "<rootDir>/packages/outline/npm"
+    ]
   }
 }

@@ -546,19 +546,20 @@ export class Selection {
 
       if (node.isImmutable() || node.isSegmented()) {
         node.remove();
-        const previousSibling = node.getPreviousSibling();
-        invariant(previousSibling !== null, 'Should never happen');
-        previousSibling.select();
+        invariant(nextSibling !== null, 'Should never happen');
+        if (nextSibling instanceof TextNode) {
+          nextSibling.select(0, 0);
+        } else {
+          nextSibling.select();;
+        }
         currentBlock.normalizeTextNodes(true);
         return;
-      } else if (node instanceof TextNode) {
+      } else if (
+        node instanceof TextNode &&
+        anchorNode.getTextContent() !== ''
+      ) {
         const textContent = node.getTextContent();
         const startIndex = node === anchorNode ? anchorOffset : 0;
-
-        if (startIndex === textContent.length) {
-          continue;
-        }
-
         let foundNonWhitespace = false;
         for (let s = startIndex; s < textContent.length; s++) {
           const char = textContent[s];

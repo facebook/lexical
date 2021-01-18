@@ -535,6 +535,7 @@ export class Selection {
       anchorNode.getNextSibling() === null &&
       anchorNode.getTextContent() === ''
     ) {
+      this.deleteForward();
       return;
     }
 

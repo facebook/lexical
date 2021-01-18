@@ -627,7 +627,6 @@ describe('OutlineSelection tests', () => {
 
   suite.forEach((testUnit, i) => {
     const name = testUnit.name || 'Test case';
-    debugger;
     test(name + ` (#${i + 1})`, () => {
       testUnit.setup();
       applySelectionInputs(testUnit.inputs, update, editor);

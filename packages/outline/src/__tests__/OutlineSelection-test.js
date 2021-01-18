@@ -219,9 +219,10 @@ describe('OutlineSelection tests', () => {
   }
 
   let editor = null;
+  let ref;
 
   function init() {
-    const ref = React.createRef();
+    ref = React.createRef();
 
     function TestBase() {
       editor = useOutlineEditor(ref);
@@ -232,7 +233,9 @@ describe('OutlineSelection tests', () => {
       ReactDOM.render(<TestBase />, container);
     });
     ref.current.focus();
+  }
 
+  function emptySetup() {
     // Insert initial block
     update((view) => {
       const paragraph = Outline.createParagraphNode();
@@ -250,6 +253,7 @@ describe('OutlineSelection tests', () => {
   }
 
   test('Expect initial output to be a block with some text', () => {
+    emptySetup();
     expect(sanitizeHTML(container.innerHTML)).toBe(
       '<div contenteditable="true"><p><span data-text="true"><br></span></p></div>',
     );
@@ -273,7 +277,9 @@ describe('OutlineSelection tests', () => {
         focusPath: [0, 0, 0],
         focusOffset: 5,
       },
+      setup: emptySetup,
     },
+
     {
       name: 'Simple typing in bold',
       inputs: [
@@ -292,6 +298,7 @@ describe('OutlineSelection tests', () => {
         focusPath: [0, 0, 0],
         focusOffset: 5,
       },
+      setup: emptySetup,
     },
     {
       name: 'Simple typing in italic',
@@ -311,6 +318,7 @@ describe('OutlineSelection tests', () => {
         focusPath: [0, 0, 0],
         focusOffset: 5,
       },
+      setup: emptySetup,
     },
     {
       name: 'Simple typing in underline',
@@ -331,6 +339,7 @@ describe('OutlineSelection tests', () => {
         focusPath: [0, 0, 0],
         focusOffset: 5,
       },
+      setup: emptySetup,
     },
     {
       name: 'Simple typing in strikethrough',
@@ -351,6 +360,7 @@ describe('OutlineSelection tests', () => {
         focusPath: [0, 0, 0],
         focusOffset: 5,
       },
+      setup: emptySetup,
     },
     {
       name: 'Deletion',
@@ -373,6 +383,7 @@ describe('OutlineSelection tests', () => {
         focusPath: [0, 0, 0],
         focusOffset: 4,
       },
+      setup: emptySetup,
     },
     {
       name: 'Jump to beginning and insert',
@@ -395,6 +406,7 @@ describe('OutlineSelection tests', () => {
         focusPath: [0, 0, 0],
         focusOffset: 3,
       },
+      setup: emptySetup,
     },
     {
       name: 'Select and replace',
@@ -411,6 +423,7 @@ describe('OutlineSelection tests', () => {
         focusPath: [0, 0, 0],
         focusOffset: 13,
       },
+      setup: emptySetup,
     },
     {
       name: 'Select and bold',
@@ -428,6 +441,7 @@ describe('OutlineSelection tests', () => {
         focusPath: [0, 1, 0],
         focusOffset: 5,
       },
+      setup: emptySetup,
     },
     {
       name: 'Select and italic',
@@ -445,6 +459,7 @@ describe('OutlineSelection tests', () => {
         focusPath: [0, 1, 0],
         focusOffset: 5,
       },
+      setup: emptySetup,
     },
     {
       name: 'Select and bold + italic',
@@ -463,6 +478,7 @@ describe('OutlineSelection tests', () => {
         focusPath: [0, 1, 0],
         focusOffset: 5,
       },
+      setup: emptySetup,
     },
     {
       name: 'Select and replace all',
@@ -479,6 +495,7 @@ describe('OutlineSelection tests', () => {
         focusPath: [0, 0, 0],
         focusOffset: 11,
       },
+      setup: emptySetup,
     },
     {
       name: 'Select and delete',
@@ -497,6 +514,7 @@ describe('OutlineSelection tests', () => {
         focusPath: [0, 0, 0],
         focusOffset: 6,
       },
+      setup: emptySetup,
     },
     {
       name: 'Inserting a paragraph',
@@ -510,6 +528,7 @@ describe('OutlineSelection tests', () => {
         focusPath: [1, 0, 0],
         focusOffset: 0,
       },
+      setup: emptySetup,
     },
     {
       name: 'Inserting a paragraph and then removing it',
@@ -522,6 +541,7 @@ describe('OutlineSelection tests', () => {
         focusPath: [0, 0, 0],
         focusOffset: 0,
       },
+      setup: emptySetup,
     },
     {
       name: 'Inserting a paragraph part way through text',
@@ -539,6 +559,7 @@ describe('OutlineSelection tests', () => {
         focusPath: [1, 0, 0],
         focusOffset: 0,
       },
+      setup: emptySetup,
     },
     {
       name: 'Inserting two paragraphs and then deleting via selection',
@@ -557,6 +578,7 @@ describe('OutlineSelection tests', () => {
         focusPath: [0, 0, 0],
         focusOffset: 0,
       },
+      setup: emptySetup,
     },
     {
       name:
@@ -578,6 +600,7 @@ describe('OutlineSelection tests', () => {
         focusPath: [0, 0, 0],
         focusOffset: 10,
       },
+      setup: emptySetup,
     },
     {
       name:
@@ -598,12 +621,15 @@ describe('OutlineSelection tests', () => {
         focusPath: [0, 0, 0],
         focusOffset: 12,
       },
+      setup: emptySetup,
     },
   ];
 
   suite.forEach((testUnit, i) => {
     const name = testUnit.name || 'Test case';
+    debugger;
     test(name + ` (#${i + 1})`, () => {
+      testUnit.setup();
       applySelectionInputs(testUnit.inputs, update, editor);
       // Validate HTML matches
       expect(sanitizeHTML(container.innerHTML)).toBe(testUnit.expectedHTML);

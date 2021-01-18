@@ -54,5 +54,8 @@
   },
   "dependencies": {
     "fs-extra": "^9.0.1"
+  },
+  "jest": {
+    "modulePathIgnorePatterns": ["<rootDir>/packages/outline/npm"]
   }
 }

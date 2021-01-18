@@ -645,6 +645,24 @@ describe('OutlineSelection tests', () => {
       },
       setup: emptySetup,
     },
+    {
+      name:
+        'Type text, move word backward, delete forward a word, delete backward',
+      inputs: [
+        insertText('Hello world'),
+        moveWordBackward(),
+        deleteWordForward(),
+        deleteWordBackward(),
+      ],
+      expectedHTML:
+        '<div contenteditable="true"><p><span data-text="true"><br></span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 0,
+        focusPath: [0, 0, 0],
+        focusOffset: 0,
+      },
+    },
   ];
 
   suite.forEach((testUnit, i) => {

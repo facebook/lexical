@@ -27,6 +27,20 @@ function insertParagraph(text) {
   };
 }
 
+function deleteWordBackward() {
+  return {
+    type: 'delete_word_backward',
+    text: null,
+  };
+}
+
+function deleteWordForward() {
+  return {
+    type: 'delete_word_forward',
+    text: null,
+  };
+}
+
 function deleteBackward() {
   return {
     type: 'delete_backward',
@@ -150,6 +164,14 @@ function applySelectionInputs(inputs, update, editor) {
         }
         case 'delete_forward': {
           selection.deleteForward();
+          break;
+        }
+        case 'delete_word_backward': {
+          selection.deleteWordBackward();
+          break;
+        }
+        case 'delete_word_forward': {
+          selection.deleteWordForward();
           break;
         }
         case 'format_text': {

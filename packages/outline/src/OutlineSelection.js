@@ -520,7 +520,71 @@ export class Selection {
     }
   }
   deleteWordForward(): void {
-    invariant(false, 'deleteWordForward TODO');
+    if (!this.isCaret()) {
+      this.removeText();
+      this.deleteForward();
+      return;
+    }
+    const anchorOffset = this.anchorOffset;
+    const anchorNode = this.getAnchorNode();
+    if (anchorNode === null) {
+      return;
+    }
+    // Handle removing block
+    if (
+      anchorNode.getNextSibling() === null &&
+      anchorNode.getTextContent() === ''
+    ) {
+      return;
+    }
+
+    const currentBlock = anchorNode.getParentBlockOrThrow();
+    let node = anchorNode;
+
+    while (true) {
+      const nextSibling = node.getNextSibling();
+
+      if (node.isImmutable() || node.isSegmented()) {
+        node.remove();
+        const previousSibling = node.getPreviousSibling();
+        invariant(previousSibling !== null, 'Should never happen');
+        previousSibling.select();
+        currentBlock.normalizeTextNodes(true);
+        return;
+      } else if (node instanceof TextNode) {
+        const textContent = node.getTextContent();
+        const startIndex = node === anchorNode ? anchorOffset : 0;
+
+        if (startIndex === textContent.length) {
+          continue;
+        }
+
+        let foundNonWhitespace = false;
+        for (let s = startIndex; s < textContent.length; s++) {
+          const char = textContent[s];
+          if (char === ' ') {
+            if (foundNonWhitespace) {
+              node.spliceText(startIndex, s - startIndex, '', true);
+              return;
+            }
+          } else if (char === '\n') {
+            node.spliceText(startIndex, s - startIndex, '', true);
+            return;
+          } else {
+            foundNonWhitespace = true;
+          }
+        }
+        node.spliceText(startIndex, textContent.length - startIndex, '', true);
+
+        if (nextSibling !== null) {
+          currentBlock.normalizeTextNodes(true);
+        }
+      }
+      if (nextSibling === null) {
+        return;
+      }
+      node = nextSibling;
+    }
   }
   deleteBackward(): void {
     if (!this.isCaret()) {

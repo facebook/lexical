@@ -662,6 +662,7 @@ describe('OutlineSelection tests', () => {
         focusPath: [0, 0, 0],
         focusOffset: 0,
       },
+      setup: emptySetup,
     },
   ];
 

@@ -27,6 +27,20 @@ function insertParagraph(text) {
   };
 }
 
+function deleteWordBackward() {
+  return {
+    type: 'delete_word_backward',
+    text: null,
+  };
+}
+
+function deleteWordForward() {
+  return {
+    type: 'delete_word_forward',
+    text: null,
+  };
+}
+
 function deleteBackward() {
   return {
     type: 'delete_backward',
@@ -150,6 +164,14 @@ function applySelectionInputs(inputs, update, editor) {
         }
         case 'delete_forward': {
           selection.deleteForward();
+          break;
+        }
+        case 'delete_word_backward': {
+          selection.deleteWordBackward();
+          break;
+        }
+        case 'delete_word_forward': {
+          selection.deleteWordForward();
           break;
         }
         case 'format_text': {
@@ -622,6 +644,24 @@ describe('OutlineSelection tests', () => {
         focusOffset: 12,
       },
       setup: emptySetup,
+    },
+    {
+      name:
+        'Type text, move word backward, delete forward a word, delete backward',
+      inputs: [
+        insertText('Hello world'),
+        moveWordBackward(),
+        deleteWordForward(),
+        deleteWordBackward(),
+      ],
+      expectedHTML:
+        '<div contenteditable="true"><p><span data-text="true"><br></span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 0,
+        focusPath: [0, 0, 0],
+        focusOffset: 0,
+      },
     },
   ];
 

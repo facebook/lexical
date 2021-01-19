@@ -421,8 +421,18 @@ export class Selection {
     if (anchorNode === null) {
       return;
     }
+    // Handle removing block
+    if (
+      anchorNode.getPreviousSibling() === null &&
+      anchorNode.getTextContent() === ''
+    ) {
+      this.deleteBackward();
+      return;
+    }
+
     const anchorOffset = this.anchorOffset;
     const nodesToSearch = anchorNode.getPreviousSiblings();
+
     nodesToSearch.push(anchorNode);
 
     for (let i = nodesToSearch.length - 1; i >= 0; i--) {
@@ -453,7 +463,55 @@ export class Selection {
     }
   }
   deleteLineForward(): void {
-    invariant(false, 'deleteLineForward TODO');
+    const anchorNode = this.getAnchorNode();
+    if (anchorNode === null) {
+      return;
+    }
+
+    // Handle removing block
+    if (
+      anchorNode.getNextSibling() === null &&
+      anchorNode.getTextContent() === ''
+    ) {
+      const currentBlock = anchorNode.getParentBlockOrThrow();
+      if (currentBlock.getNextSibling() == null) {
+        this.deleteBackward();
+      } else {
+        this.deleteForward();
+      }
+      return;
+    }
+
+    const anchorOffset = this.anchorOffset;
+    const nodesToSearch = anchorNode.getNextSiblings();
+
+    nodesToSearch.push(anchorNode);
+
+    for (let i = 0; i < nodesToSearch.length; i++) {
+      const node = nodesToSearch[i];
+      if (node instanceof TextNode) {
+        const isAnchor = node === anchorNode;
+        const textContent = node.getTextContent();
+        const indexOfNewLine = textContent.indexOf('\n', anchorOffset);
+
+        if (indexOfNewLine > -1) {
+          const delCount = indexOfNewLine - anchorOffset + 1;
+          node.spliceText(anchorOffset, delCount, '', true);
+          break;
+        } else if (isAnchor) {
+          node.spliceText(
+            anchorOffset,
+            textContent.length - anchorOffset,
+            '',
+            true,
+          );
+        } else {
+          node.remove();
+        }
+      } else {
+        node.remove();
+      }
+    }
   }
   deleteWordBackward(): void {
     if (!this.isCaret()) {
@@ -551,7 +609,7 @@ export class Selection {
         if (nextSibling instanceof TextNode) {
           nextSibling.select(0, 0);
         } else {
-          nextSibling.select();;
+          nextSibling.select();
         }
         currentBlock.normalizeTextNodes(true);
         return;

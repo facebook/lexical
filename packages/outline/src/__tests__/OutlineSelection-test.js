@@ -14,6 +14,12 @@ function sanitizeHTML(html) {
   return html.replace(/\uFEFF/g, '');
 }
 
+function printWhitespace(whitespaceCharacter) {
+  return whitespaceCharacter.charCodeAt(0) === 160
+    ? '&nbsp;'
+    : whitespaceCharacter;
+}
+
 function insertText(text) {
   return {
     type: 'insert_text',
@@ -645,77 +651,93 @@ describe('OutlineSelection tests', () => {
       },
       setup: emptySetup,
     },
-    {
-      name:
-        'Type two words, delete word backward from end',
-      inputs: [
-        insertText('Hello world'),
-        deleteWordBackward(),
-      ],
-      expectedHTML:
-        '<div contenteditable=\"true\"><p dir=\"ltr\"><span data-text=\"true\">Hello </span></p></div>',
-      expectedSelection: {
-        anchorPath: [0, 0, 0],
-        anchorOffset: 6,
-        focusPath: [0, 0, 0],
-        focusOffset: 6,
+    ...[
+      {whitespaceCharacter: ' ', whitespaceName: 'space'},
+      {whitespaceCharacter: '\u00a0', whitespaceName: 'non-breaking space'},
+      {whitespaceCharacter: '\u2000', whitespaceName: 'en quad'},
+      {whitespaceCharacter: '\u2001', whitespaceName: 'em quad'},
+      {whitespaceCharacter: '\u2002', whitespaceName: 'en space'},
+      {whitespaceCharacter: '\u2003', whitespaceName: 'em space'},
+      {whitespaceCharacter: '\u2004', whitespaceName: 'three-per-em space'},
+      {whitespaceCharacter: '\u2005', whitespaceName: 'four-per-em space'},
+      {whitespaceCharacter: '\u2006', whitespaceName: 'six-per-em space'},
+      {whitespaceCharacter: '\u2007', whitespaceName: 'figure space'},
+      {whitespaceCharacter: '\u2008', whitespaceName: 'punctuation space'},
+      {whitespaceCharacter: '\u2009', whitespaceName: 'thin space'},
+      {whitespaceCharacter: '\u200A', whitespaceName: 'hair space'},
+    ].flatMap(({whitespaceCharacter, whitespaceName}) => ([
+      {
+        name:
+          `Type two words separated by a ${whitespaceName}, delete word backward from end`,
+        inputs: [
+          insertText(`Hello${whitespaceCharacter}world`),
+          deleteWordBackward(),
+        ],
+        expectedHTML:
+          `<div contenteditable=\"true\"><p dir=\"ltr\"><span data-text=\"true\">Hello${printWhitespace(whitespaceCharacter)}</span></p></div>`,
+        expectedSelection: {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 6,
+          focusPath: [0, 0, 0],
+          focusOffset: 6,
+        },
+        setup: emptySetup,
       },
-      setup: emptySetup,
-    },
-    {
-      name:
-        'Type two words, delete word forward from beginning',
-      inputs: [
-        insertText('Hello world'),
-        moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 0),
-        deleteWordForward(),
-      ],
-      expectedHTML:
-        '<div contenteditable=\"true\"><p dir=\"ltr\"><span data-text=\"true\"> world</span></p></div>',
-      expectedSelection: {
-        anchorPath: [0, 0, 0],
-        anchorOffset: 0,
-        focusPath: [0, 0, 0],
-        focusOffset: 0,
+      {
+        name:
+          `Type two words separated by a ${whitespaceName}, delete word forward from beginning`,
+        inputs: [
+          insertText(`Hello${whitespaceCharacter}world`),
+          moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 0),
+          deleteWordForward(),
+        ],
+        expectedHTML:
+          `<div contenteditable=\"true\"><p dir=\"ltr\"><span data-text=\"true\">${printWhitespace(whitespaceCharacter)}world</span></p></div>`,
+        expectedSelection: {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 0,
+          focusPath: [0, 0, 0],
+          focusOffset: 0,
+        },
+        setup: emptySetup,
       },
-      setup: emptySetup,
-    },
-    {
-      name:
-        'Type two words, delete word forward from beginning of preceding whitespace',
-      inputs: [
-        insertText('Hello world'),
-        moveNativeSelection([0, 0, 0], 5, [0, 0, 0], 5),
-        deleteWordForward(),
-      ],
-      expectedHTML:
-        '<div contenteditable=\"true\"><p dir=\"ltr\"><span data-text=\"true\">Hello</span></p></div>',
-      expectedSelection: {
-        anchorPath: [0, 0, 0],
-        anchorOffset: 5,
-        focusPath: [0, 0, 0],
-        focusOffset: 5,
+      {
+        name:
+          `Type two words separated by a ${whitespaceName}, delete word forward from beginning of preceding whitespace`,
+        inputs: [
+          insertText(`Hello${whitespaceCharacter}world`),
+          moveNativeSelection([0, 0, 0], 5, [0, 0, 0], 5),
+          deleteWordForward(),
+        ],
+        expectedHTML:
+          '<div contenteditable=\"true\"><p dir=\"ltr\"><span data-text=\"true\">Hello</span></p></div>',
+        expectedSelection: {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 5,
+          focusPath: [0, 0, 0],
+          focusOffset: 5,
+        },
+        setup: emptySetup,
       },
-      setup: emptySetup,
-    },
-    {
-      name:
-        'Type two words, delete word backward from end of trailing whitespace',
-      inputs: [
-        insertText('Hello world'),
-        moveNativeSelection([0, 0, 0], 6, [0, 0, 0], 6),
-        deleteWordBackward(),
-      ],
-      expectedHTML:
-        '<div contenteditable=\"true\"><p dir=\"ltr\"><span data-text=\"true\">world</span></p></div>',
-      expectedSelection: {
-        anchorPath: [0, 0, 0],
-        anchorOffset: 0,
-        focusPath: [0, 0, 0],
-        focusOffset: 0,
-      },
-      setup: emptySetup,
-    },
+      {
+        name:
+          `Type two words separated by a ${whitespaceName}, delete word backward from end of trailing whitespace`,
+        inputs: [
+          insertText(`Hello${whitespaceCharacter}world`),
+          moveNativeSelection([0, 0, 0], 6, [0, 0, 0], 6),
+          deleteWordBackward(),
+        ],
+        expectedHTML:
+          '<div contenteditable=\"true\"><p dir=\"ltr\"><span data-text=\"true\">world</span></p></div>',
+        expectedSelection: {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 0,
+          focusPath: [0, 0, 0],
+          focusOffset: 0,
+        },
+        setup: emptySetup,
+      }
+    ])),
   ];
 
   suite.forEach((testUnit, i) => {

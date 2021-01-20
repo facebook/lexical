@@ -26,6 +26,8 @@ import {
 import {invariant} from './OutlineUtils';
 import {OutlineEditor} from './OutlineEditor';
 
+const WHITESPACE_REGEX = /\s/g;
+
 function removeFirstSegment(node: TextNode): void {
   const currentBlock = node.getParentBlockOrThrow();
   const textContent = node.getTextContent();
@@ -554,7 +556,7 @@ export class Selection {
           if (s === 0) {
             node.spliceText(s, endIndex - s, '', true);
             return;
-          } else if (char === ' ') {
+          } else if (WHITESPACE_REGEX.test(char)) {
             if (foundNonWhitespace) {
               node.spliceText(s + 1, endIndex - s, '', true);
               return;
@@ -625,7 +627,7 @@ export class Selection {
         let foundNonWhitespace = false;
         for (let s = startIndex; s < textContent.length; s++) {
           const char = textContent[s];
-          if (char === ' ') {
+          if (WHITESPACE_REGEX.test(char)) {
             if (foundNonWhitespace) {
               node.spliceText(startIndex, s - startIndex, '', true);
               return;

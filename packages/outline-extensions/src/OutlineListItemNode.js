@@ -58,6 +58,14 @@ export class ListItemNode extends BlockNode {
     }
   }
 
+  mergeWithNextSibling(): void {
+    const nextBlock = this.getNextSibling();
+    if (nextBlock !== null) {
+      super.mergeWithNextSibling();
+      return;
+    }
+  }
+
   insertNewAfter(): ListItemNode {
     const nextSibling = this.getNextSibling();
     const prevSibling = this.getPreviousSibling();

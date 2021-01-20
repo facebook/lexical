@@ -11,7 +11,7 @@ import type {View} from './OutlineView';
 import type {OutlineNode, NodeKey} from './OutlineNode';
 import type {Node as ReactNode} from 'react';
 
-import {RootNode, TextNode, ParagraphNode, ListItemNode} from '.';
+import {RootNode, TextNode} from '.';
 import {
   applyTextTransforms,
   cloneViewModel,
@@ -152,8 +152,6 @@ export class OutlineEditor {
     this._registeredNodeTypes = new Map([
       ['text', TextNode],
       ['root', RootNode],
-      ['paragraph', ParagraphNode],
-      ['listitem', ListItemNode],
     ]);
     this._key = generateRandomKey();
     // React node decorators for portals
@@ -179,7 +177,7 @@ export class OutlineEditor {
   setComposing(isComposing: boolean): void {
     this._isComposing = isComposing;
     if (isComposing) {
-      reconcilePlaceholder(this);
+      reconcilePlaceholder(this, this._viewModel);
     }
   }
   setKeyDown(isKeyDown: boolean): void {
@@ -268,6 +266,6 @@ export class OutlineEditor {
       placeholderElement.firstChild.nodeValue = placeholderText;
     }
     this._placeholderText = placeholderText;
-    reconcilePlaceholder(this);
+    reconcilePlaceholder(this, this._viewModel);
   }
 }

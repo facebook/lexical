@@ -402,7 +402,10 @@ function reconcileNodeChildren(
   }
 }
 
-export function reconcilePlaceholder(editor: OutlineEditor): void {
+export function reconcilePlaceholder(
+  editor: OutlineEditor,
+  nextViewModel: ViewModel,
+): void {
   const placeholderText = editor._placeholderText;
   const editorElement = editor._editorElement;
   if (editorElement === null) {
@@ -421,11 +424,35 @@ export function reconcilePlaceholder(editor: OutlineEditor): void {
     editorElement.appendChild(placeholderElement);
     editor._placeholderElement = placeholderElement;
   }
-  if (editor._textContent !== '' || noPlaceholderText || editor._isComposing) {
+  if (
+    editor._textContent !== '' ||
+    noPlaceholderText ||
+    editor._isComposing ||
+    !isEditorEmpty(editor, nextViewModel)
+  ) {
     placeholderElement.style.display = 'none';
   } else {
     placeholderElement.style.display = 'block';
   }
+}
+
+function isEditorEmpty(
+  editor: OutlineEditor,
+  nextViewModel: ViewModel,
+): boolean {
+  if (editor._textContent !== '') {
+    return false;
+  }
+  const nodeMap = nextViewModel.nodeMap;
+  const topBlockIDs = nodeMap.root.children;
+  for (let i = 0; i < topBlockIDs.length; i++) {
+    const topBlock = nodeMap[topBlockIDs[i]];
+
+    if (topBlock && topBlock.type !== 'paragraph') {
+      return false;
+    }
+  }
+  return true;
 }
 
 function reconcileRoot(
@@ -448,7 +475,7 @@ function reconcileRoot(
   activeViewModelIsHistoric = nextViewModel.isHistoric;
   reconcileNode('root', null);
   editor._textContent = editorTextContent;
-  reconcilePlaceholder(editor);
+  reconcilePlaceholder(editor, nextViewModel);
   // We don't want a bunch of void checks throughout the scope
   // so instead we make it seem that these values are always set.
   // We also want to make sure we clear them down, otherwise we

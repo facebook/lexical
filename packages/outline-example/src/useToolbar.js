@@ -159,7 +159,6 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
         }
         setLastSelection(selection);
       } else if (!activeElement || activeElement.className !== 'link-input') {
-        // eslint-disable-next-line no-debugger
         positionToolbar(toolbar, null);
         setLastSelection(null);
         setEditMode(false);

@@ -113,6 +113,19 @@ export class BlockNode extends OutlineNode {
     }
     return getNodeByKey(children[childrenLength - 1]);
   }
+  getTextContent(): string {
+    let textContent = '';
+    const children = this.getChildren();
+    const childrenLength = children.length;
+    for (let i = 0; i < childrenLength; i++) {
+      const child = children[i];
+      textContent += child.getTextContent();
+      if (child instanceof BlockNode && i !== childrenLength - 1) {
+        textContent += '\n\n';
+      }
+    }
+    return textContent;
+  }
 
   // Mutators
 
@@ -206,5 +219,70 @@ export class BlockNode extends OutlineNode {
     if (toNormalize.length > 1) {
       combineAdjacentTextNodes(toNormalize, restoreSelection);
     }
+  }
+  mergeWithPreviousSibling(): void {
+    shouldErrorOnReadOnly();
+    let prevBlock = this.getPreviousSibling();
+    invariant(
+      prevBlock instanceof BlockNode,
+      'mergeWithPreviousSibling: previousSibling not found',
+    );
+    let lastChild = prevBlock.getLastChild();
+    if (lastChild instanceof BlockNode) {
+      prevBlock = lastChild;
+    }
+    const nodesToMove = this.getChildren();
+    lastChild = prevBlock.getLastChild();
+    invariant(
+      lastChild !== null,
+      'mergeWithPreviousSibling: lastChild not found',
+    );
+    for (let i = 0; i < nodesToMove.length; i++) {
+      const nodeToMove = nodesToMove[i];
+      lastChild.insertAfter(nodeToMove);
+      lastChild = nodeToMove;
+    }
+    const nodeToSelect = nodesToMove[0];
+    if (nodeToSelect instanceof TextNode) {
+      nodeToSelect.select(0, 0);
+    }
+    this.remove();
+    prevBlock.normalizeTextNodes(true);
+  }
+  mergeWithNextSibling(): void {
+    shouldErrorOnReadOnly();
+    const nextBlock = this.getNextSibling();
+    invariant(
+      nextBlock instanceof BlockNode,
+      'mergeWithNextSibling: nextSibling not found',
+    );
+    let firstChild = nextBlock.getFirstChild();
+    if (firstChild instanceof BlockNode) {
+      firstChild = firstChild.getFirstChild();
+    }
+    invariant(
+      firstChild !== null,
+      'mergeWithNextSibling: firstChild not found',
+    );
+    const nodesToMove = [firstChild, ...firstChild.getNextSiblings()];
+    let target = this.getLastChild();
+    invariant(target !== null, 'mergeWithNextSibling: no last child');
+    for (let i = 0; i < nodesToMove.length; i++) {
+      const nodeToMove = nodesToMove[i];
+      target.insertAfter(nodeToMove);
+      target = nodeToMove;
+    }
+    if (firstChild instanceof BlockNode) {
+      firstChild.remove();
+      if (nextBlock.getChildren().length === 0) {
+        nextBlock.remove();
+      }
+    } else {
+      nextBlock.remove();
+    }
+    this.normalizeTextNodes(true);
+  }
+  insertNewAfter(): null | BlockNode {
+    return null;
   }
 }

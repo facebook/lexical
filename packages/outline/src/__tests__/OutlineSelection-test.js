@@ -667,16 +667,16 @@ describe('OutlineSelection tests', () => {
       {whitespaceCharacter: '\u2008', whitespaceName: 'punctuation space'},
       {whitespaceCharacter: '\u2009', whitespaceName: 'thin space'},
       {whitespaceCharacter: '\u200A', whitespaceName: 'hair space'},
-    ].flatMap(({whitespaceCharacter, whitespaceName}) => ([
+    ].flatMap(({whitespaceCharacter, whitespaceName}) => [
       {
-        name:
-          `Type two words separated by a ${whitespaceName}, delete word backward from end`,
+        name: `Type two words separated by a ${whitespaceName}, delete word backward from end`,
         inputs: [
           insertText(`Hello${whitespaceCharacter}world`),
           deleteWordBackward(),
         ],
-        expectedHTML:
-          `<div contenteditable=\"true\"><p dir=\"ltr\"><span data-text=\"true\">Hello${printWhitespace(whitespaceCharacter)}</span></p></div>`,
+        expectedHTML: `<div contenteditable=\"true\"><p dir=\"ltr\"><span data-text=\"true\">Hello${printWhitespace(
+          whitespaceCharacter,
+        )}</span></p></div>`,
         expectedSelection: {
           anchorPath: [0, 0, 0],
           anchorOffset: 6,
@@ -686,15 +686,15 @@ describe('OutlineSelection tests', () => {
         setup: emptySetup,
       },
       {
-        name:
-          `Type two words separated by a ${whitespaceName}, delete word forward from beginning`,
+        name: `Type two words separated by a ${whitespaceName}, delete word forward from beginning`,
         inputs: [
           insertText(`Hello${whitespaceCharacter}world`),
           moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 0),
           deleteWordForward(),
         ],
-        expectedHTML:
-          `<div contenteditable=\"true\"><p dir=\"ltr\"><span data-text=\"true\">${printWhitespace(whitespaceCharacter)}world</span></p></div>`,
+        expectedHTML: `<div contenteditable=\"true\"><p dir=\"ltr\"><span data-text=\"true\">${printWhitespace(
+          whitespaceCharacter,
+        )}world</span></p></div>`,
         expectedSelection: {
           anchorPath: [0, 0, 0],
           anchorOffset: 0,
@@ -704,15 +704,14 @@ describe('OutlineSelection tests', () => {
         setup: emptySetup,
       },
       {
-        name:
-          `Type two words separated by a ${whitespaceName}, delete word forward from beginning of preceding whitespace`,
+        name: `Type two words separated by a ${whitespaceName}, delete word forward from beginning of preceding whitespace`,
         inputs: [
           insertText(`Hello${whitespaceCharacter}world`),
           moveNativeSelection([0, 0, 0], 5, [0, 0, 0], 5),
           deleteWordForward(),
         ],
         expectedHTML:
-          '<div contenteditable=\"true\"><p dir=\"ltr\"><span data-text=\"true\">Hello</span></p></div>',
+          '<div contenteditable="true"><p dir="ltr"><span data-text="true">Hello</span></p></div>',
         expectedSelection: {
           anchorPath: [0, 0, 0],
           anchorOffset: 5,
@@ -722,15 +721,14 @@ describe('OutlineSelection tests', () => {
         setup: emptySetup,
       },
       {
-        name:
-          `Type two words separated by a ${whitespaceName}, delete word backward from end of trailing whitespace`,
+        name: `Type two words separated by a ${whitespaceName}, delete word backward from end of trailing whitespace`,
         inputs: [
           insertText(`Hello${whitespaceCharacter}world`),
           moveNativeSelection([0, 0, 0], 6, [0, 0, 0], 6),
           deleteWordBackward(),
         ],
         expectedHTML:
-          '<div contenteditable=\"true\"><p dir=\"ltr\"><span data-text=\"true\">world</span></p></div>',
+          '<div contenteditable="true"><p dir="ltr"><span data-text="true">world</span></p></div>',
         expectedSelection: {
           anchorPath: [0, 0, 0],
           anchorOffset: 0,
@@ -738,8 +736,8 @@ describe('OutlineSelection tests', () => {
           focusOffset: 0,
         },
         setup: emptySetup,
-      }
-    ])),
+      },
+    ]),
   ];
 
   suite.forEach((testUnit, i) => {

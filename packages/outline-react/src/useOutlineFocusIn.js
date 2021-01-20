@@ -14,7 +14,7 @@ import {createTextNode} from 'outline';
 type UnknownState = Object;
 
 import useOutlineEvent from 'outline-react/useOutlineEvent';
-import {createParagraphNode} from 'outline';
+import {createParagraphNode} from 'outline-extensions/ParagraphNode';
 
 function onFocusIn(event: FocusEvent, view: View) {
   const root = view.getRoot();

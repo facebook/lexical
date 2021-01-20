@@ -12,6 +12,7 @@ import type {OutlineEditor, Selection} from 'outline';
 import {useEffect, useRef} from 'react';
 import useOutlineInputEvents from 'outline-react/useOutlineInputEvents';
 import useOutlineFocusIn from 'outline-react/useOutlineFocusIn';
+import {ParagraphNode} from 'outline-extensions/ParagraphNode';
 
 export default function useOutlinePlainText(
   editor: OutlineEditor,
@@ -37,6 +38,12 @@ export default function useOutlinePlainText(
       pluginsState.isReadOnly = isReadOnly;
     }
   }, [isReadOnly]);
+
+  useEffect(() => {
+    if (editor !== null) {
+      return editor.addNodeType('paragraph', ParagraphNode);
+    }
+  }, [editor]);
 
   const inputEvents = useOutlineInputEvents(editor, pluginStateRef);
   useOutlineFocusIn(editor, pluginStateRef);

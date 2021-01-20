@@ -647,15 +647,31 @@ describe('OutlineSelection tests', () => {
     },
     {
       name:
-        'Type text, move word backward, delete forward a word, delete backward',
+        'Type two words, delete word backward from end',
       inputs: [
         insertText('Hello world'),
-        moveWordBackward(),
-        deleteWordForward(),
         deleteWordBackward(),
       ],
       expectedHTML:
-        '<div contenteditable="true"><p><span data-text="true"><br></span></p></div>',
+        '<div contenteditable=\"true\"><p dir=\"ltr\"><span data-text=\"true\">Hello </span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 6,
+        focusPath: [0, 0, 0],
+        focusOffset: 6,
+      },
+      setup: emptySetup,
+    },
+    {
+      name:
+        'Type two words, delete word forward from beginning',
+      inputs: [
+        insertText('Hello world'),
+        moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 0),
+        deleteWordForward(),
+      ],
+      expectedHTML:
+        '<div contenteditable=\"true\"><p dir=\"ltr\"><span data-text=\"true\"> world</span></p></div>',
       expectedSelection: {
         anchorPath: [0, 0, 0],
         anchorOffset: 0,

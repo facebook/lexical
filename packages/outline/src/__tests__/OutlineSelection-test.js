@@ -680,6 +680,42 @@ describe('OutlineSelection tests', () => {
       },
       setup: emptySetup,
     },
+    {
+      name:
+        'Type two words, delete word forward from beginning of preceding whitespace',
+      inputs: [
+        insertText('Hello world'),
+        moveNativeSelection([0, 0, 0], 5, [0, 0, 0], 5),
+        deleteWordForward(),
+      ],
+      expectedHTML:
+        '<div contenteditable=\"true\"><p dir=\"ltr\"><span data-text=\"true\">Hello</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 5,
+        focusPath: [0, 0, 0],
+        focusOffset: 5,
+      },
+      setup: emptySetup,
+    },
+    {
+      name:
+        'Type two words, delete word backward from end of trailing whitespace',
+      inputs: [
+        insertText('Hello world'),
+        moveNativeSelection([0, 0, 0], 6, [0, 0, 0], 6),
+        deleteWordBackward(),
+      ],
+      expectedHTML:
+        '<div contenteditable=\"true\"><p dir=\"ltr\"><span data-text=\"true\">world</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 0,
+        focusPath: [0, 0, 0],
+        focusOffset: 0,
+      },
+      setup: emptySetup,
+    },
   ];
 
   suite.forEach((testUnit, i) => {

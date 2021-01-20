@@ -15,6 +15,8 @@ import useOutlineFocusIn from 'outline-react/useOutlineFocusIn';
 import {HeadingNode} from 'outline-extensions/HeadingNode';
 import {ListNode} from 'outline-extensions/ListNode';
 import {QuoteNode} from 'outline-extensions/QuoteNode';
+import {ParagraphNode} from 'outline-extensions/ParagraphNode';
+import {ListItemNode} from 'outline-extensions/ListItemNode';
 
 export default function useOutlineRichText(
   editor: OutlineEditor,
@@ -46,11 +48,18 @@ export default function useOutlineRichText(
       const removeHeadingType = editor.addNodeType('heading', HeadingNode);
       const removeListType = editor.addNodeType('list', ListNode);
       const removeQuoteType = editor.addNodeType('quote', QuoteNode);
+      const removeParagraphType = editor.addNodeType(
+        'paragraph',
+        ParagraphNode,
+      );
+      const removeListItemType = editor.addNodeType('listitem', ListItemNode);
 
       return () => {
         removeHeadingType();
         removeListType();
         removeQuoteType();
+        removeParagraphType();
+        removeListItemType();
       };
     }
   }, [editor]);

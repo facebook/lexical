@@ -3,6 +3,7 @@ let React;
 let ReactDOM;
 let ReactTestUtils;
 let Outline;
+let ParagraphNode;
 
 describe('OutlineEditor tests', () => {
   beforeEach(() => {
@@ -10,6 +11,7 @@ describe('OutlineEditor tests', () => {
     ReactDOM = require('react-dom');
     ReactTestUtils = require('react-dom/test-utils');
     Outline = require('outline');
+    ParagraphNode = require('outline-extensions/ParagraphNode');
 
     container = document.createElement('div');
     document.body.appendChild(container);
@@ -51,7 +53,7 @@ describe('OutlineEditor tests', () => {
   test('update + read works', () => {
     // Update editor view
     editor.update((view) => {
-      const paragraph = Outline.createParagraphNode();
+      const paragraph = ParagraphNode.createParagraphNode();
       const text = Outline.createTextNode();
       paragraph.append(text);
       view.getRoot().append(paragraph);

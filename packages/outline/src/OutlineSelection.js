@@ -12,17 +12,8 @@ import type {ViewModel} from './OutlineView';
 
 import {getActiveViewModel} from './OutlineView';
 import {getNodeKeyFromDOM} from './OutlineReconciler';
-import {getNodeByKey, HAS_DIRECTION} from './OutlineNode';
-import {
-  createListItemNode,
-  createTextNode,
-  createParagraphNode,
-  BlockNode,
-  ListItemNode,
-  TextNode,
-  RootNode,
-  ParagraphNode,
-} from '.';
+import {getNodeByKey} from './OutlineNode';
+import {createTextNode, BlockNode, TextNode, RootNode} from '.';
 import {invariant} from './OutlineUtils';
 import {OutlineEditor} from './OutlineEditor';
 
@@ -354,39 +345,8 @@ export class Selection {
       nodesToMove.push(splitNode);
       anchorOffset = 0;
     }
-    let newBlock;
-
-    if (currentBlock instanceof ListItemNode) {
-      const nextSibling = currentBlock.getNextSibling();
-      const prevSibling = currentBlock.getPreviousSibling();
-      const list = currentBlock.getParent();
-
-      if (
-        list instanceof BlockNode &&
-        nodesToMove.length === 1 &&
-        currentBlock.getTextContent() === '' &&
-        (prevSibling === null || nextSibling === null)
-      ) {
-        if (nextSibling === null) {
-          newBlock = createParagraphNode();
-          currentBlock.remove();
-          list.insertAfter(newBlock);
-        } else {
-          newBlock = createParagraphNode();
-          currentBlock.remove();
-          list.insertBefore(newBlock);
-        }
-        if (list.getChildren().length === 0) {
-          list.remove();
-        }
-      } else {
-        newBlock = createListItemNode();
-        currentBlock.insertAfter(newBlock);
-      }
-    } else {
-      newBlock = createParagraphNode();
-      currentBlock.insertAfter(newBlock);
-    }
+    const newBlock = currentBlock.insertNewAfter();
+    invariant(newBlock instanceof BlockNode, 'Should never happen');
 
     const nodesToMoveLength = nodesToMove.length;
     let firstChild = null;
@@ -670,52 +630,7 @@ export class Selection {
 
     if (anchorOffset === 0) {
       if (prevSibling === null) {
-        let prevBlock = currentBlock.getPreviousSibling();
-        if (prevBlock === null) {
-          if (currentBlock instanceof ListItemNode) {
-            const listNode = currentBlock.getParentOrThrow();
-            const paragraph = createParagraphNode();
-            const children = currentBlock.getChildren();
-            children.forEach((child) => paragraph.append(child));
-
-            if (listNode.getChildren().length === 1) {
-              listNode.replace(paragraph);
-            } else {
-              listNode.insertBefore(paragraph);
-              currentBlock.remove();
-            }
-            anchorNode.select(0, 0);
-            return;
-          } else if (!(currentBlock instanceof ParagraphNode)) {
-            const paragraph = createParagraphNode();
-            const children = currentBlock.getChildren();
-            children.forEach((child) => paragraph.append(child));
-            currentBlock.replace(paragraph);
-            return;
-          } else if (anchorNode.getFlags() !== HAS_DIRECTION) {
-            // Otherwise just reset the text node flags
-            anchorNode.setFlags(HAS_DIRECTION);
-          }
-        } else if (prevBlock instanceof BlockNode) {
-          let lastChild = prevBlock.getLastChild();
-          if (lastChild instanceof BlockNode) {
-            prevBlock = lastChild;
-          }
-          const nodesToMove = [anchorNode, ...anchorNode.getNextSiblings()];
-          lastChild = prevBlock.getLastChild();
-          invariant(lastChild !== null, 'deleteBackward: lastChild not found');
-          for (let i = 0; i < nodesToMove.length; i++) {
-            const nodeToMove = nodesToMove[i];
-            lastChild.insertAfter(nodeToMove);
-            lastChild = nodeToMove;
-          }
-          const nodeToSelect = nodesToMove[0];
-          if (nodeToSelect instanceof TextNode) {
-            nodeToSelect.select(0, 0);
-          }
-          currentBlock.remove();
-          prevBlock.normalizeTextNodes(true);
-        }
+        currentBlock.mergeWithPreviousSibling();
       } else if (prevSibling instanceof TextNode) {
         if (prevSibling.isImmutable()) {
           prevSibling.remove();
@@ -759,33 +674,7 @@ export class Selection {
 
     if (anchorOffset === textContentLength) {
       if (nextSibling === null) {
-        const nextBlock = currentBlock.getNextSibling();
-        if (nextBlock instanceof BlockNode) {
-          let firstChild = nextBlock.getFirstChild();
-          if (firstChild instanceof ListItemNode) {
-            firstChild = firstChild.getFirstChild();
-          }
-          invariant(firstChild !== null, 'deleteForward: lastChild not found');
-          const nodesToMove = [firstChild, ...firstChild.getNextSiblings()];
-          let target = anchorNode;
-          for (let i = 0; i < nodesToMove.length; i++) {
-            const nodeToMove = nodesToMove[i];
-            target.insertAfter(nodeToMove);
-            target = nodeToMove;
-          }
-          if (firstChild instanceof ListItemNode) {
-            firstChild.remove();
-            if (nextBlock.getChildren().length === 0) {
-              nextBlock.remove();
-            }
-          } else {
-            nextBlock.remove();
-          }
-          currentBlock.normalizeTextNodes(true);
-        } else if (anchorNode.getFlags() !== HAS_DIRECTION) {
-          // Otherwise just reset the text node flags
-          anchorNode.setFlags(HAS_DIRECTION);
-        }
+        currentBlock.mergeWithNextSibling();
       } else if (nextSibling instanceof TextNode) {
         if (nextSibling.isImmutable()) {
           nextSibling.remove();
@@ -1012,7 +901,7 @@ export class Selection {
           const prevBlock = currentBlock.getPreviousSibling();
           if (prevBlock instanceof BlockNode) {
             let lastChild = prevBlock.getLastChild();
-            if (lastChild instanceof ListItemNode) {
+            if (lastChild instanceof BlockNode) {
               lastChild = lastChild.getFirstChild();
             }
             if (lastChild !== null) {
@@ -1093,9 +982,11 @@ export class Selection {
         if (offset === textContentLength) {
           const currentBlock = node.getParentBlockOrThrow();
           let nextBlock = currentBlock.getNextSibling();
-          if (nextBlock === null && currentBlock instanceof ListItemNode) {
+          if (nextBlock === null && currentBlock instanceof BlockNode) {
             const list = currentBlock.getParentOrThrow();
-            nextBlock = list.getNextSibling();
+            if (!(list instanceof RootNode)) {
+              nextBlock = list.getNextSibling();
+            }
           }
           if (nextBlock instanceof BlockNode) {
             const firstChild = nextBlock.getFirstChild();
@@ -1237,7 +1128,7 @@ export class Selection {
         const prevBlock = currentBlock.getPreviousSibling();
         if (prevBlock instanceof BlockNode) {
           let lastChild = prevBlock.getLastChild();
-          if (lastChild instanceof ListItemNode) {
+          if (lastChild instanceof BlockNode) {
             lastChild = lastChild.getFirstChild();
           }
           if (lastChild !== null) {
@@ -1302,9 +1193,11 @@ export class Selection {
       } else {
         const currentBlock = node.getParentBlockOrThrow();
         let nextBlock = currentBlock.getNextSibling();
-        if (nextBlock === null && currentBlock instanceof ListItemNode) {
+        if (nextBlock === null && currentBlock instanceof BlockNode) {
           const list = currentBlock.getParentOrThrow();
-          nextBlock = list.getNextSibling();
+          if (!(list instanceof RootNode)) {
+            nextBlock = list.getNextSibling();
+          }
         }
         if (nextBlock instanceof BlockNode) {
           const firstChild = nextBlock.getFirstChild();

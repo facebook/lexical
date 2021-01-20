@@ -11,7 +11,8 @@ import type {OutlineEditor, View} from 'outline';
 import type {TextNode} from 'outline';
 
 import {useEffect} from 'react';
-import {createListItemNode, ParagraphNode} from 'outline';
+import {ParagraphNode} from 'outline-extensions/ParagraphNode';
+import {createListItemNode} from 'outline-extensions/ListItemNode';
 import {createHeadingNode} from 'outline-extensions/HeadingNode';
 import {createListNode} from 'outline-extensions/ListNode';
 import {createQuoteNode} from 'outline-extensions/QuoteNode';

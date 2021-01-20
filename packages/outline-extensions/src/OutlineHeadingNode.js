@@ -10,6 +10,7 @@
 import type {NodeKey} from 'outline';
 
 import {BlockNode} from 'outline';
+import {createParagraphNode} from 'outline-extensions/ParagraphNode';
 
 type HeadingTagType = 'h1' | 'h2' | 'h3' | 'h4' | 'h5';
 
@@ -45,6 +46,27 @@ export class HeadingNode extends BlockNode {
   }
   updateDOM(prevNode: HeadingNode, dom: HTMLElement): boolean {
     return false;
+  }
+
+  // Mutation
+
+  mergeWithPreviousSibling(): void {
+    const prevBlock = this.getPreviousSibling();
+    if (prevBlock === null) {
+      const paragraph = createParagraphNode();
+      const children = this.getChildren();
+      children.forEach((child) => paragraph.append(child));
+      this.replace(paragraph);
+      return;
+    }
+    super.mergeWithPreviousSibling();
+  }
+
+  mergeWithNextSibling(): void {
+    const nextBlock = this.getNextSibling();
+    if (nextBlock !== null) {
+      super.mergeWithNextSibling();
+    }
   }
 }
 

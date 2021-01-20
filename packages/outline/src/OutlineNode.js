@@ -391,22 +391,7 @@ export class OutlineNode {
     return latest;
   }
   getTextContent(): string {
-    if (this instanceof TextNode) {
-      return this.getTextContent();
-    }
-    // If this isn't a TextNode, it must be a subclass of BlockNode.
-    invariant(this instanceof BlockNode, 'Found non-BlockNode non-TextNode');
-    let textContent = '';
-    const children = this.getChildren();
-    const childrenLength = children.length;
-    for (let i = 0; i < childrenLength; i++) {
-      const child = children[i];
-      textContent += child.getTextContent();
-      if (child instanceof BlockNode && i !== childrenLength - 1) {
-        textContent += '\n\n';
-      }
-    }
-    return textContent;
+    return '';
   }
 
   // View

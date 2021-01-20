@@ -3,6 +3,7 @@ let React;
 let ReactDOM;
 let ReactTestUtils;
 let Outline;
+let ParagraphNode;
 
 const FORMAT_BOLD = 0;
 const FORMAT_ITALIC = 1;
@@ -223,6 +224,7 @@ describe('OutlineSelection tests', () => {
     ReactDOM = require('react-dom');
     ReactTestUtils = require('react-dom/test-utils');
     Outline = require('outline');
+    ParagraphNode = require('outline-extensions/ParagraphNode');
 
     container = document.createElement('div');
     document.body.appendChild(container);
@@ -266,7 +268,7 @@ describe('OutlineSelection tests', () => {
   function emptySetup() {
     // Insert initial block
     update((view) => {
-      const paragraph = Outline.createParagraphNode();
+      const paragraph = ParagraphNode.createParagraphNode();
       const text = Outline.createTextNode();
       paragraph.append(text);
       view.getRoot().append(paragraph);

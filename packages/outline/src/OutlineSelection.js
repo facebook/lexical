@@ -551,7 +551,10 @@ export class Selection {
 
         for (let s = endIndex - 1; s >= 0; s--) {
           const char = textContent[s];
-          if (char === ' ') {
+          if (s === 0) {
+            node.spliceText(s, endIndex - s, '', true);
+            return;
+          } else if (char === ' ') {
             if (foundNonWhitespace) {
               node.spliceText(s + 1, endIndex - s, '', true);
               return;

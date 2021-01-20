@@ -553,7 +553,7 @@ export class Selection {
           const char = textContent[s];
           if (char === ' ') {
             if (foundNonWhitespace) {
-              node.spliceText(s, endIndex - s, '', true);
+              node.spliceText(s + 1, endIndex - s, '', true);
               return;
             }
           } else if (char === '\n') {

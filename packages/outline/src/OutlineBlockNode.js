@@ -223,64 +223,60 @@ export class BlockNode extends OutlineNode {
   mergeWithPreviousSibling(): void {
     shouldErrorOnReadOnly();
     let prevBlock = this.getPreviousSibling();
-    invariant(
-      prevBlock instanceof BlockNode,
-      'mergeWithPreviousSibling: previousSibling not found',
-    );
-    let lastChild = prevBlock.getLastChild();
-    if (lastChild instanceof BlockNode) {
-      prevBlock = lastChild;
+    if (prevBlock instanceof BlockNode) {
+      let lastChild = prevBlock.getLastChild();
+      if (lastChild instanceof BlockNode) {
+        prevBlock = lastChild;
+      }
+      const nodesToMove = this.getChildren();
+      lastChild = prevBlock.getLastChild();
+      invariant(
+        lastChild !== null,
+        'mergeWithPreviousSibling: lastChild not found',
+      );
+      for (let i = 0; i < nodesToMove.length; i++) {
+        const nodeToMove = nodesToMove[i];
+        lastChild.insertAfter(nodeToMove);
+        lastChild = nodeToMove;
+      }
+      const nodeToSelect = nodesToMove[0];
+      if (nodeToSelect instanceof TextNode) {
+        nodeToSelect.select(0, 0);
+      }
+      this.remove();
+      prevBlock.normalizeTextNodes(true);
     }
-    const nodesToMove = this.getChildren();
-    lastChild = prevBlock.getLastChild();
-    invariant(
-      lastChild !== null,
-      'mergeWithPreviousSibling: lastChild not found',
-    );
-    for (let i = 0; i < nodesToMove.length; i++) {
-      const nodeToMove = nodesToMove[i];
-      lastChild.insertAfter(nodeToMove);
-      lastChild = nodeToMove;
-    }
-    const nodeToSelect = nodesToMove[0];
-    if (nodeToSelect instanceof TextNode) {
-      nodeToSelect.select(0, 0);
-    }
-    this.remove();
-    prevBlock.normalizeTextNodes(true);
   }
   mergeWithNextSibling(): void {
     shouldErrorOnReadOnly();
     const nextBlock = this.getNextSibling();
-    invariant(
-      nextBlock instanceof BlockNode,
-      'mergeWithNextSibling: nextSibling not found',
-    );
-    let firstChild = nextBlock.getFirstChild();
-    if (firstChild instanceof BlockNode) {
-      firstChild = firstChild.getFirstChild();
-    }
-    invariant(
-      firstChild !== null,
-      'mergeWithNextSibling: firstChild not found',
-    );
-    const nodesToMove = [firstChild, ...firstChild.getNextSiblings()];
-    let target = this.getLastChild();
-    invariant(target !== null, 'mergeWithNextSibling: no last child');
-    for (let i = 0; i < nodesToMove.length; i++) {
-      const nodeToMove = nodesToMove[i];
-      target.insertAfter(nodeToMove);
-      target = nodeToMove;
-    }
-    if (firstChild instanceof BlockNode) {
-      firstChild.remove();
-      if (nextBlock.getChildren().length === 0) {
+    if (nextBlock instanceof BlockNode) {
+      let firstChild = nextBlock.getFirstChild();
+      if (firstChild instanceof BlockNode) {
+        firstChild = firstChild.getFirstChild();
+      }
+      invariant(
+        firstChild !== null,
+        'mergeWithNextSibling: firstChild not found',
+      );
+      const nodesToMove = [firstChild, ...firstChild.getNextSiblings()];
+      let target = this.getLastChild();
+      invariant(target !== null, 'mergeWithNextSibling: no last child');
+      for (let i = 0; i < nodesToMove.length; i++) {
+        const nodeToMove = nodesToMove[i];
+        target.insertAfter(nodeToMove);
+        target = nodeToMove;
+      }
+      if (firstChild instanceof BlockNode) {
+        firstChild.remove();
+        if (nextBlock.getChildren().length === 0) {
+          nextBlock.remove();
+        }
+      } else {
         nextBlock.remove();
       }
-    } else {
-      nextBlock.remove();
+      this.normalizeTextNodes(true);
     }
-    this.normalizeTextNodes(true);
   }
   insertNewAfter(): null | BlockNode {
     return null;

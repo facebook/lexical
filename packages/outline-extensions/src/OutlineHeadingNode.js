@@ -61,13 +61,6 @@ export class HeadingNode extends BlockNode {
     }
     super.mergeWithPreviousSibling();
   }
-
-  mergeWithNextSibling(): void {
-    const nextBlock = this.getNextSibling();
-    if (nextBlock !== null) {
-      super.mergeWithNextSibling();
-    }
-  }
 }
 
 export function createHeadingNode(headingTag: HeadingTagType): HeadingNode {

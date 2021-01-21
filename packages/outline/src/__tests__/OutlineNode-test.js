@@ -164,6 +164,32 @@ describe('OutlineNode tests', () => {
     );
   });
 
+  test('insertAfter (immutable)', () => {
+    update((view) => {
+      const textNode = view.getRoot().getFirstChild().getFirstChild();
+      const newTextNode = Outline.createTextNode('New node!');
+      newTextNode.makeImmutable();
+      textNode.insertAfter(newTextNode);
+    });
+    expect(sanitizeHTML(container.innerHTML)).toBe(
+      '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
+        '<span data-text="true" tabindex="-1">New node!</span><span data-text="true"></span></p></div>',
+    );
+  });
+
+  test('insertAfter (segmented)', () => {
+    update((view) => {
+      const textNode = view.getRoot().getFirstChild().getFirstChild();
+      const newTextNode = Outline.createTextNode('New node!');
+      newTextNode.makeSegmented();
+      textNode.insertAfter(newTextNode);
+    });
+    expect(sanitizeHTML(container.innerHTML)).toBe(
+      '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
+        '<span data-text="true" tabindex="-1">New node!</span><span data-text="true"></span></p></div>',
+    );
+  });
+
   test('insertBefore', () => {
     update((view) => {
       const textNode = view.getRoot().getFirstChild().getFirstChild();
@@ -172,6 +198,34 @@ describe('OutlineNode tests', () => {
     });
     expect(sanitizeHTML(container.innerHTML)).toBe(
       '<div contenteditable="true"><p dir="ltr"><span data-text="true">New node!</span>' +
+        '<span data-text="true"></span></p></div>',
+    );
+  });
+
+  test('insertBefore (immutable)', () => {
+    update((view) => {
+      const textNode = view.getRoot().getFirstChild().getFirstChild();
+      const newTextNode = Outline.createTextNode('New node!');
+      newTextNode.makeImmutable();
+      textNode.insertBefore(newTextNode);
+    });
+    expect(sanitizeHTML(container.innerHTML)).toBe(
+      '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
+        '<span data-text="true" tabindex="-1">New node!</span>' +
+        '<span data-text="true"></span></p></div>',
+    );
+  });
+
+  test('insertBefore (segmented)', () => {
+    update((view) => {
+      const textNode = view.getRoot().getFirstChild().getFirstChild();
+      const newTextNode = Outline.createTextNode('New node!');
+      newTextNode.makeSegmented();
+      textNode.insertBefore(newTextNode);
+    });
+    expect(sanitizeHTML(container.innerHTML)).toBe(
+      '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
+        '<span data-text="true" tabindex="-1">New node!</span>' +
         '<span data-text="true"></span></p></div>',
     );
   });

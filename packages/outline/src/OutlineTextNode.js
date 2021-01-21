@@ -11,12 +11,7 @@ import type {Selection} from './OutlineSelection';
 import type {NodeKey} from './OutlineNode';
 
 import {OutlineNode} from './OutlineNode';
-import {
-  getWritableNode,
-  IS_IMMUTABLE,
-  IS_SEGMENTED,
-  HAS_DIRECTION,
-} from './OutlineNode';
+import {getWritableNode, IS_SEGMENTED, HAS_DIRECTION} from './OutlineNode';
 import {getSelection, makeSelection} from './OutlineSelection';
 import {invariant} from './OutlineUtils';
 import {shouldErrorOnReadOnly} from './OutlineView';
@@ -375,17 +370,10 @@ export class TextNode extends OutlineNode {
     const domStyle = innerDOM.style;
     const text = this.text;
 
-    if (flags & IS_IMMUTABLE || flags & IS_SEGMENTED) {
-      dom.contentEditable = 'false';
-    }
-
     setTextStyling(innerTag, 0, flags, domStyle);
     setTextContent(null, text, innerDOM, this);
     // add data-text attribute
     innerDOM.setAttribute('data-text', 'true');
-    if (flags & IS_SEGMENTED) {
-      innerDOM.setAttribute('spellcheck', 'false');
-    }
     if (flags & IS_LINK) {
       innerDOM.setAttribute('data-link', 'true');
     }

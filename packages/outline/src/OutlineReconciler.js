@@ -12,7 +12,7 @@ import type {NodeMapType, ViewModel} from './OutlineView';
 import type {OutlineEditor} from './OutlineEditor';
 import type {Selection} from './OutlineSelection';
 
-import {getNodeByKey} from './OutlineNode';
+import {getNodeByKey, IS_IMMUTABLE, IS_SEGMENTED} from './OutlineNode';
 import {BlockNode, TextNode} from '.';
 import {invariant} from './OutlineUtils';
 
@@ -101,7 +101,15 @@ function createNode(
 ): HTMLElement {
   const node = activeNextNodeMap[key];
   const dom = node.createDOM();
+  const flags = node.flags;
   storeDOMWithKey(key, dom, activeEditor);
+
+  if (flags & IS_IMMUTABLE || flags & IS_SEGMENTED) {
+    dom.contentEditable = 'false';
+    if (!dom.hasAttribute('tabindex')) {
+      dom.tabIndex = -1;
+    }
+  }
 
   if (node instanceof TextNode) {
     const text = node.text;
@@ -517,18 +525,20 @@ function reconcileSelection(selection: Selection, editor: OutlineEditor): void {
   const focusOffset = selection.focusOffset;
   const anchorNode = getNodeByKey(anchorKey);
   const focusNode = getNodeByKey(anchorKey);
+  const domSelection = window.getSelection();
+
   if (
     anchorNode === focusNode &&
     anchorNode !== null &&
     (anchorNode.isImmutable() || anchorNode.isSegmented())
   ) {
     const anchorElement = editor.getElementByKey(anchorKey);
+    domSelection.setBaseAndExtent(anchorElement, 0, anchorElement, 0);
     anchorElement.focus();
     return;
   }
   const anchorDOM = getSelectionDOMNode(anchorKey, editor);
   const focusDOM = getSelectionDOMNode(focusKey, editor);
-  const domSelection = window.getSelection();
   domSelection.setBaseAndExtent(anchorDOM, anchorOffset, focusDOM, focusOffset);
   const editorElement = editor.getEditorElement();
   if (document.activeElement !== editorElement && editorElement !== null) {

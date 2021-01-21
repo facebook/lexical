@@ -687,6 +687,11 @@ export class Selection {
         currentBlock.mergeWithPreviousSibling();
       } else if (prevSibling instanceof TextNode) {
         if (prevSibling.isImmutable()) {
+          if (prevSibling === anchorNode) {
+            const nextPrevSibling = prevSibling.getPreviousSibling();
+            invariant(nextPrevSibling !== null, 'Should never happen');
+            nextPrevSibling.select();
+          }
           prevSibling.remove();
           currentBlock.normalizeTextNodes(true);
         } else if (prevSibling.isSegmented()) {

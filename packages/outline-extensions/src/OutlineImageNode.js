@@ -39,7 +39,6 @@ export class ImageNode extends OutlineNode {
     const img = document.createElement('img');
     img.src = this._src;
     img.alt = this._altText;
-    dom.contentEditable = 'false';
     dom.appendChild(img);
     return dom;
   }

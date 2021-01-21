@@ -23,8 +23,8 @@ const isClean = argv.clean;
 const closureOptions = {
   assume_function_wrapper: true,
   compilation_level: 'SIMPLE',
-  language_in: 'ECMASCRIPT_2018',
-  language_out: 'ECMASCRIPT_2018',
+  language_in: 'ECMASCRIPT_2019',
+  language_out: 'ECMASCRIPT_2019',
   env: 'CUSTOM',
   warning_level: 'QUIET',
   apply_input_source_maps: false,

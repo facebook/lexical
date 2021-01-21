@@ -53,7 +53,6 @@ function textNodeTransform(node: TextNode, view: View): void {
       }
       const emojiNode = createEmoji(emojiStyle, emojiText);
       targetNode.replace(emojiNode);
-      emojiNode.wrapInTextNodes();
       emojiNode.selectAfter(0, 0);
       emojiNode.getParentOrThrow().normalizeTextNodes(true);
       break;

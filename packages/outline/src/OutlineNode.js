@@ -85,10 +85,14 @@ function replaceNode<N: OutlineNode>(
   }
   writableReplaceWith.parent = newParent.key;
   toReplace.remove();
+  const flags = replaceWith.flags;
+  if (flags & IS_IMMUTABLE || flags & IS_SEGMENTED) {
+    wrapInTextNodes(replaceWith);
+  }
   return writableReplaceWith;
 }
 
-function wrapInTextNodes<N: OutlineNode>(node: N): N {
+export function wrapInTextNodes<N: OutlineNode>(node: N): N {
   const prevSibling = node.getPreviousSibling();
   if (
     prevSibling === null ||
@@ -436,10 +440,6 @@ export class OutlineNode {
   remove(): void {
     shouldErrorOnReadOnly();
     return removeNode(this);
-  }
-  wrapInTextNodes(): this {
-    shouldErrorOnReadOnly();
-    return wrapInTextNodes(this);
   }
   // TODO add support for replacing with multiple nodes?
   replace<N: OutlineNode>(targetNode: N): N {

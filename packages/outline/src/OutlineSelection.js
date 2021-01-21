@@ -19,6 +19,60 @@ import {OutlineEditor} from './OutlineEditor';
 
 const WHITESPACE_REGEX = /\s/g;
 
+let _graphemeIterator = null;
+// $FlowFixMe: Missing a Flow type for `Intl.Segmenter`.
+function getGraphemeIterator(): Intl.Segmenter {
+  if (_graphemeIterator === null) {
+    _graphemeIterator =
+      // $FlowFixMe: Missing a Flow type for `Intl.Segmenter`.
+      new Intl.Segmenter(undefined /* locale */, {granularity: 'grapheme'});
+  }
+  return _graphemeIterator;
+}
+
+/**
+ * What you think of as a single 'character' onscreen might actually be composed
+ * of multiple Unicode codepoints. This function uses the `Intl.Segmenter` to
+ * obtain the offset after the grapheme to the right of `offset`. You can use
+ * this, for instance, to advance the cursor one position rightward.
+ */
+function getOffsetAfterNextGrapheme(offset, textContent): number {
+  if (textContent === '' || offset === textContent.length) {
+    return offset;
+  }
+  try {
+    const segments = getGraphemeIterator().segment(textContent.slice(offset));
+    const firstSegment = segments.containing(0);
+    return offset + firstSegment.segment.length;
+  } catch {
+    // TODO: Implement ponyfill for `Intl.Segmenter`.
+    return offset + 1;
+  }
+}
+
+/**
+ * What you think of as a single 'character' onscreen might actually be composed
+ * of multiple Unicode codepoints. This function uses the `Intl.Segmenter` to
+ * obtain the offset before the grapheme to the left of `offset`. You can use
+ * this, for instance, to advance the cursor one position leftward.
+ */
+function getOffsetBeforePreviousGrapheme(offset, textContent): number {
+  if (textContent === '' || offset === 0) {
+    return offset;
+  }
+  try {
+    const segments = getGraphemeIterator().segment(
+      textContent.slice(0, offset),
+    );
+    const allSegments = Array.from(segments);
+    const lastSegment = allSegments[allSegments.length - 1];
+    return offset - lastSegment.segment.length;
+  } catch {
+    // TODO: Implement ponyfill for `Intl.Segmenter`.
+    return offset - 1;
+  }
+}
+
 function removeFirstSegment(node: TextNode): void {
   const currentBlock = node.getParentBlockOrThrow();
   const textContent = node.getTextContent();
@@ -649,7 +703,17 @@ export class Selection {
         throw new Error('TODO');
       }
     } else {
-      anchorNode.spliceText(anchorOffset - 1, 1, '', true);
+      const textContent = anchorNode.getTextContent();
+      const deletionStartOffset = getOffsetBeforePreviousGrapheme(
+        anchorOffset,
+        textContent,
+      );
+      anchorNode.spliceText(
+        deletionStartOffset,
+        anchorOffset - deletionStartOffset,
+        '',
+        true,
+      );
     }
   }
   deleteForward(): void {
@@ -687,7 +751,16 @@ export class Selection {
         throw new Error('TODO');
       }
     } else {
-      anchorNode.spliceText(anchorOffset, 1, '', true);
+      const deletionEndOffset = getOffsetAfterNextGrapheme(
+        anchorOffset,
+        textContent,
+      );
+      anchorNode.spliceText(
+        anchorOffset,
+        deletionEndOffset - anchorOffset,
+        '',
+        true,
+      );
     }
   }
   removeText(): void {
@@ -1103,7 +1176,10 @@ export class Selection {
         const textContent = node.getTextContent();
         if (node === firstNode) {
           if (offset !== 0) {
-            const nextOffset = offset - 1;
+            const nextOffset = getOffsetBeforePreviousGrapheme(
+              offset,
+              textContent,
+            );
             node.select(nextOffset, nextOffset);
             return;
           }
@@ -1177,7 +1253,7 @@ export class Selection {
       ) {
         if (node === lastNode) {
           if (offset !== textContent.length) {
-            const nextOffset = offset + 1;
+            const nextOffset = getOffsetAfterNextGrapheme(offset, textContent);
             node.select(nextOffset, nextOffset);
             return;
           }

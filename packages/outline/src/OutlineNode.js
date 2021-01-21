@@ -85,6 +85,7 @@ function replaceNode<N: OutlineNode>(
   }
   writableReplaceWith.parent = newParent.key;
   toReplace.remove();
+  // Handle immutable/segmented
   const flags = replaceWith.flags;
   if (flags & IS_IMMUTABLE || flags & IS_SEGMENTED) {
     wrapInTextNodes(replaceWith);
@@ -470,6 +471,11 @@ export class OutlineNode {
     } else {
       children.push(insertKey);
     }
+    // Handle immutable/segmented
+    const flags = nodeToInsert.flags;
+    if (flags & IS_IMMUTABLE || flags & IS_SEGMENTED) {
+      wrapInTextNodes(nodeToInsert);
+    }
     return writableSelf;
   }
   // TODO add support for inserting multiple nodes?
@@ -495,6 +501,11 @@ export class OutlineNode {
       children.splice(index, 0, insertKey);
     } else {
       children.push(insertKey);
+    }
+    // Handle immutable/segmented
+    const flags = nodeToInsert.flags;
+    if (flags & IS_IMMUTABLE || flags & IS_SEGMENTED) {
+      wrapInTextNodes(nodeToInsert);
     }
     return writableSelf;
   }

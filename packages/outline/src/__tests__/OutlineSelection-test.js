@@ -42,6 +42,20 @@ function insertSegmentedNode(text) {
   };
 }
 
+function convertToImmutableNode() {
+  return {
+    type: 'covert_to_immutable_node',
+    text: null,
+  };
+}
+
+function convertToSegmentedNode() {
+  return {
+    type: 'covert_to_segmented_node',
+    text: null,
+  };
+}
+
 function insertParagraph(text) {
   return {
     type: 'insert_paragraph',
@@ -237,6 +251,18 @@ function applySelectionInputs(inputs, update, editor) {
           selection.insertNodes([text]);
           break;
         }
+        case 'covert_to_immutable_node': {
+          const text = Outline.createTextNode(selection.getTextContent());
+          text.makeImmutable();
+          selection.insertNodes([text]);
+          break;
+        }
+        case 'covert_to_segmented_node': {
+          const text = Outline.createTextNode(selection.getTextContent());
+          text.makeSegmented();
+          selection.insertNodes([text]);
+          break;
+        }
         default:
           console.log('TODO');
       }
@@ -315,6 +341,7 @@ describe('OutlineSelection tests', () => {
     );
   });
 
+  // eslint-disable-next-line no-unused-vars
   const GRAPHEME_SCENARIOS = [
     {
       description: 'grapheme cluster',
@@ -489,6 +516,25 @@ describe('OutlineSelection tests', () => {
       setup: emptySetup,
     },
     {
+      name: 'Convert text to an immutable node',
+      inputs: [
+        insertText('Dominic Gannaway'),
+        moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 16),
+        convertToImmutableNode(),
+      ],
+      expectedHTML:
+        '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
+        '<span data-text="true" tabindex="-1">Dominic Gannaway</span>' +
+        '<span data-text="true"></span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 1],
+        anchorOffset: 0,
+        focusPath: [0, 1],
+        focusOffset: 0,
+      },
+      setup: emptySetup,
+    },
+    {
       name: 'Deletion of an immutable node',
       inputs: [insertImmutableNode('Dominic Gannaway'), deleteBackward()],
       expectedHTML:
@@ -504,6 +550,25 @@ describe('OutlineSelection tests', () => {
     {
       name: 'Creation of a segmented node',
       inputs: [insertSegmentedNode('Dominic Gannaway')],
+      expectedHTML:
+        '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
+        '<span data-text="true" tabindex="-1">Dominic Gannaway</span>' +
+        '<span data-text="true"></span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 1],
+        anchorOffset: 0,
+        focusPath: [0, 1],
+        focusOffset: 0,
+      },
+      setup: emptySetup,
+    },
+    {
+      name: 'Convert text to a segmented node',
+      inputs: [
+        insertText('Dominic Gannaway'),
+        moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 16),
+        convertToSegmentedNode(),
+      ],
       expectedHTML:
         '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
         '<span data-text="true" tabindex="-1">Dominic Gannaway</span>' +

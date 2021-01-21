@@ -78,6 +78,32 @@ describe('OutlineNode tests', () => {
     );
   });
 
+  test('replaceNode (immutable)', () => {
+    update((view) => {
+      const oldTextNode = view.getRoot().getFirstChild().getFirstChild();
+      const newTextNode = Outline.createTextNode('Replaced node!');
+      newTextNode.makeImmutable();
+      oldTextNode.replace(newTextNode);
+    });
+    expect(sanitizeHTML(container.innerHTML)).toBe(
+      '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
+        '<span data-text="true" tabindex="-1">Replaced node!</span><span data-text="true"></span></p></div>',
+    );
+  });
+
+  test('replaceNode (segmented)', () => {
+    update((view) => {
+      const oldTextNode = view.getRoot().getFirstChild().getFirstChild();
+      const newTextNode = Outline.createTextNode('Replaced node!');
+      newTextNode.makeSegmented();
+      oldTextNode.replace(newTextNode);
+    });
+    expect(sanitizeHTML(container.innerHTML)).toBe(
+      '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
+        '<span data-text="true" tabindex="-1">Replaced node!</span><span data-text="true"></span></p></div>',
+    );
+  });
+
   test('removeNode', () => {
     update((view) => {
       const oldTextNode = view.getRoot().getFirstChild().getFirstChild();
@@ -97,6 +123,32 @@ describe('OutlineNode tests', () => {
     expect(sanitizeHTML(container.innerHTML)).toBe(
       '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
         '<span data-text="true">New node!</span></p></div>',
+    );
+  });
+
+  test('append (immutable)', () => {
+    update((view) => {
+      const paragraph = view.getRoot().getFirstChild();
+      const newTextNode = Outline.createTextNode('New node!');
+      newTextNode.makeImmutable();
+      paragraph.append(newTextNode);
+    });
+    expect(sanitizeHTML(container.innerHTML)).toBe(
+      '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
+        '<span data-text="true" tabindex="-1">New node!</span><span data-text="true"></span></p></div>',
+    );
+  });
+
+  test('append (segmented)', () => {
+    update((view) => {
+      const paragraph = view.getRoot().getFirstChild();
+      const newTextNode = Outline.createTextNode('New node!');
+      newTextNode.makeSegmented();
+      paragraph.append(newTextNode);
+    });
+    expect(sanitizeHTML(container.innerHTML)).toBe(
+      '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
+        '<span data-text="true" tabindex="-1">New node!</span><span data-text="true"></span></p></div>',
     );
   });
 

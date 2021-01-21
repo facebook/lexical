@@ -10,7 +10,14 @@
 import type {NodeKey} from './OutlineNode';
 
 import {createTextNode, TextNode} from '.';
-import {getWritableNode, OutlineNode, getNodeByKey} from './OutlineNode';
+import {
+  getWritableNode,
+  OutlineNode,
+  getNodeByKey,
+  wrapInTextNodes,
+  IS_IMMUTABLE,
+  IS_SEGMENTED,
+} from './OutlineNode';
 import {getSelection} from './OutlineSelection';
 import {invariant} from './OutlineUtils';
 import {getActiveViewModel, shouldErrorOnReadOnly} from './OutlineView';
@@ -175,6 +182,11 @@ export class BlockNode extends OutlineNode {
     // Append children.
     const newKey = writableNodeToAppend.key;
     children.push(newKey);
+    // Handle immutable/segmented
+    const flags = nodeToAppend.flags;
+    if (flags & IS_IMMUTABLE || flags & IS_SEGMENTED) {
+      wrapInTextNodes(nodeToAppend);
+    }
     return writableSelf;
   }
   normalizeTextNodes(restoreSelection?: boolean): void {

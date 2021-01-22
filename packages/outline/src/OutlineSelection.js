@@ -676,11 +676,7 @@ export class Selection {
       return;
     }
     const currentBlock = anchorNode.getParentBlockOrThrow();
-    let prevSibling = anchorNode.getPreviousSibling();
-
-    if (anchorNode.isImmutable() || anchorNode.isSegmented()) {
-      prevSibling = anchorNode;
-    }
+    const prevSibling = anchorNode.getPreviousSibling();
 
     if (anchorOffset === 0) {
       if (prevSibling === null) {
@@ -726,7 +722,7 @@ export class Selection {
       this.removeText();
       return;
     }
-    let anchorOffset = this.anchorOffset;
+    const anchorOffset = this.anchorOffset;
     const anchorNode = this.getAnchorNode();
     if (anchorNode === null) {
       return;
@@ -734,12 +730,7 @@ export class Selection {
     const currentBlock = anchorNode.getParentBlockOrThrow();
     const textContent = anchorNode.getTextContent();
     const textContentLength = textContent.length;
-    let nextSibling = anchorNode.getNextSibling();
-
-    if (anchorNode.isImmutable() || anchorNode.isSegmented()) {
-      nextSibling = anchorNode;
-      anchorOffset = textContentLength;
-    }
+    const nextSibling = anchorNode.getNextSibling();
 
     if (anchorOffset === textContentLength) {
       if (nextSibling === null) {
@@ -914,386 +905,6 @@ export class Selection {
       currentBlock.normalizeTextNodes(true);
     }
   }
-  moveWordBackward(): void {
-    const anchorNode = this.getAnchorNode();
-    const focusNode = this.getFocusNode();
-    const isAnchorBefore = anchorNode.isBefore(focusNode);
-    const anchorOffset = this.anchorOffset;
-    const focusOffset = this.focusOffset;
-    const firstNode = isAnchorBefore ? anchorNode : focusNode;
-    const offset = isAnchorBefore ? anchorOffset : focusOffset;
-    let lookAhead = false;
-    let hasChars = false;
-    let hasSpace = false;
-    let hasNewLine = false;
-
-    let node = firstNode;
-    while (true) {
-      if (
-        !(node instanceof TextNode) ||
-        node.isImmutable() ||
-        node.isSegmented()
-      ) {
-        if (anchorNode !== node) {
-          node.select();
-          return;
-        }
-      } else {
-        const textContent = node.getTextContent();
-        const endIndex = node === firstNode ? offset - 1 : textContent.length;
-
-        for (let s = endIndex - 1; s >= 0; s--) {
-          const char = textContent[s];
-          const nextOffset = s + 1;
-          const isSpace = char === ' ';
-
-          if (isSpace) {
-            if (hasChars || lookAhead) {
-              node.select(nextOffset, nextOffset);
-              return;
-            }
-            hasSpace = true;
-          } else if (char === '\n') {
-            if (hasChars) {
-              node.select(nextOffset, nextOffset);
-              return;
-            }
-            hasNewLine = true;
-          } else {
-            if (hasNewLine || lookAhead) {
-              node.select(nextOffset, nextOffset);
-              return;
-            }
-            hasChars = true;
-          }
-        }
-        if (hasSpace || offset === 0) {
-          lookAhead = true;
-        }
-        node.select(0, 0);
-      }
-      const sibling = node.getPreviousSibling();
-      if (sibling !== null) {
-        node = sibling;
-      } else {
-        if (offset === 0) {
-          const currentBlock = node.getParentBlockOrThrow();
-          const prevBlock = currentBlock.getPreviousSibling();
-          if (prevBlock instanceof BlockNode) {
-            let lastChild = prevBlock.getLastChild();
-            if (lastChild instanceof BlockNode) {
-              lastChild = lastChild.getFirstChild();
-            }
-            if (lastChild !== null) {
-              node = lastChild;
-              continue;
-            }
-          }
-        }
-        return;
-      }
-    }
-  }
-  moveWordForward(): void {
-    const anchorNode = this.getAnchorNode();
-    const focusNode = this.getFocusNode();
-    const isAnchorBefore = anchorNode.isBefore(focusNode);
-    const anchorOffset = this.anchorOffset;
-    const focusOffset = this.focusOffset;
-    const lastNode = isAnchorBefore ? focusNode : anchorNode;
-    const offset = isAnchorBefore ? focusOffset : anchorOffset;
-    let lookAhead = false;
-    let hasChars = false;
-    let hasSpace = false;
-    let hasNewLine = false;
-
-    let node = lastNode;
-    while (true) {
-      const textContent = node.getTextContent();
-      const textContentLength = textContent.length;
-      if (
-        !(node instanceof TextNode) ||
-        node.isImmutable() ||
-        node.isSegmented()
-      ) {
-        if (anchorNode !== node) {
-          node.select();
-          return;
-        }
-      } else {
-        const startIndex = node === lastNode ? offset + 1 : 0;
-
-        for (let s = startIndex; s < textContentLength; s++) {
-          const char = textContent[s];
-          const isSpace = char === ' ';
-
-          if (isSpace) {
-            if (hasChars || lookAhead) {
-              node.select(s, s);
-              return;
-            }
-            hasSpace = true;
-          } else if (char === '\n') {
-            if (hasChars) {
-              node.select(s, s);
-              return;
-            }
-            hasNewLine = true;
-          } else {
-            if (hasNewLine || lookAhead) {
-              node.select(s, s);
-              return;
-            }
-            hasChars = true;
-          }
-        }
-        if (
-          textContentLength !== 0 &&
-          (hasSpace || offset === textContentLength)
-        ) {
-          lookAhead = true;
-        }
-        node.select();
-      }
-      const sibling = node.getNextSibling();
-      if (sibling !== null) {
-        node = sibling;
-      } else {
-        if (offset === textContentLength) {
-          const currentBlock = node.getParentBlockOrThrow();
-          let nextBlock = currentBlock.getNextSibling();
-          if (nextBlock === null && currentBlock instanceof BlockNode) {
-            const list = currentBlock.getParentOrThrow();
-            if (!(list instanceof RootNode)) {
-              nextBlock = list.getNextSibling();
-            }
-          }
-          if (nextBlock instanceof BlockNode) {
-            const firstChild = nextBlock.getFirstChild();
-            if (firstChild !== null) {
-              node = firstChild;
-              continue;
-            }
-          }
-        }
-        return;
-      }
-    }
-  }
-  moveLineBackward(): void {
-    const anchorNode = this.getAnchorNode();
-    const focusNode = this.getFocusNode();
-    const isAnchorBefore = anchorNode.isBefore(focusNode);
-    const anchorOffset = this.anchorOffset;
-    const focusOffset = this.focusOffset;
-    const firstNode = isAnchorBefore ? anchorNode : focusNode;
-    const offset = isAnchorBefore ? anchorOffset : focusOffset;
-
-    let node = firstNode;
-    while (true) {
-      const prevSibling = node.getPreviousSibling();
-
-      if (node instanceof TextNode) {
-        const textContent = node.getTextContent();
-        const endIndex = node === firstNode ? offset : textContent.length;
-
-        for (let s = endIndex - 1; s >= 0; s--) {
-          const char = textContent[s];
-          if (char === '\n') {
-            node.select(s + 1, s + 1);
-            return;
-          }
-        }
-        if (prevSibling === null) {
-          node.select(0, 0);
-          return;
-        }
-      }
-      if (prevSibling === null) {
-        invariant(false, 'Should never happen');
-      }
-      node = prevSibling;
-    }
-  }
-  moveLineForward(): void {
-    const anchorNode = this.getAnchorNode();
-    const focusNode = this.getFocusNode();
-    const isAnchorBefore = anchorNode.isBefore(focusNode);
-    const anchorOffset = this.anchorOffset;
-    const focusOffset = this.focusOffset;
-    const lastNode = isAnchorBefore ? focusNode : anchorNode;
-    const offset = isAnchorBefore ? focusOffset : anchorOffset;
-
-    let node = lastNode;
-    while (true) {
-      const nextSibling = node.getNextSibling();
-
-      if (node instanceof TextNode) {
-        const textContent = node.getTextContent();
-        const textContentLength = textContent.length;
-        const startIndex = node === lastNode ? offset : 0;
-
-        for (let s = startIndex; s < textContentLength; s++) {
-          const char = textContent[s];
-          if (char === '\n') {
-            node.select(s, s);
-            return;
-          }
-        }
-        if (nextSibling === null) {
-          node.select();
-          return;
-        }
-      }
-      if (nextSibling === null) {
-        invariant(false, 'Should never happen');
-      }
-      node = nextSibling;
-    }
-  }
-  moveBackward(): void {
-    const anchorNode = this.getAnchorNode();
-    const focusNode = this.getFocusNode();
-    const isAnchorBefore = anchorNode.isBefore(focusNode);
-    const anchorOffset = this.anchorOffset;
-    const focusOffset = this.focusOffset;
-    const firstNode = isAnchorBefore ? anchorNode : focusNode;
-
-    if (!this.isCaret()) {
-      const offset = anchorOffset > focusOffset ? focusOffset : anchorOffset;
-      firstNode.select(offset, offset);
-      return;
-    }
-    const offset = isAnchorBefore ? anchorOffset : focusOffset;
-
-    let node = firstNode;
-    let notAdjacent = false;
-    while (true) {
-      if (
-        !(node instanceof TextNode) ||
-        node.isImmutable() ||
-        node.isSegmented()
-      ) {
-        if (!node.isSelected()) {
-          node.select();
-          return;
-        }
-        notAdjacent = true;
-      } else {
-        const textContent = node.getTextContent();
-        if (node === firstNode) {
-          if (offset !== 0) {
-            const nextOffset = getOffsetBeforePreviousGrapheme(
-              offset,
-              textContent,
-            );
-            node.select(nextOffset, nextOffset);
-            return;
-          }
-        } else if (
-          textContent !== '' ||
-          node.getPreviousSibling() === null ||
-          notAdjacent
-        ) {
-          const textContentLength = textContent.length;
-          const nextOffset = notAdjacent
-            ? textContentLength
-            : textContentLength - 1;
-          node.select(nextOffset, nextOffset);
-          return;
-        }
-      }
-      const sibling = node.getPreviousSibling();
-      if (sibling !== null) {
-        node = sibling;
-      } else {
-        const currentBlock = node.getParentBlockOrThrow();
-        const prevBlock = currentBlock.getPreviousSibling();
-        if (prevBlock instanceof BlockNode) {
-          let lastChild = prevBlock.getLastChild();
-          if (lastChild instanceof BlockNode) {
-            lastChild = lastChild.getFirstChild();
-          }
-          if (lastChild !== null) {
-            node = lastChild;
-            notAdjacent = true;
-            continue;
-          }
-        }
-        return;
-      }
-    }
-  }
-  moveForward(): void {
-    const anchorNode = this.getAnchorNode();
-    const focusNode = this.getFocusNode();
-    const isAnchorBefore = anchorNode.isBefore(focusNode);
-    const anchorOffset = this.anchorOffset;
-    const focusOffset = this.focusOffset;
-    const lastNode = isAnchorBefore ? focusNode : anchorNode;
-
-    if (!this.isCaret()) {
-      const offset = anchorOffset > focusOffset ? anchorOffset : focusOffset;
-      lastNode.select(offset, offset);
-      return;
-    }
-    const offset = isAnchorBefore ? focusOffset : anchorOffset;
-
-    let node = lastNode;
-    let notAdjacent = false;
-    while (true) {
-      const textContent = node.getTextContent();
-      if (
-        !(node instanceof TextNode) ||
-        node.isImmutable() ||
-        node.isSegmented()
-      ) {
-        if (!node.isSelected()) {
-          node.select();
-          return;
-        }
-        notAdjacent = true;
-      } else if (
-        textContent !== '' ||
-        node.getNextSibling() === null ||
-        notAdjacent
-      ) {
-        if (node === lastNode) {
-          if (offset !== textContent.length) {
-            const nextOffset = getOffsetAfterNextGrapheme(offset, textContent);
-            node.select(nextOffset, nextOffset);
-            return;
-          }
-        } else {
-          const nextOffset = notAdjacent ? 0 : 1;
-          node.select(nextOffset, nextOffset);
-          return;
-        }
-      }
-      const sibling = node.getNextSibling();
-      if (sibling !== null) {
-        node = sibling;
-      } else {
-        const currentBlock = node.getParentBlockOrThrow();
-        let nextBlock = currentBlock.getNextSibling();
-        if (nextBlock === null && currentBlock instanceof BlockNode) {
-          const list = currentBlock.getParentOrThrow();
-          if (!(list instanceof RootNode)) {
-            nextBlock = list.getNextSibling();
-          }
-        }
-        if (nextBlock instanceof BlockNode) {
-          const firstChild = nextBlock.getFirstChild();
-          if (firstChild !== null) {
-            node = firstChild;
-            notAdjacent = true;
-            continue;
-          }
-        }
-        return;
-      }
-    }
-  }
   setRange(
     anchorKey: NodeKey,
     anchorOffset: number,
@@ -1466,14 +1077,14 @@ export function createSelection(
   }
   anchorKey = anchorNode.key;
   focusKey = focusNode.key;
+  let forceDirty = false;
   // Because we use a special character for whitespace,
   // we need to adjust offsets to 0 when the text is
   // really empty.
-  if (anchorNode.text === '') {
+  if (anchorNode === focusNode && anchorNode.text === '') {
     anchorOffset = 0;
-  }
-  if (focusNode.text === '') {
     focusOffset = 0;
+    forceDirty = true;
   }
 
   const selection = new Selection(
@@ -1483,9 +1094,10 @@ export function createSelection(
     focusOffset,
   );
   if (
-    lastSelection !== null &&
-    !editor.isComposing() &&
-    !selection.isEqual(lastSelection)
+    forceDirty ||
+    (lastSelection !== null &&
+      !editor.isComposing() &&
+      !selection.isEqual(lastSelection))
   ) {
     selection.isDirty = true;
   }

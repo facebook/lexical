@@ -14,7 +14,6 @@ import type {Selection} from './OutlineSelection';
 
 import {getNodeByKey, IS_IMMUTABLE, IS_SEGMENTED} from './OutlineNode';
 import {BlockNode, TextNode} from '.';
-import {invariant} from './OutlineUtils';
 
 let subTreeTextContent = '';
 let editorTextContent = '';
@@ -106,9 +105,6 @@ function createNode(
 
   if (flags & IS_IMMUTABLE || flags & IS_SEGMENTED) {
     dom.contentEditable = 'false';
-    if (!dom.hasAttribute('tabindex')) {
-      dom.tabIndex = -1;
-    }
   }
 
   if (node instanceof TextNode) {
@@ -521,41 +517,37 @@ function reconcileSelection(selection: Selection, editor: OutlineEditor): void {
   if (anchorKey === null || focusKey === null) {
     throw new Error('reconcileSelection: anchorKey or focusKey cannot be null');
   }
-  const anchorOffset = selection.anchorOffset;
-  const focusOffset = selection.focusOffset;
+  const domSelection = window.getSelection();
   const anchorNode = getNodeByKey(anchorKey);
   const focusNode = getNodeByKey(anchorKey);
-  const domSelection = window.getSelection();
+  const anchorDOM = editor.getElementByKey(anchorKey);
+  const focusDOM = editor.getElementByKey(focusKey);
+  let anchorOffset = selection.anchorOffset;
+  let focusOffset = selection.focusOffset;
 
   if (
-    anchorNode === focusNode &&
     anchorNode !== null &&
-    (anchorNode.isImmutable() || anchorNode.isSegmented())
+    anchorNode === focusNode &&
+    anchorNode.text === ''
   ) {
-    const anchorElement = editor.getElementByKey(anchorKey);
-    domSelection.setBaseAndExtent(anchorElement, 0, anchorElement, 0);
-    anchorElement.focus();
-    return;
-  }
-  const anchorDOM = getSelectionDOMNode(anchorKey, editor);
-  const focusDOM = getSelectionDOMNode(focusKey, editor);
-  domSelection.setBaseAndExtent(anchorDOM, anchorOffset, focusDOM, focusOffset);
-  const editorElement = editor.getEditorElement();
-  if (document.activeElement !== editorElement && editorElement !== null) {
-    editorElement.focus();
-  }
-}
-
-function getSelectionDOMNode(key: NodeKey, editor: OutlineEditor): Node {
-  const element = editor.getElementByKey(key);
-  let node = element;
-  while (node != null) {
-    if (node.nodeType === 3) {
-      return node;
+    // Because we use empty text nodes to ensure Outline
+    // selection and text entry works as expected, it also
+    // means we need to adjust the offset to ensure native
+    // selection works correctly and doesn't act buggy.
+    if (anchorDOM.nextSibling === null) {
+      anchorOffset = 0;
+      focusOffset = 0;
+    } else if (anchorDOM.previousSibling === null) {
+      anchorOffset = 1;
+      focusOffset = 1;
     }
-    node = node.firstChild;
   }
-  invariant(false, 'Should not happen');
+  domSelection.setBaseAndExtent(
+    anchorDOM.firstChild,
+    anchorOffset,
+    focusDOM.firstChild,
+    focusOffset,
+  );
 }
 
 export function storeDOMWithKey(

@@ -118,30 +118,6 @@ function formatUnderline() {
   };
 }
 
-function moveWordBackward() {
-  return {
-    type: 'move_word_backward',
-  };
-}
-
-function moveWordForward() {
-  return {
-    type: 'move_word_forward',
-  };
-}
-
-function moveBackward() {
-  return {
-    type: 'move_backward',
-  };
-}
-
-function moveForward() {
-  return {
-    type: 'move_forward',
-  };
-}
-
 function moveNativeSelection(anchorPath, anchorOffset, focusPath, focusOffset) {
   return {
     type: 'move_native_selection',
@@ -213,22 +189,6 @@ function applySelectionInputs(inputs, update, editor) {
           selection.formatText(input.format);
           break;
         }
-        case 'move_backward': {
-          selection.moveBackward();
-          break;
-        }
-        case 'move_forward': {
-          selection.moveForward();
-          break;
-        }
-        case 'move_word_backward': {
-          selection.moveWordBackward();
-          break;
-        }
-        case 'move_word_forward': {
-          selection.moveWordForward();
-          break;
-        }
         case 'move_native_selection': {
           setNativeSelection(
             editorElement,
@@ -243,24 +203,28 @@ function applySelectionInputs(inputs, update, editor) {
           const text = Outline.createTextNode(input.text);
           text.makeImmutable();
           selection.insertNodes([text]);
+          text.selectAfter();
           break;
         }
         case 'insert_segmented_node': {
           const text = Outline.createTextNode(input.text);
           text.makeSegmented();
           selection.insertNodes([text]);
+          text.selectAfter();
           break;
         }
         case 'covert_to_immutable_node': {
           const text = Outline.createTextNode(selection.getTextContent());
           text.makeImmutable();
           selection.insertNodes([text]);
+          text.selectAfter();
           break;
         }
         case 'covert_to_segmented_node': {
           const text = Outline.createTextNode(selection.getTextContent());
           text.makeSegmented();
           selection.insertNodes([text]);
+          text.selectAfter();
           break;
         }
         default:
@@ -505,12 +469,12 @@ describe('OutlineSelection tests', () => {
       inputs: [insertImmutableNode('Dominic Gannaway')],
       expectedHTML:
         '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
-        '<span data-text="true" tabindex="-1">Dominic Gannaway</span>' +
+        '<span data-text="true">Dominic Gannaway</span>' +
         '<span data-text="true"></span></p></div>',
       expectedSelection: {
-        anchorPath: [0, 1],
+        anchorPath: [0, 2, 0],
         anchorOffset: 0,
-        focusPath: [0, 1],
+        focusPath: [0, 2, 0],
         focusOffset: 0,
       },
       setup: emptySetup,
@@ -524,12 +488,12 @@ describe('OutlineSelection tests', () => {
       ],
       expectedHTML:
         '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
-        '<span data-text="true" tabindex="-1">Dominic Gannaway</span>' +
+        '<span data-text="true">Dominic Gannaway</span>' +
         '<span data-text="true"></span></p></div>',
       expectedSelection: {
-        anchorPath: [0, 1],
+        anchorPath: [0, 2, 0],
         anchorOffset: 0,
-        focusPath: [0, 1],
+        focusPath: [0, 2, 0],
         focusOffset: 0,
       },
       setup: emptySetup,
@@ -552,12 +516,12 @@ describe('OutlineSelection tests', () => {
       inputs: [insertSegmentedNode('Dominic Gannaway')],
       expectedHTML:
         '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
-        '<span data-text="true" tabindex="-1">Dominic Gannaway</span>' +
+        '<span data-text="true">Dominic Gannaway</span>' +
         '<span data-text="true"></span></p></div>',
       expectedSelection: {
-        anchorPath: [0, 1],
+        anchorPath: [0, 2, 0],
         anchorOffset: 0,
-        focusPath: [0, 1],
+        focusPath: [0, 2, 0],
         focusOffset: 0,
       },
       setup: emptySetup,
@@ -571,12 +535,12 @@ describe('OutlineSelection tests', () => {
       ],
       expectedHTML:
         '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
-        '<span data-text="true" tabindex="-1">Dominic Gannaway</span>' +
+        '<span data-text="true">Dominic Gannaway</span>' +
         '<span data-text="true"></span></p></div>',
       expectedSelection: {
-        anchorPath: [0, 1],
+        anchorPath: [0, 2, 0],
         anchorOffset: 0,
-        focusPath: [0, 1],
+        focusPath: [0, 2, 0],
         focusOffset: 0,
       },
       setup: emptySetup,
@@ -586,12 +550,12 @@ describe('OutlineSelection tests', () => {
       inputs: [insertSegmentedNode('Dominic Gannaway'), deleteBackward()],
       expectedHTML:
         '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
-        '<span data-text="true" tabindex="-1">Dominic</span>' +
+        '<span data-text="true">Dominic</span>' +
         '<span data-text="true"></span></p></div>',
       expectedSelection: {
-        anchorPath: [0, 1],
+        anchorPath: [0, 2, 0],
         anchorOffset: 0,
-        focusPath: [0, 1],
+        focusPath: [0, 2, 0],
         focusOffset: 0,
       },
       setup: emptySetup,
@@ -848,49 +812,6 @@ describe('OutlineSelection tests', () => {
         anchorOffset: 0,
         focusPath: [0, 0, 0],
         focusOffset: 0,
-      },
-      setup: emptySetup,
-    },
-    {
-      name:
-        'Type text, move backward, insert text and move forward and insert more text',
-      inputs: [
-        insertText('ahi'),
-        moveBackward(),
-        moveBackward(),
-        insertText(' bcd'),
-        moveForward(),
-        moveBackward(),
-        insertText(' efg '),
-      ],
-      expectedHTML:
-        '<div contenteditable="true"><p dir="ltr"><span data-text="true">a bcd efg hi</span></p></div>',
-      expectedSelection: {
-        anchorPath: [0, 0, 0],
-        anchorOffset: 10,
-        focusPath: [0, 0, 0],
-        focusOffset: 10,
-      },
-      setup: emptySetup,
-    },
-    {
-      name:
-        'Type text, move word backward, insert text and move word forward and insert more text',
-      inputs: [
-        insertText('world'),
-        moveWordBackward(),
-        insertText('Hello '),
-        moveWordForward(),
-        moveWordForward(),
-        insertText('!'),
-      ],
-      expectedHTML:
-        '<div contenteditable="true"><p dir="ltr"><span data-text="true">Hello world!</span></p></div>',
-      expectedSelection: {
-        anchorPath: [0, 0, 0],
-        anchorOffset: 12,
-        focusPath: [0, 0, 0],
-        focusOffset: 12,
       },
       setup: emptySetup,
     },

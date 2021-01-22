@@ -433,6 +433,15 @@ export class Selection {
     currentBlock.normalizeTextNodes();
   }
   deleteLineBackward(): void {
+    // When using Safari or Chrome, we will usually always have a range.
+    // This is because beforeinput gives us getTargetRanges, which tells
+    // us where to start the delete and end the delete. Which means we
+    // only need the rest of the logic for browsers that don't support
+    // native beforeinput (Firefox and IE).
+    if (!this.isCaret()) {
+      this.removeText();
+      return;
+    }
     const anchorNode = this.getAnchorNode();
     if (anchorNode === null) {
       return;
@@ -479,6 +488,15 @@ export class Selection {
     }
   }
   deleteLineForward(): void {
+    // When using Safari or Chrome, we will usually always have a range.
+    // This is because beforeinput gives us getTargetRanges, which tells
+    // us where to start the delete and end the delete. Which means we
+    // only need the rest of the logic for browsers that don't support
+    // native beforeinput (Firefox and IE).
+    if (!this.isCaret()) {
+      this.removeText();
+      return;
+    }
     const anchorNode = this.getAnchorNode();
     if (anchorNode === null) {
       return;
@@ -530,6 +548,11 @@ export class Selection {
     }
   }
   deleteWordBackward(): void {
+    // When using Safari or Chrome, we will usually always have a range.
+    // This is because beforeinput gives us getTargetRanges, which tells
+    // us where to start the delete and end the delete. Which means we
+    // only need the rest of the logic for browsers that don't support
+    // native beforeinput (Firefox and IE).
     if (!this.isCaret()) {
       this.removeText();
       return;
@@ -597,6 +620,11 @@ export class Selection {
     }
   }
   deleteWordForward(): void {
+    // When using Safari or Chrome, we will usually always have a range.
+    // This is because beforeinput gives us getTargetRanges, which tells
+    // us where to start the delete and end the delete. Which means we
+    // only need the rest of the logic for browsers that don't support
+    // native beforeinput (Firefox and IE).
     if (!this.isCaret()) {
       this.removeText();
       this.deleteForward();
@@ -666,6 +694,11 @@ export class Selection {
     }
   }
   deleteBackward(): void {
+    // When using Safari or Chrome, we will usually always have a range
+    // when working with glyps that are multi-character. That's because
+    // we leverage beforeinput's getTargetRanges. Meaning we will need
+    // to polyfill this for browsers that don't support beforeinput, such
+    // as FF.
     if (!this.isCaret()) {
       this.removeText();
       return;
@@ -723,6 +756,11 @@ export class Selection {
     }
   }
   deleteForward(): void {
+    // When using Safari or Chrome, we will usually always have a range
+    // when working with glyps that are multi-character. That's because
+    // we leverage beforeinput's getTargetRanges. Meaning we will need
+    // to polyfill this for browsers that don't support beforeinput, such
+    // as FF.
     if (!this.isCaret()) {
       this.removeText();
       return;
@@ -1087,14 +1125,14 @@ export function createSelection(
   }
   anchorKey = anchorNode.key;
   focusKey = focusNode.key;
-  let forceDirty = false;
+  let hasAdjustedOffsets = false;
   // Because we use a special character for whitespace,
   // we need to adjust offsets to 0 when the text is
   // really empty.
   if (anchorNode === focusNode && anchorNode.text === '') {
     anchorOffset = 0;
     focusOffset = 0;
-    forceDirty = true;
+    hasAdjustedOffsets = true;
   }
 
   const selection = new Selection(
@@ -1104,10 +1142,9 @@ export function createSelection(
     focusOffset,
   );
   if (
-    forceDirty ||
-    (lastSelection !== null &&
-      !editor.isComposing() &&
-      !selection.isEqual(lastSelection))
+    lastSelection !== null &&
+    !editor.isComposing() &&
+    (hasAdjustedOffsets || !selection.isEqual(lastSelection))
   ) {
     selection.isDirty = true;
   }

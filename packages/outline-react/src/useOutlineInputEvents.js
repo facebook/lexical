@@ -135,37 +135,41 @@ function onKeyDown(
   if (selection === null) {
     return;
   }
-  let shouldPreventDefault = false;
+  // If we can use native beforeinput, we handle
+  // these cases in that function.
+  if (!CAN_USE_BEFORE_INPUT) {
+    let shouldPreventDefault = false;
 
-  if (isDeleteBackward(event)) {
-    shouldPreventDefault = true;
-    selection.deleteBackward();
-  } else if (isDeleteForward(event)) {
-    shouldPreventDefault = true;
-    selection.deleteForward();
-  } else if (isLineBreak(event)) {
-    shouldPreventDefault = true;
-    selection.insertText('\n');
-  } else if (isParagraph(event)) {
-    shouldPreventDefault = true;
-    if (state.richText) {
-      selection.insertParagraph();
+    if (isDeleteBackward(event)) {
+      shouldPreventDefault = true;
+      selection.deleteBackward();
+    } else if (isDeleteForward(event)) {
+      shouldPreventDefault = true;
+      selection.deleteForward();
+    } else if (isDeleteLineBackward(event)) {
+      shouldPreventDefault = true;
+      selection.deleteLineBackward();
+    } else if (isDeleteLineForward(event)) {
+      shouldPreventDefault = true;
+      selection.deleteLineForward();
+    } else if (isDeleteWordBackward(event)) {
+      shouldPreventDefault = true;
+      selection.deleteWordBackward();
+    } else if (isDeleteWordForward(event)) {
+      shouldPreventDefault = true;
+      selection.deleteWordForward();
+    } else if (isParagraph(event)) {
+      shouldPreventDefault = true;
+      if (state.richText) {
+        selection.insertParagraph();
+      }
+    } else if (isLineBreak(event)) {
+      shouldPreventDefault = true;
+      selection.insertText('\n');
     }
-  } else if (isDeleteLineBackward(event)) {
-    shouldPreventDefault = true;
-    selection.deleteLineBackward();
-  } else if (isDeleteLineForward(event)) {
-    shouldPreventDefault = true;
-    selection.deleteLineForward();
-  } else if (isDeleteWordBackward(event)) {
-    shouldPreventDefault = true;
-    selection.deleteWordBackward();
-  } else if (isDeleteWordForward(event)) {
-    shouldPreventDefault = true;
-    selection.deleteWordForward();
-  }
-  if (shouldPreventDefault) {
-    event.preventDefault();
+    if (shouldPreventDefault) {
+      event.preventDefault();
+    }
   }
 }
 
@@ -329,20 +333,11 @@ function onNativeBeforeInput(
   if (selection === null) {
     return;
   }
+  // $FlowFixMe: Flow doesn't know of getTargetRanges
+  const targetRange = event.getTargetRanges()[0];
 
-  // Safari is the only browser where we can reliably use the
-  // target range to update selection without causing bugs around
-  // composition/on-screen keyboard entry.
-  if (
-    (IS_SAFARI && !inputType.startsWith('delete')) ||
-    inputType.startsWith('deleteBy')
-  ) {
-    // $FlowFixMe: Flow doens't know of getTargetRanges
-    const targetRange = event.getTargetRanges()[0];
-
-    if (targetRange) {
-      selection.applyDOMRange(targetRange);
-    }
+  if (targetRange != null) {
+    selection.applyDOMRange(targetRange);
   }
 
   switch (inputType) {
@@ -389,27 +384,47 @@ function onNativeBeforeInput(
       }
       break;
     }
+    case 'insertLineBreak': {
+      selection.insertText('\n');
+      break;
+    }
+    case 'insertParagraph': {
+      if (state.richText) {
+        selection.insertParagraph();
+      }
+      break;
+    }
     case 'deleteByComposition':
     case 'deleteByDrag':
     case 'deleteByCut': {
       selection.removeText();
       break;
     }
-    // These are handled in onKeyDown, so we don't need to do
-    // anything here. So if we get an issue with these occuring here
-    // then we need to re-visit adding logic for these event types
-    // again.
-
-    // case 'insertLineBreak':
-    // case 'insertParagraph':
-    // case 'deleteContentBackward':
-    // case 'deleteContent':
-    // case 'deleteContentForward':
-    // case 'deleteSoftLineBackward':
-    // case 'deleteSoftLineForward':
-    // case 'deleteWordBackward':
-    // case 'deleteWordForward':
-
+    case 'deleteContentBackward': {
+      selection.deleteBackward();
+      break;
+    }
+    case 'deleteContent':
+    case 'deleteContentForward': {
+      selection.deleteForward();
+      break;
+    }
+    case 'deleteWordBackward': {
+      selection.deleteWordBackward();
+      break;
+    }
+    case 'deleteWordForward': {
+      selection.deleteWordForward();
+      break;
+    }
+    case 'deleteSoftLineBackward': {
+      selection.deleteLineBackward();
+      break;
+    }
+    case 'deleteSoftLineForward': {
+      selection.deleteLineForward();
+      break;
+    }
     case 'historyUndo':
     case 'historyRedo':
       // Handled with useOutlineHistory

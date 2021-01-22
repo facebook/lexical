@@ -109,6 +109,7 @@ export class Selection {
   focusKey: string;
   focusOffset: number;
   isDirty: boolean;
+  needsSync: boolean;
 
   constructor(
     anchorKey: string,
@@ -121,6 +122,7 @@ export class Selection {
     this.focusKey = focusKey;
     this.focusOffset = focusOffset;
     this.isDirty = false;
+    this.needsSync = false;
   }
 
   isEqual(diffSelection: Selection): boolean {
@@ -1052,8 +1054,8 @@ export function createSelection(
   const lastSelection = currentViewModel.selection;
   const eventType = event && event.type;
   const isComposing = eventType === 'compositionstart';
-  const useDOMSelection =
-    eventType === 'selectionchange' || eventType === 'beforeinput';
+  const isSelectionChange = eventType === 'selectionchange';
+  const useDOMSelection = isSelectionChange || eventType === 'beforeinput';
   let anchorDOM, focusDOM, anchorOffset, focusOffset;
 
   if (
@@ -1141,11 +1143,12 @@ export function createSelection(
     focusKey,
     focusOffset,
   );
-  if (
-    lastSelection !== null &&
-    !editor.isComposing() &&
-    (hasAdjustedOffsets || !selection.isEqual(lastSelection))
-  ) {
+  // If the selection changes, we need to update our view model
+  // regardless to keep the view in sync.
+  if (isSelectionChange) {
+    selection.needsSync = true;
+  }
+  if (lastSelection !== null && !editor.isComposing() && hasAdjustedOffsets) {
     selection.isDirty = true;
   }
   return selection;

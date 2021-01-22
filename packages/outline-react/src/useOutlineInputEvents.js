@@ -158,15 +158,14 @@ function onKeyDown(
     } else if (isDeleteWordForward(event)) {
       shouldPreventDefault = true;
       selection.deleteWordForward();
-    }
-  }
-  if (isLineBreak(event)) {
-    shouldPreventDefault = true;
-    selection.insertText('\n');
-  } else if (isParagraph(event)) {
-    shouldPreventDefault = true;
-    if (state.richText) {
-      selection.insertParagraph();
+    } else if (isParagraph(event)) {
+      shouldPreventDefault = true;
+      if (state.richText) {
+        selection.insertParagraph();
+      }
+    } else if (isLineBreak(event)) {
+      shouldPreventDefault = true;
+      selection.insertText('\n');
     }
   }
   if (shouldPreventDefault) {
@@ -382,6 +381,16 @@ function onNativeBeforeInput(
       const dataTransfer = event.dataTransfer;
       if (dataTransfer != null) {
         insertDataTransfer(dataTransfer, selection, state, view, editor);
+      }
+      break;
+    }
+    case 'insertLineBreak': {
+      selection.insertText('\n');
+      break;
+    }
+    case 'insertParagraph': {
+      if (state.richText) {
+        selection.insertParagraph();
       }
       break;
     }

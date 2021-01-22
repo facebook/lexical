@@ -135,11 +135,11 @@ function onKeyDown(
   if (selection === null) {
     return;
   }
-  let shouldPreventDefault = false;
-
   // If we can use native beforeinput, we handle
   // these cases in that function.
   if (!CAN_USE_BEFORE_INPUT) {
+    let shouldPreventDefault = false;
+
     if (isDeleteBackward(event)) {
       shouldPreventDefault = true;
       selection.deleteBackward();
@@ -167,9 +167,9 @@ function onKeyDown(
       shouldPreventDefault = true;
       selection.insertText('\n');
     }
-  }
-  if (shouldPreventDefault) {
-    event.preventDefault();
+    if (shouldPreventDefault) {
+      event.preventDefault();
+    }
   }
 }
 

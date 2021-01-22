@@ -1052,8 +1052,8 @@ export function createSelection(
   const lastSelection = currentViewModel.selection;
   const eventType = event && event.type;
   const isComposing = eventType === 'compositionstart';
-  const useDOMSelection =
-    eventType === 'selectionchange' || eventType === 'beforeinput';
+  const isBeforeInput = eventType === 'beforeinput';
+  const useDOMSelection = eventType === 'selectionchange' || isBeforeInput;
   let anchorDOM, focusDOM, anchorOffset, focusOffset;
 
   if (
@@ -1129,7 +1129,7 @@ export function createSelection(
   // Because we use a special character for whitespace,
   // we need to adjust offsets to 0 when the text is
   // really empty.
-  if (anchorNode === focusNode && anchorNode.text === '') {
+  if (isBeforeInput && anchorNode === focusNode && anchorNode.text === '') {
     anchorOffset = 0;
     focusOffset = 0;
     forceDirty = true;

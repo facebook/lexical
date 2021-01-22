@@ -87,7 +87,7 @@ describe('OutlineNode tests', () => {
     });
     expect(sanitizeHTML(container.innerHTML)).toBe(
       '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
-        '<span data-text="true">Replaced node!</span><span data-text="true"></span></p></div>',
+        '<span data-text="true" tabindex="-1">Replaced node!</span><span data-text="true"></span></p></div>',
     );
   });
 
@@ -100,7 +100,7 @@ describe('OutlineNode tests', () => {
     });
     expect(sanitizeHTML(container.innerHTML)).toBe(
       '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
-        '<span data-text="true">Replaced node!</span><span data-text="true"></span></p></div>',
+        '<span data-text="true" tabindex="-1">Replaced node!</span><span data-text="true"></span></p></div>',
     );
   });
 
@@ -135,7 +135,7 @@ describe('OutlineNode tests', () => {
     });
     expect(sanitizeHTML(container.innerHTML)).toBe(
       '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
-        '<span data-text="true">New node!</span><span data-text="true"></span></p></div>',
+        '<span data-text="true" tabindex="-1">New node!</span><span data-text="true"></span></p></div>',
     );
   });
 
@@ -148,7 +148,7 @@ describe('OutlineNode tests', () => {
     });
     expect(sanitizeHTML(container.innerHTML)).toBe(
       '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
-        '<span data-text="true">New node!</span><span data-text="true"></span></p></div>',
+        '<span data-text="true" tabindex="-1">New node!</span><span data-text="true"></span></p></div>',
     );
   });
 
@@ -173,7 +173,7 @@ describe('OutlineNode tests', () => {
     });
     expect(sanitizeHTML(container.innerHTML)).toBe(
       '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
-        '<span data-text="true">New node!</span><span data-text="true"></span></p></div>',
+        '<span data-text="true" tabindex="-1">New node!</span><span data-text="true"></span></p></div>',
     );
   });
 
@@ -186,7 +186,7 @@ describe('OutlineNode tests', () => {
     });
     expect(sanitizeHTML(container.innerHTML)).toBe(
       '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
-        '<span data-text="true">New node!</span><span data-text="true"></span></p></div>',
+        '<span data-text="true" tabindex="-1">New node!</span><span data-text="true"></span></p></div>',
     );
   });
 
@@ -211,7 +211,7 @@ describe('OutlineNode tests', () => {
     });
     expect(sanitizeHTML(container.innerHTML)).toBe(
       '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
-        '<span data-text="true">New node!</span>' +
+        '<span data-text="true" tabindex="-1">New node!</span>' +
         '<span data-text="true"></span></p></div>',
     );
   });
@@ -225,7 +225,7 @@ describe('OutlineNode tests', () => {
     });
     expect(sanitizeHTML(container.innerHTML)).toBe(
       '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
-        '<span data-text="true">New node!</span>' +
+        '<span data-text="true" tabindex="-1">New node!</span>' +
         '<span data-text="true"></span></p></div>',
     );
   });

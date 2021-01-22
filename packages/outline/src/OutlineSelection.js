@@ -670,13 +670,18 @@ export class Selection {
       this.removeText();
       return;
     }
-    const anchorOffset = this.anchorOffset;
+    let anchorOffset = this.anchorOffset;
     const anchorNode = this.getAnchorNode();
     if (anchorNode === null) {
       return;
     }
     const currentBlock = anchorNode.getParentBlockOrThrow();
-    const prevSibling = anchorNode.getPreviousSibling();
+    let prevSibling = anchorNode.getPreviousSibling();
+
+    if (anchorNode.isImmutable() || anchorNode.isSegmented()) {
+      prevSibling = anchorNode;
+      anchorOffset = 0;
+    }
 
     if (anchorOffset === 0) {
       if (prevSibling === null) {
@@ -722,7 +727,7 @@ export class Selection {
       this.removeText();
       return;
     }
-    const anchorOffset = this.anchorOffset;
+    let anchorOffset = this.anchorOffset;
     const anchorNode = this.getAnchorNode();
     if (anchorNode === null) {
       return;
@@ -730,7 +735,12 @@ export class Selection {
     const currentBlock = anchorNode.getParentBlockOrThrow();
     const textContent = anchorNode.getTextContent();
     const textContentLength = textContent.length;
-    const nextSibling = anchorNode.getNextSibling();
+    let nextSibling = anchorNode.getNextSibling();
+
+    if (anchorNode.isImmutable() || anchorNode.isSegmented()) {
+      nextSibling = anchorNode;
+      anchorOffset = textContentLength;
+    }
 
     if (anchorOffset === textContentLength) {
       if (nextSibling === null) {

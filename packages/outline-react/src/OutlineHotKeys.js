@@ -99,8 +99,8 @@ const hotkeys: {[string]: string | Array<string>} = {
 };
 
 const appleHotkeys = {
-  moveLineBackward: ['opt+up', 'cmd+left'],
-  moveLineForward: ['opt+down', 'cmd+right'],
+  moveLineBackward: ['cmd+left'],
+  moveLineForward: ['cmd+right'],
   moveWordBackward: 'opt+left',
   moveWordForward: 'opt+right',
   deleteBackward: ['ctrl+backspace', 'ctrl+h'],

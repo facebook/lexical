@@ -829,6 +829,8 @@ export class Selection {
       }
     } else if (target instanceof TextNode) {
       target.select();
+      const parent = target.getParentBlockOrThrow();
+      parent.normalizeTextNodes(true);
     }
   }
   insertText(text: string): void {

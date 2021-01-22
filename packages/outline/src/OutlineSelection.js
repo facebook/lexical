@@ -1171,7 +1171,7 @@ export function createSelection(
   if (
     lastSelection !== null &&
     isSelectionChange &&
-    selection.isEqual(lastSelection)
+    !selection.isEqual(lastSelection)
   ) {
     selection.needsSync = true;
   }

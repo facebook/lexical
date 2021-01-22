@@ -503,13 +503,14 @@ export function reconcileViewModel(
 ): void {
   const prevViewModel = editor.getViewModel();
   const dirtySubTrees = nextViewModel.dirtySubTrees;
-  const needsUpdate = nextViewModel.isHistoric || nextViewModel.hasDirtyNodes();
+  const isHistoric = nextViewModel.isHistoric;
+  const needsUpdate = isHistoric || nextViewModel.hasDirtyNodes();
   const nextSelection = nextViewModel.selection;
 
   if (needsUpdate) {
     reconcileRoot(prevViewModel, nextViewModel, editor, dirtySubTrees);
   }
-  if (nextSelection !== null && nextSelection.isDirty) {
+  if (nextSelection !== null && (nextSelection.isDirty || isHistoric)) {
     reconcileSelection(nextSelection, editor);
   }
 }

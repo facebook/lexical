@@ -1052,8 +1052,8 @@ export function createSelection(
   const lastSelection = currentViewModel.selection;
   const eventType = event && event.type;
   const isComposing = eventType === 'compositionstart';
-  const isBeforeInput = eventType === 'beforeinput';
-  const useDOMSelection = eventType === 'selectionchange' || isBeforeInput;
+  const useDOMSelection =
+    eventType === 'selectionchange' || eventType === 'beforeinput';
   let anchorDOM, focusDOM, anchorOffset, focusOffset;
 
   if (
@@ -1125,14 +1125,14 @@ export function createSelection(
   }
   anchorKey = anchorNode.key;
   focusKey = focusNode.key;
-  let forceDirty = false;
+  let hasAdjustedOffsets = false;
   // Because we use a special character for whitespace,
   // we need to adjust offsets to 0 when the text is
   // really empty.
-  if (isBeforeInput && anchorNode === focusNode && anchorNode.text === '') {
+  if (anchorNode === focusNode && anchorNode.text === '') {
     anchorOffset = 0;
     focusOffset = 0;
-    forceDirty = true;
+    hasAdjustedOffsets = true;
   }
 
   const selection = new Selection(
@@ -1142,10 +1142,9 @@ export function createSelection(
     focusOffset,
   );
   if (
-    forceDirty ||
-    (lastSelection !== null &&
-      !editor.isComposing() &&
-      !selection.isEqual(lastSelection))
+    lastSelection !== null &&
+    !editor.isComposing() &&
+    (hasAdjustedOffsets || !selection.isEqual(lastSelection))
   ) {
     selection.isDirty = true;
   }

@@ -125,14 +125,6 @@ export class Selection {
     this.needsSync = false;
   }
 
-  isEqual(diffSelection: Selection): boolean {
-    return (
-      this.anchorKey === diffSelection.anchorKey &&
-      this.focusKey === diffSelection.focusKey &&
-      this.anchorOffset === diffSelection.anchorOffset &&
-      this.focusOffset === diffSelection.focusOffset
-    );
-  }
   isCaret(): boolean {
     return (
       this.anchorKey === this.focusKey && this.anchorOffset === this.focusOffset

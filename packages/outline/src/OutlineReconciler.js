@@ -105,6 +105,9 @@ function createNode(
 
   if (flags & IS_IMMUTABLE || flags & IS_SEGMENTED) {
     dom.contentEditable = 'false';
+    if (!dom.hasAttribute('tabindex')) {
+      dom.tabIndex = -1;
+    }
   }
 
   if (node instanceof TextNode) {

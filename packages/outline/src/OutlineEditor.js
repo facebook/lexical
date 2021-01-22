@@ -17,7 +17,7 @@ import {
   cloneViewModel,
   enterViewModelScope,
   garbageCollectDetachedNodes,
-  viewModelHasDirtySelection,
+  viewModelHasDirtySelectionOrNeedsSync,
   ViewModel,
   commitPendingUpdates,
   triggerUpdateListeners,
@@ -96,7 +96,7 @@ function updateEditor(
   );
   const shouldUpdate =
     pendingViewModel.hasDirtyNodes() ||
-    viewModelHasDirtySelection(pendingViewModel, editor);
+    viewModelHasDirtySelectionOrNeedsSync(pendingViewModel, editor);
 
   if (!shouldUpdate) {
     editor._pendingViewModel = null;

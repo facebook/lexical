@@ -545,6 +545,7 @@ function reconcileSelection(selection: Selection, editor: OutlineEditor): void {
       focusOffset = 1;
     }
   }
+  console.log(anchorOffset, focusOffset);
   domSelection.setBaseAndExtent(
     anchorDOM.firstChild,
     anchorOffset,

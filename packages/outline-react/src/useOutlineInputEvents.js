@@ -27,12 +27,6 @@ import {
   isDeleteWordBackward,
   isDeleteWordForward,
   isLineBreak,
-  isMoveBackward,
-  isMoveForward,
-  isMoveWordBackward,
-  isMoveWordForward,
-  isMoveLineBackward,
-  isMoveLineForward,
   isParagraph,
 } from 'outline-react/OutlineHotKeys';
 
@@ -157,24 +151,6 @@ function onKeyDown(
     if (state.richText) {
       selection.insertParagraph();
     }
-  } else if (isMoveBackward(event)) {
-    shouldPreventDefault = true;
-    selection.moveBackward();
-  } else if (isMoveForward(event)) {
-    shouldPreventDefault = true;
-    selection.moveForward();
-  } else if (isMoveWordBackward(event)) {
-    shouldPreventDefault = true;
-    selection.moveWordBackward();
-  } else if (isMoveWordForward(event)) {
-    shouldPreventDefault = true;
-    selection.moveWordForward();
-  } else if (isMoveLineBackward(event)) {
-    shouldPreventDefault = true;
-    selection.moveLineBackward();
-  } else if (isMoveLineForward(event)) {
-    shouldPreventDefault = true;
-    selection.moveLineForward();
   } else if (isDeleteLineBackward(event)) {
     shouldPreventDefault = true;
     selection.deleteLineBackward();

@@ -84,10 +84,6 @@ const keyCodes: {[key: string]: number} = {
 const hotkeys: {[string]: string | Array<string>} = {
   bold: 'mod+b',
   compose: ['down', 'left', 'right', 'up', 'backspace', 'enter'],
-  moveBackward: 'left',
-  moveForward: 'right',
-  moveWordBackward: 'ctrl+left',
-  moveWordForward: 'ctrl+right',
   deleteBackward: 'shift?+backspace',
   deleteForward: 'shift?+delete',
   extendBackward: 'shift+left',
@@ -99,10 +95,6 @@ const hotkeys: {[string]: string | Array<string>} = {
 };
 
 const appleHotkeys = {
-  moveLineBackward: ['cmd+left'],
-  moveLineForward: ['cmd+right'],
-  moveWordBackward: 'opt+left',
-  moveWordForward: 'opt+right',
   deleteBackward: ['ctrl+backspace', 'ctrl+h'],
   deleteForward: ['ctrl+delete', 'ctrl+d'],
   deleteLineBackward: 'cmd+shift?+backspace',
@@ -240,12 +232,6 @@ const createHotKey = (key: string): ((event: KeyboardEvent) => boolean) => {
 };
 
 export const isBold: (event: Object) => boolean = createHotKey('bold');
-export const isMoveBackward: (event: Object) => boolean = createHotKey(
-  'moveBackward',
-);
-export const isMoveForward: (event: Object) => boolean = createHotKey(
-  'moveForward',
-);
 export const isDeleteBackward: (event: Object) => boolean = createHotKey(
   'deleteBackward',
 );
@@ -277,18 +263,6 @@ export const isExtendLineForward: (event: Object) => boolean = createHotKey(
   'extendLineForward',
 );
 export const isItalic: (event: Object) => boolean = createHotKey('italic');
-export const isMoveLineBackward: (event: Object) => boolean = createHotKey(
-  'moveLineBackward',
-);
-export const isMoveLineForward: (event: Object) => boolean = createHotKey(
-  'moveLineForward',
-);
-export const isMoveWordBackward: (event: Object) => boolean = createHotKey(
-  'moveWordBackward',
-);
-export const isMoveWordForward: (event: Object) => boolean = createHotKey(
-  'moveWordForward',
-);
 export const isRedo: (event: Object) => boolean = createHotKey('redo');
 export const isLineBreak: (event: Object) => boolean = createHotKey(
   'lineBreak',

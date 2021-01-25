@@ -809,7 +809,7 @@ export class Selection {
       );
     }
   }
-  removeText(forward?: boolean): void {
+  removeText(isForwardRemoval?: boolean): void {
     const selectedNodes = this.getNodes();
     const selectedNodesLength = selectedNodes.length;
     const firstNode = selectedNodes[0];
@@ -833,7 +833,7 @@ export class Selection {
         const middleNode = selectedNodes[1];
         if (middleNode.isSegmented() && middleNode instanceof TextNode) {
           const currentBlock = firstNode.getParentBlockOrThrow();
-          if (forward) {
+          if (isForwardRemoval) {
             firstNode.select();
             removeFirstSegment(middleNode);
           } else {

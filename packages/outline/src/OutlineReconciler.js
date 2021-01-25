@@ -503,13 +503,16 @@ export function reconcileViewModel(
 ): void {
   const prevViewModel = editor.getViewModel();
   const dirtySubTrees = nextViewModel.dirtySubTrees;
-  const needsUpdate = nextViewModel.isHistoric || nextViewModel.hasDirtyNodes();
+  // When a view model is historic, we bail out of using dirty checks and
+  // always do a full reconcilation to ensure consistency.
+  const isHistoric = nextViewModel.isHistoric;
+  const needsUpdate = isHistoric || nextViewModel.hasDirtyNodes();
   const nextSelection = nextViewModel.selection;
 
   if (needsUpdate) {
     reconcileRoot(prevViewModel, nextViewModel, editor, dirtySubTrees);
   }
-  if (nextSelection !== null && nextSelection.isDirty) {
+  if (nextSelection !== null && (nextSelection.isDirty || isHistoric)) {
     reconcileSelection(nextSelection, editor);
   }
 }

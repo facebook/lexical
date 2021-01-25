@@ -109,6 +109,7 @@ export class Selection {
   focusKey: string;
   focusOffset: number;
   isDirty: boolean;
+  needsSync: boolean;
 
   constructor(
     anchorKey: string,
@@ -121,6 +122,7 @@ export class Selection {
     this.focusKey = focusKey;
     this.focusOffset = focusOffset;
     this.isDirty = false;
+    this.needsSync = false;
   }
 
   isEqual(diffSelection: Selection): boolean {
@@ -1047,13 +1049,27 @@ export function createSelection(
   viewModel: ViewModel,
   editor: OutlineEditor,
 ): null | Selection {
+  // When we create a selection, we try to use the previous
+  // selection where possible, unless an actual user selection
+  // change has occured. When we do need to create a new selection
+  // we validate we can have text nodes for both anchor and focus
+  // nodes. If that holds true, we then return that selection
+  // as a mutable object that we use for the view model for this
+  // update cycle. If a selection gets changed, and requires a
+  // update to native DOM selection, it gets marked as "dirty".
+  // If the selection changes, but matches with the existing
+  // DOM selection, then we only need to sync it. Otherwise,
+  // we generally bail out of doing an update to selection during
+  // reconcialtion unless there are dirty nodes that need
+  // reconciling.
+
   const event = window.event;
   const currentViewModel = editor.getViewModel();
   const lastSelection = currentViewModel.selection;
   const eventType = event && event.type;
   const isComposing = eventType === 'compositionstart';
-  const useDOMSelection =
-    eventType === 'selectionchange' || eventType === 'beforeinput';
+  const isSelectionChange = eventType === 'selectionchange';
+  const useDOMSelection = isSelectionChange || eventType === 'beforeinput';
   let anchorDOM, focusDOM, anchorOffset, focusOffset;
 
   if (
@@ -1096,6 +1112,8 @@ export function createSelection(
     return null;
   }
   const root = viewModel.nodeMap.root;
+  // If we're given the element nodes, lets try and work out what
+  // text nodes we can use instead. Otherwise, return null.
   if (anchorDOM === editorElement) {
     anchorNode = root.getFirstTextNode();
     if (anchorNode === null) {
@@ -1119,21 +1137,14 @@ export function createSelection(
   if (anchorKey === null || focusKey === null) {
     return null;
   }
+  // Let's resolve the nodes, in the case we're selecting block nodes.
+  // We always to make sure the anchor and focus nodes are text nodes.
   [anchorNode, focusNode] = resolveSelectionNodes(anchorKey, focusKey);
   if (anchorNode === null || focusNode === null) {
     return null;
   }
   anchorKey = anchorNode.key;
   focusKey = focusNode.key;
-  let hasAdjustedOffsets = false;
-  // Because we use a special character for whitespace,
-  // we need to adjust offsets to 0 when the text is
-  // really empty.
-  if (anchorNode === focusNode && anchorNode.text === '') {
-    anchorOffset = 0;
-    focusOffset = 0;
-    hasAdjustedOffsets = true;
-  }
 
   const selection = new Selection(
     anchorKey,
@@ -1141,12 +1152,28 @@ export function createSelection(
     focusKey,
     focusOffset,
   );
+
+  // Because we use a special character for whitespace,
+  // we need to adjust offsets to 0 when the text is
+  // really empty.
+  if (
+    !editor.isComposing() &&
+    anchorNode === focusNode &&
+    anchorNode.text === ''
+  ) {
+    anchorOffset = 0;
+    focusOffset = 0;
+    selection.isDirty = true;
+  }
+
+  // If the selection changes, we need to update our view model
+  // regardless to keep the view in sync.
   if (
     lastSelection !== null &&
-    !editor.isComposing() &&
-    (hasAdjustedOffsets || !selection.isEqual(lastSelection))
+    isSelectionChange &&
+    !selection.isEqual(lastSelection)
   ) {
-    selection.isDirty = true;
+    selection.needsSync = true;
   }
   return selection;
 }

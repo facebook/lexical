@@ -59,7 +59,7 @@ const view: View = {
   },
 };
 
-export function viewModelHasDirtySelection(
+export function viewModelHasDirtySelectionOrNeedsSync(
   viewModel: ViewModel,
   editor: OutlineEditor,
 ): boolean {
@@ -71,8 +71,7 @@ export function viewModelHasDirtySelection(
   ) {
     return true;
   }
-
-  return selection !== null && selection.isDirty;
+  return selection !== null && (selection.isDirty || selection.needsSync);
 }
 
 export function enterViewModelScope<V>(

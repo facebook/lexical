@@ -949,27 +949,6 @@ export class Selection {
     } else {
       const lastIndex = selectedNodesLength - 1;
       const lastNode = selectedNodes[lastIndex];
-      // An alternate path for where we want to delete
-      // a segemented node that is selected as part
-      // of a range. We need to do this as a backspace
-      // on browsers that support getTargetRanges picks
-      // up the range as this.
-      if (
-        text === '' &&
-        selectedNodes.length === 3 &&
-        firstNode instanceof TextNode &&
-        firstNode.getTextContent() === '' &&
-        lastNode instanceof TextNode &&
-        lastNode.getTextContent() === ''
-      ) {
-        const middleNode = selectedNodes[1];
-        if (middleNode.isSegmented() && middleNode instanceof TextNode) {
-          removeLastSegment(middleNode);
-          currentBlock.normalizeTextNodes(true);
-          lastNode.select();
-          return;
-        }
-      }
       const isBefore = firstNode === this.getAnchorNode();
       startOffset = isBefore ? anchorOffset : focusOffset;
       endOffset = isBefore ? focusOffset : anchorOffset;

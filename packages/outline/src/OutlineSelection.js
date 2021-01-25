@@ -834,11 +834,11 @@ export class Selection {
         if (middleNode.isSegmented() && middleNode instanceof TextNode) {
           const currentBlock = firstNode.getParentBlockOrThrow();
           if (forward) {
-            removeFirstSegment(middleNode);
             firstNode.select();
+            removeFirstSegment(middleNode);
           } else {
-            removeLastSegment(middleNode);
             lastNode.select();
+            removeLastSegment(middleNode);
           }
           currentBlock.normalizeTextNodes(true);
           return;

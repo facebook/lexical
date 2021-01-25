@@ -496,7 +496,7 @@ export class Selection {
     // only need the rest of the logic for browsers that don't support
     // native beforeinput (Firefox and IE).
     if (!this.isCaret()) {
-      this.removeText();
+      this.removeText(true);
       return;
     }
     const anchorNode = this.getAnchorNode();
@@ -628,7 +628,7 @@ export class Selection {
     // only need the rest of the logic for browsers that don't support
     // native beforeinput (Firefox and IE).
     if (!this.isCaret()) {
-      this.removeText();
+      this.removeText(true);
       this.deleteForward();
       return;
     }
@@ -764,7 +764,7 @@ export class Selection {
     // to polyfill this for browsers that don't support beforeinput, such
     // as FF.
     if (!this.isCaret()) {
-      this.removeText();
+      this.removeText(true);
       return;
     }
     let anchorOffset = this.anchorOffset;
@@ -809,7 +809,42 @@ export class Selection {
       );
     }
   }
-  removeText(): void {
+  removeText(forward?: boolean): void {
+    const selectedNodes = this.getNodes();
+    const selectedNodesLength = selectedNodes.length;
+    const firstNode = selectedNodes[0];
+    invariant(
+      firstNode instanceof TextNode,
+      'insertText: firstNode not a a text node',
+    );
+    if (selectedNodesLength === 3) {
+      const lastIndex = selectedNodesLength - 1;
+      const lastNode = selectedNodes[lastIndex];
+      // An alternate path for where we want to remove
+      // a segemented node that is selected as part
+      // of a text range. We need to do this as a backspace
+      // on browsers that support getTargetRanges picks
+      // up the range as this.
+      if (
+        firstNode.getTextContent() === '' &&
+        lastNode instanceof TextNode &&
+        lastNode.getTextContent() === ''
+      ) {
+        const middleNode = selectedNodes[1];
+        if (middleNode.isSegmented() && middleNode instanceof TextNode) {
+          const currentBlock = firstNode.getParentBlockOrThrow();
+          if (forward) {
+            removeFirstSegment(middleNode);
+            firstNode.select();
+          } else {
+            removeLastSegment(middleNode);
+            lastNode.select();
+          }
+          currentBlock.normalizeTextNodes(true);
+          return;
+        }
+      }
+    }
     this.insertText('');
   }
   insertNodes(nodes: Array<OutlineNode>): void {

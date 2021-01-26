@@ -15,7 +15,7 @@ import type {
   OutlineNode,
 } from 'outline';
 
-import {BlockNode} from 'outline';
+import {BlockNode, TextNode} from 'outline';
 import {useCallback, useEffect} from 'react';
 import useOutlineEventWrapper from 'outline-react/useOutlineEventWrapper';
 import {CAN_USE_BEFORE_INPUT, IS_SAFARI} from 'outline-react/OutlineEnv';
@@ -123,6 +123,10 @@ function insertDataTransfer(
   }
 }
 
+function isModifierActive(event: KeyboardEvent): boolean {
+  return event.metaKey || event.shiftKey || event.altKey || event.ctrlKey;
+}
+
 function onKeyDown(
   event: KeyboardEvent,
   view: View,
@@ -179,9 +183,58 @@ function onKeyDown(
       selection.formatText(FORMAT_ITALIC);
     }
   }
-
   if (shouldPreventDefault) {
     event.preventDefault();
+  }
+  const editorElement = editor.getEditorElement();
+  // Handle moving selection with left/right on to an
+  // immutable or segmented node, rather than jumping over
+  // the node. This is important for screen readers +
+  // text to speech accessibility tooling.
+  if (
+    selection.isCaret() &&
+    editorElement !== null &&
+    !isModifierActive(event)
+  ) {
+    const key = event.key;
+    const isLeftArrow = key === 'ArrowLeft';
+    const isRightArrow = key === 'ArrowRight';
+
+    if (isLeftArrow || isRightArrow) {
+      const anchorNode = selection.getAnchorNode();
+      const offset = selection.anchorOffset;
+
+      if (isLeftArrow) {
+        const prevSibling = anchorNode.getPreviousSibling();
+        if (prevSibling !== null) {
+          if (
+            (offset === 0 &&
+              (prevSibling.isImmutable() || prevSibling.isSegmented())) ||
+            anchorNode.isImmutable() ||
+            anchorNode.isSegmented()
+          ) {
+            prevSibling.select();
+          }
+        }
+      } else {
+        const nextSibling = anchorNode.getNextSibling();
+        if (nextSibling !== null) {
+          const textContent = anchorNode.getTextContent();
+          if (
+            (textContent.length === offset &&
+              (nextSibling.isImmutable() || nextSibling.isSegmented())) ||
+            anchorNode.isImmutable() ||
+            anchorNode.isSegmented()
+          ) {
+            if (nextSibling instanceof TextNode) {
+              nextSibling.select(0, 0);
+            } else {
+              nextSibling.select();
+            }
+          }
+        }
+      }
+    }
   }
 }
 

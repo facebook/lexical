@@ -490,6 +490,8 @@ class MentionNode extends TextNode {
   createDOM() {
     const dom = super.createDOM();
     dom.style.cssText = mentionStyle;
+    dom.setAttribute('role', 'button');
+    dom.setAttribute('aria-label', this.mention);
     return dom;
   }
 }

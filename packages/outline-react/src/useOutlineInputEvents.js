@@ -28,6 +28,8 @@ import {
   isDeleteWordForward,
   isLineBreak,
   isParagraph,
+  isBold,
+  isItalic,
 } from 'outline-react/OutlineHotKeys';
 
 // FlowFixMe: Flow doesn't know of the CompositionEvent?
@@ -135,11 +137,10 @@ function onKeyDown(
   if (selection === null) {
     return;
   }
+  let shouldPreventDefault = false;
   // If we can use native beforeinput, we handle
   // these cases in that function.
   if (!CAN_USE_BEFORE_INPUT) {
-    let shouldPreventDefault = false;
-
     if (isDeleteBackward(event)) {
       shouldPreventDefault = true;
       selection.deleteBackward();
@@ -167,9 +168,20 @@ function onKeyDown(
       shouldPreventDefault = true;
       selection.insertText('\n');
     }
-    if (shouldPreventDefault) {
-      event.preventDefault();
+  }
+  // Used for screen readers and speech tooling
+  if (state.richText) {
+    if (isBold(event)) {
+      shouldPreventDefault = true;
+      selection.formatText(FORMAT_BOLD);
+    } else if (isItalic(event)) {
+      shouldPreventDefault = true;
+      selection.formatText(FORMAT_ITALIC);
     }
+  }
+
+  if (shouldPreventDefault) {
+    event.preventDefault();
   }
 }
 

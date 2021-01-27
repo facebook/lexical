@@ -65,6 +65,7 @@ const externals = [
   'Outline',
   'outline-react',
   'outline-extensions',
+  'outline-helpers',
   'react-dom',
   'react',
   ...outlineExtensionsExternals,
@@ -168,6 +169,12 @@ build(
   'Outline',
   path.resolve('./packages/outline/src/index.js'),
   path.resolve('./packages/outline/dist/Outline.js'),
+);
+
+build(
+  'Outline Helpers',
+  path.resolve('./packages/outline-helpers/src/index.js'),
+  path.resolve('./packages/outline-helpers/dist/OutlineHelpers.js'),
 );
 
 outlineReactModules.forEach((outlineReactModule) => {

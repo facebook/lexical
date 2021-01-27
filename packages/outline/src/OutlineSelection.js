@@ -73,6 +73,36 @@ function getOffsetBeforePreviousGrapheme(offset, textContent): number {
   }
 }
 
+function removeFirstSegment(node: TextNode): void {	
+  const currentBlock = node.getParentBlockOrThrow();	
+  const textContent = node.getTextContent();	
+  const lastSpaceIndex = textContent.indexOf(' ');	
+  if (lastSpaceIndex > -1) {	
+    node.spliceText(0, lastSpaceIndex + 1, '');	
+  } else {	
+    const textNode = createTextNode('');	
+    node.insertAfter(textNode);	
+    node.remove();	
+    textNode.select();	
+    currentBlock.normalizeTextNodes(true);	
+  }	
+}	
+
+function removeLastSegment(node: TextNode): void {	
+  const currentBlock = node.getParentBlockOrThrow();	
+  const textContent = node.getTextContent();	
+  const lastSpaceIndex = textContent.lastIndexOf(' ');	
+  if (lastSpaceIndex > -1) {	
+    node.spliceText(lastSpaceIndex, textContent.length - lastSpaceIndex, '');	
+  } else {	
+    const textNode = createTextNode('');	
+    node.insertAfter(textNode);	
+    node.remove();	
+    textNode.select();	
+    currentBlock.normalizeTextNodes(true);	
+  }	
+}
+
 export class Selection {
   anchorKey: string;
   anchorOffset: number;
@@ -466,7 +496,7 @@ export class Selection {
     // only need the rest of the logic for browsers that don't support
     // native beforeinput (Firefox and IE).
     if (!this.isCaret()) {
-      this.removeText(true);
+      this.removeText();
       return;
     }
     const anchorNode = this.getAnchorNode();
@@ -598,7 +628,7 @@ export class Selection {
     // only need the rest of the logic for browsers that don't support
     // native beforeinput (Firefox and IE).
     if (!this.isCaret()) {
-      this.removeText(true);
+      this.removeText();
       this.deleteForward();
       return;
     }
@@ -675,13 +705,18 @@ export class Selection {
       this.removeText();
       return;
     }
-    const anchorOffset = this.anchorOffset;
+    let anchorOffset = this.anchorOffset;
     const anchorNode = this.getAnchorNode();
     if (anchorNode === null) {
       return;
     }
     const currentBlock = anchorNode.getParentBlockOrThrow();
-    const prevSibling = anchorNode.getPreviousSibling();
+    let prevSibling = anchorNode.getPreviousSibling();
+
+    if (anchorNode.isImmutable() || anchorNode.isSegmented()) {	
+      prevSibling = anchorNode;	
+      anchorOffset = 0;	
+    }
 
     if (anchorOffset === 0) {
       if (prevSibling === null) {
@@ -696,7 +731,7 @@ export class Selection {
           prevSibling.remove();
           currentBlock.normalizeTextNodes(true);
         } else if (prevSibling.isSegmented()) {
-          prevSibling.removeLastSegment();
+          removeLastSegment(prevSibling);
           currentBlock.normalizeTextNodes(true);
         } else {
           const textContent = prevSibling.getTextContent();
@@ -729,10 +764,10 @@ export class Selection {
     // to polyfill this for browsers that don't support beforeinput, such
     // as FF.
     if (!this.isCaret()) {
-      this.removeText(true);
+      this.removeText();
       return;
     }
-    const anchorOffset = this.anchorOffset;
+    let anchorOffset = this.anchorOffset;
     const anchorNode = this.getAnchorNode();
     if (anchorNode === null) {
       return;
@@ -740,7 +775,12 @@ export class Selection {
     const currentBlock = anchorNode.getParentBlockOrThrow();
     const textContent = anchorNode.getTextContent();
     const textContentLength = textContent.length;
-    const nextSibling = anchorNode.getNextSibling();
+    let nextSibling = anchorNode.getNextSibling();
+
+    if (anchorNode.isImmutable() || anchorNode.isSegmented()) {	
+      nextSibling = anchorNode;	
+      anchorOffset = textContentLength;	
+    }
 
     if (anchorOffset === textContentLength) {
       if (nextSibling === null) {
@@ -749,7 +789,7 @@ export class Selection {
         if (nextSibling.isImmutable()) {
           nextSibling.remove();
         } else if (nextSibling.isSegmented()) {
-          nextSibling.removeFirstSegment();
+          removeFirstSegment(nextSibling);
         } else {
           nextSibling.spliceText(0, 1, '', true);
         }
@@ -769,42 +809,7 @@ export class Selection {
       );
     }
   }
-  removeText(isForwardRemoval?: boolean): void {
-    const selectedNodes = this.getNodes();
-    const selectedNodesLength = selectedNodes.length;
-    const firstNode = selectedNodes[0];
-    invariant(
-      firstNode instanceof TextNode,
-      'insertText: firstNode not a a text node',
-    );
-    if (selectedNodesLength === 3) {
-      const lastIndex = selectedNodesLength - 1;
-      const lastNode = selectedNodes[lastIndex];
-      // An alternate path for where we want to remove
-      // a segemented node that is selected as part
-      // of a text range. We need to do this as a backspace
-      // on browsers that support getTargetRanges picks
-      // up the range as this.
-      if (
-        firstNode.getTextContent() === '' &&
-        lastNode instanceof TextNode &&
-        lastNode.getTextContent() === ''
-      ) {
-        const middleNode = selectedNodes[1];
-        if (middleNode.isSegmented() && middleNode instanceof TextNode) {
-          const currentBlock = firstNode.getParentBlockOrThrow();
-          if (isForwardRemoval) {
-            firstNode.select();
-            middleNode.removeFirstSegment();
-          } else {
-            lastNode.select();
-            middleNode.removeLastSegment();
-          }
-          currentBlock.normalizeTextNodes(true);
-          return;
-        }
-      }
-    }
+  removeText(): void {
     this.insertText('');
   }
   insertNodes(nodes: Array<OutlineNode>): void {

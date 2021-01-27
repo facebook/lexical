@@ -183,11 +183,8 @@ function onKeyDown(
       selection.formatText(FORMAT_ITALIC);
     }
   }
-  if (shouldPreventDefault) {
-    event.preventDefault();
-  }
   const editorElement = editor.getEditorElement();
-  // Handle moving selection with left/right on to an
+  // Handle moving/deleting selection with left/right on to an
   // immutable or segmented node, rather than jumping over
   // the node. This is important for screen readers +
   // text to speech accessibility tooling.
@@ -199,12 +196,14 @@ function onKeyDown(
     const key = event.key;
     const isLeftArrow = key === 'ArrowLeft';
     const isRightArrow = key === 'ArrowRight';
+    const isDelete = key === 'Delete';
+    const isBackspace = key === 'Backspace';
 
-    if (isLeftArrow || isRightArrow) {
+    if (isLeftArrow || isRightArrow || isDelete || isBackspace) {
       const anchorNode = selection.getAnchorNode();
       const offset = selection.anchorOffset;
 
-      if (isLeftArrow) {
+      if (isLeftArrow || isBackspace) {
         const prevSibling = anchorNode.getPreviousSibling();
         if (prevSibling !== null) {
           if (
@@ -213,7 +212,12 @@ function onKeyDown(
             anchorNode.isImmutable() ||
             anchorNode.isSegmented()
           ) {
-            prevSibling.select();
+            if (isLeftArrow) {
+              prevSibling.select();
+            } else {
+              selection.deleteBackward();
+            }
+            shouldPreventDefault = true;
           }
         }
       } else {
@@ -226,29 +230,23 @@ function onKeyDown(
             anchorNode.isImmutable() ||
             anchorNode.isSegmented()
           ) {
-            if (nextSibling instanceof TextNode) {
-              nextSibling.select(0, 0);
+            if (isRightArrow) {
+              if (nextSibling instanceof TextNode) {
+                nextSibling.select(0, 0);
+              } else {
+                nextSibling.select();
+              }
             } else {
-              nextSibling.select();
+              selection.deleteForward();
             }
+            shouldPreventDefault = true;
           }
         }
       }
     }
-    const isDelete = key === 'Delete';
-    const isBackspace = key === 'Backspace';
-
-    if (isDelete || isBackspace) {
-      const anchorNode = selection.getAnchorNode();
-
-      if (anchorNode.isImmutable() || anchorNode.isSegmented()) {
-        if (isBackspace) {
-          anchorNode.removeLastSegment();
-        } else {
-          anchorNode.removeFirstSegment();
-        }
-      }
-    }
+  }
+  if (shouldPreventDefault) {
+    event.preventDefault();
   }
 }
 

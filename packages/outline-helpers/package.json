@@ -1,0 +1,9 @@
+{
+  "name": "outline-helpers",
+  "version": "0.0.5",
+  "private": true,
+  "main": "dist/OutlineHelpers.js",
+  "dependencies": {
+    "outline": "0.0.5"
+  }
+}

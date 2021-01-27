@@ -3,6 +3,7 @@ let React;
 let ReactDOM;
 let ReactTestUtils;
 let Outline;
+let OutlineHelpers;
 let ParagraphNode;
 
 const FORMAT_BOLD = 0;
@@ -162,31 +163,31 @@ function applySelectionInputs(inputs, update, editor) {
 
       switch (input.type) {
         case 'insert_text': {
-          selection.insertText(input.text);
+          OutlineHelpers.insertText(selection, input.text);
           break;
         }
         case 'insert_paragraph': {
-          selection.insertParagraph();
+          OutlineHelpers.insertParagraph(selection);
           break;
         }
         case 'delete_backward': {
-          selection.deleteBackward();
+          OutlineHelpers.deleteBackward(selection);
           break;
         }
         case 'delete_forward': {
-          selection.deleteForward();
+          OutlineHelpers.deleteForward(selection);
           break;
         }
         case 'delete_word_backward': {
-          selection.deleteWordBackward();
+          OutlineHelpers.deleteWordBackward(selection);
           break;
         }
         case 'delete_word_forward': {
-          selection.deleteWordForward();
+          OutlineHelpers.deleteWordForward(selection);
           break;
         }
         case 'format_text': {
-          selection.formatText(input.format);
+          OutlineHelpers.formatText(selection, input.format);
           break;
         }
         case 'move_native_selection': {
@@ -202,28 +203,28 @@ function applySelectionInputs(inputs, update, editor) {
         case 'insert_immutable_node': {
           const text = Outline.createTextNode(input.text);
           text.makeImmutable();
-          selection.insertNodes([text]);
+          OutlineHelpers.insertNodes(selection, [text]);
           text.selectAfter();
           break;
         }
         case 'insert_segmented_node': {
           const text = Outline.createTextNode(input.text);
           text.makeSegmented();
-          selection.insertNodes([text]);
+          OutlineHelpers.insertNodes(selection, [text]);
           text.selectAfter();
           break;
         }
         case 'covert_to_immutable_node': {
           const text = Outline.createTextNode(selection.getTextContent());
           text.makeImmutable();
-          selection.insertNodes([text]);
+          OutlineHelpers.insertNodes(selection, [text]);
           text.selectAfter();
           break;
         }
         case 'covert_to_segmented_node': {
           const text = Outline.createTextNode(selection.getTextContent());
           text.makeSegmented();
-          selection.insertNodes([text]);
+          OutlineHelpers.insertNodes(selection, [text]);
           text.selectAfter();
           break;
         }
@@ -240,6 +241,7 @@ describe('OutlineSelection tests', () => {
     ReactDOM = require('react-dom');
     ReactTestUtils = require('react-dom/test-utils');
     Outline = require('outline');
+    OutlineHelpers = require('outline-helpers');
     ParagraphNode = require('outline-extensions/ParagraphNode');
 
     container = document.createElement('div');

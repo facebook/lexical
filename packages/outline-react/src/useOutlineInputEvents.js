@@ -31,6 +31,20 @@ import {
   isBold,
   isItalic,
 } from 'outline-react/OutlineHotKeys';
+import {
+  deleteBackward,
+  deleteForward,
+  deleteLineBackward,
+  deleteLineForward,
+  deleteWordBackward,
+  deleteWordForward,
+  insertParagraph,
+  formatText,
+  insertNodes,
+  insertText,
+  removeText,
+  getNodesInRange,
+} from 'outline-helpers';
 
 // FlowFixMe: Flow doesn't know of the CompositionEvent?
 // $FlowFixMe: TODO
@@ -113,13 +127,13 @@ function insertDataTransfer(
     if (outlineNodesString) {
       const nodeRange = JSON.parse(outlineNodesString);
       const nodes = generateNodes(nodeRange, editor);
-      selection.insertNodes(nodes);
+      insertNodes(selection, nodes);
       return;
     }
   }
   const text = dataTransfer.getData('text/plain');
   if (text != null) {
-    selection.insertText(text);
+    insertText(selection, text);
   }
 }
 
@@ -147,40 +161,40 @@ function onKeyDown(
   if (!CAN_USE_BEFORE_INPUT) {
     if (isDeleteBackward(event)) {
       shouldPreventDefault = true;
-      selection.deleteBackward();
+      deleteBackward(selection);
     } else if (isDeleteForward(event)) {
       shouldPreventDefault = true;
-      selection.deleteForward();
+      deleteForward(selection);
     } else if (isDeleteLineBackward(event)) {
       shouldPreventDefault = true;
-      selection.deleteLineBackward();
+      deleteLineBackward(selection);
     } else if (isDeleteLineForward(event)) {
       shouldPreventDefault = true;
-      selection.deleteLineForward();
+      deleteLineForward(selection);
     } else if (isDeleteWordBackward(event)) {
       shouldPreventDefault = true;
-      selection.deleteWordBackward();
+      deleteWordBackward(selection);
     } else if (isDeleteWordForward(event)) {
       shouldPreventDefault = true;
-      selection.deleteWordForward();
+      deleteWordForward(selection);
     } else if (isParagraph(event)) {
       shouldPreventDefault = true;
       if (state.richText) {
-        selection.insertParagraph();
+        insertParagraph(selection);
       }
     } else if (isLineBreak(event)) {
       shouldPreventDefault = true;
-      selection.insertText('\n');
+      insertText(selection, '\n');
     }
   }
   // Used for screen readers and speech tooling
   if (state.richText) {
     if (isBold(event)) {
       shouldPreventDefault = true;
-      selection.formatText(FORMAT_BOLD);
+      formatText(selection, FORMAT_BOLD);
     } else if (isItalic(event)) {
       shouldPreventDefault = true;
-      selection.formatText(FORMAT_ITALIC);
+      formatText(selection, FORMAT_ITALIC);
     }
   }
   const editorElement = editor.getEditorElement();
@@ -215,7 +229,7 @@ function onKeyDown(
             if (isLeftArrow) {
               prevSibling.select();
             } else {
-              selection.deleteBackward();
+              deleteBackward(selection);
             }
             shouldPreventDefault = true;
           }
@@ -237,7 +251,7 @@ function onKeyDown(
                 nextSibling.select();
               }
             } else {
-              selection.deleteForward();
+              deleteForward(selection);
             }
             shouldPreventDefault = true;
           }
@@ -293,7 +307,7 @@ function onCut(
   onCopy(event, view, state, editor);
   const selection = view.getSelection();
   if (selection !== null) {
-    selection.removeText();
+    removeText(selection);
   }
 }
 
@@ -319,7 +333,7 @@ function onCopy(
       clipboardData.setData('text/plain', selection.getTextContent());
       clipboardData.setData(
         'application/x-outline-nodes',
-        JSON.stringify(selection.getNodesInRange()),
+        JSON.stringify(getNodesInRange(selection)),
       );
     }
   }
@@ -342,7 +356,7 @@ function onCompositionStart(
         state.compositionSelection = selection;
       }
     } else {
-      selection.removeText();
+      removeText(selection);
     }
   }
 }
@@ -378,7 +392,7 @@ function onCompositionEnd(
     // data and also handle composition selection. There's no good way of
     // detecting this, so we'll have to use browser agents.
     if (!IS_SAFARI && CAN_USE_BEFORE_INPUT) {
-      selection.insertText(data);
+      insertText(selection, data);
     }
   }
 }
@@ -420,25 +434,25 @@ function onNativeBeforeInput(
   switch (inputType) {
     case 'formatBold': {
       if (state.richText) {
-        selection.formatText(FORMAT_BOLD);
+        formatText(selection, FORMAT_BOLD);
       }
       break;
     }
     case 'formatItalic': {
       if (state.richText) {
-        selection.formatText(FORMAT_ITALIC);
+        formatText(selection, FORMAT_ITALIC);
       }
       break;
     }
     case 'formatStrikeThrough': {
       if (state.richText) {
-        selection.formatText(FORMAT_STRIKETHROUGH);
+        formatText(selection, FORMAT_STRIKETHROUGH);
       }
       break;
     }
     case 'formatUnderline': {
       if (state.richText) {
-        selection.formatText(FORMAT_UNDERLINE);
+        formatText(selection, FORMAT_UNDERLINE);
       }
       break;
     }
@@ -446,7 +460,7 @@ function onNativeBeforeInput(
     case 'insertFromComposition': {
       const data = event.data;
       if (data) {
-        selection.insertText(data);
+        insertText(selection, data);
       }
       break;
     }
@@ -462,44 +476,44 @@ function onNativeBeforeInput(
       break;
     }
     case 'insertLineBreak': {
-      selection.insertText('\n');
+      insertText(selection, '\n');
       break;
     }
     case 'insertParagraph': {
       if (state.richText) {
-        selection.insertParagraph();
+        insertParagraph(selection);
       }
       break;
     }
     case 'deleteByComposition':
     case 'deleteByDrag':
     case 'deleteByCut': {
-      selection.removeText();
+      removeText(selection);
       break;
     }
     case 'deleteContentBackward': {
-      selection.deleteBackward();
+      deleteBackward(selection);
       break;
     }
     case 'deleteContent':
     case 'deleteContentForward': {
-      selection.deleteForward();
+      deleteForward(selection);
       break;
     }
     case 'deleteWordBackward': {
-      selection.deleteWordBackward();
+      deleteWordBackward(selection);
       break;
     }
     case 'deleteWordForward': {
-      selection.deleteWordForward();
+      deleteWordForward(selection);
       break;
     }
     case 'deleteSoftLineBackward': {
-      selection.deleteLineBackward();
+      deleteLineBackward(selection);
       break;
     }
     case 'deleteSoftLineForward': {
-      selection.deleteLineForward();
+      deleteLineForward(selection);
       break;
     }
     case 'historyUndo':
@@ -521,7 +535,7 @@ function onPolyfilledBeforeInput(
   const selection = view.getSelection();
   const data = event.data;
   if (data != null && selection !== null) {
-    selection.insertText(data);
+    insertText(selection, data);
   }
 }
 

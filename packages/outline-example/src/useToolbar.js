@@ -6,6 +6,7 @@ import {TextNode} from 'outline';
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 // $FlowFixMe
 import {unstable_batchedUpdates, createPortal} from 'react-dom';
+import {formatText} from 'outline-helpers';
 
 const FORMAT_BOLD = 0;
 const FORMAT_ITALIC = 1;
@@ -257,7 +258,7 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
               }
             });
             if (url !== null) {
-              sel.formatText(FORMAT_LINK, true);
+              formatText(sel, FORMAT_LINK, true);
             }
           }
         });
@@ -266,13 +267,13 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
     [editor],
   );
 
-  const formatText = useCallback(
+  const applyFormatText = useCallback(
     (formatType: 0 | 1 | 2 | 3 | 4 | 5) => {
       if (editor !== null) {
         editor.update((view) => {
           const selection = view.getSelection();
           if (selection !== null) {
-            selection.formatText(formatType);
+            formatText(selection, formatType);
           }
         });
       }
@@ -280,21 +281,21 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
     [editor],
   );
 
-  const bold = useCallback(() => formatText(FORMAT_BOLD), [formatText]);
-  const italic = useCallback(() => formatText(FORMAT_ITALIC), [formatText]);
-  const code = useCallback(() => formatText(FORMAT_CODE), [formatText]);
-  const strikethrough = useCallback(() => formatText(FORMAT_STRIKETHROUGH), [
-    formatText,
+  const bold = useCallback(() => applyFormatText(FORMAT_BOLD), [applyFormatText]);
+  const italic = useCallback(() => applyFormatText(FORMAT_ITALIC), [applyFormatText]);
+  const code = useCallback(() => applyFormatText(FORMAT_CODE), [applyFormatText]);
+  const strikethrough = useCallback(() => applyFormatText(FORMAT_STRIKETHROUGH), [
+    applyFormatText,
   ]);
   const link = useCallback(() => {
     if (!isLink) {
       setEditMode(true);
       updateSelectedLinks('http://', null);
     } else {
-      formatText(FORMAT_LINK);
+      applyFormatText(FORMAT_LINK);
       updateSelectedLinks(null, null);
     }
-  }, [formatText, isLink, updateSelectedLinks]);
+  }, [applyFormatText, isLink, updateSelectedLinks]);
 
   return (
     <div ref={toolbarRef} id="toolbar">

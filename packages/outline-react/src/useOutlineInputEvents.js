@@ -235,6 +235,20 @@ function onKeyDown(
         }
       }
     }
+    const isDelete = key === 'Delete';
+    const isBackspace = key === 'Backspace';
+
+    if (isDelete || isBackspace) {
+      const anchorNode = selection.getAnchorNode();
+
+      if (anchorNode.isImmutable() || anchorNode.isSegmented()) {
+        if (isBackspace) {
+          anchorNode.removeLastSegment();
+        } else {
+          anchorNode.removeFirstSegment();
+        }
+      }
+    }
   }
 }
 

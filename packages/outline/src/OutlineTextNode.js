@@ -546,6 +546,36 @@ export class TextNode extends OutlineNode {
     shouldErrorOnReadOnly();
     return splitText(this, splitOffsets);
   }
+  removeFirstSegment(): void {
+    shouldErrorOnReadOnly();
+    const currentBlock = this.getParentBlockOrThrow();
+    const textContent = this.getTextContent();
+    const lastSpaceIndex = textContent.indexOf(' ');
+    if (lastSpaceIndex > -1) {
+      this.spliceText(0, lastSpaceIndex + 1, '');
+    } else {
+      const textNode = createTextNode('');
+      this.insertAfter(textNode);
+      this.remove();
+      textNode.select();
+      currentBlock.normalizeTextNodes(true);
+    }
+  }
+  removeLastSegment(): void {
+    shouldErrorOnReadOnly();
+    const currentBlock = this.getParentBlockOrThrow();
+    const textContent = this.getTextContent();
+    const lastSpaceIndex = textContent.lastIndexOf(' ');
+    if (lastSpaceIndex > -1) {
+      this.spliceText(lastSpaceIndex, textContent.length - lastSpaceIndex, '');
+    } else {
+      const textNode = createTextNode('');
+      this.insertAfter(textNode);
+      this.remove();
+      textNode.select();
+      currentBlock.normalizeTextNodes(true);
+    }
+  }
 }
 
 export function createTextNode(text?: string = ''): TextNode {

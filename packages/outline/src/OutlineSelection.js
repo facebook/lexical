@@ -73,36 +73,6 @@ function getOffsetBeforePreviousGrapheme(offset, textContent): number {
   }
 }
 
-function removeFirstSegment(node: TextNode): void {
-  const currentBlock = node.getParentBlockOrThrow();
-  const textContent = node.getTextContent();
-  const lastSpaceIndex = textContent.indexOf(' ');
-  if (lastSpaceIndex > -1) {
-    node.spliceText(0, lastSpaceIndex + 1, '');
-  } else {
-    const textNode = createTextNode('');
-    node.insertAfter(textNode);
-    node.remove();
-    textNode.select();
-    currentBlock.normalizeTextNodes(true);
-  }
-}
-
-function removeLastSegment(node: TextNode): void {
-  const currentBlock = node.getParentBlockOrThrow();
-  const textContent = node.getTextContent();
-  const lastSpaceIndex = textContent.lastIndexOf(' ');
-  if (lastSpaceIndex > -1) {
-    node.spliceText(lastSpaceIndex, textContent.length - lastSpaceIndex, '');
-  } else {
-    const textNode = createTextNode('');
-    node.insertAfter(textNode);
-    node.remove();
-    textNode.select();
-    currentBlock.normalizeTextNodes(true);
-  }
-}
-
 export class Selection {
   anchorKey: string;
   anchorOffset: number;
@@ -705,18 +675,13 @@ export class Selection {
       this.removeText();
       return;
     }
-    let anchorOffset = this.anchorOffset;
+    const anchorOffset = this.anchorOffset;
     const anchorNode = this.getAnchorNode();
     if (anchorNode === null) {
       return;
     }
     const currentBlock = anchorNode.getParentBlockOrThrow();
-    let prevSibling = anchorNode.getPreviousSibling();
-
-    if (anchorNode.isImmutable() || anchorNode.isSegmented()) {
-      prevSibling = anchorNode;
-      anchorOffset = 0;
-    }
+    const prevSibling = anchorNode.getPreviousSibling();
 
     if (anchorOffset === 0) {
       if (prevSibling === null) {
@@ -731,7 +696,7 @@ export class Selection {
           prevSibling.remove();
           currentBlock.normalizeTextNodes(true);
         } else if (prevSibling.isSegmented()) {
-          removeLastSegment(prevSibling);
+          prevSibling.removeLastSegment();
           currentBlock.normalizeTextNodes(true);
         } else {
           const textContent = prevSibling.getTextContent();
@@ -767,7 +732,7 @@ export class Selection {
       this.removeText(true);
       return;
     }
-    let anchorOffset = this.anchorOffset;
+    const anchorOffset = this.anchorOffset;
     const anchorNode = this.getAnchorNode();
     if (anchorNode === null) {
       return;
@@ -775,12 +740,7 @@ export class Selection {
     const currentBlock = anchorNode.getParentBlockOrThrow();
     const textContent = anchorNode.getTextContent();
     const textContentLength = textContent.length;
-    let nextSibling = anchorNode.getNextSibling();
-
-    if (anchorNode.isImmutable() || anchorNode.isSegmented()) {
-      nextSibling = anchorNode;
-      anchorOffset = textContentLength;
-    }
+    const nextSibling = anchorNode.getNextSibling();
 
     if (anchorOffset === textContentLength) {
       if (nextSibling === null) {
@@ -789,7 +749,7 @@ export class Selection {
         if (nextSibling.isImmutable()) {
           nextSibling.remove();
         } else if (nextSibling.isSegmented()) {
-          removeFirstSegment(nextSibling);
+          nextSibling.removeFirstSegment();
         } else {
           nextSibling.spliceText(0, 1, '', true);
         }
@@ -835,10 +795,10 @@ export class Selection {
           const currentBlock = firstNode.getParentBlockOrThrow();
           if (isForwardRemoval) {
             firstNode.select();
-            removeFirstSegment(middleNode);
+            middleNode.removeFirstSegment();
           } else {
             lastNode.select();
-            removeLastSegment(middleNode);
+            middleNode.removeLastSegment();
           }
           currentBlock.normalizeTextNodes(true);
           return;

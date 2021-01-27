@@ -33,7 +33,7 @@ module.name_mapper='^outline-extensions/ListNode' -> '<PROJECT_ROOT>/packages/ou
 module.name_mapper='^outline-extensions/ImageNode' -> '<PROJECT_ROOT>/packages/outline-extensions/src/OutlineImageNode.js'
 module.name_mapper='^outline-extensions/QuoteNode' -> '<PROJECT_ROOT>/packages/outline-extensions/src/OutlineQuoteNode.js'
 
-module.name_mapper='^outline-helpers$' -> '<PROJECT_ROOT>/packages/outline-helpers/src/index.js'
+module.name_mapper='^outline-selection-helpers$' -> '<PROJECT_ROOT>/packages/outline-selection-helpers/src/index.js'
 
 suppress_type=$FlowIssue
 suppress_type=$FlowFixMe

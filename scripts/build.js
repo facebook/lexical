@@ -65,7 +65,7 @@ const externals = [
   'Outline',
   'outline-react',
   'outline-extensions',
-  'outline-helpers',
+  'outline-selection-helpers',
   'react-dom',
   'react',
   ...outlineExtensionsExternals,
@@ -173,8 +173,8 @@ build(
 
 build(
   'Outline Helpers',
-  path.resolve('./packages/outline-helpers/src/index.js'),
-  path.resolve('./packages/outline-helpers/dist/OutlineHelpers.js'),
+  path.resolve('./packages/outline-selection-helpers/src/index.js'),
+  path.resolve('./packages/outline-selection-helpers/dist/OutlineSelectionHelpers.js'),
 );
 
 outlineReactModules.forEach((outlineReactModule) => {

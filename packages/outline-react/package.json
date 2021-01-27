@@ -16,7 +16,7 @@
   "dependencies": {
     "outline": "0.0.5",
     "outline-extensions": "0.0.5",
-    "outline-helpers": "0.0.5"
+    "outline-selection-helpers": "0.0.5"
   },
   "peerDependencies": {
     "react": ">=17.0.1",

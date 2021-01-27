@@ -1,8 +1,8 @@
 {
-  "name": "outline-helpers",
+  "name": "outline-selection-helpers",
   "version": "0.0.5",
   "private": true,
-  "main": "dist/OutlineHelpers.js",
+  "main": "dist/OutlineSelectionHelpers.js",
   "dependencies": {
     "outline": "0.0.5"
   }

@@ -6,7 +6,7 @@ import {TextNode} from 'outline';
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 // $FlowFixMe
 import {unstable_batchedUpdates, createPortal} from 'react-dom';
-import {formatText} from 'outline-helpers';
+import {formatText} from 'outline-selection-helpers';
 
 const FORMAT_BOLD = 0;
 const FORMAT_ITALIC = 1;

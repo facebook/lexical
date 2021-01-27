@@ -241,7 +241,7 @@ describe('OutlineSelection tests', () => {
     ReactDOM = require('react-dom');
     ReactTestUtils = require('react-dom/test-utils');
     Outline = require('outline');
-    OutlineHelpers = require('outline-helpers');
+    OutlineHelpers = require('outline-selection-helpers');
     ParagraphNode = require('outline-extensions/ParagraphNode');
 
     container = document.createElement('div');

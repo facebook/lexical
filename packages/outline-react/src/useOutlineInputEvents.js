@@ -44,7 +44,7 @@ import {
   insertText,
   removeText,
   getNodesInRange,
-} from 'outline-helpers';
+} from 'outline-selection-helpers';
 
 // FlowFixMe: Flow doesn't know of the CompositionEvent?
 // $FlowFixMe: TODO

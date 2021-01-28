@@ -122,6 +122,11 @@ h1 {
   list-style-type: disc;
 }
 
+.editor-shell .hashtag {
+  background-color: rgba(88, 144, 255, .15);
+  border-bottom: 1px solid rgba(88, 144, 255, .3);
+}
+
 pre {
   margin: 20px auto 20px auto;
   max-width: 580px;

@@ -22,6 +22,7 @@ const IS_STRIKETHROUGH = 1 << 5;
 const IS_UNDERLINE = 1 << 6;
 const IS_CODE = 1 << 7;
 const IS_LINK = 1 << 8;
+const IS_HASHTAG = 1 << 9;
 
 // Do not import these from shared, otherwise we will bundle
 // all of shared too.
@@ -31,6 +32,7 @@ const FORMAT_STRIKETHROUGH = 2;
 const FORMAT_UNDERLINE = 3;
 const FORMAT_CODE = 4;
 const FORMAT_LINK = 5;
+const FORMAT_HASHTAG = 6;
 
 const zeroWidthString = '\uFEFF';
 
@@ -146,7 +148,8 @@ function splitText(
   return splitNodes;
 }
 
-function setTextStyling(tag, prevFlags, nextFlags, domStyle) {
+function setTextStyling(tag, prevFlags, nextFlags, dom) {
+  const domStyle = dom.style;
   if (tag === 'strong') {
     if (nextFlags & IS_ITALIC) {
       // When prev is not italic, but next is
@@ -177,6 +180,16 @@ function setTextStyling(tag, prevFlags, nextFlags, domStyle) {
     }
   } else if (!prevIsNotStrikeThrough || !prevIsNotUnderline) {
     domStyle.setProperty('text-decoration', 'initial');
+  }
+  const prevIsHashtag = (prevFlags & IS_HASHTAG) !== 0;
+  const nextIsHashtag = (nextFlags & IS_HASHTAG) !== 0;
+
+  if (nextIsHashtag) {
+    if (!prevIsHashtag) {
+      dom.className = 'hashtag';
+    }
+  } else if (prevIsHashtag) {
+    dom.className = '';
   }
 }
 
@@ -259,6 +272,9 @@ export class TextNode extends OutlineNode {
   isLink(): boolean {
     return (this.getLatest().flags & IS_LINK) !== 0;
   }
+  isHashtag(): boolean {
+    return (this.getLatest().flags & IS_HASHTAG) !== 0;
+  }
   getURL(): null | string {
     return this.url;
   }
@@ -267,7 +283,7 @@ export class TextNode extends OutlineNode {
     return self.text;
   }
   getTextNodeFormatFlags(
-    type: 0 | 1 | 2 | 3 | 4 | 5,
+    type: 0 | 1 | 2 | 3 | 4 | 5 | 6,
     alignWithFlags: null | number,
     force?: boolean,
   ): number {
@@ -275,6 +291,7 @@ export class TextNode extends OutlineNode {
     const nodeFlags = self.flags;
     let newFlags = nodeFlags;
 
+    // TODO: we should simplify this repeated logic to reduce code size
     switch (type) {
       case FORMAT_BOLD:
         if (nodeFlags & IS_BOLD && !force) {
@@ -348,6 +365,17 @@ export class TextNode extends OutlineNode {
           }
         }
         break;
+      case FORMAT_HASHTAG:
+        if (nodeFlags & IS_HASHTAG && !force) {
+          if (alignWithFlags === null || (alignWithFlags & IS_HASHTAG) === 0) {
+            newFlags ^= IS_HASHTAG;
+          }
+        } else {
+          if (alignWithFlags === null || alignWithFlags & IS_HASHTAG) {
+            newFlags |= IS_HASHTAG;
+          }
+        }
+        break;
       default:
     }
 
@@ -367,10 +395,9 @@ export class TextNode extends OutlineNode {
       innerDOM = document.createElement(innerTag);
       dom.appendChild(innerDOM);
     }
-    const domStyle = innerDOM.style;
     const text = this.text;
 
-    setTextStyling(innerTag, 0, flags, domStyle);
+    setTextStyling(innerTag, 0, flags, innerDOM);
     setTextContent(null, text, innerDOM, this);
     // add data-text attribute
     innerDOM.setAttribute('data-text', 'true');
@@ -413,9 +440,7 @@ export class TextNode extends OutlineNode {
         invariant(false, 'Should never happen');
       }
     }
-    const domStyle = innerDOM.style;
-
-    setTextStyling(nextInnerTag, prevFlags, nextFlags, domStyle);
+    setTextStyling(nextInnerTag, prevFlags, nextFlags, innerDOM);
     setTextContent(prevText, nextText, innerDOM, this);
     if (nextFlags & IS_SEGMENTED) {
       if ((prevFlags & IS_SEGMENTED) === 0) {
@@ -517,27 +542,52 @@ export class TextNode extends OutlineNode {
         'spliceText: can only be used on non-immutable text nodes',
       );
     }
+    const isHashtag = this.isHashtag();
+    let skipSelectionRestoration = false;
+    let handledText = newText;
+    // Handle hashtag containing whitespace
+    if (isHashtag) {
+      const whiteSpaceIndex = handledText.search(/\s/);
+
+      if (whiteSpaceIndex !== -1) {
+        handledText = newText.slice(0, whiteSpaceIndex);
+        const splitTextStr = newText.slice(whiteSpaceIndex);
+        const textNode = createTextNode(splitTextStr);
+        this.insertAfter(textNode);
+        if (restoreSelection) {
+          textNode.select();
+          skipSelectionRestoration = true;
+        }
+        const parent = this.getParentOrThrow();
+        parent.normalizeTextNodes(true);
+      }
+    }
     const writableSelf = getWritableNode(this);
     const text = writableSelf.text;
-    const newTextLength = newText.length;
+    const handledTextLength = handledText.length;
     let index = offset;
     if (index < 0) {
-      index = newTextLength + index;
+      index = handledTextLength + index;
       if (index < 0) {
         index = 0;
       }
     }
     const updatedText =
-      text.slice(0, index) + newText + text.slice(index + delCount);
+      text.slice(0, index) + handledText + text.slice(index + delCount);
     writableSelf.text = updatedText;
-    if (restoreSelection) {
+    // If the hash gets removed, remove the hashtag status
+    if (isHashtag && updatedText.indexOf('#') === -1) {
+      const flags = this.getTextNodeFormatFlags(FORMAT_HASHTAG, null);
+      this.setFlags(flags);
+    }
+    if (restoreSelection && !skipSelectionRestoration) {
       const key = writableSelf.key;
       if (key === null) {
         throw new Error('TODO: validate nodes have keys in a more generic way');
       }
       const selection = getSelection();
       invariant(selection !== null, 'spliceText: selection not found');
-      const newOffset = offset + newTextLength;
+      const newOffset = offset + handledTextLength;
       selection.setRange(key, newOffset, key, newOffset);
     }
     return writableSelf;

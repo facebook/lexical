@@ -38,6 +38,10 @@ const emojis: {[string]: [string, string]} = {
 };
 
 function textNodeTransform(node: TextNode, view: View): void {
+  if (node.isSegmented() || node.isImmutable() || node.isHashtag()) {
+    return;
+  }
+
   const text = node.getTextContent();
   for (let i = 0; i < text.length; i++) {
     const possibleEmoji = text.slice(i, i + 2);

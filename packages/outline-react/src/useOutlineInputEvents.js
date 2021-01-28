@@ -576,6 +576,12 @@ export default function useOutlineInputEvents<T>(
   const handleKeyUp = useCallback(() => {
     editor.setKeyDown(false);
   }, [editor]);
+  const handlePointerDown = useCallback(() => {
+    editor.setPointerDown(true);
+  }, [editor]);
+  const handlePointerUp = useCallback(() => {
+    editor.setPointerDown(false);
+  }, [editor]);
   const handlePaste = useOutlineEventWrapper(onPastePolyfill, editor, stateRef);
   const handleCut = useOutlineEventWrapper(onCut, editor, stateRef);
   const handleCopy = useOutlineEventWrapper(onCopy, editor, stateRef);
@@ -607,6 +613,9 @@ export default function useOutlineInputEvents<T>(
       if (target !== null) {
         target.addEventListener('keydown', handleKeyDown);
         window.addEventListener('keyup', handleKeyUp);
+        target.addEventListener('pointerdown', handlePointerDown);
+        window.addEventListener('pointerup', handlePointerUp);
+        window.addEventListener('pointercancel', handlePointerUp);
         target.addEventListener('compositionstart', handleCompositionStart);
         target.addEventListener('compositionend', handleCompositionEnd);
         target.addEventListener('cut', handleCut);

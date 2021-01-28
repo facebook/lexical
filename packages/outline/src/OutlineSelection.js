@@ -261,14 +261,18 @@ export function createSelection(
   anchorKey = anchorNode.key;
   focusKey = focusNode.key;
 
+  let isDirty = false;
+
   // Because we use a special character for whitespace,
   // we need to adjust offsets to 0 when the text is
   // really empty.
   if (anchorNode === focusNode && anchorNode.text === '') {
     anchorOffset = 0;
     focusOffset = 0;
+    if (!editor.isComposing() && !editor.isPointerDown()) {
+      isDirty = true;
+    }
   }
-
   const selection = new Selection(
     anchorKey,
     anchorOffset,
@@ -284,6 +288,9 @@ export function createSelection(
     !isEqual(selection, lastSelection)
   ) {
     selection.needsSync = true;
+  }
+  if (isDirty) {
+    selection.isDirty = true;
   }
   return selection;
 }

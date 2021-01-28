@@ -118,6 +118,7 @@ export class OutlineEditor {
   _pendingViewModel: null | ViewModel;
   _isComposing: boolean;
   _isKeyDown: boolean;
+  _isPointerDown: boolean;
   _key: string;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _updateListeners: Set<UpdateListener>;
@@ -174,6 +175,9 @@ export class OutlineEditor {
   isKeyDown(): boolean {
     return this._isKeyDown;
   }
+  isPointerDown(): boolean {
+    return this._isPointerDown;
+  }
   setComposing(isComposing: boolean): void {
     this._isComposing = isComposing;
     if (isComposing) {
@@ -182,6 +186,9 @@ export class OutlineEditor {
   }
   setKeyDown(isKeyDown: boolean): void {
     this._isKeyDown = isKeyDown;
+  }
+  setPointerDown(isPointerDown: boolean): void {
+    this._isPointerDown = isPointerDown;
   }
   addNodeDecorator(key: NodeKey, decorator: ReactNode): void {
     const nodeDecorators = {...this._nodeDecorators};

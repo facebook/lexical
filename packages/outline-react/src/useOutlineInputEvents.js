@@ -236,24 +236,44 @@ function onKeyDown(
         }
       } else {
         const nextSibling = anchorNode.getNextSibling();
-        if (nextSibling !== null) {
-          const textContent = anchorNode.getTextContent();
-          if (
-            (textContent.length === offset &&
-              (nextSibling.isImmutable() || nextSibling.isSegmented())) ||
-            anchorNode.isImmutable() ||
-            anchorNode.isSegmented()
-          ) {
-            if (isRightArrow) {
-              if (nextSibling instanceof TextNode) {
-                nextSibling.select(0, 0);
-              } else {
-                nextSibling.select();
+        const textContent = anchorNode.getTextContent();
+
+        if (textContent.length === offset) {
+          if (nextSibling === null) {
+            // When we are on an empty text node, native right arrow
+            // doesn't work correctly in some browsers. So to ensure it
+            // does work correctly, we can force it and prevent the native
+            // event so that our fix is always used.
+            if (isRightArrow && textContent === '') {
+              const parent = anchorNode.getParentOrThrow();
+              const parentSibling = parent.getNextSibling();
+
+              if (parentSibling instanceof BlockNode) {
+                const firstChild = parentSibling.getFirstChild();
+                if (firstChild instanceof TextNode) {
+                  firstChild.select(0, 0);
+                  shouldPreventDefault = true;
+                }
               }
-            } else {
-              deleteForward(selection);
             }
-            shouldPreventDefault = true;
+          } else {
+            if (
+              nextSibling.isImmutable() ||
+              nextSibling.isSegmented() ||
+              anchorNode.isImmutable() ||
+              anchorNode.isSegmented()
+            ) {
+              if (isRightArrow) {
+                if (nextSibling instanceof TextNode) {
+                  nextSibling.select(0, 0);
+                } else {
+                  nextSibling.select();
+                }
+              } else {
+                deleteForward(selection);
+              }
+              shouldPreventDefault = true;
+            }
           }
         }
       }

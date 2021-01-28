@@ -266,13 +266,24 @@ export function createSelection(
   // Because we use a special character for whitespace,
   // we need to adjust offsets to 0 when the text is
   // really empty.
-  if (anchorNode === focusNode && anchorNode.text === '') {
-    anchorOffset = 0;
-    focusOffset = 0;
+  if (anchorNode.text === '') {
     if (!editor.isComposing() && !editor.isPointerDown()) {
-      isDirty = true;
+      const anchorElement = editor.getElementByKey(anchorKey);
+      const focusElement = editor.getElementByKey(focusKey);
+      if (
+        anchorNode === focusNode &&
+        ((anchorElement.previousSibling === null && anchorOffset !== 1) ||
+          (focusElement.nextSibling === null && anchorOffset !== 0))
+      ) {
+        isDirty = true;
+      }
     }
+    anchorOffset = 0;
   }
+  if (focusNode.text === '') {
+    focusOffset = 0;
+  }
+
   const selection = new Selection(
     anchorKey,
     anchorOffset,

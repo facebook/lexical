@@ -253,9 +253,9 @@ export default function useEmojis(editor: null | OutlineEditor): void {
           if (matchArr === null) {
             return;
           }
+          const hashtagStr = matchArr[0];
           const start = matchArr.index + matchArr[1].length;
-          const hashtag = matchArr[3];
-          const end = start + hashtag.length;
+          const end = start + hashtagStr.length;
           let targetNode;
 
           if (start === 0) {
@@ -263,9 +263,7 @@ export default function useEmojis(editor: null | OutlineEditor): void {
           } else {
             [, targetNode, currentNode] = currentNode.splitText(start, end);
           }
-          // eslint-disable-next-line no-debugger
           targetNode.setFlags(IS_HASHTAG);
-          targetNode.select();
         }
       });
     }

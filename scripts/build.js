@@ -40,6 +40,7 @@ if (isClean) {
 
 const wwwMappings = {
   outline: 'Outline',
+  'outline-selection-helpers': 'OutlineSelectionHelpers',
 };
 
 const outlineExtensions = fs

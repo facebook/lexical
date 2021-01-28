@@ -456,7 +456,7 @@ function isEditorEmpty(
   if (topBlockIDsLength > 1) {
     return false;
   }
-  for (let i = 0; i < topBlockIDs.length; i++) {
+  for (let i = 0; i < topBlockIDsLength; i++) {
     const topBlock = nodeMap[topBlockIDs[i]];
 
     if (topBlock && topBlock.type !== 'paragraph') {

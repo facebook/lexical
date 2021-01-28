@@ -13,7 +13,7 @@ import type {ViewModel} from './OutlineView';
 import {getActiveViewModel} from './OutlineView';
 import {getNodeKeyFromDOM} from './OutlineReconciler';
 import {getNodeByKey} from './OutlineNode';
-import { BlockNode, TextNode} from '.';
+import {BlockNode, TextNode} from '.';
 import {invariant} from './OutlineUtils';
 import {OutlineEditor} from './OutlineEditor';
 
@@ -261,25 +261,20 @@ export function createSelection(
   anchorKey = anchorNode.key;
   focusKey = focusNode.key;
 
+  // Because we use a special character for whitespace,
+  // we need to adjust offsets to 0 when the text is
+  // really empty.
+  if (anchorNode === focusNode && anchorNode.text === '') {
+    anchorOffset = 0;
+    focusOffset = 0;
+  }
+
   const selection = new Selection(
     anchorKey,
     anchorOffset,
     focusKey,
     focusOffset,
   );
-
-  // Because we use a special character for whitespace,
-  // we need to adjust offsets to 0 when the text is
-  // really empty.
-  if (
-    !editor.isComposing() &&
-    anchorNode === focusNode &&
-    anchorNode.text === ''
-  ) {
-    anchorOffset = 0;
-    focusOffset = 0;
-    selection.isDirty = true;
-  }
 
   // If the selection changes, we need to update our view model
   // regardless to keep the view in sync.

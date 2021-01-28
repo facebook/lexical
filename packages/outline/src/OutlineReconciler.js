@@ -452,7 +452,11 @@ function isEditorEmpty(
   }
   const nodeMap = nextViewModel.nodeMap;
   const topBlockIDs = nodeMap.root.children;
-  for (let i = 0; i < topBlockIDs.length; i++) {
+  const topBlockIDsLength = topBlockIDs.length;
+  if (topBlockIDsLength > 1) {
+    return false;
+  }
+  for (let i = 0; i < topBlockIDsLength; i++) {
     const topBlock = nodeMap[topBlockIDs[i]];
 
     if (topBlock && topBlock.type !== 'paragraph') {

@@ -45,7 +45,7 @@ import {
   removeText,
   getNodesInRange,
 } from 'outline-selection-helpers';
-import {IS_CHROME} from './OutlineEnv';
+import {IS_APPLE, IS_CHROME} from './OutlineEnv';
 
 // FlowFixMe: Flow doesn't know of the CompositionEvent?
 // $FlowFixMe: TODO
@@ -138,11 +138,57 @@ function insertDataTransfer(
   }
 }
 
-function isEmojiText(node: OutlineNode): boolean {
-  if (node instanceof TextNode) {
-    return node.getTextContent().replace(/[\u0000-\u1eeff]/g, '').length === 0;
+let _graphemeIterator = null;
+// $FlowFixMe: Missing a Flow type for `Intl.Segmenter`.
+function getGraphemeIterator(): Intl.Segmenter {
+  if (_graphemeIterator === null) {
+    _graphemeIterator =
+      // $FlowFixMe: Missing a Flow type for `Intl.Segmenter`.
+      new Intl.Segmenter(undefined /* locale */, {granularity: 'grapheme'});
   }
-  return false;
+  return _graphemeIterator;
+}
+
+function hasAtLeastTwoVisibleChars(s: string): boolean {
+  try {
+    const iterator = getGraphemeIterator().segment(s);
+    return iterator.next() != null && iterator.next() != null;
+  } catch {
+    // TODO: Implement polyfill for `Intl.Segmenter`.
+    return [...s].length > 1;
+  }
+}
+
+function announceString(s: string): void {
+  const body = document.body;
+  if (body != null) {
+    const announce = document.createElement('div');
+    announce.setAttribute('id', 'outline_announce_' + Date.now());
+    announce.setAttribute('aria-live', 'polite');
+    announce.style.cssText =
+      'clip: rect(0, 0, 0, 0); height: 1px; overflow: hidden; position: absolute; width: 1px';
+    body.appendChild(announce);
+
+    // The trick to make all sreen readers to read the text is to create AND update an element with a unique id:
+    // - JAWS remains silent without update
+    // - VO remains silent without create, if the text is the same (and doing `announce.textContent=''` doesn't help)
+    setTimeout(() => {
+      announce.textContent = s;
+    }, 100);
+
+    setTimeout(() => {
+      body.removeChild(announce);
+    }, 500);
+  }
+}
+
+function announceNode(node: OutlineNode): void {
+  if (
+    node instanceof TextNode &&
+    hasAtLeastTwoVisibleChars(node.getTextContent())
+  ) {
+    announceString(node.text);
+  }
 }
 
 function isModifierActive(event: KeyboardEvent): boolean {
@@ -208,17 +254,10 @@ function onKeyDown(
     }
   }
   const editorElement = editor.getEditorElement();
-  // We need to do some extra work that normal default
-  // browser controls don't offer us. Specifically, we need
-  // to do some work around handling of selecting nodes
-  // that are either immutable or segmented, as these
-  // nodes aren't selectable by default. The logic below
-  // makes them selectable though. We also need to do some
-  // work around moving selection to the next block when
-  // the right-arrow is pressed, otherwise it gets stuck
-  // at the end of the block. We don't need to do this for
-  // left-arrow (strangely) but it's maybe worth while that
-  // we keep the logic for both for now.
+  // Handle moving/deleting selection with left/right around immutable or segmented nodes, which should be handled as a single character.
+  // This is important for screen readers + text to speech accessibility tooling. About screen readers and caret moves:
+  // In Windows, JAWS and NVDA always announce the character at the right of the caret.
+  // In MacOS, VO always announces the character over which the caret jumped.
   if (selection.isCaret() && editorElement !== null && !event.metaKey) {
     const key = event.key;
     const isLeftArrow = key === 'ArrowLeft';
@@ -237,8 +276,8 @@ function onKeyDown(
             offset === 0 &&
             (prevSibling.isImmutable() || prevSibling.isSegmented())
           ) {
-            if (isLeftArrow && !isEmojiText(prevSibling)) {
-              // TODO Announce node for screen readers
+            if (isLeftArrow) {
+              announceNode(prevSibling);
             } else if (!isModifierActive(event)) {
               deleteBackward(selection);
               shouldPreventDefault = true;
@@ -249,6 +288,7 @@ function onKeyDown(
         const nextSibling = anchorNode.getNextSibling();
         const textContent = anchorNode.getTextContent();
         const selectionAtEnd = textContent.length === offset;
+        const selectionJustBeforeEnd = textContent.length === offset + 1;
 
         if (nextSibling === null) {
           // When we are on an empty text node, native right arrow
@@ -269,12 +309,17 @@ function onKeyDown(
           }
         } else {
           if (
-            selectionAtEnd &&
+            (selectionAtEnd || selectionJustBeforeEnd) &&
             (nextSibling.isImmutable() || nextSibling.isSegmented())
           ) {
-            if (isRightArrow && !isEmojiText(nextSibling)) {
-              // TODO Announce node for screen readers
-            } else if (!isModifierActive(event)) {
+            if (isRightArrow) {
+              if (
+                (IS_APPLE && selectionAtEnd) ||
+                (!IS_APPLE && selectionJustBeforeEnd)
+              ) {
+                announceNode(nextSibling);
+              }
+            } else if (selectionAtEnd && !isModifierActive(event)) {
               deleteForward(selection);
               shouldPreventDefault = true;
             }

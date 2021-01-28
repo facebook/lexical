@@ -138,7 +138,9 @@ function insertDataTransfer(
 }
 
 function isModifierActive(event: KeyboardEvent): boolean {
-  return event.metaKey || event.shiftKey || event.altKey || event.ctrlKey;
+  // We don't need to check for metaKey here as we already
+  // do this before we reach this block.
+  return event.shiftKey || event.altKey || event.ctrlKey;
 }
 
 function onKeyDown(
@@ -198,15 +200,18 @@ function onKeyDown(
     }
   }
   const editorElement = editor.getEditorElement();
-  // Handle moving/deleting selection with left/right on to an
-  // immutable or segmented node, rather than jumping over
-  // the node. This is important for screen readers +
-  // text to speech accessibility tooling.
-  if (
-    selection.isCaret() &&
-    editorElement !== null &&
-    !isModifierActive(event)
-  ) {
+  // We need to do some extra work that normal default
+  // browser controls don't offer us. Specifically, we need
+  // to do some work around handling of selecting nodes
+  // that are either immutable or segmented, as these
+  // nodes aren't selectable by default. The logic below
+  // makes them selectable though. We also need to do some
+  // work around moving selection to the next block when
+  // the right-arrow is pressed, otherwise it gets stuck
+  // at the end of the block. We don't need to do this for
+  // left-arrow (strangely) but it's maybe worth while that
+  // we keep the logic for both for now.
+  if (selection.isCaret() && editorElement !== null && !event.metaKey) {
     const key = event.key;
     const isLeftArrow = key === 'ArrowLeft';
     const isRightArrow = key === 'ArrowRight';
@@ -228,7 +233,7 @@ function onKeyDown(
           ) {
             if (isLeftArrow) {
               prevSibling.select();
-            } else {
+            } else if (!isModifierActive(event)) {
               deleteBackward(selection);
             }
             shouldPreventDefault = true;
@@ -269,7 +274,7 @@ function onKeyDown(
               } else {
                 nextSibling.select();
               }
-            } else {
+            } else if (!isModifierActive(event)) {
               deleteForward(selection);
             }
             shouldPreventDefault = true;
@@ -667,6 +672,8 @@ export default function useOutlineInputEvents<T>(
     handleDrop,
     handleDragStart,
     handleCopy,
+    handlePointerDown,
+    handlePointerUp,
   ]);
 
   return CAN_USE_BEFORE_INPUT

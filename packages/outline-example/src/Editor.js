@@ -11,6 +11,7 @@ import useMentions from './useMentions';
 import useOutlineAutoFormatter from 'outline-react/useOutlineAutoFormatter';
 import useOutlineHistory from 'outline-react/useOutlineHistory';
 import useToolbar from './useToolbar';
+import useHashtags from './useHashtags';
 
 const editorStyle = {
   outline: 0,
@@ -67,6 +68,7 @@ export default function Editor({onChange, isReadOnly}: Props): React$Node {
   const mentionsTypeahead = useMentions(outlineEditor);
   const props = useOutlineRichText(outlineEditor, isReadOnly);
   useEmojis(outlineEditor);
+  useHashtags(outlineEditor);
   useOutlineAutoFormatter(outlineEditor);
   useOutlineHistory(outlineEditor);
 

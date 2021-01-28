@@ -402,7 +402,8 @@ export default function useMentions(editor: OutlineEditor): React$Node {
         selection === null ||
         selection.getAnchorNode() !== node ||
         node.isImmutable() ||
-        node.isSegmented()
+        node.isSegmented() ||
+        node.isHashtag()
       ) {
         return;
       }

@@ -538,13 +538,23 @@ function onNativeBeforeInput(
       // selection (from getTargetRanges). Let's correct the
       // selection so it matches the expectations.
       const domSelection = window.getSelection();
-      if (domSelection.isCollapsed && selection.anchorKey !== selection.focusKey) {
-        const currentBlock = selection.getFocusNode().getParentBlockOrThrow();
-        const firstChild = currentBlock.getFirstChild();
-        // Move the anchor to be the first point in the current block
-        if (firstChild instanceof TextNode) {
-          selection.anchorKey = firstChild.getKey();
-          selection.anchorOffset = 0;
+      // We use the heuristic that if the dom selection is a caret (collapsed)
+      // but the reported range coming back shows the anchor to be in a different
+      // block from the anchor, then we move the anchor selection to be the first
+      // node of the parent block of the focus node.
+      if (
+        domSelection.isCollapsed &&
+        selection.anchorKey !== selection.focusKey
+      ) {
+        const anchorParent = selection.getAnchorNode().getParentOrThrow();
+        const focusParent = selection.getFocusNode().getParentOrThrow();
+        if (anchorParent !== focusParent) {
+          const firstChild = focusParent.getFirstChild();
+          // Move the anchor to be the first point in the focus block
+          if (firstChild instanceof TextNode) {
+            selection.anchorKey = firstChild.getKey();
+            selection.anchorOffset = 0;
+          }
         }
       }
       deleteLineBackward(selection);

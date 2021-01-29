@@ -533,6 +533,20 @@ function onNativeBeforeInput(
       break;
     }
     case 'deleteSoftLineBackward': {
+      // For some reason, Chrome can report the anchor as being
+      // in a separate block when we're still using a collapsed
+      // selection (from getTargetRanges). Let's correct the
+      // selection so it matches the expectations.
+      const domSelection = window.getSelection();
+      if (domSelection.isCollapsed && selection.anchorKey !== selection.focusKey) {
+        const currentBlock = selection.getFocusNode().getParentBlockOrThrow();
+        const firstChild = currentBlock.getFirstChild();
+        // Move the anchor to be the first point in the current block
+        if (firstChild instanceof TextNode) {
+          selection.anchorKey = firstChild.getKey();
+          selection.anchorOffset = 0;
+        }
+      }
       deleteLineBackward(selection);
       break;
     }

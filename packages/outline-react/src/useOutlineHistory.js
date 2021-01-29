@@ -36,10 +36,17 @@ function shouldMerge(
       if (
         prevDirtyNode !== undefined &&
         prevDirtyNode instanceof TextNode &&
-        prevDirtyNode.flags === nextDirtyNode.flags &&
-        prevDirtyNode.text !== ''
+        nextDirtyNode instanceof TextNode &&
+        prevDirtyNode.flags === nextDirtyNode.flags
       ) {
-        return true;
+        const prevText = prevDirtyNode.text;
+        const nextText = nextDirtyNode.text;
+        if (prevText === '') {
+          return false;
+        }
+        const diff = nextText.length - prevText.length;
+        // Only merge if we're adding/removing a single character
+        return diff === -1 || diff === 1;
       }
     }
   }

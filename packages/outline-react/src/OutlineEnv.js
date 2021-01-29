@@ -28,6 +28,10 @@ export const IS_SAFARI: boolean =
   typeof navigator !== 'undefined' &&
   /Version\/[\d\.]+.*Safari/.test(navigator.userAgent);
 
+export const IS_CHROME: boolean =
+  typeof navigator !== 'undefined' &&
+  /^(?=.*Chrome).*/i.test(navigator.userAgent);
+
 export const CAN_USE_DOM: boolean =
   typeof window !== 'undefined' &&
   typeof window.document !== 'undefined' &&

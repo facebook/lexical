@@ -471,7 +471,7 @@ describe('OutlineSelection tests', () => {
       inputs: [insertImmutableNode('Dominic Gannaway')],
       expectedHTML:
         '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
-        '<span data-text="true" tabindex="-1">Dominic Gannaway</span>' +
+        '<span data-text="true">Dominic Gannaway</span>' +
         '<span data-text="true"></span></p></div>',
       expectedSelection: {
         anchorPath: [0, 2, 0],
@@ -490,7 +490,7 @@ describe('OutlineSelection tests', () => {
       ],
       expectedHTML:
         '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
-        '<span data-text="true" tabindex="-1">Dominic Gannaway</span>' +
+        '<span data-text="true">Dominic Gannaway</span>' +
         '<span data-text="true"></span></p></div>',
       expectedSelection: {
         anchorPath: [0, 2, 0],
@@ -518,7 +518,7 @@ describe('OutlineSelection tests', () => {
       inputs: [insertSegmentedNode('Dominic Gannaway')],
       expectedHTML:
         '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
-        '<span data-text="true" tabindex="-1">Dominic Gannaway</span>' +
+        '<span data-text="true">Dominic Gannaway</span>' +
         '<span data-text="true"></span></p></div>',
       expectedSelection: {
         anchorPath: [0, 2, 0],
@@ -537,7 +537,7 @@ describe('OutlineSelection tests', () => {
       ],
       expectedHTML:
         '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
-        '<span data-text="true" tabindex="-1">Dominic Gannaway</span>' +
+        '<span data-text="true">Dominic Gannaway</span>' +
         '<span data-text="true"></span></p></div>',
       expectedSelection: {
         anchorPath: [0, 2, 0],
@@ -552,7 +552,7 @@ describe('OutlineSelection tests', () => {
       inputs: [insertSegmentedNode('Dominic Gannaway'), deleteBackward()],
       expectedHTML:
         '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
-        '<span data-text="true" tabindex="-1">Dominic</span>' +
+        '<span data-text="true">Dominic</span>' +
         '<span data-text="true"></span></p></div>',
       expectedSelection: {
         anchorPath: [0, 2, 0],

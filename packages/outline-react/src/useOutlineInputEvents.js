@@ -537,6 +537,7 @@ function onNativeBeforeInput(
       deleteWordForward(selection);
       break;
     }
+    case 'deleteHardLineBackward':
     case 'deleteSoftLineBackward': {
       deleteLineBackward(selection);
       break;

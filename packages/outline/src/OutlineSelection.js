@@ -92,19 +92,21 @@ export class Selection {
     });
     return textContent;
   }
-  applyDOMRange(domRange: {
-    collapsed: boolean,
-    startContainer: Node,
-    endContainer: Node,
-    startOffset: number,
-    endOffset: number,
-  }): void {
-    const anchorKey = getNodeKeyFromDOM(domRange.startContainer);
-    const focusKey = getNodeKeyFromDOM(domRange.endContainer);
-    if (anchorKey === null || focusKey === null) {
-      throw new Error('Should never happen');
-    }
-    const [anchorNode, focusNode] = resolveSelectionNodes(anchorKey, focusKey);
+  applyDOMRange(
+    domRange: {
+      collapsed: boolean,
+      startContainer: Node,
+      endContainer: Node,
+      startOffset: number,
+      endOffset: number,
+    },
+    editorElement: HTMLElement,
+  ): void {
+    const [anchorNode, focusNode] = resolveSelectionNodes(
+      domRange.startContainer,
+      domRange.endContainer,
+      editorElement,
+    );
     invariant(
       anchorNode instanceof TextNode && focusNode instanceof TextNode,
       'Should never happen',
@@ -119,14 +121,37 @@ export class Selection {
 }
 
 function resolveSelectionNodes(
-  anchorKey: NodeKey,
-  focusKey: NodeKey,
+  anchorDOM: Node,
+  focusDOM: Node,
+  editorElement: HTMLElement,
 ): [TextNode | null, TextNode | null] {
   const viewModel = getActiveViewModel();
   const nodeMap = viewModel.nodeMap;
-  let anchorNode = nodeMap[anchorKey];
-  let focusNode = nodeMap[focusKey];
-  if (anchorNode === undefined || focusNode === undefined) {
+  const root = nodeMap.root;
+  let anchorNode;
+  let focusNode;
+
+  // If we're given the element nodes, lets try and work out what
+  // text nodes we can use instead. Otherwise, return null.
+  if (anchorDOM === editorElement) {
+    anchorNode = root.getFirstTextNode();
+  } else {
+    const anchorKey = getNodeKeyFromDOM(anchorDOM);
+    if (anchorKey) {
+      anchorNode = nodeMap[anchorKey];
+    }
+  }
+  if (focusDOM === editorElement) {
+    focusNode = root.getFirstTextNode();
+  } else {
+    const focusKey = getNodeKeyFromDOM(focusDOM);
+    if (focusKey) {
+      focusNode = nodeMap[focusKey];
+    }
+  }
+  // We try and find the relevant text nodes from the selection.
+  // If we can't do this, we return null.
+  if (anchorNode == null || focusNode == null) {
     return [null, null];
   }
   if (anchorNode instanceof BlockNode) {
@@ -135,7 +160,10 @@ function resolveSelectionNodes(
   if (focusNode instanceof BlockNode) {
     focusNode = focusNode.getLastTextNode();
   }
-  // $FlowFixMe: not sure why this doesn't work
+  invariant(
+    anchorNode instanceof TextNode && focusNode instanceof TextNode,
+    'Should never happen',
+  );
   return [anchorNode, focusNode];
 }
 
@@ -226,35 +254,13 @@ export function createSelection(
   ) {
     return null;
   }
-  const root = viewModel.nodeMap.root;
-  // If we're given the element nodes, lets try and work out what
-  // text nodes we can use instead. Otherwise, return null.
-  if (anchorDOM === editorElement) {
-    anchorNode = root.getFirstTextNode();
-    if (anchorNode === null) {
-      return null;
-    }
-    anchorOffset = 0;
-    anchorKey = anchorNode.key;
-  }
-  if (focusDOM === editorElement) {
-    focusNode = root.getFirstTextNode();
-    if (focusNode === null) {
-      return null;
-    }
-    focusKey = focusNode.key;
-    focusOffset = focusNode.getTextContent().length;
-  }
-  // We try and find the relevant text nodes from the selection.
-  // If we can't do this, we return null.
-  anchorKey = anchorKey === null ? getNodeKeyFromDOM(anchorDOM) : anchorKey;
-  focusKey = focusKey === null ? getNodeKeyFromDOM(focusDOM) : focusKey;
-  if (anchorKey === null || focusKey === null) {
-    return null;
-  }
   // Let's resolve the nodes, in the case we're selecting block nodes.
   // We always to make sure the anchor and focus nodes are text nodes.
-  [anchorNode, focusNode] = resolveSelectionNodes(anchorKey, focusKey);
+  [anchorNode, focusNode] = resolveSelectionNodes(
+    anchorDOM,
+    focusDOM,
+    editorElement,
+  );
   if (anchorNode === null || focusNode === null) {
     return null;
   }

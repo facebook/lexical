@@ -532,7 +532,7 @@ export function deleteWordBackward(selection: Selection): void {
     const prevSibling = node.getPreviousSibling();
     if (node.isImmutable() || node.isSegmented()) {
       node.remove();
-      invariant(prevSibling !== null, 'Should never happen');
+      invariant(prevSibling instanceof TextNode, 'Should never happen');
       prevSibling.select();
       currentBlock.normalizeTextNodes(true);
       return;
@@ -606,12 +606,8 @@ export function deleteWordForward(selection: Selection): void {
 
     if (node.isImmutable() || node.isSegmented()) {
       node.remove();
-      invariant(nextSibling !== null, 'Should never happen');
-      if (nextSibling instanceof TextNode) {
-        nextSibling.select(0, 0);
-      } else {
-        nextSibling.select();
-      }
+      invariant(nextSibling instanceof TextNode, 'Should never happen');
+      nextSibling.select(0, 0);
       currentBlock.normalizeTextNodes(true);
       return;
     } else if (node instanceof TextNode && anchorNode.getTextContent() !== '') {
@@ -655,18 +651,13 @@ export function deleteBackward(selection: Selection): void {
     removeText(selection);
     return;
   }
-  let anchorOffset = selection.anchorOffset;
+  const anchorOffset = selection.anchorOffset;
   const anchorNode = selection.getAnchorNode();
   if (anchorNode === null) {
     return;
   }
   const currentBlock = anchorNode.getParentBlockOrThrow();
-  let prevSibling = anchorNode.getPreviousSibling();
-
-  if (anchorNode.isImmutable() || anchorNode.isSegmented()) {
-    prevSibling = anchorNode;
-    anchorOffset = 0;
-  }
+  const prevSibling = anchorNode.getPreviousSibling();
 
   if (anchorOffset === 0) {
     if (prevSibling === null) {
@@ -675,7 +666,7 @@ export function deleteBackward(selection: Selection): void {
       if (prevSibling.isImmutable()) {
         if (prevSibling === anchorNode) {
           const nextPrevSibling = prevSibling.getPreviousSibling();
-          invariant(nextPrevSibling !== null, 'Should never happen');
+          invariant(nextPrevSibling instanceof TextNode, 'Should never happen');
           nextPrevSibling.select();
         }
         prevSibling.remove();
@@ -718,7 +709,7 @@ export function deleteForward(selection: Selection): void {
     removeText(selection);
     return;
   }
-  let anchorOffset = selection.anchorOffset;
+  const anchorOffset = selection.anchorOffset;
   const anchorNode = selection.getAnchorNode();
   if (anchorNode === null) {
     return;
@@ -726,12 +717,7 @@ export function deleteForward(selection: Selection): void {
   const currentBlock = anchorNode.getParentBlockOrThrow();
   const textContent = anchorNode.getTextContent();
   const textContentLength = textContent.length;
-  let nextSibling = anchorNode.getNextSibling();
-
-  if (anchorNode.isImmutable() || anchorNode.isSegmented()) {
-    nextSibling = anchorNode;
-    anchorOffset = textContentLength;
-  }
+  const nextSibling = anchorNode.getNextSibling();
 
   if (anchorOffset === textContentLength) {
     if (nextSibling === null) {

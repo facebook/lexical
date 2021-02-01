@@ -8,12 +8,10 @@
  */
 
 import type {NodeMapType} from './OutlineView';
-import type {Selection} from './OutlineSelection';
 
 import {createTextNode, RootNode, BlockNode, TextNode} from '.';
 import {getActiveViewModel, shouldErrorOnReadOnly} from './OutlineView';
 import {generateRandomKey, invariant} from './OutlineUtils';
-import {getSelection, makeSelection} from './OutlineSelection';
 
 export const IS_IMMUTABLE = 1;
 export const IS_SEGMENTED = 1 << 1;
@@ -508,17 +506,6 @@ export class OutlineNode {
       wrapInTextNodes(nodeToInsert);
     }
     return writableSelf;
-  }
-  select(): Selection {
-    shouldErrorOnReadOnly();
-    const key = this.key;
-    const selection = getSelection();
-    if (selection === null) {
-      return makeSelection(key, 0, key, 0);
-    } else {
-      selection.setRange(key, 0, key, 0);
-    }
-    return selection;
   }
 }
 

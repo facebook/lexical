@@ -491,9 +491,8 @@ class MentionNode extends TextNode {
   createDOM() {
     const dom = super.createDOM();
     dom.style.cssText = mentionStyle;
-    // This isn't right, maybe we should use a link or button?
-    dom.setAttribute('role', 'link');
-    dom.setAttribute('aria-label', this.mention);
+    dom.className = 'mention';
+    dom.tabIndex = -1;
     return dom;
   }
 }

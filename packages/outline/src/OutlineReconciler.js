@@ -106,9 +106,6 @@ function createNode(
 
   if (flags & IS_IMMUTABLE || flags & IS_SEGMENTED) {
     dom.contentEditable = 'false';
-    if (!dom.hasAttribute('tabindex')) {
-      dom.tabIndex = -1;
-    }
   }
 
   if (node instanceof TextNode) {
@@ -536,24 +533,21 @@ function reconcileSelection(selection: Selection, editor: OutlineEditor): void {
   let anchorOffset = selection.anchorOffset;
   let focusOffset = selection.focusOffset;
 
-  if (anchorNode !== null && anchorNode === focusNode) {
-    if (anchorNode.isImmutable() || anchorNode.isSegmented()) {
-      const anchorElement = editor.getElementByKey(anchorKey);
-      domSelection.setBaseAndExtent(anchorElement, 0, anchorElement, 0);
-      anchorElement.focus();
-      return;
-    } else if (anchorNode.text === '') {
-      // Because we use empty text nodes to ensure Outline
-      // selection and text entry works as expected, it also
-      // means we need to adjust the offset to ensure native
-      // selection works correctly and doesn't act buggy.
-      if (anchorDOM.nextSibling === null) {
-        anchorOffset = 0;
-        focusOffset = 0;
-      } else if (anchorDOM.previousSibling === null) {
-        anchorOffset = 1;
-        focusOffset = 1;
-      }
+  if (
+    anchorNode !== null &&
+    anchorNode === focusNode &&
+    anchorNode.text === ''
+  ) {
+    // Because we use empty text nodes to ensure Outline
+    // selection and text entry works as expected, it also
+    // means we need to adjust the offset to ensure native
+    // selection works correctly and doesn't act buggy.
+    if (anchorDOM.nextSibling === null) {
+      anchorOffset = 0;
+      focusOffset = 0;
+    } else if (anchorDOM.previousSibling === null) {
+      anchorOffset = 1;
+      focusOffset = 1;
     }
   }
   domSelection.setBaseAndExtent(

@@ -282,3 +282,8 @@ pre {
 #toolbar .link-input a:hover {
   text-decoration: underline;
 }
+
+.mention:focus {
+  box-shadow: rgb(180 213 255) 0px 0px 0px 2px;
+  outline: none;
+}

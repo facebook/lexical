@@ -14,6 +14,7 @@ import type {Selection} from './OutlineSelection';
 
 import {getNodeByKey, IS_IMMUTABLE, IS_SEGMENTED} from './OutlineNode';
 import {BlockNode, TextNode} from '.';
+import {invariant} from 'outline-selection-helpers';
 
 let subTreeTextContent = '';
 let editorTextContent = '';
@@ -556,11 +557,23 @@ function reconcileSelection(selection: Selection, editor: OutlineEditor): void {
     }
   }
   domSelection.setBaseAndExtent(
-    anchorDOM.firstChild,
+    getTextNodeFromElement(anchorDOM),
     anchorOffset,
-    focusDOM.firstChild,
+    getTextNodeFromElement(focusDOM),
     focusOffset,
   );
+}
+
+function getTextNodeFromElement(element: HTMLElement): TextNode {
+  let node = element;
+  while (node != null) {
+    if (node.nodeType === 3) {
+      // $FlowFixMe: nodeType === text node
+      return node;
+    }
+    node = node.firstChild;
+  }
+  invariant(false, 'Should never happen');
 }
 
 export function storeDOMWithKey(

@@ -45,7 +45,7 @@ import {
   removeText,
   getNodesInRange,
 } from 'outline-selection-helpers';
-import { IS_CHROME } from './OutlineEnv';
+import {IS_CHROME} from './OutlineEnv';
 
 // FlowFixMe: Flow doesn't know of the CompositionEvent?
 // $FlowFixMe: TODO
@@ -138,6 +138,13 @@ function insertDataTransfer(
   }
 }
 
+function isEmojiText(node: OutlineNode): boolean {
+  if (node instanceof TextNode) {
+    return node.getTextContent().replace(/[\u0000-\u1eeff]/g, '').length === 0;
+  }
+  return false;
+}
+
 function isModifierActive(event: KeyboardEvent): boolean {
   // We don't need to check for metaKey here as we already
   // do this before we reach this block.
@@ -227,17 +234,15 @@ function onKeyDown(
         const prevSibling = anchorNode.getPreviousSibling();
         if (prevSibling !== null) {
           if (
-            (offset === 0 &&
-              (prevSibling.isImmutable() || prevSibling.isSegmented())) ||
-            anchorNode.isImmutable() ||
-            anchorNode.isSegmented()
+            offset === 0 &&
+            (prevSibling.isImmutable() || prevSibling.isSegmented())
           ) {
-            if (isLeftArrow) {
-              prevSibling.select();
+            if (isLeftArrow && !isEmojiText(prevSibling)) {
+              // TODO Announce node for screen readers
             } else if (!isModifierActive(event)) {
               deleteBackward(selection);
+              shouldPreventDefault = true;
             }
-            shouldPreventDefault = true;
           }
         }
       } else {
@@ -264,21 +269,15 @@ function onKeyDown(
           }
         } else {
           if (
-            (selectionAtEnd &&
-              (nextSibling.isImmutable() || nextSibling.isSegmented())) ||
-            anchorNode.isImmutable() ||
-            anchorNode.isSegmented()
+            selectionAtEnd &&
+            (nextSibling.isImmutable() || nextSibling.isSegmented())
           ) {
-            if (isRightArrow) {
-              if (nextSibling instanceof TextNode) {
-                nextSibling.select(0, 0);
-              } else {
-                nextSibling.select();
-              }
+            if (isRightArrow && !isEmojiText(nextSibling)) {
+              // TODO Announce node for screen readers
             } else if (!isModifierActive(event)) {
               deleteForward(selection);
+              shouldPreventDefault = true;
             }
-            shouldPreventDefault = true;
           }
         }
       }
@@ -452,7 +451,7 @@ function onNativeBeforeInput(
   // Chromium has a bug with the wrong offsets for deleteSoftLineBackward.
   // See: https://bugs.chromium.org/p/chromium/issues/detail?id=1043564
   if (inputType !== 'deleteSoftLineBackward' || !IS_CHROME) {
-      // $FlowFixMe: Flow doesn't know of getTargetRanges
+    // $FlowFixMe: Flow doesn't know of getTargetRanges
     const targetRange = event.getTargetRanges()[0];
     const editorElement = editor.getEditorElement();
 

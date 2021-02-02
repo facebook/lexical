@@ -102,9 +102,16 @@ export class Selection {
     },
     editorElement: HTMLElement,
   ): void {
-    const [anchorNode, focusNode] = resolveSelectionNodes(
+    const [
+      anchorNode,
+      focusNode,
+      anchorOffset,
+      focusOffset,
+    ] = resolveSelectionNodes(
       domRange.startContainer,
       domRange.endContainer,
+      domRange.startOffset,
+      domRange.endOffset,
       editorElement,
     );
     invariant(
@@ -113,28 +120,31 @@ export class Selection {
     );
     this.anchorKey = anchorNode.key;
     this.focusKey = focusNode.key;
-    this.anchorOffset =
-      anchorNode.getTextContent() === '' ? 0 : domRange.startOffset;
-    this.focusOffset =
-      focusNode.getTextContent() === '' ? 0 : domRange.endOffset;
+    this.anchorOffset = anchorNode.getTextContent() === '' ? 0 : anchorOffset;
+    this.focusOffset = focusNode.getTextContent() === '' ? 0 : focusOffset;
   }
 }
 
 function resolveSelectionNodes(
   anchorDOM: Node,
   focusDOM: Node,
+  anchorOffset: number,
+  focusOffset: number,
   editorElement: HTMLElement,
-): [TextNode | null, TextNode | null] {
+): [TextNode | null, TextNode | null, number, number] {
   const viewModel = getActiveViewModel();
   const nodeMap = viewModel.nodeMap;
   const root = nodeMap.root;
   let anchorNode;
   let focusNode;
+  let resolvedAnchorOffset = anchorOffset;
+  let resolvedFocusOffset = focusOffset;
 
   // If we're given the element nodes, lets try and work out what
   // text nodes we can use instead. Otherwise, return null.
   if (anchorDOM === editorElement) {
     anchorNode = root.getFirstTextNode();
+    resolvedAnchorOffset = 0;
   } else {
     const anchorKey = getNodeKeyFromDOM(anchorDOM);
     if (anchorKey) {
@@ -142,7 +152,10 @@ function resolveSelectionNodes(
     }
   }
   if (focusDOM === editorElement) {
-    focusNode = root.getFirstTextNode();
+    focusNode = root.getLastTextNode();
+    if (focusNode !== null) {
+      resolvedFocusOffset = focusNode.getTextContent().length;
+    }
   } else {
     const focusKey = getNodeKeyFromDOM(focusDOM);
     if (focusKey) {
@@ -152,7 +165,7 @@ function resolveSelectionNodes(
   // We try and find the relevant text nodes from the selection.
   // If we can't do this, we return null.
   if (anchorNode == null || focusNode == null) {
-    return [null, null];
+    return [null, null, 0, 0];
   }
   if (anchorNode instanceof BlockNode) {
     anchorNode = anchorNode.getFirstTextNode();
@@ -164,7 +177,8 @@ function resolveSelectionNodes(
     anchorNode instanceof TextNode && focusNode instanceof TextNode,
     'Should never happen',
   );
-  return [anchorNode, focusNode];
+  console.log(anchorOffset);
+  return [anchorNode, focusNode, resolvedAnchorOffset, resolvedFocusOffset];
 }
 
 // This is used to make a selection when the existing
@@ -256,9 +270,11 @@ export function createSelection(
   }
   // Let's resolve the nodes, in the case we're selecting block nodes.
   // We always to make sure the anchor and focus nodes are text nodes.
-  [anchorNode, focusNode] = resolveSelectionNodes(
+  [anchorNode, focusNode, anchorOffset, focusOffset] = resolveSelectionNodes(
     anchorDOM,
     focusDOM,
+    anchorOffset,
+    focusOffset,
     editorElement,
   );
   if (anchorNode === null || focusNode === null) {

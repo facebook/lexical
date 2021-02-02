@@ -40,7 +40,6 @@ if (isClean) {
 
 const wwwMappings = {
   outline: 'Outline',
-  'outline-selection-helpers': 'OutlineSelectionHelpers',
 };
 
 const outlineExtensions = fs
@@ -66,7 +65,6 @@ const externals = [
   'Outline',
   'outline-react',
   'outline-extensions',
-  'outline-selection-helpers',
   'react-dom',
   'react',
   ...outlineExtensionsExternals,
@@ -170,12 +168,6 @@ build(
   'Outline',
   path.resolve('./packages/outline/src/index.js'),
   path.resolve('./packages/outline/dist/Outline.js'),
-);
-
-build(
-  'Outline Helpers',
-  path.resolve('./packages/outline-selection-helpers/src/index.js'),
-  path.resolve('./packages/outline-selection-helpers/dist/OutlineSelectionHelpers.js'),
 );
 
 outlineReactModules.forEach((outlineReactModule) => {

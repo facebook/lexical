@@ -420,14 +420,13 @@ function onCompositionStart(
   const selection = view.getSelection();
   editor.setComposing(true);
   if (selection !== null) {
-    if (selection.isCaret()) {
-      // We only have native beforeinput composition events for
-      // Safari, so we have to apply the composition selection for
-      // other browsers.
-      if (!IS_SAFARI) {
-        state.compositionSelection = selection;
-      }
-    } else {
+    // We only have native beforeinput composition events for
+    // Safari, so we have to apply the composition selection for
+    // other browsers.
+    if (!IS_SAFARI) {
+      state.compositionSelection = selection;
+    }
+    if (!selection.isCaret()) {
       removeText(selection);
     }
   }

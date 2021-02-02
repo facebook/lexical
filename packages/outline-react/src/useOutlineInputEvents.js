@@ -18,7 +18,11 @@ import type {
 import {BlockNode, TextNode} from 'outline';
 import {useCallback, useEffect} from 'react';
 import useOutlineEventWrapper from 'outline-react/useOutlineEventWrapper';
-import {CAN_USE_BEFORE_INPUT, IS_SAFARI} from 'outline-react/OutlineEnv';
+import {
+  CAN_USE_BEFORE_INPUT,
+  IS_SAFARI,
+  IS_CHROME,
+} from 'outline-react/OutlineEnv';
 import {
   isDeleteBackward,
   isDeleteForward,
@@ -44,8 +48,7 @@ import {
   insertText,
   removeText,
   getNodesInRange,
-} from 'outline-selection-helpers';
-import {IS_APPLE, IS_CHROME} from './OutlineEnv';
+} from 'outline-react/OutlineSelectionHelpers';
 
 // FlowFixMe: Flow doesn't know of the CompositionEvent?
 // $FlowFixMe: TODO

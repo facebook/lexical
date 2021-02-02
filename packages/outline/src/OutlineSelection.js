@@ -177,7 +177,6 @@ function resolveSelectionNodes(
     anchorNode instanceof TextNode && focusNode instanceof TextNode,
     'Should never happen',
   );
-  console.log(anchorOffset);
   return [anchorNode, focusNode, resolvedAnchorOffset, resolvedFocusOffset];
 }
 

@@ -118,6 +118,7 @@ ${license}
   * @nolint
   * @preventMunge
   * @preserve-invariant-messages
+  * @generated
   */
 
 ${source}`;

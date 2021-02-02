@@ -14,7 +14,7 @@ import type {Selection} from './OutlineSelection';
 
 import {getNodeByKey, IS_IMMUTABLE, IS_SEGMENTED} from './OutlineNode';
 import {BlockNode, TextNode} from '.';
-import {invariant} from 'outline-selection-helpers';
+import {invariant} from './OutlineUtils';
 
 let subTreeTextContent = '';
 let editorTextContent = '';

@@ -6,7 +6,7 @@ import {TextNode} from 'outline';
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 // $FlowFixMe
 import {unstable_batchedUpdates, createPortal} from 'react-dom';
-import {formatText} from 'outline-selection-helpers';
+import {formatText} from 'outline-react/OutlineSelectionHelpers';
 
 const FORMAT_BOLD = 0;
 const FORMAT_ITALIC = 1;
@@ -281,12 +281,19 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
     [editor],
   );
 
-  const bold = useCallback(() => applyFormatText(FORMAT_BOLD), [applyFormatText]);
-  const italic = useCallback(() => applyFormatText(FORMAT_ITALIC), [applyFormatText]);
-  const code = useCallback(() => applyFormatText(FORMAT_CODE), [applyFormatText]);
-  const strikethrough = useCallback(() => applyFormatText(FORMAT_STRIKETHROUGH), [
+  const bold = useCallback(() => applyFormatText(FORMAT_BOLD), [
     applyFormatText,
   ]);
+  const italic = useCallback(() => applyFormatText(FORMAT_ITALIC), [
+    applyFormatText,
+  ]);
+  const code = useCallback(() => applyFormatText(FORMAT_CODE), [
+    applyFormatText,
+  ]);
+  const strikethrough = useCallback(
+    () => applyFormatText(FORMAT_STRIKETHROUGH),
+    [applyFormatText],
+  );
   const link = useCallback(() => {
     if (!isLink) {
       setEditMode(true);

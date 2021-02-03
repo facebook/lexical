@@ -1,3 +1,12 @@
+/**
+ *
+ * @flow strict
+ */
+
+import type {ViewModel, View} from 'outline';
+
+import {BlockNode, TextNode} from 'outline';
+
 import React from 'react';
 
 const SYMBOLS = {
@@ -7,13 +16,13 @@ const SYMBOLS = {
   ancestorIsLastChild: ' ',
 };
 
-function visitTree(tree, currentNode, visitor, indent = []) {
-  const childNodes = currentNode?.children ?? [];
+function visitTree(view: View, currentNode: BlockNode, visitor, indent = []) {
+  const childNodes = currentNode.getChildren();
   const childNodesLength = childNodes.length;
 
-  childNodes.forEach((nodeKey, i) => {
+  childNodes.forEach((childNode, i) => {
     visitor(
-      tree[nodeKey],
+      childNode,
       indent.concat(
         i === childNodesLength - 1
           ? SYMBOLS.isLastChild
@@ -21,41 +30,56 @@ function visitTree(tree, currentNode, visitor, indent = []) {
       ),
     );
 
-    visitTree(
-      tree,
-      tree[nodeKey],
-      visitor,
-      indent.concat(
-        i === childNodesLength - 1
-          ? SYMBOLS.ancestorIsLastChild
-          : SYMBOLS.ancestorHasNextSibling,
-      ),
-    );
+    if (childNode instanceof BlockNode) {
+      visitTree(
+        view,
+        childNode,
+        visitor,
+        indent.concat(
+          i === childNodesLength - 1
+            ? SYMBOLS.ancestorIsLastChild
+            : SYMBOLS.ancestorHasNextSibling,
+        ),
+      );
+    }
   });
 }
 
-export default function TreeView({nodeMap, selection}) {
-  if (nodeMap?.root == null || selection == null) {
-    return null;
-  }
-  const {anchorKey} = selection;
+export default function TreeView({
+  viewModel,
+}: {
+  viewModel: ?ViewModel,
+}): React$Node {
+  const content = React.useMemo(() => {
+    if (viewModel == null) {
+      return null;
+    }
 
-  let res = ' root\n';
+    let res = ' root\n';
 
-  visitTree(nodeMap, nodeMap.root, (node, indent) => {
-    const isSelected = anchorKey === node.key;
-    res += `${isSelected ? '>' : ' '} ${indent.join(' ')} (${node.key.slice(
-      1,
-    )}) ${node.type} ${printNode(node)}\n`;
-  });
+    viewModel.read((view: View) => {
+      const selection = view.getSelection();
+      const anchorKey = selection?.getAnchorNode()?.key;
 
-  return <pre>{res}</pre>;
+      visitTree(view, view.getRoot(), (node, indent) => {
+        const nodeKey = node.getKey();
+        const isSelected = anchorKey === nodeKey;
+        res += `${isSelected ? '>' : ' '} ${indent.join(' ')} (${nodeKey.slice(
+          1,
+        )}) ${node?.getType() ?? ''} ${printNode(node)}\n`;
+      });
+    });
+
+    return res;
+  }, [viewModel]);
+
+  return <pre>{content}</pre>;
 }
 
 function printNode(node) {
-  return node.hasOwnProperty('text')
-    ? node.text.length === 0
-      ? '(empty)'
-      : `"${node.text}"`
-    : '';
+  if (node instanceof TextNode) {
+    const text = node.getTextContent();
+    return text.length === 0 ? '(empty)' : `"${node.text}"`;
+  }
+  return '';
 }

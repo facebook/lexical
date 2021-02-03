@@ -5,6 +5,7 @@ import type {ViewModel} from 'outline';
 import React from 'react';
 import {useState} from 'react';
 import Editor from './Editor';
+import TreeView from './TreeView';
 
 function App(): React$Node {
   const [viewModel, setViewModel] = useState<ViewModel | null>(null);
@@ -13,10 +14,13 @@ function App(): React$Node {
     <>
       <h1>OutlineJS Demo</h1>
       <div className="editor-shell">
-        <Editor onChange={(newViewModel) => {
-          requestAnimationFrame(() => setViewModel(newViewModel))
-        }} />
+        <Editor
+          onChange={(newViewModel) => {
+            requestAnimationFrame(() => setViewModel(newViewModel));
+          }}
+        />
       </div>
+      <TreeView nodeMap={viewModel?.nodeMap} selection={viewModel?.selection} />
       <pre>{JSON.stringify(viewModel, null, 2)}</pre>
     </>
   );

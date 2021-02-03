@@ -20,7 +20,7 @@ function App(): React$Node {
           }}
         />
       </div>
-      <TreeView nodeMap={viewModel?.nodeMap} selection={viewModel?.selection} />
+      <TreeView viewModel={viewModel} />
       <pre>{JSON.stringify(viewModel, null, 2)}</pre>
     </>
   );

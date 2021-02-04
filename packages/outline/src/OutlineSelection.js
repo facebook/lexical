@@ -291,12 +291,16 @@ export function createSelection(
     if (!editor.isComposing() && !editor.isPointerDown()) {
       const anchorElement = editor.getElementByKey(anchorKey);
       const focusElement = editor.getElementByKey(focusKey);
-      if (
-        anchorNode === focusNode &&
-        ((anchorElement.previousSibling === null && anchorOffset !== 1) ||
-          (focusElement.nextSibling === null && anchorOffset !== 0))
-      ) {
-        isDirty = true;
+      if (anchorNode === focusNode) {
+        if (anchorElement.previousSibling === null) {
+          if (anchorOffset !== 1) {
+            isDirty = true;
+          }
+        } else if (focusElement.nextSibling === null) {
+          if (anchorOffset !== 0) {
+            isDirty = true;
+          }
+        }
       }
     }
     anchorOffset = 0;

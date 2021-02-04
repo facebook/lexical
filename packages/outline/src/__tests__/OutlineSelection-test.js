@@ -16,6 +16,14 @@ function sanitizeHTML(html) {
   return html.replace(/\uFEFF/g, '');
 }
 
+function sanitizeSelectionWithEmptyTextNodes(selection) {
+  const {anchorNode, focusNode} = selection;
+  if (anchorNode === focusNode && anchorNode.textContent === '\uFEFF') {
+    return {anchorNode, focusNode, anchorOffset: 0, focusOffset: 0};
+  }
+  return selection;
+}
+
 function printWhitespace(whitespaceCharacter) {
   return whitespaceCharacter.charCodeAt(0) === 160
     ? '&nbsp;'
@@ -913,7 +921,9 @@ describe('OutlineSelection tests', () => {
       expect(sanitizeHTML(container.innerHTML)).toBe(testUnit.expectedHTML);
       // Validate selection matches
       const editorElement = editor.getEditorElement();
-      const acutalSelection = window.getSelection();
+      const acutalSelection = sanitizeSelectionWithEmptyTextNodes(
+        window.getSelection(),
+      );
       const expectedSelection = testUnit.expectedSelection;
       expect(acutalSelection.anchorNode).toBe(
         getNodeFromPath(expectedSelection.anchorPath, editorElement),

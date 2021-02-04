@@ -26,29 +26,27 @@ function shouldMerge(
   // If we are changing selection between view models, then merge.
   if (!hadDirtyNodes && !hasDirtyNodes) {
     return true;
-  } else if (hadDirtyNodes) {
-    if (hasDirtyNodes) {
-      const dirtyNodes = viewModel.getDirtyNodes();
-      if (dirtyNodes.length === 1) {
-        const prevNodeMap = current.nodeMap;
-        const nextDirtyNode = dirtyNodes[0];
-        const prevDirtyNodeKey = nextDirtyNode.key;
-        const prevDirtyNode = prevNodeMap[prevDirtyNodeKey];
-        if (
-          prevDirtyNode !== undefined &&
-          prevDirtyNode instanceof TextNode &&
-          nextDirtyNode instanceof TextNode &&
-          prevDirtyNode.flags === nextDirtyNode.flags
-        ) {
-          const prevText = prevDirtyNode.text;
-          const nextText = nextDirtyNode.text;
-          if (prevText === '') {
-            return false;
-          }
-          const diff = nextText.length - prevText.length;
-          // Only merge if we're adding/removing a single character
-          return diff === -1 || diff === 1;
+  } else if (hadDirtyNodes && hasDirtyNodes) {
+    const dirtyNodes = viewModel.getDirtyNodes();
+    if (dirtyNodes.length === 1) {
+      const prevNodeMap = current.nodeMap;
+      const nextDirtyNode = dirtyNodes[0];
+      const prevDirtyNodeKey = nextDirtyNode.key;
+      const prevDirtyNode = prevNodeMap[prevDirtyNodeKey];
+      if (
+        prevDirtyNode !== undefined &&
+        prevDirtyNode instanceof TextNode &&
+        nextDirtyNode instanceof TextNode &&
+        prevDirtyNode.flags === nextDirtyNode.flags
+      ) {
+        const prevText = prevDirtyNode.text;
+        const nextText = nextDirtyNode.text;
+        if (prevText === '') {
+          return false;
         }
+        const diff = nextText.length - prevText.length;
+        // Only merge if we're adding/removing a single character
+        return diff === -1 || diff === 1;
       }
     }
   }
@@ -87,14 +85,12 @@ export default function useOutlineHistory(editor: OutlineEditor): void {
         !viewModel.isHistoric &&
         !shouldMerge(viewModel, current, undoStack)
       ) {
+        if (redoStack.length !== 0) {
+          debugger;
+          redoStack = historyState.redoStack = [];
+        }
         if (current !== null) {
           undoStack.push(current);
-        }
-        if (
-          (current === null || !current.isHistoric) &&
-          redoStack.length !== 0
-        ) {
-          redoStack = historyState.redoStack = [];
         }
       }
       historyState.current = viewModel;

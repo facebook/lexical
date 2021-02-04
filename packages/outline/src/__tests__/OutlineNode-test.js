@@ -74,7 +74,7 @@ describe('OutlineNode tests', () => {
       oldTextNode.replace(newTextNode);
     });
     expect(sanitizeHTML(container.innerHTML)).toBe(
-      '<div contenteditable="true"><p dir="ltr"><span data-text="true">Replaced node!</span></p></div>',
+      '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-text="true">Replaced node!</span></p></div>',
     );
   });
 
@@ -86,7 +86,7 @@ describe('OutlineNode tests', () => {
       oldTextNode.replace(newTextNode);
     });
     expect(sanitizeHTML(container.innerHTML)).toBe(
-      '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
+      '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-text="true"></span>' +
         '<span data-text="true">Replaced node!</span><span data-text="true"></span></p></div>',
     );
   });
@@ -99,7 +99,7 @@ describe('OutlineNode tests', () => {
       oldTextNode.replace(newTextNode);
     });
     expect(sanitizeHTML(container.innerHTML)).toBe(
-      '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
+      '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-text="true"></span>' +
         '<span data-text="true">Replaced node!</span><span data-text="true"></span></p></div>',
     );
   });
@@ -110,7 +110,7 @@ describe('OutlineNode tests', () => {
       oldTextNode.remove();
     });
     expect(sanitizeHTML(container.innerHTML)).toBe(
-      '<div contenteditable="true"><p></p></div>',
+      '<div contenteditable="true" data-outline-editor="true"><p></p></div>',
     );
   });
 
@@ -121,7 +121,7 @@ describe('OutlineNode tests', () => {
       paragraph.append(newTextNode);
     });
     expect(sanitizeHTML(container.innerHTML)).toBe(
-      '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
+      '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-text="true"></span>' +
         '<span data-text="true">New node!</span></p></div>',
     );
   });
@@ -134,7 +134,7 @@ describe('OutlineNode tests', () => {
       paragraph.append(newTextNode);
     });
     expect(sanitizeHTML(container.innerHTML)).toBe(
-      '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
+      '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-text="true"></span>' +
         '<span data-text="true">New node!</span><span data-text="true"></span></p></div>',
     );
   });
@@ -147,7 +147,7 @@ describe('OutlineNode tests', () => {
       paragraph.append(newTextNode);
     });
     expect(sanitizeHTML(container.innerHTML)).toBe(
-      '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
+      '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-text="true"></span>' +
         '<span data-text="true">New node!</span><span data-text="true"></span></p></div>',
     );
   });
@@ -159,7 +159,7 @@ describe('OutlineNode tests', () => {
       textNode.insertAfter(newTextNode);
     });
     expect(sanitizeHTML(container.innerHTML)).toBe(
-      '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
+      '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-text="true"></span>' +
         '<span data-text="true">New node!</span></p></div>',
     );
   });
@@ -172,7 +172,7 @@ describe('OutlineNode tests', () => {
       textNode.insertAfter(newTextNode);
     });
     expect(sanitizeHTML(container.innerHTML)).toBe(
-      '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
+      '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-text="true"></span>' +
         '<span data-text="true">New node!</span><span data-text="true"></span></p></div>',
     );
   });
@@ -185,7 +185,7 @@ describe('OutlineNode tests', () => {
       textNode.insertAfter(newTextNode);
     });
     expect(sanitizeHTML(container.innerHTML)).toBe(
-      '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
+      '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-text="true"></span>' +
         '<span data-text="true">New node!</span><span data-text="true"></span></p></div>',
     );
   });
@@ -197,7 +197,7 @@ describe('OutlineNode tests', () => {
       textNode.insertBefore(newTextNode);
     });
     expect(sanitizeHTML(container.innerHTML)).toBe(
-      '<div contenteditable="true"><p dir="ltr"><span data-text="true">New node!</span>' +
+      '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-text="true">New node!</span>' +
         '<span data-text="true"></span></p></div>',
     );
   });
@@ -210,7 +210,7 @@ describe('OutlineNode tests', () => {
       textNode.insertBefore(newTextNode);
     });
     expect(sanitizeHTML(container.innerHTML)).toBe(
-      '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
+      '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-text="true"></span>' +
         '<span data-text="true">New node!</span>' +
         '<span data-text="true"></span></p></div>',
     );
@@ -224,7 +224,7 @@ describe('OutlineNode tests', () => {
       textNode.insertBefore(newTextNode);
     });
     expect(sanitizeHTML(container.innerHTML)).toBe(
-      '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
+      '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-text="true"></span>' +
         '<span data-text="true">New node!</span>' +
         '<span data-text="true"></span></p></div>',
     );

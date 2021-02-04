@@ -78,6 +78,9 @@ export default function Editor({onChange, isReadOnly}: Props): React$Node {
         {...props}
         className="editor"
         contentEditable={isReadOnly !== true}
+        // We use data-slate-editor so Grammarly works with Outline.
+        // Ideally, Grammarly should add support for detecting Outline.
+        data-slate-editor={true}
         role="textbox"
         ref={editorElementRef}
         spellCheck={true}

@@ -211,12 +211,6 @@ function reconcileChildren(
 function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
   const prevNode = activePrevNodeMap[key];
   const nextNode = activeNextNodeMap[key];
-  // Some DEV time checking
-  if (nextNode.type !== 'root' && nextNode.parent === null) {
-    // eslint-disable-next-line no-debugger
-    debugger;
-    throw new Error('MUST FIX');
-  }
   const hasDirtySubTree =
     activeViewModelIsHistoric || activeDirtySubTrees.has(key);
   const dom = activeEditor.getElementByKey(key);

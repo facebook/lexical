@@ -480,6 +480,7 @@ function onNativeBeforeInput(
 ): void {
   // $FlowFixMe: Flow doesn't know of the inputType field
   const inputType = event.inputType;
+  console.log(inputType);
 
   // These two types occur while a user is composing text and can't be
   // cancelled. Let them through and wait for the composition to end.
@@ -548,6 +549,11 @@ function onNativeBeforeInput(
       const dataTransfer = event.dataTransfer;
       if (dataTransfer != null) {
         insertDataTransfer(dataTransfer, selection, state, view, editor);
+      } else {
+        const data = event.data;
+        if (data) {
+          insertText(selection, data);
+        }
       }
       break;
     }

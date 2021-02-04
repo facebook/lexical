@@ -242,6 +242,7 @@ export class OutlineEditor {
     if (editorElement === null) {
       this._keyToDOMMap.delete('root');
     } else {
+      editorElement.setAttribute('data-outline-editor', 'true');
       this._keyToDOMMap.set('root', editorElement);
       commitPendingUpdates(this);
     }

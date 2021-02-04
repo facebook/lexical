@@ -549,6 +549,11 @@ function onNativeBeforeInput(
       const dataTransfer = event.dataTransfer;
       if (dataTransfer != null) {
         insertDataTransfer(dataTransfer, selection, state, view, editor);
+      } else {
+        const data = event.data;
+        if (data) {
+          insertText(selection, data);
+        }
       }
       break;
     }

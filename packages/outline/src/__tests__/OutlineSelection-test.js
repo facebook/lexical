@@ -303,7 +303,7 @@ describe('OutlineSelection tests', () => {
   test('Expect initial output to be a block with some text', () => {
     emptySetup();
     expect(sanitizeHTML(container.innerHTML)).toBe(
-      '<div contenteditable="true"><p><span data-text="true"><br></span></p></div>',
+      '<div contenteditable="true" data-outline-editor="true"><p><span data-text="true"><br></span></p></div>',
     );
   });
 
@@ -351,7 +351,7 @@ describe('OutlineSelection tests', () => {
         insertText('o'),
       ],
       expectedHTML:
-        '<div contenteditable="true"><p dir="ltr"><span data-text="true">Hello</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-text="true">Hello</span></p></div>',
       expectedSelection: {
         anchorPath: [0, 0, 0],
         anchorOffset: 5,
@@ -372,7 +372,7 @@ describe('OutlineSelection tests', () => {
         insertText('o'),
       ],
       expectedHTML:
-        '<div contenteditable="true"><p dir="ltr"><strong data-text="true">Hello</strong></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><strong data-text="true">Hello</strong></p></div>',
       expectedSelection: {
         anchorPath: [0, 0, 0],
         anchorOffset: 5,
@@ -392,7 +392,7 @@ describe('OutlineSelection tests', () => {
         insertText('o'),
       ],
       expectedHTML:
-        '<div contenteditable="true"><p dir="ltr"><em data-text="true">Hello</em></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><em data-text="true">Hello</em></p></div>',
       expectedSelection: {
         anchorPath: [0, 0, 0],
         anchorOffset: 5,
@@ -412,7 +412,7 @@ describe('OutlineSelection tests', () => {
         insertText('o'),
       ],
       expectedHTML:
-        '<div contenteditable="true"><p dir="ltr">' +
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr">' +
         '<span data-text="true" style="text-decoration: underline;">Hello</span></p></div>',
       expectedSelection: {
         anchorPath: [0, 0, 0],
@@ -433,7 +433,7 @@ describe('OutlineSelection tests', () => {
         insertText('o'),
       ],
       expectedHTML:
-        '<div contenteditable="true"><p dir="ltr">' +
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr">' +
         '<span data-text="true" style="text-decoration: line-through;">Hello</span></p></div>',
       expectedSelection: {
         anchorPath: [0, 0, 0],
@@ -457,7 +457,7 @@ describe('OutlineSelection tests', () => {
         deleteForward(),
       ],
       expectedHTML:
-        '<div contenteditable="true"><p><span data-text="true">1246</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p><span data-text="true">1246</span></p></div>',
       expectedSelection: {
         anchorPath: [0, 0, 0],
         anchorOffset: 4,
@@ -470,7 +470,7 @@ describe('OutlineSelection tests', () => {
       name: 'Creation of an immutable node',
       inputs: [insertImmutableNode('Dominic Gannaway')],
       expectedHTML:
-        '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-text="true"></span>' +
         '<span data-text="true">Dominic Gannaway</span>' +
         '<span data-text="true"></span></p></div>',
       expectedSelection: {
@@ -489,7 +489,7 @@ describe('OutlineSelection tests', () => {
         convertToImmutableNode(),
       ],
       expectedHTML:
-        '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-text="true"></span>' +
         '<span data-text="true">Dominic Gannaway</span>' +
         '<span data-text="true"></span></p></div>',
       expectedSelection: {
@@ -504,7 +504,7 @@ describe('OutlineSelection tests', () => {
       name: 'Deletion of an immutable node',
       inputs: [insertImmutableNode('Dominic Gannaway'), deleteBackward()],
       expectedHTML:
-        '<div contenteditable="true"><p><span data-text="true"><br></span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p><span data-text="true"><br></span></p></div>',
       expectedSelection: {
         anchorPath: [0, 0, 0],
         anchorOffset: 0,
@@ -517,7 +517,7 @@ describe('OutlineSelection tests', () => {
       name: 'Creation of a segmented node',
       inputs: [insertSegmentedNode('Dominic Gannaway')],
       expectedHTML:
-        '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-text="true"></span>' +
         '<span data-text="true">Dominic Gannaway</span>' +
         '<span data-text="true"></span></p></div>',
       expectedSelection: {
@@ -536,7 +536,7 @@ describe('OutlineSelection tests', () => {
         convertToSegmentedNode(),
       ],
       expectedHTML:
-        '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-text="true"></span>' +
         '<span data-text="true">Dominic Gannaway</span>' +
         '<span data-text="true"></span></p></div>',
       expectedSelection: {
@@ -551,7 +551,7 @@ describe('OutlineSelection tests', () => {
       name: 'Deletion of part of a segmented node',
       inputs: [insertSegmentedNode('Dominic Gannaway'), deleteBackward()],
       expectedHTML:
-        '<div contenteditable="true"><p dir="ltr"><span data-text="true"></span>' +
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-text="true"></span>' +
         '<span data-text="true">Dominic</span>' +
         '<span data-text="true"></span></p></div>',
       expectedSelection: {
@@ -568,7 +568,7 @@ describe('OutlineSelection tests', () => {
     //   {
     //     name: `Delete backward eliminates entire ${description} (${grapheme})`,
     //     inputs: [insertText(grapheme + grapheme), deleteBackward()],
-    //     expectedHTML: `<div contenteditable="true"><p dir=\"ltr\"><span data-text="true">${grapheme}</span></p></div>`,
+    //     expectedHTML: `<div contenteditable="true" data-outline-editor="true"><p dir=\"ltr\"><span data-text="true">${grapheme}</span></p></div>`,
     //     expectedSelection: {
     //       anchorPath: [0, 0, 0],
     //       anchorOffset: grapheme.length,
@@ -584,7 +584,7 @@ describe('OutlineSelection tests', () => {
     //       moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 0),
     //       deleteForward(),
     //     ],
-    //     expectedHTML: `<div contenteditable="true"><p dir=\"ltr\"><span data-text="true">${grapheme}</span></p></div>`,
+    //     expectedHTML: `<div contenteditable="true" data-outline-editor="true"><p dir=\"ltr\"><span data-text="true">${grapheme}</span></p></div>`,
     //     expectedSelection: {
     //       anchorPath: [0, 0, 0],
     //       anchorOffset: 0,
@@ -596,7 +596,7 @@ describe('OutlineSelection tests', () => {
     //   {
     //     name: `Move backward skips over grapheme cluster (${grapheme})`,
     //     inputs: [insertText(grapheme + grapheme), moveBackward()],
-    //     expectedHTML: `<div contenteditable="true"><p dir=\"ltr\"><span data-text="true">${grapheme}${grapheme}</span></p></div>`,
+    //     expectedHTML: `<div contenteditable="true" data-outline-editor="true"><p dir=\"ltr\"><span data-text="true">${grapheme}${grapheme}</span></p></div>`,
     //     expectedSelection: {
     //       anchorPath: [0, 0, 0],
     //       anchorOffset: grapheme.length,
@@ -612,7 +612,7 @@ describe('OutlineSelection tests', () => {
     //       moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 0),
     //       moveForward(),
     //     ],
-    //     expectedHTML: `<div contenteditable="true"><p dir=\"ltr\"><span data-text="true">${grapheme}${grapheme}</span></p></div>`,
+    //     expectedHTML: `<div contenteditable="true" data-outline-editor="true"><p dir=\"ltr\"><span data-text="true">${grapheme}${grapheme}</span></p></div>`,
     //     expectedSelection: {
     //       anchorPath: [0, 0, 0],
     //       anchorOffset: grapheme.length,
@@ -636,7 +636,7 @@ describe('OutlineSelection tests', () => {
         deleteForward(),
       ],
       expectedHTML:
-        '<div contenteditable="true"><p dir="ltr"><span data-text="true">abc123</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-text="true">abc123</span></p></div>',
       expectedSelection: {
         anchorPath: [0, 0, 0],
         anchorOffset: 3,
@@ -653,7 +653,7 @@ describe('OutlineSelection tests', () => {
         insertText('outline'),
       ],
       expectedHTML:
-        '<div contenteditable="true"><p dir="ltr"><span data-text="true">Hello outline!</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-text="true">Hello outline!</span></p></div>',
       expectedSelection: {
         anchorPath: [0, 0, 0],
         anchorOffset: 13,
@@ -670,7 +670,7 @@ describe('OutlineSelection tests', () => {
         formatBold(),
       ],
       expectedHTML:
-        '<div contenteditable="true"><p dir="ltr"><span data-text="true">Hello </span>' +
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-text="true">Hello </span>' +
         '<strong data-text="true">draft</strong><span data-text="true">!</span></p></div>',
       expectedSelection: {
         anchorPath: [0, 1, 0],
@@ -688,7 +688,7 @@ describe('OutlineSelection tests', () => {
         formatItalic(),
       ],
       expectedHTML:
-        '<div contenteditable="true"><p dir="ltr"><span data-text="true">Hello </span>' +
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-text="true">Hello </span>' +
         '<em data-text="true">draft</em><span data-text="true">!</span></p></div>',
       expectedSelection: {
         anchorPath: [0, 1, 0],
@@ -707,7 +707,7 @@ describe('OutlineSelection tests', () => {
         formatItalic(),
       ],
       expectedHTML:
-        '<div contenteditable="true"><p dir="ltr"><span data-text="true">Hello </span>' +
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-text="true">Hello </span>' +
         '<strong data-text="true" style="font-style: italic;">draft</strong><span data-text="true">!</span></p></div>',
       expectedSelection: {
         anchorPath: [0, 1, 0],
@@ -725,7 +725,7 @@ describe('OutlineSelection tests', () => {
         insertText('This works!'),
       ],
       expectedHTML:
-        '<div contenteditable="true"><p dir="ltr"><span data-text="true">This works!</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-text="true">This works!</span></p></div>',
       expectedSelection: {
         anchorPath: [0, 0, 0],
         anchorOffset: 11,
@@ -744,7 +744,7 @@ describe('OutlineSelection tests', () => {
         moveNativeSelection([0, 0, 0], 2, [0, 0, 0], 6),
       ],
       expectedHTML:
-        '<div contenteditable="true"><p dir="ltr"><span data-text="true">A duck.</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-text="true">A duck.</span></p></div>',
       expectedSelection: {
         anchorPath: [0, 0, 0],
         anchorOffset: 2,
@@ -757,7 +757,7 @@ describe('OutlineSelection tests', () => {
       name: 'Inserting a paragraph',
       inputs: [insertParagraph()],
       expectedHTML:
-        '<div contenteditable="true"><p><span data-text="true"><br></span></p>' +
+        '<div contenteditable="true" data-outline-editor="true"><p><span data-text="true"><br></span></p>' +
         '<p><span data-text="true"><br></span></p></div>',
       expectedSelection: {
         anchorPath: [1, 0, 0],
@@ -771,7 +771,7 @@ describe('OutlineSelection tests', () => {
       name: 'Inserting a paragraph and then removing it',
       inputs: [insertParagraph(), deleteBackward()],
       expectedHTML:
-        '<div contenteditable="true"><p><span data-text="true"><br></span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p><span data-text="true"><br></span></p></div>',
       expectedSelection: {
         anchorPath: [0, 0, 0],
         anchorOffset: 0,
@@ -788,7 +788,7 @@ describe('OutlineSelection tests', () => {
         insertParagraph(),
       ],
       expectedHTML:
-        '<div contenteditable="true"><p dir="ltr"><span data-text="true">Hello </span></p>' +
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-text="true">Hello </span></p>' +
         '<p dir="ltr"><span data-text="true">world</span></p></div>',
       expectedSelection: {
         anchorPath: [1, 0, 0],
@@ -808,7 +808,7 @@ describe('OutlineSelection tests', () => {
         deleteBackward(),
       ],
       expectedHTML:
-        '<div contenteditable="true"><p><span data-text="true"><br></span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p><span data-text="true"><br></span></p></div>',
       expectedSelection: {
         anchorPath: [0, 0, 0],
         anchorOffset: 0,
@@ -838,7 +838,7 @@ describe('OutlineSelection tests', () => {
           insertText(`Hello${whitespaceCharacter}world`),
           deleteWordBackward(),
         ],
-        expectedHTML: `<div contenteditable=\"true\"><p dir=\"ltr\"><span data-text=\"true\">Hello${printWhitespace(
+        expectedHTML: `<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-text="true">Hello${printWhitespace(
           whitespaceCharacter,
         )}</span></p></div>`,
         expectedSelection: {
@@ -856,7 +856,7 @@ describe('OutlineSelection tests', () => {
           moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 0),
           deleteWordForward(),
         ],
-        expectedHTML: `<div contenteditable=\"true\"><p dir=\"ltr\"><span data-text=\"true\">${printWhitespace(
+        expectedHTML: `<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-text="true">${printWhitespace(
           whitespaceCharacter,
         )}world</span></p></div>`,
         expectedSelection: {
@@ -875,7 +875,7 @@ describe('OutlineSelection tests', () => {
           deleteWordForward(),
         ],
         expectedHTML:
-          '<div contenteditable="true"><p dir="ltr"><span data-text="true">Hello</span></p></div>',
+          '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-text="true">Hello</span></p></div>',
         expectedSelection: {
           anchorPath: [0, 0, 0],
           anchorOffset: 5,
@@ -892,7 +892,7 @@ describe('OutlineSelection tests', () => {
           deleteWordBackward(),
         ],
         expectedHTML:
-          '<div contenteditable="true"><p dir="ltr"><span data-text="true">world</span></p></div>',
+          '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-text="true">world</span></p></div>',
         expectedSelection: {
           anchorPath: [0, 0, 0],
           anchorOffset: 0,

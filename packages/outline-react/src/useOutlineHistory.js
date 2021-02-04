@@ -86,7 +86,6 @@ export default function useOutlineHistory(editor: OutlineEditor): void {
         !shouldMerge(viewModel, current, undoStack)
       ) {
         if (redoStack.length !== 0) {
-          debugger;
           redoStack = historyState.redoStack = [];
         }
         if (current !== null) {

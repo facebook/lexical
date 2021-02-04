@@ -16,7 +16,7 @@ import type {
 } from 'outline';
 
 import {BlockNode, TextNode} from 'outline';
-import {useCallback, useEffect} from 'react';
+import {useCallback, useEffect, useRef} from 'react';
 import useOutlineEventWrapper from 'outline-react/useOutlineEventWrapper';
 import {
   CAN_USE_BEFORE_INPUT,
@@ -625,6 +625,7 @@ export default function useOutlineInputEvents<T>(
   editor: OutlineEditor,
   stateRef: RefObject<T>,
 ): {} | {onBeforeInput: (event: SyntheticInputEvent<T>) => void} {
+  const isHandlingPointerRef = useRef(false);
   const handleNativeBeforeInput = useOutlineEventWrapper(
     onNativeBeforeInput,
     editor,
@@ -640,9 +641,17 @@ export default function useOutlineInputEvents<T>(
     editor.setKeyDown(false);
   }, [editor]);
   const handlePointerDown = useCallback(() => {
-    editor.setPointerDown(true);
+    isHandlingPointerRef.current = true;
+    // Throttle setting of the flag for 50ms, as we don't want this to trigger
+    // for simple clicks.
+    setTimeout(() => {
+      if (isHandlingPointerRef.current) {
+        editor.setPointerDown(true);
+      }
+    }, 50);
   }, [editor]);
   const handlePointerUp = useCallback(() => {
+    isHandlingPointerRef.current = false;
     editor.setPointerDown(false);
   }, [editor]);
   const handlePaste = useOutlineEventWrapper(onPastePolyfill, editor, stateRef);

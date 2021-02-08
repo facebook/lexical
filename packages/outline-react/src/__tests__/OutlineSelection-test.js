@@ -5,6 +5,7 @@ let ReactTestUtils;
 let Outline;
 let SelectionHelpers;
 let ParagraphNode;
+let useOutlineRichText;
 
 const FORMAT_BOLD = 0;
 const FORMAT_ITALIC = 1;
@@ -163,6 +164,32 @@ function setNativeSelection(
   document.dispatchEvent(new Event('selectionchange'));
 }
 
+function moveNativeSelectionForward() {
+  const domSelection = window.getSelection();
+  const {anchorNode} = domSelection;
+
+  // TODO move native selection one character using offset
+  if (domSelection.isCollapsed) {
+    const target =
+      anchorNode.nodeType === 1 ? anchorNode : anchorNode.parentNode;
+    const keyDownEvent = new KeyboardEvent('keydown', {
+      bubbles: true,
+      key: 'ArrowRight',
+    });
+    target.dispatchEvent(keyDownEvent);
+    if (!keyDownEvent.defaultPrevented) {
+      // TODO
+    }
+    const keyUpEvent = new KeyboardEvent('keyup', {
+      bubbles: true,
+      key: 'ArrowRight',
+    });
+    target.dispatchEvent(keyUpEvent);
+  } else {
+    // TODO
+  }
+}
+
 function applySelectionInputs(inputs, update, editor) {
   const editorElement = editor.getEditorElement();
   inputs.forEach((input) => {
@@ -244,13 +271,22 @@ function applySelectionInputs(inputs, update, editor) {
 }
 
 describe('OutlineSelection tests', () => {
+  const originalPromiseResolve = Promise.resolve;
   beforeEach(() => {
+    Promise.resolve = () => {
+      return {
+        then(cb) {
+          cb();
+        },
+      };
+    };
     React = require('react');
     ReactDOM = require('react-dom');
     ReactTestUtils = require('react-dom/test-utils');
     Outline = require('outline');
     SelectionHelpers = require('outline-react/OutlineSelectionHelpers');
     ParagraphNode = require('outline-extensions/ParagraphNode');
+    useOutlineRichText = require('outline-react/useOutlineRichText');
 
     container = document.createElement('div');
     document.body.appendChild(container);
@@ -258,6 +294,7 @@ describe('OutlineSelection tests', () => {
   });
 
   afterEach(() => {
+    Promise.resolve = originalPromiseResolve;
     document.body.removeChild(container);
     container = null;
   });
@@ -282,24 +319,14 @@ describe('OutlineSelection tests', () => {
 
     function TestBase() {
       editor = useOutlineEditor(ref);
-      return <div ref={ref} contentEditable={true} />;
+      const props = useOutlineRichText(editor, false);
+      return <div ref={ref} contentEditable={true} {...props} />;
     }
 
     ReactTestUtils.act(() => {
       ReactDOM.render(<TestBase />, container);
     });
     ref.current.focus();
-  }
-
-  function emptySetup() {
-    // Insert initial block
-    update((view) => {
-      const paragraph = ParagraphNode.createParagraphNode();
-      const text = Outline.createTextNode();
-      paragraph.append(text);
-      view.getRoot().append(paragraph);
-    });
-
     // Focus first element
     setNativeSelection(ref.current, [0, 0, 0], 0, [0, 0, 0], 0);
   }
@@ -309,10 +336,49 @@ describe('OutlineSelection tests', () => {
   }
 
   test('Expect initial output to be a block with some text', () => {
-    emptySetup();
     expect(sanitizeHTML(container.innerHTML)).toBe(
       '<div contenteditable="true" data-outline-editor="true"><p><span data-text="true"><br></span></p></div>',
     );
+  });
+
+  function assertSelection(editorElement, expectedSelection) {
+    const acutalSelection = sanitizeSelectionWithEmptyTextNodes(
+      window.getSelection(),
+    );
+    expect(acutalSelection.anchorNode).toBe(
+      getNodeFromPath(expectedSelection.anchorPath, editorElement),
+    );
+    expect(acutalSelection.anchorOffset).toBe(expectedSelection.anchorOffset);
+    expect(acutalSelection.focusNode).toBe(
+      getNodeFromPath(expectedSelection.focusPath, editorElement),
+    );
+    expect(acutalSelection.focusOffset).toBe(expectedSelection.focusOffset);
+  }
+
+  test('Should correctly handle empty paragraph blocks', () => {
+    // Insert initial block
+    update((view) => {
+      const paragraph = ParagraphNode.createParagraphNode();
+      const text = Outline.createTextNode('123');
+      paragraph.append(text);
+      view.getRoot().append(paragraph);
+    });
+
+    // Focus first element
+    setNativeSelection(ref.current, [0, 0, 0], 0, [0, 0, 0], 0);
+
+    expect(sanitizeHTML(container.innerHTML)).toBe(
+      '<div contenteditable="true" data-outline-editor="true"><p><span data-text="true"><br></span></p><p><span data-text="true">123</span></p></div>',
+    );
+
+    moveNativeSelectionForward();
+
+    assertSelection(ref.current, {
+      anchorPath: [1, 0, 0],
+      anchorOffset: 0,
+      focusPath: [1, 0, 0],
+      focusOffset: 0,
+    });
   });
 
   // eslint-disable-next-line no-unused-vars
@@ -366,7 +432,6 @@ describe('OutlineSelection tests', () => {
         focusPath: [0, 0, 0],
         focusOffset: 5,
       },
-      setup: emptySetup,
     },
 
     {
@@ -387,7 +452,6 @@ describe('OutlineSelection tests', () => {
         focusPath: [0, 0, 0],
         focusOffset: 5,
       },
-      setup: emptySetup,
     },
     {
       name: 'Simple typing in italic',
@@ -407,7 +471,6 @@ describe('OutlineSelection tests', () => {
         focusPath: [0, 0, 0],
         focusOffset: 5,
       },
-      setup: emptySetup,
     },
     {
       name: 'Simple typing in underline',
@@ -428,7 +491,6 @@ describe('OutlineSelection tests', () => {
         focusPath: [0, 0, 0],
         focusOffset: 5,
       },
-      setup: emptySetup,
     },
     {
       name: 'Simple typing in strikethrough',
@@ -449,7 +511,6 @@ describe('OutlineSelection tests', () => {
         focusPath: [0, 0, 0],
         focusOffset: 5,
       },
-      setup: emptySetup,
     },
     {
       name: 'Deletion',
@@ -472,7 +533,6 @@ describe('OutlineSelection tests', () => {
         focusPath: [0, 0, 0],
         focusOffset: 4,
       },
-      setup: emptySetup,
     },
     {
       name: 'Creation of an immutable node',
@@ -487,7 +547,6 @@ describe('OutlineSelection tests', () => {
         focusPath: [0, 2, 0],
         focusOffset: 0,
       },
-      setup: emptySetup,
     },
     {
       name: 'Convert text to an immutable node',
@@ -506,7 +565,6 @@ describe('OutlineSelection tests', () => {
         focusPath: [0, 2, 0],
         focusOffset: 0,
       },
-      setup: emptySetup,
     },
     {
       name: 'Deletion of an immutable node',
@@ -519,7 +577,6 @@ describe('OutlineSelection tests', () => {
         focusPath: [0, 0, 0],
         focusOffset: 0,
       },
-      setup: emptySetup,
     },
     {
       name: 'Creation of a segmented node',
@@ -534,7 +591,6 @@ describe('OutlineSelection tests', () => {
         focusPath: [0, 2, 0],
         focusOffset: 0,
       },
-      setup: emptySetup,
     },
     {
       name: 'Convert text to a segmented node',
@@ -553,7 +609,6 @@ describe('OutlineSelection tests', () => {
         focusPath: [0, 2, 0],
         focusOffset: 0,
       },
-      setup: emptySetup,
     },
     {
       name: 'Deletion of part of a segmented node',
@@ -568,7 +623,6 @@ describe('OutlineSelection tests', () => {
         focusPath: [0, 2, 0],
         focusOffset: 0,
       },
-      setup: emptySetup,
     },
     // Tests need fixing:
 
@@ -651,7 +705,6 @@ describe('OutlineSelection tests', () => {
         focusPath: [0, 0, 0],
         focusOffset: 3,
       },
-      setup: emptySetup,
     },
     {
       name: 'Select and replace',
@@ -668,7 +721,6 @@ describe('OutlineSelection tests', () => {
         focusPath: [0, 0, 0],
         focusOffset: 13,
       },
-      setup: emptySetup,
     },
     {
       name: 'Select and bold',
@@ -686,7 +738,6 @@ describe('OutlineSelection tests', () => {
         focusPath: [0, 1, 0],
         focusOffset: 5,
       },
-      setup: emptySetup,
     },
     {
       name: 'Select and italic',
@@ -704,7 +755,6 @@ describe('OutlineSelection tests', () => {
         focusPath: [0, 1, 0],
         focusOffset: 5,
       },
-      setup: emptySetup,
     },
     {
       name: 'Select and bold + italic',
@@ -723,7 +773,6 @@ describe('OutlineSelection tests', () => {
         focusPath: [0, 1, 0],
         focusOffset: 5,
       },
-      setup: emptySetup,
     },
     {
       name: 'Select and replace all',
@@ -740,7 +789,6 @@ describe('OutlineSelection tests', () => {
         focusPath: [0, 0, 0],
         focusOffset: 11,
       },
-      setup: emptySetup,
     },
     {
       name: 'Select and delete',
@@ -759,7 +807,6 @@ describe('OutlineSelection tests', () => {
         focusPath: [0, 0, 0],
         focusOffset: 6,
       },
-      setup: emptySetup,
     },
     {
       name: 'Inserting a paragraph',
@@ -773,7 +820,6 @@ describe('OutlineSelection tests', () => {
         focusPath: [1, 0, 0],
         focusOffset: 0,
       },
-      setup: emptySetup,
     },
     {
       name: 'Inserting a paragraph and then removing it',
@@ -786,7 +832,6 @@ describe('OutlineSelection tests', () => {
         focusPath: [0, 0, 0],
         focusOffset: 0,
       },
-      setup: emptySetup,
     },
     {
       name: 'Inserting a paragraph part way through text',
@@ -804,7 +849,6 @@ describe('OutlineSelection tests', () => {
         focusPath: [1, 0, 0],
         focusOffset: 0,
       },
-      setup: emptySetup,
     },
     {
       name: 'Inserting two paragraphs and then deleting via selection',
@@ -823,7 +867,6 @@ describe('OutlineSelection tests', () => {
         focusPath: [0, 0, 0],
         focusOffset: 0,
       },
-      setup: emptySetup,
     },
     ...[
       {whitespaceCharacter: ' ', whitespaceName: 'space'},
@@ -855,7 +898,6 @@ describe('OutlineSelection tests', () => {
           focusPath: [0, 0, 0],
           focusOffset: 6,
         },
-        setup: emptySetup,
       },
       {
         name: `Type two words separated by a ${whitespaceName}, delete word forward from beginning`,
@@ -873,7 +915,6 @@ describe('OutlineSelection tests', () => {
           focusPath: [0, 0, 0],
           focusOffset: 0,
         },
-        setup: emptySetup,
       },
       {
         name: `Type two words separated by a ${whitespaceName}, delete word forward from beginning of preceding whitespace`,
@@ -890,7 +931,6 @@ describe('OutlineSelection tests', () => {
           focusPath: [0, 0, 0],
           focusOffset: 5,
         },
-        setup: emptySetup,
       },
       {
         name: `Type two words separated by a ${whitespaceName}, delete word backward from end of trailing whitespace`,
@@ -907,7 +947,6 @@ describe('OutlineSelection tests', () => {
           focusPath: [0, 0, 0],
           focusOffset: 0,
         },
-        setup: emptySetup,
       },
     ]),
   ];
@@ -915,24 +954,13 @@ describe('OutlineSelection tests', () => {
   suite.forEach((testUnit, i) => {
     const name = testUnit.name || 'Test case';
     test(name + ` (#${i + 1})`, () => {
-      testUnit.setup();
       applySelectionInputs(testUnit.inputs, update, editor);
       // Validate HTML matches
       expect(sanitizeHTML(container.innerHTML)).toBe(testUnit.expectedHTML);
       // Validate selection matches
       const editorElement = editor.getEditorElement();
-      const acutalSelection = sanitizeSelectionWithEmptyTextNodes(
-        window.getSelection(),
-      );
       const expectedSelection = testUnit.expectedSelection;
-      expect(acutalSelection.anchorNode).toBe(
-        getNodeFromPath(expectedSelection.anchorPath, editorElement),
-      );
-      expect(acutalSelection.anchorOffset).toBe(expectedSelection.anchorOffset);
-      expect(acutalSelection.focusNode).toBe(
-        getNodeFromPath(expectedSelection.focusPath, editorElement),
-      );
-      expect(acutalSelection.focusOffset).toBe(expectedSelection.focusOffset);
+      assertSelection(editorElement, expectedSelection);
     });
   });
 });

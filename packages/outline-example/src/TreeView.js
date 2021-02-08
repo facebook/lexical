@@ -59,11 +59,16 @@ export default function TreeView({
 
     viewModel.read((view: View) => {
       const selection = view.getSelection();
-      const anchorKey = selection?.getAnchorNode()?.key;
+      let selectedNodes = null;
+      if (selection !== null) {
+        selectedNodes = new Set(
+          selection.getNodes().map((node) => node.getKey()),
+        );
+      }
 
       visitTree(view, view.getRoot(), (node, indent) => {
         const nodeKey = node.getKey();
-        const isSelected = anchorKey === nodeKey;
+        const isSelected = selectedNodes !== null && selectedNodes.has(nodeKey);
         res += `${isSelected ? '>' : ' '} ${indent.join(' ')} (${nodeKey.slice(
           1,
         )}) ${node?.getType() ?? ''} ${printNode(node)}\n`;
@@ -79,7 +84,8 @@ export default function TreeView({
 function printNode(node) {
   if (node instanceof TextNode) {
     const text = node.getTextContent();
-    return text.length === 0 ? '(empty)' : `"${node.text}"`;
+    const title = text.length === 0 ? '(empty)' : `"${node.text}"`;
+    return `${title} flags: ${node.getFlags()}`;
   }
   return '';
 }

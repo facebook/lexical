@@ -53,7 +53,8 @@ const outlineExtensionsExternals = outlineExtensions.map((node) => {
 
 const outlineReactModules = fs
   .readdirSync(path.resolve('./packages/outline-react/src'))
-  .map((str) => path.basename(str, '.js'));
+  .map((str) => path.basename(str, '.js'))
+  .filter((str) => !str.includes('__tests__'));
 const outlineReactModuleExternals = outlineReactModules.map((module) => {
   const external = `outline-react/${module}`;
   wwwMappings[external] = module;

@@ -14,27 +14,27 @@ import {BlockNode} from 'outline';
 type ListNodeTagType = 'ul' | 'ol';
 
 export class ListNode extends BlockNode {
-  _type: 'list';
-  _tag: ListNodeTagType;
+  __type: 'list';
+  __tag: ListNodeTagType;
 
   constructor(tag: ListNodeTagType, key?: NodeKey) {
     super(key);
-    this._tag = tag;
-    this.type = 'list';
+    this.__tag = tag;
+    this.__type = 'list';
   }
 
   clone(): ListNode {
-    const clone = new ListNode(this._tag, this.key);
-    clone.children = [...this.children];
-    clone.parent = this.parent;
-    clone.flags = this.flags;
+    const clone = new ListNode(this.__tag, this.__key);
+    clone.__children = [...this.__children];
+    clone.__parent = this.__parent;
+    clone.__flags = this.__flags;
     return clone;
   }
 
   // View
 
   createDOM(): HTMLElement {
-    return document.createElement(this._tag);
+    return document.createElement(this.__tag);
   }
   updateDOM(prevNode: ListNode, dom: HTMLElement): boolean {
     return false;

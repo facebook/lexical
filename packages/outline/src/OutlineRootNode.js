@@ -14,12 +14,12 @@ export class RootNode extends BlockNode {
 
   constructor() {
     super('root');
-    this.type = 'root';
+    this.__type = 'root';
   }
 
   clone(): RootNode {
     const clone = new RootNode();
-    clone.children = [...this.children];
+    clone.__children = [...this.__children];
     return clone;
   }
 

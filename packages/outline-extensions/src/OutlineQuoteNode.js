@@ -12,18 +12,18 @@ import type {NodeKey} from 'outline';
 import {BlockNode} from 'outline';
 
 export class QuoteNode extends BlockNode {
-  _type: 'quote';
+  __type: 'quote';
 
   constructor(key?: NodeKey) {
     super(key);
-    this.type = 'quote';
+    this.__type = 'quote';
   }
 
   clone(): QuoteNode {
     const clone = new QuoteNode();
-    clone.children = [...this.children];
-    clone.parent = this.parent;
-    clone.flags = this.flags;
+    clone.__children = [...this.__children];
+    clone.__parent = this.__parent;
+    clone.__flags = this.__flags;
     return clone;
   }
 

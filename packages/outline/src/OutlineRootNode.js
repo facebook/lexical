@@ -14,7 +14,7 @@ export class RootNode extends BlockNode {
 
   constructor() {
     super('root');
-    this.type = 'root';
+    this.__type = 'root';
   }
 
   clone(): RootNode {

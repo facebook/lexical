@@ -175,7 +175,7 @@ export class BlockNode extends OutlineNode {
     if (childrenLength > 0) {
       const lastChildKey = children[childrenLength - 1];
       const lastChild = getNodeByKey(lastChildKey);
-      if (lastChild instanceof TextNode && lastChild.text === '') {
+      if (lastChild instanceof TextNode && lastChild.__text === '') {
         dirtySubTrees.add(lastChildKey);
       }
     }

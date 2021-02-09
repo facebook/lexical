@@ -530,7 +530,7 @@ function reconcileSelection(selection: Selection, editor: OutlineEditor): void {
   if (
     anchorNode !== null &&
     anchorNode === focusNode &&
-    anchorNode.text === ''
+    anchorNode.__text === ''
   ) {
     // Because we use empty text nodes to ensure Outline
     // selection and text entry works as expected, it also

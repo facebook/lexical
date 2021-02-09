@@ -36,6 +36,8 @@ const closureOptions = {
 
 if (isClean) {
   fs.removeSync(path.resolve('./packages/outline/dist'));
+  fs.removeSync(path.resolve('./packages/outline-react/dist'));
+  fs.removeSync(path.resolve('./packages/outline-extensions/dist'));
 }
 
 const wwwMappings = {

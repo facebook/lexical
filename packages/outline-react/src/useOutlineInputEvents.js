@@ -271,48 +271,72 @@ function onKeyDown(
     if (isLeftArrow || isRightArrow || isDelete || isBackspace) {
       const anchorNode = selection.getAnchorNode();
       const offset = selection.anchorOffset;
+      const textContent = anchorNode.getTextContent();
 
       if (isLeftArrow || isBackspace) {
-        const prevSibling = anchorNode.getPreviousSibling();
-        if (prevSibling !== null) {
-          if (
-            offset === 0 &&
-            (prevSibling.isImmutable() || prevSibling.isSegmented())
-          ) {
-            if (isLeftArrow) {
-              announceNode(prevSibling);
-            } else if (!isModifierActive(event)) {
-              deleteBackward(selection);
+        const selectionAtStart = offset === 0;
+
+        if (selectionAtStart) {
+          const prevSibling = anchorNode.getPreviousSibling();
+
+          if (prevSibling === null) {
+            // On empty text nodes, we always move native DOM selection
+            // to offset 1. Although it's at 1, we really mean that it
+            // is at 0 in our model. So when we encounter a left arrow
+            // we need to move selection to the previous block if
+            // we have no previous sibling.
+            if (isLeftArrow && textContent === '') {
+              const parent = anchorNode.getParentOrThrow();
+              const parentSibling = parent.getPreviousSibling();
+
+              if (parentSibling instanceof BlockNode) {
+                const lastChild = parentSibling.getLastChild();
+                if (lastChild instanceof TextNode) {
+                  lastChild.select();
+                  shouldPreventDefault = true;
+                }
+              }
+            }
+          } else {
+            let targetPrevSibling = prevSibling;
+            if (prevSibling.isImmutable() || prevSibling.isSegmented()) {
+              if (isLeftArrow) {
+                announceNode(prevSibling);
+                targetPrevSibling = prevSibling.getPreviousSibling();
+              } else if (!isModifierActive(event)) {
+                deleteBackward(selection);
+                shouldPreventDefault = true;
+              }
+            }
+            // Due to empty text nodes having an offset of 1, we need to
+            // account for this and move selection accordingly when right
+            // arrow is pressed.
+            if (isLeftArrow && targetPrevSibling instanceof TextNode) {
               shouldPreventDefault = true;
+              if (targetPrevSibling === prevSibling) {
+                const prevSibliongTextContent = targetPrevSibling.getTextContent();
+                // We adjust the offset by 1, as we will have have moved between
+                // two adjacent nodes.
+                const endOffset = prevSibliongTextContent.length - 1;
+                targetPrevSibling.select(endOffset, endOffset);
+              } else {
+                // We don't adjust offset as the nodes are not adjacent (the target
+                // isn't the same as the prevSibling).
+                targetPrevSibling.select();
+              }
             }
           }
         }
       } else {
-        const nextSibling = anchorNode.getNextSibling();
-        const textContent = anchorNode.getTextContent();
-        const selectionAtEnd = textContent.length === offset;
-        const selectionJustBeforeEnd = textContent.length === offset + 1;
+        const textContentLength = textContent.length;
+        const selectionAtEnd = textContentLength === offset;
+        const selectionJustBeforeEnd = textContentLength === offset + 1;
 
-        if (nextSibling === null) {
-          // When we are on an empty text node, native right arrow
-          // doesn't work correctly in some browsers. So to ensure it
-          // does work correctly, we can force it and prevent the native
-          // event so that our fix is always used.
-          if (isRightArrow && textContent === '' && selectionAtEnd) {
-            const parent = anchorNode.getParentOrThrow();
-            const parentSibling = parent.getNextSibling();
+        if (selectionAtEnd || selectionJustBeforeEnd) {
+          const nextSibling = anchorNode.getNextSibling();
 
-            if (parentSibling instanceof BlockNode) {
-              const firstChild = parentSibling.getFirstChild();
-              if (firstChild instanceof TextNode) {
-                firstChild.select(0, 0);
-                shouldPreventDefault = true;
-              }
-            }
-          }
-        } else {
           if (
-            (selectionAtEnd || selectionJustBeforeEnd) &&
+            nextSibling !== null &&
             (nextSibling.isImmutable() || nextSibling.isSegmented())
           ) {
             if (isRightArrow) {

@@ -288,20 +288,17 @@ export function createSelection(
   // we need to adjust offsets to 0 when the text is
   // really empty.
   if (anchorNode.text === '') {
-    if (!editor.isComposing() && !editor.isPointerDown()) {
-      const anchorElement = editor.getElementByKey(anchorKey);
-      const focusElement = editor.getElementByKey(focusKey);
-      if (anchorNode === focusNode) {
-        if (anchorElement.previousSibling === null) {
-          if (anchorOffset !== 1) {
-            isDirty = true;
-          }
-        } else if (focusElement.nextSibling === null) {
-          if (anchorOffset !== 0) {
-            isDirty = true;
-          }
-        }
-      }
+    // When dealing with empty text nodes, we always
+    // render a special empty space character, and set
+    // the native DOM selection to offset 1 so that
+    // text entry works as expected.
+    if (
+      anchorNode === focusNode &&
+      anchorOffset !== 1 &&
+      !editor.isComposing() &&
+      !editor.isPointerDown()
+    ) {
+      isDirty = true;
     }
     anchorOffset = 0;
   }

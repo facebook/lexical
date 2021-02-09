@@ -536,13 +536,8 @@ function reconcileSelection(selection: Selection, editor: OutlineEditor): void {
     // selection and text entry works as expected, it also
     // means we need to adjust the offset to ensure native
     // selection works correctly and doesn't act buggy.
-    if (anchorDOM.previousSibling === null) {
-      anchorOffset = 1;
-      focusOffset = 1;
-    } else if (anchorDOM.nextSibling === null) {
-      anchorOffset = 0;
-      focusOffset = 0;
-    }
+    anchorOffset = 1;
+    focusOffset = 1;
   }
   domSelection.setBaseAndExtent(
     getTextNodeFromElement(anchorDOM),

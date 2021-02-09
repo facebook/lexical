@@ -146,15 +146,7 @@ function getNodeFromPath(path, editorElement) {
   return node;
 }
 
-function setNativeSelection(
-  editorElement,
-  anchorPath,
-  anchorOffset,
-  focusPath,
-  focusOffset,
-) {
-  const anchorNode = getNodeFromPath(anchorPath, editorElement);
-  const focusNode = getNodeFromPath(focusPath, editorElement);
+function setNativeSelection(anchorNode, anchorOffset, focusNode, focusOffset) {
   const domSelection = window.getSelection();
   const range = document.createRange();
   range.setStart(anchorNode, anchorOffset);
@@ -164,29 +156,176 @@ function setNativeSelection(
   document.dispatchEvent(new Event('selectionchange'));
 }
 
-function moveNativeSelectionForward() {
-  const domSelection = window.getSelection();
-  const {anchorNode} = domSelection;
+function setNativeSelectionWithPaths(
+  editorElement,
+  anchorPath,
+  anchorOffset,
+  focusPath,
+  focusOffset,
+) {
+  const anchorNode = getNodeFromPath(anchorPath, editorElement);
+  const focusNode = getNodeFromPath(focusPath, editorElement);
+  setNativeSelection(anchorNode, anchorOffset, focusNode, focusOffset);
+}
 
-  // TODO move native selection one character using offset
+function getLastTextNode(startingNode) {
+  let node = startingNode;
+
+  mainLoop: while (node !== null) {
+    if (node !== startingNode && node.nodeType === 3) {
+      return node;
+    }
+    const child = node.lastChild;
+    if (child !== null) {
+      node = child;
+      continue;
+    }
+    const previousSibling = node.previousSibling;
+    if (previousSibling !== null) {
+      node = previousSibling;
+      continue;
+    }
+    let parent = node.parentNode;
+    while (parent !== null) {
+      const parentSibling = parent.previousSibling;
+      if (parentSibling !== null) {
+        node = parentSibling;
+        continue mainLoop;
+      }
+      parent = parent.parentNode;
+    }
+  }
+
+  return null;
+}
+
+function getNextTextNode(startingNode) {
+  let node = startingNode;
+
+  mainLoop: while (node !== null) {
+    if (node !== startingNode && node.nodeType === 3) {
+      return node;
+    }
+    const child = node.firstChild;
+    if (child !== null) {
+      node = child;
+      continue;
+    }
+    const nextSibling = node.nextSibling;
+    if (nextSibling !== null) {
+      node = nextSibling;
+      continue;
+    }
+    let parent = node.parentNode;
+    while (parent !== null) {
+      const parentSibling = parent.nextSibling;
+      if (parentSibling !== null) {
+        node = parentSibling;
+        continue mainLoop;
+      }
+      parent = parent.parentNode;
+    }
+  }
+
+  return null;
+}
+
+function moveNativeSelectionBackward() {
+  const domSelection = window.getSelection();
+  const {anchorNode, anchorOffset} = domSelection;
+
   if (domSelection.isCollapsed) {
     const target =
       anchorNode.nodeType === 1 ? anchorNode : anchorNode.parentNode;
     const keyDownEvent = new KeyboardEvent('keydown', {
       bubbles: true,
+      cancelable: true,
+      key: 'ArrowLeft',
+    });
+    target.dispatchEvent(keyDownEvent);
+    if (!keyDownEvent.defaultPrevented) {
+      if (anchorNode.nodeType === 3) {
+        if (anchorOffset === 0) {
+          const lastTextNode = getLastTextNode(anchorNode);
+
+          if (lastTextNode === null) {
+            throw new Error('moveNativeSelectionBackward: TODO');
+          } else {
+            const textLength = lastTextNode.nodeValue.length;
+            setNativeSelection(
+              lastTextNode,
+              textLength,
+              lastTextNode,
+              textLength,
+            );
+          }
+        } else {
+          setNativeSelection(
+            anchorNode,
+            anchorOffset - 1,
+            anchorNode,
+            anchorOffset - 1,
+          );
+        }
+      } else {
+        throw new Error('moveNativeSelectionBackward: TODO');
+      }
+    }
+    const keyUpEvent = new KeyboardEvent('keyup', {
+      bubbles: true,
+      cancelable: true,
+      key: 'ArrowLeft',
+    });
+    target.dispatchEvent(keyUpEvent);
+  } else {
+    throw new Error('moveNativeSelectionBackward: TODO');
+  }
+}
+
+function moveNativeSelectionForward() {
+  const domSelection = window.getSelection();
+  const {anchorNode, anchorOffset} = domSelection;
+
+  if (domSelection.isCollapsed) {
+    const target =
+      anchorNode.nodeType === 1 ? anchorNode : anchorNode.parentNode;
+    const keyDownEvent = new KeyboardEvent('keydown', {
+      bubbles: true,
+      cancelable: true,
       key: 'ArrowRight',
     });
     target.dispatchEvent(keyDownEvent);
     if (!keyDownEvent.defaultPrevented) {
-      // TODO
+      if (anchorNode.nodeType === 3) {
+        const text = anchorNode.nodeValue;
+        if (text.length === anchorOffset) {
+          const nextTextNode = getNextTextNode(anchorNode);
+
+          if (nextTextNode === null) {
+            throw new Error('moveNativeSelectionForward: TODO');
+          } else {
+            setNativeSelection(nextTextNode, 0, nextTextNode, 0);
+          }
+        } else {
+          setNativeSelection(
+            anchorNode,
+            anchorOffset + 1,
+            anchorNode,
+            anchorOffset + 1,
+          );
+        }
+      } else {
+        throw new Error('moveNativeSelectionForward: TODO');
+      }
     }
     const keyUpEvent = new KeyboardEvent('keyup', {
       bubbles: true,
+      cancelable: true,
       key: 'ArrowRight',
     });
     target.dispatchEvent(keyUpEvent);
   } else {
-    // TODO
+    throw new Error('moveNativeSelectionForward: TODO');
   }
 }
 
@@ -226,7 +365,7 @@ function applySelectionInputs(inputs, update, editor) {
           break;
         }
         case 'move_native_selection': {
-          setNativeSelection(
+          setNativeSelectionWithPaths(
             editorElement,
             input.anchorPath,
             input.anchorOffset,
@@ -328,7 +467,7 @@ describe('OutlineSelection tests', () => {
     });
     ref.current.focus();
     // Focus first element
-    setNativeSelection(ref.current, [0, 0, 0], 0, [0, 0, 0], 0);
+    setNativeSelectionWithPaths(ref.current, [0, 0, 0], 0, [0, 0, 0], 0);
   }
 
   function update(callback) {
@@ -355,20 +494,46 @@ describe('OutlineSelection tests', () => {
     expect(acutalSelection.focusOffset).toBe(expectedSelection.focusOffset);
   }
 
-  test('Should correctly handle empty paragraph blocks', () => {
+  test('Should correctly handle empty paragraph blocks (left-arrow)', () => {
     // Insert initial block
     update((view) => {
       const paragraph = ParagraphNode.createParagraphNode();
-      const text = Outline.createTextNode('123');
+      const text = Outline.createTextNode('');
       paragraph.append(text);
       view.getRoot().append(paragraph);
     });
 
     // Focus first element
-    setNativeSelection(ref.current, [0, 0, 0], 0, [0, 0, 0], 0);
+    setNativeSelectionWithPaths(ref.current, [1, 0, 0], 0, [1, 0, 0], 0);
 
     expect(sanitizeHTML(container.innerHTML)).toBe(
-      '<div contenteditable="true" data-outline-editor="true"><p><span data-text="true"><br></span></p><p><span data-text="true">123</span></p></div>',
+      '<div contenteditable="true" data-outline-editor="true"><p><span data-text="true"><br></span></p><p><span data-text="true"><br></span></p></div>',
+    );
+
+    moveNativeSelectionBackward();
+
+    assertSelection(ref.current, {
+      anchorPath: [0, 0, 0],
+      anchorOffset: 0,
+      focusPath: [0, 0, 0],
+      focusOffset: 0,
+    });
+  });
+
+  test('Should correctly handle empty paragraph blocks (right-arrow)', () => {
+    // Insert initial block
+    update((view) => {
+      const paragraph = ParagraphNode.createParagraphNode();
+      const text = Outline.createTextNode('');
+      paragraph.append(text);
+      view.getRoot().append(paragraph);
+    });
+
+    // Focus first element
+    setNativeSelectionWithPaths(ref.current, [0, 0, 0], 0, [0, 0, 0], 0);
+
+    expect(sanitizeHTML(container.innerHTML)).toBe(
+      '<div contenteditable="true" data-outline-editor="true"><p><span data-text="true"><br></span></p><p><span data-text="true"><br></span></p></div>',
     );
 
     moveNativeSelectionForward();

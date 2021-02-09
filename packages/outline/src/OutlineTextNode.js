@@ -66,7 +66,7 @@ function splitText(
     throw new Error('splitText: can only be used on non-immutable text nodes');
   }
   const textContent = node.getTextContent();
-  const key = node.key;
+  const key = node.__key;
   const offsetsSet = new Set(splitOffsets);
   const parts = [];
   const textLength = textContent.length;
@@ -89,10 +89,10 @@ function splitText(
   }
   // For the first part, update the existing node
   const writableNode = getWritableNode(node);
-  const parentKey = writableNode.parent;
+  const parentKey = writableNode.__parent;
   const firstPart = parts[0];
-  const flags = writableNode.flags;
-  writableNode.text = firstPart;
+  const flags = writableNode.__flags;
+  writableNode.__text = firstPart;
 
   // Handle selection
   const selection = getSelection();
@@ -104,8 +104,8 @@ function splitText(
     const part = parts[i];
     const partSize = part.length;
     const sibling = getWritableNode(createTextNode(part));
-    sibling.flags = flags;
-    const siblingKey = sibling.key;
+    sibling.__flags = flags;
+    const siblingKey = sibling.__key;
     const nextTextSize = textLength + partSize;
 
     if (selection !== null) {
@@ -133,16 +133,16 @@ function splitText(
       }
     }
     textSize = nextTextSize;
-    sibling.parent = parentKey;
+    sibling.__parent = parentKey;
     splitNodes.push(sibling);
   }
 
   // Insert the nodes into the parent's children
   const parent = node.getParentOrThrow();
   const writableParent = getWritableNode(parent);
-  const writableParentChildren = writableParent.children;
+  const writableParentChildren = writableParent.__children;
   const insertionIndex = writableParentChildren.indexOf(key);
-  const splitNodesKeys = splitNodes.map((splitNode) => splitNode.key);
+  const splitNodesKeys = splitNodes.map((splitNode) => splitNode.__key);
   writableParentChildren.splice(insertionIndex, 1, ...splitNodesKeys);
 
   return splitNodes;
@@ -204,7 +204,7 @@ function setTextContent(
   const hasBreakNode = firstChild && firstChild.nextSibling;
   const parent = node.getParent();
   // Check if we are on an empty line
-  if (parent !== null && parent.children.length === 1) {
+  if (parent !== null && parent.__children.length === 1) {
     if (nextText === '') {
       if (firstChild == null) {
         // We use a zero width string so that the browser moves
@@ -235,52 +235,52 @@ function setTextContent(
 }
 
 export class TextNode extends OutlineNode {
-  text: string;
-  type: 'text';
-  url: null | string;
+  __text: string;
+  __type: 'text';
+  __url: null | string;
 
   constructor(text: string, key?: NodeKey) {
     super(key);
-    this.text = text;
-    this.type = 'text';
-    this.flags = HAS_DIRECTION;
-    this.url = null;
+    this.__text = text;
+    this.__type = 'text';
+    this.__flags = HAS_DIRECTION;
+    this.__url = null;
   }
 
   clone(): TextNode {
-    const clone = new TextNode(this.text, this.key);
-    clone.parent = this.parent;
-    clone.flags = this.flags;
-    clone.url = this.url;
+    const clone = new TextNode(this.__text, this.__key);
+    clone.__parent = this.__parent;
+    clone.__flags = this.__flags;
+    clone.__url = this.__url;
     return clone;
   }
   isBold(): boolean {
-    return (this.getLatest().flags & IS_BOLD) !== 0;
+    return (this.getLatest().__flags & IS_BOLD) !== 0;
   }
   isItalic(): boolean {
-    return (this.getLatest().flags & IS_ITALIC) !== 0;
+    return (this.getLatest().__flags & IS_ITALIC) !== 0;
   }
   isStrikethrough(): boolean {
-    return (this.getLatest().flags & IS_STRIKETHROUGH) !== 0;
+    return (this.getLatest().__flags & IS_STRIKETHROUGH) !== 0;
   }
   isUnderline(): boolean {
-    return (this.getLatest().flags & IS_UNDERLINE) !== 0;
+    return (this.getLatest().__flags & IS_UNDERLINE) !== 0;
   }
   isCode(): boolean {
-    return (this.getLatest().flags & IS_CODE) !== 0;
+    return (this.getLatest().__flags & IS_CODE) !== 0;
   }
   isLink(): boolean {
-    return (this.getLatest().flags & IS_LINK) !== 0;
+    return (this.getLatest().__flags & IS_LINK) !== 0;
   }
   isHashtag(): boolean {
-    return (this.getLatest().flags & IS_HASHTAG) !== 0;
+    return (this.getLatest().__flags & IS_HASHTAG) !== 0;
   }
   getURL(): null | string {
-    return this.url;
+    return this.__url;
   }
   getTextContent(): string {
     const self = this.getLatest();
-    return self.text;
+    return self.__text;
   }
   getTextNodeFormatFlags(
     type: 0 | 1 | 2 | 3 | 4 | 5 | 6,
@@ -288,7 +288,7 @@ export class TextNode extends OutlineNode {
     force?: boolean,
   ): number {
     const self = this.getLatest();
-    const nodeFlags = self.flags;
+    const nodeFlags = self.__flags;
     let newFlags = nodeFlags;
 
     // TODO: we should simplify this repeated logic to reduce code size
@@ -385,7 +385,7 @@ export class TextNode extends OutlineNode {
   // View
 
   createDOM(): HTMLElement {
-    const flags = this.flags;
+    const flags = this.__flags;
     const outerTag = getElementOuterTag(this, flags);
     const innerTag = getElementInnerTag(this, flags);
     const tag = outerTag === null ? innerTag : outerTag;
@@ -395,7 +395,7 @@ export class TextNode extends OutlineNode {
       innerDOM = document.createElement(innerTag);
       dom.appendChild(innerDOM);
     }
-    const text = this.text;
+    const text = this.__text;
 
     setTextStyling(innerTag, 0, flags, innerDOM);
     setTextContent(null, text, innerDOM, this);
@@ -407,10 +407,10 @@ export class TextNode extends OutlineNode {
     return dom;
   }
   updateDOM(prevNode: TextNode, dom: HTMLElement): boolean {
-    const prevText = prevNode.text;
-    const nextText = this.text;
-    const prevFlags = prevNode.flags;
-    const nextFlags = this.flags;
+    const prevText = prevNode.__text;
+    const nextText = this.__text;
+    const prevFlags = prevNode.__flags;
+    const nextFlags = this.__flags;
     const prevOuterTag = getElementOuterTag(this, prevFlags);
     const nextOuterTag = getElementOuterTag(this, nextFlags);
     const prevInnerTag = getElementInnerTag(this, prevFlags);
@@ -471,7 +471,7 @@ export class TextNode extends OutlineNode {
       throw new Error('setURL: can only be used on non-immutable text nodes');
     }
     const writableSelf = getWritableNode(this);
-    writableSelf.url = url;
+    writableSelf.__url = url;
     return writableSelf;
   }
   setTextContent(text: string): TextNode {
@@ -482,7 +482,7 @@ export class TextNode extends OutlineNode {
       );
     }
     const writableSelf = getWritableNode(this);
-    writableSelf.text = text;
+    writableSelf.__text = text;
     return writableSelf;
   }
   selectAfter(anchorOffset?: number, focusOffset?: number): Selection {
@@ -504,7 +504,7 @@ export class TextNode extends OutlineNode {
     let focusOffset = _focusOffset;
     const selection = getSelection();
     const text = this.getTextContent();
-    const key = this.key;
+    const key = this.__key;
     if (key === null) {
       throw new Error('TODO: validate nodes have keys in a more generic way');
     }
@@ -560,7 +560,7 @@ export class TextNode extends OutlineNode {
       }
     }
     const writableSelf = getWritableNode(this);
-    const text = writableSelf.text;
+    const text = writableSelf.__text;
     const handledTextLength = handledText.length;
     let index = offset;
     if (index < 0) {
@@ -571,14 +571,14 @@ export class TextNode extends OutlineNode {
     }
     const updatedText =
       text.slice(0, index) + handledText + text.slice(index + delCount);
-    writableSelf.text = updatedText;
+    writableSelf.__text = updatedText;
     // If the hash gets removed, remove the hashtag status
     if (isHashtag && updatedText.indexOf('#') === -1) {
       const flags = this.getTextNodeFormatFlags(FORMAT_HASHTAG, null);
       this.setFlags(flags);
     }
     if (restoreSelection && !skipSelectionRestoration) {
-      const key = writableSelf.key;
+      const key = writableSelf.__key;
       if (key === null) {
         throw new Error('TODO: validate nodes have keys in a more generic way');
       }

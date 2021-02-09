@@ -17,14 +17,14 @@ export class ListItemNode extends BlockNode {
 
   constructor(key?: NodeKey) {
     super(key);
-    this.type = 'listitem';
+    this.__type = 'listitem';
   }
 
   clone(): ListItemNode {
-    const clone = new ListItemNode(this.key);
-    clone.children = [...this.children];
-    clone.parent = this.parent;
-    clone.flags = this.flags;
+    const clone = new ListItemNode(this.__key);
+    clone.__children = [...this.__children];
+    clone.__parent = this.__parent;
+    clone.__flags = this.__flags;
     return clone;
   }
 

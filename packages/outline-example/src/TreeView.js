@@ -84,7 +84,7 @@ export default function TreeView({
 function printNode(node) {
   if (node instanceof TextNode) {
     const text = node.getTextContent();
-    const title = text.length === 0 ? '(empty)' : `"${node.text}"`;
+    const title = text.length === 0 ? '(empty)' : `"${node.getTextContent()}"`;
     return `${title} flags: ${node.getFlags()}`;
   }
   return '';

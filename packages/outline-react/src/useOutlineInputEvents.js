@@ -81,22 +81,22 @@ function generateNode(
   editor: OutlineEditor,
 ): OutlineNode {
   const nodeData = nodeMap[key];
-  const type = nodeData.type;
+  const type = nodeData.getType();
   const NodeType = editor._registeredNodeTypes.get(type);
   if (NodeType === undefined) {
     throw new Error('generateNode: type "' + type + '" + not found');
   }
   const node = createNodeFromNodeData(nodeData, NodeType);
-  node.parent = parentKey;
-  const newKey = node.key;
+  node.__parent = parentKey;
+  const newKey = node.getKey();
   if (node instanceof BlockNode) {
     // $FlowFixMe: valid code
     const children = nodeData.children;
     for (let i = 0; i < children.length; i++) {
       const childKey = children[i];
       const child = generateNode(childKey, newKey, nodeMap, editor);
-      const newChildKey = child.key;
-      node.children.push(newChildKey);
+      const newChildKey = child.getKey();
+      node.__children.push(newChildKey);
     }
   }
   return node;
@@ -190,7 +190,7 @@ function announceNode(node: OutlineNode): void {
     node instanceof TextNode &&
     hasAtLeastTwoVisibleChars(node.getTextContent())
   ) {
-    announceString(node.text);
+    announceString(node.getTextContent());
   }
 }
 

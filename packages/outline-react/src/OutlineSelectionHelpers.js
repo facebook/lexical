@@ -124,8 +124,8 @@ export function getNodesInRange(
     const isBefore = focusOffset > anchorOffset;
     startOffset = isBefore ? anchorOffset : focusOffset;
     endOffset = isBefore ? focusOffset : anchorOffset;
-    firstNode.text = firstNode.text.slice(startOffset, endOffset);
-    const key = firstNode.key;
+    firstNode.__text = firstNode.__text.slice(startOffset, endOffset);
+    const key = firstNode.getKey();
     return {range: [key], nodeMap: {[key]: firstNode}};
   }
   const nodes = selection.getNodes();
@@ -138,23 +138,23 @@ export function getNodesInRange(
 
   const nodesLength = nodes.length;
   const sourceParent = firstNode.getParentOrThrow();
-  const sourceParentKey = sourceParent.key;
+  const sourceParentKey = sourceParent.getKey();
   const topLevelNodeKeys = new Set();
 
   for (let i = 0; i < nodesLength; i++) {
     let node = nodes[i];
     const parent = node.getParent();
-    const nodeKey = node.key;
+    const nodeKey = node.getKey();
 
     if (node instanceof TextNode) {
       const text = node.getTextContent();
 
       if (i === 0) {
         node = node.getLatest().clone();
-        node.text = text.slice(startOffset, text.length);
+        node.__text = text.slice(startOffset, text.length);
       } else if (i === nodesLength - 1) {
         node = node.getLatest().clone();
-        node.text = text.slice(0, endOffset);
+        node.__text = text.slice(0, endOffset);
       }
     }
 
@@ -166,7 +166,7 @@ export function getNodesInRange(
       nodeKeys.push(nodeKey);
 
       const topLevelBlock = node.getTopParentBlockOrThrow();
-      topLevelNodeKeys.add(topLevelBlock.key);
+      topLevelNodeKeys.add(topLevelBlock.getKey());
     } else {
       let includeTopLevelBlock = false;
 
@@ -174,7 +174,7 @@ export function getNodesInRange(
         let removeChildren = false;
 
         while (node !== null) {
-          const currKey = node.key;
+          const currKey = node.getKey();
           if (currKey === sourceParentKey) {
             removeChildren = true;
           } else if (removeChildren) {
@@ -182,7 +182,7 @@ export function getNodesInRange(
             // parent key.
             node = node.getLatest().clone();
             invariant(node instanceof BlockNode, 'Should not happen');
-            const childrenKeys = node.children;
+            const childrenKeys = node.__children;
             const index = childrenKeys.indexOf(sourceParentKey);
             invariant(index !== -1, 'Should not happen');
             childrenKeys.splice(0, index + 1);
@@ -200,7 +200,7 @@ export function getNodesInRange(
         }
       }
       if (node !== null) {
-        const key = node.key;
+        const key = node.getKey();
         if (!topLevelNodeKeys.has(key) || includeTopLevelBlock) {
           topLevelNodeKeys.add(key);
           nodeKeys.push(key);

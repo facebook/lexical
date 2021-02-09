@@ -14,18 +14,18 @@ import {BlockNode, TextNode} from 'outline';
 const HAS_DIRECTION = 1 << 2;
 
 export class ParagraphNode extends BlockNode {
-  type: 'paragraph';
+  __type: 'paragraph';
 
   constructor(key?: NodeKey) {
     super(key);
-    this.type = 'paragraph';
+    this.__type = 'paragraph';
   }
 
   clone(): ParagraphNode {
-    const clone = new ParagraphNode(this.key);
-    clone.children = [...this.children];
-    clone.parent = this.parent;
-    clone.flags = this.flags;
+    const clone = new ParagraphNode(this.__key);
+    clone.__children = [...this.__children];
+    clone.__parent = this.__parent;
+    clone.__flags = this.__flags;
     return clone;
   }
 

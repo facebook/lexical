@@ -77,7 +77,7 @@ function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
     activeEditor._keyToDOMMap.delete(key);
   }
   if (node instanceof BlockNode) {
-    const children = node.children;
+    const children = node.__children;
     destroyChildren(children, 0, children.length - 1, null);
   }
 }
@@ -101,7 +101,7 @@ function createNode(
 ): HTMLElement {
   const node = activeNextNodeMap[key];
   const dom = node.createDOM();
-  const flags = node.flags;
+  const flags = node.__flags;
   storeDOMWithKey(key, dom, activeEditor);
 
   if (flags & IS_IMMUTABLE || flags & IS_SEGMENTED) {
@@ -109,12 +109,12 @@ function createNode(
   }
 
   if (node instanceof TextNode) {
-    const text = node.text;
+    const text = node.__text;
     subTreeTextContent += text;
     editorTextContent += text;
   } else if (node instanceof BlockNode) {
     // Handle block children
-    const children = node.children;
+    const children = node.__children;
     const endIndex = children.length - 1;
     if (node.hasDirection()) {
       createChildrenWithDirection(children, endIndex, dom);
@@ -217,7 +217,7 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
 
   if (prevNode === nextNode && !hasDirtySubTree) {
     if (prevNode instanceof TextNode) {
-      const text = prevNode.text;
+      const text = prevNode.__text;
       editorTextContent += text;
       subTreeTextContent += text;
     } else {
@@ -242,14 +242,14 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
   }
   // Handle text content, for LTR, LTR cases.
   if (nextNode instanceof TextNode) {
-    const text = nextNode.text;
+    const text = nextNode.__text;
     subTreeTextContent += text;
     editorTextContent += text;
     return;
   } else if (prevNode instanceof BlockNode && nextNode instanceof BlockNode) {
     // Reconcile block children
-    const prevChildren = prevNode.children;
-    const nextChildren = nextNode.children;
+    const prevChildren = prevNode.__children;
+    const nextChildren = nextNode.__children;
     const childrenAreDifferent = prevChildren !== nextChildren;
 
     if (childrenAreDifferent || hasDirtySubTree) {
@@ -443,7 +443,7 @@ function isEditorEmpty(
     return false;
   }
   const nodeMap = nextViewModel.nodeMap;
-  const topBlockIDs = nodeMap.root.children;
+  const topBlockIDs = nodeMap.root.__children;
   const topBlockIDsLength = topBlockIDs.length;
   if (topBlockIDsLength > 1) {
     return false;
@@ -451,7 +451,7 @@ function isEditorEmpty(
   for (let i = 0; i < topBlockIDsLength; i++) {
     const topBlock = nodeMap[topBlockIDs[i]];
 
-    if (topBlock && topBlock.type !== 'paragraph') {
+    if (topBlock && topBlock.__type !== 'paragraph') {
       return false;
     }
   }

@@ -15,13 +15,13 @@ import {createParagraphNode} from 'outline-extensions/ParagraphNode';
 type HeadingTagType = 'h1' | 'h2' | 'h3' | 'h4' | 'h5';
 
 export class HeadingNode extends BlockNode {
-  _type: 'heading';
-  _tag: HeadingTagType;
+  __type: 'heading';
+  __tag: HeadingTagType;
 
   constructor(tag: HeadingTagType, key?: NodeKey) {
     super(key);
-    this._tag = tag;
-    this.type = 'heading';
+    this.__tag = tag;
+    this.__type = 'heading';
   }
   static parse(
     // $FlowFixMe: TODO: refine
@@ -32,17 +32,17 @@ export class HeadingNode extends BlockNode {
     return header;
   }
   clone(): HeadingNode {
-    const clone = new HeadingNode(this._tag, this.key);
-    clone.children = [...this.children];
-    clone.parent = this.parent;
-    clone.flags = this.flags;
+    const clone = new HeadingNode(this.__tag, this.__key);
+    clone.__children = [...this.__children];
+    clone.__parent = this.__parent;
+    clone.__flags = this.__flags;
     return clone;
   }
 
   // View
 
   createDOM(): HTMLElement {
-    return document.createElement(this._tag);
+    return document.createElement(this.__tag);
   }
   updateDOM(prevNode: HeadingNode, dom: HTMLElement): boolean {
     return false;

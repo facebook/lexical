@@ -37,16 +37,16 @@ function combineAdjacentTextNodes(
   const focusKey = selection.focusKey;
   // Merge all text nodes into the first node
   const writableMergeToNode = getWritableNode(textNodes[0]);
-  const key = writableMergeToNode.key;
+  const key = writableMergeToNode.__key;
   let textLength = writableMergeToNode.getTextContent().length;
   for (let i = 1; i < textNodes.length; i++) {
     const textNode = textNodes[i];
     const siblingText = textNode.getTextContent();
-    if (restoreSelection && textNode.key === anchorKey) {
+    if (restoreSelection && textNode.__key === anchorKey) {
       selection.anchorOffset = textLength + anchorOffset;
       selection.anchorKey = key;
     }
-    if (restoreSelection && textNode.key === focusKey) {
+    if (restoreSelection && textNode.__key === focusKey) {
       selection.focusOffset = textLength + focusOffset;
       selection.focusKey = key;
     }
@@ -60,15 +60,15 @@ function combineAdjacentTextNodes(
 }
 
 export class BlockNode extends OutlineNode {
-  children: Array<NodeKey>;
+  __children: Array<NodeKey>;
 
   constructor(key?: string) {
     super(key);
-    this.children = [];
+    this.__children = [];
   }
   getChildren(): Array<OutlineNode> {
     const self = this.getLatest();
-    const children = self.children;
+    const children = self.__children;
     const childrenNodes = [];
     for (let i = 0; i < children.length; i++) {
       const childNode = getNodeByKey(children[i]);
@@ -104,7 +104,7 @@ export class BlockNode extends OutlineNode {
   }
   getFirstChild(): null | OutlineNode {
     const self = this.getLatest();
-    const children = self.children;
+    const children = self.__children;
     const childrenLength = children.length;
     if (childrenLength === 0) {
       return null;
@@ -113,7 +113,7 @@ export class BlockNode extends OutlineNode {
   }
   getLastChild(): null | OutlineNode {
     const self = this.getLatest();
-    const children = self.children;
+    const children = self.__children;
     const childrenLength = children.length;
     if (childrenLength === 0) {
       return null;
@@ -159,15 +159,15 @@ export class BlockNode extends OutlineNode {
     const oldParent = writableNodeToAppend.getParent();
     if (oldParent !== null) {
       const writableParent = getWritableNode(oldParent);
-      const children = writableParent.children;
-      const index = children.indexOf(writableNodeToAppend.key);
+      const children = writableParent.__children;
+      const index = children.indexOf(writableNodeToAppend.__key);
       if (index > -1) {
         children.splice(index, 1);
       }
     }
     // Set child parent to self
-    writableNodeToAppend.parent = writableSelf.key;
-    const children = writableSelf.children;
+    writableNodeToAppend.__parent = writableSelf.__key;
+    const children = writableSelf.__children;
     // Because we are appending a node, we need to check if the last
     // child is an empty text node so we can make it as dirty.
     const dirtySubTrees = viewModel.dirtySubTrees;
@@ -180,10 +180,10 @@ export class BlockNode extends OutlineNode {
       }
     }
     // Append children.
-    const newKey = writableNodeToAppend.key;
+    const newKey = writableNodeToAppend.__key;
     children.push(newKey);
     // Handle immutable/segmented
-    const flags = nodeToAppend.flags;
+    const flags = nodeToAppend.__flags;
     if (flags & IS_IMMUTABLE || flags & IS_SEGMENTED) {
       wrapInTextNodes(nodeToAppend);
     }
@@ -197,14 +197,14 @@ export class BlockNode extends OutlineNode {
     let lastURL = null;
     for (let i = 0; i < children.length; i++) {
       const child: OutlineNode = children[i].getLatest();
-      const flags = child.flags;
+      const flags = child.__flags;
 
       if (
         child instanceof TextNode &&
         !child.isImmutable() &&
         !child.isSegmented()
       ) {
-        const url = child.url;
+        const url = child.__url;
         if (
           (lastTextNodeFlags === null || flags === lastTextNodeFlags) &&
           (lastURL === null || lastURL === url)

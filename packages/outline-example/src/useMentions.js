@@ -483,9 +483,9 @@ class MentionNode extends TextNode {
   }
 
   clone() {
-    const clone = new MentionNode(this.mention, this.key, this.text);
-    clone.parent = this.parent;
-    clone.flags = this.flags;
+    const clone = new MentionNode(this.mention, this.__key, this.__text);
+    clone.__parent = this.__parent;
+    clone.__flags = this.__flags;
     return clone;
   }
   createDOM() {

@@ -118,8 +118,8 @@ export class Selection {
       anchorNode instanceof TextNode && focusNode instanceof TextNode,
       'Should never happen',
     );
-    this.anchorKey = anchorNode.key;
-    this.focusKey = focusNode.key;
+    this.anchorKey = anchorNode.__key;
+    this.focusKey = focusNode.__key;
     this.anchorOffset = anchorNode.getTextContent() === '' ? 0 : anchorOffset;
     this.focusOffset = focusNode.getTextContent() === '' ? 0 : focusOffset;
   }
@@ -279,15 +279,15 @@ export function createSelection(
   if (anchorNode === null || focusNode === null) {
     return null;
   }
-  anchorKey = anchorNode.key;
-  focusKey = focusNode.key;
+  anchorKey = anchorNode.__key;
+  focusKey = focusNode.__key;
 
   let isDirty = false;
 
   // Because we use a special character for whitespace,
   // we need to adjust offsets to 0 when the text is
   // really empty.
-  if (anchorNode.text === '') {
+  if (anchorNode.__text === '') {
     // When dealing with empty text nodes, we always
     // render a special empty space character, and set
     // the native DOM selection to offset 1 so that
@@ -302,7 +302,7 @@ export function createSelection(
     }
     anchorOffset = 0;
   }
-  if (focusNode.text === '') {
+  if (focusNode.__text === '') {
     focusOffset = 0;
   }
 

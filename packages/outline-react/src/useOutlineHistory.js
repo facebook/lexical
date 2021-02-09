@@ -31,16 +31,16 @@ function shouldMerge(
     if (dirtyNodes.length === 1) {
       const prevNodeMap = current.nodeMap;
       const nextDirtyNode = dirtyNodes[0];
-      const prevDirtyNodeKey = nextDirtyNode.key;
+      const prevDirtyNodeKey = nextDirtyNode.getKey();
       const prevDirtyNode = prevNodeMap[prevDirtyNodeKey];
       if (
         prevDirtyNode !== undefined &&
         prevDirtyNode instanceof TextNode &&
         nextDirtyNode instanceof TextNode &&
-        prevDirtyNode.flags === nextDirtyNode.flags
+        prevDirtyNode.getFlags() === nextDirtyNode.getFlags()
       ) {
-        const prevText = prevDirtyNode.text;
-        const nextText = nextDirtyNode.text;
+        const prevText = prevDirtyNode.getTextContent();
+        const nextText = nextDirtyNode.getTextContent();
         if (prevText === '') {
           return false;
         }

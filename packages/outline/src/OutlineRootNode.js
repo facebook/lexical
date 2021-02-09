@@ -19,7 +19,7 @@ export class RootNode extends BlockNode {
 
   clone(): RootNode {
     const clone = new RootNode();
-    clone.children = [...this.children];
+    clone.__children = [...this.__children];
     return clone;
   }
 

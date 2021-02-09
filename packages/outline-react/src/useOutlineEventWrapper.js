@@ -13,14 +13,12 @@ import {useCallback} from 'react';
 
 // $FlowFixMe: TODO
 type UnknownEvent = Object;
-// $FlowFixMe: TODO
-type UnknownState = Object;
 
 export default function useOutlineEventWrapper<T>(
   handler: (
     event: UnknownEvent,
     view: View,
-    state: UnknownState,
+    state: ?T,
     editor: OutlineEditor,
   ) => void,
   editor: OutlineEditor,

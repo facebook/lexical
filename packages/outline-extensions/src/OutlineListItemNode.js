@@ -8,6 +8,7 @@
  */
 
 import type {NodeKey} from 'outline';
+import type {ParagraphNode} from 'outline-extensions/ParagraphNode';
 
 import {BlockNode} from 'outline';
 import {createParagraphNode} from 'outline-extensions/ParagraphNode';
@@ -66,7 +67,7 @@ export class ListItemNode extends BlockNode {
     }
   }
 
-  insertNewAfter(): ListItemNode {
+  insertNewAfter(): ListItemNode | ParagraphNode {
     const nextSibling = this.getNextSibling();
     const prevSibling = this.getPreviousSibling();
     const list = this.getParent();

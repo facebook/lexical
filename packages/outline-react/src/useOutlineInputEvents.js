@@ -67,7 +67,7 @@ const FORMAT_UNDERLINE = 3;
 function createNodeFromNodeData(nodeData: {...}, NodeType): OutlineNode {
   const node = new NodeType();
   for (const property in nodeData) {
-    if (property !== 'key' && property !== 'children') {
+    if (property !== '__key' && property !== '__children') {
       // $FlowFixMe: need to fix this
       node[property] = nodeData[property];
     }
@@ -82,7 +82,7 @@ function generateNode(
   editor: OutlineEditor,
 ): OutlineNode {
   const nodeData = nodeMap[key];
-  const type = nodeData.getType();
+  const type = nodeData.__type;
   const NodeType = editor._registeredNodeTypes.get(type);
   if (NodeType === undefined) {
     throw new Error('generateNode: type "' + type + '" + not found');
@@ -92,7 +92,7 @@ function generateNode(
   const newKey = node.getKey();
   if (node instanceof BlockNode) {
     // $FlowFixMe: valid code
-    const children = nodeData.children;
+    const children = nodeData.__children;
     for (let i = 0; i < children.length; i++) {
       const childKey = children[i];
       const child = generateNode(childKey, newKey, nodeMap, editor);

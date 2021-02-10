@@ -12,6 +12,7 @@ import useOutlineAutoFormatter from 'outline-react/useOutlineAutoFormatter';
 import useOutlineHistory from 'outline-react/useOutlineHistory';
 import useToolbar from './useToolbar';
 import useHashtags from './useHashtags';
+import BlockControls from './BlockControls';
 
 const editorStyle = {
   outline: 0,
@@ -89,6 +90,7 @@ export default function Editor({onChange, isReadOnly}: Props): React$Node {
       />
       {mentionsTypeahead}
       {toolbar}
+      <BlockControls editor={outlineEditor} />
     </>
   );
 }

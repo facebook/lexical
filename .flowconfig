@@ -29,10 +29,11 @@ module.name_mapper='^outline-react/OutlineHotKeys' -> '<PROJECT_ROOT>/packages/o
 module.name_mapper='^outline-react/OutlineEnv' -> '<PROJECT_ROOT>/packages/outline-react/src/OutlineEnv.js'
 module.name_mapper='^outline-react/OutlineSelectionHelpers' -> '<PROJECT_ROOT>/packages/outline-react/src/OutlineSelectionHelpers.js'
 
-module.name_mapper='^outline-extensions/HeaderNode' -> '<PROJECT_ROOT>/packages/outline-extensions/src/OutlineHeaderNode.js'
+module.name_mapper='^outline-extensions/HeadingNode' -> '<PROJECT_ROOT>/packages/outline-extensions/src/OutlineHeadingNode.js'
 module.name_mapper='^outline-extensions/ListNode' -> '<PROJECT_ROOT>/packages/outline-extensions/src/OutlineListNode.js'
 module.name_mapper='^outline-extensions/ImageNode' -> '<PROJECT_ROOT>/packages/outline-extensions/src/OutlineImageNode.js'
 module.name_mapper='^outline-extensions/QuoteNode' -> '<PROJECT_ROOT>/packages/outline-extensions/src/OutlineQuoteNode.js'
+module.name_mapper='^outline-extensions/ParagraphNode' -> '<PROJECT_ROOT>/packages/outline-extensions/src/OutlineParagraphNode.js'
 
 suppress_type=$FlowIssue
 suppress_type=$FlowFixMe

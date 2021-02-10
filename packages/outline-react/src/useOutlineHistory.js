@@ -26,7 +26,7 @@ function shouldMerge(
   // If we are changing selection between view models, then merge.
   if (!hadDirtyNodes && !hasDirtyNodes) {
     return true;
-  } else if (hadDirtyNodes && hasDirtyNodes) {
+  } else if (hasDirtyNodes) {
     const dirtyNodes = viewModel.getDirtyNodes();
     if (dirtyNodes.length === 1) {
       const prevNodeMap = current.nodeMap;
@@ -46,7 +46,8 @@ function shouldMerge(
         }
         const diff = nextText.length - prevText.length;
         // Only merge if we're adding/removing a single character
-        return diff === -1 || diff === 1;
+        // or if there is not change at all.
+        return diff === -1 || diff === 1 || diff === 0;
       }
     }
   }

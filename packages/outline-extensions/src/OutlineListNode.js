@@ -30,6 +30,9 @@ export class ListNode extends BlockNode {
     clone.__flags = this.__flags;
     return clone;
   }
+  getTag(): ListNodeTagType {
+    return this.__tag;
+  }
 
   // View
 

@@ -287,3 +287,90 @@ pre {
   box-shadow: rgb(180 213 255) 0px 0px 0px 2px;
   outline: none;
 }
+
+#block-controls {
+  display: block;
+  position: absolute;
+  right: 16px;
+  width: 62px;
+  height: 32px;
+  box-sizing: border-box;
+  box-shadow: rgba(0,0,0,0.1) 0px 1px 2px 0px;
+  top: 16px;
+  z-index: 10;
+  border-radius: 8px;
+  border: 1px solid rgb(206, 208, 212);
+  overflow: hidden;
+}
+
+#block-controls div.button {
+  border: 1px solid white;
+  background-color: #fff;
+  display: block;
+  width: 58px;
+  height: 28px;
+  transition: background-color 0.1s ease;
+  cursor: pointer;
+  outline: none;
+  border-radius: 8px;
+}
+
+#block-controls div.button:hover{
+  background-color: #efefef;
+}
+
+#block-controls div.button:focus-visible {
+  border-color: blue;
+}
+
+#block-controls span.block-type {
+  background-image: url(https://static.xx.fbcdn.net/rsrc.php/v3/yP/r/bfOs2Olvs0Y.png);
+  display: block;
+  width: 20px;
+  height: 20px;
+  filter: invert(0.39) sepia(0.21) saturate(2) saturate(1.095) hue-rotate(174deg) brightness(0.94) contrast(0.86);
+  position: absolute;
+  top: 5px;
+  left: 10px;
+}
+
+#block-controls span.block-type.paragraph {
+  background-position: 0px -427px;
+}
+
+#block-controls span.block-type.h1 {
+  background-position: 0px -196px;
+  filter: invert(0.39) sepia(0.57) saturate(2) saturate(2) saturate(2) saturate(2) saturate(2) saturate(1.4775) hue-rotate(202deg) brightness(0.97) contrast(0.96);
+}
+
+#block-controls span.block-type.h2 {
+  background-position: 0px -217px;
+  filter: invert(0.39) sepia(0.57) saturate(2) saturate(2) saturate(2) saturate(2) saturate(2) saturate(1.4775) hue-rotate(202deg) brightness(0.97) contrast(0.96);
+}
+
+#block-controls span.block-type.quote {
+  background-position: 0px -385px;
+  filter: invert(0.39) sepia(0.57) saturate(2) saturate(2) saturate(2) saturate(2) saturate(2) saturate(1.4775) hue-rotate(202deg) brightness(0.97) contrast(0.96);
+}
+
+#block-controls span.block-type.ul {
+  background-position: 0px -301px;
+  filter: invert(0.39) sepia(0.57) saturate(2) saturate(2) saturate(2) saturate(2) saturate(2) saturate(1.4775) hue-rotate(202deg) brightness(0.97) contrast(0.96);
+}
+
+#block-controls span.block-type.ol {
+  background-position: 0px -322px;
+  filter: invert(0.39) sepia(0.57) saturate(2) saturate(2) saturate(2) saturate(2) saturate(2) saturate(1.4775) hue-rotate(202deg) brightness(0.97) contrast(0.96);
+}
+
+#block-controls span.block-arrow {
+  background-image: url(https://static.xx.fbcdn.net/rsrc.php/v3/ye/r/GoXo9vIXtpX.png);
+  background-position: 0px -432px;
+  display: block;
+  width: 16px;
+  height: 16px;
+  filter: invert(0.39) sepia(0.21) saturate(2) saturate(1.095) hue-rotate(174deg) brightness(0.94) contrast(0.86);
+  position: absolute;
+  top: 8px;
+  left: 35px;
+}

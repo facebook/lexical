@@ -8,8 +8,10 @@
  */
 
 import type {NodeKey} from 'outline';
+import type {ParagraphNode} from 'outline-extensions/ParagraphNode';
 
 import {BlockNode} from 'outline';
+import {createParagraphNode} from 'outline-extensions/ParagraphNode';
 
 export class QuoteNode extends BlockNode {
   __type: 'quote';
@@ -34,6 +36,26 @@ export class QuoteNode extends BlockNode {
   }
   updateDOM(prevNode: QuoteNode, dom: HTMLElement): boolean {
     return false;
+  }
+
+  // Mutation
+
+  mergeWithPreviousSibling(): void {
+    const prevBlock = this.getPreviousSibling();
+    if (prevBlock === null) {
+      const paragraph = createParagraphNode();
+      const children = this.getChildren();
+      children.forEach((child) => paragraph.append(child));
+      this.replace(paragraph);
+      return;
+    }
+    super.mergeWithPreviousSibling();
+  }
+
+  insertNewAfter(): ParagraphNode {
+    const newBlock = createParagraphNode();
+    this.insertAfter(newBlock);
+    return newBlock;
   }
 }
 

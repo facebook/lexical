@@ -12,7 +12,7 @@ function App(): React$Node {
 
   return (
     <>
-      <h1>OutlineJS Demo</h1>
+      <h1>Outline Playground</h1>
       <div className="editor-shell">
         <Editor
           onChange={(newViewModel) => {

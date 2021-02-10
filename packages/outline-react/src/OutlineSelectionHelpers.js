@@ -551,9 +551,6 @@ export function deleteWordBackward(selection: Selection): void {
             node.spliceText(s + 1, endIndex - s, '', true);
             return;
           }
-        } else if (char === '\n') {
-          node.spliceText(s + 1, endIndex - s + 1, '', true);
-          return;
         } else {
           foundNonWhitespace = true;
         }
@@ -618,12 +615,9 @@ export function deleteWordForward(selection: Selection): void {
         const char = textContent[s];
         if (WHITESPACE_REGEX.test(char)) {
           if (foundNonWhitespace) {
-            node.spliceText(startIndex, s - startIndex, '', true);
+            node.spliceText(startIndex, s - startIndex + 1, '', true);
             return;
           }
-        } else if (char === '\n') {
-          node.spliceText(startIndex, s - startIndex, '', true);
-          return;
         } else {
           foundNonWhitespace = true;
         }

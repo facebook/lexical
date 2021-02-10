@@ -540,14 +540,14 @@ function reconcileSelection(selection: Selection, editor: OutlineEditor): void {
     focusOffset = 1;
   }
   domSelection.setBaseAndExtent(
-    getTextNodeFromElement(anchorDOM),
+    getDOMTextNodeFromElement(anchorDOM),
     anchorOffset,
-    getTextNodeFromElement(focusDOM),
+    getDOMTextNodeFromElement(focusDOM),
     focusOffset,
   );
 }
 
-function getTextNodeFromElement(element: HTMLElement): TextNode {
+function getDOMTextNodeFromElement(element: HTMLElement): Text {
   let node = element;
   while (node != null) {
     if (node.nodeType === 3) {

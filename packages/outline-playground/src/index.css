@@ -7,9 +7,17 @@ body {
   background: #eee;
 }
 
-h1 {
-  text-align: center;
+header {
+  width: 580px;
+  margin: auto;
+  position: relative;
+}
+
+header h1 {
+  text-align: left;
   color: #333;
+  display: inline-block;
+  margin: 20px 0 0 0;
 }
 
 .editor-shell {
@@ -375,4 +383,61 @@ pre {
   position: absolute;
   top: 8px;
   left: 35px;
+}
+
+#editor-rich-text-switch {
+  display: inline-block;
+  text-align: right;
+  position: absolute;
+  right: 0;
+  top: 30px;
+  width: 150px;
+  color: #444;
+}
+
+#editor-rich-text-switch label {
+  margin-right: 10px;
+  line-height: 24px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+#editor-rich-text-switch button {
+  background-color: rgb(206, 208, 212);
+  height: 24px;
+  box-sizing: border-box;
+  border-radius: 12px;
+  border: 0;
+  width: 44px;
+  display: inline-block;
+  vertical-align: middle;
+  position: relative;
+  outline: none;
+  cursor: pointer;
+  transition: background-color 0.1s;
+  border: 2px solid transparent;
+}
+
+#editor-rich-text-switch button:focus-visible {
+  border-color: blue;
+}
+
+#editor-rich-text-switch button span {
+  top: 0px;
+  left: 0px;
+  display: block;
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 12px;
+  background-color: white;
+  transition: transform 0.2s;
+}
+
+#editor-rich-text-switch button[aria-checked="true"] {
+  background-color: rgb(24, 119, 242);
+}
+
+#editor-rich-text-switch button[aria-checked="true"] span {
+  transform: translateX(20px);
 }

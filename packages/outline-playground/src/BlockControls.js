@@ -6,6 +6,7 @@ import {ListNode} from 'outline-extensions/ListNode';
 import * as React from 'react';
 import {useEffect, useState} from 'react';
 
+// TODO: create a functional dropdown and selection input
 export default function BlockControls({
   editor,
 }: {

@@ -40,6 +40,7 @@ h1 {
   display: block;
   z-index: 2;
   position: relative;
+  width: calc(100% - 90px);
 }
 
 .editor-shell div.editor > div {
@@ -291,7 +292,7 @@ pre {
 #block-controls {
   display: block;
   position: absolute;
-  right: 16px;
+  right: 10px;
   width: 62px;
   height: 32px;
   box-sizing: border-box;

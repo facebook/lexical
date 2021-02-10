@@ -48,7 +48,10 @@ export class ParagraphNode extends BlockNode {
     }
     // Otherwise just reset the text node flags
     const firstChild = this.getFirstChild();
-    if (firstChild instanceof TextNode) {
+    if (
+      firstChild instanceof TextNode &&
+      firstChild.getFlags() !== HAS_DIRECTION
+    ) {
       firstChild.setFlags(HAS_DIRECTION);
     }
   }

@@ -171,8 +171,8 @@ function MentionsTypeahead({
 
       if (mentionsElement !== null && mentionsElement.nodeType === 1) {
         // $FlowFixMe
-        const {x, y} = mentionsElement.getBoundingClientRect();
-        div.style.top = `${y + 22}px`;
+        const {x, y, height} = mentionsElement.getBoundingClientRect();
+        div.style.top = `${y + height + 2}px`;
         div.style.left = `${x}px`;
         mentionsElement.setAttribute('aria-controls', 'mentions-typeahead');
 

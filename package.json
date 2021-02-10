@@ -11,8 +11,8 @@
     "packages/*"
   ],
   "scripts": {
-    "start": "npm run build && npm start --prefix packages/outline-example",
-    "dev": "concurrently \"npm:watch\" \"npm start --prefix packages/outline-example\"",
+    "start": "npm run build && npm start --prefix packages/outline-playground",
+    "dev": "concurrently \"npm:watch\" \"npm start --prefix packages/outline-playground\"",
     "build": "node scripts/build.js",
     "build-prod": "node scripts/build.js --prod",
     "build-www": "node scripts/build.js --prod --www",

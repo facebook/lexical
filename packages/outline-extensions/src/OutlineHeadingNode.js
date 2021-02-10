@@ -31,6 +31,9 @@ export class HeadingNode extends BlockNode {
     clone.__flags = this.__flags;
     return clone;
   }
+  getTag(): HeadingTagType {
+    return this.__tag;
+  }
 
   // View
 

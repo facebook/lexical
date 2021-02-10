@@ -402,8 +402,6 @@ function applySelectionInputs(inputs, update, editor) {
           text.selectAfter();
           break;
         }
-        default:
-          console.log('TODO');
       }
     });
   });

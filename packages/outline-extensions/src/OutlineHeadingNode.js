@@ -8,6 +8,7 @@
  */
 
 import type {NodeKey} from 'outline';
+import type {ParagraphNode} from 'outline-extensions/ParagraphNode';
 
 import {BlockNode} from 'outline';
 import {createParagraphNode} from 'outline-extensions/ParagraphNode';
@@ -63,6 +64,12 @@ export class HeadingNode extends BlockNode {
       return;
     }
     super.mergeWithPreviousSibling();
+  }
+
+  insertNewAfter(): ParagraphNode {
+    const newBlock = createParagraphNode();
+    this.insertAfter(newBlock);
+    return newBlock;
   }
 }
 

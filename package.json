@@ -46,7 +46,7 @@
     "eslint-plugin-no-function-declare-after-return": "^1.1.0",
     "eslint-plugin-react": "^7.21.5",
     "eslint-plugin-react-hooks": "^4.2.0",
-    "flow-bin": "^0.137.0",
+    "flow-bin": "^0.144.0",
     "google-closure-compiler": "^20201006.0.0",
     "jest": "26.6.0",
     "minimist": "^1.2.5",

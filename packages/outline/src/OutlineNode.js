@@ -388,7 +388,7 @@ export class OutlineNode {
   isSegmented(): boolean {
     return (this.getLatest().__flags & IS_SEGMENTED) !== 0;
   }
-  getLatest(): this {
+  getLatest<N>(): N {
     const latest = getNodeByKey(this.__key);
     invariant(latest !== null, 'getLatest: node not found');
     return latest;

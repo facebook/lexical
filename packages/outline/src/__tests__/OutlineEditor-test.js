@@ -62,7 +62,7 @@ describe('OutlineEditor tests', () => {
       const text = Outline.createTextNode();
       paragraph.append(text);
       view.getRoot().append(paragraph);
-    }, true);
+    }, undefined, true);
 
     let root = null;
     let paragraph = null;
@@ -108,7 +108,7 @@ describe('OutlineEditor tests', () => {
         const text = Outline.createTextNode();
         paragraph.append(text);
         view.getRoot().append(paragraph);
-      }, true);
+      }, undefined, true);
 
       expect(sanitizeHTML(container.innerHTML)).toBe(
         '<div contenteditable="true" data-outline-editor="true"><div class="placeholder">' +
@@ -124,7 +124,7 @@ describe('OutlineEditor tests', () => {
         const text = Outline.createTextNode('Some text');
         paragraph.append(text);
         view.getRoot().append(paragraph);
-      }, true);
+      }, undefined, true);
 
       expect(sanitizeHTML(container.innerHTML)).toBe(
         '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-text="true">Some text</span></p></div>',
@@ -143,7 +143,7 @@ describe('OutlineEditor tests', () => {
         paragraph2.append(text2);
         view.getRoot().append(paragraph);
         view.getRoot().append(paragraph2);
-      }, true);
+      }, undefined, true);
 
       expect(sanitizeHTML(container.innerHTML)).toBe(
         '<div contenteditable="true" data-outline-editor="true"><p><span data-text="true"><br></span></p><p>' +

@@ -29,7 +29,7 @@ describe('OutlineNode tests', () => {
   });
 
   function update(callback) {
-    editor.update(callback, true);
+    editor.update(callback, undefined, true);
   }
 
   function useOutlineEditor(editorElementRef) {

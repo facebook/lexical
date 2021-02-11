@@ -417,11 +417,15 @@ export function reconcilePlaceholder(
       return;
     }
     placeholderElement = document.createElement('div');
-    placeholderElement.className = 'placeholder';
     placeholderElement.contentEditable = 'false';
     placeholderElement.appendChild(document.createTextNode(placeholderText));
     editorElement.appendChild(placeholderElement);
     editor._placeholderElement = placeholderElement;
+  }
+  if (editor._placeholderClassName == null) {
+    placeholderElement.removeAttribute('class');
+  } else {
+    placeholderElement.className = editor._placeholderClassName;
   }
   if (
     editor._textContent !== '' ||

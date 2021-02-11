@@ -38,6 +38,8 @@ export type UpdateListener = (viewModel: ViewModel) => void;
 
 export type DecoratorListener = (decorator: {[NodeKey]: ReactNode}) => void;
 
+type PlaceholderConfig = $ReadOnly<{className?: null | string}>;
+
 const NativePromise = window.Promise;
 
 function updateEditor(
@@ -128,6 +130,7 @@ export class OutlineEditor {
   _needsReconcile: boolean;
   _nodeDecorators: {[NodeKey]: ReactNode};
   _pendingNodeDecorators: null | {[NodeKey]: ReactNode};
+  _placeholderClassName: null | string;
   _placeholderText: string;
   _placeholderElement: null | HTMLElement;
   _textContent: string;
@@ -164,6 +167,7 @@ export class OutlineEditor {
     // is complete.
     this._pendingNodeDecorators = null;
     // Used for rendering placeholder text
+    this._placeholderClassName = 'placeholder';
     this._placeholderText = '';
     this._placeholderElement = null;
     // Editor fast-path for text content
@@ -267,7 +271,11 @@ export class OutlineEditor {
   update(callbackFn: (view: View) => void, sync?: boolean): boolean {
     return updateEditor(this, callbackFn, false, sync);
   }
-  setPlaceholder(placeholderText: string): void {
+  setPlaceholder(placeholderText: string, config?: PlaceholderConfig): void {
+    const className = config && config.className;
+    if (className !== undefined) {
+      this._placeholderClassName = className;
+    }
     const placeholderElement = this._placeholderElement;
     if (placeholderElement !== null) {
       // $FlowFixMe: placeholder elements always have a text node

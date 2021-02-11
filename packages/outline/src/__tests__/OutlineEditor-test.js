@@ -100,6 +100,46 @@ describe('OutlineEditor tests', () => {
   });
 
   describe('Placeholder', () => {
+    it('Placeholder uses a default class name when no config is specified', () => {
+      editor.setPlaceholder('Placeholder text');
+      expect(sanitizeHTML(container.innerHTML)).toBe(
+        '<div contenteditable="true" data-outline-editor="true">' +
+          '<div class="placeholder" style="display: block;">Placeholder text</div>' +
+          '</div>',
+      );
+    });
+
+    it('Placeholder uses a default class name when config contains no custom classname', () => {
+      editor.setPlaceholder('Placeholder text', {});
+      expect(sanitizeHTML(container.innerHTML)).toBe(
+        '<div contenteditable="true" data-outline-editor="true">' +
+          '<div class="placeholder" style="display: block;">Placeholder text</div>' +
+          '</div>',
+      );
+    });
+
+    it('Placeholder uses a custom class name when specified', () => {
+      editor.setPlaceholder('Placeholder text', {
+        className: 'superPlaceholder',
+      });
+      expect(sanitizeHTML(container.innerHTML)).toBe(
+        '<div contenteditable="true" data-outline-editor="true">' +
+          '<div class="superPlaceholder" style="display: block;">Placeholder text</div>' +
+          '</div>',
+      );
+    });
+
+    it('Placeholder uses no class name when null class name is specified', () => {
+      editor.setPlaceholder('Placeholder text', {
+        className: null,
+      });
+      expect(sanitizeHTML(container.innerHTML)).toBe(
+        '<div contenteditable="true" data-outline-editor="true">' +
+          '<div style="display: block;">Placeholder text</div>' +
+          '</div>',
+      );
+    });
+
     it('Placeholder shows when there is no content', () => {
       editor.setPlaceholder('Placeholder text');
 

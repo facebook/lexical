@@ -111,7 +111,7 @@ describe('OutlineEditor tests', () => {
       }, true);
 
       expect(sanitizeHTML(container.innerHTML)).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><div class="placeholder" style="display: block;">' +
+        '<div contenteditable="true" data-outline-editor="true"><div class="placeholder">' +
           'Placeholder text</div><p><span data-text="true"><br></span></p></div>',
       );
     });
@@ -127,8 +127,7 @@ describe('OutlineEditor tests', () => {
       }, true);
 
       expect(sanitizeHTML(container.innerHTML)).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><div class="placeholder" style="display: none;">' +
-          'Placeholder text</div><p dir="ltr"><span data-text="true">Some text</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-text="true">Some text</span></p></div>',
       );
     });
 
@@ -147,8 +146,7 @@ describe('OutlineEditor tests', () => {
       }, true);
 
       expect(sanitizeHTML(container.innerHTML)).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><div class="placeholder" style="display: none;">' +
-          'Placeholder text</div><p><span data-text="true"><br></span></p><p>' +
+        '<div contenteditable="true" data-outline-editor="true"><p><span data-text="true"><br></span></p><p>' +
           '<span data-text="true"><br></span></p></div>',
       );
     });

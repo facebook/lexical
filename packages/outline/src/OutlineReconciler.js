@@ -73,6 +73,8 @@ function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
     const dom = activeEditor.getElementByKey(key);
     parentDOM.removeChild(dom);
   }
+  // This logic is really important, otherwise we will leak DOM nodes
+  // when their corresponding OutlineNodes are removed from the view model.
   if (activeNextNodeMap[key] === undefined) {
     activeEditor._keyToDOMMap.delete(key);
   }
@@ -161,10 +163,11 @@ function reconcileChildrenWithDirection(
   prevChildren: Array<NodeKey>,
   nextChildren: Array<NodeKey>,
   dom: HTMLElement,
+  isRoot: boolean,
 ): void {
   const previousSubTreeTextContent = subTreeTextContent;
   subTreeTextContent = '';
-  reconcileChildren(prevChildren, nextChildren, dom);
+  reconcileChildren(prevChildren, nextChildren, dom, isRoot);
   handleElementTextDirection(dom);
   subTreeTextContent = previousSubTreeTextContent;
 }
@@ -173,6 +176,7 @@ function reconcileChildren(
   prevChildren: Array<NodeKey>,
   nextChildren: Array<NodeKey>,
   dom: HTMLElement,
+  isRoot: boolean,
 ): void {
   const prevChildrenLength = prevChildren.length;
   const nextChildrenLength = nextChildren.length;
@@ -193,9 +197,16 @@ function reconcileChildren(
     }
   } else if (nextChildrenLength === 0) {
     if (prevChildrenLength !== 0) {
-      destroyChildren(prevChildren, 0, prevChildrenLength - 1, null);
-      // Fast path for removing DOM nodes
-      dom.textContent = '';
+      destroyChildren(
+        prevChildren,
+        0,
+        prevChildrenLength - 1,
+        isRoot ? dom : null,
+      );
+      if (!isRoot) {
+        // Fast path for removing DOM nodes
+        dom.textContent = '';
+      }
     }
   } else {
     reconcileNodeChildren(
@@ -253,10 +264,11 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
     const childrenAreDifferent = prevChildren !== nextChildren;
 
     if (childrenAreDifferent || hasDirtySubTree) {
+      const isRoot = key === 'root';
       if (nextNode.hasDirection()) {
-        reconcileChildrenWithDirection(prevChildren, nextChildren, dom);
+        reconcileChildrenWithDirection(prevChildren, nextChildren, dom, isRoot);
       } else {
-        reconcileChildren(prevChildren, nextChildren, dom);
+        reconcileChildren(prevChildren, nextChildren, dom, isRoot);
       }
     }
   }

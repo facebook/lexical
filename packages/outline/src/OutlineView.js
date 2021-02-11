@@ -20,6 +20,7 @@ import {TextNode} from '.';
 import {invariant} from './OutlineUtils';
 
 export type View = {
+  clearSelection(): void,
   getRoot: () => RootNode,
   getNodeByKey: (key: NodeKey) => null | OutlineNode,
   getSelection: () => null | Selection,
@@ -53,6 +54,10 @@ const view: View = {
   },
   getNodeByKey,
   getSelection,
+  clearSelection(): void {
+    const viewModel = getActiveViewModel();
+    viewModel.selection = null;
+  },
   setSelection(selection: Selection): void {
     const viewModel = getActiveViewModel();
     viewModel.selection = selection;
@@ -160,9 +165,6 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
   activeViewModel = pendingViewModel;
   reconcileViewModel(pendingViewModel, editor);
   activeViewModel = previousActiveViewModel;
-  if (pendingViewModel.selection === null) {
-    pendingViewModel.selection = editor._viewModel.selection;
-  }
   editor._viewModel = pendingViewModel;
   const pendingNodeDecorators = editor._pendingNodeDecorators;
   if (pendingNodeDecorators !== null) {

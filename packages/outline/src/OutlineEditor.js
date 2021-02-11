@@ -42,8 +42,9 @@ const NativePromise = window.Promise;
 
 function updateEditor(
   editor: OutlineEditor,
-  callbackFn: (view: View) => void,
+  updateFn: (view: View) => void,
   markAllTextNodesAsDirty: boolean,
+  callbackFn?: () => void,
   sync?: boolean,
 ): boolean {
   let pendingViewModel = editor._pendingViewModel;
@@ -71,7 +72,7 @@ function updateEditor(
           editor,
         );
       }
-      callbackFn(view);
+      updateFn(view);
       if (markAllTextNodesAsDirty) {
         const currentViewModel = editor._viewModel;
         const nodeMap = currentViewModel.nodeMap;
@@ -104,9 +105,15 @@ function updateEditor(
   }
   if (sync) {
     commitPendingUpdates(editor);
+    if (callbackFn) {
+      callbackFn();
+    }
   } else if (viewModelWasCloned) {
     NativePromise.resolve().then(() => {
       commitPendingUpdates(editor);
+      if (callbackFn) {
+        callbackFn();
+      }
     });
   }
   return true;
@@ -264,8 +271,8 @@ export class OutlineEditor {
     this._pendingViewModel = viewModel;
     commitPendingUpdates(this);
   }
-  update(callbackFn: (view: View) => void, sync?: boolean): boolean {
-    return updateEditor(this, callbackFn, false, sync);
+  update(updateFn: (view: View) => void, callbackFn?: () => void, sync?: boolean): boolean {
+    return updateEditor(this, updateFn, false, callbackFn, sync);
   }
   setPlaceholder(placeholderText: string): void {
     const placeholderElement = this._placeholderElement;

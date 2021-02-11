@@ -141,10 +141,16 @@ export class BlockNode extends OutlineNode {
     const writableSelf = getWritableNode(this);
     const children = this.getChildren();
     children.forEach((child) => child.remove());
-    const textNode = createTextNode('');
-    this.append(textNode);
-    if (restoreSelection) {
-      textNode.select(0, 0);
+    const parent = this.getParent();
+    if (parent === null) {
+      const viewModel = getActiveViewModel();
+      viewModel.selection = null;
+    } else {
+      const textNode = createTextNode('');
+      this.append(textNode);
+      if (restoreSelection) {
+        textNode.select(0, 0);
+      }
     }
     return writableSelf;
   }

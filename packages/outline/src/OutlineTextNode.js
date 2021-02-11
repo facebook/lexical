@@ -16,23 +16,23 @@ import {getSelection, makeSelection} from './OutlineSelection';
 import {invariant} from './OutlineUtils';
 import {shouldErrorOnReadOnly} from './OutlineView';
 
-const IS_BOLD = 1 << 3;
-const IS_ITALIC = 1 << 4;
-const IS_STRIKETHROUGH = 1 << 5;
-const IS_UNDERLINE = 1 << 6;
-const IS_CODE = 1 << 7;
-const IS_LINK = 1 << 8;
-const IS_HASHTAG = 1 << 9;
+export const IS_BOLD = 1 << 3;
+export const IS_ITALIC = 1 << 4;
+export const IS_STRIKETHROUGH = 1 << 5;
+export const IS_UNDERLINE = 1 << 6;
+export const IS_CODE = 1 << 7;
+export const IS_LINK = 1 << 8;
+export const IS_HASHTAG = 1 << 9;
 
 // Do not import these from shared, otherwise we will bundle
 // all of shared too.
-const FORMAT_BOLD = 0;
-const FORMAT_ITALIC = 1;
-const FORMAT_STRIKETHROUGH = 2;
-const FORMAT_UNDERLINE = 3;
-const FORMAT_CODE = 4;
-const FORMAT_LINK = 5;
-const FORMAT_HASHTAG = 6;
+export const FORMAT_BOLD = 0;
+export const FORMAT_ITALIC = 1;
+export const FORMAT_STRIKETHROUGH = 2;
+export const FORMAT_UNDERLINE = 3;
+export const FORMAT_CODE = 4;
+export const FORMAT_LINK = 5;
+export const FORMAT_HASHTAG = 6;
 
 const zeroWidthString = '\uFEFF';
 

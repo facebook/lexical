@@ -124,6 +124,8 @@ function createNode(
       createChildren(children, 0, endIndex, dom, null);
     }
   }
+  const type = node.__type;
+  triggerDOMCreationListener(type, dom, activeEditor);
   if (parentDOM !== null) {
     if (insertDOM !== null) {
       parentDOM.insertBefore(dom, insertDOM);
@@ -434,8 +436,8 @@ export function reconcilePlaceholder(
       return;
     }
     placeholderElement = document.createElement('div');
-    placeholderElement.className = 'placeholder';
     placeholderElement.contentEditable = 'false';
+    triggerDOMCreationListener('placeholder', placeholderElement, editor);
     placeholderElement.appendChild(document.createTextNode(placeholderText));
     editorElement.appendChild(placeholderElement);
     editor._placeholderElement = placeholderElement;
@@ -597,4 +599,20 @@ export function getNodeKeyFromDOM(
     node = node.parentNode;
   }
   return null;
+}
+
+function triggerDOMCreationListener(
+  type: string,
+  dom: HTMLElement,
+  editor: OutlineEditor,
+): void {
+  const domCreationListenersSet = editor._domCreationListeners;
+  if (domCreationListenersSet.size === 0) {
+    return;
+  }
+  const domCreationListeners = Array.from(domCreationListenersSet);
+  for (let i = 0; i < domCreationListeners.length; i++) {
+    const domCreationListener = domCreationListeners[i];
+    domCreationListener(type, dom);
+  }
 }

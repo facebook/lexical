@@ -241,7 +241,7 @@ const IS_HASHTAG = 1 << 9;
 export default function useEmojis(editor: null | OutlineEditor): void {
   useEffect(() => {
     if (editor !== null) {
-      return editor.addTextTransform((node: TextNode) => {
+      return editor.addTextMutationListener((node: TextNode) => {
         if (node.isSegmented() || node.isImmutable() || node.isHashtag()) {
           return;
         }

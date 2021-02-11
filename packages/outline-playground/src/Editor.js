@@ -42,6 +42,11 @@ function useOutlineEditor(
       editorElement.textContent = '';
     }
     editor.setEditorElement(editorElement);
+    editor.addDOMCreationListener((type: string, element: HTMLElement) => {
+      if (type === 'placeholder') {
+        element.className = 'placeholder';
+      }
+    });
     editor.setPlaceholder(placeholder);
   }, [editorElementRef, editor, placeholder]);
 

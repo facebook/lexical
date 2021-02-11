@@ -13,13 +13,13 @@ import type {Node as ReactNode} from 'react';
 
 import {RootNode, TextNode} from '.';
 import {
-  applyTextTransforms,
   cloneViewModel,
   enterViewModelScope,
   garbageCollectDetachedNodes,
   viewModelHasDirtySelectionOrNeedsSync,
   ViewModel,
   commitPendingUpdates,
+  triggerTextMutationListeners,
   triggerUpdateListeners,
 } from './OutlineView';
 import {createSelection} from './OutlineSelection';
@@ -37,6 +37,10 @@ export function createEditor(): OutlineEditor {
 export type UpdateListener = (viewModel: ViewModel) => void;
 
 export type DecoratorListener = (decorator: {[NodeKey]: ReactNode}) => void;
+
+export type DOMCreationListener = (type: string, dom: HTMLElement) => void;
+
+export type TextMutationListener = (node: TextNode, view: View) => void;
 
 const NativePromise = window.Promise;
 
@@ -88,7 +92,7 @@ function updateEditor(
         }
       }
       if (currentPendingViewModel.hasDirtyNodes()) {
-        applyTextTransforms(currentPendingViewModel, editor);
+        triggerTextMutationListeners(currentPendingViewModel, editor);
         garbageCollectDetachedNodes(currentPendingViewModel, editor);
       }
     },
@@ -130,7 +134,8 @@ export class OutlineEditor {
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _updateListeners: Set<UpdateListener>;
   _decoratorListeners: Set<DecoratorListener>;
-  _textTransforms: Set<(node: TextNode, view: View) => void>;
+  _domCreationListeners: Set<DOMCreationListener>;
+  _textMutationListeners: Set<TextMutationListener>;
   _registeredNodeTypes: Map<string, Class<OutlineNode>>;
   _needsReconcile: boolean;
   _nodeDecorators: {[NodeKey]: ReactNode};
@@ -153,9 +158,14 @@ export class OutlineEditor {
     this._keyToDOMMap = new Map();
     // onChange listeners
     this._updateListeners = new Set();
+    // Used for rendering React Portals into nodes
     this._decoratorListeners = new Set();
+    // Used for listening when Outline creates a DOM
+    // node, so external tooling can apply additional
+    // styling or/and properties to the elements.
+    this._domCreationListeners = new Set();
     // Handling of transform
-    this._textTransforms = new Set();
+    this._textMutationListeners = new Set();
     // Mapping of types to their nodes
     this._registeredNodeTypes = new Map([
       ['text', TextNode],
@@ -223,13 +233,18 @@ export class OutlineEditor {
       this._decoratorListeners.delete(listener);
     };
   }
-  addTextTransform(
-    transformFn: (node: TextNode, view: View) => void,
-  ): () => void {
-    this._textTransforms.add(transformFn);
+  addTextMutationListener(listener: TextMutationListener): () => void {
+    this._textMutationListeners.add(listener);
     updateEditor(this, emptyFunction, true);
     return () => {
-      this._textTransforms.delete(transformFn);
+      this._textMutationListeners.delete(listener);
+    };
+  }
+  addDOMCreationListener(listener: DOMCreationListener): () => void {
+    this._domCreationListeners.add(listener);
+    updateEditor(this, emptyFunction, true);
+    return () => {
+      this._domCreationListeners.delete(listener);
     };
   }
   getNodeDecorators(): {[NodeKey]: ReactNode} {

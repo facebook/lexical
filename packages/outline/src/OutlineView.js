@@ -96,27 +96,25 @@ export function enterViewModelScope<V>(
   }
 }
 
-// To optimize things, we only apply transforms to
-// dirty text nodes, rather than all text nodes.
-export function applyTextTransforms(
+export function triggerTextMutationListeners(
   viewModel: ViewModel,
   editor: OutlineEditor,
 ): void {
-  const textTransformsSet = editor._textTransforms;
-  if (textTransformsSet.size > 0) {
+  const textMutationListeners = editor._textMutationListeners;
+  if (textMutationListeners.size > 0) {
     const nodeMap = viewModel.nodeMap;
     const dirtyNodes = Array.from(viewModel.dirtyNodes);
-    const textTransforms = Array.from(textTransformsSet);
+    const textMutations = Array.from(textMutationListeners);
 
     for (let s = 0; s < dirtyNodes.length; s++) {
       const nodeKey = dirtyNodes[s];
       const node = nodeMap[nodeKey];
 
       if (node !== undefined && node.isAttached()) {
-        // Apply text transforms
+        // Trigger the text mutation listener
         if (node instanceof TextNode) {
-          for (let i = 0; i < textTransforms.length; i++) {
-            textTransforms[i](node, view);
+          for (let i = 0; i < textMutations.length; i++) {
+            textMutations[i](node, view);
             if (!node.isAttached()) {
               break;
             }

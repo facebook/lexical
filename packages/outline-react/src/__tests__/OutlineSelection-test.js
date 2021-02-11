@@ -4,7 +4,6 @@ let ReactDOM;
 let ReactTestUtils;
 let Outline;
 let SelectionHelpers;
-let ParagraphNode;
 let useOutlineRichText;
 
 const FORMAT_BOLD = 0;
@@ -86,6 +85,20 @@ function deleteWordForward() {
   };
 }
 
+function moveBackward() {
+  return {
+    type: 'move_backward',
+    text: null,
+  };
+}
+
+function moveForward() {
+  return {
+    type: 'move_forward',
+    text: null,
+  };
+}
+
 function deleteBackward() {
   return {
     type: 'delete_backward',
@@ -149,6 +162,10 @@ function getNodeFromPath(path, editorElement) {
 function setNativeSelection(anchorNode, anchorOffset, focusNode, focusOffset) {
   const domSelection = window.getSelection();
   const range = document.createRange();
+  if (anchorNode.nodeType === 3 && anchorNode.nodeValue === '\uFEFF') {
+    anchorOffset = 1;
+    focusOffset = 1;
+  }
   range.setStart(anchorNode, anchorOffset);
   range.setEnd(focusNode, focusOffset);
   domSelection.removeAllRanges();
@@ -298,7 +315,7 @@ function moveNativeSelectionForward() {
     if (!keyDownEvent.defaultPrevented) {
       if (anchorNode.nodeType === 3) {
         const text = anchorNode.nodeValue;
-        if (text.length === anchorOffset) {
+        if (text.length === anchorOffset || text === '\uFEFF') {
           const nextTextNode = getNextTextNode(anchorNode);
 
           if (nextTextNode === null) {
@@ -342,6 +359,14 @@ function applySelectionInputs(inputs, update, editor) {
         }
         case 'insert_paragraph': {
           SelectionHelpers.insertParagraph(selection);
+          break;
+        }
+        case 'move_backward': {
+          moveNativeSelectionBackward();
+          break;
+        }
+        case 'move_forward': {
+          moveNativeSelectionForward();
           break;
         }
         case 'delete_backward': {
@@ -422,7 +447,6 @@ describe('OutlineSelection tests', () => {
     ReactTestUtils = require('react-dom/test-utils');
     Outline = require('outline');
     SelectionHelpers = require('outline-react/OutlineSelectionHelpers');
-    ParagraphNode = require('outline-extensions/ParagraphNode');
     useOutlineRichText = require('outline-react/useOutlineRichText');
 
     container = document.createElement('div');
@@ -491,58 +515,6 @@ describe('OutlineSelection tests', () => {
     );
     expect(acutalSelection.focusOffset).toBe(expectedSelection.focusOffset);
   }
-
-  test('Should correctly handle empty paragraph blocks (left-arrow)', () => {
-    // Insert initial block
-    update((view) => {
-      const paragraph = ParagraphNode.createParagraphNode();
-      const text = Outline.createTextNode('');
-      paragraph.append(text);
-      view.getRoot().append(paragraph);
-    });
-
-    // Focus first element
-    setNativeSelectionWithPaths(ref.current, [1, 0, 0], 0, [1, 0, 0], 0);
-
-    expect(sanitizeHTML(container.innerHTML)).toBe(
-      '<div contenteditable="true" data-outline-editor="true"><p><span data-text="true"><br></span></p><p><span data-text="true"><br></span></p></div>',
-    );
-
-    moveNativeSelectionBackward();
-
-    assertSelection(ref.current, {
-      anchorPath: [0, 0, 0],
-      anchorOffset: 0,
-      focusPath: [0, 0, 0],
-      focusOffset: 0,
-    });
-  });
-
-  test('Should correctly handle empty paragraph blocks (right-arrow)', () => {
-    // Insert initial block
-    update((view) => {
-      const paragraph = ParagraphNode.createParagraphNode();
-      const text = Outline.createTextNode('');
-      paragraph.append(text);
-      view.getRoot().append(paragraph);
-    });
-
-    // Focus first element
-    setNativeSelectionWithPaths(ref.current, [0, 0, 0], 0, [0, 0, 0], 0);
-
-    expect(sanitizeHTML(container.innerHTML)).toBe(
-      '<div contenteditable="true" data-outline-editor="true"><p><span data-text="true"><br></span></p><p><span data-text="true"><br></span></p></div>',
-    );
-
-    moveNativeSelectionForward();
-
-    assertSelection(ref.current, {
-      anchorPath: [1, 0, 0],
-      anchorOffset: 0,
-      focusPath: [1, 0, 0],
-      focusOffset: 0,
-    });
-  });
 
   // eslint-disable-next-line no-unused-vars
   const GRAPHEME_SCENARIOS = [
@@ -784,6 +756,36 @@ describe('OutlineSelection tests', () => {
         anchorPath: [0, 2, 0],
         anchorOffset: 0,
         focusPath: [0, 2, 0],
+        focusOffset: 0,
+      },
+    },
+    {
+      name:
+        'Should correctly handle empty paragraph blocks when moving backward',
+      inputs: [insertParagraph(), moveBackward()],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p><span data-text="true"><br></span></p><p><span data-text="true"><br></span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 0,
+        focusPath: [0, 0, 0],
+        focusOffset: 0,
+      },
+    },
+    {
+      name:
+        'Should correctly handle empty paragraph blocks when moving forward',
+      inputs: [
+        insertParagraph(),
+        moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 0),
+        moveForward(),
+      ],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p><span data-text="true"><br></span></p><p><span data-text="true"><br></span></p></div>',
+      expectedSelection: {
+        anchorPath: [1, 0, 0],
+        anchorOffset: 0,
+        focusPath: [1, 0, 0],
         focusOffset: 0,
       },
     },

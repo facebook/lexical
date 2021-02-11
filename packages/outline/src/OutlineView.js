@@ -165,12 +165,6 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
   activeViewModel = pendingViewModel;
   reconcileViewModel(pendingViewModel, editor);
   activeViewModel = previousActiveViewModel;
-  if (
-    pendingViewModel.selection === null &&
-    pendingViewModel.nodeMap.root.__children.length !== 0
-  ) {
-    pendingViewModel.selection = editor._viewModel.selection;
-  }
   editor._viewModel = pendingViewModel;
   const pendingNodeDecorators = editor._pendingNodeDecorators;
   if (pendingNodeDecorators !== null) {

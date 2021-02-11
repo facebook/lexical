@@ -19,7 +19,7 @@ function App(): React$Node {
       <header>
         <h1>Outline Playground</h1>
         <div id="editor-rich-text-switch">
-          <label for="richTextMode">Rich Text</label>
+          <label htmlFor="richTextMode">Rich Text</label>
           <button
             role="switch"
             aria-checked={isRichText}

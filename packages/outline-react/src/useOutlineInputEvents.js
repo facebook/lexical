@@ -241,6 +241,8 @@ function onKeyDown(
       shouldPreventDefault = true;
       if (state.richText) {
         insertParagraph(selection);
+      } else {
+        insertText(selection, '\n');
       }
     } else if (isLineBreak(event)) {
       shouldPreventDefault = true;
@@ -588,6 +590,8 @@ function onNativeBeforeInput(
     case 'insertParagraph': {
       if (state.richText) {
         insertParagraph(selection);
+      } else {
+        insertText(selection, '\n');
       }
       break;
     }

@@ -495,7 +495,12 @@ function onCompositionEnd(
   }
 }
 
-function onSelectionChange(event, view, state, editor): void {
+function onSelectionChange(
+  event: FocusEvent,
+  view: View,
+  state: UnknownState,
+  editor: OutlineEditor,
+): void {
   view.getSelection();
 }
 

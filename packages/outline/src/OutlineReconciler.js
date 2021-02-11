@@ -410,10 +410,15 @@ export function reconcilePlaceholder(
   if (editorElement === null) {
     return;
   }
-  const noPlaceholderText = placeholderText === '';
+  const noPlaceholder =
+    placeholderText === '' ||
+    editor._textContent !== '' ||
+    editor._isComposing ||
+    !isEditorEmpty(editor, nextViewModel);
+
   let placeholderElement = editor._placeholderElement;
   if (placeholderElement === null) {
-    if (noPlaceholderText) {
+    if (noPlaceholder) {
       return;
     }
     placeholderElement = document.createElement('div');
@@ -422,16 +427,9 @@ export function reconcilePlaceholder(
     placeholderElement.appendChild(document.createTextNode(placeholderText));
     editorElement.appendChild(placeholderElement);
     editor._placeholderElement = placeholderElement;
-  }
-  if (
-    editor._textContent !== '' ||
-    noPlaceholderText ||
-    editor._isComposing ||
-    !isEditorEmpty(editor, nextViewModel)
-  ) {
-    placeholderElement.style.display = 'none';
-  } else {
-    placeholderElement.style.display = 'block';
+  } else if (noPlaceholder) {
+    editorElement.removeChild(placeholderElement);
+    editor._placeholderElement = null;
   }
 }
 

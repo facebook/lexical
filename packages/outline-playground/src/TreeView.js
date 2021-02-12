@@ -127,7 +127,7 @@ function printNode(node) {
 
 function printFlags(flags) {
   return Object.entries(FLAG_LABELS)
-    .map(([flag, label]) => (flags & flag ? label : null))
+    .map(([flag, label]) => (flags & Number(flag) ? label : null))
     .filter(Boolean)
     .join(', ');
 }

@@ -114,11 +114,9 @@ function printNode(node) {
     const title = text.length === 0 ? '(empty)' : `"${normalize(text)}"`;
     const flags = node.getFlags();
     const flagLabels = printFlags(flags);
-    const flagLabelsFormatted =
-      flagLabels.length !== 0 ? `(${flagLabels})` : null;
-    return [title, `flags: ${flags}`, flagLabelsFormatted]
+    return [title, flagLabels.length !== 0 ? `flags: ${flagLabels}` : null]
       .filter(Boolean)
-      .join(' ')
+      .join(', ')
       .trim();
   }
 

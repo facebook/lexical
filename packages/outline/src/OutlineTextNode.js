@@ -11,28 +11,28 @@ import type {Selection} from './OutlineSelection';
 import type {NodeKey} from './OutlineNode';
 
 import {OutlineNode} from './OutlineNode';
-import {getWritableNode, IS_SEGMENTED, HAS_DIRECTION} from './OutlineNode';
+import {getWritableNode} from './OutlineNode';
 import {getSelection, makeSelection} from './OutlineSelection';
 import {invariant} from './OutlineUtils';
 import {shouldErrorOnReadOnly} from './OutlineView';
-
-export const IS_BOLD = 1 << 3;
-export const IS_ITALIC = 1 << 4;
-export const IS_STRIKETHROUGH = 1 << 5;
-export const IS_UNDERLINE = 1 << 6;
-export const IS_CODE = 1 << 7;
-export const IS_LINK = 1 << 8;
-export const IS_HASHTAG = 1 << 9;
-
-// Do not import these from shared, otherwise we will bundle
-// all of shared too.
-export const FORMAT_BOLD = 0;
-export const FORMAT_ITALIC = 1;
-export const FORMAT_STRIKETHROUGH = 2;
-export const FORMAT_UNDERLINE = 3;
-export const FORMAT_CODE = 4;
-export const FORMAT_LINK = 5;
-export const FORMAT_HASHTAG = 6;
+import {
+  HAS_DIRECTION,
+  IS_CODE,
+  IS_BOLD,
+  IS_ITALIC,
+  IS_HASHTAG,
+  IS_STRIKETHROUGH,
+  IS_UNDERLINE,
+  IS_LINK,
+  FORMAT_UNDERLINE,
+  FORMAT_BOLD,
+  FORMAT_ITALIC,
+  FORMAT_LINK,
+  FORMAT_HASHTAG,
+  FORMAT_CODE,
+  FORMAT_STRIKETHROUGH,
+  IS_SEGMENTED,
+} from './OutlineConstants';
 
 const zeroWidthString = '\uFEFF';
 

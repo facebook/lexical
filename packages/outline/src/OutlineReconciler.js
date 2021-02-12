@@ -12,9 +12,10 @@ import type {ViewModel} from './OutlineView';
 import type {OutlineEditor} from './OutlineEditor';
 import type {Selection} from './OutlineSelection';
 
-import {getNodeByKey, IS_IMMUTABLE, IS_SEGMENTED} from './OutlineNode';
+import {getNodeByKey} from './OutlineNode';
 import {BlockNode, TextNode} from '.';
 import {invariant} from './OutlineUtils';
+import {IS_IMMUTABLE, IS_SEGMENTED} from './OutlineConstants';
 
 let subTreeTextContent = '';
 let editorTextContent = '';

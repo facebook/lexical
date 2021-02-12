@@ -13,8 +13,8 @@ import {
   FORMAT_CODE,
   FORMAT_LINK,
   FORMAT_HASHTAG,
-} from '../OutlineTextNode';
-import {HAS_DIRECTION} from '../OutlineNode';
+  HAS_DIRECTION,
+} from '../OutlineConstants';
 
 let container = null;
 let React;

@@ -12,10 +12,7 @@ import type {OutlineEditor} from './OutlineEditor';
 import {createTextNode, RootNode, BlockNode, TextNode} from '.';
 import {getActiveViewModel, shouldErrorOnReadOnly} from './OutlineView';
 import {generateRandomKey, invariant} from './OutlineUtils';
-
-export const IS_IMMUTABLE = 1;
-export const IS_SEGMENTED = 1 << 1;
-export const HAS_DIRECTION = 1 << 2;
+import {HAS_DIRECTION, IS_IMMUTABLE, IS_SEGMENTED} from './OutlineConstants';
 
 export type ParsedNode = {
   __key: string,

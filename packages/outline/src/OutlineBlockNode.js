@@ -15,12 +15,11 @@ import {
   OutlineNode,
   getNodeByKey,
   wrapInTextNodes,
-  IS_IMMUTABLE,
-  IS_SEGMENTED,
 } from './OutlineNode';
 import {getSelection} from './OutlineSelection';
 import {invariant} from './OutlineUtils';
 import {getActiveViewModel, shouldErrorOnReadOnly} from './OutlineView';
+import {IS_IMMUTABLE, IS_SEGMENTED} from './OutlineConstants';
 
 function combineAdjacentTextNodes(
   textNodes: Array<TextNode>,

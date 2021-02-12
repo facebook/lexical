@@ -1,4 +1,3 @@
-import {createTextNode} from '..';
 import {
   IS_BOLD,
   IS_ITALIC,
@@ -14,15 +13,15 @@ import {
   FORMAT_CODE,
   FORMAT_LINK,
   FORMAT_HASHTAG,
-} from '../OutlineTextNode';
-import {HAS_DIRECTION} from '../OutlineNode';
+  HAS_DIRECTION,
+} from '../OutlineConstants';
 
 let container = null;
 let React;
 let ReactDOM;
 let ReactTestUtils;
 let Outline;
-let ParagraphNode;
+let ParagraphNodeModule;
 
 describe('OutlineTextNode tests', () => {
   beforeEach(() => {
@@ -30,7 +29,7 @@ describe('OutlineTextNode tests', () => {
     ReactDOM = require('react-dom');
     ReactTestUtils = require('react-dom/test-utils');
     Outline = require('outline');
-    ParagraphNode = require('outline-extensions/ParagraphNode');
+    ParagraphNodeModule = require('outline-extensions/ParagraphNode');
 
     container = document.createElement('div');
     document.body.appendChild(container);
@@ -74,7 +73,7 @@ describe('OutlineTextNode tests', () => {
 
     // Insert initial block
     update((view) => {
-      const paragraph = ParagraphNode.createParagraphNode();
+      const paragraph = ParagraphNodeModule.createParagraphNode();
       const text = Outline.createTextNode();
       paragraph.append(text);
       view.getRoot().append(paragraph);

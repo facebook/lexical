@@ -133,7 +133,7 @@ function resolveSelectionNodes(
   editorElement: HTMLElement,
 ): [TextNode | null, TextNode | null, number, number] {
   const viewModel = getActiveViewModel();
-  const nodeMap = viewModel.nodeMap;
+  const nodeMap = viewModel._nodeMap;
   const root = nodeMap.root;
   let anchorNode;
   let focusNode;
@@ -197,7 +197,7 @@ export function makeSelection(
     focusOffset,
   );
   selection.isDirty = true;
-  viewModel.selection = selection;
+  viewModel._selection = selection;
   return selection;
 }
 
@@ -221,7 +221,7 @@ export function createSelection(
 
   const event = window.event;
   const currentViewModel = editor.getViewModel();
-  const lastSelection = currentViewModel.selection;
+  const lastSelection = currentViewModel._selection;
   const eventType = event && event.type;
   const isComposing = eventType === 'compositionstart';
   const isSelectionChange = eventType === 'selectionchange';
@@ -339,5 +339,23 @@ function isEqual(selctionA: Selection, selectionB: Selection): boolean {
 
 export function getSelection(): null | Selection {
   const viewModel = getActiveViewModel();
-  return viewModel.selection;
+  return viewModel._selection;
+}
+
+export function createSelectionFromParse(
+  parsedSelection: null | {
+    anchorKey: string,
+    anchorOffset: number,
+    focusKey: string,
+    focusOffset: number,
+  },
+): null | Selection {
+  return parsedSelection === null
+    ? null
+    : new Selection(
+        parsedSelection.anchorKey,
+        parsedSelection.anchorOffset,
+        parsedSelection.focusKey,
+        parsedSelection.focusOffset,
+      );
 }

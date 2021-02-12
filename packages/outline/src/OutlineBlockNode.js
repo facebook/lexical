@@ -15,12 +15,11 @@ import {
   OutlineNode,
   getNodeByKey,
   wrapInTextNodes,
-  IS_IMMUTABLE,
-  IS_SEGMENTED,
 } from './OutlineNode';
 import {getSelection} from './OutlineSelection';
 import {invariant} from './OutlineUtils';
 import {getActiveViewModel, shouldErrorOnReadOnly} from './OutlineView';
+import {IS_IMMUTABLE, IS_SEGMENTED} from './OutlineConstants';
 
 function combineAdjacentTextNodes(
   textNodes: Array<TextNode>,
@@ -165,7 +164,7 @@ export class BlockNode extends OutlineNode {
     const children = writableSelf.__children;
     // Because we are appending a node, we need to check if the last
     // child is an empty text node so we can make it as dirty.
-    const dirtySubTrees = viewModel.dirtySubTrees;
+    const dirtySubTrees = viewModel._dirtySubTrees;
     const childrenLength = children.length;
     if (childrenLength > 0) {
       const lastChildKey = children[childrenLength - 1];

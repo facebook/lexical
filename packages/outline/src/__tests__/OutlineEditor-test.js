@@ -3,7 +3,7 @@ let React;
 let ReactDOM;
 let ReactTestUtils;
 let Outline;
-let ParagraphNode;
+let ParagraphNodeModule;
 
 function sanitizeHTML(html) {
   // Remove the special space characters
@@ -16,7 +16,7 @@ describe('OutlineEditor tests', () => {
     ReactDOM = require('react-dom');
     ReactTestUtils = require('react-dom/test-utils');
     Outline = require('outline');
-    ParagraphNode = require('outline-extensions/ParagraphNode');
+    ParagraphNodeModule = require('outline-extensions/ParagraphNode');
 
     container = document.createElement('div');
     document.body.appendChild(container);
@@ -55,60 +55,70 @@ describe('OutlineEditor tests', () => {
     });
   }
 
-  test('update + read works', () => {
-    // Update editor view
-    editor.update((view) => {
-      const paragraph = ParagraphNode.createParagraphNode();
-      const text = Outline.createTextNode();
-      paragraph.append(text);
-      view.getRoot().append(paragraph);
-    }, undefined, true);
+  test('parseViewModel()', () => {
+    editor.update(
+      (view) => {
+        const paragraph = ParagraphNodeModule.createParagraphNode();
+        const text = Outline.createTextNode();
+        paragraph.append(text);
+        view.getRoot().append(paragraph);
+      },
+      undefined,
+      true,
+    );
+
+    editor.addNodeType('paragraph', ParagraphNodeModule.ParagraphNode);
+    const stringifiedViewModel = editor.getViewModel().stringify();
+    const viewModel = editor.parseViewModel(stringifiedViewModel);
 
     let root = null;
     let paragraph = null;
     let text = null;
 
-    // Read editor model
-    editor.getViewModel().read((view) => {
+    viewModel.read((view) => {
       root = view.getRoot();
       paragraph = root.getFirstChild();
       text = paragraph.getFirstChild();
     });
 
     expect(root).toEqual({
-      __children: ['_1'],
+      __children: ['_3'],
       __flags: 0,
       __key: 'root',
       __parent: null,
       __type: 'root',
     });
     expect(paragraph).toEqual({
-      __children: ['_2'],
+      __children: ['_4'],
       __flags: 4,
-      __key: '_1',
+      __key: '_3',
       __parent: 'root',
       __type: 'paragraph',
     });
     expect(text).toEqual({
       __text: '',
       __flags: 4,
-      __key: '_2',
-      __parent: '_1',
+      __key: '_4',
+      __parent: '_3',
       __type: 'text',
       __url: null,
     });
   });
 
-  describe('Placeholder', () => {
+  describe('setPlaceholder', () => {
     it('Placeholder shows when there is no content', () => {
       editor.setPlaceholder('Placeholder text');
 
-      editor.update((view) => {
-        const paragraph = ParagraphNode.createParagraphNode();
-        const text = Outline.createTextNode();
-        paragraph.append(text);
-        view.getRoot().append(paragraph);
-      }, undefined, true);
+      editor.update(
+        (view) => {
+          const paragraph = ParagraphNodeModule.createParagraphNode();
+          const text = Outline.createTextNode();
+          paragraph.append(text);
+          view.getRoot().append(paragraph);
+        },
+        undefined,
+        true,
+      );
 
       expect(sanitizeHTML(container.innerHTML)).toBe(
         '<div contenteditable="true" data-outline-editor="true"><div>' +
@@ -119,12 +129,16 @@ describe('OutlineEditor tests', () => {
     it('Placeholder does not should when there is content', () => {
       editor.setPlaceholder('Placeholder text');
 
-      editor.update((view) => {
-        const paragraph = ParagraphNode.createParagraphNode();
-        const text = Outline.createTextNode('Some text');
-        paragraph.append(text);
-        view.getRoot().append(paragraph);
-      }, undefined, true);
+      editor.update(
+        (view) => {
+          const paragraph = ParagraphNodeModule.createParagraphNode();
+          const text = Outline.createTextNode('Some text');
+          paragraph.append(text);
+          view.getRoot().append(paragraph);
+        },
+        undefined,
+        true,
+      );
 
       expect(sanitizeHTML(container.innerHTML)).toBe(
         '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-text="true">Some text</span></p></div>',
@@ -134,16 +148,20 @@ describe('OutlineEditor tests', () => {
     it('Placeholder does not should when there are two paragraphs', () => {
       editor.setPlaceholder('Placeholder text');
 
-      editor.update((view) => {
-        const paragraph = ParagraphNode.createParagraphNode();
-        const text = Outline.createTextNode();
-        paragraph.append(text);
-        const paragraph2 = ParagraphNode.createParagraphNode();
-        const text2 = Outline.createTextNode();
-        paragraph2.append(text2);
-        view.getRoot().append(paragraph);
-        view.getRoot().append(paragraph2);
-      }, undefined, true);
+      editor.update(
+        (view) => {
+          const paragraph = ParagraphNodeModule.createParagraphNode();
+          const text = Outline.createTextNode();
+          paragraph.append(text);
+          const paragraph2 = ParagraphNodeModule.createParagraphNode();
+          const text2 = Outline.createTextNode();
+          paragraph2.append(text2);
+          view.getRoot().append(paragraph);
+          view.getRoot().append(paragraph2);
+        },
+        undefined,
+        true,
+      );
 
       expect(sanitizeHTML(container.innerHTML)).toBe(
         '<div contenteditable="true" data-outline-editor="true"><p><span data-text="true"><br></span></p><p>' +

@@ -291,90 +291,39 @@ export class TextNode extends OutlineNode {
     const nodeFlags = self.__flags;
     let newFlags = nodeFlags;
 
-    // TODO: we should simplify this repeated logic to reduce code size
+    function getNewFlags(flags, stateFlag) {
+      if (nodeFlags & stateFlag && !force) {
+        if (alignWithFlags === null || (alignWithFlags & stateFlag) === 0) {
+          return flags ^ stateFlag;
+        }
+      } else if (alignWithFlags === null || alignWithFlags & stateFlag) {
+        return flags | stateFlag;
+      }
+
+      return flags;
+    }
+
     switch (type) {
       case FORMAT_BOLD:
-        if (nodeFlags & IS_BOLD && !force) {
-          if (alignWithFlags === null || (alignWithFlags & IS_BOLD) === 0) {
-            newFlags ^= IS_BOLD;
-          }
-        } else {
-          if (alignWithFlags === null || alignWithFlags & IS_BOLD) {
-            newFlags |= IS_BOLD;
-          }
-        }
+        newFlags = getNewFlags(newFlags, IS_BOLD);
         break;
       case FORMAT_ITALIC:
-        if (nodeFlags & IS_ITALIC && !force) {
-          if (alignWithFlags === null || (alignWithFlags & IS_ITALIC) === 0) {
-            newFlags ^= IS_ITALIC;
-          }
-        } else {
-          if (alignWithFlags === null || alignWithFlags & IS_ITALIC) {
-            newFlags |= IS_ITALIC;
-          }
-        }
+        newFlags = getNewFlags(newFlags, IS_ITALIC);
         break;
       case FORMAT_STRIKETHROUGH:
-        if (nodeFlags & IS_STRIKETHROUGH && !force) {
-          if (
-            alignWithFlags === null ||
-            (alignWithFlags & IS_STRIKETHROUGH) === 0
-          ) {
-            newFlags ^= IS_STRIKETHROUGH;
-          }
-        } else {
-          if (alignWithFlags === null || alignWithFlags & IS_STRIKETHROUGH) {
-            newFlags |= IS_STRIKETHROUGH;
-          }
-        }
+        newFlags = getNewFlags(newFlags, IS_STRIKETHROUGH);
         break;
       case FORMAT_UNDERLINE:
-        if (nodeFlags & IS_UNDERLINE && !force) {
-          if (
-            alignWithFlags === null ||
-            (alignWithFlags & IS_UNDERLINE) === 0
-          ) {
-            newFlags ^= IS_UNDERLINE;
-          }
-        } else {
-          if (alignWithFlags === null || alignWithFlags & IS_UNDERLINE) {
-            newFlags |= IS_UNDERLINE;
-          }
-        }
+        newFlags = getNewFlags(newFlags, IS_UNDERLINE);
         break;
       case FORMAT_CODE:
-        if (nodeFlags & IS_CODE && !force) {
-          if (alignWithFlags === null || (alignWithFlags & IS_CODE) === 0) {
-            newFlags ^= IS_CODE;
-          }
-        } else {
-          if (alignWithFlags === null || alignWithFlags & IS_CODE) {
-            newFlags |= IS_CODE;
-          }
-        }
+        newFlags = getNewFlags(newFlags, IS_CODE);
         break;
       case FORMAT_LINK:
-        if (nodeFlags & IS_LINK && !force) {
-          if (alignWithFlags === null || (alignWithFlags & IS_LINK) === 0) {
-            newFlags ^= IS_LINK;
-          }
-        } else {
-          if (alignWithFlags === null || alignWithFlags & IS_LINK) {
-            newFlags |= IS_LINK;
-          }
-        }
+        newFlags = getNewFlags(newFlags, IS_LINK);
         break;
       case FORMAT_HASHTAG:
-        if (nodeFlags & IS_HASHTAG && !force) {
-          if (alignWithFlags === null || (alignWithFlags & IS_HASHTAG) === 0) {
-            newFlags ^= IS_HASHTAG;
-          }
-        } else {
-          if (alignWithFlags === null || alignWithFlags & IS_HASHTAG) {
-            newFlags |= IS_HASHTAG;
-          }
-        }
+        newFlags = getNewFlags(newFlags, IS_HASHTAG);
         break;
       default:
     }

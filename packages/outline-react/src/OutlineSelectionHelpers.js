@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {NodeKey, OutlineNode, Selection} from 'outline';
+import type {NodeKey, OutlineNode, Selection, TextFormatType} from 'outline';
 
 import {BlockNode, RootNode, TextNode, createTextNode} from 'outline';
 
@@ -213,7 +213,7 @@ export function getNodesInRange(
 
 export function formatText(
   selection: Selection,
-  formatType: 0 | 1 | 2 | 3 | 4 | 5,
+  formatType: TextFormatType,
   forceFormat?: boolean,
 ): void {
   const selectedNodes = selection.getNodes();

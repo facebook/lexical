@@ -1,18 +1,12 @@
 // @flow
 
-import type {OutlineEditor, Selection} from 'outline';
+import type {OutlineEditor, Selection, TextFormatType} from 'outline';
 
 import {TextNode} from 'outline';
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 // $FlowFixMe
 import {unstable_batchedUpdates, createPortal} from 'react-dom';
 import {formatText} from 'outline-react/OutlineSelectionHelpers';
-
-const FORMAT_BOLD = 0;
-const FORMAT_ITALIC = 1;
-const FORMAT_STRIKETHROUGH = 2;
-const FORMAT_CODE = 4;
-const FORMAT_LINK = 5;
 
 function positionToolbar(toolbar, rect) {
   if (rect === null) {
@@ -258,7 +252,7 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
               }
             });
             if (url !== null) {
-              formatText(sel, FORMAT_LINK, true);
+              formatText(sel, 'link', true);
             }
           }
         });
@@ -268,7 +262,7 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
   );
 
   const applyFormatText = useCallback(
-    (formatType: 0 | 1 | 2 | 3 | 4 | 5) => {
+    (formatType: TextFormatType) => {
       if (editor !== null) {
         editor.update((view) => {
           const selection = view.getSelection();
@@ -281,25 +275,20 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
     [editor],
   );
 
-  const bold = useCallback(() => applyFormatText(FORMAT_BOLD), [
+  const bold = useCallback(() => applyFormatText('bold'), [applyFormatText]);
+  const italic = useCallback(() => applyFormatText('italic'), [
     applyFormatText,
   ]);
-  const italic = useCallback(() => applyFormatText(FORMAT_ITALIC), [
+  const code = useCallback(() => applyFormatText('code'), [applyFormatText]);
+  const strikethrough = useCallback(() => applyFormatText('strikethrough'), [
     applyFormatText,
   ]);
-  const code = useCallback(() => applyFormatText(FORMAT_CODE), [
-    applyFormatText,
-  ]);
-  const strikethrough = useCallback(
-    () => applyFormatText(FORMAT_STRIKETHROUGH),
-    [applyFormatText],
-  );
   const link = useCallback(() => {
     if (!isLink) {
       setEditMode(true);
       updateSelectedLinks('http://', null);
     } else {
-      applyFormatText(FORMAT_LINK);
+      applyFormatText('link');
       updateSelectedLinks(null, null);
     }
   }, [applyFormatText, isLink, updateSelectedLinks]);

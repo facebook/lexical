@@ -50,12 +50,6 @@ import {
   removeText,
   getNodesInRange,
 } from 'outline-react/OutlineSelectionHelpers';
-import {
-  FORMAT_BOLD,
-  FORMAT_ITALIC,
-  FORMAT_STRIKETHROUGH,
-  FORMAT_UNDERLINE,
-} from 'outline/src/OutlineConstants';
 
 // FlowFixMe: Flow doesn't know of the CompositionEvent?
 // $FlowFixMe: TODO
@@ -216,10 +210,10 @@ function onKeyDown(
   if (state.richText) {
     if (isBold(event)) {
       shouldPreventDefault = true;
-      formatText(selection, FORMAT_BOLD);
+      formatText(selection, 'bold');
     } else if (isItalic(event)) {
       shouldPreventDefault = true;
-      formatText(selection, FORMAT_ITALIC);
+      formatText(selection, 'italic');
     }
   }
   const editorElement = editor.getEditorElement();
@@ -505,25 +499,25 @@ function onNativeBeforeInput(
   switch (inputType) {
     case 'formatBold': {
       if (state.richText) {
-        formatText(selection, FORMAT_BOLD);
+        formatText(selection, 'bold');
       }
       break;
     }
     case 'formatItalic': {
       if (state.richText) {
-        formatText(selection, FORMAT_ITALIC);
+        formatText(selection, 'italic');
       }
       break;
     }
     case 'formatStrikeThrough': {
       if (state.richText) {
-        formatText(selection, FORMAT_STRIKETHROUGH);
+        formatText(selection, 'strikethrough');
       }
       break;
     }
     case 'formatUnderline': {
       if (state.richText) {
-        formatText(selection, FORMAT_UNDERLINE);
+        formatText(selection, 'underline');
       }
       break;
     }

@@ -24,16 +24,18 @@ import {
   IS_STRIKETHROUGH,
   IS_UNDERLINE,
   IS_LINK,
-  FORMAT_UNDERLINE,
-  FORMAT_BOLD,
-  FORMAT_ITALIC,
-  FORMAT_LINK,
-  FORMAT_HASHTAG,
-  FORMAT_CODE,
-  FORMAT_STRIKETHROUGH,
   IS_SEGMENTED,
   BYTE_ORDER_MARK,
 } from './OutlineConstants';
+
+export type TextFormatType =
+  | 'bold'
+  | 'underline'
+  | 'strikethrough'
+  | 'italic'
+  | 'code'
+  | 'link'
+  | 'hashtag';
 
 export type SelectionFragment = {
   root: OutlineNode,
@@ -281,7 +283,7 @@ export class TextNode extends OutlineNode {
     return self.__text;
   }
   getTextNodeFormatFlags(
-    type: 0 | 1 | 2 | 3 | 4 | 5 | 6,
+    type: TextFormatType,
     alignWithFlags: null | number,
     force?: boolean,
   ): number {
@@ -310,25 +312,25 @@ export class TextNode extends OutlineNode {
     }
 
     switch (type) {
-      case FORMAT_BOLD:
+      case 'bold':
         newFlags = getNewFlags(newFlags, IS_BOLD);
         break;
-      case FORMAT_ITALIC:
+      case 'italic':
         newFlags = getNewFlags(newFlags, IS_ITALIC);
         break;
-      case FORMAT_STRIKETHROUGH:
+      case 'strikethrough':
         newFlags = getNewFlags(newFlags, IS_STRIKETHROUGH);
         break;
-      case FORMAT_UNDERLINE:
+      case 'underline':
         newFlags = getNewFlags(newFlags, IS_UNDERLINE);
         break;
-      case FORMAT_CODE:
+      case 'code':
         newFlags = getNewFlags(newFlags, IS_CODE);
         break;
-      case FORMAT_LINK:
+      case 'link':
         newFlags = getNewFlags(newFlags, IS_LINK);
         break;
-      case FORMAT_HASHTAG:
+      case 'hashtag':
         newFlags = getNewFlags(newFlags, IS_HASHTAG);
         break;
       default:
@@ -529,7 +531,7 @@ export class TextNode extends OutlineNode {
     writableSelf.__text = updatedText;
     // If the hash gets removed, remove the hashtag status
     if (isHashtag && updatedText.indexOf('#') === -1) {
-      const flags = this.getTextNodeFormatFlags(FORMAT_HASHTAG, null);
+      const flags = this.getTextNodeFormatFlags('hashtag', null);
       this.setFlags(flags);
     }
     if (restoreSelection && !skipSelectionRestoration) {

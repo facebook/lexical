@@ -29,7 +29,7 @@ function shouldMerge(
   } else if (hasDirtyNodes) {
     const dirtyNodes = viewModel.getDirtyNodes();
     if (dirtyNodes.length === 1) {
-      const prevNodeMap = current.nodeMap;
+      const prevNodeMap = current._nodeMap;
       const nextDirtyNode = dirtyNodes[0];
       const prevDirtyNodeKey = nextDirtyNode.__key;
       const prevDirtyNode = prevNodeMap[prevDirtyNodeKey];
@@ -82,10 +82,7 @@ export default function useOutlineHistory(editor: OutlineEditor): void {
       if (viewModel === current) {
         return;
       }
-      if (
-        !viewModel.isHistoric &&
-        !shouldMerge(viewModel, current, undoStack)
-      ) {
+      if (!viewModel._isDirty && !shouldMerge(viewModel, current, undoStack)) {
         if (redoStack.length !== 0) {
           redoStack = historyState.redoStack = [];
         }
@@ -113,7 +110,7 @@ export default function useOutlineHistory(editor: OutlineEditor): void {
           }
           const viewModel = undoStack.pop();
           historyState.current = viewModel;
-          viewModel.isHistoric = true;
+          viewModel._isDirty = true;
           editor.setViewModel(viewModel);
         }
       } else if (isRedo(event)) {
@@ -125,7 +122,7 @@ export default function useOutlineHistory(editor: OutlineEditor): void {
           }
           const viewModel = redoStack.pop();
           historyState.current = viewModel;
-          viewModel.isHistoric = true;
+          viewModel._isDirty = true;
           editor.setViewModel(viewModel);
         }
       }

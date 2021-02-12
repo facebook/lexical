@@ -7,8 +7,8 @@
  * @flow strict
  */
 
-import type {NodeKey} from './OutlineNode';
-import type {NodeMapType, ViewModel} from './OutlineView';
+import type {NodeKey, NodeMapType} from './OutlineNode';
+import type {ViewModel} from './OutlineView';
 import type {OutlineEditor} from './OutlineEditor';
 import type {Selection} from './OutlineSelection';
 
@@ -24,7 +24,7 @@ let activeEditor: OutlineEditor;
 let activeDirtySubTrees: Set<NodeKey>;
 let activePrevNodeMap: NodeMapType;
 let activeNextNodeMap: NodeMapType;
-let activeViewModelIsHistoric: boolean = false;
+let activeViewModelIsDirty: boolean = false;
 
 const RTL = '\u0591-\u07FF\uFB1D-\uFDFD\uFE70-\uFEFC';
 const LTR =
@@ -225,7 +225,7 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
   const prevNode = activePrevNodeMap[key];
   const nextNode = activeNextNodeMap[key];
   const hasDirtySubTree =
-    activeViewModelIsHistoric || activeDirtySubTrees.has(key);
+    activeViewModelIsDirty || activeDirtySubTrees.has(key);
   const dom = activeEditor.getElementByKey(key);
 
   if (prevNode === nextNode && !hasDirtySubTree) {
@@ -454,7 +454,7 @@ function isEditorEmpty(
   if (editor._textContent !== '') {
     return false;
   }
-  const nodeMap = nextViewModel.nodeMap;
+  const nodeMap = nextViewModel._nodeMap;
   const topBlockIDs = nodeMap.root.__children;
   const topBlockIDsLength = topBlockIDs.length;
   if (topBlockIDsLength > 1) {
@@ -485,9 +485,9 @@ function reconcileRoot(
   // we instead set them as bindings within the scope of the module.
   activeEditor = editor;
   activeDirtySubTrees = dirtySubTrees;
-  activePrevNodeMap = prevViewModel.nodeMap;
-  activeNextNodeMap = nextViewModel.nodeMap;
-  activeViewModelIsHistoric = nextViewModel.isHistoric;
+  activePrevNodeMap = prevViewModel._nodeMap;
+  activeNextNodeMap = nextViewModel._nodeMap;
+  activeViewModelIsDirty = nextViewModel._isDirty;
   reconcileNode('root', null);
   editor._textContent = editorTextContent;
   reconcilePlaceholder(editor, nextViewModel);
@@ -510,17 +510,17 @@ export function reconcileViewModel(
   editor: OutlineEditor,
 ): void {
   const prevViewModel = editor.getViewModel();
-  const dirtySubTrees = nextViewModel.dirtySubTrees;
+  const dirtySubTrees = nextViewModel._dirtySubTrees;
   // When a view model is historic, we bail out of using dirty checks and
   // always do a full reconcilation to ensure consistency.
-  const isHistoric = nextViewModel.isHistoric;
-  const needsUpdate = isHistoric || nextViewModel.hasDirtyNodes();
-  const nextSelection = nextViewModel.selection;
+  const isDirty = nextViewModel._isDirty;
+  const needsUpdate = isDirty || nextViewModel.hasDirtyNodes();
+  const nextSelection = nextViewModel._selection;
 
   if (needsUpdate) {
     reconcileRoot(prevViewModel, nextViewModel, editor, dirtySubTrees);
   }
-  if (nextSelection !== null && (nextSelection.isDirty || isHistoric)) {
+  if (nextSelection !== null && (nextSelection.isDirty || isDirty)) {
     reconcileSelection(nextSelection, editor);
   }
 }

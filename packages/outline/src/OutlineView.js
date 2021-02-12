@@ -9,13 +9,18 @@
 
 import type {RootNode} from './OutlineRootNode';
 import type {OutlineEditor} from './OutlineEditor';
-import type {OutlineNode, NodeKey} from './OutlineNode';
+import type {
+  OutlineNode,
+  NodeKey,
+  ParsedNode,
+  NodeMapType,
+} from './OutlineNode';
 import type {Selection} from './OutlineSelection';
 import type {Node as ReactNode} from 'react';
 
 import {reconcileViewModel} from './OutlineReconciler';
-import {getSelection} from './OutlineSelection';
-import {getNodeByKey} from './OutlineNode';
+import {getSelection, createSelectionFromParse} from './OutlineSelection';
+import {getNodeByKey, createNodeMapFromParse} from './OutlineNode';
 import {TextNode} from '.';
 import {invariant} from './OutlineUtils';
 
@@ -27,7 +32,15 @@ export type View = {
   setSelection: (selection: Selection) => void,
 };
 
-export type NodeMapType = {root: RootNode, [key: NodeKey]: OutlineNode};
+export type ParsedViewModel = {
+  _selection: null | {
+    anchorKey: string,
+    anchorOffset: number,
+    focusKey: string,
+    focusOffset: number,
+  },
+  _nodeMap: {root: ParsedNode, [key: NodeKey]: ParsedNode},
+};
 
 let activeViewModel = null;
 let activeReadyOnlyMode = false;
@@ -50,17 +63,17 @@ export function getActiveViewModel(): ViewModel {
 
 const view: View = {
   getRoot() {
-    return getActiveViewModel().nodeMap.root;
+    return getActiveViewModel()._nodeMap.root;
   },
   getNodeByKey,
   getSelection,
   clearSelection(): void {
     const viewModel = getActiveViewModel();
-    viewModel.selection = null;
+    viewModel._selection = null;
   },
   setSelection(selection: Selection): void {
     const viewModel = getActiveViewModel();
-    viewModel.selection = selection;
+    viewModel._selection = selection;
   },
 };
 
@@ -68,8 +81,8 @@ export function viewModelHasDirtySelectionOrNeedsSync(
   viewModel: ViewModel,
   editor: OutlineEditor,
 ): boolean {
-  const selection = viewModel.selection;
-  const currentSelection = editor.getViewModel().selection;
+  const selection = viewModel._selection;
+  const currentSelection = editor.getViewModel()._selection;
   if (
     (currentSelection !== null && selection === null) ||
     (currentSelection === null && selection !== null)
@@ -102,8 +115,8 @@ export function triggerTextMutationListeners(
 ): void {
   const textMutationListeners = editor._textMutationListeners;
   if (textMutationListeners.size > 0) {
-    const nodeMap = viewModel.nodeMap;
-    const dirtyNodes = Array.from(viewModel.dirtyNodes);
+    const nodeMap = viewModel._nodeMap;
+    const dirtyNodes = Array.from(viewModel._dirtyNodes);
     const textMutations = Array.from(textMutationListeners);
 
     for (let s = 0; s < dirtyNodes.length; s++) {
@@ -129,8 +142,8 @@ export function garbageCollectDetachedNodes(
   viewModel: ViewModel,
   editor: OutlineEditor,
 ): void {
-  const dirtyNodes = Array.from(viewModel.dirtyNodes);
-  const nodeMap = viewModel.nodeMap;
+  const dirtyNodes = Array.from(viewModel._dirtyNodes);
+  const nodeMap = viewModel._nodeMap;
   const nodeDecorators = editor._nodeDecorators;
   let pendingNodeDecorators;
 
@@ -192,41 +205,38 @@ export function triggerUpdateListeners(editor: OutlineEditor): void {
 }
 
 export function cloneViewModel(current: ViewModel): ViewModel {
-  const draft = new ViewModel({...current.nodeMap});
+  const draft = new ViewModel({...current._nodeMap});
   return draft;
 }
 
 export class ViewModel {
-  nodeMap: NodeMapType;
-  selection: null | Selection;
-  dirtyNodes: Set<NodeKey>;
-  dirtySubTrees: Set<NodeKey>;
-  isHistoric: boolean;
-  hasContent: boolean;
+  _nodeMap: NodeMapType;
+  _selection: null | Selection;
+  _dirtyNodes: Set<NodeKey>;
+  _dirtySubTrees: Set<NodeKey>;
+  _isDirty: boolean;
 
   constructor(nodeMap: NodeMapType) {
-    this.nodeMap = nodeMap;
-    this.selection = null;
+    this._nodeMap = nodeMap;
+    this._selection = null;
     // Dirty nodes are nodes that have been added or updated
     // in comparison to the previous view model. We also use
     // this Set for performance optimizations during the
     // production of a draft view model and during undo/redo.
-    this.dirtyNodes = new Set();
+    this._dirtyNodes = new Set();
     // We make nodes as "dirty" in that their have a child
     // that is dirty, which means we need to reconcile
     // the given sub-tree to find the dirty node.
-    this.dirtySubTrees = new Set();
-    // Used for undo/redo logic
-    this.isHistoric = false;
-    // A flag to tell if the view model has content
-    this.hasContent = false;
+    this._dirtySubTrees = new Set();
+    // Used to mark as needing a full reconcilation
+    this._isDirty = false;
   }
   hasDirtyNodes(): boolean {
-    return this.dirtyNodes.size > 0;
+    return this._dirtyNodes.size > 0;
   }
   getDirtyNodes(): Array<OutlineNode> {
-    const dirtyNodes = Array.from(this.dirtyNodes);
-    const nodeMap = this.nodeMap;
+    const dirtyNodes = Array.from(this._dirtyNodes);
+    const nodeMap = this._nodeMap;
     const nodes = [];
 
     for (let i = 0; i < dirtyNodes.length; i++) {
@@ -242,4 +252,32 @@ export class ViewModel {
   read<V>(callbackFn: (view: View) => V): V {
     return enterViewModelScope(callbackFn, this, true);
   }
+  stringify(): string {
+    const selection = this._selection;
+    return JSON.stringify({
+      _nodeMap: this._nodeMap,
+      _selection:
+        selection === null
+          ? null
+          : {
+              anchorKey: selection.anchorKey,
+              anchorOffset: selection.anchorOffset,
+              focusKey: selection.focusKey,
+              focusOffset: selection.focusOffset,
+            },
+    });
+  }
+}
+
+export function parseViewModel(
+  stringifiedViewModel: string,
+  editor: OutlineEditor,
+): ViewModel {
+  const parsedViewModel: ParsedViewModel = JSON.parse(stringifiedViewModel);
+  const viewModel = new ViewModel(
+    createNodeMapFromParse(parsedViewModel._nodeMap, editor),
+  );
+  viewModel._selection = createSelectionFromParse(parsedViewModel._selection);
+  viewModel._isDirty = true;
+  return viewModel;
 }

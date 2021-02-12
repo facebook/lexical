@@ -8,7 +8,12 @@
  */
 
 import type {View} from './OutlineView';
-import type {OutlineNode, NodeKey} from './OutlineNode';
+import type {
+  OutlineNode,
+  NodeKey,
+  ParsedNode,
+  ParsedNodeMap,
+} from './OutlineNode';
 import type {Node as ReactNode} from 'react';
 
 import {RootNode, TextNode} from '.';
@@ -21,10 +26,11 @@ import {
   commitPendingUpdates,
   triggerTextMutationListeners,
   triggerUpdateListeners,
+  parseViewModel,
 } from './OutlineView';
 import {createSelection} from './OutlineSelection';
 import {generateRandomKey, emptyFunction} from './OutlineUtils';
-import {getWritableNode} from './OutlineNode';
+import {getWritableNode, createNodeFromParse} from './OutlineNode';
 import {createRootNode as createRoot} from './OutlineRootNode';
 import {reconcilePlaceholder} from './OutlineReconciler';
 
@@ -71,7 +77,7 @@ function updateEditor(
   enterViewModelScope(
     (view: View) => {
       if (viewModelWasCloned) {
-        currentPendingViewModel.selection = createSelection(
+        currentPendingViewModel._selection = createSelection(
           currentPendingViewModel,
           editor,
         );
@@ -79,8 +85,8 @@ function updateEditor(
       updateFn(view);
       if (markAllTextNodesAsDirty) {
         const currentViewModel = editor._viewModel;
-        const nodeMap = currentViewModel.nodeMap;
-        const pendingNodeMap = currentPendingViewModel.nodeMap;
+        const nodeMap = currentViewModel._nodeMap;
+        const pendingNodeMap = currentPendingViewModel._nodeMap;
         for (const nodeKey in nodeMap) {
           const node = nodeMap[nodeKey];
           if (
@@ -137,7 +143,6 @@ export class OutlineEditor {
   _domCreationListeners: Set<DOMCreationListener>;
   _textMutationListeners: Set<TextMutationListener>;
   _registeredNodeTypes: Map<string, Class<OutlineNode>>;
-  _needsReconcile: boolean;
   _nodeDecorators: {[NodeKey]: ReactNode};
   _pendingNodeDecorators: null | {[NodeKey]: ReactNode};
   _placeholderText: string;
@@ -286,7 +291,14 @@ export class OutlineEditor {
     this._pendingViewModel = viewModel;
     commitPendingUpdates(this);
   }
-  update(updateFn: (view: View) => void, callbackFn?: () => void, sync?: boolean): boolean {
+  parseViewModel(stringifiedViewModel: string): ViewModel {
+    return parseViewModel(stringifiedViewModel, this);
+  }
+  update(
+    updateFn: (view: View) => void,
+    callbackFn?: () => void,
+    sync?: boolean,
+  ): boolean {
     return updateEditor(this, updateFn, false, callbackFn, sync);
   }
   setPlaceholder(placeholderText: string): void {
@@ -297,5 +309,11 @@ export class OutlineEditor {
     }
     this._placeholderText = placeholderText;
     reconcilePlaceholder(this, this._viewModel);
+  }
+  createNodeFromParse(
+    parsedNode: ParsedNode,
+    parsedNodeMap: ParsedNodeMap,
+  ): OutlineNode {
+    return createNodeFromParse(parsedNode, parsedNodeMap, this, null);
   }
 }

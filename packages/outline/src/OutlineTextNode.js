@@ -420,6 +420,9 @@ export class TextNode extends OutlineNode {
   }
 
   // Mutators
+  setHashtag(): TextNode {
+    return this.setFlags(IS_HASHTAG);
+  }
 
   setURL(url: string | null): TextNode {
     shouldErrorOnReadOnly();

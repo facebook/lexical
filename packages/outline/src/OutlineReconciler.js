@@ -15,7 +15,12 @@ import type {Selection} from './OutlineSelection';
 import {getNodeByKey} from './OutlineNode';
 import {BlockNode, TextNode} from '.';
 import {invariant} from './OutlineUtils';
-import {IS_IMMUTABLE, IS_SEGMENTED} from './OutlineConstants';
+import {
+  IS_IMMUTABLE,
+  IS_SEGMENTED,
+  RTL_REGEX,
+  LTR_REGEX,
+} from './OutlineConstants';
 
 let subTreeTextContent = '';
 let editorTextContent = '';
@@ -27,20 +32,11 @@ let activePrevNodeMap: NodeMapType;
 let activeNextNodeMap: NodeMapType;
 let activeViewModelIsDirty: boolean = false;
 
-const RTL = '\u0591-\u07FF\uFB1D-\uFDFD\uFE70-\uFEFC';
-const LTR =
-  'A-Za-z\u00C0-\u00D6\u00D8-\u00F6' +
-  '\u00F8-\u02B8\u0300-\u0590\u0800-\u1FFF\u200E\u2C00-\uFB1C' +
-  '\uFE00-\uFE6F\uFEFD-\uFFFF';
-
-const rtl = new RegExp('^[^' + LTR + ']*[' + RTL + ']');
-const ltr = new RegExp('^[^' + RTL + ']*[' + LTR + ']');
-
 function getTextDirection(text: string): 'ltr' | 'rtl' | null {
-  if (rtl.test(text)) {
+  if (RTL_REGEX.test(text)) {
     return 'rtl';
   }
-  if (ltr.test(text)) {
+  if (LTR_REGEX.test(text)) {
     return 'ltr';
   }
   return null;

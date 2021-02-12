@@ -32,9 +32,8 @@ import {
   FORMAT_CODE,
   FORMAT_STRIKETHROUGH,
   IS_SEGMENTED,
+  BYTE_ORDER_MARK,
 } from './OutlineConstants';
-
-const zeroWidthString = '\uFEFF';
 
 export type SelectionFragment = {
   root: OutlineNode,
@@ -213,19 +212,19 @@ function setTextContent(
         // the browser plays along nicely. We use the <br>
         // to ensure we take up a full line, as we don't have any
         // characters taking up the full height yet.
-        dom.appendChild(document.createTextNode(zeroWidthString));
+        dom.appendChild(document.createTextNode(BYTE_ORDER_MARK));
         dom.appendChild(document.createElement('br'));
       } else if (!hasBreakNode) {
-        firstChild.nodeValue = zeroWidthString;
+        firstChild.nodeValue = BYTE_ORDER_MARK;
         dom.appendChild(document.createElement('br'));
       }
       return;
     }
   }
   if (nextText === '') {
-    nextText = zeroWidthString;
+    nextText = BYTE_ORDER_MARK;
   } else if (nextText.endsWith('\n')) {
-    nextText += zeroWidthString;
+    nextText += BYTE_ORDER_MARK;
   }
   if (firstChild == null || hasBreakNode) {
     dom.textContent = nextText;

@@ -14,8 +14,6 @@ import {BlockNode} from 'outline';
 import {createParagraphNode} from 'outline-extensions/ParagraphNode';
 
 export class ListItemNode extends BlockNode {
-  _type: 'listitem';
-
   constructor(key?: NodeKey) {
     super(key);
     this.__type = 'listitem';

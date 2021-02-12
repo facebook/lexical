@@ -14,7 +14,6 @@ import {BlockNode} from 'outline';
 type ListNodeTagType = 'ul' | 'ol';
 
 export class ListNode extends BlockNode {
-  __type: 'list';
   __tag: ListNodeTagType;
 
   constructor(tag: ListNodeTagType, key?: NodeKey) {

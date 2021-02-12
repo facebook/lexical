@@ -13,6 +13,7 @@ import type {
   NodeKey,
   Selection,
   OutlineNode,
+  ParsedNodeMap,
 } from 'outline';
 
 import {BlockNode, TextNode} from 'outline';
@@ -63,54 +64,16 @@ const FORMAT_ITALIC = 1;
 const FORMAT_STRIKETHROUGH = 2;
 const FORMAT_UNDERLINE = 3;
 
-function createNodeFromNodeData(nodeData: {...}, NodeType): OutlineNode {
-  const node = new NodeType();
-  for (const property in nodeData) {
-    if (property !== '__key' && property !== '__children') {
-      // $FlowFixMe: need to fix this
-      node[property] = nodeData[property];
-    }
-  }
-  return node;
-}
-
-function generateNode(
-  key: NodeKey,
-  parentKey: null | NodeKey,
-  nodeMap: {[NodeKey]: OutlineNode},
-  editor: OutlineEditor,
-): OutlineNode {
-  const nodeData = nodeMap[key];
-  const type = nodeData.__type;
-  const NodeType = editor._registeredNodeTypes.get(type);
-  if (NodeType === undefined) {
-    throw new Error('generateNode: type "' + type + '" + not found');
-  }
-  const node = createNodeFromNodeData(nodeData, NodeType);
-  node.__parent = parentKey;
-  const newKey = node.getKey();
-  if (node instanceof BlockNode) {
-    // $FlowFixMe: valid code
-    const children = nodeData.__children;
-    for (let i = 0; i < children.length; i++) {
-      const childKey = children[i];
-      const child = generateNode(childKey, newKey, nodeMap, editor);
-      const newChildKey = child.getKey();
-      node.__children.push(newChildKey);
-    }
-  }
-  return node;
-}
-
 function generateNodes(
-  nodeRange: {range: Array<NodeKey>, nodeMap: {[NodeKey]: OutlineNode}},
+  nodeRange: {range: Array<NodeKey>, nodeMap: ParsedNodeMap},
   editor: OutlineEditor,
 ): Array<OutlineNode> {
-  const {range, nodeMap} = nodeRange;
+  const {range, nodeMap: parsedNodeMap} = nodeRange;
   const nodes = [];
   for (let i = 0; i < range.length; i++) {
     const key = range[i];
-    const node = generateNode(key, null, nodeMap, editor);
+    const parsedNode = parsedNodeMap[key];
+    const node = editor.createNodeFromParse(parsedNode, parsedNodeMap);
     nodes.push(node);
   }
   return nodes;

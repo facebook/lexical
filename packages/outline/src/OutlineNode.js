@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {NodeMapType} from './OutlineView';
+import type {OutlineEditor} from './OutlineEditor';
 
 import {createTextNode, RootNode, BlockNode, TextNode} from '.';
 import {getActiveViewModel, shouldErrorOnReadOnly} from './OutlineView';
@@ -17,12 +17,25 @@ export const IS_IMMUTABLE = 1;
 export const IS_SEGMENTED = 1 << 1;
 export const HAS_DIRECTION = 1 << 2;
 
+export type ParsedNode = {
+  __key: string,
+  __type: string,
+  __flags: number,
+  __children: Array<NodeKey>,
+  ...
+};
+export type ParsedNodeMap = {
+  root: ParsedNode,
+  [key: NodeKey]: ParsedNode,
+};
+export type NodeMapType = {root: RootNode, [key: NodeKey]: OutlineNode};
+
 function generateKey(node: OutlineNode): NodeKey {
   shouldErrorOnReadOnly();
   const viewModel = getActiveViewModel();
-  const dirtyNodes = viewModel.dirtyNodes;
+  const dirtyNodes = viewModel._dirtyNodes;
   const key = generateRandomKey();
-  viewModel.nodeMap[key] = node;
+  viewModel._nodeMap[key] = node;
   dirtyNodes.add(key);
   return key;
 }
@@ -30,7 +43,7 @@ function generateKey(node: OutlineNode): NodeKey {
 function makeNodeAsDirty(node: OutlineNode): void {
   const latest = node.getLatest();
   const viewModel = getActiveViewModel();
-  const dirtyNodes = viewModel.dirtyNodes;
+  const dirtyNodes = viewModel._dirtyNodes;
   dirtyNodes.add(latest.__key);
   if (latest instanceof BlockNode) {
     const children = latest.getChildren();
@@ -163,7 +176,7 @@ export class OutlineNode {
   }
   isSelected(): boolean {
     const viewModel = getActiveViewModel();
-    const selection = viewModel.selection;
+    const selection = viewModel._selection;
     const key = this.__key;
     return (
       selection !== null &&
@@ -514,14 +527,14 @@ export function getWritableNode<N: OutlineNode>(node: N): N {
   // TODO we don't need this line, it's more for sanity checking
   shouldErrorOnReadOnly();
   const viewModel = getActiveViewModel();
-  const dirtyNodes = viewModel.dirtyNodes;
-  const nodeMap = viewModel.nodeMap;
+  const dirtyNodes = viewModel._dirtyNodes;
+  const nodeMap = viewModel._nodeMap;
   const key = node.__key;
   // Ensure we get the latest node from pending state
   const latestNode = node.getLatest();
   const parent = node.__parent;
   if (parent !== null) {
-    const dirtySubTrees = viewModel.dirtySubTrees;
+    const dirtySubTrees = viewModel._dirtySubTrees;
     markParentsAsDirty(parent, nodeMap, dirtySubTrees);
   }
   if (dirtyNodes.has(key)) {
@@ -561,7 +574,7 @@ function markParentsAsDirty(
 
 export function getNodeByKey<N: OutlineNode>(key: NodeKey): N | null {
   const viewModel = getActiveViewModel();
-  const node = viewModel.nodeMap[key];
+  const node = viewModel._nodeMap[key];
   if (node === undefined) {
     return null;
   }
@@ -570,11 +583,70 @@ export function getNodeByKey<N: OutlineNode>(key: NodeKey): N | null {
 
 function getNodeByKeyOrThrow<N: OutlineNode>(key: NodeKey): N {
   const viewModel = getActiveViewModel();
-  const node = viewModel.nodeMap[key];
+  const node = viewModel._nodeMap[key];
   if (node === undefined) {
     throw new Error(
       `Expected node with key ${key} to exist but it's not in the nodeMap.`,
     );
   }
   return (node: $FlowFixMe);
+}
+
+export function createNodeMapFromParse(
+  parsedNodeMap: ParsedNodeMap,
+  editor: OutlineEditor,
+): NodeMapType {
+  const nodeMap = {};
+  for (const key in parsedNodeMap) {
+    const parsedNode = parsedNodeMap[key];
+    const node = editor.createNodeFromParse(parsedNode, parsedNodeMap);
+    nodeMap[key] = node;
+  }
+  return nodeMap;
+}
+
+export function createNodeFromParse(
+  parsedNode: ParsedNode,
+  parsedNodeMap: ParsedNodeMap,
+  editor: OutlineEditor,
+  parentKey: null | NodeKey,
+): OutlineNode {
+  const type = parsedNode.__type;
+  const NodeType = editor._registeredNodeTypes.get(type);
+  invariant(
+    NodeType !== undefined,
+    'createNodeFromParse: type "' + type + '" + not found',
+  );
+  const node = new NodeType();
+  const key = node.__key;
+  // Copy over all properties, except the key and children.
+  // We've already generated a unique key for this node, we
+  // don't want to use an old one that might already be in use.
+  // We also don't want to copy over the children as want a
+  // clean array to push the parsed children nodes into (below).
+  for (const property in parsedNode) {
+    if (property !== '__key' && property !== '__children') {
+      // $FlowFixMe: not sure how we can type this
+      node[property] = parsedNode[property];
+    }
+  }
+  node.__parent = parentKey;
+  // We will need to recursively handle the children in the case
+  // of a BlockNode.
+  if (node instanceof BlockNode) {
+    const children = parsedNode.__children;
+    for (let i = 0; i < children.length; i++) {
+      const childKey = children[i];
+      const parsedChild = parsedNodeMap[childKey];
+      const child = createNodeFromParse(
+        parsedChild,
+        parsedNodeMap,
+        editor,
+        key,
+      );
+      const newChildKey = child.getKey();
+      node.__children.push(newChildKey);
+    }
+  }
+  return node;
 }

@@ -51,6 +51,12 @@ import {
   removeText,
   getNodesInRange,
 } from 'outline-react/OutlineSelectionHelpers';
+import {
+  FORMAT_BOLD,
+  FORMAT_ITALIC,
+  FORMAT_STRIKETHROUGH,
+  FORMAT_UNDERLINE,
+} from 'outline/src/OutlineConstants';
 
 // FlowFixMe: Flow doesn't know of the CompositionEvent?
 // $FlowFixMe: TODO
@@ -59,11 +65,6 @@ type CompositionEvent = Object;
 type UnknownState = Object;
 
 const emptyObject: {} = {};
-
-const FORMAT_BOLD = 0;
-const FORMAT_ITALIC = 1;
-const FORMAT_STRIKETHROUGH = 2;
-const FORMAT_UNDERLINE = 3;
 
 function generateNodes(
   nodeRange: {range: Array<NodeKey>, nodeMap: ParsedNodeMap},

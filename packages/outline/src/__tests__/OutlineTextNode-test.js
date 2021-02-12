@@ -1,4 +1,3 @@
-import {createTextNode} from '..';
 import {
   IS_BOLD,
   IS_ITALIC,

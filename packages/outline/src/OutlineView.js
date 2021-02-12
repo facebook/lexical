@@ -17,10 +17,15 @@ import type {
 } from './OutlineNode';
 import type {Selection} from './OutlineSelection';
 import type {Node as ReactNode} from 'react';
+import type {ParsedNodeMap} from './OutlineNode';
 
 import {reconcileViewModel} from './OutlineReconciler';
 import {getSelection, createSelectionFromParse} from './OutlineSelection';
-import {getNodeByKey, createNodeMapFromParse} from './OutlineNode';
+import {
+  getNodeByKey,
+  populateNodeMapFromParse,
+  createNodeFromParse,
+} from './OutlineNode';
 import {TextNode} from '.';
 import {invariant} from './OutlineUtils';
 
@@ -30,6 +35,10 @@ export type View = {
   getNodeByKey: (key: NodeKey) => null | OutlineNode,
   getSelection: () => null | Selection,
   setSelection: (selection: Selection) => void,
+  createNodeFromParse: (
+    parsedNode: ParsedNode,
+    parsedNodeMap: ParsedNodeMap,
+  ) => OutlineNode,
 };
 
 export type ParsedViewModel = {
@@ -43,6 +52,7 @@ export type ParsedViewModel = {
 };
 
 let activeViewModel = null;
+let activeEditor = null;
 let activeReadyOnlyMode = false;
 
 export function shouldErrorOnReadOnly(): void {
@@ -61,6 +71,18 @@ export function getActiveViewModel(): ViewModel {
   return activeViewModel;
 }
 
+export function getActiveEditor(): OutlineEditor {
+  if (activeEditor === null) {
+    throw new Error(
+      'Unable to find an active editor. ' +
+        'View methods or node methods can only be used ' +
+        'synchronously during the callback of ' +
+        'editor.update() or viewModel.read().',
+    );
+  }
+  return activeEditor;
+}
+
 const view: View = {
   getRoot() {
     return getActiveViewModel()._nodeMap.root;
@@ -74,6 +96,14 @@ const view: View = {
   setSelection(selection: Selection): void {
     const viewModel = getActiveViewModel();
     viewModel._selection = selection;
+  },
+  createNodeFromParse(
+    parsedNode: ParsedNode,
+    parsedNodeMap: ParsedNodeMap,
+  ): OutlineNode {
+    shouldErrorOnReadOnly();
+    const editor = getActiveEditor();
+    return createNodeFromParse(parsedNode, parsedNodeMap, editor, null);
   },
 };
 
@@ -95,17 +125,21 @@ export function viewModelHasDirtySelectionOrNeedsSync(
 export function enterViewModelScope<V>(
   callbackFn: (view: View) => V,
   viewModel: ViewModel,
+  editor: null | OutlineEditor,
   readOnly: boolean,
 ): V {
   const previousActiveViewModel = activeViewModel;
   const previousReadyOnlyMode = activeReadyOnlyMode;
+  const previousActiveEditor = activeEditor;
   activeViewModel = viewModel;
   activeReadyOnlyMode = readOnly;
+  activeEditor = editor;
   try {
     return callbackFn(view);
   } finally {
     activeViewModel = previousActiveViewModel;
     activeReadyOnlyMode = previousReadyOnlyMode;
+    activeEditor = previousActiveEditor;
   }
 }
 
@@ -250,7 +284,7 @@ export class ViewModel {
     return nodes;
   }
   read<V>(callbackFn: (view: View) => V): V {
-    return enterViewModelScope(callbackFn, this, true);
+    return enterViewModelScope(callbackFn, this, null, true);
   }
   stringify(): string {
     const selection = this._selection;
@@ -274,8 +308,15 @@ export function parseViewModel(
   editor: OutlineEditor,
 ): ViewModel {
   const parsedViewModel: ParsedViewModel = JSON.parse(stringifiedViewModel);
-  const viewModel = new ViewModel(
-    createNodeMapFromParse(parsedViewModel._nodeMap, editor),
+  const nodeMap = {};
+  const viewModel = new ViewModel(nodeMap);
+  enterViewModelScope(
+    () => {
+      populateNodeMapFromParse(nodeMap, parsedViewModel._nodeMap, editor);
+    },
+    viewModel,
+    editor,
+    false,
   );
   viewModel._selection = createSelectionFromParse(parsedViewModel._selection);
   viewModel._isDirty = true;

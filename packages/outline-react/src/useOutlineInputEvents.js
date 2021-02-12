@@ -67,14 +67,14 @@ const emptyObject: {} = {};
 
 function generateNodes(
   nodeRange: {range: Array<NodeKey>, nodeMap: ParsedNodeMap},
-  editor: OutlineEditor,
+  view: View,
 ): Array<OutlineNode> {
   const {range, nodeMap: parsedNodeMap} = nodeRange;
   const nodes = [];
   for (let i = 0; i < range.length; i++) {
     const key = range[i];
     const parsedNode = parsedNodeMap[key];
-    const node = editor.createNodeFromParse(parsedNode, parsedNodeMap);
+    const node = view.createNodeFromParse(parsedNode, parsedNodeMap);
     nodes.push(node);
   }
   return nodes;
@@ -94,7 +94,7 @@ function insertDataTransfer(
 
     if (outlineNodesString) {
       const nodeRange = JSON.parse(outlineNodesString);
-      const nodes = generateNodes(nodeRange, editor);
+      const nodes = generateNodes(nodeRange, view);
       insertNodes(selection, nodes);
       return;
     }

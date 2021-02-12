@@ -8,12 +8,7 @@
  */
 
 import type {View} from './OutlineView';
-import type {
-  OutlineNode,
-  NodeKey,
-  ParsedNode,
-  ParsedNodeMap,
-} from './OutlineNode';
+import type {OutlineNode, NodeKey} from './OutlineNode';
 import type {Node as ReactNode} from 'react';
 
 import {RootNode, TextNode} from '.';
@@ -30,7 +25,7 @@ import {
 } from './OutlineView';
 import {createSelection} from './OutlineSelection';
 import {generateRandomKey, emptyFunction} from './OutlineUtils';
-import {getWritableNode, createNodeFromParse} from './OutlineNode';
+import {getWritableNode} from './OutlineNode';
 import {createRootNode as createRoot} from './OutlineRootNode';
 import {reconcilePlaceholder} from './OutlineReconciler';
 
@@ -103,6 +98,7 @@ function updateEditor(
       }
     },
     pendingViewModel,
+    editor,
     false,
   );
   const shouldUpdate =
@@ -309,11 +305,5 @@ export class OutlineEditor {
     }
     this._placeholderText = placeholderText;
     reconcilePlaceholder(this, this._viewModel);
-  }
-  createNodeFromParse(
-    parsedNode: ParsedNode,
-    parsedNodeMap: ParsedNodeMap,
-  ): OutlineNode {
-    return createNodeFromParse(parsedNode, parsedNodeMap, this, null);
   }
 }

@@ -589,17 +589,16 @@ function getNodeByKeyOrThrow<N: OutlineNode>(key: NodeKey): N {
   return (node: $FlowFixMe);
 }
 
-export function createNodeMapFromParse(
+export function populateNodeMapFromParse(
+  nodeMap: NodeMapType,
   parsedNodeMap: ParsedNodeMap,
   editor: OutlineEditor,
-): NodeMapType {
-  const nodeMap = {};
+): void {
   for (const key in parsedNodeMap) {
     const parsedNode = parsedNodeMap[key];
-    const node = editor.createNodeFromParse(parsedNode, parsedNodeMap);
+    const node = createNodeFromParse(parsedNode, parsedNodeMap, editor, null);
     nodeMap[key] = node;
   }
-  return nodeMap;
 }
 
 export function createNodeFromParse(

@@ -144,6 +144,22 @@ pre {
   padding: 10px;
   font-size: 12px;
   overflow: hidden;
+  white-space: pre-wrap;
+}
+
+#step-recorder-button {
+  display: block;
+  margin: 20px auto 20px auto;
+    max-width: 580px;
+  background-color: rgb(233, 35, 35);
+  color: #fff;
+  font-size: 12px;
+  padding: 6px;
+  border-radius:  5px;
+  border: none;
+  cursor: pointer;
+  outline: none;
+  box-shadow:  0px 5px 10px rgba(0,0,0, 0.3);
 }
 
 #mentions-typeahead {

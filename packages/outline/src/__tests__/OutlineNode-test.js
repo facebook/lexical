@@ -67,7 +67,7 @@ describe('OutlineNode tests', () => {
     });
   }
 
-  test('replaceNode', () => {
+  test('replaceNode()', () => {
     update((view) => {
       const oldTextNode = view.getRoot().getFirstChild().getFirstChild();
       const newTextNode = Outline.createTextNode('Replaced node!');
@@ -78,7 +78,7 @@ describe('OutlineNode tests', () => {
     );
   });
 
-  test('replaceNode (immutable)', () => {
+  test('replaceNode() (immutable)', () => {
     update((view) => {
       const oldTextNode = view.getRoot().getFirstChild().getFirstChild();
       const newTextNode = Outline.createTextNode('Replaced node!');
@@ -91,7 +91,7 @@ describe('OutlineNode tests', () => {
     );
   });
 
-  test('replaceNode (segmented)', () => {
+  test('replaceNode() (segmented)', () => {
     update((view) => {
       const oldTextNode = view.getRoot().getFirstChild().getFirstChild();
       const newTextNode = Outline.createTextNode('Replaced node!');
@@ -104,7 +104,7 @@ describe('OutlineNode tests', () => {
     );
   });
 
-  test('removeNode', () => {
+  test('removeNode()', () => {
     update((view) => {
       const oldTextNode = view.getRoot().getFirstChild().getFirstChild();
       oldTextNode.remove();
@@ -114,7 +114,7 @@ describe('OutlineNode tests', () => {
     );
   });
 
-  test('append', () => {
+  test('append()', () => {
     update((view) => {
       const paragraph = view.getRoot().getFirstChild();
       const newTextNode = Outline.createTextNode('New node!');
@@ -126,7 +126,7 @@ describe('OutlineNode tests', () => {
     );
   });
 
-  test('append (immutable)', () => {
+  test('append() (immutable)', () => {
     update((view) => {
       const paragraph = view.getRoot().getFirstChild();
       const newTextNode = Outline.createTextNode('New node!');
@@ -139,7 +139,7 @@ describe('OutlineNode tests', () => {
     );
   });
 
-  test('append (segmented)', () => {
+  test('append() (segmented)', () => {
     update((view) => {
       const paragraph = view.getRoot().getFirstChild();
       const newTextNode = Outline.createTextNode('New node!');
@@ -152,7 +152,7 @@ describe('OutlineNode tests', () => {
     );
   });
 
-  test('insertAfter', () => {
+  test('insertAfter()', () => {
     update((view) => {
       const textNode = view.getRoot().getFirstChild().getFirstChild();
       const newTextNode = Outline.createTextNode('New node!');
@@ -164,7 +164,7 @@ describe('OutlineNode tests', () => {
     );
   });
 
-  test('insertAfter (immutable)', () => {
+  test('insertAfter() (immutable)', () => {
     update((view) => {
       const textNode = view.getRoot().getFirstChild().getFirstChild();
       const newTextNode = Outline.createTextNode('New node!');
@@ -177,7 +177,7 @@ describe('OutlineNode tests', () => {
     );
   });
 
-  test('insertAfter (segmented)', () => {
+  test('insertAfter() (segmented)', () => {
     update((view) => {
       const textNode = view.getRoot().getFirstChild().getFirstChild();
       const newTextNode = Outline.createTextNode('New node!');
@@ -190,7 +190,7 @@ describe('OutlineNode tests', () => {
     );
   });
 
-  test('insertBefore', () => {
+  test('insertBefore()', () => {
     update((view) => {
       const textNode = view.getRoot().getFirstChild().getFirstChild();
       const newTextNode = Outline.createTextNode('New node!');
@@ -202,7 +202,7 @@ describe('OutlineNode tests', () => {
     );
   });
 
-  test('insertBefore (immutable)', () => {
+  test('insertBefore() (immutable)', () => {
     update((view) => {
       const textNode = view.getRoot().getFirstChild().getFirstChild();
       const newTextNode = Outline.createTextNode('New node!');
@@ -216,7 +216,7 @@ describe('OutlineNode tests', () => {
     );
   });
 
-  test('insertBefore (segmented)', () => {
+  test('insertBefore() (segmented)', () => {
     update((view) => {
       const textNode = view.getRoot().getFirstChild().getFirstChild();
       const newTextNode = Outline.createTextNode('New node!');
@@ -238,7 +238,7 @@ describe('OutlineNode tests', () => {
     });
   });
 
-  test('getCommonAncestor', () => {
+  test('getCommonAncestor()', () => {
     update((view) => {
       const textNode = view.getRoot().getFirstChild().getFirstChild();
       const textNode2 = Outline.createTextNode('New node!');

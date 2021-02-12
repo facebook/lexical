@@ -55,50 +55,6 @@ describe('OutlineEditor tests', () => {
     });
   }
 
-  test('update + read works', () => {
-    // Update editor view
-    editor.update((view) => {
-      const paragraph = ParagraphNode.createParagraphNode();
-      const text = Outline.createTextNode();
-      paragraph.append(text);
-      view.getRoot().append(paragraph);
-    }, undefined, true);
-
-    let root = null;
-    let paragraph = null;
-    let text = null;
-
-    // Read editor model
-    editor.getViewModel().read((view) => {
-      root = view.getRoot();
-      paragraph = root.getFirstChild();
-      text = paragraph.getFirstChild();
-    });
-
-    expect(root).toEqual({
-      __children: ['_1'],
-      __flags: 0,
-      __key: 'root',
-      __parent: null,
-      __type: 'root',
-    });
-    expect(paragraph).toEqual({
-      __children: ['_2'],
-      __flags: 4,
-      __key: '_1',
-      __parent: 'root',
-      __type: 'paragraph',
-    });
-    expect(text).toEqual({
-      __text: '',
-      __flags: 4,
-      __key: '_2',
-      __parent: '_1',
-      __type: 'text',
-      __url: null,
-    });
-  });
-
   describe('Placeholder', () => {
     it('Placeholder shows when there is no content', () => {
       editor.setPlaceholder('Placeholder text');

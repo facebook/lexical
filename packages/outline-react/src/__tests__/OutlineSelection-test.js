@@ -22,6 +22,8 @@ import {
   deleteWordForward,
   printWhitespace,
   applySelectionInputs,
+  undo,
+  redo,
 } from '../test-utils';
 import {createEditor} from 'outline';
 
@@ -711,6 +713,35 @@ describe('OutlineSelection tests', () => {
           anchorOffset: 0,
           focusPath: [0, 0, 0],
           focusOffset: 0,
+        },
+      },
+      {
+        name: `Type a word, delete it and undo the deletion`,
+        inputs: [insertText('Hello world'), deleteWordBackward(), undo()],
+        expectedHTML:
+          '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-text="true">Hello world</span></p></div>',
+        expectedSelection: {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 11,
+          focusPath: [0, 0, 0],
+          focusOffset: 11,
+        },
+      },
+      {
+        name: `Type a word, delete it and undo the deletion`,
+        inputs: [
+          insertText('Hello world'),
+          deleteWordBackward(),
+          undo(),
+          redo(),
+        ],
+        expectedHTML:
+          '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-text="true">Hello </span></p></div>',
+        expectedSelection: {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 6,
+          focusPath: [0, 0, 0],
+          focusOffset: 6,
         },
       },
     ]),

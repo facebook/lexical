@@ -421,7 +421,8 @@ export class TextNode extends OutlineNode {
 
   // Mutators
   setHashtag(): TextNode {
-    return this.setFlags(IS_HASHTAG);
+    const newFlags = getTextNodeFormatFlags('hashtag', null, true);
+    return this.setFlags(newFlags);
   }
 
   setURL(url: string | null): TextNode {

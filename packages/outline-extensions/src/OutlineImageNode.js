@@ -12,7 +12,6 @@ import type {NodeKey} from 'outline';
 import {OutlineNode} from 'outline';
 
 export class ImageNode extends OutlineNode {
-  __type: 'image';
   __src: string;
   __altText: string;
 

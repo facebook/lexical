@@ -14,8 +14,6 @@ import {BlockNode} from 'outline';
 import {createParagraphNode} from 'outline-extensions/ParagraphNode';
 
 export class QuoteNode extends BlockNode {
-  __type: 'quote';
-
   constructor(key?: NodeKey) {
     super(key);
     this.__type = 'quote';

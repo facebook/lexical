@@ -6,13 +6,6 @@ import {
   IS_CODE,
   IS_LINK,
   IS_HASHTAG,
-  FORMAT_BOLD,
-  FORMAT_ITALIC,
-  FORMAT_STRIKETHROUGH,
-  FORMAT_UNDERLINE,
-  FORMAT_CODE,
-  FORMAT_LINK,
-  FORMAT_HASHTAG,
   HAS_DIRECTION,
 } from '../OutlineConstants';
 
@@ -81,13 +74,13 @@ describe('OutlineTextNode tests', () => {
   }
 
   describe.each([
-    [FORMAT_BOLD, IS_BOLD],
-    [FORMAT_ITALIC, IS_ITALIC],
-    [FORMAT_STRIKETHROUGH, IS_STRIKETHROUGH],
-    [FORMAT_UNDERLINE, IS_UNDERLINE],
-    [FORMAT_CODE, IS_CODE],
-    [FORMAT_LINK, IS_LINK],
-    [FORMAT_HASHTAG, IS_HASHTAG],
+    ['bold', IS_BOLD],
+    ['italic', IS_ITALIC],
+    ['strikethrough', IS_STRIKETHROUGH],
+    ['underline', IS_UNDERLINE],
+    ['code', IS_CODE],
+    ['link', IS_LINK],
+    ['hashtag', IS_HASHTAG],
   ])('getTextNodeFormatFlags(%i)', (formatFlag, stateFlag) => {
     test(`getTextNodeFormatFlags(${formatFlag})`, () => {
       update((view) => {

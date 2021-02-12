@@ -290,11 +290,19 @@ export class TextNode extends OutlineNode {
     let newFlags = nodeFlags;
 
     function getNewFlags(flags, stateFlag) {
-      if (nodeFlags & stateFlag && !force) {
-        if (alignWithFlags === null || (alignWithFlags & stateFlag) === 0) {
-          return flags ^ stateFlag;
-        }
-      } else if (alignWithFlags === null || alignWithFlags & stateFlag) {
+      const isStateFlagPresent = Boolean(nodeFlags & stateFlag);
+
+      if (
+        isStateFlagPresent &&
+        !force &&
+        (alignWithFlags === null || (alignWithFlags & stateFlag) === 0)
+      ) {
+        // Remove the state flag.
+        return flags ^ stateFlag;
+      }
+
+      if (alignWithFlags === null || alignWithFlags & stateFlag) {
+        // Add the state flag.
         return flags | stateFlag;
       }
 

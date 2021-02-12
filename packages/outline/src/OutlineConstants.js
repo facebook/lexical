@@ -21,15 +21,6 @@ export const IS_CODE = 1 << 7;
 export const IS_LINK = 1 << 8;
 export const IS_HASHTAG = 1 << 9;
 
-// Formatting
-export const FORMAT_BOLD = 0;
-export const FORMAT_ITALIC = 1;
-export const FORMAT_STRIKETHROUGH = 2;
-export const FORMAT_UNDERLINE = 3;
-export const FORMAT_CODE = 4;
-export const FORMAT_LINK = 5;
-export const FORMAT_HASHTAG = 6;
-
 // Reconcilation
 
 export const BYTE_ORDER_MARK = '\uFEFF';

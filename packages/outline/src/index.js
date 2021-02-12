@@ -11,6 +11,7 @@ export type {OutlineEditor} from './OutlineEditor';
 export type {ViewModel, View, ParsedViewModel} from './OutlineView';
 export type {NodeKey, ParsedNode, ParsedNodeMap} from './OutlineNode';
 export type {Selection} from './OutlineSelection';
+export type {TextFormatType} from './OutlineTextNode';
 
 import {createEditor} from './OutlineEditor';
 import {createTextNode, TextNode} from './OutlineTextNode';

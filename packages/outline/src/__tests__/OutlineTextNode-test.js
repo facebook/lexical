@@ -6,7 +6,6 @@ import {
   IS_CODE,
   IS_LINK,
   IS_HASHTAG,
-  HAS_DIRECTION,
 } from '../OutlineConstants';
 
 let container = null;
@@ -89,11 +88,11 @@ describe('OutlineTextNode tests', () => {
         const textNode = paragraphNode.getFirstChild();
 
         const newFlags = textNode.getTextNodeFormatFlags(formatFlag, null);
-        expect(newFlags).toBe(stateFlag | HAS_DIRECTION);
+        expect(newFlags).toBe(stateFlag);
 
         textNode.setFlags(newFlags);
         const newFlags2 = textNode.getTextNodeFormatFlags(formatFlag, null);
-        expect(newFlags2).toBe(HAS_DIRECTION);
+        expect(newFlags2).toBe(0);
       });
     });
   });

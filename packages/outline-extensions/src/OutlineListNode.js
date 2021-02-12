@@ -44,8 +44,5 @@ export class ListNode extends BlockNode {
 }
 
 export function createListNode(tag: ListNodeTagType): ListNode {
-  const list = new ListNode(tag);
-  // List nodes align with text direection
-  list.makeDirectioned();
-  return list;
+  return new ListNode(tag);
 }

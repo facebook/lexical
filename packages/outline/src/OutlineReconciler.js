@@ -115,7 +115,7 @@ function createNode(
     // Handle block children
     const children = node.__children;
     const endIndex = children.length - 1;
-    if (node.hasDirection()) {
+    if (node.childrenNeedDirection()) {
       createChildrenWithDirection(children, endIndex, dom);
     } else {
       createChildren(children, 0, endIndex, dom, null);
@@ -264,7 +264,7 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
 
     if (childrenAreDifferent || hasDirtySubTree) {
       const isRoot = key === 'root';
-      if (nextNode.hasDirection()) {
+      if (nextNode.childrenNeedDirection()) {
         reconcileChildrenWithDirection(prevChildren, nextChildren, dom, isRoot);
       } else {
         reconcileChildren(prevChildren, nextChildren, dom, isRoot);

@@ -132,6 +132,9 @@ export class BlockNode extends OutlineNode {
     }
     return textContent;
   }
+  childrenNeedDirection(): boolean {
+    return true;
+  }
 
   // Mutators
 

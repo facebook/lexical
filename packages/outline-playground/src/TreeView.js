@@ -12,7 +12,6 @@ import React from 'react';
 // Keep in sync with OutlineNode.js and OutlineTextNode.js
 const IS_IMMUTABLE = 1;
 const IS_SEGMENTED = 1 << 1;
-const HAS_DIRECTION = 1 << 2;
 const IS_BOLD = 1 << 3;
 const IS_ITALIC = 1 << 4;
 const IS_STRIKETHROUGH = 1 << 5;
@@ -31,7 +30,6 @@ const SYMBOLS = Object.freeze({
 const FLAG_LABELS = Object.freeze({
   [IS_IMMUTABLE]: 'Immutable',
   [IS_SEGMENTED]: 'Segmented',
-  [HAS_DIRECTION]: 'Direction',
   [IS_BOLD]: 'Bold',
   [IS_ITALIC]: 'Italic',
   [IS_STRIKETHROUGH]: 'Strikethrough',
@@ -115,8 +113,10 @@ function printNode(node) {
     const text = node.getTextContent();
     const title = text.length === 0 ? '(empty)' : `"${normalize(text)}"`;
     const flags = node.getFlags();
-    const flagLabels = flags !== 0 ? `(${printFlags(node.getFlags())})` : null;
-    return [title, `flags: ${flags}`, flagLabels]
+    const flagLabels = printFlags(flags);
+    const flagLabelsFormatted =
+      flagLabels.length !== 0 ? `(${flagLabels})` : null;
+    return [title, `flags: ${flags}`, flagLabelsFormatted]
       .filter(Boolean)
       .join(' ')
       .trim();

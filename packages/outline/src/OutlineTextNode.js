@@ -41,6 +41,16 @@ export type SelectionFragment = {
   nodeMap: {[string]: OutlineNode},
 };
 
+const textFormatStateFlags = {
+  bold: IS_BOLD,
+  underline: IS_UNDERLINE,
+  strikethrough: IS_STRIKETHROUGH,
+  italic: IS_ITALIC,
+  code: IS_CODE,
+  link: IS_LINK,
+  hashtag: IS_HASHTAG,
+};
+
 function getElementOuterTag(node: TextNode, flags: number): string | null {
   if (flags & IS_CODE) {
     return 'code';
@@ -286,56 +296,24 @@ export class TextNode extends OutlineNode {
     alignWithFlags: null | number,
     force?: boolean,
   ): number {
-    const self = this.getLatest();
+    const self = this.getLatest<TextNode>();
     const nodeFlags = self.__flags;
-    let newFlags = nodeFlags;
+    const stateFlag = textFormatStateFlags[type];
+    const isStateFlagPresent = nodeFlags & stateFlag;
 
-    function getNewFlags(flags, stateFlag) {
-      const isStateFlagPresent = Boolean(nodeFlags & stateFlag);
-
-      if (
-        isStateFlagPresent &&
-        !force &&
-        (alignWithFlags === null || (alignWithFlags & stateFlag) === 0)
-      ) {
-        // Remove the state flag.
-        return flags ^ stateFlag;
-      }
-
-      if (alignWithFlags === null || alignWithFlags & stateFlag) {
-        // Add the state flag.
-        return flags | stateFlag;
-      }
-
-      return flags;
+    if (
+      isStateFlagPresent &&
+      !force &&
+      (alignWithFlags === null || (alignWithFlags & stateFlag) === 0)
+    ) {
+      // Remove the state flag.
+      return nodeFlags ^ stateFlag;
     }
-
-    switch (type) {
-      case 'bold':
-        newFlags = getNewFlags(newFlags, IS_BOLD);
-        break;
-      case 'italic':
-        newFlags = getNewFlags(newFlags, IS_ITALIC);
-        break;
-      case 'strikethrough':
-        newFlags = getNewFlags(newFlags, IS_STRIKETHROUGH);
-        break;
-      case 'underline':
-        newFlags = getNewFlags(newFlags, IS_UNDERLINE);
-        break;
-      case 'code':
-        newFlags = getNewFlags(newFlags, IS_CODE);
-        break;
-      case 'link':
-        newFlags = getNewFlags(newFlags, IS_LINK);
-        break;
-      case 'hashtag':
-        newFlags = getNewFlags(newFlags, IS_HASHTAG);
-        break;
-      default:
+    if (alignWithFlags === null || alignWithFlags & stateFlag) {
+      // Add the state flag.
+      return nodeFlags | stateFlag;
     }
-
-    return newFlags;
+    return nodeFlags;
   }
 
   // View

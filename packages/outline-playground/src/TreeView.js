@@ -9,12 +9,37 @@ import {BlockNode, TextNode} from 'outline';
 
 import React from 'react';
 
-const SYMBOLS = {
+// Keep in sync with OutlineNode.js and OutlineTextNode.js
+const IS_IMMUTABLE = 1;
+const IS_SEGMENTED = 1 << 1;
+const HAS_DIRECTION = 1 << 2;
+const IS_BOLD = 1 << 3;
+const IS_ITALIC = 1 << 4;
+const IS_STRIKETHROUGH = 1 << 5;
+const IS_UNDERLINE = 1 << 6;
+const IS_CODE = 1 << 7;
+const IS_LINK = 1 << 8;
+const IS_HASHTAG = 1 << 9;
+
+const SYMBOLS = Object.freeze({
   hasNextSibling: '├',
   isLastChild: '└',
   ancestorHasNextSibling: '|',
   ancestorIsLastChild: ' ',
-};
+});
+
+const FLAG_LABELS = Object.freeze({
+  [IS_IMMUTABLE]: 'Immutable',
+  [IS_SEGMENTED]: 'Segmented',
+  [HAS_DIRECTION]: 'Direction',
+  [IS_BOLD]: 'Bold',
+  [IS_ITALIC]: 'Italic',
+  [IS_STRIKETHROUGH]: 'Strikethrough',
+  [IS_UNDERLINE]: 'Underline',
+  [IS_CODE]: 'Code',
+  [IS_LINK]: 'Link',
+  [IS_HASHTAG]: 'Hashtag',
+});
 
 function visitTree(view: View, currentNode: BlockNode, visitor, indent = []) {
   const childNodes = currentNode.getChildren();
@@ -89,7 +114,20 @@ function printNode(node) {
   if (node instanceof TextNode) {
     const text = node.getTextContent();
     const title = text.length === 0 ? '(empty)' : `"${normalize(text)}"`;
-    return `${title} flags: ${node.getFlags()}`;
+    const flags = node.getFlags();
+    const flagLabels = flags !== 0 ? `(${printFlags(node.getFlags())})` : null;
+    return [title, `flags: ${flags}`, flagLabels]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
   }
+
   return '';
+}
+
+function printFlags(flags) {
+  return Object.entries(FLAG_LABELS)
+    .map(([flag, label]) => (flags & flag ? label : null))
+    .filter(Boolean)
+    .join(', ');
 }

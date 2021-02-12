@@ -111,9 +111,9 @@ export default function useStepRecorder(editor: OutlineEditor): React$Node {
       } else if (isLineBreak(event)) {
         pushStep('insertLinebreak');
       } else if (isUndo(event)) {
-        pushStep("TODO: this operation isn't supported yet");
+        pushStep('undo');
       } else if (isRedo(event)) {
-        pushStep("TODO: this operation isn't supported yet");
+        pushStep('redo');
       } else if (isBold(event)) {
         pushStep('formatBold');
       } else if (isItalic(event)) {

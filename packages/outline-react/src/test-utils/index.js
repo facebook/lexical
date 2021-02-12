@@ -131,6 +131,20 @@ export function formatUnderline() {
   };
 }
 
+export function redo() {
+  return {
+    type: 'redo',
+    text: null,
+  };
+}
+
+export function undo() {
+  return {
+    type: 'undo',
+    text: null,
+  };
+}
+
 export function moveNativeSelection(
   anchorPath,
   anchorOffset,
@@ -425,6 +439,29 @@ export function applySelectionInputs(inputs, update, editor) {
           text.makeSegmented();
           SelectionHelpers.insertNodes(selection, [text]);
           text.selectAfter();
+          break;
+        }
+        case 'undo': {
+          editorElement.dispatchEvent(
+            new KeyboardEvent('keydown', {
+              bubbles: true,
+              cancelable: true,
+              ctrlKey: true,
+              key: 'z',
+            }),
+          );
+          break;
+        }
+        case 'redo': {
+          editorElement.dispatchEvent(
+            new KeyboardEvent('keydown', {
+              bubbles: true,
+              cancelable: true,
+              ctrlKey: true,
+              shiftKey: true,
+              key: 'z',
+            }),
+          );
           break;
         }
       }

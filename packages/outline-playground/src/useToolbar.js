@@ -53,8 +53,6 @@ function Button({
 }
 
 function getSelectedNode(selection: Selection): TextNode {
-  // // eslint-disable-next-line no-debugger
-  // debugger;
   const anchorNode = selection.getAnchorNode();
   const focusNode = selection.getFocusNode();
   if (anchorNode === focusNode) {

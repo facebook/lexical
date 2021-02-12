@@ -421,7 +421,7 @@ export class TextNode extends OutlineNode {
 
   // Mutators
   setHashtag(): TextNode {
-    const newFlags = getTextNodeFormatFlags('hashtag', null, true);
+    const newFlags = this.getTextNodeFormatFlags('hashtag', null, true);
     return this.setFlags(newFlags);
   }
 

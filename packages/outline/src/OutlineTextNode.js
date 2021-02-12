@@ -16,7 +16,6 @@ import {getSelection, makeSelection} from './OutlineSelection';
 import {invariant} from './OutlineUtils';
 import {shouldErrorOnReadOnly} from './OutlineView';
 import {
-  HAS_DIRECTION,
   IS_CODE,
   IS_BOLD,
   IS_ITALIC,
@@ -243,7 +242,7 @@ export class TextNode extends OutlineNode {
     super(key);
     this.__text = text;
     this.__type = 'text';
-    this.__flags = HAS_DIRECTION;
+    this.__flags = 0;
     this.__url = null;
   }
 

@@ -90,14 +90,14 @@ describe('OutlineEditor tests', () => {
     });
     expect(paragraph).toEqual({
       __children: ['_4'],
-      __flags: 4,
+      __flags: 0,
       __key: '_3',
       __parent: 'root',
       __type: 'paragraph',
     });
     expect(text).toEqual({
       __text: '',
-      __flags: 4,
+      __flags: 0,
       __key: '_4',
       __parent: '_3',
       __type: 'text',

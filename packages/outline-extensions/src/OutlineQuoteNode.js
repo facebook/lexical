@@ -58,8 +58,5 @@ export class QuoteNode extends BlockNode {
 }
 
 export function createQuoteNode(): QuoteNode {
-  const list = new QuoteNode();
-  // List nodes align with text direection
-  list.makeDirectioned();
-  return list;
+  return new QuoteNode();
 }

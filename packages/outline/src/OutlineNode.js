@@ -12,7 +12,7 @@ import type {OutlineEditor} from './OutlineEditor';
 import {createTextNode, RootNode, BlockNode, TextNode} from '.';
 import {getActiveViewModel, shouldErrorOnReadOnly} from './OutlineView';
 import {generateRandomKey, invariant} from './OutlineUtils';
-import {HAS_DIRECTION, IS_IMMUTABLE, IS_SEGMENTED} from './OutlineConstants';
+import {IS_IMMUTABLE, IS_SEGMENTED} from './OutlineConstants';
 
 export type ParsedNode = {
   __key: string,
@@ -388,9 +388,6 @@ export class OutlineNode {
     }
     return nodes;
   }
-  hasDirection(): boolean {
-    return (this.getLatest().__flags & HAS_DIRECTION) !== 0;
-  }
   isImmutable(): boolean {
     return (this.getLatest().__flags & IS_IMMUTABLE) !== 0;
   }
@@ -425,12 +422,6 @@ export class OutlineNode {
     }
     const self = getWritableNode(this);
     self.__flags = flags;
-    return self;
-  }
-  makeDirectioned(): this {
-    shouldErrorOnReadOnly();
-    const self = getWritableNode(this);
-    self.__flags |= HAS_DIRECTION;
     return self;
   }
   makeImmutable(): this {

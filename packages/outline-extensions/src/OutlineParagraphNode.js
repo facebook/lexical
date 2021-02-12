@@ -11,8 +11,6 @@ import type {NodeKey} from 'outline';
 
 import {BlockNode, TextNode} from 'outline';
 
-const HAS_DIRECTION = 1 << 2;
-
 export class ParagraphNode extends BlockNode {
   constructor(key?: NodeKey) {
     super(key);
@@ -46,11 +44,8 @@ export class ParagraphNode extends BlockNode {
     }
     // Otherwise just reset the text node flags
     const firstChild = this.getFirstChild();
-    if (
-      firstChild instanceof TextNode &&
-      firstChild.getFlags() !== HAS_DIRECTION
-    ) {
-      firstChild.setFlags(HAS_DIRECTION);
+    if (firstChild instanceof TextNode && firstChild.getFlags() !== 0) {
+      firstChild.setFlags(0);
     }
   }
 
@@ -62,8 +57,8 @@ export class ParagraphNode extends BlockNode {
     }
     // Otherwise just reset the text node flags
     const firstChild = this.getFirstChild();
-    if (firstChild instanceof TextNode) {
-      firstChild.setFlags(HAS_DIRECTION);
+    if (firstChild instanceof TextNode && firstChild.getFlags() !== 0) {
+      firstChild.setFlags(0);
     }
   }
 
@@ -75,8 +70,5 @@ export class ParagraphNode extends BlockNode {
 }
 
 export function createParagraphNode(): ParagraphNode {
-  const paragraph = new ParagraphNode();
-  // Paragraph nodes align with text direection
-  paragraph.makeDirectioned();
-  return paragraph;
+  return new ParagraphNode();
 }

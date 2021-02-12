@@ -131,7 +131,7 @@ export default function useStepRecorder(editor: OutlineEditor): React$Node {
 
   useEffect(() => {
     const removeUpdateListener = editor.addUpdateListener((viewModel) => {
-      const currentSelection = viewModel.selection;
+      const currentSelection = viewModel._selection;
       const previousSelection = previousSelectionRef.current;
       const editorElement = editor.getEditorElement();
       if (previousSelection !== currentSelection) {

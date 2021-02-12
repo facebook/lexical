@@ -3,7 +3,7 @@ let React;
 let ReactDOM;
 let ReactTestUtils;
 let Outline;
-let ParagraphNode;
+let ParagraphNodeModule;
 
 describe('OutlineViewModel tests', () => {
   beforeEach(() => {
@@ -11,7 +11,7 @@ describe('OutlineViewModel tests', () => {
     ReactDOM = require('react-dom');
     ReactTestUtils = require('react-dom/test-utils');
     Outline = require('outline');
-    ParagraphNode = require('outline-extensions/ParagraphNode');
+    ParagraphNodeModule = require('outline-extensions/ParagraphNode');
 
     container = document.createElement('div');
     document.body.appendChild(container);
@@ -53,7 +53,7 @@ describe('OutlineViewModel tests', () => {
   test('read()', () => {
     editor.update(
       (view) => {
-        const paragraph = ParagraphNode.createParagraphNode();
+        const paragraph = ParagraphNodeModule.createParagraphNode();
         const text = Outline.createTextNode();
         paragraph.append(text);
         view.getRoot().append(paragraph);
@@ -99,7 +99,7 @@ describe('OutlineViewModel tests', () => {
   test('stringify()', () => {
     editor.update(
       (view) => {
-        const paragraph = ParagraphNode.createParagraphNode();
+        const paragraph = ParagraphNodeModule.createParagraphNode();
         const text = Outline.createTextNode();
         paragraph.append(text);
         view.getRoot().append(paragraph);

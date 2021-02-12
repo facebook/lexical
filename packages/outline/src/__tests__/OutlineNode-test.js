@@ -3,7 +3,7 @@ let React;
 let ReactDOM;
 let ReactTestUtils;
 let Outline;
-let ParagraphNode;
+let ParagraphNodeModule;
 
 function sanitizeHTML(html) {
   // Remove the special space characters
@@ -16,7 +16,7 @@ describe('OutlineNode tests', () => {
     ReactDOM = require('react-dom');
     ReactTestUtils = require('react-dom/test-utils');
     Outline = require('outline');
-    ParagraphNode = require('outline-extensions/ParagraphNode');
+    ParagraphNodeModule = require('outline-extensions/ParagraphNode');
 
     container = document.createElement('div');
     document.body.appendChild(container);
@@ -60,7 +60,7 @@ describe('OutlineNode tests', () => {
 
     // Insert initial block
     update((view) => {
-      const paragraph = ParagraphNode.createParagraphNode();
+      const paragraph = ParagraphNodeModule.createParagraphNode();
       const text = Outline.createTextNode();
       paragraph.append(text);
       view.getRoot().append(paragraph);
@@ -245,7 +245,7 @@ describe('OutlineNode tests', () => {
       textNode.insertAfter(textNode2);
       // Our common ancestor here isn't the paragraph node, it's a writable clone.
       // Let's commit this update and test getCommonAncestor on a fresh view.
-      const secondParagraph = ParagraphNode.createParagraphNode();
+      const secondParagraph = ParagraphNodeModule.createParagraphNode();
       const textNode3 = Outline.createTextNode('Another node!');
       secondParagraph.append(textNode3);
       view.getRoot().getFirstChild().insertAfter(secondParagraph);

@@ -236,7 +236,6 @@ function getHashtagRegexString(): string {
 }
 
 const REGEX = new RegExp(getHashtagRegexString(), 'ig');
-const IS_HASHTAG = 1 << 9;
 
 export default function useEmojis(editor: null | OutlineEditor): void {
   useEffect(() => {
@@ -263,7 +262,7 @@ export default function useEmojis(editor: null | OutlineEditor): void {
           } else {
             [, targetNode, currentNode] = currentNode.splitText(start, end);
           }
-          targetNode.setFlags(IS_HASHTAG);
+          targetNode.setHashtag();
         }
       });
     }

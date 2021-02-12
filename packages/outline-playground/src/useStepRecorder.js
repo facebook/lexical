@@ -186,7 +186,9 @@ export default function useStepRecorder(editor: OutlineEditor): React$Node {
       editorElement == null ||
       browserSelection == null ||
       browserSelection.anchorNode == null ||
-      browserSelection.focusNode == null
+      browserSelection.focusNode == null ||
+      !editorElement.contains(browserSelection.anchorNode) ||
+      !editorElement.contains(browserSelection.focusNode)
     ) {
       return null;
     }

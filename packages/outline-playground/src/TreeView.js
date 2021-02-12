@@ -12,13 +12,13 @@ import React from 'react';
 // Keep in sync with OutlineNode.js and OutlineTextNode.js
 const IS_IMMUTABLE = 1;
 const IS_SEGMENTED = 1 << 1;
-const IS_BOLD = 1 << 3;
-const IS_ITALIC = 1 << 4;
-const IS_STRIKETHROUGH = 1 << 5;
-const IS_UNDERLINE = 1 << 6;
-const IS_CODE = 1 << 7;
-const IS_LINK = 1 << 8;
-const IS_HASHTAG = 1 << 9;
+const IS_BOLD = 1 << 2;
+const IS_ITALIC = 1 << 3;
+const IS_STRIKETHROUGH = 1 << 4;
+const IS_UNDERLINE = 1 << 5;
+const IS_CODE = 1 << 6;
+const IS_LINK = 1 << 7;
+const IS_HASHTAG = 1 << 8;
 
 const SYMBOLS = Object.freeze({
   hasNextSibling: '├',

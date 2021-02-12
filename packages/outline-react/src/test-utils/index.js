@@ -1,10 +1,5 @@
-import * as SelectionHelpers from 'outline-react/OutlineSelectionHelpers'
+import * as SelectionHelpers from 'outline-react/OutlineSelectionHelpers';
 import {createTextNode} from 'outline';
-
-const FORMAT_BOLD = 0;
-const FORMAT_ITALIC = 1;
-const FORMAT_STRIKETHROUGH = 2;
-const FORMAT_UNDERLINE = 3;
 
 export function sanitizeHTML(html) {
   // Remove the special space characters
@@ -111,28 +106,28 @@ export function deleteForward() {
 export function formatBold() {
   return {
     type: 'format_text',
-    format: FORMAT_BOLD,
+    format: 'bold',
   };
 }
 
 export function formatItalic() {
   return {
     type: 'format_text',
-    format: FORMAT_ITALIC,
+    format: 'italic',
   };
 }
 
 export function formatStrikeThrough() {
   return {
     type: 'format_text',
-    format: FORMAT_STRIKETHROUGH,
+    format: 'strikethrough',
   };
 }
 
 export function formatUnderline() {
   return {
     type: 'format_text',
-    format: FORMAT_UNDERLINE,
+    format: 'underline',
   };
 }
 
@@ -189,7 +184,6 @@ export function setNativeSelectionWithPaths(
   const focusNode = getNodeFromPath(focusPath, editorElement);
   setNativeSelection(anchorNode, anchorOffset, focusNode, focusOffset);
 }
-
 
 function getLastTextNode(startingNode) {
   let node = startingNode;

@@ -13,6 +13,7 @@ import useOutlineHistory from 'outline-react/useOutlineHistory';
 import useToolbar from './useToolbar';
 import useHashtags from './useHashtags';
 import BlockControls from './BlockControls';
+import useStepRecorder from './useStepRecorder';
 
 const editorStyle = {
   outline: 0,
@@ -111,6 +112,7 @@ export function RichTextEditor({
   const mentionsTypeahead = useMentions(outlineEditor);
   const props = useOutlineRichText(outlineEditor, isReadOnly);
   useOutlineOnChange(outlineEditor, onChange);
+  const stepRecorder = useStepRecorder(outlineEditor);
   useEmojis(outlineEditor);
   useHashtags(outlineEditor);
   useOutlineAutoFormatter(outlineEditor);
@@ -125,6 +127,7 @@ export function RichTextEditor({
       />
       {mentionsTypeahead}
       {toolbar}
+      {stepRecorder}
       <BlockControls editor={outlineEditor} />
     </>
   );
@@ -145,6 +148,7 @@ export function PlainTextEditor({
   useEmojis(outlineEditor);
   useHashtags(outlineEditor);
   useOutlineHistory(outlineEditor);
+  const stepRecorder = useStepRecorder(outlineEditor);
 
   return (
     <>
@@ -154,6 +158,7 @@ export function PlainTextEditor({
         editorElementRef={editorElementRef}
       />
       {mentionsTypeahead}
+      {stepRecorder}
     </>
   );
 }

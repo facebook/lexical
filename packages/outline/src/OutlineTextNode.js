@@ -398,6 +398,10 @@ export class TextNode extends OutlineNode {
   }
 
   // Mutators
+  setHashtag(): TextNode {	
+    const newFlags = this.getTextNodeFormatFlags('hashtag', null, true);	
+    return this.setFlags(newFlags);	
+  }
 
   setURL(url: string | null): TextNode {
     shouldErrorOnReadOnly();

@@ -236,7 +236,6 @@ function setTextContent(
 
 export class TextNode extends OutlineNode {
   __text: string;
-  __type: 'text';
   __url: null | string;
 
   constructor(text: string, key?: NodeKey) {

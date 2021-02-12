@@ -475,11 +475,11 @@ function createMention(mentionName) {
 
 class MentionNode extends TextNode {
   mention: string;
+
   constructor(mentionName: string, key?: NodeKey, text?: string) {
     super(text ?? mentionName, key);
     this.mention = mentionName;
-    // $FlowFixMe: TODO
-    this.type = 'mention';
+    this.__type = 'mention';
   }
 
   clone() {

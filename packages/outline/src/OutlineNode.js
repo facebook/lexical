@@ -119,8 +119,7 @@ export function wrapInTextNodes<N: OutlineNode>(node: N): N {
 export type NodeKey = string;
 
 export class OutlineNode {
-  // $FlowFixMe: TODO
-  __type: any;
+  __type: string;
   __flags: number;
   __key: NodeKey;
   __parent: null | NodeKey;

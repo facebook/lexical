@@ -14,8 +14,6 @@ import {BlockNode, TextNode} from 'outline';
 const HAS_DIRECTION = 1 << 2;
 
 export class ParagraphNode extends BlockNode {
-  __type: 'paragraph';
-
   constructor(key?: NodeKey) {
     super(key);
     this.__type = 'paragraph';

@@ -9,34 +9,11 @@ import {BlockNode, TextNode} from 'outline';
 
 import React from 'react';
 
-// Keep in sync with OutlineNode.js and OutlineTextNode.js
-const IS_IMMUTABLE = 1;
-const IS_SEGMENTED = 1 << 1;
-const IS_BOLD = 1 << 2;
-const IS_ITALIC = 1 << 3;
-const IS_STRIKETHROUGH = 1 << 4;
-const IS_UNDERLINE = 1 << 5;
-const IS_CODE = 1 << 6;
-const IS_LINK = 1 << 7;
-const IS_HASHTAG = 1 << 8;
-
 const SYMBOLS = Object.freeze({
   hasNextSibling: '├',
   isLastChild: '└',
   ancestorHasNextSibling: '|',
   ancestorIsLastChild: ' ',
-});
-
-const FLAG_LABELS = Object.freeze({
-  [IS_IMMUTABLE]: 'Immutable',
-  [IS_SEGMENTED]: 'Segmented',
-  [IS_BOLD]: 'Bold',
-  [IS_ITALIC]: 'Italic',
-  [IS_STRIKETHROUGH]: 'Strikethrough',
-  [IS_UNDERLINE]: 'Underline',
-  [IS_CODE]: 'Code',
-  [IS_LINK]: 'Link',
-  [IS_HASHTAG]: 'Hashtag',
 });
 
 function visitTree(view: View, currentNode: BlockNode, visitor, indent = []) {
@@ -112,8 +89,7 @@ function printNode(node) {
   if (node instanceof TextNode) {
     const text = node.getTextContent();
     const title = text.length === 0 ? '(empty)' : `"${normalize(text)}"`;
-    const flags = node.getFlags();
-    const flagLabels = printFlags(flags);
+    const flagLabels = printTextNodeFlags(node);
     return [title, flagLabels.length !== 0 ? `flags: ${flagLabels}` : null]
       .filter(Boolean)
       .join(', ')
@@ -123,9 +99,20 @@ function printNode(node) {
   return '';
 }
 
-function printFlags(flags) {
-  return Object.entries(FLAG_LABELS)
-    .map(([flag, label]) => (flags & Number(flag) ? label : null))
+const LABEL_PREDICATES = [
+  (node) => node.isBold() && 'Bold',
+  (node) => node.isCode() && 'Code',
+  (node) => node.isHashtag() && 'Hashtag',
+  (node) => node.isImmutable() && 'Immutable',
+  (node) => node.isItalic() && 'Italic',
+  (node) => node.isLink() && 'Link',
+  (node) => node.isSegmented() && 'Segmented',
+  (node) => node.isStrikethrough() && 'Strikethrough',
+  (node) => node.isUnderline() && 'Underline',
+];
+
+function printTextNodeFlags(node) {
+  return LABEL_PREDICATES.map((predicate) => predicate(node))
     .filter(Boolean)
     .join(', ');
 }

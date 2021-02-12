@@ -19,9 +19,12 @@ import {BlockNode} from './OutlineBlockNode';
 import {RootNode} from './OutlineRootNode';
 import {OutlineNode} from './OutlineNode';
 
+import * as OutlineConstants from './OutlineConstants';
+
 export {
   createEditor,
   createTextNode,
+  OutlineConstants,
   OutlineNode,
   BlockNode,
   RootNode,

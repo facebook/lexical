@@ -27,7 +27,7 @@ export class ListItemNode extends BlockNode {
     return clone;
   }
 
-  childrenNeedDirection(): boolean {
+  childrenNeedDirection(): false {
     return false;
   }
 

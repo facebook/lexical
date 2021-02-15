@@ -401,24 +401,32 @@ pre {
   left: 35px;
 }
 
-#editor-rich-text-switch {
+.switch {
   display: inline-block;
   text-align: right;
   position: absolute;
-  right: 0;
   top: 30px;
-  width: 150px;
+  width: 130px;
   color: #444;
 }
 
-#editor-rich-text-switch label {
-  margin-right: 10px;
+#rich-text-switch {
+  right: 0;
+}
+
+#character-count-switch {
+  right: 130px;
+}
+
+.switch label {
+  margin-right: 5px;
   line-height: 24px;
+  font-size: 14px;
   display: inline-block;
   vertical-align: middle;
 }
 
-#editor-rich-text-switch button {
+.switch button {
   background-color: rgb(206, 208, 212);
   height: 24px;
   box-sizing: border-box;
@@ -434,11 +442,11 @@ pre {
   border: 2px solid transparent;
 }
 
-#editor-rich-text-switch button:focus-visible {
+.switch button:focus-visible {
   border-color: blue;
 }
 
-#editor-rich-text-switch button span {
+.switch button span {
   top: 0px;
   left: 0px;
   display: block;
@@ -450,10 +458,24 @@ pre {
   transition: transform 0.2s;
 }
 
-#editor-rich-text-switch button[aria-checked="true"] {
+.switch button[aria-checked="true"] {
   background-color: rgb(24, 119, 242);
 }
 
-#editor-rich-text-switch button[aria-checked="true"] span {
+.switch button[aria-checked="true"] span {
   transform: translateX(20px);
+}
+
+.characters-over {
+  color: #999;
+  font-size: 12px;
+  text-align: right;
+  display: block;
+  position: absolute;
+  right: 12px;
+  bottom: 5px;
+}
+
+.characters-over span {
+  color: red;
 }

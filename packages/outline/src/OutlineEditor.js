@@ -41,7 +41,7 @@ export type DecoratorListener = (decorator: {[NodeKey]: ReactNode}) => void;
 
 export type DOMCreationListener = (type: string, dom: HTMLElement) => void;
 
-export type TextMutationListener = (node: TextNode, view: View) => void;
+export type TextNodeTransform = (node: TextNode, view: View) => void;
 
 const NativePromise = window.Promise;
 
@@ -137,7 +137,7 @@ export class OutlineEditor {
   _updateListeners: Set<UpdateListener>;
   _decoratorListeners: Set<DecoratorListener>;
   _domCreationListeners: Set<DOMCreationListener>;
-  _textMutationListeners: Set<TextMutationListener>;
+  _textNodeTransforms: Set<TextNodeTransform>;
   _registeredNodeTypes: Map<string, Class<OutlineNode>>;
   _nodeDecorators: {[NodeKey]: ReactNode};
   _pendingNodeDecorators: null | {[NodeKey]: ReactNode};
@@ -165,8 +165,8 @@ export class OutlineEditor {
     // node, so external tooling can apply additional
     // styling or/and properties to the elements.
     this._domCreationListeners = new Set();
-    // Handling of transform
-    this._textMutationListeners = new Set();
+    // Handling of text node transforms
+    this._textNodeTransforms = new Set();
     // Mapping of types to their nodes
     this._registeredNodeTypes = new Map([
       ['text', TextNode],
@@ -234,11 +234,11 @@ export class OutlineEditor {
       this._decoratorListeners.delete(listener);
     };
   }
-  addTextMutationListener(listener: TextMutationListener): () => void {
-    this._textMutationListeners.add(listener);
+  addTextNodeTransform(listener: TextNodeTransform): () => void {
+    this._textNodeTransforms.add(listener);
     updateEditor(this, emptyFunction, true);
     return () => {
-      this._textMutationListeners.delete(listener);
+      this._textNodeTransforms.delete(listener);
     };
   }
   addDOMCreationListener(listener: DOMCreationListener): () => void {

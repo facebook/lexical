@@ -2,7 +2,7 @@
 import type {OutlineEditor, ViewModel} from 'outline';
 
 import * as React from 'react';
-import {useEffect, useMemo, useRef} from 'react';
+import {useEffect, useMemo, useRef, useState} from 'react';
 import {createEditor} from 'outline';
 import useOutlineRichText from 'outline-react/useOutlineRichText';
 import useEmojis from './useEmojis';
@@ -26,7 +26,10 @@ const editorStyle = {
 type Props = {
   onChange: (ViewModel | null) => void,
   isReadOnly?: boolean,
+  isCharLimit?: boolean,
 };
+
+const CHARACTER_LIMIT = 10;
 
 function useOutlineEditor(
   editorElementRef: {
@@ -81,7 +84,7 @@ function ContentEditable({
   props: Object,
   isReadOnly?: boolean,
   editorElementRef: {current: null | HTMLElement},
-}): React.MixedElement {
+}): React$Node {
   return (
     <div
       {...props}
@@ -99,9 +102,30 @@ function ContentEditable({
   );
 }
 
+function EditorCharacterLimit({editor}: {editor: OutlineEditor}): React$Node {
+  const [charactersOver, setCharactersOver] = useState(0);
+
+  useEffect(() => {
+    return editor.addUpdateListener((viewModel: ViewModel) => {
+      const characters = editor.getTextContent().length;
+      if (characters > CHARACTER_LIMIT) {
+        const diff = characters - CHARACTER_LIMIT;
+        setCharactersOver(diff);
+      } else if (charactersOver > 0) {
+        setCharactersOver(0);
+      }
+    });
+  }, [charactersOver, editor]);
+
+  return charactersOver > 0 ? (
+    <span className="characters-over">Character Limit: <span>-{charactersOver}</span></span>
+  ) : null;
+}
+
 export function RichTextEditor({
   onChange,
   isReadOnly,
+  isCharLimit,
 }: Props): React.MixedElement {
   const editorElementRef = useRef(null);
   const outlineEditor = useOutlineEditor(
@@ -129,6 +153,7 @@ export function RichTextEditor({
       {toolbar}
       {stepRecorder}
       <BlockControls editor={outlineEditor} />
+      {isCharLimit && <EditorCharacterLimit editor={outlineEditor} />}
     </>
   );
 }
@@ -136,7 +161,8 @@ export function RichTextEditor({
 export function PlainTextEditor({
   onChange,
   isReadOnly,
-}: Props): React.MixedElement {
+  isCharLimit,
+}: Props): React$Node {
   const editorElementRef = useRef(null);
   const outlineEditor = useOutlineEditor(
     editorElementRef,
@@ -159,6 +185,7 @@ export function PlainTextEditor({
       />
       {mentionsTypeahead}
       {stepRecorder}
+      {isCharLimit && <EditorCharacterLimit editor={outlineEditor} />}
     </>
   );
 }

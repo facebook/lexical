@@ -240,7 +240,7 @@ const REGEX = new RegExp(getHashtagRegexString(), 'ig');
 export default function useEmojis(editor: null | OutlineEditor): void {
   useEffect(() => {
     if (editor !== null) {
-      return editor.addTextMutationListener((node: TextNode) => {
+      return editor.addTextNodeTransform((node: TextNode) => {
         if (node.isSegmented() || node.isImmutable() || node.isHashtag()) {
           return;
         }

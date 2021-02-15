@@ -2,14 +2,16 @@
 
 import type {ViewModel} from 'outline';
 
-import React from 'react';
+import * as React from 'react';
 import {useCallback, useState} from 'react';
 import {RichTextEditor, PlainTextEditor} from './Editor';
 import TreeView from './TreeView';
+import Switch from './Switch';
 
 function App(): React$Node {
   const [viewModel, setViewModel] = useState<ViewModel | null>(null);
   const [isRichText, setRichText] = useState(true);
+  const [isCharLimit, setCharLimit] = useState(false);
   const handleOnChange = useCallback((newViewModel) => {
     requestAnimationFrame(() => setViewModel(newViewModel));
   }, []);
@@ -18,22 +20,24 @@ function App(): React$Node {
     <>
       <header>
         <h1>Outline Playground</h1>
-        <div id="editor-rich-text-switch">
-          <label htmlFor="richTextMode">Rich Text</label>
-          <button
-            role="switch"
-            aria-checked={isRichText}
-            id="richTextMode"
-            onClick={() => setRichText(!isRichText)}>
-            <span />
-          </button>
-        </div>
+        <Switch
+          id="character-count-switch"
+          onClick={() => setCharLimit(!isCharLimit)}
+          checked={isCharLimit}
+          text="Char Limit"
+        />
+        <Switch
+          id="rich-text-switch"
+          onClick={() => setRichText(!isRichText)}
+          checked={isRichText}
+          text="Rich Text"
+        />
       </header>
       <div className="editor-shell">
         {isRichText ? (
-          <RichTextEditor onChange={handleOnChange} />
+          <RichTextEditor isCharLimit={isCharLimit} onChange={handleOnChange} />
         ) : (
-          <PlainTextEditor onChange={handleOnChange} />
+          <PlainTextEditor isCharLimit={isCharLimit} onChange={handleOnChange} />
         )}
       </div>
       <TreeView viewModel={viewModel} />

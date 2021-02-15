@@ -432,7 +432,7 @@ export default function useMentions(editor: OutlineEditor): React$Node {
       }
       setMentionMatch(null);
     };
-    return editor.addTextMutationListener(textNodeTransform);
+    return editor.addTextNodeTransform(textNodeTransform);
   }, [editor]);
 
   const onKeyDown = useCallback(

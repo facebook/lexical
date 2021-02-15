@@ -147,21 +147,21 @@ export function triggerTextMutationListeners(
   viewModel: ViewModel,
   editor: OutlineEditor,
 ): void {
-  const textMutationListeners = editor._textMutationListeners;
-  if (textMutationListeners.size > 0) {
+  const textNodeTransforms = editor._textNodeTransforms;
+  if (textNodeTransforms.size > 0) {
     const nodeMap = viewModel._nodeMap;
     const dirtyNodes = Array.from(viewModel._dirtyNodes);
-    const textMutations = Array.from(textMutationListeners);
+    const transforms = Array.from(textNodeTransforms);
 
     for (let s = 0; s < dirtyNodes.length; s++) {
       const nodeKey = dirtyNodes[s];
       const node = nodeMap[nodeKey];
 
       if (node !== undefined && node.isAttached()) {
-        // Trigger the text mutation listener
+        // Apply text transforms
         if (node instanceof TextNode) {
-          for (let i = 0; i < textMutations.length; i++) {
-            textMutations[i](node, view);
+          for (let i = 0; i < transforms.length; i++) {
+            transforms[i](node, view);
             if (!node.isAttached()) {
               break;
             }

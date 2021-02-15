@@ -77,7 +77,7 @@ export default function useOutlineAutoFormatter(
 ): void {
   useEffect(() => {
     if (editor !== null) {
-      return editor.addTextMutationListener(textNodeTransform);
+      return editor.addTextNodeTransform(textNodeTransform);
     }
   }, [editor]);
 }

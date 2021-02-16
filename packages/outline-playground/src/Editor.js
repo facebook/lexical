@@ -1,4 +1,5 @@
-// @flow
+// @flow strict-local
+
 import type {OutlineEditor, ViewModel} from 'outline';
 
 import * as React from 'react';
@@ -9,7 +10,7 @@ import useEmojis from './useEmojis';
 import useMentions from './useMentions';
 import usePlainText from 'outline-react/useOutlinePlainText';
 import useOutlineAutoFormatter from 'outline-react/useOutlineAutoFormatter';
-import useOutlineHistory from 'outline-react/useOutlineHistory';
+import {useOutlineHistory} from 'outline-react/useOutlineHistory';
 import useToolbar from './useToolbar';
 import useHashtags from './useHashtags';
 import BlockControls from './BlockControls';
@@ -80,7 +81,7 @@ function ContentEditable({
   isReadOnly,
   editorElementRef,
 }: {
-  props: Object,
+  props: {...},
   isReadOnly?: boolean,
   editorElementRef: {current: null | HTMLElement},
 }): React$Node {

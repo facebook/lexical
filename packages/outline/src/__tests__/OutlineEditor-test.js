@@ -121,7 +121,7 @@ describe('OutlineEditor tests', () => {
       );
 
       expect(sanitizeHTML(container.innerHTML)).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><div data-placeholder="true">' +
+        '<div contenteditable="true" data-outline-editor="true"><div>' +
           'Placeholder text</div><p><span data-text="true"><br></span></p></div>',
       );
     });

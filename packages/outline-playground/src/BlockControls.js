@@ -1,4 +1,5 @@
-// @flow
+// @flow strict-local
+
 import type {OutlineEditor, ViewModel} from 'outline';
 import {HeadingNode} from 'outline-extensions/HeadingNode';
 import {ListNode} from 'outline-extensions/ListNode';

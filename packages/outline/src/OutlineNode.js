@@ -12,7 +12,7 @@ import type {OutlineEditor} from './OutlineEditor';
 import {createTextNode, RootNode, BlockNode, TextNode} from '.';
 import {getActiveViewModel, shouldErrorOnReadOnly} from './OutlineView';
 import {generateRandomKey, invariant} from './OutlineUtils';
-import {IS_IMMUTABLE, IS_SEGMENTED} from './OutlineConstants';
+import {IS_IMMUTABLE, IS_OVERFLOWED, IS_SEGMENTED} from './OutlineConstants';
 
 export type ParsedNode = {
   __key: string,
@@ -616,6 +616,9 @@ export function createNodeFromParse(
       // $FlowFixMe: not sure how we can type this
       node[property] = parsedNode[property];
     }
+  }
+  if (node.__flags & IS_OVERFLOWED) {
+    node.__flags ^= IS_OVERFLOWED;
   }
   node.__parent = parentKey;
   // We will need to recursively handle the children in the case

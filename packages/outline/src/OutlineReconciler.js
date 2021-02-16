@@ -513,11 +513,23 @@ export function reconcileViewModel(
   const isDirty = nextViewModel._isDirty;
   const needsUpdate = isDirty || nextViewModel.hasDirtyNodes();
   const nextSelection = nextViewModel._selection;
+  let reconcilationCausedLostSelection = false;
 
   if (needsUpdate) {
+    const {anchorOffset, focusOffset} = window.getSelection();
     reconcileRoot(prevViewModel, nextViewModel, editor, dirtySubTrees);
+    const selectionAfter = window.getSelection();
+    if (
+      anchorOffset !== selectionAfter.anchorOffset ||
+      focusOffset !== selectionAfter.focusOffset
+    ) {
+      reconcilationCausedLostSelection = true;
+    }
   }
-  if (nextSelection !== null && (nextSelection.isDirty || isDirty)) {
+  if (
+    nextSelection !== null &&
+    (nextSelection.isDirty || isDirty || reconcilationCausedLostSelection)
+  ) {
     reconcileSelection(nextSelection, editor);
   }
 }

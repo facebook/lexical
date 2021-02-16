@@ -35,28 +35,20 @@ let useOutlineRichText;
 let useOutlineHistory;
 
 describe('OutlineSelection tests', () => {
-  const originalPromiseResolve = Promise.resolve;
-  beforeEach(() => {
-    Promise.resolve = () => {
-      return {
-        then(cb) {
-          cb();
-        },
-      };
-    };
+  beforeEach(async () => {
     React = require('react');
     ReactDOM = require('react-dom');
     ReactTestUtils = require('react-dom/test-utils');
     useOutlineRichText = require('outline-react/useOutlineRichText');
-    useOutlineHistory = require('outline-react/useOutlineHistory');
+    useOutlineHistory = require('outline-react/useOutlineHistory')
+      .useOutlineHistory;
 
     container = document.createElement('div');
     document.body.appendChild(container);
-    init();
+    await init();
   });
 
   afterEach(() => {
-    Promise.resolve = originalPromiseResolve;
     document.body.removeChild(container);
     container = null;
   });
@@ -74,10 +66,9 @@ describe('OutlineSelection tests', () => {
   }
 
   let editor = null;
-  let ref;
 
-  function init() {
-    ref = React.createRef();
+  async function init() {
+    const ref = React.createRef();
 
     function TestBase() {
       editor = useOutlineEditor(ref);
@@ -90,12 +81,14 @@ describe('OutlineSelection tests', () => {
       ReactDOM.render(<TestBase />, container);
     });
     ref.current.focus();
+    await Promise.resolve().then();
     // Focus first element
     setNativeSelectionWithPaths(ref.current, [0, 0, 0], 0, [0, 0, 0], 0);
   }
 
-  function update(callback) {
-    editor.update(callback, undefined, true);
+  async function update(fn) {
+    editor.update(fn);
+    return Promise.resolve().then();
   }
 
   test('Expect initial output to be a block with some text', () => {
@@ -170,7 +163,6 @@ describe('OutlineSelection tests', () => {
         focusOffset: 5,
       },
     },
-
     {
       name: 'Simple typing in bold',
       inputs: [
@@ -749,8 +741,8 @@ describe('OutlineSelection tests', () => {
 
   suite.forEach((testUnit, i) => {
     const name = testUnit.name || 'Test case';
-    test(name + ` (#${i + 1})`, () => {
-      applySelectionInputs(testUnit.inputs, update, editor);
+    test(name + ` (#${i + 1})`, async () => {
+      await applySelectionInputs(testUnit.inputs, update, editor);
       // Validate HTML matches
       expect(sanitizeHTML(container.innerHTML)).toBe(testUnit.expectedHTML);
       // Validate selection matches

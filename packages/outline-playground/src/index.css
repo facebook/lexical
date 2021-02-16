@@ -479,3 +479,7 @@ pre {
 .characters-over span {
   color: red;
 }
+
+span[data-overflow="true"] {
+  color: red;
+}

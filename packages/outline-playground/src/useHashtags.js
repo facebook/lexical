@@ -262,7 +262,7 @@ export default function useEmojis(editor: null | OutlineEditor): void {
           } else {
             [, targetNode, currentNode] = currentNode.splitText(start, end);
           }
-          targetNode.setHashtag();
+          targetNode.toggleHashtag();
         }
       });
     }

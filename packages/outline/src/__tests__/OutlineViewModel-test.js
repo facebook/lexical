@@ -23,6 +23,11 @@ describe('OutlineViewModel tests', () => {
     container = null;
   });
 
+  async function update(fn) {
+    editor.update(fn);
+    return Promise.resolve().then();
+  }
+
   function useOutlineEditor(editorElementRef) {
     const editor = React.useMemo(() => Outline.createEditor(), []);
 
@@ -50,17 +55,13 @@ describe('OutlineViewModel tests', () => {
     });
   }
 
-  test('read()', () => {
-    editor.update(
-      (view) => {
-        const paragraph = ParagraphNodeModule.createParagraphNode();
-        const text = Outline.createTextNode();
-        paragraph.append(text);
-        view.getRoot().append(paragraph);
-      },
-      undefined,
-      true,
-    );
+  test('read()', async () => {
+    await update((view) => {
+      const paragraph = ParagraphNodeModule.createParagraphNode();
+      const text = Outline.createTextNode();
+      paragraph.append(text);
+      view.getRoot().append(paragraph);
+    });
 
     let root = null;
     let paragraph = null;
@@ -96,17 +97,13 @@ describe('OutlineViewModel tests', () => {
     });
   });
 
-  test('stringify()', () => {
-    editor.update(
-      (view) => {
-        const paragraph = ParagraphNodeModule.createParagraphNode();
-        const text = Outline.createTextNode();
-        paragraph.append(text);
-        view.getRoot().append(paragraph);
-      },
-      undefined,
-      true,
-    );
+  test('stringify()', async () => {
+    await update((view) => {
+      const paragraph = ParagraphNodeModule.createParagraphNode();
+      const text = Outline.createTextNode();
+      paragraph.append(text);
+      view.getRoot().append(paragraph);
+    });
     const string = editor.getViewModel().stringify();
 
     expect(string).toEqual(

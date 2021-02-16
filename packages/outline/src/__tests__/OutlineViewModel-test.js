@@ -6,7 +6,15 @@ let Outline;
 let ParagraphNodeModule;
 
 describe('OutlineViewModel tests', () => {
+  const originalPromiseResolve = Promise.resolve;
   beforeEach(() => {
+    Promise.resolve = () => {
+      return {
+        then(cb) {
+          cb();
+        },
+      };
+    };
     React = require('react');
     ReactDOM = require('react-dom');
     ReactTestUtils = require('react-dom/test-utils');
@@ -19,6 +27,7 @@ describe('OutlineViewModel tests', () => {
   });
 
   afterEach(() => {
+    Promise.resolve = originalPromiseResolve;
     document.body.removeChild(container);
     container = null;
   });
@@ -51,16 +60,12 @@ describe('OutlineViewModel tests', () => {
   }
 
   test('read()', () => {
-    editor.update(
-      (view) => {
-        const paragraph = ParagraphNodeModule.createParagraphNode();
-        const text = Outline.createTextNode();
-        paragraph.append(text);
-        view.getRoot().append(paragraph);
-      },
-      undefined,
-      true,
-    );
+    editor.update((view) => {
+      const paragraph = ParagraphNodeModule.createParagraphNode();
+      const text = Outline.createTextNode();
+      paragraph.append(text);
+      view.getRoot().append(paragraph);
+    });
 
     let root = null;
     let paragraph = null;
@@ -97,16 +102,12 @@ describe('OutlineViewModel tests', () => {
   });
 
   test('stringify()', () => {
-    editor.update(
-      (view) => {
-        const paragraph = ParagraphNodeModule.createParagraphNode();
-        const text = Outline.createTextNode();
-        paragraph.append(text);
-        view.getRoot().append(paragraph);
-      },
-      undefined,
-      true,
-    );
+    editor.update((view) => {
+      const paragraph = ParagraphNodeModule.createParagraphNode();
+      const text = Outline.createTextNode();
+      paragraph.append(text);
+      view.getRoot().append(paragraph);
+    });
     const string = editor.getViewModel().stringify();
 
     expect(string).toEqual(

@@ -16,7 +16,15 @@ let Outline;
 let ParagraphNodeModule;
 
 describe('OutlineTextNode tests', () => {
+  const originalPromiseResolve = Promise.resolve;
   beforeEach(() => {
+    Promise.resolve = () => {
+      return {
+        then(cb) {
+          cb();
+        },
+      };
+    };
     React = require('react');
     ReactDOM = require('react-dom');
     ReactTestUtils = require('react-dom/test-utils');
@@ -29,12 +37,13 @@ describe('OutlineTextNode tests', () => {
   });
 
   afterEach(() => {
+    Promise.resolve = originalPromiseResolve;
     document.body.removeChild(container);
     container = null;
   });
 
   function update(callback) {
-    editor.update(callback, undefined, true);
+    editor.update(callback);
   }
 
   function useOutlineEditor(editorElementRef) {

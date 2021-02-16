@@ -48,7 +48,8 @@ describe('OutlineSelection tests', () => {
     ReactDOM = require('react-dom');
     ReactTestUtils = require('react-dom/test-utils');
     useOutlineRichText = require('outline-react/useOutlineRichText');
-    useOutlineHistory = require('outline-react/useOutlineHistory');
+    useOutlineHistory = require('outline-react/useOutlineHistory')
+      .useOutlineHistory;
 
     container = document.createElement('div');
     document.body.appendChild(container);
@@ -95,7 +96,7 @@ describe('OutlineSelection tests', () => {
   }
 
   function update(callback) {
-    editor.update(callback, undefined, true);
+    editor.update(callback);
   }
 
   test('Expect initial output to be a block with some text', () => {

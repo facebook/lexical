@@ -434,7 +434,6 @@ export function reconcilePlaceholder(
     }
     placeholderElement = document.createElement('div');
     placeholderElement.contentEditable = 'false';
-    placeholderElement.setAttribute('data-placeholder', 'true');
     triggerDOMCreationListener('placeholder', placeholderElement, editor);
     placeholderElement.appendChild(document.createTextNode(placeholderText));
     editorElement.appendChild(placeholderElement);

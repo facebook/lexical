@@ -9,7 +9,7 @@ import {useCallback, useEffect, useRef, useState} from 'react';
 import {findTextIntersectionFromCharacters} from 'outline-react/OutlineTextHelpers';
 import {updateWithoutHistory} from 'outline-react/useOutlineHistory';
 
-const CHARACTER_LIMIT = 10;
+const CHARACTER_LIMIT = 30;
 
 function recursivelySetBlockOverflowedNodes(
   blockNode: BlockNode,

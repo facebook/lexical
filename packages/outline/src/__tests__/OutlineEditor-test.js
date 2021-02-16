@@ -11,15 +11,7 @@ function sanitizeHTML(html) {
 }
 
 describe('OutlineEditor tests', () => {
-  const originalPromiseResolve = Promise.resolve;
   beforeEach(() => {
-    Promise.resolve = () => {
-      return {
-        then(cb) {
-          cb();
-        },
-      };
-    };
     React = require('react');
     ReactDOM = require('react-dom');
     ReactTestUtils = require('react-dom/test-utils');
@@ -32,7 +24,6 @@ describe('OutlineEditor tests', () => {
   });
 
   afterEach(() => {
-    Promise.resolve = originalPromiseResolve;
     document.body.removeChild(container);
     container = null;
   });
@@ -64,8 +55,13 @@ describe('OutlineEditor tests', () => {
     });
   }
 
-  test('parseViewModel()', () => {
-    editor.update((view) => {
+  async function update(fn) {
+    editor.update(fn);
+    return Promise.resolve().then();
+  }
+
+  test('parseViewModel()', async () => {
+    await update((view) => {
       const paragraph = ParagraphNodeModule.createParagraphNode();
       const text = Outline.createTextNode();
       paragraph.append(text);
@@ -111,10 +107,10 @@ describe('OutlineEditor tests', () => {
   });
 
   describe('setPlaceholder', () => {
-    it('Placeholder shows when there is no content', () => {
+    it('Placeholder shows when there is no content', async () => {
       editor.setPlaceholder('Placeholder text');
 
-      editor.update((view) => {
+      await update((view) => {
         const paragraph = ParagraphNodeModule.createParagraphNode();
         const text = Outline.createTextNode();
         paragraph.append(text);
@@ -127,10 +123,10 @@ describe('OutlineEditor tests', () => {
       );
     });
 
-    it('Placeholder does not should when there is content', () => {
+    it('Placeholder does not should when there is content', async () => {
       editor.setPlaceholder('Placeholder text');
 
-      editor.update((view) => {
+      await update((view) => {
         const paragraph = ParagraphNodeModule.createParagraphNode();
         const text = Outline.createTextNode('Some text');
         paragraph.append(text);
@@ -142,10 +138,10 @@ describe('OutlineEditor tests', () => {
       );
     });
 
-    it('Placeholder does not should when there are two paragraphs', () => {
+    it('Placeholder does not should when there are two paragraphs', async () => {
       editor.setPlaceholder('Placeholder text');
 
-      editor.update((view) => {
+      await update((view) => {
         const paragraph = ParagraphNodeModule.createParagraphNode();
         const text = Outline.createTextNode();
         paragraph.append(text);

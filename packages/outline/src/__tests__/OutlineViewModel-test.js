@@ -6,15 +6,7 @@ let Outline;
 let ParagraphNodeModule;
 
 describe('OutlineViewModel tests', () => {
-  const originalPromiseResolve = Promise.resolve;
   beforeEach(() => {
-    Promise.resolve = () => {
-      return {
-        then(cb) {
-          cb();
-        },
-      };
-    };
     React = require('react');
     ReactDOM = require('react-dom');
     ReactTestUtils = require('react-dom/test-utils');
@@ -27,10 +19,14 @@ describe('OutlineViewModel tests', () => {
   });
 
   afterEach(() => {
-    Promise.resolve = originalPromiseResolve;
     document.body.removeChild(container);
     container = null;
   });
+
+  async function update(fn) {
+    editor.update(fn);
+    return Promise.resolve().then();
+  }
 
   function useOutlineEditor(editorElementRef) {
     const editor = React.useMemo(() => Outline.createEditor(), []);
@@ -59,8 +55,8 @@ describe('OutlineViewModel tests', () => {
     });
   }
 
-  test('read()', () => {
-    editor.update((view) => {
+  test('read()', async () => {
+    await update((view) => {
       const paragraph = ParagraphNodeModule.createParagraphNode();
       const text = Outline.createTextNode();
       paragraph.append(text);
@@ -101,8 +97,8 @@ describe('OutlineViewModel tests', () => {
     });
   });
 
-  test('stringify()', () => {
-    editor.update((view) => {
+  test('stringify()', async () => {
+    await update((view) => {
       const paragraph = ParagraphNodeModule.createParagraphNode();
       const text = Outline.createTextNode();
       paragraph.append(text);

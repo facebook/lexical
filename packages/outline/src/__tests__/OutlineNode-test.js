@@ -11,15 +11,7 @@ function sanitizeHTML(html) {
 }
 
 describe('OutlineNode tests', () => {
-  const originalPromiseResolve = Promise.resolve;
-  beforeEach(() => {
-    Promise.resolve = () => {
-      return {
-        then(cb) {
-          cb();
-        },
-      };
-    };
+  beforeEach(async () => {
     React = require('react');
     ReactDOM = require('react-dom');
     ReactTestUtils = require('react-dom/test-utils');
@@ -28,17 +20,17 @@ describe('OutlineNode tests', () => {
 
     container = document.createElement('div');
     document.body.appendChild(container);
-    init();
+    await init();
   });
 
   afterEach(() => {
-    Promise.resolve = originalPromiseResolve;
     document.body.removeChild(container);
     container = null;
   });
 
-  function update(callback) {
-    editor.update(callback);
+  async function update(fn) {
+    editor.update(fn);
+    return Promise.resolve().then();
   }
 
   function useOutlineEditor(editorElementRef) {
@@ -55,7 +47,7 @@ describe('OutlineNode tests', () => {
 
   let editor = null;
 
-  function init() {
+  async function init() {
     const ref = React.createRef();
 
     function TestBase() {
@@ -68,7 +60,7 @@ describe('OutlineNode tests', () => {
     });
 
     // Insert initial block
-    update((view) => {
+    await update((view) => {
       const paragraph = ParagraphNodeModule.createParagraphNode();
       const text = Outline.createTextNode();
       paragraph.append(text);
@@ -76,8 +68,8 @@ describe('OutlineNode tests', () => {
     });
   }
 
-  test('replaceNode()', () => {
-    update((view) => {
+  test('replaceNode()', async () => {
+    await update((view) => {
       const oldTextNode = view.getRoot().getFirstChild().getFirstChild();
       const newTextNode = Outline.createTextNode('Replaced node!');
       oldTextNode.replace(newTextNode);
@@ -87,8 +79,8 @@ describe('OutlineNode tests', () => {
     );
   });
 
-  test('replaceNode() (immutable)', () => {
-    update((view) => {
+  test('replaceNode() (immutable)', async () => {
+    await update((view) => {
       const oldTextNode = view.getRoot().getFirstChild().getFirstChild();
       const newTextNode = Outline.createTextNode('Replaced node!');
       newTextNode.makeImmutable();
@@ -100,8 +92,8 @@ describe('OutlineNode tests', () => {
     );
   });
 
-  test('replaceNode() (segmented)', () => {
-    update((view) => {
+  test('replaceNode() (segmented)', async () => {
+    await update((view) => {
       const oldTextNode = view.getRoot().getFirstChild().getFirstChild();
       const newTextNode = Outline.createTextNode('Replaced node!');
       newTextNode.makeSegmented();
@@ -113,8 +105,8 @@ describe('OutlineNode tests', () => {
     );
   });
 
-  test('removeNode()', () => {
-    update((view) => {
+  test('removeNode()', async () => {
+    await update((view) => {
       const oldTextNode = view.getRoot().getFirstChild().getFirstChild();
       oldTextNode.remove();
     });
@@ -123,8 +115,8 @@ describe('OutlineNode tests', () => {
     );
   });
 
-  test('append()', () => {
-    update((view) => {
+  test('append()', async () => {
+    await update((view) => {
       const paragraph = view.getRoot().getFirstChild();
       const newTextNode = Outline.createTextNode('New node!');
       paragraph.append(newTextNode);
@@ -135,8 +127,8 @@ describe('OutlineNode tests', () => {
     );
   });
 
-  test('append() (immutable)', () => {
-    update((view) => {
+  test('append() (immutable)', async () => {
+    await update((view) => {
       const paragraph = view.getRoot().getFirstChild();
       const newTextNode = Outline.createTextNode('New node!');
       newTextNode.makeImmutable();
@@ -148,8 +140,8 @@ describe('OutlineNode tests', () => {
     );
   });
 
-  test('append() (segmented)', () => {
-    update((view) => {
+  test('append() (segmented)', async () => {
+    await update((view) => {
       const paragraph = view.getRoot().getFirstChild();
       const newTextNode = Outline.createTextNode('New node!');
       newTextNode.makeSegmented();
@@ -161,8 +153,8 @@ describe('OutlineNode tests', () => {
     );
   });
 
-  test('insertAfter()', () => {
-    update((view) => {
+  test('insertAfter()', async () => {
+    await update((view) => {
       const textNode = view.getRoot().getFirstChild().getFirstChild();
       const newTextNode = Outline.createTextNode('New node!');
       textNode.insertAfter(newTextNode);
@@ -173,8 +165,8 @@ describe('OutlineNode tests', () => {
     );
   });
 
-  test('insertAfter() (immutable)', () => {
-    update((view) => {
+  test('insertAfter() (immutable)', async () => {
+    await update((view) => {
       const textNode = view.getRoot().getFirstChild().getFirstChild();
       const newTextNode = Outline.createTextNode('New node!');
       newTextNode.makeImmutable();
@@ -186,8 +178,8 @@ describe('OutlineNode tests', () => {
     );
   });
 
-  test('insertAfter() (segmented)', () => {
-    update((view) => {
+  test('insertAfter() (segmented)', async () => {
+    await update((view) => {
       const textNode = view.getRoot().getFirstChild().getFirstChild();
       const newTextNode = Outline.createTextNode('New node!');
       newTextNode.makeSegmented();
@@ -199,8 +191,8 @@ describe('OutlineNode tests', () => {
     );
   });
 
-  test('insertBefore()', () => {
-    update((view) => {
+  test('insertBefore()', async () => {
+    await update((view) => {
       const textNode = view.getRoot().getFirstChild().getFirstChild();
       const newTextNode = Outline.createTextNode('New node!');
       textNode.insertBefore(newTextNode);
@@ -211,8 +203,8 @@ describe('OutlineNode tests', () => {
     );
   });
 
-  test('insertBefore() (immutable)', () => {
-    update((view) => {
+  test('insertBefore() (immutable)', async () => {
+    await update((view) => {
       const textNode = view.getRoot().getFirstChild().getFirstChild();
       const newTextNode = Outline.createTextNode('New node!');
       newTextNode.makeImmutable();
@@ -225,8 +217,8 @@ describe('OutlineNode tests', () => {
     );
   });
 
-  test('insertBefore() (segmented)', () => {
-    update((view) => {
+  test('insertBefore() (segmented)', async () => {
+    await update((view) => {
       const textNode = view.getRoot().getFirstChild().getFirstChild();
       const newTextNode = Outline.createTextNode('New node!');
       newTextNode.makeSegmented();
@@ -239,16 +231,16 @@ describe('OutlineNode tests', () => {
     );
   });
 
-  test('isParentOf', () => {
-    update((view) => {
+  test('isParentOf', async () => {
+    await update((view) => {
       const textNode = view.getRoot().getFirstChild().getFirstChild();
       expect(view.getRoot().isParentOf(textNode));
       expect(view.getRoot().getFirstChild().isParentOf(textNode));
     });
   });
 
-  test('getCommonAncestor()', () => {
-    update((view) => {
+  test('getCommonAncestor()', async () => {
+    await update((view) => {
       const textNode = view.getRoot().getFirstChild().getFirstChild();
       const textNode2 = Outline.createTextNode('New node!');
       textNode.insertAfter(textNode2);
@@ -264,7 +256,7 @@ describe('OutlineNode tests', () => {
       //  ' --- p - 'Another node!'
     });
 
-    update((view) => {
+    await update((view) => {
       const root = view.getRoot();
       const paragraphNode = root.getFirstChild();
       const textNode = paragraphNode.getFirstChild();

@@ -56,7 +56,7 @@ header h1 {
   position: relative;
 }
 
-.editor-shell div.editor div.placeholder {
+.editor-shell div.editor div[data-placeholder=] {
   color: #999;
   overflow: hidden;
   position: absolute;

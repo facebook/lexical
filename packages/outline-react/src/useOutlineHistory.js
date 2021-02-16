@@ -7,17 +7,25 @@
  * @flow strict-local
  */
 
-import type {OutlineEditor, ViewModel} from 'outline';
+import type {OutlineEditor, ViewModel, View} from 'outline';
 
 import {TextNode} from 'outline';
 import {isRedo, isUndo} from 'outline-react/OutlineHotKeys';
 import {useEffect, useMemo} from 'react';
+
+const viewModelsWithoutHistory = new Set();
 
 function shouldMerge(
   viewModel: ViewModel,
   current: null | ViewModel,
   undoStack: Array<ViewModel>,
 ): boolean {
+  // If we have a view model that doesn't want its history
+  // recorded then we always merge the changes.
+  if (viewModelsWithoutHistory.has(viewModel)) {
+    viewModelsWithoutHistory.delete(viewModel);
+    return true;
+  }
   if (current === null || undoStack.length === 0) {
     return false;
   }
@@ -54,7 +62,19 @@ function shouldMerge(
   return false;
 }
 
-export default function useOutlineHistory(editor: OutlineEditor): void {
+export function updateWithoutHistory(
+  editor: OutlineEditor,
+  updateFn: (view: View) => void,
+): boolean {
+  const res = editor.update(updateFn);
+  const pendingViewModel = editor._pendingViewModel;
+  if (pendingViewModel !== null) {
+    viewModelsWithoutHistory.add(pendingViewModel);
+  }
+  return res;
+}
+
+export function useOutlineHistory(editor: OutlineEditor): void {
   const historyState: {
     current: null | ViewModel,
     redoStack: Array<ViewModel>,

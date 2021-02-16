@@ -16,7 +16,7 @@ let Outline;
 let ParagraphNodeModule;
 
 describe('OutlineTextNode tests', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     React = require('react');
     ReactDOM = require('react-dom');
     ReactTestUtils = require('react-dom/test-utils');
@@ -25,7 +25,7 @@ describe('OutlineTextNode tests', () => {
 
     container = document.createElement('div');
     document.body.appendChild(container);
-    init();
+    await init();
   });
 
   afterEach(() => {
@@ -33,8 +33,9 @@ describe('OutlineTextNode tests', () => {
     container = null;
   });
 
-  function update(callback) {
-    editor.update(callback, undefined, true);
+  async function update(fn) {
+    editor.update(fn);
+    return Promise.resolve().then();
   }
 
   function useOutlineEditor(editorElementRef) {
@@ -51,7 +52,7 @@ describe('OutlineTextNode tests', () => {
 
   let editor = null;
 
-  function init() {
+  async function init() {
     const ref = React.createRef();
 
     function TestBase() {
@@ -64,7 +65,7 @@ describe('OutlineTextNode tests', () => {
     });
 
     // Insert initial block
-    update((view) => {
+    await update((view) => {
       const paragraph = ParagraphNodeModule.createParagraphNode();
       const text = Outline.createTextNode();
       paragraph.append(text);
@@ -81,7 +82,7 @@ describe('OutlineTextNode tests', () => {
     ['link', IS_LINK],
     ['hashtag', IS_HASHTAG],
   ])('getTextNodeFormatFlags(%i)', (formatFlag, stateFlag) => {
-    test(`getTextNodeFormatFlags(${formatFlag})`, () => {
+    test(`getTextNodeFormatFlags(${formatFlag})`, async () => {
       update((view) => {
         const root = view.getRoot();
         const paragraphNode = root.getFirstChild();

@@ -55,7 +55,7 @@ function textNodeTransform(node: TextNode, view: View): void {
       } else {
         [, targetNode] = node.splitText(i, i + 2);
       }
-      const emojiNode = createEmoji(emojiStyle, emojiText);
+      const emojiNode = createEmojiNode(emojiStyle, emojiText);
       targetNode.replace(emojiNode);
       emojiNode.selectAfter(0, 0);
       emojiNode.getParentOrThrow().normalizeTextNodes(true);
@@ -77,7 +77,7 @@ export default function useEmojis(editor: null | OutlineEditor): void {
   }, [editor]);
 }
 
-function createEmoji(cssText: string, emojiText: string): EmojiNode {
+function createEmojiNode(cssText: string, emojiText: string): EmojiNode {
   return new EmojiNode(cssText, emojiText).makeImmutable();
 }
 

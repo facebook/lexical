@@ -189,7 +189,7 @@ function MentionsTypeahead({
     close();
     editor.update((view) => {
       const targetNode = view.getNodeByKey(nodeKey);
-      const mentionNode = createMention(selectedResult);
+      const mentionNode = createMentionNode(selectedResult);
 
       // $FlowFixMe
       targetNode.replace(mentionNode);
@@ -469,7 +469,7 @@ export default function useMentions(editor: OutlineEditor): React$Node {
       );
 }
 
-function createMention(mentionName) {
+function createMentionNode(mentionName: string): MentionNode {
   return new MentionNode(mentionName).makeSegmented();
 }
 

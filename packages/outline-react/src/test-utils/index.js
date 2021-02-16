@@ -360,10 +360,11 @@ function moveNativeSelectionForward() {
   }
 }
 
-export function applySelectionInputs(inputs, update, editor) {
+export async function applySelectionInputs(inputs, update, editor) {
   const editorElement = editor.getEditorElement();
-  inputs.forEach((input) => {
-    update((view) => {
+  for (let i = 0; i < inputs.length; i++) {
+    const input = inputs[i];
+    await update((view) => {
       const selection = view.getSelection();
 
       switch (input.type) {
@@ -466,5 +467,5 @@ export function applySelectionInputs(inputs, update, editor) {
         }
       }
     });
-  });
+  }
 }

@@ -77,6 +77,21 @@ export class BlockNode extends OutlineNode {
     }
     return childrenNodes;
   }
+  getAllTextNodes(): Array<TextNode> {
+    const textNodes = [];
+    const self = this.getLatest();
+    const children = self.__children;
+    for (let i = 0; i < children.length; i++) {
+      const childNode = getNodeByKey(children[i]);
+      if (childNode instanceof TextNode) {
+        textNodes.push(childNode);
+      } else if (childNode instanceof BlockNode) {
+        const subChildrenNodes = childNode.getAllTextNodes();
+        textNodes.push(...subChildrenNodes);
+      }
+    }
+    return textNodes;
+  }
   getFirstTextNode(): null | TextNode {
     const children = this.getChildren();
     for (let i = 0; i < children.length; i++) {

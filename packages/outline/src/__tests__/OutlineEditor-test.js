@@ -55,17 +55,18 @@ describe('OutlineEditor tests', () => {
     });
   }
 
-  test('parseViewModel()', () => {
-    editor.update(
-      (view) => {
-        const paragraph = ParagraphNodeModule.createParagraphNode();
-        const text = Outline.createTextNode();
-        paragraph.append(text);
-        view.getRoot().append(paragraph);
-      },
-      undefined,
-      true,
-    );
+  async function update(fn) {
+    editor.update(fn);
+    return Promise.resolve().then();
+  }
+
+  test('parseViewModel()', async () => {
+    await update((view) => {
+      const paragraph = ParagraphNodeModule.createParagraphNode();
+      const text = Outline.createTextNode();
+      paragraph.append(text);
+      view.getRoot().append(paragraph);
+    });
 
     editor.addNodeType('paragraph', ParagraphNodeModule.ParagraphNode);
     const stringifiedViewModel = editor.getViewModel().stringify();
@@ -106,19 +107,15 @@ describe('OutlineEditor tests', () => {
   });
 
   describe('setPlaceholder', () => {
-    it('Placeholder shows when there is no content', () => {
+    it('Placeholder shows when there is no content', async () => {
       editor.setPlaceholder('Placeholder text');
 
-      editor.update(
-        (view) => {
-          const paragraph = ParagraphNodeModule.createParagraphNode();
-          const text = Outline.createTextNode();
-          paragraph.append(text);
-          view.getRoot().append(paragraph);
-        },
-        undefined,
-        true,
-      );
+      await update((view) => {
+        const paragraph = ParagraphNodeModule.createParagraphNode();
+        const text = Outline.createTextNode();
+        paragraph.append(text);
+        view.getRoot().append(paragraph);
+      });
 
       expect(sanitizeHTML(container.innerHTML)).toBe(
         '<div contenteditable="true" data-outline-editor="true"><div>' +
@@ -126,19 +123,15 @@ describe('OutlineEditor tests', () => {
       );
     });
 
-    it('Placeholder does not should when there is content', () => {
+    it('Placeholder does not should when there is content', async () => {
       editor.setPlaceholder('Placeholder text');
 
-      editor.update(
-        (view) => {
-          const paragraph = ParagraphNodeModule.createParagraphNode();
-          const text = Outline.createTextNode('Some text');
-          paragraph.append(text);
-          view.getRoot().append(paragraph);
-        },
-        undefined,
-        true,
-      );
+      await update((view) => {
+        const paragraph = ParagraphNodeModule.createParagraphNode();
+        const text = Outline.createTextNode('Some text');
+        paragraph.append(text);
+        view.getRoot().append(paragraph);
+      });
 
       expect(sanitizeHTML(container.innerHTML)).toBe(
         '<div contenteditable="true" data-outline-editor="true"><div style="display: none;">' +
@@ -146,23 +139,19 @@ describe('OutlineEditor tests', () => {
       );
     });
 
-    it('Placeholder does not should when there are two paragraphs', () => {
+    it('Placeholder does not should when there are two paragraphs', async () => {
       editor.setPlaceholder('Placeholder text');
 
-      editor.update(
-        (view) => {
-          const paragraph = ParagraphNodeModule.createParagraphNode();
-          const text = Outline.createTextNode();
-          paragraph.append(text);
-          const paragraph2 = ParagraphNodeModule.createParagraphNode();
-          const text2 = Outline.createTextNode();
-          paragraph2.append(text2);
-          view.getRoot().append(paragraph);
-          view.getRoot().append(paragraph2);
-        },
-        undefined,
-        true,
-      );
+      await update((view) => {
+        const paragraph = ParagraphNodeModule.createParagraphNode();
+        const text = Outline.createTextNode();
+        paragraph.append(text);
+        const paragraph2 = ParagraphNodeModule.createParagraphNode();
+        const text2 = Outline.createTextNode();
+        paragraph2.append(text2);
+        view.getRoot().append(paragraph);
+        view.getRoot().append(paragraph2);
+      });
 
       expect(sanitizeHTML(container.innerHTML)).toBe(
         '<div contenteditable="true" data-outline-editor="true"><div style="display: none;">' +

@@ -19,6 +19,7 @@ export const IS_UNDERLINE = 1 << 5;
 export const IS_CODE = 1 << 6;
 export const IS_LINK = 1 << 7;
 export const IS_HASHTAG = 1 << 8;
+export const IS_OVERFLOWED = 1 << 9;
 
 // Reconcilation
 

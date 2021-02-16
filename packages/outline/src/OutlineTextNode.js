@@ -23,7 +23,6 @@ import {
   IS_STRIKETHROUGH,
   IS_UNDERLINE,
   IS_LINK,
-  IS_OVERFLOWED,
   BYTE_ORDER_MARK,
 } from './OutlineConstants';
 
@@ -34,8 +33,7 @@ export type TextFormatType =
   | 'italic'
   | 'code'
   | 'link'
-  | 'hashtag'
-  | 'overflowed';
+  | 'hashtag';
 
 export type SelectionFragment = {
   root: OutlineNode,
@@ -50,7 +48,6 @@ const textFormatStateFlags: {[TextFormatType]: number} = {
   code: IS_CODE,
   link: IS_LINK,
   hashtag: IS_HASHTAG,
-  overflowed: IS_OVERFLOWED,
 };
 
 function getElementOuterTag(node: TextNode, flags: number): string | null {
@@ -286,9 +283,6 @@ export class TextNode extends OutlineNode {
   isHashtag(): boolean {
     return (this.getLatest().__flags & IS_HASHTAG) !== 0;
   }
-  isOverflowed(): boolean {
-    return (this.getLatest().__flags & IS_OVERFLOWED) !== 0;
-  }
   getURL(): null | string {
     return this.__url;
   }
@@ -342,9 +336,6 @@ export class TextNode extends OutlineNode {
     if (flags & IS_LINK) {
       innerDOM.setAttribute('data-link', 'true');
     }
-    if (flags & IS_OVERFLOWED) {
-      innerDOM.setAttribute('data-overflow', 'true');
-    }
     return dom;
   }
   updateDOM(prevNode: TextNode, dom: HTMLElement): boolean {
@@ -392,23 +383,10 @@ export class TextNode extends OutlineNode {
         innerDOM.removeAttribute('data-link');
       }
     }
-    if (nextFlags & IS_OVERFLOWED) {
-      if ((prevFlags & IS_OVERFLOWED) === 0) {
-        innerDOM.setAttribute('data-overflow', 'true');
-      }
-    } else {
-      if (prevFlags & IS_OVERFLOWED) {
-        innerDOM.removeAttribute('data-overflow');
-      }
-    }
     return false;
   }
 
   // Mutators
-  toggleOverflowed(): TextNode {
-    const newFlags = this.getTextNodeFormatFlags('overflowed', null, true);
-    return this.setFlags(newFlags);
-  }
   toggleHashtag(): TextNode {
     const newFlags = this.getTextNodeFormatFlags('hashtag', null, true);
     return this.setFlags(newFlags);

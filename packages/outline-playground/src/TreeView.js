@@ -109,7 +109,6 @@ const LABEL_PREDICATES = [
   (node) => node.isSegmented() && 'Segmented',
   (node) => node.isStrikethrough() && 'Strikethrough',
   (node) => node.isUnderline() && 'Underline',
-  (node) => node.isOverflowed() && 'Overflowed',
 ];
 
 function printTextNodeFlags(node) {

@@ -1,6 +1,6 @@
 // @flow
 
-import type {OutlineEditor, ViewModel, View} from 'outline';
+import type {OutlineEditor, ViewModel} from 'outline';
 
 import * as React from 'react';
 

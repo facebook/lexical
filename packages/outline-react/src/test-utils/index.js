@@ -61,45 +61,51 @@ export function insertParagraph(text) {
   };
 }
 
-export function deleteWordBackward() {
+export function deleteWordBackward(n: ?number) {
   return {
     type: 'delete_word_backward',
     text: null,
+    times: n,
   };
 }
 
-export function deleteWordForward() {
+export function deleteWordForward(n: ?number) {
   return {
     type: 'delete_word_forward',
     text: null,
+    times: n,
   };
 }
 
-export function moveBackward() {
+export function moveBackward(n: ?number) {
   return {
     type: 'move_backward',
     text: null,
+    times: n,
   };
 }
 
-export function moveForward() {
+export function moveForward(n: ?number) {
   return {
     type: 'move_forward',
     text: null,
+    times: n,
   };
 }
 
-export function deleteBackward() {
+export function deleteBackward(n: ?number) {
   return {
     type: 'delete_backward',
     text: null,
+    times: n,
   };
 }
 
-export function deleteForward() {
+export function deleteForward(n: ?number) {
   return {
     type: 'delete_forward',
     text: null,
+    times: n,
   };
 }
 
@@ -131,17 +137,19 @@ export function formatUnderline() {
   };
 }
 
-export function redo() {
+export function redo(n: ?number) {
   return {
     type: 'redo',
     text: null,
+    times: n,
   };
 }
 
-export function undo() {
+export function undo(n: ?number) {
   return {
     type: 'undo',
     text: null,
+    times: n,
   };
 }
 
@@ -364,108 +372,112 @@ export async function applySelectionInputs(inputs, update, editor) {
   const editorElement = editor.getEditorElement();
   for (let i = 0; i < inputs.length; i++) {
     const input = inputs[i];
-    await update((view) => {
-      const selection = view.getSelection();
+    const times = input?.times ?? 1;
 
-      switch (input.type) {
-        case 'insert_text': {
-          SelectionHelpers.insertText(selection, input.text);
-          break;
+    for (let j = 0; j < times; j++) {
+      await update((view) => {
+        const selection = view.getSelection();
+
+        switch (input.type) {
+          case 'insert_text': {
+            SelectionHelpers.insertText(selection, input.text);
+            break;
+          }
+          case 'insert_paragraph': {
+            SelectionHelpers.insertParagraph(selection);
+            break;
+          }
+          case 'move_backward': {
+            moveNativeSelectionBackward();
+            break;
+          }
+          case 'move_forward': {
+            moveNativeSelectionForward();
+            break;
+          }
+          case 'delete_backward': {
+            SelectionHelpers.deleteBackward(selection);
+            break;
+          }
+          case 'delete_forward': {
+            SelectionHelpers.deleteForward(selection);
+            break;
+          }
+          case 'delete_word_backward': {
+            SelectionHelpers.deleteWordBackward(selection);
+            break;
+          }
+          case 'delete_word_forward': {
+            SelectionHelpers.deleteWordForward(selection);
+            break;
+          }
+          case 'format_text': {
+            SelectionHelpers.formatText(selection, input.format);
+            break;
+          }
+          case 'move_native_selection': {
+            setNativeSelectionWithPaths(
+              editorElement,
+              input.anchorPath,
+              input.anchorOffset,
+              input.focusPath,
+              input.focusOffset,
+            );
+            break;
+          }
+          case 'insert_immutable_node': {
+            const text = createTextNode(input.text);
+            text.makeImmutable();
+            SelectionHelpers.insertNodes(selection, [text]);
+            text.selectAfter();
+            break;
+          }
+          case 'insert_segmented_node': {
+            const text = createTextNode(input.text);
+            text.makeSegmented();
+            SelectionHelpers.insertNodes(selection, [text]);
+            text.selectAfter();
+            break;
+          }
+          case 'covert_to_immutable_node': {
+            const text = createTextNode(selection.getTextContent());
+            text.makeImmutable();
+            SelectionHelpers.insertNodes(selection, [text]);
+            text.selectAfter();
+            break;
+          }
+          case 'covert_to_segmented_node': {
+            const text = createTextNode(selection.getTextContent());
+            text.makeSegmented();
+            SelectionHelpers.insertNodes(selection, [text]);
+            text.selectAfter();
+            break;
+          }
+          case 'undo': {
+            editorElement.dispatchEvent(
+              new KeyboardEvent('keydown', {
+                bubbles: true,
+                cancelable: true,
+                ctrlKey: true,
+                key: 'z',
+              }),
+            );
+            break;
+          }
+          case 'redo': {
+            editorElement.dispatchEvent(
+              new KeyboardEvent('keydown', {
+                bubbles: true,
+                cancelable: true,
+                ctrlKey: true,
+                shiftKey: true,
+                key: 'z',
+              }),
+            );
+            break;
+          }
         }
-        case 'insert_paragraph': {
-          SelectionHelpers.insertParagraph(selection);
-          break;
-        }
-        case 'move_backward': {
-          moveNativeSelectionBackward();
-          break;
-        }
-        case 'move_forward': {
-          moveNativeSelectionForward();
-          break;
-        }
-        case 'delete_backward': {
-          SelectionHelpers.deleteBackward(selection);
-          break;
-        }
-        case 'delete_forward': {
-          SelectionHelpers.deleteForward(selection);
-          break;
-        }
-        case 'delete_word_backward': {
-          SelectionHelpers.deleteWordBackward(selection);
-          break;
-        }
-        case 'delete_word_forward': {
-          SelectionHelpers.deleteWordForward(selection);
-          break;
-        }
-        case 'format_text': {
-          SelectionHelpers.formatText(selection, input.format);
-          break;
-        }
-        case 'move_native_selection': {
-          setNativeSelectionWithPaths(
-            editorElement,
-            input.anchorPath,
-            input.anchorOffset,
-            input.focusPath,
-            input.focusOffset,
-          );
-          break;
-        }
-        case 'insert_immutable_node': {
-          const text = createTextNode(input.text);
-          text.makeImmutable();
-          SelectionHelpers.insertNodes(selection, [text]);
-          text.selectAfter();
-          break;
-        }
-        case 'insert_segmented_node': {
-          const text = createTextNode(input.text);
-          text.makeSegmented();
-          SelectionHelpers.insertNodes(selection, [text]);
-          text.selectAfter();
-          break;
-        }
-        case 'covert_to_immutable_node': {
-          const text = createTextNode(selection.getTextContent());
-          text.makeImmutable();
-          SelectionHelpers.insertNodes(selection, [text]);
-          text.selectAfter();
-          break;
-        }
-        case 'covert_to_segmented_node': {
-          const text = createTextNode(selection.getTextContent());
-          text.makeSegmented();
-          SelectionHelpers.insertNodes(selection, [text]);
-          text.selectAfter();
-          break;
-        }
-        case 'undo': {
-          editorElement.dispatchEvent(
-            new KeyboardEvent('keydown', {
-              bubbles: true,
-              cancelable: true,
-              ctrlKey: true,
-              key: 'z',
-            }),
-          );
-          break;
-        }
-        case 'redo': {
-          editorElement.dispatchEvent(
-            new KeyboardEvent('keydown', {
-              bubbles: true,
-              cancelable: true,
-              ctrlKey: true,
-              shiftKey: true,
-              key: 'z',
-            }),
-          );
-          break;
-        }
-      }
-    });
+      });
+    }
   }
 }

@@ -21,11 +21,7 @@ import type {ParsedNodeMap} from './OutlineNode';
 
 import {reconcileViewModel} from './OutlineReconciler';
 import {getSelection, createSelectionFromParse} from './OutlineSelection';
-import {
-  getNodeByKey,
-  populateNodeMapFromParse,
-  createNodeFromParse,
-} from './OutlineNode';
+import {getNodeByKey, createNodeFromParse} from './OutlineNode';
 import {TextNode} from '.';
 import {invariant} from './OutlineUtils';
 
@@ -312,12 +308,15 @@ export function parseViewModel(
   const viewModel = new ViewModel(nodeMap);
   enterViewModelScope(
     () => {
-      populateNodeMapFromParse(nodeMap, parsedViewModel._nodeMap, editor);
+      debugger;
+      const parsedNodeMap = parsedViewModel._nodeMap;
+      createNodeFromParse(parsedNodeMap.root, parsedNodeMap, editor, null);
     },
     viewModel,
     editor,
     false,
   );
+  debugger;
   viewModel._selection = createSelectionFromParse(parsedViewModel._selection);
   viewModel._isDirty = true;
   return viewModel;

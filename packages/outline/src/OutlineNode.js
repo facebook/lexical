@@ -580,18 +580,6 @@ function getNodeByKeyOrThrow<N: OutlineNode>(key: NodeKey): N {
   return (node: $FlowFixMe);
 }
 
-export function populateNodeMapFromParse(
-  nodeMap: NodeMapType,
-  parsedNodeMap: ParsedNodeMap,
-  editor: OutlineEditor,
-): void {
-  for (const key in parsedNodeMap) {
-    const parsedNode = parsedNodeMap[key];
-    const node = createNodeFromParse(parsedNode, parsedNodeMap, editor, null);
-    nodeMap[key] = node;
-  }
-}
-
 export function createNodeFromParse(
   parsedNode: ParsedNode,
   parsedNodeMap: ParsedNodeMap,
@@ -606,6 +594,10 @@ export function createNodeFromParse(
   );
   const node = new NodeType();
   const key = node.__key;
+  if (node instanceof RootNode) {
+    const viewModel = getActiveViewModel();
+    viewModel._nodeMap.root = node;
+  }
   // Copy over all properties, except the key and children.
   // We've already generated a unique key for this node, we
   // don't want to use an old one that might already be in use.

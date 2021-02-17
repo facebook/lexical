@@ -62,49 +62,51 @@ describe('OutlineEditor tests', () => {
     return Promise.resolve().then();
   }
 
-  test('parseViewModel()', async () => {
-    await update((view) => {
-      const paragraph = ParagraphNodeModule.createParagraphNode();
-      const text = Outline.createTextNode();
-      paragraph.append(text);
-      view.getRoot().append(paragraph);
+  describe('parseViewModel()', () => {
+    let parsedParagraph;
+    let parsedRoot;
+    let parsedText;
+
+    beforeEach(async () => {
+      await update((view) => {
+        const paragraph = ParagraphNodeModule.createParagraphNode();
+        const text = Outline.createTextNode('Hello world');
+        paragraph.append(text);
+        view.getRoot().append(paragraph);
+      });
+      editor.addNodeType('paragraph', ParagraphNodeModule.ParagraphNode);
+      const stringifiedViewModel = editor.getViewModel().stringify();
+      const viewModel = editor.parseViewModel(stringifiedViewModel);
+      viewModel.read((view) => {
+        parsedRoot = view.getRoot();
+        parsedParagraph = parsedRoot.getFirstChild();
+        parsedText = parsedParagraph.getFirstChild();
+      });
     });
 
-    editor.addNodeType('paragraph', ParagraphNodeModule.ParagraphNode);
-    const stringifiedViewModel = editor.getViewModel().stringify();
-    const viewModel = editor.parseViewModel(stringifiedViewModel);
-
-    let root = null;
-    let paragraph = null;
-    let text = null;
-
-    viewModel.read((view) => {
-      root = view.getRoot();
-      paragraph = root.getFirstChild();
-      text = paragraph.getFirstChild();
-    });
-
-    expect(root).toEqual({
-      __children: ['_3'],
-      __flags: 0,
-      __key: 'root',
-      __parent: null,
-      __type: 'root',
-    });
-    expect(paragraph).toEqual({
-      __children: ['_4'],
-      __flags: 0,
-      __key: '_3',
-      __parent: 'root',
-      __type: 'paragraph',
-    });
-    expect(text).toEqual({
-      __text: '',
-      __flags: 0,
-      __key: '_4',
-      __parent: '_3',
-      __type: 'text',
-      __url: null,
+    it('Parses the nodes of a stringified view model', async () => {
+      expect(parsedRoot).toEqual({
+        __children: ['_3'],
+        __flags: 0,
+        __key: 'root',
+        __parent: null,
+        __type: 'root',
+      });
+      expect(parsedParagraph).toEqual({
+        __children: ['_4'],
+        __flags: 0,
+        __key: '_3',
+        __parent: 'root',
+        __type: 'paragraph',
+      });
+      expect(parsedText).toEqual({
+        __text: 'Hello world',
+        __flags: 0,
+        __key: '_4',
+        __parent: '_3',
+        __type: 'text',
+        __url: null,
+      });
     });
   });
 

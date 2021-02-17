@@ -9,6 +9,7 @@
 
 import type {Selection} from './OutlineSelection';
 import type {NodeKey} from './OutlineNode';
+import type {EditorThemeClasses} from './OutlineEditor';
 
 import {OutlineNode} from './OutlineNode';
 import {getWritableNode} from './OutlineNode';
@@ -322,7 +323,7 @@ export class TextNode extends OutlineNode {
 
   // View
 
-  createDOM(): HTMLElement {
+  createDOM(editorThemeClasses: EditorThemeClasses): HTMLElement {
     const flags = this.__flags;
     const outerTag = getElementOuterTag(this, flags);
     const innerTag = getElementInnerTag(this, flags);
@@ -337,13 +338,18 @@ export class TextNode extends OutlineNode {
 
     setTextStyling(innerTag, 0, flags, innerDOM);
     setTextContent(null, text, innerDOM, this);
-    // add data-text attribute
-    innerDOM.setAttribute('data-text', 'true');
-    if (flags & IS_LINK) {
-      innerDOM.setAttribute('data-link', 'true');
-    }
-    if (flags & IS_OVERFLOWED) {
-      innerDOM.setAttribute('data-overflow', 'true');
+    // Apply theme class names
+    const textClassNames = editorThemeClasses.text;
+
+    if (textClassNames !== undefined) {
+      const linkClassName = textClassNames.link;
+      if (linkClassName !== undefined && flags & IS_LINK) {
+        dom.classList.add(linkClassName);
+      }
+      const overflowedClassName = textClassNames.link;
+      if (overflowedClassName !== undefined && flags & IS_OVERFLOWED) {
+        dom.classList.add(overflowedClassName);
+      }
     }
     return dom;
   }

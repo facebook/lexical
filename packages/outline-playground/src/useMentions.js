@@ -1,5 +1,5 @@
 // @flow
-import type {OutlineEditor, NodeKey} from 'outline';
+import type {OutlineEditor, NodeKey, EditorThemeClasses} from 'outline';
 
 import React, {useCallback, useLayoutEffect, useMemo, useRef} from 'react';
 import {useEffect, useState} from 'react';
@@ -469,10 +469,6 @@ export default function useMentions(editor: OutlineEditor): React$Node {
       );
 }
 
-function createMentionNode(mentionName: string): MentionNode {
-  return new MentionNode(mentionName).makeSegmented();
-}
-
 class MentionNode extends TextNode {
   mention: string;
 
@@ -488,13 +484,17 @@ class MentionNode extends TextNode {
     clone.__flags = this.__flags;
     return clone;
   }
-  createDOM() {
-    const dom = super.createDOM();
+  createDOM(editorThemeClasses: EditorThemeClasses) {
+    const dom = super.createDOM(editorThemeClasses);
     dom.style.cssText = mentionStyle;
     dom.className = 'mention';
     dom.tabIndex = -1;
     return dom;
   }
+}
+
+function createMentionNode(mentionName: string): MentionNode {
+  return new MentionNode(mentionName).makeSegmented();
 }
 
 const dummyLookupService = {

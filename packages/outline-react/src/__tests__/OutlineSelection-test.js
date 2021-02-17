@@ -745,7 +745,7 @@ describe('OutlineSelection tests', () => {
           moveBackward(14),
         ],
         expectedHTML:
-          '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-text="true">this is weird test</span></p></div>',
+          '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span>this is weird test</span></p></div>',
         expectedSelection: {
           anchorPath: [0, 0, 0],
           anchorOffset: 0,

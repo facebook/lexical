@@ -221,7 +221,7 @@ export default function useStepRecorder(editor: OutlineEditor): React$Node {
   inputs: [
     ${processedSteps.join(',\n    ')}
   ],
-  expectedHTML: '<div contenteditable="true" data-outline-editor="true">${sanitizeHTML(
+  expectedHTML: '<div contenteditable="true" data-outline-editor="true" dir="ltr">${sanitizeHTML(
     currentInnerHTML,
   )}</div>',
   expectedSelection: {

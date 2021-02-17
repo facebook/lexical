@@ -7,6 +7,8 @@ import type {OutlineEditor, View} from 'outline';
 
 // $FlowFixMe
 import {createPortal} from 'react-dom';
+import {createTextNode} from 'outline';
+import {createParagraphNode} from 'outline-extensions/ParagraphNode';
 
 import {
   isDeleteBackward,
@@ -58,11 +60,41 @@ function getPathFromNodeToEditor(node: Node, editorElement) {
 // $FlowFixMe TODO
 type Steps = Array<any>;
 
+const AVAILABLE_INPUTS = {
+  deleteBackward: isDeleteBackward,
+  deleteForward: isDeleteForward,
+  deleteWordBackward: isDeleteWordBackward,
+  deleteWordForward: isDeleteWordForward,
+  deleteLineForward: isDeleteLineForward,
+  deleteLineBackward: isDeleteLineBackward,
+  insertParagraph: isParagraph,
+  insertLinebreak: isLineBreak,
+  undo: isUndo,
+  redo: isRedo,
+  formatBold: isBold,
+  formatItalic: isItalic,
+  moveBackward: (e) => e.key === 'ArrowLeft',
+  moveForward: (e) => e.key === 'ArrowRight',
+  // I imagine there's a smarter way of checking that it's not a special character.
+  // this serves to filter out selection inputs like `ArrowLeft` etc that we handle elsewhere
+  insertText: (e) => e.key.length === 1,
+};
+
 export default function useStepRecorder(editor: OutlineEditor): React$Node {
   const [steps, setSteps] = useState<Steps>([]);
   const [isRecording, setIsRecording] = useState(false);
   const [currentInnerHTML, setCurrentInnerHTML] = useState('');
   const previousSelectionRef = useRef(null);
+  const currentEditorRef = useRef(editor);
+  const skipNextSelectionChangeRef = useRef(false);
+
+  useEffect(() => {
+    currentEditorRef.current = editor;
+  }, [editor]);
+
+  const getCurrentEditor = useCallback(() => {
+    return currentEditorRef.current;
+  }, []);
 
   // just a wrapper around inserting new actions so that we can
   // coalesce some actions like insertText/moveNativeSelection
@@ -94,34 +126,18 @@ export default function useStepRecorder(editor: OutlineEditor): React$Node {
       if (!isRecording) {
         return;
       }
-      if (isDeleteBackward(event)) {
-        pushStep('deleteBackward');
-      } else if (isDeleteForward(event)) {
-        pushStep('deleteForward');
-      } else if (isDeleteLineBackward(event)) {
-        pushStep("TODO: this operation isn't supported yet");
-      } else if (isDeleteLineForward(event)) {
-        pushStep("TODO: this operation isn't supported yet");
-      } else if (isDeleteWordBackward(event)) {
-        pushStep('deleteWordBackward');
-      } else if (isDeleteWordForward(event)) {
-        pushStep('deleteWordForward');
-      } else if (isParagraph(event)) {
-        pushStep('insertParagraph');
-      } else if (isLineBreak(event)) {
-        pushStep('insertLinebreak');
-      } else if (isUndo(event)) {
-        pushStep('undo');
-      } else if (isRedo(event)) {
-        pushStep('redo');
-      } else if (isBold(event)) {
-        pushStep('formatBold');
-      } else if (isItalic(event)) {
-        pushStep('formatItalic');
-      } else if (event.key.length === 1) {
-        // I imagine there's a smarter way of checking that it's not a special character.
-        // this serves to filter out selection inputs like `ArrowLeft` etc that we handle elsewhere
-        pushStep('insertText', event.key);
+      const maybeCommand = Object.keys(AVAILABLE_INPUTS).find((command) =>
+        AVAILABLE_INPUTS[command]?.(event),
+      );
+      if (maybeCommand != null) {
+        if (maybeCommand === 'insertText') {
+          pushStep('insertText', event.key);
+        } else {
+          pushStep(maybeCommand);
+        }
+        if (['moveBackward', 'moveForward'].includes(maybeCommand)) {
+          skipNextSelectionChangeRef.current = true;
+        }
       }
     },
     [isRecording, pushStep],
@@ -134,8 +150,13 @@ export default function useStepRecorder(editor: OutlineEditor): React$Node {
       const currentSelection = viewModel._selection;
       const previousSelection = previousSelectionRef.current;
       const editorElement = editor.getEditorElement();
+      const skipNextSelectionChange = skipNextSelectionChangeRef.current;
       if (previousSelection !== currentSelection) {
-        if (!viewModel.hasDirtyNodes() && isRecording) {
+        if (
+          !viewModel.hasDirtyNodes() &&
+          isRecording &&
+          !skipNextSelectionChange
+        ) {
           const browserSelection = window.getSelection();
           if (
             browserSelection.anchorNode == null ||
@@ -159,6 +180,7 @@ export default function useStepRecorder(editor: OutlineEditor): React$Node {
             focusOffset,
           ]);
         }
+        skipNextSelectionChangeRef.current = false;
         previousSelectionRef.current = currentSelection;
       }
     });
@@ -221,7 +243,7 @@ export default function useStepRecorder(editor: OutlineEditor): React$Node {
   inputs: [
     ${processedSteps.join(',\n    ')}
   ],
-  expectedHTML: '<div contenteditable="true" data-outline-editor="true">${sanitizeHTML(
+  expectedHTML: '<div contenteditable="true" data-outline-editor="true" dir="ltr">${sanitizeHTML(
     currentInnerHTML,
   )}</div>',
   expectedSelection: {
@@ -240,25 +262,40 @@ export default function useStepRecorder(editor: OutlineEditor): React$Node {
     `;
   }, [currentInnerHTML, editor, steps]);
 
+  const toggleEditorSelection = useCallback(
+    (currentEditor) => {
+      if (!isRecording) {
+        currentEditor.update((view: View) => {
+          const root = view.getRoot();
+          root.clear();
+          const text = createTextNode();
+          root.append(createParagraphNode().append(text));
+          text.select();
+        });
+        setSteps([]);
+      }
+      setIsRecording((currentIsRecording) => !currentIsRecording);
+    },
+    [isRecording],
+  );
+
+  useEffect(() => {
+    const cb = (event: KeyboardEvent) => {
+      if (event.key === 'k' && (event.metaKey || event.ctrlKey)) {
+        toggleEditorSelection(getCurrentEditor());
+      }
+    };
+    document.addEventListener('keydown', cb);
+    return () => {
+      document.removeEventListener('keydown', cb);
+    };
+  }, [getCurrentEditor, toggleEditorSelection]);
+
   return createPortal(
     <>
       <button
         id="step-recorder-button"
-        onClick={() => {
-          if (!isRecording) {
-            editor.update(
-              (view: View) => {
-                view.getRoot().clear();
-                view.clearSelection();
-              },
-              () => {
-                editor.getEditorElement()?.focus();
-              },
-            );
-            setSteps([]);
-          }
-          setIsRecording((currentIsRecording) => !currentIsRecording);
-        }}>
+        onClick={() => toggleEditorSelection(getCurrentEditor())}>
         {isRecording ? 'STOP RECORDING' : 'RECORD TEST'}
       </button>
       {steps.length !== 0 && <pre id="step-recorder">{testContent}</pre>}

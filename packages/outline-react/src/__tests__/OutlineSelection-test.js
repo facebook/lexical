@@ -736,6 +736,23 @@ describe('OutlineSelection tests', () => {
           focusOffset: 6,
         },
       },
+      {
+        name:
+          'Type a sentence, move the caret to the middle and move with the arrows to the start',
+        inputs: [
+          insertText('this is weird test'),
+          moveNativeSelection([0, 0, 0], 14, [0, 0, 0], 14),
+          moveBackward(14),
+        ],
+        expectedHTML:
+          '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-text="true">this is weird test</span></p></div>',
+        expectedSelection: {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 0,
+          focusPath: [0, 0, 0],
+          focusOffset: 0,
+        },
+      },
     ]),
   ];
 

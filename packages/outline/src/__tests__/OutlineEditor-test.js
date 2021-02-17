@@ -62,49 +62,67 @@ describe('OutlineEditor tests', () => {
     return Promise.resolve().then();
   }
 
-  test('parseViewModel()', async () => {
-    await update((view) => {
-      const paragraph = ParagraphNodeModule.createParagraphNode();
-      const text = Outline.createTextNode();
-      paragraph.append(text);
-      view.getRoot().append(paragraph);
+  describe('parseViewModel()', () => {
+    let originalText;
+    let parsedParagraph;
+    let parsedRoot;
+    let parsedSelection;
+    let parsedText;
+
+    beforeEach(async () => {
+      await update((view) => {
+        const paragraph = ParagraphNodeModule.createParagraphNode();
+        originalText = Outline.createTextNode('Hello world');
+        originalText.select(6, 11);
+        paragraph.append(originalText);
+        view.getRoot().append(paragraph);
+      });
+      editor.addNodeType('paragraph', ParagraphNodeModule.ParagraphNode);
+      const stringifiedViewModel = editor.getViewModel().stringify();
+      const viewModel = editor.parseViewModel(stringifiedViewModel);
+      viewModel.read((view) => {
+        parsedRoot = view.getRoot();
+        parsedParagraph = parsedRoot.getFirstChild();
+        parsedText = parsedParagraph.getFirstChild();
+        parsedSelection = view.getSelection();
+      });
     });
 
-    editor.addNodeType('paragraph', ParagraphNodeModule.ParagraphNode);
-    const stringifiedViewModel = editor.getViewModel().stringify();
-    const viewModel = editor.parseViewModel(stringifiedViewModel);
-
-    let root = null;
-    let paragraph = null;
-    let text = null;
-
-    viewModel.read((view) => {
-      root = view.getRoot();
-      paragraph = root.getFirstChild();
-      text = paragraph.getFirstChild();
+    it('Parses the nodes of a stringified view model', async () => {
+      expect(parsedRoot).toEqual({
+        __children: ['_3'],
+        __flags: 0,
+        __key: 'root',
+        __parent: null,
+        __type: 'root',
+      });
+      expect(parsedParagraph).toEqual({
+        __children: ['_4'],
+        __flags: 0,
+        __key: '_3',
+        __parent: 'root',
+        __type: 'paragraph',
+      });
+      expect(parsedText).toEqual({
+        __text: 'Hello world',
+        __flags: 0,
+        __key: '_4',
+        __parent: '_3',
+        __type: 'text',
+        __url: null,
+      });
     });
 
-    expect(root).toEqual({
-      __children: ['_3'],
-      __flags: 0,
-      __key: 'root',
-      __parent: null,
-      __type: 'root',
+    it('Parses the selection offsets of a stringified view model', async () => {
+      expect(parsedSelection.anchorOffset).toEqual(6);
+      expect(parsedSelection.focusOffset).toEqual(11);
     });
-    expect(paragraph).toEqual({
-      __children: ['_4'],
-      __flags: 0,
-      __key: '_3',
-      __parent: 'root',
-      __type: 'paragraph',
-    });
-    expect(text).toEqual({
-      __text: '',
-      __flags: 0,
-      __key: '_4',
-      __parent: '_3',
-      __type: 'text',
-      __url: null,
+
+    it('Remaps the selection keys of a stringified view model', async () => {
+      expect(parsedSelection.anchorKey).not.toEqual(originalText.__key);
+      expect(parsedSelection.focusKey).not.toEqual(originalText.__key);
+      expect(parsedSelection.anchorKey).toEqual(parsedText.__key);
+      expect(parsedSelection.focusKey).toEqual(parsedText.__key);
     });
   });
 

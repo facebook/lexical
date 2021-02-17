@@ -15,8 +15,10 @@ describe('OutlineEditor tests', () => {
     React = require('react');
     ReactDOM = require('react-dom');
     ReactTestUtils = require('react-dom/test-utils');
-    Outline = require('outline');
-    ParagraphNodeModule = require('outline-extensions/ParagraphNode');
+    jest.isolateModules(() => {
+      ParagraphNodeModule = require('outline-extensions/ParagraphNode');
+      Outline = require('outline');
+    });
 
     container = document.createElement('div');
     document.body.appendChild(container);

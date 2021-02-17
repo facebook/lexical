@@ -73,6 +73,8 @@ const AVAILABLE_INPUTS = {
   redo: isRedo,
   formatBold: isBold,
   formatItalic: isItalic,
+  moveBackward: (e) => e.key === 'ArrowLeft',
+  moveForward: (e) => e.key === 'ArrowRight',
   // I imagine there's a smarter way of checking that it's not a special character.
   // this serves to filter out selection inputs like `ArrowLeft` etc that we handle elsewhere
   insertText: (e) => e.key.length === 1,
@@ -84,6 +86,7 @@ export default function useStepRecorder(editor: OutlineEditor): React$Node {
   const [currentInnerHTML, setCurrentInnerHTML] = useState('');
   const previousSelectionRef = useRef(null);
   const currentEditorRef = useRef(editor);
+  const skipNextSelectionChangeRef = useRef(false);
 
   useEffect(() => {
     currentEditorRef.current = editor;
@@ -132,6 +135,9 @@ export default function useStepRecorder(editor: OutlineEditor): React$Node {
         } else {
           pushStep(maybeCommand);
         }
+        if (['moveBackward', 'moveForward'].includes(maybeCommand)) {
+          skipNextSelectionChangeRef.current = true;
+        }
       }
     },
     [isRecording, pushStep],
@@ -144,8 +150,13 @@ export default function useStepRecorder(editor: OutlineEditor): React$Node {
       const currentSelection = viewModel._selection;
       const previousSelection = previousSelectionRef.current;
       const editorElement = editor.getEditorElement();
+      const skipNextSelectionChange = skipNextSelectionChangeRef.current;
       if (previousSelection !== currentSelection) {
-        if (!viewModel.hasDirtyNodes() && isRecording) {
+        if (
+          !viewModel.hasDirtyNodes() &&
+          isRecording &&
+          !skipNextSelectionChange
+        ) {
           const browserSelection = window.getSelection();
           if (
             browserSelection.anchorNode == null ||
@@ -169,6 +180,7 @@ export default function useStepRecorder(editor: OutlineEditor): React$Node {
             focusOffset,
           ]);
         }
+        skipNextSelectionChangeRef.current = false;
         previousSelectionRef.current = currentSelection;
       }
     });

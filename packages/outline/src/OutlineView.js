@@ -306,16 +306,27 @@ export function parseViewModel(
   const parsedViewModel: ParsedViewModel = JSON.parse(stringifiedViewModel);
   const nodeMap = {};
   const viewModel = new ViewModel(nodeMap);
+  const state = {
+    originalSelection: parsedViewModel._selection,
+  };
   enterViewModelScope(
     () => {
       const parsedNodeMap = parsedViewModel._nodeMap;
-      createNodeFromParse(parsedNodeMap.root, parsedNodeMap, editor, null);
+      createNodeFromParse(
+        parsedNodeMap.root,
+        parsedNodeMap,
+        editor,
+        null /* parentKey */,
+        state,
+      );
     },
     viewModel,
     editor,
     false,
   );
-  viewModel._selection = createSelectionFromParse(parsedViewModel._selection);
+  viewModel._selection = createSelectionFromParse(
+    state.remappedSelection || state.originalSelection,
+  );
   viewModel._isDirty = true;
   return viewModel;
 }

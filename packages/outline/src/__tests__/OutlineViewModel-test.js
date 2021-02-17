@@ -100,16 +100,19 @@ describe('OutlineViewModel tests', () => {
   test('stringify()', async () => {
     await update((view) => {
       const paragraph = ParagraphNodeModule.createParagraphNode();
-      const text = Outline.createTextNode();
+      const text = Outline.createTextNode('Hello world');
+      text.select(6, 11);
       paragraph.append(text);
       view.getRoot().append(paragraph);
     });
     const string = editor.getViewModel().stringify();
 
     expect(string).toEqual(
-      '{"_nodeMap":{"root":{"__type":"root","__flags":0,"__key":"root","__parent":null,"__children":["_4"]},"_4"' +
-        ':{"__type":"paragraph","__flags":0,"__key":"_4","__parent":"root","__children":["_5"]},"_5":{"__type":"text",' +
-        '"__flags":0,"__key":"_5","__parent":"_4","__text":"","__url":null}},"_selection":null}',
+      '{"_nodeMap":{' +
+        '"root":{"__type":"root","__flags":0,"__key":"root","__parent":null,"__children":["_4"]},' +
+        '"_4":{"__type":"paragraph","__flags":0,"__key":"_4","__parent":"root","__children":["_5"]},' +
+        '"_5":{"__type":"text","__flags":0,"__key":"_5","__parent":"_4","__text":"Hello world","__url":null}},' +
+        '"_selection":{"anchorKey":"_5","anchorOffset":6,"focusKey":"_5","focusOffset":11}}',
     );
   });
 });

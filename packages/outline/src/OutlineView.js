@@ -201,12 +201,13 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
   if (editor._editorElement === null || pendingViewModel === null) {
     return;
   }
+  const currentViewModel = editor._viewModel;
   editor._pendingViewModel = null;
+  editor._viewModel = pendingViewModel;
   const previousActiveViewModel = activeViewModel;
   activeViewModel = pendingViewModel;
-  reconcileViewModel(pendingViewModel, editor);
+  reconcileViewModel(currentViewModel, pendingViewModel, editor);
   activeViewModel = previousActiveViewModel;
-  editor._viewModel = pendingViewModel;
   const pendingNodeDecorators = editor._pendingNodeDecorators;
   if (pendingNodeDecorators !== null) {
     editor._nodeDecorators = pendingNodeDecorators;

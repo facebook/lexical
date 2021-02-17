@@ -508,10 +508,10 @@ function reconcileRoot(
 }
 
 export function reconcileViewModel(
+  prevViewModel: ViewModel,
   nextViewModel: ViewModel,
   editor: OutlineEditor,
 ): void {
-  const prevViewModel = editor.getViewModel();
   const dirtySubTrees = nextViewModel._dirtySubTrees;
   // When a view model is historic, we bail out of using dirty checks and
   // always do a full reconcilation to ensure consistency.

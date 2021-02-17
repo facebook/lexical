@@ -60,6 +60,24 @@ function getPathFromNodeToEditor(node: Node, editorElement) {
 // $FlowFixMe TODO
 type Steps = Array<any>;
 
+const AVAILABLE_INPUTS = {
+  deleteBackward: isDeleteBackward,
+  deleteForward: isDeleteForward,
+  deleteWordBackward: isDeleteWordBackward,
+  deleteWordForward: isDeleteWordForward,
+  deleteLineForward: isDeleteLineForward,
+  deleteLineBackward: isDeleteLineBackward,
+  insertParagraph: isParagraph,
+  insertLinebreak: isLineBreak,
+  undo: isUndo,
+  redo: isRedo,
+  formatBold: isBold,
+  formatItalic: isItalic,
+  // I imagine there's a smarter way of checking that it's not a special character.
+  // this serves to filter out selection inputs like `ArrowLeft` etc that we handle elsewhere
+  insertText: (e) => e.key.length === 1,
+};
+
 export default function useStepRecorder(editor: OutlineEditor): React$Node {
   const [steps, setSteps] = useState<Steps>([]);
   const [isRecording, setIsRecording] = useState(false);
@@ -105,34 +123,15 @@ export default function useStepRecorder(editor: OutlineEditor): React$Node {
       if (!isRecording) {
         return;
       }
-      if (isDeleteBackward(event)) {
-        pushStep('deleteBackward');
-      } else if (isDeleteForward(event)) {
-        pushStep('deleteForward');
-      } else if (isDeleteLineBackward(event)) {
-        pushStep("TODO: this operation isn't supported yet");
-      } else if (isDeleteLineForward(event)) {
-        pushStep("TODO: this operation isn't supported yet");
-      } else if (isDeleteWordBackward(event)) {
-        pushStep('deleteWordBackward');
-      } else if (isDeleteWordForward(event)) {
-        pushStep('deleteWordForward');
-      } else if (isParagraph(event)) {
-        pushStep('insertParagraph');
-      } else if (isLineBreak(event)) {
-        pushStep('insertLinebreak');
-      } else if (isUndo(event)) {
-        pushStep('undo');
-      } else if (isRedo(event)) {
-        pushStep('redo');
-      } else if (isBold(event)) {
-        pushStep('formatBold');
-      } else if (isItalic(event)) {
-        pushStep('formatItalic');
-      } else if (event.key.length === 1) {
-        // I imagine there's a smarter way of checking that it's not a special character.
-        // this serves to filter out selection inputs like `ArrowLeft` etc that we handle elsewhere
-        pushStep('insertText', event.key);
+      const maybeCommand = Object.keys(AVAILABLE_INPUTS).find((command) =>
+        AVAILABLE_INPUTS[command]?.(event),
+      );
+      if (maybeCommand != null) {
+        if (maybeCommand === 'insertText') {
+          pushStep('insertText', event.key);
+        } else {
+          pushStep(maybeCommand);
+        }
       }
     },
     [isRecording, pushStep],

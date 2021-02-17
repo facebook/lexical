@@ -27,7 +27,7 @@ import {
 
 import useOutlineEvent from 'outline-react/useOutlineEvent';
 
-import React, {useState, useCallback, useMemo, useRef, useEffect} from 'react';
+import React, {useState, useCallback, useRef, useEffect} from 'react';
 
 // stolen from OutlineSelection-test
 function sanitizeSelectionWithEmptyTextNodes(selection) {
@@ -55,6 +55,20 @@ function getPathFromNodeToEditor(node: Node, editorElement) {
     currentNode = currentNode?.parentNode;
   }
   return path;
+}
+
+function formatSteps(steps) {
+  return steps.map(([action, value]) => {
+    return `${action}(${
+      value
+        ? Array.isArray(value)
+          ? value.join(',')
+          : typeof value === 'string'
+          ? `"${value}"`
+          : value
+        : ''
+    })`;
+  });
 }
 
 // $FlowFixMe TODO
@@ -90,10 +104,24 @@ const AVAILABLE_INPUTS = {
   insertText: (e) => e.key.length === 1,
 };
 
+const COALESCABLE_COMMANDS = [
+  'insertText',
+  'moveNativeSelection',
+  'undo',
+  'redo',
+  'moveBackward',
+  'moveForward',
+  'deleteBackward',
+  'deleteForward',
+  'deleteWordForward',
+  'deleteWordBackward',
+];
+
 export default function useStepRecorder(editor: OutlineEditor): React$Node {
   const [steps, setSteps] = useState<Steps>([]);
   const [isRecording, setIsRecording] = useState(false);
   const [currentInnerHTML, setCurrentInnerHTML] = useState('');
+  const [templatedTest, setTemplatedTest] = useState('');
   const previousSelectionRef = useRef(null);
   const currentEditorRef = useRef(editor);
   const skipNextSelectionChangeRef = useRef(false);
@@ -106,13 +134,59 @@ export default function useStepRecorder(editor: OutlineEditor): React$Node {
     return currentEditorRef.current;
   }, []);
 
+  const generateTestContent = useCallback(() => {
+    const editorElement = editor.getEditorElement();
+    const browserSelection = window.getSelection();
+
+    if (
+      editorElement == null ||
+      browserSelection == null ||
+      browserSelection.anchorNode == null ||
+      browserSelection.focusNode == null ||
+      !editorElement.contains(browserSelection.anchorNode) ||
+      !editorElement.contains(browserSelection.focusNode)
+    ) {
+      return null;
+    }
+
+    const {
+      anchorNode,
+      anchorOffset,
+      focusNode,
+      focusOffset,
+    } = sanitizeSelectionWithEmptyTextNodes(browserSelection);
+    return `
+{
+  name: '<YOUR TEST NAME>',
+  inputs: [
+    ${formatSteps(steps).join(',\n    ')}
+  ],
+  expectedHTML: '<div contenteditable="true" data-outline-editor="true">${sanitizeHTML(
+    currentInnerHTML,
+  )}</div>',
+  expectedSelection: {
+    anchorPath: [${getPathFromNodeToEditor(
+      anchorNode,
+      editorElement,
+    ).toString()}],
+    anchorOffset: ${anchorOffset},
+    focusPath: [${getPathFromNodeToEditor(
+      focusNode,
+      editorElement,
+    ).toString()}],
+    focusOffset: ${focusOffset},
+  },
+},
+    `;
+  }, [currentInnerHTML, editor, steps]);
+
   // just a wrapper around inserting new actions so that we can
   // coalesce some actions like insertText/moveNativeSelection
   const pushStep = useCallback(
     (step, value) => {
       setSteps((currentSteps) => {
         if (
-          ['insertText', 'moveNativeSelection'].includes(step) &&
+          COALESCABLE_COMMANDS.includes(step) &&
           currentSteps.length > 0 &&
           currentSteps[currentSteps.length - 1][0] === step
         ) {
@@ -120,8 +194,10 @@ export default function useStepRecorder(editor: OutlineEditor): React$Node {
           const [lastStep, lastStepValue] = newSteps.pop();
           if (lastStep === 'insertText') {
             newSteps.push(['insertText', lastStepValue.concat(value)]);
-          } else {
+          } else if (lastStep === 'moveNativeSelection') {
             newSteps.push([lastStep, value]);
+          } else {
+            newSteps.push([lastStep, (lastStepValue ?? 1) + 1]);
           }
           return newSteps;
         }
@@ -152,6 +228,12 @@ export default function useStepRecorder(editor: OutlineEditor): React$Node {
     },
     [isRecording, pushStep],
   );
+
+  useEffect(() => {
+    if (steps) {
+      setTemplatedTest(generateTestContent());
+    }
+  }, [generateTestContent, steps]);
 
   useOutlineEvent(editor, 'keydown', onKeyDown);
 
@@ -193,9 +275,10 @@ export default function useStepRecorder(editor: OutlineEditor): React$Node {
         previousSelectionRef.current = currentSelection;
       }
       skipNextSelectionChangeRef.current = false;
+      setTemplatedTest(generateTestContent());
     });
     return removeUpdateListener;
-  }, [editor, isRecording, pushStep]);
+  }, [editor, generateTestContent, isRecording, pushStep]);
 
   useEffect(() => {
     if (!isRecording) {
@@ -209,68 +292,6 @@ export default function useStepRecorder(editor: OutlineEditor): React$Node {
     });
     return removeUpdateListener;
   }, [editor, isRecording]);
-
-  const testContent = useMemo(() => {
-    const editorElement = editor.getEditorElement();
-    const browserSelection = window.getSelection();
-
-    if (
-      editorElement == null ||
-      browserSelection == null ||
-      browserSelection.anchorNode == null ||
-      browserSelection.focusNode == null ||
-      !editorElement.contains(browserSelection.anchorNode) ||
-      !editorElement.contains(browserSelection.focusNode)
-    ) {
-      return null;
-    }
-
-    const processedSteps = [];
-
-    steps.forEach(([action, value]) => {
-      processedSteps.push(
-        `${action}(${
-          value
-            ? Array.isArray(value)
-              ? value.join(',')
-              : typeof value === 'string'
-              ? `"${value}"`
-              : value
-            : ''
-        })`,
-      );
-    });
-
-    const {
-      anchorNode,
-      anchorOffset,
-      focusNode,
-      focusOffset,
-    } = sanitizeSelectionWithEmptyTextNodes(browserSelection);
-    return `
-{
-  name: '<YOUR TEST NAME>',
-  inputs: [
-    ${processedSteps.join(',\n    ')}
-  ],
-  expectedHTML: '<div contenteditable="true" data-outline-editor="true" dir="ltr">${sanitizeHTML(
-    currentInnerHTML,
-  )}</div>',
-  expectedSelection: {
-    anchorPath: [${getPathFromNodeToEditor(
-      anchorNode,
-      editorElement,
-    ).toString()}],
-    anchorOffset: ${anchorOffset},
-    focusPath: [${getPathFromNodeToEditor(
-      focusNode,
-      editorElement,
-    ).toString()}],
-    focusOffset: ${focusOffset},
-  },
-},
-    `;
-  }, [currentInnerHTML, editor, steps]);
 
   const toggleEditorSelection = useCallback(
     (currentEditor) => {
@@ -308,7 +329,7 @@ export default function useStepRecorder(editor: OutlineEditor): React$Node {
         onClick={() => toggleEditorSelection(getCurrentEditor())}>
         {isRecording ? 'STOP RECORDING' : 'RECORD TEST'}
       </button>
-      {steps.length !== 0 && <pre id="step-recorder">{testContent}</pre>}
+      {steps.length !== 0 && <pre id="step-recorder">{templatedTest}</pre>}
     </>,
     document.body,
   );

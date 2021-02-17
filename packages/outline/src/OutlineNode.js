@@ -14,6 +14,10 @@ import {getActiveViewModel, shouldErrorOnReadOnly} from './OutlineView';
 import {generateRandomKey, invariant} from './OutlineUtils';
 import {IS_IMMUTABLE, IS_OVERFLOWED, IS_SEGMENTED} from './OutlineConstants';
 
+type NodeParserState = {
+  originalSelection: null | ParsedSelection,
+  remappedSelection?: ParsedSelection,
+};
 export type ParsedNode = {
   __key: string,
   __type: string,
@@ -24,6 +28,12 @@ export type ParsedNode = {
 export type ParsedNodeMap = {
   root: ParsedNode,
   [key: NodeKey]: ParsedNode,
+};
+type ParsedSelection = {
+  anchorKey: NodeKey,
+  anchorOffset: number,
+  focusKey: NodeKey,
+  focusOffset: number,
 };
 export type NodeMapType = {root: RootNode, [key: NodeKey]: OutlineNode};
 
@@ -589,6 +599,7 @@ export function createNodeFromParse(
   parsedNodeMap: ParsedNodeMap,
   editor: OutlineEditor,
   parentKey: null | NodeKey,
+  state: NodeParserState = {},
 ): OutlineNode {
   const type = parsedNode.__type;
   const NodeType = editor._registeredNodeTypes.get(type);
@@ -629,9 +640,27 @@ export function createNodeFromParse(
         parsedNodeMap,
         editor,
         key,
+        state,
       );
       const newChildKey = child.getKey();
       node.__children.push(newChildKey);
+    }
+  }
+  // The selection might refer to an old node whose key has changed. Produce a
+  // new selection record with the old keys mapped to the new ones.
+  const originalSelection = state != null ? state.originalSelection : undefined;
+  if (originalSelection != null) {
+    if (parsedNode.__key === originalSelection.anchorKey) {
+      state.remappedSelection = state.remappedSelection || {
+        ...originalSelection,
+      };
+      state.remappedSelection.anchorKey = node.__key;
+    }
+    if (parsedNode.__key === originalSelection.focusKey) {
+      state.remappedSelection = state.remappedSelection || {
+        ...originalSelection,
+      };
+      state.remappedSelection.focusKey = node.__key;
     }
   }
   return node;

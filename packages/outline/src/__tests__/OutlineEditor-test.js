@@ -63,15 +63,18 @@ describe('OutlineEditor tests', () => {
   }
 
   describe('parseViewModel()', () => {
+    let originalText;
     let parsedParagraph;
     let parsedRoot;
+    let parsedSelection;
     let parsedText;
 
     beforeEach(async () => {
       await update((view) => {
         const paragraph = ParagraphNodeModule.createParagraphNode();
-        const text = Outline.createTextNode('Hello world');
-        paragraph.append(text);
+        originalText = Outline.createTextNode('Hello world');
+        originalText.select(6, 11);
+        paragraph.append(originalText);
         view.getRoot().append(paragraph);
       });
       editor.addNodeType('paragraph', ParagraphNodeModule.ParagraphNode);
@@ -81,6 +84,7 @@ describe('OutlineEditor tests', () => {
         parsedRoot = view.getRoot();
         parsedParagraph = parsedRoot.getFirstChild();
         parsedText = parsedParagraph.getFirstChild();
+        parsedSelection = view.getSelection();
       });
     });
 
@@ -107,6 +111,18 @@ describe('OutlineEditor tests', () => {
         __type: 'text',
         __url: null,
       });
+    });
+
+    it('Parses the selection offsets of a stringified view model', async () => {
+      expect(parsedSelection.anchorOffset).toEqual(6);
+      expect(parsedSelection.focusOffset).toEqual(11);
+    });
+
+    it('Remaps the selection keys of a stringified view model', async () => {
+      expect(parsedSelection.anchorKey).not.toEqual(originalText.__key);
+      expect(parsedSelection.focusKey).not.toEqual(originalText.__key);
+      expect(parsedSelection.anchorKey).toEqual(parsedText.__key);
+      expect(parsedSelection.focusKey).toEqual(parsedText.__key);
     });
   });
 

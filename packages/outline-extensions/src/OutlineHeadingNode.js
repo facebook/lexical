@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {NodeKey} from 'outline';
+import type {NodeKey, EditorThemeClasses} from 'outline';
 import type {ParagraphNode} from 'outline-extensions/ParagraphNode';
 
 import {BlockNode} from 'outline';
@@ -44,8 +44,18 @@ export class HeadingNode extends BlockNode {
 
   // View
 
-  createDOM(): HTMLElement {
-    return document.createElement(this.__tag);
+  createDOM(editorThemeClasses: EditorThemeClasses): HTMLElement {
+    const tag = this.__tag;
+    const element = document.createElement(tag);
+    const classNames = editorThemeClasses.heading;
+    if (classNames !== undefined) {
+      // $FlowFixMe: intentional cast
+      const className = classNames[tag];
+      if (className !== undefined) {
+        element.className = className;
+      }
+    }
+    return element;
   }
   updateDOM(prevNode: HeadingNode, dom: HTMLElement): boolean {
     return false;

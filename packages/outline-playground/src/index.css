@@ -56,7 +56,7 @@ header h1 {
   position: relative;
 }
 
-.editor-shell div.editor div.placeholder {
+.editor-shell div.editor div.editor-placeholder {
   color: #999;
   overflow: hidden;
   position: absolute;
@@ -103,9 +103,9 @@ header h1 {
   margin: 0
 }
 
-.editor-shell div.editor span[data-link="true"],
-.editor-shell div.editor strong[data-link="true"],
-.editor-shell div.editor em[data-link="true"] {
+.editor-shell div.editor span.editor-text-link,
+.editor-shell div.editor strong.editor-text-link,
+.editor-shell div.editor em.editor-text-link {
   color: rgb(33,111,219);
 }
 
@@ -129,11 +129,6 @@ header h1 {
 .editor-shell div.editor ul li {
   margin: 8px 32px 8px 32px;
   list-style-type: disc;
-}
-
-.editor-shell .hashtag {
-  background-color: rgba(88, 144, 255, .15);
-  border-bottom: 1px solid rgba(88, 144, 255, .3);
 }
 
 pre {
@@ -480,6 +475,39 @@ pre {
   color: red;
 }
 
-span[data-overflow="true"] {
+.editor-shell div.editor span.editor-text-overflowed,
+.editor-shell div.editor strong.editor-text-overflowed,
+.editor-shell div.editor em.editor-text-overflowed {
   color: red;
+}
+
+.editor-shell div.editor span.editor-text-italic,
+.editor-shell div.editor strong.editor-text-italic,
+.editor-shell div.editor em.editor-text-italic {
+  font-style: italic;
+}
+
+.editor-shell div.editor span.editor-text-strikethrough,
+.editor-shell div.editor strong.editor-text-strikethrough,
+.editor-shell div.editor em.editor-text-strikethrough {
+  text-decoration: line-through;
+}
+
+.editor-shell div.editor span.editor-text-underline,
+.editor-shell div.editor strong.editor-text-underline,
+.editor-shell div.editor em.editor-text-underline {
+  text-decoration: underline;
+}
+
+.editor-shell div.editor span.editor-text-underline.editor-text-strikethrough,
+.editor-shell div.editor strong.editor-text-underline.editor-text-strikethrough,
+.editor-shell div.editor em.editor-text-underline.editor-text-strikethrough {
+  text-decoration: underline line-through;
+}
+
+.editor-shell div.editor span.editor-text-hashtag,
+.editor-shell div.editor strong.editor-text-hashtag,
+.editor-shell div.editor em.editor-text-hashtag {
+  background-color: rgba(88, 144, 255, .15);
+  border-bottom: 1px solid rgba(88, 144, 255, .3);
 }

@@ -1,6 +1,6 @@
 // @flow strict-local
 
-import type {OutlineEditor, View, NodeKey} from 'outline';
+import type {OutlineEditor, View, NodeKey, EditorThemeClasses} from 'outline';
 
 import {useEffect} from 'react';
 import {TextNode} from 'outline';
@@ -77,10 +77,6 @@ export default function useEmojis(editor: null | OutlineEditor): void {
   }, [editor]);
 }
 
-function createEmojiNode(cssText: string, emojiText: string): EmojiNode {
-  return new EmojiNode(cssText, emojiText).makeImmutable();
-}
-
 class EmojiNode extends TextNode {
   cssText: string;
 
@@ -96,9 +92,13 @@ class EmojiNode extends TextNode {
     clone.__flags = this.__flags;
     return clone;
   }
-  createDOM() {
-    const dom = super.createDOM();
+  createDOM(editorThemeClasses: EditorThemeClasses) {
+    const dom = super.createDOM(editorThemeClasses);
     dom.style.cssText = this.cssText;
     return dom;
   }
+}
+
+function createEmojiNode(cssText: string, emojiText: string): EmojiNode {
+  return new EmojiNode(cssText, emojiText).makeImmutable();
 }

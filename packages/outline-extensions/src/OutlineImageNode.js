@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {NodeKey} from 'outline';
+import type {NodeKey, EditorThemeClasses} from 'outline';
 
 import {OutlineNode} from 'outline';
 
@@ -33,11 +33,15 @@ export class ImageNode extends OutlineNode {
 
   // View
 
-  createDOM(): HTMLElement {
+  createDOM(editorThemeClasses: EditorThemeClasses): HTMLElement {
     const dom = document.createElement('div');
     const img = document.createElement('img');
     img.src = this.__src;
     img.alt = this.__altText;
+    const className = editorThemeClasses.image;
+    if (className !== undefined) {
+      dom.className = className;
+    }
     dom.appendChild(img);
     return dom;
   }

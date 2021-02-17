@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-export type {OutlineEditor} from './OutlineEditor';
+export type {OutlineEditor, EditorThemeClasses} from './OutlineEditor';
 export type {ViewModel, View, ParsedViewModel} from './OutlineView';
 export type {NodeKey, ParsedNode, ParsedNodeMap} from './OutlineNode';
 export type {Selection} from './OutlineSelection';

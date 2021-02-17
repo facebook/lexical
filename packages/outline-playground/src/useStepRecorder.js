@@ -7,6 +7,8 @@ import type {OutlineEditor, View} from 'outline';
 
 // $FlowFixMe
 import {createPortal} from 'react-dom';
+import {createTextNode} from 'outline';
+import {createParagraphNode} from 'outline-extensions/ParagraphNode';
 
 import {
   isDeleteBackward,
@@ -63,6 +65,15 @@ export default function useStepRecorder(editor: OutlineEditor): React$Node {
   const [isRecording, setIsRecording] = useState(false);
   const [currentInnerHTML, setCurrentInnerHTML] = useState('');
   const previousSelectionRef = useRef(null);
+  const currentEditorRef = useRef(editor);
+
+  useEffect(() => {
+    currentEditorRef.current = editor;
+  }, [editor]);
+
+  const getCurrentEditor = useCallback(() => {
+    return currentEditorRef.current;
+  }, []);
 
   // just a wrapper around inserting new actions so that we can
   // coalesce some actions like insertText/moveNativeSelection
@@ -240,25 +251,40 @@ export default function useStepRecorder(editor: OutlineEditor): React$Node {
     `;
   }, [currentInnerHTML, editor, steps]);
 
+  const toggleEditorSelection = useCallback(
+    (currentEditor) => {
+      if (!isRecording) {
+        currentEditor.update((view: View) => {
+          const root = view.getRoot();
+          root.clear();
+          const text = createTextNode();
+          root.append(createParagraphNode().append(text));
+          text.select();
+        });
+        setSteps([]);
+      }
+      setIsRecording((currentIsRecording) => !currentIsRecording);
+    },
+    [isRecording],
+  );
+
+  useEffect(() => {
+    const cb = (event: KeyboardEvent) => {
+      if (event.key === 'k' && (event.metaKey || event.ctrlKey)) {
+        toggleEditorSelection(getCurrentEditor());
+      }
+    };
+    document.addEventListener('keydown', cb);
+    return () => {
+      document.removeEventListener('keydown', cb);
+    };
+  }, [getCurrentEditor, toggleEditorSelection]);
+
   return createPortal(
     <>
       <button
         id="step-recorder-button"
-        onClick={() => {
-          if (!isRecording) {
-            editor.update(
-              (view: View) => {
-                view.getRoot().clear();
-                view.clearSelection();
-              },
-              () => {
-                editor.getEditorElement()?.focus();
-              },
-            );
-            setSteps([]);
-          }
-          setIsRecording((currentIsRecording) => !currentIsRecording);
-        }}>
+        onClick={() => toggleEditorSelection(getCurrentEditor())}>
         {isRecording ? 'STOP RECORDING' : 'RECORD TEST'}
       </button>
       {steps.length !== 0 && <pre id="step-recorder">{testContent}</pre>}

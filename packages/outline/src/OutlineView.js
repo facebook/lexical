@@ -308,7 +308,6 @@ export function parseViewModel(
   const viewModel = new ViewModel(nodeMap);
   enterViewModelScope(
     () => {
-      debugger;
       const parsedNodeMap = parsedViewModel._nodeMap;
       createNodeFromParse(parsedNodeMap.root, parsedNodeMap, editor, null);
     },
@@ -316,7 +315,6 @@ export function parseViewModel(
     editor,
     false,
   );
-  debugger;
   viewModel._selection = createSelectionFromParse(parsedViewModel._selection);
   viewModel._isDirty = true;
   return viewModel;

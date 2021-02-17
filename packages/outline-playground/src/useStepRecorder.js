@@ -73,8 +73,18 @@ const AVAILABLE_INPUTS = {
   redo: isRedo,
   formatBold: isBold,
   formatItalic: isItalic,
-  moveBackward: (e) => e.key === 'ArrowLeft',
-  moveForward: (e) => e.key === 'ArrowRight',
+  moveBackward: (e) =>
+    e.key === 'ArrowLeft' &&
+    !e.shiftKey &&
+    !e.metaKey &&
+    !e.ctrlKey &&
+    !e.altKey,
+  moveForward: (e) =>
+    e.key === 'ArrowRight' &&
+    !e.shiftKey &&
+    !e.metaKey &&
+    !e.ctrlKey &&
+    !e.altKey,
   // I imagine there's a smarter way of checking that it's not a special character.
   // this serves to filter out selection inputs like `ArrowLeft` etc that we handle elsewhere
   insertText: (e) => e.key.length === 1,
@@ -180,9 +190,9 @@ export default function useStepRecorder(editor: OutlineEditor): React$Node {
             focusOffset,
           ]);
         }
-        skipNextSelectionChangeRef.current = false;
         previousSelectionRef.current = currentSelection;
       }
+      skipNextSelectionChangeRef.current = false;
     });
     return removeUpdateListener;
   }, [editor, isRecording, pushStep]);

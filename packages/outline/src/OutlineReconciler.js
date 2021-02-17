@@ -240,7 +240,7 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
     return;
   }
   // Update node. If it returns true, we need to unmount and re-create the node
-  if (nextNode.updateDOM(prevNode, dom)) {
+  if (nextNode.updateDOM(prevNode, dom, activeEditorThemeClasses)) {
     const replacementDOM = createNode(key, null, null);
     if (parentDOM === null) {
       throw new Error('Should never happen');

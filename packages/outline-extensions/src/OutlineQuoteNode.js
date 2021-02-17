@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {NodeKey} from 'outline';
+import type {NodeKey, EditorThemeClasses} from 'outline';
 import type {ParagraphNode} from 'outline-extensions/ParagraphNode';
 
 import {BlockNode} from 'outline';
@@ -29,8 +29,13 @@ export class QuoteNode extends BlockNode {
 
   // View
 
-  createDOM(): HTMLElement {
-    return document.createElement('blockquote');
+  createDOM(editorThemeClasses: EditorThemeClasses): HTMLElement {
+    const element = document.createElement('blockquote');
+    const className = editorThemeClasses.quote;
+    if (className !== undefined) {
+      element.className = className;
+    }
+    return element;
   }
   updateDOM(prevNode: QuoteNode, dom: HTMLElement): boolean {
     return false;

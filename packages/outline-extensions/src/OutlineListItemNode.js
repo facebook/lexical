@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {NodeKey} from 'outline';
+import type {NodeKey, EditorThemeClasses} from 'outline';
 import type {ParagraphNode} from 'outline-extensions/ParagraphNode';
 
 import {BlockNode} from 'outline';
@@ -33,8 +33,13 @@ export class ListItemNode extends BlockNode {
 
   // View
 
-  createDOM(): HTMLElement {
-    return document.createElement('li');
+  createDOM(editorThemeClasses: EditorThemeClasses): HTMLElement {
+    const element = document.createElement('li');
+    const className = editorThemeClasses.listitem;
+    if (className !== undefined) {
+      element.className = className;
+    }
+    return element;
   }
   updateDOM(prevNode: ListItemNode, dom: HTMLElement): boolean {
     return false;

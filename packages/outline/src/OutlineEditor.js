@@ -168,10 +168,7 @@ export class OutlineEditor {
   _textContent: string;
   _editorThemeClasses: EditorThemeClasses;
 
-  constructor(
-    viewModel: ViewModel,
-    editorThemeClasses: EditorThemeClasses,
-  ) {
+  constructor(viewModel: ViewModel, editorThemeClasses: EditorThemeClasses) {
     // The editor element associated with this editor
     this._editorElement = null;
     // The current view model

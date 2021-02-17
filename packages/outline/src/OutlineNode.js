@@ -408,8 +408,12 @@ export class OutlineNode {
   createDOM(editorThemeClasses: EditorThemeClasses): HTMLElement {
     throw new Error('Should never occur');
   }
-  // $FlowFixMe: TODO
-  updateDOM(prevNode: any, dom: HTMLElement): boolean {
+  updateDOM(
+    // $FlowFixMe: TODO
+    prevNode: any,
+    dom: HTMLElement,
+    editorThemeClasses: EditorThemeClasses,
+  ): boolean {
     throw new Error('Should never occur');
   }
 

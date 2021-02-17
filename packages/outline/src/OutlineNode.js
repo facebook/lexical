@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {OutlineEditor} from './OutlineEditor';
+import type {OutlineEditor, EditorThemeClasses} from './OutlineEditor';
 
 import {createTextNode, RootNode, BlockNode, TextNode} from '.';
 import {getActiveViewModel, shouldErrorOnReadOnly} from './OutlineView';
@@ -405,11 +405,15 @@ export class OutlineNode {
 
   // View
 
-  createDOM(): HTMLElement {
+  createDOM(editorThemeClasses: EditorThemeClasses): HTMLElement {
     throw new Error('Should never occur');
   }
-  // $FlowFixMe: TODO
-  updateDOM(prevNode: any, dom: HTMLElement): boolean {
+  updateDOM(
+    // $FlowFixMe: TODO
+    prevNode: any,
+    dom: HTMLElement,
+    editorThemeClasses: EditorThemeClasses,
+  ): boolean {
     throw new Error('Should never occur');
   }
 

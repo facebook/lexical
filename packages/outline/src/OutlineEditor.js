@@ -29,17 +29,51 @@ import {getWritableNode} from './OutlineNode';
 import {createRootNode as createRoot} from './OutlineRootNode';
 import {reconcilePlaceholder} from './OutlineReconciler';
 
-export function createEditor(): OutlineEditor {
+export type EditorThemeClassName = string;
+
+export type EditorThemeClasses = {
+  placeholder?: EditorThemeClassName,
+  root?: EditorThemeClassName,
+  text?: {
+    bold?: EditorThemeClassName,
+    underline?: EditorThemeClassName,
+    strikethrough?: EditorThemeClassName,
+    italic?: EditorThemeClassName,
+    code?: EditorThemeClassName,
+    link?: EditorThemeClassName,
+    hashtag?: EditorThemeClassName,
+    overflowed?: EditorThemeClassName,
+  },
+  paragraph?: EditorThemeClassName,
+  image?: EditorThemeClassName,
+  list?: {
+    ul?: EditorThemeClassName,
+    ol?: EditorThemeClassName,
+  },
+  listitem?: EditorThemeClassName,
+  quote?: EditorThemeClassName,
+  heading?: {
+    h1?: EditorThemeClassName,
+    h2?: EditorThemeClassName,
+    h3?: EditorThemeClassName,
+    h4?: EditorThemeClassName,
+    h5?: EditorThemeClassName,
+  },
+  // Handle other generic values
+  [string]: string,
+};
+
+export function createEditor(
+  editorThemeClasses?: EditorThemeClasses,
+): OutlineEditor {
   const root = createRoot();
   const viewModel = new ViewModel({root});
-  return new OutlineEditor(viewModel);
+  return new OutlineEditor(viewModel, editorThemeClasses || {});
 }
 
 export type UpdateListener = (viewModel: ViewModel) => void;
 
 export type DecoratorListener = (decorator: {[NodeKey]: ReactNode}) => void;
-
-export type DOMCreationListener = (type: string, dom: HTMLElement) => void;
 
 export type TextNodeTransform = (node: TextNode, view: View) => void;
 
@@ -125,7 +159,6 @@ export class OutlineEditor {
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _updateListeners: Set<UpdateListener>;
   _decoratorListeners: Set<DecoratorListener>;
-  _domCreationListeners: Set<DOMCreationListener>;
   _textNodeTransforms: Set<TextNodeTransform>;
   _registeredNodeTypes: Map<string, Class<OutlineNode>>;
   _nodeDecorators: {[NodeKey]: ReactNode};
@@ -133,8 +166,9 @@ export class OutlineEditor {
   _placeholderText: string;
   _placeholderElement: null | HTMLElement;
   _textContent: string;
+  _editorThemeClasses: EditorThemeClasses;
 
-  constructor(viewModel: ViewModel) {
+  constructor(viewModel: ViewModel, editorThemeClasses: EditorThemeClasses) {
     // The editor element associated with this editor
     this._editorElement = null;
     // The current view model
@@ -150,10 +184,8 @@ export class OutlineEditor {
     this._updateListeners = new Set();
     // Used for rendering React Portals into nodes
     this._decoratorListeners = new Set();
-    // Used for listening when Outline creates a DOM
-    // node, so external tooling can apply additional
-    // styling or/and properties to the elements.
-    this._domCreationListeners = new Set();
+    // Class name mappings for nodes/placeholders
+    this._editorThemeClasses = editorThemeClasses;
     // Handling of text node transforms
     this._textNodeTransforms = new Set();
     // Mapping of types to their nodes
@@ -228,13 +260,6 @@ export class OutlineEditor {
     updateEditor(this, emptyFunction, true);
     return () => {
       this._textNodeTransforms.delete(listener);
-    };
-  }
-  addDOMCreationListener(listener: DOMCreationListener): () => void {
-    this._domCreationListeners.add(listener);
-    updateEditor(this, emptyFunction, true);
-    return () => {
-      this._domCreationListeners.delete(listener);
     };
   }
   getNodeDecorators(): {[NodeKey]: ReactNode} {

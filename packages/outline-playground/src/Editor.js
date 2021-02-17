@@ -37,7 +37,38 @@ function useOutlineEditor(
   },
   placeholder: string,
 ): OutlineEditor {
-  const editor = useMemo(() => createEditor(), []);
+  const editor = useMemo(
+    () =>
+      createEditor({
+        placeholder: 'editor-placeholder',
+        paragraph: 'editor-paragraph',
+        quote: 'editor-quote',
+        heading: {
+          h1: 'editor-heading-h1',
+          h2: 'editor-heading-h2',
+          h3: 'editor-heading-h3',
+          h4: 'editor-heading-h4',
+          h5: 'editor-heading-h5',
+        },
+        list: {
+          ol: 'editor-list-ol',
+          ul: 'editor-list-ul',
+        },
+        listitem: 'editor-listitem',
+        image: 'editor-image',
+        text: {
+          bold: 'editor-text-bold',
+          link: 'editor-text-link',
+          italic: 'editor-text-italic',
+          overflowed: 'editor-text-overflowed',
+          hashtag: 'editor-text-hashtag',
+          underline: 'editor-text-underline',
+          strikethrough: 'editor-text-strikethrough',
+          code: 'editor-text-code',
+        },
+      }),
+    [],
+  );
 
   useEffect(() => {
     const editorElement = editorElementRef.current;
@@ -46,11 +77,6 @@ function useOutlineEditor(
       editorElement.textContent = '';
     }
     editor.setEditorElement(editorElement);
-    editor.addDOMCreationListener((type: string, element: HTMLElement) => {
-      if (type === 'placeholder') {
-        element.className = 'placeholder';
-      }
-    });
     editor.setPlaceholder(placeholder);
   }, [editorElementRef, editor, placeholder]);
 

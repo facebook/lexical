@@ -9,7 +9,7 @@
 
 import type {NodeKey, NodeMapType} from './OutlineNode';
 import type {ViewModel} from './OutlineView';
-import type {OutlineEditor} from './OutlineEditor';
+import type {OutlineEditor, EditorThemeClasses} from './OutlineEditor';
 import type {Selection} from './OutlineSelection';
 
 import {getNodeByKey} from './OutlineNode';
@@ -26,6 +26,7 @@ let subTreeTextContent = '';
 let editorTextContent = '';
 let forceTextDirection = null;
 let currentTextDirection = null;
+let activeEditorThemeClasses: EditorThemeClasses;
 let activeEditor: OutlineEditor;
 let activeDirtySubTrees: Set<NodeKey>;
 let activePrevNodeMap: NodeMapType;
@@ -99,7 +100,7 @@ function createNode(
   insertDOM: null | HTMLElement,
 ): HTMLElement {
   const node = activeNextNodeMap[key];
-  const dom = node.createDOM();
+  const dom = node.createDOM(activeEditorThemeClasses);
   const flags = node.__flags;
   storeDOMWithKey(key, dom, activeEditor);
 
@@ -121,8 +122,6 @@ function createNode(
       createChildren(children, 0, endIndex, dom, null);
     }
   }
-  const type = node.__type;
-  triggerDOMCreationListener(type, dom, activeEditor);
   if (parentDOM !== null) {
     if (insertDOM !== null) {
       parentDOM.insertBefore(dom, insertDOM);
@@ -241,7 +240,7 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
     return;
   }
   // Update node. If it returns true, we need to unmount and re-create the node
-  if (nextNode.updateDOM(prevNode, dom)) {
+  if (nextNode.updateDOM(prevNode, dom, activeEditorThemeClasses)) {
     const replacementDOM = createNode(key, null, null);
     if (parentDOM === null) {
       throw new Error('Should never happen');
@@ -434,7 +433,10 @@ export function reconcilePlaceholder(
     }
     placeholderElement = document.createElement('div');
     placeholderElement.contentEditable = 'false';
-    triggerDOMCreationListener('placeholder', placeholderElement, editor);
+    const placeholderClassName = editor._editorThemeClasses.placeholder;
+    if (placeholderClassName !== undefined) {
+      placeholderElement.className = placeholderClassName;
+    }
     placeholderElement.appendChild(document.createTextNode(placeholderText));
     editorElement.appendChild(placeholderElement);
     editor._placeholderElement = placeholderElement;
@@ -481,6 +483,7 @@ function reconcileRoot(
   // Rather than pass around a load of arguments through the stack recursively
   // we instead set them as bindings within the scope of the module.
   activeEditor = editor;
+  activeEditorThemeClasses = editor._editorThemeClasses;
   activeDirtySubTrees = dirtySubTrees;
   activePrevNodeMap = prevViewModel._nodeMap;
   activeNextNodeMap = nextViewModel._nodeMap;
@@ -500,6 +503,8 @@ function reconcileRoot(
   activePrevNodeMap = undefined;
   // $FlowFixMe
   activeNextNodeMap = undefined;
+  // $FlowFixMe
+  activeEditorThemeClasses = undefined;
 }
 
 export function reconcileViewModel(
@@ -608,20 +613,4 @@ export function getNodeKeyFromDOM(
     node = node.parentNode;
   }
   return null;
-}
-
-function triggerDOMCreationListener(
-  type: string,
-  dom: HTMLElement,
-  editor: OutlineEditor,
-): void {
-  const domCreationListenersSet = editor._domCreationListeners;
-  if (domCreationListenersSet.size === 0) {
-    return;
-  }
-  const domCreationListeners = Array.from(domCreationListenersSet);
-  for (let i = 0; i < domCreationListeners.length; i++) {
-    const domCreationListener = domCreationListeners[i];
-    domCreationListener(type, dom);
-  }
 }

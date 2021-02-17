@@ -9,6 +9,7 @@
 
 import type {Selection} from './OutlineSelection';
 import type {NodeKey} from './OutlineNode';
+import type {EditorThemeClasses} from './OutlineEditor';
 
 import {OutlineNode} from './OutlineNode';
 import {getWritableNode} from './OutlineNode';
@@ -160,48 +161,43 @@ function splitText(
   return splitNodes;
 }
 
-function setTextStyling(tag, prevFlags, nextFlags, dom) {
-  const domStyle = dom.style;
-  if (tag === 'strong') {
-    if (nextFlags & IS_ITALIC) {
-      // When prev is not italic, but next is
-      if ((prevFlags & IS_ITALIC) === 0) {
-        domStyle.setProperty('font-style', 'italic');
+function setTextThemeClassName(
+  className: string,
+  prevFlags: number,
+  nextFlags: number,
+  flag: number,
+  dom: HTMLElement,
+): void {
+  if (className !== undefined) {
+    if (nextFlags & flag) {
+      if ((prevFlags & flag) === 0) {
+        dom.classList.add(className);
       }
-    } else if (prevFlags & IS_ITALIC) {
-      // When prev was italic, but the next is not
-      domStyle.setProperty('font-style', 'normal');
+    } else {
+      if (prevFlags & flag) {
+        dom.classList.remove(className);
+      }
     }
   }
-  const prevIsNotStrikeThrough = (prevFlags & IS_STRIKETHROUGH) === 0;
-  const prevIsNotUnderline = (prevFlags & IS_UNDERLINE) === 0;
-  const nextIsStrikeThrough = nextFlags & IS_STRIKETHROUGH;
-  const nextIsUnderline = nextFlags & IS_UNDERLINE;
+}
 
-  if (nextIsStrikeThrough && nextIsUnderline) {
-    if (prevIsNotStrikeThrough || prevIsNotUnderline) {
-      domStyle.setProperty('text-decoration', 'underline line-through');
-    }
-  } else if (nextIsStrikeThrough) {
-    if (prevIsNotStrikeThrough) {
-      domStyle.setProperty('text-decoration', 'line-through');
-    }
-  } else if (nextIsUnderline) {
-    if (prevIsNotUnderline) {
-      domStyle.setProperty('text-decoration', 'underline');
-    }
-  } else if (!prevIsNotStrikeThrough || !prevIsNotUnderline) {
-    domStyle.setProperty('text-decoration', 'initial');
-  }
-  const prevIsHashtag = (prevFlags & IS_HASHTAG) !== 0;
-  const nextIsHashtag = (nextFlags & IS_HASHTAG) !== 0;
-
-  if (nextIsHashtag) {
-    if (!prevIsHashtag) {
-      dom.className = 'hashtag';
-    }
-  } else if (prevIsHashtag) {
-    dom.className = '';
+function setTextThemeClassNames(
+  tag: string,
+  prevFlags: number,
+  nextFlags: number,
+  dom: HTMLElement,
+  textClassNames,
+): void {
+  for (const key in textFormatStateFlags) {
+    // $FlowFixMe: expected cast here
+    const format: TextFormatType = key;
+    setTextThemeClassName(
+      textClassNames[key],
+      prevFlags,
+      nextFlags,
+      textFormatStateFlags[format],
+      dom,
+    );
   }
 }
 
@@ -308,12 +304,13 @@ export class TextNode extends OutlineNode {
 
     if (
       isStateFlagPresent &&
-      (force || alignWithFlags === null || (alignWithFlags & stateFlag) === 0)
+      !force &&
+      (alignWithFlags === null || (alignWithFlags & stateFlag) === 0)
     ) {
       // Remove the state flag.
       return nodeFlags ^ stateFlag;
     }
-    if (force || alignWithFlags === null || alignWithFlags & stateFlag) {
+    if (alignWithFlags === null || alignWithFlags & stateFlag) {
       // Add the state flag.
       return nodeFlags | stateFlag;
     }
@@ -322,7 +319,7 @@ export class TextNode extends OutlineNode {
 
   // View
 
-  createDOM(): HTMLElement {
+  createDOM(editorThemeClasses: EditorThemeClasses): HTMLElement {
     const flags = this.__flags;
     const outerTag = getElementOuterTag(this, flags);
     const innerTag = getElementInnerTag(this, flags);
@@ -335,19 +332,20 @@ export class TextNode extends OutlineNode {
     }
     const text = this.__text;
 
-    setTextStyling(innerTag, 0, flags, innerDOM);
     setTextContent(null, text, innerDOM, this);
-    // add data-text attribute
-    innerDOM.setAttribute('data-text', 'true');
-    if (flags & IS_LINK) {
-      innerDOM.setAttribute('data-link', 'true');
-    }
-    if (flags & IS_OVERFLOWED) {
-      innerDOM.setAttribute('data-overflow', 'true');
+    // Apply theme class names
+    const textClassNames = editorThemeClasses.text;
+
+    if (textClassNames !== undefined) {
+      setTextThemeClassNames(innerTag, 0, flags, innerDOM, textClassNames);
     }
     return dom;
   }
-  updateDOM(prevNode: TextNode, dom: HTMLElement): boolean {
+  updateDOM(
+    prevNode: TextNode,
+    dom: HTMLElement,
+    editorThemeClasses: EditorThemeClasses,
+  ): boolean {
     const prevText = prevNode.__text;
     const nextText = this.__text;
     const prevFlags = prevNode.__flags;
@@ -381,36 +379,29 @@ export class TextNode extends OutlineNode {
         invariant(false, 'Should never happen');
       }
     }
-    setTextStyling(nextInnerTag, prevFlags, nextFlags, innerDOM);
     setTextContent(prevText, nextText, innerDOM, this);
-    if (nextFlags & IS_LINK) {
-      if ((prevFlags & IS_LINK) === 0) {
-        innerDOM.setAttribute('data-link', 'true');
-      }
-    } else {
-      if (prevFlags & IS_LINK) {
-        innerDOM.removeAttribute('data-link');
-      }
-    }
-    if (nextFlags & IS_OVERFLOWED) {
-      if ((prevFlags & IS_OVERFLOWED) === 0) {
-        innerDOM.setAttribute('data-overflow', 'true');
-      }
-    } else {
-      if (prevFlags & IS_OVERFLOWED) {
-        innerDOM.removeAttribute('data-overflow');
-      }
+    // Apply theme class names
+    const textClassNames = editorThemeClasses.text;
+
+    if (textClassNames !== undefined) {
+      setTextThemeClassNames(
+        nextInnerTag,
+        prevFlags,
+        nextFlags,
+        innerDOM,
+        textClassNames,
+      );
     }
     return false;
   }
 
   // Mutators
   toggleOverflowed(): TextNode {
-    const newFlags = this.getTextNodeFormatFlags('overflowed', null, true);
+    const newFlags = this.getTextNodeFormatFlags('overflowed', null);
     return this.setFlags(newFlags);
   }
   toggleHashtag(): TextNode {
-    const newFlags = this.getTextNodeFormatFlags('hashtag', null, true);
+    const newFlags = this.getTextNodeFormatFlags('hashtag', null);
     return this.setFlags(newFlags);
   }
   setURL(url: string | null): TextNode {

@@ -38,6 +38,7 @@ export type EditorThemeClasses = {
     bold?: EditorThemeClassName,
     underline?: EditorThemeClassName,
     strikethrough?: EditorThemeClassName,
+    underlineStrikethrough?: EditorThemeClassName,
     italic?: EditorThemeClassName,
     code?: EditorThemeClassName,
     link?: EditorThemeClassName,
@@ -60,7 +61,7 @@ export type EditorThemeClasses = {
     h5?: EditorThemeClassName,
   },
   // Handle other generic values
-  [string]: string,
+  [string]: EditorThemeClassName | {[string]: EditorThemeClassName},
 };
 
 function resetEditor(editor: OutlineEditor): void {

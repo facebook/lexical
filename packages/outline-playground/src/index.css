@@ -499,9 +499,9 @@ pre {
   text-decoration: underline;
 }
 
-.editor-shell div.editor span.editor-text-underline.editor-text-strikethrough,
-.editor-shell div.editor strong.editor-text-underline.editor-text-strikethrough,
-.editor-shell div.editor em.editor-text-underline.editor-text-strikethrough {
+.editor-shell div.editor span.editor-text-underlineStrikethrough,
+.editor-shell div.editor strong.editor-text-underlineStrikethrough,
+.editor-shell div.editor em.editor-text-underlineStrikethrough {
   text-decoration: underline line-through;
 }
 

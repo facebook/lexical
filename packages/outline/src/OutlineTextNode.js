@@ -14,7 +14,7 @@ import type {EditorThemeClasses} from './OutlineEditor';
 import {OutlineNode} from './OutlineNode';
 import {getWritableNode} from './OutlineNode';
 import {getSelection, makeSelection} from './OutlineSelection';
-import {invariant} from './OutlineUtils';
+import {invariant, isArray} from './OutlineUtils';
 import {shouldErrorOnReadOnly} from './OutlineView';
 import {
   IS_CODE,
@@ -161,26 +161,6 @@ function splitText(
   return splitNodes;
 }
 
-function setTextThemeClassName(
-  className: string,
-  prevFlags: number,
-  nextFlags: number,
-  flag: number,
-  dom: HTMLElement,
-): void {
-  if (className !== undefined) {
-    if (nextFlags & flag) {
-      if ((prevFlags & flag) === 0) {
-        dom.classList.add(className);
-      }
-    } else {
-      if (prevFlags & flag) {
-        dom.classList.remove(className);
-      }
-    }
-  }
-}
-
 function setTextThemeClassNames(
   tag: string,
   prevFlags: number,
@@ -188,16 +168,55 @@ function setTextThemeClassNames(
   dom: HTMLElement,
   textClassNames,
 ): void {
+  const domClassList = dom.classList;
   for (const key in textFormatStateFlags) {
     // $FlowFixMe: expected cast here
     const format: TextFormatType = key;
-    setTextThemeClassName(
-      textClassNames[key],
-      prevFlags,
-      nextFlags,
-      textFormatStateFlags[format],
-      dom,
-    );
+    const flag = textFormatStateFlags[format];
+    let classNames = textClassNames[key];
+    if (classNames !== undefined) {
+      // As we're using classList below, we need
+      // to handle className tokens that have spaces.
+      // The easiest way to do this to convert the
+      // className tokens to an array that can be
+      // applied to classList.add()/remove().
+      if (!isArray(classNames)) {
+        classNames = classNames.split(' ');
+        textClassNames[key] = classNames;
+      }
+      if (nextFlags & flag) {
+        if ((prevFlags & flag) === 0) {
+          domClassList.add(...classNames);
+        }
+      } else if (prevFlags & flag) {
+        domClassList.remove(...classNames);
+      }
+    }
+  }
+  // Now we handle the special case: underline + strikethrough.
+  // We have to do this as we need a way to compose the fact that
+  // the same CSS property will need to be used: text-decoration.
+  // In an ideal world we shouldn't have to do this, but there's no
+  // easy workaround for many atomic CSS systems today.
+  let classNames = textClassNames.underlineStrikethrough;
+  if (classNames !== undefined) {
+    if (!isArray(classNames)) {
+      classNames = classNames.split(' ');
+      // $FlowFixMe: this isn't right but we want to cache the array value
+      textClassNames.underlineStrikethrough = classNames;
+    }
+
+    const prevUnderlineStrikethrough =
+      prevFlags & IS_UNDERLINE && prevFlags & IS_STRIKETHROUGH;
+    const nextUnderlineStrikethrough =
+      nextFlags & IS_UNDERLINE && nextFlags & IS_STRIKETHROUGH;
+    if (nextUnderlineStrikethrough) {
+      if (!prevUnderlineStrikethrough) {
+        domClassList.add(...classNames);
+      }
+    } else if (prevUnderlineStrikethrough) {
+      domClassList.remove(...classNames);
+    }
   }
 }
 
@@ -383,7 +402,7 @@ export class TextNode extends OutlineNode {
     // Apply theme class names
     const textClassNames = editorThemeClasses.text;
 
-    if (textClassNames !== undefined) {
+    if (textClassNames !== undefined && prevFlags !== nextFlags) {
       setTextThemeClassNames(
         nextInnerTag,
         prevFlags,

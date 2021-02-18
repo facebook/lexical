@@ -64,6 +64,7 @@ function useOutlineEditor(
           hashtag: 'editor-text-hashtag',
           underline: 'editor-text-underline',
           strikethrough: 'editor-text-strikethrough',
+          underlineStrikethrough: 'editor-text-underlineStrikethrough',
           code: 'editor-text-code',
         },
       }),

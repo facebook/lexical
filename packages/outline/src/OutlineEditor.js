@@ -63,6 +63,17 @@ export type EditorThemeClasses = {
   [string]: string,
 };
 
+function resetEditor(editor: OutlineEditor): void {
+  const root = createRoot();
+  const viewModel = new ViewModel({root});
+  editor._viewModel = viewModel;
+  editor._pendingViewModel = null;
+  editor._placeholderElement = null;
+  editor._keyToDOMMap.clear();
+  editor._textContent = '';
+  triggerUpdateListeners(editor);
+}
+
 export function createEditor(
   editorThemeClasses?: EditorThemeClasses,
 ): OutlineEditor {
@@ -274,13 +285,17 @@ export class OutlineEditor {
   getTextContent(): string {
     return this._textContent;
   }
-  setEditorElement(editorElement: null | HTMLElement): void {
-    this._editorElement = editorElement;
-    if (editorElement === null) {
+  setEditorElement(nextEditorElement: null | HTMLElement): void {
+    const prevEditorElement = this._editorElement;
+    this._editorElement = nextEditorElement;
+    if (nextEditorElement === null) {
       this._keyToDOMMap.delete('root');
     } else {
-      editorElement.setAttribute('data-outline-editor', 'true');
-      this._keyToDOMMap.set('root', editorElement);
+      if (nextEditorElement !== prevEditorElement) {
+        resetEditor(this);
+      }
+      nextEditorElement.setAttribute('data-outline-editor', 'true');
+      this._keyToDOMMap.set('root', nextEditorElement);
       commitPendingUpdates(this);
     }
   }

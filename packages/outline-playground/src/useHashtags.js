@@ -237,7 +237,7 @@ function getHashtagRegexString(): string {
 
 const REGEX = new RegExp(getHashtagRegexString(), 'ig');
 
-export default function useEmojis(editor: null | OutlineEditor): void {
+export default function useHashtags(editor: null | OutlineEditor): void {
   useEffect(() => {
     if (editor !== null) {
       return editor.addTextNodeTransform((node: TextNode) => {

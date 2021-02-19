@@ -12,7 +12,12 @@ import type {OutlineEditor, EditorThemeClasses} from './OutlineEditor';
 import {createTextNode, RootNode, BlockNode, TextNode} from '.';
 import {getActiveViewModel, shouldErrorOnReadOnly} from './OutlineView';
 import {generateRandomKey, invariant} from './OutlineUtils';
-import {IS_IMMUTABLE, IS_OVERFLOWED, IS_SEGMENTED} from './OutlineConstants';
+import {
+  IS_IMMUTABLE,
+  IS_INERT,
+  IS_OVERFLOWED,
+  IS_SEGMENTED,
+} from './OutlineConstants';
 
 type NodeParserState = {
   originalSelection: null | ParsedSelection,
@@ -105,7 +110,10 @@ function replaceNode<N: OutlineNode>(
   toReplace.remove();
   // Handle immutable/segmented
   const flags = replaceWith.__flags;
-  if (flags & IS_IMMUTABLE || flags & IS_SEGMENTED) {
+  if (
+    (flags & IS_INERT) === 0 &&
+    (flags & IS_IMMUTABLE || flags & IS_SEGMENTED)
+  ) {
     wrapInTextNodes(replaceWith);
   }
   return writableReplaceWith;
@@ -404,12 +412,15 @@ export class OutlineNode {
   isSegmented(): boolean {
     return (this.getLatest().__flags & IS_SEGMENTED) !== 0;
   }
+  isInert(): boolean {
+    return (this.getLatest().__flags & IS_INERT) !== 0;
+  }
   getLatest<N>(): N {
     const latest = getNodeByKey(this.__key);
     invariant(latest !== null, 'getLatest: node not found');
     return latest;
   }
-  getTextContent(): string {
+  getTextContent(includeInert?: boolean): string {
     return '';
   }
 
@@ -450,6 +461,12 @@ export class OutlineNode {
     self.__flags |= IS_SEGMENTED;
     return self;
   }
+  makeInert(): this {
+    shouldErrorOnReadOnly();
+    const self = getWritableNode(this);
+    self.__flags |= IS_INERT;
+    return self;
+  }
   remove(): void {
     shouldErrorOnReadOnly();
     return removeNode(this);
@@ -485,7 +502,10 @@ export class OutlineNode {
     }
     // Handle immutable/segmented
     const flags = nodeToInsert.__flags;
-    if (flags & IS_IMMUTABLE || flags & IS_SEGMENTED) {
+    if (
+      (flags & IS_INERT) === 0 &&
+      (flags & IS_IMMUTABLE || flags & IS_SEGMENTED)
+    ) {
       wrapInTextNodes(nodeToInsert);
     }
     return writableSelf;
@@ -516,7 +536,10 @@ export class OutlineNode {
     }
     // Handle immutable/segmented
     const flags = nodeToInsert.__flags;
-    if (flags & IS_IMMUTABLE || flags & IS_SEGMENTED) {
+    if (
+      (flags & IS_INERT) === 0 &&
+      (flags & IS_IMMUTABLE || flags & IS_SEGMENTED)
+    ) {
       wrapInTextNodes(nodeToInsert);
     }
     return writableSelf;

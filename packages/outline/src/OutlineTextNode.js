@@ -307,7 +307,10 @@ export class TextNode extends OutlineNode {
   getURL(): null | string {
     return this.__url;
   }
-  getTextContent(): string {
+  getTextContent(includeInert?: boolean): string {
+    if (!includeInert && this.isInert()) {
+      return '';
+    }
     const self = this.getLatest();
     return self.__text;
   }

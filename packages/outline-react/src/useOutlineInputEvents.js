@@ -260,7 +260,10 @@ function onKeyDown(
           } else {
             let targetPrevSibling = prevSibling;
             if (prevSibling.isImmutable() || prevSibling.isSegmented()) {
-              if (isLeftArrow) {
+              if (prevSibling.isInert()) {
+                shouldPreventDefault = true;
+                targetPrevSibling = null;
+              } else if (isLeftArrow) {
                 announceNode(prevSibling);
                 targetPrevSibling = prevSibling.getPreviousSibling();
               } else if (!isModifierActive(event)) {
@@ -299,7 +302,9 @@ function onKeyDown(
             nextSibling !== null &&
             (nextSibling.isImmutable() || nextSibling.isSegmented())
           ) {
-            if (isRightArrow) {
+            if (nextSibling.isInert()) {
+              shouldPreventDefault = true;
+            } else if (isRightArrow) {
               if (
                 (IS_APPLE && selectionAtEnd) ||
                 (!IS_APPLE && selectionJustBeforeEnd)

@@ -13,11 +13,10 @@ import useOutlineAutoFormatter from 'outline-react/useOutlineAutoFormatter';
 import {useOutlineHistory} from 'outline-react/useOutlineHistory';
 import useToolbar from './useToolbar';
 import useHashtags from './useHashtags';
-import useTypeahead from './useTypeahead'
 import BlockControls from './BlockControls';
 import useStepRecorder from './useStepRecorder';
 import CharacterLimit from './CharacterLimit';
-import {Typeahead} from "./Typeahead";
+import {Typeahead} from './Typeahead';
 
 const editorStyle = {
   outline: 0,
@@ -31,7 +30,7 @@ type Props = {
   onChange: (ViewModel | null) => void,
   isReadOnly?: boolean,
   isCharLimit?: boolean,
-  isTypeahead?: boolean,
+  isAutocomplete?: boolean,
 };
 
 function useOutlineEditor(
@@ -136,7 +135,7 @@ export function RichTextEditor({
   onChange,
   isReadOnly,
   isCharLimit,
-  isTypeahead,
+  isAutocomplete,
 }: Props): React.MixedElement {
   const editorElementRef = useRef(null);
   const outlineEditor = useOutlineEditor(
@@ -165,7 +164,7 @@ export function RichTextEditor({
       {stepRecorder}
       <BlockControls editor={outlineEditor} />
       {isCharLimit && <CharacterLimit editor={outlineEditor} />}
-      {isTypeahead && <Typeahead editor={outlineEditor} />}
+      {isAutocomplete && <Typeahead editor={outlineEditor} />}
     </>
   );
 }
@@ -174,6 +173,7 @@ export function PlainTextEditor({
   onChange,
   isReadOnly,
   isCharLimit,
+  isAutocomplete,
 }: Props): React$Node {
   const editorElementRef = useRef(null);
   const outlineEditor = useOutlineEditor(
@@ -198,6 +198,7 @@ export function PlainTextEditor({
       {mentionsTypeahead}
       {stepRecorder}
       {isCharLimit && <CharacterLimit editor={outlineEditor} />}
+      {isAutocomplete && <Typeahead editor={outlineEditor} />}
     </>
   );
 }

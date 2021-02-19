@@ -93,6 +93,12 @@ export function moveForward(n: ?number) {
   };
 }
 
+export function moveEnd() {
+  return {
+    type: 'move_end',
+  }
+}
+
 export function deleteBackward(n: ?number) {
   return {
     type: 'delete_backward',
@@ -395,6 +401,10 @@ export async function applySelectionInputs(inputs, update, editor) {
             moveNativeSelectionForward();
             break;
           }
+          case 'move_end': {
+            SelectionHelpers.moveEnd(selection);
+            break;
+          }
           case 'delete_backward': {
             SelectionHelpers.deleteBackward(selection);
             break;
@@ -429,28 +439,28 @@ export async function applySelectionInputs(inputs, update, editor) {
             const text = createTextNode(input.text);
             text.makeImmutable();
             SelectionHelpers.insertNodes(selection, [text]);
-            text.selectAfter();
+            text.selectNext();
             break;
           }
           case 'insert_segmented_node': {
             const text = createTextNode(input.text);
             text.makeSegmented();
             SelectionHelpers.insertNodes(selection, [text]);
-            text.selectAfter();
+            text.selectNext();
             break;
           }
           case 'covert_to_immutable_node': {
             const text = createTextNode(selection.getTextContent());
             text.makeImmutable();
             SelectionHelpers.insertNodes(selection, [text]);
-            text.selectAfter();
+            text.selectNext();
             break;
           }
           case 'covert_to_segmented_node': {
             const text = createTextNode(selection.getTextContent());
             text.makeSegmented();
             SelectionHelpers.insertNodes(selection, [text]);
-            text.selectAfter();
+            text.selectNext();
             break;
           }
           case 'undo': {

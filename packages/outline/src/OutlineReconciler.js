@@ -20,6 +20,7 @@ import {
   IS_SEGMENTED,
   RTL_REGEX,
   LTR_REGEX,
+  IS_INERT,
 } from './OutlineConstants';
 
 let subTreeTextContent = '';
@@ -102,16 +103,24 @@ function createNode(
   const node = activeNextNodeMap[key];
   const dom = node.createDOM(activeEditorThemeClasses);
   const flags = node.__flags;
+  const isInert = flags & IS_INERT;
   storeDOMWithKey(key, dom, activeEditor);
 
-  if (flags & IS_IMMUTABLE || flags & IS_SEGMENTED) {
+  if (flags & IS_IMMUTABLE || flags & IS_SEGMENTED || isInert) {
     dom.contentEditable = 'false';
+  }
+  if (isInert) {
+    const domStyle = dom.style;
+    domStyle.pointerEvents = 'none';
+    domStyle.userSelect = 'none';
   }
 
   if (node instanceof TextNode) {
-    const text = node.__text;
-    subTreeTextContent += text;
-    editorTextContent += text;
+    if (!isInert) {
+      const text = node.__text;
+      subTreeTextContent += text;
+      editorTextContent += text;
+    }
   } else if (node instanceof BlockNode) {
     // Handle block children
     const children = node.__children;

@@ -18,6 +18,7 @@ import {
   convertToSegmentedNode,
   moveBackward,
   moveForward,
+  moveEnd,
   deleteWordBackward,
   deleteWordForward,
   printWhitespace,
@@ -751,6 +752,29 @@ describe('OutlineSelection tests', () => {
           anchorOffset: 0,
           focusPath: [0, 0, 0],
           focusOffset: 0,
+        },
+      },
+      {
+        name:
+          'Type a text and an immutable text, move the caret to the end of the first text',
+        inputs: [
+          insertText('Hello '),
+          insertImmutableNode('Bob'),
+          moveBackward(),
+          moveBackward(),
+          moveEnd(),
+        ],
+        expectedHTML:
+          '<div contenteditable="true" data-outline-editor="true"><p dir="ltr">' +
+          '<span>Hello </span>' +
+          '<span>Bob</span>' +
+          '<span></span>' +
+          '</p></div>',
+        expectedSelection: {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 6,
+          focusPath: [0, 0, 0],
+          focusOffset: 6,
         },
       },
     ]),

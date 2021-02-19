@@ -193,7 +193,7 @@ function MentionsTypeahead({
 
       // $FlowFixMe
       targetNode.replace(mentionNode);
-      mentionNode.selectAfter(0, 0);
+      mentionNode.selectNext(0, 0);
       mentionNode.getParentOrThrow().normalizeTextNodes(true);
     });
   }, [close, editor, nodeKey, results, selectedIndex]);

@@ -12,7 +12,7 @@ function App(): React$Node {
   const [viewModel, setViewModel] = useState<ViewModel | null>(null);
   const [isRichText, setRichText] = useState(true);
   const [isCharLimit, setCharLimit] = useState(false);
-  const [isTypeahead, setTypeahead] = useState(false);
+  const [isAutocomplete, setAutocomplete] = useState(false);
   const handleOnChange = useCallback((newViewModel) => {
     requestAnimationFrame(() => setViewModel(newViewModel));
   }, []);
@@ -24,35 +24,32 @@ function App(): React$Node {
       </header>
       <div className="switches">
         <Switch
-          id="rich-text-switch"
           onClick={() => setRichText(!isRichText)}
           checked={isRichText}
           text="Rich Text"
         />
         <Switch
-          id="character-count-switch"
           onClick={() => setCharLimit(!isCharLimit)}
           checked={isCharLimit}
           text="Char Limit"
         />
         <Switch
-          id="typeahead-switch"
-          onClick={() => setTypeahead(!isTypeahead)}
-          checked={isTypeahead}
-          text="Typeahead"
+          onClick={() => setAutocomplete(!isAutocomplete)}
+          checked={isAutocomplete}
+          text="Autocomplete"
         />
       </div>
       <div className="editor-shell">
         {isRichText ? (
           <RichTextEditor
             isCharLimit={isCharLimit}
-            isTypeahead={isTypeahead}
+            isAutocomplete={isAutocomplete}
             onChange={handleOnChange}
           />
         ) : (
           <PlainTextEditor
             isCharLimit={isCharLimit}
-            isTypeahead={isTypeahead}
+            isAutocomplete={isAutocomplete}
             onChange={handleOnChange}
           />
         )}

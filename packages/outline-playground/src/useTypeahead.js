@@ -147,9 +147,23 @@ class TypeaheadServer {
     he: 'llo',
     hel: 'lo',
     hell: 'o',
+    He: 'llo',
+    Hel: 'lo',
+    Hell: 'o',
     'happy ': 'birthday',
     'happy b': 'irthday',
     'happy bi': 'rthday',
+    'Happy ': 'birthday',
+    'Happy b': 'irthday',
+    'Happy bi': 'rthday',
+    'hello ': 'world',
+    'hello w': 'orld',
+    'hello wo': 'rld',
+    'hello wor': 'ld',
+    'Hello ': 'world',
+    'Hello w': 'orld',
+    'Hello wo': 'rld',
+    'Hello wor': 'ld',
   };
   LATENCY = 200;
 

@@ -326,8 +326,10 @@ export default function useStepRecorder(editor: OutlineEditor): React$Node {
     <>
       <button
         id="step-recorder-button"
-        onClick={() => toggleEditorSelection(getCurrentEditor())}>
-        {isRecording ? 'STOP RECORDING' : 'RECORD TEST'}
+        className={isRecording ? 'recording' : null}
+        onClick={() => toggleEditorSelection(getCurrentEditor())}
+        title={isRecording ? 'Disable step recorder' : 'Enable step recorder'}>
+        <span></span>
       </button>
       {steps.length !== 0 && <pre id="step-recorder">{templatedTest}</pre>}
     </>,

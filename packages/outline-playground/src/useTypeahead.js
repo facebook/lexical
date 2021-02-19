@@ -2,90 +2,96 @@
 
 import type {OutlineEditor, View, NodeKey, EditorThemeClasses} from 'outline';
 
-import {TextNode} from 'outline';
-import {useEffect, useRef, useState} from "react";
+import {TextNode, BlockNode} from 'outline';
+import {useEffect, useRef, useState, useCallback, useMemo} from 'react';
 
 export default function useTypeahead(editor: null | OutlineEditor): void {
-  // const len = useMemo(() => editor?.getTextContent(), [editor]);
-  // const typeaheadNodeY = useRef<NodeKey | null>(null);
+  const typeaheadNodeKey = useRef<NodeKey | null>(null);
+  const [text, setText] = useState<string>('');
+  const server = useMemo(() => new TypeaheadServer(), []);
+  const suggestion = useTypeaheadSuggestion(text, server.query);
 
-  // useEffect(() => {
-  //   if (editor !== null) {
-  //     return editor.addTextNodeTransform((node: TextNode, view: View) => {
-  //       editor.addNodeType('typeahead', TypeaheadNode);
-  //       const text = node.getParentOrThrow().getTextContent();
-  //       if (text === 'he') {
-  //         const typeaheadNode = createTypeaheadNode('llo world');
-  //         node.insertAfter(typeaheadNode);
-  //       }
-  //       if (text === 'xhello world') {
-  //         node.setTextContent('yhe');
-  //         node.selectEnd();
-  //       }
-  //     });
-  //   }
-  // });
+  const getTypeaheadTextNode: (view: View) => TextNode | null = useCallback(
+    (view: View) => {
+      if (typeaheadNodeKey.current === null) {
+        return null;
+      }
+      const node = view.getNodeByKey(typeaheadNodeKey.current);
+      if (!(node instanceof TextNode)) {
+        return null;
+      }
+      return node;
+    },
+    [],
+  );
 
+  // Monitor entered text
   useEffect(() => {
-        if (editor !== null) {
-          editor.addNodeType('typeahead', TypeaheadNode);
-
-          return editor.addTextNodeTransform((node: TextNode, view: View) => {
-               // Monitor entered text and cursor position
-    editor.addTextNodeTransform((textNode: TextNode, view: View) => {
-      const text = view.getRoot().getTextContent();
-      const typeaheadTextNode = getTypeaheadTextNode(view);
-      const typeaheadText = typeaheadTextNode?.getTextContent() ?? '';
-
-      textNode.getParentBlockOrThrow().getTextContent();
-      smartComposeHelper.setEnteredText(
-        text.substring(0, text.length - typeaheadText.length),
-      );
-          });
-        }
+    if (editor !== null) {
+      return editor.addTextNodeTransform((node: TextNode, view: View) => {
+        const text = view.getRoot().getTextContent() ?? '';
+        setText(text);
+      });
+    }
   }, [editor]);
 
-  // useEffect(() => {
-  //   if (editor !== null) {
-  //     editor.addNodeType('typeahead', TypeaheadNode);
+  // Monitor suggestions and trigger editor updates
+  useEffect(() => {
+    if (editor !== null) {
+      editor.update((view: View) => {
+        const typeaheadTextNode = getTypeaheadTextNode(view);
+        typeaheadTextNode?.remove();
+        typeaheadNodeKey.current = null;
 
-  //     return editor.addTextNodeTransform((node: TextNode, view: View) => {
-  //       if (typeaheadNodeY.current !== null) {
-  //         const oldTypeaheadNode = view.getNodeByKey(typeaheadNodeY.current);
-  //         if (oldTypeaheadNode !== null) {
-  //           oldTypeaheadNode.remove();
-  //         }
-  //       }
+        if (suggestion !== null) {
+          const lastParagraph = view.getRoot().getLastChild();
+          if (lastParagraph instanceof BlockNode) {
+            const lastTextNode = lastParagraph.getLastChild();
+            if (lastTextNode instanceof TextNode) {
+              const newTypeaheadNode = createTypeaheadNode(suggestion);
+              lastTextNode.insertAfter(newTypeaheadNode);
+              typeaheadNodeKey.current = newTypeaheadNode.getKey();
+            }
+          }
+        }
+      });
+    }
+  }, [editor, getTypeaheadTextNode, suggestion]);
 
-  //       const text = node.getParentOrThrow().getTextContent();
+  // Handle Keyboard TAB to complete suggestion
+  useEffect(() => {
+    const element = editor?.getEditorElement();
+    if (editor !== null && element != null) {
+      const handleEvent = (event: KeyboardEvent) => {
+        if (event.key === 'Tab') {
+          editor.update((view: View) => {
+            const typeaheadTextNode = getTypeaheadTextNode(view);
+            const prevTextNode = typeaheadTextNode?.getPreviousSibling();
+            // Make sure that the Typeahead is visible and previous child writable
+            // before calling it a succesfully handled event.
+            if (
+              typeaheadTextNode !== null &&
+              prevTextNode instanceof TextNode
+            ) {
+              event.preventDefault();
+              prevTextNode.setTextContent(
+                prevTextNode.getTextContent() +
+                  typeaheadTextNode.getTextContent(true),
+              );
+              prevTextNode.selectEnd();
+            }
+            typeaheadTextNode?.remove();
+            typeaheadNodeKey.current = null;
+          });
+        }
+      };
 
-  //       // Autofill
-  //       // if (text === 'he') {
-  //       //   node.setTextContent('hello');
-  //       //   node.selectAfter();
-  //       //   return;
-  //       // }
-
-  //       // const isLast = node.getNextSibling() === null ||
-  //       //   node.getNextSibling() instanceof TypeaheadNode;
-
-  //       const typeaheadText = typeaheadSuggestion(text);
-  //       if (typeaheadText !== null) {
-  //         const typeaheadNode = createTypeaheadNode(typeaheadText);
-  //         typeaheadNodeY.current = typeaheadNode.getKey();
-  //         node.insertAfter(typeaheadNode);
-  //       }
-
-  //       // // const text = node.getTextContent();
-  //       // const root = view.getRoot();
-  //       // // $FlowFixMe
-  //       // const lastBlock: ParagraphNode | null = root.getLastChild();
-  //       // // lastBlock?.insertAfter
-  //       // console.info(lastBlock?.getPreviousSiblings(), lastBlock?.isLeaf());
-  //       // // last
-  //     });
-  //   }
-  // }, [editor]);
+      element.addEventListener('keydown', handleEvent);
+      return () => {
+        element.removeEventListener('keydown', handleEvent);
+      };
+    }
+  }, [editor, getTypeaheadTextNode]);
 }
 
 class TypeaheadNode extends TextNode {
@@ -108,40 +114,69 @@ class TypeaheadNode extends TextNode {
   }
 }
 
-function createTypeaheadNode(text: string): TypeaheadNode {
-  return new TypeaheadNode(text).makeImmutable();
+function createTypeaheadNode(text: string): TextNode {
+  return new TypeaheadNode(text).makeInert();
 }
 
-function useTypeaheadSuggestion(text: string, query:(text: string) => Promise<string | null>) {
+function useTypeaheadSuggestion(
+  text: string,
+  query: (
+    text: string,
+  ) => {promise: () => Promise<string | null>, cancel: () => void},
+) {
+  const cancelRequest = useRef<() => void>(() => {});
+  const requestTime = useRef<number>(0);
   const [suggestion, setSuggestion] = useState<string | null>(null);
   useEffect(() => {
-    // TODO race conditions
+    setSuggestion(null);
+    cancelRequest.current();
     (async () => {
-      const suggestion = await query(text);
-      setSuggestion(suggestion);
+      let time = Date.now();
+      requestTime.current = time;
+      const request = await query(text);
+      cancelRequest.current = request.cancel;
+      setSuggestion(await request.promise());
     })();
-  },[query, text])
+  }, [query, text]);
 
   return suggestion;
 }
 
 class TypeaheadServer {
   DATABASE = {
-    'he': 'hello',
-    'hel': 'lo',
-    'hell': 'o',
+    he: 'llo',
+    hel: 'lo',
+    hell: 'o',
     'happy ': 'birthday',
     'happy b': 'irthday',
-  }
+    'happy bi': 'rthday',
+  };
   LATENCY = 200;
 
-  // TODO cancel query
-  query(text: string): Promise<string | null> {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const response = this.DATABASE[text] ?? null;
-        resolve(response);
-      }, this.LATENCY)
-    });
-  }
+  query = (
+    text: string,
+  ): ({promise: () => Promise<string | null>, cancel: () => void}) => {
+    let isCancelled = false;
+
+    const promise = () =>
+      new Promise((resolve, reject) => {
+        setTimeout(() => {
+          const response = this.DATABASE[text] ?? null;
+          if (!isCancelled) {
+            resolve(response);
+          } else {
+            reject('Cancelled network request');
+          }
+        }, this.LATENCY);
+      });
+
+    const cancel = () => {
+      isCancelled = true;
+    };
+
+    return {
+      promise,
+      cancel,
+    };
+  };
 }

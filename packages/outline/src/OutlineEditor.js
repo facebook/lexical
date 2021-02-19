@@ -290,6 +290,9 @@ export class OutlineEditor {
     const prevEditorElement = this._editorElement;
     this._editorElement = nextEditorElement;
     if (nextEditorElement === null) {
+      if (prevEditorElement !== null) {
+        prevEditorElement.textContent = '';
+      }
       this._keyToDOMMap.delete('root');
     } else {
       if (nextEditorElement !== prevEditorElement) {

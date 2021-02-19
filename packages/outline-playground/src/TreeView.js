@@ -87,7 +87,7 @@ function normalize(text) {
 
 function printNode(node) {
   if (node instanceof TextNode) {
-    const text = node.getTextContent();
+    const text = node.getTextContent(true);
     const title = text.length === 0 ? '(empty)' : `"${normalize(text)}"`;
     const flagLabels = printTextNodeFlags(node);
     return [title, flagLabels.length !== 0 ? `flags: ${flagLabels}` : null]

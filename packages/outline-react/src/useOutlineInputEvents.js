@@ -259,11 +259,11 @@ function onKeyDown(
             }
           } else {
             let targetPrevSibling = prevSibling;
-            if (prevSibling.isImmutable() || prevSibling.isSegmented()) {
-              if (prevSibling.isInert()) {
-                shouldPreventDefault = true;
-                targetPrevSibling = null;
-              } else if (isLeftArrow) {
+            if (prevSibling.isInert()) {
+              shouldPreventDefault = true;
+              targetPrevSibling = null;
+            } else if (prevSibling.isImmutable() || prevSibling.isSegmented()) {
+              if (isLeftArrow) {
                 announceNode(prevSibling);
                 targetPrevSibling = prevSibling.getPreviousSibling();
               } else if (!isModifierActive(event)) {
@@ -298,22 +298,21 @@ function onKeyDown(
         if (selectionAtEnd || selectionJustBeforeEnd) {
           const nextSibling = anchorNode.getNextSibling();
 
-          if (
-            nextSibling !== null &&
-            (nextSibling.isImmutable() || nextSibling.isSegmented())
-          ) {
-            if (nextSibling.isInert()) {
+          if (nextSibling !== null) {
+            if (nextSibling.isInert() && selectionAtEnd) {
               shouldPreventDefault = true;
-            } else if (isRightArrow) {
-              if (
-                (IS_APPLE && selectionAtEnd) ||
-                (!IS_APPLE && selectionJustBeforeEnd)
-              ) {
-                announceNode(nextSibling);
+            } else if (nextSibling.isImmutable() || nextSibling.isSegmented()) {
+              if (isRightArrow) {
+                if (
+                  (IS_APPLE && selectionAtEnd) ||
+                  (!IS_APPLE && selectionJustBeforeEnd)
+                ) {
+                  announceNode(nextSibling);
+                }
+              } else if (selectionAtEnd && !isModifierActive(event)) {
+                deleteForward(selection);
+                shouldPreventDefault = true;
               }
-            } else if (selectionAtEnd && !isModifierActive(event)) {
-              deleteForward(selection);
-              shouldPreventDefault = true;
             }
           }
         }

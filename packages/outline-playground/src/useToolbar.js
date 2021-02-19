@@ -102,7 +102,7 @@ function LinkBar({
     />
   ) : (
     <div className="link-input">
-      <a href={linkUrl} target="_blank" rel="noopener">
+      <a href={linkUrl} target="_blank" rel="noopener noreferrer">
         {linkUrl}
       </a>
       <div

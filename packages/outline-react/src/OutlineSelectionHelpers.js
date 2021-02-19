@@ -898,3 +898,12 @@ export function insertText(selection: Selection, text: string): void {
     currentBlock.normalizeTextNodes(true);
   }
 }
+
+export function moveEnd(selection: Selection): void {
+  const anchorNode = selection.getAnchorNode();
+  if (anchorNode === null) {
+    return;
+  }
+
+  anchorNode.selectEnd();
+}

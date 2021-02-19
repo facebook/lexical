@@ -443,7 +443,12 @@ export class TextNode extends OutlineNode {
     writableSelf.__text = text;
     return writableSelf;
   }
-  selectAfter(anchorOffset?: number, focusOffset?: number): Selection {
+  selectEnd(): Selection {
+    shouldErrorOnReadOnly();
+    const text = this.getTextContent();
+    return this.select(text.length, text.length);
+  }
+  selectNext(anchorOffset?: number, focusOffset?: number): Selection {
     shouldErrorOnReadOnly();
     const nextSibling = this.getNextSibling();
     if (

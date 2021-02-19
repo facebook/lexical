@@ -57,7 +57,7 @@ function textNodeTransform(node: TextNode, view: View): void {
       }
       const emojiNode = createEmojiNode(emojiStyle, emojiText);
       targetNode.replace(emojiNode);
-      emojiNode.selectAfter(0, 0);
+      emojiNode.selectNext(0, 0);
       emojiNode.getParentOrThrow().normalizeTextNodes(true);
       break;
     }

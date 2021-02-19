@@ -20,6 +20,11 @@ header h1 {
   margin: 20px 0 0 0;
 }
 
+.switches {
+  margin: 20px auto;
+  width: 580px;
+}
+
 .editor-shell {
   background: #fff;
   margin: 20px auto 20px auto;
@@ -417,9 +422,6 @@ pre {
 
 .switch {
   display: inline-block;
-  text-align: right;
-  position: absolute;
-  top: 30px;
   width: 130px;
   color: #444;
 }

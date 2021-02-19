@@ -105,6 +105,19 @@ describe('OutlineNode tests', () => {
     );
   });
 
+  test('replaceNode() (inert)', async () => {
+    await update((view) => {
+      const oldTextNode = view.getRoot().getFirstChild().getFirstChild();
+      const newTextNode = Outline.createTextNode('Replaced node!');
+      newTextNode.makeInert();
+      oldTextNode.replace(newTextNode);
+    });
+    expect(sanitizeHTML(container.innerHTML)).toBe(
+      '<div contenteditable="true" data-outline-editor="true"><p>' +
+        '<span style="pointer-events: none; user-select: none;">Replaced node!</span></p></div>',
+    );
+  });
+
   test('removeNode()', async () => {
     await update((view) => {
       const oldTextNode = view.getRoot().getFirstChild().getFirstChild();
@@ -153,6 +166,19 @@ describe('OutlineNode tests', () => {
     );
   });
 
+  test('append() (inert)', async () => {
+    await update((view) => {
+      const paragraph = view.getRoot().getFirstChild();
+      const newTextNode = Outline.createTextNode('New node!');
+      newTextNode.makeInert();
+      paragraph.append(newTextNode);
+    });
+    expect(sanitizeHTML(container.innerHTML)).toBe(
+      '<div contenteditable="true" data-outline-editor="true"><p><span></span>' +
+        '<span style="pointer-events: none; user-select: none;">New node!</span></p></div>',
+    );
+  });
+
   test('insertAfter()', async () => {
     await update((view) => {
       const textNode = view.getRoot().getFirstChild().getFirstChild();
@@ -188,6 +214,19 @@ describe('OutlineNode tests', () => {
     expect(sanitizeHTML(container.innerHTML)).toBe(
       '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span></span>' +
         '<span>New node!</span><span></span></p></div>',
+    );
+  });
+
+  test('insertAfter() (inert)', async () => {
+    await update((view) => {
+      const textNode = view.getRoot().getFirstChild().getFirstChild();
+      const newTextNode = Outline.createTextNode('New node!');
+      newTextNode.makeInert();
+      textNode.insertAfter(newTextNode);
+    });
+    expect(sanitizeHTML(container.innerHTML)).toBe(
+      '<div contenteditable="true" data-outline-editor="true"><p><span></span>' +
+        '<span style="pointer-events: none; user-select: none;">New node!</span></p></div>',
     );
   });
 
@@ -227,6 +266,20 @@ describe('OutlineNode tests', () => {
     expect(sanitizeHTML(container.innerHTML)).toBe(
       '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span></span>' +
         '<span>New node!</span>' +
+        '<span></span></p></div>',
+    );
+  });
+
+  test('insertBefore() (inert)', async () => {
+    await update((view) => {
+      const textNode = view.getRoot().getFirstChild().getFirstChild();
+      const newTextNode = Outline.createTextNode('New node!');
+      newTextNode.makeInert();
+      textNode.insertBefore(newTextNode);
+    });
+    expect(sanitizeHTML(container.innerHTML)).toBe(
+      '<div contenteditable="true" data-outline-editor="true"><p>' +
+        '<span style="pointer-events: none; user-select: none;">New node!</span>' +
         '<span></span></p></div>',
     );
   });

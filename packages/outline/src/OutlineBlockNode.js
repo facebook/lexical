@@ -19,7 +19,7 @@ import {
 import {getSelection} from './OutlineSelection';
 import {invariant} from './OutlineUtils';
 import {getActiveViewModel, shouldErrorOnReadOnly} from './OutlineView';
-import {IS_IMMUTABLE, IS_SEGMENTED} from './OutlineConstants';
+import {IS_IMMUTABLE, IS_INERT, IS_SEGMENTED} from './OutlineConstants';
 
 function combineAdjacentTextNodes(
   textNodes: Array<TextNode>,
@@ -134,13 +134,13 @@ export class BlockNode extends OutlineNode {
     }
     return getNodeByKey(children[childrenLength - 1]);
   }
-  getTextContent(): string {
+  getTextContent(includeInert?: boolean): string {
     let textContent = '';
     const children = this.getChildren();
     const childrenLength = children.length;
     for (let i = 0; i < childrenLength; i++) {
       const child = children[i];
-      textContent += child.getTextContent();
+      textContent += child.getTextContent(includeInert);
       if (child instanceof BlockNode && i !== childrenLength - 1) {
         textContent += '\n\n';
       }
@@ -196,7 +196,10 @@ export class BlockNode extends OutlineNode {
     children.push(newKey);
     // Handle immutable/segmented
     const flags = nodeToAppend.__flags;
-    if (flags & IS_IMMUTABLE || flags & IS_SEGMENTED) {
+    if (
+      (flags & IS_INERT) === 0 &&
+      (flags & IS_IMMUTABLE || flags & IS_SEGMENTED)
+    ) {
       wrapInTextNodes(nodeToAppend);
     }
     return writableSelf;

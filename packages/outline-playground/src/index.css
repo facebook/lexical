@@ -144,17 +144,36 @@ pre {
 
 #step-recorder-button {
   display: block;
-  margin: 20px auto 20px auto;
-    max-width: 580px;
-  background-color: rgb(233, 35, 35);
-  color: #fff;
+  width: 40px;
+  height: 40px;
   font-size: 12px;
-  padding: 6px;
-  border-radius:  5px;
+  padding: 10px 11px;
+  border-radius:  20px;
   border: none;
   cursor: pointer;
   outline: none;
-  box-shadow:  0px 5px 10px rgba(0,0,0, 0.3);
+  box-shadow:  0px 1px 10px rgba(0,0,0, 0.3);
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  background-color: #444;
+}
+
+#step-recorder-button:hover {
+  background-color: #555;
+}
+
+#step-recorder-button.recording {
+  background-color: rgb(233, 35, 35);
+}
+
+#step-recorder-button span {
+  width: 20px;
+  height: 20px;
+  display: block;
+  background-image: url(https://static.xx.fbcdn.net/rsrc.php/v3/yM/r/t_wyvBug7cH.png);
+  background-position: 0 -466px;
+  filter: invert(1);
 }
 
 #mentions-typeahead {

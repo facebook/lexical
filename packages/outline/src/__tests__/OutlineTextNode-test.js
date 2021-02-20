@@ -73,6 +73,24 @@ describe('OutlineTextNode tests', () => {
     });
   }
 
+  test('getTextContent()', async () => {
+    await update(() => {
+      const textNode = Outline.createTextNode('My new text node');
+
+      expect(textNode.getTextContent()).toBe('My new text node');
+    });
+  });
+
+  test('getTextContent() (inert)', async () => {
+    await update(() => {
+      const textNode = Outline.createTextNode('My inert text node');
+      textNode.makeInert();
+
+      expect(textNode.getTextContent()).toBe('');
+      expect(textNode.getTextContent(true)).toBe('My inert text node');
+    });
+  });
+
   describe.each([
     ['bold', IS_BOLD],
     ['italic', IS_ITALIC],

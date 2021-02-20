@@ -170,7 +170,7 @@ describe('OutlineTextNode tests', () => {
 
     test(`toggling for ${formatFlag}`, async () => {
       // Toggle method hasn't been implemented for this flag.
-      if (flagToggle == null) {
+      if (flagToggle === null) {
         return;
       }
 

@@ -6,6 +6,7 @@ import {
   IS_CODE,
   IS_LINK,
   IS_HASHTAG,
+  IS_OVERFLOWED,
 } from '../OutlineConstants';
 
 let container = null;
@@ -92,16 +93,57 @@ describe('OutlineTextNode tests', () => {
   });
 
   describe.each([
-    ['bold', IS_BOLD],
-    ['italic', IS_ITALIC],
-    ['strikethrough', IS_STRIKETHROUGH],
-    ['underline', IS_UNDERLINE],
-    ['code', IS_CODE],
-    ['link', IS_LINK],
-    ['hashtag', IS_HASHTAG],
-  ])('getTextNodeFormatFlags(%i)', (formatFlag, stateFlag) => {
+    [
+      'bold',
+      IS_BOLD,
+      (node) => node.isBold(),
+      null, // Toggle not implemented.
+    ],
+    [
+      'italic',
+      IS_ITALIC,
+      (node) => node.isItalic(),
+      null, // Toggle not implemented.
+    ],
+    [
+      'strikethrough',
+      IS_STRIKETHROUGH,
+      (node) => node.isStrikethrough(),
+      null, // Toggle not implemented.
+    ],
+    [
+      'underline',
+      IS_UNDERLINE,
+      (node) => node.isUnderline(),
+      null, // Toggle not implemented.
+    ],
+    [
+      'code',
+      IS_CODE,
+      (node) => node.isCode(),
+      null, // Toggle not implemented.
+    ],
+    [
+      'link',
+      IS_LINK,
+      (node) => node.isLink(),
+      null, // Toggle not implemented.
+    ],
+    [
+      'hashtag',
+      IS_HASHTAG,
+      (node) => node.isHashtag(),
+      (node) => node.toggleHashtag(),
+    ],
+    [
+      'overflowed',
+      IS_OVERFLOWED,
+      (node) => node.isOverflowed(),
+      (node) => node.toggleOverflowed(),
+    ],
+  ])('%s flag', (formatFlag, stateFlag, flagPredicate, flagToggle) => {
     test(`getTextNodeFormatFlags(${formatFlag})`, async () => {
-      update((view) => {
+      await update((view) => {
         const root = view.getRoot();
         const paragraphNode = root.getFirstChild();
         const textNode = paragraphNode.getFirstChild();
@@ -112,6 +154,36 @@ describe('OutlineTextNode tests', () => {
         textNode.setFlags(newFlags);
         const newFlags2 = textNode.getTextNodeFormatFlags(formatFlag, null);
         expect(newFlags2).toBe(0);
+      });
+    });
+
+    test(`predicate for ${formatFlag}`, async () => {
+      await update((view) => {
+        const root = view.getRoot();
+        const paragraphNode = root.getFirstChild();
+        const textNode = paragraphNode.getFirstChild();
+
+        textNode.setFlags(stateFlag);
+        expect(flagPredicate(textNode)).toBe(true);
+      });
+    });
+
+    test(`toggling for ${formatFlag}`, async () => {
+      // Toggle method hasn't been implemented for this flag.
+      if (flagToggle === null) {
+        return;
+      }
+
+      await update((view) => {
+        const root = view.getRoot();
+        const paragraphNode = root.getFirstChild();
+        const textNode = paragraphNode.getFirstChild();
+
+        expect(flagPredicate(textNode)).toBe(false);
+        flagToggle(textNode);
+        expect(flagPredicate(textNode)).toBe(true);
+        flagToggle(textNode);
+        expect(flagPredicate(textNode)).toBe(false);
       });
     });
   });

@@ -187,4 +187,45 @@ describe('OutlineTextNode tests', () => {
       });
     });
   });
+
+  describe('splitText()', () => {
+    test('throw when immutable', async () => {
+      await update(() => {
+        const textNode = Outline.createTextNode('Hello world');
+        textNode.makeImmutable();
+
+        expect(() => {
+          textNode.splitText(3);
+        }).toThrow();
+      });
+    });
+
+    test.each([
+      ['a', [], ['a']],
+      ['a', [1], ['a']],
+      ['a', [5], ['a']],
+      ['Hello World', [], ['Hello World']],
+      ['Hello World', [3], ['Hel', 'lo World']],
+      ['Hello World', [3, 3], ['Hel', 'lo World']],
+      ['Hello World', [3, 7], ['Hel', 'lo W', 'orld']],
+      ['Hello World', [7, 3], ['Hel', 'lo W', 'orld']],
+      ['Hello World', [3, 7, 99], ['Hel', 'lo W', 'orld']],
+    ])(
+      '%s splitText(%s)',
+      async (initialString, splitOffsets, splitStrings) => {
+        await update((view) => {
+          const paragraphNode = ParagraphNodeModule.createParagraphNode();
+          const textNode = Outline.createTextNode(initialString);
+          paragraphNode.append(textNode);
+
+          const splitNodes = textNode.splitText(...splitOffsets);
+
+          expect(paragraphNode.getChildren()).toHaveLength(splitStrings.length);
+          expect(splitNodes.map((node) => node.getTextContent())).toEqual(
+            splitStrings,
+          );
+        });
+      },
+    );
+  });
 });

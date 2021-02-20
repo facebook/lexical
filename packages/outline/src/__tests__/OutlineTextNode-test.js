@@ -195,7 +195,7 @@ describe('OutlineTextNode tests', () => {
         textNode.makeImmutable();
 
         expect(() => {
-          textNode.split(3);
+          textNode.splitText(3);
         }).toThrow();
       });
     });

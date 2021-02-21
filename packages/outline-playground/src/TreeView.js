@@ -9,7 +9,9 @@ import {BlockNode, TextNode} from 'outline';
 
 import React from 'react';
 
-const NON_SINGLE_WIDTH_CHARS_REPLACEMENT = Object.freeze({
+const NON_SINGLE_WIDTH_CHARS_REPLACEMENT: $ReadOnly<{
+  [string]: string,
+}> = Object.freeze({
   '\n': '\\n',
   '\t': '\\t',
 });
@@ -105,7 +107,7 @@ export default function TreeView({
 
 function normalize(text) {
   return Object.entries(NON_SINGLE_WIDTH_CHARS_REPLACEMENT).reduce(
-    (acc, [key, value]) => acc.replaceAll(key, value),
+    (acc, [key, value]) => acc.replace(new RegExp(key, 'g'), String(value)),
     text,
   );
 }
@@ -202,7 +204,7 @@ function printSelectedCharsLine({
   );
 }
 
-function getSelectionStartEnd(node, selection) {
+function getSelectionStartEnd(node, selection): [number, number] {
   const anchorNode = selection.getAnchorNode();
   const focusNode = selection.getFocusNode();
   const textContent = node.getTextContent(true);

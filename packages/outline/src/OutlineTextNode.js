@@ -119,14 +119,13 @@ function splitText(
     const sibling = getWritableNode(createTextNode(part));
     sibling.__flags = flags;
     const siblingKey = sibling.__key;
-    const nextTextSize = textLength + partSize;
+    const nextTextSize = textSize + partSize;
 
     if (selection !== null) {
       const anchorOffset = selection.anchorOffset;
       const focusOffset = selection.focusOffset;
 
       if (
-        selection !== null &&
         selection.anchorKey === key &&
         anchorOffset > textSize &&
         anchorOffset < nextTextSize

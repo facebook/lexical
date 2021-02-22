@@ -438,7 +438,7 @@ export class TextNode extends OutlineNode {
     shouldErrorOnReadOnly();
     if (this.isImmutable()) {
       throw new Error(
-        'spliceText: can only be used on non-immutable text nodes',
+        'setTextContent: can only be used on non-immutable text nodes',
       );
     }
     const writableSelf = getWritableNode(this);

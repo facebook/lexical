@@ -128,7 +128,7 @@ function splitText(
       if (
         selection.anchorKey === key &&
         anchorOffset > textSize &&
-        anchorOffset < nextTextSize
+        anchorOffset <= nextTextSize
       ) {
         selection.anchorKey = siblingKey;
         selection.anchorOffset = anchorOffset - textSize;
@@ -137,7 +137,7 @@ function splitText(
       if (
         selection.focusKey === key &&
         focusOffset > textSize &&
-        focusOffset < nextTextSize
+        focusOffset <= nextTextSize
       ) {
         selection.focusKey = siblingKey;
         selection.focusOffset = focusOffset - textSize;

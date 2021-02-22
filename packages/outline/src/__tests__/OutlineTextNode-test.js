@@ -310,6 +310,28 @@ describe('OutlineTextNode tests', () => {
 
     test.each([
       [
+        'Hello',
+        [4],
+        [3, 3],
+        {
+          anchorNodeIndex: 0,
+          anchorOffset: 3,
+          focusNodeIndex: 0,
+          focusOffset: 3,
+        },
+      ],
+      [
+        'Hello',
+        [4],
+        [5, 5],
+        {
+          anchorNodeIndex: 1,
+          anchorOffset: 1,
+          focusNodeIndex: 1,
+          focusOffset: 1,
+        },
+      ],
+      [
         'Hello World',
         [4],
         [2, 7],
@@ -362,6 +384,17 @@ describe('OutlineTextNode tests', () => {
           anchorOffset: 3,
           focusNodeIndex: 0,
           focusOffset: 2,
+        },
+      ],
+      [
+        'Hello World',
+        [4, 6],
+        [9, 9],
+        {
+          anchorNodeIndex: 2,
+          anchorOffset: 3,
+          focusNodeIndex: 2,
+          focusOffset: 3,
         },
       ],
     ])(

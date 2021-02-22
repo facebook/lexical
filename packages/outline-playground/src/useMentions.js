@@ -19,7 +19,7 @@ const DocumentMentionsRegex = {
   NAME,
 };
 
-const CaptitalizedNameMentionsRegex = new RegExp(
+const CapitalizedNameMentionsRegex = new RegExp(
   '(^|[^#])((?:' + DocumentMentionsRegex.NAME + '{' + 1 + ',})$)',
 );
 
@@ -327,11 +327,11 @@ type MentionMatch = {
   replaceableString: string,
 };
 
-function checkForCaptitalizedNameMentions(
+function checkForCapitalizedNameMentions(
   text,
   minMatchLength,
 ): MentionMatch | null {
-  const match = CaptitalizedNameMentionsRegex.exec(text);
+  const match = CapitalizedNameMentionsRegex.exec(text);
   if (match !== null) {
     // The strategy ignores leading whitespace but we need to know it's
     // length to add it to the leadOffset
@@ -374,7 +374,7 @@ function checkForAtSignMentions(text, minMatchLength): MentionMatch | null {
 
 function getPossibleMentionMatch(text): MentionMatch | null {
   const match = checkForAtSignMentions(text, 1);
-  return match === null ? checkForCaptitalizedNameMentions(text, 3) : match;
+  return match === null ? checkForCapitalizedNameMentions(text, 3) : match;
 }
 
 export default function useMentions(editor: OutlineEditor): React$Node {

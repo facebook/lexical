@@ -259,7 +259,7 @@ export class ViewModel {
     // that is dirty, which means we need to reconcile
     // the given sub-tree to find the dirty node.
     this._dirtySubTrees = new Set();
-    // Used to mark as needing a full reconcilation
+    // Used to mark as needing a full reconciliation
     this._isDirty = false;
   }
   hasDirtyNodes(): boolean {

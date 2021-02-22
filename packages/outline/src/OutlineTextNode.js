@@ -391,12 +391,12 @@ export class TextNode extends OutlineNode {
           'Should never happen',
         );
       } else {
-        // TODO ensure we can remove this and simpify this block's logic
+        // TODO ensure we can remove this and simplify this block's logic
         invariant(false, 'Should never happen');
       }
     } else {
       if (prevOuterTag !== null) {
-        // TODO ensure we can remove this and simpify this block's logic
+        // TODO ensure we can remove this and simplify this block's logic
         invariant(false, 'Should never happen');
       }
     }

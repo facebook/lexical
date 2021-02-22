@@ -153,7 +153,7 @@ export class OutlineNode {
   __parent: null | NodeKey;
 
   clone(): OutlineNode {
-    // Flow doesn't support abstract classes unfortunatley, so we can't _force_
+    // Flow doesn't support abstract classes unfortunately, so we can't _force_
     // subclasses of Node to implement clone. All subclasses of Node should have
     // a clone method though. We define clone here so we can call it on any Node,
     // and we throw this error by default since the subclass should provide
@@ -170,7 +170,7 @@ export class OutlineNode {
     this.__parent = null;
   }
 
-  // Getters and Traversors
+  // Getters and Traversers
 
   getType(): string {
     return this.__type;

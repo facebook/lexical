@@ -130,7 +130,7 @@ function announceString(s: string): void {
       'clip: rect(0, 0, 0, 0); height: 1px; overflow: hidden; position: absolute; width: 1px';
     body.appendChild(announce);
 
-    // The trick to make all sreen readers to read the text is to create AND update an element with a unique id:
+    // The trick to make all screen readers to read the text is to create AND update an element with a unique id:
     // - JAWS remains silent without update
     // - VO remains silent without create, if the text is the same (and doing `announce.textContent=''` doesn't help)
     setTimeout(() => {
@@ -277,10 +277,10 @@ function onKeyDown(
             if (isLeftArrow && targetPrevSibling instanceof TextNode) {
               shouldPreventDefault = true;
               if (targetPrevSibling === prevSibling) {
-                const prevSibliongTextContent = targetPrevSibling.getTextContent();
+                const prevSiblingTextContent = targetPrevSibling.getTextContent();
                 // We adjust the offset by 1, as we will have have moved between
                 // two adjacent nodes.
-                const endOffset = prevSibliongTextContent.length - 1;
+                const endOffset = prevSiblingTextContent.length - 1;
                 targetPrevSibling.select(endOffset, endOffset);
               } else {
                 // We don't adjust offset as the nodes are not adjacent (the target

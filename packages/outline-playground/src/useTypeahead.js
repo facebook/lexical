@@ -68,7 +68,7 @@ export default function useTypeahead(editor: null | OutlineEditor): void {
             const typeaheadTextNode = getTypeaheadTextNode(view);
             const prevTextNode = typeaheadTextNode?.getPreviousSibling();
             // Make sure that the Typeahead is visible and previous child writable
-            // before calling it a succesfully handled event.
+            // before calling it a successfully handled event.
             if (
               typeaheadTextNode !== null &&
               prevTextNode instanceof TextNode

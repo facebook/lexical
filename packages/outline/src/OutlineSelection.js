@@ -207,7 +207,7 @@ export function createSelection(
 ): null | Selection {
   // When we create a selection, we try to use the previous
   // selection where possible, unless an actual user selection
-  // change has occured. When we do need to create a new selection
+  // change has occurred. When we do need to create a new selection
   // we validate we can have text nodes for both anchor and focus
   // nodes. If that holds true, we then return that selection
   // as a mutable object that we use for the view model for this
@@ -216,7 +216,7 @@ export function createSelection(
   // If the selection changes, but matches with the existing
   // DOM selection, then we only need to sync it. Otherwise,
   // we generally bail out of doing an update to selection during
-  // reconcialtion unless there are dirty nodes that need
+  // reconciliation unless there are dirty nodes that need
   // reconciling.
 
   const event = window.event;
@@ -328,12 +328,12 @@ export function createSelection(
   return selection;
 }
 
-function isEqual(selctionA: Selection, selectionB: Selection): boolean {
+function isEqual(selectionA: Selection, selectionB: Selection): boolean {
   return (
-    selctionA.anchorKey === selectionB.anchorKey &&
-    selctionA.focusKey === selectionB.focusKey &&
-    selctionA.anchorOffset === selectionB.anchorOffset &&
-    selctionA.focusOffset === selectionB.focusOffset
+    selectionA.anchorKey === selectionB.anchorKey &&
+    selectionA.focusKey === selectionB.focusKey &&
+    selectionA.anchorOffset === selectionB.anchorOffset &&
+    selectionA.focusOffset === selectionB.focusOffset
   );
 }
 

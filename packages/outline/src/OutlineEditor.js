@@ -190,7 +190,7 @@ export class OutlineEditor {
     // Used to help co-ordinate selection and events
     this._isComposing = false;
     this._isKeyDown = false;
-    // Used during reconcilation
+    // Used during reconciliation
     this._keyToDOMMap = new Map();
     // onChange listeners
     this._updateListeners = new Set();

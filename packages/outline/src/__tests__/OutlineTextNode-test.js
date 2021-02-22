@@ -122,8 +122,10 @@ describe('OutlineTextNode tests', () => {
       await update(() => {
         const textNode = Outline.createTextNode('My link');
         textNode.setURL('https://www.facebook.com');
-
         expect(textNode.getURL()).toBe('https://www.facebook.com');
+
+        textNode.setURL(null);
+        expect(textNode.getURL()).toBe(null);
       });
     });
 

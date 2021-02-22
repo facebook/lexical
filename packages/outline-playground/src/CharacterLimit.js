@@ -78,6 +78,16 @@ export default function CharacterLimit({
                     nodeKey: nextOverflowNode.getKey(),
                     offset: 0,
                   };
+                } else {
+                  // Handle next sibling blocks
+                  const parent = node.getTopParentBlockOrThrow();
+                  const parentBlock = parent.getParentBlockOrThrow();
+                  const parentBlockSiblings = parentBlock.getNextSiblings();
+                  recursivelySetBlockOverflowedNodes(
+                    parentBlock,
+                    parentBlockSiblings,
+                    true,
+                  );
                 }
                 return;
               } else {

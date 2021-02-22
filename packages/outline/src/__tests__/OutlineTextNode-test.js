@@ -307,5 +307,88 @@ describe('OutlineTextNode tests', () => {
         });
       },
     );
+
+    test.each([
+      [
+        'Hello World',
+        [4],
+        [2, 7],
+        {
+          anchorNodeIndex: 0,
+          anchorOffset: 2,
+          focusNodeIndex: 1,
+          focusOffset: 3,
+        },
+      ],
+      [
+        'Hello World',
+        [4],
+        [2, 4],
+        {
+          anchorNodeIndex: 0,
+          anchorOffset: 2,
+          focusNodeIndex: 0,
+          focusOffset: 4,
+        },
+      ],
+      [
+        'Hello World',
+        [4],
+        [7, 2],
+        {
+          anchorNodeIndex: 1,
+          anchorOffset: 3,
+          focusNodeIndex: 0,
+          focusOffset: 2,
+        },
+      ],
+      [
+        'Hello World',
+        [4, 6],
+        [2, 9],
+        {
+          anchorNodeIndex: 0,
+          anchorOffset: 2,
+          focusNodeIndex: 2,
+          focusOffset: 3,
+        },
+      ],
+      [
+        'Hello World',
+        [4, 6],
+        [9, 2],
+        {
+          anchorNodeIndex: 2,
+          anchorOffset: 3,
+          focusNodeIndex: 0,
+          focusOffset: 2,
+        },
+      ],
+    ])(
+      '"%s" splitText(...%p) with select(...%p)',
+      async (
+        initialString,
+        splitOffsets,
+        selectionOffsets,
+        {anchorNodeIndex, anchorOffset, focusNodeIndex, focusOffset},
+      ) => {
+        await update((view) => {
+          const paragraphNode = ParagraphNodeModule.createParagraphNode();
+          const textNode = Outline.createTextNode(initialString);
+          paragraphNode.append(textNode);
+          view.getRoot().append(paragraphNode);
+
+          const selection = textNode.select(...selectionOffsets);
+          const childrenNodes = textNode.splitText(...splitOffsets);
+
+          expect(selection.getAnchorNode()).toBe(
+            childrenNodes[anchorNodeIndex],
+          );
+          expect(selection.anchorOffset).toBe(anchorOffset);
+          expect(selection.getFocusNode()).toBe(childrenNodes[focusNodeIndex]);
+          expect(selection.focusOffset).toBe(focusOffset);
+        });
+      },
+    );
   });
 });

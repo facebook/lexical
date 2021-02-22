@@ -1,3 +1,20 @@
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
+import {createEditor} from 'outline';
+
+import React from 'react';
+import ReactDOM from 'react-dom';
+import ReactTestUtils from 'react-dom/test-utils';
+
+import useOutlineRichText from 'outline-react/useOutlineRichText';
+import {useOutlineHistory} from 'outline-react/useOutlineHistory';
+
 import {
   insertText,
   sanitizeSelectionWithEmptyTextNodes,
@@ -26,24 +43,11 @@ import {
   undo,
   redo,
 } from '../test-utils';
-import {createEditor} from 'outline';
-
-let container = null;
-let React;
-let ReactDOM;
-let ReactTestUtils;
-let useOutlineRichText;
-let useOutlineHistory;
 
 describe('OutlineSelection tests', () => {
-  beforeEach(async () => {
-    React = require('react');
-    ReactDOM = require('react-dom');
-    ReactTestUtils = require('react-dom/test-utils');
-    useOutlineRichText = require('outline-react/useOutlineRichText');
-    useOutlineHistory = require('outline-react/useOutlineHistory')
-      .useOutlineHistory;
+  let container = null;
 
+  beforeEach(async () => {
     container = document.createElement('div');
     document.body.appendChild(container);
     await init();

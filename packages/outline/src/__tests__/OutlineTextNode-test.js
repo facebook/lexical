@@ -243,6 +243,17 @@ describe('OutlineTextNode tests', () => {
       [
         'Hello World',
         [4],
+        [2, 4],
+        {
+          anchorNodeIndex: 0,
+          anchorOffset: 2,
+          focusNodeIndex: 0,
+          focusOffset: 4,
+        },
+      ],
+      [
+        'Hello World',
+        [4],
         [7, 2],
         {
           anchorNodeIndex: 1,
@@ -254,11 +265,22 @@ describe('OutlineTextNode tests', () => {
       [
         'Hello World',
         [4, 6],
-        [2, 8],
+        [2, 9],
         {
           anchorNodeIndex: 0,
           anchorOffset: 2,
           focusNodeIndex: 2,
+          focusOffset: 3,
+        },
+      ],
+      [
+        'Hello World',
+        [4, 6],
+        [9, 2],
+        {
+          anchorNodeIndex: 2,
+          anchorOffset: 3,
+          focusNodeIndex: 0,
           focusOffset: 2,
         },
       ],
@@ -267,7 +289,7 @@ describe('OutlineTextNode tests', () => {
       async (
         initialString,
         splitOffsets,
-        selectionOffets,
+        selectionOffsets,
         {anchorNodeIndex, anchorOffset, focusNodeIndex, focusOffset},
       ) => {
         await update((view) => {
@@ -276,7 +298,7 @@ describe('OutlineTextNode tests', () => {
           paragraphNode.append(textNode);
           view.getRoot().append(paragraphNode);
 
-          const selection = textNode.select(...selectionOffets);
+          const selection = textNode.select(...selectionOffsets);
           const childrenNodes = textNode.splitText(...splitOffsets);
 
           expect(selection.getAnchorNode()).toBe(

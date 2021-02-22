@@ -188,6 +188,86 @@ describe('OutlineTextNode tests', () => {
     });
   });
 
+  test('selectEnd()', async () => {
+    await update((view) => {
+      const paragraphNode = ParagraphNodeModule.createParagraphNode();
+      const textNode = Outline.createTextNode('Hello World');
+      paragraphNode.append(textNode);
+      view.getRoot().append(paragraphNode);
+
+      const selection = textNode.selectEnd();
+
+      expect(selection.getAnchorNode()).toBe(textNode);
+      expect(selection.anchorOffset).toBe(11);
+      expect(selection.getFocusNode()).toBe(textNode);
+      expect(selection.focusOffset).toBe(11);
+    });
+  });
+
+  test('selectNext()', async () => {
+    await update((view) => {
+      const paragraphNode = ParagraphNodeModule.createParagraphNode();
+      const textNode = Outline.createTextNode('Hello World');
+      const textNode2 = Outline.createTextNode('Goodbye Earth');
+
+      paragraphNode.append(textNode);
+      paragraphNode.append(textNode2);
+      view.getRoot().append(paragraphNode);
+
+      const selection = textNode.selectNext(1, 3);
+
+      expect(selection.getAnchorNode()).toBe(textNode2);
+      expect(selection.anchorOffset).toBe(1);
+      expect(selection.getFocusNode()).toBe(textNode2);
+      expect(selection.focusOffset).toBe(3);
+
+      expect(() => {
+        textNode2.selectNext(1, 3);
+      }).toThrow();
+    });
+  });
+
+  describe('select()', () => {
+    test.each([
+      [
+        [2, 4],
+        [2, 4],
+      ],
+      [
+        [4, 2],
+        [4, 2],
+      ],
+      [
+        [undefined, 2],
+        [11, 2],
+      ],
+      [
+        [2, undefined],
+        [2, 11],
+      ],
+    ])(
+      'select(...%p)',
+      async (
+        [anchorOffset, focusOffset],
+        [expectedAnchorOffset, expectedFocusOffset],
+      ) => {
+        await update((view) => {
+          const paragraphNode = ParagraphNodeModule.createParagraphNode();
+          const textNode = Outline.createTextNode('Hello World');
+          paragraphNode.append(textNode);
+          view.getRoot().append(paragraphNode);
+
+          const selection = textNode.select(anchorOffset, focusOffset);
+
+          expect(selection.getAnchorNode()).toBe(textNode);
+          expect(selection.anchorOffset).toBe(expectedAnchorOffset);
+          expect(selection.getFocusNode()).toBe(textNode);
+          expect(selection.focusOffset).toBe(expectedFocusOffset);
+        });
+      },
+    );
+  });
+
   describe('splitText()', () => {
     test('throw when immutable', async () => {
       await update(() => {
@@ -211,7 +291,7 @@ describe('OutlineTextNode tests', () => {
       ['Hello World', [7, 3], ['Hel', 'lo W', 'orld']],
       ['Hello World', [3, 7, 99], ['Hel', 'lo W', 'orld']],
     ])(
-      '%s splitText(%s)',
+      '"%s" splitText(...%p)',
       async (initialString, splitOffsets, splitStrings) => {
         await update((view) => {
           const paragraphNode = ParagraphNodeModule.createParagraphNode();

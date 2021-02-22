@@ -13,7 +13,7 @@ import {BlockNode, RootNode, TextNode, createTextNode} from 'outline';
 
 const WHITESPACE_REGEX = /\s/g;
 
-// inviariant(condition, message) will refine types based on "condition", and
+// invariant(condition, message) will refine types based on "condition", and
 // if "condition" is false will throw an error. This function is special-cased
 // in flow itself, so we can't name it anything else.
 export function invariant(cond: boolean, message: string) {
@@ -50,7 +50,7 @@ function getOffsetAfterNextGrapheme(offset, textContent): number {
     const firstSegment = segments.containing(0);
     return offset + firstSegment.segment.length;
   } catch {
-    // TODO: Implement ponyfill for `Intl.Segmenter`.
+    // TODO: Implement polyfill for `Intl.Segmenter`.
     return offset + 1;
   }
 }
@@ -73,7 +73,7 @@ function getOffsetBeforePreviousGrapheme(offset, textContent): number {
     const lastSegment = allSegments[allSegments.length - 1];
     return offset - lastSegment.segment.length;
   } catch {
-    // TODO: Implement ponyfill for `Intl.Segmenter`.
+    // TODO: Implement polyfill for `Intl.Segmenter`.
     return offset - 1;
   }
 }
@@ -643,7 +643,7 @@ export function deleteWordForward(selection: Selection): void {
 
 export function deleteBackward(selection: Selection): void {
   // When using Safari or Chrome, we will usually always have a range
-  // when working with glyps that are multi-character. That's because
+  // when working with glyphs that are multi-character. That's because
   // we leverage beforeinput's getTargetRanges. Meaning we will need
   // to polyfill this for browsers that don't support beforeinput, such
   // as FF.

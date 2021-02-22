@@ -523,11 +523,11 @@ export function reconcileViewModel(
 ): void {
   const dirtySubTrees = nextViewModel._dirtySubTrees;
   // When a view model is historic, we bail out of using dirty checks and
-  // always do a full reconcilation to ensure consistency.
+  // always do a full reconciliation to ensure consistency.
   const isDirty = nextViewModel._isDirty;
   const needsUpdate = isDirty || nextViewModel.hasDirtyNodes();
   const nextSelection = nextViewModel._selection;
-  let reconcilationCausedLostSelection = false;
+  let reconciliationCausedLostSelection = false;
 
   if (needsUpdate) {
     const {anchorOffset, focusOffset} = window.getSelection();
@@ -537,12 +537,12 @@ export function reconcileViewModel(
       anchorOffset !== selectionAfter.anchorOffset ||
       focusOffset !== selectionAfter.focusOffset
     ) {
-      reconcilationCausedLostSelection = true;
+      reconciliationCausedLostSelection = true;
     }
   }
   if (
     nextSelection !== null &&
-    (nextSelection.isDirty || isDirty || reconcilationCausedLostSelection)
+    (nextSelection.isDirty || isDirty || reconciliationCausedLostSelection)
   ) {
     reconcileSelection(nextSelection, editor);
   }

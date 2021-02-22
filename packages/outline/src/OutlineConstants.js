@@ -22,7 +22,7 @@ export const IS_LINK = 1 << 8;
 export const IS_HASHTAG = 1 << 9;
 export const IS_OVERFLOWED = 1 << 10;
 
-// Reconcilation
+// Reconciliation
 
 export const BYTE_ORDER_MARK = '\uFEFF';
 

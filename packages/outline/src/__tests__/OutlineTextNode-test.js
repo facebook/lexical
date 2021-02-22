@@ -74,21 +74,72 @@ describe('OutlineTextNode tests', () => {
     });
   }
 
-  test('getTextContent()', async () => {
-    await update(() => {
-      const textNode = Outline.createTextNode('My new text node');
+  describe('setTextContent()', () => {
+    test('writable nodes', async () => {
+      await update(() => {
+        const textNode = Outline.createTextNode('My new text node');
+        textNode.setTextContent('My newer text node');
 
-      expect(textNode.getTextContent()).toBe('My new text node');
+        expect(textNode.getTextContent()).toBe('My newer text node');
+      });
+    });
+
+    test('immutable nodes', async () => {
+      await update(() => {
+        const textNode = Outline.createTextNode('My new text node');
+        textNode.makeImmutable();
+
+        expect(() => {
+          textNode.setTextContent('My newer text node');
+        }).toThrow();
+        expect(textNode.getTextContent()).toBe('My new text node');
+      });
     });
   });
 
-  test('getTextContent() (inert)', async () => {
-    await update(() => {
-      const textNode = Outline.createTextNode('My inert text node');
-      textNode.makeInert();
+  describe('getTextContent()', () => {
+    test('writable nodes', async () => {
+      await update(() => {
+        const textNode = Outline.createTextNode('My new text node');
 
-      expect(textNode.getTextContent()).toBe('');
-      expect(textNode.getTextContent(true)).toBe('My inert text node');
+        expect(textNode.getTextContent()).toBe('My new text node');
+      });
+    });
+
+    test('inert nodes', async () => {
+      await update(() => {
+        const textNode = Outline.createTextNode('My inert text node');
+        textNode.makeInert();
+
+        expect(textNode.getTextContent()).toBe('');
+        expect(textNode.getTextContent(true)).toBe('My inert text node');
+      });
+    });
+  });
+
+  describe('url methods', () => {
+    test('writable nodes', async () => {
+      await update(() => {
+        const textNode = Outline.createTextNode('My link');
+        textNode.setURL('https://www.facebook.com');
+        expect(textNode.getURL()).toBe('https://www.facebook.com');
+
+        textNode.setURL(null);
+        expect(textNode.getURL()).toBe(null);
+      });
+    });
+
+    test('immutable nodes', async () => {
+      await update(() => {
+        const textNode = Outline.createTextNode('My link');
+        textNode.setURL('https://www.facebook.com');
+        textNode.makeImmutable();
+
+        expect(() => {
+          textNode.setURL('https://www.instagram.com');
+        }).toThrow();
+        expect(textNode.getURL()).toBe('https://www.facebook.com');
+      });
     });
   });
 

@@ -1,9 +1,17 @@
-let container = null;
-let React;
-let ReactDOM;
-let ReactTestUtils;
-let Outline;
-let ParagraphNodeModule;
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
+import React from 'react';
+import ReactDOM from 'react-dom';
+import ReactTestUtils from 'react-dom/test-utils';
+
+import Outline from 'outline';
+import ParagraphNodeModule from 'outline-extensions/ParagraphNode';
 
 function sanitizeHTML(html) {
   // Remove the special space characters
@@ -11,13 +19,9 @@ function sanitizeHTML(html) {
 }
 
 describe('OutlineNode tests', () => {
-  beforeEach(async () => {
-    React = require('react');
-    ReactDOM = require('react-dom');
-    ReactTestUtils = require('react-dom/test-utils');
-    Outline = require('outline');
-    ParagraphNodeModule = require('outline-extensions/ParagraphNode');
+  let container = null;
 
+  beforeEach(async () => {
     container = document.createElement('div');
     document.body.appendChild(container);
     await init();

@@ -479,4 +479,85 @@ describe('OutlineTextNode tests', () => {
       },
     );
   });
+
+  describe('createDOM()', () => {
+    const editorThemeClasses = {
+      text: {
+        bold: 'my-bold-class',
+        underline: 'my-underline-class',
+        strikethrough: 'my-strikethrough-class',
+        underlineStrikethrough: 'my-underline-strikethrough-class',
+        italic: 'my-italic-class',
+        code: 'my-code-class',
+        link: 'my-link-class',
+        hashtag: 'my-hashtag-class',
+        overflowed: 'my-overflowed-class',
+      },
+    };
+
+    test.each([
+      ['bold', IS_BOLD, '<strong class="my-bold-class">My text node</strong>'],
+      [
+        'underline',
+        IS_UNDERLINE,
+        '<span class="my-underline-class">My text node</span>',
+      ],
+      [
+        'strikethrough',
+        IS_STRIKETHROUGH,
+        '<span class="my-strikethrough-class">My text node</span>',
+      ],
+      ['italic', IS_ITALIC, '<em class="my-italic-class">My text node</em>'],
+      [
+        'code',
+        IS_CODE,
+        '<code><span class="my-code-class">My text node</span></code>',
+      ],
+      ['link', IS_LINK, '<span class="my-link-class">My text node</span>'],
+      [
+        'hashtag',
+        IS_HASHTAG,
+        '<span class="my-hashtag-class">My text node</span>',
+      ],
+      [
+        'overflowed',
+        IS_OVERFLOWED,
+        '<span class="my-overflowed-class">My text node</span>',
+      ],
+      [
+        'underline + strikethrough',
+        IS_UNDERLINE | IS_STRIKETHROUGH,
+        '<span class="my-underline-class my-strikethrough-class ' +
+          'my-underline-strikethrough-class">' +
+          'My text node</span>',
+      ],
+      [
+        'code + italic',
+        IS_CODE | IS_ITALIC,
+        '<code><em class="my-italic-class my-code-class">My text node' +
+          '</em></code>',
+      ],
+      [
+        'code + underline + strikethrough',
+        IS_CODE | IS_UNDERLINE | IS_STRIKETHROUGH,
+        '<code><span class="my-underline-class my-strikethrough-class ' +
+          'my-code-class my-underline-strikethrough-class">' +
+          'My text node</span></code>',
+      ],
+      [
+        'code + underline + strikethrough + bold + italic',
+        IS_CODE | IS_UNDERLINE | IS_STRIKETHROUGH | IS_BOLD | IS_ITALIC,
+        '<code><strong class="my-bold-class my-underline-class my-strikethrough-class ' +
+          'my-italic-class my-code-class my-underline-strikethrough-class">' +
+          'My text node</strong></code>',
+      ],
+    ])('%s text format type', async (_type, flag, expectedHTML) => {
+      await update(() => {
+        const textNode = Outline.createTextNode('My text node');
+        textNode.setFlags(flag);
+        const element = textNode.createDOM(editorThemeClasses);
+        expect(element.outerHTML).toBe(expectedHTML);
+      });
+    });
+  });
 });

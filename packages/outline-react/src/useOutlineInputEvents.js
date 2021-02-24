@@ -497,7 +497,7 @@ function onNativeBeforeInput(
     const editorElement = editor.getEditorElement();
 
     if (targetRange != null && editorElement !== null) {
-      selection.applyDOMRange(targetRange, editorElement);
+      selection.applyDOMRange(targetRange);
     }
   }
 

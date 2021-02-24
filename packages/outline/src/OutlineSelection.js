@@ -188,6 +188,11 @@ function resolveSelectionNodes(
     anchorNode instanceof TextNode && focusNode instanceof TextNode,
     'Should never happen',
   );
+  // TODO:
+  // We may not want to do this, and thus we won't need to return isDirty
+  // from this function. This is because we're forcing selection to another
+  // area, which might result in flicker. A better way to avoid this might
+  // be to block the original event that causes selection to occur.
   const eventType = getActiveEventType();
   if (
     eventType === 'selectionchange' &&

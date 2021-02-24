@@ -77,13 +77,16 @@ export class BlockNode extends OutlineNode {
     }
     return childrenNodes;
   }
-  getAllTextNodes(): Array<TextNode> {
+  getAllTextNodes(includeInert?: boolean): Array<TextNode> {
     const textNodes = [];
     const self = this.getLatest();
     const children = self.__children;
     for (let i = 0; i < children.length; i++) {
       const childNode = getNodeByKey(children[i]);
-      if (childNode instanceof TextNode) {
+      if (
+        childNode instanceof TextNode &&
+        (includeInert || !childNode.isInert())
+      ) {
         textNodes.push(childNode);
       } else if (childNode instanceof BlockNode) {
         const subChildrenNodes = childNode.getAllTextNodes();
@@ -92,11 +95,11 @@ export class BlockNode extends OutlineNode {
     }
     return textNodes;
   }
-  getFirstTextNode(): null | TextNode {
+  getFirstTextNode(includeInert?: boolean): null | TextNode {
     const children = this.getChildren();
     for (let i = 0; i < children.length; i++) {
       const child = children[i];
-      if (child instanceof TextNode) {
+      if (child instanceof TextNode && (includeInert || !child.isInert())) {
         return child;
       } else if (child instanceof BlockNode) {
         return child.getFirstTextNode();
@@ -104,11 +107,11 @@ export class BlockNode extends OutlineNode {
     }
     return null;
   }
-  getLastTextNode(): null | TextNode {
+  getLastTextNode(includeInert?: boolean): null | TextNode {
     const children = this.getChildren();
     for (let i = children.length - 1; i >= 0; i--) {
       const child = children[i];
-      if (child instanceof TextNode) {
+      if (child instanceof TextNode && (includeInert || !child.isInert())) {
         return child;
       } else if (child instanceof BlockNode) {
         return child.getLastTextNode();

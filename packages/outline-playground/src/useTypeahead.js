@@ -133,9 +133,13 @@ function useTypeaheadSuggestion(
     (async () => {
       let time = Date.now();
       requestTime.current = time;
-      const request = await query(text);
-      cancelRequest.current = request.cancel;
-      setSuggestion(await request.promise());
+      try {
+        const request = await query(text);
+        cancelRequest.current = request.cancel;
+        setSuggestion(await request.promise());
+      } catch (e) {
+        // Ignore for this example
+      }
     })();
   }, [query, text]);
 

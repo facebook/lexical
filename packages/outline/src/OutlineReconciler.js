@@ -113,6 +113,8 @@ function createNode(
     const domStyle = dom.style;
     domStyle.pointerEvents = 'none';
     domStyle.userSelect = 'none';
+    // To support Safari
+    domStyle.setProperty('-webkit-user-select', 'none');
   }
 
   if (node instanceof TextNode) {

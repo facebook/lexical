@@ -7,11 +7,10 @@
  * @flow strict-local
  */
 
-import type {OutlineEditor, Selection} from 'outline';
+import type {OutlineEditor} from 'outline';
 
-import {useEffect, useRef} from 'react';
+import {useEffect, useMemo} from 'react';
 import useOutlineInputEvents from 'outline-react/useOutlineInputEvents';
-import useOutlineFocusIn from 'outline-react/useOutlineFocusIn';
 import {HeadingNode} from 'outline-extensions/HeadingNode';
 import {ListNode} from 'outline-extensions/ListNode';
 import {QuoteNode} from 'outline-extensions/QuoteNode';
@@ -22,26 +21,16 @@ export default function useOutlineRichText(
   editor: OutlineEditor,
   isReadOnly: boolean = false,
 ): {} | {onBeforeInput: (SyntheticInputEvent<EventTarget>) => void} {
-  const pluginStateRef = useRef<{
-    isReadOnly: boolean,
+  const pluginState = useMemo(() => ({
+    isReadOnly: false,
     richText: true,
-    compositionSelection: null | Selection,
-  } | null>(null);
+    compositionSelection: null,
+    isHandlingPointer: false,
+  }), []);
 
-  // Handle event plugin state
   useEffect(() => {
-    const pluginsState = pluginStateRef.current;
-
-    if (pluginsState === null) {
-      pluginStateRef.current = {
-        isReadOnly,
-        richText: true,
-        compositionSelection: null,
-      };
-    } else {
-      pluginsState.isReadOnly = isReadOnly;
-    }
-  }, [isReadOnly]);
+    pluginState.isReadOnly = isReadOnly;
+  }, [isReadOnly, pluginState]);
 
   useEffect(() => {
     if (editor !== null) {
@@ -64,7 +53,5 @@ export default function useOutlineRichText(
     }
   }, [editor]);
 
-  const inputEvents = useOutlineInputEvents(editor, pluginStateRef);
-  useOutlineFocusIn(editor, pluginStateRef);
-  return inputEvents;
+  return useOutlineInputEvents(editor, pluginState);
 }

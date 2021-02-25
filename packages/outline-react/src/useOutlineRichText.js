@@ -7,41 +7,48 @@
  * @flow strict-local
  */
 
-import type {OutlineEditor, Selection} from 'outline';
+import type {OutlineEditor} from 'outline';
+import type {EventHandlerState} from 'outline-react/useOutlineInputEvents';
 
-import {useEffect, useRef} from 'react';
+import {useEffect, useMemo} from 'react';
+import {createTextNode} from 'outline';
 import useOutlineInputEvents from 'outline-react/useOutlineInputEvents';
-import useOutlineFocusIn from 'outline-react/useOutlineFocusIn';
 import {HeadingNode} from 'outline-extensions/HeadingNode';
 import {ListNode} from 'outline-extensions/ListNode';
 import {QuoteNode} from 'outline-extensions/QuoteNode';
 import {ParagraphNode} from 'outline-extensions/ParagraphNode';
 import {ListItemNode} from 'outline-extensions/ListItemNode';
+import {createParagraphNode} from 'outline-extensions/ParagraphNode';
+
+function initEditor(editor: OutlineEditor): void {
+  editor.update((view) => {
+    const root = view.getRoot();
+
+    if (root.getFirstChild() === null) {
+      const text = createTextNode();
+      root.append(createParagraphNode().append(text));
+      text.select();
+    }
+  });
+}
 
 export default function useOutlineRichText(
   editor: OutlineEditor,
   isReadOnly: boolean = false,
 ): {} | {onBeforeInput: (SyntheticInputEvent<EventTarget>) => void} {
-  const pluginStateRef = useRef<{
-    isReadOnly: boolean,
-    richText: true,
-    compositionSelection: null | Selection,
-  } | null>(null);
+  const eventHandlerState: EventHandlerState = useMemo(
+    () => ({
+      isReadOnly: false,
+      richText: true,
+      compositionSelection: null,
+      isHandlingPointer: false,
+    }),
+    [],
+  );
 
-  // Handle event plugin state
   useEffect(() => {
-    const pluginsState = pluginStateRef.current;
-
-    if (pluginsState === null) {
-      pluginStateRef.current = {
-        isReadOnly,
-        richText: true,
-        compositionSelection: null,
-      };
-    } else {
-      pluginsState.isReadOnly = isReadOnly;
-    }
-  }, [isReadOnly]);
+    eventHandlerState.isReadOnly = isReadOnly;
+  }, [isReadOnly, eventHandlerState]);
 
   useEffect(() => {
     if (editor !== null) {
@@ -53,6 +60,7 @@ export default function useOutlineRichText(
         ParagraphNode,
       );
       const removeListItemType = editor.addNodeType('listitem', ListItemNode);
+      initEditor(editor);
 
       return () => {
         removeHeadingType();
@@ -64,7 +72,5 @@ export default function useOutlineRichText(
     }
   }, [editor]);
 
-  const inputEvents = useOutlineInputEvents(editor, pluginStateRef);
-  useOutlineFocusIn(editor, pluginStateRef);
-  return inputEvents;
+  return useOutlineInputEvents(editor, eventHandlerState);
 }

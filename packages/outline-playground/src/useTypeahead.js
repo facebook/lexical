@@ -8,6 +8,7 @@ import {useEffect, useRef, useState, useCallback, useMemo} from 'react';
 export default function useTypeahead(editor: null | OutlineEditor): void {
   const typeaheadNodeKey = useRef<NodeKey | null>(null);
   const [text, setText] = useState<string>('');
+  const [selectionCollapsed, setSelectionCollapsed] = useState<boolean>(false);
   const server = useMemo(() => new TypeaheadServer(), []);
   const suggestion = useTypeaheadSuggestion(text, server.query);
 
@@ -43,7 +44,7 @@ export default function useTypeahead(editor: null | OutlineEditor): void {
         typeaheadTextNode?.remove();
         typeaheadNodeKey.current = null;
 
-        if (suggestion !== null) {
+        if (suggestion !== null && selectionCollapsed) {
           const lastParagraph = view.getRoot().getLastChild();
           if (lastParagraph instanceof BlockNode) {
             const lastTextNode = lastParagraph.getLastChild();
@@ -56,14 +57,14 @@ export default function useTypeahead(editor: null | OutlineEditor): void {
         }
       });
     }
-  }, [editor, getTypeaheadTextNode, suggestion]);
+  }, [editor, getTypeaheadTextNode, selectionCollapsed, suggestion]);
 
-  // Handle Keyboard TAB to complete suggestion
+  // Handle Keyboard TAB or RIGHT ARROW to complete suggestion
   useEffect(() => {
     const element = editor?.getEditorElement();
     if (editor !== null && element != null) {
       const handleEvent = (event: KeyboardEvent) => {
-        if (event.key === 'Tab') {
+        if (event.key === 'Tab' || event.key === 'ArrowRight') {
           editor.update((view: View) => {
             const typeaheadTextNode = getTypeaheadTextNode(view);
             const prevTextNode = typeaheadTextNode?.getPreviousSibling();
@@ -92,6 +93,18 @@ export default function useTypeahead(editor: null | OutlineEditor): void {
       };
     }
   }, [editor, getTypeaheadTextNode]);
+
+  useEffect(() => {
+    const handleEvent = () => {
+      const selection = window.getSelection();
+
+      setSelectionCollapsed(selection.isCollapsed);
+    };
+    document.addEventListener('selectionchange', handleEvent);
+    return () => {
+      document.removeEventListener('selectionchange', handleEvent);
+    };
+  }, []);
 }
 
 class TypeaheadNode extends TextNode {

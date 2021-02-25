@@ -259,14 +259,24 @@ function onKeyDown(
             }
           } else {
             let targetPrevSibling = prevSibling;
-            if (prevSibling.isInert()) {
-              shouldPreventDefault = true;
-              targetPrevSibling = null;
-            } else if (prevSibling.isImmutable() || prevSibling.isSegmented()) {
+            if (prevSibling.isImmutable() || prevSibling.isSegmented()) {
               if (isLeftArrow) {
                 announceNode(prevSibling);
                 targetPrevSibling = prevSibling.getPreviousSibling();
               } else if (!isModifierActive(event)) {
+                deleteBackward(selection);
+                shouldPreventDefault = true;
+              }
+            } else if (prevSibling.isInert()) {
+              targetPrevSibling = prevSibling.getPreviousSibling();
+              if (
+                !isLeftArrow &&
+                selection.isCaret() &&
+                targetPrevSibling instanceof TextNode
+              ) {
+                const prevKey = targetPrevSibling.getKey();
+                const prevOffset = targetPrevSibling.getTextContent().length;
+                selection.setRange(prevKey, prevOffset, prevKey, prevOffset);
                 deleteBackward(selection);
                 shouldPreventDefault = true;
               }
@@ -299,9 +309,7 @@ function onKeyDown(
           const nextSibling = anchorNode.getNextSibling();
 
           if (nextSibling !== null) {
-            if (nextSibling.isInert() && selectionAtEnd) {
-              shouldPreventDefault = true;
-            } else if (nextSibling.isImmutable() || nextSibling.isSegmented()) {
+            if (nextSibling.isImmutable() || nextSibling.isSegmented()) {
               if (isRightArrow) {
                 if (
                   (IS_APPLE && selectionAtEnd) ||

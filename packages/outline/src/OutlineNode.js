@@ -110,10 +110,7 @@ function replaceNode<N: OutlineNode>(
   toReplace.remove();
   // Handle immutable/segmented
   const flags = replaceWith.__flags;
-  if (
-    (flags & IS_INERT) === 0 &&
-    (flags & IS_IMMUTABLE || flags & IS_SEGMENTED)
-  ) {
+  if (flags & IS_IMMUTABLE || flags & IS_SEGMENTED || flags & IS_INERT) {
     wrapInTextNodes(replaceWith);
   }
   return writableReplaceWith;
@@ -502,10 +499,7 @@ export class OutlineNode {
     }
     // Handle immutable/segmented
     const flags = nodeToInsert.__flags;
-    if (
-      (flags & IS_INERT) === 0 &&
-      (flags & IS_IMMUTABLE || flags & IS_SEGMENTED)
-    ) {
+    if (flags & IS_IMMUTABLE || flags & IS_SEGMENTED || flags & IS_INERT) {
       wrapInTextNodes(nodeToInsert);
     }
     return writableSelf;
@@ -536,10 +530,7 @@ export class OutlineNode {
     }
     // Handle immutable/segmented
     const flags = nodeToInsert.__flags;
-    if (
-      (flags & IS_INERT) === 0 &&
-      (flags & IS_IMMUTABLE || flags & IS_SEGMENTED)
-    ) {
+    if (flags & IS_IMMUTABLE || flags & IS_SEGMENTED || flags & IS_INERT) {
       wrapInTextNodes(nodeToInsert);
     }
     return writableSelf;

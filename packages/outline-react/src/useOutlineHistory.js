@@ -102,7 +102,7 @@ export function useOutlineHistory(editor: OutlineEditor): void {
       if (viewModel === current) {
         return;
       }
-      if (!viewModel._isDirty && !shouldMerge(viewModel, current, undoStack)) {
+      if (!viewModel.isDirty() && !shouldMerge(viewModel, current, undoStack)) {
         if (redoStack.length !== 0) {
           redoStack = historyState.redoStack = [];
         }
@@ -130,7 +130,7 @@ export function useOutlineHistory(editor: OutlineEditor): void {
           }
           const viewModel = undoStack.pop();
           historyState.current = viewModel;
-          viewModel._isDirty = true;
+          viewModel.markDirty();
           editor.setViewModel(viewModel);
         }
       } else if (isRedo(event)) {
@@ -142,7 +142,7 @@ export function useOutlineHistory(editor: OutlineEditor): void {
           }
           const viewModel = redoStack.pop();
           historyState.current = viewModel;
-          viewModel._isDirty = true;
+          viewModel.markDirty();
           editor.setViewModel(viewModel);
         }
       }

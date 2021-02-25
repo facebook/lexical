@@ -268,6 +268,9 @@ export class ViewModel {
   isDirty(): boolean {
     return this._isDirty;
   }
+  markDirty(): void {
+    this._isDirty = true;
+  }
   getDirtyNodes(): Array<OutlineNode> {
     const dirtyNodes = Array.from(this._dirtyNodes);
     const nodeMap = this._nodeMap;

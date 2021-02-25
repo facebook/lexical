@@ -188,19 +188,6 @@ function resolveSelectionNodes(
     anchorNode instanceof TextNode && focusNode instanceof TextNode,
     'Should never happen',
   );
-  // TODO:
-  // We may not want to do this, and thus we won't need to return isDirty
-  // from this function. This is because we're forcing selection to another
-  // area, which might result in flicker. A better way to avoid this might
-  // be to block the original event that causes selection to occur.
-  const eventType = getActiveEventType();
-  if (
-    eventType === 'selectionchange' &&
-    (!doesNodeContainDOMElement(focusNode, focusDOM, editor) ||
-      !doesNodeContainDOMElement(anchorNode, anchorDOM, editor))
-  ) {
-    isDirty = true;
-  }
   // Because we use a special character for whitespace,
   // we need to adjust offsets to 0 when the text is
   // really empty.
@@ -351,15 +338,6 @@ export function createSelection(
     selection.isDirty = true;
   }
   return selection;
-}
-
-function doesNodeContainDOMElement(
-  node: OutlineNode,
-  dom: Node,
-  editor: OutlineEditor,
-): boolean {
-  const nodeDOM = editor.getElementByKey(node.__key);
-  return nodeDOM.contains(dom);
 }
 
 function isEqual(selectionA: Selection, selectionB: Selection): boolean {

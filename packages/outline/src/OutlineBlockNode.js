@@ -199,10 +199,7 @@ export class BlockNode extends OutlineNode {
     children.push(newKey);
     // Handle immutable/segmented
     const flags = nodeToAppend.__flags;
-    if (
-      (flags & IS_INERT) === 0 &&
-      (flags & IS_IMMUTABLE || flags & IS_SEGMENTED)
-    ) {
+    if (flags & IS_IMMUTABLE || flags & IS_SEGMENTED || flags & IS_INERT) {
       wrapInTextNodes(nodeToAppend);
     }
     return writableSelf;

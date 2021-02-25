@@ -17,8 +17,7 @@ import type {
 } from 'outline';
 
 import {BlockNode, TextNode} from 'outline';
-import {useCallback, useEffect, useRef} from 'react';
-import useOutlineEventWrapper from 'outline-react/useOutlineEventWrapper';
+import {useEffect} from 'react';
 import {
   CAN_USE_BEFORE_INPUT,
   IS_SAFARI,
@@ -54,10 +53,48 @@ import {
 // FlowFixMe: Flow doesn't know of the CompositionEvent?
 // $FlowFixMe: TODO
 type CompositionEvent = Object;
-// $FlowFixMe: TODO
-type UnknownState = Object;
+
+// TODO the Flow types here needs fixing
+export type EventHandler = (
+  // $FlowFixMe: not sure how to handle this generic properly
+  event: Object,
+  editor: OutlineEditor,
+  state: EventHandlerState,
+) => void;
+
+export type InputEvents = Array<[string, EventHandler]>;
+
+export type EventHandlerState = {
+  isReadOnly: boolean,
+  compositionSelection: null | Selection,
+  richText: boolean,
+  isHandlingPointer: boolean,
+};
 
 const emptyObject: {} = {};
+
+const events: InputEvents = [
+  ['selectionchange', onSelectionChange],
+  ['keydown', onKeyDown],
+  ['keyup', onKeyUp],
+  ['pointerdown', onPointerDown],
+  ['pointerup', onPointerUp],
+  ['pointercancel', onPointerUp],
+  ['compositionstart', onCompositionStart],
+  ['compositionend', onCompositionEnd],
+  ['cut', onCut],
+  ['copy', onCopy],
+];
+
+if (CAN_USE_BEFORE_INPUT) {
+  events.push(['beforeinput', onNativeBeforeInput]);
+} else {
+  events.push(
+    ['paste', onPastePolyfill],
+    ['drop', onDropPolyfill],
+    ['dragstart', onDragStartPolyfill],
+  );
+}
 
 function generateNodes(
   nodeRange: {range: Array<NodeKey>, nodeMap: ParsedNodeMap},
@@ -77,10 +114,10 @@ function generateNodes(
 function insertDataTransfer(
   dataTransfer: DataTransfer,
   selection: Selection,
-  state: UnknownState,
+  state: EventHandlerState,
   view: View,
   editor: OutlineEditor,
-) {
+): void {
   if (state.richText) {
     const outlineNodesString = dataTransfer.getData(
       'application/x-outline-nodes',
@@ -158,328 +195,364 @@ function isModifierActive(event: KeyboardEvent): boolean {
   return event.shiftKey || event.altKey || event.ctrlKey;
 }
 
+function onKeyUp(event: KeyboardEvent, editor: OutlineEditor): void {
+  editor.setKeyDown(false);
+}
+
 function onKeyDown(
   event: KeyboardEvent,
-  view: View,
-  state: UnknownState,
   editor: OutlineEditor,
+  state: EventHandlerState,
 ): void {
   editor.setKeyDown(true);
   if (editor.isComposing()) {
     return;
   }
-  const selection = view.getSelection();
-  if (selection === null) {
-    return;
-  }
-  let shouldPreventDefault = false;
-  // If we can use native beforeinput, we handle
-  // these cases in that function.
-  if (!CAN_USE_BEFORE_INPUT) {
-    if (isDeleteBackward(event)) {
-      shouldPreventDefault = true;
-      deleteBackward(selection);
-    } else if (isDeleteForward(event)) {
-      shouldPreventDefault = true;
-      deleteForward(selection);
-    } else if (isDeleteLineBackward(event)) {
-      shouldPreventDefault = true;
-      deleteLineBackward(selection);
-    } else if (isDeleteLineForward(event)) {
-      shouldPreventDefault = true;
-      deleteLineForward(selection);
-    } else if (isDeleteWordBackward(event)) {
-      shouldPreventDefault = true;
-      deleteWordBackward(selection);
-    } else if (isDeleteWordForward(event)) {
-      shouldPreventDefault = true;
-      deleteWordForward(selection);
-    } else if (isParagraph(event)) {
-      shouldPreventDefault = true;
-      if (state.richText) {
-        insertParagraph(selection);
-      } else {
+  editor.update((view) => {
+    const selection = view.getSelection();
+    if (selection === null) {
+      return;
+    }
+    let shouldPreventDefault = false;
+    // If we can use native beforeinput, we handle
+    // these cases in that function.
+    if (!CAN_USE_BEFORE_INPUT) {
+      if (isDeleteBackward(event)) {
+        shouldPreventDefault = true;
+        deleteBackward(selection);
+      } else if (isDeleteForward(event)) {
+        shouldPreventDefault = true;
+        deleteForward(selection);
+      } else if (isDeleteLineBackward(event)) {
+        shouldPreventDefault = true;
+        deleteLineBackward(selection);
+      } else if (isDeleteLineForward(event)) {
+        shouldPreventDefault = true;
+        deleteLineForward(selection);
+      } else if (isDeleteWordBackward(event)) {
+        shouldPreventDefault = true;
+        deleteWordBackward(selection);
+      } else if (isDeleteWordForward(event)) {
+        shouldPreventDefault = true;
+        deleteWordForward(selection);
+      } else if (isParagraph(event)) {
+        shouldPreventDefault = true;
+        if (state.richText) {
+          insertParagraph(selection);
+        } else {
+          insertText(selection, '\n');
+        }
+      } else if (isLineBreak(event)) {
+        shouldPreventDefault = true;
         insertText(selection, '\n');
       }
-    } else if (isLineBreak(event)) {
-      shouldPreventDefault = true;
-      insertText(selection, '\n');
     }
-  }
-  // Used for screen readers and speech tooling
-  if (state.richText) {
-    if (isBold(event)) {
-      shouldPreventDefault = true;
-      formatText(selection, 'bold');
-    } else if (isItalic(event)) {
-      shouldPreventDefault = true;
-      formatText(selection, 'italic');
+    // Used for screen readers and speech tooling
+    if (state.richText) {
+      if (isBold(event)) {
+        shouldPreventDefault = true;
+        formatText(selection, 'bold');
+      } else if (isItalic(event)) {
+        shouldPreventDefault = true;
+        formatText(selection, 'italic');
+      }
     }
-  }
-  const editorElement = editor.getEditorElement();
-  // Handle moving/deleting selection with left/right around immutable or segmented nodes, which should be handled as a single character.
-  // This is important for screen readers + text to speech accessibility tooling. About screen readers and caret moves:
-  // In Windows, JAWS and NVDA always announce the character at the right of the caret.
-  // In MacOS, VO always announces the character over which the caret jumped.
-  if (selection.isCaret() && editorElement !== null && !event.metaKey) {
-    const key = event.key;
-    const isLeftArrow = key === 'ArrowLeft';
-    const isRightArrow = key === 'ArrowRight';
-    const isDelete = key === 'Delete';
-    const isBackspace = key === 'Backspace';
+    const editorElement = editor.getEditorElement();
+    // Handle moving/deleting selection with left/right around immutable or segmented nodes, which should be handled as a single character.
+    // This is important for screen readers + text to speech accessibility tooling. About screen readers and caret moves:
+    // In Windows, JAWS and NVDA always announce the character at the right of the caret.
+    // In MacOS, VO always announces the character over which the caret jumped.
+    if (selection.isCaret() && editorElement !== null && !event.metaKey) {
+      const key = event.key;
+      const isLeftArrow = key === 'ArrowLeft';
+      const isRightArrow = key === 'ArrowRight';
+      const isDelete = key === 'Delete';
+      const isBackspace = key === 'Backspace';
 
-    if (isLeftArrow || isRightArrow || isDelete || isBackspace) {
-      const anchorNode = selection.getAnchorNode();
-      const offset = selection.anchorOffset;
-      const textContent = anchorNode.getTextContent();
+      if (isLeftArrow || isRightArrow || isDelete || isBackspace) {
+        const anchorNode = selection.getAnchorNode();
+        const offset = selection.anchorOffset;
+        const textContent = anchorNode.getTextContent();
 
-      if (isLeftArrow || isBackspace) {
-        const selectionAtStart = offset === 0;
+        if (isLeftArrow || isBackspace) {
+          const selectionAtStart = offset === 0;
 
-        if (selectionAtStart) {
-          const prevSibling = anchorNode.getPreviousSibling();
+          if (selectionAtStart) {
+            const prevSibling = anchorNode.getPreviousSibling();
 
-          if (prevSibling === null) {
-            // On empty text nodes, we always move native DOM selection
-            // to offset 1. Although it's at 1, we really mean that it
-            // is at 0 in our model. So when we encounter a left arrow
-            // we need to move selection to the previous block if
-            // we have no previous sibling.
-            if (isLeftArrow && textContent === '') {
-              const parent = anchorNode.getParentOrThrow();
-              const parentSibling = parent.getPreviousSibling();
+            if (prevSibling === null) {
+              // On empty text nodes, we always move native DOM selection
+              // to offset 1. Although it's at 1, we really mean that it
+              // is at 0 in our model. So when we encounter a left arrow
+              // we need to move selection to the previous block if
+              // we have no previous sibling.
+              if (isLeftArrow && textContent === '') {
+                const parent = anchorNode.getParentOrThrow();
+                const parentSibling = parent.getPreviousSibling();
 
-              if (parentSibling instanceof BlockNode) {
-                const lastChild = parentSibling.getLastChild();
-                if (lastChild instanceof TextNode) {
-                  lastChild.select();
+                if (parentSibling instanceof BlockNode) {
+                  const lastChild = parentSibling.getLastChild();
+                  if (lastChild instanceof TextNode) {
+                    lastChild.select();
+                    shouldPreventDefault = true;
+                  }
+                }
+              }
+            } else {
+              let targetPrevSibling = prevSibling;
+              if (prevSibling.isImmutable() || prevSibling.isSegmented()) {
+                if (isLeftArrow) {
+                  announceNode(prevSibling);
+                  targetPrevSibling = prevSibling.getPreviousSibling();
+                } else if (!isModifierActive(event)) {
+                  deleteBackward(selection);
+                  shouldPreventDefault = true;
+                }
+              } else if (prevSibling.isInert()) {
+                targetPrevSibling = prevSibling.getPreviousSibling();
+                if (
+                  !isLeftArrow &&
+                  selection.isCaret() &&
+                  targetPrevSibling instanceof TextNode
+                ) {
+                  const prevKey = targetPrevSibling.getKey();
+                  const prevOffset = targetPrevSibling.getTextContent().length;
+                  selection.setRange(prevKey, prevOffset, prevKey, prevOffset);
+                  deleteBackward(selection);
+                  shouldPreventDefault = true;
+                }
+              }
+              // Due to empty text nodes having an offset of 1, we need to
+              // account for this and move selection accordingly when right
+              // arrow is pressed.
+              if (isLeftArrow && targetPrevSibling instanceof TextNode) {
+                shouldPreventDefault = true;
+                if (targetPrevSibling === prevSibling) {
+                  const prevSiblingTextContent = targetPrevSibling.getTextContent();
+                  // We adjust the offset by 1, as we will have have moved between
+                  // two adjacent nodes.
+                  const endOffset = prevSiblingTextContent.length - 1;
+                  targetPrevSibling.select(endOffset, endOffset);
+                } else {
+                  // We don't adjust offset as the nodes are not adjacent (the target
+                  // isn't the same as the prevSibling).
+                  targetPrevSibling.select();
+                }
+              }
+            }
+          }
+        } else {
+          const textContentLength = textContent.length;
+          const selectionAtEnd = textContentLength === offset;
+          const selectionJustBeforeEnd = textContentLength === offset + 1;
+
+          if (selectionAtEnd || selectionJustBeforeEnd) {
+            const nextSibling = anchorNode.getNextSibling();
+
+            if (nextSibling !== null) {
+              if (nextSibling.isImmutable() || nextSibling.isSegmented()) {
+                if (isRightArrow) {
+                  if (
+                    (IS_APPLE && selectionAtEnd) ||
+                    (!IS_APPLE && selectionJustBeforeEnd)
+                  ) {
+                    announceNode(nextSibling);
+                  }
+                } else if (selectionAtEnd && !isModifierActive(event)) {
+                  deleteForward(selection);
                   shouldPreventDefault = true;
                 }
               }
             }
-          } else {
-            let targetPrevSibling = prevSibling;
-            if (prevSibling.isImmutable() || prevSibling.isSegmented()) {
-              if (isLeftArrow) {
-                announceNode(prevSibling);
-                targetPrevSibling = prevSibling.getPreviousSibling();
-              } else if (!isModifierActive(event)) {
-                deleteBackward(selection);
-                shouldPreventDefault = true;
-              }
-            } else if (prevSibling.isInert()) {
-              targetPrevSibling = prevSibling.getPreviousSibling();
-              if (
-                !isLeftArrow &&
-                selection.isCaret() &&
-                targetPrevSibling instanceof TextNode
-              ) {
-                const prevKey = targetPrevSibling.getKey();
-                const prevOffset = targetPrevSibling.getTextContent().length;
-                selection.setRange(prevKey, prevOffset, prevKey, prevOffset);
-                deleteBackward(selection);
-                shouldPreventDefault = true;
-              }
-            }
-            // Due to empty text nodes having an offset of 1, we need to
-            // account for this and move selection accordingly when right
-            // arrow is pressed.
-            if (isLeftArrow && targetPrevSibling instanceof TextNode) {
-              shouldPreventDefault = true;
-              if (targetPrevSibling === prevSibling) {
-                const prevSiblingTextContent = targetPrevSibling.getTextContent();
-                // We adjust the offset by 1, as we will have have moved between
-                // two adjacent nodes.
-                const endOffset = prevSiblingTextContent.length - 1;
-                targetPrevSibling.select(endOffset, endOffset);
-              } else {
-                // We don't adjust offset as the nodes are not adjacent (the target
-                // isn't the same as the prevSibling).
-                targetPrevSibling.select();
-              }
-            }
-          }
-        }
-      } else {
-        const textContentLength = textContent.length;
-        const selectionAtEnd = textContentLength === offset;
-        const selectionJustBeforeEnd = textContentLength === offset + 1;
-
-        if (selectionAtEnd || selectionJustBeforeEnd) {
-          const nextSibling = anchorNode.getNextSibling();
-
-          if (nextSibling !== null) {
-            if (nextSibling.isImmutable() || nextSibling.isSegmented()) {
-              if (isRightArrow) {
-                if (
-                  (IS_APPLE && selectionAtEnd) ||
-                  (!IS_APPLE && selectionJustBeforeEnd)
-                ) {
-                  announceNode(nextSibling);
-                }
-              } else if (selectionAtEnd && !isModifierActive(event)) {
-                deleteForward(selection);
-                shouldPreventDefault = true;
-              }
-            }
           }
         }
       }
     }
-  }
-  if (shouldPreventDefault) {
-    event.preventDefault();
-  }
+    if (shouldPreventDefault) {
+      event.preventDefault();
+    }
+  });
 }
 
 function onPastePolyfill(
   event: ClipboardEvent,
-  view: View,
-  state: UnknownState,
   editor: OutlineEditor,
+  state: EventHandlerState,
 ): void {
   event.preventDefault();
-  const selection = view.getSelection();
-  const clipboardData = event.clipboardData;
-  if (clipboardData != null && selection !== null) {
-    insertDataTransfer(clipboardData, selection, state, view, editor);
-  }
+  editor.update((view) => {
+    const selection = view.getSelection();
+    const clipboardData = event.clipboardData;
+    if (clipboardData != null && selection !== null) {
+      insertDataTransfer(clipboardData, selection, state, view, editor);
+    }
+  });
 }
 
 function onDropPolyfill(
   event: ClipboardEvent,
-  view: View,
-  state: UnknownState,
   editor: OutlineEditor,
-) {
+  state: EventHandlerState,
+): void {
   // TODO
   event.preventDefault();
 }
 
 function onDragStartPolyfill(
   event: ClipboardEvent,
-  view: View,
-  state: UnknownState,
   editor: OutlineEditor,
-) {
+  state: EventHandlerState,
+): void {
   // TODO: seems to be only FF that supports dragging content
   event.preventDefault();
 }
 
 function onCut(
   event: ClipboardEvent,
-  view: View,
-  state: UnknownState,
   editor: OutlineEditor,
+  state: EventHandlerState,
 ): void {
-  onCopy(event, view, state, editor);
-  const selection = view.getSelection();
-  if (selection !== null) {
-    removeText(selection);
-  }
+  onCopy(event, editor, state);
+  editor.update((view) => {
+    const selection = view.getSelection();
+    if (selection !== null) {
+      removeText(selection);
+    }
+  });
 }
 
 function onCopy(
   event: ClipboardEvent,
-  view: View,
-  state: UnknownState,
   editor: OutlineEditor,
+  state: EventHandlerState,
 ): void {
   event.preventDefault();
-  const clipboardData = event.clipboardData;
-  const selection = view.getSelection();
-  if (selection !== null) {
-    if (clipboardData != null) {
-      const domSelection = window.getSelection();
-      const range = domSelection.getRangeAt(0);
-      if (range) {
-        const container = document.createElement('div');
-        const frag = range.cloneContents();
-        container.appendChild(frag);
-        clipboardData.setData('text/html', container.innerHTML);
+  editor.update((view) => {
+    const clipboardData = event.clipboardData;
+    const selection = view.getSelection();
+    if (selection !== null) {
+      if (clipboardData != null) {
+        const domSelection = window.getSelection();
+        const range = domSelection.getRangeAt(0);
+        if (range) {
+          const container = document.createElement('div');
+          const frag = range.cloneContents();
+          container.appendChild(frag);
+          clipboardData.setData('text/html', container.innerHTML);
+        }
+        clipboardData.setData('text/plain', selection.getTextContent());
+        clipboardData.setData(
+          'application/x-outline-nodes',
+          JSON.stringify(getNodesInRange(selection)),
+        );
       }
-      clipboardData.setData('text/plain', selection.getTextContent());
-      clipboardData.setData(
-        'application/x-outline-nodes',
-        JSON.stringify(getNodesInRange(selection)),
-      );
     }
-  }
+  });
 }
 
 function onCompositionStart(
   event: CompositionEvent,
-  view: View,
-  state: UnknownState,
   editor: OutlineEditor,
+  state: EventHandlerState,
 ): void {
-  const selection = view.getSelection();
-  editor.setComposing(true);
-  if (selection !== null) {
-    // We only have native beforeinput composition events for
-    // Safari, so we have to apply the composition selection for
-    // other browsers.
-    if (!IS_SAFARI) {
-      state.compositionSelection = selection;
+  editor.update((view) => {
+    const selection = view.getSelection();
+    editor.setComposing(true);
+    if (selection !== null) {
+      // We only have native beforeinput composition events for
+      // Safari, so we have to apply the composition selection for
+      // other browsers.
+      if (!IS_SAFARI) {
+        state.compositionSelection = selection;
+      }
+      if (!selection.isCaret()) {
+        removeText(selection);
+      }
     }
-    if (!selection.isCaret()) {
-      removeText(selection);
-    }
-  }
+  });
 }
 
 function onCompositionEnd(
   event: CompositionEvent,
-  view: View,
-  state: UnknownState,
   editor: OutlineEditor,
+  state: EventHandlerState,
 ): void {
   const data = event.data;
-  const selection = view.getSelection();
-  editor.setComposing(false);
-  if (data != null && selection !== null) {
-    // We only have native beforeinput composition events for
-    // Safari, so we have to apply the composition selection for
-    // other browsers.
-    if (!IS_SAFARI) {
-      const compositionSelection = state.compositionSelection;
-      state.compositionSelection = null;
-      if (compositionSelection !== null) {
-        selection.setRange(
-          compositionSelection.anchorKey,
-          compositionSelection.anchorOffset,
-          compositionSelection.focusKey,
-          compositionSelection.focusOffset,
-        );
+  editor.update((view) => {
+    const selection = view.getSelection();
+    editor.setComposing(false);
+    if (data != null && selection !== null) {
+      // We only have native beforeinput composition events for
+      // Safari, so we have to apply the composition selection for
+      // other browsers.
+      if (!IS_SAFARI) {
+        const compositionSelection = state.compositionSelection;
+        state.compositionSelection = null;
+        if (compositionSelection !== null) {
+          selection.setRange(
+            compositionSelection.anchorKey,
+            compositionSelection.anchorOffset,
+            compositionSelection.focusKey,
+            compositionSelection.focusOffset,
+          );
+        }
+      }
+      // Handle the fact that Chromium/FF nightly doesn't fire beforeInput's
+      // insertFromComposition/deleteByComposition composition events, so we
+      // need to listen to the compositionend event to apply the composition
+      // data and also handle composition selection. There's no good way of
+      // detecting this, so we'll have to use browser agents.
+      if (!IS_SAFARI && CAN_USE_BEFORE_INPUT) {
+        insertText(selection, data);
       }
     }
-    // Handle the fact that Chromium/FF nightly doesn't fire beforeInput's
-    // insertFromComposition/deleteByComposition composition events, so we
-    // need to listen to the compositionend event to apply the composition
-    // data and also handle composition selection. There's no good way of
-    // detecting this, so we'll have to use browser agents.
-    if (!IS_SAFARI && CAN_USE_BEFORE_INPUT) {
-      insertText(selection, data);
-    }
-  }
+  });
 }
 
 function onSelectionChange(
-  event: FocusEvent,
-  view: View,
-  state: UnknownState,
+  event: Event,
   editor: OutlineEditor,
+  state: EventHandlerState,
 ): void {
-  view.getSelection();
+  const selection = window.getSelection();
+  const editorElement = editor.getEditorElement();
+  if (editorElement && !editorElement.contains(selection.anchorNode)) {
+    return;
+  }
+  editor.update((view) => {
+    view.getSelection();
+  });
+}
+
+function onPointerDown(
+  event: PointerEvent,
+  editor: OutlineEditor,
+  state: EventHandlerState,
+): void {
+  state.isHandlingPointer = true;
+  // Throttle setting of the flag for 50ms, as we don't want this to trigger
+  // for simple clicks.
+  setTimeout(() => {
+    if (state.isHandlingPointer) {
+      editor.setPointerDown(true);
+    }
+  }, 50);
+}
+
+function onPointerUp(
+  event: PointerEvent,
+  editor: OutlineEditor,
+  state: EventHandlerState,
+): void {
+  state.isHandlingPointer = false;
+  editor.setPointerDown(false);
 }
 
 function onNativeBeforeInput(
   event: InputEvent,
-  view: View,
-  state: UnknownState,
   editor: OutlineEditor,
+  state: EventHandlerState,
 ): void {
-  // $FlowFixMe: Flow doesn't know of the inputType field
   const inputType = event.inputType;
 
   // These two types occur while a user is composing text and can't be
@@ -490,263 +563,183 @@ function onNativeBeforeInput(
   ) {
     return;
   }
+  // $FlowFixMe: Flow doesn't think we can prevent Input Events
   event.preventDefault();
-  const selection = view.getSelection();
+  editor.update((view) => {
+    const selection = view.getSelection();
 
-  if (selection === null) {
-    return;
-  }
-  // Chromium has a bug with the wrong offsets for deleteSoftLineBackward.
-  // See: https://bugs.chromium.org/p/chromium/issues/detail?id=1043564
-  if (inputType !== 'deleteSoftLineBackward' || !IS_CHROME) {
-    // $FlowFixMe: Flow doesn't know of getTargetRanges
-    const targetRange = event.getTargetRanges()[0];
-    const editorElement = editor.getEditorElement();
+    if (selection === null) {
+      return;
+    }
+    // Chromium has a bug with the wrong offsets for deleteSoftLineBackward.
+    // See: https://bugs.chromium.org/p/chromium/issues/detail?id=1043564
+    if (inputType !== 'deleteSoftLineBackward' || !IS_CHROME) {
+      // $FlowFixMe: Flow doesn't know of getTargetRanges
+      const targetRange = event.getTargetRanges()[0];
+      const editorElement = editor.getEditorElement();
 
-    if (targetRange != null && editorElement !== null) {
-      selection.applyDOMRange(targetRange);
+      if (targetRange != null && editorElement !== null) {
+        selection.applyDOMRange(targetRange);
+      }
     }
-  }
+    const data = event.data;
 
-  switch (inputType) {
-    case 'formatBold': {
-      if (state.richText) {
-        formatText(selection, 'bold');
+    switch (inputType) {
+      case 'formatBold': {
+        if (state.richText) {
+          formatText(selection, 'bold');
+        }
+        break;
       }
-      break;
-    }
-    case 'formatItalic': {
-      if (state.richText) {
-        formatText(selection, 'italic');
+      case 'formatItalic': {
+        if (state.richText) {
+          formatText(selection, 'italic');
+        }
+        break;
       }
-      break;
-    }
-    case 'formatStrikeThrough': {
-      if (state.richText) {
-        formatText(selection, 'strikethrough');
+      case 'formatStrikeThrough': {
+        if (state.richText) {
+          formatText(selection, 'strikethrough');
+        }
+        break;
       }
-      break;
-    }
-    case 'formatUnderline': {
-      if (state.richText) {
-        formatText(selection, 'underline');
+      case 'formatUnderline': {
+        if (state.richText) {
+          formatText(selection, 'underline');
+        }
+        break;
       }
-      break;
-    }
-    case 'insertText':
-    case 'insertFromComposition': {
-      const data = event.data;
-      if (data) {
-        insertText(selection, data);
-      }
-      break;
-    }
-    case 'insertFromYank':
-    case 'insertFromDrop':
-    case 'insertReplacementText':
-    case 'insertFromPaste': {
-      // $FlowFixMe: Flow doesn't know about the dataTransfer field
-      const dataTransfer = event.dataTransfer;
-      if (dataTransfer != null) {
-        insertDataTransfer(dataTransfer, selection, state, view, editor);
-      } else {
-        const data = event.data;
+      case 'insertText':
+      case 'insertFromComposition': {
         if (data) {
           insertText(selection, data);
         }
+        break;
       }
-      break;
-    }
-    case 'insertLineBreak': {
-      insertText(selection, '\n');
-      break;
-    }
-    case 'insertParagraph': {
-      if (state.richText) {
-        insertParagraph(selection);
-      } else {
+      case 'insertFromYank':
+      case 'insertFromDrop':
+      case 'insertReplacementText':
+      case 'insertFromPaste': {
+        // $FlowFixMe: Flow doesn't know about the dataTransfer field
+        const dataTransfer = event.dataTransfer;
+        if (dataTransfer != null) {
+          insertDataTransfer(dataTransfer, selection, state, view, editor);
+        } else {
+          if (data) {
+            insertText(selection, data);
+          }
+        }
+        break;
+      }
+      case 'insertLineBreak': {
         insertText(selection, '\n');
+        break;
       }
-      break;
+      case 'insertParagraph': {
+        if (state.richText) {
+          insertParagraph(selection);
+        } else {
+          insertText(selection, '\n');
+        }
+        break;
+      }
+      case 'deleteByComposition':
+      case 'deleteByDrag':
+      case 'deleteByCut': {
+        removeText(selection);
+        break;
+      }
+      case 'deleteContentBackward': {
+        deleteBackward(selection);
+        break;
+      }
+      case 'deleteContent':
+      case 'deleteContentForward': {
+        deleteForward(selection);
+        break;
+      }
+      case 'deleteWordBackward': {
+        deleteWordBackward(selection);
+        break;
+      }
+      case 'deleteWordForward': {
+        deleteWordForward(selection);
+        break;
+      }
+      case 'deleteHardLineBackward':
+      case 'deleteSoftLineBackward': {
+        deleteLineBackward(selection);
+        break;
+      }
+      case 'deleteSoftLineForward': {
+        deleteLineForward(selection);
+        break;
+      }
+      case 'historyUndo':
+      case 'historyRedo':
+        // Handled with useOutlineHistory
+        break;
+      default:
+      // NO-OP
     }
-    case 'deleteByComposition':
-    case 'deleteByDrag':
-    case 'deleteByCut': {
-      removeText(selection);
-      break;
-    }
-    case 'deleteContentBackward': {
-      deleteBackward(selection);
-      break;
-    }
-    case 'deleteContent':
-    case 'deleteContentForward': {
-      deleteForward(selection);
-      break;
-    }
-    case 'deleteWordBackward': {
-      deleteWordBackward(selection);
-      break;
-    }
-    case 'deleteWordForward': {
-      deleteWordForward(selection);
-      break;
-    }
-    case 'deleteHardLineBackward':
-    case 'deleteSoftLineBackward': {
-      deleteLineBackward(selection);
-      break;
-    }
-    case 'deleteSoftLineForward': {
-      deleteLineForward(selection);
-      break;
-    }
-    case 'historyUndo':
-    case 'historyRedo':
-      // Handled with useOutlineHistory
-      break;
-    default: {
-      throw new Error('TODO - ' + inputType);
-    }
-  }
+  });
 }
 
 function onPolyfilledBeforeInput(
   event: SyntheticInputEvent<EventTarget>,
-  view: View,
-  state: UnknownState,
+  editor: OutlineEditor,
+  state: EventHandlerState,
 ): void {
   event.preventDefault();
-  const selection = view.getSelection();
-  const data = event.data;
-  if (data != null && selection !== null) {
-    insertText(selection, data);
-  }
+  editor.update((view) => {
+    const selection = view.getSelection();
+    const data = event.data;
+    if (data != null && selection !== null) {
+      insertText(selection, data);
+    }
+  });
 }
 
-export default function useOutlineInputEvents<T>(
+export default function useOutlineInputEvents(
   editor: OutlineEditor,
-  stateRef: RefObject<T>,
-): {} | {onBeforeInput: (event: SyntheticInputEvent<T>) => void} {
-  const isHandlingPointerRef = useRef(false);
-  const handleNativeBeforeInput = useOutlineEventWrapper(
-    onNativeBeforeInput,
-    editor,
-    stateRef,
-  );
-  const handlePolyfilledBeforeInput = useOutlineEventWrapper(
-    onPolyfilledBeforeInput,
-    editor,
-    stateRef,
-  );
-  const handleKeyDown = useOutlineEventWrapper(onKeyDown, editor, stateRef);
-  const handleKeyUp = useCallback(() => {
-    editor.setKeyDown(false);
-  }, [editor]);
-  const handlePointerDown = useCallback(() => {
-    isHandlingPointerRef.current = true;
-    // Throttle setting of the flag for 50ms, as we don't want this to trigger
-    // for simple clicks.
-    setTimeout(() => {
-      if (isHandlingPointerRef.current) {
-        editor.setPointerDown(true);
-      }
-    }, 50);
-  }, [editor]);
-  const handlePointerUp = useCallback(() => {
-    isHandlingPointerRef.current = false;
-    editor.setPointerDown(false);
-  }, [editor]);
-  const handlePaste = useOutlineEventWrapper(onPastePolyfill, editor, stateRef);
-  const handleCut = useOutlineEventWrapper(onCut, editor, stateRef);
-  const handleCopy = useOutlineEventWrapper(onCopy, editor, stateRef);
-  const handleDrop = useOutlineEventWrapper(onDropPolyfill, editor, stateRef);
-  const handleDragStart = useOutlineEventWrapper(
-    onDragStartPolyfill,
-    editor,
-    stateRef,
-  );
-  const handleCompositionStart = useOutlineEventWrapper(
-    onCompositionStart,
-    editor,
-    stateRef,
-  );
-  const handleCompositionEnd = useOutlineEventWrapper(
-    onCompositionEnd,
-    editor,
-    stateRef,
-  );
-  const handleSelectionChange = useOutlineEventWrapper(
-    onSelectionChange,
-    editor,
-    stateRef,
-  );
+  state: EventHandlerState,
+): {} | {onBeforeInput: (event: SyntheticInputEvent<>) => void} {
   useEffect(() => {
     if (editor !== null) {
       const target: null | HTMLElement = editor.getEditorElement();
 
-      if (target !== null) {
-        target.addEventListener('keydown', handleKeyDown);
-        window.addEventListener('keyup', handleKeyUp);
-        target.addEventListener('pointerdown', handlePointerDown);
-        window.addEventListener('pointerup', handlePointerUp);
-        window.addEventListener('pointercancel', handlePointerUp);
-        target.addEventListener('compositionstart', handleCompositionStart);
-        target.addEventListener('compositionend', handleCompositionEnd);
-        target.addEventListener('cut', handleCut);
-        target.addEventListener('copy', handleCopy);
-        document.addEventListener('selectionchange', handleSelectionChange);
-
-        if (CAN_USE_BEFORE_INPUT) {
-          target.addEventListener('beforeinput', handleNativeBeforeInput);
-        } else {
-          target.addEventListener('paste', handlePaste);
-          target.addEventListener('drop', handleDrop);
-          target.addEventListener('dragstart', handleDragStart);
-        }
-        return () => {
-          target.removeEventListener('keydown', handleKeyDown);
-          window.removeEventListener('keyup', handleKeyUp);
-          target.removeEventListener(
-            'compositionstart',
-            handleCompositionStart,
-          );
-          target.removeEventListener('compositionend', handleCompositionEnd);
-          target.removeEventListener('cut', handleCut);
-          target.removeEventListener('copy', handleCopy);
-          document.removeEventListener(
-            'selectionchange',
-            handleSelectionChange,
-          );
-
-          if (CAN_USE_BEFORE_INPUT) {
-            target.removeEventListener('beforeinput', handleNativeBeforeInput);
-          } else {
-            target.removeEventListener('paste', handlePaste);
-            target.removeEventListener('drop', handleDrop);
-            target.removeEventListener('dragstart', handleDragStart);
+      if (target !== null && state !== null) {
+        const teardown = events.map(([eventName, handler]) => {
+          let eventTarget = target;
+          if (
+            eventName === 'selectionchange' ||
+            eventName === 'keyup' ||
+            eventName === 'pointerup' ||
+            eventName === 'pointercancel'
+          ) {
+            eventTarget = target.ownerDocument;
           }
+          const handlerWrapper = (event: Event) => {
+            handler(event, editor, state);
+          };
+          eventTarget.addEventListener(eventName, handlerWrapper);
+          return () => {
+            eventTarget.removeEventListener(eventName, handlerWrapper);
+          };
+        });
+
+        return () => {
+          teardown.forEach((destroy) => destroy());
         };
       }
     }
-  }, [
-    editor,
-    handleCompositionStart,
-    handleCompositionEnd,
-    handleCut,
-    handleKeyDown,
-    handleKeyUp,
-    handleNativeBeforeInput,
-    handlePaste,
-    handleSelectionChange,
-    handleDrop,
-    handleDragStart,
-    handleCopy,
-    handlePointerDown,
-    handlePointerUp,
-  ]);
+  }, [editor, state]);
 
   return CAN_USE_BEFORE_INPUT
     ? emptyObject
-    : {onBeforeInput: handlePolyfilledBeforeInput};
+    : {
+        onBeforeInput: (event: SyntheticInputEvent<EventTarget>) => {
+          onPolyfilledBeforeInput(event, editor, state);
+        },
+      };
 }

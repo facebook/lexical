@@ -30,47 +30,78 @@ export default function useTypeahead(editor: null | OutlineEditor): void {
   useEffect(() => {
     if (editor !== null) {
       return editor.addUpdateListener((viewModel) => {
-        if (viewModel.isDirty()) {
-          // We are loading a dirty view model, so we need
-          // to check it for typeahead nodes
-          viewModel.read((view) => {
-            const typeaheadNode = view
-              .getRoot()
-              .getAllTextNodes(true)
-              .find((textNode) => textNode instanceof TypeaheadNode);
-            if (typeaheadNode instanceof TypeaheadNode) {
-              typeaheadNodeKey.current = typeaheadNode.getKey();
-            }
-          });
-        }
         const text = editor.getTextContent();
         setText(text);
       });
     }
   }, [editor]);
 
-  // Monitor suggestions and trigger editor updates
-  useEffect(() => {
-    if (editor !== null) {
-      editor.update((view: View) => {
-        const typeaheadTextNode = getTypeaheadTextNode(view);
-        typeaheadTextNode?.remove();
-        typeaheadNodeKey.current = null;
+  const renderTypeahead = useCallback(() => {
+    editor?.update((view: View) => {
+      const currentTypeaheadNode = getTypeaheadTextNode(view);
 
-        if (suggestion !== null && selectionCollapsed) {
-          const lastParagraph = view.getRoot().getLastChild();
-          if (lastParagraph instanceof BlockNode) {
-            const lastTextNode = lastParagraph.getLastChild();
-            if (lastTextNode instanceof TextNode) {
-              const newTypeaheadNode = createTypeaheadNode(suggestion);
-              lastTextNode.insertAfter(newTypeaheadNode);
-              typeaheadNodeKey.current = newTypeaheadNode.getKey();
-            }
+      function maybeRemoveTypeahead() {
+        if (currentTypeaheadNode !== null) {
+          currentTypeaheadNode.remove();
+          view.getRoot().normalizeTextNodes(true);
+        }
+        typeaheadNodeKey.current = null;
+      }
+
+      function maybeAddTypeahead() {
+        if (currentTypeaheadNode?.getTextContent(true) === suggestion) {
+          return;
+        }
+        const lastParagraph = view.getRoot().getLastChild();
+        if (lastParagraph instanceof BlockNode) {
+          const lastTextNode = lastParagraph.getLastChild();
+          if (lastTextNode instanceof TextNode) {
+            const newTypeaheadNode = createTypeaheadNode(suggestion ?? '');
+            lastTextNode.insertAfter(newTypeaheadNode);
+            typeaheadNodeKey.current = newTypeaheadNode.getKey();
           }
         }
-      });
-    }
+        view.getRoot().normalizeTextNodes(true);
+      }
+
+      const selection = view.getSelection();
+      const anchorNode = selection?.getAnchorNode();
+      const anchorOffset = selection?.anchorOffset;
+      const anchorLength = anchorNode?.getTextContent().length;
+      const isCaretPositionAtEnd =
+        anchorLength != null && anchorOffset === anchorLength;
+      if (suggestion === null || !selectionCollapsed || !isCaretPositionAtEnd) {
+        maybeRemoveTypeahead();
+      } else {
+        maybeAddTypeahead();
+      }
+    })
   }, [editor, getTypeaheadTextNode, selectionCollapsed, suggestion]);
+
+  // Rerender on suggestion change
+  useEffect(() => {
+    renderTypeahead();
+  }, [renderTypeahead, suggestion])
+
+  // Rerender on editor updates
+  useEffect(() => {
+    return editor?.addUpdateListener((viewModel) => {
+      if (viewModel.isDirty()) {
+        // We are loading a dirty view model, so we need
+        // to check it for typeahead nodes
+        viewModel.read((view) => {
+          const typeaheadNode = view
+            .getRoot()
+            .getAllTextNodes(true)
+            .find((textNode) => textNode instanceof TypeaheadNode);
+          if (typeaheadNode instanceof TypeaheadNode) {
+            typeaheadNodeKey.current = typeaheadNode.getKey();
+          }
+        });
+      }
+      renderTypeahead();
+    });
+  }, [editor, renderTypeahead]);
 
   // Handle Keyboard TAB or RIGHT ARROW to complete suggestion
   useEffect(() => {

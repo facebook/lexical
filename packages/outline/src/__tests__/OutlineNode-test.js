@@ -117,8 +117,8 @@ describe('OutlineNode tests', () => {
       oldTextNode.replace(newTextNode);
     });
     expect(sanitizeHTML(container.innerHTML)).toBe(
-      '<div contenteditable="true" data-outline-editor="true"><p>' +
-        '<span style="pointer-events: none; user-select: none;">Replaced node!</span></p></div>',
+      '<div contenteditable="true" data-outline-editor="true"><p><span></span>' +
+        '<span style="pointer-events: none; user-select: none;">Replaced node!</span><span></span></p></div>',
     );
   });
 
@@ -179,7 +179,7 @@ describe('OutlineNode tests', () => {
     });
     expect(sanitizeHTML(container.innerHTML)).toBe(
       '<div contenteditable="true" data-outline-editor="true"><p><span></span>' +
-        '<span style="pointer-events: none; user-select: none;">New node!</span></p></div>',
+        '<span style="pointer-events: none; user-select: none;">New node!</span><span></span></p></div>',
     );
   });
 
@@ -230,7 +230,7 @@ describe('OutlineNode tests', () => {
     });
     expect(sanitizeHTML(container.innerHTML)).toBe(
       '<div contenteditable="true" data-outline-editor="true"><p><span></span>' +
-        '<span style="pointer-events: none; user-select: none;">New node!</span></p></div>',
+        '<span style="pointer-events: none; user-select: none;">New node!</span><span></span></p></div>',
     );
   });
 
@@ -282,7 +282,7 @@ describe('OutlineNode tests', () => {
       textNode.insertBefore(newTextNode);
     });
     expect(sanitizeHTML(container.innerHTML)).toBe(
-      '<div contenteditable="true" data-outline-editor="true"><p>' +
+      '<div contenteditable="true" data-outline-editor="true"><p><span></span>' +
         '<span style="pointer-events: none; user-select: none;">New node!</span>' +
         '<span></span></p></div>',
     );

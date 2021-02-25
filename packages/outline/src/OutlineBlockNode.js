@@ -89,7 +89,7 @@ export class BlockNode extends OutlineNode {
       ) {
         textNodes.push(childNode);
       } else if (childNode instanceof BlockNode) {
-        const subChildrenNodes = childNode.getAllTextNodes();
+        const subChildrenNodes = childNode.getAllTextNodes(includeInert);
         textNodes.push(...subChildrenNodes);
       }
     }

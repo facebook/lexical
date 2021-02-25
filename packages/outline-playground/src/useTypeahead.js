@@ -29,8 +29,21 @@ export default function useTypeahead(editor: null | OutlineEditor): void {
   // Monitor entered text
   useEffect(() => {
     if (editor !== null) {
-      return editor.addTextNodeTransform((node: TextNode, view: View) => {
-        const text = view.getRoot().getTextContent() ?? '';
+      return editor.addUpdateListener((viewModel) => {
+        if (viewModel.isDirty()) {
+          // We are loading a dirty view model, so we need
+          // to check it for typeahead nodes
+          viewModel.read((view) => {
+            const typeaheadNode = view
+              .getRoot()
+              .getAllTextNodes(true)
+              .find((textNode) => textNode instanceof TypeaheadNode);
+            if (typeaheadNode instanceof TypeaheadNode) {
+              typeaheadNodeKey.current = typeaheadNode.getKey();
+            }
+          });
+        }
+        const text = editor.getTextContent();
         setText(text);
       });
     }

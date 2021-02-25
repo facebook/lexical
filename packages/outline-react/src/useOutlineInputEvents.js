@@ -16,7 +16,7 @@ import type {
   ParsedNodeMap,
 } from 'outline';
 
-import {createTextNode, BlockNode, TextNode} from 'outline';
+import {BlockNode, TextNode} from 'outline';
 import {useEffect} from 'react';
 import {
   CAN_USE_BEFORE_INPUT,
@@ -50,20 +50,52 @@ import {
   removeText,
   getNodesInRange,
 } from 'outline-react/OutlineSelectionHelpers';
-import {createParagraphNode} from 'outline-extensions/ParagraphNode';
 
 // FlowFixMe: Flow doesn't know of the CompositionEvent?
 // $FlowFixMe: TODO
 type CompositionEvent = Object;
 
-type State = {
-  compositionSelection: null | Selection,
+// TODO the Flow types here needs fixing
+export type EventHandler = (
+  // $FlowFixMe: not sure how to handle this generic properly
+  event: Object,
+  editor: OutlineEditor,
+  state: EventHandlerState,
+) => void;
+
+export type InputEvents = Array<[string, EventHandler]>;
+
+export type EventHandlerState = {
   isReadOnly: boolean,
+  compositionSelection: null | Selection,
   richText: boolean,
   isHandlingPointer: boolean,
 };
 
 const emptyObject: {} = {};
+
+const events: InputEvents = [
+  ['selectionchange', onSelectionChange],
+  ['keydown', onKeyDown],
+  ['keyup', onKeyUp],
+  ['pointerdown', onPointerDown],
+  ['pointerup', onPointerUp],
+  ['pointercancel', onPointerUp],
+  ['compositionstart', onCompositionStart],
+  ['compositionend', onCompositionEnd],
+  ['cut', onCut],
+  ['copy', onCopy],
+];
+
+if (CAN_USE_BEFORE_INPUT) {
+  events.push(['beforeinput', onNativeBeforeInput]);
+} else {
+  events.push(
+    ['paste', onPastePolyfill],
+    ['drop', onDropPolyfill],
+    ['dragstart', onDragStartPolyfill],
+  );
+}
 
 function generateNodes(
   nodeRange: {range: Array<NodeKey>, nodeMap: ParsedNodeMap},
@@ -83,10 +115,10 @@ function generateNodes(
 function insertDataTransfer(
   dataTransfer: DataTransfer,
   selection: Selection,
-  state: State,
+  state: EventHandlerState,
   view: View,
   editor: OutlineEditor,
-) {
+): void {
   if (state.richText) {
     const outlineNodesString = dataTransfer.getData(
       'application/x-outline-nodes',
@@ -164,14 +196,14 @@ function isModifierActive(event: KeyboardEvent): boolean {
   return event.shiftKey || event.altKey || event.ctrlKey;
 }
 
-function onKeyUp(event: KeyboardEvent, editor: OutlineEditor) {
+function onKeyUp(event: KeyboardEvent, editor: OutlineEditor): void {
   editor.setKeyDown(false);
 }
 
 function onKeyDown(
   event: KeyboardEvent,
   editor: OutlineEditor,
-  state: State,
+  state: EventHandlerState,
 ): void {
   editor.setKeyDown(true);
   if (editor.isComposing()) {
@@ -346,7 +378,7 @@ function onKeyDown(
 function onPastePolyfill(
   event: ClipboardEvent,
   editor: OutlineEditor,
-  state: State,
+  state: EventHandlerState,
 ): void {
   event.preventDefault();
   editor.update((view) => {
@@ -361,8 +393,8 @@ function onPastePolyfill(
 function onDropPolyfill(
   event: ClipboardEvent,
   editor: OutlineEditor,
-  state: State,
-) {
+  state: EventHandlerState,
+): void {
   // TODO
   event.preventDefault();
 }
@@ -370,8 +402,8 @@ function onDropPolyfill(
 function onDragStartPolyfill(
   event: ClipboardEvent,
   editor: OutlineEditor,
-  state: State,
-) {
+  state: EventHandlerState,
+): void {
   // TODO: seems to be only FF that supports dragging content
   event.preventDefault();
 }
@@ -379,7 +411,7 @@ function onDragStartPolyfill(
 function onCut(
   event: ClipboardEvent,
   editor: OutlineEditor,
-  state: State,
+  state: EventHandlerState,
 ): void {
   onCopy(event, editor, state);
   editor.update((view) => {
@@ -393,7 +425,7 @@ function onCut(
 function onCopy(
   event: ClipboardEvent,
   editor: OutlineEditor,
-  state: State,
+  state: EventHandlerState,
 ): void {
   event.preventDefault();
   editor.update((view) => {
@@ -422,7 +454,7 @@ function onCopy(
 function onCompositionStart(
   event: CompositionEvent,
   editor: OutlineEditor,
-  state: State,
+  state: EventHandlerState,
 ): void {
   editor.update((view) => {
     const selection = view.getSelection();
@@ -444,7 +476,7 @@ function onCompositionStart(
 function onCompositionEnd(
   event: CompositionEvent,
   editor: OutlineEditor,
-  state: State,
+  state: EventHandlerState,
 ): void {
   const data = event.data;
   editor.update((view) => {
@@ -481,7 +513,7 @@ function onCompositionEnd(
 function onSelectionChange(
   event: Event,
   editor: OutlineEditor,
-  state: State,
+  state: EventHandlerState,
 ): void {
   const selection = window.getSelection();
   const editorElement = editor.getEditorElement();
@@ -496,8 +528,8 @@ function onSelectionChange(
 function onPointerDown(
   event: PointerEvent,
   editor: OutlineEditor,
-  state: State,
-) {
+  state: EventHandlerState,
+): void {
   state.isHandlingPointer = true;
   // Throttle setting of the flag for 50ms, as we don't want this to trigger
   // for simple clicks.
@@ -508,31 +540,19 @@ function onPointerDown(
   }, 50);
 }
 
-function onPointerUp(event: PointerEvent, editor: OutlineEditor, state: State) {
+function onPointerUp(
+  event: PointerEvent,
+  editor: OutlineEditor,
+  state: EventHandlerState,
+): void {
   state.isHandlingPointer = false;
   editor.setPointerDown(false);
-}
-
-function onFocusIn(
-  event: FocusEvent,
-  editor: OutlineEditor,
-  state: State,
-) {
-  editor.update((view) => {
-    const root = view.getRoot();
-
-    if (root.getFirstChild() === null) {
-      const text = createTextNode();
-      root.append(createParagraphNode().append(text));
-      text.select();
-    }
-  });
 }
 
 function onNativeBeforeInput(
   event: InputEvent,
   editor: OutlineEditor,
-  state: State,
+  state: EventHandlerState,
 ): void {
   const inputType = event.inputType;
 
@@ -660,9 +680,8 @@ function onNativeBeforeInput(
       case 'historyRedo':
         // Handled with useOutlineHistory
         break;
-      default: {
-        throw new Error('TODO - ' + inputType);
-      }
+      default:
+      // NO-OP
     }
   });
 }
@@ -670,7 +689,7 @@ function onNativeBeforeInput(
 function onPolyfilledBeforeInput(
   event: SyntheticInputEvent<EventTarget>,
   editor: OutlineEditor,
-  state: State,
+  state: EventHandlerState,
 ): void {
   event.preventDefault();
   editor.update((view) => {
@@ -682,41 +701,9 @@ function onPolyfilledBeforeInput(
   });
 }
 
-// TODO the Flow types here needs fixing
-type EventHandler = (
-  // $FlowFixMe: not sure how to handle this generic properly
-  event: Object,
-  editor: OutlineEditor,
-  state: State,
-) => void;
-
-const events: Array<[string, EventHandler]> = [
-  ['selectionchange', onSelectionChange],
-  ['keydown', onKeyDown],
-  ['keyup', onKeyUp],
-  ['pointerdown', onPointerDown],
-  ['pointerup', onPointerUp],
-  ['pointercancel', onPointerUp],
-  ['compositionstart', onCompositionStart],
-  ['compositionend', onCompositionEnd],
-  ['cut', onCut],
-  ['copy', onCopy],
-  ['focusin', onFocusIn],
-];
-
-if (CAN_USE_BEFORE_INPUT) {
-  events.push(['beforeinput', onNativeBeforeInput]);
-} else {
-  events.push(
-    ['paste', onPastePolyfill],
-    ['drop', onDropPolyfill],
-    ['dragstart', onDragStartPolyfill],
-  );
-}
-
 export default function useOutlineInputEvents(
   editor: OutlineEditor,
-  state: State,
+  state: EventHandlerState,
 ): {} | {onBeforeInput: (event: SyntheticInputEvent<>) => void} {
   useEffect(() => {
     if (editor !== null) {

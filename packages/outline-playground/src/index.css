@@ -502,6 +502,12 @@ pre {
   color: red;
 }
 
+.editor-shell div.editor span.editor-text-bold,
+.editor-shell div.editor strong.editor-text-bold,
+.editor-shell div.editor em.editor-text-bold {
+  font-weight: bold;
+}
+
 .editor-shell div.editor span.editor-text-italic,
 .editor-shell div.editor strong.editor-text-italic,
 .editor-shell div.editor em.editor-text-italic {

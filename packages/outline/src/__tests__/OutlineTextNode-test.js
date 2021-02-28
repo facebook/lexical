@@ -7,6 +7,7 @@
  */
 
 import {
+  BYTE_ORDER_MARK,
   IS_BOLD,
   IS_ITALIC,
   IS_STRIKETHROUGH,
@@ -23,6 +24,20 @@ import ReactTestUtils from 'react-dom/test-utils';
 
 import Outline from 'outline';
 import ParagraphNodeModule from 'outline-extensions/ParagraphNode';
+
+const editorThemeClasses = Object.freeze({
+  text: {
+    bold: 'my-bold-class',
+    underline: 'my-underline-class',
+    strikethrough: 'my-strikethrough-class',
+    underlineStrikethrough: 'my-underline-strikethrough-class',
+    italic: 'my-italic-class',
+    code: 'my-code-class',
+    link: 'my-link-class',
+    hashtag: 'my-hashtag-class',
+    overflowed: 'my-overflowed-class',
+  },
+});
 
 describe('OutlineTextNode tests', () => {
   let container = null;
@@ -481,52 +496,78 @@ describe('OutlineTextNode tests', () => {
   });
 
   describe('createDOM()', () => {
-    const editorThemeClasses = {
-      text: {
-        bold: 'my-bold-class',
-        underline: 'my-underline-class',
-        strikethrough: 'my-strikethrough-class',
-        underlineStrikethrough: 'my-underline-strikethrough-class',
-        italic: 'my-italic-class',
-        code: 'my-code-class',
-        link: 'my-link-class',
-        hashtag: 'my-hashtag-class',
-        overflowed: 'my-overflowed-class',
-      },
-    };
-
     test.each([
-      ['bold', IS_BOLD, '<strong class="my-bold-class">My text node</strong>'],
+      ['no formatting', null, 'My text node', '<span>My text node</span>'],
+      [
+        'no formatting + newline',
+        null,
+        'My text node\n',
+        `<span>My text node\n${BYTE_ORDER_MARK}</span>`,
+      ],
+      [
+        'bold',
+        IS_BOLD,
+        'My text node',
+        '<strong class="my-bold-class">My text node</strong>',
+      ],
+      [
+        'bold + empty',
+        IS_BOLD,
+        '',
+        `<strong class="my-bold-class">${BYTE_ORDER_MARK}</strong>`,
+      ],
+      [
+        'bold + newline',
+        IS_BOLD,
+        'My text node\n',
+        `<strong class="my-bold-class">My text node\n${BYTE_ORDER_MARK}</strong>`,
+      ],
       [
         'underline',
         IS_UNDERLINE,
+        'My text node',
         '<span class="my-underline-class">My text node</span>',
       ],
       [
         'strikethrough',
         IS_STRIKETHROUGH,
+        'My text node',
         '<span class="my-strikethrough-class">My text node</span>',
       ],
-      ['italic', IS_ITALIC, '<em class="my-italic-class">My text node</em>'],
+      [
+        'italic',
+        IS_ITALIC,
+        'My text node',
+        '<em class="my-italic-class">My text node</em>',
+      ],
       [
         'code',
         IS_CODE,
+        'My text node',
         '<code><span class="my-code-class">My text node</span></code>',
       ],
-      ['link', IS_LINK, '<span class="my-link-class">My text node</span>'],
+      [
+        'link',
+        IS_LINK,
+        'My text node',
+        '<span class="my-link-class">My text node</span>',
+      ],
       [
         'hashtag',
         IS_HASHTAG,
+        'My text node',
         '<span class="my-hashtag-class">My text node</span>',
       ],
       [
         'overflowed',
         IS_OVERFLOWED,
+        'My text node',
         '<span class="my-overflowed-class">My text node</span>',
       ],
       [
         'underline + strikethrough',
         IS_UNDERLINE | IS_STRIKETHROUGH,
+        'My text node',
         '<span class="my-underline-class my-strikethrough-class ' +
           'my-underline-strikethrough-class">' +
           'My text node</span>',
@@ -534,12 +575,14 @@ describe('OutlineTextNode tests', () => {
       [
         'code + italic',
         IS_CODE | IS_ITALIC,
+        'My text node',
         '<code><em class="my-italic-class my-code-class">My text node' +
           '</em></code>',
       ],
       [
         'code + underline + strikethrough',
         IS_CODE | IS_UNDERLINE | IS_STRIKETHROUGH,
+        'My text node',
         '<code><span class="my-underline-class my-strikethrough-class ' +
           'my-code-class my-underline-strikethrough-class">' +
           'My text node</span></code>',
@@ -547,17 +590,132 @@ describe('OutlineTextNode tests', () => {
       [
         'code + underline + strikethrough + bold + italic',
         IS_CODE | IS_UNDERLINE | IS_STRIKETHROUGH | IS_BOLD | IS_ITALIC,
+        'My text node',
         '<code><strong class="my-bold-class my-underline-class my-strikethrough-class ' +
           'my-italic-class my-code-class my-underline-strikethrough-class">' +
           'My text node</strong></code>',
       ],
-    ])('%s text format type', async (_type, flag, expectedHTML) => {
+    ])('%s text format type', async (_type, flag, contents, expectedHTML) => {
       await update(() => {
-        const textNode = Outline.createTextNode('My text node');
+        const textNode = Outline.createTextNode(contents);
         textNode.setFlags(flag);
         const element = textNode.createDOM(editorThemeClasses);
         expect(element.outerHTML).toBe(expectedHTML);
       });
     });
+
+    describe('has parent node', () => {
+      test.each([
+        ['no formatting', null, 'My text node', '<span>My text node</span>'],
+        [
+          'no formatting + empty string',
+          null,
+          '',
+          `<span>${BYTE_ORDER_MARK}<br></span>`,
+        ],
+      ])('%s text format type', async (_type, flag, contents, expectedHTML) => {
+        await update(() => {
+          const paragraphNode = ParagraphNodeModule.createParagraphNode();
+          const textNode = Outline.createTextNode(contents);
+          textNode.setFlags(flag);
+          paragraphNode.append(textNode);
+
+          const element = textNode.createDOM(editorThemeClasses);
+          expect(element.outerHTML).toBe(expectedHTML);
+        });
+      });
+    });
+  });
+
+  describe('updateDOM()', () => {
+    test.each([
+      [
+        'different tags',
+        {
+          text: 'My text node',
+          flags: IS_BOLD,
+        },
+        {
+          text: 'My text node',
+          flags: IS_ITALIC,
+        },
+        {
+          result: true,
+          expectedHTML: null,
+        },
+      ],
+      [
+        'no change in tags',
+        {
+          text: 'My text node',
+          flags: IS_BOLD,
+        },
+        {
+          text: 'My text node',
+          flags: IS_BOLD,
+        },
+        {
+          result: false,
+          expectedHTML: '<strong class="my-bold-class">My text node</strong>',
+        },
+      ],
+      [
+        'change in text',
+        {
+          text: 'My text node',
+          flags: IS_BOLD,
+        },
+        {
+          text: 'My new text node',
+          flags: IS_BOLD,
+        },
+        {
+          result: false,
+          expectedHTML:
+            '<strong class="my-bold-class">My new text node</strong>',
+        },
+      ],
+      [
+        'removing code block',
+        {
+          text: 'My text node',
+          flags: IS_CODE | IS_BOLD,
+        },
+        {
+          text: 'My new text node',
+          flags: IS_BOLD,
+        },
+        {
+          result: true,
+          expectedHTML: null,
+        },
+      ],
+    ])(
+      '%s',
+      async (
+        _desc,
+        {text: prevText, flags: prevFlags},
+        {text: nextText, flags: nextFlags},
+        {result, expectedHTML},
+      ) => {
+        await update(() => {
+          const prevTextNode = Outline.createTextNode(prevText);
+          prevTextNode.setFlags(prevFlags);
+          const element = prevTextNode.createDOM(editorThemeClasses);
+
+          const textNode = Outline.createTextNode(nextText);
+          textNode.setFlags(nextFlags);
+
+          expect(
+            textNode.updateDOM(prevTextNode, element, editorThemeClasses),
+          ).toBe(result);
+          // Only need to bother about DOM element contents if updateDOM()
+          // returns false.
+          if (!result) {
+            expect(element.outerHTML).toBe(expectedHTML);
+          }
+        });
+      },
+    );
   });
 });

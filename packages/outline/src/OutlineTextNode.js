@@ -260,6 +260,23 @@ function setTextContent(
   }
 }
 
+function createTextInnerDOM(
+  innerDOM: HTMLElement,
+  node: TextNode,
+  innerTag: string,
+  flags: number,
+  text: string,
+  editorThemeClasses: EditorThemeClasses,
+): void {
+  setTextContent(null, text, innerDOM, node);
+  // Apply theme class names
+  const textClassNames = editorThemeClasses.text;
+
+  if (textClassNames !== undefined) {
+    setTextThemeClassNames(innerTag, 0, flags, innerDOM, textClassNames);
+  }
+}
+
 export class TextNode extends OutlineNode {
   __text: string;
   __url: null | string;
@@ -352,14 +369,14 @@ export class TextNode extends OutlineNode {
       dom.appendChild(innerDOM);
     }
     const text = this.__text;
-
-    setTextContent(null, text, innerDOM, this);
-    // Apply theme class names
-    const textClassNames = editorThemeClasses.text;
-
-    if (textClassNames !== undefined) {
-      setTextThemeClassNames(innerTag, 0, flags, innerDOM, textClassNames);
-    }
+    createTextInnerDOM(
+      innerDOM,
+      this,
+      innerTag,
+      flags,
+      text,
+      editorThemeClasses,
+    );
     return dom;
   }
   updateDOM(
@@ -381,23 +398,28 @@ export class TextNode extends OutlineNode {
     if (prevTag !== nextTag) {
       return true;
     }
+    if (prevOuterTag === nextOuterTag && prevInnerTag !== nextInnerTag) {
+      // $FlowFixMe: should always be an element
+      const prevInnerDOM: HTMLElement = dom.firstChild;
+      invariant(prevInnerDOM != null, 'Should never happen');
+      const nextInnerDOM = document.createElement(nextInnerTag);
+      createTextInnerDOM(
+        nextInnerDOM,
+        this,
+        nextInnerTag,
+        nextFlags,
+        nextText,
+        editorThemeClasses,
+      );
+      dom.replaceChild(nextInnerDOM, prevInnerDOM);
+      return false;
+    }
     let innerDOM: HTMLElement = dom;
     if (nextOuterTag !== null) {
       if (prevOuterTag !== null) {
-        // $FlowFixMe: this should not be possible
+        // $FlowFixMe: should always be an element
         innerDOM = dom.firstChild;
-        invariant(
-          innerDOM != null && innerDOM.nodeType === 1,
-          'Should never happen',
-        );
-      } else {
-        // TODO ensure we can remove this and simplify this block's logic
-        invariant(false, 'Should never happen');
-      }
-    } else {
-      if (prevOuterTag !== null) {
-        // TODO ensure we can remove this and simplify this block's logic
-        invariant(false, 'Should never happen');
+        invariant(innerDOM != null, 'Should never happen');
       }
     }
     setTextContent(prevText, nextText, innerDOM, this);

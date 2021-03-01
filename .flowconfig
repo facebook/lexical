@@ -21,8 +21,6 @@ module.name_mapper='^outline$' -> '<PROJECT_ROOT>/packages/outline/src/index.js'
 
 module.name_mapper='^outline-react/useOutlineRichText' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlineRichText.js'
 module.name_mapper='^outline-react/useOutlinePlainText' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlinePlainText.js'
-module.name_mapper='^outline-react/useOutlineEventWrapper' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlineEventWrapper.js'
-module.name_mapper='^outline-react/useOutlineEvent' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlineEvent.js'
 module.name_mapper='^outline-react/useOutlineFocusIn' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlineFocusIn.js'
 module.name_mapper='^outline-react/useOutlineEditorEvents' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlineEditorEvents.js'
 module.name_mapper='^outline-react/OutlineHotKeys' -> '<PROJECT_ROOT>/packages/outline-react/src/OutlineHotKeys.js'

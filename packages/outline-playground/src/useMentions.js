@@ -5,8 +5,8 @@ import React, {useCallback, useLayoutEffect, useMemo, useRef} from 'react';
 import {useEffect, useState} from 'react';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
-import useOutlineEvent from 'outline-react/useOutlineEvent';
 import {TextNode} from 'outline';
+import useEvent from './useEvent';
 
 const mentionStyle = 'background-color: rgba(24, 119, 232, 0.2)';
 
@@ -453,7 +453,7 @@ export default function useMentions(editor: OutlineEditor): React$Node {
     setNodeKey(null);
   }, []);
 
-  useOutlineEvent(editor, 'keydown', onKeyDown);
+  useEvent(editor, 'keydown', onKeyDown);
 
   return mentionMatch === null || nodeKey === null || editor === null
     ? null

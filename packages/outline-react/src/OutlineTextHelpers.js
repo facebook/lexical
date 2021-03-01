@@ -7,9 +7,20 @@
  * @flow strict
  */
 
-import type {RootNode} from 'outline';
+import type {RootNode, OutlineNode} from 'outline';
 
 import {TextNode, BlockNode} from 'outline';
+
+let _graphemeIterator = null;
+// $FlowFixMe: Missing a Flow type for `Intl.Segmenter`.
+function getGraphemeIterator(): Intl.Segmenter {
+  if (_graphemeIterator === null) {
+    _graphemeIterator =
+      // $FlowFixMe: Missing a Flow type for `Intl.Segmenter`.
+      new Intl.Segmenter(undefined /* locale */, {granularity: 'grapheme'});
+  }
+  return _graphemeIterator;
+}
 
 export function findTextIntersectionFromCharacters(
   root: RootNode,
@@ -50,4 +61,46 @@ export function findTextIntersectionFromCharacters(
     break;
   }
   return null;
+}
+
+export function announceString(s: string): void {
+  const body = document.body;
+  if (body != null) {
+    const announce = document.createElement('div');
+    announce.setAttribute('id', 'outline_announce_' + Date.now());
+    announce.setAttribute('aria-live', 'polite');
+    announce.style.cssText =
+      'clip: rect(0, 0, 0, 0); height: 1px; overflow: hidden; position: absolute; width: 1px';
+    body.appendChild(announce);
+
+    // The trick to make all screen readers to read the text is to create AND update an element with a unique id:
+    // - JAWS remains silent without update
+    // - VO remains silent without create, if the text is the same (and doing `announce.textContent=''` doesn't help)
+    setTimeout(() => {
+      announce.textContent = s;
+    }, 100);
+
+    setTimeout(() => {
+      body.removeChild(announce);
+    }, 500);
+  }
+}
+
+function hasAtLeastTwoVisibleChars(s: string): boolean {
+  try {
+    const iterator = getGraphemeIterator().segment(s);
+    return iterator.next() != null && iterator.next() != null;
+  } catch {
+    // TODO: Implement polyfill for `Intl.Segmenter`.
+    return [...s].length > 1;
+  }
+}
+
+export function announceNode(node: OutlineNode): void {
+  if (
+    node instanceof TextNode &&
+    hasAtLeastTwoVisibleChars(node.getTextContent())
+  ) {
+    announceString(node.getTextContent());
+  }
 }

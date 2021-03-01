@@ -53,6 +53,7 @@ export type EditorThemeClasses = {
   },
   listitem?: EditorThemeClassName,
   quote?: EditorThemeClassName,
+  code?: EditorThemeClassName,
   heading?: {
     h1?: EditorThemeClassName,
     h2?: EditorThemeClassName,

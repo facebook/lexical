@@ -7,11 +7,12 @@
  * @flow strict
  */
 
-import type {NodeKey, EditorThemeClasses} from 'outline';
+import type {NodeKey, EditorThemeClasses, OutlineNode} from 'outline';
 import type {ParagraphNode} from 'outline-extensions/ParagraphNode';
 
 import {BlockNode} from 'outline';
 import {createParagraphNode} from 'outline-extensions/ParagraphNode';
+import {createListNode, ListNode} from 'outline-extensions/ListNode';
 
 export class ListItemNode extends BlockNode {
   constructor(key?: NodeKey) {
@@ -46,6 +47,38 @@ export class ListItemNode extends BlockNode {
   }
 
   // Mutation
+
+  replace<N: OutlineNode>(replaceWithNode: N): N {
+    if (replaceWithNode instanceof ListItemNode) {
+      return super.replace(replaceWithNode);
+    }
+    const list = this.getParentOrThrow();
+    if (list instanceof ListNode) {
+      const childrenKeys = list.__children;
+      const childrenLength = childrenKeys.length;
+      const index = childrenKeys.indexOf(this.__key);
+      if (index === 0) {
+        list.insertBefore(replaceWithNode);
+      } else if (index === childrenLength - 1) {
+        list.insertAfter(replaceWithNode);
+      } else {
+        // Split the list
+        const newList = createListNode(list.__tag);
+        const children = list.getChildren();
+        for (let i = index + 1; i < childrenLength; i++) {
+          const child = children[i];
+          newList.append(child);
+        }
+        list.insertAfter(replaceWithNode);
+        replaceWithNode.insertAfter(newList);
+      }
+      this.remove();
+      if (childrenLength === 1) {
+        list.remove();
+      }
+    }
+    return replaceWithNode;
+  }
 
   mergeWithPreviousSibling(): void {
     const prevBlock = this.getPreviousSibling();

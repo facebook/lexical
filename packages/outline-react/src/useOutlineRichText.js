@@ -16,6 +16,7 @@ import useOutlineInputEvents from 'outline-react/useOutlineInputEvents';
 import {HeadingNode} from 'outline-extensions/HeadingNode';
 import {ListNode} from 'outline-extensions/ListNode';
 import {QuoteNode} from 'outline-extensions/QuoteNode';
+import {CodeNode} from 'outline-extensions/CodeNode';
 import {ParagraphNode} from 'outline-extensions/ParagraphNode';
 import {ListItemNode} from 'outline-extensions/ListItemNode';
 import {createParagraphNode} from 'outline-extensions/ParagraphNode';
@@ -55,6 +56,7 @@ export default function useOutlineRichText(
       const removeHeadingType = editor.addNodeType('heading', HeadingNode);
       const removeListType = editor.addNodeType('list', ListNode);
       const removeQuoteType = editor.addNodeType('quote', QuoteNode);
+      const removeCodeType = editor.addNodeType('code', CodeNode);
       const removeParagraphType = editor.addNodeType(
         'paragraph',
         ParagraphNode,
@@ -68,6 +70,7 @@ export default function useOutlineRichText(
         removeQuoteType();
         removeParagraphType();
         removeListItemType();
+        removeCodeType();
       };
     }
   }, [editor]);

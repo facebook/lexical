@@ -9,6 +9,7 @@ import type {OutlineEditor, View} from 'outline';
 import {createPortal} from 'react-dom';
 import {createTextNode} from 'outline';
 import {createParagraphNode} from 'outline-extensions/ParagraphNode';
+import useEvent from './useEvent';
 
 import {
   isDeleteBackward,
@@ -24,8 +25,6 @@ import {
   isUndo,
   isRedo,
 } from 'outline-react/OutlineHotKeys';
-
-import useOutlineEvent from 'outline-react/useOutlineEvent';
 
 import React, {useState, useCallback, useRef, useEffect} from 'react';
 
@@ -235,7 +234,7 @@ export default function useStepRecorder(editor: OutlineEditor): React$Node {
     }
   }, [generateTestContent, steps]);
 
-  useOutlineEvent(editor, 'keydown', onKeyDown);
+  useEvent(editor, 'keydown', onKeyDown);
 
   useEffect(() => {
     const removeUpdateListener = editor.addUpdateListener((viewModel) => {

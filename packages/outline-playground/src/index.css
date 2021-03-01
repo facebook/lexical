@@ -348,7 +348,7 @@ pre {
   overflow: hidden;
 }
 
-#block-controls div.button {
+#block-controls button {
   border: 1px solid white;
   background-color: #fff;
   display: block;
@@ -358,18 +358,19 @@ pre {
   cursor: pointer;
   outline: none;
   border-radius: 8px;
+  margin: 1px;
 }
 
-#block-controls div.button:hover{
+#block-controls button:hover {
   background-color: #efefef;
 }
 
-#block-controls div.button:focus-visible {
+#block-controls button:focus-visible {
   border-color: blue;
 }
 
 #block-controls span.block-type {
-  background-image: url(https://static.xx.fbcdn.net/rsrc.php/v3/yP/r/bfOs2Olvs0Y.png);
+  background-image: url(https://static.xx.fbcdn.net/rsrc.php/v3/y4/r/wsLhCXiG1a_.png);
   display: block;
   width: 20px;
   height: 20px;
@@ -380,11 +381,11 @@ pre {
 }
 
 #block-controls span.block-type.paragraph {
-  background-position: 0px -427px;
+  background-position: 0 -406px;
 }
 
 #block-controls span.block-type.h1 {
-  background-position: 0px -196px;
+  background-position: 0 -196px;
   filter: invert(0.39) sepia(0.57) saturate(2) saturate(2) saturate(2) saturate(2) saturate(2) saturate(1.4775) hue-rotate(202deg) brightness(0.97) contrast(0.96);
 }
 
@@ -394,7 +395,7 @@ pre {
 }
 
 #block-controls span.block-type.quote {
-  background-position: 0px -385px;
+  background-position: 0 -364px;
   filter: invert(0.39) sepia(0.57) saturate(2) saturate(2) saturate(2) saturate(2) saturate(2) saturate(1.4775) hue-rotate(202deg) brightness(0.97) contrast(0.96);
 }
 
@@ -405,6 +406,11 @@ pre {
 
 #block-controls span.block-type.ol {
   background-position: 0px -322px;
+  filter: invert(0.39) sepia(0.57) saturate(2) saturate(2) saturate(2) saturate(2) saturate(2) saturate(1.4775) hue-rotate(202deg) brightness(0.97) contrast(0.96);
+}
+
+#block-controls span.block-type.code {
+  background-position: 0px -343px;
   filter: invert(0.39) sepia(0.57) saturate(2) saturate(2) saturate(2) saturate(2) saturate(2) saturate(1.4775) hue-rotate(202deg) brightness(0.97) contrast(0.96);
 }
 
@@ -537,4 +543,99 @@ pre {
 .editor-shell div.editor em.editor-text-hashtag {
   background-color: rgba(88, 144, 255, .15);
   border-bottom: 1px solid rgba(88, 144, 255, .3);
+}
+
+.dropdown {
+  z-index: 5;
+  display: block;
+  position: absolute;
+  box-shadow: 0 12px 28px 0 rgba(0,0,0,0.2),0 2px 4px 0 rgba(0,0,0,0.1),inset 0 0 0 1px rgba(255,255,255,0.5);
+  border-radius: 8px;
+  min-width: 100px;
+  min-height: 40px;
+  background-color: #fff;
+}
+
+.dropdown .item {
+  margin: 0 8px 0 8px;
+  padding: 8px;
+  color: #050505;
+  cursor: pointer;
+  line-height: 16px;
+  font-size: 15px;
+  display: flex;
+  align-content: center;
+  flex-direction: row;
+  flex-shrink: 0;
+  justify-content: space-between;
+  background-color: #fff;
+  border-radius: 8px;
+  border: 0;
+  min-width: 268px;
+}
+
+.dropdown .item .active {
+  display: flex;
+  width: 20px;
+  height: 20px;
+  background-position: 0 -655px;
+  background-image: url(https://static.xx.fbcdn.net/rsrc.php/v3/yj/r/VuIcQBFX4ba.png);
+  filter: invert(0.39) sepia(0.57) saturate(2) saturate(2) saturate(2) saturate(2) saturate(2) saturate(1.4775) hue-rotate(202deg) brightness(0.97) contrast(0.96);
+}
+
+.dropdown .item:first-child {
+  margin-top: 8px;
+}
+
+.dropdown .item:last-child {
+  margin-bottom: 8px;
+}
+
+.dropdown .item:hover {
+  background-color: #eee;
+}
+
+.dropdown .item .text {
+  display: flex;
+  line-height: 20px;
+  flex-grow: 1;
+  width: 200px
+}
+
+.dropdown .item .icon {
+  display: flex;
+  width: 20px;
+  height: 20px;
+  user-select: none;
+  background-image: url(https://static.xx.fbcdn.net/rsrc.php/v3/y4/r/wsLhCXiG1a_.png);
+  margin-right: 12px;
+  line-height: 16px;
+}
+
+.dropdown .item .icon.paragraph {
+  background-position: 0 -406px;
+}
+
+.dropdown .item .icon.large-heading {
+  background-position: 0 -196px;
+}
+
+.dropdown .item .icon.small-heading {
+  background-position: 0 -217px;
+}
+
+.dropdown .item .icon.bullet-list {
+  background-position: 0 -301px;
+}
+
+.dropdown .item .icon.numbered-list {
+  background-position: 0 -322px;
+}
+
+.dropdown .item .icon.quote {
+  background-position: 0 -364px;
+}
+
+.dropdown .item .icon.code {
+  background-position: 0 -343px;
 }

@@ -8,11 +8,11 @@
  */
 
 import type {OutlineEditor} from 'outline';
-import type {EventHandlerState} from 'outline-react/useOutlineInputEvents';
+import type {EventHandlerState} from 'outline-react/OutlineEventHandlers';
 
 import {useEffect, useMemo} from 'react';
 import {createTextNode} from 'outline';
-import useOutlineInputEvents from 'outline-react/useOutlineInputEvents';
+import useOutlineEditorEvents from 'outline-react/useOutlineEditorEvents';
 import {
   createParagraphNode,
   ParagraphNode,
@@ -55,5 +55,5 @@ export default function useOutlinePlainText(
     }
   }, [editor]);
 
-  return useOutlineInputEvents(editor, pluginState);
+  return useOutlineEditorEvents(editor, pluginState);
 }

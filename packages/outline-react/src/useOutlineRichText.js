@@ -8,11 +8,11 @@
  */
 
 import type {OutlineEditor} from 'outline';
-import type {EventHandlerState} from 'outline-react/useOutlineInputEvents';
+import type {EventHandlerState} from 'outline-react/OutlineEventHandlers';
 
 import {useEffect, useMemo} from 'react';
 import {createTextNode} from 'outline';
-import useOutlineInputEvents from 'outline-react/useOutlineInputEvents';
+import useOutlineEditorEvents from 'outline-react/useOutlineEditorEvents';
 import {HeadingNode} from 'outline-extensions/HeadingNode';
 import {ListNode} from 'outline-extensions/ListNode';
 import {QuoteNode} from 'outline-extensions/QuoteNode';
@@ -75,5 +75,5 @@ export default function useOutlineRichText(
     }
   }, [editor]);
 
-  return useOutlineInputEvents(editor, eventHandlerState);
+  return useOutlineEditorEvents(editor, eventHandlerState);
 }

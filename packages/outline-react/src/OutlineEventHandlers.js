@@ -9,15 +9,14 @@
 
 import type {
   OutlineEditor,
-  View,
-  NodeKey,
   Selection,
   OutlineNode,
   ParsedNodeMap,
+  NodeKey,
+  View,
 } from 'outline';
 
 import {BlockNode, TextNode} from 'outline';
-import {useEffect} from 'react';
 import {
   CAN_USE_BEFORE_INPUT,
   IS_SAFARI,
@@ -44,11 +43,12 @@ import {
   deleteWordForward,
   insertParagraph,
   formatText,
-  insertNodes,
   insertText,
   removeText,
   getNodesInRange,
+  insertNodes,
 } from 'outline-react/OutlineSelectionHelpers';
+import {announceNode} from 'outline-react/OutlineTextHelpers';
 
 // FlowFixMe: Flow doesn't know of the CompositionEvent?
 // $FlowFixMe: TODO
@@ -62,39 +62,12 @@ export type EventHandler = (
   state: EventHandlerState,
 ) => void;
 
-export type InputEvents = Array<[string, EventHandler]>;
-
 export type EventHandlerState = {
   isReadOnly: boolean,
   compositionSelection: null | Selection,
   richText: boolean,
   isHandlingPointer: boolean,
 };
-
-const emptyObject: {} = {};
-
-const events: InputEvents = [
-  ['selectionchange', onSelectionChange],
-  ['keydown', onKeyDown],
-  ['keyup', onKeyUp],
-  ['pointerdown', onPointerDown],
-  ['pointerup', onPointerUp],
-  ['pointercancel', onPointerUp],
-  ['compositionstart', onCompositionStart],
-  ['compositionend', onCompositionEnd],
-  ['cut', onCut],
-  ['copy', onCopy],
-];
-
-if (CAN_USE_BEFORE_INPUT) {
-  events.push(['beforeinput', onNativeBeforeInput]);
-} else {
-  events.push(
-    ['paste', onPastePolyfill],
-    ['drop', onDropPolyfill],
-    ['dragstart', onDragStartPolyfill],
-  );
-}
 
 function generateNodes(
   nodeRange: {range: Array<NodeKey>, nodeMap: ParsedNodeMap},
@@ -136,70 +109,13 @@ function insertDataTransfer(
   }
 }
 
-let _graphemeIterator = null;
-// $FlowFixMe: Missing a Flow type for `Intl.Segmenter`.
-function getGraphemeIterator(): Intl.Segmenter {
-  if (_graphemeIterator === null) {
-    _graphemeIterator =
-      // $FlowFixMe: Missing a Flow type for `Intl.Segmenter`.
-      new Intl.Segmenter(undefined /* locale */, {granularity: 'grapheme'});
-  }
-  return _graphemeIterator;
-}
-
-function hasAtLeastTwoVisibleChars(s: string): boolean {
-  try {
-    const iterator = getGraphemeIterator().segment(s);
-    return iterator.next() != null && iterator.next() != null;
-  } catch {
-    // TODO: Implement polyfill for `Intl.Segmenter`.
-    return [...s].length > 1;
-  }
-}
-
-function announceString(s: string): void {
-  const body = document.body;
-  if (body != null) {
-    const announce = document.createElement('div');
-    announce.setAttribute('id', 'outline_announce_' + Date.now());
-    announce.setAttribute('aria-live', 'polite');
-    announce.style.cssText =
-      'clip: rect(0, 0, 0, 0); height: 1px; overflow: hidden; position: absolute; width: 1px';
-    body.appendChild(announce);
-
-    // The trick to make all screen readers to read the text is to create AND update an element with a unique id:
-    // - JAWS remains silent without update
-    // - VO remains silent without create, if the text is the same (and doing `announce.textContent=''` doesn't help)
-    setTimeout(() => {
-      announce.textContent = s;
-    }, 100);
-
-    setTimeout(() => {
-      body.removeChild(announce);
-    }, 500);
-  }
-}
-
-function announceNode(node: OutlineNode): void {
-  if (
-    node instanceof TextNode &&
-    hasAtLeastTwoVisibleChars(node.getTextContent())
-  ) {
-    announceString(node.getTextContent());
-  }
-}
-
 function isModifierActive(event: KeyboardEvent): boolean {
   // We don't need to check for metaKey here as we already
   // do this before we reach this block.
   return event.shiftKey || event.altKey || event.ctrlKey;
 }
 
-function onKeyUp(event: KeyboardEvent, editor: OutlineEditor): void {
-  editor.setKeyDown(false);
-}
-
-function onKeyDown(
+export function onKeyDown(
   event: KeyboardEvent,
   editor: OutlineEditor,
   state: EventHandlerState,
@@ -374,7 +290,11 @@ function onKeyDown(
   });
 }
 
-function onPastePolyfill(
+export function onKeyUp(event: KeyboardEvent, editor: OutlineEditor): void {
+  editor.setKeyDown(false);
+}
+
+export function onPastePolyfill(
   event: ClipboardEvent,
   editor: OutlineEditor,
   state: EventHandlerState,
@@ -389,7 +309,7 @@ function onPastePolyfill(
   });
 }
 
-function onDropPolyfill(
+export function onDropPolyfill(
   event: ClipboardEvent,
   editor: OutlineEditor,
   state: EventHandlerState,
@@ -398,7 +318,7 @@ function onDropPolyfill(
   event.preventDefault();
 }
 
-function onDragStartPolyfill(
+export function onDragStartPolyfill(
   event: ClipboardEvent,
   editor: OutlineEditor,
   state: EventHandlerState,
@@ -407,7 +327,7 @@ function onDragStartPolyfill(
   event.preventDefault();
 }
 
-function onCut(
+export function onCut(
   event: ClipboardEvent,
   editor: OutlineEditor,
   state: EventHandlerState,
@@ -421,7 +341,7 @@ function onCut(
   });
 }
 
-function onCopy(
+export function onCopy(
   event: ClipboardEvent,
   editor: OutlineEditor,
   state: EventHandlerState,
@@ -450,7 +370,7 @@ function onCopy(
   });
 }
 
-function onCompositionStart(
+export function onCompositionStart(
   event: CompositionEvent,
   editor: OutlineEditor,
   state: EventHandlerState,
@@ -472,7 +392,7 @@ function onCompositionStart(
   });
 }
 
-function onCompositionEnd(
+export function onCompositionEnd(
   event: CompositionEvent,
   editor: OutlineEditor,
   state: EventHandlerState,
@@ -509,7 +429,7 @@ function onCompositionEnd(
   });
 }
 
-function onSelectionChange(
+export function onSelectionChange(
   event: Event,
   editor: OutlineEditor,
   state: EventHandlerState,
@@ -524,7 +444,7 @@ function onSelectionChange(
   });
 }
 
-function onPointerDown(
+export function onPointerDown(
   event: PointerEvent,
   editor: OutlineEditor,
   state: EventHandlerState,
@@ -539,7 +459,7 @@ function onPointerDown(
   }, 50);
 }
 
-function onPointerUp(
+export function onPointerUp(
   event: PointerEvent,
   editor: OutlineEditor,
   state: EventHandlerState,
@@ -548,7 +468,7 @@ function onPointerUp(
   editor.setPointerDown(false);
 }
 
-function onNativeBeforeInput(
+export function onNativeBeforeInput(
   event: InputEvent,
   editor: OutlineEditor,
   state: EventHandlerState,
@@ -685,7 +605,7 @@ function onNativeBeforeInput(
   });
 }
 
-function onPolyfilledBeforeInput(
+export function onPolyfilledBeforeInput(
   event: SyntheticInputEvent<EventTarget>,
   editor: OutlineEditor,
   state: EventHandlerState,
@@ -698,48 +618,4 @@ function onPolyfilledBeforeInput(
       insertText(selection, data);
     }
   });
-}
-
-export default function useOutlineInputEvents(
-  editor: OutlineEditor,
-  state: EventHandlerState,
-): {} | {onBeforeInput: (event: SyntheticInputEvent<>) => void} {
-  useEffect(() => {
-    if (editor !== null) {
-      const target: null | HTMLElement = editor.getEditorElement();
-
-      if (target !== null && state !== null) {
-        const teardown = events.map(([eventName, handler]) => {
-          let eventTarget = target;
-          if (
-            eventName === 'selectionchange' ||
-            eventName === 'keyup' ||
-            eventName === 'pointerup' ||
-            eventName === 'pointercancel'
-          ) {
-            eventTarget = target.ownerDocument;
-          }
-          const handlerWrapper = (event: Event) => {
-            handler(event, editor, state);
-          };
-          eventTarget.addEventListener(eventName, handlerWrapper);
-          return () => {
-            eventTarget.removeEventListener(eventName, handlerWrapper);
-          };
-        });
-
-        return () => {
-          teardown.forEach((destroy) => destroy());
-        };
-      }
-    }
-  }, [editor, state]);
-
-  return CAN_USE_BEFORE_INPUT
-    ? emptyObject
-    : {
-        onBeforeInput: (event: SyntheticInputEvent<EventTarget>) => {
-          onPolyfilledBeforeInput(event, editor, state);
-        },
-      };
 }

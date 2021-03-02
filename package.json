@@ -20,8 +20,10 @@
     "watch": "node scripts/build.js --watch",
     "flow": "node ./scripts/tasks/flow.js",
     "test": "npm run build && jest",
+    "lint": "node ./scripts/tasks/eslint.js",
     "debug-test": "node --inspect-brk node_modules/.bin/jest --runInBand",
     "prettier": "node ./scripts/prettier.js write-changed",
+    "prettier-all": "node ./scripts/prettier.js write",
     "prepare-release": "yarn build --prod && node ./scripts/prepare-release.js"
   },
   "devDependencies": {

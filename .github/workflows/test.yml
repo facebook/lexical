@@ -19,6 +19,7 @@ jobs:
         node-version: ${{ matrix.node-version }}
     - run: yarn install
     - run: yarn build
+    - run: yarn lint
     - run: yarn flow
     - run: yarn test
       env:

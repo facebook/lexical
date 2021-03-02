@@ -75,13 +75,13 @@ export default function useTypeahead(editor: null | OutlineEditor): void {
       } else {
         maybeAddTypeahead();
       }
-    })
+    });
   }, [editor, getTypeaheadTextNode, selectionCollapsed, suggestion]);
 
   // Rerender on suggestion change
   useEffect(() => {
     renderTypeahead();
-  }, [renderTypeahead, suggestion])
+  }, [renderTypeahead, suggestion]);
 
   // Rerender on editor updates
   useEffect(() => {

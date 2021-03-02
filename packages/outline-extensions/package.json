@@ -1,9 +1,24 @@
 {
   "name": "outline-extensions",
-  "version": "0.0.6",
-  "private": true,
-  "main": "dist/index.js",
+  "author": {
+    "name": "Dominic Gannaway",
+    "email": "dg@domgan.com"
+  },
+  "description": "The library provides Outline Node extensions for React.",
+  "keywords": [
+    "react",
+    "outline",
+    "editor",
+    "rich-text"
+  ],
+  "license": "MIT",
+  "version": "0.0.7",
   "dependencies": {
-    "outline": "0.0.6"
+    "outline": "0.0.7"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/facebookexternal/Outline",
+    "directory": "packages/outline-react"
   }
 }

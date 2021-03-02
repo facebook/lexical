@@ -4,14 +4,10 @@ import type {OutlineEditor, View} from 'outline';
 
 import {useCallback, useEffect} from 'react';
 
-function useWrapper(
-  handler: (
-    event: KeyboardEvent,
-    view: View,
-    editor: OutlineEditor,
-  ) => void,
+function useWrapper<E: Event>(
+  handler: (event: E, view: View, editor: OutlineEditor) => void,
   editor: OutlineEditor,
-): (event: KeyboardEvent) => void {
+): (event: E) => void {
   return useCallback(
     (event) => {
       // Fast-path so we don't do unnecessary work
@@ -28,10 +24,10 @@ function useWrapper(
   );
 }
 
-export default function useEvent(
+export default function useEvent<E>(
   editor: OutlineEditor,
   eventName: string,
-  handler: (event: KeyboardEvent, view: View) => void,
+  handler: (event: E, view: View) => void,
 ): void {
   const wrapper = useWrapper(handler, editor);
   useEffect(() => {

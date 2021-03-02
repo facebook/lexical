@@ -207,8 +207,11 @@ export default function useStepRecorder(editor: OutlineEditor): React$Node {
   );
 
   const onKeyDown = useCallback(
-    (event, view) => {
+    (event: KeyboardEvent, view) => {
       if (!isRecording) {
+        return;
+      }
+      if (event.key === 'v' && (event.metaKey || event.ctrlKey)) {
         return;
       }
       const maybeCommand = Object.keys(AVAILABLE_INPUTS).find((command) =>
@@ -228,13 +231,34 @@ export default function useStepRecorder(editor: OutlineEditor): React$Node {
     [isRecording, pushStep],
   );
 
+  useEvent(editor, 'keydown', onKeyDown);
+
+  const onPaste = useCallback(
+    (event: ClipboardEvent, view) => {
+      if (!isRecording) {
+        return;
+      }
+      const clipboardData = event.clipboardData;
+      const richData = clipboardData?.getData('application/x-outline-nodes');
+      if (richData) {
+        // TODO
+        return;
+      }
+      const data = clipboardData?.getData('text/plain');
+      if (data) {
+        pushStep('paste', data);
+      }
+    },
+    [isRecording, pushStep],
+  );
+
+  useEvent(editor, 'paste', onPaste);
+
   useEffect(() => {
     if (steps) {
       setTemplatedTest(generateTestContent());
     }
   }, [generateTestContent, steps]);
-
-  useEvent(editor, 'keydown', onKeyDown);
 
   useEffect(() => {
     const removeUpdateListener = editor.addUpdateListener((viewModel) => {

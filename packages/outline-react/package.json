@@ -4,7 +4,7 @@
     "name": "Dominic Gannaway",
     "email": "dg@domgan.com"
   },
-  "description": "The library provides powerful Outline extensions for React.",
+  "description": "The library provides Outline helpers and utilities for React applications.",
   "keywords": [
     "react",
     "outline",
@@ -12,10 +12,10 @@
     "rich-text"
   ],
   "license": "MIT",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "dependencies": {
-    "outline": "0.0.6",
-    "outline-extensions": "0.0.6"
+    "outline": "0.0.7",
+    "outline-extensions": "0.0.7"
   },
   "peerDependencies": {
     "react": ">=17.0.1",

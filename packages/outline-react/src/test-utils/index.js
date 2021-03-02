@@ -159,9 +159,16 @@ export function undo(n: ?number) {
   };
 }
 
-export function paste(text: string) {
+export function pastePlain(text: string) {
   return {
-    type: 'paste',
+    type: 'paste_plain',
+    text: text,
+  };
+}
+
+export function pasteOutline(text: string) {
+  return {
+    type: 'paste_outline',
     text: text,
   };
 }
@@ -493,7 +500,7 @@ export async function applySelectionInputs(inputs, update, editor) {
             );
             break;
           }
-          case 'paste': {
+          case 'paste_plain': {
             editorElement.dispatchEvent(
               Object.assign(
                 new Event('paste', {
@@ -504,6 +511,27 @@ export async function applySelectionInputs(inputs, update, editor) {
                   clipboardData: {
                     getData: (type) => {
                       if (type === 'text/plain') {
+                        return input.text;
+                      }
+                      return '';
+                    },
+                  },
+                },
+              ),
+            );
+            break;
+          }
+          case 'paste_outline': {
+            editorElement.dispatchEvent(
+              Object.assign(
+                new Event('paste', {
+                  bubbles: true,
+                  cancelable: true,
+                }),
+                {
+                  clipboardData: {
+                    getData: (type) => {
+                      if (type === 'application/x-outline-nodes') {
                         return input.text;
                       }
                       return '';

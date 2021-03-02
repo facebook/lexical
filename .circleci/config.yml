@@ -20,6 +20,9 @@ aliases:
 
   - &TEST_PARALLELISM 20
 
+  - &attach_workspace
+    at: build
+
 # The CircleCI API doesn't yet support triggering a specific workflow, but it
 # does support triggering a pipeline. So as a workaround you can triggger the
 # entire pipeline and use parameters to disable everything except the workflow
@@ -112,3 +115,22 @@ jobs:
       - run: yarn workspaces info | head -n -1 > workspace_info.txt
       - *restore_node_modules
       - run: yarn test <<parameters.args>> --ci
+
+workflows:
+  version: 2
+  build_and_Test:
+    unless: << pipeline.parameters.prerelease_commit_sha >>
+    jobs:
+      - setup
+      - yarn_flow:
+          requires:
+            - setup
+      - yarn_lint:
+          requires:
+            - setup
+      - yarn_build:
+          requires:
+            - setup
+      - yarn_test:
+          requires:
+            - setup

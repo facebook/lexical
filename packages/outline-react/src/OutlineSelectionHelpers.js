@@ -528,48 +528,51 @@ export function deleteWordBackward(selection: Selection): void {
   const currentBlock = anchorNode.getParentBlockOrThrow();
   let node = anchorNode;
 
-  while (true) {
-    const prevSibling = node.getPreviousSibling();
-    if (node.isImmutable() || node.isSegmented()) {
-      node.remove();
-      invariant(prevSibling instanceof TextNode, 'Should never happen');
-      prevSibling.select();
-      currentBlock.normalizeTextNodes(true);
-      return;
-    } else if (node instanceof TextNode) {
-      const textContent = node.getTextContent();
-      const endIndex = node === anchorNode ? anchorOffset : textContent.length;
-      let foundNonWhitespace = false;
+  try {
+    while (true) {
+      const prevSibling = node.getPreviousSibling();
+      if (node.isImmutable() || node.isSegmented()) {
+        node.remove();
+        invariant(prevSibling instanceof TextNode, 'Should never happen');
+        prevSibling.select();
+        return;
+      } else if (node instanceof TextNode) {
+        const textContent = node.getTextContent();
+        const endIndex =
+          node === anchorNode ? anchorOffset : textContent.length;
+        let foundNonWhitespace = false;
 
-      for (let s = endIndex - 1; s >= 0; s--) {
-        const char = textContent[s];
-        if (s === 0) {
-          node.spliceText(s, endIndex - s, '', true);
-          return;
-        } else if (WHITESPACE_REGEX.test(char)) {
-          if (foundNonWhitespace) {
-            node.spliceText(s + 1, endIndex - s, '', true);
+        for (let s = endIndex - 1; s >= 0; s--) {
+          const char = textContent[s];
+          if (s === 0) {
+            node.spliceText(s, endIndex - s, '', true);
             return;
+          } else if (WHITESPACE_REGEX.test(char)) {
+            if (foundNonWhitespace) {
+              node.spliceText(s + 1, endIndex - s, '', true);
+              return;
+            }
+          } else if (char === '\n') {
+            node.spliceText(s + 1, endIndex - s + 1, '', true);
+            return;
+          } else {
+            foundNonWhitespace = true;
           }
-        } else if (char === '\n') {
-          node.spliceText(s + 1, endIndex - s + 1, '', true);
-          return;
+        }
+        if (prevSibling === null) {
+          node.setTextContent('');
+          node.select();
         } else {
-          foundNonWhitespace = true;
+          node.remove();
         }
       }
       if (prevSibling === null) {
-        node.setTextContent('');
-        node.select();
-      } else {
-        node.remove();
-        currentBlock.normalizeTextNodes(true);
+        return;
       }
+      node = prevSibling;
     }
-    if (prevSibling === null) {
-      return;
-    }
-    node = prevSibling;
+  } finally {
+    currentBlock.normalizeTextNodes(true);
   }
 }
 
@@ -601,43 +604,45 @@ export function deleteWordForward(selection: Selection): void {
   const currentBlock = anchorNode.getParentBlockOrThrow();
   let node = anchorNode;
 
-  while (true) {
-    const nextSibling = node.getNextSibling();
+  try {
+    while (true) {
+      const nextSibling = node.getNextSibling();
 
-    if (node.isImmutable() || node.isSegmented()) {
-      node.remove();
-      invariant(nextSibling instanceof TextNode, 'Should never happen');
-      nextSibling.select(0, 0);
-      currentBlock.normalizeTextNodes(true);
-      return;
-    } else if (node instanceof TextNode && anchorNode.getTextContent() !== '') {
-      const textContent = node.getTextContent();
-      const startIndex = node === anchorNode ? anchorOffset : 0;
-      let foundNonWhitespace = false;
-      for (let s = startIndex; s < textContent.length; s++) {
-        const char = textContent[s];
-        if (WHITESPACE_REGEX.test(char)) {
-          if (foundNonWhitespace) {
+      if (node.isImmutable() || node.isSegmented()) {
+        node.remove();
+        invariant(nextSibling instanceof TextNode, 'Should never happen');
+        nextSibling.select(0, 0);
+        return;
+      } else if (
+        node instanceof TextNode &&
+        anchorNode.getTextContent() !== ''
+      ) {
+        const textContent = node.getTextContent();
+        const startIndex = node === anchorNode ? anchorOffset : 0;
+        let foundNonWhitespace = false;
+        for (let s = startIndex; s < textContent.length; s++) {
+          const char = textContent[s];
+          if (WHITESPACE_REGEX.test(char)) {
+            if (foundNonWhitespace) {
+              node.spliceText(startIndex, s - startIndex, '', true);
+              return;
+            }
+          } else if (char === '\n') {
             node.spliceText(startIndex, s - startIndex, '', true);
             return;
+          } else {
+            foundNonWhitespace = true;
           }
-        } else if (char === '\n') {
-          node.spliceText(startIndex, s - startIndex, '', true);
-          return;
-        } else {
-          foundNonWhitespace = true;
         }
+        node.spliceText(startIndex, textContent.length - startIndex, '', true);
       }
-      node.spliceText(startIndex, textContent.length - startIndex, '', true);
-
-      if (nextSibling !== null) {
-        currentBlock.normalizeTextNodes(true);
+      if (nextSibling === null) {
+        return;
       }
+      node = nextSibling;
     }
-    if (nextSibling === null) {
-      return;
-    }
-    node = nextSibling;
+  } finally {
+    currentBlock.normalizeTextNodes(true);
   }
 }
 

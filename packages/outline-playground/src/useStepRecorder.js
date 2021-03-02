@@ -211,7 +211,11 @@ export default function useStepRecorder(editor: OutlineEditor): React$Node {
       if (!isRecording) {
         return;
       }
-      if (event.key === 'v' && (event.metaKey || event.ctrlKey)) {
+      const key = event.key;
+      if (
+        (key === 'v' || key === 'x' || key === 'c' || key === 'a') &&
+        (event.metaKey || event.ctrlKey)
+      ) {
         return;
       }
       const maybeCommand = Object.keys(AVAILABLE_INPUTS).find((command) =>
@@ -239,14 +243,14 @@ export default function useStepRecorder(editor: OutlineEditor): React$Node {
         return;
       }
       const clipboardData = event.clipboardData;
-      const richData = clipboardData?.getData('application/x-outline-nodes');
-      if (richData) {
-        // TODO
+      const outlineData = clipboardData?.getData('application/x-outline-nodes');
+      if (outlineData) {
+        pushStep('pasteOutline', outlineData);
         return;
       }
       const data = clipboardData?.getData('text/plain');
       if (data) {
-        pushStep('paste', data);
+        pushStep('pastePlain', data);
       }
     },
     [isRecording, pushStep],

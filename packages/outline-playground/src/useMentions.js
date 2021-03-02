@@ -150,23 +150,45 @@ function MentionsTypeahead({
   close,
   editor,
   match,
-  nodeKey,
   registerKeys,
 }: {
   close: () => void,
   editor: OutlineEditor,
   match: MentionMatch,
-  nodeKey: NodeKey,
   registerKeys: (keys: any) => () => void,
 }): React$Node {
   const divRef = useRef(null);
   const results = useMentionLookupService(match.matchingString);
+  const [nodeKey, setNodeKey] = useState(null);
   const [selectedIndex, setSelectedIndex] = useState<null | number>(null);
   const [hoveredIndex, setHoveredIndex] = useState(null);
 
-  useLayoutEffect(() => {
+  useEffect(() => {
+    if (results !== null) {
+      editor.update((view) => {
+        const selection = view.getSelection();
+        if (selection !== null) {
+          const {leadOffset, replaceableString} = match;
+          const anchorNode = selection.getAnchorNode();
+          if (anchorNode.getTextContent().indexOf(replaceableString) !== -1) {
+            const splitNodes = anchorNode.splitText(
+              leadOffset,
+              leadOffset + replaceableString.length,
+            );
+            const target = leadOffset === 0 ? splitNodes[0] : splitNodes[1];
+            target.setTextContent(replaceableString);
+            target.select();
+            setNodeKey(anchorNode.getKey());
+          }
+        }
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor, match.replaceableString, match.leadOffset, results]);
+
+  useEffect(() => {
     const div = divRef.current;
-    if (results !== null && div !== null) {
+    if (results !== null && div !== null && nodeKey !== null) {
       const mentionsElement = editor.getElementByKey(nodeKey);
 
       if (mentionsElement !== null && mentionsElement.nodeType === 1) {
@@ -184,6 +206,9 @@ function MentionsTypeahead({
   }, [editor, nodeKey, results]);
 
   const applyCurrentSelected = useCallback(() => {
+    if (nodeKey == null) {
+      return;
+    }
     // $FlowFixMe
     const selectedResult = results[selectedIndex];
     close();
@@ -379,7 +404,6 @@ function getPossibleMentionMatch(text): MentionMatch | null {
 
 export default function useMentions(editor: OutlineEditor): React$Node {
   const [mentionMatch, setMentionMatch] = useState<MentionMatch | null>(null);
-  const [nodeKey, setNodeKey] = useState(null);
   const registeredKeys: Set<any> = useMemo(() => new Set(), []);
   const registerKeys = useMemo(
     () => (keys) => {
@@ -413,18 +437,9 @@ export default function useMentions(editor: OutlineEditor): React$Node {
       if (text !== '') {
         const match = getPossibleMentionMatch(text);
         if (match !== null) {
-          const {leadOffset, replaceableString} = match;
-          const splitNodes = node.splitText(
-            leadOffset,
-            leadOffset + replaceableString.length,
-          );
-          const target = leadOffset === 0 ? splitNodes[0] : splitNodes[1];
-          target.setTextContent(replaceableString);
-          target.select();
           // We shouldn't do updates to React until this view is actually
           // reconciled.
           window.requestAnimationFrame(() => {
-            setNodeKey(target.getKey());
             setMentionMatch(match);
           });
           return;
@@ -450,18 +465,16 @@ export default function useMentions(editor: OutlineEditor): React$Node {
 
   const closeTypeahead = useCallback(() => {
     setMentionMatch(null);
-    setNodeKey(null);
   }, []);
 
   useEvent(editor, 'keydown', onKeyDown);
 
-  return mentionMatch === null || nodeKey === null || editor === null
+  return mentionMatch === null || editor === null
     ? null
     : createPortal(
         <MentionsTypeahead
           close={closeTypeahead}
           match={mentionMatch}
-          nodeKey={nodeKey}
           editor={editor}
           registerKeys={registerKeys}
         />,

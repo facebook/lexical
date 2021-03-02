@@ -87,7 +87,7 @@ jobs:
       - checkout
       - run: yarn workspaces info | head -n -1 > workspace_info.txt
       - *restore_node_modules
-      - run: node ./scripts/tasks/flow-ci
+      - run: node ./scripts/tasks/flow.js
 
   yarn_build:
     docker: *docker

@@ -7,15 +7,14 @@
  * @flow strict-local
  */
 
+import type {OutlineEditor} from 'outline';
 import type {
-  OutlineEditor,
-} from 'outline';
-import type {EventHandler, EventHandlerState} from 'outline-react/OutlineEventHandlers';
+  EventHandler,
+  EventHandlerState,
+} from 'outline-react/OutlineEventHandlers';
 
 import {useEffect} from 'react';
-import {
-  CAN_USE_BEFORE_INPUT,
-} from 'outline-react/OutlineEnv';
+import {CAN_USE_BEFORE_INPUT} from 'outline-react/OutlineEnv';
 import {
   onSelectionChange,
   onKeyDown,
@@ -30,7 +29,7 @@ import {
   onPastePolyfill,
   onDropPolyfill,
   onDragStartPolyfill,
-  onPolyfilledBeforeInput
+  onPolyfilledBeforeInput,
 } from 'outline-react/OutlineEventHandlers';
 
 export type InputEvents = Array<[string, EventHandler]>;

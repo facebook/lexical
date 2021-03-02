@@ -1,0 +1,128 @@
+version: 2.1
+
+aliases:
+  - &docker
+    - image: circleci/openjdk:8-jdk-node-browsers
+
+  - &environment
+    TZ: /usr/share/zoneinfo/America/Los_Angeles
+
+  - &restore_yarn_cache
+    restore_cache:
+      name: Restore yarn cache
+      key: v2-node-{{ arch }}-{{ checksum "yarn.lock" }}-yarn
+
+  - &restore_node_modules
+    restore_cache:
+      name: Restore node_modules cache
+      keys:
+        - v2-node-{{ arch }}-{{ .Branch }}-{{ checksum "yarn.lock" }}-{{ checksum "workspace_info.txt" }}-node-modules
+
+  - &TEST_PARALLELISM 20
+
+  - &attach_workspace
+    at: build
+
+# The CircleCI API doesn't yet support triggering a specific workflow, but it
+# does support triggering a pipeline. So as a workaround you can triggger the
+# entire pipeline and use parameters to disable everything except the workflow
+# you want. CircleCI recommends this workaround here:
+# https://support.circleci.com/hc/en-us/articles/360050351292-How-to-trigger-a-workflow-via-CircleCI-API-v2-
+parameters:
+  # This is only set when triggering the CI pipeline via an API request.
+  prerelease_commit_sha:
+    type: string
+    default: ''
+
+jobs:
+  setup:
+    docker: *docker
+    environment: *environment
+    steps:
+      - checkout
+      - run:
+          name: Nodejs Version
+          command: node --version
+      - *restore_yarn_cache
+      - run:
+          name: Install Packages
+          command: yarn --frozen-lockfile --cache-folder ~/.cache/yarn
+      - run: yarn workspaces info | head -n -1 > workspace_info.txt
+      - save_cache:
+          # Store the yarn cache globally for all lock files with this same
+          # checksum. This will speed up the setup job for all PRs where the
+          # lockfile is the same.
+          name: Save yarn cache for future installs
+          key: v2-node-{{ arch }}-{{ checksum "yarn.lock" }}-yarn
+          paths:
+            - ~/.cache/yarn
+      - save_cache:
+          # Store node_modules for all jobs in this workflow so that they don't
+          # need to each run a yarn install for each job. This will speed up
+          # all jobs run on this branch with the same lockfile.
+          name: Save node_modules cache
+          # This cache key is per branch, a yarn install in setup is required.
+          key: v2-node-{{ arch }}-{{ .Branch }}-{{ checksum "yarn.lock" }}-{{ checksum "workspace_info.txt" }}-node-modules
+          paths:
+            - node_modules
+
+  yarn_lint:
+    docker: *docker
+    environment: *environment
+
+    steps:
+      - checkout
+      - run: yarn workspaces info | head -n -1 > workspace_info.txt
+      - *restore_node_modules
+      - run: node ./scripts/prettier.js
+      - run: node ./scripts/tasks/eslint
+      - run: ./scripts/circleci/check_license.sh
+
+  yarn_flow:
+    docker: *docker
+    environment: *environment
+    parallelism: 5
+
+    steps:
+      - checkout
+      - run: yarn workspaces info | head -n -1 > workspace_info.txt
+      - *restore_node_modules
+      - run: node ./scripts/tasks/flow.js
+
+  yarn_build:
+    docker: *docker
+    environment: *environment
+    parallelism: 20
+    steps:
+      - checkout
+      - run: yarn workspaces info | head -n -1 > workspace_info.txt
+      - *restore_node_modules
+      - run: yarn build
+
+  yarn_test:
+    docker: *docker
+    environment: *environment
+    parallelism: *TEST_PARALLELISM
+    steps:
+      - checkout
+      - run: yarn workspaces info | head -n -1 > workspace_info.txt
+      - *restore_node_modules
+      - run: yarn test
+
+workflows:
+  version: 1
+  build_and_test:
+    jobs:
+      - setup
+      - yarn_flow:
+          requires:
+            - setup
+      - yarn_lint:
+          requires:
+            - setup
+      - yarn_build:
+          requires:
+            - setup
+      - yarn_test:
+          requires:
+            - setup

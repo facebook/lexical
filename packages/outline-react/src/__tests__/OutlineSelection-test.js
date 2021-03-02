@@ -42,6 +42,7 @@ import {
   applySelectionInputs,
   undo,
   redo,
+  paste,
 } from '../test-utils';
 
 describe('OutlineSelection tests', () => {
@@ -779,6 +780,24 @@ describe('OutlineSelection tests', () => {
           anchorOffset: 6,
           focusPath: [0, 0, 0],
           focusOffset: 6,
+        },
+      },
+      {
+        name: 'Paste text, move selection and delete word forward',
+        inputs: [
+          paste('ABD	EFG'),
+          moveBackward(5),
+          insertText('C'),
+          moveBackward(),
+          deleteWordForward(),
+        ],
+        expectedHTML:
+          '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span>AB\tEFG</span></p></div>',
+        expectedSelection: {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 2,
+          focusPath: [0, 0, 0],
+          focusOffset: 2,
         },
       },
     ]),

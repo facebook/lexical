@@ -96,7 +96,7 @@ export function moveForward(n: ?number) {
 export function moveEnd() {
   return {
     type: 'move_end',
-  }
+  };
 }
 
 export function deleteBackward(n: ?number) {
@@ -156,6 +156,13 @@ export function undo(n: ?number) {
     type: 'undo',
     text: null,
     times: n,
+  };
+}
+
+export function paste(text: string) {
+  return {
+    type: 'paste',
+    text: text,
   };
 }
 
@@ -483,6 +490,27 @@ export async function applySelectionInputs(inputs, update, editor) {
                 shiftKey: true,
                 key: 'z',
               }),
+            );
+            break;
+          }
+          case 'paste': {
+            editorElement.dispatchEvent(
+              Object.assign(
+                new Event('paste', {
+                  bubbles: true,
+                  cancelable: true,
+                }),
+                {
+                  clipboardData: {
+                    getData: (type) => {
+                      if (type === 'text/plain') {
+                        return input.text;
+                      }
+                      return '';
+                    },
+                  },
+                },
+              ),
             );
             break;
           }

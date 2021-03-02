@@ -98,8 +98,6 @@ jobs:
       - run: yarn workspaces info | head -n -1 > workspace_info.txt
       - *restore_node_modules
       - run: yarn build
-      - persist_to_workspace:
-          root: build
 
   yarn_test:
     docker: *docker

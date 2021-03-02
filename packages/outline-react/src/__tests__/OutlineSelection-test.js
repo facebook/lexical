@@ -42,7 +42,7 @@ import {
   applySelectionInputs,
   undo,
   redo,
-  paste,
+  pastePlain,
 } from '../test-utils';
 
 describe('OutlineSelection tests', () => {
@@ -785,7 +785,7 @@ describe('OutlineSelection tests', () => {
       {
         name: 'Paste text, move selection and delete word forward',
         inputs: [
-          paste('ABD	EFG'),
+          pastePlain('ABD	EFG'),
           moveBackward(5),
           insertText('C'),
           moveBackward(),

@@ -1,9 +1,9 @@
 {
   "name": "outline-extensions",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "private": true,
   "main": "dist/index.js",
   "dependencies": {
-    "outline": "0.0.5"
+    "outline": "0.0.6"
   }
 }

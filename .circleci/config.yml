@@ -107,19 +107,15 @@ jobs:
     docker: *docker
     environment: *environment
     parallelism: *TEST_PARALLELISM
-    parameters:
-      args:
-        type: string
     steps:
       - checkout
       - run: yarn workspaces info | head -n -1 > workspace_info.txt
       - *restore_node_modules
-      - run: yarn test <<parameters.args>> --ci
+      - run: yarn test
 
 workflows:
-  version: 2
-  build_and_Test:
-    unless: << pipeline.parameters.prerelease_commit_sha >>
+  version: 1
+  build_and_test:
     jobs:
       - setup
       - yarn_flow:

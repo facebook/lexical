@@ -1,3 +1,3 @@
 # `outline-react`
 
-This package provides a set of extensions and utilities for Outline that allow for rich-text editing in React applications.
+This package provides a set of helpers and utilities for Outline that allow for text editing in React applications.

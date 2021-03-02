@@ -34,7 +34,7 @@ function runESLintOnFilesWithOptions(filePatterns, onlyChanged, options) {
 
   // When using `ignorePattern`, eslint will show `File ignored...` warnings for any ignores.
   // We don't care because we *expect* some passed files will be ignores if `ignorePattern` is used.
-  const messages = report.results.filter(item => {
+  const messages = report.results.filter((item) => {
     if (!onlyChanged) {
       // Don't suppress the message on a full run.
       // We only expect it to happen for "only changed" runs.
@@ -55,7 +55,7 @@ function runESLintOnFilesWithOptions(filePatterns, onlyChanged, options) {
 
 function intersect(files, patterns) {
   let intersection = [];
-  patterns.forEach(pattern => {
+  patterns.forEach((pattern) => {
     intersection = [
       ...intersection,
       ...minimatch.match(files, pattern, {matchBase: true}),
@@ -71,7 +71,7 @@ function runESLint({onlyChanged, ...options}) {
   const {errorCount, warningCount, output} = runESLintOnFilesWithOptions(
     allPaths,
     onlyChanged,
-    options
+    options,
   );
   console.log(output);
   return errorCount === 0 && warningCount === 0;

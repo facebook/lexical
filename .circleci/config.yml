@@ -74,7 +74,7 @@ jobs:
       - checkout
       - run: yarn workspaces info | head -n -1 > workspace_info.txt
       - *restore_node_modules
-      - run: node ./scripts/prettier/index
+      - run: node ./scripts/prettier.js
       - run: node ./scripts/tasks/eslint
       - run: ./scripts/circleci/check_license.sh
 

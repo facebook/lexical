@@ -20,6 +20,8 @@
     "watch": "node scripts/build.js --watch",
     "flow": "node ./scripts/tasks/flow.js",
     "test": "npm run build && jest",
+    "test:e2e": "npm run test -- --selectProjects e2e",
+    "test:unit": "npm run test -- --selectProjects unit",
     "lint": "node ./scripts/tasks/eslint.js",
     "debug-test": "node --inspect-brk node_modules/.bin/jest --runInBand",
     "prettier": "node ./scripts/prettier.js write-changed",

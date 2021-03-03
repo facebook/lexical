@@ -13,6 +13,7 @@ function App(): React$Node {
   const [isRichText, setRichText] = useState(true);
   const [isCharLimit, setCharLimit] = useState(false);
   const [isAutocomplete, setAutocomplete] = useState(false);
+  const [showOptions, setShowOptions] = useState(false);
   const handleOnChange = useCallback((newViewModel) => {
     requestAnimationFrame(() => setViewModel(newViewModel));
   }, []);
@@ -20,25 +21,32 @@ function App(): React$Node {
   return (
     <>
       <header>
-        <h1>Outline Playground</h1>
+        <img src="logo.svg" alt="Outline Logo" />
+        <button
+          id="options-button"
+          onClick={() => setShowOptions(!showOptions)}>
+          <span />
+        </button>
       </header>
-      <div className="switches">
-        <Switch
-          onClick={() => setRichText(!isRichText)}
-          checked={isRichText}
-          text="Rich Text"
-        />
-        <Switch
-          onClick={() => setCharLimit(!isCharLimit)}
-          checked={isCharLimit}
-          text="Char Limit"
-        />
-        <Switch
-          onClick={() => setAutocomplete(!isAutocomplete)}
-          checked={isAutocomplete}
-          text="Autocomplete"
-        />
-      </div>
+      {showOptions && (
+        <div className="switches">
+          <Switch
+            onClick={() => setRichText(!isRichText)}
+            checked={isRichText}
+            text="Rich Text"
+          />
+          <Switch
+            onClick={() => setCharLimit(!isCharLimit)}
+            checked={isCharLimit}
+            text="Char Limit"
+          />
+          <Switch
+            onClick={() => setAutocomplete(!isAutocomplete)}
+            checked={isAutocomplete}
+            text="Autocomplete"
+          />
+        </div>
+      )}
       <div className="editor-shell">
         {isRichText ? (
           <RichTextEditor

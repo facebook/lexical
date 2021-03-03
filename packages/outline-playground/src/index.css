@@ -11,6 +11,14 @@ header {
   width: 580px;
   margin: auto;
   position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+header img {
+  max-width: 220px;
+  margin: 20px 0 0 0;
+  display: block;
 }
 
 header h1 {
@@ -18,11 +26,6 @@ header h1 {
   color: #333;
   display: inline-block;
   margin: 20px 0 0 0;
-}
-
-.switches {
-  margin: 20px auto;
-  width: 580px;
 }
 
 .editor-shell {
@@ -426,68 +429,6 @@ pre {
   left: 35px;
 }
 
-.switch {
-  display: inline-block;
-  color: #444;
-  margin-right: 20px;
-}
-
-#rich-text-switch {
-  right: 0;
-}
-
-#character-count-switch {
-  right: 130px;
-}
-
-.switch label {
-  margin-right: 5px;
-  line-height: 24px;
-  font-size: 14px;
-  display: inline-block;
-  vertical-align: middle;
-}
-
-.switch button {
-  background-color: rgb(206, 208, 212);
-  height: 24px;
-  box-sizing: border-box;
-  border-radius: 12px;
-  border: 0;
-  width: 44px;
-  display: inline-block;
-  vertical-align: middle;
-  position: relative;
-  outline: none;
-  cursor: pointer;
-  transition: background-color 0.1s;
-  border: 2px solid transparent;
-}
-
-.switch button:focus-visible {
-  border-color: blue;
-}
-
-.switch button span {
-  top: 0px;
-  left: 0px;
-  display: block;
-  position: absolute;
-  width: 20px;
-  height: 20px;
-  border-radius: 12px;
-  background-color: white;
-  transition: transform 0.2s;
-}
-
-.switch button[aria-checked="true"] {
-  background-color: rgb(24, 119, 242);
-}
-
-.switch button[aria-checked="true"] span {
-  transform: translateX(20px);
-}
-
 .characters-over {
   color: #999;
   font-size: 12px;
@@ -638,4 +579,115 @@ pre {
 
 .dropdown .item .icon.code {
   background-position: 0 -343px;
+}
+
+#options-button {
+  display: block;
+  width: 40px;
+  height: 40px;
+  font-size: 12px;
+  padding: 10px 10px;
+  border-radius:  20px;
+  border: none;
+  cursor: pointer;
+  outline: none;
+  box-shadow:  0px 1px 10px rgba(0,0,0, 0.3);
+  position: fixed;
+  right: 70px;
+  bottom: 20px;
+  background-color: #444;
+}
+
+#options-button span {
+  width: 20px;
+  height: 20px;
+  display: block;
+  background-image: url(https://static.xx.fbcdn.net/rsrc.php/v3/y9/r/Vn1r5cFcNrX.png);
+  background-position: 0 -679px;
+  filter: invert(1);
+}
+
+.switches {
+  z-index: 6;
+  position: fixed;
+  right: 10px;
+  bottom: 70px;
+  animation: slide-in 0.4s ease;
+}
+
+@keyframes slide-in {
+  0% {
+      opacity: 0;
+      transform: translateX(200px);
+  }
+  100% {
+      opacity: 1;
+      transform: translateX(0);
+  }
+}
+
+.switch {
+  display: block;
+  color: #444;
+  margin: 5px 0;
+  background-color: rgba(238, 238, 238, 0.7);
+  padding: 5px 10px;
+  border-radius: 10px;
+}
+
+#rich-text-switch {
+  right: 0;
+}
+
+#character-count-switch {
+  right: 130px;
+}
+
+.switch label {
+  margin-right: 5px;
+  line-height: 24px;
+  width: 100px;
+  font-size: 14px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.switch button {
+  background-color: rgb(206, 208, 212);
+  height: 24px;
+  box-sizing: border-box;
+  border-radius: 12px;
+  border: 0;
+  width: 44px;
+  display: inline-block;
+  vertical-align: middle;
+  position: relative;
+  outline: none;
+  cursor: pointer;
+  transition: background-color 0.1s;
+  border: 2px solid transparent;
+}
+
+.switch button:focus-visible {
+  border-color: blue;
+}
+
+.switch button span {
+  top: 0px;
+  left: 0px;
+  display: block;
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 12px;
+  background-color: white;
+  transition: transform 0.2s;
+}
+
+.switch button[aria-checked="true"] {
+  background-color: rgb(24, 119, 242);
+}
+
+.switch button[aria-checked="true"] span {
+  transform: translateX(20px);
 }

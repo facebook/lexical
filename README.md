@@ -4,6 +4,6 @@ Outline is a fast, light-weight, extensible library for building rich text edito
 
 ## Running tests
 
-* `yarn test` runs all tests.
+* `yarn test` runs unit tests only.
+* `yarn test:all` runs e2e and unit tests.
 * `yarn test:e2e` runs only e2e tests.
-* `yarn test:unit` runs only unit tests.

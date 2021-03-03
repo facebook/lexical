@@ -18,7 +18,7 @@ aliases:
       keys:
         - v2-node-{{ arch }}-{{ .Branch }}-{{ checksum "yarn.lock" }}-{{ checksum "workspace_info.txt" }}-node-modules
 
-  - &TEST_PARALLELISM 20
+  - &UNIT_TEST_PARALLELISM 20
 
   - &attach_workspace
     at: build
@@ -99,15 +99,24 @@ jobs:
       - *restore_node_modules
       - run: yarn build
 
-  yarn_test:
+  yarn_test_e2e:
     docker: *docker
     environment: *environment
-    parallelism: *TEST_PARALLELISM
     steps:
       - checkout
       - run: yarn workspaces info | head -n -1 > workspace_info.txt
       - *restore_node_modules
-      - run: yarn test
+      - run: yarn test:e2e --passWithNoTests
+
+  yarn_test_unit:
+    docker: *docker
+    environment: *environment
+    parallelism: *UNIT_TEST_PARALLELISM
+    steps:
+      - checkout
+      - run: yarn workspaces info | head -n -1 > workspace_info.txt
+      - *restore_node_modules
+      - run: yarn test:unit
 
 workflows:
   version: 1
@@ -123,6 +132,9 @@ workflows:
       - yarn_build:
           requires:
             - setup
-      - yarn_test:
+      - yarn_test_e2e:
+          requires:
+            - setup
+      - yarn_test_unit:
           requires:
             - setup

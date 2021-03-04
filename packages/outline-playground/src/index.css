@@ -19,6 +19,8 @@ header img {
   max-width: 220px;
   margin: 20px 0 0 0;
   display: block;
+  height: 100%;
+  width: 100%;
 }
 
 header h1 {

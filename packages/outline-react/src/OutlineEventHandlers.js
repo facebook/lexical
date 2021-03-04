@@ -33,6 +33,7 @@ import {
   isParagraph,
   isBold,
   isItalic,
+  isTab,
 } from './OutlineKeyHelpers';
 import {
   deleteBackward,
@@ -335,6 +336,23 @@ export function onKeyDownForRichText(
       formatText(selection, 'italic');
     }
     handleCustomKeyInput(event, selection, editor);
+    // Handle code blocks
+    if (isTab(event)) {
+      const anchorNode = selection.getAnchorNode();
+      const parentBlock = anchorNode.getParentBlockOrThrow();
+      if (parentBlock.canInsertTab()) {
+        if (event.shiftKey) {
+          const textContent = anchorNode.getTextContent();
+          const character = textContent[selection.anchorOffset - 1];
+          if (character === '\t') {
+            deleteBackward(selection);
+          }
+        } else {
+          insertText(selection, '\t');
+        }
+        event.preventDefault();
+      }
+    }
   });
 }
 

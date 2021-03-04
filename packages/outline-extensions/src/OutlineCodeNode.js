@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {NodeKey, EditorThemeClasses} from 'outline';
+import type {NodeKey, EditorThemeClasses, Selection} from 'outline';
 import type {ParagraphNode} from 'outline-extensions/ParagraphNode';
 
 import {BlockNode} from 'outline';
@@ -35,6 +35,7 @@ export class CodeNode extends BlockNode {
     if (className !== undefined) {
       element.className = className;
     }
+    element.setAttribute('spellcheck', 'false');
     return element;
   }
   updateDOM(prevNode: CodeNode, dom: HTMLElement): boolean {
@@ -55,10 +56,28 @@ export class CodeNode extends BlockNode {
     super.mergeWithPreviousSibling();
   }
 
-  insertNewAfter(): ParagraphNode {
+  insertNewAfter(selection: Selection): null | ParagraphNode {
+    const textContent = this.getTextContent();
+    const textContentLength = textContent.length;
+    const lastTwoCharactrsAreLineBreaks = textContent.slice(-2) === '\n\n';
+    const offset = selection.anchorOffset;
+    if (offset !== textContentLength || !lastTwoCharactrsAreLineBreaks) {
+      return null;
+    }
+    // Look for previous new lines
+    if (lastTwoCharactrsAreLineBreaks) {
+      const lastText = this.getLastTextNode();
+      if (lastText !== null) {
+        lastText.spliceText(textContentLength - 2, 2, '');
+      }
+    }
     const newBlock = createParagraphNode();
     this.insertAfter(newBlock);
     return newBlock;
+  }
+
+  canInsertTab(): true {
+    return true;
   }
 }
 

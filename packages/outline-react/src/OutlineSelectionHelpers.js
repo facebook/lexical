@@ -351,38 +351,41 @@ export function insertParagraph(selection: Selection): void {
     nodesToMove.push(splitNode);
     anchorOffset = 0;
   }
-  const newBlock = currentBlock.insertNewAfter();
-  invariant(newBlock instanceof BlockNode, 'Should never happen');
+  const newBlock = currentBlock.insertNewAfter(selection);
+  if (newBlock === null) {
+    // Handle as a line break insertion
+    insertText(selection, '\n');
+  } else if (newBlock instanceof BlockNode) {
+    const nodesToMoveLength = nodesToMove.length;
+    let firstChild = null;
 
-  const nodesToMoveLength = nodesToMove.length;
-  let firstChild = null;
-
-  for (let i = 0; i < nodesToMoveLength; i++) {
-    const nodeToMove = nodesToMove[i];
-    if (firstChild === null) {
-      newBlock.append(nodeToMove);
-    } else {
-      firstChild.insertBefore(nodeToMove);
+    for (let i = 0; i < nodesToMoveLength; i++) {
+      const nodeToMove = nodesToMove[i];
+      if (firstChild === null) {
+        newBlock.append(nodeToMove);
+      } else {
+        firstChild.insertBefore(nodeToMove);
+      }
+      firstChild = nodeToMove;
     }
-    firstChild = nodeToMove;
+    const nodeToSelect = nodesToMove[nodesToMoveLength - 1];
+    if (nodeToSelect instanceof TextNode) {
+      nodeToSelect.select(anchorOffset, anchorOffset);
+    }
+    const blockFirstChild = currentBlock.getFirstChild();
+    const blockLastChild = currentBlock.getLastChild();
+    if (
+      blockFirstChild === null ||
+      blockLastChild === null ||
+      blockLastChild.isImmutable() ||
+      blockLastChild.isSegmented() ||
+      !(blockLastChild instanceof TextNode)
+    ) {
+      const textNode = createTextNode('');
+      currentBlock.append(textNode);
+    }
+    currentBlock.normalizeTextNodes();
   }
-  const nodeToSelect = nodesToMove[nodesToMoveLength - 1];
-  if (nodeToSelect instanceof TextNode) {
-    nodeToSelect.select(anchorOffset, anchorOffset);
-  }
-  const blockFirstChild = currentBlock.getFirstChild();
-  const blockLastChild = currentBlock.getLastChild();
-  if (
-    blockFirstChild === null ||
-    blockLastChild === null ||
-    blockLastChild.isImmutable() ||
-    blockLastChild.isSegmented() ||
-    !(blockLastChild instanceof TextNode)
-  ) {
-    const textNode = createTextNode('');
-    currentBlock.append(textNode);
-  }
-  currentBlock.normalizeTextNodes();
 }
 
 export function deleteLineBackward(selection: Selection): void {

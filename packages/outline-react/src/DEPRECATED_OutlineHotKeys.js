@@ -11,7 +11,7 @@
 // https://github.com/ianstormtaylor/slate/blob/master/packages/slate-react/src/utils/hotkeys.ts
 // https://github.com/ianstormtaylor/is-hotkey/blob/master/src/index.js
 
-import {IS_APPLE, IS_MAC} from 'outline-react/OutlineEnv';
+import {IS_APPLE, IS_MAC} from './OutlineEnv';
 
 const modifiers: {[key: string]: string} = {
   alt: 'altKey',

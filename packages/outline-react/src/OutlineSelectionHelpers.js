@@ -10,6 +10,7 @@
 import type {NodeKey, OutlineNode, Selection, TextFormatType} from 'outline';
 
 import {BlockNode, RootNode, TextNode, createTextNode} from 'outline';
+import {CAN_USE_INTL_SEGMENTER} from './OutlineEnv';
 
 const WHITESPACE_REGEX = /\s/g;
 
@@ -45,11 +46,11 @@ function getOffsetAfterNextGrapheme(offset, textContent): number {
   if (textContent === '' || offset === textContent.length) {
     return offset;
   }
-  try {
+  if (CAN_USE_INTL_SEGMENTER) {
     const segments = getGraphemeIterator().segment(textContent.slice(offset));
     const firstSegment = segments.containing(0);
     return offset + firstSegment.segment.length;
-  } catch {
+  } else {
     // TODO: Implement polyfill for `Intl.Segmenter`.
     return offset + 1;
   }
@@ -65,14 +66,14 @@ function getOffsetBeforePreviousGrapheme(offset, textContent): number {
   if (textContent === '' || offset === 0) {
     return offset;
   }
-  try {
+  if (CAN_USE_INTL_SEGMENTER) {
     const segments = getGraphemeIterator().segment(
       textContent.slice(0, offset),
     );
     const allSegments = Array.from(segments);
     const lastSegment = allSegments[allSegments.length - 1];
     return offset - lastSegment.segment.length;
-  } catch {
+  } else {
     // TODO: Implement polyfill for `Intl.Segmenter`.
     return offset - 1;
   }
@@ -540,6 +541,9 @@ export function deleteWordBackward(selection: Selection): void {
         const textContent = node.getTextContent();
         const endIndex =
           node === anchorNode ? anchorOffset : textContent.length;
+        if (endIndex === 0 && node === anchorNode) {
+          return;
+        }
         let foundNonWhitespace = false;
 
         for (let s = endIndex - 1; s >= 0; s--) {

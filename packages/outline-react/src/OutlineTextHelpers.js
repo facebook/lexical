@@ -10,6 +10,7 @@
 import type {RootNode, OutlineNode} from 'outline';
 
 import {TextNode, BlockNode} from 'outline';
+import {CAN_USE_INTL_SEGMENTER} from './OutlineEnv';
 
 let _graphemeIterator = null;
 // $FlowFixMe: Missing a Flow type for `Intl.Segmenter`.
@@ -87,10 +88,10 @@ export function announceString(s: string): void {
 }
 
 function hasAtLeastTwoVisibleChars(s: string): boolean {
-  try {
+  if (CAN_USE_INTL_SEGMENTER) {
     const iterator = getGraphemeIterator().segment(s);
     return iterator.next() != null && iterator.next() != null;
-  } catch {
+  } else {
     // TODO: Implement polyfill for `Intl.Segmenter`.
     return [...s].length > 1;
   }

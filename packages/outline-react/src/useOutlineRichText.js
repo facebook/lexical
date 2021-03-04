@@ -13,7 +13,7 @@ import type {InputEvents} from 'outline-react/useOutlineEditorEvents';
 
 import {useEffect, useMemo} from 'react';
 import {createTextNode} from 'outline';
-import useOutlineEditorEvents from 'outline-react/useOutlineEditorEvents';
+import useOutlineEditorEvents from './useOutlineEditorEvents';
 import {HeadingNode} from 'outline-extensions/HeadingNode';
 import {ListNode} from 'outline-extensions/ListNode';
 import {QuoteNode} from 'outline-extensions/QuoteNode';
@@ -21,10 +21,10 @@ import {CodeNode} from 'outline-extensions/CodeNode';
 import {ParagraphNode} from 'outline-extensions/ParagraphNode';
 import {ListItemNode} from 'outline-extensions/ListItemNode';
 import {createParagraphNode} from 'outline-extensions/ParagraphNode';
-import {CAN_USE_BEFORE_INPUT} from 'outline-react/OutlineEnv';
+import {CAN_USE_BEFORE_INPUT} from './OutlineEnv';
 import {
   onSelectionChange,
-  onKeyDown,
+  onKeyDownForRichText,
   onKeyUp,
   onPointerDown,
   onPointerUp,
@@ -32,12 +32,12 @@ import {
   onCompositionEnd,
   onCut,
   onCopy,
-  onNativeBeforeInput,
-  onPastePolyfill,
+  onNativeBeforeInputForRichText,
+  onPastePolyfillForRichText,
   onDropPolyfill,
   onDragStartPolyfill,
   onPolyfilledBeforeInput,
-} from 'outline-react/OutlineEventHandlers';
+} from './OutlineEventHandlers';
 
 function initEditor(editor: OutlineEditor): void {
   editor.update((view) => {
@@ -55,7 +55,7 @@ const emptyObject: {} = {};
 
 const events: InputEvents = [
   ['selectionchange', onSelectionChange],
-  ['keydown', onKeyDown],
+  ['keydown', onKeyDownForRichText],
   ['keyup', onKeyUp],
   ['pointerdown', onPointerDown],
   ['pointerup', onPointerUp],
@@ -67,10 +67,10 @@ const events: InputEvents = [
 ];
 
 if (CAN_USE_BEFORE_INPUT) {
-  events.push(['beforeinput', onNativeBeforeInput]);
+  events.push(['beforeinput', onNativeBeforeInputForRichText]);
 } else {
   events.push(
-    ['paste', onPastePolyfill],
+    ['paste', onPastePolyfillForRichText],
     ['drop', onDropPolyfill],
     ['dragstart', onDragStartPolyfill],
   );

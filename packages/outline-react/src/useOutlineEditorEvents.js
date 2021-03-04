@@ -14,55 +14,14 @@ import type {
 } from 'outline-react/OutlineEventHandlers';
 
 import {useEffect} from 'react';
-import {CAN_USE_BEFORE_INPUT} from 'outline-react/OutlineEnv';
-import {
-  onSelectionChange,
-  onKeyDown,
-  onKeyUp,
-  onPointerDown,
-  onPointerUp,
-  onCompositionStart,
-  onCompositionEnd,
-  onCut,
-  onCopy,
-  onNativeBeforeInput,
-  onPastePolyfill,
-  onDropPolyfill,
-  onDragStartPolyfill,
-  onPolyfilledBeforeInput,
-} from 'outline-react/OutlineEventHandlers';
 
 export type InputEvents = Array<[string, EventHandler]>;
 
-const emptyObject: {} = {};
-
-const events: InputEvents = [
-  ['selectionchange', onSelectionChange],
-  ['keydown', onKeyDown],
-  ['keyup', onKeyUp],
-  ['pointerdown', onPointerDown],
-  ['pointerup', onPointerUp],
-  ['pointercancel', onPointerUp],
-  ['compositionstart', onCompositionStart],
-  ['compositionend', onCompositionEnd],
-  ['cut', onCut],
-  ['copy', onCopy],
-];
-
-if (CAN_USE_BEFORE_INPUT) {
-  events.push(['beforeinput', onNativeBeforeInput]);
-} else {
-  events.push(
-    ['paste', onPastePolyfill],
-    ['drop', onDropPolyfill],
-    ['dragstart', onDragStartPolyfill],
-  );
-}
-
 export default function useOutlineEditorEvents(
+  events: InputEvents,
   editor: OutlineEditor,
   state: EventHandlerState,
-): {} | {onBeforeInput: (event: SyntheticInputEvent<>) => void} {
+): void {
   useEffect(() => {
     if (editor !== null) {
       const target: null | HTMLElement = editor.getEditorElement();
@@ -92,13 +51,5 @@ export default function useOutlineEditorEvents(
         };
       }
     }
-  }, [editor, state]);
-
-  return CAN_USE_BEFORE_INPUT
-    ? emptyObject
-    : {
-        onBeforeInput: (event: SyntheticInputEvent<EventTarget>) => {
-          onPolyfilledBeforeInput(event, editor, state);
-        },
-      };
+  }, [editor, events, state]);
 }

@@ -496,9 +496,8 @@ export function onNativeBeforeInput(
     if (inputType !== 'deleteSoftLineBackward' || !IS_CHROME) {
       // $FlowFixMe: Flow doesn't know of getTargetRanges
       const targetRange = event.getTargetRanges()[0];
-      const editorElement = editor.getEditorElement();
 
-      if (targetRange != null && editorElement !== null) {
+      if (targetRange != null) {
         selection.applyDOMRange(targetRange);
       }
     }

@@ -13,9 +13,9 @@
   "scripts": {
     "start": "npm run build && npm start --prefix packages/outline-playground",
     "dev": "concurrently \"npm:watch\" \"npm start --prefix packages/outline-playground\"",
-    "build": "node scripts/build.js",
-    "build-prod": "node scripts/build.js --prod",
-    "build-www": "node scripts/build.js --prod --www",
+    "build": "node scripts/build.js --clean",
+    "build-prod": "node scripts/build.js --prod --clean",
+    "build-www": "node scripts/build.js --www --clean && node scripts/build.js --prod --www",
     "clean": "node scripts/build.js --clean",
     "watch": "node scripts/build.js --watch",
     "flow": "node ./scripts/tasks/flow.js",

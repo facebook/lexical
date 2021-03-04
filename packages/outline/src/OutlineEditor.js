@@ -24,7 +24,7 @@ import {
   parseViewModel,
 } from './OutlineView';
 import {createSelection} from './OutlineSelection';
-import {generateRandomKey, emptyFunction} from './OutlineUtils';
+import {generateRandomKey, emptyFunction, invariant} from './OutlineUtils';
 import {getWritableNode} from './OutlineNode';
 import {createRootNode as createRoot} from './OutlineRootNode';
 import {reconcilePlaceholder} from './OutlineReconciler';
@@ -307,7 +307,11 @@ export class OutlineEditor {
   getElementByKey(key: NodeKey): HTMLElement {
     const element = this._keyToDOMMap.get(key);
     if (element === undefined) {
-      throw new Error('getElementByKey failed for key ' + key);
+      if (__DEV__) {
+        invariant(false, 'getElementByKey failed for key ' + key);
+      } else {
+        invariant();
+      }
     }
     return element;
   }

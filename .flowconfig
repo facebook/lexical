@@ -35,14 +35,16 @@ module.name_mapper='^outline-extensions/ImageNode' -> '<PROJECT_ROOT>/packages/o
 module.name_mapper='^outline-extensions/QuoteNode' -> '<PROJECT_ROOT>/packages/outline-extensions/src/OutlineQuoteNode.js'
 module.name_mapper='^outline-extensions/ParagraphNode' -> '<PROJECT_ROOT>/packages/outline-extensions/src/OutlineParagraphNode.js'
 
+munge_underscores=false
+
 suppress_type=$FlowIssue
 suppress_type=$FlowFixMe
 suppress_type=$FixMe
 suppress_type=$FlowExpectedError
 
-
 [libs]
 ./libdefs/
+./scripts/flow/environment.js
 
 [strict]
 nonstrict-import

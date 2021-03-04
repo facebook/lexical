@@ -76,7 +76,14 @@ function splitText(
   splitOffsets: Array<number>,
 ): Array<TextNode> {
   if (node.isImmutable()) {
-    throw new Error('splitText: can only be used on non-immutable text nodes');
+    if (__DEV__) {
+      invariant(
+        false,
+        'splitText: can only be used on non-immutable text nodes',
+      );
+    } else {
+      invariant();
+    }
   }
   const textContent = node.getTextContent();
   const key = node.__key;
@@ -401,7 +408,13 @@ export class TextNode extends OutlineNode {
     if (prevOuterTag === nextOuterTag && prevInnerTag !== nextInnerTag) {
       // $FlowFixMe: should always be an element
       const prevInnerDOM: HTMLElement = dom.firstChild;
-      invariant(prevInnerDOM != null, 'Should never happen');
+      if (prevInnerDOM == null) {
+        if (__DEV__) {
+          invariant(false, 'Should never happen');
+        } else {
+          invariant();
+        }
+      }
       const nextInnerDOM = document.createElement(nextInnerTag);
       createTextInnerDOM(
         nextInnerDOM,
@@ -419,7 +432,13 @@ export class TextNode extends OutlineNode {
       if (prevOuterTag !== null) {
         // $FlowFixMe: should always be an element
         innerDOM = dom.firstChild;
-        invariant(innerDOM != null, 'Should never happen');
+        if (innerDOM == null) {
+          if (__DEV__) {
+            invariant(false, 'Should never happen');
+          } else {
+            invariant();
+          }
+        }
       }
     }
     setTextContent(prevText, nextText, innerDOM, this);
@@ -450,7 +469,14 @@ export class TextNode extends OutlineNode {
   setURL(url: string | null): TextNode {
     shouldErrorOnReadOnly();
     if (this.isImmutable()) {
-      throw new Error('setURL: can only be used on non-immutable text nodes');
+      if (__DEV__) {
+        invariant(
+          false,
+          'setURL: can only be used on non-immutable text nodes',
+        );
+      } else {
+        invariant();
+      }
     }
     const writableSelf = getWritableNode(this);
     writableSelf.__url = url;
@@ -459,9 +485,14 @@ export class TextNode extends OutlineNode {
   setTextContent(text: string): TextNode {
     shouldErrorOnReadOnly();
     if (this.isImmutable()) {
-      throw new Error(
-        'setTextContent: can only be used on non-immutable text nodes',
-      );
+      if (__DEV__) {
+        invariant(
+          false,
+          'setTextContent: can only be used on non-immutable text nodes',
+        );
+      } else {
+        invariant();
+      }
     }
     const writableSelf = getWritableNode(this);
     writableSelf.__text = text;
@@ -481,7 +512,11 @@ export class TextNode extends OutlineNode {
       nextSibling.isImmutable() ||
       nextSibling.isSegmented()
     ) {
-      throw new Error('This needs to be fixed');
+      if (__DEV__) {
+        invariant(false, 'TODO: This needs to be fixed');
+      } else {
+        invariant();
+      }
     }
     return nextSibling.select(anchorOffset, focusOffset);
   }
@@ -493,7 +528,14 @@ export class TextNode extends OutlineNode {
     const text = this.getTextContent();
     const key = this.__key;
     if (key === null) {
-      throw new Error('TODO: validate nodes have keys in a more generic way');
+      if (__DEV__) {
+        invariant(
+          false,
+          'TODO: validate nodes have keys in a more generic way',
+        );
+      } else {
+        invariant();
+      }
     }
     if (typeof text === 'string') {
       const lastOffset = text.length;
@@ -522,9 +564,14 @@ export class TextNode extends OutlineNode {
   ): TextNode {
     shouldErrorOnReadOnly();
     if (this.isImmutable()) {
-      throw new Error(
-        'spliceText: can only be used on non-immutable text nodes',
-      );
+      if (__DEV__) {
+        invariant(
+          false,
+          'spliceText: can only be used on non-immutable text nodes',
+        );
+      } else {
+        invariant();
+      }
     }
     const isHashtag = this.isHashtag();
     let skipSelectionRestoration = false;
@@ -567,10 +614,23 @@ export class TextNode extends OutlineNode {
     if (restoreSelection && !skipSelectionRestoration) {
       const key = writableSelf.__key;
       if (key === null) {
-        throw new Error('TODO: validate nodes have keys in a more generic way');
+        if (__DEV__) {
+          invariant(
+            false,
+            'TODO: validate nodes have keys in a more generic way',
+          );
+        } else {
+          invariant();
+        }
       }
       const selection = getSelection();
-      invariant(selection !== null, 'spliceText: selection not found');
+      if (selection === null) {
+        if (__DEV__) {
+          invariant(false, 'spliceText: selection not found');
+        } else {
+          invariant();
+        }
+      }
       const newOffset = offset + handledTextLength;
       selection.setRange(key, newOffset, key, newOffset);
     }

@@ -254,7 +254,11 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
   if (nextNode.updateDOM(prevNode, dom, activeEditorThemeClasses)) {
     const replacementDOM = createNode(key, null, null);
     if (parentDOM === null) {
-      throw new Error('Should never happen');
+      if (__DEV__) {
+        invariant(false, 'should never happen');
+      } else {
+        invariant();
+      }
     }
     parentDOM.replaceChild(replacementDOM, dom);
     destroyNode(key, null);
@@ -311,7 +315,11 @@ function findIndexInPrevChildren(
       return i;
     }
   }
-  throw new Error('Should never happen');
+  if (__DEV__) {
+    invariant(false, 'Should never happen');
+  } else {
+    invariant();
+  }
 }
 
 // Disclaimer: this logic was adapted from Vue (MIT):
@@ -404,7 +412,11 @@ function reconcileNodeChildren(
             activeEditor.getElementByKey(prevStartKey),
           );
         } else {
-          throw new Error('TODO: Should this ever happen?');
+          if (__DEV__) {
+            invariant(false, 'Should never happen');
+          } else {
+            invariant();
+          }
         }
       }
       nextStartKey = nextChildren[++nextStartIndex];
@@ -554,7 +566,14 @@ function reconcileSelection(selection: Selection, editor: OutlineEditor): void {
   const anchorKey = selection.anchorKey;
   const focusKey = selection.focusKey;
   if (anchorKey === null || focusKey === null) {
-    throw new Error('reconcileSelection: anchorKey or focusKey cannot be null');
+    if (__DEV__) {
+      invariant(
+        false,
+        'reconcileSelection: anchorKey or focusKey cannot be null',
+      );
+    } else {
+      invariant();
+    }
   }
   const domSelection = window.getSelection();
   const anchorNode = getNodeByKey(anchorKey);
@@ -593,7 +612,11 @@ function getDOMTextNodeFromElement(element: HTMLElement): Text {
     }
     node = node.firstChild;
   }
-  invariant(false, 'Should never happen');
+  if (__DEV__) {
+    invariant(false, 'Should never happen');
+  } else {
+    invariant();
+  }
 }
 
 export function storeDOMWithKey(
@@ -602,7 +625,11 @@ export function storeDOMWithKey(
   editor: OutlineEditor,
 ): void {
   if (key === null) {
-    throw new Error('storeDOMWithNodeKey failed');
+    if (__DEV__) {
+      invariant(false, 'storeDOMWithNodeKey failed');
+    } else {
+      invariant();
+    }
   }
   const keyToDOMMap = editor._keyToDOMMap;
   // $FlowFixMe: internal field

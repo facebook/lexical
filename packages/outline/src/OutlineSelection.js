@@ -47,19 +47,25 @@ export class Selection {
   getAnchorNode(): TextNode {
     const anchorKey = this.anchorKey;
     const anchorNode = getNodeByKey(anchorKey);
-    invariant(
-      anchorNode instanceof TextNode,
-      'getAnchorNode: anchorNode not a text node',
-    );
+    if (!(anchorNode instanceof TextNode)) {
+      if (__DEV__) {
+        invariant(false, 'getAnchorNode: anchorNode not a text node');
+      } else {
+        invariant();
+      }
+    }
     return anchorNode;
   }
   getFocusNode(): TextNode {
     const focusKey = this.focusKey;
     const focusNode = getNodeByKey(focusKey);
-    invariant(
-      focusNode instanceof TextNode,
-      'getFocusNode: focusNode not a text node',
-    );
+    if (!(focusNode instanceof TextNode)) {
+      if (__DEV__) {
+        invariant(false, 'getFocusNode: focusNode not a text node');
+      } else {
+        invariant();
+      }
+    }
     return focusNode;
   }
   getNodes(): Array<OutlineNode> {
@@ -184,10 +190,13 @@ function resolveSelectionNodes(
     anchorNode = focusNode;
     resolvedAnchorOffset = resolvedFocusOffset;
   }
-  invariant(
-    anchorNode instanceof TextNode && focusNode instanceof TextNode,
-    'Should never happen',
-  );
+  if (!(anchorNode instanceof TextNode && focusNode instanceof TextNode)) {
+    if (__DEV__) {
+      invariant(false, 'Should never happen');
+    } else {
+      invariant();
+    }
+  }
   // Because we use a special character for whitespace,
   // we need to adjust offsets to 0 when the text is
   // really empty.

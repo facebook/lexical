@@ -155,9 +155,14 @@ export class OutlineNode {
     // a clone method though. We define clone here so we can call it on any Node,
     // and we throw this error by default since the subclass should provide
     // their own implementation.
-    throw new Error(
-      `Node type ${this.constructor.name} does not implement .clone().`,
-    );
+    if (__DEV__) {
+      invariant(
+        false,
+        `Node type ${this.constructor.name} does not implement .clone().`,
+      );
+    } else {
+      invariant();
+    }
   }
 
   constructor(key?: string) {
@@ -214,7 +219,11 @@ export class OutlineNode {
   getParentOrThrow(): BlockNode {
     const parent = this.getLatest().__parent;
     if (parent === null) {
-      throw new Error(`Expected node ${this.__key} to have a parent.`);
+      if (__DEV__) {
+        invariant(false, `Expected node ${this.__key} to have a parent.`);
+      } else {
+        invariant();
+      }
     }
     return getNodeByKeyOrThrow<BlockNode>(parent);
   }
@@ -226,7 +235,11 @@ export class OutlineNode {
       }
       node = node.getParent();
     }
-    throw new Error(`Expected node ${this.__key} to have a parent.`);
+    if (__DEV__) {
+      invariant(false, `Expected node ${this.__key} to have a parent.`);
+    } else {
+      invariant();
+    }
   }
   getTopParentBlockOrThrow(): BlockNode {
     let node = this;
@@ -237,7 +250,11 @@ export class OutlineNode {
       }
       node = parent;
     }
-    throw new Error(`Expected node ${this.__key} to have a top parent.`);
+    if (__DEV__) {
+      invariant(false, `Expected node ${this.__key} to have a top parent.`);
+    } else {
+      invariant();
+    }
   }
   getParents(): Array<BlockNode> {
     const parents = [];
@@ -362,7 +379,11 @@ export class OutlineNode {
         let ancestor = parent;
         do {
           if (ancestor === null) {
-            throw new Error('This should never happen');
+            if (__DEV__) {
+              invariant(false, 'This should never happen');
+            } else {
+              invariant();
+            }
           }
           parentSibling = ancestor.getNextSibling();
           ancestor = ancestor.getParent();
@@ -392,7 +413,11 @@ export class OutlineNode {
         let ancestor = parent;
         do {
           if (ancestor === null) {
-            throw new Error('This should never happen');
+            if (__DEV__) {
+              invariant(false, `Should never happen`);
+            } else {
+              invariant();
+            }
           }
           parentSibling = ancestor.getPreviousSibling();
           ancestor = ancestor.getParent();
@@ -414,7 +439,13 @@ export class OutlineNode {
   }
   getLatest<N>(): N {
     const latest = getNodeByKey(this.__key);
-    invariant(latest !== null, 'getLatest: node not found');
+    if (latest === null) {
+      if (__DEV__) {
+        invariant(false, 'getLatest: node not found');
+      } else {
+        invariant();
+      }
+    }
     return latest;
   }
   getTextContent(includeInert?: boolean): string {
@@ -424,7 +455,11 @@ export class OutlineNode {
   // View
 
   createDOM(editorThemeClasses: EditorThemeClasses): HTMLElement {
-    throw new Error('Should never occur');
+    if (__DEV__) {
+      invariant(false, 'This should never happen');
+    } else {
+      invariant();
+    }
   }
   updateDOM(
     // $FlowFixMe: TODO
@@ -432,7 +467,11 @@ export class OutlineNode {
     dom: HTMLElement,
     editorThemeClasses: EditorThemeClasses,
   ): boolean {
-    throw new Error('Should never occur');
+    if (__DEV__) {
+      invariant(false, 'This should never happen');
+    } else {
+      invariant();
+    }
   }
 
   // Setters and mutators
@@ -440,7 +479,11 @@ export class OutlineNode {
   setFlags(flags: number): this {
     shouldErrorOnReadOnly();
     if (this.isImmutable()) {
-      throw new Error('setFlags: can only be used on non-immutable nodes');
+      if (__DEV__) {
+        invariant(false, 'setFlags: can only be used on non-immutable nodes');
+      } else {
+        invariant();
+      }
     }
     const self = getWritableNode(this);
     self.__flags = flags;
@@ -557,12 +600,13 @@ export function getWritableNode<N: OutlineNode>(node: N): N {
     return latestNode;
   }
   const mutableNode = latestNode.clone();
-  // TODO this should be a DEV only check
-  if (!mutableNode.constructor.prototype.hasOwnProperty('clone')) {
-    throw new Error(
-      latestNode.constructor.name +
-        ': "clone" method was either missing or incorrectly implemented.',
-    );
+  if (__DEV__) {
+    if (!mutableNode.constructor.prototype.hasOwnProperty('clone')) {
+      throw new Error(
+        latestNode.constructor.name +
+          ': "clone" method was either missing or incorrectly implemented.',
+      );
+    }
   }
   mutableNode.__key = key;
   dirtyNodes.add(key);
@@ -601,9 +645,14 @@ function getNodeByKeyOrThrow<N: OutlineNode>(key: NodeKey): N {
   const viewModel = getActiveViewModel();
   const node = viewModel._nodeMap[key];
   if (node === undefined) {
-    throw new Error(
-      `Expected node with key ${key} to exist but it's not in the nodeMap.`,
-    );
+    if (__DEV__) {
+      invariant(
+        false,
+        `Expected node with key ${key} to exist but it's not in the nodeMap.`,
+      );
+    } else {
+      invariant();
+    }
   }
   return (node: $FlowFixMe);
 }
@@ -617,10 +666,13 @@ export function createNodeFromParse(
 ): OutlineNode {
   const type = parsedNode.__type;
   const NodeType = editor._registeredNodeTypes.get(type);
-  invariant(
-    NodeType !== undefined,
-    'createNodeFromParse: type "' + type + '" + not found',
-  );
+  if (NodeType === undefined) {
+    if (__DEV__) {
+      invariant(false, 'createNodeFromParse: type "' + type + '" + not found');
+    } else {
+      invariant();
+    }
+  }
   const node = new NodeType();
   const key = node.__key;
   if (node instanceof RootNode) {

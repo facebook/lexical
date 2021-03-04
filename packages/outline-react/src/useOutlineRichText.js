@@ -9,6 +9,7 @@
 
 import type {OutlineEditor} from 'outline';
 import type {EventHandlerState} from 'outline-react/OutlineEventHandlers';
+import type {InputEvents} from 'outline-react/useOutlineEditorEvents';
 
 import {useEffect, useMemo} from 'react';
 import {createTextNode} from 'outline';
@@ -20,6 +21,23 @@ import {CodeNode} from 'outline-extensions/CodeNode';
 import {ParagraphNode} from 'outline-extensions/ParagraphNode';
 import {ListItemNode} from 'outline-extensions/ListItemNode';
 import {createParagraphNode} from 'outline-extensions/ParagraphNode';
+import {CAN_USE_BEFORE_INPUT} from 'outline-react/OutlineEnv';
+import {
+  onSelectionChange,
+  onKeyDown,
+  onKeyUp,
+  onPointerDown,
+  onPointerUp,
+  onCompositionStart,
+  onCompositionEnd,
+  onCut,
+  onCopy,
+  onNativeBeforeInput,
+  onPastePolyfill,
+  onDropPolyfill,
+  onDragStartPolyfill,
+  onPolyfilledBeforeInput,
+} from 'outline-react/OutlineEventHandlers';
 
 function initEditor(editor: OutlineEditor): void {
   editor.update((view) => {
@@ -31,6 +49,31 @@ function initEditor(editor: OutlineEditor): void {
       text.select();
     }
   });
+}
+
+const emptyObject: {} = {};
+
+const events: InputEvents = [
+  ['selectionchange', onSelectionChange],
+  ['keydown', onKeyDown],
+  ['keyup', onKeyUp],
+  ['pointerdown', onPointerDown],
+  ['pointerup', onPointerUp],
+  ['pointercancel', onPointerUp],
+  ['compositionstart', onCompositionStart],
+  ['compositionend', onCompositionEnd],
+  ['cut', onCut],
+  ['copy', onCopy],
+];
+
+if (CAN_USE_BEFORE_INPUT) {
+  events.push(['beforeinput', onNativeBeforeInput]);
+} else {
+  events.push(
+    ['paste', onPastePolyfill],
+    ['drop', onDropPolyfill],
+    ['dragstart', onDragStartPolyfill],
+  );
 }
 
 export default function useOutlineRichText(
@@ -75,5 +118,13 @@ export default function useOutlineRichText(
     }
   }, [editor]);
 
-  return useOutlineEditorEvents(editor, eventHandlerState);
+  useOutlineEditorEvents(events, editor, eventHandlerState);
+
+  return CAN_USE_BEFORE_INPUT
+    ? emptyObject
+    : {
+        onBeforeInput: (event: SyntheticInputEvent<EventTarget>) => {
+          onPolyfilledBeforeInput(event, editor, eventHandlerState);
+        },
+      };
 }

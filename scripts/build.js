@@ -190,7 +190,13 @@ build(
 );
 
 outlineReactModules.forEach((outlineReactModule) => {
-  if (outlineReactModule.includes('DEPRECATED')) {
+  // We don't want to sync these modules
+  if (
+    isWWW &&
+    (outlineReactModule === 'OutlineEnv' ||
+      outlineReactModule === 'OutlineReactUtils' ||
+      outlineReactModule === 'DEPRECATED_OutlineHotKeys')
+  ) {
     return;
   }
   build(

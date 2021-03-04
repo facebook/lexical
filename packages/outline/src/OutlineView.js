@@ -52,29 +52,45 @@ let activeEditor = null;
 let activeReadyOnlyMode = false;
 
 export function shouldErrorOnReadOnly(): void {
-  invariant(!activeReadyOnlyMode, 'Cannot use method in read-only mode.');
+  if (activeReadyOnlyMode) {
+    if (__DEV__) {
+      invariant(false, 'Cannot use method in read-only mode.');
+    } else {
+      invariant();
+    }
+  }
 }
 
 export function getActiveViewModel(): ViewModel {
   if (activeViewModel === null) {
-    throw new Error(
-      'Unable to find an active view model. ' +
-        'View methods or node methods can only be used ' +
-        'synchronously during the callback of ' +
-        'editor.update() or viewModel.read().',
-    );
+    if (__DEV__) {
+      invariant(
+        false,
+        'Unable to find an active view model. ' +
+          'View methods or node methods can only be used ' +
+          'synchronously during the callback of ' +
+          'editor.update() or viewModel.read().',
+      );
+    } else {
+      invariant();
+    }
   }
   return activeViewModel;
 }
 
 export function getActiveEditor(): OutlineEditor {
   if (activeEditor === null) {
-    throw new Error(
-      'Unable to find an active editor. ' +
-        'View methods or node methods can only be used ' +
-        'synchronously during the callback of ' +
-        'editor.update() or viewModel.read().',
-    );
+    if (__DEV__) {
+      invariant(
+        false,
+        'Unable to find an active editor. ' +
+          'View methods or node methods can only be used ' +
+          'synchronously during the callback of ' +
+          'editor.update() or viewModel.read().',
+      );
+    } else {
+      invariant();
+    }
   }
   return activeEditor;
 }

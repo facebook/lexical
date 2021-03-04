@@ -13,15 +13,15 @@ import type {InputEvents} from 'outline-react/useOutlineEditorEvents';
 
 import {useEffect, useMemo} from 'react';
 import {createTextNode} from 'outline';
-import useOutlineEditorEvents from 'outline-react/useOutlineEditorEvents';
+import useOutlineEditorEvents from './useOutlineEditorEvents';
 import {
   createParagraphNode,
   ParagraphNode,
 } from 'outline-extensions/ParagraphNode';
-import {CAN_USE_BEFORE_INPUT} from 'outline-react/OutlineEnv';
+import {CAN_USE_BEFORE_INPUT} from './OutlineEnv';
 import {
   onSelectionChange,
-  onKeyDown,
+  onKeyDownForPlainText,
   onKeyUp,
   onPointerDown,
   onPointerUp,
@@ -29,12 +29,12 @@ import {
   onCompositionEnd,
   onCut,
   onCopy,
-  onNativeBeforeInput,
-  onPastePolyfill,
+  onNativeBeforeInputForPlainText,
+  onPastePolyfillForPlainText,
   onDropPolyfill,
   onDragStartPolyfill,
   onPolyfilledBeforeInput,
-} from 'outline-react/OutlineEventHandlers';
+} from './OutlineEventHandlers';
 
 function initEditor(editor: OutlineEditor): void {
   editor.update((view) => {
@@ -52,7 +52,7 @@ const emptyObject: {} = {};
 
 const events: InputEvents = [
   ['selectionchange', onSelectionChange],
-  ['keydown', onKeyDown],
+  ['keydown', onKeyDownForPlainText],
   ['keyup', onKeyUp],
   ['pointerdown', onPointerDown],
   ['pointerup', onPointerUp],
@@ -64,10 +64,10 @@ const events: InputEvents = [
 ];
 
 if (CAN_USE_BEFORE_INPUT) {
-  events.push(['beforeinput', onNativeBeforeInput]);
+  events.push(['beforeinput', onNativeBeforeInputForPlainText]);
 } else {
   events.push(
-    ['paste', onPastePolyfill],
+    ['paste', onPastePolyfillForPlainText],
     ['drop', onDropPolyfill],
     ['dragstart', onDragStartPolyfill],
   );
@@ -80,7 +80,6 @@ export default function useOutlinePlainText(
   const eventHandlerState: EventHandlerState = useMemo(
     () => ({
       isReadOnly: false,
-      richText: false,
       compositionSelection: null,
       isHandlingPointer: false,
     }),

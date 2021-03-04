@@ -26,10 +26,13 @@ function combineAdjacentTextNodes(
   restoreSelection,
 ) {
   const selection = getSelection();
-  invariant(
-    selection !== null,
-    'combineAdjacentTextNodes: selection not found',
-  );
+  if (selection === null) {
+    if (__DEV__) {
+      invariant(false, 'combineAdjacentTextNodes: selection not found');
+    } else {
+      invariant();
+    }
+  }
   const anchorOffset = selection.anchorOffset;
   const focusOffset = selection.focusOffset;
   const anchorKey = selection.anchorKey;
@@ -257,10 +260,13 @@ export class BlockNode extends OutlineNode {
       }
       const nodesToMove = this.getChildren();
       lastChild = prevBlock.getLastChild();
-      invariant(
-        lastChild !== null,
-        'mergeWithPreviousSibling: lastChild not found',
-      );
+      if (lastChild === null) {
+        if (__DEV__) {
+          invariant(false, 'mergeWithPreviousSibling: lastChild not found');
+        } else {
+          invariant();
+        }
+      }
       for (let i = 0; i < nodesToMove.length; i++) {
         const nodeToMove = nodesToMove[i];
         lastChild.insertAfter(nodeToMove);
@@ -282,13 +288,22 @@ export class BlockNode extends OutlineNode {
       if (firstChild instanceof BlockNode) {
         firstChild = firstChild.getFirstChild();
       }
-      invariant(
-        firstChild !== null,
-        'mergeWithNextSibling: firstChild not found',
-      );
+      if (firstChild === null) {
+        if (__DEV__) {
+          invariant(false, 'mergeWithNextSibling: firstChild not found');
+        } else {
+          invariant();
+        }
+      }
       const nodesToMove = [firstChild, ...firstChild.getNextSiblings()];
       let target = this.getLastChild();
-      invariant(target !== null, 'mergeWithNextSibling: no last child');
+      if (target === null) {
+        if (__DEV__) {
+          invariant(false, 'mergeWithNextSibling: no last child');
+        } else {
+          invariant();
+        }
+      }
       for (let i = 0; i < nodesToMove.length; i++) {
         const nodeToMove = nodesToMove[i];
         target.insertAfter(nodeToMove);

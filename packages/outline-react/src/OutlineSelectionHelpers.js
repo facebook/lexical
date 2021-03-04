@@ -11,19 +11,9 @@ import type {NodeKey, OutlineNode, Selection, TextFormatType} from 'outline';
 
 import {BlockNode, RootNode, TextNode, createTextNode} from 'outline';
 import {CAN_USE_INTL_SEGMENTER} from './OutlineEnv';
+import {invariant} from './OutlineReactUtils';
 
 const WHITESPACE_REGEX = /\s/g;
-
-// invariant(condition, message) will refine types based on "condition", and
-// if "condition" is false will throw an error. This function is special-cased
-// in flow itself, so we can't name it anything else.
-export function invariant(cond: boolean, message: string) {
-  if (!cond) {
-    const err = new Error(message);
-    err.name = 'Invariant Violation';
-    throw err;
-  }
-}
 
 let _graphemeIterator = null;
 // $FlowFixMe: Missing a Flow type for `Intl.Segmenter`.
@@ -121,7 +111,13 @@ export function getNodesInRange(
 
   if (anchorNode === focusNode) {
     const firstNode = anchorNode.getLatest().clone();
-    invariant(firstNode instanceof TextNode, 'Should never happen');
+    if (!(firstNode instanceof TextNode)) {
+      if (__DEV__) {
+        invariant(false, 'Should never happen');
+      } else {
+        invariant();
+      }
+    }
     const isBefore = focusOffset > anchorOffset;
     startOffset = isBefore ? anchorOffset : focusOffset;
     endOffset = isBefore ? focusOffset : anchorOffset;
@@ -182,10 +178,22 @@ export function getNodesInRange(
             // We need to remove any children before out last source
             // parent key.
             node = node.getLatest().clone();
-            invariant(node instanceof BlockNode, 'Should not happen');
+            if (!(node instanceof BlockNode)) {
+              if (__DEV__) {
+                invariant(false, 'Should never happen');
+              } else {
+                invariant();
+              }
+            }
             const childrenKeys = node.__children;
             const index = childrenKeys.indexOf(sourceParentKey);
-            invariant(index !== -1, 'Should not happen');
+            if (index === -1) {
+              if (__DEV__) {
+                invariant(false, 'Should never happen');
+              } else {
+                invariant();
+              }
+            }
             childrenKeys.splice(0, index + 1);
             includeTopLevelBlock = true;
           }
@@ -223,10 +231,13 @@ export function formatText(
   let firstNode = selectedNodes[0];
   let lastNode = selectedNodes[lastIndex];
 
-  invariant(
-    firstNode instanceof TextNode && lastNode instanceof TextNode,
-    'formatText: firstNode/lastNode not a text node',
-  );
+  if (!(firstNode instanceof TextNode && lastNode instanceof TextNode)) {
+    if (__DEV__) {
+      invariant(false, 'formatText: firstNode/lastNode not a text node');
+    } else {
+      invariant();
+    }
+  }
   const firstNodeText = firstNode.getTextContent();
   const firstNodeTextLength = firstNodeText.length;
   const currentBlock = firstNode.getParentBlockOrThrow();
@@ -256,7 +267,13 @@ export function formatText(
         beforeNode.insertBefore(textNode);
       }
       textNode.select();
-      invariant(currentBlock !== null, 'formatText: currentBlock not be found');
+      if (currentBlock === null) {
+        if (__DEV__) {
+          invariant(false, 'formatText: currentBlock not be found');
+        } else {
+          invariant();
+        }
+      }
       currentBlock.normalizeTextNodes(true);
     }
     return;
@@ -537,7 +554,13 @@ export function deleteWordBackward(selection: Selection): void {
       const prevSibling = node.getPreviousSibling();
       if (node.isImmutable() || node.isSegmented()) {
         node.remove();
-        invariant(prevSibling instanceof TextNode, 'Should never happen');
+        if (!(prevSibling instanceof TextNode)) {
+          if (__DEV__) {
+            invariant(false, 'Should never happen');
+          } else {
+            invariant();
+          }
+        }
         prevSibling.select();
         return;
       } else if (node instanceof TextNode) {
@@ -617,7 +640,13 @@ export function deleteWordForward(selection: Selection): void {
 
       if (node.isImmutable() || node.isSegmented()) {
         node.remove();
-        invariant(nextSibling instanceof TextNode, 'Should never happen');
+        if (!(nextSibling instanceof TextNode)) {
+          if (__DEV__) {
+            invariant(false, 'Should never happen');
+          } else {
+            invariant();
+          }
+        }
         nextSibling.select(0, 0);
         return;
       } else if (
@@ -678,7 +707,13 @@ export function deleteBackward(selection: Selection): void {
       if (prevSibling.isImmutable()) {
         if (prevSibling === anchorNode) {
           const nextPrevSibling = prevSibling.getPreviousSibling();
-          invariant(nextPrevSibling instanceof TextNode, 'Should never happen');
+          if (!(nextPrevSibling instanceof TextNode)) {
+            if (__DEV__) {
+              invariant(false, 'Should never happen');
+            } else {
+              invariant();
+            }
+          }
           nextPrevSibling.select();
         }
         prevSibling.remove();
@@ -694,7 +729,11 @@ export function deleteBackward(selection: Selection): void {
         }
       }
     } else {
-      throw new Error('TODO');
+      if (__DEV__) {
+        invariant(false, `TODO`);
+      } else {
+        invariant();
+      }
     }
   } else {
     const textContent = anchorNode.getTextContent();
@@ -743,7 +782,11 @@ export function deleteForward(selection: Selection): void {
         nextSibling.spliceText(0, 1, '', true);
       }
     } else {
-      throw new Error('TODO');
+      if (__DEV__) {
+        invariant(false, 'TODO');
+      } else {
+        invariant();
+      }
     }
   } else {
     const deletionEndOffset = getOffsetAfterNextGrapheme(
@@ -812,7 +855,13 @@ export function insertNodes(
   }
   if (target instanceof BlockNode) {
     const lastChild = target.getLastTextNode();
-    invariant(lastChild instanceof TextNode, 'Should never happen');
+    if (!(lastChild instanceof TextNode)) {
+      if (__DEV__) {
+        invariant(false, 'Should never happen');
+      } else {
+        invariant();
+      }
+    }
     lastChild.select();
     if (siblings.length !== 0) {
       let prevSibling = lastChild;
@@ -835,10 +884,13 @@ export function insertText(selection: Selection, text: string): void {
   const anchorOffset = selection.anchorOffset;
   const focusOffset = selection.focusOffset;
   const firstNode = selectedNodes[0];
-  invariant(
-    firstNode instanceof TextNode,
-    'insertText: firstNode not a a text node',
-  );
+  if (!(firstNode instanceof TextNode)) {
+    if (__DEV__) {
+      invariant(false, 'insertText: firstNode not a a text node');
+    } else {
+      invariant();
+    }
+  }
   const firstNodeText = firstNode.getTextContent();
   const firstNodeTextLength = firstNodeText.length;
   const currentBlock = firstNode.getParentBlockOrThrow();

@@ -7,10 +7,6 @@
  * @flow strict
  */
 
-export const emptyFunction = () => {};
-
-let keyCounter = 0;
-
 // invariant(condition, message) will refine types based on "condition", and
 // if "condition" is false will throw an error. This function is special-cased
 // in flow itself, so we can't name it anything else.
@@ -23,9 +19,3 @@ export function invariant(cond?: boolean, message?: string) {
     throw err;
   }
 }
-
-export function generateRandomKey(): string {
-  return '_' + keyCounter++;
-}
-
-export const isArray = Array.isArray;

@@ -109,9 +109,15 @@ async function build(name, inputFile, outputFile) {
         plugins: ['@babel/plugin-transform-flow-strip-types'],
       }),
       commonjs(),
-      isWWW && replace(wwwMappings),
-      isProduction &&
-        closure(isWWW ? {...closureOptions, renaming: false} : closureOptions),
+      replace(
+        Object.assign(
+          {
+            __DEV__: isProduction ? 'false' : 'true',
+          },
+          isWWW && wwwMappings,
+        ),
+      ),
+      isProduction && closure(closureOptions),
       isWWW && {
         renderChunk(source) {
           return `/**
@@ -160,24 +166,38 @@ ${source}`;
   }
 }
 
+function getFileName(fileName) {
+  if (isWWW) {
+    return `${fileName}.${isProduction ? 'prod' : 'dev'}.js`;
+  }
+  return `${fileName}.js`;
+}
+
 outlineExtensions.forEach((outlineNode) => {
   build(
     `Outline Extensions - ${outlineNode}`,
     path.resolve(`./packages/outline-extensions/src/${outlineNode}.js`),
-    path.resolve(`./packages/outline-extensions/dist/${outlineNode}.js`),
+    path.resolve(
+      `./packages/outline-extensions/dist/${getFileName(outlineNode)}`,
+    ),
   );
 });
 
 build(
   'Outline',
   path.resolve('./packages/outline/src/index.js'),
-  path.resolve('./packages/outline/dist/Outline.js'),
+  path.resolve(`./packages/outline/dist/${getFileName('Outline')}`),
 );
 
 outlineReactModules.forEach((outlineReactModule) => {
+  if (outlineReactModule.includes('DEPRECATED')) {
+    return;
+  }
   build(
     `Outline React - ${outlineReactModule}`,
     path.resolve(`./packages/outline-react/src/${outlineReactModule}.js`),
-    path.resolve(`./packages/outline-react/dist/${outlineReactModule}.js`),
+    path.resolve(
+      `./packages/outline-react/dist/${getFileName(outlineReactModule)}`,
+    ),
   );
 });

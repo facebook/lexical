@@ -10,7 +10,7 @@
 import type {OutlineEditor, ViewModel, View} from 'outline';
 
 import {TextNode} from 'outline';
-import {isRedo, isUndo} from 'outline-react/OutlineHotKeys';
+import {isRedo, isUndo} from './OutlineKeyHelpers';
 import {useEffect, useMemo} from 'react';
 
 const viewModelsWithoutHistory = new Set();

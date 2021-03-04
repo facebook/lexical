@@ -50,3 +50,6 @@ export let CAN_USE_BEFORE_INPUT: boolean = false;
 if (CAN_USE_DOM && 'InputEvent' in window && !documentMode) {
   CAN_USE_BEFORE_INPUT = 'getTargetRanges' in new window.InputEvent('input');
 }
+
+export const CAN_USE_INTL_SEGMENTER: boolean =
+  'Intl' in window && 'Segmenter' in window.Intl;

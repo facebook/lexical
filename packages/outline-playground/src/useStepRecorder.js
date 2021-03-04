@@ -24,7 +24,7 @@ import {
   isItalic,
   isUndo,
   isRedo,
-} from 'outline-react/OutlineHotKeys';
+} from 'outline-react/OutlineKeyHelpers';
 
 import React, {useState, useCallback, useRef, useEffect} from 'react';
 

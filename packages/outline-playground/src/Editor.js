@@ -69,6 +69,7 @@ function useOutlineEditor(
           underlineStrikethrough: 'editor-text-underlineStrikethrough',
           code: 'editor-text-code',
         },
+        code: 'editor-code',
       }),
     [],
   );

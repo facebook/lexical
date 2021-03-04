@@ -59,6 +59,7 @@ header h1 {
   z-index: 2;
   position: relative;
   width: calc(100% - 90px);
+  tab-size: 1;
 }
 
 .editor-shell div.editor > div {
@@ -78,15 +79,6 @@ header h1 {
   z-index: 1;
   display: inline-block;
   pointer-events: none;
-}
-
-.editor-shell div.editor > p {
-  margin: 0 0 8px 0;
-  position: relative;
-}
-
-.editor-shell div.editor > p span {
-  display: inline;
 }
 
 .editor-shell div.editor h1 {
@@ -692,4 +684,22 @@ pre {
 
 .switch button[aria-checked="true"] span {
   transform: translateX(20px);
+}
+
+.editor-shell div.editor .editor-paragraph {
+  margin: 0 0 8px 0;
+  position: relative;
+}
+
+.editor-shell div.editor .editor-paragraph span {
+  display: inline;
+}
+
+.editor-shell div.editor .editor-code {
+  display: block;
+  padding: 8px;
+  line-height: 1.53;
+  font-size: 13px;
+  margin: 8px 0;
+  tab-size: 2;
 }

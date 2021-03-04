@@ -97,3 +97,9 @@ export function isRedo(event: KeyboardEvent): boolean {
   }
   return (key === 'y' && ctrlKey) || (key === 'z' && ctrlKey && shiftKey);
 }
+
+export function isTab(event: KeyboardEvent): boolean {
+  return (
+    event.key === 'Tab' && !event.altKey && !event.ctrlKey && !event.metaKey
+  );
+}

@@ -16,7 +16,7 @@ import {
   getNodeByKey,
   wrapInTextNodes,
 } from './OutlineNode';
-import {getSelection} from './OutlineSelection';
+import {getSelection, Selection} from './OutlineSelection';
 import {invariant} from './OutlineUtils';
 import {getActiveViewModel, shouldErrorOnReadOnly} from './OutlineView';
 import {IS_IMMUTABLE, IS_INERT, IS_SEGMENTED} from './OutlineConstants';
@@ -305,7 +305,10 @@ export class BlockNode extends OutlineNode {
       this.normalizeTextNodes(true);
     }
   }
-  insertNewAfter(): null | BlockNode {
+  insertNewAfter(selection: Selection): null | BlockNode {
     return null;
+  }
+  canInsertTab(): boolean {
+    return false;
   }
 }

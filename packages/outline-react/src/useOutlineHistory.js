@@ -15,12 +15,6 @@ import {useEffect, useMemo} from 'react';
 
 const viewModelsWithoutHistory = new Set();
 
-type OutlineHistoryState = {
-  current: null | ViewModel,
-  redoStack: Array<ViewModel>,
-  undoStack: Array<ViewModel>,
-};
-
 function shouldMerge(
   viewModel: ViewModel,
   current: null | ViewModel,
@@ -80,19 +74,23 @@ export function updateWithoutHistory(
   return res;
 }
 
-const getHistoryStateSetter = (
-  historyState: OutlineHistoryState,
-) => newHistoryState => {
-  const {undoStack, redoStack} = historyState;
-  historyState.current = newHistoryState.current;
-  redoStack.splice(0, redoStack.length, ...newHistoryState.redoStack);
-  undoStack.splice(0, undoStack.length, ...newHistoryState.undoStack);
-};
+type OutlineHistoryStacks = [
+  $ReadOnly<Array<ViewModel>>,
+  $ReadOnly<Array<ViewModel>>,
+];
+type OutlineHistorySetter = (
+  undoStack: Array<ViewModel>,
+  redoStack: Array<ViewModel>,
+) => void;
 
 export function useOutlineHistory(
   editor: OutlineEditor,
-): [$ReadOnly<OutlineHistoryState>, (OutlineHistoryState) => void] {
-  const historyState: OutlineHistoryState = useMemo(
+): [OutlineHistoryStacks, OutlineHistorySetter] {
+  const historyState: {
+    current: null | ViewModel,
+    redoStack: Array<ViewModel>,
+    undoStack: Array<ViewModel>,
+  } = useMemo(
     () => ({
       current: null,
       redoStack: [],
@@ -168,5 +166,22 @@ export function useOutlineHistory(
       removeUpdateListener();
     };
   }, [historyState, editor]);
-  return [historyState, getHistoryStateSetter(historyState)];
+
+  const setHistoryState: OutlineHistorySetter = (undoStack, redoStack) => {
+    historyState.undoStack.splice(
+      0,
+      historyState.undoStack.length,
+      ...undoStack,
+    );
+    historyState.redoStack.splice(
+      0,
+      historyState.redoStack.length,
+      ...redoStack,
+    );
+  };
+
+  return [
+    [historyState.undoStack.slice(), historyState.redoStack.slice()],
+    setHistoryState,
+  ];
 }

@@ -8,6 +8,7 @@
  */
 
 import type {OutlineEditor, EditorThemeClasses} from './OutlineEditor';
+import type {Selection} from './OutlineSelection';
 
 import {createTextNode, RootNode, BlockNode, TextNode} from '.';
 import {getActiveViewModel, shouldErrorOnReadOnly} from './OutlineView';
@@ -577,6 +578,23 @@ export class OutlineNode {
       wrapInTextNodes(nodeToInsert);
     }
     return writableSelf;
+  }
+  selectNext(anchorOffset?: number, focusOffset?: number): Selection {
+    shouldErrorOnReadOnly();
+    const nextSibling = this.getNextSibling();
+    if (
+      nextSibling === null ||
+      !(nextSibling instanceof TextNode) ||
+      nextSibling.isImmutable() ||
+      nextSibling.isSegmented()
+    ) {
+      if (__DEV__) {
+        invariant(false, 'TODO: This needs to be fixed');
+      } else {
+        invariant();
+      }
+    }
+    return nextSibling.select(anchorOffset, focusOffset);
   }
 }
 

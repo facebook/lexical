@@ -17,11 +17,14 @@ import {createEditor} from './OutlineEditor';
 import {createTextNode, TextNode} from './OutlineTextNode';
 import {BlockNode} from './OutlineBlockNode';
 import {RootNode} from './OutlineRootNode';
+import {createLineBreakNode, LineBreakNode} from './OutlineLineBreakNode';
 import {OutlineNode} from './OutlineNode';
 
 export {
   createEditor,
+  createLineBreakNode,
   createTextNode,
+  LineBreakNode,
   OutlineNode,
   BlockNode,
   RootNode,

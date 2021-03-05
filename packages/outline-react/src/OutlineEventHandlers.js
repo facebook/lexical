@@ -16,13 +16,18 @@ import type {
   View,
 } from 'outline';
 
-import {BlockNode, TextNode} from 'outline';
+import {
+  createLineBreakNode,
+  createTextNode,
+  BlockNode,
+  TextNode,
+  LineBreakNode,
+} from 'outline';
 import {
   CAN_USE_BEFORE_INPUT,
   IS_APPLE,
   IS_SAFARI,
   IS_CHROME,
-  NEW_LINE,
 } from './OutlineEnv';
 import {
   isDeleteBackward,
@@ -50,6 +55,7 @@ import {
   removeText,
   getNodesInRange,
   insertNodes,
+  insertLineBreak,
 } from './OutlineSelectionHelpers';
 import {announceNode} from './OutlineTextHelpers';
 
@@ -111,7 +117,21 @@ function insertDataTransferForPlainText(
 ): void {
   const text = dataTransfer.getData('text/plain');
   if (text != null) {
-    insertText(selection, text);
+    const parts = text.split(/\r?\n/);
+    if (parts.length === 1) {
+      insertText(selection, text);
+    } else {
+      const nodes = [];
+      const length = parts.length;
+      for (let i = 0; i < length; i++) {
+        const part = parts[i];
+        nodes.push(createTextNode(part));
+        if (i !== length - 1) {
+          nodes.push(createLineBreakNode());
+        }
+      }
+      insertNodes(selection, nodes);
+    }
   }
 }
 
@@ -126,12 +146,11 @@ function handleCustomKeyInput(
   selection: Selection,
   editor: OutlineEditor,
 ): void {
-  const editorElement = editor.getEditorElement();
   // Handle moving/deleting selection with left/right around immutable or segmented nodes, which should be handled as a single character.
   // This is important for screen readers + text to speech accessibility tooling. About screen readers and caret moves:
   // In Windows, JAWS and NVDA always announce the character at the right of the caret.
   // In MacOS, VO always announces the character over which the caret jumped.
-  if (selection.isCaret() && editorElement !== null && !event.metaKey) {
+  if (selection.isCaret() && !event.metaKey) {
     const key = event.key;
     const isLeftArrow = key === 'ArrowLeft';
     const isRightArrow = key === 'ArrowRight';
@@ -171,9 +190,11 @@ function handleCustomKeyInput(
             let targetPrevSibling = prevSibling;
             if (prevSibling.isImmutable() || prevSibling.isSegmented()) {
               if (isLeftArrow) {
-                announceNode(prevSibling);
+                if (!(prevSibling instanceof LineBreakNode)) {
+                  announceNode(prevSibling);
+                }
                 targetPrevSibling = prevSibling.getPreviousSibling();
-              } else if (!isModifierActive(event)) {
+              } else {
                 deleteBackward(selection);
                 event.preventDefault();
               }
@@ -225,7 +246,12 @@ function handleCustomKeyInput(
                   (IS_APPLE && selectionAtEnd) ||
                   (!IS_APPLE && selectionJustBeforeEnd)
                 ) {
-                  announceNode(nextSibling);
+                  if (nextSibling instanceof LineBreakNode) {
+                    nextSibling.selectNext(0, 0);
+                    event.preventDefault();
+                  } else {
+                    announceNode(nextSibling);
+                  }
                 }
               } else if (selectionAtEnd && !isModifierActive(event)) {
                 deleteForward(selection);
@@ -274,12 +300,9 @@ export function onKeyDownForPlainText(
       } else if (isDeleteWordForward(event)) {
         event.preventDefault();
         deleteWordForward(selection);
-      } else if (isParagraph(event)) {
+      } else if (isParagraph(event) || isLineBreak(event)) {
         event.preventDefault();
-        insertText(selection, NEW_LINE);
-      } else if (isLineBreak(event)) {
-        event.preventDefault();
-        insertText(selection, NEW_LINE);
+        insertLineBreak(selection);
       }
     }
     handleCustomKeyInput(event, selection, editor);
@@ -326,7 +349,7 @@ export function onKeyDownForRichText(
         insertParagraph(selection);
       } else if (isLineBreak(event)) {
         event.preventDefault();
-        insertText(selection, NEW_LINE);
+        insertLineBreak(selection);
       }
     }
     // Used for screen readers and speech tooling
@@ -609,12 +632,9 @@ export function onNativeBeforeInputForPlainText(
         }
         break;
       }
-      case 'insertLineBreak': {
-        insertText(selection, NEW_LINE);
-        break;
-      }
+      case 'insertLineBreak':
       case 'insertParagraph': {
-        insertText(selection, NEW_LINE);
+        insertLineBreak(selection);
         break;
       }
       case 'deleteByComposition':
@@ -645,6 +665,7 @@ export function onNativeBeforeInputForPlainText(
         deleteLineBackward(selection);
         break;
       }
+      case 'deleteHardLineForward':
       case 'deleteSoftLineForward': {
         deleteLineForward(selection);
         break;
@@ -734,7 +755,7 @@ export function onNativeBeforeInputForRichText(
         break;
       }
       case 'insertLineBreak': {
-        insertText(selection, NEW_LINE);
+        insertLineBreak(selection);
         break;
       }
       case 'insertParagraph': {
@@ -769,6 +790,7 @@ export function onNativeBeforeInputForRichText(
         deleteLineBackward(selection);
         break;
       }
+      case 'deleteHardLineForward':
       case 'deleteSoftLineForward': {
         deleteLineForward(selection);
         break;

@@ -89,12 +89,11 @@ export function announceString(s: string): void {
 
 function hasAtLeastTwoVisibleChars(s: string): boolean {
   if (CAN_USE_INTL_SEGMENTER) {
-    const iterator = getGraphemeIterator().segment(s);
-    return iterator.next() != null && iterator.next() != null;
-  } else {
-    // TODO: Implement polyfill for `Intl.Segmenter`.
-    return [...s].length > 1;
+    const segments = Array.from(getGraphemeIterator().segment(s));
+    return segments.length > 1;
   }
+  // TODO: Implement polyfill for `Intl.Segmenter`.
+  return [...s].length > 1;
 }
 
 export function announceNode(node: OutlineNode): void {

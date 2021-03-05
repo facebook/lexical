@@ -346,13 +346,14 @@ export function onKeyDownForRichText(
       } else if (isParagraph(event)) {
         event.preventDefault();
         insertParagraph(selection);
-      } else if (isLineBreak(event)) {
-        event.preventDefault();
-        insertLineBreak(selection);
       }
     }
-    // Used for screen readers and speech tooling
-    if (isBold(event)) {
+    // Various browser struggle with these events in
+    // beforeinput, so we ensure they work here
+    if (isLineBreak(event)) {
+      event.preventDefault();
+      insertLineBreak(selection);
+    } else if (isBold(event)) {
       event.preventDefault();
       formatText(selection, 'bold');
     } else if (isItalic(event)) {

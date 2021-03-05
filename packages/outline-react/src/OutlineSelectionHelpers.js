@@ -10,7 +10,7 @@
 import type {NodeKey, OutlineNode, Selection, TextFormatType} from 'outline';
 
 import {BlockNode, RootNode, TextNode, createTextNode} from 'outline';
-import {CAN_USE_INTL_SEGMENTER} from './OutlineEnv';
+import {CAN_USE_INTL_SEGMENTER, NEW_LINE} from './OutlineEnv';
 import {invariant} from './OutlineReactUtils';
 
 const WHITESPACE_REGEX = /\s/g;
@@ -371,7 +371,7 @@ export function insertParagraph(selection: Selection): void {
   const newBlock = currentBlock.insertNewAfter(selection);
   if (newBlock === null) {
     // Handle as a line break insertion
-    insertText(selection, '\n');
+    insertText(selection, NEW_LINE);
   } else if (newBlock instanceof BlockNode) {
     const nodesToMoveLength = nodesToMove.length;
     let firstChild = null;
@@ -438,7 +438,7 @@ export function deleteLineBackward(selection: Selection): void {
     if (node instanceof TextNode) {
       const isAnchor = node === anchorNode;
       const textContent = node.getTextContent();
-      const indexOfNewLine = textContent.lastIndexOf('\n');
+      const indexOfNewLine = textContent.lastIndexOf(NEW_LINE);
 
       if (indexOfNewLine > -1) {
         let delCount;
@@ -500,7 +500,7 @@ export function deleteLineForward(selection: Selection): void {
     if (node instanceof TextNode) {
       const isAnchor = node === anchorNode;
       const textContent = node.getTextContent();
-      const indexOfNewLine = textContent.indexOf('\n', anchorOffset);
+      const indexOfNewLine = textContent.indexOf(NEW_LINE, anchorOffset);
 
       if (indexOfNewLine > -1) {
         const delCount = indexOfNewLine - anchorOffset + 1;

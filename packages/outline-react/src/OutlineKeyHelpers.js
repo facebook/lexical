@@ -63,12 +63,12 @@ export function isDeleteBackward(event: KeyboardEvent): boolean {
     if (shiftKey || altKey || metaKey) {
       return false;
     }
-    return isBackspace || key === 'h';
+    return isBackspace || (key === 'h' && ctrlKey);
   }
   if (ctrlKey || altKey || metaKey) {
     return false;
   }
-  return isBackspace || (IS_APPLE && key === 'h' && event.ctrlKey);
+  return isBackspace;
 }
 
 export function isDeleteForward(event: KeyboardEvent): boolean {
@@ -78,12 +78,12 @@ export function isDeleteForward(event: KeyboardEvent): boolean {
     if (shiftKey || altKey || metaKey) {
       return false;
     }
-    return isDelete || key === 'd';
+    return isDelete || (key === 'd' && ctrlKey);
   }
   if (ctrlKey || altKey || metaKey) {
     return false;
   }
-  return isDelete || (IS_APPLE && key === 'h' && event.ctrlKey);
+  return isDelete;
 }
 
 export function isUndo(event: KeyboardEvent): boolean {

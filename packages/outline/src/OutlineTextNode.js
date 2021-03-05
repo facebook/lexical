@@ -257,8 +257,6 @@ function setTextContent(
   }
   if (nextText === '') {
     nextText = BYTE_ORDER_MARK;
-  } else if (nextText.endsWith('\n')) {
-    nextText += BYTE_ORDER_MARK;
   }
   if (firstChild == null || hasBreakNode) {
     dom.textContent = nextText;
@@ -292,7 +290,6 @@ export class TextNode extends OutlineNode {
     super(key);
     this.__text = text;
     this.__type = 'text';
-    this.__flags = 0;
     this.__url = null;
   }
 
@@ -502,23 +499,6 @@ export class TextNode extends OutlineNode {
     shouldErrorOnReadOnly();
     const text = this.getTextContent();
     return this.select(text.length, text.length);
-  }
-  selectNext(anchorOffset?: number, focusOffset?: number): Selection {
-    shouldErrorOnReadOnly();
-    const nextSibling = this.getNextSibling();
-    if (
-      nextSibling === null ||
-      !(nextSibling instanceof TextNode) ||
-      nextSibling.isImmutable() ||
-      nextSibling.isSegmented()
-    ) {
-      if (__DEV__) {
-        invariant(false, 'TODO: This needs to be fixed');
-      } else {
-        invariant();
-      }
-    }
-    return nextSibling.select(anchorOffset, focusOffset);
   }
   select(_anchorOffset?: number, _focusOffset?: number): Selection {
     shouldErrorOnReadOnly();

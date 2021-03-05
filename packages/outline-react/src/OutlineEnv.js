@@ -56,5 +56,3 @@ if (CAN_USE_DOM && 'InputEvent' in window && !documentMode) {
 
 export const CAN_USE_INTL_SEGMENTER: boolean =
   'Intl' in window && 'Segmenter' in window.Intl;
-
-export const NEW_LINE: string = IS_WINDOWS ? '\r\n' : '\n';

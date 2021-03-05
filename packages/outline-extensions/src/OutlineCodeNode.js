@@ -58,18 +58,30 @@ export class CodeNode extends BlockNode {
 
   insertNewAfter(selection: Selection): null | ParagraphNode {
     const textContent = this.getTextContent();
-    const textContentLength = textContent.length;
-    const lastTwoCharactrsAreLineBreaks = textContent.slice(-2) === '\n\n';
+    const anchorNode = selection.getAnchorNode();
+    const anchorTextContentLength = anchorNode.getTextContent().length;
+    const children = this.getChildren();
+    const childrenLength = children.length;
+    const lastChild = children[childrenLength - 1];
+    const hasTwoEndingLineBreaks = textContent.slice(-2) === '\n\n';
+
     const offset = selection.anchorOffset;
-    if (offset !== textContentLength || !lastTwoCharactrsAreLineBreaks) {
+    if (
+      anchorNode !== lastChild ||
+      offset !== anchorTextContentLength ||
+      !hasTwoEndingLineBreaks
+    ) {
       return null;
     }
-    // Look for previous new lines
-    if (lastTwoCharactrsAreLineBreaks) {
-      const lastText = this.getLastTextNode();
-      if (lastText !== null) {
-        lastText.spliceText(textContentLength - 2, 2, '');
-      }
+    // Remove the dangling new lines
+    if (hasTwoEndingLineBreaks) {
+      // We offset by 1 extra because the last node should always be a text
+      // node to ensure selection works as intended.
+      const firstLinkBreak = children[childrenLength - 2];
+      // Again offset because of wrapped text nodes
+      const secondLinkBreak = children[childrenLength - 4];
+      firstLinkBreak.remove();
+      secondLinkBreak.remove();
     }
     const newBlock = createParagraphNode();
     this.insertAfter(newBlock);

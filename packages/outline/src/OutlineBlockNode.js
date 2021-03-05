@@ -212,10 +212,9 @@ export class BlockNode extends OutlineNode {
     const children = this.getChildren();
     let toNormalize = [];
     let lastTextNodeFlags: number | null = null;
-    let lastURL = null;
+    let lastTextNodeURL = null;
     for (let i = 0; i < children.length; i++) {
       const child: OutlineNode = children[i].getLatest();
-      const flags = child.__flags;
 
       if (
         child instanceof TextNode &&
@@ -223,20 +222,21 @@ export class BlockNode extends OutlineNode {
         !child.isSegmented()
       ) {
         const url = child.__url;
+        const flags = child.__flags;
         if (
           (lastTextNodeFlags === null || flags === lastTextNodeFlags) &&
-          (lastURL === null || lastURL === url)
+          (lastTextNodeURL === null || lastTextNodeURL === url)
         ) {
           toNormalize.push(child);
           lastTextNodeFlags = flags;
-          lastURL = url;
+          lastTextNodeURL = url;
         } else {
           if (toNormalize.length > 1) {
             combineAdjacentTextNodes(toNormalize, restoreSelection);
           }
           toNormalize = [child];
           lastTextNodeFlags = flags;
-          lastURL = url;
+          lastTextNodeURL = url;
         }
       } else {
         if (toNormalize.length > 1) {
@@ -244,6 +244,7 @@ export class BlockNode extends OutlineNode {
         }
         toNormalize = [];
         lastTextNodeFlags = null;
+        lastTextNodeURL = null;
       }
     }
     if (toNormalize.length > 1) {

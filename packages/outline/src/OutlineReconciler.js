@@ -106,7 +106,10 @@ function createNode(
   const isInert = flags & IS_INERT;
   storeDOMWithKey(key, dom, activeEditor);
 
-  if (flags & IS_IMMUTABLE || flags & IS_SEGMENTED || isInert) {
+  if (
+    node.__type !== 'linebreak' &&
+    (flags & IS_IMMUTABLE || flags & IS_SEGMENTED || isInert)
+  ) {
     dom.contentEditable = 'false';
   }
   if (isInert) {

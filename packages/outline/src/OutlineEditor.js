@@ -11,7 +11,7 @@ import type {View} from './OutlineView';
 import type {OutlineNode, NodeKey} from './OutlineNode';
 import type {Node as ReactNode} from 'react';
 
-import {RootNode, TextNode} from '.';
+import {RootNode, TextNode, LineBreakNode} from '.';
 import {
   cloneViewModel,
   enterViewModelScope,
@@ -204,6 +204,7 @@ export class OutlineEditor {
     // Mapping of types to their nodes
     this._registeredNodeTypes = new Map([
       ['text', TextNode],
+      ['linebreak', LineBreakNode],
       ['root', RootNode],
     ]);
     this._key = generateRandomKey();

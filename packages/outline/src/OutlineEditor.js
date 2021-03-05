@@ -297,7 +297,10 @@ export class OutlineEditor {
       }
       this._keyToDOMMap.delete('root');
     } else {
-      if (nextEditorElement !== prevEditorElement) {
+      if (
+        nextEditorElement !== prevEditorElement &&
+        prevEditorElement !== null
+      ) {
         resetEditor(this);
       }
       nextEditorElement.setAttribute('data-outline-editor', 'true');

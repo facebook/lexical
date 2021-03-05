@@ -22,6 +22,7 @@ import {
   IS_APPLE,
   IS_SAFARI,
   IS_CHROME,
+  NEW_LINE,
 } from './OutlineEnv';
 import {
   isDeleteBackward,
@@ -275,10 +276,10 @@ export function onKeyDownForPlainText(
         deleteWordForward(selection);
       } else if (isParagraph(event)) {
         event.preventDefault();
-        insertText(selection, '\n');
+        insertText(selection, NEW_LINE);
       } else if (isLineBreak(event)) {
         event.preventDefault();
-        insertText(selection, '\n');
+        insertText(selection, NEW_LINE);
       }
     }
     handleCustomKeyInput(event, selection, editor);
@@ -325,7 +326,7 @@ export function onKeyDownForRichText(
         insertParagraph(selection);
       } else if (isLineBreak(event)) {
         event.preventDefault();
-        insertText(selection, '\n');
+        insertText(selection, NEW_LINE);
       }
     }
     // Used for screen readers and speech tooling
@@ -609,11 +610,11 @@ export function onNativeBeforeInputForPlainText(
         break;
       }
       case 'insertLineBreak': {
-        insertText(selection, '\n');
+        insertText(selection, NEW_LINE);
         break;
       }
       case 'insertParagraph': {
-        insertText(selection, '\n');
+        insertText(selection, NEW_LINE);
         break;
       }
       case 'deleteByComposition':
@@ -733,7 +734,7 @@ export function onNativeBeforeInputForRichText(
         break;
       }
       case 'insertLineBreak': {
-        insertText(selection, '\n');
+        insertText(selection, NEW_LINE);
         break;
       }
       case 'insertParagraph': {

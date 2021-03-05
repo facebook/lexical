@@ -11,6 +11,9 @@ export const IS_MAC: boolean =
   typeof window !== 'undefined' &&
   /Mac|iPod|iPhone|iPad/.test(window.navigator.platform);
 
+export const IS_WINDOWS: boolean =
+  typeof window !== 'undefined' && /Win/.test(window.navigator.platform);
+
 export const IS_IOS: boolean =
   typeof navigator !== 'undefined' &&
   typeof window !== 'undefined' &&
@@ -53,3 +56,5 @@ if (CAN_USE_DOM && 'InputEvent' in window && !documentMode) {
 
 export const CAN_USE_INTL_SEGMENTER: boolean =
   'Intl' in window && 'Segmenter' in window.Intl;
+
+export const NEW_LINE: string = IS_WINDOWS ? '\r\n' : '\n';

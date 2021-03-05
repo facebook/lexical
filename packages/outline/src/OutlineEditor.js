@@ -295,7 +295,7 @@ export class OutlineEditor {
       if (prevEditorElement !== null) {
         prevEditorElement.textContent = '';
       }
-      this._keyToDOMMap.delete('root');
+      resetEditor(this);
     } else {
       if (
         nextEditorElement !== prevEditorElement &&

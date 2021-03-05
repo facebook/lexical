@@ -9,8 +9,15 @@
 
 import type {NodeKey, OutlineNode, Selection, TextFormatType} from 'outline';
 
-import {BlockNode, RootNode, TextNode, createTextNode} from 'outline';
-import {CAN_USE_INTL_SEGMENTER, NEW_LINE} from './OutlineEnv';
+import {
+  createLineBreakNode,
+  BlockNode,
+  RootNode,
+  TextNode,
+  createTextNode,
+  LineBreakNode,
+} from 'outline';
+import {CAN_USE_INTL_SEGMENTER} from './OutlineEnv';
 import {invariant} from './OutlineReactUtils';
 
 const WHITESPACE_REGEX = /\s/g;
@@ -371,7 +378,7 @@ export function insertParagraph(selection: Selection): void {
   const newBlock = currentBlock.insertNewAfter(selection);
   if (newBlock === null) {
     // Handle as a line break insertion
-    insertText(selection, NEW_LINE);
+    insertLineBreak(selection);
   } else if (newBlock instanceof BlockNode) {
     const nodesToMoveLength = nodesToMove.length;
     let firstChild = null;
@@ -427,34 +434,15 @@ export function deleteLineBackward(selection: Selection): void {
     deleteBackward(selection);
     return;
   }
-
   const anchorOffset = selection.anchorOffset;
-  const nodesToSearch = anchorNode.getPreviousSiblings();
+  const nodesToTraverse = anchorNode.getPreviousSiblings();
+  anchorNode.spliceText(0, anchorOffset, '', true);
 
-  nodesToSearch.push(anchorNode);
+  for (let i = nodesToTraverse.length - 1; i >= 0; i--) {
+    const node = nodesToTraverse[i];
 
-  for (let i = nodesToSearch.length - 1; i >= 0; i--) {
-    const node = nodesToSearch[i];
-    if (node instanceof TextNode) {
-      const isAnchor = node === anchorNode;
-      const textContent = node.getTextContent();
-      const indexOfNewLine = textContent.lastIndexOf(NEW_LINE);
-
-      if (indexOfNewLine > -1) {
-        let delCount;
-
-        if (isAnchor && indexOfNewLine < anchorOffset) {
-          delCount = anchorOffset - indexOfNewLine;
-        } else {
-          delCount = textContent.length - indexOfNewLine;
-        }
-        node.spliceText(indexOfNewLine, delCount, '', true);
-        break;
-      } else if (isAnchor) {
-        node.spliceText(0, anchorOffset, '', true);
-      } else {
-        node.remove();
-      }
+    if (node instanceof LineBreakNode) {
+      return;
     } else {
       node.remove();
     }
@@ -491,31 +479,20 @@ export function deleteLineForward(selection: Selection): void {
   }
 
   const anchorOffset = selection.anchorOffset;
-  const nodesToSearch = anchorNode.getNextSiblings();
+  const nodesToTraverse = anchorNode.getNextSiblings();
+  const textContentLength = anchorNode.getTextContent().length;
+  anchorNode.spliceText(
+    anchorOffset,
+    textContentLength - anchorOffset,
+    '',
+    true,
+  );
 
-  nodesToSearch.push(anchorNode);
+  for (let i = 0; i < nodesToTraverse.length; i++) {
+    const node = nodesToTraverse[i];
 
-  for (let i = 0; i < nodesToSearch.length; i++) {
-    const node = nodesToSearch[i];
-    if (node instanceof TextNode) {
-      const isAnchor = node === anchorNode;
-      const textContent = node.getTextContent();
-      const indexOfNewLine = textContent.indexOf(NEW_LINE, anchorOffset);
-
-      if (indexOfNewLine > -1) {
-        const delCount = indexOfNewLine - anchorOffset + 1;
-        node.spliceText(anchorOffset, delCount, '', true);
-        break;
-      } else if (isAnchor) {
-        node.spliceText(
-          anchorOffset,
-          textContent.length - anchorOffset,
-          '',
-          true,
-        );
-      } else {
-        node.remove();
-      }
+    if (node instanceof LineBreakNode) {
+      return;
     } else {
       node.remove();
     }
@@ -614,7 +591,6 @@ export function deleteWordForward(selection: Selection): void {
   // native beforeinput (Firefox and IE).
   if (!selection.isCaret()) {
     removeText(selection);
-    deleteForward(selection);
     return;
   }
   const anchorOffset = selection.anchorOffset;
@@ -804,6 +780,12 @@ export function deleteForward(selection: Selection): void {
 
 export function removeText(selection: Selection): void {
   insertText(selection, '');
+}
+
+export function insertLineBreak(selection: Selection): void {
+  const lineBreakNode = createLineBreakNode();
+  insertNodes(selection, [lineBreakNode]);
+  lineBreakNode.selectNext();
 }
 
 export function insertNodes(

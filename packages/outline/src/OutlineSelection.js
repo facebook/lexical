@@ -13,9 +13,10 @@ import {getActiveEditor, ViewModel} from './OutlineView';
 import {getActiveViewModel} from './OutlineView';
 import {getNodeKeyFromDOM} from './OutlineReconciler';
 import {getNodeByKey} from './OutlineNode';
-import {BlockNode, TextNode} from '.';
+import {TextNode} from '.';
 import {invariant} from './OutlineUtils';
 import {OutlineEditor} from './OutlineEditor';
+import {LineBreakNode} from './OutlineLineBreakNode';
 
 export class Selection {
   anchorKey: string;
@@ -124,6 +125,19 @@ export class Selection {
   }
 }
 
+function resolveNonLineBreakNode(node: LineBreakNode): [TextNode, number] {
+  const resolvedNode = node.getPreviousSibling();
+  if (!(resolvedNode instanceof TextNode)) {
+    if (__DEV__) {
+      invariant(false, 'Should never happen');
+    } else {
+      invariant();
+    }
+  }
+  const offset = resolvedNode.getTextContent().length;
+  return [resolvedNode, offset];
+}
+
 function resolveSelectionNodes(
   anchorDOM: Node,
   focusDOM: Node,
@@ -154,9 +168,16 @@ function resolveSelectionNodes(
     anchorNode = root.getFirstTextNode();
     resolvedAnchorOffset = 0;
   } else {
-    const anchorKey = getNodeKeyFromDOM(anchorDOM);
+    let resolvedAnchorDOM = anchorDOM;
+    if (anchorDOM.nodeType === 1) {
+      resolvedAnchorDOM = anchorDOM.childNodes[anchorOffset];
+    }
+    const anchorKey = getNodeKeyFromDOM(resolvedAnchorDOM);
     if (anchorKey) {
       anchorNode = nodeMap[anchorKey];
+    }
+    if (anchorNode instanceof LineBreakNode) {
+      [anchorNode, resolvedAnchorOffset] = resolveNonLineBreakNode(anchorNode);
     }
   }
   if (focusDOM === editorElement) {
@@ -165,30 +186,23 @@ function resolveSelectionNodes(
       resolvedFocusOffset = focusNode.getTextContent().length;
     }
   } else {
-    const focusKey = getNodeKeyFromDOM(focusDOM);
+    let resolvedFocusDOM = focusDOM;
+    if (focusDOM.nodeType === 1) {
+      resolvedFocusDOM = focusDOM.childNodes[focusOffset];
+      resolvedFocusOffset = 0;
+    }
+    const focusKey = getNodeKeyFromDOM(resolvedFocusDOM);
     if (focusKey) {
       focusNode = nodeMap[focusKey];
+    }
+    if (focusNode instanceof LineBreakNode) {
+      [focusNode, resolvedFocusOffset] = resolveNonLineBreakNode(focusNode);
     }
   }
   // We try and find the relevant text nodes from the selection.
   // If we can't do this, we return null.
   if (anchorNode == null || focusNode == null) {
     return null;
-  }
-  if (focusNode instanceof BlockNode) {
-    focusNode = focusNode.getLastTextNode();
-    if (focusNode !== null) {
-      resolvedFocusOffset = focusNode.getTextContent().length;
-    }
-  }
-  if (anchorOffset !== focusOffset) {
-    if (anchorNode instanceof BlockNode) {
-      anchorNode = anchorNode.getFirstTextNode();
-      resolvedAnchorOffset = 0;
-    }
-  } else {
-    anchorNode = focusNode;
-    resolvedAnchorOffset = resolvedFocusOffset;
   }
   if (!(anchorNode instanceof TextNode && focusNode instanceof TextNode)) {
     if (__DEV__) {

@@ -31,9 +31,11 @@ module.name_mapper='^outline-react/OutlineEventHandlers' -> '<PROJECT_ROOT>/pack
 
 module.name_mapper='^outline-extensions/HeadingNode' -> '<PROJECT_ROOT>/packages/outline-extensions/src/OutlineHeadingNode.js'
 module.name_mapper='^outline-extensions/ListNode' -> '<PROJECT_ROOT>/packages/outline-extensions/src/OutlineListNode.js'
+module.name_mapper='^outline-extensions/ListItemNode' -> '<PROJECT_ROOT>/packages/outline-extensions/src/OutlineListItemNode.js'
 module.name_mapper='^outline-extensions/ImageNode' -> '<PROJECT_ROOT>/packages/outline-extensions/src/OutlineImageNode.js'
 module.name_mapper='^outline-extensions/QuoteNode' -> '<PROJECT_ROOT>/packages/outline-extensions/src/OutlineQuoteNode.js'
 module.name_mapper='^outline-extensions/ParagraphNode' -> '<PROJECT_ROOT>/packages/outline-extensions/src/OutlineParagraphNode.js'
+module.name_mapper='^outline-extensions/CodeNode' -> '<PROJECT_ROOT>/packages/outline-extensions/src/OutlineCodeNode.js'
 
 munge_underscores=false
 

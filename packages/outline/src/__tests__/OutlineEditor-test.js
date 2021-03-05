@@ -99,6 +99,55 @@ describe('OutlineEditor tests', () => {
     );
   });
 
+  it('Should be able to handle a change in editor element', async () => {
+    function TestBase({changeElement}) {
+      editor = React.useMemo(() => Outline.createEditor(), []);
+
+      React.useEffect(() => {
+        editor.update((view) => {
+          const paragraph = ParagraphNodeModule.createParagraphNode();
+          const text = Outline.createTextNode(
+            changeElement ? 'Change successful' : 'Not changed',
+          );
+          paragraph.append(text);
+          view.getRoot().append(paragraph);
+        });
+      }, [changeElement]);
+
+      const ref = React.useCallback((node) => {
+        editor.setEditorElement(node);
+      }, []);
+
+      return changeElement ? (
+        <span ref={ref} contentEditable={true} />
+      ) : (
+        <div ref={ref} contentEditable={true} />
+      );
+    }
+
+    ReactTestUtils.act(() => {
+      ReactDOM.render(<TestBase changeElement={false} />, container);
+    });
+
+    // Let Outline update
+    await Promise.resolve().then();
+
+    expect(container.innerHTML).toBe(
+      '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span>Not changed</span></p></div>',
+    );
+
+    ReactTestUtils.act(() => {
+      ReactDOM.render(<TestBase changeElement={true} />, container);
+    });
+
+    // Let Outline update
+    await Promise.resolve().then();
+
+    expect(container.innerHTML).toBe(
+      '<span contenteditable="true" data-outline-editor="true"><p dir="ltr"><span>Change successful</span></p></span>',
+    );
+  });
+
   describe('With editor element', () => {
     beforeEach(() => {
       init();
@@ -110,6 +159,8 @@ describe('OutlineEditor tests', () => {
       let parsedRoot;
       let parsedSelection;
       let parsedText;
+      let paragraphKey;
+      let textKey;
 
       beforeEach(async () => {
         await update((view) => {
@@ -125,31 +176,33 @@ describe('OutlineEditor tests', () => {
         viewModel.read((view) => {
           parsedRoot = view.getRoot();
           parsedParagraph = parsedRoot.getFirstChild();
+          paragraphKey = parsedParagraph.getKey();
           parsedText = parsedParagraph.getFirstChild();
+          textKey = parsedText.getKey();
           parsedSelection = view.getSelection();
         });
       });
 
       it('Parses the nodes of a stringified view model', async () => {
         expect(parsedRoot).toEqual({
-          __children: ['_6'],
+          __children: [paragraphKey],
           __flags: 0,
           __key: 'root',
           __parent: null,
           __type: 'root',
         });
         expect(parsedParagraph).toEqual({
-          __children: ['_7'],
+          __children: [textKey],
           __flags: 0,
-          __key: '_6',
+          __key: paragraphKey,
           __parent: 'root',
           __type: 'paragraph',
         });
         expect(parsedText).toEqual({
           __text: 'Hello world',
           __flags: 0,
-          __key: '_7',
-          __parent: '_6',
+          __key: textKey,
+          __parent: paragraphKey,
           __type: 'text',
           __url: null,
         });

@@ -498,7 +498,6 @@ describe('OutlineTextNode tests', () => {
   describe('createDOM()', () => {
     test.each([
       ['no formatting', null, 'My text node', '<span>My text node</span>'],
-      ['no formatting', null, 'My text node', `<span>My text node</span>`],
       [
         'bold',
         IS_BOLD,

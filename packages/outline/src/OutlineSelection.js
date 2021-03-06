@@ -222,8 +222,8 @@ function resolveSelectionNodes(
     if (
       anchorNode === focusNode &&
       anchorOffset !== 1 &&
-      !editor.isComposing() &&
-      !editor.isPointerDown()
+      !editor._isComposing &&
+      !editor._isPointerDown
     ) {
       isDirty = true;
     }

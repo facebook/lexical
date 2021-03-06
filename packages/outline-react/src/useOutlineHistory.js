@@ -74,10 +74,7 @@ export function updateWithoutHistory(
   return res;
 }
 
-type OutlineHistoryStacks = [
-  $ReadOnly<Array<ViewModel>>,
-  $ReadOnly<Array<ViewModel>>,
-];
+type OutlineHistoryStacks = [Array<ViewModel>, Array<ViewModel>];
 type OutlineHistorySetter = (
   undoStack: Array<ViewModel>,
   redoStack: Array<ViewModel>,
@@ -107,7 +104,7 @@ export function useOutlineHistory(
     }
     let redoStack = historyState.redoStack;
 
-    const applyChange = viewModel => {
+    const applyChange = (viewModel) => {
       const current = historyState.current;
 
       if (viewModel === current) {

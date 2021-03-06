@@ -7,6 +7,7 @@ import {useCallback, useState} from 'react';
 import {RichTextEditor, PlainTextEditor} from './Editor';
 import TreeView from './TreeView';
 import Switch from './Switch';
+import useEventRecorder from './useEventRecorder'
 
 function App(): React$Node {
   const [viewModel, setViewModel] = useState<ViewModel | null>(null);
@@ -17,6 +18,7 @@ function App(): React$Node {
   const handleOnChange = useCallback((newViewModel) => {
     requestAnimationFrame(() => setViewModel(newViewModel));
   }, []);
+  useEventRecorder();
 
   return (
     <>

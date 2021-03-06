@@ -74,7 +74,18 @@ export function updateWithoutHistory(
   return res;
 }
 
-export function useOutlineHistory(editor: OutlineEditor): void {
+type OutlineHistoryStacks = [
+  $ReadOnly<Array<ViewModel>>,
+  $ReadOnly<Array<ViewModel>>,
+];
+type OutlineHistorySetter = (
+  undoStack: Array<ViewModel>,
+  redoStack: Array<ViewModel>,
+) => void;
+
+export function useOutlineHistory(
+  editor: OutlineEditor,
+): [OutlineHistoryStacks, OutlineHistorySetter] {
   const historyState: {
     current: null | ViewModel,
     redoStack: Array<ViewModel>,
@@ -96,7 +107,7 @@ export function useOutlineHistory(editor: OutlineEditor): void {
     }
     let redoStack = historyState.redoStack;
 
-    const applyChange = (viewModel) => {
+    const applyChange = viewModel => {
       const current = historyState.current;
 
       if (viewModel === current) {
@@ -155,4 +166,22 @@ export function useOutlineHistory(editor: OutlineEditor): void {
       removeUpdateListener();
     };
   }, [historyState, editor]);
+
+  const setHistoryState: OutlineHistorySetter = (undoStack, redoStack) => {
+    historyState.undoStack.splice(
+      0,
+      historyState.undoStack.length,
+      ...undoStack,
+    );
+    historyState.redoStack.splice(
+      0,
+      historyState.redoStack.length,
+      ...redoStack,
+    );
+  };
+
+  return [
+    [historyState.undoStack.slice(), historyState.redoStack.slice()],
+    setHistoryState,
+  ];
 }

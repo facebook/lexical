@@ -234,33 +234,12 @@ function setTextContent(
 ): void {
   let nextText = _nextText;
   const firstChild = dom.firstChild;
-  const hasBreakNode = firstChild && firstChild.nextSibling;
-  const parent = node.getParent();
-  // Check if we are on an empty line
-  if (parent !== null && parent.__children.length === 1) {
-    if (nextText === '') {
-      if (firstChild == null) {
-        // We use a zero width string so that the browser moves
-        // the cursor into the text node. It won't move the cursor
-        // in if it's empty. This trick makes it seem empty, so
-        // the browser plays along nicely. We use the <br>
-        // to ensure we take up a full line, as we don't have any
-        // characters taking up the full height yet.
-        dom.appendChild(document.createTextNode(BYTE_ORDER_MARK));
-        dom.appendChild(document.createElement('br'));
-      } else if (!hasBreakNode) {
-        firstChild.nodeValue = BYTE_ORDER_MARK;
-        dom.appendChild(document.createElement('br'));
-      }
-      return;
-    }
-  }
   if (nextText === '') {
     nextText = BYTE_ORDER_MARK;
   }
-  if (firstChild == null || hasBreakNode) {
+  if (firstChild == null) {
     dom.textContent = nextText;
-  } else if (prevText !== nextText) {
+  } else if (prevText !== nextText && firstChild.nodeValue !== nextText) {
     firstChild.nodeValue = nextText;
   }
 }

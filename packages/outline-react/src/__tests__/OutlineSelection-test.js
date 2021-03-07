@@ -99,7 +99,7 @@ describe('OutlineSelection tests', () => {
 
   test('Expect initial output to be a block with some text', () => {
     expect(sanitizeHTML(container.innerHTML)).toBe(
-      '<div contenteditable="true" data-outline-editor="true"><p><span><br></span></p></div>',
+      '<div contenteditable="true" data-outline-editor="true"><p><span></span></p></div>',
     );
   });
 
@@ -305,7 +305,7 @@ describe('OutlineSelection tests', () => {
       name: 'Deletion of an immutable node',
       inputs: [insertImmutableNode('Dominic Gannaway'), deleteBackward()],
       expectedHTML:
-        '<div contenteditable="true" data-outline-editor="true"><p><span><br></span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p><span></span></p></div>',
       expectedSelection: {
         anchorPath: [0, 0, 0],
         anchorOffset: 0,
@@ -364,7 +364,7 @@ describe('OutlineSelection tests', () => {
         'Should correctly handle empty paragraph blocks when moving backward',
       inputs: [insertParagraph(), moveBackward()],
       expectedHTML:
-        '<div contenteditable="true" data-outline-editor="true"><p><span><br></span></p><p><span><br></span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p><span></span></p><p><span></span></p></div>',
       expectedSelection: {
         anchorPath: [0, 0, 0],
         anchorOffset: 0,
@@ -381,7 +381,7 @@ describe('OutlineSelection tests', () => {
         moveForward(),
       ],
       expectedHTML:
-        '<div contenteditable="true" data-outline-editor="true"><p><span><br></span></p><p><span><br></span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p><span></span></p><p><span></span></p></div>',
       expectedSelection: {
         anchorPath: [1, 0, 0],
         anchorOffset: 0,
@@ -577,8 +577,8 @@ describe('OutlineSelection tests', () => {
       name: 'Inserting a paragraph',
       inputs: [insertParagraph()],
       expectedHTML:
-        '<div contenteditable="true" data-outline-editor="true"><p><span><br></span></p>' +
-        '<p><span><br></span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p><span></span></p>' +
+        '<p><span></span></p></div>',
       expectedSelection: {
         anchorPath: [1, 0, 0],
         anchorOffset: 0,
@@ -590,7 +590,7 @@ describe('OutlineSelection tests', () => {
       name: 'Inserting a paragraph and then removing it',
       inputs: [insertParagraph(), deleteBackward()],
       expectedHTML:
-        '<div contenteditable="true" data-outline-editor="true"><p><span><br></span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p><span></span></p></div>',
       expectedSelection: {
         anchorPath: [0, 0, 0],
         anchorOffset: 0,
@@ -625,7 +625,7 @@ describe('OutlineSelection tests', () => {
         deleteBackward(),
       ],
       expectedHTML:
-        '<div contenteditable="true" data-outline-editor="true"><p><span><br></span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p><span></span></p></div>',
       expectedSelection: {
         anchorPath: [0, 0, 0],
         anchorOffset: 0,

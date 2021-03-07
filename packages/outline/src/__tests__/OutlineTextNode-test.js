@@ -599,7 +599,7 @@ describe('OutlineTextNode tests', () => {
           'no formatting + empty string',
           null,
           '',
-          `<span>${BYTE_ORDER_MARK}<br></span>`,
+          `<span>${BYTE_ORDER_MARK}</span>`,
         ],
       ])('%s text format type', async (_type, flag, contents, expectedHTML) => {
         await update(() => {

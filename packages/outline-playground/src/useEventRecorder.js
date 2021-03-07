@@ -6,12 +6,6 @@ const originalSetBaseAndExtent = Selection.prototype.setBaseAndExtent;
 
 export default function useEventRecorder() {
   useEffect(() => {
-    let lastSelection = {
-      anchorNode: null,
-      focusNode: null,
-      anchorOffset: 0,
-      focusOffset: 0,
-    };
     const lastImperativeSelection = {
       anchorNode: null,
       focusNode: null,
@@ -28,19 +22,6 @@ export default function useEventRecorder() {
         focusOffset,
         anchorOffset,
       } = window.getSelection();
-      // Do not record duplicate selection events if it's the same
-      if (
-        lastSelection.anchorNode === anchorNode &&
-        lastSelection.focusNode === focusNode &&
-        lastSelection.anchorOffset === anchorOffset &&
-        lastSelection.focusOffset === focusOffset
-      ) {
-        return;
-      }
-      lastSelection.anchorNode = anchorNode;
-      lastSelection.focusNode = focusNode;
-      lastSelection.anchorOffset = anchorOffset;
-      lastSelection.focusOffset = focusOffset;
       // If a selection matches the last imperative focus call, then
       // we mark these selection changes as being from that source.
       // Note: this can happen during composition.
@@ -54,23 +35,23 @@ export default function useEventRecorder() {
           return;
         }
         lastImperativeSelection.count++;
-        console.log(
-          'Imperative selection',
-          {anchorNode, focusNode, focusOffset, anchorOffset},
-          performance.now(),
-          {
-            isComposing,
-          },
-        );
+        // console.log(
+        //   'Imperative selection',
+        //   {anchorNode, focusNode, focusOffset, anchorOffset},
+        //   performance.now(),
+        //   {
+        //     isComposing,
+        //   },
+        // );
         return;
       }
 
-      console.log(
-        'User selection',
-        {anchorNode, focusNode, focusOffset, anchorOffset},
-        performance.now(),
-        {isComposing},
-      );
+      // console.log(
+      //   'User selection',
+      //   {anchorNode, focusNode, focusOffset, anchorOffset},
+      //   performance.now(),
+      //   {isComposing},
+      // );
     };
 
     const onCompositionStart = () => {

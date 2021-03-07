@@ -13,7 +13,7 @@ import {getActiveEditor, ViewModel} from './OutlineView';
 import {getActiveViewModel} from './OutlineView';
 import {getNodeKeyFromDOM} from './OutlineReconciler';
 import {getNodeByKey} from './OutlineNode';
-import {TextNode} from '.';
+import {isTextNode, isLineBreakNode, TextNode} from '.';
 import {invariant} from './OutlineUtils';
 import {OutlineEditor} from './OutlineEditor';
 import {LineBreakNode} from './OutlineLineBreakNode';
@@ -47,8 +47,8 @@ export class Selection {
   }
   getAnchorNode(): TextNode {
     const anchorKey = this.anchorKey;
-    const anchorNode = getNodeByKey(anchorKey);
-    if (!(anchorNode instanceof TextNode)) {
+    const anchorNode = getNodeByKey<TextNode>(anchorKey);
+    if (!isTextNode(anchorNode)) {
       if (__DEV__) {
         invariant(false, 'getAnchorNode: anchorNode not a text node');
       } else {
@@ -59,8 +59,8 @@ export class Selection {
   }
   getFocusNode(): TextNode {
     const focusKey = this.focusKey;
-    const focusNode = getNodeByKey(focusKey);
-    if (!(focusNode instanceof TextNode)) {
+    const focusNode = getNodeByKey<TextNode>(focusKey);
+    if (!isTextNode(focusNode)) {
       if (__DEV__) {
         invariant(false, 'getFocusNode: focusNode not a text node');
       } else {
@@ -93,7 +93,7 @@ export class Selection {
     const nodes = this.getNodes();
     let textContent = '';
     nodes.forEach((node) => {
-      if (node instanceof TextNode) {
+      if (isTextNode(node)) {
         textContent += node.getTextContent();
       }
     });
@@ -127,7 +127,7 @@ export class Selection {
 
 function resolveNonLineBreakNode(node: LineBreakNode): [TextNode, number] {
   const resolvedNode = node.getPreviousSibling();
-  if (!(resolvedNode instanceof TextNode)) {
+  if (!isTextNode(resolvedNode)) {
     if (__DEV__) {
       invariant(false, 'Should never happen');
     } else {
@@ -176,7 +176,7 @@ function resolveSelectionNodes(
     if (anchorKey) {
       anchorNode = nodeMap[anchorKey];
     }
-    if (anchorNode instanceof LineBreakNode) {
+    if (isLineBreakNode(anchorNode)) {
       [anchorNode, resolvedAnchorOffset] = resolveNonLineBreakNode(anchorNode);
     }
   }
@@ -195,7 +195,7 @@ function resolveSelectionNodes(
     if (focusKey) {
       focusNode = nodeMap[focusKey];
     }
-    if (focusNode instanceof LineBreakNode) {
+    if (isLineBreakNode(focusNode)) {
       [focusNode, resolvedFocusOffset] = resolveNonLineBreakNode(focusNode);
     }
   }
@@ -204,7 +204,7 @@ function resolveSelectionNodes(
   if (anchorNode == null || focusNode == null) {
     return null;
   }
-  if (!(anchorNode instanceof TextNode && focusNode instanceof TextNode)) {
+  if (!isTextNode(anchorNode) || !isTextNode(focusNode)) {
     if (__DEV__) {
       invariant(false, 'Should never happen');
     } else {

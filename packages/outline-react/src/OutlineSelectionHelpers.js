@@ -7,15 +7,21 @@
  * @flow strict
  */
 
-import type {NodeKey, OutlineNode, Selection, TextFormatType} from 'outline';
+import type {
+  NodeKey,
+  OutlineNode,
+  Selection,
+  TextFormatType,
+  TextNode,
+} from 'outline';
 
 import {
   createLineBreakNode,
-  BlockNode,
-  RootNode,
-  TextNode,
+  isTextNode,
+  isBlockNode,
+  isRootNode,
+  isLineBreakNode,
   createTextNode,
-  LineBreakNode,
 } from 'outline';
 import {CAN_USE_INTL_SEGMENTER} from './OutlineEnv';
 import {invariant} from './OutlineReactUtils';
@@ -118,7 +124,7 @@ export function getNodesInRange(
 
   if (anchorNode === focusNode) {
     const firstNode = anchorNode.getLatest().clone();
-    if (!(firstNode instanceof TextNode)) {
+    if (!isTextNode(firstNode)) {
       if (__DEV__) {
         invariant(false, 'Should never happen');
       } else {
@@ -150,7 +156,7 @@ export function getNodesInRange(
     const parent = node.getParent();
     const nodeKey = node.getKey();
 
-    if (node instanceof TextNode) {
+    if (isTextNode(node)) {
       const text = node.getTextContent();
 
       if (i === 0) {
@@ -174,7 +180,7 @@ export function getNodesInRange(
     } else {
       let includeTopLevelBlock = false;
 
-      if (!(parent instanceof RootNode)) {
+      if (!isRootNode(parent)) {
         let removeChildren = false;
 
         while (node !== null) {
@@ -185,7 +191,7 @@ export function getNodesInRange(
             // We need to remove any children before out last source
             // parent key.
             node = node.getLatest().clone();
-            if (!(node instanceof BlockNode)) {
+            if (!isBlockNode(node)) {
               if (__DEV__) {
                 invariant(false, 'Should never happen');
               } else {
@@ -209,7 +215,7 @@ export function getNodesInRange(
           }
 
           const nextParent = node.getParent();
-          if (nextParent instanceof RootNode) {
+          if (isRootNode(nextParent)) {
             break;
           }
           node = nextParent;
@@ -238,7 +244,7 @@ export function formatText(
   let firstNode = selectedNodes[0];
   let lastNode = selectedNodes[lastIndex];
 
-  if (!(firstNode instanceof TextNode && lastNode instanceof TextNode)) {
+  if (!isTextNode(firstNode) || !isTextNode(lastNode)) {
     if (__DEV__) {
       invariant(false, 'formatText: firstNode/lastNode not a text node');
     } else {
@@ -287,7 +293,7 @@ export function formatText(
   }
 
   if (selectedNodesLength === 1) {
-    if (firstNode instanceof TextNode) {
+    if (isTextNode(firstNode)) {
       startOffset = anchorOffset > focusOffset ? focusOffset : anchorOffset;
       endOffset = anchorOffset > focusOffset ? anchorOffset : focusOffset;
 
@@ -330,7 +336,7 @@ export function formatText(
 
     for (let i = 1; i < lastIndex; i++) {
       const selectedNode = selectedNodes[i];
-      if (selectedNode instanceof TextNode && !selectedNode.isImmutable()) {
+      if (isTextNode(selectedNode) && !selectedNode.isImmutable()) {
         const selectedNextFlags = selectedNode.getTextNodeFormatFlags(
           formatType,
           firstNextFlags,
@@ -379,7 +385,7 @@ export function insertParagraph(selection: Selection): void {
   if (newBlock === null) {
     // Handle as a line break insertion
     insertLineBreak(selection);
-  } else if (newBlock instanceof BlockNode) {
+  } else if (isBlockNode(newBlock)) {
     const nodesToMoveLength = nodesToMove.length;
     let firstChild = null;
 
@@ -393,7 +399,7 @@ export function insertParagraph(selection: Selection): void {
       firstChild = nodeToMove;
     }
     const nodeToSelect = nodesToMove[nodesToMoveLength - 1];
-    if (nodeToSelect instanceof TextNode) {
+    if (isTextNode(nodeToSelect)) {
       nodeToSelect.select(anchorOffset, anchorOffset);
     }
     const blockFirstChild = currentBlock.getFirstChild();
@@ -403,7 +409,7 @@ export function insertParagraph(selection: Selection): void {
       blockLastChild === null ||
       blockLastChild.isImmutable() ||
       blockLastChild.isSegmented() ||
-      !(blockLastChild instanceof TextNode)
+      !isTextNode(blockLastChild)
     ) {
       const textNode = createTextNode('');
       currentBlock.append(textNode);
@@ -441,7 +447,7 @@ export function deleteLineBackward(selection: Selection): void {
   for (let i = nodesToTraverse.length - 1; i >= 0; i--) {
     const node = nodesToTraverse[i];
 
-    if (node instanceof LineBreakNode) {
+    if (isLineBreakNode(node)) {
       return;
     } else {
       node.remove();
@@ -491,7 +497,7 @@ export function deleteLineForward(selection: Selection): void {
   for (let i = 0; i < nodesToTraverse.length; i++) {
     const node = nodesToTraverse[i];
 
-    if (node instanceof LineBreakNode) {
+    if (isLineBreakNode(node)) {
       return;
     } else {
       node.remove();
@@ -531,7 +537,7 @@ export function deleteWordBackward(selection: Selection): void {
       const prevSibling = node.getPreviousSibling();
       if (node.isImmutable() || node.isSegmented()) {
         node.remove();
-        if (!(prevSibling instanceof TextNode)) {
+        if (!isTextNode(prevSibling)) {
           if (__DEV__) {
             invariant(false, 'Should never happen');
           } else {
@@ -540,7 +546,7 @@ export function deleteWordBackward(selection: Selection): void {
         }
         prevSibling.select();
         return;
-      } else if (node instanceof TextNode) {
+      } else if (isTextNode(node)) {
         const textContent = node.getTextContent();
         const endIndex =
           node === anchorNode ? anchorOffset : textContent.length;
@@ -616,7 +622,7 @@ export function deleteWordForward(selection: Selection): void {
 
       if (node.isImmutable() || node.isSegmented()) {
         node.remove();
-        if (!(nextSibling instanceof TextNode)) {
+        if (!isTextNode(nextSibling)) {
           if (__DEV__) {
             invariant(false, 'Should never happen');
           } else {
@@ -625,10 +631,7 @@ export function deleteWordForward(selection: Selection): void {
         }
         nextSibling.select(0, 0);
         return;
-      } else if (
-        node instanceof TextNode &&
-        anchorNode.getTextContent() !== ''
-      ) {
+      } else if (isTextNode(node) && anchorNode.getTextContent() !== '') {
         const textContent = node.getTextContent();
         const startIndex = node === anchorNode ? anchorOffset : 0;
         let foundNonWhitespace = false;
@@ -679,11 +682,11 @@ export function deleteBackward(selection: Selection): void {
   if (anchorOffset === 0) {
     if (prevSibling === null) {
       currentBlock.mergeWithPreviousSibling();
-    } else if (prevSibling instanceof TextNode) {
+    } else if (isTextNode(prevSibling)) {
       if (prevSibling.isImmutable()) {
         if (prevSibling === anchorNode) {
           const nextPrevSibling = prevSibling.getPreviousSibling();
-          if (!(nextPrevSibling instanceof TextNode)) {
+          if (!isTextNode(nextPrevSibling)) {
             if (__DEV__) {
               invariant(false, 'Should never happen');
             } else {
@@ -749,7 +752,7 @@ export function deleteForward(selection: Selection): void {
   if (anchorOffset === textContentLength) {
     if (nextSibling === null) {
       currentBlock.mergeWithNextSibling();
-    } else if (nextSibling instanceof TextNode) {
+    } else if (isTextNode(nextSibling)) {
       if (nextSibling.isImmutable()) {
         nextSibling.remove();
       } else if (nextSibling.isSegmented()) {
@@ -824,20 +827,20 @@ export function insertNodes(
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
 
-    if (node instanceof TextNode) {
+    if (isTextNode(node)) {
       target.insertAfter(node);
       target = node;
     } else {
-      if (target instanceof TextNode) {
+      if (isTextNode(target)) {
         target = topLevelBlock;
       }
       target.insertAfter(node);
       target = node;
     }
   }
-  if (target instanceof BlockNode) {
+  if (isBlockNode(target)) {
     const lastChild = target.getLastTextNode();
-    if (!(lastChild instanceof TextNode)) {
+    if (!isTextNode(lastChild)) {
       if (__DEV__) {
         invariant(false, 'Should never happen');
       } else {
@@ -853,7 +856,7 @@ export function insertNodes(
         prevSibling = sibling;
       }
     }
-  } else if (target instanceof TextNode) {
+  } else if (isTextNode(target)) {
     target.select();
     const parent = target.getParentBlockOrThrow();
     parent.normalizeTextNodes(true);
@@ -866,7 +869,7 @@ export function insertText(selection: Selection, text: string): void {
   const anchorOffset = selection.anchorOffset;
   const focusOffset = selection.focusOffset;
   const firstNode = selectedNodes[0];
-  if (!(firstNode instanceof TextNode)) {
+  if (!isTextNode(firstNode)) {
     if (__DEV__) {
       invariant(false, 'insertText: firstNode not a a text node');
     } else {
@@ -921,7 +924,7 @@ export function insertText(selection: Selection, text: string): void {
       if (endOffset === lastNodeTextLength) {
         lastNodeRemove = true;
         lastNode.remove();
-      } else if (lastNode instanceof TextNode) {
+      } else if (isTextNode(lastNode)) {
         lastNode.spliceText(0, endOffset, '', false);
         if (firstNode.getTextContent() === '') {
           firstNodeRemove = true;

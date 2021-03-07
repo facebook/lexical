@@ -10,9 +10,9 @@
 import type {NodeKey, EditorThemeClasses, OutlineNode} from 'outline';
 import type {ParagraphNode} from 'outline-extensions/ParagraphNode';
 
-import {BlockNode} from 'outline';
+import {isBlockNode, BlockNode} from 'outline';
 import {createParagraphNode} from 'outline-extensions/ParagraphNode';
-import {createListNode, ListNode} from 'outline-extensions/ListNode';
+import {createListNode, isListNode} from 'outline-extensions/ListNode';
 
 export class ListItemNode extends BlockNode {
   constructor(key?: NodeKey) {
@@ -49,11 +49,11 @@ export class ListItemNode extends BlockNode {
   // Mutation
 
   replace<N: OutlineNode>(replaceWithNode: N): N {
-    if (replaceWithNode instanceof ListItemNode) {
+    if (isListItemNode(replaceWithNode)) {
       return super.replace(replaceWithNode);
     }
     const list = this.getParentOrThrow();
-    if (list instanceof ListNode) {
+    if (isListNode(list)) {
       const childrenKeys = list.__children;
       const childrenLength = childrenKeys.length;
       const index = childrenKeys.indexOf(this.__key);
@@ -114,7 +114,7 @@ export class ListItemNode extends BlockNode {
     let newBlock;
 
     if (
-      list instanceof BlockNode &&
+      isBlockNode(list) &&
       this.getTextContent() === '' &&
       (prevSibling === null || nextSibling === null)
     ) {
@@ -141,4 +141,8 @@ export class ListItemNode extends BlockNode {
 
 export function createListItemNode(): ListItemNode {
   return new ListItemNode();
+}
+
+export function isListItemNode(node: ?OutlineNode): boolean %checks {
+  return node instanceof ListItemNode;
 }

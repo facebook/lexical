@@ -1,8 +1,8 @@
 // @flow strict-local
 
 import type {OutlineEditor, ViewModel} from 'outline';
-import {HeadingNode} from 'outline-extensions/HeadingNode';
-import {ListNode} from 'outline-extensions/ListNode';
+import {isHeadingNode} from 'outline-extensions/HeadingNode';
+import {isListNode} from 'outline-extensions/ListNode';
 import {createParagraphNode} from 'outline-extensions/ParagraphNode';
 import {createHeadingNode} from 'outline-extensions/HeadingNode';
 import {createListNode} from 'outline-extensions/ListNode';
@@ -50,7 +50,7 @@ export default function BlockControls({
             setPosition(top - editorTop);
             setSelectedBlockKey(blockKey);
             const type =
-              block instanceof HeadingNode || block instanceof ListNode
+              isHeadingNode(block) || isListNode(block)
                 ? block.getTag()
                 : block.getType();
             setBlockType(type);

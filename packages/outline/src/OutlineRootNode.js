@@ -7,6 +7,8 @@
  * @flow strict
  */
 
+import type {OutlineNode} from './OutlineNode';
+
 import {BlockNode} from './OutlineBlockNode';
 
 export class RootNode extends BlockNode {
@@ -36,4 +38,8 @@ export class RootNode extends BlockNode {
 
 export function createRootNode(): RootNode {
   return new RootNode();
+}
+
+export function isRootNode(node: ?OutlineNode): boolean %checks {
+  return node instanceof RootNode;
 }

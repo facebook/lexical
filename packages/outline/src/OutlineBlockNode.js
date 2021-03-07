@@ -9,7 +9,7 @@
 
 import type {NodeKey} from './OutlineNode';
 
-import {TextNode} from '.';
+import {isTextNode, TextNode} from '.';
 import {
   getWritableNode,
   OutlineNode,
@@ -73,7 +73,7 @@ export class BlockNode extends OutlineNode {
     const children = self.__children;
     const childrenNodes = [];
     for (let i = 0; i < children.length; i++) {
-      const childNode = getNodeByKey(children[i]);
+      const childNode = getNodeByKey<OutlineNode>(children[i]);
       if (childNode !== null) {
         childrenNodes.push(childNode);
       }
@@ -85,13 +85,10 @@ export class BlockNode extends OutlineNode {
     const self = this.getLatest();
     const children = self.__children;
     for (let i = 0; i < children.length; i++) {
-      const childNode = getNodeByKey(children[i]);
-      if (
-        childNode instanceof TextNode &&
-        (includeInert || !childNode.isInert())
-      ) {
+      const childNode = getNodeByKey<OutlineNode>(children[i]);
+      if (isTextNode(childNode) && (includeInert || !childNode.isInert())) {
         textNodes.push(childNode);
-      } else if (childNode instanceof BlockNode) {
+      } else if (isBlockNode(childNode)) {
         const subChildrenNodes = childNode.getAllTextNodes(includeInert);
         textNodes.push(...subChildrenNodes);
       }
@@ -102,9 +99,9 @@ export class BlockNode extends OutlineNode {
     const children = this.getChildren();
     for (let i = 0; i < children.length; i++) {
       const child = children[i];
-      if (child instanceof TextNode && (includeInert || !child.isInert())) {
+      if (isTextNode(child) && (includeInert || !child.isInert())) {
         return child;
-      } else if (child instanceof BlockNode) {
+      } else if (isBlockNode(child)) {
         return child.getFirstTextNode();
       }
     }
@@ -114,9 +111,9 @@ export class BlockNode extends OutlineNode {
     const children = this.getChildren();
     for (let i = children.length - 1; i >= 0; i--) {
       const child = children[i];
-      if (child instanceof TextNode && (includeInert || !child.isInert())) {
+      if (isTextNode(child) && (includeInert || !child.isInert())) {
         return child;
-      } else if (child instanceof BlockNode) {
+      } else if (isBlockNode(child)) {
         return child.getLastTextNode();
       }
     }
@@ -129,7 +126,7 @@ export class BlockNode extends OutlineNode {
     if (childrenLength === 0) {
       return null;
     }
-    return getNodeByKey(children[0]);
+    return getNodeByKey<OutlineNode>(children[0]);
   }
   getLastChild(): null | OutlineNode {
     const self = this.getLatest();
@@ -138,7 +135,7 @@ export class BlockNode extends OutlineNode {
     if (childrenLength === 0) {
       return null;
     }
-    return getNodeByKey(children[childrenLength - 1]);
+    return getNodeByKey<OutlineNode>(children[childrenLength - 1]);
   }
   getTextContent(includeInert?: boolean): string {
     let textContent = '';
@@ -147,7 +144,7 @@ export class BlockNode extends OutlineNode {
     for (let i = 0; i < childrenLength; i++) {
       const child = children[i];
       textContent += child.getTextContent(includeInert);
-      if (child instanceof BlockNode && i !== childrenLength - 1) {
+      if (isBlockNode(child) && i !== childrenLength - 1) {
         textContent += '\n\n';
       }
     }
@@ -193,7 +190,7 @@ export class BlockNode extends OutlineNode {
     if (childrenLength > 0) {
       const lastChildKey = children[childrenLength - 1];
       const lastChild = getNodeByKey(lastChildKey);
-      if (lastChild instanceof TextNode && lastChild.__text === '') {
+      if (isTextNode(lastChild) && lastChild.__text === '') {
         dirtySubTrees.add(lastChildKey);
       }
     }
@@ -216,11 +213,7 @@ export class BlockNode extends OutlineNode {
     for (let i = 0; i < children.length; i++) {
       const child: OutlineNode = children[i].getLatest();
 
-      if (
-        child instanceof TextNode &&
-        !child.isImmutable() &&
-        !child.isSegmented()
-      ) {
+      if (isTextNode(child) && !child.isImmutable() && !child.isSegmented()) {
         const url = child.__url;
         const flags = child.__flags;
         if (
@@ -254,9 +247,9 @@ export class BlockNode extends OutlineNode {
   mergeWithPreviousSibling(): void {
     shouldErrorOnReadOnly();
     let prevBlock = this.getPreviousSibling();
-    if (prevBlock instanceof BlockNode) {
+    if (isBlockNode(prevBlock)) {
       let lastChild = prevBlock.getLastChild();
-      if (lastChild instanceof BlockNode) {
+      if (isBlockNode(lastChild)) {
         prevBlock = lastChild;
       }
       const nodesToMove = this.getChildren();
@@ -274,7 +267,7 @@ export class BlockNode extends OutlineNode {
         lastChild = nodeToMove;
       }
       const nodeToSelect = nodesToMove[0];
-      if (nodeToSelect instanceof TextNode) {
+      if (isTextNode(nodeToSelect)) {
         nodeToSelect.select(0, 0);
       }
       this.remove();
@@ -284,9 +277,9 @@ export class BlockNode extends OutlineNode {
   mergeWithNextSibling(): void {
     shouldErrorOnReadOnly();
     const nextBlock = this.getNextSibling();
-    if (nextBlock instanceof BlockNode) {
+    if (isBlockNode(nextBlock)) {
       let firstChild = nextBlock.getFirstChild();
-      if (firstChild instanceof BlockNode) {
+      if (isBlockNode(firstChild)) {
         firstChild = firstChild.getFirstChild();
       }
       if (firstChild === null) {
@@ -310,7 +303,7 @@ export class BlockNode extends OutlineNode {
         target.insertAfter(nodeToMove);
         target = nodeToMove;
       }
-      if (firstChild instanceof BlockNode) {
+      if (isBlockNode(firstChild)) {
         firstChild.remove();
         if (nextBlock.getChildren().length === 0) {
           nextBlock.remove();
@@ -327,4 +320,8 @@ export class BlockNode extends OutlineNode {
   canInsertTab(): boolean {
     return false;
   }
+}
+
+export function isBlockNode(node: ?OutlineNode): boolean %checks {
+  return node instanceof BlockNode;
 }

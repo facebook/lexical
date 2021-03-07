@@ -447,7 +447,7 @@ export function deleteLineBackward(selection: Selection): void {
   for (let i = nodesToTraverse.length - 1; i >= 0; i--) {
     const node = nodesToTraverse[i];
 
-    if (isTextNode(node)) {
+    if (isLineBreakNode(node)) {
       return;
     } else {
       node.remove();

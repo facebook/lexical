@@ -7,9 +7,9 @@
  * @flow strict
  */
 
-import type {NodeKey, EditorThemeClasses} from 'outline';
+import type {OutlineNode, NodeKey, EditorThemeClasses} from 'outline';
 
-import {BlockNode, TextNode} from 'outline';
+import {isTextNode, BlockNode} from 'outline';
 
 export class ParagraphNode extends BlockNode {
   constructor(key?: NodeKey) {
@@ -49,7 +49,7 @@ export class ParagraphNode extends BlockNode {
     }
     // Otherwise just reset the text node flags
     const firstChild = this.getFirstChild();
-    if (firstChild instanceof TextNode && firstChild.getFlags() !== 0) {
+    if (isTextNode(firstChild) && firstChild.getFlags() !== 0) {
       firstChild.setFlags(0);
     }
   }
@@ -62,7 +62,7 @@ export class ParagraphNode extends BlockNode {
     }
     // Otherwise just reset the text node flags
     const firstChild = this.getFirstChild();
-    if (firstChild instanceof TextNode && firstChild.getFlags() !== 0) {
+    if (isTextNode(firstChild) && firstChild.getFlags() !== 0) {
       firstChild.setFlags(0);
     }
   }
@@ -76,4 +76,8 @@ export class ParagraphNode extends BlockNode {
 
 export function createParagraphNode(): ParagraphNode {
   return new ParagraphNode();
+}
+
+export function isParagraphNode(node: ?OutlineNode): boolean %checks {
+  return node instanceof ParagraphNode;
 }

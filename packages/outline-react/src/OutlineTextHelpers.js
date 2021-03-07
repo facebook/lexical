@@ -7,9 +7,9 @@
  * @flow strict
  */
 
-import type {RootNode, OutlineNode} from 'outline';
+import type {RootNode, OutlineNode, TextNode} from 'outline';
 
-import {TextNode, BlockNode} from 'outline';
+import {isTextNode, isBlockNode} from 'outline';
 import {CAN_USE_INTL_SEGMENTER} from './OutlineEnv';
 
 let _graphemeIterator = null;
@@ -31,13 +31,13 @@ export function findTextIntersectionFromCharacters(
   let currentCharacters = 0;
 
   mainLoop: while (node !== null) {
-    if (node instanceof BlockNode) {
+    if (isBlockNode(node)) {
       const child = node.getFirstChild();
       if (child !== null) {
         node = child;
         continue;
       }
-    } else if (node instanceof TextNode) {
+    } else if (isTextNode(node)) {
       const characters = node.getTextContent().length;
 
       if (currentCharacters + characters > targetCharacters) {
@@ -97,10 +97,7 @@ function hasAtLeastTwoVisibleChars(s: string): boolean {
 }
 
 export function announceNode(node: OutlineNode): void {
-  if (
-    node instanceof TextNode &&
-    hasAtLeastTwoVisibleChars(node.getTextContent())
-  ) {
+  if (isTextNode(node) && hasAtLeastTwoVisibleChars(node.getTextContent())) {
     announceString(node.getTextContent());
   }
 }

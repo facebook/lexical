@@ -11,7 +11,7 @@ import type {OutlineEditor, View} from 'outline';
 import type {TextNode} from 'outline';
 
 import {useEffect} from 'react';
-import {ParagraphNode} from 'outline-extensions/ParagraphNode';
+import {isParagraphNode} from 'outline-extensions/ParagraphNode';
 import {createListItemNode} from 'outline-extensions/ListItemNode';
 import {createHeadingNode} from 'outline-extensions/HeadingNode';
 import {createListNode} from 'outline-extensions/ListNode';
@@ -23,7 +23,7 @@ function textNodeTransform(node: TextNode, view: View): void {
   if (
     block !== null &&
     node.getPreviousSibling() === null &&
-    block instanceof ParagraphNode
+    isParagraphNode(block)
   ) {
     const textContent = node.getTextContent();
     const firstChar = textContent[0];

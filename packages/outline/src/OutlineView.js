@@ -22,7 +22,7 @@ import type {ParsedNodeMap} from './OutlineNode';
 import {reconcileViewModel} from './OutlineReconciler';
 import {getSelection, createSelectionFromParse} from './OutlineSelection';
 import {getNodeByKey, createNodeFromParse} from './OutlineNode';
-import {TextNode} from '.';
+import {isTextNode} from '.';
 import {invariant} from './OutlineUtils';
 
 export type View = {
@@ -171,7 +171,7 @@ export function triggerTextMutationListeners(
 
       if (node !== undefined && node.isAttached()) {
         // Apply text transforms
-        if (node instanceof TextNode) {
+        if (isTextNode(node)) {
           for (let i = 0; i < transforms.length; i++) {
             transforms[i](node, view);
             if (!node.isAttached()) {

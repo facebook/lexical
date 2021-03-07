@@ -19,9 +19,9 @@ import type {
 import {
   createLineBreakNode,
   createTextNode,
-  BlockNode,
-  TextNode,
-  LineBreakNode,
+  isBlockNode,
+  isTextNode,
+  isLineBreakNode,
 } from 'outline';
 import {
   CAN_USE_BEFORE_INPUT,
@@ -177,9 +177,9 @@ function handleCustomKeyInput(
               const parent = anchorNode.getParentOrThrow();
               const parentSibling = parent.getPreviousSibling();
 
-              if (parentSibling instanceof BlockNode) {
+              if (isBlockNode(parentSibling)) {
                 const lastChild = parentSibling.getLastChild();
-                if (lastChild instanceof TextNode) {
+                if (isTextNode(lastChild)) {
                   lastChild.select();
                   event.preventDefault();
                 }
@@ -189,7 +189,7 @@ function handleCustomKeyInput(
             let targetPrevSibling = prevSibling;
             if (prevSibling.isImmutable() || prevSibling.isSegmented()) {
               if (isLeftArrow) {
-                if (!(prevSibling instanceof LineBreakNode)) {
+                if (!isLineBreakNode(prevSibling)) {
                   announceNode(prevSibling);
                 }
                 targetPrevSibling = prevSibling.getPreviousSibling();
@@ -202,7 +202,7 @@ function handleCustomKeyInput(
               if (
                 !isLeftArrow &&
                 selection.isCaret() &&
-                targetPrevSibling instanceof TextNode
+                isTextNode(targetPrevSibling)
               ) {
                 const prevKey = targetPrevSibling.getKey();
                 const prevOffset = targetPrevSibling.getTextContent().length;
@@ -214,7 +214,7 @@ function handleCustomKeyInput(
             // Due to empty text nodes having an offset of 1, we need to
             // account for this and move selection accordingly when right
             // arrow is pressed.
-            if (isLeftArrow && targetPrevSibling instanceof TextNode) {
+            if (isLeftArrow && isTextNode(targetPrevSibling)) {
               event.preventDefault();
               if (targetPrevSibling === prevSibling) {
                 const prevSiblingTextContent = targetPrevSibling.getTextContent();
@@ -245,7 +245,7 @@ function handleCustomKeyInput(
                   (IS_APPLE && selectionAtEnd) ||
                   (!IS_APPLE && selectionJustBeforeEnd)
                 ) {
-                  if (nextSibling instanceof LineBreakNode) {
+                  if (isLineBreakNode(nextSibling)) {
                     nextSibling.selectNext(0, 0);
                     event.preventDefault();
                   } else {

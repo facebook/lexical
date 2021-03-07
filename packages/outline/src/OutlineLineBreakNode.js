@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {NodeKey} from './OutlineNode';
+import type {OutlineNode, NodeKey} from './OutlineNode';
 
 import {TextNode} from './OutlineTextNode';
 
@@ -28,4 +28,8 @@ export class LineBreakNode extends TextNode {
 
 export function createLineBreakNode(): LineBreakNode {
   return new LineBreakNode().makeImmutable();
+}
+
+export function isLineBreakNode(node: ?OutlineNode): boolean %checks {
+  return node instanceof LineBreakNode;
 }

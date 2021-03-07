@@ -1,10 +1,10 @@
 // @flow strict-local
 
-import type {OutlineEditor, View, OutlineNode} from 'outline';
+import type {BlockNode, OutlineEditor, View, OutlineNode} from 'outline';
 
 import * as React from 'react';
 
-import {TextNode, BlockNode} from 'outline';
+import {isBlockNode, isTextNode} from 'outline';
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {findTextIntersectionFromCharacters} from 'outline-react/OutlineTextHelpers';
 import {updateWithoutHistory} from 'outline-react/useOutlineHistory';
@@ -17,9 +17,9 @@ function recursivelySetBlockOverflowedNodes(
   value: boolean,
 ) {
   nodes.forEach((node) => {
-    if (node instanceof BlockNode) {
+    if (isBlockNode(node)) {
       recursivelySetBlockOverflowedNodes(node, node.getChildren(), value);
-    } else if (node instanceof TextNode && node.isOverflowed() !== value) {
+    } else if (isTextNode(node) && node.isOverflowed() !== value) {
       node.toggleOverflowed();
     }
   });
@@ -61,7 +61,7 @@ export default function CharacterLimit({
             );
             // existingOverflowNode and is always a TextNode, we do this for Flow
             if (
-              existingOverflowNode instanceof TextNode &&
+              isTextNode(existingOverflowNode) &&
               existingOverflowNode.isOverflowed()
             ) {
               if (existingOverflowNodeKey === node.getKey()) {

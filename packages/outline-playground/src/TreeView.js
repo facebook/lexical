@@ -3,9 +3,9 @@
  * @flow strict
  */
 
-import type {ViewModel, View} from 'outline';
+import type {BlockNode, ViewModel, View} from 'outline';
 
-import {BlockNode, TextNode} from 'outline';
+import {isBlockNode, isTextNode} from 'outline';
 
 import React from 'react';
 
@@ -42,7 +42,7 @@ function visitTree(view: View, currentNode: BlockNode, visitor, indent = []) {
       ),
     );
 
-    if (childNode instanceof BlockNode) {
+    if (isBlockNode(childNode)) {
       visitTree(
         view,
         childNode,
@@ -113,7 +113,7 @@ function normalize(text) {
 }
 
 function printNode(node) {
-  if (node instanceof TextNode) {
+  if (isTextNode(node)) {
     const text = node.getTextContent(true);
     const title = text.length === 0 ? '(empty)' : `"${normalize(text)}"`;
     const flagLabels = printTextNodeFlags(node);
@@ -156,10 +156,10 @@ function printSelectedCharsLine({
 }) {
   // No selection or node is not selected.
   if (
-    !node instanceof TextNode ||
+    !isTextNode(node) ||
     selection === null ||
     !isSelected ||
-    !node.isLeaf()
+    isBlockNode(node)
   ) {
     return '';
   }

@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {NodeKey, EditorThemeClasses} from 'outline';
+import type {OutlineNode, NodeKey, EditorThemeClasses} from 'outline';
 import type {ParagraphNode} from 'outline-extensions/ParagraphNode';
 
 import {BlockNode} from 'outline';
@@ -84,4 +84,8 @@ export class HeadingNode extends BlockNode {
 
 export function createHeadingNode(headingTag: HeadingTagType): HeadingNode {
   return new HeadingNode(headingTag);
+}
+
+export function isHeadingNode(node: ?OutlineNode): boolean %checks {
+  return node instanceof HeadingNode;
 }

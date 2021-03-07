@@ -11,7 +11,7 @@ import type {View} from './OutlineView';
 import type {OutlineNode, NodeKey} from './OutlineNode';
 import type {Node as ReactNode} from 'react';
 
-import {RootNode, TextNode, LineBreakNode} from '.';
+import {isTextNode, RootNode, TextNode, LineBreakNode} from '.';
 import {
   cloneViewModel,
   enterViewModelScope,
@@ -125,10 +125,7 @@ function updateEditor(
         const pendingNodeMap = currentPendingViewModel._nodeMap;
         for (const nodeKey in nodeMap) {
           const node = nodeMap[nodeKey];
-          if (
-            node instanceof TextNode &&
-            pendingNodeMap[nodeKey] !== undefined
-          ) {
+          if (isTextNode(node) && pendingNodeMap[nodeKey] !== undefined) {
             getWritableNode(node);
           }
         }

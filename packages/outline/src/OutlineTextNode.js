@@ -604,3 +604,7 @@ export class TextNode extends OutlineNode {
 export function createTextNode(text?: string = ''): TextNode {
   return new TextNode(text);
 }
+
+export function isTextNode(node: ?OutlineNode): boolean %checks {
+  return node instanceof TextNode;
+}

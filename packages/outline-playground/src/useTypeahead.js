@@ -2,7 +2,7 @@
 
 import type {OutlineEditor, View, NodeKey, EditorThemeClasses} from 'outline';
 
-import {TextNode, BlockNode} from 'outline';
+import {isTextNode, isBlockNode, TextNode} from 'outline';
 import {useEffect, useRef, useState, useCallback, useMemo} from 'react';
 
 export default function useTypeahead(editor: null | OutlineEditor): void {
@@ -18,7 +18,7 @@ export default function useTypeahead(editor: null | OutlineEditor): void {
         return null;
       }
       const node = view.getNodeByKey(typeaheadNodeKey.current);
-      if (!(node instanceof TextNode)) {
+      if (!isTextNode(node)) {
         return null;
       }
       return node;
@@ -53,9 +53,9 @@ export default function useTypeahead(editor: null | OutlineEditor): void {
           return;
         }
         const lastParagraph = view.getRoot().getLastChild();
-        if (lastParagraph instanceof BlockNode) {
+        if (isBlockNode(lastParagraph)) {
           const lastTextNode = lastParagraph.getLastChild();
-          if (lastTextNode instanceof TextNode) {
+          if (isTextNode(lastTextNode)) {
             const newTypeaheadNode = createTypeaheadNode(suggestion ?? '');
             lastTextNode.insertAfter(newTypeaheadNode);
             typeaheadNodeKey.current = newTypeaheadNode.getKey();
@@ -114,10 +114,7 @@ export default function useTypeahead(editor: null | OutlineEditor): void {
             const prevTextNode = typeaheadTextNode?.getPreviousSibling();
             // Make sure that the Typeahead is visible and previous child writable
             // before calling it a successfully handled event.
-            if (
-              typeaheadTextNode !== null &&
-              prevTextNode instanceof TextNode
-            ) {
+            if (typeaheadTextNode !== null && isTextNode(prevTextNode)) {
               event.preventDefault();
               prevTextNode.setTextContent(
                 prevTextNode.getTextContent() +

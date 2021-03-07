@@ -14,16 +14,24 @@ export type {Selection} from './OutlineSelection';
 export type {TextFormatType} from './OutlineTextNode';
 
 import {createEditor} from './OutlineEditor';
-import {createTextNode, TextNode} from './OutlineTextNode';
-import {BlockNode} from './OutlineBlockNode';
-import {RootNode} from './OutlineRootNode';
-import {createLineBreakNode, LineBreakNode} from './OutlineLineBreakNode';
+import {createTextNode, isTextNode, TextNode} from './OutlineTextNode';
+import {isBlockNode, BlockNode} from './OutlineBlockNode';
+import {isRootNode, RootNode} from './OutlineRootNode';
+import {
+  createLineBreakNode,
+  isLineBreakNode,
+  LineBreakNode,
+} from './OutlineLineBreakNode';
 import {OutlineNode} from './OutlineNode';
 
 export {
   createEditor,
   createLineBreakNode,
   createTextNode,
+  isTextNode,
+  isBlockNode,
+  isRootNode,
+  isLineBreakNode,
   LineBreakNode,
   OutlineNode,
   BlockNode,

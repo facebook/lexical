@@ -9,7 +9,7 @@
 
 import type {OutlineEditor, ViewModel, View} from 'outline';
 
-import {TextNode} from 'outline';
+import {isTextNode} from 'outline';
 import {isRedo, isUndo} from './OutlineKeyHelpers';
 import {useEffect, useMemo} from 'react';
 
@@ -43,8 +43,8 @@ function shouldMerge(
       const prevDirtyNode = prevNodeMap[prevDirtyNodeKey];
       if (
         prevDirtyNode !== undefined &&
-        prevDirtyNode instanceof TextNode &&
-        nextDirtyNode instanceof TextNode &&
+        isTextNode(prevDirtyNode) &&
+        isTextNode(nextDirtyNode) &&
         prevDirtyNode.__flags === nextDirtyNode.__flags
       ) {
         const prevText = prevDirtyNode.__text;

@@ -13,7 +13,7 @@ import type {OutlineEditor, EditorThemeClasses} from './OutlineEditor';
 import type {Selection} from './OutlineSelection';
 
 import {getNodeByKey} from './OutlineNode';
-import {BlockNode, TextNode} from '.';
+import {isTextNode, isBlockNode} from '.';
 import {invariant} from './OutlineUtils';
 import {
   IS_IMMUTABLE,
@@ -77,7 +77,7 @@ function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
   if (activeNextNodeMap[key] === undefined) {
     activeEditor._keyToDOMMap.delete(key);
   }
-  if (node instanceof BlockNode) {
+  if (isBlockNode(node)) {
     const children = node.__children;
     destroyChildren(children, 0, children.length - 1, null);
   }
@@ -120,13 +120,13 @@ function createNode(
     domStyle.setProperty('-webkit-user-select', 'none');
   }
 
-  if (node instanceof TextNode) {
+  if (isTextNode(node)) {
     if (!isInert) {
       const text = node.__text;
       subTreeTextContent += text;
       editorTextContent += text;
     }
-  } else if (node instanceof BlockNode) {
+  } else if (isBlockNode(node)) {
     // Handle block children
     const children = node.__children;
     const endIndex = children.length - 1;
@@ -239,7 +239,7 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
   const dom = activeEditor.getElementByKey(key);
 
   if (prevNode === nextNode && !hasDirtySubTree) {
-    if (prevNode instanceof TextNode) {
+    if (isTextNode(prevNode)) {
       const text = prevNode.__text;
       editorTextContent += text;
       subTreeTextContent += text;
@@ -268,12 +268,12 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
     return;
   }
   // Handle text content, for LTR, LTR cases.
-  if (nextNode instanceof TextNode) {
+  if (isTextNode(nextNode)) {
     const text = nextNode.__text;
     subTreeTextContent += text;
     editorTextContent += text;
     return;
-  } else if (prevNode instanceof BlockNode && nextNode instanceof BlockNode) {
+  } else if (isBlockNode(prevNode) && isBlockNode(nextNode)) {
     // Reconcile block children
     const prevChildren = prevNode.__children;
     const nextChildren = nextNode.__children;

@@ -1,8 +1,8 @@
 // @flow
 
-import type {OutlineEditor, Selection, TextFormatType} from 'outline';
+import type {OutlineEditor, Selection, TextFormatType, TextNode} from 'outline';
 
-import {TextNode} from 'outline';
+import {isTextNode} from 'outline';
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 // $FlowFixMe
 import {unstable_batchedUpdates, createPortal} from 'react-dom';
@@ -247,7 +247,7 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
           if (sel !== null) {
             const nodes = sel.getNodes();
             nodes.forEach((node) => {
-              if (node instanceof TextNode && !node.isImmutable()) {
+              if (isTextNode(node) && !node.isImmutable()) {
                 node.setURL(url);
               }
             });

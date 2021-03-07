@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {NodeKey, EditorThemeClasses} from 'outline';
+import type {OutlineNode, NodeKey, EditorThemeClasses} from 'outline';
 
 import {BlockNode} from 'outline';
 
@@ -55,4 +55,8 @@ export class ListNode extends BlockNode {
 
 export function createListNode(tag: ListNodeTagType): ListNode {
   return new ListNode(tag);
+}
+
+export function isListNode(node: ?OutlineNode): boolean %checks {
+  return node instanceof ListNode;
 }

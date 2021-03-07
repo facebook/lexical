@@ -10,7 +10,14 @@
 import type {OutlineEditor, EditorThemeClasses} from './OutlineEditor';
 import type {Selection} from './OutlineSelection';
 
-import {createTextNode, RootNode, BlockNode, TextNode} from '.';
+import {
+  createTextNode,
+  isBlockNode,
+  isTextNode,
+  isRootNode,
+  RootNode,
+  BlockNode,
+} from '.';
 import {getActiveViewModel, shouldErrorOnReadOnly} from './OutlineView';
 import {generateRandomKey, invariant} from './OutlineUtils';
 import {
@@ -58,7 +65,7 @@ function makeNodeAsDirty(node: OutlineNode): void {
   const viewModel = getActiveViewModel();
   const dirtyNodes = viewModel._dirtyNodes;
   dirtyNodes.add(latest.__key);
-  if (latest instanceof BlockNode) {
+  if (isBlockNode(latest)) {
     const children = latest.getChildren();
     for (let i = 0; i < children.length; i++) {
       const child = children[i];
@@ -121,7 +128,7 @@ export function wrapInTextNodes<N: OutlineNode>(node: N): N {
   const prevSibling = node.getPreviousSibling();
   if (
     prevSibling === null ||
-    !(prevSibling instanceof TextNode) ||
+    !isTextNode(prevSibling) ||
     prevSibling.isImmutable() ||
     prevSibling.isSegmented()
   ) {
@@ -131,7 +138,7 @@ export function wrapInTextNodes<N: OutlineNode>(node: N): N {
   const nextSibling = node.getNextSibling();
   if (
     nextSibling === null ||
-    !(nextSibling instanceof TextNode) ||
+    !isTextNode(nextSibling) ||
     nextSibling.isImmutable() ||
     nextSibling.isSegmented()
   ) {
@@ -186,12 +193,6 @@ export class OutlineNode {
     const parent = getNodeByKey(parentKey);
     return parent !== null && parent.isAttached();
   }
-  isLeaf(): boolean {
-    return !(this instanceof BlockNode);
-  }
-  isText(): boolean {
-    return this instanceof TextNode;
-  }
   isSelected(): boolean {
     const viewModel = getActiveViewModel();
     const selection = viewModel._selection;
@@ -231,7 +232,7 @@ export class OutlineNode {
   getParentBlockOrThrow(): BlockNode {
     let node = this;
     while (node !== null) {
-      if (node instanceof BlockNode) {
+      if (isBlockNode(node)) {
         return node;
       }
       node = node.getParent();
@@ -246,7 +247,7 @@ export class OutlineNode {
     let node = this;
     while (node !== null) {
       const parent = node.getParent();
-      if (parent instanceof RootNode && node instanceof BlockNode) {
+      if (isRootNode(parent) && isBlockNode(node)) {
         return node;
       }
       node = parent;
@@ -364,7 +365,7 @@ export class OutlineNode {
         if (node === targetNode) {
           break;
         }
-        const child = node instanceof BlockNode ? node.getFirstChild() : null;
+        const child = isBlockNode(node) ? node.getFirstChild() : null;
         if (child !== null) {
           node = child;
           continue;
@@ -398,7 +399,7 @@ export class OutlineNode {
         if (node === targetNode) {
           break;
         }
-        const child = node instanceof BlockNode ? node.getLastChild() : null;
+        const child = isBlockNode(node) ? node.getLastChild() : null;
         if (child !== null) {
           node = child;
           continue;
@@ -584,7 +585,7 @@ export class OutlineNode {
     const nextSibling = this.getNextSibling();
     if (
       nextSibling === null ||
-      !(nextSibling instanceof TextNode) ||
+      !isTextNode(nextSibling) ||
       nextSibling.isImmutable() ||
       nextSibling.isSegmented()
     ) {
@@ -693,7 +694,7 @@ export function createNodeFromParse(
   }
   const node = new NodeType();
   const key = node.__key;
-  if (node instanceof RootNode) {
+  if (isRootNode(node)) {
     const viewModel = getActiveViewModel();
     viewModel._nodeMap.root = node;
   }
@@ -714,7 +715,7 @@ export function createNodeFromParse(
   node.__parent = parentKey;
   // We will need to recursively handle the children in the case
   // of a BlockNode.
-  if (node instanceof BlockNode) {
+  if (isBlockNode(node)) {
     const children = parsedNode.__children;
     for (let i = 0; i < children.length; i++) {
       const childKey = children[i];

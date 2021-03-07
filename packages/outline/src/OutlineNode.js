@@ -190,7 +190,7 @@ export class OutlineNode {
     if (parentKey === null) {
       return false;
     }
-    const parent = getNodeByKey(parentKey);
+    const parent = getNodeByKey<BlockNode>(parentKey);
     return parent !== null && parent.isAttached();
   }
   isSelected(): boolean {
@@ -216,7 +216,7 @@ export class OutlineNode {
     if (parent === null) {
       return null;
     }
-    return getNodeByKey(parent);
+    return getNodeByKey<BlockNode>(parent);
   }
   getParentOrThrow(): BlockNode {
     const parent = this.getLatest().__parent;
@@ -274,7 +274,7 @@ export class OutlineNode {
     if (index <= 0) {
       return null;
     }
-    return getNodeByKey(children[index - 1]);
+    return getNodeByKey<OutlineNode>(children[index - 1]);
   }
   getPreviousSiblings(): Array<OutlineNode> {
     const parent = this.getParentOrThrow();
@@ -292,7 +292,7 @@ export class OutlineNode {
     if (index >= childrenLength - 1) {
       return null;
     }
-    return getNodeByKey(children[index + 1]);
+    return getNodeByKey<OutlineNode>(children[index + 1]);
   }
   getNextSiblings(): Array<OutlineNode> {
     const parent = this.getParentOrThrow();
@@ -439,8 +439,8 @@ export class OutlineNode {
   isInert(): boolean {
     return (this.getLatest().__flags & IS_INERT) !== 0;
   }
-  getLatest<N>(): N {
-    const latest = getNodeByKey(this.__key);
+  getLatest<N: OutlineNode>(): N {
+    const latest = getNodeByKey<N>(this.__key);
     if (latest === null) {
       if (__DEV__) {
         invariant(false, 'getLatest: node not found');

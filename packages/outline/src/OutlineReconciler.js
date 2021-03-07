@@ -11,6 +11,7 @@ import type {NodeKey, NodeMapType} from './OutlineNode';
 import type {ViewModel} from './OutlineView';
 import type {OutlineEditor, EditorThemeClasses} from './OutlineEditor';
 import type {Selection} from './OutlineSelection';
+import type {TextNode} from './OutlineTextNode';
 
 import {getNodeByKey} from './OutlineNode';
 import {isTextNode, isBlockNode} from '.';
@@ -579,8 +580,8 @@ function reconcileSelection(selection: Selection, editor: OutlineEditor): void {
     }
   }
   const domSelection = window.getSelection();
-  const anchorNode = getNodeByKey(anchorKey);
-  const focusNode = getNodeByKey(anchorKey);
+  const anchorNode = getNodeByKey<TextNode>(anchorKey);
+  const focusNode = getNodeByKey<TextNode>(anchorKey);
   const anchorDOM = editor.getElementByKey(anchorKey);
   const focusDOM = editor.getElementByKey(focusKey);
   let anchorOffset = selection.anchorOffset;

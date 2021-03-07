@@ -73,7 +73,7 @@ export class BlockNode extends OutlineNode {
     const children = self.__children;
     const childrenNodes = [];
     for (let i = 0; i < children.length; i++) {
-      const childNode = getNodeByKey(children[i]);
+      const childNode = getNodeByKey<OutlineNode>(children[i]);
       if (childNode !== null) {
         childrenNodes.push(childNode);
       }
@@ -85,7 +85,7 @@ export class BlockNode extends OutlineNode {
     const self = this.getLatest();
     const children = self.__children;
     for (let i = 0; i < children.length; i++) {
-      const childNode = getNodeByKey(children[i]);
+      const childNode = getNodeByKey<OutlineNode>(children[i]);
       if (isTextNode(childNode) && (includeInert || !childNode.isInert())) {
         textNodes.push(childNode);
       } else if (isBlockNode(childNode)) {
@@ -126,7 +126,7 @@ export class BlockNode extends OutlineNode {
     if (childrenLength === 0) {
       return null;
     }
-    return getNodeByKey(children[0]);
+    return getNodeByKey<OutlineNode>(children[0]);
   }
   getLastChild(): null | OutlineNode {
     const self = this.getLatest();
@@ -135,7 +135,7 @@ export class BlockNode extends OutlineNode {
     if (childrenLength === 0) {
       return null;
     }
-    return getNodeByKey(children[childrenLength - 1]);
+    return getNodeByKey<OutlineNode>(children[childrenLength - 1]);
   }
   getTextContent(includeInert?: boolean): string {
     let textContent = '';

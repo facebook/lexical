@@ -47,7 +47,7 @@ export class Selection {
   }
   getAnchorNode(): TextNode {
     const anchorKey = this.anchorKey;
-    const anchorNode = getNodeByKey(anchorKey);
+    const anchorNode = getNodeByKey<TextNode>(anchorKey);
     if (!isTextNode(anchorNode)) {
       if (__DEV__) {
         invariant(false, 'getAnchorNode: anchorNode not a text node');
@@ -59,7 +59,7 @@ export class Selection {
   }
   getFocusNode(): TextNode {
     const focusKey = this.focusKey;
-    const focusNode = getNodeByKey(focusKey);
+    const focusNode = getNodeByKey<TextNode>(focusKey);
     if (!isTextNode(focusNode)) {
       if (__DEV__) {
         invariant(false, 'getFocusNode: focusNode not a text node');

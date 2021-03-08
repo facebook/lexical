@@ -580,15 +580,22 @@ export class OutlineNode {
     }
     return writableSelf;
   }
+  selectPrevious(anchorOffset?: number, focusOffset?: number): Selection {
+    shouldErrorOnReadOnly();
+    const prevSibling = this.getPreviousSibling();
+    if (prevSibling === null || !isTextNode(prevSibling)) {
+      if (__DEV__) {
+        invariant(false, 'TODO: This needs to be fixed');
+      } else {
+        invariant();
+      }
+    }
+    return prevSibling.select(anchorOffset, focusOffset);
+  }
   selectNext(anchorOffset?: number, focusOffset?: number): Selection {
     shouldErrorOnReadOnly();
     const nextSibling = this.getNextSibling();
-    if (
-      nextSibling === null ||
-      !isTextNode(nextSibling) ||
-      nextSibling.isImmutable() ||
-      nextSibling.isSegmented()
-    ) {
+    if (nextSibling === null || !isTextNode(nextSibling)) {
       if (__DEV__) {
         invariant(false, 'TODO: This needs to be fixed');
       } else {

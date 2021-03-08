@@ -304,7 +304,10 @@ function moveNativeSelectionBackward() {
     target.dispatchEvent(keyDownEvent);
     if (!keyDownEvent.defaultPrevented) {
       if (anchorNode.nodeType === 3) {
-        if (anchorOffset === 0) {
+        if (
+          anchorOffset === 0 ||
+          anchorNode.parentNode.contentEditable === 'false'
+        ) {
           const lastTextNode = getLastTextNode(anchorNode);
 
           if (lastTextNode === null) {
@@ -355,7 +358,10 @@ function moveNativeSelectionForward() {
     });
     target.dispatchEvent(keyDownEvent);
     if (!keyDownEvent.defaultPrevented) {
-      if (anchorNode.nodeType === 3) {
+      if (
+        anchorNode.nodeType === 3 ||
+        anchorNode.parentNode.contentEditable === 'false'
+      ) {
         const text = anchorNode.nodeValue;
         if (text.length === anchorOffset || text === '\uFEFF') {
           const nextTextNode = getNextTextNode(anchorNode);

@@ -12,7 +12,7 @@ const mentionStyle = 'background-color: rgba(24, 119, 232, 0.2)';
 
 const PUNCTUATION =
   '\\.,\\+\\*\\?\\$\\@\\|#{}\\(\\)\\^\\-\\[\\]\\\\/!%\'"~=<>_:;';
-const NAME = '\\b[A-Z][^\\s' + PUNCTUATION + ']';
+const NAME = '\\b[A-Z][^' + PUNCTUATION + ']';
 
 const DocumentMentionsRegex = {
   PUNCTUATION,
@@ -501,6 +501,7 @@ class MentionNode extends TextNode {
     const dom = super.createDOM(editorThemeClasses);
     dom.style.cssText = mentionStyle;
     dom.className = 'mention';
+    dom.setAttribute('role', 'link');
     dom.tabIndex = -1;
     return dom;
   }

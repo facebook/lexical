@@ -7,14 +7,13 @@
  * @flow strict
  */
 
-import type {RootNode, OutlineNode, TextNode} from 'outline';
+import type {RootNode, TextNode} from 'outline';
 
 import {isTextNode, isBlockNode} from 'outline';
-import {CAN_USE_INTL_SEGMENTER} from './OutlineEnv';
 
 let _graphemeIterator = null;
 // $FlowFixMe: Missing a Flow type for `Intl.Segmenter`.
-function getGraphemeIterator(): Intl.Segmenter {
+export function getGraphemeIterator(): Intl.Segmenter {
   if (_graphemeIterator === null) {
     _graphemeIterator =
       // $FlowFixMe: Missing a Flow type for `Intl.Segmenter`.
@@ -62,42 +61,4 @@ export function findTextIntersectionFromCharacters(
     break;
   }
   return null;
-}
-
-export function announceString(s: string): void {
-  const body = document.body;
-  if (body != null) {
-    const announce = document.createElement('div');
-    announce.setAttribute('id', 'outline_announce_' + Date.now());
-    announce.setAttribute('aria-live', 'polite');
-    announce.style.cssText =
-      'clip: rect(0, 0, 0, 0); height: 1px; overflow: hidden; position: absolute; width: 1px';
-    body.appendChild(announce);
-
-    // The trick to make all screen readers to read the text is to create AND update an element with a unique id:
-    // - JAWS remains silent without update
-    // - VO remains silent without create, if the text is the same (and doing `announce.textContent=''` doesn't help)
-    setTimeout(() => {
-      announce.textContent = s;
-    }, 100);
-
-    setTimeout(() => {
-      body.removeChild(announce);
-    }, 500);
-  }
-}
-
-function hasAtLeastTwoVisibleChars(s: string): boolean {
-  if (CAN_USE_INTL_SEGMENTER) {
-    const segments = Array.from(getGraphemeIterator().segment(s));
-    return segments.length > 1;
-  }
-  // TODO: Implement polyfill for `Intl.Segmenter`.
-  return [...s].length > 1;
-}
-
-export function announceNode(node: OutlineNode): void {
-  if (isTextNode(node) && hasAtLeastTwoVisibleChars(node.getTextContent())) {
-    announceString(node.getTextContent());
-  }
 }

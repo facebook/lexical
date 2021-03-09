@@ -148,6 +148,77 @@ describe('OutlineEditor tests', () => {
     );
   });
 
+  describe('With node decorators', () => {
+    function useDecorators() {
+      const [decorators, setDecorators] = React.useState(() =>
+        editor.getNodeDecorators(),
+      );
+      // Subscribe to changes
+      React.useEffect(() => {
+        return editor.addDecoratorListener((nextDecorators) => {
+          setDecorators(nextDecorators);
+        });
+      }, []);
+      const decoratedPortals = React.useMemo(
+        () =>
+          Object.keys(decorators).map((nodeKey) => {
+            const reactDecorator = decorators[nodeKey];
+            const element = editor.getElementByKey(nodeKey);
+            return ReactDOM.createPortal(reactDecorator, element);
+          }),
+        [decorators],
+      );
+      return decoratedPortals;
+    }
+
+    it('Should correctly render React component into Outline node', async () => {
+      function Decorator({text}) {
+        return <span>{text}</span>;
+      }
+
+      function Test() {
+        editor = React.useMemo(() => Outline.createEditor(), []);
+
+        const ref = React.useCallback((node) => {
+          editor.setEditorElement(node);
+        }, []);
+
+        const decorators = useDecorators();
+
+        return (
+          <>
+            <div ref={ref} contentEditable={true} />
+            {decorators}
+          </>
+        );
+      }
+
+      ReactTestUtils.act(() => {
+        ReactDOM.render(<Test />, container);
+      });
+
+      // Update the editor with the decorator
+      await ReactTestUtils.act(async () => {
+        await editor.update((view) => {
+          const paragraph = ParagraphNodeModule.createParagraphNode();
+          const text = Outline.createTextNode('');
+          text.makeImmutable();
+          editor.addNodeDecorator(
+            text.getKey(),
+            <Decorator text={'Hello world'} />,
+          );
+          paragraph.append(text);
+          view.getRoot().append(paragraph);
+        });
+      });
+
+      expect(sanitizeHTML(container.innerHTML)).toBe(
+        '<div contenteditable="true" data-outline-editor="true"><p><span></span>' +
+          '<span><span>Hello world</span></span><span></span></p></div>',
+      );
+    });
+  });
+
   describe('With editor element', () => {
     beforeEach(() => {
       init();

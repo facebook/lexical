@@ -241,12 +241,11 @@ export class OutlineEditor {
     this._isPointerDown = isPointerDown;
   }
   addNodeDecorator(key: NodeKey, decorator: ReactNode): void {
-    const nodeDecorators = {...this._nodeDecorators};
-    nodeDecorators[key] = decorator;
-    this._nodeDecorators = nodeDecorators;
-    if (this._pendingViewModel === null) {
-      triggerUpdateListeners(this);
-    }
+    const pendingNodeDecorators = this._pendingNodeDecorators || {
+      ...this._nodeDecorators,
+    };
+    pendingNodeDecorators[key] = decorator;
+    this._pendingNodeDecorators = pendingNodeDecorators;
   }
   addNodeType(nodeType: string, klass: Class<OutlineNode>): () => void {
     this._registeredNodeTypes.set(nodeType, klass);

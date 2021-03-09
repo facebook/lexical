@@ -402,6 +402,7 @@ export function insertParagraph(selection: Selection): void {
     if (isTextNode(nodeToSelect)) {
       nodeToSelect.select(anchorOffset, anchorOffset);
     }
+    newBlock.normalizeTextNodes(true);
     const blockFirstChild = currentBlock.getFirstChild();
     const blockLastChild = currentBlock.getLastChild();
     if (

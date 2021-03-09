@@ -212,7 +212,11 @@ function handleCustomKeyInput(
   ) {
     if (isLeftArrow) {
       nativelyMoveSelectionToNode(prevSibling, editor, false);
-    } else if (key === 'ArrowUp' || key === 'ArrowDown' || isRightArrow) {
+      event.preventDefault();
+    } else if (isRightArrow) {
+      nativelyMoveSelectionToNode(nextSibling, editor, true);
+      event.preventDefault();
+    } else if (key === 'ArrowUp' || key === 'ArrowDown') {
       nativelyMoveSelectionToNode(nextSibling, editor, true);
     } else if (isBackspace) {
       event.preventDefault();
@@ -231,18 +235,14 @@ function handleCustomKeyInput(
   if (!isModifierActive(event)) {
     // Handle moving selection or backspaces around inert nodes and
     // also handle deletions (backspace) around inert nodes.
-    if (
-      isTextNode(prevSibling) &&
-      prevSibling.isInert() &&
-      (isLeftArrow || isBackspace)
-    ) {
+    if (isTextNode(prevSibling) && prevSibling.isInert()) {
       const nextPrevSibling = prevSibling.getPreviousSibling();
       if (isTextNode(nextPrevSibling)) {
-        nativelyMoveSelectionToNode(nextPrevSibling, editor, false);
         if (isLeftArrow) {
-          // Prevent left arrow native behavior, as the selection should
-          // already be in the right place.
+          nativelyMoveSelectionToNode(nextPrevSibling, editor, false);
           event.preventDefault();
+        } else if (isBackspace) {
+          nativelyMoveSelectionToNode(nextPrevSibling, editor, false);
         }
       }
       return;

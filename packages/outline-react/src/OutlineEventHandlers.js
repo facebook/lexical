@@ -153,6 +153,10 @@ function isImmutableOrSegmented(node: OutlineNode): boolean {
   return !isLineBreakNode(node) && (node.isImmutable() || node.isSegmented());
 }
 
+function isSelectable(element: HTMLElement): boolean {
+  return element.hasAttribute('tabindex');
+}
+
 function handleCustomKeyInput(
   event: KeyboardEvent,
   view: View,
@@ -196,6 +200,7 @@ function handleCustomKeyInput(
   }
   const isRightArrow = key === 'ArrowRight';
   const isDelete = key === 'Delete';
+  const isBackspace = key === 'Backspace';
   const isOffsetAtEnd = offset === textContent.length;
   const nextSibling = anchorNode.getNextSibling();
 
@@ -209,7 +214,7 @@ function handleCustomKeyInput(
       nativelyMoveSelectionToNode(prevSibling, editor, false);
     } else if (key === 'ArrowUp' || key === 'ArrowDown' || isRightArrow) {
       nativelyMoveSelectionToNode(nextSibling, editor, true);
-    } else if (key === 'Backspace') {
+    } else if (isBackspace) {
       event.preventDefault();
       nextSibling.select();
       deleteBackward(selection);
@@ -219,20 +224,30 @@ function handleCustomKeyInput(
       prevSibling.selectEnd();
       deleteForward(selection);
       return;
-    } else if (key === 'Enter') {
-      const textNode = createTextNode(textContent);
-      anchorNode.replace(textNode);
-      textNode.select();
-      const parent = textNode.getParentOrThrow();
-      parent.normalizeTextNodes(true);
-      event.preventDefault();
     }
     return;
   }
 
-  // Handle moving selection into an immutable or segmented text node.
-  // Also handles deletion of the first part of a segmented text node.
   if (!isModifierActive(event)) {
+    // Handle moving selection or backspaces around inert nodes and
+    // also handle deletions (backspace) around inert nodes.
+    if (
+      isTextNode(prevSibling) &&
+      prevSibling.isInert() &&
+      (isLeftArrow || isBackspace)
+    ) {
+      const nextPrevSibling = prevSibling.getPreviousSibling();
+      if (isTextNode(nextPrevSibling)) {
+        nativelyMoveSelectionToNode(nextPrevSibling, editor, false);
+        if (isLeftArrow) {
+          // Prevent left arrow native behavior, as the selection should
+          // already be in the right place.
+          event.preventDefault();
+        }
+      }
+      return;
+    }
+    // Handle moving selection (left) into an immutable or segmented text node.
     if (
       isLeftArrow &&
       isOffsetAtStart &&
@@ -241,10 +256,18 @@ function handleCustomKeyInput(
     ) {
       const previousNodeKey = prevSibling.getKey();
       const previousElement = editor.getElementByKey(previousNodeKey);
-      previousElement.focus();
-      prevSibling.select();
+      if (isSelectable(previousElement)) {
+        previousElement.focus();
+        prevSibling.select();
+      } else {
+        prevSibling.selectPrevious();
+      }
       event.preventDefault();
-    } else if (
+      return;
+    }
+    // Handle moving selection (Right) into an immutable or segmented text node and
+    // also handle deletion (delete) of the first part of a segmented text node.
+    if (
       isOffsetAtEnd &&
       isTextNode(nextSibling) &&
       isImmutableOrSegmented(nextSibling)
@@ -252,8 +275,12 @@ function handleCustomKeyInput(
       if (isRightArrow) {
         const nextNodeKey = nextSibling.getKey();
         const nextElement = editor.getElementByKey(nextNodeKey);
-        nextElement.focus();
-        nextSibling.select();
+        if (isSelectable(nextElement)) {
+          nextElement.focus();
+          nextSibling.select();
+        } else {
+          nextSibling.selectNext();
+        }
         event.preventDefault();
       } else if (isDelete) {
         event.preventDefault();

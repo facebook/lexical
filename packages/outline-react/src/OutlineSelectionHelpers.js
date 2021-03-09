@@ -25,19 +25,9 @@ import {
 } from 'outline';
 import {CAN_USE_INTL_SEGMENTER} from './OutlineEnv';
 import {invariant} from './OutlineReactUtils';
+import {getGraphemeIterator} from './OutlineTextHelpers';
 
 const WHITESPACE_REGEX = /\s/g;
-
-let _graphemeIterator = null;
-// $FlowFixMe: Missing a Flow type for `Intl.Segmenter`.
-function getGraphemeIterator(): Intl.Segmenter {
-  if (_graphemeIterator === null) {
-    _graphemeIterator =
-      // $FlowFixMe: Missing a Flow type for `Intl.Segmenter`.
-      new Intl.Segmenter(undefined /* locale */, {granularity: 'grapheme'});
-  }
-  return _graphemeIterator;
-}
 
 /**
  * What you think of as a single 'character' onscreen might actually be composed

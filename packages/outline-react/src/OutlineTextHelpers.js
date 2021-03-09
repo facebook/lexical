@@ -14,7 +14,7 @@ import {CAN_USE_INTL_SEGMENTER} from './OutlineEnv';
 
 let _graphemeIterator = null;
 // $FlowFixMe: Missing a Flow type for `Intl.Segmenter`.
-function getGraphemeIterator(): Intl.Segmenter {
+export function getGraphemeIterator(): Intl.Segmenter {
   if (_graphemeIterator === null) {
     _graphemeIterator =
       // $FlowFixMe: Missing a Flow type for `Intl.Segmenter`.

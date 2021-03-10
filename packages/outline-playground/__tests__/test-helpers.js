@@ -146,6 +146,7 @@ async function expectHTML(page, expected) {
     return editorElement.innerHTML;
   });
   if (html !== expected) {
+    console.error('Expected:\n\n' + expected + '\n\nActual:\n\n' + html)
     throw new Error('expectHTML: actual HTML did not match expected HTML');
   }
 }

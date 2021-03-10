@@ -255,7 +255,6 @@ export default function useEventRecorder(editor: OutlineEditor) {
           activeKeys.forEach((logEntry) => {
             const event = logEntry.event;
             if (event.type === 'keydown') {
-              debugger;
               event.cancelled = true;
             }
           });
@@ -302,7 +301,7 @@ export default function useEventRecorder(editor: OutlineEditor) {
           return;
         }
         if (isValidTarget(target, editorElement)) {
-          if (activeKeys.has(key)) {
+          if (activeKeys.has(keyCode)) {
             return;
           }
           // Seems like we have an odd Puppeteer bug when the alt modifer is pressed
@@ -329,9 +328,6 @@ export default function useEventRecorder(editor: OutlineEditor) {
           return;
         }
         if (isValidTarget(event.target, editorElement)) {
-          if (!activeKeys.has(key)) {
-            return;
-          }
           activeKeys.delete(key);
           log({type: 'keyup', key}, target, timeStamp);
         }

@@ -1,5 +1,5 @@
 const puppeteer = require('puppeteer');
-const {composition, keydown, select} = require('./test-helpers');
+const {expectHTML, composition, keydown, select} = require('./test-helpers');
 
 (async () => {
   const browser = await puppeteer.launch({headless: false});
@@ -157,5 +157,8 @@ const {composition, keydown, select} = require('./test-helpers');
   });
   await page.keyboard.up('Enter');
   await page.$eval('div.editor', (e) => e.blur());
-  // await expectHTML('<p class="editor-paragraph" dir="ltr"><span>Hello Steven </span><span contenteditable="false" style="color: transparent; background-size: 16px 16px; height: 16px; width: 16px; background-position: center center; background-repeat: no-repeat; display: inline-block; margin: 0px 1px; text-align: center; vertical-align: middle; background-image: url(&quot;https://static.xx.fbcdn.net/images/emoji.php/v9/t4c/1/16/1f642.png&quot;);">🙂</span><span> </span><span class="editor-text-hashtag">#hashtagftw</span><span> éè もじ</span></p>');
+  await expectHTML(
+    page,
+    '<p class="editor-paragraph" dir="ltr"><span>Hello Steven </span><span contenteditable="false" style="color: transparent; background-size: 16px 16px; height: 16px; width: 16px; background-position: center center; background-repeat: no-repeat; display: inline-block; margin: 0px 1px; text-align: center; vertical-align: middle; background-image: url(&quot;https://static.xx.fbcdn.net/images/emoji.php/v9/t4c/1/16/1f642.png&quot;);">🙂</span><span> </span><span class="editor-text-hashtag">#hashtagftw</span><span> éè もじ</span></p>',
+  );
 })();

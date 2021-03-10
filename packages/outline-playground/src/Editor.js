@@ -17,7 +17,7 @@ import BlockControls from './BlockControls';
 import useStepRecorder from './useStepRecorder';
 import CharacterLimit from './CharacterLimit';
 import {Typeahead} from './Typeahead';
-import useEventRecorder from './useEventRecorder'
+import useEventRecorder from './useEventRecorder';
 
 const editorStyle = {
   outline: 0,
@@ -140,10 +140,7 @@ export function RichTextEditor({
   isAutocomplete,
 }: Props): React.MixedElement {
   const editorElementRef = useRef(null);
-  const editor = useOutlineEditor(
-    editorElementRef,
-    'Enter some rich text...',
-  );
+  const editor = useOutlineEditor(editorElementRef, 'Enter some rich text...');
   const toolbar = useToolbar(editor);
   const mentionsTypeahead = useMentions(editor);
   const props = useOutlineRichText(editor, isReadOnly);
@@ -153,7 +150,7 @@ export function RichTextEditor({
   useHashtags(editor);
   useOutlineAutoFormatter(editor);
   useOutlineHistory(editor);
-  useEventRecorder(editor)
+  useEventRecorder(editor);
 
   return (
     <>
@@ -179,10 +176,7 @@ export function PlainTextEditor({
   isAutocomplete,
 }: Props): React$Node {
   const editorElementRef = useRef(null);
-  const editor = useOutlineEditor(
-    editorElementRef,
-    'Enter some plain text...',
-  );
+  const editor = useOutlineEditor(editorElementRef, 'Enter some plain text...');
   const mentionsTypeahead = useMentions(editor);
   const props = usePlainText(editor, isReadOnly);
   useOutlineOnChange(editor, onChange);
@@ -190,7 +184,7 @@ export function PlainTextEditor({
   useHashtags(editor);
   useOutlineHistory(editor);
   const stepRecorder = useStepRecorder(editor);
-  useEventRecorder(editor)
+  useEventRecorder(editor);
 
   return (
     <>

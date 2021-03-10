@@ -10,10 +10,25 @@ async function select(page, anchorPath, anchorOffset, focusPath, focusOffset) {
         return node;
       }
 
+      const selection = window.getSelection();
+      const anchorNode = getNodeFromPath(anchorPath);
+      const focusNode = getNodeFromPath(focusPath);
+      selection.setBaseAndExtent(
+        anchorNode,
+        anchorOffset,
+        focusNode,
+        focusOffset,
+      );
+
       await new Promise((resolve) => {
+        // We do this, as selection is async and we need to wait before
+        // selection has been invoked before we can continue. Oddly,
+        // I couldn't add a selectionchange listener and continue on that
+        // firing. I assume it's a bug with Puppeteer. So for now, I've
+        // gone with 20ms, which should cover us.
         setTimeout(() => {
           resolve();
-        }, 100);
+        }, 20);
 
         const selection = window.getSelection();
         const anchorNode = getNodeFromPath(anchorPath);
@@ -125,9 +140,20 @@ async function keydown(page, key, cancelled) {
   }
 }
 
+async function expectHTML(page, expected) {
+  const html = await page.evaluate(() => {
+    const editorElement = document.querySelector('div.editor');
+    return editorElement.innerHTML;
+  });
+  if (html !== expected) {
+    throw new Error('expectHTML: actual HTML did not match expected HTML');
+  }
+}
+
 module.exports = {
   debug,
   composition,
   select,
   keydown,
+  expectHTML,
 };

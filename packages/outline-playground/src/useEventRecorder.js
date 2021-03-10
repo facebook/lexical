@@ -107,7 +107,7 @@ function generateTestCaseFromLog(
     }
     currentLogEntry = next;
   }
-  testCase += `${indent}await expectHTML('${editorElement.innerHTML}');\n`;
+  testCase += `${indent}await expectHTML(page, '${editorElement.innerHTML}');\n`;
   // Copy content to clipboard
   navigator.clipboard.writeText(testCase);
   console.log(testCase);
@@ -240,7 +240,7 @@ export default function useEventRecorder(editor: OutlineEditor) {
         if (selectionLogEntry !== null) {
           pushLogEntry(selectionLogEntry);
         }
-        const entry = createLogEntry(event, target, time)
+        const entry = createLogEntry(event, target, time);
         pushLogEntry(entry);
         return entry;
       }
@@ -252,13 +252,13 @@ export default function useEventRecorder(editor: OutlineEditor) {
         const {target, timeStamp} = event;
         if (isValidTarget(target, editorElement)) {
           // Cancel any existing keydowns from entering text
-          activeKeys.forEach(logEntry => {
+          activeKeys.forEach((logEntry) => {
             const event = logEntry.event;
             if (event.type === 'keydown') {
-              debugger
+              debugger;
               event.cancelled = true;
             }
-          })
+          });
           log({type: 'compositionstart'}, target, timeStamp, true);
         }
       };
@@ -312,7 +312,11 @@ export default function useEventRecorder(editor: OutlineEditor) {
             activeKeys.delete('Alt');
             log({type: 'keyup', key: 'Alt'}, target, timeStamp);
           }
-          const entry = log({type: 'keydown', key, cancelled: false}, target, timeStamp);
+          const entry = log(
+            {type: 'keydown', key, cancelled: false},
+            target,
+            timeStamp,
+          );
           activeKeys.set(key, entry);
         }
       };

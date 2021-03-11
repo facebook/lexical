@@ -16,18 +16,8 @@ import type {
   View,
 } from 'outline';
 
-import {
-  createLineBreakNode,
-  createTextNode,
-  isBlockNode,
-  isTextNode,
-  isLineBreakNode,
-} from 'outline';
-import {
-  CAN_USE_BEFORE_INPUT,
-  IS_SAFARI,
-  IS_CHROME,
-} from './OutlineEnv';
+import {createLineBreakNode, createTextNode} from 'outline';
+import {CAN_USE_BEFORE_INPUT, IS_SAFARI, IS_CHROME} from './OutlineEnv';
 import {
   isDeleteBackward,
   isDeleteForward,
@@ -55,8 +45,8 @@ import {
   getNodesInRange,
   insertNodes,
   insertLineBreak,
+  handleKeyDownSelection,
 } from './OutlineSelectionHelpers';
-import {announceNode} from './OutlineTextHelpers';
 
 // FlowFixMe: Flow doesn't know of the CompositionEvent?
 // $FlowFixMe: TODO
@@ -134,136 +124,6 @@ function insertDataTransferForPlainText(
   }
 }
 
-function isModifierActive(event: KeyboardEvent): boolean {
-  // We don't need to check for metaKey here as we already
-  // do this before we reach this block.
-  return event.shiftKey || event.altKey || event.ctrlKey;
-}
-
-function handleCustomKeyInput(
-  event: KeyboardEvent,
-  selection: Selection,
-  editor: OutlineEditor,
-): void {
-  // Handle moving/deleting selection with left/right around immutable or segmented nodes, which should be handled as a single character.
-  // This is important for screen readers + text to speech accessibility tooling. About screen readers and caret moves:
-  // In Windows, JAWS and NVDA always announce the character at the right of the caret.
-  // In MacOS, VO always announces the character over which the caret jumped.
-  if (selection.isCaret() && !event.metaKey) {
-    const key = event.key;
-    const isLeftArrow = key === 'ArrowLeft';
-    const isRightArrow = key === 'ArrowRight';
-    const isDelete = key === 'Delete';
-    const isBackspace = key === 'Backspace';
-
-    if (isLeftArrow || isRightArrow || isDelete || isBackspace) {
-      const anchorNode = selection.getAnchorNode();
-      const offset = selection.anchorOffset;
-      const textContent = anchorNode.getTextContent();
-
-      if (isLeftArrow || isBackspace) {
-        const selectionAtStart = offset === 0;
-
-        if (selectionAtStart) {
-          const prevSibling = anchorNode.getPreviousSibling();
-
-          if (prevSibling === null) {
-            // On empty text nodes, we always move native DOM selection
-            // to offset 1. Although it's at 1, we really mean that it
-            // is at 0 in our model. So when we encounter a left arrow
-            // we need to move selection to the previous block if
-            // we have no previous sibling.
-            if (isLeftArrow && textContent === '') {
-              const parent = anchorNode.getParentOrThrow();
-              const parentSibling = parent.getPreviousSibling();
-
-              if (isBlockNode(parentSibling)) {
-                const lastChild = parentSibling.getLastChild();
-                if (isTextNode(lastChild)) {
-                  lastChild.select();
-                  event.preventDefault();
-                }
-              }
-            }
-          } else {
-            let targetPrevSibling = prevSibling;
-            if (prevSibling.isImmutable() || prevSibling.isSegmented()) {
-              if (isLeftArrow) {
-                if (!isLineBreakNode(prevSibling)) {
-                  announceNode(prevSibling);
-                }
-                targetPrevSibling = prevSibling.getPreviousSibling();
-              } else {
-                deleteBackward(selection);
-                event.preventDefault();
-              }
-            } else if (prevSibling.isInert()) {
-              targetPrevSibling = prevSibling.getPreviousSibling();
-              if (
-                !isLeftArrow &&
-                selection.isCaret() &&
-                isTextNode(targetPrevSibling)
-              ) {
-                const prevKey = targetPrevSibling.getKey();
-                const prevOffset = targetPrevSibling.getTextContent().length;
-                selection.setRange(prevKey, prevOffset, prevKey, prevOffset);
-                deleteBackward(selection);
-                event.preventDefault();
-              }
-            }
-            // Due to empty text nodes having an offset of 1, we need to
-            // account for this and move selection accordingly when right
-            // arrow is pressed.
-            if (isLeftArrow && isTextNode(targetPrevSibling)) {
-              event.preventDefault();
-              if (targetPrevSibling === prevSibling) {
-                const prevSiblingTextContent = targetPrevSibling.getTextContent();
-                // We adjust the offset by 1, as we will have have moved between
-                // two adjacent nodes.
-                const endOffset = prevSiblingTextContent.length - 1;
-                targetPrevSibling.select(endOffset, endOffset);
-              } else {
-                // We don't adjust offset as the nodes are not adjacent (the target
-                // isn't the same as the prevSibling).
-                targetPrevSibling.select();
-              }
-            }
-          }
-        }
-      } else {
-        const textContentLength = textContent.length;
-        const selectionAtEnd = textContentLength === offset;
-        const selectionJustBeforeEnd = textContentLength === offset + 1;
-
-        if (selectionAtEnd || selectionJustBeforeEnd) {
-          const nextSibling = anchorNode.getNextSibling();
-
-          if (nextSibling !== null) {
-            if (nextSibling.isImmutable() || nextSibling.isSegmented()) {
-              if (isRightArrow) {
-                if (
-                  (IS_APPLE && selectionAtEnd) ||
-                  (!IS_APPLE && selectionJustBeforeEnd)
-                ) {
-                  if (isLineBreakNode(nextSibling)) {
-                    nextSibling.selectNext(0, 0);
-                    event.preventDefault();
-                  } else {
-                    announceNode(nextSibling);
-                  }
-                }
-              } else if (selectionAtEnd && !isModifierActive(event)) {
-                deleteForward(selection);
-                event.preventDefault();
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
 export function onKeyDownForPlainText(
   event: KeyboardEvent,
   editor: OutlineEditor,
@@ -304,7 +164,7 @@ export function onKeyDownForPlainText(
         insertLineBreak(selection);
       }
     }
-    handleCustomKeyInput(event, selection, editor);
+    handleKeyDownSelection(event, selection);
   });
 }
 
@@ -359,10 +219,8 @@ export function onKeyDownForRichText(
     } else if (isItalic(event)) {
       event.preventDefault();
       formatText(selection, 'italic');
-    }
-    handleCustomKeyInput(event, selection, editor);
-    // Handle code blocks
-    if (isTab(event)) {
+    } else if (isTab(event)) {
+      // Handle code blocks
       const anchorNode = selection.getAnchorNode();
       const parentBlock = anchorNode.getParentBlockOrThrow();
       if (parentBlock.canInsertTab()) {
@@ -377,6 +235,8 @@ export function onKeyDownForRichText(
         }
         event.preventDefault();
       }
+    } else {
+      handleKeyDownSelection(event, selection);
     }
   });
 }

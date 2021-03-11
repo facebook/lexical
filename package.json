@@ -19,14 +19,17 @@
     "clean": "node scripts/build.js --clean",
     "watch": "node scripts/build.js --watch",
     "flow": "node ./scripts/tasks/flow.js",
-    "test": "npm run test:unit",
-    "test:all": "npm run build && jest",
-    "test:e2e": "npm run test:all -- --selectProjects e2e",
-    "test:unit": "npm run test:all -- --selectProjects unit",
+    "test": "npm run build && jest",
+    "test-e2e": "jest --selectProjects e2e",
+    "test-e2e-ci": "E2E_PORT=4000 start-server-and-test prepare-ci 4000 test-e2e",
+    "test-unit": "jest --selectProjects unit",
+    "test-unit-ci": "E2E_PORT=4000 start-server-and-test prepare-ci 4000 test-e2e",
+    "debug-test-e2e": "E2E_DEBUG=true npm run test-e2e",
+    "debug-test-unit": "node --inspect-brk node_modules/.bin/jest --runInBand",
     "lint": "node ./scripts/tasks/eslint.js",
-    "debug-test": "node --inspect-brk node_modules/.bin/jest --runInBand",
     "prettier": "node ./scripts/prettier.js write-changed",
     "prettier-all": "node ./scripts/prettier.js write",
+    "prepare-ci": "npm run build --prefix packages/outline-playground && serve packages/outline-playground/build -l 4000",
     "prepare-release": "yarn build --prod && node ./scripts/prepare-release.js"
   },
   "devDependencies": {
@@ -55,9 +58,12 @@
     "google-closure-compiler": "^20201006.0.0",
     "jest": "26.6.0",
     "minimist": "^1.2.5",
+    "playwright": "^1.9.2",
     "prettier": "^2.1.2",
     "react-test-renderer": "^17.0.1",
-    "rollup": "^2.33.1"
+    "rollup": "^2.33.1",
+    "serve": "^11.3.2",
+    "start-server-and-test": "^1.12.0"
   },
   "dependencies": {
     "fs-extra": "^9.0.1"

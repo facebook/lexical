@@ -1059,12 +1059,7 @@ export function handleKeyDownSelection(
                 announceNode(nextSibling);
               }
             }
-          } else if (
-            selectionAtEnd &&
-            !event.shiftKey &&
-            !event.altKey &&
-            !event.ctrlKey
-          ) {
+          } else if (selectionAtEnd) {
             deleteForward(selection);
             event.preventDefault();
           }

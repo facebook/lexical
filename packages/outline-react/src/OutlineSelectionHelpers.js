@@ -526,7 +526,7 @@ export function deleteWordBackward(selection: Selection): void {
   try {
     while (true) {
       const prevSibling = node.getPreviousSibling();
-      if (node.isImmutable() || node.isSegmented()) {
+      if (node.isImmutable() || node.isSegmented() || node.isInert()) {
         node.remove();
         if (!isTextNode(prevSibling)) {
           if (__DEV__) {
@@ -611,7 +611,7 @@ export function deleteWordForward(selection: Selection): void {
     while (true) {
       const nextSibling = node.getNextSibling();
 
-      if (node.isImmutable() || node.isSegmented()) {
+      if (node.isImmutable() || node.isSegmented() || node.isInert()) {
         node.remove();
         if (!isTextNode(nextSibling)) {
           if (__DEV__) {

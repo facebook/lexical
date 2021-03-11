@@ -1,3 +1,11 @@
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
 import * as SelectionHelpers from 'outline-react/OutlineSelectionHelpers';
 import {createTextNode} from 'outline';
 

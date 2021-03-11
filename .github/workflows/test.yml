@@ -3,8 +3,7 @@ name: Outline Tests
 on: [push]
 
 jobs:
-  build:
-
+  integrity:
     runs-on: ubuntu-latest
 
     strategy:
@@ -21,6 +20,47 @@ jobs:
     - run: yarn build
     - run: yarn lint
     - run: yarn flow
-    - run: yarn test:all
+      env:
+        CI: true  
+  unit:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [12.x]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+    - run: yarn install
+    - run: yarn build
+    - run: yarn test-unit
+      env:
+        CI: true
+
+  e2e:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [12.x]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+    - name: install required packages
+      run: |
+        sudo apt-get update
+        sudo apt-get install libharfbuzz-icu0 libgstreamer-plugins-base1.0-0 libgstreamer-gl1.0-0 libgstreamer-plugins-bad1.0-0 libopenjp2-7 gstreamer1.0-libav libwoff1 libwebpdemux2 libenchant1c2a libhyphen0 libgles2
+        sudo apt-get install xvfb
+    - run: yarn install
+    - run: yarn build
+    - run: yarn test-e2e-ci
       env:
         CI: true

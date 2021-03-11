@@ -43,7 +43,7 @@ import {
   undo,
   redo,
   pastePlain,
-} from '../test-utils';
+} from './utils';
 
 describe('OutlineSelection tests', () => {
   let container = null;

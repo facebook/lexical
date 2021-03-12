@@ -746,8 +746,10 @@ export function deleteForward(selection: Selection): void {
     } else if (isTextNode(nextSibling)) {
       if (nextSibling.isImmutable()) {
         nextSibling.remove();
+        currentBlock.normalizeTextNodes(true);
       } else if (nextSibling.isSegmented()) {
         removeFirstSegment(nextSibling);
+        currentBlock.normalizeTextNodes(true);
       } else {
         nextSibling.spliceText(0, 1, '', true);
       }

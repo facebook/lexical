@@ -746,8 +746,10 @@ export function deleteForward(selection: Selection): void {
     } else if (isTextNode(nextSibling)) {
       if (nextSibling.isImmutable()) {
         nextSibling.remove();
+        currentBlock.normalizeTextNodes(true);
       } else if (nextSibling.isSegmented()) {
         removeFirstSegment(nextSibling);
+        currentBlock.normalizeTextNodes(true);
       } else {
         nextSibling.spliceText(0, 1, '', true);
       }
@@ -1066,5 +1068,21 @@ export function handleKeyDownSelection(
         }
       }
     }
+  }
+}
+
+export function selectAll(selection: Selection): void {
+  const anchorNode = selection.getAnchorNode();
+  const topParent = anchorNode.getTopParentBlockOrThrow();
+  const root = topParent.getParentOrThrow();
+  const firstTextNode = root.getFirstTextNode();
+  const lastTextNode = root.getLastTextNode();
+  if (firstTextNode !== null && lastTextNode !== null) {
+    selection.setRange(
+      firstTextNode.getKey(),
+      0,
+      lastTextNode.getKey(),
+      lastTextNode.getTextContent().length,
+    );
   }
 }

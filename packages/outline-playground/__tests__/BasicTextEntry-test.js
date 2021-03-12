@@ -114,14 +114,11 @@ describe('BasicTextEntry', () => {
           const text = 'Delete some of these characters.';
           const backspacedText = 'Delete some of these ';
           await page.keyboard.type(text);
-          await Promise.resolve(resolve => setTimeout(resolve, 200));
+          await page.keyboard.down('Control');
           await page.keyboard.down('Shift');
-          await keyDownCtrlOrAlt(page);
-          await Promise.resolve(resolve => setTimeout(resolve, 200));
           await page.keyboard.press('ArrowLeft');
-          await Promise.resolve(resolve => setTimeout(resolve, 200));
           await page.keyboard.up('Shift');
-          await keyUpCtrlOrAlt(page);
+          await page.keyboard.up('Control');
           // Ensure the selection is now covering the whole word and period.
           await assertSelection(page, {
             anchorPath: [0, 0, 0],

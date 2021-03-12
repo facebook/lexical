@@ -103,3 +103,7 @@ export function isTab(event: KeyboardEvent): boolean {
     event.key === 'Tab' && !event.altKey && !event.ctrlKey && !event.metaKey
   );
 }
+
+export function isSelectAll(event: KeyboardEvent): boolean {
+  return event.key === 'a' && (IS_MAC ? event.metaKey : event.ctrlKey);
+}

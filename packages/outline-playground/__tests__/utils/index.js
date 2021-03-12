@@ -10,21 +10,30 @@ import {chromium, firefox, webkit} from 'playwright';
 
 const E2E_DEBUG = process.env.E2E_DEBUG;
 const E2E_PORT = process.env.E2E_PORT || 3000;
+const E2E_BROWSER = process.env.E2E_BROWSER;
+
+jest.setTimeout(15000);
 
 function uppercase(str) {
   return str[0].toUpperCase() + str.slice(1);
 }
 
 export function initializeE2E(browsers, runTests) {
-  Object.keys(browsers).forEach((browser) => {
-    describe(uppercase(browser), () => {
+  if (E2E_BROWSER) {
+    browsers = {[E2E_BROWSER]: true};
+  }
+  Object.keys(browsers).forEach((browserName) => {
+    describe(uppercase(browserName), () => {
       const e2e = {
         browser: null,
         page: null,
       };
 
       beforeAll(async () => {
-        e2e.browser = await {chromium, webkit, firefox}[browser].launch({headless: !E2E_DEBUG});
+        const browser = await {chromium, webkit, firefox}[browserName].launch({
+          headless: !E2E_DEBUG,
+        });
+        e2e.browser = browser;
       });
       beforeEach(async () => {
         const page = await e2e.browser.newPage();
@@ -41,10 +50,10 @@ export function initializeE2E(browsers, runTests) {
           await e2e.browser.close();
         }
       });
-      
+
       runTests(e2e);
-    })
-  })
+    });
+  });
 }
 
 export async function repeat(times, cb) {
@@ -53,7 +62,127 @@ export async function repeat(times, cb) {
   }
 }
 
-export async function assertHtmlSnapshot(page) {
+export async function assertHTMLSnapshot(page) {
+  // Assert HTML of the editor matches the snapshot
   const html = await page.innerHTML('div.editor');
   expect(html).toMatchSnapshot();
+}
+export async function assertSelection(page, expected) {
+  // Assert the selection of the editor matches the snapshot
+  const selection = await page.evaluate(() => {
+    const editorElement = document.querySelector('div.editor');
+
+    const getPathFromNode = (node) => {
+      const path = [];
+      while (node !== null) {
+        const parent = node.parentNode;
+        if (parent === null || node === editorElement) {
+          break;
+        }
+        path.push(Array.from(parent.childNodes).indexOf(node));
+        node = parent;
+      }
+      return path.reverse();
+    };
+
+    const {
+      anchorNode,
+      anchorOffset,
+      focusNode,
+      focusOffset,
+    } = window.getSelection();
+
+    return {
+      anchorPath: getPathFromNode(anchorNode),
+      anchorOffset,
+      focusPath: getPathFromNode(focusNode),
+      focusOffset,
+    };
+  }, expected);
+  expect(selection).toEqual(expected);
+}
+
+export async function isMac(page) {
+  return page.evaluate(
+    () =>
+      typeof window !== 'undefined' &&
+      /Mac|iPod|iPhone|iPad/.test(window.navigator.platform),
+  );
+}
+
+export async function supportsBeforeInput(page) {
+  return page.evaluate(() => {
+    if ('InputEvent' in window) {
+      return 'getTargetRanges' in new window.InputEvent('input');
+    }
+    return false;
+  });
+}
+
+export async function pressDownCtrlOrMeta(page) {
+  if (await isMac(page)) {
+    await page.keyboard.down('Meta');
+  } else {
+    await page.keyboard.down('Control');
+  }
+}
+
+export async function pressUpCtrlOrMeta(page) {
+  if (await isMac(page)) {
+    await page.keyboard.up('Meta');
+  } else {
+    await page.keyboard.up('Control');
+  }
+}
+
+export async function copyToClipboard(page) {
+  return await page.evaluate(() => {
+    const clipboardData = {};
+    const editor = document.querySelector('div.editor');
+    const copyEvent = new ClipboardEvent('copy');
+    Object.defineProperty(copyEvent, 'clipboardData', {
+      value: {
+        setData(type, value) {
+          clipboardData[type] = value;
+        },
+      },
+    });
+    editor.dispatchEvent(copyEvent);
+    return clipboardData;
+  });
+}
+
+export async function pasteFromClipboard(page, clipboardData) {
+  const canUseBeforeInput = supportsBeforeInput(page);
+  await page.evaluate(
+    async ({clipboardData, canUseBeforeInput}) => {
+      const editor = document.querySelector('div.editor');
+      const pasteEvent = new ClipboardEvent('paste', {bubbles: true});
+      Object.defineProperty(pasteEvent, 'clipboardData', {
+        value: {
+          getData(type, value) {
+            return clipboardData[type];
+          },
+        },
+      });
+      editor.dispatchEvent(pasteEvent);
+      if (!pasteEvent.defaultPrevented) {
+        if (canUseBeforeInput) {
+          const inputEvent = new InputEvent('beforeinput', {bubbles: true});
+          Object.defineProperty(inputEvent, 'inputType', {
+            value: 'insertFromPaste',
+          });
+          Object.defineProperty(inputEvent, 'dataTransfer', {
+            value: {
+              getData(type, value) {
+                return clipboardData[type];
+              },
+            },
+          });
+          editor.dispatchEvent(inputEvent);
+        }
+      }
+    },
+    {clipboardData, canUseBeforeInput},
+  );
 }

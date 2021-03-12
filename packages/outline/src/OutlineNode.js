@@ -65,14 +65,6 @@ function makeNodeAsDirty(node: OutlineNode): void {
   const viewModel = getActiveViewModel();
   const dirtyNodes = viewModel._dirtyNodes;
   dirtyNodes.add(latest.__key);
-  if (isBlockNode(latest)) {
-    const children = latest.getChildren();
-    for (let i = 0; i < children.length; i++) {
-      const child = children[i];
-      dirtyNodes.add(child.__key);
-      makeNodeAsDirty(child);
-    }
-  }
 }
 
 function removeNode(nodeToRemove: OutlineNode): void {

@@ -20,7 +20,26 @@ import {
 describe('BasicTextEntry', () => {
   initializeE2E({chromium: true, webkit: true, firefox: true}, (e2e) => {
     describe(`Rich text`, () => {
-      it('Simple text entry and selection', async () => {
+      it(`Can type 'Hello Outline' in the editor`, async () => {
+        const {page} = e2e;
+
+        const targetText = 'Hello Outline';
+        await page.focus('div.editor');
+        await page.keyboard.type(targetText);
+        const enteredText = await page.textContent(
+          'div.editor p:first-of-type',
+        );
+        expect(enteredText).toBe(targetText);
+        await assertHTMLSnapshot(page);
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: targetText.length,
+          focusPath: [0, 0, 0],
+          focusOffset: targetText.length,
+        });
+      });
+
+      it('Paragraphed text entry and selection', async () => {
         const {page} = e2e;
 
         await page.focus('div.editor');
@@ -46,6 +65,69 @@ describe('BasicTextEntry', () => {
           anchorOffset: 1,
           focusPath: [1, 2, 0],
           focusOffset: 1,
+        });
+      });
+
+      it(`Can delete characters after they're typed`, async () => {
+        const {page} = e2e;
+
+        await page.focus('div.editor');
+        const text = 'Delete some of these characters.';
+        const backspacedText = 'Delete some of these characte';
+        await page.keyboard.type(text);
+        await page.keyboard.press('Backspace');
+        await page.keyboard.press('Backspace');
+        await page.keyboard.press('Backspace');
+        const remainingText = await page.textContent(
+          'div.editor p:first-of-type',
+        );
+        expect(remainingText).toBe(backspacedText);
+
+        await assertHTMLSnapshot(page);
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: backspacedText.length,
+          focusPath: [0, 0, 0],
+          focusOffset: backspacedText.length,
+        });
+      });
+
+      // This doesn't work correctly on Chromium, Shift+Alt+ArrowLeft
+      // on selects the period the first time, rather than the word
+      // "characters".
+      e2e.skip(['chromium'], () => {
+        it(`Can select and delete a word`, async () => {
+          const {page} = e2e;
+
+          await page.focus('div.editor');
+          const text = 'Delete some of these characters.';
+          const backspacedText = 'Delete some of these ';
+          await page.keyboard.type(text);
+          await page.keyboard.down('Shift');
+          await page.keyboard.down('Alt');
+          await page.keyboard.press('ArrowLeft');
+          await assertSelection(page, {
+            anchorPath: [0, 0, 0],
+            anchorOffset: text.length,
+            focusPath: [0, 0, 0],
+            focusOffset: backspacedText.length,
+          });
+
+          await page.keyboard.up('Shift');
+          await page.keyboard.up('Alt');
+          await page.keyboard.press('Backspace');
+          const remainingText = await page.textContent(
+            'div.editor p:first-of-type',
+          );
+          expect(remainingText).toBe(backspacedText);
+
+          await assertHTMLSnapshot(page);
+          await assertSelection(page, {
+            anchorPath: [0, 0, 0],
+            anchorOffset: backspacedText.length,
+            focusPath: [0, 0, 0],
+            focusOffset: backspacedText.length,
+          });
         });
       });
 

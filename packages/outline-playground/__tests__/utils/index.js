@@ -27,6 +27,11 @@ export function initializeE2E(browsers, runTests) {
       const e2e = {
         browser: null,
         page: null,
+        skip(browsers, cb) {
+          if (!browsers.includes(browserName)) {
+            cb();
+          }
+        },
       };
 
       beforeAll(async () => {

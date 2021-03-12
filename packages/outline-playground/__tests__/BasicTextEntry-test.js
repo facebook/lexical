@@ -11,10 +11,12 @@ import {
   repeat,
   assertSelection,
   assertHTMLSnapshot,
-  pressDownCtrlOrMeta,
-  pressUpCtrlOrMeta,
+  keyDownCtrlOrMeta,
+  keyUpCtrlOrMeta,
   copyToClipboard,
   pasteFromClipboard,
+  keyDownCtrlOrAlt,
+  keyUpCtrlOrAlt,
 } from './utils';
 
 describe('BasicTextEntry', () => {
@@ -104,7 +106,7 @@ describe('BasicTextEntry', () => {
           const backspacedText = 'Delete some of these ';
           await page.keyboard.type(text);
           await page.keyboard.down('Shift');
-          await page.keyboard.down('Alt');
+          await keyDownCtrlOrAlt(page);
           await page.keyboard.press('ArrowLeft');
           await assertSelection(page, {
             anchorPath: [0, 0, 0],
@@ -114,7 +116,7 @@ describe('BasicTextEntry', () => {
           });
 
           await page.keyboard.up('Shift');
-          await page.keyboard.up('Alt');
+          await keyUpCtrlOrAlt(page);
           await page.keyboard.press('Backspace');
           const remainingText = await page.textContent(
             'div.editor p:first-of-type',
@@ -216,9 +218,9 @@ describe('BasicTextEntry', () => {
         });
 
         // Select all the text
-        await pressDownCtrlOrMeta(page);
+        await keyDownCtrlOrMeta(page);
         await page.keyboard.press('a');
-        await pressUpCtrlOrMeta(page);
+        await keyUpCtrlOrMeta(page);
         await assertHTMLSnapshot(page);
         await assertSelection(page, {
           anchorPath: [0, 0, 0],

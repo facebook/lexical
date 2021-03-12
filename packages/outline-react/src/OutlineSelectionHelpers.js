@@ -994,7 +994,7 @@ export function handleKeyDownSelection(
             }
           }
         }
-      } else {
+      } else if (!event.shiftKey) {
         let targetPrevSibling = prevSibling;
         if (prevSibling.isImmutable() || prevSibling.isSegmented()) {
           if (isLeftArrow) {

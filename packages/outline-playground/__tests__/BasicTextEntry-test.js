@@ -11,16 +11,37 @@ import {
   repeat,
   assertSelection,
   assertHTMLSnapshot,
-  pressDownCtrlOrMeta,
-  pressUpCtrlOrMeta,
+  keyDownCtrlOrMeta,
+  keyUpCtrlOrMeta,
   copyToClipboard,
   pasteFromClipboard,
+  keyDownCtrlOrAlt,
+  keyUpCtrlOrAlt,
 } from './utils';
 
 describe('BasicTextEntry', () => {
   initializeE2E({chromium: true, webkit: true, firefox: true}, (e2e) => {
     describe(`Rich text`, () => {
-      it('Simple text entry and selection', async () => {
+      it(`Can type 'Hello Outline' in the editor`, async () => {
+        const {page} = e2e;
+
+        const targetText = 'Hello Outline';
+        await page.focus('div.editor');
+        await page.keyboard.type(targetText);
+        const enteredText = await page.textContent(
+          'div.editor p:first-of-type',
+        );
+        expect(enteredText).toBe(targetText);
+        await assertHTMLSnapshot(page);
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: targetText.length,
+          focusPath: [0, 0, 0],
+          focusOffset: targetText.length,
+        });
+      });
+
+      it('Paragraphed text entry and selection', async () => {
         const {page} = e2e;
 
         await page.focus('div.editor');
@@ -46,6 +67,79 @@ describe('BasicTextEntry', () => {
           anchorOffset: 1,
           focusPath: [1, 2, 0],
           focusOffset: 1,
+        });
+      });
+
+      it(`Can delete characters after they're typed`, async () => {
+        const {page} = e2e;
+
+        await page.focus('div.editor');
+        const text = 'Delete some of these characters.';
+        const backspacedText = 'Delete some of these characte';
+        await page.keyboard.type(text);
+        await page.keyboard.press('Backspace');
+        await page.keyboard.press('Backspace');
+        await page.keyboard.press('Backspace');
+        const remainingText = await page.textContent(
+          'div.editor p:first-of-type',
+        );
+        expect(remainingText).toBe(backspacedText);
+
+        await assertHTMLSnapshot(page);
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: backspacedText.length,
+          focusPath: [0, 0, 0],
+          focusOffset: backspacedText.length,
+        });
+      });
+
+      // Some issues with this test:
+      //
+      // - Doesn't work correctly on Chromium, Shift+Alt+ArrowLeft
+      // on selects the period the first time, rather than the word
+      // "characters". We plan to use Intl.Segmeneter for this anway
+      // so this should be fixed.
+      //
+      // - Also seems to fail for Firefox when run on CI. Not sure why,
+      // as it seems to work fine when run locally. I can see from the
+      // screenshot (hint: use e2e.logScreenshot) that the selection
+      // has moved at all. I can use this keyboard shortcut on
+      //
+      e2e.skip(['chromium', 'firefox'], () => {
+        it(`Can select and delete a word`, async () => {
+          const {page} = e2e;
+
+          await page.focus('div.editor');
+          const text = 'Delete some of these characters.';
+          const backspacedText = 'Delete some of these ';
+          await page.keyboard.type(text);
+          await page.keyboard.down('Shift');
+          await keyDownCtrlOrAlt(page);
+          await page.keyboard.press('ArrowLeft');
+          await page.keyboard.up('Shift');
+          await keyUpCtrlOrAlt(page);
+          // Ensure the selection is now covering the whole word and period.
+          await assertSelection(page, {
+            anchorPath: [0, 0, 0],
+            anchorOffset: text.length,
+            focusPath: [0, 0, 0],
+            focusOffset: backspacedText.length,
+          });
+
+          await page.keyboard.press('Backspace');
+          const remainingText = await page.textContent(
+            'div.editor p:first-of-type',
+          );
+          expect(remainingText).toBe(backspacedText);
+
+          await assertHTMLSnapshot(page);
+          await assertSelection(page, {
+            anchorPath: [0, 0, 0],
+            anchorOffset: backspacedText.length,
+            focusPath: [0, 0, 0],
+            focusOffset: backspacedText.length,
+          });
         });
       });
 
@@ -134,9 +228,9 @@ describe('BasicTextEntry', () => {
         });
 
         // Select all the text
-        await pressDownCtrlOrMeta(page);
+        await keyDownCtrlOrMeta(page);
         await page.keyboard.press('a');
-        await pressUpCtrlOrMeta(page);
+        await keyUpCtrlOrMeta(page);
         await assertHTMLSnapshot(page);
         await assertSelection(page, {
           anchorPath: [0, 0, 0],

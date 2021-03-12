@@ -19,6 +19,6 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/facebookexternal/Outline",
-    "directory": "packages/outline-react"
+    "directory": "packages/outline-extensions"
   }
 }

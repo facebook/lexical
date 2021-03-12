@@ -15,8 +15,6 @@ import {
   keyUpCtrlOrMeta,
   copyToClipboard,
   pasteFromClipboard,
-  keyDownCtrlOrAlt,
-  keyUpCtrlOrAlt,
 } from './utils';
 
 describe('BasicTextEntry', () => {
@@ -115,9 +113,11 @@ describe('BasicTextEntry', () => {
           const backspacedText = 'Delete some of these ';
           await page.keyboard.type(text);
           await page.keyboard.down('Control');
+          await page.keyboard.down('Alt');
           await page.keyboard.down('Shift');
           await page.keyboard.press('ArrowLeft');
           await page.keyboard.up('Shift');
+          await page.keyboard.up('Alt');
           await page.keyboard.up('Control');
           // Ensure the selection is now covering the whole word and period.
           await assertSelection(page, {

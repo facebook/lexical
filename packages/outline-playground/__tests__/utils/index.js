@@ -32,6 +32,20 @@ export function initializeE2E(browsers, runTests) {
             cb();
           }
         },
+        async saveScreenshot(print) {
+          const currentTest = expect.getState().currentTestName;
+          const path = currentTest.replace(/\s/g, '_') + '.png';
+          await e2e.page.screenshot({path});
+        },
+        async logScreenshot(print) {
+          const currentTest = expect.getState().currentTestName;
+          const buffer = await e2e.page.screenshot();
+          console.log(
+            `Screenshot "${currentTest}": \n\n` +
+              buffer.toString('base64') +
+              '\n\n',
+          );
+        },
       };
 
       beforeAll(async () => {

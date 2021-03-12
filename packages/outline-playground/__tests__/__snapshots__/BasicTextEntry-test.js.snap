@@ -8,6 +8,10 @@ exports[`BasicTextEntry Chromium Rich text Basic copy + paste 3`] = `"<p class=\
 
 exports[`BasicTextEntry Chromium Rich text Basic copy + paste 4`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Copy + pasting?</span></p><p class=\\"editor-paragraph\\"><span>﻿</span></p><p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Sounds good!</span><span>Copy + pasting?</span></p><p class=\\"editor-paragraph\\"><span>﻿</span></p><p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Sounds good!</span></p>"`;
 
+exports[`BasicTextEntry Chromium Rich text Can delete characters after they're typed 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Delete some of these characte</span></p>"`;
+
+exports[`BasicTextEntry Chromium Rich text Can type 'Hello Outline' in the editor 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello Outline</span></p>"`;
+
 exports[`BasicTextEntry Chromium Rich text Empty paragraph and new line node selection 1`] = `"<p class=\\"editor-paragraph\\"><span>﻿</span></p><p class=\\"editor-paragraph\\"><span>﻿</span></p>"`;
 
 exports[`BasicTextEntry Chromium Rich text Empty paragraph and new line node selection 2`] = `"<p class=\\"editor-paragraph\\"><span>﻿</span></p><p class=\\"editor-paragraph\\"><span>﻿</span></p>"`;
@@ -20,7 +24,7 @@ exports[`BasicTextEntry Chromium Rich text Empty paragraph and new line node sel
 
 exports[`BasicTextEntry Chromium Rich text Empty paragraph and new line node selection 6`] = `"<p class=\\"editor-paragraph\\"><span>﻿</span></p><div contenteditable=\\"false\\" class=\\"editor-placeholder\\">Enter some rich text...</div>"`;
 
-exports[`BasicTextEntry Chromium Rich text Simple text entry and selection 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello World.</span></p><p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>This is another paragraph. </span><span contenteditable=\\"false\\" style=\\"color: transparent; background-size: 16px 16px; height: 16px; width: 16px; background-position: center center; background-repeat: no-repeat; display: inline-block; margin: 0px 1px; text-align: center; vertical-align: middle; background-image: url(&quot;https://static.xx.fbcdn.net/images/emoji.php/v9/t4c/1/16/1f642.png&quot;);\\">🙂</span><span>﻿</span></p>"`;
+exports[`BasicTextEntry Chromium Rich text Paragraphed text entry and selection 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello World.</span></p><p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>This is another paragraph. </span><span contenteditable=\\"false\\" style=\\"color: transparent; background-size: 16px 16px; height: 16px; width: 16px; background-position: center center; background-repeat: no-repeat; display: inline-block; margin: 0px 1px; text-align: center; vertical-align: middle; background-image: url(&quot;https://static.xx.fbcdn.net/images/emoji.php/v9/t4c/1/16/1f642.png&quot;);\\">🙂</span><span>﻿</span></p>"`;
 
 exports[`BasicTextEntry Firefox Rich text Basic copy + paste 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Copy + pasting?</span></p><p class=\\"editor-paragraph\\"><span>﻿</span></p><p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Sounds good!</span></p>"`;
 
@@ -29,6 +33,10 @@ exports[`BasicTextEntry Firefox Rich text Basic copy + paste 2`] = `"<p class=\\
 exports[`BasicTextEntry Firefox Rich text Basic copy + paste 3`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Copy + pasting?</span></p><p class=\\"editor-paragraph\\"><span>﻿</span></p><p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Sounds good!</span></p>"`;
 
 exports[`BasicTextEntry Firefox Rich text Basic copy + paste 4`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Copy + pasting?</span></p><p class=\\"editor-paragraph\\"><span>﻿</span></p><p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Sounds good!</span><span>Copy + pasting?</span></p><p class=\\"editor-paragraph\\"><span>﻿</span></p><p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Sounds good!</span></p>"`;
+
+exports[`BasicTextEntry Firefox Rich text Can delete characters after they're typed 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Delete some of these characte</span></p>"`;
+
+exports[`BasicTextEntry Firefox Rich text Can type 'Hello Outline' in the editor 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello Outline</span></p>"`;
 
 exports[`BasicTextEntry Firefox Rich text Empty paragraph and new line node selection 1`] = `"<p class=\\"editor-paragraph\\"><span>﻿</span></p><p class=\\"editor-paragraph\\"><span>﻿</span></p>"`;
 
@@ -42,7 +50,7 @@ exports[`BasicTextEntry Firefox Rich text Empty paragraph and new line node sele
 
 exports[`BasicTextEntry Firefox Rich text Empty paragraph and new line node selection 6`] = `"<p class=\\"editor-paragraph\\"><span>﻿</span></p><div class=\\"editor-placeholder\\" contenteditable=\\"false\\">Enter some rich text...</div>"`;
 
-exports[`BasicTextEntry Firefox Rich text Simple text entry and selection 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello World.</span></p><p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>This is another paragraph. </span><span style=\\"color: transparent; background-size: 16px 16px; height: 16px; width: 16px; background-position: center center; background-repeat: no-repeat; display: inline-block; margin: 0px 1px; text-align: center; vertical-align: middle; background-image: url(&quot;https://static.xx.fbcdn.net/images/emoji.php/v9/t4c/1/16/1f642.png&quot;);\\" contenteditable=\\"false\\">🙂</span><span>﻿</span></p>"`;
+exports[`BasicTextEntry Firefox Rich text Paragraphed text entry and selection 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello World.</span></p><p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>This is another paragraph. </span><span style=\\"color: transparent; background-size: 16px 16px; height: 16px; width: 16px; background-position: center center; background-repeat: no-repeat; display: inline-block; margin: 0px 1px; text-align: center; vertical-align: middle; background-image: url(&quot;https://static.xx.fbcdn.net/images/emoji.php/v9/t4c/1/16/1f642.png&quot;);\\" contenteditable=\\"false\\">🙂</span><span>﻿</span></p>"`;
 
 exports[`BasicTextEntry Webkit Rich text Basic copy + paste 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Copy + pasting?</span></p><p class=\\"editor-paragraph\\"><span>﻿</span></p><p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Sounds good!</span></p>"`;
 
@@ -51,6 +59,12 @@ exports[`BasicTextEntry Webkit Rich text Basic copy + paste 2`] = `"<p class=\\"
 exports[`BasicTextEntry Webkit Rich text Basic copy + paste 3`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Copy + pasting?</span></p><p class=\\"editor-paragraph\\"><span>﻿</span></p><p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Sounds good!</span></p>"`;
 
 exports[`BasicTextEntry Webkit Rich text Basic copy + paste 4`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Copy + pasting?</span></p><p class=\\"editor-paragraph\\"><span>﻿</span></p><p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Sounds good!</span><span>Copy + pasting?</span></p><p class=\\"editor-paragraph\\"><span>﻿</span></p><p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Sounds good!</span></p>"`;
+
+exports[`BasicTextEntry Webkit Rich text Can delete characters after they're typed 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Delete some of these characte</span></p>"`;
+
+exports[`BasicTextEntry Webkit Rich text Can select and delete a word 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Delete some of these </span></p>"`;
+
+exports[`BasicTextEntry Webkit Rich text Can type 'Hello Outline' in the editor 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello Outline</span></p>"`;
 
 exports[`BasicTextEntry Webkit Rich text Empty paragraph and new line node selection 1`] = `"<p class=\\"editor-paragraph\\"><span>﻿</span></p><p class=\\"editor-paragraph\\"><span>﻿</span></p>"`;
 
@@ -64,4 +78,4 @@ exports[`BasicTextEntry Webkit Rich text Empty paragraph and new line node selec
 
 exports[`BasicTextEntry Webkit Rich text Empty paragraph and new line node selection 6`] = `"<p class=\\"editor-paragraph\\"><span>﻿</span></p><div contenteditable=\\"false\\" class=\\"editor-placeholder\\">Enter some rich text...</div>"`;
 
-exports[`BasicTextEntry Webkit Rich text Simple text entry and selection 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello World.</span></p><p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>This is another paragraph. </span><span contenteditable=\\"false\\" style=\\"color: transparent; background-size: 16px 16px; height: 16px; width: 16px; display: inline-block; margin: 0px 1px; text-align: center; vertical-align: middle; background-image: url(&quot;https://static.xx.fbcdn.net/images/emoji.php/v9/t4c/1/16/1f642.png&quot;); background-position: center center; background-repeat: no-repeat no-repeat;\\">🙂</span><span>﻿</span></p>"`;
+exports[`BasicTextEntry Webkit Rich text Paragraphed text entry and selection 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello World.</span></p><p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>This is another paragraph. </span><span contenteditable=\\"false\\" style=\\"color: transparent; background-size: 16px 16px; height: 16px; width: 16px; display: inline-block; margin: 0px 1px; text-align: center; vertical-align: middle; background-image: url(&quot;https://static.xx.fbcdn.net/images/emoji.php/v9/t4c/1/16/1f642.png&quot;); background-position: center center; background-repeat: no-repeat no-repeat;\\">🙂</span><span>﻿</span></p>"`;

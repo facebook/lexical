@@ -27,6 +27,25 @@ export function initializeE2E(browsers, runTests) {
       const e2e = {
         browser: null,
         page: null,
+        skip(browsers, cb) {
+          if (!browsers.includes(browserName)) {
+            cb();
+          }
+        },
+        async saveScreenshot(print) {
+          const currentTest = expect.getState().currentTestName;
+          const path = currentTest.replace(/\s/g, '_') + '.png';
+          await e2e.page.screenshot({path});
+        },
+        async logScreenshot(print) {
+          const currentTest = expect.getState().currentTestName;
+          const buffer = await e2e.page.screenshot();
+          console.log(
+            `Screenshot "${currentTest}": \n\n` +
+              buffer.toString('base64') +
+              '\n\n',
+          );
+        },
       };
 
       beforeAll(async () => {
@@ -119,7 +138,7 @@ export async function supportsBeforeInput(page) {
   });
 }
 
-export async function pressDownCtrlOrMeta(page) {
+export async function keyDownCtrlOrMeta(page) {
   if (await isMac(page)) {
     await page.keyboard.down('Meta');
   } else {
@@ -127,9 +146,25 @@ export async function pressDownCtrlOrMeta(page) {
   }
 }
 
-export async function pressUpCtrlOrMeta(page) {
+export async function keyUpCtrlOrMeta(page) {
   if (await isMac(page)) {
     await page.keyboard.up('Meta');
+  } else {
+    await page.keyboard.up('Control');
+  }
+}
+
+export async function keyDownCtrlOrAlt(page) {
+  if (await isMac(page)) {
+    await page.keyboard.down('Alt');
+  } else {
+    await page.keyboard.down('Control');
+  }
+}
+
+export async function keyUpCtrlOrAlt(page) {
+  if (await isMac(page)) {
+    await page.keyboard.up('Alt');
   } else {
     await page.keyboard.up('Control');
   }

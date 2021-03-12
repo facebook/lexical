@@ -13,7 +13,7 @@ import {getActiveEditor, ViewModel} from './OutlineView';
 import {getActiveViewModel} from './OutlineView';
 import {getNodeKeyFromDOM} from './OutlineReconciler';
 import {getNodeByKey} from './OutlineNode';
-import {isTextNode, isLineBreakNode, TextNode} from '.';
+import {isTextNode, isBlockNode, isLineBreakNode, TextNode} from '.';
 import {invariant} from './OutlineUtils';
 import {OutlineEditor} from './OutlineEditor';
 import {LineBreakNode} from './OutlineLineBreakNode';
@@ -107,17 +107,22 @@ export class Selection {
     endOffset: number,
   }): void {
     const editor = getActiveEditor();
-    const resolution = resolveSelectionNodes(
+    const resolvedSelectionNodesAndOffsets = resolveSelectionNodesAndOffsets(
       domRange.startContainer,
-      domRange.endContainer,
       domRange.startOffset,
+      domRange.endContainer,
       domRange.endOffset,
       editor,
     );
-    if (resolution === null) {
+    if (resolvedSelectionNodesAndOffsets === null) {
       return;
     }
-    const [anchorNode, focusNode, anchorOffset, focusOffset] = resolution;
+    const [
+      anchorNode,
+      focusNode,
+      anchorOffset,
+      focusOffset,
+    ] = resolvedSelectionNodesAndOffsets;
     this.anchorKey = anchorNode.__key;
     this.focusKey = focusNode.__key;
     this.anchorOffset = anchorOffset;
@@ -138,90 +143,113 @@ function resolveNonLineBreakNode(node: LineBreakNode): [TextNode, number] {
   return [resolvedNode, offset];
 }
 
-function resolveSelectionNodes(
-  anchorDOM: Node,
-  focusDOM: Node,
+function getNodeFromDOM(dom: Node): null | OutlineNode {
+  const nodeKey = getNodeKeyFromDOM(dom);
+  if (nodeKey === null) {
+    return null;
+  }
+  return getNodeByKey(nodeKey);
+}
+
+function resolveSelectionNodeAndOffset(
+  dom: Node,
+  offset: number,
+): null | [TextNode, number] {
+  let resolvedDOM = dom;
+  let resolvedOffset = offset;
+  let resolvedNode;
+  // If we have selection on an element, we will
+  // need to figure out (using the offset) what text
+  // node should be selected.
+
+  // $FlowFixMe: this might be an element node
+  const tagName: string | void = resolvedDOM.tagName;
+  if (resolvedDOM.nodeType === 1 && tagName !== 'BR') {
+    let moveSelectionToEnd = false;
+    // We use the anchor to find which child node to select
+    const childNodes = resolvedDOM.childNodes;
+    const childNodesLength = childNodes.length;
+    // If the anchor is the same as length, then this means we
+    // need to select the very last text node.
+    if (resolvedOffset === childNodesLength) {
+      moveSelectionToEnd = true;
+      resolvedOffset = childNodesLength - 1;
+    }
+    resolvedDOM = childNodes[resolvedOffset];
+    resolvedNode = getNodeFromDOM(resolvedDOM);
+    if (isBlockNode(resolvedNode)) {
+      if (moveSelectionToEnd) {
+        resolvedNode = resolvedNode.getLastTextNode();
+        if (resolvedNode === null) {
+          return null;
+        }
+        resolvedOffset = resolvedNode.getTextContent().length;
+      } else {
+        resolvedNode = resolvedNode.getFirstTextNode();
+        resolvedOffset = 0;
+      }
+    }
+  } else {
+    resolvedNode = getNodeFromDOM(resolvedDOM);
+  }
+  if (isLineBreakNode(resolvedNode)) {
+    return resolveNonLineBreakNode(resolvedNode);
+  }
+  if (!isTextNode(resolvedNode)) {
+    return null;
+  }
+  return [resolvedNode, resolvedOffset];
+}
+
+function resolveSelectionNodesAndOffsets(
+  anchorDOM: null | Node,
   anchorOffset: number,
+  focusDOM: null | Node,
   focusOffset: number,
   editor: OutlineEditor,
 ): null | [TextNode, TextNode, number, number, boolean] {
-  const viewModel = getActiveViewModel();
-  const nodeMap = viewModel._nodeMap;
-  const root = nodeMap.root;
   const editorElement = editor.getEditorElement();
-  let anchorNode;
-  let focusNode;
-  let resolvedAnchorOffset = anchorOffset;
-  let resolvedFocusOffset = focusOffset;
-  let isDirty = false;
-
   if (
     editorElement === null ||
+    anchorDOM === null ||
+    focusDOM === null ||
     !editorElement.contains(anchorDOM) ||
     !editorElement.contains(focusDOM)
   ) {
     return null;
   }
-  // If we're given the element nodes, lets try and work out what
-  // text nodes we can use instead. Otherwise, return null.
-  if (anchorDOM === editorElement) {
-    anchorNode = root.getFirstTextNode();
-    resolvedAnchorOffset = 0;
-  } else {
-    let resolvedAnchorDOM = anchorDOM;
-    if (anchorDOM.nodeType === 1) {
-      resolvedAnchorDOM = anchorDOM.childNodes[anchorOffset];
-    }
-    const anchorKey = getNodeKeyFromDOM(resolvedAnchorDOM);
-    if (anchorKey) {
-      anchorNode = nodeMap[anchorKey];
-    }
-    if (isLineBreakNode(anchorNode)) {
-      [anchorNode, resolvedAnchorOffset] = resolveNonLineBreakNode(anchorNode);
-    }
-  }
-  if (focusDOM === editorElement) {
-    focusNode = root.getLastTextNode();
-    if (focusNode !== null) {
-      resolvedFocusOffset = focusNode.getTextContent().length;
-    }
-  } else {
-    let resolvedFocusDOM = focusDOM;
-    if (focusDOM.nodeType === 1) {
-      resolvedFocusDOM = focusDOM.childNodes[focusOffset];
-      resolvedFocusOffset = 0;
-    }
-    const focusKey = getNodeKeyFromDOM(resolvedFocusDOM);
-    if (focusKey) {
-      focusNode = nodeMap[focusKey];
-    }
-    if (isLineBreakNode(focusNode)) {
-      [focusNode, resolvedFocusOffset] = resolveNonLineBreakNode(focusNode);
-    }
-  }
-  // We try and find the relevant text nodes from the selection.
-  // If we can't do this, we return null.
-  if (anchorNode == null || focusNode == null) {
+  const resolveAnchorNodeAndOffset = resolveSelectionNodeAndOffset(
+    anchorDOM,
+    anchorOffset,
+  );
+  const resolveFocusNodeAndOffset = resolveSelectionNodeAndOffset(
+    focusDOM,
+    focusOffset,
+  );
+  if (
+    resolveAnchorNodeAndOffset === null ||
+    resolveFocusNodeAndOffset === null
+  ) {
     return null;
   }
-  if (!isTextNode(anchorNode) || !isTextNode(focusNode)) {
-    if (__DEV__) {
-      invariant(false, 'Should never happen');
-    } else {
-      invariant();
-    }
-  }
+  const resolvedAnchorNode = resolveAnchorNodeAndOffset[0];
+  const resolvedFocusNode = resolveFocusNodeAndOffset[0];
+  let resolvedAnchorOffset = resolveAnchorNodeAndOffset[1];
+  let resolvedFocusOffset = resolveFocusNodeAndOffset[1];
+  let isDirty = false;
+
   // Because we use a special character for whitespace,
   // we need to adjust offsets to 0 when the text is
   // really empty.
-  if (anchorNode.__text === '') {
+  if (resolvedAnchorNode.__text === '') {
     // When dealing with empty text nodes, we always
     // render a special empty space character, and set
     // the native DOM selection to offset 1 so that
     // text entry works as expected.
     if (
-      anchorNode === focusNode &&
-      anchorOffset !== 1 &&
+      !isDirty &&
+      resolvedAnchorNode === resolvedFocusNode &&
+      resolvedAnchorOffset !== 1 &&
       !editor._isComposing &&
       !editor._isPointerDown
     ) {
@@ -229,12 +257,12 @@ function resolveSelectionNodes(
     }
     resolvedAnchorOffset = 0;
   }
-  if (focusNode.__text === '') {
+  if (resolvedFocusNode.__text === '') {
     resolvedFocusOffset = 0;
   }
   return [
-    anchorNode,
-    focusNode,
+    resolvedAnchorNode,
+    resolvedFocusNode,
     resolvedAnchorOffset,
     resolvedFocusOffset,
     isDirty,
@@ -316,19 +344,16 @@ export function createSelection(
     }
     return selection;
   }
-  if (editor === null || anchorDOM === null || focusDOM === null) {
-    return null;
-  }
-  // Let's resolve the nodes, in the case we're selecting block nodes.
-  // We always to make sure the anchor and focus nodes are text nodes.
-  const resolution = resolveSelectionNodes(
+  // Let's resolve the text nodes from the offsets and DOM nodes we have from
+  // native selection.
+  const resolvedSelectionNodesAndOffsets = resolveSelectionNodesAndOffsets(
     anchorDOM,
-    focusDOM,
     anchorOffset,
+    focusDOM,
     focusOffset,
     editor,
   );
-  if (resolution === null) {
+  if (resolvedSelectionNodesAndOffsets === null) {
     return null;
   }
   const [
@@ -337,7 +362,7 @@ export function createSelection(
     resolvedAnchorOffset,
     resolvedFocusOffset,
     isDirty,
-  ] = resolution;
+  ] = resolvedSelectionNodesAndOffsets;
 
   const selection = new Selection(
     resolvedAnchorNode.__key,

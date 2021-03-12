@@ -12,6 +12,8 @@ const E2E_DEBUG = process.env.E2E_DEBUG;
 const E2E_PORT = process.env.E2E_PORT || 3000;
 const E2E_BROWSER = process.env.E2E_BROWSER;
 
+jest.setTimeout(15000);
+
 function uppercase(str) {
   return str[0].toUpperCase() + str.slice(1);
 }
@@ -60,24 +62,28 @@ export async function repeat(times, cb) {
   }
 }
 
-export async function assertSnapshot(page) {
+export async function assertHTMLSnapshot(page) {
   // Assert HTML of the editor matches the snapshot
   const html = await page.innerHTML('div.editor');
   expect(html).toMatchSnapshot();
+}
+export async function assertSelection(page, expected) {
   // Assert the selection of the editor matches the snapshot
   const selection = await page.evaluate(() => {
-    function getPathFromNode(node) {
+    const editorElement = document.querySelector('div.editor');
+
+    const getPathFromNode = (node) => {
       const path = [];
       while (node !== null) {
         const parent = node.parentNode;
-        if (parent === null) {
+        if (parent === null || node === editorElement) {
           break;
         }
         path.push(Array.from(parent.childNodes).indexOf(node));
         node = parent;
       }
       return path.reverse();
-    }
+    };
 
     const {
       anchorNode,
@@ -85,14 +91,15 @@ export async function assertSnapshot(page) {
       focusNode,
       focusOffset,
     } = window.getSelection();
+
     return {
       anchorPath: getPathFromNode(anchorNode),
       anchorOffset,
       focusPath: getPathFromNode(focusNode),
       focusOffset,
     };
-  });
-  expect(selection).toMatchSnapshot();
+  }, expected);
+  expect(selection).toEqual(expected);
 }
 
 export async function isMac(page) {
@@ -160,7 +167,6 @@ export async function pasteFromClipboard(page, clipboardData) {
       });
       editor.dispatchEvent(pasteEvent);
       if (!pasteEvent.defaultPrevented) {
-        debugger;
         if (canUseBeforeInput) {
           const inputEvent = new InputEvent('beforeinput', {bubbles: true});
           Object.defineProperty(inputEvent, 'inputType', {

@@ -1070,3 +1070,19 @@ export function handleKeyDownSelection(
     }
   }
 }
+
+export function selectAll(selection: Selection): void {
+  const anchorNode = selection.getAnchorNode();
+  const topParent = anchorNode.getTopParentBlockOrThrow();
+  const root = topParent.getParentOrThrow();
+  const firstTextNode = root.getFirstTextNode();
+  const lastTextNode = root.getLastTextNode();
+  if (firstTextNode !== null && lastTextNode !== null) {
+    selection.setRange(
+      firstTextNode.getKey(),
+      0,
+      lastTextNode.getKey(),
+      lastTextNode.getTextContent().length,
+    );
+  }
+}

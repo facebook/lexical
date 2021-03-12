@@ -17,7 +17,12 @@ import type {
 } from 'outline';
 
 import {createLineBreakNode, createTextNode} from 'outline';
-import {CAN_USE_BEFORE_INPUT, IS_SAFARI, IS_CHROME} from './OutlineEnv';
+import {
+  CAN_USE_BEFORE_INPUT,
+  IS_SAFARI,
+  IS_CHROME,
+  IS_FIREFOX,
+} from './OutlineEnv';
 import {
   isDeleteBackward,
   isDeleteForward,
@@ -30,6 +35,7 @@ import {
   isBold,
   isItalic,
   isTab,
+  isSelectAll,
 } from './OutlineKeyHelpers';
 import {
   deleteBackward,
@@ -46,6 +52,7 @@ import {
   insertNodes,
   insertLineBreak,
   handleKeyDownSelection,
+  selectAll,
 } from './OutlineSelectionHelpers';
 
 // FlowFixMe: Flow doesn't know of the CompositionEvent?
@@ -164,7 +171,14 @@ export function onKeyDownForPlainText(
         insertLineBreak(selection);
       }
     }
-    handleKeyDownSelection(event, selection);
+    if (isSelectAll(event)) {
+      if (IS_FIREFOX) {
+        event.preventDefault();
+        selectAll(selection);
+      }
+    } else {
+      handleKeyDownSelection(event, selection);
+    }
   });
 }
 
@@ -234,6 +248,11 @@ export function onKeyDownForRichText(
           insertText(selection, '\t');
         }
         event.preventDefault();
+      }
+    } else if (isSelectAll(event)) {
+      if (IS_FIREFOX) {
+        event.preventDefault();
+        selectAll(selection);
       }
     } else {
       handleKeyDownSelection(event, selection);

@@ -106,7 +106,7 @@ describe('BasicTextEntry', () => {
       // screenshot (hint: use e2e.logScreenshot) that the selection
       // has moved at all. I can use this keyboard shortcut on
       //
-      e2e.skip(['chromium', 'firefox'], () => {
+      e2e.skip(['chromium'], () => {
         it(`Can select and delete a word`, async () => {
           const {page} = e2e;
 
@@ -114,9 +114,12 @@ describe('BasicTextEntry', () => {
           const text = 'Delete some of these characters.';
           const backspacedText = 'Delete some of these ';
           await page.keyboard.type(text);
+          await Promise.resolve(resolve => setTimeout(resolve, 200));
           await page.keyboard.down('Shift');
           await keyDownCtrlOrAlt(page);
+          await Promise.resolve(resolve => setTimeout(resolve, 200));
           await page.keyboard.press('ArrowLeft');
+          await Promise.resolve(resolve => setTimeout(resolve, 200));
           await page.keyboard.up('Shift');
           await keyUpCtrlOrAlt(page);
           // Ensure the selection is now covering the whole word and period.

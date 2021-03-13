@@ -11,6 +11,7 @@ import {chromium, firefox, webkit} from 'playwright';
 const E2E_DEBUG = process.env.E2E_DEBUG;
 const E2E_PORT = process.env.E2E_PORT || 3000;
 const E2E_BROWSER = process.env.E2E_BROWSER;
+const E2E_IS_CI = E2E_PORT === '4000';
 
 jest.setTimeout(15000);
 
@@ -27,8 +28,25 @@ export function initializeE2E(browsers, runTests) {
       const e2e = {
         browser: null,
         page: null,
-        skip(browsers, cb) {
-          if (!browsers.includes(browserName)) {
+        skip(skipBrowsers, cb) {
+          const shouldSkip = skipBrowsers.find((skipBrowser) => {
+            const [browser, option] = skipBrowser.split('-');
+            if (browser === browserName) {
+              if (!option || (option === 'ci' && E2E_IS_CI)) {
+                return true;
+              }
+            }
+            return false;
+          });
+          if (shouldSkip) {
+            const it = global.it;
+            global.it = global.it.skip;
+            try {
+              cb();
+            } finally {
+              global.it = it;
+            }
+          } else {
             cb();
           }
         },

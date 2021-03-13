@@ -106,7 +106,7 @@ describe('BasicTextEntry', () => {
       // screenshot (hint: use e2e.logScreenshot) that the selection
       // has moved at all. I can use this keyboard shortcut on
       //
-      e2e.skip(['chromium', 'firefox'], () => {
+      e2e.skip(['chromium', 'firefox-ci'], () => {
         it(`Can select and delete a word`, async () => {
           const {page} = e2e;
 
@@ -114,8 +114,8 @@ describe('BasicTextEntry', () => {
           const text = 'Delete some of these characters.';
           const backspacedText = 'Delete some of these ';
           await page.keyboard.type(text);
-          await page.keyboard.down('Shift');
           await keyDownCtrlOrAlt(page);
+          await page.keyboard.down('Shift');
           await page.keyboard.press('ArrowLeft');
           await page.keyboard.up('Shift');
           await keyUpCtrlOrAlt(page);
@@ -133,7 +133,6 @@ describe('BasicTextEntry', () => {
           );
           expect(remainingText).toBe(backspacedText);
 
-          await assertHTMLSnapshot(page);
           await assertSelection(page, {
             anchorPath: [0, 0, 0],
             anchorOffset: backspacedText.length,

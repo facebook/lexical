@@ -56,7 +56,6 @@ jobs:
         node-version: ${{ matrix.node-version }}
     - name: install required packages
       run: |
-        sudo apt-get update
         sudo apt-get install libharfbuzz-icu0 libgstreamer-plugins-base1.0-0 libgstreamer-gl1.0-0 libgstreamer-plugins-bad1.0-0 libopenjp2-7 gstreamer1.0-libav libwoff1 libwebpdemux2 libenchant1c2a libhyphen0 libgles2
         sudo apt-get install xvfb
     - run: yarn install

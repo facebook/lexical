@@ -114,16 +114,6 @@ describe('OutlineTextNode tests', () => {
         expect(textNode.getTextContent()).toBe('My new text node');
       });
     });
-  });
-
-  describe('getTextContent()', () => {
-    test('writable nodes', async () => {
-      await update(() => {
-        const textNode = Outline.createTextNode('My new text node');
-
-        expect(textNode.getTextContent()).toBe('My new text node');
-      });
-    });
 
     test('inert nodes', async () => {
       await update(() => {

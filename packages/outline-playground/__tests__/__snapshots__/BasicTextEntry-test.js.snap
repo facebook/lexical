@@ -62,8 +62,6 @@ exports[`BasicTextEntry Webkit Rich text Basic copy + paste 4`] = `"<p class=\\"
 
 exports[`BasicTextEntry Webkit Rich text Can delete characters after they're typed 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Delete some of these characte</span></p>"`;
 
-exports[`BasicTextEntry Webkit Rich text Can select and delete a word 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Delete some of these </span></p>"`;
-
 exports[`BasicTextEntry Webkit Rich text Can type 'Hello Outline' in the editor 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello Outline</span></p>"`;
 
 exports[`BasicTextEntry Webkit Rich text Empty paragraph and new line node selection 1`] = `"<p class=\\"editor-paragraph\\"><span>﻿</span></p><p class=\\"editor-paragraph\\"><span>﻿</span></p>"`;

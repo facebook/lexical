@@ -61,11 +61,17 @@ describe('OutlineImageNode tests', () => {
     ReactTestUtils.act(() => {
       ReactDOM.render(<TestBase />, container);
     });
+
+    // Insert initial block
+    await update((view) => {
+      const imageNode = new ImageNode('logo.jpg', 'Alt Text');
+      view.getRoot().append(imageNode);
+    });
   }
 
   test('clone()', async () => {
-    await update(() => {
-      const imageNode = new ImageNode('logo.jpg', 'Alt Text');
+    await update((view) => {
+      const imageNode = view.getRoot().getFirstChild();
       const clone = imageNode.clone();
       expect(clone).not.toBe(imageNode);
       expect(clone instanceof ImageNode).toBe(true);
@@ -73,16 +79,17 @@ describe('OutlineImageNode tests', () => {
   });
 
   test('isImage()', async () => {
-    await update(() => {
-      const imageNode = new ImageNode('logo.jpg', 'Alt Text');
-      expect(imageNode.isImage()).toBe(true);
+    await update((view) => {
+      expect(view.getRoot().getFirstChild().isImage()).toBe(true);
     });
   });
 
   test('createDOM()', async () => {
-    await update(() => {
-      const imageNode = new ImageNode('logo.jpg', 'Alt Text');
-      const element = imageNode.createDOM(editorThemeClasses);
+    await update((view) => {
+      const element = view
+        .getRoot()
+        .getFirstChild()
+        .createDOM(editorThemeClasses);
       expect(element.outerHTML).toBe(
         '<div class="my-image-class"><img src="logo.jpg" alt="Alt Text"></div>',
       );
@@ -90,8 +97,8 @@ describe('OutlineImageNode tests', () => {
   });
 
   test('updateDOM()', async () => {
-    await update(() => {
-      const imageNode = new ImageNode('logo.jpg', 'Alt Text');
+    await update((view) => {
+      const imageNode = view.getRoot().getFirstChild();
       const element = imageNode.createDOM(editorThemeClasses);
 
       const newImageNode = new ImageNode('new-logo.jpg', 'New Alt Text');

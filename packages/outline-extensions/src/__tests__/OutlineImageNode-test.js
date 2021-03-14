@@ -11,7 +11,7 @@ import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
 import Outline from 'outline';
-import {ImageNode} from '../OutlineImageNode';
+import {createImageNode, ImageNode} from '../OutlineImageNode';
 
 const editorThemeClasses = Object.freeze({
   image: 'my-image-class',
@@ -64,7 +64,7 @@ describe('OutlineImageNode tests', () => {
 
     // Insert initial block
     await update((view) => {
-      const imageNode = new ImageNode('logo.jpg', 'Alt Text');
+      const imageNode = createImageNode('logo.jpg', 'Alt Text');
       view.getRoot().append(imageNode);
     });
   }
@@ -101,7 +101,7 @@ describe('OutlineImageNode tests', () => {
       const imageNode = view.getRoot().getFirstChild();
       const element = imageNode.createDOM(editorThemeClasses);
 
-      const newImageNode = new ImageNode('new-logo.jpg', 'New Alt Text');
+      const newImageNode = createImageNode('new-logo.jpg', 'New Alt Text');
       const result = newImageNode.updateDOM(imageNode, element);
       expect(result).toBe(false);
       expect(element.outerHTML).toBe(

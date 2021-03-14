@@ -11,7 +11,7 @@ import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
 import Outline from 'outline';
-import {ListNode, createListNode} from '../OutlineListNode';
+import {createListNode, isListNode} from '../OutlineListNode';
 import {createListItemNode} from '../OutlineListItemNode';
 
 const editorThemeClasses = Object.freeze({
@@ -81,7 +81,7 @@ describe('OutlineListNode tests', () => {
       const listNode = view.getRoot().getFirstChild();
       const clone = listNode.clone();
       expect(clone).not.toBe(listNode);
-      expect(clone instanceof ListNode).toBe(true);
+      expect(isListNode(clone)).toBe(true);
       expect(clone.getChildren()).toHaveLength(2);
     });
   });

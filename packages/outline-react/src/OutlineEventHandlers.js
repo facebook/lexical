@@ -55,6 +55,8 @@ import {
   selectAll,
 } from './OutlineSelectionHelpers';
 
+const globalSelection = window.getSelection();
+
 // FlowFixMe: Flow doesn't know of the CompositionEvent?
 // $FlowFixMe: TODO
 type CompositionEvent = Object;
@@ -338,8 +340,7 @@ export function onCopy(
     const selection = view.getSelection();
     if (selection !== null) {
       if (clipboardData != null) {
-        const domSelection = window.getSelection();
-        const range = domSelection.getRangeAt(0);
+        const range = globalSelection.getRangeAt(0);
         if (range) {
           const container = document.createElement('div');
           const frag = range.cloneContents();
@@ -420,9 +421,8 @@ export function onSelectionChange(
   editor: OutlineEditor,
   state: EventHandlerState,
 ): void {
-  const selection = window.getSelection();
   const editorElement = editor.getEditorElement();
-  if (editorElement && !editorElement.contains(selection.anchorNode)) {
+  if (editorElement && !editorElement.contains(globalSelection.anchorNode)) {
     return;
   }
   editor.update((view) => {
@@ -454,6 +454,31 @@ export function onPointerUp(
   editor.setPointerDown(false);
 }
 
+export function onNativeInput(
+  event: InputEvent,
+  editor: OutlineEditor,
+  state: EventHandlerState,
+): void {
+  const inputType = event.inputType;
+
+  if (inputType !== 'insertText') {
+    return;
+  }
+
+  editor.update((view) => {
+    const selection = view.getSelection();
+
+    if (selection === null) {
+      return;
+    }
+
+    const data = event.data;
+    if (data) {
+      insertText(selection, data);
+    }
+  });
+}
+
 export function onNativeBeforeInputForPlainText(
   event: InputEvent,
   editor: OutlineEditor,
@@ -468,6 +493,11 @@ export function onNativeBeforeInputForPlainText(
     inputType === 'deleteCompositionText'
   ) {
     return;
+  }
+  if (inputType === 'insertText') {
+    if (globalSelection.isCollapsed) {
+      return;
+    }
   }
   // $FlowFixMe: Flow doesn't think we can prevent Input Events
   event.preventDefault();
@@ -575,8 +605,6 @@ export function onNativeBeforeInputForRichText(
   ) {
     return;
   }
-  // $FlowFixMe: Flow doesn't think we can prevent Input Events
-  event.preventDefault();
   editor.update((view) => {
     const selection = view.getSelection();
 
@@ -594,6 +622,15 @@ export function onNativeBeforeInputForRichText(
       }
     }
     const data = event.data;
+
+    if (inputType === 'insertText') {
+      if (!selection.isCaret()) {
+        insertText(selection, '');
+      }
+      return;
+    }
+    // $FlowFixMe: Flow doesn't think we can prevent Input Events
+    event.preventDefault();
 
     switch (inputType) {
       case 'formatBold': {

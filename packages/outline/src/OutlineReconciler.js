@@ -15,7 +15,7 @@ import type {TextNode} from './OutlineTextNode';
 
 import {getNodeByKey} from './OutlineNode';
 import {isTextNode, isBlockNode} from '.';
-import {invariant} from './OutlineUtils';
+import {invariant, getAdjustedSelectionAnchor} from './OutlineUtils';
 import {
   IS_IMMUTABLE,
   IS_SEGMENTED,
@@ -587,17 +587,18 @@ function reconcileSelection(selection: Selection, editor: OutlineEditor): void {
   let anchorOffset = selection.anchorOffset;
   let focusOffset = selection.focusOffset;
 
+  // Because we use empty text nodes to ensure Outline
+  // selection and text entry works as expected, it also
+  // means we need to adjust the offset to ensure native
+  // selection works correctly and doesn't act buggy.
   if (
     anchorNode !== null &&
     anchorNode === focusNode &&
     anchorNode.__text === ''
   ) {
-    // Because we use empty text nodes to ensure Outline
-    // selection and text entry works as expected, it also
-    // means we need to adjust the offset to ensure native
-    // selection works correctly and doesn't act buggy.
-    anchorOffset = 1;
-    focusOffset = 1;
+    const offset = getAdjustedSelectionAnchor(anchorDOM);
+    anchorOffset = offset;
+    focusOffset = offset;
   }
   domSelection.setBaseAndExtent(
     getDOMTextNodeFromElement(anchorDOM),

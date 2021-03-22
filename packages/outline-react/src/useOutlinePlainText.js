@@ -34,6 +34,7 @@ import {
   onDropPolyfill,
   onDragStartPolyfill,
   onPolyfilledBeforeInput,
+  onNativeInput,
 } from './OutlineEventHandlers';
 
 function initEditor(editor: OutlineEditor): void {
@@ -64,7 +65,10 @@ const events: InputEvents = [
 ];
 
 if (CAN_USE_BEFORE_INPUT) {
-  events.push(['beforeinput', onNativeBeforeInputForPlainText]);
+  events.push(
+    ['beforeinput', onNativeBeforeInputForPlainText],
+    ['input', onNativeInput],
+  );
 } else {
   events.push(
     ['paste', onPastePolyfillForPlainText],

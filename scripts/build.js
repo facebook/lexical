@@ -46,7 +46,8 @@ const wwwMappings = {
 
 const outlineExtensions = fs
   .readdirSync(path.resolve('./packages/outline-extensions/src'))
-  .map((str) => path.basename(str, '.js'));
+  .map((str) => path.basename(str, '.js'))
+  .filter((str) => !str.includes('__tests__') && !str.includes('test-utils'));
 const outlineExtensionsExternals = outlineExtensions.map((node) => {
   const external = `outline-extensions/${node.replace('Outline', '')}`;
   wwwMappings[external] = node;

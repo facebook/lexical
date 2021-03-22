@@ -24,6 +24,7 @@ module.exports = {
       testPathIgnorePatterns: [
         '<rootDir>/packages/outline/',
         '<rootDir>/packages/outline-react/',
+        '<rootDir>/packages/outline-extensions/',
         '<rootDir>/packages/outline-playground/__tests__/utils/',
       ],
     },

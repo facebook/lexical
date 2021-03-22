@@ -20,7 +20,7 @@
     "watch": "node scripts/build.js --watch",
     "flow": "node ./scripts/tasks/flow.js",
     "test": "npm run build && jest",
-    "test-unit": "jest --selectProjects unit",
+    "test-unit": "jest --selectProjects unit --testPathPattern",
     "test-unit-ci": "E2E_PORT=4000 start-server-and-test prepare-ci 4000 test-e2e",
     "test-e2e": "jest --selectProjects e2e --testPathPattern",
     "test-e2e:chromium": "E2E_BROWSER=chromium jest --selectProjects e2e --testPathPattern",

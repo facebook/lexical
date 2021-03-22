@@ -199,10 +199,7 @@ export function onKeyDownForRichText(
     // If we can use native beforeinput, we handle
     // these cases in that function.
     if (!CAN_USE_BEFORE_INPUT) {
-      if (isDeleteBackward(event)) {
-        event.preventDefault();
-        deleteBackward(selection);
-      } else if (isDeleteForward(event)) {
+      if (isDeleteForward(event)) {
         event.preventDefault();
         deleteForward(selection);
       } else if (isDeleteLineBackward(event)) {
@@ -224,7 +221,11 @@ export function onKeyDownForRichText(
     }
     // Various browser struggle with these events in
     // beforeinput, so we ensure they work here
-    if (isLineBreak(event)) {
+    if (isDeleteBackward(event)) {
+      // This is used to better support Dragon Dictation
+      event.preventDefault();
+      deleteBackward(selection);
+    } else if (isLineBreak(event)) {
       event.preventDefault();
       insertLineBreak(selection);
     } else if (isBold(event)) {

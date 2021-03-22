@@ -14,6 +14,22 @@ import ReactTestUtils from 'react-dom/test-utils';
 
 import Outline from 'outline';
 
+class TestBlockNode extends Outline.BlockNode {
+  clone() {
+    const clone = new TestBlockNode(this.__key);
+    clone.__children = [...this.__children];
+    clone.__parent = this.__parent;
+    clone.__flags = this.__flags;
+    return clone;
+  }
+  createDOM() {
+    return document.createElement('div');
+  }
+  updateDOM() {
+    return false;
+  }
+}
+
 describe('OutlineBlockNode tests', () => {
   let container = null;
 
@@ -61,7 +77,7 @@ describe('OutlineBlockNode tests', () => {
 
     // Insert initial block
     await update((view) => {
-      const block = new Outline.BlockNode();
+      const block = new TestBlockNode();
       const text = Outline.createTextNode('Foo');
       const text2 = Outline.createTextNode('Bar');
       // Prevent text nodes from combining.
@@ -81,7 +97,7 @@ describe('OutlineBlockNode tests', () => {
   describe('getChildren()', () => {
     test('no children', async () => {
       await update((view) => {
-        const block = new Outline.BlockNode();
+        const block = new TestBlockNode();
         const children = block.getChildren();
         expect(children).toHaveLength(0);
         expect(children).toEqual([]);
@@ -105,9 +121,9 @@ describe('OutlineBlockNode tests', () => {
     });
 
     test('nested', async () => {
-      await update(() => {
-        const block = new Outline.BlockNode();
-        const innerBlock = new Outline.BlockNode();
+      await update((view) => {
+        const block = new TestBlockNode();
+        const innerBlock = new TestBlockNode();
         const text = Outline.createTextNode('Foo');
         text.select(0, 0);
         const text2 = Outline.createTextNode('Bar');
@@ -125,7 +141,7 @@ describe('OutlineBlockNode tests', () => {
         expect(children).toHaveLength(4);
         expect(children).toEqual([text, text2, text3, text4]);
 
-        const innerInnerBlock = new Outline.BlockNode();
+        const innerInnerBlock = new TestBlockNode();
         const text5 = Outline.createTextNode('More');
         const text6 = Outline.createTextNode('Stuff');
         innerInnerBlock.append(text5);
@@ -135,6 +151,7 @@ describe('OutlineBlockNode tests', () => {
         const children2 = block.getAllTextNodes();
         expect(children2).toHaveLength(6);
         expect(children2).toEqual([text, text2, text3, text5, text6, text4]);
+        view.getRoot().append(block);
       });
     });
 
@@ -152,14 +169,14 @@ describe('OutlineBlockNode tests', () => {
 
     test('empty', async () => {
       await update(() => {
-        const block = new Outline.BlockNode();
+        const block = new TestBlockNode();
         expect(block.getFirstTextNode()).toBe(null);
       });
     });
 
     test('inert', async () => {
-      await update(() => {
-        const block = new Outline.BlockNode();
+      await update((view) => {
+        const block = new TestBlockNode();
         const inertNode = Outline.createTextNode('Foo');
         inertNode.makeInert();
         inertNode.select(0, 0);
@@ -169,13 +186,14 @@ describe('OutlineBlockNode tests', () => {
         block.append(text);
         expect(block.getFirstTextNode()).not.toEqual(inertNode);
         expect(block.getFirstTextNode(true).getTextContent()).toEqual('');
+        view.getRoot().append(block);
       });
     });
 
     test('nested', async () => {
-      await update(() => {
-        const block = new Outline.BlockNode();
-        const innerBlock = new Outline.BlockNode();
+      await update((view) => {
+        const block = new TestBlockNode();
+        const innerBlock = new TestBlockNode();
         const text = Outline.createTextNode('Foo');
         const text2 = Outline.createTextNode('Bar');
         text.select(0, 0);
@@ -185,6 +203,7 @@ describe('OutlineBlockNode tests', () => {
         innerBlock.append(text2);
 
         expect(block.getFirstTextNode()).toBe(text);
+        view.getRoot().append(block);
       });
     });
   });
@@ -200,14 +219,14 @@ describe('OutlineBlockNode tests', () => {
 
     test('empty', async () => {
       await update(() => {
-        const block = new Outline.BlockNode();
+        const block = new TestBlockNode();
         expect(block.getLastTextNode()).toBe(null);
       });
     });
 
     test('inert', async () => {
-      await update(() => {
-        const block = new Outline.BlockNode();
+      await update((view) => {
+        const block = new TestBlockNode();
         const text = Outline.createTextNode('Foo');
         const inertNode = Outline.createTextNode('Bar');
         inertNode.makeInert();
@@ -217,13 +236,14 @@ describe('OutlineBlockNode tests', () => {
         block.append(inertNode);
         expect(block.getLastTextNode()).not.toEqual(inertNode);
         expect(block.getLastTextNode(true).getTextContent()).toBe('');
+        view.getRoot().append(block);
       });
     });
 
     test('nested', async () => {
-      await update(() => {
-        const block = new Outline.BlockNode();
-        const innerBlock = new Outline.BlockNode();
+      await update((view) => {
+        const block = new TestBlockNode();
+        const innerBlock = new TestBlockNode();
         const text = Outline.createTextNode('Foo');
         const text2 = Outline.createTextNode('Bar');
         text.select(0, 0);
@@ -233,6 +253,7 @@ describe('OutlineBlockNode tests', () => {
         innerBlock.append(text2);
 
         expect(block.getLastTextNode().getTextContent()).toBe('Bar');
+        view.getRoot().append(block);
       });
     });
   });
@@ -248,7 +269,7 @@ describe('OutlineBlockNode tests', () => {
 
     test('empty', async () => {
       await update(() => {
-        const block = new Outline.BlockNode();
+        const block = new TestBlockNode();
         expect(block.getFirstChild()).toBe(null);
       });
     });
@@ -265,7 +286,7 @@ describe('OutlineBlockNode tests', () => {
 
     test('empty', async () => {
       await update(() => {
-        const block = new Outline.BlockNode();
+        const block = new TestBlockNode();
         expect(block.getLastChild()).toBe(null);
       });
     });
@@ -282,41 +303,44 @@ describe('OutlineBlockNode tests', () => {
 
     test('empty', async () => {
       await update(() => {
-        const block = new Outline.BlockNode();
+        const block = new TestBlockNode();
         expect(block.getTextContent()).toBe('');
       });
     });
 
     test('nested', async () => {
-      const block = new Outline.BlockNode();
-      const innerBlock = new Outline.BlockNode();
-      const text = Outline.createTextNode('Foo');
-      text.select(0, 0);
-      const text2 = Outline.createTextNode('Bar');
-      const text3 = Outline.createTextNode('Baz');
-      text3.makeInert();
-      const text4 = Outline.createTextNode('Qux');
+      await update((view) => {
+        const block = new TestBlockNode();
+        const innerBlock = new TestBlockNode();
+        const text = Outline.createTextNode('Foo');
+        text.select(0, 0);
+        const text2 = Outline.createTextNode('Bar');
+        const text3 = Outline.createTextNode('Baz');
+        text3.makeInert();
+        const text4 = Outline.createTextNode('Qux');
 
-      block.append(text);
-      block.append(innerBlock);
-      block.append(text4);
+        block.append(text);
+        block.append(innerBlock);
+        block.append(text4);
 
-      innerBlock.append(text2);
-      innerBlock.append(text3);
+        innerBlock.append(text2);
+        innerBlock.append(text3);
 
-      expect(block.getTextContent()).toEqual('FooBar\n\nQux');
-      expect(block.getTextContent(true)).toEqual('FooBarBaz\n\nQux');
+        expect(block.getTextContent()).toEqual('FooBar\n\nQux');
+        expect(block.getTextContent(true)).toEqual('FooBarBaz\n\nQux');
 
-      const innerInnerBlock = new Outline.BlockNode();
-      const text5 = Outline.createTextNode('More');
-      text5.makeInert();
-      const text6 = Outline.createTextNode('Stuff');
-      innerInnerBlock.append(text5);
-      innerInnerBlock.append(text6);
-      innerBlock.append(innerInnerBlock);
+        const innerInnerBlock = new TestBlockNode();
+        const text5 = Outline.createTextNode('More');
+        text5.makeInert();
+        const text6 = Outline.createTextNode('Stuff');
+        innerInnerBlock.append(text5);
+        innerInnerBlock.append(text6);
+        innerBlock.append(innerInnerBlock);
 
-      expect(block.getTextContent()).toEqual('FooBarStuff\n\nQux');
-      expect(block.getTextContent(true)).toEqual('FooBarBazMoreStuff\n\nQux');
+        expect(block.getTextContent()).toEqual('FooBarStuff\n\nQux');
+        expect(block.getTextContent(true)).toEqual('FooBarBazMoreStuff\n\nQux');
+        view.getRoot().append(block);
+      });
     });
   });
 });

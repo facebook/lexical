@@ -964,7 +964,6 @@ export function handleKeyDownSelection(
   const key = event.key;
   const isLeftArrow = key === 'ArrowLeft';
   const isRightArrow = key === 'ArrowRight';
-  const isDelete = key === 'Delete';
   const isBackspace = key === 'Backspace';
   const anchorNode = selection.getAnchorNode();
   const offset = selection.anchorOffset;
@@ -1039,7 +1038,7 @@ export function handleKeyDownSelection(
         }
       }
     }
-  } else if (isRightArrow || isDelete) {
+  } else if (isRightArrow) {
     const textContentLength = textContent.length;
     const selectionAtEnd = textContentLength === offset;
     const selectionJustBeforeEnd = textContentLength === offset + 1;
@@ -1061,9 +1060,6 @@ export function handleKeyDownSelection(
                 announceNode(nextSibling);
               }
             }
-          } else if (selectionAtEnd) {
-            deleteForward(selection);
-            event.preventDefault();
           }
         }
       }

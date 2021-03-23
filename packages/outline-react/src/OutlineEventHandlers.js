@@ -55,10 +55,6 @@ import {
   selectAll,
 } from './OutlineSelectionHelpers';
 
-// FlowFixMe: Flow doesn't know of the CompositionEvent?
-// $FlowFixMe: TODO
-type CompositionEvent = Object;
-
 // TODO the Flow types here needs fixing
 export type EventHandler = (
   // $FlowFixMe: not sure how to handle this generic properly
@@ -480,6 +476,16 @@ export function onNativeInput(
   });
 }
 
+function applyTargetRange(selection: Selection, event: InputEvent): void {
+  if (event.getTargetRanges) {
+    const targetRange = event.getTargetRanges()[0];
+
+    if (targetRange) {
+      selection.applyDOMRange(targetRange);
+    }
+  }
+}
+
 export function onNativeBeforeInputForPlainText(
   event: InputEvent,
   editor: OutlineEditor,
@@ -504,12 +510,7 @@ export function onNativeBeforeInputForPlainText(
     // Chromium has a bug with the wrong offsets for deleteSoftLineBackward.
     // See: https://bugs.chromium.org/p/chromium/issues/detail?id=1043564
     if (inputType !== 'deleteSoftLineBackward' || !IS_CHROME) {
-      // $FlowFixMe: Flow doesn't know of getTargetRanges
-      const targetRange = event.getTargetRanges()[0];
-
-      if (targetRange != null) {
-        selection.applyDOMRange(targetRange);
-      }
+      applyTargetRange(selection, event);
     }
     if (inputType === 'insertText') {
       if (!selection.isCaret()) {
@@ -532,7 +533,6 @@ export function onNativeBeforeInputForPlainText(
       case 'insertFromDrop':
       case 'insertReplacementText':
       case 'insertFromPaste': {
-        // $FlowFixMe: Flow doesn't know about the dataTransfer field
         const dataTransfer = event.dataTransfer;
         if (dataTransfer != null) {
           insertDataTransferForPlainText(dataTransfer, selection, view);
@@ -615,12 +615,7 @@ export function onNativeBeforeInputForRichText(
     // Chromium has a bug with the wrong offsets for deleteSoftLineBackward.
     // See: https://bugs.chromium.org/p/chromium/issues/detail?id=1043564
     if (inputType !== 'deleteSoftLineBackward' || !IS_CHROME) {
-      // $FlowFixMe: Flow doesn't know of getTargetRanges
-      const targetRange = event.getTargetRanges()[0];
-
-      if (targetRange != null) {
-        selection.applyDOMRange(targetRange);
-      }
+      applyTargetRange(selection, event);
     }
     if (inputType === 'insertText') {
       if (!selection.isCaret()) {
@@ -659,7 +654,6 @@ export function onNativeBeforeInputForRichText(
       case 'insertFromDrop':
       case 'insertReplacementText':
       case 'insertFromPaste': {
-        // $FlowFixMe: Flow doesn't know about the dataTransfer field
         const dataTransfer = event.dataTransfer;
         if (dataTransfer != null) {
           insertDataTransferForRichText(dataTransfer, selection, view);

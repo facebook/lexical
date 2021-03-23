@@ -148,10 +148,7 @@ export function onKeyDownForPlainText(
     // If we can use native beforeinput, we handle
     // these cases in that function.
     if (!CAN_USE_BEFORE_INPUT) {
-      if (isDeleteBackward(event)) {
-        event.preventDefault();
-        deleteBackward(selection);
-      } else if (isDeleteForward(event)) {
+      if (isDeleteForward(event)) {
         event.preventDefault();
         deleteForward(selection);
       } else if (isDeleteLineBackward(event)) {
@@ -166,9 +163,6 @@ export function onKeyDownForPlainText(
       } else if (isDeleteWordForward(event)) {
         event.preventDefault();
         deleteWordForward(selection);
-      } else if (isParagraph(event) || isLineBreak(event)) {
-        event.preventDefault();
-        insertLineBreak(selection);
       }
     }
     if (isSelectAll(event)) {
@@ -176,6 +170,13 @@ export function onKeyDownForPlainText(
         event.preventDefault();
         selectAll(selection);
       }
+    } else if (isDeleteBackward(event)) {
+      // This is used to better support Dragon Dictation
+      event.preventDefault();
+      deleteBackward(selection);
+    } else if (isParagraph(event) || isLineBreak(event)) {
+      event.preventDefault();
+      insertLineBreak(selection);
     } else {
       handleKeyDownSelection(event, selection);
     }

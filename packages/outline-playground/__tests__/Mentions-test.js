@@ -34,9 +34,6 @@ describe('Mentions', () => {
         focusOffset: 1,
       });
 
-      await page.waitForSelector('#mentions-typeahead ul li', {
-        state: 'hidden',
-      });
       await page.waitForSelector('.mention');
 
       await page.keyboard.press('ArrowLeft');
@@ -80,9 +77,6 @@ describe('Mentions', () => {
         focusOffset: 1,
       });
 
-      await page.waitForSelector('#mentions-typeahead ul li', {
-        state: 'hidden',
-      });
       await page.waitForSelector('.mention');
 
       await page.keyboard.press('ArrowLeft');
@@ -110,8 +104,6 @@ describe('Mentions', () => {
         focusPath: [0, 0, 0],
         focusOffset: 0,
       });
-
-      await page.waitForSelector('.mention', {state: 'hidden'});
     });
 
     it(`Can enter and backspace part of the Luke Skywalker mention`, async () => {
@@ -138,9 +130,6 @@ describe('Mentions', () => {
         focusOffset: 1,
       });
 
-      await page.waitForSelector('#mentions-typeahead ul li', {
-        state: 'hidden',
-      });
       await page.waitForSelector('.mention');
 
       await page.keyboard.press('Backspace');
@@ -160,8 +149,6 @@ describe('Mentions', () => {
         focusPath: [0, 0, 0],
         focusOffset: 0,
       });
-
-      await page.waitForSelector('.mention', {state: 'hidden'});
     });
   });
 });

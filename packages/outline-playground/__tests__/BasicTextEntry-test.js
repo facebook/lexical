@@ -166,6 +166,24 @@ describe('BasicTextEntry', () => {
           focusOffset: 0,
         });
 
+        await page.keyboard.press('ArrowRight');
+        await assertHTMLSnapshot(page);
+        await assertSelection(page, {
+          anchorPath: [1, 0, 0],
+          anchorOffset: 0,
+          focusPath: [1, 0, 0],
+          focusOffset: 0,
+        });
+
+        await page.keyboard.press('ArrowLeft');
+        await assertHTMLSnapshot(page);
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 0,
+          focusPath: [0, 0, 0],
+          focusOffset: 0,
+        });
+
         // Remove paragraph
         await page.keyboard.press('Delete');
         await assertHTMLSnapshot(page);

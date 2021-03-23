@@ -14,9 +14,15 @@ function App(): React$Node {
   const [isCharLimit, setCharLimit] = useState(false);
   const [isAutocomplete, setAutocomplete] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
-  const handleOnChange = useCallback((newViewModel) => {
-    requestAnimationFrame(() => setViewModel(newViewModel));
-  }, []);
+  const [showTreeView, setShowTreeView] = useState(true);
+  const handleOnChange = useCallback(
+    (newViewModel) => {
+      if (showTreeView) {
+        requestAnimationFrame(() => setViewModel(newViewModel));
+      }
+    },
+    [showTreeView],
+  );
 
   return (
     <>
@@ -30,6 +36,11 @@ function App(): React$Node {
       </header>
       {showOptions && (
         <div className="switches">
+          <Switch
+            onClick={() => setShowTreeView(!showTreeView)}
+            checked={showTreeView}
+            text="Tree View"
+          />
           <Switch
             onClick={() => setRichText(!isRichText)}
             checked={isRichText}
@@ -62,7 +73,7 @@ function App(): React$Node {
           />
         )}
       </div>
-      <TreeView viewModel={viewModel} />
+      {showTreeView && <TreeView viewModel={viewModel} />}
     </>
   );
 }

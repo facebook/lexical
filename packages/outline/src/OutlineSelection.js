@@ -14,7 +14,7 @@ import {getActiveViewModel} from './OutlineView';
 import {getNodeKeyFromDOM} from './OutlineReconciler';
 import {getNodeByKey} from './OutlineNode';
 import {isTextNode, isBlockNode, isLineBreakNode, TextNode} from '.';
-import {invariant} from './OutlineUtils';
+import {invariant, getAdjustedSelectionAnchor} from './OutlineUtils';
 import {OutlineEditor} from './OutlineEditor';
 import {LineBreakNode} from './OutlineLineBreakNode';
 
@@ -162,9 +162,7 @@ function resolveSelectionNodeAndOffset(
   // need to figure out (using the offset) what text
   // node should be selected.
 
-  // $FlowFixMe: this might be an element node
-  const tagName: string | void = resolvedDOM.tagName;
-  if (resolvedDOM.nodeType === 1 && tagName !== 'BR') {
+  if (resolvedDOM.nodeType === 1 && resolvedDOM.nodeName !== 'BR') {
     let moveSelectionToEnd = false;
     // We use the anchor to find which child node to select
     const childNodes = resolvedDOM.childNodes;
@@ -249,11 +247,14 @@ function resolveSelectionNodesAndOffsets(
     if (
       !isDirty &&
       resolvedAnchorNode === resolvedFocusNode &&
-      resolvedAnchorOffset !== 1 &&
       !editor._isComposing &&
       !editor._isPointerDown
     ) {
-      isDirty = true;
+      const key = resolvedAnchorNode.__key;
+      const dom = editor.getElementByKey(key);
+      if (getAdjustedSelectionAnchor(dom) !== resolvedAnchorOffset) {
+        isDirty = true;
+      }
     }
     resolvedAnchorOffset = 0;
   }

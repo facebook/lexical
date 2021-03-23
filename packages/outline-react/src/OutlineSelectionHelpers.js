@@ -975,25 +975,7 @@ export function handleKeyDownSelection(
     if (selectionAtStart) {
       const prevSibling = anchorNode.getPreviousSibling();
 
-      if (prevSibling === null) {
-        // On empty text nodes, we always move native DOM selection
-        // to offset 1. Although it's at 1, we really mean that it
-        // is at 0 in our model. So when we encounter a left arrow
-        // we need to move selection to the previous block if
-        // we have no previous sibling.
-        if (isLeftArrow && textContent === '') {
-          const parent = anchorNode.getParentOrThrow();
-          const parentSibling = parent.getPreviousSibling();
-
-          if (isBlockNode(parentSibling)) {
-            const lastChild = parentSibling.getLastChild();
-            if (isTextNode(lastChild)) {
-              lastChild.select();
-              event.preventDefault();
-            }
-          }
-        }
-      } else if (!event.shiftKey) {
+      if (prevSibling !== null && !event.shiftKey) {
         let targetPrevSibling = prevSibling;
         if (prevSibling.isImmutable() || prevSibling.isSegmented()) {
           if (isLeftArrow) {
@@ -1046,7 +1028,24 @@ export function handleKeyDownSelection(
     if (selectionAtEnd || selectionJustBeforeEnd) {
       const nextSibling = anchorNode.getNextSibling();
 
-      if (nextSibling !== null) {
+      if (nextSibling === null) {
+        // On empty text nodes, we sometimes move native DOM selection
+        // to offset 0. Given it's at 0, it means the browser won't natively
+        // move it to the next node (instead opting for position 1). So
+        // need to work out this logic ourselves.
+        if (textContent === '') {
+          const parent = anchorNode.getParentOrThrow();
+          const parentSibling = parent.getNextSibling();
+
+          if (isBlockNode(parentSibling)) {
+            const firstChild = parentSibling.getFirstChild();
+            if (isTextNode(firstChild)) {
+              firstChild.select();
+              event.preventDefault();
+            }
+          }
+        }
+      } else {
         if (nextSibling.isImmutable() || nextSibling.isSegmented()) {
           if (isRightArrow) {
             if (

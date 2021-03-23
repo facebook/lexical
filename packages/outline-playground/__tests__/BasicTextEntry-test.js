@@ -152,18 +152,18 @@ describe('BasicTextEntry', () => {
         await assertHTMLSnapshot(page);
         await assertSelection(page, {
           anchorPath: [1, 0, 0],
-          anchorOffset: 1,
+          anchorOffset: 0,
           focusPath: [1, 0, 0],
-          focusOffset: 1,
+          focusOffset: 0,
         });
 
         await page.keyboard.press('ArrowLeft');
         await assertHTMLSnapshot(page);
         await assertSelection(page, {
           anchorPath: [0, 0, 0],
-          anchorOffset: 1,
+          anchorOffset: 0,
           focusPath: [0, 0, 0],
-          focusOffset: 1,
+          focusOffset: 0,
         });
 
         // Remove paragraph
@@ -171,9 +171,9 @@ describe('BasicTextEntry', () => {
         await assertHTMLSnapshot(page);
         await assertSelection(page, {
           anchorPath: [0, 0, 0],
-          anchorOffset: 1,
+          anchorOffset: 0,
           focusPath: [0, 0, 0],
-          focusOffset: 1,
+          focusOffset: 0,
         });
 
         // Add line break
@@ -183,18 +183,18 @@ describe('BasicTextEntry', () => {
         await assertHTMLSnapshot(page);
         await assertSelection(page, {
           anchorPath: [0, 2, 0],
-          anchorOffset: 1,
+          anchorOffset: 0,
           focusPath: [0, 2, 0],
-          focusOffset: 1,
+          focusOffset: 0,
         });
 
         await page.keyboard.press('ArrowLeft');
         await assertHTMLSnapshot(page);
         await assertSelection(page, {
           anchorPath: [0, 0, 0],
-          anchorOffset: 1,
+          anchorOffset: 0,
           focusPath: [0, 0, 0],
-          focusOffset: 1,
+          focusOffset: 0,
         });
 
         // Remove line break
@@ -202,9 +202,9 @@ describe('BasicTextEntry', () => {
         await assertHTMLSnapshot(page);
         await assertSelection(page, {
           anchorPath: [0, 0, 0],
-          anchorOffset: 1,
+          anchorOffset: 0,
           focusPath: [0, 0, 0],
-          focusOffset: 1,
+          focusOffset: 0,
         });
       });
 

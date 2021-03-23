@@ -227,10 +227,7 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
       return () => {
         document.removeEventListener('mousedown', mouseDownHandler);
         document.removeEventListener('mouseup', mouseUpHandler);
-        document.removeEventListener(
-          'selectionChangeHandler',
-          selectionChangeHandler,
-        );
+        document.removeEventListener('selectionchange', selectionChangeHandler);
         removeUpdateListener();
       };
     }

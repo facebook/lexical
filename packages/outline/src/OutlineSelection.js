@@ -99,19 +99,13 @@ export class Selection {
     });
     return textContent;
   }
-  applyDOMRange(domRange: {
-    collapsed: boolean,
-    startContainer: Node,
-    endContainer: Node,
-    startOffset: number,
-    endOffset: number,
-  }): void {
+  applyDOMRange(range: StaticRange): void {
     const editor = getActiveEditor();
     const resolvedSelectionNodesAndOffsets = resolveSelectionNodesAndOffsets(
-      domRange.startContainer,
-      domRange.startOffset,
-      domRange.endContainer,
-      domRange.endOffset,
+      range.startContainer,
+      range.startOffset,
+      range.endContainer,
+      range.endOffset,
       editor,
     );
     if (resolvedSelectionNodesAndOffsets === null) {

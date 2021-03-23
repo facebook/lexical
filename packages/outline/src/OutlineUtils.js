@@ -44,3 +44,10 @@ export function getAdjustedSelectionAnchor(anchorDOM: Node): number {
 }
 
 export const isArray = Array.isArray;
+
+const NativePromise = window.Promise;
+
+export const scheduleMicroTask: (fn: () => void) => void =
+  typeof queueMicrotask === 'function'
+    ? queueMicrotask
+    : (fn) => NativePromise.resolve().then(fn);

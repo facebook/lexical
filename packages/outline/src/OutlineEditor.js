@@ -24,7 +24,12 @@ import {
   parseViewModel,
 } from './OutlineView';
 import {createSelection} from './OutlineSelection';
-import {generateRandomKey, emptyFunction, invariant} from './OutlineUtils';
+import {
+  generateRandomKey,
+  emptyFunction,
+  invariant,
+  scheduleMicroTask,
+} from './OutlineUtils';
 import {getWritableNode} from './OutlineNode';
 import {createRootNode as createRoot} from './OutlineRootNode';
 import {reconcilePlaceholder} from './OutlineReconciler';
@@ -90,8 +95,6 @@ export type DecoratorListener = (decorator: {[NodeKey]: ReactNode}) => void;
 
 export type TextNodeTransform = (node: TextNode, view: View) => void;
 
-const NativePromise = window.Promise;
-
 function updateEditor(
   editor: OutlineEditor,
   updateFn: (view: View) => void,
@@ -148,7 +151,7 @@ function updateEditor(
     return false;
   }
   if (viewModelWasCloned) {
-    NativePromise.resolve().then(() => {
+    scheduleMicroTask(() => {
       commitPendingUpdates(editor);
       if (callbackFn) {
         callbackFn();

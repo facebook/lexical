@@ -1052,7 +1052,7 @@ export function handleKeyDownSelection(
         ) {
           if (
             ((IS_APPLE && selectionAtEnd) ||
-            (!IS_APPLE && selectionJustBeforeEnd)) &&
+              (!IS_APPLE && selectionJustBeforeEnd)) &&
             !isLineBreakNode(nextSibling)
           ) {
             announceNode(nextSibling);

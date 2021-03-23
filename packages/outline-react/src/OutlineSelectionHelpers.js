@@ -1046,18 +1046,20 @@ export function handleKeyDownSelection(
           }
         }
       } else {
-        if (nextSibling.isImmutable() || nextSibling.isSegmented()) {
-          if (isRightArrow) {
-            if (
-              (IS_APPLE && selectionAtEnd) ||
-              (!IS_APPLE && selectionJustBeforeEnd)
-            ) {
-              if (!isLineBreakNode(nextSibling)) {
-                announceNode(nextSibling);
-              }
-              event.preventDefault();
-              nextSibling.selectNext(0, 0);
-            }
+        if (
+          isRightArrow &&
+          (nextSibling.isImmutable() || nextSibling.isSegmented())
+        ) {
+          if (
+            ((IS_APPLE && selectionAtEnd) ||
+            (!IS_APPLE && selectionJustBeforeEnd)) &&
+            !isLineBreakNode(nextSibling)
+          ) {
+            announceNode(nextSibling);
+          }
+          if (selectionAtEnd) {
+            event.preventDefault();
+            nextSibling.selectNext(0, 0);
           }
         }
       }

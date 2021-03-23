@@ -165,18 +165,18 @@ export function onKeyDownForPlainText(
         deleteWordForward(selection);
       }
     }
-    if (isSelectAll(event)) {
-      if (IS_FIREFOX) {
-        event.preventDefault();
-        selectAll(selection);
-      }
-    } else if (isDeleteBackward(event)) {
+    if (isDeleteBackward(event)) {
       // This is used to better support Dragon Dictation
       event.preventDefault();
       deleteBackward(selection);
     } else if (isParagraph(event) || isLineBreak(event)) {
       event.preventDefault();
       insertLineBreak(selection);
+    } else if (isSelectAll(event)) {
+      if (IS_FIREFOX) {
+        event.preventDefault();
+        selectAll(selection);
+      }
     } else {
       handleKeyDownSelection(event, selection);
     }

@@ -1052,12 +1052,11 @@ export function handleKeyDownSelection(
               (IS_APPLE && selectionAtEnd) ||
               (!IS_APPLE && selectionJustBeforeEnd)
             ) {
-              if (isLineBreakNode(nextSibling)) {
-                nextSibling.selectNext(0, 0);
-                event.preventDefault();
-              } else {
+              if (!isLineBreakNode(nextSibling)) {
                 announceNode(nextSibling);
               }
+              event.preventDefault();
+              nextSibling.selectNext(0, 0);
             }
           }
         }

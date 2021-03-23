@@ -19,7 +19,7 @@ import {
   keyUpCtrlOrAlt,
 } from './utils';
 
-describe('BasicTextEntry', () => {
+describe('TextEntry', () => {
   initializeE2E({chromium: true, webkit: true, firefox: true}, (e2e) => {
     describe(`Rich text`, () => {
       it(`Can type 'Hello Outline' in the editor`, async () => {

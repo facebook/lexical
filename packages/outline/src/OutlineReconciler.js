@@ -92,7 +92,10 @@ function destroyChildren(
 ): void {
   let startIndex = _startIndex;
   for (; startIndex <= endIndex; ++startIndex) {
-    destroyNode(children[startIndex], dom);
+    const child = children[startIndex];
+    if (child !== undefined) {
+      destroyNode(child, dom);
+    }
   }
 }
 

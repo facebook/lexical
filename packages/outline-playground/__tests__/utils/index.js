@@ -13,7 +13,7 @@ const E2E_PORT = process.env.E2E_PORT || 3000;
 const E2E_BROWSER = process.env.E2E_BROWSER;
 const E2E_IS_CI = E2E_PORT === '4000';
 
-jest.setTimeout(30000);
+jest.setTimeout(60000);
 
 function uppercase(str) {
   return str[0].toUpperCase() + str.slice(1);

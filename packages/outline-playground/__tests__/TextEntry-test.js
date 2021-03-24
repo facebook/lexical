@@ -94,19 +94,11 @@ describe('TextEntry', () => {
         });
       });
 
-      // Some issues with this test:
-      //
-      // - Doesn't work correctly on Chromium, Shift+Alt+ArrowLeft
+      // Test doesn't work correctly on Chromium, Shift+Alt+ArrowLeft
       // on selects the period the first time, rather than the word
       // "characters". We plan to use Intl.Segmeneter for this anway
       // so this should be fixed.
-      //
-      // - Also seems to fail for Firefox when run on CI. Not sure why,
-      // as it seems to work fine when run locally. I can see from the
-      // screenshot (hint: use e2e.logScreenshot) that the selection
-      // has moved at all. I can use this keyboard shortcut on
-      //
-      e2e.skip(['chromium', 'firefox-ci'], () => {
+      e2e.skip(['chromium'], () => {
         it(`Can select and delete a word`, async () => {
           const {page} = e2e;
 

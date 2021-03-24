@@ -211,9 +211,6 @@ export function onKeyDownForRichText(
       } else if (isDeleteWordForward(event)) {
         event.preventDefault();
         deleteWordForward(selection);
-      } else if (isParagraph(event)) {
-        event.preventDefault();
-        insertParagraph(selection);
       }
     }
     // Various browser struggle with these events in
@@ -225,6 +222,10 @@ export function onKeyDownForRichText(
     } else if (isLineBreak(event)) {
       event.preventDefault();
       insertLineBreak(selection);
+    } else if (isParagraph(event)) {
+      // This is used to better support Dragon Dictation
+      event.preventDefault();
+      insertParagraph(selection);
     } else if (isBold(event)) {
       event.preventDefault();
       formatText(selection, 'bold');

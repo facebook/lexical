@@ -730,7 +730,6 @@ export function deleteForward(selection: Selection): void {
     removeText(selection);
     return;
   }
-  const anchorOffset = selection.anchorOffset;
   const anchorNode = selection.getAnchorNode();
   if (anchorNode === null) {
     return;
@@ -738,7 +737,21 @@ export function deleteForward(selection: Selection): void {
   const currentBlock = anchorNode.getParentBlockOrThrow();
   const textContent = anchorNode.getTextContent();
   const textContentLength = textContent.length;
-  const nextSibling = anchorNode.getNextSibling();
+  let nextSibling = anchorNode.getNextSibling();
+  let anchorOffset = selection.anchorOffset;
+
+  // If we're dealing with an anchor that is either segmented or immutable
+  // then we need to ensure that we actually affect the anchor instead. So
+  // we make the next sibling the anchor to emulate this (less code than
+  // forking the logic again).
+  if (
+    isTextNode(nextSibling) &&
+    (anchorNode.isImmutable() || anchorNode.isSegmented())
+  ) {
+    nextSibling.select(0, 0);
+    nextSibling = anchorNode;
+    anchorOffset = textContentLength;
+  }
 
   if (anchorOffset === textContentLength) {
     if (nextSibling === null) {

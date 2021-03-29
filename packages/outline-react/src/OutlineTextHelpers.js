@@ -94,7 +94,7 @@ export function announceNode(node: OutlineNode): void {
 export function getSegmentsFromString(
   string: string,
   granularity: 'grapheme' | 'word' | 'sentence',
-) {
+): Array<Segment> {
   const segmenter = new Intl.Segmenter(undefined /* locale */, {
     granularity,
   });

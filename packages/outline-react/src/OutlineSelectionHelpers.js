@@ -25,7 +25,11 @@ import {
 } from 'outline';
 import {CAN_USE_INTL_SEGMENTER, IS_APPLE} from './OutlineEnv';
 import {invariant} from './OutlineReactUtils';
-import {getGraphemeIterator, announceNode} from './OutlineTextHelpers';
+import {
+  announceNode,
+  getLastSegment,
+  getSegmentsFromString,
+} from './OutlineTextHelpers';
 
 const WHITESPACE_REGEX = /\s/g;
 
@@ -40,8 +44,8 @@ function getOffsetAfterNextGrapheme(offset, textContent): number {
     return offset;
   }
   if (CAN_USE_INTL_SEGMENTER) {
-    const segments = getGraphemeIterator().segment(textContent.slice(offset));
-    const firstSegment = segments.containing(0);
+    const segments = getSegmentsFromString(textContent, 'grapheme');
+    const firstSegment = segments[0];
     return offset + firstSegment.segment.length;
   } else {
     // TODO: Implement polyfill for `Intl.Segmenter`.
@@ -60,11 +64,11 @@ function getOffsetBeforePreviousGrapheme(offset, textContent): number {
     return offset;
   }
   if (CAN_USE_INTL_SEGMENTER) {
-    const segments = getGraphemeIterator().segment(
+    const segments = getSegmentsFromString(
       textContent.slice(0, offset),
+      'grapheme',
     );
-    const allSegments = Array.from(segments);
-    const lastSegment = allSegments[allSegments.length - 1];
+    const lastSegment = segments[segments.length - 1];
     return offset - lastSegment.segment.length;
   } else {
     // TODO: Implement polyfill for `Intl.Segmenter`.
@@ -577,6 +581,90 @@ export function deleteWordBackward(selection: Selection): void {
     }
   } finally {
     currentBlock.normalizeTextNodes(true);
+  }
+}
+
+export function moveWordBackward(selection: Selection, isCaret: boolean): void {
+  const focusNode = selection.getFocusNode();
+  const focusOffset = selection.focusOffset;
+  const anchorKey = selection.anchorKey;
+  const anchorOffset = selection.anchorOffset;
+  let node = focusNode;
+
+  while (node !== null) {
+    const prevSibling = node.getPreviousSibling();
+    if (!isTextNode(node)) {
+      if (__DEV__) {
+        invariant(false, 'Should never happen');
+      } else {
+        invariant();
+      }
+    }
+    if (!node.isSegmented() && !node.isImmutable() && !node.isInert()) {
+      const textContent = node.getTextContent();
+      const slicedTextContent =
+        node === focusNode
+          ? textContent.slice(0, focusOffset)
+          : node.getTextContent();
+      const segments = getSegmentsFromString(slicedTextContent, 'word');
+      if (segments.length === 0) {
+        node.select(0, 0);
+        const key = node.getKey();
+        selection.setRange(
+          isCaret ? key : anchorKey,
+          isCaret ? 0 : anchorOffset,
+          key,
+          0,
+        );
+      } else {
+        const lastSegment = getLastSegment(segments);
+        if (lastSegment !== null) {
+          const key = node.getKey();
+          const index = lastSegment.index;
+          selection.setRange(
+            isCaret ? key : anchorKey,
+            isCaret ? index : anchorOffset,
+            key,
+            index,
+          );
+        }
+      }
+    }
+    const isAtStart = node === focusNode && focusOffset === 0;
+    if (isLineBreakNode(prevSibling)) {
+      if (isAtStart) {
+        const nextPrevSibling = prevSibling.getPreviousSibling();
+        if (isTextNode(nextPrevSibling)) {
+          const key = nextPrevSibling.getKey();
+          const index = nextPrevSibling.getTextContent().length;
+          selection.setRange(
+            isCaret ? key : anchorKey,
+            isCaret ? index : anchorOffset,
+            key,
+            index,
+          );
+        }
+      }
+      return;
+    } else if (prevSibling === null && isAtStart) {
+      const parent = node.getParentOrThrow();
+      const parentPrev = parent.getPreviousSibling();
+      if (isBlockNode(parentPrev)) {
+        const child = parentPrev.getLastChild();
+        if (isTextNode(child)) {
+          const key = child.getKey();
+          const index = child.getTextContent().length;
+          selection.setRange(
+            isCaret ? key : anchorKey,
+            isCaret ? index : anchorOffset,
+            key,
+            index,
+          );
+          return;
+        }
+      }
+    }
+    node = prevSibling;
   }
 }
 

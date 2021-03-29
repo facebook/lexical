@@ -22,6 +22,7 @@ import {
   IS_SAFARI,
   IS_CHROME,
   IS_FIREFOX,
+  CAN_USE_INTL_SEGMENTER,
 } from './OutlineEnv';
 import {
   isDeleteBackward,
@@ -36,6 +37,7 @@ import {
   isItalic,
   isTab,
   isSelectAll,
+  isMoveWordBackward,
 } from './OutlineKeyHelpers';
 import {
   deleteBackward,
@@ -53,6 +55,7 @@ import {
   insertLineBreak,
   handleKeyDownSelection,
   selectAll,
+  moveWordBackward,
 } from './OutlineSelectionHelpers';
 
 // TODO the Flow types here needs fixing
@@ -173,6 +176,12 @@ export function onKeyDownForPlainText(
         event.preventDefault();
         selectAll(selection);
       }
+    } else if (isMoveWordBackward(event) && CAN_USE_INTL_SEGMENTER) {
+      // For where we support Intl.Segmenter, let's use it to work
+      // out where to move selection for word boundary selections.
+      // Otherwise, we'll let the browser default behavior work.
+      event.preventDefault();
+      moveWordBackward(selection, !event.shiftKey);
     } else {
       handleKeyDownSelection(event, selection);
     }
@@ -214,7 +223,7 @@ export function onKeyDownForRichText(
       }
     }
     // Various browser struggle with these events in
-    // beforeinput, so we ensure they work here
+    // beforeinput, so we ensure they work here.
     if (isDeleteBackward(event)) {
       // This is used to better support Dragon Dictation
       event.preventDefault();
@@ -253,6 +262,12 @@ export function onKeyDownForRichText(
         event.preventDefault();
         selectAll(selection);
       }
+    } else if (isMoveWordBackward(event) && CAN_USE_INTL_SEGMENTER) {
+      // For where we support Intl.Segmenter, let's use it to work
+      // out where to move selection for word boundary selections.
+      // Otherwise, we'll let the browser default behavior work.
+      event.preventDefault();
+      moveWordBackward(selection, !event.shiftKey);
     } else {
       handleKeyDownSelection(event, selection);
     }

@@ -107,3 +107,18 @@ export function isTab(event: KeyboardEvent): boolean {
 export function isSelectAll(event: KeyboardEvent): boolean {
   return event.key === 'a' && (IS_MAC ? event.metaKey : event.ctrlKey);
 }
+
+export function isMoveWordBackward(event: KeyboardEvent): boolean {
+  const {key, altKey, metaKey, ctrlKey} = event;
+  const isLeftArrow = key === 'ArrowLeft';
+  if (IS_APPLE) {
+    if (ctrlKey || metaKey) {
+      return false;
+    }
+    return isLeftArrow && altKey;
+  }
+  if (altKey || metaKey) {
+    return false;
+  }
+  return isLeftArrow && ctrlKey;
+}

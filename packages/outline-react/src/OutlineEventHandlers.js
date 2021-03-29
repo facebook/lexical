@@ -176,6 +176,12 @@ export function onKeyDownForPlainText(
         event.preventDefault();
         selectAll(selection);
       }
+    } else if (isMoveWordBackward(event) && CAN_USE_INTL_SEGMENTER) {
+      // For where we support Intl.Segmenter, let's use it to work
+      // out where to move selection for word boundary selections.
+      // Otherwise, we'll let the browser default behavior work.
+      event.preventDefault();
+      moveWordBackward(selection, !event.shiftKey);
     } else {
       handleKeyDownSelection(event, selection);
     }

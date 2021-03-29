@@ -24,3 +24,27 @@ declare class InputEvent extends UIEvent {
   +getTargetRanges?: () => Array<StaticRange>;
   +dataTransfer?: DataTransfer;
 }
+
+declare class Segment {
+  +isWordLike: true | void;
+  +index: number;
+  +segment: string;
+}
+
+declare var Intl: {
+  Collator: Class<Intl$Collator>,
+  DateTimeFormat: Class<Intl$DateTimeFormat>,
+  NumberFormat: Class<Intl$NumberFormat>,
+  PluralRules: ?Class<Intl$PluralRules>,
+  getCanonicalLocales?: (locales?: Intl$Locales) => Intl$Locale[],
+  Segmenter: (
+    locale?: string,
+    options?: {
+      granularity: 'word' | 'grapheme' | 'sentence',
+    },
+  ) => {
+    containing(index: number): void | Segment,
+    segment(string: string): Iterable<Segment>,
+  },
+  ...
+};

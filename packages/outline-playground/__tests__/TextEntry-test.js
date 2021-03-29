@@ -94,43 +94,37 @@ describe('TextEntry', () => {
         });
       });
 
-      // Test doesn't work correctly on Chromium, Shift+Alt+ArrowLeft
-      // on selects the period the first time, rather than the word
-      // "characters". We plan to use Intl.Segmeneter for this anway
-      // so this should be fixed.
-      e2e.skip(['chromium'], () => {
-        it(`Can select and delete a word`, async () => {
-          const {page} = e2e;
+      it(`Can select and delete a word`, async () => {
+        const {page} = e2e;
 
-          await page.focus('div.editor');
-          const text = 'Delete some of these characters.';
-          const backspacedText = 'Delete some of these ';
-          await page.keyboard.type(text);
-          await keyDownCtrlOrAlt(page);
-          await page.keyboard.down('Shift');
-          await page.keyboard.press('ArrowLeft');
-          await page.keyboard.up('Shift');
-          await keyUpCtrlOrAlt(page);
-          // Ensure the selection is now covering the whole word and period.
-          await assertSelection(page, {
-            anchorPath: [0, 0, 0],
-            anchorOffset: text.length,
-            focusPath: [0, 0, 0],
-            focusOffset: backspacedText.length,
-          });
+        await page.focus('div.editor');
+        const text = 'Delete some of these characters.';
+        const backspacedText = 'Delete some of these ';
+        await page.keyboard.type(text);
+        await keyDownCtrlOrAlt(page);
+        await page.keyboard.down('Shift');
+        await page.keyboard.press('ArrowLeft');
+        await page.keyboard.up('Shift');
+        await keyUpCtrlOrAlt(page);
+        // Ensure the selection is now covering the whole word and period.
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: text.length,
+          focusPath: [0, 0, 0],
+          focusOffset: backspacedText.length,
+        });
 
-          await page.keyboard.press('Backspace');
-          const remainingText = await page.textContent(
-            'div.editor p:first-of-type',
-          );
-          expect(remainingText).toBe(backspacedText);
+        await page.keyboard.press('Backspace');
+        const remainingText = await page.textContent(
+          'div.editor p:first-of-type',
+        );
+        expect(remainingText).toBe(backspacedText);
 
-          await assertSelection(page, {
-            anchorPath: [0, 0, 0],
-            anchorOffset: backspacedText.length,
-            focusPath: [0, 0, 0],
-            focusOffset: backspacedText.length,
-          });
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: backspacedText.length,
+          focusPath: [0, 0, 0],
+          focusOffset: backspacedText.length,
         });
       });
 

@@ -12,17 +12,6 @@ import type {RootNode, OutlineNode, TextNode} from 'outline';
 import {isTextNode, isBlockNode} from 'outline';
 import {CAN_USE_INTL_SEGMENTER} from './OutlineEnv';
 
-let _graphemeIterator = null;
-// $FlowFixMe: Missing a Flow type for `Intl.Segmenter`.
-export function getGraphemeIterator(): Intl.Segmenter {
-  if (_graphemeIterator === null) {
-    _graphemeIterator =
-      // $FlowFixMe: Missing a Flow type for `Intl.Segmenter`.
-      new Intl.Segmenter(undefined /* locale */, {granularity: 'grapheme'});
-  }
-  return _graphemeIterator;
-}
-
 export function findTextIntersectionFromCharacters(
   root: RootNode,
   targetCharacters: number,
@@ -89,7 +78,7 @@ export function announceString(s: string): void {
 
 function hasAtLeastTwoVisibleChars(s: string): boolean {
   if (CAN_USE_INTL_SEGMENTER) {
-    const segments = Array.from(getGraphemeIterator().segment(s));
+    const segments = getSegmentsFromString(s, 'grapheme');
     return segments.length > 1;
   }
   // TODO: Implement polyfill for `Intl.Segmenter`.
@@ -100,4 +89,25 @@ export function announceNode(node: OutlineNode): void {
   if (isTextNode(node) && hasAtLeastTwoVisibleChars(node.getTextContent())) {
     announceString(node.getTextContent());
   }
+}
+
+export function getSegmentsFromString(
+  string: string,
+  granularity: 'grapheme' | 'word' | 'sentence',
+): Array<Segment> {
+  const segmenter = new Intl.Segmenter(undefined /* locale */, {
+    granularity,
+  });
+  return Array.from(segmenter.segment(string));
+}
+
+export function getLastSegment(segments: Array<Segment>): null | Segment {
+  for (let i = segments.length - 1; i >= 0; i--) {
+    const segment = segments[i];
+    if (!segment.isWordLike || segment.segment.trim() === '') {
+      continue;
+    }
+    return segment;
+  }
+  return null;
 }

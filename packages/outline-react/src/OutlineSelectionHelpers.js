@@ -652,7 +652,14 @@ export function moveWordBackward(selection: Selection, isCaret: boolean): void {
       if (isBlockNode(parentPrev)) {
         const child = parentPrev.getLastChild();
         if (isTextNode(child)) {
-          child.select();
+          const key = child.getKey();
+          const index = child.getTextContent().length;
+          selection.setRange(
+            isCaret ? key : anchorKey,
+            isCaret ? index : anchorOffset,
+            key,
+            index,
+          );
           return;
         }
       }

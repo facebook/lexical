@@ -6,7 +6,7 @@ exports[`TextEntry Chromium Rich text Basic copy + paste 2`] = `"<p class=\\"edi
 
 exports[`TextEntry Chromium Rich text Basic copy + paste 3`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Copy + pasting?</span></p><p class=\\"editor-paragraph\\"><span>﻿</span></p><p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Sounds good!</span></p>"`;
 
-exports[`TextEntry Chromium Rich text Basic copy + paste 4`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Copy + pasting?</span></p><p class=\\"editor-paragraph\\"><span>﻿</span></p><p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Sounds good!</span><span>Copy + pasting?</span></p><p class=\\"editor-paragraph\\"><span>﻿</span></p><p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Sounds good!</span></p>"`;
+exports[`TextEntry Chromium Rich text Basic copy + paste 4`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Copy + pasting?</span></p><p class=\\"editor-paragraph\\"><span>﻿</span></p><p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Sounds good!Copy + pasting?</span></p><p class=\\"editor-paragraph\\"><span>﻿</span></p><p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Sounds good!</span></p>"`;
 
 exports[`TextEntry Chromium Rich text Can delete characters after they're typed 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Delete some of these characte</span></p>"`;
 
@@ -36,7 +36,7 @@ exports[`TextEntry Firefox Rich text Basic copy + paste 2`] = `"<p class=\\"edit
 
 exports[`TextEntry Firefox Rich text Basic copy + paste 3`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Copy + pasting?</span></p><p class=\\"editor-paragraph\\"><span>﻿</span></p><p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Sounds good!</span></p>"`;
 
-exports[`TextEntry Firefox Rich text Basic copy + paste 4`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Copy + pasting?</span></p><p class=\\"editor-paragraph\\"><span>﻿</span></p><p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Sounds good!</span><span>Copy + pasting?</span></p><p class=\\"editor-paragraph\\"><span>﻿</span></p><p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Sounds good!</span></p>"`;
+exports[`TextEntry Firefox Rich text Basic copy + paste 4`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Copy + pasting?</span></p><p class=\\"editor-paragraph\\"><span>﻿</span></p><p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Sounds good!Copy + pasting?</span></p><p class=\\"editor-paragraph\\"><span>﻿</span></p><p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Sounds good!</span></p>"`;
 
 exports[`TextEntry Firefox Rich text Can delete characters after they're typed 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Delete some of these characte</span></p>"`;
 
@@ -66,7 +66,7 @@ exports[`TextEntry Webkit Rich text Basic copy + paste 2`] = `"<p class=\\"edito
 
 exports[`TextEntry Webkit Rich text Basic copy + paste 3`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Copy + pasting?</span></p><p class=\\"editor-paragraph\\"><span>﻿</span></p><p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Sounds good!</span></p>"`;
 
-exports[`TextEntry Webkit Rich text Basic copy + paste 4`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Copy + pasting?</span></p><p class=\\"editor-paragraph\\"><span>﻿</span></p><p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Sounds good!</span><span>Copy + pasting?</span></p><p class=\\"editor-paragraph\\"><span>﻿</span></p><p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Sounds good!</span></p>"`;
+exports[`TextEntry Webkit Rich text Basic copy + paste 4`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Copy + pasting?</span></p><p class=\\"editor-paragraph\\"><span>﻿</span></p><p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Sounds good!Copy + pasting?</span></p><p class=\\"editor-paragraph\\"><span>﻿</span></p><p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Sounds good!</span></p>"`;
 
 exports[`TextEntry Webkit Rich text Can delete characters after they're typed 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Delete some of these characte</span></p>"`;
 

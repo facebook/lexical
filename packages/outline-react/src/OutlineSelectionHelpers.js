@@ -969,7 +969,9 @@ export function insertNodes(
     // Normalize the block where we started the insertion
     topLevelBlock.normalizeTextNodes(true);
     // Normalize the block where we ended the insertion
-    target.normalizeTextNodes(true);
+    if (isBlockNode(target)) {
+      target.normalizeTextNodes(true);
+    }
   } else if (isTextNode(target)) {
     // We've only inserted text nodes, so we only need to normalize this block.
     target.select();

@@ -94,37 +94,42 @@ describe('TextEntry', () => {
         });
       });
 
-      it(`Can select and delete a word`, async () => {
-        const {page} = e2e;
+      // This test fails locally on Mac but seems to pass on CI.
+      // Seems related to a bug in Playwright:
+      // https://github.com/microsoft/playwright/issues/5929#issuecomment-805734335
+      e2e.skip(['firefox-mac'], () => {
+        it(`Can select and delete a word`, async () => {
+          const {page} = e2e;
 
-        await page.focus('div.editor');
-        const text = 'Delete some of these characters.';
-        const backspacedText = 'Delete some of these ';
-        await page.keyboard.type(text);
-        await keyDownCtrlOrAlt(page);
-        await page.keyboard.down('Shift');
-        await page.keyboard.press('ArrowLeft');
-        await page.keyboard.up('Shift');
-        await keyUpCtrlOrAlt(page);
-        // Ensure the selection is now covering the whole word and period.
-        await assertSelection(page, {
-          anchorPath: [0, 0, 0],
-          anchorOffset: text.length,
-          focusPath: [0, 0, 0],
-          focusOffset: backspacedText.length,
-        });
+          await page.focus('div.editor');
+          const text = 'Delete some of these characters.';
+          const backspacedText = 'Delete some of these ';
+          await page.keyboard.type(text);
+          await keyDownCtrlOrAlt(page);
+          await page.keyboard.down('Shift');
+          await page.keyboard.press('ArrowLeft');
+          await page.keyboard.up('Shift');
+          await keyUpCtrlOrAlt(page);
+          // Ensure the selection is now covering the whole word and period.
+          await assertSelection(page, {
+            anchorPath: [0, 0, 0],
+            anchorOffset: text.length,
+            focusPath: [0, 0, 0],
+            focusOffset: backspacedText.length,
+          });
 
-        await page.keyboard.press('Backspace');
-        const remainingText = await page.textContent(
-          'div.editor p:first-of-type',
-        );
-        expect(remainingText).toBe(backspacedText);
+          await page.keyboard.press('Backspace');
+          const remainingText = await page.textContent(
+            'div.editor p:first-of-type',
+          );
+          expect(remainingText).toBe(backspacedText);
 
-        await assertSelection(page, {
-          anchorPath: [0, 0, 0],
-          anchorOffset: backspacedText.length,
-          focusPath: [0, 0, 0],
-          focusOffset: backspacedText.length,
+          await assertSelection(page, {
+            anchorPath: [0, 0, 0],
+            anchorOffset: backspacedText.length,
+            focusPath: [0, 0, 0],
+            focusOffset: backspacedText.length,
+          });
         });
       });
 

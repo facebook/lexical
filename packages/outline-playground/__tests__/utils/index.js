@@ -12,6 +12,7 @@ const E2E_DEBUG = process.env.E2E_DEBUG;
 const E2E_PORT = process.env.E2E_PORT || 3000;
 const E2E_BROWSER = process.env.E2E_BROWSER;
 const E2E_IS_CI = E2E_PORT === '4000';
+const IS_MAC = process.platform === 'darwin';
 
 jest.setTimeout(60000);
 
@@ -33,6 +34,9 @@ export function initializeE2E(browsers, runTests) {
             const [browser, option] = skipBrowser.split('-');
             if (browser === browserName) {
               if (!option || (option === 'ci' && E2E_IS_CI)) {
+                return true;
+              }
+              if (!option || (option === 'mac' && IS_MAC)) {
                 return true;
               }
             }

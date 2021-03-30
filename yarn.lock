@@ -8456,10 +8456,10 @@ pkg-up@3.1.0:
   dependencies:
     find-up "^3.0.0"
 
-playwright@^1.10.0-1616563674000:
-  version "1.10.0-1616563674000"
-  resolved "https://registry.yarnpkg.com/playwright/-/playwright-1.10.0-1616563674000.tgz#d39eb46611e2065acaef9ab549c03ff318bd535f"
-  integrity sha512-gYNW3fZg17+k64pv8I4QzSkwOaf5MqxmXFfSo/vzNty1hFcHs9TuE6yQyRvRBB0I4jza+P7lg/tx1GDApoHGEA==
+playwright@^1.10.0:
+  version "1.10.0"
+  resolved "https://registry.yarnpkg.com/playwright/-/playwright-1.10.0.tgz#a14d295f1ad886caf4cc5e674afe03ac832066bc"
+  integrity sha512-b7SGBcCPq4W3pb4ImEDmNXtO0ZkJbZMuWiShsaNJd+rGfY/6fqwgllsAojmxGSgFmijYw7WxCoPiAIEDIH16Kw==
   dependencies:
     commander "^6.1.0"
     debug "^4.1.1"

@@ -23,6 +23,7 @@ import {
   isLineBreakNode,
   createTextNode,
 } from 'outline';
+
 import {CAN_USE_INTL_SEGMENTER, IS_APPLE} from './OutlineEnv';
 import {invariant} from './OutlineReactUtils';
 import {
@@ -889,8 +890,10 @@ export function insertNodes(
   selection: Selection,
   nodes: Array<OutlineNode>,
 ): void {
+  // If there is a range selected remove the text in it
   if (!selection.isCaret()) {
     removeText(selection);
+    // TODO: We're not updating the selection here. Should we be?
   }
   const anchorOffset = selection.anchorOffset;
   const anchorNode = selection.getAnchorNode();
@@ -900,6 +903,8 @@ export function insertNodes(
   let target;
 
   if (anchorOffset === 0) {
+    // Insert an empty text node to wrap whatever is being inserted
+    // in case it's immutable
     target = createTextNode('');
     anchorNode.insertBefore(target);
     siblings.push(anchorNode);
@@ -910,21 +915,31 @@ export function insertNodes(
   ) {
     target = anchorNode;
   } else {
+    // If we started with a range selected grab the danglingText after the 
+    // end of the selection and put it on our siblings array so we can
+    // append it after the last node we're inserting
     let danglingText;
     [target, danglingText] = anchorNode.splitText(anchorOffset);
     siblings.push(danglingText);
   }
+  
+  // Finally, get all remaining text node siblings in this block so we can
+  // append them after the last node we're inserting.
   const nextSiblings = anchorNode.getNextSiblings();
   siblings.push(...nextSiblings);
   const topLevelBlock = anchorNode.getTopParentBlockOrThrow();
 
+  // Time to insert the nodes! 
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
 
     if (isTextNode(node)) {
+      // If it's a text node append it to the previous text node.
       target.insertAfter(node);
       target = node;
     } else {
+      // If it's a block node make sure target refers to a block
+      // and then insert after our target block
       if (isTextNode(target)) {
         target = topLevelBlock;
       }
@@ -932,6 +947,7 @@ export function insertNodes(
       target = node;
     }
   }
+
   if (isBlockNode(target)) {
     const lastChild = target.getLastTextNode();
     if (!isTextNode(lastChild)) {
@@ -950,7 +966,14 @@ export function insertNodes(
         prevSibling = sibling;
       }
     }
+    // Normalize the block where we started the insertion
+    topLevelBlock.normalizeTextNodes(true);
+    // Normalize the block where we ended the insertion
+    if (isBlockNode(target)) {
+      target.normalizeTextNodes(true);
+    }
   } else if (isTextNode(target)) {
+    // We've only inserted text nodes, so we only need to normalize this block.
     target.select();
     const parent = target.getParentBlockOrThrow();
     parent.normalizeTextNodes(true);

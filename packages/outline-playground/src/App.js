@@ -18,7 +18,7 @@ function App(): React$Node {
   const handleOnChange = useCallback(
     (newViewModel) => {
       if (showTreeView) {
-        requestAnimationFrame(() => setViewModel(newViewModel));
+        setViewModel(newViewModel)
       }
     },
     [showTreeView],

@@ -239,7 +239,7 @@ function setTextContent(
   }
   if (firstChild == null) {
     dom.textContent = nextText;
-  } else if (prevText !== nextText && firstChild.nodeValue !== nextText) {
+  } else if (prevText !== nextText || firstChild.nodeValue !== nextText) {
     firstChild.nodeValue = nextText;
   }
 }

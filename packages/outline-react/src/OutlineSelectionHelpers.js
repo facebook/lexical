@@ -1035,7 +1035,7 @@ export function insertText(selection: Selection, text: string): void {
       firstNode.isSegmented()
     ) {
       firstNodeRemove = true;
-      const textNode = createTextNode('');
+      const textNode = createTextNode(text);
       firstNode.replace(textNode);
       firstNode = textNode;
       textNode.select();

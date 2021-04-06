@@ -243,3 +243,21 @@ export async function pasteFromClipboard(page, clipboardData) {
     {clipboardData, canUseBeforeInput},
   );
 }
+
+export async function focusEditor(page) {
+  await page.focus('div.editor');
+  await page.evaluate(() => {
+    const editor = document.querySelector('div.editor');
+    let lastNode = editor.lastChild;
+    while (lastNode !== null) {
+      const lastChild = lastNode.lastChild;
+      if (lastChild === null) {
+        break;
+      }
+      lastNode = lastChild;
+    }
+    const selection = window.getSelection();
+    const offset = lastNode.nodeValue.length;
+    selection.setBaseAndExtent(lastNode, offset, lastNode, offset);
+  });
+}

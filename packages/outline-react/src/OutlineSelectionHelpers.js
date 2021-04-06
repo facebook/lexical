@@ -915,21 +915,21 @@ export function insertNodes(
   ) {
     target = anchorNode;
   } else {
-    // If we started with a range selected grab the danglingText after the 
+    // If we started with a range selected grab the danglingText after the
     // end of the selection and put it on our siblings array so we can
     // append it after the last node we're inserting
     let danglingText;
     [target, danglingText] = anchorNode.splitText(anchorOffset);
     siblings.push(danglingText);
   }
-  
+
   // Finally, get all remaining text node siblings in this block so we can
   // append them after the last node we're inserting.
   const nextSiblings = anchorNode.getNextSiblings();
   siblings.push(...nextSiblings);
   const topLevelBlock = anchorNode.getTopParentBlockOrThrow();
 
-  // Time to insert the nodes! 
+  // Time to insert the nodes!
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
 
@@ -985,7 +985,7 @@ export function insertText(selection: Selection, text: string): void {
   const selectedNodesLength = selectedNodes.length;
   const anchorOffset = selection.anchorOffset;
   const focusOffset = selection.focusOffset;
-  const firstNode = selectedNodes[0];
+  let firstNode = selectedNodes[0];
   if (!isTextNode(firstNode)) {
     if (__DEV__) {
       invariant(false, 'insertText: firstNode not a a text node');
@@ -1024,18 +1024,30 @@ export function insertText(selection: Selection, text: string): void {
     const lastIndex = selectedNodesLength - 1;
     const lastNode = selectedNodes[lastIndex];
     const isBefore = firstNode === selection.getAnchorNode();
+    let firstNodeRemove = false;
+    let lastNodeRemove = false;
     startOffset = isBefore ? anchorOffset : focusOffset;
     endOffset = isBefore ? focusOffset : anchorOffset;
 
-    firstNode.spliceText(
-      startOffset,
-      firstNodeTextLength - startOffset,
-      text,
-      true,
-    );
+    if (
+      firstNode.isImmutable() ||
+      firstNode.isInert() ||
+      firstNode.isSegmented()
+    ) {
+      firstNodeRemove = true;
+      const textNode = createTextNode('');
+      firstNode.replace(textNode);
+      firstNode = textNode;
+      textNode.select();
+    } else {
+      firstNode.spliceText(
+        startOffset,
+        firstNodeTextLength - startOffset,
+        text,
+        true,
+      );
+    }
     const lastNodeTextLength = lastNode.getTextContent().length;
-    let lastNodeRemove = false;
-    let firstNodeRemove = false;
 
     if (!lastNode.isParentOf(firstNode)) {
       if (endOffset === lastNodeTextLength) {

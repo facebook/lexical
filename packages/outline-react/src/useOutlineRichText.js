@@ -47,7 +47,6 @@ function initEditor(editor: OutlineEditor): void {
     if (root.getFirstChild() === null) {
       const text = createTextNode();
       root.append(createParagraphNode().append(text));
-      text.select();
     }
   });
 }

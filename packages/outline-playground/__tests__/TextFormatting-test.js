@@ -13,6 +13,7 @@ import {
   keyDownCtrlOrMeta,
   keyUpCtrlOrMeta,
   repeat,
+  focusEditor,
 } from './utils';
 
 describe('TextFormatting', () => {
@@ -20,7 +21,7 @@ describe('TextFormatting', () => {
     it(`Can create bold text using the shortcut`, async () => {
       const {page} = e2e;
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type('Hello');
       await keyDownCtrlOrMeta(page);
       await page.keyboard.press('b');
@@ -50,7 +51,7 @@ describe('TextFormatting', () => {
     it(`Can create italic text using the shortcut`, async () => {
       const {page} = e2e;
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type('Hello');
       await keyDownCtrlOrMeta(page);
       await page.keyboard.press('i');
@@ -80,7 +81,7 @@ describe('TextFormatting', () => {
     it(`Can select text and boldify it with the shortcut`, async () => {
       const {page} = e2e;
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type('Hello world!');
       await page.keyboard.press('ArrowLeft');
       await page.keyboard.down('Shift');
@@ -121,7 +122,7 @@ describe('TextFormatting', () => {
     it(`Can select text and italicify it with the shortcut`, async () => {
       const {page} = e2e;
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type('Hello world!');
       await page.keyboard.press('ArrowLeft');
       await page.keyboard.down('Shift');
@@ -162,7 +163,7 @@ describe('TextFormatting', () => {
     it(`Can select multiple text parts and format them with shortcuts`, async () => {
       const {page} = e2e;
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type('Hello world!');
       await page.keyboard.press('ArrowLeft');
       await page.keyboard.down('Shift');

@@ -11,6 +11,7 @@ import {
   assertHTMLSnapshot,
   assertSelection,
   repeat,
+  focusEditor,
 } from './utils';
 
 describe('Emoticons', () => {
@@ -18,7 +19,7 @@ describe('Emoticons', () => {
     it(`Can handle a single emoticon`, async () => {
       const {page} = e2e;
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type('This is an emoji :)');
       await assertHTMLSnapshot(page);
       await assertSelection(page, {
@@ -68,7 +69,7 @@ describe('Emoticons', () => {
     it(`Can enter mutliple emoticons`, async () => {
       const {page} = e2e;
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type(':) :) <3 :(');
       await assertHTMLSnapshot(page);
       await assertSelection(page, {

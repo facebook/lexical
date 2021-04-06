@@ -11,6 +11,7 @@ import {
   assertHTMLSnapshot,
   assertSelection,
   repeat,
+  focusEditor,
 } from './utils';
 
 describe('Hashtags', () => {
@@ -18,7 +19,7 @@ describe('Hashtags', () => {
     it(`Can handle a single hashtag`, async () => {
       const {page} = e2e;
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type('#yolo');
 
       await page.waitForSelector('.editor-text-hashtag');

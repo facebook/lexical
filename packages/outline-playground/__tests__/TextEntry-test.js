@@ -17,6 +17,7 @@ import {
   pasteFromClipboard,
   keyDownCtrlOrAlt,
   keyUpCtrlOrAlt,
+  focusEditor,
 } from './utils';
 
 describe('TextEntry', () => {
@@ -26,7 +27,7 @@ describe('TextEntry', () => {
         const {page} = e2e;
 
         const targetText = 'Hello Outline';
-        await page.focus('div.editor');
+        await focusEditor(page);
         await page.keyboard.type(targetText);
         const enteredText = await page.textContent(
           'div.editor p:first-of-type',
@@ -44,7 +45,7 @@ describe('TextEntry', () => {
       it('Paragraphed text entry and selection', async () => {
         const {page} = e2e;
 
-        await page.focus('div.editor');
+        await focusEditor(page);
         await page.keyboard.type('Hello World.');
         await page.keyboard.press('Enter');
         await page.keyboard.type('This is another block.');
@@ -73,7 +74,7 @@ describe('TextEntry', () => {
       it(`Can delete characters after they're typed`, async () => {
         const {page} = e2e;
 
-        await page.focus('div.editor');
+        await focusEditor(page);
         const text = 'Delete some of these characters.';
         const backspacedText = 'Delete some of these characte';
         await page.keyboard.type(text);
@@ -97,7 +98,7 @@ describe('TextEntry', () => {
       it(`Can select and delete a word`, async () => {
         const {page} = e2e;
 
-        await page.focus('div.editor');
+        await focusEditor(page);
         const text = 'Delete some of these characters.';
         const backspacedText = 'Delete some of these ';
         await page.keyboard.type(text);
@@ -131,7 +132,7 @@ describe('TextEntry', () => {
       it('Empty paragraph and new line node selection', async () => {
         const {page} = e2e;
 
-        await page.focus('div.editor');
+        await focusEditor(page);
 
         // Add paragraph
         await page.keyboard.press('Enter');
@@ -215,7 +216,7 @@ describe('TextEntry', () => {
       it('Basic copy + paste', async () => {
         const {page} = e2e;
 
-        await page.focus('div.editor');
+        await focusEditor(page);
 
         // Add paragraph
         await page.keyboard.type('Copy + pasting?');

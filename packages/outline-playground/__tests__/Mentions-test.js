@@ -6,14 +6,19 @@
  *
  */
 
-import {initializeE2E, assertHTMLSnapshot, assertSelection} from './utils';
+import {
+  initializeE2E,
+  assertHTMLSnapshot,
+  assertSelection,
+  focusEditor,
+} from './utils';
 
 describe('Mentions', () => {
   initializeE2E({chromium: true, webkit: true, firefox: true}, (e2e) => {
     it(`Can enter the Luke Skywalker mention`, async () => {
       const {page} = e2e;
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type('Luke');
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -56,7 +61,7 @@ describe('Mentions', () => {
     it(`Can enter and delete part of the Luke Skywalker mention`, async () => {
       const {page} = e2e;
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type('Luke');
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -109,7 +114,7 @@ describe('Mentions', () => {
     it(`Can enter and backspace part of the Luke Skywalker mention`, async () => {
       const {page} = e2e;
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type('Luke');
       await assertSelection(page, {
         anchorPath: [0, 0, 0],

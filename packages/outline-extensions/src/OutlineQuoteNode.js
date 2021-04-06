@@ -43,18 +43,6 @@ export class QuoteNode extends BlockNode {
 
   // Mutation
 
-  mergeWithPreviousSibling(): void {
-    const prevBlock = this.getPreviousSibling();
-    if (prevBlock === null) {
-      const paragraph = createParagraphNode();
-      const children = this.getChildren();
-      children.forEach((child) => paragraph.append(child));
-      this.replace(paragraph);
-      return;
-    }
-    super.mergeWithPreviousSibling();
-  }
-
   insertNewAfter(): ParagraphNode {
     const newBlock = createParagraphNode();
     this.insertAfter(newBlock);

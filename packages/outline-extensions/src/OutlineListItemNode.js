@@ -80,33 +80,6 @@ export class ListItemNode extends BlockNode {
     return replaceWithNode;
   }
 
-  mergeWithPreviousSibling(): void {
-    const prevBlock = this.getPreviousSibling();
-    if (prevBlock !== null) {
-      super.mergeWithPreviousSibling();
-      return;
-    }
-    const listNode = this.getParentOrThrow();
-    const paragraph = createParagraphNode();
-    const children = this.getChildren();
-    children.forEach((child) => paragraph.append(child));
-
-    if (listNode.getChildren().length === 1) {
-      listNode.replace(paragraph);
-    } else {
-      listNode.insertBefore(paragraph);
-      this.remove();
-    }
-  }
-
-  mergeWithNextSibling(): void {
-    const nextBlock = this.getNextSibling();
-    if (nextBlock !== null) {
-      super.mergeWithNextSibling();
-      return;
-    }
-  }
-
   insertNewAfter(): ListItemNode | ParagraphNode {
     const nextSibling = this.getNextSibling();
     const prevSibling = this.getPreviousSibling();

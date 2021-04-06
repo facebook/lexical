@@ -7,13 +7,7 @@
  * @flow strict
  */
 
-import type {
-  NodeKey,
-  OutlineNode,
-  Selection,
-  TextFormatType,
-  TextNode,
-} from 'outline';
+import type {NodeKey, OutlineNode, Selection, TextFormatType} from 'outline';
 
 import {
   createLineBreakNode,
@@ -28,84 +22,12 @@ import {CAN_USE_INTL_SEGMENTER, IS_APPLE} from './OutlineEnv';
 import {invariant} from './OutlineReactUtils';
 import {
   announceNode,
-  getLastSegment,
+  getFirstWordIndex,
+  getFirstWordSegment,
+  getLastWordIndex,
+  getLastWordSegment,
   getSegmentsFromString,
 } from './OutlineTextHelpers';
-
-const WHITESPACE_REGEX = /\s/g;
-
-/**
- * What you think of as a single 'character' onscreen might actually be composed
- * of multiple Unicode codepoints. This function uses the `Intl.Segmenter` to
- * obtain the offset after the grapheme to the right of `offset`. You can use
- * this, for instance, to advance the cursor one position rightward.
- */
-function getOffsetAfterNextGrapheme(offset, textContent): number {
-  if (textContent === '' || offset === textContent.length) {
-    return offset;
-  }
-  if (CAN_USE_INTL_SEGMENTER) {
-    const segments = getSegmentsFromString(textContent, 'grapheme');
-    const firstSegment = segments[0];
-    return offset + firstSegment.segment.length;
-  } else {
-    // TODO: Implement polyfill for `Intl.Segmenter`.
-    return offset + 1;
-  }
-}
-
-/**
- * What you think of as a single 'character' onscreen might actually be composed
- * of multiple Unicode codepoints. This function uses the `Intl.Segmenter` to
- * obtain the offset before the grapheme to the left of `offset`. You can use
- * this, for instance, to advance the cursor one position leftward.
- */
-function getOffsetBeforePreviousGrapheme(offset, textContent): number {
-  if (textContent === '' || offset === 0) {
-    return offset;
-  }
-  if (CAN_USE_INTL_SEGMENTER) {
-    const segments = getSegmentsFromString(
-      textContent.slice(0, offset),
-      'grapheme',
-    );
-    const lastSegment = segments[segments.length - 1];
-    return offset - lastSegment.segment.length;
-  } else {
-    // TODO: Implement polyfill for `Intl.Segmenter`.
-    return offset - 1;
-  }
-}
-
-function removeFirstSegment(node: TextNode): void {
-  const currentBlock = node.getParentBlockOrThrow();
-  const textContent = node.getTextContent();
-  const lastSpaceIndex = textContent.indexOf(' ');
-  if (lastSpaceIndex > -1) {
-    node.spliceText(0, lastSpaceIndex + 1, '');
-  } else {
-    const textNode = createTextNode('');
-    node.insertAfter(textNode);
-    node.remove();
-    textNode.select();
-    currentBlock.normalizeTextNodes(true);
-  }
-}
-
-function removeLastSegment(node: TextNode): void {
-  const currentBlock = node.getParentBlockOrThrow();
-  const textContent = node.getTextContent();
-  const lastSpaceIndex = textContent.lastIndexOf(' ');
-  if (lastSpaceIndex > -1) {
-    node.spliceText(lastSpaceIndex, textContent.length - lastSpaceIndex, '');
-  } else {
-    const textNode = createTextNode('');
-    node.insertAfter(textNode);
-    node.remove();
-    textNode.select();
-    currentBlock.normalizeTextNodes(true);
-  }
-}
 
 export function getNodesInRange(
   selection: Selection,
@@ -414,411 +336,114 @@ export function insertParagraph(selection: Selection): void {
   }
 }
 
-export function deleteLineBackward(selection: Selection): void {
-  // When using Safari or Chrome, we will usually always have a range.
-  // This is because beforeinput gives us getTargetRanges, which tells
-  // us where to start the delete and end the delete. Which means we
-  // only need the rest of the logic for browsers that don't support
-  // native beforeinput (Firefox and IE).
-  if (!selection.isCaret()) {
-    removeText(selection);
-    return;
-  }
-  const anchorNode = selection.getAnchorNode();
-  if (anchorNode === null) {
-    return;
-  }
-  // Handle removing block
-  if (
-    anchorNode.getPreviousSibling() === null &&
-    anchorNode.getTextContent() === ''
-  ) {
-    deleteBackward(selection);
-    return;
-  }
-  const anchorOffset = selection.anchorOffset;
-  const nodesToTraverse = anchorNode.getPreviousSiblings();
-  anchorNode.spliceText(0, anchorOffset, '', true);
-
-  for (let i = nodesToTraverse.length - 1; i >= 0; i--) {
-    const node = nodesToTraverse[i];
-
-    if (isLineBreakNode(node)) {
-      return;
-    } else {
-      node.remove();
+export function moveWordBackward(selection: Selection, isCaret: boolean): void {
+  updateCaretSelectionForRange(selection, true, 'word');
+  const focusNode = selection.getFocusNode();
+  // We have to adjust selection if we move selection into a segmented node
+  if (focusNode.isSegmented()) {
+    const prevSibling = focusNode.getPreviousSibling();
+    if (isTextNode(prevSibling)) {
+      selection.focusKey = prevSibling.getKey();
+      selection.focusOffset = prevSibling.getTextContent().length;
     }
   }
+  if (isCaret) {
+    selection.anchorKey = selection.focusKey;
+    selection.anchorOffset = selection.focusOffset;
+  }
+}
+
+export function deleteLineBackward(selection: Selection): void {
+  if (selection.isCaret()) {
+    updateCaretSelectionForRange(selection, true, 'line');
+  }
+  removeText(selection);
 }
 
 export function deleteLineForward(selection: Selection): void {
-  // When using Safari or Chrome, we will usually always have a range.
-  // This is because beforeinput gives us getTargetRanges, which tells
-  // us where to start the delete and end the delete. Which means we
-  // only need the rest of the logic for browsers that don't support
-  // native beforeinput (Firefox and IE).
-  if (!selection.isCaret()) {
-    removeText(selection);
-    return;
+  if (selection.isCaret()) {
+    updateCaretSelectionForRange(selection, false, 'line');
   }
-  const anchorNode = selection.getAnchorNode();
-  if (anchorNode === null) {
-    return;
-  }
-
-  // Handle removing block
-  if (
-    anchorNode.getNextSibling() === null &&
-    anchorNode.getTextContent() === ''
-  ) {
-    const currentBlock = anchorNode.getParentBlockOrThrow();
-    if (currentBlock.getNextSibling() == null) {
-      deleteBackward(selection);
-    } else {
-      deleteForward(selection);
-    }
-    return;
-  }
-
-  const anchorOffset = selection.anchorOffset;
-  const nodesToTraverse = anchorNode.getNextSiblings();
-  const textContentLength = anchorNode.getTextContent().length;
-  anchorNode.spliceText(
-    anchorOffset,
-    textContentLength - anchorOffset,
-    '',
-    true,
-  );
-
-  for (let i = 0; i < nodesToTraverse.length; i++) {
-    const node = nodesToTraverse[i];
-
-    if (isLineBreakNode(node)) {
-      return;
-    } else {
-      node.remove();
-    }
-  }
+  removeText(selection);
 }
 
 export function deleteWordBackward(selection: Selection): void {
-  // When using Safari or Chrome, we will usually always have a range.
-  // This is because beforeinput gives us getTargetRanges, which tells
-  // us where to start the delete and end the delete. Which means we
-  // only need the rest of the logic for browsers that don't support
-  // native beforeinput (Firefox and IE).
-  if (!selection.isCaret()) {
-    removeText(selection);
-    return;
+  if (selection.isCaret()) {
+    updateCaretSelectionForRange(selection, true, 'word');
   }
-  const anchorOffset = selection.anchorOffset;
-  const anchorNode = selection.getAnchorNode();
-  if (anchorNode === null) {
-    return;
-  }
-  // Handle removing block
-  if (
-    anchorNode.getPreviousSibling() === null &&
-    anchorNode.getTextContent() === ''
-  ) {
-    deleteBackward(selection);
-    return;
-  }
-
-  const currentBlock = anchorNode.getParentBlockOrThrow();
-  let node = anchorNode;
-
-  try {
-    while (true) {
-      const prevSibling = node.getPreviousSibling();
-      if (node.isImmutable() || node.isSegmented() || node.isInert()) {
-        node.remove();
-        if (!isTextNode(prevSibling)) {
-          if (__DEV__) {
-            invariant(false, 'Should never happen');
-          } else {
-            invariant();
-          }
-        }
-        prevSibling.select();
-        return;
-      } else if (isTextNode(node)) {
-        const textContent = node.getTextContent();
-        const endIndex =
-          node === anchorNode ? anchorOffset : textContent.length;
-        if (endIndex === 0 && node === anchorNode) {
-          return;
-        }
-        let foundNonWhitespace = false;
-
-        for (let s = endIndex - 1; s >= 0; s--) {
-          const char = textContent[s];
-          if (s === 0) {
-            node.spliceText(s, endIndex - s, '', true);
-            return;
-          } else if (WHITESPACE_REGEX.test(char)) {
-            if (foundNonWhitespace) {
-              node.spliceText(s + 1, endIndex - s, '', true);
-              return;
-            }
-          } else if (char === '\n') {
-            node.spliceText(s + 1, endIndex - s + 1, '', true);
-            return;
-          } else {
-            foundNonWhitespace = true;
-          }
-        }
-        if (prevSibling === null) {
-          node.setTextContent('');
-          node.select();
-        } else {
-          node.remove();
-        }
-      }
-      if (prevSibling === null) {
-        return;
-      }
-      node = prevSibling;
-    }
-  } finally {
-    currentBlock.normalizeTextNodes(true);
-  }
-}
-
-export function moveWordBackward(selection: Selection, isCaret: boolean): void {
-  const focusNode = selection.getFocusNode();
-  const focusOffset = selection.focusOffset;
-  const anchorKey = selection.anchorKey;
-  const anchorOffset = selection.anchorOffset;
-  let node = focusNode;
-
-  while (node !== null) {
-    const prevSibling = node.getPreviousSibling();
-    if (!isTextNode(node)) {
-      if (__DEV__) {
-        invariant(false, 'Should never happen');
-      } else {
-        invariant();
-      }
-    }
-    if (!node.isSegmented() && !node.isImmutable() && !node.isInert()) {
-      const textContent = node.getTextContent();
-      const slicedTextContent =
-        node === focusNode
-          ? textContent.slice(0, focusOffset)
-          : node.getTextContent();
-      const segments = getSegmentsFromString(slicedTextContent, 'word');
-      if (segments.length === 0) {
-        node.select(0, 0);
-        const key = node.getKey();
-        selection.setRange(
-          isCaret ? key : anchorKey,
-          isCaret ? 0 : anchorOffset,
-          key,
-          0,
-        );
-      } else {
-        const lastSegment = getLastSegment(segments);
-        if (lastSegment !== null) {
-          const key = node.getKey();
-          const index = lastSegment.index;
-          selection.setRange(
-            isCaret ? key : anchorKey,
-            isCaret ? index : anchorOffset,
-            key,
-            index,
-          );
-        }
-      }
-    }
-    const isAtStart = node === focusNode && focusOffset === 0;
-    if (isLineBreakNode(prevSibling)) {
-      if (isAtStart) {
-        const nextPrevSibling = prevSibling.getPreviousSibling();
-        if (isTextNode(nextPrevSibling)) {
-          const key = nextPrevSibling.getKey();
-          const index = nextPrevSibling.getTextContent().length;
-          selection.setRange(
-            isCaret ? key : anchorKey,
-            isCaret ? index : anchorOffset,
-            key,
-            index,
-          );
-        }
-      }
-      return;
-    } else if (prevSibling === null && isAtStart) {
-      const parent = node.getParentOrThrow();
-      const parentPrev = parent.getPreviousSibling();
-      if (isBlockNode(parentPrev)) {
-        const child = parentPrev.getLastChild();
-        if (isTextNode(child)) {
-          const key = child.getKey();
-          const index = child.getTextContent().length;
-          selection.setRange(
-            isCaret ? key : anchorKey,
-            isCaret ? index : anchorOffset,
-            key,
-            index,
-          );
-          return;
-        }
-      }
-    }
-    node = prevSibling;
-  }
+  removeText(selection);
 }
 
 export function deleteWordForward(selection: Selection): void {
-  // When using Safari or Chrome, we will usually always have a range.
-  // This is because beforeinput gives us getTargetRanges, which tells
-  // us where to start the delete and end the delete. Which means we
-  // only need the rest of the logic for browsers that don't support
-  // native beforeinput (Firefox and IE).
-  if (!selection.isCaret()) {
-    removeText(selection);
-    return;
+  if (selection.isCaret()) {
+    updateCaretSelectionForRange(selection, false, 'word');
   }
-  const anchorOffset = selection.anchorOffset;
-  const anchorNode = selection.getAnchorNode();
-  if (anchorNode === null) {
-    return;
-  }
-  // Handle removing block
-  if (
-    anchorNode.getNextSibling() === null &&
-    anchorNode.getTextContent() === ''
-  ) {
-    deleteForward(selection);
-    return;
-  }
-
-  const currentBlock = anchorNode.getParentBlockOrThrow();
-  let node = anchorNode;
-
-  try {
-    while (true) {
-      const nextSibling = node.getNextSibling();
-
-      if (node.isImmutable() || node.isSegmented() || node.isInert()) {
-        node.remove();
-        if (!isTextNode(nextSibling)) {
-          if (__DEV__) {
-            invariant(false, 'Should never happen');
-          } else {
-            invariant();
-          }
-        }
-        nextSibling.select(0, 0);
-        return;
-      } else if (isTextNode(node) && anchorNode.getTextContent() !== '') {
-        const textContent = node.getTextContent();
-        const startIndex = node === anchorNode ? anchorOffset : 0;
-        let foundNonWhitespace = false;
-        for (let s = startIndex; s < textContent.length; s++) {
-          const char = textContent[s];
-          if (WHITESPACE_REGEX.test(char)) {
-            if (foundNonWhitespace) {
-              node.spliceText(startIndex, s - startIndex, '', true);
-              return;
-            }
-          } else if (char === '\n') {
-            node.spliceText(startIndex, s - startIndex, '', true);
-            return;
-          } else {
-            foundNonWhitespace = true;
-          }
-        }
-        node.spliceText(startIndex, textContent.length - startIndex, '', true);
-      }
-      if (nextSibling === null) {
-        return;
-      }
-      node = nextSibling;
-    }
-  } finally {
-    currentBlock.normalizeTextNodes(true);
-  }
+  removeText(selection);
 }
 
 export function deleteBackward(selection: Selection): void {
-  // When using Safari or Chrome, we will usually always have a range
-  // when working with glyphs that are multi-character. That's because
-  // we leverage beforeinput's getTargetRanges. Meaning we will need
-  // to polyfill this for browsers that don't support beforeinput, such
-  // as FF.
-  if (!selection.isCaret()) {
-    removeText(selection);
-    return;
+  if (selection.isCaret()) {
+    updateCaretSelectionForRange(selection, true, 'character');
   }
-  const anchorOffset = selection.anchorOffset;
-  const anchorNode = selection.getAnchorNode();
-  if (anchorNode === null) {
-    return;
-  }
-  const currentBlock = anchorNode.getParentBlockOrThrow();
-  const prevSibling = anchorNode.getPreviousSibling();
-
-  if (anchorOffset === 0) {
-    if (prevSibling === null) {
-      currentBlock.mergeWithPreviousSibling();
-    } else if (isTextNode(prevSibling)) {
-      if (prevSibling.isImmutable()) {
-        if (prevSibling === anchorNode) {
-          const nextPrevSibling = prevSibling.getPreviousSibling();
-          if (!isTextNode(nextPrevSibling)) {
-            if (__DEV__) {
-              invariant(false, 'Should never happen');
-            } else {
-              invariant();
-            }
-          }
-          nextPrevSibling.select();
-        }
-        prevSibling.remove();
-        currentBlock.normalizeTextNodes(true);
-      } else if (prevSibling.isSegmented()) {
-        removeLastSegment(prevSibling);
-        currentBlock.normalizeTextNodes(true);
-      } else {
-        const textContent = prevSibling.getTextContent();
-        const textContentLength = textContent.length;
-        if (textContentLength !== 0) {
-          prevSibling.spliceText(textContentLength - 1, 1, '', true);
-        }
-      }
-    } else {
-      if (__DEV__) {
-        invariant(false, `TODO`);
-      } else {
-        invariant();
-      }
-    }
-  } else {
-    const textContent = anchorNode.getTextContent();
-    const deletionStartOffset = getOffsetBeforePreviousGrapheme(
-      anchorOffset,
-      textContent,
-    );
-    anchorNode.spliceText(
-      deletionStartOffset,
-      anchorOffset - deletionStartOffset,
-      '',
-      true,
-    );
-  }
+  removeText(selection);
 }
 
 export function deleteForward(selection: Selection): void {
-  // When using Safari or Chrome, we will usually always have a range
-  // when working with glyps that are multi-character. That's because
-  // we leverage beforeinput's getTargetRanges. Meaning we will need
-  // to polyfill this for browsers that don't support beforeinput, such
-  // as FF.
-  if (!selection.isCaret()) {
-    removeText(selection);
-    return;
+  if (selection.isCaret()) {
+    updateCaretSelectionForRange(selection, false, 'character');
   }
+  removeText(selection);
+}
+
+function setSelectionFocus(
+  selection: Selection,
+  key: string,
+  offset: number,
+): void {
+  selection.focusKey = key;
+  selection.focusOffset = offset;
+  selection.isDirty = true;
+}
+
+function updateSelectionForNextSiblingRange(
+  selection: Selection,
+  isBackward: boolean,
+  sibling: OutlineNode,
+): void {
+  const nextSibling = isBackward
+    ? sibling.getPreviousSibling()
+    : sibling.getNextSibling();
+  if (isTextNode(nextSibling)) {
+    const key = nextSibling.getKey();
+    const offset = isBackward ? nextSibling.getTextContent().length : 0;
+    setSelectionFocus(selection, key, offset);
+  }
+}
+
+function updateSelectionForNextSegmentedRange(
+  selection: Selection,
+  isBackward: boolean,
+  sibling: OutlineNode,
+) {
+  const siblingTextContent = sibling.getTextContent();
+  let spaceIndex = isBackward
+    ? siblingTextContent.lastIndexOf(' ')
+    : siblingTextContent.indexOf(' ');
+  if (spaceIndex === -1) {
+    spaceIndex = isBackward ? 0 : siblingTextContent.length;
+  } else if (!isBackward) {
+    spaceIndex++;
+  }
+  const key = sibling.getKey();
+  setSelectionFocus(selection, key, spaceIndex);
+}
+
+export function updateCaretSelectionForRange(
+  selection: Selection,
+  isBackward: boolean,
+  granularity: 'character' | 'word' | 'line',
+): void {
+  const anchorOffset = selection.anchorOffset;
   const anchorNode = selection.getAnchorNode();
   if (anchorNode === null) {
     return;
@@ -826,53 +451,135 @@ export function deleteForward(selection: Selection): void {
   const currentBlock = anchorNode.getParentBlockOrThrow();
   const textContent = anchorNode.getTextContent();
   const textContentLength = textContent.length;
-  let nextSibling = anchorNode.getNextSibling();
-  let anchorOffset = selection.anchorOffset;
+  const sibling = isBackward
+    ? anchorNode.getPreviousSibling()
+    : anchorNode.getNextSibling();
+  const isOffsetAtBoundary = isBackward
+    ? anchorOffset === 0
+    : anchorOffset === textContentLength;
 
-  // If we're dealing with an anchor that is either segmented or immutable
-  // then we need to ensure that we actually affect the anchor instead. So
-  // we make the next sibling the anchor to emulate this (less code than
-  // forking the logic again).
-  if (
-    isTextNode(nextSibling) &&
-    (anchorNode.isImmutable() || anchorNode.isSegmented())
-  ) {
-    nextSibling.select(0, 0);
-    nextSibling = anchorNode;
-    anchorOffset = textContentLength;
-  }
-
-  if (anchorOffset === textContentLength) {
-    if (nextSibling === null) {
-      currentBlock.mergeWithNextSibling();
-    } else if (isTextNode(nextSibling)) {
-      if (nextSibling.isImmutable()) {
-        nextSibling.remove();
-        currentBlock.normalizeTextNodes(true);
-      } else if (nextSibling.isSegmented()) {
-        removeFirstSegment(nextSibling);
-        currentBlock.normalizeTextNodes(true);
-      } else {
-        nextSibling.spliceText(0, 1, '', true);
-      }
-    } else {
-      if (__DEV__) {
-        invariant(false, 'TODO');
-      } else {
-        invariant();
+  if (sibling === null && isOffsetAtBoundary) {
+    // If we are at the start or the end, and try to move to the prev
+    // or next block via deletions, then set the range to be of that
+    // inserecting block.
+    const block = isBackward
+      ? currentBlock.getPreviousSibling()
+      : currentBlock.getNextSibling();
+    if (isBlockNode(block)) {
+      const textNode = isBackward
+        ? block.getLastChild()
+        : block.getFirstChild();
+      if (textNode !== null) {
+        const key = textNode.getKey();
+        const offset = isBackward ? textNode.getTextContent().length : 0;
+        setSelectionFocus(selection, key, offset);
       }
     }
+  } else if (isLineBreakNode(sibling) && isOffsetAtBoundary) {
+    updateSelectionForNextSiblingRange(selection, isBackward, sibling);
   } else {
-    const deletionEndOffset = getOffsetAfterNextGrapheme(
-      anchorOffset,
-      textContent,
-    );
-    anchorNode.spliceText(
-      anchorOffset,
-      deletionEndOffset - anchorOffset,
-      '',
-      true,
-    );
+    if (granularity === 'character') {
+      let characterNode = anchorNode;
+      let characterOffset = anchorOffset;
+      if (isOffsetAtBoundary) {
+        if (sibling === null) {
+          return;
+        }
+        if (sibling.isImmutable() || sibling.isInert()) {
+          updateSelectionForNextSiblingRange(selection, isBackward, sibling);
+          return;
+        } else if (sibling.isSegmented()) {
+          updateSelectionForNextSegmentedRange(selection, isBackward, sibling);
+          return;
+        }
+        characterNode = sibling;
+        characterOffset = isBackward ? sibling.getTextContent().length : 0;
+      }
+      let offset = 1;
+      if (CAN_USE_INTL_SEGMENTER) {
+        const textSlice = isBackward
+          ? textContent.slice(0, anchorOffset)
+          : textContent.slice(anchorOffset);
+        const segments = getSegmentsFromString(textSlice, 'grapheme');
+        const segment = isBackward
+          ? segments[segments.length - 1]
+          : segments[0];
+        offset = segment.segment.length;
+      }
+      const key = characterNode.getKey();
+      setSelectionFocus(
+        selection,
+        key,
+        isBackward ? characterOffset - offset : characterOffset + offset,
+      );
+    } else if (granularity === 'word') {
+      let node = anchorNode;
+      let index = null;
+
+      let targetTextContent = isBackward
+        ? textContent.slice(0, anchorOffset)
+        : textContent.slice(anchorOffset);
+      let segments;
+      while (true) {
+        if (CAN_USE_INTL_SEGMENTER) {
+          segments = getSegmentsFromString(targetTextContent, 'word');
+          const segment = isBackward
+            ? getLastWordSegment(segments)
+            : getFirstWordSegment(segments);
+          index = segment
+            ? isBackward
+              ? segment.index
+              : segment.index + segment.segment.length
+            : null;
+        } else {
+          index = isBackward
+            ? getLastWordIndex(targetTextContent)
+            : getFirstWordIndex(targetTextContent);
+        }
+        const siblingAfter = isBackward
+          ? node.getPreviousSibling()
+          : node.getNextSibling();
+        if (
+          siblingAfter === null ||
+          (segments && segments.length > 1) ||
+          isLineBreakNode(siblingAfter)
+        ) {
+          break;
+        }
+        targetTextContent = siblingAfter.getTextContent();
+        node = siblingAfter;
+      }
+
+      if (node.isImmutable() || node.isInert()) {
+        updateSelectionForNextSiblingRange(selection, isBackward, node);
+      } else if (node.isSegmented()) {
+        updateSelectionForNextSegmentedRange(selection, isBackward, node);
+      } else if (index !== null) {
+        const key = node.getKey();
+        // If we are partially through an anchor string, we need to include
+        // the offset for moving forward
+        if (!isBackward && node === anchorNode) {
+          index += anchorOffset;
+        }
+        setSelectionFocus(selection, key, index);
+      }
+    } else {
+      // granularity === 'line'
+      let node = anchorNode;
+      while (true) {
+        const siblingAfter = isBackward
+          ? node.getPreviousSibling()
+          : node.getNextSibling();
+        if (siblingAfter === null || isLineBreakNode(siblingAfter)) {
+          const target = siblingAfter || node;
+          const key = target.getKey();
+          const offset = isBackward ? 0 : target.getTextContent().length;
+          setSelectionFocus(selection, key, offset);
+          break;
+        }
+        node = siblingAfter;
+      }
+    }
   }
 }
 
@@ -893,7 +600,6 @@ export function insertNodes(
   // If there is a range selected remove the text in it
   if (!selection.isCaret()) {
     removeText(selection);
-    // TODO: We're not updating the selection here. Should we be?
   }
   const anchorOffset = selection.anchorOffset;
   const anchorNode = selection.getAnchorNode();
@@ -1029,11 +735,7 @@ export function insertText(selection: Selection, text: string): void {
     startOffset = isBefore ? anchorOffset : focusOffset;
     endOffset = isBefore ? focusOffset : anchorOffset;
 
-    if (
-      firstNode.isImmutable() ||
-      firstNode.isInert() ||
-      firstNode.isSegmented()
-    ) {
+    if (firstNode.isImmutable() || firstNode.isInert()) {
       firstNodeRemove = true;
       const textNode = createTextNode(text);
       firstNode.replace(textNode);
@@ -1046,6 +748,16 @@ export function insertText(selection: Selection, text: string): void {
         text,
         true,
       );
+      const textNode = createTextNode(text);
+      if (startOffset === 0) {
+        firstNode.insertBefore(textNode);
+      } else {
+        firstNode.insertAfter(textNode);
+      }
+      if (firstNode.isSegmented() && firstNode.getTextContent() === '') {
+        firstNode.remove();
+      }
+      textNode.select();
     }
     const lastNodeTextLength = lastNode.getTextContent().length;
 
@@ -1058,7 +770,6 @@ export function insertText(selection: Selection, text: string): void {
         if (firstNode.getTextContent() === '') {
           firstNodeRemove = true;
           firstNode.remove();
-          lastNode.select(0, 0);
         } else {
           firstNode.insertAfter(lastNode);
         }

@@ -101,13 +101,54 @@ export function getSegmentsFromString(
   return Array.from(segmenter.segment(string));
 }
 
-export function getLastSegment(segments: Array<Segment>): null | Segment {
-  for (let i = segments.length - 1; i >= 0; i--) {
+export function getFirstWordSegment(segments: Array<Segment>): null | Segment {
+  for (let i = 0; i < segments.length; i++) {
     const segment = segments[i];
-    if (!segment.isWordLike || segment.segment.trim() === '') {
+    if (!segment.isWordLike) {
       continue;
     }
     return segment;
   }
   return null;
+}
+
+export function getLastWordSegment(segments: Array<Segment>): null | Segment {
+  for (let i = segments.length - 1; i >= 0; i--) {
+    const segment = segments[i];
+    if (!segment.isWordLike) {
+      continue;
+    }
+    return segment;
+  }
+  return null;
+}
+
+export function getFirstWordIndex(string: string): number {
+  let hasCharacter = false;
+  for (let i = 0; i < string.length; i++) {
+    const char = string[i];
+    if (/\s/.test(char)) {
+      if (hasCharacter) {
+        return i;
+      }
+    } else {
+      hasCharacter = true;
+    }
+  }
+  return string.length;
+}
+
+export function getLastWordIndex(string: string): number {
+  let hasCharacter = false;
+  for (let i = string.length - 1; i >= 0; i--) {
+    const char = string[i];
+    if (/\s/.test(char)) {
+      if (hasCharacter) {
+        return i + 1;
+      }
+    } else {
+      hasCharacter = true;
+    }
+  }
+  return 0;
 }

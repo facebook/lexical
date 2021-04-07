@@ -9,7 +9,7 @@
 
 import type {OutlineNode, NodeKey, EditorThemeClasses} from 'outline';
 
-import {isTextNode, BlockNode} from 'outline';
+import {BlockNode} from 'outline';
 
 export class ParagraphNode extends BlockNode {
   constructor(key?: NodeKey) {
@@ -40,32 +40,6 @@ export class ParagraphNode extends BlockNode {
   }
 
   // Mutation
-
-  mergeWithPreviousSibling(): void {
-    const prevBlock = this.getPreviousSibling();
-    if (prevBlock !== null) {
-      super.mergeWithPreviousSibling();
-      return;
-    }
-    // Otherwise just reset the text node flags
-    const firstChild = this.getFirstChild();
-    if (isTextNode(firstChild) && firstChild.getFlags() !== 0) {
-      firstChild.setFlags(0);
-    }
-  }
-
-  mergeWithNextSibling(): void {
-    const nextBlock = this.getNextSibling();
-    if (nextBlock !== null) {
-      super.mergeWithNextSibling();
-      return;
-    }
-    // Otherwise just reset the text node flags
-    const firstChild = this.getFirstChild();
-    if (isTextNode(firstChild) && firstChild.getFlags() !== 0) {
-      firstChild.setFlags(0);
-    }
-  }
 
   insertNewAfter(): ParagraphNode {
     const newBlock = createParagraphNode();

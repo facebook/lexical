@@ -147,27 +147,25 @@ export function onKeyDownForPlainText(
     // If we can use native beforeinput, we handle
     // these cases in that function.
     if (!CAN_USE_BEFORE_INPUT) {
-      if (isDeleteForward(event)) {
-        event.preventDefault();
-        deleteForward(selection);
-      } else if (isDeleteLineBackward(event)) {
+      if (isDeleteLineBackward(event)) {
         event.preventDefault();
         deleteLineBackward(selection);
       } else if (isDeleteLineForward(event)) {
         event.preventDefault();
         deleteLineForward(selection);
-      } else if (isDeleteWordBackward(event)) {
-        event.preventDefault();
-        deleteWordBackward(selection);
-      } else if (isDeleteWordForward(event)) {
-        event.preventDefault();
-        deleteWordForward(selection);
       }
     }
+    // Rather than process these events in beforeinput,
+    // we choose to process them here, for a number of
+    // reasons. It may be for better speech-to-text
+    // support, or screen reader support, or to fix
+    // quirks between browsers.
     if (isDeleteBackward(event)) {
-      // This is used to better support Dragon Dictation
       event.preventDefault();
       deleteBackward(selection);
+    } else if (isDeleteForward(event)) {
+      event.preventDefault();
+      deleteForward(selection);
     } else if (isParagraph(event) || isLineBreak(event)) {
       event.preventDefault();
       insertLineBreak(selection);
@@ -176,6 +174,18 @@ export function onKeyDownForPlainText(
         event.preventDefault();
         selectAll(selection);
       }
+    } else if (
+      isDeleteWordBackward(event) &&
+      (CAN_USE_INTL_SEGMENTER || !CAN_USE_BEFORE_INPUT)
+    ) {
+      event.preventDefault();
+      deleteWordBackward(selection);
+    } else if (
+      isDeleteWordForward(event) &&
+      (CAN_USE_INTL_SEGMENTER || !CAN_USE_BEFORE_INPUT)
+    ) {
+      event.preventDefault();
+      deleteWordForward(selection);
     } else if (isMoveWordBackward(event) && CAN_USE_INTL_SEGMENTER) {
       // For where we support Intl.Segmenter, let's use it to work
       // out where to move selection for word boundary selections.
@@ -205,34 +215,29 @@ export function onKeyDownForRichText(
     // If we can use native beforeinput, we handle
     // these cases in that function.
     if (!CAN_USE_BEFORE_INPUT) {
-      if (isDeleteForward(event)) {
-        event.preventDefault();
-        deleteForward(selection);
-      } else if (isDeleteLineBackward(event)) {
+      if (isDeleteLineBackward(event)) {
         event.preventDefault();
         deleteLineBackward(selection);
       } else if (isDeleteLineForward(event)) {
         event.preventDefault();
         deleteLineForward(selection);
-      } else if (isDeleteWordBackward(event)) {
-        event.preventDefault();
-        deleteWordBackward(selection);
-      } else if (isDeleteWordForward(event)) {
-        event.preventDefault();
-        deleteWordForward(selection);
       }
     }
-    // Various browser struggle with these events in
-    // beforeinput, so we ensure they work here.
+    // Rather than process these events in beforeinput,
+    // we choose to process them here, for a number of
+    // reasons. It may be for better speech-to-text
+    // support, or screen reader support, or to fix
+    // quirks between browsers.
     if (isDeleteBackward(event)) {
-      // This is used to better support Dragon Dictation
       event.preventDefault();
       deleteBackward(selection);
+    } else if (isDeleteForward(event)) {
+      event.preventDefault();
+      deleteForward(selection);
     } else if (isLineBreak(event)) {
       event.preventDefault();
       insertLineBreak(selection);
     } else if (isParagraph(event)) {
-      // This is used to better support Dragon Dictation
       event.preventDefault();
       insertParagraph(selection);
     } else if (isBold(event)) {
@@ -262,6 +267,18 @@ export function onKeyDownForRichText(
         event.preventDefault();
         selectAll(selection);
       }
+    } else if (
+      isDeleteWordBackward(event) &&
+      (CAN_USE_INTL_SEGMENTER || !CAN_USE_BEFORE_INPUT)
+    ) {
+      event.preventDefault();
+      deleteWordBackward(selection);
+    } else if (
+      isDeleteWordForward(event) &&
+      (CAN_USE_INTL_SEGMENTER || !CAN_USE_BEFORE_INPUT)
+    ) {
+      event.preventDefault();
+      deleteWordForward(selection);
     } else if (isMoveWordBackward(event) && CAN_USE_INTL_SEGMENTER) {
       // For where we support Intl.Segmenter, let's use it to work
       // out where to move selection for word boundary selections.
@@ -530,7 +547,7 @@ export function onNativeBeforeInputForPlainText(
     }
     if (inputType === 'insertText') {
       if (!selection.isCaret()) {
-        insertText(selection, '');
+        removeText(selection);
       }
       return;
     }
@@ -559,23 +576,13 @@ export function onNativeBeforeInputForPlainText(
         }
         break;
       }
-      case 'insertLineBreak':
-      case 'insertParagraph': {
-        insertLineBreak(selection);
-        break;
-      }
       case 'deleteByComposition':
       case 'deleteByDrag':
       case 'deleteByCut': {
         removeText(selection);
         break;
       }
-      case 'deleteContentBackward': {
-        deleteBackward(selection);
-        break;
-      }
-      case 'deleteContent':
-      case 'deleteContentForward': {
+      case 'deleteContent': {
         deleteForward(selection);
         break;
       }
@@ -597,10 +604,6 @@ export function onNativeBeforeInputForPlainText(
         deleteLineForward(selection);
         break;
       }
-      case 'historyUndo':
-      case 'historyRedo':
-        // Handled with useOutlineHistory
-        break;
       default:
       // NO-OP
     }
@@ -635,7 +638,7 @@ export function onNativeBeforeInputForRichText(
     }
     if (inputType === 'insertText') {
       if (!selection.isCaret()) {
-        insertText(selection, '');
+        removeText(selection);
       }
       return;
     }
@@ -643,14 +646,6 @@ export function onNativeBeforeInputForRichText(
     event.preventDefault();
 
     switch (inputType) {
-      case 'formatBold': {
-        formatText(selection, 'bold');
-        break;
-      }
-      case 'formatItalic': {
-        formatText(selection, 'italic');
-        break;
-      }
       case 'formatStrikeThrough': {
         formatText(selection, 'strikethrough');
         break;
@@ -680,26 +675,13 @@ export function onNativeBeforeInputForRichText(
         }
         break;
       }
-      case 'insertLineBreak': {
-        insertLineBreak(selection);
-        break;
-      }
-      case 'insertParagraph': {
-        insertParagraph(selection);
-        break;
-      }
       case 'deleteByComposition':
       case 'deleteByDrag':
       case 'deleteByCut': {
         removeText(selection);
         break;
       }
-      case 'deleteContentBackward': {
-        deleteBackward(selection);
-        break;
-      }
-      case 'deleteContent':
-      case 'deleteContentForward': {
+      case 'deleteContent': {
         deleteForward(selection);
         break;
       }
@@ -721,10 +703,6 @@ export function onNativeBeforeInputForRichText(
         deleteLineForward(selection);
         break;
       }
-      case 'historyUndo':
-      case 'historyRedo':
-        // Handled with useOutlineHistory
-        break;
       default:
       // NO-OP
     }

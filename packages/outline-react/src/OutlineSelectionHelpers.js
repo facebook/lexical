@@ -590,7 +590,6 @@ export function removeText(selection: Selection): void {
 export function insertLineBreak(selection: Selection): void {
   const lineBreakNode = createLineBreakNode();
   insertNodes(selection, [lineBreakNode]);
-  lineBreakNode.selectNext();
 }
 
 export function insertNodes(

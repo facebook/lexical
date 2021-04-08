@@ -80,6 +80,10 @@ export class BlockNode extends OutlineNode {
     }
     return childrenNodes;
   }
+  getChildrenSize(): number {
+    const self = this.getLatest();
+    return self.__children.length;
+  }
   getAllTextNodes(includeInert?: boolean): Array<TextNode> {
     const textNodes = [];
     const self = this.getLatest();

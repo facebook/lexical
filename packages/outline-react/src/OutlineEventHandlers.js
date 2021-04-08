@@ -35,6 +35,7 @@ import {
   isParagraph,
   isBold,
   isItalic,
+  isUnderline,
   isTab,
   isSelectAll,
   isMoveWordBackward,
@@ -243,6 +244,9 @@ export function onKeyDownForRichText(
     } else if (isBold(event)) {
       event.preventDefault();
       formatText(selection, 'bold');
+    } else if (isUnderline(event)) {
+      event.preventDefault();
+      formatText(selection, 'underline');
     } else if (isItalic(event)) {
       event.preventDefault();
       formatText(selection, 'italic');
@@ -648,10 +652,6 @@ export function onNativeBeforeInputForRichText(
     switch (inputType) {
       case 'formatStrikeThrough': {
         formatText(selection, 'strikethrough');
-        break;
-      }
-      case 'formatUnderline': {
-        formatText(selection, 'underline');
         break;
       }
       case 'insertText':

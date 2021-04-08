@@ -24,6 +24,10 @@ export function isItalic(event: KeyboardEvent): boolean {
   return event.key === 'i' && controlOrMeta(event);
 }
 
+export function isUnderline(event: KeyboardEvent): boolean {
+  return event.key === 'u' && controlOrMeta(event);
+}
+
 export function isParagraph(event: KeyboardEvent): boolean {
   return event.key === 'Enter' && !event.shiftKey;
 }

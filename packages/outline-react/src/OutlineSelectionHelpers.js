@@ -17,6 +17,7 @@ import {
   isLineBreakNode,
   createTextNode,
 } from 'outline';
+import {createParagraphNode} from 'outline-extensions/ParagraphNode';
 
 import {CAN_USE_INTL_SEGMENTER, IS_APPLE} from './OutlineEnv';
 import {invariant} from './OutlineReactUtils';
@@ -384,6 +385,30 @@ export function deleteWordForward(selection: Selection): void {
 export function deleteBackward(selection: Selection): void {
   if (selection.isCaret()) {
     updateCaretSelectionForRange(selection, true, 'character');
+    // Special handling around rich text nodes
+    if (selection.isCaret()) {
+      const anchorNode = selection.getAnchorNode();
+      const parent = anchorNode.getParentOrThrow();
+      const parentType = parent.getType();
+      if (selection.anchorOffset === 0 && parentType !== 'paragraph') {
+        const paragraph = createParagraphNode();
+        const children = parent.getChildren();
+        children.forEach((child) => paragraph.append(child));
+
+        if (parentType === 'listitem') {
+          const listNode = parent.getParentOrThrow();
+          if (listNode.getChildrenSize() === 1) {
+            listNode.replace(paragraph);
+          } else {
+            listNode.insertBefore(paragraph);
+            parent.remove();
+          }
+        } else {
+          parent.replace(paragraph);
+        }
+        return;
+      }
+    }
   }
   removeText(selection);
 }
@@ -467,8 +492,8 @@ export function updateCaretSelectionForRange(
       : currentBlock.getNextSibling();
     if (isBlockNode(block)) {
       const textNode = isBackward
-        ? block.getLastChild()
-        : block.getFirstChild();
+        ? block.getLastTextNode()
+        : block.getFirstTextNode();
       if (textNode !== null) {
         const key = textNode.getKey();
         const offset = isBackward ? textNode.getTextContent().length : 0;
@@ -730,6 +755,8 @@ export function insertText(selection: Selection, text: string): void {
     const lastIndex = selectedNodesLength - 1;
     const lastNode = selectedNodes[lastIndex];
     const isBefore = firstNode === selection.getAnchorNode();
+    const firstNodeParents = new Set(firstNode.getParents());
+    const lastNodeParents = new Set(lastNode.getParents());
     let firstNodeRemove = false;
     let lastNodeRemove = false;
     startOffset = isBefore ? anchorOffset : focusOffset;
@@ -748,29 +775,40 @@ export function insertText(selection: Selection, text: string): void {
         text,
         true,
       );
-      const textNode = createTextNode(text);
-      if (startOffset === 0) {
-        firstNode.insertBefore(textNode);
+      if (firstNode.isSegmented()) {
+        firstNode.selectNext(0, 0);
+        if (firstNode.getTextContent() === '') {
+          firstNode.remove();
+        }
       } else {
-        firstNode.insertAfter(textNode);
+        firstNode.select(startOffset, startOffset);
       }
-      if (firstNode.isSegmented() && firstNode.getTextContent() === '') {
-        firstNode.remove();
-      }
-      textNode.select();
     }
     const lastNodeTextLength = lastNode.getTextContent().length;
 
-    if (!lastNode.isParentOf(firstNode)) {
-      if (endOffset === lastNodeTextLength) {
+    if (!firstNodeParents.has(lastNode)) {
+      if (
+        endOffset === lastNodeTextLength &&
+        lastNode.getKey() !== selection.anchorKey
+      ) {
         lastNodeRemove = true;
         lastNode.remove();
       } else if (isTextNode(lastNode)) {
         lastNode.spliceText(0, endOffset, '', false);
-        if (firstNode.getTextContent() === '') {
+        if (
+          firstNode.getTextContent() === '' &&
+          firstNode.getKey() !== selection.anchorKey
+        ) {
           firstNodeRemove = true;
           firstNode.remove();
         } else {
+          let parent = lastNode.getParent();
+          while (parent !== null) {
+            if (parent.getChildrenSize() < 2) {
+              lastNodeParents.delete(parent);
+            }
+            parent = parent.getParent();
+          }
           firstNode.insertAfter(lastNode);
         }
       }
@@ -778,8 +816,8 @@ export function insertText(selection: Selection, text: string): void {
     for (let i = 1; i < lastIndex; i++) {
       const selectedNode = selectedNodes[i];
       if (
-        (firstNodeRemove || !selectedNode.isParentOf(firstNode)) &&
-        (lastNodeRemove || !selectedNode.isParentOf(lastNode))
+        (firstNodeRemove || !firstNodeParents.has(selectedNode)) &&
+        (lastNodeRemove || !lastNodeParents.has(selectedNode))
       ) {
         selectedNode.remove();
       }

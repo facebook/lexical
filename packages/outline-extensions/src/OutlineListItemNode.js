@@ -100,7 +100,7 @@ export class ListItemNode extends BlockNode {
         this.remove();
         list.insertBefore(newBlock);
       }
-      if (list.getChildren().length === 0) {
+      if (list.getChildrenSize() === 0) {
         list.remove();
       }
     } else {

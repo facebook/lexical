@@ -113,6 +113,7 @@ async function build(name, inputFile, outputFile) {
       replace(
         Object.assign(
           {
+            preventAssignment: true,
             __DEV__: isProduction ? 'false' : 'true',
           },
           isWWW && wwwMappings,

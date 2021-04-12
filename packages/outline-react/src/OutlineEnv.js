@@ -7,15 +7,13 @@
  * @flow strict
  */
 
-export const CAN_USE_DOM: boolean =
+const CAN_USE_DOM: boolean =
   typeof window !== 'undefined' &&
   typeof window.document !== 'undefined' &&
   typeof window.document.createElement !== 'undefined';
 
-let documentMode = null;
-if (CAN_USE_DOM && 'documentMode' in document) {
-  documentMode = document.documentMode;
-}
+const documentMode =
+  CAN_USE_DOM && 'documentMode' in document ? document.documentMode : null;
 
 export const IS_MAC: boolean =
   CAN_USE_DOM && /Mac|iPod|iPhone|iPad/.test(navigator.platform);
@@ -43,11 +41,10 @@ export const IS_CHROME: boolean =
 export const canUseTextInputEvent: boolean =
   CAN_USE_DOM && 'TextEvent' in window && !documentMode;
 
-export let CAN_USE_BEFORE_INPUT: boolean = false;
-
-if (CAN_USE_DOM && 'InputEvent' in window && !documentMode) {
-  CAN_USE_BEFORE_INPUT = 'getTargetRanges' in new window.InputEvent('input');
-}
+export const CAN_USE_BEFORE_INPUT: boolean =
+  CAN_USE_DOM && 'InputEvent' in window && !documentMode
+    ? 'getTargetRanges' in new window.InputEvent('input')
+    : false;
 
 export const CAN_USE_INTL_SEGMENTER: boolean =
   'Intl' in window && 'Segmenter' in window.Intl;

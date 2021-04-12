@@ -675,16 +675,19 @@ export function createNodeFromParse(
   parentKey: null | NodeKey,
   state: NodeParserState = {},
 ): OutlineNode {
-  const type = parsedNode.__type;
-  const NodeType = editor._registeredNodeTypes.get(type);
-  if (NodeType === undefined) {
+  const nodeType = parsedNode.__type;
+  const NodeTypeCount = editor._registeredNodeTypes.get(nodeType);
+  if (NodeTypeCount === undefined) {
     if (__DEV__) {
-      invariant(false, 'createNodeFromParse: type "' + type + '" + not found');
+      invariant(
+        false,
+        'createNodeFromParse: type "' + nodeType + '" + not found',
+      );
     } else {
       invariant();
     }
   }
-  const node = new NodeType();
+  const node = new NodeTypeCount.class();
   const key = node.__key;
   if (isRootNode(node)) {
     const viewModel = getActiveViewModel();

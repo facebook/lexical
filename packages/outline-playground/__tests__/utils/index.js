@@ -54,6 +54,57 @@ export function initializeE2E(browsers, runTests) {
             cb();
           }
         },
+        flaky(flakyBrowsers, cb) {
+          const retryCount = 10;
+          const isFlaky = flakyBrowsers.find((flakyBrowser) => {
+            const [browser, option] = flakyBrowser.split('-');
+            if (browser === browserName) {
+              if (!option || (option === 'ci' && E2E_IS_CI)) {
+                return true;
+              }
+              if (!option || (option === 'mac' && IS_MAC)) {
+                return true;
+              }
+              return false;
+            }
+          });
+          if (isFlaky) {
+            const it = global.it;
+            // if we mark the test as flaky, overwrite the original 'it' function
+            // to attempt the test 10 times before actually failing
+            global.it = async (description, test) => {
+              const result = it(description, async () => {
+                let count = 0;
+                async function attempt() {
+                  try {
+                    // test attempt
+                    return await test();
+                  } catch(err) {
+                    // test failed
+                    if (count < retryCount) {
+                      count ++;
+                      // retry
+                      return await attempt();
+                    } else {
+                      // fail for real
+                      throw err;
+                    }
+                  }
+                }
+                return await attempt();
+              });
+              return result;
+            }
+
+            try {
+              cb();
+            } finally {
+              global.it = it;
+            }
+          } else {
+            cb();
+          }
+        },
         async saveScreenshot(print) {
           const currentTest = expect.getState().currentTestName;
           const path = currentTest.replace(/\s/g, '_') + '.png';

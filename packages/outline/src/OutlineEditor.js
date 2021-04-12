@@ -70,6 +70,8 @@ export type EditorThemeClasses = {
   [string]: EditorThemeClassName | {[string]: EditorThemeClassName},
 };
 
+type NodeTypeCount = {count: number, class: Class<OutlineNode>};
+
 function resetEditor(editor: OutlineEditor): void {
   const root = createRoot();
   const viewModel = new ViewModel({root});
@@ -161,6 +163,10 @@ function updateEditor(
   return true;
 }
 
+function createNodeTypeCount(klass: Class<OutlineNode>): NodeTypeCount {
+  return {count: 1, class: klass};
+}
+
 export class OutlineEditor {
   _editorElement: null | HTMLElement;
   _viewModel: ViewModel;
@@ -173,7 +179,7 @@ export class OutlineEditor {
   _updateListeners: Set<UpdateListener>;
   _decoratorListeners: Set<DecoratorListener>;
   _textNodeTransforms: Set<TextNodeTransform>;
-  _registeredNodeTypes: Map<string, Class<OutlineNode>>;
+  _registeredNodeTypes: Map<string, NodeTypeCount>;
   _nodeDecorators: {[NodeKey]: ReactNode};
   _pendingNodeDecorators: null | {[NodeKey]: ReactNode};
   _placeholderText: string;
@@ -203,9 +209,9 @@ export class OutlineEditor {
     this._textNodeTransforms = new Set();
     // Mapping of types to their nodes
     this._registeredNodeTypes = new Map([
-      ['text', TextNode],
-      ['linebreak', LineBreakNode],
-      ['root', RootNode],
+      ['text', createNodeTypeCount(TextNode)],
+      ['linebreak', createNodeTypeCount(LineBreakNode)],
+      ['root', createNodeTypeCount(RootNode)],
     ]);
     this._key = generateRandomKey();
     // React node decorators for portals
@@ -251,9 +257,20 @@ export class OutlineEditor {
     this._pendingNodeDecorators = pendingNodeDecorators;
   }
   addNodeType(nodeType: string, klass: Class<OutlineNode>): () => void {
-    this._registeredNodeTypes.set(nodeType, klass);
+    let nodeTypeCount = this._registeredNodeTypes.get(nodeType);
+    if (nodeTypeCount === undefined) {
+      nodeTypeCount = createNodeTypeCount(klass);
+    } else {
+      nodeTypeCount.count++;
+    }
+    this._registeredNodeTypes.set(nodeType, nodeTypeCount);
+    // To get around Flow struggling with let bindings
+    const _nodeTypeCount = nodeTypeCount;
     return () => {
-      this._registeredNodeTypes.delete(nodeType);
+      _nodeTypeCount.count--;
+      if (_nodeTypeCount.count === 0) {
+        this._registeredNodeTypes.delete(nodeType);
+      }
     };
   }
   addUpdateListener(listener: UpdateListener): () => void {

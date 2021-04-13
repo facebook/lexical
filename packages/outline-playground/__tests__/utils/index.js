@@ -80,10 +80,10 @@ export function initializeE2E(browsers, runTests) {
                   try {
                     // test attempt
                     return await test();
-                  } catch(err) {
+                  } catch (err) {
                     // test failed
                     if (count < retryCount) {
-                      count ++;
+                      count++;
                       // retry
                       return await attempt();
                     } else {
@@ -95,7 +95,7 @@ export function initializeE2E(browsers, runTests) {
                 return await attempt();
               });
               return result;
-            }
+            };
 
             try {
               cb();

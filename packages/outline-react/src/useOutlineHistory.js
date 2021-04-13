@@ -15,51 +15,72 @@ import {useEffect, useMemo} from 'react';
 
 const viewModelsWithoutHistory = new Set();
 
-function shouldMerge(
-  viewModel: ViewModel,
-  current: null | ViewModel,
-  undoStack: Array<ViewModel>,
-): boolean {
+const MERGE = 0;
+const NO_MERGE = 1;
+const DISCARD = 2;
+
+function getMergeAction(
+  prevViewModel: null | ViewModel,
+  nextViewModel: ViewModel,
+): 0 | 1 | 2 {
   // If we have a view model that doesn't want its history
   // recorded then we always merge the changes.
-  if (viewModelsWithoutHistory.has(viewModel)) {
-    viewModelsWithoutHistory.delete(viewModel);
-    return true;
+  if (viewModelsWithoutHistory.has(nextViewModel)) {
+    viewModelsWithoutHistory.delete(nextViewModel);
+    return MERGE;
   }
-  if (current === null || undoStack.length === 0) {
-    return false;
+  if (prevViewModel === null) {
+    return NO_MERGE;
   }
-  const hadDirtyNodes = current.hasDirtyNodes();
-  const hasDirtyNodes = viewModel.hasDirtyNodes();
-  // If we are changing selection between view models, then merge.
-  if (!hadDirtyNodes && !hasDirtyNodes) {
-    return true;
-  } else if (hasDirtyNodes) {
-    const dirtyNodes = viewModel.getDirtyNodes();
-    if (dirtyNodes.length === 1) {
-      const prevNodeMap = current._nodeMap;
-      const nextDirtyNode = dirtyNodes[0];
-      const prevDirtyNodeKey = nextDirtyNode.__key;
-      const prevDirtyNode = prevNodeMap[prevDirtyNodeKey];
-      if (
-        prevDirtyNode !== undefined &&
-        isTextNode(prevDirtyNode) &&
-        isTextNode(nextDirtyNode) &&
-        prevDirtyNode.__flags === nextDirtyNode.__flags
-      ) {
-        const prevText = prevDirtyNode.__text;
-        const nextText = nextDirtyNode.__text;
-        if (prevText === '') {
-          return false;
+  const hasDirtyNodes = nextViewModel.hasDirtyNodes();
+  if (!hasDirtyNodes) {
+    return DISCARD;
+  }
+  const dirtyNodes = nextViewModel.getDirtyNodes();
+  if (dirtyNodes.length === 1) {
+    const prevNodeMap = prevViewModel._nodeMap;
+    const nextDirtyNode = dirtyNodes[0];
+    const prevDirtyNodeKey = nextDirtyNode.__key;
+    const prevDirtyNode = prevNodeMap[prevDirtyNodeKey];
+    if (
+      prevDirtyNode !== undefined &&
+      isTextNode(prevDirtyNode) &&
+      isTextNode(nextDirtyNode) &&
+      prevDirtyNode.__flags === nextDirtyNode.__flags
+    ) {
+      const prevText = prevDirtyNode.__text;
+      const nextText = nextDirtyNode.__text;
+      if (prevText === '') {
+        return NO_MERGE;
+      }
+      const textDiff = nextText.length - prevText.length;
+      if (textDiff === 0) {
+        return MERGE;
+      }
+      // Only merge if we're adding/removing a single character
+      // or if there is not change at all.
+      if (textDiff === -1 || textDiff === 1) {
+        const selection = nextViewModel._selection;
+        const prevSelection = prevViewModel._selection;
+        if (selection == null || prevSelection === null) {
+          return MERGE;
         }
-        const diff = nextText.length - prevText.length;
-        // Only merge if we're adding/removing a single character
-        // or if there is not change at all.
-        return diff === -1 || diff === 1 || diff === 0;
+        const anchorKey = selection.anchorKey;
+        const prevAnchorKey = prevSelection.anchorKey;
+        if (anchorKey !== prevAnchorKey) {
+          return NO_MERGE;
+        }
+        const anchorOffset = selection.anchorOffset;
+        const prevAnchorOffset = prevSelection.anchorOffset;
+        // If we've inserted some text that is a single character
+        // after, then merge it.
+        if (prevAnchorOffset === anchorOffset - 1) {
+          return MERGE;
+        }
       }
     }
   }
-  return false;
+  return NO_MERGE;
 }
 
 export function updateWithoutHistory(
@@ -110,13 +131,19 @@ export function useOutlineHistory(
       if (viewModel === current) {
         return;
       }
-      if (!viewModel.isDirty() && !shouldMerge(viewModel, current, undoStack)) {
-        if (redoStack.length !== 0) {
-          redoStack = historyState.redoStack = [];
+      if (!viewModel.isDirty()) {
+        const mergeAction = getMergeAction(current, viewModel);
+        if (mergeAction === NO_MERGE) {
+          if (redoStack.length !== 0) {
+            redoStack = historyState.redoStack = [];
+          }
+          if (current !== null) {
+            undoStack.push(current);
+          }
+        } else if (mergeAction === DISCARD) {
+          return;
         }
-        if (current !== null) {
-          undoStack.push(current);
-        }
+        // Else we merge
       }
       historyState.current = viewModel;
     };

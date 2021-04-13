@@ -81,6 +81,8 @@ export function initializeE2E(browsers, runTests) {
                     // test attempt
                     return await test();
                   } catch (err) {
+                    console.log(`Flaky Test: ${description}:`);
+                    await e2e.logScreenshot();
                     // test failed
                     if (count < retryCount) {
                       count++;

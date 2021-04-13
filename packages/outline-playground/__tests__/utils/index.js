@@ -81,8 +81,6 @@ export function initializeE2E(browsers, runTests) {
                     // test attempt
                     return await test();
                   } catch (err) {
-                    console.log(`Flaky Test: ${description}:`);
-                    await e2e.logScreenshot();
                     // test failed
                     if (count < retryCount) {
                       count++;
@@ -90,6 +88,8 @@ export function initializeE2E(browsers, runTests) {
                       return await attempt();
                     } else {
                       // fail for real
+                      console.log(`Flaky Test: ${description}:`);
+                      await e2e.logScreenshot();
                       throw err;
                     }
                   }

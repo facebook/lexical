@@ -85,7 +85,7 @@ export function initializeE2E(browsers, runTests) {
                     if (count < retryCount) {
                       count++;
                       // retry
-                      console.log(`Flaky Test: ${description}. Attempt: ${retryCount}`);
+                      console.log(`Flaky Test: ${description}. Attempt: ${count}`);
                       return await attempt();
                     } else {
                       // fail for real + log screenshot

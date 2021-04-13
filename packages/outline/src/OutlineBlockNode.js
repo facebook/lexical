@@ -17,7 +17,6 @@ import {
   wrapInTextNodes,
 } from './OutlineNode';
 import {getSelection, Selection} from './OutlineSelection';
-import {invariant} from './OutlineUtils';
 import {shouldErrorOnReadOnly} from './OutlineView';
 import {IS_IMMUTABLE, IS_INERT, IS_SEGMENTED} from './OutlineConstants';
 

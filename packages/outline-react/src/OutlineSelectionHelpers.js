@@ -338,6 +338,16 @@ export function insertParagraph(selection: Selection): void {
 }
 
 export function moveWordBackward(selection: Selection, isCaret: boolean): void {
+  let resetAnchorKey;
+  let resetAnchorOffset = 0;
+  // If we have a range, we need to make the anchor the focus, then set back
+  // the range at the end. This allows us to re-use updateCaretSelectionForRange.
+  if (!selection.isCaret()) {
+    resetAnchorKey = selection.anchorKey;
+    resetAnchorOffset = selection.anchorOffset;
+    selection.anchorKey = selection.focusKey;
+    selection.anchorOffset = selection.focusOffset;
+  }
   updateCaretSelectionForRange(selection, true, 'word');
   const focusNode = selection.getFocusNode();
   // We have to adjust selection if we move selection into a segmented node
@@ -351,6 +361,9 @@ export function moveWordBackward(selection: Selection, isCaret: boolean): void {
   if (isCaret) {
     selection.anchorKey = selection.focusKey;
     selection.anchorOffset = selection.focusOffset;
+  } else if (resetAnchorKey) {
+    selection.anchorKey = resetAnchorKey;
+    selection.anchorOffset = resetAnchorOffset;
   }
 }
 

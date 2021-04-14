@@ -7,13 +7,12 @@
  * @flow strict-local
  */
 
-import type {OutlineEditor, ViewModel, View} from 'outline';
+import type {OutlineEditor, ViewModel} from 'outline';
 
 import {isTextNode} from 'outline';
 import {isRedo, isUndo} from './OutlineKeyHelpers';
 import {useEffect, useMemo} from 'react';
-
-const viewModelsWithoutHistory = new Set();
+import {viewModelsWithoutHistory} from 'outline-react/OutlineHistory';
 
 const MERGE = 0;
 const NO_MERGE = 1;
@@ -83,25 +82,13 @@ function getMergeAction(
   return NO_MERGE;
 }
 
-export function updateWithoutHistory(
-  editor: OutlineEditor,
-  updateFn: (view: View) => void,
-): boolean {
-  const res = editor.update(updateFn);
-  const pendingViewModel = editor._pendingViewModel;
-  if (pendingViewModel !== null) {
-    viewModelsWithoutHistory.add(pendingViewModel);
-  }
-  return res;
-}
-
 type OutlineHistoryStacks = [Array<ViewModel>, Array<ViewModel>];
 type OutlineHistorySetter = (
   undoStack: Array<ViewModel>,
   redoStack: Array<ViewModel>,
 ) => void;
 
-export function useOutlineHistory(
+export default function useOutlineHistory(
   editor: OutlineEditor,
 ): [OutlineHistoryStacks, OutlineHistorySetter] {
   const historyState: {

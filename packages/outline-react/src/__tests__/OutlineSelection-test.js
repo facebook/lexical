@@ -13,7 +13,6 @@ import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
 import useOutlineRichText from 'outline-react/useOutlineRichText';
-import {useOutlineHistory} from 'outline-react/useOutlineHistory';
 
 import {
   insertText,
@@ -79,7 +78,6 @@ describe('OutlineSelection tests', () => {
     function TestBase() {
       editor = useOutlineEditor(ref);
       const props = useOutlineRichText(editor, false);
-      useOutlineHistory(editor);
       return <div ref={ref} contentEditable={true} {...props} />;
     }
 

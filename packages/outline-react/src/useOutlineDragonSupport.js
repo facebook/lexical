@@ -9,7 +9,7 @@
 
 import type {OutlineEditor} from 'outline';
 
-import {insertRichText} from 'outline-react/OutlineSelectionHelpers';
+import {insertRichText} from './OutlineSelectionHelpers';
 
 import {useEffect} from 'react';
 

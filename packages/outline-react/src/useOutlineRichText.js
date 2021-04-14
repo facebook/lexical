@@ -40,6 +40,8 @@ import {
   onNativeInput,
   onFocus,
 } from './OutlineEventHandlers';
+import useOutlineDragonSupport from './useOutlineDragonSupport';
+import useOutlineHistory from './useOutlineHistory';
 
 function initEditor(editor: OutlineEditor): void {
   editor.update((view) => {
@@ -124,6 +126,8 @@ export default function useOutlineRichText(
   }, [editor]);
 
   useOutlineEditorEvents(events, editor, eventHandlerState);
+  useOutlineDragonSupport(editor);
+  useOutlineHistory(editor);
 
   return CAN_USE_BEFORE_INPUT
     ? emptyObject

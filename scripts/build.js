@@ -192,11 +192,13 @@ build(
 );
 
 outlineReactModules.forEach((outlineReactModule) => {
-  // We don't want to sync these modules
+  // We don't want to sync these modules, as they're bundled in the other
+  // modules already.
   if (
-    isWWW &&
-    (outlineReactModule === 'OutlineEnv' ||
-      outlineReactModule === 'OutlineReactUtils')
+    outlineReactModule === 'OutlineEnv' ||
+    outlineReactModule === 'useOutlineHistory' ||
+    outlineReactModule === 'useOutlineDragonSupport' ||
+    outlineReactModule === 'OutlineReactUtils'
   ) {
     return;
   }

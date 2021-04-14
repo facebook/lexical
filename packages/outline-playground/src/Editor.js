@@ -10,13 +10,11 @@ import useEmojis from './useEmojis';
 import useMentions from './useMentions';
 import usePlainText from 'outline-react/useOutlinePlainText';
 import useOutlineAutoFormatter from 'outline-react/useOutlineAutoFormatter';
-import {useOutlineHistory} from 'outline-react/useOutlineHistory';
 import useToolbar from './useToolbar';
 import useHashtags from './useHashtags';
 import BlockControls from './BlockControls';
 import useStepRecorder from './useStepRecorder';
 import CharacterLimit from './CharacterLimit';
-import useOutlineDragonSupport from 'outline-react/useOutlineDragonSupport';
 import {Typeahead} from './Typeahead';
 
 const editorStyle = {
@@ -152,8 +150,6 @@ export function RichTextEditor({
   useEmojis(outlineEditor);
   useHashtags(outlineEditor);
   useOutlineAutoFormatter(outlineEditor);
-  useOutlineHistory(outlineEditor);
-  useOutlineDragonSupport(outlineEditor);
 
   return (
     <>
@@ -188,8 +184,6 @@ export function PlainTextEditor({
   useOutlineOnChange(outlineEditor, onChange);
   useEmojis(outlineEditor);
   useHashtags(outlineEditor);
-  useOutlineHistory(outlineEditor);
-  useOutlineDragonSupport(outlineEditor);
   const stepRecorder = useStepRecorder(outlineEditor);
 
   return (

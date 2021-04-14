@@ -23,7 +23,6 @@ module.name_mapper='^outline-react/useOutlineRichText' -> '<PROJECT_ROOT>/packag
 module.name_mapper='^outline-react/useOutlinePlainText' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlinePlainText.js'
 module.name_mapper='^outline-react/useOutlineEditorEvents' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlineEditorEvents.js'
 module.name_mapper='^outline-react/useOutlineAutoFormatter' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlineAutoFormatter.js'
-module.name_mapper='^outline-react/useOutlineDragonSupport' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlineDragonSupport.js'
 module.name_mapper='^outline-react/OutlineHistory' -> '<PROJECT_ROOT>/packages/outline-react/src/OutlineHistory.js'
 module.name_mapper='^outline-react/OutlineKeyHelpers' -> '<PROJECT_ROOT>/packages/outline-react/src/OutlineKeyHelpers.js'
 module.name_mapper='^outline-react/OutlineSelectionHelpers' -> '<PROJECT_ROOT>/packages/outline-react/src/OutlineSelectionHelpers.js'

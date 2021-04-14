@@ -25,8 +25,10 @@ function combineAdjacentTextNodes(
   restoreSelection,
 ) {
   const selection = getSelection();
-  let anchorOffset;
-  let focusOffset;
+  // We're checking `selection !== null` later before we use these
+  // so initializing to 0 is safe and saves us an extra check below
+  let anchorOffset = 0;
+  let focusOffset = 0;
   let anchorKey;
   let focusKey;
   
@@ -44,11 +46,11 @@ function combineAdjacentTextNodes(
   for (let i = 1; i < textNodes.length; i++) {
     const textNode = textNodes[i];
     const siblingText = textNode.getTextContent();
-    if (restoreSelection && selection !== null && textNode.__key === anchorKey && anchorOffset != null) {
+    if (restoreSelection && selection !== null && textNode.__key === anchorKey) {
       selection.anchorOffset = textLength + anchorOffset;
       selection.anchorKey = key;
     }
-    if (restoreSelection && selection !== null && textNode.__key === focusKey && focusOffset != null) {
+    if (restoreSelection && selection !== null && textNode.__key === focusKey) {
       selection.focusOffset = textLength + focusOffset;
       selection.focusKey = key;
     }

@@ -196,8 +196,7 @@ outlineReactModules.forEach((outlineReactModule) => {
   if (
     isWWW &&
     (outlineReactModule === 'OutlineEnv' ||
-      outlineReactModule === 'OutlineReactUtils' ||
-      outlineReactModule === 'DEPRECATED_OutlineHotKeys')
+      outlineReactModule === 'OutlineReactUtils')
   ) {
     return;
   }

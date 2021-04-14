@@ -144,11 +144,12 @@ function createNode(
     if (insertDOM !== null) {
       parentDOM.insertBefore(dom, insertDOM);
     } else {
-      if (
-        parentDOM === activeEditor._editorElement &&
-        activeEditor._placeholderElement !== null
-      ) {
-        parentDOM.insertBefore(dom, activeEditor._placeholderElement);
+      const editorElement = activeEditor._editorElement;
+      const placeholderElement = activeEditor._placeholderElement;
+      // Ensure we insert the DOM element before the placeholder, if
+      // one exists.
+      if (parentDOM === editorElement && placeholderElement !== null) {
+        parentDOM.insertBefore(dom, placeholderElement);
       } else {
         parentDOM.appendChild(dom);
       }

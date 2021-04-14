@@ -24,9 +24,9 @@ describe('Placeholder', () => {
 
       await assertHTMLSnapshot(page);
       await assertSelection(page, {
-        anchorPath: [1, 0, 0],
+        anchorPath: [0, 0, 0],
         anchorOffset: 0,
-        focusPath: [1, 0, 0],
+        focusPath: [0, 0, 0],
         focusOffset: 0,
       });
     });

@@ -1,7 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Placeholder Chromium Displays a placeholder when no content is present 1`] = `"<div contenteditable=\\"false\\" class=\\"editor-placeholder\\">Enter some rich text...</div><p class=\\"editor-paragraph\\"><span>﻿</span></p>"`;
+exports[`Placeholder Chromium Displays a placeholder when no content is present 1`] = `"<p class=\\"editor-paragraph\\"><span>﻿</span></p><div contenteditable=\\"false\\" class=\\"editor-placeholder\\">Enter some rich text...</div>"`;
 
-exports[`Placeholder Firefox Displays a placeholder when no content is present 1`] = `"<div class=\\"editor-placeholder\\" contenteditable=\\"false\\">Enter some rich text...</div><p class=\\"editor-paragraph\\"><span>﻿</span></p>"`;
+exports[`Placeholder Firefox Displays a placeholder when no content is present 1`] = `"<p class=\\"editor-paragraph\\"><span>﻿</span></p><div class=\\"editor-placeholder\\" contenteditable=\\"false\\">Enter some rich text...</div>"`;
 
-exports[`Placeholder Webkit Displays a placeholder when no content is present 1`] = `"<div contenteditable=\\"false\\" class=\\"editor-placeholder\\">Enter some rich text...</div><p class=\\"editor-paragraph\\"><span>﻿</span></p>"`;
+exports[`Placeholder Webkit Displays a placeholder when no content is present 1`] = `"<p class=\\"editor-paragraph\\"><span>﻿</span></p><div contenteditable=\\"false\\" class=\\"editor-placeholder\\">Enter some rich text...</div>"`;

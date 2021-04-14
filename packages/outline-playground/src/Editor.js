@@ -16,6 +16,7 @@ import useHashtags from './useHashtags';
 import BlockControls from './BlockControls';
 import useStepRecorder from './useStepRecorder';
 import CharacterLimit from './CharacterLimit';
+import useOutlineDragonSupport from 'outline-react/useOutlineDragonSupport';
 import {Typeahead} from './Typeahead';
 
 const editorStyle = {
@@ -152,6 +153,7 @@ export function RichTextEditor({
   useHashtags(outlineEditor);
   useOutlineAutoFormatter(outlineEditor);
   useOutlineHistory(outlineEditor);
+  useOutlineDragonSupport(outlineEditor);
 
   return (
     <>
@@ -187,6 +189,7 @@ export function PlainTextEditor({
   useEmojis(outlineEditor);
   useHashtags(outlineEditor);
   useOutlineHistory(outlineEditor);
+  useOutlineDragonSupport(outlineEditor);
   const stepRecorder = useStepRecorder(outlineEditor);
 
   return (

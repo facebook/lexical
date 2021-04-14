@@ -144,7 +144,14 @@ function createNode(
     if (insertDOM !== null) {
       parentDOM.insertBefore(dom, insertDOM);
     } else {
-      parentDOM.appendChild(dom);
+      if (
+        parentDOM === activeEditor._editorElement &&
+        activeEditor._placeholderElement !== null
+      ) {
+        parentDOM.insertBefore(dom, activeEditor._placeholderElement);
+      } else {
+        parentDOM.appendChild(dom);
+      }
     }
   }
   return dom;

@@ -300,16 +300,16 @@ export async function focusEditor(page) {
   await page.focus('div.editor');
   await page.evaluate(() => {
     const editor = document.querySelector('div.editor');
-    let lastNode = editor.lastChild;
-    while (lastNode !== null) {
-      const lastChild = lastNode.lastChild;
-      if (lastChild === null) {
+    let firstNode = editor.firstChild;
+    while (firstNode !== null) {
+      const firstChild = firstNode.firstChild;
+      if (firstChild === null) {
         break;
       }
-      lastNode = lastChild;
+      firstNode = firstChild;
     }
     const selection = window.getSelection();
-    const offset = lastNode.nodeValue.length;
-    selection.setBaseAndExtent(lastNode, offset, lastNode, offset);
+    const offset = firstNode.nodeValue.length;
+    selection.setBaseAndExtent(firstNode, offset, firstNode, offset);
   });
 }

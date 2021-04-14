@@ -16,7 +16,6 @@ import type {
   View,
 } from 'outline';
 
-import {createLineBreakNode, createTextNode} from 'outline';
 import {
   CAN_USE_BEFORE_INPUT,
   IS_SAFARI,
@@ -57,6 +56,7 @@ import {
   handleKeyDownSelection,
   selectAll,
   moveWordBackward,
+  insertRichText,
 } from './OutlineSelectionHelpers';
 
 // TODO the Flow types here needs fixing
@@ -113,21 +113,7 @@ function insertDataTransferForPlainText(
 ): void {
   const text = dataTransfer.getData('text/plain');
   if (text != null) {
-    const parts = text.split(/\r?\n/);
-    if (parts.length === 1) {
-      insertText(selection, text);
-    } else {
-      const nodes = [];
-      const length = parts.length;
-      for (let i = 0; i < length; i++) {
-        const part = parts[i];
-        nodes.push(createTextNode(part));
-        if (i !== length - 1) {
-          nodes.push(createLineBreakNode());
-        }
-      }
-      insertNodes(selection, nodes);
-    }
+    insertRichText(selection, text);
   }
 }
 
@@ -720,6 +706,19 @@ export function onPolyfilledBeforeInput(
     const data = event.data;
     if (data != null && selection !== null) {
       insertText(selection, data);
+    }
+  });
+}
+
+export function onFocus(
+  event: FocusEvent,
+  editor: OutlineEditor,
+  state: EventHandlerState,
+) {
+  editor.update((view) => {
+    const selection = view.getSelection();
+    if (selection !== null) {
+      selection.isDirty = true;
     }
   });
 }

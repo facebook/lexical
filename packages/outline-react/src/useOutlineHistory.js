@@ -12,7 +12,7 @@ import type {OutlineEditor, ViewModel} from 'outline';
 import {isTextNode} from 'outline';
 import {isRedo, isUndo} from './OutlineKeyHelpers';
 import {useEffect, useMemo} from 'react';
-import {viewModelsWithoutHistory} from 'outline-react/OutlineHistory'
+import {viewModelsWithoutHistory} from 'outline-react/OutlineHistory';
 
 const MERGE = 0;
 const NO_MERGE = 1;

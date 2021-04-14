@@ -17,7 +17,6 @@ import {
   wrapInTextNodes,
 } from './OutlineNode';
 import {getSelection, Selection} from './OutlineSelection';
-import {invariant} from './OutlineUtils';
 import {shouldErrorOnReadOnly} from './OutlineView';
 import {IS_IMMUTABLE, IS_INERT, IS_SEGMENTED} from './OutlineConstants';
 
@@ -26,17 +25,20 @@ function combineAdjacentTextNodes(
   restoreSelection,
 ) {
   const selection = getSelection();
-  if (selection === null) {
-    if (__DEV__) {
-      invariant(false, 'combineAdjacentTextNodes: selection not found');
-    } else {
-      invariant();
-    }
+  // We're checking `selection !== null` later before we use these
+  // so initializing to 0 is safe and saves us an extra check below
+  let anchorOffset = 0;
+  let focusOffset = 0;
+  let anchorKey;
+  let focusKey;
+  
+  if (restoreSelection && selection !== null) {
+    anchorOffset = selection.anchorOffset;
+    focusOffset = selection.focusOffset;
+    anchorKey = selection.anchorKey;
+    focusKey = selection.focusKey;
   }
-  const anchorOffset = selection.anchorOffset;
-  const focusOffset = selection.focusOffset;
-  const anchorKey = selection.anchorKey;
-  const focusKey = selection.focusKey;
+
   // Merge all text nodes into the first node
   const writableMergeToNode = getWritableNode(textNodes[0]);
   const key = writableMergeToNode.__key;
@@ -44,11 +46,11 @@ function combineAdjacentTextNodes(
   for (let i = 1; i < textNodes.length; i++) {
     const textNode = textNodes[i];
     const siblingText = textNode.getTextContent();
-    if (restoreSelection && textNode.__key === anchorKey) {
+    if (restoreSelection && selection !== null && textNode.__key === anchorKey) {
       selection.anchorOffset = textLength + anchorOffset;
       selection.anchorKey = key;
     }
-    if (restoreSelection && textNode.__key === focusKey) {
+    if (restoreSelection && selection !== null && textNode.__key === focusKey) {
       selection.focusOffset = textLength + focusOffset;
       selection.focusKey = key;
     }
@@ -56,7 +58,7 @@ function combineAdjacentTextNodes(
     textLength += siblingText.length;
     textNode.remove();
   }
-  if (restoreSelection) {
+  if (restoreSelection && selection !== null ) {
     selection.isDirty = true;
   }
 }

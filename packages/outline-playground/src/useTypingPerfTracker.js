@@ -15,7 +15,14 @@ export default function useTypingPerfTracker(measureTypingPerf: boolean): void {
         console.log(reportedText);
         // Show an element on the screen too :)
         const element = document.createElement('div');
-        element.className = 'report';
+        element.style.position = 'fixed';
+        element.style.top = '50%';
+        element.style.left = '50%';
+        element.style.fontSize = '32px';
+        element.style.transform = 'translate(-50%, -50px)';
+        element.style.padding = '20px';
+        element.style.background = 'rgba(255, 255, 255, 0.4)';
+        element.style.borderRadius = '20px';
         element.textContent = reportedText;
         const body = document.body;
         if (body !== null) {
@@ -32,17 +39,15 @@ export default function useTypingPerfTracker(measureTypingPerf: boolean): void {
           timerId = null;
         }
         start = performance.now();
-      };
-      const handleInput = (event) => {
-        log.push(performance.now() - start);
+        setTimeout(() => {
+          log.push(performance.now() - start);
+        }, 0);
         timerId = setTimeout(report, 2000);
       };
       window.addEventListener('beforeinput', handleBeforeInput, true);
-      window.addEventListener('input', handleInput);
 
       return () => {
         window.removeEventListener('beforeinput', handleBeforeInput, true);
-        window.removeEventListener('input', handleInput);
       };
     }
   }, [measureTypingPerf]);

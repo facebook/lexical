@@ -38,6 +38,7 @@ import {
   onDragStartPolyfill,
   onPolyfilledBeforeInput,
   onNativeInput,
+  onFocus,
 } from './OutlineEventHandlers';
 
 function initEditor(editor: OutlineEditor): void {
@@ -64,6 +65,7 @@ const events: InputEvents = [
   ['compositionend', onCompositionEnd],
   ['cut', onCut],
   ['copy', onCopy],
+  ['focus', onFocus],
 ];
 
 if (CAN_USE_BEFORE_INPUT) {

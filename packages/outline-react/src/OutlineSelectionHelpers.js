@@ -724,6 +724,24 @@ export function insertNodes(
   }
 }
 
+export function insertRichText(selection: Selection, text: string): void {
+  const parts = text.split(/\r?\n/);
+  if (parts.length === 1) {
+    insertText(selection, text);
+  } else {
+    const nodes = [];
+    const length = parts.length;
+    for (let i = 0; i < length; i++) {
+      const part = parts[i];
+      nodes.push(createTextNode(part));
+      if (i !== length - 1) {
+        nodes.push(createLineBreakNode());
+      }
+    }
+    insertNodes(selection, nodes);
+  }
+}
+
 export function insertText(selection: Selection, text: string): void {
   const selectedNodes = selection.getNodes();
   const selectedNodesLength = selectedNodes.length;

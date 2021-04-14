@@ -703,3 +703,14 @@ pre {
   margin: 8px 0;
   tab-size: 2;
 }
+
+div.report {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50px);
+  font-size: 32px;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 20px;
+  padding: 20px;
+}

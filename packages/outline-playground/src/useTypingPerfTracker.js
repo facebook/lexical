@@ -10,7 +10,20 @@ export default function useTypingPerfTracker(measureTypingPerf: boolean): void {
       let log = [];
       const report = () => {
         const total = log.reduce((a, b) => a + b, 0);
-        console.log('Average Typing Perf:', total / log.length + 'ms');
+        const reportedText =
+          'Typing Perf: ' + Math.round((total / log.length) * 100) / 100 + 'ms';
+        console.log(reportedText);
+        // Show an element on the screen too :)
+        const element = document.createElement('div');
+        element.className = 'report';
+        element.textContent = reportedText;
+        const body = document.body;
+        if (body !== null) {
+          body.appendChild(element);
+          setTimeout(() => {
+            body.removeChild(element);
+          }, 1000);
+        }
         log = [];
       };
       const handleBeforeInput = (event) => {

@@ -709,16 +709,3 @@ export function onPolyfilledBeforeInput(
     }
   });
 }
-
-export function onFocus(
-  event: FocusEvent,
-  editor: OutlineEditor,
-  state: EventHandlerState,
-) {
-  editor.update((view) => {
-    const selection = view.getSelection();
-    if (selection !== null) {
-      selection.isDirty = true;
-    }
-  });
-}

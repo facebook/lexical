@@ -38,7 +38,6 @@ import {
   onDragStartPolyfill,
   onPolyfilledBeforeInput,
   onNativeInput,
-  onFocus,
 } from './OutlineEventHandlers';
 import useOutlineDragonSupport from './useOutlineDragonSupport';
 import useOutlineHistory from './useOutlineHistory';
@@ -67,7 +66,6 @@ const events: InputEvents = [
   ['compositionend', onCompositionEnd],
   ['cut', onCut],
   ['copy', onCopy],
-  ['focus', onFocus],
 ];
 
 if (CAN_USE_BEFORE_INPUT) {

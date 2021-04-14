@@ -7,6 +7,7 @@ import {useCallback, useState} from 'react';
 import {RichTextEditor, PlainTextEditor} from './Editor';
 import TreeView from './TreeView';
 import Switch from './Switch';
+import useTypingPerfTracker from './useTypingPerfTracker';
 
 function App(): React$Node {
   const [viewModel, setViewModel] = useState<ViewModel | null>(null);
@@ -15,6 +16,8 @@ function App(): React$Node {
   const [isAutocomplete, setAutocomplete] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
   const [showTreeView, setShowTreeView] = useState(true);
+  const [measureTypingPerf, setMeasureTypingPerf] = useState(false);
+  useTypingPerfTracker(measureTypingPerf);
   const handleOnChange = useCallback(
     (newViewModel) => {
       if (showTreeView) {
@@ -36,6 +39,11 @@ function App(): React$Node {
       </header>
       {showOptions && (
         <div className="switches">
+          <Switch
+            onClick={() => setMeasureTypingPerf(!measureTypingPerf)}
+            checked={measureTypingPerf}
+            text="Measure Perf"
+          />
           <Switch
             onClick={() => setShowTreeView(!showTreeView)}
             checked={showTreeView}

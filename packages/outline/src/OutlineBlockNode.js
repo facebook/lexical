@@ -31,7 +31,7 @@ function combineAdjacentTextNodes(
   let focusOffset = 0;
   let anchorKey;
   let focusKey;
-  
+
   if (restoreSelection && selection !== null) {
     anchorOffset = selection.anchorOffset;
     focusOffset = selection.focusOffset;
@@ -46,7 +46,11 @@ function combineAdjacentTextNodes(
   for (let i = 1; i < textNodes.length; i++) {
     const textNode = textNodes[i];
     const siblingText = textNode.getTextContent();
-    if (restoreSelection && selection !== null && textNode.__key === anchorKey) {
+    if (
+      restoreSelection &&
+      selection !== null &&
+      textNode.__key === anchorKey
+    ) {
       selection.anchorOffset = textLength + anchorOffset;
       selection.anchorKey = key;
     }
@@ -58,7 +62,7 @@ function combineAdjacentTextNodes(
     textLength += siblingText.length;
     textNode.remove();
   }
-  if (restoreSelection && selection !== null ) {
+  if (restoreSelection && selection !== null) {
     selection.isDirty = true;
   }
 }

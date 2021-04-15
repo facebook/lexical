@@ -487,7 +487,7 @@ export function updateCaretSelectionForRange(
     return;
   }
   const currentBlock = anchorNode.getParentBlockOrThrow();
-  const textContent = anchorNode.getTextContent();
+  let textContent = anchorNode.getTextContent();
   const textContentLength = textContent.length;
   const sibling = isBackward
     ? anchorNode.getPreviousSibling()
@@ -519,6 +519,7 @@ export function updateCaretSelectionForRange(
     if (granularity === 'character') {
       let characterNode = anchorNode;
       let characterOffset = anchorOffset;
+      let key = characterNode.getKey();
       if (isOffsetAtBoundary) {
         if (sibling === null) {
           return;
@@ -531,20 +532,22 @@ export function updateCaretSelectionForRange(
           return;
         }
         characterNode = sibling;
-        characterOffset = isBackward ? sibling.getTextContent().length : 0;
+        textContent = sibling.getTextContent();
+        key = sibling.getKey();
+        textContent = sibling.getTextContent();
+        characterOffset = isBackward ? textContent.length : 0;
       }
       let offset = 1;
       if (CAN_USE_INTL_SEGMENTER) {
         const textSlice = isBackward
-          ? textContent.slice(0, anchorOffset)
-          : textContent.slice(anchorOffset);
+          ? textContent.slice(0, characterOffset)
+          : textContent.slice(characterOffset);
         const segments = getSegmentsFromString(textSlice, 'grapheme');
         const segment = isBackward
           ? segments[segments.length - 1]
           : segments[0];
         offset = segment.segment.length;
       }
-      const key = characterNode.getKey();
       setSelectionFocus(
         selection,
         key,

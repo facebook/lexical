@@ -548,19 +548,35 @@ export class TextNode extends OutlineNode {
     let skipSelectionRestoration = false;
     let handledText = newText;
     // Handle hashtag containing whitespace
-    if (isHashtag) {
+    if (isHashtag && newText !== '') {
+      const parent = this.getParentOrThrow();
+      if (offset === 0) {
+        const textNode = createTextNode(newText);
+        this.insertBefore(textNode);
+        if (restoreSelection) {
+          textNode.select();
+        }
+        parent.normalizeTextNodes(true);
+        return this;
+      }
       const whiteSpaceIndex = handledText.search(/\s/);
 
       if (whiteSpaceIndex !== -1) {
+        const currentText = this.getTextContent();
         handledText = newText.slice(0, whiteSpaceIndex);
         const splitTextStr = newText.slice(whiteSpaceIndex);
         const textNode = createTextNode(splitTextStr);
-        this.insertAfter(textNode);
+        if (offset === currentText.length) {
+          this.insertAfter(textNode);
+        } else {
+          const [, targetNode] = this.splitText(offset);
+          targetNode.insertBefore(textNode);
+          targetNode.toggleHashtag();
+        }
         if (restoreSelection) {
           textNode.select();
           skipSelectionRestoration = true;
         }
-        const parent = this.getParentOrThrow();
         parent.normalizeTextNodes(true);
       }
     }

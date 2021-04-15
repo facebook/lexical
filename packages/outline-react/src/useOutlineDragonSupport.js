@@ -22,8 +22,14 @@ export default function useOutlineDragonSupport(editor: OutlineEditor) {
       }
       const data = event.data;
       if (data) {
-        const parsedData = JSON.parse(data);
+        let parsedData;
+        try {
+          parsedData = JSON.parse(data);
+        } catch (e) {
+          return;
+        }
         if (
+          parsedData &&
           parsedData.protocol === 'nuanria_messaging' &&
           parsedData.type === 'request'
         ) {

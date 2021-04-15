@@ -546,8 +546,7 @@ describe('OutlineTextNode tests', () => {
         'underline + strikethrough',
         IS_UNDERLINE | IS_STRIKETHROUGH,
         'My text node',
-        '<span class="my-underline-class my-strikethrough-class ' +
-          'my-underline-strikethrough-class">' +
+        '<span class="my-underline-strikethrough-class">' +
           'My text node</span>',
       ],
       [
@@ -561,16 +560,15 @@ describe('OutlineTextNode tests', () => {
         'code + underline + strikethrough',
         IS_CODE | IS_UNDERLINE | IS_STRIKETHROUGH,
         'My text node',
-        '<code><span class="my-underline-class my-strikethrough-class ' +
-          'my-code-class my-underline-strikethrough-class">' +
+        '<code><span class="my-underline-strikethrough-class my-code-class">' +
           'My text node</span></code>',
       ],
       [
         'code + underline + strikethrough + bold + italic',
         IS_CODE | IS_UNDERLINE | IS_STRIKETHROUGH | IS_BOLD | IS_ITALIC,
         'My text node',
-        '<code><strong class="my-bold-class my-underline-class my-strikethrough-class ' +
-          'my-italic-class my-code-class my-underline-strikethrough-class">' +
+        '<code><strong class="my-underline-strikethrough-class my-bold-class ' +
+          'my-italic-class my-code-class">' +
           'My text node</strong></code>',
       ],
     ])('%s text format type', async (_type, flag, contents, expectedHTML) => {

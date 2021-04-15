@@ -21,7 +21,7 @@ export default function useOutlineDragonSupport(editor: OutlineEditor) {
         return;
       }
       const data = event.data;
-      if (data) {
+      if (typeof data === 'string') {
         let parsedData;
         try {
           parsedData = JSON.parse(data);

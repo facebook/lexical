@@ -28,7 +28,6 @@ import {
   generateRandomKey,
   emptyFunction,
   invariant,
-  scheduleMicroTask,
 } from './OutlineUtils';
 import {getWritableNode} from './OutlineNode';
 import {createRootNode as createRoot} from './OutlineRootNode';
@@ -153,12 +152,10 @@ function updateEditor(
     return false;
   }
   if (viewModelWasCloned) {
-    scheduleMicroTask(() => {
-      commitPendingUpdates(editor);
-      if (callbackFn) {
-        callbackFn();
-      }
-    });
+    commitPendingUpdates(editor);
+    if (callbackFn) {
+      callbackFn();
+    }
   }
   return true;
 }

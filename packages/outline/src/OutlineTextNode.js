@@ -175,36 +175,13 @@ function setTextThemeClassNames(
   textClassNames,
 ): void {
   const domClassList = dom.classList;
-  for (const key in textFormatStateFlags) {
-    // $FlowFixMe: expected cast here
-    const format: TextFormatType = key;
-    const flag = textFormatStateFlags[format];
-    let classNames = textClassNames[key];
-    if (classNames !== undefined) {
-      // As we're using classList below, we need
-      // to handle className tokens that have spaces.
-      // The easiest way to do this to convert the
-      // className tokens to an array that can be
-      // applied to classList.add()/remove().
-      if (!isArray(classNames)) {
-        classNames = classNames.split(' ');
-        textClassNames[key] = classNames;
-      }
-      if (nextFlags & flag) {
-        if ((prevFlags & flag) === 0) {
-          domClassList.add(...classNames);
-        }
-      } else if (prevFlags & flag) {
-        domClassList.remove(...classNames);
-      }
-    }
-  }
-  // Now we handle the special case: underline + strikethrough.
+  // First we handle the special case: underline + strikethrough.
   // We have to do this as we need a way to compose the fact that
   // the same CSS property will need to be used: text-decoration.
   // In an ideal world we shouldn't have to do this, but there's no
   // easy workaround for many atomic CSS systems today.
   let classNames = textClassNames.underlineStrikethrough;
+  let hasUnderlineStrikethrough = false;
   if (classNames !== undefined) {
     if (!isArray(classNames)) {
       classNames = classNames.split(' ');
@@ -217,11 +194,46 @@ function setTextThemeClassNames(
     const nextUnderlineStrikethrough =
       nextFlags & IS_UNDERLINE && nextFlags & IS_STRIKETHROUGH;
     if (nextUnderlineStrikethrough) {
+      hasUnderlineStrikethrough = true;
       if (!prevUnderlineStrikethrough) {
         domClassList.add(...classNames);
       }
     } else if (prevUnderlineStrikethrough) {
       domClassList.remove(...classNames);
+    }
+  }
+
+  for (const key in textFormatStateFlags) {
+    // $FlowFixMe: expected cast here
+    const format: TextFormatType = key;
+    const flag = textFormatStateFlags[format];
+    classNames = textClassNames[key];
+    if (classNames !== undefined) {
+      // As we're using classList below, we need
+      // to handle className tokens that have spaces.
+      // The easiest way to do this to convert the
+      // className tokens to an array that can be
+      // applied to classList.add()/remove().
+      if (!isArray(classNames)) {
+        classNames = classNames.split(' ');
+        textClassNames[key] = classNames;
+      }
+      if (nextFlags & flag) {
+        if (
+          hasUnderlineStrikethrough &&
+          (key === 'underline' || key === 'strikethrough')
+        ) {
+          if (prevFlags & flag) {
+            domClassList.remove(...classNames);
+          }
+          continue;
+        }
+        if ((prevFlags & flag) === 0) {
+          domClassList.add(...classNames);
+        }
+      } else if (prevFlags & flag) {
+        domClassList.remove(...classNames);
+      }
     }
   }
 }

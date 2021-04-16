@@ -258,7 +258,7 @@ export default function useHashtags(editor: null | OutlineEditor): void {
           let targetNode;
 
           if (start === 0) {
-            [targetNode, currentNode] = currentNode.splitText(start);
+            [targetNode, currentNode] = currentNode.splitText(end);
           } else {
             [, targetNode, currentNode] = currentNode.splitText(start, end);
           }

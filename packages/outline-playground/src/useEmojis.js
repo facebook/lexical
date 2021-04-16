@@ -67,10 +67,9 @@ function textNodeTransform(node: TextNode, view: View): void {
 export default function useEmojis(editor: null | OutlineEditor): void {
   useEffect(() => {
     if (editor !== null) {
-      const removeNodeType = editor.addNodeType('emoji', EmojiNode);
+      editor.setNodeType('emoji', EmojiNode);
       const removeTransform = editor.addTextNodeTransform(textNodeTransform);
       return () => {
-        removeNodeType();
         removeTransform();
       };
     }

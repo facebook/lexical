@@ -255,13 +255,8 @@ export class OutlineEditor {
     pendingNodeDecorators[key] = decorator;
     this._pendingNodeDecorators = pendingNodeDecorators;
   }
-  setNodeType(nodeType: string, klass: null | Class<OutlineNode>): void {
-    const nodeTypes = this._nodeTypes;
-    if (klass === null) {
-      nodeTypes.delete(nodeType);
-    } else {
-      nodeTypes.set(nodeType, klass);
-    }
+  registerNodeType(nodeType: string, klass: Class<OutlineNode>): void {
+    this._nodeTypes.set(nodeType, klass);
   }
   addUpdateListener(listener: UpdateListener): () => void {
     this._updateListeners.add(listener);

@@ -416,7 +416,7 @@ export default function useMentions(editor: OutlineEditor): React$Node {
   );
 
   useEffect(() => {
-    editor.setNodeType('mention', MentionNode);
+    editor.registerNodeType('mention', MentionNode);
   }, [editor]);
 
   useEffect(() => {

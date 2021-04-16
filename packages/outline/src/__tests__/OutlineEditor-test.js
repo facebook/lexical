@@ -249,7 +249,7 @@ describe('OutlineEditor tests', () => {
           paragraph.append(originalText);
           view.getRoot().append(paragraph);
         });
-        editor.setNodeType('paragraph', ParagraphNodeModule.ParagraphNode);
+        editor.registerNodeType('paragraph', ParagraphNodeModule.ParagraphNode);
         const stringifiedViewModel = editor.getViewModel().stringify();
         const viewModel = editor.parseViewModel(stringifiedViewModel);
         viewModel.read((view) => {

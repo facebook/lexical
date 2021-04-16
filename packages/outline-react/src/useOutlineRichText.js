@@ -101,12 +101,12 @@ export default function useOutlineRichText(
 
   useEffect(() => {
     if (editor !== null) {
-      editor.setNodeType('heading', HeadingNode);
-      editor.setNodeType('list', ListNode);
-      editor.setNodeType('quote', QuoteNode);
-      editor.setNodeType('code', CodeNode);
-      editor.setNodeType('paragraph', ParagraphNode);
-      editor.setNodeType('listitem', ListItemNode);
+      editor.registerNodeType('heading', HeadingNode);
+      editor.registerNodeType('list', ListNode);
+      editor.registerNodeType('quote', QuoteNode);
+      editor.registerNodeType('code', CodeNode);
+      editor.registerNodeType('paragraph', ParagraphNode);
+      editor.registerNodeType('listitem', ListItemNode);
       initEditor(editor);
     }
   }, [editor]);

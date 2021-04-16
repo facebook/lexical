@@ -70,8 +70,6 @@ export type EditorThemeClasses = {
   [string]: EditorThemeClassName | {[string]: EditorThemeClassName},
 };
 
-type NodeTypeCount = {count: number, class: Class<OutlineNode>};
-
 export type UpdateListener = (viewModel: ViewModel) => void;
 
 export type DecoratorListener = (decorator: {[NodeKey]: ReactNode}) => void;
@@ -165,10 +163,6 @@ function updateEditor(
   return true;
 }
 
-function createNodeTypeCount(klass: Class<OutlineNode>): NodeTypeCount {
-  return {count: 1, class: klass};
-}
-
 export class OutlineEditor {
   _editorElement: null | HTMLElement;
   _viewModel: ViewModel;
@@ -182,7 +176,7 @@ export class OutlineEditor {
   _elementListeners: Set<EditorElementListener>;
   _decoratorListeners: Set<DecoratorListener>;
   _textNodeTransforms: Set<TextNodeTransform>;
-  _registeredNodeTypes: Map<string, NodeTypeCount>;
+  _nodeTypes: Map<string, Class<OutlineNode>>;
   _nodeDecorators: {[NodeKey]: ReactNode};
   _pendingNodeDecorators: null | {[NodeKey]: ReactNode};
   _placeholderText: string;
@@ -213,10 +207,10 @@ export class OutlineEditor {
     // Handling of text node transforms
     this._textNodeTransforms = new Set();
     // Mapping of types to their nodes
-    this._registeredNodeTypes = new Map([
-      ['text', createNodeTypeCount(TextNode)],
-      ['linebreak', createNodeTypeCount(LineBreakNode)],
-      ['root', createNodeTypeCount(RootNode)],
+    this._nodeTypes = new Map([
+      ['text', TextNode],
+      ['linebreak', LineBreakNode],
+      ['root', RootNode],
     ]);
     this._key = generateRandomKey();
     // React node decorators for portals
@@ -261,22 +255,13 @@ export class OutlineEditor {
     pendingNodeDecorators[key] = decorator;
     this._pendingNodeDecorators = pendingNodeDecorators;
   }
-  addNodeType(nodeType: string, klass: Class<OutlineNode>): () => void {
-    let nodeTypeCount = this._registeredNodeTypes.get(nodeType);
-    if (nodeTypeCount === undefined) {
-      nodeTypeCount = createNodeTypeCount(klass);
+  setNodeType(nodeType: string, klass: null | Class<OutlineNode>): void {
+    const nodeTypes = this._nodeTypes;
+    if (klass === null) {
+      nodeTypes.delete(nodeType);
     } else {
-      nodeTypeCount.count++;
+      nodeTypes.set(nodeType, klass);
     }
-    this._registeredNodeTypes.set(nodeType, nodeTypeCount);
-    // To get around Flow struggling with let bindings
-    const _nodeTypeCount = nodeTypeCount;
-    return () => {
-      _nodeTypeCount.count--;
-      if (_nodeTypeCount.count === 0) {
-        this._registeredNodeTypes.delete(nodeType);
-      }
-    };
   }
   addUpdateListener(listener: UpdateListener): () => void {
     this._updateListeners.add(listener);

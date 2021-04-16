@@ -98,7 +98,7 @@ export default function useOutlinePlainText(
   useEffect(() => {
     if (editor !== null) {
       initEditor(editor);
-      return editor.addNodeType('paragraph', ParagraphNode);
+      editor.setNodeType('paragraph', ParagraphNode);
     }
   }, [editor]);
 

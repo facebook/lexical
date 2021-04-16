@@ -253,10 +253,10 @@ export default function useHashtags(editor: null | OutlineEditor): void {
           if (matchArr === null) {
             return;
           }
-          const hashtagStr = matchArr[0];
+          const hashtagLength = matchArr[3].length + 1;
           const startOffset =
             matchArr.index + matchArr[1].length - adjustedOffset;
-          const endOffset = startOffset + hashtagStr.length;
+          const endOffset = startOffset + hashtagLength;
           let targetNode;
 
           if (startOffset === 0) {

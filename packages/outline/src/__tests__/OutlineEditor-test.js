@@ -100,6 +100,8 @@ describe('OutlineEditor tests', () => {
   });
 
   it('Should be able to handle a change in editor element', async () => {
+    const listener = jest.fn();
+
     function TestBase({changeElement}) {
       editor = React.useMemo(() => Outline.createEditor(), []);
 
@@ -115,6 +117,7 @@ describe('OutlineEditor tests', () => {
       }, [changeElement]);
 
       const ref = React.useCallback((node) => {
+        editor.addEditorElementListener(listener);
         editor.setEditorElement(node);
       }, []);
 
@@ -143,6 +146,7 @@ describe('OutlineEditor tests', () => {
     // Let Outline update
     await Promise.resolve().then();
 
+    expect(listener).toHaveBeenCalledTimes(3);
     expect(container.innerHTML).toBe(
       '<span contenteditable="true" data-outline-editor="true"><p dir="ltr"><span>Change successful</span></p></span>',
     );
@@ -172,6 +176,8 @@ describe('OutlineEditor tests', () => {
     }
 
     it('Should correctly render React component into Outline node', async () => {
+      const listener = jest.fn();
+
       function Decorator({text}) {
         return <span>{text}</span>;
       }
@@ -180,6 +186,7 @@ describe('OutlineEditor tests', () => {
         editor = React.useMemo(() => Outline.createEditor(), []);
 
         const ref = React.useCallback((node) => {
+          editor.addEditorElementListener(listener);
           editor.setEditorElement(node);
         }, []);
 
@@ -212,6 +219,7 @@ describe('OutlineEditor tests', () => {
         });
       });
 
+      expect(listener).toHaveBeenCalledTimes(1);
       expect(sanitizeHTML(container.innerHTML)).toBe(
         '<div contenteditable="true" data-outline-editor="true"><p><span></span>' +
           '<span><span>Hello world</span></span><span></span></p></div>',

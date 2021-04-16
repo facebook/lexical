@@ -72,6 +72,14 @@ export type EditorThemeClasses = {
 
 type NodeTypeCount = {count: number, class: Class<OutlineNode>};
 
+export type UpdateListener = (viewModel: ViewModel) => void;
+
+export type DecoratorListener = (decorator: {[NodeKey]: ReactNode}) => void;
+
+export type TextNodeTransform = (node: TextNode, view: View) => void;
+
+export type EditorElementListener = (element: null | HTMLElement) => void;
+
 function resetEditor(editor: OutlineEditor): void {
   const root = createRoot();
   const viewModel = new ViewModel({root});
@@ -90,12 +98,6 @@ export function createEditor(
   const viewModel = new ViewModel({root});
   return new OutlineEditor(viewModel, editorThemeClasses || {});
 }
-
-export type UpdateListener = (viewModel: ViewModel) => void;
-
-export type DecoratorListener = (decorator: {[NodeKey]: ReactNode}) => void;
-
-export type TextNodeTransform = (node: TextNode, view: View) => void;
 
 function updateEditor(
   editor: OutlineEditor,
@@ -177,6 +179,7 @@ export class OutlineEditor {
   _key: string;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _updateListeners: Set<UpdateListener>;
+  _elementListeners: Set<EditorElementListener>;
   _decoratorListeners: Set<DecoratorListener>;
   _textNodeTransforms: Set<TextNodeTransform>;
   _registeredNodeTypes: Map<string, NodeTypeCount>;
@@ -203,6 +206,8 @@ export class OutlineEditor {
     this._updateListeners = new Set();
     // Used for rendering React Portals into nodes
     this._decoratorListeners = new Set();
+    // Editor element listeners
+    this._elementListeners = new Set();
     // Class name mappings for nodes/placeholders
     this._editorThemeClasses = editorThemeClasses;
     // Handling of text node transforms
@@ -279,6 +284,12 @@ export class OutlineEditor {
       this._updateListeners.delete(listener);
     };
   }
+  addEditorElementListener(listener: EditorElementListener): () => void {
+    this._elementListeners.add(listener);
+    return () => {
+      this._elementListeners.delete(listener);
+    };
+  }
   addDecoratorListener(listener: DecoratorListener): () => void {
     this._decoratorListeners.add(listener);
     return () => {
@@ -322,6 +333,10 @@ export class OutlineEditor {
       nextEditorElement.setAttribute('data-outline-editor', 'true');
       this._keyToDOMMap.set('root', nextEditorElement);
       commitPendingUpdates(this);
+    }
+    const editorElementListeners = Array.from(this._elementListeners);
+    for (let i = 0; i < editorElementListeners.length; i++) {
+      editorElementListeners[i](nextEditorElement);
     }
   }
   getElementByKey(key: NodeKey): HTMLElement {

@@ -249,7 +249,7 @@ describe('OutlineEditor tests', () => {
           paragraph.append(originalText);
           view.getRoot().append(paragraph);
         });
-        editor.addNodeType('paragraph', ParagraphNodeModule.ParagraphNode);
+        editor.setNodeType('paragraph', ParagraphNodeModule.ParagraphNode);
         const stringifiedViewModel = editor.getViewModel().stringify();
         const viewModel = editor.parseViewModel(stringifiedViewModel);
         viewModel.read((view) => {
@@ -350,29 +350,6 @@ describe('OutlineEditor tests', () => {
           '<div contenteditable="true" data-outline-editor="true"><p><span></span></p><p>' +
             '<span></span></p></div>',
         );
-      });
-    });
-
-    describe('addNodeType()', () => {
-      it('Supports adding and removing the same node type', async () => {
-        await update((view) => {
-          const paragraph = ParagraphNodeModule.createParagraphNode();
-          const text = Outline.createTextNode('Hello world');
-          text.select(6, 11);
-          paragraph.append(text);
-          view.getRoot().append(paragraph);
-        });
-
-        const remove = editor.addNodeType(
-          'paragraph',
-          ParagraphNodeModule.ParagraphNode,
-        );
-        editor.addNodeType('paragraph', ParagraphNodeModule.ParagraphNode);
-        // Remove the first added node type
-        remove();
-        // Parse the view model
-        const stringifiedViewModel = editor.getViewModel().stringify();
-        editor.parseViewModel(stringifiedViewModel);
       });
     });
   });

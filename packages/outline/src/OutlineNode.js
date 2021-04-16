@@ -676,8 +676,8 @@ export function createNodeFromParse(
   state: NodeParserState = {},
 ): OutlineNode {
   const nodeType = parsedNode.__type;
-  const NodeTypeCount = editor._registeredNodeTypes.get(nodeType);
-  if (NodeTypeCount === undefined) {
+  const NodeType = editor._nodeTypes.get(nodeType);
+  if (NodeType === undefined) {
     if (__DEV__) {
       invariant(
         false,
@@ -687,7 +687,7 @@ export function createNodeFromParse(
       invariant();
     }
   }
-  const node = new NodeTypeCount.class();
+  const node = new NodeType();
   const key = node.__key;
   if (isRootNode(node)) {
     const viewModel = getActiveViewModel();

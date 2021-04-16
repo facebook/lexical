@@ -101,25 +101,13 @@ export default function useOutlineRichText(
 
   useEffect(() => {
     if (editor !== null) {
-      const removeHeadingType = editor.addNodeType('heading', HeadingNode);
-      const removeListType = editor.addNodeType('list', ListNode);
-      const removeQuoteType = editor.addNodeType('quote', QuoteNode);
-      const removeCodeType = editor.addNodeType('code', CodeNode);
-      const removeParagraphType = editor.addNodeType(
-        'paragraph',
-        ParagraphNode,
-      );
-      const removeListItemType = editor.addNodeType('listitem', ListItemNode);
+      editor.setNodeType('heading', HeadingNode);
+      editor.setNodeType('list', ListNode);
+      editor.setNodeType('quote', QuoteNode);
+      editor.setNodeType('code', CodeNode);
+      editor.setNodeType('paragraph', ParagraphNode);
+      editor.setNodeType('listitem', ListItemNode);
       initEditor(editor);
-
-      return () => {
-        removeHeadingType();
-        removeListType();
-        removeQuoteType();
-        removeParagraphType();
-        removeListItemType();
-        removeCodeType();
-      };
     }
   }, [editor]);
 

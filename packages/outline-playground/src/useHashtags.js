@@ -246,6 +246,7 @@ export default function useHashtags(editor: null | OutlineEditor): void {
         }
         const text = node.getTextContent();
         let currentNode = node;
+        let adjustedOffset = 0;
 
         while (true) {
           const matchArr = REGEX.exec(text);
@@ -253,15 +254,21 @@ export default function useHashtags(editor: null | OutlineEditor): void {
             return;
           }
           const hashtagStr = matchArr[0];
-          const start = matchArr.index + matchArr[1].length;
-          const end = start + hashtagStr.length;
+          const startOffset =
+            matchArr.index + matchArr[1].length - adjustedOffset;
+          const endOffset = startOffset + hashtagStr.length;
           let targetNode;
 
-          if (start === 0) {
-            [targetNode, currentNode] = currentNode.splitText(end);
+          if (startOffset === 0) {
+            [targetNode, currentNode] = currentNode.splitText(endOffset);
           } else {
-            [, targetNode, currentNode] = currentNode.splitText(start, end);
+            [, targetNode, currentNode] = currentNode.splitText(
+              startOffset,
+              endOffset,
+            );
           }
+          adjustedOffset += endOffset;
+
           targetNode.toggleHashtag();
         }
       });

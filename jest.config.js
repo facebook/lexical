@@ -1,9 +1,7 @@
 'use strict';
 
 const common = {
-  modulePathIgnorePatterns: [
-    '/npm',
-  ],
+  modulePathIgnorePatterns: ['/npm'],
 };
 
 module.exports = {

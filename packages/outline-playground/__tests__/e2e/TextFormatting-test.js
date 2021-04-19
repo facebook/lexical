@@ -161,7 +161,7 @@ describe('TextFormatting', () => {
         });
       });
 
-      it(`Can select multiple text parts and format them with shortcuts`, async () => {
+      it.only(`Can select multiple text parts and format them with shortcuts`, async () => {
         const {page} = e2e;
 
         await focusEditor(page);

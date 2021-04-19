@@ -995,7 +995,7 @@ export function handleKeyDownSelection(
               event.preventDefault();
               nextSibling.selectNext(0, 0);
             }
-          } else if (isTextNode(nextSibling)) {
+          } else if (isTextNode(nextSibling) && selectionAtEnd) {
             nextSibling.select(0, 0);
           }
         }

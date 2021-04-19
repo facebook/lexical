@@ -61,10 +61,10 @@ export function isDeleteLineForward(event: KeyboardEvent): boolean {
 }
 
 export function isDeleteBackward(event: KeyboardEvent): boolean {
-  const {key, shiftKey, altKey, metaKey, ctrlKey} = event;
+  const {key, altKey, metaKey, ctrlKey} = event;
   const isBackspace = key === 'Backspace';
   if (IS_APPLE) {
-    if (shiftKey || altKey || metaKey) {
+    if (altKey || metaKey) {
       return false;
     }
     return isBackspace || (key === 'h' && ctrlKey);

@@ -6,7 +6,7 @@
  *
  */
 
-import {initializeE2E, assertHTMLSnapshot, assertSelection} from '../utils';
+import {initializeE2E, assertHTMLSnapshot, assertSelection} from './utils';
 
 describe('Placeholder', () => {
   initializeE2E({chromium: true, webkit: true, firefox: true}, (e2e) => {

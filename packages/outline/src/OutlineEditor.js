@@ -149,6 +149,8 @@ function updateEditor(
       false,
     );
   } catch (error) {
+    // Recover any DOM mutations if possible
+    commitPendingUpdates(editor);
     triggerErrorListeners(editor, error);
     editor._pendingViewModel = null;
     return false;

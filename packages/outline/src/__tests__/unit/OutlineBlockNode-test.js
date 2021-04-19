@@ -6,7 +6,7 @@
  *
  */
 
-import {IS_BOLD} from '../OutlineConstants';
+import {IS_BOLD} from '../../OutlineConstants';
 
 import React from 'react';
 import ReactDOM from 'react-dom';

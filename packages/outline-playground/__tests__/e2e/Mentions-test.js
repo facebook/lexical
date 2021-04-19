@@ -11,7 +11,7 @@ import {
   assertHTMLSnapshot,
   assertSelection,
   focusEditor,
-} from './utils';
+} from '../utils';
 
 describe('Mentions', () => {
   initializeE2E({chromium: true, webkit: true, firefox: true}, (e2e) => {

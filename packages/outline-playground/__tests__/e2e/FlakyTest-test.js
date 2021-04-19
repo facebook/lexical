@@ -6,7 +6,7 @@
  *
  */
 
-import {initializeE2E} from 'outline-playground/__tests__/utils';
+import {initializeE2E} from '../utils';
 
 describe('Flaky Test', () => {
   initializeE2E({chromium: true, webkit: true, firefox: true}, (e2e) => {

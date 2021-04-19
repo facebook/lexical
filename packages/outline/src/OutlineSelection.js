@@ -145,6 +145,10 @@ function getNodeFromDOM(dom: Node): null | OutlineNode {
   return getNodeByKey(nodeKey);
 }
 
+function domIsElement(dom: Node): boolean {
+  return dom.nodeType === 1;
+}
+
 function resolveSelectionNodeAndOffset(
   dom: Node,
   offset: number,
@@ -156,7 +160,7 @@ function resolveSelectionNodeAndOffset(
   // need to figure out (using the offset) what text
   // node should be selected.
 
-  if (resolvedDOM.nodeType === 1 && resolvedDOM.nodeName !== 'BR') {
+  if (domIsElement(resolvedDOM) && resolvedDOM.nodeName !== 'BR') {
     let moveSelectionToEnd = false;
     // We use the anchor to find which child node to select
     const childNodes = resolvedDOM.childNodes;
@@ -228,7 +232,7 @@ function resolveSelectionNodesAndOffsets(
   const resolvedFocusNode = resolveFocusNodeAndOffset[0];
   let resolvedAnchorOffset = resolveAnchorNodeAndOffset[1];
   let resolvedFocusOffset = resolveFocusNodeAndOffset[1];
-  let isDirty = false;
+  let isDirty = domIsElement(anchorDOM) || domIsElement(focusDOM);
 
   // Because we use a special character for whitespace,
   // we need to adjust offsets to 0 when the text is

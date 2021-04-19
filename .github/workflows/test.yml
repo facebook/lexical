@@ -16,12 +16,16 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.node-version }}
+    - uses: actions/cache@v2
+      with:
+        path: '**/node_modules'
+        key: ${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}
     - run: yarn install
     - run: yarn build
     - run: yarn lint
     - run: yarn flow
       env:
-        CI: true  
+        CI: true
   unit:
     runs-on: ubuntu-latest
 
@@ -35,6 +39,10 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.node-version }}
+    - uses: actions/cache@v2
+      with:
+        path: '**/node_modules'
+        key: ${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}
     - run: yarn install
     - run: yarn build
     - run: yarn test-unit
@@ -58,6 +66,10 @@ jobs:
       run: |
         sudo apt-get install libharfbuzz-icu0 libgstreamer-plugins-base1.0-0 libgstreamer-gl1.0-0 libgstreamer-plugins-bad1.0-0 libopenjp2-7 gstreamer1.0-libav libwoff1 libwebpdemux2 libenchant1c2a libhyphen0 libgles2
         sudo apt-get install xvfb
+    - uses: actions/cache@v2
+      with:
+        path: '**/node_modules'
+        key: ${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}
     - run: yarn install
     - run: yarn build
     - run: yarn test-e2e-ci

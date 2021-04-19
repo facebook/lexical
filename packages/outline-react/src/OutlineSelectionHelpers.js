@@ -996,7 +996,14 @@ export function handleKeyDownSelection(
               nextSibling.selectNext(0, 0);
             }
           } else if (isTextNode(nextSibling) && selectionAtEnd) {
-            nextSibling.select(0, 0);
+            if (isLineBreakNode(nextSibling) || nextSibling.isInert()) {
+              const siblingAfter = nextSibling.getNextSibling();
+              if (isTextNode(siblingAfter)) {
+                siblingAfter.select(0, 0);
+              }
+            } else {
+              nextSibling.select(0, 0);
+            }
           }
         }
       }

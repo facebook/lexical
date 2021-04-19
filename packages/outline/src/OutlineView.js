@@ -251,6 +251,16 @@ export function triggerUpdateListeners(editor: OutlineEditor): void {
   }
 }
 
+export function triggerErrorListeners(
+  editor: OutlineEditor,
+  error: Error,
+): void {
+  const listeners = Array.from(editor._errorListeners);
+  for (let i = 0; i < listeners.length; i++) {
+    listeners[i](error);
+  }
+}
+
 export function cloneViewModel(current: ViewModel): ViewModel {
   const draft = new ViewModel({...current._nodeMap});
   return draft;

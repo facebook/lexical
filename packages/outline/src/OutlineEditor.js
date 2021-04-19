@@ -21,6 +21,7 @@ import {
   commitPendingUpdates,
   triggerTextMutationListeners,
   triggerUpdateListeners,
+  triggerErrorListeners,
   parseViewModel,
 } from './OutlineView';
 import {createSelection} from './OutlineSelection';
@@ -70,6 +71,8 @@ export type EditorThemeClasses = {
   [string]: EditorThemeClassName | {[string]: EditorThemeClassName},
 };
 
+export type ErrorListener = (error: Error) => void;
+
 export type UpdateListener = (viewModel: ViewModel) => void;
 
 export type DecoratorListener = (decorator: {[NodeKey]: ReactNode}) => void;
@@ -115,35 +118,41 @@ function updateEditor(
   }
   const currentPendingViewModel = pendingViewModel;
 
-  enterViewModelScope(
-    (view: View) => {
-      if (viewModelWasCloned) {
-        currentPendingViewModel._selection = createSelection(
-          currentPendingViewModel,
-          editor,
-        );
-      }
-      updateFn(view);
-      if (markAllTextNodesAsDirty) {
-        const currentViewModel = editor._viewModel;
-        const nodeMap = currentViewModel._nodeMap;
-        const pendingNodeMap = currentPendingViewModel._nodeMap;
-        for (const nodeKey in nodeMap) {
-          const node = nodeMap[nodeKey];
-          if (isTextNode(node) && pendingNodeMap[nodeKey] !== undefined) {
-            getWritableNode(node);
+  try {
+    enterViewModelScope(
+      (view: View) => {
+        if (viewModelWasCloned) {
+          currentPendingViewModel._selection = createSelection(
+            currentPendingViewModel,
+            editor,
+          );
+        }
+        updateFn(view);
+        if (markAllTextNodesAsDirty) {
+          const currentViewModel = editor._viewModel;
+          const nodeMap = currentViewModel._nodeMap;
+          const pendingNodeMap = currentPendingViewModel._nodeMap;
+          for (const nodeKey in nodeMap) {
+            const node = nodeMap[nodeKey];
+            if (isTextNode(node) && pendingNodeMap[nodeKey] !== undefined) {
+              getWritableNode(node);
+            }
           }
         }
-      }
-      if (currentPendingViewModel.hasDirtyNodes()) {
-        triggerTextMutationListeners(currentPendingViewModel, editor);
-        garbageCollectDetachedNodes(currentPendingViewModel, editor);
-      }
-    },
-    pendingViewModel,
-    editor,
-    false,
-  );
+        if (currentPendingViewModel.hasDirtyNodes()) {
+          triggerTextMutationListeners(currentPendingViewModel, editor);
+          garbageCollectDetachedNodes(currentPendingViewModel, editor);
+        }
+      },
+      pendingViewModel,
+      editor,
+      false,
+    );
+  } catch (error) {
+    triggerErrorListeners(editor, error);
+    editor._pendingViewModel = null;
+    return false;
+  }
   const shouldUpdate =
     pendingViewModel.hasDirtyNodes() ||
     viewModelHasDirtySelectionOrNeedsSync(pendingViewModel, editor);
@@ -172,6 +181,7 @@ export class OutlineEditor {
   _isPointerDown: boolean;
   _key: string;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
+  _errorListeners: Set<ErrorListener>;
   _updateListeners: Set<UpdateListener>;
   _elementListeners: Set<EditorElementListener>;
   _decoratorListeners: Set<DecoratorListener>;
@@ -196,6 +206,8 @@ export class OutlineEditor {
     this._isKeyDown = false;
     // Used during reconciliation
     this._keyToDOMMap = new Map();
+    // error listeners
+    this._errorListeners = new Set();
     // onChange listeners
     this._updateListeners = new Set();
     // Used for rendering React Portals into nodes
@@ -262,6 +274,12 @@ export class OutlineEditor {
     this._updateListeners.add(listener);
     return () => {
       this._updateListeners.delete(listener);
+    };
+  }
+  addErrorListener(listener: ErrorListener): () => void {
+    this._errorListeners.add(listener);
+    return () => {
+      this._errorListeners.delete(listener);
     };
   }
   addEditorElementListener(listener: EditorElementListener): () => void {

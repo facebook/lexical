@@ -6,19 +6,14 @@
  *
  */
 
-import {
-  initializeE2E,
-  assertHTMLSnapshot,
-  assertSelection,
-  focusEditor,
-} from '../utils';
+import {initializeE2E, assertHTMLSnapshot, assertSelection} from '../utils';
 
 describe('Placeholder', () => {
   initializeE2E({chromium: true, webkit: true, firefox: true}, (e2e) => {
     it(`Displays a placeholder when no content is present`, async () => {
       const {page} = e2e;
 
-      await focusEditor(page);
+      await page.focus('div.editor');
       const textContent = await page.textContent('.editor-placeholder');
       expect(textContent).toBe('Enter some rich text...');
 

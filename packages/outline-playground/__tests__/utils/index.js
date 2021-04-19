@@ -295,21 +295,3 @@ export async function pasteFromClipboard(page, clipboardData) {
     {clipboardData, canUseBeforeInput},
   );
 }
-
-export async function focusEditor(page) {
-  await page.focus('div.editor');
-  await page.evaluate(() => {
-    const editor = document.querySelector('div.editor');
-    let node = editor.firstChild;
-    while (node !== null) {
-      const lastChild = node.lastChild;
-      if (lastChild === null) {
-        break;
-      }
-      node = lastChild;
-    }
-    const selection = window.getSelection();
-    const offset = node.nodeValue.length;
-    selection.setBaseAndExtent(node, offset, node, offset);
-  });
-}

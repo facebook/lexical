@@ -1401,7 +1401,7 @@
     "@rollup/pluginutils" "^3.1.0"
     magic-string "^0.25.7"
 
-"@rollup/plugin-replace@^2.3.4":
+"@rollup/plugin-replace@^2.4.2":
   version "2.4.2"
   resolved "https://registry.yarnpkg.com/@rollup/plugin-replace/-/plugin-replace-2.4.2.tgz#a2d539314fbc77c244858faa523012825068510a"
   integrity sha512-IGcu+cydlUMZ5En85jxHH4qj2hta/11BHq95iHEyb2sbgiN0eCdzvUcHw5gt9pBL5lTi4JDYJ1acCoMGpTvEZg==
@@ -8471,10 +8471,10 @@ pkg-up@3.1.0:
   dependencies:
     find-up "^3.0.0"
 
-playwright@^1.11.0-next-alpha-apr-6-2021:
-  version "1.11.0-next-alpha-apr-6-2021"
-  resolved "https://registry.yarnpkg.com/playwright/-/playwright-1.11.0-next-alpha-apr-6-2021.tgz#fe9bf3a263cbe71aafe4814baf9f8f92be9f5fe7"
-  integrity sha512-VcR/GqOVFUg07iqxY0BM0ILZQqEjoR7McrsVCWM7TbQ23Z9MR+bKJmESygsGmQf9TuAy/Je4fpWmNMhZRCPD3w==
+playwright@^1.11.0-next-alpha-apr-19-2021:
+  version "1.11.0-next-alpha-apr-19-2021"
+  resolved "https://registry.yarnpkg.com/playwright/-/playwright-1.11.0-next-alpha-apr-19-2021.tgz#98d7e553b172c86302f0afc9395473622e2d1896"
+  integrity sha512-3Yrmp0X69an01cxh6OY5a6O+nivV4Q2v+E5/q8rYzTW92T0L/hPOQOKyR91u0cKYObn/0aT3dKbbGok8hSkgew==
   dependencies:
     commander "^6.1.0"
     debug "^4.1.1"

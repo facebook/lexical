@@ -8508,9 +8508,9 @@ pkg-up@3.1.0:
     find-up "^3.0.0"
 
 playwright@^1.11.0-next-alpha-apr-19-2021:
-  version "1.11.0-next-alpha-mar-31-2021"
-  resolved "https://registry.yarnpkg.com/playwright/-/playwright-1.11.0-next-alpha-mar-31-2021.tgz#fe9e73561282288412987cdb5e1d6eceb388924e"
-  integrity sha512-iwklh0F6saCJwEHrYZ5333p9Ea0dbLegRO4OWLVf+6xZEYEUkGmQrICPtNeH+CggdDzpFKHvJXe8wHGpjoKfwA==
+  version "1.11.0-next-alpha-apr-19-2021"
+  resolved "https://registry.yarnpkg.com/playwright/-/playwright-1.11.0-next-alpha-apr-19-2021.tgz#98d7e553b172c86302f0afc9395473622e2d1896"
+  integrity sha512-3Yrmp0X69an01cxh6OY5a6O+nivV4Q2v+E5/q8rYzTW92T0L/hPOQOKyR91u0cKYObn/0aT3dKbbGok8hSkgew==
   dependencies:
     commander "^6.1.0"
     debug "^4.1.1"

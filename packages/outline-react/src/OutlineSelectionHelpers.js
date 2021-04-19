@@ -367,11 +367,18 @@ export function moveWordBackward(selection: Selection, isCaret: boolean): void {
   }
 }
 
+function normalizeAnchorParent(selection: Selection): void {
+  const focusNode = selection.getFocusNode();
+  const parent = focusNode.getParentOrThrow();
+  parent.normalizeTextNodes(true);
+}
+
 export function deleteLineBackward(selection: Selection): void {
   if (selection.isCaret()) {
     updateCaretSelectionForRange(selection, true, 'line');
   }
   removeText(selection);
+  normalizeAnchorParent(selection);
 }
 
 export function deleteLineForward(selection: Selection): void {
@@ -379,6 +386,7 @@ export function deleteLineForward(selection: Selection): void {
     updateCaretSelectionForRange(selection, false, 'line');
   }
   removeText(selection);
+  normalizeAnchorParent(selection);
 }
 
 export function deleteWordBackward(selection: Selection): void {
@@ -386,6 +394,7 @@ export function deleteWordBackward(selection: Selection): void {
     updateCaretSelectionForRange(selection, true, 'word');
   }
   removeText(selection);
+  normalizeAnchorParent(selection);
 }
 
 export function deleteWordForward(selection: Selection): void {
@@ -393,6 +402,7 @@ export function deleteWordForward(selection: Selection): void {
     updateCaretSelectionForRange(selection, false, 'word');
   }
   removeText(selection);
+  normalizeAnchorParent(selection);
 }
 
 export function deleteBackward(selection: Selection): void {
@@ -424,6 +434,7 @@ export function deleteBackward(selection: Selection): void {
     }
   }
   removeText(selection);
+  normalizeAnchorParent(selection);
 }
 
 export function deleteForward(selection: Selection): void {
@@ -431,6 +442,7 @@ export function deleteForward(selection: Selection): void {
     updateCaretSelectionForRange(selection, false, 'character');
   }
   removeText(selection);
+  normalizeAnchorParent(selection);
 }
 
 function setSelectionFocus(
@@ -543,10 +555,15 @@ export function updateCaretSelectionForRange(
           ? textContent.slice(0, characterOffset)
           : textContent.slice(characterOffset);
         const segments = getSegmentsFromString(textSlice, 'grapheme');
-        const segment = isBackward
-          ? segments[segments.length - 1]
-          : segments[0];
-        offset = segment.segment.length;
+        const segmentsLength = segments.length;
+        if (segmentsLength === 0) {
+          offset = 0;
+        } else {
+          const segment = isBackward
+            ? segments[segmentsLength - 1]
+            : segments[0];
+          offset = segment.segment.length;
+        }
       }
       setSelectionFocus(
         selection,
@@ -965,20 +982,21 @@ export function handleKeyDownSelection(
           }
         }
       } else {
-        if (
-          isRightArrow &&
-          (nextSibling.isImmutable() || nextSibling.isSegmented())
-        ) {
-          if (
-            ((IS_APPLE && selectionAtEnd) ||
-              (!IS_APPLE && selectionJustBeforeEnd)) &&
-            !isLineBreakNode(nextSibling)
-          ) {
-            announceNode(nextSibling);
-          }
-          if (selectionAtEnd) {
-            event.preventDefault();
-            nextSibling.selectNext(0, 0);
+        if (isRightArrow) {
+          if (nextSibling.isImmutable() || nextSibling.isSegmented()) {
+            if (
+              ((IS_APPLE && selectionAtEnd) ||
+                (!IS_APPLE && selectionJustBeforeEnd)) &&
+              !isLineBreakNode(nextSibling)
+            ) {
+              announceNode(nextSibling);
+            }
+            if (selectionAtEnd) {
+              event.preventDefault();
+              nextSibling.selectNext(0, 0);
+            }
+          } else if (isTextNode(nextSibling)) {
+            nextSibling.select(0, 0);
           }
         }
       }

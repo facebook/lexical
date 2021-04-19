@@ -995,8 +995,15 @@ export function handleKeyDownSelection(
               event.preventDefault();
               nextSibling.selectNext(0, 0);
             }
-          } else if (isTextNode(nextSibling)) {
-            nextSibling.select(0, 0);
+          } else if (isTextNode(nextSibling) && selectionAtEnd) {
+            if (isLineBreakNode(nextSibling) || nextSibling.isInert()) {
+              const siblingAfter = nextSibling.getNextSibling();
+              if (isTextNode(siblingAfter)) {
+                siblingAfter.select(0, 0);
+              }
+            } else {
+              nextSibling.select(0, 0);
+            }
           }
         }
       }

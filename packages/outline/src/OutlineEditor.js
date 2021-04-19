@@ -149,10 +149,13 @@ function updateEditor(
       false,
     );
   } catch (error) {
-    // Recover any DOM mutations if possible
-    commitPendingUpdates(editor);
+    // Report errors
     triggerErrorListeners(editor, error);
-    editor._pendingViewModel = null;
+    // Restore existing view model to the DOM
+    const currentViewModel = editor._viewModel;
+    currentViewModel.markDirty();
+    editor._pendingViewModel = currentViewModel;
+    commitPendingUpdates(editor);
     return false;
   }
   const shouldUpdate =

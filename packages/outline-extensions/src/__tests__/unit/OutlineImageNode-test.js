@@ -11,7 +11,7 @@ import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
 import Outline from 'outline';
-import {createImageNode, ImageNode} from '../OutlineImageNode';
+import {createImageNode, ImageNode} from 'outline-extensions/src/OutlineImageNode';
 
 const editorThemeClasses = Object.freeze({
   image: 'my-image-class',

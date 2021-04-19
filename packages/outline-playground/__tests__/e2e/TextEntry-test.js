@@ -18,7 +18,7 @@ import {
   keyDownCtrlOrAlt,
   keyUpCtrlOrAlt,
   focusEditor,
-} from './utils';
+} from '../utils';
 
 describe('TextEntry', () => {
   initializeE2E({chromium: true, webkit: true, firefox: true}, (e2e) => {

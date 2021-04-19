@@ -42,7 +42,7 @@ import {
   undo,
   redo,
   pastePlain,
-} from './utils';
+} from 'outline-react/src/__tests__/utils';
 
 describe('OutlineSelection tests', () => {
   let container = null;

@@ -12,7 +12,7 @@ import {
   assertSelection,
   repeat,
   focusEditor,
-} from './utils';
+} from '../utils';
 
 describe('Emoticons', () => {
   initializeE2E({chromium: true, webkit: true, firefox: true}, (e2e) => {

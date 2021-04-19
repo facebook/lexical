@@ -16,7 +16,7 @@ import {
   IS_LINK,
   IS_HASHTAG,
   IS_OVERFLOWED,
-} from '../OutlineConstants';
+} from '../../OutlineConstants';
 
 import React from 'react';
 import ReactDOM from 'react-dom';

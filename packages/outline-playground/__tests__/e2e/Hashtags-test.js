@@ -12,10 +12,10 @@ import {
   assertSelection,
   repeat,
   focusEditor,
-} from './utils';
+} from '../utils';
 
 describe('Hashtags', () => {
-  initializeE2E({chromium: true, webkit: true, firefox: true}, (e2e) => {
+  initializeE2E({chromium: true}, (e2e) => {
     it(`Can handle a single hashtag`, async () => {
       const {page} = e2e;
 

@@ -11,8 +11,8 @@ import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
 import Outline from 'outline';
-import {createListNode, isListNode} from '../OutlineListNode';
-import {createListItemNode} from '../OutlineListItemNode';
+import {createListNode, isListNode} from '../../OutlineListNode';
+import {createListItemNode} from '../../OutlineListItemNode';
 
 const editorThemeClasses = Object.freeze({
   list: {

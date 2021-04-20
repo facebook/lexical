@@ -102,16 +102,16 @@ function replaceNode<N: OutlineNode>(
   const writableParent = getWritableNode(newParent);
   const children = writableParent.__children;
   const index = children.indexOf(toReplace.__key);
-  const newKey = replaceWith.__key;
+  const newKey = writableReplaceWith.__key;
   if (index > -1) {
     children.splice(index, 0, newKey);
   }
   writableReplaceWith.__parent = newParent.__key;
   toReplace.remove();
   // Handle immutable/segmented
-  const flags = replaceWith.__flags;
+  const flags = writableReplaceWith.__flags;
   if (flags & IS_IMMUTABLE || flags & IS_SEGMENTED || flags & IS_INERT) {
-    wrapInTextNodes(replaceWith);
+    wrapInTextNodes(writableReplaceWith);
   }
   return writableReplaceWith;
 }
@@ -525,7 +525,7 @@ export class OutlineNode {
       }
     }
     const writableParent = getWritableNode(this.getParentOrThrow());
-    const insertKey = nodeToInsert.__key;
+    const insertKey = writableNodeToInsert.__key;
     writableNodeToInsert.__parent = writableSelf.__parent;
     const children = writableParent.__children;
     const index = children.indexOf(writableSelf.__key);
@@ -535,9 +535,9 @@ export class OutlineNode {
       children.push(insertKey);
     }
     // Handle immutable/segmented
-    const flags = nodeToInsert.__flags;
+    const flags = writableNodeToInsert.__flags;
     if (flags & IS_IMMUTABLE || flags & IS_SEGMENTED || flags & IS_INERT) {
-      wrapInTextNodes(nodeToInsert);
+      wrapInTextNodes(writableNodeToInsert);
     }
     return writableSelf;
   }
@@ -556,7 +556,7 @@ export class OutlineNode {
       }
     }
     const writableParent = getWritableNode(this.getParentOrThrow());
-    const insertKey = nodeToInsert.__key;
+    const insertKey = writableNodeToInsert.__key;
     writableNodeToInsert.__parent = writableSelf.__parent;
     const children = writableParent.__children;
     const index = children.indexOf(writableSelf.__key);
@@ -566,9 +566,9 @@ export class OutlineNode {
       children.push(insertKey);
     }
     // Handle immutable/segmented
-    const flags = nodeToInsert.__flags;
+    const flags = writableNodeToInsert.__flags;
     if (flags & IS_IMMUTABLE || flags & IS_SEGMENTED || flags & IS_INERT) {
-      wrapInTextNodes(nodeToInsert);
+      wrapInTextNodes(writableNodeToInsert);
     }
     return writableSelf;
   }

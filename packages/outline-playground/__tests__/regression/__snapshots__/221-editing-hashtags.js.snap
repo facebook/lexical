@@ -1,0 +1,37 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Regression test #221 Chromium Can handle backspace into hashtag 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span class=\\"editor-text-hashtag\\">#yolo</span><span> </span></p>"`;
+
+exports[`Regression test #221 Chromium Can handle backspace into hashtag 2`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span class=\\"editor-text-hashtag\\">#yol</span></p>"`;
+
+exports[`Regression test #221 Chromium Can handle delete in hashtag 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span class=\\"editor-text-hashtag\\">#yolo</span><span> </span></p>"`;
+
+exports[`Regression test #221 Chromium Can handle delete in hashtag 2`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span class=\\"editor-text-hashtag\\">#yolo</span></p>"`;
+
+exports[`Regression test #221 Chromium Can handle space in hashtag 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span class=\\"editor-text-hashtag\\">#yolo</span></p>"`;
+
+exports[`Regression test #221 Chromium Can handle space in hashtag 2`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span class=\\"editor-text-hashtag\\">#yo</span><span> lo</span></p>"`;
+
+exports[`Regression test #221 Firefox Can handle backspace into hashtag 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span class=\\"editor-text-hashtag\\">#yolo</span><span> </span></p>"`;
+
+exports[`Regression test #221 Firefox Can handle backspace into hashtag 2`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span class=\\"editor-text-hashtag\\">#yol</span></p>"`;
+
+exports[`Regression test #221 Firefox Can handle delete in hashtag 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span class=\\"editor-text-hashtag\\">#yolo</span><span> </span></p>"`;
+
+exports[`Regression test #221 Firefox Can handle delete in hashtag 2`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span class=\\"editor-text-hashtag\\">#yolo</span></p>"`;
+
+exports[`Regression test #221 Firefox Can handle space in hashtag 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span class=\\"editor-text-hashtag\\">#yolo</span></p>"`;
+
+exports[`Regression test #221 Firefox Can handle space in hashtag 2`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span class=\\"editor-text-hashtag\\">#yo</span><span> lo</span></p>"`;
+
+exports[`Regression test #221 Webkit Can handle backspace into hashtag 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span class=\\"editor-text-hashtag\\">#yolo</span><span> </span></p>"`;
+
+exports[`Regression test #221 Webkit Can handle backspace into hashtag 2`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span class=\\"editor-text-hashtag\\">#yol</span></p>"`;
+
+exports[`Regression test #221 Webkit Can handle delete in hashtag 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span class=\\"editor-text-hashtag\\">#yolo</span><span> </span></p>"`;
+
+exports[`Regression test #221 Webkit Can handle delete in hashtag 2`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span class=\\"editor-text-hashtag\\">#yolo</span></p>"`;
+
+exports[`Regression test #221 Webkit Can handle space in hashtag 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span class=\\"editor-text-hashtag\\">#yolo</span></p>"`;
+
+exports[`Regression test #221 Webkit Can handle space in hashtag 2`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span class=\\"editor-text-hashtag\\">#yo</span><span> lo</span></p>"`;

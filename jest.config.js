@@ -14,7 +14,10 @@ module.exports = {
     {
       ...common,
       displayName: 'e2e',
-      testMatch: ['**/__tests__/e2e/**/*.js'],
+      testMatch: [
+        '**/__tests__/e2e/**/*.js',
+        '**/__tests__/regression/**/*.js'
+      ],
     },
   ],
 };

@@ -94,33 +94,13 @@ export function announceNode(node: OutlineNode): void {
 export function getSegmentsFromString(
   string: string,
   granularity: 'grapheme' | 'word' | 'sentence',
+  filterNonWords?: boolean,
 ): Array<Segment> {
   const segmenter = new Intl.Segmenter(undefined /* locale */, {
     granularity,
   });
-  return Array.from(segmenter.segment(string));
-}
-
-export function getFirstWordSegment(segments: Array<Segment>): null | Segment {
-  for (let i = 0; i < segments.length; i++) {
-    const segment = segments[i];
-    if (!segment.isWordLike) {
-      continue;
-    }
-    return segment;
-  }
-  return null;
-}
-
-export function getLastWordSegment(segments: Array<Segment>): null | Segment {
-  for (let i = segments.length - 1; i >= 0; i--) {
-    const segment = segments[i];
-    if (!segment.isWordLike) {
-      continue;
-    }
-    return segment;
-  }
-  return null;
+  const segments = Array.from(segmenter.segment(string));
+  return filterNonWords ? segments.filter((seg) => seg.isWordLike) : segments;
 }
 
 export function getFirstWordIndex(string: string): number {

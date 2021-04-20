@@ -7,13 +7,7 @@
  * @flow strict
  */
 
-import type {
-  NodeKey,
-  OutlineNode,
-  Selection,
-  TextFormatType,
-  TextNode,
-} from 'outline';
+import type {NodeKey, OutlineNode, Selection, TextFormatType} from 'outline';
 
 import {
   createLineBreakNode,
@@ -30,9 +24,7 @@ import {invariant} from './OutlineReactUtils';
 import {
   announceNode,
   getFirstWordIndex,
-  getFirstWordSegment,
   getLastWordIndex,
-  getLastWordSegment,
   getSegmentsFromString,
 } from './OutlineTextHelpers';
 
@@ -585,14 +577,6 @@ function getSurrogatePairOffset(str: string, isBackward: boolean): number {
   return /[\uD800-\uDFFF]/.test(segment) ? segment.length : 1;
 }
 
-function hasWhitespaceAtBoundary(node: TextNode, isBackward: boolean): boolean {
-  const textContent = node.getTextContent();
-  const trimmedContent = isBackward
-    ? textContent.trimEnd()
-    : textContent.trimStart();
-  return trimmedContent.length !== textContent.length;
-}
-
 export function updateCaretSelectionForRange(
   selection: Selection,
   isBackward: boolean,
@@ -701,18 +685,26 @@ export function updateCaretSelectionForRange(
         ? textContent.slice(0, anchorOffset)
         : textContent.slice(anchorOffset);
       let segments;
+      let segmentsLength = 0;
       while (true) {
         if (CAN_USE_INTL_SEGMENTER) {
-          segments = getSegmentsFromString(targetTextContent, 'word');
-          const segment = isBackward
-            ? getLastWordSegment(segments)
-            : getFirstWordSegment(segments);
+          segments = getSegmentsFromString(targetTextContent, 'word', true);
+          segmentsLength = segments.length;
+          let segment = null;
+          if (segmentsLength !== 0) {
+            segment = isBackward ? segments[segmentsLength - 1] : segments[0];
+          }
           if (segment !== null) {
             index = isBackward
               ? segment.index
               : segment.index + segment.segment.length;
           } else {
-            index = isBackward ? 0 : targetTextContent.length;
+            const contentLength = targetTextContent.length;
+            if (isBackward) {
+              index = anchorNode === node ? 0 : contentLength;
+            } else {
+              index = anchorNode === node ? (index = contentLength) : 0;
+            }
           }
         } else {
           index = isBackward
@@ -724,12 +716,8 @@ export function updateCaretSelectionForRange(
           : node.getNextSibling();
         if (
           !isTextNode(siblingAfter) ||
-          (segments && segments.length > 1) ||
-          isLineBreakNode(siblingAfter) ||
-          // If the next text node has whitespace at the boundary
-          // then we should stop here (unless we're also at a boundary).
-          (hasWhitespaceAtBoundary(siblingAfter, isBackward) &&
-            (node !== anchorNode || !isOffsetAtBoundary))
+          (segments && segmentsLength > 1) ||
+          isLineBreakNode(siblingAfter)
         ) {
           break;
         }

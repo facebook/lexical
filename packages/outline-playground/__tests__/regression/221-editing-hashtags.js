@@ -6,11 +6,7 @@
  *
  */
 
-import {
-    initializeE2E,
-    assertHTMLSnapshot,
-    assertSelection,
-  } from '../utils';
+import {initializeE2E, assertHTMLSnapshot, assertSelection} from '../utils';
 
 describe('Regression test #221', () => {
   initializeE2E({chromium: true, webkit: true, firefox: true}, (e2e) => {
@@ -22,9 +18,9 @@ describe('Regression test #221', () => {
       await page.waitForSelector('.editor-text-hashtag');
       await assertHTMLSnapshot(page);
       await assertSelection(page, {
-        anchorPath: [0,0,0],
+        anchorPath: [0, 0, 0],
         anchorOffset: 5,
-        focusPath: [0,0,0],
+        focusPath: [0, 0, 0],
         focusOffset: 5,
       });
 
@@ -33,9 +29,9 @@ describe('Regression test #221', () => {
       await page.keyboard.press('Space');
       await assertHTMLSnapshot(page);
       await assertSelection(page, {
-        anchorPath: [0,1,0],
+        anchorPath: [0, 1, 0],
         anchorOffset: 1,
-        focusPath: [0,1,0],
+        focusPath: [0, 1, 0],
         focusOffset: 1,
       });
     });
@@ -48,9 +44,9 @@ describe('Regression test #221', () => {
       await page.waitForSelector('.editor-text-hashtag');
       await assertHTMLSnapshot(page);
       await assertSelection(page, {
-        anchorPath: [0,1,0],
+        anchorPath: [0, 1, 0],
         anchorOffset: 1,
-        focusPath: [0,1,0],
+        focusPath: [0, 1, 0],
         focusOffset: 1,
       });
 
@@ -58,9 +54,9 @@ describe('Regression test #221', () => {
       await page.keyboard.press('Delete');
       await assertHTMLSnapshot(page);
       await assertSelection(page, {
-        anchorPath: [0,0,0],
+        anchorPath: [0, 0, 0],
         anchorOffset: 5,
-        focusPath: [0,0,0],
+        focusPath: [0, 0, 0],
         focusOffset: 5,
       });
     });
@@ -73,9 +69,9 @@ describe('Regression test #221', () => {
       await page.waitForSelector('.editor-text-hashtag');
       await assertHTMLSnapshot(page);
       await assertSelection(page, {
-        anchorPath: [0,1,0],
+        anchorPath: [0, 1, 0],
         anchorOffset: 1,
-        focusPath: [0,1,0],
+        focusPath: [0, 1, 0],
         focusOffset: 1,
       });
 
@@ -83,9 +79,9 @@ describe('Regression test #221', () => {
       await page.keyboard.press('Backspace');
       await assertHTMLSnapshot(page);
       await assertSelection(page, {
-        anchorPath: [0,0,0],
+        anchorPath: [0, 0, 0],
         anchorOffset: 4,
-        focusPath: [0,0,0],
+        focusPath: [0, 0, 0],
         focusOffset: 4,
       });
     });

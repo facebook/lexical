@@ -5,11 +5,12 @@ on: [push]
 jobs:
   integrity:
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
         node-version: [12.x]
-
+    env:
+      CI: true
+      PLAYWRIGHT_BROWSERS_PATH: 0
     steps:
     - uses: actions/checkout@v2
     - name: Use Node.js ${{ matrix.node-version }}
@@ -24,15 +25,15 @@ jobs:
     - run: yarn build
     - run: yarn lint
     - run: yarn flow
-      env:
-        CI: true
+
   unit:
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
         node-version: [12.x]
-
+    env:
+      CI: true
+      PLAYWRIGHT_BROWSERS_PATH: 0
     steps:
     - uses: actions/checkout@v2
     - name: Use Node.js ${{ matrix.node-version }}
@@ -46,16 +47,15 @@ jobs:
     - run: yarn install
     - run: yarn build
     - run: yarn test-unit
-      env:
-        CI: true
 
   e2e:
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
         node-version: [12.x]
-
+    env:
+      CI: true
+      PLAYWRIGHT_BROWSERS_PATH: 0
     steps:
     - uses: actions/checkout@v2
     - name: Use Node.js ${{ matrix.node-version }}
@@ -73,5 +73,3 @@ jobs:
     - run: yarn install
     - run: yarn build
     - run: yarn test-e2e-ci
-      env:
-        CI: true

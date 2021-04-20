@@ -21,7 +21,6 @@ import {
   IS_SAFARI,
   IS_CHROME,
   IS_FIREFOX,
-  CAN_USE_INTL_SEGMENTER,
 } from './OutlineEnv';
 import {
   isDeleteBackward,
@@ -38,6 +37,9 @@ import {
   isTab,
   isSelectAll,
   isMoveWordBackward,
+  isMoveBackward,
+  isMoveForward,
+  isMoveWordForward,
 } from './OutlineKeyHelpers';
 import {
   deleteBackward,
@@ -53,10 +55,12 @@ import {
   getNodesInRange,
   insertNodes,
   insertLineBreak,
-  handleKeyDownSelection,
   selectAll,
   moveWordBackward,
   insertRichText,
+  moveBackward,
+  moveForward,
+  moveWordForward,
 } from './OutlineSelectionHelpers';
 
 // TODO the Flow types here needs fixing
@@ -142,45 +146,40 @@ export function onKeyDownForPlainText(
         deleteLineForward(selection);
       }
     }
-    // Rather than process these events in beforeinput,
-    // we choose to process them here, for a number of
-    // reasons. It may be for better speech-to-text
-    // support, or screen reader support, or to fix
-    // quirks between browsers.
-    if (isDeleteBackward(event)) {
+    const isCaret = !event.shiftKey;
+
+    if (isMoveBackward(event)) {
+      event.preventDefault();
+      moveBackward(selection, isCaret);
+    } else if (isMoveForward(event)) {
+      event.preventDefault();
+      moveForward(selection, isCaret);
+    } else if (isParagraph(event) || isLineBreak(event)) {
+      event.preventDefault();
+      insertLineBreak(selection);
+    } else if (isDeleteBackward(event)) {
       event.preventDefault();
       deleteBackward(selection);
     } else if (isDeleteForward(event)) {
       event.preventDefault();
       deleteForward(selection);
-    } else if (isParagraph(event) || isLineBreak(event)) {
+    } else if (isMoveWordBackward(event)) {
       event.preventDefault();
-      insertLineBreak(selection);
+      moveWordBackward(selection, isCaret);
+    } else if (isMoveWordForward(event)) {
+      event.preventDefault();
+      moveWordForward(selection, isCaret);
+    } else if (isDeleteWordBackward(event)) {
+      event.preventDefault();
+      deleteWordBackward(selection);
+    } else if (isDeleteWordForward(event)) {
+      event.preventDefault();
+      deleteWordForward(selection);
     } else if (isSelectAll(event)) {
       if (IS_FIREFOX) {
         event.preventDefault();
         selectAll(selection);
       }
-    } else if (
-      isDeleteWordBackward(event) &&
-      (CAN_USE_INTL_SEGMENTER || !CAN_USE_BEFORE_INPUT)
-    ) {
-      event.preventDefault();
-      deleteWordBackward(selection);
-    } else if (
-      isDeleteWordForward(event) &&
-      (CAN_USE_INTL_SEGMENTER || !CAN_USE_BEFORE_INPUT)
-    ) {
-      event.preventDefault();
-      deleteWordForward(selection);
-    } else if (isMoveWordBackward(event) && CAN_USE_INTL_SEGMENTER) {
-      // For where we support Intl.Segmenter, let's use it to work
-      // out where to move selection for word boundary selections.
-      // Otherwise, we'll let the browser default behavior work.
-      event.preventDefault();
-      moveWordBackward(selection, !event.shiftKey);
-    } else {
-      handleKeyDownSelection(event, selection);
     }
   });
 }
@@ -210,23 +209,38 @@ export function onKeyDownForRichText(
         deleteLineForward(selection);
       }
     }
-    // Rather than process these events in beforeinput,
-    // we choose to process them here, for a number of
-    // reasons. It may be for better speech-to-text
-    // support, or screen reader support, or to fix
-    // quirks between browsers.
-    if (isDeleteBackward(event)) {
+    const isCaret = !event.shiftKey;
+
+    if (isMoveBackward(event)) {
       event.preventDefault();
-      deleteBackward(selection);
-    } else if (isDeleteForward(event)) {
+      moveBackward(selection, isCaret);
+    } else if (isMoveForward(event)) {
       event.preventDefault();
-      deleteForward(selection);
+      moveForward(selection, isCaret);
     } else if (isLineBreak(event)) {
       event.preventDefault();
       insertLineBreak(selection);
     } else if (isParagraph(event)) {
       event.preventDefault();
       insertParagraph(selection);
+    } else if (isDeleteBackward(event)) {
+      event.preventDefault();
+      deleteBackward(selection);
+    } else if (isDeleteForward(event)) {
+      event.preventDefault();
+      deleteForward(selection);
+    } else if (isMoveWordBackward(event)) {
+      event.preventDefault();
+      moveWordBackward(selection, isCaret);
+    } else if (isMoveWordForward(event)) {
+      event.preventDefault();
+      moveWordForward(selection, isCaret);
+    } else if (isDeleteWordBackward(event)) {
+      event.preventDefault();
+      deleteWordBackward(selection);
+    } else if (isDeleteWordForward(event)) {
+      event.preventDefault();
+      deleteWordForward(selection);
     } else if (isBold(event)) {
       event.preventDefault();
       formatText(selection, 'bold');
@@ -257,26 +271,6 @@ export function onKeyDownForRichText(
         event.preventDefault();
         selectAll(selection);
       }
-    } else if (
-      isDeleteWordBackward(event) &&
-      (CAN_USE_INTL_SEGMENTER || !CAN_USE_BEFORE_INPUT)
-    ) {
-      event.preventDefault();
-      deleteWordBackward(selection);
-    } else if (
-      isDeleteWordForward(event) &&
-      (CAN_USE_INTL_SEGMENTER || !CAN_USE_BEFORE_INPUT)
-    ) {
-      event.preventDefault();
-      deleteWordForward(selection);
-    } else if (isMoveWordBackward(event) && CAN_USE_INTL_SEGMENTER) {
-      // For where we support Intl.Segmenter, let's use it to work
-      // out where to move selection for word boundary selections.
-      // Otherwise, we'll let the browser default behavior work.
-      event.preventDefault();
-      moveWordBackward(selection, !event.shiftKey);
-    } else {
-      handleKeyDownSelection(event, selection);
     }
   });
 }

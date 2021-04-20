@@ -1,0 +1,7 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Regression test #230 Chromium Is able to right arrow before hashtag after inserting text node 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>﻿</span><span class=\\"editor-text-hashtag\\">#foo</span></p>"`;
+
+exports[`Regression test #230 Firefox Is able to right arrow before hashtag after inserting text node 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>﻿</span><span class=\\"editor-text-hashtag\\">#foo</span></p>"`;
+
+exports[`Regression test #230 Webkit Is able to right arrow before hashtag after inserting text node 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>﻿</span><span class=\\"editor-text-hashtag\\">#foo</span></p>"`;

@@ -337,7 +337,12 @@ export function insertParagraph(selection: Selection): void {
   }
 }
 
-export function moveWordBackward(selection: Selection, isCaret: boolean): void {
+function moveCaretSelection(
+  selection: Selection,
+  isCaret: boolean,
+  isBackward: boolean,
+  granularity: 'character' | 'word' | 'line',
+): void {
   let resetAnchorKey;
   let resetAnchorOffset = 0;
   // If we have a range, we need to make the anchor the focus, then set back
@@ -348,14 +353,38 @@ export function moveWordBackward(selection: Selection, isCaret: boolean): void {
     selection.anchorKey = selection.focusKey;
     selection.anchorOffset = selection.focusOffset;
   }
-  updateCaretSelectionForRange(selection, true, 'word');
+  updateCaretSelectionForRange(selection, isBackward, granularity);
   const focusNode = selection.getFocusNode();
   // We have to adjust selection if we move selection into a segmented node
   if (focusNode.isSegmented()) {
-    const prevSibling = focusNode.getPreviousSibling();
-    if (isTextNode(prevSibling)) {
-      selection.focusKey = prevSibling.getKey();
-      selection.focusOffset = prevSibling.getTextContent().length;
+    if (isBackward) {
+      // Announce the node for all screen readers.
+      announceNode(focusNode);
+      const prevSibling = focusNode.getPreviousSibling();
+      if (isTextNode(prevSibling)) {
+        selection.focusKey = prevSibling.getKey();
+        selection.focusOffset = prevSibling.getTextContent().length;
+      }
+    } else {
+      // Announce the node for VoiceOver
+      if (IS_APPLE) {
+        announceNode(focusNode);
+      }
+      const nextSibling = focusNode.getNextSibling();
+      if (isTextNode(nextSibling)) {
+        selection.focusKey = nextSibling.getKey();
+        selection.focusOffset = 0;
+      }
+    }
+  } else if (
+    !IS_APPLE &&
+    focusNode.getTextContent().length === selection.focusOffset + 1
+  ) {
+    // If selection is just before for non Apple devices, we then
+    // announce the node for screen readers other than VoiceOver.
+    const nextSibling = focusNode.getNextSibling();
+    if (nextSibling !== null && nextSibling.isSegmented()) {
+      announceNode(nextSibling);
     }
   }
   if (isCaret) {
@@ -365,6 +394,60 @@ export function moveWordBackward(selection: Selection, isCaret: boolean): void {
     selection.anchorKey = resetAnchorKey;
     selection.anchorOffset = resetAnchorOffset;
   }
+}
+
+function moveCaretToRangeBoundary(
+  selection: Selection,
+  isBackward: boolean,
+): void {
+  const anchorKey = selection.anchorKey;
+  const focusKey = selection.focusKey;
+  const anchorOffset = selection.anchorOffset;
+  const focusOffset = selection.focusOffset;
+  const isAnchorBefore =
+    anchorKey === focusKey
+      ? anchorOffset < focusOffset
+      : selection.getAnchorNode().isBefore(selection.getFocusNode());
+  const key = isAnchorBefore
+    ? isBackward
+      ? anchorKey
+      : focusKey
+    : isBackward
+    ? focusKey
+    : anchorKey;
+  const offset = isAnchorBefore
+    ? isBackward
+      ? anchorOffset
+      : focusOffset
+    : isBackward
+    ? focusOffset
+    : anchorOffset;
+  selection.setRange(key, offset, key, offset);
+  return;
+}
+
+export function moveBackward(selection: Selection, isCaret: boolean): void {
+  if (isCaret && !selection.isCaret()) {
+    moveCaretToRangeBoundary(selection, true);
+    return;
+  }
+  moveCaretSelection(selection, isCaret, true, 'character');
+}
+
+export function moveForward(selection: Selection, isCaret: boolean): void {
+  if (isCaret && !selection.isCaret()) {
+    moveCaretToRangeBoundary(selection, false);
+    return;
+  }
+  moveCaretSelection(selection, isCaret, false, 'character');
+}
+
+export function moveWordBackward(selection: Selection, isCaret: boolean): void {
+  moveCaretSelection(selection, isCaret, true, 'word');
+}
+
+export function moveWordForward(selection: Selection, isCaret: boolean): void {
+  moveCaretSelection(selection, isCaret, false, 'word');
 }
 
 function normalizeAnchorParent(selection: Selection): void {
@@ -488,6 +571,14 @@ function updateSelectionForNextSegmentedRange(
   setSelectionFocus(selection, key, spaceIndex);
 }
 
+function getSurrogatePairOffset(str: string, isBackward: boolean): number {
+  const characters = Array.from(str);
+  const segment = isBackward
+    ? characters[characters.length - 1]
+    : characters[0];
+  return /[\uD800-\uDFFF]/.test(segment) ? segment.length : 1;
+}
+
 export function updateCaretSelectionForRange(
   selection: Selection,
   isBackward: boolean,
@@ -550,10 +641,10 @@ export function updateCaretSelectionForRange(
         characterOffset = isBackward ? textContent.length : 0;
       }
       let offset = 1;
+      const textSlice = isBackward
+        ? textContent.slice(0, characterOffset)
+        : textContent.slice(characterOffset);
       if (CAN_USE_INTL_SEGMENTER) {
-        const textSlice = isBackward
-          ? textContent.slice(0, characterOffset)
-          : textContent.slice(characterOffset);
         const segments = getSegmentsFromString(textSlice, 'grapheme');
         const segmentsLength = segments.length;
         if (segmentsLength === 0) {
@@ -564,6 +655,8 @@ export function updateCaretSelectionForRange(
             : segments[0];
           offset = segment.segment.length;
         }
+      } else {
+        offset = getSurrogatePairOffset(textSlice, isBackward);
       }
       setSelectionFocus(
         selection,
@@ -584,11 +677,13 @@ export function updateCaretSelectionForRange(
           const segment = isBackward
             ? getLastWordSegment(segments)
             : getFirstWordSegment(segments);
-          index = segment
-            ? isBackward
+          if (segment !== null) {
+            index = isBackward
               ? segment.index
-              : segment.index + segment.segment.length
-            : null;
+              : segment.index + segment.segment.length;
+          } else {
+            index = isBackward ? 0 : targetTextContent.length;
+          }
         } else {
           index = isBackward
             ? getLastWordIndex(targetTextContent)
@@ -884,131 +979,6 @@ export function moveEnd(selection: Selection): void {
   }
 
   anchorNode.selectEnd();
-}
-
-export function handleKeyDownSelection(
-  event: KeyboardEvent,
-  selection: Selection,
-): void {
-  if (event.metaKey || !selection.isCaret()) {
-    return;
-  }
-  // Handle moving/deleting selection with left/right around immutable or segmented nodes, which should be handled as a single character.
-  // This is important for screen readers + text to speech accessibility tooling. About screen readers and caret moves:
-  // In Windows, JAWS and NVDA always announce the character at the right of the caret.
-  // In MacOS, VO always announces the character over which the caret jumped.
-  const key = event.key;
-  const isLeftArrow = key === 'ArrowLeft';
-  const isRightArrow = key === 'ArrowRight';
-  const isBackspace = key === 'Backspace';
-  const anchorNode = selection.getAnchorNode();
-  const offset = selection.anchorOffset;
-  const textContent = anchorNode.getTextContent();
-
-  if (isLeftArrow || isBackspace) {
-    const selectionAtStart = offset === 0;
-
-    if (selectionAtStart) {
-      const prevSibling = anchorNode.getPreviousSibling();
-
-      if (prevSibling !== null && !event.shiftKey) {
-        let targetPrevSibling = prevSibling;
-        if (prevSibling.isImmutable() || prevSibling.isSegmented()) {
-          if (isLeftArrow) {
-            if (!isLineBreakNode(prevSibling)) {
-              announceNode(prevSibling);
-            }
-            targetPrevSibling = prevSibling.getPreviousSibling();
-          } else {
-            deleteBackward(selection);
-            event.preventDefault();
-          }
-        } else if (prevSibling.isInert()) {
-          targetPrevSibling = prevSibling.getPreviousSibling();
-          if (
-            !isLeftArrow &&
-            selection.isCaret() &&
-            isTextNode(targetPrevSibling)
-          ) {
-            const prevKey = targetPrevSibling.getKey();
-            const prevOffset = targetPrevSibling.getTextContent().length;
-            selection.setRange(prevKey, prevOffset, prevKey, prevOffset);
-            deleteBackward(selection);
-            event.preventDefault();
-          }
-        }
-        // Due to empty text nodes having an offset of 1, we need to
-        // account for this and move selection accordingly when right
-        // arrow is pressed.
-        if (isLeftArrow && isTextNode(targetPrevSibling)) {
-          event.preventDefault();
-          if (targetPrevSibling === prevSibling) {
-            const prevSiblingTextContent = targetPrevSibling.getTextContent();
-            // We adjust the offset by 1, as we will have have moved between
-            // two adjacent nodes.
-            const endOffset = prevSiblingTextContent.length - 1;
-            targetPrevSibling.select(endOffset, endOffset);
-          } else {
-            // We don't adjust offset as the nodes are not adjacent (the target
-            // isn't the same as the prevSibling).
-            targetPrevSibling.select();
-          }
-        }
-      }
-    }
-  } else if (isRightArrow) {
-    const textContentLength = textContent.length;
-    const selectionAtEnd = textContentLength === offset;
-    const selectionJustBeforeEnd = textContentLength === offset + 1;
-
-    if (selectionAtEnd || selectionJustBeforeEnd) {
-      const nextSibling = anchorNode.getNextSibling();
-
-      if (nextSibling === null) {
-        // On empty text nodes, we sometimes move native DOM selection
-        // to offset 0. Given it's at 0, it means the browser won't natively
-        // move it to the next node (instead opting for position 1). So
-        // need to work out this logic ourselves.
-        if (textContent === '') {
-          const parent = anchorNode.getParentOrThrow();
-          const parentSibling = parent.getNextSibling();
-
-          if (isBlockNode(parentSibling)) {
-            const firstChild = parentSibling.getFirstChild();
-            if (isTextNode(firstChild)) {
-              firstChild.select();
-              event.preventDefault();
-            }
-          }
-        }
-      } else {
-        if (isRightArrow) {
-          if (nextSibling.isImmutable() || nextSibling.isSegmented()) {
-            if (
-              ((IS_APPLE && selectionAtEnd) ||
-                (!IS_APPLE && selectionJustBeforeEnd)) &&
-              !isLineBreakNode(nextSibling)
-            ) {
-              announceNode(nextSibling);
-            }
-            if (selectionAtEnd) {
-              event.preventDefault();
-              nextSibling.selectNext(0, 0);
-            }
-          } else if (isTextNode(nextSibling) && selectionAtEnd) {
-            if (isLineBreakNode(nextSibling) || nextSibling.isInert()) {
-              const siblingAfter = nextSibling.getNextSibling();
-              if (isTextNode(siblingAfter)) {
-                siblingAfter.select(0, 0);
-              }
-            } else {
-              nextSibling.select(0, 0);
-            }
-          }
-        }
-      }
-    }
-  }
 }
 
 export function selectAll(selection: Selection): void {

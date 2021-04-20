@@ -18,7 +18,7 @@ exports[`Regression test #221 Firefox Can handle backspace into hashtag 2`] = `"
 
 exports[`Regression test #221 Firefox Can handle delete in hashtag 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span class=\\"editor-text-hashtag\\">#yolo</span><span> </span></p>"`;
 
-exports[`Regression test #221 Firefox Can handle delete in hashtag 2`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span class=\\"editor-text-hashtag\\">#yolo</span><span>﻿</span></p>"`;
+exports[`Regression test #221 Firefox Can handle delete in hashtag 2`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span class=\\"editor-text-hashtag\\">#yolo</span></p>"`;
 
 exports[`Regression test #221 Firefox Can handle space in hashtag 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span class=\\"editor-text-hashtag\\">#yolo</span></p>"`;
 

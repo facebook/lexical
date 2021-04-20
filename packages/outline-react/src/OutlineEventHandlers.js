@@ -354,7 +354,7 @@ export function onCopy(
       if (clipboardData != null) {
         const domSelection = window.getSelection();
         // If we haven't selected a range, then don't copy anything
-        if (!domSelection.isCollapsed) {
+        if (domSelection.isCollapsed) {
           return;
         }
         const range = domSelection.getRangeAt(0);

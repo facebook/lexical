@@ -9,7 +9,7 @@
 
 import type {NodeKey} from './OutlineNode';
 
-import {isTextNode, TextNode} from '.';
+import {isTextNode, TextNode, isLineBreakNode} from '.';
 import {
   getWritableNode,
   OutlineNode,
@@ -211,7 +211,12 @@ export class BlockNode extends OutlineNode {
     for (let i = 0; i < children.length; i++) {
       const child: OutlineNode = children[i].getLatest();
 
-      if (isTextNode(child) && !child.isImmutable() && !child.isSegmented()) {
+      if (
+        isTextNode(child) &&
+        !child.isImmutable() &&
+        !child.isSegmented() &&
+        !isLineBreakNode(child)
+      ) {
         const url = child.__url;
         const flags = child.__flags;
         if (

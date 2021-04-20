@@ -622,7 +622,6 @@ export function updateCaretSelectionForRange(
     if (granularity === 'character') {
       let characterNode = anchorNode;
       let characterOffset = anchorOffset;
-      let key = characterNode.getKey();
       if (isOffsetAtBoundary) {
         if (sibling === null) {
           return;
@@ -636,7 +635,6 @@ export function updateCaretSelectionForRange(
         }
         characterNode = sibling;
         textContent = sibling.getTextContent();
-        key = sibling.getKey();
         textContent = sibling.getTextContent();
         characterOffset = isBackward ? textContent.length : 0;
       }
@@ -658,11 +656,25 @@ export function updateCaretSelectionForRange(
       } else {
         offset = getSurrogatePairOffset(textSlice, isBackward);
       }
-      setSelectionFocus(
-        selection,
-        key,
-        isBackward ? characterOffset - offset : characterOffset + offset,
-      );
+      let selectionOffset = isBackward
+        ? characterOffset - offset
+        : characterOffset + offset;
+      // If we move selection to the start, then we can check if there
+      // is a node before that we can adjust selection to, which is a better
+      // UX in most cases.
+      if (isBackward && selectionOffset === 0) {
+        const prevSibling = characterNode.getPreviousSibling();
+        if (
+          isTextNode(prevSibling) &&
+          !prevSibling.isSegmented() &&
+          !prevSibling.isImmutable() &&
+          !prevSibling.isInert()
+        ) {
+          characterNode = prevSibling;
+          selectionOffset = prevSibling.getTextContent().length;
+        }
+      }
+      setSelectionFocus(selection, characterNode.getKey(), selectionOffset);
     } else if (granularity === 'word') {
       let node = anchorNode;
       let index = null;

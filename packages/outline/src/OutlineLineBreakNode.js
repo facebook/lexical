@@ -18,7 +18,9 @@ export class LineBreakNode extends TextNode {
   }
 
   clone(): LineBreakNode {
-    return new LineBreakNode(this.__key);
+    const clone = new LineBreakNode(this.__key);
+    clone.__parent = this.__parent;
+    return clone;
   }
 
   createDOM(): HTMLElement {

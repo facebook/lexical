@@ -196,9 +196,9 @@ export class BlockNode extends OutlineNode {
     const newKey = writableNodeToAppend.__key;
     children.push(newKey);
     // Handle immutable/segmented
-    const flags = nodeToAppend.__flags;
+    const flags = writableNodeToAppend.__flags;
     if (flags & IS_IMMUTABLE || flags & IS_SEGMENTED || flags & IS_INERT) {
-      wrapInTextNodes(nodeToAppend);
+      wrapInTextNodes(writableNodeToAppend);
     }
     return writableSelf;
   }

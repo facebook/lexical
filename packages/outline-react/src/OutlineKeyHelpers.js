@@ -126,3 +126,36 @@ export function isMoveWordBackward(event: KeyboardEvent): boolean {
   }
   return isLeftArrow && ctrlKey;
 }
+
+export function isMoveWordForward(event: KeyboardEvent): boolean {
+  const {key, altKey, metaKey, ctrlKey} = event;
+  const isLeftArrow = key === 'ArrowRight';
+  if (IS_APPLE) {
+    if (ctrlKey || metaKey) {
+      return false;
+    }
+    return isLeftArrow && altKey;
+  }
+  if (altKey || metaKey) {
+    return false;
+  }
+  return isLeftArrow && ctrlKey;
+}
+
+export function isMoveBackward(event: KeyboardEvent): boolean {
+  return (
+    event.key === 'ArrowLeft' &&
+    !event.ctrlKey &&
+    !event.metaKey &&
+    !event.altKey
+  );
+}
+
+export function isMoveForward(event: KeyboardEvent): boolean {
+  return (
+    event.key === 'ArrowRight' &&
+    !event.ctrlKey &&
+    !event.metaKey &&
+    !event.altKey
+  );
+}

@@ -708,9 +708,6 @@ export function updateCaretSelectionForRange(
 
               if (segment.isWordLike) {
                 index = segment.index + segment.segment.length;
-                if (node === anchorNode) {
-                  index += anchorOffset;
-                }
                 foundWordNode = node;
               } else if (foundWordNode !== null) {
                 node = foundWordNode;
@@ -739,6 +736,11 @@ export function updateCaretSelectionForRange(
         updateSelectionForNextSegmentedRange(selection, isBackward, node);
       } else if (index !== null) {
         const key = node.getKey();
+        // If we are partially through an anchor string, we need to include
+        // the offset for moving forward
+        if (!isBackward && node === anchorNode) {
+          index += anchorOffset;
+        }
         setSelectionFocus(selection, key, index);
       }
     } else {

@@ -30,12 +30,12 @@ describe('Regression test #231', () => {
       });
       await repeat(5, async () => {
         await page.keyboard.press('Backspace');
-      })
+      });
       await assertHTMLSnapshot(page);
       await assertSelection(page, {
-        anchorPath: [0,0,0],
+        anchorPath: [0, 0, 0],
         anchorOffset: 0,
-        focusPath: [0,0,0],
+        focusPath: [0, 0, 0],
         focusOffset: 0,
       });
     });

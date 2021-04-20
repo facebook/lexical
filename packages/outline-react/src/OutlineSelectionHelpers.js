@@ -7,7 +7,13 @@
  * @flow strict
  */
 
-import type {NodeKey, OutlineNode, Selection, TextFormatType} from 'outline';
+import type {
+  NodeKey,
+  OutlineNode,
+  Selection,
+  TextFormatType,
+  TextNode,
+} from 'outline';
 
 import {
   createLineBreakNode,
@@ -353,7 +359,7 @@ function moveCaretSelection(
     selection.anchorKey = selection.focusKey;
     selection.anchorOffset = selection.focusOffset;
   }
-  updateCaretSelectionForRange(selection, isBackward, granularity);
+  updateCaretSelectionForRange(selection, isBackward, granularity, isCaret);
   const focusNode = selection.getFocusNode();
   // We have to adjust selection if we move selection into a segmented node
   if (focusNode.isSegmented()) {
@@ -458,7 +464,7 @@ function normalizeAnchorParent(selection: Selection): void {
 
 export function deleteLineBackward(selection: Selection): void {
   if (selection.isCaret()) {
-    updateCaretSelectionForRange(selection, true, 'line');
+    updateCaretSelectionForRange(selection, true, 'line', true);
   }
   removeText(selection);
   normalizeAnchorParent(selection);
@@ -466,7 +472,7 @@ export function deleteLineBackward(selection: Selection): void {
 
 export function deleteLineForward(selection: Selection): void {
   if (selection.isCaret()) {
-    updateCaretSelectionForRange(selection, false, 'line');
+    updateCaretSelectionForRange(selection, false, 'line', true);
   }
   removeText(selection);
   normalizeAnchorParent(selection);
@@ -474,7 +480,7 @@ export function deleteLineForward(selection: Selection): void {
 
 export function deleteWordBackward(selection: Selection): void {
   if (selection.isCaret()) {
-    updateCaretSelectionForRange(selection, true, 'word');
+    updateCaretSelectionForRange(selection, true, 'word', true);
   }
   removeText(selection);
   normalizeAnchorParent(selection);
@@ -482,7 +488,7 @@ export function deleteWordBackward(selection: Selection): void {
 
 export function deleteWordForward(selection: Selection): void {
   if (selection.isCaret()) {
-    updateCaretSelectionForRange(selection, false, 'word');
+    updateCaretSelectionForRange(selection, false, 'word', true);
   }
   removeText(selection);
   normalizeAnchorParent(selection);
@@ -490,7 +496,7 @@ export function deleteWordForward(selection: Selection): void {
 
 export function deleteBackward(selection: Selection): void {
   if (selection.isCaret()) {
-    updateCaretSelectionForRange(selection, true, 'character');
+    updateCaretSelectionForRange(selection, true, 'character', true);
     // Special handling around rich text nodes
     if (selection.isCaret()) {
       const anchorNode = selection.getAnchorNode();
@@ -522,7 +528,7 @@ export function deleteBackward(selection: Selection): void {
 
 export function deleteForward(selection: Selection): void {
   if (selection.isCaret()) {
-    updateCaretSelectionForRange(selection, false, 'character');
+    updateCaretSelectionForRange(selection, false, 'character', true);
   }
   removeText(selection);
   normalizeAnchorParent(selection);
@@ -579,10 +585,19 @@ function getSurrogatePairOffset(str: string, isBackward: boolean): number {
   return /[\uD800-\uDFFF]/.test(segment) ? segment.length : 1;
 }
 
+function hasWhitespaceAtBoundary(node: TextNode, isBackward: boolean): boolean {
+  const textContent = node.getTextContent();
+  const trimmedContent = isBackward
+    ? textContent.trimEnd()
+    : textContent.trimStart();
+  return trimmedContent.length !== textContent.length;
+}
+
 export function updateCaretSelectionForRange(
   selection: Selection,
   isBackward: boolean,
   granularity: 'character' | 'word' | 'line',
+  isCaret: boolean,
 ): void {
   const anchorOffset = selection.anchorOffset;
   const anchorNode = selection.getAnchorNode();
@@ -635,8 +650,11 @@ export function updateCaretSelectionForRange(
         }
         characterNode = sibling;
         textContent = sibling.getTextContent();
-        textContent = sibling.getTextContent();
         characterOffset = isBackward ? textContent.length : 0;
+        if (!isCaret) {
+          selection.anchorKey = sibling.getKey();
+          selection.anchorOffset = characterOffset;
+        }
       }
       let offset = 1;
       const textSlice = isBackward
@@ -662,7 +680,7 @@ export function updateCaretSelectionForRange(
       // If we move selection to the start, then we can check if there
       // is a node before that we can adjust selection to, which is a better
       // UX in most cases.
-      if (isBackward && selectionOffset === 0) {
+      if (isBackward && selectionOffset === 0 && isCaret) {
         const prevSibling = characterNode.getPreviousSibling();
         if (
           isTextNode(prevSibling) &&
@@ -705,9 +723,13 @@ export function updateCaretSelectionForRange(
           ? node.getPreviousSibling()
           : node.getNextSibling();
         if (
-          siblingAfter === null ||
+          !isTextNode(siblingAfter) ||
           (segments && segments.length > 1) ||
-          isLineBreakNode(siblingAfter)
+          isLineBreakNode(siblingAfter) ||
+          // If the next text node has whitespace at the boundary
+          // then we should stop here (unless we're also at a boundary).
+          (hasWhitespaceAtBoundary(siblingAfter, isBackward) &&
+            (node !== anchorNode || !isOffsetAtBoundary))
         ) {
           break;
         }

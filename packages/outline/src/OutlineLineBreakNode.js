@@ -20,6 +20,7 @@ export class LineBreakNode extends TextNode {
   clone(): LineBreakNode {
     const clone = new LineBreakNode(this.__key);
     clone.__parent = this.__parent;
+    clone.__flags = this.__flags;
     return clone;
   }
 

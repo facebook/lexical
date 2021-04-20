@@ -7,11 +7,11 @@
  */
 
 import {
-    initializeE2E,
-    assertHTMLSnapshot,
-    assertSelection,
-    repeat,
-  } from '../utils';
+  initializeE2E,
+  assertHTMLSnapshot,
+  assertSelection,
+  repeat,
+} from '../utils';
 
 describe('Regression test #230', () => {
   initializeE2E({chromium: true, webkit: true, firefox: true}, (e2e) => {
@@ -28,9 +28,9 @@ describe('Regression test #230', () => {
       await page.keyboard.press('ArrowRight');
       await assertHTMLSnapshot(page);
       await assertSelection(page, {
-        anchorPath: [0,1,0],
+        anchorPath: [0, 1, 0],
         anchorOffset: 1,
-        focusPath: [0,1,0],
+        focusPath: [0, 1, 0],
         focusOffset: 1,
       });
     });

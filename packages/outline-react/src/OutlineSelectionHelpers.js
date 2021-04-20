@@ -684,26 +684,35 @@ export function updateCaretSelectionForRange(
       let targetTextContent = isBackward
         ? textContent.slice(0, anchorOffset)
         : textContent.slice(anchorOffset);
-      let segments;
-      let segmentsLength = 0;
-      while (true) {
+      let foundWordNode = null;
+      mainLoop: while (true) {
         if (CAN_USE_INTL_SEGMENTER) {
-          segments = getSegmentsFromString(targetTextContent, 'word', true);
-          segmentsLength = segments.length;
-          let segment = null;
-          if (segmentsLength !== 0) {
-            segment = isBackward ? segments[segmentsLength - 1] : segments[0];
-          }
-          if (segment !== null) {
-            index = isBackward
-              ? segment.index
-              : segment.index + segment.segment.length;
+          const segments = getSegmentsFromString(targetTextContent, 'word');
+          const segmentsLength = segments.length;
+
+          if (isBackward) {
+            for (let i = segmentsLength - 1; i >= 0; i--) {
+              const segment = segments[i];
+
+              if (segment.isWordLike) {
+                index = segment.index;
+                foundWordNode = node;
+              } else if (foundWordNode !== null) {
+                node = foundWordNode;
+                break mainLoop;
+              }
+            }
           } else {
-            const contentLength = targetTextContent.length;
-            if (isBackward) {
-              index = anchorNode === node ? 0 : contentLength;
-            } else {
-              index = anchorNode === node ? (index = contentLength) : 0;
+            for (let i = 0; i < segmentsLength; i++) {
+              const segment = segments[i];
+
+              if (segment.isWordLike) {
+                index = segment.index + segment.segment.length;
+                foundWordNode = node;
+              } else if (foundWordNode !== null) {
+                node = foundWordNode;
+                break mainLoop;
+              }
             }
           }
         } else {
@@ -714,11 +723,7 @@ export function updateCaretSelectionForRange(
         const siblingAfter = isBackward
           ? node.getPreviousSibling()
           : node.getNextSibling();
-        if (
-          !isTextNode(siblingAfter) ||
-          (segments && segmentsLength > 1) ||
-          isLineBreakNode(siblingAfter)
-        ) {
+        if (!isTextNode(siblingAfter) || isLineBreakNode(siblingAfter)) {
           break;
         }
         targetTextContent = siblingAfter.getTextContent();

@@ -295,3 +295,7 @@ export async function pasteFromClipboard(page, clipboardData) {
     {clipboardData, canUseBeforeInput},
   );
 }
+
+export async function sleep(delay) {
+  await new Promise((resolve) => setTimeout(resolve, delay));
+}

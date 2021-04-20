@@ -383,7 +383,7 @@ function moveCaretSelection(
     // If selection is just before for non Apple devices, we then
     // announce the node for screen readers other than VoiceOver.
     const nextSibling = focusNode.getNextSibling();
-    if (nextSibling !== null && nextSibling.isSegmented()) {
+    if (isTextNode(nextSibling) && nextSibling.isSegmented()) {
       announceNode(nextSibling);
     }
   }

@@ -16,7 +16,7 @@ module.exports = {
       displayName: 'e2e',
       testMatch: [
         '**/__tests__/e2e/**/*.js',
-        '**/__tests__/regression/**/*.js'
+        '**/__tests__/regression/**/*.js',
       ],
     },
   ],

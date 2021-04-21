@@ -693,15 +693,16 @@ export function updateCaretSelectionForRange(
           if (isBackward) {
             for (let i = segmentsLength - 1; i >= 0; i--) {
               const segment = segments[i];
+              const nextIndex = segment.index;
 
               if (segment.isWordLike) {
-                index = segment.index;
+                index = nextIndex;
                 foundWordNode = node;
               } else if (foundWordNode !== null) {
                 node = foundWordNode;
                 break mainLoop;
               } else if (node === anchorNode) {
-                index = segment.index;
+                index = nextIndex;
               }
             }
           } else {

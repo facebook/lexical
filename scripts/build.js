@@ -130,6 +130,8 @@ ${license}
   * @preventMunge
   * @preserve-invariant-messages
   * @generated
+  * @preserve-whitespace
+  * @fullSyntaxTransform
   */
 
 ${source}`;

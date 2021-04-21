@@ -700,18 +700,23 @@ export function updateCaretSelectionForRange(
               } else if (foundWordNode !== null) {
                 node = foundWordNode;
                 break mainLoop;
+              } else if (node === anchorNode) {
+                index = segment.index;
               }
             }
           } else {
             for (let i = 0; i < segmentsLength; i++) {
               const segment = segments[i];
+              const nextIndex = segment.index + segment.segment.length;
 
               if (segment.isWordLike) {
-                index = segment.index + segment.segment.length;
+                index = nextIndex;
                 foundWordNode = node;
               } else if (foundWordNode !== null) {
                 node = foundWordNode;
                 break mainLoop;
+              } else if (node === anchorNode) {
+                index = nextIndex;
               }
             }
           }

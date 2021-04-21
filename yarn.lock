@@ -5668,40 +5668,40 @@ globby@^6.1.0:
     pify "^2.0.0"
     pinkie-promise "^2.0.0"
 
-google-closure-compiler-java@^20201006.0.0:
-  version "20201006.0.0"
-  resolved "https://registry.yarnpkg.com/google-closure-compiler-java/-/google-closure-compiler-java-20201006.0.0.tgz#a650d2fcac37df892be4dc34e8aa9d480b4a9748"
-  integrity sha512-22FBVYwCDxR97pNRQ1ll+YzXlaSyKHZqhDCEAPJ1q6RWhSROvV/hY/n3rZggjLj4aoi7vXU7k9KjyxtIOfdhPg==
+google-closure-compiler-java@^20210406.0.0:
+  version "20210406.0.0"
+  resolved "https://registry.yarnpkg.com/google-closure-compiler-java/-/google-closure-compiler-java-20210406.0.0.tgz#f2be1f825e1c08027698e24dc3ad7c762a7b838d"
+  integrity sha512-hVOoFiIenZuicZSLqi4sNdwzWeg9hRi3acpvOy6WPwKQUuUNkSXNtUiiXpKgCY5puDs49onhV7FzAHoQ/908lg==
 
-google-closure-compiler-linux@^20201006.0.0:
-  version "20201006.0.0"
-  resolved "https://registry.yarnpkg.com/google-closure-compiler-linux/-/google-closure-compiler-linux-20201006.0.0.tgz#071cf40a12ad0ca7a7733fd0ab71592ce3f4d9c5"
-  integrity sha512-h+ktF8M/W8DOCJjg0n8CbViOoDbARANOs0bseOP7XHHxK7ENzFAP3cKJXgYkFyzVYLoFPS5FSMzMjWsk5t1crA==
+google-closure-compiler-linux@^20210406.0.0:
+  version "20210406.0.0"
+  resolved "https://registry.yarnpkg.com/google-closure-compiler-linux/-/google-closure-compiler-linux-20210406.0.0.tgz#e31ecb9ae6cdfb4e1b02052d8f24ac457e8fd435"
+  integrity sha512-KzE39AD3OOZMkR1TtE3nwPBhB3eEJwH8w4Jm3vx2k4veFhryWASFAnDMfHcASzlzjk05tPjecuFtGrHhVafL+w==
 
-google-closure-compiler-osx@^20201006.0.0:
-  version "20201006.0.0"
-  resolved "https://registry.yarnpkg.com/google-closure-compiler-osx/-/google-closure-compiler-osx-20201006.0.0.tgz#cd0707c96578555dc19b96d6eb117e1e658d190d"
-  integrity sha512-HrY1CQWHW7fjDGX+cof27DLpKbSEMp6GthHwPgKrAaYAC5k1+eShYXm9uKEVnIm3oTjCK0K/r2FQ4b5bvfTmcw==
+google-closure-compiler-osx@^20210406.0.0:
+  version "20210406.0.0"
+  resolved "https://registry.yarnpkg.com/google-closure-compiler-osx/-/google-closure-compiler-osx-20210406.0.0.tgz#17049155b2eba6a74b383d6b013d929a8a3a6d6a"
+  integrity sha512-Kph0hewevDC2T3uEQSRFoZAI5oE18ceyx5gUy93B0fd8cbL7vUCVjazBcHKOUiQ/Opq2CT96V0moCSFEhq8d1w==
 
-google-closure-compiler-windows@^20201006.0.0:
-  version "20201006.0.0"
-  resolved "https://registry.yarnpkg.com/google-closure-compiler-windows/-/google-closure-compiler-windows-20201006.0.0.tgz#26d6e928ef49361fd6fc036d4cafc634691b28cd"
-  integrity sha512-ZPHJM1raylOR63SJ8NBK7wlVDqayNnaQXchzmcKLltBbTyAF4bGUhBnWPRgBCRuzU9wrqYKXrQ4Fkpa4FUdB0g==
+google-closure-compiler-windows@^20210406.0.0:
+  version "20210406.0.0"
+  resolved "https://registry.yarnpkg.com/google-closure-compiler-windows/-/google-closure-compiler-windows-20210406.0.0.tgz#030a8f4bc7d9aa3fbcfe6028a8b8e23bc0cab755"
+  integrity sha512-IlFWn3vv8SLCRcxK6MSfRgnU4we7zy+s6OczmEmH4wymkpRM6aydAaD4Vxz68i00Om0hkT5l2oO3cFq5FiQBLg==
 
-google-closure-compiler@^20201006.0.0:
-  version "20201006.0.0"
-  resolved "https://registry.yarnpkg.com/google-closure-compiler/-/google-closure-compiler-20201006.0.0.tgz#23e94614166b1345675ad41a29bb15465953bbb8"
-  integrity sha512-BW6Dm0AV/3KxUf3Jw8i+EJFNLM06ZMfWY3+j1Ft4vPek7UTO3O9PtX8hLcqbxDfDmlRzZjqfCFtReUZJa2ZWQA==
+google-closure-compiler@^20210406.0.0:
+  version "20210406.0.0"
+  resolved "https://registry.yarnpkg.com/google-closure-compiler/-/google-closure-compiler-20210406.0.0.tgz#954be1b1347ccfab00dbcaed5c6296133e710e0c"
+  integrity sha512-qaQqEjIneTK5OXYfZmGnWwy5S1nYLeTTphpbc7LzhsvEq4s2xapKCi6fC8VsbCHZvgq8z5VNomMJU97ErRCyGQ==
   dependencies:
     chalk "2.x"
-    google-closure-compiler-java "^20201006.0.0"
+    google-closure-compiler-java "^20210406.0.0"
     minimist "1.x"
     vinyl "2.x"
     vinyl-sourcemaps-apply "^0.2.0"
   optionalDependencies:
-    google-closure-compiler-linux "^20201006.0.0"
-    google-closure-compiler-osx "^20201006.0.0"
-    google-closure-compiler-windows "^20201006.0.0"
+    google-closure-compiler-linux "^20210406.0.0"
+    google-closure-compiler-osx "^20210406.0.0"
+    google-closure-compiler-windows "^20210406.0.0"
 
 graceful-fs@^4.1.11, graceful-fs@^4.1.15, graceful-fs@^4.1.2, graceful-fs@^4.1.6, graceful-fs@^4.2.0, graceful-fs@^4.2.4:
   version "4.2.6"

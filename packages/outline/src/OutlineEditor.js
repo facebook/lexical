@@ -106,6 +106,9 @@ function updateEditor(
   markAllTextNodesAsDirty: boolean,
   callbackFn?: () => void,
 ): boolean {
+  if (callbackFn) {
+    editor._deferred.push(callbackFn);
+  }
   let pendingViewModel = editor._pendingViewModel;
   let viewModelWasCloned = false;
 
@@ -169,9 +172,6 @@ function updateEditor(
   if (viewModelWasCloned) {
     scheduleMicroTask(() => {
       commitPendingUpdates(editor);
-      if (callbackFn) {
-        callbackFn();
-      }
     });
   }
   return true;
@@ -181,7 +181,8 @@ export class OutlineEditor {
   _editorElement: null | HTMLElement;
   _viewModel: ViewModel;
   _pendingViewModel: null | ViewModel;
-  _isComposing: boolean;
+  _compositionKey: null | NodeKey;
+  _deferred: Array<() => void>;
   _isKeyDown: boolean;
   _isPointerDown: boolean;
   _key: string;
@@ -207,7 +208,8 @@ export class OutlineEditor {
     // Handling of drafts and updates
     this._pendingViewModel = null;
     // Used to help co-ordinate selection and events
-    this._isComposing = false;
+    this._compositionKey = null;
+    this._deferred = [];
     this._isKeyDown = false;
     // Used during reconciliation
     this._keyToDOMMap = new Map();
@@ -245,7 +247,7 @@ export class OutlineEditor {
     this._textContent = '';
   }
   isComposing(): boolean {
-    return this._isComposing;
+    return this._compositionKey != null;
   }
   isKeyDown(): boolean {
     return this._isKeyDown;
@@ -253,10 +255,20 @@ export class OutlineEditor {
   isPointerDown(): boolean {
     return this._isPointerDown;
   }
-  setComposing(isComposing: boolean): void {
-    this._isComposing = isComposing;
-    if (isComposing) {
-      reconcilePlaceholder(this, this._viewModel);
+  setCompositionKey(nodeKey: null | NodeKey): void {
+    if (nodeKey === null) {
+      this._compositionKey = null;
+      updateEditor(this, emptyFunction, true);
+      const pendingViewModel = this._pendingViewModel;
+      if (pendingViewModel !== null) {
+        pendingViewModel.markDirty();
+      }
+    } else {
+      updateEditor(this, emptyFunction, true);
+      this._deferred.push(() => {
+        this._compositionKey = nodeKey;
+        reconcilePlaceholder(this, this._viewModel);
+      });
     }
   }
   setKeyDown(isKeyDown: boolean): void {

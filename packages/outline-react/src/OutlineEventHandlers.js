@@ -16,12 +16,7 @@ import type {
   View,
 } from 'outline';
 
-import {
-  CAN_USE_BEFORE_INPUT,
-  IS_SAFARI,
-  IS_CHROME,
-  IS_FIREFOX,
-} from './OutlineEnv';
+import {CAN_USE_BEFORE_INPUT, IS_FIREFOX} from './OutlineEnv';
 import {
   isDeleteBackward,
   isDeleteForward,
@@ -62,6 +57,11 @@ import {
   moveForward,
   moveWordForward,
 } from './OutlineSelectionHelpers';
+
+// Safari triggers composition before keydown, meaning
+// we need to account for this when handling key events.
+let wasRecentlyComposing = false;
+const RESOLVE_DELAY = 20;
 
 // TODO the Flow types here needs fixing
 export type EventHandler = (
@@ -127,7 +127,7 @@ export function onKeyDownForPlainText(
   state: EventHandlerState,
 ): void {
   editor.setKeyDown(true);
-  if (editor.isComposing()) {
+  if (editor.isComposing() || wasRecentlyComposing) {
     return;
   }
   editor.update((view) => {
@@ -190,7 +190,7 @@ export function onKeyDownForRichText(
   state: EventHandlerState,
 ): void {
   editor.setKeyDown(true);
-  if (editor.isComposing()) {
+  if (editor.isComposing() || wasRecentlyComposing) {
     return;
   }
   editor.update((view) => {
@@ -381,17 +381,17 @@ export function onCompositionStart(
 ): void {
   editor.update((view) => {
     const selection = view.getSelection();
-    editor.setComposing(true);
     if (selection !== null) {
-      // We only have native beforeinput composition events for
-      // Safari, so we have to apply the composition selection for
-      // other browsers.
-      if (!IS_SAFARI) {
+      if (!CAN_USE_BEFORE_INPUT) {
+        // We only have native beforeinput composition events for
+        // Safari, so we have to apply the composition selection for
+        // other browsers.
         state.compositionSelection = selection;
       }
       if (!selection.isCaret()) {
         removeText(selection);
       }
+      editor.setCompositionKey(selection.anchorKey);
     }
   });
 }
@@ -401,36 +401,11 @@ export function onCompositionEnd(
   editor: OutlineEditor,
   state: EventHandlerState,
 ): void {
-  const data = event.data;
-  editor.update((view) => {
-    const selection = view.getSelection();
-    editor.setComposing(false);
-    if (data != null && selection !== null) {
-      // We only have native beforeinput composition events for
-      // Safari, so we have to apply the composition selection for
-      // other browsers.
-      if (!IS_SAFARI) {
-        const compositionSelection = state.compositionSelection;
-        state.compositionSelection = null;
-        if (compositionSelection !== null) {
-          selection.setRange(
-            compositionSelection.anchorKey,
-            compositionSelection.anchorOffset,
-            compositionSelection.focusKey,
-            compositionSelection.focusOffset,
-          );
-        }
-      }
-      // Handle the fact that Chromium/FF nightly doesn't fire beforeInput's
-      // insertFromComposition/deleteByComposition composition events, so we
-      // need to listen to the compositionend event to apply the composition
-      // data and also handle composition selection. There's no good way of
-      // detecting this, so we'll have to use browser agents.
-      if (!IS_SAFARI && CAN_USE_BEFORE_INPUT) {
-        insertText(selection, data);
-      }
-    }
-  });
+  editor.setCompositionKey(null);
+  wasRecentlyComposing = true;
+  setTimeout(() => {
+    wasRecentlyComposing = false;
+  }, RESOLVE_DELAY);
 }
 
 export function onSelectionChange(
@@ -479,7 +454,11 @@ export function onNativeInput(
 ): void {
   const inputType = event.inputType;
 
-  if (inputType !== 'insertText') {
+  if (
+    inputType !== 'insertText' &&
+    inputType !== 'insertCompositionText' &&
+    inputType !== 'deleteCompositionText'
+  ) {
     return;
   }
 
@@ -489,7 +468,6 @@ export function onNativeInput(
     if (selection === null) {
       return;
     }
-
     const data = event.data;
     if (data) {
       insertText(selection, data);
@@ -514,40 +492,49 @@ export function onNativeBeforeInputForPlainText(
 ): void {
   const inputType = event.inputType;
 
-  // These two types occur while a user is composing text and can't be
-  // cancelled. Let them through and wait for the composition to end.
-  if (
-    inputType === 'insertCompositionText' ||
-    inputType === 'deleteCompositionText'
-  ) {
-    return;
-  }
   editor.update((view) => {
     const selection = view.getSelection();
 
     if (selection === null) {
       return;
     }
-    // Chromium has a bug with the wrong offsets for deleteSoftLineBackward.
-    // See: https://bugs.chromium.org/p/chromium/issues/detail?id=1043564
-    if (inputType !== 'deleteSoftLineBackward' || !IS_CHROME) {
-      applyTargetRange(selection, event);
+    if (inputType === 'deleteContentBackward') {
+      // Used for Android
+      editor.setCompositionKey(null);
+      event.preventDefault();
+      deleteBackward(selection);
+      return;
     }
-    if (inputType === 'insertText') {
+
+    applyTargetRange(selection, event);
+
+    if (
+      inputType === 'insertText' ||
+      inputType === 'insertCompositionText' ||
+      inputType === 'deleteCompositionText'
+    ) {
       if (!selection.isCaret()) {
         removeText(selection);
       }
       return;
     }
+
+    applyTargetRange(selection, event);
+
     const data = event.data;
     event.preventDefault();
 
     switch (inputType) {
-      case 'insertText':
       case 'insertFromComposition': {
         if (data) {
           insertText(selection, data);
         }
+        break;
+      }
+      case 'insertParagraph': {
+        // Used for Android
+        editor.setCompositionKey(null);
+        insertLineBreak(selection);
         break;
       }
       case 'insertFromYank':
@@ -605,44 +592,53 @@ export function onNativeBeforeInputForRichText(
 ): void {
   const inputType = event.inputType;
 
-  // These two types occur while a user is composing text and can't be
-  // cancelled. Let them through and wait for the composition to end.
-  if (
-    inputType === 'insertCompositionText' ||
-    inputType === 'deleteCompositionText'
-  ) {
-    return;
-  }
   editor.update((view) => {
     const selection = view.getSelection();
 
     if (selection === null) {
       return;
     }
-    // Chromium has a bug with the wrong offsets for deleteSoftLineBackward.
-    // See: https://bugs.chromium.org/p/chromium/issues/detail?id=1043564
-    if (inputType !== 'deleteSoftLineBackward' || !IS_CHROME) {
-      applyTargetRange(selection, event);
+    if (inputType === 'deleteContentBackward') {
+      // Used for Android
+      editor.setCompositionKey(null);
+      event.preventDefault();
+      deleteBackward(selection);
+      return;
     }
-    if (inputType === 'insertText') {
+
+    applyTargetRange(selection, event);
+
+    if (
+      inputType === 'insertText' ||
+      inputType === 'insertCompositionText' ||
+      inputType === 'deleteCompositionText'
+    ) {
       if (!selection.isCaret()) {
         removeText(selection);
       }
       return;
     }
+
+    applyTargetRange(selection, event);
+
     const data = event.data;
     event.preventDefault();
 
     switch (inputType) {
-      case 'formatStrikeThrough': {
-        formatText(selection, 'strikethrough');
-        break;
-      }
-      case 'insertText':
       case 'insertFromComposition': {
         if (data) {
           insertText(selection, data);
         }
+        break;
+      }
+      case 'insertParagraph': {
+        // Used for Android
+        editor.setCompositionKey(null);
+        insertParagraph(selection);
+        break;
+      }
+      case 'formatStrikeThrough': {
+        formatText(selection, 'strikethrough');
         break;
       }
       case 'insertFromYank':
@@ -703,6 +699,16 @@ export function onPolyfilledBeforeInput(
     const selection = view.getSelection();
     const data = event.data;
     if (data != null && selection !== null) {
+      const compositionSelection = state.compositionSelection;
+      state.compositionSelection = null;
+      if (compositionSelection !== null) {
+        selection.setRange(
+          compositionSelection.anchorKey,
+          compositionSelection.anchorOffset,
+          compositionSelection.focusKey,
+          compositionSelection.focusOffset,
+        );
+      }
       insertText(selection, data);
     }
   });

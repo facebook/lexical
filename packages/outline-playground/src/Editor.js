@@ -103,6 +103,14 @@ function useOutlineOnChange(
       return outlineEditor.addUpdateListener(onChange);
     }
   }, [onChange, outlineEditor]);
+  // Subscribe to errors
+  useEffect(() => {
+    if (outlineEditor !== null) {
+      return outlineEditor.addErrorListener(e => {
+        throw e;
+      });
+    }
+  }, [outlineEditor]);
 }
 
 function ContentEditable({

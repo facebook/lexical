@@ -91,10 +91,34 @@ export class Selection {
   }
   getTextContent(): string {
     const nodes = this.getNodes();
+    if (nodes.length === 0) {
+      return '';
+    }
+    const firstNode = nodes[0];
+    const lastNode = nodes[nodes.length - 1];
+    const isBefore = firstNode === this.getAnchorNode();
+    const anchorOffset = this.anchorOffset;
+    const focusOffset = this.focusOffset;
     let textContent = '';
     nodes.forEach((node) => {
       if (isTextNode(node)) {
-        textContent += node.getTextContent();
+        let text = node.getTextContent();
+        if (node === firstNode) {
+          if (node === lastNode) {
+            text = text.slice(anchorOffset, focusOffset);
+          } else {
+            text = isBefore
+              ? text.slice(anchorOffset)
+              : text.slice(focusOffset);
+          }
+        } else if (node === lastNode) {
+          text = isBefore
+            ? text.slice(0, focusOffset)
+            : text.slice(0, anchorOffset);
+        }
+        textContent += text;
+      } else if (isBlockNode(node)) {
+        textContent += '\n';
       }
     });
     return textContent;

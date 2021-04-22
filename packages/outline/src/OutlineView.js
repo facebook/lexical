@@ -231,6 +231,13 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
     triggerDecoratorListeners(pendingNodeDecorators, editor);
   }
   triggerUpdateListeners(editor);
+  const deferred = editor._deferred;
+  if (deferred.length !== 0) {
+    for (let i = 0; i < deferred.length; i++) {
+      deferred[i]();
+    }
+    editor._deferred = [];
+  }
 }
 
 export function triggerDecoratorListeners(

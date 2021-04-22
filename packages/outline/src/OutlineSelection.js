@@ -245,7 +245,7 @@ function resolveSelectionNodesAndOffsets(
     if (
       !isDirty &&
       resolvedAnchorNode === resolvedFocusNode &&
-      !editor._isComposing &&
+      !editor.isComposing() &&
       !editor._isPointerDown
     ) {
       const key = resolvedAnchorNode.__key;
@@ -315,7 +315,7 @@ export function createSelection(
   const currentViewModel = editor.getViewModel();
   const lastSelection = currentViewModel._selection;
   const eventType = getActiveEventType();
-  const isComposing = eventType === 'compositionstart';
+  const isCompositionStart = eventType === 'compositionstart';
   const isSelectionChange = eventType === 'selectionchange';
   const useDOMSelection = isSelectionChange || eventType === 'beforeinput';
   let anchorDOM, focusDOM, anchorOffset, focusOffset;
@@ -324,7 +324,7 @@ export function createSelection(
     eventType === undefined ||
     lastSelection === null ||
     useDOMSelection ||
-    (isComposing && editor.isKeyDown())
+    (isCompositionStart && editor.isKeyDown())
   ) {
     const domSelection: WindowSelection = window.getSelection();
     anchorDOM = domSelection.anchorNode;
@@ -338,7 +338,7 @@ export function createSelection(
       lastSelection.focusKey,
       lastSelection.focusOffset,
     );
-    if (isComposing) {
+    if (isCompositionStart) {
       selection.isDirty = true;
     }
     return selection;

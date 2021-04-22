@@ -249,8 +249,10 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
   const hasDirtySubTree =
     activeViewModelIsDirty || activeDirtySubTrees.has(key);
   const dom = activeEditor.getElementByKey(key);
+  // If we're composing this node, skip over reconciling it
+  const isComposingNode = key === activeEditor._compositionKey;
 
-  if (prevNode === nextNode && !hasDirtySubTree) {
+  if ((prevNode === nextNode && !hasDirtySubTree) || isComposingNode) {
     if (isTextNode(prevNode)) {
       const text = prevNode.__text;
       editorTextContent += text;
@@ -461,7 +463,7 @@ export function reconcilePlaceholder(
   const noPlaceholder =
     placeholderText === '' ||
     editor._textContent !== '' ||
-    editor._isComposing ||
+    editor.isComposing() ||
     !isEditorEmpty(editor, nextViewModel);
 
   let placeholderElement = editor._placeholderElement;
@@ -570,6 +572,7 @@ export function reconcileViewModel(
     }
   }
   if (
+    !editor.isComposing() &&
     nextSelection !== null &&
     (nextSelection.isDirty || isDirty || reconciliationCausedLostSelection)
   ) {
@@ -611,12 +614,30 @@ function reconcileSelection(selection: Selection, editor: OutlineEditor): void {
     anchorOffset = offset;
     focusOffset = offset;
   }
-  domSelection.setBaseAndExtent(
-    getDOMTextNodeFromElement(anchorDOM),
-    anchorOffset,
-    getDOMTextNodeFromElement(focusDOM),
-    focusOffset,
-  );
+  const anchorDOMTarget = getDOMTextNodeFromElement(anchorDOM);
+  const focusDOMTarget = getDOMTextNodeFromElement(focusDOM);
+
+  // Diff against the native DOM selection to ensure we don't do
+  // an unnecessary selection update.
+  if (
+    domSelection.anchorOffset !== anchorOffset ||
+    domSelection.focusOffset !== focusOffset ||
+    domSelection.anchorNode !== anchorDOMTarget ||
+    domSelection.focusNode !== focusDOMTarget
+  ) {
+    try {
+      domSelection.setBaseAndExtent(
+        anchorDOMTarget,
+        anchorOffset,
+        focusDOMTarget,
+        focusOffset,
+      );
+    } catch {
+      // If we encounter an error, continue. This can sometimes
+      // occur with FF and there's no good reason as to why it
+      // should happen.
+    }
+  }
 }
 
 function getDOMTextNodeFromElement(element: HTMLElement): Text {

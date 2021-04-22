@@ -11,10 +11,6 @@ const minimist = require('minimist');
 const runESLint = require('../eslint');
 
 console.log('Linting all files...');
-// https://circleci.com/docs/2.0/env-vars/#circleci-environment-variable-descriptions
-if (!process.env.CI) {
-  console.log('Hint: run `yarn linc` to only lint changed files.');
-}
 
 const cliOptions = minimist(process.argv.slice(2));
 if (runESLint({onlyChanged: false, ...cliOptions})) {

@@ -356,6 +356,7 @@ function moveCaretSelection(
   // We have to adjust selection if we move selection into a segmented node
   if (focusNode.isSegmented()) {
     if (isBackward) {
+      // Announce the node for all screen readers.
       announceNode(focusNode);
       const prevSibling = focusNode.getPreviousSibling();
       if (isTextNode(prevSibling)) {
@@ -373,13 +374,13 @@ function moveCaretSelection(
     const textSize = focusNode.getTextContentSize();
     const focusOffset = selection.focusOffset;
 
+    // If selection is just before for non Apple devices, we then
+    // announce the node for screen readers other than VoiceOver. If it
+    // is an Apple device then we should announce it on the boundary.
     if (
       (!IS_APPLE && focusOffset + 1 === textSize) ||
       (IS_APPLE && focusOffset === textSize)
     ) {
-      // If selection is just before for non Apple devices, we then
-      // announce the node for screen readers other than VoiceOver. If it
-      // is an Apple device then we should announce it on the boundary.
       const nextSibling = focusNode.getNextSibling();
       if (
         isTextNode(nextSibling) &&

@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [12.x]
+        node-version: [16.x]
     env:
       CI: true
       PLAYWRIGHT_BROWSERS_PATH: 0
@@ -20,17 +20,17 @@ jobs:
     - uses: actions/cache@v2
       with:
         path: '**/node_modules'
-        key: ${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}
-    - run: yarn install
-    - run: yarn build
-    - run: yarn lint
-    - run: yarn flow
+        key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+    - run: npm install --legacy-peer-deps
+    - run: npm run build
+    - run: npm run lint
+    - run: npm run flow
 
   unit:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [12.x]
+        node-version: [16.x]
     env:
       CI: true
       PLAYWRIGHT_BROWSERS_PATH: 0
@@ -43,16 +43,16 @@ jobs:
     - uses: actions/cache@v2
       with:
         path: '**/node_modules'
-        key: ${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}
-    - run: yarn install
-    - run: yarn build
-    - run: yarn test-unit
+        key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+    - run: npm install --legacy-peer-deps
+    - run: npm run build
+    - run: npm run test-unit
 
   e2e:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [12.x]
+        node-version: [16.x]
     env:
       CI: true
       PLAYWRIGHT_BROWSERS_PATH: 0
@@ -69,7 +69,7 @@ jobs:
     - uses: actions/cache@v2
       with:
         path: '**/node_modules'
-        key: ${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}
-    - run: yarn install
-    - run: yarn build
-    - run: yarn test-e2e-ci
+        key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+    - run: npm install --legacy-peer-deps
+    - run: npm run build
+    - run: npm run test-e2e-ci

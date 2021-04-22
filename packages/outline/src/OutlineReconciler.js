@@ -614,17 +614,29 @@ function reconcileSelection(selection: Selection, editor: OutlineEditor): void {
     anchorOffset = offset;
     focusOffset = offset;
   }
-  try {
-    domSelection.setBaseAndExtent(
-      getDOMTextNodeFromElement(anchorDOM),
-      anchorOffset,
-      getDOMTextNodeFromElement(focusDOM),
-      focusOffset,
-    );
-  } catch {
-    // If we encounter an error, continue. This can sometimes
-    // occur with FF and there's no good reason as to why it
-    // should happen.
+  const anchorDOMTarget = getDOMTextNodeFromElement(anchorDOM);
+  const focusDOMTarget = getDOMTextNodeFromElement(focusDOM);
+
+  // Diff against the native DOM selection to ensure we don't do
+  // an unnecessary selection update.
+  if (
+    domSelection.anchorOffset !== anchorOffset ||
+    domSelection.focusOffset !== focusOffset ||
+    domSelection.anchorNode !== anchorDOMTarget ||
+    domSelection.focusNode !== focusDOMTarget
+  ) {
+    try {
+      domSelection.setBaseAndExtent(
+        anchorDOMTarget,
+        anchorOffset,
+        focusDOMTarget,
+        focusOffset,
+      );
+    } catch {
+      // If we encounter an error, continue. This can sometimes
+      // occur with FF and there's no good reason as to why it
+      // should happen.
+    }
   }
 }
 

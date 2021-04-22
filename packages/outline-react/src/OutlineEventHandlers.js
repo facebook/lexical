@@ -498,6 +498,15 @@ export function onNativeBeforeInputForPlainText(
     if (selection === null) {
       return;
     }
+    if (inputType === 'deleteContentBackward') {
+      // Used for Android
+      editor.setCompositionKey(null);
+      event.preventDefault();
+      deleteBackward(selection);
+      return;
+    }
+
+    applyTargetRange(selection, event);
 
     if (
       inputType === 'insertText' ||
@@ -507,12 +516,6 @@ export function onNativeBeforeInputForPlainText(
       if (!selection.isCaret()) {
         removeText(selection);
       }
-      return;
-    } else if (inputType === 'deleteContentBackward') {
-      // Used for Android
-      editor.setCompositionKey(null);
-      event.preventDefault();
-      deleteBackward(selection);
       return;
     }
 
@@ -595,6 +598,15 @@ export function onNativeBeforeInputForRichText(
     if (selection === null) {
       return;
     }
+    if (inputType === 'deleteContentBackward') {
+      // Used for Android
+      editor.setCompositionKey(null);
+      event.preventDefault();
+      deleteBackward(selection);
+      return;
+    }
+
+    applyTargetRange(selection, event);
 
     if (
       inputType === 'insertText' ||
@@ -604,12 +616,6 @@ export function onNativeBeforeInputForRichText(
       if (!selection.isCaret()) {
         removeText(selection);
       }
-      return;
-    } else if (inputType === 'deleteContentBackward') {
-      // Used for Android
-      editor.setCompositionKey(null);
-      event.preventDefault();
-      deleteBackward(selection);
       return;
     }
 

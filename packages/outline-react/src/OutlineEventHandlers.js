@@ -540,6 +540,7 @@ export function onNativeBeforeInputForPlainText(
       } else if (data === '\n\n') {
         event.preventDefault();
         insertLineBreak(selection);
+        insertLineBreak(selection);
       }
       return;
     }

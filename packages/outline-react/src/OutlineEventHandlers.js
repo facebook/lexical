@@ -521,6 +521,7 @@ export function onNativeBeforeInputForPlainText(
       deleteBackward(selection);
       return;
     }
+    const data = event.data;
 
     applyTargetRange(selection, event);
 
@@ -532,12 +533,20 @@ export function onNativeBeforeInputForPlainText(
       if (!selection.isCaret()) {
         removeText(selection);
       }
+      // These are used for dictation tools
+      if (data === '\n') {
+        event.preventDefault();
+        insertLineBreak(selection);
+      } else if (data === '\n\n') {
+        event.preventDefault();
+        insertLineBreak(selection);
+        insertLineBreak(selection);
+      }
       return;
     }
 
     applyTargetRange(selection, event);
 
-    const data = event.data;
     event.preventDefault();
 
     switch (inputType) {
@@ -621,6 +630,7 @@ export function onNativeBeforeInputForRichText(
       deleteBackward(selection);
       return;
     }
+    const data = event.data;
 
     applyTargetRange(selection, event);
 
@@ -632,12 +642,19 @@ export function onNativeBeforeInputForRichText(
       if (!selection.isCaret()) {
         removeText(selection);
       }
+      // These are used for dictation tools
+      if (data === '\n') {
+        event.preventDefault();
+        insertLineBreak(selection);
+      } else if (data === '\n\n') {
+        event.preventDefault();
+        insertParagraph(selection);
+      }
       return;
     }
 
     applyTargetRange(selection, event);
 
-    const data = event.data;
     event.preventDefault();
 
     switch (inputType) {

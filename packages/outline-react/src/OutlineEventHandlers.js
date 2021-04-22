@@ -509,6 +509,7 @@ export function onNativeBeforeInputForPlainText(
       }
       return;
     } else if (inputType === 'deleteContentBackward') {
+      // Used for Android
       editor.setCompositionKey(null);
       event.preventDefault();
       deleteBackward(selection);
@@ -528,6 +529,7 @@ export function onNativeBeforeInputForPlainText(
         break;
       }
       case 'insertParagraph': {
+        // Used for Android
         editor.setCompositionKey(null);
         insertLineBreak(selection);
         break;
@@ -604,6 +606,7 @@ export function onNativeBeforeInputForRichText(
       }
       return;
     } else if (inputType === 'deleteContentBackward') {
+      // Used for Android
       editor.setCompositionKey(null);
       event.preventDefault();
       deleteBackward(selection);
@@ -623,6 +626,7 @@ export function onNativeBeforeInputForRichText(
         break;
       }
       case 'insertParagraph': {
+        // Used for Android
         editor.setCompositionKey(null);
         insertParagraph(selection);
         break;

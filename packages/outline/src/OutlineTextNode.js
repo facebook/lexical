@@ -557,12 +557,14 @@ export class TextNode extends OutlineNode {
         parent.normalizeTextNodes(true);
         return this;
       }
-      const whiteSpaceIndex = handledText.search(/\s/);
+      const breakCharacterIndex = handledText.search(
+        /[\s.,\\\/#!$%\^&\*;:{}=\-`~()]/,
+      );
 
-      if (whiteSpaceIndex !== -1) {
+      if (breakCharacterIndex !== -1) {
         const currentText = this.getTextContent();
-        handledText = newText.slice(0, whiteSpaceIndex);
-        const splitTextStr = newText.slice(whiteSpaceIndex);
+        handledText = newText.slice(0, breakCharacterIndex);
+        const splitTextStr = newText.slice(breakCharacterIndex);
         const textNode = createTextNode(splitTextStr);
         if (offset === currentText.length) {
           this.insertAfter(textNode);

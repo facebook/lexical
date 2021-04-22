@@ -7,10 +7,9 @@
  * @flow strict
  */
 
-import type {RootNode, OutlineNode, TextNode} from 'outline';
+import type {RootNode, TextNode} from 'outline';
 
 import {isTextNode, isBlockNode} from 'outline';
-import {CAN_USE_INTL_SEGMENTER} from './OutlineEnv';
 
 export function findTextIntersectionFromCharacters(
   root: RootNode,
@@ -76,19 +75,8 @@ export function announceString(s: string): void {
   }
 }
 
-function hasAtLeastTwoVisibleChars(s: string): boolean {
-  if (CAN_USE_INTL_SEGMENTER) {
-    const segments = getSegmentsFromString(s, 'grapheme');
-    return segments.length > 1;
-  }
-  // TODO: Implement polyfill for `Intl.Segmenter`.
-  return [...s].length > 1;
-}
-
-export function announceNode(node: OutlineNode): void {
-  if (isTextNode(node) && hasAtLeastTwoVisibleChars(node.getTextContent())) {
-    announceString(node.getTextContent());
-  }
+export function announceNode(node: TextNode): void {
+  announceString(node.getTextContent());
 }
 
 export function getSegmentsFromString(

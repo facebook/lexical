@@ -364,25 +364,30 @@ function moveCaretSelection(
         selection.focusOffset = prevSibling.getTextContentSize();
       }
     } else {
-      // Announce the node for VoiceOver
-      if (IS_APPLE) {
-        announceNode(focusNode);
-      }
       const nextSibling = focusNode.getNextSibling();
       if (isTextNode(nextSibling)) {
         selection.focusKey = nextSibling.getKey();
         selection.focusOffset = 0;
       }
     }
-  } else if (
-    !IS_APPLE &&
-    focusNode.getTextContentSize() === selection.focusOffset + 1
-  ) {
+  } else {
+    const textSize = focusNode.getTextContentSize();
+    const focusOffset = selection.focusOffset;
+
     // If selection is just before for non Apple devices, we then
-    // announce the node for screen readers other than VoiceOver.
-    const nextSibling = focusNode.getNextSibling();
-    if (isTextNode(nextSibling) && nextSibling.isSegmented()) {
-      announceNode(nextSibling);
+    // announce the node for screen readers other than VoiceOver. If it
+    // is an Apple device then we should announce it on the boundary.
+    if (
+      (!IS_APPLE && focusOffset + 1 === textSize) ||
+      (IS_APPLE && focusOffset === textSize)
+    ) {
+      const nextSibling = focusNode.getNextSibling();
+      if (
+        isTextNode(nextSibling) &&
+        (nextSibling.isImmutable() || nextSibling.isSegmented())
+      ) {
+        announceNode(nextSibling);
+      }
     }
   }
   if (isCaret) {

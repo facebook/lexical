@@ -7,11 +7,11 @@ Outline is a fast, light-weight, extensible library for building rich text edito
 1. Clone this repository
 
 2. Install dependencies
-   - `yarn install`
+   - `npm install --legacy-peer-deps`
 
 3. Start local server and run tests
-   - `yarn start`
-   - `yarn test`
+   - `npm run start`
+   - `npm run test`
      - The server needs to be running for the e2e tests
 
 ### Optional but recommended, use VSCode for development
@@ -42,6 +42,6 @@ Outline is a fast, light-weight, extensible library for building rich text edito
 
 ## Running tests
 
-* `yarn test` runs e2e and unit tests.
-* `yarn test-e2e` runs only e2e tests.
-* `yarn test-unit` runs only unit tests.
+* `npm run test` runs e2e and unit tests.
+* `npm run test-e2e` runs only e2e tests.
+* `npm run test-unit` runs only unit tests.

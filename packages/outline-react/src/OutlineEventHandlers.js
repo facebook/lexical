@@ -149,11 +149,19 @@ export function onKeyDownForPlainText(
     const isCaret = !event.shiftKey;
 
     if (isMoveBackward(event)) {
-      event.preventDefault();
-      moveBackward(selection, isCaret);
+      if (selection.isCaret() && selection.anchorOffset < 2) {
+        event.preventDefault();
+        moveBackward(selection, isCaret);
+      }
     } else if (isMoveForward(event)) {
-      event.preventDefault();
-      moveForward(selection, isCaret);
+      if (
+        selection.isCaret() &&
+        selection.anchorOffset >
+          selection.getAnchorNode().getTextContentSize() - 2
+      ) {
+        event.preventDefault();
+        moveForward(selection, isCaret);
+      }
     } else if (isParagraph(event) || isLineBreak(event)) {
       event.preventDefault();
       insertLineBreak(selection);
@@ -212,11 +220,19 @@ export function onKeyDownForRichText(
     const isCaret = !event.shiftKey;
 
     if (isMoveBackward(event)) {
-      event.preventDefault();
-      moveBackward(selection, isCaret);
+      if (selection.isCaret() && selection.anchorOffset < 2) {
+        event.preventDefault();
+        moveBackward(selection, isCaret);
+      }
     } else if (isMoveForward(event)) {
-      event.preventDefault();
-      moveForward(selection, isCaret);
+      if (
+        selection.isCaret() &&
+        selection.anchorOffset >
+          selection.getAnchorNode().getTextContentSize() - 2
+      ) {
+        event.preventDefault();
+        moveForward(selection, isCaret);
+      }
     } else if (isLineBreak(event)) {
       event.preventDefault();
       insertLineBreak(selection);

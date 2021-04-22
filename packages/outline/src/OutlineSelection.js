@@ -157,7 +157,7 @@ function resolveNonLineBreakNode(node: LineBreakNode): [TextNode, number] {
       invariant();
     }
   }
-  const offset = resolvedNode.getTextContent().length;
+  const offset = resolvedNode.getTextContentSize();
   return [resolvedNode, offset];
 }
 
@@ -203,7 +203,7 @@ function resolveSelectionNodeAndOffset(
         if (resolvedNode === null) {
           return null;
         }
-        resolvedOffset = resolvedNode.getTextContent().length;
+        resolvedOffset = resolvedNode.getTextContentSize();
       } else {
         resolvedNode = resolvedNode.getFirstTextNode();
         resolvedOffset = 0;

@@ -67,7 +67,7 @@ export default function useTypeahead(editor: null | OutlineEditor): void {
       const selection = view.getSelection();
       const anchorNode = selection?.getAnchorNode();
       const anchorOffset = selection?.anchorOffset;
-      const anchorLength = anchorNode?.getTextContent().length;
+      const anchorLength = anchorNode?.getTextContentSize();
       const isCaretPositionAtEnd =
         anchorLength != null && anchorOffset === anchorLength;
       if (suggestion === null || !selectionCollapsed || !isCaretPositionAtEnd) {

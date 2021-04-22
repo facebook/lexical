@@ -361,7 +361,7 @@ function moveCaretSelection(
       const prevSibling = focusNode.getPreviousSibling();
       if (isTextNode(prevSibling)) {
         selection.focusKey = prevSibling.getKey();
-        selection.focusOffset = prevSibling.getTextContent().length;
+        selection.focusOffset = prevSibling.getTextContentSize();
       }
     } else {
       // Announce the node for VoiceOver
@@ -376,7 +376,7 @@ function moveCaretSelection(
     }
   } else if (
     !IS_APPLE &&
-    focusNode.getTextContent().length === selection.focusOffset + 1
+    focusNode.getTextContentSize() === selection.focusOffset + 1
   ) {
     // If selection is just before for non Apple devices, we then
     // announce the node for screen readers other than VoiceOver.
@@ -546,7 +546,7 @@ function updateSelectionForNextSiblingRange(
     : sibling.getNextSibling();
   if (isTextNode(nextSibling)) {
     const key = nextSibling.getKey();
-    const offset = isBackward ? nextSibling.getTextContent().length : 0;
+    const offset = isBackward ? nextSibling.getTextContentSize() : 0;
     setSelectionFocus(selection, key, offset);
   }
 }
@@ -611,7 +611,7 @@ export function updateCaretSelectionForRange(
         : block.getFirstTextNode();
       if (textNode !== null) {
         const key = textNode.getKey();
-        const offset = isBackward ? textNode.getTextContent().length : 0;
+        const offset = isBackward ? textNode.getTextContentSize() : 0;
         setSelectionFocus(selection, key, offset);
       }
     }
@@ -673,7 +673,7 @@ export function updateCaretSelectionForRange(
           !prevSibling.isInert()
         ) {
           characterNode = prevSibling;
-          selectionOffset = prevSibling.getTextContent().length;
+          selectionOffset = prevSibling.getTextContentSize();
         }
       }
       setSelectionFocus(selection, characterNode.getKey(), selectionOffset);
@@ -757,10 +757,11 @@ export function updateCaretSelectionForRange(
           ? node.getPreviousSibling()
           : node.getNextSibling();
         if (siblingAfter === null || isLineBreakNode(siblingAfter)) {
-          const target = siblingAfter || node;
-          const key = target.getKey();
-          const offset = isBackward ? 0 : target.getTextContent().length;
-          setSelectionFocus(selection, key, offset);
+          if (isTextNode(node)) {
+            const key = node.getKey();
+            const offset = isBackward ? 0 : node.getTextContentSize();
+            setSelectionFocus(selection, key, offset);
+          }
           break;
         }
         node = siblingAfter;
@@ -963,11 +964,11 @@ export function insertText(selection: Selection, text: string): void {
         firstNode.select(startOffset, startOffset);
       }
     }
-    const lastNodeTextLength = lastNode.getTextContent().length;
 
     if (!firstNodeParents.has(lastNode)) {
       if (
-        endOffset === lastNodeTextLength &&
+        isTextNode(lastNode) &&
+        endOffset === lastNode.getTextContentSize() &&
         lastNode.getKey() !== selection.anchorKey
       ) {
         lastNodeRemove = true;
@@ -1025,7 +1026,7 @@ export function selectAll(selection: Selection): void {
       firstTextNode.getKey(),
       0,
       lastTextNode.getKey(),
-      lastTextNode.getTextContent().length,
+      lastTextNode.getTextContentSize(),
     );
   }
 }

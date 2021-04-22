@@ -42,7 +42,7 @@ function combineAdjacentTextNodes(
   // Merge all text nodes into the first node
   const writableMergeToNode = getWritableNode(textNodes[0]);
   const key = writableMergeToNode.__key;
-  let textLength = writableMergeToNode.getTextContent().length;
+  let textLength = writableMergeToNode.getTextContentSize();
   for (let i = 1; i < textNodes.length; i++) {
     const textNode = textNodes[i];
     const siblingText = textNode.getTextContent();

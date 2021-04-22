@@ -75,7 +75,7 @@ export default function useOutlineDragonSupport(editor: OutlineEditor) {
                   setSelEnd = selStart + selLength;
                   const anchorNodeTextLength = selection
                     .getAnchorNode()
-                    .getTextContent().length;
+                    .getTextContentSize();
                   // If the offset is more than the end, make it the end
                   setSelStart =
                     setSelStart > anchorNodeTextLength

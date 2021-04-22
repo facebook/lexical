@@ -47,7 +47,7 @@ export class CodeNode extends BlockNode {
   insertNewAfter(selection: Selection): null | ParagraphNode {
     const textContent = this.getTextContent();
     const anchorNode = selection.getAnchorNode();
-    const anchorTextContentLength = anchorNode.getTextContent().length;
+    const anchorTextContentLength = anchorNode.getTextContentSize();
     const children = this.getChildren();
     const childrenLength = children.length;
     const lastChild = children[childrenLength - 1];

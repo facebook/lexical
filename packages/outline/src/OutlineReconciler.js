@@ -625,6 +625,7 @@ function reconcileSelection(selection: Selection, editor: OutlineEditor): void {
     domSelection.anchorNode !== anchorDOMTarget ||
     domSelection.focusNode !== focusDOMTarget
   ) {
+    console.log('selection');
     try {
       domSelection.setBaseAndExtent(
         anchorDOMTarget,

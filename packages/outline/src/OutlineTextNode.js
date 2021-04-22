@@ -239,7 +239,6 @@ function setTextThemeClassNames(
 }
 
 function setTextContent(
-  prevText: null | string,
   _nextText: string,
   dom: HTMLElement,
   node: TextNode,
@@ -251,7 +250,7 @@ function setTextContent(
   }
   if (firstChild == null) {
     dom.textContent = nextText;
-  } else if (prevText !== nextText || firstChild.nodeValue !== nextText) {
+  } else if (firstChild.nodeValue !== nextText) {
     firstChild.nodeValue = nextText;
   }
 }
@@ -264,7 +263,7 @@ function createTextInnerDOM(
   text: string,
   editorThemeClasses: EditorThemeClasses,
 ): void {
-  setTextContent(null, text, innerDOM, node);
+  setTextContent(text, innerDOM, node);
   // Apply theme class names
   const textClassNames = editorThemeClasses.text;
 
@@ -379,7 +378,6 @@ export class TextNode extends OutlineNode {
     dom: HTMLElement,
     editorThemeClasses: EditorThemeClasses,
   ): boolean {
-    const prevText = prevNode.__text;
     const nextText = this.__text;
     const prevFlags = prevNode.__flags;
     const nextFlags = this.__flags;
@@ -429,7 +427,7 @@ export class TextNode extends OutlineNode {
         }
       }
     }
-    setTextContent(prevText, nextText, innerDOM, this);
+    setTextContent(nextText, innerDOM, this);
     // Apply theme class names
     const textClassNames = editorThemeClasses.text;
 

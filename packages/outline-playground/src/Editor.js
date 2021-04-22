@@ -106,7 +106,7 @@ function useOutlineOnChange(
   // Subscribe to errors
   useEffect(() => {
     if (outlineEditor !== null) {
-      return outlineEditor.addErrorListener(e => {
+      return outlineEditor.addErrorListener((e) => {
         throw e;
       });
     }

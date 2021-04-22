@@ -16,6 +16,26 @@ function controlOrMeta(event: KeyboardEvent): boolean {
   return event.ctrlKey;
 }
 
+function isEnter(event: KeyboardEvent): boolean {
+  return event.key === 'Enter' || event.keyCode === 13;
+}
+
+function isBackspace(event: KeyboardEvent): boolean {
+  return event.key === 'Backspace' || event.keyCode === 8;
+}
+
+function isDelete(event: KeyboardEvent): boolean {
+  return event.key === 'Delete' || event.keyCode === 46;
+}
+
+function isArrowLeft(event: KeyboardEvent): boolean {
+  return event.key === 'ArrowLeft' || event.keyCode === 37;
+}
+
+function isArrowRight(event: KeyboardEvent): boolean {
+  return event.key === 'ArrowRight' || event.keyCode === 39;
+}
+
 export function isBold(event: KeyboardEvent): boolean {
   return event.key === 'b' && controlOrMeta(event);
 }
@@ -29,65 +49,55 @@ export function isUnderline(event: KeyboardEvent): boolean {
 }
 
 export function isParagraph(event: KeyboardEvent): boolean {
-  return event.key === 'Enter' && !event.shiftKey;
+  return isEnter(event) && !event.shiftKey;
 }
 
 export function isLineBreak(event: KeyboardEvent): boolean {
-  return event.key === 'Enter' && event.shiftKey;
+  return isEnter(event) && event.shiftKey;
 }
 
 export function isDeleteWordBackward(event: KeyboardEvent): boolean {
-  const isBackspace = event.key === 'Backspace';
-  if (IS_MAC) {
-    return event.altKey && isBackspace;
-  }
-  return event.ctrlKey && isBackspace;
+  return isBackspace(event) && (IS_MAC ? event.altKey : event.ctrlKey);
 }
 
 export function isDeleteWordForward(event: KeyboardEvent): boolean {
-  const isDelete = event.key === 'Delete';
-  if (IS_MAC) {
-    return event.altKey && isDelete;
-  }
-  return event.ctrlKey && isDelete;
+  return isDelete(event) && (IS_MAC ? event.altKey : event.ctrlKey);
 }
 
 export function isDeleteLineBackward(event: KeyboardEvent): boolean {
-  return IS_MAC && event.metaKey && event.key === 'Backspace';
+  return IS_MAC && event.metaKey && isBackspace(event);
 }
 
 export function isDeleteLineForward(event: KeyboardEvent): boolean {
-  return IS_MAC && event.metaKey && event.key === 'Delete';
+  return IS_MAC && event.metaKey && isDelete(event);
 }
 
 export function isDeleteBackward(event: KeyboardEvent): boolean {
   const {key, altKey, metaKey, ctrlKey} = event;
-  const isBackspace = key === 'Backspace';
   if (IS_APPLE) {
     if (altKey || metaKey) {
       return false;
     }
-    return isBackspace || (key === 'h' && ctrlKey);
+    return isBackspace(event) || (key === 'h' && ctrlKey);
   }
   if (ctrlKey || altKey || metaKey) {
     return false;
   }
-  return isBackspace;
+  return isBackspace(event);
 }
 
 export function isDeleteForward(event: KeyboardEvent): boolean {
   const {key, shiftKey, altKey, metaKey, ctrlKey} = event;
-  const isDelete = key === 'Delete';
   if (IS_APPLE) {
     if (shiftKey || altKey || metaKey) {
       return false;
     }
-    return isDelete || (key === 'd' && ctrlKey);
+    return isDelete(event) || (key === 'd' && ctrlKey);
   }
   if (ctrlKey || altKey || metaKey) {
     return false;
   }
-  return isDelete;
+  return isDelete(event);
 }
 
 export function isUndo(event: KeyboardEvent): boolean {
@@ -113,49 +123,41 @@ export function isSelectAll(event: KeyboardEvent): boolean {
 }
 
 export function isMoveWordBackward(event: KeyboardEvent): boolean {
-  const {key, altKey, metaKey, ctrlKey} = event;
-  const isLeftArrow = key === 'ArrowLeft';
+  const {altKey, metaKey, ctrlKey} = event;
   if (IS_APPLE) {
     if (ctrlKey || metaKey) {
       return false;
     }
-    return isLeftArrow && altKey;
+    return isArrowLeft(event) && altKey;
   }
   if (altKey || metaKey) {
     return false;
   }
-  return isLeftArrow && ctrlKey;
+  return isArrowLeft(event) && ctrlKey;
 }
 
 export function isMoveWordForward(event: KeyboardEvent): boolean {
-  const {key, altKey, metaKey, ctrlKey} = event;
-  const isLeftArrow = key === 'ArrowRight';
+  const {altKey, metaKey, ctrlKey} = event;
   if (IS_APPLE) {
     if (ctrlKey || metaKey) {
       return false;
     }
-    return isLeftArrow && altKey;
+    return isArrowRight(event) && altKey;
   }
   if (altKey || metaKey) {
     return false;
   }
-  return isLeftArrow && ctrlKey;
+  return isArrowRight(event) && ctrlKey;
 }
 
 export function isMoveBackward(event: KeyboardEvent): boolean {
   return (
-    event.key === 'ArrowLeft' &&
-    !event.ctrlKey &&
-    !event.metaKey &&
-    !event.altKey
+    isArrowLeft(event) && !event.ctrlKey && !event.metaKey && !event.altKey
   );
 }
 
 export function isMoveForward(event: KeyboardEvent): boolean {
   return (
-    event.key === 'ArrowRight' &&
-    !event.ctrlKey &&
-    !event.metaKey &&
-    !event.altKey
+    isArrowRight(event) && !event.ctrlKey && !event.metaKey && !event.altKey
   );
 }

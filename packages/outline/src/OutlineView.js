@@ -160,6 +160,7 @@ export function triggerTextMutationListeners(
   editor: OutlineEditor,
 ): void {
   const textNodeTransforms = editor._textNodeTransforms;
+  const compositionKey = editor._compositionKey;
   if (textNodeTransforms.size > 0) {
     const nodeMap = viewModel._nodeMap;
     const dirtyNodes = Array.from(viewModel._dirtyNodes);
@@ -167,6 +168,11 @@ export function triggerTextMutationListeners(
 
     for (let s = 0; s < dirtyNodes.length; s++) {
       const nodeKey = dirtyNodes[s];
+      // We don't want to trigger mutation listeners on a
+      // text node that is currently being composed.
+      if (nodeKey === compositionKey) {
+        continue;
+      }
       const node = nodeMap[nodeKey];
 
       if (node !== undefined && node.isAttached()) {

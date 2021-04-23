@@ -628,6 +628,7 @@ export function onNativeBeforeInputForRichText(
   state: EventHandlerState,
 ): void {
   const inputType = event.inputType;
+  console.log(inputType);
 
   editor.update((view) => {
     const selection = view.getSelection();
@@ -643,8 +644,6 @@ export function onNativeBeforeInputForRichText(
       return;
     }
     const data = event.data;
-
-    applyTargetRange(selection, event);
 
     if (
       inputType === 'insertText' ||
@@ -664,8 +663,6 @@ export function onNativeBeforeInputForRichText(
       }
       return;
     }
-
-    applyTargetRange(selection, event);
 
     event.preventDefault();
 

@@ -9,6 +9,7 @@
 
 import type {OutlineEditor, EditorThemeClasses} from './OutlineEditor';
 import type {Selection} from './OutlineSelection';
+import type {Node as ReactNode} from 'react';
 
 import {
   createTextNode,
@@ -466,6 +467,9 @@ export class OutlineNode {
     } else {
       invariant();
     }
+  }
+  decorate(): null | ReactNode {
+    return null;
   }
 
   // Setters and mutators

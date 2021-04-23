@@ -487,7 +487,7 @@ export function onNativeInput(
     }
     if (isInsertText) {
       const anchorKey = selection.anchorKey;
-      // Android Chrome triggers insert text during composition. 
+      // Android Chrome triggers insert text during composition.
       // If this happens, then we will need to remove the
       // composition key in order for the DOM to update in
       // accordance with what is occuring. Composition should

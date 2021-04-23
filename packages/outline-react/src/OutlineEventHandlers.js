@@ -469,9 +469,10 @@ export function onNativeInput(
   state: EventHandlerState,
 ): void {
   const inputType = event.inputType;
+  const isInsertText = inputType === 'insertText';
 
   if (
-    inputType !== 'insertText' &&
+    !isInsertText &&
     inputType !== 'insertCompositionText' &&
     inputType !== 'deleteCompositionText'
   ) {
@@ -483,6 +484,17 @@ export function onNativeInput(
 
     if (selection === null) {
       return;
+    }
+    if (isInsertText) {
+      const anchorKey = selection.anchorKey;
+      // Android Chrome triggers insert text during composition. 
+      // If this happens, then we will need to remove the
+      // composition key in order for the DOM to update in
+      // accordance with what is occuring. Composition should
+      // automatically get re-added.
+      if (anchorKey === editor._compositionKey) {
+        editor._compositionKey = null;
+      }
     }
     const data = event.data;
     if (data) {

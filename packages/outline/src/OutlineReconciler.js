@@ -12,6 +12,7 @@ import type {ViewModel} from './OutlineView';
 import type {OutlineEditor, EditorThemeClasses} from './OutlineEditor';
 import type {Selection} from './OutlineSelection';
 import type {TextNode} from './OutlineTextNode';
+import type {Node as ReactNode} from 'react';
 
 import {getNodeByKey} from './OutlineNode';
 import {isTextNode, isBlockNode} from '.';
@@ -106,9 +107,14 @@ function createNode(
 ): HTMLElement {
   const node = activeNextNodeMap[key];
   const dom = node.createDOM(activeEditorThemeClasses);
+  const decorator = node.decorate();
   const flags = node.__flags;
   const isInert = flags & IS_INERT;
   storeDOMWithKey(key, dom, activeEditor);
+
+  if (decorator !== null) {
+    reconcileDecorator(key, decorator);
+  }
 
   if (
     node.__type !== 'linebreak' &&
@@ -281,6 +287,10 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
     destroyNode(key, null);
     return;
   }
+  const decorator = nextNode.decorate();
+  if (decorator !== null) {
+    reconcileDecorator(key, decorator);
+  }
   // Handle text content, for LTR, LTR cases.
   if (isTextNode(nextNode)) {
     const text = nextNode.__text;
@@ -302,6 +312,20 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
       }
     }
   }
+}
+
+function reconcileDecorator(key: NodeKey, decorator: ReactNode): void {
+  let pendingDecorators = activeEditor._pendingDecorators;
+  const currentDecorators = activeEditor._decorators;
+
+  if (pendingDecorators === null) {
+    if (currentDecorators[key] === decorator) {
+      return;
+    }
+    pendingDecorators = {...currentDecorators};
+    activeEditor._pendingDecorators = pendingDecorators;
+  }
+  pendingDecorators[key] = decorator;
 }
 
 function createKeyToIndexMap(

@@ -184,28 +184,31 @@ export function triggerTextMutationListeners(
   }
 }
 
+function garbageCollectDetachedDecorators(
+  pendingDecorators: {[NodeKey]: ReactNode},
+  pendingViewModel: ViewModel,
+): void {
+  const nodeMap = pendingViewModel._nodeMap;
+  let key;
+  for (key in pendingDecorators) {
+    if (nodeMap[key] === undefined) {
+      delete pendingDecorators[key];
+    }
+  }
+}
+
 export function garbageCollectDetachedNodes(
   viewModel: ViewModel,
   editor: OutlineEditor,
 ): void {
   const dirtyNodes = Array.from(viewModel._dirtyNodes);
   const nodeMap = viewModel._nodeMap;
-  const nodeDecorators = editor._nodeDecorators;
-  let pendingNodeDecorators;
 
   for (let s = 0; s < dirtyNodes.length; s++) {
     const nodeKey = dirtyNodes[s];
     const node = nodeMap[nodeKey];
 
     if (node !== undefined && !node.isAttached()) {
-      // Remove decorator if needed
-      if (nodeDecorators[nodeKey] !== undefined) {
-        if (pendingNodeDecorators === undefined) {
-          pendingNodeDecorators = {...nodeDecorators};
-          editor._pendingNodeDecorators = pendingNodeDecorators;
-        }
-        delete pendingNodeDecorators[nodeKey];
-      }
       // Garbage collect node
       delete nodeMap[nodeKey];
     }
@@ -224,11 +227,12 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
   activeViewModel = pendingViewModel;
   reconcileViewModel(currentViewModel, pendingViewModel, editor);
   activeViewModel = previousActiveViewModel;
-  const pendingNodeDecorators = editor._pendingNodeDecorators;
-  if (pendingNodeDecorators !== null) {
-    editor._nodeDecorators = pendingNodeDecorators;
-    editor._pendingNodeDecorators = null;
-    triggerDecoratorListeners(pendingNodeDecorators, editor);
+  const pendingDecorators = editor._pendingDecorators;
+  if (pendingDecorators !== null) {
+    garbageCollectDetachedDecorators(pendingDecorators, pendingViewModel);
+    editor._decorators = pendingDecorators;
+    editor._pendingDecorators = null;
+    triggerDecoratorListeners(pendingDecorators, editor);
   }
   triggerUpdateListeners(editor);
   const deferred = editor._deferred;
@@ -241,12 +245,12 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
 }
 
 export function triggerDecoratorListeners(
-  nodeDecorators: {[NodeKey]: ReactNode},
+  decorators: {[NodeKey]: ReactNode},
   editor: OutlineEditor,
 ): void {
   const listeners = Array.from(editor._decoratorListeners);
   for (let i = 0; i < listeners.length; i++) {
-    listeners[i](nodeDecorators);
+    listeners[i](decorators);
   }
 }
 

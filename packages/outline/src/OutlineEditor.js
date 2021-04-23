@@ -193,8 +193,8 @@ export class OutlineEditor {
   _decoratorListeners: Set<DecoratorListener>;
   _textNodeTransforms: Set<TextNodeTransform>;
   _nodeTypes: Map<string, Class<OutlineNode>>;
-  _nodeDecorators: {[NodeKey]: ReactNode};
-  _pendingNodeDecorators: null | {[NodeKey]: ReactNode};
+  _decorators: {[NodeKey]: ReactNode};
+  _pendingDecorators: null | {[NodeKey]: ReactNode};
   _placeholderText: string;
   _placeholderElement: null | HTMLElement;
   _textContent: string;
@@ -233,13 +233,8 @@ export class OutlineEditor {
     ]);
     this._key = generateRandomKey();
     // React node decorators for portals
-    this._nodeDecorators = {};
-    // Outline tries to garbage collect nodes
-    // so if it garbage collects a node with
-    // a decorator, it should set the next
-    // decorators to pending until the update
-    // is complete.
-    this._pendingNodeDecorators = null;
+    this._decorators = {};
+    this._pendingDecorators = null;
     // Used for rendering placeholder text
     this._placeholderText = '';
     this._placeholderElement = null;
@@ -277,13 +272,6 @@ export class OutlineEditor {
   setPointerDown(isPointerDown: boolean): void {
     this._isPointerDown = isPointerDown;
   }
-  addNodeDecorator(key: NodeKey, decorator: ReactNode): void {
-    const pendingNodeDecorators = this._pendingNodeDecorators || {
-      ...this._nodeDecorators,
-    };
-    pendingNodeDecorators[key] = decorator;
-    this._pendingNodeDecorators = pendingNodeDecorators;
-  }
   registerNodeType(nodeType: string, klass: Class<OutlineNode>): void {
     this._nodeTypes.set(nodeType, klass);
   }
@@ -318,8 +306,8 @@ export class OutlineEditor {
       this._textNodeTransforms.delete(listener);
     };
   }
-  getNodeDecorators(): {[NodeKey]: ReactNode} {
-    return this._nodeDecorators;
+  getDecorators(): {[NodeKey]: ReactNode} {
+    return this._decorators;
   }
   getEditorKey(): string {
     return this._key;

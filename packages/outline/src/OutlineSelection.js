@@ -356,16 +356,12 @@ export function createSelection(
     anchorOffset = domSelection.anchorOffset;
     focusOffset = domSelection.focusOffset;
   } else {
-    const selection = new Selection(
+    return new Selection(
       lastSelection.anchorKey,
       lastSelection.anchorOffset,
       lastSelection.focusKey,
       lastSelection.focusOffset,
     );
-    if (isCompositionStart) {
-      selection.isDirty = true;
-    }
-    return selection;
   }
   // Let's resolve the text nodes from the offsets and DOM nodes we have from
   // native selection.

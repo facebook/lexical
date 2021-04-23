@@ -184,19 +184,21 @@ export function triggerTextMutationListeners(
   }
 }
 
-export function garbageCollectDetachedDecorators(
+function garbageCollectDetachedDecorators(
   editor: OutlineEditor,
   pendingViewModel: ViewModel,
 ): void {
-  let pendingDecorators = editor._pendingDecorators;
-  if (pendingDecorators === null) {
-    pendingDecorators = cloneDecorators(editor);
-  }
+  const currentDecorators = editor._decorators;
+  const pendingDecorators = editor._pendingDecorators;
+  let decorators = pendingDecorators || currentDecorators;
   const nodeMap = pendingViewModel._nodeMap;
   let key;
-  for (key in pendingDecorators) {
+  for (key in decorators) {
     if (nodeMap[key] === undefined) {
-      delete pendingDecorators[key];
+      if (decorators === currentDecorators) {
+        decorators = cloneDecorators(editor);
+      }
+      delete decorators[key];
     }
   }
 }
@@ -231,9 +233,9 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
   activeViewModel = pendingViewModel;
   reconcileViewModel(currentViewModel, pendingViewModel, editor);
   activeViewModel = previousActiveViewModel;
+  garbageCollectDetachedDecorators(editor, pendingViewModel);
   const pendingDecorators = editor._pendingDecorators;
   if (pendingDecorators !== null) {
-    garbageCollectDetachedDecorators(editor, pendingViewModel);
     editor._decorators = pendingDecorators;
     editor._pendingDecorators = null;
     triggerDecoratorListeners(pendingDecorators, editor);

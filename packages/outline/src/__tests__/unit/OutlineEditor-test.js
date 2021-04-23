@@ -155,7 +155,7 @@ describe('OutlineEditor tests', () => {
   describe('With node decorators', () => {
     function useDecorators() {
       const [decorators, setDecorators] = React.useState(() =>
-        editor.getNodeDecorators(),
+        editor.getDecorators(),
       );
       // Subscribe to changes
       React.useEffect(() => {
@@ -206,14 +206,21 @@ describe('OutlineEditor tests', () => {
 
       // Update the editor with the decorator
       await ReactTestUtils.act(async () => {
+        class DecoratorNode extends Outline.TextNode {
+          clone() {
+            const node = new DecoratorNode(this.__text, this.__key);
+            node.__parent = this.__parent;
+            node.__flags = this.__flags;
+            return node;
+          }
+          decorate() {
+            return <Decorator text={'Hello world'} />;
+          }
+        }
         await editor.update((view) => {
           const paragraph = ParagraphNodeModule.createParagraphNode();
-          const text = Outline.createTextNode('');
+          const text = new DecoratorNode('');
           text.makeImmutable();
-          editor.addNodeDecorator(
-            text.getKey(),
-            <Decorator text={'Hello world'} />,
-          );
           paragraph.append(text);
           view.getRoot().append(paragraph);
         });

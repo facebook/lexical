@@ -56,7 +56,6 @@ header h1 {
   font-size: 15px;
   caret-color: rgb(5, 5, 5);
   display: block;
-  z-index: 2;
   position: relative;
   width: calc(100% - 90px);
   tab-size: 1;
@@ -590,6 +589,7 @@ pre {
   right: 70px;
   bottom: 20px;
   background-color: #444;
+  z-index: 1;
 }
 
 #options-button span {

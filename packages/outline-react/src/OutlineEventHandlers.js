@@ -557,8 +557,9 @@ export function onNativeBeforeInputForPlainText(
       return;
     }
 
-    applyTargetRange(selection, event);
-
+    // Prevent the browser from carrying out
+    // the input event, so we can control the
+    // output.
     event.preventDefault();
 
     switch (inputType) {
@@ -628,7 +629,6 @@ export function onNativeBeforeInputForRichText(
   state: EventHandlerState,
 ): void {
   const inputType = event.inputType;
-  console.log(inputType);
 
   editor.update((view) => {
     const selection = view.getSelection();
@@ -644,6 +644,8 @@ export function onNativeBeforeInputForRichText(
       return;
     }
     const data = event.data;
+
+    applyTargetRange(selection, event);
 
     if (
       inputType === 'insertText' ||
@@ -664,6 +666,9 @@ export function onNativeBeforeInputForRichText(
       return;
     }
 
+    // Prevent the browser from carrying out
+    // the input event, so we can control the
+    // output.
     event.preventDefault();
 
     switch (inputType) {

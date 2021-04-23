@@ -741,6 +741,13 @@ export function updateCaretSelectionForRange(
         node = siblingAfter;
       }
 
+      if (
+        index === null &&
+        node !== anchorNode &&
+        node.getTextContent() === ''
+      ) {
+        index = 0;
+      }
       if (node.isImmutable() || node.isInert()) {
         updateSelectionForNextSiblingRange(selection, isBackward, node);
       } else if (node.isSegmented()) {

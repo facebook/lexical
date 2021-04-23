@@ -314,6 +314,13 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
   }
 }
 
+export function cloneDecorators(editor: OutlineEditor): {[NodeKey]: ReactNode} {
+  const currentDecorators = editor._decorators;
+  const pendingDecorators = {...currentDecorators};
+  editor._pendingDecorators = pendingDecorators;
+  return pendingDecorators;
+}
+
 function reconcileDecorator(key: NodeKey, decorator: ReactNode): void {
   let pendingDecorators = activeEditor._pendingDecorators;
   const currentDecorators = activeEditor._decorators;
@@ -322,8 +329,7 @@ function reconcileDecorator(key: NodeKey, decorator: ReactNode): void {
     if (currentDecorators[key] === decorator) {
       return;
     }
-    pendingDecorators = {...currentDecorators};
-    activeEditor._pendingDecorators = pendingDecorators;
+    pendingDecorators = cloneDecorators(activeEditor);
   }
   pendingDecorators[key] = decorator;
 }

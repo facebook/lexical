@@ -19,7 +19,7 @@ import type {Selection} from './OutlineSelection';
 import type {Node as ReactNode} from 'react';
 import type {ParsedNodeMap} from './OutlineNode';
 
-import {reconcileViewModel} from './OutlineReconciler';
+import {cloneDecorators, reconcileViewModel} from './OutlineReconciler';
 import {getSelection, createSelectionFromParse} from './OutlineSelection';
 import {getNodeByKey, createNodeFromParse} from './OutlineNode';
 import {isTextNode} from '.';
@@ -184,10 +184,14 @@ export function triggerTextMutationListeners(
   }
 }
 
-function garbageCollectDetachedDecorators(
-  pendingDecorators: {[NodeKey]: ReactNode},
+export function garbageCollectDetachedDecorators(
+  editor: OutlineEditor,
   pendingViewModel: ViewModel,
 ): void {
+  let pendingDecorators = editor._pendingDecorators;
+  if (pendingDecorators === null) {
+    pendingDecorators = cloneDecorators(editor);
+  }
   const nodeMap = pendingViewModel._nodeMap;
   let key;
   for (key in pendingDecorators) {
@@ -229,7 +233,7 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
   activeViewModel = previousActiveViewModel;
   const pendingDecorators = editor._pendingDecorators;
   if (pendingDecorators !== null) {
-    garbageCollectDetachedDecorators(pendingDecorators, pendingViewModel);
+    garbageCollectDetachedDecorators(editor, pendingViewModel);
     editor._decorators = pendingDecorators;
     editor._pendingDecorators = null;
     triggerDecoratorListeners(pendingDecorators, editor);

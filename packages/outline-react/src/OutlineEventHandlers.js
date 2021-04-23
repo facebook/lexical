@@ -557,8 +557,9 @@ export function onNativeBeforeInputForPlainText(
       return;
     }
 
-    applyTargetRange(selection, event);
-
+    // Prevent the browser from carrying out
+    // the input event, so we can control the
+    // output.
     event.preventDefault();
 
     switch (inputType) {
@@ -665,8 +666,9 @@ export function onNativeBeforeInputForRichText(
       return;
     }
 
-    applyTargetRange(selection, event);
-
+    // Prevent the browser from carrying out
+    // the input event, so we can control the
+    // output.
     event.preventDefault();
 
     switch (inputType) {

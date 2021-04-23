@@ -11,10 +11,8 @@ import type {NodeKey, NodeMapType} from './OutlineNode';
 import type {ViewModel} from './OutlineView';
 import type {OutlineEditor, EditorThemeClasses} from './OutlineEditor';
 import type {Selection} from './OutlineSelection';
-import type {TextNode} from './OutlineTextNode';
 import type {Node as ReactNode} from 'react';
 
-import {getNodeByKey} from './OutlineNode';
 import {isTextNode, isBlockNode} from '.';
 import {invariant, getAdjustedSelectionAnchor} from './OutlineUtils';
 import {
@@ -587,7 +585,6 @@ export function reconcileViewModel(
   // always do a full reconciliation to ensure consistency.
   const isDirty = nextViewModel._isDirty;
   const needsUpdate = isDirty || nextViewModel.hasDirtyNodes();
-  const nextSelection = nextViewModel._selection;
   let reconciliationCausedLostSelection = false;
 
   if (needsUpdate) {
@@ -601,72 +598,73 @@ export function reconcileViewModel(
       reconciliationCausedLostSelection = true;
     }
   }
+  const prevSelection = prevViewModel._selection;
+  const nextSelection = nextViewModel._selection;
+
   if (
     !editor.isComposing() &&
     nextSelection !== null &&
     (nextSelection.isDirty || isDirty || reconciliationCausedLostSelection)
   ) {
-    reconcileSelection(nextSelection, editor);
+    reconcileSelection(prevSelection, nextSelection, editor);
   }
 }
 
-function reconcileSelection(selection: Selection, editor: OutlineEditor): void {
-  const anchorKey = selection.anchorKey;
-  const focusKey = selection.focusKey;
-  if (anchorKey === null || focusKey === null) {
-    if (__DEV__) {
-      invariant(
-        false,
-        'reconcileSelection: anchorKey or focusKey cannot be null',
-      );
-    } else {
-      invariant();
-    }
-  }
-  const domSelection = window.getSelection();
-  const anchorNode = getNodeByKey<TextNode>(anchorKey);
-  const focusNode = getNodeByKey<TextNode>(anchorKey);
+function reconcileSelection(
+  prevSelection: Selection | null,
+  nextSelection: Selection,
+  editor: OutlineEditor,
+): void {
+  const anchorKey = nextSelection.anchorKey;
+  const focusKey = nextSelection.focusKey;
+  const anchorNode = nextSelection.getAnchorNode();
+  const focusNode = nextSelection.getFocusNode();
   const anchorDOM = editor.getElementByKey(anchorKey);
   const focusDOM = editor.getElementByKey(focusKey);
-  let anchorOffset = selection.anchorOffset;
-  let focusOffset = selection.focusOffset;
+  const anchorTextIsEmpty = anchorNode.__text === '';
+  let anchorOffset = nextSelection.anchorOffset;
+  let focusOffset = nextSelection.focusOffset;
 
   // Because we use empty text nodes to ensure Outline
   // selection and text entry works as expected, it also
   // means we need to adjust the offset to ensure native
   // selection works correctly and doesn't act buggy.
-  if (
-    anchorNode !== null &&
-    anchorNode === focusNode &&
-    anchorNode.__text === ''
-  ) {
+  if (anchorNode === focusNode && anchorTextIsEmpty) {
     const offset = getAdjustedSelectionAnchor(anchorDOM);
     anchorOffset = offset;
     focusOffset = offset;
   }
+  // Get the underlying DOM text nodes from the representive
+  // Outline text nodes (we use elements for text nodes).
   const anchorDOMTarget = getDOMTextNodeFromElement(anchorDOM);
   const focusDOMTarget = getDOMTextNodeFromElement(focusDOM);
 
   // Diff against the native DOM selection to ensure we don't do
   // an unnecessary selection update.
+  const domSelection = window.getSelection();
   if (
-    domSelection.anchorOffset !== anchorOffset ||
-    domSelection.focusOffset !== focusOffset ||
-    domSelection.anchorNode !== anchorDOMTarget ||
-    domSelection.focusNode !== focusDOMTarget
+    !anchorTextIsEmpty &&
+    domSelection.anchorOffset === anchorOffset &&
+    domSelection.focusOffset === focusOffset &&
+    domSelection.anchorNode === anchorDOMTarget &&
+    domSelection.focusNode === focusDOMTarget
   ) {
-    try {
-      domSelection.setBaseAndExtent(
-        anchorDOMTarget,
-        anchorOffset,
-        focusDOMTarget,
-        focusOffset,
-      );
-    } catch {
-      // If we encounter an error, continue. This can sometimes
-      // occur with FF and there's no good reason as to why it
-      // should happen.
-    }
+    return;
+  }
+
+  // Apply the updated selection to the DOM. Note: this will trigger
+  // a "selectionchange" event, although it will be asynchronous.
+  try {
+    domSelection.setBaseAndExtent(
+      anchorDOMTarget,
+      anchorOffset,
+      focusDOMTarget,
+      focusOffset,
+    );
+  } catch {
+    // If we encounter an error, continue. This can sometimes
+    // occur with FF and there's no good reason as to why it
+    // should happen.
   }
 }
 

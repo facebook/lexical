@@ -23,7 +23,6 @@ import {
   triggerUpdateListeners,
   triggerErrorListeners,
   parseViewModel,
-  garbageCollectDetachedDecorators,
 } from './OutlineView';
 import {createSelection} from './OutlineSelection';
 import {
@@ -362,7 +361,6 @@ export class OutlineEditor {
       commitPendingUpdates(this);
     }
     this._pendingViewModel = viewModel;
-    garbageCollectDetachedDecorators(this, viewModel);
     commitPendingUpdates(this);
   }
   parseViewModel(stringifiedViewModel: string): ViewModel {

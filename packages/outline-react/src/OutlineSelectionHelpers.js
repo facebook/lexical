@@ -742,7 +742,7 @@ export function updateCaretSelectionForRange(
       }
 
       if (index === null && node !== anchorNode) {
-        index = isBackward ? 0 : node.getTextContentSize();
+        index = isBackward ? node.getTextContentSize() : 0;
       }
       if (node.isImmutable() || node.isInert()) {
         updateSelectionForNextSiblingRange(selection, isBackward, node);

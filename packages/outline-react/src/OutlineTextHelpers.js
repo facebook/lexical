@@ -89,32 +89,46 @@ export function getSegmentsFromString(
   return Array.from(segmenter.segment(string));
 }
 
-export function getFirstWordIndex(string: string): number {
-  let hasCharacter = false;
-  for (let i = 0; i < string.length; i++) {
-    const char = string[i];
-    if (/\s/.test(char)) {
-      if (hasCharacter) {
-        return i;
-      }
-    } else {
-      hasCharacter = true;
-    }
-  }
-  return string.length;
+function pushSegment(
+  segments: Array<Segment>,
+  index: number,
+  str: string,
+  isWordLike: boolean,
+): void {
+  segments.push({
+    index: index - str.length,
+    segment: str,
+    isWordLike,
+  });
 }
 
-export function getLastWordIndex(string: string): number {
-  let hasCharacter = false;
-  for (let i = string.length - 1; i >= 0; i--) {
+export function getWordsFromString(string: string): Array<Segment> {
+  const segments = [];
+  let wordString = '';
+  let nonWordString = '';
+  let i;
+  for (i = 0; i < string.length; i++) {
     const char = string[i];
-    if (/\s/.test(char)) {
-      if (hasCharacter) {
-        return i + 1;
+
+    if (/[\s.,\\\/#!$%\^&\*;:{}=\-`~()]/.test(char)) {
+      if (wordString !== '') {
+        pushSegment(segments, i, wordString, true);
+        wordString = '';
       }
+      nonWordString += char;
     } else {
-      hasCharacter = true;
+      if (nonWordString !== '') {
+        pushSegment(segments, i, nonWordString, false);
+        nonWordString = '';
+      }
+      wordString += char;
     }
   }
-  return 0;
+  if (wordString !== '') {
+    pushSegment(segments, i, wordString, true);
+  }
+  if (nonWordString !== '') {
+    pushSegment(segments, i, nonWordString, false);
+  }
+  return segments;
 }

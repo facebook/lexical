@@ -25,11 +25,11 @@ declare class InputEvent extends UIEvent {
   +dataTransfer?: DataTransfer;
 }
 
-declare class Segment {
-  +isWordLike: true | void;
-  +index: number;
-  +segment: string;
-}
+declare type Segment = {
+  +isWordLike: boolean,
+  +index: number,
+  +segment: string,
+};
 
 declare var Intl: {
   Collator: Class<Intl$Collator>,

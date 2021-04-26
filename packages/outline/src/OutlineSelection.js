@@ -14,7 +14,11 @@ import {getActiveViewModel} from './OutlineView';
 import {getNodeKeyFromDOM} from './OutlineReconciler';
 import {getNodeByKey} from './OutlineNode';
 import {isTextNode, isBlockNode, isLineBreakNode, TextNode} from '.';
-import {invariant, getAdjustedSelectionOffset} from './OutlineUtils';
+import {
+  invariant,
+  getAdjustedSelectionOffset,
+  isSelectionWithinEditor,
+} from './OutlineUtils';
 import {OutlineEditor} from './OutlineEditor';
 import {LineBreakNode} from './OutlineLineBreakNode';
 
@@ -254,13 +258,10 @@ function resolveSelectionNodesAndOffsets(
   focusOffset: number,
   editor: OutlineEditor,
 ): null | [TextNode, TextNode, number, number, boolean] {
-  const editorElement = editor.getEditorElement();
   if (
-    editorElement === null ||
     anchorDOM === null ||
     focusDOM === null ||
-    !editorElement.contains(anchorDOM) ||
-    !editorElement.contains(focusDOM)
+    !isSelectionWithinEditor(editor, anchorDOM, focusDOM)
   ) {
     return null;
   }

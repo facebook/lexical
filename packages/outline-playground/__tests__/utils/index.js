@@ -80,10 +80,10 @@ export function initializeE2E(browsers, runTests) {
                   try {
                     if (!E2E_DEBUG) {
                       await e2e.page.close();
+                      const page = await e2e.browser.newPage();
+                      await page.goto(`http://localhost:${E2E_PORT}/`);
+                      e2e.page = page;
                     }
-                    const page = await e2e.browser.newPage();
-                    await page.goto(`http://localhost:${E2E_PORT}/`);
-                    e2e.page = page;
                     // test attempt
                     return await test();
                   } catch (err) {

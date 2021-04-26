@@ -603,8 +603,11 @@ export function reconcileViewModel(
 
   if (
     !editor.isComposing() &&
-    nextSelection !== null &&
-    (nextSelection.isDirty || isDirty || reconciliationCausedLostSelection)
+    prevSelection !== nextSelection &&
+    (!nextSelection ||
+      nextSelection.isDirty ||
+      isDirty ||
+      reconciliationCausedLostSelection)
   ) {
     reconcileSelection(prevSelection, nextSelection, editor);
   }
@@ -612,9 +615,14 @@ export function reconcileViewModel(
 
 function reconcileSelection(
   prevSelection: Selection | null,
-  nextSelection: Selection,
+  nextSelection: Selection | null,
   editor: OutlineEditor,
 ): void {
+  const domSelection = window.getSelection();
+  if (nextSelection === null) {
+    domSelection.removeAllRanges();
+    return;
+  }
   const anchorKey = nextSelection.anchorKey;
   const focusKey = nextSelection.focusKey;
   const anchorNode = nextSelection.getAnchorNode();
@@ -643,7 +651,6 @@ function reconcileSelection(
 
   // Diff against the native DOM selection to ensure we don't do
   // an unnecessary selection update.
-  const domSelection = window.getSelection();
   if (
     !anchorTextIsEmpty &&
     !focusTextIsEmpty &&

@@ -23,8 +23,9 @@ import {CAN_USE_INTL_SEGMENTER, IS_APPLE} from './OutlineEnv';
 import {invariant} from './OutlineReactUtils';
 import {
   announceNode,
+  getFirstWordIndex,
+  getLastWordIndex,
   getSegmentsFromString,
-  getWordsFromString,
 } from './OutlineTextHelpers';
 
 export function getNodesInRange(
@@ -669,41 +670,45 @@ export function updateCaretSelectionForRange(
         : textContent.slice(anchorOffset);
       let foundWordNode = null;
       mainLoop: while (true) {
-        const segments = CAN_USE_INTL_SEGMENTER
-          ? getSegmentsFromString(targetTextContent, 'word')
-          : getWordsFromString(targetTextContent);
-        const segmentsLength = segments.length;
+        if (CAN_USE_INTL_SEGMENTER) {
+          const segments = getSegmentsFromString(targetTextContent, 'word');
+          const segmentsLength = segments.length;
 
-        if (isBackward) {
-          for (let i = segmentsLength - 1; i >= 0; i--) {
-            const segment = segments[i];
-            const nextIndex = segment.index;
+          if (isBackward) {
+            for (let i = segmentsLength - 1; i >= 0; i--) {
+              const segment = segments[i];
+              const nextIndex = segment.index;
 
-            if (segment.isWordLike) {
-              index = nextIndex;
-              foundWordNode = node;
-            } else if (foundWordNode !== null) {
-              node = foundWordNode;
-              break mainLoop;
-            } else if (node === anchorNode) {
-              index = nextIndex;
+              if (segment.isWordLike) {
+                index = nextIndex;
+                foundWordNode = node;
+              } else if (foundWordNode !== null) {
+                node = foundWordNode;
+                break mainLoop;
+              } else if (node === anchorNode) {
+                index = nextIndex;
+              }
+            }
+          } else {
+            for (let i = 0; i < segmentsLength; i++) {
+              const segment = segments[i];
+              const nextIndex = segment.index + segment.segment.length;
+
+              if (segment.isWordLike) {
+                index = nextIndex;
+                foundWordNode = node;
+              } else if (foundWordNode !== null) {
+                node = foundWordNode;
+                break mainLoop;
+              } else if (node === anchorNode) {
+                index = nextIndex;
+              }
             }
           }
         } else {
-          for (let i = 0; i < segmentsLength; i++) {
-            const segment = segments[i];
-            const nextIndex = segment.index + segment.segment.length;
-
-            if (segment.isWordLike) {
-              index = nextIndex;
-              foundWordNode = node;
-            } else if (foundWordNode !== null) {
-              node = foundWordNode;
-              break mainLoop;
-            } else if (node === anchorNode) {
-              index = nextIndex;
-            }
-          }
+          index = isBackward
+            ? getLastWordIndex(targetTextContent)
+            : getFirstWordIndex(targetTextContent);
         }
         const siblingAfter = isBackward
           ? node.getPreviousSibling()

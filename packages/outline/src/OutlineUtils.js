@@ -7,6 +7,8 @@
  * @flow strict
  */
 
+import type {OutlineEditor} from './OutlineEditor';
+
 export const emptyFunction = () => {};
 
 let keyCounter = 0;
@@ -51,3 +53,16 @@ export const scheduleMicroTask: (fn: () => void) => void =
   typeof queueMicrotask === 'function'
     ? queueMicrotask
     : (fn) => NativePromise.resolve().then(fn);
+
+export function isSelectionWithinEditor(
+  editor: OutlineEditor,
+  anchorDOM: Node,
+  focusDOM: Node,
+): boolean {
+  const editorElement = editor.getEditorElement();
+  return (
+    editorElement !== null &&
+    editorElement.contains(anchorDOM) &&
+    editorElement.contains(focusDOM)
+  );
+}

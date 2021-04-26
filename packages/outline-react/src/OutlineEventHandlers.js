@@ -146,21 +146,17 @@ export function onKeyDownForPlainText(
         deleteLineForward(selection);
       }
     }
-    const isCaret = !event.shiftKey;
+    const isHoldingShift = event.shiftKey;
 
     if (isMoveBackward(event)) {
-      if (selection.isCaret() && selection.anchorOffset < 2) {
+      if (shouldOverrideBrowserDefault(selection, isHoldingShift, true)) {
         event.preventDefault();
-        moveBackward(selection, isCaret);
+        moveBackward(selection, isHoldingShift);
       }
     } else if (isMoveForward(event)) {
-      if (
-        selection.isCaret() &&
-        selection.anchorOffset >
-          selection.getAnchorNode().getTextContentSize() - 2
-      ) {
+      if (shouldOverrideBrowserDefault(selection, isHoldingShift, false)) {
         event.preventDefault();
-        moveForward(selection, isCaret);
+        moveForward(selection, isHoldingShift);
       }
     } else if (isParagraph(event) || isLineBreak(event)) {
       event.preventDefault();
@@ -173,10 +169,10 @@ export function onKeyDownForPlainText(
       deleteForward(selection);
     } else if (isMoveWordBackward(event)) {
       event.preventDefault();
-      moveWordBackward(selection, isCaret);
+      moveWordBackward(selection, isHoldingShift);
     } else if (isMoveWordForward(event)) {
       event.preventDefault();
-      moveWordForward(selection, isCaret);
+      moveWordForward(selection, isHoldingShift);
     } else if (isDeleteWordBackward(event)) {
       event.preventDefault();
       deleteWordBackward(selection);
@@ -190,6 +186,23 @@ export function onKeyDownForPlainText(
       }
     }
   });
+}
+
+function shouldOverrideBrowserDefault(
+  selection: Selection,
+  isHoldingShift: boolean,
+  isBackward: boolean,
+): boolean {
+  const anchorOffset = selection.anchorOffset;
+  const focusOffset = selection.focusOffset;
+  const selectionAtBoundary = isBackward
+    ? anchorOffset < 2 || focusOffset < 2
+    : anchorOffset > selection.getAnchorNode().getTextContentSize() - 2 ||
+      focusOffset > selection.getFocusNode().getTextContentSize() - 2;
+
+  return selection.isCaret()
+    ? isHoldingShift || selectionAtBoundary
+    : isHoldingShift && selectionAtBoundary;
 }
 
 export function onKeyDownForRichText(
@@ -217,21 +230,17 @@ export function onKeyDownForRichText(
         deleteLineForward(selection);
       }
     }
-    const isCaret = !event.shiftKey;
+    const isHoldingShift = event.shiftKey;
 
     if (isMoveBackward(event)) {
-      if (selection.isCaret() && selection.anchorOffset < 2) {
+      if (shouldOverrideBrowserDefault(selection, isHoldingShift, true)) {
         event.preventDefault();
-        moveBackward(selection, isCaret);
+        moveBackward(selection, isHoldingShift);
       }
     } else if (isMoveForward(event)) {
-      if (
-        selection.isCaret() &&
-        selection.anchorOffset >
-          selection.getAnchorNode().getTextContentSize() - 2
-      ) {
+      if (shouldOverrideBrowserDefault(selection, isHoldingShift, false)) {
         event.preventDefault();
-        moveForward(selection, isCaret);
+        moveForward(selection, isHoldingShift);
       }
     } else if (isLineBreak(event)) {
       event.preventDefault();
@@ -247,10 +256,10 @@ export function onKeyDownForRichText(
       deleteForward(selection);
     } else if (isMoveWordBackward(event)) {
       event.preventDefault();
-      moveWordBackward(selection, isCaret);
+      moveWordBackward(selection, isHoldingShift);
     } else if (isMoveWordForward(event)) {
       event.preventDefault();
-      moveWordForward(selection, isCaret);
+      moveWordForward(selection, isHoldingShift);
     } else if (isDeleteWordBackward(event)) {
       event.preventDefault();
       deleteWordBackward(selection);

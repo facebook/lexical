@@ -105,7 +105,10 @@ export class Selection {
         let text = node.getTextContent();
         if (node === firstNode) {
           if (node === lastNode) {
-            text = text.slice(anchorOffset, focusOffset);
+            text =
+              anchorOffset < focusOffset
+                ? text.slice(anchorOffset, focusOffset)
+                : text.slice(focusOffset, anchorOffset);
           } else {
             text = isBefore
               ? text.slice(anchorOffset)

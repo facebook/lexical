@@ -14,7 +14,11 @@ import type {Selection} from './OutlineSelection';
 import type {Node as ReactNode} from 'react';
 
 import {isTextNode, isBlockNode} from '.';
-import {invariant, getAdjustedSelectionOffset} from './OutlineUtils';
+import {
+  invariant,
+  getAdjustedSelectionOffset,
+  isSelectionWithinEditor,
+} from './OutlineUtils';
 import {
   IS_IMMUTABLE,
   IS_SEGMENTED,
@@ -620,7 +624,15 @@ function reconcileSelection(
 ): void {
   const domSelection = window.getSelection();
   if (nextSelection === null) {
-    domSelection.removeAllRanges();
+    if (
+      isSelectionWithinEditor(
+        editor,
+        domSelection.anchorNode,
+        domSelection.focusNode,
+      )
+    ) {
+      domSelection.removeAllRanges();
+    }
     return;
   }
   const anchorKey = nextSelection.anchorKey;

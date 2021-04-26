@@ -14,7 +14,7 @@ import type {Selection} from './OutlineSelection';
 import type {Node as ReactNode} from 'react';
 
 import {isTextNode, isBlockNode} from '.';
-import {invariant, getAdjustedSelectionAnchor} from './OutlineUtils';
+import {invariant, getAdjustedSelectionOffset} from './OutlineUtils';
 import {
   IS_IMMUTABLE,
   IS_SEGMENTED,
@@ -622,6 +622,7 @@ function reconcileSelection(
   const anchorDOM = editor.getElementByKey(anchorKey);
   const focusDOM = editor.getElementByKey(focusKey);
   const anchorTextIsEmpty = anchorNode.__text === '';
+  const focusTextIsEmpty = focusNode.__text === '';
   let anchorOffset = nextSelection.anchorOffset;
   let focusOffset = nextSelection.focusOffset;
 
@@ -629,10 +630,11 @@ function reconcileSelection(
   // selection and text entry works as expected, it also
   // means we need to adjust the offset to ensure native
   // selection works correctly and doesn't act buggy.
-  if (anchorNode === focusNode && anchorTextIsEmpty) {
-    const offset = getAdjustedSelectionAnchor(anchorDOM);
-    anchorOffset = offset;
-    focusOffset = offset;
+  if (anchorTextIsEmpty) {
+    anchorOffset = getAdjustedSelectionOffset(anchorDOM);
+  }
+  if (focusTextIsEmpty) {
+    focusOffset = getAdjustedSelectionOffset(focusDOM);
   }
   // Get the underlying DOM text nodes from the representive
   // Outline text nodes (we use elements for text nodes).
@@ -644,6 +646,7 @@ function reconcileSelection(
   const domSelection = window.getSelection();
   if (
     !anchorTextIsEmpty &&
+    !focusTextIsEmpty &&
     domSelection.anchorOffset === anchorOffset &&
     domSelection.focusOffset === focusOffset &&
     domSelection.anchorNode === anchorDOMTarget &&

@@ -55,7 +55,7 @@ export function initializeE2E(browsers, runTests) {
           }
         },
         flaky(flakyBrowsers, cb) {
-          const retryCount = 10;
+          const retryCount = 100;
           const isFlaky = flakyBrowsers.find((flakyBrowser) => {
             const [browser, option] = flakyBrowser.split('-');
             if (browser === browserName) {
@@ -85,9 +85,12 @@ export function initializeE2E(browsers, runTests) {
                     if (count < retryCount) {
                       count++;
                       // retry
+                      console.log(`Flaky Test: ${description}. Attempt: ${count}`);
                       return await attempt();
                     } else {
-                      // fail for real
+                      // fail for real + log screenshot
+                      console.log(`Flaky Test: ${description}:`);
+                      await e2e.logScreenshot();
                       throw err;
                     }
                   }

@@ -337,7 +337,7 @@ export function insertParagraph(selection: Selection): void {
 
 function moveCaretSelection(
   selection: Selection,
-  isCaret: boolean,
+  isHoldingShift: boolean,
   isBackward: boolean,
   granularity: 'character' | 'word' | 'line',
 ): void {
@@ -351,7 +351,12 @@ function moveCaretSelection(
     selection.anchorKey = selection.focusKey;
     selection.anchorOffset = selection.focusOffset;
   }
-  updateCaretSelectionForRange(selection, isBackward, granularity, isCaret);
+  updateCaretSelectionForRange(
+    selection,
+    isBackward,
+    granularity,
+    isHoldingShift,
+  );
   const focusNode = selection.getFocusNode();
   // We have to adjust selection if we move selection into a segmented node
   if (focusNode.isSegmented()) {
@@ -390,7 +395,7 @@ function moveCaretSelection(
       }
     }
   }
-  if (isCaret) {
+  if (!isHoldingShift) {
     selection.anchorKey = selection.focusKey;
     selection.anchorOffset = selection.focusOffset;
   } else if (resetAnchorKey) {
@@ -399,58 +404,32 @@ function moveCaretSelection(
   }
 }
 
-function moveCaretToRangeBoundary(
+export function moveBackward(
   selection: Selection,
-  isBackward: boolean,
+  isHoldingShift: boolean,
 ): void {
-  const anchorKey = selection.anchorKey;
-  const focusKey = selection.focusKey;
-  const anchorOffset = selection.anchorOffset;
-  const focusOffset = selection.focusOffset;
-  const isAnchorBefore =
-    anchorKey === focusKey
-      ? anchorOffset < focusOffset
-      : selection.getAnchorNode().isBefore(selection.getFocusNode());
-  const key = isAnchorBefore
-    ? isBackward
-      ? anchorKey
-      : focusKey
-    : isBackward
-    ? focusKey
-    : anchorKey;
-  const offset = isAnchorBefore
-    ? isBackward
-      ? anchorOffset
-      : focusOffset
-    : isBackward
-    ? focusOffset
-    : anchorOffset;
-  selection.setRange(key, offset, key, offset);
-  return;
+  moveCaretSelection(selection, isHoldingShift, true, 'character');
 }
 
-export function moveBackward(selection: Selection, isCaret: boolean): void {
-  if (isCaret && !selection.isCaret()) {
-    moveCaretToRangeBoundary(selection, true);
-    return;
-  }
-  moveCaretSelection(selection, isCaret, true, 'character');
+export function moveForward(
+  selection: Selection,
+  isHoldingShift: boolean,
+): void {
+  moveCaretSelection(selection, isHoldingShift, false, 'character');
 }
 
-export function moveForward(selection: Selection, isCaret: boolean): void {
-  if (isCaret && !selection.isCaret()) {
-    moveCaretToRangeBoundary(selection, false);
-    return;
-  }
-  moveCaretSelection(selection, isCaret, false, 'character');
+export function moveWordBackward(
+  selection: Selection,
+  isHoldingShift: boolean,
+): void {
+  moveCaretSelection(selection, isHoldingShift, true, 'word');
 }
 
-export function moveWordBackward(selection: Selection, isCaret: boolean): void {
-  moveCaretSelection(selection, isCaret, true, 'word');
-}
-
-export function moveWordForward(selection: Selection, isCaret: boolean): void {
-  moveCaretSelection(selection, isCaret, false, 'word');
+export function moveWordForward(
+  selection: Selection,
+  isHoldingShift: boolean,
+): void {
+  moveCaretSelection(selection, isHoldingShift, false, 'word');
 }
 
 function normalizeAnchorParent(selection: Selection): void {
@@ -461,7 +440,7 @@ function normalizeAnchorParent(selection: Selection): void {
 
 export function deleteLineBackward(selection: Selection): void {
   if (selection.isCaret()) {
-    updateCaretSelectionForRange(selection, true, 'line', true);
+    updateCaretSelectionForRange(selection, true, 'line');
   }
   removeText(selection);
   normalizeAnchorParent(selection);
@@ -469,7 +448,7 @@ export function deleteLineBackward(selection: Selection): void {
 
 export function deleteLineForward(selection: Selection): void {
   if (selection.isCaret()) {
-    updateCaretSelectionForRange(selection, false, 'line', true);
+    updateCaretSelectionForRange(selection, false, 'line');
   }
   removeText(selection);
   normalizeAnchorParent(selection);
@@ -477,7 +456,7 @@ export function deleteLineForward(selection: Selection): void {
 
 export function deleteWordBackward(selection: Selection): void {
   if (selection.isCaret()) {
-    updateCaretSelectionForRange(selection, true, 'word', true);
+    updateCaretSelectionForRange(selection, true, 'word');
   }
   removeText(selection);
   normalizeAnchorParent(selection);
@@ -485,7 +464,7 @@ export function deleteWordBackward(selection: Selection): void {
 
 export function deleteWordForward(selection: Selection): void {
   if (selection.isCaret()) {
-    updateCaretSelectionForRange(selection, false, 'word', true);
+    updateCaretSelectionForRange(selection, false, 'word');
   }
   removeText(selection);
   normalizeAnchorParent(selection);
@@ -493,7 +472,7 @@ export function deleteWordForward(selection: Selection): void {
 
 export function deleteBackward(selection: Selection): void {
   if (selection.isCaret()) {
-    updateCaretSelectionForRange(selection, true, 'character', true);
+    updateCaretSelectionForRange(selection, true, 'character');
     // Special handling around rich text nodes
     if (selection.isCaret()) {
       const anchorNode = selection.getAnchorNode();
@@ -525,7 +504,7 @@ export function deleteBackward(selection: Selection): void {
 
 export function deleteForward(selection: Selection): void {
   if (selection.isCaret()) {
-    updateCaretSelectionForRange(selection, false, 'character', true);
+    updateCaretSelectionForRange(selection, false, 'character');
   }
   removeText(selection);
   normalizeAnchorParent(selection);
@@ -586,7 +565,7 @@ export function updateCaretSelectionForRange(
   selection: Selection,
   isBackward: boolean,
   granularity: 'character' | 'word' | 'line',
-  isCaret: boolean,
+  isHoldingShift?: boolean,
 ): void {
   const anchorOffset = selection.anchorOffset;
   const anchorNode = selection.getAnchorNode();
@@ -640,7 +619,7 @@ export function updateCaretSelectionForRange(
         characterNode = sibling;
         textContent = sibling.getTextContent();
         characterOffset = isBackward ? textContent.length : 0;
-        if (!isCaret) {
+        if (isHoldingShift) {
           selection.anchorKey = sibling.getKey();
           selection.anchorOffset = characterOffset;
         }
@@ -669,7 +648,7 @@ export function updateCaretSelectionForRange(
       // If we move selection to the start, then we can check if there
       // is a node before that we can adjust selection to, which is a better
       // UX in most cases.
-      if (isBackward && selectionOffset === 0 && isCaret) {
+      if (isBackward && selectionOffset === 0 && !isHoldingShift) {
         const prevSibling = characterNode.getPreviousSibling();
         if (
           isTextNode(prevSibling) &&

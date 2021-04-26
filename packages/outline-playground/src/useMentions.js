@@ -452,6 +452,9 @@ export default function useMentions(editor: OutlineEditor): React$Node {
 
   const onKeyDown = useCallback(
     (event, view) => {
+      if (editor.isComposing()) {
+        return;
+      }
       const key = event.key;
       registeredKeys.forEach((registeredKeyMap) => {
         const controlFunction = registeredKeyMap[key];
@@ -460,7 +463,7 @@ export default function useMentions(editor: OutlineEditor): React$Node {
         }
       });
     },
-    [registeredKeys],
+    [editor, registeredKeys],
   );
 
   const closeTypeahead = useCallback(() => {

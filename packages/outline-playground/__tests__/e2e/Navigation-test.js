@@ -150,8 +150,7 @@ describe('Keyboard Navigation', () => {
         });
 
         e2e.skip(['firefox'], () => {
-
-
+            // we skip these tests on firefox because it doesn't support keyboard shortcuts to move to the beginning/end of the paragraph
             it('can move to the beginning of the current paragraph', async () => {
                 const {page} = e2e;
                 await typeParagraphs(page);

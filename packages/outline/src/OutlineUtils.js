@@ -38,7 +38,7 @@ export function generateRandomKey(): string {
 // We let the browser natively insert text, but this can cause issues on a new block
 // with things like autocorrect and the software keyboard suggestions. Conversely,
 // IME input can break if the anchor is not at 1 in other cases.
-export function getAdjustedSelectionAnchor(anchorDOM: Node): number {
+export function getAdjustedSelectionOffset(anchorDOM: Node): number {
   const previousSibling = anchorDOM.previousSibling;
   return previousSibling == null || previousSibling.nodeName === 'BR' ? 0 : 1;
 }

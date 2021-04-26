@@ -14,7 +14,7 @@ import {getActiveViewModel} from './OutlineView';
 import {getNodeKeyFromDOM} from './OutlineReconciler';
 import {getNodeByKey} from './OutlineNode';
 import {isTextNode, isBlockNode, isLineBreakNode, TextNode} from '.';
-import {invariant, getAdjustedSelectionAnchor} from './OutlineUtils';
+import {invariant, getAdjustedSelectionOffset} from './OutlineUtils';
 import {OutlineEditor} from './OutlineEditor';
 import {LineBreakNode} from './OutlineLineBreakNode';
 
@@ -148,7 +148,9 @@ export class Selection {
   }
 }
 
-function resolveNonLineBreakNode(node: LineBreakNode): [TextNode, number] {
+function resolveNonLineBreakNode(
+  node: LineBreakNode,
+): [TextNode, number, boolean] {
   const resolvedNode = node.getPreviousSibling();
   if (!isTextNode(resolvedNode)) {
     if (__DEV__) {
@@ -158,7 +160,7 @@ function resolveNonLineBreakNode(node: LineBreakNode): [TextNode, number] {
     }
   }
   const offset = resolvedNode.getTextContentSize();
-  return [resolvedNode, offset];
+  return [resolvedNode, offset, true];
 }
 
 function getNodeFromDOM(dom: Node): null | OutlineNode {
@@ -176,7 +178,9 @@ function domIsElement(dom: Node): boolean {
 function resolveSelectionNodeAndOffset(
   dom: Node,
   offset: number,
-): null | [TextNode, number] {
+  editor: OutlineEditor,
+  _isDirty: boolean,
+): null | [TextNode, number, boolean] {
   let resolvedDOM = dom;
   let resolvedOffset = offset;
   let resolvedNode;
@@ -218,7 +222,26 @@ function resolveSelectionNodeAndOffset(
   if (!isTextNode(resolvedNode)) {
     return null;
   }
-  return [resolvedNode, resolvedOffset];
+  const resolvedTextNode = resolvedNode;
+  let isDirty = _isDirty;
+  // Because we use a special character for whitespace,
+  // we need to adjust offsets to 0 when the text is
+  // really empty.
+  if (resolvedTextNode.__text === '') {
+    // When dealing with empty text nodes, we always
+    // render a special empty space character, and set
+    // the native DOM selection to offset 1 so that
+    // text entry works as expected.
+    if (!isDirty && !editor.isComposing() && !editor._isPointerDown) {
+      const key = resolvedTextNode.__key;
+      const nodeDOM = editor.getElementByKey(key);
+      if (getAdjustedSelectionOffset(nodeDOM) !== resolvedOffset) {
+        isDirty = true;
+      }
+    }
+    resolvedOffset = 0;
+  }
+  return [resolvedTextNode, resolvedOffset, isDirty];
 }
 
 function resolveSelectionNodesAndOffsets(
@@ -238,51 +261,32 @@ function resolveSelectionNodesAndOffsets(
   ) {
     return null;
   }
+  let isDirty = false;
   const resolveAnchorNodeAndOffset = resolveSelectionNodeAndOffset(
     anchorDOM,
     anchorOffset,
+    editor,
+    isDirty,
   );
-  const resolveFocusNodeAndOffset = resolveSelectionNodeAndOffset(
-    focusDOM,
-    focusOffset,
-  );
-  if (
-    resolveAnchorNodeAndOffset === null ||
-    resolveFocusNodeAndOffset === null
-  ) {
+  if (resolveAnchorNodeAndOffset === null) {
     return null;
   }
   const resolvedAnchorNode = resolveAnchorNodeAndOffset[0];
+  const resolvedAnchorOffset = resolveAnchorNodeAndOffset[1];
+  isDirty = resolveAnchorNodeAndOffset[2];
+  const resolveFocusNodeAndOffset = resolveSelectionNodeAndOffset(
+    focusDOM,
+    focusOffset,
+    editor,
+    isDirty,
+  );
+  if (resolveFocusNodeAndOffset === null) {
+    return null;
+  }
   const resolvedFocusNode = resolveFocusNodeAndOffset[0];
-  let resolvedAnchorOffset = resolveAnchorNodeAndOffset[1];
-  let resolvedFocusOffset = resolveFocusNodeAndOffset[1];
-  let isDirty = domIsElement(anchorDOM) || domIsElement(focusDOM);
+  const resolvedFocusOffset = resolveFocusNodeAndOffset[1];
+  isDirty = resolveAnchorNodeAndOffset[2];
 
-  // Because we use a special character for whitespace,
-  // we need to adjust offsets to 0 when the text is
-  // really empty.
-  if (resolvedAnchorNode.__text === '') {
-    // When dealing with empty text nodes, we always
-    // render a special empty space character, and set
-    // the native DOM selection to offset 1 so that
-    // text entry works as expected.
-    if (
-      !isDirty &&
-      resolvedAnchorNode === resolvedFocusNode &&
-      !editor.isComposing() &&
-      !editor._isPointerDown
-    ) {
-      const key = resolvedAnchorNode.__key;
-      const dom = editor.getElementByKey(key);
-      if (getAdjustedSelectionAnchor(dom) !== resolvedAnchorOffset) {
-        isDirty = true;
-      }
-    }
-    resolvedAnchorOffset = 0;
-  }
-  if (resolvedFocusNode.__text === '') {
-    resolvedFocusOffset = 0;
-  }
   return [
     resolvedAnchorNode,
     resolvedFocusNode,

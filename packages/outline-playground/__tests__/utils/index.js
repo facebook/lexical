@@ -78,12 +78,6 @@ export function initializeE2E(browsers, runTests) {
                 let count = 0;
                 async function attempt() {
                   try {
-                    if (!E2E_DEBUG) {
-                      await e2e.page.close();
-                      const page = await e2e.browser.newPage();
-                      await page.goto(`http://localhost:${E2E_PORT}/`);
-                      e2e.page = page;
-                    }
                     // test attempt
                     return await test();
                   } catch (err) {
@@ -91,7 +85,19 @@ export function initializeE2E(browsers, runTests) {
                     if (count < retryCount) {
                       count++;
                       // retry
-                      console.log(`Flaky Test: ${description}. Attempt: ${count}`);
+                      console.log(
+                        `Flaky Test: ${description}. Attempt: ${count}`,
+                      );
+                      await e2e.browser.close();
+                      const browser = await {chromium, webkit, firefox}[
+                        browserName
+                      ].launch({
+                        headless: !E2E_DEBUG,
+                      });
+                      e2e.browser = browser;
+                      const page = await e2e.browser.newPage();
+                      await page.goto(`http://localhost:${E2E_PORT}/`);
+                      e2e.page = page;
                       return await attempt();
                     } else {
                       // fail for real + log screenshot

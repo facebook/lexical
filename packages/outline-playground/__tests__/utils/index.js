@@ -88,6 +88,18 @@ export function initializeE2E(browsers, runTests) {
                       console.log(
                         `Flaky Test: ${description}. Attempt: ${count}`,
                       );
+                      // Close and re-open browser before running test again.
+                      await e2e.browser.close();
+                      const browser = await {chromium, webkit, firefox}[
+                        browserName
+                      ].launch({
+                        headless: !E2E_DEBUG,
+                      });
+                      e2e.browser = browser;
+                      const page = await e2e.browser.newPage();
+                      await page.goto(`http://localhost:${E2E_PORT}/`);
+                      e2e.page = page;
+                      // Run test again.
                       return await attempt();
                     } else {
                       // fail for real + log screenshot

@@ -90,7 +90,7 @@ export function initializeE2E(runTests) {
               // Close and re-open page
               await e2e.page.close();
               const page = await await e2e.browser.newPage();
-              await e2e.page.goto(`http://localhost:${E2E_PORT}/`);
+              await page.goto(`http://localhost:${E2E_PORT}/`);
               e2e.page = page;
               // retry
               return await attempt();

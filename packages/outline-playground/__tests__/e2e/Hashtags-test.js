@@ -14,7 +14,7 @@ import {
 } from '../utils';
 
 describe('Hashtags', () => {
-  initializeE2E({chromium: true}, (e2e) => {
+  initializeE2E((e2e) => {
     it(`Can handle a single hashtag`, async () => {
       const {page} = e2e;
 

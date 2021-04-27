@@ -42,6 +42,7 @@ Outline is a fast, light-weight, extensible library for building rich text edito
 
 ## Running tests
 
-* `npm run test` runs e2e and unit tests.
-* `npm run test-e2e` runs only e2e tests.
 * `npm run test-unit` runs only unit tests.
+* `npm run test-e2e:chromium` runs only chromium e2e tests.
+* `npm run test-e2e:firefox` runs only firefox e2e tests.
+* `npm run test-e2e:webkit` runs only webkit e2e tests.

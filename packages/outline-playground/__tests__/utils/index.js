@@ -88,7 +88,9 @@ export function initializeE2E(browsers, runTests) {
                       console.log(
                         `Flaky Test: ${description}. Attempt: ${count}`,
                       );
+                      // Close browser anbd then re-open
                       await e2e.browser.close();
+                      await sleep(100);
                       const browser = await {chromium, webkit, firefox}[
                         browserName
                       ].launch({

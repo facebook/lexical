@@ -48,7 +48,7 @@ jobs:
     - run: npm run build
     - run: npm run test-unit
 
-  e2e chromium ubuntu:
+  e2e-chromium-ubuntu:
     runs-on: ubuntu-latest
     strategy:
       matrix:

@@ -72,34 +72,39 @@ export function initializeE2E(runTests) {
     }
   });
 
-  const it = global.it;
-  // if we mark the test as flaky, overwrite the original 'it' function
-  // to attempt the test 10 times before actually failing
-  global.it = async (description, test) => {
-    const result = it(description, async () => {
-      let count = 0;
-      async function attempt() {
-        try {
-          // test attempt
-          return await test();
-        } catch (err) {
-          // test failed
-          if (count < retryCount) {
-            count++;
-            // retry
-            return await attempt();
-          } else {
-            // fail for real + log screenshot
-            console.log(`Flaky Test: ${description}:`);
-            await e2e.logScreenshot();
-            throw err;
+  if (!E2E_DEBUG) {
+    const it = global.it;
+    // if we mark the test as flaky, overwrite the original 'it' function
+    // to attempt the test 10 times before actually failing
+    global.it = async (description, test) => {
+      const result = it(description, async () => {
+        let count = 0;
+        async function attempt() {
+          try {
+            // test attempt
+            return await test();
+          } catch (err) {
+            // test failed
+            if (count < retryCount) {
+              count++;
+              // Close and re-open page
+              await e2e.page.close();
+              await e2e.page.goto(`http://localhost:${E2E_PORT}/`);
+              // retry
+              return await attempt();
+            } else {
+              // fail for real + log screenshot
+              console.log(`Flaky Test: ${description}:`);
+              await e2e.logScreenshot();
+              throw err;
+            }
           }
         }
-      }
-      return await attempt();
-    });
-    return result;
-  };
+        return await attempt();
+      });
+      return result;
+    };
+  }
 
   runTests(e2e);
 }

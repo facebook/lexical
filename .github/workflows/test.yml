@@ -21,7 +21,7 @@ jobs:
       with:
         path: '**/node_modules'
         key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
-    - run: npm install --legacy-peer-deps
+    - run: npm ci --legacy-peer-deps
     - run: npm run build
     - run: npm run lint
     - run: npm run flow
@@ -44,7 +44,7 @@ jobs:
       with:
         path: '**/node_modules'
         key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
-    - run: npm install --legacy-peer-deps
+    - run: npm ci --legacy-peer-deps
     - run: npm run build
     - run: npm run test-unit
 
@@ -70,6 +70,6 @@ jobs:
       with:
         path: '**/node_modules'
         key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
-    - run: npm install --legacy-peer-deps
+    - run: npm ci --legacy-peer-deps
     - run: npm run build
     - run: npm run test-e2e-ci

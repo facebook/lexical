@@ -14,7 +14,7 @@ import {
 } from '../utils';
 
 describe('Emoticons', () => {
-  initializeE2E({chromium: true, webkit: true, firefox: true}, (e2e) => {
+  initializeE2E((e2e) => {
     it(`Can handle a single emoticon`, async () => {
       const {page} = e2e;
 

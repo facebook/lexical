@@ -14,7 +14,7 @@ import {
 } from '../utils';
 
 describe('Regression test #230', () => {
-  initializeE2E({chromium: true, webkit: true, firefox: true}, (e2e) => {
+  initializeE2E((e2e) => {
     it(`Is able to right arrow before hashtag after inserting text node`, async () => {
       const {page} = e2e;
       await page.focus('div.editor');

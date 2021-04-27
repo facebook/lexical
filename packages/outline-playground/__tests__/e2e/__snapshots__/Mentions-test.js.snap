@@ -1,61 +1,170 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Mentions Chromium Can enter and backspace part of the Luke Skywalker mention 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span aria-controls=\\"mentions-typeahead\\">Luke</span></p>"`;
+exports[`Mentions Can enter and backspace part of the Luke Skywalker mention 1`] = `
+<p
+  class="editor-paragraph"
+  dir="ltr"
+>
+  <span
+    aria-controls="mentions-typeahead"
+  >
+    Luke
+  </span>
+</p>
+`;
 
-exports[`Mentions Chromium Can enter and backspace part of the Luke Skywalker mention 2`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>﻿</span><span class=\\"mention\\" tabindex=\\"-1\\" contenteditable=\\"false\\" style=\\"background-color: rgba(24, 119, 232, 0.2);\\">Luke Skywalker</span><span>﻿</span></p>"`;
+exports[`Mentions Can enter and backspace part of the Luke Skywalker mention 2`] = `
+<p
+  class="editor-paragraph"
+  dir="ltr"
+>
+  <span>
+    ﻿
+  </span>
+  <span
+    class="mention"
+    contenteditable="false"
+    style="background-color: rgba(24, 119, 232, 0.2);"
+    tabindex="-1"
+  >
+    Luke Skywalker
+  </span>
+  <span>
+    ﻿
+  </span>
+</p>
+`;
 
-exports[`Mentions Chromium Can enter and backspace part of the Luke Skywalker mention 3`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>﻿</span><span class=\\"mention\\" tabindex=\\"-1\\" contenteditable=\\"false\\" style=\\"background-color: rgba(24, 119, 232, 0.2);\\">Luke</span><span>﻿</span></p>"`;
+exports[`Mentions Can enter and backspace part of the Luke Skywalker mention 3`] = `
+<p
+  class="editor-paragraph"
+  dir="ltr"
+>
+  <span>
+    ﻿
+  </span>
+  <span
+    class="mention"
+    contenteditable="false"
+    style="background-color: rgba(24, 119, 232, 0.2);"
+    tabindex="-1"
+  >
+    Luke
+  </span>
+  <span>
+    ﻿
+  </span>
+</p>
+`;
 
-exports[`Mentions Chromium Can enter and backspace part of the Luke Skywalker mention 4`] = `"<p class=\\"editor-paragraph\\"><span>﻿</span></p><div contenteditable=\\"false\\" class=\\"editor-placeholder\\">Enter some rich text...</div>"`;
+exports[`Mentions Can enter and backspace part of the Luke Skywalker mention 4`] = `
+<p
+  class="editor-paragraph"
+>
+  <span>
+    ﻿
+  </span>
+</p>
+`;
 
-exports[`Mentions Chromium Can enter and delete part of the Luke Skywalker mention 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span aria-controls=\\"mentions-typeahead\\">Luke</span></p>"`;
+exports[`Mentions Can enter and delete part of the Luke Skywalker mention 1`] = `
+<p
+  class="editor-paragraph"
+  dir="ltr"
+>
+  <span
+    aria-controls="mentions-typeahead"
+  >
+    Luke
+  </span>
+</p>
+`;
 
-exports[`Mentions Chromium Can enter and delete part of the Luke Skywalker mention 2`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>﻿</span><span class=\\"mention\\" tabindex=\\"-1\\" contenteditable=\\"false\\" style=\\"background-color: rgba(24, 119, 232, 0.2);\\">Luke Skywalker</span><span>﻿</span></p>"`;
+exports[`Mentions Can enter and delete part of the Luke Skywalker mention 2`] = `
+<p
+  class="editor-paragraph"
+  dir="ltr"
+>
+  <span>
+    ﻿
+  </span>
+  <span
+    class="mention"
+    contenteditable="false"
+    style="background-color: rgba(24, 119, 232, 0.2);"
+    tabindex="-1"
+  >
+    Luke Skywalker
+  </span>
+  <span>
+    ﻿
+  </span>
+</p>
+`;
 
-exports[`Mentions Chromium Can enter and delete part of the Luke Skywalker mention 3`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>﻿</span><span class=\\"mention\\" tabindex=\\"-1\\" contenteditable=\\"false\\" style=\\"background-color: rgba(24, 119, 232, 0.2);\\">Skywalker</span><span>﻿</span></p>"`;
+exports[`Mentions Can enter and delete part of the Luke Skywalker mention 3`] = `
+<p
+  class="editor-paragraph"
+  dir="ltr"
+>
+  <span>
+    ﻿
+  </span>
+  <span
+    class="mention"
+    contenteditable="false"
+    style="background-color: rgba(24, 119, 232, 0.2);"
+    tabindex="-1"
+  >
+    Skywalker
+  </span>
+  <span>
+    ﻿
+  </span>
+</p>
+`;
 
-exports[`Mentions Chromium Can enter and delete part of the Luke Skywalker mention 4`] = `"<p class=\\"editor-paragraph\\"><span>﻿</span></p><div contenteditable=\\"false\\" class=\\"editor-placeholder\\">Enter some rich text...</div>"`;
+exports[`Mentions Can enter and delete part of the Luke Skywalker mention 4`] = `
+<p
+  class="editor-paragraph"
+>
+  <span>
+    ﻿
+  </span>
+</p>
+`;
 
-exports[`Mentions Chromium Can enter the Luke Skywalker mention 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span aria-controls=\\"mentions-typeahead\\">Luke</span></p>"`;
+exports[`Mentions Can enter the Luke Skywalker mention 1`] = `
+<p
+  class="editor-paragraph"
+  dir="ltr"
+>
+  <span
+    aria-controls="mentions-typeahead"
+  >
+    Luke
+  </span>
+</p>
+`;
 
-exports[`Mentions Chromium Can enter the Luke Skywalker mention 2`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>﻿</span><span class=\\"mention\\" tabindex=\\"-1\\" contenteditable=\\"false\\" style=\\"background-color: rgba(24, 119, 232, 0.2);\\">Luke Skywalker</span><span>﻿</span></p>"`;
-
-exports[`Mentions Firefox Can enter and backspace part of the Luke Skywalker mention 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span aria-controls=\\"mentions-typeahead\\">Luke</span></p>"`;
-
-exports[`Mentions Firefox Can enter and backspace part of the Luke Skywalker mention 2`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>﻿</span><span style=\\"background-color: rgba(24, 119, 232, 0.2);\\" class=\\"mention\\" tabindex=\\"-1\\" contenteditable=\\"false\\">Luke Skywalker</span><span>﻿</span></p>"`;
-
-exports[`Mentions Firefox Can enter and backspace part of the Luke Skywalker mention 3`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>﻿</span><span style=\\"background-color: rgba(24, 119, 232, 0.2);\\" class=\\"mention\\" tabindex=\\"-1\\" contenteditable=\\"false\\">Luke</span><span>﻿</span></p>"`;
-
-exports[`Mentions Firefox Can enter and backspace part of the Luke Skywalker mention 4`] = `"<p class=\\"editor-paragraph\\"><span>﻿</span></p><div class=\\"editor-placeholder\\" contenteditable=\\"false\\">Enter some rich text...</div>"`;
-
-exports[`Mentions Firefox Can enter and delete part of the Luke Skywalker mention 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span aria-controls=\\"mentions-typeahead\\">Luke</span></p>"`;
-
-exports[`Mentions Firefox Can enter and delete part of the Luke Skywalker mention 2`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>﻿</span><span style=\\"background-color: rgba(24, 119, 232, 0.2);\\" class=\\"mention\\" tabindex=\\"-1\\" contenteditable=\\"false\\">Luke Skywalker</span><span>﻿</span></p>"`;
-
-exports[`Mentions Firefox Can enter and delete part of the Luke Skywalker mention 3`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>﻿</span><span style=\\"background-color: rgba(24, 119, 232, 0.2);\\" class=\\"mention\\" tabindex=\\"-1\\" contenteditable=\\"false\\">Skywalker</span><span>﻿</span></p>"`;
-
-exports[`Mentions Firefox Can enter and delete part of the Luke Skywalker mention 4`] = `"<p class=\\"editor-paragraph\\"><span>﻿</span></p><div class=\\"editor-placeholder\\" contenteditable=\\"false\\">Enter some rich text...</div>"`;
-
-exports[`Mentions Firefox Can enter the Luke Skywalker mention 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span aria-controls=\\"mentions-typeahead\\">Luke</span></p>"`;
-
-exports[`Mentions Firefox Can enter the Luke Skywalker mention 2`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>﻿</span><span style=\\"background-color: rgba(24, 119, 232, 0.2);\\" class=\\"mention\\" tabindex=\\"-1\\" contenteditable=\\"false\\">Luke Skywalker</span><span>﻿</span></p>"`;
-
-exports[`Mentions Webkit Can enter and backspace part of the Luke Skywalker mention 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span aria-controls=\\"mentions-typeahead\\">Luke</span></p>"`;
-
-exports[`Mentions Webkit Can enter and backspace part of the Luke Skywalker mention 2`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>﻿</span><span class=\\"mention\\" tabindex=\\"-1\\" contenteditable=\\"false\\" style=\\"background-color: rgba(24, 119, 232, 0.2);\\">Luke Skywalker</span><span>﻿</span></p>"`;
-
-exports[`Mentions Webkit Can enter and backspace part of the Luke Skywalker mention 3`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>﻿</span><span class=\\"mention\\" tabindex=\\"-1\\" contenteditable=\\"false\\" style=\\"background-color: rgba(24, 119, 232, 0.2);\\">Luke</span><span>﻿</span></p>"`;
-
-exports[`Mentions Webkit Can enter and backspace part of the Luke Skywalker mention 4`] = `"<p class=\\"editor-paragraph\\"><span>﻿</span></p><div contenteditable=\\"false\\" class=\\"editor-placeholder\\">Enter some rich text...</div>"`;
-
-exports[`Mentions Webkit Can enter and delete part of the Luke Skywalker mention 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span aria-controls=\\"mentions-typeahead\\">Luke</span></p>"`;
-
-exports[`Mentions Webkit Can enter and delete part of the Luke Skywalker mention 2`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>﻿</span><span class=\\"mention\\" tabindex=\\"-1\\" contenteditable=\\"false\\" style=\\"background-color: rgba(24, 119, 232, 0.2);\\">Luke Skywalker</span><span>﻿</span></p>"`;
-
-exports[`Mentions Webkit Can enter and delete part of the Luke Skywalker mention 3`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>﻿</span><span class=\\"mention\\" tabindex=\\"-1\\" contenteditable=\\"false\\" style=\\"background-color: rgba(24, 119, 232, 0.2);\\">Skywalker</span><span>﻿</span></p>"`;
-
-exports[`Mentions Webkit Can enter and delete part of the Luke Skywalker mention 4`] = `"<p class=\\"editor-paragraph\\"><span>﻿</span></p><div contenteditable=\\"false\\" class=\\"editor-placeholder\\">Enter some rich text...</div>"`;
-
-exports[`Mentions Webkit Can enter the Luke Skywalker mention 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span aria-controls=\\"mentions-typeahead\\">Luke</span></p>"`;
-
-exports[`Mentions Webkit Can enter the Luke Skywalker mention 2`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>﻿</span><span class=\\"mention\\" tabindex=\\"-1\\" contenteditable=\\"false\\" style=\\"background-color: rgba(24, 119, 232, 0.2);\\">Luke Skywalker</span><span>﻿</span></p>"`;
+exports[`Mentions Can enter the Luke Skywalker mention 2`] = `
+<p
+  class="editor-paragraph"
+  dir="ltr"
+>
+  <span>
+    ﻿
+  </span>
+  <span
+    class="mention"
+    contenteditable="false"
+    style="background-color: rgba(24, 119, 232, 0.2);"
+    tabindex="-1"
+  >
+    Luke Skywalker
+  </span>
+  <span>
+    ﻿
+  </span>
+</p>
+`;

@@ -1,85 +1,257 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`TextFormatting Chromium Can create bold text using the shortcut 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello</span><strong class=\\"editor-text-bold\\"> World</strong></p>"`;
+exports[`TextFormatting Can create bold text using the shortcut 1`] = `
+<p
+  class="editor-paragraph"
+  dir="ltr"
+>
+  <span>
+    Hello
+  </span>
+  <strong
+    class="editor-text-bold"
+  >
+     World
+  </strong>
+</p>
+`;
 
-exports[`TextFormatting Chromium Can create bold text using the shortcut 2`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello</span><strong class=\\"editor-text-bold\\"> World</strong><span>!</span></p>"`;
+exports[`TextFormatting Can create bold text using the shortcut 2`] = `
+<p
+  class="editor-paragraph"
+  dir="ltr"
+>
+  <span>
+    Hello
+  </span>
+  <strong
+    class="editor-text-bold"
+  >
+     World
+  </strong>
+  <span>
+    !
+  </span>
+</p>
+`;
 
-exports[`TextFormatting Chromium Can create italic text using the shortcut 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello</span><em class=\\"editor-text-italic\\"> World</em></p>"`;
+exports[`TextFormatting Can create italic text using the shortcut 1`] = `
+<p
+  class="editor-paragraph"
+  dir="ltr"
+>
+  <span>
+    Hello
+  </span>
+  <em
+    class="editor-text-italic"
+  >
+     World
+  </em>
+</p>
+`;
 
-exports[`TextFormatting Chromium Can create italic text using the shortcut 2`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello</span><em class=\\"editor-text-italic\\"> World</em><span>!</span></p>"`;
+exports[`TextFormatting Can create italic text using the shortcut 2`] = `
+<p
+  class="editor-paragraph"
+  dir="ltr"
+>
+  <span>
+    Hello
+  </span>
+  <em
+    class="editor-text-italic"
+  >
+     World
+  </em>
+  <span>
+    !
+  </span>
+</p>
+`;
 
-exports[`TextFormatting Chromium Can select multiple text parts and format them with shortcuts 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello </span><strong class=\\"editor-text-bold\\">world</strong><span>!</span></p>"`;
+exports[`TextFormatting Can select multiple text parts and format them with shortcuts 1`] = `
+<p
+  class="editor-paragraph"
+  dir="ltr"
+>
+  <span>
+    Hello 
+  </span>
+  <strong
+    class="editor-text-bold"
+  >
+    world
+  </strong>
+  <span>
+    !
+  </span>
+</p>
+`;
 
-exports[`TextFormatting Chromium Can select multiple text parts and format them with shortcuts 2`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello </span><strong class=\\"editor-text-bold\\">w</strong><strong class=\\"editor-text-bold editor-text-italic\\">or</strong><strong class=\\"editor-text-bold\\">ld</strong><span>!</span></p>"`;
+exports[`TextFormatting Can select multiple text parts and format them with shortcuts 2`] = `
+<p
+  class="editor-paragraph"
+  dir="ltr"
+>
+  <span>
+    Hello 
+  </span>
+  <strong
+    class="editor-text-bold"
+  >
+    w
+  </strong>
+  <strong
+    class="editor-text-bold editor-text-italic"
+  >
+    or
+  </strong>
+  <strong
+    class="editor-text-bold"
+  >
+    ld
+  </strong>
+  <span>
+    !
+  </span>
+</p>
+`;
 
-exports[`TextFormatting Chromium Can select multiple text parts and format them with shortcuts 3`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello </span><strong class=\\"editor-text-bold\\">w</strong><em class=\\"editor-text-italic\\">or</em><strong class=\\"editor-text-bold\\">ld</strong><span>!</span></p>"`;
+exports[`TextFormatting Can select multiple text parts and format them with shortcuts 3`] = `
+<p
+  class="editor-paragraph"
+  dir="ltr"
+>
+  <span>
+    Hello 
+  </span>
+  <strong
+    class="editor-text-bold"
+  >
+    w
+  </strong>
+  <em
+    class="editor-text-italic"
+  >
+    or
+  </em>
+  <strong
+    class="editor-text-bold"
+  >
+    ld
+  </strong>
+  <span>
+    !
+  </span>
+</p>
+`;
 
-exports[`TextFormatting Chromium Can select multiple text parts and format them with shortcuts 4`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello w</span><em class=\\"editor-text-italic\\">or</em><span>ld!</span></p>"`;
+exports[`TextFormatting Can select multiple text parts and format them with shortcuts 4`] = `
+<p
+  class="editor-paragraph"
+  dir="ltr"
+>
+  <span>
+    Hello w
+  </span>
+  <em
+    class="editor-text-italic"
+  >
+    or
+  </em>
+  <span>
+    ld!
+  </span>
+</p>
+`;
 
-exports[`TextFormatting Chromium Can select multiple text parts and format them with shortcuts 5`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello </span><em class=\\"editor-text-italic\\">world</em><span>!</span></p>"`;
+exports[`TextFormatting Can select multiple text parts and format them with shortcuts 5`] = `
+<p
+  class="editor-paragraph"
+  dir="ltr"
+>
+  <span>
+    Hello 
+  </span>
+  <em
+    class="editor-text-italic"
+  >
+    world
+  </em>
+  <span>
+    !
+  </span>
+</p>
+`;
 
-exports[`TextFormatting Chromium Can select multiple text parts and format them with shortcuts 6`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello world!</span></p>"`;
+exports[`TextFormatting Can select multiple text parts and format them with shortcuts 6`] = `
+<p
+  class="editor-paragraph"
+  dir="ltr"
+>
+  <span>
+    Hello world!
+  </span>
+</p>
+`;
 
-exports[`TextFormatting Chromium Can select text and boldify it with the shortcut 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello </span><strong class=\\"editor-text-bold\\">world</strong><span>!</span></p>"`;
+exports[`TextFormatting Can select text and boldify it with the shortcut 1`] = `
+<p
+  class="editor-paragraph"
+  dir="ltr"
+>
+  <span>
+    Hello 
+  </span>
+  <strong
+    class="editor-text-bold"
+  >
+    world
+  </strong>
+  <span>
+    !
+  </span>
+</p>
+`;
 
-exports[`TextFormatting Chromium Can select text and boldify it with the shortcut 2`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello world!</span></p>"`;
+exports[`TextFormatting Can select text and boldify it with the shortcut 2`] = `
+<p
+  class="editor-paragraph"
+  dir="ltr"
+>
+  <span>
+    Hello world!
+  </span>
+</p>
+`;
 
-exports[`TextFormatting Chromium Can select text and italicify it with the shortcut 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello </span><em class=\\"editor-text-italic\\">world</em><span>!</span></p>"`;
+exports[`TextFormatting Can select text and italicify it with the shortcut 1`] = `
+<p
+  class="editor-paragraph"
+  dir="ltr"
+>
+  <span>
+    Hello 
+  </span>
+  <em
+    class="editor-text-italic"
+  >
+    world
+  </em>
+  <span>
+    !
+  </span>
+</p>
+`;
 
-exports[`TextFormatting Chromium Can select text and italicify it with the shortcut 2`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello world!</span></p>"`;
-
-exports[`TextFormatting Firefox Can create bold text using the shortcut 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello</span><strong class=\\"editor-text-bold\\"> World</strong></p>"`;
-
-exports[`TextFormatting Firefox Can create bold text using the shortcut 2`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello</span><strong class=\\"editor-text-bold\\"> World</strong><span>!</span></p>"`;
-
-exports[`TextFormatting Firefox Can create italic text using the shortcut 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello</span><em class=\\"editor-text-italic\\"> World</em></p>"`;
-
-exports[`TextFormatting Firefox Can create italic text using the shortcut 2`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello</span><em class=\\"editor-text-italic\\"> World</em><span>!</span></p>"`;
-
-exports[`TextFormatting Firefox Can select multiple text parts and format them with shortcuts 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello </span><strong class=\\"editor-text-bold\\">world</strong><span>!</span></p>"`;
-
-exports[`TextFormatting Firefox Can select multiple text parts and format them with shortcuts 2`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello </span><strong class=\\"editor-text-bold\\">w</strong><strong class=\\"editor-text-bold editor-text-italic\\">or</strong><strong class=\\"editor-text-bold\\">ld</strong><span>!</span></p>"`;
-
-exports[`TextFormatting Firefox Can select multiple text parts and format them with shortcuts 3`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello </span><strong class=\\"editor-text-bold\\">w</strong><em class=\\"editor-text-italic\\">or</em><strong class=\\"editor-text-bold\\">ld</strong><span>!</span></p>"`;
-
-exports[`TextFormatting Firefox Can select multiple text parts and format them with shortcuts 4`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello w</span><em class=\\"editor-text-italic\\">or</em><span>ld!</span></p>"`;
-
-exports[`TextFormatting Firefox Can select multiple text parts and format them with shortcuts 5`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello </span><em class=\\"editor-text-italic\\">world</em><span>!</span></p>"`;
-
-exports[`TextFormatting Firefox Can select multiple text parts and format them with shortcuts 6`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello world!</span></p>"`;
-
-exports[`TextFormatting Firefox Can select text and boldify it with the shortcut 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello </span><strong class=\\"editor-text-bold\\">world</strong><span>!</span></p>"`;
-
-exports[`TextFormatting Firefox Can select text and boldify it with the shortcut 2`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello world!</span></p>"`;
-
-exports[`TextFormatting Firefox Can select text and italicify it with the shortcut 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello </span><em class=\\"editor-text-italic\\">world</em><span>!</span></p>"`;
-
-exports[`TextFormatting Firefox Can select text and italicify it with the shortcut 2`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello world!</span></p>"`;
-
-exports[`TextFormatting Webkit Can create bold text using the shortcut 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello</span><strong class=\\"editor-text-bold\\"> World</strong></p>"`;
-
-exports[`TextFormatting Webkit Can create bold text using the shortcut 2`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello</span><strong class=\\"editor-text-bold\\"> World</strong><span>!</span></p>"`;
-
-exports[`TextFormatting Webkit Can create italic text using the shortcut 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello</span><em class=\\"editor-text-italic\\"> World</em></p>"`;
-
-exports[`TextFormatting Webkit Can create italic text using the shortcut 2`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello</span><em class=\\"editor-text-italic\\"> World</em><span>!</span></p>"`;
-
-exports[`TextFormatting Webkit Can select multiple text parts and format them with shortcuts 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello </span><strong class=\\"editor-text-bold\\">world</strong><span>!</span></p>"`;
-
-exports[`TextFormatting Webkit Can select multiple text parts and format them with shortcuts 2`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello </span><strong class=\\"editor-text-bold\\">w</strong><strong class=\\"editor-text-bold editor-text-italic\\">or</strong><strong class=\\"editor-text-bold\\">ld</strong><span>!</span></p>"`;
-
-exports[`TextFormatting Webkit Can select multiple text parts and format them with shortcuts 3`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello </span><strong class=\\"editor-text-bold\\">w</strong><em class=\\"editor-text-italic\\">or</em><strong class=\\"editor-text-bold\\">ld</strong><span>!</span></p>"`;
-
-exports[`TextFormatting Webkit Can select multiple text parts and format them with shortcuts 4`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello w</span><em class=\\"editor-text-italic\\">or</em><span>ld!</span></p>"`;
-
-exports[`TextFormatting Webkit Can select multiple text parts and format them with shortcuts 5`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello </span><em class=\\"editor-text-italic\\">world</em><span>!</span></p>"`;
-
-exports[`TextFormatting Webkit Can select multiple text parts and format them with shortcuts 6`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello world!</span></p>"`;
-
-exports[`TextFormatting Webkit Can select text and boldify it with the shortcut 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello </span><strong class=\\"editor-text-bold\\">world</strong><span>!</span></p>"`;
-
-exports[`TextFormatting Webkit Can select text and boldify it with the shortcut 2`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello world!</span></p>"`;
-
-exports[`TextFormatting Webkit Can select text and italicify it with the shortcut 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello </span><em class=\\"editor-text-italic\\">world</em><span>!</span></p>"`;
-
-exports[`TextFormatting Webkit Can select text and italicify it with the shortcut 2`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span>Hello world!</span></p>"`;
+exports[`TextFormatting Can select text and italicify it with the shortcut 2`] = `
+<p
+  class="editor-paragraph"
+  dir="ltr"
+>
+  <span>
+    Hello world!
+  </span>
+</p>
+`;

@@ -1,7 +1,11 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Regression test #231 Chromium Does not generate segment error when editing empty text nodes 1`] = `"<p class=\\"editor-paragraph\\"><span>﻿</span></p><div contenteditable=\\"false\\" class=\\"editor-placeholder\\">Enter some rich text...</div>"`;
-
-exports[`Regression test #231 Firefox Does not generate segment error when editing empty text nodes 1`] = `"<p class=\\"editor-paragraph\\"><span>﻿</span></p><div class=\\"editor-placeholder\\" contenteditable=\\"false\\">Enter some rich text...</div>"`;
-
-exports[`Regression test #231 Webkit Does not generate segment error when editing empty text nodes 1`] = `"<p class=\\"editor-paragraph\\"><span>﻿</span></p><div contenteditable=\\"false\\" class=\\"editor-placeholder\\">Enter some rich text...</div>"`;
+exports[`Regression test #231 Does not generate segment error when editing empty text nodes 1`] = `
+<p
+  class="editor-paragraph"
+>
+  <span>
+    ﻿
+  </span>
+</p>
+`;

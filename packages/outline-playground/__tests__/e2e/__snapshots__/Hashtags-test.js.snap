@@ -1,7 +1,40 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Hashtags Chromium Can handle a single hashtag 1`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span class=\\"editor-text-hashtag\\">#yolo</span></p>"`;
+exports[`Hashtags Can handle a single hashtag 1`] = `
+<p
+  class="editor-paragraph"
+  dir="ltr"
+>
+  <span
+    class="editor-text-hashtag"
+  >
+    #yolo
+  </span>
+</p>
+`;
 
-exports[`Hashtags Chromium Can handle a single hashtag 2`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span class=\\"editor-text-hashtag\\">#yolonce</span></p>"`;
+exports[`Hashtags Can handle a single hashtag 2`] = `
+<p
+  class="editor-paragraph"
+  dir="ltr"
+>
+  <span
+    class="editor-text-hashtag"
+  >
+    #yolonce
+  </span>
+</p>
+`;
 
-exports[`Hashtags Chromium Can handle a single hashtag 3`] = `"<p class=\\"editor-paragraph\\" dir=\\"ltr\\"><span class=\\"\\">yolonce</span></p>"`;
+exports[`Hashtags Can handle a single hashtag 3`] = `
+<p
+  class="editor-paragraph"
+  dir="ltr"
+>
+  <span
+    class=""
+  >
+    yolonce
+  </span>
+</p>
+`;

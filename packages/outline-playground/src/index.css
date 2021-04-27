@@ -703,3 +703,32 @@ pre {
   margin: 8px 0;
   tab-size: 2;
 }
+
+.emoji {
+  color: transparent;
+  background-size: 16px 16px;
+  height: 16px;
+  width: 16px;
+  background-position: center;
+  background-repeat: no-repeat;
+  display: inline-block;
+  margin: 0 1px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.emoji.happysmile {
+  background-image: url(https://static.xx.fbcdn.net/images/emoji.php/v9/t4c/1/16/1f642.png);
+}
+
+.emoji.veryhappysmile {
+  background-image: url(https://static.xx.fbcdn.net/images/emoji.php/v9/t51/1/16/1f603.png);
+}
+
+.emoji.unhappysmile {
+  background-image: url(https://static.xx.fbcdn.net/images/emoji.php/v9/tcb/1/16/1f641.png);
+}
+
+.emoji.heart {
+  background-image: url(https://static.xx.fbcdn.net/images/emoji.php/v9/t6c/1/16/2764.png);
+}

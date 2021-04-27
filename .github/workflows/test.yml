@@ -48,7 +48,7 @@ jobs:
     - run: npm run build
     - run: npm run test-unit
 
-  e2e (chromium + ubuntu):
+  e2e - chromium + ubuntu:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -74,7 +74,7 @@ jobs:
     - run: npm run build
     - run: npm run test-e2e-ci:chromium
 
-  e2e (firefox + ubuntu):
+  e2e - firefox + ubuntu:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -100,7 +100,7 @@ jobs:
     - run: npm run build
     - run: npm run test-e2e-ci:firefox
 
-  e2e (webkit + macos):
+  e2e - webkit + macos:
     runs-on: macos-11.0
     strategy:
       matrix:

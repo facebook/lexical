@@ -235,7 +235,7 @@ const deps = {
   },
 };
 
-function getUbuntuVersionInternal(osReleaseText: string): string {
+function getUbuntuVersionInternal(osReleaseText) {
   const fields = new Map();
   // eslint-disable-next-line no-for-of-loops/no-for-of-loops
   for (const line of osReleaseText.split('\n')) {
@@ -253,7 +253,7 @@ function getUbuntuVersionInternal(osReleaseText: string): string {
   return fields.get('version_id') || '';
 }
 
-async function getUbuntuVersion(): Promise<string> {
+async function getUbuntuVersion() {
   if (os.platform() !== 'linux')
     return '';
   const osReleaseText = await readFileAsync('/etc/os-release', 'utf8').catch(e => '');
@@ -273,7 +273,7 @@ async function installDeps() {
     return;
   }
 
-  const libraries: string[] = [];
+  const libraries = [];
   // eslint-disable-next-line no-for-of-loops/no-for-of-loops
   for (const browserType of browserTypes) {
     if (ubuntuVersion === '18.04') libraries.push(...deps.bionic[browserType]);
@@ -282,7 +282,7 @@ async function installDeps() {
   }
   const uniqueLibraries = Array.from(new Set(libraries));
   console.log('Installing Ubuntu dependencies...'); // eslint-disable-line no-console
-  const commands: string[] = [];
+  const commands = [];
   commands.push('apt-get update');
   commands.push(
     [

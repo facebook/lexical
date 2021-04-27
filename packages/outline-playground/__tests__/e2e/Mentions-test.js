@@ -9,7 +9,7 @@
 import {initializeE2E, assertHTMLSnapshot, assertSelection} from '../utils';
 
 describe('Mentions', () => {
-  initializeE2E({chromium: true, webkit: true, firefox: true}, (e2e) => {
+  initializeE2E((e2e) => {
     it(`Can enter the Luke Skywalker mention`, async () => {
       const {page} = e2e;
 

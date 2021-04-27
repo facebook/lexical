@@ -20,7 +20,7 @@ import {
 } from '../utils';
 
 describe('TextEntry', () => {
-  initializeE2E({chromium: true, webkit: true, firefox: true}, (e2e) => {
+  initializeE2E((e2e) => {
     describe(`Rich text`, () => {
       it(`Can type 'Hello Outline' in the editor`, async () => {
         const {page} = e2e;

@@ -14,7 +14,7 @@ import {
 } from '../utils';
 
 describe('Regression test #231', () => {
-  initializeE2E({chromium: true, webkit: true, firefox: true}, (e2e) => {
+  initializeE2E((e2e) => {
     it(`Does not generate segment error when editing empty text nodes`, async () => {
       const {page} = e2e;
       await page.focus('div.editor');

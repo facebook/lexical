@@ -5,36 +5,11 @@ import type {OutlineEditor, View, NodeKey, EditorThemeClasses} from 'outline';
 import {useEffect} from 'react';
 import {TextNode} from 'outline';
 
-const baseEmojiStyle =
-  'color: transparent;' +
-  'background-size: 16px 16px;' +
-  'height: 16px;' +
-  'width: 16px;' +
-  'background-position: center;' +
-  'background-repeat: no-repeat;' +
-  'display: inline-block;' +
-  'margin: 0 1px;' +
-  'text-align: center;' +
-  'vertical-align: middle;';
-
-const happySmile =
-  baseEmojiStyle +
-  'background-image: url(https://static.xx.fbcdn.net/images/emoji.php/v9/t4c/1/16/1f642.png);';
-const veryHappySmile =
-  baseEmojiStyle +
-  'background-image: url(https://static.xx.fbcdn.net/images/emoji.php/v9/t51/1/16/1f603.png);';
-const unhappySmile =
-  baseEmojiStyle +
-  'background-image: url(https://static.xx.fbcdn.net/images/emoji.php/v9/tcb/1/16/1f641.png);';
-const heart =
-  baseEmojiStyle +
-  'background-image: url(https://static.xx.fbcdn.net/images/emoji.php/v9/t6c/1/16/2764.png);';
-
 const emojis: {[string]: [string, string]} = {
-  ':)': [happySmile, '🙂'],
-  ':D': [veryHappySmile, '😀'],
-  ':(': [unhappySmile, '🙁'],
-  '<3': [heart, '❤'],
+  ':)': ['emoji happysmile', '🙂'],
+  ':D': ['emoji veryhappysmile', '😀'],
+  ':(': ['emoji unhappysmile', '🙁'],
+  '<3': ['emoji heart', '❤'],
 };
 
 function textNodeTransform(node: TextNode, view: View): void {
@@ -77,27 +52,27 @@ export default function useEmojis(editor: null | OutlineEditor): void {
 }
 
 class EmojiNode extends TextNode {
-  cssText: string;
+  className: string;
 
-  constructor(cssText: string, text: string, key?: NodeKey) {
+  constructor(className: string, text: string, key?: NodeKey) {
     super(text, key);
-    this.cssText = cssText;
+    this.className = className;
     this.__type = 'emoji';
   }
 
   clone() {
-    const clone = new EmojiNode(this.cssText, this.__text, this.__key);
+    const clone = new EmojiNode(this.className, this.__text, this.__key);
     clone.__parent = this.__parent;
     clone.__flags = this.__flags;
     return clone;
   }
   createDOM(editorThemeClasses: EditorThemeClasses) {
     const dom = super.createDOM(editorThemeClasses);
-    dom.style.cssText = this.cssText;
+    dom.className = this.className;
     return dom;
   }
 }
 
-function createEmojiNode(cssText: string, emojiText: string): EmojiNode {
-  return new EmojiNode(cssText, emojiText).makeImmutable();
+function createEmojiNode(className: string, emojiText: string): EmojiNode {
+  return new EmojiNode(className, emojiText).makeImmutable();
 }

@@ -8,9 +8,10 @@
 
 import {chromium, firefox, webkit} from 'playwright';
 
-const E2E_DEBUG = process.env.E2E_DEBUG;
-const E2E_PORT = process.env.E2E_PORT || 3000;
-const E2E_BROWSER = process.env.E2E_BROWSER;
+export const E2E_DEBUG = process.env.E2E_DEBUG;
+export const E2E_PORT = process.env.E2E_PORT || 3000;
+export const E2E_BROWSER = process.env.E2E_BROWSER;
+export const IS_MAC = process.platform === 'darwin';
 
 jest.setTimeout(60000);
 
@@ -20,20 +21,6 @@ export function initializeE2E(runTests) {
   const e2e = {
     browser: null,
     page: null,
-    skip(browsers, cb) {
-      const shouldSkip = browsers.find((browser) => browser === E2E_BROWSER);
-      if (shouldSkip) {
-        const it = global.it;
-        global.it = global.it.skip;
-        try {
-          cb();
-        } finally {
-          global.it = it;
-        }
-      } else {
-        cb();
-      }
-    },
     async saveScreenshot(print) {
       const currentTest = expect.getState().currentTestName;
       const path = currentTest.replace(/\s/g, '_') + '.png';
@@ -159,7 +146,22 @@ export async function assertSelection(page, expected) {
       focusOffset,
     };
   }, expected);
-  expect(selection).toEqual(expected);
+  expect(selection.anchorPath).toEqual(expected.anchorPath);
+  expect(selection.focusPath).toEqual(expected.focusPath);
+  if (Array.isArray(expected.anchorOffset)) {
+    const [start, end] = expected.anchorOffset;
+    expect(selection.anchorOffset).toBeGreaterThanOrEqual(start);
+    expect(selection.anchorOffset).toBeLessThanOrEqual(end);
+  } else {
+    expect(selection.anchorOffset).toEqual(expected.anchorOffset);
+  }
+  if (Array.isArray(expected.focusOffset)) {
+    const [start, end] = expected.focusOffset;
+    expect(selection.focusOffset).toBeGreaterThanOrEqual(start);
+    expect(selection.focusOffset).toBeLessThanOrEqual(end);
+  } else {
+    expect(selection.focusOffset).toEqual(expected.focusOffset);
+  }
 }
 
 export async function isMac(page) {

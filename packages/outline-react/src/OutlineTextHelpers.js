@@ -11,8 +11,6 @@ import type {RootNode, TextNode} from 'outline';
 
 import {isTextNode, isBlockNode} from 'outline';
 
-let announcingNode = null;
-
 export function findTextIntersectionFromCharacters(
   root: RootNode,
   targetCharacters: number,
@@ -57,12 +55,7 @@ export function findTextIntersectionFromCharacters(
 export function announceString(s: string): void {
   const body = document.body;
   if (body != null) {
-    if (announcingNode !== null) {
-      body.removeChild(announcingNode);
-      announcingNode = null;
-    }
     const announce = document.createElement('div');
-    announcingNode = announce;
     announce.setAttribute('id', 'outline_announce_' + Date.now());
     announce.setAttribute('aria-live', 'polite');
     announce.style.cssText =
@@ -73,22 +66,13 @@ export function announceString(s: string): void {
     // - JAWS remains silent without update
     // - VO remains silent without create, if the text is the same (and doing `announce.textContent=''` doesn't help)
     setTimeout(() => {
-      if (announce === announcingNode) {
-        announce.textContent = s;
-      }
+      announce.textContent = s;
     }, 100);
 
     setTimeout(() => {
-      if (announce === announcingNode) {
-        body.removeChild(announce);
-        announcingNode = null;
-      }
+      body.removeChild(announce);
     }, 500);
   }
-}
-
-export function announceNode(node: TextNode): void {
-  announceString(node.getTextContent());
 }
 
 export function getSegmentsFromString(

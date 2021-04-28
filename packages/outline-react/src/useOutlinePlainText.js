@@ -22,7 +22,6 @@ import {CAN_USE_BEFORE_INPUT} from './OutlineEnv';
 import {
   onSelectionChange,
   onKeyDownForPlainText,
-  onKeyUp,
   onPointerDown,
   onPointerUp,
   onCompositionStart,
@@ -55,7 +54,6 @@ const emptyObject: {} = {};
 const events: InputEvents = [
   ['selectionchange', onSelectionChange],
   ['keydown', onKeyDownForPlainText],
-  ['keyup', onKeyUp],
   ['pointerdown', onPointerDown],
   ['pointerup', onPointerUp],
   ['pointercancel', onPointerUp],

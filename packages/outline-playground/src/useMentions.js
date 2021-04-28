@@ -159,43 +159,31 @@ function MentionsTypeahead({
 }): React$Node {
   const divRef = useRef(null);
   const results = useMentionLookupService(match.matchingString);
-  const [nodeKey, setNodeKey] = useState(null);
   const [selectedIndex, setSelectedIndex] = useState<null | number>(null);
   const [hoveredIndex, setHoveredIndex] = useState(null);
 
   useEffect(() => {
-    if (results !== null) {
-      editor.update((view) => {
+    const div = divRef.current;
+    if (results !== null && div !== null) {
+      const res = editor.getViewModel().read((view) => {
         const selection = view.getSelection();
-        if (selection !== null) {
-          const {leadOffset, replaceableString} = match;
-          const anchorNode = selection.getAnchorNode();
-          if (anchorNode.getTextContent().indexOf(replaceableString) !== -1) {
-            const splitNodes = anchorNode.splitText(
-              leadOffset,
-              leadOffset + replaceableString.length,
-            );
-            const target = leadOffset === 0 ? splitNodes[0] : splitNodes[1];
-            target.setTextContent(replaceableString);
-            target.select();
-            setNodeKey(anchorNode.getKey());
+
+        if (selection !== null && selection.isCaret()) {
+          const range = document.createRange();
+          const mentionsElement = editor.getElementByKey(selection.anchorKey);
+          const anchorTextNode = mentionsElement.firstChild;
+          if (anchorTextNode) {
+            range.setStart(anchorTextNode, match.leadOffset);
+            range.setEnd(anchorTextNode, selection.anchorOffset);
           }
+          return [range, mentionsElement];
         }
       });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editor, match.replaceableString, match.leadOffset, results]);
-
-  useEffect(() => {
-    const div = divRef.current;
-    if (results !== null && div !== null && nodeKey !== null) {
-      const mentionsElement = editor.getElementByKey(nodeKey);
-
-      if (mentionsElement !== null && mentionsElement.nodeType === 1) {
-        // $FlowFixMe
-        const {x, y, height} = mentionsElement.getBoundingClientRect();
-        div.style.top = `${y + height + 2}px`;
-        div.style.left = `${x}px`;
+      if (res) {
+        const [range, mentionsElement] = res;
+        const {left, top, height} = range.getBoundingClientRect();
+        div.style.top = `${top + height + 2}px`;
+        div.style.left = `${left - 14}px`;
         mentionsElement.setAttribute('aria-controls', 'mentions-typeahead');
 
         return () => {
@@ -203,25 +191,33 @@ function MentionsTypeahead({
         };
       }
     }
-  }, [editor, nodeKey, results]);
+  }, [editor, match, results]);
 
   const applyCurrentSelected = useCallback(() => {
-    if (nodeKey == null) {
+    if (results === null || selectedIndex === null) {
       return;
     }
-    // $FlowFixMe
     const selectedResult = results[selectedIndex];
     close();
     editor.update((view) => {
-      const targetNode = view.getNodeByKey(nodeKey);
-      const mentionNode = createMentionNode(selectedResult);
-
-      // $FlowFixMe
-      targetNode.replace(mentionNode);
-      mentionNode.selectNext(0, 0);
-      mentionNode.getParentOrThrow().normalizeTextNodes(true);
+      const selection = view.getSelection();
+      if (match && selection && selection.isCaret()) {
+        const {leadOffset, replaceableString} = match;
+        const anchorNode = selection.getAnchorNode();
+        if (anchorNode.getTextContent().indexOf(replaceableString) !== -1) {
+          const splitNodes = anchorNode.splitText(
+            leadOffset,
+            leadOffset + replaceableString.length,
+          );
+          const target = leadOffset === 0 ? splitNodes[0] : splitNodes[1];
+          const mentionNode = createMentionNode(selectedResult);
+          target.replace(mentionNode);
+          mentionNode.selectNext(0, 0);
+          mentionNode.getParentOrThrow().normalizeTextNodes(true);
+        }
+      }
     });
-  }, [close, editor, nodeKey, results, selectedIndex]);
+  }, [close, editor, match, results, selectedIndex]);
 
   const updateSelectedIndex = useCallback(
     (index) => {

@@ -183,7 +183,6 @@ export class OutlineEditor {
   _pendingViewModel: null | ViewModel;
   _compositionKey: null | NodeKey;
   _deferred: Array<() => void>;
-  _isKeyDown: boolean;
   _isPointerDown: boolean;
   _key: string;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
@@ -210,7 +209,6 @@ export class OutlineEditor {
     // Used to help co-ordinate selection and events
     this._compositionKey = null;
     this._deferred = [];
-    this._isKeyDown = false;
     // Used during reconciliation
     this._keyToDOMMap = new Map();
     // error listeners
@@ -244,9 +242,6 @@ export class OutlineEditor {
   isComposing(): boolean {
     return this._compositionKey != null;
   }
-  isKeyDown(): boolean {
-    return this._isKeyDown;
-  }
   isPointerDown(): boolean {
     return this._isPointerDown;
   }
@@ -265,9 +260,6 @@ export class OutlineEditor {
         reconcilePlaceholder(this, this._viewModel);
       });
     }
-  }
-  setKeyDown(isKeyDown: boolean): void {
-    this._isKeyDown = isKeyDown;
   }
   setPointerDown(isPointerDown: boolean): void {
     this._isPointerDown = isPointerDown;

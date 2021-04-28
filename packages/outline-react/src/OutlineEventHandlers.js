@@ -126,7 +126,6 @@ export function onKeyDownForPlainText(
   editor: OutlineEditor,
   state: EventHandlerState,
 ): void {
-  editor.setKeyDown(true);
   if (editor.isComposing() || wasRecentlyComposing) {
     return;
   }
@@ -210,7 +209,6 @@ export function onKeyDownForRichText(
   editor: OutlineEditor,
   state: EventHandlerState,
 ): void {
-  editor.setKeyDown(true);
   if (editor.isComposing() || wasRecentlyComposing) {
     return;
   }
@@ -298,10 +296,6 @@ export function onKeyDownForRichText(
       }
     }
   });
-}
-
-export function onKeyUp(event: KeyboardEvent, editor: OutlineEditor): void {
-  editor.setKeyDown(false);
 }
 
 export function onPastePolyfillForPlainText(

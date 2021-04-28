@@ -456,10 +456,10 @@ export function onSelectionChange(
     if (selection !== null && selection.isCaret()) {
       const anchorNode = selection.getAnchorNode();
       const anchorOffset = selection.anchorOffset;
-      const textContent = anchorNode.getTextContent();
+      const textContentSize = anchorNode.getTextContentSize();
       // This is a hot-path, so let's only get the next sibling
       // if we know we're at the end of a node first.
-      if (anchorOffset === textContent.length) {
+      if (anchorOffset === textContentSize) {
         const nextSibling = anchorNode.getNextSibling();
         if (
           isTextNode(nextSibling) &&
@@ -473,7 +473,7 @@ export function onSelectionChange(
           // text nodes).
           if (
             !/[\u2700-\u27bf]/g.test(announceText) ||
-            (domSelection.anchorOffset === 0 && textContent === '')
+            (domSelection.anchorOffset === 0 && textContentSize === 0)
           ) {
             announceString(announceText);
           }

@@ -347,17 +347,14 @@ export function createSelection(
   const currentViewModel = editor.getViewModel();
   const lastSelection = currentViewModel._selection;
   const eventType = getActiveEventType();
-  const isCompositionStart = eventType === 'compositionstart';
   const isSelectionChange = eventType === 'selectionchange';
-  const useDOMSelection = isSelectionChange || eventType === 'beforeinput';
+  const useDOMSelection =
+    isSelectionChange ||
+    eventType === 'beforeinput' ||
+    eventType === 'compositionstart';
   let anchorDOM, focusDOM, anchorOffset, focusOffset;
 
-  if (
-    eventType === undefined ||
-    lastSelection === null ||
-    useDOMSelection ||
-    (isCompositionStart && editor.isKeyDown())
-  ) {
+  if (eventType === undefined || lastSelection === null || useDOMSelection) {
     const domSelection: WindowSelection = window.getSelection();
     anchorDOM = domSelection.anchorNode;
     focusDOM = domSelection.focusNode;

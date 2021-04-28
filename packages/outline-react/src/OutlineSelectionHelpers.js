@@ -19,13 +19,9 @@ import {
 } from 'outline';
 import {createParagraphNode} from 'outline-extensions/ParagraphNode';
 
-import {CAN_USE_INTL_SEGMENTER, IS_APPLE} from './OutlineEnv';
+import {CAN_USE_INTL_SEGMENTER} from './OutlineEnv';
 import {invariant} from './OutlineReactUtils';
-import {
-  announceNode,
-  getSegmentsFromString,
-  getWordsFromString,
-} from './OutlineTextHelpers';
+import {getSegmentsFromString, getWordsFromString} from './OutlineTextHelpers';
 
 export function getNodesInRange(
   selection: Selection,
@@ -360,8 +356,6 @@ function moveCaretSelection(
   // We have to adjust selection if we move selection into a segmented node
   if (focusNode.isSegmented()) {
     if (isBackward) {
-      // Announce the node for all screen readers.
-      announceNode(focusNode);
       const prevSibling = focusNode.getPreviousSibling();
       if (isTextNode(prevSibling)) {
         selection.focusKey = prevSibling.getKey();
@@ -372,25 +366,6 @@ function moveCaretSelection(
       if (isTextNode(nextSibling)) {
         selection.focusKey = nextSibling.getKey();
         selection.focusOffset = 0;
-      }
-    }
-  } else {
-    const textSize = focusNode.getTextContentSize();
-    const focusOffset = selection.focusOffset;
-
-    // If selection is just before for non Apple devices, we then
-    // announce the node for screen readers other than VoiceOver. If it
-    // is an Apple device then we should announce it on the boundary.
-    if (
-      (!IS_APPLE && focusOffset + 1 === textSize) ||
-      (IS_APPLE && focusOffset === textSize)
-    ) {
-      const nextSibling = focusNode.getNextSibling();
-      if (
-        isTextNode(nextSibling) &&
-        (nextSibling.isImmutable() || nextSibling.isSegmented())
-      ) {
-        announceNode(nextSibling);
       }
     }
   }

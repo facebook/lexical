@@ -59,7 +59,7 @@ import {
   moveForward,
   moveWordForward,
 } from './OutlineSelectionHelpers';
-import {announceNode} from './OutlineTextHelpers';
+import {announceString} from './OutlineTextHelpers';
 
 // Safari triggers composition before keydown, meaning
 // we need to account for this when handling key events.
@@ -465,7 +465,18 @@ export function onSelectionChange(
           isTextNode(nextSibling) &&
           (nextSibling.isSegmented() || nextSibling.isImmutable())
         ) {
-          announceNode(nextSibling);
+          const announceText = nextSibling.getTextContent();
+          // If the string is not a string with a surrogate pair then we don't
+          // bother announcing it, as it will likely be picked up by the screen
+          // reader. The exception to this is if we're not really next to the
+          // text (because we move native offset to 0 when dealing with empty
+          // text nodes).
+          if (
+            !/[\u2700-\u27bf]/g.test(announceText) ||
+            (domSelection.anchorOffset === 0 && textContentSize === 0)
+          ) {
+            announceString(announceText);
+          }
         }
       }
     }

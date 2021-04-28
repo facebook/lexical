@@ -75,10 +75,6 @@ export function announceString(s: string): void {
   }
 }
 
-export function announceNode(node: TextNode): void {
-  announceString(node.getTextContent());
-}
-
 export function getSegmentsFromString(
   string: string,
   granularity: 'grapheme' | 'word' | 'sentence',

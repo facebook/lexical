@@ -173,11 +173,16 @@ function MentionsTypeahead({
           const mentionsElement = editor.getElementByKey(selection.anchorKey);
           const anchorTextNode = mentionsElement.firstChild;
           if (anchorTextNode) {
-            range.setStart(anchorTextNode, match.leadOffset);
-            range.setEnd(anchorTextNode, selection.anchorOffset);
+            try {
+              range.setStart(anchorTextNode, match.leadOffset);
+              range.setEnd(anchorTextNode, selection.anchorOffset);
+            } catch (e) {
+              return null;
+            }
           }
           return [range, mentionsElement];
         }
+        return null;
       });
       if (res) {
         const [range, mentionsElement] = res;
@@ -191,7 +196,7 @@ function MentionsTypeahead({
         };
       }
     }
-  }, [editor, match, results]);
+  }, [close, editor, match, results]);
 
   const applyCurrentSelected = useCallback(() => {
     if (results === null || selectedIndex === null) {
@@ -423,7 +428,8 @@ export default function useMentions(editor: OutlineEditor): React$Node {
         selection.getAnchorNode() !== node ||
         node.isImmutable() ||
         node.isSegmented() ||
-        node.isHashtag()
+        node.isHashtag() ||
+        node.__type === 'mention'
       ) {
         return;
       }
@@ -433,11 +439,7 @@ export default function useMentions(editor: OutlineEditor): React$Node {
       if (text !== '') {
         const match = getPossibleMentionMatch(text);
         if (match !== null) {
-          // We shouldn't do updates to React until this view is actually
-          // reconciled.
-          window.requestAnimationFrame(() => {
-            setMentionMatch(match);
-          });
+          setMentionMatch(match);
           return;
         }
       }

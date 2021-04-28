@@ -4,8 +4,9 @@ import type {OutlineEditor, View, NodeKey, EditorThemeClasses} from 'outline';
 
 import {isTextNode, isBlockNode, TextNode} from 'outline';
 import {useEffect, useRef, useState, useCallback, useMemo} from 'react';
+import {updateWithoutHistory} from 'outline-react/OutlineHistory';
 
-export default function useTypeahead(editor: null | OutlineEditor): void {
+export default function useTypeahead(editor: OutlineEditor): void {
   const typeaheadNodeKey = useRef<NodeKey | null>(null);
   const [text, setText] = useState<string>('');
   const [selectionCollapsed, setSelectionCollapsed] = useState<boolean>(false);
@@ -28,16 +29,14 @@ export default function useTypeahead(editor: null | OutlineEditor): void {
 
   // Monitor entered text
   useEffect(() => {
-    if (editor !== null) {
-      return editor.addUpdateListener((viewModel) => {
-        const text = editor.getTextContent();
-        setText(text);
-      });
-    }
+    return editor.addUpdateListener((viewModel) => {
+      const text = editor.getTextContent();
+      setText(text);
+    });
   }, [editor]);
 
   const renderTypeahead = useCallback(() => {
-    editor?.update((view: View) => {
+    updateWithoutHistory(editor, (view: View) => {
       const currentTypeaheadNode = getTypeaheadTextNode(view);
 
       function maybeRemoveTypeahead() {
@@ -85,7 +84,7 @@ export default function useTypeahead(editor: null | OutlineEditor): void {
 
   // Rerender on editor updates
   useEffect(() => {
-    return editor?.addUpdateListener((viewModel) => {
+    return editor.addUpdateListener((viewModel) => {
       if (viewModel.isDirty()) {
         // We are loading a dirty view model, so we need
         // to check it for typeahead nodes
@@ -105,8 +104,8 @@ export default function useTypeahead(editor: null | OutlineEditor): void {
 
   // Handle Keyboard TAB or RIGHT ARROW to complete suggestion
   useEffect(() => {
-    const element = editor?.getEditorElement();
-    if (editor !== null && element != null) {
+    const element = editor.getEditorElement();
+    if (element != null) {
       const handleEvent = (event: KeyboardEvent) => {
         if (event.key === 'Tab' || event.key === 'ArrowRight') {
           editor.update((view: View) => {

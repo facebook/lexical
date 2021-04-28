@@ -6,7 +6,7 @@ import * as React from 'react';
 import useTypeahead from './useTypeahead';
 
 type Props = $ReadOnly<{
-  editor: OutlineEditor | null,
+  editor: OutlineEditor,
 }>;
 
 export function Typeahead({editor}: Props): React.Node {

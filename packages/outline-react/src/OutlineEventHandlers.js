@@ -416,6 +416,11 @@ export function onCompositionStart(
       if (!selection.isCaret()) {
         removeText(selection);
       }
+      if (IS_FIREFOX) {
+        // Not sure why we have to do this, but it seems to fix a bunch
+        // of FF related composition bugs to do with selection.
+        selection.isDirty = true;
+      }
       editor.setCompositionKey(selection.anchorKey);
     }
   });
@@ -544,17 +549,17 @@ export function onNativeBeforeInputForPlainText(
     }
     const data = event.data;
 
-    applyTargetRange(selection, event);
+    const inputText = inputType === 'insertText';
+
+    if (selection.isCaret()) {
+      applyTargetRange(selection, event);
+    }
 
     if (
-      inputType === 'insertText' ||
+      inputText ||
       inputType === 'insertCompositionText' ||
       inputType === 'deleteCompositionText'
     ) {
-      if (!selection.isCaret()) {
-        removeText(selection);
-      }
-      // These are used for dictation tools
       if (data === '\n') {
         event.preventDefault();
         insertLineBreak(selection);
@@ -562,6 +567,15 @@ export function onNativeBeforeInputForPlainText(
         event.preventDefault();
         insertLineBreak(selection);
         insertLineBreak(selection);
+      } else if (!selection.isCaret()) {
+        const anchorKey = selection.anchorKey;
+        const focusKey = selection.focusKey;
+        removeText(selection);
+        if (inputText && anchorKey !== focusKey && data) {
+          event.preventDefault();
+          editor.setCompositionKey(null);
+          insertText(selection, data);
+        }
       }
       return;
     }
@@ -654,30 +668,32 @@ export function onNativeBeforeInputForRichText(
     }
     const data = event.data;
 
-    applyTargetRange(selection, event);
-
     const inputText = inputType === 'insertText';
+
+    if (selection.isCaret()) {
+      applyTargetRange(selection, event);
+    }
 
     if (
       inputText ||
       inputType === 'insertCompositionText' ||
       inputType === 'deleteCompositionText'
     ) {
-      const isCaret = selection.isCaret();
-      if (!isCaret) {
-        removeText(selection);
-      }
-      // These are used for dictation tools
       if (data === '\n') {
         event.preventDefault();
         insertLineBreak(selection);
       } else if (data === '\n\n') {
         event.preventDefault();
         insertParagraph(selection);
-      }
-      if (!isCaret && inputText && data) {
-        event.preventDefault();
-        insertText(selection, data);
+      } else if (!selection.isCaret()) {
+        const anchorKey = selection.anchorKey;
+        const focusKey = selection.focusKey;
+        removeText(selection);
+        if (inputText && anchorKey !== focusKey && data) {
+          event.preventDefault();
+          editor.setCompositionKey(null);
+          insertText(selection, data);
+        }
       }
       return;
     }

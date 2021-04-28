@@ -656,12 +656,15 @@ export function onNativeBeforeInputForRichText(
 
     applyTargetRange(selection, event);
 
+    const inputText = inputType === 'insertText';
+
     if (
-      inputType === 'insertText' ||
+      inputText ||
       inputType === 'insertCompositionText' ||
       inputType === 'deleteCompositionText'
     ) {
-      if (!selection.isCaret()) {
+      const isCaret = selection.isCaret();
+      if (!isCaret) {
         removeText(selection);
       }
       // These are used for dictation tools
@@ -671,6 +674,10 @@ export function onNativeBeforeInputForRichText(
       } else if (data === '\n\n') {
         event.preventDefault();
         insertParagraph(selection);
+      }
+      if (!isCaret && inputText && data) {
+        event.preventDefault();
+        insertText(selection, data);
       }
       return;
     }

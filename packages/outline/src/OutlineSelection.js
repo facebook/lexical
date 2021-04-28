@@ -191,12 +191,16 @@ function resolveSelectionNodeAndOffset(
   let resolvedDOM = dom;
   let resolvedOffset = offset;
   let resolvedNode;
+  let isDirty = _isDirty;
   // If we have selection on an element, we will
   // need to figure out (using the offset) what text
   // node should be selected.
 
   if (domIsElement(resolvedDOM) && resolvedDOM.nodeName !== 'BR') {
     let moveSelectionToEnd = false;
+    // Given we're moving selection to another node, selection is
+    // definitely dirty.
+    isDirty = true;
     // We use the anchor to find which child node to select
     const childNodes = resolvedDOM.childNodes;
     const childNodesLength = childNodes.length;
@@ -230,7 +234,6 @@ function resolveSelectionNodeAndOffset(
     return null;
   }
   const resolvedTextNode = resolvedNode;
-  let isDirty = _isDirty;
   // Because we use a special character for whitespace,
   // we need to adjust offsets to 0 when the text is
   // really empty.

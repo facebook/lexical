@@ -7,15 +7,16 @@
  */
 
 import {
-  initializeE2E,
-  assertSelection,
-  keyDownCtrlOrMeta,
-  keyUpCtrlOrMeta,
-  keyDownCtrlOrAlt,
-  keyUpCtrlOrAlt,
-  E2E_BROWSER,
-  IS_MAC,
-} from '../utils';
+  moveToEditorBeginning,
+  moveToEditorEnd,
+  moveToLineBeginning,
+  moveToLineEnd,
+  moveToNextWord,
+  moveToParagraphBeginning,
+  moveToParagraphEnd,
+  moveToPrevWord,
+} from '../keyboardShortcuts';
+import {initializeE2E, assertSelection} from '../utils';
 
 describe('Keyboard Navigation', () => {
   initializeE2E((e2e) => {
@@ -48,13 +49,7 @@ describe('Keyboard Navigation', () => {
     it('can move to the beginning of the current line, then back to the end of the current line', async () => {
       const {page} = e2e;
       await typeParagraphs(page);
-      if (IS_MAC) {
-        await keyDownCtrlOrMeta(page);
-        await page.keyboard.press('ArrowLeft');
-        await keyUpCtrlOrMeta(page);
-      } else {
-        await page.keyboard.press('Home');
-      }
+      await moveToLineBeginning(page);
       await assertSelection(page, {
         anchorPath: [2, 0, 0],
         // Due to text rendering it can be in this range of offsets
@@ -63,13 +58,7 @@ describe('Keyboard Navigation', () => {
         // Due to text rendering it can be in this range of offsets
         focusOffset: [68, 79],
       });
-      if (IS_MAC) {
-        await keyDownCtrlOrMeta(page);
-        await page.keyboard.press('ArrowRight');
-        await keyUpCtrlOrMeta(page);
-      } else {
-        await page.keyboard.press('End');
-      }
+      await moveToLineEnd(page);
       await assertSelection(page, {
         anchorPath: [2, 0, 0],
         anchorOffset: 100,
@@ -81,13 +70,7 @@ describe('Keyboard Navigation', () => {
     it('can move to the top of the editor', async () => {
       const {page} = e2e;
       await typeParagraphs(page);
-      if (IS_MAC) {
-        await keyDownCtrlOrMeta(page);
-        await page.keyboard.press('ArrowUp');
-        await keyUpCtrlOrMeta(page);
-      } else {
-        await page.keyboard.press('PageUp');
-      }
+      await moveToEditorBeginning(page);
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
         anchorOffset: 0,
@@ -99,21 +82,8 @@ describe('Keyboard Navigation', () => {
     it('can move one word to the right', async () => {
       const {page} = e2e;
       await typeParagraphs(page);
-      // go to the top of the editor
-      if (IS_MAC) {
-        await keyDownCtrlOrMeta(page);
-        await page.keyboard.press('ArrowUp');
-        await keyUpCtrlOrMeta(page);
-      } else {
-        await page.keyboard.press('PageUp');
-        if (E2E_BROWSER === 'firefox') {
-          await page.keyboard.press('Home');
-        }
-      }
-      // move one word to the right
-      await keyDownCtrlOrAlt(page);
-      await page.keyboard.press('ArrowRight');
-      await keyUpCtrlOrAlt(page);
+      await moveToEditorBeginning(page);
+      await moveToNextWord(page);
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
         anchorOffset: 5,
@@ -125,20 +95,14 @@ describe('Keyboard Navigation', () => {
     it('can move to the beginning of the previous word', async () => {
       const {page} = e2e;
       await typeParagraphs(page);
-      // go one word to the left
-      await keyDownCtrlOrAlt(page);
-      await page.keyboard.press('ArrowLeft');
-      await keyUpCtrlOrAlt(page);
+      await moveToPrevWord(page);
       await assertSelection(page, {
         anchorPath: [2, 0, 0],
         anchorOffset: 91,
         focusPath: [2, 0, 0],
         focusOffset: 91,
       });
-      // go another word to the left
-      await keyDownCtrlOrAlt(page);
-      await page.keyboard.press('ArrowLeft');
-      await keyUpCtrlOrAlt(page);
+      await moveToPrevWord(page);
       await assertSelection(page, {
         anchorPath: [2, 0, 0],
         anchorOffset: 85,
@@ -150,28 +114,8 @@ describe('Keyboard Navigation', () => {
     it('can move to the bottom of the editor', async () => {
       const {page} = e2e;
       await typeParagraphs(page);
-      // go to the top of the editor
-      if (IS_MAC) {
-        await keyDownCtrlOrMeta(page);
-        await page.keyboard.press('ArrowUp');
-        await keyUpCtrlOrMeta(page);
-      } else {
-        await page.keyboard.press('PageUp');
-        if (E2E_BROWSER === 'firefox') {
-          await page.keyboard.press('Home');
-        }
-      }
-      // go to the end of the editor
-      if (IS_MAC) {
-        await keyDownCtrlOrMeta(page);
-        await page.keyboard.press('ArrowDown');
-        await keyUpCtrlOrMeta(page);
-      } else {
-        await page.keyboard.press('PageDown');
-        if (E2E_BROWSER === 'firefox') {
-          await page.keyboard.press('End');
-        }
-      }
+      await moveToEditorBeginning(page);
+      await moveToEditorEnd(page);
       await assertSelection(page, {
         anchorPath: [2, 0, 0],
         anchorOffset: 100,
@@ -183,21 +127,7 @@ describe('Keyboard Navigation', () => {
     it('can move to the beginning of the current paragraph', async () => {
       const {page} = e2e;
       await typeParagraphs(page);
-
-      if (IS_MAC) {
-        await keyDownCtrlOrAlt(page);
-        await page.keyboard.press('ArrowUp');
-        // Firefox has a known bug with this key command, but if we press it again
-        // we can work around the bug.
-        if (E2E_BROWSER === 'firefox') {
-          await page.keyboard.press('ArrowUp');
-        }
-        await keyUpCtrlOrAlt(page);
-      } else {
-        await page.keyboard.press('ArrowUp');
-        await page.keyboard.press('Home');
-      }
-
+      await moveToParagraphBeginning(page);
       await assertSelection(page, {
         anchorPath: [2, 0, 0],
         anchorOffset: 0,
@@ -209,30 +139,8 @@ describe('Keyboard Navigation', () => {
     it('can move to the top of the editor, then to the bottom of the current paragraph', async () => {
       const {page} = e2e;
       await typeParagraphs(page);
-      if (IS_MAC) {
-        await keyDownCtrlOrMeta(page);
-        await page.keyboard.press('ArrowUp');
-      } else {
-        await page.keyboard.press('PageUp');
-      }
-      if (IS_MAC) {
-        // Firefox has a known bug with this key command, but if we press it again
-        // we can work around the bug.
-        if (E2E_BROWSER === 'firefox') {
-          await page.keyboard.press('ArrowUp');
-        }
-        await keyUpCtrlOrMeta(page);
-        await keyDownCtrlOrAlt(page);
-        await page.keyboard.press('ArrowDown');
-        // Firefox has a known bug with this key command, but if we press it again
-        // we can work around the bug.
-        if (E2E_BROWSER === 'firefox') {
-          await page.keyboard.press('ArrowDown');
-        }
-        await keyUpCtrlOrMeta(page);
-      } else {
-        await page.keyboard.press('End');
-      }
+      await moveToEditorBeginning(page);
+      await moveToParagraphEnd(page);
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
         // Due to text rendering it can be in this range of offsets

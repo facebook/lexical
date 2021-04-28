@@ -472,7 +472,7 @@ export function onSelectionChange(
           // text (because we move native offset to 0 when dealing with empty
           // text nodes).
           if (
-            !/[\u2700-\u27bf]/g.test(announceText) ||
+            !/[\uD800-\uDBFF][\uDC00-\uDFFF]/g.test(announceText) ||
             (domSelection.anchorOffset === 0 && textContentSize === 0)
           ) {
             announceString(announceText);

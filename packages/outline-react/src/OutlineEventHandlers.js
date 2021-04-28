@@ -16,6 +16,8 @@ import type {
   View,
 } from 'outline';
 
+import {isTextNode} from 'outline';
+
 import {CAN_USE_BEFORE_INPUT, IS_FIREFOX} from './OutlineEnv';
 import {
   isDeleteBackward,
@@ -57,6 +59,7 @@ import {
   moveForward,
   moveWordForward,
 } from './OutlineSelectionHelpers';
+import {announceNode} from './OutlineTextHelpers';
 
 // Safari triggers composition before keydown, meaning
 // we need to account for this when handling key events.
@@ -437,13 +440,35 @@ export function onSelectionChange(
   editor: OutlineEditor,
   state: EventHandlerState,
 ): void {
-  const selection = window.getSelection();
+  const domSelection = window.getSelection();
   const editorElement = editor.getEditorElement();
-  if (editorElement && !editorElement.contains(selection.anchorNode)) {
+  // This is a hot-path, so let's avoid doing an update when
+  // the anchorNode is not actually inside the editor.
+  if (editorElement && !editorElement.contains(domSelection.anchorNode)) {
     return;
   }
+  // This update also functions as a way of reconciling a bad selection
+  // to a good selection. So if we do remove the a11y logic below, we need
+  // to ensure that we keep the editor.update() in place.
   editor.update((view) => {
-    view.getSelection();
+    const selection = view.getSelection();
+    // Handle screen reader announcements of immutable and segmented nodes.
+    if (selection !== null && selection.isCaret()) {
+      const anchorNode = selection.getAnchorNode();
+      const anchorOffset = selection.anchorOffset;
+      const textContentSize = anchorNode.getTextContentSize();
+      // This is a hot-path, so let's only get the next sibling
+      // if we know we're at the end of a node first.
+      if (anchorOffset === textContentSize) {
+        const nextSibling = anchorNode.getNextSibling();
+        if (
+          isTextNode(nextSibling) &&
+          (nextSibling.isSegmented() || nextSibling.isImmutable())
+        ) {
+          announceNode(nextSibling);
+        }
+      }
+    }
   });
 }
 

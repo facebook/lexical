@@ -61,6 +61,7 @@ const events: InputEvents = [
   ['compositionend', onCompositionEnd],
   ['cut', onCut],
   ['copy', onCopy],
+  ['dragstart', onDragStartPolyfill],
 ];
 
 if (CAN_USE_BEFORE_INPUT) {
@@ -69,11 +70,7 @@ if (CAN_USE_BEFORE_INPUT) {
     ['input', onNativeInput],
   );
 } else {
-  events.push(
-    ['paste', onPastePolyfillForPlainText],
-    ['drop', onDropPolyfill],
-    ['dragstart', onDragStartPolyfill],
-  );
+  events.push(['paste', onPastePolyfillForPlainText], ['drop', onDropPolyfill]);
 }
 
 export default function useOutlinePlainText(

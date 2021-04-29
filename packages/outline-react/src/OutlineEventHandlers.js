@@ -336,7 +336,8 @@ export function onDropPolyfill(
   editor: OutlineEditor,
   state: EventHandlerState,
 ): void {
-  // TODO
+  // This should only occur without beforeInput. Block it as it's too much
+  // hassle to make work at this point.
   event.preventDefault();
 }
 
@@ -345,7 +346,7 @@ export function onDragStartPolyfill(
   editor: OutlineEditor,
   state: EventHandlerState,
 ): void {
-  // TODO: seems to be only FF that supports dragging content
+  // Block dragging.
   event.preventDefault();
 }
 

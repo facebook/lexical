@@ -33,8 +33,9 @@ import {
   onCopy,
   onNativeBeforeInputForRichText,
   onPastePolyfillForRichText,
-  onDropPolyfill,
-  onDragStartPolyfill,
+  onDrop,
+  onDragStart,
+  onDragEnd,
   onPolyfilledBeforeInput,
   onNativeInput,
 } from './OutlineEventHandlers';
@@ -64,6 +65,9 @@ const events: InputEvents = [
   ['compositionend', onCompositionEnd],
   ['cut', onCut],
   ['copy', onCopy],
+  ['dragstart', onDragStart],
+  ['dragend', onDragEnd],
+  ['drop', onDrop],
 ];
 
 if (CAN_USE_BEFORE_INPUT) {
@@ -74,8 +78,6 @@ if (CAN_USE_BEFORE_INPUT) {
 } else {
   events.push(
     ['paste', onPastePolyfillForRichText],
-    ['drop', onDropPolyfill],
-    ['dragstart', onDragStartPolyfill],
   );
 }
 
@@ -89,6 +91,7 @@ export default function useOutlineRichText(
       richText: true,
       compositionSelection: null,
       isHandlingPointer: false,
+      dragSelection: null,
     }),
     [],
   );

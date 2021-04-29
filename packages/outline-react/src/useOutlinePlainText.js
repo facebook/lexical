@@ -30,8 +30,9 @@ import {
   onCopy,
   onNativeBeforeInputForPlainText,
   onPastePolyfillForPlainText,
-  onDropPolyfill,
-  onDragStartPolyfill,
+  onDrop,
+  onDragStart,
+  onDragEnd,
   onPolyfilledBeforeInput,
   onNativeInput,
 } from './OutlineEventHandlers';
@@ -61,6 +62,9 @@ const events: InputEvents = [
   ['compositionend', onCompositionEnd],
   ['cut', onCut],
   ['copy', onCopy],
+  ['dragstart', onDragStart],
+  ['dragend', onDragEnd],
+  ['drop', onDrop],
 ];
 
 if (CAN_USE_BEFORE_INPUT) {
@@ -71,8 +75,6 @@ if (CAN_USE_BEFORE_INPUT) {
 } else {
   events.push(
     ['paste', onPastePolyfillForPlainText],
-    ['drop', onDropPolyfill],
-    ['dragstart', onDragStartPolyfill],
   );
 }
 
@@ -84,6 +86,7 @@ export default function useOutlinePlainText(
     () => ({
       isReadOnly: false,
       compositionSelection: null,
+      dragSelection: null,
       isHandlingPointer: false,
     }),
     [],

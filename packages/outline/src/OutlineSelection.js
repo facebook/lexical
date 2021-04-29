@@ -93,6 +93,14 @@ export class Selection {
     this.focusKey = focusKey;
     this.isDirty = true;
   }
+  applySelection(selection: Selection): void {
+    this.setRange(
+      selection.anchorKey,
+      selection.anchorOffset,
+      selection.focusKey,
+      selection.focusOffset,
+    );
+  }
   getTextContent(): string {
     const nodes = this.getNodes();
     if (nodes.length === 0) {
@@ -130,7 +138,7 @@ export class Selection {
     });
     return textContent;
   }
-  applyDOMRange(range: StaticRange): void {
+  applyDOMRange(range: Range | StaticRange): void {
     const editor = getActiveEditor();
     const resolvedSelectionNodesAndOffsets = resolveSelectionNodesAndOffsets(
       range.startContainer,

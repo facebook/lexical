@@ -16,7 +16,7 @@ import type {
   View,
 } from 'outline';
 
-import {isTextNode} from 'outline';
+import {isTextNode, createTextNode} from 'outline';
 
 import {CAN_USE_BEFORE_INPUT, IS_FIREFOX} from './OutlineEnv';
 import {
@@ -78,6 +78,7 @@ export type EventHandlerState = {
   isReadOnly: boolean,
   compositionSelection: null | Selection,
   isHandlingPointer: boolean,
+  dragSelection: null | Selection,
 };
 
 function generateNodes(
@@ -331,22 +332,76 @@ export function onPastePolyfillForRichText(
   });
 }
 
-export function onDropPolyfill(
-  event: ClipboardEvent,
+export function onDrop(
+  event: DragEvent,
   editor: OutlineEditor,
   state: EventHandlerState,
 ): void {
-  // TODO
+  const dataTransfer = event.dataTransfer;
   event.preventDefault();
+  if (dataTransfer != null) {
+    editor.update((view) => {
+      const selection = view.getSelection();
+      if (selection !== null) {
+        // Find out the selection range of where we are dropping
+        let range: Range | null = null;
+        if (IS_FIREFOX) {
+          // $FlowFixMe this works in FF
+          const {rangeParent, rangeOffset} = event;
+          range = document.createRange();
+          range.setStart(rangeParent, rangeOffset);
+          range.setEnd(rangeParent, rangeOffset);
+        } else {
+          // $FlowFixMe this works in non-FF/IE browsers
+          range = document.caretRangeFromPoint(event.x, event.y);
+        }
+
+        if (range !== null) {
+          selection.applyDOMRange(range);
+          // Insert data to new selection
+          insertDataTransferForRichText(dataTransfer, selection, view);
+          // Remove the drag selection, if we have one
+          const dragSelection = state.dragSelection;
+          if (dragSelection !== null) {
+            // Insert a market text node to move selection to
+            const marker = createTextNode('')
+            // We make the node overflowed to prevent it being normalized
+            marker.toggleOverflowed();
+            insertNodes(selection, [marker]);
+            selection.applySelection(dragSelection);
+            removeText(selection);
+            marker.select();
+            marker.toggleOverflowed();
+            marker.getParentOrThrow().normalizeTextNodes(true);
+            state.dragSelection = null;
+          }
+        }
+      }
+    });
+  }
 }
 
-export function onDragStartPolyfill(
-  event: ClipboardEvent,
+export function onDragStart(
+  event: DragEvent,
   editor: OutlineEditor,
   state: EventHandlerState,
 ): void {
-  // TODO: seems to be only FF that supports dragging content
-  event.preventDefault();
+  editor.update((view) => {
+    const dataTransfer = event.dataTransfer;
+    const selection = view.getSelection();
+    if (selection !== null && dataTransfer != null) {
+      copyContentToDataTransfer(selection, dataTransfer);
+    }
+    state.dragSelection = selection;
+  });
+}
+
+export function onDragEnd(
+  event: DragEvent,
+  editor: OutlineEditor,
+  state: EventHandlerState,
+): void {
+  state.dragSelection = null;
 }
 
 export function onCut(
@@ -372,28 +427,33 @@ export function onCopy(
   editor.update((view) => {
     const clipboardData = event.clipboardData;
     const selection = view.getSelection();
-    if (selection !== null) {
-      if (clipboardData != null) {
-        const domSelection = window.getSelection();
-        // If we haven't selected a range, then don't copy anything
-        if (domSelection.isCollapsed) {
-          return;
-        }
-        const range = domSelection.getRangeAt(0);
-        if (range) {
-          const container = document.createElement('div');
-          const frag = range.cloneContents();
-          container.appendChild(frag);
-          clipboardData.setData('text/html', container.innerHTML);
-        }
-        clipboardData.setData('text/plain', selection.getTextContent());
-        clipboardData.setData(
-          'application/x-outline-nodes',
-          JSON.stringify(getNodesInRange(selection)),
-        );
-      }
+    if (selection !== null && clipboardData != null) {
+      copyContentToDataTransfer(selection, clipboardData);
     }
   });
+}
+
+function copyContentToDataTransfer(
+  selection: Selection,
+  dataTransfer: DataTransfer,
+): void {
+  const domSelection = window.getSelection();
+  // If we haven't selected a range, then don't copy anything
+  if (domSelection.isCollapsed) {
+    return;
+  }
+  const range = domSelection.getRangeAt(0);
+  if (range) {
+    const container = document.createElement('div');
+    const frag = range.cloneContents();
+    container.appendChild(frag);
+    dataTransfer.setData('text/html', container.innerHTML);
+  }
+  dataTransfer.setData('text/plain', selection.getTextContent());
+  dataTransfer.setData(
+    'application/x-outline-nodes',
+    JSON.stringify(getNodesInRange(selection)),
+  );
 }
 
 export function onCompositionStart(
@@ -811,12 +871,7 @@ export function onPolyfilledBeforeInput(
       const compositionSelection = state.compositionSelection;
       state.compositionSelection = null;
       if (compositionSelection !== null) {
-        selection.setRange(
-          compositionSelection.anchorKey,
-          compositionSelection.anchorOffset,
-          compositionSelection.focusKey,
-          compositionSelection.focusOffset,
-        );
+        selection.applySelection(compositionSelection);
       }
       insertText(selection, data);
     }

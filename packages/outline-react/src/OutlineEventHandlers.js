@@ -182,10 +182,8 @@ export function onKeyDownForPlainText(
       event.preventDefault();
       deleteWordForward(selection);
     } else if (isSelectAll(event)) {
-      if (IS_FIREFOX) {
-        event.preventDefault();
-        selectAll(selection);
-      }
+      event.preventDefault();
+      selectAll(selection);
     }
   });
 }
@@ -293,10 +291,8 @@ export function onKeyDownForRichText(
         event.preventDefault();
       }
     } else if (isSelectAll(event)) {
-      if (IS_FIREFOX) {
-        event.preventDefault();
-        selectAll(selection);
-      }
+      event.preventDefault();
+      selectAll(selection);
     }
   });
 }

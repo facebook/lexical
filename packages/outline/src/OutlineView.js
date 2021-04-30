@@ -49,11 +49,11 @@ export type ParsedViewModel = {
 
 let activeViewModel = null;
 let activeEditor = null;
-let activeReadyOnlyMode = false;
-let activeProcessingTextNodeTransforms = false;
+let isReadOnlyMode = false;
+let isProcessingTextNodeTransforms = false;
 
 export function errorOnProcessingTextNodeTransforms(): void {
-  if (activeProcessingTextNodeTransforms) {
+  if (isProcessingTextNodeTransforms) {
     if (__DEV__) {
       invariant(
         false,
@@ -66,7 +66,7 @@ export function errorOnProcessingTextNodeTransforms(): void {
 }
 
 export function errorOnReadOnly(): void {
-  if (activeReadyOnlyMode) {
+  if (isReadOnlyMode) {
     if (__DEV__) {
       invariant(false, 'Cannot use method in read-only mode.');
     } else {
@@ -155,16 +155,16 @@ export function enterViewModelScope<V>(
   readOnly: boolean,
 ): V {
   const previousActiveViewModel = activeViewModel;
-  const previousReadyOnlyMode = activeReadyOnlyMode;
+  const previousReadOnlyMode = isReadOnlyMode;
   const previousActiveEditor = activeEditor;
   activeViewModel = viewModel;
-  activeReadyOnlyMode = readOnly;
+  isReadOnlyMode = readOnly;
   activeEditor = editor;
   try {
     return callbackFn(view);
   } finally {
     activeViewModel = previousActiveViewModel;
-    activeReadyOnlyMode = previousReadyOnlyMode;
+    isReadOnlyMode = previousReadOnlyMode;
     activeEditor = previousActiveEditor;
   }
 }
@@ -210,7 +210,7 @@ export function applyTextTransforms(
     const compositionKey = editor._compositionKey;
 
     try {
-      activeProcessingTextNodeTransforms = true;
+      isProcessingTextNodeTransforms = true;
       triggerTextMutationListeners(
         nodeMap,
         dirtyNodes,
@@ -218,7 +218,7 @@ export function applyTextTransforms(
         compositionKey,
       );
     } finally {
-      activeProcessingTextNodeTransforms = false;
+      isProcessingTextNodeTransforms = false;
     }
   }
 }

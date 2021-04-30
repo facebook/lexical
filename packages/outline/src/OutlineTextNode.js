@@ -478,7 +478,6 @@ export class TextNode extends OutlineNode {
         } else {
           const [, targetNode] = this.splitText(offset);
           targetNode.insertBefore(textNode);
-          targetNode.toggleHashtag();
         }
         if (restoreSelection) {
           textNode.select();
@@ -573,10 +572,10 @@ export class TextNode extends OutlineNode {
     const firstPart = parts[0];
     const flags = writableNode.__flags;
     writableNode.__text = firstPart;
-  
+
     // Handle selection
     const selection = getSelection();
-  
+
     // Then handle all other parts
     const splitNodes = [writableNode];
     let textSize = firstPart.length;
@@ -587,11 +586,11 @@ export class TextNode extends OutlineNode {
       sibling.__flags = flags;
       const siblingKey = sibling.__key;
       const nextTextSize = textSize + partSize;
-  
+
       if (selection !== null) {
         const anchorOffset = selection.anchorOffset;
         const focusOffset = selection.focusOffset;
-  
+
         if (
           selection.anchorKey === key &&
           anchorOffset > textSize &&
@@ -615,7 +614,7 @@ export class TextNode extends OutlineNode {
       sibling.__parent = parentKey;
       splitNodes.push(sibling);
     }
-  
+
     // Insert the nodes into the parent's children
     const parent = this.getParentOrThrow();
     const writableParent = getWritableNode(parent);
@@ -623,7 +622,7 @@ export class TextNode extends OutlineNode {
     const insertionIndex = writableParentChildren.indexOf(key);
     const splitNodesKeys = splitNodes.map((splitNode) => splitNode.__key);
     writableParentChildren.splice(insertionIndex, 1, ...splitNodesKeys);
-  
+
     return splitNodes;
   }
 }

@@ -171,6 +171,9 @@ function MentionsTypeahead({
         if (selection !== null && selection.isCaret()) {
           const range = document.createRange();
           const mentionsElement = editor.getElementByKey(selection.anchorKey);
+          if (mentionsElement === null) {
+            return null;
+          }
           const anchorTextNode = mentionsElement.firstChild;
           if (anchorTextNode) {
             try {

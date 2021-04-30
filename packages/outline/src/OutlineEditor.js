@@ -28,7 +28,6 @@ import {createSelection} from './OutlineSelection';
 import {
   generateRandomKey,
   emptyFunction,
-  invariant,
   scheduleMicroTask,
 } from './OutlineUtils';
 import {getWritableNode} from './OutlineNode';
@@ -334,16 +333,8 @@ export class OutlineEditor {
       editorElementListeners[i](nextEditorElement);
     }
   }
-  getElementByKey(key: NodeKey): HTMLElement {
-    const element = this._keyToDOMMap.get(key);
-    if (element === undefined) {
-      if (__DEV__) {
-        invariant(false, 'getElementByKey failed for key ' + key);
-      } else {
-        invariant();
-      }
-    }
-    return element;
+  getElementByKey(key: NodeKey): HTMLElement | null {
+    return this._keyToDOMMap.get(key) || null;
   }
   getViewModel(): ViewModel {
     return this._viewModel;

@@ -73,7 +73,7 @@ function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
   const node = activePrevNodeMap[key];
 
   if (parentDOM !== null) {
-    const dom = activeEditor.getElementByKey(key);
+    const dom = getElementByKeyOrThrow(activeEditor, key);
     parentDOM.removeChild(dom);
   }
   // This logic is really important, otherwise we will leak DOM nodes
@@ -218,7 +218,7 @@ function reconcileChildren(
     if (prevChildKey === nextChildKey) {
       reconcileNode(prevChildKey, dom);
     } else {
-      const lastDOM = activeEditor.getElementByKey(prevChildKey);
+      const lastDOM = getElementByKeyOrThrow(activeEditor, prevChildKey);
       const replacementDOM = createNode(nextChildKey, null, null);
       dom.replaceChild(replacementDOM, lastDOM);
       destroyNode(prevChildKey, null);
@@ -256,7 +256,7 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
   const nextNode = activeNextNodeMap[key];
   const hasDirtySubTree =
     activeViewModelIsDirty || activeDirtySubTrees.has(key);
-  const dom = activeEditor.getElementByKey(key);
+  const dom = getElementByKeyOrThrow(activeEditor, key);
   // If we're composing this node, skip over reconciling it
   const isComposingNode = key === activeEditor._compositionKey;
 
@@ -409,16 +409,16 @@ function reconcileNodeChildren(
     } else if (prevStartKey === nextEndKey) {
       reconcileNode(prevStartKey, dom);
       dom.insertBefore(
-        activeEditor.getElementByKey(prevStartKey),
-        activeEditor.getElementByKey(prevEndKey).nextSibling,
+        getElementByKeyOrThrow(activeEditor, prevStartKey),
+        getElementByKeyOrThrow(activeEditor, prevEndKey).nextSibling,
       );
       prevStartKey = prevChildren[++prevStartIndex];
       nextEndKey = nextChildren[--nextEndIndex];
     } else if (prevEndKey === nextStartKey) {
       reconcileNode(prevEndKey, dom);
       dom.insertBefore(
-        activeEditor.getElementByKey(prevEndKey),
-        activeEditor.getElementByKey(prevStartKey),
+        getElementByKeyOrThrow(activeEditor, prevEndKey),
+        getElementByKeyOrThrow(activeEditor, prevStartKey),
       );
       prevEndKey = prevChildren[--prevEndIndex];
       nextStartKey = nextChildren[++nextStartIndex];
@@ -457,8 +457,8 @@ function reconcileNodeChildren(
           // $FlowFixMe: figure a way of typing this better
           prevChildren[indexInPrevChildren] = ((undefined: any): NodeKey);
           dom.insertBefore(
-            activeEditor.getElementByKey(keyToMove),
-            activeEditor.getElementByKey(prevStartKey),
+            getElementByKeyOrThrow(activeEditor, keyToMove),
+            getElementByKeyOrThrow(activeEditor, prevStartKey),
           );
         } else {
           if (__DEV__) {
@@ -639,8 +639,8 @@ function reconcileSelection(
   const focusKey = nextSelection.focusKey;
   const anchorNode = nextSelection.getAnchorNode();
   const focusNode = nextSelection.getFocusNode();
-  const anchorDOM = editor.getElementByKey(anchorKey);
-  const focusDOM = editor.getElementByKey(focusKey);
+  const anchorDOM = getElementByKeyOrThrow(editor, anchorKey);
+  const focusDOM = getElementByKeyOrThrow(editor, focusKey);
   const anchorTextIsEmpty = anchorNode.__text === '';
   const focusTextIsEmpty = focusNode.__text === '';
   let anchorOffset = nextSelection.anchorOffset;
@@ -738,4 +738,22 @@ export function getNodeKeyFromDOM(
     node = node.parentNode;
   }
   return null;
+}
+
+export function getElementByKeyOrThrow(
+  editor: OutlineEditor,
+  key: NodeKey,
+): HTMLElement {
+  const element = editor._keyToDOMMap.get(key);
+  if (element === undefined) {
+    if (__DEV__) {
+      invariant(
+        false,
+        `Reconcilation: could not find DOM element for node key "${key}"`,
+      );
+    } else {
+      invariant();
+    }
+  }
+  return element;
 }

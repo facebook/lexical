@@ -11,7 +11,7 @@ import type {OutlineNode, NodeKey} from './OutlineNode';
 import {getActiveEditor, ViewModel} from './OutlineView';
 
 import {getActiveViewModel} from './OutlineView';
-import {getNodeKeyFromDOM} from './OutlineReconciler';
+import {getNodeKeyFromDOM, getElementByKeyOrThrow} from './OutlineReconciler';
 import {getNodeByKey} from './OutlineNode';
 import {isTextNode, isBlockNode, isLineBreakNode, TextNode} from '.';
 import {
@@ -244,7 +244,7 @@ function resolveSelectionNodeAndOffset(
     // text entry works as expected.
     if (!isDirty && !editor.isComposing() && !editor._isPointerDown) {
       const key = resolvedTextNode.__key;
-      const nodeDOM = editor.getElementByKey(key);
+      const nodeDOM = getElementByKeyOrThrow(editor, key);
       if (getAdjustedSelectionOffset(nodeDOM) !== resolvedOffset) {
         isDirty = true;
       }

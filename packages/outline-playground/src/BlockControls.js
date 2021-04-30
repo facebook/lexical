@@ -38,22 +38,24 @@ export default function BlockControls({
           const blockKey = block.getKey();
           if (blockKey !== selectedBlockKey) {
             const blockDOM = editor.getElementByKey(blockKey);
-            const editorElem = editor.getEditorElement();
-            let editorTop = editorPosition;
+            if (blockDOM !== null) {
+              const editorElem = editor.getEditorElement();
+              let editorTop = editorPosition;
 
-            if (editorElem !== null && editorPosition === 0) {
-              const {top} = editorElem.getBoundingClientRect();
-              editorTop = top;
-              setEditorPosition(editorPosition);
+              if (editorElem !== null && editorPosition === 0) {
+                const {top} = editorElem.getBoundingClientRect();
+                editorTop = top;
+                setEditorPosition(editorPosition);
+              }
+              const {top} = blockDOM.getBoundingClientRect();
+              setPosition(top - editorTop);
+              setSelectedBlockKey(blockKey);
+              const type =
+                isHeadingNode(block) || isListNode(block)
+                  ? block.getTag()
+                  : block.getType();
+              setBlockType(type);
             }
-            const {top} = blockDOM.getBoundingClientRect();
-            setPosition(top - editorTop);
-            setSelectedBlockKey(blockKey);
-            const type =
-              isHeadingNode(block) || isListNode(block)
-                ? block.getTag()
-                : block.getType();
-            setBlockType(type);
           }
         }
       });

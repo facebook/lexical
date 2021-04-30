@@ -19,10 +19,11 @@ import {
   viewModelHasDirtySelectionOrNeedsSync,
   ViewModel,
   commitPendingUpdates,
-  triggerTextMutationListeners,
+  applyTextTransforms,
   triggerUpdateListeners,
   triggerErrorListeners,
   parseViewModel,
+  errorOnProcessingTextNodeTransforms,
 } from './OutlineView';
 import {createSelection} from './OutlineSelection';
 import {
@@ -142,7 +143,7 @@ function updateEditor(
           }
         }
         if (currentPendingViewModel.hasDirtyNodes()) {
-          triggerTextMutationListeners(currentPendingViewModel, editor);
+          applyTextTransforms(currentPendingViewModel, editor);
           garbageCollectDetachedNodes(currentPendingViewModel, editor);
         }
       },
@@ -350,6 +351,7 @@ export class OutlineEditor {
     return parseViewModel(stringifiedViewModel, this);
   }
   update(updateFn: (view: View) => void, callbackFn?: () => void): boolean {
+    errorOnProcessingTextNodeTransforms();
     return updateEditor(this, updateFn, false, callbackFn);
   }
   setPlaceholder(placeholderText: string): void {

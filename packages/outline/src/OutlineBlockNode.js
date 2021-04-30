@@ -17,7 +17,7 @@ import {
   wrapInTextNodes,
 } from './OutlineNode';
 import {getSelection, Selection} from './OutlineSelection';
-import {shouldErrorOnReadOnly} from './OutlineView';
+import {errorOnReadOnly} from './OutlineView';
 import {IS_IMMUTABLE, IS_INERT, IS_SEGMENTED} from './OutlineConstants';
 
 function combineAdjacentTextNodes(
@@ -167,7 +167,7 @@ export class BlockNode extends OutlineNode {
   // Mutators
 
   clear(): BlockNode {
-    shouldErrorOnReadOnly();
+    errorOnReadOnly();
     const writableSelf = getWritableNode(this);
     const children = this.getChildren();
     children.forEach((child) => child.remove());
@@ -175,7 +175,7 @@ export class BlockNode extends OutlineNode {
   }
   // TODO add support for appending multiple nodes?
   append(nodeToAppend: OutlineNode): BlockNode {
-    shouldErrorOnReadOnly();
+    errorOnReadOnly();
     const writableSelf = getWritableNode(this);
     const writableNodeToAppend = getWritableNode(nodeToAppend);
 
@@ -203,7 +203,7 @@ export class BlockNode extends OutlineNode {
     return writableSelf;
   }
   normalizeTextNodes(restoreSelection?: boolean): void {
-    shouldErrorOnReadOnly();
+    errorOnReadOnly();
     const children = this.getChildren();
     let toNormalize = [];
     let lastTextNodeFlags: number | null = null;

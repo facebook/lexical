@@ -50,10 +50,10 @@ export type ParsedViewModel = {
 let activeViewModel = null;
 let activeEditor = null;
 let activeReadyOnlyMode = false;
-let activeProcessingTextTransforms = false;
+let activeProcessingTextNodeTransforms = false;
 
-export function errorOnProcessingTextTransforms(): void {
-  if (activeProcessingTextTransforms) {
+export function errorOnProcessingTextNodeTransforms(): void {
+  if (activeProcessingTextNodeTransforms) {
     if (__DEV__) {
       invariant(
         false,
@@ -210,7 +210,7 @@ export function applyTextTransforms(
     const compositionKey = editor._compositionKey;
 
     try {
-      activeProcessingTextTransforms = true;
+      activeProcessingTextNodeTransforms = true;
       triggerTextMutationListeners(
         nodeMap,
         dirtyNodes,
@@ -218,7 +218,7 @@ export function applyTextTransforms(
         compositionKey,
       );
     } finally {
-      activeProcessingTextTransforms = false;
+      activeProcessingTextNodeTransforms = false;
     }
   }
 }

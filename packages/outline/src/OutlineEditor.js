@@ -23,7 +23,7 @@ import {
   triggerUpdateListeners,
   triggerErrorListeners,
   parseViewModel,
-  errorOnProcessingTextTransforms,
+  errorOnProcessingTextNodeTransforms,
 } from './OutlineView';
 import {createSelection} from './OutlineSelection';
 import {
@@ -351,7 +351,7 @@ export class OutlineEditor {
     return parseViewModel(stringifiedViewModel, this);
   }
   update(updateFn: (view: View) => void, callbackFn?: () => void): boolean {
-    errorOnProcessingTextTransforms();
+    errorOnProcessingTextNodeTransforms();
     return updateEditor(this, updateFn, false, callbackFn);
   }
   setPlaceholder(placeholderText: string): void {

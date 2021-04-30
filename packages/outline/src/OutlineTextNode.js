@@ -15,7 +15,7 @@ import {OutlineNode} from './OutlineNode';
 import {getWritableNode} from './OutlineNode';
 import {getSelection, makeSelection} from './OutlineSelection';
 import {invariant, isArray} from './OutlineUtils';
-import {shouldErrorOnReadOnly} from './OutlineView';
+import {errorOnReadOnly} from './OutlineView';
 import {
   IS_CODE,
   IS_BOLD,
@@ -360,7 +360,7 @@ export class TextNode extends OutlineNode {
     return this.setFlags(newFlags);
   }
   setURL(url: string | null): TextNode {
-    shouldErrorOnReadOnly();
+    errorOnReadOnly();
     if (this.isImmutable()) {
       if (__DEV__) {
         invariant(
@@ -376,7 +376,7 @@ export class TextNode extends OutlineNode {
     return writableSelf;
   }
   setTextContent(text: string): TextNode {
-    shouldErrorOnReadOnly();
+    errorOnReadOnly();
     if (this.isImmutable()) {
       if (__DEV__) {
         invariant(
@@ -392,12 +392,12 @@ export class TextNode extends OutlineNode {
     return writableSelf;
   }
   selectEnd(): Selection {
-    shouldErrorOnReadOnly();
+    errorOnReadOnly();
     const text = this.getTextContent();
     return this.select(text.length, text.length);
   }
   select(_anchorOffset?: number, _focusOffset?: number): Selection {
-    shouldErrorOnReadOnly();
+    errorOnReadOnly();
     let anchorOffset = _anchorOffset;
     let focusOffset = _focusOffset;
     const selection = getSelection();
@@ -438,7 +438,7 @@ export class TextNode extends OutlineNode {
     newText: string,
     restoreSelection?: boolean,
   ): TextNode {
-    shouldErrorOnReadOnly();
+    errorOnReadOnly();
     if (this.isImmutable()) {
       if (__DEV__) {
         invariant(
@@ -530,7 +530,7 @@ export class TextNode extends OutlineNode {
     return writableSelf;
   }
   splitText(...splitOffsets: Array<number>): Array<TextNode> {
-    shouldErrorOnReadOnly();
+    errorOnReadOnly();
     if (this.isImmutable()) {
       if (__DEV__) {
         invariant(

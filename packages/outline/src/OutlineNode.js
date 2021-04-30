@@ -19,7 +19,7 @@ import {
   RootNode,
   BlockNode,
 } from '.';
-import {getActiveViewModel, shouldErrorOnReadOnly} from './OutlineView';
+import {getActiveViewModel, errorOnReadOnly} from './OutlineView';
 import {generateRandomKey, invariant} from './OutlineUtils';
 import {
   IS_IMMUTABLE,
@@ -52,7 +52,7 @@ type ParsedSelection = {
 export type NodeMapType = {root: RootNode, [key: NodeKey]: OutlineNode};
 
 function generateKey(node: OutlineNode): NodeKey {
-  shouldErrorOnReadOnly();
+  errorOnReadOnly();
   const viewModel = getActiveViewModel();
   const dirtyNodes = viewModel._dirtyNodes;
   const key = generateRandomKey();
@@ -475,7 +475,7 @@ export class OutlineNode {
   // Setters and mutators
 
   setFlags(flags: number): this {
-    shouldErrorOnReadOnly();
+    errorOnReadOnly();
     if (this.isImmutable()) {
       if (__DEV__) {
         invariant(false, 'setFlags: can only be used on non-immutable nodes');
@@ -488,35 +488,35 @@ export class OutlineNode {
     return self;
   }
   makeImmutable(): this {
-    shouldErrorOnReadOnly();
+    errorOnReadOnly();
     const self = getWritableNode(this);
     self.__flags |= IS_IMMUTABLE;
     return self;
   }
   makeSegmented(): this {
-    shouldErrorOnReadOnly();
+    errorOnReadOnly();
     const self = getWritableNode(this);
     self.__flags |= IS_SEGMENTED;
     return self;
   }
   makeInert(): this {
-    shouldErrorOnReadOnly();
+    errorOnReadOnly();
     const self = getWritableNode(this);
     self.__flags |= IS_INERT;
     return self;
   }
   remove(): void {
-    shouldErrorOnReadOnly();
+    errorOnReadOnly();
     return removeNode(this);
   }
   // TODO add support for replacing with multiple nodes?
   replace<N: OutlineNode>(targetNode: N): N {
-    shouldErrorOnReadOnly();
+    errorOnReadOnly();
     return replaceNode(this, targetNode);
   }
   // TODO add support for inserting multiple nodes?
   insertAfter(nodeToInsert: OutlineNode): this {
-    shouldErrorOnReadOnly();
+    errorOnReadOnly();
     const writableSelf = getWritableNode(this);
     const writableNodeToInsert = getWritableNode(nodeToInsert);
     const oldParent = writableNodeToInsert.getParent();
@@ -547,7 +547,7 @@ export class OutlineNode {
   }
   // TODO add support for inserting multiple nodes?
   insertBefore(nodeToInsert: OutlineNode): this {
-    shouldErrorOnReadOnly();
+    errorOnReadOnly();
     const writableSelf = getWritableNode(this);
     const writableNodeToInsert = getWritableNode(nodeToInsert);
     const oldParent = writableNodeToInsert.getParent();
@@ -577,7 +577,7 @@ export class OutlineNode {
     return writableSelf;
   }
   selectNext(anchorOffset?: number, focusOffset?: number): Selection {
-    shouldErrorOnReadOnly();
+    errorOnReadOnly();
     const nextSibling = this.getNextSibling();
     if (
       nextSibling === null ||
@@ -599,7 +599,7 @@ export class OutlineNode {
 
 export function getWritableNode<N: OutlineNode>(node: N): N {
   // TODO we don't need this line, it's more for sanity checking
-  shouldErrorOnReadOnly();
+  errorOnReadOnly();
   const viewModel = getActiveViewModel();
   const dirtyNodes = viewModel._dirtyNodes;
   const nodeMap = viewModel._nodeMap;

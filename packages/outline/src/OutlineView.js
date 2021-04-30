@@ -8,7 +8,7 @@
  */
 
 import type {RootNode} from './OutlineRootNode';
-import type {OutlineEditor} from './OutlineEditor';
+import type {OutlineEditor, TextNodeTransform} from './OutlineEditor';
 import type {
   OutlineNode,
   NodeKey,
@@ -50,8 +50,22 @@ export type ParsedViewModel = {
 let activeViewModel = null;
 let activeEditor = null;
 let activeReadyOnlyMode = false;
+let activeProcessingTextTransforms = false;
 
-export function shouldErrorOnReadOnly(): void {
+export function errorOnProcessingTextTransforms(): void {
+  if (activeProcessingTextTransforms) {
+    if (__DEV__) {
+      invariant(
+        false,
+        'Editor.update() cannot be used within a text transform.',
+      );
+    } else {
+      invariant();
+    }
+  }
+}
+
+export function errorOnReadOnly(): void {
   if (activeReadyOnlyMode) {
     if (__DEV__) {
       invariant(false, 'Cannot use method in read-only mode.');
@@ -113,7 +127,7 @@ const view: View = {
     parsedNode: ParsedNode,
     parsedNodeMap: ParsedNodeMap,
   ): OutlineNode {
-    shouldErrorOnReadOnly();
+    errorOnReadOnly();
     const editor = getActiveEditor();
     return createNodeFromParse(parsedNode, parsedNodeMap, editor, null);
   },
@@ -155,37 +169,56 @@ export function enterViewModelScope<V>(
   }
 }
 
-export function triggerTextMutationListeners(
+function triggerTextMutationListeners(
+  nodeMap: NodeMapType,
+  dirtyNodes: Array<NodeKey>,
+  transforms: Array<TextNodeTransform>,
+  compositionKey: null | NodeKey,
+): void {
+  for (let s = 0; s < dirtyNodes.length; s++) {
+    const nodeKey = dirtyNodes[s];
+    // We don't want to trigger mutation listeners on a
+    // text node that is currently being composed.
+    if (nodeKey === compositionKey) {
+      continue;
+    }
+    const node = nodeMap[nodeKey];
+
+    if (node !== undefined && node.isAttached()) {
+      // Apply text transforms
+      if (isTextNode(node)) {
+        for (let i = 0; i < transforms.length; i++) {
+          transforms[i](node, view);
+          if (!node.isAttached()) {
+            break;
+          }
+        }
+      }
+    }
+  }
+}
+
+export function applyTextTransforms(
   viewModel: ViewModel,
   editor: OutlineEditor,
 ): void {
   const textNodeTransforms = editor._textNodeTransforms;
-  const compositionKey = editor._compositionKey;
   if (textNodeTransforms.size > 0) {
     const nodeMap = viewModel._nodeMap;
     const dirtyNodes = Array.from(viewModel._dirtyNodes);
     const transforms = Array.from(textNodeTransforms);
+    const compositionKey = editor._compositionKey;
 
-    for (let s = 0; s < dirtyNodes.length; s++) {
-      const nodeKey = dirtyNodes[s];
-      // We don't want to trigger mutation listeners on a
-      // text node that is currently being composed.
-      if (nodeKey === compositionKey) {
-        continue;
-      }
-      const node = nodeMap[nodeKey];
-
-      if (node !== undefined && node.isAttached()) {
-        // Apply text transforms
-        if (isTextNode(node)) {
-          for (let i = 0; i < transforms.length; i++) {
-            transforms[i](node, view);
-            if (!node.isAttached()) {
-              break;
-            }
-          }
-        }
-      }
+    try {
+      activeProcessingTextTransforms = true;
+      triggerTextMutationListeners(
+        nodeMap,
+        dirtyNodes,
+        transforms,
+        compositionKey,
+      );
+    } finally {
+      activeProcessingTextTransforms = false;
     }
   }
 }

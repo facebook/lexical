@@ -639,8 +639,8 @@ function reconcileSelection(
   const focusKey = nextSelection.focusKey;
   const anchorNode = nextSelection.getAnchorNode();
   const focusNode = nextSelection.getFocusNode();
-  const anchorDOM = getElementByKeyOrThrow(activeEditor, anchorKey);
-  const focusDOM = getElementByKeyOrThrow(activeEditor, focusKey);
+  const anchorDOM = getElementByKeyOrThrow(editor, anchorKey);
+  const focusDOM = getElementByKeyOrThrow(editor, focusKey);
   const anchorTextIsEmpty = anchorNode.__text === '';
   const focusTextIsEmpty = focusNode.__text === '';
   let anchorOffset = nextSelection.anchorOffset;

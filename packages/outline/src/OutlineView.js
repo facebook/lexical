@@ -57,7 +57,7 @@ export function errorOnProcessingTextTransforms(): void {
     if (__DEV__) {
       invariant(
         false,
-        'Editor.update() cannot be used within a text transform.',
+        'Editor.update() cannot be used within a text node transform.',
       );
     } else {
       invariant();

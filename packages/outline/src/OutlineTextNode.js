@@ -71,102 +71,6 @@ function getElementInnerTag(node: TextNode, flags: number): string {
   return 'span';
 }
 
-function splitText(
-  node: TextNode,
-  splitOffsets: Array<number>,
-): Array<TextNode> {
-  if (node.isImmutable()) {
-    if (__DEV__) {
-      invariant(
-        false,
-        'splitText: can only be used on non-immutable text nodes',
-      );
-    } else {
-      invariant();
-    }
-  }
-  const textContent = node.getTextContent();
-  const key = node.__key;
-  const offsetsSet = new Set(splitOffsets);
-  const parts = [];
-  const textLength = textContent.length;
-  let string = '';
-  for (let i = 0; i < textLength; i++) {
-    if (string !== '' && offsetsSet.has(i)) {
-      parts.push(string);
-      string = '';
-    }
-    string += textContent[i];
-  }
-  if (string !== '') {
-    parts.push(string);
-  }
-  const partsLength = parts.length;
-  if (partsLength === 0) {
-    return [];
-  } else if (parts[0] === textContent) {
-    return [node];
-  }
-  // For the first part, update the existing node
-  const writableNode = getWritableNode(node);
-  const parentKey = writableNode.__parent;
-  const firstPart = parts[0];
-  const flags = writableNode.__flags;
-  writableNode.__text = firstPart;
-
-  // Handle selection
-  const selection = getSelection();
-
-  // Then handle all other parts
-  const splitNodes = [writableNode];
-  let textSize = firstPart.length;
-  for (let i = 1; i < partsLength; i++) {
-    const part = parts[i];
-    const partSize = part.length;
-    const sibling = getWritableNode(createTextNode(part));
-    sibling.__flags = flags;
-    const siblingKey = sibling.__key;
-    const nextTextSize = textSize + partSize;
-
-    if (selection !== null) {
-      const anchorOffset = selection.anchorOffset;
-      const focusOffset = selection.focusOffset;
-
-      if (
-        selection.anchorKey === key &&
-        anchorOffset > textSize &&
-        anchorOffset <= nextTextSize
-      ) {
-        selection.anchorKey = siblingKey;
-        selection.anchorOffset = anchorOffset - textSize;
-        selection.isDirty = true;
-      }
-      if (
-        selection.focusKey === key &&
-        focusOffset > textSize &&
-        focusOffset <= nextTextSize
-      ) {
-        selection.focusKey = siblingKey;
-        selection.focusOffset = focusOffset - textSize;
-        selection.isDirty = true;
-      }
-    }
-    textSize = nextTextSize;
-    sibling.__parent = parentKey;
-    splitNodes.push(sibling);
-  }
-
-  // Insert the nodes into the parent's children
-  const parent = node.getParentOrThrow();
-  const writableParent = getWritableNode(parent);
-  const writableParentChildren = writableParent.__children;
-  const insertionIndex = writableParentChildren.indexOf(key);
-  const splitNodesKeys = splitNodes.map((splitNode) => splitNode.__key);
-  writableParentChildren.splice(insertionIndex, 1, ...splitNodesKeys);
-
-  return splitNodes;
-}
-
 function setTextThemeClassNames(
   tag: string,
   prevFlags: number,
@@ -574,7 +478,6 @@ export class TextNode extends OutlineNode {
         } else {
           const [, targetNode] = this.splitText(offset);
           targetNode.insertBefore(textNode);
-          targetNode.toggleHashtag();
         }
         if (restoreSelection) {
           textNode.select();
@@ -628,7 +531,99 @@ export class TextNode extends OutlineNode {
   }
   splitText(...splitOffsets: Array<number>): Array<TextNode> {
     shouldErrorOnReadOnly();
-    return splitText(this, splitOffsets);
+    if (this.isImmutable()) {
+      if (__DEV__) {
+        invariant(
+          false,
+          'splitText: can only be used on non-immutable text nodes',
+        );
+      } else {
+        invariant();
+      }
+    }
+    const textContent = this.getTextContent();
+    const key = this.__key;
+    const offsetsSet = new Set(splitOffsets);
+    const parts = [];
+    const textLength = textContent.length;
+    let string = '';
+    for (let i = 0; i < textLength; i++) {
+      if (string !== '' && offsetsSet.has(i)) {
+        parts.push(string);
+        string = '';
+      }
+      string += textContent[i];
+    }
+    if (string !== '') {
+      parts.push(string);
+    }
+    if (this.isHashtag()) {
+      this.toggleHashtag();
+    }
+    const partsLength = parts.length;
+    if (partsLength === 0) {
+      return [];
+    } else if (parts[0] === textContent) {
+      return [this];
+    }
+    // For the first part, update the existing node
+    const writableNode = getWritableNode(this);
+    const parentKey = writableNode.__parent;
+    const firstPart = parts[0];
+    const flags = writableNode.__flags;
+    writableNode.__text = firstPart;
+
+    // Handle selection
+    const selection = getSelection();
+
+    // Then handle all other parts
+    const splitNodes = [writableNode];
+    let textSize = firstPart.length;
+    for (let i = 1; i < partsLength; i++) {
+      const part = parts[i];
+      const partSize = part.length;
+      const sibling = getWritableNode(createTextNode(part));
+      sibling.__flags = flags;
+      const siblingKey = sibling.__key;
+      const nextTextSize = textSize + partSize;
+
+      if (selection !== null) {
+        const anchorOffset = selection.anchorOffset;
+        const focusOffset = selection.focusOffset;
+
+        if (
+          selection.anchorKey === key &&
+          anchorOffset > textSize &&
+          anchorOffset <= nextTextSize
+        ) {
+          selection.anchorKey = siblingKey;
+          selection.anchorOffset = anchorOffset - textSize;
+          selection.isDirty = true;
+        }
+        if (
+          selection.focusKey === key &&
+          focusOffset > textSize &&
+          focusOffset <= nextTextSize
+        ) {
+          selection.focusKey = siblingKey;
+          selection.focusOffset = focusOffset - textSize;
+          selection.isDirty = true;
+        }
+      }
+      textSize = nextTextSize;
+      sibling.__parent = parentKey;
+      splitNodes.push(sibling);
+    }
+
+    // Insert the nodes into the parent's children
+    const parent = this.getParentOrThrow();
+    const writableParent = getWritableNode(parent);
+    const writableParentChildren = writableParent.__children;
+    const insertionIndex = writableParentChildren.indexOf(key);
+    const splitNodesKeys = splitNodes.map((splitNode) => splitNode.__key);
+    writableParentChildren.splice(insertionIndex, 1, ...splitNodesKeys);
+
+    return splitNodes;
   }
 }
 

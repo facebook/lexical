@@ -96,6 +96,28 @@ jobs:
     - run: npm run build
     - run: npm run test-e2e-ci:chromium
 
+  e2e-chromium-windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        node-version: [16.x]
+    env:
+      CI: true
+      PLAYWRIGHT_BROWSERS_PATH: 0
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+    - uses: actions/cache@v2
+      with:
+        path: '**/node_modules'
+        key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+    - run: npm install --legacy-peer-deps
+    - run: npm run build
+    - run: npm run test-e2e-ci:chromium
+
   e2e-firefox-linux:
     runs-on: ubuntu-latest
     strategy:
@@ -124,6 +146,28 @@ jobs:
 
   e2e-firefox-mac:
     runs-on: macos-latest
+    strategy:
+      matrix:
+        node-version: [16.x]
+    env:
+      CI: true
+      PLAYWRIGHT_BROWSERS_PATH: 0
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+    - uses: actions/cache@v2
+      with:
+        path: '**/node_modules'
+        key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+    - run: npm install --legacy-peer-deps
+    - run: npm run build
+    - run: npm run test-e2e-ci:firefox
+
+  e2e-firefox-windows:
+    runs-on: windows-latest
     strategy:
       matrix:
         node-version: [16.x]

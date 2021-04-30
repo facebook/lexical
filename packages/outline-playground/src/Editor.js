@@ -87,30 +87,30 @@ function useOutlineEditor(
 }
 
 function useOutlineOnChange(
-  outlineEditor: OutlineEditor,
+  editor: OutlineEditor,
   onChange: (ViewModel | null) => void,
 ): void {
   // Set the initial state
   useEffect(() => {
-    if (outlineEditor !== null) {
-      onChange(outlineEditor.getViewModel());
+    if (editor !== null) {
+      onChange(editor.getViewModel());
     }
-  }, [outlineEditor, onChange]);
+  }, [editor, onChange]);
 
   // Subscribe to changes
   useEffect(() => {
-    if (outlineEditor !== null) {
-      return outlineEditor.addUpdateListener(onChange);
+    if (editor !== null) {
+      return editor.addUpdateListener(onChange);
     }
-  }, [onChange, outlineEditor]);
+  }, [onChange, editor]);
   // Subscribe to errors
   useEffect(() => {
-    if (outlineEditor !== null) {
-      return outlineEditor.addErrorListener((e) => {
+    if (editor !== null) {
+      return editor.addErrorListener((e) => {
         throw e;
       });
     }
-  }, [outlineEditor]);
+  }, [editor]);
 }
 
 function ContentEditable({
@@ -146,18 +146,15 @@ export function RichTextEditor({
   isAutocomplete,
 }: Props): React.MixedElement {
   const editorElementRef = useRef(null);
-  const outlineEditor = useOutlineEditor(
-    editorElementRef,
-    'Enter some rich text...',
-  );
-  const toolbar = useToolbar(outlineEditor);
-  const mentionsTypeahead = useMentions(outlineEditor);
-  const props = useOutlineRichText(outlineEditor, isReadOnly);
-  useOutlineOnChange(outlineEditor, onChange);
-  const stepRecorder = useStepRecorder(outlineEditor);
-  useEmojis(outlineEditor);
-  useHashtags(outlineEditor);
-  useOutlineAutoFormatter(outlineEditor);
+  const editor = useOutlineEditor(editorElementRef, 'Enter some rich text...');
+  const toolbar = useToolbar(editor);
+  const mentionsTypeahead = useMentions(editor);
+  const props = useOutlineRichText(editor, isReadOnly);
+  useOutlineOnChange(editor, onChange);
+  const stepRecorder = useStepRecorder(editor);
+  useEmojis(editor);
+  useHashtags(editor);
+  useOutlineAutoFormatter(editor);
 
   return (
     <>
@@ -169,9 +166,9 @@ export function RichTextEditor({
       {mentionsTypeahead}
       {toolbar}
       {stepRecorder}
-      <BlockControls editor={outlineEditor} />
-      {isCharLimit && <CharacterLimit editor={outlineEditor} />}
-      {isAutocomplete && <Typeahead editor={outlineEditor} />}
+      <BlockControls editor={editor} />
+      {isCharLimit && <CharacterLimit editor={editor} />}
+      {isAutocomplete && <Typeahead editor={editor} />}
     </>
   );
 }
@@ -183,16 +180,13 @@ export function PlainTextEditor({
   isAutocomplete,
 }: Props): React$Node {
   const editorElementRef = useRef(null);
-  const outlineEditor = useOutlineEditor(
-    editorElementRef,
-    'Enter some plain text...',
-  );
-  const mentionsTypeahead = useMentions(outlineEditor);
-  const props = usePlainText(outlineEditor, isReadOnly);
-  useOutlineOnChange(outlineEditor, onChange);
-  useEmojis(outlineEditor);
-  useHashtags(outlineEditor);
-  const stepRecorder = useStepRecorder(outlineEditor);
+  const editor = useOutlineEditor(editorElementRef, 'Enter some plain text...');
+  const mentionsTypeahead = useMentions(editor);
+  const props = usePlainText(editor, isReadOnly);
+  useOutlineOnChange(editor, onChange);
+  useEmojis(editor);
+  useHashtags(editor);
+  const stepRecorder = useStepRecorder(editor);
 
   return (
     <>
@@ -203,8 +197,8 @@ export function PlainTextEditor({
       />
       {mentionsTypeahead}
       {stepRecorder}
-      {isCharLimit && <CharacterLimit editor={outlineEditor} />}
-      {isAutocomplete && <Typeahead editor={outlineEditor} />}
+      {isCharLimit && <CharacterLimit editor={editor} />}
+      {isAutocomplete && <Typeahead editor={editor} />}
     </>
   );
 }

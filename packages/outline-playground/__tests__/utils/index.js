@@ -235,7 +235,10 @@ export async function pasteFromClipboard(page, clipboardData) {
   await page.evaluate(
     async ({clipboardData, canUseBeforeInput}) => {
       const editor = document.querySelector('div.editor');
-      const pasteEvent = new ClipboardEvent('paste', {bubbles: true});
+      const pasteEvent = new ClipboardEvent('paste', {
+        bubbles: true,
+        cancelable: true,
+      });
       Object.defineProperty(pasteEvent, 'clipboardData', {
         value: {
           getData(type, value) {
@@ -246,7 +249,10 @@ export async function pasteFromClipboard(page, clipboardData) {
       editor.dispatchEvent(pasteEvent);
       if (!pasteEvent.defaultPrevented) {
         if (canUseBeforeInput) {
-          const inputEvent = new InputEvent('beforeinput', {bubbles: true});
+          const inputEvent = new InputEvent('beforeinput', {
+            bubbles: true,
+            cancelable: true,
+          });
           Object.defineProperty(inputEvent, 'inputType', {
             value: 'insertFromPaste',
           });

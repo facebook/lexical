@@ -301,7 +301,7 @@ export function onKeyDownForRichText(
   });
 }
 
-export function onPastePolyfillForPlainText(
+export function onPasteForPlainText(
   event: ClipboardEvent,
   editor: OutlineEditor,
   state: EventHandlerState,
@@ -316,7 +316,7 @@ export function onPastePolyfillForPlainText(
   });
 }
 
-export function onPastePolyfillForRichText(
+export function onPasteForRichText(
   event: ClipboardEvent,
   editor: OutlineEditor,
   state: EventHandlerState,

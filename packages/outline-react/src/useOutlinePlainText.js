@@ -29,7 +29,7 @@ import {
   onCut,
   onCopy,
   onNativeBeforeInputForPlainText,
-  onPastePolyfillForPlainText,
+  onPasteForPlainText,
   onDropPolyfill,
   onDragStartPolyfill,
   onPolyfilledBeforeInput,
@@ -62,6 +62,7 @@ const events: InputEvents = [
   ['cut', onCut],
   ['copy', onCopy],
   ['dragstart', onDragStartPolyfill],
+  ['paste', onPasteForPlainText],
 ];
 
 if (CAN_USE_BEFORE_INPUT) {
@@ -70,7 +71,7 @@ if (CAN_USE_BEFORE_INPUT) {
     ['input', onNativeInput],
   );
 } else {
-  events.push(['paste', onPastePolyfillForPlainText], ['drop', onDropPolyfill]);
+  events.push(['drop', onDropPolyfill]);
 }
 
 export default function useOutlinePlainText(

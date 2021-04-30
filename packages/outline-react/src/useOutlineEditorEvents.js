@@ -33,7 +33,10 @@ export default function useOutlineEditorEvents(
             eventName === 'selectionchange' ||
             eventName === 'keyup' ||
             eventName === 'pointerup' ||
-            eventName === 'pointercancel'
+            eventName === 'pointercancel' ||
+            // Paste needs to be on the document/window for Safari
+            // to properly support pasting things like img alt text.
+            eventName === 'paste'
           ) {
             eventTarget = target.ownerDocument;
           }

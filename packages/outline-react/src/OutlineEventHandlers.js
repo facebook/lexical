@@ -80,6 +80,13 @@ export type EventHandlerState = {
   isHandlingPointer: boolean,
 };
 
+function isWithinEditor(editor: OutlineEditor, target: EventTarget): boolean {
+  const editorElement = editor.getEditorElement();
+  // $FlowFixMe: target should always be a node or null
+  const node: null | Node = target;
+  return editorElement !== null && editorElement.contains(node);
+}
+
 function generateNodes(
   nodeRange: {range: Array<NodeKey>, nodeMap: ParsedNodeMap},
   view: View,
@@ -306,6 +313,9 @@ export function onPastePolyfillForPlainText(
   editor: OutlineEditor,
   state: EventHandlerState,
 ): void {
+  if (!isWithinEditor(editor, event.target)) {
+    return;
+  }
   event.preventDefault();
   editor.update((view) => {
     const selection = view.getSelection();
@@ -321,6 +331,9 @@ export function onPastePolyfillForRichText(
   editor: OutlineEditor,
   state: EventHandlerState,
 ): void {
+  if (!isWithinEditor(editor, event.target)) {
+    return;
+  }
   event.preventDefault();
   editor.update((view) => {
     const selection = view.getSelection();
@@ -442,10 +455,9 @@ export function onSelectionChange(
   state: EventHandlerState,
 ): void {
   const domSelection = window.getSelection();
-  const editorElement = editor.getEditorElement();
   // This is a hot-path, so let's avoid doing an update when
   // the anchorNode is not actually inside the editor.
-  if (editorElement && !editorElement.contains(domSelection.anchorNode)) {
+  if (!isWithinEditor(editor, domSelection.anchorNode)) {
     return;
   }
   // This update also functions as a way of reconciling a bad selection

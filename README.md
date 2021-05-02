@@ -7,7 +7,7 @@ Outline is a fast, light-weight, extensible library for building rich text edito
 1. Clone this repository
 
 2. Install dependencies
-   - `npm install --legacy-peer-deps`
+   - `npm install`
 
 3. Start local server and run tests
    - `npm run start`

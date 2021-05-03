@@ -717,7 +717,7 @@ export function updateCaretSelectionForRange(
 
       if (index === null && node !== anchorNode) {
         index = isBackward ? node.getTextContentSize() : 0;
-      } else if (index === 0 && isBackward && !isHoldingShift) {
+      } else if (isBackward && index === 0 && !isHoldingShift) {
         [node, index] = getPreviousNodeAndEndingOffset(node, index);
       }
       if (node.isImmutable() || node.isInert()) {

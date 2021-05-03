@@ -68,6 +68,14 @@ describe('OutlineLineBreakNode tests', () => {
     });
   });
 
+  test('clone()', async () => {
+    await update(() => {
+      const lineBreakNode = Outline.createLineBreakNode();
+      const lineBreakNodeClone = lineBreakNode.clone()
+      expect(lineBreakNodeClone).toStrictEqual(lineBreakNode);
+    });
+  });
+
   test('createDOM()', async () => {
     await update(() => {
       const lineBreakNode = Outline.createLineBreakNode();

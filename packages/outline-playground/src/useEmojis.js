@@ -12,11 +12,7 @@ const emojis: {[string]: [string, string]} = {
   '<3': ['emoji heart', '❤'],
 };
 
-function textNodeTransform(node: TextNode, view: View): void {
-  if (node.isSegmented() || node.isImmutable() || node.isHashtag()) {
-    return;
-  }
-
+function findAndTransformEmoji(node): null | TextNode {
   const text = node.getTextContent();
   for (let i = 0; i < text.length; i++) {
     const possibleEmoji = text.slice(i, i + 2);
@@ -32,10 +28,30 @@ function textNodeTransform(node: TextNode, view: View): void {
       }
       const emojiNode = createEmojiNode(emojiStyle, emojiText);
       targetNode.replace(emojiNode);
-      emojiNode.selectNext(0, 0);
-      emojiNode.getParentOrThrow().normalizeTextNodes(true);
-      break;
+      const nextSibling = emojiNode.getNextSibling();
+      nextSibling.select(0, 0);
+      return nextSibling;
     }
+  }
+  return null;
+}
+
+function textNodeTransform(node: TextNode, view: View): void {
+  if (node.isSegmented() || node.isImmutable() || node.isHashtag()) {
+    return;
+  }
+
+  let targetNode = node;
+  let parentToNormalize = null;
+
+  while (targetNode !== null) {
+    targetNode = findAndTransformEmoji(targetNode);
+    if (targetNode !== null) {
+      parentToNormalize = targetNode.getParent();
+    }
+  }
+  if (parentToNormalize !== null) {
+    parentToNormalize.normalizeTextNodes(true);
   }
 }
 

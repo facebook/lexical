@@ -291,10 +291,10 @@ describe('Keyboard Navigation', () => {
       // 1 left
       await moveToPrevWord(page);
       await assertSelection(page, {
-        anchorPath: [0, 3, 0],
-        anchorOffset: 0,
-        focusPath: [0, 3, 0],
-        focusOffset: 0,
+        anchorPath: [0, 2, 0],
+        anchorOffset: 7,
+        focusPath: [0, 2, 0],
+        focusOffset: 7,
       });
       // 2 left
       await moveToPrevWord(page);
@@ -307,10 +307,10 @@ describe('Keyboard Navigation', () => {
       // 3 left
       await moveToPrevWord(page);
       await assertSelection(page, {
-        anchorPath: [0, 1, 0],
-        anchorOffset: 0,
-        focusPath: [0, 1, 0],
-        focusOffset: 0,
+        anchorPath: [0, 0, 0],
+        anchorOffset: 6,
+        focusPath: [0, 0, 0],
+        focusOffset: 6,
       });
       // 4 left
       await moveToPrevWord(page);

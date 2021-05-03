@@ -56,6 +56,9 @@ describe('OutlineNode tests', () => {
 
     function TestBase() {
       editor = useOutlineEditor(ref);
+      editor.addErrorListener(error => {
+        throw error
+      })
       return <div ref={ref} contentEditable={true} />;
     }
 

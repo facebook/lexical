@@ -35,7 +35,8 @@
     "prettier": "node ./scripts/prettier.js write-changed",
     "prettier-all": "node ./scripts/prettier.js write",
     "prepare-ci": "npm run build --prefix packages/outline-playground && serve packages/outline-playground/build -l 4000",
-    "prepare-release": "npm run build --prod && node ./scripts/prepare-release.js"
+    "prepare-release": "npm run build --prod && node ./scripts/prepare-release.js",
+    "prepare": "husky install"
   },
   "devDependencies": {
     "@babel/plugin-transform-flow-strip-types": "^7.13.0",
@@ -63,7 +64,9 @@
     "flow-bin": "^0.150.0",
     "fs-extra": "^9.1.0",
     "google-closure-compiler": "^20210406.0.0",
+    "husky": "^6.0.0",
     "jest": "26.6.0",
+    "lint-staged": "^10.5.4",
     "minimist": "^1.2.5",
     "playwright": "next",
     "prettier": "^2.2.1",

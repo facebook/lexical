@@ -50,9 +50,9 @@ describe('OutlineLineBreakNode tests', () => {
 
     function TestBase() {
       editor = useOutlineEditor(ref);
-      editor.addErrorListener(error => {
-        throw error
-      })
+      editor.addErrorListener((error) => {
+        throw error;
+      });
       return <div ref={ref} contentEditable={true} />;
     }
 
@@ -71,7 +71,7 @@ describe('OutlineLineBreakNode tests', () => {
   test('clone()', async () => {
     await update(() => {
       const lineBreakNode = Outline.createLineBreakNode();
-      const lineBreakNodeClone = lineBreakNode.clone()
+      const lineBreakNodeClone = lineBreakNode.clone();
       expect(lineBreakNodeClone).toStrictEqual(lineBreakNode);
     });
   });

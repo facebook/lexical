@@ -7,7 +7,13 @@
  * @flow strict
  */
 
-import type {NodeKey, OutlineNode, Selection, TextFormatType} from 'outline';
+import type {
+  NodeKey,
+  OutlineNode,
+  Selection,
+  TextFormatType,
+  TextNode,
+} from 'outline';
 
 import {
   createLineBreakNode,
@@ -539,6 +545,22 @@ function getSurrogatePairOffset(str: string, isBackward: boolean): number {
   return /[\uD800-\uDFFF]/.test(segment) ? segment.length : 1;
 }
 
+function getPreviousNodeAndEndingOffset(
+  node: TextNode,
+  index: number,
+): [TextNode, number] {
+  const prevSibling = node.getPreviousSibling();
+  if (
+    isTextNode(prevSibling) &&
+    !prevSibling.isSegmented() &&
+    !prevSibling.isImmutable() &&
+    !prevSibling.isInert()
+  ) {
+    return [prevSibling, prevSibling.getTextContentSize()];
+  }
+  return [node, index];
+}
+
 export function updateCaretSelectionForRange(
   selection: Selection,
   isBackward: boolean,
@@ -626,17 +648,16 @@ export function updateCaretSelectionForRange(
       // If we move selection to the start, then we can check if there
       // is a node before that we can adjust selection to, which is a better
       // UX in most cases.
-      if (isBackward && selectionOffset === 0 && !isHoldingShift) {
-        const prevSibling = characterNode.getPreviousSibling();
-        if (
-          isTextNode(prevSibling) &&
-          !prevSibling.isSegmented() &&
-          !prevSibling.isImmutable() &&
-          !prevSibling.isInert()
-        ) {
-          characterNode = prevSibling;
-          selectionOffset = prevSibling.getTextContentSize();
-        }
+      if (
+        isBackward &&
+        selectionOffset === 0 &&
+        !isHoldingShift &&
+        isTextNode(characterNode)
+      ) {
+        [characterNode, selectionOffset] = getPreviousNodeAndEndingOffset(
+          characterNode,
+          selectionOffset,
+        );
       }
       setSelectionFocus(selection, characterNode.getKey(), selectionOffset);
     } else if (granularity === 'word') {
@@ -696,6 +717,8 @@ export function updateCaretSelectionForRange(
 
       if (index === null && node !== anchorNode) {
         index = isBackward ? node.getTextContentSize() : 0;
+      } else if (isBackward && index === 0 && !isHoldingShift) {
+        [node, index] = getPreviousNodeAndEndingOffset(node, index);
       }
       if (node.isImmutable() || node.isInert()) {
         updateSelectionForNextSiblingRange(selection, isBackward, node);

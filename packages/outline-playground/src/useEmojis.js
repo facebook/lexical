@@ -3,7 +3,7 @@
 import type {OutlineEditor, View, NodeKey, EditorThemeClasses} from 'outline';
 
 import {useEffect} from 'react';
-import {TextNode} from 'outline';
+import {TextNode, isTextNode} from 'outline';
 
 const emojis: {[string]: [string, string]} = {
   ':)': ['emoji happysmile', '🙂'],
@@ -29,8 +29,11 @@ function findAndTransformEmoji(node): null | TextNode {
       const emojiNode = createEmojiNode(emojiStyle, emojiText);
       targetNode.replace(emojiNode);
       const nextSibling = emojiNode.getNextSibling();
-      nextSibling.select(0, 0);
-      return nextSibling;
+      if (isTextNode(nextSibling)) {
+        nextSibling.select(0, 0);
+        return nextSibling;
+      }
+      break;
     }
   }
   return null;

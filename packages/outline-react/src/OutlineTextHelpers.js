@@ -106,7 +106,7 @@ export function getWordsFromString(string: string): Array<Segment> {
   for (i = 0; i < string.length; i++) {
     const char = string[i];
 
-    if (/[\s.,\\\/#!$%\^&\*;:{}=\-`~()]/.test(char)) {
+    if (/[\s.,\\\/#!$%\^&\*;:{}=\-`~()\uD800-\uDBFF\uDC00-\uDFFF]/.test(char)) {
       if (wordString !== '') {
         pushSegment(segments, i, wordString, true);
         wordString = '';

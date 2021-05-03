@@ -1,6 +1,12 @@
 // @flow strict-local
 
-import type {OutlineEditor, View, NodeKey, EditorThemeClasses} from 'outline';
+import type {
+  OutlineEditor,
+  View,
+  NodeKey,
+  EditorThemeClasses,
+  Selection,
+} from 'outline';
 
 import {useEffect} from 'react';
 import {TextNode, isTextNode} from 'outline';
@@ -12,7 +18,10 @@ const emojis: {[string]: [string, string]} = {
   '<3': ['emoji heart', '❤'],
 };
 
-function findAndTransformEmoji(node): null | TextNode {
+function findAndTransformEmoji(
+  selection: null | Selection,
+  node: TextNode,
+): null | TextNode {
   const text = node.getTextContent();
   for (let i = 0; i < text.length; i++) {
     const possibleEmoji = text.slice(i, i + 2);
@@ -30,7 +39,9 @@ function findAndTransformEmoji(node): null | TextNode {
       targetNode.replace(emojiNode);
       const nextSibling = emojiNode.getNextSibling();
       if (isTextNode(nextSibling)) {
-        nextSibling.select(0, 0);
+        if (selection !== null && !selection.getAnchorNode().isAttached()) {
+          nextSibling.select(0, 0);
+        }
         return nextSibling;
       }
       break;
@@ -44,11 +55,13 @@ function textNodeTransform(node: TextNode, view: View): void {
     return;
   }
 
+  const selection = view.getSelection();
+
   let targetNode = node;
   let parentToNormalize = null;
 
   while (targetNode !== null) {
-    targetNode = findAndTransformEmoji(targetNode);
+    targetNode = findAndTransformEmoji(selection, targetNode);
     if (targetNode !== null) {
       parentToNormalize = targetNode.getParent();
     }

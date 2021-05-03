@@ -10,6 +10,7 @@
 import type {RootNode, TextNode} from 'outline';
 
 import {isTextNode, isBlockNode} from 'outline';
+import {IS_SAFARI} from './OutlineEnv';
 
 export function findTextIntersectionFromCharacters(
   root: RootNode,
@@ -83,6 +84,17 @@ export function getSegmentsFromString(
     granularity,
   });
   return Array.from(segmenter.segment(string));
+}
+
+export function isSegmentWordLike(segment: Segment): boolean {
+  const isWordLike = segment.isWordLike;
+  if (IS_SAFARI) {
+    // Safari treats strings with only numbers as not word like.
+    // This isn't correct, so we have to do an additional check for
+    // these cases.
+    return isWordLike || /^[0-9]*$/g.test(segment.segment);
+  }
+  return isWordLike;
 }
 
 function pushSegment(

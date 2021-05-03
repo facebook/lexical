@@ -21,7 +21,11 @@ import {createParagraphNode} from 'outline-extensions/ParagraphNode';
 
 import {CAN_USE_INTL_SEGMENTER} from './OutlineEnv';
 import {invariant} from './OutlineReactUtils';
-import {getSegmentsFromString, getWordsFromString} from './OutlineTextHelpers';
+import {
+  getSegmentsFromString,
+  getWordsFromString,
+  isSegmentWordLike,
+} from './OutlineTextHelpers';
 
 export function getNodesInRange(
   selection: Selection,
@@ -654,7 +658,7 @@ export function updateCaretSelectionForRange(
             const segment = segments[i];
             const nextIndex = segment.index;
 
-            if (segment.isWordLike) {
+            if (isSegmentWordLike(segment)) {
               index = nextIndex;
               foundWordNode = node;
             } else if (foundWordNode !== null) {
@@ -669,7 +673,7 @@ export function updateCaretSelectionForRange(
             const segment = segments[i];
             const nextIndex = segment.index + segment.segment.length;
 
-            if (segment.isWordLike) {
+            if (isSegmentWordLike(segment)) {
               index = nextIndex;
               foundWordNode = node;
             } else if (foundWordNode !== null) {

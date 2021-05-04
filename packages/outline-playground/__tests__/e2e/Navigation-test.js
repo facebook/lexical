@@ -5,10 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {
-  keyDownCtrlOrMeta,
-  keyUpCtrlOrMeta,
-} from '../utils';
+import {keyDownCtrlOrMeta, keyUpCtrlOrMeta} from '../utils';
 
 import {
   moveToEditorBeginning,

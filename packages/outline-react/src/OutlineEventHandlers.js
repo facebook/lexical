@@ -64,6 +64,7 @@ import {announceString} from './OutlineTextHelpers';
 // Safari triggers composition before keydown, meaning
 // we need to account for this when handling key events.
 let wasRecentlyComposing = false;
+let lastKeyWasMaybeAndroidSoftKey = false;
 const RESOLVE_DELAY = 20;
 
 // TODO the Flow types here needs fixing
@@ -124,11 +125,34 @@ function insertDataTransferForPlainText(
   }
 }
 
+function shouldOverrideBrowserDefault(
+  selection: Selection,
+  isHoldingShift: boolean,
+  isBackward: boolean,
+): boolean {
+  const anchorOffset = selection.anchorOffset;
+  const focusOffset = selection.focusOffset;
+  const selectionAtBoundary = isBackward
+    ? anchorOffset < 2 || focusOffset < 2
+    : anchorOffset > selection.getAnchorNode().getTextContentSize() - 2 ||
+      focusOffset > selection.getFocusNode().getTextContentSize() - 2;
+
+  return selection.isCaret()
+    ? isHoldingShift || selectionAtBoundary
+    : isHoldingShift && selectionAtBoundary;
+}
+
+function checkIfLastKeyWasMaybeAndroidSoftKey(event: KeyboardEvent): void {
+  lastKeyWasMaybeAndroidSoftKey =
+    event.key === 'Unidentified' && event.isComposing && event.keyCode === 229;
+}
+
 export function onKeyDownForPlainText(
   event: KeyboardEvent,
   editor: OutlineEditor,
   state: EventHandlerState,
 ): void {
+  checkIfLastKeyWasMaybeAndroidSoftKey(event);
   if (editor.isComposing() || wasRecentlyComposing) {
     return;
   }
@@ -188,28 +212,12 @@ export function onKeyDownForPlainText(
   });
 }
 
-function shouldOverrideBrowserDefault(
-  selection: Selection,
-  isHoldingShift: boolean,
-  isBackward: boolean,
-): boolean {
-  const anchorOffset = selection.anchorOffset;
-  const focusOffset = selection.focusOffset;
-  const selectionAtBoundary = isBackward
-    ? anchorOffset < 2 || focusOffset < 2
-    : anchorOffset > selection.getAnchorNode().getTextContentSize() - 2 ||
-      focusOffset > selection.getFocusNode().getTextContentSize() - 2;
-
-  return selection.isCaret()
-    ? isHoldingShift || selectionAtBoundary
-    : isHoldingShift && selectionAtBoundary;
-}
-
 export function onKeyDownForRichText(
   event: KeyboardEvent,
   editor: OutlineEditor,
   state: EventHandlerState,
 ): void {
+  checkIfLastKeyWasMaybeAndroidSoftKey(event);
   if (editor.isComposing() || wasRecentlyComposing) {
     return;
   }
@@ -511,10 +519,11 @@ export function onNativeInput(
 ): void {
   const inputType = event.inputType;
   const isInsertText = inputType === 'insertText';
+  const isInsertCompositionText = inputType === 'insertCompositionText';
 
   if (
     !isInsertText &&
-    inputType !== 'insertCompositionText' &&
+    !isInsertCompositionText &&
     inputType !== 'deleteCompositionText'
   ) {
     return;
@@ -526,16 +535,21 @@ export function onNativeInput(
     if (selection === null) {
       return;
     }
-    if (isInsertText) {
-      const anchorKey = selection.anchorKey;
-      // Android Chrome triggers insert text during composition.
-      // If this happens, then we will need to remove the
-      // composition key in order for the DOM to update in
-      // accordance with what is occuring. Composition should
-      // automatically get re-added.
-      if (anchorKey === editor._compositionKey) {
-        editor._compositionKey = null;
-      }
+    const anchorKey = selection.anchorKey;
+
+    // To ensure we handle Android software keyboard
+    // text entry properly (which is usually composed text),
+    // we need to support a few extra heuristics. Notbaly,
+    // we need to disable composition for "insertText" or
+    // "insertCompositionText" when the last key press was
+    // likely to be an android soft key press. Android will
+    // then enable composition again automatically.
+    if (
+      anchorKey === editor._compositionKey &&
+      (isInsertText ||
+        (isInsertCompositionText && lastKeyWasMaybeAndroidSoftKey))
+    ) {
+      editor._compositionKey = null;
     }
     const data = event.data;
     if (data) {

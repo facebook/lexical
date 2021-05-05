@@ -123,7 +123,7 @@ describe('OutlineViewModel tests', () => {
     );
   });
 
-  test.only('ensure garbage collection works as expected', async () => {
+  test('ensure garbage collection works as expected', async () => {
     await update((view) => {
       const paragraph = ParagraphNodeModule.createParagraphNode();
       const text = Outline.createTextNode();

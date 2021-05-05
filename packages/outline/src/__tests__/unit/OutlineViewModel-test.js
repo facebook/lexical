@@ -122,4 +122,30 @@ describe('OutlineViewModel tests', () => {
         '"_selection":{"anchorKey":"_5","anchorOffset":6,"focusKey":"_5","focusOffset":11}}',
     );
   });
+
+  test('ensure garbage collection works as expected', async () => {
+    await update((view) => {
+      const paragraph = ParagraphNodeModule.createParagraphNode();
+      const text = Outline.createTextNode();
+      paragraph.append(text);
+      view.getRoot().append(paragraph);
+    });
+
+    // Remove the first node, which should cause a GC for everything
+    await update((view) => {
+      view.getRoot().getFirstChild().remove();
+    });
+
+    const viewModel = editor.getViewModel();
+
+    expect(viewModel._nodeMap).toEqual({
+      root: {
+        __children: [],
+        __flags: 0,
+        __key: 'root',
+        __parent: null,
+        __type: 'root',
+      },
+    });
+  });
 });

@@ -15,6 +15,7 @@ import type {
   ParsedNode,
   NodeMapType,
 } from './OutlineNode';
+import type {BlockNode} from './OutlineBlockNode';
 import type {Selection} from './OutlineSelection';
 import type {Node as ReactNode} from 'react';
 import type {ParsedNodeMap} from './OutlineNode';
@@ -22,7 +23,7 @@ import type {ParsedNodeMap} from './OutlineNode';
 import {cloneDecorators, reconcileViewModel} from './OutlineReconciler';
 import {getSelection, createSelectionFromParse} from './OutlineSelection';
 import {getNodeByKey, createNodeFromParse} from './OutlineNode';
-import {isTextNode} from '.';
+import {isBlockNode, isTextNode} from '.';
 import {invariant} from './OutlineUtils';
 
 export type View = {
@@ -242,6 +243,25 @@ function garbageCollectDetachedDecorators(
   }
 }
 
+function garbageCollectDetachedDeepChildNodes(
+  node: BlockNode,
+  parentKey: NodeKey,
+  nodeMap: NodeMapType,
+): void {
+  const children = node.__children;
+  const childrenLength = children.length;
+  for (let i = 0; i < childrenLength; i++) {
+    const childKey = children[i];
+    const child = nodeMap[childKey];
+    if (child !== undefined && child.__parent === parentKey) {
+      if (isBlockNode(child)) {
+        garbageCollectDetachedDeepChildNodes(child, childKey, nodeMap);
+      }
+      delete nodeMap[childKey];
+    }
+  }
+}
+
 export function garbageCollectDetachedNodes(
   viewModel: ViewModel,
   editor: OutlineEditor,
@@ -253,9 +273,14 @@ export function garbageCollectDetachedNodes(
     const nodeKey = dirtyNodes[s];
     const node = nodeMap[nodeKey];
 
-    if (node !== undefined && !node.isAttached()) {
-      // Garbage collect node
-      delete nodeMap[nodeKey];
+    if (node !== undefined) {
+      // Garbage collect node and its children if they exist
+      if (!node.isAttached()) {
+        if (isBlockNode(node)) {
+          garbageCollectDetachedDeepChildNodes(node, nodeKey, nodeMap);
+        }
+        delete nodeMap[nodeKey];
+      }
     }
   }
 }

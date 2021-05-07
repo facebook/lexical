@@ -166,7 +166,9 @@ function updateEditor(
     viewModelHasDirtySelectionOrNeedsSync(pendingViewModel, editor);
 
   if (!shouldUpdate) {
-    editor._pendingViewModel = null;
+    if (viewModelWasCloned) {
+      editor._pendingViewModel = null;
+    }
     return false;
   }
   if (viewModelWasCloned) {

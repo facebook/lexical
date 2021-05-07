@@ -911,6 +911,16 @@ export function insertText(selection: Selection, text: string): void {
       textNode.select();
       currentBlock.normalizeTextNodes(true);
       return;
+    } else if (
+      firstNode.isImmutable() ||
+      firstNode.isInert() ||
+      firstNode.isSegmented()
+    ) {
+      const textNode = createTextNode(text);
+      firstNode.replace(textNode);
+      firstNode = textNode;
+      textNode.select();
+      return;
     }
     const delCount = endOffset - startOffset;
 

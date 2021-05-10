@@ -23,7 +23,7 @@ import type {ParsedNodeMap} from './OutlineNode';
 import {cloneDecorators, reconcileViewModel} from './OutlineReconciler';
 import {getSelection, createSelectionFromParse} from './OutlineSelection';
 import {getNodeByKey, createNodeFromParse} from './OutlineNode';
-import {isBlockNode, isTextNode} from '.';
+import {isBlockNode, isTextNode, isLineBreakNode} from '.';
 import {invariant} from './OutlineUtils';
 
 export type View = {
@@ -185,14 +185,17 @@ function triggerTextMutationListeners(
     }
     const node = nodeMap[nodeKey];
 
-    if (node !== undefined && node.isAttached()) {
+    if (
+      node !== undefined &&
+      isTextNode(node) &&
+      !isLineBreakNode(node) &&
+      node.isAttached()
+    ) {
       // Apply text transforms
-      if (isTextNode(node)) {
-        for (let i = 0; i < transforms.length; i++) {
-          transforms[i](node, view);
-          if (!node.isAttached()) {
-            break;
-          }
+      for (let i = 0; i < transforms.length; i++) {
+        transforms[i](node, view);
+        if (!node.isAttached()) {
+          break;
         }
       }
     }

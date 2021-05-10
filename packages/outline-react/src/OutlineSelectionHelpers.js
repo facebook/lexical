@@ -927,7 +927,7 @@ export function insertText(selection: Selection, text: string): void {
     firstNode.spliceText(startOffset, delCount, text, true);
   } else {
     const lastIndex = selectedNodesLength - 1;
-    const lastNode = selectedNodes[lastIndex];
+    let lastNode = selectedNodes[lastIndex];
     const isBefore = firstNode === selection.getAnchorNode();
     const firstNodeParents = new Set(firstNode.getParents());
     const lastNodeParents = new Set(lastNode.getParents());
@@ -968,7 +968,14 @@ export function insertText(selection: Selection, text: string): void {
         lastNodeRemove = true;
         lastNode.remove();
       } else if (isTextNode(lastNode)) {
-        lastNode.spliceText(0, endOffset, '', false);
+        if (lastNode.isImmutable() || lastNode.isInert()) {
+          lastNodeRemove = true;
+          const textNode = createTextNode();
+          lastNode.replace(textNode);
+          lastNode = textNode;
+        } else {
+          lastNode.spliceText(0, endOffset, '', false);
+        }
         if (
           firstNode.getTextContent() === '' &&
           firstNode.getKey() !== selection.anchorKey

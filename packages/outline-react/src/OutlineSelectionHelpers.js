@@ -968,7 +968,7 @@ export function insertText(selection: Selection, text: string): void {
         lastNodeRemove = true;
         lastNode.remove();
       } else if (isTextNode(lastNode)) {
-        if (lastNode.isImmutable() || lastNode.isSegmented()) {
+        if (lastNode.isImmutable() || lastNode.isInert()) {
           lastNodeRemove = true;
           const textNode = createTextNode();
           lastNode.replace(textNode);

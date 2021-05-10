@@ -476,7 +476,13 @@ export class TextNode extends OutlineNode {
         if (offset === currentText.length) {
           this.insertAfter(textNode);
         } else {
-          const [, targetNode] = this.splitText(offset);
+          let targetNode;
+          const split = this.splitText(offset);
+          if (offset === 0) {
+            targetNode = split[0];
+          } else {
+            targetNode = split[1];
+          }
           targetNode.insertBefore(textNode);
         }
         if (restoreSelection) {

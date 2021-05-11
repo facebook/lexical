@@ -446,6 +446,9 @@ export class OutlineNode {
   getTextContent(includeInert?: boolean): string {
     return '';
   }
+  getTextContentSize(includeInert?: boolean): number {
+    return this.getTextContent(includeInert).length;
+  }
 
   // View
 

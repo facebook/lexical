@@ -33,6 +33,14 @@ import {
   isSegmentWordLike,
 } from './OutlineTextHelpers';
 
+function isImmutableOrInert(node: OutlineNode): boolean {
+  return node.isImmutable() || node.isInert();
+}
+
+function isSegmentedOrImmutableOrInert(node: OutlineNode): boolean {
+  return node.isSegmented() || isImmutableOrInert(node);
+}
+
 export function getNodesInRange(
   selection: Selection,
 ): {range: Array<NodeKey>, nodeMap: {[NodeKey]: Node}} {
@@ -480,6 +488,13 @@ export function deleteBackward(selection: Selection): void {
         }
         return;
       }
+    } else {
+      const focusNode = selection.getFocusNode();
+
+      if (focusNode.isSegmented()) {
+        removeSegment(focusNode, true);
+        return;
+      }
     }
   }
   removeText(selection);
@@ -489,6 +504,14 @@ export function deleteBackward(selection: Selection): void {
 export function deleteForward(selection: Selection): void {
   if (selection.isCaret()) {
     updateCaretSelectionForRange(selection, false, 'character');
+    if (!selection.isCaret()) {
+      const focusNode = selection.getFocusNode();
+
+      if (focusNode.isSegmented()) {
+        removeSegment(focusNode, false);
+        return;
+      }
+    }
   }
   removeText(selection);
   normalizeAnchorParent(selection);
@@ -524,17 +547,40 @@ function updateSelectionForNextSegmentedRange(
   isBackward: boolean,
   sibling: OutlineNode,
 ) {
-  const siblingTextContent = sibling.getTextContent();
-  let spaceIndex = isBackward
-    ? siblingTextContent.lastIndexOf(' ')
-    : siblingTextContent.indexOf(' ');
-  if (spaceIndex === -1) {
-    spaceIndex = isBackward ? 0 : siblingTextContent.length;
-  } else if (!isBackward) {
-    spaceIndex++;
-  }
   const key = sibling.getKey();
-  setSelectionFocus(selection, key, spaceIndex);
+  setSelectionFocus(
+    selection,
+    key,
+    isBackward ? 0 : sibling.getTextContentSize(),
+  );
+}
+
+function removeSegment(node: TextNode, isBackward: boolean): void {
+  const textContent = node.getTextContent();
+  const split = textContent.split(/\s/g);
+
+  if (isBackward) {
+    split.pop();
+  } else {
+    split.shift();
+  }
+  const nextTextContent = split.join('');
+  const sibling = isBackward
+    ? node.getNextSibling()
+    : node.getPreviousSibling();
+  if (isTextNode(sibling)) {
+    if (nextTextContent === '') {
+      node.remove();
+    } else {
+      node.setTextContent(nextTextContent);
+    }
+    if (isBackward) {
+      sibling.select(0, 0);
+    } else {
+      sibling.select();
+    }
+    sibling.getParentBlockOrThrow().normalizeTextNodes(true);
+  }
 }
 
 function getSurrogatePairOffset(str: string, isBackward: boolean): number {
@@ -550,12 +596,7 @@ function getPreviousNodeAndEndingOffset(
   index: number,
 ): [TextNode, number] {
   const prevSibling = node.getPreviousSibling();
-  if (
-    isTextNode(prevSibling) &&
-    !prevSibling.isSegmented() &&
-    !prevSibling.isImmutable() &&
-    !prevSibling.isInert()
-  ) {
+  if (isTextNode(prevSibling) && !isSegmentedOrImmutableOrInert(prevSibling)) {
     return [prevSibling, prevSibling.getTextContentSize()];
   }
   return [node, index];
@@ -609,7 +650,7 @@ export function updateCaretSelectionForRange(
         if (sibling === null) {
           return;
         }
-        if (sibling.isImmutable() || sibling.isInert()) {
+        if (isImmutableOrInert(sibling)) {
           updateSelectionForNextSiblingRange(selection, isBackward, sibling);
           return;
         } else if (sibling.isSegmented()) {
@@ -720,7 +761,7 @@ export function updateCaretSelectionForRange(
       } else if (isBackward && index === 0 && !isHoldingShift) {
         [node, index] = getPreviousNodeAndEndingOffset(node, index);
       }
-      if (node.isImmutable() || node.isInert()) {
+      if (isImmutableOrInert(node)) {
         updateSelectionForNextSiblingRange(selection, isBackward, node);
       } else if (node.isSegmented()) {
         updateSelectionForNextSegmentedRange(selection, isBackward, node);
@@ -911,15 +952,13 @@ export function insertText(selection: Selection, text: string): void {
       textNode.select();
       currentBlock.normalizeTextNodes(true);
       return;
-    } else if (
-      firstNode.isImmutable() ||
-      firstNode.isInert() ||
-      firstNode.isSegmented()
-    ) {
+    } else if (isImmutableOrInert(firstNode)) {
       const textNode = createTextNode(text);
       firstNode.replace(textNode);
       firstNode = textNode;
       textNode.select();
+      return;
+    } else if (firstNode.isSegmented()) {
       return;
     }
     const delCount = endOffset - startOffset;
@@ -936,61 +975,55 @@ export function insertText(selection: Selection, text: string): void {
     startOffset = isBefore ? anchorOffset : focusOffset;
     endOffset = isBefore ? focusOffset : anchorOffset;
 
-    if (firstNode.isImmutable() || firstNode.isInert()) {
+    if (isImmutableOrInert(firstNode)) {
       firstNodeRemove = true;
       const textNode = createTextNode(text);
       firstNode.replace(textNode);
       firstNode = textNode;
       textNode.select();
-    } else {
+    } else if (!firstNode.isSegmented()) {
       firstNode.spliceText(
         startOffset,
         firstNodeTextLength - startOffset,
         text,
         true,
       );
-      if (firstNode.isSegmented()) {
-        firstNode.selectNext(0, 0);
-        if (firstNode.getTextContent() === '') {
-          firstNode.remove();
-        }
-      } else {
-        firstNode.select(startOffset, startOffset);
-      }
+      firstNode.select(startOffset, startOffset);
     }
 
     if (!firstNodeParents.has(lastNode)) {
-      if (
-        isTextNode(lastNode) &&
-        endOffset === lastNode.getTextContentSize() &&
-        lastNode.getKey() !== selection.anchorKey
-      ) {
-        lastNodeRemove = true;
-        lastNode.remove();
-      } else if (isTextNode(lastNode)) {
-        if (lastNode.isImmutable() || lastNode.isInert()) {
-          lastNodeRemove = true;
-          const textNode = createTextNode();
-          lastNode.replace(textNode);
-          lastNode = textNode;
-        } else {
-          lastNode.spliceText(0, endOffset, '', false);
-        }
+      if (isTextNode(lastNode) && !lastNode.isSegmented()) {
         if (
-          firstNode.getTextContent() === '' &&
-          firstNode.getKey() !== selection.anchorKey
+          endOffset === lastNode.getTextContentSize() &&
+          lastNode.getKey() !== selection.anchorKey
         ) {
-          firstNodeRemove = true;
-          firstNode.remove();
+          lastNodeRemove = true;
+          lastNode.remove();
         } else {
-          let parent = lastNode.getParent();
-          while (parent !== null) {
-            if (parent.getChildrenSize() < 2) {
-              lastNodeParents.delete(parent);
-            }
-            parent = parent.getParent();
+          if (isImmutableOrInert(lastNode)) {
+            lastNodeRemove = true;
+            const textNode = createTextNode('');
+            lastNode.replace(textNode);
+            lastNode = textNode;
+          } else {
+            lastNode.spliceText(0, endOffset, '', false);
           }
-          firstNode.insertAfter(lastNode);
+          if (
+            firstNode.getTextContent() === '' &&
+            firstNode.getKey() !== selection.anchorKey
+          ) {
+            firstNodeRemove = true;
+            firstNode.remove();
+          } else {
+            let parent = lastNode.getParent();
+            while (parent !== null) {
+              if (parent.getChildrenSize() < 2) {
+                lastNodeParents.delete(parent);
+              }
+              parent = parent.getParent();
+            }
+            firstNode.insertAfter(lastNode);
+          }
         }
       }
     }

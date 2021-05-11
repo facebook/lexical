@@ -38,7 +38,7 @@ function isImmutableOrInert(node: OutlineNode): boolean {
 }
 
 function isSegmentedOrImmutableOrInert(node: OutlineNode): boolean {
-  return node.isSegmented() || node.isImmutable() || node.isInert();
+  return node.isSegmented() || isImmutableOrInert(node);
 }
 
 export function getNodesInRange(

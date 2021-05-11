@@ -992,38 +992,38 @@ export function insertText(selection: Selection, text: string): void {
     }
 
     if (!firstNodeParents.has(lastNode)) {
-      if (isTextNode(lastNode)) {
-        if (isImmutableOrInert(lastNode)) {
+      if (isTextNode(lastNode) && !lastNode.isSegmented()) {
+        if (
+          endOffset === lastNode.getTextContentSize() &&
+          lastNode.getKey() !== selection.anchorKey
+        ) {
           lastNodeRemove = true;
-          const textNode = createTextNode('');
-          lastNode.replace(textNode);
-          lastNode = textNode;
-        } else if (!lastNode.isSegmented()) {
-          if (
-            endOffset === lastNode.getTextContentSize() &&
-            lastNode.getKey() !== selection.anchorKey
-          ) {
-            lastNode.remove();
-            return;
+          lastNode.remove();
+        } else {
+          if (isImmutableOrInert(lastNode)) {
+            lastNodeRemove = true;
+            const textNode = createTextNode('');
+            lastNode.replace(textNode);
+            lastNode = textNode;
           } else {
             lastNode.spliceText(0, endOffset, '', false);
           }
-        }
-        if (
-          firstNode.getTextContent() === '' &&
-          firstNode.getKey() !== selection.anchorKey
-        ) {
-          firstNodeRemove = true;
-          firstNode.remove();
-        } else {
-          let parent = lastNode.getParent();
-          while (parent !== null) {
-            if (parent.getChildrenSize() < 2) {
-              lastNodeParents.delete(parent);
+          if (
+            firstNode.getTextContent() === '' &&
+            firstNode.getKey() !== selection.anchorKey
+          ) {
+            firstNodeRemove = true;
+            firstNode.remove();
+          } else {
+            let parent = lastNode.getParent();
+            while (parent !== null) {
+              if (parent.getChildrenSize() < 2) {
+                lastNodeParents.delete(parent);
+              }
+              parent = parent.getParent();
             }
-            parent = parent.getParent();
+            firstNode.insertAfter(lastNode);
           }
-          firstNode.insertAfter(lastNode);
         }
       }
     }

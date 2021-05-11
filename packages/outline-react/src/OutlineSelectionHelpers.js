@@ -999,7 +999,15 @@ export function insertText(selection: Selection, text: string): void {
           lastNode.replace(textNode);
           lastNode = textNode;
         } else if (!lastNode.isSegmented()) {
-          lastNode.spliceText(0, endOffset, '', false);
+          if (
+            endOffset === lastNode.getTextContentSize() &&
+            lastNode.getKey() !== selection.anchorKey
+          ) {
+            lastNode.remove();
+            return;
+          } else {
+            lastNode.spliceText(0, endOffset, '', false);
+          }
         }
         if (
           firstNode.getTextContent() === '' &&

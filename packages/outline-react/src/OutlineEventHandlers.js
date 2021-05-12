@@ -554,6 +554,16 @@ export function onNativeInput(
     const data = event.data;
     if (data) {
       insertText(selection, data);
+      if (isInsertText && anchorKey === selection.focusKey) {
+        const {anchorOffset, focusOffset} = window.getSelection();
+        // Re-adjust the selection to what the browser thinks it should be
+        if (
+          selection.anchorOffset !== anchorOffset ||
+          selection.focusOffset !== focusOffset
+        ) {
+          selection.setRange(anchorKey, anchorOffset, anchorKey, focusOffset);
+        }
+      }
     }
   });
 }

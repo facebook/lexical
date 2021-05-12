@@ -114,9 +114,8 @@ function updateEditor(
 
   if (pendingViewModel === null) {
     const currentViewModel = editor._viewModel;
-    pendingViewModel = editor._pendingViewModel = cloneViewModel(
-      currentViewModel,
-    );
+    pendingViewModel = editor._pendingViewModel =
+      cloneViewModel(currentViewModel);
     viewModelWasCloned = true;
   }
   const currentPendingViewModel = pendingViewModel;

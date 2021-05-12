@@ -132,12 +132,8 @@ export async function assertSelection(page, expected) {
       return path.reverse();
     };
 
-    const {
-      anchorNode,
-      anchorOffset,
-      focusNode,
-      focusOffset,
-    } = window.getSelection();
+    const {anchorNode, anchorOffset, focusNode, focusOffset} =
+      window.getSelection();
 
     return {
       anchorPath: getPathFromNode(anchorNode),

@@ -67,10 +67,8 @@ export default function CharacterLimit({
               if (existingOverflowNodeKey === node.getKey()) {
                 if (startOffset > existingOffset) {
                   const offset = startOffset - existingOffset;
-                  const [
-                    targetNode,
-                    nextOverflowNode,
-                  ] = existingOverflowNode.splitText(offset);
+                  const [targetNode, nextOverflowNode] =
+                    existingOverflowNode.splitText(offset);
                   targetNode.toggleOverflowed();
                   const parent = targetNode.getTopParentBlockOrThrow();
                   parent.normalizeTextNodes(true);

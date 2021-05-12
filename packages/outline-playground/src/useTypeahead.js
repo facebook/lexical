@@ -173,9 +173,10 @@ function createTypeaheadNode(text: string): TextNode {
 
 function useTypeaheadSuggestion(
   text: string,
-  query: (
-    text: string,
-  ) => {promise: () => Promise<string | null>, cancel: () => void},
+  query: (text: string) => {
+    promise: () => Promise<string | null>,
+    cancel: () => void,
+  },
 ) {
   const cancelRequest = useRef<() => void>(() => {});
   const requestTime = useRef<number>(0);

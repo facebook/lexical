@@ -41,9 +41,10 @@ function isSegmentedOrImmutableOrInert(node: OutlineNode): boolean {
   return node.isSegmented() || isImmutableOrInert(node);
 }
 
-export function getNodesInRange(
-  selection: Selection,
-): {range: Array<NodeKey>, nodeMap: {[NodeKey]: Node}} {
+export function getNodesInRange(selection: Selection): {
+  range: Array<NodeKey>,
+  nodeMap: {[NodeKey]: Node},
+} {
   const anchorNode = selection.getAnchorNode();
   const focusNode = selection.getFocusNode();
   const anchorOffset = selection.anchorOffset;

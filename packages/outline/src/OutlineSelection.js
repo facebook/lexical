@@ -142,12 +142,8 @@ export class Selection {
     if (resolvedSelectionNodesAndOffsets === null) {
       return;
     }
-    const [
-      anchorNode,
-      focusNode,
-      anchorOffset,
-      focusOffset,
-    ] = resolvedSelectionNodesAndOffsets;
+    const [anchorNode, focusNode, anchorOffset, focusOffset] =
+      resolvedSelectionNodesAndOffsets;
     this.anchorKey = anchorNode.__key;
     this.focusKey = focusNode.__key;
     this.anchorOffset = anchorOffset;
@@ -221,6 +217,12 @@ function resolveSelectionNodeAndOffset(
         resolvedOffset = resolvedNode.getTextContentSize();
       } else {
         resolvedNode = resolvedNode.getFirstTextNode();
+        resolvedOffset = 0;
+      }
+    } else if (isTextNode(resolvedNode)) {
+      if (moveSelectionToEnd) {
+        resolvedOffset = resolvedNode.getTextContentSize();
+      } else {
         resolvedOffset = 0;
       }
     }

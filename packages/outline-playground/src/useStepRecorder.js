@@ -148,12 +148,8 @@ export default function useStepRecorder(editor: OutlineEditor): React$Node {
       return null;
     }
 
-    const {
-      anchorNode,
-      anchorOffset,
-      focusNode,
-      focusOffset,
-    } = sanitizeSelectionWithEmptyTextNodes(browserSelection);
+    const {anchorNode, anchorOffset, focusNode, focusOffset} =
+      sanitizeSelectionWithEmptyTextNodes(browserSelection);
     return `
 {
   name: '<YOUR TEST NAME>',
@@ -282,12 +278,8 @@ export default function useStepRecorder(editor: OutlineEditor): React$Node {
           ) {
             return;
           }
-          const {
-            anchorNode,
-            anchorOffset,
-            focusNode,
-            focusOffset,
-          } = sanitizeSelectionWithEmptyTextNodes(browserSelection);
+          const {anchorNode, anchorOffset, focusNode, focusOffset} =
+            sanitizeSelectionWithEmptyTextNodes(browserSelection);
           pushStep('moveNativeSelection', [
             `[${getPathFromNodeToEditor(
               anchorNode,

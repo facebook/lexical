@@ -435,8 +435,7 @@ describe('OutlineSelection tests', () => {
       },
     },
     {
-      name:
-        'Should correctly handle empty paragraph blocks when moving backward',
+      name: 'Should correctly handle empty paragraph blocks when moving backward',
       inputs: [insertParagraph(), moveBackward()],
       expectedHTML:
         '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span></span></p>' +
@@ -449,8 +448,7 @@ describe('OutlineSelection tests', () => {
       },
     },
     {
-      name:
-        'Should correctly handle empty paragraph blocks when moving forward',
+      name: 'Should correctly handle empty paragraph blocks when moving forward',
       inputs: [
         insertParagraph(),
         moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 0),
@@ -872,8 +870,7 @@ describe('OutlineSelection tests', () => {
         },
       },
       {
-        name:
-          'Type a sentence, move the caret to the middle and move with the arrows to the start',
+        name: 'Type a sentence, move the caret to the middle and move with the arrows to the start',
         inputs: [
           insertText('this is weird test'),
           moveNativeSelection([0, 0, 0], 14, [0, 0, 0], 14),
@@ -890,8 +887,7 @@ describe('OutlineSelection tests', () => {
         },
       },
       {
-        name:
-          'Type a text and an immutable text, move the caret to the end of the first text',
+        name: 'Type a text and an immutable text, move the caret to the end of the first text',
         inputs: [
           insertText('Hello '),
           insertImmutableNode('Bob'),

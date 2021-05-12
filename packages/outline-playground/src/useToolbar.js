@@ -273,13 +273,15 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
   );
 
   const bold = useCallback(() => applyFormatText('bold'), [applyFormatText]);
-  const italic = useCallback(() => applyFormatText('italic'), [
-    applyFormatText,
-  ]);
+  const italic = useCallback(
+    () => applyFormatText('italic'),
+    [applyFormatText],
+  );
   const code = useCallback(() => applyFormatText('code'), [applyFormatText]);
-  const strikethrough = useCallback(() => applyFormatText('strikethrough'), [
-    applyFormatText,
-  ]);
+  const strikethrough = useCallback(
+    () => applyFormatText('strikethrough'),
+    [applyFormatText],
+  );
   const link = useCallback(() => {
     if (!isLink) {
       setEditMode(true);

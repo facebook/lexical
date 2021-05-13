@@ -123,6 +123,19 @@ describe('OutlineViewModel tests', () => {
     );
   });
 
+  test('stringify(2)', async () => {
+    await update((view) => {
+      const paragraph = ParagraphNodeModule.createParagraphNode();
+      const text = Outline.createTextNode('Hello world');
+      text.select(6, 11);
+      paragraph.append(text);
+      view.getRoot().append(paragraph);
+    });
+    const string = editor.getViewModel().stringify(2);
+
+    expect(string).toMatchSnapshot();
+  });
+
   test('ensure garbage collection works as expected', async () => {
     await update((view) => {
       const paragraph = ParagraphNodeModule.createParagraphNode();

@@ -1,0 +1,40 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`OutlineViewModel tests stringify(2) 1`] = `
+"{
+  \\"_nodeMap\\": {
+    \\"root\\": {
+      \\"__type\\": \\"root\\",
+      \\"__flags\\": 0,
+      \\"__key\\": \\"root\\",
+      \\"__parent\\": null,
+      \\"__children\\": [
+        \\"_7\\"
+      ]
+    },
+    \\"_7\\": {
+      \\"__type\\": \\"paragraph\\",
+      \\"__flags\\": 0,
+      \\"__key\\": \\"_7\\",
+      \\"__parent\\": \\"root\\",
+      \\"__children\\": [
+        \\"_8\\"
+      ]
+    },
+    \\"_8\\": {
+      \\"__type\\": \\"text\\",
+      \\"__flags\\": 0,
+      \\"__key\\": \\"_8\\",
+      \\"__parent\\": \\"_7\\",
+      \\"__text\\": \\"Hello world\\",
+      \\"__url\\": null
+    }
+  },
+  \\"_selection\\": {
+    \\"anchorKey\\": \\"_8\\",
+    \\"anchorOffset\\": 6,
+    \\"focusKey\\": \\"_8\\",
+    \\"focusOffset\\": 11
+  }
+}"
+`;

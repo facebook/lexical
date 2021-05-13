@@ -399,20 +399,24 @@ export class ViewModel {
   read<V>(callbackFn: (view: View) => V): V {
     return enterViewModelScope(callbackFn, this, null, true);
   }
-  stringify(): string {
+  stringify(space?: string | number): string {
     const selection = this._selection;
-    return JSON.stringify({
-      _nodeMap: this._nodeMap,
-      _selection:
-        selection === null
-          ? null
-          : {
-              anchorKey: selection.anchorKey,
-              anchorOffset: selection.anchorOffset,
-              focusKey: selection.focusKey,
-              focusOffset: selection.focusOffset,
-            },
-    });
+    return JSON.stringify(
+      {
+        _nodeMap: this._nodeMap,
+        _selection:
+          selection === null
+            ? null
+            : {
+                anchorKey: selection.anchorKey,
+                anchorOffset: selection.anchorOffset,
+                focusKey: selection.focusKey,
+                focusOffset: selection.focusOffset,
+              },
+      },
+      null,
+      space,
+    );
   }
 }
 

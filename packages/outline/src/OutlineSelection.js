@@ -280,8 +280,8 @@ function resolveSelectionNodesAndOffsets(
   if (resolveAnchorNodeAndOffset === null) {
     return null;
   }
-  const resolvedAnchorNode = resolveAnchorNodeAndOffset[0];
-  const resolvedAnchorOffset = resolveAnchorNodeAndOffset[1];
+  let resolvedAnchorNode = resolveAnchorNodeAndOffset[0];
+  let resolvedAnchorOffset = resolveAnchorNodeAndOffset[1];
   isDirty = resolveAnchorNodeAndOffset[2];
   const resolveFocusNodeAndOffset = resolveSelectionNodeAndOffset(
     focusDOM,
@@ -292,9 +292,37 @@ function resolveSelectionNodesAndOffsets(
   if (resolveFocusNodeAndOffset === null) {
     return null;
   }
-  const resolvedFocusNode = resolveFocusNodeAndOffset[0];
-  const resolvedFocusOffset = resolveFocusNodeAndOffset[1];
+  let resolvedFocusNode = resolveFocusNodeAndOffset[0];
+  let resolvedFocusOffset = resolveFocusNodeAndOffset[1];
   isDirty = resolveAnchorNodeAndOffset[2];
+
+  // If the cursor is at the bounds and is also on an immutable
+  // or segmented node, we can try and move the cursor to an
+  // adjacent sibling.
+  if (
+    resolvedAnchorNode === resolvedFocusNode &&
+    resolvedAnchorOffset === resolvedFocusOffset &&
+    (resolvedAnchorNode.isImmutable() || resolvedAnchorNode.isSegmented())
+  ) {
+    const textContentSize = resolvedAnchorNode.getTextContentSize();
+    const isAtStart = resolvedAnchorOffset === 0;
+    const isAtBoundary = isAtStart || resolvedAnchorOffset === textContentSize;
+
+    if (isAtBoundary) {
+      const sibling = isAtStart
+        ? resolvedAnchorNode.getPreviousSibling()
+        : resolvedAnchorNode.getNextSibling();
+      // Resolve the sibling
+      if (isTextNode(sibling)) {
+        const offset = isAtStart ? sibling.getTextContentSize() : 0;
+        resolvedAnchorNode = sibling;
+        resolvedFocusNode = sibling;
+        resolvedAnchorOffset = offset;
+        resolvedFocusOffset = offset;
+        isDirty = true;
+      }
+    }
+  }
 
   return [
     resolvedAnchorNode,

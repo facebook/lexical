@@ -12,6 +12,7 @@ import type {ViewModel} from './OutlineView';
 import type {OutlineEditor, EditorThemeClasses} from './OutlineEditor';
 import type {Selection} from './OutlineSelection';
 import type {Node as ReactNode} from 'react';
+import type {BlockNode} from './OutlineBlockNode';
 
 import {isTextNode, isBlockNode} from '.';
 import {
@@ -48,7 +49,7 @@ function getTextDirection(text: string): 'ltr' | 'rtl' | null {
   return null;
 }
 
-function handleElementTextDirection(element: HTMLElement): void {
+function reconcileBlockDirection(node: BlockNode, element: HTMLElement): void {
   if (forceTextDirection === null) {
     // $FlowFixMe: internal field
     const prevSubTreeTextContent: string = element.__outlineTextContent;
@@ -59,7 +60,9 @@ function handleElementTextDirection(element: HTMLElement): void {
         : getTextDirection(subTreeTextContent);
       if (direction === null || (hasEmptyTextContent && direction === 'ltr')) {
         element.removeAttribute('dir');
+        node.__dir = null;
       } else {
+        node.__dir = direction;
         element.dir = direction;
       }
       currentTextDirection = direction;
@@ -143,7 +146,7 @@ function createNode(
     const children = node.__children;
     const endIndex = children.length - 1;
     if (node.childrenNeedDirection()) {
-      createChildrenWithDirection(children, endIndex, dom);
+      createChildrenWithDirection(children, endIndex, node, dom);
     } else {
       createChildren(children, 0, endIndex, dom, null);
     }
@@ -169,12 +172,13 @@ function createNode(
 function createChildrenWithDirection(
   children: Array<NodeKey>,
   endIndex: number,
+  node: BlockNode,
   dom: HTMLElement,
 ): void {
   const previousSubTreeTextContent = subTreeTextContent;
   subTreeTextContent = '';
   createChildren(children, 0, endIndex, dom, null);
-  handleElementTextDirection(dom);
+  reconcileBlockDirection(node, dom);
   subTreeTextContent = previousSubTreeTextContent;
 }
 
@@ -194,13 +198,14 @@ function createChildren(
 function reconcileChildrenWithDirection(
   prevChildren: Array<NodeKey>,
   nextChildren: Array<NodeKey>,
+  node: BlockNode,
   dom: HTMLElement,
   isRoot: boolean,
 ): void {
   const previousSubTreeTextContent = subTreeTextContent;
   subTreeTextContent = '';
   reconcileChildren(prevChildren, nextChildren, dom, isRoot);
-  handleElementTextDirection(dom);
+  reconcileBlockDirection(node, dom);
   subTreeTextContent = previousSubTreeTextContent;
 }
 
@@ -308,7 +313,13 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
     if (childrenAreDifferent || hasDirtySubTree) {
       const isRoot = key === 'root';
       if (nextNode.childrenNeedDirection()) {
-        reconcileChildrenWithDirection(prevChildren, nextChildren, dom, isRoot);
+        reconcileChildrenWithDirection(
+          prevChildren,
+          nextChildren,
+          nextNode,
+          dom,
+          isRoot,
+        );
       } else {
         reconcileChildren(prevChildren, nextChildren, dom, isRoot);
       }

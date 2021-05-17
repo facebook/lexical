@@ -147,6 +147,13 @@ function checkIfLastKeyWasMaybeAndroidSoftKey(event: KeyboardEvent): void {
     event.key === 'Unidentified' && event.isComposing && event.keyCode === 229;
 }
 
+function isTopLevelBlockRTL(selection: Selection) {
+  const anchorNode = selection.getAnchorNode();
+  const topLevelBlock = anchorNode.getTopParentBlockOrThrow();
+  const direction = topLevelBlock.getDirection();
+  return direction === 'rtl';
+}
+
 export function onKeyDownForPlainText(
   event: KeyboardEvent,
   editor: OutlineEditor,
@@ -173,16 +180,17 @@ export function onKeyDownForPlainText(
       }
     }
     const isHoldingShift = event.shiftKey;
+    const isRTL = isTopLevelBlockRTL(selection);
 
     if (isMoveBackward(event)) {
-      if (shouldOverrideBrowserDefault(selection, isHoldingShift, true)) {
+      if (shouldOverrideBrowserDefault(selection, isHoldingShift, !isRTL)) {
         event.preventDefault();
-        moveBackward(selection, isHoldingShift);
+        moveBackward(selection, isHoldingShift, isRTL);
       }
     } else if (isMoveForward(event)) {
-      if (shouldOverrideBrowserDefault(selection, isHoldingShift, false)) {
+      if (shouldOverrideBrowserDefault(selection, isHoldingShift, isRTL)) {
         event.preventDefault();
-        moveForward(selection, isHoldingShift);
+        moveForward(selection, isHoldingShift, isRTL);
       }
     } else if (isParagraph(event) || isLineBreak(event)) {
       event.preventDefault();
@@ -195,10 +203,10 @@ export function onKeyDownForPlainText(
       deleteForward(selection);
     } else if (isMoveWordBackward(event)) {
       event.preventDefault();
-      moveWordBackward(selection, isHoldingShift);
+      moveWordBackward(selection, isHoldingShift, isRTL);
     } else if (isMoveWordForward(event)) {
       event.preventDefault();
-      moveWordForward(selection, isHoldingShift);
+      moveWordForward(selection, isHoldingShift, isRTL);
     } else if (isDeleteWordBackward(event)) {
       event.preventDefault();
       deleteWordBackward(selection);
@@ -238,16 +246,17 @@ export function onKeyDownForRichText(
       }
     }
     const isHoldingShift = event.shiftKey;
+    const isRTL = isTopLevelBlockRTL(selection);
 
     if (isMoveBackward(event)) {
-      if (shouldOverrideBrowserDefault(selection, isHoldingShift, true)) {
+      if (shouldOverrideBrowserDefault(selection, isHoldingShift, !isRTL)) {
         event.preventDefault();
-        moveBackward(selection, isHoldingShift);
+        moveBackward(selection, isHoldingShift, isRTL);
       }
     } else if (isMoveForward(event)) {
-      if (shouldOverrideBrowserDefault(selection, isHoldingShift, false)) {
+      if (shouldOverrideBrowserDefault(selection, isHoldingShift, isRTL)) {
         event.preventDefault();
-        moveForward(selection, isHoldingShift);
+        moveForward(selection, isHoldingShift, isRTL);
       }
     } else if (isLineBreak(event)) {
       event.preventDefault();
@@ -263,10 +272,10 @@ export function onKeyDownForRichText(
       deleteForward(selection);
     } else if (isMoveWordBackward(event)) {
       event.preventDefault();
-      moveWordBackward(selection, isHoldingShift);
+      moveWordBackward(selection, isHoldingShift, isRTL);
     } else if (isMoveWordForward(event)) {
       event.preventDefault();
-      moveWordForward(selection, isHoldingShift);
+      moveWordForward(selection, isHoldingShift, isRTL);
     } else if (isDeleteWordBackward(event)) {
       event.preventDefault();
       deleteWordBackward(selection);

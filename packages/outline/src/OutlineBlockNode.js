@@ -69,10 +69,12 @@ function combineAdjacentTextNodes(
 
 export class BlockNode extends OutlineNode {
   __children: Array<NodeKey>;
+  __dir: 'ltr' | 'rtl' | null;
 
   constructor(key?: string) {
     super(key);
     this.__children = [];
+    this.__dir = null;
   }
   getChildren(): Array<OutlineNode> {
     const self = this.getLatest();
@@ -159,6 +161,9 @@ export class BlockNode extends OutlineNode {
       }
     }
     return textContent;
+  }
+  getDirection(): 'ltr' | 'rtl' | null {
+    return this.__dir;
   }
   childrenNeedDirection(): boolean {
     return true;

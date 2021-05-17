@@ -83,12 +83,14 @@ describe('OutlineViewModel tests', () => {
     expect(root).toEqual({
       __children: ['_1'],
       __flags: 0,
+      __dir: null,
       __key: 'root',
       __parent: null,
       __type: 'root',
     });
     expect(paragraph).toEqual({
       __children: ['_2'],
+      __dir: null,
       __flags: 0,
       __key: '_1',
       __parent: 'root',
@@ -115,10 +117,9 @@ describe('OutlineViewModel tests', () => {
     const string = editor.getViewModel().stringify();
 
     expect(string).toEqual(
-      '{"_nodeMap":{' +
-        '"root":{"__type":"root","__flags":0,"__key":"root","__parent":null,"__children":["_4"]},' +
-        '"_4":{"__type":"paragraph","__flags":0,"__key":"_4","__parent":"root","__children":["_5"]},' +
-        '"_5":{"__type":"text","__flags":0,"__key":"_5","__parent":"_4","__text":"Hello world","__url":null}},' +
+      '{"_nodeMap":{"root":{"__type":"root","__flags":0,"__key":"root","__parent":null,"__children":["_4"],' +
+        '"__dir":null},"_4":{"__type":"paragraph","__flags":0,"__key":"_4","__parent":"root","__children":["_5"],' +
+        '"__dir":"ltr"},"_5":{"__type":"text","__flags":0,"__key":"_5","__parent":"_4","__text":"Hello world","__url":null}},' +
         '"_selection":{"anchorKey":"_5","anchorOffset":6,"focusKey":"_5","focusOffset":11}}',
     );
   });
@@ -154,6 +155,7 @@ describe('OutlineViewModel tests', () => {
     expect(viewModel._nodeMap).toEqual({
       root: {
         __children: [],
+        __dir: null,
         __flags: 0,
         __key: 'root',
         __parent: null,

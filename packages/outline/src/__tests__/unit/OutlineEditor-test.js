@@ -275,6 +275,7 @@ describe('OutlineEditor tests', () => {
       it('Parses the nodes of a stringified view model', async () => {
         expect(parsedRoot).toEqual({
           __children: [paragraphKey],
+          __dir: null,
           __flags: 0,
           __key: 'root',
           __parent: null,
@@ -282,6 +283,7 @@ describe('OutlineEditor tests', () => {
         });
         expect(parsedParagraph).toEqual({
           __children: [textKey],
+          __dir: 'ltr',
           __flags: 0,
           __key: paragraphKey,
           __parent: 'root',

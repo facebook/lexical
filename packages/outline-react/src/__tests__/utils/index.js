@@ -308,6 +308,7 @@ function moveNativeSelectionBackward() {
       bubbles: true,
       cancelable: true,
       key: 'ArrowLeft',
+      keyCode: 37,
     });
     target.dispatchEvent(keyDownEvent);
     if (!keyDownEvent.defaultPrevented) {
@@ -342,6 +343,7 @@ function moveNativeSelectionBackward() {
       bubbles: true,
       cancelable: true,
       key: 'ArrowLeft',
+      keyCode: 37,
     });
     target.dispatchEvent(keyUpEvent);
   } else {
@@ -360,6 +362,7 @@ function moveNativeSelectionForward() {
       bubbles: true,
       cancelable: true,
       key: 'ArrowRight',
+      keyCode: 39,
     });
     target.dispatchEvent(keyDownEvent);
     if (!keyDownEvent.defaultPrevented) {
@@ -389,6 +392,7 @@ function moveNativeSelectionForward() {
       bubbles: true,
       cancelable: true,
       key: 'ArrowRight',
+      keyCode: 39,
     });
     target.dispatchEvent(keyUpEvent);
   } else {
@@ -492,6 +496,7 @@ export async function applySelectionInputs(inputs, update, editor) {
                 cancelable: true,
                 ctrlKey: true,
                 key: 'z',
+                keyCode: 90,
               }),
             );
             break;
@@ -504,6 +509,7 @@ export async function applySelectionInputs(inputs, update, editor) {
                 ctrlKey: true,
                 shiftKey: true,
                 key: 'z',
+                keyCode: 90,
               }),
             );
             break;

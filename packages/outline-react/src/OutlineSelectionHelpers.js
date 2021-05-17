@@ -400,29 +400,33 @@ function moveCaretSelection(
 export function moveBackward(
   selection: Selection,
   isHoldingShift: boolean,
+  isRTL: boolean,
 ): void {
-  moveCaretSelection(selection, isHoldingShift, true, 'character');
+  moveCaretSelection(selection, isHoldingShift, !isRTL, 'character');
 }
 
 export function moveForward(
   selection: Selection,
   isHoldingShift: boolean,
+  isRTL: boolean,
 ): void {
-  moveCaretSelection(selection, isHoldingShift, false, 'character');
+  moveCaretSelection(selection, isHoldingShift, isRTL, 'character');
 }
 
 export function moveWordBackward(
   selection: Selection,
   isHoldingShift: boolean,
+  isRTL: boolean,
 ): void {
-  moveCaretSelection(selection, isHoldingShift, true, 'word');
+  moveCaretSelection(selection, isHoldingShift, !isRTL, 'word');
 }
 
 export function moveWordForward(
   selection: Selection,
   isHoldingShift: boolean,
+  isRTL: boolean,
 ): void {
-  moveCaretSelection(selection, isHoldingShift, false, 'word');
+  moveCaretSelection(selection, isHoldingShift, isRTL, 'word');
 }
 
 function normalizeAnchorParent(selection: Selection): void {

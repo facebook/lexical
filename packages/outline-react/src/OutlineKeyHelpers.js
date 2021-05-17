@@ -21,31 +21,31 @@ function isEnter(event: KeyboardEvent): boolean {
 }
 
 function isBackspace(event: KeyboardEvent): boolean {
-  return event.key === 'Backspace' || event.keyCode === 8;
+  return event.keyCode === 8;
 }
 
 function isDelete(event: KeyboardEvent): boolean {
-  return event.key === 'Delete' || event.keyCode === 46;
+  return event.keyCode === 46;
 }
 
 function isArrowLeft(event: KeyboardEvent): boolean {
-  return event.key === 'ArrowLeft' || event.keyCode === 37;
+  return event.keyCode === 37;
 }
 
 function isArrowRight(event: KeyboardEvent): boolean {
-  return event.key === 'ArrowRight' || event.keyCode === 39;
+  return event.keyCode === 39;
 }
 
 export function isBold(event: KeyboardEvent): boolean {
-  return event.key === 'b' && controlOrMeta(event);
+  return event.keyCode === 66 && controlOrMeta(event);
 }
 
 export function isItalic(event: KeyboardEvent): boolean {
-  return event.key === 'i' && controlOrMeta(event);
+  return event.keyCode === 73 && controlOrMeta(event);
 }
 
 export function isUnderline(event: KeyboardEvent): boolean {
-  return event.key === 'u' && controlOrMeta(event);
+  return event.keyCode === 85 && controlOrMeta(event);
 }
 
 export function isParagraph(event: KeyboardEvent): boolean {
@@ -73,12 +73,12 @@ export function isDeleteLineForward(event: KeyboardEvent): boolean {
 }
 
 export function isDeleteBackward(event: KeyboardEvent): boolean {
-  const {key, altKey, metaKey, ctrlKey} = event;
+  const {keyCode, altKey, metaKey, ctrlKey} = event;
   if (IS_APPLE) {
     if (altKey || metaKey) {
       return false;
     }
-    return isBackspace(event) || (key === 'h' && ctrlKey);
+    return isBackspace(event) || (keyCode === 72 && ctrlKey);
   }
   if (ctrlKey || altKey || metaKey) {
     return false;
@@ -87,12 +87,12 @@ export function isDeleteBackward(event: KeyboardEvent): boolean {
 }
 
 export function isDeleteForward(event: KeyboardEvent): boolean {
-  const {key, shiftKey, altKey, metaKey, ctrlKey} = event;
+  const {keyCode, shiftKey, altKey, metaKey, ctrlKey} = event;
   if (IS_APPLE) {
     if (shiftKey || altKey || metaKey) {
       return false;
     }
-    return isDelete(event) || (key === 'd' && ctrlKey);
+    return isDelete(event) || (keyCode === 68 && ctrlKey);
   }
   if (ctrlKey || altKey || metaKey) {
     return false;
@@ -101,25 +101,27 @@ export function isDeleteForward(event: KeyboardEvent): boolean {
 }
 
 export function isUndo(event: KeyboardEvent): boolean {
-  return event.key === 'z' && !event.shiftKey && controlOrMeta(event);
+  return event.keyCode === 90 && !event.shiftKey && controlOrMeta(event);
 }
 
 export function isRedo(event: KeyboardEvent): boolean {
-  const {key, shiftKey, ctrlKey} = event;
+  const {keyCode, shiftKey, ctrlKey} = event;
   if (IS_MAC) {
-    return key === 'z' && event.metaKey && shiftKey;
+    return keyCode === 90 && event.metaKey && shiftKey;
   }
-  return (key === 'y' && ctrlKey) || (key === 'z' && ctrlKey && shiftKey);
+  return (
+    (keyCode === 122 && ctrlKey) || (keyCode === 90 && ctrlKey && shiftKey)
+  );
 }
 
 export function isTab(event: KeyboardEvent): boolean {
   return (
-    event.key === 'Tab' && !event.altKey && !event.ctrlKey && !event.metaKey
+    event.keyCode === 90 && !event.altKey && !event.ctrlKey && !event.metaKey
   );
 }
 
 export function isSelectAll(event: KeyboardEvent): boolean {
-  return event.key === 'a' && (IS_MAC ? event.metaKey : event.ctrlKey);
+  return event.keyCode === 65 && (IS_MAC ? event.metaKey : event.ctrlKey);
 }
 
 export function isMoveWordBackward(event: KeyboardEvent): boolean {

@@ -3,6 +3,7 @@ node_modules
 .pnp.js
 
 build
+coverage
 dist
 npm
 .DS_Store

@@ -5,6 +5,9 @@ const common = {
 };
 
 module.exports = {
+  collectCoverage: true,
+  collectCoverageFrom: ['packages/**/src/*.js'],
+  coverageReporters: ['json', 'text'],
   projects: [
     {
       ...common,

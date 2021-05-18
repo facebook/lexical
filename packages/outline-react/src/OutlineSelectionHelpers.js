@@ -569,7 +569,7 @@ function removeSegment(node: TextNode, isBackward: boolean): void {
   } else {
     split.shift();
   }
-  const nextTextContent = split.join('');
+  const nextTextContent = split.join(' ');
   const sibling = isBackward
     ? node.getNextSibling()
     : node.getPreviousSibling();

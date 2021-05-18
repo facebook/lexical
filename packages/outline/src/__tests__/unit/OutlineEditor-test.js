@@ -10,7 +10,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import Outline from 'outline';
+import Outline, {View} from 'outline';
 import ParagraphNodeModule from 'outline-extensions/ParagraphNode';
 
 function sanitizeHTML(html) {
@@ -29,6 +29,8 @@ describe('OutlineEditor tests', () => {
   afterEach(() => {
     document.body.removeChild(container);
     container = null;
+
+    jest.restoreAllMocks();
   });
 
   function useOutlineEditor(editorElementRef) {
@@ -362,6 +364,29 @@ describe('OutlineEditor tests', () => {
           '<div contenteditable="true" data-outline-editor="true"><p><span></span></p><p>' +
             '<span></span></p></div>',
         );
+      });
+
+      it('focus() should be able to restore selection back to the editor', async (done) => {
+        editor.update((view: View) => {
+          const paragraph = ParagraphNodeModule.createParagraphNode();
+          const text = Outline.createTextNode('Hello world');
+          text.select(1, 1);
+          paragraph.append(text);
+          view.getRoot().append(paragraph);
+        });
+
+        const spyFn = jest.spyOn(
+          window.Selection.prototype,
+          'setBaseAndExtent',
+        );
+
+        editor.focus(() => {
+          expect(spyFn).toHaveBeenCalledTimes(1);
+          expect(spyFn.mock.calls[0][1]).toBe(1);
+          expect(spyFn.mock.calls[0][3]).toBe(1);
+
+          done();
+        });
       });
     });
   });

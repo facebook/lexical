@@ -364,4 +364,16 @@ export class OutlineEditor {
     this._placeholderText = placeholderText;
     reconcilePlaceholder(this, this._viewModel);
   }
+  focus(callbackFn?: () => void): void {
+    this.update((view: View) => {
+      const selection = view.getSelection();
+      if (selection !== null) {
+        // Marking the selection dirty will force the selection back to it
+        selection.isDirty = true;
+      } else {
+        const lastTextNode = view.getRoot().getLastTextNode();
+        lastTextNode?.select();
+      }
+    }, callbackFn);
+  }
 }

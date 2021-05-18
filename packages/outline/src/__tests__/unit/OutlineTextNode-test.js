@@ -251,22 +251,6 @@ describe('OutlineTextNode tests', () => {
     });
   });
 
-  test('selectEnd()', async () => {
-    await update((view) => {
-      const paragraphNode = ParagraphNodeModule.createParagraphNode();
-      const textNode = Outline.createTextNode('Hello World');
-      paragraphNode.append(textNode);
-      view.getRoot().append(paragraphNode);
-
-      const selection = textNode.selectEnd();
-
-      expect(selection.getAnchorNode()).toBe(textNode);
-      expect(selection.anchorOffset).toBe(11);
-      expect(selection.getFocusNode()).toBe(textNode);
-      expect(selection.focusOffset).toBe(11);
-    });
-  });
-
   test('selectNext()', async () => {
     await update((view) => {
       const paragraphNode = ParagraphNodeModule.createParagraphNode();
@@ -308,6 +292,10 @@ describe('OutlineTextNode tests', () => {
         [2, undefined],
         [2, 11],
       ],
+      [
+        [undefined, undefined],
+        [11, 11],
+      ]
     ])(
       'select(...%p)',
       async (

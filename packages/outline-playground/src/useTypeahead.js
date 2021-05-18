@@ -119,7 +119,7 @@ export default function useTypeahead(editor: OutlineEditor): void {
                 prevTextNode.getTextContent() +
                   typeaheadTextNode.getTextContent(true),
               );
-              prevTextNode.selectEnd();
+              prevTextNode.select();
             }
             typeaheadTextNode?.remove();
             typeaheadNodeKey.current = null;

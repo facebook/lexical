@@ -295,7 +295,7 @@ describe('OutlineTextNode tests', () => {
       [
         [undefined, undefined],
         [11, 11],
-      ]
+      ],
     ])(
       'select(...%p)',
       async (

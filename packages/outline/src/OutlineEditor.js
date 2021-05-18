@@ -372,7 +372,9 @@ export class OutlineEditor {
         selection.isDirty = true;
       } else {
         const lastTextNode = view.getRoot().getLastTextNode();
-        lastTextNode?.select();
+        if (lastTextNode !== null) {
+          lastTextNode.select();
+        }
       }
     }, callbackFn);
   }

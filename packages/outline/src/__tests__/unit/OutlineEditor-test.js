@@ -10,7 +10,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import Outline, {View} from 'outline';
+import Outline from 'outline';
 import ParagraphNodeModule from 'outline-extensions/ParagraphNode';
 
 function sanitizeHTML(html) {
@@ -367,7 +367,7 @@ describe('OutlineEditor tests', () => {
       });
 
       it('focus() should be able to restore selection back to the editor', async (done) => {
-        editor.update((view: View) => {
+        editor.update((view) => {
           const paragraph = ParagraphNodeModule.createParagraphNode();
           const text = Outline.createTextNode('Hello world');
           text.select(1, 1);

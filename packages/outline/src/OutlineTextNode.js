@@ -388,11 +388,6 @@ export class TextNode extends OutlineNode {
     writableSelf.__text = text;
     return writableSelf;
   }
-  selectEnd(): Selection {
-    errorOnReadOnly();
-    const text = this.getTextContent();
-    return this.select(text.length, text.length);
-  }
   select(_anchorOffset?: number, _focusOffset?: number): Selection {
     errorOnReadOnly();
     let anchorOffset = _anchorOffset;

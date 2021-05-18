@@ -1051,7 +1051,7 @@ export function moveEnd(selection: Selection): void {
     return;
   }
 
-  anchorNode.selectEnd();
+  anchorNode.select();
 }
 
 export function selectAll(selection: Selection): void {

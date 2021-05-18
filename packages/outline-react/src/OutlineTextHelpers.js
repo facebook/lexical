@@ -12,6 +12,9 @@ import type {RootNode, TextNode} from 'outline';
 import {isTextNode, isBlockNode} from 'outline';
 import {IS_SAFARI} from './OutlineEnv';
 
+const wordBreakPolyfillRegex =
+  /[\s.,\\\/#!$%\^&\*;:{}=\-`~()\uD800-\uDBFF\uDC00-\uDFFF\u3000-\u303F]/;
+
 export function findTextIntersectionFromCharacters(
   root: RootNode,
   targetCharacters: number,
@@ -118,7 +121,7 @@ export function getWordsFromString(string: string): Array<Segment> {
   for (i = 0; i < string.length; i++) {
     const char = string[i];
 
-    if (/[\s.,\\\/#!$%\^&\*;:{}=\-`~()\uD800-\uDBFF\uDC00-\uDFFF]/.test(char)) {
+    if (wordBreakPolyfillRegex.test(char)) {
       if (wordString !== '') {
         pushSegment(segments, i, wordString, true);
         wordString = '';

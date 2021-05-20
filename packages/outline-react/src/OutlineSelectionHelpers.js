@@ -726,6 +726,11 @@ export function updateCaretSelectionForRange(
             const nextIndex = segment.index;
 
             if (isSegmentWordLike(segment)) {
+              // If we already found a word on the same node,
+              // use that instead.
+              if (node === foundWordNode) {
+                break;
+              }
               index = nextIndex;
               foundWordNode = node;
             } else if (foundWordNode !== null) {

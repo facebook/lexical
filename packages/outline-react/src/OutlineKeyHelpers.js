@@ -110,7 +110,7 @@ export function isRedo(event: KeyboardEvent): boolean {
     return keyCode === 90 && event.metaKey && shiftKey;
   }
   return (
-    (keyCode === 122 && ctrlKey) || (keyCode === 90 && ctrlKey && shiftKey)
+    (keyCode === 89 && ctrlKey) || (keyCode === 90 && ctrlKey && shiftKey)
   );
 }
 

@@ -348,7 +348,7 @@ describe('OutlineSelection tests', () => {
       name: 'Creation of an immutable node',
       inputs: [insertImmutableNode('Dominic Gannaway')],
       expectedHTML:
-        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><span></span>' +
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span></span>' +
         '<span>Dominic Gannaway</span>' +
         '<span></span></p></div>',
       expectedSelection: {
@@ -366,7 +366,7 @@ describe('OutlineSelection tests', () => {
         convertToImmutableNode(),
       ],
       expectedHTML:
-        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><span></span>' +
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span></span>' +
         '<span>Dominic Gannaway</span>' +
         '<span></span></p></div>',
       expectedSelection: {
@@ -392,7 +392,7 @@ describe('OutlineSelection tests', () => {
       name: 'Creation of a segmented node',
       inputs: [insertSegmentedNode('Dominic Gannaway')],
       expectedHTML:
-        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><span></span>' +
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span></span>' +
         '<span>Dominic Gannaway</span>' +
         '<span></span></p></div>',
       expectedSelection: {
@@ -410,7 +410,7 @@ describe('OutlineSelection tests', () => {
         convertToSegmentedNode(),
       ],
       expectedHTML:
-        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><span></span>' +
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span></span>' +
         '<span>Dominic Gannaway</span>' +
         '<span></span></p></div>',
       expectedSelection: {
@@ -424,7 +424,7 @@ describe('OutlineSelection tests', () => {
       name: 'Deletion of part of a segmented node',
       inputs: [insertSegmentedNode('Dominic Gannaway'), deleteBackward()],
       expectedHTML:
-        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><span></span>' +
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span></span>' +
         '<span>Dominic</span>' +
         '<span></span></p></div>',
       expectedSelection: {

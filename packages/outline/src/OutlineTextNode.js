@@ -14,7 +14,7 @@ import type {EditorThemeClasses} from './OutlineEditor';
 import {OutlineNode} from './OutlineNode';
 import {getWritableNode} from './OutlineNode';
 import {getSelection, makeSelection} from './OutlineSelection';
-import {invariant, isArray} from './OutlineUtils';
+import {getTextDirection, invariant, isArray} from './OutlineUtils';
 import {errorOnReadOnly} from './OutlineView';
 import {
   IS_CODE,
@@ -490,9 +490,25 @@ export class TextNode extends OutlineNode {
         index = 0;
       }
     }
+    const topBlock = this.getTopParentBlockOrThrow();
+    const topBlockWasEmpty = text === '' && topBlock.getTextContent() === '';
     const updatedText =
       text.slice(0, index) + handledText + text.slice(index + delCount);
     writableSelf.__text = updatedText;
+    // Handle text direction
+    const prevDirection = topBlock.getDirection();
+    if (prevDirection === null || topBlockWasEmpty) {
+      const direction = getTextDirection(updatedText);
+      if (direction !== null) {
+        topBlock.setDirection(direction);
+      }
+    } else if (
+      prevDirection !== null &&
+      updatedText === '' &&
+      topBlock.getTextContent() === ''
+    ) {
+      topBlock.setDirection(null);
+    }
     // If the hash gets removed, remove the hashtag status
     if (isHashtag && updatedText.indexOf('#') === -1) {
       const flags = this.getTextNodeFormatFlags('hashtag', null);

@@ -12,7 +12,6 @@ import type {ViewModel} from './OutlineView';
 import type {OutlineEditor, EditorThemeClasses} from './OutlineEditor';
 import type {Selection} from './OutlineSelection';
 import type {Node as ReactNode} from 'react';
-import type {BlockNode} from './OutlineBlockNode';
 
 import {isTextNode, isBlockNode} from '.';
 import {
@@ -23,54 +22,19 @@ import {
 import {
   IS_IMMUTABLE,
   IS_SEGMENTED,
-  RTL_REGEX,
-  LTR_REGEX,
   IS_INERT,
+  IS_RTL,
+  IS_LTR,
 } from './OutlineConstants';
 
 let subTreeTextContent = '';
 let editorTextContent = '';
-let forceTextDirection = null;
-let currentTextDirection = null;
 let activeEditorThemeClasses: EditorThemeClasses;
 let activeEditor: OutlineEditor;
 let activeDirtySubTrees: Set<NodeKey>;
 let activePrevNodeMap: NodeMapType;
 let activeNextNodeMap: NodeMapType;
 let activeViewModelIsDirty: boolean = false;
-
-function getTextDirection(text: string): 'ltr' | 'rtl' | null {
-  if (RTL_REGEX.test(text)) {
-    return 'rtl';
-  }
-  if (LTR_REGEX.test(text)) {
-    return 'ltr';
-  }
-  return null;
-}
-
-function reconcileBlockDirection(node: BlockNode, element: HTMLElement): void {
-  if (forceTextDirection === null) {
-    // $FlowFixMe: internal field
-    const prevSubTreeTextContent: string = element.__outlineTextContent;
-    if (prevSubTreeTextContent !== subTreeTextContent) {
-      const hasEmptyTextContent = subTreeTextContent === '';
-      const direction = hasEmptyTextContent
-        ? currentTextDirection
-        : getTextDirection(subTreeTextContent);
-      if (direction === null || (hasEmptyTextContent && direction === 'ltr')) {
-        element.removeAttribute('dir');
-        node.__dir = null;
-      } else {
-        node.__dir = direction;
-        element.dir = direction;
-      }
-      currentTextDirection = direction;
-      // $FlowFixMe: internal field
-      element.__outlineTextContent = subTreeTextContent;
-    }
-  }
-}
 
 function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
   const node = activePrevNodeMap[key];
@@ -142,14 +106,15 @@ function createNode(
       editorTextContent += text;
     }
   } else if (isBlockNode(node)) {
+    if (flags & IS_LTR) {
+      dom.dir = 'ltr';
+    } else if (flags & IS_RTL) {
+      dom.dir = 'rtl';
+    }
     // Handle block children
     const children = node.__children;
     const endIndex = children.length - 1;
-    if (node.childrenNeedDirection()) {
-      createChildrenWithDirection(children, endIndex, node, dom);
-    } else {
-      createChildren(children, 0, endIndex, dom, null);
-    }
+    createChildren(children, 0, endIndex, dom, null);
   }
   if (parentDOM !== null) {
     if (insertDOM !== null) {
@@ -169,19 +134,6 @@ function createNode(
   return dom;
 }
 
-function createChildrenWithDirection(
-  children: Array<NodeKey>,
-  endIndex: number,
-  node: BlockNode,
-  dom: HTMLElement,
-): void {
-  const previousSubTreeTextContent = subTreeTextContent;
-  subTreeTextContent = '';
-  createChildren(children, 0, endIndex, dom, null);
-  reconcileBlockDirection(node, dom);
-  subTreeTextContent = previousSubTreeTextContent;
-}
-
 function createChildren(
   children: Array<NodeKey>,
   _startIndex: number,
@@ -189,23 +141,14 @@ function createChildren(
   dom: null | HTMLElement,
   insertDOM: null | HTMLElement,
 ): void {
+  const previousSubTreeTextContent = subTreeTextContent;
+  subTreeTextContent = '';
   let startIndex = _startIndex;
   for (; startIndex <= endIndex; ++startIndex) {
     createNode(children[startIndex], dom, insertDOM);
   }
-}
-
-function reconcileChildrenWithDirection(
-  prevChildren: Array<NodeKey>,
-  nextChildren: Array<NodeKey>,
-  node: BlockNode,
-  dom: HTMLElement,
-  isRoot: boolean,
-): void {
-  const previousSubTreeTextContent = subTreeTextContent;
-  subTreeTextContent = '';
-  reconcileChildren(prevChildren, nextChildren, dom, isRoot);
-  reconcileBlockDirection(node, dom);
+  // $FlowFixMe: internal field
+  dom.__outlineTextContent = subTreeTextContent;
   subTreeTextContent = previousSubTreeTextContent;
 }
 
@@ -215,6 +158,8 @@ function reconcileChildren(
   dom: HTMLElement,
   isRoot: boolean,
 ): void {
+  const previousSubTreeTextContent = subTreeTextContent;
+  subTreeTextContent = '';
   const prevChildrenLength = prevChildren.length;
   const nextChildrenLength = nextChildren.length;
   if (prevChildrenLength === 1 && nextChildrenLength === 1) {
@@ -254,6 +199,9 @@ function reconcileChildren(
       dom,
     );
   }
+  // $FlowFixMe: internal field
+  dom.__outlineTextContent = subTreeTextContent;
+  subTreeTextContent = previousSubTreeTextContent;
 }
 
 function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
@@ -305,6 +253,19 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
     editorTextContent += text;
     return;
   } else if (isBlockNode(prevNode) && isBlockNode(nextNode)) {
+    const prevFlags = prevNode.__flags;
+    const nextFlags = nextNode.__flags;
+    if (nextFlags & IS_LTR) {
+      if ((prevFlags & IS_LTR) === 0) {
+        dom.dir = 'ltr';
+      }
+    } else if (nextFlags & IS_RTL) {
+      if ((prevFlags & IS_RTL) === 0) {
+        dom.dir = 'rtl';
+      }
+    } else if (prevFlags & IS_LTR || prevFlags & IS_RTL) {
+      dom.removeAttribute('dir');
+    }
     // Reconcile block children
     const prevChildren = prevNode.__children;
     const nextChildren = nextNode.__children;
@@ -312,17 +273,7 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
 
     if (childrenAreDifferent || hasDirtySubTree) {
       const isRoot = key === 'root';
-      if (nextNode.childrenNeedDirection()) {
-        reconcileChildrenWithDirection(
-          prevChildren,
-          nextChildren,
-          nextNode,
-          dom,
-          isRoot,
-        );
-      } else {
-        reconcileChildren(prevChildren, nextChildren, dom, isRoot);
-      }
+      reconcileChildren(prevChildren, nextChildren, dom, isRoot);
     }
   }
 }
@@ -558,9 +509,6 @@ function reconcileRoot(
   editor: OutlineEditor,
   dirtySubTrees: Set<NodeKey>,
 ): void {
-  // TODO: take this value from Editor props, default to null;
-  // This will over-ride any sub-tree text direction properties.
-  forceTextDirection = null;
   subTreeTextContent = '';
   editorTextContent = '';
   // Rather than pass around a load of arguments through the stack recursively

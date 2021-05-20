@@ -60,6 +60,7 @@ exports[`Mentions Can enter and backspace part of the Luke Skywalker mention 3`]
 exports[`Mentions Can enter and backspace part of the Luke Skywalker mention 4`] = `
 <p
   class="editor-paragraph"
+  dir="ltr"
 >
   <span>
     ﻿
@@ -127,6 +128,7 @@ exports[`Mentions Can enter and delete part of the Luke Skywalker mention 3`] = 
 exports[`Mentions Can enter and delete part of the Luke Skywalker mention 4`] = `
 <p
   class="editor-paragraph"
+  dir="ltr"
 >
   <span>
     ﻿

@@ -28,10 +28,6 @@ export class ListItemNode extends BlockNode {
     return clone;
   }
 
-  childrenNeedDirection(): false {
-    return false;
-  }
-
   // View
 
   createDOM(editorThemeClasses: EditorThemeClasses): HTMLElement {

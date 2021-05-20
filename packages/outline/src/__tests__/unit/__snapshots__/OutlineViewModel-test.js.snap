@@ -10,8 +10,7 @@ exports[`OutlineViewModel tests stringify(2) 1`] = `
       \\"__parent\\": null,
       \\"__children\\": [
         \\"_7\\"
-      ],
-      \\"__dir\\": null
+      ]
     },
     \\"_7\\": {
       \\"__type\\": \\"paragraph\\",
@@ -20,8 +19,7 @@ exports[`OutlineViewModel tests stringify(2) 1`] = `
       \\"__parent\\": \\"root\\",
       \\"__children\\": [
         \\"_8\\"
-      ],
-      \\"__dir\\": \\"ltr\\"
+      ]
     },
     \\"_8\\": {
       \\"__type\\": \\"text\\",

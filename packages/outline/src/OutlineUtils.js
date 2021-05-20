@@ -9,6 +9,8 @@
 
 import type {OutlineEditor} from './OutlineEditor';
 
+import {RTL_REGEX, LTR_REGEX} from './OutlineConstants';
+
 export const emptyFunction = () => {};
 
 let keyCounter = 0;
@@ -65,4 +67,14 @@ export function isSelectionWithinEditor(
     editorElement.contains(anchorDOM) &&
     editorElement.contains(focusDOM)
   );
+}
+
+export function getTextDirection(text: string): 'ltr' | 'rtl' | null {
+  if (RTL_REGEX.test(text)) {
+    return 'rtl';
+  }
+  if (LTR_REGEX.test(text)) {
+    return 'ltr';
+  }
+  return null;
 }

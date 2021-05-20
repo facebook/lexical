@@ -18,7 +18,13 @@ import {
 } from './OutlineNode';
 import {getSelection, Selection} from './OutlineSelection';
 import {errorOnReadOnly} from './OutlineView';
-import {IS_IMMUTABLE, IS_INERT, IS_SEGMENTED} from './OutlineConstants';
+import {
+  IS_IMMUTABLE,
+  IS_INERT,
+  IS_LTR,
+  IS_RTL,
+  IS_SEGMENTED,
+} from './OutlineConstants';
 
 function combineAdjacentTextNodes(
   textNodes: Array<TextNode>,
@@ -69,12 +75,10 @@ function combineAdjacentTextNodes(
 
 export class BlockNode extends OutlineNode {
   __children: Array<NodeKey>;
-  __dir: 'ltr' | 'rtl' | null;
 
   constructor(key?: string) {
     super(key);
     this.__children = [];
-    this.__dir = null;
   }
   getChildren(): Array<OutlineNode> {
     const self = this.getLatest();
@@ -163,10 +167,8 @@ export class BlockNode extends OutlineNode {
     return textContent;
   }
   getDirection(): 'ltr' | 'rtl' | null {
-    return this.__dir;
-  }
-  childrenNeedDirection(): boolean {
-    return true;
+    const flags = this.__flags;
+    return flags & IS_LTR ? 'ltr' : flags & IS_RTL ? 'rtl' : null;
   }
 
   // Mutators
@@ -252,6 +254,23 @@ export class BlockNode extends OutlineNode {
   }
   canInsertTab(): boolean {
     return false;
+  }
+  setDirection(direction: 'ltr' | 'rtl' | null): this {
+    errorOnReadOnly();
+    const self = getWritableNode(this);
+    const flags = self.__flags;
+    if (flags & IS_LTR) {
+      self.__flags ^= IS_LTR;
+    }
+    if (flags & IS_RTL) {
+      self.__flags ^= IS_RTL;
+    }
+    if (direction === 'ltr') {
+      self.__flags |= IS_LTR;
+    } else if (direction === 'rtl') {
+      self.__flags |= IS_RTL;
+    }
+    return self;
   }
 }
 

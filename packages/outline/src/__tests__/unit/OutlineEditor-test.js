@@ -100,7 +100,7 @@ describe('OutlineEditor tests', () => {
     });
 
     expect(container.innerHTML).toBe(
-      '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span>This works!</span></p></div>',
+      '<div contenteditable="true" data-outline-editor="true"><p><span>This works!</span></p></div>',
     );
   });
 
@@ -141,7 +141,7 @@ describe('OutlineEditor tests', () => {
     await Promise.resolve().then();
 
     expect(container.innerHTML).toBe(
-      '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span>Not changed</span></p></div>',
+      '<div contenteditable="true" data-outline-editor="true"><p><span>Not changed</span></p></div>',
     );
 
     ReactTestUtils.act(() => {
@@ -153,7 +153,7 @@ describe('OutlineEditor tests', () => {
 
     expect(listener).toHaveBeenCalledTimes(3);
     expect(container.innerHTML).toBe(
-      '<span contenteditable="true" data-outline-editor="true"><p dir="ltr"><span>Change successful</span></p></span>',
+      '<span contenteditable="true" data-outline-editor="true"><p><span>Change successful</span></p></span>',
     );
   });
 
@@ -277,7 +277,6 @@ describe('OutlineEditor tests', () => {
       it('Parses the nodes of a stringified view model', async () => {
         expect(parsedRoot).toEqual({
           __children: [paragraphKey],
-          __dir: null,
           __flags: 0,
           __key: 'root',
           __parent: null,
@@ -285,7 +284,6 @@ describe('OutlineEditor tests', () => {
         });
         expect(parsedParagraph).toEqual({
           __children: [textKey],
-          __dir: 'ltr',
           __flags: 0,
           __key: paragraphKey,
           __parent: 'root',
@@ -342,7 +340,7 @@ describe('OutlineEditor tests', () => {
         });
 
         expect(sanitizeHTML(container.innerHTML)).toBe(
-          '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span>Some text</span></p></div>',
+          '<div contenteditable="true" data-outline-editor="true"><p><span>Some text</span></p></div>',
         );
       });
 

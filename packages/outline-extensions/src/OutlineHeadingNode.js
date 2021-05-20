@@ -65,6 +65,8 @@ export class HeadingNode extends BlockNode {
 
   insertNewAfter(): ParagraphNode {
     const newBlock = createParagraphNode();
+    const direction = this.getDirection();
+    newBlock.setDirection(direction);
     this.insertAfter(newBlock);
     return newBlock;
   }

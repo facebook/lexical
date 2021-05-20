@@ -3,6 +3,7 @@
 exports[`Regression test #231 Does not generate segment error when editing empty text nodes 1`] = `
 <p
   class="editor-paragraph"
+  dir="ltr"
 >
   <span>
     ﻿

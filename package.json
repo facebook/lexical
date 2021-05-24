@@ -10,6 +10,11 @@
   "workspaces": [
     "packages/*"
   ],
+  "engines": {
+    "npm": ">=7",
+    "yarn": ">=1"
+  },
+  "engineStrict": true,
   "scripts": {
     "start": "npm run build && npm run start --prefix packages/outline-playground",
     "dev": "concurrently \"npm:watch\" \"npm run start --prefix packages/outline-playground\"",

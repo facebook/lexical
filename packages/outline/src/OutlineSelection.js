@@ -226,7 +226,7 @@ function resolveSelectionNodeAndOffset(
     return null;
   }
   const resolvedTextNode = resolvedNode;
-  const isComposing = editor.isComposing() ;
+  const isComposing = editor.isComposing();
   // Because we use a special character for whitespace,
   // we need to adjust offsets to 0 when the text is
   // really empty.

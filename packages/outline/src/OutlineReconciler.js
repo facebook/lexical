@@ -628,7 +628,7 @@ function reconcileSelection(
   // Apply the updated selection to the DOM. Note: this will trigger
   // a "selectionchange" event, although it will be asynchronous.
   try {
-    console.log(anchorOffset, focusOffset)
+    console.log(anchorOffset, focusOffset);
 
     domSelection.setBaseAndExtent(
       anchorDOMTarget,

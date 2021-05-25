@@ -299,11 +299,7 @@ export class TextNode extends OutlineNode {
       // $FlowFixMe: should always be an element
       const prevInnerDOM: HTMLElement = dom.firstChild;
       if (prevInnerDOM == null) {
-        if (__DEV__) {
-          invariant(false, 'Should never happen');
-        } else {
-          invariant();
-        }
+        invariant(false, 'updateDOM: prevInnerDOM is null or undefined');
       }
       const nextInnerDOM = document.createElement(nextInnerTag);
       createTextInnerDOM(
@@ -323,11 +319,7 @@ export class TextNode extends OutlineNode {
         // $FlowFixMe: should always be an element
         innerDOM = dom.firstChild;
         if (innerDOM == null) {
-          if (__DEV__) {
-            invariant(false, 'Should never happen');
-          } else {
-            invariant();
-          }
+          invariant(false, 'updateDOM: innerDOM is null or undefined');
         }
       }
     }
@@ -359,14 +351,7 @@ export class TextNode extends OutlineNode {
   setURL(url: string | null): TextNode {
     errorOnReadOnly();
     if (this.isImmutable()) {
-      if (__DEV__) {
-        invariant(
-          false,
-          'setURL: can only be used on non-immutable text nodes',
-        );
-      } else {
-        invariant();
-      }
+      invariant(false, 'setURL: can only be used on non-immutable text nodes');
     }
     const writableSelf = getWritableNode(this);
     writableSelf.__url = url;
@@ -375,14 +360,10 @@ export class TextNode extends OutlineNode {
   setTextContent(text: string): TextNode {
     errorOnReadOnly();
     if (this.isImmutable()) {
-      if (__DEV__) {
-        invariant(
-          false,
-          'setTextContent: can only be used on non-immutable text nodes',
-        );
-      } else {
-        invariant();
-      }
+      invariant(
+        false,
+        'setTextContent: can only be used on non-immutable text nodes',
+      );
     }
     const writableSelf = getWritableNode(this);
     writableSelf.__text = text;
@@ -396,14 +377,10 @@ export class TextNode extends OutlineNode {
     const text = this.getTextContent();
     const key = this.__key;
     if (key === null) {
-      if (__DEV__) {
-        invariant(
-          false,
-          'TODO: validate nodes have keys in a more generic way',
-        );
-      } else {
-        invariant();
-      }
+      invariant(
+        false,
+        'select: TODO? validate nodes have keys in a more generic way',
+      );
     }
     if (typeof text === 'string') {
       const lastOffset = text.length;
@@ -432,14 +409,10 @@ export class TextNode extends OutlineNode {
   ): TextNode {
     errorOnReadOnly();
     if (this.isImmutable()) {
-      if (__DEV__) {
-        invariant(
-          false,
-          'spliceText: can only be used on non-immutable text nodes',
-        );
-      } else {
-        invariant();
-      }
+      invariant(
+        false,
+        'spliceText: can only be used on non-immutable text nodes',
+      );
     }
     const isHashtag = this.isHashtag();
     let skipSelectionRestoration = false;
@@ -517,22 +490,14 @@ export class TextNode extends OutlineNode {
     if (restoreSelection && !skipSelectionRestoration) {
       const key = writableSelf.__key;
       if (key === null) {
-        if (__DEV__) {
-          invariant(
-            false,
-            'TODO: validate nodes have keys in a more generic way',
-          );
-        } else {
-          invariant();
-        }
+        invariant(
+          false,
+          'spliceText: TODO? validate nodes have keys in a more generic way',
+        );
       }
       const selection = getSelection();
       if (selection === null) {
-        if (__DEV__) {
-          invariant(false, 'spliceText: selection not found');
-        } else {
-          invariant();
-        }
+        invariant(false, 'spliceText: selection not found');
       }
       const newOffset = offset + handledTextLength;
       selection.setRange(key, newOffset, key, newOffset);
@@ -542,14 +507,10 @@ export class TextNode extends OutlineNode {
   splitText(...splitOffsets: Array<number>): Array<TextNode> {
     errorOnReadOnly();
     if (this.isImmutable()) {
-      if (__DEV__) {
-        invariant(
-          false,
-          'splitText: can only be used on non-immutable text nodes',
-        );
-      } else {
-        invariant();
-      }
+      invariant(
+        false,
+        'splitText: can only be used on non-immutable text nodes',
+      );
     }
     const textContent = this.getTextContent();
     const key = this.__key;

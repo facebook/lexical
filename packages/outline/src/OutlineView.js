@@ -55,57 +55,41 @@ let isProcessingTextNodeTransforms = false;
 
 export function errorOnProcessingTextNodeTransforms(): void {
   if (isProcessingTextNodeTransforms) {
-    if (__DEV__) {
-      invariant(
-        false,
-        'Editor.update() cannot be used within a text node transform.',
-      );
-    } else {
-      invariant();
-    }
+    invariant(
+      false,
+      'Editor.update() cannot be used within a text node transform.',
+    );
   }
 }
 
 export function errorOnReadOnly(): void {
   if (isReadOnlyMode) {
-    if (__DEV__) {
-      invariant(false, 'Cannot use method in read-only mode.');
-    } else {
-      invariant();
-    }
+    invariant(false, 'Cannot use method in read-only mode.');
   }
 }
 
 export function getActiveViewModel(): ViewModel {
   if (activeViewModel === null) {
-    if (__DEV__) {
-      invariant(
-        false,
-        'Unable to find an active view model. ' +
-          'View methods or node methods can only be used ' +
-          'synchronously during the callback of ' +
-          'editor.update() or viewModel.read().',
-      );
-    } else {
-      invariant();
-    }
+    invariant(
+      false,
+      'Unable to find an active view model. ' +
+        'View methods or node methods can only be used ' +
+        'synchronously during the callback of ' +
+        'editor.update() or viewModel.read().',
+    );
   }
   return activeViewModel;
 }
 
 export function getActiveEditor(): OutlineEditor {
   if (activeEditor === null) {
-    if (__DEV__) {
-      invariant(
-        false,
-        'Unable to find an active editor. ' +
-          'View methods or node methods can only be used ' +
-          'synchronously during the callback of ' +
-          'editor.update() or viewModel.read().',
-      );
-    } else {
-      invariant();
-    }
+    invariant(
+      false,
+      'Unable to find an active editor. ' +
+        'View methods or node methods can only be used ' +
+        'synchronously during the callback of ' +
+        'editor.update() or viewModel.read().',
+    );
   }
   return activeEditor;
 }

@@ -55,11 +55,7 @@ export function getNodesInRange(selection: Selection): {
   if (anchorNode === focusNode) {
     const firstNode = anchorNode.getLatest().clone();
     if (!isTextNode(firstNode)) {
-      if (__DEV__) {
-        invariant(false, 'Should never happen');
-      } else {
-        invariant();
-      }
+      invariant(false, 'getNodesInRange: firstNode is not a text node');
     }
     const isBefore = focusOffset > anchorOffset;
     startOffset = isBefore ? anchorOffset : focusOffset;
@@ -122,20 +118,12 @@ export function getNodesInRange(selection: Selection): {
             // parent key.
             node = node.getLatest().clone();
             if (!isBlockNode(node)) {
-              if (__DEV__) {
-                invariant(false, 'Should never happen');
-              } else {
-                invariant();
-              }
+              invariant(false, 'getNodesInRange: node is not a block node');
             }
             const childrenKeys = node.__children;
             const index = childrenKeys.indexOf(sourceParentKey);
             if (index === -1) {
-              if (__DEV__) {
-                invariant(false, 'Should never happen');
-              } else {
-                invariant();
-              }
+              invariant(false, 'getNodesInRange: child is not inside parent');
             }
             childrenKeys.splice(0, index + 1);
             includeTopLevelBlock = true;
@@ -175,11 +163,7 @@ export function formatText(
   let lastNode = selectedNodes[lastIndex];
 
   if (!isTextNode(firstNode) || !isTextNode(lastNode)) {
-    if (__DEV__) {
-      invariant(false, 'formatText: firstNode/lastNode not a text node');
-    } else {
-      invariant();
-    }
+    invariant(false, 'formatText: firstNode/lastNode not a text node');
   }
   const firstNodeText = firstNode.getTextContent();
   const firstNodeTextLength = firstNodeText.length;
@@ -211,11 +195,7 @@ export function formatText(
       }
       textNode.select();
       if (currentBlock === null) {
-        if (__DEV__) {
-          invariant(false, 'formatText: currentBlock not be found');
-        } else {
-          invariant();
-        }
+        invariant(false, 'formatText: currentBlock not be found');
       }
       currentBlock.normalizeTextNodes(true);
     }
@@ -879,11 +859,7 @@ export function insertNodes(
   if (isBlockNode(target)) {
     const lastChild = target.getLastTextNode();
     if (!isTextNode(lastChild)) {
-      if (__DEV__) {
-        invariant(false, 'Should never happen');
-      } else {
-        invariant();
-      }
+      invariant(false, 'insertNodes: lastChild not a text node');
     }
     lastChild.select();
     if (siblings.length !== 0) {
@@ -933,11 +909,7 @@ export function insertText(selection: Selection, text: string): void {
   const focusOffset = selection.focusOffset;
   let firstNode = selectedNodes[0];
   if (!isTextNode(firstNode)) {
-    if (__DEV__) {
-      invariant(false, 'insertText: firstNode not a a text node');
-    } else {
-      invariant();
-    }
+    invariant(false, 'insertText: firstNode not a a text node');
   }
   const firstNodeText = firstNode.getTextContent();
   const firstNodeTextLength = firstNodeText.length;

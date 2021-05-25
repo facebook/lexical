@@ -18,14 +18,15 @@ let keyCounter = 0;
 // invariant(condition, message) will refine types based on "condition", and
 // if "condition" is false will throw an error. This function is special-cased
 // in flow itself, so we can't name it anything else.
-export function invariant(cond?: boolean, message?: string) {
-  if (!cond) {
-    const err = new Error(
-      message || 'Encountered Invariant Violation. Use DEV mode to see error.',
-    );
-    err.name = 'Invariant Violation';
-    throw err;
-  }
+export function invariant(
+  condition: boolean,
+  format: string,
+  ...args: Array<string>
+) {
+  throw new Error(
+    'Internal Outline error: invariant() is meant to be replaced at compile ' +
+      'time. There is no runtime version.',
+  );
 }
 
 export function generateRandomKey(): string {

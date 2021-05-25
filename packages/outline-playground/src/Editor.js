@@ -13,7 +13,6 @@ import useOutlineAutoFormatter from 'outline-react/useOutlineAutoFormatter';
 import useToolbar from './useToolbar';
 import useHashtags from './useHashtags';
 import BlockControls from './BlockControls';
-import useStepRecorder from './useStepRecorder';
 import CharacterLimit from './CharacterLimit';
 import {Typeahead} from './Typeahead';
 
@@ -139,46 +138,56 @@ function ContentEditable({
   );
 }
 
-export function RichTextEditor({
+export const useRichTextEditor = ({
   onChange,
   isReadOnly,
   isCharLimit,
   isAutocomplete,
-}: Props): React.MixedElement {
+}: Props): [OutlineEditor, React.MixedElement] => {
   const editorElementRef = useRef(null);
   const editor = useOutlineEditor(editorElementRef, 'Enter some rich text...');
-  const toolbar = useToolbar(editor);
   const mentionsTypeahead = useMentions(editor);
   const props = useOutlineRichText(editor, isReadOnly);
+  const toolbar = useToolbar(editor);
   useOutlineOnChange(editor, onChange);
-  const stepRecorder = useStepRecorder(editor);
   useEmojis(editor);
   useHashtags(editor);
   useOutlineAutoFormatter(editor);
 
-  return (
-    <>
-      <ContentEditable
-        props={props}
-        isReadOnly={isReadOnly}
-        editorElementRef={editorElementRef}
-      />
-      {mentionsTypeahead}
-      {toolbar}
-      {stepRecorder}
-      <BlockControls editor={editor} />
-      {isCharLimit && <CharacterLimit editor={editor} />}
-      {isAutocomplete && <Typeahead editor={editor} />}
-    </>
-  );
-}
+  const element = useMemo(() => {
+    return (
+      <>
+        <ContentEditable
+          props={props}
+          isReadOnly={isReadOnly}
+          editorElementRef={editorElementRef}
+        />
+        {mentionsTypeahead}
+        {toolbar}
+        <BlockControls editor={editor} />
+        {isCharLimit && <CharacterLimit editor={editor} />}
+        {isAutocomplete && <Typeahead editor={editor} />}
+      </>
+    );
+  }, [
+    props,
+    isReadOnly,
+    isCharLimit,
+    isAutocomplete,
+    mentionsTypeahead,
+    toolbar,
+    editor,
+  ]);
 
-export function PlainTextEditor({
+  return [editor, element];
+};
+
+export const usePlainTextEditor = ({
   onChange,
   isReadOnly,
   isCharLimit,
   isAutocomplete,
-}: Props): React$Node {
+}: Props): [OutlineEditor, React.MixedElement] => {
   const editorElementRef = useRef(null);
   const editor = useOutlineEditor(editorElementRef, 'Enter some plain text...');
   const mentionsTypeahead = useMentions(editor);
@@ -186,19 +195,22 @@ export function PlainTextEditor({
   useOutlineOnChange(editor, onChange);
   useEmojis(editor);
   useHashtags(editor);
-  const stepRecorder = useStepRecorder(editor);
 
-  return (
-    <>
-      <ContentEditable
-        props={props}
-        isReadOnly={isReadOnly}
-        editorElementRef={editorElementRef}
-      />
-      {mentionsTypeahead}
-      {stepRecorder}
-      {isCharLimit && <CharacterLimit editor={editor} />}
-      {isAutocomplete && <Typeahead editor={editor} />}
-    </>
+  const element = useMemo(
+    () => (
+      <>
+        <ContentEditable
+          props={props}
+          isReadOnly={isReadOnly}
+          editorElementRef={editorElementRef}
+        />
+        {mentionsTypeahead}
+        {isCharLimit && <CharacterLimit editor={editor} />}
+        {isAutocomplete && <Typeahead editor={editor} />}
+      </>
+    ),
+    [props, mentionsTypeahead, isReadOnly, isCharLimit, isAutocomplete, editor],
   );
-}
+
+  return [editor, element];
+};

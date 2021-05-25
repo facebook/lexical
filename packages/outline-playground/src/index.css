@@ -74,7 +74,7 @@ header h1 {
   top: 10px;
   left: 10px;
   user-select: none;
-  white-space: 'nowrap';
+  white-space: nowrap;
   display: inline-block;
   pointer-events: none;
 }
@@ -106,7 +106,7 @@ header h1 {
 .editor-shell div.editor span.editor-text-link,
 .editor-shell div.editor strong.editor-text-link,
 .editor-shell div.editor em.editor-text-link {
-  color: rgb(33,111,219);
+  color: rgb(33, 111, 219);
 }
 
 .editor-shell div.editor blockquote {
@@ -142,44 +142,62 @@ pre {
   white-space: pre-wrap;
 }
 
-#step-recorder-button {
+.editor-dev-toolbar {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  display: flex;
+}
+
+.editor-dev-button {
   display: block;
   width: 40px;
   height: 40px;
   font-size: 12px;
-  padding: 10px 11px;
-  border-radius:  20px;
+  padding: 10px 10px;
+  border-radius: 20px;
   border: none;
   cursor: pointer;
   outline: none;
-  box-shadow:  0px 1px 10px rgba(0,0,0, 0.3);
-  position: fixed;
-  right: 20px;
-  bottom: 20px;
+  box-shadow: 0px 1px 10px rgba(0, 0, 0, 0.3);
   background-color: #444;
 }
 
-#step-recorder-button:hover {
+.editor-dev-button + .editor-dev-button {
+  margin-left: 8px;
+}
+
+.editor-dev-button::after {
+  content: "";
+  display: block;
+  width: 20px;
+  height: 20px;
+  background-repeat: no-repeat;
+  filter: invert(1);
+}
+
+.editor-dev-button:hover {
   background-color: #555;
 }
 
-#step-recorder-button.recording {
+.editor-dev-button.active {
   background-color: rgb(233, 35, 35);
 }
 
-#step-recorder-button span {
-  width: 20px;
-  height: 20px;
-  display: block;
+#options-button::after {
+  background-image: url(https://static.xx.fbcdn.net/rsrc.php/v3/y9/r/Vn1r5cFcNrX.png);
+  background-position: 0 -679px;
+}
+
+#step-recorder-button::after {
   background-image: url(https://static.xx.fbcdn.net/rsrc.php/v3/yM/r/t_wyvBug7cH.png);
   background-position: 0 -466px;
-  filter: invert(1);
 }
 
 #mentions-typeahead {
   position: fixed;
   background: #fff;
-  box-shadow:  0px 5px 10px rgba(0,0,0, 0.3);
+  box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.3);
   border-radius: 8px;
   z-index: 3;
 }
@@ -218,7 +236,7 @@ pre {
   margin-top: -6px;
   opacity: 0;
   background-color: #fff;
-  box-shadow:  0px 5px 10px rgba(0,0,0, 0.3);
+  box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.3);
   border-radius: 8px;
   transition: opacity 0.5s;
 }
@@ -228,7 +246,7 @@ pre {
   height: 20px;
   display: inline-block;
   padding: 6px;
-  border-radius:  8px;
+  border-radius: 8px;
   cursor: pointer;
   margin: 0 2px;
 }
@@ -283,10 +301,10 @@ pre {
   display: inline-block;
   margin: 0 2px;
   padding: 8px 12px;
-  border-radius:  15px;
+  border-radius: 15px;
   background-color: rgb(240, 242, 245);
   font-size: 15px;
-  color: rgb(5,5,5);
+  color: rgb(5, 5, 5);
   min-width: 200px;
   border: 0;
   outline: 0;
@@ -314,7 +332,7 @@ pre {
 }
 
 #toolbar .link-input a {
-  color: rgb(33,111,219);
+  color: rgb(33, 111, 219);
   text-decoration: none;
   display: block;
 }
@@ -335,7 +353,7 @@ pre {
   width: 62px;
   height: 32px;
   box-sizing: border-box;
-  box-shadow: rgba(0,0,0,0.1) 0px 1px 2px 0px;
+  box-shadow: rgba(0, 0, 0, 0.1) 0px 1px 2px 0px;
   top: 16px;
   z-index: 10;
   border-radius: 8px;
@@ -482,7 +500,7 @@ pre {
   z-index: 5;
   display: block;
   position: absolute;
-  box-shadow: 0 12px 28px 0 rgba(0,0,0,0.2),0 2px 4px 0 rgba(0,0,0,0.1),inset 0 0 0 1px rgba(255,255,255,0.5);
+  box-shadow: 0 12px 28px 0 rgba(0, 0, 0, 0.2), 0 2px 4px 0 rgba(0, 0, 0, 0.1), inset 0 0 0 1px rgba(255, 255, 255, 0.5);
   border-radius: 8px;
   min-width: 100px;
   min-height: 40px;
@@ -573,33 +591,6 @@ pre {
   background-position: 0 -343px;
 }
 
-#options-button {
-  display: block;
-  width: 40px;
-  height: 40px;
-  font-size: 12px;
-  padding: 10px 10px;
-  border-radius:  20px;
-  border: none;
-  cursor: pointer;
-  outline: none;
-  box-shadow:  0px 1px 10px rgba(0,0,0, 0.3);
-  position: fixed;
-  right: 70px;
-  bottom: 20px;
-  background-color: #444;
-  z-index: 1;
-}
-
-#options-button span {
-  width: 20px;
-  height: 20px;
-  display: block;
-  background-image: url(https://static.xx.fbcdn.net/rsrc.php/v3/y9/r/Vn1r5cFcNrX.png);
-  background-position: 0 -679px;
-  filter: invert(1);
-}
-
 .switches {
   z-index: 6;
   position: fixed;
@@ -610,12 +601,12 @@ pre {
 
 @keyframes slide-in {
   0% {
-      opacity: 0;
-      transform: translateX(200px);
+    opacity: 0;
+    transform: translateX(200px);
   }
   100% {
-      opacity: 1;
-      transform: translateX(0);
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 
@@ -650,7 +641,6 @@ pre {
   height: 24px;
   box-sizing: border-box;
   border-radius: 12px;
-  border: 0;
   width: 44px;
   display: inline-block;
   vertical-align: middle;

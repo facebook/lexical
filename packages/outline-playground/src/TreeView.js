@@ -102,7 +102,13 @@ export default function TreeView({
     return res;
   }, [viewModel]);
 
-  return <pre>{content}</pre>;
+  return (
+    <div className="tree-view-output">
+      <pre>
+        {content}
+      </pre>
+    </div>
+  );
 }
 
 function normalize(text) {

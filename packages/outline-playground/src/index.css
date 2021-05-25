@@ -131,15 +131,21 @@ header h1 {
   list-style-type: disc;
 }
 
-pre {
+.tree-view-output,
+.step-recorder-output,
+.test-recorder-output {
   margin: 20px auto 20px auto;
-  max-width: 580px;
+  max-width: 600px;
+}
+
+pre {
   background: #222;
   color: #fff;
   padding: 10px;
   font-size: 12px;
-  overflow: hidden;
+  overflow: auto;
   white-space: pre-wrap;
+  max-height: 250px;
 }
 
 .editor-dev-toolbar {
@@ -184,6 +190,42 @@ pre {
   background-color: rgb(233, 35, 35);
 }
 
+.test-recorder-toolbar {
+  display: flex;
+}
+
+.test-recorder-button {
+  display: block;
+  width: 32px;
+  height: 32px;
+  font-size: 10px;
+  padding: 6px 6px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  outline: none;
+  box-shadow: 1px 2px 2px rgba(0, 0, 0, 0.4);
+  background-color: #222;
+  transition: box-shadow 50ms ease-out;
+}
+
+.test-recorder-button:active {
+  box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.test-recorder-button + .test-recorder-button {
+  margin-left: 4px;
+}
+
+.test-recorder-button::after {
+  content: "";
+  display: block;
+  width: 20px;
+  height: 20px;
+  background-repeat: no-repeat;
+  filter: invert(1);
+}
+
 #options-button::after {
   background-image: url(https://static.xx.fbcdn.net/rsrc.php/v3/y9/r/Vn1r5cFcNrX.png);
   background-position: 0 -679px;
@@ -192,6 +234,30 @@ pre {
 #step-recorder-button::after {
   background-image: url(https://static.xx.fbcdn.net/rsrc.php/v3/yM/r/t_wyvBug7cH.png);
   background-position: 0 -466px;
+}
+
+#test-recorder-button::after {
+  background-image: url(https://static.xx.fbcdn.net/rsrc.php/v3/yM/r/t_wyvBug7cH.png);
+  background-position: 0 -172px;
+}
+
+#test-recorder-button-snapshot {
+  margin-right: auto;
+}
+
+#test-recorder-button-snapshot::after {
+  background-image: url(https://static.xx.fbcdn.net/rsrc.php/v3/yM/r/t_wyvBug7cH.png);
+  background-position: 0 -571px;
+}
+
+#test-recorder-button-copy::after {
+  background-image: url(https://static.xx.fbcdn.net/rsrc.php/v3/yM/r/t_wyvBug7cH.png);
+  background-position: 0 -928px;
+}
+
+#test-recorder-button-download::after {
+  background-image: url(https://static.xx.fbcdn.net/rsrc.php/v3/yM/r/t_wyvBug7cH.png);
+  background-position: 0 -948px;
 }
 
 #mentions-typeahead {

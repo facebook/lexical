@@ -12,7 +12,7 @@
 // during build.
 
 function formatProdErrorMessage(code) {
-  throw new Error(
+  throw Error(
     `Minified Outline error #${code}; see codes.json for the full message or ` +
       'use the non-minified dev environment for full errors and additional ' +
       'helpful warnings.',

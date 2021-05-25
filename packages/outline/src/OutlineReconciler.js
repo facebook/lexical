@@ -232,11 +232,7 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
   if (nextNode.updateDOM(prevNode, dom, activeEditorThemeClasses)) {
     const replacementDOM = createNode(key, null, null);
     if (parentDOM === null) {
-      if (__DEV__) {
-        invariant(false, 'should never happen');
-      } else {
-        invariant();
-      }
+      invariant(false, 'reconcileNode: parentDOM is null');
     }
     parentDOM.replaceChild(replacementDOM, dom);
     destroyNode(key, null);
@@ -326,11 +322,7 @@ function findIndexInPrevChildren(
       return i;
     }
   }
-  if (__DEV__) {
-    invariant(false, 'Should never happen');
-  } else {
-    invariant();
-  }
+  invariant(false, 'findIndexInPrevChildren: index in prevChildren not found');
 }
 
 // Disclaimer: this logic was adapted from Vue (MIT):
@@ -423,11 +415,10 @@ function reconcileNodeChildren(
             getElementByKeyOrThrow(activeEditor, prevStartKey),
           );
         } else {
-          if (__DEV__) {
-            invariant(false, 'Should never happen');
-          } else {
-            invariant();
-          }
+          invariant(
+            false,
+            'reconcileNodeChildren: keyToMove to was not nextStartKey',
+          );
         }
       }
       nextStartKey = nextChildren[++nextStartIndex];
@@ -658,11 +649,7 @@ function getDOMTextNodeFromElement(element: HTMLElement): Text {
     }
     node = node.firstChild;
   }
-  if (__DEV__) {
-    invariant(false, 'Should never happen');
-  } else {
-    invariant();
-  }
+  invariant(false, 'getDOMTextNodeFromElement: text node not found');
 }
 
 export function storeDOMWithKey(
@@ -671,11 +658,7 @@ export function storeDOMWithKey(
   editor: OutlineEditor,
 ): void {
   if (key === null) {
-    if (__DEV__) {
-      invariant(false, 'storeDOMWithNodeKey failed');
-    } else {
-      invariant();
-    }
+    invariant(false, 'storeDOMWithNodeKey: key was null');
   }
   const keyToDOMMap = editor._keyToDOMMap;
   // $FlowFixMe: internal field
@@ -705,14 +688,10 @@ export function getElementByKeyOrThrow(
 ): HTMLElement {
   const element = editor._keyToDOMMap.get(key);
   if (element === undefined) {
-    if (__DEV__) {
-      invariant(
-        false,
-        `Reconcilation: could not find DOM element for node key "${key}"`,
-      );
-    } else {
-      invariant();
-    }
+    invariant(
+      false,
+      'Reconcilation: could not find DOM element for node key "${key}"',
+    );
   }
   return element;
 }

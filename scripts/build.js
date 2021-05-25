@@ -9,6 +9,7 @@ const closure = require('./plugins/closure-plugin');
 const nodeResolve = require('@rollup/plugin-node-resolve').default;
 const commonjs = require('@rollup/plugin-commonjs');
 const replace = require('@rollup/plugin-replace');
+const extractErrorCodes = require('./error-codes/extract-errors');
 
 const license = ` * Copyright (c) Facebook, Inc. and its affiliates.
  *
@@ -76,6 +77,12 @@ const externals = [
   ...Object.values(wwwMappings),
 ];
 
+const errorCodeOpts = {
+  errorMapFilePath: 'scripts/error-codes/codes.json',
+};
+
+const findAndRecordErrorCodes = extractErrorCodes(errorCodeOpts);
+
 async function build(name, inputFile, outputFile) {
   const inputOptions = {
     input: inputFile,
@@ -100,6 +107,13 @@ async function build(name, inputFile, outputFile) {
       }
     },
     plugins: [
+      // Extract error codes from invariant() messages into a file.
+      {
+        transform(source) {
+          findAndRecordErrorCodes(source);
+          return source;
+        },
+      },
       nodeResolve(),
       babel({
         babelHelpers: 'bundled',
@@ -107,8 +121,23 @@ async function build(name, inputFile, outputFile) {
         babelrc: false,
         configFile: false,
         presets: ['@babel/preset-react'],
-        plugins: ['@babel/plugin-transform-flow-strip-types'],
+        plugins: [
+          '@babel/plugin-transform-flow-strip-types',
+          [
+            require('./error-codes/transform-error-messages'),
+            {noMinify: !isProduction},
+          ],
+        ],
       }),
+      {
+        resolveId(importee, importer) {
+          if (importee === 'formatProdErrorMessage') {
+            return path.resolve(
+              './scripts/error-codes/formatProdErrorMessage.js',
+            );
+          }
+        },
+      },
       commonjs(),
       replace(
         Object.assign(

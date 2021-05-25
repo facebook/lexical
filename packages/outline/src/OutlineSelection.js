@@ -53,11 +53,7 @@ export class Selection {
     const anchorKey = this.anchorKey;
     const anchorNode = getNodeByKey<TextNode>(anchorKey);
     if (!isTextNode(anchorNode)) {
-      if (__DEV__) {
-        invariant(false, 'getAnchorNode: anchorNode not a text node');
-      } else {
-        invariant();
-      }
+      invariant(false, 'getAnchorNode: anchorNode not a text node');
     }
     return anchorNode;
   }
@@ -65,11 +61,7 @@ export class Selection {
     const focusKey = this.focusKey;
     const focusNode = getNodeByKey<TextNode>(focusKey);
     if (!isTextNode(focusNode)) {
-      if (__DEV__) {
-        invariant(false, 'getFocusNode: focusNode not a text node');
-      } else {
-        invariant();
-      }
+      invariant(false, 'getFocusNode: focusNode not a text node');
     }
     return focusNode;
   }
@@ -156,11 +148,7 @@ function resolveNonLineBreakNode(
 ): [TextNode, number, boolean] {
   const resolvedNode = node.getPreviousSibling();
   if (!isTextNode(resolvedNode)) {
-    if (__DEV__) {
-      invariant(false, 'Should never happen');
-    } else {
-      invariant();
-    }
+    invariant(false, 'resolveNonLineBreakNode: resolved node not a text node');
   }
   const offset = resolvedNode.getTextContentSize();
   return [resolvedNode, offset, true];

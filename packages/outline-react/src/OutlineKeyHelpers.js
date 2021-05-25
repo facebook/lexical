@@ -109,9 +109,7 @@ export function isRedo(event: KeyboardEvent): boolean {
   if (IS_MAC) {
     return keyCode === 90 && event.metaKey && shiftKey;
   }
-  return (
-    (keyCode === 89 && ctrlKey) || (keyCode === 90 && ctrlKey && shiftKey)
-  );
+  return (keyCode === 89 && ctrlKey) || (keyCode === 90 && ctrlKey && shiftKey);
 }
 
 export function isTab(event: KeyboardEvent): boolean {

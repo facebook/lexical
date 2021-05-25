@@ -6,7 +6,6 @@
 import type {OutlineEditor, View} from 'outline';
 
 // $FlowFixMe
-import {createPortal} from 'react-dom';
 import {createTextNode} from 'outline';
 import {createParagraphNode} from 'outline-extensions/ParagraphNode';
 import useEvent from './useEvent';
@@ -116,7 +115,9 @@ const COALESCABLE_COMMANDS = [
   'deleteWordBackward',
 ];
 
-export default function useStepRecorder(editor: OutlineEditor): React$Node {
+export default function useStepRecorder(
+  editor: OutlineEditor,
+): [React$Node, React$Node] {
   const [steps, setSteps] = useState<Steps>([]);
   const [isRecording, setIsRecording] = useState(false);
   const [currentInnerHTML, setCurrentInnerHTML] = useState('');
@@ -340,17 +341,17 @@ export default function useStepRecorder(editor: OutlineEditor): React$Node {
     };
   }, [getCurrentEditor, toggleEditorSelection]);
 
-  return createPortal(
-    <>
-      <button
-        id="step-recorder-button"
-        className={isRecording ? 'recording' : null}
-        onClick={() => toggleEditorSelection(getCurrentEditor())}
-        title={isRecording ? 'Disable step recorder' : 'Enable step recorder'}>
-        <span></span>
-      </button>
-      {steps.length !== 0 && <pre id="step-recorder">{templatedTest}</pre>}
-    </>,
-    document.body,
+  const button = (
+    <button
+      id="step-recorder-button"
+      className={`editor-dev-button ${isRecording ? 'active' : ''}`}
+      onClick={() => toggleEditorSelection(getCurrentEditor())}
+      title={isRecording ? 'Disable step recorder' : 'Enable step recorder'}
+    />
   );
+  const output = isRecording ? (
+    <pre id="step-recorder">{templatedTest}</pre>
+  ) : null;
+
+  return [button, output];
 }

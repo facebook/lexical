@@ -3,7 +3,7 @@
 import type {OutlineEditor, Selection, TextFormatType, TextNode} from 'outline';
 
 import {isTextNode} from 'outline';
-import React, {useCallback, useEffect, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState, useMemo} from 'react';
 // $FlowFixMe
 import {unstable_batchedUpdates, createPortal} from 'react-dom';
 import {formatText} from 'outline-react/OutlineSelectionHelpers';
@@ -319,5 +319,8 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
 }
 
 export default function useToolbar(editor: OutlineEditor): React$Node {
-  return createPortal(<Toolbar editor={editor} />, document.body);
+  return useMemo(
+    () => createPortal(<Toolbar editor={editor} />, document.body),
+    [editor],
+  );
 }

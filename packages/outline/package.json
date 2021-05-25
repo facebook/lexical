@@ -12,7 +12,7 @@
     "rich-text"
   ],
   "license": "MIT",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "main": "dist/Outline.js",
   "repository": {
     "type": "git",

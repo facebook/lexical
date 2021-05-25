@@ -738,6 +738,8 @@ export function onNativeBeforeInputForRichText(
 
     const inputText = inputType === 'insertText';
 
+    console.log(inputType, {...selection})
+
     if (selection.isCaret()) {
       applyTargetRange(selection, event);
     }

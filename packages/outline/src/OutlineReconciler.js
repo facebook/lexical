@@ -18,6 +18,7 @@ import {
   invariant,
   getAdjustedSelectionOffset,
   isSelectionWithinEditor,
+  getDOMTextNodeFromElement,
 } from './OutlineUtils';
 import {
   IS_IMMUTABLE,
@@ -638,18 +639,6 @@ function reconcileSelection(
     // occur with FF and there's no good reason as to why it
     // should happen.
   }
-}
-
-function getDOMTextNodeFromElement(element: HTMLElement): Text {
-  let node = element;
-  while (node != null) {
-    if (node.nodeType === 3) {
-      // $FlowFixMe: nodeType === text node
-      return node;
-    }
-    node = node.firstChild;
-  }
-  invariant(false, 'getDOMTextNodeFromElement: text node not found');
 }
 
 export function storeDOMWithKey(

@@ -18,7 +18,9 @@ import {
   invariant,
   getAdjustedSelectionOffset,
   isSelectionWithinEditor,
+  getDOMTextNodeFromElement,
 } from './OutlineUtils';
+import {BYTE_ORDER_MARK} from './OutlineConstants';
 import {OutlineEditor} from './OutlineEditor';
 import {LineBreakNode} from './OutlineLineBreakNode';
 
@@ -224,6 +226,7 @@ function resolveSelectionNodeAndOffset(
     return null;
   }
   const resolvedTextNode = resolvedNode;
+  const isComposing = editor.isComposing();
   // Because we use a special character for whitespace,
   // we need to adjust offsets to 0 when the text is
   // really empty.
@@ -232,7 +235,7 @@ function resolveSelectionNodeAndOffset(
     // render a special empty space character, and set
     // the native DOM selection to offset 1 so that
     // text entry works as expected.
-    if (!isDirty && !editor.isComposing() && !editor._isPointerDown) {
+    if (!isDirty && !isComposing && !editor._isPointerDown) {
       const key = resolvedTextNode.__key;
       const nodeDOM = getElementByKeyOrThrow(editor, key);
       if (getAdjustedSelectionOffset(nodeDOM) !== resolvedOffset) {
@@ -240,6 +243,15 @@ function resolveSelectionNodeAndOffset(
       }
     }
     resolvedOffset = 0;
+  } else if (isComposing && resolvedOffset !== 0) {
+    // When composing, we might still have the byte order mark in the
+    // text. If we do, we need to reduce the offset by one.
+    const textDOM = getDOMTextNodeFromElement(resolvedDOM);
+    const rawTextContent = textDOM.nodeValue;
+    // If we have a byte order in the text still
+    if (rawTextContent[0] === BYTE_ORDER_MARK) {
+      resolvedOffset--;
+    }
   }
   return [resolvedTextNode, resolvedOffset, isDirty];
 }

@@ -20,25 +20,14 @@ import {
   isTextNode,
   isBlockNode,
   isRootNode,
-  isLineBreakNode,
   createTextNode,
 } from 'outline';
 import {createParagraphNode} from 'outline-extensions/ParagraphNode';
 
-import {CAN_USE_INTL_SEGMENTER} from './OutlineEnv';
 import {invariant} from './OutlineReactUtils';
-import {
-  getSegmentsFromString,
-  getWordsFromString,
-  isSegmentWordLike,
-} from './OutlineTextHelpers';
 
 function isImmutableOrInert(node: OutlineNode): boolean {
   return node.isImmutable() || node.isInert();
-}
-
-function isSegmentedOrImmutableOrInert(node: OutlineNode): boolean {
-  return node.isSegmented() || isImmutableOrInert(node);
 }
 
 export function getNodesInRange(selection: Selection): {
@@ -333,18 +322,10 @@ function moveCaretSelection(
   selection: Selection,
   isHoldingShift: boolean,
   isBackward: boolean,
-  granularity: 'character' | 'word' | 'line',
+  granularity: 'character' | 'word' | 'lineboundary',
 ): void {
-  let resetAnchorKey;
-  let resetAnchorOffset = 0;
-  // If we have a range, we need to make the anchor the focus, then set back
-  // the range at the end. This allows us to re-use updateCaretSelectionForRange.
-  if (!selection.isCaret()) {
-    resetAnchorKey = selection.anchorKey;
-    resetAnchorOffset = selection.anchorOffset;
-    selection.anchorKey = selection.focusKey;
-    selection.anchorOffset = selection.focusOffset;
-  }
+  const anchorKey = selection.anchorKey;
+  const anchorOffset = selection.anchorOffset;
   updateCaretSelectionForRange(
     selection,
     isBackward,
@@ -369,11 +350,17 @@ function moveCaretSelection(
     }
   }
   if (!isHoldingShift) {
-    selection.anchorKey = selection.focusKey;
-    selection.anchorOffset = selection.focusOffset;
-  } else if (resetAnchorKey) {
-    selection.anchorKey = resetAnchorKey;
-    selection.anchorOffset = resetAnchorOffset;
+    if (
+      selection.anchorKey !== anchorKey ||
+      selection.anchorOffset !== anchorOffset
+    ) {
+      selection.focusKey = selection.anchorKey;
+      selection.focusOffset = selection.anchorOffset;
+    } else {
+      selection.anchorKey = selection.focusKey;
+      selection.anchorOffset = selection.focusOffset;
+    }
+    selection.isDirty = true;
   }
 }
 
@@ -417,7 +404,7 @@ function normalizeAnchorParent(selection: Selection): void {
 
 export function deleteLineBackward(selection: Selection): void {
   if (selection.isCaret()) {
-    updateCaretSelectionForRange(selection, true, 'line');
+    updateCaretSelectionForRange(selection, true, 'lineboundary');
   }
   removeText(selection);
   normalizeAnchorParent(selection);
@@ -425,7 +412,7 @@ export function deleteLineBackward(selection: Selection): void {
 
 export function deleteLineForward(selection: Selection): void {
   if (selection.isCaret()) {
-    updateCaretSelectionForRange(selection, false, 'line');
+    updateCaretSelectionForRange(selection, false, 'lineboundary');
   }
   removeText(selection);
   normalizeAnchorParent(selection);
@@ -512,34 +499,6 @@ function setSelectionFocus(
   selection.isDirty = true;
 }
 
-function updateSelectionForNextSiblingRange(
-  selection: Selection,
-  isBackward: boolean,
-  sibling: OutlineNode,
-): void {
-  const nextSibling = isBackward
-    ? sibling.getPreviousSibling()
-    : sibling.getNextSibling();
-  if (isTextNode(nextSibling)) {
-    const key = nextSibling.getKey();
-    const offset = isBackward ? nextSibling.getTextContentSize() : 0;
-    setSelectionFocus(selection, key, offset);
-  }
-}
-
-function updateSelectionForNextSegmentedRange(
-  selection: Selection,
-  isBackward: boolean,
-  sibling: OutlineNode,
-) {
-  const key = sibling.getKey();
-  setSelectionFocus(
-    selection,
-    key,
-    isBackward ? 0 : sibling.getTextContentSize(),
-  );
-}
-
 function removeSegment(node: TextNode, isBackward: boolean): void {
   const textContent = node.getTextContent();
   const split = textContent.split(/\s/g);
@@ -568,221 +527,48 @@ function removeSegment(node: TextNode, isBackward: boolean): void {
   }
 }
 
-function getSurrogatePairOffset(str: string, isBackward: boolean): number {
-  const characters = Array.from(str);
-  const segment = isBackward
-    ? characters[characters.length - 1]
-    : characters[0];
-  return /[\uD800-\uDFFF]/.test(segment) ? segment.length : 1;
-}
-
-function getPreviousNodeAndEndingOffset(
-  node: TextNode,
-  index: number,
-): [TextNode, number] {
-  const prevSibling = node.getPreviousSibling();
-  if (isTextNode(prevSibling) && !isSegmentedOrImmutableOrInert(prevSibling)) {
-    return [prevSibling, prevSibling.getTextContentSize()];
-  }
-  return [node, index];
-}
-
 export function updateCaretSelectionForRange(
   selection: Selection,
   isBackward: boolean,
-  granularity: 'character' | 'word' | 'line',
+  granularity: 'character' | 'word' | 'lineboundary',
   isHoldingShift?: boolean,
 ): void {
-  const anchorOffset = selection.anchorOffset;
-  const anchorNode = selection.getAnchorNode();
-  if (anchorNode === null) {
-    return;
-  }
-  const currentBlock = anchorNode.getParentBlockOrThrow();
-  let textContent = anchorNode.getTextContent();
-  const textContentLength = textContent.length;
-  const sibling = isBackward
-    ? anchorNode.getPreviousSibling()
-    : anchorNode.getNextSibling();
-  const isOffsetAtBoundary = isBackward
-    ? anchorOffset === 0
-    : anchorOffset === textContentLength;
-
-  if (sibling === null && isOffsetAtBoundary) {
-    // If we are at the start or the end, and try to move to the prev
-    // or next block via deletions, then set the range to be of that
-    // inserecting block.
-    const block = isBackward
-      ? currentBlock.getPreviousSibling()
-      : currentBlock.getNextSibling();
-    if (isBlockNode(block)) {
-      const textNode = isBackward
-        ? block.getLastTextNode()
-        : block.getFirstTextNode();
-      if (textNode !== null) {
-        const key = textNode.getKey();
-        const offset = isBackward ? textNode.getTextContentSize() : 0;
-        setSelectionFocus(selection, key, offset);
-      }
-    }
-  } else if (isLineBreakNode(sibling) && isOffsetAtBoundary) {
-    updateSelectionForNextSiblingRange(selection, isBackward, sibling);
-  } else {
+  const domSelection = window.getSelection();
+  if (selection.isCaret()) {
+    const anchorNode = selection.getAnchorNode();
     if (granularity === 'character') {
-      let characterNode = anchorNode;
-      let characterOffset = anchorOffset;
-      if (isOffsetAtBoundary) {
-        if (sibling === null) {
+      if (isBackward && selection.anchorOffset === 0) {
+        const prevSibling = anchorNode.getPreviousSibling();
+        if (isTextNode(prevSibling) && prevSibling.isSegmented()) {
+          setSelectionFocus(selection, prevSibling.getKey(), 0);
           return;
         }
-        if (isImmutableOrInert(sibling)) {
-          updateSelectionForNextSiblingRange(selection, isBackward, sibling);
-          return;
-        } else if (sibling.isSegmented()) {
-          updateSelectionForNextSegmentedRange(selection, isBackward, sibling);
-          return;
-        }
-        characterNode = sibling;
-        textContent = sibling.getTextContent();
-        characterOffset = isBackward ? textContent.length : 0;
-        if (isHoldingShift) {
-          selection.anchorKey = sibling.getKey();
-          selection.anchorOffset = characterOffset;
-        }
-      }
-      let offset = 1;
-      const textSlice = isBackward
-        ? textContent.slice(0, characterOffset)
-        : textContent.slice(characterOffset);
-      if (CAN_USE_INTL_SEGMENTER) {
-        const segments = getSegmentsFromString(textSlice, 'grapheme');
-        const segmentsLength = segments.length;
-        if (segmentsLength === 0) {
-          offset = 0;
-        } else {
-          const segment = isBackward
-            ? segments[segmentsLength - 1]
-            : segments[0];
-          offset = segment.segment.length;
-        }
-      } else {
-        offset = getSurrogatePairOffset(textSlice, isBackward);
-      }
-      let selectionOffset = isBackward
-        ? characterOffset - offset
-        : characterOffset + offset;
-      // If we move selection to the start, then we can check if there
-      // is a node before that we can adjust selection to, which is a better
-      // UX in most cases.
-      if (
-        isBackward &&
-        selectionOffset === 0 &&
-        !isHoldingShift &&
-        isTextNode(characterNode)
+      } else if (
+        !isBackward &&
+        selection.anchorOffset === anchorNode.getTextContentSize()
       ) {
-        [characterNode, selectionOffset] = getPreviousNodeAndEndingOffset(
-          characterNode,
-          selectionOffset,
-        );
-      }
-      setSelectionFocus(selection, characterNode.getKey(), selectionOffset);
-    } else if (granularity === 'word') {
-      let node = anchorNode;
-      let index = null;
-
-      let targetTextContent = isBackward
-        ? textContent.slice(0, anchorOffset)
-        : textContent.slice(anchorOffset);
-      let foundWordNode = null;
-      mainLoop: while (true) {
-        const segments = CAN_USE_INTL_SEGMENTER
-          ? getSegmentsFromString(targetTextContent, 'word')
-          : getWordsFromString(targetTextContent);
-        const segmentsLength = segments.length;
-
-        if (isBackward) {
-          for (let i = segmentsLength - 1; i >= 0; i--) {
-            const segment = segments[i];
-            const nextIndex = segment.index;
-
-            if (isSegmentWordLike(segment)) {
-              // If we already found a word on the same node,
-              // use that instead.
-              if (node === foundWordNode) {
-                break;
-              }
-              index = nextIndex;
-              foundWordNode = node;
-            } else if (foundWordNode !== null) {
-              node = foundWordNode;
-              break mainLoop;
-            } else if (node === anchorNode) {
-              index = nextIndex;
-            }
-          }
-        } else {
-          for (let i = 0; i < segmentsLength; i++) {
-            const segment = segments[i];
-            const nextIndex = segment.index + segment.segment.length;
-
-            if (isSegmentWordLike(segment)) {
-              index = nextIndex;
-              foundWordNode = node;
-            } else if (foundWordNode !== null) {
-              node = foundWordNode;
-              break mainLoop;
-            } else if (node === anchorNode) {
-              index = nextIndex;
-            }
-          }
+        const nextSibling = anchorNode.getNextSibling();
+        if (isTextNode(nextSibling) && nextSibling.isSegmented()) {
+          setSelectionFocus(
+            selection,
+            nextSibling.getKey(),
+            nextSibling.getTextContentSize(),
+          );
+          return;
         }
-        const siblingAfter = isBackward
-          ? node.getPreviousSibling()
-          : node.getNextSibling();
-        if (!isTextNode(siblingAfter) || isLineBreakNode(siblingAfter)) {
-          break;
-        }
-        targetTextContent = siblingAfter.getTextContent();
-        node = siblingAfter;
-      }
-
-      if (index === null && node !== anchorNode) {
-        index = isBackward ? node.getTextContentSize() : 0;
-      } else if (isBackward && index === 0 && !isHoldingShift) {
-        [node, index] = getPreviousNodeAndEndingOffset(node, index);
-      }
-      if (isImmutableOrInert(node)) {
-        updateSelectionForNextSiblingRange(selection, isBackward, node);
-      } else if (node.isSegmented()) {
-        updateSelectionForNextSegmentedRange(selection, isBackward, node);
-      } else if (index !== null) {
-        const key = node.getKey();
-        // If we are partially through an anchor string, we need to include
-        // the offset for moving forward
-        if (!isBackward && node === anchorNode) {
-          index += anchorOffset;
-        }
-        setSelectionFocus(selection, key, index);
-      }
-    } else {
-      // granularity === 'line'
-      let node = anchorNode;
-      while (true) {
-        const siblingAfter = isBackward
-          ? node.getPreviousSibling()
-          : node.getNextSibling();
-        if (siblingAfter === null || isLineBreakNode(siblingAfter)) {
-          if (isTextNode(node)) {
-            const key = node.getKey();
-            const offset = isBackward ? 0 : node.getTextContentSize();
-            setSelectionFocus(selection, key, offset);
-          }
-          break;
-        }
-        node = siblingAfter;
       }
     }
+    if (anchorNode.getTextContent() === '') {
+      domSelection.extend(domSelection.anchorNode, isBackward ? 0 : 1);
+    }
   }
+  domSelection.modify(
+    'extend',
+    isBackward ? 'backward' : 'forward',
+    granularity,
+  );
+  const range = domSelection.getRangeAt(0);
+  selection.applyDOMRange(range);
 }
 
 export function removeText(selection: Selection): void {

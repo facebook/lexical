@@ -9,6 +9,134 @@
 import * as SelectionHelpers from 'outline-react/OutlineSelectionHelpers';
 import {createTextNode} from 'outline';
 
+if (!Selection.prototype.modify) {
+  const wordBreakPolyfillRegex =
+    /[\s.,\\\/#!$%\^&\*;:{}=\-`~()\uD800-\uDBFF\uDC00-\uDFFF\u3000-\u303F]/;
+
+  const pushSegment = function (
+    segments: Array<Segment>,
+    index: number,
+    str: string,
+    isWordLike: boolean,
+  ): void {
+    segments.push({
+      index: index - str.length,
+      segment: str,
+      isWordLike,
+    });
+  };
+
+  const getWordsFromString = function (string: string): Array<Segment> {
+    const segments = [];
+    let wordString = '';
+    let nonWordString = '';
+    let i;
+    for (i = 0; i < string.length; i++) {
+      const char = string[i];
+
+      if (wordBreakPolyfillRegex.test(char)) {
+        if (wordString !== '') {
+          pushSegment(segments, i, wordString, true);
+          wordString = '';
+        }
+        nonWordString += char;
+      } else {
+        if (nonWordString !== '') {
+          pushSegment(segments, i, nonWordString, false);
+          nonWordString = '';
+        }
+        wordString += char;
+      }
+    }
+    if (wordString !== '') {
+      pushSegment(segments, i, wordString, true);
+    }
+    if (nonWordString !== '') {
+      pushSegment(segments, i, nonWordString, false);
+    }
+    return segments;
+  };
+
+  Selection.prototype.modify = function (alter, direction, granularity) {
+    // This is not a thorough implementation, it was more to get tests working
+    // given the refactor to use this selection method.
+    const symbol = Object.getOwnPropertySymbols(this)[0];
+    const impl = this[symbol];
+    const anchor = impl._focus;
+    if (granularity === 'character') {
+      if (direction === 'backward') {
+        if (anchor.offset === 0) {
+          let node = anchor.node.parentElement.previousSibling;
+          if (node === null) {
+            node =
+              anchor.node.parentElement.parentElement.previousSibling.lastChild;
+          }
+          anchor.node = node;
+          anchor.offset = 1;
+        } else {
+          anchor.offset--;
+        }
+      } else {
+        if (anchor.offset === anchor.node.textContent.length) {
+          let node = anchor.node.parentElement.nextSibling;
+          if (node === null) {
+            node =
+              anchor.node.parentElement.parentElement.nextSibling.firstChild;
+          }
+          anchor.node = node;
+          anchor.offset = 0;
+        } else {
+          anchor.offset++;
+        }
+      }
+    } else if (granularity === 'word') {
+      const anchorNode = this.anchorNode;
+      const targetTextContent =
+        direction === 'backward'
+          ? anchorNode.textContent.slice(0, this.anchorOffset)
+          : anchorNode.textContent.slice(this.anchorOffset);
+      const segments = getWordsFromString(targetTextContent);
+      const segmentsLength = segments.length;
+      let index = anchor.offset;
+      let foundWordNode = false;
+
+      if (direction === 'backward') {
+        for (let i = segmentsLength - 1; i >= 0; i--) {
+          const segment = segments[i];
+          const nextIndex = segment.index;
+
+          if (segment.isWordLike) {
+            index = nextIndex;
+            foundWordNode = true;
+          } else if (foundWordNode) {
+            break;
+          } else {
+            index = nextIndex;
+          }
+        }
+      } else {
+        for (let i = 0; i < segmentsLength; i++) {
+          const segment = segments[i];
+          const nextIndex = segment.index + segment.segment.length;
+
+          if (segment.isWordLike) {
+            index = nextIndex;
+            foundWordNode = true;
+          } else if (foundWordNode) {
+            break;
+          } else {
+            index = nextIndex;
+          }
+        }
+      }
+      if (direction === 'forward') {
+        index += anchor.offset;
+      }
+      anchor.offset = index;
+    }
+  };
+}
+
 export function sanitizeHTML(html) {
   // Remove the special space characters
   return html.replace(/\uFEFF/g, '');

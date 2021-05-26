@@ -751,7 +751,7 @@ const dummyMentionsData = [
   'Lor San Tekka',
   'Lorth Needa',
   'Lott Dod',
-  'Luke Dickmood',
+  'Luke Skywalker',
   'Lumat',
   'Luminara Unduli',
   'Lux Bonteri',

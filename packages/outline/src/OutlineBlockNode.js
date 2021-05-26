@@ -156,6 +156,12 @@ export class BlockNode extends OutlineNode {
     return getNodeByKey<OutlineNode>(children[childrenLength - 1]);
   }
   getTextContent(includeInert?: boolean, includeDirectionless?: false): string {
+    if (
+      (!includeInert && this.isInert()) ||
+      (includeDirectionless === false && this.isDirectionless())
+    ) {
+      return '';
+    }
     let textContent = '';
     const children = this.getChildren();
     const childrenLength = children.length;

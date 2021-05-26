@@ -511,7 +511,7 @@ class MentionNode extends TextNode {
 }
 
 function createMentionNode(mentionName: string): MentionNode {
-  return new MentionNode(mentionName).makeSegmented();
+  return new MentionNode(mentionName).makeSegmented().makeDirectionless();
 }
 
 const dummyLookupService = {

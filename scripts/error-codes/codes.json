@@ -39,5 +39,7 @@
   "37": "getDOMTextNodeFromElement: text node not found",
   "38": "storeDOMWithNodeKey: key was null",
   "39": "Reconcilation: could not find DOM element for node key \"${key}\"",
-  "40": "reconcileNode: parentDOM is null"
+  "40": "reconcileNode: parentDOM is null",
+  "41": "Expected node %s to have a top parent block.",
+  "42": "Expected node %s to have a parent block."
 }

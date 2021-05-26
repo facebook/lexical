@@ -416,6 +416,7 @@ export class TextNode extends OutlineNode {
     }
     const isHashtag = this.isHashtag();
     let skipSelectionRestoration = false;
+    let shouldNormalizeTextNodes = false;
     let handledText = newText;
     // Handle hashtag containing whitespace
     if (isHashtag && newText !== '') {
@@ -438,6 +439,7 @@ export class TextNode extends OutlineNode {
         handledText = newText.slice(0, breakCharacterIndex);
         const splitTextStr = newText.slice(breakCharacterIndex);
         const textNode = createTextNode(splitTextStr);
+        shouldNormalizeTextNodes = true;
         if (offset === currentText.length) {
           this.insertAfter(textNode);
         } else if (offset === 0) {
@@ -450,7 +452,6 @@ export class TextNode extends OutlineNode {
           textNode.select();
           skipSelectionRestoration = true;
         }
-        parent.normalizeTextNodes(true);
       }
     }
     const writableSelf = getWritableNode(this);
@@ -501,6 +502,9 @@ export class TextNode extends OutlineNode {
       }
       const newOffset = offset + handledTextLength;
       selection.setRange(key, newOffset, key, newOffset);
+    }
+    if (shouldNormalizeTextNodes) {
+      this.getParentBlockOrThrow().normalizeTextNodes(true);
     }
     return writableSelf;
   }

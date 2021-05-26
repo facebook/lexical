@@ -177,8 +177,7 @@ function triggerTextMutationListeners(
       // You shouldn't be able to transform these types of
       // nodes.
       !node.isImmutable() &&
-      !node.isSegmented() &&
-      !node.isInert()
+      !node.isSegmented()
     ) {
       // Apply text transforms
       for (let i = 0; i < transforms.length; i++) {

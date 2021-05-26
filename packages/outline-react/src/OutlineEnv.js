@@ -45,4 +45,3 @@ export const CAN_USE_BEFORE_INPUT: boolean =
   CAN_USE_DOM && 'InputEvent' in window && !documentMode
     ? 'getTargetRanges' in new window.InputEvent('input')
     : false;
-

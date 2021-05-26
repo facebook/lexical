@@ -17,6 +17,7 @@ import {
   pasteFromClipboard,
   keyDownCtrlOrAlt,
   keyUpCtrlOrAlt,
+  E2E_BROWSER,
 } from '../utils';
 
 describe('TextEntry', () => {
@@ -104,6 +105,11 @@ describe('TextEntry', () => {
         await keyDownCtrlOrAlt(page);
         await page.keyboard.down('Shift');
         await page.keyboard.press('ArrowLeft');
+        // Chrome stops words on punctuation, so we need to trigger
+        // the left arrow key one more time.
+        if (E2E_BROWSER === 'chromium') {
+          await page.keyboard.press('ArrowLeft');
+        }
         await page.keyboard.up('Shift');
         await keyUpCtrlOrAlt(page);
         // Ensure the selection is now covering the whole word and period.

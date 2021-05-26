@@ -46,5 +46,3 @@ export const CAN_USE_BEFORE_INPUT: boolean =
     ? 'getTargetRanges' in new window.InputEvent('input')
     : false;
 
-export const CAN_USE_INTL_SEGMENTER: boolean =
-  'Intl' in window && 'Segmenter' in window.Intl;

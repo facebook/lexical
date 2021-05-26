@@ -173,7 +173,11 @@ function triggerTextMutationListeners(
       node !== undefined &&
       isTextNode(node) &&
       !isLineBreakNode(node) &&
-      node.isAttached()
+      node.isAttached() &&
+      // You shouldn't be able to transform these types of
+      // nodes.
+      !node.isImmutable() &&
+      !node.isSegmented()
     ) {
       // Apply text transforms
       for (let i = 0; i < transforms.length; i++) {

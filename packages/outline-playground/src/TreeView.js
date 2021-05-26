@@ -138,6 +138,7 @@ const LABEL_PREDICATES = [
   (node) => node.isUnderline() && 'Underline',
   (node) => node.isOverflowed() && 'Overflowed',
   (node) => node.isInert() && 'Inert',
+  (node) => node.isDirectionless() && 'Directionless',
 ];
 
 function printTextNodeFlags(node) {

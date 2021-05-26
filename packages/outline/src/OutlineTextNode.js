@@ -221,8 +221,11 @@ export class TextNode extends OutlineNode {
   getURL(): null | string {
     return this.__url;
   }
-  getTextContent(includeInert?: boolean): string {
-    if (!includeInert && this.isInert()) {
+  getTextContent(includeInert?: boolean, includeDirectionless?: false): string {
+    if (
+      (!includeInert && this.isInert()) ||
+      (includeDirectionless === false && this.isDirectionless())
+    ) {
       return '';
     }
     const self = this.getLatest();
@@ -465,7 +468,8 @@ export class TextNode extends OutlineNode {
       }
     }
     const topBlock = this.getTopParentBlockOrThrow();
-    const topBlockWasEmpty = text === '' && topBlock.getTextContent() === '';
+    const topBlockWasEmpty =
+      text === '' && topBlock.getTextContent(false, false) === '';
     const updatedText =
       text.slice(0, index) + handledText + text.slice(index + delCount);
     writableSelf.__text = updatedText;

@@ -20,8 +20,9 @@ import {
   BlockNode,
 } from '.';
 import {getActiveViewModel, errorOnReadOnly} from './OutlineView';
-import {generateRandomKey, invariant} from './OutlineUtils';
+import {generateRandomKey, getTextDirection, invariant} from './OutlineUtils';
 import {
+  IS_DIRECTIONLESS,
   IS_IMMUTABLE,
   IS_INERT,
   IS_OVERFLOWED,
@@ -109,12 +110,28 @@ function replaceNode<N: OutlineNode>(
   }
   writableReplaceWith.__parent = newParent.__key;
   toReplace.remove();
-  // Handle immutable/segmented
   const flags = writableReplaceWith.__flags;
+  // Handle direciton if node is directionless
+  if (flags & IS_DIRECTIONLESS) {
+    updateDirectionIfNeeded(writableReplaceWith);
+  }
+  // Handle immutable/segmented
   if (flags & IS_IMMUTABLE || flags & IS_SEGMENTED || flags & IS_INERT) {
     wrapInTextNodes(writableReplaceWith);
   }
   return writableReplaceWith;
+}
+
+export function updateDirectionIfNeeded(node: OutlineNode): void {
+  const topBlock = node.getTopParentBlockOrThrow();
+  const prevDirection = topBlock.getDirection();
+  if (prevDirection !== null) {
+    const textContent = topBlock.getTextContent(false, false);
+    const direction = getTextDirection(textContent);
+    if (direction === null) {
+      topBlock.setDirection(null);
+    }
+  }
 }
 
 export function wrapInTextNodes<N: OutlineNode>(node: N): N {
@@ -413,6 +430,9 @@ export class OutlineNode {
   isInert(): boolean {
     return (this.getLatest().__flags & IS_INERT) !== 0;
   }
+  isDirectionless(): boolean {
+    return (this.getLatest().__flags & IS_DIRECTIONLESS) !== 0;
+  }
   getLatest<N: OutlineNode>(): N {
     const latest = getNodeByKey<N>(this.__key);
     if (latest === null) {
@@ -420,11 +440,14 @@ export class OutlineNode {
     }
     return latest;
   }
-  getTextContent(includeInert?: boolean): string {
+  getTextContent(includeInert?: boolean, includeDirectionless?: false): string {
     return '';
   }
-  getTextContentSize(includeInert?: boolean): number {
-    return this.getTextContent(includeInert).length;
+  getTextContentSize(
+    includeInert?: boolean,
+    includeDirectionless?: false,
+  ): number {
+    return this.getTextContent(includeInert, includeDirectionless).length;
   }
 
   // View
@@ -473,6 +496,12 @@ export class OutlineNode {
     self.__flags |= IS_INERT;
     return self;
   }
+  makeDirectionless(): this {
+    errorOnReadOnly();
+    const self = getWritableNode(this);
+    self.__flags |= IS_DIRECTIONLESS;
+    return self;
+  }
   remove(): void {
     errorOnReadOnly();
     return removeNode(this);
@@ -506,8 +535,12 @@ export class OutlineNode {
     } else {
       children.push(insertKey);
     }
-    // Handle immutable/segmented
     const flags = writableNodeToInsert.__flags;
+    // Handle direciton if node is directionless
+    if (flags & IS_DIRECTIONLESS) {
+      updateDirectionIfNeeded(writableNodeToInsert);
+    }
+    // Handle immutable/segmented
     if (flags & IS_IMMUTABLE || flags & IS_SEGMENTED || flags & IS_INERT) {
       wrapInTextNodes(writableNodeToInsert);
     }
@@ -537,8 +570,12 @@ export class OutlineNode {
     } else {
       children.push(insertKey);
     }
-    // Handle immutable/segmented
     const flags = writableNodeToInsert.__flags;
+    // Handle direciton if node is directionless
+    if (flags & IS_DIRECTIONLESS) {
+      updateDirectionIfNeeded(writableNodeToInsert);
+    }
+    // Handle immutable/segmented
     if (flags & IS_IMMUTABLE || flags & IS_SEGMENTED || flags & IS_INERT) {
       wrapInTextNodes(writableNodeToInsert);
     }

@@ -15,10 +15,12 @@ import {
   OutlineNode,
   getNodeByKey,
   wrapInTextNodes,
+  updateDirectionIfNeeded,
 } from './OutlineNode';
 import {getSelection, Selection} from './OutlineSelection';
 import {errorOnReadOnly} from './OutlineView';
 import {
+  IS_DIRECTIONLESS,
   IS_IMMUTABLE,
   IS_INERT,
   IS_LTR,
@@ -153,13 +155,19 @@ export class BlockNode extends OutlineNode {
     }
     return getNodeByKey<OutlineNode>(children[childrenLength - 1]);
   }
-  getTextContent(includeInert?: boolean): string {
+  getTextContent(includeInert?: boolean, includeDirectionless?: false): string {
+    if (
+      (!includeInert && this.isInert()) ||
+      (includeDirectionless === false && this.isDirectionless())
+    ) {
+      return '';
+    }
     let textContent = '';
     const children = this.getChildren();
     const childrenLength = children.length;
     for (let i = 0; i < childrenLength; i++) {
       const child = children[i];
-      textContent += child.getTextContent(includeInert);
+      textContent += child.getTextContent(includeInert, includeDirectionless);
       if (isBlockNode(child) && i !== childrenLength - 1) {
         textContent += '\n\n';
       }
@@ -202,8 +210,12 @@ export class BlockNode extends OutlineNode {
     // Append children.
     const newKey = writableNodeToAppend.__key;
     children.push(newKey);
-    // Handle immutable/segmented
     const flags = writableNodeToAppend.__flags;
+    // Handle direciton if node is directionless
+    if (flags & IS_DIRECTIONLESS) {
+      updateDirectionIfNeeded(writableNodeToAppend);
+    }
+    // Handle immutable/segmented
     if (flags & IS_IMMUTABLE || flags & IS_SEGMENTED || flags & IS_INERT) {
       wrapInTextNodes(writableNodeToAppend);
     }

@@ -16,7 +16,6 @@ exports[`Mentions Can enter and backspace part of the Luke Skywalker mention 1`]
 exports[`Mentions Can enter and backspace part of the Luke Skywalker mention 2`] = `
 <p
   class="editor-paragraph"
-  dir="ltr"
 >
   <span>
     ﻿
@@ -38,7 +37,6 @@ exports[`Mentions Can enter and backspace part of the Luke Skywalker mention 2`]
 exports[`Mentions Can enter and backspace part of the Luke Skywalker mention 3`] = `
 <p
   class="editor-paragraph"
-  dir="ltr"
 >
   <span>
     ﻿
@@ -60,7 +58,6 @@ exports[`Mentions Can enter and backspace part of the Luke Skywalker mention 3`]
 exports[`Mentions Can enter and backspace part of the Luke Skywalker mention 4`] = `
 <p
   class="editor-paragraph"
-  dir="ltr"
 >
   <span>
     ﻿
@@ -84,7 +81,6 @@ exports[`Mentions Can enter and delete part of the Luke Skywalker mention 1`] = 
 exports[`Mentions Can enter and delete part of the Luke Skywalker mention 2`] = `
 <p
   class="editor-paragraph"
-  dir="ltr"
 >
   <span>
     ﻿
@@ -106,7 +102,6 @@ exports[`Mentions Can enter and delete part of the Luke Skywalker mention 2`] = 
 exports[`Mentions Can enter and delete part of the Luke Skywalker mention 3`] = `
 <p
   class="editor-paragraph"
-  dir="ltr"
 >
   <span>
     ﻿
@@ -128,7 +123,6 @@ exports[`Mentions Can enter and delete part of the Luke Skywalker mention 3`] = 
 exports[`Mentions Can enter and delete part of the Luke Skywalker mention 4`] = `
 <p
   class="editor-paragraph"
-  dir="ltr"
 >
   <span>
     ﻿
@@ -152,7 +146,6 @@ exports[`Mentions Can enter the Luke Skywalker mention 1`] = `
 exports[`Mentions Can enter the Luke Skywalker mention 2`] = `
 <p
   class="editor-paragraph"
-  dir="ltr"
 >
   <span>
     ﻿

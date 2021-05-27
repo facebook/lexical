@@ -133,9 +133,9 @@ function shouldOverrideBrowserDefault(
   const anchorOffset = selection.anchorOffset;
   const focusOffset = selection.focusOffset;
   const selectionAtBoundary = isBackward
-    ? anchorOffset < 2 || focusOffset < 2
-    : anchorOffset > selection.getAnchorNode().getTextContentSize() - 2 ||
-      focusOffset > selection.getFocusNode().getTextContentSize() - 2;
+    ? anchorOffset === 0 || focusOffset === 0
+    : anchorOffset === selection.getAnchorNode().getTextContentSize() ||
+      focusOffset === selection.getFocusNode().getTextContentSize();
 
   return selection.isCaret()
     ? isHoldingShift || selectionAtBoundary
@@ -168,17 +168,6 @@ export function onKeyDownForPlainText(
     if (selection === null) {
       return;
     }
-    // If we can use native beforeinput, we handle
-    // these cases in that function.
-    if (!CAN_USE_BEFORE_INPUT) {
-      if (isDeleteLineBackward(event)) {
-        event.preventDefault();
-        deleteLineBackward(selection);
-      } else if (isDeleteLineForward(event)) {
-        event.preventDefault();
-        deleteLineForward(selection);
-      }
-    }
     const isHoldingShift = event.shiftKey;
     const isRTL = isTopLevelBlockRTL(selection);
 
@@ -202,17 +191,27 @@ export function onKeyDownForPlainText(
       event.preventDefault();
       deleteForward(selection);
     } else if (isMoveWordBackward(event)) {
-      event.preventDefault();
-      moveWordBackward(selection, isHoldingShift, isRTL);
+      if (shouldOverrideBrowserDefault(selection, isHoldingShift, !isRTL)) {
+        event.preventDefault();
+        moveWordBackward(selection, isHoldingShift, isRTL);
+      }
     } else if (isMoveWordForward(event)) {
-      event.preventDefault();
-      moveWordForward(selection, isHoldingShift, isRTL);
+      if (shouldOverrideBrowserDefault(selection, isHoldingShift, !isRTL)) {
+        event.preventDefault();
+        moveWordForward(selection, isHoldingShift, isRTL);
+      }
     } else if (isDeleteWordBackward(event)) {
       event.preventDefault();
       deleteWordBackward(selection);
     } else if (isDeleteWordForward(event)) {
       event.preventDefault();
       deleteWordForward(selection);
+    } else if (isDeleteLineBackward(event)) {
+      event.preventDefault();
+      deleteLineBackward(selection);
+    } else if (isDeleteLineForward(event)) {
+      event.preventDefault();
+      deleteLineForward(selection);
     } else if (isSelectAll(event)) {
       event.preventDefault();
       selectAll(selection);
@@ -233,17 +232,6 @@ export function onKeyDownForRichText(
     const selection = view.getSelection();
     if (selection === null) {
       return;
-    }
-    // If we can use native beforeinput, we handle
-    // these cases in that function.
-    if (!CAN_USE_BEFORE_INPUT) {
-      if (isDeleteLineBackward(event)) {
-        event.preventDefault();
-        deleteLineBackward(selection);
-      } else if (isDeleteLineForward(event)) {
-        event.preventDefault();
-        deleteLineForward(selection);
-      }
     }
     const isHoldingShift = event.shiftKey;
     const isRTL = isTopLevelBlockRTL(selection);
@@ -282,6 +270,12 @@ export function onKeyDownForRichText(
     } else if (isDeleteWordForward(event)) {
       event.preventDefault();
       deleteWordForward(selection);
+    } else if (isDeleteLineBackward(event)) {
+      event.preventDefault();
+      deleteLineBackward(selection);
+    } else if (isDeleteLineForward(event)) {
+      event.preventDefault();
+      deleteLineForward(selection);
     } else if (isBold(event)) {
       event.preventDefault();
       formatText(selection, 'bold');

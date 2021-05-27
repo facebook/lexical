@@ -259,7 +259,7 @@ export function insertParagraph(selection: Selection): void {
     removeText(selection);
   }
   const anchorNode = selection.getAnchorNode();
-  if (anchorNode === null) {
+  if (anchorNode === null || anchorNode.isSegmented()) {
     return;
   }
   const textContent = anchorNode.getTextContent();

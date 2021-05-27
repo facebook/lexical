@@ -550,8 +550,12 @@ export function updateCaretSelectionForRange(
   }
   if (anchorNode.getTextContent() === '') {
     domSelection.extend(domSelection.anchorNode, isBackward ? 0 : 1);
-    if (selection.isCaret()) {
-      domSelection.collapseToEnd();
+    if (collapse) {
+      if (isBackward) {
+        domSelection.collapseToStart();
+      } else {
+        domSelection.collapseToEnd();
+      }
     }
   }
   domSelection.modify(

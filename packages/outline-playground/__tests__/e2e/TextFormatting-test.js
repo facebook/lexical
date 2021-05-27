@@ -159,7 +159,7 @@ describe('TextFormatting', () => {
       });
     });
 
-    it.only(`Can select multiple text parts and format them with shortcuts`, async () => {
+    it(`Can select multiple text parts and format them with shortcuts`, async () => {
       const {page} = e2e;
 
       await page.focus('div.editor');
@@ -188,16 +188,17 @@ describe('TextFormatting', () => {
         focusOffset: 5,
       });
 
+      await page.keyboard.press('ArrowLeft');
       await page.keyboard.press('ArrowRight');
       await page.keyboard.down('Shift');
       await page.keyboard.press('ArrowRight');
       await page.keyboard.press('ArrowRight');
       await page.keyboard.up('Shift');
       await assertSelection(page, {
-        anchorPath: [0, 2, 0],
-        anchorOffset: 0,
-        focusPath: [0, 2, 0],
-        focusOffset: 2,
+        anchorPath: [0, 1, 0],
+        anchorOffset: 1,
+        focusPath: [0, 1, 0],
+        focusOffset: 3,
       });
 
       await keyDownCtrlOrMeta(page);

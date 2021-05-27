@@ -320,7 +320,7 @@ describe('Keyboard Navigation', () => {
       }
     });
 
-    it.only('can navigate through the formatted text word by word', async () => {
+    it('can navigate through the formatted text word by word', async () => {
       const {page} = e2e;
       await page.focus('div.editor');
       // type sample text
@@ -370,10 +370,10 @@ describe('Keyboard Navigation', () => {
         });
       } else {
         await assertSelection(page, {
-          anchorPath: [0, 3, 0],
-          anchorOffset: 0,
-          focusPath: [0, 3, 0],
-          focusOffset: 0,
+          anchorPath: [0, 2, 0],
+          anchorOffset: 7,
+          focusPath: [0, 2, 0],
+          focusOffset: 7,
         });
       }
       // 2 left
@@ -386,21 +386,12 @@ describe('Keyboard Navigation', () => {
       });
       // 3 left
       await moveToPrevWord(page);
-      if (E2E_BROWSER !== 'chromium') {
-        await assertSelection(page, {
-          anchorPath: [0, 0, 0],
-          anchorOffset: 6,
-          focusPath: [0, 0, 0],
-          focusOffset: 6,
-        });
-      } else {
-        await assertSelection(page, {
-          anchorPath: [0, 1, 0],
-          anchorOffset: 0,
-          focusPath: [0, 1, 0],
-          focusOffset: 0,
-        });
-      }
+      await assertSelection(page, {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 6,
+        focusPath: [0, 0, 0],
+        focusOffset: 6,
+      });
       // 4 left
       await moveToPrevWord(page);
       await assertSelection(page, {

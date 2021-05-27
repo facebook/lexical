@@ -524,6 +524,7 @@ export function updateCaretSelectionForRange(
 ): void {
   const domSelection = window.getSelection();
   const anchorNode = selection.getAnchorNode();
+
   if (selection.isCaret()) {
     if (granularity === 'character') {
       if (isBackward && selection.anchorOffset === 0) {
@@ -548,6 +549,9 @@ export function updateCaretSelectionForRange(
       }
     }
   }
+  const prevAnchorKey = selection.anchorKey;
+  const prevAnchorOffset = selection.anchorOffset;
+
   if (anchorNode.getTextContent() === '') {
     domSelection.extend(domSelection.anchorNode, isBackward ? 0 : 1);
     if (collapse) {
@@ -558,13 +562,46 @@ export function updateCaretSelectionForRange(
       }
     }
   }
+  // We use the DOM selection.modify API here to "tell" us what the selection
+  // will be. We then use it to update the Outline selection accordingly. This
+  // is much more reliable than waiting for a beforeinput and using the ranges
+  // from getTargetRanges(), and is also better than trying to do it ourselves
+  // using Intl.Segmenter or other work-arounds that struggle with word segments
+  // and line segments (especially with word wrapping and non-Roman languages).
   domSelection.modify(
     collapse ? 'move' : 'extend',
     isBackward ? 'backward' : 'forward',
     granularity,
   );
   const range = domSelection.getRangeAt(0);
+  // Apply the DOM selection to our Outline selection.
   selection.applyDOMRange(range);
+
+  // Check if the selection moved just past an immutable/segmented node.
+  // In which case, we want to ensure that selection hits the boundary
+  // of these types of node, primarily for accessibility reasons. We
+  // only do this for selection going forward, as this is the most prone
+  // to be skewed by the fact that these nodes use contenteditable="false"
+  if (
+    !isBackward &&
+    granularity === 'word' &&
+    selection.isCaret() &&
+    selection.anchorOffset === 0
+  ) {
+    const target = selection.getAnchorNode().getPreviousSibling();
+    if (isTextNode(target) && (target.isImmutable() || target.isSegmented())) {
+      const targetPrevSibling = target.getPreviousSibling();
+      // Ensure that we don't move selection if we were previously in the
+      // same place!
+      if (
+        isTextNode(targetPrevSibling) &&
+        (prevAnchorKey !== targetPrevSibling.getKey() ||
+          prevAnchorOffset !== targetPrevSibling.getTextContentSize())
+      ) {
+        targetPrevSibling.select();
+      }
+    }
+  }
 }
 
 export function removeText(selection: Selection): void {

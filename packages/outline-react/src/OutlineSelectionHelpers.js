@@ -324,13 +324,11 @@ function moveCaretSelection(
   isBackward: boolean,
   granularity: 'character' | 'word' | 'lineboundary',
 ): void {
-  const anchorKey = selection.anchorKey;
-  const focusKey = selection.focusKey;
   updateCaretSelectionForRange(
     selection,
     isBackward,
     granularity,
-    isHoldingShift,
+    !isHoldingShift,
   );
   const focusNode = selection.getFocusNode();
   // We have to adjust selection if we move selection into a segmented node
@@ -352,27 +350,6 @@ function moveCaretSelection(
       selection.anchorKey = selection.focusKey;
       selection.anchorOffset = selection.focusOffset;
     }
-  } else if (!isHoldingShift) {
-    if (anchorKey === selection.anchorKey && focusKey === selection.focusKey) {
-      const anchorOffset = selection.anchorOffset;
-      const focusOffset = selection.focusOffset;
-      const offset = isBackward
-        ? anchorOffset < focusOffset
-          ? anchorOffset
-          : focusOffset
-        : anchorOffset < focusOffset
-        ? focusOffset
-        : anchorOffset;
-      selection.anchorOffset = offset;
-      selection.focusOffset = offset;
-    } else {
-      if (isBackward) {
-        selection.focusOffset = selection.anchorOffset;
-      } else {
-        selection.anchorOffset = selection.focusOffset;
-      }
-    }
-    selection.isDirty = true;
   }
 }
 
@@ -416,7 +393,7 @@ function normalizeAnchorParent(selection: Selection): void {
 
 export function deleteLineBackward(selection: Selection): void {
   if (selection.isCaret()) {
-    updateCaretSelectionForRange(selection, true, 'lineboundary');
+    updateCaretSelectionForRange(selection, true, 'lineboundary', false);
   }
   removeText(selection);
   normalizeAnchorParent(selection);
@@ -424,7 +401,7 @@ export function deleteLineBackward(selection: Selection): void {
 
 export function deleteLineForward(selection: Selection): void {
   if (selection.isCaret()) {
-    updateCaretSelectionForRange(selection, false, 'lineboundary');
+    updateCaretSelectionForRange(selection, false, 'lineboundary', false);
   }
   removeText(selection);
   normalizeAnchorParent(selection);
@@ -432,7 +409,7 @@ export function deleteLineForward(selection: Selection): void {
 
 export function deleteWordBackward(selection: Selection): void {
   if (selection.isCaret()) {
-    updateCaretSelectionForRange(selection, true, 'word');
+    updateCaretSelectionForRange(selection, true, 'word', false);
   }
   removeText(selection);
   normalizeAnchorParent(selection);
@@ -440,7 +417,7 @@ export function deleteWordBackward(selection: Selection): void {
 
 export function deleteWordForward(selection: Selection): void {
   if (selection.isCaret()) {
-    updateCaretSelectionForRange(selection, false, 'word');
+    updateCaretSelectionForRange(selection, false, 'word', false);
   }
   removeText(selection);
   normalizeAnchorParent(selection);
@@ -448,7 +425,7 @@ export function deleteWordForward(selection: Selection): void {
 
 export function deleteBackward(selection: Selection): void {
   if (selection.isCaret()) {
-    updateCaretSelectionForRange(selection, true, 'character');
+    updateCaretSelectionForRange(selection, true, 'character', false);
     // Special handling around rich text nodes
     if (selection.isCaret()) {
       const anchorNode = selection.getAnchorNode();
@@ -487,7 +464,7 @@ export function deleteBackward(selection: Selection): void {
 
 export function deleteForward(selection: Selection): void {
   if (selection.isCaret()) {
-    updateCaretSelectionForRange(selection, false, 'character');
+    updateCaretSelectionForRange(selection, false, 'character', false);
     if (!selection.isCaret()) {
       const focusNode = selection.getFocusNode();
 
@@ -543,11 +520,11 @@ export function updateCaretSelectionForRange(
   selection: Selection,
   isBackward: boolean,
   granularity: 'character' | 'word' | 'lineboundary',
-  isHoldingShift?: boolean,
+  collapse: boolean,
 ): void {
   const domSelection = window.getSelection();
+  const anchorNode = selection.getAnchorNode();
   if (selection.isCaret()) {
-    const anchorNode = selection.getAnchorNode();
     if (granularity === 'character') {
       if (isBackward && selection.anchorOffset === 0) {
         const prevSibling = anchorNode.getPreviousSibling();
@@ -570,12 +547,15 @@ export function updateCaretSelectionForRange(
         }
       }
     }
-    if (anchorNode.getTextContent() === '') {
-      domSelection.extend(domSelection.anchorNode, isBackward ? 0 : 1);
+  }
+  if (anchorNode.getTextContent() === '') {
+    domSelection.extend(domSelection.anchorNode, isBackward ? 0 : 1);
+    if (selection.isCaret()) {
+      domSelection.collapseToEnd();
     }
   }
   domSelection.modify(
-    'extend',
+    collapse ? 'move' : 'extend',
     isBackward ? 'backward' : 'forward',
     granularity,
   );

@@ -326,6 +326,8 @@ function moveCaretSelection(
 ): void {
   const anchorKey = selection.anchorKey;
   const anchorOffset = selection.anchorOffset;
+  const focusKey = selection.focusKey;
+  const focusOffset = selection.focusOffset;
   updateCaretSelectionForRange(
     selection,
     isBackward,
@@ -350,7 +352,13 @@ function moveCaretSelection(
     }
   }
   if (!isHoldingShift) {
-    if (isBackward) {
+    const anchorDiff =
+      selection.anchorKey !== anchorKey ||
+      selection.anchorOffset !== anchorOffset;
+    const focusDiff =
+      selection.focusKey !== focusKey || selection.focusOffset !== focusOffset;
+
+    if ((anchorDiff && focusDiff && isBackward) || anchorDiff) {
       selection.focusKey = selection.anchorKey;
       selection.focusOffset = selection.anchorOffset;
     } else {

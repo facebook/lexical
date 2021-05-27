@@ -12,6 +12,7 @@ export const E2E_DEBUG = process.env.E2E_DEBUG;
 export const E2E_PORT = process.env.E2E_PORT || 3000;
 export const E2E_BROWSER = process.env.E2E_BROWSER;
 export const IS_MAC = process.platform === 'darwin';
+export const IS_WINDOWS = process.platform === 'win32';
 
 jest.setTimeout(60000);
 

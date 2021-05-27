@@ -54,10 +54,10 @@ describe('Regression test #221', () => {
       await page.keyboard.press('Delete');
       await assertHTMLSnapshot(page);
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
-        anchorOffset: 5,
-        focusPath: [0, 0, 0],
-        focusOffset: 5,
+        anchorPath: [0, 1, 0],
+        anchorOffset: 1,
+        focusPath: [0, 1, 0],
+        focusOffset: 1,
       });
     });
 

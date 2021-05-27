@@ -45,6 +45,3 @@ export const CAN_USE_BEFORE_INPUT: boolean =
   CAN_USE_DOM && 'InputEvent' in window && !documentMode
     ? 'getTargetRanges' in new window.InputEvent('input')
     : false;
-
-export const CAN_USE_INTL_SEGMENTER: boolean =
-  'Intl' in window && 'Segmenter' in window.Intl;

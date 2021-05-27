@@ -10,10 +10,6 @@
 import type {RootNode, TextNode} from 'outline';
 
 import {isTextNode, isBlockNode} from 'outline';
-import {IS_SAFARI} from './OutlineEnv';
-
-const wordBreakPolyfillRegex =
-  /[\s.,\\\/#!$%\^&\*;:{}=\-`~()\uD800-\uDBFF\uDC00-\uDFFF\u3000-\u303F]/;
 
 export function findTextIntersectionFromCharacters(
   root: RootNode,
@@ -77,69 +73,4 @@ export function announceString(s: string): void {
       body.removeChild(announce);
     }, 500);
   }
-}
-
-export function getSegmentsFromString(
-  string: string,
-  granularity: 'grapheme' | 'word' | 'sentence',
-): Array<Segment> {
-  const segmenter = new Intl.Segmenter(undefined /* locale */, {
-    granularity,
-  });
-  return Array.from(segmenter.segment(string));
-}
-
-export function isSegmentWordLike(segment: Segment): boolean {
-  const isWordLike = segment.isWordLike;
-  if (IS_SAFARI) {
-    // Safari treats strings with only numbers as not word like.
-    // This isn't correct, so we have to do an additional check for
-    // these cases.
-    return isWordLike || /^[0-9]*$/g.test(segment.segment);
-  }
-  return isWordLike;
-}
-
-function pushSegment(
-  segments: Array<Segment>,
-  index: number,
-  str: string,
-  isWordLike: boolean,
-): void {
-  segments.push({
-    index: index - str.length,
-    segment: str,
-    isWordLike,
-  });
-}
-
-export function getWordsFromString(string: string): Array<Segment> {
-  const segments = [];
-  let wordString = '';
-  let nonWordString = '';
-  let i;
-  for (i = 0; i < string.length; i++) {
-    const char = string[i];
-
-    if (wordBreakPolyfillRegex.test(char)) {
-      if (wordString !== '') {
-        pushSegment(segments, i, wordString, true);
-        wordString = '';
-      }
-      nonWordString += char;
-    } else {
-      if (nonWordString !== '') {
-        pushSegment(segments, i, nonWordString, false);
-        nonWordString = '';
-      }
-      wordString += char;
-    }
-  }
-  if (wordString !== '') {
-    pushSegment(segments, i, wordString, true);
-  }
-  if (nonWordString !== '') {
-    pushSegment(segments, i, nonWordString, false);
-  }
-  return segments;
 }

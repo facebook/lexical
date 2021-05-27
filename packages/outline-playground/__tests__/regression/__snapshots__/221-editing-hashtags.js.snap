@@ -55,6 +55,9 @@ exports[`Regression test #221 Can handle delete in hashtag 2`] = `
   >
     #yolo
   </span>
+  <span>
+    ﻿
+  </span>
 </p>
 `;
 

@@ -427,36 +427,80 @@ describe('Keyboard Navigation', () => {
       }
       // 2 right
       await moveToNextWord(page);
-      await assertSelection(page, {
-        anchorPath: [0, 2, 0],
-        anchorOffset: 1,
-        focusPath: [0, 2, 0],
-        focusOffset: 1,
-      });
+      if (IS_MAC || E2E_BROWSER === 'firefox') {
+        await assertSelection(page, {
+          anchorPath: [0, 2, 0],
+          anchorOffset: 1,
+          focusPath: [0, 2, 0],
+          focusOffset: 1,
+        });
+      } else {
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 6,
+          focusPath: [0, 0, 0],
+          focusOffset: 6,
+        });
+      }
       // 3 right
       await moveToNextWord(page);
-      await assertSelection(page, {
-        anchorPath: [0, 2, 0],
-        anchorOffset: 5,
-        focusPath: [0, 2, 0],
-        focusOffset: 5,
-      });
+      if (IS_MAC || E2E_BROWSER === 'firefox') {
+        await assertSelection(page, {
+          anchorPath: [0, 2, 0],
+          anchorOffset: 5,
+          focusPath: [0, 2, 0],
+          focusOffset: 5,
+        });
+      } else {
+        await assertSelection(page, {
+          anchorPath: [0, 2, 0],
+          anchorOffset: 2,
+          focusPath: [0, 2, 0],
+          focusOffset: 2,
+        });
+      }
       // 4 right
       await moveToNextWord(page);
-      await assertSelection(page, {
-        anchorPath: [0, 4, 0],
-        anchorOffset: 1,
-        focusPath: [0, 4, 0],
-        focusOffset: 1,
-      });
+      if (IS_MAC || E2E_BROWSER === 'firefox') {
+        await assertSelection(page, {
+          anchorPath: [0, 4, 0],
+          anchorOffset: 1,
+          focusPath: [0, 4, 0],
+          focusOffset: 1,
+        });
+      } else {
+        await assertSelection(page, {
+          anchorPath: [0, 2, 0],
+          anchorOffset: 7,
+          focusPath: [0, 2, 0],
+          focusOffset: 7,
+        });
+      }
       // 5 right
       await moveToNextWord(page);
-      await assertSelection(page, {
-        anchorPath: [0, 4, 0],
-        anchorOffset: 3,
-        focusPath: [0, 4, 0],
-        focusOffset: 3,
-      });
+      if (IS_MAC || E2E_BROWSER === 'firefox') {
+        await assertSelection(page, {
+          anchorPath: [0, 4, 0],
+          anchorOffset: 3,
+          focusPath: [0, 4, 0],
+          focusOffset: 3,
+        });
+      } else {
+        await assertSelection(page, {
+          anchorPath: [0, 4, 0],
+          anchorOffset: 1,
+          focusPath: [0, 4, 0],
+          focusOffset: 1,
+        });
+        // 6 right
+        await moveToNextWord(page);
+        await assertSelection(page, {
+          anchorPath: [0, 4, 0],
+          anchorOffset: 3,
+          focusPath: [0, 4, 0],
+          focusOffset: 3,
+        });
+      }
     });
 
     it('can navigate through the text with emoji word by word', async () => {
@@ -623,6 +667,13 @@ describe('Keyboard Navigation', () => {
           focusPath: [0, 6, 0],
           focusOffset: 2,
         });
+      } else if (!IS_MAC) {
+        await assertSelection(page, {
+          anchorPath: [0, 2, 0],
+          anchorOffset: 4,
+          focusPath: [0, 2, 0],
+          focusOffset: 4,
+        });
       } else {
         await assertSelection(page, {
           anchorPath: [0, 2, 0],
@@ -682,6 +733,13 @@ describe('Keyboard Navigation', () => {
             anchorOffset: 1,
             focusPath: [0, 4, 0],
             focusOffset: 1,
+          });
+        } else if (!IS_MAC) {
+          await assertSelection(page, {
+            anchorPath: [0, 6, 0],
+            anchorOffset: 3,
+            focusPath: [0, 6, 0],
+            focusOffset: 3,
           });
         } else {
           await assertSelection(page, {

@@ -386,6 +386,40 @@ describe('OutlineEditor tests', () => {
           done();
         });
       });
+
+      it('does not get stuck in a recursive isDirty selection loop', async () => {
+        let counter = 0;
+
+        await update((view) => {
+          const paragraph = ParagraphNodeModule.createParagraphNode();
+          const text = Outline.createTextNode('Hello world');
+          text.select(1, 1);
+          paragraph.append(text);
+          view.getRoot().append(paragraph);
+        });
+
+        editor.addErrorListener(() => {
+          throw new Error('Fail!');
+        });
+
+        editor.addUpdateListener(() => {
+          window
+            .getSelection()
+            .setBaseAndExtent(editorElement, 0, editorElement, 0);
+          editor.update(() => {
+            counter++;
+            if (counter === 2) {
+              throw new Error('Fail!');
+            }
+          });
+        });
+
+        const editorElement = editor.getEditorElement();
+        window
+          .getSelection()
+          .setBaseAndExtent(editorElement, 0, editorElement, 0);
+        await update(() => {});
+      });
     });
   });
 });

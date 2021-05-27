@@ -259,7 +259,7 @@ export function insertParagraph(selection: Selection): void {
     removeText(selection);
   }
   const anchorNode = selection.getAnchorNode();
-  if (anchorNode === null || anchorNode.isSegmented()) {
+  if (anchorNode.isSegmented()) {
     return;
   }
   const textContent = anchorNode.getTextContent();
@@ -806,10 +806,6 @@ export function insertText(selection: Selection, text: string): void {
 
 export function moveEnd(selection: Selection): void {
   const anchorNode = selection.getAnchorNode();
-  if (anchorNode === null) {
-    return;
-  }
-
   anchorNode.select();
 }
 

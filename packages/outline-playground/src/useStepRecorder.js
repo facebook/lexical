@@ -350,7 +350,9 @@ export default function useStepRecorder(
     />
   );
   const output = isRecording ? (
-    <pre id="step-recorder">{templatedTest}</pre>
+    <div className="step-recorder-output">
+      <pre id="step-recorder">{templatedTest}</pre>
+    </div>
   ) : null;
 
   return [button, output];

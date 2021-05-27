@@ -503,7 +503,7 @@ describe('Keyboard Navigation', () => {
       }
     });
 
-    it.only('can navigate through the text with emoji word by word', async () => {
+    it('can navigate through the text with emoji word by word', async () => {
       const {page} = e2e;
       await page.focus('div.editor');
       // type sample text
@@ -629,20 +629,38 @@ describe('Keyboard Navigation', () => {
       }
       // 1 right
       await moveToNextWord(page);
-      await assertSelection(page, {
-        anchorPath: [0, 0, 0],
-        anchorOffset: 3,
-        focusPath: [0, 0, 0],
-        focusOffset: 3,
-      });
+      if (E2E_BROWSER === 'firefox') {
+        await assertSelection(page, {
+          anchorPath: [0, 2, 0],
+          anchorOffset: 3,
+          focusPath: [0, 2, 0],
+          focusOffset: 3,
+        });
+      } else {
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 3,
+          focusPath: [0, 0, 0],
+          focusOffset: 3,
+        });
+      }
       // 2 right
       await moveToNextWord(page);
-      await assertSelection(page, {
-        anchorPath: [0, 2, 0],
-        anchorOffset: 0,
-        focusPath: [0, 2, 0],
-        focusOffset: 0,
-      });
+      if (E2E_BROWSER === 'firefox') {
+        await assertSelection(page, {
+          anchorPath: [0, 6, 0],
+          anchorOffset: 2,
+          focusPath: [0, 6, 0],
+          focusOffset: 2,
+        });
+      } else {
+        await assertSelection(page, {
+          anchorPath: [0, 2, 0],
+          anchorOffset: 0,
+          focusPath: [0, 2, 0],
+          focusOffset: 0,
+        });
+      }
       // 3 right
       await moveToNextWord(page);
       if (E2E_BROWSER === 'webkit') {

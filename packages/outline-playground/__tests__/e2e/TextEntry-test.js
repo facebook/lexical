@@ -10,7 +10,7 @@ import {
   initializeE2E,
   repeat,
   assertSelection,
-  assertHTMLSnapshot,
+  assertHTML,
   keyDownCtrlOrMeta,
   keyUpCtrlOrMeta,
   copyToClipboard,
@@ -33,7 +33,10 @@ describe('TextEntry', () => {
           'div.editor p:first-of-type',
         );
         expect(enteredText).toBe(targetText);
-        await assertHTMLSnapshot(page);
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph" dir="ltr"><span>Hello Outline</span></p>',
+        );
         await assertSelection(page, {
           anchorPath: [0, 0, 0],
           anchorOffset: targetText.length,
@@ -62,7 +65,10 @@ describe('TextEntry', () => {
         await page.keyboard.type('paragraph.');
         await page.keyboard.type(' :)');
 
-        await assertHTMLSnapshot(page);
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph" dir="ltr"><span>Hello World.</span></p><p class="editor-paragraph" dir="ltr"><span>This is another paragraph. </span><span class="emoji happysmile" contenteditable="false">🙂</span><span></span></p>',
+        );
         await assertSelection(page, {
           anchorPath: [1, 2, 0],
           anchorOffset: 1,
@@ -86,7 +92,10 @@ describe('TextEntry', () => {
         );
         expect(remainingText).toBe(backspacedText);
 
-        await assertHTMLSnapshot(page);
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph" dir="ltr"><span>Delete some of these characte</span></p>',
+        );
         await assertSelection(page, {
           anchorPath: [0, 0, 0],
           anchorOffset: backspacedText.length,
@@ -126,6 +135,10 @@ describe('TextEntry', () => {
         );
         expect(remainingText).toBe(backspacedText);
 
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph" dir="ltr"><span>Delete some of these </span></p>',
+        );
         await assertSelection(page, {
           anchorPath: [0, 0, 0],
           anchorOffset: backspacedText.length,
@@ -141,7 +154,10 @@ describe('TextEntry', () => {
 
         // Add paragraph
         await page.keyboard.press('Enter');
-        await assertHTMLSnapshot(page);
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph"><span></span></p><p class="editor-paragraph"><span></span></p>',
+        );
         await assertSelection(page, {
           anchorPath: [1, 0, 0],
           anchorOffset: 0,
@@ -150,7 +166,6 @@ describe('TextEntry', () => {
         });
 
         await page.keyboard.press('ArrowLeft');
-        await assertHTMLSnapshot(page);
         await assertSelection(page, {
           anchorPath: [0, 0, 0],
           anchorOffset: 0,
@@ -159,7 +174,6 @@ describe('TextEntry', () => {
         });
 
         await page.keyboard.press('ArrowRight');
-        await assertHTMLSnapshot(page);
         await assertSelection(page, {
           anchorPath: [1, 0, 0],
           anchorOffset: 0,
@@ -168,7 +182,6 @@ describe('TextEntry', () => {
         });
 
         await page.keyboard.press('ArrowLeft');
-        await assertHTMLSnapshot(page);
         await assertSelection(page, {
           anchorPath: [0, 0, 0],
           anchorOffset: 0,
@@ -178,7 +191,10 @@ describe('TextEntry', () => {
 
         // Remove paragraph
         await page.keyboard.press('Delete');
-        await assertHTMLSnapshot(page);
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph"><span></span></p><div contenteditable="false" class="editor-placeholder">Enter some rich text...</div>',
+        );
         await assertSelection(page, {
           anchorPath: [0, 0, 0],
           anchorOffset: 0,
@@ -190,7 +206,10 @@ describe('TextEntry', () => {
         await page.keyboard.down('Shift');
         await page.keyboard.press('Enter');
         await page.keyboard.up('Shift');
-        await assertHTMLSnapshot(page);
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph"><span></span><br><span></span></p>',
+        );
         await assertSelection(page, {
           anchorPath: [0, 2, 0],
           anchorOffset: 0,
@@ -199,7 +218,10 @@ describe('TextEntry', () => {
         });
 
         await page.keyboard.press('ArrowLeft');
-        await assertHTMLSnapshot(page);
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph"><span></span><br><span></span></p>',
+        );
         await assertSelection(page, {
           anchorPath: [0, 0, 0],
           anchorOffset: 0,
@@ -209,7 +231,10 @@ describe('TextEntry', () => {
 
         // Remove line break
         await page.keyboard.press('Delete');
-        await assertHTMLSnapshot(page);
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph"><span></span></p><div contenteditable="false" class="editor-placeholder">Enter some rich text...</div>',
+        );
         await assertSelection(page, {
           anchorPath: [0, 0, 0],
           anchorOffset: 0,
@@ -228,7 +253,10 @@ describe('TextEntry', () => {
         await page.keyboard.press('Enter');
         await page.keyboard.press('Enter');
         await page.keyboard.type('Sounds good!');
-        await assertHTMLSnapshot(page);
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph" dir="ltr"><span>Copy + pasting?</span></p><p class="editor-paragraph" dir="ltr"><span></span></p><p class="editor-paragraph" dir="ltr"><span>Sounds good!</span></p>',
+        );
         await assertSelection(page, {
           anchorPath: [2, 0, 0],
           anchorOffset: 12,
@@ -240,7 +268,10 @@ describe('TextEntry', () => {
         await keyDownCtrlOrMeta(page);
         await page.keyboard.press('a');
         await keyUpCtrlOrMeta(page);
-        await assertHTMLSnapshot(page);
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph" dir="ltr"><span>Copy + pasting?</span></p><p class="editor-paragraph" dir="ltr"><span></span></p><p class="editor-paragraph" dir="ltr"><span>Sounds good!</span></p>',
+        );
         await assertSelection(page, {
           anchorPath: [0, 0, 0],
           anchorOffset: 0,
@@ -250,12 +281,18 @@ describe('TextEntry', () => {
 
         // Copy all the text
         const clipboard = await copyToClipboard(page);
-        await assertHTMLSnapshot(page);
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph" dir="ltr"><span>Copy + pasting?</span></p><p class="editor-paragraph" dir="ltr"><span></span></p><p class="editor-paragraph" dir="ltr"><span>Sounds good!</span></p>',
+        );
 
         // Paste after
         await page.keyboard.press('ArrowRight');
         await pasteFromClipboard(page, clipboard);
-        await assertHTMLSnapshot(page);
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph" dir="ltr"><span>Copy + pasting?</span></p><p class="editor-paragraph" dir="ltr"><span></span></p><p class="editor-paragraph" dir="ltr"><span>Sounds good!</span></p>',
+        );
         await assertSelection(page, {
           anchorPath: [4, 0, 0],
           anchorOffset: 12,

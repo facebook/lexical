@@ -6,12 +6,7 @@
  *
  */
 
-import {
-  initializeE2E,
-  assertHTMLSnapshot,
-  assertSelection,
-  repeat,
-} from '../utils';
+import {initializeE2E, assertHTML, assertSelection, repeat} from '../utils';
 
 describe('Hashtags', () => {
   initializeE2E((e2e) => {
@@ -23,7 +18,10 @@ describe('Hashtags', () => {
 
       await page.waitForSelector('.editor-text-hashtag');
 
-      await assertHTMLSnapshot(page);
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span class="editor-text-hashtag">#yolo</span></p>',
+      );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
         anchorOffset: 5,
@@ -33,7 +31,10 @@ describe('Hashtags', () => {
 
       await page.keyboard.press('Backspace');
       await page.keyboard.type('once');
-      await assertHTMLSnapshot(page);
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span class="editor-text-hashtag">#yolonce</span></p>',
+      );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
         anchorOffset: 8,
@@ -45,7 +46,10 @@ describe('Hashtags', () => {
         await page.keyboard.press('ArrowLeft');
       });
       await page.keyboard.press('Delete');
-      await assertHTMLSnapshot(page);
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span class="">yolonce</span></p>',
+      );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
         anchorOffset: 0,

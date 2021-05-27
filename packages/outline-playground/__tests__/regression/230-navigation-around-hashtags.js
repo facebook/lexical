@@ -6,12 +6,7 @@
  *
  */
 
-import {
-  initializeE2E,
-  assertHTMLSnapshot,
-  assertSelection,
-  repeat,
-} from '../utils';
+import {initializeE2E, assertHTML, assertSelection, repeat} from '../utils';
 
 describe('Regression test #230', () => {
   initializeE2E((e2e) => {
@@ -26,7 +21,10 @@ describe('Regression test #230', () => {
       await page.keyboard.type('a');
       await page.keyboard.press('Backspace');
       await page.keyboard.press('ArrowRight');
-      await assertHTMLSnapshot(page);
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span></span><span class="editor-text-hashtag">#foo</span></p>',
+      );
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
         anchorOffset: 1,

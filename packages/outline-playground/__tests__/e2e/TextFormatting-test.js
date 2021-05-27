@@ -8,7 +8,7 @@
 
 import {
   initializeE2E,
-  assertHTMLSnapshot,
+  assertHTML,
   assertSelection,
   keyDownCtrlOrMeta,
   keyUpCtrlOrMeta,
@@ -26,7 +26,10 @@ describe('TextFormatting', () => {
       await page.keyboard.press('b');
       await keyUpCtrlOrMeta(page);
       await page.keyboard.type(' World');
-      await assertHTMLSnapshot(page);
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span>Hello</span><strong class="editor-text-bold"> World</strong></p>',
+      );
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
         anchorOffset: 6,
@@ -38,7 +41,10 @@ describe('TextFormatting', () => {
       await page.keyboard.press('b');
       await keyUpCtrlOrMeta(page);
       await page.keyboard.type('!');
-      await assertHTMLSnapshot(page);
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span>Hello</span><strong class="editor-text-bold"> World</strong><span>!</span></p>',
+      );
       await assertSelection(page, {
         anchorPath: [0, 2, 0],
         anchorOffset: 1,
@@ -56,7 +62,10 @@ describe('TextFormatting', () => {
       await page.keyboard.press('i');
       await keyUpCtrlOrMeta(page);
       await page.keyboard.type(' World');
-      await assertHTMLSnapshot(page);
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span>Hello</span><em class="editor-text-italic"> World</em></p>',
+      );
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
         anchorOffset: 6,
@@ -68,7 +77,10 @@ describe('TextFormatting', () => {
       await page.keyboard.press('i');
       await keyUpCtrlOrMeta(page);
       await page.keyboard.type('!');
-      await assertHTMLSnapshot(page);
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span>Hello</span><em class="editor-text-italic"> World</em><span>!</span></p>',
+      );
       await assertSelection(page, {
         anchorPath: [0, 2, 0],
         anchorOffset: 1,
@@ -98,7 +110,10 @@ describe('TextFormatting', () => {
       await keyDownCtrlOrMeta(page);
       await page.keyboard.press('b');
       await keyUpCtrlOrMeta(page);
-      await assertHTMLSnapshot(page);
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span>Hello </span><strong class="editor-text-bold">world</strong><span>!</span></p>',
+      );
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
         anchorOffset: 0,
@@ -109,7 +124,10 @@ describe('TextFormatting', () => {
       await keyDownCtrlOrMeta(page);
       await page.keyboard.press('b');
       await keyUpCtrlOrMeta(page);
-      await assertHTMLSnapshot(page);
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span>Hello world!</span></p>',
+      );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
         anchorOffset: 6,
@@ -139,7 +157,10 @@ describe('TextFormatting', () => {
       await keyDownCtrlOrMeta(page);
       await page.keyboard.press('i');
       await keyUpCtrlOrMeta(page);
-      await assertHTMLSnapshot(page);
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span>Hello </span><em class="editor-text-italic">world</em><span>!</span></p>',
+      );
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
         anchorOffset: 0,
@@ -150,7 +171,10 @@ describe('TextFormatting', () => {
       await keyDownCtrlOrMeta(page);
       await page.keyboard.press('i');
       await keyUpCtrlOrMeta(page);
-      await assertHTMLSnapshot(page);
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span>Hello world!</span></p>',
+      );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
         anchorOffset: 6,
@@ -180,7 +204,10 @@ describe('TextFormatting', () => {
       await keyDownCtrlOrMeta(page);
       await page.keyboard.press('b');
       await keyUpCtrlOrMeta(page);
-      await assertHTMLSnapshot(page);
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span>Hello </span><strong class="editor-text-bold">world</strong><span>!</span></p>',
+      );
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
         anchorOffset: 0,
@@ -204,7 +231,10 @@ describe('TextFormatting', () => {
       await keyDownCtrlOrMeta(page);
       await page.keyboard.press('i');
       await keyUpCtrlOrMeta(page);
-      await assertHTMLSnapshot(page);
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span>Hello </span><strong class="editor-text-bold">w</strong><strong class="editor-text-bold editor-text-italic">or</strong><strong class="editor-text-bold">ld</strong><span>!</span></p>',
+      );
       await assertSelection(page, {
         anchorPath: [0, 2, 0],
         anchorOffset: 0,
@@ -215,7 +245,10 @@ describe('TextFormatting', () => {
       await keyDownCtrlOrMeta(page);
       await page.keyboard.press('b');
       await keyUpCtrlOrMeta(page);
-      await assertHTMLSnapshot(page);
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span>Hello </span><strong class="editor-text-bold">w</strong><em class="editor-text-italic">or</em><strong class="editor-text-bold">ld</strong><span>!</span></p>',
+      );
       await assertSelection(page, {
         anchorPath: [0, 2, 0],
         anchorOffset: 0,
@@ -240,7 +273,10 @@ describe('TextFormatting', () => {
       await keyDownCtrlOrMeta(page);
       await page.keyboard.press('b');
       await keyUpCtrlOrMeta(page);
-      await assertHTMLSnapshot(page);
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span>Hello w</span><em class="editor-text-italic">or</em><span>ld!</span></p>',
+      );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
         anchorOffset: 6,
@@ -251,7 +287,10 @@ describe('TextFormatting', () => {
       await keyDownCtrlOrMeta(page);
       await page.keyboard.press('i');
       await keyUpCtrlOrMeta(page);
-      await assertHTMLSnapshot(page);
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span>Hello </span><em class="editor-text-italic">world</em><span>!</span></p>',
+      );
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
         anchorOffset: 0,
@@ -262,7 +301,10 @@ describe('TextFormatting', () => {
       await keyDownCtrlOrMeta(page);
       await page.keyboard.press('i');
       await keyUpCtrlOrMeta(page);
-      await assertHTMLSnapshot(page);
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span>Hello world!</span></p>',
+      );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
         anchorOffset: 6,

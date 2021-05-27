@@ -6,7 +6,7 @@
  *
  */
 
-import {initializeE2E, assertHTMLSnapshot, assertSelection} from '../utils';
+import {initializeE2E, assertHTML, assertSelection} from '../utils';
 
 describe('Regression test #221', () => {
   initializeE2E((e2e) => {
@@ -16,7 +16,10 @@ describe('Regression test #221', () => {
       await page.focus('div.editor');
       await page.keyboard.type('#yolo');
       await page.waitForSelector('.editor-text-hashtag');
-      await assertHTMLSnapshot(page);
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span class="editor-text-hashtag">#yolo</span></p>',
+      );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
         anchorOffset: 5,
@@ -27,7 +30,10 @@ describe('Regression test #221', () => {
       await page.keyboard.press('ArrowLeft');
       await page.keyboard.press('ArrowLeft');
       await page.keyboard.press('Space');
-      await assertHTMLSnapshot(page);
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span class="editor-text-hashtag">#yo</span><span> lo</span></p>',
+      );
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
         anchorOffset: 1,
@@ -42,7 +48,10 @@ describe('Regression test #221', () => {
       await page.focus('div.editor');
       await page.keyboard.type('#yolo ');
       await page.waitForSelector('.editor-text-hashtag');
-      await assertHTMLSnapshot(page);
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span class="editor-text-hashtag">#yolo</span><span> </span></p>',
+      );
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
         anchorOffset: 1,
@@ -52,7 +61,10 @@ describe('Regression test #221', () => {
 
       await page.keyboard.press('ArrowLeft');
       await page.keyboard.press('Delete');
-      await assertHTMLSnapshot(page);
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span class="editor-text-hashtag">#yolo</span><span></span></p>',
+      );
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
         anchorOffset: 1,
@@ -67,7 +79,10 @@ describe('Regression test #221', () => {
       await page.focus('div.editor');
       await page.keyboard.type('#yolo ');
       await page.waitForSelector('.editor-text-hashtag');
-      await assertHTMLSnapshot(page);
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span class="editor-text-hashtag">#yolo</span><span> </span></p>',
+      );
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
         anchorOffset: 1,
@@ -77,7 +92,10 @@ describe('Regression test #221', () => {
 
       await page.keyboard.press('Backspace');
       await page.keyboard.press('Backspace');
-      await assertHTMLSnapshot(page);
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span class="editor-text-hashtag">#yol</span></p>',
+      );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
         anchorOffset: 4,

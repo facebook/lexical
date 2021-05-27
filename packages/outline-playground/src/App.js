@@ -8,6 +8,7 @@ import {useRichTextEditor, usePlainTextEditor} from './Editor';
 import TreeView from './TreeView';
 import useOptions from './useOptions';
 import useStepRecorder from './useStepRecorder';
+import useTestRecorder from './useTestRecorder';
 import useTypingPerfTracker from './useTypingPerfTracker';
 
 function RichTextEditor({options, onOptionsChange}): React$Node {
@@ -31,6 +32,7 @@ function RichTextEditor({options, onOptionsChange}): React$Node {
     isAutocomplete,
   });
   const [stepRecorderButton, stepRecorderOutput] = useStepRecorder(editor);
+  const [testRecorderButton, testRecorderOutput] = useTestRecorder(editor);
   useTypingPerfTracker(measureTypingPerf);
 
   return (
@@ -38,10 +40,12 @@ function RichTextEditor({options, onOptionsChange}): React$Node {
       <div className="editor-shell">{editorComponent}</div>
       {showTreeView && <TreeView viewModel={viewModel} />}
       {stepRecorderOutput}
+      {testRecorderOutput}
       <div className="editor-dev-toolbar">
         {optionsSwitches}
         {optionsButton}
         {stepRecorderButton}
+        {testRecorderButton}
       </div>
     </>
   );

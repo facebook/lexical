@@ -104,9 +104,7 @@ export default function TreeView({
 
   return (
     <div className="tree-view-output">
-      <pre>
-        {content}
-      </pre>
+      <pre>{content}</pre>
     </div>
   );
 }

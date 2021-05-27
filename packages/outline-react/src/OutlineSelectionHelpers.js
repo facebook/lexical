@@ -523,7 +523,7 @@ export function updateCaretSelectionForRange(
   collapse: boolean,
 ): void {
   const domSelection = window.getSelection();
-  const anchorNode = selection.getAnchorNode();
+  let anchorNode = selection.getAnchorNode();
   if (selection.isCaret()) {
     if (granularity === 'character') {
       if (isBackward && selection.anchorOffset === 0) {
@@ -564,7 +564,47 @@ export function updateCaretSelectionForRange(
     granularity,
   );
   const range = domSelection.getRangeAt(0);
+  const prevAnchorKey = selection.anchorKey;
+  const prevAnchorOffset = selection.anchorOffset;
   selection.applyDOMRange(range);
+  // Check if the selection moved just past an immutable/segmented node.
+  // In which case, we want to ensure that selection hits the boundary
+  // of these types of node, primarily for accessibility reasons.
+  if (granularity === 'word' && selection.isCaret()) {
+    anchorNode = selection.getAnchorNode();
+    if (isBackward) {
+      let nextSibling = anchorNode.getNextSibling();
+      if (
+        selection.anchorOffset === anchorNode.getTextContentSize() &&
+        isTextNode(nextSibling) &&
+        (nextSibling.isImmutable() || nextSibling.isSegmented())
+      ) {
+        nextSibling = nextSibling.getNextSibling();
+        if (
+          isTextNode(nextSibling) &&
+          (prevAnchorKey !== nextSibling.getKey() || prevAnchorOffset !== 0)
+        ) {
+          nextSibling.select(0, 0);
+        }
+      }
+    } else {
+      let prevSibling = anchorNode.getPreviousSibling();
+      if (
+        selection.anchorOffset === 0 &&
+        isTextNode(prevSibling) &&
+        (prevSibling.isImmutable() || prevSibling.isSegmented())
+      ) {
+        prevSibling = prevSibling.getPreviousSibling();
+        if (
+          isTextNode(prevSibling) &&
+          (prevAnchorKey !== prevSibling.getKey() ||
+            prevAnchorOffset !== prevSibling.getTextContentSize())
+        ) {
+          prevSibling.select();
+        }
+      }
+    }
+  }
 }
 
 export function removeText(selection: Selection): void {

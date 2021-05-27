@@ -12,6 +12,7 @@ import {
   initializeE2E,
   assertSelection,
   E2E_BROWSER,
+  IS_MAC,
 } from '../utils';
 import {
   moveToEditorBeginning,
@@ -90,12 +91,21 @@ describe('Keyboard Navigation', () => {
       await typeParagraphs(page);
       await moveToEditorBeginning(page);
       await moveToNextWord(page);
-      await assertSelection(page, {
-        anchorPath: [0, 0, 0],
-        anchorOffset: 5,
-        focusPath: [0, 0, 0],
-        focusOffset: 5,
-      });
+      if (IS_MAC || E2E_BROWSER === 'firefox') {
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 5,
+          focusPath: [0, 0, 0],
+          focusOffset: 5,
+        });
+      } else {
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 6,
+          focusPath: [0, 0, 0],
+          focusOffset: 6,
+        });
+      }
     });
 
     it('can move to the beginning of the previous word', async () => {
@@ -216,47 +226,101 @@ describe('Keyboard Navigation', () => {
       });
       // 1 right
       await moveToNextWord(page);
-      await assertSelection(page, {
-        anchorPath: [0, 0, 0],
-        anchorOffset: 5,
-        focusPath: [0, 0, 0],
-        focusOffset: 5,
-      });
+      if (IS_MAC || E2E_BROWSER === 'firefox') {
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 5,
+          focusPath: [0, 0, 0],
+          focusOffset: 5,
+        });
+      } else {
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 2,
+          focusPath: [0, 0, 0],
+          focusOffset: 2,
+        });
+      }
       // 2 right
       await moveToNextWord(page);
-      await assertSelection(page, {
-        anchorPath: [0, 0, 0],
-        anchorOffset: 9,
-        focusPath: [0, 0, 0],
-        focusOffset: 9,
-      });
+      if (IS_MAC || E2E_BROWSER === 'firefox') {
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 9,
+          focusPath: [0, 0, 0],
+          focusOffset: 9,
+        });
+      } else {
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 6,
+          focusPath: [0, 0, 0],
+          focusOffset: 6,
+        });
+      }
       // 3 right
       await moveToNextWord(page);
-      await assertSelection(page, {
-        anchorPath: [0, 0, 0],
-        anchorOffset: 13,
-        focusPath: [0, 0, 0],
-        focusOffset: 13,
-      });
+      if (IS_MAC || E2E_BROWSER === 'firefox') {
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 13,
+          focusPath: [0, 0, 0],
+          focusOffset: 13,
+        });
+      } else {
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 10,
+          focusPath: [0, 0, 0],
+          focusOffset: 10,
+        });
+      }
       // 4 right
       await moveToNextWord(page);
-      await assertSelection(page, {
-        anchorPath: [0, 0, 0],
-        anchorOffset: 18,
-        focusPath: [0, 0, 0],
-        focusOffset: 18,
-      });
+      if (IS_MAC || E2E_BROWSER === 'firefox') {
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 18,
+          focusPath: [0, 0, 0],
+          focusOffset: 18,
+        });
+      } else {
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 15,
+          focusPath: [0, 0, 0],
+          focusOffset: 15,
+        });
+      }
       // 5 right
       await moveToNextWord(page);
-      await assertSelection(page, {
-        anchorPath: [0, 0, 0],
-        anchorOffset: 20,
-        focusPath: [0, 0, 0],
-        focusOffset: 20,
-      });
+      if (IS_MAC || E2E_BROWSER === 'firefox') {
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 20,
+          focusPath: [0, 0, 0],
+          focusOffset: 20,
+        });
+      } else {
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 18,
+          focusPath: [0, 0, 0],
+          focusOffset: 18,
+        });
+
+        // 6 right
+        await moveToNextWord(page);
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 20,
+          focusPath: [0, 0, 0],
+          focusOffset: 20,
+        });
+      }
     });
 
-    it('can navigate through the formatted text word by word', async () => {
+    it.only('can navigate through the formatted text word by word', async () => {
       const {page} = e2e;
       await page.focus('div.editor');
       // type sample text
@@ -355,12 +419,21 @@ describe('Keyboard Navigation', () => {
       });
       // 1 right
       await moveToNextWord(page);
-      await assertSelection(page, {
-        anchorPath: [0, 0, 0],
-        anchorOffset: 5,
-        focusPath: [0, 0, 0],
-        focusOffset: 5,
-      });
+      if (IS_MAC || E2E_BROWSER === 'firefox') {
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 5,
+          focusPath: [0, 0, 0],
+          focusOffset: 5,
+        });
+      } else {
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 2,
+          focusPath: [0, 0, 0],
+          focusOffset: 2,
+        });
+      }
       // 2 right
       await moveToNextWord(page);
       await assertSelection(page, {

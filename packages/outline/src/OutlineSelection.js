@@ -427,20 +427,24 @@ export function createSelection(
     resolvedFocusNode.__key,
     resolvedFocusOffset,
   );
-  // If the selection changes, we need to update our view model
-  // regardless to keep the view in sync. If the selection is
-  // already dirty, we don't need to bother with this, as we
-  // will update the selection regardless.
-  if (
-    !isDirty &&
-    lastSelection !== null &&
-    isSelectionChange &&
-    !isEqual(selection, lastSelection)
-  ) {
-    selection.needsSync = true;
-  }
+
+  const selectionsMatch =
+    lastSelection !== null && isEqual(selection, lastSelection);
+
   if (isDirty) {
-    selection.isDirty = true;
+    // If the selection hasn't changed and we're not looking at
+    // handling selection during selectionchange, then don't
+    // add the isDirty flag. This will avoid recursive updates
+    // occuring because we keep adding isDirty.
+    if (isSelectionChange || !selectionsMatch) {
+      selection.isDirty = true;
+    }
+  } else if (isSelectionChange && !selectionsMatch) {
+    // If the selection changes, we need to update our view model
+    // regardless to keep the view in sync. If the selection is
+    // already dirty, we don't need to bother with this, as we
+    // will update the selection regardless.
+    selection.needsSync = true;
   }
   return selection;
 }

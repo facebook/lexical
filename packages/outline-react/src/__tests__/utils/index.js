@@ -62,31 +62,32 @@ if (!Selection.prototype.modify) {
     // given the refactor to use this selection method.
     const symbol = Object.getOwnPropertySymbols(this)[0];
     const impl = this[symbol];
-    const anchor = impl._focus;
+    const focus = impl._focus;
+    const anchor = impl._anchor;
     if (granularity === 'character') {
       if (direction === 'backward') {
-        if (anchor.offset === 0) {
-          let node = anchor.node.parentElement.previousSibling;
+        if (focus.offset === 0) {
+          let node = focus.node.parentElement.previousSibling;
           if (node === null) {
             node =
-              anchor.node.parentElement.parentElement.previousSibling.lastChild;
+              focus.node.parentElement.parentElement.previousSibling.lastChild;
           }
-          anchor.node = node;
-          anchor.offset = 1;
+          focus.node = node.firstChild;
+          focus.offset = 1;
         } else {
-          anchor.offset--;
+          focus.offset--;
         }
       } else {
-        if (anchor.offset === anchor.node.textContent.length) {
-          let node = anchor.node.parentElement.nextSibling;
+        if (focus.offset === focus.node.textContent.length) {
+          let node = focus.node.parentElement.nextSibling;
           if (node === null) {
             node =
-              anchor.node.parentElement.parentElement.nextSibling.firstChild;
+              focus.node.parentElement.parentElement.nextSibling.firstChild;
           }
-          anchor.node = node;
-          anchor.offset = 0;
+          focus.node = node.firstChild;
+          focus.offset = 0;
         } else {
-          anchor.offset++;
+          focus.offset++;
         }
       }
     } else if (granularity === 'word') {
@@ -133,6 +134,10 @@ if (!Selection.prototype.modify) {
         index += anchor.offset;
       }
       anchor.offset = index;
+    }
+    if (alter === 'move') {
+      anchor.offset = focus.offset;
+      anchor.node = focus.node;
     }
   };
 }

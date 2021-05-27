@@ -325,9 +325,7 @@ function moveCaretSelection(
   granularity: 'character' | 'word' | 'lineboundary',
 ): void {
   const anchorKey = selection.anchorKey;
-  const anchorOffset = selection.anchorOffset;
   const focusKey = selection.focusKey;
-  const focusOffset = selection.focusOffset;
   updateCaretSelectionForRange(
     selection,
     isBackward,
@@ -350,20 +348,29 @@ function moveCaretSelection(
         selection.focusOffset = 0;
       }
     }
-  }
-  if (!isHoldingShift) {
-    const anchorDiff =
-      selection.anchorKey !== anchorKey ||
-      selection.anchorOffset !== anchorOffset;
-    const focusDiff =
-      selection.focusKey !== focusKey || selection.focusOffset !== focusOffset;
-
-    if ((anchorDiff && focusDiff && isBackward) || anchorDiff) {
-      selection.focusKey = selection.anchorKey;
-      selection.focusOffset = selection.anchorOffset;
-    } else {
+    if (!isHoldingShift) {
       selection.anchorKey = selection.focusKey;
       selection.anchorOffset = selection.focusOffset;
+    }
+  } else if (!isHoldingShift) {
+    if (anchorKey === selection.anchorKey && focusKey === selection.focusKey) {
+      const anchorOffset = selection.anchorOffset;
+      const focusOffset = selection.focusOffset;
+      const offset = isBackward
+        ? anchorOffset < focusOffset
+          ? anchorOffset
+          : focusOffset
+        : anchorOffset < focusOffset
+        ? focusOffset
+        : anchorOffset;
+      selection.anchorOffset = offset;
+      selection.focusOffset = offset;
+    } else {
+      if (isBackward) {
+        selection.focusOffset = selection.anchorOffset;
+      } else {
+        selection.anchorOffset = selection.focusOffset;
+      }
     }
     selection.isDirty = true;
   }

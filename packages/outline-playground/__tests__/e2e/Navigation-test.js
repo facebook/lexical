@@ -12,7 +12,7 @@ import {
   initializeE2E,
   assertSelection,
   E2E_BROWSER,
-  IS_MAC,
+  IS_WINDOWS,
 } from '../utils';
 import {
   moveToEditorBeginning,
@@ -91,7 +91,7 @@ describe('Keyboard Navigation', () => {
       await typeParagraphs(page);
       await moveToEditorBeginning(page);
       await moveToNextWord(page);
-      if (IS_MAC || E2E_BROWSER === 'firefox') {
+      if (!IS_WINDOWS || E2E_BROWSER === 'firefox') {
         await assertSelection(page, {
           anchorPath: [0, 0, 0],
           anchorOffset: 5,
@@ -226,7 +226,7 @@ describe('Keyboard Navigation', () => {
       });
       // 1 right
       await moveToNextWord(page);
-      if (IS_MAC || E2E_BROWSER === 'firefox') {
+      if (!IS_WINDOWS || E2E_BROWSER === 'firefox') {
         await assertSelection(page, {
           anchorPath: [0, 0, 0],
           anchorOffset: 5,
@@ -243,7 +243,7 @@ describe('Keyboard Navigation', () => {
       }
       // 2 right
       await moveToNextWord(page);
-      if (IS_MAC || E2E_BROWSER === 'firefox') {
+      if (!IS_WINDOWS || E2E_BROWSER === 'firefox') {
         await assertSelection(page, {
           anchorPath: [0, 0, 0],
           anchorOffset: 9,
@@ -260,7 +260,7 @@ describe('Keyboard Navigation', () => {
       }
       // 3 right
       await moveToNextWord(page);
-      if (IS_MAC || E2E_BROWSER === 'firefox') {
+      if (!IS_WINDOWS || E2E_BROWSER === 'firefox') {
         await assertSelection(page, {
           anchorPath: [0, 0, 0],
           anchorOffset: 13,
@@ -277,7 +277,7 @@ describe('Keyboard Navigation', () => {
       }
       // 4 right
       await moveToNextWord(page);
-      if (IS_MAC || E2E_BROWSER === 'firefox') {
+      if (!IS_WINDOWS || E2E_BROWSER === 'firefox') {
         await assertSelection(page, {
           anchorPath: [0, 0, 0],
           anchorOffset: 18,
@@ -294,7 +294,7 @@ describe('Keyboard Navigation', () => {
       }
       // 5 right
       await moveToNextWord(page);
-      if (IS_MAC || E2E_BROWSER === 'firefox') {
+      if (!IS_WINDOWS || E2E_BROWSER === 'firefox') {
         await assertSelection(page, {
           anchorPath: [0, 0, 0],
           anchorOffset: 20,
@@ -410,7 +410,7 @@ describe('Keyboard Navigation', () => {
       });
       // 1 right
       await moveToNextWord(page);
-      if (IS_MAC || E2E_BROWSER === 'firefox') {
+      if (!IS_WINDOWS || E2E_BROWSER === 'firefox') {
         await assertSelection(page, {
           anchorPath: [0, 0, 0],
           anchorOffset: 5,
@@ -427,7 +427,7 @@ describe('Keyboard Navigation', () => {
       }
       // 2 right
       await moveToNextWord(page);
-      if (IS_MAC || E2E_BROWSER === 'firefox') {
+      if (!IS_WINDOWS || E2E_BROWSER === 'firefox') {
         await assertSelection(page, {
           anchorPath: [0, 2, 0],
           anchorOffset: 1,
@@ -444,7 +444,7 @@ describe('Keyboard Navigation', () => {
       }
       // 3 right
       await moveToNextWord(page);
-      if (IS_MAC || E2E_BROWSER === 'firefox') {
+      if (!IS_WINDOWS || E2E_BROWSER === 'firefox') {
         await assertSelection(page, {
           anchorPath: [0, 2, 0],
           anchorOffset: 5,
@@ -461,7 +461,7 @@ describe('Keyboard Navigation', () => {
       }
       // 4 right
       await moveToNextWord(page);
-      if (IS_MAC || E2E_BROWSER === 'firefox') {
+      if (!IS_WINDOWS || E2E_BROWSER === 'firefox') {
         await assertSelection(page, {
           anchorPath: [0, 4, 0],
           anchorOffset: 1,
@@ -478,7 +478,7 @@ describe('Keyboard Navigation', () => {
       }
       // 5 right
       await moveToNextWord(page);
-      if (IS_MAC || E2E_BROWSER === 'firefox') {
+      if (!IS_WINDOWS || E2E_BROWSER === 'firefox') {
         await assertSelection(page, {
           anchorPath: [0, 4, 0],
           anchorOffset: 3,
@@ -667,7 +667,7 @@ describe('Keyboard Navigation', () => {
           focusPath: [0, 6, 0],
           focusOffset: 2,
         });
-      } else if (!IS_MAC) {
+      } else if (IS_WINDOWS) {
         await assertSelection(page, {
           anchorPath: [0, 2, 0],
           anchorOffset: 4,
@@ -734,7 +734,7 @@ describe('Keyboard Navigation', () => {
             focusPath: [0, 4, 0],
             focusOffset: 1,
           });
-        } else if (!IS_MAC) {
+        } else if (IS_WINDOWS) {
           await assertSelection(page, {
             anchorPath: [0, 6, 0],
             anchorOffset: 3,

@@ -350,10 +350,7 @@ function moveCaretSelection(
     }
   }
   if (!isHoldingShift) {
-    if (
-      selection.anchorKey !== anchorKey ||
-      selection.anchorOffset !== anchorOffset
-    ) {
+    if (isBackward) {
       selection.focusKey = selection.anchorKey;
       selection.focusOffset = selection.anchorOffset;
     } else {

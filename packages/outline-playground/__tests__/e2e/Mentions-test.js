@@ -6,7 +6,7 @@
  *
  */
 
-import {initializeE2E, assertHTMLSnapshot, assertSelection} from '../utils';
+import {initializeE2E, assertHTML, assertSelection} from '../utils';
 
 describe('Mentions', () => {
   initializeE2E((e2e) => {
@@ -23,10 +23,16 @@ describe('Mentions', () => {
       });
 
       await page.waitForSelector('#mentions-typeahead ul li');
-      await assertHTMLSnapshot(page);
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span aria-controls="mentions-typeahead">Luke</span></p>',
+      );
 
       await page.keyboard.press('Enter');
-      await assertHTMLSnapshot(page);
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph"><span></span><span class="mention" tabindex="-1" contenteditable="false" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span></span></p>',
+      );
       await assertSelection(page, {
         anchorPath: [0, 2, 0],
         anchorOffset: 1,
@@ -66,10 +72,16 @@ describe('Mentions', () => {
       });
 
       await page.waitForSelector('#mentions-typeahead ul li');
-      await assertHTMLSnapshot(page);
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span aria-controls="mentions-typeahead">Luke</span></p',
+      );
 
       await page.keyboard.press('Enter');
-      await assertHTMLSnapshot(page);
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph"><span></span><span class="mention" tabindex="-1" contenteditable="false" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span></span></p>',
+      );
       await assertSelection(page, {
         anchorPath: [0, 2, 0],
         anchorOffset: 1,
@@ -88,7 +100,10 @@ describe('Mentions', () => {
       });
 
       await page.keyboard.press('Delete');
-      await assertHTMLSnapshot(page);
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph"><span></span><span class="mention" tabindex="-1" contenteditable="false" style="background-color: rgba(24, 119, 232, 0.2);">Skywalker</span><span></span></p>',
+      );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
         anchorOffset: 0,
@@ -97,7 +112,10 @@ describe('Mentions', () => {
       });
 
       await page.keyboard.press('Delete');
-      await assertHTMLSnapshot(page);
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph"><span></span></p><div contenteditable="false" class="editor-placeholder">Enter some rich text...</div>',
+      );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
         anchorOffset: 0,
@@ -119,10 +137,16 @@ describe('Mentions', () => {
       });
 
       await page.waitForSelector('#mentions-typeahead ul li');
-      await assertHTMLSnapshot(page);
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span aria-controls="mentions-typeahead">Luke</span></p>',
+      );
 
       await page.keyboard.press('Enter');
-      await assertHTMLSnapshot(page);
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph"><span></span><span class="mention" tabindex="-1" contenteditable="false" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span></span></p>',
+      );
       await assertSelection(page, {
         anchorPath: [0, 2, 0],
         anchorOffset: 1,
@@ -133,7 +157,10 @@ describe('Mentions', () => {
       await page.waitForSelector('.mention');
 
       await page.keyboard.press('Backspace');
-      await assertHTMLSnapshot(page);
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph"><span></span><span class="mention" tabindex="-1" contenteditable="false" style="background-color: rgba(24, 119, 232, 0.2);">Luke</span><span></span></p>',
+      );
       await assertSelection(page, {
         anchorPath: [0, 2, 0],
         anchorOffset: 1,
@@ -142,7 +169,10 @@ describe('Mentions', () => {
       });
 
       await page.keyboard.press('Backspace');
-      await assertHTMLSnapshot(page);
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph"><span></span></p><div contenteditable="false" class="editor-placeholder">Enter some rich text...</div>',
+      );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
         anchorOffset: 0,

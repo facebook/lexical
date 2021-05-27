@@ -105,16 +105,23 @@ export async function repeat(times, cb) {
   }
 }
 
-export async function assertHTMLSnapshot(page) {
-  // Assert HTML of the editor matches the snapshot
-  const html = await page.innerHTML('div.editor');
+export async function assertHTML(page, expectedHtml) {
+  // Assert HTML of the editor matches the given html
+  const actualHtml = await page.innerHTML('div.editor');
+  if (expectedHtml === '') {
+    console.log('Output HTML:\n\n' + actualHtml);
+    throw new Error('Empty HTML assertion!');
+  }
   // HTML might differ between browsers, so we use attach
-  // it to an element using JSDOM to normalize and prettify
-  // the output.
-  const element = document.createElement('div');
-  element.innerHTML = html;
-  expect(element.firstChild).toMatchSnapshot();
+  // outputs to an element using JSDOM to normalize and prettify
+  // the output. Plus we strip out the zero width character.
+  const actual = document.createElement('div');
+  actual.innerHTML = actualHtml.replace(/\uFEFF/g, '');
+  const expected = document.createElement('div');
+  expected.innerHTML = expectedHtml.replace(/\uFEFF/g, '');
+  expect(expected.firstChild).toEqual(actual.firstChild);
 }
+
 export async function assertSelection(page, expected) {
   // Assert the selection of the editor matches the snapshot
   const selection = await page.evaluate(() => {

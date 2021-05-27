@@ -6,7 +6,7 @@
  *
  */
 
-import {initializeE2E, assertHTMLSnapshot, assertSelection} from '../utils';
+import {initializeE2E, assertHTML, assertSelection} from '../utils';
 
 describe('Placeholder', () => {
   initializeE2E((e2e) => {
@@ -17,7 +17,10 @@ describe('Placeholder', () => {
       const textContent = await page.textContent('.editor-placeholder');
       expect(textContent).toBe('Enter some rich text...');
 
-      await assertHTMLSnapshot(page);
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph"><span></span></p><div contenteditable="false" class="editor-placeholder">Enter some rich text...</div>',
+      );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
         anchorOffset: 0,

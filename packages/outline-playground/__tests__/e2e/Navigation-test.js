@@ -677,12 +677,19 @@ describe('Keyboard Navigation', () => {
           focusPath: [0, 6, 0],
           focusOffset: 5,
         });
-      } else {
+      } else if (IS_WINDOWS) {
         await assertSelection(page, {
           anchorPath: [0, 2, 0],
           anchorOffset: 4,
           focusPath: [0, 2, 0],
           focusOffset: 4,
+        });
+      } else {
+        await assertSelection(page, {
+          anchorPath: [0, 2, 0],
+          anchorOffset: 3,
+          focusPath: [0, 2, 0],
+          focusOffset: 3,
         });
       }
       // Non-Firefox requires more arrow presses
@@ -713,12 +720,21 @@ describe('Keyboard Navigation', () => {
         });
         // 7 right
         await moveToNextWord(page);
-        await assertSelection(page, {
-          anchorPath: [0, 6, 0],
-          anchorOffset: 3,
-          focusPath: [0, 6, 0],
-          focusOffset: 3,
-        });
+        if (!IS_WINDOWS) {
+          await assertSelection(page, {
+            anchorPath: [0, 6, 0],
+            anchorOffset: 2,
+            focusPath: [0, 6, 0],
+            focusOffset: 2,
+          });
+        } else {
+          await assertSelection(page, {
+            anchorPath: [0, 6, 0],
+            anchorOffset: 3,
+            focusPath: [0, 6, 0],
+            focusOffset: 3,
+          });
+        }
         // 8 right
         await moveToNextWord(page);
         await assertSelection(page, {

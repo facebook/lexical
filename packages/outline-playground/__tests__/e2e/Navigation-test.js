@@ -503,7 +503,7 @@ describe('Keyboard Navigation', () => {
       }
     });
 
-    it.only('can navigate through the text with emoji word by word', async () => {
+    it('can navigate through the text with emoji word by word', async () => {
       const {page} = e2e;
       await page.focus('div.editor');
       // type sample text

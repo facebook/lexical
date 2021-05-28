@@ -432,11 +432,10 @@ export function createSelection(
     lastSelection !== null && isEqual(selection, lastSelection);
 
   if (isDirty) {
-    // If the selection hasn't changed and we're not looking at
-    // handling selection during selectionchange, then don't
-    // add the isDirty flag. This will avoid recursive updates
-    // occuring because we keep adding isDirty.
-    if (isSelectionChange || !selectionsMatch) {
+    // If the selection hasn't changed then don't add the isDirty flag.
+    // This will avoid recursive updates occuring because we keep
+    // adding isDirty.
+    if (!selectionsMatch) {
       selection.isDirty = true;
     }
   } else if (isSelectionChange && !selectionsMatch) {

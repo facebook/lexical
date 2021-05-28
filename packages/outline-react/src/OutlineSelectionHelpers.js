@@ -523,7 +523,7 @@ export function updateCaretSelectionForRange(
   collapse: boolean,
 ): void {
   const domSelection = window.getSelection();
-  const anchorNode = selection.getAnchorNode();
+  let anchorNode = selection.getAnchorNode();
 
   if (selection.isCaret()) {
     if (granularity === 'character') {
@@ -582,23 +582,22 @@ export function updateCaretSelectionForRange(
   // of these types of node, primarily for accessibility reasons. We
   // only do this for selection going forward, as this is the most prone
   // to be skewed by the fact that these nodes use contenteditable="false"
-  if (
-    !isBackward &&
-    granularity === 'word' &&
-    selection.isCaret() &&
-    selection.anchorOffset === 0
-  ) {
-    const target = selection.getAnchorNode().getPreviousSibling();
+  if (!isBackward && granularity === 'word' && selection.isCaret()) {
+    anchorNode = selection.getAnchorNode();
+    const target = anchorNode.getPreviousSibling();
     if (isTextNode(target) && (target.isImmutable() || target.isSegmented())) {
       const targetPrevSibling = target.getPreviousSibling();
-      // Ensure that we don't move selection if we were previously in the
-      // same place!
       if (
         isTextNode(targetPrevSibling) &&
-        (prevAnchorKey !== targetPrevSibling.getKey() ||
-          prevAnchorOffset !== targetPrevSibling.getTextContentSize())
+        prevAnchorKey === targetPrevSibling.getKey()
       ) {
-        targetPrevSibling.select();
+        // Ensure that we move selection to the right place. Either before the
+        // node or just after the node, depending on where we were.
+        if (prevAnchorOffset === targetPrevSibling.getTextContentSize()) {
+          anchorNode.select(0, 0);
+        } else {
+          targetPrevSibling.select();
+        }
       }
     }
   }

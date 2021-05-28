@@ -704,12 +704,21 @@ describe('Keyboard Navigation', () => {
         // 6 right
         await moveToNextWord(page);
         if (E2E_BROWSER === 'chromium') {
-          await assertSelection(page, {
-            anchorPath: [0, 6, 0],
-            anchorOffset: 2,
-            focusPath: [0, 6, 0],
-            focusOffset: 2,
-          });
+          if (IS_WINDOWS) {
+            await assertSelection(page, {
+              anchorPath: [0, 6, 0],
+              anchorOffset: 3,
+              focusPath: [0, 6, 0],
+              focusOffset: 3,
+            });
+          } else {
+            await assertSelection(page, {
+              anchorPath: [0, 6, 0],
+              anchorOffset: 2,
+              focusPath: [0, 6, 0],
+              focusOffset: 2,
+            });
+          }
         } else {
           await assertSelection(page, {
             anchorPath: [0, 6, 0],

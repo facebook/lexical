@@ -674,18 +674,33 @@ describe('Keyboard Navigation', () => {
           focusOffset: 3,
         });
       }
-      // Non-Firefox requires more arrow presses
-      if (E2E_BROWSER !== 'firefox') {
-        // 4 right
-        await moveToNextWord(page);
+      // 4 right
+      await moveToNextWord(page);
+      if (E2E_BROWSER === 'firefox') {
+        await assertSelection(page, {
+          anchorPath: [0, 6, 0],
+          anchorOffset: 2,
+          focusPath: [0, 6, 0],
+          focusOffset: 2,
+        });
+      } else {
         await assertSelection(page, {
           anchorPath: [0, 2, 0],
           anchorOffset: 7,
           focusPath: [0, 2, 0],
           focusOffset: 7,
         });
-        // 5 right
-        await moveToNextWord(page);
+      }
+      // 5 right
+      await moveToNextWord(page);
+      if (E2E_BROWSER === 'firefox') {
+        await assertSelection(page, {
+          anchorPath: [0, 6, 0],
+          anchorOffset: 5,
+          focusPath: [0, 6, 0],
+          focusOffset: 5,
+        });
+      } else {
         if (E2E_BROWSER === 'chromium') {
           await assertSelection(page, {
             anchorPath: [0, 6, 0],

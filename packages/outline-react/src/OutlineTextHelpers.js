@@ -74,3 +74,7 @@ export function announceString(s: string): void {
     }, 500);
   }
 }
+
+export function doesContainGraheme(str: string): boolean {
+  return /[\uD800-\uDBFF][\uDC00-\uDFFF]/g.test(str);
+}

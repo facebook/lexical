@@ -243,6 +243,72 @@ describe('TextEntry', () => {
         });
       });
 
+      it('Handles Arabic characters with diacritics', async () => {
+        const {page} = e2e;
+
+        await page.focus('div.editor');
+
+        await page.keyboard.type('هَ');
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph" dir="rtl"><span>هَ</span></p>',
+        );
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 2,
+          focusPath: [0, 0, 0],
+          focusOffset: 2,
+        });
+
+        await page.keyboard.press('Backspace');
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph" dir="rtl"><span>ه</span></p>',
+        );
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 1,
+          focusPath: [0, 0, 0],
+          focusOffset: 1,
+        });
+
+        await page.keyboard.press('Backspace');
+
+        await assertHTML(page, '<p class="editor-paragraph"><span></span></p>');
+
+        await page.keyboard.type('هَ');
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph" dir="rtl"><span>هَ</span></p>',
+        );
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 2,
+          focusPath: [0, 0, 0],
+          focusOffset: 2,
+        });
+
+        await page.keyboard.press('ArrowRight');
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 0,
+          focusPath: [0, 0, 0],
+          focusOffset: 0,
+        });
+
+        await page.keyboard.press('Delete');
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph" dir="rtl"><span>ه</span></p>',
+        );
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 1,
+          focusPath: [0, 0, 0],
+          focusOffset: 1,
+        });
+      });
+
       it('Basic copy + paste', async () => {
         const {page} = e2e;
 

@@ -256,11 +256,11 @@ export class OutlineEditor {
       }
     } else {
       updateEditor(this, emptyFunction, true);
-      this._deferred.push(() => {
-        this._compositionKey = nodeKey;
-        reconcilePlaceholder(this, this._viewModel);
-      });
     }
+    this._deferred.push(() => {
+      this._compositionKey = nodeKey;
+      reconcilePlaceholder(this, this._viewModel);
+    });
   }
   setPointerDown(isPointerDown: boolean): void {
     this._isPointerDown = isPointerDown;

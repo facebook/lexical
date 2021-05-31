@@ -59,7 +59,7 @@ import {
   moveForward,
   moveWordForward,
 } from './OutlineSelectionHelpers';
-import {announceString} from './OutlineTextHelpers';
+import {announceString, doesContainGraheme} from './OutlineTextHelpers';
 
 // Safari triggers composition before keydown, meaning
 // we need to account for this when handling key events.
@@ -480,7 +480,7 @@ export function onSelectionChange(
           // text (because we move native offset to 0 when dealing with empty
           // text nodes).
           if (
-            !/[\uD800-\uDBFF][\uDC00-\uDFFF]/g.test(announceText) ||
+            !doesContainGraheme(announceText) ||
             (domSelection.anchorOffset === 0 && textContentSize === 0)
           ) {
             announceString(announceText);

@@ -25,6 +25,7 @@ import {
 import {createParagraphNode} from 'outline-extensions/ParagraphNode';
 
 import {invariant} from './OutlineReactUtils';
+import {doesContainGraheme} from './OutlineTextHelpers';
 
 function isImmutableOrInert(node: OutlineNode): boolean {
   return node.isImmutable() || node.isInert();
@@ -423,6 +424,33 @@ export function deleteWordForward(selection: Selection): void {
   normalizeAnchorParent(selection);
 }
 
+function updateCaretSelectionForUnicodeCharacter(
+  selection: Selection,
+  isBackward: boolean,
+): void {
+  const anchorNode = selection.getAnchorNode();
+  const focusNode = selection.getFocusNode();
+
+  if (anchorNode === focusNode) {
+    // Handling of multibyte characters
+    const anchorOffset = selection.anchorOffset;
+    const focusOffset = selection.focusOffset;
+    const isBefore = anchorOffset < focusOffset;
+    const startOffset = isBefore ? anchorOffset : focusOffset;
+    const endOffset = isBefore ? focusOffset : anchorOffset;
+    const characterOffset = isBackward ? endOffset - 1 : endOffset + 1;
+
+    if (startOffset !== characterOffset) {
+      const text = anchorNode.getTextContent().slice(startOffset, endOffset);
+      if (!doesContainGraheme(text)) {
+        selection.anchorOffset = characterOffset;
+      }
+    }
+  } else {
+    // TODO Handling of multibyte characters
+  }
+}
+
 export function deleteBackward(selection: Selection): void {
   if (selection.isCaret()) {
     updateCaretSelectionForRange(selection, true, 'character', false);
@@ -456,6 +484,7 @@ export function deleteBackward(selection: Selection): void {
         removeSegment(focusNode, true);
         return;
       }
+      updateCaretSelectionForUnicodeCharacter(selection, true);
     }
   }
   removeText(selection);
@@ -472,6 +501,7 @@ export function deleteForward(selection: Selection): void {
         removeSegment(focusNode, false);
         return;
       }
+      updateCaretSelectionForUnicodeCharacter(selection, true);
     }
   }
   removeText(selection);

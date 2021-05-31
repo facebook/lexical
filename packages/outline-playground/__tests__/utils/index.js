@@ -119,7 +119,7 @@ export async function assertHTML(page, expectedHtml) {
   actual.innerHTML = actualHtml.replace(/\uFEFF/g, '');
   const expected = document.createElement('div');
   expected.innerHTML = expectedHtml.replace(/\uFEFF/g, '');
-  expect(expected.firstChild).toEqual(actual.firstChild);
+  expect(actual.firstChild).toEqual(expected.firstChild);
 }
 
 export async function assertSelection(page, expected) {

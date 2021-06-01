@@ -556,10 +556,28 @@ export function onNativeInput(
     }
     const data = event.data;
     if (data) {
-      const anchorTextBeforeInsertion = selection
-        .getAnchorNode()
-        .getTextContent();
-      insertText(selection, data);
+      const anchorNode = selection.getAnchorNode();
+      const anchorTextBeforeInsertion = anchorNode.getTextContent();
+
+      // Let's read what is in the DOM already, and use that as the value
+      // for our anchor node.
+      const anchorElement = editor.getElementByKey(anchorKey);
+      if (anchorElement !== null) {
+        const textNode = anchorElement.firstChild;
+        if (textNode != null) {
+          let domTextContent = textNode.nodeValue;
+          let anchorOffset = window.getSelection().anchorOffset;
+          if (domTextContent[0] === '\uFEFF') {
+            domTextContent = domTextContent.slice(1);
+            anchorOffset--;
+          }
+          anchorNode.setTextContent(domTextContent);
+          selection.setRange(anchorKey, anchorOffset, anchorKey, anchorOffset);
+        }
+      } else {
+        insertText(selection, data);
+      }
+
       if (
         isInsertText &&
         anchorKey === selection.focusKey &&

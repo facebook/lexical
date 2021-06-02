@@ -13,6 +13,7 @@ import type {
   OutlineNode,
   ParsedNodeMap,
   NodeKey,
+  TextNode,
   View,
 } from 'outline';
 
@@ -516,6 +517,21 @@ export function onPointerUp(
   editor.setPointerDown(false);
 }
 
+function checkForBadInsertion(
+  anchorElement: HTMLElement,
+  anchorNode: TextNode,
+  editor: OutlineEditor,
+): boolean {
+  const nextSibling = anchorNode.getNextSibling();
+
+  return (
+    anchorElement.parentNode === null ||
+    (nextSibling !== null &&
+      editor.getElementByKey(nextSibling.getKey()) !==
+        anchorElement.nextSibling)
+  );
+}
+
 export function onNativeInput(
   event: InputEvent,
   editor: OutlineEditor,
@@ -555,22 +571,44 @@ export function onNativeInput(
     const data = event.data;
     if (data != null) {
       const focusKey = selection.focusKey;
+      const anchorElement = editor.getElementByKey(anchorKey);
+      const anchorNode = selection.getAnchorNode();
+
+      invariant(
+        anchorElement !== null,
+        'onNativeInput: cannot find DOM element for anchor node',
+      );
+
+      // Let's try and detect a bad update here. This usually comes from text transformation
+      // tools that attempt to insertText across a range of nodes – which obviously we can't
+      // detect unless we rely on the DOM being the source of truth. We can try and recover
+      // by dispatching an Undo event, and then capturing the previous selection and trying to
+      // apply the text on that.
+      if (checkForBadInsertion(anchorElement, anchorNode, editor)) {
+        window.requestAnimationFrame(() => {
+          document.execCommand('Undo', false, null);
+          editor.update((undoneView) => {
+            const undoneSelection = undoneView.getSelection();
+            if (undoneSelection !== null) {
+              insertText(undoneSelection, data);
+            }
+          });
+        });
+        return;
+      }
 
       // If we are inserting text into the same anchor as is our focus
       // node, then we can apply a faster optimization that also handles
       // text replacement tools that use execCommand (which doesn't trigger
       // beforeinput in some browsers).
       if (anchorKey === focusKey) {
-        const anchorNode = selection.getAnchorNode();
         // Let's read what is in the DOM already, and use that as the value
         // for our anchor node.
-        const anchorElement = editor.getElementByKey(anchorKey);
-        const textNode =
-          anchorElement && getDOMTextNodeFromElement(anchorElement);
+        const textNode = getDOMTextNodeFromElement(anchorElement);
 
         invariant(
-          anchorElement && textNode != null,
-          'onNativeInput: cannot find DOM element and its text node for anchor node',
+          textNode != null,
+          'onNativeInput: cannot find DOM text node for anchor node',
         );
 
         // We get the text content from the anchor element's text node
@@ -582,27 +620,6 @@ export function onNativeInput(
           anchorOffset--;
         } else if (domTextContent[domTextContentLength - 1] === '\uFEFF') {
           domTextContent = domTextContent.slice(0, domTextContentLength - 1);
-        }
-        // Let's try and detect a bad update here. This usually comes from text transformation
-        // tools that attempt to insertText across a range of nodes – which obviously we can't
-        // detect unless we rely on the DOM being the source of truth. We can try and recover
-        // by dispatching an Undo event, and then capturing the previous selection and trying to
-        // apply the text on that.
-        if (
-          anchorElement.parentNode === null ||
-          (anchorElement.nextSibling === null &&
-            anchorNode.getNextSibling() !== null)
-        ) {
-          requestAnimationFrame(() => {
-            document.execCommand('Undo', false, null);
-            editor.update((undoneView) => {
-              const undoneSelection = undoneView.getSelection();
-              if (undoneSelection !== null) {
-                insertText(undoneSelection, data);
-              }
-            });
-          });
-          return;
         }
         // We set the range before content, as hashtags might skew the offset
         selection.setRange(anchorKey, anchorOffset, anchorKey, anchorOffset);

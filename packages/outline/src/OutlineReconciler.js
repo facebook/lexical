@@ -20,19 +20,14 @@ import {
   isSelectionWithinEditor,
   getDOMTextNodeFromElement,
 } from './OutlineUtils';
-import {
-  IS_IMMUTABLE,
-  IS_SEGMENTED,
-  IS_INERT,
-  IS_RTL,
-  IS_LTR,
-} from './OutlineConstants';
+import {IS_INERT, IS_RTL, IS_LTR} from './OutlineConstants';
 
 let subTreeTextContent = '';
 let editorTextContent = '';
 let activeEditorThemeClasses: EditorThemeClasses;
 let activeEditor: OutlineEditor;
 let activeDirtySubTrees: Set<NodeKey>;
+let activeDirtyNodes: Set<NodeKey>;
 let activePrevNodeMap: NodeMapType;
 let activeNextNodeMap: NodeMapType;
 let activeViewModelIsDirty: boolean = false;
@@ -86,10 +81,7 @@ function createNode(
     reconcileDecorator(key, decorator);
   }
 
-  if (
-    node.__type !== 'linebreak' &&
-    (flags & IS_IMMUTABLE || flags & IS_SEGMENTED || isInert)
-  ) {
+  if (node.__type !== 'linebreak' && isInert) {
     dom.contentEditable = 'false';
   }
   if (isInert) {
@@ -150,7 +142,7 @@ function createChildren(
   }
   // $FlowFixMe: internal field
   dom.__outlineTextContent = subTreeTextContent;
-  subTreeTextContent = previousSubTreeTextContent;
+  subTreeTextContent = previousSubTreeTextContent + subTreeTextContent;
 }
 
 function reconcileChildren(
@@ -202,19 +194,21 @@ function reconcileChildren(
   }
   // $FlowFixMe: internal field
   dom.__outlineTextContent = subTreeTextContent;
-  subTreeTextContent = previousSubTreeTextContent;
+  subTreeTextContent = previousSubTreeTextContent + subTreeTextContent;
 }
 
 function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
   const prevNode = activePrevNodeMap[key];
   const nextNode = activeNextNodeMap[key];
-  const hasDirtySubTree =
-    activeViewModelIsDirty || activeDirtySubTrees.has(key);
+  const isDirty =
+    activeViewModelIsDirty ||
+    activeDirtyNodes.has(key) ||
+    activeDirtySubTrees.has(key);
   const dom = getElementByKeyOrThrow(activeEditor, key);
   // If we're composing this node, skip over reconciling it
   const isComposingNode = key === activeEditor._compositionKey;
 
-  if ((prevNode === nextNode && !hasDirtySubTree) || isComposingNode) {
+  if ((prevNode === nextNode && !isDirty) || isComposingNode) {
     if (isTextNode(prevNode)) {
       const text = prevNode.__text;
       editorTextContent += text;
@@ -268,7 +262,7 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
     const nextChildren = nextNode.__children;
     const childrenAreDifferent = prevChildren !== nextChildren;
 
-    if (childrenAreDifferent || hasDirtySubTree) {
+    if (childrenAreDifferent || isDirty) {
       const isRoot = key === 'root';
       reconcileChildren(prevChildren, nextChildren, dom, isRoot);
     }
@@ -500,6 +494,7 @@ function reconcileRoot(
   nextViewModel: ViewModel,
   editor: OutlineEditor,
   dirtySubTrees: Set<NodeKey>,
+  dirtyNodes: Set<NodeKey>,
 ): void {
   subTreeTextContent = '';
   editorTextContent = '';
@@ -508,6 +503,7 @@ function reconcileRoot(
   activeEditor = editor;
   activeEditorThemeClasses = editor._editorThemeClasses;
   activeDirtySubTrees = dirtySubTrees;
+  activeDirtyNodes = dirtyNodes;
   activePrevNodeMap = prevViewModel._nodeMap;
   activeNextNodeMap = nextViewModel._nodeMap;
   activeViewModelIsDirty = nextViewModel._isDirty;
@@ -523,6 +519,8 @@ function reconcileRoot(
   // $FlowFixMe
   activeDirtySubTrees = undefined;
   // $FlowFixMe
+  activeDirtyNodes = undefined;
+  // $FlowFixMe
   activePrevNodeMap = undefined;
   // $FlowFixMe
   activeNextNodeMap = undefined;
@@ -536,6 +534,7 @@ export function reconcileViewModel(
   editor: OutlineEditor,
 ): void {
   const dirtySubTrees = nextViewModel._dirtySubTrees;
+  const dirtyNodes = nextViewModel._dirtyNodes;
   // When a view model is historic, we bail out of using dirty checks and
   // always do a full reconciliation to ensure consistency.
   const isDirty = nextViewModel._isDirty;
@@ -544,7 +543,13 @@ export function reconcileViewModel(
 
   if (needsUpdate) {
     const {anchorOffset, focusOffset} = window.getSelection();
-    reconcileRoot(prevViewModel, nextViewModel, editor, dirtySubTrees);
+    reconcileRoot(
+      prevViewModel,
+      nextViewModel,
+      editor,
+      dirtySubTrees,
+      dirtyNodes,
+    );
     const selectionAfter = window.getSelection();
     if (
       anchorOffset !== selectionAfter.anchorOffset ||

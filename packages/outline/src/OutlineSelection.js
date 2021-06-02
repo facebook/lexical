@@ -22,7 +22,6 @@ import {
 } from './OutlineUtils';
 import {BYTE_ORDER_MARK} from './OutlineConstants';
 import {OutlineEditor} from './OutlineEditor';
-import {LineBreakNode} from './OutlineLineBreakNode';
 
 export class Selection {
   anchorKey: string;
@@ -145,12 +144,15 @@ export class Selection {
   }
 }
 
-function resolveNonLineBreakNode(
-  node: LineBreakNode,
+function resolveNonLineBreakOrInertNode(
+  node: TextNode,
 ): [TextNode, number, boolean] {
   const resolvedNode = node.getPreviousSibling();
   if (!isTextNode(resolvedNode)) {
-    invariant(false, 'resolveNonLineBreakNode: resolved node not a text node');
+    invariant(
+      false,
+      'resolveNonLineBreakOrInertNode: resolved node not a text node',
+    );
   }
   const offset = resolvedNode.getTextContentSize();
   return [resolvedNode, offset, true];
@@ -219,8 +221,11 @@ function resolveSelectionNodeAndOffset(
   } else {
     resolvedNode = getNodeFromDOM(resolvedDOM);
   }
-  if (isLineBreakNode(resolvedNode)) {
-    return resolveNonLineBreakNode(resolvedNode);
+  if (
+    isLineBreakNode(resolvedNode) ||
+    (isTextNode(resolvedNode) && resolvedNode.isInert())
+  ) {
+    return resolveNonLineBreakOrInertNode(resolvedNode);
   }
   if (!isTextNode(resolvedNode)) {
     return null;

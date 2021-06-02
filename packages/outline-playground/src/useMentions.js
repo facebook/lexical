@@ -511,7 +511,6 @@ class MentionNode extends TextNode {
     const dom = super.createDOM(editorThemeClasses);
     dom.style.cssText = mentionStyle;
     dom.className = 'mention';
-    dom.tabIndex = -1;
     return dom;
   }
 }

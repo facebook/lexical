@@ -63,13 +63,13 @@ describe('Regression test #221', () => {
       await page.keyboard.press('Delete');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span class="editor-text-hashtag">#yolo</span><span></span></p>',
+        '<p class="editor-paragraph" dir="ltr"><span class="editor-text-hashtag">#yolo</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 1, 0],
-        anchorOffset: 1,
-        focusPath: [0, 1, 0],
-        focusOffset: 1,
+        anchorPath: [0, 0, 0],
+        anchorOffset: 5,
+        focusPath: [0, 0, 0],
+        focusOffset: 5,
       });
     });
 

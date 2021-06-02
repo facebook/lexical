@@ -451,6 +451,37 @@ function updateCaretSelectionForUnicodeCharacter(
   }
 }
 
+function updateCaretSelectionForAdjacentHashtags(
+  selection: Selection,
+  isBackward: boolean,
+): void {
+  const anchorNode = selection.getAnchorNode();
+  const textContent = anchorNode.getTextContent();
+  const anchorOffset = selection.anchorOffset;
+  const selectionAtBoundary = isBackward
+    ? anchorOffset === 0
+    : anchorOffset === textContent.length;
+  if (selectionAtBoundary && anchorNode.getFlags() === 0) {
+    const sibling = isBackward
+      ? anchorNode.getPreviousSibling()
+      : anchorNode.getNextSibling();
+    if (!anchorNode.isHashtag() && isTextNode(sibling) && sibling.isHashtag()) {
+      if (isBackward) {
+        sibling.select();
+      } else {
+        sibling.select(0, 0);
+      }
+      const siblingTextContent = sibling.getTextContent();
+      sibling.setTextContent(
+        isBackward
+          ? siblingTextContent + textContent
+          : textContent + siblingTextContent,
+      );
+      anchorNode.remove();
+    }
+  }
+}
+
 export function deleteBackward(selection: Selection): void {
   if (selection.isCaret()) {
     updateCaretSelectionForRange(selection, true, 'character', false);
@@ -488,6 +519,7 @@ export function deleteBackward(selection: Selection): void {
     }
   }
   removeText(selection);
+  updateCaretSelectionForAdjacentHashtags(selection, true);
   normalizeAnchorParent(selection);
 }
 
@@ -505,6 +537,7 @@ export function deleteForward(selection: Selection): void {
     }
   }
   removeText(selection);
+  updateCaretSelectionForAdjacentHashtags(selection, true);
   normalizeAnchorParent(selection);
 }
 

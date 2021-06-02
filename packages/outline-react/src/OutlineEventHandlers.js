@@ -579,7 +579,10 @@ export function onNativeInput(
       // If we are mutating an immutable or segmented node, then reset
       // the content back to what it was before, as this is not allowed.
       if (anchorNode.isSegmented() || anchorNode.isImmutable()) {
-        view.makeNodeAsDirty(anchorNode);
+        // If this node has a decorator, then we'll make it as needing an
+        // update by React.
+        anchorNode.markDirtyDecorator();
+        view.markNodeAsDirty(anchorNode);
         editor._compositionKey = null;
         return;
       }

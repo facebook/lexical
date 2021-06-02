@@ -26,6 +26,7 @@ import {
   IS_LINK,
   IS_OVERFLOWED,
   BYTE_ORDER_MARK,
+  IS_DIRTY_DECORATOR,
 } from './OutlineConstants';
 
 export type TextFormatType =
@@ -220,6 +221,11 @@ export class TextNode extends OutlineNode {
   }
   getURL(): null | string {
     return this.__url;
+  }
+  markDirtyDecorator(): void {
+    errorOnReadOnly();
+    const self = getWritableNode(this);
+    self.__flags |= IS_DIRTY_DECORATOR;
   }
   getTextContent(includeInert?: boolean, includeDirectionless?: false): string {
     if (

@@ -20,7 +20,7 @@ import {
   isSelectionWithinEditor,
   getDOMTextNodeFromElement,
 } from './OutlineUtils';
-import {IS_INERT, IS_RTL, IS_LTR} from './OutlineConstants';
+import {IS_INERT, IS_RTL, IS_LTR, IS_DIRTY_DECORATOR} from './OutlineConstants';
 
 let subTreeTextContent = '';
 let editorTextContent = '';
@@ -31,6 +31,8 @@ let activeDirtyNodes: Set<NodeKey>;
 let activePrevNodeMap: NodeMapType;
 let activeNextNodeMap: NodeMapType;
 let activeViewModelIsDirty: boolean = false;
+
+const decoratorKeyMap: Map<NodeKey, string> = new Map();
 
 function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
   const node = activePrevNodeMap[key];
@@ -72,13 +74,17 @@ function createNode(
 ): HTMLElement {
   const node = activeNextNodeMap[key];
   const dom = node.createDOM(activeEditorThemeClasses);
-  const decorator = node.decorate();
   const flags = node.__flags;
   const isInert = flags & IS_INERT;
+  const decorate = node.decorate;
   storeDOMWithKey(key, dom, activeEditor);
 
-  if (decorator !== null) {
-    reconcileDecorator(key, decorator);
+  if (typeof decorate === 'function') {
+    const decoratorKey = getDecoratorKey(key, false);
+    const decorator = decorate.call(node, decoratorKey);
+    if (decorator !== null) {
+      reconcileDecorator(key, decorator);
+    }
   }
 
   if (node.__type !== 'linebreak' && isInert) {
@@ -143,6 +149,22 @@ function createChildren(
   // $FlowFixMe: internal field
   dom.__outlineTextContent = subTreeTextContent;
   subTreeTextContent = previousSubTreeTextContent + subTreeTextContent;
+}
+
+function getDecoratorKey(nodeKey: NodeKey, hasDirtyDecorator: boolean): string {
+  let decoratorKey = decoratorKeyMap.get(nodeKey);
+  if (decoratorKey === undefined) {
+    decoratorKey = nodeKey;
+    decoratorKeyMap.set(nodeKey, decoratorKey);
+  } else if (hasDirtyDecorator) {
+    let counter = 0;
+    if (decoratorKey !== nodeKey) {
+      counter = Number(decoratorKey.split('_')[2]);
+    }
+    decoratorKey = nodeKey + '_' + ++counter;
+    decoratorKeyMap.set(nodeKey, decoratorKey);
+  }
+  return decoratorKey;
 }
 
 function reconcileChildren(
@@ -233,9 +255,19 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
     destroyNode(key, null);
     return;
   }
-  const decorator = nextNode.decorate();
-  if (decorator !== null) {
-    reconcileDecorator(key, decorator);
+  const nextFlags = nextNode.__flags;
+  const decorate = nextNode.decorate;
+  if (typeof decorate === 'function') {
+    const hasDirtyDecorator = (nextFlags & IS_DIRTY_DECORATOR) !== 0;
+    const decoratorKey = getDecoratorKey(key, hasDirtyDecorator);
+    if (hasDirtyDecorator) {
+      // Remove the dirty decorator flag
+      nextNode.__flags ^= IS_DIRTY_DECORATOR;
+    }
+    const decorator = decorate.call(nextNode, decoratorKey);
+    if (decorator !== null) {
+      reconcileDecorator(key, decorator);
+    }
   }
   // Handle text content, for LTR, LTR cases.
   if (isTextNode(nextNode)) {
@@ -245,7 +277,6 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
     return;
   } else if (isBlockNode(prevNode) && isBlockNode(nextNode)) {
     const prevFlags = prevNode.__flags;
-    const nextFlags = nextNode.__flags;
     if (nextFlags & IS_LTR) {
       if ((prevFlags & IS_LTR) === 0) {
         dom.dir = 'ltr';

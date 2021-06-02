@@ -6,7 +6,13 @@
  *
  */
 
-import {initializeE2E, assertHTML, assertSelection, repeat} from '../utils';
+import {
+  E2E_BROWSER,
+  initializeE2E,
+  assertHTML,
+  assertSelection,
+  repeat,
+} from '../utils';
 
 describe('Hashtags', () => {
   initializeE2E((e2e) => {
@@ -112,12 +118,21 @@ describe('Hashtags', () => {
       });
 
       await page.keyboard.press('ArrowLeft');
-      await assertSelection(page, {
-        anchorPath: [0, 0, 0],
-        anchorOffset: 6,
-        focusPath: [0, 0, 0],
-        focusOffset: 6,
-      });
+      if (E2E_BROWSER === 'firefox') {
+        await assertSelection(page, {
+          anchorPath: [0, 1, 0],
+          anchorOffset: 0,
+          focusPath: [0, 1, 0],
+          focusOffset: 0,
+        });
+      } else {
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 6,
+          focusPath: [0, 0, 0],
+          focusOffset: 6,
+        });
+      }
 
       await page.keyboard.press('Delete');
       await assertHTML(

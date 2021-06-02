@@ -68,9 +68,9 @@ describe('Keyboard Navigation', () => {
       await moveToLineEnd(page);
       await assertSelection(page, {
         anchorPath: [2, 0, 0],
-        anchorOffset: 100,
+        anchorOffset: 101,
         focusPath: [2, 0, 0],
-        focusOffset: 100,
+        focusOffset: 101,
       });
     });
 

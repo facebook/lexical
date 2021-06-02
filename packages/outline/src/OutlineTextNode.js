@@ -368,25 +368,31 @@ export class TextNode extends OutlineNode {
         'setTextContent: can only be used on non-immutable text nodes',
       );
     }
-    const writableSelf = getWritableNode(this);
-    const topBlock = this.getTopParentBlockOrThrow();
-    const topBlockWasEmpty =
-      text === '' && topBlock.getTextContent(false, false) === '';
-    writableSelf.__text = text;
+
     // Handle text direction
-    const prevDirection = topBlock.getDirection();
-    if (prevDirection === null || topBlockWasEmpty) {
-      const direction = getTextDirection(text);
-      if (direction !== null) {
-        topBlock.setDirection(direction);
+    const topBlock = this.getTopParentBlock();
+    if (topBlock !== null) {
+      const topBlockWasEmpty =
+        text === '' && topBlock.getTextContent(false, false) === '';
+      const prevDirection = topBlock.getDirection();
+      if (prevDirection === null || topBlockWasEmpty) {
+        const direction = getTextDirection(text);
+        if (direction !== null) {
+          topBlock.setDirection(direction);
+        }
+      } else if (
+        prevDirection !== null &&
+        text === '' &&
+        topBlock.getTextContent() === ''
+      ) {
+        topBlock.setDirection(null);
       }
-    } else if (
-      prevDirection !== null &&
-      text === '' &&
-      topBlock.getTextContent() === ''
-    ) {
-      topBlock.setDirection(null);
     }
+
+    // Update text content
+    const writableSelf = getWritableNode(this);
+    writableSelf.__text = text;
+
     const isHashtag = this.isHashtag();
     // Handle hashtags
     let requireNormalize = false;

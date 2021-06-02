@@ -52,29 +52,6 @@ export function findTextIntersectionFromCharacters(
   return null;
 }
 
-export function announceString(s: string): void {
-  const body = document.body;
-  if (body != null) {
-    const announce = document.createElement('div');
-    announce.setAttribute('id', 'outline_announce_' + Date.now());
-    announce.setAttribute('aria-live', 'polite');
-    announce.style.cssText =
-      'clip: rect(0, 0, 0, 0); height: 1px; overflow: hidden; position: absolute; width: 1px';
-    body.appendChild(announce);
-
-    // The trick to make all screen readers to read the text is to create AND update an element with a unique id:
-    // - JAWS remains silent without update
-    // - VO remains silent without create, if the text is the same (and doing `announce.textContent=''` doesn't help)
-    setTimeout(() => {
-      announce.textContent = s;
-    }, 100);
-
-    setTimeout(() => {
-      body.removeChild(announce);
-    }, 500);
-  }
-}
-
 export function doesContainGraheme(str: string): boolean {
   return /[\uD800-\uDBFF][\uDC00-\uDFFF]/g.test(str);
 }

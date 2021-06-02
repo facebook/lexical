@@ -102,7 +102,7 @@ describe('Mentions', () => {
       await page.keyboard.press('Delete');
       await assertHTML(
         page,
-        '<p class="editor-paragraph"><span></span><span class="mention" tabindex="-1" contenteditable="false" style="background-color: rgba(24, 119, 232, 0.2);">Skywalker</span><span></span></p>',
+        '<p class="editor-paragraph" dir="ltr"><span></span><span class="mention" tabindex="-1" contenteditable="false" style="background-color: rgba(24, 119, 232, 0.2);">Skywalker</span><span></span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -114,7 +114,7 @@ describe('Mentions', () => {
       await page.keyboard.press('Delete');
       await assertHTML(
         page,
-        '<p class="editor-paragraph"><span></span></p><div contenteditable="false" class="editor-placeholder">Enter some rich text...</div>',
+        '<p class="editor-paragraph" dir="ltr"><span></span></p><div contenteditable="false" class="editor-placeholder">Enter some rich text...</div>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -159,7 +159,7 @@ describe('Mentions', () => {
       await page.keyboard.press('Backspace');
       await assertHTML(
         page,
-        '<p class="editor-paragraph"><span></span><span class="mention" tabindex="-1" contenteditable="false" style="background-color: rgba(24, 119, 232, 0.2);">Luke</span><span></span></p>',
+        '<p class="editor-paragraph" dir="ltr"><span></span><span class="mention" tabindex="-1" contenteditable="false" style="background-color: rgba(24, 119, 232, 0.2);">Luke</span><span></span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 2, 0],
@@ -171,7 +171,7 @@ describe('Mentions', () => {
       await page.keyboard.press('Backspace');
       await assertHTML(
         page,
-        '<p class="editor-paragraph"><span></span></p><div contenteditable="false" class="editor-placeholder">Enter some rich text...</div>',
+        '<p class="editor-paragraph" dir="ltr"><span></span></p><div contenteditable="false" class="editor-placeholder">Enter some rich text...</div>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],

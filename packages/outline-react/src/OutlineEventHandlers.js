@@ -137,8 +137,8 @@ function shouldOverrideBrowserDefault(
   const focusOffset = selection.focusOffset;
   const selectionAtBoundary = isBackward
     ? anchorOffset === 0 || focusOffset === 0
-    : anchorOffset === selection.getAnchorNode().getTextContentSize() ||
-      focusOffset === selection.getFocusNode().getTextContentSize();
+    : anchorOffset > selection.getAnchorNode().getTextContentSize() - 2 ||
+      focusOffset > selection.getFocusNode().getTextContentSize() - 2;
 
   return selection.isCaret()
     ? isHoldingShift || selectionAtBoundary
@@ -594,16 +594,6 @@ export function onNativeInput(
         anchorNode.markDirtyDecorator();
         view.markNodeAsDirty(anchorNode);
         editor._compositionKey = null;
-        const nextSibling = anchorNode.getNextSibling();
-        if (
-          selection.isCaret() &&
-          selection.anchorOffset === anchorNode.getTextContentSize() &&
-          nextSibling !== null
-        ) {
-          const key = nextSibling.getKey();
-          selection.setRange(key, 0, key, 0);
-          insertText(selection, data);
-        }
         return;
       }
 
@@ -684,21 +674,10 @@ export function onNativeBeforeInputForPlainText(
       inputType === 'insertCompositionText' ||
       inputType === 'deleteCompositionText'
     ) {
-      if (selection.isCaret()) {
-        const anchorNode = selection.getAnchorNode();
-        if (isImmutableOrInertOrSegmented(anchorNode)) {
-          const nextSibling = anchorNode.getNextSibling();
-          if (
-            selection.anchorOffset === anchorNode.getTextContentSize() &&
-            nextSibling !== null
-          ) {
-            const key = nextSibling.getKey();
-            selection.setRange(key, 0, key, 0);
-          } else {
-            event.preventDefault();
-            return;
-          }
-        }
+      const anchorNode = selection.getAnchorNode();
+      if (selection.isCaret() && isImmutableOrInertOrSegmented(anchorNode)) {
+        event.preventDefault();
+        return;
       }
       if (data === '\n') {
         event.preventDefault();
@@ -710,7 +689,14 @@ export function onNativeBeforeInputForPlainText(
       } else if (!selection.isCaret()) {
         const anchorKey = selection.anchorKey;
         const focusKey = selection.focusKey;
-        removeText(selection);
+        const focusNode = selection.getAnchorNode();
+
+        if (
+          !isImmutableOrInertOrSegmented(anchorNode) ||
+          !isImmutableOrInertOrSegmented(focusNode)
+        ) {
+          removeText(selection);
+        }
         if (inputText && anchorKey !== focusKey && data) {
           event.preventDefault();
           editor.setCompositionKey(null);
@@ -820,21 +806,9 @@ export function onNativeBeforeInputForRichText(
       inputType === 'deleteCompositionText'
     ) {
       const anchorNode = selection.getAnchorNode();
-
-      if (selection.isCaret()) {
-        if (isImmutableOrInertOrSegmented(anchorNode)) {
-          const nextSibling = anchorNode.getNextSibling();
-          if (
-            selection.anchorOffset === anchorNode.getTextContentSize() &&
-            nextSibling !== null
-          ) {
-            const key = nextSibling.getKey();
-            selection.setRange(key, 0, key, 0);
-          } else {
-            event.preventDefault();
-            return;
-          }
-        }
+      if (selection.isCaret() && isImmutableOrInertOrSegmented(anchorNode)) {
+        event.preventDefault();
+        return;
       }
       if (data === '\n') {
         event.preventDefault();

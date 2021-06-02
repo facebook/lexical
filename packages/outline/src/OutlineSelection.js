@@ -11,16 +11,10 @@ import type {OutlineNode, NodeKey} from './OutlineNode';
 import {getActiveEditor, ViewModel} from './OutlineView';
 
 import {getActiveViewModel} from './OutlineView';
-import {getNodeKeyFromDOM, getElementByKeyOrThrow} from './OutlineReconciler';
+import {getNodeKeyFromDOM} from './OutlineReconciler';
 import {getNodeByKey} from './OutlineNode';
 import {isTextNode, isBlockNode, isLineBreakNode, TextNode} from '.';
-import {
-  invariant,
-  getAdjustedSelectionOffset,
-  isSelectionWithinEditor,
-  getDOMTextNodeFromElement,
-} from './OutlineUtils';
-import {BYTE_ORDER_MARK} from './OutlineConstants';
+import {invariant, isSelectionWithinEditor} from './OutlineUtils';
 import {OutlineEditor} from './OutlineEditor';
 
 export class Selection {
@@ -230,41 +224,11 @@ function resolveSelectionNodeAndOffset(
   if (!isTextNode(resolvedNode)) {
     return null;
   }
-  let resolvedTextNode = resolvedNode;
-  const isComposing = editor.isComposing();
-  // Because we use a special character for whitespace,
-  // we need to adjust offsets to 0 when the text is
-  // really empty.
-  if (resolvedTextNode.__text === '') {
-    // When dealing with empty text nodes, we always
-    // render a special empty space character, and set
-    // the native DOM selection to offset 1 so that
-    // text entry works as expected.
-    if (!isDirty && !isComposing && !editor._isPointerDown) {
-      const key = resolvedTextNode.__key;
-      const nodeDOM = getElementByKeyOrThrow(editor, key);
-      if (getAdjustedSelectionOffset(nodeDOM) !== resolvedOffset) {
-        isDirty = true;
-      }
-    }
-    resolvedOffset = 0;
-  } else if (isComposing && resolvedOffset !== 0) {
-    // When composing, we might still have the byte order mark in the
-    // text. If we do, we need to reduce the offset by one.
-    const textDOM = getDOMTextNodeFromElement(resolvedDOM);
-    const rawTextContent = textDOM.nodeValue;
-    // If we have a byte order in the text still
-    if (rawTextContent[0] === BYTE_ORDER_MARK) {
-      resolvedOffset--;
-    }
-  } else if (resolvedOffset === 0 && window.getSelection().isCollapsed) {
-    const prevSibling = resolvedTextNode.getPreviousSibling();
-    if (isTextNode(prevSibling)) {
-      resolvedTextNode = prevSibling;
-      resolvedOffset = prevSibling.getTextContentSize();
-      isDirty = true;
-    }
-  }
+  const resolvedTextNode = resolvedNode;
+  // Because we use a special character for whitespace
+  // at the start of all strings, we need to remove one
+  // from the offset.
+  resolvedOffset--;
   return [resolvedTextNode, resolvedOffset, isDirty];
 }
 
@@ -372,11 +336,15 @@ export function createSelection(
   let anchorDOM, focusDOM, anchorOffset, focusOffset;
 
   if (eventType === undefined || lastSelection === null || useDOMSelection) {
-    const domSelection: WindowSelection = window.getSelection();
-    anchorDOM = domSelection.anchorNode;
-    focusDOM = domSelection.focusNode;
-    anchorOffset = domSelection.anchorOffset;
-    focusOffset = domSelection.focusOffset;
+    const domSelection = window.getSelection();
+    if (domSelection.rangeCount === 0) {
+      return null;
+    }
+    const range = domSelection.getRangeAt(0);
+    anchorDOM = range.startContainer;
+    focusDOM = range.endContainer;
+    anchorOffset = range.startOffset;
+    focusOffset = range.endOffset;
   } else {
     return new Selection(
       lastSelection.anchorKey,

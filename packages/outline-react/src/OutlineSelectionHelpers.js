@@ -553,18 +553,11 @@ export function updateCaretSelectionForRange(
   collapse: boolean,
 ): void {
   const domSelection = window.getSelection();
-  const anchorNode = selection.getAnchorNode();
+  const isAtBoundary = isBackward
+    ? selection.anchorOffset === 0
+    : selection.anchorOffset ===
+      selection.getAnchorNode().getTextContentSize() - 1;
 
-  if (anchorNode.getTextContent() === '' && selection.isCaret()) {
-    domSelection.extend(domSelection.anchorNode, isBackward ? 0 : 1);
-    if (collapse) {
-      if (isBackward) {
-        domSelection.collapseToStart();
-      } else {
-        domSelection.collapseToEnd();
-      }
-    }
-  }
   // We use the DOM selection.modify API here to "tell" us what the selection
   // will be. We then use it to update the Outline selection accordingly. This
   // is much more reliable than waiting for a beforeinput and using the ranges
@@ -576,6 +569,13 @@ export function updateCaretSelectionForRange(
     isBackward ? 'backward' : 'forward',
     granularity,
   );
+  if (isAtBoundary) {
+    domSelection.modify(
+      collapse ? 'move' : 'extend',
+      isBackward ? 'backward' : 'forward',
+      granularity,
+    );
+  }
   const range = domSelection.getRangeAt(0);
   // Apply the DOM selection to our Outline selection.
   selection.applyDOMRange(range);

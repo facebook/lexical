@@ -16,7 +16,6 @@ import type {Node as ReactNode} from 'react';
 import {isTextNode, isBlockNode} from '.';
 import {
   invariant,
-  getAdjustedSelectionOffset,
   isSelectionWithinEditor,
   getDOMTextNodeFromElement,
 } from './OutlineUtils';
@@ -624,25 +623,11 @@ function reconcileSelection(
   }
   const anchorKey = nextSelection.anchorKey;
   const focusKey = nextSelection.focusKey;
-  const anchorNode = nextSelection.getAnchorNode();
-  const focusNode = nextSelection.getFocusNode();
   const anchorDOM = getElementByKeyOrThrow(editor, anchorKey);
   const focusDOM = getElementByKeyOrThrow(editor, focusKey);
-  const anchorTextIsEmpty = anchorNode.__text === '';
-  const focusTextIsEmpty = focusNode.__text === '';
-  let anchorOffset = nextSelection.anchorOffset;
-  let focusOffset = nextSelection.focusOffset;
+  const anchorOffset = nextSelection.anchorOffset + 1;
+  const focusOffset = nextSelection.focusOffset + 1;
 
-  // Because we use empty text nodes to ensure Outline
-  // selection and text entry works as expected, it also
-  // means we need to adjust the offset to ensure native
-  // selection works correctly and doesn't act buggy.
-  if (anchorTextIsEmpty) {
-    anchorOffset = getAdjustedSelectionOffset(anchorDOM);
-  }
-  if (focusTextIsEmpty) {
-    focusOffset = getAdjustedSelectionOffset(focusDOM);
-  }
   // Get the underlying DOM text nodes from the representive
   // Outline text nodes (we use elements for text nodes).
   const anchorDOMTarget = getDOMTextNodeFromElement(anchorDOM);
@@ -651,8 +636,6 @@ function reconcileSelection(
   // Diff against the native DOM selection to ensure we don't do
   // an unnecessary selection update.
   if (
-    !anchorTextIsEmpty &&
-    !focusTextIsEmpty &&
     domSelection.anchorOffset === anchorOffset &&
     domSelection.focusOffset === focusOffset &&
     domSelection.anchorNode === anchorDOMTarget &&

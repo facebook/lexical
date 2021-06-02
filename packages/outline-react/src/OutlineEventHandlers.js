@@ -575,10 +575,13 @@ export function onNativeInput(
 
         // We get the text content from the anchor element's text node
         let domTextContent = textNode.nodeValue;
+        const domTextContentLength = domTextContent.length;
         let anchorOffset = window.getSelection().anchorOffset;
         if (domTextContent[0] === '\uFEFF') {
           domTextContent = domTextContent.slice(1);
           anchorOffset--;
+        } else if (domTextContent[domTextContentLength - 1] === '\uFEFF') {
+          domTextContent = domTextContent.slice(0, domTextContentLength - 1);
         }
         // Let's try and detect a bad update here. This usually comes from text transformation
         // tools that attempt to insertText across a range of nodes – which obviously we can't
@@ -586,7 +589,6 @@ export function onNativeInput(
         // by dispatching an Undo event, in the hopes that the user will realize that the
         // tool they are using is broken.
         if (
-          anchorOffset > domTextContent.length ||
           anchorElement.parentNode === null ||
           (anchorElement.nextSibling === null &&
             anchorNode.getNextSibling() !== null)

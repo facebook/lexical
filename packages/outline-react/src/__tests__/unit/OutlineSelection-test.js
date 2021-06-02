@@ -366,7 +366,7 @@ describe('OutlineSelection tests', () => {
         convertToImmutableNode(),
       ],
       expectedHTML:
-        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><span></span>' +
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span></span>' +
         '<span>Dominic Gannaway</span>' +
         '<span></span></p></div>',
       expectedSelection: {
@@ -410,7 +410,7 @@ describe('OutlineSelection tests', () => {
         convertToSegmentedNode(),
       ],
       expectedHTML:
-        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><span></span>' +
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span></span>' +
         '<span>Dominic Gannaway</span>' +
         '<span></span></p></div>',
       expectedSelection: {

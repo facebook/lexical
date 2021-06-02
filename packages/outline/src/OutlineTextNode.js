@@ -368,12 +368,15 @@ export class TextNode extends OutlineNode {
         'setTextContent: can only be used on non-immutable text nodes',
       );
     }
+    const writableSelf = getWritableNode(this);
 
-    // Handle text direction
+    // Handle text direction and update text content
     const topBlock = this.getTopParentBlock();
     if (topBlock !== null) {
       const topBlockWasEmpty =
         text === '' && topBlock.getTextContent(false, false) === '';
+
+      writableSelf.__text = text;
       const prevDirection = topBlock.getDirection();
       if (prevDirection === null || topBlockWasEmpty) {
         const direction = getTextDirection(text);
@@ -387,11 +390,9 @@ export class TextNode extends OutlineNode {
       ) {
         topBlock.setDirection(null);
       }
+    } else {
+      writableSelf.__text = text;
     }
-
-    // Update text content
-    const writableSelf = getWritableNode(this);
-    writableSelf.__text = text;
 
     const isHashtag = this.isHashtag();
     // Handle hashtags

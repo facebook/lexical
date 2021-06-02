@@ -256,7 +256,11 @@ export class OutlineNode {
   getTopParentBlockOrThrow(): BlockNode {
     const parent = this.getTopParentBlock();
     if (parent === null) {
-      invariant(false, 'Expected node %s to have a top parent block.', this.__key);
+      invariant(
+        false,
+        'Expected node %s to have a top parent block.',
+        this.__key,
+      );
     }
     return parent;
   }

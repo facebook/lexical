@@ -69,10 +69,13 @@ export function getNodesInRange(selection: Selection): {
 
   for (let i = 0; i < nodesLength; i++) {
     let node = nodes[i];
+    if (node.isInert()) {
+      continue;
+    }
     const parent = node.getParent();
     const nodeKey = node.getKey();
 
-    if (isTextNode(node)) {
+    if (isTextNode(node) && !node.isSegmented() && !node.isImmutable()) {
       const text = node.getTextContent();
 
       if (i === 0) {

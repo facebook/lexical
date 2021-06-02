@@ -461,7 +461,7 @@ function updateCaretSelectionForAdjacentHashtags(
   const selectionAtBoundary = isBackward
     ? anchorOffset === 0
     : anchorOffset === textContent.length;
-  if (selectionAtBoundary) {
+  if (selectionAtBoundary && anchorNode.getFlags() === 0) {
     const sibling = isBackward
       ? anchorNode.getPreviousSibling()
       : anchorNode.getNextSibling();

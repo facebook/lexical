@@ -37,7 +37,11 @@ import {
   isMoveForward,
   isMoveWordForward,
 } from './OutlineKeyHelpers';
-import {getDOMTextNodeFromElement, invariant} from './OutlineReactUtils';
+import {
+  getDOMTextNodeFromElement,
+  invariant,
+  isImmutableOrInertOrSegmented,
+} from './OutlineReactUtils';
 import {
   deleteBackward,
   deleteForward,
@@ -578,12 +582,22 @@ export function onNativeInput(
 
       // If we are mutating an immutable or segmented node, then reset
       // the content back to what it was before, as this is not allowed.
-      if (anchorNode.isSegmented() || anchorNode.isImmutable()) {
+      if (isImmutableOrInertOrSegmented(anchorNode)) {
         // If this node has a decorator, then we'll make it as needing an
         // update by React.
         anchorNode.markDirtyDecorator();
         view.markNodeAsDirty(anchorNode);
         editor._compositionKey = null;
+        const nextSibling = anchorNode.getNextSibling();
+        if (
+          selection.isCaret() &&
+          selection.anchorOffset === anchorNode.getTextContentSize() &&
+          nextSibling !== null
+        ) {
+          const key = nextSibling.getKey();
+          selection.setRange(key, 0, key, 0);
+          insertText(selection, data);
+        }
         return;
       }
 
@@ -664,6 +678,22 @@ export function onNativeBeforeInputForPlainText(
       inputType === 'insertCompositionText' ||
       inputType === 'deleteCompositionText'
     ) {
+      if (selection.isCaret()) {
+        const anchorNode = selection.getAnchorNode();
+        if (isImmutableOrInertOrSegmented(anchorNode)) {
+          const nextSibling = anchorNode.getNextSibling();
+          if (
+            selection.anchorOffset === anchorNode.getTextContentSize() &&
+            nextSibling !== null
+          ) {
+            const key = nextSibling.getKey();
+            selection.setRange(key, 0, key, 0);
+          } else {
+            event.preventDefault();
+            return;
+          }
+        }
+      }
       if (data === '\n') {
         event.preventDefault();
         insertLineBreak(selection);
@@ -783,6 +813,22 @@ export function onNativeBeforeInputForRichText(
       inputType === 'insertCompositionText' ||
       inputType === 'deleteCompositionText'
     ) {
+      if (selection.isCaret()) {
+        const anchorNode = selection.getAnchorNode();
+        if (isImmutableOrInertOrSegmented(anchorNode)) {
+          const nextSibling = anchorNode.getNextSibling();
+          if (
+            selection.anchorOffset === anchorNode.getTextContentSize() &&
+            nextSibling !== null
+          ) {
+            const key = nextSibling.getKey();
+            selection.setRange(key, 0, key, 0);
+          } else {
+            event.preventDefault();
+            return;
+          }
+        }
+      }
       if (data === '\n') {
         event.preventDefault();
         insertLineBreak(selection);

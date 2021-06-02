@@ -17,8 +17,6 @@ import type {
   View,
 } from 'outline';
 
-import {isTextNode} from 'outline';
-
 import {CAN_USE_BEFORE_INPUT, IS_FIREFOX} from './OutlineEnv';
 import {
   isDeleteBackward,
@@ -61,7 +59,6 @@ import {
   moveForward,
   moveWordForward,
 } from './OutlineSelectionHelpers';
-import {announceString, doesContainGraheme} from './OutlineTextHelpers';
 
 // Safari triggers composition before keydown, meaning
 // we need to account for this when handling key events.
@@ -470,39 +467,10 @@ export function onSelectionChange(
   if (editorElement && !editorElement.contains(domSelection.anchorNode)) {
     return;
   }
-  // This update also functions as a way of reconciling a bad selection
-  // to a good selection. So if we do remove the a11y logic below, we need
-  // to ensure that we keep the editor.update() in place.
+
   editor.update((view) => {
-    const selection = view.getSelection();
-    // Handle screen reader announcements of immutable and segmented nodes.
-    if (selection !== null && selection.isCaret()) {
-      const anchorNode = selection.getAnchorNode();
-      const anchorOffset = selection.anchorOffset;
-      const textContentSize = anchorNode.getTextContentSize();
-      // This is a hot-path, so let's only get the next sibling
-      // if we know we're at the end of a node first.
-      if (anchorOffset === textContentSize) {
-        const nextSibling = anchorNode.getNextSibling();
-        if (
-          isTextNode(nextSibling) &&
-          (nextSibling.isSegmented() || nextSibling.isImmutable())
-        ) {
-          const announceText = nextSibling.getTextContent();
-          // If the string is not a string with a surrogate pair then we don't
-          // bother announcing it, as it will likely be picked up by the screen
-          // reader. The exception to this is if we're not really next to the
-          // text (because we move native offset to 0 when dealing with empty
-          // text nodes).
-          if (
-            !doesContainGraheme(announceText) ||
-            (domSelection.anchorOffset === 0 && textContentSize === 0)
-          ) {
-            announceString(announceText);
-          }
-        }
-      }
-    }
+    // This update also functions as a way of reconciling a bad selection
+    // to a good selection.
   });
 }
 

@@ -62,9 +62,30 @@ function generateKey(node: OutlineNode): NodeKey {
   return key;
 }
 
-function makeNodeAsDirty(node: OutlineNode): void {
+function markParentsAsDirty(
+  parentKey: NodeKey,
+  nodeMap: NodeMapType,
+  dirtySubTrees: Set<NodeKey>,
+): void {
+  let nextParentKey = parentKey;
+  while (nextParentKey !== null) {
+    if (dirtySubTrees.has(nextParentKey)) {
+      return;
+    }
+    dirtySubTrees.add(nextParentKey);
+    nextParentKey = nodeMap[nextParentKey].__parent;
+  }
+}
+
+export function makeNodeAsDirty(node: OutlineNode): void {
   const latest = node.getLatest();
+  const parent = latest.__parent;
   const viewModel = getActiveViewModel();
+  const nodeMap = viewModel._nodeMap;
+  if (parent !== null) {
+    const dirtySubTrees = viewModel._dirtySubTrees;
+    markParentsAsDirty(parent, nodeMap, dirtySubTrees);
+  }
   const dirtyNodes = viewModel._dirtyNodes;
   dirtyNodes.add(latest.__key);
 }
@@ -632,27 +653,12 @@ export function getWritableNode<N: OutlineNode>(node: N): N {
     }
   }
   mutableNode.__key = key;
-  dirtyNodes.add(key);
+  makeNodeAsDirty(mutableNode);
   // Update reference in node map
   if (nodeMap[key] !== undefined) {
     nodeMap[key] = mutableNode;
   }
   return mutableNode;
-}
-
-function markParentsAsDirty(
-  parentKey: NodeKey,
-  nodeMap: NodeMapType,
-  dirtySubTrees: Set<NodeKey>,
-): void {
-  let nextParentKey = parentKey;
-  while (nextParentKey !== null) {
-    if (dirtySubTrees.has(nextParentKey)) {
-      return;
-    }
-    dirtySubTrees.add(nextParentKey);
-    nextParentKey = nodeMap[nextParentKey].__parent;
-  }
 }
 
 export function getNodeByKey<N: OutlineNode>(key: NodeKey): N | null {

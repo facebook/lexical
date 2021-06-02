@@ -27,8 +27,8 @@ import {createParagraphNode} from 'outline-extensions/ParagraphNode';
 import {invariant} from './OutlineReactUtils';
 import {doesContainGraheme} from './OutlineTextHelpers';
 
-function isImmutableOrInert(node: OutlineNode): boolean {
-  return node.isImmutable() || node.isInert();
+function isImmutableOrInertOrSegmented(node: OutlineNode): boolean {
+  return node.isImmutable() || node.isInert() || node.isSegmented();
 }
 
 export function getNodesInRange(selection: Selection): {
@@ -69,10 +69,13 @@ export function getNodesInRange(selection: Selection): {
 
   for (let i = 0; i < nodesLength; i++) {
     let node = nodes[i];
+    if (node.isInert()) {
+      continue;
+    }
     const parent = node.getParent();
     const nodeKey = node.getKey();
 
-    if (isTextNode(node)) {
+    if (isTextNode(node) && !node.isSegmented() && !node.isImmutable()) {
       const text = node.getTextContent();
 
       if (i === 0) {
@@ -331,27 +334,6 @@ function moveCaretSelection(
     granularity,
     !isHoldingShift,
   );
-  const focusNode = selection.getFocusNode();
-  // We have to adjust selection if we move selection into a segmented node
-  if (focusNode.isSegmented()) {
-    if (isBackward) {
-      const prevSibling = focusNode.getPreviousSibling();
-      if (isTextNode(prevSibling)) {
-        selection.focusKey = prevSibling.getKey();
-        selection.focusOffset = prevSibling.getTextContentSize();
-      }
-    } else {
-      const nextSibling = focusNode.getNextSibling();
-      if (isTextNode(nextSibling)) {
-        selection.focusKey = nextSibling.getKey();
-        selection.focusOffset = 0;
-      }
-    }
-    if (!isHoldingShift) {
-      selection.anchorKey = selection.focusKey;
-      selection.anchorOffset = selection.focusOffset;
-    }
-  }
 }
 
 export function moveBackward(
@@ -509,10 +491,9 @@ export function deleteBackward(selection: Selection): void {
         return;
       }
     } else {
-      const focusNode = selection.getFocusNode();
-
-      if (focusNode.isSegmented()) {
-        removeSegment(focusNode, true);
+      const anchorNode = selection.getAnchorNode();
+      if (anchorNode.isSegmented()) {
+        removeSegment(anchorNode, true);
         return;
       }
       updateCaretSelectionForUnicodeCharacter(selection, true);
@@ -539,16 +520,6 @@ export function deleteForward(selection: Selection): void {
   removeText(selection);
   updateCaretSelectionForAdjacentHashtags(selection, true);
   normalizeAnchorParent(selection);
-}
-
-function setSelectionFocus(
-  selection: Selection,
-  key: string,
-  offset: number,
-): void {
-  selection.focusKey = key;
-  selection.focusOffset = offset;
-  selection.isDirty = true;
 }
 
 function removeSegment(node: TextNode, isBackward: boolean): void {
@@ -586,36 +557,9 @@ export function updateCaretSelectionForRange(
   collapse: boolean,
 ): void {
   const domSelection = window.getSelection();
-  let anchorNode = selection.getAnchorNode();
+  const anchorNode = selection.getAnchorNode();
 
-  if (selection.isCaret()) {
-    if (granularity === 'character') {
-      if (isBackward && selection.anchorOffset === 0) {
-        const prevSibling = anchorNode.getPreviousSibling();
-        if (isTextNode(prevSibling) && prevSibling.isSegmented()) {
-          setSelectionFocus(selection, prevSibling.getKey(), 0);
-          return;
-        }
-      } else if (
-        !isBackward &&
-        selection.anchorOffset === anchorNode.getTextContentSize()
-      ) {
-        const nextSibling = anchorNode.getNextSibling();
-        if (isTextNode(nextSibling) && nextSibling.isSegmented()) {
-          setSelectionFocus(
-            selection,
-            nextSibling.getKey(),
-            nextSibling.getTextContentSize(),
-          );
-          return;
-        }
-      }
-    }
-  }
-  const prevAnchorKey = selection.anchorKey;
-  const prevAnchorOffset = selection.anchorOffset;
-
-  if (anchorNode.getTextContent() === '') {
+  if (anchorNode.getTextContent() === '' && selection.isCaret()) {
     domSelection.extend(domSelection.anchorNode, isBackward ? 0 : 1);
     if (collapse) {
       if (isBackward) {
@@ -639,31 +583,6 @@ export function updateCaretSelectionForRange(
   const range = domSelection.getRangeAt(0);
   // Apply the DOM selection to our Outline selection.
   selection.applyDOMRange(range);
-
-  // Check if the selection moved just past an immutable/segmented node.
-  // In which case, we want to ensure that selection hits the boundary
-  // of these types of node, primarily for accessibility reasons. We
-  // only do this for selection going forward, as this is the most prone
-  // to be skewed by the fact that these nodes use contenteditable="false"
-  if (!isBackward && granularity === 'word' && selection.isCaret()) {
-    anchorNode = selection.getAnchorNode();
-    const target = anchorNode.getPreviousSibling();
-    if (isTextNode(target) && (target.isImmutable() || target.isSegmented())) {
-      const targetPrevSibling = target.getPreviousSibling();
-      if (
-        isTextNode(targetPrevSibling) &&
-        prevAnchorKey === targetPrevSibling.getKey()
-      ) {
-        // Ensure that we move selection to the right place. Either before the
-        // node or just after the node, depending on where we were.
-        if (prevAnchorOffset === targetPrevSibling.getTextContentSize()) {
-          anchorNode.select(0, 0);
-        } else {
-          targetPrevSibling.select();
-        }
-      }
-    }
-  }
 }
 
 export function removeText(selection: Selection): void {
@@ -672,14 +591,15 @@ export function removeText(selection: Selection): void {
 
 export function insertLineBreak(selection: Selection): void {
   const lineBreakNode = createLineBreakNode();
-  insertNodes(selection, [lineBreakNode]);
-  lineBreakNode.selectNext(0, 0);
+  if (insertNodes(selection, [lineBreakNode])) {
+    lineBreakNode.selectNext(0, 0);
+  }
 }
 
 export function insertNodes(
   selection: Selection,
   nodes: Array<OutlineNode>,
-): void {
+): boolean {
   // If there is a range selected remove the text in it
   if (!selection.isCaret()) {
     removeText(selection);
@@ -697,12 +617,11 @@ export function insertNodes(
     target = createTextNode('');
     anchorNode.insertBefore(target);
     siblings.push(anchorNode);
-  } else if (
-    anchorOffset === textContentLength ||
-    anchorNode.isImmutable() ||
-    anchorNode.isSegmented()
-  ) {
+  } else if (anchorOffset === textContentLength) {
     target = anchorNode;
+  } else if (isImmutableOrInertOrSegmented(anchorNode)) {
+    // Do nothing if we're inside an immutable/segmented node
+    return false;
   } else {
     // If we started with a range selected grab the danglingText after the
     // end of the selection and put it on our siblings array so we can
@@ -763,6 +682,7 @@ export function insertNodes(
     const parent = target.getParentBlockOrThrow();
     parent.normalizeTextNodes(true);
   }
+  return true;
 }
 
 export function insertRichText(selection: Selection, text: string): void {
@@ -815,13 +735,11 @@ export function insertText(selection: Selection, text: string): void {
       textNode.select();
       currentBlock.normalizeTextNodes(true);
       return;
-    } else if (isImmutableOrInert(firstNode)) {
+    } else if (isImmutableOrInertOrSegmented(firstNode)) {
       const textNode = createTextNode(text);
       firstNode.replace(textNode);
       firstNode = textNode;
       textNode.select();
-      return;
-    } else if (firstNode.isSegmented()) {
       return;
     }
     const delCount = endOffset - startOffset;
@@ -838,13 +756,13 @@ export function insertText(selection: Selection, text: string): void {
     startOffset = isBefore ? anchorOffset : focusOffset;
     endOffset = isBefore ? focusOffset : anchorOffset;
 
-    if (isImmutableOrInert(firstNode)) {
+    if (isImmutableOrInertOrSegmented(firstNode)) {
       firstNodeRemove = true;
       const textNode = createTextNode(text);
       firstNode.replace(textNode);
       firstNode = textNode;
       textNode.select();
-    } else if (!firstNode.isSegmented()) {
+    } else {
       firstNode.spliceText(
         startOffset,
         firstNodeTextLength - startOffset,
@@ -855,15 +773,17 @@ export function insertText(selection: Selection, text: string): void {
     }
 
     if (!firstNodeParents.has(lastNode)) {
-      if (isTextNode(lastNode) && !lastNode.isSegmented()) {
+      if (isTextNode(lastNode)) {
+        const lastNodeKey = lastNode.getKey();
         if (
           endOffset === lastNode.getTextContentSize() &&
-          lastNode.getKey() !== selection.anchorKey
+          lastNodeKey !== selection.anchorKey &&
+          lastNodeKey !== selection.focusKey
         ) {
           lastNodeRemove = true;
           lastNode.remove();
         } else {
-          if (isImmutableOrInert(lastNode)) {
+          if (isImmutableOrInertOrSegmented(lastNode)) {
             lastNodeRemove = true;
             const textNode = createTextNode('');
             lastNode.replace(textNode);

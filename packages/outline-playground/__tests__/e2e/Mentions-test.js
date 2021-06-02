@@ -31,7 +31,7 @@ describe('Mentions', () => {
       await page.keyboard.press('Enter');
       await assertHTML(
         page,
-        '<p class="editor-paragraph"><span></span><span class="mention" tabindex="-1" contenteditable="false" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span></span></p>',
+        '<p class="editor-paragraph"><span></span><span class="mention" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span></span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 2, 0],
@@ -44,10 +44,10 @@ describe('Mentions', () => {
 
       await page.keyboard.press('ArrowLeft');
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
-        anchorOffset: 0,
-        focusPath: [0, 0, 0],
-        focusOffset: 0,
+        anchorPath: [0, 1, 0],
+        anchorOffset: 13,
+        focusPath: [0, 1, 0],
+        focusOffset: 13,
       });
 
       await page.keyboard.press('ArrowRight');
@@ -80,7 +80,7 @@ describe('Mentions', () => {
       await page.keyboard.press('Enter');
       await assertHTML(
         page,
-        '<p class="editor-paragraph"><span></span><span class="mention" tabindex="-1" contenteditable="false" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span></span></p>',
+        '<p class="editor-paragraph"><span></span><span class="mention" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span></span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 2, 0],
@@ -93,16 +93,16 @@ describe('Mentions', () => {
 
       await page.keyboard.press('ArrowLeft');
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
-        anchorOffset: 0,
-        focusPath: [0, 0, 0],
-        focusOffset: 0,
+        anchorPath: [0, 1, 0],
+        anchorOffset: 13,
+        focusPath: [0, 1, 0],
+        focusOffset: 13,
       });
 
       await page.keyboard.press('Delete');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span></span><span class="mention" tabindex="-1" contenteditable="false" style="background-color: rgba(24, 119, 232, 0.2);">Skywalker</span><span></span></p>',
+        '<p class="editor-paragraph" dir="ltr"><span></span><span class="mention" style="background-color: rgba(24, 119, 232, 0.2);">Skywalker</span><span></span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -145,7 +145,7 @@ describe('Mentions', () => {
       await page.keyboard.press('Enter');
       await assertHTML(
         page,
-        '<p class="editor-paragraph"><span></span><span class="mention" tabindex="-1" contenteditable="false" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span></span></p>',
+        '<p class="editor-paragraph"><span></span><span class="mention" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span></span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 2, 0],
@@ -159,7 +159,7 @@ describe('Mentions', () => {
       await page.keyboard.press('Backspace');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span></span><span class="mention" tabindex="-1" contenteditable="false" style="background-color: rgba(24, 119, 232, 0.2);">Luke</span><span></span></p>',
+        '<p class="editor-paragraph" dir="ltr"><span></span><span class="mention" style="background-color: rgba(24, 119, 232, 0.2);">Luke</span><span></span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 2, 0],

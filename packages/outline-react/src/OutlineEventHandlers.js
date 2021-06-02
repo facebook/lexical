@@ -421,6 +421,19 @@ export function onCompositionStart(
         state.compositionSelection = selection;
       }
       if (!selection.isCaret()) {
+        const focusKey = selection.focusKey;
+        // If we have a range that starts on an immutable/segmented node
+        // then move it to the next node so that we insert text at the
+        // right place.
+        if (selection.anchorKey !== focusKey) {
+          const anchorNode = selection.getAnchorNode();
+          if (
+            (anchorNode.isImmutable() || anchorNode.isSegmented()) &&
+            anchorNode.getNextSibling() === selection.getFocusNode()
+          ) {
+            selection.setRange(focusKey, 0, focusKey, selection.focusOffset);
+          }
+        }
         removeText(selection);
       }
       if (IS_FIREFOX) {
@@ -574,17 +587,15 @@ export function onNativeInput(
       const anchorElement = editor.getElementByKey(anchorKey);
       const anchorNode = selection.getAnchorNode();
 
-      invariant(
-        anchorElement !== null,
-        'onNativeInput: cannot find DOM element for anchor node',
-      );
-
       // Let's try and detect a bad update here. This usually comes from text transformation
       // tools that attempt to insertText across a range of nodes – which obviously we can't
       // detect unless we rely on the DOM being the source of truth. We can try and recover
       // by dispatching an Undo event, and then capturing the previous selection and trying to
       // apply the text on that.
-      if (checkForBadInsertion(anchorElement, anchorNode, editor)) {
+      if (
+        anchorElement !== null &&
+        checkForBadInsertion(anchorElement, anchorNode, editor)
+      ) {
         window.requestAnimationFrame(() => {
           document.execCommand('Undo', false, null);
           editor.update((undoneView) => {
@@ -597,11 +608,19 @@ export function onNativeInput(
         return;
       }
 
+      // If we are mutating an immutable or segmented node, then reset
+      // the content back to what it was before, as this is not allowed.
+      if (anchorNode.isSegmented() || anchorNode.isImmutable()) {
+        view.makeNodeAsDirty(anchorNode);
+        editor._compositionKey = null;
+        return;
+      }
+
       // If we are inserting text into the same anchor as is our focus
       // node, then we can apply a faster optimization that also handles
       // text replacement tools that use execCommand (which doesn't trigger
       // beforeinput in some browsers).
-      if (anchorKey === focusKey) {
+      if (anchorElement !== null && isInsertText && anchorKey === focusKey) {
         // Let's read what is in the DOM already, and use that as the value
         // for our anchor node.
         const textNode = getDOMTextNodeFromElement(anchorElement);

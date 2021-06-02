@@ -22,7 +22,11 @@ import type {ParsedNodeMap} from './OutlineNode';
 
 import {cloneDecorators, reconcileViewModel} from './OutlineReconciler';
 import {getSelection, createSelectionFromParse} from './OutlineSelection';
-import {getNodeByKey, createNodeFromParse} from './OutlineNode';
+import {
+  getNodeByKey,
+  createNodeFromParse,
+  makeNodeAsDirty,
+} from './OutlineNode';
 import {isBlockNode, isTextNode, isLineBreakNode} from '.';
 import {invariant} from './OutlineUtils';
 
@@ -36,6 +40,7 @@ export type View = {
     parsedNode: ParsedNode,
     parsedNodeMap: ParsedNodeMap,
   ) => OutlineNode,
+  makeNodeAsDirty: (node: OutlineNode) => void,
 };
 
 export type ParsedViewModel = {
@@ -116,6 +121,7 @@ const view: View = {
     const editor = getActiveEditor();
     return createNodeFromParse(parsedNode, parsedNodeMap, editor, null);
   },
+  makeNodeAsDirty,
 };
 
 export function viewModelHasDirtySelectionOrNeedsSync(

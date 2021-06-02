@@ -45,5 +45,6 @@
   "43": "onNativeInput: cannot find DOM element for anchor node",
   "44": "onNativeInput: cannot find DOM element and its text node for anchor node",
   "45": "updateTextNodeContentFromDOM: cannot find DOM element and its text node for node",
-  "46": "onNativeInput: cannot find DOM text node for anchor node"
+  "46": "onNativeInput: cannot find DOM text node for anchor node",
+  "47": "resolveNonLineBreakOrInertNode: resolved node not a text node"
 }

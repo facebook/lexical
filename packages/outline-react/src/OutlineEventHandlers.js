@@ -38,6 +38,7 @@ import {
   isMoveForward,
   isMoveWordForward,
 } from './OutlineKeyHelpers';
+import {getDOMTextNodeFromElement, invariant} from './OutlineReactUtils';
 import {
   deleteBackward,
   deleteForward,
@@ -523,12 +524,9 @@ export function onNativeInput(
   const inputType = event.inputType;
   const isInsertText = inputType === 'insertText';
   const isInsertCompositionText = inputType === 'insertCompositionText';
+  const isDeleteCompositionText = inputType === 'deleteCompositionText';
 
-  if (
-    !isInsertText &&
-    !isInsertCompositionText &&
-    inputType !== 'deleteCompositionText'
-  ) {
+  if (!isInsertText && !isInsertCompositionText && !isDeleteCompositionText) {
     return;
   }
 
@@ -555,43 +553,54 @@ export function onNativeInput(
       editor._compositionKey = null;
     }
     const data = event.data;
-    if (data) {
-      const anchorNode = selection.getAnchorNode();
-      const anchorTextBeforeInsertion = anchorNode.getTextContent();
+    if (data != null) {
+      const focusKey = selection.focusKey;
 
-      // Let's read what is in the DOM already, and use that as the value
-      // for our anchor node.
-      const anchorElement = editor.getElementByKey(anchorKey);
-      if (anchorElement !== null) {
-        const textNode = anchorElement.firstChild;
-        if (textNode != null) {
-          let domTextContent = textNode.nodeValue;
-          let anchorOffset = window.getSelection().anchorOffset;
-          if (domTextContent[0] === '\uFEFF') {
-            domTextContent = domTextContent.slice(1);
-            anchorOffset--;
-          }
-          anchorNode.setTextContent(domTextContent);
-          selection.setRange(anchorKey, anchorOffset, anchorKey, anchorOffset);
+      // If we are inserting text into the same anchor as is our focus
+      // node, then we can apply a faster optimization that also handles
+      // text replacement tools that use execCommand (which doesn't trigger
+      // beforeinput in some browsers).
+      if (anchorKey === focusKey) {
+        const anchorNode = selection.getAnchorNode();
+        // Let's read what is in the DOM already, and use that as the value
+        // for our anchor node.
+        const anchorElement = editor.getElementByKey(anchorKey);
+        const textNode =
+          anchorElement && getDOMTextNodeFromElement(anchorElement);
+
+        invariant(
+          anchorElement && textNode != null,
+          'onNativeInput: cannot find DOM element and its text node for anchor node',
+        );
+
+        // We get the text content from the anchor element's text node
+        let domTextContent = textNode.nodeValue;
+        let anchorOffset = window.getSelection().anchorOffset;
+        if (domTextContent[0] === '\uFEFF') {
+          domTextContent = domTextContent.slice(1);
+          anchorOffset--;
         }
+        // Let's try and detect a bad update here. This usually comes from text transformation
+        // tools that attempt to insertText across a range of nodes – which obviously we can't
+        // detect unless we rely on the DOM being the source of truth. We can try and recover
+        // by dispatching an Undo event, in the hopes that the user will realize that the
+        // tool they are using is broken.
+        if (
+          anchorOffset > domTextContent.length ||
+          anchorElement.parentNode === null ||
+          (anchorElement.nextSibling === null &&
+            anchorNode.getNextSibling() !== null)
+        ) {
+          requestAnimationFrame(() => {
+            document.execCommand('Undo', false, null);
+          });
+          return;
+        }
+        // We set the range before content, as hashtags might skew the offset
+        selection.setRange(anchorKey, anchorOffset, anchorKey, anchorOffset);
+        anchorNode.setTextContent(domTextContent);
       } else {
         insertText(selection, data);
-      }
-
-      if (
-        isInsertText &&
-        anchorKey === selection.focusKey &&
-        // If we're dealing with empty text node heuristics, skip this logic
-        anchorTextBeforeInsertion !== ''
-      ) {
-        const {anchorOffset, focusOffset} = window.getSelection();
-        // Re-adjust the selection to what the browser thinks it should be
-        if (
-          selection.anchorOffset !== anchorOffset ||
-          selection.focusOffset !== focusOffset
-        ) {
-          selection.setRange(anchorKey, anchorOffset, anchorKey, focusOffset);
-        }
       }
     }
   });

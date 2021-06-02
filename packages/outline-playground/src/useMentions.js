@@ -408,6 +408,7 @@ function getPossibleMentionMatch(text): MentionMatch | null {
 
 export default function useMentions(editor: OutlineEditor): React$Node {
   const [mentionMatch, setMentionMatch] = useState<MentionMatch | null>(null);
+  const hasMentionRef = useRef(false);
   const registeredKeys: Set<any> = useMemo(() => new Set(), []);
   const registerKeys = useMemo(
     () => (keys) => {
@@ -442,11 +443,15 @@ export default function useMentions(editor: OutlineEditor): React$Node {
       if (text !== '') {
         const match = getPossibleMentionMatch(text);
         if (match !== null) {
+          hasMentionRef.current = true;
           setMentionMatch(match);
           return;
         }
       }
-      setMentionMatch(null);
+      if (hasMentionRef.current) {
+        hasMentionRef.current = false;
+        setMentionMatch(null);
+      }
     };
     return editor.addTextNodeTransform(textNodeTransform);
   }, [editor]);
@@ -468,6 +473,7 @@ export default function useMentions(editor: OutlineEditor): React$Node {
   );
 
   const closeTypeahead = useCallback(() => {
+    hasMentionRef.current = false;
     setMentionMatch(null);
   }, []);
 

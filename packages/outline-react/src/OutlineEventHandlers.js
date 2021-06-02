@@ -423,11 +423,12 @@ export function onCompositionStart(
       }
       if (!selection.isCaret()) {
         const focusKey = selection.focusKey;
+        const anchorNode = selection.getAnchorNode();
+        const focusNode = selection.getAnchorNode();
         // If we have a range that starts on an immutable/segmented node
         // then move it to the next node so that we insert text at the
         // right place.
         if (selection.anchorKey !== focusKey) {
-          const anchorNode = selection.getAnchorNode();
           if (
             (anchorNode.isImmutable() || anchorNode.isSegmented()) &&
             anchorNode.getNextSibling() === selection.getFocusNode()
@@ -435,7 +436,12 @@ export function onCompositionStart(
             selection.setRange(focusKey, 0, focusKey, selection.focusOffset);
           }
         }
-        removeText(selection);
+        if (
+          !isImmutableOrInertOrSegmented(anchorNode) ||
+          !isImmutableOrInertOrSegmented(focusNode)
+        ) {
+          removeText(selection);
+        }
       }
       if (IS_FIREFOX) {
         // Not sure why we have to do this, but it seems to fix a bunch
@@ -813,8 +819,9 @@ export function onNativeBeforeInputForRichText(
       inputType === 'insertCompositionText' ||
       inputType === 'deleteCompositionText'
     ) {
+      const anchorNode = selection.getAnchorNode();
+
       if (selection.isCaret()) {
-        const anchorNode = selection.getAnchorNode();
         if (isImmutableOrInertOrSegmented(anchorNode)) {
           const nextSibling = anchorNode.getNextSibling();
           if (
@@ -838,7 +845,14 @@ export function onNativeBeforeInputForRichText(
       } else if (!selection.isCaret()) {
         const anchorKey = selection.anchorKey;
         const focusKey = selection.focusKey;
-        removeText(selection);
+        const focusNode = selection.getAnchorNode();
+
+        if (
+          !isImmutableOrInertOrSegmented(anchorNode) ||
+          !isImmutableOrInertOrSegmented(focusNode)
+        ) {
+          removeText(selection);
+        }
         if (inputText && anchorKey !== focusKey && data) {
           event.preventDefault();
           editor.setCompositionKey(null);

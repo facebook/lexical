@@ -16,3 +16,15 @@ export function invariant(cond?: boolean, message?: string) {
       'time. There is no runtime version.',
   );
 }
+
+export function getDOMTextNodeFromElement(element: Node): Text {
+  let node = element;
+  while (node != null) {
+    if (node.nodeType === 3) {
+      // $FlowFixMe: nodeType === text node
+      return node;
+    }
+    node = node.firstChild;
+  }
+  invariant(false, 'getDOMTextNodeFromElement: text node not found');
+}

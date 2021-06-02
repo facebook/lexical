@@ -26,7 +26,10 @@ describe('Regression test #231', () => {
       await repeat(5, async () => {
         await page.keyboard.press('Backspace');
       });
-      await assertHTML(page, '<p class="editor-paragraph"><span></span></p>');
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph"><span class=""></span></p>',
+      );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
         anchorOffset: 0,

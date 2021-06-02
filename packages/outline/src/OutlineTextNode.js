@@ -360,7 +360,7 @@ export class TextNode extends OutlineNode {
     writableSelf.__url = url;
     return writableSelf;
   }
-  setTextContent(text: string): TextNode {
+  setTextContent(text: string): boolean {
     errorOnReadOnly();
     if (this.isImmutable()) {
       invariant(
@@ -369,8 +369,60 @@ export class TextNode extends OutlineNode {
       );
     }
     const writableSelf = getWritableNode(this);
-    writableSelf.__text = text;
-    return writableSelf;
+
+    // Handle text direction and update text content
+    const topBlock = this.getTopParentBlock();
+    if (topBlock !== null) {
+      const topBlockWasEmpty =
+        text === '' && topBlock.getTextContent(false, false) === '';
+
+      writableSelf.__text = text;
+      const prevDirection = topBlock.getDirection();
+      if (prevDirection === null || topBlockWasEmpty) {
+        const direction = getTextDirection(text);
+        if (direction !== null) {
+          topBlock.setDirection(direction);
+        }
+      } else if (
+        prevDirection !== null &&
+        text === '' &&
+        topBlock.getTextContent() === ''
+      ) {
+        topBlock.setDirection(null);
+      }
+    } else {
+      writableSelf.__text = text;
+    }
+
+    const isHashtag = this.isHashtag();
+    // Handle hashtags
+    let requireNormalize = false;
+    if (isHashtag) {
+      const indexOfHash = text.indexOf('#');
+      let targetNode = this;
+      if (indexOfHash === -1) {
+        targetNode.toggleHashtag();
+        requireNormalize = true;
+      } else if (indexOfHash > 0) {
+        [, targetNode] = this.splitText(indexOfHash);
+        targetNode.toggleHashtag();
+        requireNormalize = true;
+      }
+      // Check for invalid characters
+      const targetTextContent = targetNode.getTextContent().slice(1);
+      const indexOfInvalidChar = targetTextContent.search(
+        /[\s.,\\\/#!$%\^&\*;:{}=\-`~()]/,
+      );
+      if (indexOfInvalidChar === 0) {
+        targetNode.toggleHashtag();
+        requireNormalize = true;
+      } else if (indexOfInvalidChar > 0) {
+        [targetNode] = targetNode.splitText(indexOfInvalidChar + 1);
+        targetNode.toggleHashtag();
+        requireNormalize = true;
+      }
+    }
+    return requireNormalize;
   }
   select(_anchorOffset?: number, _focusOffset?: number): Selection {
     errorOnReadOnly();
@@ -417,49 +469,9 @@ export class TextNode extends OutlineNode {
         'spliceText: can only be used on non-immutable text nodes',
       );
     }
-    const isHashtag = this.isHashtag();
-    let skipSelectionRestoration = false;
-    let shouldNormalizeTextNodes = false;
-    let handledText = newText;
-    // Handle hashtag containing whitespace
-    if (isHashtag && newText !== '') {
-      const parent = this.getParentOrThrow();
-      if (offset === 0) {
-        const textNode = createTextNode(newText);
-        this.insertBefore(textNode);
-        if (restoreSelection) {
-          textNode.select();
-        }
-        parent.normalizeTextNodes(true);
-        return this;
-      }
-      const breakCharacterIndex = handledText.search(
-        /[\s.,\\\/#!$%\^&\*;:{}=\-`~()]/,
-      );
-
-      if (breakCharacterIndex !== -1) {
-        const currentText = this.getTextContent();
-        handledText = newText.slice(0, breakCharacterIndex);
-        const splitTextStr = newText.slice(breakCharacterIndex);
-        const textNode = createTextNode(splitTextStr);
-        shouldNormalizeTextNodes = true;
-        if (offset === currentText.length) {
-          this.insertAfter(textNode);
-        } else if (offset === 0) {
-          this.insertBefore(textNode);
-        } else {
-          const [, targetNode] = this.splitText(offset);
-          targetNode.insertBefore(textNode);
-        }
-        if (restoreSelection) {
-          textNode.select();
-          skipSelectionRestoration = true;
-        }
-      }
-    }
     const writableSelf = getWritableNode(this);
     const text = writableSelf.__text;
-    const handledTextLength = handledText.length;
+    const handledTextLength = newText.length;
     let index = offset;
     if (index < 0) {
       index = handledTextLength + index;
@@ -467,32 +479,11 @@ export class TextNode extends OutlineNode {
         index = 0;
       }
     }
-    const topBlock = this.getTopParentBlockOrThrow();
-    const topBlockWasEmpty =
-      text === '' && topBlock.getTextContent(false, false) === '';
     const updatedText =
-      text.slice(0, index) + handledText + text.slice(index + delCount);
-    writableSelf.__text = updatedText;
-    // Handle text direction
-    const prevDirection = topBlock.getDirection();
-    if (prevDirection === null || topBlockWasEmpty) {
-      const direction = getTextDirection(updatedText);
-      if (direction !== null) {
-        topBlock.setDirection(direction);
-      }
-    } else if (
-      prevDirection !== null &&
-      updatedText === '' &&
-      topBlock.getTextContent() === ''
-    ) {
-      topBlock.setDirection(null);
-    }
-    // If the hash gets removed, remove the hashtag status
-    if (isHashtag && updatedText.indexOf('#') === -1) {
-      const flags = this.getTextNodeFormatFlags('hashtag', null);
-      this.setFlags(flags);
-    }
-    if (restoreSelection && !skipSelectionRestoration) {
+      text.slice(0, index) + newText + text.slice(index + delCount);
+    writableSelf.setTextContent(updatedText);
+
+    if (restoreSelection) {
       const key = writableSelf.__key;
       if (key === null) {
         invariant(
@@ -506,9 +497,6 @@ export class TextNode extends OutlineNode {
       }
       const newOffset = offset + handledTextLength;
       selection.setRange(key, newOffset, key, newOffset);
-    }
-    if (shouldNormalizeTextNodes) {
-      this.getParentBlockOrThrow().normalizeTextNodes(true);
     }
     return writableSelf;
   }

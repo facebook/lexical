@@ -242,7 +242,7 @@ export class OutlineNode {
     }
     invariant(false, 'Expected node %s to have a parent block.', this.__key);
   }
-  getTopParentBlockOrThrow(): BlockNode {
+  getTopParentBlock(): null | BlockNode {
     let node = this;
     while (node !== null) {
       const parent = node.getParent();
@@ -251,11 +251,18 @@ export class OutlineNode {
       }
       node = parent;
     }
-    invariant(
-      false,
-      'Expected node %s to have a top parent block.',
-      this.__key,
-    );
+    return null;
+  }
+  getTopParentBlockOrThrow(): BlockNode {
+    const parent = this.getTopParentBlock();
+    if (parent === null) {
+      invariant(
+        false,
+        'Expected node %s to have a top parent block.',
+        this.__key,
+      );
+    }
+    return parent;
   }
   getParents(): Array<BlockNode> {
     const parents = [];

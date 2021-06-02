@@ -609,12 +609,18 @@ function reconcileSelection(
   editor: OutlineEditor,
 ): void {
   const domSelection = window.getSelection();
+  const range = domSelection.getRangeAt(0);
+  const startContainer = range.startContainer;
+  const endContainer = range.endContainer;
+  const startOffset = range.startOffset;
+  const endOffset = range.endOffset;
+
   if (nextSelection === null) {
     if (
       isSelectionWithinEditor(
         editor,
-        domSelection.anchorNode,
-        domSelection.focusNode,
+        startContainer,
+        endContainer,
       )
     ) {
       domSelection.removeAllRanges();
@@ -636,10 +642,10 @@ function reconcileSelection(
   // Diff against the native DOM selection to ensure we don't do
   // an unnecessary selection update.
   if (
-    domSelection.anchorOffset === anchorOffset &&
-    domSelection.focusOffset === focusOffset &&
-    domSelection.anchorNode === anchorDOMTarget &&
-    domSelection.focusNode === focusDOMTarget
+    startOffset === anchorOffset &&
+    endOffset === focusOffset &&
+    startContainer === anchorDOMTarget &&
+    endContainer === focusDOMTarget
   ) {
     return;
   }

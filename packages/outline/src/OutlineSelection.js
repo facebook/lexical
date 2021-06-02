@@ -224,11 +224,32 @@ function resolveSelectionNodeAndOffset(
   if (!isTextNode(resolvedNode)) {
     return null;
   }
-  const resolvedTextNode = resolvedNode;
+  let resolvedTextNode = resolvedNode;
   // Because we use a special character for whitespace
   // at the start of all strings, we need to remove one
   // from the offset.
-  resolvedOffset--;
+  if (resolvedOffset !== 0) {
+    resolvedOffset--;
+  }
+  // If we are on the boundaries of an immutable of segmented node,
+  // move it to the edge of the adjacent node.
+  if (resolvedTextNode.isImmutable() || resolvedTextNode.isSegmented()) {
+    if (resolvedOffset === 0) {
+      const prevSibling = resolvedTextNode.getPreviousSibling();
+      if (isTextNode(prevSibling)) {
+        resolvedTextNode = prevSibling;
+        resolvedOffset = prevSibling.getTextContentSize();
+        isDirty = true;
+      }
+  } else if (resolvedOffset === resolvedTextNode.getTextContentSize()) {
+      const nextSibling = resolvedTextNode.getNextSibling();
+      if (isTextNode(nextSibling)) {
+        resolvedTextNode = nextSibling;
+        resolvedOffset = 0;
+        isDirty = true;
+      }
+    }
+  }
   return [resolvedTextNode, resolvedOffset, isDirty];
 }
 

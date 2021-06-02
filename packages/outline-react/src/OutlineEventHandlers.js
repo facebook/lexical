@@ -136,7 +136,7 @@ function shouldOverrideBrowserDefault(
   const anchorOffset = selection.anchorOffset;
   const focusOffset = selection.focusOffset;
   const selectionAtBoundary = isBackward
-    ? anchorOffset === 0 || focusOffset === 0
+    ? anchorOffset < 2 || focusOffset < 2
     : anchorOffset > selection.getAnchorNode().getTextContentSize() - 2 ||
       focusOffset > selection.getFocusNode().getTextContentSize() - 2;
 

@@ -586,8 +586,8 @@ export function onNativeInput(
         // Let's try and detect a bad update here. This usually comes from text transformation
         // tools that attempt to insertText across a range of nodes – which obviously we can't
         // detect unless we rely on the DOM being the source of truth. We can try and recover
-        // by dispatching an Undo event, in the hopes that the user will realize that the
-        // tool they are using is broken.
+        // by dispatching an Undo event, and then capturing the previous selection and trying to
+        // apply the text on that.
         if (
           anchorElement.parentNode === null ||
           (anchorElement.nextSibling === null &&
@@ -595,6 +595,12 @@ export function onNativeInput(
         ) {
           requestAnimationFrame(() => {
             document.execCommand('Undo', false, null);
+            editor.update((undoneView) => {
+              const undoneSelection = undoneView.getSelection();
+              if (undoneSelection !== null) {
+                insertText(undoneSelection, data);
+              }
+            });
           });
           return;
         }

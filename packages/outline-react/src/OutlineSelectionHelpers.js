@@ -25,7 +25,7 @@ import {
 import {createParagraphNode} from 'outline-extensions/ParagraphNode';
 
 import {invariant, isImmutableOrInertOrSegmented} from './OutlineReactUtils';
-import {doesContainGraheme} from './OutlineTextHelpers';
+import {doesContainGrapheme} from './OutlineTextHelpers';
 
 export function getNodesInRange(selection: Selection): {
   range: Array<NodeKey>,
@@ -420,7 +420,7 @@ function updateCaretSelectionForUnicodeCharacter(
 
     if (startOffset !== characterOffset) {
       const text = anchorNode.getTextContent().slice(startOffset, endOffset);
-      if (!doesContainGraheme(text)) {
+      if (!doesContainGrapheme(text)) {
         selection.anchorOffset = characterOffset;
       }
     }
@@ -597,7 +597,7 @@ export function updateCaretSelectionForRange(
   // will be. We then use it to update the Outline selection accordingly. This
   // is much more reliable than waiting for a beforeinput and using the ranges
   // from getTargetRanges(), and is also better than trying to do it ourselves
-  // using Intl.Segmenter or other work-arounds that struggle with word segments
+  // using Intl.Segmenter or other workarounds that struggle with word segments
   // and line segments (especially with word wrapping and non-Roman languages).
   moveSelection(domSelection, collapse, isBackward, granularity);
   // If we are at a boundary, move once again.

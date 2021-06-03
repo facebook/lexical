@@ -266,8 +266,8 @@ describe('TextFormatting', () => {
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
         anchorOffset: 0,
-        focusPath: [0, 3, 0],
-        focusOffset: 2,
+        focusPath: [0, 4, 0],
+        focusOffset: 0,
       });
 
       await keyDownCtrlOrMeta(page);

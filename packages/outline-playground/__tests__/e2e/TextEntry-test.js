@@ -29,10 +29,6 @@ describe('TextEntry', () => {
         const targetText = 'Hello Outline';
         await page.focus('div.editor');
         await page.keyboard.type(targetText);
-        const enteredText = await page.textContent(
-          'div.editor p:first-of-type',
-        );
-        expect(enteredText).toBe(targetText);
         await assertHTML(
           page,
           '<p class="editor-paragraph" dir="ltr"><span>Hello Outline</span></p>',
@@ -71,9 +67,9 @@ describe('TextEntry', () => {
         );
         await assertSelection(page, {
           anchorPath: [1, 2, 0],
-          anchorOffset: 1,
+          anchorOffset: 0,
           focusPath: [1, 2, 0],
-          focusOffset: 1,
+          focusOffset: 0,
         });
       });
 
@@ -87,10 +83,6 @@ describe('TextEntry', () => {
         await page.keyboard.press('Backspace');
         await page.keyboard.press('Backspace');
         await page.keyboard.press('Backspace');
-        const remainingText = await page.textContent(
-          'div.editor p:first-of-type',
-        );
-        expect(remainingText).toBe(backspacedText);
 
         await assertHTML(
           page,
@@ -130,10 +122,6 @@ describe('TextEntry', () => {
         });
 
         await page.keyboard.press('Backspace');
-        const remainingText = await page.textContent(
-          'div.editor p:first-of-type',
-        );
-        expect(remainingText).toBe(backspacedText);
 
         await assertHTML(
           page,

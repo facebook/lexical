@@ -66,28 +66,28 @@ if (!Selection.prototype.modify) {
     const anchor = impl._anchor;
     if (granularity === 'character') {
       if (direction === 'backward') {
-        if (focus.offset === 0) {
-          let node = focus.node.parentElement.previousSibling;
+        if (anchor.offset === 0) {
+          let node = anchor.node.parentElement.previousSibling;
           if (node === null) {
             node =
-              focus.node.parentElement.parentElement.previousSibling.lastChild;
+              anchor.node.parentElement.parentElement.previousSibling.lastChild;
           }
-          focus.node = node.firstChild;
-          focus.offset = 1;
+          anchor.node = node.firstChild;
+          anchor.offset = anchor.node.nodeValue.length - 1;
         } else {
-          focus.offset--;
+          anchor.offset--;
         }
       } else {
-        if (focus.offset === focus.node.textContent.length) {
-          let node = focus.node.parentElement.nextSibling;
+        if (anchor.offset === anchor.node.textContent.length) {
+          let node = anchor.node.parentElement.nextSibling;
           if (node === null) {
             node =
-              focus.node.parentElement.parentElement.nextSibling.firstChild;
+              anchor.node.parentElement.parentElement.nextSibling.firstChild;
           }
-          focus.node = node.firstChild;
-          focus.offset = 0;
+          anchor.node = node.firstChild;
+          anchor.offset = 0;
         } else {
-          focus.offset++;
+          anchor.offset++;
         }
       }
     } else if (granularity === 'word') {
@@ -136,8 +136,8 @@ if (!Selection.prototype.modify) {
       anchor.offset = index;
     }
     if (alter === 'move') {
-      anchor.offset = focus.offset;
-      anchor.node = focus.node;
+      focus.offset = anchor.offset;
+      focus.node = anchor.node;
     }
   };
 }
@@ -147,12 +147,16 @@ export function sanitizeHTML(html) {
   return html.replace(/\uFEFF/g, '');
 }
 
-export function sanitizeSelectionWithEmptyTextNodes(selection) {
-  const {anchorNode, focusNode} = selection;
-  if (anchorNode === focusNode && anchorNode.textContent === '\uFEFF') {
-    return {anchorNode, focusNode, anchorOffset: 0, focusOffset: 0};
+export function sanitizeSelection(selection) {
+  // eslint-disable-next-line prefer-const
+  let {anchorNode, anchorOffset, focusNode, focusOffset} = selection;
+  if (anchorOffset !== 0) {
+    anchorOffset--;
   }
-  return selection;
+  if (focusOffset !== 0) {
+    focusOffset--;
+  }
+  return {anchorNode, focusNode, anchorOffset, focusOffset};
 }
 
 export function printWhitespace(whitespaceCharacter) {
@@ -365,7 +369,7 @@ export function setNativeSelectionWithPaths(
 ) {
   const anchorNode = getNodeFromPath(anchorPath, editorElement);
   const focusNode = getNodeFromPath(focusPath, editorElement);
-  setNativeSelection(anchorNode, anchorOffset, focusNode, focusOffset);
+  setNativeSelection(anchorNode, anchorOffset + 1, focusNode, focusOffset + 1);
 }
 
 function getLastTextNode(startingNode) {

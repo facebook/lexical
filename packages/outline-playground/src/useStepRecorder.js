@@ -28,12 +28,15 @@ import {
 import React, {useState, useCallback, useRef, useEffect} from 'react';
 
 // stolen from OutlineSelection-test
-function sanitizeSelectionWithEmptyTextNodes(selection) {
-  const {anchorNode, focusNode} = selection;
-  if (anchorNode === focusNode && anchorNode.textContent === '\uFEFF') {
-    return {anchorNode, focusNode, anchorOffset: 0, focusOffset: 0};
+function sanitizeSelection(selection) {
+  let {anchorNode, anchorOffset, focusNode, focusOffset} = selection;
+  if (anchorOffset !== 0) {
+    anchorOffset--;
   }
-  return selection;
+  if (focusOffset !== 0) {
+    focusOffset--;
+  }
+  return {anchorNode, focusNode, anchorOffset, focusOffset};
 }
 
 function sanitizeHTML(html) {
@@ -150,7 +153,7 @@ export default function useStepRecorder(
     }
 
     const {anchorNode, anchorOffset, focusNode, focusOffset} =
-      sanitizeSelectionWithEmptyTextNodes(browserSelection);
+      sanitizeSelection(browserSelection);
     return `
 {
   name: '<YOUR TEST NAME>',
@@ -280,7 +283,7 @@ export default function useStepRecorder(
             return;
           }
           const {anchorNode, anchorOffset, focusNode, focusOffset} =
-            sanitizeSelectionWithEmptyTextNodes(browserSelection);
+            sanitizeSelection(browserSelection);
           pushStep('moveNativeSelection', [
             `[${getPathFromNodeToEditor(
               anchorNode,

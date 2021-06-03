@@ -24,12 +24,8 @@ import {
 } from 'outline';
 import {createParagraphNode} from 'outline-extensions/ParagraphNode';
 
-import {invariant} from './OutlineReactUtils';
+import {invariant, isImmutableOrInertOrSegmented} from './OutlineReactUtils';
 import {doesContainGraheme} from './OutlineTextHelpers';
-
-function isImmutableOrInertOrSegmented(node: OutlineNode): boolean {
-  return node.isImmutable() || node.isInert() || node.isSegmented();
-}
 
 export function getNodesInRange(selection: Selection): {
   range: Array<NodeKey>,
@@ -508,10 +504,18 @@ export function deleteForward(selection: Selection): void {
   if (selection.isCaret()) {
     updateCaretSelectionForRange(selection, false, 'character', false);
     if (!selection.isCaret()) {
-      const focusNode = selection.getFocusNode();
+      const anchorNode = selection.getAnchorNode();
+      const nextSibling = anchorNode.getNextSibling();
 
-      if (focusNode.isSegmented()) {
-        removeSegment(focusNode, false);
+      if (anchorNode.isSegmented()) {
+        removeSegment(anchorNode, false);
+        return;
+      } else if (
+        selection.anchorOffset === anchorNode.getTextContentSize() &&
+        isTextNode(nextSibling) &&
+        nextSibling.isSegmented()
+      ) {
+        removeSegment(nextSibling, false);
         return;
       }
       updateCaretSelectionForUnicodeCharacter(selection, true);
@@ -550,6 +554,19 @@ function removeSegment(node: TextNode, isBackward: boolean): void {
   }
 }
 
+function moveSelection(
+  domSelection,
+  collapse: boolean,
+  isBackward: boolean,
+  granularity: 'character' | 'word' | 'lineboundary',
+): void {
+  domSelection.modify(
+    collapse ? 'move' : 'extend',
+    isBackward ? 'backward' : 'forward',
+    granularity,
+  );
+}
+
 export function updateCaretSelectionForRange(
   selection: Selection,
   isBackward: boolean,
@@ -557,15 +574,22 @@ export function updateCaretSelectionForRange(
   collapse: boolean,
 ): void {
   const domSelection = window.getSelection();
-  const anchorNode = selection.getAnchorNode();
+  const focusNode = selection.getFocusNode();
+  const focusOffset = selection.focusOffset;
 
-  if (anchorNode.getTextContent() === '' && selection.isCaret()) {
-    domSelection.extend(domSelection.anchorNode, isBackward ? 0 : 1);
-    if (collapse) {
-      if (isBackward) {
-        domSelection.collapseToStart();
-      } else {
-        domSelection.collapseToEnd();
+  const isAtBoundary = isBackward
+    ? focusOffset <= (isImmutableOrInertOrSegmented(focusNode) ? 1 : 2)
+    : focusOffset >=
+      focusNode.getTextContentSize() -
+        (isImmutableOrInertOrSegmented(focusNode) ? 2 : 1);
+
+  // Ensure we don't move selection to the zero width offset
+  if (isAtBoundary && isBackward && focusOffset === 0) {
+    const parent = focusNode.getParentOrThrow();
+    const prevSibling = focusNode.getPreviousSibling();
+    if (prevSibling === null) {
+      if (parent.getPreviousSibling() === null) {
+        return;
       }
     }
   }
@@ -575,11 +599,11 @@ export function updateCaretSelectionForRange(
   // from getTargetRanges(), and is also better than trying to do it ourselves
   // using Intl.Segmenter or other work-arounds that struggle with word segments
   // and line segments (especially with word wrapping and non-Roman languages).
-  domSelection.modify(
-    collapse ? 'move' : 'extend',
-    isBackward ? 'backward' : 'forward',
-    granularity,
-  );
+  moveSelection(domSelection, collapse, isBackward, granularity);
+  // If we are at a boundary, move once again.
+  if (isAtBoundary) {
+    moveSelection(domSelection, collapse, isBackward, granularity);
+  }
   const range = domSelection.getRangeAt(0);
   // Apply the DOM selection to our Outline selection.
   selection.applyDOMRange(range);

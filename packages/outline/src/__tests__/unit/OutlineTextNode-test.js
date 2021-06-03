@@ -7,7 +7,6 @@
  */
 
 import {
-  BYTE_ORDER_MARK,
   IS_BOLD,
   IS_ITALIC,
   IS_STRIKETHROUGH,
@@ -38,6 +37,11 @@ const editorThemeClasses = Object.freeze({
     overflowed: 'my-overflowed-class',
   },
 });
+
+function sanitizeHTML(html) {
+  // Remove the special space characters
+  return html.replace(/\uFEFF/g, '');
+}
 
 describe('OutlineTextNode tests', () => {
   let container = null;
@@ -485,12 +489,7 @@ describe('OutlineTextNode tests', () => {
         'My text node',
         '<strong class="my-bold-class">My text node</strong>',
       ],
-      [
-        'bold + empty',
-        IS_BOLD,
-        '',
-        `<strong class="my-bold-class">${BYTE_ORDER_MARK}</strong>`,
-      ],
+      ['bold + empty', IS_BOLD, '', `<strong class="my-bold-class"></strong>`],
       [
         'underline',
         IS_UNDERLINE,
@@ -567,19 +566,14 @@ describe('OutlineTextNode tests', () => {
         const textNode = Outline.createTextNode(contents);
         textNode.setFlags(flag);
         const element = textNode.createDOM(editorThemeClasses);
-        expect(element.outerHTML).toBe(expectedHTML);
+        expect(sanitizeHTML(element.outerHTML)).toBe(expectedHTML);
       });
     });
 
     describe('has parent node', () => {
       test.each([
         ['no formatting', null, 'My text node', '<span>My text node</span>'],
-        [
-          'no formatting + empty string',
-          null,
-          '',
-          `<span>${BYTE_ORDER_MARK}</span>`,
-        ],
+        ['no formatting + empty string', null, '', `<span></span>`],
       ])('%s text format type', async (_type, flag, contents, expectedHTML) => {
         await update(() => {
           const paragraphNode = ParagraphNodeModule.createParagraphNode();
@@ -588,7 +582,7 @@ describe('OutlineTextNode tests', () => {
           paragraphNode.append(textNode);
 
           const element = textNode.createDOM(editorThemeClasses);
-          expect(element.outerHTML).toBe(expectedHTML);
+          expect(sanitizeHTML(element.outerHTML)).toBe(expectedHTML);
         });
       });
     });
@@ -679,7 +673,7 @@ describe('OutlineTextNode tests', () => {
           // Only need to bother about DOM element contents if updateDOM()
           // returns false.
           if (!result) {
-            expect(element.outerHTML).toBe(expectedHTML);
+            expect(sanitizeHTML(element.outerHTML)).toBe(expectedHTML);
           }
         });
       },

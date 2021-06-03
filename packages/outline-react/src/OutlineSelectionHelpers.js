@@ -574,37 +574,19 @@ export function updateCaretSelectionForRange(
   collapse: boolean,
 ): void {
   const domSelection = window.getSelection();
-  const anchorNode = selection.getAnchorNode();
   const focusNode = selection.getFocusNode();
-  const isBefore =
-    anchorNode === focusNode
-      ? selection.anchorOffset < selection.focusOffset
-      : anchorNode.isBefore(focusNode);
-  let targetNode;
-  let offset;
-
-  if (isBefore) {
-    targetNode = anchorNode;
-    offset = selection.anchorOffset;
-  } else {
-    targetNode = focusNode;
-    offset = selection.focusOffset;
-  }
+  const focusOffset = selection.focusOffset;
 
   const isAtBoundary = isBackward
-    ? offset <= (isImmutableOrInertOrSegmented(targetNode) ? 1 : 2)
-    : offset >=
-      targetNode.getTextContentSize() -
-        (isImmutableOrInertOrSegmented(targetNode) ? 2 : 1);
-
-  if (isAtBoundary) {
-    debugger;
-  }
+    ? focusOffset <= (isImmutableOrInertOrSegmented(focusNode) ? 1 : 2)
+    : focusOffset >=
+      focusNode.getTextContentSize() -
+        (isImmutableOrInertOrSegmented(focusNode) ? 2 : 1);
 
   // Ensure we don't move selection to the zero width offset
-  if (isAtBoundary && isBackward && offset === 0) {
-    const parent = targetNode.getParentOrThrow();
-    const prevSibling = targetNode.getPreviousSibling();
+  if (isAtBoundary && isBackward && focusOffset === 0) {
+    const parent = focusNode.getParentOrThrow();
+    const prevSibling = focusNode.getPreviousSibling();
     if (prevSibling === null) {
       if (parent.getPreviousSibling() === null) {
         return;

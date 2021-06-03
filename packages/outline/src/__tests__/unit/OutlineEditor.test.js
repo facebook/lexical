@@ -10,8 +10,16 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import Outline from 'outline';
-import ParagraphNodeModule from 'outline-extensions/ParagraphNode';
+import {
+  createEditor,
+  createTextNode,
+  TextNode,
+} from 'outline';
+
+import {
+  createParagraphNode,
+  ParagraphNode,
+} from 'outline-extensions/ParagraphNode';
 
 function sanitizeHTML(html) {
   // Remove the special space characters
@@ -34,7 +42,7 @@ describe('OutlineEditor tests', () => {
   });
 
   function useOutlineEditor(editorElementRef) {
-    const editor = React.useMemo(() => Outline.createEditor(), []);
+    const editor = React.useMemo(() => createEditor(), []);
 
     React.useEffect(() => {
       const editorElement = editorElementRef.current;
@@ -72,7 +80,7 @@ describe('OutlineEditor tests', () => {
     const ref = React.createRef();
 
     function TestBase({element}) {
-      editor = React.useMemo(() => Outline.createEditor(), []);
+      editor = React.useMemo(() => createEditor(), []);
 
       React.useEffect(() => {
         editor.setEditorElement(element);
@@ -87,8 +95,8 @@ describe('OutlineEditor tests', () => {
 
     editor.update((view) => {
       const root = view.getRoot();
-      const paragraph = ParagraphNodeModule.createParagraphNode();
-      const text = Outline.createTextNode('This works!');
+      const paragraph = createParagraphNode();
+      const text = createTextNode('This works!');
       root.append(paragraph);
       paragraph.append(text);
     });
@@ -108,12 +116,12 @@ describe('OutlineEditor tests', () => {
     const listener = jest.fn();
 
     function TestBase({changeElement}) {
-      editor = React.useMemo(() => Outline.createEditor(), []);
+      editor = React.useMemo(() => createEditor(), []);
 
       React.useEffect(() => {
         editor.update((view) => {
-          const paragraph = ParagraphNodeModule.createParagraphNode();
-          const text = Outline.createTextNode(
+          const paragraph = createParagraphNode();
+          const text = createTextNode(
             changeElement ? 'Change successful' : 'Not changed',
           );
           paragraph.append(text);
@@ -188,7 +196,7 @@ describe('OutlineEditor tests', () => {
       }
 
       function Test() {
-        editor = React.useMemo(() => Outline.createEditor(), []);
+        editor = React.useMemo(() => createEditor(), []);
 
         const ref = React.useCallback((node) => {
           editor.addEditorElementListener(listener);
@@ -211,7 +219,7 @@ describe('OutlineEditor tests', () => {
 
       // Update the editor with the decorator
       await ReactTestUtils.act(async () => {
-        class DecoratorNode extends Outline.TextNode {
+        class DecoratorNode extends TextNode {
           clone() {
             const node = new DecoratorNode(this.__text, this.__key);
             node.__parent = this.__parent;
@@ -223,7 +231,7 @@ describe('OutlineEditor tests', () => {
           }
         }
         await editor.update((view) => {
-          const paragraph = ParagraphNodeModule.createParagraphNode();
+          const paragraph = createParagraphNode();
           const text = new DecoratorNode('');
           text.makeImmutable();
           paragraph.append(text);
@@ -255,13 +263,13 @@ describe('OutlineEditor tests', () => {
 
       beforeEach(async () => {
         await update((view) => {
-          const paragraph = ParagraphNodeModule.createParagraphNode();
-          originalText = Outline.createTextNode('Hello world');
+          const paragraph = createParagraphNode();
+          originalText = createTextNode('Hello world');
           originalText.select(6, 11);
           paragraph.append(originalText);
           view.getRoot().append(paragraph);
         });
-        editor.registerNodeType('paragraph', ParagraphNodeModule.ParagraphNode);
+        editor.registerNodeType('paragraph', ParagraphNode);
         const stringifiedViewModel = editor.getViewModel().stringify();
         const viewModel = editor.parseViewModel(stringifiedViewModel);
         viewModel.read((view) => {
@@ -317,8 +325,8 @@ describe('OutlineEditor tests', () => {
         editor.setPlaceholder('Placeholder text');
 
         await update((view) => {
-          const paragraph = ParagraphNodeModule.createParagraphNode();
-          const text = Outline.createTextNode();
+          const paragraph = createParagraphNode();
+          const text = createTextNode();
           paragraph.append(text);
           view.getRoot().append(paragraph);
         });
@@ -333,8 +341,8 @@ describe('OutlineEditor tests', () => {
         editor.setPlaceholder('Placeholder text');
 
         await update((view) => {
-          const paragraph = ParagraphNodeModule.createParagraphNode();
-          const text = Outline.createTextNode('Some text');
+          const paragraph = createParagraphNode();
+          const text = createTextNode('Some text');
           paragraph.append(text);
           view.getRoot().append(paragraph);
         });
@@ -348,11 +356,11 @@ describe('OutlineEditor tests', () => {
         editor.setPlaceholder('Placeholder text');
 
         await update((view) => {
-          const paragraph = ParagraphNodeModule.createParagraphNode();
-          const text = Outline.createTextNode();
+          const paragraph = createParagraphNode();
+          const text = createTextNode();
           paragraph.append(text);
-          const paragraph2 = ParagraphNodeModule.createParagraphNode();
-          const text2 = Outline.createTextNode();
+          const paragraph2 = createParagraphNode();
+          const text2 = createTextNode();
           paragraph2.append(text2);
           view.getRoot().append(paragraph);
           view.getRoot().append(paragraph2);
@@ -366,8 +374,8 @@ describe('OutlineEditor tests', () => {
 
       it('focus() should be able to restore selection back to the editor', async (done) => {
         editor.update((view) => {
-          const paragraph = ParagraphNodeModule.createParagraphNode();
-          const text = Outline.createTextNode('Hello world');
+          const paragraph = createParagraphNode();
+          const text = createTextNode('Hello world');
           text.select(1, 1);
           paragraph.append(text);
           view.getRoot().append(paragraph);
@@ -392,8 +400,8 @@ describe('OutlineEditor tests', () => {
         let counter = 0;
 
         await update((view) => {
-          const paragraph = ParagraphNodeModule.createParagraphNode();
-          const text = Outline.createTextNode('Hello world');
+          const paragraph = createParagraphNode();
+          const text = createTextNode('Hello world');
           text.select(1, 1);
           paragraph.append(text);
           view.getRoot().append(paragraph);

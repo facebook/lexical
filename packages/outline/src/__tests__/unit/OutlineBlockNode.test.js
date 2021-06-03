@@ -12,9 +12,13 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import Outline from 'outline';
+import {
+  BlockNode,
+  createEditor,
+  createTextNode
+} from 'outline';
 
-class TestBlockNode extends Outline.BlockNode {
+class TestBlockNode extends BlockNode {
   clone() {
     const clone = new TestBlockNode(this.__key);
     clone.__children = [...this.__children];
@@ -50,7 +54,7 @@ describe('OutlineBlockNode tests', () => {
   }
 
   function useOutlineEditor(editorElementRef) {
-    const editor = React.useMemo(() => Outline.createEditor(), []);
+    const editor = React.useMemo(() => createEditor(), []);
 
     React.useEffect(() => {
       const editorElement = editorElementRef.current;
@@ -81,11 +85,11 @@ describe('OutlineBlockNode tests', () => {
     // Insert initial block
     await update((view) => {
       const block = new TestBlockNode();
-      const text = Outline.createTextNode('Foo');
-      const text2 = Outline.createTextNode('Bar');
+      const text = createTextNode('Foo');
+      const text2 = createTextNode('Bar');
       // Prevent text nodes from combining.
       text2.setFlags(IS_BOLD);
-      const text3 = Outline.createTextNode('Baz');
+      const text3 = createTextNode('Baz');
 
       // Some operations require a selection to exist, hence
       // we make a selection in the setup code.
@@ -99,7 +103,7 @@ describe('OutlineBlockNode tests', () => {
 
   describe('getChildren()', () => {
     test('no children', async () => {
-      await update((view) => {
+      await update(() => {
         const block = new TestBlockNode();
         const children = block.getChildren();
         expect(children).toHaveLength(0);
@@ -127,11 +131,11 @@ describe('OutlineBlockNode tests', () => {
       await update((view) => {
         const block = new TestBlockNode();
         const innerBlock = new TestBlockNode();
-        const text = Outline.createTextNode('Foo');
+        const text = createTextNode('Foo');
         text.select(0, 0);
-        const text2 = Outline.createTextNode('Bar');
-        const text3 = Outline.createTextNode('Baz');
-        const text4 = Outline.createTextNode('Qux');
+        const text2 = createTextNode('Bar');
+        const text3 = createTextNode('Baz');
+        const text4 = createTextNode('Qux');
 
         block.append(text);
         block.append(innerBlock);
@@ -145,8 +149,8 @@ describe('OutlineBlockNode tests', () => {
         expect(children).toEqual([text, text2, text3, text4]);
 
         const innerInnerBlock = new TestBlockNode();
-        const text5 = Outline.createTextNode('More');
-        const text6 = Outline.createTextNode('Stuff');
+        const text5 = createTextNode('More');
+        const text6 = createTextNode('Stuff');
         innerInnerBlock.append(text5);
         innerInnerBlock.append(text6);
         innerBlock.append(innerInnerBlock);
@@ -180,10 +184,10 @@ describe('OutlineBlockNode tests', () => {
     test('inert', async () => {
       await update((view) => {
         const block = new TestBlockNode();
-        const inertNode = Outline.createTextNode('Foo');
+        const inertNode = createTextNode('Foo');
         inertNode.makeInert();
         inertNode.select(0, 0);
-        const text = Outline.createTextNode('Bar');
+        const text = createTextNode('Bar');
 
         block.append(inertNode);
         block.append(text);
@@ -197,8 +201,8 @@ describe('OutlineBlockNode tests', () => {
       await update((view) => {
         const block = new TestBlockNode();
         const innerBlock = new TestBlockNode();
-        const text = Outline.createTextNode('Foo');
-        const text2 = Outline.createTextNode('Bar');
+        const text = createTextNode('Foo');
+        const text2 = createTextNode('Bar');
         text.select(0, 0);
 
         block.append(innerBlock);
@@ -230,8 +234,8 @@ describe('OutlineBlockNode tests', () => {
     test('inert', async () => {
       await update((view) => {
         const block = new TestBlockNode();
-        const text = Outline.createTextNode('Foo');
-        const inertNode = Outline.createTextNode('Bar');
+        const text = createTextNode('Foo');
+        const inertNode = createTextNode('Bar');
         inertNode.makeInert();
         inertNode.select(0, 0);
 
@@ -247,8 +251,8 @@ describe('OutlineBlockNode tests', () => {
       await update((view) => {
         const block = new TestBlockNode();
         const innerBlock = new TestBlockNode();
-        const text = Outline.createTextNode('Foo');
-        const text2 = Outline.createTextNode('Bar');
+        const text = createTextNode('Foo');
+        const text2 = createTextNode('Bar');
         text.select(0, 0);
 
         block.append(innerBlock);
@@ -315,12 +319,12 @@ describe('OutlineBlockNode tests', () => {
       await update((view) => {
         const block = new TestBlockNode();
         const innerBlock = new TestBlockNode();
-        const text = Outline.createTextNode('Foo');
+        const text = createTextNode('Foo');
         text.select(0, 0);
-        const text2 = Outline.createTextNode('Bar');
-        const text3 = Outline.createTextNode('Baz');
+        const text2 = createTextNode('Bar');
+        const text3 = createTextNode('Baz');
         text3.makeInert();
-        const text4 = Outline.createTextNode('Qux');
+        const text4 = createTextNode('Qux');
 
         block.append(text);
         block.append(innerBlock);
@@ -333,9 +337,9 @@ describe('OutlineBlockNode tests', () => {
         expect(block.getTextContent(true)).toEqual('FooBarBaz\n\nQux');
 
         const innerInnerBlock = new TestBlockNode();
-        const text5 = Outline.createTextNode('More');
+        const text5 = createTextNode('More');
         text5.makeInert();
-        const text6 = Outline.createTextNode('Stuff');
+        const text6 = createTextNode('Stuff');
         innerInnerBlock.append(text5);
         innerInnerBlock.append(text6);
         innerBlock.append(innerInnerBlock);

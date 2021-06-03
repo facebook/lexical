@@ -6,13 +6,26 @@ const common = {
 
 module.exports = {
   collectCoverage: true,
-  collectCoverageFrom: ['packages/**/src/*.js'],
+  collectCoverageFrom: [
+    '<rootDir>/packages/outline/**/src/*.js',
+    '<rootDir>/packages/outline-extensions/**/src/*.js',
+    '<rootDir>/packages/outline-react/**/src/*.js',
+  ],
   coverageReporters: ['json', 'text'],
   projects: [
     {
       ...common,
       displayName: 'unit',
-      testMatch: ['**/__tests__/unit/**/*.js'],
+      testMatch: ['**/__tests__/unit/**/*.test.js'],
+      moduleNameMapper: {
+        '^outline$': '<rootDir>/packages/outline/src/index.js',
+        '^outline-extensions/(.+)':
+          '<rootDir>/packages/outline-extensions/src/Outline$1.js',
+        '^./dist/(.+)': './src/$1',
+      },
+      globals: {
+        __DEV__: true,
+      },
     },
     {
       ...common,

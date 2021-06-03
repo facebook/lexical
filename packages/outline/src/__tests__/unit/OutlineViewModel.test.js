@@ -10,8 +10,14 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import Outline from 'outline';
-import ParagraphNodeModule from 'outline-extensions/ParagraphNode';
+import {
+  createEditor,
+  createTextNode,
+} from 'outline';
+
+import {
+  createParagraphNode,
+} from 'outline-extensions/ParagraphNode';
 
 describe('OutlineViewModel tests', () => {
   let container = null;
@@ -33,7 +39,7 @@ describe('OutlineViewModel tests', () => {
   }
 
   function useOutlineEditor(editorElementRef) {
-    const editor = React.useMemo(() => Outline.createEditor(), []);
+    const editor = React.useMemo(() => createEditor(), []);
 
     React.useEffect(() => {
       const editorElement = editorElementRef.current;
@@ -64,8 +70,8 @@ describe('OutlineViewModel tests', () => {
 
   test('read()', async () => {
     await update((view) => {
-      const paragraph = ParagraphNodeModule.createParagraphNode();
-      const text = Outline.createTextNode();
+      const paragraph = createParagraphNode();
+      const text = createTextNode();
       paragraph.append(text);
       view.getRoot().append(paragraph);
     });
@@ -106,8 +112,8 @@ describe('OutlineViewModel tests', () => {
 
   test('stringify()', async () => {
     await update((view) => {
-      const paragraph = ParagraphNodeModule.createParagraphNode();
-      const text = Outline.createTextNode('Hello world');
+      const paragraph = createParagraphNode();
+      const text = createTextNode('Hello world');
       text.select(6, 11);
       paragraph.append(text);
       view.getRoot().append(paragraph);
@@ -124,8 +130,8 @@ describe('OutlineViewModel tests', () => {
 
   test('stringify(2)', async () => {
     await update((view) => {
-      const paragraph = ParagraphNodeModule.createParagraphNode();
-      const text = Outline.createTextNode('Hello world');
+      const paragraph = createParagraphNode();
+      const text = createTextNode('Hello world');
       text.select(6, 11);
       paragraph.append(text);
       view.getRoot().append(paragraph);
@@ -137,8 +143,8 @@ describe('OutlineViewModel tests', () => {
 
   test('ensure garbage collection works as expected', async () => {
     await update((view) => {
-      const paragraph = ParagraphNodeModule.createParagraphNode();
-      const text = Outline.createTextNode();
+      const paragraph = createParagraphNode();
+      const text = createTextNode();
       paragraph.append(text);
       view.getRoot().append(paragraph);
     });

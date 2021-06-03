@@ -16,7 +16,7 @@ import useOutlineRichText from 'outline-react/useOutlineRichText';
 
 import {
   insertText,
-  sanitizeSelectionWithEmptyTextNodes,
+  sanitizeSelection,
   sanitizeHTML,
   setNativeSelectionWithPaths,
   getNodeFromPath,
@@ -135,9 +135,7 @@ describe('OutlineSelection tests', () => {
   });
 
   function assertSelection(editorElement, expectedSelection) {
-    const acutalSelection = sanitizeSelectionWithEmptyTextNodes(
-      window.getSelection(),
-    );
+    const acutalSelection = sanitizeSelection(window.getSelection());
     expect(acutalSelection.anchorNode).toBe(
       getNodeFromPath(expectedSelection.anchorPath, editorElement),
     );
@@ -902,10 +900,10 @@ describe('OutlineSelection tests', () => {
           '<span></span>' +
           '</p></div>',
         expectedSelection: {
-          anchorPath: [0, 0, 0],
-          anchorOffset: 6,
-          focusPath: [0, 0, 0],
-          focusOffset: 6,
+          anchorPath: [0, 1, 0],
+          anchorOffset: 3,
+          focusPath: [0, 1, 0],
+          focusOffset: 3,
         },
       },
       {

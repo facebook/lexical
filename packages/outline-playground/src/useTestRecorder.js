@@ -119,12 +119,15 @@ const formatStep = (step) => {
 };
 
 // stolen from OutlineSelection-test
-function sanitizeSelectionWithEmptyTextNodes(selection) {
-  const {anchorNode, focusNode} = selection;
-  if (anchorNode === focusNode && anchorNode.textContent === '\uFEFF') {
-    return {anchorNode, focusNode, anchorOffset: 0, focusOffset: 0};
+function sanitizeSelection(selection) {
+  let {anchorNode, anchorOffset, focusNode, focusOffset} = selection;
+  if (anchorOffset !== 0) {
+    anchorOffset--;
   }
-  return selection;
+  if (focusOffset !== 0) {
+    focusOffset--;
+  }
+  return {anchorNode, focusNode, anchorOffset, focusOffset};
 }
 
 function getPathFromNodeToEditor(node: Node, editorElement) {
@@ -359,7 +362,7 @@ ${steps.map(formatStep).join(`\n`)}
       return;
     }
     const {anchorNode, anchorOffset, focusNode, focusOffset} =
-      sanitizeSelectionWithEmptyTextNodes(browserSelection);
+      sanitizeSelection(browserSelection);
     const anchorPath = getPathFromNodeToEditor(
       anchorNode,
       getCurrentEditor().getEditorElement(),

@@ -77,7 +77,7 @@ function markParentsAsDirty(
   }
 }
 
-export function makeNodeAsDirty(node: OutlineNode): void {
+export function markNodeAsDirty(node: OutlineNode): void {
   const latest = node.getLatest();
   const parent = latest.__parent;
   const viewModel = getActiveViewModel();
@@ -104,7 +104,7 @@ function removeNode(nodeToRemove: OutlineNode): void {
   }
   const writableNodeToRemove = getWritableNode(nodeToRemove);
   writableNodeToRemove.__parent = null;
-  makeNodeAsDirty(writableNodeToRemove);
+  markNodeAsDirty(writableNodeToRemove);
 }
 
 function replaceNode<N: OutlineNode>(
@@ -187,6 +187,7 @@ export class OutlineNode {
   __flags: number;
   __key: NodeKey;
   __parent: null | NodeKey;
+  decorate: void | ((key: string) => null | ReactNode);
 
   clone(): OutlineNode {
     // Flow doesn't support abstract classes unfortunately, so we can't _force_
@@ -491,9 +492,6 @@ export class OutlineNode {
   ): boolean {
     invariant(false, 'updateDOM: base method not extended');
   }
-  decorate(): null | ReactNode {
-    return null;
-  }
 
   // Setters and mutators
 
@@ -653,7 +651,7 @@ export function getWritableNode<N: OutlineNode>(node: N): N {
     }
   }
   mutableNode.__key = key;
-  makeNodeAsDirty(mutableNode);
+  markNodeAsDirty(mutableNode);
   // Update reference in node map
   if (nodeMap[key] !== undefined) {
     nodeMap[key] = mutableNode;

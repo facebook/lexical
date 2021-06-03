@@ -16,11 +16,10 @@ import type {Node as ReactNode} from 'react';
 import {isTextNode, isBlockNode} from '.';
 import {
   invariant,
-  getAdjustedSelectionOffset,
   isSelectionWithinEditor,
   getDOMTextNodeFromElement,
 } from './OutlineUtils';
-import {IS_INERT, IS_RTL, IS_LTR} from './OutlineConstants';
+import {IS_INERT, IS_RTL, IS_LTR, IS_DIRTY_DECORATOR} from './OutlineConstants';
 
 let subTreeTextContent = '';
 let editorTextContent = '';
@@ -31,6 +30,8 @@ let activeDirtyNodes: Set<NodeKey>;
 let activePrevNodeMap: NodeMapType;
 let activeNextNodeMap: NodeMapType;
 let activeViewModelIsDirty: boolean = false;
+
+const decoratorKeyMap: Map<NodeKey, string> = new Map();
 
 function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
   const node = activePrevNodeMap[key];
@@ -72,13 +73,17 @@ function createNode(
 ): HTMLElement {
   const node = activeNextNodeMap[key];
   const dom = node.createDOM(activeEditorThemeClasses);
-  const decorator = node.decorate();
   const flags = node.__flags;
   const isInert = flags & IS_INERT;
+  const decorate = node.decorate;
   storeDOMWithKey(key, dom, activeEditor);
 
-  if (decorator !== null) {
-    reconcileDecorator(key, decorator);
+  if (typeof decorate === 'function') {
+    const decoratorKey = getDecoratorKey(key, false);
+    const decorator = decorate.call(node, decoratorKey);
+    if (decorator !== null) {
+      reconcileDecorator(key, decorator);
+    }
   }
 
   if (node.__type !== 'linebreak' && isInert) {
@@ -143,6 +148,22 @@ function createChildren(
   // $FlowFixMe: internal field
   dom.__outlineTextContent = subTreeTextContent;
   subTreeTextContent = previousSubTreeTextContent + subTreeTextContent;
+}
+
+function getDecoratorKey(nodeKey: NodeKey, hasDirtyDecorator: boolean): string {
+  let decoratorKey = decoratorKeyMap.get(nodeKey);
+  if (decoratorKey === undefined) {
+    decoratorKey = nodeKey;
+    decoratorKeyMap.set(nodeKey, decoratorKey);
+  } else if (hasDirtyDecorator) {
+    let counter = 0;
+    if (decoratorKey !== nodeKey) {
+      counter = Number(decoratorKey.split('_')[2]);
+    }
+    decoratorKey = nodeKey + '_' + ++counter;
+    decoratorKeyMap.set(nodeKey, decoratorKey);
+  }
+  return decoratorKey;
 }
 
 function reconcileChildren(
@@ -233,9 +254,19 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
     destroyNode(key, null);
     return;
   }
-  const decorator = nextNode.decorate();
-  if (decorator !== null) {
-    reconcileDecorator(key, decorator);
+  const nextFlags = nextNode.__flags;
+  const decorate = nextNode.decorate;
+  if (typeof decorate === 'function') {
+    const hasDirtyDecorator = (nextFlags & IS_DIRTY_DECORATOR) !== 0;
+    const decoratorKey = getDecoratorKey(key, hasDirtyDecorator);
+    if (hasDirtyDecorator) {
+      // Remove the dirty decorator flag
+      nextNode.__flags ^= IS_DIRTY_DECORATOR;
+    }
+    const decorator = decorate.call(nextNode, decoratorKey);
+    if (decorator !== null) {
+      reconcileDecorator(key, decorator);
+    }
   }
   // Handle text content, for LTR, LTR cases.
   if (isTextNode(nextNode)) {
@@ -245,7 +276,6 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
     return;
   } else if (isBlockNode(prevNode) && isBlockNode(nextNode)) {
     const prevFlags = prevNode.__flags;
-    const nextFlags = nextNode.__flags;
     if (nextFlags & IS_LTR) {
       if ((prevFlags & IS_LTR) === 0) {
         dom.dir = 'ltr';
@@ -539,10 +569,8 @@ export function reconcileViewModel(
   // always do a full reconciliation to ensure consistency.
   const isDirty = nextViewModel._isDirty;
   const needsUpdate = isDirty || nextViewModel.hasDirtyNodes();
-  let reconciliationCausedLostSelection = false;
 
   if (needsUpdate) {
-    const {anchorOffset, focusOffset} = window.getSelection();
     reconcileRoot(
       prevViewModel,
       nextViewModel,
@@ -550,13 +578,6 @@ export function reconcileViewModel(
       dirtySubTrees,
       dirtyNodes,
     );
-    const selectionAfter = window.getSelection();
-    if (
-      anchorOffset !== selectionAfter.anchorOffset ||
-      focusOffset !== selectionAfter.focusOffset
-    ) {
-      reconciliationCausedLostSelection = true;
-    }
   }
   const prevSelection = prevViewModel._selection;
   const nextSelection = nextViewModel._selection;
@@ -564,10 +585,7 @@ export function reconcileViewModel(
   if (
     !editor.isComposing() &&
     prevSelection !== nextSelection &&
-    (!nextSelection ||
-      nextSelection.isDirty ||
-      isDirty ||
-      reconciliationCausedLostSelection)
+    (!nextSelection || nextSelection.isDirty || isDirty)
   ) {
     reconcileSelection(prevSelection, nextSelection, editor);
   }
@@ -579,39 +597,24 @@ function reconcileSelection(
   editor: OutlineEditor,
 ): void {
   const domSelection = window.getSelection();
+  const anchorNode = domSelection.anchorNode;
+  const focusNode = domSelection.focusNode;
+  const anchorOffset = domSelection.anchorOffset;
+  const focusOffset = domSelection.focusOffset;
+
   if (nextSelection === null) {
-    if (
-      isSelectionWithinEditor(
-        editor,
-        domSelection.anchorNode,
-        domSelection.focusNode,
-      )
-    ) {
+    if (isSelectionWithinEditor(editor, anchorNode, focusNode)) {
       domSelection.removeAllRanges();
     }
     return;
   }
   const anchorKey = nextSelection.anchorKey;
   const focusKey = nextSelection.focusKey;
-  const anchorNode = nextSelection.getAnchorNode();
-  const focusNode = nextSelection.getFocusNode();
   const anchorDOM = getElementByKeyOrThrow(editor, anchorKey);
   const focusDOM = getElementByKeyOrThrow(editor, focusKey);
-  const anchorTextIsEmpty = anchorNode.__text === '';
-  const focusTextIsEmpty = focusNode.__text === '';
-  let anchorOffset = nextSelection.anchorOffset;
-  let focusOffset = nextSelection.focusOffset;
+  const nextAnchorOffset = nextSelection.anchorOffset + 1;
+  const nextFocusOffset = nextSelection.focusOffset + 1;
 
-  // Because we use empty text nodes to ensure Outline
-  // selection and text entry works as expected, it also
-  // means we need to adjust the offset to ensure native
-  // selection works correctly and doesn't act buggy.
-  if (anchorTextIsEmpty) {
-    anchorOffset = getAdjustedSelectionOffset(anchorDOM);
-  }
-  if (focusTextIsEmpty) {
-    focusOffset = getAdjustedSelectionOffset(focusDOM);
-  }
   // Get the underlying DOM text nodes from the representive
   // Outline text nodes (we use elements for text nodes).
   const anchorDOMTarget = getDOMTextNodeFromElement(anchorDOM);
@@ -620,12 +623,10 @@ function reconcileSelection(
   // Diff against the native DOM selection to ensure we don't do
   // an unnecessary selection update.
   if (
-    !anchorTextIsEmpty &&
-    !focusTextIsEmpty &&
-    domSelection.anchorOffset === anchorOffset &&
-    domSelection.focusOffset === focusOffset &&
-    domSelection.anchorNode === anchorDOMTarget &&
-    domSelection.focusNode === focusDOMTarget
+    anchorOffset === nextAnchorOffset &&
+    focusOffset === nextFocusOffset &&
+    anchorNode === anchorDOMTarget &&
+    focusNode === focusDOMTarget
   ) {
     return;
   }
@@ -635,9 +636,9 @@ function reconcileSelection(
   try {
     domSelection.setBaseAndExtent(
       anchorDOMTarget,
-      anchorOffset,
+      nextAnchorOffset,
       focusDOMTarget,
-      focusOffset,
+      nextFocusOffset,
     );
   } catch {
     // If we encounter an error, continue. This can sometimes

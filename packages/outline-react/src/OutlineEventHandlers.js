@@ -37,7 +37,11 @@ import {
   isMoveForward,
   isMoveWordForward,
 } from './OutlineKeyHelpers';
-import {getDOMTextNodeFromElement, invariant} from './OutlineReactUtils';
+import {
+  getDOMTextNodeFromElement,
+  invariant,
+  isImmutableOrInertOrSegmented,
+} from './OutlineReactUtils';
 import {
   deleteBackward,
   deleteForward,
@@ -131,10 +135,11 @@ function shouldOverrideBrowserDefault(
 ): boolean {
   const anchorOffset = selection.anchorOffset;
   const focusOffset = selection.focusOffset;
+  const anchorTextContentSize = selection.getAnchorNode().getTextContentSize();
   const selectionAtBoundary = isBackward
-    ? anchorOffset === 0 || focusOffset === 0
-    : anchorOffset === selection.getAnchorNode().getTextContentSize() ||
-      focusOffset === selection.getFocusNode().getTextContentSize();
+    ? anchorOffset < 2 || focusOffset < 2
+    : anchorOffset > anchorTextContentSize - 2 ||
+      focusOffset > anchorTextContentSize - 2;
 
   return selection.isCaret()
     ? isHoldingShift || selectionAtBoundary
@@ -419,11 +424,12 @@ export function onCompositionStart(
       }
       if (!selection.isCaret()) {
         const focusKey = selection.focusKey;
+        const anchorNode = selection.getAnchorNode();
+        const focusNode = selection.getAnchorNode();
         // If we have a range that starts on an immutable/segmented node
         // then move it to the next node so that we insert text at the
         // right place.
         if (selection.anchorKey !== focusKey) {
-          const anchorNode = selection.getAnchorNode();
           if (
             (anchorNode.isImmutable() || anchorNode.isSegmented()) &&
             anchorNode.getNextSibling() === selection.getFocusNode()
@@ -431,7 +437,12 @@ export function onCompositionStart(
             selection.setRange(focusKey, 0, focusKey, selection.focusOffset);
           }
         }
-        removeText(selection);
+        if (
+          !isImmutableOrInertOrSegmented(anchorNode) ||
+          !isImmutableOrInertOrSegmented(focusNode)
+        ) {
+          removeText(selection);
+        }
       }
       if (IS_FIREFOX) {
         // Not sure why we have to do this, but it seems to fix a bunch
@@ -578,8 +589,11 @@ export function onNativeInput(
 
       // If we are mutating an immutable or segmented node, then reset
       // the content back to what it was before, as this is not allowed.
-      if (anchorNode.isSegmented() || anchorNode.isImmutable()) {
-        view.makeNodeAsDirty(anchorNode);
+      if (isImmutableOrInertOrSegmented(anchorNode)) {
+        // If this node has a decorator, then we'll make it as needing an
+        // update by React.
+        anchorNode.markDirtyDecorator();
+        view.markNodeAsDirty(anchorNode);
         editor._compositionKey = null;
         return;
       }
@@ -600,13 +614,12 @@ export function onNativeInput(
 
         // We get the text content from the anchor element's text node
         let domTextContent = textNode.nodeValue;
-        const domTextContentLength = domTextContent.length;
         let anchorOffset = window.getSelection().anchorOffset;
         if (domTextContent[0] === '\uFEFF') {
           domTextContent = domTextContent.slice(1);
           anchorOffset--;
-        } else if (domTextContent[domTextContentLength - 1] === '\uFEFF') {
-          domTextContent = domTextContent.slice(0, domTextContentLength - 1);
+        } else {
+          domTextContent = domTextContent.replace('\uFEFF', '');
         }
         // We set the range before content, as hashtags might skew the offset
         selection.setRange(anchorKey, anchorOffset, anchorKey, anchorOffset);
@@ -661,6 +674,11 @@ export function onNativeBeforeInputForPlainText(
       inputType === 'insertCompositionText' ||
       inputType === 'deleteCompositionText'
     ) {
+      const anchorNode = selection.getAnchorNode();
+      if (selection.isCaret() && isImmutableOrInertOrSegmented(anchorNode)) {
+        event.preventDefault();
+        return;
+      }
       if (data === '\n') {
         event.preventDefault();
         insertLineBreak(selection);
@@ -671,7 +689,14 @@ export function onNativeBeforeInputForPlainText(
       } else if (!selection.isCaret()) {
         const anchorKey = selection.anchorKey;
         const focusKey = selection.focusKey;
-        removeText(selection);
+        const focusNode = selection.getAnchorNode();
+
+        if (
+          !isImmutableOrInertOrSegmented(anchorNode) ||
+          !isImmutableOrInertOrSegmented(focusNode)
+        ) {
+          removeText(selection);
+        }
         if (inputText && anchorKey !== focusKey && data) {
           event.preventDefault();
           editor.setCompositionKey(null);
@@ -780,6 +805,11 @@ export function onNativeBeforeInputForRichText(
       inputType === 'insertCompositionText' ||
       inputType === 'deleteCompositionText'
     ) {
+      const anchorNode = selection.getAnchorNode();
+      if (selection.isCaret() && isImmutableOrInertOrSegmented(anchorNode)) {
+        event.preventDefault();
+        return;
+      }
       if (data === '\n') {
         event.preventDefault();
         insertLineBreak(selection);
@@ -789,7 +819,14 @@ export function onNativeBeforeInputForRichText(
       } else if (!selection.isCaret()) {
         const anchorKey = selection.anchorKey;
         const focusKey = selection.focusKey;
-        removeText(selection);
+        const focusNode = selection.getAnchorNode();
+
+        if (
+          !isImmutableOrInertOrSegmented(anchorNode) ||
+          !isImmutableOrInertOrSegmented(focusNode)
+        ) {
+          removeText(selection);
+        }
         if (inputText && anchorKey !== focusKey && data) {
           event.preventDefault();
           editor.setCompositionKey(null);

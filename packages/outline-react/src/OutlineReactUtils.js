@@ -7,6 +7,8 @@
  * @flow strict
  */
 
+import type {OutlineNode} from 'outline';
+
 // invariant(condition, message) will refine types based on "condition", and
 // if "condition" is false will throw an error. This function is special-cased
 // in flow itself, so we can't name it anything else.
@@ -27,4 +29,8 @@ export function getDOMTextNodeFromElement(element: Node): Text {
     node = node.firstChild;
   }
   invariant(false, 'getDOMTextNodeFromElement: text node not found');
+}
+
+export function isImmutableOrInertOrSegmented(node: OutlineNode): boolean {
+  return node.isImmutable() || node.isInert() || node.isSegmented();
 }

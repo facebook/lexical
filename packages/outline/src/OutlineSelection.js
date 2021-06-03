@@ -11,16 +11,10 @@ import type {OutlineNode, NodeKey} from './OutlineNode';
 import {getActiveEditor, ViewModel} from './OutlineView';
 
 import {getActiveViewModel} from './OutlineView';
-import {getNodeKeyFromDOM, getElementByKeyOrThrow} from './OutlineReconciler';
+import {getNodeKeyFromDOM} from './OutlineReconciler';
 import {getNodeByKey} from './OutlineNode';
 import {isTextNode, isBlockNode, isLineBreakNode, TextNode} from '.';
-import {
-  invariant,
-  getAdjustedSelectionOffset,
-  isSelectionWithinEditor,
-  getDOMTextNodeFromElement,
-} from './OutlineUtils';
-import {BYTE_ORDER_MARK} from './OutlineConstants';
+import {invariant, isSelectionWithinEditor} from './OutlineUtils';
 import {OutlineEditor} from './OutlineEditor';
 
 export class Selection {
@@ -230,32 +224,35 @@ function resolveSelectionNodeAndOffset(
   if (!isTextNode(resolvedNode)) {
     return null;
   }
-  const resolvedTextNode = resolvedNode;
-  const isComposing = editor.isComposing();
-  // Because we use a special character for whitespace,
-  // we need to adjust offsets to 0 when the text is
-  // really empty.
-  if (resolvedTextNode.__text === '') {
-    // When dealing with empty text nodes, we always
-    // render a special empty space character, and set
-    // the native DOM selection to offset 1 so that
-    // text entry works as expected.
-    if (!isDirty && !isComposing && !editor._isPointerDown) {
-      const key = resolvedTextNode.__key;
-      const nodeDOM = getElementByKeyOrThrow(editor, key);
-      if (getAdjustedSelectionOffset(nodeDOM) !== resolvedOffset) {
+  let resolvedTextNode = resolvedNode;
+  // Because we use a special character for whitespace
+  // at the start of all strings, we need to remove one
+  // from the offset.
+  if (resolvedOffset === 0) {
+    isDirty = true;
+  } else {
+    resolvedOffset--;
+  }
+  // If we are on the boundaries of an immutable of segmented node,
+  // move it to the edge of the adjacent node.
+  if (
+    resolvedTextNode.isImmutable() ||
+    (resolvedTextNode.isSegmented() && window.getSelection().isCollapsed)
+  ) {
+    if (resolvedOffset === 0) {
+      const prevSibling = resolvedTextNode.getPreviousSibling();
+      if (isTextNode(prevSibling)) {
+        resolvedTextNode = prevSibling;
+        resolvedOffset = prevSibling.getTextContentSize();
         isDirty = true;
       }
-    }
-    resolvedOffset = 0;
-  } else if (isComposing && resolvedOffset !== 0) {
-    // When composing, we might still have the byte order mark in the
-    // text. If we do, we need to reduce the offset by one.
-    const textDOM = getDOMTextNodeFromElement(resolvedDOM);
-    const rawTextContent = textDOM.nodeValue;
-    // If we have a byte order in the text still
-    if (rawTextContent[0] === BYTE_ORDER_MARK) {
-      resolvedOffset--;
+    } else if (resolvedOffset === resolvedTextNode.getTextContentSize()) {
+      const nextSibling = resolvedTextNode.getNextSibling();
+      if (isTextNode(nextSibling)) {
+        resolvedTextNode = nextSibling;
+        resolvedOffset = 0;
+        isDirty = true;
+      }
     }
   }
   return [resolvedTextNode, resolvedOffset, isDirty];
@@ -285,8 +282,8 @@ function resolveSelectionNodesAndOffsets(
   if (resolveAnchorNodeAndOffset === null) {
     return null;
   }
-  let resolvedAnchorNode = resolveAnchorNodeAndOffset[0];
-  let resolvedAnchorOffset = resolveAnchorNodeAndOffset[1];
+  const resolvedAnchorNode = resolveAnchorNodeAndOffset[0];
+  const resolvedAnchorOffset = resolveAnchorNodeAndOffset[1];
   isDirty = resolveAnchorNodeAndOffset[2];
   const resolveFocusNodeAndOffset = resolveSelectionNodeAndOffset(
     focusDOM,
@@ -297,37 +294,9 @@ function resolveSelectionNodesAndOffsets(
   if (resolveFocusNodeAndOffset === null) {
     return null;
   }
-  let resolvedFocusNode = resolveFocusNodeAndOffset[0];
-  let resolvedFocusOffset = resolveFocusNodeAndOffset[1];
-  isDirty = resolveAnchorNodeAndOffset[2];
-
-  // If the cursor is at the bounds and is also on an immutable
-  // or segmented node, we can try and move the cursor to an
-  // adjacent sibling.
-  if (
-    resolvedAnchorNode === resolvedFocusNode &&
-    resolvedAnchorOffset === resolvedFocusOffset &&
-    (resolvedAnchorNode.isImmutable() || resolvedAnchorNode.isSegmented())
-  ) {
-    const textContentSize = resolvedAnchorNode.getTextContentSize();
-    const isAtStart = resolvedAnchorOffset === 0;
-    const isAtBoundary = isAtStart || resolvedAnchorOffset === textContentSize;
-
-    if (isAtBoundary) {
-      const sibling = isAtStart
-        ? resolvedAnchorNode.getPreviousSibling()
-        : resolvedAnchorNode.getNextSibling();
-      // Resolve the sibling
-      if (isTextNode(sibling)) {
-        const offset = isAtStart ? sibling.getTextContentSize() : 0;
-        resolvedAnchorNode = sibling;
-        resolvedFocusNode = sibling;
-        resolvedAnchorOffset = offset;
-        resolvedFocusOffset = offset;
-        isDirty = true;
-      }
-    }
-  }
+  const resolvedFocusNode = resolveFocusNodeAndOffset[0];
+  const resolvedFocusOffset = resolveFocusNodeAndOffset[1];
+  isDirty = resolveFocusNodeAndOffset[2];
 
   return [
     resolvedAnchorNode,
@@ -393,7 +362,7 @@ export function createSelection(
   let anchorDOM, focusDOM, anchorOffset, focusOffset;
 
   if (eventType === undefined || lastSelection === null || useDOMSelection) {
-    const domSelection: WindowSelection = window.getSelection();
+    const domSelection = window.getSelection();
     anchorDOM = domSelection.anchorNode;
     focusDOM = domSelection.focusNode;
     anchorOffset = domSelection.anchorOffset;

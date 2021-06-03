@@ -145,9 +145,9 @@ export async function assertSelection(page, expected) {
 
     return {
       anchorPath: getPathFromNode(anchorNode),
-      anchorOffset,
+      anchorOffset: anchorOffset - 1,
       focusPath: getPathFromNode(focusNode),
-      focusOffset,
+      focusOffset: focusOffset - 1,
     };
   }, expected);
   expect(selection.anchorPath).toEqual(expected.anchorPath);

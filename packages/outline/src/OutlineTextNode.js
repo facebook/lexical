@@ -26,6 +26,7 @@ import {
   IS_LINK,
   IS_OVERFLOWED,
   BYTE_ORDER_MARK,
+  IS_DIRTY_DECORATOR,
 } from './OutlineConstants';
 
 export type TextFormatType =
@@ -143,19 +144,15 @@ function setTextThemeClassNames(
 }
 
 function setTextContent(
-  _nextText: string,
+  nextText: string,
   dom: HTMLElement,
   node: TextNode,
 ): void {
-  let nextText = _nextText;
   const firstChild = dom.firstChild;
-  if (nextText === '') {
-    nextText = BYTE_ORDER_MARK;
-  }
   if (firstChild == null) {
-    dom.textContent = nextText;
-  } else if (firstChild.nodeValue !== nextText) {
-    firstChild.nodeValue = nextText;
+    dom.textContent = BYTE_ORDER_MARK + nextText;
+  } else if (firstChild.nodeValue !== BYTE_ORDER_MARK + nextText) {
+    firstChild.nodeValue = BYTE_ORDER_MARK + nextText;
   }
 }
 
@@ -220,6 +217,11 @@ export class TextNode extends OutlineNode {
   }
   getURL(): null | string {
     return this.__url;
+  }
+  markDirtyDecorator(): void {
+    errorOnReadOnly();
+    const self = getWritableNode(this);
+    self.__flags |= IS_DIRTY_DECORATOR;
   }
   getTextContent(includeInert?: boolean, includeDirectionless?: false): string {
     if (

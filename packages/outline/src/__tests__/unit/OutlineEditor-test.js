@@ -99,7 +99,7 @@ describe('OutlineEditor tests', () => {
       ReactDOM.render(<TestBase element={ref.current} />, container);
     });
 
-    expect(container.innerHTML).toBe(
+    expect(sanitizeHTML(container.innerHTML)).toBe(
       '<div contenteditable="true" data-outline-editor="true"><p><span>This works!</span></p></div>',
     );
   });
@@ -140,7 +140,7 @@ describe('OutlineEditor tests', () => {
     // Let Outline update
     await Promise.resolve().then();
 
-    expect(container.innerHTML).toBe(
+    expect(sanitizeHTML(container.innerHTML)).toBe(
       '<div contenteditable="true" data-outline-editor="true"><p><span>Not changed</span></p></div>',
     );
 
@@ -152,7 +152,7 @@ describe('OutlineEditor tests', () => {
     await Promise.resolve().then();
 
     expect(listener).toHaveBeenCalledTimes(3);
-    expect(container.innerHTML).toBe(
+    expect(sanitizeHTML(container.innerHTML)).toBe(
       '<span contenteditable="true" data-outline-editor="true"><p><span>Change successful</span></p></span>',
     );
   });
@@ -380,8 +380,9 @@ describe('OutlineEditor tests', () => {
 
         editor.focus(() => {
           expect(spyFn).toHaveBeenCalledTimes(1);
-          expect(spyFn.mock.calls[0][1]).toBe(1);
-          expect(spyFn.mock.calls[0][3]).toBe(1);
+          // The native offset is always + 1 because of our special character
+          expect(spyFn.mock.calls[0][1]).toBe(2);
+          expect(spyFn.mock.calls[0][3]).toBe(2);
 
           done();
         });

@@ -10,7 +10,10 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import Outline from 'outline';
+import {
+  createEditor,
+  createLineBreakNode,
+} from 'outline';
 
 describe('OutlineLineBreakNode tests', () => {
   let container = null;
@@ -32,7 +35,7 @@ describe('OutlineLineBreakNode tests', () => {
   }
 
   function useOutlineEditor(editorElementRef) {
-    const editor = React.useMemo(() => Outline.createEditor(), []);
+    const editor = React.useMemo(() => createEditor(), []);
 
     React.useEffect(() => {
       const editorElement = editorElementRef.current;
@@ -63,14 +66,14 @@ describe('OutlineLineBreakNode tests', () => {
 
   test('constructor', async () => {
     await update(() => {
-      const lineBreakNode = Outline.createLineBreakNode();
+      const lineBreakNode = createLineBreakNode();
       expect(lineBreakNode.getTextContent()).toBe('\n');
     });
   });
 
   test('clone()', async () => {
     await update(() => {
-      const lineBreakNode = Outline.createLineBreakNode();
+      const lineBreakNode = createLineBreakNode();
       const lineBreakNodeClone = lineBreakNode.clone();
       expect(lineBreakNodeClone).toStrictEqual(lineBreakNode);
     });
@@ -78,7 +81,7 @@ describe('OutlineLineBreakNode tests', () => {
 
   test('createDOM()', async () => {
     await update(() => {
-      const lineBreakNode = Outline.createLineBreakNode();
+      const lineBreakNode = createLineBreakNode();
       const element = lineBreakNode.createDOM({});
       expect(element.outerHTML).toBe('<br>');
     });
@@ -86,7 +89,7 @@ describe('OutlineLineBreakNode tests', () => {
 
   test('updateDOM()', async () => {
     await update(() => {
-      const lineBreakNode = Outline.createLineBreakNode();
+      const lineBreakNode = createLineBreakNode();
       expect(lineBreakNode.updateDOM()).toBe(false);
     });
   });

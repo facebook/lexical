@@ -21,8 +21,14 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import Outline from 'outline';
-import ParagraphNodeModule from 'outline-extensions/ParagraphNode';
+import {
+  createEditor,
+  createTextNode,
+} from 'outline';
+
+import {
+  createParagraphNode,
+} from 'outline-extensions/ParagraphNode';
 
 const editorThemeClasses = Object.freeze({
   text: {
@@ -63,7 +69,7 @@ describe('OutlineTextNode tests', () => {
   }
 
   function useOutlineEditor(editorElementRef) {
-    const editor = React.useMemo(() => Outline.createEditor(), []);
+    const editor = React.useMemo(() => createEditor(), []);
 
     React.useEffect(() => {
       const editorElement = editorElementRef.current;
@@ -93,8 +99,8 @@ describe('OutlineTextNode tests', () => {
 
     // Insert initial block
     await update((view) => {
-      const paragraph = ParagraphNodeModule.createParagraphNode();
-      const text = Outline.createTextNode();
+      const paragraph = createParagraphNode();
+      const text = createTextNode();
       paragraph.append(text);
       view.getRoot().append(paragraph);
     });
@@ -103,7 +109,7 @@ describe('OutlineTextNode tests', () => {
   describe('setTextContent()', () => {
     test('writable nodes', async () => {
       await update(() => {
-        const textNode = Outline.createTextNode('My new text node');
+        const textNode = createTextNode('My new text node');
         textNode.setTextContent('My newer text node');
 
         expect(textNode.getTextContent()).toBe('My newer text node');
@@ -112,7 +118,7 @@ describe('OutlineTextNode tests', () => {
 
     test('immutable nodes', async () => {
       await update(() => {
-        const textNode = Outline.createTextNode('My new text node');
+        const textNode = createTextNode('My new text node');
         textNode.makeImmutable();
 
         expect(() => {
@@ -124,7 +130,7 @@ describe('OutlineTextNode tests', () => {
 
     test('inert nodes', async () => {
       await update(() => {
-        const textNode = Outline.createTextNode('My inert text node');
+        const textNode = createTextNode('My inert text node');
         textNode.makeInert();
 
         expect(textNode.getTextContent()).toBe('');
@@ -136,7 +142,7 @@ describe('OutlineTextNode tests', () => {
   describe('url methods', () => {
     test('writable nodes', async () => {
       await update(() => {
-        const textNode = Outline.createTextNode('My link');
+        const textNode = createTextNode('My link');
         textNode.setURL('https://www.facebook.com');
         expect(textNode.getURL()).toBe('https://www.facebook.com');
 
@@ -147,7 +153,7 @@ describe('OutlineTextNode tests', () => {
 
     test('immutable nodes', async () => {
       await update(() => {
-        const textNode = Outline.createTextNode('My link');
+        const textNode = createTextNode('My link');
         textNode.setURL('https://www.facebook.com');
         textNode.makeImmutable();
 
@@ -257,9 +263,9 @@ describe('OutlineTextNode tests', () => {
 
   test('selectNext()', async () => {
     await update((view) => {
-      const paragraphNode = ParagraphNodeModule.createParagraphNode();
-      const textNode = Outline.createTextNode('Hello World');
-      const textNode2 = Outline.createTextNode('Goodbye Earth');
+      const paragraphNode = createParagraphNode();
+      const textNode = createTextNode('Hello World');
+      const textNode2 = createTextNode('Goodbye Earth');
 
       paragraphNode.append(textNode);
       paragraphNode.append(textNode2);
@@ -307,8 +313,8 @@ describe('OutlineTextNode tests', () => {
         [expectedAnchorOffset, expectedFocusOffset],
       ) => {
         await update((view) => {
-          const paragraphNode = ParagraphNodeModule.createParagraphNode();
-          const textNode = Outline.createTextNode('Hello World');
+          const paragraphNode = createParagraphNode();
+          const textNode = createTextNode('Hello World');
           paragraphNode.append(textNode);
           view.getRoot().append(paragraphNode);
 
@@ -326,7 +332,7 @@ describe('OutlineTextNode tests', () => {
   describe('splitText()', () => {
     test('throw when immutable', async () => {
       await update(() => {
-        const textNode = Outline.createTextNode('Hello world');
+        const textNode = createTextNode('Hello world');
         textNode.makeImmutable();
 
         expect(() => {
@@ -349,8 +355,8 @@ describe('OutlineTextNode tests', () => {
       '"%s" splitText(...%p)',
       async (initialString, splitOffsets, splitStrings) => {
         await update((view) => {
-          const paragraphNode = ParagraphNodeModule.createParagraphNode();
-          const textNode = Outline.createTextNode(initialString);
+          const paragraphNode = createParagraphNode();
+          const textNode = createTextNode(initialString);
           paragraphNode.append(textNode);
 
           const splitNodes = textNode.splitText(...splitOffsets);
@@ -461,8 +467,8 @@ describe('OutlineTextNode tests', () => {
         {anchorNodeIndex, anchorOffset, focusNodeIndex, focusOffset},
       ) => {
         await update((view) => {
-          const paragraphNode = ParagraphNodeModule.createParagraphNode();
-          const textNode = Outline.createTextNode(initialString);
+          const paragraphNode = createParagraphNode();
+          const textNode = createTextNode(initialString);
           paragraphNode.append(textNode);
           view.getRoot().append(paragraphNode);
 
@@ -563,7 +569,7 @@ describe('OutlineTextNode tests', () => {
       ],
     ])('%s text format type', async (_type, flag, contents, expectedHTML) => {
       await update(() => {
-        const textNode = Outline.createTextNode(contents);
+        const textNode = createTextNode(contents);
         textNode.setFlags(flag);
         const element = textNode.createDOM(editorThemeClasses);
         expect(sanitizeHTML(element.outerHTML)).toBe(expectedHTML);
@@ -576,8 +582,8 @@ describe('OutlineTextNode tests', () => {
         ['no formatting + empty string', null, '', `<span></span>`],
       ])('%s text format type', async (_type, flag, contents, expectedHTML) => {
         await update(() => {
-          const paragraphNode = ParagraphNodeModule.createParagraphNode();
-          const textNode = Outline.createTextNode(contents);
+          const paragraphNode = createParagraphNode();
+          const textNode = createTextNode(contents);
           textNode.setFlags(flag);
           paragraphNode.append(textNode);
 
@@ -660,11 +666,11 @@ describe('OutlineTextNode tests', () => {
         {result, expectedHTML},
       ) => {
         await update(() => {
-          const prevTextNode = Outline.createTextNode(prevText);
+          const prevTextNode = createTextNode(prevText);
           prevTextNode.setFlags(prevFlags);
           const element = prevTextNode.createDOM(editorThemeClasses);
 
-          const textNode = Outline.createTextNode(nextText);
+          const textNode = createTextNode(nextText);
           textNode.setFlags(nextFlags);
 
           expect(

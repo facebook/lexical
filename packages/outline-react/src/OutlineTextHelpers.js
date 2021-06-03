@@ -52,6 +52,6 @@ export function findTextIntersectionFromCharacters(
   return null;
 }
 
-export function doesContainGraheme(str: string): boolean {
+export function doesContainGrapheme(str: string): boolean {
   return /[\uD800-\uDBFF][\uDC00-\uDFFF]/g.test(str);
 }

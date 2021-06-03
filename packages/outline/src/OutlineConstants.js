@@ -27,7 +27,7 @@ export const IS_OVERFLOWED = 1 << 11;
 export const IS_LTR = 1 << 12;
 export const IS_RTL = 1 << 13;
 
-// Decarators
+// Decorators
 export const IS_DIRTY_DECORATOR = 1 << 14;
 
 // Reconciliation

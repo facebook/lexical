@@ -35,10 +35,10 @@ Outline is a fast, light-weight, extensible library for building rich text edito
 2. Commit your changes
    - `git commit -a -m 'Description of the changes'`
      - There are many ways of doing this and this is just a suggestion
-3. Push your branch to Github
+3. Push your branch to GitHub
    - `git push origin my-new-branch`
-4. Go to the repository page in Github and click on "Compare & pull request"
-   - The [Github CLI](https://cli.github.com/manual/gh_pr_create) allows you to skip the web interface for this step (and much more)
+4. Go to the repository page in GitHub and click on "Compare & pull request"
+   - The [GitHub CLI](https://cli.github.com/manual/gh_pr_create) allows you to skip the web interface for this step (and much more)
 
 ## Running tests
 

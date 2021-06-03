@@ -48,5 +48,6 @@
   "46": "onNativeInput: cannot find DOM text node for anchor node",
   "47": "resolveNonLineBreakOrInertNode: resolved node not a text node",
   "48": "getStartNode: startNode not a text node",
-  "49": "getEndNode: endNode not a text node"
+  "49": "getEndNode: endNode not a text node",
+  "50": "Reconciliation: could not find DOM element for node key \"${key}\""
 }

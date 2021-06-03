@@ -595,6 +595,16 @@ export function updateCaretSelectionForRange(
       targetNode.getTextContentSize() -
         (isImmutableOrInertOrSegmented(targetNode) ? 2 : 1);
 
+  // Ensure we don't move selection to the zero width offset
+  if (isAtBoundary && isBackward && offset === 0) {
+    const parent = targetNode.getParentOrThrow();
+    const prevSibling = targetNode.getPreviousSibling();
+    if (prevSibling === null) {
+      if (parent.getPreviousSibling() === null) {
+        return;
+      }
+    }
+  }
   // We use the DOM selection.modify API here to "tell" us what the selection
   // will be. We then use it to update the Outline selection accordingly. This
   // is much more reliable than waiting for a beforeinput and using the ranges

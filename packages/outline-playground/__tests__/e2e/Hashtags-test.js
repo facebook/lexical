@@ -16,7 +16,7 @@ import {
 
 describe('Hashtags', () => {
   initializeE2E((e2e) => {
-    it(`Can handle a single hashtag`, async () => {
+    it.only(`Can handle a single hashtag`, async () => {
       const {page} = e2e;
 
       await page.focus('div.editor');

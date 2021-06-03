@@ -296,7 +296,7 @@ function resolveSelectionNodesAndOffsets(
   }
   const resolvedFocusNode = resolveFocusNodeAndOffset[0];
   const resolvedFocusOffset = resolveFocusNodeAndOffset[1];
-  isDirty = resolveAnchorNodeAndOffset[2];
+  isDirty = resolveFocusNodeAndOffset[2];
 
   return [
     resolvedAnchorNode,

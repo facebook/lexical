@@ -577,7 +577,9 @@ export function updateCaretSelectionForRange(
   const anchorNode = selection.getAnchorNode();
   const focusNode = selection.getFocusNode();
   const isBefore =
-    anchorNode === focusNode ? true : anchorNode.isBefore(focusNode);
+    anchorNode === focusNode
+      ? selection.anchorOffset < selection.focusOffset
+      : anchorNode.isBefore(focusNode);
   let targetNode;
   let offset;
 
@@ -594,6 +596,10 @@ export function updateCaretSelectionForRange(
     : offset >=
       targetNode.getTextContentSize() -
         (isImmutableOrInertOrSegmented(targetNode) ? 2 : 1);
+
+  if (isAtBoundary) {
+    debugger;
+  }
 
   // Ensure we don't move selection to the zero width offset
   if (isAtBoundary && isBackward && offset === 0) {

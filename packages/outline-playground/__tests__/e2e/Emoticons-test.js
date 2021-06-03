@@ -21,9 +21,9 @@ describe('Emoticons', () => {
       );
       await assertSelection(page, {
         anchorPath: [0, 2, 0],
-        anchorOffset: 1,
+        anchorOffset: 0,
         focusPath: [0, 2, 0],
-        focusOffset: 1,
+        focusOffset: 0,
       });
 
       await page.keyboard.press('Backspace');
@@ -50,9 +50,9 @@ describe('Emoticons', () => {
       await page.keyboard.press('ArrowRight');
       await assertSelection(page, {
         anchorPath: [0, 2, 0],
-        anchorOffset: 1,
+        anchorOffset: 0,
         focusPath: [0, 2, 0],
-        focusOffset: 1,
+        focusOffset: 0,
       });
 
       await page.keyboard.press('ArrowLeft');
@@ -80,9 +80,9 @@ describe('Emoticons', () => {
       );
       await assertSelection(page, {
         anchorPath: [0, 8, 0],
-        anchorOffset: 1,
+        anchorOffset: 0,
         focusPath: [0, 8, 0],
-        focusOffset: 1,
+        focusOffset: 0,
       });
 
       await page.keyboard.down('Shift');
@@ -106,9 +106,9 @@ describe('Emoticons', () => {
       );
       await assertSelection(page, {
         anchorPath: [0, 18, 0],
-        anchorOffset: 1,
+        anchorOffset: 0,
         focusPath: [0, 18, 0],
-        focusOffset: 1,
+        focusOffset: 0,
       });
 
       await page.keyboard.press('Enter');
@@ -130,9 +130,9 @@ describe('Emoticons', () => {
       );
       await assertSelection(page, {
         anchorPath: [1, 8, 0],
-        anchorOffset: 1,
+        anchorOffset: 0,
         focusPath: [1, 8, 0],
-        focusOffset: 1,
+        focusOffset: 0,
       });
 
       await repeat(23, async () => await page.keyboard.press('Backspace'));
@@ -151,33 +151,33 @@ describe('Emoticons', () => {
       await page.keyboard.press('ArrowLeft');
       await assertSelection(page, {
         anchorPath: [0, 8, 0],
-        anchorOffset: 1,
+        anchorOffset: 0,
         focusPath: [0, 8, 0],
-        focusOffset: 1,
+        focusOffset: 0,
       });
 
       await page.keyboard.press('ArrowLeft');
       await assertSelection(page, {
         anchorPath: [0, 6, 0],
-        anchorOffset: 1,
+        anchorOffset: 0,
         focusPath: [0, 6, 0],
-        focusOffset: 1,
+        focusOffset: 0,
       });
 
       await page.keyboard.press('ArrowLeft');
       await assertSelection(page, {
         anchorPath: [0, 4, 0],
-        anchorOffset: 1,
+        anchorOffset: 0,
         focusPath: [0, 4, 0],
-        focusOffset: 1,
+        focusOffset: 0,
       });
 
       await page.keyboard.press('ArrowLeft');
       await assertSelection(page, {
         anchorPath: [0, 2, 0],
-        anchorOffset: 1,
+        anchorOffset: 0,
         focusPath: [0, 2, 0],
-        focusOffset: 1,
+        focusOffset: 0,
       });
 
       await page.keyboard.press('ArrowLeft');

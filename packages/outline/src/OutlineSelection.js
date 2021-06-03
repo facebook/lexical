@@ -228,12 +228,17 @@ function resolveSelectionNodeAndOffset(
   // Because we use a special character for whitespace
   // at the start of all strings, we need to remove one
   // from the offset.
-  if (resolvedOffset !== 0) {
+  if (resolvedOffset === 0) {
+    isDirty = true;
+  } else {
     resolvedOffset--;
   }
   // If we are on the boundaries of an immutable of segmented node,
   // move it to the edge of the adjacent node.
-  if (resolvedTextNode.isImmutable() || resolvedTextNode.isSegmented()) {
+  if (
+    resolvedTextNode.isImmutable() ||
+    (resolvedTextNode.isSegmented() && window.getSelection().isCollapsed)
+  ) {
     if (resolvedOffset === 0) {
       const prevSibling = resolvedTextNode.getPreviousSibling();
       if (isTextNode(prevSibling)) {

@@ -504,10 +504,18 @@ export function deleteForward(selection: Selection): void {
   if (selection.isCaret()) {
     updateCaretSelectionForRange(selection, false, 'character', false);
     if (!selection.isCaret()) {
-      const focusNode = selection.getFocusNode();
+      const anchorNode = selection.getAnchorNode();
+      const nextSibling = anchorNode.getNextSibling();
 
-      if (focusNode.isSegmented()) {
-        removeSegment(focusNode, false);
+      if (anchorNode.isSegmented()) {
+        removeSegment(anchorNode, false);
+        return;
+      } else if (
+        selection.anchorOffset === anchorNode.getTextContentSize() &&
+        isTextNode(nextSibling) &&
+        nextSibling.isSegmented()
+      ) {
+        removeSegment(nextSibling, false);
         return;
       }
       updateCaretSelectionForUnicodeCharacter(selection, true);
@@ -546,6 +554,19 @@ function removeSegment(node: TextNode, isBackward: boolean): void {
   }
 }
 
+function moveSelection(
+  domSelection,
+  collapse: boolean,
+  isBackward: boolean,
+  granularity: 'character' | 'word' | 'lineboundary',
+): void {
+  domSelection.modify(
+    collapse ? 'move' : 'extend',
+    isBackward ? 'backward' : 'forward',
+    granularity,
+  );
+}
+
 export function updateCaretSelectionForRange(
   selection: Selection,
   isBackward: boolean,
@@ -569,8 +590,8 @@ export function updateCaretSelectionForRange(
   }
 
   const isAtBoundary = isBackward
-    ? offset < (isImmutableOrInertOrSegmented(targetNode) ? 1 : 2)
-    : offset >
+    ? offset <= (isImmutableOrInertOrSegmented(targetNode) ? 1 : 2)
+    : offset >=
       targetNode.getTextContentSize() -
         (isImmutableOrInertOrSegmented(targetNode) ? 2 : 1);
 
@@ -580,17 +601,10 @@ export function updateCaretSelectionForRange(
   // from getTargetRanges(), and is also better than trying to do it ourselves
   // using Intl.Segmenter or other work-arounds that struggle with word segments
   // and line segments (especially with word wrapping and non-Roman languages).
-  domSelection.modify(
-    collapse ? 'move' : 'extend',
-    isBackward ? 'backward' : 'forward',
-    granularity,
-  );
+  moveSelection(domSelection, collapse, isBackward, granularity);
+  // If we are at a boundary, move once again.
   if (isAtBoundary) {
-    domSelection.modify(
-      collapse ? 'move' : 'extend',
-      isBackward ? 'backward' : 'forward',
-      granularity,
-    );
+    moveSelection(domSelection, collapse, isBackward, granularity);
   }
   const range = domSelection.getRangeAt(0);
   // Apply the DOM selection to our Outline selection.

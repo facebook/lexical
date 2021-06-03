@@ -180,244 +180,244 @@ describe('OutlineSelection tests', () => {
   ];
 
   const suite = [
-    // {
-    //   name: 'Simple typing',
-    //   inputs: [
-    //     insertText('H'),
-    //     insertText('e'),
-    //     insertText('l'),
-    //     insertText('l'),
-    //     insertText('o'),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><span>Hello</span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 0, 0],
-    //     anchorOffset: 5,
-    //     focusPath: [0, 0, 0],
-    //     focusOffset: 5,
-    //   },
-    // },
-    // {
-    //   name: 'Simple typing in bold',
-    //   inputs: [
-    //     formatBold(),
-    //     insertText('H'),
-    //     insertText('e'),
-    //     insertText('l'),
-    //     insertText('l'),
-    //     insertText('o'),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr">' +
-    //     '<strong class="editor-text-bold">Hello</strong></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 0, 0],
-    //     anchorOffset: 5,
-    //     focusPath: [0, 0, 0],
-    //     focusOffset: 5,
-    //   },
-    // },
-    // {
-    //   name: 'Simple typing in italic',
-    //   inputs: [
-    //     formatItalic(),
-    //     insertText('H'),
-    //     insertText('e'),
-    //     insertText('l'),
-    //     insertText('l'),
-    //     insertText('o'),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr">' +
-    //     '<em class="editor-text-italic">Hello</em></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 0, 0],
-    //     anchorOffset: 5,
-    //     focusPath: [0, 0, 0],
-    //     focusOffset: 5,
-    //   },
-    // },
-    // {
-    //   name: 'Simple typing in italic + bold',
-    //   inputs: [
-    //     formatItalic(),
-    //     formatBold(),
-    //     insertText('H'),
-    //     insertText('e'),
-    //     insertText('l'),
-    //     insertText('l'),
-    //     insertText('o'),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr">' +
-    //     '<strong class="editor-text-bold editor-text-italic">Hello</strong></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 0, 0],
-    //     anchorOffset: 5,
-    //     focusPath: [0, 0, 0],
-    //     focusOffset: 5,
-    //   },
-    // },
-    // {
-    //   name: 'Simple typing in underline',
-    //   inputs: [
-    //     formatUnderline(),
-    //     insertText('H'),
-    //     insertText('e'),
-    //     insertText('l'),
-    //     insertText('l'),
-    //     insertText('o'),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr">' +
-    //     '<span class="editor-text-underline">Hello</span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 0, 0],
-    //     anchorOffset: 5,
-    //     focusPath: [0, 0, 0],
-    //     focusOffset: 5,
-    //   },
-    // },
-    // {
-    //   name: 'Simple typing in strikethrough',
-    //   inputs: [
-    //     formatStrikeThrough(),
-    //     insertText('H'),
-    //     insertText('e'),
-    //     insertText('l'),
-    //     insertText('l'),
-    //     insertText('o'),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr">' +
-    //     '<span class="editor-text-strikethrough">Hello</span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 0, 0],
-    //     anchorOffset: 5,
-    //     focusPath: [0, 0, 0],
-    //     focusOffset: 5,
-    //   },
-    // },
-    // {
-    //   name: 'Simple typing in underline + strikethrough',
-    //   inputs: [
-    //     formatUnderline(),
-    //     formatStrikeThrough(),
-    //     insertText('H'),
-    //     insertText('e'),
-    //     insertText('l'),
-    //     insertText('l'),
-    //     insertText('o'),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr">' +
-    //     '<span class="editor-text-underlineStrikethrough">Hello</span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 0, 0],
-    //     anchorOffset: 5,
-    //     focusPath: [0, 0, 0],
-    //     focusOffset: 5,
-    //   },
-    // },
-    // {
-    //   name: 'Deletion',
-    //   inputs: [
-    //     insertText('1'),
-    //     insertText('2'),
-    //     insertText('3'),
-    //     deleteBackward(),
-    //     insertText('4'),
-    //     insertText('5'),
-    //     deleteBackward(),
-    //     insertText('6'),
-    //     deleteForward(),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span>1246</span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 0, 0],
-    //     anchorOffset: 4,
-    //     focusPath: [0, 0, 0],
-    //     focusOffset: 4,
-    //   },
-    // },
-    // {
-    //   name: 'Creation of an immutable node',
-    //   inputs: [insertImmutableNode('Dominic Gannaway')],
-    //   expectedHTML:
-    //     '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span></span>' +
-    //     '<span>Dominic Gannaway</span>' +
-    //     '<span></span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 2, 0],
-    //     anchorOffset: 0,
-    //     focusPath: [0, 2, 0],
-    //     focusOffset: 0,
-    //   },
-    // },
-    // {
-    //   name: 'Convert text to an immutable node',
-    //   inputs: [
-    //     insertText('Dominic Gannaway'),
-    //     moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 16),
-    //     convertToImmutableNode(),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span></span>' +
-    //     '<span>Dominic Gannaway</span>' +
-    //     '<span></span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 2, 0],
-    //     anchorOffset: 0,
-    //     focusPath: [0, 2, 0],
-    //     focusOffset: 0,
-    //   },
-    // },
-    // {
-    //   name: 'Deletion of an immutable node',
-    //   inputs: [insertImmutableNode('Dominic Gannaway'), deleteBackward()],
-    //   expectedHTML:
-    //     '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span></span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 0, 0],
-    //     anchorOffset: 0,
-    //     focusPath: [0, 0, 0],
-    //     focusOffset: 0,
-    //   },
-    // },
-    // {
-    //   name: 'Creation of a segmented node',
-    //   inputs: [insertSegmentedNode('Dominic Gannaway')],
-    //   expectedHTML:
-    //     '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span></span>' +
-    //     '<span>Dominic Gannaway</span>' +
-    //     '<span></span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 2, 0],
-    //     anchorOffset: 0,
-    //     focusPath: [0, 2, 0],
-    //     focusOffset: 0,
-    //   },
-    // },
-    // {
-    //   name: 'Convert text to a segmented node',
-    //   inputs: [
-    //     insertText('Dominic Gannaway'),
-    //     moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 16),
-    //     convertToSegmentedNode(),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span></span>' +
-    //     '<span>Dominic Gannaway</span>' +
-    //     '<span></span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 2, 0],
-    //     anchorOffset: 0,
-    //     focusPath: [0, 2, 0],
-    //     focusOffset: 0,
-    //   },
-    // },
+    {
+      name: 'Simple typing',
+      inputs: [
+        insertText('H'),
+        insertText('e'),
+        insertText('l'),
+        insertText('l'),
+        insertText('o'),
+      ],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><span>Hello</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 5,
+        focusPath: [0, 0, 0],
+        focusOffset: 5,
+      },
+    },
+    {
+      name: 'Simple typing in bold',
+      inputs: [
+        formatBold(),
+        insertText('H'),
+        insertText('e'),
+        insertText('l'),
+        insertText('l'),
+        insertText('o'),
+      ],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr">' +
+        '<strong class="editor-text-bold">Hello</strong></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 5,
+        focusPath: [0, 0, 0],
+        focusOffset: 5,
+      },
+    },
+    {
+      name: 'Simple typing in italic',
+      inputs: [
+        formatItalic(),
+        insertText('H'),
+        insertText('e'),
+        insertText('l'),
+        insertText('l'),
+        insertText('o'),
+      ],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr">' +
+        '<em class="editor-text-italic">Hello</em></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 5,
+        focusPath: [0, 0, 0],
+        focusOffset: 5,
+      },
+    },
+    {
+      name: 'Simple typing in italic + bold',
+      inputs: [
+        formatItalic(),
+        formatBold(),
+        insertText('H'),
+        insertText('e'),
+        insertText('l'),
+        insertText('l'),
+        insertText('o'),
+      ],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr">' +
+        '<strong class="editor-text-bold editor-text-italic">Hello</strong></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 5,
+        focusPath: [0, 0, 0],
+        focusOffset: 5,
+      },
+    },
+    {
+      name: 'Simple typing in underline',
+      inputs: [
+        formatUnderline(),
+        insertText('H'),
+        insertText('e'),
+        insertText('l'),
+        insertText('l'),
+        insertText('o'),
+      ],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr">' +
+        '<span class="editor-text-underline">Hello</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 5,
+        focusPath: [0, 0, 0],
+        focusOffset: 5,
+      },
+    },
+    {
+      name: 'Simple typing in strikethrough',
+      inputs: [
+        formatStrikeThrough(),
+        insertText('H'),
+        insertText('e'),
+        insertText('l'),
+        insertText('l'),
+        insertText('o'),
+      ],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr">' +
+        '<span class="editor-text-strikethrough">Hello</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 5,
+        focusPath: [0, 0, 0],
+        focusOffset: 5,
+      },
+    },
+    {
+      name: 'Simple typing in underline + strikethrough',
+      inputs: [
+        formatUnderline(),
+        formatStrikeThrough(),
+        insertText('H'),
+        insertText('e'),
+        insertText('l'),
+        insertText('l'),
+        insertText('o'),
+      ],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr">' +
+        '<span class="editor-text-underlineStrikethrough">Hello</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 5,
+        focusPath: [0, 0, 0],
+        focusOffset: 5,
+      },
+    },
+    {
+      name: 'Deletion',
+      inputs: [
+        insertText('1'),
+        insertText('2'),
+        insertText('3'),
+        deleteBackward(),
+        insertText('4'),
+        insertText('5'),
+        deleteBackward(),
+        insertText('6'),
+        deleteForward(),
+      ],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span>1246</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 4,
+        focusPath: [0, 0, 0],
+        focusOffset: 4,
+      },
+    },
+    {
+      name: 'Creation of an immutable node',
+      inputs: [insertImmutableNode('Dominic Gannaway')],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span></span>' +
+        '<span>Dominic Gannaway</span>' +
+        '<span></span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 2, 0],
+        anchorOffset: 0,
+        focusPath: [0, 2, 0],
+        focusOffset: 0,
+      },
+    },
+    {
+      name: 'Convert text to an immutable node',
+      inputs: [
+        insertText('Dominic Gannaway'),
+        moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 16),
+        convertToImmutableNode(),
+      ],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span></span>' +
+        '<span>Dominic Gannaway</span>' +
+        '<span></span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 2, 0],
+        anchorOffset: 0,
+        focusPath: [0, 2, 0],
+        focusOffset: 0,
+      },
+    },
+    {
+      name: 'Deletion of an immutable node',
+      inputs: [insertImmutableNode('Dominic Gannaway'), deleteBackward()],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span></span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 0,
+        focusPath: [0, 0, 0],
+        focusOffset: 0,
+      },
+    },
+    {
+      name: 'Creation of a segmented node',
+      inputs: [insertSegmentedNode('Dominic Gannaway')],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span></span>' +
+        '<span>Dominic Gannaway</span>' +
+        '<span></span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 2, 0],
+        anchorOffset: 0,
+        focusPath: [0, 2, 0],
+        focusOffset: 0,
+      },
+    },
+    {
+      name: 'Convert text to a segmented node',
+      inputs: [
+        insertText('Dominic Gannaway'),
+        moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 16),
+        convertToSegmentedNode(),
+      ],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span></span>' +
+        '<span>Dominic Gannaway</span>' +
+        '<span></span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 2, 0],
+        anchorOffset: 0,
+        focusPath: [0, 2, 0],
+        focusOffset: 0,
+      },
+    },
     {
       name: 'Deletion of part of a segmented node',
       inputs: [insertSegmentedNode('Dominic Gannaway'), deleteBackward()],

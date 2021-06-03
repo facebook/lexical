@@ -135,10 +135,11 @@ function shouldOverrideBrowserDefault(
 ): boolean {
   const anchorOffset = selection.anchorOffset;
   const focusOffset = selection.focusOffset;
+  const anchorTextContentSize = selection.getAnchorNode().getTextContentSize();
   const selectionAtBoundary = isBackward
     ? anchorOffset < 2 || focusOffset < 2
-    : anchorOffset > selection.getAnchorNode().getTextContentSize() - 2 ||
-      focusOffset > selection.getFocusNode().getTextContentSize() - 2;
+    : anchorOffset > anchorTextContentSize - 2 ||
+      focusOffset > anchorTextContentSize - 2;
 
   return selection.isCaret()
     ? isHoldingShift || selectionAtBoundary
@@ -613,13 +614,12 @@ export function onNativeInput(
 
         // We get the text content from the anchor element's text node
         let domTextContent = textNode.nodeValue;
-        const domTextContentLength = domTextContent.length;
         let anchorOffset = window.getSelection().anchorOffset;
         if (domTextContent[0] === '\uFEFF') {
           domTextContent = domTextContent.slice(1);
           anchorOffset--;
-        } else if (domTextContent[domTextContentLength - 1] === '\uFEFF') {
-          domTextContent = domTextContent.slice(0, domTextContentLength - 1);
+        } else {
+          domTextContent = domTextContent.replace('\uFEFF', '');
         }
         // We set the range before content, as hashtags might skew the offset
         selection.setRange(anchorKey, anchorOffset, anchorKey, anchorOffset);

@@ -35,9 +35,9 @@ describe('Mentions', () => {
       );
       await assertSelection(page, {
         anchorPath: [0, 2, 0],
-        anchorOffset: 1,
+        anchorOffset: 0,
         focusPath: [0, 2, 0],
-        focusOffset: 1,
+        focusOffset: 0,
       });
 
       await page.waitForSelector('.mention');
@@ -53,9 +53,9 @@ describe('Mentions', () => {
       await page.keyboard.press('ArrowRight');
       await assertSelection(page, {
         anchorPath: [0, 2, 0],
-        anchorOffset: 1,
+        anchorOffset: 0,
         focusPath: [0, 2, 0],
-        focusOffset: 1,
+        focusOffset: 0,
       });
     });
 
@@ -84,9 +84,9 @@ describe('Mentions', () => {
       );
       await assertSelection(page, {
         anchorPath: [0, 2, 0],
-        anchorOffset: 1,
+        anchorOffset: 0,
         focusPath: [0, 2, 0],
-        focusOffset: 1,
+        focusOffset: 0,
       });
 
       await page.waitForSelector('.mention');
@@ -149,9 +149,9 @@ describe('Mentions', () => {
       );
       await assertSelection(page, {
         anchorPath: [0, 2, 0],
-        anchorOffset: 1,
+        anchorOffset: 0,
         focusPath: [0, 2, 0],
-        focusOffset: 1,
+        focusOffset: 0,
       });
 
       await page.waitForSelector('.mention');
@@ -163,9 +163,9 @@ describe('Mentions', () => {
       );
       await assertSelection(page, {
         anchorPath: [0, 2, 0],
-        anchorOffset: 1,
+        anchorOffset: 0,
         focusPath: [0, 2, 0],
-        focusOffset: 1,
+        focusOffset: 0,
       });
 
       await page.keyboard.press('Backspace');

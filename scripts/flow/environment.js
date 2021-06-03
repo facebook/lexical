@@ -10,11 +10,11 @@ declare class CompositionEvent extends UIEvent {
 }
 
 declare class StaticRange {
-  +collapsed: boolean;
-  +startContainer: Node;
-  +endContainer: Node;
-  +startOffset: number;
-  +endOffset: number;
+  collapsed: boolean;
+  startContainer: Node;
+  endContainer: Node;
+  startOffset: number;
+  endOffset: number;
 }
 
 declare class InputEvent extends UIEvent {

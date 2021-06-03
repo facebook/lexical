@@ -363,14 +363,10 @@ export function createSelection(
 
   if (eventType === undefined || lastSelection === null || useDOMSelection) {
     const domSelection = window.getSelection();
-    if (domSelection.rangeCount === 0) {
-      return null;
-    }
-    const range = domSelection.getRangeAt(0);
-    anchorDOM = range.startContainer;
-    focusDOM = range.endContainer;
-    anchorOffset = range.startOffset;
-    focusOffset = range.endOffset;
+    anchorDOM = domSelection.anchorNode;
+    focusDOM = domSelection.focusNode;
+    anchorOffset = domSelection.anchorOffset;
+    focusOffset = domSelection.focusOffset;
   } else {
     return new Selection(
       lastSelection.anchorKey,

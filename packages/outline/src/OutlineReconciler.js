@@ -597,21 +597,13 @@ function reconcileSelection(
   editor: OutlineEditor,
 ): void {
   const domSelection = window.getSelection();
-  let startContainer = null;
-  let endContainer = null;
-  let startOffset = 0;
-  let endOffset = 0;
-
-  if (domSelection.rangeCount !== 0) {
-    const range = domSelection.getRangeAt(0);
-    startContainer = range.startContainer;
-    endContainer = range.endContainer;
-    startOffset = range.startOffset;
-    endOffset = range.endOffset;
-  }
+  const anchorNode = domSelection.anchorNode;
+  const focusNode = domSelection.focusNode;
+  const anchorOffset = domSelection.anchorOffset;
+  const focusOffset = domSelection.focusOffset;
 
   if (nextSelection === null) {
-    if (isSelectionWithinEditor(editor, startContainer, endContainer)) {
+    if (isSelectionWithinEditor(editor, anchorNode, focusNode)) {
       domSelection.removeAllRanges();
     }
     return;
@@ -620,8 +612,8 @@ function reconcileSelection(
   const focusKey = nextSelection.focusKey;
   const anchorDOM = getElementByKeyOrThrow(editor, anchorKey);
   const focusDOM = getElementByKeyOrThrow(editor, focusKey);
-  const anchorOffset = nextSelection.anchorOffset + 1;
-  const focusOffset = nextSelection.focusOffset + 1;
+  const nextAnchorOffset = nextSelection.anchorOffset + 1;
+  const nextFocusOffset = nextSelection.focusOffset + 1;
 
   // Get the underlying DOM text nodes from the representive
   // Outline text nodes (we use elements for text nodes).
@@ -631,10 +623,10 @@ function reconcileSelection(
   // Diff against the native DOM selection to ensure we don't do
   // an unnecessary selection update.
   if (
-    startOffset === anchorOffset &&
-    endOffset === focusOffset &&
-    startContainer === anchorDOMTarget &&
-    endContainer === focusDOMTarget
+    anchorOffset === nextAnchorOffset &&
+    focusOffset === nextFocusOffset &&
+    anchorNode === anchorDOMTarget &&
+    focusNode === focusDOMTarget
   ) {
     return;
   }
@@ -644,9 +636,9 @@ function reconcileSelection(
   try {
     domSelection.setBaseAndExtent(
       anchorDOMTarget,
-      anchorOffset,
+      nextAnchorOffset,
       focusDOMTarget,
-      focusOffset,
+      nextFocusOffset,
     );
   } catch {
     // If we encounter an error, continue. This can sometimes

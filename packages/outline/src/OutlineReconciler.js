@@ -569,10 +569,8 @@ export function reconcileViewModel(
   // always do a full reconciliation to ensure consistency.
   const isDirty = nextViewModel._isDirty;
   const needsUpdate = isDirty || nextViewModel.hasDirtyNodes();
-  let reconciliationCausedLostSelection = false;
 
   if (needsUpdate) {
-    const {anchorOffset, focusOffset} = window.getSelection();
     reconcileRoot(
       prevViewModel,
       nextViewModel,
@@ -580,13 +578,6 @@ export function reconcileViewModel(
       dirtySubTrees,
       dirtyNodes,
     );
-    const selectionAfter = window.getSelection();
-    if (
-      anchorOffset !== selectionAfter.anchorOffset ||
-      focusOffset !== selectionAfter.focusOffset
-    ) {
-      reconciliationCausedLostSelection = true;
-    }
   }
   const prevSelection = prevViewModel._selection;
   const nextSelection = nextViewModel._selection;
@@ -594,10 +585,7 @@ export function reconcileViewModel(
   if (
     !editor.isComposing() &&
     prevSelection !== nextSelection &&
-    (!nextSelection ||
-      nextSelection.isDirty ||
-      isDirty ||
-      reconciliationCausedLostSelection)
+    (!nextSelection || nextSelection.isDirty || isDirty)
   ) {
     reconcileSelection(prevSelection, nextSelection, editor);
   }
@@ -609,6 +597,9 @@ function reconcileSelection(
   editor: OutlineEditor,
 ): void {
   const domSelection = window.getSelection();
+  if (domSelection.rangeCount === 0) {
+    return;
+  }
   const range = domSelection.getRangeAt(0);
   const startContainer = range.startContainer;
   const endContainer = range.endContainer;
@@ -616,13 +607,7 @@ function reconcileSelection(
   const endOffset = range.endOffset;
 
   if (nextSelection === null) {
-    if (
-      isSelectionWithinEditor(
-        editor,
-        startContainer,
-        endContainer,
-      )
-    ) {
+    if (isSelectionWithinEditor(editor, startContainer, endContainer)) {
       domSelection.removeAllRanges();
     }
     return;

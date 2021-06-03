@@ -597,14 +597,18 @@ function reconcileSelection(
   editor: OutlineEditor,
 ): void {
   const domSelection = window.getSelection();
-  if (domSelection.rangeCount === 0) {
-    return;
+  let startContainer = null;
+  let endContainer = null;
+  let startOffset = 0;
+  let endOffset = 0;
+
+  if (domSelection.rangeCount !== 0) {
+    const range = domSelection.getRangeAt(0);
+    startContainer = range.startContainer;
+    endContainer = range.endContainer;
+    startOffset = range.startOffset;
+    endOffset = range.endOffset;
   }
-  const range = domSelection.getRangeAt(0);
-  const startContainer = range.startContainer;
-  const endContainer = range.endContainer;
-  const startOffset = range.startOffset;
-  const endOffset = range.endOffset;
 
   if (nextSelection === null) {
     if (isSelectionWithinEditor(editor, startContainer, endContainer)) {

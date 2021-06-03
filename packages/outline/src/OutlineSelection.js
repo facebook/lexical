@@ -241,7 +241,7 @@ function resolveSelectionNodeAndOffset(
         resolvedOffset = prevSibling.getTextContentSize();
         isDirty = true;
       }
-  } else if (resolvedOffset === resolvedTextNode.getTextContentSize()) {
+    } else if (resolvedOffset === resolvedTextNode.getTextContentSize()) {
       const nextSibling = resolvedTextNode.getNextSibling();
       if (isTextNode(nextSibling)) {
         resolvedTextNode = nextSibling;

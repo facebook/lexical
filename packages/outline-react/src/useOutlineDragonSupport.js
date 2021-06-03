@@ -91,7 +91,7 @@ export default function useOutlineDragonSupport(editor: OutlineEditor) {
                     anchorKey,
                     setSelEnd,
                   );
-                  // block the chrome extenion from handling this event
+                  // block the chrome extension from handling this event
                   event.stopImmediatePropagation();
                 }
               });

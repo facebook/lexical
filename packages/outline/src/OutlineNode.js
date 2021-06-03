@@ -132,7 +132,7 @@ function replaceNode<N: OutlineNode>(
   writableReplaceWith.__parent = newParent.__key;
   toReplace.remove();
   const flags = writableReplaceWith.__flags;
-  // Handle direciton if node is directionless
+  // Handle direction if node is directionless
   if (flags & IS_DIRECTIONLESS) {
     updateDirectionIfNeeded(writableReplaceWith);
   }
@@ -562,7 +562,7 @@ export class OutlineNode {
       children.push(insertKey);
     }
     const flags = writableNodeToInsert.__flags;
-    // Handle direciton if node is directionless
+    // Handle direction if node is directionless
     if (flags & IS_DIRECTIONLESS) {
       updateDirectionIfNeeded(writableNodeToInsert);
     }
@@ -597,7 +597,7 @@ export class OutlineNode {
       children.push(insertKey);
     }
     const flags = writableNodeToInsert.__flags;
-    // Handle direciton if node is directionless
+    // Handle direction if node is directionless
     if (flags & IS_DIRECTIONLESS) {
       updateDirectionIfNeeded(writableNodeToInsert);
     }

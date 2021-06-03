@@ -36,7 +36,7 @@ export function generateRandomKey(): string {
 // When we are dealing with setting selection on an empty text node, we
 // need to apply some heuristics that alter the selection anchor. Specifically,
 // if the text node is the start of a block or new line, the anchor should be in
-// position 0. Otherwise, it should be in position 1. This is becasue we use the
+// position 0. Otherwise, it should be in position 1. This is because we use the
 // BYTE_ORDER_MARK character as a way of giving the empty text node some physical
 // space so that browsers correctly insert text into them. The reason we need to
 // apply heuristics around if we should use 0 or 1 is because of how we insertText.

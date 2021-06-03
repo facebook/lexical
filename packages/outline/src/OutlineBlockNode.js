@@ -211,7 +211,7 @@ export class BlockNode extends OutlineNode {
     const newKey = writableNodeToAppend.__key;
     children.push(newKey);
     const flags = writableNodeToAppend.__flags;
-    // Handle direciton if node is directionless
+    // Handle direction if node is directionless
     if (flags & IS_DIRECTIONLESS) {
       updateDirectionIfNeeded(writableNodeToAppend);
     }

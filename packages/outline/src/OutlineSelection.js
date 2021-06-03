@@ -407,7 +407,7 @@ export function createSelection(
 
   if (isDirty) {
     // If the selection hasn't changed then don't add the isDirty flag.
-    // This will avoid recursive updates occuring because we keep
+    // This will avoid recursive updates occurring because we keep
     // adding isDirty.
     if (!selectionsMatch) {
       selection.isDirty = true;

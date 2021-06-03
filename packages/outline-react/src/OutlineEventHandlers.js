@@ -548,7 +548,7 @@ export function onNativeInput(
 
     // To ensure we handle Android software keyboard
     // text entry properly (which is usually composed text),
-    // we need to support a few extra heuristics. Notbaly,
+    // we need to support a few extra heuristics. Notably,
     // we need to disable composition for "insertText" or
     // "insertCompositionText" when the last key press was
     // likely to be an android soft key press. Android will

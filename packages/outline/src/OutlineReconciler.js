@@ -615,7 +615,7 @@ function reconcileSelection(
   const nextAnchorOffset = nextSelection.anchorOffset + 1;
   const nextFocusOffset = nextSelection.focusOffset + 1;
 
-  // Get the underlying DOM text nodes from the representive
+  // Get the underlying DOM text nodes from the representative
   // Outline text nodes (we use elements for text nodes).
   const anchorDOMTarget = getDOMTextNodeFromElement(anchorDOM);
   const focusDOMTarget = getDOMTextNodeFromElement(focusDOM);
@@ -685,7 +685,7 @@ export function getElementByKeyOrThrow(
   if (element === undefined) {
     invariant(
       false,
-      'Reconcilation: could not find DOM element for node key "${key}"',
+      'Reconciliation: could not find DOM element for node key "${key}"',
     );
   }
   return element;

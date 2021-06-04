@@ -588,9 +588,12 @@ export function updateCaretSelectionForRange(
   if (isAtBoundary && granularity === 'character') {
     moveSelection(domSelection, collapse, isBackward, granularity);
   }
-  const range = domSelection.getRangeAt(0);
-  // Apply the DOM selection to our Outline selection.
-  selection.applyDOMRange(range);
+  // Guard against no ranges
+  if (domSelection.rangeCount > 0) {
+    const range = domSelection.getRangeAt(0);
+    // Apply the DOM selection to our Outline selection.
+    selection.applyDOMRange(range);
+  }
 }
 
 export function removeText(selection: Selection): void {

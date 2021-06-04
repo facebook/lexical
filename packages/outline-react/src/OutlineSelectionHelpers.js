@@ -429,30 +429,19 @@ export function updateCaretSelectionForUnicodeCharacter(
 }
 
 export function updateCaretSelectionForAdjacentHashtags(
-  selection: Selection,
-  isBackward: boolean,
+  selection: Selection
 ): void {
   const anchorNode = selection.getAnchorNode();
   const textContent = anchorNode.getTextContent();
   const anchorOffset = selection.anchorOffset;
-  const selectionAtBoundary = isBackward
-    ? anchorOffset === 0
-    : anchorOffset === textContent.length;
+  const selectionAtBoundary = anchorOffset === 0
   if (selectionAtBoundary && anchorNode.getFlags() === 0) {
-    const sibling = isBackward
-      ? anchorNode.getPreviousSibling()
-      : anchorNode.getNextSibling();
+    const sibling = anchorNode.getPreviousSibling();
     if (!anchorNode.isHashtag() && isTextNode(sibling) && sibling.isHashtag()) {
-      if (isBackward) {
-        sibling.select();
-      } else {
-        sibling.select(0, 0);
-      }
+      sibling.select();
       const siblingTextContent = sibling.getTextContent();
       sibling.setTextContent(
-        isBackward
-          ? siblingTextContent + textContent
-          : textContent + siblingTextContent,
+        siblingTextContent + textContent
       );
       anchorNode.remove();
     }
@@ -507,7 +496,7 @@ function deleteCharacter(selection: Selection, isBackward: boolean): void {
     }
   }
   removeText(selection);
-  updateCaretSelectionForAdjacentHashtags(selection, isBackward);
+  updateCaretSelectionForAdjacentHashtags(selection);
   normalizeAnchorParent(selection);
 }
 

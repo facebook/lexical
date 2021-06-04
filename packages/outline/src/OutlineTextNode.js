@@ -14,7 +14,12 @@ import type {EditorThemeClasses} from './OutlineEditor';
 import {OutlineNode} from './OutlineNode';
 import {getWritableNode} from './OutlineNode';
 import {getSelection, makeSelection} from './OutlineSelection';
-import {getTextDirection, invariant, isArray} from './OutlineUtils';
+import {
+  getTextDirection,
+  invariant,
+  isArray,
+  isImmutableOrInertOrSegmented,
+} from './OutlineUtils';
 import {errorOnReadOnly} from './OutlineView';
 import {
   IS_CODE,
@@ -149,10 +154,12 @@ function setTextContent(
   node: TextNode,
 ): void {
   const firstChild = dom.firstChild;
+  // We only prefix normal nodes with the byte order mark.
+  const prefix = isImmutableOrInertOrSegmented(node) ? '' : BYTE_ORDER_MARK;
   if (firstChild == null) {
-    dom.textContent = BYTE_ORDER_MARK + nextText;
-  } else if (firstChild.nodeValue !== BYTE_ORDER_MARK + nextText) {
-    firstChild.nodeValue = BYTE_ORDER_MARK + nextText;
+    dom.textContent = prefix + nextText;
+  } else if (firstChild.nodeValue !== prefix + nextText) {
+    firstChild.nodeValue = prefix + nextText;
   }
 }
 

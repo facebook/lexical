@@ -45,9 +45,9 @@ describe('Mentions', () => {
       await page.keyboard.press('ArrowLeft');
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
-        anchorOffset: 13,
+        anchorOffset: 12,
         focusPath: [0, 1, 0],
-        focusOffset: 13,
+        focusOffset: 12,
       });
 
       await page.keyboard.press('ArrowRight');
@@ -94,9 +94,9 @@ describe('Mentions', () => {
       await page.keyboard.press('ArrowLeft');
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
-        anchorOffset: 13,
+        anchorOffset: 12,
         focusPath: [0, 1, 0],
-        focusOffset: 13,
+        focusOffset: 12,
       });
 
       await page.keyboard.press('Delete');

@@ -480,6 +480,7 @@ function deleteCharacter(selection: Selection, isBackward: boolean): void {
           removeSegment(nextSibling, false);
           return;
         }
+        updateCaretSelectionForUnicodeCharacter(selection, isBackward);
       }
     } else if (isBackward) {
       // Special handling around rich text nodes
@@ -507,7 +508,7 @@ function deleteCharacter(selection: Selection, isBackward: boolean): void {
     }
   }
   removeText(selection);
-  updateCaretSelectionForAdjacentHashtags(selection, true);
+  updateCaretSelectionForAdjacentHashtags(selection, isBackward);
   normalizeAnchorParent(selection);
 }
 

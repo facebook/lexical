@@ -509,7 +509,7 @@ export function onPointerUp(
   editor.setPointerDown(false);
 }
 
-function checkForBadInsertion(
+export function checkForBadInsertion(
   anchorElement: HTMLElement,
   anchorNode: TextNode,
   editor: OutlineEditor,
@@ -524,7 +524,7 @@ function checkForBadInsertion(
   );
 }
 
-function handleBlockTextInputOnNode(
+export function handleBlockTextInputOnNode(
   anchorNode: TextNode,
   view: View,
   editor: OutlineEditor,

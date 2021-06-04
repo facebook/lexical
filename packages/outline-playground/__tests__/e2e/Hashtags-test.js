@@ -7,7 +7,6 @@
  */
 
 import {
-  E2E_BROWSER,
   initializeE2E,
   assertHTML,
   assertSelection,

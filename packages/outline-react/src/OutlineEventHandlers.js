@@ -146,7 +146,7 @@ function shouldOverrideBrowserDefault(
     : isHoldingShift && selectionAtBoundary;
 }
 
-function checkIfLastKeyWasMaybeAndroidSoftKey(event: KeyboardEvent): void {
+function updateAndroidSoftKeyFlagIfAny(event: KeyboardEvent): void {
   lastKeyWasMaybeAndroidSoftKey =
     event.key === 'Unidentified' && event.isComposing && event.keyCode === 229;
 }
@@ -163,7 +163,7 @@ export function onKeyDownForPlainText(
   editor: OutlineEditor,
   state: EventHandlerState,
 ): void {
-  checkIfLastKeyWasMaybeAndroidSoftKey(event);
+  updateAndroidSoftKeyFlagIfAny(event);
   if (editor.isComposing() || wasRecentlyComposing) {
     return;
   }
@@ -228,7 +228,7 @@ export function onKeyDownForRichText(
   editor: OutlineEditor,
   state: EventHandlerState,
 ): void {
-  checkIfLastKeyWasMaybeAndroidSoftKey(event);
+  updateAndroidSoftKeyFlagIfAny(event);
   if (editor.isComposing() || wasRecentlyComposing) {
     return;
   }

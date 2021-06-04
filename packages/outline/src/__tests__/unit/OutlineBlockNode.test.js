@@ -12,11 +12,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import {
-  BlockNode,
-  createEditor,
-  createTextNode
-} from 'outline';
+import {BlockNode, createEditor, createTextNode} from 'outline';
 
 class TestBlockNode extends BlockNode {
   clone() {

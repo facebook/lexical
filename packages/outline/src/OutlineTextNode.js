@@ -481,10 +481,6 @@ export class TextNode extends OutlineNode {
         index = 0;
       }
     }
-    const updatedText =
-      text.slice(0, index) + newText + text.slice(index + delCount);
-    writableSelf.setTextContent(updatedText);
-
     if (restoreSelection) {
       const key = writableSelf.__key;
       if (key === null) {
@@ -500,6 +496,11 @@ export class TextNode extends OutlineNode {
       const newOffset = offset + handledTextLength;
       selection.setRange(key, newOffset, key, newOffset);
     }
+
+    const updatedText =
+      text.slice(0, index) + newText + text.slice(index + delCount);
+    writableSelf.setTextContent(updatedText);
+
     return writableSelf;
   }
   splitText(...splitOffsets: Array<number>): Array<TextNode> {

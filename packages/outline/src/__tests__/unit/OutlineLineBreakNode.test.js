@@ -10,10 +10,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import {
-  createEditor,
-  createLineBreakNode,
-} from 'outline';
+import {createEditor, createLineBreakNode} from 'outline';
 
 describe('OutlineLineBreakNode tests', () => {
   let container = null;

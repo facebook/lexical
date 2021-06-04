@@ -10,11 +10,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import {
-  createEditor,
-  createTextNode,
-  TextNode,
-} from 'outline';
+import {createEditor, createTextNode, TextNode} from 'outline';
 
 import {
   createParagraphNode,

@@ -10,14 +10,9 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import {
-  createEditor,
-  createTextNode,
-} from 'outline';
+import {createEditor, createTextNode} from 'outline';
 
-import {
-  createParagraphNode,
-} from 'outline-extensions/ParagraphNode';
+import {createParagraphNode} from 'outline-extensions/ParagraphNode';
 
 describe('OutlineViewModel tests', () => {
   let container = null;

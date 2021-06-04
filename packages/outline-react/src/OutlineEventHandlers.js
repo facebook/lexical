@@ -524,6 +524,24 @@ function checkForBadInsertion(
   );
 }
 
+function handleBlockTextInputOnNode(
+  anchorNode: TextNode,
+  view: View,
+  editor: OutlineEditor,
+): boolean {
+  // If we are mutating an immutable or segmented node, then reset
+  // the content back to what it was before, as this is not allowed.
+  if (isImmutableOrInertOrSegmented(anchorNode)) {
+    // If this node has a decorator, then we'll make it as needing an
+    // update by React.
+    anchorNode.markDirtyDecorator();
+    view.markNodeAsDirty(anchorNode);
+    editor._compositionKey = null;
+    return true;
+  }
+  return false;
+}
+
 export function onNativeInput(
   event: InputEvent,
   editor: OutlineEditor,
@@ -587,14 +605,7 @@ export function onNativeInput(
         return;
       }
 
-      // If we are mutating an immutable or segmented node, then reset
-      // the content back to what it was before, as this is not allowed.
-      if (isImmutableOrInertOrSegmented(anchorNode)) {
-        // If this node has a decorator, then we'll make it as needing an
-        // update by React.
-        anchorNode.markDirtyDecorator();
-        view.markNodeAsDirty(anchorNode);
-        editor._compositionKey = null;
+      if (handleBlockTextInputOnNode(anchorNode, view, editor)) {
         return;
       }
 
@@ -925,6 +936,9 @@ export function onPolyfilledBeforeInput(
           compositionSelection.focusKey,
           compositionSelection.focusOffset,
         );
+      }
+      if (handleBlockTextInputOnNode(selection.getAnchorNode(), view, editor)) {
+        return;
       }
       insertText(selection, data);
     }

@@ -585,7 +585,7 @@ export function updateCaretSelectionForRange(
   // and line segments (especially with word wrapping and non-Roman languages).
   moveSelection(domSelection, collapse, isBackward, granularity);
   // If we are at a boundary, move once again.
-  if (isAtBoundary) {
+  if (isAtBoundary && granularity === 'character') {
     moveSelection(domSelection, collapse, isBackward, granularity);
   }
   const range = domSelection.getRangeAt(0);

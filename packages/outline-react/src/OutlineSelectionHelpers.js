@@ -402,7 +402,7 @@ export function deleteWordForward(selection: Selection): void {
   normalizeAnchorParent(selection);
 }
 
-function updateCaretSelectionForUnicodeCharacter(
+export function updateCaretSelectionForUnicodeCharacter(
   selection: Selection,
   isBackward: boolean,
 ): void {
@@ -429,7 +429,7 @@ function updateCaretSelectionForUnicodeCharacter(
   }
 }
 
-function updateCaretSelectionForAdjacentHashtags(
+export function updateCaretSelectionForAdjacentHashtags(
   selection: Selection,
   isBackward: boolean,
 ): void {
@@ -460,11 +460,29 @@ function updateCaretSelectionForAdjacentHashtags(
   }
 }
 
-export function deleteBackward(selection: Selection): void {
+function deleteCharacter(selection: Selection, isBackward: boolean): void {
   if (selection.isCaret()) {
-    updateCaretSelectionForRange(selection, true, 'character', false);
-    // Special handling around rich text nodes
-    if (selection.isCaret()) {
+    updateCaretSelectionForRange(selection, isBackward, 'character', false);
+
+    if (!selection.isCaret()) {
+      const anchorNode = selection.getAnchorNode();
+      if (anchorNode.isSegmented()) {
+        removeSegment(anchorNode, isBackward);
+        return;
+      } else if (!isBackward) {
+        const nextSibling = anchorNode.getNextSibling();
+
+        if (
+          selection.anchorOffset === anchorNode.getTextContentSize() &&
+          isTextNode(nextSibling) &&
+          nextSibling.isSegmented()
+        ) {
+          removeSegment(nextSibling, false);
+          return;
+        }
+      }
+    } else if (isBackward) {
+      // Special handling around rich text nodes
       const anchorNode = selection.getAnchorNode();
       const parent = anchorNode.getParentOrThrow();
       const parentType = parent.getType();
@@ -486,13 +504,6 @@ export function deleteBackward(selection: Selection): void {
         }
         return;
       }
-    } else {
-      const anchorNode = selection.getAnchorNode();
-      if (anchorNode.isSegmented()) {
-        removeSegment(anchorNode, true);
-        return;
-      }
-      updateCaretSelectionForUnicodeCharacter(selection, true);
     }
   }
   removeText(selection);
@@ -500,30 +511,12 @@ export function deleteBackward(selection: Selection): void {
   normalizeAnchorParent(selection);
 }
 
-export function deleteForward(selection: Selection): void {
-  if (selection.isCaret()) {
-    updateCaretSelectionForRange(selection, false, 'character', false);
-    if (!selection.isCaret()) {
-      const anchorNode = selection.getAnchorNode();
-      const nextSibling = anchorNode.getNextSibling();
+export function deleteBackward(selection: Selection): void {
+  deleteCharacter(selection, true);
+}
 
-      if (anchorNode.isSegmented()) {
-        removeSegment(anchorNode, false);
-        return;
-      } else if (
-        selection.anchorOffset === anchorNode.getTextContentSize() &&
-        isTextNode(nextSibling) &&
-        nextSibling.isSegmented()
-      ) {
-        removeSegment(nextSibling, false);
-        return;
-      }
-      updateCaretSelectionForUnicodeCharacter(selection, true);
-    }
-  }
-  removeText(selection);
-  updateCaretSelectionForAdjacentHashtags(selection, true);
-  normalizeAnchorParent(selection);
+export function deleteForward(selection: Selection): void {
+  deleteCharacter(selection, false);
 }
 
 function removeSegment(node: TextNode, isBackward: boolean): void {

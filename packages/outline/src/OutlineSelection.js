@@ -14,9 +14,8 @@ import {getActiveViewModel} from './OutlineView';
 import {getNodeKeyFromDOM} from './OutlineReconciler';
 import {getNodeByKey} from './OutlineNode';
 import {isTextNode, isBlockNode, isLineBreakNode, TextNode} from '.';
-import {invariant, isSelectionWithinEditor} from './OutlineUtils';
+import {invariant, isImmutableOrInertOrSegmented, isSelectionWithinEditor} from './OutlineUtils';
 import {OutlineEditor} from './OutlineEditor';
-import {isImmutableOrInertOrSegmented} from 'outline-react/src/OutlineReactUtils';
 
 export class Selection {
   anchorKey: string;

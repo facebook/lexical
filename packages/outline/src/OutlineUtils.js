@@ -8,6 +8,7 @@
  */
 
 import type {OutlineEditor} from './OutlineEditor';
+import type {OutlineNode} from './OutlineNode'
 
 import {RTL_REGEX, LTR_REGEX} from './OutlineConstants';
 
@@ -90,4 +91,8 @@ export function getDOMTextNodeFromElement(element: Node): Text {
     node = node.firstChild;
   }
   invariant(false, 'getDOMTextNodeFromElement: text node not found');
+}
+
+export function isImmutableOrInertOrSegmented(node: OutlineNode): boolean {
+  return node.isImmutable() || node.isInert() || node.isSegmented();
 }

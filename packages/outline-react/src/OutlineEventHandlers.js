@@ -624,14 +624,9 @@ export function onNativeInput(
         );
 
         // We get the text content from the anchor element's text node
-        let domTextContent = textNode.nodeValue;
-        let anchorOffset = window.getSelection().anchorOffset;
-        if (domTextContent[0] === '\uFEFF') {
-          domTextContent = domTextContent.slice(1);
-          anchorOffset--;
-        } else {
-          domTextContent = domTextContent.replace('\uFEFF', '');
-        }
+        const domTextContent = textNode.nodeValue.replace('\uFEFF', '');
+        const anchorOffset = window.getSelection().anchorOffset - 1;
+
         // We set the range before content, as hashtags might skew the offset
         selection.setRange(anchorKey, anchorOffset, anchorKey, anchorOffset);
         anchorNode.setTextContent(domTextContent);

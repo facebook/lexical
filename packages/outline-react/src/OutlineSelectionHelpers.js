@@ -429,20 +429,18 @@ export function updateCaretSelectionForUnicodeCharacter(
 }
 
 export function updateCaretSelectionForAdjacentHashtags(
-  selection: Selection
+  selection: Selection,
 ): void {
   const anchorNode = selection.getAnchorNode();
   const textContent = anchorNode.getTextContent();
   const anchorOffset = selection.anchorOffset;
-  const selectionAtBoundary = anchorOffset === 0
+  const selectionAtBoundary = anchorOffset === 0;
   if (selectionAtBoundary && anchorNode.getFlags() === 0) {
     const sibling = anchorNode.getPreviousSibling();
     if (!anchorNode.isHashtag() && isTextNode(sibling) && sibling.isHashtag()) {
       sibling.select();
       const siblingTextContent = sibling.getTextContent();
-      sibling.setTextContent(
-        siblingTextContent + textContent
-      );
+      sibling.setTextContent(siblingTextContent + textContent);
       anchorNode.remove();
     }
   }
@@ -558,23 +556,27 @@ export function updateCaretSelectionForRange(
   const domSelection = window.getSelection();
   const focusNode = selection.getFocusNode();
   const focusOffset = selection.focusOffset;
-
-  const isAtBoundary = isBackward
-    ? focusOffset <= (isImmutableOrInertOrSegmented(focusNode) ? 1 : 2)
-    : focusOffset >=
-      focusNode.getTextContentSize() -
-        (isImmutableOrInertOrSegmented(focusNode) ? 2 : 1);
+  const sibling = isBackward
+    ? focusNode.getPreviousSibling()
+    : focusNode.getNextSibling();
 
   // Ensure we don't move selection to the zero width offset
-  if (isAtBoundary && isBackward && focusOffset === 0) {
+  if (isBackward && focusOffset === 0 && sibling === null) {
     const parent = focusNode.getParentOrThrow();
-    const prevSibling = focusNode.getPreviousSibling();
-    if (prevSibling === null) {
-      if (parent.getPreviousSibling() === null) {
-        return;
-      }
+    if (parent.getPreviousSibling() === null) {
+      return;
     }
   }
+
+  const textSize = focusNode.getTextContentSize();
+  const isAtBoundary = isBackward
+    ? focusOffset === 0
+    : (focusOffset > textSize - 1 &&
+        isImmutableOrInertOrSegmented(focusNode)) ||
+      (focusOffset === textSize &&
+        sibling !== null &&
+        !isImmutableOrInertOrSegmented(sibling));
+
   // We use the DOM selection.modify API here to "tell" us what the selection
   // will be. We then use it to update the Outline selection accordingly. This
   // is much more reliable than waiting for a beforeinput and using the ranges
@@ -583,7 +585,7 @@ export function updateCaretSelectionForRange(
   // and line segments (especially with word wrapping and non-Roman languages).
   moveSelection(domSelection, collapse, isBackward, granularity);
   // If we are at a boundary, move once again.
-  if (isAtBoundary) {
+  if (isAtBoundary && granularity === 'character') {
     moveSelection(domSelection, collapse, isBackward, granularity);
   }
   const range = domSelection.getRangeAt(0);

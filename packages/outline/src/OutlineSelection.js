@@ -16,6 +16,7 @@ import {getNodeByKey} from './OutlineNode';
 import {isTextNode, isBlockNode, isLineBreakNode, TextNode} from '.';
 import {invariant, isSelectionWithinEditor} from './OutlineUtils';
 import {OutlineEditor} from './OutlineEditor';
+import {isImmutableOrInertOrSegmented} from 'outline-react/src/OutlineReactUtils';
 
 export class Selection {
   anchorKey: string;
@@ -225,34 +226,33 @@ function resolveSelectionNodeAndOffset(
     return null;
   }
   let resolvedTextNode = resolvedNode;
-  // Because we use a special character for whitespace
-  // at the start of all strings, we need to remove one
-  // from the offset.
-  if (resolvedOffset === 0) {
-    isDirty = true;
+
+  if (isImmutableOrInertOrSegmented(resolvedTextNode)) {
+    if (window.getSelection().isCollapsed) {
+      if (resolvedOffset === 0) {
+        const prevSibling = resolvedTextNode.getPreviousSibling();
+        if (isTextNode(prevSibling)) {
+          resolvedTextNode = prevSibling;
+          resolvedOffset = prevSibling.getTextContentSize();
+          isDirty = true;
+        }
+      } else if (resolvedOffset === resolvedTextNode.getTextContentSize()) {
+        const nextSibling = resolvedTextNode.getNextSibling();
+        if (isTextNode(nextSibling)) {
+          resolvedTextNode = nextSibling;
+          resolvedOffset = 0;
+          isDirty = true;
+        }
+      }
+    }
   } else {
-    resolvedOffset--;
-  }
-  // If we are on the boundaries of an immutable of segmented node,
-  // move it to the edge of the adjacent node.
-  if (
-    resolvedTextNode.isImmutable() ||
-    (resolvedTextNode.isSegmented() && window.getSelection().isCollapsed)
-  ) {
+    // Because we use a special character for whitespace
+    // at the start of all strings, we need to remove one
+    // from the offset.
     if (resolvedOffset === 0) {
-      const prevSibling = resolvedTextNode.getPreviousSibling();
-      if (isTextNode(prevSibling)) {
-        resolvedTextNode = prevSibling;
-        resolvedOffset = prevSibling.getTextContentSize();
-        isDirty = true;
-      }
-    } else if (resolvedOffset === resolvedTextNode.getTextContentSize()) {
-      const nextSibling = resolvedTextNode.getNextSibling();
-      if (isTextNode(nextSibling)) {
-        resolvedTextNode = nextSibling;
-        resolvedOffset = 0;
-        isDirty = true;
-      }
+      isDirty = true;
+    } else {
+      resolvedOffset--;
     }
   }
   return [resolvedTextNode, resolvedOffset, isDirty];

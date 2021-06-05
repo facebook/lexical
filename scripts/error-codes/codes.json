@@ -42,12 +42,7 @@
   "40": "reconcileNode: parentDOM is null",
   "41": "Expected node %s to have a top parent block.",
   "42": "Expected node %s to have a parent block.",
-  "43": "onNativeInput: cannot find DOM element for anchor node",
-  "44": "onNativeInput: cannot find DOM element and its text node for anchor node",
-  "45": "updateTextNodeContentFromDOM: cannot find DOM element and its text node for node",
-  "46": "onNativeInput: cannot find DOM text node for anchor node",
-  "47": "resolveNonLineBreakOrInertNode: resolved node not a text node",
-  "48": "getStartNode: startNode not a text node",
-  "49": "getEndNode: endNode not a text node",
-  "50": "Reconciliation: could not find DOM element for node key \"${key}\""
+  "43": "onNativeInput: cannot find DOM text node for anchor node",
+  "44": "resolveNonLineBreakOrInertNode: resolved node not a text node",
+  "45": "Reconciliation: could not find DOM element for node key \"${key}\""
 }

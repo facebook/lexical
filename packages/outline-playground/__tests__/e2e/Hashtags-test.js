@@ -6,12 +6,7 @@
  *
  */
 
-import {
-  initializeE2E,
-  assertHTML,
-  assertSelection,
-  repeat,
-} from '../utils';
+import {initializeE2E, assertHTML, assertSelection, repeat} from '../utils';
 
 describe('Hashtags', () => {
   initializeE2E((e2e) => {

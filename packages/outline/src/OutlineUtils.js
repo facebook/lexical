@@ -8,7 +8,7 @@
  */
 
 import type {OutlineEditor} from './OutlineEditor';
-import type {OutlineNode} from './OutlineNode'
+import type {OutlineNode} from './OutlineNode';
 
 import {RTL_REGEX, LTR_REGEX} from './OutlineConstants';
 

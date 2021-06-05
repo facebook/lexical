@@ -69,6 +69,7 @@ import {
 let wasRecentlyComposing = false;
 let lastKeyWasMaybeAndroidSoftKey = false;
 const RESOLVE_DELAY = 20;
+const BYTE_ORDER_MARK = '\uFEFF';
 
 // TODO the Flow types here needs fixing
 export type EventHandler = (
@@ -624,12 +625,18 @@ export function onNativeInput(
         );
 
         // We get the text content from the anchor element's text node
-        const domTextContent = textNode.nodeValue.replace('\uFEFF', '');
-        const anchorOffset = window.getSelection().anchorOffset - 1;
+        const rawTextContent = textNode.nodeValue;
+        const textContent = rawTextContent.replace(BYTE_ORDER_MARK, '');
+        let anchorOffset = window.getSelection().anchorOffset;
+        // If the first character is a BOM, then we need to offset this because
+        // this character isn't really apart of our offset.
+        if (rawTextContent[0] === BYTE_ORDER_MARK) {
+          anchorOffset--;
+        }
 
         // We set the range before content, as hashtags might skew the offset
         selection.setRange(anchorKey, anchorOffset, anchorKey, anchorOffset);
-        anchorNode.setTextContent(domTextContent);
+        anchorNode.setTextContent(textContent);
       } else {
         insertText(selection, data);
       }

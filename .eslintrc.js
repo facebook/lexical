@@ -79,7 +79,7 @@ module.exports = {
     'react/jsx-no-undef': ERROR,
     // We don't care to do this
     'react/jsx-sort-prop-types': OFF,
-    'react/jsx-space-before-closing': ERROR,
+    'react/jsx-tag-spacing': ERROR,
     'react/jsx-uses-react': ERROR,
     'react/no-is-mounted': OFF,
     // This isn't useful in our test code
@@ -118,5 +118,5 @@ module.exports = {
   ],
   globals: {
     __DEV__: true,
-  }
+  },
 };

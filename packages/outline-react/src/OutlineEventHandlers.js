@@ -578,7 +578,7 @@ export function onNativeInput(
     ) {
       editor._compositionKey = null;
     }
-    const data = getTextFromInputEvent(event);
+    const data = event.data;
     if (data != null) {
       const focusKey = selection.focusKey;
       const anchorElement = editor.getElementByKey(anchorKey);
@@ -649,14 +649,6 @@ function applyTargetRange(selection: Selection, event: InputEvent): void {
   }
 }
 
-function getTextFromInputEvent(event: InputEvent): null | string {
-  const dataTransfer = event.dataTransfer;
-  if (dataTransfer) {
-    return dataTransfer.getData('text/plain');
-  }
-  return event.data;
-}
-
 export function onNativeBeforeInputForPlainText(
   event: InputEvent,
   editor: OutlineEditor,
@@ -677,8 +669,7 @@ export function onNativeBeforeInputForPlainText(
       deleteBackward(selection);
       return;
     }
-    const data = getTextFromInputEvent(event);
-
+    const data = event.data;
     const inputText = inputType === 'insertText';
 
     if (selection.isCaret()) {
@@ -697,9 +688,10 @@ export function onNativeBeforeInputForPlainText(
         return;
       }
       // Gets around a Safari text replacement bug.
-      if (IS_SAFARI && event.data === null && data !== null) {
+      if (IS_SAFARI && data === null && event.dataTransfer) {
+        const text = event.dataTransfer.getData('text/plain');
         event.preventDefault();
-        insertRichText(selection, data);
+        insertRichText(selection, text);
         return;
       }
       if (data === '\n') {
@@ -822,7 +814,7 @@ export function onNativeBeforeInputForRichText(
       deleteBackward(selection);
       return;
     }
-    const data = getTextFromInputEvent(event);
+    const data = event.data;
     const inputText = inputType === 'insertText';
 
     if (selection.isCaret()) {
@@ -841,9 +833,10 @@ export function onNativeBeforeInputForRichText(
         return;
       }
       // Gets around a Safari text replacement bug.
-      if (IS_SAFARI && event.data === null && data !== null) {
+      if (IS_SAFARI && data === null && event.dataTransfer) {
+        const text = event.dataTransfer.getData('text/plain');
         event.preventDefault();
-        insertRichText(selection, data);
+        insertRichText(selection, text);
         return;
       }
       if (data === '\n') {

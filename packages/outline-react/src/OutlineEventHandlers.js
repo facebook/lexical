@@ -17,7 +17,7 @@ import type {
   View,
 } from 'outline';
 
-import {CAN_USE_BEFORE_INPUT, IS_FIREFOX} from './OutlineEnv';
+import {CAN_USE_BEFORE_INPUT, IS_FIREFOX, IS_SAFARI} from './OutlineEnv';
 import {
   isDeleteBackward,
   isDeleteForward,
@@ -39,7 +39,6 @@ import {
 } from './OutlineKeyHelpers';
 import {
   getDOMTextNodeFromElement,
-  invariant,
   isImmutableOrInertOrSegmented,
 } from './OutlineReactUtils';
 import {
@@ -579,7 +578,7 @@ export function onNativeInput(
     ) {
       editor._compositionKey = null;
     }
-    const data = event.data;
+    const data = getTextFromInputEvent(event);
     if (data != null) {
       const focusKey = selection.focusKey;
       const anchorElement = editor.getElementByKey(anchorKey);
@@ -607,24 +606,28 @@ export function onNativeInput(
       }
 
       if (handleBlockTextInputOnNode(anchorNode, view, editor)) {
+        const anchorOffset = selection.anchorOffset - 1;
+        selection.setRange(anchorKey, anchorOffset, anchorKey, anchorOffset);
         return;
       }
+      const textNode =
+        anchorElement !== null
+          ? getDOMTextNodeFromElement(anchorElement)
+          : null;
 
       // If we are inserting text into the same anchor as is our focus
       // node, then we can apply a faster optimization that also handles
       // text replacement tools that use execCommand (which doesn't trigger
       // beforeinput in some browsers).
-      if (anchorElement !== null && isInsertText && anchorKey === focusKey) {
+      if (
+        anchorElement !== null &&
+        textNode !== null &&
+        isInsertText &&
+        anchorKey === focusKey
+      ) {
         // Let's read what is in the DOM already, and use that as the value
-        // for our anchor node.
-        const textNode = getDOMTextNodeFromElement(anchorElement);
-
-        invariant(
-          textNode != null,
-          'onNativeInput: cannot find DOM text node for anchor node',
-        );
-
-        // We get the text content from the anchor element's text node
+        // for our anchor node. We get the text content from the anchor element's
+        // text node.
         const rawTextContent = textNode.nodeValue;
         const textContent = rawTextContent.replace(BYTE_ORDER_MARK, '');
         let anchorOffset = window.getSelection().anchorOffset;
@@ -654,6 +657,14 @@ function applyTargetRange(selection: Selection, event: InputEvent): void {
   }
 }
 
+function getTextFromInputEvent(event: InputEvent): null | string {
+  const dataTransfer = event.dataTransfer;
+  if (dataTransfer) {
+    return dataTransfer.getData('text/plain');
+  }
+  return event.data;
+}
+
 export function onNativeBeforeInputForPlainText(
   event: InputEvent,
   editor: OutlineEditor,
@@ -674,22 +685,29 @@ export function onNativeBeforeInputForPlainText(
       deleteBackward(selection);
       return;
     }
-    const data = event.data;
+    const data = getTextFromInputEvent(event);
 
     const inputText = inputType === 'insertText';
 
     if (selection.isCaret()) {
       applyTargetRange(selection, event);
     }
+    const anchorNode = selection.getAnchorNode();
+    const focusNode = selection.getAnchorNode();
 
     if (
       inputText ||
       inputType === 'insertCompositionText' ||
       inputType === 'deleteCompositionText'
     ) {
-      const anchorNode = selection.getAnchorNode();
       if (selection.isCaret() && isImmutableOrInertOrSegmented(anchorNode)) {
         event.preventDefault();
+        return;
+      }
+      // Gets around a Safari text replacement bug.
+      if (IS_SAFARI && event.data === null && data !== null) {
+        event.preventDefault();
+        insertRichText(selection, data);
         return;
       }
       if (data === '\n') {
@@ -702,7 +720,6 @@ export function onNativeBeforeInputForPlainText(
       } else if (!selection.isCaret()) {
         const anchorKey = selection.anchorKey;
         const focusKey = selection.focusKey;
-        const focusNode = selection.getAnchorNode();
 
         if (
           !isImmutableOrInertOrSegmented(anchorNode) ||
@@ -751,7 +768,15 @@ export function onNativeBeforeInputForPlainText(
         }
         break;
       }
-      case 'deleteByComposition':
+      case 'deleteByComposition': {
+        if (
+          !isImmutableOrInertOrSegmented(anchorNode) ||
+          !isImmutableOrInertOrSegmented(focusNode)
+        ) {
+          removeText(selection);
+        }
+        break;
+      }
       case 'deleteByDrag':
       case 'deleteByCut': {
         removeText(selection);
@@ -805,22 +830,28 @@ export function onNativeBeforeInputForRichText(
       deleteBackward(selection);
       return;
     }
-    const data = event.data;
-
+    const data = getTextFromInputEvent(event);
     const inputText = inputType === 'insertText';
 
     if (selection.isCaret()) {
       applyTargetRange(selection, event);
     }
+    const anchorNode = selection.getAnchorNode();
+    const focusNode = selection.getAnchorNode();
 
     if (
       inputText ||
       inputType === 'insertCompositionText' ||
       inputType === 'deleteCompositionText'
     ) {
-      const anchorNode = selection.getAnchorNode();
       if (selection.isCaret() && isImmutableOrInertOrSegmented(anchorNode)) {
         event.preventDefault();
+        return;
+      }
+      // Gets around a Safari text replacement bug.
+      if (IS_SAFARI && event.data === null && data !== null) {
+        event.preventDefault();
+        insertRichText(selection, data);
         return;
       }
       if (data === '\n') {
@@ -832,7 +863,6 @@ export function onNativeBeforeInputForRichText(
       } else if (!selection.isCaret()) {
         const anchorKey = selection.anchorKey;
         const focusKey = selection.focusKey;
-        const focusNode = selection.getAnchorNode();
 
         if (
           !isImmutableOrInertOrSegmented(anchorNode) ||
@@ -885,7 +915,15 @@ export function onNativeBeforeInputForRichText(
         }
         break;
       }
-      case 'deleteByComposition':
+      case 'deleteByComposition': {
+        if (
+          !isImmutableOrInertOrSegmented(anchorNode) ||
+          !isImmutableOrInertOrSegmented(focusNode)
+        ) {
+          removeText(selection);
+        }
+        break;
+      }
       case 'deleteByDrag':
       case 'deleteByCut': {
         removeText(selection);
@@ -940,6 +978,9 @@ export function onPolyfilledBeforeInput(
         );
       }
       if (handleBlockTextInputOnNode(selection.getAnchorNode(), view, editor)) {
+        const anchorOffset = selection.anchorOffset - 1;
+        const anchorKey = selection.anchorKey;
+        selection.setRange(anchorKey, anchorOffset, anchorKey, anchorOffset);
         return;
       }
       insertText(selection, data);

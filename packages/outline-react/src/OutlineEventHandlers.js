@@ -610,24 +610,16 @@ export function onNativeInput(
         selection.setRange(anchorKey, anchorOffset, anchorKey, anchorOffset);
         return;
       }
-      const textNode =
-        anchorElement !== null
-          ? getDOMTextNodeFromElement(anchorElement)
-          : null;
 
       // If we are inserting text into the same anchor as is our focus
       // node, then we can apply a faster optimization that also handles
       // text replacement tools that use execCommand (which doesn't trigger
       // beforeinput in some browsers).
-      if (
-        anchorElement !== null &&
-        textNode !== null &&
-        isInsertText &&
-        anchorKey === focusKey
-      ) {
+      if (anchorElement !== null && isInsertText && anchorKey === focusKey) {
         // Let's read what is in the DOM already, and use that as the value
         // for our anchor node. We get the text content from the anchor element's
         // text node.
+        const textNode = getDOMTextNodeFromElement(anchorElement);
         const rawTextContent = textNode.nodeValue;
         const textContent = rawTextContent.replace(BYTE_ORDER_MARK, '');
         let anchorOffset = window.getSelection().anchorOffset;

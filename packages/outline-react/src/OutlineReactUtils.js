@@ -19,7 +19,7 @@ export function invariant(cond?: boolean, message?: string) {
   );
 }
 
-export function getDOMTextNodeFromElement(element: Node): null | Text {
+export function getDOMTextNodeFromElement(element: Node): Text {
   let node = element;
   while (node != null) {
     if (node.nodeType === 3) {
@@ -28,7 +28,7 @@ export function getDOMTextNodeFromElement(element: Node): null | Text {
     }
     node = node.firstChild;
   }
-  return null;
+  invariant(false, 'getDOMTextNodeFromElement: text node not found');
 }
 
 export function isImmutableOrInertOrSegmented(node: OutlineNode): boolean {

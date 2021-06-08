@@ -583,6 +583,7 @@ export function onNativeInput(
       const focusKey = selection.focusKey;
       const anchorElement = editor.getElementByKey(anchorKey);
       const anchorNode = selection.getAnchorNode();
+      const textNode = getDOMTextNodeFromElement(anchorElement);
 
       // Let's try and detect a bad update here. This usually comes from text transformation
       // tools that attempt to insertText across a range of nodes – which obviously we can't
@@ -591,7 +592,8 @@ export function onNativeInput(
       // apply the text on that.
       if (
         anchorElement !== null &&
-        checkForBadInsertion(anchorElement, anchorNode, editor)
+        (textNode === null ||
+          checkForBadInsertion(anchorElement, anchorNode, editor))
       ) {
         window.requestAnimationFrame(() => {
           document.execCommand('Undo', false, null);
@@ -615,11 +617,15 @@ export function onNativeInput(
       // node, then we can apply a faster optimization that also handles
       // text replacement tools that use execCommand (which doesn't trigger
       // beforeinput in some browsers).
-      if (anchorElement !== null && isInsertText && anchorKey === focusKey) {
+      if (
+        anchorElement !== null &&
+        textNode !== null &&
+        isInsertText &&
+        anchorKey === focusKey
+      ) {
         // Let's read what is in the DOM already, and use that as the value
         // for our anchor node. We get the text content from the anchor element's
         // text node.
-        const textNode = getDOMTextNodeFromElement(anchorElement);
         const rawTextContent = textNode.nodeValue;
         const textContent = rawTextContent.replace(BYTE_ORDER_MARK, '');
         let anchorOffset = window.getSelection().anchorOffset;

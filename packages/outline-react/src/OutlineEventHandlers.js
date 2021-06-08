@@ -592,8 +592,7 @@ export function onNativeInput(
       // apply the text on that.
       if (
         anchorElement !== null &&
-        (textNode === null ||
-          checkForBadInsertion(anchorElement, anchorNode, editor))
+        checkForBadInsertion(anchorElement, anchorNode, editor)
       ) {
         window.requestAnimationFrame(() => {
           document.execCommand('Undo', false, null);

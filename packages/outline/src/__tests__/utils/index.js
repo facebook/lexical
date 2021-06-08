@@ -17,12 +17,16 @@ import type {OutlineEditor} from 'outline';
 type TestEnv = {
   editor: OutlineEditor | null,
   container: HTMLDivElement | null,
-}
+  outerHTML: string,
+};
 
 export const initializeUnitTest = (runTests: (testEnv: TestEnv) => void) => {
   const testEnv: TestEnv = {
     editor: null,
     container: null,
+    get outerHTML() {
+      return this.container.innerHTML.replace(/\uFEFF/g, '');
+    },
   };
 
   beforeEach(async () => {

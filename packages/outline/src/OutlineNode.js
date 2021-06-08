@@ -257,10 +257,10 @@ export class OutlineNode {
   getParentBlockOrThrow(): BlockNode {
     let node = this;
     while (node !== null) {
+      node = node.getParent();
       if (isBlockNode(node)) {
         return node;
       }
-      node = node.getParent();
     }
     invariant(false, 'Expected node %s to have a parent block.', this.__key);
   }

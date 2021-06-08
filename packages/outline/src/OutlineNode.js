@@ -104,7 +104,6 @@ function removeNode(nodeToRemove: OutlineNode): void {
   }
   const writableNodeToRemove = getWritableNode(nodeToRemove);
   writableNodeToRemove.__parent = null;
-  markNodeAsDirty(writableNodeToRemove);
 }
 
 function replaceNode<N: OutlineNode>(

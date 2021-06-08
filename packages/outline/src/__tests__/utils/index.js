@@ -10,6 +10,7 @@ import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
 import {createEditor} from 'outline';
+import {resetRandomKey} from '../../OutlineUtils';
 
 import type {OutlineEditor} from 'outline';
 
@@ -25,6 +26,8 @@ export const initializeUnitTest = (runTests: (testEnv: TestEnv) => void) => {
   };
 
   beforeEach(async () => {
+    resetRandomKey();
+
     testEnv.container = document.createElement('div');
     document.body.appendChild(testEnv.container);
     const ref = React.createRef();

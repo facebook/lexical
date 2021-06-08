@@ -30,6 +30,10 @@ export function invariant(
   );
 }
 
+export function resetRandomKey(): void {
+  keyCounter = 0;
+}
+
 export function generateRandomKey(): string {
   return '_' + keyCounter++;
 }

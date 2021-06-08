@@ -10,6 +10,7 @@ import {createTextNode} from 'outline';
 import {
   emptyFunction,
   invariant,
+  resetRandomKey,
   generateRandomKey,
   getAdjustedSelectionOffset,
   isArray,
@@ -57,6 +58,18 @@ describe('OutlineUtils tests', () => {
     test('invariant()', () => {
       expect(invariant).toBeInstanceOf(Function);
       expect(() => invariant()).toThrow();
+    });
+
+    test('resetRandomKey()', () => {
+      resetRandomKey();
+      const key1 = generateRandomKey();
+      resetRandomKey();
+      const key2 = generateRandomKey();
+      expect(typeof key1).toBe('string');
+      expect(typeof key2).toBe('string');
+      expect(key1).not.toBe('');
+      expect(key2).not.toBe('');
+      expect(key1).toEqual(key2);
     });
 
     test('generateRandomKey()', () => {

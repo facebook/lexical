@@ -19,7 +19,13 @@ function recursivelySetBlockOverflowedNodes(
   nodes.forEach((node) => {
     if (isBlockNode(node)) {
       recursivelySetBlockOverflowedNodes(node, node.getChildren(), value);
-    } else if (isTextNode(node) && node.isOverflowed() !== value) {
+    } else if (
+      isTextNode(node) &&
+      node.isOverflowed() !== value &&
+      !node.isImmutable() &&
+      !node.isSegmented() &&
+      !node.isInert()
+    ) {
       node.toggleOverflowed();
     }
   });
@@ -70,16 +76,22 @@ export default function CharacterLimit({
                   const [targetNode, nextOverflowNode] =
                     existingOverflowNode.splitText(offset);
                   targetNode.toggleOverflowed();
-                  const parent = targetNode.getTopParentBlockOrThrow();
-                  parent.normalizeTextNodes(true);
+                  const parentBlock = targetNode.getParentBlockOrThrow();
+                  parentBlock.normalizeTextNodes(true);
                   currentIntersectionRef.current = {
                     nodeKey: nextOverflowNode.getKey(),
                     offset: 0,
                   };
                 } else {
+                  // Handle next siblings
+                  const parentBlock = node.getParentBlockOrThrow();
+                  const siblings = node.getNextSiblings();
+                  recursivelySetBlockOverflowedNodes(
+                    parentBlock,
+                    siblings,
+                    true,
+                  );
                   // Handle next sibling blocks
-                  const parent = node.getTopParentBlockOrThrow();
-                  const parentBlock = parent.getParentBlockOrThrow();
                   const parentBlockSiblings = parentBlock.getNextSiblings();
                   recursivelySetBlockOverflowedNodes(
                     parentBlock,
@@ -120,10 +132,9 @@ export default function CharacterLimit({
           }
           // Handle next siblings
           const siblings = node.getNextSiblings();
-          const parent = node.getTopParentBlockOrThrow();
-          recursivelySetBlockOverflowedNodes(parent, siblings, true);
+          const parentBlock = node.getParentBlockOrThrow();
+          recursivelySetBlockOverflowedNodes(parentBlock, siblings, true);
           // Handle next sibling blocks
-          const parentBlock = parent.getParentBlockOrThrow();
           const parentBlockSiblings = parentBlock.getNextSiblings();
           currentIntersectionRef.current = {
             nodeKey: targetNode.getKey(),

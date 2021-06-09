@@ -76,8 +76,8 @@ export default function CharacterLimit({
                   const [targetNode, nextOverflowNode] =
                     existingOverflowNode.splitText(offset);
                   targetNode.toggleOverflowed();
-                  const parent = targetNode.getParentBlockOrThrow();
-                  parent.normalizeTextNodes(true);
+                  const parentBlock = targetNode.getParentBlockOrThrow();
+                  parentBlock.normalizeTextNodes(true);
                   currentIntersectionRef.current = {
                     nodeKey: nextOverflowNode.getKey(),
                     offset: 0,

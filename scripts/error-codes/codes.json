@@ -39,6 +39,5 @@
   "37": "findIndexInPrevChildren: index in prevChildren not found",
   "38": "reconcileNodeChildren: keyToMove to was not nextStartKey",
   "39": "storeDOMWithNodeKey: key was null",
-  "40": "Reconciliation: could not find DOM element for node key \"${key}\"",
-  "41": "onNativeInput: cannot find DOM text node for anchor node"
+  "40": "Reconciliation: could not find DOM element for node key \"${key}\""
 }

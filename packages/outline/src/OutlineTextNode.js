@@ -350,6 +350,10 @@ export class TextNode extends OutlineNode {
     }
     return false;
   }
+  selectionTransform(
+    prevSelection: null | Selection,
+    nextSelection: Selection,
+  ): void {}
 
   // Mutators
   toggleOverflowed(): TextNode {

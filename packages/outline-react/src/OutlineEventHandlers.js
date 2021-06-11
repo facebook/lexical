@@ -437,10 +437,7 @@ export function onCompositionStart(
             selection.setRange(focusKey, 0, focusKey, selection.focusOffset);
           }
         }
-        if (
-          !isImmutableOrInertOrSegmented(anchorNode) ||
-          !isImmutableOrInertOrSegmented(focusNode)
-        ) {
+        if (canRemoveText(anchorNode, focusNode)) {
           removeText(selection);
         }
       }
@@ -654,6 +651,14 @@ function applyTargetRange(selection: Selection, event: InputEvent): void {
   }
 }
 
+function canRemoveText(anchorNode: TextNode, focusNode: TextNode): boolean {
+  return (
+    anchorNode !== focusNode ||
+    !isImmutableOrInertOrSegmented(anchorNode) ||
+    !isImmutableOrInertOrSegmented(focusNode)
+  );
+}
+
 export function onNativeBeforeInputForPlainText(
   event: InputEvent,
   editor: OutlineEditor,
@@ -710,10 +715,7 @@ export function onNativeBeforeInputForPlainText(
         const anchorKey = selection.anchorKey;
         const focusKey = selection.focusKey;
 
-        if (
-          !isImmutableOrInertOrSegmented(anchorNode) ||
-          !isImmutableOrInertOrSegmented(focusNode)
-        ) {
+        if (canRemoveText(anchorNode, focusNode)) {
           removeText(selection);
         }
         if (inputText && anchorKey !== focusKey && data) {
@@ -758,10 +760,7 @@ export function onNativeBeforeInputForPlainText(
         break;
       }
       case 'deleteByComposition': {
-        if (
-          !isImmutableOrInertOrSegmented(anchorNode) ||
-          !isImmutableOrInertOrSegmented(focusNode)
-        ) {
+        if (canRemoveText(anchorNode, focusNode)) {
           removeText(selection);
         }
         break;
@@ -854,10 +853,7 @@ export function onNativeBeforeInputForRichText(
         const anchorKey = selection.anchorKey;
         const focusKey = selection.focusKey;
 
-        if (
-          !isImmutableOrInertOrSegmented(anchorNode) ||
-          !isImmutableOrInertOrSegmented(focusNode)
-        ) {
+        if (canRemoveText(anchorNode, focusNode)) {
           removeText(selection);
         }
         if (inputText && anchorKey !== focusKey && data) {
@@ -906,10 +902,7 @@ export function onNativeBeforeInputForRichText(
         break;
       }
       case 'deleteByComposition': {
-        if (
-          !isImmutableOrInertOrSegmented(anchorNode) ||
-          !isImmutableOrInertOrSegmented(focusNode)
-        ) {
+        if (canRemoveText(anchorNode, focusNode)) {
           removeText(selection);
         }
         break;

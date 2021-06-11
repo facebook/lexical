@@ -651,7 +651,7 @@ function applyTargetRange(selection: Selection, event: InputEvent): void {
   }
 }
 
-export function canRemoveText(anchorNode: TextNode, focusNode: TextNode): boolean {
+function canRemoveText(anchorNode: TextNode, focusNode: TextNode): boolean {
   return (
     anchorNode !== focusNode ||
     !isImmutableOrInertOrSegmented(anchorNode) ||

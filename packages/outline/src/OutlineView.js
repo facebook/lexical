@@ -196,6 +196,23 @@ function triggerTextMutationListeners(
   }
 }
 
+export function applySelectionTransforms(
+  nextViewModel: ViewModel,
+  editor: OutlineEditor,
+): void {
+  const prevViewModel = editor.getViewModel();
+  const prevSelection = prevViewModel._selection;
+  const nextSelection = nextViewModel._selection;
+  if (nextSelection !== null) {
+    const anchorNode = nextSelection.getAnchorNode();
+    const focusNode = nextSelection.getFocusNode();
+    anchorNode.selectionTransform(prevSelection, nextSelection);
+    if (anchorNode !== focusNode) {
+      focusNode.selectionTransform(prevSelection, nextSelection);
+    }
+  }
+}
+
 export function applyTextTransforms(
   viewModel: ViewModel,
   editor: OutlineEditor,

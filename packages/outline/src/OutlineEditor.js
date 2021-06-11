@@ -24,6 +24,7 @@ import {
   triggerErrorListeners,
   parseViewModel,
   errorOnProcessingTextNodeTransforms,
+  applySelectionTransforms,
 } from './OutlineView';
 import {createSelection} from './OutlineSelection';
 import {
@@ -141,6 +142,7 @@ function updateEditor(
             }
           }
         }
+        applySelectionTransforms(currentPendingViewModel, editor);
         if (currentPendingViewModel.hasDirtyNodes()) {
           applyTextTransforms(currentPendingViewModel, editor);
           garbageCollectDetachedNodes(currentPendingViewModel, editor);

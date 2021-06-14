@@ -263,11 +263,15 @@ export function onKeyDownForRichText(
       event.preventDefault();
       deleteForward(selection);
     } else if (isMoveWordBackward(event)) {
-      event.preventDefault();
-      moveWordBackward(selection, isHoldingShift, isRTL);
+      if (shouldOverrideBrowserDefault(selection, isHoldingShift, !isRTL)) {
+        event.preventDefault();
+        moveWordBackward(selection, isHoldingShift, isRTL);
+      }
     } else if (isMoveWordForward(event)) {
-      event.preventDefault();
-      moveWordForward(selection, isHoldingShift, isRTL);
+      if (shouldOverrideBrowserDefault(selection, isHoldingShift, isRTL)) {
+        event.preventDefault();
+        moveWordForward(selection, isHoldingShift, isRTL);
+      }
     } else if (isDeleteWordBackward(event)) {
       event.preventDefault();
       deleteWordBackward(selection);

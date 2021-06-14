@@ -200,7 +200,7 @@ export function onKeyDownForPlainText(
         moveWordBackward(selection, isHoldingShift, isRTL);
       }
     } else if (isMoveWordForward(event)) {
-      if (shouldOverrideBrowserDefault(selection, isHoldingShift, !isRTL)) {
+      if (shouldOverrideBrowserDefault(selection, isHoldingShift, isRTL)) {
         event.preventDefault();
         moveWordForward(selection, isHoldingShift, isRTL);
       }

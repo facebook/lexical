@@ -16,7 +16,7 @@ export type {TextFormatType} from './OutlineTextNode';
 import {createEditor} from './OutlineEditor';
 import {createTextNode, isTextNode, TextNode} from './OutlineTextNode';
 import {isBlockNode, BlockNode} from './OutlineBlockNode';
-import {isRootNode, RootNode} from './OutlineRootNode';
+import {createRootNode, isRootNode, RootNode} from './OutlineRootNode';
 import {
   createLineBreakNode,
   isLineBreakNode,
@@ -27,6 +27,7 @@ import {OutlineNode} from './OutlineNode';
 export {
   createEditor,
   createLineBreakNode,
+  createRootNode,
   createTextNode,
   isTextNode,
   isBlockNode,

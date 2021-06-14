@@ -6,88 +6,56 @@
  *
  */
 
-import React from 'react';
-import ReactDOM from 'react-dom';
-import ReactTestUtils from 'react-dom/test-utils';
+import {IS_IMMUTABLE} from '../../OutlineConstants';
 
-import {createEditor, createLineBreakNode} from 'outline';
+import {createLineBreakNode, isLineBreakNode} from 'outline';
+import {initializeUnitTest} from '../utils';
 
 describe('OutlineLineBreakNode tests', () => {
-  let container = null;
-
-  beforeEach(async () => {
-    container = document.createElement('div');
-    document.body.appendChild(container);
-    await init();
-  });
-
-  afterEach(() => {
-    document.body.removeChild(container);
-    container = null;
-  });
-
-  async function update(fn) {
-    editor.update(fn);
-    return Promise.resolve().then();
-  }
-
-  function useOutlineEditor(editorElementRef) {
-    const editor = React.useMemo(() => createEditor(), []);
-
-    React.useEffect(() => {
-      const editorElement = editorElementRef.current;
-
-      editor.setEditorElement(editorElement);
-    }, [editorElementRef, editor]);
-
-    return editor;
-  }
-
-  let editor = null;
-
-  async function init() {
-    const ref = React.createRef();
-
-    function TestBase() {
-      editor = useOutlineEditor(ref);
-      editor.addErrorListener((error) => {
-        throw error;
+  initializeUnitTest((testEnv) => {
+    test('constructor', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const lineBreakNode = createLineBreakNode();
+        expect(lineBreakNode.getFlags()).toBe(IS_IMMUTABLE);
+        expect(lineBreakNode.getType()).toEqual('linebreak');
+        expect(lineBreakNode.getTextContent()).toEqual('\n');
       });
-      return <div ref={ref} contentEditable={true} />;
-    }
-
-    ReactTestUtils.act(() => {
-      ReactDOM.render(<TestBase />, container);
     });
-  }
 
-  test('constructor', async () => {
-    await update(() => {
-      const lineBreakNode = createLineBreakNode();
-      expect(lineBreakNode.getTextContent()).toBe('\n');
+    test('clone()', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const lineBreakNode = createLineBreakNode();
+        const lineBreakNodeClone = lineBreakNode.clone();
+        expect(lineBreakNodeClone).not.toBe(lineBreakNode);
+        expect(lineBreakNodeClone).toStrictEqual(lineBreakNode);
+      });
     });
-  });
 
-  test('clone()', async () => {
-    await update(() => {
-      const lineBreakNode = createLineBreakNode();
-      const lineBreakNodeClone = lineBreakNode.clone();
-      expect(lineBreakNodeClone).toStrictEqual(lineBreakNode);
+    test('createDOM()', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const lineBreakNode = createLineBreakNode();
+        const element = lineBreakNode.createDOM({});
+        expect(element.outerHTML).toBe('<br>');
+      });
     });
-  });
 
-  test('createDOM()', async () => {
-    await update(() => {
-      const lineBreakNode = createLineBreakNode();
-      const element = lineBreakNode.createDOM({});
-      expect(element.outerHTML).toBe('<br>');
+    test('updateDOM()', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const lineBreakNode = createLineBreakNode();
+        expect(lineBreakNode.updateDOM()).toBe(false);
+      });
     });
-  });
 
-  test('updateDOM()', async () => {
-    await update(() => {
-      const lineBreakNode = createLineBreakNode();
-      expect(lineBreakNode.updateDOM()).toBe(false);
+    test('isLineBreakNode()', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const lineBreakNode = createLineBreakNode();
+        expect(isLineBreakNode(lineBreakNode)).toBe(true);
+      });
     });
   });
 });

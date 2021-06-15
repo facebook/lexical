@@ -145,7 +145,7 @@ describe('OutlineNode tests', () => {
       expect(() => textNode.getParentBlockOrThrow()).toThrow();
     });
 
-    test.skip('OutlineNode.getParentBlockOrThrow()', async () => {
+    test('OutlineNode.getParentBlockOrThrow()', async () => {
       const {editor} = testEnv;
       await editor.getViewModel().read((view) => {
         const rootNode = view.getRoot();

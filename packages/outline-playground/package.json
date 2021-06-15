@@ -3,8 +3,8 @@
   "version": "0.0.15",
   "private": true,
   "dependencies": {
-    "react": "^17.0.1",
-    "react-dom": "^17.0.1",
+    "react": "^18.0.0-alpha-9212d994b",
+    "react-dom": "^18.0.0-alpha-9212d994b",
     "react-scripts": "4.0.0",
     "outline": "0.0.15",
     "outline-react": "0.0.15"

@@ -80,6 +80,10 @@ function useOutlineEditor(
     }
     editor.setEditorElement(editorElement);
     editor.setPlaceholder(placeholder);
+
+    return () => {
+      editor.setEditorElement(null);
+    };
   }, [editorElementRef, editor, placeholder]);
 
   return editor;

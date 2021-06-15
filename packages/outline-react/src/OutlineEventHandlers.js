@@ -673,6 +673,28 @@ function canRemoveText(anchorNode: TextNode, focusNode: TextNode): boolean {
   );
 }
 
+// Block double space auto-period insertion if we're
+// at the start of a an empty text node. This happens
+// because the BOM gets treated like "text".
+function isBadDoubleSpacePeriodReplacment(
+  event: InputEvent,
+  selection: Selection,
+): boolean {
+  const inputType = event.inputType;
+  if (
+    (inputType === 'insertText' || inputType === 'insertReplacementText') &&
+    selection.anchorOffset === 0 &&
+    selection.focusOffset === 1 &&
+    selection.anchorKey === selection.focusKey
+  ) {
+    const dataTransfer = event.dataTransfer;
+    const data =
+      dataTransfer != null ? dataTransfer.getData('text/plain') : event.data;
+    return data === '. ';
+  }
+  return false;
+}
+
 export function onNativeBeforeInputForPlainText(
   event: InputEvent,
   editor: OutlineEditor,
@@ -698,6 +720,11 @@ export function onNativeBeforeInputForPlainText(
 
     if (selection.isCaret()) {
       applyTargetRange(selection, event);
+    }
+    if (isBadDoubleSpacePeriodReplacment(event, selection)) {
+      event.preventDefault();
+      insertText(selection, '  ');
+      return;
     }
     const anchorNode = selection.getAnchorNode();
     const focusNode = selection.getAnchorNode();
@@ -837,6 +864,11 @@ export function onNativeBeforeInputForRichText(
 
     if (selection.isCaret()) {
       applyTargetRange(selection, event);
+    }
+    if (isBadDoubleSpacePeriodReplacment(event, selection)) {
+      event.preventDefault();
+      insertText(selection, '  ');
+      return;
     }
     const anchorNode = selection.getAnchorNode();
     const focusNode = selection.getAnchorNode();

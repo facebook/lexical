@@ -387,7 +387,7 @@ describe('OutlineNode tests', () => {
           textNode,
           barTextNode,
           bazTextNode,
-          paragraphNode,
+          paragraphNode.getLatest(),
           newParagraphNode,
           quxTextNode,
         ]);

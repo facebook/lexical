@@ -195,12 +195,18 @@ export function onKeyDownForPlainText(
       event.preventDefault();
       deleteForward(selection);
     } else if (isMoveWordBackward(event)) {
-      if (IS_SAFARI || shouldOverrideBrowserDefault(selection, isHoldingShift, !isRTL)) {
+      if (
+        IS_SAFARI ||
+        shouldOverrideBrowserDefault(selection, isHoldingShift, !isRTL)
+      ) {
         event.preventDefault();
         moveWordBackward(selection, isHoldingShift, isRTL);
       }
     } else if (isMoveWordForward(event)) {
-      if (IS_SAFARI || shouldOverrideBrowserDefault(selection, isHoldingShift, isRTL)) {
+      if (
+        IS_SAFARI ||
+        shouldOverrideBrowserDefault(selection, isHoldingShift, isRTL)
+      ) {
         event.preventDefault();
         moveWordForward(selection, isHoldingShift, isRTL);
       }
@@ -263,12 +269,18 @@ export function onKeyDownForRichText(
       event.preventDefault();
       deleteForward(selection);
     } else if (isMoveWordBackward(event)) {
-      if (IS_SAFARI || shouldOverrideBrowserDefault(selection, isHoldingShift, !isRTL)) {
+      if (
+        IS_SAFARI ||
+        shouldOverrideBrowserDefault(selection, isHoldingShift, !isRTL)
+      ) {
         event.preventDefault();
         moveWordBackward(selection, isHoldingShift, isRTL);
       }
     } else if (isMoveWordForward(event)) {
-      if (IS_SAFARI || shouldOverrideBrowserDefault(selection, isHoldingShift, isRTL)) {
+      if (
+        IS_SAFARI ||
+        shouldOverrideBrowserDefault(selection, isHoldingShift, isRTL)
+      ) {
         event.preventDefault();
         moveWordForward(selection, isHoldingShift, isRTL);
       }

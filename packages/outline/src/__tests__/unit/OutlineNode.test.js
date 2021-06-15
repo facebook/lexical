@@ -458,7 +458,7 @@ describe('OutlineNode tests', () => {
       expect(() => textNode.getLatest()).toThrow();
     });
 
-    test.skip('OutlineNode.getLatest()', async () => {
+    test('OutlineNode.getLatest(): garbage collected node', async () => {
       const {editor} = testEnv;
       let node;
       await editor.update(() => {
@@ -466,7 +466,7 @@ describe('OutlineNode tests', () => {
         node.getLatest();
       });
       await editor.update(() => {
-        node.getLatest();
+        expect(() => node.getLatest()).toThrow();
       });
     });
 

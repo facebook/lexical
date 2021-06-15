@@ -13,12 +13,12 @@ describe('Regression test #379', () => {
     it(`Is able to correctly handle backspace press at the line boundary`, async () => {
       const {page} = e2e;
       await page.focus('div.editor');
-      await page.keyboard.type('@Yoda');
-      await page.waitForSelector('#mentions-typeahead');
+      await page.keyboard.type('Luke');
+      await page.waitForSelector('#mentions-typeahead ul li');
       await page.keyboard.press('Enter');
       await assertHTML(
         page,
-        '<p class="editor-paragraph"><span></span><span class="mention" style="background-color: rgba(24, 119, 232, 0.2);">Yoda</span><span></span></p>\n',
+        '<p class="editor-paragraph"><span></span><span class="mention" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span></span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 2, 0],
@@ -31,12 +31,12 @@ describe('Regression test #379', () => {
       await page.keyboard.press('Backspace');
       await assertHTML(
         page,
-        '<p class="editor-paragraph"><span></span><span class="mention" style="background-color: rgba(24, 119, 232, 0.2);">Yoda</span><span></span></p>\n',
+        '<p class="editor-paragraph"><span></span><span class="mention" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span></span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 2, 0],
+        anchorPath: [0, 0, 0],
         anchorOffset: 0,
-        focusPath: [0, 2, 0],
+        focusPath: [0, 0, 0],
         focusOffset: 0,
       });
     });

@@ -783,41 +783,47 @@ export function insertText(selection: Selection, text: string): void {
       firstNode.select(startOffset, startOffset);
     }
 
-    if (!firstNodeParents.has(lastNode)) {
-      if (isTextNode(lastNode)) {
-        const lastNodeKey = lastNode.getKey();
-        if (
-          endOffset === lastNode.getTextContentSize() &&
-          lastNodeKey !== selection.anchorKey &&
-          lastNodeKey !== selection.focusKey
-        ) {
+    if (!firstNodeParents.has(lastNode) && isTextNode(lastNode)) {
+      const lastNodeKey = lastNode.getKey();
+      if (firstNode.getParent() !== lastNode.getParent()) {
+        // Move siblings after last node
+        const lastNodeSiblings = lastNode.getNextSiblings();
+        for (let i = 0; i < lastNodeSiblings.length; i++) {
+          const lastNodeSibling = lastNodeSiblings[i];
+          firstNode.insertAfter(lastNodeSibling);
+        }
+      }
+      if (
+        endOffset === lastNode.getTextContentSize() &&
+        lastNodeKey !== selection.anchorKey &&
+        lastNodeKey !== selection.focusKey
+      ) {
+        lastNode.remove();
+        lastNodeRemove = true;
+      } else {
+        if (isImmutableOrInertOrSegmented(lastNode)) {
           lastNodeRemove = true;
-          lastNode.remove();
+          const textNode = createTextNode('');
+          lastNode.replace(textNode);
+          lastNode = textNode;
         } else {
-          if (isImmutableOrInertOrSegmented(lastNode)) {
-            lastNodeRemove = true;
-            const textNode = createTextNode('');
-            lastNode.replace(textNode);
-            lastNode = textNode;
-          } else {
-            lastNode.spliceText(0, endOffset, '', false);
-          }
-          if (
-            firstNode.getTextContent() === '' &&
-            firstNode.getKey() !== selection.anchorKey
-          ) {
-            firstNodeRemove = true;
-            firstNode.remove();
-          } else {
-            let parent = lastNode.getParent();
-            while (parent !== null) {
-              if (parent.getChildrenSize() < 2) {
-                lastNodeParents.delete(parent);
-              }
-              parent = parent.getParent();
+          lastNode.spliceText(0, endOffset, '', false);
+        }
+        if (
+          firstNode.getTextContent() === '' &&
+          firstNode.getKey() !== selection.anchorKey
+        ) {
+          firstNodeRemove = true;
+          firstNode.remove();
+        } else {
+          let parent = lastNode.getParent();
+          while (parent !== null) {
+            if (parent.getChildrenSize() < 2) {
+              lastNodeParents.delete(parent);
             }
-            firstNode.insertAfter(lastNode);
+            parent = parent.getParent();
           }
+          firstNode.insertAfter(lastNode);
         }
       }
     }

@@ -18,7 +18,7 @@ describe('Regression test #379', () => {
       await page.keyboard.press('Enter');
       await assertHTML(
         page,
-        '<p class="editor-paragraph"><span>﻿</span><span class="mention" style="background-color: rgba(24, 119, 232, 0.2);">Yoda</span><span>﻿</span></p>\n',
+        '<p class="editor-paragraph"><span></span><span class="mention" style="background-color: rgba(24, 119, 232, 0.2);">Yoda</span><span></span></p>\n',
       );
       await assertSelection(page, {
         anchorPath: [0, 2, 0],
@@ -31,7 +31,7 @@ describe('Regression test #379', () => {
       await page.keyboard.press('Backspace');
       await assertHTML(
         page,
-        '<p class="editor-paragraph"><span>﻿</span><span class="mention" style="background-color: rgba(24, 119, 232, 0.2);">Yoda</span><span>﻿</span></p>\n',
+        '<p class="editor-paragraph"><span></span><span class="mention" style="background-color: rgba(24, 119, 232, 0.2);">Yoda</span><span></span></p>\n',
       );
       await assertSelection(page, {
         anchorPath: [0, 2, 0],

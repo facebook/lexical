@@ -6,6 +6,7 @@
  *
  */
 
+import {moveToEditorBeginning} from '../keyboardShortcuts';
 import {initializeE2E, assertHTML, assertSelection} from '../utils';
 
 describe('Regression test #379', () => {
@@ -26,7 +27,7 @@ describe('Regression test #379', () => {
         focusPath: [0, 2, 0],
         focusOffset: 0,
       });
-      await page.keyboard.press('Home');
+      await moveToEditorBeginning(page);
       await page.keyboard.press('Enter');
       await page.keyboard.press('Backspace');
       await assertHTML(

@@ -352,23 +352,45 @@ describe('OutlineNode tests', () => {
       expect(() => paragraphNode.isParentOf(textNode)).toThrow();
     });
 
-    test.skip('OutlineNode.getNodesBetween()', async () => {
+    test('OutlineNode.getNodesBetween()', async () => {
       const {editor} = testEnv;
       let barTextNode;
       let bazTextNode;
-      await editor.update(() => {
+      let newParagraphNode;
+      let quxTextNode;
+      await editor.update((view) => {
+        const rootNode = view.getRoot();
         barTextNode = new TextNode('bar');
         paragraphNode.append(barTextNode);
         bazTextNode = new TextNode('baz');
         paragraphNode.append(bazTextNode);
+        newParagraphNode = new ParagraphNode();
+        quxTextNode = new TextNode('qux');
+        newParagraphNode.append(quxTextNode);
+        rootNode.append(newParagraphNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span>foo</span><span>bar</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p><span>foo</span><span>bar</span><span>baz</span></p><p><span>qux</span></p></div>',
       );
       await editor.getViewModel().read(() => {
-        expect(textNode.getNodesBetween(textNode)).toEqual([]);
-        expect(textNode.getNodesBetween(barTextNode)).toEqual([]);
-        expect(textNode.getNodesBetween(bazTextNode)).toEqual([barTextNode]);
+        expect(textNode.getNodesBetween(textNode)).toEqual([textNode]);
+        expect(textNode.getNodesBetween(barTextNode)).toEqual([
+          textNode,
+          barTextNode,
+        ]);
+        expect(textNode.getNodesBetween(bazTextNode)).toEqual([
+          textNode,
+          barTextNode,
+          bazTextNode,
+        ]);
+        expect(textNode.getNodesBetween(quxTextNode)).toEqual([
+          textNode,
+          barTextNode,
+          bazTextNode,
+          paragraphNode.getLatest(),
+          newParagraphNode,
+          quxTextNode,
+        ]);
       });
       expect(() => textNode.getNodesBetween(bazTextNode)).toThrow();
     });
@@ -458,7 +480,7 @@ describe('OutlineNode tests', () => {
       expect(() => textNode.getLatest()).toThrow();
     });
 
-    test.skip('OutlineNode.getLatest()', async () => {
+    test('OutlineNode.getLatest(): garbage collected node', async () => {
       const {editor} = testEnv;
       let node;
       await editor.update(() => {
@@ -466,7 +488,7 @@ describe('OutlineNode tests', () => {
         node.getLatest();
       });
       await editor.update(() => {
-        node.getLatest();
+        expect(() => node.getLatest()).toThrow();
       });
     });
 

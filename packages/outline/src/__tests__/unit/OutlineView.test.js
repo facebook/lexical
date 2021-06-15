@@ -13,7 +13,6 @@ import {initializeUnitTest} from '../utils';
 
 describe('OutlineViewModel tests', () => {
   initializeUnitTest((testEnv) => {
-
     test('constructor', async () => {
       const root = createRootNode();
       const nodeMap = {root};
@@ -51,35 +50,29 @@ describe('OutlineViewModel tests', () => {
 
     test('getDirtyNodes()', async () => {
       const {editor} = testEnv;
-      expect(editor.getViewModel().getDirtyNodes()).toEqual(
-        [],
-      );
+      expect(editor.getViewModel().getDirtyNodes()).toEqual([]);
       await editor.update((view) => {
         const textNode = createTextNode('foo');
         markNodeAsDirty(textNode);
         view.getRoot().append(textNode);
       });
-      expect(editor.getViewModel().getDirtyNodes()).toEqual(
-        [
-          {
-            '__flags': 0,
-            '__key': '_1',
-            '__parent': 'root',
-            '__text': 'foo',
-            '__type': 'text',
-            '__url': null,
-          },
-          {
-            '__children': [
-              '_1',
-            ],
-            '__flags': 0,
-            '__key': 'root',
-            '__parent': null,
-            '__type': 'root',
-          },
-        ],
-      );
+      expect(editor.getViewModel().getDirtyNodes()).toEqual([
+        {
+          __flags: 0,
+          __key: '_1',
+          __parent: 'root',
+          __text: 'foo',
+          __type: 'text',
+          __url: null,
+        },
+        {
+          __children: ['_1'],
+          __flags: 0,
+          __key: 'root',
+          __parent: null,
+          __type: 'root',
+        },
+      ]);
     });
 
     test('read()', async () => {
@@ -201,6 +194,5 @@ describe('OutlineViewModel tests', () => {
         },
       });
     });
-
   });
 });

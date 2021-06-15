@@ -20,6 +20,7 @@ import {
   getDOMTextNodeFromElement,
 } from './OutlineUtils';
 import {IS_INERT, IS_RTL, IS_LTR, IS_DIRTY_DECORATOR} from './OutlineConstants';
+import {isImmutableOrInertOrSegmented} from 'outline-react/src/OutlineReactUtils';
 
 let subTreeTextContent = '';
 let editorTextContent = '';
@@ -609,23 +610,31 @@ function reconcileSelection(
   editor: OutlineEditor,
 ): void {
   const domSelection = window.getSelection();
-  const anchorNode = domSelection.anchorNode;
-  const focusNode = domSelection.focusNode;
+  const anchorDOMNode = domSelection.anchorNode;
+  const focusDOMNode = domSelection.focusNode;
   const anchorOffset = domSelection.anchorOffset;
   const focusOffset = domSelection.focusOffset;
 
   if (nextSelection === null) {
-    if (isSelectionWithinEditor(editor, anchorNode, focusNode)) {
+    if (isSelectionWithinEditor(editor, anchorDOMNode, focusDOMNode)) {
       domSelection.removeAllRanges();
     }
     return;
   }
   const anchorKey = nextSelection.anchorKey;
   const focusKey = nextSelection.focusKey;
+  const anchorNode = nextSelection.getAnchorNode();
+  const focusNode = nextSelection.getFocusNode();
   const anchorDOM = getElementByKeyOrThrow(editor, anchorKey);
   const focusDOM = getElementByKeyOrThrow(editor, focusKey);
-  const nextAnchorOffset = nextSelection.anchorOffset + 1;
-  const nextFocusOffset = nextSelection.focusOffset + 1;
+  const nextSelectionAnchorOffset = nextSelection.anchorOffset;
+  const nextSelectionFocusOffset = nextSelection.focusOffset;
+  const nextAnchorOffset = isImmutableOrInertOrSegmented(anchorNode)
+    ? nextSelectionAnchorOffset
+    : nextSelectionAnchorOffset + 1;
+  const nextFocusOffset = isImmutableOrInertOrSegmented(focusNode)
+    ? nextSelectionFocusOffset
+    : nextSelectionFocusOffset + 1;
 
   // Get the underlying DOM text nodes from the representative
   // Outline text nodes (we use elements for text nodes).
@@ -637,8 +646,8 @@ function reconcileSelection(
   if (
     anchorOffset === nextAnchorOffset &&
     focusOffset === nextFocusOffset &&
-    anchorNode === anchorDOMTarget &&
-    focusNode === focusDOMTarget
+    anchorDOMNode === anchorDOMTarget &&
+    focusDOMNode === focusDOMTarget
   ) {
     return;
   }

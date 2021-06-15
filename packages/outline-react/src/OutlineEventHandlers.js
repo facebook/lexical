@@ -620,8 +620,6 @@ export function onNativeInput(
       }
 
       if (handleBlockTextInputOnNode(anchorNode, view, editor)) {
-        const anchorOffset = selection.anchorOffset - 1;
-        selection.setRange(anchorKey, anchorOffset, anchorKey, anchorOffset);
         return;
       }
 
@@ -977,9 +975,6 @@ export function onPolyfilledBeforeInput(
         );
       }
       if (handleBlockTextInputOnNode(selection.getAnchorNode(), view, editor)) {
-        const anchorOffset = selection.anchorOffset - 1;
-        const anchorKey = selection.anchorKey;
-        selection.setRange(anchorKey, anchorOffset, anchorKey, anchorOffset);
         return;
       }
       insertText(selection, data);

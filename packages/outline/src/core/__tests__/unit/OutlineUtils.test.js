@@ -9,7 +9,6 @@ import {createTextNode} from 'outline';
 
 import {
   emptyFunction,
-  invariant,
   resetRandomKey,
   generateRandomKey,
   getAdjustedSelectionOffset,

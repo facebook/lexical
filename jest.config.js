@@ -40,11 +40,14 @@ module.exports = {
           '<rootDir>/packages/outline/src/helpers/OutlineSelectionHelpers.js',
         '^outline/TextHelpers$':
           '<rootDir>/packages/outline/src/helpers/OutlineTextHelpers.js',
+        '^outline/KeyHelpers$':
+          '<rootDir>/packages/outline/src/helpers/OutlineKeyHelpers.js',
         '^shared/getDOMTextNodeFromElement$':
           '<rootDir>/packages/shared/src/getDOMTextNodeFromElement.js',
         '^shared/isImmutableOrInertOrSegmented$':
           '<rootDir>/packages/shared/src/isImmutableOrInertOrSegmented.js',
         '^shared/invariant$': '<rootDir>/packages/shared/src/invariant.js',
+        '^shared/environment$': '<rootDir>/packages/shared/src/environment.js',
         '^./dist/(.+)': './src/$1',
       },
       globals: {

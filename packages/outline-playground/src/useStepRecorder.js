@@ -10,107 +10,20 @@ import {createTextNode} from 'outline';
 import {createParagraphNode} from 'outline/ParagraphNode';
 import useEvent from './useEvent';
 import React, {useState, useCallback, useRef, useEffect} from 'react';
-
-// stolen from Keyboard.js
-
-const CAN_USE_DOM: boolean =
-  typeof window !== 'undefined' &&
-  typeof window.document !== 'undefined' &&
-  typeof window.document.createElement !== 'undefined';
-
-const IS_APPLE: boolean =
-  CAN_USE_DOM && /Mac|iPod|iPhone|iPad/.test(navigator.platform);
-
-function isBackspace(event: KeyboardEvent): boolean {
-  return event.keyCode === 8;
-}
-
-function isDelete(event: KeyboardEvent): boolean {
-  return event.keyCode === 46;
-}
-
-function isDeleteBackward(event: KeyboardEvent): boolean {
-  const {keyCode, altKey, metaKey, ctrlKey} = event;
-  if (IS_APPLE) {
-    if (altKey || metaKey) {
-      return false;
-    }
-    return isBackspace(event) || (keyCode === 72 && ctrlKey);
-  }
-  if (ctrlKey || altKey || metaKey) {
-    return false;
-  }
-  return isBackspace(event);
-}
-
-function isDeleteForward(event: KeyboardEvent): boolean {
-  const {keyCode, shiftKey, altKey, metaKey, ctrlKey} = event;
-  if (IS_APPLE) {
-    if (shiftKey || altKey || metaKey) {
-      return false;
-    }
-    return isDelete(event) || (keyCode === 68 && ctrlKey);
-  }
-  if (ctrlKey || altKey || metaKey) {
-    return false;
-  }
-  return isDelete(event);
-}
-
-function isDeleteWordBackward(event: KeyboardEvent): boolean {
-  return isBackspace(event) && (IS_APPLE ? event.altKey : event.ctrlKey);
-}
-
-function isDeleteWordForward(event: KeyboardEvent): boolean {
-  return isDelete(event) && (IS_APPLE ? event.altKey : event.ctrlKey);
-}
-
-function isDeleteLineForward(event: KeyboardEvent): boolean {
-  return IS_APPLE && event.metaKey && isDelete(event);
-}
-
-function isDeleteLineBackward(event: KeyboardEvent): boolean {
-  return IS_APPLE && event.metaKey && isBackspace(event);
-}
-
-function isEnter(event: KeyboardEvent): boolean {
-  return event.key === 'Enter' || event.keyCode === 13;
-}
-
-function isParagraph(event: KeyboardEvent): boolean {
-  return isEnter(event) && !event.shiftKey;
-}
-
-function isLineBreak(event: KeyboardEvent): boolean {
-  return isEnter(event) && event.shiftKey;
-}
-
-function controlOrMeta(event: KeyboardEvent): boolean {
-  if (IS_APPLE) {
-    return event.metaKey;
-  }
-  return event.ctrlKey;
-}
-
-function isUndo(event: KeyboardEvent): boolean {
-  return event.keyCode === 90 && !event.shiftKey && controlOrMeta(event);
-}
-
-function isRedo(event: KeyboardEvent): boolean {
-  const {keyCode, shiftKey, ctrlKey} = event;
-  if (IS_APPLE) {
-    return keyCode === 90 && event.metaKey && shiftKey;
-  }
-  return (keyCode === 89 && ctrlKey) || (keyCode === 90 && ctrlKey && shiftKey);
-}
-
-function isBold(event: KeyboardEvent): boolean {
-  return event.keyCode === 66 && controlOrMeta(event);
-}
-
-function isItalic(event: KeyboardEvent): boolean {
-  return event.keyCode === 73 && controlOrMeta(event);
-}
+import {
+  isDeleteBackward,
+  isDeleteForward,
+  isDeleteLineBackward,
+  isDeleteLineForward,
+  isDeleteWordBackward,
+  isDeleteWordForward,
+  isLineBreak,
+  isParagraph,
+  isBold,
+  isItalic,
+  isUndo,
+  isRedo,
+} from 'outline/KeyHelpers';
 
 // stolen from OutlineSelection-test
 function sanitizeSelection(selection) {

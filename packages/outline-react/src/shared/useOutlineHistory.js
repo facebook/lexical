@@ -10,7 +10,7 @@
 import type {OutlineEditor, ViewModel} from 'outline';
 
 import {isTextNode} from 'outline';
-import {isRedo, isUndo} from './Keyboard';
+import {isRedo, isUndo} from 'outline/KeyHelpers';
 import {useEffect, useMemo} from 'react';
 import {viewModelsWithoutHistory} from 'outline/HistoryHelpers';
 

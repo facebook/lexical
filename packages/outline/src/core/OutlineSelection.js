@@ -15,11 +15,11 @@ import {getNodeKeyFromDOM} from './OutlineReconciler';
 import {getNodeByKey} from './OutlineNode';
 import {isTextNode, isBlockNode, isLineBreakNode, TextNode} from '.';
 import {
-  invariant,
   isImmutableOrInertOrSegmented,
   isSelectionWithinEditor,
 } from './OutlineUtils';
 import {OutlineEditor} from './OutlineEditor';
+import invariant from 'shared/invariant';
 
 export class Selection {
   anchorKey: string;

@@ -21,7 +21,7 @@ import {CodeNode} from 'outline/CodeNode';
 import {ParagraphNode} from 'outline/ParagraphNode';
 import {ListItemNode} from 'outline/ListItemNode';
 import {createParagraphNode} from 'outline/ParagraphNode';
-import {CAN_USE_BEFORE_INPUT} from './shared/Environment';
+import {CAN_USE_BEFORE_INPUT} from 'shared/environment';
 import {
   onSelectionChange,
   onKeyDownForRichText,

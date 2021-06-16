@@ -28,7 +28,7 @@ import {
   markNodeAsDirty,
 } from './OutlineNode';
 import {isBlockNode, isTextNode, isLineBreakNode} from '.';
-import {invariant} from './OutlineUtils';
+import invariant from 'shared/invariant';
 
 export type View = {
   clearSelection(): void,

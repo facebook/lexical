@@ -21,7 +21,7 @@ import {
   CAN_USE_BEFORE_INPUT,
   IS_FIREFOX,
   IS_SAFARI,
-} from '../../../shared/src/environment';
+} from 'shared/src/environment';
 import {
   isDeleteBackward,
   isDeleteForward,

@@ -47,6 +47,7 @@ module.exports = {
         '^shared/isImmutableOrInertOrSegmented$':
           '<rootDir>/packages/shared/src/isImmutableOrInertOrSegmented.js',
         '^shared/invariant$': '<rootDir>/packages/shared/src/invariant.js',
+        '^shared/environment$': '<rootDir>/packages/shared/src/environment.js',
         '^./dist/(.+)': './src/$1',
       },
       globals: {

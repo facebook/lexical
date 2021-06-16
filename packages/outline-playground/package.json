@@ -7,12 +7,12 @@
     "react-dom": "^18.0.0-alpha-9212d994b",
     "react-scripts": "4.0.0",
     "outline": "0.0.15",
-    "outline-react": "0.0.15"
+    "outline-react": "0.0.15",
+    "@craco/craco": "6.1.2"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "eject": "react-scripts eject"
+    "start": "craco start",
+    "build": "craco build"
   },
   "browserslist": {
     "production": [

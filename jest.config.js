@@ -8,7 +8,6 @@ module.exports = {
   collectCoverage: true,
   collectCoverageFrom: [
     '<rootDir>/packages/outline/**/src/*.js',
-    '<rootDir>/packages/outline-extensions/**/src/*.js',
     '<rootDir>/packages/outline-react/**/src/*.js',
   ],
   coverageReporters: ['json', 'text'],
@@ -18,9 +17,27 @@ module.exports = {
       displayName: 'unit',
       testMatch: ['**/__tests__/unit/**/*.test.js'],
       moduleNameMapper: {
-        '^outline$': '<rootDir>/packages/outline/src/index.js',
-        '^outline-extensions/(.+)':
-          '<rootDir>/packages/outline-extensions/src/Outline$1.js',
+        '^outline$': '<rootDir>/packages/outline/src/core/index.js',
+        '^outline/ParagraphNode$':
+          '<rootDir>/packages/outline/src/extensions/OutlineParagraphNode.js',
+        '^outline/HeadingNode$':
+          '<rootDir>/packages/outline/src/extensions/OutlineHeadingNode.js',
+        '^outline/ListNode$':
+          '<rootDir>/packages/outline/src/extensions/OutlineListNode.js',
+        '^outline/ListItemNode$':
+          '<rootDir>/packages/outline/src/extensions/OutlineListItemNode.js',
+        '^outline/QuoteNode$':
+          '<rootDir>/packages/outline/src/extensions/OutlineQuoteNode.js',
+        '^outline/CodeNode$':
+          '<rootDir>/packages/outline/src/extensions/OutlineCodeNode.js',
+        '^outline/ImageNode$':
+          '<rootDir>/packages/outline/src/extensions/OutlineImageNode.js',
+        '^outline-react/useOutlineRichText$':
+          '<rootDir>/packages/outline-react/src/useOutlineRichText.js',
+        '^outline-react/OutlineHistory$':
+          '<rootDir>/packages/outline-react/src/OutlineHistory.js',
+        '^outline-react/OutlineSelectionHelpers$':
+          '<rootDir>/packages/outline-react/src/OutlineSelectionHelpers.js',
         '^./dist/(.+)': './src/$1',
       },
       globals: {

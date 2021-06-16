@@ -14,13 +14,13 @@ import type {InputEvents} from 'outline-react/useOutlineEditorEvents';
 import {useEffect, useMemo} from 'react';
 import {createTextNode} from 'outline';
 import useOutlineEditorEvents from './useOutlineEditorEvents';
-import {HeadingNode} from 'outline-extensions/HeadingNode';
-import {ListNode} from 'outline-extensions/ListNode';
-import {QuoteNode} from 'outline-extensions/QuoteNode';
-import {CodeNode} from 'outline-extensions/CodeNode';
-import {ParagraphNode} from 'outline-extensions/ParagraphNode';
-import {ListItemNode} from 'outline-extensions/ListItemNode';
-import {createParagraphNode} from 'outline-extensions/ParagraphNode';
+import {HeadingNode} from 'outline/HeadingNode';
+import {ListNode} from 'outline/ListNode';
+import {QuoteNode} from 'outline/QuoteNode';
+import {CodeNode} from 'outline/CodeNode';
+import {ParagraphNode} from 'outline/ParagraphNode';
+import {ListItemNode} from 'outline/ListItemNode';
+import {createParagraphNode} from 'outline/ParagraphNode';
 import {CAN_USE_BEFORE_INPUT} from './OutlineEnv';
 import {
   onSelectionChange,

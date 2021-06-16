@@ -6,7 +6,7 @@
  *
  */
 import {createRootNode, createTextNode} from 'outline';
-import {createParagraphNode} from 'outline-extensions/ParagraphNode';
+import {createParagraphNode} from 'outline/ParagraphNode';
 import {ViewModel} from '../../OutlineView';
 import {markNodeAsDirty} from '../../OutlineNode';
 import {initializeUnitTest} from '../utils';

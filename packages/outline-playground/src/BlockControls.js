@@ -1,14 +1,14 @@
 // @flow strict-local
 
 import type {OutlineEditor, ViewModel} from 'outline';
-import {isHeadingNode} from 'outline-extensions/HeadingNode';
-import {isListNode} from 'outline-extensions/ListNode';
-import {createParagraphNode} from 'outline-extensions/ParagraphNode';
-import {createHeadingNode} from 'outline-extensions/HeadingNode';
-import {createListNode} from 'outline-extensions/ListNode';
-import {createListItemNode} from 'outline-extensions/ListItemNode';
-import {createQuoteNode} from 'outline-extensions/QuoteNode';
-import {createCodeNode} from 'outline-extensions/CodeNode';
+import {isHeadingNode} from 'outline/HeadingNode';
+import {isListNode} from 'outline/ListNode';
+import {createParagraphNode} from 'outline/ParagraphNode';
+import {createHeadingNode} from 'outline/HeadingNode';
+import {createListNode} from 'outline/ListNode';
+import {createListItemNode} from 'outline/ListItemNode';
+import {createQuoteNode} from 'outline/QuoteNode';
+import {createCodeNode} from 'outline/CodeNode';
 
 import * as React from 'react';
 import {useEffect, useRef, useState} from 'react';

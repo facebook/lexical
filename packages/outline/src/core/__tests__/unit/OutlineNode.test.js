@@ -6,7 +6,7 @@
  *
  */
 import {TextNode} from 'outline';
-import {ParagraphNode} from 'outline-extensions/ParagraphNode';
+import {ParagraphNode} from 'outline/ParagraphNode';
 import {getNodeByKey, OutlineNode} from '../../OutlineNode';
 
 import {

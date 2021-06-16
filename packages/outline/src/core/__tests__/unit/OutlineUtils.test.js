@@ -55,11 +55,6 @@ describe('OutlineUtils tests', () => {
       expect(emptyFunction()).toBe(undefined);
     });
 
-    test('invariant()', () => {
-      expect(invariant).toBeInstanceOf(Function);
-      expect(() => invariant()).toThrow();
-    });
-
     test('resetRandomKey()', () => {
       resetRandomKey();
       const key1 = generateRandomKey();

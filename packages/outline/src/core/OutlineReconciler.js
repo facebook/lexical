@@ -15,12 +15,12 @@ import type {Node as ReactNode} from 'react';
 
 import {isTextNode, isBlockNode} from '.';
 import {
-  invariant,
   isSelectionWithinEditor,
   getDOMTextNodeFromElement,
   isImmutableOrInertOrSegmented,
 } from './OutlineUtils';
 import {IS_INERT, IS_RTL, IS_LTR, IS_DIRTY_DECORATOR} from './OutlineConstants';
+import invariant from 'shared/invariant';
 
 let subTreeTextContent = '';
 let editorTextContent = '';

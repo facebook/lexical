@@ -20,7 +20,8 @@ import {
   BlockNode,
 } from '.';
 import {getActiveViewModel, errorOnReadOnly} from './OutlineView';
-import {generateRandomKey, getTextDirection, invariant} from './OutlineUtils';
+import {generateRandomKey, getTextDirection} from './OutlineUtils';
+import invariant from 'shared/invariant';
 import {
   IS_DIRECTIONLESS,
   IS_IMMUTABLE,

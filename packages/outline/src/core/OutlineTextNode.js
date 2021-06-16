@@ -16,10 +16,10 @@ import {getWritableNode} from './OutlineNode';
 import {getSelection, makeSelection} from './OutlineSelection';
 import {
   getTextDirection,
-  invariant,
   isArray,
   isImmutableOrInertOrSegmented,
 } from './OutlineUtils';
+import invariant from 'shared/invariant';
 import {errorOnReadOnly} from './OutlineView';
 import {
   IS_CODE,

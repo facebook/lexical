@@ -17,11 +17,7 @@ import type {
   View,
 } from 'outline';
 
-import {
-  CAN_USE_BEFORE_INPUT,
-  IS_FIREFOX,
-  IS_SAFARI,
-} from 'shared/environment';
+import {CAN_USE_BEFORE_INPUT, IS_FIREFOX, IS_SAFARI} from 'shared/environment';
 import {
   isDeleteBackward,
   isDeleteForward,

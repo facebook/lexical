@@ -6,7 +6,7 @@ import {isTextNode} from 'outline';
 import React, {useCallback, useEffect, useRef, useState, useMemo} from 'react';
 // $FlowFixMe
 import {unstable_batchedUpdates, createPortal} from 'react-dom';
-import {formatText} from 'outline-react/OutlineSelectionHelpers';
+import {formatText} from 'outline/SelectionHelpers';
 
 function positionToolbar(toolbar, rect) {
   if (rect === null) {

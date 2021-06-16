@@ -15,9 +15,6 @@ const CAN_USE_DOM: boolean =
 const documentMode =
   CAN_USE_DOM && 'documentMode' in document ? document.documentMode : null;
 
-export const IS_MAC: boolean =
-  CAN_USE_DOM && /Mac|iPod|iPhone|iPad/.test(navigator.platform);
-
 export const IS_WINDOWS: boolean =
   CAN_USE_DOM && /Win/.test(navigator.platform);
 
@@ -27,7 +24,7 @@ export const IS_IOS: boolean =
   !window.MSStream;
 
 export const IS_APPLE: boolean =
-  CAN_USE_DOM && /Mac OS X/.test(navigator.userAgent);
+  CAN_USE_DOM && /Mac|iPod|iPhone|iPad/.test(navigator.platform);
 
 export const IS_FIREFOX: boolean =
   CAN_USE_DOM && /^(?!.*Seamonkey)(?=.*Firefox).*/i.test(navigator.userAgent);

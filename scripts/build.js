@@ -10,6 +10,7 @@ const nodeResolve = require('@rollup/plugin-node-resolve').default;
 const commonjs = require('@rollup/plugin-commonjs');
 const replace = require('@rollup/plugin-replace');
 const extractErrorCodes = require('./error-codes/extract-errors');
+const alias = require('@rollup/plugin-alias');
 
 const license = ` * Copyright (c) Facebook, Inc. and its affiliates.
  *
@@ -54,10 +55,24 @@ const outlineExtensionsExternals = outlineExtensions.map((node) => {
   return external;
 });
 
+const outlineShared = fs
+  .readdirSync(path.resolve('./packages/shared/src'))
+  .map((str) => path.basename(str, '.js'));
+
+const outlineHelpers = fs
+  .readdirSync(path.resolve('./packages/outline/src/helpers'))
+  .map((str) => path.basename(str, '.js'))
+  .filter((str) => !str.includes('__tests__') && !str.includes('test-utils'));
+
 const outlineReactModules = fs
   .readdirSync(path.resolve('./packages/outline-react/src'))
   .map((str) => path.basename(str, '.js'))
-  .filter((str) => !str.includes('__tests__') && !str.includes('test-utils'));
+  .filter(
+    (str) =>
+      !str.includes('__tests__') &&
+      !str.includes('shared') &&
+      !str.includes('test-utils'),
+  );
 const outlineReactModuleExternals = outlineReactModules.map((module) => {
   const external = `outline-react/${module}`;
   wwwMappings[external] = module;
@@ -68,6 +83,8 @@ const externals = [
   'outline',
   'Outline',
   'outline-react',
+  'outline/HistoryHelpers',
+  'Outline/HistoryHelpers',
   'react-dom',
   'react',
   ...outlineExtensionsExternals,
@@ -105,6 +122,30 @@ async function build(name, inputFile, outputFile) {
       }
     },
     plugins: [
+      alias({
+        entries: [
+          {find: 'shared', replacement: path.resolve('packages/shared/dist')},
+          // We inline both these helpers to improve the bundle size of the outline-react modules
+          {
+            find: isWWW
+              ? 'Outline/SelectionHelpers'
+              : 'outline/SelectionHelpers',
+            replacement: path.resolve(
+              isWWW
+                ? 'packages/outline/dist/OutlineSelectionHelpers.dev'
+                : 'packages/outline/dist/OutlineSelectionHelpers',
+            ),
+          },
+          {
+            find: isWWW ? 'Outline/TextHelpers' : 'outline/TextHelpers',
+            replacement: path.resolve(
+              isWWW
+                ? 'packages/outline/dist/OutlineTextHelpers.dev'
+                : 'packages/outline/dist/OutlineTextHelpers',
+            ),
+          },
+        ],
+      }),
       // Extract error codes from invariant() messages into a file.
       {
         transform(source) {
@@ -204,11 +245,27 @@ function getFileName(fileName) {
   return `${fileName}.js`;
 }
 
-outlineExtensions.forEach((outlineNode) => {
+outlineExtensions.forEach((module) => {
   build(
-    `Outline Extensions - ${outlineNode}`,
-    path.resolve(`./packages/outline/src/extensions/${outlineNode}.js`),
-    path.resolve(`./packages/outline/dist/${getFileName(outlineNode)}`),
+    `Outline Extensions - ${module}`,
+    path.resolve(`./packages/outline/src/extensions/${module}.js`),
+    path.resolve(`./packages/outline/dist/${getFileName(module)}`),
+  );
+});
+
+outlineHelpers.forEach((module) => {
+  build(
+    `Outline Helpers - ${module}`,
+    path.resolve(`./packages/outline/src/helpers/${module}.js`),
+    path.resolve(`./packages/outline/dist/${getFileName(module)}`),
+  );
+});
+
+outlineShared.forEach((module) => {
+  build(
+    `Outline Shared - ${module}`,
+    path.resolve(`./packages/shared/src/${module}.js`),
+    path.resolve(`./packages/shared/dist/${getFileName(module)}`),
   );
 });
 

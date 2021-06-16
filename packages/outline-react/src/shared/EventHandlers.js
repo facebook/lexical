@@ -17,7 +17,7 @@ import type {
   View,
 } from 'outline';
 
-import {CAN_USE_BEFORE_INPUT, IS_FIREFOX, IS_SAFARI} from './OutlineEnv';
+import {CAN_USE_BEFORE_INPUT, IS_FIREFOX, IS_SAFARI} from './Environment';
 import {
   isDeleteBackward,
   isDeleteForward,
@@ -36,11 +36,9 @@ import {
   isMoveBackward,
   isMoveForward,
   isMoveWordForward,
-} from './OutlineKeyHelpers';
-import {
-  getDOMTextNodeFromElement,
-  isImmutableOrInertOrSegmented,
-} from './OutlineReactUtils';
+} from './Keyboard';
+import getDOMTextNodeFromElement from 'shared/getDOMTextNodeFromElement';
+import isImmutableOrInertOrSegmented from 'shared/isImmutableOrInertOrSegmented';
 import {
   deleteBackward,
   deleteForward,
@@ -61,7 +59,7 @@ import {
   moveBackward,
   moveForward,
   moveWordForward,
-} from './OutlineSelectionHelpers';
+} from 'outline/SelectionHelpers';
 
 // Safari triggers composition before keydown, meaning
 // we need to account for this when handling key events.

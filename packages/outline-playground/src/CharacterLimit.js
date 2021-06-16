@@ -6,8 +6,8 @@ import * as React from 'react';
 
 import {isBlockNode, isTextNode} from 'outline';
 import {useCallback, useEffect, useRef, useState} from 'react';
-import {findTextIntersectionFromCharacters} from 'outline-react/OutlineTextHelpers';
-import {updateWithoutHistory} from 'outline-react/OutlineHistory';
+import {findTextIntersectionFromCharacters} from 'outline/TextHelpers';
+import {updateWithoutHistory} from 'outline/HistoryHelpers';
 
 const CHARACTER_LIMIT = 30;
 

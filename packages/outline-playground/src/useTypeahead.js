@@ -4,7 +4,7 @@ import type {OutlineEditor, View, NodeKey, EditorThemeClasses} from 'outline';
 
 import {isTextNode, isBlockNode, TextNode} from 'outline';
 import {useEffect, useRef, useState, useCallback, useMemo} from 'react';
-import {updateWithoutHistory} from 'outline-react/OutlineHistory';
+import {updateWithoutHistory} from 'outline/HistoryHelpers';
 
 export default function useTypeahead(editor: OutlineEditor): void {
   const typeaheadNodeKey = useRef<NodeKey | null>(null);

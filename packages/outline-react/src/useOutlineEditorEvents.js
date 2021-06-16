@@ -8,10 +8,7 @@
  */
 
 import type {OutlineEditor} from 'outline';
-import type {
-  EventHandler,
-  EventHandlerState,
-} from 'outline-react/OutlineEventHandlers';
+import type {EventHandler, EventHandlerState} from './shared/EventHandlers';
 
 import {useEffect} from 'react';
 

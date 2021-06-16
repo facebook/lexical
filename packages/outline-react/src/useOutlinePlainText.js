@@ -8,14 +8,14 @@
  */
 
 import type {OutlineEditor} from 'outline';
-import type {EventHandlerState} from 'outline-react/OutlineEventHandlers';
+import type {EventHandlerState} from './shared/EventHandlers';
 import type {InputEvents} from 'outline-react/useOutlineEditorEvents';
 
 import {useEffect, useMemo} from 'react';
 import {createTextNode} from 'outline';
 import useOutlineEditorEvents from './useOutlineEditorEvents';
 import {createParagraphNode, ParagraphNode} from 'outline/ParagraphNode';
-import {CAN_USE_BEFORE_INPUT} from './OutlineEnv';
+import {CAN_USE_BEFORE_INPUT} from './shared/Environment';
 import {
   onSelectionChange,
   onKeyDownForPlainText,
@@ -31,9 +31,9 @@ import {
   onDragStartPolyfill,
   onPolyfilledBeforeInput,
   onNativeInput,
-} from './OutlineEventHandlers';
-import useOutlineDragonSupport from './useOutlineDragonSupport';
-import useOutlineHistory from './useOutlineHistory';
+} from './shared/EventHandlers';
+import useOutlineDragonSupport from './shared/useOutlineDragonSupport';
+import useOutlineHistory from './shared/useOutlineHistory';
 
 function initEditor(editor: OutlineEditor): void {
   editor.update((view) => {

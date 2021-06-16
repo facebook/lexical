@@ -22,6 +22,7 @@
     "directory": "packages/shared"
   },
   "exports": {
+    "./environment": "./dist/environment.js",
     "./getDOMTextNodeFromElement": "./dist/getDOMTextNodeFromElement.js",
     "./isImmutableOrInertOrSegmented": "./dist/isImmutableOrInertOrSegmented.js",
     "./invariant": "./dist/invariant.js"

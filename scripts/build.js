@@ -137,6 +137,14 @@ async function build(name, inputFile, outputFile) {
             ),
           },
           {
+            find: isWWW ? 'Outline/KeyHelpers' : 'outline/KeyHelpers',
+            replacement: path.resolve(
+              isWWW
+                ? 'packages/outline/dist/OutlineKeyHelpers.dev'
+                : 'packages/outline/dist/OutlineKeyHelpers',
+            ),
+          },
+          {
             find: isWWW ? 'Outline/TextHelpers' : 'outline/TextHelpers',
             replacement: path.resolve(
               isWWW

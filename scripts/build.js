@@ -84,6 +84,7 @@ const externals = [
   'Outline',
   'outline-react',
   'outline/HistoryHelpers',
+  'Outline/HistoryHelpers',
   'react-dom',
   'react',
   ...outlineExtensionsExternals,
@@ -126,15 +127,21 @@ async function build(name, inputFile, outputFile) {
           {find: 'shared', replacement: path.resolve('packages/shared/dist')},
           // We inline both these helpers to improve the bundle size of the outline-react modules
           {
-            find: 'outline/SelectionHelpers',
+            find: isWWW
+              ? 'Outline/SelectionHelpers'
+              : 'outline/SelectionHelpers',
             replacement: path.resolve(
-              'packages/outline/dist/OutlineSelectionHelpers',
+              isWWW
+                ? 'packages/outline/dist/OutlineSelectionHelpers.dev'
+                : 'packages/outline/dist/OutlineSelectionHelpers',
             ),
           },
           {
-            find: 'outline/TextHelpers',
+            find: isWWW ? 'Outline/TextHelpers' : 'outline/TextHelpers',
             replacement: path.resolve(
-              'packages/outline/dist/OutlineTextHelpers',
+              isWWW
+                ? 'packages/outline/dist/OutlineTextHelpers.dev'
+                : 'packages/outline/dist/OutlineTextHelpers',
             ),
           },
         ],

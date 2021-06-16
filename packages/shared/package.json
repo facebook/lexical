@@ -1,0 +1,29 @@
+{
+  "name": "shared",
+  "private": "true",
+  "author": {
+    "name": "Dominic Gannaway",
+    "email": "dg@domgan.com"
+  },
+  "keywords": [
+    "react",
+    "outline",
+    "editor",
+    "rich-text"
+  ],
+  "license": "MIT",
+  "version": "0.0.15",
+  "dependencies": {
+    "outline": "0.0.15"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/facebookexternal/Outline",
+    "directory": "packages/shared"
+  },
+  "exports": {
+    "./getDOMTextNodeFromElement": "./dist/getDOMTextNodeFromElement.js",
+    "./isImmutableOrInertOrSegmented": "./dist/isImmutableOrInertOrSegmented.js",
+    "./invariant": "./dist/invariant.js"
+  }
+}

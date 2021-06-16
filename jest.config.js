@@ -34,10 +34,17 @@ module.exports = {
           '<rootDir>/packages/outline/src/extensions/OutlineImageNode.js',
         '^outline-react/useOutlineRichText$':
           '<rootDir>/packages/outline-react/src/useOutlineRichText.js',
-        '^outline-react/OutlineHistory$':
-          '<rootDir>/packages/outline-react/src/OutlineHistory.js',
-        '^outline-react/OutlineSelectionHelpers$':
-          '<rootDir>/packages/outline-react/src/OutlineSelectionHelpers.js',
+        '^outline/HistoryHelpers$':
+          '<rootDir>/packages/outline/src/helpers/OutlineHistoryHelpers.js',
+        '^outline/SelectionHelpers$':
+          '<rootDir>/packages/outline/src/helpers/OutlineSelectionHelpers.js',
+        '^outline/TextHelpers$':
+          '<rootDir>/packages/outline/src/helpers/OutlineTextHelpers.js',
+        '^shared/getDOMTextNodeFromElement$':
+          '<rootDir>/packages/shared/src/getDOMTextNodeFromElement.js',
+        '^shared/isImmutableOrInertOrSegmented$':
+          '<rootDir>/packages/shared/src/isImmutableOrInertOrSegmented.js',
+        '^shared/invariant$': '<rootDir>/packages/shared/src/invariant.js',
         '^./dist/(.+)': './src/$1',
       },
       globals: {

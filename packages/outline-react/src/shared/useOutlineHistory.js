@@ -10,9 +10,9 @@
 import type {OutlineEditor, ViewModel} from 'outline';
 
 import {isTextNode} from 'outline';
-import {isRedo, isUndo} from './OutlineKeyHelpers';
+import {isRedo, isUndo} from './Keyboard';
 import {useEffect, useMemo} from 'react';
-import {viewModelsWithoutHistory} from 'outline-react/OutlineHistory';
+import {viewModelsWithoutHistory} from 'outline/HistoryHelpers';
 
 const MERGE = 0;
 const NO_MERGE = 1;

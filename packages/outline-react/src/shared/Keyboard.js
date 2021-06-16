@@ -7,10 +7,10 @@
  * @flow strict
  */
 
-import {IS_APPLE, IS_MAC} from './OutlineEnv';
+import {IS_APPLE} from './Environment';
 
 function controlOrMeta(event: KeyboardEvent): boolean {
-  if (IS_MAC) {
+  if (IS_APPLE) {
     return event.metaKey;
   }
   return event.ctrlKey;
@@ -57,19 +57,19 @@ export function isLineBreak(event: KeyboardEvent): boolean {
 }
 
 export function isDeleteWordBackward(event: KeyboardEvent): boolean {
-  return isBackspace(event) && (IS_MAC ? event.altKey : event.ctrlKey);
+  return isBackspace(event) && (IS_APPLE ? event.altKey : event.ctrlKey);
 }
 
 export function isDeleteWordForward(event: KeyboardEvent): boolean {
-  return isDelete(event) && (IS_MAC ? event.altKey : event.ctrlKey);
+  return isDelete(event) && (IS_APPLE ? event.altKey : event.ctrlKey);
 }
 
 export function isDeleteLineBackward(event: KeyboardEvent): boolean {
-  return IS_MAC && event.metaKey && isBackspace(event);
+  return IS_APPLE && event.metaKey && isBackspace(event);
 }
 
 export function isDeleteLineForward(event: KeyboardEvent): boolean {
-  return IS_MAC && event.metaKey && isDelete(event);
+  return IS_APPLE && event.metaKey && isDelete(event);
 }
 
 export function isDeleteBackward(event: KeyboardEvent): boolean {
@@ -106,7 +106,7 @@ export function isUndo(event: KeyboardEvent): boolean {
 
 export function isRedo(event: KeyboardEvent): boolean {
   const {keyCode, shiftKey, ctrlKey} = event;
-  if (IS_MAC) {
+  if (IS_APPLE) {
     return keyCode === 90 && event.metaKey && shiftKey;
   }
   return (keyCode === 89 && ctrlKey) || (keyCode === 90 && ctrlKey && shiftKey);
@@ -119,7 +119,7 @@ export function isTab(event: KeyboardEvent): boolean {
 }
 
 export function isSelectAll(event: KeyboardEvent): boolean {
-  return event.keyCode === 65 && (IS_MAC ? event.metaKey : event.ctrlKey);
+  return event.keyCode === 65 && (IS_APPLE ? event.metaKey : event.ctrlKey);
 }
 
 export function isMoveWordBackward(event: KeyboardEvent): boolean {

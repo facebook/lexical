@@ -24,8 +24,9 @@ import {
 } from 'outline';
 import {createParagraphNode} from 'outline/ParagraphNode';
 
-import {invariant, isImmutableOrInertOrSegmented} from './OutlineReactUtils';
-import {doesContainGrapheme} from './OutlineTextHelpers';
+import isImmutableOrInertOrSegmented from 'shared/isImmutableOrInertOrSegmented';
+import invariant from 'shared/invariant';
+import {doesContainGrapheme} from 'outline/TextHelpers';
 
 export function getNodesInRange(selection: Selection): {
   range: Array<NodeKey>,

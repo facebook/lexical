@@ -38,7 +38,6 @@ const closureOptions = {
 if (isClean) {
   fs.removeSync(path.resolve('./packages/outline/dist'));
   fs.removeSync(path.resolve('./packages/outline-react/dist'));
-  fs.removeSync(path.resolve('./packages/outline-extensions/dist'));
 }
 
 const wwwMappings = {
@@ -46,11 +45,11 @@ const wwwMappings = {
 };
 
 const outlineExtensions = fs
-  .readdirSync(path.resolve('./packages/outline-extensions/src'))
+  .readdirSync(path.resolve('./packages/outline/src/extensions'))
   .map((str) => path.basename(str, '.js'))
   .filter((str) => !str.includes('__tests__') && !str.includes('test-utils'));
 const outlineExtensionsExternals = outlineExtensions.map((node) => {
-  const external = `outline-extensions/${node.replace('Outline', '')}`;
+  const external = `outline/${node.replace('Outline', '')}`;
   wwwMappings[external] = node;
   return external;
 });
@@ -69,7 +68,6 @@ const externals = [
   'outline',
   'Outline',
   'outline-react',
-  'outline-extensions',
   'react-dom',
   'react',
   ...outlineExtensionsExternals,
@@ -209,16 +207,14 @@ function getFileName(fileName) {
 outlineExtensions.forEach((outlineNode) => {
   build(
     `Outline Extensions - ${outlineNode}`,
-    path.resolve(`./packages/outline-extensions/src/${outlineNode}.js`),
-    path.resolve(
-      `./packages/outline-extensions/dist/${getFileName(outlineNode)}`,
-    ),
+    path.resolve(`./packages/outline/src/extensions/${outlineNode}.js`),
+    path.resolve(`./packages/outline/dist/${getFileName(outlineNode)}`),
   );
 });
 
 build(
-  'Outline',
-  path.resolve('./packages/outline/src/index.js'),
+  'Outline Core',
+  path.resolve('./packages/outline/src/core/index.js'),
   path.resolve(`./packages/outline/dist/${getFileName('Outline')}`),
 );
 

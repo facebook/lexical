@@ -8,10 +8,10 @@
  */
 
 import type {OutlineNode, NodeKey, EditorThemeClasses} from 'outline';
-import type {ParagraphNode} from 'outline-extensions/ParagraphNode';
+import type {ParagraphNode} from 'outline/ParagraphNode';
 
 import {BlockNode} from 'outline';
-import {createParagraphNode} from 'outline-extensions/ParagraphNode';
+import {createParagraphNode} from 'outline/ParagraphNode';
 
 type HeadingTagType = 'h1' | 'h2' | 'h3' | 'h4' | 'h5';
 

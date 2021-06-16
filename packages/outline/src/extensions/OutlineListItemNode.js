@@ -8,11 +8,11 @@
  */
 
 import type {NodeKey, EditorThemeClasses, OutlineNode} from 'outline';
-import type {ParagraphNode} from 'outline-extensions/ParagraphNode';
+import type {ParagraphNode} from 'outline/ParagraphNode';
 
 import {isBlockNode, BlockNode} from 'outline';
-import {createParagraphNode} from 'outline-extensions/ParagraphNode';
-import {createListNode, isListNode} from 'outline-extensions/ListNode';
+import {createParagraphNode} from 'outline/ParagraphNode';
+import {createListNode, isListNode} from 'outline/ListNode';
 
 export class ListItemNode extends BlockNode {
   constructor(key?: NodeKey) {

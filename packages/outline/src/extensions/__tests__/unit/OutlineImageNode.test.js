@@ -11,16 +11,13 @@ import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
 import {createEditor} from 'outline';
-import {createListNode, isListNode} from 'outline-extensions/ListNode';
-import {createListItemNode} from 'outline-extensions/ListItemNode';
+import {createImageNode, ImageNode} from 'outline/ImageNode';
 
 const editorThemeClasses = Object.freeze({
-  list: {
-    ul: 'my-list-ul-class',
-  },
+  image: 'my-image-class',
 });
 
-describe('OutlineListNode tests', () => {
+describe('OutlineImageNode tests', () => {
   let container = null;
 
   beforeEach(async () => {
@@ -67,48 +64,49 @@ describe('OutlineListNode tests', () => {
 
     // Insert initial block
     await update((view) => {
-      const listNode = createListNode('ul');
-      const listItemNode = createListItemNode();
-      const listItemNode2 = createListItemNode();
-      listNode.append(listItemNode);
-      listNode.append(listItemNode2);
-      view.getRoot().append(listNode);
+      const imageNode = createImageNode('logo.jpg', 'Alt Text');
+      view.getRoot().append(imageNode);
     });
   }
 
   test('clone()', async () => {
     await update((view) => {
-      const listNode = view.getRoot().getFirstChild();
-      const clone = listNode.clone();
-      expect(clone).not.toBe(listNode);
-      expect(isListNode(clone)).toBe(true);
-      expect(clone.getChildren()).toHaveLength(2);
+      const imageNode = view.getRoot().getFirstChild();
+      const clone = imageNode.clone();
+      expect(clone).not.toBe(imageNode);
+      expect(clone instanceof ImageNode).toBe(true);
     });
   });
 
-  test('getTag()', async () => {
-    await update(() => {
-      expect(createListNode('ol').getTag()).toBe('ol');
-      expect(createListNode('ul').getTag()).toBe('ul');
+  test('isImage()', async () => {
+    await update((view) => {
+      expect(view.getRoot().getFirstChild().isImage()).toBe(true);
     });
   });
 
   test('createDOM()', async () => {
     await update((view) => {
-      const listNode = view.getRoot().getFirstChild();
-      const element = listNode.createDOM(editorThemeClasses);
-      expect(element.outerHTML).toBe('<ul class="my-list-ul-class"></ul>');
+      const element = view
+        .getRoot()
+        .getFirstChild()
+        .createDOM(editorThemeClasses);
+      expect(element.outerHTML).toBe(
+        '<div class="my-image-class"><img src="logo.jpg" alt="Alt Text"></div>',
+      );
     });
   });
 
   test('updateDOM()', async () => {
     await update((view) => {
-      const listNode = view.getRoot().getFirstChild();
-      const element = listNode.createDOM(editorThemeClasses);
+      const imageNode = view.getRoot().getFirstChild();
+      const element = imageNode.createDOM(editorThemeClasses);
 
-      const newListNode = createListNode('ul');
-      const result = newListNode.updateDOM(listNode, element);
+      const newImageNode = createImageNode('new-logo.jpg', 'New Alt Text');
+      const result = newImageNode.updateDOM(imageNode, element);
       expect(result).toBe(false);
+      expect(element.outerHTML).toBe(
+        '<div class="my-image-class"><img src="new-logo.jpg" alt="New Alt Text"></div>',
+      );
     });
   });
 });

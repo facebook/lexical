@@ -14,10 +14,7 @@ import type {InputEvents} from 'outline-react/useOutlineEditorEvents';
 import {useEffect, useMemo} from 'react';
 import {createTextNode} from 'outline';
 import useOutlineEditorEvents from './useOutlineEditorEvents';
-import {
-  createParagraphNode,
-  ParagraphNode,
-} from 'outline-extensions/ParagraphNode';
+import {createParagraphNode, ParagraphNode} from 'outline/ParagraphNode';
 import {CAN_USE_BEFORE_INPUT} from './OutlineEnv';
 import {
   onSelectionChange,

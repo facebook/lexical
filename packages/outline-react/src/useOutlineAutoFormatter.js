@@ -11,11 +11,11 @@ import type {OutlineEditor, View} from 'outline';
 import type {TextNode} from 'outline';
 
 import {useEffect} from 'react';
-import {isParagraphNode} from 'outline-extensions/ParagraphNode';
-import {createListItemNode} from 'outline-extensions/ListItemNode';
-import {createHeadingNode} from 'outline-extensions/HeadingNode';
-import {createListNode} from 'outline-extensions/ListNode';
-import {createQuoteNode} from 'outline-extensions/QuoteNode';
+import {isParagraphNode} from 'outline/ParagraphNode';
+import {createListItemNode} from 'outline/ListItemNode';
+import {createHeadingNode} from 'outline/HeadingNode';
+import {createListNode} from 'outline/ListNode';
+import {createQuoteNode} from 'outline/QuoteNode';
 
 function textNodeTransform(node: TextNode, view: View): void {
   const block = node.getParentBlockOrThrow();

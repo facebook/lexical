@@ -43,6 +43,7 @@ if (isClean) {
 
 const wwwMappings = {
   outline: 'Outline',
+  'outline/HistoryHelpers': 'OutlineHistoryHelpers',
 };
 
 const outlineExtensions = fs

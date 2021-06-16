@@ -6,7 +6,7 @@
 import type {OutlineEditor, View} from 'outline';
 
 import {createTextNode} from 'outline';
-import {createParagraphNode} from 'outline-extensions/ParagraphNode';
+import {createParagraphNode} from 'outline/ParagraphNode';
 import useEvent from './useEvent';
 
 import React, {

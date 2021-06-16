@@ -23,7 +23,7 @@ import ReactTestUtils from 'react-dom/test-utils';
 
 import {createEditor, createTextNode} from 'outline';
 
-import {createParagraphNode} from 'outline-extensions/ParagraphNode';
+import {createParagraphNode} from 'outline/ParagraphNode';
 
 const editorThemeClasses = Object.freeze({
   text: {

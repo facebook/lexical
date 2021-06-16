@@ -12,10 +12,7 @@ import ReactTestUtils from 'react-dom/test-utils';
 
 import {createEditor, createTextNode, TextNode} from 'outline';
 
-import {
-  createParagraphNode,
-  ParagraphNode,
-} from 'outline-extensions/ParagraphNode';
+import {createParagraphNode, ParagraphNode} from 'outline/ParagraphNode';
 
 function sanitizeHTML(html) {
   // Remove the special space characters

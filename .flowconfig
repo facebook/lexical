@@ -15,7 +15,7 @@ untyped-type-import=error
 [options]
 server.max_workers=4
 
-module.name_mapper='^outline$' -> '<PROJECT_ROOT>/packages/outline/src/index.js'
+module.name_mapper='^outline$' -> '<PROJECT_ROOT>/packages/outline/src/core/index.js'
 
 module.name_mapper='^outline-react/useOutlineRichText' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlineRichText.js'
 module.name_mapper='^outline-react/useOutlinePlainText' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlinePlainText.js'
@@ -27,13 +27,13 @@ module.name_mapper='^outline-react/OutlineSelectionHelpers' -> '<PROJECT_ROOT>/p
 module.name_mapper='^outline-react/OutlineTextHelpers' -> '<PROJECT_ROOT>/packages/outline-react/src/OutlineTextHelpers.js'
 module.name_mapper='^outline-react/OutlineEventHandlers' -> '<PROJECT_ROOT>/packages/outline-react/src/OutlineEventHandlers.js'
 
-module.name_mapper='^outline-extensions/HeadingNode' -> '<PROJECT_ROOT>/packages/outline-extensions/src/OutlineHeadingNode.js'
-module.name_mapper='^outline-extensions/ListNode' -> '<PROJECT_ROOT>/packages/outline-extensions/src/OutlineListNode.js'
-module.name_mapper='^outline-extensions/ListItemNode' -> '<PROJECT_ROOT>/packages/outline-extensions/src/OutlineListItemNode.js'
-module.name_mapper='^outline-extensions/ImageNode' -> '<PROJECT_ROOT>/packages/outline-extensions/src/OutlineImageNode.js'
-module.name_mapper='^outline-extensions/QuoteNode' -> '<PROJECT_ROOT>/packages/outline-extensions/src/OutlineQuoteNode.js'
-module.name_mapper='^outline-extensions/ParagraphNode' -> '<PROJECT_ROOT>/packages/outline-extensions/src/OutlineParagraphNode.js'
-module.name_mapper='^outline-extensions/CodeNode' -> '<PROJECT_ROOT>/packages/outline-extensions/src/OutlineCodeNode.js'
+module.name_mapper='^outline/HeadingNode' -> '<PROJECT_ROOT>/packages/outline/src/extensions/OutlineHeadingNode.js'
+module.name_mapper='^outline/ListNode' -> '<PROJECT_ROOT>/packages/outline/src/extensions/OutlineListNode.js'
+module.name_mapper='^outline/ListItemNode' -> '<PROJECT_ROOT>/packages/outline/src/extensions/OutlineListItemNode.js'
+module.name_mapper='^outline/ImageNode' -> '<PROJECT_ROOT>/packages/outline/src/extensions/OutlineImageNode.js'
+module.name_mapper='^outline/QuoteNode' -> '<PROJECT_ROOT>/packages/outline/src/extensions/OutlineQuoteNode.js'
+module.name_mapper='^outline/ParagraphNode' -> '<PROJECT_ROOT>/packages/outline/src/extensions/OutlineParagraphNode.js'
+module.name_mapper='^outline/CodeNode' -> '<PROJECT_ROOT>/packages/outline/src/extensions/OutlineCodeNode.js'
 
 munge_underscores=false
 

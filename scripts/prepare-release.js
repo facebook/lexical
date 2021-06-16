@@ -31,24 +31,5 @@ async function prepareOutlineReactPackage() {
   );
 }
 
-async function prepareOutlineExtensionsPackage() {
-  await exec(`rm -rf ./packages/outline-extensions/npm`);
-  await exec(`mkdir ./packages/outline-extensions/npm`);
-  await exec(
-    `cp -R ./packages/outline-extensions/dist ./packages/outline-extensions/npm`,
-  );
-  await exec(
-    `cp -R ./packages/outline-extensions/*.js ./packages/outline-extensions/npm`,
-  );
-  await exec(
-    `cp -R ./packages/outline-extensions/package.json ./packages/outline-extensions/npm`,
-  );
-  await exec(`cp -R LICENSE ./packages/outline-extensions/npm`);
-  await exec(
-    `cp -R ./packages/outline-extensions/README.md ./packages/outline-extensions/npm`,
-  );
-}
-
 prepareOutlinePackage();
 prepareOutlineReactPackage();
-prepareOutlineExtensionsPackage();

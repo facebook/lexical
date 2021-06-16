@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import {IS_APPLE} from './Environment';
+import {IS_APPLE} from 'shared/environment';
 
 function controlOrMeta(event: KeyboardEvent): boolean {
   if (IS_APPLE) {

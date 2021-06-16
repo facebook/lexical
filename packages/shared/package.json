@@ -20,10 +20,5 @@
     "type": "git",
     "url": "https://github.com/facebookexternal/Outline",
     "directory": "packages/shared"
-  },
-  "exports": {
-    "./getDOMTextNodeFromElement": "./dist/getDOMTextNodeFromElement.js",
-    "./isImmutableOrInertOrSegmented": "./dist/isImmutableOrInertOrSegmented.js",
-    "./invariant": "./dist/invariant.js"
   }
 }

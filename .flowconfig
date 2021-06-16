@@ -28,6 +28,7 @@ module.name_mapper='^outline/CodeNode' -> '<PROJECT_ROOT>/packages/outline/src/e
 module.name_mapper='^outline/HistoryHelpers' -> '<PROJECT_ROOT>/packages/outline/src/helpers/OutlineHistoryHelpers.js'
 module.name_mapper='^outline/SelectionHelpers' -> '<PROJECT_ROOT>/packages/outline/src/helpers/OutlineSelectionHelpers.js'
 module.name_mapper='^outline/TextHelpers' -> '<PROJECT_ROOT>/packages/outline/src/helpers/OutlineTextHelpers.js'
+module.name_mapper='^outline/KeyHelpers' -> '<PROJECT_ROOT>/packages/outline/src/helpers/OutlineKeyHelpers.js'
 
 module.name_mapper='^outline-react/useOutlineRichText' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlineRichText.js'
 module.name_mapper='^outline-react/useOutlinePlainText' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlinePlainText.js'
@@ -37,6 +38,7 @@ module.name_mapper='^outline-react/useOutlineAutoFormatter' -> '<PROJECT_ROOT>/p
 module.name_mapper='^shared/isImmutableOrInertOrSegmented' -> '<PROJECT_ROOT>/packages/shared/src/isImmutableOrInertOrSegmented.js'
 module.name_mapper='^shared/invariant' -> '<PROJECT_ROOT>/packages/shared/src/invariant.js'
 module.name_mapper='^shared/getDOMTextNodeFromElement' -> '<PROJECT_ROOT>/packages/shared/src/getDOMTextNodeFromElement.js'
+module.name_mapper='^shared/environment' -> '<PROJECT_ROOT>/packages/shared/src/environment.js'
 
 munge_underscores=false
 

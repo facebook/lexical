@@ -124,24 +124,26 @@ async function build(name, inputFile, outputFile) {
     plugins: [
       alias({
         entries: [
-          {find: 'shared', replacement: path.resolve('packages/shared/dist')},
+          {find: 'shared', replacement: path.resolve('packages/shared/src')},
           // We inline both these helpers to improve the bundle size of the outline-react modules
           {
             find: isWWW
               ? 'Outline/SelectionHelpers'
               : 'outline/SelectionHelpers',
             replacement: path.resolve(
-              isWWW
-                ? 'packages/outline/dist/OutlineSelectionHelpers.dev'
-                : 'packages/outline/dist/OutlineSelectionHelpers',
+              'packages/outline/src/helpers/OutlineSelectionHelpers',
+            ),
+          },
+          {
+            find: isWWW ? 'Outline/KeyHelpers' : 'outline/KeyHelpers',
+            replacement: path.resolve(
+              'packages/outline/src/helpers/OutlineKeyHelpers',
             ),
           },
           {
             find: isWWW ? 'Outline/TextHelpers' : 'outline/TextHelpers',
             replacement: path.resolve(
-              isWWW
-                ? 'packages/outline/dist/OutlineTextHelpers.dev'
-                : 'packages/outline/dist/OutlineTextHelpers',
+              'packages/outline/src/helpers/OutlineTextHelpers',
             ),
           },
         ],

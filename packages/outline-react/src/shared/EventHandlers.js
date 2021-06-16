@@ -17,7 +17,7 @@ import type {
   View,
 } from 'outline';
 
-import {CAN_USE_BEFORE_INPUT, IS_FIREFOX, IS_SAFARI} from './Environment';
+import {CAN_USE_BEFORE_INPUT, IS_FIREFOX, IS_SAFARI} from 'shared/environment';
 import {
   isDeleteBackward,
   isDeleteForward,
@@ -36,7 +36,7 @@ import {
   isMoveBackward,
   isMoveForward,
   isMoveWordForward,
-} from './Keyboard';
+} from 'outline/KeyHelpers';
 import getDOMTextNodeFromElement from 'shared/getDOMTextNodeFromElement';
 import isImmutableOrInertOrSegmented from 'shared/isImmutableOrInertOrSegmented';
 import {

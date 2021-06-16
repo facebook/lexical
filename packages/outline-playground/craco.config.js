@@ -13,6 +13,7 @@ module.exports = {
       'outline/SelectionHelpers': 'outline/dist/OutlineSelectionHelpers',
       'outline/TextHelpers': 'outline/dist/OutlineTextHelpers',
       'outline/HistoryHelpers': 'outline/dist/OutlineHistoryHelpers',
+      'outline/KeyHelpers': 'outline/dist/OutlineKeyHelpers',
       // Outline React
       'outline-react/useOutlineRichText':
         'outline-react/dist/useOutlineRichText',

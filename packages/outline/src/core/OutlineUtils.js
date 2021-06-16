@@ -11,24 +11,11 @@ import type {OutlineEditor} from './OutlineEditor';
 import type {OutlineNode} from './OutlineNode';
 
 import {RTL_REGEX, LTR_REGEX} from './OutlineConstants';
+import invariant from 'shared/invariant';
 
 export const emptyFunction = () => {};
 
 let keyCounter = 0;
-
-// invariant(condition, message) will refine types based on "condition", and
-// if "condition" is false will throw an error. This function is special-cased
-// in flow itself, so we can't name it anything else.
-export function invariant(
-  condition: boolean,
-  format: string,
-  ...args: Array<string>
-) {
-  throw new Error(
-    'Internal Outline error: invariant() is meant to be replaced at compile ' +
-      'time. There is no runtime version.',
-  );
-}
 
 export function resetRandomKey(): void {
   keyCounter = 0;

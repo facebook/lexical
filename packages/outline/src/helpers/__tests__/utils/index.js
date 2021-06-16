@@ -6,7 +6,7 @@
  *
  */
 
-import * as SelectionHelpers from 'outline-react/OutlineSelectionHelpers';
+import * as SelectionHelpers from 'outline/SelectionHelpers';
 import {createTextNode} from 'outline';
 
 if (!Selection.prototype.modify) {

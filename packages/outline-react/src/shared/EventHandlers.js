@@ -59,7 +59,7 @@ import {
   moveBackward,
   moveForward,
   moveWordForward,
-} from 'outline/src/helpers/OutlineSelectionHelpers';
+} from 'outline/SelectionHelpers';
 
 // Safari triggers composition before keydown, meaning
 // we need to account for this when handling key events.

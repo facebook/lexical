@@ -79,7 +79,6 @@ export type EventHandler = (
 export type EventHandlerState = {
   isReadOnly: boolean,
   compositionSelection: null | Selection,
-  isHandlingPointer: boolean,
 };
 
 function generateNodes(
@@ -494,30 +493,6 @@ export function onSelectionChange(
     // This update also functions as a way of reconciling a bad selection
     // to a good selection.
   });
-}
-
-export function onPointerDown(
-  event: PointerEvent,
-  editor: OutlineEditor,
-  state: EventHandlerState,
-): void {
-  state.isHandlingPointer = true;
-  // Throttle setting of the flag for 50ms, as we don't want this to trigger
-  // for simple clicks.
-  setTimeout(() => {
-    if (state.isHandlingPointer) {
-      editor.setPointerDown(true);
-    }
-  }, 50);
-}
-
-export function onPointerUp(
-  event: PointerEvent,
-  editor: OutlineEditor,
-  state: EventHandlerState,
-): void {
-  state.isHandlingPointer = false;
-  editor.setPointerDown(false);
 }
 
 export function checkForBadInsertion(

@@ -89,7 +89,6 @@ function resetEditor(editor: OutlineEditor): void {
   editor._placeholderElement = null;
   editor._keyToDOMMap.clear();
   editor._textContent = '';
-  // triggerUpdateListeners(editor);
 }
 
 export function createEditor(

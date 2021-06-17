@@ -227,19 +227,23 @@ export class BlockNode extends OutlineNode {
     let toNormalize = [];
     let lastTextNodeFlags: number | null = null;
     let lastTextNodeURL = null;
+    let lastTextNodeType = null;
     for (let i = 0; i < children.length; i++) {
       const child: OutlineNode = children[i].getLatest();
 
       if (isTextNode(child) && !child.isImmutable() && !child.isSegmented()) {
         const url = child.__url;
         const flags = child.__flags;
+        const type = child.__type;
         if (
           (lastTextNodeFlags === null || flags === lastTextNodeFlags) &&
-          (lastTextNodeURL === null || lastTextNodeURL === url)
+          (lastTextNodeURL === null || lastTextNodeURL === url) &&
+          (lastTextNodeType === null || lastTextNodeType === type)
         ) {
           toNormalize.push(child);
           lastTextNodeFlags = flags;
           lastTextNodeURL = url;
+          lastTextNodeType = type;
         } else {
           if (toNormalize.length > 1) {
             combineAdjacentTextNodes(toNormalize, restoreSelection);
@@ -247,6 +251,7 @@ export class BlockNode extends OutlineNode {
           toNormalize = [child];
           lastTextNodeFlags = flags;
           lastTextNodeURL = url;
+          lastTextNodeType = type;
         }
       } else {
         if (toNormalize.length > 1) {
@@ -255,6 +260,7 @@ export class BlockNode extends OutlineNode {
         toNormalize = [];
         lastTextNodeFlags = null;
         lastTextNodeURL = null;
+        lastTextNodeType = null;
       }
     }
     if (toNormalize.length > 1) {

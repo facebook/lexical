@@ -7,8 +7,8 @@
  */
 import {createRootNode, createTextNode} from 'outline';
 import {createParagraphNode} from 'outline/ParagraphNode';
-import {ViewModel} from '../../OutlineView';
-import {markNodeAsDirty} from '../../OutlineNode';
+import {ViewModel} from '../../core/OutlineView';
+import {markNodeAsDirty} from '../../core/OutlineNode';
 import {initializeUnitTest} from '../utils';
 
 describe('OutlineViewModel tests', () => {

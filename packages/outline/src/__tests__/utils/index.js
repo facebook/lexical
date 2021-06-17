@@ -10,7 +10,7 @@ import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
 import {createEditor} from 'outline';
-import {resetRandomKey} from '../../OutlineUtils';
+import {resetRandomKey} from '../../core/OutlineUtils';
 
 import type {OutlineEditor} from 'outline';
 

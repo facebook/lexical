@@ -17,7 +17,7 @@ import {
   getTextDirection,
   getDOMTextNodeFromElement,
   isImmutableOrInertOrSegmented,
-} from '../../OutlineUtils';
+} from '../../core/OutlineUtils';
 
 import {initializeUnitTest} from '../utils';
 
@@ -25,7 +25,7 @@ describe('OutlineUtils tests', () => {
   initializeUnitTest((testEnv) => {
     test('scheduleMicroTask(): native', async () => {
       jest.resetModules();
-      const {scheduleMicroTask} = require('../../OutlineUtils');
+      const {scheduleMicroTask} = require('../../core/OutlineUtils');
       let flag = false;
       scheduleMicroTask(() => {
         flag = true;
@@ -38,7 +38,7 @@ describe('OutlineUtils tests', () => {
     test('scheduleMicroTask(): promise', async () => {
       jest.resetModules();
       window.queueMicrotask = undefined;
-      const {scheduleMicroTask} = require('../../OutlineUtils');
+      const {scheduleMicroTask} = require('../../core/OutlineUtils');
       let flag = false;
       scheduleMicroTask(() => {
         flag = true;

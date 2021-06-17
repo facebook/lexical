@@ -7,8 +7,9 @@ const common = {
 module.exports = {
   collectCoverage: true,
   collectCoverageFrom: [
-    '<rootDir>/packages/outline/**/src/*.js',
-    '<rootDir>/packages/outline-react/**/src/*.js',
+    '<rootDir>/packages/outline/src/core/**/*.js',
+    '<rootDir>/packages/outline/src/extensions/**/*.js',
+    '<rootDir>/packages/outline-react/src/**/*.js',
   ],
   coverageReporters: ['json', 'text'],
   projects: [

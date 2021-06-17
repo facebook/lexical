@@ -6,7 +6,7 @@
  *
  */
 
-import {IS_IMMUTABLE} from '../../OutlineConstants';
+import {IS_IMMUTABLE} from '../../core/OutlineConstants';
 
 import {createLineBreakNode, isLineBreakNode} from 'outline';
 import {initializeUnitTest} from '../utils';

@@ -24,6 +24,7 @@ import {
   parseViewModel,
   errorOnProcessingTextNodeTransforms,
   applySelectionTransforms,
+  triggerUpdateListeners,
 } from './OutlineView';
 import {createSelection} from './OutlineSelection';
 import {
@@ -86,10 +87,16 @@ function resetEditor(editor: OutlineEditor): void {
   const viewModel = new ViewModel({root});
   editor._viewModel = viewModel;
   editor._pendingViewModel = null;
+  const editorElement = editor._editorElement;
+  const placeholderElement = editor._placeholderElement;
+  if (placeholderElement !== null && editorElement !== null) {
+    editorElement.removeChild(placeholderElement);
+  }
+  editor._compositionKey = null;
   editor._placeholderElement = null;
   editor._keyToDOMMap.clear();
   editor._textContent = '';
-  // triggerUpdateListeners(editor);
+  triggerUpdateListeners(editor);
 }
 
 export function createEditor(
@@ -185,7 +192,6 @@ export class OutlineEditor {
   _pendingViewModel: null | ViewModel;
   _compositionKey: null | NodeKey;
   _deferred: Array<() => void>;
-  _isPointerDown: boolean;
   _key: string;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _errorListeners: Set<ErrorListener>;
@@ -244,9 +250,6 @@ export class OutlineEditor {
   isComposing(): boolean {
     return this._compositionKey != null;
   }
-  isPointerDown(): boolean {
-    return this._isPointerDown;
-  }
   setCompositionKey(nodeKey: null | NodeKey): void {
     if (nodeKey === null) {
       this._compositionKey = null;
@@ -262,9 +265,6 @@ export class OutlineEditor {
       this._compositionKey = nodeKey;
       reconcilePlaceholder(this, this._viewModel);
     });
-  }
-  setPointerDown(isPointerDown: boolean): void {
-    this._isPointerDown = isPointerDown;
   }
   registerNodeType(nodeType: string, klass: Class<OutlineNode>): void {
     this._nodeTypes.set(nodeType, klass);

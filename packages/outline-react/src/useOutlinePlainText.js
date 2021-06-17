@@ -19,8 +19,6 @@ import {CAN_USE_BEFORE_INPUT} from 'shared/environment';
 import {
   onSelectionChange,
   onKeyDownForPlainText,
-  onPointerDown,
-  onPointerUp,
   onCompositionStart,
   onCompositionEnd,
   onCut,
@@ -51,9 +49,6 @@ const emptyObject: {} = {};
 const events: InputEvents = [
   ['selectionchange', onSelectionChange],
   ['keydown', onKeyDownForPlainText],
-  ['pointerdown', onPointerDown],
-  ['pointerup', onPointerUp],
-  ['pointercancel', onPointerUp],
   ['compositionstart', onCompositionStart],
   ['compositionend', onCompositionEnd],
   ['cut', onCut],
@@ -79,7 +74,6 @@ export default function useOutlinePlainText(
     () => ({
       isReadOnly: false,
       compositionSelection: null,
-      isHandlingPointer: false,
     }),
     [],
   );

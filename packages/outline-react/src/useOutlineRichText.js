@@ -25,8 +25,6 @@ import {CAN_USE_BEFORE_INPUT} from 'shared/environment';
 import {
   onSelectionChange,
   onKeyDownForRichText,
-  onPointerDown,
-  onPointerUp,
   onCompositionStart,
   onCompositionEnd,
   onCut,
@@ -57,9 +55,6 @@ const emptyObject: {} = {};
 const events: InputEvents = [
   ['selectionchange', onSelectionChange],
   ['keydown', onKeyDownForRichText],
-  ['pointerdown', onPointerDown],
-  ['pointerup', onPointerUp],
-  ['pointercancel', onPointerUp],
   ['compositionstart', onCompositionStart],
   ['compositionend', onCompositionEnd],
   ['cut', onCut],
@@ -86,7 +81,6 @@ export default function useOutlineRichText(
       isReadOnly: false,
       richText: true,
       compositionSelection: null,
-      isHandlingPointer: false,
     }),
     [],
   );

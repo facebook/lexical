@@ -6,109 +6,112 @@
  *
  */
 
-import React from 'react';
-import ReactDOM from 'react-dom';
-import ReactTestUtils from 'react-dom/test-utils';
-
-import {createEditor} from 'outline';
-import {createListNode, isListNode} from 'outline/ListNode';
-import {createListItemNode} from 'outline/ListItemNode';
+import {ListNode, createListNode, isListNode} from 'outline/ListNode';
+import {TextNode} from 'outline';
+import {initializeUnitTest} from '../utils';
 
 const editorThemeClasses = Object.freeze({
   list: {
-    ul: 'my-list-ul-class',
+    ul: 'my-ul-list-class',
+    ol: 'my-ol-list-class',
   },
 });
 
 describe('OutlineListNode tests', () => {
-  let container = null;
-
-  beforeEach(async () => {
-    container = document.createElement('div');
-    document.body.appendChild(container);
-    await init();
-  });
-
-  afterEach(() => {
-    document.body.removeChild(container);
-    container = null;
-  });
-
-  async function update(fn) {
-    editor.update(fn);
-    return Promise.resolve().then();
-  }
-
-  function useOutlineEditor(editorElementRef) {
-    const editor = React.useMemo(() => createEditor(), []);
-
-    React.useEffect(() => {
-      const editorElement = editorElementRef.current;
-
-      editor.setEditorElement(editorElement);
-    }, [editorElementRef, editor]);
-
-    return editor;
-  }
-
-  let editor = null;
-
-  async function init() {
-    const ref = React.createRef();
-
-    function TestBase() {
-      editor = useOutlineEditor(ref);
-      return <div ref={ref} contentEditable={true} />;
-    }
-
-    ReactTestUtils.act(() => {
-      ReactDOM.render(<TestBase />, container);
+  initializeUnitTest((testEnv) => {
+    test('ListNode.constructor', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const listNode = new ListNode('ul');
+        expect(listNode.getFlags()).toBe(0);
+        expect(listNode.getType()).toBe('list');
+        expect(listNode.getTag()).toBe('ul');
+        expect(listNode.getTextContent()).toBe('');
+      });
+      expect(() => new ListNode()).toThrow();
     });
 
-    // Insert initial block
-    await update((view) => {
-      const listNode = createListNode('ul');
-      const listItemNode = createListItemNode();
-      const listItemNode2 = createListItemNode();
-      listNode.append(listItemNode);
-      listNode.append(listItemNode2);
-      view.getRoot().append(listNode);
+    test('ListNode.clone()', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const listNode = new ListNode();
+        const textNode = new TextNode('foo');
+        listNode.append(textNode);
+        const listNodeClone = listNode.clone();
+        expect(listNodeClone).not.toBe(listNode);
+        expect(listNode.__type).toEqual(listNodeClone.__type);
+        expect(listNode.__flags).toEqual(listNodeClone.__flags);
+        expect(listNode.__parent).toEqual(listNodeClone.__parent);
+        expect(listNode.__children).toEqual(listNodeClone.__children);
+        expect(listNode.__key).toEqual(listNodeClone.__key);
+        expect(listNode.getTextContent()).toEqual(
+          listNodeClone.getTextContent(),
+        );
+      });
     });
-  }
 
-  test('clone()', async () => {
-    await update((view) => {
-      const listNode = view.getRoot().getFirstChild();
-      const clone = listNode.clone();
-      expect(clone).not.toBe(listNode);
-      expect(isListNode(clone)).toBe(true);
-      expect(clone.getChildren()).toHaveLength(2);
+    test('ListNode.getTag()', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const ulListNode = new ListNode('ul');
+        expect(ulListNode.getTag()).toBe('ul');
+        const olListNode = new ListNode('ol');
+        expect(olListNode.getTag()).toBe('ol');
+      });
     });
-  });
 
-  test('getTag()', async () => {
-    await update(() => {
-      expect(createListNode('ol').getTag()).toBe('ol');
-      expect(createListNode('ul').getTag()).toBe('ul');
+    test('ListNode.createDOM()', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const listNode = new ListNode('ul');
+        expect(listNode.createDOM(editorThemeClasses).outerHTML).toBe(
+          '<ul class="my-ul-list-class"></ul>',
+        );
+        expect(listNode.createDOM({list: {}}).outerHTML).toBe('<ul></ul>');
+        expect(listNode.createDOM({}).outerHTML).toBe('<ul></ul>');
+      });
     });
-  });
 
-  test('createDOM()', async () => {
-    await update((view) => {
-      const listNode = view.getRoot().getFirstChild();
-      const element = listNode.createDOM(editorThemeClasses);
-      expect(element.outerHTML).toBe('<ul class="my-list-ul-class"></ul>');
+    test('ListNode.updateDOM()', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const listNode = new ListNode('ul');
+        const domElement = listNode.createDOM(editorThemeClasses);
+        expect(domElement.outerHTML).toBe('<ul class="my-ul-list-class"></ul>');
+        const newListNode = new ListNode();
+        const result = newListNode.updateDOM(listNode, domElement);
+        expect(result).toBe(false);
+        expect(domElement.outerHTML).toBe('<ul class="my-ul-list-class"></ul>');
+      });
     });
-  });
 
-  test('updateDOM()', async () => {
-    await update((view) => {
-      const listNode = view.getRoot().getFirstChild();
-      const element = listNode.createDOM(editorThemeClasses);
+    test('ListNode.canInsertTab()', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const listNode = new ListNode();
+        expect(listNode.canInsertTab()).toBe(false);
+      });
+    });
 
-      const newListNode = createListNode('ul');
-      const result = newListNode.updateDOM(listNode, element);
-      expect(result).toBe(false);
+    test('createListNode()', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const listNode = new ListNode('ul');
+        const createdListNode = createListNode('ul');
+        expect(listNode.__type).toEqual(createdListNode.__type);
+        expect(listNode.__flags).toEqual(createdListNode.__flags);
+        expect(listNode.__parent).toEqual(createdListNode.__parent);
+        expect(listNode.__tag).toEqual(createdListNode.__tag);
+        expect(listNode.__key).not.toEqual(createdListNode.__key);
+      });
+    });
+
+    test('isListNode()', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const listNode = new ListNode();
+        expect(isListNode(listNode)).toBe(true);
+      });
     });
   });
 });

@@ -13,7 +13,7 @@ const editorThemeClasses = Object.freeze({
   image: 'my-image-class',
 });
 
-describe('OutlineImageNode tests', () => {
+describe('OutlineRootNode tests', () => {
   initializeUnitTest((testEnv) => {
     const src = 'image.jpg';
     const alt = 'Example Image';
@@ -37,12 +37,7 @@ describe('OutlineImageNode tests', () => {
         const imageNode = new ImageNode(src, alt);
         const imageNodeClone = imageNode.clone();
         expect(imageNodeClone).not.toBe(imageNode);
-        expect(imageNode.__type).toEqual(imageNodeClone.__type);
-        expect(imageNode.__flags).toEqual(imageNodeClone.__flags);
-        expect(imageNode.__parent).toEqual(imageNodeClone.__parent);
-        expect(imageNode.__src).toEqual(imageNodeClone.__src);
-        expect(imageNode.__altText).toEqual(imageNodeClone.__altText);
-        expect(imageNode.__key).toEqual(imageNodeClone.__key);
+        expect(imageNodeClone).toStrictEqual(imageNode);
       });
     });
 
@@ -84,8 +79,9 @@ describe('OutlineImageNode tests', () => {
 
     test('ImageNode.isImage()', async () => {
       const {editor} = testEnv;
+      let imageNode;
       await editor.update(() => {
-        const imageNode = new ImageNode(src, alt);
+        imageNode = new ImageNode(src, alt);
         expect(imageNode.isImage()).toBe(true);
       });
     });

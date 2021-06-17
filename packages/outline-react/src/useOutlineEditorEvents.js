@@ -62,6 +62,8 @@ export default function useOutlineEditorEvents(
         if (nextEditorElement !== null) {
           prevEditorElementRef.current = nextEditorElement;
           create.forEach((fn) => fn(nextEditorElement));
+        } else {
+          prevEditorElementRef.current = null;
         }
       },
     );

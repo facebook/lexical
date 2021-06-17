@@ -20,7 +20,6 @@ import {
   ViewModel,
   commitPendingUpdates,
   applyTextTransforms,
-  triggerUpdateListeners,
   triggerErrorListeners,
   parseViewModel,
   errorOnProcessingTextNodeTransforms,
@@ -90,7 +89,7 @@ function resetEditor(editor: OutlineEditor): void {
   editor._placeholderElement = null;
   editor._keyToDOMMap.clear();
   editor._textContent = '';
-  triggerUpdateListeners(editor);
+  // triggerUpdateListeners(editor);
 }
 
 export function createEditor(
@@ -284,6 +283,8 @@ export class OutlineEditor {
   }
   addEditorElementListener(listener: EditorElementListener): () => void {
     this._elementListeners.add(listener);
+    listener(this._editorElement);
+
     return () => {
       this._elementListeners.delete(listener);
     };
@@ -315,6 +316,9 @@ export class OutlineEditor {
   }
   setEditorElement(nextEditorElement: null | HTMLElement): void {
     const prevEditorElement = this._editorElement;
+    if (nextEditorElement === prevEditorElement) {
+      return;
+    }
     this._editorElement = nextEditorElement;
     if (nextEditorElement === null) {
       if (prevEditorElement !== null) {
@@ -322,10 +326,7 @@ export class OutlineEditor {
       }
       resetEditor(this);
     } else {
-      if (
-        nextEditorElement !== prevEditorElement &&
-        prevEditorElement !== null
-      ) {
+      if (prevEditorElement !== null) {
         resetEditor(this);
       }
       nextEditorElement.setAttribute('data-outline-editor', 'true');

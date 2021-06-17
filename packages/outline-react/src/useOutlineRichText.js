@@ -96,15 +96,17 @@ export default function useOutlineRichText(
   }, [isReadOnly, eventHandlerState]);
 
   useEffect(() => {
-    if (editor !== null) {
-      editor.registerNodeType('heading', HeadingNode);
-      editor.registerNodeType('list', ListNode);
-      editor.registerNodeType('quote', QuoteNode);
-      editor.registerNodeType('code', CodeNode);
-      editor.registerNodeType('paragraph', ParagraphNode);
-      editor.registerNodeType('listitem', ListItemNode);
-      initEditor(editor);
-    }
+    return editor.addEditorElementListener((editorElement) => {
+      if (editorElement !== null) {
+        editor.registerNodeType('heading', HeadingNode);
+        editor.registerNodeType('list', ListNode);
+        editor.registerNodeType('quote', QuoteNode);
+        editor.registerNodeType('code', CodeNode);
+        editor.registerNodeType('paragraph', ParagraphNode);
+        editor.registerNodeType('listitem', ListItemNode);
+        initEditor(editor);
+      }
+    });
   }, [editor]);
 
   useOutlineEditorEvents(events, editor, eventHandlerState);

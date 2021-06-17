@@ -122,8 +122,11 @@ describe('OutlineEditor tests', () => {
         });
       }, [changeElement]);
 
-      const ref = React.useCallback((node) => {
+      React.useEffect(() => {
         editor.addEditorElementListener(listener);
+      }, []);
+
+      const ref = React.useCallback((node) => {
         editor.setEditorElement(node);
       }, []);
 
@@ -191,8 +194,11 @@ describe('OutlineEditor tests', () => {
       function Test() {
         editor = React.useMemo(() => createEditor(), []);
 
-        const ref = React.useCallback((node) => {
+        React.useEffect(() => {
           editor.addEditorElementListener(listener);
+        }, []);
+
+        const ref = React.useCallback((node) => {
           editor.setEditorElement(node);
         }, []);
 

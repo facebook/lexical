@@ -237,41 +237,39 @@ function getHashtagRegexString(): string {
 
 const REGEX = new RegExp(getHashtagRegexString(), 'ig');
 
-export default function useHashtags(editor: null | OutlineEditor): void {
+export default function useHashtags(editor: OutlineEditor): void {
   useEffect(() => {
-    if (editor !== null) {
-      return editor.addTextNodeTransform((node: TextNode) => {
-        if (node.isSegmented() || node.isImmutable() || node.isHashtag()) {
+    return editor.addTextNodeTransform((node: TextNode) => {
+      if (node.isSegmented() || node.isImmutable() || node.isHashtag()) {
+        return;
+      }
+      const text = node.getTextContent();
+      let currentNode = node;
+      let adjustedOffset = 0;
+
+      while (true) {
+        const matchArr = REGEX.exec(text);
+        if (matchArr === null) {
           return;
         }
-        const text = node.getTextContent();
-        let currentNode = node;
-        let adjustedOffset = 0;
+        const hashtagLength = matchArr[3].length + 1;
+        const startOffset =
+          matchArr.index + matchArr[1].length - adjustedOffset;
+        const endOffset = startOffset + hashtagLength;
+        let targetNode;
 
-        while (true) {
-          const matchArr = REGEX.exec(text);
-          if (matchArr === null) {
-            return;
-          }
-          const hashtagLength = matchArr[3].length + 1;
-          const startOffset =
-            matchArr.index + matchArr[1].length - adjustedOffset;
-          const endOffset = startOffset + hashtagLength;
-          let targetNode;
-
-          if (startOffset === 0) {
-            [targetNode, currentNode] = currentNode.splitText(endOffset);
-          } else {
-            [, targetNode, currentNode] = currentNode.splitText(
-              startOffset,
-              endOffset,
-            );
-          }
-          adjustedOffset += endOffset;
-
-          targetNode.toggleHashtag();
+        if (startOffset === 0) {
+          [targetNode, currentNode] = currentNode.splitText(endOffset);
+        } else {
+          [, targetNode, currentNode] = currentNode.splitText(
+            startOffset,
+            endOffset,
+          );
         }
-      });
-    }
+        adjustedOffset += endOffset;
+
+        targetNode.toggleHashtag();
+      }
+    });
   }, [editor]);
 }

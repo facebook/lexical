@@ -11,8 +11,8 @@ import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
 import {createEditor, createTextNode, TextNode} from 'outline';
-
 import {createParagraphNode, ParagraphNode} from 'outline/ParagraphNode';
+import useOutlineRichText from 'outline-react/useOutlineRichText';
 
 function sanitizeHTML(html) {
   // Remove the special space characters
@@ -122,8 +122,11 @@ describe('OutlineEditor tests', () => {
         });
       }, [changeElement]);
 
-      const ref = React.useCallback((node) => {
+      React.useEffect(() => {
         editor.addEditorElementListener(listener);
+      }, []);
+
+      const ref = React.useCallback((node) => {
         editor.setEditorElement(node);
       }, []);
 
@@ -191,8 +194,11 @@ describe('OutlineEditor tests', () => {
       function Test() {
         editor = React.useMemo(() => createEditor(), []);
 
-        const ref = React.useCallback((node) => {
+        React.useEffect(() => {
           editor.addEditorElementListener(listener);
+        }, []);
+
+        const ref = React.useCallback((node) => {
           editor.setEditorElement(node);
         }, []);
 
@@ -237,6 +243,73 @@ describe('OutlineEditor tests', () => {
         '<div contenteditable="true" data-outline-editor="true"><p><span></span>' +
           '<span><span>Hello world</span></span><span></span></p></div>',
       );
+    });
+
+    it('Should correctly render React component into Outline node', async () => {
+      const listener = jest.fn();
+
+      function Test({divKey}) {
+        editor = React.useMemo(() => createEditor(), []);
+        useOutlineRichText(editor, false);
+
+        React.useEffect(() => {
+          editor.addEditorElementListener(listener);
+        }, []);
+
+        const ref = React.useCallback((node) => {
+          editor.setEditorElement(node);
+        }, []);
+
+        return <div key={divKey} ref={ref} contentEditable={true} />;
+      }
+
+      ReactTestUtils.act(() => {
+        ReactDOM.render(<Test divKey={0} />, container);
+      });
+
+      expect(listener).toHaveBeenCalledTimes(1);
+      expect(sanitizeHTML(container.innerHTML)).toBe(
+        '<div contenteditable="true" data-outline-editor="true"></div>',
+      );
+
+      ReactTestUtils.act(() => {
+        ReactDOM.render(<Test divKey={1} />, container);
+      });
+      expect(listener).toHaveBeenCalledTimes(3);
+      expect(sanitizeHTML(container.innerHTML)).toBe(
+        '<div contenteditable="true" data-outline-editor="true"></div>',
+      );
+      // Wait for update to complete
+      await Promise.resolve().then();
+
+      editor.getViewModel().read((view) => {
+        const root = view.getRoot();
+        const paragraph = root.getFirstChild();
+        const text = paragraph.getFirstChild();
+
+        expect(root).toEqual({
+          __children: [paragraph.getKey()],
+          __flags: 0,
+          __key: 'root',
+          __parent: null,
+          __type: 'root',
+        });
+        expect(paragraph).toEqual({
+          __children: [text.getKey()],
+          __flags: 0,
+          __key: paragraph.getKey(),
+          __parent: 'root',
+          __type: 'paragraph',
+        });
+        expect(text).toEqual({
+          __text: '',
+          __flags: 0,
+          __key: text.getKey(),
+          __parent: paragraph.getKey(),
+          __type: 'text',
+          __url: null,
+        });
+      });
     });
   });
 

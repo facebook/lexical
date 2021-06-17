@@ -91,7 +91,7 @@ function LinkBar({
       onKeyDown={(event) => {
         if (event.key === 'Enter') {
           event.preventDefault();
-          if (editor !== null && lastSelection !== null) {
+          if (lastSelection !== null) {
             if (linkUrl !== '') {
               updateSelectedLinks(linkUrl, lastSelection);
             }
@@ -164,17 +164,15 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
   );
 
   useEffect(() => {
-    if (editor !== null) {
-      editor.getViewModel().read((view) => {
-        const selection = view.getSelection();
-        moveToolbar(selection);
-      });
-    }
+    editor.getViewModel().read((view) => {
+      const selection = view.getSelection();
+      moveToolbar(selection);
+    });
   });
 
   useEffect(() => {
     const toolbar = toolbarRef.current;
-    if (editor !== null && toolbar !== null) {
+    if (toolbar !== null) {
       const updateButtonStates = (selection) => {
         const activeElement = document.activeElement;
         if (
@@ -212,12 +210,10 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
       };
       const mouseUpHandler = () => {
         mouseDownRef.current = false;
-        if (editor !== null) {
-          editor.getViewModel().read((view) => {
-            const selection = view.getSelection();
-            moveToolbar(selection);
-          });
-        }
+        editor.getViewModel().read((view) => {
+          const selection = view.getSelection();
+          moveToolbar(selection);
+        });
       };
 
       document.addEventListener('selectionchange', selectionChangeHandler);
@@ -235,39 +231,35 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
 
   const updateSelectedLinks = useCallback(
     (url: null | string, selection: null | Selection) => {
-      if (editor !== null) {
-        editor.update((view) => {
-          if (selection !== null) {
-            view.setSelection(selection);
-          }
-          const sel = view.getSelection();
-          if (sel !== null) {
-            const nodes = sel.getNodes();
-            nodes.forEach((node) => {
-              if (isTextNode(node) && !node.isImmutable()) {
-                node.setURL(url);
-              }
-            });
-            if (url !== null) {
-              formatText(sel, 'link', true);
+      editor.update((view) => {
+        if (selection !== null) {
+          view.setSelection(selection);
+        }
+        const sel = view.getSelection();
+        if (sel !== null) {
+          const nodes = sel.getNodes();
+          nodes.forEach((node) => {
+            if (isTextNode(node) && !node.isImmutable()) {
+              node.setURL(url);
             }
+          });
+          if (url !== null) {
+            formatText(sel, 'link', true);
           }
-        });
-      }
+        }
+      });
     },
     [editor],
   );
 
   const applyFormatText = useCallback(
     (formatType: TextFormatType) => {
-      if (editor !== null) {
-        editor.update((view) => {
-          const selection = view.getSelection();
-          if (selection !== null) {
-            formatText(selection, formatType);
-          }
-        });
-      }
+      editor.update((view) => {
+        const selection = view.getSelection();
+        if (selection !== null) {
+          formatText(selection, formatType);
+        }
+      });
     },
     [editor],
   );

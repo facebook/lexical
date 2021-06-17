@@ -76,10 +76,13 @@ function useOutlineEditor(
         editorElement.textContent = '';
       }
       editor.setEditorElement(editorElement);
-      editor.setPlaceholder(placeholder);
     },
-    [editor, placeholder],
+    [editor],
   );
+
+  useEffect(() => {
+    editor.setPlaceholder(placeholder);
+  }, [editor, placeholder]);
 
   return [editor, editorElementRef];
 }

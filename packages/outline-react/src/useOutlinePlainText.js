@@ -89,10 +89,12 @@ export default function useOutlinePlainText(
   }, [isReadOnly, eventHandlerState]);
 
   useEffect(() => {
-    if (editor !== null) {
-      initEditor(editor);
-      editor.registerNodeType('paragraph', ParagraphNode);
-    }
+    return editor.addEditorElementListener((editorElement) => {
+      if (editorElement !== null) {
+        initEditor(editor);
+        editor.registerNodeType('paragraph', ParagraphNode);
+      }
+    });
   }, [editor]);
 
   useOutlineEditorEvents(events, editor, eventHandlerState);

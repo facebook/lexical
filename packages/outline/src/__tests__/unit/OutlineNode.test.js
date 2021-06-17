@@ -7,14 +7,14 @@
  */
 import {TextNode} from 'outline';
 import {ParagraphNode} from 'outline/ParagraphNode';
-import {getNodeByKey, OutlineNode} from '../../OutlineNode';
+import {getNodeByKey, OutlineNode} from '../../core/OutlineNode';
 
 import {
   IS_DIRECTIONLESS,
   IS_IMMUTABLE,
   IS_INERT,
   IS_SEGMENTED,
-} from '../../OutlineConstants';
+} from '../../core/OutlineConstants';
 
 import {initializeUnitTest} from '../utils';
 

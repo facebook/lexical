@@ -3,7 +3,7 @@
 import type {OutlineEditor, ViewModel} from 'outline';
 
 import * as React from 'react';
-import {useEffect, useMemo, useRef} from 'react';
+import {useCallback, useEffect, useMemo} from 'react';
 import {createEditor} from 'outline';
 import useOutlineRichText from 'outline-react/useOutlineRichText';
 import useEmojis from './useEmojis';
@@ -32,11 +32,8 @@ type Props = {
 };
 
 function useOutlineEditor(
-  editorElementRef: {
-    current: null | HTMLElement,
-  },
   placeholder: string,
-): OutlineEditor {
+): [OutlineEditor, (null | HTMLElement) => void] {
   const editor = useMemo(
     () =>
       createEditor({
@@ -72,21 +69,22 @@ function useOutlineEditor(
     [],
   );
 
+  const editorElementRef = useCallback(
+    (editorElement: null | HTMLElement) => {
+      // Clear editorElement if not done already
+      if (editorElement !== null && editorElement.firstChild !== null) {
+        editorElement.textContent = '';
+      }
+      editor.setEditorElement(editorElement);
+    },
+    [editor],
+  );
+
   useEffect(() => {
-    const editorElement = editorElementRef.current;
-    // Clear editorElement if not done already
-    if (editorElement !== null && editorElement.firstChild !== null) {
-      editorElement.textContent = '';
-    }
-    editor.setEditorElement(editorElement);
     editor.setPlaceholder(placeholder);
+  }, [editor, placeholder]);
 
-    return () => {
-      editor.setEditorElement(null);
-    };
-  }, [editorElementRef, editor, placeholder]);
-
-  return editor;
+  return [editor, editorElementRef];
 }
 
 function useOutlineOnChange(
@@ -123,7 +121,7 @@ function ContentEditable({
 }: {
   props: {...},
   isReadOnly?: boolean,
-  editorElementRef: {current: null | HTMLElement},
+  editorElementRef: (null | HTMLElement) => void,
 }): React$Node {
   return (
     <div
@@ -145,8 +143,9 @@ export const useRichTextEditor = ({
   isCharLimit,
   isAutocomplete,
 }: Props): [OutlineEditor, React.MixedElement] => {
-  const editorElementRef = useRef(null);
-  const editor = useOutlineEditor(editorElementRef, 'Enter some rich text...');
+  const [editor, editorElementRef] = useOutlineEditor(
+    'Enter some rich text...',
+  );
   const mentionsTypeahead = useMentions(editor);
   const props = useOutlineRichText(editor, isReadOnly);
   const toolbar = useToolbar(editor);
@@ -173,11 +172,12 @@ export const useRichTextEditor = ({
   }, [
     props,
     isReadOnly,
-    isCharLimit,
-    isAutocomplete,
+    editorElementRef,
     mentionsTypeahead,
     toolbar,
     editor,
+    isCharLimit,
+    isAutocomplete,
   ]);
 
   return [editor, element];
@@ -189,8 +189,9 @@ export const usePlainTextEditor = ({
   isCharLimit,
   isAutocomplete,
 }: Props): [OutlineEditor, React.MixedElement] => {
-  const editorElementRef = useRef(null);
-  const editor = useOutlineEditor(editorElementRef, 'Enter some plain text...');
+  const [editor, editorElementRef] = useOutlineEditor(
+    'Enter some plain text...',
+  );
   const mentionsTypeahead = useMentions(editor);
   const props = usePlainText(editor, isReadOnly);
   useOutlineOnChange(editor, onChange);
@@ -210,7 +211,15 @@ export const usePlainTextEditor = ({
         {isAutocomplete && <Typeahead editor={editor} />}
       </>
     ),
-    [props, mentionsTypeahead, isReadOnly, isCharLimit, isAutocomplete, editor],
+    [
+      props,
+      isReadOnly,
+      editorElementRef,
+      mentionsTypeahead,
+      isCharLimit,
+      editor,
+      isAutocomplete,
+    ],
   );
 
   return [editor, element];

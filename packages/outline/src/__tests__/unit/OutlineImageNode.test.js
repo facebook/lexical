@@ -6,107 +6,102 @@
  *
  */
 
-import React from 'react';
-import ReactDOM from 'react-dom';
-import ReactTestUtils from 'react-dom/test-utils';
-
-import {createEditor} from 'outline';
 import {createImageNode, ImageNode} from 'outline/ImageNode';
+import {initializeUnitTest} from '../utils';
 
 const editorThemeClasses = Object.freeze({
   image: 'my-image-class',
 });
 
 describe('OutlineImageNode tests', () => {
-  let container = null;
+  initializeUnitTest((testEnv) => {
+    const src = 'image.jpg';
+    const alt = 'Example Image';
 
-  beforeEach(async () => {
-    container = document.createElement('div');
-    document.body.appendChild(container);
-    await init();
-  });
-
-  afterEach(() => {
-    document.body.removeChild(container);
-    container = null;
-  });
-
-  async function update(fn) {
-    editor.update(fn);
-    return Promise.resolve().then();
-  }
-
-  function useOutlineEditor(editorElementRef) {
-    const editor = React.useMemo(() => createEditor(), []);
-
-    React.useEffect(() => {
-      const editorElement = editorElementRef.current;
-
-      editor.setEditorElement(editorElement);
-    }, [editorElementRef, editor]);
-
-    return editor;
-  }
-
-  let editor = null;
-
-  async function init() {
-    const ref = React.createRef();
-
-    function TestBase() {
-      editor = useOutlineEditor(ref);
-      return <div ref={ref} contentEditable={true} />;
-    }
-
-    ReactTestUtils.act(() => {
-      ReactDOM.render(<TestBase />, container);
+    test('ImageNode.constructor', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const imageNode = new ImageNode(src, alt);
+        expect(imageNode.__src).toBe(src);
+        expect(imageNode.__altText).toBe(alt);
+        expect(imageNode.getFlags()).toBe(0);
+        expect(imageNode.getType()).toBe('image');
+        expect(imageNode.getTextContent()).toBe('');
+      });
+      expect(() => new ImageNode(src, alt)).toThrow();
     });
 
-    // Insert initial block
-    await update((view) => {
-      const imageNode = createImageNode('logo.jpg', 'Alt Text');
-      view.getRoot().append(imageNode);
+    test('ImageNode.clone()', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const imageNode = new ImageNode(src, alt);
+        const imageNodeClone = imageNode.clone();
+        expect(imageNodeClone).not.toBe(imageNode);
+        expect(imageNode.__type).toEqual(imageNodeClone.__type);
+        expect(imageNode.__flags).toEqual(imageNodeClone.__flags);
+        expect(imageNode.__parent).toEqual(imageNodeClone.__parent);
+        expect(imageNode.__src).toEqual(imageNodeClone.__src);
+        expect(imageNode.__altText).toEqual(imageNodeClone.__altText);
+        expect(imageNode.__key).toEqual(imageNodeClone.__key);
+      });
     });
-  }
 
-  test('clone()', async () => {
-    await update((view) => {
-      const imageNode = view.getRoot().getFirstChild();
-      const clone = imageNode.clone();
-      expect(clone).not.toBe(imageNode);
-      expect(clone instanceof ImageNode).toBe(true);
+    test('ImageNode.createDOM()', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const imageNode = new ImageNode(src, alt);
+        expect(imageNode.createDOM(editorThemeClasses).outerHTML).toBe(
+          '<div class="my-image-class"><img src="image.jpg" alt="Example Image"></div>',
+        );
+        expect(imageNode.createDOM({}).outerHTML).toBe(
+          '<div><img src="image.jpg" alt="Example Image"></div>',
+        );
+      });
     });
-  });
 
-  test('isImage()', async () => {
-    await update((view) => {
-      expect(view.getRoot().getFirstChild().isImage()).toBe(true);
+    test('ImageNode.updateDOM()', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const tryUpdateDOM = (newSrc, newAlt) => {
+          const newImageNode = new ImageNode(newSrc, newAlt);
+          const imageNode = new ImageNode(src, alt);
+          const domElement = imageNode.createDOM(editorThemeClasses);
+          expect(domElement.outerHTML).toBe(
+            '<div class="my-image-class"><img src="image.jpg" alt="Example Image"></div>',
+          );
+          const result = newImageNode.updateDOM(imageNode, domElement);
+          expect(result).toBe(false);
+          expect(domElement.outerHTML).toBe(
+            `<div class="my-image-class"><img src="${newSrc}" alt="${newAlt}"></div>`,
+          );
+        };
+        tryUpdateDOM(src, alt);
+        tryUpdateDOM('image2.jpg', alt);
+        tryUpdateDOM(src, 'Example Image 2');
+        tryUpdateDOM('image2.jpg', 'Example Image 2');
+      });
     });
-  });
 
-  test('createDOM()', async () => {
-    await update((view) => {
-      const element = view
-        .getRoot()
-        .getFirstChild()
-        .createDOM(editorThemeClasses);
-      expect(element.outerHTML).toBe(
-        '<div class="my-image-class"><img src="logo.jpg" alt="Alt Text"></div>',
-      );
+    test('ImageNode.isImage()', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const imageNode = new ImageNode(src, alt);
+        expect(imageNode.isImage()).toBe(true);
+      });
     });
-  });
 
-  test('updateDOM()', async () => {
-    await update((view) => {
-      const imageNode = view.getRoot().getFirstChild();
-      const element = imageNode.createDOM(editorThemeClasses);
-
-      const newImageNode = createImageNode('new-logo.jpg', 'New Alt Text');
-      const result = newImageNode.updateDOM(imageNode, element);
-      expect(result).toBe(false);
-      expect(element.outerHTML).toBe(
-        '<div class="my-image-class"><img src="new-logo.jpg" alt="New Alt Text"></div>',
-      );
+    test('createImageNode()', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const imageNode = new ImageNode(src, alt);
+        const createdImageNode = createImageNode(src, alt);
+        expect(imageNode.__type).toEqual(createdImageNode.__type);
+        expect(imageNode.__flags).toEqual(createdImageNode.__flags);
+        expect(imageNode.__parent).toEqual(createdImageNode.__parent);
+        expect(imageNode.__src).toEqual(createdImageNode.__src);
+        expect(imageNode.__altText).toEqual(createdImageNode.__altText);
+        expect(imageNode.__key).not.toEqual(createdImageNode.__key);
+      });
     });
   });
 });

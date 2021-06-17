@@ -366,6 +366,9 @@ export function createSelection(
 
   if (eventType === undefined || lastSelection === null || useDOMSelection) {
     const domSelection = window.getSelection();
+    if (domSelection === null) {
+      return null;
+    }
     anchorDOM = domSelection.anchorNode;
     focusDOM = domSelection.focusNode;
     anchorOffset = domSelection.anchorOffset;

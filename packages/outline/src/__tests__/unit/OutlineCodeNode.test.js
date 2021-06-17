@@ -6,97 +6,118 @@
  *
  */
 
-import {createImageNode, ImageNode} from 'outline/ImageNode';
+import {createCodeNode, CodeNode} from 'outline/CodeNode';
+import {ParagraphNode} from 'outline/ParagraphNode';
+import {TextNode} from 'outline';
 import {initializeUnitTest} from '../utils';
 
 const editorThemeClasses = Object.freeze({
-  image: 'my-image-class',
+  code: 'my-code-class',
 });
 
-describe('OutlineRootNode tests', () => {
+describe('OutlineCodeNode tests', () => {
   initializeUnitTest((testEnv) => {
-    const src = 'image.jpg';
-    const alt = 'Example Image';
-
-    test('ImageNode.constructor', async () => {
+    test('CodeNode.constructor', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const imageNode = new ImageNode(src, alt);
-        expect(imageNode.__src).toBe(src);
-        expect(imageNode.__altText).toBe(alt);
-        expect(imageNode.getFlags()).toBe(0);
-        expect(imageNode.getType()).toBe('image');
-        expect(imageNode.getTextContent()).toBe('');
+        const codeNode = new CodeNode();
+        expect(codeNode.getFlags()).toBe(0);
+        expect(codeNode.getType()).toBe('code');
+        expect(codeNode.getTextContent()).toBe('');
       });
-      expect(() => new ImageNode(src, alt)).toThrow();
+      expect(() => new CodeNode()).toThrow();
     });
 
-    test('ImageNode.clone()', async () => {
+    test('CodeNode.clone()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const imageNode = new ImageNode(src, alt);
-        const imageNodeClone = imageNode.clone();
-        expect(imageNodeClone).not.toBe(imageNode);
-        expect(imageNodeClone).toStrictEqual(imageNode);
+        const codeNode = new CodeNode();
+        const textNode = new TextNode('foo');
+        codeNode.append(textNode);
+        const codeNodeClone = codeNode.clone();
+        expect(codeNodeClone).not.toBe(codeNode);
+        expect(codeNode.__type).toEqual(codeNodeClone.__type);
+        expect(codeNode.__flags).toEqual(codeNodeClone.__flags);
+        expect(codeNode.__parent).toEqual(codeNodeClone.__parent);
+        expect(codeNode.__children).toEqual(codeNodeClone.__children);
+        expect(codeNode.__key).not.toEqual(codeNodeClone.__key);
       });
     });
 
-    test('ImageNode.createDOM()', async () => {
+    test('CodeNode.createDOM()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const imageNode = new ImageNode(src, alt);
-        expect(imageNode.createDOM(editorThemeClasses).outerHTML).toBe(
-          '<div class="my-image-class"><img src="image.jpg" alt="Example Image"></div>',
+        const codeNode = new CodeNode();
+        expect(codeNode.createDOM(editorThemeClasses).outerHTML).toBe(
+          '<code class="my-code-class" spellcheck="false"></code>',
         );
-        expect(imageNode.createDOM({}).outerHTML).toBe(
-          '<div><img src="image.jpg" alt="Example Image"></div>',
+        expect(codeNode.createDOM({}).outerHTML).toBe(
+          '<code spellcheck="false"></code>',
         );
       });
     });
 
-    test('ImageNode.updateDOM()', async () => {
+    test('CodeNode.updateDOM()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const tryUpdateDOM = (newSrc, newAlt) => {
-          const newImageNode = new ImageNode(newSrc, newAlt);
-          const imageNode = new ImageNode(src, alt);
-          const domElement = imageNode.createDOM(editorThemeClasses);
-          expect(domElement.outerHTML).toBe(
-            '<div class="my-image-class"><img src="image.jpg" alt="Example Image"></div>',
-          );
-          const result = newImageNode.updateDOM(imageNode, domElement);
-          expect(result).toBe(false);
-          expect(domElement.outerHTML).toBe(
-            `<div class="my-image-class"><img src="${newSrc}" alt="${newAlt}"></div>`,
-          );
-        };
-        tryUpdateDOM(src, alt);
-        tryUpdateDOM('image2.jpg', alt);
-        tryUpdateDOM(src, 'Example Image 2');
-        tryUpdateDOM('image2.jpg', 'Example Image 2');
+        const newCodeNode = new CodeNode();
+        const codeNode = new CodeNode();
+        const domElement = codeNode.createDOM({});
+        expect(domElement.outerHTML).toBe('<code spellcheck="false"></code>');
+        const result = newCodeNode.updateDOM(codeNode, domElement);
+        expect(result).toBe(false);
+        expect(domElement.outerHTML).toBe('<code spellcheck="false"></code>');
       });
     });
 
-    test('ImageNode.isImage()', async () => {
+    test.skip('CodeNode.insertNewAfter()', async () => {
       const {editor} = testEnv;
-      let imageNode;
-      await editor.update(() => {
-        imageNode = new ImageNode(src, alt);
-        expect(imageNode.isImage()).toBe(true);
+      await editor.update((view) => {
+        const root = view.getRoot();
+        const paragraphNode = new ParagraphNode();
+        const textNode = new TextNode('foo');
+        paragraphNode.append(textNode);
+        root.append(paragraphNode);
+        textNode.select(0, 0);
+        const selection = view.getSelection();
+        expect(selection).toEqual({
+          anchorKey: '_2',
+          anchorOffset: 0,
+          focusKey: '_2',
+          focusOffset: 0,
+          isDirty: true,
+          needsSync: false,
+        });
+      });
+      expect(testEnv.outerHTML).toBe(
+        '<div contenteditable="true" data-outline-editor="true"><p><span>foo</span></p></div>',
+      );
+      await editor.update((view) => {
+        const codeNode = new CodeNode();
+        const selection = view.getSelection();
+        codeNode.insertNewAfter(selection);
       });
     });
 
-    test('createImageNode()', async () => {
+    test('CodeNode.canInsertTab()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const imageNode = new ImageNode(src, alt);
-        const createdImageNode = createImageNode(src, alt);
-        expect(imageNode.__type).toEqual(createdImageNode.__type);
-        expect(imageNode.__flags).toEqual(createdImageNode.__flags);
-        expect(imageNode.__parent).toEqual(createdImageNode.__parent);
-        expect(imageNode.__src).toEqual(createdImageNode.__src);
-        expect(imageNode.__altText).toEqual(createdImageNode.__altText);
-        expect(imageNode.__key).not.toEqual(createdImageNode.__key);
+        const codeNode = new CodeNode();
+        expect(codeNode.canInsertTab()).toBe(true);
+      });
+    });
+
+    test('createCodeNode()', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const codeNode = new CodeNode();
+        const createdCodeNode = createCodeNode();
+        expect(codeNode.__type).toEqual(createdCodeNode.__type);
+        expect(codeNode.__flags).toEqual(createdCodeNode.__flags);
+        expect(codeNode.__parent).toEqual(createdCodeNode.__parent);
+        expect(codeNode.__src).toEqual(createdCodeNode.__src);
+        expect(codeNode.__altText).toEqual(createdCodeNode.__altText);
+        expect(codeNode.__key).not.toEqual(createdCodeNode.__key);
       });
     });
   });

@@ -231,7 +231,12 @@ export class BlockNode extends OutlineNode {
     for (let i = 0; i < children.length; i++) {
       const child: OutlineNode = children[i].getLatest();
 
-      if (isTextNode(child) && !child.isImmutable() && !child.isSegmented()) {
+      if (
+        isTextNode(child) &&
+        !child.isImmutable() &&
+        !child.isSegmented() &&
+        !child.isUnmergeable()
+      ) {
         const url = child.__url;
         const flags = child.__flags;
         const type = child.__type;

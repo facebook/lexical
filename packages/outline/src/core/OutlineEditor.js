@@ -287,6 +287,7 @@ export class OutlineEditor {
 
     return () => {
       this._elementListeners.delete(listener);
+      listener(null);
     };
   }
   addDecoratorListener(listener: DecoratorListener): () => void {

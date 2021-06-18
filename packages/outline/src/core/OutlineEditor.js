@@ -369,17 +369,30 @@ export class OutlineEditor {
     reconcilePlaceholder(this, this._viewModel);
   }
   focus(callbackFn?: () => void): void {
-    this.update((view: View) => {
-      const selection = view.getSelection();
-      if (selection !== null) {
-        // Marking the selection dirty will force the selection back to it
-        selection.isDirty = true;
-      } else {
-        const lastTextNode = view.getRoot().getLastTextNode();
-        if (lastTextNode !== null) {
-          lastTextNode.select();
-        }
-      }
-    }, callbackFn);
+    const editorElement = this._editorElement;
+    if (editorElement !== null) {
+      // This ensures that iOS does not trigger caps lock upon focus
+      editorElement.setAttribute('autocapitalize', 'off');
+      this.update(
+        (view: View) => {
+          const selection = view.getSelection();
+          if (selection !== null) {
+            // Marking the selection dirty will force the selection back to it
+            selection.isDirty = true;
+          } else {
+            const lastTextNode = view.getRoot().getLastTextNode();
+            if (lastTextNode !== null) {
+              lastTextNode.select();
+            }
+          }
+        },
+        () => {
+          editorElement.removeAttribute('autocapitalize');
+          if (callbackFn) {
+            callbackFn();
+          }
+        },
+      );
+    }
   }
 }

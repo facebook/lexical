@@ -41,7 +41,9 @@ export type TextFormatType =
   | 'strikethrough'
   | 'italic'
   | 'code'
-  | 'link';
+  | 'link'
+  | 'hashtag'
+  | 'overflowed';
 
 export type SelectionFragment = {
   root: OutlineNode,
@@ -55,6 +57,8 @@ const textFormatStateFlags: {[TextFormatType]: number} = {
   italic: IS_ITALIC,
   code: IS_CODE,
   link: IS_LINK,
+  hashtag: IS_HASHTAG,
+  overflowed: IS_OVERFLOWED,
 };
 
 function getElementOuterTag(node: TextNode, flags: number): string | null {

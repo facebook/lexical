@@ -32,6 +32,7 @@ import {
   IS_OVERFLOWED,
   BYTE_ORDER_MARK,
   IS_DIRTY_DECORATOR,
+  IS_UNMERGEABLE,
 } from './OutlineConstants';
 
 export type TextFormatType =
@@ -40,9 +41,7 @@ export type TextFormatType =
   | 'strikethrough'
   | 'italic'
   | 'code'
-  | 'link'
-  | 'hashtag'
-  | 'overflowed';
+  | 'link';
 
 export type SelectionFragment = {
   root: OutlineNode,
@@ -56,8 +55,6 @@ const textFormatStateFlags: {[TextFormatType]: number} = {
   italic: IS_ITALIC,
   code: IS_CODE,
   link: IS_LINK,
-  hashtag: IS_HASHTAG,
-  overflowed: IS_OVERFLOWED,
 };
 
 function getElementOuterTag(node: TextNode, flags: number): string | null {
@@ -199,28 +196,31 @@ export class TextNode extends OutlineNode {
     return clone;
   }
   isBold(): boolean {
-    return (this.getLatest().__flags & IS_BOLD) !== 0;
+    return (this.getFlags() & IS_BOLD) !== 0;
   }
   isItalic(): boolean {
-    return (this.getLatest().__flags & IS_ITALIC) !== 0;
+    return (this.getFlags() & IS_ITALIC) !== 0;
   }
   isStrikethrough(): boolean {
-    return (this.getLatest().__flags & IS_STRIKETHROUGH) !== 0;
+    return (this.getFlags() & IS_STRIKETHROUGH) !== 0;
   }
   isUnderline(): boolean {
-    return (this.getLatest().__flags & IS_UNDERLINE) !== 0;
+    return (this.getFlags() & IS_UNDERLINE) !== 0;
   }
   isCode(): boolean {
-    return (this.getLatest().__flags & IS_CODE) !== 0;
+    return (this.getFlags() & IS_CODE) !== 0;
   }
   isLink(): boolean {
-    return (this.getLatest().__flags & IS_LINK) !== 0;
+    return (this.getFlags() & IS_LINK) !== 0;
   }
   isHashtag(): boolean {
-    return (this.getLatest().__flags & IS_HASHTAG) !== 0;
+    return (this.getFlags() & IS_HASHTAG) !== 0;
   }
   isOverflowed(): boolean {
-    return (this.getLatest().__flags & IS_OVERFLOWED) !== 0;
+    return (this.getFlags() & IS_OVERFLOWED) !== 0;
+  }
+  isUnmergeable(): boolean {
+    return (this.getFlags() & IS_UNMERGEABLE) !== 0;
   }
   getURL(): null | string {
     return this.__url;
@@ -357,11 +357,21 @@ export class TextNode extends OutlineNode {
 
   // Mutators
   toggleOverflowed(): TextNode {
-    const newFlags = this.getTextNodeFormatFlags('overflowed', null);
+    const flags = this.getFlags();
+    const newFlags =
+      flags & IS_OVERFLOWED ? flags ^ IS_OVERFLOWED : flags | IS_OVERFLOWED;
     return this.setFlags(newFlags);
   }
   toggleHashtag(): TextNode {
-    const newFlags = this.getTextNodeFormatFlags('hashtag', null);
+    const flags = this.getFlags();
+    const newFlags =
+      flags & IS_HASHTAG ? flags ^ IS_HASHTAG : flags | IS_HASHTAG;
+    return this.setFlags(newFlags);
+  }
+  toggleUnmergeable(): TextNode {
+    const flags = this.getFlags();
+    const newFlags =
+      flags & IS_UNMERGEABLE ? flags ^ IS_UNMERGEABLE : flags | IS_UNMERGEABLE;
     return this.setFlags(newFlags);
   }
   setURL(url: string | null): TextNode {

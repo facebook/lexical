@@ -358,21 +358,15 @@ export class TextNode extends OutlineNode {
   // Mutators
   toggleOverflowed(): TextNode {
     const flags = this.getFlags();
-    const newFlags =
-      flags & IS_OVERFLOWED ? flags ^ IS_OVERFLOWED : flags | IS_OVERFLOWED;
-    return this.setFlags(newFlags);
+    return this.setFlags(flags ^ IS_OVERFLOWED);
   }
   toggleHashtag(): TextNode {
     const flags = this.getFlags();
-    const newFlags =
-      flags & IS_HASHTAG ? flags ^ IS_HASHTAG : flags | IS_HASHTAG;
-    return this.setFlags(newFlags);
+    return this.setFlags(flags ^ IS_HASHTAG);
   }
   toggleUnmergeable(): TextNode {
     const flags = this.getFlags();
-    const newFlags =
-      flags & IS_UNMERGEABLE ? flags ^ IS_UNMERGEABLE : flags | IS_UNMERGEABLE;
-    return this.setFlags(newFlags);
+    return this.setFlags(flags ^ IS_UNMERGEABLE);
   }
   setURL(url: string | null): TextNode {
     errorOnReadOnly();

@@ -12,9 +12,9 @@
     "rich-text"
   ],
   "license": "MIT",
-  "version": "0.0.15",
+  "version": "0.0.16",
   "dependencies": {
-    "outline": "0.0.15"
+    "outline": "0.0.16"
   },
   "peerDependencies": {
     "react": ">=17.0.1",

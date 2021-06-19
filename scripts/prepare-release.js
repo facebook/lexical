@@ -15,12 +15,12 @@ async function prepareOutlinePackage() {
     if (filename === 'Outline.js') {
       fs.renameSync(
         path.resolve('./packages/outline/npm', filename),
-        path.resolve('./packages/outline/npm', filename.replace('Outline', 'index')),
+        path.resolve(
+          './packages/outline/npm',
+          filename.replace('Outline', 'index'),
+        ),
       );
-    } else if (
-      filename.indexOf('Helpers') === -1 &&
-      filename.indexOf('Outline') !== -1
-    ) {
+    } else if (filename.indexOf('Outline') !== -1) {
       fs.renameSync(
         path.resolve('./packages/outline/npm', filename),
         path.resolve('./packages/outline/npm', filename.replace('Outline', '')),

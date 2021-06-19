@@ -1,13 +1,13 @@
 {
   "name": "outline-playground",
-  "version": "0.0.15",
+  "version": "0.0.16",
   "private": true,
   "dependencies": {
     "react": "^18.0.0-alpha-9212d994b",
     "react-dom": "^18.0.0-alpha-9212d994b",
     "react-scripts": "4.0.0",
-    "outline": "0.0.15",
-    "outline-react": "0.0.15",
+    "outline": "0.0.16",
+    "outline-react": "0.0.16",
     "@craco/craco": "6.1.2"
   },
   "scripts": {

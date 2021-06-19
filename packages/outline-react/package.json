@@ -12,9 +12,9 @@
     "rich-text"
   ],
   "license": "MIT",
-  "version": "0.0.16",
+  "version": "0.0.17",
   "dependencies": {
-    "outline": "0.0.16"
+    "outline": "0.0.17"
   },
   "peerDependencies": {
     "react": ">=17.0.1",
@@ -24,11 +24,5 @@
     "type": "git",
     "url": "https://github.com/facebookexternal/Outline",
     "directory": "packages/outline-react"
-  },
-  "exports": {
-    "./useOutlineAutoFormatter": "./dist/useOutlineAutoFormatter.js",
-    "./useOutlineEditorEvents": "./dist/useOutlineEditorEvents.js",
-    "./useOutlinePlainText": "./dist/useOutlinePlainText.js",
-    "./useOutlineRichText": "./dist/useOutlineRichText.js"
   }
 }

@@ -20,9 +20,6 @@ async function prepareOutlineReactPackage() {
     `cp -R ./packages/outline-react/dist ./packages/outline-react/npm`,
   );
   await exec(
-    `cp -R ./packages/outline-react/*.js ./packages/outline-react/npm`,
-  );
-  await exec(
     `cp -R ./packages/outline-react/package.json ./packages/outline-react/npm`,
   );
   await exec(`cp -R LICENSE ./packages/outline-react/npm`);

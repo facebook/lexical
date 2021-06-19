@@ -26,6 +26,7 @@ import {
   isDeleteWordBackward,
   isDeleteWordForward,
   isLineBreak,
+  isOpenLineBreak,
   isParagraph,
   isBold,
   isItalic,
@@ -185,6 +186,10 @@ export function onKeyDownForPlainText(
     } else if (isParagraph(event) || isLineBreak(event)) {
       event.preventDefault();
       insertLineBreak(selection);
+    } else if (isOpenLineBreak(event)) {
+      event.preventDefault();
+      moveBackward(selection, false, isRTL);
+      insertLineBreak(selection);
     } else if (isDeleteBackward(event)) {
       event.preventDefault();
       deleteBackward(selection);
@@ -255,6 +260,10 @@ export function onKeyDownForRichText(
       }
     } else if (isLineBreak(event)) {
       event.preventDefault();
+      insertLineBreak(selection);
+    } else if (isOpenLineBreak(event)) {
+      event.preventDefault();
+      moveBackward(selection, false, isRTL);
       insertLineBreak(selection);
     } else if (isParagraph(event)) {
       event.preventDefault();

@@ -84,17 +84,32 @@ export type EditorElementListener = (element: null | HTMLElement) => void;
 
 function resetEditor(editor: OutlineEditor): void {
   const root = createRoot();
-  const viewModel = new ViewModel({root});
-  editor._viewModel = viewModel;
-  editor._pendingViewModel = null;
+  const emptyViewModel = new ViewModel({root});
+  const prevViewModel = editor._viewModel;
+  const rootChildrenKeys = prevViewModel._nodeMap.root.__children;
+  const keyToDOMMap = editor._keyToDOMMap;
   const editorElement = editor._editorElement;
   const placeholderElement = editor._placeholderElement;
-  if (placeholderElement !== null && editorElement !== null) {
-    editorElement.removeChild(placeholderElement);
+
+  if (editorElement !== null) {
+    // Remove all existing top level DOM elements from editor
+    for (let i = 0; i < rootChildrenKeys.length; i++) {
+      const rootChildKey = rootChildrenKeys[i];
+      const element = keyToDOMMap.get(rootChildKey);
+      if (element !== undefined) {
+        editorElement.removeChild(element);
+      }
+    }
+    // Remove the placeholder element from the editor
+    if (placeholderElement !== null) {
+      editorElement.removeChild(placeholderElement);
+    }
   }
+  editor._viewModel = emptyViewModel;
+  editor._pendingViewModel = null;
   editor._compositionKey = null;
   editor._placeholderElement = null;
-  editor._keyToDOMMap.clear();
+  keyToDOMMap.clear();
   editor._textContent = '';
   triggerUpdateListeners(editor);
 }
@@ -317,26 +332,20 @@ export class OutlineEditor {
   }
   setEditorElement(nextEditorElement: null | HTMLElement): void {
     const prevEditorElement = this._editorElement;
-    if (nextEditorElement === prevEditorElement) {
-      return;
-    }
-    this._editorElement = nextEditorElement;
-    if (nextEditorElement === null) {
-      if (prevEditorElement !== null) {
-        prevEditorElement.textContent = '';
-      }
-      resetEditor(this);
-    } else {
-      if (prevEditorElement !== null) {
+    if (nextEditorElement !== prevEditorElement) {
+      this._editorElement = nextEditorElement;
+      if (nextEditorElement === null || prevEditorElement !== null) {
         resetEditor(this);
       }
-      nextEditorElement.setAttribute('data-outline-editor', 'true');
-      this._keyToDOMMap.set('root', nextEditorElement);
-      commitPendingUpdates(this);
-    }
-    const editorElementListeners = Array.from(this._elementListeners);
-    for (let i = 0; i < editorElementListeners.length; i++) {
-      editorElementListeners[i](nextEditorElement);
+      if (nextEditorElement !== null) {
+        nextEditorElement.setAttribute('data-outline-editor', 'true');
+        this._keyToDOMMap.set('root', nextEditorElement);
+        commitPendingUpdates(this);
+      }
+      const editorElementListeners = Array.from(this._elementListeners);
+      for (let i = 0; i < editorElementListeners.length; i++) {
+        editorElementListeners[i](nextEditorElement);
+      }
     }
   }
   getElementByKey(key: NodeKey): HTMLElement | null {

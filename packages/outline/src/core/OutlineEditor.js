@@ -334,7 +334,9 @@ export class OutlineEditor {
     const prevEditorElement = this._editorElement;
     if (nextEditorElement !== prevEditorElement) {
       this._editorElement = nextEditorElement;
-      resetEditor(this);
+      if (nextEditorElement === null || prevEditorElement !== null) {
+        resetEditor(this);
+      }
       if (nextEditorElement !== null) {
         nextEditorElement.setAttribute('data-outline-editor', 'true');
         this._keyToDOMMap.set('root', nextEditorElement);

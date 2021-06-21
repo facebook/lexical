@@ -333,10 +333,10 @@ export class OutlineEditor {
   setEditorElement(nextEditorElement: null | HTMLElement): void {
     const prevEditorElement = this._editorElement;
     if (nextEditorElement !== prevEditorElement) {
-      this._editorElement = nextEditorElement;
       if (nextEditorElement === null || prevEditorElement !== null) {
         resetEditor(this);
       }
+      this._editorElement = nextEditorElement;
       if (nextEditorElement !== null) {
         nextEditorElement.setAttribute('data-outline-editor', 'true');
         this._keyToDOMMap.set('root', nextEditorElement);

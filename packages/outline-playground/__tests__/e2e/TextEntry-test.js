@@ -96,6 +96,30 @@ describe('TextEntry', () => {
         });
       });
 
+      it(`Can type characters, and select and replace a part`, async () => {
+        const {page} = e2e;
+
+        await page.focus('div.editor');
+        const text = 'Hello foobar.';
+        await page.keyboard.type(text);
+        await repeat(7, async () => await page.keyboard.down('ArrowLeft'));
+        await page.keyboard.down('Shift');
+        await repeat(3, async () => await page.keyboard.down('ArrowRight'));
+        await page.keyboard.up('Shift');
+        await page.keyboard.type('lol');
+
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph" dir="ltr"><span>Hello lolbar.</span></p>',
+        );
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 9,
+          focusPath: [0, 0, 0],
+          focusOffset: 9,
+        });
+      });
+
       it(`Can select and delete a word`, async () => {
         const {page} = e2e;
 

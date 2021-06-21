@@ -454,9 +454,9 @@ export function onCompositionStart(
           removeText(selection);
         }
       }
+      // This works around a FF issue with text selection
+      // ranges during composition.
       if (IS_FIREFOX) {
-        // Not sure why we have to do this, but it seems to fix a bunch
-        // of FF related composition bugs to do with selection.
         selection.isDirty = true;
       }
       editor.setCompositionKey(selection.anchorKey);
@@ -689,7 +689,6 @@ export function onNativeBeforeInputForPlainText(
       return;
     }
     const data = event.data;
-    const inputText = inputType === 'insertText';
 
     if (selection.isCaret()) {
       applyTargetRange(selection, event);
@@ -699,11 +698,12 @@ export function onNativeBeforeInputForPlainText(
       insertText(selection, '  ');
       return;
     }
+    const isInputText = inputType === 'insertText';
     const anchorNode = selection.getAnchorNode();
     const focusNode = selection.getAnchorNode();
 
     if (
-      inputText ||
+      isInputText ||
       inputType === 'insertCompositionText' ||
       inputType === 'deleteCompositionText'
     ) {
@@ -729,10 +729,13 @@ export function onNativeBeforeInputForPlainText(
         const anchorKey = selection.anchorKey;
         const focusKey = selection.focusKey;
 
-        if (canRemoveText(anchorNode, focusNode)) {
+        if (
+          (IS_FIREFOX || !isInputText) &&
+          canRemoveText(anchorNode, focusNode)
+        ) {
           removeText(selection);
         }
-        if (inputText && anchorKey !== focusKey && data) {
+        if (isInputText && anchorKey !== focusKey && data) {
           event.preventDefault();
           editor.setCompositionKey(null);
           insertText(selection, data);
@@ -833,7 +836,6 @@ export function onNativeBeforeInputForRichText(
       return;
     }
     const data = event.data;
-    const inputText = inputType === 'insertText';
 
     if (selection.isCaret()) {
       applyTargetRange(selection, event);
@@ -843,11 +845,12 @@ export function onNativeBeforeInputForRichText(
       insertText(selection, '  ');
       return;
     }
+    const isInputText = inputType === 'insertText';
     const anchorNode = selection.getAnchorNode();
     const focusNode = selection.getAnchorNode();
 
     if (
-      inputText ||
+      isInputText ||
       inputType === 'insertCompositionText' ||
       inputType === 'deleteCompositionText'
     ) {
@@ -872,10 +875,13 @@ export function onNativeBeforeInputForRichText(
         const anchorKey = selection.anchorKey;
         const focusKey = selection.focusKey;
 
-        if (canRemoveText(anchorNode, focusNode)) {
+        if (
+          (IS_FIREFOX || !isInputText) &&
+          canRemoveText(anchorNode, focusNode)
+        ) {
           removeText(selection);
         }
-        if (inputText && anchorKey !== focusKey && data) {
+        if (isInputText && anchorKey !== focusKey && data) {
           event.preventDefault();
           editor.setCompositionKey(null);
           insertText(selection, data);

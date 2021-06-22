@@ -74,7 +74,7 @@ if (CAN_USE_BEFORE_INPUT) {
 
 export default function useOutlineRichText(
   editor: OutlineEditor,
-  isReadOnly: boolean = false,
+  isReadOnly?: boolean = false,
 ): {} | {onBeforeInput: (SyntheticInputEvent<EventTarget>) => void} {
   const eventHandlerState: EventHandlerState = useMemo(
     () => ({

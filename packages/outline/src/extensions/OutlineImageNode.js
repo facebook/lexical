@@ -22,10 +22,7 @@ export class ImageNode extends OutlineNode {
     this.__altText = altText;
   }
   clone(): ImageNode {
-    const clone = new ImageNode(this.__src, this.__altText, this.__key);
-    clone.__parent = this.__parent;
-    clone.__flags = this.__flags;
-    return clone;
+    return new ImageNode(this.__src, this.__altText, this.__key);
   }
   isImage(): true {
     return true;

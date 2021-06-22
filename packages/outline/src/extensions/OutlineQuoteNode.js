@@ -20,11 +20,7 @@ export class QuoteNode extends BlockNode {
   }
 
   clone(): QuoteNode {
-    const clone = new QuoteNode();
-    clone.__children = [...this.__children];
-    clone.__parent = this.__parent;
-    clone.__flags = this.__flags;
-    return clone;
+    return new QuoteNode();
   }
 
   // View

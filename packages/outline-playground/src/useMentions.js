@@ -493,19 +493,16 @@ export default function useMentions(editor: OutlineEditor): React$Node {
 }
 
 class MentionNode extends TextNode {
-  mention: string;
+  __mention: string;
 
   constructor(mentionName: string, key?: NodeKey, text?: string) {
     super(text ?? mentionName, key);
-    this.mention = mentionName;
+    this.__mention = mentionName;
     this.__type = 'mention';
   }
 
   clone() {
-    const clone = new MentionNode(this.mention, this.__key, this.__text);
-    clone.__parent = this.__parent;
-    clone.__flags = this.__flags;
-    return clone;
+    return new MentionNode(this.__mention, this.__key, this.__text);
   }
   createDOM(editorThemeClasses: EditorThemeClasses) {
     const dom = super.createDOM(editorThemeClasses);

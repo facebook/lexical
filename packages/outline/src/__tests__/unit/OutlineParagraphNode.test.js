@@ -11,7 +11,6 @@ import {
   createParagraphNode,
   isParagraphNode,
 } from 'outline/ParagraphNode';
-import {TextNode} from 'outline';
 import {initializeUnitTest} from '../utils';
 
 const editorThemeClasses = Object.freeze({
@@ -29,25 +28,6 @@ describe('OutlineParagraphNode tests', () => {
         expect(paragraphNode.getTextContent()).toBe('');
       });
       expect(() => new ParagraphNode()).toThrow();
-    });
-
-    test('ParagraphNode.clone()', async () => {
-      const {editor} = testEnv;
-      await editor.update(() => {
-        const paragraphNode = new ParagraphNode();
-        const textNode = new TextNode('foo');
-        paragraphNode.append(textNode);
-        const paragraphNodeClone = paragraphNode.clone();
-        expect(paragraphNodeClone).not.toBe(paragraphNode);
-        expect(paragraphNode.__type).toEqual(paragraphNodeClone.__type);
-        expect(paragraphNode.__flags).toEqual(paragraphNodeClone.__flags);
-        expect(paragraphNode.__parent).toEqual(paragraphNodeClone.__parent);
-        expect(paragraphNode.__children).toEqual(paragraphNodeClone.__children);
-        expect(paragraphNode.__key).toEqual(paragraphNodeClone.__key);
-        expect(paragraphNode.getTextContent()).toEqual(
-          paragraphNodeClone.getTextContent(),
-        );
-      });
     });
 
     test('ParagraphNode.createDOM()', async () => {

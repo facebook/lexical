@@ -21,11 +21,7 @@ export class ListItemNode extends BlockNode {
   }
 
   clone(): ListItemNode {
-    const clone = new ListItemNode(this.__key);
-    clone.__children = [...this.__children];
-    clone.__parent = this.__parent;
-    clone.__flags = this.__flags;
-    return clone;
+    return new ListItemNode(this.__key);
   }
 
   // View

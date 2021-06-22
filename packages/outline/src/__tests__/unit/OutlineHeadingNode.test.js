@@ -12,7 +12,6 @@ import {
   isHeadingNode,
 } from 'outline/HeadingNode';
 import {ParagraphNode} from 'outline/ParagraphNode';
-import {TextNode} from 'outline';
 import {initializeUnitTest} from '../utils';
 
 const editorThemeClasses = Object.freeze({
@@ -37,26 +36,6 @@ describe('OutlineHeadingNode tests', () => {
         expect(headingNode.getTextContent()).toBe('');
       });
       expect(() => new HeadingNode()).toThrow();
-    });
-
-    test('HeadingNode.clone()', async () => {
-      const {editor} = testEnv;
-      await editor.update(() => {
-        const headingNode = new HeadingNode('h1');
-        const textNode = new TextNode('foo');
-        headingNode.append(textNode);
-        const headingNodeClone = headingNode.clone();
-        expect(headingNodeClone).not.toBe(headingNode);
-        expect(headingNode.__type).toEqual(headingNodeClone.__type);
-        expect(headingNode.__flags).toEqual(headingNodeClone.__flags);
-        expect(headingNode.__parent).toEqual(headingNodeClone.__parent);
-        expect(headingNode.__children).toEqual(headingNodeClone.__children);
-        expect(headingNode.__tag).toEqual(headingNodeClone.__tag);
-        expect(headingNode.__key).toEqual(headingNodeClone.__key);
-        expect(headingNode.getTextContent()).toEqual(
-          headingNodeClone.getTextContent(),
-        );
-      });
     });
 
     test('HeadingNode.createDOM()', async () => {

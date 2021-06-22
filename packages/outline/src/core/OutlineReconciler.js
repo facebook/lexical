@@ -432,7 +432,7 @@ function reconcileNodeChildren(
           reconcileNode(keyToMove, dom);
           if (!hasClonedPrevChildren) {
             hasClonedPrevChildren = true;
-            prevChildren = [...prevChildren];
+            prevChildren = Array.from(prevChildren);
           }
           // $FlowFixMe: figure a way of typing this better
           prevChildren[indexInPrevChildren] = ((undefined: any): NodeKey);

@@ -7,7 +7,6 @@
  */
 
 import {ListNode, createListNode, isListNode} from 'outline/ListNode';
-import {TextNode} from 'outline';
 import {initializeUnitTest} from '../utils';
 
 const editorThemeClasses = Object.freeze({
@@ -29,25 +28,6 @@ describe('OutlineListNode tests', () => {
         expect(listNode.getTextContent()).toBe('');
       });
       expect(() => new ListNode()).toThrow();
-    });
-
-    test('ListNode.clone()', async () => {
-      const {editor} = testEnv;
-      await editor.update(() => {
-        const listNode = new ListNode();
-        const textNode = new TextNode('foo');
-        listNode.append(textNode);
-        const listNodeClone = listNode.clone();
-        expect(listNodeClone).not.toBe(listNode);
-        expect(listNode.__type).toEqual(listNodeClone.__type);
-        expect(listNode.__flags).toEqual(listNodeClone.__flags);
-        expect(listNode.__parent).toEqual(listNodeClone.__parent);
-        expect(listNode.__children).toEqual(listNodeClone.__children);
-        expect(listNode.__key).toEqual(listNodeClone.__key);
-        expect(listNode.getTextContent()).toEqual(
-          listNodeClone.getTextContent(),
-        );
-      });
     });
 
     test('ListNode.getTag()', async () => {

@@ -20,11 +20,7 @@ export class CodeNode extends BlockNode {
   }
 
   clone(): CodeNode {
-    const clone = new CodeNode();
-    clone.__children = [...this.__children];
-    clone.__parent = this.__parent;
-    clone.__flags = this.__flags;
-    return clone;
+    return new CodeNode();
   }
 
   // View

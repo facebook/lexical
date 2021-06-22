@@ -82,23 +82,20 @@ export default function useEmojis(editor: OutlineEditor): void {
 }
 
 class EmojiNode extends TextNode {
-  className: string;
+  __className: string;
 
   constructor(className: string, text: string, key?: NodeKey) {
     super(text, key);
-    this.className = className;
+    this.__className = className;
     this.__type = 'emoji';
   }
 
   clone() {
-    const clone = new EmojiNode(this.className, this.__text, this.__key);
-    clone.__parent = this.__parent;
-    clone.__flags = this.__flags;
-    return clone;
+    return new EmojiNode(this.__className, this.__text, this.__key);
   }
   createDOM(editorThemeClasses: EditorThemeClasses) {
     const dom = super.createDOM(editorThemeClasses);
-    dom.className = this.className;
+    dom.className = this.__className;
     return dom;
   }
 }

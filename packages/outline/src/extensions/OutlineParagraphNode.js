@@ -18,11 +18,7 @@ export class ParagraphNode extends BlockNode {
   }
 
   clone(): ParagraphNode {
-    const clone = new ParagraphNode(this.__key);
-    clone.__children = [...this.__children];
-    clone.__parent = this.__parent;
-    clone.__flags = this.__flags;
-    return clone;
+    return new ParagraphNode(this.__key);
   }
 
   // View

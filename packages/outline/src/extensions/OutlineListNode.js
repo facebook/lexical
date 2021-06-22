@@ -23,11 +23,7 @@ export class ListNode extends BlockNode {
   }
 
   clone(): ListNode {
-    const clone = new ListNode(this.__tag, this.__key);
-    clone.__children = [...this.__children];
-    clone.__parent = this.__parent;
-    clone.__flags = this.__flags;
-    return clone;
+    return new ListNode(this.__tag, this.__key);
   }
   getTag(): ListNodeTagType {
     return this.__tag;

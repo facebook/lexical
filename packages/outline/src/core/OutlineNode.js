@@ -633,7 +633,7 @@ export function getWritableNode<N: OutlineNode>(node: N): N {
   const key = node.__key;
   // Ensure we get the latest node from pending state
   const latestNode = node.getLatest();
-  const parent = node.__parent;
+  const parent = latestNode.__parent;
   if (parent !== null) {
     const dirtySubTrees = viewModel._dirtySubTrees;
     markParentsAsDirty(parent, nodeMap, dirtySubTrees);
@@ -642,7 +642,7 @@ export function getWritableNode<N: OutlineNode>(node: N): N {
     return latestNode;
   }
   const mutableNode = latestNode.clone();
-  mutableNode.__parent = latestNode.__parent;
+  mutableNode.__parent = parent;
   mutableNode.__flags = latestNode.__flags;
   if (isBlockNode(mutableNode)) {
     mutableNode.__children = Array.from(latestNode.__children);

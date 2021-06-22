@@ -174,16 +174,16 @@ function updateEditor(
           const pendingNodeMap = currentPendingViewModel._nodeMap;
           const anchorKey = pendingSelection.anchorKey;
           const focusKey = pendingSelection.focusKey;
-          invariant(
-            pendingNodeMap[anchorKey] !== undefined,
-            'updateEditor: selection has been lost because the previously selected anchor node has been removed and ' +
-              "selection wasn't moved to another node. Ensure selection changes after removing/replacing a selected node.",
-          );
-          invariant(
-            pendingNodeMap[focusKey] !== undefined,
-            'updateEditor: selection has been lost because the previously selected focus node has been removed and ' +
-              "selection wasn't moved to another node. Ensure selection changes after removing/replacing a selected node.",
-          );
+          if (
+            pendingNodeMap[anchorKey] === undefined ||
+            pendingNodeMap[focusKey] === undefined
+          ) {
+            invariant(
+              false,
+              'updateEditor: selection has been lost because the previously selected nodes have been removed and ' +
+                "selection wasn't moved to another node. Ensure selection changes after removing/replacing a selected node.",
+            );
+          }
         }
       },
       pendingViewModel,

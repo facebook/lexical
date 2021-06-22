@@ -135,46 +135,67 @@ export default function useOutlineHistory(
       historyState.current = viewModel;
     };
 
+    const undo = () => {
+      const undoStackLength = undoStack.length;
+      if (undoStackLength !== 0) {
+        let current = historyState.current;
+
+        if (current !== null) {
+          if (undoStackLength !== 1 && !current.hasDirtyNodes()) {
+            current = undoStack.pop();
+          }
+          redoStack.push(current);
+        }
+        const viewModel = undoStack.pop();
+        historyState.current = viewModel;
+        viewModel.markDirty();
+        editor.setViewModel(viewModel);
+      }
+    };
+
+    const redo = () => {
+      if (redoStack.length !== 0) {
+        const current = historyState.current;
+
+        if (current !== null) {
+          undoStack.push(current);
+        }
+        const viewModel = redoStack.pop();
+        historyState.current = viewModel;
+        viewModel.markDirty();
+        editor.setViewModel(viewModel);
+      }
+    };
+
     const handleKeyDown = (event: KeyboardEvent) => {
       if (editor.isComposing()) {
         return;
       }
       if (isUndo(event)) {
-        const undoStackLength = undoStack.length;
-        if (undoStackLength !== 0) {
-          let current = historyState.current;
-
-          if (current !== null) {
-            if (undoStackLength !== 1 && !current.hasDirtyNodes()) {
-              current = undoStack.pop();
-            }
-            redoStack.push(current);
-          }
-          const viewModel = undoStack.pop();
-          historyState.current = viewModel;
-          viewModel.markDirty();
-          editor.setViewModel(viewModel);
-        }
+        undo();
       } else if (isRedo(event)) {
-        if (redoStack.length !== 0) {
-          const current = historyState.current;
+        redo();
+      }
+    };
 
-          if (current !== null) {
-            undoStack.push(current);
-          }
-          const viewModel = redoStack.pop();
-          historyState.current = viewModel;
-          viewModel.markDirty();
-          editor.setViewModel(viewModel);
-        }
+    const handleBeforeInput = (event: InputEvent) => {
+      const inputType = event.inputType;
+      if (inputType === 'historyUndo') {
+        event.preventDefault();
+        undo();
+      } else if (inputType === 'historyRedo') {
+        event.preventDefault();
+        redo();
       }
     };
 
     const removeUpdateListener = editor.addUpdateListener(applyChange);
     editorElement.addEventListener('keydown', handleKeyDown);
+    editorElement.addEventListener('beforeinput', handleBeforeInput);
     return () => {
-      editorElement.removeEventListener('keydown', handleKeyDown);
       removeUpdateListener();
+      editorElement.removeEventListener('keydown', handleKeyDown);
+      editorElement.removeEventListener('beforeinput', handleBeforeInput);
     };
   }, [historyState, editor]);
 

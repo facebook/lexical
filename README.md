@@ -21,8 +21,8 @@ Below is an example of a basic plain text editor using `outline` and `outline-re
 
 ```jsx
 import {useCallback} from 'react';
-import {useOutlineEditor} from 'outline-react/useOutlineEditor';
-import {useOutlinePlainText} from 'outline-react/useOutlinePlainText';
+import useOutlineEditor from 'outline-react/useOutlineEditor';
+import useOutlinePlainText from 'outline-react/useOutlinePlainText';
 
 function Editor() {
   // When Outline encounters an error, this is where

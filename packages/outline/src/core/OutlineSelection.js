@@ -178,11 +178,13 @@ function resolveSelectionNodeAndOffset(
   let resolvedOffset = offset;
   let resolvedNode;
   let isDirty = _isDirty;
+  let didResolveOffsetAlready = false;
   // If we have selection on an element, we will
   // need to figure out (using the offset) what text
   // node should be selected.
 
   if (domIsElement(resolvedDOM) && resolvedDOM.nodeName !== 'BR') {
+    didResolveOffsetAlready = true;
     let moveSelectionToEnd = false;
     // Given we're moving selection to another node, selection is
     // definitely dirty.
@@ -254,7 +256,7 @@ function resolveSelectionNodeAndOffset(
     // from the offset.
     if (resolvedOffset === 0) {
       isDirty = true;
-    } else {
+    } else if (!didResolveOffsetAlready) {
       resolvedOffset--;
     }
   }

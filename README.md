@@ -27,7 +27,7 @@ import {useOutlinePlainText} from 'outline-react/useOutlinePlainText';
 function Editor() {
   // When Outline encounters an error, this is where
   // we can report/handle it.
-  const onError = useCallback((error: Error) => {
+  const onError = useCallback((error) => {
     throw error;
   }, [])
 

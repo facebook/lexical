@@ -32,11 +32,7 @@ export class HeadingNode extends BlockNode {
     return header;
   }
   clone(): HeadingNode {
-    const clone = new HeadingNode(this.__tag, this.__key);
-    clone.__children = [...this.__children];
-    clone.__parent = this.__parent;
-    clone.__flags = this.__flags;
-    return clone;
+    return new HeadingNode(this.__tag, this.__key);
   }
   getTag(): HeadingTagType {
     return this.__tag;

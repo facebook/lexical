@@ -28,22 +28,6 @@ describe('OutlineCodeNode tests', () => {
       expect(() => new CodeNode()).toThrow();
     });
 
-    test('CodeNode.clone()', async () => {
-      const {editor} = testEnv;
-      await editor.update(() => {
-        const codeNode = new CodeNode();
-        const textNode = new TextNode('foo');
-        codeNode.append(textNode);
-        const codeNodeClone = codeNode.clone();
-        expect(codeNodeClone).not.toBe(codeNode);
-        expect(codeNode.__type).toEqual(codeNodeClone.__type);
-        expect(codeNode.__flags).toEqual(codeNodeClone.__flags);
-        expect(codeNode.__parent).toEqual(codeNodeClone.__parent);
-        expect(codeNode.__children).toEqual(codeNodeClone.__children);
-        expect(codeNode.__key).not.toEqual(codeNodeClone.__key);
-      });
-    });
-
     test('CodeNode.createDOM()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {

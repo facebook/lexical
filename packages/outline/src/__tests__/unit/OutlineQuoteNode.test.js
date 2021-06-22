@@ -8,7 +8,6 @@
 
 import {QuoteNode, createQuoteNode} from 'outline/QuoteNode';
 import {ParagraphNode} from 'outline/ParagraphNode';
-import {TextNode} from 'outline';
 import {initializeUnitTest} from '../utils';
 
 const editorThemeClasses = Object.freeze({
@@ -26,25 +25,6 @@ describe('OutlineQuoteNode tests', () => {
         expect(quoteNode.getTextContent()).toBe('');
       });
       expect(() => new QuoteNode()).toThrow();
-    });
-
-    test('QuoteNode.clone()', async () => {
-      const {editor} = testEnv;
-      await editor.update(() => {
-        const quoteNode = new QuoteNode();
-        const textNode = new TextNode('foo');
-        quoteNode.append(textNode);
-        const quoteNodeClone = quoteNode.clone();
-        expect(quoteNodeClone).not.toBe(quoteNode);
-        expect(quoteNode.__type).toEqual(quoteNodeClone.__type);
-        expect(quoteNode.__flags).toEqual(quoteNodeClone.__flags);
-        expect(quoteNode.__parent).toEqual(quoteNodeClone.__parent);
-        expect(quoteNode.__children).toEqual(quoteNodeClone.__children);
-        expect(quoteNode.__key).not.toEqual(quoteNodeClone.__key);
-        expect(quoteNode.getTextContent()).toEqual(
-          quoteNodeClone.getTextContent(),
-        );
-      });
     });
 
     test('QuoteNode.createDOM()', async () => {

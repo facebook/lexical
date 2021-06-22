@@ -194,8 +194,6 @@ export class TextNode extends OutlineNode {
 
   clone(): TextNode {
     const clone = new TextNode(this.__text, this.__key);
-    clone.__parent = this.__parent;
-    clone.__flags = this.__flags;
     clone.__url = this.__url;
     return clone;
   }

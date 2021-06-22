@@ -32,25 +32,6 @@ describe('OutlineListItemNode tests', () => {
       expect(() => new ListItemNode()).toThrow();
     });
 
-    test('ListItemNode.clone()', async () => {
-      const {editor} = testEnv;
-      await editor.update(() => {
-        const listItemNode = new ListItemNode();
-        const textNode = new TextNode('foo');
-        listItemNode.append(textNode);
-        const listItemNodeClone = listItemNode.clone();
-        expect(listItemNodeClone).not.toBe(listItemNode);
-        expect(listItemNode.__type).toEqual(listItemNodeClone.__type);
-        expect(listItemNode.__flags).toEqual(listItemNodeClone.__flags);
-        expect(listItemNode.__parent).toEqual(listItemNodeClone.__parent);
-        expect(listItemNode.__children).toEqual(listItemNodeClone.__children);
-        expect(listItemNode.__key).toEqual(listItemNodeClone.__key);
-        expect(listItemNode.getTextContent()).toEqual(
-          listItemNodeClone.getTextContent(),
-        );
-      });
-    });
-
     test('ListItemNode.createDOM()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {

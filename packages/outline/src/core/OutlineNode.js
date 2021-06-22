@@ -642,6 +642,11 @@ export function getWritableNode<N: OutlineNode>(node: N): N {
     return latestNode;
   }
   const mutableNode = latestNode.clone();
+  mutableNode.__parent = latestNode.__parent;
+  mutableNode.__flags = latestNode.__flags;
+  if (isBlockNode(mutableNode)) {
+    mutableNode.__children = Array.from(latestNode.__children);
+  }
   if (__DEV__) {
     if (!mutableNode.constructor.prototype.hasOwnProperty('clone')) {
       throw new Error(

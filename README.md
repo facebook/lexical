@@ -37,19 +37,19 @@ function Editor() {
 
   // Create an Outline editor instance and also a ref
   // that we need to pass to our content editable.
-  const [editor, editorElementRef] = useOutlineEditor(
+  const [editor, contentEditableRef] = useOutlineEditor(
     placeholderText,
     onError,
   );
 
   // Setup event handlers for plain text entry.
-  const props = useOutlinePlainText(editor);
+  const eventHandlers = useOutlinePlainText(editor);
 
   // Our <div> content editable element with some basic styling.
   return (
     <div
-      {...props}
-      ref={editorElementRef}
+      {...eventHandlers}
+      ref={contentEditableRef}
       contentEditable={true}
       role="textbox"
       spellCheck={true}

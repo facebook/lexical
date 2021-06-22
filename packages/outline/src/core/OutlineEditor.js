@@ -35,6 +35,7 @@ import {
 import {getWritableNode} from './OutlineNode';
 import {createRootNode as createRoot} from './OutlineRootNode';
 import {reconcilePlaceholder} from './OutlineReconciler';
+import invariant from 'shared/invariant';
 
 export type EditorThemeClassName = string;
 
@@ -167,6 +168,22 @@ function updateEditor(
         if (currentPendingViewModel.hasDirtyNodes()) {
           applyTextTransforms(currentPendingViewModel, editor);
           garbageCollectDetachedNodes(currentPendingViewModel, editor);
+        }
+        const pendingSelection = currentPendingViewModel._selection;
+        if (pendingSelection !== null) {
+          const pendingNodeMap = currentPendingViewModel._nodeMap;
+          const anchorKey = pendingSelection.anchorKey;
+          const focusKey = pendingSelection.focusKey;
+          invariant(
+            pendingNodeMap[anchorKey] !== undefined,
+            'updateEditor: selection has been lost because the previously selected anchor node has been removed and ' +
+              "selection wasn't moved to another node. Ensure selection changes after removing/replacing a selected node.",
+          );
+          invariant(
+            pendingNodeMap[focusKey] !== undefined,
+            'updateEditor: selection has been lost because the previously selected focus node has been removed and ' +
+              "selection wasn't moved to another node. Ensure selection changes after removing/replacing a selected node.",
+          );
         }
       },
       pendingViewModel,

@@ -43,11 +43,12 @@ function Editor() {
   );
 
   // Setup event handlers for plain text entry.
-  useOutlinePlainText(editor);
+  const props = useOutlinePlainText(editor);
 
   // Our <div> content editable element with some basic styling.
   return (
     <div
+      {...props}
       ref={editorElementRef}
       contentEditable={true}
       role="textbox"

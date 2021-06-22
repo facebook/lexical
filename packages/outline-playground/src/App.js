@@ -26,8 +26,12 @@ function RichTextEditor({options, onOptionsChange}): React$Node {
     },
     [showTreeView],
   );
+  const onError = useCallback((e: Error) => {
+    throw e;
+  }, []);
   const [editor, editorComponent] = useRichTextEditor({
     onChange,
+    onError,
     isCharLimit,
     isAutocomplete,
   });
@@ -66,8 +70,12 @@ function PlainTextEditor({options, onOptionsChange}): React$Node {
     },
     [showTreeView],
   );
+  const onError = useCallback((e: Error) => {
+    throw e;
+  }, []);
   const [editor, editorComponent] = usePlainTextEditor({
     onChange,
+    onError,
     isCharLimit,
     isAutocomplete,
   });

@@ -39,5 +39,6 @@
   "37": "findIndexInPrevChildren: index in prevChildren not found",
   "38": "reconcileNodeChildren: keyToMove to was not nextStartKey",
   "39": "storeDOMWithNodeKey: key was null",
-  "40": "Reconciliation: could not find DOM element for node key \"${key}\""
+  "40": "Reconciliation: could not find DOM element for node key \"${key}\"",
+  "41": "updateEditor: selection has been lost because the previously selected nodes have been removed and selection wasn't moved to another node. Ensure selection changes after removing/replacing a selected node."
 }

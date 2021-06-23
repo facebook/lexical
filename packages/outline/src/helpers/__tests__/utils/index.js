@@ -143,8 +143,8 @@ if (!Selection.prototype.modify) {
 }
 
 export function sanitizeHTML(html) {
-  // Remove the special space characters
-  return html.replace(/\uFEFF/g, '');
+  // Remove zero width characters.
+  return html.replace(/[\u200B-\u200D\u2060\uFEFF]/g, '');
 }
 
 export function sanitizeSelection(selection) {
@@ -349,7 +349,10 @@ export function setNativeSelection(
 ) {
   const domSelection = window.getSelection();
   const range = document.createRange();
-  if (anchorNode.nodeType === 3 && anchorNode.nodeValue === '\uFEFF') {
+  if (
+    anchorNode.nodeType === 3 &&
+    (anchorNode.nodeValue === '\u200B' || anchorNode.nodeValue === '\u2060')
+  ) {
     anchorOffset = 1;
     focusOffset = 1;
   }
@@ -505,7 +508,11 @@ function moveNativeSelectionForward() {
     if (!keyDownEvent.defaultPrevented) {
       if (anchorNode.nodeType === 3) {
         const text = anchorNode.nodeValue;
-        if (text.length === anchorOffset || text === '\uFEFF') {
+        if (
+          text.length === anchorOffset ||
+          text === '\u200B' ||
+          text === '\u2060'
+        ) {
           const nextTextNode = getNextTextNode(anchorNode);
 
           if (nextTextNode === null) {

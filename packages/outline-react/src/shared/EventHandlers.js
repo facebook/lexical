@@ -60,13 +60,15 @@ import {
   moveForward,
   moveWordForward,
 } from 'outline/SelectionHelpers';
+import {isTextNode} from 'outline';
 
 // Safari triggers composition before keydown, meaning
 // we need to account for this when handling key events.
 let wasRecentlyComposing = false;
 let lastKeyWasMaybeAndroidSoftKey = false;
 const RESOLVE_DELAY = 20;
-const BYTE_ORDER_MARK = '\uFEFF';
+const ZERO_WIDTH_SPACE_CHAR = '\u200B';
+const ZERO_WIDTH_JOINER_CHAR = '\u2060';
 
 // TODO the Flow types here needs fixing
 export type EventHandler = (
@@ -488,10 +490,50 @@ export function onSelectionChange(
   if (editorElement && !editorElement.contains(domSelection.anchorNode)) {
     return;
   }
+  const prevSelection = editor.getViewModel()._selection;
 
+  // This update also functions as a way of reconciling a bad selection
+  // to a good selection. So if the below logic is removed, remember to
+  // not remove the editor update.
   editor.update((view) => {
-    // This update also functions as a way of reconciling a bad selection
-    // to a good selection.
+    const selection = view.getSelection();
+    // In some cases, selection can move without an precursor operation
+    // occuring. For example, iOS Voice Control moves selection without
+    // triggering keydown events. In order to account for zero-width
+    // characters, and moving selection to the right place, we need to
+    // do the below.
+    if (
+      prevSelection !== null &&
+      selection !== null &&
+      selection.isCaret() &&
+      prevSelection.isCaret()
+    ) {
+      const prevAnchorOffset = prevSelection.anchorOffset;
+      const prevAnchorKey = prevSelection.anchorKey;
+      const anchorOffset = selection.anchorOffset;
+      const anchorNode = selection.getAnchorNode();
+
+      if (
+        prevAnchorOffset === 0 &&
+        anchorOffset === anchorNode.getTextContentSize()
+      ) {
+        const nextSibling = anchorNode.getNextSibling();
+        if (isTextNode(nextSibling) && nextSibling.getKey() === prevAnchorKey) {
+          const isRTL = isTopLevelBlockRTL(selection);
+          moveBackward(selection, false, isRTL);
+        }
+      } else if (anchorOffset === 0) {
+        const prevSibling = anchorNode.getPreviousSibling();
+        if (
+          isTextNode(prevSibling) &&
+          prevSibling.getKey() === prevAnchorKey &&
+          prevSibling.getTextContentSize() === prevAnchorOffset
+        ) {
+          const isRTL = isTopLevelBlockRTL(selection);
+          moveForward(selection, false, isRTL);
+        }
+      }
+    }
   });
 }
 
@@ -610,11 +652,14 @@ export function onNativeInput(
         // for our anchor node. We get the text content from the anchor element's
         // text node.
         const rawTextContent = textNode.nodeValue;
-        const textContent = rawTextContent.replace(BYTE_ORDER_MARK, '');
+        const textContent = rawTextContent.replace(/[\u200B\u2060]/g, '');
         let anchorOffset = window.getSelection().anchorOffset;
         // If the first character is a BOM, then we need to offset this because
         // this character isn't really apart of our offset.
-        if (rawTextContent[0] === BYTE_ORDER_MARK) {
+        if (
+          rawTextContent[0] === ZERO_WIDTH_SPACE_CHAR ||
+          rawTextContent[0] === ZERO_WIDTH_JOINER_CHAR
+        ) {
           anchorOffset--;
         }
 
@@ -707,8 +752,19 @@ export function onNativeBeforeInputForPlainText(
       inputType === 'insertCompositionText' ||
       inputType === 'deleteCompositionText'
     ) {
-      if (selection.isCaret() && isImmutableOrInertOrSegmented(anchorNode)) {
+      if (
+        isInputText &&
+        selection.isCaret() &&
+        isImmutableOrInertOrSegmented(anchorNode)
+      ) {
         event.preventDefault();
+        if (selection.anchorOffset === anchorNode.getTextContentSize()) {
+          const nextSibling = anchorNode.getNextSibling();
+          if (isTextNode(nextSibling) && data != null) {
+            nextSibling.select(0, 0);
+            insertText(selection, data);
+          }
+        }
         return;
       }
       // Gets around a Safari text replacement bug.
@@ -854,8 +910,19 @@ export function onNativeBeforeInputForRichText(
       inputType === 'insertCompositionText' ||
       inputType === 'deleteCompositionText'
     ) {
-      if (selection.isCaret() && isImmutableOrInertOrSegmented(anchorNode)) {
+      if (
+        isInputText &&
+        selection.isCaret() &&
+        isImmutableOrInertOrSegmented(anchorNode)
+      ) {
         event.preventDefault();
+        if (selection.anchorOffset === anchorNode.getTextContentSize()) {
+          const nextSibling = anchorNode.getNextSibling();
+          if (isTextNode(nextSibling) && data != null) {
+            nextSibling.select(0, 0);
+            insertText(selection, data);
+          }
+        }
         return;
       }
       // Gets around a Safari text replacement bug.

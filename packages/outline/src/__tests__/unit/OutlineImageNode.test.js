@@ -26,7 +26,7 @@ describe('OutlineImageNode tests', () => {
         expect(imageNode.__altText).toBe(alt);
         expect(imageNode.getFlags()).toBe(0);
         expect(imageNode.getType()).toBe('image');
-        expect(imageNode.getTextContent()).toBe('');
+        expect(imageNode.getTextContent()).toBe('Example Image');
       });
       expect(() => new ImageNode(src, alt)).toThrow();
     });

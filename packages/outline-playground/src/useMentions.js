@@ -1,4 +1,12 @@
-// @flow
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow
+ */
+
 import type {OutlineEditor, NodeKey, EditorThemeClasses} from 'outline';
 
 import React, {useCallback, useLayoutEffect, useMemo, useRef} from 'react';
@@ -430,8 +438,6 @@ export default function useMentions(editor: OutlineEditor): React$Node {
       if (
         selection === null ||
         selection.getAnchorNode() !== node ||
-        node.isImmutable() ||
-        node.isSegmented() ||
         node.isHashtag() ||
         node.__type === 'mention'
       ) {

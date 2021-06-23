@@ -1,4 +1,11 @@
-// @flow strict-local
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow strict-local
+ */
 
 import type {OutlineEditor, TextNode} from 'outline';
 
@@ -240,7 +247,7 @@ const REGEX = new RegExp(getHashtagRegexString(), 'ig');
 export default function useHashtags(editor: OutlineEditor): void {
   useEffect(() => {
     return editor.addTextNodeTransform((node: TextNode) => {
-      if (node.isSegmented() || node.isImmutable() || node.isHashtag()) {
+      if (node.isHashtag()) {
         return;
       }
       const text = node.getTextContent();

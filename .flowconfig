@@ -35,6 +35,7 @@ module.name_mapper='^outline-react/useOutlineRichText' -> '<PROJECT_ROOT>/packag
 module.name_mapper='^outline-react/useOutlinePlainText' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlinePlainText.js'
 module.name_mapper='^outline-react/useOutlineEditorEvents' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlineEditorEvents.js'
 module.name_mapper='^outline-react/useOutlineAutoFormatter' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlineAutoFormatter.js'
+module.name_mapper='^outline-react/useOutlineDecorators' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlineDecorators.js'
 
 module.name_mapper='^shared/isImmutableOrInertOrSegmented' -> '<PROJECT_ROOT>/packages/shared/src/isImmutableOrInertOrSegmented.js'
 module.name_mapper='^shared/invariant' -> '<PROJECT_ROOT>/packages/shared/src/invariant.js'

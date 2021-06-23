@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+
 import {createRootNode, createTextNode} from 'outline';
 import {createParagraphNode} from 'outline/ParagraphNode';
 import {ViewModel} from '../../core/OutlineView';

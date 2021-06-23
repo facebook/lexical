@@ -17,8 +17,10 @@ import useMentions from './useMentions';
 import useOutlineEditor from 'outline-react/useOutlineEditor';
 import usePlainText from 'outline-react/useOutlinePlainText';
 import useOutlineAutoFormatter from 'outline-react/useOutlineAutoFormatter';
+import useOutlineDecorators from 'outline-react/useOutlineDecorators';
 import useToolbar from './useToolbar';
 import useHashtags from './useHashtags';
+import useKeywords from './useKeywords';
 import BlockControls from './BlockControls';
 import CharacterLimit from './CharacterLimit';
 import {Typeahead} from './Typeahead';
@@ -127,10 +129,12 @@ export const useRichTextEditor = ({
   const mentionsTypeahead = useMentions(editor);
   const props = useOutlineRichText(editor, isReadOnly);
   const toolbar = useToolbar(editor);
+  const decorators = useOutlineDecorators(editor);
   useOutlineOnChange(editor, onChange);
   useEmojis(editor);
   useHashtags(editor);
   useOutlineAutoFormatter(editor);
+  useKeywords(editor);
 
   const element = useMemo(() => {
     return (
@@ -140,6 +144,7 @@ export const useRichTextEditor = ({
           isReadOnly={isReadOnly}
           editorElementRef={editorElementRef}
         />
+        {decorators}
         {mentionsTypeahead}
         {toolbar}
         <BlockControls editor={editor} />
@@ -151,6 +156,7 @@ export const useRichTextEditor = ({
     props,
     isReadOnly,
     editorElementRef,
+    decorators,
     mentionsTypeahead,
     toolbar,
     editor,
@@ -175,9 +181,11 @@ export const usePlainTextEditor = ({
   );
   const mentionsTypeahead = useMentions(editor);
   const props = usePlainText(editor, isReadOnly);
+  const decorators = useOutlineDecorators(editor);
   useOutlineOnChange(editor, onChange);
   useEmojis(editor);
   useHashtags(editor);
+  useKeywords(editor);
 
   const element = useMemo(
     () => (
@@ -187,6 +195,7 @@ export const usePlainTextEditor = ({
           isReadOnly={isReadOnly}
           editorElementRef={editorElementRef}
         />
+        {decorators}
         {mentionsTypeahead}
         {isCharLimit && <CharacterLimit editor={editor} />}
         {isAutocomplete && <Typeahead editor={editor} />}
@@ -196,6 +205,7 @@ export const usePlainTextEditor = ({
       props,
       isReadOnly,
       editorElementRef,
+      decorators,
       mentionsTypeahead,
       isCharLimit,
       editor,

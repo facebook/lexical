@@ -24,6 +24,8 @@ module.exports = {
         'outline-react/dist/useOutlineEditorEvents',
       'outline-react/useOutlineAutoFormatter':
         'outline-react/dist/useOutlineAutoFormatter',
+      'outline-react/useOutlineDecorators':
+        'outline-react/dist/useOutlineDecorators',
     },
   },
 };

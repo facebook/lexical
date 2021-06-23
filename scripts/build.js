@@ -43,6 +43,7 @@ if (isClean) {
 
 const wwwMappings = {
   outline: 'Outline',
+  'react-dom': 'ReactDOMComet',
   'outline/HistoryHelpers': 'OutlineHistoryHelpers',
 };
 
@@ -87,6 +88,7 @@ const externals = [
   'outline/HistoryHelpers',
   'Outline/HistoryHelpers',
   'react-dom',
+  'ReactDOMComet',
   'react',
   ...outlineExtensionsExternals,
   ...outlineReactModuleExternals,

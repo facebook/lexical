@@ -779,7 +779,6 @@ export function insertText(selection: Selection, text: string): void {
         text,
         true,
       );
-      firstNode.select(startOffset, startOffset);
     }
 
     if (!firstNodeParents.has(lastNode) && isTextNode(lastNode)) {

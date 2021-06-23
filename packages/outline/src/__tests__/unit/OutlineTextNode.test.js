@@ -40,8 +40,8 @@ const editorThemeClasses = Object.freeze({
 });
 
 function sanitizeHTML(html) {
-  // Remove the special space characters
-  return html.replace(/\uFEFF/g, '');
+  // Remove zero width characters.
+  return html.replace(/[\u200B-\u200D\u2060\uFEFF]/g, '');
 }
 
 describe('OutlineTextNode tests', () => {

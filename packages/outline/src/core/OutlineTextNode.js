@@ -18,6 +18,7 @@ import {
   getTextDirection,
   isArray,
   isImmutableOrInertOrSegmented,
+  IS_SAFARI,
 } from './OutlineUtils';
 import invariant from 'shared/invariant';
 import {errorOnReadOnly} from './OutlineView';
@@ -30,7 +31,8 @@ import {
   IS_UNDERLINE,
   IS_LINK,
   IS_OVERFLOWED,
-  BYTE_ORDER_MARK,
+  ZERO_WIDTH_SPACE_CHAR,
+  ZERO_WIDTH_JOINER_CHAR,
   IS_DIRTY_DECORATOR,
   IS_UNMERGEABLE,
 } from './OutlineConstants';
@@ -156,7 +158,12 @@ function setTextContent(
 ): void {
   const firstChild = dom.firstChild;
   // We only prefix normal nodes with the byte order mark.
-  const prefix = isImmutableOrInertOrSegmented(node) ? '' : BYTE_ORDER_MARK;
+  const prefix = isImmutableOrInertOrSegmented(node)
+    ? ''
+    : !IS_SAFARI && (nextText.length === 0 || nextText[0] === ' ')
+    ? ZERO_WIDTH_SPACE_CHAR
+    : ZERO_WIDTH_JOINER_CHAR;
+
   if (firstChild == null) {
     dom.textContent = prefix + nextText;
   } else if (firstChild.nodeValue !== prefix + nextText) {

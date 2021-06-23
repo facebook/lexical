@@ -116,9 +116,9 @@ export async function assertHTML(page, expectedHtml) {
   // outputs to an element using JSDOM to normalize and prettify
   // the output. Plus we strip out the zero width character.
   const actual = document.createElement('div');
-  actual.innerHTML = actualHtml.replace(/\uFEFF/g, '');
+  actual.innerHTML = actualHtml.replace(/[\u200B-\u200D\u2060\uFEFF]/g, '');
   const expected = document.createElement('div');
-  expected.innerHTML = expectedHtml.replace(/\uFEFF/g, '');
+  expected.innerHTML = expectedHtml.replace(/[\u200B-\u200D\u2060\uFEFF]/g, '');
   expect(actual.firstChild).toEqual(expected.firstChild);
 }
 

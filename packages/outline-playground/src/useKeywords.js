@@ -23,6 +23,8 @@ export default function useKeywords(editor: OutlineEditor): void {
         return;
       }
       const text = node.getTextContent();
+      // TODO this only works if there is only the keyword in the editor.
+      // we should make it work more effectively.
       if (keywords.has(text)) {
         const keywordNode = createKeywordNode(text);
         node.replace(keywordNode);

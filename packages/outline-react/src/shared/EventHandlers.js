@@ -652,9 +652,7 @@ export function onNativeInput(
         // for our anchor node. We get the text content from the anchor element's
         // text node.
         const rawTextContent = textNode.nodeValue;
-        const textContent = rawTextContent
-          .replace(ZERO_WIDTH_SPACE_CHAR, '')
-          .replace(ZERO_WIDTH_JOINER_CHAR, '');
+        const textContent = rawTextContent.replace(/[\u200B\u2060]/g, '');
         let anchorOffset = window.getSelection().anchorOffset;
         // If the first character is a BOM, then we need to offset this because
         // this character isn't really apart of our offset.

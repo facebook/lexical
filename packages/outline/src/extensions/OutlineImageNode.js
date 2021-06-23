@@ -21,6 +21,9 @@ export class ImageNode extends OutlineNode {
     this.__src = src;
     this.__altText = altText;
   }
+  getTextContent(): string {
+    return this.__altText;
+  }
   clone(): ImageNode {
     return new ImageNode(this.__src, this.__altText, this.__key);
   }

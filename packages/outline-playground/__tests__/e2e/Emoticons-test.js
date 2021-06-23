@@ -49,6 +49,14 @@ describe('Emoticons', () => {
 
       await page.keyboard.press('ArrowRight');
       await assertSelection(page, {
+        anchorPath: [0, 1, 0],
+        anchorOffset: 1,
+        focusPath: [0, 1, 0],
+        focusOffset: 1,
+      });
+
+      await page.keyboard.press('ArrowRight');
+      await assertSelection(page, {
         anchorPath: [0, 2, 0],
         anchorOffset: 0,
         focusPath: [0, 2, 0],

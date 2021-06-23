@@ -87,3 +87,9 @@ export function getDOMTextNodeFromElement(element: Node): Text {
 export function isImmutableOrInertOrSegmented(node: OutlineNode): boolean {
   return node.isImmutable() || node.isInert() || node.isSegmented();
 }
+
+// This is a simplified version from environment.js, to avoid pulling in all
+// the other env exports.
+export const IS_SAFARI: boolean =
+  typeof navigator !== 'undefined' &&
+  /Version\/[\d\.]+.*Safari/.test(navigator.userAgent);

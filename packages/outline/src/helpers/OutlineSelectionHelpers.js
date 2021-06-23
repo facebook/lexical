@@ -572,11 +572,9 @@ export function updateCaretSelectionForRange(
   const textSize = focusNode.getTextContentSize();
   const isAtBoundary = isBackward
     ? focusOffset === 0
-    : (focusOffset > textSize - 1 &&
-        isImmutableOrInertOrSegmented(focusNode)) ||
-      (focusOffset === textSize &&
-        sibling !== null &&
-        !isImmutableOrInertOrSegmented(sibling));
+    : focusOffset === textSize &&
+      (isImmutableOrInertOrSegmented(focusNode) ||
+        (sibling !== null && !isImmutableOrInertOrSegmented(sibling)));
 
   // We use the DOM selection.modify API here to "tell" us what the selection
   // will be. We then use it to update the Outline selection accordingly. This

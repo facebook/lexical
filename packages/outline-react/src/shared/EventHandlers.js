@@ -68,7 +68,7 @@ let wasRecentlyComposing = false;
 let lastKeyWasMaybeAndroidSoftKey = false;
 const RESOLVE_DELAY = 20;
 const ZERO_WIDTH_SPACE_CHAR = '\u200B';
-const ZERO_WIDTH_JOINER_CHAR = '\uFEFF';
+const ZERO_WIDTH_JOINER_CHAR = '\u2060';
 
 // TODO the Flow types here needs fixing
 export type EventHandler = (

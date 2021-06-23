@@ -41,7 +41,7 @@ const editorThemeClasses = Object.freeze({
 
 function sanitizeHTML(html) {
   // Remove zero width characters.
-  return html.replace(/[\u200B-\u200D\uFEFF]/g, '');
+  return html.replace(/[\u200B-\u200D\u2060\uFEFF]/g, '');
 }
 
 describe('OutlineTextNode tests', () => {

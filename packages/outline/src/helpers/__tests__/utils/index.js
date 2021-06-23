@@ -144,7 +144,7 @@ if (!Selection.prototype.modify) {
 
 export function sanitizeHTML(html) {
   // Remove zero width characters.
-  return html.replace(/[\u200B-\u200D\uFEFF]/g, '');
+  return html.replace(/[\u200B-\u200D\u2060\uFEFF]/g, '');
 }
 
 export function sanitizeSelection(selection) {

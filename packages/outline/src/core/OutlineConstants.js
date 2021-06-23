@@ -34,7 +34,7 @@ export const IS_DIRTY_DECORATOR = 1 << 14;
 // Reconciliation
 
 export const ZERO_WIDTH_SPACE_CHAR = '\u200B';
-export const ZERO_WIDTH_JOINER_CHAR = '\uFEFF';
+export const ZERO_WIDTH_JOINER_CHAR = '\u2060';
 
 const RTL = '\u0591-\u07FF\uFB1D-\uFDFD\uFE70-\uFEFC';
 const LTR =

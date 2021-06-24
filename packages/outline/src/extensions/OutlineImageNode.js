@@ -19,9 +19,6 @@ export class ImageNode extends MediaNode {
     this.__type = 'image';
     this.__src = src;
   }
-  getTextContent(): string {
-    return this.__altText;
-  }
   clone(): ImageNode {
     return new ImageNode(this.__src, this.__altText, this.__key);
   }

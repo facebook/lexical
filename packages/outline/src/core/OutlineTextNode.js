@@ -12,7 +12,6 @@ import type {NodeKey} from './OutlineNode';
 import type {EditorThemeClasses} from './OutlineEditor';
 
 import {OutlineNode} from './OutlineNode';
-import {getWritableNode} from './OutlineNode';
 import {getSelection, makeSelection} from './OutlineSelection';
 import {
   getTextDirection,
@@ -29,7 +28,6 @@ import {
   IS_HASHTAG,
   IS_STRIKETHROUGH,
   IS_UNDERLINE,
-  IS_LINK,
   IS_OVERFLOWED,
   IS_UNMERGEABLE,
   ZERO_WIDTH_SPACE_CHAR,
@@ -43,7 +41,6 @@ export type TextFormatType =
   | 'strikethrough'
   | 'italic'
   | 'code'
-  | 'link'
   | 'hashtag'
   | 'overflowed'
   | 'unmergeable';
@@ -59,7 +56,6 @@ const textFormatStateFlags: {[TextFormatType]: number} = {
   strikethrough: IS_STRIKETHROUGH,
   italic: IS_ITALIC,
   code: IS_CODE,
-  link: IS_LINK,
   hashtag: IS_HASHTAG,
   overflowed: IS_OVERFLOWED,
   unmergeable: IS_UNMERGEABLE,
@@ -204,19 +200,15 @@ function createTextInnerDOM(
 
 export class TextNode extends OutlineNode {
   __text: string;
-  __url: null | string;
 
   constructor(text: string, key?: NodeKey) {
     super(key);
     this.__text = text;
     this.__type = 'text';
-    this.__url = null;
   }
 
   clone(): TextNode {
-    const clone = new TextNode(this.__text, this.__key);
-    clone.__url = this.__url;
-    return clone;
+    return new TextNode(this.__text, this.__key);
   }
   isBold(): boolean {
     return (this.getFlags() & IS_BOLD) !== 0;
@@ -233,9 +225,6 @@ export class TextNode extends OutlineNode {
   isCode(): boolean {
     return (this.getFlags() & IS_CODE) !== 0;
   }
-  isLink(): boolean {
-    return (this.getFlags() & IS_LINK) !== 0;
-  }
   isHashtag(): boolean {
     return (this.getFlags() & IS_HASHTAG) !== 0;
   }
@@ -245,12 +234,9 @@ export class TextNode extends OutlineNode {
   isUnmergeable(): boolean {
     return (this.getFlags() & IS_UNMERGEABLE) !== 0;
   }
-  getURL(): null | string {
-    return this.__url;
-  }
   markDirtyDecorator(): void {
     errorOnReadOnly();
-    const self = getWritableNode(this);
+    const self = this.getWritable();
     self.__flags |= IS_DIRTY_DECORATOR;
   }
   getTextContent(includeInert?: boolean, includeDirectionless?: false): string {
@@ -394,9 +380,6 @@ export class TextNode extends OutlineNode {
   toggleCode(): TextNode {
     return this.setFlags(this.getFlags() ^ IS_CODE);
   }
-  toggleLink(): TextNode {
-    return this.setFlags(this.getFlags() ^ IS_LINK);
-  }
   toggleHashtag(): TextNode {
     return this.setFlags(this.getFlags() ^ IS_HASHTAG);
   }
@@ -406,15 +389,6 @@ export class TextNode extends OutlineNode {
   toggleUnmergeable(): TextNode {
     return this.setFlags(this.getFlags() ^ IS_UNMERGEABLE);
   }
-  setURL(url: string | null): TextNode {
-    errorOnReadOnly();
-    if (this.isImmutable()) {
-      invariant(false, 'setURL: can only be used on non-immutable text nodes');
-    }
-    const writableSelf = getWritableNode(this);
-    writableSelf.__url = url;
-    return writableSelf;
-  }
   setTextContent(text: string): boolean {
     errorOnReadOnly();
     if (this.isImmutable()) {
@@ -423,7 +397,7 @@ export class TextNode extends OutlineNode {
         'setTextContent: can only be used on non-immutable text nodes',
       );
     }
-    const writableSelf = getWritableNode(this);
+    const writableSelf = this.getWritable();
 
     // Handle text direction and update text content
     const topBlock = this.getTopParentBlock();
@@ -524,7 +498,7 @@ export class TextNode extends OutlineNode {
         'spliceText: can only be used on non-immutable text nodes',
       );
     }
-    const writableSelf = getWritableNode(this);
+    const writableSelf = this.getWritable();
     const text = writableSelf.__text;
     const handledTextLength = newText.length;
     let index = offset;
@@ -590,7 +564,7 @@ export class TextNode extends OutlineNode {
       return [this];
     }
     // For the first part, update the existing node
-    const writableNode = getWritableNode(this);
+    const writableNode = this.getWritable();
     const parentKey = writableNode.__parent;
     const firstPart = parts[0];
     const flags = writableNode.__flags;
@@ -605,7 +579,7 @@ export class TextNode extends OutlineNode {
     for (let i = 1; i < partsLength; i++) {
       const part = parts[i];
       const partSize = part.length;
-      const sibling = getWritableNode(createTextNode(part));
+      const sibling = createTextNode(part).getWritable();
       sibling.__flags = flags;
       const siblingKey = sibling.__key;
       const nextTextSize = textSize + partSize;
@@ -640,7 +614,7 @@ export class TextNode extends OutlineNode {
 
     // Insert the nodes into the parent's children
     const parent = this.getParentOrThrow();
-    const writableParent = getWritableNode(parent);
+    const writableParent = parent.getWritable();
     const writableParentChildren = writableParent.__children;
     const insertionIndex = writableParentChildren.indexOf(key);
     const splitNodesKeys = splitNodes.map((splitNode) => splitNode.__key);

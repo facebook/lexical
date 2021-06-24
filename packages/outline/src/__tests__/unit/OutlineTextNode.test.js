@@ -162,17 +162,12 @@ describe('OutlineTextNode tests', () => {
   });
 
   describe.each([
-    [
-      'bold',
-      IS_BOLD,
-      (node) => node.isBold(),
-      (node) => node.toggleBold(),
-    ],
+    ['bold', IS_BOLD, (node) => node.isBold(), (node) => node.toggleBold()],
     [
       'italic',
       IS_ITALIC,
       (node) => node.isItalic(),
-      (node) => node.toggleItalics()
+      (node) => node.toggleItalics(),
     ],
     [
       'strikethrough',
@@ -186,18 +181,8 @@ describe('OutlineTextNode tests', () => {
       (node) => node.isUnderline(),
       (node) => node.toggleUnderline(),
     ],
-    [
-      'code',
-      IS_CODE,
-      (node) => node.isCode(),
-      (node) => node.toggleCode(),
-    ],
-    [
-      'link',
-      IS_LINK,
-      (node) => node.isLink(),
-      (node) => node.toggleLink(),
-    ],
+    ['code', IS_CODE, (node) => node.isCode(), (node) => node.toggleCode()],
+    ['link', IS_LINK, (node) => node.isLink(), (node) => node.toggleLink()],
     [
       'hashtag',
       IS_HASHTAG,
@@ -215,7 +200,7 @@ describe('OutlineTextNode tests', () => {
       IS_UNMERGEABLE,
       (node) => node.isUnmergeable(),
       (node) => node.toggleUnmergeable(),
-    ]
+    ],
   ])('%s flag', (formatFlag, stateFlag, flagPredicate, flagToggle) => {
     test(`getTextNodeFormatFlags(${formatFlag})`, async () => {
       await update((view) => {

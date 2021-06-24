@@ -732,7 +732,6 @@ export function insertText(selection: Selection, text: string): void {
     startOffset = anchorOffset > focusOffset ? focusOffset : anchorOffset;
     endOffset = anchorOffset > focusOffset ? anchorOffset : focusOffset;
     if (
-      firstNode.isLink() &&
       selection.isCaret() &&
       (startOffset === 0 || endOffset === firstNodeTextLength)
     ) {

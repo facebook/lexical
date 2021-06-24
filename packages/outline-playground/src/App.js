@@ -10,7 +10,7 @@
 import * as React from 'react';
 import {useCallback, useEffect, useState} from 'react';
 import {useRichTextEditor, usePlainTextEditor} from './Editor';
-import TreeView from 'outline-react/TreeView';
+import OutlineTreeView from 'outline-react/OutlineTreeView';
 import useOptions from './useOptions';
 import useStepRecorder from './useStepRecorder';
 import useTestRecorder from './useTestRecorder';
@@ -37,7 +37,7 @@ function RichTextEditor({options, onOptionsChange}): React$Node {
   return (
     <>
       <div className="editor-shell">{editorComponent}</div>
-      {showTreeView && <TreeView className="tree-view-output" editor={editor} />}
+      {showTreeView && <OutlineTreeView className="tree-view-output" editor={editor} />}
       {stepRecorderOutput}
       {testRecorderOutput}
       <div className="editor-dev-toolbar">
@@ -70,7 +70,7 @@ function PlainTextEditor({options, onOptionsChange}): React$Node {
   return (
     <>
       <div className="editor-shell">{editorComponent}</div>
-      {showTreeView && <TreeView className="tree-view-output" editor={editor} />}
+      {showTreeView && <OutlineTreeView className="tree-view-output" editor={editor} />}
       {stepRecorderOutput}
       <div className="editor-dev-toolbar">
         {optionsSwitches}

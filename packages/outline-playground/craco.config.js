@@ -15,7 +15,7 @@ module.exports = {
       'outline/HistoryHelpers': 'outline/dist/OutlineHistoryHelpers',
       'outline/KeyHelpers': 'outline/dist/OutlineKeyHelpers',
       // Outline React
-      'outline-react/TreeView': 'outline-react/dist/TreeView',
+      'outline-react/OutlineTreeView': 'outline-react/dist/OutlineTreeView',
       'outline-react/useOutlineEditor': 'outline-react/dist/useOutlineEditor',
       'outline-react/useOutlineRichText':
         'outline-react/dist/useOutlineRichText',

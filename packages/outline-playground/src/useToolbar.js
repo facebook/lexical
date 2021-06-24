@@ -390,7 +390,7 @@ class LinkNode extends TextNode {
     return this.getLatest().__url;
   }
   setURL(url: string): void {
-    const writable = this.getWritable();
+    const writable = this.getWritable<LinkNode>();
     writable.__url = url;
   }
 }

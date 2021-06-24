@@ -15,6 +15,7 @@ import {
   IS_LINK,
   IS_HASHTAG,
   IS_OVERFLOWED,
+  IS_UNMERGEABLE,
 } from '../../core/OutlineConstants';
 
 import React from 'react';
@@ -165,37 +166,37 @@ describe('OutlineTextNode tests', () => {
       'bold',
       IS_BOLD,
       (node) => node.isBold(),
-      null, // Toggle not implemented.
+      (node) => node.toggleBold(),
     ],
     [
       'italic',
       IS_ITALIC,
       (node) => node.isItalic(),
-      null, // Toggle not implemented.
+      (node) => node.toggleItalics()
     ],
     [
       'strikethrough',
       IS_STRIKETHROUGH,
       (node) => node.isStrikethrough(),
-      null, // Toggle not implemented.
+      (node) => node.toggleStrikethrough(),
     ],
     [
       'underline',
       IS_UNDERLINE,
       (node) => node.isUnderline(),
-      null, // Toggle not implemented.
+      (node) => node.toggleUnderline(),
     ],
     [
       'code',
       IS_CODE,
       (node) => node.isCode(),
-      null, // Toggle not implemented.
+      (node) => node.toggleCode(),
     ],
     [
       'link',
       IS_LINK,
       (node) => node.isLink(),
-      null, // Toggle not implemented.
+      (node) => node.toggleLink(),
     ],
     [
       'hashtag',
@@ -209,6 +210,12 @@ describe('OutlineTextNode tests', () => {
       (node) => node.isOverflowed(),
       (node) => node.toggleOverflowed(),
     ],
+    [
+      'unmergeable',
+      IS_UNMERGEABLE,
+      (node) => node.isUnmergeable(),
+      (node) => node.toggleUnmergeable(),
+    ]
   ])('%s flag', (formatFlag, stateFlag, flagPredicate, flagToggle) => {
     test(`getTextNodeFormatFlags(${formatFlag})`, async () => {
       await update((view) => {

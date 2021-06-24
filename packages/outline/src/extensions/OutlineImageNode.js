@@ -11,15 +11,13 @@ import type {EditorThemeClasses} from '../core/OutlineEditor';
 
 import {OutlineNode} from '../core/OutlineNode';
 
-export class ImageNode extends OutlineNode {
+export class ImageNode extends MediaNode {
   __src: string;
-  __altText: string;
 
   constructor(src: string, altText: string, key?: NodeKey) {
-    super(key);
+    super(altText, key);
     this.__type = 'image';
     this.__src = src;
-    this.__altText = altText;
   }
   getTextContent(): string {
     return this.__altText;
@@ -40,7 +38,8 @@ export class ImageNode extends OutlineNode {
     }
     return img;
   }
-  updateDOM(prevNode: ImageNode, dom: HTMLElement): boolean {
+  // $FlowFixMe: we know from about that we are using a HTMLImageElement
+  updateDOM(prevNode: ImageNode, dom: HTMLImageElement): boolean {
     const prevAltText = prevNode.__altText;
     const nextAltText = this.__altText;
     if (prevAltText !== nextAltText) {

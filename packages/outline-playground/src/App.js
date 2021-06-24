@@ -7,37 +7,25 @@
  * @flow strict-local
  */
 
-import type {ViewModel} from 'outline';
-
 import * as React from 'react';
 import {useCallback, useEffect, useState} from 'react';
 import {useRichTextEditor, usePlainTextEditor} from './Editor';
-import TreeView from './TreeView';
+import TreeView from 'outline-react/TreeView';
 import useOptions from './useOptions';
 import useStepRecorder from './useStepRecorder';
 import useTestRecorder from './useTestRecorder';
 import useTypingPerfTracker from './useTypingPerfTracker';
 
 function RichTextEditor({options, onOptionsChange}): React$Node {
-  const [viewModel, setViewModel] = useState<ViewModel | null>(null);
   const [optionsButton, optionsSwitches, opts] = useOptions(options);
   useEffect(() => {
     onOptionsChange(opts);
   }, [onOptionsChange, opts]);
   const {measureTypingPerf, isCharLimit, isAutocomplete, showTreeView} = opts;
-  const onChange = useCallback(
-    (newViewModel) => {
-      if (showTreeView) {
-        setViewModel(newViewModel);
-      }
-    },
-    [showTreeView],
-  );
   const onError = useCallback((e: Error) => {
     throw e;
   }, []);
   const [editor, editorComponent] = useRichTextEditor({
-    onChange,
     onError,
     isCharLimit,
     isAutocomplete,
@@ -49,7 +37,7 @@ function RichTextEditor({options, onOptionsChange}): React$Node {
   return (
     <>
       <div className="editor-shell">{editorComponent}</div>
-      {showTreeView && <TreeView viewModel={viewModel} />}
+      {showTreeView && <TreeView className="tree-view-output" editor={editor} />}
       {stepRecorderOutput}
       {testRecorderOutput}
       <div className="editor-dev-toolbar">
@@ -63,25 +51,15 @@ function RichTextEditor({options, onOptionsChange}): React$Node {
 }
 
 function PlainTextEditor({options, onOptionsChange}): React$Node {
-  const [viewModel, setViewModel] = useState<ViewModel | null>(null);
   const [optionsButton, optionsSwitches, opts] = useOptions(options);
   const {measureTypingPerf, isCharLimit, isAutocomplete, showTreeView} = opts;
   useEffect(() => {
     onOptionsChange(opts);
   }, [onOptionsChange, opts]);
-  const onChange = useCallback(
-    (newViewModel) => {
-      if (showTreeView) {
-        setViewModel(newViewModel);
-      }
-    },
-    [showTreeView],
-  );
   const onError = useCallback((e: Error) => {
     throw e;
   }, []);
   const [editor, editorComponent] = usePlainTextEditor({
-    onChange,
     onError,
     isCharLimit,
     isAutocomplete,
@@ -92,7 +70,7 @@ function PlainTextEditor({options, onOptionsChange}): React$Node {
   return (
     <>
       <div className="editor-shell">{editorComponent}</div>
-      {showTreeView && <TreeView viewModel={viewModel} />}
+      {showTreeView && <TreeView className="tree-view-output" editor={editor} />}
       {stepRecorderOutput}
       <div className="editor-dev-toolbar">
         {optionsSwitches}

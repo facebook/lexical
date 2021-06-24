@@ -7,11 +7,12 @@
  * @flow strict-local
  */
 
-import type {BlockNode, ViewModel, View} from 'outline';
+import type {BlockNode, ViewModel, View, OutlineEditor} from 'outline';
 
 import {isBlockNode, isTextNode} from 'outline';
 
-import React from 'react';
+import * as React from 'react';
+import {useState, useEffect} from 'react';
 
 const NON_SINGLE_WIDTH_CHARS_REPLACEMENT: $ReadOnly<{
   [string]: string,
@@ -31,6 +32,78 @@ const SYMBOLS = Object.freeze({
   selectedChar: '^',
   selectedLine: '>',
 });
+
+export default function TreeView({
+  className = '',
+  editor,
+}: {
+  className?: string,
+  editor: OutlineEditor,
+}): React$Node {
+  const [content, setContent] = useState<string>('');
+  useEffect(() => {
+    setContent(generateContent(editor.getViewModel()));
+    return editor.addUpdateListener(() => {
+      setContent(generateContent(editor.getViewModel()));
+    });
+  }, [editor]);
+
+  const styles =
+    className != null
+      ? {
+          className,
+        }
+      : {
+          styles: {
+            borderRadius: '2px',
+            background: '#222',
+            color: '#fff',
+            padding: '10px',
+            fontSize: '12px',
+            overflow: 'auto',
+            whiteSpace: 'pre-wrap',
+            margin: '20px auto 20px auto',
+          },
+        };
+
+  return <pre {...styles}>{content}</pre>;
+}
+
+function generateContent(viewModel: ViewModel): string {
+  let res = ' root\n';
+
+  viewModel.read((view: View) => {
+    const selection = view.getSelection();
+    let selectedNodes = null;
+    if (selection !== null) {
+      selectedNodes = new Set(
+        selection.getNodes().map((node) => node.getKey()),
+      );
+    }
+
+    visitTree(view, view.getRoot(), (node, indent) => {
+      const nodeKey = node.getKey();
+      const nodeKeyDisplay = `(${nodeKey.slice(1)})`;
+      const typeDisplay = node.getType() || '';
+      const isSelected = selectedNodes !== null && selectedNodes.has(nodeKey);
+
+      res += `${isSelected ? SYMBOLS.selectedLine : ' '} ${indent.join(
+        ' ',
+      )} ${nodeKeyDisplay} ${typeDisplay} ${printNode(node)}\n`;
+
+      res += printSelectedCharsLine({
+        isSelected,
+        indent,
+        node,
+        nodeKeyDisplay,
+        selection,
+        typeDisplay,
+      });
+    });
+  });
+
+  return res;
+}
 
 function visitTree(view: View, currentNode: BlockNode, visitor, indent = []) {
   const childNodes = currentNode.getChildren();
@@ -59,58 +132,6 @@ function visitTree(view: View, currentNode: BlockNode, visitor, indent = []) {
       );
     }
   });
-}
-
-export default function TreeView({
-  viewModel,
-}: {
-  viewModel: ?ViewModel,
-}): React$Node {
-  const content = React.useMemo(() => {
-    if (viewModel == null) {
-      return null;
-    }
-
-    let res = ' root\n';
-
-    viewModel.read((view: View) => {
-      const selection = view.getSelection();
-      let selectedNodes = null;
-      if (selection !== null) {
-        selectedNodes = new Set(
-          selection.getNodes().map((node) => node.getKey()),
-        );
-      }
-
-      visitTree(view, view.getRoot(), (node, indent) => {
-        const nodeKey = node.getKey();
-        const nodeKeyDisplay = `(${nodeKey.slice(1)})`;
-        const typeDisplay = node?.getType() ?? '';
-        const isSelected = selectedNodes !== null && selectedNodes.has(nodeKey);
-
-        res += `${isSelected ? SYMBOLS.selectedLine : ' '} ${indent.join(
-          ' ',
-        )} ${nodeKeyDisplay} ${typeDisplay} ${printNode(node)}\n`;
-
-        res += printSelectedCharsLine({
-          isSelected,
-          indent,
-          node,
-          nodeKeyDisplay,
-          selection,
-          typeDisplay,
-        });
-      });
-    });
-
-    return res;
-  }, [viewModel]);
-
-  return (
-    <div className="tree-view-output">
-      <pre>{content}</pre>
-    </div>
-  );
 }
 
 function normalize(text) {
@@ -146,6 +167,7 @@ const LABEL_PREDICATES = [
   (node) => node.isOverflowed() && 'Overflowed',
   (node) => node.isInert() && 'Inert',
   (node) => node.isDirectionless() && 'Directionless',
+  (node) => node.isUnmergeable() && 'Unmergeable',
 ];
 
 function printTextNodeFlags(node) {

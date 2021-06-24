@@ -97,13 +97,13 @@ function removeNode(nodeToRemove: OutlineNode): void {
   if (parent === null) {
     return;
   }
-  const writableParent = getWritableNode(parent);
+  const writableParent = parent.getWritable();
   const parentChildren = writableParent.__children;
   const index = parentChildren.indexOf(key);
   if (index > -1) {
     parentChildren.splice(index, 1);
   }
-  const writableNodeToRemove = getWritableNode(nodeToRemove);
+  const writableNodeToRemove = nodeToRemove.getWritable();
   writableNodeToRemove.__parent = null;
 }
 
@@ -111,10 +111,10 @@ function replaceNode<N: OutlineNode>(
   toReplace: OutlineNode,
   replaceWith: N,
 ): N {
-  const writableReplaceWith = getWritableNode(replaceWith);
+  const writableReplaceWith = replaceWith.getWritable();
   const oldParent = writableReplaceWith.getParent();
   if (oldParent !== null) {
-    const writableParent = getWritableNode(oldParent);
+    const writableParent = oldParent.getWritable();
     const children = writableParent.__children;
     const index = children.indexOf(writableReplaceWith.__key);
     if (index > -1) {
@@ -122,7 +122,7 @@ function replaceNode<N: OutlineNode>(
     }
   }
   const newParent = toReplace.getParentOrThrow();
-  const writableParent = getWritableNode(newParent);
+  const writableParent = newParent.getWritable();
   const children = writableParent.__children;
   const index = children.indexOf(toReplace.__key);
   const newKey = writableReplaceWith.__key;
@@ -469,6 +469,44 @@ export class OutlineNode {
     }
     return latest;
   }
+  getWritable<N>(): N {
+    errorOnReadOnly();
+    const viewModel = getActiveViewModel();
+    const dirtyNodes = viewModel._dirtyNodes;
+    const nodeMap = viewModel._nodeMap;
+    const key = this.__key;
+    // Ensure we get the latest node from pending state
+    const latestNode = this.getLatest();
+    const parent = latestNode.__parent;
+    if (parent !== null) {
+      const dirtySubTrees = viewModel._dirtySubTrees;
+      markParentsAsDirty(parent, nodeMap, dirtySubTrees);
+    }
+    if (dirtyNodes.has(key)) {
+      return latestNode;
+    }
+    const mutableNode = latestNode.clone();
+    mutableNode.__parent = parent;
+    mutableNode.__flags = latestNode.__flags;
+    if (isBlockNode(mutableNode)) {
+      mutableNode.__children = Array.from(latestNode.__children);
+    }
+    if (__DEV__) {
+      if (!mutableNode.constructor.prototype.hasOwnProperty('clone')) {
+        throw new Error(
+          latestNode.constructor.name +
+            ': "clone" method was either missing or incorrectly implemented.',
+        );
+      }
+    }
+    mutableNode.__key = key;
+    markNodeAsDirty(mutableNode);
+    // Update reference in node map
+    if (nodeMap[key] !== undefined) {
+      nodeMap[key] = mutableNode;
+    }
+    return mutableNode;
+  }
   getTextContent(includeInert?: boolean, includeDirectionless?: false): string {
     return '';
   }
@@ -500,31 +538,31 @@ export class OutlineNode {
     if (this.isImmutable()) {
       invariant(false, 'setFlags: can only be used on non-immutable nodes');
     }
-    const self = getWritableNode(this);
-    self.__flags = flags;
+    const self = this.getWritable();
+    this.getWritable().__flags = flags;
     return self;
   }
   makeImmutable(): this {
     errorOnReadOnly();
-    const self = getWritableNode(this);
+    const self = this.getWritable();
     self.__flags |= IS_IMMUTABLE;
     return self;
   }
   makeSegmented(): this {
     errorOnReadOnly();
-    const self = getWritableNode(this);
+    const self = this.getWritable();
     self.__flags |= IS_SEGMENTED;
     return self;
   }
   makeInert(): this {
     errorOnReadOnly();
-    const self = getWritableNode(this);
+    const self = this.getWritable();
     self.__flags |= IS_INERT;
     return self;
   }
   makeDirectionless(): this {
     errorOnReadOnly();
-    const self = getWritableNode(this);
+    const self = this.getWritable();
     self.__flags |= IS_DIRECTIONLESS;
     return self;
   }
@@ -540,18 +578,18 @@ export class OutlineNode {
   // TODO add support for inserting multiple nodes?
   insertAfter(nodeToInsert: OutlineNode): this {
     errorOnReadOnly();
-    const writableSelf = getWritableNode(this);
-    const writableNodeToInsert = getWritableNode(nodeToInsert);
+    const writableSelf = this.getWritable();
+    const writableNodeToInsert = nodeToInsert.getWritable();
     const oldParent = writableNodeToInsert.getParent();
     if (oldParent !== null) {
-      const writableParent = getWritableNode(oldParent);
+      const writableParent = oldParent.getWritable();
       const children = writableParent.__children;
       const index = children.indexOf(writableNodeToInsert.__key);
       if (index > -1) {
         children.splice(index, 1);
       }
     }
-    const writableParent = getWritableNode(this.getParentOrThrow());
+    const writableParent = this.getParentOrThrow().getWritable();
     const insertKey = writableNodeToInsert.__key;
     writableNodeToInsert.__parent = writableSelf.__parent;
     const children = writableParent.__children;
@@ -575,18 +613,18 @@ export class OutlineNode {
   // TODO add support for inserting multiple nodes?
   insertBefore(nodeToInsert: OutlineNode): this {
     errorOnReadOnly();
-    const writableSelf = getWritableNode(this);
-    const writableNodeToInsert = getWritableNode(nodeToInsert);
+    const writableSelf = this.getWritable();
+    const writableNodeToInsert = nodeToInsert.getWritable();
     const oldParent = writableNodeToInsert.getParent();
     if (oldParent !== null) {
-      const writableParent = getWritableNode(oldParent);
+      const writableParent = oldParent.getWritable();
       const children = writableParent.__children;
       const index = children.indexOf(writableNodeToInsert.__key);
       if (index > -1) {
         children.splice(index, 1);
       }
     }
-    const writableParent = getWritableNode(this.getParentOrThrow());
+    const writableParent = this.getParentOrThrow().getWritable();
     const insertKey = writableNodeToInsert.__key;
     writableNodeToInsert.__parent = writableSelf.__parent;
     const children = writableParent.__children;
@@ -620,48 +658,6 @@ export class OutlineNode {
     }
     return nextSibling.select(anchorOffset, focusOffset);
   }
-}
-
-// NOTE: we could make a mutable node type
-
-export function getWritableNode<N: OutlineNode>(node: N): N {
-  // TODO we don't need this line, it's more for sanity checking
-  errorOnReadOnly();
-  const viewModel = getActiveViewModel();
-  const dirtyNodes = viewModel._dirtyNodes;
-  const nodeMap = viewModel._nodeMap;
-  const key = node.__key;
-  // Ensure we get the latest node from pending state
-  const latestNode = node.getLatest();
-  const parent = latestNode.__parent;
-  if (parent !== null) {
-    const dirtySubTrees = viewModel._dirtySubTrees;
-    markParentsAsDirty(parent, nodeMap, dirtySubTrees);
-  }
-  if (dirtyNodes.has(key)) {
-    return latestNode;
-  }
-  const mutableNode = latestNode.clone();
-  mutableNode.__parent = parent;
-  mutableNode.__flags = latestNode.__flags;
-  if (isBlockNode(mutableNode)) {
-    mutableNode.__children = Array.from(latestNode.__children);
-  }
-  if (__DEV__) {
-    if (!mutableNode.constructor.prototype.hasOwnProperty('clone')) {
-      throw new Error(
-        latestNode.constructor.name +
-          ': "clone" method was either missing or incorrectly implemented.',
-      );
-    }
-  }
-  mutableNode.__key = key;
-  markNodeAsDirty(mutableNode);
-  // Update reference in node map
-  if (nodeMap[key] !== undefined) {
-    nodeMap[key] = mutableNode;
-  }
-  return mutableNode;
 }
 
 export function getNodeByKey<N: OutlineNode>(key: NodeKey): N | null {

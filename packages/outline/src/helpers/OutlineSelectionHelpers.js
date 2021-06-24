@@ -731,21 +731,7 @@ export function insertText(selection: Selection, text: string): void {
   if (selectedNodesLength === 1) {
     startOffset = anchorOffset > focusOffset ? focusOffset : anchorOffset;
     endOffset = anchorOffset > focusOffset ? anchorOffset : focusOffset;
-    if (
-      firstNode.isLink() &&
-      selection.isCaret() &&
-      (startOffset === 0 || endOffset === firstNodeTextLength)
-    ) {
-      const textNode = createTextNode(text);
-      if (startOffset === 0) {
-        firstNode.insertBefore(textNode);
-      } else {
-        firstNode.insertAfter(textNode);
-      }
-      textNode.select();
-      currentBlock.normalizeTextNodes(true);
-      return;
-    } else if (isImmutableOrInertOrSegmented(firstNode)) {
+    if (isImmutableOrInertOrSegmented(firstNode)) {
       const textNode = createTextNode(text);
       firstNode.replace(textNode);
       firstNode = textNode;

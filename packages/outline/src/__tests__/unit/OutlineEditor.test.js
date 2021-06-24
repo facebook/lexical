@@ -307,7 +307,6 @@ describe('OutlineEditor tests', () => {
           __key: text.getKey(),
           __parent: paragraph.getKey(),
           __type: 'text',
-          __url: null,
         });
       });
     });
@@ -369,7 +368,6 @@ describe('OutlineEditor tests', () => {
           __key: textKey,
           __parent: paragraphKey,
           __type: 'text',
-          __url: null,
         });
       });
 

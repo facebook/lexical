@@ -140,7 +140,6 @@ const LABEL_PREDICATES = [
   (node) => node.isHashtag() && 'Hashtag',
   (node) => node.isImmutable() && 'Immutable',
   (node) => node.isItalic() && 'Italic',
-  (node) => node.isLink() && 'Link',
   (node) => node.isSegmented() && 'Segmented',
   (node) => node.isStrikethrough() && 'Strikethrough',
   (node) => node.isUnderline() && 'Underline',

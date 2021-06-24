@@ -7,9 +7,15 @@
  * @flow strict-local
  */
 
-import type {OutlineEditor, Selection, TextFormatType, TextNode} from 'outline';
+import type {
+  OutlineEditor,
+  Selection,
+  TextFormatType,
+  NodeKey,
+  EditorThemeClasses,
+} from 'outline';
 
-import {isTextNode} from 'outline';
+import {createTextNode, isTextNode, TextNode} from 'outline';
 import React, {useCallback, useEffect, useRef, useState, useMemo} from 'react';
 // $FlowFixMe
 import {unstable_batchedUpdates, createPortal} from 'react-dom';
@@ -192,8 +198,12 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
             setIsItalic(node.isItalic());
             setIsStrikethrough(node.isStrikethrough());
             setIsCode(node.isCode());
-            setIsLink(node.isLink());
-            setLinkUrl(node.getURL() || '');
+            if (isLinkNode(node)) {
+              setIsLink(true);
+              setLinkUrl(node.getURL());
+            } else {
+              setLinkUrl('');
+            }
           });
         }
       };
@@ -247,12 +257,33 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
           const nodes = sel.getNodes();
           nodes.forEach((node) => {
             if (isTextNode(node) && !node.isImmutable()) {
-              node.setURL(url);
+              if (isLinkNode(node)) {
+                if (url === null) {
+                  const textNode = createTextNode(node.getTextContent());
+                  let shouldSelect = false;
+                  if (node === sel.getAnchorNode()) {
+                    shouldSelect = true;
+                  }
+                  node.replace(textNode);
+                  if (shouldSelect) {
+                    textNode.select();
+                  }
+                } else {
+                  node.setURL(url);
+                }
+              } else if (url !== null) {
+                const linkNode = createLinkNode(node.getTextContent(), url);
+                let shouldSelect = false;
+                if (node === sel.getAnchorNode()) {
+                  shouldSelect = true;
+                }
+                node.replace(linkNode);
+                if (shouldSelect) {
+                  linkNode.select();
+                }
+              }
             }
           });
-          if (url !== null) {
-            formatText(sel, 'link', true);
-          }
         }
       });
     },
@@ -286,10 +317,9 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
       setEditMode(true);
       updateSelectedLinks('http://', null);
     } else {
-      applyFormatText('link');
       updateSelectedLinks(null, null);
     }
-  }, [applyFormatText, isLink, updateSelectedLinks]);
+  }, [isLink, updateSelectedLinks]);
 
   return (
     <div ref={toolbarRef} id="toolbar">
@@ -317,7 +347,66 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
   );
 }
 
+class LinkNode extends TextNode {
+  __url: string;
+
+  constructor(text: string, url: string, key?: NodeKey) {
+    super(text, key);
+    this.__url = url;
+    this.__type = 'link';
+  }
+  clone(): LinkNode {
+    return new LinkNode(this.__text, this.__url, this.__key);
+  }
+  createDOM(editorThemeClasses: EditorThemeClasses): HTMLElement {
+    const text = super.createDOM(editorThemeClasses);
+    const link = document.createElement('a');
+    link.href = this.__url;
+    link.appendChild(text);
+    return link;
+  }
+  updateDOM(
+    // $FlowFixMe: not sure how to fix this
+    prevNode: LinkNode,
+    dom: HTMLElement,
+    editorThemeClasses: EditorThemeClasses,
+  ): boolean {
+    // $FlowFixMe: this is always the case here.
+    const textNode: null | HTMLElement = dom.firstChild;
+    if (textNode != null) {
+      const textUpdate = super.updateDOM(
+        prevNode,
+        textNode,
+        editorThemeClasses,
+      );
+      if (prevNode.__url !== this.__url) {
+        dom.setAttribute('href', this.__url);
+      }
+      return textUpdate;
+    }
+    return true;
+  }
+  getURL(): string {
+    return this.getLatest().__url;
+  }
+  setURL(url: string): void {
+    const writable = this.getWritable();
+    writable.__url = url;
+  }
+}
+
+function createLinkNode(text: string, url: string): LinkNode {
+  return new LinkNode(text, url);
+}
+
+function isLinkNode(node: TextNode): boolean %checks {
+  return node instanceof LinkNode;
+}
+
 export default function useToolbar(editor: OutlineEditor): React$Node {
+  useEffect(() => {
+    editor.registerNodeType('link', LinkNode);
+  }, [editor]);
   return useMemo(
     () => createPortal(<Toolbar editor={editor} />, document.body),
     [editor],

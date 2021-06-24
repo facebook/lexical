@@ -32,7 +32,6 @@ import {
   emptyFunction,
   scheduleMicroTask,
 } from './OutlineUtils';
-import {getWritableNode} from './OutlineNode';
 import {createRootNode as createRoot} from './OutlineRootNode';
 import {reconcilePlaceholder} from './OutlineReconciler';
 import invariant from 'shared/invariant';
@@ -49,7 +48,6 @@ export type EditorThemeClasses = {
     underlineStrikethrough?: EditorThemeClassName,
     italic?: EditorThemeClassName,
     code?: EditorThemeClassName,
-    link?: EditorThemeClassName,
     hashtag?: EditorThemeClassName,
     overflowed?: EditorThemeClassName,
   },
@@ -160,7 +158,7 @@ function updateEditor(
           for (const nodeKey in nodeMap) {
             const node = nodeMap[nodeKey];
             if (isTextNode(node) && pendingNodeMap[nodeKey] !== undefined) {
-              getWritableNode(node);
+              node.getWritable();
             }
           }
         }

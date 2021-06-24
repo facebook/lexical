@@ -19,14 +19,13 @@ export const IS_ITALIC = 1 << 5;
 export const IS_STRIKETHROUGH = 1 << 6;
 export const IS_UNDERLINE = 1 << 7;
 export const IS_CODE = 1 << 8;
-export const IS_LINK = 1 << 9;
-export const IS_HASHTAG = 1 << 10;
-export const IS_OVERFLOWED = 1 << 11;
-export const IS_UNMERGEABLE = 1 << 12;
+export const IS_HASHTAG = 1 << 9;
+export const IS_OVERFLOWED = 1 << 10;
+export const IS_UNMERGEABLE = 1 << 11;
 
 // Block nodes
-export const IS_LTR = 1 << 13;
-export const IS_RTL = 1 << 14;
+export const IS_LTR = 1 << 12;
+export const IS_RTL = 1 << 13;
 
 // Decorators
 export const IS_DIRTY_DECORATOR = 1 << 14;

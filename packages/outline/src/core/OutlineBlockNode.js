@@ -11,7 +11,6 @@ import type {NodeKey} from './OutlineNode';
 
 import {isTextNode, TextNode} from '.';
 import {
-  getWritableNode,
   OutlineNode,
   getNodeByKey,
   wrapInTextNodes,
@@ -48,7 +47,7 @@ function combineAdjacentTextNodes(
   }
 
   // Merge all text nodes into the first node
-  const writableMergeToNode = getWritableNode(textNodes[0]);
+  const writableMergeToNode = textNodes[0].getWritable();
   const key = writableMergeToNode.__key;
   let textLength = writableMergeToNode.getTextContentSize();
   for (let i = 1; i < textNodes.length; i++) {
@@ -183,7 +182,7 @@ export class BlockNode extends OutlineNode {
 
   clear(): BlockNode {
     errorOnReadOnly();
-    const writableSelf = getWritableNode(this);
+    const writableSelf = this.getWritable();
     const children = this.getChildren();
     children.forEach((child) => child.remove());
     return writableSelf;
@@ -191,13 +190,13 @@ export class BlockNode extends OutlineNode {
   // TODO add support for appending multiple nodes?
   append(nodeToAppend: OutlineNode): BlockNode {
     errorOnReadOnly();
-    const writableSelf = getWritableNode(this);
-    const writableNodeToAppend = getWritableNode(nodeToAppend);
+    const writableSelf = this.getWritable();
+    const writableNodeToAppend = nodeToAppend.getWritable();
 
     // Remove node from previous parent
     const oldParent = writableNodeToAppend.getParent();
     if (oldParent !== null) {
-      const writableParent = getWritableNode(oldParent);
+      const writableParent = oldParent.getWritable();
       const children = writableParent.__children;
       const index = children.indexOf(writableNodeToAppend.__key);
       if (index > -1) {
@@ -226,7 +225,6 @@ export class BlockNode extends OutlineNode {
     const children = this.getChildren();
     let toNormalize = [];
     let lastTextNodeFlags: number | null = null;
-    let lastTextNodeURL = null;
     let lastTextNodeType = null;
     for (let i = 0; i < children.length; i++) {
       const child: OutlineNode = children[i].getLatest();
@@ -237,17 +235,14 @@ export class BlockNode extends OutlineNode {
         !child.isSegmented() &&
         !child.isUnmergeable()
       ) {
-        const url = child.__url;
         const flags = child.__flags;
         const type = child.__type;
         if (
           (lastTextNodeFlags === null || flags === lastTextNodeFlags) &&
-          (lastTextNodeURL === null || lastTextNodeURL === url) &&
           (lastTextNodeType === null || lastTextNodeType === type)
         ) {
           toNormalize.push(child);
           lastTextNodeFlags = flags;
-          lastTextNodeURL = url;
           lastTextNodeType = type;
         } else {
           if (toNormalize.length > 1) {
@@ -255,7 +250,6 @@ export class BlockNode extends OutlineNode {
           }
           toNormalize = [child];
           lastTextNodeFlags = flags;
-          lastTextNodeURL = url;
           lastTextNodeType = type;
         }
       } else {
@@ -264,7 +258,6 @@ export class BlockNode extends OutlineNode {
         }
         toNormalize = [];
         lastTextNodeFlags = null;
-        lastTextNodeURL = null;
         lastTextNodeType = null;
       }
     }
@@ -280,7 +273,7 @@ export class BlockNode extends OutlineNode {
   }
   setDirection(direction: 'ltr' | 'rtl' | null): this {
     errorOnReadOnly();
-    const self = getWritableNode(this);
+    const self = this.getWritable();
     const flags = self.__flags;
     if (flags & IS_LTR) {
       self.__flags ^= IS_LTR;

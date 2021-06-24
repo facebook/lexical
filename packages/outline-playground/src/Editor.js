@@ -18,6 +18,8 @@ import useOutlineEditor from 'outline-react/useOutlineEditor';
 import usePlainText from 'outline-react/useOutlinePlainText';
 import useOutlineAutoFormatter from 'outline-react/useOutlineAutoFormatter';
 import useOutlineDecorators from 'outline-react/useOutlineDecorators';
+import {createImageNode} from 'outline/ImageNode';
+import {insertNodes} from 'outline/SelectionHelpers';
 import useToolbar from './useToolbar';
 import useHashtags from './useHashtags';
 import useKeywords from './useKeywords';
@@ -111,6 +113,21 @@ export const useRichTextEditor = ({
   useKeywords(editor);
 
   const element = useMemo(() => {
+    const handleAddImage = () => {
+      editor.update((view) => {
+        const selection = view.getSelection();
+        if (selection !== null) {
+          const src =
+            'https://www.crawshaygallery.com/portfolio2019/New-York-Skyline-Black-White-cropped.jpg';
+          const imageNode = createImageNode(
+            src,
+            'New York Skyline, Black and White',
+          );
+          insertNodes(selection, [imageNode]);
+        }
+      });
+    };
+
     return (
       <>
         <ContentEditable
@@ -124,6 +141,11 @@ export const useRichTextEditor = ({
         <BlockControls editor={editor} />
         {isCharLimit && <CharacterLimit editor={editor} />}
         {isAutocomplete && <Typeahead editor={editor} />}
+        <div className="actions">
+          <button className="add-image" onClick={handleAddImage}>
+            Insert Image
+          </button>
+        </div>
       </>
     );
   }, [

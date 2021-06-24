@@ -171,8 +171,9 @@ function setTextContent(
   }
   let possibleLineBreak = dom.lastChild;
   if (possibleLineBreak != null) {
+    const parent = node.getParent();
     const needsLineBreak =
-      nextText === '' && node.getParentOrThrow().__children.length === 1;
+      nextText === '' && parent !== null && parent.__children.length === 1;
     if (needsLineBreak && possibleLineBreak.nodeType === 3) {
       possibleLineBreak = document.createElement('br');
       dom.appendChild(possibleLineBreak);

@@ -146,7 +146,7 @@ describe('Emoticons', () => {
       await repeat(23, async () => await page.keyboard.press('Backspace'));
       await assertHTML(
         page,
-        '<p class="editor-paragraph"><span></span></p><div class="editor-placeholder">Enter some rich text...</div>',
+        '<p class="editor-paragraph"><span><br></span></p><div class="editor-placeholder">Enter some rich text...</div>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],

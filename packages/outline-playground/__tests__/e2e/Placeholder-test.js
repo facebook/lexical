@@ -19,7 +19,7 @@ describe('Placeholder', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph"><span></span></p><div contenteditable="false" class="editor-placeholder">Enter some rich text...</div>',
+        '<p class="editor-paragraph"><span><br></span></p><div contenteditable="false" class="editor-placeholder">Enter some rich text...</div>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],

@@ -574,7 +574,7 @@ describe('OutlineTextNode tests', () => {
     describe('has parent node', () => {
       test.each([
         ['no formatting', null, 'My text node', '<span>My text node</span>'],
-        ['no formatting + empty string', null, '', `<span></span>`],
+        ['no formatting + empty string', null, '', `<span><br></span>`],
       ])('%s text format type', async (_type, flag, contents, expectedHTML) => {
         await update(() => {
           const paragraphNode = createParagraphNode();

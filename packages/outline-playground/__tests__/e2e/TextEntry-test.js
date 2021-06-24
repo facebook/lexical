@@ -168,7 +168,7 @@ describe('TextEntry', () => {
         await page.keyboard.press('Enter');
         await assertHTML(
           page,
-          '<p class="editor-paragraph"><span></span></p><p class="editor-paragraph"><span></span></p>',
+          '<p class="editor-paragraph"><span><br></span></p><p class="editor-paragraph"><span><br></span></p>',
         );
         await assertSelection(page, {
           anchorPath: [1, 0, 0],
@@ -205,7 +205,7 @@ describe('TextEntry', () => {
         await page.keyboard.press('Delete');
         await assertHTML(
           page,
-          '<p class="editor-paragraph"><span></span></p><div contenteditable="false" class="editor-placeholder">Enter some rich text...</div>',
+          '<p class="editor-paragraph"><span><br></span></p><div contenteditable="false" class="editor-placeholder">Enter some rich text...</div>',
         );
         await assertSelection(page, {
           anchorPath: [0, 0, 0],
@@ -245,7 +245,7 @@ describe('TextEntry', () => {
         await page.keyboard.press('Delete');
         await assertHTML(
           page,
-          '<p class="editor-paragraph"><span></span></p><div contenteditable="false" class="editor-placeholder">Enter some rich text...</div>',
+          '<p class="editor-paragraph"><span><br></span></p><div contenteditable="false" class="editor-placeholder">Enter some rich text...</div>',
         );
         await assertSelection(page, {
           anchorPath: [0, 0, 0],
@@ -286,7 +286,10 @@ describe('TextEntry', () => {
 
         await page.keyboard.press('Backspace');
 
-        await assertHTML(page, '<p class="editor-paragraph"><span></span></p>');
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph"><span><br></span></p>',
+        );
 
         await page.keyboard.type('هَ');
         await assertHTML(

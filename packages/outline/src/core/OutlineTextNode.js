@@ -169,6 +169,18 @@ function setTextContent(
   } else if (firstChild.nodeValue !== prefix + nextText) {
     firstChild.nodeValue = prefix + nextText;
   }
+  let possibleLineBreak = dom.lastChild;
+  if (possibleLineBreak != null) {
+    const parent = node.getParent();
+    const needsLineBreak =
+      nextText === '' && parent !== null && parent.__children.length === 1;
+    if (needsLineBreak && possibleLineBreak.nodeType === 3) {
+      possibleLineBreak = document.createElement('br');
+      dom.appendChild(possibleLineBreak);
+    } else if (!needsLineBreak && possibleLineBreak.nodeType !== 3) {
+      dom.removeChild(possibleLineBreak);
+    }
+  }
 }
 
 function createTextInnerDOM(

@@ -26,7 +26,10 @@ export const initializeUnitTest = (runTests: (testEnv: TestEnv) => void) => {
     editor: null,
     container: null,
     get outerHTML() {
-      return this.container.innerHTML.replace(/[\u200B-\u200D\u2060\uFEFF]/g, '');
+      return this.container.innerHTML.replace(
+        /[\u200B-\u200D\u2060\uFEFF]/g,
+        '',
+      );
     },
   };
 

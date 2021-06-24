@@ -556,6 +556,7 @@ export async function applySelectionInputs(inputs, update, editor) {
 
         switch (input.type) {
           case 'insert_text': {
+            debugger;
             SelectionHelpers.insertText(selection, input.text);
             break;
           }
@@ -592,6 +593,7 @@ export async function applySelectionInputs(inputs, update, editor) {
             break;
           }
           case 'format_text': {
+            debugger;
             SelectionHelpers.formatText(selection, input.format);
             break;
           }

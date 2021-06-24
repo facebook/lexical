@@ -12,7 +12,6 @@ import {
   IS_STRIKETHROUGH,
   IS_UNDERLINE,
   IS_CODE,
-  IS_LINK,
   IS_HASHTAG,
   IS_OVERFLOWED,
   IS_UNMERGEABLE,
@@ -34,7 +33,6 @@ const editorThemeClasses = Object.freeze({
     underlineStrikethrough: 'my-underline-strikethrough-class',
     italic: 'my-italic-class',
     code: 'my-code-class',
-    link: 'my-link-class',
     hashtag: 'my-hashtag-class',
     overflowed: 'my-overflowed-class',
   },
@@ -135,32 +133,6 @@ describe('OutlineTextNode tests', () => {
     });
   });
 
-  describe('url methods', () => {
-    test('writable nodes', async () => {
-      await update(() => {
-        const textNode = createTextNode('My link');
-        textNode.setURL('https://www.facebook.com');
-        expect(textNode.getURL()).toBe('https://www.facebook.com');
-
-        textNode.setURL(null);
-        expect(textNode.getURL()).toBe(null);
-      });
-    });
-
-    test('immutable nodes', async () => {
-      await update(() => {
-        const textNode = createTextNode('My link');
-        textNode.setURL('https://www.facebook.com');
-        textNode.makeImmutable();
-
-        expect(() => {
-          textNode.setURL('https://www.instagram.com');
-        }).toThrow();
-        expect(textNode.getURL()).toBe('https://www.facebook.com');
-      });
-    });
-  });
-
   describe.each([
     ['bold', IS_BOLD, (node) => node.isBold(), (node) => node.toggleBold()],
     [
@@ -182,7 +154,6 @@ describe('OutlineTextNode tests', () => {
       (node) => node.toggleUnderline(),
     ],
     ['code', IS_CODE, (node) => node.isCode(), (node) => node.toggleCode()],
-    ['link', IS_LINK, (node) => node.isLink(), (node) => node.toggleLink()],
     [
       'hashtag',
       IS_HASHTAG,
@@ -506,12 +477,6 @@ describe('OutlineTextNode tests', () => {
         IS_CODE,
         'My text node',
         '<code><span class="my-code-class">My text node</span></code>',
-      ],
-      [
-        'link',
-        IS_LINK,
-        'My text node',
-        '<span class="my-link-class">My text node</span>',
       ],
       [
         'hashtag',

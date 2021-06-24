@@ -28,9 +28,7 @@ import isImmutableOrInertOrSegmented from 'shared/isImmutableOrInertOrSegmented'
 import invariant from 'shared/invariant';
 import {doesContainGrapheme} from 'outline/TextHelpers';
 
-export function getNodesInRange(
-  selection: Selection,
-): {
+export function getNodesInRange(selection: Selection): {
   range: Array<NodeKey>,
   nodeMap: {[NodeKey]: Node},
 } {
@@ -603,16 +601,26 @@ export function removeText(selection: Selection): void {
   insertText(selection, '');
 }
 
-export function insertLineBreak(selection: Selection): void {
+export function insertLineBreak(
+  selection: Selection,
+  selectStart?: boolean,
+): void {
+  // const emptyTextNode = createTextNode('');
+  // console.log(emptyTextNode.getKey());
   const lineBreakNode = createLineBreakNode();
-  if (insertNodes(selection, [lineBreakNode])) {
-    lineBreakNode.selectNext(0, 0);
+  if (selectStart) {
+    insertNodes(selection, [lineBreakNode], true);
+  } else {
+    if (insertNodes(selection, [lineBreakNode])) {
+      lineBreakNode.selectNext(0, 0);
+    }
   }
 }
 
 export function insertNodes(
   selection: Selection,
   nodes: Array<OutlineNode>,
+  selectStart?: boolean,
 ): boolean {
   // If there is a range selected remove the text in it
   if (!selection.isCaret()) {
@@ -644,6 +652,7 @@ export function insertNodes(
     [target, danglingText] = anchorNode.splitText(anchorOffset);
     siblings.push(danglingText);
   }
+  const startingNode = target;
 
   // Finally, get all remaining text node siblings in this block so we can
   // append them after the last node we're inserting.
@@ -675,7 +684,11 @@ export function insertNodes(
     if (!isTextNode(lastChild)) {
       invariant(false, 'insertNodes: lastChild not a text node');
     }
-    lastChild.select();
+    if (selectStart) {
+      startingNode.select();
+    } else {
+      lastChild.select();
+    }
     if (siblings.length !== 0) {
       let prevSibling = lastChild;
       for (let i = 0; i < siblings.length; i++) {
@@ -691,8 +704,12 @@ export function insertNodes(
       target.normalizeTextNodes(true);
     }
   } else if (isTextNode(target)) {
+    if (selectStart) {
+      startingNode.select();
+    } else {
+      target.select();
+    }
     // We've only inserted text nodes, so we only need to normalize this block.
-    target.select();
     const parent = target.getParentBlockOrThrow();
     parent.normalizeTextNodes(true);
   }

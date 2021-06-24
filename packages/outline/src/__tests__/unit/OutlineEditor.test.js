@@ -398,7 +398,7 @@ describe('OutlineEditor tests', () => {
         });
 
         expect(sanitizeHTML(container.innerHTML)).toBe(
-          '<div contenteditable="true" data-outline-editor="true"><p><span></span></p>' +
+          '<div contenteditable="true" data-outline-editor="true"><p><span><br></span></p>' +
             '<div>Placeholder text</div></div>',
         );
       });
@@ -433,8 +433,8 @@ describe('OutlineEditor tests', () => {
         });
 
         expect(sanitizeHTML(container.innerHTML)).toBe(
-          '<div contenteditable="true" data-outline-editor="true"><p><span></span></p><p>' +
-            '<span></span></p></div>',
+          '<div contenteditable="true" data-outline-editor="true"><p><span><br></span></p><p>' +
+            '<span><br></span></p></div>',
         );
       });
 

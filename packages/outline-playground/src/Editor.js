@@ -7,10 +7,10 @@
  * @flow strict-local
  */
 
-import type {OutlineEditor, ViewModel} from 'outline';
+import type {OutlineEditor} from 'outline';
 
 import * as React from 'react';
-import {useEffect, useMemo} from 'react';
+import {useMemo} from 'react';
 import useOutlineRichText from 'outline-react/useOutlineRichText';
 import useEmojis from './useEmojis';
 import useMentions from './useMentions';
@@ -34,7 +34,6 @@ const editorStyle = {
 };
 
 type Props = {
-  onChange: (ViewModel | null) => void,
   onError: (Error) => void,
   isReadOnly?: boolean,
   isCharLimit?: boolean,
@@ -72,25 +71,6 @@ const editorThemeClasses = {
   code: 'editor-code',
 };
 
-function useOutlineOnChange(
-  editor: OutlineEditor,
-  onChange: (ViewModel | null) => void,
-): void {
-  // Set the initial state
-  useEffect(() => {
-    if (editor !== null) {
-      onChange(editor.getViewModel());
-    }
-  }, [editor, onChange]);
-
-  // Subscribe to changes
-  useEffect(() => {
-    if (editor !== null) {
-      return editor.addUpdateListener(onChange);
-    }
-  }, [onChange, editor]);
-}
-
 function ContentEditable({
   props,
   isReadOnly,
@@ -115,7 +95,6 @@ function ContentEditable({
 }
 
 export const useRichTextEditor = ({
-  onChange,
   onError,
   isReadOnly,
   isCharLimit,
@@ -130,7 +109,6 @@ export const useRichTextEditor = ({
   const props = useOutlineRichText(editor, isReadOnly);
   const toolbar = useToolbar(editor);
   const decorators = useOutlineDecorators(editor);
-  useOutlineOnChange(editor, onChange);
   useEmojis(editor);
   useHashtags(editor);
   useOutlineAutoFormatter(editor);
@@ -168,7 +146,6 @@ export const useRichTextEditor = ({
 };
 
 export const usePlainTextEditor = ({
-  onChange,
   onError,
   isReadOnly,
   isCharLimit,
@@ -182,7 +159,6 @@ export const usePlainTextEditor = ({
   const mentionsTypeahead = useMentions(editor);
   const props = usePlainText(editor, isReadOnly);
   const decorators = useOutlineDecorators(editor);
-  useOutlineOnChange(editor, onChange);
   useEmojis(editor);
   useHashtags(editor);
   useKeywords(editor);

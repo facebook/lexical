@@ -31,10 +31,10 @@ import {
   IS_UNDERLINE,
   IS_LINK,
   IS_OVERFLOWED,
+  IS_UNMERGEABLE,
   ZERO_WIDTH_SPACE_CHAR,
   ZERO_WIDTH_JOINER_CHAR,
   IS_DIRTY_DECORATOR,
-  IS_UNMERGEABLE,
 } from './OutlineConstants';
 
 export type TextFormatType =
@@ -45,7 +45,8 @@ export type TextFormatType =
   | 'code'
   | 'link'
   | 'hashtag'
-  | 'overflowed';
+  | 'overflowed'
+  | 'unmergeable';
 
 export type SelectionFragment = {
   root: OutlineNode,
@@ -61,6 +62,7 @@ const textFormatStateFlags: {[TextFormatType]: number} = {
   link: IS_LINK,
   hashtag: IS_HASHTAG,
   overflowed: IS_OVERFLOWED,
+  unmergeable: IS_UNMERGEABLE,
 };
 
 function getElementOuterTag(node: TextNode, flags: number): string | null {
@@ -377,17 +379,32 @@ export class TextNode extends OutlineNode {
   ): void {}
 
   // Mutators
-  toggleOverflowed(): TextNode {
-    const flags = this.getFlags();
-    return this.setFlags(flags ^ IS_OVERFLOWED);
+  toggleBold(): TextNode {
+    return this.setFlags(this.getFlags() ^ IS_BOLD);
+  }
+  toggleItalics(): TextNode {
+    return this.setFlags(this.getFlags() ^ IS_ITALIC);
+  }
+  toggleStrikethrough(): TextNode {
+    return this.setFlags(this.getFlags() ^ IS_STRIKETHROUGH);
+  }
+  toggleUnderline(): TextNode {
+    return this.setFlags(this.getFlags() ^ IS_UNDERLINE);
+  }
+  toggleCode(): TextNode {
+    return this.setFlags(this.getFlags() ^ IS_CODE);
+  }
+  toggleLink(): TextNode {
+    return this.setFlags(this.getFlags() ^ IS_LINK);
   }
   toggleHashtag(): TextNode {
-    const flags = this.getFlags();
-    return this.setFlags(flags ^ IS_HASHTAG);
+    return this.setFlags(this.getFlags() ^ IS_HASHTAG);
+  }
+  toggleOverflowed(): TextNode {
+    return this.setFlags(this.getFlags() ^ IS_OVERFLOWED);
   }
   toggleUnmergeable(): TextNode {
-    const flags = this.getFlags();
-    return this.setFlags(flags ^ IS_UNMERGEABLE);
+    return this.setFlags(this.getFlags() ^ IS_UNMERGEABLE);
   }
   setURL(url: string | null): TextNode {
     errorOnReadOnly();

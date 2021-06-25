@@ -141,6 +141,45 @@ export function getNodesInRange(selection: Selection): {
   return {range: nodeKeys, nodeMap};
 }
 
+export function extractSelection(selection: Selection): Array<OutlineNode> {
+  const selectedNodes = selection.getNodes();
+  const selectedNodesLength = selectedNodes.length;
+  const lastIndex = selectedNodesLength - 1;
+  let firstNode = selectedNodes[0];
+  let lastNode = selectedNodes[lastIndex];
+
+  if (!isTextNode(firstNode) || !isTextNode(lastNode)) {
+    invariant(false, 'formatText: firstNode/lastNode not a text node');
+  }
+  const anchorOffset = selection.anchorOffset;
+  const focusOffset = selection.focusOffset;
+  let startOffset;
+  let endOffset;
+
+  if (selectedNodesLength === 1) {
+    startOffset = anchorOffset > focusOffset ? focusOffset : anchorOffset;
+    endOffset = anchorOffset > focusOffset ? anchorOffset : focusOffset;
+    const splitNodes = firstNode.splitText(startOffset, endOffset);
+    const node = startOffset === 0 ? splitNodes[0] : splitNodes[1];
+    return [node];
+  }
+  const isBefore = firstNode === selection.getAnchorNode();
+  startOffset = isBefore ? anchorOffset : focusOffset;
+  endOffset = isBefore ? focusOffset : anchorOffset;
+
+  if (startOffset !== 0) {
+    [, firstNode] = firstNode.splitText(startOffset);
+  }
+  selectedNodes[0] = firstNode;
+  const lastNodeText = lastNode.getTextContent();
+  const lastNodeTextLength = lastNodeText.length;
+  if (endOffset !== lastNodeTextLength) {
+    [lastNode] = lastNode.splitText(endOffset);
+  }
+  selectedNodes[lastIndex] = lastNode;
+  return selectedNodes;
+}
+
 export function formatText(
   selection: Selection,
   formatType: TextFormatType,

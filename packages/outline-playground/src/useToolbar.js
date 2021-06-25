@@ -13,7 +13,7 @@ import {createTextNode, isTextNode} from 'outline';
 import React, {useCallback, useEffect, useRef, useState, useMemo} from 'react';
 // $FlowFixMe
 import {unstable_batchedUpdates, createPortal} from 'react-dom';
-import {formatText} from 'outline/SelectionHelpers';
+import {formatText, extractSelection} from 'outline/SelectionHelpers';
 import {createLinkNode, isLinkNode, LinkNode} from 'outline/LinkNode';
 
 function positionToolbar(toolbar, rect) {
@@ -197,6 +197,7 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
               setIsLink(true);
               setLinkUrl(node.getURL());
             } else {
+              setIsLink(false);
               setLinkUrl('');
             }
           });
@@ -249,7 +250,7 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
         }
         const sel = view.getSelection();
         if (sel !== null) {
-          const nodes = sel.getNodes();
+          const nodes = extractSelection(sel);
           nodes.forEach((node) => {
             if (isTextNode(node) && !node.isImmutable()) {
               if (isLinkNode(node)) {

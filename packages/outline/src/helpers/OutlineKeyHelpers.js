@@ -16,8 +16,8 @@ function controlOrMeta(event: KeyboardEvent): boolean {
   return event.ctrlKey;
 }
 
-function isEnter(event: KeyboardEvent): boolean {
-  return event.key === 'Enter' || event.keyCode === 13;
+function isReturn(event: KeyboardEvent): boolean {
+  return event.keyCode === 13;
 }
 
 function isBackspace(event: KeyboardEvent): boolean {
@@ -49,11 +49,11 @@ export function isUnderline(event: KeyboardEvent): boolean {
 }
 
 export function isParagraph(event: KeyboardEvent): boolean {
-  return isEnter(event) && !event.shiftKey;
+  return isReturn(event) && !event.shiftKey;
 }
 
 export function isLineBreak(event: KeyboardEvent): boolean {
-  return isEnter(event) && event.shiftKey;
+  return isReturn(event) && event.shiftKey;
 }
 
 export function isDeleteWordBackward(event: KeyboardEvent): boolean {

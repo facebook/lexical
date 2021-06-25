@@ -37,7 +37,9 @@ function RichTextEditor({options, onOptionsChange}): React$Node {
   return (
     <>
       <div className="editor-shell">{editorComponent}</div>
-      {showTreeView && <OutlineTreeView className="tree-view-output" editor={editor} />}
+      {showTreeView && (
+        <OutlineTreeView className="tree-view-output" editor={editor} />
+      )}
       {stepRecorderOutput}
       {testRecorderOutput}
       <div className="editor-dev-toolbar">
@@ -70,7 +72,9 @@ function PlainTextEditor({options, onOptionsChange}): React$Node {
   return (
     <>
       <div className="editor-shell">{editorComponent}</div>
-      {showTreeView && <OutlineTreeView className="tree-view-output" editor={editor} />}
+      {showTreeView && (
+        <OutlineTreeView className="tree-view-output" editor={editor} />
+      )}
       {stepRecorderOutput}
       <div className="editor-dev-toolbar">
         {optionsSwitches}

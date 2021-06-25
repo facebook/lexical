@@ -64,9 +64,7 @@ import {isTextNode} from 'outline';
 
 // Safari triggers composition before keydown, meaning
 // we need to account for this when handling key events.
-let wasRecentlyComposing = false;
 let lastKeyWasMaybeAndroidSoftKey = false;
-const RESOLVE_DELAY = 20;
 const ZERO_WIDTH_SPACE_CHAR = '\u200B';
 const ZERO_WIDTH_JOINER_CHAR = '\u2060';
 
@@ -163,7 +161,7 @@ export function onKeyDownForPlainText(
   state: EventHandlerState,
 ): void {
   updateAndroidSoftKeyFlagIfAny(event);
-  if (editor.isComposing() || wasRecentlyComposing) {
+  if (editor.isComposing()) {
     return;
   }
   editor.update((view) => {
@@ -234,7 +232,7 @@ export function onKeyDownForRichText(
   state: EventHandlerState,
 ): void {
   updateAndroidSoftKeyFlagIfAny(event);
-  if (editor.isComposing() || wasRecentlyComposing) {
+  if (editor.isComposing()) {
     return;
   }
   editor.update((view) => {
@@ -472,10 +470,6 @@ export function onCompositionEnd(
   state: EventHandlerState,
 ): void {
   editor.setCompositionKey(null);
-  wasRecentlyComposing = true;
-  setTimeout(() => {
-    wasRecentlyComposing = false;
-  }, RESOLVE_DELAY);
 }
 
 export function onSelectionChange(

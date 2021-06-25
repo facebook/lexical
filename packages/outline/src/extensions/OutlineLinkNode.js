@@ -23,11 +23,13 @@ export class LinkNode extends TextNode {
     return new LinkNode(this.__text, this.__url, this.__key);
   }
   createDOM(editorThemeClasses: EditorThemeClasses): HTMLElement {
-    const element = super.createDOM(editorThemeClasses);
+    const element = document.createElement('span');
+    const text = super.createDOM(editorThemeClasses);
     const className = editorThemeClasses.link;
     if (className !== undefined) {
       element.className = className;
     }
+    element.appendChild(text);
     return element;
   }
   updateDOM(
@@ -36,8 +38,14 @@ export class LinkNode extends TextNode {
     dom: HTMLElement,
     editorThemeClasses: EditorThemeClasses,
   ): boolean {
-    const textUpdate = super.updateDOM(prevNode, dom, editorThemeClasses);
-    return textUpdate;
+    // $FlowFixMe: this should always be right
+    const text: HTMLElement = dom.firstChild;
+    const needsReplace = super.updateDOM(prevNode, text, editorThemeClasses);
+    if (needsReplace) {
+      const replacementText = super.createDOM(editorThemeClasses);
+      dom.replaceChild(replacementText, text);
+    }
+    return false;
   }
   getURL(): string {
     return this.getLatest().__url;

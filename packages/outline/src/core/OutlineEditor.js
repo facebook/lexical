@@ -82,7 +82,7 @@ export type TextNodeTransform = (node: TextNode, view: View) => void;
 
 export type EditorElementListener = (element: null | HTMLElement) => void;
 
-function resetEditor(editor: OutlineEditor): void {
+export function resetEditor(editor: OutlineEditor): void {
   const root = createRoot();
   const emptyViewModel = new ViewModel({root});
   const prevViewModel = editor._viewModel;
@@ -96,12 +96,15 @@ function resetEditor(editor: OutlineEditor): void {
     for (let i = 0; i < rootChildrenKeys.length; i++) {
       const rootChildKey = rootChildrenKeys[i];
       const element = keyToDOMMap.get(rootChildKey);
-      if (element !== undefined) {
+      if (element !== undefined && element.parentNode === editorElement) {
         editorElement.removeChild(element);
       }
     }
     // Remove the placeholder element from the editor
-    if (placeholderElement !== null) {
+    if (
+      placeholderElement !== null &&
+      placeholderElement.parentNode === editorElement
+    ) {
       editorElement.removeChild(placeholderElement);
     }
   }

@@ -9,6 +9,7 @@ module.exports = {
       'outline/QuoteNode': 'outline/dist/OutlineQuoteNode',
       'outline/ParagraphNode': 'outline/dist/OutlineParagraphNode',
       'outline/CodeNode': 'outline/dist/OutlineCodeNode',
+      'outline/LinkNode': 'outline/dist/OutlineLinkNode',
       // Outline Helpers
       'outline/SelectionHelpers': 'outline/dist/OutlineSelectionHelpers',
       'outline/TextHelpers': 'outline/dist/OutlineTextHelpers',

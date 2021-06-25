@@ -58,6 +58,7 @@ let activeViewModel = null;
 let activeEditor = null;
 let isReadOnlyMode = false;
 let isProcessingTextNodeTransforms = false;
+let isAttemptingToRecoverFromReconcilerError = false;
 
 export function errorOnProcessingTextNodeTransforms(): void {
   if (isProcessingTextNodeTransforms) {
@@ -317,11 +318,13 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
     triggerErrorListeners(editor, error);
     // Reset editor and restore incoming view model to the DOM
     const editorElement = editor._editorElement;
-    if (editorElement !== null) {
+    if (editorElement !== null && !isAttemptingToRecoverFromReconcilerError) {
       resetEditor(editor);
       editor._keyToDOMMap.set('root', editorElement);
       editor._pendingViewModel = pendingViewModel;
+      isAttemptingToRecoverFromReconcilerError = true;
       commitPendingUpdates(editor);
+      isAttemptingToRecoverFromReconcilerError = false;
     }
     return;
   } finally {

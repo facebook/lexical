@@ -29,6 +29,7 @@ import {
 } from './OutlineNode';
 import {isBlockNode, isTextNode, isLineBreakNode} from '.';
 import invariant from 'shared/invariant';
+import {resetEditor} from './OutlineEditor';
 
 export type View = {
   clearSelection(): void,
@@ -309,8 +310,23 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
   editor._viewModel = pendingViewModel;
   const previousActiveViewModel = activeViewModel;
   activeViewModel = pendingViewModel;
-  reconcileViewModel(currentViewModel, pendingViewModel, editor);
-  activeViewModel = previousActiveViewModel;
+  try {
+    reconcileViewModel(currentViewModel, pendingViewModel, editor);
+  } catch (error) {
+    // Report errors
+    triggerErrorListeners(editor, error);
+    // Reset editor and restore incoming view model to the DOM
+    const editorElement = editor._editorElement;
+    if (editorElement !== null) {
+      resetEditor(editor);
+      editor._keyToDOMMap.set('root', editorElement);
+      editor._pendingViewModel = pendingViewModel;
+      commitPendingUpdates(editor);
+    }
+    return;
+  } finally {
+    activeViewModel = previousActiveViewModel;
+  }
   garbageCollectDetachedDecorators(editor, pendingViewModel);
   const pendingDecorators = editor._pendingDecorators;
   if (pendingDecorators !== null) {

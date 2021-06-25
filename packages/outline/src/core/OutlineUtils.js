@@ -55,11 +55,15 @@ export function isSelectionWithinEditor(
   focusDOM: null | Node,
 ): boolean {
   const editorElement = editor.getEditorElement();
-  return (
-    editorElement !== null &&
-    editorElement.contains(anchorDOM) &&
-    editorElement.contains(focusDOM)
-  );
+  try {
+    return (
+      editorElement !== null &&
+      editorElement.contains(anchorDOM) &&
+      editorElement.contains(focusDOM)
+    );
+  } catch {
+    return false;
+  }
 }
 
 export function getTextDirection(text: string): 'ltr' | 'rtl' | null {

@@ -69,6 +69,7 @@ const editorThemeClasses = {
     code: 'editor-text-code',
   },
   code: 'editor-code',
+  link: 'editor-text-link',
 };
 
 function ContentEditable({

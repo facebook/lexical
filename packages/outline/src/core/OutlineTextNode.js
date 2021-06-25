@@ -530,6 +530,9 @@ export class TextNode extends OutlineNode {
 
     return writableSelf;
   }
+  canInsertTextAtEnd(): boolean {
+    return true;
+  }
   splitText(...splitOffsets: Array<number>): Array<TextNode> {
     errorOnReadOnly();
     if (this.isImmutable()) {

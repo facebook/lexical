@@ -60,7 +60,7 @@ import {
   moveForward,
   moveWordForward,
 } from 'outline/SelectionHelpers';
-import {isTextNode} from 'outline';
+import {createTextNode, isTextNode} from 'outline';
 
 // Safari triggers composition before keydown, meaning
 // we need to account for this when handling key events.
@@ -749,12 +749,18 @@ export function onNativeBeforeInputForPlainText(
       if (
         isInputText &&
         selection.isCaret() &&
-        isImmutableOrInertOrSegmented(anchorNode)
+        selection.anchorOffset === anchorNode.getTextContentSize() &&
+        (isImmutableOrInertOrSegmented(anchorNode) ||
+          !anchorNode.canInsertTextAtEnd())
       ) {
         event.preventDefault();
-        if (selection.anchorOffset === anchorNode.getTextContentSize()) {
+        if (data != null) {
           const nextSibling = anchorNode.getNextSibling();
-          if (isTextNode(nextSibling) && data != null) {
+          if (nextSibling === null) {
+            const textNode = createTextNode(data);
+            textNode.select();
+            anchorNode.insertAfter(textNode);
+          } else if (isTextNode(nextSibling)) {
             nextSibling.select(0, 0);
             insertText(selection, data);
           }
@@ -907,12 +913,18 @@ export function onNativeBeforeInputForRichText(
       if (
         isInputText &&
         selection.isCaret() &&
-        isImmutableOrInertOrSegmented(anchorNode)
+        selection.anchorOffset === anchorNode.getTextContentSize() &&
+        (isImmutableOrInertOrSegmented(anchorNode) ||
+          !anchorNode.canInsertTextAtEnd())
       ) {
         event.preventDefault();
-        if (selection.anchorOffset === anchorNode.getTextContentSize()) {
+        if (data != null) {
           const nextSibling = anchorNode.getNextSibling();
-          if (isTextNode(nextSibling) && data != null) {
+          if (nextSibling === null) {
+            const textNode = createTextNode(data);
+            textNode.select();
+            anchorNode.insertAfter(textNode);
+          } else if (isTextNode(nextSibling)) {
             nextSibling.select(0, 0);
             insertText(selection, data);
           }

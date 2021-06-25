@@ -57,6 +57,7 @@ export type EditorThemeClasses = {
     ul?: EditorThemeClassName,
     ol?: EditorThemeClassName,
   },
+  link?: EditorThemeClassName,
   listitem?: EditorThemeClassName,
   quote?: EditorThemeClassName,
   code?: EditorThemeClassName,

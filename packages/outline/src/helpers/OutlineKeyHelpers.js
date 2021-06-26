@@ -56,6 +56,12 @@ export function isLineBreak(event: KeyboardEvent): boolean {
   return isReturn(event) && event.shiftKey;
 }
 
+// Inserts a new line after the selection
+export function isOpenLineBreak(event: KeyboardEvent): boolean {  
+  // 79 = KeyO
+  return IS_APPLE && event.ctrlKey && event.keyCode === 79;
+}
+
 export function isDeleteWordBackward(event: KeyboardEvent): boolean {
   return isBackspace(event) && (IS_APPLE ? event.altKey : event.ctrlKey);
 }

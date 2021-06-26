@@ -605,8 +605,6 @@ export function insertLineBreak(
   selection: Selection,
   selectStart?: boolean,
 ): void {
-  // const emptyTextNode = createTextNode('');
-  // console.log(emptyTextNode.getKey());
   const lineBreakNode = createLineBreakNode();
   if (selectStart) {
     insertNodes(selection, [lineBreakNode], true);

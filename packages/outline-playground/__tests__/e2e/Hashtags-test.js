@@ -48,7 +48,7 @@ describe('Hashtags', () => {
       await page.keyboard.press('Delete');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span class="">yolonce</span></p>',
+        '<p class="editor-paragraph" dir="ltr"><span>yolonce</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],

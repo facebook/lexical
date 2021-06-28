@@ -119,15 +119,7 @@ function createNode(
     if (insertDOM !== null) {
       parentDOM.insertBefore(dom, insertDOM);
     } else {
-      const editorElement = activeEditor._editorElement;
-      const placeholderElement = activeEditor._placeholderElement;
-      // Ensure we insert the DOM element before the placeholder, if
-      // one exists.
-      if (parentDOM === editorElement && placeholderElement !== null) {
-        parentDOM.insertBefore(dom, placeholderElement);
-      } else {
-        parentDOM.appendChild(dom);
-      }
+      parentDOM.appendChild(dom);
     }
   }
   return dom;
@@ -462,64 +454,6 @@ function reconcileNodeChildren(
   }
 }
 
-export function reconcilePlaceholder(
-  editor: OutlineEditor,
-  nextViewModel: ViewModel,
-): void {
-  const placeholderText = editor._placeholderText;
-  const editorElement = editor._editorElement;
-  if (editorElement === null) {
-    return;
-  }
-  const noPlaceholder =
-    placeholderText === '' ||
-    editor._textContent !== '' ||
-    editor.isComposing() ||
-    !isEditorEmpty(editor, nextViewModel);
-
-  let placeholderElement = editor._placeholderElement;
-  if (placeholderElement === null) {
-    if (noPlaceholder) {
-      return;
-    }
-    placeholderElement = document.createElement('div');
-    placeholderElement.contentEditable = 'false';
-    const placeholderClassName = editor._editorThemeClasses.placeholder;
-    if (placeholderClassName !== undefined) {
-      placeholderElement.className = placeholderClassName;
-    }
-    placeholderElement.appendChild(document.createTextNode(placeholderText));
-    editorElement.appendChild(placeholderElement);
-    editor._placeholderElement = placeholderElement;
-  } else if (noPlaceholder) {
-    editorElement.removeChild(placeholderElement);
-    editor._placeholderElement = null;
-  }
-}
-
-function isEditorEmpty(
-  editor: OutlineEditor,
-  nextViewModel: ViewModel,
-): boolean {
-  if (editor._textContent !== '') {
-    return false;
-  }
-  const nodeMap = nextViewModel._nodeMap;
-  const topBlockIDs = nodeMap.root.__children;
-  const topBlockIDsLength = topBlockIDs.length;
-  if (topBlockIDsLength > 1) {
-    return false;
-  }
-  for (let i = 0; i < topBlockIDsLength; i++) {
-    const topBlock = nodeMap[topBlockIDs[i]];
-
-    if (topBlock && topBlock.__type !== 'paragraph') {
-      return false;
-    }
-  }
-  return true;
-}
-
 function reconcileRoot(
   prevViewModel: ViewModel,
   nextViewModel: ViewModel,
@@ -540,7 +474,6 @@ function reconcileRoot(
   activeViewModelIsDirty = nextViewModel._isDirty;
   reconcileNode('root', null);
   editor._textContent = editorTextContent;
-  reconcilePlaceholder(editor, nextViewModel);
   // We don't want a bunch of void checks throughout the scope
   // so instead we make it seem that these values are always set.
   // We also want to make sure we clear them down, otherwise we

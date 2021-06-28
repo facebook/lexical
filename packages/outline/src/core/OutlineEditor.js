@@ -33,13 +33,11 @@ import {
   scheduleMicroTask,
 } from './OutlineUtils';
 import {createRootNode as createRoot} from './OutlineRootNode';
-import {reconcilePlaceholder} from './OutlineReconciler';
 import invariant from 'shared/invariant';
 
 export type EditorThemeClassName = string;
 
 export type EditorThemeClasses = {
-  placeholder?: EditorThemeClassName,
   root?: EditorThemeClassName,
   text?: {
     bold?: EditorThemeClassName,
@@ -89,7 +87,6 @@ export function resetEditor(editor: OutlineEditor): void {
   const rootChildrenKeys = prevViewModel._nodeMap.root.__children;
   const keyToDOMMap = editor._keyToDOMMap;
   const editorElement = editor._editorElement;
-  const placeholderElement = editor._placeholderElement;
 
   if (editorElement !== null) {
     // Remove all existing top level DOM elements from editor
@@ -100,18 +97,10 @@ export function resetEditor(editor: OutlineEditor): void {
         editorElement.removeChild(element);
       }
     }
-    // Remove the placeholder element from the editor
-    if (
-      placeholderElement !== null &&
-      placeholderElement.parentNode === editorElement
-    ) {
-      editorElement.removeChild(placeholderElement);
-    }
   }
   editor._viewModel = emptyViewModel;
   editor._pendingViewModel = null;
   editor._compositionKey = null;
-  editor._placeholderElement = null;
   keyToDOMMap.clear();
   editor._textContent = '';
   triggerUpdateListeners(editor);
@@ -236,8 +225,6 @@ export class OutlineEditor {
   _nodeTypes: Map<string, Class<OutlineNode>>;
   _decorators: {[NodeKey]: ReactNode};
   _pendingDecorators: null | {[NodeKey]: ReactNode};
-  _placeholderText: string;
-  _placeholderElement: null | HTMLElement;
   _textContent: string;
   _editorThemeClasses: EditorThemeClasses;
 
@@ -275,9 +262,6 @@ export class OutlineEditor {
     // React node decorators for portals
     this._decorators = {};
     this._pendingDecorators = null;
-    // Used for rendering placeholder text
-    this._placeholderText = '';
-    this._placeholderElement = null;
     // Editor fast-path for text content
     this._textContent = '';
   }
@@ -297,7 +281,6 @@ export class OutlineEditor {
     }
     this._deferred.push(() => {
       this._compositionKey = nodeKey;
-      reconcilePlaceholder(this, this._viewModel);
     });
   }
   registerNodeType(nodeType: string, klass: Class<OutlineNode>): void {
@@ -387,15 +370,6 @@ export class OutlineEditor {
     errorOnProcessingTextNodeTransforms();
     return updateEditor(this, updateFn, false, callbackFn);
   }
-  setPlaceholder(placeholderText: string): void {
-    const placeholderElement = this._placeholderElement;
-    if (placeholderElement !== null) {
-      // $FlowFixMe: placeholder elements always have a text node
-      placeholderElement.firstChild.nodeValue = placeholderText;
-    }
-    this._placeholderText = placeholderText;
-    reconcilePlaceholder(this, this._viewModel);
-  }
   focus(callbackFn?: () => void): void {
     const editorElement = this._editorElement;
     if (editorElement !== null) {
@@ -422,5 +396,24 @@ export class OutlineEditor {
         },
       );
     }
+  }
+  canShowPlaceholder(): boolean {
+    if (this.isComposing() || this._textContent !== '') {
+      return false;
+    }
+    const nodeMap = this._viewModel._nodeMap;
+    const topBlockIDs = nodeMap.root.__children;
+    const topBlockIDsLength = topBlockIDs.length;
+    if (topBlockIDsLength > 1) {
+      return false;
+    }
+    for (let i = 0; i < topBlockIDsLength; i++) {
+      const topBlock = nodeMap[topBlockIDs[i]];
+
+      if (topBlock && topBlock.__type !== 'paragraph') {
+        return false;
+      }
+    }
+    return true;
   }
 }

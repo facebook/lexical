@@ -66,7 +66,8 @@ header h1 {
   position: relative;
 }
 
-.editor-shell div.editor div.editor-placeholder {
+.editor-shell div.editor-placeholder {
+  font-size: 15px;
   color: #999;
   overflow: hidden;
   position: absolute;

@@ -61,12 +61,12 @@ const editorThemeClasses = {
     link: 'editor-text-link',
     italic: 'editor-text-italic',
     overflowed: 'editor-text-overflowed',
-    hashtag: 'editor-text-hashtag',
     underline: 'editor-text-underline',
     strikethrough: 'editor-text-strikethrough',
     underlineStrikethrough: 'editor-text-underlineStrikethrough',
     code: 'editor-text-code',
   },
+  hashtag: 'editor-text-hashtag',
   code: 'editor-code',
   link: 'editor-text-link',
 };

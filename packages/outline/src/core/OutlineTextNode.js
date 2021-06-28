@@ -25,7 +25,6 @@ import {
   IS_CODE,
   IS_BOLD,
   IS_ITALIC,
-  IS_HASHTAG,
   IS_STRIKETHROUGH,
   IS_UNDERLINE,
   IS_OVERFLOWED,
@@ -41,7 +40,6 @@ export type TextFormatType =
   | 'strikethrough'
   | 'italic'
   | 'code'
-  | 'hashtag'
   | 'overflowed'
   | 'unmergeable';
 
@@ -56,7 +54,6 @@ const textFormatStateFlags: {[TextFormatType]: number} = {
   strikethrough: IS_STRIKETHROUGH,
   italic: IS_ITALIC,
   code: IS_CODE,
-  hashtag: IS_HASHTAG,
   overflowed: IS_OVERFLOWED,
   unmergeable: IS_UNMERGEABLE,
 };
@@ -225,9 +222,6 @@ export class TextNode extends OutlineNode {
   isCode(): boolean {
     return (this.getFlags() & IS_CODE) !== 0;
   }
-  isHashtag(): boolean {
-    return (this.getFlags() & IS_HASHTAG) !== 0;
-  }
   isOverflowed(): boolean {
     return (this.getFlags() & IS_OVERFLOWED) !== 0;
   }
@@ -380,9 +374,6 @@ export class TextNode extends OutlineNode {
   toggleCode(): TextNode {
     return this.setFlags(this.getFlags() ^ IS_CODE);
   }
-  toggleHashtag(): TextNode {
-    return this.setFlags(this.getFlags() ^ IS_HASHTAG);
-  }
   toggleOverflowed(): TextNode {
     return this.setFlags(this.getFlags() ^ IS_OVERFLOWED);
   }
@@ -423,35 +414,7 @@ export class TextNode extends OutlineNode {
       writableSelf.__text = text;
     }
 
-    const isHashtag = this.isHashtag();
-    // Handle hashtags
-    let requireNormalize = false;
-    if (isHashtag) {
-      const indexOfHash = text.indexOf('#');
-      let targetNode = this;
-      if (indexOfHash === -1) {
-        targetNode.toggleHashtag();
-        requireNormalize = true;
-      } else if (indexOfHash > 0) {
-        [, targetNode] = this.splitText(indexOfHash);
-        targetNode.toggleHashtag();
-        requireNormalize = true;
-      }
-      // Check for invalid characters
-      const targetTextContent = targetNode.getTextContent().slice(1);
-      const indexOfInvalidChar = targetTextContent.search(
-        /[\s.,\\\/#!$%\^&\*;:{}=\-`~()]/,
-      );
-      if (indexOfInvalidChar === 0) {
-        targetNode.toggleHashtag();
-        requireNormalize = true;
-      } else if (indexOfInvalidChar > 0) {
-        [targetNode] = targetNode.splitText(indexOfInvalidChar + 1);
-        targetNode.toggleHashtag();
-        requireNormalize = true;
-      }
-    }
-    return requireNormalize;
+    return false;
   }
   select(_anchorOffset?: number, _focusOffset?: number): Selection {
     errorOnReadOnly();
@@ -556,9 +519,6 @@ export class TextNode extends OutlineNode {
     }
     if (string !== '') {
       parts.push(string);
-    }
-    if (this.isHashtag()) {
-      this.toggleHashtag();
     }
     const partsLength = parts.length;
     if (partsLength === 0) {

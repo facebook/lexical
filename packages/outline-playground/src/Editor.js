@@ -41,7 +41,6 @@ type Props = {
 };
 
 const editorThemeClasses = {
-  placeholder: 'editor-placeholder',
   paragraph: 'editor-paragraph',
   quote: 'editor-quote',
   heading: {
@@ -101,8 +100,7 @@ export const useRichTextEditor = ({
   isCharLimit,
   isAutocomplete,
 }: Props): [OutlineEditor, React.MixedElement] => {
-  const [editor, editorElementRef] = useOutlineEditor(
-    'Enter some rich text...',
+  const [editor, editorElementRef, showPlaceholder] = useOutlineEditor(
     onError,
     editorThemeClasses,
   );
@@ -123,6 +121,7 @@ export const useRichTextEditor = ({
           isReadOnly={isReadOnly}
           editorElementRef={editorElementRef}
         />
+        {showPlaceholder && <Placeholder>Enter some rich text...</Placeholder>}
         {decorators}
         {mentionsTypeahead}
         {toolbar}
@@ -135,6 +134,7 @@ export const useRichTextEditor = ({
     props,
     isReadOnly,
     editorElementRef,
+    showPlaceholder,
     decorators,
     mentionsTypeahead,
     toolbar,
@@ -146,14 +146,17 @@ export const useRichTextEditor = ({
   return [editor, element];
 };
 
+function Placeholder({children}: {children: string}): React.Node {
+  return <div className="editor-placeholder">{children}</div>;
+}
+
 export const usePlainTextEditor = ({
   onError,
   isReadOnly,
   isCharLimit,
   isAutocomplete,
 }: Props): [OutlineEditor, React.MixedElement] => {
-  const [editor, editorElementRef] = useOutlineEditor(
-    'Enter some plain text...',
+  const [editor, editorElementRef, showPlaceholder] = useOutlineEditor(
     onError,
     editorThemeClasses,
   );
@@ -172,6 +175,7 @@ export const usePlainTextEditor = ({
           isReadOnly={isReadOnly}
           editorElementRef={editorElementRef}
         />
+        {showPlaceholder && <Placeholder>Enter some plain text...</Placeholder>}
         {decorators}
         {mentionsTypeahead}
         {isCharLimit && <CharacterLimit editor={editor} />}
@@ -182,6 +186,7 @@ export const usePlainTextEditor = ({
       props,
       isReadOnly,
       editorElementRef,
+      showPlaceholder,
       decorators,
       mentionsTypeahead,
       isCharLimit,

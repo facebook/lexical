@@ -57,7 +57,7 @@ export function isLineBreak(event: KeyboardEvent): boolean {
 }
 
 // Inserts a new line after the selection
-export function isOpenLineBreak(event: KeyboardEvent): boolean {  
+export function isOpenLineBreak(event: KeyboardEvent): boolean {
   // 79 = KeyO
   return IS_APPLE && event.ctrlKey && event.keyCode === 79;
 }

@@ -20,7 +20,11 @@ import {
   BlockNode,
 } from '.';
 import {getActiveViewModel, errorOnReadOnly} from './OutlineView';
-import {generateRandomKey, getTextDirection} from './OutlineUtils';
+import {
+  generateRandomKey,
+  getTextDirection,
+  isImmutableOrInertOrSegmented,
+} from './OutlineUtils';
 import invariant from 'shared/invariant';
 import {
   IS_DIRECTIONLESS,
@@ -160,8 +164,7 @@ export function wrapInTextNodes<N: OutlineNode>(node: N): N {
   if (
     prevSibling === null ||
     !isTextNode(prevSibling) ||
-    prevSibling.isImmutable() ||
-    prevSibling.isSegmented()
+    isImmutableOrInertOrSegmented(prevSibling)
   ) {
     const text = createTextNode('');
     node.insertBefore(text);
@@ -170,8 +173,7 @@ export function wrapInTextNodes<N: OutlineNode>(node: N): N {
   if (
     nextSibling === null ||
     !isTextNode(nextSibling) ||
-    nextSibling.isImmutable() ||
-    nextSibling.isSegmented()
+    isImmutableOrInertOrSegmented(nextSibling)
   ) {
     const text = createTextNode('');
     node.insertAfter(text);
@@ -651,8 +653,7 @@ export class OutlineNode {
     if (
       nextSibling === null ||
       !isTextNode(nextSibling) ||
-      nextSibling.isImmutable() ||
-      nextSibling.isSegmented()
+      isImmutableOrInertOrSegmented(nextSibling)
     ) {
       invariant(false, 'selectNext: found invalid sibling');
     }

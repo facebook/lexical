@@ -31,14 +31,9 @@ function Editor() {
     throw error;
   }, [])
 
-  // Some placeholder text to be used when the editor
-  // field is empty.
-  const placeholderText = 'Enter some plain text...';
-
   // Create an Outline editor instance and also a ref
   // that we need to pass to our content editable.
-  const [editor, contentEditableRef] = useOutlineEditor(
-    placeholderText,
+  const [editor, contentEditableRef, showPlaceholder] = useOutlineEditor(
     onError,
   );
 
@@ -47,21 +42,26 @@ function Editor() {
 
   // Our <div> content editable element with some basic styling.
   return (
-    <div
-      {...eventHandlers}
-      ref={contentEditableRef}
-      contentEditable={true}
-      role="textbox"
-      spellCheck={true}
-      style={{
-        outline: 0,
-        overflowWrap: 'break-word',
-        padding: '10px',
-        userSelect: 'text',
-        whiteSpace: 'pre-wrap',
-      }}
-      tabIndex={0}
-    />
+    <div>
+      <div
+        {...eventHandlers}
+        ref={contentEditableRef}
+        contentEditable={true}
+        role="textbox"
+        spellCheck={true}
+        style={{
+          outline: 0,
+          overflowWrap: 'break-word',
+          padding: '10px',
+          userSelect: 'text',
+          whiteSpace: 'pre-wrap',
+        }}
+        tabIndex={0}
+      />
+      {showPlaceholder && (
+        <div className="placeholder">Enter some plain text...</div>
+      )}
+    </div>
   );
 }
 ```

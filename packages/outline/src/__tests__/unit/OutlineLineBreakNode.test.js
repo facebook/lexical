@@ -13,7 +13,7 @@ import {initializeUnitTest} from '../utils';
 
 describe('OutlineLineBreakNode tests', () => {
   initializeUnitTest((testEnv) => {
-    test('constructor', async () => {
+    test('LineBreakNode.constructor', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const lineBreakNode = createLineBreakNode();
@@ -23,7 +23,7 @@ describe('OutlineLineBreakNode tests', () => {
       });
     });
 
-    test('clone()', async () => {
+    test('LineBreakNode.clone()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const lineBreakNode = createLineBreakNode();
@@ -33,7 +33,7 @@ describe('OutlineLineBreakNode tests', () => {
       });
     });
 
-    test('createDOM()', async () => {
+    test('LineBreakNode.createDOM()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const lineBreakNode = createLineBreakNode();
@@ -42,7 +42,7 @@ describe('OutlineLineBreakNode tests', () => {
       });
     });
 
-    test('updateDOM()', async () => {
+    test('LineBreakNode.updateDOM()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const lineBreakNode = createLineBreakNode();
@@ -50,7 +50,7 @@ describe('OutlineLineBreakNode tests', () => {
       });
     });
 
-    test('isLineBreakNode()', async () => {
+    test('LineBreakNode.isLineBreakNode()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const lineBreakNode = createLineBreakNode();

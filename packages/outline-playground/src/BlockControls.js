@@ -76,7 +76,6 @@ export default function BlockControls({
           onClick={() => setShowDropDown(!showDropDown)}
           aria-label="Formatting Options">
           <span className={'block-type ' + blockType} />
-          <span className="block-arrow" />
         </button>
       </div>
       {showDropDown &&

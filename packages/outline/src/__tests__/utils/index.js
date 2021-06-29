@@ -21,6 +21,10 @@ type TestEnv = {
   outerHTML: string,
 };
 
+export const sanitizeHTML = (text) => {
+  return text.replace(/[\u200B-\u200D\u2060\uFEFF]/g, '');
+};
+
 export const initializeUnitTest = (runTests: (testEnv: TestEnv) => void) => {
   const testEnv: TestEnv = {
     editor: null,

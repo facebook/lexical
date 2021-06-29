@@ -20,7 +20,7 @@ describe('OutlineRootNode tests', () => {
       });
     });
 
-    test('constructor', async () => {
+    test('RootNode.constructor', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
         expect(rootNode).toStrictEqual(createRootNode());
@@ -30,25 +30,25 @@ describe('OutlineRootNode tests', () => {
       });
     });
 
-    test('clone()', async () => {
+    test('RootNode.clone()', async () => {
       const rootNodeClone = rootNode.clone();
       expect(rootNodeClone).not.toBe(rootNode);
       expect(rootNodeClone).toStrictEqual(rootNode);
     });
 
-    test('createDOM()', async () => {
+    test('RootNode.createDOM()', async () => {
       expect(() => rootNode.createDOM()).toThrow();
     });
 
-    test('updateDOM()', async () => {
+    test('RootNode.updateDOM()', async () => {
       expect(rootNode.updateDOM()).toBe(false);
     });
 
-    test('isAttached()', async () => {
+    test('RootNode.isAttached()', async () => {
       expect(rootNode.isAttached()).toBe(true);
     });
 
-    test('isRootNode()', () => {
+    test('RootNode.isRootNode()', () => {
       expect(isRootNode(rootNode)).toBe(true);
     });
   });

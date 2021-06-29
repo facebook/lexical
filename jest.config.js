@@ -27,6 +27,8 @@ module.exports = {
           '<rootDir>/packages/outline/src/extensions/OutlineListNode.js',
         '^outline/ListItemNode$':
           '<rootDir>/packages/outline/src/extensions/OutlineListItemNode.js',
+        '^outline/LinkNode$':
+          '<rootDir>/packages/outline/src/extensions/OutlineLinkNode.js',
         '^outline/QuoteNode$':
           '<rootDir>/packages/outline/src/extensions/OutlineQuoteNode.js',
         '^outline/CodeNode$':

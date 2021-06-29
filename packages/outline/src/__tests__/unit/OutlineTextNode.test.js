@@ -100,6 +100,52 @@ describe('OutlineTextNode tests', () => {
     });
   }
 
+  describe('getTextContent()', () => {
+    test('writable nodes', async () => {
+      let nodeKey;
+
+      await update((view) => {
+        const textNode = createTextNode('Text');
+        nodeKey = textNode.getKey();
+        expect(textNode.getTextContent()).toBe('Text');
+        expect(textNode.getTextContent(true)).toBe('Text');
+        expect(textNode.__text).toBe('Text');
+
+        view.getRoot().getFirstChild().append(textNode);
+      });
+
+      expect(editor.getTextContent()).toBe('Text');
+
+      // Make sure that the editor content is still set after further reconciliations
+      await update((view) => {
+        view.markNodeAsDirty(view.getNodeByKey(nodeKey));
+      });
+      expect(editor.getTextContent()).toBe('Text');
+    });
+
+    test('inert nodes', async () => {
+      let nodeKey;
+
+      await update((view) => {
+        const textNode = createTextNode('Inert text').makeInert();
+        nodeKey = textNode.getKey();
+        expect(textNode.getTextContent()).toBe('');
+        expect(textNode.getTextContent(true)).toBe('Inert text');
+        expect(textNode.__text).toBe('Inert text');
+
+        view.getRoot().getFirstChild().append(textNode);
+      });
+
+      expect(editor.getTextContent()).toBe('');
+
+      // Make sure that the editor content is still empty after further reconciliations
+      await update((view) => {
+        view.markNodeAsDirty(view.getNodeByKey(nodeKey));
+      });
+      expect(editor.getTextContent()).toBe('');
+    });
+  });
+
   describe('setTextContent()', () => {
     test('writable nodes', async () => {
       await update(() => {

@@ -37,8 +37,9 @@ function useOptions(
   const button = (
     <button
       id="options-button"
-      className="editor-dev-button"
-      onClick={() => setShowOptions(!showOptions)}></button>
+      className={`editor-dev-button ${showOptions ? 'active' : ''}`}
+      onClick={() => setShowOptions(!showOptions)}
+    />
   );
 
   const switches = showOptions ? (

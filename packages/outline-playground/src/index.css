@@ -170,11 +170,11 @@ pre :not(.tree-view-output) {
 }
 
 .editor-dev-button {
+  position: relative;
   display: block;
   width: 40px;
   height: 40px;
   font-size: 12px;
-  padding: 10px 10px;
   border-radius: 20px;
   border: none;
   cursor: pointer;
@@ -189,10 +189,13 @@ pre :not(.tree-view-output) {
 
 .editor-dev-button::after {
   content: "";
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  bottom: 10px;
+  left: 10px;
   display: block;
-  width: 20px;
-  height: 20px;
-  background-repeat: no-repeat;
+  background-size: contain;
   filter: invert(1);
 }
 
@@ -204,11 +207,15 @@ pre :not(.tree-view-output) {
   background-color: rgb(233, 35, 35);
 }
 
+.editor-dev-button.active::after {
+}
+
 .test-recorder-toolbar {
   display: flex;
 }
 
 .test-recorder-button {
+  position: relative;
   display: block;
   width: 32px;
   height: 32px;
@@ -233,26 +240,26 @@ pre :not(.tree-view-output) {
 
 .test-recorder-button::after {
   content: "";
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  bottom: 8px;
+  left: 8px;
   display: block;
-  width: 20px;
-  height: 20px;
-  background-repeat: no-repeat;
+  background-size: contain;
   filter: invert(1);
 }
 
 #options-button::after {
-  background-image: url(https://static.xx.fbcdn.net/rsrc.php/v3/y9/r/Vn1r5cFcNrX.png);
-  background-position: 0 -679px;
+  background-image: url(images/icons/gear.svg);
 }
 
 #step-recorder-button::after {
-  background-image: url(https://static.xx.fbcdn.net/rsrc.php/v3/yM/r/t_wyvBug7cH.png);
-  background-position: 0 -466px;
+  background-image: url(images/icons/journal-text.svg);
 }
 
 #test-recorder-button::after {
-  background-image: url(https://static.xx.fbcdn.net/rsrc.php/v3/yM/r/t_wyvBug7cH.png);
-  background-position: 0 -172px;
+  background-image: url(images/icons/journal-code.svg);
 }
 
 #test-recorder-button-snapshot {
@@ -260,18 +267,15 @@ pre :not(.tree-view-output) {
 }
 
 #test-recorder-button-snapshot::after {
-  background-image: url(https://static.xx.fbcdn.net/rsrc.php/v3/yM/r/t_wyvBug7cH.png);
-  background-position: 0 -571px;
+  background-image: url(images/icons/camera.svg);
 }
 
 #test-recorder-button-copy::after {
-  background-image: url(https://static.xx.fbcdn.net/rsrc.php/v3/yM/r/t_wyvBug7cH.png);
-  background-position: 0 -928px;
+  background-image: url(images/icons/clipboard.svg);
 }
 
 #test-recorder-button-download::after {
-  background-image: url(https://static.xx.fbcdn.net/rsrc.php/v3/yM/r/t_wyvBug7cH.png);
-  background-position: 0 -948px;
+  background-image: url(images/icons/download.svg);
 }
 
 #mentions-typeahead {
@@ -339,34 +343,31 @@ pre :not(.tree-view-output) {
 }
 
 #toolbar .button i {
-  background-image: url('https://static.xx.fbcdn.net/rsrc.php/v3/y4/r/wsLhCXiG1a_.png');
-  background-size: auto;
-  background-repeat: no-repeat;
+  background-size: contain;
   display: inline-block;
   height: 20px;
   width: 20px;
   vertical-align: -0.25em;
-  filter: invert(0.39) sepia(0.21) saturate(2) saturate(1.095) hue-rotate(174deg) brightness(0.94) contrast(0.86)
 }
 
 #toolbar .button i.bold {
-  background-position: 0 -154px;
+  background-image: url(images/icons/type-bold.svg);
 }
 
 #toolbar .button i.italic {
-  background-position: 0 -238px;
+  background-image: url(images/icons/type-italic.svg);
 }
 
 #toolbar .button i.code {
-  background-position: 0 -175px;
+  background-image: url(images/icons/code.svg);
 }
 
 #toolbar .button i.strikethrough {
-  background-position: 0 -385px;
+  background-image: url(images/icons/type-strikethrough.svg);
 }
 
 #toolbar .button i.link {
-  background-position: 0 -280px;
+  background-image: url(images/icons/link.svg);
 }
 
 #toolbar .button.active {
@@ -374,7 +375,6 @@ pre :not(.tree-view-output) {
 }
 
 #toolbar .button.active i {
-  filter: invert(0.39) sepia(0.57) saturate(2) saturate(2) saturate(2) saturate(2) saturate(2) saturate(1.4775) hue-rotate(202deg) brightness(0.97) contrast(0.96)
 }
 
 #toolbar .link-input {
@@ -392,15 +392,12 @@ pre :not(.tree-view-output) {
 }
 
 #toolbar div.link-edit {
-  background-image: url('https://static.xx.fbcdn.net/rsrc.php/v3/yQ/r/0EcsRiBC-tE.png');
-  background-size: auto;
-  background-repeat: no-repeat;
-  background-position: 0px -4814px;
+  background-image: url(images/icons/pencil-fill.svg);
+  background-size: contain;
   display: inline-block;
   height: 16px;
   width: 16px;
   vertical-align: -0.25em;
-  filter: invert(0.39) sepia(0.21) saturate(2) saturate(1.095) hue-rotate(174deg) brightness(0.94) contrast(0.86);
   position: absolute;
   right: 10px;
   top: 10px;
@@ -408,7 +405,6 @@ pre :not(.tree-view-output) {
 }
 
 #toolbar div.link-edit:hover {
-  filter: invert(0.39) sepia(0.57) saturate(2) saturate(2) saturate(2) saturate(2) saturate(2) saturate(1.4775) hue-rotate(202deg) brightness(0.97) contrast(0.96)
 }
 
 #toolbar .link-input a {
@@ -430,7 +426,7 @@ pre :not(.tree-view-output) {
   display: block;
   position: absolute;
   right: 10px;
-  width: 62px;
+  width: 32px;
   height: 32px;
   box-sizing: border-box;
   box-shadow: rgba(0, 0, 0, 0.1) 0px 1px 2px 0px;
@@ -445,13 +441,11 @@ pre :not(.tree-view-output) {
   border: 1px solid white;
   background-color: #fff;
   display: block;
-  width: 58px;
-  height: 28px;
   transition: background-color 0.1s ease;
   cursor: pointer;
   outline: none;
   border-radius: 8px;
-  margin: 1px;
+  padding: 3px;
 }
 
 #block-controls button:hover {
@@ -463,60 +457,39 @@ pre :not(.tree-view-output) {
 }
 
 #block-controls span.block-type {
-  background-image: url(https://static.xx.fbcdn.net/rsrc.php/v3/y4/r/wsLhCXiG1a_.png);
+  background-size: contain;
   display: block;
-  width: 20px;
-  height: 20px;
-  filter: invert(0.39) sepia(0.21) saturate(2) saturate(1.095) hue-rotate(174deg) brightness(0.94) contrast(0.86);
-  position: absolute;
-  top: 5px;
-  left: 10px;
+  width: 18px;
+  height: 18px;
+  margin: 2px;
 }
 
 #block-controls span.block-type.paragraph {
-  background-position: 0 -406px;
+  background-image: url(images/icons/text-paragraph.svg);
 }
 
 #block-controls span.block-type.h1 {
-  background-position: 0 -196px;
-  filter: invert(0.39) sepia(0.57) saturate(2) saturate(2) saturate(2) saturate(2) saturate(2) saturate(1.4775) hue-rotate(202deg) brightness(0.97) contrast(0.96);
+  background-image: url(images/icons/type-h1.svg);
 }
 
 #block-controls span.block-type.h2 {
-  background-position: 0px -217px;
-  filter: invert(0.39) sepia(0.57) saturate(2) saturate(2) saturate(2) saturate(2) saturate(2) saturate(1.4775) hue-rotate(202deg) brightness(0.97) contrast(0.96);
+  background-image: url(images/icons/type-h2.svg);
 }
 
 #block-controls span.block-type.quote {
-  background-position: 0 -364px;
-  filter: invert(0.39) sepia(0.57) saturate(2) saturate(2) saturate(2) saturate(2) saturate(2) saturate(1.4775) hue-rotate(202deg) brightness(0.97) contrast(0.96);
+  background-image: url(images/icons/chat-square-quote.svg);
 }
 
 #block-controls span.block-type.ul {
-  background-position: 0px -301px;
-  filter: invert(0.39) sepia(0.57) saturate(2) saturate(2) saturate(2) saturate(2) saturate(2) saturate(1.4775) hue-rotate(202deg) brightness(0.97) contrast(0.96);
+  background-image: url(images/icons/list-ul.svg);
 }
 
 #block-controls span.block-type.ol {
-  background-position: 0px -322px;
-  filter: invert(0.39) sepia(0.57) saturate(2) saturate(2) saturate(2) saturate(2) saturate(2) saturate(1.4775) hue-rotate(202deg) brightness(0.97) contrast(0.96);
+  background-image: url(images/icons/list-ol.svg);
 }
 
 #block-controls span.block-type.code {
-  background-position: 0px -343px;
-  filter: invert(0.39) sepia(0.57) saturate(2) saturate(2) saturate(2) saturate(2) saturate(2) saturate(1.4775) hue-rotate(202deg) brightness(0.97) contrast(0.96);
-}
-
-#block-controls span.block-arrow {
-  background-image: url(https://static.xx.fbcdn.net/rsrc.php/v3/ye/r/GoXo9vIXtpX.png);
-  background-position: 0px -432px;
-  display: block;
-  width: 16px;
-  height: 16px;
-  filter: invert(0.39) sepia(0.21) saturate(2) saturate(1.095) hue-rotate(174deg) brightness(0.94) contrast(0.86);
-  position: absolute;
-  top: 8px;
-  left: 35px;
+  background-image: url(images/icons/code.svg);
 }
 
 .characters-over {
@@ -609,9 +582,7 @@ pre :not(.tree-view-output) {
   display: flex;
   width: 20px;
   height: 20px;
-  background-position: 0 -655px;
-  background-image: url(https://static.xx.fbcdn.net/rsrc.php/v3/yj/r/VuIcQBFX4ba.png);
-  filter: invert(0.39) sepia(0.57) saturate(2) saturate(2) saturate(2) saturate(2) saturate(2) saturate(1.4775) hue-rotate(202deg) brightness(0.97) contrast(0.96);
+  background-size: contain;
 }
 
 .dropdown .item:first-child {
@@ -638,37 +609,37 @@ pre :not(.tree-view-output) {
   width: 20px;
   height: 20px;
   user-select: none;
-  background-image: url(https://static.xx.fbcdn.net/rsrc.php/v3/y4/r/wsLhCXiG1a_.png);
   margin-right: 12px;
   line-height: 16px;
+  background-size: contain;
 }
 
 .dropdown .item .icon.paragraph {
-  background-position: 0 -406px;
+  background-image: url(images/icons/text-paragraph.svg);
 }
 
 .dropdown .item .icon.large-heading {
-  background-position: 0 -196px;
+  background-image: url(images/icons/type-h1.svg);
 }
 
 .dropdown .item .icon.small-heading {
-  background-position: 0 -217px;
+  background-image: url(images/icons/type-h2.svg);
 }
 
 .dropdown .item .icon.bullet-list {
-  background-position: 0 -301px;
+  background-image: url(images/icons/list-ul.svg);
 }
 
 .dropdown .item .icon.numbered-list {
-  background-position: 0 -322px;
+  background-image: url(images/icons/list-ol.svg);
 }
 
 .dropdown .item .icon.quote {
-  background-position: 0 -364px;
+  background-image: url(images/icons/chat-square-quote.svg);
 }
 
 .dropdown .item .icon.code {
-  background-position: 0 -343px;
+  background-image: url(images/icons/code.svg);
 }
 
 .switches {
@@ -787,17 +758,17 @@ pre :not(.tree-view-output) {
 }
 
 .emoji.happysmile {
-  background-image: url(https://static.xx.fbcdn.net/images/emoji.php/v9/t4c/1/16/1f642.png);
+  background-image: url(images/emoji/1F642.png);
 }
 
 .emoji.veryhappysmile {
-  background-image: url(https://static.xx.fbcdn.net/images/emoji.php/v9/t51/1/16/1f603.png);
+  background-image: url(images/emoji/1F600.png);
 }
 
 .emoji.unhappysmile {
-  background-image: url(https://static.xx.fbcdn.net/images/emoji.php/v9/tcb/1/16/1f641.png);
+  background-image: url(images/emoji/1F641.png);
 }
 
 .emoji.heart {
-  background-image: url(https://static.xx.fbcdn.net/images/emoji.php/v9/t6c/1/16/2764.png);
+  background-image: url(images/emoji/2764.png);
 }

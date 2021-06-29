@@ -40,7 +40,7 @@ export default function useOutlineEditor(
         setShowPlaceholder(canShowPlaceholder);
       }
     });
-  });
+  }, [editor]);
 
   return [editor, editorElementRef, showPlaceholder];
 }

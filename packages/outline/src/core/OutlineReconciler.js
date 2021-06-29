@@ -99,9 +99,9 @@ function createNode(
   }
 
   if (isTextNode(node)) {
-      const text = node.getTextContent();
-      subTreeTextContent += text;
-      editorTextContent += text;
+    const text = node.getTextContent();
+    subTreeTextContent += text;
+    editorTextContent += text;
   } else if (isBlockNode(node)) {
     if (flags & IS_LTR) {
       dom.dir = 'ltr';

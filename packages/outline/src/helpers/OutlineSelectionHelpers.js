@@ -828,7 +828,7 @@ export function insertText(selection: Selection, text: string): void {
       if (firstNode.getParent() !== lastNode.getParent()) {
         // Move siblings after last node
         const lastNodeSiblings = lastNode.getNextSiblings();
-        for (let i = 0; i < lastNodeSiblings.length; i++) {
+        for (let i = lastNodeSiblings.length - 1; i >= 0; i--) {
           const lastNodeSibling = lastNodeSiblings[i];
           firstNode.insertAfter(lastNodeSibling);
         }

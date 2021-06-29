@@ -1,3 +1,3 @@
 module.exports = {
-  '*.js': ['flow', 'prettier --write'],
+  '*.js': ['flow focus-check', 'prettier --write'],
 };

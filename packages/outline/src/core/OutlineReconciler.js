@@ -99,11 +99,9 @@ function createNode(
   }
 
   if (isTextNode(node)) {
-    if (!isInert) {
-      const text = node.__text;
+      const text = node.getTextContent();
       subTreeTextContent += text;
       editorTextContent += text;
-    }
   } else if (isBlockNode(node)) {
     if (flags & IS_LTR) {
       dom.dir = 'ltr';
@@ -224,7 +222,7 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
 
   if ((prevNode === nextNode && !isDirty) || isComposingNode) {
     if (isTextNode(prevNode)) {
-      const text = prevNode.__text;
+      const text = prevNode.getTextContent();
       editorTextContent += text;
       subTreeTextContent += text;
     } else {
@@ -263,7 +261,7 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
   }
   // Handle text content, for LTR, LTR cases.
   if (isTextNode(nextNode)) {
-    const text = nextNode.__text;
+    const text = nextNode.getTextContent();
     subTreeTextContent += text;
     editorTextContent += text;
     return;

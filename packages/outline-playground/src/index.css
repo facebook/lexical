@@ -787,17 +787,17 @@ pre :not(.tree-view-output) {
 }
 
 .emoji.happysmile {
-  background-image: url(https://static.xx.fbcdn.net/images/emoji.php/v9/t4c/1/16/1f642.png);
+  background-image: url(images/emoji/1F642.png);
 }
 
 .emoji.veryhappysmile {
-  background-image: url(https://static.xx.fbcdn.net/images/emoji.php/v9/t51/1/16/1f603.png);
+  background-image: url(images/emoji/1F600.png);
 }
 
 .emoji.unhappysmile {
-  background-image: url(https://static.xx.fbcdn.net/images/emoji.php/v9/tcb/1/16/1f641.png);
+  background-image: url(images/emoji/1F641.png);
 }
 
 .emoji.heart {
-  background-image: url(https://static.xx.fbcdn.net/images/emoji.php/v9/t6c/1/16/2764.png);
+  background-image: url(images/emoji/2764.png);
 }

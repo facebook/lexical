@@ -82,6 +82,7 @@ function Editor() {
 ## Documentation
 
 - [How Outline was designed](/docs/design.md)
+- [Testing](/docs/testing.md)
 
 ## Contributing
 
@@ -94,10 +95,6 @@ function Editor() {
    - `git push origin my-new-branch`
 4. Go to the repository page in GitHub and click on "Compare & pull request"
    - The [GitHub CLI](https://cli.github.com/manual/gh_pr_create) allows you to skip the web interface for this step (and much more)
-
-## Testing
-
-Please see [testing.md](/docs/testing.md)
 
 ## Running tests
 

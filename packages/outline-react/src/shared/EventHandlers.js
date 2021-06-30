@@ -867,6 +867,7 @@ export function onNativeBeforeInputForPlainText(
         deleteLineBackward(selection);
         break;
       }
+      case 'deleteContentForward':
       case 'deleteHardLineForward':
       case 'deleteSoftLineForward': {
         deleteLineForward(selection);
@@ -1034,6 +1035,7 @@ export function onNativeBeforeInputForRichText(
         deleteLineBackward(selection);
         break;
       }
+      case 'deleteContentForward':
       case 'deleteHardLineForward':
       case 'deleteSoftLineForward': {
         deleteLineForward(selection);

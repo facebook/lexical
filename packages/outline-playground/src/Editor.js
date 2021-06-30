@@ -62,7 +62,6 @@ const editorThemeClasses = {
     bold: 'editor-text-bold',
     link: 'editor-text-link',
     italic: 'editor-text-italic',
-    overflowed: 'editor-text-overflowed',
     underline: 'editor-text-underline',
     strikethrough: 'editor-text-strikethrough',
     underlineStrikethrough: 'editor-text-underlineStrikethrough',
@@ -71,6 +70,7 @@ const editorThemeClasses = {
   hashtag: 'editor-text-hashtag',
   code: 'editor-code',
   link: 'editor-text-link',
+  overflowed: 'editor-text-overflowed',
 };
 
 function ContentEditable({

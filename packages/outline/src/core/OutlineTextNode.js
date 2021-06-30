@@ -26,7 +26,6 @@ import {
   IS_ITALIC,
   IS_STRIKETHROUGH,
   IS_UNDERLINE,
-  IS_OVERFLOWED,
   IS_UNMERGEABLE,
   ZERO_WIDTH_JOINER_CHAR,
   NO_BREAK_SPACE_CHAR,
@@ -38,7 +37,6 @@ export type TextFormatType =
   | 'strikethrough'
   | 'italic'
   | 'code'
-  | 'overflowed'
   | 'unmergeable';
 
 export type SelectionFragment = {
@@ -52,7 +50,6 @@ const textFormatStateFlags: {[TextFormatType]: number} = {
   strikethrough: IS_STRIKETHROUGH,
   italic: IS_ITALIC,
   code: IS_CODE,
-  overflowed: IS_OVERFLOWED,
   unmergeable: IS_UNMERGEABLE,
 };
 
@@ -231,9 +228,6 @@ export class TextNode extends OutlineNode {
   isCode(): boolean {
     return (this.getFlags() & IS_CODE) !== 0;
   }
-  isOverflowed(): boolean {
-    return (this.getFlags() & IS_OVERFLOWED) !== 0;
-  }
   isUnmergeable(): boolean {
     return (this.getFlags() & IS_UNMERGEABLE) !== 0;
   }
@@ -385,9 +379,6 @@ export class TextNode extends OutlineNode {
   }
   toggleCode(): TextNode {
     return this.setFlags(this.getFlags() ^ IS_CODE);
-  }
-  toggleOverflowed(): TextNode {
-    return this.setFlags(this.getFlags() ^ IS_OVERFLOWED);
   }
   toggleUnmergeable(): TextNode {
     return this.setFlags(this.getFlags() ^ IS_UNMERGEABLE);

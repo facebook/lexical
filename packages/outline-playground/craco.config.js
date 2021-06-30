@@ -11,6 +11,7 @@ module.exports = {
       'outline/CodeNode': 'outline/dist/OutlineCodeNode',
       'outline/LinkNode': 'outline/dist/OutlineLinkNode',
       'outline/HashtagNode': 'outline/dist/OutlineHashtagNode',
+      'outline/OverflowedTextNode': 'outline/dist/OutlineOverflowedTextNode',
       // Outline Helpers
       'outline/SelectionHelpers': 'outline/dist/OutlineSelectionHelpers',
       'outline/TextHelpers': 'outline/dist/OutlineTextHelpers',

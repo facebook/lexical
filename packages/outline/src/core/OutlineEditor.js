@@ -43,7 +43,6 @@ export type EditorThemeClasses = {
     underlineStrikethrough?: EditorThemeClassName,
     italic?: EditorThemeClassName,
     code?: EditorThemeClassName,
-    overflowed?: EditorThemeClassName,
   },
   paragraph?: EditorThemeClassName,
   image?: EditorThemeClassName,
@@ -63,6 +62,7 @@ export type EditorThemeClasses = {
     h4?: EditorThemeClassName,
     h5?: EditorThemeClassName,
   },
+  overflowed?: EditorThemeClassName,
   // Handle other generic values
   [string]: EditorThemeClassName | {[string]: EditorThemeClassName},
 };

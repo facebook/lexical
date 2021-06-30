@@ -18,7 +18,6 @@ const editorThemeClasses = Object.freeze({
     italic: 'my-italic-class',
     code: 'my-code-class',
     hashtag: 'my-hashtag-class',
-    overflowed: 'my-overflowed-class',
   },
   link: 'my-link-class',
 });

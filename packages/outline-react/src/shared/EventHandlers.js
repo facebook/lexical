@@ -565,6 +565,11 @@ export function handleBlockTextInputOnNode(
   return false;
 }
 
+// We use this to avoid doing duplicate passes of updateTextNodeFromDOMContent.
+// This can be possible with FF, as onInput and onMutation might trigger for
+// the same node.
+let lastTextNodeKeyDuplicateCheck = null;
+
 function updateTextNodeFromDOMContent(
   dom: Node,
   view: View,
@@ -572,6 +577,12 @@ function updateTextNodeFromDOMContent(
 ): void {
   const node = getNodeFromDOMNode(view, dom);
   if (node !== null) {
+    const key = node.getKey();
+    if (lastTextNodeKeyDuplicateCheck === key) {
+      lastTextNodeKeyDuplicateCheck = null;
+      return;
+    }
+    lastTextNodeKeyDuplicateCheck = key;
     const rawTextContent = dom.nodeValue;
     const textContent = rawTextContent.replace(/[\u200B\u2060]/g, '');
 

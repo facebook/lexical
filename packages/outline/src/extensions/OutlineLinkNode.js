@@ -45,7 +45,7 @@ export class LinkNode extends TextNode {
       const replacementText = super.createDOM(editorThemeClasses);
       dom.replaceChild(replacementText, text);
     }
-    return false;
+    return needsReplace;
   }
   getURL(): string {
     return this.getLatest().__url;

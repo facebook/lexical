@@ -79,6 +79,9 @@ function Editor() {
      - Optional: set format on save `editor.formatOnSave`
    - [ESlint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
 
+## Documentation
+
+- [How Outline was designed](/docs/design.md)
 
 ## Contributing
 

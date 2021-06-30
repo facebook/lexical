@@ -77,6 +77,30 @@ export type EventHandlerState = {
   isReadOnly: boolean,
 };
 
+function getNodeFromDOMNode(view: View, dom: Node): OutlineNode | null {
+  let node = dom;
+  while (node != null) {
+    // $FlowFixMe: internal field
+    const key: NodeKey | undefined = node.__outlineInternalRef;
+    if (key !== undefined) {
+      return view.getNodeByKey(key);
+    }
+    node = node.parentNode;
+  }
+  return null;
+}
+
+function getDOMFromNode(editor: OutlineEditor, node: null | OutlineNode) {
+  if (node === null) {
+    return null;
+  }
+  return editor.getElementByKey(node.getKey());
+}
+
+function getLastSelection(editor: OutlineEditor): null | Selection {
+  return editor.getViewModel().read((lastView) => lastView.getSelection());
+}
+
 function generateNodes(
   nodeRange: {range: Array<NodeKey>, nodeMap: ParsedNodeMap},
   view: View,
@@ -541,16 +565,51 @@ export function handleBlockTextInputOnNode(
   return false;
 }
 
+function updateTextNodeFromDOMContent(
+  dom: Node,
+  view: View,
+  editor: OutlineEditor,
+): void {
+  const node = getNodeFromDOMNode(view, dom);
+  if (node !== null) {
+    const rawTextContent = dom.nodeValue;
+    const textContent = rawTextContent.replace(/[\u200B\u2060]/g, '');
+
+    if (isTextNode(node) && textContent !== node.getTextContent()) {
+      if (handleBlockTextInputOnNode(node, view, editor)) {
+        return;
+      }
+      node.setTextContent(textContent);
+      const selection = view.getSelection();
+      if (
+        selection !== null &&
+        selection.isCaret() &&
+        selection.anchorKey === node.getKey()
+      ) {
+        const domSelection = window.getSelection();
+        let offset = domSelection.focusOffset;
+        const firstCharacter = rawTextContent[0];
+        if (
+          firstCharacter === ZERO_WIDTH_SPACE_CHAR ||
+          firstCharacter === ZERO_WIDTH_JOINER_CHAR
+        ) {
+          offset--;
+        }
+        node.select(offset, offset);
+      }
+    }
+  }
+}
+
 export function onInput(
   event: InputEvent,
   editor: OutlineEditor,
   state: EventHandlerState,
 ): void {
   editor.update((view) => {
-    const selection = view.getSelection();
-    if (selection !== null) {
-      selection.isDirty = true;
-    }
+    const domSelection = window.getSelection();
+    const anchorDOM = domSelection.anchorNode;
+    updateTextNodeFromDOMContent(anchorDOM, view, editor);
   });
 }
 
@@ -939,78 +998,19 @@ export function onBeforeInputForRichText(
   });
 }
 
-function getNodeFromDOMNode(view: View, dom: Node): OutlineNode | null {
-  let node = dom;
-  while (node != null) {
-    // $FlowFixMe: internal field
-    const key: NodeKey | undefined = node.__outlineInternalRef;
-    if (key !== undefined) {
-      return view.getNodeByKey(key);
-    }
-    node = node.parentNode;
-  }
-  return null;
-}
-
-function getDOMFromNode(editor: OutlineEditor, node: null | OutlineNode) {
-  if (node === null) {
-    return null;
-  }
-  return editor.getElementByKey(node.getKey());
-}
-
-function getLastSelection(editor: OutlineEditor): null | Selection {
-  return editor.getViewModel().read((lastView) => lastView.getSelection());
-}
-
 export function onMutation(
   editor: OutlineEditor,
   mutations: Array<MutationRecord>,
 ): void {
   editor.update((view: View) => {
     const selection = view.getSelection();
-    const domSelection = window.getSelection();
 
     for (let i = 0; i < mutations.length; i++) {
       const mutation = mutations[i];
-      const target = mutation.target;
       const type = mutation.type;
-      const node = getNodeFromDOMNode(view, target);
 
-      // TextNode updates
       if (type === 'characterData') {
-        const rawTextContent = target.nodeValue;
-        const textContent = rawTextContent.replace(/[\u200B\u2060]/g, '');
-
-        if (isTextNode(node) && textContent !== node.getTextContent()) {
-          if (handleBlockTextInputOnNode(node, view, editor)) {
-            continue;
-          }
-          const key = node.getKey();
-          node.setTextContent(textContent);
-          if (
-            selection !== null &&
-            selection.anchorKey === key &&
-            domSelection != null
-          ) {
-            let offset = domSelection.focusOffset;
-            const firstCharacter = rawTextContent[0];
-            if (
-              firstCharacter === ZERO_WIDTH_SPACE_CHAR ||
-              firstCharacter === ZERO_WIDTH_JOINER_CHAR
-            ) {
-              offset--;
-            }
-            selection.setRange(key, offset, key, offset);
-          }
-        } else if (selection === null) {
-          // Looks like a text node was added and selection was moved to it.
-          // We can attempt to restore the last selection.
-          const lastSelection = getLastSelection(editor);
-          if (lastSelection !== null) {
-            view.setSelection(lastSelection);
-          }
-        }
+        updateTextNodeFromDOMContent(mutation.target, view, editor);
       } else if (type === 'childList') {
         // This occurs when the DOM tree has been mutated in terms of
         // structure. This is actually not good. Outline should control
@@ -1055,6 +1055,14 @@ export function onMutation(
             }
           }
         });
+        if (selection === null) {
+          // Looks like a text node was added and selection was moved to it.
+          // We can attempt to restore the last selection.
+          const lastSelection = getLastSelection(editor);
+          if (lastSelection !== null) {
+            view.setSelection(lastSelection);
+          }
+        }
       }
     }
   });

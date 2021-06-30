@@ -95,6 +95,10 @@ function Editor() {
 4. Go to the repository page in GitHub and click on "Compare & pull request"
    - The [GitHub CLI](https://cli.github.com/manual/gh_pr_create) allows you to skip the web interface for this step (and much more)
 
+## Testing
+
+Please see [testing.md](/docs/testing.md)
+
 ## Running tests
 
 * `npm run test-unit` runs only unit tests.

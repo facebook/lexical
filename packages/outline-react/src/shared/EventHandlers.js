@@ -17,7 +17,7 @@ import type {
   View,
 } from 'outline';
 
-import {CAN_USE_BEFORE_INPUT, IS_FIREFOX, IS_SAFARI} from 'shared/environment';
+import {IS_SAFARI} from 'shared/environment';
 import {
   isDeleteBackward,
   isDeleteForward,
@@ -38,7 +38,6 @@ import {
   isMoveForward,
   isMoveWordForward,
 } from 'outline/KeyHelpers';
-import getDOMTextNodeFromElement from 'shared/getDOMTextNodeFromElement';
 import isImmutableOrInertOrSegmented from 'shared/isImmutableOrInertOrSegmented';
 import {
   deleteBackward,
@@ -63,9 +62,6 @@ import {
 } from 'outline/SelectionHelpers';
 import {createTextNode, isTextNode} from 'outline';
 
-// Safari triggers composition before keydown, meaning
-// we need to account for this when handling key events.
-let lastKeyWasMaybeAndroidSoftKey = false;
 const ZERO_WIDTH_SPACE_CHAR = '\u200B';
 const ZERO_WIDTH_JOINER_CHAR = '\u2060';
 
@@ -79,7 +75,6 @@ export type EventHandler = (
 
 export type EventHandlerState = {
   isReadOnly: boolean,
-  compositionSelection: null | Selection,
 };
 
 function generateNodes(
@@ -144,11 +139,6 @@ function shouldOverrideBrowserDefault(
     : isHoldingShift && selectionAtBoundary;
 }
 
-function updateAndroidSoftKeyFlagIfAny(event: KeyboardEvent): void {
-  lastKeyWasMaybeAndroidSoftKey =
-    event.key === 'Unidentified' && event.isComposing && event.keyCode === 229;
-}
-
 function isTopLevelBlockRTL(selection: Selection) {
   const anchorNode = selection.getAnchorNode();
   const topLevelBlock = anchorNode.getTopParentBlockOrThrow();
@@ -161,7 +151,6 @@ export function onKeyDownForPlainText(
   editor: OutlineEditor,
   state: EventHandlerState,
 ): void {
-  updateAndroidSoftKeyFlagIfAny(event);
   if (editor.isComposing()) {
     return;
   }
@@ -235,7 +224,6 @@ export function onKeyDownForRichText(
   editor: OutlineEditor,
   state: EventHandlerState,
 ): void {
-  updateAndroidSoftKeyFlagIfAny(event);
   if (editor.isComposing()) {
     return;
   }
@@ -436,36 +424,6 @@ export function onCompositionStart(
   editor.update((view) => {
     const selection = view.getSelection();
     if (selection !== null) {
-      if (!CAN_USE_BEFORE_INPUT) {
-        // We only have native beforeinput composition events for
-        // Safari, so we have to apply the composition selection for
-        // other browsers.
-        state.compositionSelection = selection;
-      }
-      if (!selection.isCaret()) {
-        const focusKey = selection.focusKey;
-        const anchorNode = selection.getAnchorNode();
-        const focusNode = selection.getAnchorNode();
-        // If we have a range that starts on an immutable/segmented node
-        // then move it to the next node so that we insert text at the
-        // right place.
-        if (selection.anchorKey !== focusKey) {
-          if (
-            (anchorNode.isImmutable() || anchorNode.isSegmented()) &&
-            anchorNode.getNextSibling() === selection.getFocusNode()
-          ) {
-            selection.setRange(focusKey, 0, focusKey, selection.focusOffset);
-          }
-        }
-        if (canRemoveText(anchorNode, focusNode)) {
-          removeText(selection);
-        }
-      }
-      // This works around a FF issue with text selection
-      // ranges during composition.
-      if (IS_FIREFOX) {
-        selection.isDirty = true;
-      }
       editor.setCompositionKey(selection.anchorKey);
     }
   });
@@ -477,6 +435,8 @@ export function onCompositionEnd(
   state: EventHandlerState,
 ): void {
   editor.setCompositionKey(null);
+
+  editor.update((view) => {});
 }
 
 export function onSelectionChange(
@@ -566,110 +526,30 @@ export function handleBlockTextInputOnNode(
     anchorNode.markDirtyDecorator();
     view.markNodeAsDirty(anchorNode);
     editor._compositionKey = null;
+    const selection = view.getSelection();
+    if (selection !== null) {
+      const key = anchorNode.getKey();
+      const lastSelection = getLastSelection(editor);
+      const lastAnchorOffset =
+        lastSelection !== null ? lastSelection.anchorOffset : null;
+      if (lastAnchorOffset !== null) {
+        selection.setRange(key, lastAnchorOffset, key, lastAnchorOffset);
+      }
+    }
     return true;
   }
   return false;
 }
 
-export function onNativeInput(
+export function onInput(
   event: InputEvent,
   editor: OutlineEditor,
   state: EventHandlerState,
 ): void {
-  const inputType = event.inputType;
-  const isInsertText = inputType === 'insertText';
-  const isInsertCompositionText = inputType === 'insertCompositionText';
-  const isDeleteCompositionText = inputType === 'deleteCompositionText';
-
-  if (!isInsertText && !isInsertCompositionText && !isDeleteCompositionText) {
-    return;
-  }
-
   editor.update((view) => {
     const selection = view.getSelection();
-
-    if (selection === null) {
-      return;
-    }
-    const anchorKey = selection.anchorKey;
-
-    // To ensure we handle Android software keyboard
-    // text entry properly (which is usually composed text),
-    // we need to support a few extra heuristics. Notably,
-    // we need to disable composition for "insertText" or
-    // "insertCompositionText" when the last key press was
-    // likely to be an android soft key press. Android will
-    // then enable composition again automatically.
-    if (
-      anchorKey === editor._compositionKey &&
-      (isInsertText ||
-        (isInsertCompositionText && lastKeyWasMaybeAndroidSoftKey))
-    ) {
-      editor._compositionKey = null;
-    }
-    const data = event.data;
-    if (data != null) {
-      const focusKey = selection.focusKey;
-      const anchorElement = editor.getElementByKey(anchorKey);
-      const anchorNode = selection.getAnchorNode();
-      const textNode = getDOMTextNodeFromElement(anchorElement);
-
-      // Let's try and detect a bad update here. This usually comes from text transformation
-      // tools that attempt to insertText across a range of nodes – which obviously we can't
-      // detect unless we rely on the DOM being the source of truth. We can try and recover
-      // by dispatching an Undo event, and then capturing the previous selection and trying to
-      // apply the text on that.
-      if (
-        anchorElement !== null &&
-        checkForBadInsertion(anchorElement, anchorNode, editor)
-      ) {
-        window.requestAnimationFrame(() => {
-          document.execCommand('Undo', false, null);
-          editor.update((undoneView) => {
-            const undoneSelection = undoneView.getSelection();
-            if (undoneSelection !== null) {
-              insertText(undoneSelection, data);
-            }
-          });
-        });
-        return;
-      }
-
-      if (handleBlockTextInputOnNode(anchorNode, view, editor)) {
-        return;
-      }
-
-      // If we are inserting text into the same anchor as is our focus
-      // node, then we can apply a faster optimization that also handles
-      // text replacement tools that use execCommand (which doesn't trigger
-      // beforeinput in some browsers).
-      if (
-        anchorElement !== null &&
-        textNode !== null &&
-        isInsertText &&
-        anchorKey === focusKey
-      ) {
-        // Let's read what is in the DOM already, and use that as the value
-        // for our anchor node. We get the text content from the anchor element's
-        // text node.
-        const rawTextContent = textNode.nodeValue;
-        const textContent = rawTextContent.replace(/[\u200B\u2060]/g, '');
-        let anchorOffset = window.getSelection().anchorOffset;
-        // If the first character is a BOM, then we need to offset this because
-        // this character isn't really apart of our offset.
-        if (
-          rawTextContent[0] === ZERO_WIDTH_SPACE_CHAR ||
-          rawTextContent[0] === ZERO_WIDTH_JOINER_CHAR
-        ) {
-          anchorOffset--;
-        }
-
-        // We set the range before content, as hashtags might skew the offset
-        selection.setRange(anchorKey, anchorOffset, anchorKey, anchorOffset);
-        anchorNode.setTextContent(textContent);
-      } else {
-        insertText(selection, data);
-      }
+    if (selection !== null) {
+      selection.isDirty = true;
     }
   });
 }
@@ -714,7 +594,7 @@ function isBadDoubleSpacePeriodReplacment(
   return false;
 }
 
-export function onNativeBeforeInputForPlainText(
+export function onBeforeInputForPlainText(
   event: InputEvent,
   editor: OutlineEditor,
   state: EventHandlerState,
@@ -744,43 +624,22 @@ export function onNativeBeforeInputForPlainText(
       insertText(selection, '  ');
       return;
     }
-    const isInputText = inputType === 'insertText';
-    const anchorNode = selection.getAnchorNode();
-    const focusNode = selection.getAnchorNode();
-
+    // We let the browser do its own thing for these composition
+    // events. We handle their updates in our mutation observer.
     if (
-      isInputText ||
       inputType === 'insertCompositionText' ||
       inputType === 'deleteCompositionText'
     ) {
-      if (
-        isInputText &&
-        selection.isCaret() &&
-        selection.anchorOffset === anchorNode.getTextContentSize() &&
-        (isImmutableOrInertOrSegmented(anchorNode) ||
-          !anchorNode.canInsertTextAtEnd())
-      ) {
-        event.preventDefault();
-        if (data != null) {
-          const nextSibling = anchorNode.getNextSibling();
-          if (nextSibling === null) {
-            const textNode = createTextNode(data);
-            textNode.select();
-            anchorNode.insertAfter(textNode);
-          } else if (isTextNode(nextSibling)) {
-            nextSibling.select(0, 0);
-            insertText(selection, data);
-          }
-        }
-        return;
-      }
-      // Gets around a Safari text replacement bug.
-      if (IS_SAFARI && data === null && event.dataTransfer) {
-        const text = event.dataTransfer.getData('text/plain');
-        event.preventDefault();
-        insertRichText(selection, text);
-        return;
-      }
+      return;
+    }
+    const anchorNode = selection.getAnchorNode();
+    const focusNode = selection.getAnchorNode();
+
+    // Standard text insertion goes through a different path.
+    // For most text insertion, we let the browser do its own thing.
+    // We update the view model in our mutation observer. However,
+    // we do have a few exceptions.
+    if (inputType === 'insertText') {
       if (data === '\n') {
         event.preventDefault();
         insertLineBreak(selection);
@@ -788,17 +647,44 @@ export function onNativeBeforeInputForPlainText(
         event.preventDefault();
         insertLineBreak(selection);
         insertLineBreak(selection);
-      } else if (!selection.isCaret()) {
+      } else if (data == null && IS_SAFARI && event.dataTransfer) {
+        // Gets around a Safari text replacement bug.
+        const text = event.dataTransfer.getData('text/plain');
+        event.preventDefault();
+        insertRichText(selection, text);
+      } else if (data != null) {
         const anchorKey = selection.anchorKey;
         const focusKey = selection.focusKey;
 
-        if (
-          (IS_FIREFOX || !isInputText) &&
-          canRemoveText(anchorNode, focusNode)
-        ) {
-          removeText(selection);
-        }
-        if (isInputText && anchorKey !== focusKey && data) {
+        if (anchorKey === focusKey) {
+          const isAtEnd =
+            selection.anchorOffset === anchorNode.getTextContentSize();
+          const canInsertAtEnd = anchorNode.canInsertTextAtEnd();
+
+          // We should always block text insertion to imm/seg/inert nodes.
+          // We should also do the same when at the end of nodes that do not
+          // allow text insertion at the end (like links). When we do have
+          // text to go at the end, we can insert into a sibling node instead.
+          if (
+            isImmutableOrInertOrSegmented(anchorNode) ||
+            (isAtEnd && !canInsertAtEnd && selection.isCaret())
+          ) {
+            event.preventDefault();
+            if (isAtEnd && data != null) {
+              const nextSibling = anchorNode.getNextSibling();
+              if (nextSibling === null) {
+                const textNode = createTextNode(data);
+                textNode.select();
+                anchorNode.insertAfter(textNode);
+              } else if (isTextNode(nextSibling)) {
+                nextSibling.select(0, 0);
+                insertText(selection, data);
+              }
+            }
+          }
+        } else {
+          // For range text insertion, always over override
+          // default and control outselves
           event.preventDefault();
           editor.setCompositionKey(null);
           insertText(selection, data);
@@ -879,7 +765,7 @@ export function onNativeBeforeInputForPlainText(
   });
 }
 
-export function onNativeBeforeInputForRichText(
+export function onBeforeInputForRichText(
   event: InputEvent,
   editor: OutlineEditor,
   state: EventHandlerState,
@@ -909,60 +795,66 @@ export function onNativeBeforeInputForRichText(
       insertText(selection, '  ');
       return;
     }
-    const isInputText = inputType === 'insertText';
-    const anchorNode = selection.getAnchorNode();
-    const focusNode = selection.getAnchorNode();
-
+    // We let the browser do its own thing for these composition
+    // events. We handle their updates in our mutation observer.
     if (
-      isInputText ||
       inputType === 'insertCompositionText' ||
       inputType === 'deleteCompositionText'
     ) {
-      if (
-        isInputText &&
-        selection.isCaret() &&
-        selection.anchorOffset === anchorNode.getTextContentSize() &&
-        (isImmutableOrInertOrSegmented(anchorNode) ||
-          !anchorNode.canInsertTextAtEnd())
-      ) {
-        event.preventDefault();
-        if (data != null) {
-          const nextSibling = anchorNode.getNextSibling();
-          if (nextSibling === null) {
-            const textNode = createTextNode(data);
-            textNode.select();
-            anchorNode.insertAfter(textNode);
-          } else if (isTextNode(nextSibling)) {
-            nextSibling.select(0, 0);
-            insertText(selection, data);
-          }
-        }
-        return;
-      }
-      // Gets around a Safari text replacement bug.
-      if (IS_SAFARI && data === null && event.dataTransfer) {
-        const text = event.dataTransfer.getData('text/plain');
-        event.preventDefault();
-        insertRichText(selection, text);
-        return;
-      }
+      return;
+    }
+    const anchorNode = selection.getAnchorNode();
+    const focusNode = selection.getAnchorNode();
+
+    // Standard text insertion goes through a different path.
+    // For most text insertion, we let the browser do its own thing.
+    // We update the view model in our mutation observer. However,
+    // we do have a few exceptions.
+    if (inputType === 'insertText') {
       if (data === '\n') {
         event.preventDefault();
         insertLineBreak(selection);
       } else if (data === '\n\n') {
         event.preventDefault();
         insertParagraph(selection);
-      } else if (!selection.isCaret()) {
+      } else if (data == null && IS_SAFARI && event.dataTransfer) {
+        // Gets around a Safari text replacement bug.
+        const text = event.dataTransfer.getData('text/plain');
+        event.preventDefault();
+        insertRichText(selection, text);
+      } else if (data != null) {
         const anchorKey = selection.anchorKey;
         const focusKey = selection.focusKey;
 
-        if (
-          (IS_FIREFOX || !isInputText) &&
-          canRemoveText(anchorNode, focusNode)
-        ) {
-          removeText(selection);
-        }
-        if (isInputText && anchorKey !== focusKey && data) {
+        if (anchorKey === focusKey) {
+          const isAtEnd =
+            selection.anchorOffset === anchorNode.getTextContentSize();
+          const canInsertAtEnd = anchorNode.canInsertTextAtEnd();
+
+          // We should always block text insertion to imm/seg/inert nodes.
+          // We should also do the same when at the end of nodes that do not
+          // allow text insertion at the end (like links). When we do have
+          // text to go at the end, we can insert into a sibling node instead.
+          if (
+            isImmutableOrInertOrSegmented(anchorNode) ||
+            (isAtEnd && !canInsertAtEnd && selection.isCaret())
+          ) {
+            event.preventDefault();
+            if (isAtEnd && data != null) {
+              const nextSibling = anchorNode.getNextSibling();
+              if (nextSibling === null) {
+                const textNode = createTextNode(data);
+                textNode.select();
+                anchorNode.insertAfter(textNode);
+              } else if (isTextNode(nextSibling)) {
+                nextSibling.select(0, 0);
+                insertText(selection, data);
+              }
+            }
+          }
+        } else {
+          // For range text insertion, always over override
+          // default and control outselves
           event.preventDefault();
           editor.setCompositionKey(null);
           insertText(selection, data);
@@ -1047,30 +939,123 @@ export function onNativeBeforeInputForRichText(
   });
 }
 
-export function onPolyfilledBeforeInput(
-  event: SyntheticInputEvent<EventTarget>,
+function getNodeFromDOMNode(view: View, dom: Node): OutlineNode | null {
+  let node = dom;
+  while (node != null) {
+    // $FlowFixMe: internal field
+    const key: NodeKey | undefined = node.__outlineInternalRef;
+    if (key !== undefined) {
+      return view.getNodeByKey(key);
+    }
+    node = node.parentNode;
+  }
+  return null;
+}
+
+function getDOMFromNode(editor: OutlineEditor, node: null | OutlineNode) {
+  if (node === null) {
+    return null;
+  }
+  return editor.getElementByKey(node.getKey());
+}
+
+function getLastSelection(editor: OutlineEditor): null | Selection {
+  return editor.getViewModel().read((lastView) => lastView.getSelection());
+}
+
+export function onMutation(
   editor: OutlineEditor,
-  state: EventHandlerState,
+  mutations: Array<MutationRecord>,
 ): void {
-  event.preventDefault();
-  editor.update((view) => {
+  editor.update((view: View) => {
     const selection = view.getSelection();
-    const data = event.data;
-    if (data != null && selection !== null) {
-      const compositionSelection = state.compositionSelection;
-      state.compositionSelection = null;
-      if (compositionSelection !== null) {
-        selection.setRange(
-          compositionSelection.anchorKey,
-          compositionSelection.anchorOffset,
-          compositionSelection.focusKey,
-          compositionSelection.focusOffset,
-        );
+    const domSelection = window.getSelection();
+
+    for (let i = 0; i < mutations.length; i++) {
+      const mutation = mutations[i];
+      const target = mutation.target;
+      const type = mutation.type;
+      const node = getNodeFromDOMNode(view, target);
+
+      // TextNode updates
+      if (type === 'characterData') {
+        const rawTextContent = target.nodeValue;
+        const textContent = rawTextContent.replace(/[\u200B\u2060]/g, '');
+
+        if (isTextNode(node) && textContent !== node.getTextContent()) {
+          if (handleBlockTextInputOnNode(node, view, editor)) {
+            continue;
+          }
+          const key = node.getKey();
+          node.setTextContent(textContent);
+          if (
+            selection !== null &&
+            selection.anchorKey === key &&
+            domSelection != null
+          ) {
+            let offset = domSelection.focusOffset;
+            const firstCharacter = rawTextContent[0];
+            if (
+              firstCharacter === ZERO_WIDTH_SPACE_CHAR ||
+              firstCharacter === ZERO_WIDTH_JOINER_CHAR
+            ) {
+              offset--;
+            }
+            selection.setRange(key, offset, key, offset);
+          }
+        } else if (selection === null) {
+          // Looks like a text node was added and selection was moved to it.
+          // We can attempt to restore the last selection.
+          const lastSelection = getLastSelection(editor);
+          if (lastSelection !== null) {
+            view.setSelection(lastSelection);
+          }
+        }
+      } else if (type === 'childList') {
+        // This occurs when the DOM tree has been mutated in terms of
+        // structure. This is actually not good. Outline should control
+        // the contenteditable. This can typically happen because of
+        // third party extensions and tools that directly mutate the DOM.
+        // Given this code-path shouldn't happen often so we can use
+        // slightly slower code but code that takes up less bytes.
+        const {addedNodes, removedNodes} = mutation;
+
+        addedNodes.forEach((addedDOM) => {
+          const addedNode = getNodeFromDOMNode(view, addedDOM);
+          // For now we don't want nodes that weren't added by Outline.
+          // So lets remove this node if it's not managed by Outline
+          if (addedNode === null) {
+            const parent = addedDOM.parentNode;
+            console.log('remove', addedDOM);
+            if (parent != null) {
+              parent.removeChild(addedDOM);
+            }
+          } else {
+            console.log('remove', null);
+          }
+        });
+        removedNodes.forEach((removedDOM) => {
+          // If a node was removed that we control, we should re-attach it!
+          const removedNode = getNodeFromDOMNode(view, removedDOM);
+          if (removedNode !== null) {
+            const parentDOM = getDOMFromNode(editor, removedNode.getParent());
+            // We should be re-adding this back to the DOM
+            if (parentDOM !== null) {
+              // See if we have a sibling to insert before
+              const siblingDOM = getDOMFromNode(
+                editor,
+                removedNode.getNextSibling(),
+              );
+              console.log('add', removedNode);
+              if (siblingDOM === null) {
+                parentDOM.appendChild(removedDOM);
+              } else {
+                parentDOM.insertBefore(removedDOM, siblingDOM);
+              }
+            }
+          }
+        });
       }
-      if (handleBlockTextInputOnNode(selection.getAnchorNode(), view, editor)) {
-        return;
-      }
-      insertText(selection, data);
     }
   });
 }

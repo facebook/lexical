@@ -62,14 +62,14 @@ describe('OutlineTextNode tests', () => {
     return Promise.resolve().then();
   }
 
-  function useOutlineEditor(editorElementRef) {
+  function useOutlineEditor(rootElementRef) {
     const editor = React.useMemo(() => createEditor(), []);
 
     React.useEffect(() => {
-      const editorElement = editorElementRef.current;
+      const rootElement = rootElementRef.current;
 
-      editor.setEditorElement(editorElement);
-    }, [editorElementRef, editor]);
+      editor.setRootElement(rootElement);
+    }, [rootElementRef, editor]);
 
     return editor;
   }
@@ -81,7 +81,7 @@ describe('OutlineTextNode tests', () => {
 
     function TestBase() {
       editor = useOutlineEditor(ref);
-      editor.addErrorListener((error) => {
+      editor.addListener('error', (error) => {
         throw error;
       });
       return <div ref={ref} contentEditable={true} />;

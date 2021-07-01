@@ -54,12 +54,12 @@ export function isSelectionWithinEditor(
   anchorDOM: null | Node,
   focusDOM: null | Node,
 ): boolean {
-  const editorElement = editor.getEditorElement();
+  const rootElement = editor.getRootElement();
   try {
     return (
-      editorElement !== null &&
-      editorElement.contains(anchorDOM) &&
-      editorElement.contains(focusDOM)
+      rootElement !== null &&
+      rootElement.contains(anchorDOM) &&
+      rootElement.contains(focusDOM)
     );
   } catch {
     return false;

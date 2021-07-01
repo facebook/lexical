@@ -44,7 +44,6 @@ import type {View, OutlineEditor, Selection} from 'outline';
 import {insertText} from 'outline/SelectionHlpers'
 
 function listenToTextInsertion(editor: OutlineEditor) {
-  let currentEditorElement = null;
 
   // The "input" event fires when a user types in some text
   const onInput = (event: InputEvent) => {
@@ -67,16 +66,18 @@ function listenToTextInsertion(editor: OutlineEditor) {
   }
 
   // We want to listen for when Outline gets an editor element
-  editor.addEditorElementListener((editorElement: null | HTMLElement) => {
-    // Clear our old listener if the editorElement changes
-    if (currentEditorElement !== null) {
-      currentEditorElement.removeEventListener('input', onInput)
+  editor.addListener('root', (
+    rootElement: null | HTMLElement
+    prevRootElement, null | HTMLElement,
+  ) => {
+    // Clear our old listener if the root element changes
+    if (prevRootElement !== null) {
+      prevRootElement.removeEventListener('input', onInput)
     }
     // If we have an editor element, listen to the "input" event
-    if (editorElement !== null) {
-      editorElement.addEventListener('input', onInput);
+    if (rootElement !== null) {
+      rootElement.addEventListener('input', onInput);
     }
-    currentEditorElement = editorElement;
   });
 }
 ```

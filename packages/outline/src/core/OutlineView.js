@@ -19,6 +19,7 @@ import type {BlockNode} from './OutlineBlockNode';
 import type {Selection} from './OutlineSelection';
 import type {Node as ReactNode} from 'react';
 import type {ParsedNodeMap} from './OutlineNode';
+import type {ListenerType} from './OutlineEditor';
 
 import {cloneDecorators, reconcileViewModel} from './OutlineReconciler';
 import {getSelection, createSelectionFromParse} from './OutlineSelection';
@@ -303,8 +304,8 @@ export function garbageCollectDetachedNodes(
 
 export function commitPendingUpdates(editor: OutlineEditor): void {
   const pendingViewModel = editor._pendingViewModel;
-  const editorElement = editor._editorElement;
-  if (editorElement === null || pendingViewModel === null) {
+  const rootElement = editor._rootElement;
+  if (rootElement === null || pendingViewModel === null) {
     return;
   }
   const currentViewModel = editor._viewModel;
@@ -313,19 +314,14 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
   const previousActiveViewModel = activeViewModel;
   activeViewModel = pendingViewModel;
   try {
-    reconcileViewModel(
-      editorElement,
-      currentViewModel,
-      pendingViewModel,
-      editor,
-    );
+    reconcileViewModel(rootElement, currentViewModel, pendingViewModel, editor);
   } catch (error) {
     // Report errors
-    triggerErrorListeners(editor, error);
+    triggerListeners('error', editor, error);
     // Reset editor and restore incoming view model to the DOM
     if (!isAttemptingToRecoverFromReconcilerError) {
       resetEditor(editor);
-      editor._keyToDOMMap.set('root', editorElement);
+      editor._keyToDOMMap.set('root', rootElement);
       editor._pendingViewModel = pendingViewModel;
       isAttemptingToRecoverFromReconcilerError = true;
       commitPendingUpdates(editor);
@@ -340,9 +336,9 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
   if (pendingDecorators !== null) {
     editor._decorators = pendingDecorators;
     editor._pendingDecorators = null;
-    triggerDecoratorListeners(pendingDecorators, editor);
+    triggerListeners('decorator', editor, pendingDecorators);
   }
-  triggerUpdateListeners(editor);
+  triggerListeners('update', editor, pendingViewModel);
   const deferred = editor._deferred;
   if (deferred.length !== 0) {
     for (let i = 0; i < deferred.length; i++) {
@@ -352,51 +348,17 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
   }
 }
 
-export function triggerDecoratorListeners(
-  decorators: {[NodeKey]: ReactNode},
+export function triggerListeners(
+  type: ListenerType,
   editor: OutlineEditor,
+  ...payload: Array<
+    // $FlowFixMe: needs refining
+    null | Error | HTMLElement | {[NodeKey]: ReactNode} | ViewModel,
+  >
 ): void {
-  const listeners = Array.from(editor._decoratorListeners);
+  const listeners = Array.from(editor._listeners[type]);
   for (let i = 0; i < listeners.length; i++) {
-    listeners[i](decorators);
-  }
-}
-
-export function triggerEndMutationListeners(
-  editor: OutlineEditor,
-): Array<(HTMLElement) => void> {
-  const endMutationListeners = Array.from(editor._mutationListeners);
-  const startMutationListeners = [];
-  for (let i = 0; i < endMutationListeners.length; i++) {
-    startMutationListeners.push(endMutationListeners[i]());
-  }
-  return startMutationListeners;
-}
-
-export function triggerStartMutationListeners(
-  editorElement: HTMLElement,
-  startMutationListeners: Array<(HTMLElement) => void>,
-): void {
-  for (let i = 0; i < startMutationListeners.length; i++) {
-    startMutationListeners[i](editorElement);
-  }
-}
-
-export function triggerUpdateListeners(editor: OutlineEditor): void {
-  const viewModel = editor._viewModel;
-  const listeners = Array.from(editor._updateListeners);
-  for (let i = 0; i < listeners.length; i++) {
-    listeners[i](viewModel);
-  }
-}
-
-export function triggerErrorListeners(
-  editor: OutlineEditor,
-  error: Error,
-): void {
-  const listeners = Array.from(editor._errorListeners);
-  for (let i = 0; i < listeners.length; i++) {
-    listeners[i](error);
+    listeners[i](...payload);
   }
 }
 

@@ -20,12 +20,10 @@ import {
   ViewModel,
   commitPendingUpdates,
   applyTextTransforms,
-  triggerErrorListeners,
   parseViewModel,
   errorOnProcessingTextNodeTransforms,
   applySelectionTransforms,
-  triggerUpdateListeners,
-  triggerEndMutationListeners,
+  triggerListeners,
 } from './OutlineView';
 import {createSelection} from './OutlineSelection';
 import {
@@ -71,17 +69,31 @@ export type EditorThemeClasses = {
   [string]: EditorThemeClassName | {[string]: EditorThemeClassName},
 };
 
-export type ErrorListener = (error: Error) => void;
-
-export type UpdateListener = (viewModel: ViewModel) => void;
-
-export type DecoratorListener = (decorator: {[NodeKey]: ReactNode}) => void;
-
 export type TextNodeTransform = (node: TextNode, view: View) => void;
 
-export type EditorElementListener = (element: null | HTMLElement) => void;
+export type ErrorListener = (error: Error) => void;
+export type UpdateListener = (viewModel: ViewModel) => void;
+export type DecoratorListener = (decorator: {[NodeKey]: ReactNode}) => void;
+export type RootListener = (
+  element: null | HTMLElement,
+  element: null | HTMLElement,
+) => void;
+export type MutationListener = (rootElement: null | HTMLElement) => void;
 
-export type MutationListener = () => (editorElement: HTMLElement) => void;
+type Listeners = {
+  decorator: Set<DecoratorListener>,
+  error: Set<ErrorListener>,
+  mutation: Set<MutationListener>,
+  root: Set<RootListener>,
+  update: Set<UpdateListener>,
+};
+
+export type ListenerType =
+  | 'update'
+  | 'error'
+  | 'mutation'
+  | 'root'
+  | 'decorator';
 
 export function resetEditor(editor: OutlineEditor): void {
   const root = createRoot();
@@ -89,15 +101,15 @@ export function resetEditor(editor: OutlineEditor): void {
   const prevViewModel = editor._viewModel;
   const rootChildrenKeys = prevViewModel._nodeMap.root.__children;
   const keyToDOMMap = editor._keyToDOMMap;
-  const editorElement = editor._editorElement;
+  const rootElement = editor._rootElement;
 
-  if (editorElement !== null) {
+  if (rootElement !== null) {
     // Remove all existing top level DOM elements from editor
     for (let i = 0; i < rootChildrenKeys.length; i++) {
       const rootChildKey = rootChildrenKeys[i];
       const element = keyToDOMMap.get(rootChildKey);
-      if (element !== undefined && element.parentNode === editorElement) {
-        editorElement.removeChild(element);
+      if (element !== undefined && element.parentNode === rootElement) {
+        rootElement.removeChild(element);
       }
     }
   }
@@ -106,8 +118,8 @@ export function resetEditor(editor: OutlineEditor): void {
   editor._compositionKey = null;
   keyToDOMMap.clear();
   editor._textContent = '';
-  triggerUpdateListeners(editor);
-  triggerEndMutationListeners(editor);
+  triggerListeners('update', editor, editor._viewModel);
+  triggerListeners('mutation', editor, null);
 }
 
 export function createEditor(
@@ -115,7 +127,8 @@ export function createEditor(
 ): OutlineEditor {
   const root = createRoot();
   const viewModel = new ViewModel({root});
-  return new OutlineEditor(viewModel, editorThemeClasses || {});
+  // $FlowFixMe: use our declared type instead
+  return new BaseOutlineEditor(viewModel, editorThemeClasses || {});
 }
 
 function updateEditor(
@@ -187,7 +200,7 @@ function updateEditor(
     );
   } catch (error) {
     // Report errors
-    triggerErrorListeners(editor, error);
+    triggerListeners('error', editor, error);
     // Restore existing view model to the DOM
     const currentViewModel = editor._viewModel;
     currentViewModel.markDirty();
@@ -213,19 +226,20 @@ function updateEditor(
   return true;
 }
 
-export class OutlineEditor {
-  _editorElement: null | HTMLElement;
+function getSelf(self: BaseOutlineEditor): OutlineEditor {
+  // $FlowFixMe: a hack to work around exporting a declaration
+  return ((self: any): OutlineEditor);
+}
+
+class BaseOutlineEditor {
+  _rootElement: null | HTMLElement;
   _viewModel: ViewModel;
   _pendingViewModel: null | ViewModel;
   _compositionKey: null | NodeKey;
   _deferred: Array<() => void>;
   _key: string;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
-  _errorListeners: Set<ErrorListener>;
-  _updateListeners: Set<UpdateListener>;
-  _elementListeners: Set<EditorElementListener>;
-  _mutationListeners: Set<MutationListener>;
-  _decoratorListeners: Set<DecoratorListener>;
+  _listeners: Listeners;
   _textNodeTransforms: Set<TextNodeTransform>;
   _nodeTypes: Map<string, Class<OutlineNode>>;
   _decorators: {[NodeKey]: ReactNode};
@@ -235,7 +249,7 @@ export class OutlineEditor {
 
   constructor(viewModel: ViewModel, editorThemeClasses: EditorThemeClasses) {
     // The editor element associated with this editor
-    this._editorElement = null;
+    this._rootElement = null;
     // The current view model
     this._viewModel = viewModel;
     // Handling of drafts and updates
@@ -245,16 +259,14 @@ export class OutlineEditor {
     this._deferred = [];
     // Used during reconciliation
     this._keyToDOMMap = new Map();
-    // error listeners
-    this._errorListeners = new Set();
-    // onChange listeners
-    this._updateListeners = new Set();
-    // Used for rendering React Portals into nodes
-    this._decoratorListeners = new Set();
-    // Editor element listeners
-    this._elementListeners = new Set();
-    // Mutation listeners
-    this._mutationListeners = new Set();
+    // Listeners
+    this._listeners = {
+      decorator: new Set(),
+      error: new Set(),
+      mutation: new Set(),
+      root: new Set(),
+      update: new Set(),
+    };
     // Class name mappings for nodes/placeholders
     this._editorThemeClasses = editorThemeClasses;
     // Handling of text node transforms
@@ -278,13 +290,13 @@ export class OutlineEditor {
   setCompositionKey(nodeKey: null | NodeKey): void {
     if (nodeKey === null) {
       this._compositionKey = null;
-      updateEditor(this, emptyFunction, false);
+      updateEditor(getSelf(this), emptyFunction, false);
       const pendingViewModel = this._pendingViewModel;
       if (pendingViewModel !== null) {
         pendingViewModel.markDirty();
       }
     } else {
-      updateEditor(this, emptyFunction, false);
+      updateEditor(getSelf(this), emptyFunction, false);
     }
     this._deferred.push(() => {
       this._compositionKey = nodeKey;
@@ -293,42 +305,38 @@ export class OutlineEditor {
   registerNodeType(nodeType: string, klass: Class<OutlineNode>): void {
     this._nodeTypes.set(nodeType, klass);
   }
-  addUpdateListener(listener: UpdateListener): () => void {
-    this._updateListeners.add(listener);
-    return () => {
-      this._updateListeners.delete(listener);
-    };
-  }
-  addErrorListener(listener: ErrorListener): () => void {
-    this._errorListeners.add(listener);
-    return () => {
-      this._errorListeners.delete(listener);
-    };
-  }
-  addMutationListener(listener: MutationListener): () => void {
-    this._mutationListeners.add(listener);
-    return () => {
-      this._mutationListeners.delete(listener);
-    };
-  }
-  addEditorElementListener(listener: EditorElementListener): () => void {
-    this._elementListeners.add(listener);
-    listener(this._editorElement);
+  addListener(
+    type: ListenerType,
+    listener:
+      | ErrorListener
+      | UpdateListener
+      | DecoratorListener
+      | RootListener
+      | MutationListener,
+  ): () => void {
+    const listenerSet = this._listeners[type];
+    // $FlowFixMe: TODO refine this from the above types
+    listenerSet.add(listener);
 
+    const isRootType = type === 'root';
+    if (isRootType) {
+      // $FlowFixMe: TODO refine
+      const rootListener: RootListener = (listener: any);
+      rootListener(this._rootElement, null);
+    }
     return () => {
-      this._elementListeners.delete(listener);
-      listener(null);
-    };
-  }
-  addDecoratorListener(listener: DecoratorListener): () => void {
-    this._decoratorListeners.add(listener);
-    return () => {
-      this._decoratorListeners.delete(listener);
+      // $FlowFixMe: TODO refine this from the above types
+      listenerSet.delete(listener);
+      if (isRootType) {
+        // $FlowFixMe: TODO refine
+        const rootListener: RootListener = (listener: any);
+        rootListener(null, this._rootElement);
+      }
     };
   }
   addTextNodeTransform(listener: TextNodeTransform): () => void {
     this._textNodeTransforms.add(listener);
-    updateEditor(this, emptyFunction, true);
+    updateEditor(getSelf(this), emptyFunction, true);
     return () => {
       this._textNodeTransforms.delete(listener);
     };
@@ -339,28 +347,25 @@ export class OutlineEditor {
   getEditorKey(): string {
     return this._key;
   }
-  getEditorElement(): null | HTMLElement {
-    return this._editorElement;
+  getRootElement(): null | HTMLElement {
+    return this._rootElement;
   }
   getTextContent(): string {
     return this._textContent;
   }
-  setEditorElement(nextEditorElement: null | HTMLElement): void {
-    const prevEditorElement = this._editorElement;
-    if (nextEditorElement !== prevEditorElement) {
-      if (nextEditorElement === null || prevEditorElement !== null) {
-        resetEditor(this);
+  setRootElement(nextRootElement: null | HTMLElement): void {
+    const prevRootElement = this._rootElement;
+    if (nextRootElement !== prevRootElement) {
+      if (nextRootElement === null || prevRootElement !== null) {
+        resetEditor(getSelf(this));
       }
-      this._editorElement = nextEditorElement;
-      if (nextEditorElement !== null) {
-        nextEditorElement.setAttribute('data-outline-editor', 'true');
-        this._keyToDOMMap.set('root', nextEditorElement);
-        commitPendingUpdates(this);
+      this._rootElement = nextRootElement;
+      if (nextRootElement !== null) {
+        nextRootElement.setAttribute('data-outline-editor', 'true');
+        this._keyToDOMMap.set('root', nextRootElement);
+        commitPendingUpdates(getSelf(this));
       }
-      const editorElementListeners = Array.from(this._elementListeners);
-      for (let i = 0; i < editorElementListeners.length; i++) {
-        editorElementListeners[i](nextEditorElement);
-      }
+      triggerListeners('root', getSelf(this), nextRootElement, prevRootElement);
     }
   }
   getElementByKey(key: NodeKey): HTMLElement | null {
@@ -371,23 +376,23 @@ export class OutlineEditor {
   }
   setViewModel(viewModel: ViewModel): void {
     if (this._pendingViewModel !== null) {
-      commitPendingUpdates(this);
+      commitPendingUpdates(getSelf(this));
     }
     this._pendingViewModel = viewModel;
-    commitPendingUpdates(this);
+    commitPendingUpdates(getSelf(this));
   }
   parseViewModel(stringifiedViewModel: string): ViewModel {
-    return parseViewModel(stringifiedViewModel, this);
+    return parseViewModel(stringifiedViewModel, getSelf(this));
   }
   update(updateFn: (view: View) => void, callbackFn?: () => void): boolean {
     errorOnProcessingTextNodeTransforms();
-    return updateEditor(this, updateFn, false, callbackFn);
+    return updateEditor(getSelf(this), updateFn, false, callbackFn);
   }
   focus(callbackFn?: () => void): void {
-    const editorElement = this._editorElement;
-    if (editorElement !== null) {
+    const rootElement = this._rootElement;
+    if (rootElement !== null) {
       // This ensures that iOS does not trigger caps lock upon focus
-      editorElement.setAttribute('autocapitalize', 'off');
+      rootElement.setAttribute('autocapitalize', 'off');
       this.update(
         (view: View) => {
           const selection = view.getSelection();
@@ -402,7 +407,7 @@ export class OutlineEditor {
           }
         },
         () => {
-          editorElement.removeAttribute('autocapitalize');
+          rootElement.removeAttribute('autocapitalize');
           if (callbackFn) {
             callbackFn();
           }
@@ -429,4 +434,46 @@ export class OutlineEditor {
     }
     return true;
   }
+}
+
+// We export this to make the addListener types work properly.
+// For some reason, we can't do this via an interface without
+// Flow messing up the types. It's hacky, but it improves DX.
+declare export class OutlineEditor {
+  _rootElement: null | HTMLElement;
+  _viewModel: ViewModel;
+  _pendingViewModel: null | ViewModel;
+  _compositionKey: null | NodeKey;
+  _deferred: Array<() => void>;
+  _key: string;
+  _keyToDOMMap: Map<NodeKey, HTMLElement>;
+  _listeners: Listeners;
+  _textNodeTransforms: Set<TextNodeTransform>;
+  _nodeTypes: Map<string, Class<OutlineNode>>;
+  _decorators: {[NodeKey]: ReactNode};
+  _pendingDecorators: null | {[NodeKey]: ReactNode};
+  _textContent: string;
+  _editorThemeClasses: EditorThemeClasses;
+
+  isComposing(): boolean;
+  setCompositionKey(compositionKey: NodeKey | null): void;
+  registerNodeType(nodeType: string, klass: Class<OutlineNode>): void;
+  addListener(type: 'error', listener: ErrorListener): () => void;
+  addListener(type: 'update', listener: UpdateListener): () => void;
+  addListener(type: 'root', listener: RootListener): () => void;
+  addListener(type: 'decorator', listener: DecoratorListener): () => void;
+  addListener(type: 'mutation', listener: MutationListener): () => void;
+  addTextNodeTransform(listener: TextNodeTransform): () => void;
+  getDecorators(): {[NodeKey]: ReactNode};
+  getEditorKey(): string;
+  getRootElement(): null | HTMLElement;
+  setRootElement(rootElement: null | HTMLElement): void;
+  getTextContent(): string;
+  getElementByKey(key: NodeKey): null | HTMLElement;
+  getViewModel(): ViewModel;
+  setViewModel(viewModel: ViewModel): void;
+  parseViewModel(stringifiedViewModel: string): ViewModel;
+  update(updateFn: (view: View) => void, callbackFn?: () => void): boolean;
+  focus(callbackFn?: () => void): void;
+  canShowPlaceholder(): boolean;
 }

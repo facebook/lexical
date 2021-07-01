@@ -10,17 +10,17 @@
 import type {OutlineEditor} from 'outline';
 import type {EventHandler, EventHandlerState} from './shared/EventHandlers';
 
-import {useEffect, useRef} from 'react';
+import {useEffect} from 'react';
 
 export type InputEvents = Array<[string, EventHandler]>;
 
-function getTarget(eventName: string, editorElement: HTMLElement): EventTarget {
+function getTarget(eventName: string, rootElement: HTMLElement): EventTarget {
   return eventName === 'selectionchange' ||
     eventName === 'keyup' ||
     eventName === 'pointerup' ||
     eventName === 'pointercancel'
-    ? editorElement.ownerDocument
-    : editorElement;
+    ? rootElement.ownerDocument
+    : rootElement;
 }
 
 export default function useOutlineEditorEvents(
@@ -28,7 +28,6 @@ export default function useOutlineEditorEvents(
   editor: OutlineEditor,
   state: EventHandlerState,
 ): void {
-  const prevEditorElementRef = useRef<null | HTMLElement>(null);
   useEffect(() => {
     const create = [];
     const destroy = [];
@@ -39,30 +38,32 @@ export default function useOutlineEditorEvents(
       const handlerWrapper = (event: Event) => {
         handler(event, editor, state);
       };
-      create.push((editorElement: HTMLElement) => {
-        getTarget(eventName, editorElement).addEventListener(
+      create.push((rootElement: HTMLElement) => {
+        getTarget(eventName, rootElement).addEventListener(
           eventName,
           handlerWrapper,
         );
       });
-      destroy.push((editorElement: HTMLElement) => {
-        getTarget(eventName, editorElement).removeEventListener(
+      destroy.push((rootElement: HTMLElement) => {
+        getTarget(eventName, rootElement).removeEventListener(
           eventName,
           handlerWrapper,
         );
       });
     }
 
-    return editor.addEditorElementListener(
-      (nextEditorElement: null | HTMLElement) => {
-        const prevEditorElement = prevEditorElementRef.current;
-        if (prevEditorElement !== null) {
-          destroy.forEach((fn) => fn(prevEditorElement));
+    return editor.addListener(
+      'root',
+      (
+        rootElement: null | HTMLElement,
+        prevRootElement: null | HTMLElement,
+      ) => {
+        if (prevRootElement !== null) {
+          destroy.forEach((fn) => fn(prevRootElement));
         }
-        if (nextEditorElement !== null) {
-          create.forEach((fn) => fn(nextEditorElement));
+        if (rootElement !== null) {
+          create.forEach((fn) => fn(rootElement));
         }
-        prevEditorElementRef.current = nextEditorElement;
       },
     );
   }, [editor, events, state]);

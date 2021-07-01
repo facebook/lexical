@@ -83,6 +83,7 @@ function markParentsAsDirty(
 }
 
 export function markNodeAsDirty(node: OutlineNode): void {
+  debugger;
   const latest = node.getLatest();
   const parent = latest.__parent;
   const viewModel = getActiveViewModel();
@@ -463,6 +464,10 @@ export class OutlineNode {
   }
   isDirectionless(): boolean {
     return (this.getLatest().__flags & IS_DIRECTIONLESS) !== 0;
+  }
+  isDirty(): boolean {
+    const viewModel = getActiveViewModel();
+    return viewModel._dirtyNodes.has(this.__key);
   }
   getLatest<N: OutlineNode>(): N {
     const latest = getNodeByKey<N>(this.__key);

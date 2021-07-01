@@ -278,13 +278,13 @@ export class OutlineEditor {
   setCompositionKey(nodeKey: null | NodeKey): void {
     if (nodeKey === null) {
       this._compositionKey = null;
-      updateEditor(this, emptyFunction, true);
+      updateEditor(this, emptyFunction, false);
       const pendingViewModel = this._pendingViewModel;
       if (pendingViewModel !== null) {
         pendingViewModel.markDirty();
       }
     } else {
-      updateEditor(this, emptyFunction, true);
+      updateEditor(this, emptyFunction, false);
     }
     this._deferred.push(() => {
       this._compositionKey = nodeKey;

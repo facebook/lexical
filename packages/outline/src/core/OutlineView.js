@@ -351,8 +351,8 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
 export function triggerListeners(
   type: ListenerType,
   editor: OutlineEditor,
-  // $FlowFixMe: needs refining
   ...payload: Array<
+    // $FlowFixMe: needs refining
     null | Error | HTMLElement | {[NodeKey]: ReactNode} | ViewModel,
   >
 ): void {

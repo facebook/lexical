@@ -82,6 +82,7 @@ function Editor() {
 ## Documentation
 
 - [How Outline was designed](/docs/design.md)
+- [Testing](/docs/testing.md)
 
 ## Contributing
 

@@ -69,7 +69,7 @@ describe('OutlineEditor tests', () => {
     return Promise.resolve().then();
   }
 
-  it('Should be able to update a view model without an editor element', () => {
+  it('Should be able to update a view model without an root element', () => {
     const ref = React.createRef();
 
     function TestBase({element}) {
@@ -105,7 +105,7 @@ describe('OutlineEditor tests', () => {
     );
   });
 
-  it('Should be able to handle a change in editor element', async () => {
+  it('Should be able to handle a change in root element', async () => {
     const listener = jest.fn();
 
     function TestBase({changeElement}) {
@@ -312,7 +312,7 @@ describe('OutlineEditor tests', () => {
     });
   });
 
-  describe('With editor element', () => {
+  describe('With root element', () => {
     beforeEach(() => {
       init();
     });

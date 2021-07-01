@@ -170,7 +170,7 @@ export default function CharacterLimit({
 
   useEffect(() => {
     handleTextNodeOverflows();
-    return editor.addUpdateListener(handleTextNodeOverflows);
+    return editor.addListener('update', handleTextNodeOverflows);
   }, [charactersOver, editor, handleTextNodeOverflows]);
 
   // Handle garbage collection if the character limit is disabled

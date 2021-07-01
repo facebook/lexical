@@ -469,10 +469,10 @@ export function onSelectionChange(
   state: EventHandlerState,
 ): void {
   const domSelection = window.getSelection();
-  const editorElement = editor.getEditorElement();
+  const rootElement = editor.getRootElement();
   // This is a hot-path, so let's avoid doing an update when
   // the anchorNode is not actually inside the editor.
-  if (editorElement && !editorElement.contains(domSelection.anchorNode)) {
+  if (rootElement && !rootElement.contains(domSelection.anchorNode)) {
     return;
   }
   const prevSelection = editor.getViewModel()._selection;

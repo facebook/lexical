@@ -44,25 +44,25 @@ export const initializeUnitTest = (runTests: (testEnv: TestEnv) => void) => {
     document.body.appendChild(testEnv.container);
     const ref = React.createRef();
 
-    const useOutlineEditor = (editorElementRef) => {
+    const useOutlineEditor = (rootElementRef) => {
       const outlineEditor = React.useMemo(() => {
         const outline = createEditor();
-        outline.addErrorListener((error) => {
+        outline.addListener('error', (error) => {
           throw error;
         });
         return outline;
       }, []);
 
       React.useEffect(() => {
-        const editorElement = editorElementRef.current;
-        outlineEditor.setEditorElement(editorElement);
-      }, [editorElementRef, outlineEditor]);
+        const rootElement = rootElementRef.current;
+        outlineEditor.setRootElement(rootElement);
+      }, [rootElementRef, outlineEditor]);
       return outlineEditor;
     };
 
     const Editor = () => {
       testEnv.editor = useOutlineEditor(ref);
-      testEnv.editor.addErrorListener((error) => {
+      testEnv.editor.addListener('error', (error) => {
         throw error;
       });
       return <div ref={ref} contentEditable={true} />;

@@ -106,8 +106,8 @@ export default function useOutlineHistory(
 
   useEffect(() => {
     const undoStack = historyState.undoStack;
-    const editorElement = editor.getEditorElement();
-    if (editorElement === null) {
+    const rootElement = editor.getRootElement();
+    if (rootElement === null) {
       return;
     }
     let redoStack = historyState.redoStack;
@@ -189,13 +189,13 @@ export default function useOutlineHistory(
       }
     };
 
-    const removeUpdateListener = editor.addUpdateListener(applyChange);
-    editorElement.addEventListener('keydown', handleKeyDown);
-    editorElement.addEventListener('beforeinput', handleBeforeInput);
+    const removeUpdateListener = editor.addListener('update', applyChange);
+    rootElement.addEventListener('keydown', handleKeyDown);
+    rootElement.addEventListener('beforeinput', handleBeforeInput);
     return () => {
       removeUpdateListener();
-      editorElement.removeEventListener('keydown', handleKeyDown);
-      editorElement.removeEventListener('beforeinput', handleBeforeInput);
+      rootElement.removeEventListener('keydown', handleKeyDown);
+      rootElement.removeEventListener('beforeinput', handleBeforeInput);
     };
   }, [historyState, editor]);
 

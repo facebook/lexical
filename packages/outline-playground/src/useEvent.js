@@ -20,8 +20,8 @@ function useWrapper<E: Event>(
       // Fast-path so we don't do unnecessary work
       if (event.type === 'selectionchange') {
         const selection = window.getSelection();
-        const editorElement = editor.getEditorElement();
-        if (editorElement && !editorElement.contains(selection.anchorNode)) {
+        const rootElement = editor.getRootElement();
+        if (rootElement && !rootElement.contains(selection.anchorNode)) {
           return;
         }
       }
@@ -38,7 +38,7 @@ export default function useEvent<E>(
 ): void {
   const wrapper = useWrapper(handler, editor);
   useEffect(() => {
-    const target = editor.getEditorElement();
+    const target = editor.getRootElement();
 
     if (target !== null) {
       // $FlowFixMe

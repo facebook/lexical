@@ -7,7 +7,7 @@
  * @flow strict-local
  */
 
-import type {OutlineEditor, View} from 'outline';
+import type {OutlineEditor, View, ViewModel} from 'outline';
 
 import {createTextNode} from 'outline';
 import {createParagraphNode} from 'outline/ParagraphNode';
@@ -134,10 +134,10 @@ function sanitizeSelection(selection) {
   return {anchorNode, focusNode, anchorOffset, focusOffset};
 }
 
-function getPathFromNodeToEditor(node: Node, editorElement) {
+function getPathFromNodeToEditor(node: Node, rootElement) {
   let currentNode = node;
   const path = [];
-  while (currentNode !== editorElement) {
+  while (currentNode !== rootElement) {
     path.unshift(
       Array.from(currentNode?.parentNode?.childNodes ?? []).indexOf(
         currentNode,
@@ -167,16 +167,16 @@ export default function useStepRecorder(
   }, [editor]);
 
   const generateTestContent = useCallback(() => {
-    const editorElement = editor.getEditorElement();
+    const rootElement = editor.getRootElement();
     const browserSelection = window.getSelection();
 
     if (
-      editorElement == null ||
+      rootElement == null ||
       browserSelection == null ||
       browserSelection.anchorNode == null ||
       browserSelection.focusNode == null ||
-      !editorElement.contains(browserSelection.anchorNode) ||
-      !editorElement.contains(browserSelection.focusNode)
+      !rootElement.contains(browserSelection.anchorNode) ||
+      !rootElement.contains(browserSelection.focusNode)
     ) {
       return null;
     }
@@ -284,28 +284,31 @@ ${steps.map(formatStep).join(`\n`)}
   }, [generateTestContent, steps]);
 
   useEffect(() => {
-    const removeUpdateListener = editor.addUpdateListener((viewModel) => {
-      if (!isRecording) {
-        return;
-      }
-      const currentSelection = viewModel._selection;
-      const previousSelection = previousSelectionRef.current;
-      const skipNextSelectionChange = skipNextSelectionChangeRef.current;
-      if (previousSelection !== currentSelection) {
-        if (!viewModel.hasDirtyNodes() && !skipNextSelectionChange) {
-          const browserSelection = window.getSelection();
-          if (
-            browserSelection.anchorNode == null ||
-            browserSelection.focusNode == null
-          ) {
-            return;
-          }
+    const removeUpdateListener = editor.addListener(
+      'update',
+      (viewModel: ViewModel) => {
+        if (!isRecording) {
+          return;
         }
-        previousSelectionRef.current = currentSelection;
-      }
-      skipNextSelectionChangeRef.current = false;
-      setTemplatedTest(generateTestContent());
-    });
+        const currentSelection = viewModel._selection;
+        const previousSelection = previousSelectionRef.current;
+        const skipNextSelectionChange = skipNextSelectionChangeRef.current;
+        if (previousSelection !== currentSelection) {
+          if (!viewModel.hasDirtyNodes() && !skipNextSelectionChange) {
+            const browserSelection = window.getSelection();
+            if (
+              browserSelection.anchorNode == null ||
+              browserSelection.focusNode == null
+            ) {
+              return;
+            }
+          }
+          previousSelectionRef.current = currentSelection;
+        }
+        skipNextSelectionChangeRef.current = false;
+        setTemplatedTest(generateTestContent());
+      },
+    );
     return removeUpdateListener;
   }, [editor, generateTestContent, isRecording, pushStep]);
 
@@ -314,10 +317,10 @@ ${steps.map(formatStep).join(`\n`)}
     if (!isRecording) {
       return;
     }
-    const removeUpdateListener = editor.addUpdateListener((viewModel) => {
-      const editorElement = editor.getEditorElement();
-      if (editorElement !== null) {
-        setCurrentInnerHTML(editorElement?.innerHTML);
+    const removeUpdateListener = editor.addListener('update', (viewModel) => {
+      const rootElement = editor.getRootElement();
+      if (rootElement !== null) {
+        setCurrentInnerHTML(rootElement?.innerHTML);
       }
     });
     return removeUpdateListener;
@@ -369,11 +372,11 @@ ${steps.map(formatStep).join(`\n`)}
       sanitizeSelection(browserSelection);
     const anchorPath = getPathFromNodeToEditor(
       anchorNode,
-      getCurrentEditor().getEditorElement(),
+      getCurrentEditor().getRootElement(),
     );
     const focusPath = getPathFromNodeToEditor(
       focusNode,
-      getCurrentEditor().getEditorElement(),
+      getCurrentEditor().getRootElement(),
     );
     pushStep('snapshot', {
       anchorPath,

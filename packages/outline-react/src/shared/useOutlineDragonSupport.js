@@ -16,8 +16,8 @@ import {useEffect} from 'react';
 export default function useOutlineDragonSupport(editor: OutlineEditor) {
   useEffect(() => {
     const handler = (event) => {
-      const editorElement = editor.getEditorElement();
-      if (document.activeElement !== editorElement) {
+      const rootElement = editor.getRootElement();
+      if (document.activeElement !== rootElement) {
         return;
       }
       const data = event.data;

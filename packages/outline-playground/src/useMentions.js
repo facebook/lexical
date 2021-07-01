@@ -237,9 +237,9 @@ function MentionsTypeahead({
 
   const updateSelectedIndex = useCallback(
     (index) => {
-      const editorElem = editor.getEditorElement();
-      if (editorElem !== null) {
-        editorElem.setAttribute(
+      const rootElem = editor.getRootElement();
+      if (rootElem !== null) {
+        rootElem.setAttribute(
           'aria-activedescendant',
           'typeahead-item-' + index,
         );
@@ -251,9 +251,9 @@ function MentionsTypeahead({
 
   useEffect(() => {
     return () => {
-      const editorElem = editor.getEditorElement();
-      if (editorElem !== null) {
-        editorElem.removeAttribute('aria-activedescendant');
+      const rootElem = editor.getRootElement();
+      if (rootElem !== null) {
+        rootElem.removeAttribute('aria-activedescendant');
       }
     };
   }, [editor]);

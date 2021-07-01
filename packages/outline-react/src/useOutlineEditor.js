@@ -23,17 +23,17 @@ export default function useOutlineEditor(
     () => createEditor(editorThemeClasses),
     [editorThemeClasses],
   );
-  const editorElementRef = useCallback(
-    (editorElement: null | HTMLElement) => {
-      editor.setEditorElement(editorElement);
+  const rootElementRef = useCallback(
+    (rootElement: null | HTMLElement) => {
+      editor.setRootElement(rootElement);
     },
     [editor],
   );
   useEffect(() => {
-    return editor.addErrorListener(onError);
+    return editor.addListener('error', onError);
   }, [editor, onError]);
   useEffect(() => {
-    return editor.addUpdateListener(() => {
+    return editor.addListener('update', () => {
       const canShowPlaceholder = editor.canShowPlaceholder();
       if (showPlaceholderRef.current !== canShowPlaceholder) {
         showPlaceholderRef.current = canShowPlaceholder;
@@ -42,5 +42,5 @@ export default function useOutlineEditor(
     });
   }, [editor]);
 
-  return [editor, editorElementRef, showPlaceholder];
+  return [editor, rootElementRef, showPlaceholder];
 }

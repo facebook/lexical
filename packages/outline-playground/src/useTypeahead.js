@@ -36,7 +36,7 @@ export default function useTypeahead(editor: OutlineEditor): void {
 
   // Monitor entered text
   useEffect(() => {
-    return editor.addUpdateListener((viewModel) => {
+    return editor.addListener('update', (viewModel) => {
       const text = editor.getTextContent();
       setText(text);
     });
@@ -91,7 +91,7 @@ export default function useTypeahead(editor: OutlineEditor): void {
 
   // Rerender on editor updates
   useEffect(() => {
-    return editor.addUpdateListener((viewModel) => {
+    return editor.addListener('update', (viewModel) => {
       if (viewModel.isDirty()) {
         // We are loading a dirty view model, so we need
         // to check it for typeahead nodes
@@ -111,8 +111,8 @@ export default function useTypeahead(editor: OutlineEditor): void {
 
   // Handle Keyboard TAB or RIGHT ARROW to complete suggestion
   useEffect(() => {
-    const element = editor.getEditorElement();
-    if (element != null) {
+    const root = editor.getRootElement();
+    if (root != null) {
       const handleEvent = (event: KeyboardEvent) => {
         if (event.key === 'Tab' || event.key === 'ArrowRight') {
           editor.update((view: View) => {
@@ -134,9 +134,9 @@ export default function useTypeahead(editor: OutlineEditor): void {
         }
       };
 
-      element.addEventListener('keydown', handleEvent);
+      root.addEventListener('keydown', handleEvent);
       return () => {
-        element.removeEventListener('keydown', handleEvent);
+        root.removeEventListener('keydown', handleEvent);
       };
     }
   }, [editor, getTypeaheadTextNode]);

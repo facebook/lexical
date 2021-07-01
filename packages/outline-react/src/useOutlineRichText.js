@@ -84,9 +84,10 @@ export default function useOutlineRichText(
   }, [isReadOnly, eventHandlerState]);
 
   useEffect(() => {
-    const removeElementListner = editor.addEditorElementListener(
-      (editorElement) => {
-        if (editorElement !== null) {
+    const removeElementListner = editor.addListener(
+      'root',
+      (rootElement: null | HTMLElement) => {
+        if (rootElement !== null) {
           editor.registerNodeType('heading', HeadingNode);
           editor.registerNodeType('list', ListNode);
           editor.registerNodeType('quote', QuoteNode);
@@ -98,17 +99,20 @@ export default function useOutlineRichText(
       },
     );
     const observer = new MutationObserver(onMutation.bind(null, editor));
-    const removeMutationListener = editor.addMutationListener(() => {
-      observer.disconnect();
-
-      return (editorElement: HTMLElement) => {
-        observer.observe(editorElement, {
-          childList: true,
-          subtree: true,
-          characterData: true,
-        });
-      };
-    });
+    const removeMutationListener = editor.addListener(
+      'mutation',
+      (rootElement: null | HTMLElement) => {
+        if (rootElement === null) {
+          observer.disconnect();
+        } else {
+          observer.observe(rootElement, {
+            childList: true,
+            subtree: true,
+            characterData: true,
+          });
+        }
+      },
+    );
 
     return () => {
       removeMutationListener();

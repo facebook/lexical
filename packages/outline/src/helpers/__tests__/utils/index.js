@@ -333,8 +333,8 @@ export function moveNativeSelection(
   };
 }
 
-export function getNodeFromPath(path, editorElement) {
-  let node = editorElement;
+export function getNodeFromPath(path, rootElement) {
+  let node = rootElement;
   for (let i = 0; i < path.length; i++) {
     node = node.childNodes[path[i]];
   }
@@ -364,14 +364,14 @@ export function setNativeSelection(
 }
 
 export function setNativeSelectionWithPaths(
-  editorElement,
+  rootElement,
   anchorPath,
   anchorOffset,
   focusPath,
   focusOffset,
 ) {
-  const anchorNode = getNodeFromPath(anchorPath, editorElement);
-  const focusNode = getNodeFromPath(focusPath, editorElement);
+  const anchorNode = getNodeFromPath(anchorPath, rootElement);
+  const focusNode = getNodeFromPath(focusPath, rootElement);
   setNativeSelection(anchorNode, anchorOffset + 1, focusNode, focusOffset + 1);
 }
 
@@ -545,7 +545,7 @@ function moveNativeSelectionForward() {
 }
 
 export async function applySelectionInputs(inputs, update, editor) {
-  const editorElement = editor.getEditorElement();
+  const rootElement = editor.getRootElement();
   for (let i = 0; i < inputs.length; i++) {
     const input = inputs[i];
     const times = input?.times ?? 1;
@@ -597,7 +597,7 @@ export async function applySelectionInputs(inputs, update, editor) {
           }
           case 'move_native_selection': {
             setNativeSelectionWithPaths(
-              editorElement,
+              rootElement,
               input.anchorPath,
               input.anchorOffset,
               input.focusPath,
@@ -634,7 +634,7 @@ export async function applySelectionInputs(inputs, update, editor) {
             break;
           }
           case 'undo': {
-            editorElement.dispatchEvent(
+            rootElement.dispatchEvent(
               new KeyboardEvent('keydown', {
                 bubbles: true,
                 cancelable: true,
@@ -646,7 +646,7 @@ export async function applySelectionInputs(inputs, update, editor) {
             break;
           }
           case 'redo': {
-            editorElement.dispatchEvent(
+            rootElement.dispatchEvent(
               new KeyboardEvent('keydown', {
                 bubbles: true,
                 cancelable: true,
@@ -659,7 +659,7 @@ export async function applySelectionInputs(inputs, update, editor) {
             break;
           }
           case 'paste_plain': {
-            editorElement.dispatchEvent(
+            rootElement.dispatchEvent(
               Object.assign(
                 new Event('paste', {
                   bubbles: true,
@@ -680,7 +680,7 @@ export async function applySelectionInputs(inputs, update, editor) {
             break;
           }
           case 'paste_outline': {
-            editorElement.dispatchEvent(
+            rootElement.dispatchEvent(
               Object.assign(
                 new Event('paste', {
                   bubbles: true,

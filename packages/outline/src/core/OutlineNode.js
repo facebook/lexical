@@ -83,7 +83,6 @@ function markParentsAsDirty(
 }
 
 export function markNodeAsDirty(node: OutlineNode): void {
-  debugger;
   const latest = node.getLatest();
   const parent = latest.__parent;
   const viewModel = getActiveViewModel();

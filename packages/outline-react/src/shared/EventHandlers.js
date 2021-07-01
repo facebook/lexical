@@ -571,7 +571,6 @@ function updateTextNodeFromDOMContent(
   editor: OutlineEditor,
 ): void {
   const node = getNodeFromDOMNode(view, dom);
-  debugger;
   if (node !== null && !node.isDirty()) {
     const rawTextContent = dom.nodeValue;
     const textContent = rawTextContent.replace(/[\u200B\u2060]/g, '');

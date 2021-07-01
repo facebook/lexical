@@ -37,14 +37,13 @@ function Editor() {
     onError,
   );
 
-  // Setup event handlers for plain text entry.
-  const eventHandlers = useOutlinePlainText(editor);
+  // Setup plain text entry event handlers.
+  useOutlinePlainText(editor);
 
   // Our <div> content editable element with some basic styling.
   return (
     <div>
       <div
-        {...eventHandlers}
         ref={contentEditableRef}
         contentEditable={true}
         role="textbox"

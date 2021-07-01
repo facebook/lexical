@@ -65,7 +65,7 @@ function listenToTextInsertion(editor: OutlineEditor) {
     });
   }
 
-  // We want to listen for when Outline gets an root element
+  // We want to listen for when Outline gets a root element
   editor.addListener('root', (
     rootElement: null | HTMLElement
     prevRootElement, null | HTMLElement,

@@ -248,7 +248,7 @@ class BaseOutlineEditor {
   _editorThemeClasses: EditorThemeClasses;
 
   constructor(viewModel: ViewModel, editorThemeClasses: EditorThemeClasses) {
-    // The editor element associated with this editor
+    // The root element associated with this editor
     this._rootElement = null;
     // The current view model
     this._viewModel = viewModel;

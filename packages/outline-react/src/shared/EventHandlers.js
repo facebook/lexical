@@ -606,11 +606,18 @@ export function onInput(
   editor: OutlineEditor,
   state: EventHandlerState,
 ): void {
-  editor.update((view) => {
-    const domSelection = window.getSelection();
-    const anchorDOM = domSelection.anchorNode;
-    updateTextNodeFromDOMContent(anchorDOM, view, editor);
-  });
+  const inputType = event.inputType;
+  if (
+    inputType === 'insertText' ||
+    inputType === 'insertCompositionText' ||
+    inputType === 'deleteCompositionText'
+  ) {
+    editor.update((view) => {
+      const domSelection = window.getSelection();
+      const anchorDOM = domSelection.anchorNode;
+      updateTextNodeFromDOMContent(anchorDOM, view, editor);
+    });
+  }
 }
 
 function applyTargetRange(selection: Selection, event: InputEvent): void {

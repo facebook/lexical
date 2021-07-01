@@ -303,7 +303,8 @@ export function garbageCollectDetachedNodes(
 
 export function commitPendingUpdates(editor: OutlineEditor): void {
   const pendingViewModel = editor._pendingViewModel;
-  if (editor._editorElement === null || pendingViewModel === null) {
+  const editorElement = editor._editorElement;
+  if (editorElement === null || pendingViewModel === null) {
     return;
   }
   const currentViewModel = editor._viewModel;
@@ -312,13 +313,17 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
   const previousActiveViewModel = activeViewModel;
   activeViewModel = pendingViewModel;
   try {
-    reconcileViewModel(currentViewModel, pendingViewModel, editor);
+    reconcileViewModel(
+      editorElement,
+      currentViewModel,
+      pendingViewModel,
+      editor,
+    );
   } catch (error) {
     // Report errors
     triggerErrorListeners(editor, error);
     // Reset editor and restore incoming view model to the DOM
-    const editorElement = editor._editorElement;
-    if (editorElement !== null && !isAttemptingToRecoverFromReconcilerError) {
+    if (!isAttemptingToRecoverFromReconcilerError) {
       resetEditor(editor);
       editor._keyToDOMMap.set('root', editorElement);
       editor._pendingViewModel = pendingViewModel;
@@ -354,6 +359,26 @@ export function triggerDecoratorListeners(
   const listeners = Array.from(editor._decoratorListeners);
   for (let i = 0; i < listeners.length; i++) {
     listeners[i](decorators);
+  }
+}
+
+export function triggerEndMutationListeners(
+  editor: OutlineEditor,
+): Array<(HTMLElement) => void> {
+  const endMutationListeners = Array.from(editor._mutationListeners);
+  const startMutationListeners = [];
+  for (let i = 0; i < endMutationListeners.length; i++) {
+    startMutationListeners.push(endMutationListeners[i]());
+  }
+  return startMutationListeners;
+}
+
+export function triggerStartMutationListeners(
+  editorElement: HTMLElement,
+  startMutationListeners: Array<(HTMLElement) => void>,
+): void {
+  for (let i = 0; i < startMutationListeners.length; i++) {
+    startMutationListeners[i](editorElement);
   }
 }
 

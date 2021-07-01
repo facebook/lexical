@@ -72,17 +72,14 @@ const editorThemeClasses = {
 };
 
 function ContentEditable({
-  props,
   isReadOnly,
   editorElementRef,
 }: {
-  props: {...},
   isReadOnly?: boolean,
   editorElementRef: (null | HTMLElement) => void,
 }): React$Node {
   return (
     <div
-      {...props}
       className="editor"
       contentEditable={isReadOnly !== true}
       role="textbox"
@@ -105,7 +102,7 @@ export const useRichTextEditor = ({
     editorThemeClasses,
   );
   const mentionsTypeahead = useMentions(editor);
-  const props = useOutlineRichText(editor, isReadOnly);
+  useOutlineRichText(editor, isReadOnly);
   const toolbar = useToolbar(editor);
   const decorators = useOutlineDecorators(editor);
   useEmojis(editor);
@@ -117,7 +114,6 @@ export const useRichTextEditor = ({
     return (
       <>
         <ContentEditable
-          props={props}
           isReadOnly={isReadOnly}
           editorElementRef={editorElementRef}
         />
@@ -131,7 +127,6 @@ export const useRichTextEditor = ({
       </>
     );
   }, [
-    props,
     isReadOnly,
     editorElementRef,
     showPlaceholder,
@@ -161,7 +156,7 @@ export const usePlainTextEditor = ({
     editorThemeClasses,
   );
   const mentionsTypeahead = useMentions(editor);
-  const props = usePlainText(editor, isReadOnly);
+  usePlainText(editor, isReadOnly);
   const decorators = useOutlineDecorators(editor);
   useEmojis(editor);
   useHashtags(editor);
@@ -171,7 +166,6 @@ export const usePlainTextEditor = ({
     () => (
       <>
         <ContentEditable
-          props={props}
           isReadOnly={isReadOnly}
           editorElementRef={editorElementRef}
         />
@@ -183,7 +177,6 @@ export const usePlainTextEditor = ({
       </>
     ),
     [
-      props,
       isReadOnly,
       editorElementRef,
       showPlaceholder,

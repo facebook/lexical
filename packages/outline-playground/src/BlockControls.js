@@ -36,7 +36,7 @@ export default function BlockControls({
   const blockControlsRef = useRef(null);
 
   useEffect(() => {
-    return editor.addUpdateListener((viewModel: ViewModel) => {
+    return editor.addListener('update', (viewModel: ViewModel) => {
       viewModel.read((view) => {
         const selection = view.getSelection();
         if (selection !== null) {
@@ -46,11 +46,11 @@ export default function BlockControls({
           if (blockKey !== selectedBlockKey) {
             const blockDOM = editor.getElementByKey(blockKey);
             if (blockDOM !== null) {
-              const editorElem = editor.getEditorElement();
+              const root = editor.getRootElement();
               let editorTop = editorPosition;
 
-              if (editorElem !== null && editorPosition === 0) {
-                const {top} = editorElem.getBoundingClientRect();
+              if (root !== null && editorPosition === 0) {
+                const {top} = root.getBoundingClientRect();
                 editorTop = top;
                 setEditorPosition(editorPosition);
               }

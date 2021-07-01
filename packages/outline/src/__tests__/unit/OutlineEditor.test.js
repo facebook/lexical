@@ -34,14 +34,14 @@ describe('OutlineEditor tests', () => {
     jest.restoreAllMocks();
   });
 
-  function useOutlineEditor(editorElementRef) {
+  function useOutlineEditor(rootElementRef) {
     const editor = React.useMemo(() => createEditor(), []);
 
     React.useEffect(() => {
-      const editorElement = editorElementRef.current;
+      const rootElement = rootElementRef.current;
 
-      editor.setEditorElement(editorElement);
-    }, [editorElementRef, editor]);
+      editor.setRootElement(rootElement);
+    }, [rootElementRef, editor]);
 
     return editor;
   }
@@ -53,7 +53,7 @@ describe('OutlineEditor tests', () => {
 
     function TestBase() {
       editor = useOutlineEditor(ref);
-      editor.addErrorListener((error) => {
+      editor.addListener('error', (error) => {
         throw error;
       });
       return <div ref={ref} contentEditable={true} />;
@@ -76,7 +76,7 @@ describe('OutlineEditor tests', () => {
       editor = React.useMemo(() => createEditor(), []);
 
       React.useEffect(() => {
-        editor.setEditorElement(element);
+        editor.setRootElement(element);
       }, [element]);
 
       return <div ref={ref} contentEditable={true} />;
@@ -123,11 +123,11 @@ describe('OutlineEditor tests', () => {
       }, [changeElement]);
 
       React.useEffect(() => {
-        editor.addEditorElementListener(listener);
+        editor.addListener('root', listener);
       }, []);
 
       const ref = React.useCallback((node) => {
-        editor.setEditorElement(node);
+        editor.setRootElement(node);
       }, []);
 
       return changeElement ? (
@@ -168,7 +168,7 @@ describe('OutlineEditor tests', () => {
       );
       // Subscribe to changes
       React.useEffect(() => {
-        return editor.addDecoratorListener((nextDecorators) => {
+        return editor.addListener('decorator', (nextDecorators) => {
           setDecorators(nextDecorators);
         });
       }, []);
@@ -195,11 +195,11 @@ describe('OutlineEditor tests', () => {
         editor = React.useMemo(() => createEditor(), []);
 
         React.useEffect(() => {
-          editor.addEditorElementListener(listener);
+          editor.addListener('root', listener);
         }, []);
 
         const ref = React.useCallback((node) => {
-          editor.setEditorElement(node);
+          editor.setRootElement(node);
         }, []);
 
         const decorators = useDecorators();
@@ -253,11 +253,11 @@ describe('OutlineEditor tests', () => {
         useOutlineRichText(editor, false);
 
         React.useEffect(() => {
-          editor.addEditorElementListener(listener);
+          editor.addListener('root', listener);
         }, []);
 
         const ref = React.useCallback((node) => {
-          editor.setEditorElement(node);
+          editor.setRootElement(node);
         }, []);
 
         return <div key={divKey} ref={ref} contentEditable={true} />;

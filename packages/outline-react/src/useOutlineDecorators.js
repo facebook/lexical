@@ -23,7 +23,7 @@ export default function useOutlineDecorators(
   );
   // Subscribe to changes
   useEffect(() => {
-    return editor.addDecoratorListener((nextDecorators) => {
+    return editor.addListener('decorator', (nextDecorators) => {
       flushSync(() => {
         setDecorators(nextDecorators);
       });

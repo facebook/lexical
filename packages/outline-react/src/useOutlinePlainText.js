@@ -77,26 +77,27 @@ export default function useOutlinePlainText(
   }, [isReadOnly, eventHandlerState]);
 
   useEffect(() => {
-    const removeElementListner = editor.addEditorElementListener(
-      (editorElement) => {
-        if (editorElement !== null) {
-          initEditor(editor);
-          editor.registerNodeType('paragraph', ParagraphNode);
+    const removeElementListner = editor.addListener('root', (rootElement) => {
+      if (rootElement !== null) {
+        initEditor(editor);
+        editor.registerNodeType('paragraph', ParagraphNode);
+      }
+    });
+    const observer = new MutationObserver(onMutation.bind(null, editor));
+    const removeMutationListener = editor.addListener(
+      'mutation',
+      (rootElement: null | HTMLElement) => {
+        if (rootElement === null) {
+          observer.disconnect();
+        } else {
+          observer.observe(rootElement, {
+            childList: true,
+            subtree: true,
+            characterData: true,
+          });
         }
       },
     );
-    const observer = new MutationObserver(onMutation.bind(null, editor));
-    const removeMutationListener = editor.addMutationListener(() => {
-      observer.disconnect();
-
-      return (editorElement: HTMLElement) => {
-        observer.observe(editorElement, {
-          childList: true,
-          subtree: true,
-          characterData: true,
-        });
-      };
-    });
 
     return () => {
       removeMutationListener();

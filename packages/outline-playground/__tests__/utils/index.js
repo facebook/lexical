@@ -125,13 +125,13 @@ export async function assertHTML(page, expectedHtml) {
 export async function assertSelection(page, expected) {
   // Assert the selection of the editor matches the snapshot
   const selection = await page.evaluate(() => {
-    const editorElement = document.querySelector('div.editor');
+    const rootElement = document.querySelector('div.editor');
 
     const getPathFromNode = (node) => {
       const path = [];
       while (node !== null) {
         const parent = node.parentNode;
-        if (parent === null || node === editorElement) {
+        if (parent === null || node === rootElement) {
           break;
         }
         path.push(Array.from(parent.childNodes).indexOf(node));

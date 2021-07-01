@@ -73,17 +73,17 @@ const editorThemeClasses = {
 
 function ContentEditable({
   isReadOnly,
-  editorElementRef,
+  rootElementRef,
 }: {
   isReadOnly?: boolean,
-  editorElementRef: (null | HTMLElement) => void,
+  rootElementRef: (null | HTMLElement) => void,
 }): React$Node {
   return (
     <div
       className="editor"
       contentEditable={isReadOnly !== true}
       role="textbox"
-      ref={editorElementRef}
+      ref={rootElementRef}
       spellCheck={true}
       style={editorStyle}
       tabIndex={0}
@@ -97,7 +97,7 @@ export const useRichTextEditor = ({
   isCharLimit,
   isAutocomplete,
 }: Props): [OutlineEditor, React.MixedElement] => {
-  const [editor, editorElementRef, showPlaceholder] = useOutlineEditor(
+  const [editor, rootElementRef, showPlaceholder] = useOutlineEditor(
     onError,
     editorThemeClasses,
   );
@@ -115,7 +115,7 @@ export const useRichTextEditor = ({
       <>
         <ContentEditable
           isReadOnly={isReadOnly}
-          editorElementRef={editorElementRef}
+          rootElementRef={rootElementRef}
         />
         {showPlaceholder && <Placeholder>Enter some rich text...</Placeholder>}
         {decorators}
@@ -128,7 +128,7 @@ export const useRichTextEditor = ({
     );
   }, [
     isReadOnly,
-    editorElementRef,
+    rootElementRef,
     showPlaceholder,
     decorators,
     mentionsTypeahead,
@@ -151,7 +151,7 @@ export const usePlainTextEditor = ({
   isCharLimit,
   isAutocomplete,
 }: Props): [OutlineEditor, React.MixedElement] => {
-  const [editor, editorElementRef, showPlaceholder] = useOutlineEditor(
+  const [editor, rootElementRef, showPlaceholder] = useOutlineEditor(
     onError,
     editorThemeClasses,
   );
@@ -167,7 +167,7 @@ export const usePlainTextEditor = ({
       <>
         <ContentEditable
           isReadOnly={isReadOnly}
-          editorElementRef={editorElementRef}
+          rootElementRef={rootElementRef}
         />
         {showPlaceholder && <Placeholder>Enter some plain text...</Placeholder>}
         {decorators}
@@ -178,7 +178,7 @@ export const usePlainTextEditor = ({
     ),
     [
       isReadOnly,
-      editorElementRef,
+      rootElementRef,
       showPlaceholder,
       decorators,
       mentionsTypeahead,

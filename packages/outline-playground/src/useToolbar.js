@@ -147,13 +147,13 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
       if (toolbar === null) {
         return;
       }
-      const editorElement = editor.getEditorElement();
+      const rootElement = editor.getRootElement();
 
       if (
         selection !== null &&
         !nativeSelection.isCollapsed &&
-        editorElement !== null &&
-        editorElement.contains(nativeSelection.anchorNode)
+        rootElement !== null &&
+        rootElement.contains(nativeSelection.anchorNode)
       ) {
         const domRange = nativeSelection.getRangeAt(0);
         const rect = domRange.getBoundingClientRect();
@@ -232,7 +232,10 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
       document.addEventListener('selectionchange', selectionChangeHandler);
       document.addEventListener('mousedown', mouseDownHandler);
       document.addEventListener('mouseup', mouseUpHandler);
-      const removeUpdateListener = editor.addUpdateListener(checkForChanges);
+      const removeUpdateListener = editor.addListener(
+        'update',
+        checkForChanges,
+      );
       return () => {
         document.removeEventListener('mousedown', mouseDownHandler);
         document.removeEventListener('mouseup', mouseUpHandler);

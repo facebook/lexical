@@ -25,6 +25,7 @@ import {
   errorOnProcessingTextNodeTransforms,
   applySelectionTransforms,
   triggerUpdateListeners,
+  triggerEndMutationListeners,
 } from './OutlineView';
 import {createSelection} from './OutlineSelection';
 import {
@@ -80,6 +81,8 @@ export type TextNodeTransform = (node: TextNode, view: View) => void;
 
 export type EditorElementListener = (element: null | HTMLElement) => void;
 
+export type MutationListener = () => (editorElement: HTMLElement) => void;
+
 export function resetEditor(editor: OutlineEditor): void {
   const root = createRoot();
   const emptyViewModel = new ViewModel({root});
@@ -104,6 +107,7 @@ export function resetEditor(editor: OutlineEditor): void {
   keyToDOMMap.clear();
   editor._textContent = '';
   triggerUpdateListeners(editor);
+  triggerEndMutationListeners(editor);
 }
 
 export function createEditor(
@@ -220,6 +224,7 @@ export class OutlineEditor {
   _errorListeners: Set<ErrorListener>;
   _updateListeners: Set<UpdateListener>;
   _elementListeners: Set<EditorElementListener>;
+  _mutationListeners: Set<MutationListener>;
   _decoratorListeners: Set<DecoratorListener>;
   _textNodeTransforms: Set<TextNodeTransform>;
   _nodeTypes: Map<string, Class<OutlineNode>>;
@@ -248,6 +253,8 @@ export class OutlineEditor {
     this._decoratorListeners = new Set();
     // Editor element listeners
     this._elementListeners = new Set();
+    // Mutation listeners
+    this._mutationListeners = new Set();
     // Class name mappings for nodes/placeholders
     this._editorThemeClasses = editorThemeClasses;
     // Handling of text node transforms
@@ -271,13 +278,13 @@ export class OutlineEditor {
   setCompositionKey(nodeKey: null | NodeKey): void {
     if (nodeKey === null) {
       this._compositionKey = null;
-      updateEditor(this, emptyFunction, true);
+      updateEditor(this, emptyFunction, false);
       const pendingViewModel = this._pendingViewModel;
       if (pendingViewModel !== null) {
         pendingViewModel.markDirty();
       }
     } else {
-      updateEditor(this, emptyFunction, true);
+      updateEditor(this, emptyFunction, false);
     }
     this._deferred.push(() => {
       this._compositionKey = nodeKey;
@@ -296,6 +303,12 @@ export class OutlineEditor {
     this._errorListeners.add(listener);
     return () => {
       this._errorListeners.delete(listener);
+    };
+  }
+  addMutationListener(listener: MutationListener): () => void {
+    this._mutationListeners.add(listener);
+    return () => {
+      this._mutationListeners.delete(listener);
     };
   }
   addEditorElementListener(listener: EditorElementListener): () => void {

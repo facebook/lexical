@@ -8,7 +8,11 @@
  */
 
 import type {NodeKey, NodeMapType} from './OutlineNode';
-import type {ViewModel} from './OutlineView';
+import {
+  triggerEndMutationListeners,
+  triggerStartMutationListeners,
+  ViewModel,
+} from './OutlineView';
 import type {OutlineEditor, EditorThemeClasses} from './OutlineEditor';
 import type {Selection} from './OutlineSelection';
 import type {Node as ReactNode} from 'react';
@@ -491,6 +495,7 @@ function reconcileRoot(
 }
 
 export function reconcileViewModel(
+  editorElement: HTMLElement,
   prevViewModel: ViewModel,
   nextViewModel: ViewModel,
   editor: OutlineEditor,
@@ -505,13 +510,18 @@ export function reconcileViewModel(
 
   if (needsUpdate) {
     const {anchorOffset, focusOffset} = window.getSelection();
-    reconcileRoot(
-      prevViewModel,
-      nextViewModel,
-      editor,
-      dirtySubTrees,
-      dirtyNodes,
-    );
+    const startMutationListeners = triggerEndMutationListeners(editor);
+    try {
+      reconcileRoot(
+        prevViewModel,
+        nextViewModel,
+        editor,
+        dirtySubTrees,
+        dirtyNodes,
+      );
+    } finally {
+      triggerStartMutationListeners(editorElement, startMutationListeners);
+    }
     const selectionAfter = window.getSelection();
     if (
       anchorOffset !== selectionAfter.anchorOffset ||

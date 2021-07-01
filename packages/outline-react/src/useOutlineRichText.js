@@ -29,12 +29,12 @@ import {
   onCompositionEnd,
   onCut,
   onCopy,
-  onNativeBeforeInputForRichText,
+  onBeforeInputForRichText,
   onPasteForRichText,
   onDropPolyfill,
   onDragStartPolyfill,
-  onPolyfilledBeforeInput,
-  onNativeInput,
+  onInput,
+  onMutation,
 } from './shared/EventHandlers';
 import useOutlineDragonSupport from './shared/useOutlineDragonSupport';
 import useOutlineHistory from './shared/useOutlineHistory';
@@ -50,8 +50,6 @@ function initEditor(editor: OutlineEditor): void {
   });
 }
 
-const emptyObject: {} = {};
-
 const events: InputEvents = [
   ['selectionchange', onSelectionChange],
   ['keydown', onKeyDownForRichText],
@@ -61,26 +59,22 @@ const events: InputEvents = [
   ['copy', onCopy],
   ['dragstart', onDragStartPolyfill],
   ['paste', onPasteForRichText],
+  ['input', onInput],
+  ['beforeinput', onBeforeInputForRichText],
 ];
 
-if (CAN_USE_BEFORE_INPUT) {
-  events.push(
-    ['beforeinput', onNativeBeforeInputForRichText],
-    ['input', onNativeInput],
-  );
-} else {
+if (!CAN_USE_BEFORE_INPUT) {
   events.push(['drop', onDropPolyfill]);
 }
 
 export default function useOutlineRichText(
   editor: OutlineEditor,
   isReadOnly?: boolean = false,
-): {} | {onBeforeInput: (SyntheticInputEvent<EventTarget>) => void} {
+): void {
   const eventHandlerState: EventHandlerState = useMemo(
     () => ({
       isReadOnly: false,
       richText: true,
-      compositionSelection: null,
     }),
     [],
   );
@@ -90,28 +84,39 @@ export default function useOutlineRichText(
   }, [isReadOnly, eventHandlerState]);
 
   useEffect(() => {
-    return editor.addEditorElementListener((editorElement) => {
-      if (editorElement !== null) {
-        editor.registerNodeType('heading', HeadingNode);
-        editor.registerNodeType('list', ListNode);
-        editor.registerNodeType('quote', QuoteNode);
-        editor.registerNodeType('code', CodeNode);
-        editor.registerNodeType('paragraph', ParagraphNode);
-        editor.registerNodeType('listitem', ListItemNode);
-        initEditor(editor);
-      }
+    const removeElementListner = editor.addEditorElementListener(
+      (editorElement) => {
+        if (editorElement !== null) {
+          editor.registerNodeType('heading', HeadingNode);
+          editor.registerNodeType('list', ListNode);
+          editor.registerNodeType('quote', QuoteNode);
+          editor.registerNodeType('code', CodeNode);
+          editor.registerNodeType('paragraph', ParagraphNode);
+          editor.registerNodeType('listitem', ListItemNode);
+          initEditor(editor);
+        }
+      },
+    );
+    const observer = new MutationObserver(onMutation.bind(null, editor));
+    const removeMutationListener = editor.addMutationListener(() => {
+      observer.disconnect();
+
+      return (editorElement: HTMLElement) => {
+        observer.observe(editorElement, {
+          childList: true,
+          subtree: true,
+          characterData: true,
+        });
+      };
     });
+
+    return () => {
+      removeMutationListener();
+      removeElementListner();
+    };
   }, [editor]);
 
   useOutlineEditorEvents(events, editor, eventHandlerState);
   useOutlineDragonSupport(editor);
   useOutlineHistory(editor);
-
-  return CAN_USE_BEFORE_INPUT
-    ? emptyObject
-    : {
-        onBeforeInput: (event: SyntheticInputEvent<EventTarget>) => {
-          onPolyfilledBeforeInput(event, editor, eventHandlerState);
-        },
-      };
 }

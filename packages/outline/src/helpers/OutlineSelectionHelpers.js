@@ -685,9 +685,7 @@ export function insertNodes(
     // append it after the last node we're inserting
     let danglingText;
     [target, danglingText] = anchorNode.splitText(anchorOffset);
-    if (danglingText != null) {
-      siblings.push(danglingText);
-    }
+    siblings.push(danglingText);
   }
   const startingNode = target;
 

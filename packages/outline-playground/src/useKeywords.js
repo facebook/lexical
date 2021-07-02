@@ -54,9 +54,9 @@ class KeywordNode extends TextNode {
   updateDOM(): boolean {
     return false;
   }
-  decorate = (key: string) => {
+  decorate(key: string) {
     return <Keyword key={key}>{this.__text}</Keyword>;
-  };
+  }
 }
 
 function isKeywordNode(node: TextNode): boolean {

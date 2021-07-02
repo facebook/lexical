@@ -189,7 +189,6 @@ export class OutlineNode {
   __flags: number;
   __key: NodeKey;
   __parent: null | NodeKey;
-  decorate: void | ((key: string) => null | ReactNode);
 
   clone(): OutlineNode {
     // Flow doesn't support abstract classes unfortunately, so we can't _force_
@@ -535,6 +534,9 @@ export class OutlineNode {
     editorThemeClasses: EditorThemeClasses,
   ): boolean {
     invariant(false, 'updateDOM: base method not extended');
+  }
+  decorate(key: string, editor: OutlineEditor): null | ReactNode {
+    return null;
   }
 
   // Setters and mutators

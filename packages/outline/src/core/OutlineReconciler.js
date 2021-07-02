@@ -16,11 +16,11 @@ import type {Node as ReactNode} from 'react';
 import {isTextNode, isBlockNode} from '.';
 import {
   isSelectionWithinEditor,
-  getDOMTextNodeFromElement,
   isImmutableOrInertOrSegmented,
 } from './OutlineUtils';
 import {IS_INERT, IS_RTL, IS_LTR, IS_DIRTY_DECORATOR} from './OutlineConstants';
 import invariant from 'shared/invariant';
+import {OutlineNode} from './OutlineNode';
 
 let subTreeTextContent = '';
 let editorTextContent = '';
@@ -33,6 +33,8 @@ let activeNextNodeMap: NodeMapType;
 let activeViewModelIsDirty: boolean = false;
 
 const decoratorKeyMap: Map<NodeKey, string> = new Map();
+// $FlowFixMe: Flow complains about being unbound
+const baseDecorateMethod = OutlineNode.prototype.decorate;
 
 function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
   const node = activePrevNodeMap[key];
@@ -76,12 +78,12 @@ function createNode(
   const dom = node.createDOM(activeEditorThemeClasses);
   const flags = node.__flags;
   const isInert = flags & IS_INERT;
-  const decorate = node.decorate;
   storeDOMWithKey(key, dom, activeEditor);
 
-  if (typeof decorate === 'function') {
+  // $FlowFixMe: Flow complains about being unbound
+  if (node.decorate !== baseDecorateMethod) {
     const decoratorKey = getDecoratorKey(key, false);
-    const decorator = decorate.call(node, decoratorKey);
+    const decorator = node.decorate(decoratorKey, activeEditor);
     if (decorator !== null) {
       reconcileDecorator(key, decorator);
     }
@@ -183,12 +185,7 @@ function reconcileChildren(
     }
   } else if (nextChildrenLength === 0) {
     if (prevChildrenLength !== 0) {
-      destroyChildren(
-        prevChildren,
-        0,
-        prevChildrenLength - 1,
-        null,
-      );
+      destroyChildren(prevChildren, 0, prevChildrenLength - 1, null);
       // Fast path for removing DOM nodes
       dom.textContent = '';
     }
@@ -243,15 +240,15 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
     return;
   }
   const nextFlags = nextNode.__flags;
-  const decorate = nextNode.decorate;
-  if (typeof decorate === 'function') {
+  // $FlowFixMe: Flow complains about being unbound
+  if (nextNode.decorate !== baseDecorateMethod) {
     const hasDirtyDecorator = (nextFlags & IS_DIRTY_DECORATOR) !== 0;
     const decoratorKey = getDecoratorKey(key, hasDirtyDecorator);
     if (hasDirtyDecorator) {
       // Remove the dirty decorator flag
       nextNode.__flags ^= IS_DIRTY_DECORATOR;
     }
-    const decorator = decorate.call(nextNode, decoratorKey);
+    const decorator = nextNode.decorate(decoratorKey, activeEditor);
     if (decorator !== null) {
       reconcileDecorator(key, decorator);
     }
@@ -560,6 +557,21 @@ function reconcileSelection(
   const focusNode = nextSelection.getFocusNode();
   const anchorDOM = getElementByKeyOrThrow(editor, anchorKey);
   const focusDOM = getElementByKeyOrThrow(editor, focusKey);
+
+  // Get the underlying DOM text nodes from the representative
+  // Outline text nodes (we use elements for text nodes).
+  const anchorDOMTarget = anchorDOM.firstChild;
+  const focusDOMTarget = focusDOM.firstChild;
+  // If we can't get an underlying text node for selection, then
+  // we should avoid setting selection to something incorrect.
+  if (
+    focusDOMTarget == null ||
+    anchorDOMTarget == null ||
+    focusDOMTarget.nodeType !== 3 ||
+    focusDOMTarget.nodeType !== 3
+  ) {
+    return;
+  }
   const nextSelectionAnchorOffset = nextSelection.anchorOffset;
   const nextSelectionFocusOffset = nextSelection.focusOffset;
   const nextAnchorOffset = isImmutableOrInertOrSegmented(anchorNode)
@@ -568,11 +580,6 @@ function reconcileSelection(
   const nextFocusOffset = isImmutableOrInertOrSegmented(focusNode)
     ? nextSelectionFocusOffset
     : nextSelectionFocusOffset + 1;
-
-  // Get the underlying DOM text nodes from the representative
-  // Outline text nodes (we use elements for text nodes).
-  const anchorDOMTarget = getDOMTextNodeFromElement(anchorDOM);
-  const focusDOMTarget = getDOMTextNodeFromElement(focusDOM);
 
   // Diff against the native DOM selection to ensure we don't do
   // an unnecessary selection update.

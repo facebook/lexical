@@ -498,7 +498,13 @@ export function reconcileViewModel(
   let reconciliationCausedLostSelection = false;
 
   if (needsUpdate) {
-    const {anchorOffset, focusOffset} = window.getSelection();
+    let anchorOffset;
+    let focusOffset;
+    const windowSelection = window.getSelection();
+    if (windowSelection != null) {
+      anchorOffset = windowSelection.anchorOffset;
+      focusOffset = windowSelection.focusOffset;
+    }
     triggerListeners('mutation', editor, null);
     try {
       reconcileRoot(
@@ -513,6 +519,7 @@ export function reconcileViewModel(
     }
     const selectionAfter = window.getSelection();
     if (
+      selectionAfter == null ||
       anchorOffset !== selectionAfter.anchorOffset ||
       focusOffset !== selectionAfter.focusOffset
     ) {

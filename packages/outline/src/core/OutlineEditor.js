@@ -98,20 +98,12 @@ export type ListenerType =
 export function resetEditor(editor: OutlineEditor): void {
   const root = createRoot();
   const emptyViewModel = new ViewModel({root});
-  const prevViewModel = editor._viewModel;
-  const rootChildrenKeys = prevViewModel._nodeMap.root.__children;
   const keyToDOMMap = editor._keyToDOMMap;
   const rootElement = editor._rootElement;
 
   if (rootElement !== null) {
-    // Remove all existing top level DOM elements from editor
-    for (let i = 0; i < rootChildrenKeys.length; i++) {
-      const rootChildKey = rootChildrenKeys[i];
-      const element = keyToDOMMap.get(rootChildKey);
-      if (element !== undefined && element.parentNode === rootElement) {
-        rootElement.removeChild(element);
-      }
-    }
+    // Clear all DOM content from the root element.
+    rootElement.textContent = '';
   }
   editor._viewModel = emptyViewModel;
   editor._pendingViewModel = null;

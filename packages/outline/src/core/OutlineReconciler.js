@@ -161,7 +161,6 @@ function reconcileChildren(
   prevChildren: Array<NodeKey>,
   nextChildren: Array<NodeKey>,
   dom: HTMLElement,
-  isRoot: boolean,
 ): void {
   const previousSubTreeTextContent = subTreeTextContent;
   subTreeTextContent = '';
@@ -188,12 +187,10 @@ function reconcileChildren(
         prevChildren,
         0,
         prevChildrenLength - 1,
-        isRoot ? dom : null,
+        null,
       );
-      if (!isRoot) {
-        // Fast path for removing DOM nodes
-        dom.textContent = '';
-      }
+      // Fast path for removing DOM nodes
+      dom.textContent = '';
     }
   } else {
     reconcileNodeChildren(
@@ -284,8 +281,7 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
     const childrenAreDifferent = prevChildren !== nextChildren;
 
     if (childrenAreDifferent || isDirty) {
-      const isRoot = key === 'root';
-      reconcileChildren(prevChildren, nextChildren, dom, isRoot);
+      reconcileChildren(prevChildren, nextChildren, dom);
     }
   }
 }

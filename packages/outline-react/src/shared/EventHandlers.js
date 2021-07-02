@@ -566,7 +566,7 @@ export function handleBlockTextInputOnNode(
 }
 
 function updateTextNodeFromDOMContent(
-  dom: Node,
+  dom: Text,
   view: View,
   editor: OutlineEditor,
 ): void {
@@ -1021,7 +1021,8 @@ export function onMutation(
       if (type === 'characterData') {
         const target = mutation.target;
         if (target.nodeType === 3) {
-          updateTextNodeFromDOMContent(target, view, editor);
+          // $FlowFixMe: we refine the type by checking nodeType above
+          updateTextNodeFromDOMContent(((target: any): Text), view, editor);
         }
       } else if (type === 'childList') {
         // This occurs when the DOM tree has been mutated in terms of

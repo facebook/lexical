@@ -77,5 +77,88 @@ describe('Hashtags', () => {
         focusOffset: 0,
       });
     });
+
+    it(`Can create a decorator and handle text input correctly`, async () => {
+      const {page} = e2e;
+
+      await page.focus('div.editor');
+      await page.keyboard.type('congrats');
+
+      await page.waitForSelector('.keyword');
+
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span>​</span><span style="cursor: default;"><span class="keyword">congrats</span></span><span>​</span></p>',
+      );
+      await assertSelection(page, {
+        anchorPath: [0, 2, 0],
+        anchorOffset: 0,
+        focusPath: [0, 2, 0],
+        focusOffset: 0,
+      });
+
+      await page.keyboard.press('ArrowLeft');
+      await page.keyboard.press('ArrowLeft');
+      await assertSelection(page, {
+        anchorPath: [0, 1, 0, 0],
+        anchorOffset: 5,
+        focusPath: [0, 1, 0, 0],
+        focusOffset: 5,
+      });
+
+      // Input should be blocked
+      await page.keyboard.type('a');
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span>​</span><span style="cursor: default;"><span class="keyword">congrats</span></span><span>​</span></p>',
+      );
+      await assertSelection(page, {
+        anchorPath: [0, 1, 0, 0],
+        anchorOffset: 5,
+        focusPath: [0, 1, 0, 0],
+        focusOffset: 5,
+      });
+
+      // Composition input should be blocked
+      await page.keyboard.type('è');
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span>​</span><span style="cursor: default;"><span class="keyword">congrats</span></span><span>​</span></p>',
+      );
+      await assertSelection(page, {
+        anchorPath: [0, 1, 0, 0],
+        anchorOffset: 5,
+        focusPath: [0, 1, 0, 0],
+        focusOffset: 5,
+      });
+
+      // Diacritics input should be blocked
+      await page.keyboard.type('هَ');
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span>​</span><span style="cursor: default;"><span class="keyword">congrats</span></span><span>​</span></p>',
+      );
+      await assertSelection(page, {
+        anchorPath: [0, 1, 0, 0],
+        anchorOffset: 5,
+        focusPath: [0, 1, 0, 0],
+        focusOffset: 5,
+      });
+
+      // Text should get inserted after
+      await page.keyboard.press('ArrowRight');
+      await page.keyboard.press('ArrowRight');
+      await page.keyboard.type('a');
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span>​</span><span style="cursor: default;"><span class="keyword">congrats</span></span><span>⁠a</span></p>',
+      );
+      await assertSelection(page, {
+        anchorPath: [0, 2, 0],
+        anchorOffset: 1,
+        focusPath: [0, 2, 0],
+        focusOffset: 1,
+      });
+    });
   });
 });

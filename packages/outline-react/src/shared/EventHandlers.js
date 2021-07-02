@@ -1051,17 +1051,26 @@ export function onMutation(
           const removedNode = getNodeFromDOMNode(view, removedDOM);
           if (removedNode !== null) {
             const parentDOM = getDOMFromNode(editor, removedNode.getParent());
-            // We should be re-adding this back to the DOM
-            if (parentDOM !== null) {
-              // See if we have a sibling to insert before
-              const siblingDOM = getDOMFromNode(
-                editor,
-                removedNode.getNextSibling(),
-              );
-              if (siblingDOM === null) {
-                parentDOM.appendChild(removedDOM);
-              } else {
-                parentDOM.insertBefore(removedDOM, siblingDOM);
+            // We should be re-adding this back to the DOM (we may have already
+            // done it though, so we need to confirm).
+            if (parentDOM !== null && removedDOM.parentNode !== parentDOM) {
+              // Here's an interesting problem. We used to just find the sibling
+              // DOM and do parentDOM.insertBefore(removedDOM, siblingDOM);
+              // However, what if a DOM mutation has forced the sibling to also be
+              // disconnected? So instead, we can append this node, then proceed to
+              // append all siblings.
+
+              // First append this DOM.
+              parentDOM.appendChild(removedDOM);
+              // Append all siblings DOMs.
+              let sibling = removedNode.getNextSibling();
+
+              while (sibling !== null) {
+                const siblingDOM = getDOMFromNode(editor, sibling);
+                if (siblingDOM !== null) {
+                  parentDOM.appendChild(siblingDOM);
+                }
+                sibling = sibling.getNextSibling();
               }
             }
           }

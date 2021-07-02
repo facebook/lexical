@@ -16,7 +16,6 @@ import {
   isArray,
   isSelectionWithinEditor,
   getTextDirection,
-  getDOMTextNodeFromElement,
   isImmutableOrInertOrSegmented,
 } from '../../core/OutlineUtils';
 
@@ -152,17 +151,6 @@ describe('OutlineUtils tests', () => {
       expect(getTextDirection(`\uFDFD`)).toBe('rtl');
       expect(getTextDirection(`\uFE70`)).toBe('rtl');
       expect(getTextDirection(`\uFEFC`)).toBe('rtl');
-    });
-
-    test('getDOMTextNodeFromElement()', () => {
-      const div = document.createElement('div');
-      div.innerHTML = 'foo';
-      const textNode = getDOMTextNodeFromElement(div);
-      expect(textNode).toBeInstanceOf(Node);
-      expect(textNode.nodeType).toBe(3);
-      expect(textNode.textContent).toBe('foo');
-      const emptyDiv = document.createElement('div');
-      expect(() => getDOMTextNodeFromElement(emptyDiv)).toThrow();
     });
 
     test('isImmutableOrInertOrSegmented()', async () => {

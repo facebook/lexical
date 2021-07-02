@@ -1037,16 +1037,13 @@ export function onMutation(
           // So lets remove this node if it's not managed by Outline
           if (addedNode === null) {
             const parent = addedDOM.parentNode;
-            console.log('remove', addedDOM);
             if (parent != null) {
               parent.removeChild(addedDOM);
             }
-          } else {
-            console.log('remove', null);
           }
         }
         const removedNodes = mutation.removedNodes;
-        
+
         for (let s = 0; s < removedNodes.length; s++) {
           const removedDOM = removedNodes[s];
           // If a node was removed that we control, we should re-attach it!
@@ -1060,7 +1057,6 @@ export function onMutation(
                 editor,
                 removedNode.getNextSibling(),
               );
-              console.log('add', removedNode);
               if (siblingDOM === null) {
                 parentDOM.appendChild(removedDOM);
               } else {

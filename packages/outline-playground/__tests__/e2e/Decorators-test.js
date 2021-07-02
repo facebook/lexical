@@ -7,7 +7,13 @@
  */
 
 import {moveToLineEnd} from '../keyboardShortcuts';
-import {initializeE2E, assertHTML, assertSelection, repeat} from '../utils';
+import {
+  initializeE2E,
+  assertHTML,
+  assertSelection,
+  repeat,
+  E2E_BROWSER,
+} from '../utils';
 
 describe('Hashtags', () => {
   initializeE2E((e2e) => {
@@ -125,25 +131,55 @@ describe('Hashtags', () => {
         page,
         '<p class="editor-paragraph" dir="ltr"><span>​</span><span style="cursor: default;"><span class="keyword">congrats</span></span><span>​</span></p>',
       );
-      await assertSelection(page, {
-        anchorPath: [0, 1, 0, 0],
-        anchorOffset: 5,
-        focusPath: [0, 1, 0, 0],
-        focusOffset: 5,
-      });
-
+      if (E2E_BROWSER === 'firefox') {
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 0,
+          focusPath: [0, 0, 0],
+          focusOffset: 0,
+        });
+        // Return to the same location
+        await page.keyboard.press('Backspace');
+        await moveToLineEnd(page);
+        await page.keyboard.press('ArrowLeft');
+      } else {
+        await assertSelection(page, {
+          anchorPath: [0, 1, 0, 0],
+          anchorOffset: 5,
+          focusPath: [0, 1, 0, 0],
+          focusOffset: 5,
+        });
+      }
       // Diacritics input should be blocked
       await page.keyboard.type('هَ');
-      await assertHTML(
-        page,
-        '<p class="editor-paragraph" dir="ltr"><span>​</span><span style="cursor: default;"><span class="keyword">congrats</span></span><span>​</span></p>',
-      );
-      await assertSelection(page, {
-        anchorPath: [0, 1, 0, 0],
-        anchorOffset: 5,
-        focusPath: [0, 1, 0, 0],
-        focusOffset: 5,
-      });
+
+      if (E2E_BROWSER === 'firefox') {
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 1,
+          focusPath: [0, 0, 0],
+          focusOffset: 1,
+        });
+        // Return to the same location
+        await page.keyboard.press('Backspace');
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph" dir="ltr"><span>​</span><span style="cursor: default;"><span class="keyword">congrats</span></span><span>​</span></p>',
+        );
+        await moveToLineEnd(page);
+        await page.keyboard.press('ArrowLeft');
+      } else {
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph" dir="ltr"><span>​</span><span style="cursor: default;"><span class="keyword">congrats</span></span><span>​</span></p>',
+        );
+        await assertSelection(page, {
+          anchorPath: [0, 1, 0, 0],
+          anchorOffset: 5,
+          focusPath: [0, 1, 0, 0],
+          focusOffset: 5,
+        });
+      }
 
       // Text should get inserted after
       await page.keyboard.press('ArrowRight');

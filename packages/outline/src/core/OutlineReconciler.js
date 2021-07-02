@@ -501,7 +501,7 @@ export function reconcileViewModel(
     let anchorOffset;
     let focusOffset;
     const windowSelection = window.getSelection();
-    if (windowSelection != null) {
+    if (windowSelection !== null) {
       anchorOffset = windowSelection.anchorOffset;
       focusOffset = windowSelection.focusOffset;
     }
@@ -519,7 +519,7 @@ export function reconcileViewModel(
     }
     const selectionAfter = window.getSelection();
     if (
-      selectionAfter == null ||
+      selectionAfter === null ||
       anchorOffset !== selectionAfter.anchorOffset ||
       focusOffset !== selectionAfter.focusOffset
     ) {
@@ -559,13 +559,23 @@ function reconcileSelection(
   editor: OutlineEditor,
 ): void {
   const domSelection = window.getSelection();
-  const anchorDOMNode = domSelection.anchorNode;
-  const focusDOMNode = domSelection.focusNode;
-  const anchorOffset = domSelection.anchorOffset;
-  const focusOffset = domSelection.focusOffset;
+  let anchorDOMNode;
+  let focusDOMNode;
+  let anchorOffset;
+  let focusOffset;
+
+  if (domSelection !== null) {
+    anchorDOMNode = domSelection.anchorNode;
+    focusDOMNode = domSelection.focusNode;
+    anchorOffset = domSelection.anchorOffset;
+    focusOffset = domSelection.focusOffset;
+  }
 
   if (nextSelection === null) {
-    if (isSelectionWithinEditor(editor, anchorDOMNode, focusDOMNode)) {
+    if (
+      domSelection === null ||
+      isSelectionWithinEditor(editor, anchorDOMNode, focusDOMNode)
+    ) {
       domSelection.removeAllRanges();
     }
     return;

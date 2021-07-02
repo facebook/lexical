@@ -50,8 +50,8 @@ export const scheduleMicroTask: (fn: () => void) => void =
 
 export function isSelectionWithinEditor(
   editor: OutlineEditor,
-  anchorDOM: null | Node,
-  focusDOM: null | Node,
+  anchorDOM: ?Node,
+  focusDOM: ?Node,
 ): boolean {
   const rootElement = editor.getRootElement();
   try {

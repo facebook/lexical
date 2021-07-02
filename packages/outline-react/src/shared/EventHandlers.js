@@ -1019,17 +1019,19 @@ export function onMutation(
       const type = mutation.type;
 
       if (type === 'characterData') {
-        updateTextNodeFromDOMContent(mutation.target, view, editor);
+        const target = mutation.target;
+        if (target.nodeType === 3) {
+          updateTextNodeFromDOMContent(target, view, editor);
+        }
       } else if (type === 'childList') {
         // This occurs when the DOM tree has been mutated in terms of
         // structure. This is actually not good. Outline should control
         // the contenteditable. This can typically happen because of
         // third party extensions and tools that directly mutate the DOM.
-        // Given this code-path shouldn't happen often so we can use
-        // slightly slower code but code that takes up less bytes.
-        const {addedNodes, removedNodes} = mutation;
+        const addedNodes = mutation.addedNodes;
 
-        addedNodes.forEach((addedDOM) => {
+        for (let s = 0; s < addedNodes.length; s++) {
+          const addedDOM = addedNodes[s];
           const addedNode = getNodeFromDOMNode(view, addedDOM);
           // For now we don't want nodes that weren't added by Outline.
           // So lets remove this node if it's not managed by Outline
@@ -1042,8 +1044,11 @@ export function onMutation(
           } else {
             console.log('remove', null);
           }
-        });
-        removedNodes.forEach((removedDOM) => {
+        }
+        const removedNodes = mutation.removedNodes;
+        
+        for (let s = 0; s < removedNodes.length; s++) {
+          const removedDOM = removedNodes[s];
           // If a node was removed that we control, we should re-attach it!
           const removedNode = getNodeFromDOMNode(view, removedDOM);
           if (removedNode !== null) {
@@ -1063,7 +1068,7 @@ export function onMutation(
               }
             }
           }
-        });
+        }
         if (selection === null) {
           // Looks like a text node was added and selection was moved to it.
           // We can attempt to restore the last selection.

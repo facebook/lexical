@@ -10,7 +10,7 @@
 import type {NodeKey, NodeMapType} from './OutlineNode';
 import {triggerListeners, ViewModel} from './OutlineView';
 import type {OutlineEditor, EditorThemeClasses} from './OutlineEditor';
-import type {Selection} from './OutlineSelection';
+import type {Selection as OutlineSelection} from './OutlineSelection';
 import type {Node as ReactNode} from 'react';
 
 import {isTextNode, isBlockNode} from '.';
@@ -495,15 +495,20 @@ export function reconcileViewModel(
   // always do a full reconciliation to ensure consistency.
   const isDirty = nextViewModel._isDirty;
   const needsUpdate = isDirty || nextViewModel.hasDirtyNodes();
-  let reconciliationCausedLostSelection = false;
+  const domSelection: null | Selection = window.getSelection();
+  let mutationsCausedLostSelection = false;
 
   if (needsUpdate) {
-    let anchorOffset;
-    let focusOffset;
-    const windowSelection = window.getSelection();
-    if (windowSelection !== null) {
-      anchorOffset = windowSelection.anchorOffset;
-      focusOffset = windowSelection.focusOffset;
+    let anchorNodeBeforeMutation;
+    let focusNodeBeforeMutation;
+    let anchorOffsetBeforeMutation;
+    let focusOffsetBeforeMutation;
+
+    if (domSelection !== null) {
+      anchorNodeBeforeMutation = domSelection.anchorNode;
+      focusNodeBeforeMutation = domSelection.focusNode;
+      anchorOffsetBeforeMutation = domSelection.anchorOffset;
+      focusOffsetBeforeMutation = domSelection.focusOffset;
     }
     triggerListeners('mutation', editor, null);
     try {
@@ -517,27 +522,31 @@ export function reconcileViewModel(
     } finally {
       triggerListeners('mutation', editor, rootElement);
     }
-    const selectionAfter = window.getSelection();
+    // Compare the selection before mutation to the one after mutation.
+    // If there are changes, we will need to update selection anyway.
     if (
-      selectionAfter === null ||
-      anchorOffset !== selectionAfter.anchorOffset ||
-      focusOffset !== selectionAfter.focusOffset
+      domSelection !== null &&
+      (anchorNodeBeforeMutation !== domSelection.anchorNode ||
+        focusNodeBeforeMutation !== domSelection.focusNode ||
+        anchorOffsetBeforeMutation !== domSelection.anchorOffset ||
+        focusOffsetBeforeMutation !== domSelection.focusOffset)
     ) {
-      reconciliationCausedLostSelection = true;
+      mutationsCausedLostSelection = true;
     }
   }
   const prevSelection = prevViewModel._selection;
   const nextSelection = nextViewModel._selection;
 
   if (
+    domSelection !== null &&
     !editor.isComposing() &&
     prevSelection !== nextSelection &&
     (!nextSelection ||
       nextSelection.isDirty ||
       isDirty ||
-      reconciliationCausedLostSelection)
+      mutationsCausedLostSelection)
   ) {
-    reconcileSelection(prevSelection, nextSelection, editor);
+    reconcileSelection(prevSelection, nextSelection, editor, domSelection);
   }
 }
 
@@ -554,28 +563,18 @@ function getDOMTextNode(element: HTMLElement): Text | null {
 }
 
 function reconcileSelection(
-  prevSelection: Selection | null,
-  nextSelection: Selection | null,
+  prevSelection: OutlineSelection | null,
+  nextSelection: OutlineSelection | null,
   editor: OutlineEditor,
+  domSelection: Selection,
 ): void {
-  const domSelection = window.getSelection();
-  let anchorDOMNode;
-  let focusDOMNode;
-  let anchorOffset;
-  let focusOffset;
-
-  if (domSelection !== null) {
-    anchorDOMNode = domSelection.anchorNode;
-    focusDOMNode = domSelection.focusNode;
-    anchorOffset = domSelection.anchorOffset;
-    focusOffset = domSelection.focusOffset;
-  }
+  const anchorDOMNode = domSelection.anchorNode;
+  const focusDOMNode = domSelection.focusNode;
+  const anchorOffset = domSelection.anchorOffset;
+  const focusOffset = domSelection.focusOffset;
 
   if (nextSelection === null) {
-    if (
-      domSelection === null ||
-      isSelectionWithinEditor(editor, anchorDOMNode, focusDOMNode)
-    ) {
+    if (isSelectionWithinEditor(editor, anchorDOMNode, focusDOMNode)) {
       domSelection.removeAllRanges();
     }
     return;

@@ -534,6 +534,18 @@ export function reconcileViewModel(
   }
 }
 
+function getDOMTextNode(element: HTMLElement): Text | null {
+  let node = element;
+  while (node != null) {
+    if (node.nodeType === 3) {
+      // $FlowFixMe: this is a Text
+      return node;
+    }
+    node = node.firstChild;
+  }
+  return null;
+}
+
 function reconcileSelection(
   prevSelection: Selection | null,
   nextSelection: Selection | null,
@@ -560,16 +572,11 @@ function reconcileSelection(
 
   // Get the underlying DOM text nodes from the representative
   // Outline text nodes (we use elements for text nodes).
-  const anchorDOMTarget = anchorDOM.firstChild;
-  const focusDOMTarget = focusDOM.firstChild;
+  const anchorDOMTarget = getDOMTextNode(anchorDOM);
+  const focusDOMTarget = getDOMTextNode(focusDOM);
   // If we can't get an underlying text node for selection, then
   // we should avoid setting selection to something incorrect.
-  if (
-    focusDOMTarget == null ||
-    anchorDOMTarget == null ||
-    focusDOMTarget.nodeType !== 3 ||
-    focusDOMTarget.nodeType !== 3
-  ) {
+  if (focusDOMTarget === null || anchorDOMTarget === null) {
     return;
   }
   const nextSelectionAnchorOffset = nextSelection.anchorOffset;

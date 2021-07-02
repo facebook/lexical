@@ -772,3 +772,8 @@ pre :not(.tree-view-output) {
 .emoji.heart {
   background-image: url(images/emoji/2764.png);
 }
+
+.keyword {
+  color: blue;
+  font-weight: bold;
+}

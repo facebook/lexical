@@ -35,7 +35,7 @@ export default function useKeywords(editor: OutlineEditor): void {
 }
 
 function Keyword({children}: {children: string}): React.MixedElement {
-  return <span style={{color: 'blue', fontWeight: 'bold'}}>{children}</span>;
+  return <span className="keyword">{children}</span>;
 }
 
 class KeywordNode extends TextNode {

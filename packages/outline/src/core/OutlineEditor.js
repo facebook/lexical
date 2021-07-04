@@ -97,7 +97,8 @@ export type ListenerType =
 
 export function resetEditor(editor: OutlineEditor): void {
   const root = createRoot();
-  const emptyViewModel = new ViewModel({root});
+  const nodeMap = new Map([['root', root]]);
+  const emptyViewModel = new ViewModel(nodeMap);
   const keyToDOMMap = editor._keyToDOMMap;
   const rootElement = editor._rootElement;
 
@@ -118,7 +119,8 @@ export function createEditor(
   editorThemeClasses?: EditorThemeClasses,
 ): OutlineEditor {
   const root = createRoot();
-  const viewModel = new ViewModel({root});
+  const nodeMap = new Map([['root', root]]);
+  const viewModel = new ViewModel(nodeMap);
   // $FlowFixMe: use our declared type instead
   return new BaseOutlineEditor(viewModel, editorThemeClasses || {});
 }
@@ -158,8 +160,8 @@ function updateEditor(
           const nodeMap = currentViewModel._nodeMap;
           const pendingNodeMap = currentPendingViewModel._nodeMap;
           for (const nodeKey in nodeMap) {
-            const node = nodeMap[nodeKey];
-            if (isTextNode(node) && pendingNodeMap[nodeKey] !== undefined) {
+            const node = nodeMap.get(nodeKey);
+            if (isTextNode(node) && pendingNodeMap.get(nodeKey) !== undefined) {
               node.getWritable();
             }
           }
@@ -175,8 +177,8 @@ function updateEditor(
           const anchorKey = pendingSelection.anchorKey;
           const focusKey = pendingSelection.focusKey;
           if (
-            pendingNodeMap[anchorKey] === undefined ||
-            pendingNodeMap[focusKey] === undefined
+            pendingNodeMap.get(anchorKey) === undefined ||
+            pendingNodeMap.get(focusKey) === undefined
           ) {
             invariant(
               false,
@@ -412,15 +414,17 @@ class BaseOutlineEditor {
       return false;
     }
     const nodeMap = this._viewModel._nodeMap;
-    const topBlockIDs = nodeMap.root.__children;
+    // $FlowFixMe: root is always in the Map
+    const root = ((nodeMap.get('root'): any): RootNode);
+    const topBlockIDs = root.__children;
     const topBlockIDsLength = topBlockIDs.length;
     if (topBlockIDsLength > 1) {
       return false;
     }
     for (let i = 0; i < topBlockIDsLength; i++) {
-      const topBlock = nodeMap[topBlockIDs[i]];
+      const topBlock = nodeMap.get(topBlockIDs[i]);
 
-      if (topBlock && topBlock.__type !== 'paragraph') {
+      if (topBlock !== undefined && topBlock.__type !== 'paragraph') {
         return false;
       }
     }

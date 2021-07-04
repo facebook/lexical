@@ -21,7 +21,7 @@ export function resetRandomKey(): void {
 }
 
 export function generateRandomKey(): string {
-  return '_' + keyCounter++;
+  return '' + keyCounter++;
 }
 
 // When we are dealing with setting selection on an empty text node, we

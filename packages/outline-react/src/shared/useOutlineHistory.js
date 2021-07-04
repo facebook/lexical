@@ -40,7 +40,7 @@ function getMergeAction(
     const prevNodeMap = prevViewModel._nodeMap;
     const nextDirtyNode = dirtyNodes[0];
     const prevDirtyNodeKey = nextDirtyNode.__key;
-    const prevDirtyNode = prevNodeMap[prevDirtyNodeKey];
+    const prevDirtyNode = prevNodeMap.get(prevDirtyNodeKey);
     if (
       prevDirtyNode !== undefined &&
       isTextNode(prevDirtyNode) &&

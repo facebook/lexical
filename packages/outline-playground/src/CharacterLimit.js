@@ -82,15 +82,13 @@ export default function CharacterLimit({
                   const offset = startOffset - existingOffset;
                   const [targetNode, nextOverflowNode] =
                     existingOverflowNode.splitText(offset);
-                  if (nextOverflowNode != null) {
-                    targetNode.toggleOverflowed();
-                    const parentBlock = targetNode.getParentBlockOrThrow();
-                    parentBlock.normalizeTextNodes(true);
-                    currentIntersectionRef.current = {
-                      nodeKey: nextOverflowNode.getKey(),
-                      offset: 0,
-                    };
-                  }
+                  targetNode.toggleOverflowed();
+                  const parentBlock = targetNode.getParentBlockOrThrow();
+                  parentBlock.normalizeTextNodes(true);
+                  currentIntersectionRef.current = {
+                    nodeKey: nextOverflowNode.getKey(),
+                    offset: 0,
+                  };
                 } else {
                   // Handle next siblings
                   const parentBlock = node.getParentBlockOrThrow();
@@ -135,12 +133,9 @@ export default function CharacterLimit({
             if (startOffset !== 0) {
               [, targetNode] = node.splitText(startOffset);
             }
-            if (targetNode != null && !targetNode.isOverflowed()) {
+            if (!targetNode.isOverflowed()) {
               targetNode.toggleOverflowed();
             }
-          }
-          if (targetNode == null) {
-            return;
           }
           // Handle next siblings
           const siblings = node.getNextSiblings();

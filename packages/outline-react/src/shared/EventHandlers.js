@@ -618,7 +618,7 @@ export function onInput(
     editor.update((view) => {
       const domSelection = window.getSelection();
       const anchorDOM = domSelection.anchorNode;
-      if (anchorDOM.nodeType === 3) {
+      if (anchorDOM !== null && anchorDOM.nodeType === 3) {
         updateTextNodeFromDOMContent(anchorDOM, view, editor);
       }
     });

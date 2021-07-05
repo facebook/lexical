@@ -37,7 +37,7 @@ const decoratorKeyMap: Map<NodeKey, string> = new Map();
 const baseDecorateMethod = OutlineNode.prototype.decorate;
 
 function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
-  const node = activePrevNodeMap[key];
+  const node = activePrevNodeMap.get(key);
 
   if (parentDOM !== null) {
     const dom = getElementByKeyOrThrow(activeEditor, key);
@@ -45,7 +45,7 @@ function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
   }
   // This logic is really important, otherwise we will leak DOM nodes
   // when their corresponding OutlineNodes are removed from the view model.
-  if (activeNextNodeMap[key] === undefined) {
+  if (!activeNextNodeMap.has(key)) {
     activeEditor._keyToDOMMap.delete(key);
   }
   if (isBlockNode(node)) {
@@ -74,7 +74,10 @@ function createNode(
   parentDOM: null | HTMLElement,
   insertDOM: null | HTMLElement,
 ): HTMLElement {
-  const node = activeNextNodeMap[key];
+  const node = activeNextNodeMap.get(key);
+  if (node === undefined) {
+    invariant(false, 'createNode: node does not exist in nodeMap');
+  }
   const dom = node.createDOM(activeEditorThemeClasses);
   const flags = node.__flags;
   const isInert = flags & IS_INERT;
@@ -204,8 +207,14 @@ function reconcileChildren(
 }
 
 function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
-  const prevNode = activePrevNodeMap[key];
-  const nextNode = activeNextNodeMap[key];
+  const prevNode = activePrevNodeMap.get(key);
+  const nextNode = activeNextNodeMap.get(key);
+  if (prevNode === undefined || nextNode === undefined) {
+    invariant(
+      false,
+      'reconcileNode: prevNode or nextNode does not exist in nodeMap',
+    );
+  }
   const isDirty =
     activeViewModelIsDirty ||
     activeDirtyNodes.has(key) ||

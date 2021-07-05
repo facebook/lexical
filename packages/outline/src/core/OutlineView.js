@@ -52,7 +52,7 @@ export type ParsedViewModel = {
     focusKey: string,
     focusOffset: number,
   },
-  _nodeMap: {root: ParsedNode, [key: NodeKey]: ParsedNode},
+  _nodeMap: Array<[NodeKey, ParsedNode]>,
 };
 
 let activeViewModel = null;
@@ -104,7 +104,8 @@ export function getActiveEditor(): OutlineEditor {
 
 const view: View = {
   getRoot() {
-    return getActiveViewModel()._nodeMap.root;
+    // $FlowFixMe: root is always in our Map
+    return ((getActiveViewModel()._nodeMap.get('root'): any): RootNode);
   },
   getNodeByKey,
   getSelection,
@@ -176,7 +177,7 @@ function triggerTextMutationListeners(
     if (nodeKey === compositionKey) {
       continue;
     }
-    const node = nodeMap[nodeKey];
+    const node = nodeMap.get(nodeKey);
 
     if (
       node !== undefined &&
@@ -251,7 +252,7 @@ function garbageCollectDetachedDecorators(
   const nodeMap = pendingViewModel._nodeMap;
   let key;
   for (key in decorators) {
-    if (nodeMap[key] === undefined) {
+    if (!nodeMap.has(key)) {
       if (decorators === currentDecorators) {
         decorators = cloneDecorators(editor);
       }
@@ -269,12 +270,12 @@ function garbageCollectDetachedDeepChildNodes(
   const childrenLength = children.length;
   for (let i = 0; i < childrenLength; i++) {
     const childKey = children[i];
-    const child = nodeMap[childKey];
+    const child = nodeMap.get(childKey);
     if (child !== undefined && child.__parent === parentKey) {
       if (isBlockNode(child)) {
         garbageCollectDetachedDeepChildNodes(child, childKey, nodeMap);
       }
-      delete nodeMap[childKey];
+      nodeMap.delete(childKey);
     }
   }
 }
@@ -288,7 +289,7 @@ export function garbageCollectDetachedNodes(
 
   for (let s = 0; s < dirtyNodes.length; s++) {
     const nodeKey = dirtyNodes[s];
-    const node = nodeMap[nodeKey];
+    const node = nodeMap.get(nodeKey);
 
     if (node !== undefined) {
       // Garbage collect node and its children if they exist
@@ -296,7 +297,7 @@ export function garbageCollectDetachedNodes(
         if (isBlockNode(node)) {
           garbageCollectDetachedDeepChildNodes(node, nodeKey, nodeMap);
         }
-        delete nodeMap[nodeKey];
+        nodeMap.delete(nodeKey);
       }
     }
   }
@@ -363,7 +364,7 @@ export function triggerListeners(
 }
 
 export function cloneViewModel(current: ViewModel): ViewModel {
-  const draft = new ViewModel({...current._nodeMap});
+  const draft = new ViewModel(new Map(current._nodeMap));
   return draft;
 }
 
@@ -405,7 +406,7 @@ export class ViewModel {
 
     for (let i = 0; i < dirtyNodes.length; i++) {
       const dirtyNodeKey = dirtyNodes[i];
-      const dirtyNode = nodeMap[dirtyNodeKey];
+      const dirtyNode = nodeMap.get(dirtyNodeKey);
 
       if (dirtyNode !== undefined) {
         nodes.push(dirtyNode);
@@ -420,7 +421,7 @@ export class ViewModel {
     const selection = this._selection;
     return JSON.stringify(
       {
-        _nodeMap: this._nodeMap,
+        _nodeMap: Array.from(this._nodeMap.entries()),
         _selection:
           selection === null
             ? null
@@ -442,16 +443,18 @@ export function parseViewModel(
   editor: OutlineEditor,
 ): ViewModel {
   const parsedViewModel: ParsedViewModel = JSON.parse(stringifiedViewModel);
-  const nodeMap = {};
+  const nodeMap = new Map();
   const viewModel = new ViewModel(nodeMap);
   const state = {
     originalSelection: parsedViewModel._selection,
   };
   enterViewModelScope(
     () => {
-      const parsedNodeMap = parsedViewModel._nodeMap;
+      const parsedNodeMap = new Map(parsedViewModel._nodeMap);
+      // $FlowFixMe: root always exists in Map
+      const parsedRoot = ((parsedNodeMap.get('root'): any): ParsedNode);
       createNodeFromParse(
-        parsedNodeMap.root,
+        parsedRoot,
         parsedNodeMap,
         editor,
         null /* parentKey */,

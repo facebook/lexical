@@ -105,13 +105,16 @@ function generateNodes(
   nodeRange: {range: Array<NodeKey>, nodeMap: ParsedNodeMap},
   view: View,
 ): Array<OutlineNode> {
-  const {range, nodeMap: parsedNodeMap} = nodeRange;
+  const {range, nodeMap} = nodeRange;
+  const parsedNodeMap: ParsedNodeMap = new Map(nodeMap);
   const nodes = [];
   for (let i = 0; i < range.length; i++) {
     const key = range[i];
-    const parsedNode = parsedNodeMap[key];
-    const node = view.createNodeFromParse(parsedNode, parsedNodeMap);
-    nodes.push(node);
+    const parsedNode = parsedNodeMap.get(key);
+    if (parsedNode !== undefined) {
+      const node = view.createNodeFromParse(parsedNode, parsedNodeMap);
+      nodes.push(node);
+    }
   }
   return nodes;
 }

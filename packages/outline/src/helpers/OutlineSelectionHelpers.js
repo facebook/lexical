@@ -478,7 +478,11 @@ export function updateCaretSelectionForAdjacentHashtags(
   const selectionAtBoundary = anchorOffset === 0;
   if (selectionAtBoundary && anchorNode.getFlags() === 0) {
     const sibling = anchorNode.getPreviousSibling();
-    if (!isHashtagNode(anchorNode) && isTextNode(sibling) && isHashtagNode(sibling)) {
+    if (
+      !isHashtagNode(anchorNode) &&
+      isTextNode(sibling) &&
+      isHashtagNode(sibling)
+    ) {
       sibling.select();
       const siblingTextContent = sibling.getTextContent();
       sibling.setTextContent(siblingTextContent + textContent);

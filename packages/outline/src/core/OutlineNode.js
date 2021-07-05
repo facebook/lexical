@@ -32,6 +32,7 @@ import {
   IS_OVERFLOWED,
   IS_SEGMENTED,
 } from './OutlineConstants';
+import {getSelection} from './OutlineSelection';
 
 type NodeParserState = {
   originalSelection: null | ParsedSelection,
@@ -116,7 +117,18 @@ function removeNode(nodeToRemove: OutlineNode): void {
 function replaceNode<N: OutlineNode>(
   toReplace: OutlineNode,
   replaceWith: N,
+  restoreSelection?: boolean,
 ): N {
+  let anchorOffset;
+  if (restoreSelection && isTextNode(toReplace)) {
+    const selection = getSelection();
+    if (selection) {
+      const anchorNode = selection.getAnchorNode();
+      if (selection.isCaret() && anchorNode.__key === toReplace.__key) {
+        anchorOffset = selection.anchorOffset;
+      }
+    }
+  }
   const writableReplaceWith = replaceWith.getWritable();
   const oldParent = writableReplaceWith.getParent();
   if (oldParent !== null) {
@@ -145,6 +157,9 @@ function replaceNode<N: OutlineNode>(
   // Handle immutable/segmented
   if (flags & IS_IMMUTABLE || flags & IS_SEGMENTED || flags & IS_INERT) {
     wrapInTextNodes(writableReplaceWith);
+  }
+  if (isTextNode(writableReplaceWith) && anchorOffset !== undefined) {
+    writableReplaceWith.select(anchorOffset, anchorOffset);
   }
   return writableReplaceWith;
 }
@@ -579,9 +594,9 @@ export class OutlineNode {
     return removeNode(this);
   }
   // TODO add support for replacing with multiple nodes?
-  replace<N: OutlineNode>(targetNode: N): N {
+  replace<N: OutlineNode>(targetNode: N, restoreSelection?: boolean): N {
     errorOnReadOnly();
-    return replaceNode(this, targetNode);
+    return replaceNode(this, targetNode, restoreSelection);
   }
   // TODO add support for inserting multiple nodes?
   insertAfter(nodeToInsert: OutlineNode): this {

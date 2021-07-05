@@ -45,8 +45,10 @@ export function initializeE2E(runTests) {
     e2e.browser = browser;
   });
   beforeEach(async () => {
+    const isRichText = process.env.E2E_EDITOR_MODE !== 'plain-text';
+    const url = `http://localhost:${E2E_PORT}/?isRichText=${isRichText}`;
     const page = await e2e.browser.newPage();
-    await page.goto(`http://localhost:${E2E_PORT}/`);
+    await page.goto(url);
     e2e.page = page;
   });
   afterEach(async () => {
@@ -77,8 +79,10 @@ export function initializeE2E(runTests) {
               count++;
               // Close and re-open page
               await e2e.page.close();
-              const page = await await e2e.browser.newPage();
-              await page.goto(`http://localhost:${E2E_PORT}/`);
+              const isRichText = process.env.E2E_EDITOR_MODE !== 'plain-text';
+              const url = `http://localhost:${E2E_PORT}/?isRichText=${isRichText}`;
+              const page = await e2e.browser.newPage();
+              await page.goto(url);
               e2e.page = page;
               // retry
               return await attempt();

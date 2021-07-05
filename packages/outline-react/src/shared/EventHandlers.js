@@ -600,6 +600,8 @@ function updateTextNodeFromDOMContent(
         }
         node.select(offset, offset);
       }
+    } else if (editor._compositionKey === node.getKey()) {
+      view.markNodeAsDirty(node);
     }
   }
 }
@@ -754,10 +756,11 @@ export function onBeforeInputForPlainText(
             }
           }
         } else {
-          // For range text insertion, always over override
+          // For range text insertion, always override
           // default and control outselves
           event.preventDefault();
-          editor.setCompositionKey(null);
+          // This will end composition
+          editor._compositionKey = null;
           insertText(selection, data);
         }
       }
@@ -772,6 +775,8 @@ export function onBeforeInputForPlainText(
     switch (inputType) {
       case 'insertFromComposition': {
         if (data) {
+          // This is the end of composition
+          editor._compositionKey = null;
           insertText(selection, data);
         }
         break;
@@ -924,15 +929,17 @@ export function onBeforeInputForRichText(
             }
           }
         } else {
-          // For range text insertion, always over override
+          // For range text insertion, always override
           // default and control outselves
           event.preventDefault();
-          editor.setCompositionKey(null);
+          // This will end composition
+          editor._compositionKey = null;
           insertText(selection, data);
         }
       }
       return;
     }
+    console.log(inputType)
 
     // Prevent the browser from carrying out
     // the input event, so we can control the
@@ -942,6 +949,8 @@ export function onBeforeInputForRichText(
     switch (inputType) {
       case 'insertFromComposition': {
         if (data) {
+          // This is the end of composition
+          editor._compositionKey = null;
           insertText(selection, data);
         }
         break;

@@ -282,14 +282,8 @@ class BaseOutlineEditor {
     return this._compositionKey != null;
   }
   setCompositionKey(nodeKey: null | NodeKey): void {
-    this._compositionKey = null;
+    this._compositionKey = nodeKey;
     updateEditor(getSelf(this), emptyFunction, false);
-    if (nodeKey === null) {
-      const pendingViewModel = this._pendingViewModel;
-      if (pendingViewModel !== null) {
-        pendingViewModel.markDirty();
-      }
-    }
   }
   registerNodeType(nodeType: string, klass: Class<OutlineNode>): void {
     this._nodeTypes.set(nodeType, klass);

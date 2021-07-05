@@ -9,7 +9,12 @@
 
 export type {OutlineEditor, EditorThemeClasses} from './OutlineEditor';
 export type {ViewModel, View, ParsedViewModel} from './OutlineView';
-export type {NodeKey, ParsedNode, ParsedNodeMap} from './OutlineNode';
+export type {
+  NodeKey,
+  ParsedNode,
+  ParsedNodeMap,
+  OutlineNode,
+} from './OutlineNode';
 export type {Selection} from './OutlineSelection';
 export type {TextFormatType} from './OutlineTextNode';
 
@@ -17,24 +22,20 @@ import {createEditor} from './OutlineEditor';
 import {createTextNode, isTextNode, TextNode} from './OutlineTextNode';
 import {isBlockNode, BlockNode} from './OutlineBlockNode';
 import {createRootNode, isRootNode, RootNode} from './OutlineRootNode';
-import {
-  createLineBreakNode,
-  isLineBreakNode,
-  LineBreakNode,
-} from './OutlineLineBreakNode';
-import {OutlineNode} from './OutlineNode';
+import {createLineBreakNode, isLineBreakNode} from './OutlineLineBreakNode';
 
 export {
   createEditor,
+  // Node factories
   createLineBreakNode,
   createRootNode,
   createTextNode,
-  isTextNode,
+  // Node validation
   isBlockNode,
-  isRootNode,
   isLineBreakNode,
-  LineBreakNode,
-  OutlineNode,
+  isRootNode,
+  isTextNode,
+  // Extensible nodes
   BlockNode,
   RootNode,
   TextNode,

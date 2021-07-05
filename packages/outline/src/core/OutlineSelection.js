@@ -143,7 +143,7 @@ export class Selection {
 }
 
 function resolveNonLineBreakOrInertNode(
-  node: TextNode,
+  node: OutlineNode,
 ): [TextNode, number, boolean] {
   const resolvedNode = node.getPreviousSibling();
   if (!isTextNode(resolvedNode)) {

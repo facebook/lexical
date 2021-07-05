@@ -704,16 +704,15 @@ export function insertNodes(
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
 
-    if (isTextNode(node)) {
-      // If it's a text node append it to the previous text node.
-      target.insertAfter(node);
-      target = node;
-    } else {
+    if (isBlockNode(node)) {
       // If it's a block node make sure target refers to a block
       // and then insert after our target block
       if (isTextNode(target)) {
         target = topLevelBlock;
       }
+      target.insertAfter(node);
+      target = node;
+    } else {
       target.insertAfter(node);
       target = node;
     }
@@ -752,6 +751,11 @@ export function insertNodes(
     // We've only inserted text nodes, so we only need to normalize this block.
     const parent = target.getParentBlockOrThrow();
     parent.normalizeTextNodes(true);
+  } else {
+    const prevSibling = target.getPreviousSibling();
+    if (isTextNode(prevSibling)) {
+      prevSibling.select();
+    }
   }
   return true;
 }

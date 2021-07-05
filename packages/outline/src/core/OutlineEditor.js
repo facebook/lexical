@@ -11,7 +11,7 @@ import type {View} from './OutlineView';
 import type {OutlineNode, NodeKey} from './OutlineNode';
 import type {Node as ReactNode} from 'react';
 
-import {isTextNode, RootNode, TextNode, LineBreakNode} from '.';
+import {isTextNode, TextNode} from '.';
 import {
   cloneViewModel,
   enterViewModelScope,
@@ -33,6 +33,8 @@ import {
 } from './OutlineUtils';
 import {createRootNode as createRoot} from './OutlineRootNode';
 import invariant from 'shared/invariant';
+import {LineBreakNode} from './OutlineLineBreakNode';
+import {RootNode} from './OutlineRootNode';
 
 export type EditorThemeClassName = string;
 

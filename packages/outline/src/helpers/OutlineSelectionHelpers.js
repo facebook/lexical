@@ -50,7 +50,7 @@ export function getNodesInRange(selection: Selection): {
     endOffset = isBefore ? focusOffset : anchorOffset;
     firstNode.__text = firstNode.__text.slice(startOffset, endOffset);
     const key = firstNode.getKey();
-    return {range: [key], nodeMap: {[key]: firstNode}};
+    return {range: [key], nodeMap: [[key, firstNode]]};
   }
   const nodes = selection.getNodes();
   const firstNode = nodes[0];

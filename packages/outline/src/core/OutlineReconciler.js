@@ -13,7 +13,7 @@ import type {OutlineEditor, EditorThemeClasses} from './OutlineEditor';
 import type {Selection as OutlineSelection} from './OutlineSelection';
 import type {Node as ReactNode} from 'react';
 
-import {isTextNode, isBlockNode} from '.';
+import {isBlockNode} from '.';
 import {
   isSelectionWithinEditor,
   isImmutableOrInertOrSegmented,
@@ -103,11 +103,7 @@ function createNode(
     domStyle.setProperty('-webkit-user-select', 'none');
   }
 
-  if (isTextNode(node)) {
-    const text = node.getTextContent();
-    subTreeTextContent += text;
-    editorTextContent += text;
-  } else if (isBlockNode(node)) {
+  if (isBlockNode(node)) {
     if (flags & IS_LTR) {
       dom.dir = 'ltr';
     } else if (flags & IS_RTL) {
@@ -117,6 +113,10 @@ function createNode(
     const children = node.__children;
     const endIndex = children.length - 1;
     createChildren(children, 0, endIndex, dom, null);
+  } else {
+    const text = node.getTextContent();
+    subTreeTextContent += text;
+    editorTextContent += text;
   }
   if (parentDOM !== null) {
     if (insertDOM !== null) {
@@ -224,17 +224,17 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
   const isComposingNode = key === activeEditor._compositionKey;
 
   if ((prevNode === nextNode && !isDirty) || isComposingNode) {
-    if (isTextNode(prevNode)) {
-      const text = prevNode.getTextContent();
-      editorTextContent += text;
-      subTreeTextContent += text;
-    } else {
+    if (isBlockNode(prevNode)) {
       // $FlowFixMe: internal field
       const prevSubTreeTextContent = dom.__outlineTextContent;
       if (prevSubTreeTextContent !== undefined) {
         subTreeTextContent += prevSubTreeTextContent;
         editorTextContent += prevSubTreeTextContent;
       }
+    } else {
+      const text = prevNode.getTextContent();
+      editorTextContent += text;
+      subTreeTextContent += text;
     }
     return;
   }
@@ -262,13 +262,7 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
       reconcileDecorator(key, decorator);
     }
   }
-  // Handle text content, for LTR, LTR cases.
-  if (isTextNode(nextNode)) {
-    const text = nextNode.getTextContent();
-    subTreeTextContent += text;
-    editorTextContent += text;
-    return;
-  } else if (isBlockNode(prevNode) && isBlockNode(nextNode)) {
+  if (isBlockNode(prevNode) && isBlockNode(nextNode)) {
     const prevFlags = prevNode.__flags;
     if (nextFlags & IS_LTR) {
       if ((prevFlags & IS_LTR) === 0) {
@@ -289,6 +283,11 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
     if (childrenAreDifferent || isDirty) {
       reconcileChildren(prevChildren, nextChildren, dom);
     }
+  } else {
+    // Handle text content, for LTR, LTR cases.
+    const text = nextNode.getTextContent();
+    subTreeTextContent += text;
+    editorTextContent += text;
   }
 }
 

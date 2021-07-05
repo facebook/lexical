@@ -7,21 +7,22 @@
  * @flow strict
  */
 
-import type {OutlineNode, NodeKey} from './OutlineNode';
+import type {NodeKey} from './OutlineNode';
 
-import {TextNode} from './OutlineTextNode';
+import {OutlineNode} from './OutlineNode';
 
-export class LineBreakNode extends TextNode {
+export class LineBreakNode extends OutlineNode {
   constructor(key?: NodeKey) {
-    super('\n', key);
+    super(key);
     this.__type = 'linebreak';
   }
 
+  getTextContent(): '\n' {
+    return '\n';
+  }
+
   clone(): LineBreakNode {
-    const clone = new LineBreakNode(this.__key);
-    clone.__parent = this.__parent;
-    clone.__flags = this.__flags;
-    return clone;
+    return new LineBreakNode(this.__key);
   }
 
   createDOM(): HTMLElement {
@@ -34,7 +35,7 @@ export class LineBreakNode extends TextNode {
 }
 
 export function createLineBreakNode(): LineBreakNode {
-  return new LineBreakNode().makeImmutable();
+  return new LineBreakNode();
 }
 
 export function isLineBreakNode(node: ?OutlineNode): boolean %checks {

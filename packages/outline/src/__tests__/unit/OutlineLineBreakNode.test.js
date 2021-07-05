@@ -6,8 +6,6 @@
  *
  */
 
-import {IS_IMMUTABLE} from '../../core/OutlineConstants';
-
 import {createLineBreakNode, isLineBreakNode} from 'outline';
 import {initializeUnitTest} from '../utils';
 
@@ -17,19 +15,8 @@ describe('OutlineLineBreakNode tests', () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const lineBreakNode = createLineBreakNode();
-        expect(lineBreakNode.getFlags()).toBe(IS_IMMUTABLE);
         expect(lineBreakNode.getType()).toEqual('linebreak');
         expect(lineBreakNode.getTextContent()).toEqual('\n');
-      });
-    });
-
-    test('LineBreakNode.clone()', async () => {
-      const {editor} = testEnv;
-      await editor.update(() => {
-        const lineBreakNode = createLineBreakNode();
-        const lineBreakNodeClone = lineBreakNode.clone();
-        expect(lineBreakNodeClone).not.toBe(lineBreakNode);
-        expect(lineBreakNodeClone).toStrictEqual(lineBreakNode);
       });
     });
 

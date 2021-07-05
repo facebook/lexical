@@ -60,14 +60,14 @@ describe('OutlineTextNode tests', () => {
     return Promise.resolve().then();
   }
 
-  function useOutlineEditor(editorElementRef) {
+  function useOutlineEditor(rootElementRef) {
     const editor = React.useMemo(() => createEditor(), []);
 
     React.useEffect(() => {
-      const editorElement = editorElementRef.current;
+      const rootElement = rootElementRef.current;
 
-      editor.setEditorElement(editorElement);
-    }, [editorElementRef, editor]);
+      editor.setRootElement(rootElement);
+    }, [rootElementRef, editor]);
 
     return editor;
   }
@@ -79,7 +79,7 @@ describe('OutlineTextNode tests', () => {
 
     function TestBase() {
       editor = useOutlineEditor(ref);
-      editor.addErrorListener((error) => {
+      editor.addListener('error', (error) => {
         throw error;
       });
       return <div ref={ref} contentEditable={true} />;
@@ -97,6 +97,52 @@ describe('OutlineTextNode tests', () => {
       view.getRoot().append(paragraph);
     });
   }
+
+  describe('getTextContent()', () => {
+    test('writable nodes', async () => {
+      let nodeKey;
+
+      await update((view) => {
+        const textNode = createTextNode('Text');
+        nodeKey = textNode.getKey();
+        expect(textNode.getTextContent()).toBe('Text');
+        expect(textNode.getTextContent(true)).toBe('Text');
+        expect(textNode.__text).toBe('Text');
+
+        view.getRoot().getFirstChild().append(textNode);
+      });
+
+      expect(editor.getTextContent()).toBe('Text');
+
+      // Make sure that the editor content is still set after further reconciliations
+      await update((view) => {
+        view.markNodeAsDirty(view.getNodeByKey(nodeKey));
+      });
+      expect(editor.getTextContent()).toBe('Text');
+    });
+
+    test('inert nodes', async () => {
+      let nodeKey;
+
+      await update((view) => {
+        const textNode = createTextNode('Inert text').makeInert();
+        nodeKey = textNode.getKey();
+        expect(textNode.getTextContent()).toBe('');
+        expect(textNode.getTextContent(true)).toBe('Inert text');
+        expect(textNode.__text).toBe('Inert text');
+
+        view.getRoot().getFirstChild().append(textNode);
+      });
+
+      expect(editor.getTextContent()).toBe('');
+
+      // Make sure that the editor content is still empty after further reconciliations
+      await update((view) => {
+        view.markNodeAsDirty(view.getNodeByKey(nodeKey));
+      });
+      expect(editor.getTextContent()).toBe('');
+    });
+  });
 
   describe('setTextContent()', () => {
     test('writable nodes', async () => {

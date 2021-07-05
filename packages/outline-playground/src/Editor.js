@@ -72,21 +72,18 @@ const editorThemeClasses = {
 };
 
 function ContentEditable({
-  props,
   isReadOnly,
-  editorElementRef,
+  rootElementRef,
 }: {
-  props: {...},
   isReadOnly?: boolean,
-  editorElementRef: (null | HTMLElement) => void,
+  rootElementRef: (null | HTMLElement) => void,
 }): React$Node {
   return (
     <div
-      {...props}
       className="editor"
       contentEditable={isReadOnly !== true}
       role="textbox"
-      ref={editorElementRef}
+      ref={rootElementRef}
       spellCheck={true}
       style={editorStyle}
       tabIndex={0}
@@ -100,12 +97,12 @@ export const useRichTextEditor = ({
   isCharLimit,
   isAutocomplete,
 }: Props): [OutlineEditor, React.MixedElement] => {
-  const [editor, editorElementRef, showPlaceholder] = useOutlineEditor(
+  const [editor, rootElementRef, showPlaceholder] = useOutlineEditor(
     onError,
     editorThemeClasses,
   );
   const mentionsTypeahead = useMentions(editor);
-  const props = useOutlineRichText(editor, isReadOnly);
+  useOutlineRichText(editor, isReadOnly);
   const toolbar = useToolbar(editor);
   const decorators = useOutlineDecorators(editor);
   useEmojis(editor);
@@ -117,9 +114,8 @@ export const useRichTextEditor = ({
     return (
       <>
         <ContentEditable
-          props={props}
           isReadOnly={isReadOnly}
-          editorElementRef={editorElementRef}
+          rootElementRef={rootElementRef}
         />
         {showPlaceholder && <Placeholder>Enter some rich text...</Placeholder>}
         {decorators}
@@ -131,9 +127,8 @@ export const useRichTextEditor = ({
       </>
     );
   }, [
-    props,
     isReadOnly,
-    editorElementRef,
+    rootElementRef,
     showPlaceholder,
     decorators,
     mentionsTypeahead,
@@ -156,12 +151,12 @@ export const usePlainTextEditor = ({
   isCharLimit,
   isAutocomplete,
 }: Props): [OutlineEditor, React.MixedElement] => {
-  const [editor, editorElementRef, showPlaceholder] = useOutlineEditor(
+  const [editor, rootElementRef, showPlaceholder] = useOutlineEditor(
     onError,
     editorThemeClasses,
   );
   const mentionsTypeahead = useMentions(editor);
-  const props = usePlainText(editor, isReadOnly);
+  usePlainText(editor, isReadOnly);
   const decorators = useOutlineDecorators(editor);
   useEmojis(editor);
   useHashtags(editor);
@@ -171,9 +166,8 @@ export const usePlainTextEditor = ({
     () => (
       <>
         <ContentEditable
-          props={props}
           isReadOnly={isReadOnly}
-          editorElementRef={editorElementRef}
+          rootElementRef={rootElementRef}
         />
         {showPlaceholder && <Placeholder>Enter some plain text...</Placeholder>}
         {decorators}
@@ -183,9 +177,8 @@ export const usePlainTextEditor = ({
       </>
     ),
     [
-      props,
       isReadOnly,
-      editorElementRef,
+      rootElementRef,
       showPlaceholder,
       decorators,
       mentionsTypeahead,

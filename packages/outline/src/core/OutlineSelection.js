@@ -8,8 +8,9 @@
  */
 
 import type {OutlineNode, NodeKey} from './OutlineNode';
-import {getActiveEditor, ViewModel} from './OutlineView';
+import type {OutlineEditor} from './OutlineEditor';
 
+import {getActiveEditor, ViewModel} from './OutlineView';
 import {getActiveViewModel} from './OutlineView';
 import {getNodeKeyFromDOM} from './OutlineReconciler';
 import {getNodeByKey} from './OutlineNode';
@@ -18,7 +19,6 @@ import {
   isImmutableOrInertOrSegmented,
   isSelectionWithinEditor,
 } from './OutlineUtils';
-import {OutlineEditor} from './OutlineEditor';
 import invariant from 'shared/invariant';
 
 export class Selection {
@@ -356,6 +356,7 @@ export function createSelection(
   const useDOMSelection =
     isSelectionChange ||
     eventType === 'beforeinput' ||
+    eventType === 'input' ||
     eventType === 'compositionstart';
   let anchorDOM, focusDOM, anchorOffset, focusOffset;
 

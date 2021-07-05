@@ -7,7 +7,7 @@
  * @flow strict-local
  */
 
-import type {OutlineEditor, View} from 'outline';
+import type {OutlineEditor, View, ViewModel} from 'outline';
 
 // $FlowFixMe
 import {createTextNode} from 'outline';
@@ -46,10 +46,10 @@ function sanitizeHTML(html) {
   return html.replace(/[\u200B-\u200D\u2060\uFEFF]/g, '');
 }
 
-function getPathFromNodeToEditor(node: Node, editorElement) {
+function getPathFromNodeToEditor(node: Node, rootElement) {
   let currentNode = node;
   const path = [];
-  while (currentNode !== editorElement) {
+  while (currentNode !== rootElement) {
     path.unshift(
       Array.from(currentNode?.parentNode?.childNodes ?? []).indexOf(
         currentNode,
@@ -140,16 +140,16 @@ export default function useStepRecorder(
   }, []);
 
   const generateTestContent = useCallback(() => {
-    const editorElement = editor.getEditorElement();
+    const rootElement = editor.getRootElement();
     const browserSelection = window.getSelection();
 
     if (
-      editorElement == null ||
+      rootElement == null ||
       browserSelection == null ||
       browserSelection.anchorNode == null ||
       browserSelection.focusNode == null ||
-      !editorElement.contains(browserSelection.anchorNode) ||
-      !editorElement.contains(browserSelection.focusNode)
+      !rootElement.contains(browserSelection.anchorNode) ||
+      !rootElement.contains(browserSelection.focusNode)
     ) {
       return null;
     }
@@ -168,13 +168,10 @@ export default function useStepRecorder(
   expectedSelection: {
     anchorPath: [${getPathFromNodeToEditor(
       anchorNode,
-      editorElement,
+      rootElement,
     ).toString()}],
     anchorOffset: ${anchorOffset},
-    focusPath: [${getPathFromNodeToEditor(
-      focusNode,
-      editorElement,
-    ).toString()}],
+    focusPath: [${getPathFromNodeToEditor(focusNode, rootElement).toString()}],
     focusOffset: ${focusOffset},
   },
 },
@@ -267,40 +264,43 @@ export default function useStepRecorder(
   }, [generateTestContent, steps]);
 
   useEffect(() => {
-    const removeUpdateListener = editor.addUpdateListener((viewModel) => {
-      if (!isRecording) {
-        return;
-      }
-      const currentSelection = viewModel._selection;
-      const previousSelection = previousSelectionRef.current;
-      const editorElement = editor.getEditorElement();
-      const skipNextSelectionChange = skipNextSelectionChangeRef.current;
-      if (previousSelection !== currentSelection) {
-        if (!viewModel.hasDirtyNodes() && !skipNextSelectionChange) {
-          const browserSelection = window.getSelection();
-          if (
-            browserSelection.anchorNode == null ||
-            browserSelection.focusNode == null
-          ) {
-            return;
-          }
-          const {anchorNode, anchorOffset, focusNode, focusOffset} =
-            sanitizeSelection(browserSelection);
-          pushStep('moveNativeSelection', [
-            `[${getPathFromNodeToEditor(
-              anchorNode,
-              editorElement,
-            ).toString()}]`,
-            anchorOffset,
-            `[${getPathFromNodeToEditor(focusNode, editorElement).toString()}]`,
-            focusOffset,
-          ]);
+    const removeUpdateListener = editor.addListener(
+      'update',
+      (viewModel: ViewModel) => {
+        if (!isRecording) {
+          return;
         }
-        previousSelectionRef.current = currentSelection;
-      }
-      skipNextSelectionChangeRef.current = false;
-      setTemplatedTest(generateTestContent());
-    });
+        const currentSelection = viewModel._selection;
+        const previousSelection = previousSelectionRef.current;
+        const rootElement = editor.getRootElement();
+        const skipNextSelectionChange = skipNextSelectionChangeRef.current;
+        if (previousSelection !== currentSelection) {
+          if (!viewModel.hasDirtyNodes() && !skipNextSelectionChange) {
+            const browserSelection = window.getSelection();
+            if (
+              browserSelection.anchorNode == null ||
+              browserSelection.focusNode == null
+            ) {
+              return;
+            }
+            const {anchorNode, anchorOffset, focusNode, focusOffset} =
+              sanitizeSelection(browserSelection);
+            pushStep('moveNativeSelection', [
+              `[${getPathFromNodeToEditor(
+                anchorNode,
+                rootElement,
+              ).toString()}]`,
+              anchorOffset,
+              `[${getPathFromNodeToEditor(focusNode, rootElement).toString()}]`,
+              focusOffset,
+            ]);
+          }
+          previousSelectionRef.current = currentSelection;
+        }
+        skipNextSelectionChangeRef.current = false;
+        setTemplatedTest(generateTestContent());
+      },
+    );
     return removeUpdateListener;
   }, [editor, generateTestContent, isRecording, pushStep]);
 
@@ -308,10 +308,10 @@ export default function useStepRecorder(
     if (!isRecording) {
       return;
     }
-    const removeUpdateListener = editor.addUpdateListener((viewModel) => {
-      const editorElement = editor.getEditorElement();
-      if (editorElement !== null) {
-        setCurrentInnerHTML(editorElement?.innerHTML);
+    const removeUpdateListener = editor.addListener('update', (viewModel) => {
+      const rootElement = editor.getRootElement();
+      if (rootElement !== null) {
+        setCurrentInnerHTML(rootElement?.innerHTML);
       }
     });
     return removeUpdateListener;

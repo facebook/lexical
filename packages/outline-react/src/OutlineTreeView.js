@@ -43,7 +43,7 @@ export default function TreeView({
   const [content, setContent] = useState<string>('');
   useEffect(() => {
     setContent(generateContent(editor.getViewModel()));
-    return editor.addUpdateListener(() => {
+    return editor.addListener('update', () => {
       setContent(generateContent(editor.getViewModel()));
     });
   }, [editor]);

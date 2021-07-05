@@ -19,6 +19,7 @@ import type {BlockNode} from './OutlineBlockNode';
 import type {Selection} from './OutlineSelection';
 import type {Node as ReactNode} from 'react';
 import type {ParsedNodeMap} from './OutlineNode';
+import type {ListenerType} from './OutlineEditor';
 
 import {cloneDecorators, reconcileViewModel} from './OutlineReconciler';
 import {getSelection, createSelectionFromParse} from './OutlineSelection';
@@ -51,7 +52,7 @@ export type ParsedViewModel = {
     focusKey: string,
     focusOffset: number,
   },
-  _nodeMap: {root: ParsedNode, [key: NodeKey]: ParsedNode},
+  _nodeMap: Array<[NodeKey, ParsedNode]>,
 };
 
 let activeViewModel = null;
@@ -103,7 +104,8 @@ export function getActiveEditor(): OutlineEditor {
 
 const view: View = {
   getRoot() {
-    return getActiveViewModel()._nodeMap.root;
+    // $FlowFixMe: root is always in our Map
+    return ((getActiveViewModel()._nodeMap.get('root'): any): RootNode);
   },
   getNodeByKey,
   getSelection,
@@ -175,7 +177,7 @@ function triggerTextMutationListeners(
     if (nodeKey === compositionKey) {
       continue;
     }
-    const node = nodeMap[nodeKey];
+    const node = nodeMap.get(nodeKey);
 
     if (
       node !== undefined &&
@@ -250,7 +252,7 @@ function garbageCollectDetachedDecorators(
   const nodeMap = pendingViewModel._nodeMap;
   let key;
   for (key in decorators) {
-    if (nodeMap[key] === undefined) {
+    if (!nodeMap.has(key)) {
       if (decorators === currentDecorators) {
         decorators = cloneDecorators(editor);
       }
@@ -268,12 +270,12 @@ function garbageCollectDetachedDeepChildNodes(
   const childrenLength = children.length;
   for (let i = 0; i < childrenLength; i++) {
     const childKey = children[i];
-    const child = nodeMap[childKey];
+    const child = nodeMap.get(childKey);
     if (child !== undefined && child.__parent === parentKey) {
       if (isBlockNode(child)) {
         garbageCollectDetachedDeepChildNodes(child, childKey, nodeMap);
       }
-      delete nodeMap[childKey];
+      nodeMap.delete(childKey);
     }
   }
 }
@@ -287,7 +289,7 @@ export function garbageCollectDetachedNodes(
 
   for (let s = 0; s < dirtyNodes.length; s++) {
     const nodeKey = dirtyNodes[s];
-    const node = nodeMap[nodeKey];
+    const node = nodeMap.get(nodeKey);
 
     if (node !== undefined) {
       // Garbage collect node and its children if they exist
@@ -295,7 +297,7 @@ export function garbageCollectDetachedNodes(
         if (isBlockNode(node)) {
           garbageCollectDetachedDeepChildNodes(node, nodeKey, nodeMap);
         }
-        delete nodeMap[nodeKey];
+        nodeMap.delete(nodeKey);
       }
     }
   }
@@ -303,7 +305,8 @@ export function garbageCollectDetachedNodes(
 
 export function commitPendingUpdates(editor: OutlineEditor): void {
   const pendingViewModel = editor._pendingViewModel;
-  if (editor._editorElement === null || pendingViewModel === null) {
+  const rootElement = editor._rootElement;
+  if (rootElement === null || pendingViewModel === null) {
     return;
   }
   const currentViewModel = editor._viewModel;
@@ -312,15 +315,14 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
   const previousActiveViewModel = activeViewModel;
   activeViewModel = pendingViewModel;
   try {
-    reconcileViewModel(currentViewModel, pendingViewModel, editor);
+    reconcileViewModel(rootElement, currentViewModel, pendingViewModel, editor);
   } catch (error) {
     // Report errors
-    triggerErrorListeners(editor, error);
+    triggerListeners('error', editor, error);
     // Reset editor and restore incoming view model to the DOM
-    const editorElement = editor._editorElement;
-    if (editorElement !== null && !isAttemptingToRecoverFromReconcilerError) {
+    if (!isAttemptingToRecoverFromReconcilerError) {
       resetEditor(editor);
-      editor._keyToDOMMap.set('root', editorElement);
+      editor._keyToDOMMap.set('root', rootElement);
       editor._pendingViewModel = pendingViewModel;
       isAttemptingToRecoverFromReconcilerError = true;
       commitPendingUpdates(editor);
@@ -335,9 +337,9 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
   if (pendingDecorators !== null) {
     editor._decorators = pendingDecorators;
     editor._pendingDecorators = null;
-    triggerDecoratorListeners(pendingDecorators, editor);
+    triggerListeners('decorator', editor, pendingDecorators);
   }
-  triggerUpdateListeners(editor);
+  triggerListeners('update', editor, pendingViewModel);
   const deferred = editor._deferred;
   if (deferred.length !== 0) {
     for (let i = 0; i < deferred.length; i++) {
@@ -347,36 +349,22 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
   }
 }
 
-export function triggerDecoratorListeners(
-  decorators: {[NodeKey]: ReactNode},
+export function triggerListeners(
+  type: ListenerType,
   editor: OutlineEditor,
+  ...payload: Array<
+    // $FlowFixMe: needs refining
+    null | Error | HTMLElement | {[NodeKey]: ReactNode} | ViewModel,
+  >
 ): void {
-  const listeners = Array.from(editor._decoratorListeners);
+  const listeners = Array.from(editor._listeners[type]);
   for (let i = 0; i < listeners.length; i++) {
-    listeners[i](decorators);
-  }
-}
-
-export function triggerUpdateListeners(editor: OutlineEditor): void {
-  const viewModel = editor._viewModel;
-  const listeners = Array.from(editor._updateListeners);
-  for (let i = 0; i < listeners.length; i++) {
-    listeners[i](viewModel);
-  }
-}
-
-export function triggerErrorListeners(
-  editor: OutlineEditor,
-  error: Error,
-): void {
-  const listeners = Array.from(editor._errorListeners);
-  for (let i = 0; i < listeners.length; i++) {
-    listeners[i](error);
+    listeners[i](...payload);
   }
 }
 
 export function cloneViewModel(current: ViewModel): ViewModel {
-  const draft = new ViewModel({...current._nodeMap});
+  const draft = new ViewModel(new Map(current._nodeMap));
   return draft;
 }
 
@@ -418,7 +406,7 @@ export class ViewModel {
 
     for (let i = 0; i < dirtyNodes.length; i++) {
       const dirtyNodeKey = dirtyNodes[i];
-      const dirtyNode = nodeMap[dirtyNodeKey];
+      const dirtyNode = nodeMap.get(dirtyNodeKey);
 
       if (dirtyNode !== undefined) {
         nodes.push(dirtyNode);
@@ -433,7 +421,7 @@ export class ViewModel {
     const selection = this._selection;
     return JSON.stringify(
       {
-        _nodeMap: this._nodeMap,
+        _nodeMap: Array.from(this._nodeMap.entries()),
         _selection:
           selection === null
             ? null
@@ -455,16 +443,18 @@ export function parseViewModel(
   editor: OutlineEditor,
 ): ViewModel {
   const parsedViewModel: ParsedViewModel = JSON.parse(stringifiedViewModel);
-  const nodeMap = {};
+  const nodeMap = new Map();
   const viewModel = new ViewModel(nodeMap);
   const state = {
     originalSelection: parsedViewModel._selection,
   };
   enterViewModelScope(
     () => {
-      const parsedNodeMap = parsedViewModel._nodeMap;
+      const parsedNodeMap = new Map(parsedViewModel._nodeMap);
+      // $FlowFixMe: root always exists in Map
+      const parsedRoot = ((parsedNodeMap.get('root'): any): ParsedNode);
       createNodeFromParse(
-        parsedNodeMap.root,
+        parsedRoot,
         parsedNodeMap,
         editor,
         null /* parentKey */,

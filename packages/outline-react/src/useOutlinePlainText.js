@@ -23,12 +23,12 @@ import {
   onCompositionEnd,
   onCut,
   onCopy,
-  onNativeBeforeInputForPlainText,
+  onBeforeInputForPlainText,
   onPasteForPlainText,
   onDropPolyfill,
   onDragStartPolyfill,
-  onPolyfilledBeforeInput,
-  onNativeInput,
+  onInput,
+  onMutation,
 } from './shared/EventHandlers';
 import useOutlineDragonSupport from './shared/useOutlineDragonSupport';
 import useOutlineHistory from './shared/useOutlineHistory';
@@ -44,8 +44,6 @@ function initEditor(editor: OutlineEditor): void {
   });
 }
 
-const emptyObject: {} = {};
-
 const events: InputEvents = [
   ['selectionchange', onSelectionChange],
   ['keydown', onKeyDownForPlainText],
@@ -55,25 +53,21 @@ const events: InputEvents = [
   ['copy', onCopy],
   ['dragstart', onDragStartPolyfill],
   ['paste', onPasteForPlainText],
+  ['beforeinput', onBeforeInputForPlainText],
+  ['input', onInput],
 ];
 
-if (CAN_USE_BEFORE_INPUT) {
-  events.push(
-    ['beforeinput', onNativeBeforeInputForPlainText],
-    ['input', onNativeInput],
-  );
-} else {
+if (!CAN_USE_BEFORE_INPUT) {
   events.push(['drop', onDropPolyfill]);
 }
 
 export default function useOutlinePlainText(
   editor: OutlineEditor,
   isReadOnly?: boolean = false,
-): {} | {onBeforeInput: (SyntheticInputEvent<EventTarget>) => void} {
+): void {
   const eventHandlerState: EventHandlerState = useMemo(
     () => ({
       isReadOnly: false,
-      compositionSelection: null,
     }),
     [],
   );
@@ -83,23 +77,35 @@ export default function useOutlinePlainText(
   }, [isReadOnly, eventHandlerState]);
 
   useEffect(() => {
-    return editor.addEditorElementListener((editorElement) => {
-      if (editorElement !== null) {
+    const removeElementListner = editor.addListener('root', (rootElement) => {
+      if (rootElement !== null) {
         initEditor(editor);
         editor.registerNodeType('paragraph', ParagraphNode);
       }
     });
+    const observer = new MutationObserver(onMutation.bind(null, editor));
+    const removeMutationListener = editor.addListener(
+      'mutation',
+      (rootElement: null | HTMLElement) => {
+        if (rootElement === null) {
+          observer.disconnect();
+        } else {
+          observer.observe(rootElement, {
+            childList: true,
+            subtree: true,
+            characterData: true,
+          });
+        }
+      },
+    );
+
+    return () => {
+      removeMutationListener();
+      removeElementListner();
+    };
   }, [editor]);
 
   useOutlineEditorEvents(events, editor, eventHandlerState);
   useOutlineDragonSupport(editor);
   useOutlineHistory(editor);
-
-  return CAN_USE_BEFORE_INPUT
-    ? emptyObject
-    : {
-        onBeforeInput: (event: SyntheticInputEvent<EventTarget>) => {
-          onPolyfilledBeforeInput(event, editor, eventHandlerState);
-        },
-      };
 }

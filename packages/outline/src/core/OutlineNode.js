@@ -16,7 +16,6 @@ import {
   isBlockNode,
   isTextNode,
   isRootNode,
-  RootNode,
   BlockNode,
 } from '.';
 import {getActiveViewModel, errorOnReadOnly} from './OutlineView';
@@ -45,24 +44,23 @@ export type ParsedNode = {
   __children: Array<NodeKey>,
   ...
 };
-export type ParsedNodeMap = {
-  root: ParsedNode,
-  [key: NodeKey]: ParsedNode,
-};
+export type ParsedNodeMap = Map<NodeKey, ParsedNode>;
 type ParsedSelection = {
   anchorKey: NodeKey,
   anchorOffset: number,
   focusKey: NodeKey,
   focusOffset: number,
 };
-export type NodeMapType = {root: RootNode, [key: NodeKey]: OutlineNode};
+// export type NodeMapType = {root: RootNode, [key: NodeKey]: OutlineNode};
+
+export type NodeMapType = Map<NodeKey, OutlineNode>;
 
 function generateKey(node: OutlineNode): NodeKey {
   errorOnReadOnly();
   const viewModel = getActiveViewModel();
   const dirtyNodes = viewModel._dirtyNodes;
   const key = generateRandomKey();
-  viewModel._nodeMap[key] = node;
+  viewModel._nodeMap.set(key, node);
   dirtyNodes.add(key);
   return key;
 }
@@ -78,7 +76,11 @@ function markParentsAsDirty(
       return;
     }
     dirtySubTrees.add(nextParentKey);
-    nextParentKey = nodeMap[nextParentKey].__parent;
+    const node = nodeMap.get(nextParentKey);
+    if (node === undefined) {
+      break;
+    }
+    nextParentKey = node.__parent;
   }
 }
 
@@ -189,7 +191,6 @@ export class OutlineNode {
   __flags: number;
   __key: NodeKey;
   __parent: null | NodeKey;
-  decorate: void | ((key: string) => null | ReactNode);
 
   clone(): OutlineNode {
     // Flow doesn't support abstract classes unfortunately, so we can't _force_
@@ -464,6 +465,10 @@ export class OutlineNode {
   isDirectionless(): boolean {
     return (this.getLatest().__flags & IS_DIRECTIONLESS) !== 0;
   }
+  isDirty(): boolean {
+    const viewModel = getActiveViewModel();
+    return viewModel._dirtyNodes.has(this.__key);
+  }
   getLatest<N: OutlineNode>(): N {
     const latest = getNodeByKey<N>(this.__key);
     if (latest === null) {
@@ -504,9 +509,7 @@ export class OutlineNode {
     mutableNode.__key = key;
     markNodeAsDirty(mutableNode);
     // Update reference in node map
-    if (nodeMap[key] !== undefined) {
-      nodeMap[key] = mutableNode;
-    }
+    nodeMap.set(key, mutableNode);
     return mutableNode;
   }
   getTextContent(includeInert?: boolean, includeDirectionless?: false): string {
@@ -531,6 +534,9 @@ export class OutlineNode {
     editorThemeClasses: EditorThemeClasses,
   ): boolean {
     invariant(false, 'updateDOM: base method not extended');
+  }
+  decorate(key: string, editor: OutlineEditor): null | ReactNode {
+    return null;
   }
 
   // Setters and mutators
@@ -663,7 +669,7 @@ export class OutlineNode {
 
 export function getNodeByKey<N: OutlineNode>(key: NodeKey): N | null {
   const viewModel = getActiveViewModel();
-  const node = viewModel._nodeMap[key];
+  const node = viewModel._nodeMap.get(key);
   if (node === undefined) {
     return null;
   }
@@ -671,16 +677,15 @@ export function getNodeByKey<N: OutlineNode>(key: NodeKey): N | null {
 }
 
 function getNodeByKeyOrThrow<N: OutlineNode>(key: NodeKey): N {
-  const viewModel = getActiveViewModel();
-  const node = viewModel._nodeMap[key];
-  if (node === undefined) {
+  const node = getNodeByKey<N>(key);
+  if (node === null) {
     invariant(
       false,
       "Expected node with key %s to exist but it's not in the nodeMap.",
       key,
     );
   }
-  return (node: $FlowFixMe);
+  return node;
 }
 
 export function createNodeFromParse(
@@ -699,7 +704,7 @@ export function createNodeFromParse(
   const key = node.__key;
   if (isRootNode(node)) {
     const viewModel = getActiveViewModel();
-    viewModel._nodeMap.root = node;
+    viewModel._nodeMap.set('root', node);
   }
   // Copy over all properties, except the key and children.
   // We've already generated a unique key for this node, we
@@ -722,16 +727,18 @@ export function createNodeFromParse(
     const children = parsedNode.__children;
     for (let i = 0; i < children.length; i++) {
       const childKey = children[i];
-      const parsedChild = parsedNodeMap[childKey];
-      const child = createNodeFromParse(
-        parsedChild,
-        parsedNodeMap,
-        editor,
-        key,
-        state,
-      );
-      const newChildKey = child.getKey();
-      node.__children.push(newChildKey);
+      const parsedChild = parsedNodeMap.get(childKey);
+      if (parsedChild !== undefined) {
+        const child = createNodeFromParse(
+          parsedChild,
+          parsedNodeMap,
+          editor,
+          key,
+          state,
+        );
+        const newChildKey = child.getKey();
+        node.__children.push(newChildKey);
+      }
     }
   }
   // The selection might refer to an old node whose key has changed. Produce a

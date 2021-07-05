@@ -8,19 +8,19 @@
  */
 
 import type {NodeKey, NodeMapType} from './OutlineNode';
-import type {ViewModel} from './OutlineView';
+import {triggerListeners, ViewModel} from './OutlineView';
 import type {OutlineEditor, EditorThemeClasses} from './OutlineEditor';
-import type {Selection} from './OutlineSelection';
+import type {Selection as OutlineSelection} from './OutlineSelection';
 import type {Node as ReactNode} from 'react';
 
 import {isTextNode, isBlockNode} from '.';
 import {
   isSelectionWithinEditor,
-  getDOMTextNodeFromElement,
   isImmutableOrInertOrSegmented,
 } from './OutlineUtils';
 import {IS_INERT, IS_RTL, IS_LTR, IS_DIRTY_DECORATOR} from './OutlineConstants';
 import invariant from 'shared/invariant';
+import {OutlineNode} from './OutlineNode';
 
 let subTreeTextContent = '';
 let editorTextContent = '';
@@ -33,9 +33,11 @@ let activeNextNodeMap: NodeMapType;
 let activeViewModelIsDirty: boolean = false;
 
 const decoratorKeyMap: Map<NodeKey, string> = new Map();
+// $FlowFixMe: Flow complains about being unbound
+const baseDecorateMethod = OutlineNode.prototype.decorate;
 
 function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
-  const node = activePrevNodeMap[key];
+  const node = activePrevNodeMap.get(key);
 
   if (parentDOM !== null) {
     const dom = getElementByKeyOrThrow(activeEditor, key);
@@ -43,7 +45,7 @@ function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
   }
   // This logic is really important, otherwise we will leak DOM nodes
   // when their corresponding OutlineNodes are removed from the view model.
-  if (activeNextNodeMap[key] === undefined) {
+  if (!activeNextNodeMap.has(key)) {
     activeEditor._keyToDOMMap.delete(key);
   }
   if (isBlockNode(node)) {
@@ -72,16 +74,19 @@ function createNode(
   parentDOM: null | HTMLElement,
   insertDOM: null | HTMLElement,
 ): HTMLElement {
-  const node = activeNextNodeMap[key];
+  const node = activeNextNodeMap.get(key);
+  if (node === undefined) {
+    invariant(false, 'createNode: node does not exist in nodeMap');
+  }
   const dom = node.createDOM(activeEditorThemeClasses);
   const flags = node.__flags;
   const isInert = flags & IS_INERT;
-  const decorate = node.decorate;
   storeDOMWithKey(key, dom, activeEditor);
 
-  if (typeof decorate === 'function') {
+  // $FlowFixMe: Flow complains about being unbound
+  if (node.decorate !== baseDecorateMethod) {
     const decoratorKey = getDecoratorKey(key, false);
-    const decorator = decorate.call(node, decoratorKey);
+    const decorator = node.decorate(decoratorKey, activeEditor);
     if (decorator !== null) {
       reconcileDecorator(key, decorator);
     }
@@ -99,11 +104,9 @@ function createNode(
   }
 
   if (isTextNode(node)) {
-    if (!isInert) {
-      const text = node.__text;
-      subTreeTextContent += text;
-      editorTextContent += text;
-    }
+    const text = node.getTextContent();
+    subTreeTextContent += text;
+    editorTextContent += text;
   } else if (isBlockNode(node)) {
     if (flags & IS_LTR) {
       dom.dir = 'ltr';
@@ -163,7 +166,6 @@ function reconcileChildren(
   prevChildren: Array<NodeKey>,
   nextChildren: Array<NodeKey>,
   dom: HTMLElement,
-  isRoot: boolean,
 ): void {
   const previousSubTreeTextContent = subTreeTextContent;
   subTreeTextContent = '';
@@ -186,16 +188,9 @@ function reconcileChildren(
     }
   } else if (nextChildrenLength === 0) {
     if (prevChildrenLength !== 0) {
-      destroyChildren(
-        prevChildren,
-        0,
-        prevChildrenLength - 1,
-        isRoot ? dom : null,
-      );
-      if (!isRoot) {
-        // Fast path for removing DOM nodes
-        dom.textContent = '';
-      }
+      destroyChildren(prevChildren, 0, prevChildrenLength - 1, null);
+      // Fast path for removing DOM nodes
+      dom.textContent = '';
     }
   } else {
     reconcileNodeChildren(
@@ -212,8 +207,14 @@ function reconcileChildren(
 }
 
 function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
-  const prevNode = activePrevNodeMap[key];
-  const nextNode = activeNextNodeMap[key];
+  const prevNode = activePrevNodeMap.get(key);
+  const nextNode = activeNextNodeMap.get(key);
+  if (prevNode === undefined || nextNode === undefined) {
+    invariant(
+      false,
+      'reconcileNode: prevNode or nextNode does not exist in nodeMap',
+    );
+  }
   const isDirty =
     activeViewModelIsDirty ||
     activeDirtyNodes.has(key) ||
@@ -224,7 +225,7 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
 
   if ((prevNode === nextNode && !isDirty) || isComposingNode) {
     if (isTextNode(prevNode)) {
-      const text = prevNode.__text;
+      const text = prevNode.getTextContent();
       editorTextContent += text;
       subTreeTextContent += text;
     } else {
@@ -248,22 +249,22 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
     return;
   }
   const nextFlags = nextNode.__flags;
-  const decorate = nextNode.decorate;
-  if (typeof decorate === 'function') {
+  // $FlowFixMe: Flow complains about being unbound
+  if (nextNode.decorate !== baseDecorateMethod) {
     const hasDirtyDecorator = (nextFlags & IS_DIRTY_DECORATOR) !== 0;
     const decoratorKey = getDecoratorKey(key, hasDirtyDecorator);
     if (hasDirtyDecorator) {
       // Remove the dirty decorator flag
       nextNode.__flags ^= IS_DIRTY_DECORATOR;
     }
-    const decorator = decorate.call(nextNode, decoratorKey);
+    const decorator = nextNode.decorate(decoratorKey, activeEditor);
     if (decorator !== null) {
       reconcileDecorator(key, decorator);
     }
   }
   // Handle text content, for LTR, LTR cases.
   if (isTextNode(nextNode)) {
-    const text = nextNode.__text;
+    const text = nextNode.getTextContent();
     subTreeTextContent += text;
     editorTextContent += text;
     return;
@@ -286,8 +287,7 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
     const childrenAreDifferent = prevChildren !== nextChildren;
 
     if (childrenAreDifferent || isDirty) {
-      const isRoot = key === 'root';
-      reconcileChildren(prevChildren, nextChildren, dom, isRoot);
+      reconcileChildren(prevChildren, nextChildren, dom);
     }
   }
 }
@@ -493,6 +493,7 @@ function reconcileRoot(
 }
 
 export function reconcileViewModel(
+  rootElement: HTMLElement,
   prevViewModel: ViewModel,
   nextViewModel: ViewModel,
   editor: OutlineEditor,
@@ -503,46 +504,79 @@ export function reconcileViewModel(
   // always do a full reconciliation to ensure consistency.
   const isDirty = nextViewModel._isDirty;
   const needsUpdate = isDirty || nextViewModel.hasDirtyNodes();
-  let reconciliationCausedLostSelection = false;
+  const domSelection: null | Selection = window.getSelection();
+  let mutationsCausedLostSelection = false;
 
   if (needsUpdate) {
-    const {anchorOffset, focusOffset} = window.getSelection();
-    reconcileRoot(
-      prevViewModel,
-      nextViewModel,
-      editor,
-      dirtySubTrees,
-      dirtyNodes,
-    );
-    const selectionAfter = window.getSelection();
+    let anchorNodeBeforeMutation;
+    let focusNodeBeforeMutation;
+    let anchorOffsetBeforeMutation;
+    let focusOffsetBeforeMutation;
+
+    if (domSelection !== null) {
+      anchorNodeBeforeMutation = domSelection.anchorNode;
+      focusNodeBeforeMutation = domSelection.focusNode;
+      anchorOffsetBeforeMutation = domSelection.anchorOffset;
+      focusOffsetBeforeMutation = domSelection.focusOffset;
+    }
+    triggerListeners('mutation', editor, null);
+    try {
+      reconcileRoot(
+        prevViewModel,
+        nextViewModel,
+        editor,
+        dirtySubTrees,
+        dirtyNodes,
+      );
+    } finally {
+      triggerListeners('mutation', editor, rootElement);
+    }
+    // Compare the selection before mutation to the one after mutation.
+    // If there are changes, we will need to update selection anyway.
     if (
-      anchorOffset !== selectionAfter.anchorOffset ||
-      focusOffset !== selectionAfter.focusOffset
+      domSelection !== null &&
+      (anchorNodeBeforeMutation !== domSelection.anchorNode ||
+        focusNodeBeforeMutation !== domSelection.focusNode ||
+        anchorOffsetBeforeMutation !== domSelection.anchorOffset ||
+        focusOffsetBeforeMutation !== domSelection.focusOffset)
     ) {
-      reconciliationCausedLostSelection = true;
+      mutationsCausedLostSelection = true;
     }
   }
   const prevSelection = prevViewModel._selection;
   const nextSelection = nextViewModel._selection;
 
   if (
+    domSelection !== null &&
     !editor.isComposing() &&
     prevSelection !== nextSelection &&
     (!nextSelection ||
       nextSelection.isDirty ||
       isDirty ||
-      reconciliationCausedLostSelection)
+      mutationsCausedLostSelection)
   ) {
-    reconcileSelection(prevSelection, nextSelection, editor);
+    reconcileSelection(prevSelection, nextSelection, editor, domSelection);
   }
 }
 
+function getDOMTextNode(element: HTMLElement): Text | null {
+  let node = element;
+  while (node != null) {
+    if (node.nodeType === 3) {
+      // $FlowFixMe: this is a Text
+      return node;
+    }
+    node = node.firstChild;
+  }
+  return null;
+}
+
 function reconcileSelection(
-  prevSelection: Selection | null,
-  nextSelection: Selection | null,
+  prevSelection: OutlineSelection | null,
+  nextSelection: OutlineSelection | null,
   editor: OutlineEditor,
+  domSelection: Selection,
 ): void {
-  const domSelection = window.getSelection();
   const anchorDOMNode = domSelection.anchorNode;
   const focusDOMNode = domSelection.focusNode;
   const anchorOffset = domSelection.anchorOffset;
@@ -560,6 +594,16 @@ function reconcileSelection(
   const focusNode = nextSelection.getFocusNode();
   const anchorDOM = getElementByKeyOrThrow(editor, anchorKey);
   const focusDOM = getElementByKeyOrThrow(editor, focusKey);
+
+  // Get the underlying DOM text nodes from the representative
+  // Outline text nodes (we use elements for text nodes).
+  const anchorDOMTarget = getDOMTextNode(anchorDOM);
+  const focusDOMTarget = getDOMTextNode(focusDOM);
+  // If we can't get an underlying text node for selection, then
+  // we should avoid setting selection to something incorrect.
+  if (focusDOMTarget === null || anchorDOMTarget === null) {
+    return;
+  }
   const nextSelectionAnchorOffset = nextSelection.anchorOffset;
   const nextSelectionFocusOffset = nextSelection.focusOffset;
   const nextAnchorOffset = isImmutableOrInertOrSegmented(anchorNode)
@@ -568,11 +612,6 @@ function reconcileSelection(
   const nextFocusOffset = isImmutableOrInertOrSegmented(focusNode)
     ? nextSelectionFocusOffset
     : nextSelectionFocusOffset + 1;
-
-  // Get the underlying DOM text nodes from the representative
-  // Outline text nodes (we use elements for text nodes).
-  const anchorDOMTarget = getDOMTextNodeFromElement(anchorDOM);
-  const focusDOMTarget = getDOMTextNodeFromElement(focusDOM);
 
   // Diff against the native DOM selection to ensure we don't do
   // an unnecessary selection update.

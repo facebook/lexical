@@ -11,7 +11,6 @@ import type {OutlineEditor} from './OutlineEditor';
 import type {OutlineNode} from './OutlineNode';
 
 import {RTL_REGEX, LTR_REGEX} from './OutlineConstants';
-import invariant from 'shared/invariant';
 
 export const emptyFunction = () => {};
 
@@ -22,7 +21,7 @@ export function resetRandomKey(): void {
 }
 
 export function generateRandomKey(): string {
-  return '_' + keyCounter++;
+  return '' + keyCounter++;
 }
 
 // When we are dealing with setting selection on an empty text node, we
@@ -54,12 +53,12 @@ export function isSelectionWithinEditor(
   anchorDOM: null | Node,
   focusDOM: null | Node,
 ): boolean {
-  const editorElement = editor.getEditorElement();
+  const rootElement = editor.getRootElement();
   try {
     return (
-      editorElement !== null &&
-      editorElement.contains(anchorDOM) &&
-      editorElement.contains(focusDOM)
+      rootElement !== null &&
+      rootElement.contains(anchorDOM) &&
+      rootElement.contains(focusDOM)
     );
   } catch {
     return false;
@@ -74,18 +73,6 @@ export function getTextDirection(text: string): 'ltr' | 'rtl' | null {
     return 'ltr';
   }
   return null;
-}
-
-export function getDOMTextNodeFromElement(element: Node): Text {
-  let node = element;
-  while (node != null) {
-    if (node.nodeType === 3) {
-      // $FlowFixMe: nodeType === text node
-      return node;
-    }
-    node = node.firstChild;
-  }
-  invariant(false, 'getDOMTextNodeFromElement: text node not found');
 }
 
 export function isImmutableOrInertOrSegmented(node: OutlineNode): boolean {

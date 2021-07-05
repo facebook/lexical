@@ -59,7 +59,7 @@ function findAndTransformEmoji(
 }
 
 function textNodeTransform(node: TextNode, view: View): void {
-  if (node.isSegmented() || node.isImmutable() || isHashtagNode(node)) {
+  if (isHashtagNode(node)) {
     return;
   }
 

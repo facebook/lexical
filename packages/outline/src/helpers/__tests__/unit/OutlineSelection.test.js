@@ -58,7 +58,7 @@ describe('OutlineSelection tests', () => {
     container = null;
   });
 
-  function useOutlineEditor(editorElementRef) {
+  function useOutlineEditor(rootElementRef) {
     const editor = React.useMemo(
       () =>
         createEditor({
@@ -95,10 +95,10 @@ describe('OutlineSelection tests', () => {
     );
 
     React.useEffect(() => {
-      const editorElement = editorElementRef.current;
+      const rootElement = rootElementRef.current;
 
-      editor.setEditorElement(editorElement);
-    }, [editorElementRef, editor]);
+      editor.setRootElement(rootElement);
+    }, [rootElementRef, editor]);
 
     return editor;
   }
@@ -134,14 +134,14 @@ describe('OutlineSelection tests', () => {
     );
   });
 
-  function assertSelection(editorElement, expectedSelection) {
+  function assertSelection(rootElement, expectedSelection) {
     const acutalSelection = sanitizeSelection(window.getSelection());
     expect(acutalSelection.anchorNode).toBe(
-      getNodeFromPath(expectedSelection.anchorPath, editorElement),
+      getNodeFromPath(expectedSelection.anchorPath, rootElement),
     );
     expect(acutalSelection.anchorOffset).toBe(expectedSelection.anchorOffset);
     expect(acutalSelection.focusNode).toBe(
-      getNodeFromPath(expectedSelection.focusPath, editorElement),
+      getNodeFromPath(expectedSelection.focusPath, rootElement),
     );
     expect(acutalSelection.focusOffset).toBe(expectedSelection.focusOffset);
   }
@@ -934,9 +934,9 @@ describe('OutlineSelection tests', () => {
       // Validate HTML matches
       expect(sanitizeHTML(container.innerHTML)).toBe(testUnit.expectedHTML);
       // Validate selection matches
-      const editorElement = editor.getEditorElement();
+      const rootElement = editor.getRootElement();
       const expectedSelection = testUnit.expectedSelection;
-      assertSelection(editorElement, expectedSelection);
+      assertSelection(rootElement, expectedSelection);
     });
   });
 });

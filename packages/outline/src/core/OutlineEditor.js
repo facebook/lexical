@@ -159,9 +159,12 @@ function updateEditor(
           const currentViewModel = editor._viewModel;
           const nodeMap = currentViewModel._nodeMap;
           const pendingNodeMap = currentPendingViewModel._nodeMap;
-          for (const nodeKey in nodeMap) {
-            const node = nodeMap.get(nodeKey);
-            if (isTextNode(node) && pendingNodeMap.get(nodeKey) !== undefined) {
+          const nodeMapEntries = Array.from(nodeMap);
+          // For...of would be faster here, but this will get
+          // compiled away to a slow-path with Babel.
+          for (let i = 0; i < nodeMapEntries.length; i++) {
+            const [nodeKey, node] = nodeMapEntries[i];
+            if (isTextNode(node) && pendingNodeMap.has(nodeKey)) {
               node.getWritable();
             }
           }

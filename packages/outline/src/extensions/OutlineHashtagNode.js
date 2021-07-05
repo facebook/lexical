@@ -40,7 +40,7 @@ export class HashtagNode extends TextNode {
         toggleHashtag(targetNode);
         requireNormalize = true;
       } else if (indexOfHash > 0) {
-        [, targetNode] = this.splitText(indexOfHash);
+        [targetNode] = this.splitText(indexOfHash);
         toggleHashtag(targetNode);
         requireNormalize = true;
       }

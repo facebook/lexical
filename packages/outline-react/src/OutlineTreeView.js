@@ -158,7 +158,6 @@ function printNode(node) {
 const LABEL_PREDICATES = [
   (node) => node.isBold() && 'Bold',
   (node) => node.isCode() && 'Code',
-  (node) => node.isHashtag() && 'Hashtag',
   (node) => node.isImmutable() && 'Immutable',
   (node) => node.isItalic() && 'Italic',
   (node) => node.isSegmented() && 'Segmented',

@@ -14,6 +14,7 @@ import {useEffect, useState} from 'react';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
 import {TextNode} from 'outline';
+import {isHashtagNode} from 'outline/HashtagNode';
 import useEvent from './useEvent';
 
 const mentionStyle = 'background-color: rgba(24, 119, 232, 0.2)';
@@ -438,7 +439,7 @@ export default function useMentions(editor: OutlineEditor): React$Node {
       if (
         selection === null ||
         selection.getAnchorNode() !== node ||
-        node.isHashtag() ||
+        isHashtagNode(node) ||
         node.__type === 'mention'
       ) {
         return;

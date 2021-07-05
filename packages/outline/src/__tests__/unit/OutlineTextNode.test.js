@@ -12,7 +12,6 @@ import {
   IS_STRIKETHROUGH,
   IS_UNDERLINE,
   IS_CODE,
-  IS_HASHTAG,
   IS_OVERFLOWED,
   IS_UNMERGEABLE,
 } from '../../core/OutlineConstants';
@@ -33,7 +32,6 @@ const editorThemeClasses = Object.freeze({
     underlineStrikethrough: 'my-underline-strikethrough-class',
     italic: 'my-italic-class',
     code: 'my-code-class',
-    hashtag: 'my-hashtag-class',
     overflowed: 'my-overflowed-class',
   },
 });
@@ -200,12 +198,6 @@ describe('OutlineTextNode tests', () => {
       (node) => node.toggleUnderline(),
     ],
     ['code', IS_CODE, (node) => node.isCode(), (node) => node.toggleCode()],
-    [
-      'hashtag',
-      IS_HASHTAG,
-      (node) => node.isHashtag(),
-      (node) => node.toggleHashtag(),
-    ],
     [
       'overflowed',
       IS_OVERFLOWED,
@@ -523,12 +515,6 @@ describe('OutlineTextNode tests', () => {
         IS_CODE,
         'My text node',
         '<code><span class="my-code-class">My text node</span></code>',
-      ],
-      [
-        'hashtag',
-        IS_HASHTAG,
-        'My text node',
-        '<span class="my-hashtag-class">My text node</span>',
       ],
       [
         'overflowed',

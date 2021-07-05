@@ -12,6 +12,7 @@ import type {OutlineEditor, NodeKey} from 'outline';
 import * as React from 'react';
 import {useEffect} from 'react';
 import {TextNode} from 'outline';
+import {isHashtagNode} from 'outline/HashtagNode';
 
 const keywords = new Set(['congrats', 'congratulations']);
 
@@ -19,7 +20,7 @@ export default function useKeywords(editor: OutlineEditor): void {
   useEffect(() => {
     editor.registerNodeType('keyword', KeywordNode);
     return editor.addTextNodeTransform((node: TextNode) => {
-      if (node.isHashtag() || isKeywordNode(node)) {
+      if (isHashtagNode(node) || isKeywordNode(node)) {
         return;
       }
       const text = node.getTextContent();

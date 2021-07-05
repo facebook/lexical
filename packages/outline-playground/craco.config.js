@@ -10,6 +10,7 @@ module.exports = {
       'outline/ParagraphNode': 'outline/dist/OutlineParagraphNode',
       'outline/CodeNode': 'outline/dist/OutlineCodeNode',
       'outline/LinkNode': 'outline/dist/OutlineLinkNode',
+      'outline/HashtagNode': 'outline/dist/OutlineHashtagNode',
       // Outline Helpers
       'outline/SelectionHelpers': 'outline/dist/OutlineSelectionHelpers',
       'outline/TextHelpers': 'outline/dist/OutlineTextHelpers',

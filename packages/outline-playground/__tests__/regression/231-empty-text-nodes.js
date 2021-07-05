@@ -28,7 +28,7 @@ describe('Regression test #231', () => {
       });
       await assertHTML(
         page,
-        '<p class="editor-paragraph"><span class=""><br></span></p>',
+        '<p class="editor-paragraph"><span><br></span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],

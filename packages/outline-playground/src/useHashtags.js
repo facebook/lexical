@@ -7,7 +7,13 @@
  * @flow strict-local
  */
 
-import type {OutlineEditor, TextNode} from 'outline';
+import type {OutlineEditor, TextNode, View} from 'outline';
+import {createTextNode} from 'outline';
+import {
+  HashtagNode,
+  createHashtagNode,
+  isHashtagNode,
+} from 'outline/HashtagNode';
 
 import {useEffect} from 'react';
 
@@ -228,11 +234,11 @@ function getHashtagRegexString(): string {
   // A hashtag contains characters, numbers and underscores,
   // but not all numbers.
   const hashtag =
-    '(' +
+    '(?:' +
     hashtagBoundary +
-    ')(' +
+    ')(?:' +
     hashCharList +
-    ')(' +
+    ')(?:' +
     hashtagAlphanumeric +
     '*' +
     hashtagAlpha +
@@ -242,41 +248,81 @@ function getHashtagRegexString(): string {
   return hashtag;
 }
 
-const REGEX = new RegExp(getHashtagRegexString(), 'ig');
+const REGEX = new RegExp(getHashtagRegexString(), 'i');
+
+function textNodeTransform(node: TextNode, view: View): void {
+  const selection = view.getSelection();
+  // now we loop through the text contents and look for hashtags
+  // then transform every occurrence into a hashtag node
+  let currentNode = node;
+  while (currentNode) {
+    const currentNodeText = currentNode.getTextContent();
+    const nodeIsHashtag = isHashtagNode(currentNode);
+    const match = REGEX.exec(currentNodeText);
+    // no hashtags were found?
+    if (match === null) {
+      if (nodeIsHashtag) {
+        let anchorOffset;
+        if (selection) {
+          const anchorNode = selection.getAnchorNode();
+          if (selection.isCaret() && anchorNode === currentNode) {
+            anchorOffset = selection.anchorOffset;
+          }
+        }
+        const textNode = createTextNode(currentNodeText);
+        currentNode.replace(textNode);
+        textNode.select(anchorOffset, anchorOffset);
+      }
+      return;
+    }
+    // we found a hashtag?
+    const [hashtagText] = match;
+    if (hashtagText === currentNodeText) {
+      if (!nodeIsHashtag) {
+        let anchorOffset;
+        if (selection) {
+          const anchorNode = selection.getAnchorNode();
+          if (selection.isCaret() && anchorNode === currentNode) {
+            anchorOffset = selection.anchorOffset;
+          }
+        }
+        const hashtagNode = createHashtagNode(currentNodeText);
+        currentNode.replace(hashtagNode);
+        hashtagNode.select(anchorOffset, anchorOffset);
+      }
+      return;
+    }
+    // not a full match?
+    // split it and make the matched part a hashtag
+    const startOffset = match.index;
+    const endOffset = startOffset + hashtagText.length;
+    let targetNode;
+    if (startOffset === 0) {
+      [targetNode, currentNode] = currentNode.splitText(endOffset);
+    } else {
+      [, targetNode, currentNode] = currentNode.splitText(
+        startOffset,
+        endOffset,
+      );
+    }
+    let anchorOffset;
+    if (selection) {
+      const anchorNode = selection.getAnchorNode();
+      if (selection.isCaret() && anchorNode === targetNode) {
+        anchorOffset = selection.anchorOffset;
+      }
+    }
+    const hashtagNode = createHashtagNode(hashtagText);
+    targetNode.replace(hashtagNode);
+    if (anchorOffset !== undefined) {
+      hashtagNode.select(anchorOffset, anchorOffset);
+    }
+  }
+}
 
 export default function useHashtags(editor: OutlineEditor): void {
   useEffect(() => {
-    return editor.addTextNodeTransform((node: TextNode) => {
-      if (node.isHashtag()) {
-        return;
-      }
-      const text = node.getTextContent();
-      let currentNode = node;
-      let adjustedOffset = 0;
-
-      while (true) {
-        const matchArr = REGEX.exec(text);
-        if (matchArr === null) {
-          return;
-        }
-        const hashtagLength = matchArr[3].length + 1;
-        const startOffset =
-          matchArr.index + matchArr[1].length - adjustedOffset;
-        const endOffset = startOffset + hashtagLength;
-        let targetNode;
-
-        if (startOffset === 0) {
-          [targetNode, currentNode] = currentNode.splitText(endOffset);
-        } else {
-          [, targetNode, currentNode] = currentNode.splitText(
-            startOffset,
-            endOffset,
-          );
-        }
-        adjustedOffset += endOffset;
-
-        targetNode.toggleHashtag();
-      }
-    });
+    editor.registerNodeType('hashtag', HashtagNode);
+    return editor.addTextNodeTransform(textNodeTransform);
   }, [editor]);
 }

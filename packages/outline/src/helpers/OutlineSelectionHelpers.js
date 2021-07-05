@@ -23,6 +23,7 @@ import {
   createTextNode,
 } from 'outline';
 import {createParagraphNode} from 'outline/ParagraphNode';
+import {isHashtagNode} from 'outline/HashtagNode';
 
 import isImmutableOrInertOrSegmented from 'shared/isImmutableOrInertOrSegmented';
 import invariant from 'shared/invariant';
@@ -477,7 +478,7 @@ export function updateCaretSelectionForAdjacentHashtags(
   const selectionAtBoundary = anchorOffset === 0;
   if (selectionAtBoundary && anchorNode.getFlags() === 0) {
     const sibling = anchorNode.getPreviousSibling();
-    if (!anchorNode.isHashtag() && isTextNode(sibling) && sibling.isHashtag()) {
+    if (!isHashtagNode(anchorNode) && isTextNode(sibling) && isHashtagNode(sibling)) {
       sibling.select();
       const siblingTextContent = sibling.getTextContent();
       sibling.setTextContent(siblingTextContent + textContent);

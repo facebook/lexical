@@ -600,8 +600,6 @@ function updateTextNodeFromDOMContent(
         }
         node.select(offset, offset);
       }
-    } else if (editor._compositionKey === node.getKey()) {
-      view.markNodeAsDirty(node);
     }
   }
 }
@@ -939,7 +937,6 @@ export function onBeforeInputForRichText(
       }
       return;
     }
-    console.log(inputType)
 
     // Prevent the browser from carrying out
     // the input event, so we can control the

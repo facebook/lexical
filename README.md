@@ -16,7 +16,7 @@ Outline is a fast, light-weight, extensible library for building rich text edito
 
 ## Getting started with React
 
-Below is an example of a basic plain text editor using `outline` and `outline-react`.
+Below is an example of a basic plain text editor using `outline` and `outline-react` ([try it yourself](https://codesandbox.io/s/outline-plain-text-example-g932e)).
 
 
 ```jsx

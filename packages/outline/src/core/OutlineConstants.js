@@ -23,11 +23,11 @@ export const IS_OVERFLOWED = 1 << 9;
 export const IS_UNMERGEABLE = 1 << 10;
 
 // Block nodes
-export const IS_LTR = 1 << 12;
-export const IS_RTL = 1 << 13;
+export const IS_LTR = 1 << 11;
+export const IS_RTL = 1 << 12;
 
 // Decorators
-export const IS_DIRTY_DECORATOR = 1 << 14;
+export const IS_DIRTY_DECORATOR = 1 << 13;
 
 // Reconciliation
 

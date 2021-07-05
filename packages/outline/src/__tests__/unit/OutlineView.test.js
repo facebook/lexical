@@ -12,7 +12,7 @@ import {ViewModel} from '../../core/OutlineView';
 import {markNodeAsDirty} from '../../core/OutlineNode';
 import {initializeUnitTest} from '../utils';
 
-describe('OutlineViewModel tests', () => {
+describe('OutlineView tests', () => {
   initializeUnitTest((testEnv) => {
     test('constructor', async () => {
       const root = createRootNode();
@@ -60,13 +60,13 @@ describe('OutlineViewModel tests', () => {
       expect(editor.getViewModel().getDirtyNodes()).toEqual([
         {
           __flags: 0,
-          __key: '_1',
+          __key: '1',
           __parent: 'root',
           __text: 'foo',
           __type: 'text',
         },
         {
-          __children: ['_1'],
+          __children: ['1'],
           __flags: 0,
           __key: 'root',
           __parent: null,
@@ -95,24 +95,24 @@ describe('OutlineViewModel tests', () => {
       });
 
       expect(root).toEqual({
-        __children: ['_1'],
+        __children: ['1'],
         __flags: 0,
         __key: 'root',
         __parent: null,
         __type: 'root',
       });
       expect(paragraph).toEqual({
-        __children: ['_2'],
+        __children: ['2'],
         __flags: 0,
-        __key: '_1',
+        __key: '1',
         __parent: 'root',
         __type: 'paragraph',
       });
       expect(text).toEqual({
         __text: 'foo',
         __flags: 0,
-        __key: '_2',
-        __parent: '_1',
+        __key: '2',
+        __parent: '1',
         __type: 'text',
       });
     });
@@ -127,41 +127,50 @@ describe('OutlineViewModel tests', () => {
         view.getRoot().append(paragraph);
       });
       expect(editor.getViewModel().stringify()).toEqual(
-        `{"_nodeMap":{"root":{"__type":"root","__flags":0,"__key":"root","__parent":null,"__children":["_1"]},"_1":{"__type":"paragraph","__flags":0,"__key":"_1","__parent":"root","__children":["_2"]},"_2":{"__type":"text","__flags":0,"__key":"_2","__parent":"_1","__text":"Hello world"}},"_selection":{"anchorKey":"_2","anchorOffset":6,"focusKey":"_2","focusOffset":11}}`,
+        `{\"_nodeMap\":[[\"root\",{\"__type\":\"root\",\"__flags\":0,\"__key\":\"root\",\"__parent\":null,\"__children\":[\"1\"]}],[\"1\",{\"__type\":\"paragraph\",\"__flags\":0,\"__key\":\"1\",\"__parent\":\"root\",\"__children\":[\"2\"]}],[\"2\",{\"__type\":\"text\",\"__flags\":0,\"__key\":\"2\",\"__parent\":\"1\",\"__text\":\"Hello world\"}]],\"_selection\":{\"anchorKey\":\"2\",\"anchorOffset\":6,\"focusKey\":\"2\",\"focusOffset\":11}}`,
       );
       expect(editor.getViewModel().stringify(2)).toEqual(
         `{
-  "_nodeMap": {
-    "root": {
-      "__type": "root",
-      "__flags": 0,
-      "__key": "root",
-      "__parent": null,
-      "__children": [
-        "_1"
-      ]
-    },
-    "_1": {
-      "__type": "paragraph",
-      "__flags": 0,
-      "__key": "_1",
-      "__parent": "root",
-      "__children": [
-        "_2"
-      ]
-    },
-    "_2": {
-      "__type": "text",
-      "__flags": 0,
-      "__key": "_2",
-      "__parent": "_1",
-      "__text": "Hello world"
-    }
-  },
+  "_nodeMap": [
+    [
+      "root",
+      {
+        "__type": "root",
+        "__flags": 0,
+        "__key": "root",
+        "__parent": null,
+        "__children": [
+          "1"
+        ]
+      }
+    ],
+    [
+      "1",
+      {
+        "__type": "paragraph",
+        "__flags": 0,
+        "__key": "1",
+        "__parent": "root",
+        "__children": [
+          "2"
+        ]
+      }
+    ],
+    [
+      "2",
+      {
+        "__type": "text",
+        "__flags": 0,
+        "__key": "2",
+        "__parent": "1",
+        "__text": "Hello world"
+      }
+    ]
+  ],
   "_selection": {
-    "anchorKey": "_2",
+    "anchorKey": "2",
     "anchorOffset": 6,
-    "focusKey": "_2",
+    "focusKey": "2",
     "focusOffset": 11
   }
 }`,
@@ -182,15 +191,20 @@ describe('OutlineViewModel tests', () => {
         view.getRoot().getFirstChild().remove();
       });
 
-      expect(editor.getViewModel()._nodeMap).toEqual({
-        root: {
-          __children: [],
-          __flags: 0,
-          __key: 'root',
-          __parent: null,
-          __type: 'root',
-        },
-      });
+      expect(editor.getViewModel()._nodeMap).toEqual(
+        new Map([
+          [
+            'root',
+            {
+              __children: [],
+              __flags: 0,
+              __key: 'root',
+              __parent: null,
+              __type: 'root',
+            },
+          ],
+        ]),
+      );
     });
   });
 });

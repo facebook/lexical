@@ -30,7 +30,7 @@ import {doesContainGrapheme} from 'outline/TextHelpers';
 
 export function getNodesInRange(selection: Selection): {
   range: Array<NodeKey>,
-  nodeMap: {[NodeKey]: Node},
+  nodeMap: Array<[NodeKey, OutlineNode]>,
 } {
   const anchorNode = selection.getAnchorNode();
   const focusNode = selection.getFocusNode();
@@ -55,7 +55,7 @@ export function getNodesInRange(selection: Selection): {
   const firstNode = nodes[0];
   const isBefore = firstNode === selection.getAnchorNode();
   const nodeKeys = [];
-  const nodeMap = {};
+  const nodeMap = new Map();
   startOffset = isBefore ? anchorOffset : focusOffset;
   endOffset = isBefore ? focusOffset : anchorOffset;
 
@@ -84,8 +84,8 @@ export function getNodesInRange(selection: Selection): {
       }
     }
 
-    if (nodeMap[nodeKey] === undefined) {
-      nodeMap[nodeKey] = node;
+    if (!nodeMap.has(nodeKey)) {
+      nodeMap.set(nodeKey, node);
     }
 
     if (parent === sourceParent && parent !== null) {
@@ -118,8 +118,8 @@ export function getNodesInRange(selection: Selection): {
             childrenKeys.splice(0, index + 1);
             includeTopLevelBlock = true;
           }
-          if (nodeMap[currKey] === undefined) {
-            nodeMap[currKey] = node;
+          if (!nodeMap.has(currKey)) {
+            nodeMap.set(currKey, node);
           }
 
           const nextParent = node.getParent();
@@ -138,7 +138,7 @@ export function getNodesInRange(selection: Selection): {
       }
     }
   }
-  return {range: nodeKeys, nodeMap};
+  return {range: nodeKeys, nodeMap: Array.from(nodeMap.entries())};
 }
 
 export function extractSelection(selection: Selection): Array<OutlineNode> {

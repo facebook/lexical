@@ -207,9 +207,6 @@ pre :not(.tree-view-output) {
   background-color: rgb(233, 35, 35);
 }
 
-.editor-dev-button.active::after {
-}
-
 .test-recorder-toolbar {
   display: flex;
 }
@@ -374,9 +371,6 @@ pre :not(.tree-view-output) {
   background-color: rgb(223, 232, 250);
 }
 
-#toolbar .button.active i {
-}
-
 #toolbar .link-input {
   display: inline-block;
   margin: 0 2px;
@@ -402,9 +396,6 @@ pre :not(.tree-view-output) {
   right: 10px;
   top: 10px;
   cursor: pointer;
-}
-
-#toolbar div.link-edit:hover {
 }
 
 #toolbar .link-input a {

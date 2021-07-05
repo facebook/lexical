@@ -23,12 +23,12 @@ describe('Regression test #230', () => {
       await page.keyboard.press('ArrowRight');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span class=""></span><span class="editor-text-hashtag">#foo</span></p>',
+        '<p class="editor-paragraph" dir="ltr"><span class="editor-text-hashtag">#foo</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 1, 0],
+        anchorPath: [0, 0, 0],
         anchorOffset: 1,
-        focusPath: [0, 1, 0],
+        focusPath: [0, 0, 0],
         focusOffset: 1,
       });
     });

@@ -45,7 +45,6 @@ export type EditorThemeClasses = {
     underlineStrikethrough?: EditorThemeClassName,
     italic?: EditorThemeClassName,
     code?: EditorThemeClassName,
-    hashtag?: EditorThemeClassName,
     overflowed?: EditorThemeClassName,
   },
   paragraph?: EditorThemeClassName,
@@ -58,6 +57,7 @@ export type EditorThemeClasses = {
   listitem?: EditorThemeClassName,
   quote?: EditorThemeClassName,
   code?: EditorThemeClassName,
+  hashtag?: EditorThemeClassName,
   heading?: {
     h1?: EditorThemeClassName,
     h2?: EditorThemeClassName,

@@ -83,7 +83,7 @@ function generateContent(viewModel: ViewModel): string {
 
     visitTree(view, view.getRoot(), (node, indent) => {
       const nodeKey = node.getKey();
-      const nodeKeyDisplay = `(${nodeKey.slice(1)})`;
+      const nodeKeyDisplay = `(${nodeKey})`;
       const typeDisplay = node.getType() || '';
       const isSelected = selectedNodes !== null && selectedNodes.has(nodeKey);
 
@@ -142,10 +142,10 @@ function normalize(text) {
 }
 
 function printNode(node) {
-  if (isTextNode(node)) {
+  if (!isBlockNode(node)) {
     const text = node.getTextContent(true);
     const title = text.length === 0 ? '(empty)' : `"${normalize(text)}"`;
-    const flagLabels = printTextNodeFlags(node);
+    const flagLabels = isTextNode(node) ? printTextNodeFlags(node) : '';
     return [title, flagLabels.length !== 0 ? `flags: ${flagLabels}` : null]
       .filter(Boolean)
       .join(', ')

@@ -7,11 +7,17 @@
  * @flow strict-local
  */
 
-import type {OutlineEditor, NodeKey} from 'outline';
+import type {
+  OutlineEditor,
+  NodeKey,
+  TextNode,
+  OutlineNode,
+  View,
+} from 'outline';
 
 import * as React from 'react';
-import {useEffect} from 'react';
-import {TextNode} from 'outline';
+import {useEffect, useCallback} from 'react';
+import {DecoratorNode, createTextNode} from 'outline';
 import {isHashtagNode} from 'outline/HashtagNode';
 
 const keywords = new Set(['congrats', 'congratulations']);
@@ -19,7 +25,7 @@ const keywords = new Set(['congrats', 'congratulations']);
 export default function useKeywords(editor: OutlineEditor): void {
   useEffect(() => {
     editor.registerNodeType('keyword', KeywordNode);
-    return editor.addTextNodeTransform((node: TextNode) => {
+    return editor.addTextNodeTransform((node: TextNode, view: View) => {
       if (isHashtagNode(node) || isKeywordNode(node)) {
         return;
       }
@@ -27,36 +33,94 @@ export default function useKeywords(editor: OutlineEditor): void {
       // TODO this only works if there is only the keyword in the editor.
       // we should make it work more effectively.
       if (keywords.has(text)) {
-        const keywordNode = createKeywordNode(text);
+        const selection = view.getSelection();
+        let anchorOffset = null;
+        if (selection !== null && node === selection.getAnchorNode()) {
+          anchorOffset = selection.anchorOffset;
+        }
+        const keywordNode = createKeywordNode(text, anchorOffset);
         node.replace(keywordNode);
-        keywordNode.selectNext(0, 0);
+        view.clearSelection();
       }
     });
   }, [editor]);
 }
 
-function Keyword({children}: {children: string}): React.MixedElement {
-  return <span className="keyword">{children}</span>;
+function Keyword({
+  children,
+  anchorOffset,
+}: {
+  children: string,
+  anchorOffset: null | number,
+}): React.MixedElement {
+  const ref = useCallback(
+    (node) => {
+      if (node !== null && anchorOffset !== null) {
+        const domSelection = window.getSelection();
+        const child = node.firstChild;
+        if (domSelection !== null && child !== null) {
+          domSelection.setBaseAndExtent(
+            child,
+            anchorOffset,
+            child,
+            anchorOffset,
+          );
+        }
+      }
+    },
+    [anchorOffset],
+  );
+  return (
+    <span className="keyword" ref={ref}>
+      {children}
+    </span>
+  );
 }
 
-class KeywordNode extends TextNode {
-  constructor(text: string, key?: NodeKey) {
-    super(text, key);
+class KeywordNode extends DecoratorNode {
+  __keyword: string;
+  __anchorOffset: null | number;
+
+  constructor(keyword: string, anchorOffset: null | number, key?: NodeKey) {
+    super(key);
+    this.__keyword = keyword;
     this.__type = 'keyword';
+    this.__anchorOffset = anchorOffset;
+  }
+  getTextContent(): string {
+    return this.__keyword;
   }
   clone(): KeywordNode {
-    return new KeywordNode(this.__text, this.__key);
+    return new KeywordNode(this.__keyword, this.__anchorOffset, this.__key);
   }
   createDOM(): HTMLElement {
     const dom = document.createElement('span');
     dom.style.cursor = 'default';
     return dom;
   }
+  observeDOM(dom: HTMLElement, mutation: MutationRecord): null | OutlineNode {
+    const type = mutation.type;
+    if (type === 'characterData') {
+      const target = mutation.target;
+      const domSelection = window.getSelection();
+      let offset;
+      if (domSelection.anchorNode === target) {
+        offset = domSelection.anchorOffset;
+      }
+      // Attempt to change text, we should reset to plain text.
+      const textNode = createTextNode(target.nodeValue);
+      textNode.select(offset, offset);
+      return textNode;
+    }
+    return null;
+  }
   updateDOM(): boolean {
     return false;
   }
-  decorate(key: string) {
-    return <Keyword key={key}>{this.__text}</Keyword>;
+  decorate() {
+    return (
+      <Keyword anchorOffset={this.__anchorOffset}>{this.__keyword}</Keyword>
+    );
   }
 }
 
@@ -64,6 +128,10 @@ function isKeywordNode(node: TextNode): boolean {
   return node instanceof KeywordNode;
 }
 
-function createKeywordNode(text: string): KeywordNode {
-  return new KeywordNode(text).makeImmutable();
+function createKeywordNode(
+  keyword: string,
+  anchorOffset: null | number,
+): KeywordNode {
+  // TODO we should not be using makeImmutable here really.
+  return new KeywordNode(keyword, anchorOffset).makeImmutable();
 }

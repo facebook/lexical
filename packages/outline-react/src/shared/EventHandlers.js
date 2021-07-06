@@ -15,6 +15,7 @@ import type {
   NodeKey,
   TextNode,
   View,
+  DecoratorNode,
 } from 'outline';
 
 import {IS_SAFARI} from 'shared/environment';
@@ -60,7 +61,7 @@ import {
   moveForward,
   moveWordForward,
 } from 'outline/SelectionHelpers';
-import {createTextNode, isTextNode} from 'outline';
+import {createTextNode, isTextNode, isDecoratorNode} from 'outline';
 
 const ZERO_WIDTH_SPACE_CHAR = '\u200B';
 const ZERO_WIDTH_JOINER_CHAR = '\u2060';
@@ -77,17 +78,28 @@ export type EventHandlerState = {
   isReadOnly: boolean,
 };
 
-function getNodeFromDOMNode(view: View, dom: Node): OutlineNode | null {
+function getManagedElementFromDOMNode(dom: Node): HTMLElement | null {
   let node = dom;
   while (node != null) {
     // $FlowFixMe: internal field
     const key: NodeKey | undefined = node.__outlineInternalRef;
     if (key !== undefined) {
-      return view.getNodeByKey(key);
+      // $FlowFixMe: this will always be an element
+      return node;
     }
     node = node.parentNode;
   }
   return null;
+}
+
+function getNodeFromDOMNode(view: View, dom: Node): OutlineNode | null {
+  const managedElement = getManagedElementFromDOMNode(dom);
+  if (managedElement === null) {
+    return null;
+  }
+  // $FlowFixMe: internal field
+  const key: NodeKey | undefined = managedElement.__outlineInternalRef;
+  return view.getNodeByKey(key);
 }
 
 function getDOMFromNode(editor: OutlineEditor, node: null | OutlineNode) {
@@ -548,9 +560,6 @@ export function handleBlockTextInputOnNode(
   // If we are mutating an immutable or segmented node, then reset
   // the content back to what it was before, as this is not allowed.
   if (isImmutableOrInertOrSegmented(anchorNode)) {
-    // If this node has a decorator, then we'll make it as needing an
-    // update by React.
-    anchorNode.markDirtyDecorator();
     view.markNodeAsDirty(anchorNode);
     editor._compositionKey = null;
     const selection = view.getSelection();
@@ -574,11 +583,11 @@ function updateTextNodeFromDOMContent(
   editor: OutlineEditor,
 ): void {
   const node = getNodeFromDOMNode(view, dom);
-  if (node !== null && !node.isDirty()) {
+  if (isTextNode(node) && !node.isDirty()) {
     const rawTextContent = dom.nodeValue;
     const textContent = rawTextContent.replace(/[\u200B\u2060]/g, '');
 
-    if (isTextNode(node) && textContent !== node.getTextContent()) {
+    if (textContent !== node.getTextContent()) {
       if (handleBlockTextInputOnNode(node, view, editor)) {
         return;
       }
@@ -635,9 +644,14 @@ function applyTargetRange(selection: Selection, event: InputEvent): void {
   }
 }
 
-function canRemoveText(anchorNode: TextNode, focusNode: TextNode): boolean {
+function canRemoveText(
+  anchorNode: TextNode | DecoratorNode,
+  focusNode: TextNode | DecoratorNode,
+): boolean {
   return (
     anchorNode !== focusNode ||
+    isDecoratorNode(anchorNode) ||
+    isDecoratorNode(focusNode) ||
     !isImmutableOrInertOrSegmented(anchorNode) ||
     !isImmutableOrInertOrSegmented(focusNode)
   );
@@ -728,28 +742,30 @@ export function onBeforeInputForPlainText(
         const focusKey = selection.focusKey;
 
         if (anchorKey === focusKey) {
-          const isAtEnd =
-            selection.anchorOffset === anchorNode.getTextContentSize();
-          const canInsertAtEnd = anchorNode.canInsertTextAtEnd();
+          if (isTextNode(anchorNode)) {
+            const isAtEnd =
+              selection.anchorOffset === anchorNode.getTextContentSize();
+            const canInsertAtEnd = anchorNode.canInsertTextAtEnd();
 
-          // We should always block text insertion to imm/seg/inert nodes.
-          // We should also do the same when at the end of nodes that do not
-          // allow text insertion at the end (like links). When we do have
-          // text to go at the end, we can insert into a sibling node instead.
-          if (
-            isImmutableOrInertOrSegmented(anchorNode) ||
-            (isAtEnd && !canInsertAtEnd && selection.isCaret())
-          ) {
-            event.preventDefault();
-            if (isAtEnd && data != null) {
-              const nextSibling = anchorNode.getNextSibling();
-              if (nextSibling === null) {
-                const textNode = createTextNode(data);
-                textNode.select();
-                anchorNode.insertAfter(textNode);
-              } else if (isTextNode(nextSibling)) {
-                nextSibling.select(0, 0);
-                insertText(selection, data);
+            // We should always block text insertion to imm/seg/inert nodes.
+            // We should also do the same when at the end of nodes that do not
+            // allow text insertion at the end (like links). When we do have
+            // text to go at the end, we can insert into a sibling node instead.
+            if (
+              isImmutableOrInertOrSegmented(anchorNode) ||
+              (isAtEnd && !canInsertAtEnd && selection.isCaret())
+            ) {
+              event.preventDefault();
+              if (isAtEnd && data != null) {
+                const nextSibling = anchorNode.getNextSibling();
+                if (nextSibling === null) {
+                  const textNode = createTextNode(data);
+                  textNode.select();
+                  anchorNode.insertAfter(textNode);
+                } else if (isTextNode(nextSibling)) {
+                  nextSibling.select(0, 0);
+                  insertText(selection, data);
+                }
               }
             }
           }
@@ -901,28 +917,30 @@ export function onBeforeInputForRichText(
         const focusKey = selection.focusKey;
 
         if (anchorKey === focusKey) {
-          const isAtEnd =
-            selection.anchorOffset === anchorNode.getTextContentSize();
-          const canInsertAtEnd = anchorNode.canInsertTextAtEnd();
+          if (isTextNode(anchorNode)) {
+            const isAtEnd =
+              selection.anchorOffset === anchorNode.getTextContentSize();
+            const canInsertAtEnd = anchorNode.canInsertTextAtEnd();
 
-          // We should always block text insertion to imm/seg/inert nodes.
-          // We should also do the same when at the end of nodes that do not
-          // allow text insertion at the end (like links). When we do have
-          // text to go at the end, we can insert into a sibling node instead.
-          if (
-            isImmutableOrInertOrSegmented(anchorNode) ||
-            (isAtEnd && !canInsertAtEnd && selection.isCaret())
-          ) {
-            event.preventDefault();
-            if (isAtEnd && data != null) {
-              const nextSibling = anchorNode.getNextSibling();
-              if (nextSibling === null) {
-                const textNode = createTextNode(data);
-                textNode.select();
-                anchorNode.insertAfter(textNode);
-              } else if (isTextNode(nextSibling)) {
-                nextSibling.select(0, 0);
-                insertText(selection, data);
+            // We should always block text insertion to imm/seg/inert nodes.
+            // We should also do the same when at the end of nodes that do not
+            // allow text insertion at the end (like links). When we do have
+            // text to go at the end, we can insert into a sibling node instead.
+            if (
+              isImmutableOrInertOrSegmented(anchorNode) ||
+              (isAtEnd && !canInsertAtEnd && selection.isCaret())
+            ) {
+              event.preventDefault();
+              if (isAtEnd && data != null) {
+                const nextSibling = anchorNode.getNextSibling();
+                if (nextSibling === null) {
+                  const textNode = createTextNode(data);
+                  textNode.select();
+                  anchorNode.insertAfter(textNode);
+                } else if (isTextNode(nextSibling)) {
+                  nextSibling.select(0, 0);
+                  insertText(selection, data);
+                }
               }
             }
           }
@@ -1021,14 +1039,24 @@ export function onMutation(
   mutations: Array<MutationRecord>,
 ): void {
   editor.update((view: View) => {
-    const selection = view.getSelection();
-
     for (let i = 0; i < mutations.length; i++) {
       const mutation = mutations[i];
       const type = mutation.type;
+      const target = mutation.target;
+      const targetNode = getNodeFromDOMNode(view, target);
 
+      if (isDecoratorNode(targetNode)) {
+        const dom = getManagedElementFromDOMNode(target);
+        if (dom !== null) {
+          const replacement = targetNode.observeDOM(dom, mutation);
+          if (replacement !== null) {
+            editor._compositionKey = null;
+            targetNode.replace(replacement);
+          }
+        }
+        continue;
+      }
       if (type === 'characterData') {
-        const target = mutation.target;
         if (target.nodeType === 3) {
           // $FlowFixMe: we refine the type by checking nodeType above
           updateTextNodeFromDOMContent(((target: any): Text), view, editor);
@@ -1084,7 +1112,7 @@ export function onMutation(
             }
           }
         }
-        if (selection === null) {
+        if (view.getSelection() === null) {
           // Looks like a text node was added and selection was moved to it.
           // We can attempt to restore the last selection.
           const lastSelection = getLastSelection(editor);

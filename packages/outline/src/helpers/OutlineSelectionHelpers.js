@@ -20,6 +20,7 @@ import {
   isTextNode,
   isBlockNode,
   isRootNode,
+  isDecoratorNode,
   createTextNode,
 } from 'outline';
 import {createParagraphNode} from 'outline/ParagraphNode';
@@ -300,7 +301,7 @@ export function insertParagraph(selection: Selection): void {
     removeText(selection);
   }
   const anchorNode = selection.getAnchorNode();
-  if (anchorNode.isSegmented()) {
+  if (anchorNode.isSegmented() || isDecoratorNode(anchorNode)) {
     return;
   }
   const textContent = anchorNode.getTextContent();
@@ -497,7 +498,7 @@ function deleteCharacter(selection: Selection, isBackward: boolean): void {
 
     if (!selection.isCaret()) {
       const anchorNode = selection.getAnchorNode();
-      if (anchorNode.isSegmented()) {
+      if (anchorNode.isSegmented() && !isDecoratorNode(anchorNode)) {
         removeSegment(anchorNode, isBackward);
         return;
       } else if (!isBackward) {
@@ -681,7 +682,10 @@ export function insertNodes(
     siblings.push(anchorNode);
   } else if (anchorOffset === textContentLength) {
     target = anchorNode;
-  } else if (isImmutableOrInertOrSegmented(anchorNode)) {
+  } else if (
+    isImmutableOrInertOrSegmented(anchorNode) ||
+    isDecoratorNode(anchorNode)
+  ) {
     // Do nothing if we're inside an immutable/segmented node
     return false;
   } else {
@@ -724,7 +728,9 @@ export function insertNodes(
       invariant(false, 'insertNodes: lastChild not a text node');
     }
     if (selectStart) {
-      startingNode.select();
+      if (isTextNode(startingNode)) {
+        startingNode.select();
+      }
     } else {
       lastChild.select();
     }
@@ -744,7 +750,9 @@ export function insertNodes(
     }
   } else if (isTextNode(target)) {
     if (selectStart) {
-      startingNode.select();
+      if (isTextNode(startingNode)) {
+        startingNode.select();
+      }
     } else {
       target.select();
     }
@@ -891,7 +899,9 @@ export function insertText(selection: Selection, text: string): void {
 
 export function moveEnd(selection: Selection): void {
   const anchorNode = selection.getAnchorNode();
-  anchorNode.select();
+  if (isTextNode(anchorNode)) {
+    anchorNode.select();
+  }
 }
 
 export function selectAll(selection: Selection): void {

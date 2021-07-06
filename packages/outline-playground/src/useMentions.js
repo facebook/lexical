@@ -13,7 +13,7 @@ import React, {useCallback, useLayoutEffect, useMemo, useRef} from 'react';
 import {useEffect, useState} from 'react';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
-import {TextNode} from 'outline';
+import {TextNode, isTextNode} from 'outline';
 import {isHashtagNode} from 'outline/HashtagNode';
 import useEvent from './useEvent';
 
@@ -221,7 +221,10 @@ function MentionsTypeahead({
       if (match && selection && selection.isCaret()) {
         const {leadOffset, replaceableString} = match;
         const anchorNode = selection.getAnchorNode();
-        if (anchorNode.getTextContent().indexOf(replaceableString) !== -1) {
+        if (
+          isTextNode(anchorNode) &&
+          anchorNode.getTextContent().indexOf(replaceableString) !== -1
+        ) {
           const splitNodes = anchorNode.splitText(
             leadOffset,
             leadOffset + replaceableString.length,

@@ -9,12 +9,19 @@
 
 import type {OutlineNode, NodeKey} from './OutlineNode';
 import type {OutlineEditor} from './OutlineEditor';
+import type {DecoratorNode} from './OutlineDecoratorNode';
 
 import {getActiveEditor, ViewModel} from './OutlineView';
 import {getActiveViewModel} from './OutlineView';
 import {getNodeKeyFromDOM} from './OutlineReconciler';
 import {getNodeByKey} from './OutlineNode';
-import {isTextNode, isBlockNode, isLineBreakNode, TextNode} from '.';
+import {
+  isDecoratorNode,
+  isTextNode,
+  isBlockNode,
+  isLineBreakNode,
+  TextNode,
+} from '.';
 import {
   isImmutableOrInertOrSegmented,
   isSelectionWithinEditor,
@@ -48,19 +55,22 @@ export class Selection {
       this.anchorKey === this.focusKey && this.anchorOffset === this.focusOffset
     );
   }
-  getAnchorNode(): TextNode {
+  getAnchorNode(): TextNode | DecoratorNode {
     const anchorKey = this.anchorKey;
     const anchorNode = getNodeByKey<TextNode>(anchorKey);
-    if (!isTextNode(anchorNode)) {
-      invariant(false, 'getAnchorNode: anchorNode not a text node');
+    if (!isTextNode(anchorNode) && !isDecoratorNode(anchorNode)) {
+      invariant(
+        false,
+        'getAnchorNode: anchorNode not a text or decorator node',
+      );
     }
     return anchorNode;
   }
-  getFocusNode(): TextNode {
+  getFocusNode(): TextNode | DecoratorNode {
     const focusKey = this.focusKey;
     const focusNode = getNodeByKey<TextNode>(focusKey);
-    if (!isTextNode(focusNode)) {
-      invariant(false, 'getFocusNode: focusNode not a text node');
+    if (!isTextNode(focusNode) && !isDecoratorNode(focusNode)) {
+      invariant(false, 'getFocusNode: focusNode not a text or decorator node');
     }
     return focusNode;
   }
@@ -144,7 +154,7 @@ export class Selection {
 
 function resolveNonLineBreakOrInertNode(
   node: OutlineNode,
-): [TextNode, number, boolean] {
+): [TextNode | DecoratorNode, number, boolean] {
   const resolvedNode = node.getPreviousSibling();
   if (!isTextNode(resolvedNode)) {
     invariant(
@@ -173,7 +183,7 @@ function resolveSelectionNodeAndOffset(
   offset: number,
   editor: OutlineEditor,
   _isDirty: boolean,
-): null | [TextNode, number, boolean] {
+): null | [TextNode | DecoratorNode, number, boolean] {
   let resolvedDOM = dom;
   let resolvedOffset = offset;
   let resolvedNode;
@@ -211,15 +221,22 @@ function resolveSelectionNodeAndOffset(
         resolvedNode = resolvedNode.getFirstTextNode();
         resolvedOffset = 0;
       }
-    } else if (isTextNode(resolvedNode)) {
+    } else {
       if (moveSelectionToEnd) {
-        resolvedOffset = resolvedNode.getTextContentSize();
+        if (isTextNode(resolvedNode)) {
+          resolvedOffset = resolvedNode.getTextContentSize();
+        } else {
+          resolvedOffset = 1;
+        }
       } else {
         resolvedOffset = 0;
       }
     }
   } else {
     resolvedNode = getNodeFromDOM(resolvedDOM);
+  }
+  if (isDecoratorNode(resolvedNode)) {
+    return [resolvedNode, resolvedOffset, false];
   }
   if (
     isLineBreakNode(resolvedNode) ||
@@ -262,7 +279,15 @@ function resolveSelectionNodesAndOffsets(
   focusDOM: null | Node,
   focusOffset: number,
   editor: OutlineEditor,
-): null | [TextNode, TextNode, number, number, boolean] {
+):
+  | null
+  | [
+      TextNode | DecoratorNode,
+      TextNode | DecoratorNode,
+      number,
+      number,
+      boolean,
+    ] {
   if (
     anchorDOM === null ||
     focusDOM === null ||

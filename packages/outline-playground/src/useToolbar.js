@@ -7,7 +7,13 @@
  * @flow strict-local
  */
 
-import type {OutlineEditor, Selection, TextFormatType, TextNode} from 'outline';
+import type {
+  OutlineEditor,
+  Selection,
+  TextFormatType,
+  TextNode,
+  DecoratorNode,
+} from 'outline';
 
 import {createTextNode, isTextNode} from 'outline';
 import React, {useCallback, useEffect, useRef, useState, useMemo} from 'react';
@@ -60,7 +66,7 @@ function Button({
   );
 }
 
-function getSelectedNode(selection: Selection): TextNode {
+function getSelectedNode(selection: Selection): TextNode | DecoratorNode {
   const anchorNode = selection.getAnchorNode();
   const focusNode = selection.getFocusNode();
   if (anchorNode === focusNode) {
@@ -188,19 +194,21 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
           (!activeElement || activeElement.className !== 'link-input')
         ) {
           const node = getSelectedNode(selection);
-          unstable_batchedUpdates(() => {
-            setIsBold(node.isBold());
-            setIsItalic(node.isItalic());
-            setIsStrikethrough(node.isStrikethrough());
-            setIsCode(node.isCode());
-            if (isLinkNode(node)) {
-              setIsLink(true);
-              setLinkUrl(node.getURL());
-            } else {
-              setIsLink(false);
-              setLinkUrl('');
-            }
-          });
+          if (isTextNode(node)) {
+            unstable_batchedUpdates(() => {
+              setIsBold(node.isBold());
+              setIsItalic(node.isItalic());
+              setIsStrikethrough(node.isStrikethrough());
+              setIsCode(node.isCode());
+              if (isLinkNode(node)) {
+                setIsLink(true);
+                setLinkUrl(node.getURL());
+              } else {
+                setIsLink(false);
+                setLinkUrl('');
+              }
+            });
+          }
         }
       };
 

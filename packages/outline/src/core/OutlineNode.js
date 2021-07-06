@@ -14,6 +14,7 @@ import type {Node as ReactNode} from 'react';
 import {
   createTextNode,
   isBlockNode,
+  isLineBreakNode,
   isTextNode,
   isRootNode,
   BlockNode,
@@ -155,7 +156,12 @@ function replaceNode<N: OutlineNode>(
     updateDirectionIfNeeded(writableReplaceWith);
   }
   // Handle immutable/segmented
-  if (flags & IS_IMMUTABLE || flags & IS_SEGMENTED || flags & IS_INERT) {
+  if (
+    flags & IS_IMMUTABLE ||
+    flags & IS_SEGMENTED ||
+    flags & IS_INERT ||
+    isLineBreakNode(writableReplaceWith)
+  ) {
     wrapInTextNodes(writableReplaceWith);
   }
   if (isTextNode(writableReplaceWith) && anchorOffset !== undefined) {
@@ -628,7 +634,12 @@ export class OutlineNode {
       updateDirectionIfNeeded(writableNodeToInsert);
     }
     // Handle immutable/segmented
-    if (flags & IS_IMMUTABLE || flags & IS_SEGMENTED || flags & IS_INERT) {
+    if (
+      flags & IS_IMMUTABLE ||
+      flags & IS_SEGMENTED ||
+      flags & IS_INERT ||
+      isLineBreakNode(writableNodeToInsert)
+    ) {
       wrapInTextNodes(writableNodeToInsert);
     }
     return writableSelf;
@@ -663,7 +674,12 @@ export class OutlineNode {
       updateDirectionIfNeeded(writableNodeToInsert);
     }
     // Handle immutable/segmented
-    if (flags & IS_IMMUTABLE || flags & IS_SEGMENTED || flags & IS_INERT) {
+    if (
+      flags & IS_IMMUTABLE ||
+      flags & IS_SEGMENTED ||
+      flags & IS_INERT ||
+      isLineBreakNode(writableNodeToInsert)
+    ) {
       wrapInTextNodes(writableNodeToInsert);
     }
     return writableSelf;

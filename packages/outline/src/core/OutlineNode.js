@@ -238,6 +238,18 @@ export class OutlineNode {
     this.__flags = 0;
     this.__key = key || generateKey(this);
     this.__parent = null;
+
+    // ensure custom nodes implement required methods
+    if (__DEV__) {
+      const proto = Object.getPrototypeOf(this);
+      ['clone', 'createDOM', 'serialize', 'deserialize'].forEach((method) => {
+        if (!proto.hasOwnProperty(method)) {
+          console.warn(
+            `${this.constructor.name} must implement "${method}" method`,
+          );
+        }
+      });
+    }
   }
 
   // Getters and Traversers

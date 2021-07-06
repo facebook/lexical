@@ -805,18 +805,39 @@ export function insertText(selection: Selection, text: string): void {
   let endOffset;
 
   if (selectedNodesLength === 1) {
+    let isComposing = false;
     startOffset = anchorOffset > focusOffset ? focusOffset : anchorOffset;
     endOffset = anchorOffset > focusOffset ? anchorOffset : focusOffset;
-    if (isImmutableOrInertOrSegmented(firstNode)) {
-      const textNode = createTextNode(text);
-      firstNode.replace(textNode);
-      firstNode = textNode;
-      textNode.select();
-      return;
+    if (firstNode.isSegmented()) {
+      isComposing = firstNode.isComposing();
+      if (
+        !isComposing &&
+        selection.isCaret() &&
+        anchorOffset === firstNodeTextLength
+      ) {
+        const nextSibling = firstNode.getNextSibling();
+        if (isTextNode(nextSibling)) {
+          nextSibling.select(0, 0);
+          insertText(selection, text);
+        } else {
+          const textNode = createTextNode(text);
+          firstNode.insertAfter(textNode);
+          textNode.select();
+        }
+        return;
+      } else {
+        const textNode = createTextNode(firstNode.getTextContent());
+        firstNode.replace(textNode, true);
+        firstNode = textNode;
+      }
     }
     const delCount = endOffset - startOffset;
 
     firstNode.spliceText(startOffset, delCount, text, true);
+
+    if (isComposing) {
+      selection.anchorOffset -= text.length;
+    }
   } else {
     const lastIndex = selectedNodesLength - 1;
     let lastNode = selectedNodes[lastIndex];

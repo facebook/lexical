@@ -18,7 +18,11 @@ import {
   isRootNode,
   BlockNode,
 } from '.';
-import {getActiveViewModel, errorOnReadOnly} from './OutlineView';
+import {
+  getActiveViewModel,
+  errorOnReadOnly,
+  getActiveEditor,
+} from './OutlineView';
 import {
   generateRandomKey,
   getTextDirection,
@@ -165,6 +169,16 @@ function replaceNode<N: OutlineNode>(
   }
   if (isTextNode(writableReplaceWith) && anchorOffset !== undefined) {
     writableReplaceWith.select(anchorOffset, anchorOffset);
+  }
+  const editor = getActiveEditor();
+  if (toReplace.isComposing()) {
+    // We will need to ensure this update is flushed sync
+    const viewModel = getActiveViewModel();
+    viewModel._flushSync = true;
+    editor._compositionKey = null;
+    editor._deferred.push(() => {
+      editor._compositionKey = newKey;
+    })
   }
   return writableReplaceWith;
 }
@@ -488,6 +502,10 @@ export class OutlineNode {
   isDirty(): boolean {
     const viewModel = getActiveViewModel();
     return viewModel._dirtyNodes.has(this.__key);
+  }
+  isComposing(): boolean {
+    const editor = getActiveEditor();
+    return this.__key === editor._compositionKey;
   }
   getLatest<N: OutlineNode>(): N {
     const latest = getNodeByKey<N>(this.__key);

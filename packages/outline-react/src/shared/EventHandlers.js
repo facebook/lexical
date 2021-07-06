@@ -692,22 +692,14 @@ export function onBeforeInputForPlainText(
       insertText(selection, '  ');
       return;
     }
-    // We let the browser do its own thing for these composition
-    // events. We handle their updates in our mutation observer.
-    if (
-      inputType === 'insertCompositionText' ||
-      inputType === 'deleteCompositionText'
-    ) {
+    // We let the browser do its own thing for composition deletions.
+    if (inputType === 'deleteCompositionText') {
       return;
     }
     const anchorNode = selection.getAnchorNode();
     const focusNode = selection.getAnchorNode();
 
-    // Standard text insertion goes through a different path.
-    // For most text insertion, we let the browser do its own thing.
-    // We update the view model in our mutation observer. However,
-    // we do have a few exceptions.
-    if (inputType === 'insertText') {
+    if (inputType === 'insertText' || inputType === 'insertCompositionText') {
       if (data === '\n') {
         event.preventDefault();
         insertLineBreak(selection);
@@ -724,38 +716,8 @@ export function onBeforeInputForPlainText(
         const anchorKey = selection.anchorKey;
         const focusKey = selection.focusKey;
 
-        if (anchorKey === focusKey) {
-          const isAtEnd =
-            selection.anchorOffset === anchorNode.getTextContentSize();
-          const canInsertAtEnd = anchorNode.canInsertTextAtEnd();
-
-          // We should always block text insertion to imm/seg/inert nodes.
-          // We should also do the same when at the end of nodes that do not
-          // allow text insertion at the end (like links). When we do have
-          // text to go at the end, we can insert into a sibling node instead.
-          if (
-            isImmutableOrInertOrSegmented(anchorNode) ||
-            (isAtEnd && !canInsertAtEnd && selection.isCaret())
-          ) {
-            event.preventDefault();
-            if (isAtEnd && data != null) {
-              const nextSibling = anchorNode.getNextSibling();
-              if (nextSibling === null) {
-                const textNode = createTextNode(data);
-                textNode.select();
-                anchorNode.insertAfter(textNode);
-              } else if (isTextNode(nextSibling)) {
-                nextSibling.select(0, 0);
-                insertText(selection, data);
-              }
-            }
-          }
-        } else {
-          // For range text insertion, always override
-          // default and control outselves
+        if (anchorKey !== focusKey || anchorNode.isSegmented()) {
           event.preventDefault();
-          // This will end composition
-          editor._compositionKey = null;
           insertText(selection, data);
         }
       }
@@ -866,22 +828,14 @@ export function onBeforeInputForRichText(
       insertText(selection, '  ');
       return;
     }
-    // We let the browser do its own thing for these composition
-    // events. We handle their updates in our mutation observer.
-    if (
-      inputType === 'insertCompositionText' ||
-      inputType === 'deleteCompositionText'
-    ) {
+    // We let the browser do its own thing for composition deletions.
+    if (inputType === 'deleteCompositionText') {
       return;
     }
     const anchorNode = selection.getAnchorNode();
     const focusNode = selection.getAnchorNode();
 
-    // Standard text insertion goes through a different path.
-    // For most text insertion, we let the browser do its own thing.
-    // We update the view model in our mutation observer. However,
-    // we do have a few exceptions.
-    if (inputType === 'insertText') {
+    if (inputType === 'insertText' || inputType === 'insertCompositionText') {
       if (data === '\n') {
         event.preventDefault();
         insertLineBreak(selection);
@@ -897,38 +851,8 @@ export function onBeforeInputForRichText(
         const anchorKey = selection.anchorKey;
         const focusKey = selection.focusKey;
 
-        if (anchorKey === focusKey) {
-          const isAtEnd =
-            selection.anchorOffset === anchorNode.getTextContentSize();
-          const canInsertAtEnd = anchorNode.canInsertTextAtEnd();
-
-          // We should always block text insertion to imm/seg/inert nodes.
-          // We should also do the same when at the end of nodes that do not
-          // allow text insertion at the end (like links). When we do have
-          // text to go at the end, we can insert into a sibling node instead.
-          if (
-            isImmutableOrInertOrSegmented(anchorNode) ||
-            (isAtEnd && !canInsertAtEnd && selection.isCaret())
-          ) {
-            event.preventDefault();
-            if (isAtEnd && data != null) {
-              const nextSibling = anchorNode.getNextSibling();
-              if (nextSibling === null) {
-                const textNode = createTextNode(data);
-                textNode.select();
-                anchorNode.insertAfter(textNode);
-              } else if (isTextNode(nextSibling)) {
-                nextSibling.select(0, 0);
-                insertText(selection, data);
-              }
-            }
-          }
-        } else {
-          // For range text insertion, always override
-          // default and control outselves
+        if (anchorKey !== focusKey || anchorNode.isSegmented()) {
           event.preventDefault();
-          // This will end composition
-          editor._compositionKey = null;
           insertText(selection, data);
         }
       }

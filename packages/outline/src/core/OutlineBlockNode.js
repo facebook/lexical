@@ -9,7 +9,7 @@
 
 import type {NodeKey} from './OutlineNode';
 
-import {isTextNode, TextNode} from '.';
+import {isTextNode, TextNode, isLineBreakNode} from '.';
 import {
   OutlineNode,
   getNodeByKey,
@@ -215,7 +215,12 @@ export class BlockNode extends OutlineNode {
       updateDirectionIfNeeded(writableNodeToAppend);
     }
     // Handle immutable/segmented
-    if (flags & IS_IMMUTABLE || flags & IS_SEGMENTED || flags & IS_INERT) {
+    if (
+      flags & IS_IMMUTABLE ||
+      flags & IS_SEGMENTED ||
+      flags & IS_INERT ||
+      isLineBreakNode(writableNodeToAppend)
+    ) {
       wrapInTextNodes(writableNodeToAppend);
     }
     return writableSelf;

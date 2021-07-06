@@ -40,5 +40,10 @@
   "38": "findIndexInPrevChildren: index in prevChildren not found",
   "39": "reconcileNodeChildren: keyToMove to was not nextStartKey",
   "40": "storeDOMWithNodeKey: key was null",
-  "41": "Reconciliation: could not find DOM element for node key \"${key}\""
+  "41": "Reconciliation: could not find DOM element for node key \"${key}\"",
+  "42": "getTextContent: base method not extended",
+  "43": "decorate: base method not extended",
+  "44": "getAnchorNode: anchorNode not a text or decorator node",
+  "45": "getFocusNode: focusNode not a text or decorator node",
+  "46": "undecorate: base method not extended"
 }

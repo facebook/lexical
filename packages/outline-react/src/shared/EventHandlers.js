@@ -60,7 +60,7 @@ import {
   moveForward,
   moveWordForward,
 } from 'outline/SelectionHelpers';
-import {isTextNode, isDecoratorNode} from 'outline';
+import {createTextNode, isTextNode, isDecoratorNode} from 'outline';
 
 const ZERO_WIDTH_SPACE_CHAR = '\u200B';
 const ZERO_WIDTH_JOINER_CHAR = '\u2060';
@@ -559,7 +559,7 @@ function updateTextNodeFromDOMContent(
   view: View,
   editor: OutlineEditor,
 ): void {
-  const node = getNodeFromDOMNode(view, dom);
+  let node = getNodeFromDOMNode(view, dom);
   if (node !== null && !node.isDirty()) {
     const rawTextContent = dom.nodeValue;
     const textContent = rawTextContent.replace(/[\u200B\u2060]/g, '');
@@ -567,6 +567,10 @@ function updateTextNodeFromDOMContent(
     if (isTextNode(node) && textContent !== node.getTextContent()) {
       if (handleBlockTextInputOnNode(node, view, editor)) {
         return;
+      } else if (node.isSegmented()) {
+        const replacement = createTextNode(node.getTextContent());
+        node.replace(replacement, true);
+        node = replacement;
       }
       node.setTextContent(textContent);
       const selection = view.getSelection();

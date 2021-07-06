@@ -19,7 +19,9 @@ jest.setTimeout(60000);
 const retryCount = 10;
 
 export function initializeE2E(runTests) {
+  const isRichText = process.env.E2E_EDITOR_MODE !== 'plain-text';
   const e2e = {
+    isRichText,
     browser: null,
     page: null,
     async saveScreenshot(print) {

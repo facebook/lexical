@@ -49,11 +49,35 @@ jobs:
     - run: npm run build
     - run: npm run test-unit
 
-  e2e-chromium-linux:
+  e2e-mac:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        node-version: [16.x]
+        browser: ['chromium', 'firefox', 'webkit']
+    env:
+      CI: true
+      PLAYWRIGHT_BROWSERS_PATH: 0
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+      - uses: actions/cache@v2
+        with:
+          path: '**/node_modules'
+          key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+      - run: npm install
+      - run: npm run build
+      - run: npm run test-e2e-ci:${{ matrix.browser }}
+
+  e2e-linux:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         node-version: [16.x]
+        browser: ['chromium', 'firefox']
     env:
       CI: true
       PLAYWRIGHT_BROWSERS_PATH: 0
@@ -73,35 +97,14 @@ jobs:
         key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
     - run: npm install
     - run: npm run build
-    - run: npm run test-e2e-ci:chromium
+    - run: npm run test-e2e-ci:${{ matrix.browser }}
 
-  e2e-chromium-mac:
-    runs-on: macos-latest
-    strategy:
-      matrix:
-        node-version: [16.x]
-    env:
-      CI: true
-      PLAYWRIGHT_BROWSERS_PATH: 0
-    steps:
-    - uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
-      with:
-        node-version: ${{ matrix.node-version }}
-    - uses: actions/cache@v2
-      with:
-        path: '**/node_modules'
-        key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
-    - run: npm install
-    - run: npm run build
-    - run: npm run test-e2e-ci:chromium
-
-  e2e-chromium-windows:
+  e2e-windows:
     runs-on: windows-latest
     strategy:
       matrix:
         node-version: [16.x]
+        browser: ['chromium', 'firefox']
     env:
       CI: true
       PLAYWRIGHT_BROWSERS_PATH: 0
@@ -117,96 +120,4 @@ jobs:
         key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
     - run: npm install
     - run: npm run build
-    - run: npm run test-e2e-ci:chromium
-
-  e2e-firefox-linux:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [16.x]
-    env:
-      CI: true
-      PLAYWRIGHT_BROWSERS_PATH: 0
-    steps:
-    - uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
-      with:
-        node-version: ${{ matrix.node-version }}
-    - name: install required packages
-      run: |
-        sudo apt-get install libharfbuzz-icu0 libgstreamer-plugins-base1.0-0 libgstreamer-gl1.0-0 libgstreamer-plugins-bad1.0-0 libopenjp2-7 gstreamer1.0-libav libwoff1 libwebpdemux2 libenchant1c2a libhyphen0 libgles2
-        sudo apt-get install xvfb
-    - uses: actions/cache@v2
-      with:
-        path: '**/node_modules'
-        key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
-    - run: npm install
-    - run: npm run build
-    - run: npm run test-e2e-ci:firefox
-
-  e2e-firefox-mac:
-    runs-on: macos-latest
-    strategy:
-      matrix:
-        node-version: [16.x]
-    env:
-      CI: true
-      PLAYWRIGHT_BROWSERS_PATH: 0
-    steps:
-    - uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
-      with:
-        node-version: ${{ matrix.node-version }}
-    - uses: actions/cache@v2
-      with:
-        path: '**/node_modules'
-        key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
-    - run: npm install
-    - run: npm run build
-    - run: npm run test-e2e-ci:firefox
-
-  e2e-firefox-windows:
-    runs-on: windows-latest
-    strategy:
-      matrix:
-        node-version: [16.x]
-    env:
-      CI: true
-      PLAYWRIGHT_BROWSERS_PATH: 0
-    steps:
-    - uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
-      with:
-        node-version: ${{ matrix.node-version }}
-    - uses: actions/cache@v2
-      with:
-        path: '**/node_modules'
-        key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
-    - run: npm install
-    - run: npm run build
-    - run: npm run test-e2e-ci:firefox
-
-  e2e-webkit-mac:
-    runs-on: macos-latest
-    strategy:
-      matrix:
-        node-version: [16.x]
-    env:
-      CI: true
-      PLAYWRIGHT_BROWSERS_PATH: 0
-    steps:
-    - uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
-      with:
-        node-version: ${{ matrix.node-version }}
-    - uses: actions/cache@v2
-      with:
-        path: '**/node_modules'
-        key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
-    - run: npm install
-    - run: npm run build
-    - run: npm run test-e2e-ci:webkit
+    - run: npm run test-e2e-ci:${{ matrix.browser }}

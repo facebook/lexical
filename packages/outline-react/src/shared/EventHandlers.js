@@ -548,9 +548,6 @@ export function handleBlockTextInputOnNode(
   // If we are mutating an immutable or segmented node, then reset
   // the content back to what it was before, as this is not allowed.
   if (isImmutableOrInertOrSegmented(anchorNode)) {
-    // If this node has a decorator, then we'll make it as needing an
-    // update by React.
-    anchorNode.markDirtyDecorator();
     view.markNodeAsDirty(anchorNode);
     editor._compositionKey = null;
     const selection = view.getSelection();

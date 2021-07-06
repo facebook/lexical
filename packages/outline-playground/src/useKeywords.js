@@ -7,11 +7,11 @@
  * @flow strict-local
  */
 
-import type {OutlineEditor, NodeKey} from 'outline';
+import type {OutlineEditor, NodeKey, TextNode} from 'outline';
 
 import * as React from 'react';
 import {useEffect} from 'react';
-import {TextNode} from 'outline';
+import {DecoratorNode} from 'outline';
 import {isHashtagNode} from 'outline/HashtagNode';
 
 const keywords = new Set(['congrats', 'congratulations']);
@@ -39,13 +39,19 @@ function Keyword({children}: {children: string}): React.MixedElement {
   return <span className="keyword">{children}</span>;
 }
 
-class KeywordNode extends TextNode {
-  constructor(text: string, key?: NodeKey) {
-    super(text, key);
+class KeywordNode extends DecoratorNode {
+  __keyword: string;
+
+  constructor(keyword: string, key?: NodeKey) {
+    super(key);
     this.__type = 'keyword';
+    this.__keyword = keyword;
   }
   clone(): KeywordNode {
-    return new KeywordNode(this.__text, this.__key);
+    return new KeywordNode(this.__keyword, this.__key);
+  }
+  getTextContent(): string {
+    return this.__keyword;
   }
   createDOM(): HTMLElement {
     const dom = document.createElement('span');
@@ -55,8 +61,8 @@ class KeywordNode extends TextNode {
   updateDOM(): boolean {
     return false;
   }
-  decorate(key: string) {
-    return <Keyword key={key}>{this.__text}</Keyword>;
+  decorate() {
+    return <Keyword>{this.__keyword}</Keyword>;
   }
 }
 
@@ -64,6 +70,6 @@ function isKeywordNode(node: TextNode): boolean {
   return node instanceof KeywordNode;
 }
 
-function createKeywordNode(text: string): KeywordNode {
-  return new KeywordNode(text).makeImmutable();
+function createKeywordNode(keyword: string): KeywordNode {
+  return new KeywordNode(keyword);
 }

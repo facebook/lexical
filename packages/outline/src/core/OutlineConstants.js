@@ -26,9 +26,6 @@ export const IS_UNMERGEABLE = 1 << 10;
 export const IS_LTR = 1 << 11;
 export const IS_RTL = 1 << 12;
 
-// Decorators
-export const IS_DIRTY_DECORATOR = 1 << 13;
-
 // Reconciliation
 
 export const ZERO_WIDTH_SPACE_CHAR = '\u200B';

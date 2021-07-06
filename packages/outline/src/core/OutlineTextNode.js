@@ -31,7 +31,6 @@ import {
   IS_UNMERGEABLE,
   ZERO_WIDTH_SPACE_CHAR,
   ZERO_WIDTH_JOINER_CHAR,
-  IS_DIRTY_DECORATOR,
 } from './OutlineConstants';
 
 export type TextFormatType =
@@ -227,11 +226,6 @@ export class TextNode extends OutlineNode {
   }
   isUnmergeable(): boolean {
     return (this.getFlags() & IS_UNMERGEABLE) !== 0;
-  }
-  markDirtyDecorator(): void {
-    errorOnReadOnly();
-    const self = this.getWritable();
-    self.__flags |= IS_DIRTY_DECORATOR;
   }
   getTextContent(includeInert?: boolean, includeDirectionless?: false): string {
     if (

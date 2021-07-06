@@ -18,9 +18,9 @@ import {
   isSelectionWithinEditor,
   isImmutableOrInertOrSegmented,
 } from './OutlineUtils';
-import {IS_INERT, IS_RTL, IS_LTR, IS_DIRTY_DECORATOR} from './OutlineConstants';
+import {IS_INERT, IS_RTL, IS_LTR} from './OutlineConstants';
 import invariant from 'shared/invariant';
-import {OutlineNode} from './OutlineNode';
+import {isDecoratorNode} from './OutlineDecoratorNode';
 
 let subTreeTextContent = '';
 let editorTextContent = '';
@@ -31,10 +31,6 @@ let activeDirtyNodes: Set<NodeKey>;
 let activePrevNodeMap: NodeMapType;
 let activeNextNodeMap: NodeMapType;
 let activeViewModelIsDirty: boolean = false;
-
-const decoratorKeyMap: Map<NodeKey, string> = new Map();
-// $FlowFixMe: Flow complains about being unbound
-const baseDecorateMethod = OutlineNode.prototype.decorate;
 
 function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
   const node = activePrevNodeMap.get(key);
@@ -83,15 +79,6 @@ function createNode(
   const isInert = flags & IS_INERT;
   storeDOMWithKey(key, dom, activeEditor);
 
-  // $FlowFixMe: Flow complains about being unbound
-  if (node.decorate !== baseDecorateMethod) {
-    const decoratorKey = getDecoratorKey(key, false);
-    const decorator = node.decorate(decoratorKey, activeEditor);
-    if (decorator !== null) {
-      reconcileDecorator(key, decorator);
-    }
-  }
-
   if (node.__type !== 'linebreak' && isInert) {
     dom.contentEditable = 'false';
   }
@@ -114,6 +101,13 @@ function createNode(
     const endIndex = children.length - 1;
     createChildren(children, 0, endIndex, dom, null);
   } else {
+    if (isDecoratorNode(node)) {
+      dom.contentEditable = 'false';
+      const decorator = node.decorate(activeEditor);
+      if (decorator !== null) {
+        reconcileDecorator(key, decorator);
+      }
+    }
     const text = node.getTextContent();
     subTreeTextContent += text;
     editorTextContent += text;
@@ -144,22 +138,6 @@ function createChildren(
   // $FlowFixMe: internal field
   dom.__outlineTextContent = subTreeTextContent;
   subTreeTextContent = previousSubTreeTextContent + subTreeTextContent;
-}
-
-function getDecoratorKey(nodeKey: NodeKey, hasDirtyDecorator: boolean): string {
-  let decoratorKey = decoratorKeyMap.get(nodeKey);
-  if (decoratorKey === undefined) {
-    decoratorKey = nodeKey;
-    decoratorKeyMap.set(nodeKey, decoratorKey);
-  } else if (hasDirtyDecorator) {
-    let counter = 0;
-    if (decoratorKey !== nodeKey) {
-      counter = Number(decoratorKey.split('_')[2]);
-    }
-    decoratorKey = nodeKey + '_' + ++counter;
-    decoratorKeyMap.set(nodeKey, decoratorKey);
-  }
-  return decoratorKey;
 }
 
 function reconcileChildren(
@@ -249,19 +227,7 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
     return;
   }
   const nextFlags = nextNode.__flags;
-  // $FlowFixMe: Flow complains about being unbound
-  if (nextNode.decorate !== baseDecorateMethod) {
-    const hasDirtyDecorator = (nextFlags & IS_DIRTY_DECORATOR) !== 0;
-    const decoratorKey = getDecoratorKey(key, hasDirtyDecorator);
-    if (hasDirtyDecorator) {
-      // Remove the dirty decorator flag
-      nextNode.__flags ^= IS_DIRTY_DECORATOR;
-    }
-    const decorator = nextNode.decorate(decoratorKey, activeEditor);
-    if (decorator !== null) {
-      reconcileDecorator(key, decorator);
-    }
-  }
+
   if (isBlockNode(prevNode) && isBlockNode(nextNode)) {
     const prevFlags = prevNode.__flags;
     if (nextFlags & IS_LTR) {
@@ -284,6 +250,12 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
       reconcileChildren(prevChildren, nextChildren, dom);
     }
   } else {
+    if (isDecoratorNode(nextNode)) {
+      const decorator = nextNode.decorate(activeEditor);
+      if (decorator !== null) {
+        reconcileDecorator(key, decorator);
+      }
+    }
     // Handle text content, for LTR, LTR cases.
     const text = nextNode.getTextContent();
     subTreeTextContent += text;

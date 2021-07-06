@@ -38,7 +38,7 @@ import {
   isMoveForward,
   isMoveWordForward,
 } from 'outline/KeyHelpers';
-import isImmutableOrInertOrSegmented from 'shared/isImmutableOrInertOrSegmented';
+import isImmutableOrInert from 'shared/isImmutableOrInert';
 import {
   deleteBackward,
   deleteForward,
@@ -60,7 +60,7 @@ import {
   moveForward,
   moveWordForward,
 } from 'outline/SelectionHelpers';
-import {createTextNode, isTextNode, isDecoratorNode} from 'outline';
+import {isTextNode, isDecoratorNode} from 'outline';
 
 const ZERO_WIDTH_SPACE_CHAR = '\u200B';
 const ZERO_WIDTH_JOINER_CHAR = '\u2060';
@@ -545,21 +545,10 @@ export function handleBlockTextInputOnNode(
   view: View,
   editor: OutlineEditor,
 ): boolean {
-  // If we are mutating an immutable or segmented node, then reset
+  // If we are mutating an immutable or inert node, then reset
   // the content back to what it was before, as this is not allowed.
-  if (isImmutableOrInertOrSegmented(anchorNode)) {
+  if (isImmutableOrInert(anchorNode)) {
     view.markNodeAsDirty(anchorNode);
-    editor._compositionKey = null;
-    const selection = view.getSelection();
-    if (selection !== null) {
-      const key = anchorNode.getKey();
-      const lastSelection = getLastSelection(editor);
-      const lastAnchorOffset =
-        lastSelection !== null ? lastSelection.anchorOffset : null;
-      if (lastAnchorOffset !== null) {
-        selection.setRange(key, lastAnchorOffset, key, lastAnchorOffset);
-      }
-    }
     return true;
   }
   return false;
@@ -635,8 +624,8 @@ function applyTargetRange(selection: Selection, event: InputEvent): void {
 function canRemoveText(anchorNode: TextNode, focusNode: TextNode): boolean {
   return (
     anchorNode !== focusNode ||
-    !isImmutableOrInertOrSegmented(anchorNode) ||
-    !isImmutableOrInertOrSegmented(focusNode)
+    !isImmutableOrInert(anchorNode) ||
+    !isImmutableOrInert(focusNode)
   );
 }
 

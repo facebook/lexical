@@ -710,7 +710,7 @@ export class OutlineNode {
     editor._compositionKey = null;
     editor._deferred.push(() => {
       editor._compositionKey = key;
-    })
+    });
   }
 }
 

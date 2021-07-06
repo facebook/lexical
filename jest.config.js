@@ -49,8 +49,8 @@ module.exports = {
           '<rootDir>/packages/outline/src/helpers/OutlineKeyHelpers.js',
         '^shared/getDOMTextNodeFromElement$':
           '<rootDir>/packages/shared/src/getDOMTextNodeFromElement.js',
-        '^shared/isImmutableOrInertOrSegmented$':
-          '<rootDir>/packages/shared/src/isImmutableOrInertOrSegmented.js',
+        '^shared/isImmutableOrInert$':
+          '<rootDir>/packages/shared/src/isImmutableOrInert.js',
         '^shared/invariant$': '<rootDir>/packages/shared/src/invariant.js',
         '^shared/environment$': '<rootDir>/packages/shared/src/environment.js',
         '^./dist/(.+)': './src/$1',

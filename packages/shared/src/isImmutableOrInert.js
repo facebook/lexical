@@ -9,8 +9,6 @@
 
 import type {OutlineNode} from 'outline';
 
-export default function isImmutableOrInertOrSegmented(
-  node: OutlineNode,
-): boolean {
-  return node.isImmutable() || node.isInert() || node.isSegmented();
+export default function isImmutableOrInert(node: OutlineNode): boolean {
+  return node.isImmutable() || node.isInert();
 }

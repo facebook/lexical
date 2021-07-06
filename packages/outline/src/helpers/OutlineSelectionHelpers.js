@@ -25,7 +25,7 @@ import {
 import {createParagraphNode} from 'outline/ParagraphNode';
 import {isHashtagNode} from 'outline/HashtagNode';
 
-import isImmutableOrInertOrSegmented from 'shared/isImmutableOrInertOrSegmented';
+import isImmutableOrInert from 'shared/isImmutableOrInert';
 import invariant from 'shared/invariant';
 import {doesContainGrapheme} from 'outline/TextHelpers';
 
@@ -628,8 +628,8 @@ export function updateCaretSelectionForRange(
   const isAtBoundary = isBackward
     ? focusOffset === 0
     : focusOffset === textSize &&
-      (isImmutableOrInertOrSegmented(focusNode) ||
-        (sibling !== null && !isImmutableOrInertOrSegmented(sibling)));
+      (isImmutableOrInert(focusNode) ||
+        (sibling !== null && !isImmutableOrInert(sibling)));
 
   // We use the DOM selection.modify API here to "tell" us what the selection
   // will be. We then use it to update the Outline selection accordingly. This
@@ -692,7 +692,7 @@ export function insertNodes(
     siblings.push(anchorNode);
   } else if (anchorOffset === textContentLength) {
     target = anchorNode;
-  } else if (isImmutableOrInertOrSegmented(anchorNode)) {
+  } else if (isImmutableOrInert(anchorNode)) {
     // Do nothing if we're inside an immutable/segmented node
     return false;
   } else {
@@ -834,6 +834,12 @@ export function insertText(selection: Selection, text: string): void {
   if (selectedNodesLength === 1) {
     startOffset = anchorOffset > focusOffset ? focusOffset : anchorOffset;
     endOffset = anchorOffset > focusOffset ? anchorOffset : focusOffset;
+    if (isImmutableOrInert(firstNode)) {
+      const textNode = createTextNode(text);
+      firstNode.replace(textNode);
+      textNode.select();
+      return;
+    }
     const delCount = endOffset - startOffset;
 
     firstNode.spliceText(startOffset, delCount, text, true);
@@ -849,12 +855,20 @@ export function insertText(selection: Selection, text: string): void {
     startOffset = isBefore ? anchorOffset : focusOffset;
     endOffset = isBefore ? focusOffset : anchorOffset;
 
-    firstNode.spliceText(
-      startOffset,
-      firstNodeTextLength - startOffset,
-      text,
-      true,
-    );
+    if (isImmutableOrInert(firstNode)) {
+      firstNodeRemove = true;
+      const textNode = createTextNode(text);
+      firstNode.replace(textNode);
+      firstNode = textNode;
+      textNode.select();
+    } else {
+      firstNode.spliceText(
+        startOffset,
+        firstNodeTextLength - startOffset,
+        text,
+        true,
+      );
+    }
     if (isComposingTextEntry) {
       selection.anchorOffset -= text.length;
     }
@@ -877,7 +891,7 @@ export function insertText(selection: Selection, text: string): void {
         lastNode.remove();
         lastNodeRemove = true;
       } else {
-        if (isImmutableOrInertOrSegmented(lastNode)) {
+        if (isImmutableOrInert(lastNode)) {
           lastNodeRemove = true;
           const textNode = createTextNode('');
           lastNode.replace(textNode);

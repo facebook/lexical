@@ -217,7 +217,9 @@ function updateEditor(
     }
     return false;
   }
-  if (viewModelWasCloned) {
+  if (pendingViewModel._flushSync) {
+    commitPendingUpdates(editor);
+  } else if (viewModelWasCloned) {
     scheduleMicroTask(() => {
       commitPendingUpdates(editor);
     });

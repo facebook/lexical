@@ -24,8 +24,8 @@ export class DecoratorNode extends OutlineNode {
   decorate(editor: OutlineEditor): ReactNode {
     invariant(false, 'decorate: base method not extended');
   }
-  observeDOM(dom: HTMLElement, mutation: MutationRecord): null | OutlineNode {
-    return null;
+  undecorate(): OutlineNode {
+    invariant(false, 'undecorate: base method not extended');
   }
   selectionTransform(
     prevSelection: null | Selection,

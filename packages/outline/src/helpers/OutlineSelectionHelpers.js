@@ -792,6 +792,18 @@ export function insertText(selection: Selection, text: string): void {
   const anchorOffset = selection.anchorOffset;
   const focusOffset = selection.focusOffset;
   let firstNode = selectedNodes[0];
+  let shouldSelectInsertedText = false;
+  if (isDecoratorNode(firstNode)) {
+    const replacement = firstNode.undecorate();
+    shouldSelectInsertedText = firstNode.isComposing();
+    firstNode.replace(replacement);
+    firstNode = replacement;
+  } else if (isImmutableOrInertOrSegmented(firstNode)) {
+    const replacement = createTextNode(firstNode.getTextContent());
+    shouldSelectInsertedText = firstNode.isComposing();
+    firstNode.replace(replacement);
+    firstNode = replacement;
+  }
   if (!isTextNode(firstNode)) {
     invariant(false, 'insertText: firstNode not a a text node');
   }
@@ -804,16 +816,11 @@ export function insertText(selection: Selection, text: string): void {
   if (selectedNodesLength === 1) {
     startOffset = anchorOffset > focusOffset ? focusOffset : anchorOffset;
     endOffset = anchorOffset > focusOffset ? anchorOffset : focusOffset;
-    if (isImmutableOrInertOrSegmented(firstNode)) {
-      const textNode = createTextNode(text);
-      firstNode.replace(textNode);
-      firstNode = textNode;
-      textNode.select();
-      return;
-    }
     const delCount = endOffset - startOffset;
-
     firstNode.spliceText(startOffset, delCount, text, true);
+    if (shouldSelectInsertedText) {
+      selection.anchorOffset -= text.length;
+    }
   } else {
     const lastIndex = selectedNodesLength - 1;
     let lastNode = selectedNodes[lastIndex];

@@ -78,28 +78,17 @@ export type EventHandlerState = {
   isReadOnly: boolean,
 };
 
-function getManagedElementFromDOMNode(dom: Node): HTMLElement | null {
+function getNodeFromDOMNode(view: View, dom: Node): OutlineNode | null {
   let node = dom;
   while (node != null) {
     // $FlowFixMe: internal field
     const key: NodeKey | undefined = node.__outlineInternalRef;
     if (key !== undefined) {
-      // $FlowFixMe: this will always be an element
-      return node;
+      return view.getNodeByKey(key);
     }
     node = node.parentNode;
   }
   return null;
-}
-
-function getNodeFromDOMNode(view: View, dom: Node): OutlineNode | null {
-  const managedElement = getManagedElementFromDOMNode(dom);
-  if (managedElement === null) {
-    return null;
-  }
-  // $FlowFixMe: internal field
-  const key: NodeKey | undefined = managedElement.__outlineInternalRef;
-  return view.getNodeByKey(key);
 }
 
 function getDOMFromNode(editor: OutlineEditor, node: null | OutlineNode) {
@@ -880,21 +869,26 @@ export function onBeforeInputForRichText(
     if (selection.isCaret()) {
       applyTargetRange(selection, event);
     }
+    const anchorNode = selection.getAnchorNode();
+    const focusNode = selection.getAnchorNode();
+
     if (isBadDoubleSpacePeriodReplacment(event, selection)) {
       event.preventDefault();
       insertText(selection, '  ');
       return;
     }
-    // We let the browser do its own thing for these composition
-    // events. We handle their updates in our mutation observer.
-    if (
-      inputType === 'insertCompositionText' ||
-      inputType === 'deleteCompositionText'
-    ) {
+    if (inputType === 'insertCompositionText') {
+      if (
+        (isDecoratorNode(anchorNode) ||
+          isImmutableOrInertOrSegmented(anchorNode)) &&
+        data != null
+      ) {
+        insertText(selection, data);
+      }
+      return;
+    } else if (inputType === 'deleteCompositionText') {
       return;
     }
-    const anchorNode = selection.getAnchorNode();
-    const focusNode = selection.getAnchorNode();
 
     // Standard text insertion goes through a different path.
     // For most text insertion, we let the browser do its own thing.
@@ -917,21 +911,20 @@ export function onBeforeInputForRichText(
         const focusKey = selection.focusKey;
 
         if (anchorKey === focusKey) {
-          if (isTextNode(anchorNode)) {
+          if (
+            isDecoratorNode(anchorNode) ||
+            isImmutableOrInertOrSegmented(anchorNode)
+          ) {
+            event.preventDefault();
+            insertText(selection, data);
+          } else if (isTextNode(anchorNode)) {
             const isAtEnd =
               selection.anchorOffset === anchorNode.getTextContentSize();
             const canInsertAtEnd = anchorNode.canInsertTextAtEnd();
 
-            // We should always block text insertion to imm/seg/inert nodes.
-            // We should also do the same when at the end of nodes that do not
-            // allow text insertion at the end (like links). When we do have
-            // text to go at the end, we can insert into a sibling node instead.
-            if (
-              isImmutableOrInertOrSegmented(anchorNode) ||
-              (isAtEnd && !canInsertAtEnd && selection.isCaret())
-            ) {
+            if (isAtEnd && !canInsertAtEnd && selection.isCaret()) {
               event.preventDefault();
-              if (isAtEnd && data != null) {
+              if (data != null) {
                 const nextSibling = anchorNode.getNextSibling();
                 if (nextSibling === null) {
                   const textNode = createTextNode(data);
@@ -1046,14 +1039,6 @@ export function onMutation(
       const targetNode = getNodeFromDOMNode(view, target);
 
       if (isDecoratorNode(targetNode)) {
-        const dom = getManagedElementFromDOMNode(target);
-        if (dom !== null) {
-          const replacement = targetNode.observeDOM(dom, mutation);
-          if (replacement !== null) {
-            editor._compositionKey = null;
-            targetNode.replace(replacement);
-          }
-        }
         continue;
       }
       if (type === 'characterData') {

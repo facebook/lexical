@@ -374,6 +374,7 @@ export class ViewModel {
   _dirtyNodes: Set<NodeKey>;
   _dirtySubTrees: Set<NodeKey>;
   _isDirty: boolean;
+  _flushSync: boolean;
 
   constructor(nodeMap: NodeMapType) {
     this._nodeMap = nodeMap;
@@ -389,6 +390,7 @@ export class ViewModel {
     this._dirtySubTrees = new Set();
     // Used to mark as needing a full reconciliation
     this._isDirty = false;
+    this._flushSync = false;
   }
   hasDirtyNodes(): boolean {
     return this._dirtyNodes.size > 0;

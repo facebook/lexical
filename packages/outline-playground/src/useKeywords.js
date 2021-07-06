@@ -11,7 +11,6 @@ import type {
   OutlineEditor,
   NodeKey,
   TextNode,
-  OutlineNode,
   View,
 } from 'outline';
 
@@ -98,22 +97,6 @@ class KeywordNode extends DecoratorNode {
     dom.style.cursor = 'default';
     return dom;
   }
-  observeDOM(dom: HTMLElement, mutation: MutationRecord): null | OutlineNode {
-    const type = mutation.type;
-    if (type === 'characterData') {
-      const target = mutation.target;
-      const domSelection = window.getSelection();
-      let offset;
-      if (domSelection.anchorNode === target) {
-        offset = domSelection.anchorOffset;
-      }
-      // Attempt to change text, we should reset to plain text.
-      const textNode = createTextNode(target.nodeValue);
-      textNode.select(offset, offset);
-      return textNode;
-    }
-    return null;
-  }
   updateDOM(): boolean {
     return false;
   }
@@ -121,6 +104,13 @@ class KeywordNode extends DecoratorNode {
     return (
       <Keyword anchorOffset={this.__anchorOffset}>{this.__keyword}</Keyword>
     );
+  }
+  undecorate(): TextNode {
+    const domSelection = window.getSelection();
+    const anchorOffset = domSelection.anchorOffset;
+    const textNode = createTextNode(this.__keyword);
+    textNode.select(anchorOffset, anchorOffset);
+    return textNode;
   }
 }
 

@@ -44,5 +44,6 @@
   "42": "getTextContent: base method not extended",
   "43": "decorate: base method not extended",
   "44": "getAnchorNode: anchorNode not a text or decorator node",
-  "45": "getFocusNode: focusNode not a text or decorator node"
+  "45": "getFocusNode: focusNode not a text or decorator node",
+  "46": "undecorate: base method not extended"
 }

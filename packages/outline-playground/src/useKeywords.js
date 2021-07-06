@@ -7,7 +7,7 @@
  * @flow strict-local
  */
 
-import type {OutlineEditor, NodeKey, TextNode} from 'outline';
+import type {OutlineEditor, ParsedNode, NodeKey, TextNode} from 'outline';
 
 import * as React from 'react';
 import {useEffect} from 'react';
@@ -38,6 +38,11 @@ function Keyword({children}: {children: string}): React.MixedElement {
   return <span className="keyword">{children}</span>;
 }
 
+type ParsedKeywordNode = {
+  ...ParsedNode,
+  __keyword: string,
+};
+
 class KeywordNode extends DecoratorNode {
   __keyword: string;
 
@@ -45,6 +50,18 @@ class KeywordNode extends DecoratorNode {
     super(key);
     this.__type = 'keyword';
     this.__keyword = keyword;
+  }
+  serialize(): ParsedKeywordNode {
+    const {__keyword} = this;
+    return {
+      ...super.serialize(),
+      __keyword,
+    };
+  }
+  deserialize(data: $FlowFixMe) {
+    const {__keyword, ...rest} = data;
+    super.deserialize(rest);
+    this.__keyword = __keyword;
   }
   clone(): KeywordNode {
     return new KeywordNode(this.__keyword, this.__key);

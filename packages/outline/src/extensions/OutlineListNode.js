@@ -7,11 +7,21 @@
  * @flow strict
  */
 
-import type {OutlineNode, NodeKey, EditorThemeClasses} from 'outline';
+import type {
+  OutlineNode,
+  NodeKey,
+  ParsedBlockNode,
+  EditorThemeClasses,
+} from 'outline';
 
 import {BlockNode} from 'outline';
 
 type ListNodeTagType = 'ul' | 'ol';
+
+export type ParsedListNode = {
+  ...ParsedBlockNode,
+  __tag: ListNodeTagType,
+};
 
 export class ListNode extends BlockNode {
   __tag: ListNodeTagType;
@@ -21,7 +31,18 @@ export class ListNode extends BlockNode {
     this.__tag = tag;
     this.__type = 'list';
   }
-
+  serialize(): ParsedListNode {
+    const {__tag} = this;
+    return {
+      ...super.serialize(),
+      __tag,
+    };
+  }
+  deserialize(data: $FlowFixMe) {
+    const {__tag, ...rest} = data;
+    super.deserialize(rest);
+    this.__tag = __tag;
+  }
   clone(): ListNode {
     return new ListNode(this.__tag, this.__key);
   }

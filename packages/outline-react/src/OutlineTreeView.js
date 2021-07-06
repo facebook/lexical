@@ -83,7 +83,7 @@ function generateContent(viewModel: ViewModel): string {
 
     visitTree(view, view.getRoot(), (node, indent) => {
       const nodeKey = node.getKey();
-      const nodeKeyDisplay = `(${nodeKey.slice(1)})`;
+      const nodeKeyDisplay = `(${nodeKey})`;
       const typeDisplay = node.getType() || '';
       const isSelected = selectedNodes !== null && selectedNodes.has(nodeKey);
 

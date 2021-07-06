@@ -60,7 +60,7 @@ import {
   moveForward,
   moveWordForward,
 } from 'outline/SelectionHelpers';
-import {createTextNode, isTextNode} from 'outline';
+import {createTextNode, isTextNode, isDecoratorNode} from 'outline';
 
 const ZERO_WIDTH_SPACE_CHAR = '\u200B';
 const ZERO_WIDTH_JOINER_CHAR = '\u2060';
@@ -1023,9 +1023,13 @@ export function onMutation(
     for (let i = 0; i < mutations.length; i++) {
       const mutation = mutations[i];
       const type = mutation.type;
+      const target = mutation.target;
+      const targetNode = getNodeFromDOMNode(view, target);
 
+      if (isDecoratorNode(targetNode)) {
+        continue;
+      }
       if (type === 'characterData') {
-        const target = mutation.target;
         if (target.nodeType === 3) {
           // $FlowFixMe: we refine the type by checking nodeType above
           updateTextNodeFromDOMContent(((target: any): Text), view, editor);

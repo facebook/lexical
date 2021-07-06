@@ -10,7 +10,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import {createEditor, createTextNode, TextNode} from 'outline';
+import {createEditor, createTextNode, DecoratorNode} from 'outline';
 import {createParagraphNode, ParagraphNode} from 'outline/ParagraphNode';
 import useOutlineRichText from 'outline-react/useOutlineRichText';
 
@@ -218,12 +218,15 @@ describe('OutlineEditor tests', () => {
 
       // Update the editor with the decorator
       await ReactTestUtils.act(async () => {
-        class DecoratorNode extends TextNode {
+        class TestNode extends DecoratorNode {
           clone() {
-            const node = new DecoratorNode(this.__text, this.__key);
-            node.__parent = this.__parent;
-            node.__flags = this.__flags;
-            return node;
+            return new TestNode(this.__key);
+          }
+          getTextContent() {
+            return 'Hello world';
+          }
+          createDOM() {
+            return document.createElement('span');
           }
           decorate() {
             return <Decorator text={'Hello world'} />;
@@ -231,9 +234,8 @@ describe('OutlineEditor tests', () => {
         }
         await editor.update((view) => {
           const paragraph = createParagraphNode();
-          const text = new DecoratorNode('');
-          text.makeImmutable();
-          paragraph.append(text);
+          const test = new TestNode();
+          paragraph.append(test);
           view.getRoot().append(paragraph);
         });
       });

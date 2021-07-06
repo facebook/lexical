@@ -568,12 +568,8 @@ function reconcileSelection(
 
   // Get the underlying DOM text nodes from the representative
   // Outline text nodes (we use elements for text nodes).
-  const anchorDOMTarget = isDecoratorNode(anchorNode)
-    ? anchorDOM
-    : getDOMTextNode(anchorDOM);
-  const focusDOMTarget = isDecoratorNode(focusNode)
-    ? focusDOM
-    : getDOMTextNode(focusDOM);
+  const anchorDOMTarget = getDOMTextNode(anchorDOM);
+  const focusDOMTarget = getDOMTextNode(focusDOM);
   // If we can't get an underlying text node for selection, then
   // we should avoid setting selection to something incorrect.
   if (focusDOMTarget === null || anchorDOMTarget === null) {
@@ -581,14 +577,12 @@ function reconcileSelection(
   }
   const nextSelectionAnchorOffset = nextSelection.anchorOffset;
   const nextSelectionFocusOffset = nextSelection.focusOffset;
-  const nextAnchorOffset =
-    isImmutableOrInertOrSegmented(anchorNode) && !isDecoratorNode(anchorNode)
-      ? nextSelectionAnchorOffset
-      : nextSelectionAnchorOffset + 1;
-  const nextFocusOffset =
-    isImmutableOrInertOrSegmented(focusNode) && !isDecoratorNode(focusNode)
-      ? nextSelectionFocusOffset
-      : nextSelectionFocusOffset + 1;
+  const nextAnchorOffset = isImmutableOrInertOrSegmented(anchorNode)
+    ? nextSelectionAnchorOffset
+    : nextSelectionAnchorOffset + 1;
+  const nextFocusOffset = isImmutableOrInertOrSegmented(focusNode)
+    ? nextSelectionFocusOffset
+    : nextSelectionFocusOffset + 1;
 
   // Diff against the native DOM selection to ensure we don't do
   // an unnecessary selection update.
@@ -603,7 +597,6 @@ function reconcileSelection(
 
   // Apply the updated selection to the DOM. Note: this will trigger
   // a "selectionchange" event, although it will be asynchronous.
-  console.log(nextAnchorOffset);
   try {
     domSelection.setBaseAndExtent(
       anchorDOMTarget,

@@ -9,7 +9,6 @@
 
 import type {OutlineEditor, EditorThemeClasses} from './OutlineEditor';
 import type {Selection} from './OutlineSelection';
-import type {Node as ReactNode} from 'react';
 
 import {
   createTextNode,
@@ -555,9 +554,6 @@ export class OutlineNode {
     editorThemeClasses: EditorThemeClasses,
   ): boolean {
     invariant(false, 'updateDOM: base method not extended');
-  }
-  decorate(key: string, editor: OutlineEditor): null | ReactNode {
-    return null;
   }
 
   // Setters and mutators

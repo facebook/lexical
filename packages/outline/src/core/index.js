@@ -23,6 +23,7 @@ import {createTextNode, isTextNode, TextNode} from './OutlineTextNode';
 import {isBlockNode, BlockNode} from './OutlineBlockNode';
 import {createRootNode, isRootNode, RootNode} from './OutlineRootNode';
 import {createLineBreakNode, isLineBreakNode} from './OutlineLineBreakNode';
+import {DecoratorNode, isDecoratorNode} from './OutlineDecoratorNode';
 
 export {
   createEditor,
@@ -32,11 +33,13 @@ export {
   createTextNode,
   // Node validation
   isBlockNode,
+  isDecoratorNode,
   isLineBreakNode,
   isRootNode,
   isTextNode,
   // Extensible nodes
   BlockNode,
+  DecoratorNode,
   RootNode,
   TextNode,
 };

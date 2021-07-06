@@ -170,16 +170,6 @@ function replaceNode<N: OutlineNode>(
   if (isTextNode(writableReplaceWith) && anchorOffset !== undefined) {
     writableReplaceWith.select(anchorOffset, anchorOffset);
   }
-  const editor = getActiveEditor();
-  if (toReplace.isComposing()) {
-    // We will need to ensure this update is flushed sync
-    const viewModel = getActiveViewModel();
-    viewModel._flushSync = true;
-    editor._compositionKey = null;
-    editor._deferred.push(() => {
-      editor._compositionKey = newKey;
-    })
-  }
   return writableReplaceWith;
 }
 
@@ -709,6 +699,18 @@ export class OutlineNode {
       invariant(false, 'selectNext: found invalid sibling');
     }
     return nextSibling.select(anchorOffset, focusOffset);
+  }
+  forceComposition(): void {
+    errorOnReadOnly();
+    // We will need to ensure this node gets rendered during composition
+    const viewModel = getActiveViewModel();
+    const editor = getActiveEditor();
+    const key = this.__key;
+    viewModel._flushSync = true;
+    editor._compositionKey = null;
+    editor._deferred.push(() => {
+      editor._compositionKey = key;
+    })
   }
 }
 

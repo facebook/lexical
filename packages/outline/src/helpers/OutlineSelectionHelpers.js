@@ -29,6 +29,17 @@ import isImmutableOrInertOrSegmented from 'shared/isImmutableOrInertOrSegmented'
 import invariant from 'shared/invariant';
 import {doesContainGrapheme} from 'outline/TextHelpers';
 
+function cloneWithProperties<T: OutlineNode>(node: T): T {
+  const latest = node.getLatest();
+  const clone = latest.clone();
+  clone.__flags = latest.__flags;
+  clone.__parent = latest.__parent;
+  if (isBlockNode(latest)) {
+    clone.__children = Array.from(latest.__children);
+  }
+  return clone;
+}
+
 export function getNodesInRange(selection: Selection): {
   range: Array<NodeKey>,
   nodeMap: Array<[NodeKey, OutlineNode]>,
@@ -41,7 +52,7 @@ export function getNodesInRange(selection: Selection): {
   let endOffset;
 
   if (anchorNode === focusNode) {
-    const firstNode = anchorNode.getLatest().clone();
+    const firstNode = cloneWithProperties<TextNode>(anchorNode);
     if (!isTextNode(firstNode)) {
       invariant(false, 'getNodesInRange: firstNode is not a text node');
     }
@@ -77,10 +88,10 @@ export function getNodesInRange(selection: Selection): {
       const text = node.getTextContent();
 
       if (i === 0) {
-        node = node.getLatest().clone();
+        node = cloneWithProperties<TextNode>(node);
         node.__text = text.slice(startOffset, text.length);
       } else if (i === nodesLength - 1) {
-        node = node.getLatest().clone();
+        node = cloneWithProperties<TextNode>(node);
         node.__text = text.slice(0, endOffset);
       }
     }

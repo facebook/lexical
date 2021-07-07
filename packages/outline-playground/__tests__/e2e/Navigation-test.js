@@ -46,7 +46,6 @@ describe('Keyboard Navigation', () => {
     it('can type several paragraphs', async () => {
       const {isRichText, page} = e2e;
       await typeParagraphs(page);
-      console.log(E2E_EDITOR_MODE);
       if (isRichText) {
         await assertSelection(page, {
           anchorPath: [2, 0, 0],

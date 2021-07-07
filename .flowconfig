@@ -20,12 +20,12 @@ module.name_mapper='^outline$' -> '<PROJECT_ROOT>/packages/outline/src/core/inde
 module.name_mapper='^outline/HeadingNode' -> '<PROJECT_ROOT>/packages/outline/src/extensions/OutlineHeadingNode.js'
 module.name_mapper='^outline/ListNode' -> '<PROJECT_ROOT>/packages/outline/src/extensions/OutlineListNode.js'
 module.name_mapper='^outline/ListItemNode' -> '<PROJECT_ROOT>/packages/outline/src/extensions/OutlineListItemNode.js'
-module.name_mapper='^outline/ImageNode' -> '<PROJECT_ROOT>/packages/outline/src/extensions/OutlineImageNode.js'
 module.name_mapper='^outline/QuoteNode' -> '<PROJECT_ROOT>/packages/outline/src/extensions/OutlineQuoteNode.js'
 module.name_mapper='^outline/ParagraphNode' -> '<PROJECT_ROOT>/packages/outline/src/extensions/OutlineParagraphNode.js'
 module.name_mapper='^outline/CodeNode' -> '<PROJECT_ROOT>/packages/outline/src/extensions/OutlineCodeNode.js'
 module.name_mapper='^outline/LinkNode' -> '<PROJECT_ROOT>/packages/outline/src/extensions/OutlineLinkNode.js'
 module.name_mapper='^outline/HashtagNode' -> '<PROJECT_ROOT>/packages/outline/src/extensions/OutlineHashtagNode.js'
+module.name_mapper='^outline/ImageNode' -> '<PROJECT_ROOT>/packages/outline/src/extensions/OutlineImageNode.js'
 
 module.name_mapper='^outline/HistoryHelpers' -> '<PROJECT_ROOT>/packages/outline/src/helpers/OutlineHistoryHelpers.js'
 module.name_mapper='^outline/SelectionHelpers' -> '<PROJECT_ROOT>/packages/outline/src/helpers/OutlineSelectionHelpers.js'

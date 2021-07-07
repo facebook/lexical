@@ -11,7 +11,7 @@ import type {View} from './OutlineView';
 import type {OutlineNode, NodeKey} from './OutlineNode';
 import type {Node as ReactNode} from 'react';
 
-import {isTextNode, TextNode} from '.';
+import {isBlockNode, isTextNode, TextNode} from '.';
 import {
   cloneViewModel,
   enterViewModelScope,
@@ -421,8 +421,17 @@ class BaseOutlineEditor {
     for (let i = 0; i < topBlockIDsLength; i++) {
       const topBlock = nodeMap.get(topBlockIDs[i]);
 
-      if (topBlock !== undefined && topBlock.__type !== 'paragraph') {
-        return false;
+      if (isBlockNode(topBlock)) {
+        if (topBlock.__type !== 'paragraph') {
+          return false;
+        }
+        const children = topBlock.__children;
+        for (let s = 0; s < children.length; s++) {
+          const child = nodeMap.get(children[s]);
+          if (!isTextNode(child)) {
+            return false;
+          }
+        }
       }
     }
     return true;

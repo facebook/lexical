@@ -6,12 +6,23 @@
  *
  */
 
-import {initializeE2E, assertHTML, assertSelection, repeat} from '../utils';
+import {
+  initializeE2E,
+  assertHTML,
+  assertSelection,
+  repeat,
+  IS_MAC,
+} from '../utils';
 
 describe('Regression test #399', () => {
   initializeE2E((e2e) => {
     it(`Supports Ctrl-O as an open line command`, async () => {
       const {isRichText, page} = e2e;
+
+      // This is a Mac only command
+      if (!IS_MAC) {
+        return;
+      }
 
       await page.focus('div.editor');
       await page.keyboard.type('foo');
@@ -57,7 +68,10 @@ describe('Regression test #399', () => {
           focusOffset: 0,
         });
       } else {
-        await assertHTML(page, '<p class="editor-paragraph" dir="ltr"><span>⁠foo</span><br><span>​</span><br><span>⁠bar</span></p>');
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph" dir="ltr"><span>⁠foo</span><br><span>​</span><br><span>⁠bar</span></p>',
+        );
         await assertSelection(page, {
           anchorPath: [0, 2, 0],
           anchorOffset: 0,

@@ -942,9 +942,9 @@ describe('OutlineNode tests', () => {
     test('getNodeByKey', async () => {
       const {editor} = testEnv;
       await editor.getViewModel().read(() => {
-        expect(getNodeByKey('1')).toBe(paragraphNode);
-        expect(getNodeByKey('2')).toBe(textNode);
-        expect(getNodeByKey('0')).toBe(null);
+        expect(getNodeByKey('0')).toBe(paragraphNode);
+        expect(getNodeByKey('1')).toBe(textNode);
+        expect(getNodeByKey('2')).toBe(null);
       });
       expect(() => getNodeByKey()).toThrow();
     });

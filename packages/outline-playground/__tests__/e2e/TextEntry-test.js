@@ -42,7 +42,7 @@ describe('TextEntry', () => {
       });
 
       it('Paragraphed text entry and selection', async () => {
-        const {page} = e2e;
+        const {isRichText, page} = e2e;
 
         await page.focus('div.editor');
         await page.keyboard.type('Hello World.');
@@ -50,27 +50,49 @@ describe('TextEntry', () => {
         await page.keyboard.type('This is another block.');
         await page.keyboard.down('Shift');
         await repeat(6, async () => await page.keyboard.down('ArrowLeft'));
-        await assertSelection(page, {
-          anchorPath: [1, 0, 0],
-          anchorOffset: 22,
-          focusPath: [1, 0, 0],
-          focusOffset: 16,
-        });
+        if (isRichText) {
+          await assertSelection(page, {
+            anchorPath: [1, 0, 0],
+            anchorOffset: 22,
+            focusPath: [1, 0, 0],
+            focusOffset: 16,
+          });
+        } else {
+          await assertSelection(page, {
+            anchorPath: [0, 2, 0],
+            anchorOffset: 22,
+            focusPath: [0, 2, 0],
+            focusOffset: 16,
+          });
+        }
 
         await page.keyboard.up('Shift');
         await page.keyboard.type('paragraph.');
         await page.keyboard.type(' :)');
 
-        await assertHTML(
-          page,
-          '<p class="editor-paragraph" dir="ltr"><span>Hello World.</span></p><p class="editor-paragraph" dir="ltr"><span>This is another paragraph. </span><span class="emoji happysmile" contenteditable="false">🙂</span><span></span></p>',
-        );
-        await assertSelection(page, {
-          anchorPath: [1, 2, 0],
-          anchorOffset: 0,
-          focusPath: [1, 2, 0],
-          focusOffset: 0,
-        });
+        if (isRichText) {
+          await assertHTML(
+            page,
+            '<p class="editor-paragraph" dir="ltr"><span>Hello World.</span></p><p class="editor-paragraph" dir="ltr"><span>This is another paragraph. </span><span class="emoji happysmile" contenteditable="false">🙂</span><span></span></p>',
+          );
+          await assertSelection(page, {
+            anchorPath: [1, 2, 0],
+            anchorOffset: 0,
+            focusPath: [1, 2, 0],
+            focusOffset: 0,
+          });
+        } else {
+          await assertHTML(
+            page,
+            '<p class="editor-paragraph" dir="ltr"><span>⁠Hello World.</span><br><span>⁠This is another paragraph. </span><span class="emoji happysmile" contenteditable="false">🙂</span><span>​</span></p>',
+          );
+          await assertSelection(page, {
+            anchorPath: [0, 4, 0],
+            anchorOffset: 0,
+            focusPath: [0, 4, 0],
+            focusOffset: 0,
+          });
+        }
       });
 
       it(`Can delete characters after they're typed`, async () => {
@@ -160,22 +182,35 @@ describe('TextEntry', () => {
       });
 
       it('Empty paragraph and new line node selection', async () => {
-        const {page} = e2e;
+        const {isRichText, page} = e2e;
 
         await page.focus('div.editor');
 
         // Add paragraph
         await page.keyboard.press('Enter');
-        await assertHTML(
-          page,
-          '<p class="editor-paragraph"><span><br></span></p><p class="editor-paragraph"><span><br></span></p>',
-        );
-        await assertSelection(page, {
-          anchorPath: [1, 0, 0],
-          anchorOffset: 0,
-          focusPath: [1, 0, 0],
-          focusOffset: 0,
-        });
+        if (isRichText) {
+          await assertHTML(
+            page,
+            '<p class="editor-paragraph"><span><br></span></p><p class="editor-paragraph"><span><br></span></p>',
+          );
+          await assertSelection(page, {
+            anchorPath: [1, 0, 0],
+            anchorOffset: 0,
+            focusPath: [1, 0, 0],
+            focusOffset: 0,
+          });
+        } else {
+          await assertHTML(
+            page,
+            '<p class="editor-paragraph"><span>​</span><br><span>​</span></p>',
+          );
+          await assertSelection(page, {
+            anchorPath: [0, 2, 0],
+            anchorOffset: 0,
+            focusPath: [0, 2, 0],
+            focusOffset: 0,
+          });
+        }
 
         await page.keyboard.press('ArrowLeft');
         await assertSelection(page, {
@@ -186,12 +221,21 @@ describe('TextEntry', () => {
         });
 
         await page.keyboard.press('ArrowRight');
-        await assertSelection(page, {
-          anchorPath: [1, 0, 0],
-          anchorOffset: 0,
-          focusPath: [1, 0, 0],
-          focusOffset: 0,
-        });
+        if (isRichText) {
+          await assertSelection(page, {
+            anchorPath: [1, 0, 0],
+            anchorOffset: 0,
+            focusPath: [1, 0, 0],
+            focusOffset: 0,
+          });
+        } else {
+          await assertSelection(page, {
+            anchorPath: [0, 2, 0],
+            anchorOffset: 0,
+            focusPath: [0, 2, 0],
+            focusOffset: 0,
+          });
+        }
 
         await page.keyboard.press('ArrowLeft');
         await assertSelection(page, {
@@ -325,7 +369,7 @@ describe('TextEntry', () => {
       });
 
       it('Basic copy + paste', async () => {
-        const {page} = e2e;
+        const {isRichText, page} = e2e;
 
         await page.focus('div.editor');
 
@@ -334,52 +378,98 @@ describe('TextEntry', () => {
         await page.keyboard.press('Enter');
         await page.keyboard.press('Enter');
         await page.keyboard.type('Sounds good!');
-        await assertHTML(
-          page,
-          '<p class="editor-paragraph" dir="ltr"><span>Copy + pasting?</span></p><p class="editor-paragraph" dir="ltr"><span></span></p><p class="editor-paragraph" dir="ltr"><span>Sounds good!</span></p>',
-        );
-        await assertSelection(page, {
-          anchorPath: [2, 0, 0],
-          anchorOffset: 12,
-          focusPath: [2, 0, 0],
-          focusOffset: 12,
-        });
+        if (isRichText) {
+          await assertHTML(
+            page,
+            '<p class="editor-paragraph" dir="ltr"><span>Copy + pasting?</span></p><p class="editor-paragraph" dir="ltr"><span></span></p><p class="editor-paragraph" dir="ltr"><span>Sounds good!</span></p>',
+          );
+          await assertSelection(page, {
+            anchorPath: [2, 0, 0],
+            anchorOffset: 12,
+            focusPath: [2, 0, 0],
+            focusOffset: 12,
+          });
+        } else {
+          await assertHTML(
+            page,
+            '<p class="editor-paragraph" dir="ltr"><span>⁠Copy + pasting?</span><br><span>​</span><br><span>⁠Sounds good!</span></p>',
+          );
+          await assertSelection(page, {
+            anchorPath: [0, 4, 0],
+            anchorOffset: 12,
+            focusPath: [0, 4, 0],
+            focusOffset: 12,
+          });
+        }
 
         // Select all the text
         await keyDownCtrlOrMeta(page);
         await page.keyboard.press('a');
         await keyUpCtrlOrMeta(page);
-        await assertHTML(
-          page,
-          '<p class="editor-paragraph" dir="ltr"><span>Copy + pasting?</span></p><p class="editor-paragraph" dir="ltr"><span></span></p><p class="editor-paragraph" dir="ltr"><span>Sounds good!</span></p>',
-        );
-        await assertSelection(page, {
-          anchorPath: [0, 0, 0],
-          anchorOffset: 0,
-          focusPath: [2, 0, 0],
-          focusOffset: 12,
-        });
+        if (isRichText) {
+          await assertHTML(
+            page,
+            '<p class="editor-paragraph" dir="ltr"><span>Copy + pasting?</span></p><p class="editor-paragraph" dir="ltr"><span></span></p><p class="editor-paragraph" dir="ltr"><span>Sounds good!</span></p>',
+          );
+          await assertSelection(page, {
+            anchorPath: [0, 0, 0],
+            anchorOffset: 0,
+            focusPath: [2, 0, 0],
+            focusOffset: 12,
+          });
+        } else {
+          await assertHTML(
+            page,
+            '<p class="editor-paragraph" dir="ltr"><span>⁠Copy + pasting?</span><br><span>​</span><br><span>⁠Sounds good!</span></p>',
+          );
+          await assertSelection(page, {
+            anchorPath: [0, 0, 0],
+            anchorOffset: 0,
+            focusPath: [0, 4, 0],
+            focusOffset: 12,
+          });
+        }
 
         // Copy all the text
         const clipboard = await copyToClipboard(page);
-        await assertHTML(
-          page,
-          '<p class="editor-paragraph" dir="ltr"><span>Copy + pasting?</span></p><p class="editor-paragraph" dir="ltr"><span></span></p><p class="editor-paragraph" dir="ltr"><span>Sounds good!</span></p>',
-        );
+        if (isRichText) {
+          await assertHTML(
+            page,
+            '<p class="editor-paragraph" dir="ltr"><span>Copy + pasting?</span></p><p class="editor-paragraph" dir="ltr"><span></span></p><p class="editor-paragraph" dir="ltr"><span>Sounds good!</span></p>',
+          );
+        } else {
+          await assertHTML(
+            page,
+            '<p class="editor-paragraph" dir="ltr"><span>⁠Copy + pasting?</span><br><span>​</span><br><span>⁠Sounds good!</span></p>',
+          );
+        }
 
         // Paste after
         await page.keyboard.press('ArrowRight');
         await pasteFromClipboard(page, clipboard);
-        await assertHTML(
-          page,
-          '<p class="editor-paragraph" dir="ltr"><span>Copy + pasting?</span></p><p class="editor-paragraph" dir="ltr"><span></span></p><p class="editor-paragraph" dir="ltr"><span>Sounds good!</span></p>',
-        );
-        await assertSelection(page, {
-          anchorPath: [4, 0, 0],
-          anchorOffset: 12,
-          focusPath: [4, 0, 0],
-          focusOffset: 12,
-        });
+        if (isRichText) {
+          await assertHTML(
+            page,
+            '<p class="editor-paragraph" dir="ltr"><span>Copy + pasting?</span></p><p class="editor-paragraph" dir="ltr"><span></span></p><p class="editor-paragraph" dir="ltr"><span>Sounds good!</span></p>',
+          );
+          await assertSelection(page, {
+            anchorPath: [4, 0, 0],
+            anchorOffset: 12,
+            focusPath: [4, 0, 0],
+            focusOffset: 12,
+          });
+        } else {
+          await assertHTML(
+            page,
+            '<p class="editor-paragraph" dir="ltr"><span>⁠Copy + pasting?</span><br><span>​</span><br><span>⁠Sounds good!Copy + pasting?Sounds good!</span></p>',
+          );
+          await assertSelection(page, {
+            anchorPath: [0, 4, 0],
+            anchorOffset: 39,
+            focusPath: [0, 4, 0],
+            focusOffset: 39,
+          });
+        }
       });
     });
   });

@@ -70,7 +70,7 @@ describe('Emoticons', () => {
     });
 
     it(`Can enter mutliple emoticons`, async () => {
-      const {page} = e2e;
+      const {isRichText, page} = e2e;
 
       await page.focus('div.editor');
       await page.keyboard.type(':) :) <3 :(');
@@ -112,28 +112,54 @@ describe('Emoticons', () => {
       });
 
       await page.keyboard.press('Enter');
-      await assertHTML(
-        page,
-        '<p class="editor-paragraph"><span></span><span class="emoji happysmile" contenteditable="false">🙂</span><span> </span><span class="emoji happysmile" contenteditable="false">🙂</span><span> </span><span class="emoji heart" contenteditable="false">❤</span><span> </span><span class="emoji unhappysmile" contenteditable="false" contenteditable="false">🙁</span><span></span><br><span></span><span class="emoji happysmile" contenteditable="false">🙂</span><span> </span><span class="emoji happysmile" contenteditable="false">🙂</span><span> </span><span class="emoji heart" contenteditable="false">❤</span><span> </span><span class="emoji unhappysmile" contenteditable="false" contenteditable="false">🙁</span><span></span></p><p class="editor-paragraph"><span></span></p>',
-      );
-      await assertSelection(page, {
-        anchorPath: [1, 0, 0],
-        anchorOffset: 0,
-        focusPath: [1, 0, 0],
-        focusOffset: 0,
-      });
+      if (isRichText) {
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph"><span></span><span class="emoji happysmile" contenteditable="false">🙂</span><span> </span><span class="emoji happysmile" contenteditable="false">🙂</span><span> </span><span class="emoji heart" contenteditable="false">❤</span><span> </span><span class="emoji unhappysmile" contenteditable="false" contenteditable="false">🙁</span><span></span><br><span></span><span class="emoji happysmile" contenteditable="false">🙂</span><span> </span><span class="emoji happysmile" contenteditable="false">🙂</span><span> </span><span class="emoji heart" contenteditable="false">❤</span><span> </span><span class="emoji unhappysmile" contenteditable="false" contenteditable="false">🙁</span><span></span></p><p class="editor-paragraph"><span></span></p>',
+        );
+        await assertSelection(page, {
+          anchorPath: [1, 0, 0],
+          anchorOffset: 0,
+          focusPath: [1, 0, 0],
+          focusOffset: 0,
+        });
+      } else {
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph"><span>​</span><span class="emoji happysmile" contenteditable="false">🙂</span><span>​ </span><span class="emoji happysmile" contenteditable="false">🙂</span><span>​ </span><span class="emoji heart" contenteditable="false">❤</span><span>​ </span><span class="emoji unhappysmile" contenteditable="false">🙁</span><span>​</span><br><span>​</span><span class="emoji happysmile" contenteditable="false">🙂</span><span>​ </span><span class="emoji happysmile" contenteditable="false">🙂</span><span>​ </span><span class="emoji heart" contenteditable="false">❤</span><span>​ </span><span class="emoji unhappysmile" contenteditable="false">🙁</span><span>​</span><br><span>​</span></p>',
+        );
+        await assertSelection(page, {
+          anchorPath: [0, 20, 0],
+          anchorOffset: 0,
+          focusPath: [0, 20, 0],
+          focusOffset: 0,
+        });
+      }
 
       await page.keyboard.type(':) :) <3 :(');
-      await assertHTML(
-        page,
-        '<p class="editor-paragraph"><span></span><span class="emoji happysmile" contenteditable="false">🙂</span><span> </span><span class="emoji happysmile" contenteditable="false">🙂</span><span> </span><span class="emoji heart" contenteditable="false">❤</span><span> </span><span class="emoji unhappysmile" contenteditable="false" contenteditable="false">🙁</span><span></span><br><span></span><span class="emoji happysmile" contenteditable="false">🙂</span><span> </span><span class="emoji happysmile" contenteditable="false">🙂</span><span> </span><span class="emoji heart" contenteditable="false">❤</span><span> </span><span class="emoji unhappysmile" contenteditable="false" contenteditable="false">🙁</span><span></span></p><p class="editor-paragraph"><span></span><span class="emoji happysmile" contenteditable="false">🙂</span><span> </span><span class="emoji happysmile" contenteditable="false">🙂</span><span> </span><span class="emoji heart" contenteditable="false">❤</span><span> </span><span class="emoji unhappysmile" contenteditable="false" contenteditable="false">🙁</span><span></span></p>',
-      );
-      await assertSelection(page, {
-        anchorPath: [1, 8, 0],
-        anchorOffset: 0,
-        focusPath: [1, 8, 0],
-        focusOffset: 0,
-      });
+      if (isRichText) {
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph"><span></span><span class="emoji happysmile" contenteditable="false">🙂</span><span> </span><span class="emoji happysmile" contenteditable="false">🙂</span><span> </span><span class="emoji heart" contenteditable="false">❤</span><span> </span><span class="emoji unhappysmile" contenteditable="false" contenteditable="false">🙁</span><span></span><br><span></span><span class="emoji happysmile" contenteditable="false">🙂</span><span> </span><span class="emoji happysmile" contenteditable="false">🙂</span><span> </span><span class="emoji heart" contenteditable="false">❤</span><span> </span><span class="emoji unhappysmile" contenteditable="false" contenteditable="false">🙁</span><span></span></p><p class="editor-paragraph"><span></span><span class="emoji happysmile" contenteditable="false">🙂</span><span> </span><span class="emoji happysmile" contenteditable="false">🙂</span><span> </span><span class="emoji heart" contenteditable="false">❤</span><span> </span><span class="emoji unhappysmile" contenteditable="false" contenteditable="false">🙁</span><span></span></p>',
+        );
+        await assertSelection(page, {
+          anchorPath: [1, 8, 0],
+          anchorOffset: 0,
+          focusPath: [1, 8, 0],
+          focusOffset: 0,
+        });
+      } else {
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph"><span>​</span><span class="emoji happysmile" contenteditable="false">🙂</span><span>​ </span><span class="emoji happysmile" contenteditable="false">🙂</span><span>​ </span><span class="emoji heart" contenteditable="false">❤</span><span>​ </span><span class="emoji unhappysmile" contenteditable="false">🙁</span><span>​</span><br><span>​</span><span class="emoji happysmile" contenteditable="false">🙂</span><span>​ </span><span class="emoji happysmile" contenteditable="false">🙂</span><span>​ </span><span class="emoji heart" contenteditable="false">❤</span><span>​ </span><span class="emoji unhappysmile" contenteditable="false">🙁</span><span>​</span><br><span>​</span><span class="emoji happysmile" contenteditable="false">🙂</span><span>​ </span><span class="emoji happysmile" contenteditable="false">🙂</span><span>​ </span><span class="emoji heart" contenteditable="false">❤</span><span>​ </span><span class="emoji unhappysmile" contenteditable="false">🙁</span><span>​</span></p>',
+        );
+        await assertSelection(page, {
+          anchorPath: [0, 28, 0],
+          anchorOffset: 0,
+          focusPath: [0, 28, 0],
+          focusOffset: 0,
+        });
+      }
 
       await repeat(23, async () => await page.keyboard.press('Backspace'));
       await assertHTML(

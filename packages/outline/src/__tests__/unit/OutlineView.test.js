@@ -60,13 +60,13 @@ describe('OutlineView tests', () => {
       expect(editor.getViewModel().getDirtyNodes()).toEqual([
         {
           __flags: 0,
-          __key: '1',
+          __key: '0',
           __parent: 'root',
           __text: 'foo',
           __type: 'text',
         },
         {
-          __children: ['1'],
+          __children: ['0'],
           __flags: 0,
           __key: 'root',
           __parent: null,
@@ -95,24 +95,24 @@ describe('OutlineView tests', () => {
       });
 
       expect(root).toEqual({
-        __children: ['1'],
+        __children: ['0'],
         __flags: 0,
         __key: 'root',
         __parent: null,
         __type: 'root',
       });
       expect(paragraph).toEqual({
-        __children: ['2'],
+        __children: ['1'],
         __flags: 0,
-        __key: '1',
+        __key: '0',
         __parent: 'root',
         __type: 'paragraph',
       });
       expect(text).toEqual({
         __text: 'foo',
         __flags: 0,
-        __key: '2',
-        __parent: '1',
+        __key: '1',
+        __parent: '0',
         __type: 'text',
       });
     });
@@ -127,7 +127,7 @@ describe('OutlineView tests', () => {
         view.getRoot().append(paragraph);
       });
       expect(editor.getViewModel().stringify()).toEqual(
-        `{\"_nodeMap\":[[\"root\",{\"__type\":\"root\",\"__flags\":0,\"__key\":\"root\",\"__parent\":null,\"__children\":[\"1\"]}],[\"1\",{\"__type\":\"paragraph\",\"__flags\":0,\"__key\":\"1\",\"__parent\":\"root\",\"__children\":[\"2\"]}],[\"2\",{\"__type\":\"text\",\"__flags\":0,\"__key\":\"2\",\"__parent\":\"1\",\"__text\":\"Hello world\"}]],\"_selection\":{\"anchorKey\":\"2\",\"anchorOffset\":6,\"focusKey\":\"2\",\"focusOffset\":11}}`,
+        `{\"_nodeMap\":[[\"root\",{\"__type\":\"root\",\"__flags\":0,\"__key\":\"root\",\"__parent\":null,\"__children\":[\"0\"]}],[\"0\",{\"__type\":\"paragraph\",\"__flags\":0,\"__key\":\"0\",\"__parent\":\"root\",\"__children\":[\"1\"]}],[\"1\",{\"__type\":\"text\",\"__flags\":0,\"__key\":\"1\",\"__parent\":\"0\",\"__text\":\"Hello world\"}]],\"_selection\":{\"anchorKey\":\"1\",\"anchorOffset\":6,\"focusKey\":\"1\",\"focusOffset\":11}}`,
       );
       expect(editor.getViewModel().stringify(2)).toEqual(
         `{
@@ -140,6 +140,18 @@ describe('OutlineView tests', () => {
         "__key": "root",
         "__parent": null,
         "__children": [
+          "0"
+        ]
+      }
+    ],
+    [
+      "0",
+      {
+        "__type": "paragraph",
+        "__flags": 0,
+        "__key": "0",
+        "__parent": "root",
+        "__children": [
           "1"
         ]
       }
@@ -147,30 +159,18 @@ describe('OutlineView tests', () => {
     [
       "1",
       {
-        "__type": "paragraph",
-        "__flags": 0,
-        "__key": "1",
-        "__parent": "root",
-        "__children": [
-          "2"
-        ]
-      }
-    ],
-    [
-      "2",
-      {
         "__type": "text",
         "__flags": 0,
-        "__key": "2",
-        "__parent": "1",
+        "__key": "1",
+        "__parent": "0",
         "__text": "Hello world"
       }
     ]
   ],
   "_selection": {
-    "anchorKey": "2",
+    "anchorKey": "1",
     "anchorOffset": 6,
-    "focusKey": "2",
+    "focusKey": "1",
     "focusOffset": 11
   }
 }`,

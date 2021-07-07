@@ -735,6 +735,19 @@ pre :not(.tree-view-output) {
   tab-size: 2;
 }
 
+.editor-shell div.editor span.editor-image {
+  cursor: default;
+  display: inline-block;
+}
+
+.editor-shell div.editor .editor-image img {
+  max-width: 100%;
+}
+
+.editor-shell div.editor .editor-image img:focus {
+  outline: 3px solid rgb(10, 177, 255);
+}
+
 .emoji {
   color: transparent;
   background-size: 16px 16px;
@@ -767,4 +780,27 @@ pre :not(.tree-view-output) {
 .keyword {
   color: blue;
   font-weight: bold;
+}
+
+.actions {
+  position: relative;
+  text-align: right;
+  padding: 10px;
+}
+
+.add-image {
+  background-color: #eee;
+  border: 0;
+  padding: 8px 12px;
+  position: relative;
+  margin-left: 5px;
+  border-radius: 15px;
+  color: #222;
+  display: inline-block;
+  cursor: pointer;
+}
+
+.add-image:hover {
+  background-color: #ddd;
+  color: #000;
 }

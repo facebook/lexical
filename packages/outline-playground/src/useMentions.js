@@ -471,6 +471,9 @@ export default function useMentions(editor: OutlineEditor): React$Node {
       const key = event.key;
       registeredKeys.forEach((registeredKeyMap) => {
         const controlFunction = registeredKeyMap[key];
+        if (key === 'Enter' && event.keyCode !== 13) {
+          return;
+        }
         if (typeof controlFunction === 'function') {
           controlFunction(event, view);
         }

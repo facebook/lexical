@@ -40,7 +40,7 @@ module.name_mapper='^outline-react/useOutlineEditorEvents' -> '<PROJECT_ROOT>/pa
 module.name_mapper='^outline-react/useOutlineAutoFormatter' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlineAutoFormatter.js'
 module.name_mapper='^outline-react/useOutlineDecorators' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlineDecorators.js'
 
-module.name_mapper='^shared/isImmutableOrInertOrSegmented' -> '<PROJECT_ROOT>/packages/shared/src/isImmutableOrInertOrSegmented.js'
+module.name_mapper='^shared/isImmutableOrInert' -> '<PROJECT_ROOT>/packages/shared/src/isImmutableOrInert.js'
 module.name_mapper='^shared/invariant' -> '<PROJECT_ROOT>/packages/shared/src/invariant.js'
 module.name_mapper='^shared/getDOMTextNodeFromElement' -> '<PROJECT_ROOT>/packages/shared/src/getDOMTextNodeFromElement.js'
 module.name_mapper='^shared/environment' -> '<PROJECT_ROOT>/packages/shared/src/environment.js'

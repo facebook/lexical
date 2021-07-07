@@ -18,7 +18,7 @@ import {
   isSelectionWithinEditor,
   isImmutableOrInertOrSegmented,
 } from './OutlineUtils';
-import {IS_INERT, IS_RTL, IS_LTR} from './OutlineConstants';
+import {IS_INERT, IS_RTL, IS_LTR, IS_IMMUTABLE} from './OutlineConstants';
 import invariant from 'shared/invariant';
 import {isDecoratorNode} from './OutlineDecoratorNode';
 
@@ -77,9 +77,10 @@ function createNode(
   const dom = node.createDOM(activeEditorThemeClasses);
   const flags = node.__flags;
   const isInert = flags & IS_INERT;
+  const isImmutable = flags & IS_IMMUTABLE;
   storeDOMWithKey(key, dom, activeEditor);
 
-  if (node.__type !== 'linebreak' && isInert) {
+  if (isImmutable || isInert) {
     dom.contentEditable = 'false';
   }
   if (isInert) {
@@ -102,7 +103,6 @@ function createNode(
     createChildren(children, 0, endIndex, dom, null);
   } else {
     if (isDecoratorNode(node)) {
-      dom.contentEditable = 'false';
       const decorator = node.decorate(activeEditor);
       if (decorator !== null) {
         reconcileDecorator(key, decorator);

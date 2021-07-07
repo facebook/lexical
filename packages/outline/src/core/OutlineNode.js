@@ -18,7 +18,11 @@ import {
   isRootNode,
   BlockNode,
 } from '.';
-import {getActiveViewModel, errorOnReadOnly} from './OutlineView';
+import {
+  getActiveViewModel,
+  errorOnReadOnly,
+  getActiveEditor,
+} from './OutlineView';
 import {
   generateRandomKey,
   getTextDirection,
@@ -489,6 +493,10 @@ export class OutlineNode {
     const viewModel = getActiveViewModel();
     return viewModel._dirtyNodes.has(this.__key);
   }
+  isComposing(): boolean {
+    const editor = getActiveEditor();
+    return this.__key === editor._compositionKey;
+  }
   getLatest<N: OutlineNode>(): N {
     const latest = getNodeByKey<N>(this.__key);
     if (latest === null) {
@@ -691,6 +699,18 @@ export class OutlineNode {
       invariant(false, 'selectNext: found invalid sibling');
     }
     return nextSibling.select(anchorOffset, focusOffset);
+  }
+  forceComposition(): void {
+    errorOnReadOnly();
+    // We will need to ensure this node gets rendered during composition
+    const viewModel = getActiveViewModel();
+    const editor = getActiveEditor();
+    const key = this.__key;
+    viewModel._flushSync = true;
+    editor._compositionKey = null;
+    editor._deferred.push(() => {
+      editor._compositionKey = key;
+    });
   }
 }
 

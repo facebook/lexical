@@ -63,7 +63,7 @@ describe('TextEntry', () => {
 
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span>Hello World.</span></p><p class="editor-paragraph" dir="ltr"><span>This is another paragraph. </span><span class="emoji happysmile">🙂</span><span></span></p>',
+          '<p class="editor-paragraph" dir="ltr"><span>Hello World.</span></p><p class="editor-paragraph" dir="ltr"><span>This is another paragraph. </span><span class="emoji happysmile" contenteditable="false">🙂</span><span></span></p>',
         );
         await assertSelection(page, {
           anchorPath: [1, 2, 0],

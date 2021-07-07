@@ -55,9 +55,11 @@ jobs:
       matrix:
         node-version: [16.x]
         browser: ['chromium', 'firefox', 'webkit']
+        editor-mode: ['rich-text', 'plain-text']
     env:
       CI: true
       PLAYWRIGHT_BROWSERS_PATH: 0
+      E2E_EDITOR_MODE: ${{ matrix.editor-mode }}
     steps:
       - uses: actions/checkout@v2
       - name: Use Node.js ${{ matrix.node-version }}
@@ -78,9 +80,11 @@ jobs:
       matrix:
         node-version: [16.x]
         browser: ['chromium', 'firefox']
+        editor-mode: ['rich-text', 'plain-text']
     env:
       CI: true
       PLAYWRIGHT_BROWSERS_PATH: 0
+      E2E_EDITOR_MODE: ${{ matrix.editor-mode }}
     steps:
     - uses: actions/checkout@v2
     - name: Use Node.js ${{ matrix.node-version }}
@@ -105,9 +109,11 @@ jobs:
       matrix:
         node-version: [16.x]
         browser: ['chromium', 'firefox']
+        editor-mode: ['rich-text', 'plain-text']
     env:
       CI: true
       PLAYWRIGHT_BROWSERS_PATH: 0
+      E2E_EDITOR_MODE: ${{ matrix.editor-mode }}
     steps:
     - uses: actions/checkout@v2
     - name: Use Node.js ${{ matrix.node-version }}

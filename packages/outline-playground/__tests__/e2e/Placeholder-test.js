@@ -11,11 +11,15 @@ import {initializeE2E, assertHTML, assertSelection} from '../utils';
 describe('Placeholder', () => {
   initializeE2E((e2e) => {
     it(`Displays a placeholder when no content is present`, async () => {
-      const {page} = e2e;
+      const {page, isRichText} = e2e;
 
       await page.focus('div.editor');
       const textContent = await page.textContent('.editor-placeholder');
-      expect(textContent).toBe('Enter some rich text...');
+      if (isRichText) {
+        expect(textContent).toBe('Enter some rich text...');
+      } else {
+        expect(textContent).toBe('Enter some plain text...');
+      }
 
       await assertHTML(
         page,

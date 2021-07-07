@@ -18,7 +18,11 @@ import {
 describe('TextFormatting', () => {
   initializeE2E((e2e) => {
     it(`Can create bold text using the shortcut`, async () => {
-      const {page} = e2e;
+      const {isRichText, page} = e2e;
+
+      if (!isRichText) {
+        return;
+      }
 
       await page.focus('div.editor');
       await page.keyboard.type('Hello');
@@ -54,7 +58,11 @@ describe('TextFormatting', () => {
     });
 
     it(`Can create italic text using the shortcut`, async () => {
-      const {page} = e2e;
+      const {isRichText, page} = e2e;
+
+      if (!isRichText) {
+        return;
+      }
 
       await page.focus('div.editor');
       await page.keyboard.type('Hello');
@@ -90,7 +98,11 @@ describe('TextFormatting', () => {
     });
 
     it(`Can select text and boldify it with the shortcut`, async () => {
-      const {page} = e2e;
+      const {isRichText, page} = e2e;
+
+      if (!isRichText) {
+        return;
+      }
 
       await page.focus('div.editor');
       await page.keyboard.type('Hello world!');
@@ -137,7 +149,11 @@ describe('TextFormatting', () => {
     });
 
     it(`Can select text and italicify it with the shortcut`, async () => {
-      const {page} = e2e;
+      const {isRichText, page} = e2e;
+
+      if (!isRichText) {
+        return;
+      }
 
       await page.focus('div.editor');
       await page.keyboard.type('Hello world!');
@@ -184,7 +200,11 @@ describe('TextFormatting', () => {
     });
 
     it(`Can select multiple text parts and format them with shortcuts`, async () => {
-      const {page} = e2e;
+      const {isRichText, page} = e2e;
+
+      if (!isRichText) {
+        return;
+      }
 
       await page.focus('div.editor');
       await page.keyboard.type('Hello world!');

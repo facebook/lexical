@@ -94,6 +94,19 @@ const DEFAULT_OPTIONS = {
   showOptions: false,
 };
 
+// override default options with query parameters if any
+const urlSearchParams = new URLSearchParams(window.location.search);
+for (let param in DEFAULT_OPTIONS) {
+  if (urlSearchParams.has(param)) {
+    try {
+      const value = JSON.parse(urlSearchParams.get(param) ?? 'true');
+      DEFAULT_OPTIONS[param] = Boolean(value);
+    } catch (error) {
+      console.warn(`Unable to parse query parameter "${param}"`);
+    }
+  }
+}
+
 function App(): React$Node {
   const [options, setOptions] = useState(DEFAULT_OPTIONS);
 

@@ -897,6 +897,11 @@ export function insertText(selection: Selection, text: string): void {
           lastNode.replace(textNode);
           lastNode = textNode;
         } else {
+          if (lastNode.isSegmented()) {
+            const textNode = createTextNode(lastNode.getTextContent());
+            lastNode.replace(textNode);
+            lastNode = textNode;
+          }
           lastNode.spliceText(0, endOffset, '', false);
         }
         if (

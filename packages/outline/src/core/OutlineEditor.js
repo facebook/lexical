@@ -335,9 +335,6 @@ class BaseOutlineEditor {
   getDecorators(): {[NodeKey]: ReactNode} {
     return this._decorators;
   }
-  getEditorKey(): string {
-    return this._key;
-  }
   getRootElement(): null | HTMLElement {
     return this._rootElement;
   }
@@ -467,7 +464,6 @@ declare export class OutlineEditor {
   addListener(type: 'mutation', listener: MutationListener): () => void;
   addTextNodeTransform(listener: TextNodeTransform): () => void;
   getDecorators(): {[NodeKey]: ReactNode};
-  getEditorKey(): string;
   getRootElement(): null | HTMLElement;
   setRootElement(rootElement: null | HTMLElement): void;
   getTextContent(): string;

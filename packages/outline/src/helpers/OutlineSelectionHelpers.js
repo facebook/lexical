@@ -824,7 +824,9 @@ export function insertText(selection: Selection, text: string): void {
     } else {
       const textNode = createTextNode(firstNode.getTextContent());
       firstNode.replace(textNode, true);
-      firstNode.forceComposition();
+      if (isComposingTextEntry) {
+        firstNode.forceComposition();
+      }
       firstNode = textNode;
     }
   }

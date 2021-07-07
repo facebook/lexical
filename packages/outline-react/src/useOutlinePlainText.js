@@ -38,8 +38,9 @@ function initEditor(editor: OutlineEditor): void {
     const root = view.getRoot();
 
     if (root.getFirstChild() === null) {
+      const paragraph = createParagraphNode();
       const text = createTextNode();
-      root.append(createParagraphNode().append(text));
+      root.append(paragraph.append(text));
     }
   });
 }

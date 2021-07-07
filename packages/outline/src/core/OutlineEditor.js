@@ -26,11 +26,7 @@ import {
   triggerListeners,
 } from './OutlineView';
 import {createSelection} from './OutlineSelection';
-import {
-  generateRandomKey,
-  emptyFunction,
-  scheduleMicroTask,
-} from './OutlineUtils';
+import {emptyFunction, scheduleMicroTask} from './OutlineUtils';
 import {createRootNode as createRoot} from './OutlineRootNode';
 import invariant from 'shared/invariant';
 import {LineBreakNode} from './OutlineLineBreakNode';
@@ -239,7 +235,6 @@ class BaseOutlineEditor {
   _pendingViewModel: null | ViewModel;
   _compositionKey: null | NodeKey;
   _deferred: Array<() => void>;
-  _key: string;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _listeners: Listeners;
   _textNodeTransforms: Set<TextNodeTransform>;
@@ -279,7 +274,6 @@ class BaseOutlineEditor {
       ['linebreak', LineBreakNode],
       ['root', RootNode],
     ]);
-    this._key = generateRandomKey();
     // React node decorators for portals
     this._decorators = {};
     this._pendingDecorators = null;
@@ -444,7 +438,6 @@ declare export class OutlineEditor {
   _pendingViewModel: null | ViewModel;
   _compositionKey: null | NodeKey;
   _deferred: Array<() => void>;
-  _key: string;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _listeners: Listeners;
   _textNodeTransforms: Set<TextNodeTransform>;

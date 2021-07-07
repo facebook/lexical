@@ -7,17 +7,72 @@
  * @flow strict
  */
 
-import type {EditorThemeClasses} from '../core/OutlineEditor';
+import type {
+  EditorThemeClasses,
+  NodeKey,
+  OutlineNode,
+  OutlineEditor,
+} from 'outline';
 
-import {OutlineNode} from '../core/OutlineNode';
+import {DecoratorNode} from 'outline';
 
-export class ImageNode extends MediaNode {
+import * as React from 'react';
+
+import {useRef, useState} from 'react';
+
+function Image({
+  editor,
+  src,
+  altText,
+  nodeKey,
+}: {
+  editor: OutlineEditor,
+  src: string,
+  altText: string,
+  nodeKey: NodeKey,
+}) {
+  const ref = useRef(null);
+  const [hasFocus, setHasFocus] = useState(false);
+
+  const handleKeyDown = (event) => {
+    if ((hasFocus && event.key === 'Backspace') || event.key === 'Delete') {
+      editor.update((view) => {
+        const node = view.getNodeByKey(nodeKey);
+        if (node !== null) {
+          node.remove();
+        }
+      });
+    }
+  };
+
+  // TODO: This needs to be made accessible.
+  return (
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
+    <img
+      src={src}
+      alt={altText}
+      ref={ref}
+      onFocus={() => setHasFocus(true)}
+      onBlur={() => setHasFocus(false)}
+      onKeyDown={handleKeyDown}
+      // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
+      tabIndex={0}
+    />
+  );
+}
+
+export class ImageNode extends DecoratorNode {
   __src: string;
+  __altText: string;
 
   constructor(src: string, altText: string, key?: NodeKey) {
-    super(altText, key);
+    super(key);
     this.__type = 'image';
     this.__src = src;
+    this.__altText = altText;
+  }
+  getTextContent(): string {
+    return this.__altText;
   }
   clone(): ImageNode {
     return new ImageNode(this.__src, this.__altText, this.__key);
@@ -26,28 +81,25 @@ export class ImageNode extends MediaNode {
   // View
 
   createDOM(editorThemeClasses: EditorThemeClasses): HTMLElement {
-    const img = document.createElement('img');
-    img.src = this.__src;
-    img.alt = this.__altText;
+    const span = document.createElement('span');
     const className = editorThemeClasses.image;
     if (className !== undefined) {
-      img.className = className;
+      span.className = className;
     }
-    return img;
+    return span;
   }
-  // $FlowFixMe: we know from about that we are using a HTMLImageElement
-  updateDOM(prevNode: ImageNode, dom: HTMLImageElement): boolean {
-    const prevAltText = prevNode.__altText;
-    const nextAltText = this.__altText;
-    if (prevAltText !== nextAltText) {
-      dom.alt = nextAltText;
-    }
-    const prevSrc = prevNode.__src;
-    const nextSrc = this.__src;
-    if (prevSrc !== nextSrc) {
-      dom.src = nextSrc;
-    }
+  updateDOM(): false {
     return false;
+  }
+  decorate(editor: OutlineEditor): React.Node {
+    return (
+      <Image
+        src={this.__src}
+        altText={this.__altText}
+        editor={editor}
+        nodeKey={this.getKey()}
+      />
+    );
   }
 }
 

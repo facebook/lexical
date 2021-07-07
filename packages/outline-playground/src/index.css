@@ -741,7 +741,11 @@ pre :not(.tree-view-output) {
 }
 
 .editor-shell div.editor .editor-image img {
-  max-width: 100%;;
+  max-width: 100%;
+}
+
+.editor-shell div.editor .editor-image img:focus {
+  outline: 3px solid rgb(10, 177, 255);
 }
 
 .emoji {

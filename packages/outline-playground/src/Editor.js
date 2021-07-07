@@ -10,7 +10,7 @@
 import type {OutlineEditor} from 'outline';
 
 import * as React from 'react';
-import {useMemo} from 'react';
+import {useEffect, useMemo} from 'react';
 import useOutlineRichText from 'outline-react/useOutlineRichText';
 import useEmojis from './useEmojis';
 import useMentions from './useMentions';
@@ -18,7 +18,7 @@ import useOutlineEditor from 'outline-react/useOutlineEditor';
 import usePlainText from 'outline-react/useOutlinePlainText';
 import useOutlineAutoFormatter from 'outline-react/useOutlineAutoFormatter';
 import useOutlineDecorators from 'outline-react/useOutlineDecorators';
-import {createImageNode} from 'outline/ImageNode';
+import {ImageNode, createImageNode} from 'outline/ImageNode';
 import {insertNodes} from 'outline/SelectionHelpers';
 import useToolbar from './useToolbar';
 import useHashtags from './useHashtags';
@@ -111,6 +111,9 @@ export const useRichTextEditor = ({
   useHashtags(editor);
   useOutlineAutoFormatter(editor);
   useKeywords(editor);
+  useEffect(() => {
+    editor.registerNodeType('image', ImageNode);
+  }, [editor]);
 
   const element = useMemo(() => {
     const handleAddImage = () => {

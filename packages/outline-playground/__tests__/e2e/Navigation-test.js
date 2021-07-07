@@ -724,7 +724,7 @@ describe('Keyboard Navigation', () => {
       }
     });
 
-    it('can navigate through the text with emoji word by word', async () => {
+    it.only('can navigate through the text with emoji word by word', async () => {
       const {page} = e2e;
       await page.focus('div.editor');
       // type sample text
@@ -987,9 +987,9 @@ describe('Keyboard Navigation', () => {
         } else if (IS_WINDOWS) {
           await assertSelection(page, {
             anchorPath: [0, 6, 0],
-            anchorOffset: 3,
+            anchorOffset: 5,
             focusPath: [0, 6, 0],
-            focusOffset: 3,
+            focusOffset: 5,
           });
         } else {
           await assertSelection(page, {

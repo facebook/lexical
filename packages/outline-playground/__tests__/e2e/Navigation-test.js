@@ -13,7 +13,6 @@ import {
   assertSelection,
   E2E_BROWSER,
   IS_WINDOWS,
-  E2E_EDITOR_MODE,
 } from '../utils';
 import {
   moveToEditorBeginning,

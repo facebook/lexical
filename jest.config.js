@@ -35,6 +35,8 @@ module.exports = {
           '<rootDir>/packages/outline/src/extensions/OutlineCodeNode.js',
         '^outline/ImageNode$':
           '<rootDir>/packages/outline/src/extensions/OutlineImageNode.js',
+        '^outline/HashtagNode$':
+          '<rootDir>/packages/outline/src/extensions/OutlineHashtagNode.js',
         '^outline-react/useOutlineRichText$':
           '<rootDir>/packages/outline-react/src/useOutlineRichText.js',
         '^outline/HistoryHelpers$':

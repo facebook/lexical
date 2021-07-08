@@ -33,7 +33,7 @@ export class HashtagNode extends TextNode {
     let requireNormalize = super.setTextContent(text);
     const isHashtag = isHashtagNode(this);
     // Handle hashtags
-    if (isHashtag) {
+    if (isHashtag && this.getParent() !== null) {
       const indexOfHash = text.indexOf('#');
       let targetNode = this;
       if (indexOfHash === -1) {

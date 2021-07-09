@@ -508,7 +508,10 @@ function deleteCharacter(selection: Selection, isBackward: boolean): void {
 
     if (!selection.isCaret()) {
       const anchorNode = selection.getAnchorNode();
-      if (anchorNode.isSegmented()) {
+      if (
+        anchorNode.isSegmented() &&
+        selection.anchorOffset !== anchorNode.getTextContentSize()
+      ) {
         removeSegment(anchorNode, isBackward);
         return;
       } else if (!isBackward) {
@@ -625,11 +628,14 @@ export function updateCaretSelectionForRange(
   }
 
   const textSize = focusNode.getTextContentSize();
-  const isAtBoundary = isBackward
-    ? focusOffset === 0
+  const needsExtraMove = isBackward
+    ? focusOffset === 0 &&
+      focusNode.getTextContent() === '' &&
+      !isImmutableOrInert(focusNode)
     : focusOffset === textSize &&
-      (isImmutableOrInert(focusNode) ||
-        (sibling !== null && !isImmutableOrInert(sibling)));
+      isTextNode(sibling) &&
+      !isImmutableOrInert(sibling) &&
+      sibling.getTextContent() === '';
 
   // We use the DOM selection.modify API here to "tell" us what the selection
   // will be. We then use it to update the Outline selection accordingly. This
@@ -639,7 +645,7 @@ export function updateCaretSelectionForRange(
   // and line segments (especially with word wrapping and non-Roman languages).
   moveSelection(domSelection, collapse, isBackward, granularity);
   // If we are at a boundary, move once again.
-  if (isAtBoundary && granularity === 'character') {
+  if (needsExtraMove && granularity === 'character') {
     moveSelection(domSelection, collapse, isBackward, granularity);
   }
   // Guard against no ranges
@@ -802,25 +808,27 @@ export function insertText(selection: Selection, text: string): void {
   const firstNodeTextLength = firstNodeText.length;
   const currentBlock = firstNode.getParentBlockOrThrow();
   const lastIndex = selectedNodesLength - 1;
+  const isBefore = firstNode === selection.getAnchorNode();
   let lastNode = selectedNodes[lastIndex];
   let isComposingTextEntry = false;
+
   if (firstNode.isSegmented()) {
     isComposingTextEntry = firstNode.isComposing() || lastNode.isComposing();
     if (
       !isComposingTextEntry &&
-      selection.isCaret() &&
       anchorOffset === firstNodeTextLength
     ) {
       const nextSibling = firstNode.getNextSibling();
       if (isTextNode(nextSibling)) {
         nextSibling.select(0, 0);
         insertText(selection, text);
+        firstNode = nextSibling;
       } else {
         const textNode = createTextNode(text);
         firstNode.insertAfter(textNode);
         textNode.select();
+        firstNode = textNode;
       }
-      return;
     } else {
       const textNode = createTextNode(firstNode.getTextContent());
       firstNode.replace(textNode, true);
@@ -849,7 +857,6 @@ export function insertText(selection: Selection, text: string): void {
       selection.anchorOffset -= text.length;
     }
   } else {
-    const isBefore = firstNode === selection.getAnchorNode();
     const firstNodeParents = new Set(firstNode.getParents());
     const lastNodeParents = new Set(lastNode.getParents());
     let firstNodeRemove = false;

@@ -15,11 +15,9 @@ import {getActiveViewModel} from './OutlineView';
 import {getNodeKeyFromDOM} from './OutlineReconciler';
 import {getNodeByKey} from './OutlineNode';
 import {isTextNode, isBlockNode, isLineBreakNode, TextNode} from '.';
-import {
-  isImmutableOrInertOrSegmented,
-  isSelectionWithinEditor,
-} from './OutlineUtils';
+import {getDOMTextNode, isSelectionWithinEditor} from './OutlineUtils';
 import invariant from 'shared/invariant';
+import {ZERO_WIDTH_JOINER_CHAR} from './OutlineConstants';
 
 export class Selection {
   anchorKey: string;
@@ -178,13 +176,11 @@ function resolveSelectionNodeAndOffset(
   let resolvedOffset = offset;
   let resolvedNode;
   let isDirty = _isDirty;
-  let didResolveOffsetAlready = false;
   // If we have selection on an element, we will
   // need to figure out (using the offset) what text
   // node should be selected.
 
   if (domIsElement(resolvedDOM) && resolvedDOM.nodeName !== 'BR') {
-    didResolveOffsetAlready = true;
     let moveSelectionToEnd = false;
     // Given we're moving selection to another node, selection is
     // definitely dirty.
@@ -231,26 +227,31 @@ function resolveSelectionNodeAndOffset(
     return null;
   }
   let resolvedTextNode = resolvedNode;
+  const textNode = getDOMTextNode(resolvedDOM);
 
-  if (isImmutableOrInertOrSegmented(resolvedTextNode)) {
-    if (window.getSelection().isCollapsed) {
-      if (resolvedOffset === 0) {
-        const prevSibling = resolvedTextNode.getPreviousSibling();
-        if (isTextNode(prevSibling)) {
-          resolvedTextNode = prevSibling;
-          resolvedOffset = prevSibling.getTextContentSize();
-          isDirty = true;
-        }
-      }
-    }
-  } else {
+  if (
+    textNode !== null &&
+    resolvedOffset !== 0 &&
+    textNode.nodeValue[0] === ZERO_WIDTH_JOINER_CHAR
+  ) {
+    isDirty = true;
+    resolvedOffset--;
+  }
+
+  if (resolvedTextNode.getTextContent() === '') {
     // Because we use a special character for whitespace
-    // at the start of all strings, we need to remove one
+    // at the start of empty strings, we need to remove one
     // from the offset.
     if (resolvedOffset === 0) {
       isDirty = true;
-    } else if (!didResolveOffsetAlready) {
-      resolvedOffset--;
+    }
+    resolvedOffset = 0;
+  } else if (resolvedOffset === 0) {
+    const prevSibling = resolvedTextNode.getPreviousSibling();
+    if (isTextNode(prevSibling)) {
+      resolvedTextNode = prevSibling;
+      resolvedOffset = prevSibling.getTextContentSize();
+      isDirty = true;
     }
   }
   return [resolvedTextNode, resolvedOffset, isDirty];

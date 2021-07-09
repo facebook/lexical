@@ -62,7 +62,6 @@ import {
 } from 'outline/SelectionHelpers';
 import {createTextNode, isTextNode, isDecoratorNode} from 'outline';
 
-const ZERO_WIDTH_SPACE_CHAR = '\u200B';
 const ZERO_WIDTH_JOINER_CHAR = '\u2060';
 
 // TODO the Flow types here needs fixing
@@ -562,7 +561,7 @@ function updateTextNodeFromDOMContent(
   let node = getNodeFromDOMNode(view, dom);
   if (node !== null && !node.isDirty()) {
     const rawTextContent = dom.nodeValue;
-    const textContent = rawTextContent.replace(/[\u200B\u2060]/g, '');
+    const textContent = rawTextContent.replace('\u2060', '');
 
     if (isTextNode(node) && textContent !== node.getTextContent()) {
       if (handleBlockTextInputOnNode(node, view, editor)) {
@@ -582,10 +581,7 @@ function updateTextNodeFromDOMContent(
         const domSelection = window.getSelection();
         let offset = domSelection.focusOffset;
         const firstCharacter = rawTextContent[0];
-        if (
-          firstCharacter === ZERO_WIDTH_SPACE_CHAR ||
-          firstCharacter === ZERO_WIDTH_JOINER_CHAR
-        ) {
+        if (firstCharacter === ZERO_WIDTH_JOINER_CHAR) {
           offset--;
         }
         node.select(offset, offset);

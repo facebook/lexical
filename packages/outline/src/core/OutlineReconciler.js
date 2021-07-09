@@ -198,10 +198,8 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
     activeDirtyNodes.has(key) ||
     activeDirtySubTrees.has(key);
   const dom = getElementByKeyOrThrow(activeEditor, key);
-  // If we're composing this node, skip over reconciling it
-  const isComposingNode = key === activeEditor._compositionKey;
 
-  if ((prevNode === nextNode && !isDirty) || isComposingNode) {
+  if (prevNode === nextNode && !isDirty) {
     if (isBlockNode(prevNode)) {
       // $FlowFixMe: internal field
       const prevSubTreeTextContent = dom.__outlineTextContent;
@@ -519,7 +517,6 @@ export function reconcileViewModel(
 
   if (
     domSelection !== null &&
-    !editor.isComposing() &&
     prevSelection !== nextSelection &&
     (!nextSelection ||
       nextSelection.isDirty ||

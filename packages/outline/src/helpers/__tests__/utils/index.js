@@ -150,11 +150,11 @@ export function sanitizeHTML(html) {
 export function sanitizeSelection(selection) {
   // eslint-disable-next-line prefer-const
   let {anchorNode, anchorOffset, focusNode, focusOffset} = selection;
-  if (anchorOffset !== 0) {
-    anchorOffset--;
+  if (anchorNode.textContent === '\u2060') {
+    anchorOffset = 0;
   }
-  if (focusOffset !== 0) {
-    focusOffset--;
+  if (focusNode.textContent === '\u2060') {
+    focusOffset = 0;
   }
   return {anchorNode, focusNode, anchorOffset, focusOffset};
 }
@@ -372,7 +372,12 @@ export function setNativeSelectionWithPaths(
 ) {
   const anchorNode = getNodeFromPath(anchorPath, rootElement);
   const focusNode = getNodeFromPath(focusPath, rootElement);
-  setNativeSelection(anchorNode, anchorOffset + 1, focusNode, focusOffset + 1);
+  setNativeSelection(
+    anchorNode,
+    anchorNode.textContent === '\u2060' ? anchorOffset + 1 : anchorOffset,
+    focusNode,
+    focusNode.textContent === '\u2060' ? focusOffset + 1 : focusOffset,
+  );
 }
 
 function getLastTextNode(startingNode) {

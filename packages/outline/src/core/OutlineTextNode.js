@@ -227,6 +227,14 @@ export class TextNode extends OutlineNode {
   isUnmergeable(): boolean {
     return (this.getFlags() & IS_UNMERGEABLE) !== 0;
   }
+  isSimpleText(): boolean {
+    return (
+      this.__type === 'text' &&
+      !this.isImmutable() &&
+      !this.isInert() &&
+      !this.isSegmented()
+    );
+  }
   getTextContent(includeInert?: boolean, includeDirectionless?: false): string {
     if (
       (!includeInert && this.isInert()) ||

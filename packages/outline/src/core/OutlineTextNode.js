@@ -20,7 +20,7 @@ import {
   IS_SAFARI,
 } from './OutlineUtils';
 import invariant from 'shared/invariant';
-import {errorOnReadOnly} from './OutlineView';
+import {errorOnReadOnly, getActiveEditor} from './OutlineView';
 import {
   IS_CODE,
   IS_BOLD,
@@ -438,6 +438,14 @@ export class TextNode extends OutlineNode {
     if (selection === null) {
       return makeSelection(key, anchorOffset, key, focusOffset);
     } else {
+      const editor = getActiveEditor();
+      const compositionKey = editor._compositionKey;
+      if (
+        compositionKey === selection.anchorKey ||
+        compositionKey === selection.focusKey
+      ) {
+        editor._compositionKey = key;
+      }
       selection.setRange(key, anchorOffset, key, focusOffset);
     }
     return selection;

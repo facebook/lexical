@@ -567,7 +567,12 @@ function updateTextNodeFromDOMContent(
     if (isTextNode(node) && textContent !== node.getTextContent()) {
       if (handleBlockTextInputOnNode(node, view, editor)) {
         return;
-      } else if (node.isSegmented()) {
+      }
+      if (editor.isComposing() && !node.isComposing()) {
+        view.markNodeAsDirty(node);
+        return;
+      }
+      if (node.isSegmented()) {
         const replacement = createTextNode(node.getTextContent());
         node.replace(replacement, true);
         node = replacement;
@@ -844,7 +849,11 @@ export function onBeforeInputForRichText(
         const anchorKey = selection.anchorKey;
         const focusKey = selection.focusKey;
 
-        if (anchorKey !== focusKey || anchorNode.isSegmented()) {
+        if (
+          anchorKey !== focusKey ||
+          anchorNode.isSegmented() ||
+          (!IS_SAFARI && anchorNode.getTextContent() === '')
+        ) {
           event.preventDefault();
           insertText(selection, data);
         }

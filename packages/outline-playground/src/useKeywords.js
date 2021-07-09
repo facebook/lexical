@@ -65,10 +65,6 @@ class KeywordNode extends DecoratorNode {
   }
 }
 
-function isKeywordNode(node: TextNode): boolean {
-  return node instanceof KeywordNode;
-}
-
 function createKeywordNode(keyword: string): KeywordNode {
   return new KeywordNode(keyword);
 }

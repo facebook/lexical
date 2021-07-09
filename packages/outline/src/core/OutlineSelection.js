@@ -115,7 +115,7 @@ export class Selection {
             : text.slice(0, anchorOffset);
         }
         textContent += text;
-      } else if (isBlockNode(node)) {
+      } else if (isBlockNode(node) || isLineBreakNode(node)) {
         textContent += '\n';
       }
     });

@@ -714,7 +714,11 @@ export function onBeforeInputForPlainText(
         const anchorKey = selection.anchorKey;
         const focusKey = selection.focusKey;
 
-        if (anchorKey !== focusKey || anchorNode.isSegmented()) {
+        if (
+          anchorKey !== focusKey ||
+          anchorNode.isSegmented() ||
+          (!IS_SAFARI && anchorNode.getTextContent() === '')
+        ) {
           event.preventDefault();
           insertText(selection, data);
         }

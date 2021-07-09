@@ -443,15 +443,19 @@ export function onCopy(
   });
 }
 
-export function onCompositionStart(
+export function onCompositionUpdate(
   event: CompositionEvent,
   editor: OutlineEditor,
   state: EventHandlerState,
 ): void {
   editor.update((view) => {
     const selection = view.getSelection();
-    if (selection !== null) {
+    if (selection !== null && !editor.isComposing()) {
       editor.setCompositionKey(selection.anchorKey);
+      const data = event.data;
+      if (data != null) {
+        insertText(selection, data);
+      }
     }
   });
 }
@@ -462,7 +466,6 @@ export function onCompositionEnd(
   state: EventHandlerState,
 ): void {
   editor.setCompositionKey(null);
-
   editor.update((view) => {});
 }
 
@@ -690,14 +693,17 @@ export function onBeforeInputForPlainText(
       insertText(selection, '  ');
       return;
     }
-    // We let the browser do its own thing for composition deletions.
-    if (inputType === 'deleteCompositionText') {
+    // We let the browser do its own thing for composition.
+    if (
+      inputType === 'deleteCompositionText' ||
+      inputType === 'insertCompositionText'
+    ) {
       return;
     }
     const anchorNode = selection.getAnchorNode();
     const focusNode = selection.getAnchorNode();
 
-    if (inputType === 'insertText' || inputType === 'insertCompositionText') {
+    if (inputType === 'insertText') {
       if (data === '\n') {
         event.preventDefault();
         insertLineBreak(selection);
@@ -714,11 +720,7 @@ export function onBeforeInputForPlainText(
         const anchorKey = selection.anchorKey;
         const focusKey = selection.focusKey;
 
-        if (
-          anchorKey !== focusKey ||
-          anchorNode.isSegmented() ||
-          (!IS_SAFARI && anchorNode.getTextContent() === '')
-        ) {
+        if (anchorKey !== focusKey || anchorNode.isSegmented()) {
           event.preventDefault();
           insertText(selection, data);
         }
@@ -830,14 +832,17 @@ export function onBeforeInputForRichText(
       insertText(selection, '  ');
       return;
     }
-    // We let the browser do its own thing for composition deletions.
-    if (inputType === 'deleteCompositionText') {
+    // We let the browser do its own thing for composition.
+    if (
+      inputType === 'deleteCompositionText' ||
+      inputType === 'insertCompositionText'
+    ) {
       return;
     }
     const anchorNode = selection.getAnchorNode();
     const focusNode = selection.getAnchorNode();
 
-    if (inputType === 'insertText' || inputType === 'insertCompositionText') {
+    if (inputType === 'insertText') {
       if (data === '\n') {
         event.preventDefault();
         insertLineBreak(selection);
@@ -853,11 +858,7 @@ export function onBeforeInputForRichText(
         const anchorKey = selection.anchorKey;
         const focusKey = selection.focusKey;
 
-        if (
-          anchorKey !== focusKey ||
-          anchorNode.isSegmented() ||
-          (!IS_SAFARI && anchorNode.getTextContent() === '')
-        ) {
+        if (anchorKey !== focusKey || anchorNode.isSegmented()) {
           event.preventDefault();
           insertText(selection, data);
         }

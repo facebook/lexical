@@ -19,7 +19,7 @@ import {CAN_USE_BEFORE_INPUT} from 'shared/environment';
 import {
   onSelectionChange,
   onKeyDownForPlainText,
-  onCompositionStart,
+  onCompositionUpdate,
   onCompositionEnd,
   onCut,
   onCopy,
@@ -48,17 +48,18 @@ function initEditor(editor: OutlineEditor): void {
 const events: InputEvents = [
   ['selectionchange', onSelectionChange],
   ['keydown', onKeyDownForPlainText],
-  ['compositionstart', onCompositionStart],
+  ['compositionupdate', onCompositionUpdate],
   ['compositionend', onCompositionEnd],
   ['cut', onCut],
   ['copy', onCopy],
   ['dragstart', onDragStartPolyfill],
   ['paste', onPasteForPlainText],
-  ['beforeinput', onBeforeInputForPlainText],
   ['input', onInput],
 ];
 
-if (!CAN_USE_BEFORE_INPUT) {
+if (CAN_USE_BEFORE_INPUT) {
+  events.push(['beforeinput', onBeforeInputForPlainText]);
+} else {
   events.push(['drop', onDropPolyfill]);
 }
 

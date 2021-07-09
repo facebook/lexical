@@ -371,7 +371,7 @@ export function createSelection(
     isSelectionChange ||
     eventType === 'beforeinput' ||
     eventType === 'input' ||
-    eventType === 'compositionstart';
+    eventType === 'compositionupdate';
   let anchorDOM, focusDOM, anchorOffset, focusOffset;
 
   if (eventType === undefined || lastSelection === null || useDOMSelection) {

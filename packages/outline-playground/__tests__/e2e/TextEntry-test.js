@@ -461,7 +461,7 @@ describe('TextEntry', () => {
         } else {
           await assertHTML(
             page,
-            '<p class="editor-paragraph" dir="ltr"><span>⁠Copy + pasting?</span><br><span>​</span><br><span>⁠Sounds good!Copy + pasting?Sounds good!</span></p>',
+            '<p class="editor-paragraph" dir="ltr"><span>⁠Copy + pasting?</span><br><span>​</span><br><span>⁠Sounds good!Copy + pasting?</span><br><span>​</span><br><span>⁠Sounds good!</span></p>',
           );
           await assertSelection(page, {
             anchorPath: [0, 4, 0],

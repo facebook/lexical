@@ -152,6 +152,7 @@ function updateEditor(
             editor,
           );
         }
+        const startingCompositionKey = editor._compositionKey;
         updateFn(view);
         if (markAllTextNodesAsDirty) {
           const currentViewModel = editor._viewModel;
@@ -171,6 +172,13 @@ function updateEditor(
         if (currentPendingViewModel.hasDirtyNodes()) {
           applyTextTransforms(currentPendingViewModel, editor);
           garbageCollectDetachedNodes(currentPendingViewModel, editor);
+        }
+        const endingCompositionKey = editor._compositionKey;
+        if (
+          endingCompositionKey !== null &&
+          startingCompositionKey !== endingCompositionKey
+        ) {
+          currentPendingViewModel._flushSync = true;
         }
         const pendingSelection = currentPendingViewModel._selection;
         if (pendingSelection !== null) {

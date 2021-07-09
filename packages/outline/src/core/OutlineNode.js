@@ -124,11 +124,12 @@ function replaceNode<N: OutlineNode>(
   restoreSelection?: boolean,
 ): N {
   let anchorOffset;
+  const toReplaceKey = toReplace.__key;
   if (restoreSelection && isTextNode(toReplace)) {
     const selection = getSelection();
     if (selection) {
       const anchorNode = selection.getAnchorNode();
-      if (selection.isCaret() && anchorNode.__key === toReplace.__key) {
+      if (selection.isCaret() && anchorNode.__key === toReplaceKey) {
         anchorOffset = selection.anchorOffset;
       }
     }
@@ -169,6 +170,10 @@ function replaceNode<N: OutlineNode>(
   }
   if (isTextNode(writableReplaceWith) && anchorOffset !== undefined) {
     writableReplaceWith.select(anchorOffset, anchorOffset);
+  }
+  const editor = getActiveEditor();
+  if (editor._compositionKey === toReplaceKey) {
+    editor._compositionKey = newKey;
   }
   return writableReplaceWith;
 }
@@ -699,18 +704,6 @@ export class OutlineNode {
       invariant(false, 'selectNext: found invalid sibling');
     }
     return nextSibling.select(anchorOffset, focusOffset);
-  }
-  forceComposition(): void {
-    errorOnReadOnly();
-    // We will need to ensure this node gets rendered during composition
-    const viewModel = getActiveViewModel();
-    const editor = getActiveEditor();
-    const key = this.__key;
-    viewModel._flushSync = true;
-    editor._compositionKey = null;
-    editor._deferred.push(() => {
-      editor._compositionKey = key;
-    });
   }
 }
 

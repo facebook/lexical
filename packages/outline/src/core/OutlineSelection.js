@@ -280,8 +280,8 @@ function resolveSelectionNodesAndOffsets(
   if (resolveAnchorNodeAndOffset === null) {
     return null;
   }
-  const resolvedAnchorNode = resolveAnchorNodeAndOffset[0];
-  const resolvedAnchorOffset = resolveAnchorNodeAndOffset[1];
+  let resolvedAnchorNode = resolveAnchorNodeAndOffset[0];
+  let resolvedAnchorOffset = resolveAnchorNodeAndOffset[1];
   isDirty = resolveAnchorNodeAndOffset[2];
   const resolveFocusNodeAndOffset = resolveSelectionNodeAndOffset(
     focusDOM,
@@ -292,9 +292,23 @@ function resolveSelectionNodesAndOffsets(
   if (resolveFocusNodeAndOffset === null) {
     return null;
   }
-  const resolvedFocusNode = resolveFocusNodeAndOffset[0];
-  const resolvedFocusOffset = resolveFocusNodeAndOffset[1];
+  let resolvedFocusNode = resolveFocusNodeAndOffset[0];
+  let resolvedFocusOffset = resolveFocusNodeAndOffset[1];
   isDirty = resolveFocusNodeAndOffset[2];
+
+  const currentViewModel = editor.getViewModel();
+  const lastSelection = currentViewModel._selection;
+  if (
+    editor.isComposing() &&
+    editor._compositionKey !== resolvedAnchorNode.__key &&
+    lastSelection !== null
+  ) {
+    isDirty = true;
+    resolvedAnchorNode = lastSelection.getAnchorNode();
+    resolvedAnchorOffset = lastSelection.anchorOffset;
+    resolvedFocusNode = lastSelection.getFocusNode();
+    resolvedFocusOffset = lastSelection.focusOffset;
+  }
 
   return [
     resolvedAnchorNode,
@@ -357,7 +371,7 @@ export function createSelection(
     isSelectionChange ||
     eventType === 'beforeinput' ||
     eventType === 'input' ||
-    eventType === 'compositionstart';
+    eventType === 'compositionupdate';
   let anchorDOM, focusDOM, anchorOffset, focusOffset;
 
   if (eventType === undefined || lastSelection === null || useDOMSelection) {

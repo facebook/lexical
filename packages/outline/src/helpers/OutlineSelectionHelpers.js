@@ -802,31 +802,24 @@ export function insertText(selection: Selection, text: string): void {
   const firstNodeTextLength = firstNodeText.length;
   const currentBlock = firstNode.getParentBlockOrThrow();
   const lastIndex = selectedNodesLength - 1;
+  const isBefore = firstNode === selection.getAnchorNode();
   let lastNode = selectedNodes[lastIndex];
-  let isComposingTextEntry = false;
-  if (firstNode.isSegmented()) {
-    isComposingTextEntry = firstNode.isComposing() || lastNode.isComposing();
-    if (
-      !isComposingTextEntry &&
-      selection.isCaret() &&
-      anchorOffset === firstNodeTextLength
-    ) {
-      const nextSibling = firstNode.getNextSibling();
-      if (isTextNode(nextSibling)) {
-        nextSibling.select(0, 0);
-        insertText(selection, text);
-      } else {
-        const textNode = createTextNode(text);
-        firstNode.insertAfter(textNode);
-        textNode.select();
+
+  if (firstNode.isSegmented() || !firstNode.canInsertTextAtEnd()) {
+    if (anchorOffset === firstNodeTextLength) {
+      let nextSibling = firstNode.getNextSibling();
+      if (!isTextNode(nextSibling)) {
+        nextSibling = createTextNode();
+        firstNode.insertAfter(nextSibling);
       }
-      return;
-    } else {
+      nextSibling.select(0, 0);
+      if (text !== '') {
+        insertText(selection, text);
+        return;
+      }
+    } else if (firstNode.isSegmented()) {
       const textNode = createTextNode(firstNode.getTextContent());
       firstNode.replace(textNode, true);
-      if (isComposingTextEntry) {
-        firstNode.forceComposition();
-      }
       firstNode = textNode;
     }
   }
@@ -845,11 +838,10 @@ export function insertText(selection: Selection, text: string): void {
     const delCount = endOffset - startOffset;
 
     firstNode.spliceText(startOffset, delCount, text, true);
-    if (isComposingTextEntry) {
+    if (firstNode.isComposing()) {
       selection.anchorOffset -= text.length;
     }
   } else {
-    const isBefore = firstNode === selection.getAnchorNode();
     const firstNodeParents = new Set(firstNode.getParents());
     const lastNodeParents = new Set(lastNode.getParents());
     let firstNodeRemove = false;
@@ -870,9 +862,9 @@ export function insertText(selection: Selection, text: string): void {
         text,
         true,
       );
-    }
-    if (isComposingTextEntry) {
-      selection.anchorOffset -= text.length;
+      if (firstNode.isComposing()) {
+        selection.anchorOffset -= text.length;
+      }
     }
 
     if (!firstNodeParents.has(lastNode) && isTextNode(lastNode)) {

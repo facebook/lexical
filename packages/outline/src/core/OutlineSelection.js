@@ -14,7 +14,13 @@ import {getActiveEditor, ViewModel} from './OutlineView';
 import {getActiveViewModel} from './OutlineView';
 import {getNodeKeyFromDOM} from './OutlineReconciler';
 import {getNodeByKey} from './OutlineNode';
-import {isTextNode, isBlockNode, isLineBreakNode, TextNode} from '.';
+import {
+  isTextNode,
+  isBlockNode,
+  isLineBreakNode,
+  isDecoratorNode,
+  TextNode,
+} from '.';
 import {
   isImmutableOrInertOrSegmented,
   isSelectionWithinEditor,
@@ -117,6 +123,8 @@ export class Selection {
         textContent += text;
       } else if (isBlockNode(node) || isLineBreakNode(node)) {
         textContent += '\n';
+      } else if (isDecoratorNode(node)) {
+        textContent += node.getTextContent();
       }
     });
     return textContent;

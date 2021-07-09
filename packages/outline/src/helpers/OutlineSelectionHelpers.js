@@ -508,7 +508,10 @@ function deleteCharacter(selection: Selection, isBackward: boolean): void {
 
     if (!selection.isCaret()) {
       const anchorNode = selection.getAnchorNode();
-      if (anchorNode.isSegmented()) {
+      if (
+        anchorNode.isSegmented() &&
+        selection.anchorOffset !== anchorNode.getTextContentSize()
+      ) {
         removeSegment(anchorNode, isBackward);
         return;
       } else if (!isBackward) {
@@ -625,11 +628,14 @@ export function updateCaretSelectionForRange(
   }
 
   const textSize = focusNode.getTextContentSize();
-  const isAtBoundary = isBackward
-    ? focusOffset === 0
+  const needsExtraMove = isBackward
+    ? focusOffset === 0 &&
+      focusNode.getTextContent() === '' &&
+      !isImmutableOrInert(focusNode)
     : focusOffset === textSize &&
-      (isImmutableOrInert(focusNode) ||
-        (sibling !== null && !isImmutableOrInert(sibling)));
+      isTextNode(sibling) &&
+      !isImmutableOrInert(sibling) &&
+      sibling.getTextContent() === '';
 
   // We use the DOM selection.modify API here to "tell" us what the selection
   // will be. We then use it to update the Outline selection accordingly. This
@@ -639,7 +645,7 @@ export function updateCaretSelectionForRange(
   // and line segments (especially with word wrapping and non-Roman languages).
   moveSelection(domSelection, collapse, isBackward, granularity);
   // If we are at a boundary, move once again.
-  if (isAtBoundary && granularity === 'character') {
+  if (needsExtraMove && granularity === 'character') {
     moveSelection(domSelection, collapse, isBackward, granularity);
   }
   // Guard against no ranges
@@ -813,6 +819,7 @@ export function insertText(selection: Selection, text: string): void {
         firstNode.insertAfter(nextSibling);
       }
       nextSibling.select(0, 0);
+      firstNode = nextSibling;
       if (text !== '') {
         insertText(selection, text);
         return;

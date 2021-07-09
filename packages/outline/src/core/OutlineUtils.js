@@ -79,8 +79,14 @@ export function isImmutableOrInertOrSegmented(node: OutlineNode): boolean {
   return node.isImmutable() || node.isInert() || node.isSegmented();
 }
 
-// This is a simplified version from environment.js, to avoid pulling in all
-// the other env exports.
-export const IS_SAFARI: boolean =
-  typeof navigator !== 'undefined' &&
-  /Version\/[\d\.]+.*Safari/.test(navigator.userAgent);
+export function getDOMTextNode(element: Node): Text | null {
+  let node = element;
+  while (node != null) {
+    if (node.nodeType === 3) {
+      // $FlowFixMe: this is a Text
+      return node;
+    }
+    node = node.firstChild;
+  }
+  return null;
+}

@@ -17,7 +17,6 @@ export const IS_WINDOWS = process.platform === 'win32';
 jest.setTimeout(60000);
 
 const retryCount = 10;
-const ZERO_WIDTH_JOINER_CHAR = '\u2060';
 
 export function initializeE2E(runTests) {
   const isRichText = process.env.E2E_EDITOR_MODE !== 'plain-text';
@@ -132,6 +131,7 @@ export async function assertHTML(page, expectedHtml) {
 export async function assertSelection(page, expected) {
   // Assert the selection of the editor matches the snapshot
   const selection = await page.evaluate(() => {
+    const ZERO_WIDTH_JOINER_CHAR = '\u2060';
     const rootElement = document.querySelector('div.editor');
 
     const getPathFromNode = (node) => {

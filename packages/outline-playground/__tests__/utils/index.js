@@ -17,6 +17,7 @@ export const IS_WINDOWS = process.platform === 'win32';
 jest.setTimeout(60000);
 
 const retryCount = 10;
+const ZERO_WIDTH_JOINER_CHAR = '\u2060';
 
 export function initializeE2E(runTests) {
   const isRichText = process.env.E2E_EDITOR_MODE !== 'plain-text';
@@ -151,9 +152,15 @@ export async function assertSelection(page, expected) {
 
     return {
       anchorPath: getPathFromNode(anchorNode),
-      anchorOffset: anchorNode.textContent === '\u2060' ? anchorOffset - 1 : anchorOffset,
+      anchorOffset:
+        anchorNode.textContent === ZERO_WIDTH_JOINER_CHAR
+          ? anchorOffset - 1
+          : anchorOffset,
       focusPath: getPathFromNode(focusNode),
-      focusOffset: focusNode.textContent === '\u2060' ? focusOffset - 1 : focusOffset,
+      focusOffset:
+        focusNode.textContent === ZERO_WIDTH_JOINER_CHAR
+          ? focusOffset - 1
+          : focusOffset,
     };
   }, expected);
   expect(selection.anchorPath).toEqual(expected.anchorPath);

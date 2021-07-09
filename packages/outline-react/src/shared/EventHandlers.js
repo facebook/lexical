@@ -491,9 +491,8 @@ export function onSelectionChange(
     return;
   }
 
-  // This update also functions as a way of reconciling a bad selection
-  // to a good selection. So if the below logic is removed, remember to
-  // not remove the editor update.
+  // This update functions as a way of reconciling a bad selection
+  // to a good selection.
   editor.update((view) => {});
 }
 

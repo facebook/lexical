@@ -127,8 +127,8 @@ describe('TextFormatting', () => {
         '<p class="editor-paragraph" dir="ltr"><span>Hello </span><strong class="editor-text-bold">world</strong><span>!</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 1, 0],
-        anchorOffset: 0,
+        anchorPath: [0, 0, 0],
+        anchorOffset: 6,
         focusPath: [0, 1, 0],
         focusOffset: 5,
       });
@@ -178,8 +178,8 @@ describe('TextFormatting', () => {
         '<p class="editor-paragraph" dir="ltr"><span>Hello </span><em class="editor-text-italic">world</em><span>!</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 1, 0],
-        anchorOffset: 0,
+        anchorPath: [0, 0, 0],
+        anchorOffset: 6,
         focusPath: [0, 1, 0],
         focusOffset: 5,
       });
@@ -229,8 +229,8 @@ describe('TextFormatting', () => {
         '<p class="editor-paragraph" dir="ltr"><span>Hello </span><strong class="editor-text-bold">world</strong><span>!</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 1, 0],
-        anchorOffset: 0,
+        anchorPath: [0, 0, 0],
+        anchorOffset: 6,
         focusPath: [0, 1, 0],
         focusOffset: 5,
       });
@@ -256,8 +256,8 @@ describe('TextFormatting', () => {
         '<p class="editor-paragraph" dir="ltr"><span>Hello </span><strong class="editor-text-bold">w</strong><strong class="editor-text-bold editor-text-italic">or</strong><strong class="editor-text-bold">ld</strong><span>!</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 2, 0],
-        anchorOffset: 0,
+        anchorPath: [0, 1, 0],
+        anchorOffset: 1,
         focusPath: [0, 2, 0],
         focusOffset: 2,
       });
@@ -270,8 +270,8 @@ describe('TextFormatting', () => {
         '<p class="editor-paragraph" dir="ltr"><span>Hello </span><strong class="editor-text-bold">w</strong><em class="editor-text-italic">or</em><strong class="editor-text-bold">ld</strong><span>!</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 2, 0],
-        anchorOffset: 0,
+        anchorPath: [0, 1, 0],
+        anchorOffset: 1,
         focusPath: [0, 2, 0],
         focusOffset: 2,
       });
@@ -284,8 +284,8 @@ describe('TextFormatting', () => {
       });
       await page.keyboard.up('Shift');
       await assertSelection(page, {
-        anchorPath: [0, 1, 0],
-        anchorOffset: 0,
+        anchorPath: [0, 0, 0],
+        anchorOffset: 6,
         focusPath: [0, 3, 0],
         focusOffset: 2,
       });
@@ -312,8 +312,8 @@ describe('TextFormatting', () => {
         '<p class="editor-paragraph" dir="ltr"><span>Hello </span><em class="editor-text-italic">world</em><span>!</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 1, 0],
-        anchorOffset: 0,
+        anchorPath: [0, 0, 0],
+        anchorOffset: 6,
         focusPath: [0, 1, 0],
         focusOffset: 5,
       });

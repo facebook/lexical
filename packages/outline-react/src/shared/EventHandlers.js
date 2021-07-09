@@ -17,7 +17,7 @@ import type {
   View,
 } from 'outline';
 
-import {IS_SAFARI} from 'shared/environment';
+import {IS_SAFARI, CAN_USE_BEFORE_INPUT} from 'shared/environment';
 import {
   isDeleteBackward,
   isDeleteForward,
@@ -557,6 +557,20 @@ export function handleBlockTextInputOnNode(
   return false;
 }
 
+function shouldInsertTextAfterTextNode(
+  selection: Selection,
+  node: TextNode,
+  validateOffset: boolean,
+): boolean {
+  return (
+    node.isSegmented() ||
+    (selection.isCaret() &&
+      (!validateOffset ||
+        node.getTextContentSize() === selection.anchorOffset) &&
+      !node.canInsertTextAtEnd())
+  );
+}
+
 function updateTextNodeFromDOMContent(
   dom: Text,
   view: View,
@@ -566,6 +580,7 @@ function updateTextNodeFromDOMContent(
   if (node !== null && !node.isDirty()) {
     const rawTextContent = dom.nodeValue;
     const textContent = rawTextContent.replace(/[\u200B\u2060]/g, '');
+    const nodeKey = node.getKey();
 
     if (isTextNode(node) && textContent !== node.getTextContent()) {
       if (handleBlockTextInputOnNode(node, view, editor)) {
@@ -575,17 +590,33 @@ function updateTextNodeFromDOMContent(
         view.markNodeAsDirty(node);
         return;
       }
-      if (node.isSegmented()) {
-        const replacement = createTextNode(node.getTextContent());
+      const originalTextContent = node.getTextContent();
+      const selection = view.getSelection();
+
+      if (
+        !CAN_USE_BEFORE_INPUT &&
+        selection !== null &&
+        selection.anchorKey === nodeKey &&
+        textContent.indexOf(originalTextContent) === 0 &&
+        shouldInsertTextAfterTextNode(selection, node, false)
+      ) {
+        const insertionText = textContent.slice(originalTextContent.length);
+        view.markNodeAsDirty(node);
+        selection.anchorOffset -= insertionText.length;
+        insertText(selection, insertionText);
+        return;
+      } else if (node.isSegmented()) {
+        const replacement = createTextNode(originalTextContent);
         node.replace(replacement, true);
         node = replacement;
       }
+
       node.setTextContent(textContent);
-      const selection = view.getSelection();
+
       if (
         selection !== null &&
         selection.isCaret() &&
-        selection.anchorKey === node.getKey()
+        selection.anchorKey === nodeKey
       ) {
         const domSelection = window.getSelection();
         let offset = domSelection.focusOffset;
@@ -720,7 +751,10 @@ export function onBeforeInputForPlainText(
         const anchorKey = selection.anchorKey;
         const focusKey = selection.focusKey;
 
-        if (anchorKey !== focusKey || anchorNode.isSegmented()) {
+        if (
+          anchorKey !== focusKey ||
+          shouldInsertTextAfterTextNode(selection, anchorNode, true)
+        ) {
           event.preventDefault();
           insertText(selection, data);
         }
@@ -858,7 +892,10 @@ export function onBeforeInputForRichText(
         const anchorKey = selection.anchorKey;
         const focusKey = selection.focusKey;
 
-        if (anchorKey !== focusKey || anchorNode.isSegmented()) {
+        if (
+          anchorKey !== focusKey ||
+          shouldInsertTextAfterTextNode(selection, anchorNode, true)
+        ) {
           event.preventDefault();
           insertText(selection, data);
         }

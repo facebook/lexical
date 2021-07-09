@@ -805,7 +805,7 @@ export function insertText(selection: Selection, text: string): void {
   const isBefore = firstNode === selection.getAnchorNode();
   let lastNode = selectedNodes[lastIndex];
 
-  if (firstNode.isSegmented()) {
+  if (firstNode.isSegmented() || !firstNode.canInsertTextAtEnd()) {
     if (anchorOffset === firstNodeTextLength) {
       let nextSibling = firstNode.getNextSibling();
       if (!isTextNode(nextSibling)) {
@@ -817,7 +817,7 @@ export function insertText(selection: Selection, text: string): void {
         insertText(selection, text);
         return;
       }
-    } else {
+    } else if (firstNode.isSegmented()) {
       const textNode = createTextNode(firstNode.getTextContent());
       firstNode.replace(textNode, true);
       firstNode = textNode;

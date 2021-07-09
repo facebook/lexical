@@ -493,6 +493,7 @@ export function reconcileViewModel(
     }
     triggerListeners('mutation', editor, null);
     try {
+      editor._isReconciling = true;
       reconcileRoot(
         prevViewModel,
         nextViewModel,
@@ -501,6 +502,7 @@ export function reconcileViewModel(
         dirtyNodes,
       );
     } finally {
+      editor._isReconciling = false;
       triggerListeners('mutation', editor, rootElement);
     }
     // Compare the selection before mutation to the one after mutation.

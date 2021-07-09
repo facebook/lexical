@@ -237,6 +237,7 @@ function resolveSelectionNodeAndOffset(
     isDirty = true;
     resolvedOffset--;
   }
+  const domSelection = window.getSelection();
 
   if (resolvedTextNode.getTextContent() === '') {
     // Because we use a special character for whitespace
@@ -246,7 +247,11 @@ function resolveSelectionNodeAndOffset(
       isDirty = true;
     }
     resolvedOffset = 0;
-  } else if (resolvedOffset === 0) {
+  } else if (
+    resolvedOffset === 0 &&
+    domSelection !== null &&
+    domSelection.isCollapsed
+  ) {
     const prevSibling = resolvedTextNode.getPreviousSibling();
     if (isTextNode(prevSibling)) {
       resolvedTextNode = prevSibling;

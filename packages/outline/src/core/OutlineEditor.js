@@ -129,6 +129,10 @@ function updateEditor(
   markAllTextNodesAsDirty: boolean,
   callbackFn?: () => void,
 ): boolean {
+  if (editor._isReconciling) {
+    // If we are reconciling, do not trigger this update.
+    return false;
+  }
   if (callbackFn) {
     editor._deferred.push(callbackFn);
   }
@@ -243,6 +247,7 @@ class BaseOutlineEditor {
   _pendingDecorators: null | {[NodeKey]: ReactNode};
   _textContent: string;
   _editorThemeClasses: EditorThemeClasses;
+  _isReconciling: boolean;
 
   constructor(viewModel: ViewModel, editorThemeClasses: EditorThemeClasses) {
     // The root element associated with this editor
@@ -255,6 +260,8 @@ class BaseOutlineEditor {
     this._compositionKey = null;
     this._deferred = [];
     // Used during reconciliation
+    this._isReconciling = false;
+    // Stores nodes to DOM nodes
     this._keyToDOMMap = new Map();
     // Listeners
     this._listeners = {
@@ -446,6 +453,7 @@ declare export class OutlineEditor {
   _pendingDecorators: null | {[NodeKey]: ReactNode};
   _textContent: string;
   _editorThemeClasses: EditorThemeClasses;
+  _isReconciling: boolean;
 
   isComposing(): boolean;
   setCompositionKey(compositionKey: NodeKey | null): void;

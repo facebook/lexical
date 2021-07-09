@@ -564,15 +564,24 @@ function updateTextNodeFromDOMContent(
     const textContent = rawTextContent.replace('\u2060', '');
 
     if (isTextNode(node) && textContent !== node.getTextContent()) {
+      const selection = view.getSelection();
       if (handleBlockTextInputOnNode(node, view, editor)) {
         return;
       } else if (node.isSegmented()) {
+        if (
+          editor.isComposing() &&
+          selection !== null &&
+          selection.anchorKey !== editor._compositionKey
+        ) {
+          const anchorNode = selection.getAnchorNode();
+          view.markNodeAsDirty(anchorNode);
+          return;
+        }
         const replacement = createTextNode(node.getTextContent());
         node.replace(replacement, true);
         node = replacement;
       }
       node.setTextContent(textContent);
-      const selection = view.getSelection();
       if (
         selection !== null &&
         selection.isCaret() &&

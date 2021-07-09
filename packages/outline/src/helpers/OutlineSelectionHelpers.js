@@ -814,10 +814,7 @@ export function insertText(selection: Selection, text: string): void {
 
   if (firstNode.isSegmented()) {
     isComposingTextEntry = firstNode.isComposing() || lastNode.isComposing();
-    if (
-      !isComposingTextEntry &&
-      anchorOffset === firstNodeTextLength
-    ) {
+    if (anchorOffset === firstNodeTextLength) {
       const nextSibling = firstNode.getNextSibling();
       if (isTextNode(nextSibling)) {
         nextSibling.select(0, 0);
@@ -828,6 +825,13 @@ export function insertText(selection: Selection, text: string): void {
         firstNode.insertAfter(textNode);
         textNode.select();
         firstNode = textNode;
+      }
+      if (isComposingTextEntry) {
+        firstNode.forceComposition();
+        selection.anchorOffset -= text.length;
+      }
+      if (text !== '') {
+        return;
       }
     } else {
       const textNode = createTextNode(firstNode.getTextContent());

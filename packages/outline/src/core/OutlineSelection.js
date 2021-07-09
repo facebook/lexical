@@ -262,7 +262,7 @@ function resolveSelectionNodeAndOffset(
     domSelection.isCollapsed
   ) {
     const prevSibling = resolvedTextNode.getPreviousSibling();
-    if (isTextNode(prevSibling)) {
+    if (isTextNode(prevSibling) && !prevSibling.isImmutable()) {
       resolvedTextNode = prevSibling;
       resolvedOffset = prevSibling.getTextContentSize();
       isDirty = true;

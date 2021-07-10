@@ -81,12 +81,17 @@ function createNode(
   const isImmutable = flags & IS_IMMUTABLE;
   storeDOMWithKey(key, dom, activeEditor);
 
+  // This helps preserve the text, and stops spell check tools from
+  // merging or break the spans (which happens if they are missing
+  // this attribute).
   if (isTextNode(node)) {
-    // This helps preserve the text, and stops spell check tools from
-    // merging or break the spans (which happens if they are missing
-    // this attribute).
     dom.setAttribute('data-outline-text', 'true');
+  } else if (isDecoratorNode(node)) {
+    dom.setAttribute('data-outline-decorator', 'true');
   }
+
+  // Immutable and inert nodes are always non-editable and should be
+  // marked so third-party tools know to not try and modify their contents.
   if (isImmutable || isInert) {
     dom.contentEditable = 'false';
   }

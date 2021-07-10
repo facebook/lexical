@@ -403,12 +403,12 @@ export function onDragStartPolyfill(
   event.preventDefault();
 }
 
-export function onCut(
+export function onCutForPlainText(
   event: ClipboardEvent,
   editor: OutlineEditor,
   state: EventHandlerState,
 ): void {
-  onCopy(event, editor, state);
+  onCopyForPlainText(event, editor, state);
   editor.update((view) => {
     const selection = view.getSelection();
     if (selection !== null) {
@@ -417,7 +417,50 @@ export function onCut(
   });
 }
 
-export function onCopy(
+export function onCutForRichText(
+  event: ClipboardEvent,
+  editor: OutlineEditor,
+  state: EventHandlerState,
+): void {
+  onCopyForRichText(event, editor, state);
+  editor.update((view) => {
+    const selection = view.getSelection();
+    if (selection !== null) {
+      removeText(selection);
+    }
+  });
+}
+
+export function onCopyForPlainText(
+  event: ClipboardEvent,
+  editor: OutlineEditor,
+  state: EventHandlerState,
+): void {
+  event.preventDefault();
+  editor.update((view) => {
+    const clipboardData = event.clipboardData;
+    const selection = view.getSelection();
+    if (selection !== null) {
+      if (clipboardData != null) {
+        const domSelection = window.getSelection();
+        // If we haven't selected a range, then don't copy anything
+        if (domSelection.isCollapsed) {
+          return;
+        }
+        const range = domSelection.getRangeAt(0);
+        if (range) {
+          const container = document.createElement('div');
+          const frag = range.cloneContents();
+          container.appendChild(frag);
+          clipboardData.setData('text/html', container.innerHTML);
+        }
+        clipboardData.setData('text/plain', selection.getTextContent());
+      }
+    }
+  });
+}
+
+export function onCopyForRichText(
   event: ClipboardEvent,
   editor: OutlineEditor,
   state: EventHandlerState,

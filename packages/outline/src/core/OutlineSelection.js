@@ -234,8 +234,6 @@ function resolveSelectionNodeAndOffset(
   if (!isTextNode(resolvedNode)) {
     return null;
   }
-  let resolvedTextNode = resolvedNode;
-
   const textNode = getDOMTextNode(resolvedDOM);
 
   if (
@@ -247,7 +245,7 @@ function resolveSelectionNodeAndOffset(
     resolvedOffset--;
   }
 
-  if (resolvedTextNode.getTextContent() === '') {
+  if (resolvedNode.getTextContent() === '') {
     // Because we use a special character for whitespace
     // at the start of empty strings, we need to remove one
     // from the offset.
@@ -255,16 +253,9 @@ function resolveSelectionNodeAndOffset(
       isDirty = true;
     }
     resolvedOffset = 0;
-  } else if (resolvedOffset === 0 && !editor.isComposing()) {
-    const prevSibling = resolvedTextNode.getPreviousSibling();
-    if (isTextNode(prevSibling) && !prevSibling.isImmutable()) {
-      resolvedTextNode = prevSibling;
-      resolvedOffset = prevSibling.getTextContentSize();
-      isDirty = true;
-    }
   }
 
-  return [resolvedTextNode, resolvedOffset, isDirty];
+  return [resolvedNode, resolvedOffset, isDirty];
 }
 
 function resolveSelectionNodesAndOffsets(
@@ -306,6 +297,36 @@ function resolveSelectionNodesAndOffsets(
   let resolvedFocusNode = resolveFocusNodeAndOffset[0];
   let resolvedFocusOffset = resolveFocusNodeAndOffset[1];
   isDirty = resolveFocusNodeAndOffset[2];
+
+  // Handle normalization of selection when it is at the boundaries.
+  const domSelection = window.getSelection();
+  const textContentSize = resolvedAnchorNode.getTextContentSize();
+  // Once we remove zero width characters, we will no longer need this
+  // check as it will become redundant (we won't allow empty text nodes).
+  if (textContentSize !== 0) {
+    if (domSelection.isCollapsed) {
+      if (resolvedAnchorOffset === 0) {
+        const prevSibling = resolvedAnchorNode.getPreviousSibling();
+        if (isTextNode(prevSibling) && !prevSibling.isImmutable()) {
+          const offset = prevSibling.getTextContentSize();
+          resolvedAnchorNode = prevSibling;
+          resolvedFocusNode = prevSibling;
+          resolvedAnchorOffset = offset;
+          resolvedFocusOffset = offset;
+          isDirty = true;
+        }
+      }
+    } else {
+      if (resolvedAnchorOffset === textContentSize) {
+        const nextSibling = resolvedAnchorNode.getNextSibling();
+        if (isTextNode(nextSibling) && !nextSibling.isImmutable()) {
+          resolvedAnchorNode = nextSibling;
+          resolvedAnchorOffset = 0;
+          isDirty = true;
+        }
+      }
+    }
+  }
 
   const currentViewModel = editor.getViewModel();
   const lastSelection = currentViewModel._selection;

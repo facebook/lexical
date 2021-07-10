@@ -67,6 +67,12 @@ export async function moveToNextWord(page) {
   await keyUpCtrlOrAlt(page);
 }
 
+export async function deleteNextWord(page) {
+  await keyDownCtrlOrAlt(page);
+  await page.keyboard.press('Delete');
+  await keyUpCtrlOrAlt(page);
+}
+
 export async function moveToPrevWord(page) {
   await keyDownCtrlOrAlt(page);
   await page.keyboard.press('ArrowLeft');

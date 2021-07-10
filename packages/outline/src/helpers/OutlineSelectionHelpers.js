@@ -833,9 +833,7 @@ export function insertText(selection: Selection, text: string): void {
   const firstNodeText = firstNode.getTextContent();
   const firstNodeTextLength = firstNodeText.length;
   const currentBlock = firstNode.getParentBlockOrThrow();
-  const lastIndex = selectedNodesLength - 1;
   const isBefore = firstNode === selection.getAnchorNode();
-  let lastNode = selectedNodes[lastIndex];
 
   if (firstNode.isSegmented() || !firstNode.canInsertTextAtEnd()) {
     if (anchorOffset === firstNodeTextLength) {
@@ -875,6 +873,8 @@ export function insertText(selection: Selection, text: string): void {
       selection.anchorOffset -= text.length;
     }
   } else {
+    const lastIndex = selectedNodesLength - 1;
+    const lastNode = selectedNodes[lastIndex];
     const firstNodeParents = new Set(firstNode.getParents());
     const lastNodeParents = new Set(lastNode.getParents());
     let firstNodeRemove = false;
@@ -882,24 +882,7 @@ export function insertText(selection: Selection, text: string): void {
     startOffset = isBefore ? anchorOffset : focusOffset;
     endOffset = isBefore ? focusOffset : anchorOffset;
 
-    if (isImmutableOrInert(firstNode)) {
-      firstNodeRemove = true;
-      const textNode = createTextNode(text);
-      firstNode.replace(textNode);
-      firstNode = textNode;
-      textNode.select();
-    } else {
-      firstNode.spliceText(
-        startOffset,
-        firstNodeTextLength - startOffset,
-        text,
-        true,
-      );
-      if (firstNode.isComposing()) {
-        selection.anchorOffset -= text.length;
-      }
-    }
-
+    // Deal with moving and removing nodes first
     if (!firstNodeParents.has(lastNode) && isTextNode(lastNode)) {
       const lastNodeKey = lastNode.getKey();
       if (firstNode.getParent() !== lastNode.getParent()) {
@@ -918,19 +901,6 @@ export function insertText(selection: Selection, text: string): void {
         lastNode.remove();
         lastNodeRemove = true;
       } else {
-        if (isImmutableOrInert(lastNode)) {
-          lastNodeRemove = true;
-          const textNode = createTextNode('');
-          lastNode.replace(textNode);
-          lastNode = textNode;
-        } else {
-          if (lastNode.isSegmented()) {
-            const textNode = createTextNode(lastNode.getTextContent());
-            lastNode.replace(textNode);
-            lastNode = textNode;
-          }
-          lastNode.spliceText(0, endOffset, '', false);
-        }
         if (
           firstNode.getTextContent() === '' &&
           firstNode.getKey() !== selection.anchorKey
@@ -947,8 +917,40 @@ export function insertText(selection: Selection, text: string): void {
           }
           firstNode.insertAfter(lastNode);
         }
+        // Ensure we do splicing after moving of nodes, as splicing
+        // can have side-effects (in the case of hashtags).
+        if (isImmutableOrInert(lastNode)) {
+          lastNodeRemove = true;
+          const textNode = createTextNode('');
+          lastNode.replace(textNode);
+        } else {
+          if (lastNode.isSegmented()) {
+            const textNode = createTextNode(lastNode.getTextContent());
+            lastNode.replace(textNode);
+          }
+          lastNode.spliceText(0, endOffset, '', false);
+        }
       }
     }
+    // Ensure we do splicing after moving of nodes, as splicing
+    // can have side-effects (in the case of hashtags).
+    if (isImmutableOrInert(firstNode)) {
+      firstNodeRemove = true;
+      const textNode = createTextNode(text);
+      firstNode.replace(textNode);
+      textNode.select();
+    } else {
+      firstNode.spliceText(
+        startOffset,
+        firstNodeTextLength - startOffset,
+        text,
+        true,
+      );
+      if (firstNode.isComposing()) {
+        selection.anchorOffset -= text.length;
+      }
+    }
+
     for (let i = 1; i < lastIndex; i++) {
       const selectedNode = selectedNodes[i];
       if (

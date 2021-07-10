@@ -877,61 +877,65 @@ export function insertText(selection: Selection, text: string): void {
     const lastNode = selectedNodes[lastIndex];
     const firstNodeParents = new Set(firstNode.getParents());
     const lastNodeParents = new Set(lastNode.getParents());
+    const firstNodeParent = firstNode.getParent();
+    const lastNodeParent = lastNode.getParent();
     let firstNodeRemove = false;
     let lastNodeRemove = false;
     startOffset = isBefore ? anchorOffset : focusOffset;
     endOffset = isBefore ? focusOffset : anchorOffset;
 
-    // Deal with moving and removing nodes first
-    if (!firstNodeParents.has(lastNode) && isTextNode(lastNode)) {
-      const lastNodeKey = lastNode.getKey();
-      if (firstNode.getParent() !== lastNode.getParent()) {
-        // Move siblings after last node
-        const lastNodeSiblings = lastNode.getNextSiblings();
-        for (let i = lastNodeSiblings.length - 1; i >= 0; i--) {
-          const lastNodeSibling = lastNodeSiblings[i];
-          firstNode.insertAfter(lastNodeSibling);
+    // Handle mutations to the last node.
+    if (endOffset === lastNode.getTextContentSize()) {
+      lastNode.remove();
+      lastNodeRemove = true;
+    } else if (isImmutableOrInert(lastNode)) {
+      lastNodeRemove = true;
+      const textNode = createTextNode('');
+      lastNode.replace(textNode);
+    } else if (isTextNode(lastNode)) {
+      if (lastNode.isSegmented()) {
+        const textNode = createTextNode(lastNode.getTextContent());
+        lastNode.replace(textNode);
+      }
+      lastNode.spliceText(0, endOffset, '', false);
+    }
+
+    // Either move the remaining nodes of the last parent to after
+    // the first child, or remove them entirely. If the last parent
+    // is the same as the first parent, this logic also works.
+    if (isBlockNode(firstNodeParent) && isBlockNode(lastNodeParent)) {
+      const lastNodeChildren = lastNodeParent.getChildren();
+      const selectedNodesSet = new Set(selectedNodes);
+      const avoidNodes = new Set(firstNode.getPreviousSiblings());
+
+      for (let i = lastNodeChildren.length - 1; i >= 0; i--) {
+        const lastNodeChild = lastNodeChildren[i];
+        if (!lastNodeChild.is(firstNode) && !avoidNodes.has(lastNodeChild)) {
+          if (
+            !selectedNodesSet.has(lastNodeChild) ||
+            lastNodeChild.is(lastNode)
+          ) {
+            firstNode.insertAfter(lastNodeChild);
+          } else {
+            lastNodeChild.remove();
+          }
         }
       }
-      if (
-        endOffset === lastNode.getTextContentSize() &&
-        lastNodeKey !== selection.anchorKey &&
-        lastNodeKey !== selection.focusKey
-      ) {
-        lastNode.remove();
-        lastNodeRemove = true;
-      } else {
-        if (
-          firstNode.getTextContent() === '' &&
-          firstNode.getKey() !== selection.anchorKey
-        ) {
-          firstNodeRemove = true;
-          firstNode.remove();
-        } else {
-          let parent = lastNode.getParent();
-          while (parent !== null) {
-            if (parent.getChildrenSize() < 2) {
-              lastNodeParents.delete(parent);
-            }
-            parent = parent.getParent();
+
+      if (!firstNodeParent.is(lastNodeParent)) {
+        // Check if we have already moved out all the nodes of the
+        // last parent, and if so, traverse the parent tree and mark
+        // them all as being able to deleted too.
+        let parent = lastNodeParent;
+        while (parent !== null) {
+          if (parent.getChildrenSize() === 0) {
+            lastNodeParents.delete(parent);
           }
-          firstNode.insertAfter(lastNode);
-        }
-        // Ensure we do splicing after moving of nodes, as splicing
-        // can have side-effects (in the case of hashtags).
-        if (isImmutableOrInert(lastNode)) {
-          lastNodeRemove = true;
-          const textNode = createTextNode('');
-          lastNode.replace(textNode);
-        } else {
-          if (lastNode.isSegmented()) {
-            const textNode = createTextNode(lastNode.getTextContent());
-            lastNode.replace(textNode);
-          }
-          lastNode.spliceText(0, endOffset, '', false);
+          parent = parent.getParent();
         }
       }
     }
+
     // Ensure we do splicing after moving of nodes, as splicing
     // can have side-effects (in the case of hashtags).
     if (isImmutableOrInert(firstNode)) {
@@ -951,6 +955,7 @@ export function insertText(selection: Selection, text: string): void {
       }
     }
 
+    // Remove all selected nodes that haven't already been removed.
     for (let i = 1; i < lastIndex; i++) {
       const selectedNode = selectedNodes[i];
       if (

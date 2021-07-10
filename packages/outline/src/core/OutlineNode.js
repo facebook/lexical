@@ -379,6 +379,12 @@ export class OutlineNode {
     }
     return null;
   }
+  is(object: ?OutlineNode): boolean {
+    if (object == null) {
+      return false;
+    }
+    return this.getKey() === object.getKey();
+  }
   isBefore(targetNode: OutlineNode): boolean {
     const commonAncestor = this.getCommonAncestor(targetNode);
     let indexA = 0;

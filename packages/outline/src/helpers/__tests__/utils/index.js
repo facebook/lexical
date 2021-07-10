@@ -9,6 +9,8 @@
 import * as SelectionHelpers from 'outline/SelectionHelpers';
 import {createTextNode} from 'outline';
 
+const ZERO_WIDTH_JOINER_CHAR = '\u2060';
+
 if (!Selection.prototype.modify) {
   const wordBreakPolyfillRegex =
     /[\s.,\\\/#!$%\^&\*;:{}=\-`~()\uD800-\uDBFF\uDC00-\uDFFF\u3000-\u303F]/;
@@ -150,11 +152,11 @@ export function sanitizeHTML(html) {
 export function sanitizeSelection(selection) {
   // eslint-disable-next-line prefer-const
   let {anchorNode, anchorOffset, focusNode, focusOffset} = selection;
-  if (anchorOffset !== 0) {
-    anchorOffset--;
+  if (anchorNode.textContent === ZERO_WIDTH_JOINER_CHAR) {
+    anchorOffset = 0;
   }
-  if (focusOffset !== 0) {
-    focusOffset--;
+  if (focusNode.textContent === ZERO_WIDTH_JOINER_CHAR) {
+    focusOffset = 0;
   }
   return {anchorNode, focusNode, anchorOffset, focusOffset};
 }
@@ -351,7 +353,7 @@ export function setNativeSelection(
   const range = document.createRange();
   if (
     anchorNode.nodeType === 3 &&
-    (anchorNode.nodeValue === '\u200B' || anchorNode.nodeValue === '\u2060')
+    anchorNode.nodeValue === ZERO_WIDTH_JOINER_CHAR
   ) {
     anchorOffset = 1;
     focusOffset = 1;
@@ -372,7 +374,16 @@ export function setNativeSelectionWithPaths(
 ) {
   const anchorNode = getNodeFromPath(anchorPath, rootElement);
   const focusNode = getNodeFromPath(focusPath, rootElement);
-  setNativeSelection(anchorNode, anchorOffset + 1, focusNode, focusOffset + 1);
+  setNativeSelection(
+    anchorNode,
+    anchorNode.textContent === ZERO_WIDTH_JOINER_CHAR
+      ? anchorOffset + 1
+      : anchorOffset,
+    focusNode,
+    focusNode.textContent === ZERO_WIDTH_JOINER_CHAR
+      ? focusOffset + 1
+      : focusOffset,
+  );
 }
 
 function getLastTextNode(startingNode) {
@@ -508,11 +519,7 @@ function moveNativeSelectionForward() {
     if (!keyDownEvent.defaultPrevented) {
       if (anchorNode.nodeType === 3) {
         const text = anchorNode.nodeValue;
-        if (
-          text.length === anchorOffset ||
-          text === '\u200B' ||
-          text === '\u2060'
-        ) {
+        if (text.length === anchorOffset || text === ZERO_WIDTH_JOINER_CHAR) {
           const nextTextNode = getNextTextNode(anchorNode);
 
           if (nextTextNode === null) {

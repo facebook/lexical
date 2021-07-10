@@ -113,10 +113,10 @@ describe('Hashtags', () => {
 
       await page.keyboard.press('ArrowLeft');
       await assertSelection(page, {
-        anchorPath: [0, 1, 0],
-        anchorOffset: 0,
-        focusPath: [0, 1, 0],
-        focusOffset: 0,
+        anchorPath: [0, 0, 0],
+        anchorOffset: 6,
+        focusPath: [0, 0, 0],
+        focusOffset: 6,
       });
 
       await page.keyboard.press('Delete');

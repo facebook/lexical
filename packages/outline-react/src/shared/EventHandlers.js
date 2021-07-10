@@ -60,10 +60,17 @@ import {
   moveForward,
   moveWordForward,
 } from 'outline/SelectionHelpers';
-import {createTextNode, isTextNode, isDecoratorNode} from 'outline';
+import {
+  createTextNode,
+  isTextNode,
+  isBlockNode,
+  isDecoratorNode,
+} from 'outline';
 
-const ZERO_WIDTH_SPACE_CHAR = '\u200B';
 const ZERO_WIDTH_JOINER_CHAR = '\u2060';
+
+let compositonStartOffset = 0;
+let compositonStartKey = null;
 
 // TODO the Flow types here needs fixing
 export type EventHandler = (
@@ -396,12 +403,12 @@ export function onDragStartPolyfill(
   event.preventDefault();
 }
 
-export function onCut(
+export function onCutForPlainText(
   event: ClipboardEvent,
   editor: OutlineEditor,
   state: EventHandlerState,
 ): void {
-  onCopy(event, editor, state);
+  onCopyForPlainText(event, editor, state);
   editor.update((view) => {
     const selection = view.getSelection();
     if (selection !== null) {
@@ -410,7 +417,50 @@ export function onCut(
   });
 }
 
-export function onCopy(
+export function onCutForRichText(
+  event: ClipboardEvent,
+  editor: OutlineEditor,
+  state: EventHandlerState,
+): void {
+  onCopyForRichText(event, editor, state);
+  editor.update((view) => {
+    const selection = view.getSelection();
+    if (selection !== null) {
+      removeText(selection);
+    }
+  });
+}
+
+export function onCopyForPlainText(
+  event: ClipboardEvent,
+  editor: OutlineEditor,
+  state: EventHandlerState,
+): void {
+  event.preventDefault();
+  editor.update((view) => {
+    const clipboardData = event.clipboardData;
+    const selection = view.getSelection();
+    if (selection !== null) {
+      if (clipboardData != null) {
+        const domSelection = window.getSelection();
+        // If we haven't selected a range, then don't copy anything
+        if (domSelection.isCollapsed) {
+          return;
+        }
+        const range = domSelection.getRangeAt(0);
+        if (range) {
+          const container = document.createElement('div');
+          const frag = range.cloneContents();
+          container.appendChild(frag);
+          clipboardData.setData('text/html', container.innerHTML);
+        }
+        clipboardData.setData('text/plain', selection.getTextContent());
+      }
+    }
+  });
+}
+
+export function onCopyForRichText(
   event: ClipboardEvent,
   editor: OutlineEditor,
   state: EventHandlerState,
@@ -451,6 +501,8 @@ export function onCompositionUpdate(
   editor.update((view) => {
     const selection = view.getSelection();
     if (selection !== null && !editor.isComposing()) {
+      compositonStartOffset = selection.anchorOffset;
+      compositonStartKey = selection.anchorKey;
       editor.setCompositionKey(selection.anchorKey);
       const data = event.data;
       if (data != null) {
@@ -481,51 +533,10 @@ export function onSelectionChange(
   if (rootElement && !rootElement.contains(domSelection.anchorNode)) {
     return;
   }
-  const prevSelection = editor.getViewModel()._selection;
 
-  // This update also functions as a way of reconciling a bad selection
-  // to a good selection. So if the below logic is removed, remember to
-  // not remove the editor update.
-  editor.update((view) => {
-    const selection = view.getSelection();
-    // In some cases, selection can move without an precursor operation
-    // occuring. For example, iOS Voice Control moves selection without
-    // triggering keydown events. In order to account for zero-width
-    // characters, and moving selection to the right place, we need to
-    // do the below.
-    if (
-      prevSelection !== null &&
-      selection !== null &&
-      selection.isCaret() &&
-      prevSelection.isCaret()
-    ) {
-      const prevAnchorOffset = prevSelection.anchorOffset;
-      const prevAnchorKey = prevSelection.anchorKey;
-      const anchorOffset = selection.anchorOffset;
-      const anchorNode = selection.getAnchorNode();
-
-      if (
-        prevAnchorOffset === 0 &&
-        anchorOffset === anchorNode.getTextContentSize()
-      ) {
-        const nextSibling = anchorNode.getNextSibling();
-        if (isTextNode(nextSibling) && nextSibling.getKey() === prevAnchorKey) {
-          const isRTL = isTopLevelBlockRTL(selection);
-          moveBackward(selection, false, isRTL);
-        }
-      } else if (anchorOffset === 0) {
-        const prevSibling = anchorNode.getPreviousSibling();
-        if (
-          isTextNode(prevSibling) &&
-          prevSibling.getKey() === prevAnchorKey &&
-          prevSibling.getTextContentSize() === prevAnchorOffset
-        ) {
-          const isRTL = isTopLevelBlockRTL(selection);
-          moveForward(selection, false, isRTL);
-        }
-      }
-    }
-  });
+  // This update functions as a way of reconciling a bad selection
+  // to a good selection.
+  editor.update((view) => {});
 }
 
 export function checkForBadInsertion(
@@ -579,7 +590,7 @@ function updateTextNodeFromDOMContent(
   let node = getNodeFromDOMNode(view, dom);
   if (node !== null && !node.isDirty()) {
     const rawTextContent = dom.nodeValue;
-    const textContent = rawTextContent.replace(/[\u200B\u2060]/g, '');
+    const textContent = rawTextContent.replace('\u2060', '');
     const nodeKey = node.getKey();
 
     if (isTextNode(node) && textContent !== node.getTextContent()) {
@@ -620,11 +631,7 @@ function updateTextNodeFromDOMContent(
       ) {
         const domSelection = window.getSelection();
         let offset = domSelection.focusOffset;
-        const firstCharacter = rawTextContent[0];
-        if (
-          firstCharacter === ZERO_WIDTH_SPACE_CHAR ||
-          firstCharacter === ZERO_WIDTH_JOINER_CHAR
-        ) {
+        if (rawTextContent[0] === ZERO_WIDTH_JOINER_CHAR) {
           offset--;
         }
         node.select(offset, offset);
@@ -913,6 +920,22 @@ export function onBeforeInputForRichText(
         if (data) {
           // This is the end of composition
           editor._compositionKey = null;
+          // This fixes a Safari issue when composition starts
+          // in another node and gets moved to the next sibling.
+          // The offset is always off.
+          if (compositonStartKey !== null) {
+            if (compositonStartKey !== anchorNode.getKey()) {
+              const prevSibling = anchorNode.getPreviousSibling();
+              if (
+                isTextNode(prevSibling) &&
+                prevSibling.getKey() === compositonStartKey &&
+                compositonStartOffset === prevSibling.getTextContentSize()
+              ) {
+                anchorNode.select(0, 0);
+              }
+            }
+            compositonStartKey = null;
+          }
           insertText(selection, data);
         }
         break;
@@ -986,7 +1009,7 @@ export function onMutation(
   mutations: Array<MutationRecord>,
 ): void {
   editor.update((view: View) => {
-    const selection = view.getSelection();
+    let selection = view.getSelection();
 
     for (let i = 0; i < mutations.length; i++) {
       const mutation = mutations[i];
@@ -1014,7 +1037,7 @@ export function onMutation(
           const addedNode = getNodeFromDOMNode(view, addedDOM);
           // For now we don't want nodes that weren't added by Outline.
           // So lets remove this node if it's not managed by Outline
-          if (addedNode === null) {
+          if (addedNode === null || addedDOM.nodeName === 'BR') {
             const parent = addedDOM.parentNode;
             if (parent != null) {
               parent.removeChild(addedDOM);
@@ -1025,40 +1048,71 @@ export function onMutation(
 
         for (let s = 0; s < removedNodes.length; s++) {
           const removedDOM = removedNodes[s];
-          // If a node was removed that we control, we should re-attach it!
-          const removedNode = getNodeFromDOMNode(view, removedDOM);
-          if (removedNode !== null) {
-            const parentDOM = getDOMFromNode(editor, removedNode.getParent());
-            // We should be re-adding this back to the DOM (we may have already
-            // done it though, so we need to confirm).
-            if (parentDOM !== null && removedDOM.parentNode !== parentDOM) {
-              // Here's an interesting problem. We used to just find the sibling
-              // DOM and do parentDOM.insertBefore(removedDOM, siblingDOM);
-              // However, what if a DOM mutation has forced the sibling to also be
-              // disconnected? So instead, we can append this node, then proceed to
-              // append all siblings.
+          if (removedDOM.nodeType === 3) {
+            // If the text node has been removed and the element is missing
+            // a text node, we can assume this to be something clearing down
+            // the TextNode.
+            if (
+              isTextNode(targetNode) &&
+              (target.firstChild == null || target.firstChild.nodeType !== 3)
+            ) {
+              // Come out of composition
+              editor._compositionKey = null;
+              targetNode.setTextContent('');
+              targetNode.select();
+            }
+          } else {
+            // If a node was removed that we control, we should re-attach it!
+            const removedNode = getNodeFromDOMNode(view, removedDOM);
+            if (removedNode !== null) {
+              const parentDOM = getDOMFromNode(editor, removedNode.getParent());
+              // We should be re-adding this back to the DOM (we may have already
+              // done it though, so we need to confirm).
+              if (parentDOM !== null) {
+                // Here's an interesting problem. We used to just find the sibling
+                // DOM and do parentDOM.insertBefore(removedDOM, siblingDOM);
+                // However, what if a DOM mutation has forced the sibling to also be
+                // disconnected? So instead, we can append this node, then proceed to
+                // append all siblings.
 
-              // First append this DOM.
-              parentDOM.appendChild(removedDOM);
-              // Append all siblings DOMs.
-              let sibling = removedNode.getNextSibling();
+                // First append this DOM.
+                parentDOM.appendChild(removedDOM);
+                // Append all siblings DOMs.
+                let sibling = removedNode.getNextSibling();
 
-              while (sibling !== null) {
-                const siblingDOM = getDOMFromNode(editor, sibling);
-                if (siblingDOM !== null) {
-                  parentDOM.appendChild(siblingDOM);
+                while (sibling !== null) {
+                  const siblingDOM = getDOMFromNode(editor, sibling);
+                  if (siblingDOM !== null) {
+                    parentDOM.appendChild(siblingDOM);
+                  }
+                  sibling = sibling.getNextSibling();
                 }
-                sibling = sibling.getNextSibling();
+
+                // Come out of composition
+                editor._compositionKey = null;
+
+                // Clear the text node
+                if (isTextNode(removedNode)) {
+                  removedNode.setTextContent('');
+                  removedNode.select();
+                  removedDOM.textContent = '';
+                } else if (isBlockNode(removedNode)) {
+                  const emptyText = createTextNode();
+                  removedNode.clear();
+                  removedNode.append(emptyText);
+                  emptyText.select();
+                  selection = view.getSelection();
+                }
               }
             }
           }
-        }
-        if (selection === null) {
-          // Looks like a text node was added and selection was moved to it.
-          // We can attempt to restore the last selection.
-          const lastSelection = getLastSelection(editor);
-          if (lastSelection !== null) {
-            view.setSelection(lastSelection);
+          if (selection === null) {
+            // Looks like a text node was added and selection was moved to it.
+            // We can attempt to restore the last selection.
+            const lastSelection = getLastSelection(editor);
+            if (lastSelection !== null) {
+              view.setSelection(lastSelection);
+            }
           }
         }
       }

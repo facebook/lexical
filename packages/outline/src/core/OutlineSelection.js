@@ -21,11 +21,9 @@ import {
   isDecoratorNode,
   TextNode,
 } from '.';
-import {
-  isImmutableOrInertOrSegmented,
-  isSelectionWithinEditor,
-} from './OutlineUtils';
+import {getDOMTextNode, isSelectionWithinEditor} from './OutlineUtils';
 import invariant from 'shared/invariant';
+import {ZERO_WIDTH_JOINER_CHAR} from './OutlineConstants';
 
 export class Selection {
   anchorKey: string;
@@ -186,13 +184,11 @@ function resolveSelectionNodeAndOffset(
   let resolvedOffset = offset;
   let resolvedNode;
   let isDirty = _isDirty;
-  let didResolveOffsetAlready = false;
   // If we have selection on an element, we will
   // need to figure out (using the offset) what text
   // node should be selected.
 
   if (domIsElement(resolvedDOM) && resolvedDOM.nodeName !== 'BR') {
-    didResolveOffsetAlready = true;
     let moveSelectionToEnd = false;
     // Given we're moving selection to another node, selection is
     // definitely dirty.
@@ -238,30 +234,28 @@ function resolveSelectionNodeAndOffset(
   if (!isTextNode(resolvedNode)) {
     return null;
   }
-  let resolvedTextNode = resolvedNode;
+  const textNode = getDOMTextNode(resolvedDOM);
 
-  if (isImmutableOrInertOrSegmented(resolvedTextNode)) {
-    if (window.getSelection().isCollapsed) {
-      if (resolvedOffset === 0) {
-        const prevSibling = resolvedTextNode.getPreviousSibling();
-        if (isTextNode(prevSibling)) {
-          resolvedTextNode = prevSibling;
-          resolvedOffset = prevSibling.getTextContentSize();
-          isDirty = true;
-        }
-      }
-    }
-  } else {
+  if (
+    textNode !== null &&
+    resolvedOffset !== 0 &&
+    textNode.nodeValue[0] === ZERO_WIDTH_JOINER_CHAR
+  ) {
+    isDirty = true;
+    resolvedOffset--;
+  }
+
+  if (resolvedNode.getTextContent() === '') {
     // Because we use a special character for whitespace
-    // at the start of all strings, we need to remove one
+    // at the start of empty strings, we need to remove one
     // from the offset.
     if (resolvedOffset === 0) {
       isDirty = true;
-    } else if (!didResolveOffsetAlready) {
-      resolvedOffset--;
     }
+    resolvedOffset = 0;
   }
-  return [resolvedTextNode, resolvedOffset, isDirty];
+
+  return [resolvedNode, resolvedOffset, isDirty];
 }
 
 function resolveSelectionNodesAndOffsets(
@@ -303,6 +297,36 @@ function resolveSelectionNodesAndOffsets(
   let resolvedFocusNode = resolveFocusNodeAndOffset[0];
   let resolvedFocusOffset = resolveFocusNodeAndOffset[1];
   isDirty = resolveFocusNodeAndOffset[2];
+
+  // Handle normalization of selection when it is at the boundaries.
+  const domSelection = window.getSelection();
+  const textContentSize = resolvedAnchorNode.getTextContentSize();
+  // Once we remove zero width characters, we will no longer need this
+  // check as it will become redundant (we won't allow empty text nodes).
+  if (textContentSize !== 0) {
+    if (domSelection.isCollapsed) {
+      if (resolvedAnchorOffset === 0) {
+        const prevSibling = resolvedAnchorNode.getPreviousSibling();
+        if (isTextNode(prevSibling) && !prevSibling.isImmutable()) {
+          const offset = prevSibling.getTextContentSize();
+          resolvedAnchorNode = prevSibling;
+          resolvedFocusNode = prevSibling;
+          resolvedAnchorOffset = offset;
+          resolvedFocusOffset = offset;
+          isDirty = true;
+        }
+      }
+    } else {
+      if (resolvedAnchorOffset === textContentSize) {
+        const nextSibling = resolvedAnchorNode.getNextSibling();
+        if (isTextNode(nextSibling) && !nextSibling.isImmutable()) {
+          resolvedAnchorNode = nextSibling;
+          resolvedAnchorOffset = 0;
+          isDirty = true;
+        }
+      }
+    }
+  }
 
   const currentViewModel = editor.getViewModel();
   const lastSelection = currentViewModel._selection;

@@ -45,17 +45,17 @@ describe('Mentions', () => {
       await page.keyboard.press('ArrowLeft');
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
-        anchorOffset: 12,
+        anchorOffset: 13,
         focusPath: [0, 1, 0],
-        focusOffset: 12,
+        focusOffset: 13,
       });
 
       await page.keyboard.press('ArrowRight');
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
-        anchorOffset: 13,
+        anchorOffset: 14,
         focusPath: [0, 1, 0],
-        focusOffset: 13,
+        focusOffset: 14,
       });
 
       await page.keyboard.press('ArrowRight');
@@ -102,9 +102,9 @@ describe('Mentions', () => {
       await page.keyboard.press('ArrowLeft');
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
-        anchorOffset: 12,
+        anchorOffset: 13,
         focusPath: [0, 1, 0],
-        focusOffset: 12,
+        focusOffset: 13,
       });
 
       await page.keyboard.press('Delete');

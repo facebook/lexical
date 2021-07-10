@@ -12,9 +12,9 @@
     "rich-text"
   ],
   "license": "MIT",
-  "version": "0.0.21",
+  "version": "0.0.22",
   "dependencies": {
-    "outline": "0.0.21"
+    "outline": "0.0.22"
   },
   "repository": {
     "type": "git",

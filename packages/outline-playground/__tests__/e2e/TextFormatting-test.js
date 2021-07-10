@@ -32,7 +32,7 @@ describe('TextFormatting', () => {
       await page.keyboard.type(' World');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span>Hello</span><strong class="editor-text-bold"> World</strong></p>',
+        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello</span><strong class="editor-text-bold" data-outline-text="true"> World</strong></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
@@ -47,7 +47,7 @@ describe('TextFormatting', () => {
       await page.keyboard.type('!');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span>Hello</span><strong class="editor-text-bold"> World</strong><span>!</span></p>',
+        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello</span><strong class="editor-text-bold" data-outline-text="true"> World</strong><span data-outline-text="true">!</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 2, 0],
@@ -72,7 +72,7 @@ describe('TextFormatting', () => {
       await page.keyboard.type(' World');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span>Hello</span><em class="editor-text-italic"> World</em></p>',
+        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello</span><em class="editor-text-italic" data-outline-text="true"> World</em></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
@@ -87,7 +87,7 @@ describe('TextFormatting', () => {
       await page.keyboard.type('!');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span>Hello</span><em class="editor-text-italic"> World</em><span>!</span></p>',
+        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello</span><em class="editor-text-italic" data-outline-text="true"> World</em><span data-outline-text="true">!</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 2, 0],
@@ -124,7 +124,7 @@ describe('TextFormatting', () => {
       await keyUpCtrlOrMeta(page);
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span>Hello </span><strong class="editor-text-bold">world</strong><span>!</span></p>',
+        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello </span><strong class="editor-text-bold" data-outline-text="true">world</strong><span data-outline-text="true">!</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
@@ -138,7 +138,7 @@ describe('TextFormatting', () => {
       await keyUpCtrlOrMeta(page);
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span>Hello world!</span></p>',
+        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello world!</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -175,7 +175,7 @@ describe('TextFormatting', () => {
       await keyUpCtrlOrMeta(page);
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span>Hello </span><em class="editor-text-italic">world</em><span>!</span></p>',
+        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello </span><em class="editor-text-italic" data-outline-text="true">world</em><span data-outline-text="true">!</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
@@ -189,7 +189,7 @@ describe('TextFormatting', () => {
       await keyUpCtrlOrMeta(page);
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span>Hello world!</span></p>',
+        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello world!</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -226,7 +226,7 @@ describe('TextFormatting', () => {
       await keyUpCtrlOrMeta(page);
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span>Hello </span><strong class="editor-text-bold">world</strong><span>!</span></p>',
+        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello </span><strong class="editor-text-bold" data-outline-text="true">world</strong><span data-outline-text="true">!</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
@@ -253,7 +253,7 @@ describe('TextFormatting', () => {
       await keyUpCtrlOrMeta(page);
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span>Hello </span><strong class="editor-text-bold">w</strong><strong class="editor-text-bold editor-text-italic">or</strong><strong class="editor-text-bold">ld</strong><span>!</span></p>',
+        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello </span><strong class="editor-text-bold" data-outline-text="true">w</strong><strong class="editor-text-bold editor-text-italic" data-outline-text="true">or</strong><strong class="editor-text-bold" data-outline-text="true">ld</strong><span data-outline-text="true">!</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 2, 0],
@@ -267,7 +267,7 @@ describe('TextFormatting', () => {
       await keyUpCtrlOrMeta(page);
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span>Hello </span><strong class="editor-text-bold">w</strong><em class="editor-text-italic">or</em><strong class="editor-text-bold">ld</strong><span>!</span></p>',
+        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello </span><strong class="editor-text-bold" data-outline-text="true">w</strong><em class="editor-text-italic" data-outline-text="true">or</em><strong class="editor-text-bold" data-outline-text="true">ld</strong><span data-outline-text="true">!</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 2, 0],
@@ -295,7 +295,7 @@ describe('TextFormatting', () => {
       await keyUpCtrlOrMeta(page);
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span>Hello w</span><em class="editor-text-italic">or</em><span>ld!</span></p>',
+        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello w</span><em class="editor-text-italic" data-outline-text="true">or</em><span data-outline-text="true">ld!</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -309,7 +309,7 @@ describe('TextFormatting', () => {
       await keyUpCtrlOrMeta(page);
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span>Hello </span><em class="editor-text-italic">world</em><span>!</span></p>',
+        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello </span><em class="editor-text-italic" data-outline-text="true">world</em><span data-outline-text="true">!</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
@@ -323,7 +323,7 @@ describe('TextFormatting', () => {
       await keyUpCtrlOrMeta(page);
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span>Hello world!</span></p>',
+        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello world!</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],

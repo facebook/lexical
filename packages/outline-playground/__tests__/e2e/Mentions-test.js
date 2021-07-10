@@ -25,13 +25,13 @@ describe('Mentions', () => {
       await page.waitForSelector('#mentions-typeahead ul li');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span aria-controls="mentions-typeahead">Luke</span></p>',
+        '<p class="editor-paragraph" dir="ltr"><span aria-controls="mentions-typeahead" data-outline-text="true">Luke</span></p>',
       );
 
       await page.keyboard.press('Enter');
       await assertHTML(
         page,
-        '<p class="editor-paragraph"><span></span><span class="mention" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span></span></p>',
+        '<p class="editor-paragraph"><span data-outline-text="true"></span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"></span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 2, 0],
@@ -82,13 +82,13 @@ describe('Mentions', () => {
       await page.waitForSelector('#mentions-typeahead ul li');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span aria-controls="mentions-typeahead">Luke</span></p',
+        '<p class="editor-paragraph" dir="ltr"><span aria-controls="mentions-typeahead" data-outline-text="true">Luke</span></p',
       );
 
       await page.keyboard.press('Enter');
       await assertHTML(
         page,
-        '<p class="editor-paragraph"><span></span><span class="mention" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span></span></p>',
+        '<p class="editor-paragraph"><span data-outline-text="true"></span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"></span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 2, 0],
@@ -110,7 +110,7 @@ describe('Mentions', () => {
       await page.keyboard.press('Delete');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span></span><span class="mention" style="background-color: rgba(24, 119, 232, 0.2);">Skywalker</span><span></span></p>',
+        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true"></span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Skywalker</span><span data-outline-text="true"></span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -122,7 +122,7 @@ describe('Mentions', () => {
       await page.keyboard.press('Delete');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span><br></span></p><div contenteditable="false" class="editor-placeholder">Enter some rich text...</div>',
+        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true"><br></span></p><div contenteditable="false" class="editor-placeholder">Enter some rich text...</div>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -147,13 +147,13 @@ describe('Mentions', () => {
       await page.waitForSelector('#mentions-typeahead ul li');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span aria-controls="mentions-typeahead">Luke</span></p>',
+        '<p class="editor-paragraph" dir="ltr"><span aria-controls="mentions-typeahead" data-outline-text="true">Luke</span></p>',
       );
 
       await page.keyboard.press('Enter');
       await assertHTML(
         page,
-        '<p class="editor-paragraph"><span></span><span class="mention" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span></span></p>',
+        '<p class="editor-paragraph"><span data-outline-text="true"></span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"></span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 2, 0],
@@ -167,7 +167,7 @@ describe('Mentions', () => {
       await page.keyboard.press('Backspace');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span></span><span class="mention" style="background-color: rgba(24, 119, 232, 0.2);">Luke</span><span></span></p>',
+        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true"></span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke</span><span data-outline-text="true"></span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 2, 0],
@@ -179,7 +179,7 @@ describe('Mentions', () => {
       await page.keyboard.press('Backspace');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span><br></span></p><div contenteditable="false" class="editor-placeholder">Enter some rich text...</div>',
+        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true"><br></span></p><div contenteditable="false" class="editor-placeholder">Enter some rich text...</div>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],

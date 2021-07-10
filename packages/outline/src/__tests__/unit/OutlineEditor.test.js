@@ -101,7 +101,7 @@ describe('OutlineEditor tests', () => {
     });
 
     expect(sanitizeHTML(container.innerHTML)).toBe(
-      '<div contenteditable="true" data-outline-editor="true"><p><span>This works!</span></p></div>',
+      '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">This works!</span></p></div>',
     );
   });
 
@@ -145,7 +145,7 @@ describe('OutlineEditor tests', () => {
     await Promise.resolve().then();
 
     expect(sanitizeHTML(container.innerHTML)).toBe(
-      '<div contenteditable="true" data-outline-editor="true"><p><span>Not changed</span></p></div>',
+      '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">Not changed</span></p></div>',
     );
 
     ReactTestUtils.act(() => {
@@ -157,7 +157,7 @@ describe('OutlineEditor tests', () => {
 
     expect(listener).toHaveBeenCalledTimes(3);
     expect(sanitizeHTML(container.innerHTML)).toBe(
-      '<span contenteditable="true" data-outline-editor="true"><p><span>Change successful</span></p></span>',
+      '<span contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">Change successful</span></p></span>',
     );
   });
 
@@ -242,8 +242,8 @@ describe('OutlineEditor tests', () => {
 
       expect(listener).toHaveBeenCalledTimes(1);
       expect(sanitizeHTML(container.innerHTML)).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span></span>' +
-          '<span><span>Hello world</span></span><span></span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true"></span>' +
+          '<span data-outline-decorator="true"><span>Hello world</span></span><span data-outline-text="true"></span></p></div>',
       );
     });
 

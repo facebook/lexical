@@ -31,7 +31,7 @@ describe('Regression test #399', () => {
       if (isRichText) {
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span>foo</span></p><p class="editor-paragraph" dir="ltr"><span>bar</span></p>',
+          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">foo</span></p><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">bar</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [1, 0, 0],
@@ -42,7 +42,7 @@ describe('Regression test #399', () => {
       } else {
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span>⁠foo</span><br><span>⁠bar</span></p>',
+          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">⁠foo</span><br><span data-outline-text="true">⁠bar</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 2, 0],
@@ -59,7 +59,7 @@ describe('Regression test #399', () => {
       if (isRichText) {
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span>foo</span></p><p class="editor-paragraph" dir="ltr"><span></span><br><span>bar</span></p>',
+          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">foo</span></p><p class="editor-paragraph" dir="ltr"><span data-outline-text="true"></span><br><span data-outline-text="true">bar</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [1, 0, 0],
@@ -70,7 +70,7 @@ describe('Regression test #399', () => {
       } else {
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span>⁠foo</span><br><span>​</span><br><span>⁠bar</span></p>',
+          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">⁠foo</span><br><span data-outline-text="true">​</span><br><span data-outline-text="true">⁠bar</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 2, 0],

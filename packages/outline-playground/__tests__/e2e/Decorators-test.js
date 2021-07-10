@@ -20,7 +20,7 @@ describe('Hashtags', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span>​</span><span contenteditable="false" style="cursor: default;"><span class="keyword">congrats</span></span><span>​</span></p>',
+        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">​</span><span data-outline-decorator="true" contenteditable="false" style="cursor: default;"><span class="keyword">congrats</span></span><span data-outline-text="true">​</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 2, 0],
@@ -48,7 +48,7 @@ describe('Hashtags', () => {
       await page.keyboard.press('Backspace');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span>​<br></span></p>',
+        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">​<br></span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],

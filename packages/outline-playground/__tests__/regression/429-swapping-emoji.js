@@ -17,7 +17,7 @@ describe('Regression test #429', () => {
       await page.keyboard.type(':) or :(');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span></span><span class="emoji happysmile" contenteditable="false">🙂</span><span> or </span><span class="emoji unhappysmile" contenteditable="false">🙁</span><span></span></p>',
+        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true"></span><span class="emoji happysmile" contenteditable="false" data-outline-text="true">🙂</span><span data-outline-text="true"> or </span><span class="emoji unhappysmile" contenteditable="false" data-outline-text="true">🙁</span><span data-outline-text="true"></span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 4, 0],
@@ -33,7 +33,7 @@ describe('Regression test #429', () => {
       if (isRichText) {
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span><br></span></p><p class="editor-paragraph" dir="ltr"><span></span><span class="emoji happysmile" contenteditable="false">🙂</span><span> or </span><span class="emoji unhappysmile" contenteditable="false">🙁</span><span></span></p>',
+          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true"><br></span></p><p class="editor-paragraph" dir="ltr"><span data-outline-text="true"></span><span class="emoji happysmile" contenteditable="false" data-outline-text="true">🙂</span><span data-outline-text="true"> or </span><span class="emoji unhappysmile" contenteditable="false" data-outline-text="true">🙁</span><span data-outline-text="true"></span></p>',
         );
         await assertSelection(page, {
           anchorPath: [1, 0, 0],
@@ -44,7 +44,7 @@ describe('Regression test #429', () => {
       } else {
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span>​</span><br><span>​</span><span class="emoji happysmile" contenteditable="false">🙂</span><span>​ or </span><span class="emoji unhappysmile" contenteditable="false">🙁</span><span>​</span></p>',
+          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">​</span><br><span data-outline-text="true">​</span><span class="emoji happysmile" contenteditable="false" data-outline-text="true">🙂</span><span data-outline-text="true">​ or </span><span class="emoji unhappysmile" contenteditable="false" data-outline-text="true">🙁</span><span data-outline-text="true">​</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 2, 0],
@@ -57,7 +57,7 @@ describe('Regression test #429', () => {
       await page.keyboard.press('Backspace');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span></span><span class="emoji happysmile" contenteditable="false">🙂</span><span> or </span><span class="emoji unhappysmile" contenteditable="false">🙁</span><span></span></p>',
+        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true"></span><span class="emoji happysmile" contenteditable="false" data-outline-text="true">🙂</span><span data-outline-text="true"> or </span><span class="emoji unhappysmile" contenteditable="false" data-outline-text="true">🙁</span><span data-outline-text="true"></span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],

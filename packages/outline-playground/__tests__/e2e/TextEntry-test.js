@@ -561,7 +561,9 @@ describe('TextEntry', () => {
         await moveToPrevWord(page);
         await page.keyboard.down('Shift');
         await page.keyboard.press('ArrowUp');
-        if (!IS_LINUX) {
+        await moveToPrevWord(page);
+        // Once more for linux
+        if (IS_LINUX) {
           await moveToPrevWord(page);
         }
         await page.keyboard.up('Shift');

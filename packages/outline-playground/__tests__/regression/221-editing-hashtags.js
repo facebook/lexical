@@ -18,7 +18,7 @@ describe('Regression test #221', () => {
       await page.waitForSelector('.editor-text-hashtag');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span class="editor-text-hashtag">#yolo</span></p>',
+        '<p class="editor-paragraph" dir="ltr"><span class="editor-text-hashtag" data-outline-text="true">#yolo</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -32,7 +32,7 @@ describe('Regression test #221', () => {
       await page.keyboard.press('Space');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span class="editor-text-hashtag">#yo</span><span> lo</span></p>',
+        '<p class="editor-paragraph" dir="ltr"><span class="editor-text-hashtag" data-outline-text="true">#yo</span><span data-outline-text="true"> lo</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
@@ -50,7 +50,7 @@ describe('Regression test #221', () => {
       await page.waitForSelector('.editor-text-hashtag');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span class="editor-text-hashtag">#yolo</span><span> </span></p>',
+        '<p class="editor-paragraph" dir="ltr"><span class="editor-text-hashtag" data-outline-text="true">#yolo</span><span data-outline-text="true"> </span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
@@ -63,7 +63,7 @@ describe('Regression test #221', () => {
       await page.keyboard.press('Delete');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span class="editor-text-hashtag">#yolo</span></p>',
+        '<p class="editor-paragraph" dir="ltr"><span class="editor-text-hashtag" data-outline-text="true">#yolo</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -81,7 +81,7 @@ describe('Regression test #221', () => {
       await page.waitForSelector('.editor-text-hashtag');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span class="editor-text-hashtag">#yolo</span><span> </span></p>',
+        '<p class="editor-paragraph" dir="ltr"><span class="editor-text-hashtag" data-outline-text="true">#yolo</span><span data-outline-text="true"> </span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
@@ -94,7 +94,7 @@ describe('Regression test #221', () => {
       await page.keyboard.press('Backspace');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span class="editor-text-hashtag">#yol</span></p>',
+        '<p class="editor-paragraph" dir="ltr"><span class="editor-text-hashtag" data-outline-text="true">#yol</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],

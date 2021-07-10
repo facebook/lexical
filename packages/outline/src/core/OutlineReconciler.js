@@ -13,7 +13,7 @@ import type {OutlineEditor, EditorThemeClasses} from './OutlineEditor';
 import type {Selection as OutlineSelection} from './OutlineSelection';
 import type {Node as ReactNode} from 'react';
 
-import {isBlockNode} from '.';
+import {isBlockNode, isTextNode} from '.';
 import {
   isSelectionWithinEditor,
   isImmutableOrInertOrSegmented,
@@ -81,6 +81,12 @@ function createNode(
   const isImmutable = flags & IS_IMMUTABLE;
   storeDOMWithKey(key, dom, activeEditor);
 
+  if (isTextNode(node)) {
+    // This helps preserve the text, and stops spell check tools from
+    // merging or break the spans (which happens if they are missing
+    // this attribute).
+    dom.setAttribute('data-outline-text', 'true');
+  }
   if (isImmutable || isInert) {
     dom.contentEditable = 'false';
   }

@@ -209,13 +209,13 @@ export function formatText(
   const firstNodeText = firstNode.getTextContent();
   const firstNodeTextLength = firstNodeText.length;
   const currentBlock = firstNode.getParentBlockOrThrow();
-  const anchorOffset = selection.anchorOffset;
   const focusOffset = selection.focusOffset;
-  const firstNextFlags = firstNode.getTextNodeFormatFlags(
+  let firstNextFlags = firstNode.getTextNodeFormatFlags(
     formatType,
     null,
     forceFormat,
   );
+  let anchorOffset = selection.anchorOffset;
   let startOffset;
   let endOffset;
 
@@ -242,8 +242,26 @@ export function formatText(
     }
     return;
   }
+  const isBefore = firstNode === selection.getAnchorNode();
+  startOffset = isBefore ? anchorOffset : focusOffset;
+  endOffset = isBefore ? focusOffset : anchorOffset;
 
-  if (selectedNodesLength === 1) {
+  if (startOffset === firstNode.getTextContentSize()) {
+    const nextSibling = firstNode.getNextSibling();
+
+    if (isTextNode(nextSibling)) {
+      anchorOffset = 0;
+      startOffset = 0;
+      firstNode = nextSibling;
+      firstNextFlags = firstNode.getTextNodeFormatFlags(
+        formatType,
+        null,
+        forceFormat,
+      );
+    }
+  }
+
+  if (firstNode === lastNode) {
     if (isTextNode(firstNode)) {
       startOffset = anchorOffset > focusOffset ? focusOffset : anchorOffset;
       endOffset = anchorOffset > focusOffset ? anchorOffset : focusOffset;
@@ -263,10 +281,6 @@ export function formatText(
       currentBlock.normalizeTextNodes(true);
     }
   } else {
-    const isBefore = firstNode === selection.getAnchorNode();
-    startOffset = isBefore ? anchorOffset : focusOffset;
-    endOffset = isBefore ? focusOffset : anchorOffset;
-
     if (startOffset !== 0) {
       [, firstNode] = firstNode.splitText(startOffset);
       startOffset = 0;
@@ -287,7 +301,13 @@ export function formatText(
 
     for (let i = 1; i < lastIndex; i++) {
       const selectedNode = selectedNodes[i];
-      if (isTextNode(selectedNode) && !selectedNode.isImmutable()) {
+      const selectedNodeKey = selectedNode.getKey();
+      if (
+        isTextNode(selectedNode) &&
+        selectedNodeKey !== firstNode.getKey() &&
+        selectedNodeKey !== lastNode.getKey() &&
+        !selectedNode.isImmutable()
+      ) {
         const selectedNextFlags = selectedNode.getTextNodeFormatFlags(
           formatType,
           firstNextFlags,
@@ -486,18 +506,24 @@ export function updateCaretSelectionForAdjacentHashtags(
   const anchorNode = selection.getAnchorNode();
   const textContent = anchorNode.getTextContent();
   const anchorOffset = selection.anchorOffset;
-  const selectionAtBoundary = anchorOffset === 0;
-  if (selectionAtBoundary && anchorNode.getFlags() === 0) {
+
+  if (anchorOffset === 0 && anchorNode.isSimpleText()) {
     const sibling = anchorNode.getPreviousSibling();
-    if (
-      !isHashtagNode(anchorNode) &&
-      isTextNode(sibling) &&
-      isHashtagNode(sibling)
-    ) {
+    if (isTextNode(sibling) && isHashtagNode(sibling)) {
       sibling.select();
       const siblingTextContent = sibling.getTextContent();
       sibling.setTextContent(siblingTextContent + textContent);
       anchorNode.remove();
+    }
+  } else if (
+    isHashtagNode(anchorNode) &&
+    anchorOffset === anchorNode.getTextContentSize()
+  ) {
+    const sibling = anchorNode.getNextSibling();
+    if (isTextNode(sibling) && sibling.isSimpleText()) {
+      const siblingTextContent = sibling.getTextContent();
+      anchorNode.setTextContent(textContent + siblingTextContent);
+      sibling.remove();
     }
   }
 }
@@ -508,7 +534,10 @@ function deleteCharacter(selection: Selection, isBackward: boolean): void {
 
     if (!selection.isCaret()) {
       const anchorNode = selection.getAnchorNode();
-      if (anchorNode.isSegmented()) {
+      if (
+        anchorNode.isSegmented() &&
+        selection.anchorOffset !== anchorNode.getTextContentSize()
+      ) {
         removeSegment(anchorNode, isBackward);
         return;
       } else if (!isBackward) {
@@ -625,11 +654,14 @@ export function updateCaretSelectionForRange(
   }
 
   const textSize = focusNode.getTextContentSize();
-  const isAtBoundary = isBackward
-    ? focusOffset === 0
+  const needsExtraMove = isBackward
+    ? focusOffset === 0 &&
+      focusNode.getTextContent() === '' &&
+      !isImmutableOrInert(focusNode)
     : focusOffset === textSize &&
-      (isImmutableOrInert(focusNode) ||
-        (sibling !== null && !isImmutableOrInert(sibling)));
+      isTextNode(sibling) &&
+      !isImmutableOrInert(sibling) &&
+      sibling.getTextContent() === '';
 
   // We use the DOM selection.modify API here to "tell" us what the selection
   // will be. We then use it to update the Outline selection accordingly. This
@@ -639,7 +671,7 @@ export function updateCaretSelectionForRange(
   // and line segments (especially with word wrapping and non-Roman languages).
   moveSelection(domSelection, collapse, isBackward, granularity);
   // If we are at a boundary, move once again.
-  if (isAtBoundary && granularity === 'character') {
+  if (needsExtraMove && granularity === 'character') {
     moveSelection(domSelection, collapse, isBackward, granularity);
   }
   // Guard against no ranges
@@ -813,6 +845,7 @@ export function insertText(selection: Selection, text: string): void {
         firstNode.insertAfter(nextSibling);
       }
       nextSibling.select(0, 0);
+      firstNode = nextSibling;
       if (text !== '') {
         insertText(selection, text);
         return;

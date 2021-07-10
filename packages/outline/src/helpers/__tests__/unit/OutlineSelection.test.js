@@ -901,9 +901,9 @@ describe('OutlineSelection tests', () => {
           '</p></div>',
         expectedSelection: {
           anchorPath: [0, 1, 0],
-          anchorOffset: 2,
+          anchorOffset: 3,
           focusPath: [0, 1, 0],
-          focusOffset: 2,
+          focusOffset: 3,
         },
       },
       {

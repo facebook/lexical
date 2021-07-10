@@ -17,6 +17,7 @@ import {isBlockNode} from '.';
 import {
   isSelectionWithinEditor,
   isImmutableOrInertOrSegmented,
+  getDOMTextNode,
 } from './OutlineUtils';
 import {IS_INERT, IS_RTL, IS_LTR, IS_IMMUTABLE} from './OutlineConstants';
 import invariant from 'shared/invariant';
@@ -527,18 +528,6 @@ export function reconcileViewModel(
   }
 }
 
-function getDOMTextNode(element: HTMLElement): Text | null {
-  let node = element;
-  while (node != null) {
-    if (node.nodeType === 3) {
-      // $FlowFixMe: this is a Text
-      return node;
-    }
-    node = node.firstChild;
-  }
-  return null;
-}
-
 function reconcileSelection(
   prevSelection: OutlineSelection | null,
   nextSelection: OutlineSelection | null,
@@ -574,12 +563,16 @@ function reconcileSelection(
   }
   const nextSelectionAnchorOffset = nextSelection.anchorOffset;
   const nextSelectionFocusOffset = nextSelection.focusOffset;
-  const nextAnchorOffset = isImmutableOrInertOrSegmented(anchorNode)
-    ? nextSelectionAnchorOffset
-    : nextSelectionAnchorOffset + 1;
-  const nextFocusOffset = isImmutableOrInertOrSegmented(focusNode)
-    ? nextSelectionFocusOffset
-    : nextSelectionFocusOffset + 1;
+  const nextAnchorOffset =
+    isImmutableOrInertOrSegmented(anchorNode) ||
+    anchorNode.getTextContent() !== ''
+      ? nextSelectionAnchorOffset
+      : nextSelectionAnchorOffset + 1;
+  const nextFocusOffset =
+    isImmutableOrInertOrSegmented(focusNode) ||
+    focusNode.getTextContent() !== ''
+      ? nextSelectionFocusOffset
+      : nextSelectionFocusOffset + 1;
 
   // Diff against the native DOM selection to ensure we don't do
   // an unnecessary selection update.

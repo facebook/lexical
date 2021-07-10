@@ -17,7 +17,6 @@ import type {
 
 import {useEffect} from 'react';
 import {TextNode, isTextNode} from 'outline';
-import {isHashtagNode} from 'outline/HashtagNode';
 
 const emojis: {[string]: [string, string]} = {
   ':)': ['emoji happysmile', '🙂'],
@@ -59,7 +58,7 @@ function findAndTransformEmoji(
 }
 
 function textNodeTransform(node: TextNode, view: View): void {
-  if (isHashtagNode(node)) {
+  if (!node.isSimpleText()) {
     return;
   }
 

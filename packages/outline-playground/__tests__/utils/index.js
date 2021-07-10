@@ -131,6 +131,7 @@ export async function assertHTML(page, expectedHtml) {
 export async function assertSelection(page, expected) {
   // Assert the selection of the editor matches the snapshot
   const selection = await page.evaluate(() => {
+    const ZERO_WIDTH_JOINER_CHAR = '\u2060';
     const rootElement = document.querySelector('div.editor');
 
     const getPathFromNode = (node) => {
@@ -151,9 +152,15 @@ export async function assertSelection(page, expected) {
 
     return {
       anchorPath: getPathFromNode(anchorNode),
-      anchorOffset: anchorOffset - 1,
+      anchorOffset:
+        anchorNode.textContent === ZERO_WIDTH_JOINER_CHAR
+          ? anchorOffset - 1
+          : anchorOffset,
       focusPath: getPathFromNode(focusNode),
-      focusOffset: focusOffset - 1,
+      focusOffset:
+        focusNode.textContent === ZERO_WIDTH_JOINER_CHAR
+          ? focusOffset - 1
+          : focusOffset,
     };
   }, expected);
   expect(selection.anchorPath).toEqual(expected.anchorPath);

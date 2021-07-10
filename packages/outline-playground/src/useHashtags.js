@@ -8,7 +8,7 @@
  */
 
 import type {OutlineEditor, TextNode, View} from 'outline';
-import {HashtagNode, isHashtagNode, toggleHashtag} from 'outline/HashtagNode';
+import {HashtagNode, toggleHashtag} from 'outline/HashtagNode';
 
 import {useEffect} from 'react';
 
@@ -246,7 +246,7 @@ function getHashtagRegexString(): string {
 const REGEX = new RegExp(getHashtagRegexString(), 'ig');
 
 function textNodeTransform(node: TextNode, view: View): void {
-  if (isHashtagNode(node) || node.isInert()) {
+  if (!node.isSimpleText()) {
     return;
   }
   const text = node.getTextContent();

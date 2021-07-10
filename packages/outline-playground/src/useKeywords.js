@@ -12,7 +12,6 @@ import type {OutlineEditor, NodeKey, TextNode} from 'outline';
 import * as React from 'react';
 import {useEffect} from 'react';
 import {DecoratorNode} from 'outline';
-import {isHashtagNode} from 'outline/HashtagNode';
 
 const keywords = new Set(['congrats', 'congratulations']);
 
@@ -20,7 +19,7 @@ export default function useKeywords(editor: OutlineEditor): void {
   useEffect(() => {
     editor.registerNodeType('keyword', KeywordNode);
     return editor.addTextNodeTransform((node: TextNode) => {
-      if (isHashtagNode(node) || isKeywordNode(node)) {
+      if (!node.isSimpleText()) {
         return;
       }
       const text = node.getTextContent();
@@ -64,10 +63,6 @@ class KeywordNode extends DecoratorNode {
   decorate() {
     return <Keyword>{this.__keyword}</Keyword>;
   }
-}
-
-function isKeywordNode(node: TextNode): boolean {
-  return node instanceof KeywordNode;
 }
 
 function createKeywordNode(keyword: string): KeywordNode {

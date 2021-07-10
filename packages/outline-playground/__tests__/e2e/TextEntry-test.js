@@ -6,6 +6,7 @@
  *
  */
 
+import {moveToPrevWord} from '../keyboardShortcuts';
 import {
   initializeE2E,
   repeat,
@@ -18,6 +19,7 @@ import {
   keyDownCtrlOrAlt,
   keyUpCtrlOrAlt,
   E2E_BROWSER,
+  IS_LINUX,
 } from '../utils';
 
 describe('TextEntry', () => {
@@ -470,6 +472,188 @@ describe('TextEntry', () => {
             focusOffset: 12,
           });
         }
+      });
+
+      it(`Copy and paste between sections`, async () => {
+        const {isRichText, page} = e2e;
+
+        await page.focus('div.editor');
+        await page.keyboard.type('Hello world #foobar test #foobar2 when #not');
+
+        await page.keyboard.press('Enter');
+        await page.keyboard.type('Next #line of #text test #foo');
+
+        if (isRichText) {
+          await assertHTML(
+            page,
+            '<p class="editor-paragraph" dir="ltr"><span>Hello world </span><span class="editor-text-hashtag">#foobar</span><span> test </span><span class="editor-text-hashtag">#foobar2</span><span> when </span><span class="editor-text-hashtag">#not</span></p><p class="editor-paragraph" dir="ltr"><span>Next </span><span class="editor-text-hashtag">#line</span><span> of </span><span class="editor-text-hashtag">#text</span><span> test </span><span class="editor-text-hashtag">#foo</span></p>',
+          );
+          await assertSelection(page, {
+            anchorPath: [1, 5, 0],
+            anchorOffset: 4,
+            focusPath: [1, 5, 0],
+            focusOffset: 4,
+          });
+        } else {
+          await assertHTML(
+            page,
+            '<p class="editor-paragraph" dir="ltr"><span>Hello world </span><span class="editor-text-hashtag">#foobar</span><span> test </span><span class="editor-text-hashtag">#foobar2</span><span> when </span><span class="editor-text-hashtag">#not</span><br><span>Next </span><span class="editor-text-hashtag">#line</span><span> of </span><span class="editor-text-hashtag">#text</span><span> test </span><span class="editor-text-hashtag">#foo</span></p>',
+          );
+          await assertSelection(page, {
+            anchorPath: [0, 12, 0],
+            anchorOffset: 4,
+            focusPath: [0, 12, 0],
+            focusOffset: 4,
+          });
+        }
+
+        // Select all the content
+        await keyDownCtrlOrMeta(page);
+        await page.keyboard.press('a');
+        await keyUpCtrlOrMeta(page);
+
+        if (isRichText) {
+          await assertSelection(page, {
+            anchorPath: [0, 0, 0],
+            anchorOffset: 0,
+            focusPath: [1, 5, 0],
+            focusOffset: 4,
+          });
+        } else {
+          await assertSelection(page, {
+            anchorPath: [0, 0, 0],
+            anchorOffset: 0,
+            focusPath: [0, 12, 0],
+            focusOffset: 4,
+          });
+        }
+
+        // Copy all the text
+        let clipboard = await copyToClipboard(page);
+        await page.keyboard.press('Delete');
+        // Paste the content
+        await pasteFromClipboard(page, clipboard);
+
+        if (isRichText) {
+          await assertHTML(
+            page,
+            '<p class="editor-paragraph" dir="ltr"><span>Hello world </span><span class="editor-text-hashtag">#foobar</span><span> test </span><span class="editor-text-hashtag">#foobar2</span><span> when </span><span class="editor-text-hashtag">#not</span></p><p class="editor-paragraph" dir="ltr"><span>Next </span><span class="editor-text-hashtag">#line</span><span> of </span><span class="editor-text-hashtag">#text</span><span> test </span><span class="editor-text-hashtag">#foo</span></p>',
+          );
+          await assertSelection(page, {
+            anchorPath: [1, 5, 0],
+            anchorOffset: 4,
+            focusPath: [1, 5, 0],
+            focusOffset: 4,
+          });
+        } else {
+          await assertHTML(
+            page,
+            '<p class="editor-paragraph" dir="ltr"><span>Hello world </span><span class="editor-text-hashtag">#foobar</span><span> test </span><span class="editor-text-hashtag">#foobar2</span><span> when </span><span class="editor-text-hashtag">#not</span><br><span>Next </span><span class="editor-text-hashtag">#line</span><span> of </span><span class="editor-text-hashtag">#text</span><span> test </span><span class="editor-text-hashtag">#foo</span></p>',
+          );
+          await assertSelection(page, {
+            anchorPath: [0, 12, 0],
+            anchorOffset: 4,
+            focusPath: [0, 12, 0],
+            focusOffset: 4,
+          });
+        }
+
+        await moveToPrevWord(page);
+        await page.keyboard.down('Shift');
+        await page.keyboard.press('ArrowUp');
+        await moveToPrevWord(page);
+        // Once more for linux on Chromium
+        if (IS_LINUX && E2E_BROWSER === 'chromium') {
+          await moveToPrevWord(page);
+        }
+        await page.keyboard.up('Shift');
+
+        if (isRichText) {
+          await assertSelection(page, {
+            anchorPath: [1, 5, 0],
+            anchorOffset: 1,
+            focusPath: [0, 2, 0],
+            focusOffset: 1,
+          });
+        } else {
+          await assertSelection(page, {
+            anchorPath: [0, 12, 0],
+            anchorOffset: 1,
+            focusPath: [0, 2, 0],
+            focusOffset: 1,
+          });
+        }
+
+        // Copy selected text
+        clipboard = await copyToClipboard(page);
+        await page.keyboard.press('Delete');
+        // Paste the content
+        await pasteFromClipboard(page, clipboard);
+
+        if (isRichText) {
+          await assertHTML(
+            page,
+            '<p class="editor-paragraph" dir="ltr"><span>Hello world </span><span class="editor-text-hashtag">#foobar</span><span> test </span><span class="editor-text-hashtag">#foobar2</span><span> when </span><span class="editor-text-hashtag">#not</span></p><p class="editor-paragraph" dir="ltr"><span>Next </span><span class="editor-text-hashtag">#line</span><span> of </span><span class="editor-text-hashtag">#text</span><span> test </span><span class="editor-text-hashtag">#foo</span></p>',
+          );
+          await assertSelection(page, {
+            anchorPath: [1, 5, 0],
+            anchorOffset: 1,
+            focusPath: [1, 5, 0],
+            focusOffset: 1,
+          });
+        } else {
+          await assertHTML(
+            page,
+            '<p class="editor-paragraph" dir="ltr"><span>Hello world </span><span class="editor-text-hashtag">#foobar</span><span> test </span><span class="editor-text-hashtag">#foobar2</span><span> when </span><span class="editor-text-hashtag">#not</span><br><span>Next </span><span class="editor-text-hashtag">#line</span><span> of </span><span class="editor-text-hashtag">#text</span><span> test </span><span class="editor-text-hashtag">#foo</span></p>',
+          );
+          await assertSelection(page, {
+            anchorPath: [0, 12, 0],
+            anchorOffset: 1,
+            focusPath: [0, 12, 0],
+            focusOffset: 1,
+          });
+        }
+
+        // Select all the content
+        await keyDownCtrlOrMeta(page);
+        await page.keyboard.press('a');
+        await keyUpCtrlOrMeta(page);
+
+        if (isRichText) {
+          await assertSelection(page, {
+            anchorPath: [0, 0, 0],
+            anchorOffset: 0,
+            focusPath: [1, 6, 0],
+            focusOffset: 3,
+          });
+        } else {
+          await assertSelection(page, {
+            anchorPath: [0, 0, 0],
+            anchorOffset: 0,
+            focusPath: [0, 12, 0],
+            focusOffset: 4,
+          });
+        }
+
+        await page.keyboard.press('Delete');
+
+        if (isRichText) {
+          await assertHTML(
+            page,
+            '<p class="editor-paragraph" dir="ltr"><span>⁠<br></span></p>',
+          );
+        } else {
+          await assertHTML(
+            page,
+            '<p class="editor-paragraph"><span>⁠<br></span></p>',
+          );
+        }
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 0,
+          focusPath: [0, 0, 0],
+          focusOffset: 0,
+        });
       });
     });
   });

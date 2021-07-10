@@ -19,6 +19,7 @@ import {
   keyDownCtrlOrAlt,
   keyUpCtrlOrAlt,
   E2E_BROWSER,
+  IS_LINUX,
 } from '../utils';
 
 describe('TextEntry', () => {
@@ -560,7 +561,9 @@ describe('TextEntry', () => {
         await moveToPrevWord(page);
         await page.keyboard.down('Shift');
         await page.keyboard.press('ArrowUp');
-        await moveToPrevWord(page);
+        if (!IS_LINUX) {
+          await moveToPrevWord(page);
+        }
         await page.keyboard.up('Shift');
 
         if (isRichText) {

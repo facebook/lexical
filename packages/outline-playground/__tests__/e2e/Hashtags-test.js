@@ -7,6 +7,7 @@
  */
 
 import {initializeE2E, assertHTML, assertSelection, repeat} from '../utils';
+import {deleteNextWord, moveToEditorBeginning} from '../keyboardShortcuts';
 
 describe('Hashtags', () => {
   initializeE2E((e2e) => {
@@ -129,6 +130,51 @@ describe('Hashtags', () => {
         anchorOffset: 6,
         focusPath: [0, 0, 0],
         focusOffset: 6,
+      });
+    });
+
+    it(`Can insert many hashtags mixed with text and delete them all correctly`, async () => {
+      const {page} = e2e;
+
+      await page.focus('div.editor');
+      await page.keyboard.type(
+        '#hello world foo #lol #lol asdasd #lol test this #asdas #asdas lasdasd asdasd',
+      );
+
+      await page.waitForSelector('.editor-text-hashtag');
+
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span class="editor-text-hashtag">#hello</span><span> world foo </span><span class="editor-text-hashtag">#lol</span><span> </span><span class="editor-text-hashtag">#lol</span><span> asdasd </span><span class="editor-text-hashtag">#lol</span><span> test this </span><span class="editor-text-hashtag">#asdas</span><span> </span><span class="editor-text-hashtag">#asdas</span><span> lasdasd asdasd</span></p>',
+      );
+      await assertSelection(page, {
+        anchorPath: [0, 11, 0],
+        anchorOffset: 15,
+        focusPath: [0, 11, 0],
+        focusOffset: 15,
+      });
+
+      await moveToEditorBeginning(page);
+
+      await assertSelection(page, {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 0,
+        focusPath: [0, 0, 0],
+        focusOffset: 0,
+      });
+
+      await repeat(20, async () => {
+        await deleteNextWord(page);
+      });
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph"><span>⁠<br></span></p>',
+      );
+      await assertSelection(page, {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 0,
+        focusPath: [0, 0, 0],
+        focusOffset: 0,
       });
     });
   });

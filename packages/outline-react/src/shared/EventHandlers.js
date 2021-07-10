@@ -1009,8 +1009,6 @@ export function onMutation(
   mutations: Array<MutationRecord>,
 ): void {
   editor.update((view: View) => {
-    let selection = view.getSelection();
-
     for (let i = 0; i < mutations.length; i++) {
       const mutation = mutations[i];
       const type = mutation.type;
@@ -1058,7 +1056,13 @@ export function onMutation(
             ) {
               // Come out of composition
               editor._compositionKey = null;
-              targetNode.setTextContent('');
+              // Clear the text node if possible
+              if (!targetNode.isImmutable()) {
+                targetNode.setTextContent('');
+              } else {
+                view.markNodeAsDirty(targetNode);
+              }
+              target.textContent = '';
               targetNode.select();
             }
           } else {
@@ -1091,9 +1095,13 @@ export function onMutation(
                 // Come out of composition
                 editor._compositionKey = null;
 
-                // Clear the text node
                 if (isTextNode(removedNode)) {
-                  removedNode.setTextContent('');
+                  // Clear the text node if possible
+                  if (!removedNode.isImmutable()) {
+                    removedNode.setTextContent('');
+                  } else {
+                    view.markNodeAsDirty(removedNode);
+                  }
                   removedNode.select();
                   removedDOM.textContent = '';
                 } else if (isBlockNode(removedNode)) {
@@ -1101,20 +1109,20 @@ export function onMutation(
                   removedNode.clear();
                   removedNode.append(emptyText);
                   emptyText.select();
-                  selection = view.getSelection();
                 }
               }
             }
           }
-          if (selection === null) {
-            // Looks like a text node was added and selection was moved to it.
-            // We can attempt to restore the last selection.
-            const lastSelection = getLastSelection(editor);
-            if (lastSelection !== null) {
-              view.setSelection(lastSelection);
-            }
-          }
         }
+      }
+    }
+    const selection = view.getSelection();
+    if (selection === null) {
+      // Looks like a text node was added and selection was moved to it.
+      // We can attempt to restore the last selection.
+      const lastSelection = getLastSelection(editor);
+      if (lastSelection !== null) {
+        view.setSelection(lastSelection);
       }
     }
   });

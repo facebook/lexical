@@ -874,7 +874,7 @@ export function insertText(selection: Selection, text: string): void {
     }
   } else {
     const lastIndex = selectedNodesLength - 1;
-    const lastNode = selectedNodes[lastIndex];
+    let lastNode = selectedNodes[lastIndex];
     const firstNodeParents = new Set(firstNode.getParents());
     const lastNodeParents = new Set(lastNode.getParents());
     const firstNodeParent = firstNode.getParent();
@@ -895,7 +895,8 @@ export function insertText(selection: Selection, text: string): void {
     } else if (isTextNode(lastNode)) {
       if (lastNode.isSegmented()) {
         const textNode = createTextNode(lastNode.getTextContent());
-        lastNode.replace(textNode);
+        lastNode.replace(textNode, true);
+        lastNode = textNode;
       }
       lastNode.spliceText(0, endOffset, '', false);
     }
@@ -906,23 +907,30 @@ export function insertText(selection: Selection, text: string): void {
     if (isBlockNode(firstNodeParent) && isBlockNode(lastNodeParent)) {
       const lastNodeChildren = lastNodeParent.getChildren();
       const selectedNodesSet = new Set(selectedNodes);
-      const avoidNodes = new Set(firstNode.getPreviousSiblings());
+      const firstAndLastParentsAreEqual = firstNodeParent.is(lastNodeParent);
 
       for (let i = lastNodeChildren.length - 1; i >= 0; i--) {
         const lastNodeChild = lastNodeChildren[i];
-        if (!lastNodeChild.is(firstNode) && !avoidNodes.has(lastNodeChild)) {
+
+        if (lastNodeChild.is(firstNode)) {
+          break;
+        }
+
+        if (lastNodeChild.isAttached()) {
           if (
             !selectedNodesSet.has(lastNodeChild) ||
             lastNodeChild.is(lastNode)
           ) {
-            firstNode.insertAfter(lastNodeChild);
+            if (!firstAndLastParentsAreEqual) {
+              firstNode.insertAfter(lastNodeChild);
+            }
           } else {
             lastNodeChild.remove();
           }
         }
       }
 
-      if (!firstNodeParent.is(lastNodeParent)) {
+      if (!firstAndLastParentsAreEqual) {
         // Check if we have already moved out all the nodes of the
         // last parent, and if so, traverse the parent tree and mark
         // them all as being able to deleted too.

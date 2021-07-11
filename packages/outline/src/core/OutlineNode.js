@@ -209,7 +209,6 @@ export function wrapInTextNodes<N: OutlineNode>(node: N): N {
     const text = createTextNode('');
     node.insertAfter(text);
   }
-  node.getParentOrThrow().normalizeTextNodes(true);
   return node;
 }
 

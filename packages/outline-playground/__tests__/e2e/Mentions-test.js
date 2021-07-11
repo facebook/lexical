@@ -214,7 +214,7 @@ describe('Mentions', () => {
       await page.waitForSelector('#mentions-typeahead ul li');
       await page.keyboard.press('Enter');
 
-      await page.waitForSelector('.mention');
+      await page.waitForSelector('.mention:nth-child(2)');
 
       await page.keyboard.type(' ');
 
@@ -223,7 +223,7 @@ describe('Mentions', () => {
       await page.waitForSelector('#mentions-typeahead ul li');
       await page.keyboard.press('Enter');
 
-      await page.waitForSelector('.mention');
+      await page.waitForSelector('.mention:nth-child(3n)');
 
       await page.keyboard.type(' ');
 
@@ -232,7 +232,8 @@ describe('Mentions', () => {
       await page.waitForSelector('#mentions-typeahead ul li');
       await page.keyboard.press('Enter');
 
-      await page.waitForSelector('.mention');
+      await page.waitForSelector('.mention:nth-child(1n + 7)');
+
 
       await assertHTML(
         page,

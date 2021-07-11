@@ -6,7 +6,13 @@
  *
  */
 
-import {initializeE2E, assertHTML, assertSelection, IS_WINDOWS} from '../utils';
+import {
+  initializeE2E,
+  assertHTML,
+  assertSelection,
+  IS_WINDOWS,
+  E2E_BROWSER,
+} from '../utils';
 import {deleteNextWord, moveToEditorBeginning} from '../keyboardShortcuts';
 
 describe('Mentions', () => {
@@ -256,7 +262,7 @@ describe('Mentions', () => {
 
       await deleteNextWord(page);
 
-      if (IS_WINDOWS) {
+      if (IS_WINDOWS && E2E_BROWSER === 'chromium') {
         await assertHTML(
           page,
           '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Skywalker </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true">⁠</span></p>',
@@ -275,7 +281,7 @@ describe('Mentions', () => {
       });
 
       await deleteNextWord(page);
-      if (IS_WINDOWS) {
+      if (IS_WINDOWS && E2E_BROWSER === 'chromium') {
         await assertHTML(
           page,
           '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">⁠</span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true">⁠</span></p>',
@@ -294,7 +300,7 @@ describe('Mentions', () => {
       });
 
       await deleteNextWord(page);
-      if (IS_WINDOWS) {
+      if (IS_WINDOWS && E2E_BROWSER === 'chromium') {
         await assertHTML(
           page,
           '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Skywalker </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true">⁠</span></p>',

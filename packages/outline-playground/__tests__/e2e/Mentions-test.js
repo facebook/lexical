@@ -6,8 +6,8 @@
  *
  */
 
-import {initializeE2E, assertHTML, assertSelection} from '../utils';
-import {deleteNextWord, moveToEditorBeginning} from '../keyboardShortcuts'
+import {initializeE2E, assertHTML, assertSelection, IS_WINDOWS} from '../utils';
+import {deleteNextWord, moveToEditorBeginning} from '../keyboardShortcuts';
 
 describe('Mentions', () => {
   initializeE2E((e2e) => {
@@ -234,7 +234,6 @@ describe('Mentions', () => {
 
       await page.waitForSelector('.mention:nth-child(1n + 7)');
 
-
       await assertHTML(
         page,
         '<p class="editor-paragraph"><span data-outline-text="true">⁠</span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true">⁠</span></p>',
@@ -256,10 +255,18 @@ describe('Mentions', () => {
       });
 
       await deleteNextWord(page);
-      await assertHTML(
-        page,
-        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true"> Skywalker </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true">⁠</span></p>',
-      );
+
+      if (IS_WINDOWS) {
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Skywalker </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true">⁠</span></p>',
+        );
+      } else {
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true"> Skywalker </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true">⁠</span></p>',
+        );
+      }
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
         anchorOffset: 0,
@@ -268,10 +275,17 @@ describe('Mentions', () => {
       });
 
       await deleteNextWord(page);
-      await assertHTML(
-        page,
-        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true">⁠</span></p>',
-      );
+      if (IS_WINDOWS) {
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">⁠</span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true">⁠</span></p>',
+        );
+      } else {
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true">⁠</span></p>',
+        );
+      }
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
         anchorOffset: 0,
@@ -280,10 +294,17 @@ describe('Mentions', () => {
       });
 
       await deleteNextWord(page);
-      await assertHTML(
-        page,
-        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true"> Skywalker </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true">⁠</span></p>',
-      );
+      if (IS_WINDOWS) {
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Skywalker </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true">⁠</span></p>',
+        );
+      } else {
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true"> Skywalker </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true">⁠</span></p>',
+        );
+      }
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
         anchorOffset: 0,

@@ -243,9 +243,22 @@ export class OutlineNode {
     if (__DEV__) {
       // don't check built-in nodes
       if (
-        !['RootNode', 'BlockNode', 'TextNode', 'ParagraphNode'].includes(
-          this.constructor.name,
-        )
+        ![
+          'RootNode',
+          'BlockNode',
+          'TextNode',
+          'LineBreakNode',
+          'CodeNode',
+          'HashtagNode',
+          'HeadingNode',
+          'ImageNode',
+          'LinkNode',
+          'ListNode',
+          'ListItemNode',
+          'ParagraphNode',
+          'QuoteNode',
+          'OverflowedTextNode',
+        ].includes(this.constructor.name)
       ) {
         const proto = Object.getPrototypeOf(this);
         ['clone', 'createDOM', 'serialize', 'deserialize'].forEach((method) => {

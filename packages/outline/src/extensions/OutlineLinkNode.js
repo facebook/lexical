@@ -24,18 +24,6 @@ export class LinkNode extends TextNode {
     this.__url = url;
     this.__type = 'link';
   }
-  serialize(): ParsedLinkNode {
-    const {__url} = this;
-    return {
-      ...super.serialize(),
-      __url,
-    };
-  }
-  deserialize(data: $FlowFixMe) {
-    const {__url, ...rest} = data;
-    super.deserialize(rest);
-    this.__url = __url;
-  }
   clone(): LinkNode {
     return new LinkNode(this.__text, this.__url, this.__key);
   }

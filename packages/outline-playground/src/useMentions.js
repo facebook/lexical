@@ -7,12 +7,7 @@
  * @flow
  */
 
-import type {
-  OutlineEditor,
-  ParsedTextNode,
-  NodeKey,
-  EditorThemeClasses,
-} from 'outline';
+import type {OutlineEditor, NodeKey, EditorThemeClasses} from 'outline';
 
 import React, {useCallback, useLayoutEffect, useMemo, useRef} from 'react';
 import {useEffect, useState} from 'react';
@@ -504,11 +499,6 @@ export default function useMentions(editor: OutlineEditor): React$Node {
       );
 }
 
-type ParsedMentionNode = {
-  ...ParsedTextNode,
-  __mention: string,
-};
-
 class MentionNode extends TextNode {
   __mention: string;
 
@@ -516,18 +506,6 @@ class MentionNode extends TextNode {
     super(text ?? mentionName, key);
     this.__mention = mentionName;
     this.__type = 'mention';
-  }
-  serialize(): ParsedMentionNode {
-    const {__mention} = this;
-    return {
-      ...super.serialize(),
-      __mention,
-    };
-  }
-  deserialize(data: $FlowFixMe) {
-    const {__mention, ...rest} = data;
-    super.deserialize(rest);
-    this.__mention = __mention;
   }
   clone() {
     return new MentionNode(this.__mention, this.__key, this.__text);

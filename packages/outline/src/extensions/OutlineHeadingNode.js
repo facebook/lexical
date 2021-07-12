@@ -33,18 +33,6 @@ export class HeadingNode extends BlockNode {
     this.__tag = tag;
     this.__type = 'heading';
   }
-  serialize(): ParsedHeadingNode {
-    const {__tag} = this;
-    return {
-      ...super.serialize(),
-      __tag,
-    };
-  }
-  deserialize(data: $FlowFixMe) {
-    const {__tag, ...rest} = data;
-    super.deserialize(rest);
-    this.__tag = __tag;
-  }
   clone(): HeadingNode {
     return new HeadingNode(this.__tag, this.__key);
   }

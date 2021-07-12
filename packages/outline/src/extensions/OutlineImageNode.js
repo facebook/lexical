@@ -78,20 +78,6 @@ export class ImageNode extends DecoratorNode {
     this.__src = src;
     this.__altText = altText;
   }
-  serialize(): ParsedImageNode {
-    const {__src, __altText} = this;
-    return {
-      ...super.serialize(),
-      __src,
-      __altText,
-    };
-  }
-  deserialize(data: $FlowFixMe) {
-    const {__src, __altText, ...rest} = data;
-    super.deserialize(rest);
-    this.__src = __src;
-    this.__altText = __altText;
-  }
   getTextContent(): string {
     return this.__altText;
   }

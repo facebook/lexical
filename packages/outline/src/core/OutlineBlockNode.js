@@ -39,18 +39,6 @@ export class BlockNode extends OutlineNode {
     super(key);
     this.__children = [];
   }
-  serialize(): ParsedBlockNode {
-    const {__children} = this;
-    return {
-      ...super.serialize(),
-      __children,
-    };
-  }
-  deserialize(data: $FlowFixMe) {
-    const {__children, ...rest} = data;
-    super.deserialize(rest);
-    this.__children = __children;
-  }
   getChildren(): Array<OutlineNode> {
     const self = this.getLatest();
     const children = self.__children;

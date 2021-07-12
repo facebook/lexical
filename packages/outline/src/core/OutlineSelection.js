@@ -299,12 +299,14 @@ function resolveSelectionNodesAndOffsets(
   isDirty = resolveFocusNodeAndOffset[2];
 
   // Handle normalization of selection when it is at the boundaries.
-  const domSelection = window.getSelection();
   const textContentSize = resolvedAnchorNode.getTextContentSize();
   // Once we remove zero width characters, we will no longer need this
   // check as it will become redundant (we won't allow empty text nodes).
   if (textContentSize !== 0) {
-    if (domSelection.isCollapsed) {
+    if (
+      resolvedAnchorNode === resolvedFocusNode &&
+      resolvedAnchorOffset === resolvedFocusOffset
+    ) {
       if (resolvedAnchorOffset === 0) {
         const prevSibling = resolvedAnchorNode.getPreviousSibling();
         if (isTextNode(prevSibling) && !prevSibling.isImmutable()) {

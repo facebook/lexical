@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {NodeKey, NodeMapType, OutlineNode} from './OutlineNode';
+import type {NodeKey, NodeMapType} from './OutlineNode';
 import type {OutlineEditor, EditorThemeClasses} from './OutlineEditor';
 import type {Selection as OutlineSelection} from './OutlineSelection';
 import type {TextNode} from './OutlineTextNode';

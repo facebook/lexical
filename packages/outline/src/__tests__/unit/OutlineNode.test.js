@@ -755,7 +755,7 @@ describe('OutlineNode tests', () => {
         textNode.insertAfter(barTextNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foobar</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">foobar</span></p></div>',
       );
     });
 
@@ -855,7 +855,7 @@ describe('OutlineNode tests', () => {
         textNode.insertBefore(barTextNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">barfoo</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">barfoo</span></p></div>',
       );
     });
 

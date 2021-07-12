@@ -241,14 +241,21 @@ export class OutlineNode {
 
     // ensure custom nodes implement required methods
     if (__DEV__) {
-      const proto = Object.getPrototypeOf(this);
-      ['clone', 'createDOM', 'serialize', 'deserialize'].forEach((method) => {
-        if (!proto.hasOwnProperty(method)) {
-          console.warn(
-            `${this.constructor.name} must implement "${method}" method`,
-          );
-        }
-      });
+      // don't check built-in nodes
+      if (
+        !['RootNode', 'BlockNode', 'TextNode', 'ParagraphNode'].includes(
+          this.constructor.name,
+        )
+      ) {
+        const proto = Object.getPrototypeOf(this);
+        ['clone', 'createDOM', 'serialize', 'deserialize'].forEach((method) => {
+          if (!proto.hasOwnProperty(method)) {
+            console.warn(
+              `${this.constructor.name} must implement "${method}" method`,
+            );
+          }
+        });
+      }
     }
   }
 

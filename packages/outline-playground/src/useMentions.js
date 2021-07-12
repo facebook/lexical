@@ -234,7 +234,6 @@ function MentionsTypeahead({
           const mentionNode = createMentionNode(selectedResult);
           target.replace(mentionNode);
           mentionNode.selectNext(0, 0);
-          mentionNode.getParentOrThrow().normalizeTextNodes(true);
         }
       }
     });

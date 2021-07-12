@@ -202,6 +202,7 @@ describe('OutlineNode tests', () => {
       let barTextNode;
       await editor.update(() => {
         barTextNode = new TextNode('bar');
+        barTextNode.toggleUnmergeable();
         paragraphNode.append(barTextNode);
       });
       expect(testEnv.outerHTML).toBe(
@@ -220,8 +221,10 @@ describe('OutlineNode tests', () => {
       let bazTextNode;
       await editor.update(() => {
         barTextNode = new TextNode('bar');
+        barTextNode.toggleUnmergeable();
         paragraphNode.append(barTextNode);
         bazTextNode = new TextNode('baz');
+        bazTextNode.toggleUnmergeable();
         paragraphNode.append(bazTextNode);
       });
       expect(testEnv.outerHTML).toBe(
@@ -243,6 +246,7 @@ describe('OutlineNode tests', () => {
       let barTextNode;
       await editor.update(() => {
         barTextNode = new TextNode('bar');
+        barTextNode.toggleUnmergeable();
         paragraphNode.append(barTextNode);
       });
       expect(testEnv.outerHTML).toBe(
@@ -261,8 +265,10 @@ describe('OutlineNode tests', () => {
       let bazTextNode;
       await editor.update(() => {
         barTextNode = new TextNode('bar');
+        barTextNode.toggleUnmergeable();
         paragraphNode.append(barTextNode);
         bazTextNode = new TextNode('baz');
+        bazTextNode.toggleUnmergeable();
         paragraphNode.append(bazTextNode);
       });
       expect(testEnv.outerHTML).toBe(
@@ -287,9 +293,12 @@ describe('OutlineNode tests', () => {
         const rootNode = view.getRoot();
         barParagraphNode = new ParagraphNode();
         barTextNode = new TextNode('bar');
+        barTextNode.toggleUnmergeable();
         bazParagraphNode = new ParagraphNode();
         bazTextNode = new TextNode('baz');
+        bazTextNode.toggleUnmergeable();
         quxTextNode = new TextNode('qux');
+        quxTextNode.toggleUnmergeable();
         paragraphNode.append(quxTextNode);
         expect(barTextNode.getCommonAncestor(bazTextNode)).toBe(null);
         barParagraphNode.append(barTextNode);
@@ -320,8 +329,10 @@ describe('OutlineNode tests', () => {
       let bazTextNode;
       await editor.update(() => {
         barTextNode = new TextNode('bar');
+        barTextNode.toggleUnmergeable();
         paragraphNode.append(barTextNode);
         bazTextNode = new TextNode('baz');
+        bazTextNode.toggleUnmergeable();
         paragraphNode.append(bazTextNode);
       });
       expect(testEnv.outerHTML).toBe(
@@ -361,11 +372,14 @@ describe('OutlineNode tests', () => {
       await editor.update((view) => {
         const rootNode = view.getRoot();
         barTextNode = new TextNode('bar');
+        barTextNode.toggleUnmergeable();
         paragraphNode.append(barTextNode);
         bazTextNode = new TextNode('baz');
+        bazTextNode.toggleUnmergeable();
         paragraphNode.append(bazTextNode);
         newParagraphNode = new ParagraphNode();
         quxTextNode = new TextNode('qux');
+        quxTextNode.toggleUnmergeable();
         newParagraphNode.append(quxTextNode);
         rootNode.append(newParagraphNode);
       });
@@ -741,7 +755,7 @@ describe('OutlineNode tests', () => {
         textNode.insertAfter(barTextNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span><span data-outline-text="true">bar</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">foobar</span></p></div>',
       );
     });
 
@@ -841,7 +855,7 @@ describe('OutlineNode tests', () => {
         textNode.insertBefore(barTextNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">bar</span><span data-outline-text="true">foo</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">barfoo</span></p></div>',
       );
     });
 

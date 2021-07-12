@@ -49,7 +49,6 @@ export default function useTypeahead(editor: OutlineEditor): void {
       function maybeRemoveTypeahead() {
         if (currentTypeaheadNode !== null) {
           currentTypeaheadNode.remove();
-          view.getRoot().normalizeTextNodes(true);
         }
         typeaheadNodeKey.current = null;
       }
@@ -67,7 +66,6 @@ export default function useTypeahead(editor: OutlineEditor): void {
             typeaheadNodeKey.current = newTypeaheadNode.getKey();
           }
         }
-        view.getRoot().normalizeTextNodes(true);
       }
 
       const selection = view.getSelection();

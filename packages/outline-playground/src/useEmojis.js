@@ -66,16 +66,9 @@ function textNodeTransform(node: TextNode, view: View): void {
   const selection = view.getSelection();
 
   let targetNode = node;
-  let parentToNormalize = null;
 
   while (targetNode !== null) {
     targetNode = findAndTransformEmoji(selection, targetNode);
-    if (targetNode !== null) {
-      parentToNormalize = targetNode.getParent();
-    }
-  }
-  if (parentToNormalize !== null) {
-    parentToNormalize.normalizeTextNodes(true);
   }
 }
 

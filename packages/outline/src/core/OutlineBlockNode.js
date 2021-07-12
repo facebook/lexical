@@ -16,7 +16,7 @@ import {
   wrapInTextNodes,
   updateDirectionIfNeeded,
 } from './OutlineNode';
-import {getSelection, Selection} from './OutlineSelection';
+import {Selection} from './OutlineSelection';
 import {errorOnReadOnly} from './OutlineView';
 import {
   IS_DIRECTIONLESS,
@@ -26,53 +26,6 @@ import {
   IS_RTL,
   IS_SEGMENTED,
 } from './OutlineConstants';
-
-function combineAdjacentTextNodes(
-  textNodes: Array<TextNode>,
-  restoreSelection,
-) {
-  const selection = getSelection();
-  // We're checking `selection !== null` later before we use these
-  // so initializing to 0 is safe and saves us an extra check below
-  let anchorOffset = 0;
-  let focusOffset = 0;
-  let anchorKey;
-  let focusKey;
-
-  if (restoreSelection && selection !== null) {
-    anchorOffset = selection.anchorOffset;
-    focusOffset = selection.focusOffset;
-    anchorKey = selection.anchorKey;
-    focusKey = selection.focusKey;
-  }
-
-  // Merge all text nodes into the first node
-  const writableMergeToNode = textNodes[0].getWritable();
-  const key = writableMergeToNode.__key;
-  let textLength = writableMergeToNode.getTextContentSize();
-  for (let i = 1; i < textNodes.length; i++) {
-    const textNode = textNodes[i];
-    const siblingText = textNode.getTextContent();
-    if (
-      restoreSelection &&
-      selection !== null &&
-      textNode.__key === anchorKey
-    ) {
-      selection.anchorOffset = textLength + anchorOffset;
-      selection.anchorKey = key;
-    }
-    if (restoreSelection && selection !== null && textNode.__key === focusKey) {
-      selection.focusOffset = textLength + focusOffset;
-      selection.focusKey = key;
-    }
-    writableMergeToNode.spliceText(textLength, 0, siblingText);
-    textLength += siblingText.length;
-    textNode.remove();
-  }
-  if (restoreSelection && selection !== null) {
-    selection.isDirty = true;
-  }
-}
 
 export type ParsedBlockNode = {
   ...ParsedNode,
@@ -241,51 +194,6 @@ export class BlockNode extends OutlineNode {
       wrapInTextNodes(writableNodeToAppend);
     }
     return writableSelf;
-  }
-  normalizeTextNodes(restoreSelection?: boolean): void {
-    errorOnReadOnly();
-    const children = this.getChildren();
-    let toNormalize = [];
-    let lastTextNodeFlags: number | null = null;
-    let lastTextNodeType = null;
-    for (let i = 0; i < children.length; i++) {
-      const child: OutlineNode = children[i].getLatest();
-
-      if (
-        isTextNode(child) &&
-        !child.isImmutable() &&
-        !child.isSegmented() &&
-        !child.isUnmergeable()
-      ) {
-        const flags = child.__flags;
-        const type = child.__type;
-        if (
-          (lastTextNodeFlags === null || flags === lastTextNodeFlags) &&
-          (lastTextNodeType === null || lastTextNodeType === type)
-        ) {
-          toNormalize.push(child);
-          lastTextNodeFlags = flags;
-          lastTextNodeType = type;
-        } else {
-          if (toNormalize.length > 1) {
-            combineAdjacentTextNodes(toNormalize, restoreSelection);
-          }
-          toNormalize = [child];
-          lastTextNodeFlags = flags;
-          lastTextNodeType = type;
-        }
-      } else {
-        if (toNormalize.length > 1) {
-          combineAdjacentTextNodes(toNormalize, restoreSelection);
-        }
-        toNormalize = [];
-        lastTextNodeFlags = null;
-        lastTextNodeType = null;
-      }
-    }
-    if (toNormalize.length > 1) {
-      combineAdjacentTextNodes(toNormalize, restoreSelection);
-    }
   }
   insertNewAfter(selection: Selection): null | BlockNode {
     return null;

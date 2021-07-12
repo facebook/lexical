@@ -31,18 +31,6 @@ export class ListNode extends BlockNode {
     this.__tag = tag;
     this.__type = 'list';
   }
-  serialize(): ParsedListNode {
-    const {__tag} = this;
-    return {
-      ...super.serialize(),
-      __tag,
-    };
-  }
-  deserialize(data: $FlowFixMe) {
-    const {__tag, ...rest} = data;
-    super.deserialize(rest);
-    this.__tag = __tag;
-  }
   clone(): ListNode {
     return new ListNode(this.__tag, this.__key);
   }

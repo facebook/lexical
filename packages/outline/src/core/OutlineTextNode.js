@@ -204,18 +204,6 @@ export class TextNode extends OutlineNode {
     this.__text = text;
     this.__type = 'text';
   }
-  serialize(): ParsedTextNode {
-    const {__text} = this;
-    return {
-      ...super.serialize(),
-      __text,
-    };
-  }
-  deserialize(data: $FlowFixMe) {
-    const {__text, ...rest} = data;
-    super.deserialize(rest);
-    this.__text = __text;
-  }
   clone(): TextNode {
     return new TextNode(this.__text, this.__key);
   }

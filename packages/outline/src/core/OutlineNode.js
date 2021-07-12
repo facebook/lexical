@@ -239,59 +239,16 @@ export class OutlineNode {
     this.__key = key || generateKey(this);
     this.__parent = null;
 
-    // ensure custom nodes implement required methods
+    // Ensure custom nodes implement required methods.
     if (__DEV__) {
-      // don't check built-in nodes
-      if (
-        ![
-          'RootNode',
-          'BlockNode',
-          'TextNode',
-          'LineBreakNode',
-          'CodeNode',
-          'HashtagNode',
-          'HeadingNode',
-          'ImageNode',
-          'LinkNode',
-          'ListNode',
-          'ListItemNode',
-          'ParagraphNode',
-          'QuoteNode',
-          'OverflowedTextNode',
-        ].includes(this.constructor.name)
-      ) {
-        const proto = Object.getPrototypeOf(this);
-        ['clone', 'createDOM', 'serialize', 'deserialize'].forEach((method) => {
-          if (!proto.hasOwnProperty(method)) {
-            console.warn(
-              `${this.constructor.name} must implement "${method}" method`,
-            );
-          }
-        });
-      }
-    }
-  }
-  serialize(): ParsedNode {
-    const {__type, __flags, __key, __parent} = this;
-    return {
-      __type,
-      __flags,
-      __key,
-      __parent,
-    };
-  }
-  deserialize({__type, __flags, __key, __parent, ...rest}: ParsedNode) {
-    Object.assign(this, {
-      __type,
-      __flags,
-      __key,
-      __parent,
-    });
-    if (__DEV__) {
-      const keys = Object.keys(rest);
-      if (keys.length > 0) {
-        invariant(false, 'Extraneous keys in serialized node data: %s', keys);
-      }
+      const proto = Object.getPrototypeOf(this);
+      ['clone'].forEach((method) => {
+        if (!proto.hasOwnProperty(method)) {
+          console.warn(
+            `${this.constructor.name} must implement "${method}" method`,
+          );
+        }
+      });
     }
   }
   // Getters and Traversers

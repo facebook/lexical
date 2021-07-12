@@ -239,7 +239,6 @@ export function formatText(
       if (currentBlock === null) {
         invariant(false, 'formatText: currentBlock not be found');
       }
-      currentBlock.normalizeTextNodes(true);
     }
     return;
   }
@@ -279,7 +278,6 @@ export function formatText(
         replacement.setFlags(firstNextFlags);
         replacement.select(0, endOffset - startOffset);
       }
-      currentBlock.normalizeTextNodes(true);
     }
   } else {
     if (startOffset !== 0) {
@@ -323,7 +321,6 @@ export function formatText(
       lastNode.getKey(),
       endOffset,
     );
-    currentBlock.normalizeTextNodes(true);
   }
 }
 
@@ -374,7 +371,6 @@ export function insertParagraph(selection: Selection): void {
     if (isTextNode(nodeToSelect)) {
       nodeToSelect.select(anchorOffset, anchorOffset);
     }
-    newBlock.normalizeTextNodes(true);
     const blockFirstChild = currentBlock.getFirstChild();
     const blockLastChild = currentBlock.getLastChild();
     if (
@@ -387,7 +383,6 @@ export function insertParagraph(selection: Selection): void {
       const textNode = createTextNode('');
       currentBlock.append(textNode);
     }
-    currentBlock.normalizeTextNodes();
   }
 }
 
@@ -437,18 +432,11 @@ export function moveWordForward(
   moveCaretSelection(selection, isHoldingShift, isRTL, 'word');
 }
 
-function normalizeAnchorParent(selection: Selection): void {
-  const focusNode = selection.getFocusNode();
-  const parent = focusNode.getParentOrThrow();
-  parent.normalizeTextNodes(true);
-}
-
 export function deleteLineBackward(selection: Selection): void {
   if (selection.isCaret()) {
     updateCaretSelectionForRange(selection, true, 'lineboundary', false);
   }
   removeText(selection);
-  normalizeAnchorParent(selection);
 }
 
 export function deleteLineForward(selection: Selection): void {
@@ -456,7 +444,6 @@ export function deleteLineForward(selection: Selection): void {
     updateCaretSelectionForRange(selection, false, 'lineboundary', false);
   }
   removeText(selection);
-  normalizeAnchorParent(selection);
 }
 
 export function deleteWordBackward(selection: Selection): void {
@@ -464,7 +451,6 @@ export function deleteWordBackward(selection: Selection): void {
     updateCaretSelectionForRange(selection, true, 'word', false);
   }
   removeText(selection);
-  normalizeAnchorParent(selection);
 }
 
 export function deleteWordForward(selection: Selection): void {
@@ -472,7 +458,6 @@ export function deleteWordForward(selection: Selection): void {
     updateCaretSelectionForRange(selection, false, 'word', false);
   }
   removeText(selection);
-  normalizeAnchorParent(selection);
 }
 
 export function updateCaretSelectionForUnicodeCharacter(
@@ -581,7 +566,6 @@ function deleteCharacter(selection: Selection, isBackward: boolean): void {
   }
   removeText(selection);
   updateCaretSelectionForAdjacentHashtags(selection);
-  normalizeAnchorParent(selection);
 }
 
 export function deleteBackward(selection: Selection): void {
@@ -616,7 +600,6 @@ function removeSegment(node: TextNode, isBackward: boolean): void {
     } else {
       sibling.select();
     }
-    sibling.getParentBlockOrThrow().normalizeTextNodes(true);
   }
 }
 
@@ -780,21 +763,12 @@ export function insertNodes(
         prevSibling = sibling;
       }
     }
-    // Normalize the block where we started the insertion
-    topLevelBlock.normalizeTextNodes(true);
-    // Normalize the block where we ended the insertion
-    if (isBlockNode(target)) {
-      target.normalizeTextNodes(true);
-    }
   } else if (isTextNode(target)) {
     if (selectStart) {
       startingNode.select();
     } else {
       target.select();
     }
-    // We've only inserted text nodes, so we only need to normalize this block.
-    const parent = target.getParentBlockOrThrow();
-    parent.normalizeTextNodes(true);
   } else {
     const prevSibling = target.getPreviousSibling();
     if (isTextNode(prevSibling)) {
@@ -833,7 +807,6 @@ export function insertText(selection: Selection, text: string): void {
   }
   const firstNodeText = firstNode.getTextContent();
   const firstNodeTextLength = firstNodeText.length;
-  const currentBlock = firstNode.getParentBlockOrThrow();
   const isBefore = firstNode === selection.getAnchorNode();
 
   if (firstNode.isSegmented() || !firstNode.canInsertTextAtEnd()) {
@@ -974,7 +947,6 @@ export function insertText(selection: Selection, text: string): void {
         selectedNode.remove();
       }
     }
-    currentBlock.normalizeTextNodes(true);
   }
 }
 

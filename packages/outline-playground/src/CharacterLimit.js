@@ -36,8 +36,6 @@ function recursivelySetBlockOverflowedNodes(
       node.toggleOverflowed();
     }
   });
-  // Merge text nodes where possible
-  blockNode.normalizeTextNodes(value);
 }
 
 export default function CharacterLimit({
@@ -83,8 +81,6 @@ export default function CharacterLimit({
                   const [targetNode, nextOverflowNode] =
                     existingOverflowNode.splitText(offset);
                   targetNode.toggleOverflowed();
-                  const parentBlock = targetNode.getParentBlockOrThrow();
-                  parentBlock.normalizeTextNodes(true);
                   currentIntersectionRef.current = {
                     nodeKey: nextOverflowNode.getKey(),
                     offset: 0,
@@ -109,9 +105,6 @@ export default function CharacterLimit({
                 return;
               } else {
                 existingOverflowNode.toggleOverflowed();
-                existingOverflowNode
-                  .getParentBlockOrThrow()
-                  .normalizeTextNodes(true);
                 // Handle previous siblings
                 const siblings = node.getPreviousSiblings();
                 const parent = node.getTopParentBlockOrThrow();

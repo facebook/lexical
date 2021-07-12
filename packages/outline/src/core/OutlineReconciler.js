@@ -8,12 +8,13 @@
  */
 
 import type {NodeKey, NodeMapType} from './OutlineNode';
-import {triggerListeners, ViewModel} from './OutlineView';
 import type {OutlineEditor, EditorThemeClasses} from './OutlineEditor';
 import type {Selection as OutlineSelection} from './OutlineSelection';
+import type {TextNode} from './OutlineTextNode';
 import type {Node as ReactNode} from 'react';
 
-import {isBlockNode, isTextNode} from '.';
+import {triggerListeners, ViewModel} from './OutlineView';
+import {BlockNode, isBlockNode, isTextNode} from '.';
 import {
   isSelectionWithinEditor,
   isImmutableOrInertOrSegmented,
@@ -31,6 +32,7 @@ let activeDirtySubTrees: Set<NodeKey>;
 let activeDirtyNodes: Set<NodeKey>;
 let activePrevNodeMap: NodeMapType;
 let activeNextNodeMap: NodeMapType;
+let activeSelection: null | OutlineSelection;
 let activeViewModelIsDirty: boolean = false;
 
 function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
@@ -110,6 +112,7 @@ function createNode(
       dom.dir = 'rtl';
     }
     // Handle block children
+    normalizeTextNodes(node);
     const children = node.__children;
     const endIndex = children.length - 1;
     createChildren(children, 0, endIndex, dom, null);
@@ -236,10 +239,12 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
     destroyNode(key, null);
     return;
   }
-  const nextFlags = nextNode.__flags;
 
   if (isBlockNode(prevNode) && isBlockNode(nextNode)) {
+    // Reconcile block children
+    normalizeTextNodes(nextNode);
     const prevFlags = prevNode.__flags;
+    const nextFlags = nextNode.getLatest().__flags;
     if (nextFlags & IS_LTR) {
       if ((prevFlags & IS_LTR) === 0) {
         dom.dir = 'ltr';
@@ -251,12 +256,12 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
     } else if (prevFlags & IS_LTR || prevFlags & IS_RTL) {
       dom.removeAttribute('dir');
     }
-    // Reconcile block children
     const prevChildren = prevNode.__children;
-    const nextChildren = nextNode.__children;
+    const nextChildren = nextNode.getLatest().__children;
     const childrenAreDifferent = prevChildren !== nextChildren;
 
     if (childrenAreDifferent || isDirty) {
+      // We get the children again, in case they change.
       reconcileChildren(prevChildren, nextChildren, dom);
     }
   } else {
@@ -439,6 +444,7 @@ function reconcileRoot(
   prevViewModel: ViewModel,
   nextViewModel: ViewModel,
   editor: OutlineEditor,
+  selection: null | OutlineSelection,
   dirtySubTrees: Set<NodeKey>,
   dirtyNodes: Set<NodeKey>,
 ): void {
@@ -452,6 +458,7 @@ function reconcileRoot(
   activeDirtyNodes = dirtyNodes;
   activePrevNodeMap = prevViewModel._nodeMap;
   activeNextNodeMap = nextViewModel._nodeMap;
+  activeSelection = selection;
   activeViewModelIsDirty = nextViewModel._isDirty;
   reconcileNode('root', null);
   editor._textContent = editorTextContent;
@@ -470,6 +477,8 @@ function reconcileRoot(
   // $FlowFixMe
   activeNextNodeMap = undefined;
   // $FlowFixMe
+  activeSelection = undefined;
+  // $FlowFixMe
   activeEditorThemeClasses = undefined;
 }
 
@@ -486,6 +495,8 @@ export function reconcileViewModel(
   const isDirty = nextViewModel._isDirty;
   const needsUpdate = isDirty || nextViewModel.hasDirtyNodes();
   const domSelection: null | Selection = window.getSelection();
+  const prevSelection = prevViewModel._selection;
+  const nextSelection = nextViewModel._selection;
   let mutationsCausedLostSelection = false;
 
   if (needsUpdate) {
@@ -506,6 +517,7 @@ export function reconcileViewModel(
         prevViewModel,
         nextViewModel,
         editor,
+        nextSelection,
         dirtySubTrees,
         dirtyNodes,
       );
@@ -524,8 +536,6 @@ export function reconcileViewModel(
       mutationsCausedLostSelection = true;
     }
   }
-  const prevSelection = prevViewModel._selection;
-  const nextSelection = nextViewModel._selection;
 
   if (
     domSelection !== null &&
@@ -654,4 +664,81 @@ export function getElementByKeyOrThrow(
     );
   }
   return element;
+}
+
+function mergeAdjacentTextNodes(textNodes: Array<TextNode>): void {
+  // We're checking `selection !== null` later before we use these
+  // so initializing to 0 is safe and saves us an extra check below
+  let anchorOffset = 0;
+  let focusOffset = 0;
+  let anchorKey;
+  let focusKey;
+
+  if (activeSelection !== null) {
+    anchorOffset = activeSelection.anchorOffset;
+    focusOffset = activeSelection.focusOffset;
+    anchorKey = activeSelection.anchorKey;
+    focusKey = activeSelection.focusKey;
+  }
+
+  // Merge all text nodes into the first node
+  const writableMergeToNode = textNodes[0].getWritable();
+  const key = writableMergeToNode.__key;
+  let textLength = writableMergeToNode.getTextContentSize();
+  for (let i = 1; i < textNodes.length; i++) {
+    const textNode = textNodes[i];
+    const siblingText = textNode.getTextContent();
+    if (activeSelection !== null && textNode.__key === anchorKey) {
+      activeSelection.anchorOffset = textLength + anchorOffset;
+      activeSelection.anchorKey = key;
+    }
+    if (activeSelection !== null && textNode.__key === focusKey) {
+      activeSelection.focusOffset = textLength + focusOffset;
+      activeSelection.focusKey = key;
+    }
+    writableMergeToNode.spliceText(textLength, 0, siblingText);
+    textLength += siblingText.length;
+    textNode.remove();
+  }
+  if (activeSelection !== null) {
+    activeSelection.isDirty = true;
+  }
+}
+
+function normalizeTextNodes(block: BlockNode): void {
+  const children = block.getChildren();
+  let toNormalize = [];
+  let lastTextNodeFlags: number | null = null;
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i];
+
+    if (
+      isTextNode(child) &&
+      child.__type === 'text' &&
+      !child.isImmutable() &&
+      !child.isSegmented() &&
+      !child.isUnmergeable()
+    ) {
+      const flags = child.__flags;
+      if (lastTextNodeFlags === null || flags === lastTextNodeFlags) {
+        toNormalize.push(child);
+        lastTextNodeFlags = flags;
+      } else {
+        if (toNormalize.length > 1) {
+          mergeAdjacentTextNodes(toNormalize);
+        }
+        toNormalize = [child];
+        lastTextNodeFlags = flags;
+      }
+    } else {
+      if (toNormalize.length > 1) {
+        mergeAdjacentTextNodes(toNormalize);
+      }
+      toNormalize = [];
+      lastTextNodeFlags = null;
+    }
+  }
+  if (toNormalize.length > 1) {
+    mergeAdjacentTextNodes(toNormalize);
+  }
 }

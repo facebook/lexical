@@ -279,6 +279,21 @@ function textNodeTransform(node: TextNode, view: View): void {
 export default function useHashtags(editor: OutlineEditor): void {
   useEffect(() => {
     editor.registerNodeType('hashtag', HashtagNode);
-    return editor.addTextNodeTransform(textNodeTransform);
+    const removeTextNodeTransform =
+      editor.addTextNodeTransform(textNodeTransform);
+    const removeUpdateListener = editor.addListener('update', () => {
+      editor.update((view) => {
+        const selection = view.getSelection();
+        if (selection !== null) {
+          const anchorNode = selection.getAnchorNode();
+          textNodeTransform(anchorNode, view);
+        }
+      });
+    });
+
+    return () => {
+      removeTextNodeTransform();
+      removeUpdateListener();
+    };
   }, [editor]);
 }

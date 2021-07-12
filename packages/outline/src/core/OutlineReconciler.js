@@ -239,10 +239,12 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
     destroyNode(key, null);
     return;
   }
-  const nextFlags = nextNode.__flags;
 
   if (isBlockNode(prevNode) && isBlockNode(nextNode)) {
+    // Reconcile block children
+    normalizeTextNodes(nextNode);
     const prevFlags = prevNode.__flags;
+    const nextFlags = nextNode.getLatest().__flags;
     if (nextFlags & IS_LTR) {
       if ((prevFlags & IS_LTR) === 0) {
         dom.dir = 'ltr';
@@ -254,8 +256,6 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
     } else if (prevFlags & IS_LTR || prevFlags & IS_RTL) {
       dom.removeAttribute('dir');
     }
-    // Reconcile block children
-    normalizeTextNodes(nextNode);
     const prevChildren = prevNode.__children;
     const nextChildren = nextNode.getLatest().__children;
     const childrenAreDifferent = prevChildren !== nextChildren;
@@ -709,32 +709,26 @@ function normalizeTextNodes(block: BlockNode): void {
   const children = block.getChildren();
   let toNormalize = [];
   let lastTextNodeFlags: number | null = null;
-  let lastTextNodeType = null;
   for (let i = 0; i < children.length; i++) {
-    const child: OutlineNode = children[i].getLatest();
+    const child = children[i];
 
     if (
       isTextNode(child) &&
+      child.__type === 'text' &&
       !child.isImmutable() &&
       !child.isSegmented() &&
       !child.isUnmergeable()
     ) {
       const flags = child.__flags;
-      const type = child.__type;
-      if (
-        (lastTextNodeFlags === null || flags === lastTextNodeFlags) &&
-        (lastTextNodeType === null || lastTextNodeType === type)
-      ) {
+      if (lastTextNodeFlags === null || flags === lastTextNodeFlags) {
         toNormalize.push(child);
         lastTextNodeFlags = flags;
-        lastTextNodeType = type;
       } else {
         if (toNormalize.length > 1) {
           mergeAdjacentTextNodes(toNormalize);
         }
         toNormalize = [child];
         lastTextNodeFlags = flags;
-        lastTextNodeType = type;
       }
     } else {
       if (toNormalize.length > 1) {
@@ -742,7 +736,6 @@ function normalizeTextNodes(block: BlockNode): void {
       }
       toNormalize = [];
       lastTextNodeFlags = null;
-      lastTextNodeType = null;
     }
   }
   if (toNormalize.length > 1) {

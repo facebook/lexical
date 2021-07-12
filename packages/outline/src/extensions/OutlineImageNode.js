@@ -12,6 +12,7 @@ import type {
   NodeKey,
   OutlineNode,
   OutlineEditor,
+  ParsedNode,
 } from 'outline';
 
 import {DecoratorNode} from 'outline';
@@ -61,6 +62,12 @@ function Image({
   );
 }
 
+export type ParsedImageNode = {
+  ...ParsedNode,
+  __src: string,
+  __altText: string,
+};
+
 export class ImageNode extends DecoratorNode {
   __src: string;
   __altText: string;
@@ -70,6 +77,20 @@ export class ImageNode extends DecoratorNode {
     this.__type = 'image';
     this.__src = src;
     this.__altText = altText;
+  }
+  serialize(): ParsedImageNode {
+    const {__src, __altText} = this;
+    return {
+      ...super.serialize(),
+      __src,
+      __altText,
+    };
+  }
+  deserialize(data: $FlowFixMe) {
+    const {__src, __altText, ...rest} = data;
+    super.deserialize(rest);
+    this.__src = __src;
+    this.__altText = __altText;
   }
   getTextContent(): string {
     return this.__altText;

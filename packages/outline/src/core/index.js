@@ -15,6 +15,8 @@ export type {
   ParsedNodeMap,
   OutlineNode,
 } from './OutlineNode';
+export type {ParsedBlockNode} from './OutlineBlockNode';
+export type {ParsedTextNode} from './OutlineTextNode';
 export type {Selection} from './OutlineSelection';
 export type {TextFormatType} from './OutlineTextNode';
 

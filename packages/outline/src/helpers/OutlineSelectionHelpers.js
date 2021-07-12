@@ -13,6 +13,7 @@ import type {
   Selection,
   TextFormatType,
   TextNode,
+  ParsedNode,
 } from 'outline';
 
 import {
@@ -42,7 +43,7 @@ function cloneWithProperties<T: OutlineNode>(node: T): T {
 
 export function getNodesInRange(selection: Selection): {
   range: Array<NodeKey>,
-  nodeMap: Array<[NodeKey, OutlineNode]>,
+  nodeMap: Array<[NodeKey, ParsedNode]>,
 } {
   const anchorNode = selection.getAnchorNode();
   const focusNode = selection.getFocusNode();
@@ -61,7 +62,7 @@ export function getNodesInRange(selection: Selection): {
     endOffset = isBefore ? focusOffset : anchorOffset;
     firstNode.__text = firstNode.__text.slice(startOffset, endOffset);
     const key = firstNode.getKey();
-    return {range: [key], nodeMap: [[key, firstNode]]};
+    return {range: [key], nodeMap: [[key, firstNode.serialize()]]};
   }
   const nodes = selection.getNodes();
   const firstNode = nodes[0];
@@ -97,7 +98,7 @@ export function getNodesInRange(selection: Selection): {
     }
 
     if (!nodeMap.has(nodeKey)) {
-      nodeMap.set(nodeKey, node);
+      nodeMap.set(nodeKey, node.serialize());
     }
 
     if (parent === sourceParent && parent !== null) {
@@ -131,7 +132,7 @@ export function getNodesInRange(selection: Selection): {
             includeTopLevelBlock = true;
           }
           if (!nodeMap.has(currKey)) {
-            nodeMap.set(currKey, node);
+            nodeMap.set(currKey, node.serialize());
           }
 
           const nextParent = node.getParent();

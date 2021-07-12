@@ -7,13 +7,23 @@
  * @flow strict
  */
 
-import type {OutlineNode, NodeKey, EditorThemeClasses} from 'outline';
+import type {
+  OutlineNode,
+  NodeKey,
+  ParsedBlockNode,
+  EditorThemeClasses,
+} from 'outline';
 import type {ParagraphNode} from 'outline/ParagraphNode';
 
 import {BlockNode} from 'outline';
 import {createParagraphNode} from 'outline/ParagraphNode';
 
 type HeadingTagType = 'h1' | 'h2' | 'h3' | 'h4' | 'h5';
+
+export type ParsedHeadingNode = {
+  ...ParsedBlockNode,
+  __tag: HeadingTagType,
+};
 
 export class HeadingNode extends BlockNode {
   __tag: HeadingTagType;
@@ -23,13 +33,17 @@ export class HeadingNode extends BlockNode {
     this.__tag = tag;
     this.__type = 'heading';
   }
-  static parse(
-    // $FlowFixMe: TODO: refine
-    data: Object,
-  ): HeadingNode {
-    const header = new HeadingNode(data._tag);
-    header.flags = data.flags;
-    return header;
+  serialize(): ParsedHeadingNode {
+    const {__tag} = this;
+    return {
+      ...super.serialize(),
+      __tag,
+    };
+  }
+  deserialize(data: $FlowFixMe) {
+    const {__tag, ...rest} = data;
+    super.deserialize(rest);
+    this.__tag = __tag;
   }
   clone(): HeadingNode {
     return new HeadingNode(this.__tag, this.__key);

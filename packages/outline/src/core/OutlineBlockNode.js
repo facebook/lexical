@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {NodeKey} from './OutlineNode';
+import type {NodeKey, ParsedNode} from './OutlineNode';
 
 import {isTextNode, TextNode, isLineBreakNode} from '.';
 import {
@@ -74,12 +74,29 @@ function combineAdjacentTextNodes(
   }
 }
 
+export type ParsedBlockNode = {
+  ...ParsedNode,
+  __children: Array<NodeKey>,
+};
+
 export class BlockNode extends OutlineNode {
   __children: Array<NodeKey>;
 
   constructor(key?: string) {
     super(key);
     this.__children = [];
+  }
+  serialize(): ParsedBlockNode {
+    const {__children} = this;
+    return {
+      ...super.serialize(),
+      __children,
+    };
+  }
+  deserialize(data: $FlowFixMe) {
+    const {__children, ...rest} = data;
+    super.deserialize(rest);
+    this.__children = __children;
   }
   getChildren(): Array<OutlineNode> {
     const self = this.getLatest();

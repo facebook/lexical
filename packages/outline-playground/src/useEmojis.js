@@ -13,6 +13,7 @@ import type {
   NodeKey,
   EditorThemeClasses,
   Selection,
+  ParsedTextNode,
 } from 'outline';
 
 import {useEffect} from 'react';
@@ -88,6 +89,11 @@ export default function useEmojis(editor: OutlineEditor): void {
   }, [editor]);
 }
 
+export type ParsedEmojiNode = {
+  ...ParsedTextNode,
+  __className: string,
+};
+
 class EmojiNode extends TextNode {
   __className: string;
 
@@ -96,7 +102,18 @@ class EmojiNode extends TextNode {
     this.__className = className;
     this.__type = 'emoji';
   }
-
+  serialize(): ParsedEmojiNode {
+    const {__className} = this;
+    return {
+      ...super.serialize(),
+      __className,
+    };
+  }
+  deserialize(data: $FlowFixMe) {
+    const {__className, ...rest} = data;
+    super.deserialize(rest);
+    this.__className = __className;
+  }
   clone() {
     return new EmojiNode(this.__className, this.__text, this.__key);
   }

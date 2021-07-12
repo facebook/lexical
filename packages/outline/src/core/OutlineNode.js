@@ -46,7 +46,7 @@ export type ParsedNode = {
   __key: string,
   __type: string,
   __flags: number,
-  __children: Array<NodeKey>,
+  __parent: null | NodeKey,
   ...
 };
 export type ParsedNodeMap = Map<NodeKey, ParsedNode>;
@@ -258,7 +258,29 @@ export class OutlineNode {
       }
     }
   }
-
+  serialize(): ParsedNode {
+    const {__type, __flags, __key, __parent} = this;
+    return {
+      __type,
+      __flags,
+      __key,
+      __parent,
+    };
+  }
+  deserialize({__type, __flags, __key, __parent, ...rest}: ParsedNode) {
+    Object.assign(this, {
+      __type,
+      __flags,
+      __key,
+      __parent,
+    });
+    if (__DEV__) {
+      const keys = Object.keys(rest);
+      if (keys.length > 0) {
+        invariant(false, 'Extraneous keys in serialized node data: %s', keys);
+      }
+    }
+  }
   // Getters and Traversers
 
   getType(): string {
@@ -753,7 +775,7 @@ function getNodeByKeyOrThrow<N: OutlineNode>(key: NodeKey): N {
 }
 
 export function createNodeFromParse(
-  parsedNode: ParsedNode,
+  parsedNode: $FlowFixMe,
   parsedNodeMap: ParsedNodeMap,
   editor: OutlineEditor,
   parentKey: null | NodeKey,

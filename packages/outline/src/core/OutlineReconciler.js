@@ -112,9 +112,9 @@ function createNode(
       dom.dir = 'rtl';
     }
     // Handle block children
+    normalizeTextNodes(node);
     const children = node.__children;
     const endIndex = children.length - 1;
-    normalizeTextNodes(node);
     createChildren(children, 0, endIndex, dom, null);
   } else {
     if (isDecoratorNode(node)) {
@@ -255,12 +255,12 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
       dom.removeAttribute('dir');
     }
     // Reconcile block children
+    normalizeTextNodes(nextNode);
     const prevChildren = prevNode.__children;
     const nextChildren = nextNode.__children;
     const childrenAreDifferent = prevChildren !== nextChildren;
 
     if (childrenAreDifferent || isDirty) {
-      normalizeTextNodes(nextNode);
       reconcileChildren(prevChildren, nextChildren, dom);
     }
   } else {

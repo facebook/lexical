@@ -7,7 +7,7 @@
  * @flow strict-local
  */
 
-import type {BlockNode, OutlineEditor, View, OutlineNode} from 'outline';
+import type {OutlineEditor, View, OutlineNode} from 'outline';
 
 import * as React from 'react';
 
@@ -19,13 +19,12 @@ import {updateWithoutHistory} from 'outline/HistoryHelpers';
 const CHARACTER_LIMIT = 30;
 
 function recursivelySetBlockOverflowedNodes(
-  blockNode: BlockNode,
   nodes: Array<OutlineNode>,
   value: boolean,
 ) {
   nodes.forEach((node) => {
     if (isBlockNode(node)) {
-      recursivelySetBlockOverflowedNodes(node, node.getChildren(), value);
+      recursivelySetBlockOverflowedNodes(node.getChildren(), value);
     } else if (
       isTextNode(node) &&
       node.isOverflowed() !== value &&
@@ -89,26 +88,17 @@ export default function CharacterLimit({
                   // Handle next siblings
                   const parentBlock = node.getParentBlockOrThrow();
                   const siblings = node.getNextSiblings();
-                  recursivelySetBlockOverflowedNodes(
-                    parentBlock,
-                    siblings,
-                    true,
-                  );
+                  recursivelySetBlockOverflowedNodes(siblings, true);
                   // Handle next sibling blocks
                   const parentBlockSiblings = parentBlock.getNextSiblings();
-                  recursivelySetBlockOverflowedNodes(
-                    parentBlock,
-                    parentBlockSiblings,
-                    true,
-                  );
+                  recursivelySetBlockOverflowedNodes(parentBlockSiblings, true);
                 }
                 return;
               } else {
                 existingOverflowNode.toggleOverflowed();
                 // Handle previous siblings
                 const siblings = node.getPreviousSiblings();
-                const parent = node.getTopParentBlockOrThrow();
-                recursivelySetBlockOverflowedNodes(parent, siblings, false);
+                recursivelySetBlockOverflowedNodes(siblings, false);
                 currentIntersectionRef.current = {
                   nodeKey: node.getKey(),
                   offset: startOffset,
@@ -133,18 +123,14 @@ export default function CharacterLimit({
           // Handle next siblings
           const siblings = node.getNextSiblings();
           const parentBlock = node.getParentBlockOrThrow();
-          recursivelySetBlockOverflowedNodes(parentBlock, siblings, true);
+          recursivelySetBlockOverflowedNodes(siblings, true);
           // Handle next sibling blocks
           const parentBlockSiblings = parentBlock.getNextSiblings();
           currentIntersectionRef.current = {
             nodeKey: targetNode.getKey(),
             offset: 0,
           };
-          recursivelySetBlockOverflowedNodes(
-            parentBlock,
-            parentBlockSiblings,
-            true,
-          );
+          recursivelySetBlockOverflowedNodes(parentBlockSiblings, true);
         }
       });
     } else if (charactersOver > 0) {

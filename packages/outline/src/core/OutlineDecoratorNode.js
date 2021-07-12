@@ -20,6 +20,18 @@ export class DecoratorNode extends OutlineNode {
     super(key);
     this.__type = 'decorator';
     this.__flags = IS_IMMUTABLE;
+
+    // ensure custom nodes implement required methods
+    if (__DEV__) {
+      const proto = Object.getPrototypeOf(this);
+      ['decorate'].forEach((method) => {
+        if (!proto.hasOwnProperty(method)) {
+          console.warn(
+            `${this.constructor.name} must implement "${method}" method`,
+          );
+        }
+      });
+    }
   }
 
   decorate(editor: OutlineEditor): ReactNode {

@@ -257,10 +257,11 @@ function reconcileNode(key: NodeKey, parentDOM: HTMLElement | null): void {
     // Reconcile block children
     normalizeTextNodes(nextNode);
     const prevChildren = prevNode.__children;
-    const nextChildren = nextNode.__children;
+    const nextChildren = nextNode.getLatest().__children;
     const childrenAreDifferent = prevChildren !== nextChildren;
 
     if (childrenAreDifferent || isDirty) {
+      // We get the children again, in case they change.
       reconcileChildren(prevChildren, nextChildren, dom);
     }
   } else {

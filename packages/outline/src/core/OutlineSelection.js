@@ -146,6 +146,14 @@ export class Selection {
     this.anchorOffset = anchorOffset;
     this.focusOffset = focusOffset;
   }
+  clone(): Selection {
+    return new Selection(
+      this.anchorKey,
+      this.anchorOffset,
+      this.focusKey,
+      this.focusOffset,
+    );
+  }
 }
 
 function resolveNonLineBreakOrInertNode(

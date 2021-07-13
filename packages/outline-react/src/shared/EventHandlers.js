@@ -71,6 +71,7 @@ const ZERO_WIDTH_JOINER_CHAR = '\u2060';
 
 let compositonStartOffset = 0;
 let compositonStartKey = null;
+let lastKeyWasMaybeAndroidSoftKey = false;
 
 // TODO the Flow types here needs fixing
 export type EventHandler = (
@@ -83,6 +84,11 @@ export type EventHandler = (
 export type EventHandlerState = {
   isReadOnly: boolean,
 };
+
+function updateAndroidSoftKeyFlagIfAny(event: KeyboardEvent): void {
+  lastKeyWasMaybeAndroidSoftKey =
+    event.key === 'Unidentified' && event.keyCode === 229;
+}
 
 function getNodeFromDOMNode(view: View, dom: Node): OutlineNode | null {
   let node = dom;
@@ -185,6 +191,7 @@ export function onKeyDownForPlainText(
   editor: OutlineEditor,
   state: EventHandlerState,
 ): void {
+  updateAndroidSoftKeyFlagIfAny(event);
   if (editor.isComposing()) {
     return;
   }
@@ -258,6 +265,7 @@ export function onKeyDownForRichText(
   editor: OutlineEditor,
   state: EventHandlerState,
 ): void {
+  updateAndroidSoftKeyFlagIfAny(event);
   if (editor.isComposing()) {
     return;
   }
@@ -493,7 +501,7 @@ export function onCopyForRichText(
   });
 }
 
-export function onCompositionUpdate(
+export function onCompositionStart(
   event: CompositionEvent,
   editor: OutlineEditor,
   state: EventHandlerState,
@@ -505,8 +513,12 @@ export function onCompositionUpdate(
       compositonStartKey = selection.anchorKey;
       editor.setCompositionKey(selection.anchorKey);
       const data = event.data;
-      if (data != null) {
-        insertText(selection, data);
+      if (data != null && !lastKeyWasMaybeAndroidSoftKey) {
+        // We insert an empty space, ready for the composition
+        // to get inserted into the new node we create. If
+        // we don't do this, Safari will fail on us because
+        // there is no text node matching the selection.
+        insertText(selection, ' ');
       }
     }
   });

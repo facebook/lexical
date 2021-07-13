@@ -1,6 +1,6 @@
 {
   "description": "Outline is an extensible text-editor that provides reliable, accessible and performant typing experiences.",
-  "version": "0.0.22",
+  "version": "0.0.23",
   "license": "MIT",
   "author": {
     "name": "Dominic Gannaway",
@@ -18,9 +18,9 @@
   "scripts": {
     "start": "npm run build && npm run start --prefix packages/outline-playground",
     "dev": "concurrently \"npm:watch\" \"npm run start --prefix packages/outline-playground\"",
-    "build": "node scripts/build.js --clean",
-    "build-prod": "node scripts/build.js --prod --clean",
-    "build-www": "node scripts/build.js --www --clean && node scripts/build.js --prod --www",
+    "build": "node scripts/build.js -- --clean",
+    "build-prod": "node scripts/build.js -- --prod --clean",
+    "build-www": "node scripts/build.js -- --www --clean --prod",
     "clean": "node scripts/build.js --clean",
     "watch": "node scripts/build.js --watch",
     "flow": "node ./scripts/tasks/flow.js",
@@ -47,7 +47,7 @@
     "prettier": "node ./scripts/prettier.js write-changed",
     "prettier-all": "node ./scripts/prettier.js write",
     "prepare-ci": "npm run build --prefix packages/outline-playground && serve packages/outline-playground/build -l 4000",
-    "prepare-release": "npm run build --prod && node ./scripts/prepare-release.js",
+    "prepare-release": "npm run build -- --prod && node ./scripts/prepare-release.js",
     "prepare": "husky install"
   },
   "devDependencies": {

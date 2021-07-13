@@ -168,15 +168,10 @@ function triggerTextMutationListeners(
   nodeMap: NodeMapType,
   dirtyNodes: Array<NodeKey>,
   transforms: Array<TextNodeTransform>,
-  compositionKey: null | NodeKey,
 ): void {
   for (let s = 0; s < dirtyNodes.length; s++) {
     const nodeKey = dirtyNodes[s];
-    // We don't want to trigger mutation listeners on a
-    // text node that is currently being composed.
-    if (nodeKey === compositionKey) {
-      continue;
-    }
+
     const node = nodeMap.get(nodeKey);
 
     if (
@@ -226,16 +221,10 @@ export function applyTextTransforms(
     const nodeMap = viewModel._nodeMap;
     const dirtyNodes = Array.from(viewModel._dirtyNodes);
     const transforms = Array.from(textNodeTransforms);
-    const compositionKey = editor._compositionKey;
 
     try {
       isProcessingTextNodeTransforms = true;
-      triggerTextMutationListeners(
-        nodeMap,
-        dirtyNodes,
-        transforms,
-        compositionKey,
-      );
+      triggerTextMutationListeners(nodeMap, dirtyNodes, transforms);
     } finally {
       isProcessingTextNodeTransforms = false;
     }
@@ -313,7 +302,9 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
   editor._pendingViewModel = null;
   editor._viewModel = pendingViewModel;
   const previousActiveViewModel = activeViewModel;
+  const previousReadOnlyMode = isReadOnlyMode;
   activeViewModel = pendingViewModel;
+  isReadOnlyMode = false;
   try {
     reconcileViewModel(rootElement, currentViewModel, pendingViewModel, editor);
   } catch (error) {
@@ -331,6 +322,7 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
     return;
   } finally {
     activeViewModel = previousActiveViewModel;
+    isReadOnlyMode = previousReadOnlyMode;
   }
   garbageCollectDetachedDecorators(editor, pendingViewModel);
   const pendingDecorators = editor._pendingDecorators;

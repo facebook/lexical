@@ -669,6 +669,8 @@ export function getElementByKeyOrThrow(
 function mergeAdjacentTextNodes(textNodes: Array<TextNode>): void {
   // We're checking `selection !== null` later before we use these
   // so initializing to 0 is safe and saves us an extra check below
+  const editor = activeEditor;
+  const compositionKey = editor._compositionKey;
   let anchorOffset = 0;
   let focusOffset = 0;
   let anchorKey;
@@ -688,11 +690,15 @@ function mergeAdjacentTextNodes(textNodes: Array<TextNode>): void {
   for (let i = 1; i < textNodes.length; i++) {
     const textNode = textNodes[i];
     const siblingText = textNode.getTextContent();
-    if (activeSelection !== null && textNode.__key === anchorKey) {
+    const textNodeKey = textNode.__key;
+    if (compositionKey === textNodeKey) {
+      editor._compositionKey = key;
+    }
+    if (activeSelection !== null && textNodeKey === anchorKey) {
       activeSelection.anchorOffset = textLength + anchorOffset;
       activeSelection.anchorKey = key;
     }
-    if (activeSelection !== null && textNode.__key === focusKey) {
+    if (activeSelection !== null && textNodeKey === focusKey) {
       activeSelection.focusOffset = textLength + focusOffset;
       activeSelection.focusKey = key;
     }

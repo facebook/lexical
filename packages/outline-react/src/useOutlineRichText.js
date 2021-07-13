@@ -25,7 +25,7 @@ import {CAN_USE_BEFORE_INPUT} from 'shared/environment';
 import {
   onSelectionChange,
   onKeyDownForRichText,
-  onCompositionUpdate,
+  onCompositionStart,
   onCompositionEnd,
   onCutForRichText,
   onCopyForRichText,
@@ -54,7 +54,7 @@ function initEditor(editor: OutlineEditor): void {
 const events: InputEvents = [
   ['selectionchange', onSelectionChange],
   ['keydown', onKeyDownForRichText],
-  ['compositionupdate', onCompositionUpdate],
+  ['compositionstart', onCompositionStart],
   ['compositionend', onCompositionEnd],
   ['cut', onCutForRichText],
   ['copy', onCopyForRichText],

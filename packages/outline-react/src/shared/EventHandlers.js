@@ -652,6 +652,27 @@ function updateTextNodeFromDOMContent(
   }
 }
 
+export function onInput(
+  event: InputEvent,
+  editor: OutlineEditor,
+  state: EventHandlerState,
+): void {
+  const inputType = event.inputType;
+  if (
+    inputType === 'insertText' ||
+    inputType === 'insertCompositionText' ||
+    inputType === 'deleteCompositionText'
+  ) {
+    editor.update((view) => {
+      const domSelection = window.getSelection();
+      const anchorDOM = domSelection.anchorNode;
+      if (anchorDOM !== null && anchorDOM.nodeType === 3) {
+        updateTextNodeFromDOMContent(anchorDOM, view, editor);
+      }
+    });
+  }
+}
+
 function applyTargetRange(selection: Selection, event: InputEvent): void {
   if (event.getTargetRanges) {
     const targetRange = event.getTargetRanges()[0];

@@ -313,7 +313,9 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
   editor._pendingViewModel = null;
   editor._viewModel = pendingViewModel;
   const previousActiveViewModel = activeViewModel;
+  const previousReadOnlyMode = isReadOnlyMode;
   activeViewModel = pendingViewModel;
+  isReadOnlyMode = false;
   try {
     reconcileViewModel(rootElement, currentViewModel, pendingViewModel, editor);
   } catch (error) {
@@ -331,6 +333,7 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
     return;
   } finally {
     activeViewModel = previousActiveViewModel;
+    isReadOnlyMode = previousReadOnlyMode;
   }
   garbageCollectDetachedDecorators(editor, pendingViewModel);
   const pendingDecorators = editor._pendingDecorators;

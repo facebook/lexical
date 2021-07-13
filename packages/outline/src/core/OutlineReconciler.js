@@ -711,13 +711,18 @@ function normalizeTextNodes(block: BlockNode): void {
   let lastTextNodeFlags: number | null = null;
   for (let i = 0; i < children.length; i++) {
     const child = children[i];
+    const childKey = child.__key;
 
     if (
       isTextNode(child) &&
       child.__type === 'text' &&
       !child.isImmutable() &&
       !child.isSegmented() &&
-      !child.isUnmergeable()
+      !child.isUnmergeable() &&
+      (child.__text !== '' ||
+        activeSelection === null ||
+        (activeSelection.anchorKey !== childKey &&
+          activeSelection.focusKey !== childKey))
     ) {
       const flags = child.__flags;
       if (lastTextNodeFlags === null || flags === lastTextNodeFlags) {

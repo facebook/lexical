@@ -25,7 +25,7 @@ import {CAN_USE_BEFORE_INPUT} from 'shared/environment';
 import {
   onSelectionChange,
   onKeyDownForRichText,
-  onCompositionUpdate,
+  onCompositionStart,
   onCompositionEnd,
   onCutForRichText,
   onCopyForRichText,
@@ -33,7 +33,6 @@ import {
   onPasteForRichText,
   onDropPolyfill,
   onDragStartPolyfill,
-  onInput,
   onMutation,
 } from './shared/EventHandlers';
 import useOutlineDragonSupport from './shared/useOutlineDragonSupport';
@@ -54,13 +53,12 @@ function initEditor(editor: OutlineEditor): void {
 const events: InputEvents = [
   ['selectionchange', onSelectionChange],
   ['keydown', onKeyDownForRichText],
-  ['compositionupdate', onCompositionUpdate],
+  ['compositionstart', onCompositionStart],
   ['compositionend', onCompositionEnd],
   ['cut', onCutForRichText],
   ['copy', onCopyForRichText],
   ['dragstart', onDragStartPolyfill],
   ['paste', onPasteForRichText],
-  ['input', onInput],
 ];
 
 if (CAN_USE_BEFORE_INPUT) {

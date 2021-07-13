@@ -404,9 +404,7 @@ export function createSelection(
   const useDOMSelection =
     isSelectionChange ||
     eventType === 'beforeinput' ||
-    eventType === 'input' ||
-    eventType === 'compositionstart' ||
-    eventType === 'compositionupdate';
+    eventType === 'compositionstart';
   let anchorDOM, focusDOM, anchorOffset, focusOffset;
 
   if (eventType === undefined || lastSelection === null || useDOMSelection) {

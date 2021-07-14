@@ -48,15 +48,47 @@ export default function useTypeahead(editor: OutlineEditor): void {
 
       function maybeRemoveTypeahead() {
         if (currentTypeaheadNode !== null) {
+          const selection = view.getSelection();
+          if (selection !== null) {
+            let anchorNode = selection.getAnchorNode();
+            let anchorNodeOffset = selection.anchorOffset;
+            if (anchorNode.getKey() === currentTypeaheadNode.getKey()) {
+              anchorNode = anchorNode.getPreviousSibling();
+              if (isTextNode(anchorNode)) {
+                anchorNodeOffset = anchorNode.getTextContent().length;
+              }
+            }
+            let focusNode = selection.getFocusNode();
+            let focusNodeOffset = selection.focusOffset;
+            if (focusNode.getKey() === currentTypeaheadNode.getKey()) {
+              focusNode = focusNode.getPreviousSibling();
+              if (isTextNode(focusNode)) {
+                focusNodeOffset = focusNode.getTextContent().length;
+              }
+            }
+            if (focusNode !== null && anchorNode !== null) {
+              selection.setRange(
+                anchorNode.getKey(),
+                anchorNodeOffset,
+                focusNode.getKey(),
+                focusNodeOffset,
+              );
+            }
+          }
           currentTypeaheadNode.remove();
         }
         typeaheadNodeKey.current = null;
       }
 
-      function maybeAddTypeahead() {
-        if (currentTypeaheadNode?.getTextContent(true) === suggestion) {
+      function maybeAddOrEditTypeahead() {
+        if (currentTypeaheadNode !== null) {
+          // Edit
+          if (currentTypeaheadNode.getTextContent(true) !== suggestion) {
+            currentTypeaheadNode.setTextContent(suggestion ?? '');
+          }
           return;
         }
+        // Add
         const lastParagraph = view.getRoot().getLastChild();
         if (isBlockNode(lastParagraph)) {
           const lastTextNode = lastParagraph.getLastChild();
@@ -77,7 +109,7 @@ export default function useTypeahead(editor: OutlineEditor): void {
       if (suggestion === null || !selectionCollapsed || !isCaretPositionAtEnd) {
         maybeRemoveTypeahead();
       } else {
-        maybeAddTypeahead();
+        maybeAddOrEditTypeahead();
       }
     });
   }, [editor, getTypeaheadTextNode, selectionCollapsed, suggestion]);

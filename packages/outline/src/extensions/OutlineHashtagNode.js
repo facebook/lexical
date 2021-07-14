@@ -47,7 +47,7 @@ export class HashtagNode extends TextNode {
       // Check for invalid characters
       const targetTextContent = targetNode.getTextContent().slice(1);
       const indexOfInvalidChar = targetTextContent.search(
-        /[\s.,\\\/#!$%\^&\*;:{}=\-`~()]/,
+        /[\s.,\\\/#!$%\^&\*;:{}=\-`~()@]/,
       );
       if (indexOfInvalidChar === 0) {
         toggleHashtag(targetNode);

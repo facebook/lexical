@@ -169,6 +169,7 @@ function triggerTextMutationListeners(
   dirtyNodes: Array<NodeKey>,
   transforms: Array<TextNodeTransform>,
 ): void {
+  const compositionKey = getActiveEditor()._compositionKey;
   for (let s = 0; s < dirtyNodes.length; s++) {
     const nodeKey = dirtyNodes[s];
 
@@ -177,6 +178,8 @@ function triggerTextMutationListeners(
     if (
       node !== undefined &&
       isTextNode(node) &&
+      // We don't want to transform nodes being composed
+      node.__key !== compositionKey &&
       !isLineBreakNode(node) &&
       node.isAttached() &&
       // You shouldn't be able to transform these types of

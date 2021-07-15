@@ -791,10 +791,27 @@ export function onBeforeInputForPlainText(
         if (data) {
           // This is the end of composition
           editor._compositionKey = null;
+          // This fixes a Safari issue when composition starts
+          // in another node and gets moved to the next sibling.
+          // The offset is always off.
+          if (compositonStartKey !== null) {
+            if (compositonStartKey !== anchorNode.getKey()) {
+              const prevSibling = anchorNode.getPreviousSibling();
+              if (
+                isTextNode(prevSibling) &&
+                prevSibling.getKey() === compositonStartKey &&
+                compositonStartOffset === prevSibling.getTextContentSize()
+              ) {
+                anchorNode.select(0, 0);
+              }
+            }
+            compositonStartKey = null;
+          }
           insertText(selection, data);
         }
         break;
       }
+      case 'insertLineBreak':
       case 'insertParagraph': {
         // Used for Android
         editor.setCompositionKey(null);
@@ -950,6 +967,12 @@ export function onBeforeInputForRichText(
           }
           insertText(selection, data);
         }
+        break;
+      }
+      case 'insertLineBreak': {
+        // Used for Android
+        editor.setCompositionKey(null);
+        insertLineBreak(selection);
         break;
       }
       case 'insertParagraph': {

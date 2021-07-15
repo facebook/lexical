@@ -7,7 +7,13 @@
  * @flow
  */
 
-import type {OutlineEditor, NodeKey, EditorThemeClasses} from 'outline';
+import type {
+  OutlineEditor,
+  NodeKey,
+  EditorThemeClasses,
+  View,
+  Selection,
+} from 'outline';
 
 import React, {useCallback, useLayoutEffect, useMemo, useRef} from 'react';
 import {useEffect, useState} from 'react';
@@ -413,6 +419,30 @@ function getPossibleMentionMatch(text): MentionMatch | null {
   return match === null ? checkForCapitalizedNameMentions(text, 3) : match;
 }
 
+function getTextUpToAnchor(selection: Selection): string | null {
+  const anchorNode = selection.getAnchorNode();
+  // We should not be attempting to extract mentions out of nodes
+  // that are already being used for other core things. This is
+  // especially true for immutable nodes, which can't be mutated at all.
+  if (!anchorNode.isSimpleText()) {
+    return null;
+  }
+  const anchorOffset = selection.anchorOffset;
+  return anchorNode.getTextContent().slice(0, anchorOffset);
+}
+
+function getMentionsTextToSearch(editor: OutlineEditor): string | null {
+  let text = null;
+  editor.getViewModel().read((view: View) => {
+    const selection = view.getSelection();
+    if (selection == null) {
+      return;
+    }
+    text = getTextUpToAnchor(selection);
+  });
+  return text;
+}
+
 export default function useMentions(editor: OutlineEditor): React$Node {
   const [mentionMatch, setMentionMatch] = useState<MentionMatch | null>(null);
   const hasMentionRef = useRef(false);
@@ -432,19 +462,10 @@ export default function useMentions(editor: OutlineEditor): React$Node {
   }, [editor]);
 
   useEffect(() => {
-    const textNodeTransform = (node, view) => {
-      const selection = view.getSelection();
-      if (
-        selection === null ||
-        selection.getAnchorNode() !== node ||
-        !node.isSimpleText()
-      ) {
-        return;
-      }
-      const anchorOffset = selection.anchorOffset;
-      const text = node.getTextContent().slice(0, anchorOffset);
+    const updateListener = () => {
+      const text = getMentionsTextToSearch(editor);
 
-      if (text !== '') {
+      if (text) {
         const match = getPossibleMentionMatch(text);
         if (match !== null) {
           hasMentionRef.current = true;
@@ -457,7 +478,7 @@ export default function useMentions(editor: OutlineEditor): React$Node {
         setMentionMatch(null);
       }
     };
-    return editor.addTextNodeTransform(textNodeTransform);
+    return editor.addListener('update', updateListener);
   }, [editor]);
 
   const onKeyDown = useCallback(

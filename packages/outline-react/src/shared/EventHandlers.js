@@ -761,7 +761,7 @@ export function onBeforeInputForPlainText(
         event.preventDefault();
         insertLineBreak(selection);
         insertLineBreak(selection);
-      } else if (data == null && IS_SAFARI && event.dataTransfer) {
+      } else if (data == null && event.dataTransfer) {
         // Gets around a Safari text replacement bug.
         const text = event.dataTransfer.getData('text/plain');
         event.preventDefault();
@@ -919,7 +919,7 @@ export function onBeforeInputForRichText(
       } else if (data === '\n\n') {
         event.preventDefault();
         insertParagraph(selection);
-      } else if (data == null && IS_SAFARI && event.dataTransfer) {
+      } else if (data == null && event.dataTransfer) {
         // Gets around a Safari text replacement bug.
         const text = event.dataTransfer.getData('text/plain');
         event.preventDefault();
@@ -1070,7 +1070,31 @@ export function onMutation(
           const addedNode = getNodeFromDOMNode(view, addedDOM);
           // For now we don't want nodes that weren't added by Outline.
           // So lets remove this node if it's not managed by Outline
-          if (addedNode === null || addedDOM.nodeName === 'BR') {
+          let shouldRemoveNode =
+            addedNode === null || addedDOM.nodeName === 'BR';
+
+          // For some cases, we might want to incorporate the change into our
+          // view. This happens on Chrome with the TouchBar replacements.
+          if (isBlockNode(addedNode) && addedDOM.nodeType === 3) {
+            const textContent: string = addedDOM.nodeValue;
+            // If we're trying to add a text node directly into a block
+            // we need to give it a bounding text node
+            const textNode = createTextNode(textContent);
+            textNode.select();
+            // We need to find where to insert it.
+            const nextDOMSibling = addedDOM.nextSibling;
+            if (nextDOMSibling == null) {
+              // End
+              addedNode.append(textNode);
+            } else {
+              const nextSibling = getNodeFromDOMNode(view, nextDOMSibling);
+              if (nextSibling !== null) {
+                nextSibling.insertBefore(textNode);
+              }
+            }
+            shouldRemoveNode = true;
+          }
+          if (shouldRemoveNode) {
             const parent = addedDOM.parentNode;
             if (parent != null) {
               parent.removeChild(addedDOM);

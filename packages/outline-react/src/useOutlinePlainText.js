@@ -85,7 +85,11 @@ export default function useOutlinePlainText(
         editor.registerNodeType('paragraph', ParagraphNode);
       }
     });
-    const observer = new MutationObserver(onMutation.bind(null, editor));
+    const observer = new MutationObserver(
+      (mutations: Array<MutationRecord>) => {
+        onMutation(editor, mutations, observer);
+      },
+    );
     const removeMutationListener = editor.addListener(
       'mutation',
       (rootElement: null | HTMLElement) => {

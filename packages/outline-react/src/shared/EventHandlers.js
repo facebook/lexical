@@ -17,7 +17,7 @@ import type {
   View,
 } from 'outline';
 
-import {IS_SAFARI, CAN_USE_BEFORE_INPUT} from 'shared/environment';
+import {IS_SAFARI, CAN_USE_BEFORE_INPUT, IS_FIREFOX} from 'shared/environment';
 import {
   isDeleteBackward,
   isDeleteForward,
@@ -60,17 +60,10 @@ import {
   moveForward,
   moveWordForward,
 } from 'outline/SelectionHelpers';
-import {
-  createTextNode,
-  isTextNode,
-  isBlockNode,
-  isDecoratorNode,
-} from 'outline';
+import {createTextNode, isTextNode, isDecoratorNode} from 'outline';
 
 const ZERO_WIDTH_JOINER_CHAR = '\u2060';
 
-let compositonStartOffset = 0;
-let compositonStartKey = null;
 let lastKeyWasMaybeAndroidSoftKey = false;
 
 // TODO the Flow types here needs fixing
@@ -101,13 +94,6 @@ function getNodeFromDOMNode(view: View, dom: Node): OutlineNode | null {
     node = node.parentNode;
   }
   return null;
-}
-
-function getDOMFromNode(editor: OutlineEditor, node: null | OutlineNode) {
-  if (node === null) {
-    return null;
-  }
-  return editor.getElementByKey(node.getKey());
 }
 
 function getLastSelection(editor: OutlineEditor): null | Selection {
@@ -509,9 +495,7 @@ export function onCompositionStart(
   editor.update((view) => {
     const selection = view.getSelection();
     if (selection !== null && !editor.isComposing()) {
-      compositonStartOffset = selection.anchorOffset;
-      compositonStartKey = selection.anchorKey;
-      editor.setCompositionKey(selection.anchorKey);
+      view.setCompositionKey(selection.anchorKey);
       const data = event.data;
       if (data != null && !lastKeyWasMaybeAndroidSoftKey) {
         // We insert an empty space, ready for the composition
@@ -529,8 +513,19 @@ export function onCompositionEnd(
   editor: OutlineEditor,
   state: EventHandlerState,
 ): void {
-  editor.setCompositionKey(null);
-  editor.update((view) => {});
+  // There's a bug in FF where doing an update during
+  // compositionend can cause diacritics to be lost.
+  if (IS_FIREFOX) {
+    setTimeout(() => {
+      editor.update((view) => {
+        view.setCompositionKey(null);
+      });
+    });
+  } else {
+    editor.update((view) => {
+      view.setCompositionKey(null);
+    });
+  }
 }
 
 export function onSelectionChange(
@@ -602,7 +597,7 @@ function updateTextNodeFromDOMContent(
   let node = getNodeFromDOMNode(view, dom);
   if (node !== null && !node.isDirty()) {
     const rawTextContent = dom.nodeValue;
-    const textContent = rawTextContent.replace('\u2060', '');
+    const textContent = rawTextContent.replace(/[\u2060\u00A0]/g, '');
     const nodeKey = node.getKey();
 
     if (isTextNode(node) && textContent !== node.getTextContent()) {
@@ -728,7 +723,7 @@ export function onBeforeInputForPlainText(
     }
     if (inputType === 'deleteContentBackward') {
       // Used for Android
-      editor.setCompositionKey(null);
+      view.setCompositionKey(null);
       event.preventDefault();
       deleteBackward(selection);
       return;
@@ -772,7 +767,8 @@ export function onBeforeInputForPlainText(
 
         if (
           anchorKey !== focusKey ||
-          shouldInsertTextAfterTextNode(selection, anchorNode, true)
+          shouldInsertTextAfterTextNode(selection, anchorNode, true) ||
+          data.length > 1
         ) {
           event.preventDefault();
           insertText(selection, data);
@@ -790,23 +786,7 @@ export function onBeforeInputForPlainText(
       case 'insertFromComposition': {
         if (data) {
           // This is the end of composition
-          editor._compositionKey = null;
-          // This fixes a Safari issue when composition starts
-          // in another node and gets moved to the next sibling.
-          // The offset is always off.
-          if (compositonStartKey !== null) {
-            if (compositonStartKey !== anchorNode.getKey()) {
-              const prevSibling = anchorNode.getPreviousSibling();
-              if (
-                isTextNode(prevSibling) &&
-                prevSibling.getKey() === compositonStartKey &&
-                compositonStartOffset === prevSibling.getTextContentSize()
-              ) {
-                anchorNode.select(0, 0);
-              }
-            }
-            compositonStartKey = null;
-          }
+          view.setCompositionKey(null);
           insertText(selection, data);
         }
         break;
@@ -814,7 +794,7 @@ export function onBeforeInputForPlainText(
       case 'insertLineBreak':
       case 'insertParagraph': {
         // Used for Android
-        editor.setCompositionKey(null);
+        view.setCompositionKey(null);
         insertLineBreak(selection);
         break;
       }
@@ -887,7 +867,7 @@ export function onBeforeInputForRichText(
     }
     if (inputType === 'deleteContentBackward') {
       // Used for Android
-      editor.setCompositionKey(null);
+      view.setCompositionKey(null);
       event.preventDefault();
       deleteBackward(selection);
       return;
@@ -930,7 +910,8 @@ export function onBeforeInputForRichText(
 
         if (
           anchorKey !== focusKey ||
-          shouldInsertTextAfterTextNode(selection, anchorNode, true)
+          shouldInsertTextAfterTextNode(selection, anchorNode, true) ||
+          data.length > 1
         ) {
           event.preventDefault();
           insertText(selection, data);
@@ -948,36 +929,20 @@ export function onBeforeInputForRichText(
       case 'insertFromComposition': {
         if (data) {
           // This is the end of composition
-          editor._compositionKey = null;
-          // This fixes a Safari issue when composition starts
-          // in another node and gets moved to the next sibling.
-          // The offset is always off.
-          if (compositonStartKey !== null) {
-            if (compositonStartKey !== anchorNode.getKey()) {
-              const prevSibling = anchorNode.getPreviousSibling();
-              if (
-                isTextNode(prevSibling) &&
-                prevSibling.getKey() === compositonStartKey &&
-                compositonStartOffset === prevSibling.getTextContentSize()
-              ) {
-                anchorNode.select(0, 0);
-              }
-            }
-            compositonStartKey = null;
-          }
+          view.setCompositionKey(null);
           insertText(selection, data);
         }
         break;
       }
       case 'insertLineBreak': {
         // Used for Android
-        editor.setCompositionKey(null);
+        view.setCompositionKey(null);
         insertLineBreak(selection);
         break;
       }
       case 'insertParagraph': {
         // Used for Android
-        editor.setCompositionKey(null);
+        view.setCompositionKey(null);
         insertParagraph(selection);
         break;
       }
@@ -1033,6 +998,18 @@ export function onBeforeInputForRichText(
         deleteLineForward(selection);
         break;
       }
+      case 'formatBold': {
+        formatText(selection, 'bold');
+        break;
+      }
+      case 'formatItalic': {
+        formatText(selection, 'italic');
+        break;
+      }
+      case 'formatUnderline': {
+        formatText(selection, 'underline');
+        break;
+      }
       default:
       // NO-OP
     }
@@ -1042,6 +1019,7 @@ export function onBeforeInputForRichText(
 export function onMutation(
   editor: OutlineEditor,
   mutations: Array<MutationRecord>,
+  observer: MutationObserver,
 ): void {
   editor.update((view: View) => {
     for (let i = 0; i < mutations.length; i++) {
@@ -1055,122 +1033,39 @@ export function onMutation(
       }
       if (type === 'characterData') {
         if (target.nodeType === 3) {
-          // $FlowFixMe: we refine the type by checking nodeType above
+          // $FlowFixMe: nodeType === 3 is a Text DOM node
           updateTextNodeFromDOMContent(((target: any): Text), view, editor);
         }
       } else if (type === 'childList') {
-        // This occurs when the DOM tree has been mutated in terms of
-        // structure. This is actually not good. Outline should control
-        // the contenteditable. This can typically happen because of
-        // third party extensions and tools that directly mutate the DOM.
+        // We attempt to "undo" any changes that have occured outside
+        // of Outline. We want Outline's view model to be source of truth.
+        // To the user, these will look like no-ops.
+        const nextSibling = mutation.nextSibling;
         const addedNodes = mutation.addedNodes;
-
-        for (let s = 0; s < addedNodes.length; s++) {
-          const addedDOM = addedNodes[s];
-          const addedNode = getNodeFromDOMNode(view, addedDOM);
-          // For now we don't want nodes that weren't added by Outline.
-          // So lets remove this node if it's not managed by Outline
-          let shouldRemoveNode =
-            addedNode === null || addedDOM.nodeName === 'BR';
-
-          // For some cases, we might want to incorporate the change into our
-          // view. This happens on Chrome with the TouchBar replacements.
-          if (isBlockNode(addedNode) && addedDOM.nodeType === 3) {
-            const textContent: string = addedDOM.nodeValue;
-            // If we're trying to add a text node directly into a block
-            // we need to give it a bounding text node
-            const textNode = createTextNode(textContent);
-            textNode.select();
-            // We need to find where to insert it.
-            const nextDOMSibling = addedDOM.nextSibling;
-            if (nextDOMSibling == null) {
-              // End
-              addedNode.append(textNode);
-            } else {
-              const nextSibling = getNodeFromDOMNode(view, nextDOMSibling);
-              if (nextSibling !== null) {
-                nextSibling.insertBefore(textNode);
-              }
-            }
-            shouldRemoveNode = true;
-          }
-          if (shouldRemoveNode) {
-            const parent = addedDOM.parentNode;
-            if (parent != null) {
-              parent.removeChild(addedDOM);
-            }
-          }
-        }
         const removedNodes = mutation.removedNodes;
 
         for (let s = 0; s < removedNodes.length; s++) {
           const removedDOM = removedNodes[s];
-          if (removedDOM.nodeType === 3) {
-            // If the text node has been removed and the element is missing
-            // a text node, we can assume this to be something clearing down
-            // the TextNode.
-            if (
-              isTextNode(targetNode) &&
-              (target.firstChild == null || target.firstChild.nodeType !== 3)
-            ) {
-              // Come out of composition
-              editor._compositionKey = null;
-              // Clear the text node if possible
-              if (!targetNode.isImmutable()) {
-                targetNode.setTextContent('');
-              } else {
-                view.markNodeAsDirty(targetNode);
+          if (nextSibling != null) {
+            let ancestor = nextSibling;
+
+            while (ancestor != null) {
+              const parent = ancestor.parentNode;
+              if (parent === target) {
+                target.insertBefore(removedDOM, ancestor);
+                break;
               }
-              target.textContent = '';
-              targetNode.select();
+              ancestor = parent;
             }
           } else {
-            // If a node was removed that we control, we should re-attach it!
-            const removedNode = getNodeFromDOMNode(view, removedDOM);
-            if (removedNode !== null) {
-              const parentDOM = getDOMFromNode(editor, removedNode.getParent());
-              // We should be re-adding this back to the DOM (we may have already
-              // done it though, so we need to confirm).
-              if (parentDOM !== null) {
-                // Here's an interesting problem. We used to just find the sibling
-                // DOM and do parentDOM.insertBefore(removedDOM, siblingDOM);
-                // However, what if a DOM mutation has forced the sibling to also be
-                // disconnected? So instead, we can append this node, then proceed to
-                // append all siblings.
-
-                // First append this DOM.
-                parentDOM.appendChild(removedDOM);
-                // Append all siblings DOMs.
-                let sibling = removedNode.getNextSibling();
-
-                while (sibling !== null) {
-                  const siblingDOM = getDOMFromNode(editor, sibling);
-                  if (siblingDOM !== null) {
-                    parentDOM.appendChild(siblingDOM);
-                  }
-                  sibling = sibling.getNextSibling();
-                }
-
-                // Come out of composition
-                editor._compositionKey = null;
-
-                if (isTextNode(removedNode)) {
-                  // Clear the text node if possible
-                  if (!removedNode.isImmutable()) {
-                    removedNode.setTextContent('');
-                  } else {
-                    view.markNodeAsDirty(removedNode);
-                  }
-                  removedNode.select();
-                  removedDOM.textContent = '';
-                } else if (isBlockNode(removedNode)) {
-                  const emptyText = createTextNode();
-                  removedNode.clear();
-                  removedNode.append(emptyText);
-                  emptyText.select();
-                }
-              }
-            }
+            target.appendChild(removedDOM);
+          }
+        }
+        for (let s = 0; s < addedNodes.length; s++) {
+          const addedDOM = addedNodes[s];
+          const parentNode = addedDOM.parentNode;
+          if (parentNode != null) {
+            parentNode.removeChild(addedDOM);
           }
         }
       }
@@ -1184,5 +1079,8 @@ export function onMutation(
         view.setSelection(lastSelection);
       }
     }
+
+    // Discard all the mutations made during this function.
+    observer.takeRecords();
   });
 }

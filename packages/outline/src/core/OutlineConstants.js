@@ -29,6 +29,7 @@ export const IS_RTL = 1 << 12;
 // Reconciliation
 
 export const ZERO_WIDTH_JOINER_CHAR = '\u2060';
+export const NO_BREAK_SPACE_CHAR = '\u00A0';
 
 const RTL = '\u0591-\u07FF\uFB1D-\uFDFD\uFE70-\uFEFC';
 const LTR =

@@ -100,7 +100,11 @@ export default function useOutlineRichText(
         }
       },
     );
-    const observer = new MutationObserver(onMutation.bind(null, editor));
+    const observer = new MutationObserver(
+      (mutations: Array<MutationRecord>) => {
+        onMutation(editor, mutations, observer);
+      },
+    );
     const removeMutationListener = editor.addListener(
       'mutation',
       (rootElement: null | HTMLElement) => {

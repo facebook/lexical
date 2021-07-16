@@ -11,7 +11,7 @@ import type {Selection} from './OutlineSelection';
 import type {NodeKey, ParsedNode} from './OutlineNode';
 import type {EditorThemeClasses} from './OutlineEditor';
 
-import {OutlineNode} from './OutlineNode';
+import {OutlineNode, setCompositionKey, getCompositionKey} from './OutlineNode';
 import {getSelection, makeSelection} from './OutlineSelection';
 import {
   getTextDirection,
@@ -19,7 +19,7 @@ import {
   isImmutableOrInertOrSegmented,
 } from './OutlineUtils';
 import invariant from 'shared/invariant';
-import {errorOnReadOnly, getActiveEditor} from './OutlineView';
+import {errorOnReadOnly} from './OutlineView';
 import {
   IS_CODE,
   IS_BOLD,
@@ -29,6 +29,7 @@ import {
   IS_OVERFLOWED,
   IS_UNMERGEABLE,
   ZERO_WIDTH_JOINER_CHAR,
+  NO_BREAK_SPACE_CHAR,
 } from './OutlineConstants';
 
 export type TextFormatType =
@@ -155,10 +156,14 @@ function setTextContent(
       ? ''
       : ZERO_WIDTH_JOINER_CHAR;
 
+  // Always add a suffix if we're composing a node
+  const suffix = node.isComposing() ? NO_BREAK_SPACE_CHAR : '';
+  const text = prefix + nextText + suffix;
+
   if (firstChild == null) {
-    dom.textContent = prefix + nextText;
-  } else if (firstChild.nodeValue !== prefix + nextText) {
-    firstChild.nodeValue = prefix + nextText;
+    dom.textContent = text;
+  } else if (firstChild.nodeValue !== text) {
+    firstChild.nodeValue = text;
   }
   let possibleLineBreak = dom.lastChild;
   if (possibleLineBreak != null) {
@@ -447,13 +452,12 @@ export class TextNode extends OutlineNode {
     if (selection === null) {
       return makeSelection(key, anchorOffset, key, focusOffset);
     } else {
-      const editor = getActiveEditor();
-      const compositionKey = editor._compositionKey;
+      const compositionKey = getCompositionKey();
       if (
         compositionKey === selection.anchorKey ||
         compositionKey === selection.focusKey
       ) {
-        editor._compositionKey = key;
+        setCompositionKey(key);
       }
       selection.setRange(key, anchorOffset, key, focusOffset);
     }

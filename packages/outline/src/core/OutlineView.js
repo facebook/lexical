@@ -27,6 +27,8 @@ import {
   getNodeByKey,
   createNodeFromParse,
   markNodeAsDirty,
+  setCompositionKey,
+  getCompositionKey,
 } from './OutlineNode';
 import {isBlockNode, isTextNode, isLineBreakNode} from '.';
 import invariant from 'shared/invariant';
@@ -43,6 +45,8 @@ export type View = {
     parsedNodeMap: ParsedNodeMap,
   ) => OutlineNode,
   markNodeAsDirty: (node: OutlineNode) => void,
+  setCompositionKey: (compositionKey: NodeKey | null) => void,
+  getCompositionKey: () => null | NodeKey,
 };
 
 export type ParsedViewModel = {
@@ -126,6 +130,8 @@ const view: View = {
     return createNodeFromParse(parsedNode, parsedNodeMap, editor, null);
   },
   markNodeAsDirty,
+  setCompositionKey,
+  getCompositionKey,
 };
 
 export function viewModelHasDirtySelectionOrNeedsSync(
@@ -169,7 +175,7 @@ function triggerTextMutationListeners(
   dirtyNodes: Array<NodeKey>,
   transforms: Array<TextNodeTransform>,
 ): void {
-  const compositionKey = getActiveEditor()._compositionKey;
+  const compositionKey = getCompositionKey();
   for (let s = 0; s < dirtyNodes.length; s++) {
     const nodeKey = dirtyNodes[s];
 
@@ -306,6 +312,8 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
   editor._viewModel = pendingViewModel;
   const previousActiveViewModel = activeViewModel;
   const previousReadOnlyMode = isReadOnlyMode;
+  const previousActiveEditor = activeEditor;
+  activeEditor = editor;
   activeViewModel = pendingViewModel;
   isReadOnlyMode = false;
   try {
@@ -326,6 +334,7 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
   } finally {
     activeViewModel = previousActiveViewModel;
     isReadOnlyMode = previousReadOnlyMode;
+    activeEditor = previousActiveEditor;
   }
   garbageCollectDetachedDecorators(editor, pendingViewModel);
   const pendingDecorators = editor._pendingDecorators;

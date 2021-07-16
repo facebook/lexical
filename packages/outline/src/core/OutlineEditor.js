@@ -174,10 +174,7 @@ function updateEditor(
           garbageCollectDetachedNodes(currentPendingViewModel, editor);
         }
         const endingCompositionKey = editor._compositionKey;
-        if (
-          endingCompositionKey !== null &&
-          startingCompositionKey !== endingCompositionKey
-        ) {
+        if (startingCompositionKey !== endingCompositionKey) {
           currentPendingViewModel._flushSync = true;
         }
         const pendingSelection = currentPendingViewModel._selection;
@@ -290,10 +287,6 @@ class BaseOutlineEditor {
   }
   isComposing(): boolean {
     return this._compositionKey != null;
-  }
-  setCompositionKey(nodeKey: null | NodeKey): void {
-    this._compositionKey = nodeKey;
-    updateEditor(getSelf(this), emptyFunction, false);
   }
   registerNodeType(nodeType: string, klass: Class<OutlineNode>): void {
     this._nodeTypes.set(nodeType, klass);
@@ -456,7 +449,6 @@ declare export class OutlineEditor {
   _editorThemeClasses: EditorThemeClasses;
 
   isComposing(): boolean;
-  setCompositionKey(compositionKey: NodeKey | null): void;
   registerNodeType(nodeType: string, klass: Class<OutlineNode>): void;
   addListener(type: 'error', listener: ErrorListener): () => void;
   addListener(type: 'update', listener: UpdateListener): () => void;

@@ -23,6 +23,7 @@ import {
 import {IS_INERT, IS_RTL, IS_LTR, IS_IMMUTABLE} from './OutlineConstants';
 import invariant from 'shared/invariant';
 import {isDecoratorNode} from './OutlineDecoratorNode';
+import {getCompositionKey, setCompositionKey} from './OutlineNode';
 
 let subTreeTextContent = '';
 let editorTextContent = '';
@@ -669,8 +670,7 @@ export function getElementByKeyOrThrow(
 function mergeAdjacentTextNodes(textNodes: Array<TextNode>): void {
   // We're checking `selection !== null` later before we use these
   // so initializing to 0 is safe and saves us an extra check below
-  const editor = activeEditor;
-  const compositionKey = editor._compositionKey;
+  const compositionKey = getCompositionKey();
   let anchorOffset = 0;
   let focusOffset = 0;
   let anchorKey;
@@ -692,7 +692,7 @@ function mergeAdjacentTextNodes(textNodes: Array<TextNode>): void {
     const siblingText = textNode.getTextContent();
     const textNodeKey = textNode.__key;
     if (compositionKey === textNodeKey) {
-      editor._compositionKey = key;
+      setCompositionKey(key);
     }
     if (activeSelection !== null && textNodeKey === anchorKey) {
       activeSelection.anchorOffset = textLength + anchorOffset;

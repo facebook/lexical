@@ -171,9 +171,8 @@ function replaceNode<N: OutlineNode>(
   if (isTextNode(writableReplaceWith) && anchorOffset !== undefined) {
     writableReplaceWith.select(anchorOffset, anchorOffset);
   }
-  const editor = getActiveEditor();
-  if (editor._compositionKey === toReplaceKey) {
-    editor._compositionKey = newKey;
+  if (getCompositionKey() === toReplaceKey) {
+    setCompositionKey(newKey);
   }
   return writableReplaceWith;
 }
@@ -515,8 +514,7 @@ export class OutlineNode {
     return viewModel._dirtyNodes.has(this.__key);
   }
   isComposing(): boolean {
-    const editor = getActiveEditor();
-    return this.__key === editor._compositionKey;
+    return this.__key === getCompositionKey();
   }
   getLatest<N: OutlineNode>(): N {
     const latest = getNodeByKey<N>(this.__key);
@@ -742,6 +740,29 @@ function getNodeByKeyOrThrow<N: OutlineNode>(key: NodeKey): N {
     );
   }
   return node;
+}
+
+export function setCompositionKey(compositionKey: null | NodeKey): void {
+  const editor = getActiveEditor();
+  const previousCompositionKey = editor._compositionKey;
+  editor._compositionKey = compositionKey;
+  if (previousCompositionKey !== null) {
+    const node = getNodeByKey(previousCompositionKey);
+    if (node !== null) {
+      markNodeAsDirty(node);
+    }
+  }
+  if (compositionKey !== null) {
+    const node = getNodeByKey(compositionKey);
+    if (node !== null) {
+      markNodeAsDirty(node);
+    }
+  }
+}
+
+export function getCompositionKey(): null | NodeKey {
+  const editor = getActiveEditor();
+  return editor._compositionKey;
 }
 
 export function createNodeFromParse(

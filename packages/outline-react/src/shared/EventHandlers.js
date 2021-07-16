@@ -84,14 +84,25 @@ function updateAndroidSoftKeyFlagIfAny(event: KeyboardEvent): void {
 }
 
 function getNodeFromDOMNode(view: View, dom: Node): OutlineNode | null {
-  let node = dom;
-  while (node != null) {
-    // $FlowFixMe: internal field
-    const key: NodeKey | undefined = node.__outlineInternalRef;
-    if (key !== undefined) {
-      return view.getNodeByKey(key);
+  // $FlowFixMe: internal field
+  const key: NodeKey | undefined = dom.__outlineInternalRef;
+  if (key !== undefined) {
+    return view.getNodeByKey(key);
+  }
+  return null;
+}
+
+function getClosestNodeFromDOMNode(
+  view: View,
+  startingDOM: Node,
+): OutlineNode | null {
+  let dom = startingDOM;
+  while (dom != null) {
+    const node = getNodeFromDOMNode(view, dom);
+    if (node !== null) {
+      return node;
     }
-    node = node.parentNode;
+    dom = dom.parentNode;
   }
   return null;
 }
@@ -593,7 +604,7 @@ function updateTextNodeFromDOMContent(
   view: View,
   editor: OutlineEditor,
 ): void {
-  let node = getNodeFromDOMNode(view, dom);
+  let node = getClosestNodeFromDOMNode(view, dom);
   if (node !== null && !node.isDirty()) {
     const rawTextContent = dom.nodeValue;
     const textContent = rawTextContent.replace(/[\u2060\u00A0]/g, '');
@@ -1025,7 +1036,7 @@ export function onMutation(
       const mutation = mutations[i];
       const type = mutation.type;
       const target = mutation.target;
-      const targetNode = getNodeFromDOMNode(view, target);
+      const targetNode = getClosestNodeFromDOMNode(view, target);
 
       if (isDecoratorNode(targetNode)) {
         continue;
@@ -1049,12 +1060,12 @@ export function onMutation(
             let ancestor = nextSibling;
 
             while (ancestor != null) {
-              const parent = ancestor.parentNode;
-              if (parent === target) {
+              const parentDOM = ancestor.parentNode;
+              if (parentDOM === target) {
                 target.insertBefore(removedDOM, ancestor);
                 break;
               }
-              ancestor = parent;
+              ancestor = parentDOM;
             }
           } else {
             target.appendChild(removedDOM);
@@ -1062,9 +1073,10 @@ export function onMutation(
         }
         for (let s = 0; s < addedNodes.length; s++) {
           const addedDOM = addedNodes[s];
-          const parentNode = addedDOM.parentNode;
-          if (parentNode != null) {
-            parentNode.removeChild(addedDOM);
+          const node = getNodeFromDOMNode(view, addedDOM);
+          const parentDOM = addedDOM.parentNode;
+          if (parentDOM != null && node === null) {
+            parentDOM.removeChild(addedDOM);
           }
         }
       }
@@ -1079,7 +1091,28 @@ export function onMutation(
       }
     }
 
-    // Discard all the mutations made during this function.
-    observer.takeRecords();
+    // Capture all the mutations made during this function. This
+    // also prevents us having to process them on the next cycle
+    // of onMutation, as these mutations were made by us.
+    const records = observer.takeRecords();
+
+    // Check for any random auto-added <br> elements, and remove them.
+    // These get added by the browser when we undo the above mutations
+    // and this can lead to a broken UI.
+    if (records.length > 0) {
+      for (let i = 0; i < records.length; i++) {
+        const record = records[i];
+        const addedNodes = record.addedNodes;
+        for (let s = 0; s < addedNodes.length; s++) {
+          const addedDOM = addedNodes[s];
+          const parentDOM = addedDOM.parentNode;
+          if (parentDOM != null && addedDOM.nodeName === 'BR') {
+            parentDOM.removeChild(addedDOM);
+          }
+        }
+      }
+      // Clear any of those removal mutations
+      observer.takeRecords();
+    }
   });
 }

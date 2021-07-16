@@ -92,7 +92,7 @@ function getNodeFromDOMNode(view: View, dom: Node): OutlineNode | null {
   return null;
 }
 
-function getCloestNodeFromDOMNode(
+function getClosestNodeFromDOMNode(
   view: View,
   startingDOM: Node,
 ): OutlineNode | null {
@@ -604,7 +604,7 @@ function updateTextNodeFromDOMContent(
   view: View,
   editor: OutlineEditor,
 ): void {
-  let node = getCloestNodeFromDOMNode(view, dom);
+  let node = getClosestNodeFromDOMNode(view, dom);
   if (node !== null && !node.isDirty()) {
     const rawTextContent = dom.nodeValue;
     const textContent = rawTextContent.replace(/[\u2060\u00A0]/g, '');
@@ -1036,7 +1036,7 @@ export function onMutation(
       const mutation = mutations[i];
       const type = mutation.type;
       const target = mutation.target;
-      const targetNode = getCloestNodeFromDOMNode(view, target);
+      const targetNode = getClosestNodeFromDOMNode(view, target);
 
       if (isDecoratorNode(targetNode)) {
         continue;

@@ -17,7 +17,7 @@ import type {
   View,
 } from 'outline';
 
-import {IS_SAFARI, CAN_USE_BEFORE_INPUT} from 'shared/environment';
+import {IS_SAFARI, CAN_USE_BEFORE_INPUT, IS_FIREFOX} from 'shared/environment';
 import {
   isDeleteBackward,
   isDeleteForward,
@@ -513,9 +513,19 @@ export function onCompositionEnd(
   editor: OutlineEditor,
   state: EventHandlerState,
 ): void {
-  editor.update((view) => {
-    view.setCompositionKey(null);
-  });
+  // There's a bug in FF where doing an update during
+  // compositionend can cause diacritics to be lost.
+  if (IS_FIREFOX) {
+    setTimeout(() => {
+      editor.update((view) => {
+        view.setCompositionKey(null);
+      });
+    });
+  } else {
+    editor.update((view) => {
+      view.setCompositionKey(null);
+    });
+  }
 }
 
 export function onSelectionChange(
@@ -651,7 +661,6 @@ export function onInput(
     editor.update((view) => {
       const domSelection = window.getSelection();
       const anchorDOM = domSelection.anchorNode;
-
       if (anchorDOM !== null && anchorDOM.nodeType === 3) {
         updateTextNodeFromDOMContent(anchorDOM, view, editor);
       }

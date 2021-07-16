@@ -1057,6 +1057,8 @@ export function onMutation(
               }
               ancestor = parent;
             }
+          } else {
+            target.appendChild(removedDOM);
           }
         }
         for (let s = 0; s < addedNodes.length; s++) {

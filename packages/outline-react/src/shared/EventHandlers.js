@@ -564,7 +564,6 @@ export function checkForBadInsertion(
 export function handleBlockTextInputOnNode(
   anchorNode: TextNode,
   view: View,
-  editor: OutlineEditor,
 ): boolean {
   // If we are mutating an immutable or inert node, then reset
   // the content back to what it was before, as this is not allowed.
@@ -601,7 +600,7 @@ function updateTextNodeFromDOMContent(
     const nodeKey = node.getKey();
 
     if (isTextNode(node) && textContent !== node.getTextContent()) {
-      if (handleBlockTextInputOnNode(node, view, editor)) {
+      if (handleBlockTextInputOnNode(node, view)) {
         return;
       }
       if (editor.isComposing() && !node.isComposing()) {

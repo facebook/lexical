@@ -461,6 +461,7 @@ export function deleteWordForward(selection: Selection): void {
 
 export function updateCaretSelectionForUnicodeCharacter(
   selection: Selection,
+  isBackward: boolean,
 ): void {
   const anchorNode = selection.getAnchorNode();
   const focusNode = selection.getFocusNode();
@@ -477,7 +478,11 @@ export function updateCaretSelectionForUnicodeCharacter(
     if (startOffset !== characterOffset) {
       const text = anchorNode.getTextContent().slice(startOffset, endOffset);
       if (!doesContainGrapheme(text)) {
-        selection.anchorOffset = characterOffset;
+        if (isBackward) {
+          selection.focusOffset = characterOffset;
+        } else {
+          selection.anchorOffset = characterOffset;
+        }
       }
     }
   } else {
@@ -537,7 +542,7 @@ function deleteCharacter(selection: Selection, isBackward: boolean): void {
           return;
         }
       }
-      updateCaretSelectionForUnicodeCharacter(selection);
+      updateCaretSelectionForUnicodeCharacter(selection, isBackward);
     } else if (isBackward) {
       // Special handling around rich text nodes
       const anchorNode = selection.getAnchorNode();

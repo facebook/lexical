@@ -51,10 +51,10 @@ export type View = {
 
 export type ParsedViewModel = {
   _selection: null | {
-    anchorKey: string,
-    anchorOffset: number,
-    focusKey: string,
-    focusOffset: number,
+    _anchorKey: string,
+    _anchorOffset: number,
+    _focusKey: string,
+    _focusOffset: number,
   },
   _nodeMap: Array<[NodeKey, ParsedNode]>,
 };

@@ -465,18 +465,18 @@ export function getSelection(): null | Selection {
 
 export function createSelectionFromParse(
   parsedSelection: null | {
-    anchorKey: string,
-    anchorOffset: number,
-    focusKey: string,
-    focusOffset: number,
+    _anchorKey: string,
+    _anchorOffset: number,
+    _focusKey: string,
+    _focusOffset: number,
   },
 ): null | Selection {
   return parsedSelection === null
     ? null
     : new Selection(
-        parsedSelection.anchorKey,
-        parsedSelection.anchorOffset,
-        parsedSelection.focusKey,
-        parsedSelection.focusOffset,
+        parsedSelection._anchorKey,
+        parsedSelection._anchorOffset,
+        parsedSelection._focusKey,
+        parsedSelection._focusOffset,
       );
 }

@@ -51,10 +51,10 @@ export type ParsedNode = {
 };
 export type ParsedNodeMap = Map<NodeKey, ParsedNode>;
 type ParsedSelection = {
-  anchorKey: NodeKey,
-  anchorOffset: number,
-  focusKey: NodeKey,
-  focusOffset: number,
+  _anchorKey: NodeKey,
+  _anchorOffset: number,
+  _focusKey: NodeKey,
+  _focusOffset: number,
 };
 // export type NodeMapType = {root: RootNode, [key: NodeKey]: OutlineNode};
 
@@ -822,17 +822,17 @@ export function createNodeFromParse(
   // new selection record with the old keys mapped to the new ones.
   const originalSelection = state != null ? state.originalSelection : undefined;
   if (originalSelection != null) {
-    if (parsedNode.__key === originalSelection.anchorKey) {
+    if (parsedNode.__key === originalSelection._anchorKey) {
       state.remappedSelection = state.remappedSelection || {
         ...originalSelection,
       };
-      state.remappedSelection.anchorKey = node.__key;
+      state.remappedSelection._anchorKey = node.__key;
     }
-    if (parsedNode.__key === originalSelection.focusKey) {
+    if (parsedNode.__key === originalSelection._focusKey) {
       state.remappedSelection = state.remappedSelection || {
         ...originalSelection,
       };
-      state.remappedSelection.focusKey = node.__key;
+      state.remappedSelection._focusKey = node.__key;
     }
   }
   return node;

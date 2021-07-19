@@ -219,7 +219,7 @@ export function formatText(
   let startOffset;
   let endOffset;
 
-  if (selection.isCaret()) {
+  if (selection.isCollapsed()) {
     if (firstNodeTextLength === 0) {
       firstNode.setFlags(firstNextFlags);
       selection.isDirty = true;
@@ -324,7 +324,7 @@ export function formatText(
 }
 
 export function insertParagraph(selection: Selection): void {
-  if (!selection.isCaret()) {
+  if (!selection.isCollapsed()) {
     removeText(selection);
   }
   const anchorNode = selection.getAnchorNode();
@@ -432,28 +432,28 @@ export function moveWordForward(
 }
 
 export function deleteLineBackward(selection: Selection): void {
-  if (selection.isCaret()) {
+  if (selection.isCollapsed()) {
     updateCaretSelectionForRange(selection, true, 'lineboundary', false);
   }
   removeText(selection);
 }
 
 export function deleteLineForward(selection: Selection): void {
-  if (selection.isCaret()) {
+  if (selection.isCollapsed()) {
     updateCaretSelectionForRange(selection, false, 'lineboundary', false);
   }
   removeText(selection);
 }
 
 export function deleteWordBackward(selection: Selection): void {
-  if (selection.isCaret()) {
+  if (selection.isCollapsed()) {
     updateCaretSelectionForRange(selection, true, 'word', false);
   }
   removeText(selection);
 }
 
 export function deleteWordForward(selection: Selection): void {
-  if (selection.isCaret()) {
+  if (selection.isCollapsed()) {
     updateCaretSelectionForRange(selection, false, 'word', false);
   }
   removeText(selection);
@@ -519,10 +519,10 @@ export function updateCaretSelectionForAdjacentHashtags(
 }
 
 function deleteCharacter(selection: Selection, isBackward: boolean): void {
-  if (selection.isCaret()) {
+  if (selection.isCollapsed()) {
     updateCaretSelectionForRange(selection, isBackward, 'character', false);
 
-    if (!selection.isCaret()) {
+    if (!selection.isCollapsed()) {
       const focusNode = selection.getFocusNode();
       if (
         focusNode.isSegmented() &&
@@ -703,7 +703,7 @@ export function insertNodes(
   selectStart?: boolean,
 ): boolean {
   // If there is a range selected remove the text in it
-  if (!selection.isCaret()) {
+  if (!selection.isCollapsed()) {
     removeText(selection);
   }
   const anchorOffset = selection.anchorOffset;

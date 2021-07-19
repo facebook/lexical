@@ -518,18 +518,18 @@ function deleteCharacter(selection: Selection, isBackward: boolean): void {
     updateCaretSelectionForRange(selection, isBackward, 'character', false);
 
     if (!selection.isCaret()) {
-      const anchorNode = selection.getAnchorNode();
+      const focusNode = selection.getFocusNode();
       if (
-        anchorNode.isSegmented() &&
-        selection.anchorOffset !== anchorNode.getTextContentSize()
+        focusNode.isSegmented() &&
+        selection.anchorOffset !== focusNode.getTextContentSize()
       ) {
-        removeSegment(anchorNode, isBackward);
+        removeSegment(focusNode, isBackward);
         return;
       } else if (!isBackward) {
-        const nextSibling = anchorNode.getNextSibling();
+        const nextSibling = focusNode.getNextSibling();
 
         if (
-          selection.anchorOffset === anchorNode.getTextContentSize() &&
+          selection.anchorOffset === focusNode.getTextContentSize() &&
           isTextNode(nextSibling) &&
           nextSibling.isSegmented()
         ) {

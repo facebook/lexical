@@ -270,9 +270,9 @@ describe('OutlineTextNode tests', () => {
       const selection = textNode.selectNext(1, 3);
 
       expect(selection.getAnchorNode()).toBe(textNode2);
-      expect(selection.anchorOffset).toBe(1);
+      expect(selection.getAnchorOffset()).toBe(1);
       expect(selection.getFocusNode()).toBe(textNode2);
-      expect(selection.focusOffset).toBe(3);
+      expect(selection.getFocusOffset()).toBe(3);
 
       expect(() => {
         textNode2.selectNext(1, 3);
@@ -317,9 +317,9 @@ describe('OutlineTextNode tests', () => {
           const selection = textNode.select(anchorOffset, focusOffset);
 
           expect(selection.getAnchorNode()).toBe(textNode);
-          expect(selection.anchorOffset).toBe(expectedAnchorOffset);
+          expect(selection.getAnchorOffset()).toBe(expectedAnchorOffset);
           expect(selection.getFocusNode()).toBe(textNode);
-          expect(selection.focusOffset).toBe(expectedFocusOffset);
+          expect(selection.getFocusOffset()).toBe(expectedFocusOffset);
         });
       },
     );
@@ -474,9 +474,9 @@ describe('OutlineTextNode tests', () => {
           expect(selection.getAnchorNode()).toBe(
             childrenNodes[anchorNodeIndex],
           );
-          expect(selection.anchorOffset).toBe(anchorOffset);
+          expect(selection.getAnchorOffset()).toBe(anchorOffset);
           expect(selection.getFocusNode()).toBe(childrenNodes[focusNodeIndex]);
-          expect(selection.focusOffset).toBe(focusOffset);
+          expect(selection.getFocusOffset()).toBe(focusOffset);
         });
       },
     );

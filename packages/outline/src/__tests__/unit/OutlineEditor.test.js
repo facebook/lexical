@@ -374,15 +374,15 @@ describe('OutlineEditor tests', () => {
       });
 
       it('Parses the selection offsets of a stringified view model', async () => {
-        expect(parsedSelection.anchorOffset).toEqual(6);
-        expect(parsedSelection.focusOffset).toEqual(11);
+        expect(parsedSelection._anchorOffset).toEqual(6);
+        expect(parsedSelection._focusOffset).toEqual(11);
       });
 
       it('Remaps the selection keys of a stringified view model', async () => {
-        expect(parsedSelection.anchorKey).not.toEqual(originalText.__key);
-        expect(parsedSelection.focusKey).not.toEqual(originalText.__key);
-        expect(parsedSelection.anchorKey).toEqual(parsedText.__key);
-        expect(parsedSelection.focusKey).toEqual(parsedText.__key);
+        expect(parsedSelection._anchorKey).not.toEqual(originalText.__key);
+        expect(parsedSelection._focusKey).not.toEqual(originalText.__key);
+        expect(parsedSelection._anchorKey).toEqual(parsedText.__key);
+        expect(parsedSelection._focusKey).toEqual(parsedText.__key);
       });
     });
   });

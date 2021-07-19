@@ -134,7 +134,7 @@ const view: View = {
   getCompositionKey,
 };
 
-export function viewModelHasDirtySelectionOrNeedsSync(
+export function viewModelHasDirtySelection(
   viewModel: ViewModel,
   editor: OutlineEditor,
 ): boolean {
@@ -146,7 +146,7 @@ export function viewModelHasDirtySelectionOrNeedsSync(
   ) {
     return true;
   }
-  return selection !== null && (selection.isDirty || selection.needsSync);
+  return selection !== null && selection.isDirty;
 }
 
 export function enterViewModelScope<V>(

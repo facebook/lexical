@@ -16,7 +16,7 @@ import {
   cloneViewModel,
   enterViewModelScope,
   garbageCollectDetachedNodes,
-  viewModelHasDirtySelectionOrNeedsSync,
+  viewModelHasDirtySelection,
   ViewModel,
   commitPendingUpdates,
   applyTextTransforms,
@@ -210,7 +210,7 @@ function updateEditor(
   }
   const shouldUpdate =
     pendingViewModel.hasDirtyNodes() ||
-    viewModelHasDirtySelectionOrNeedsSync(pendingViewModel, editor);
+    viewModelHasDirtySelection(pendingViewModel, editor);
 
   if (!shouldUpdate) {
     if (viewModelWasCloned) {

@@ -171,7 +171,7 @@ function shouldOverrideBrowserDefault(
     : anchorOffset > anchorTextContentSize - 2 ||
       focusOffset > anchorTextContentSize - 2;
 
-  return selection.isCollapsed()
+  return selection.isCaret()
     ? isHoldingShift || selectionAtBoundary
     : isHoldingShift && selectionAtBoundary;
 }
@@ -592,7 +592,7 @@ function shouldInsertTextAfterTextNode(
 ): boolean {
   return (
     node.isSegmented() ||
-    (selection.isCollapsed() &&
+    (selection.isCaret() &&
       (!validateOffset ||
         node.getTextContentSize() === selection.anchorOffset) &&
       !node.canInsertTextAtEnd())
@@ -643,7 +643,7 @@ function updateTextNodeFromDOMContent(
 
       if (
         selection !== null &&
-        selection.isCollapsed() &&
+        selection.isCaret() &&
         selection.anchorKey === nodeKey
       ) {
         const domSelection = window.getSelection();
@@ -740,7 +740,7 @@ export function onBeforeInputForPlainText(
     }
     const data = event.data;
 
-    if (selection.isCollapsed()) {
+    if (selection.isCaret()) {
       applyTargetRange(selection, event);
     }
     if (isBadDoubleSpacePeriodReplacment(event, selection)) {
@@ -884,7 +884,7 @@ export function onBeforeInputForRichText(
     }
     const data = event.data;
 
-    if (selection.isCollapsed()) {
+    if (selection.isCaret()) {
       applyTargetRange(selection, event);
     }
     if (isBadDoubleSpacePeriodReplacment(event, selection)) {

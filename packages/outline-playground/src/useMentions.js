@@ -182,7 +182,7 @@ function MentionsTypeahead({
       const res = editor.getViewModel().read((view) => {
         const selection = view.getSelection();
 
-        if (selection !== null && selection.isCollapsed()) {
+        if (selection !== null && selection.isCaret()) {
           const range = document.createRange();
           const mentionsElement = editor.getElementByKey(selection.anchorKey);
           if (mentionsElement === null) {
@@ -223,7 +223,7 @@ function MentionsTypeahead({
     close();
     editor.update((view) => {
       const selection = view.getSelection();
-      if (match && selection && selection.isCollapsed()) {
+      if (match && selection && selection.isCaret()) {
         const {leadOffset, replaceableString} = match;
         const anchorNode = selection.getAnchorNode();
         if (anchorNode.getTextContent().indexOf(replaceableString) !== -1) {

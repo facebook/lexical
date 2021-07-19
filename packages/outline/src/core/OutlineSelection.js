@@ -53,7 +53,7 @@ export class Selection {
       this.focusOffset === selection.focusOffset
     );
   }
-  isCollapsed(): boolean {
+  isCaret(): boolean {
     return (
       this.anchorKey === this.focusKey && this.anchorOffset === this.focusOffset
     );

@@ -49,7 +49,7 @@ export class CodeNode extends BlockNode {
     const lastChild = children[childrenLength - 1];
     const hasTwoEndingLineBreaks = textContent.slice(-2) === '\n\n';
 
-    const offset = selection.anchorOffset;
+    const offset = selection.getAnchorOffset();
     if (
       anchorNode !== lastChild ||
       offset !== anchorTextContentLength ||

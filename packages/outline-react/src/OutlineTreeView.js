@@ -197,7 +197,7 @@ function printSelectedCharsLine({
   if (
     node.getTextContent() === '' ||
     (selection.getAnchorNode() === selection.getFocusNode() &&
-      selection.anchorOffset === selection.focusOffset)
+      selection.getAnchorOffset() === selection.getFocusOffset())
   ) {
     return '';
   }
@@ -245,20 +245,20 @@ function getSelectionStartEnd(node, selection): [number, number] {
   if (
     anchorNode === focusNode &&
     node === anchorNode &&
-    selection.anchorOffset !== selection.focusOffset
+    selection.getAnchorOffset() !== selection.getFocusOffset()
   ) {
     [start, end] =
-      selection.anchorOffset < selection.focusOffset
-        ? [selection.anchorOffset, selection.focusOffset]
-        : [selection.focusOffset, selection.anchorOffset];
+      selection.getAnchorOffset() < selection.getFocusOffset()
+        ? [selection.getAnchorOffset(), selection.getFocusOffset()]
+        : [selection.getFocusOffset(), selection.getAnchorOffset()];
   } else if (node === anchorNode) {
     [start, end] = anchorNode.isBefore(focusNode)
-      ? [selection.anchorOffset, textLength]
-      : [0, selection.anchorOffset];
+      ? [selection.getAnchorOffset(), textLength]
+      : [0, selection.getAnchorOffset()];
   } else if (node === focusNode) {
     [start, end] = focusNode.isBefore(anchorNode)
-      ? [selection.focusOffset, textLength]
-      : [0, selection.focusOffset];
+      ? [selection.getFocusOffset(), textLength]
+      : [0, selection.getFocusOffset()];
   } else {
     // Node is within selection but not the anchor nor focus.
     [start, end] = [0, textLength];

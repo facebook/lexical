@@ -184,7 +184,7 @@ function MentionsTypeahead({
 
         if (selection !== null && selection.isCollapsed()) {
           const range = document.createRange();
-          const mentionsElement = editor.getElementByKey(selection.anchorKey);
+          const mentionsElement = editor.getElementByKey(selection._anchorKey);
           if (mentionsElement === null) {
             return null;
           }
@@ -192,7 +192,7 @@ function MentionsTypeahead({
           if (anchorTextNode) {
             try {
               range.setStart(anchorTextNode, match.leadOffset);
-              range.setEnd(anchorTextNode, selection.anchorOffset);
+              range.setEnd(anchorTextNode, selection.getAnchorOffset());
             } catch (e) {
               return null;
             }
@@ -427,7 +427,7 @@ function getTextUpToAnchor(selection: Selection): string | null {
   if (!anchorNode.isSimpleText()) {
     return null;
   }
-  const anchorOffset = selection.anchorOffset;
+  const anchorOffset = selection.getAnchorOffset();
   return anchorNode.getTextContent().slice(0, anchorOffset);
 }
 

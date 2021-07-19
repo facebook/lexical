@@ -180,8 +180,8 @@ function updateEditor(
         const pendingSelection = currentPendingViewModel._selection;
         if (pendingSelection !== null) {
           const pendingNodeMap = currentPendingViewModel._nodeMap;
-          const anchorKey = pendingSelection.anchorKey;
-          const focusKey = pendingSelection.focusKey;
+          const anchorKey = pendingSelection._anchorKey;
+          const focusKey = pendingSelection._focusKey;
           if (
             pendingNodeMap.get(anchorKey) === undefined ||
             pendingNodeMap.get(focusKey) === undefined
@@ -382,7 +382,7 @@ class BaseOutlineEditor {
           const selection = view.getSelection();
           if (selection !== null) {
             // Marking the selection dirty will force the selection back to it
-            selection.isDirty = true;
+            selection._isDirty = true;
           } else {
             const lastTextNode = view.getRoot().getLastTextNode();
             if (lastTextNode !== null) {

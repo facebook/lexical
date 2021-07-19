@@ -51,7 +51,7 @@ export default function useTypeahead(editor: OutlineEditor): void {
           const selection = view.getSelection();
           if (selection !== null) {
             let anchorNode = selection.getAnchorNode();
-            let anchorNodeOffset = selection.anchorOffset;
+            let anchorNodeOffset = selection.getAnchorOffset();
             if (anchorNode.getKey() === currentTypeaheadNode.getKey()) {
               anchorNode = anchorNode.getPreviousSibling();
               if (isTextNode(anchorNode)) {
@@ -59,7 +59,7 @@ export default function useTypeahead(editor: OutlineEditor): void {
               }
             }
             let focusNode = selection.getFocusNode();
-            let focusNodeOffset = selection.focusOffset;
+            let focusNodeOffset = selection.getFocusOffset();
             if (focusNode.getKey() === currentTypeaheadNode.getKey()) {
               focusNode = focusNode.getPreviousSibling();
               if (isTextNode(focusNode)) {
@@ -67,7 +67,7 @@ export default function useTypeahead(editor: OutlineEditor): void {
               }
             }
             if (focusNode !== null && anchorNode !== null) {
-              selection.setRange(
+              selection.setBaseAndExtent(
                 anchorNode.getKey(),
                 anchorNodeOffset,
                 focusNode.getKey(),
@@ -102,7 +102,7 @@ export default function useTypeahead(editor: OutlineEditor): void {
 
       const selection = view.getSelection();
       const anchorNode = selection?.getAnchorNode();
-      const anchorOffset = selection?.anchorOffset;
+      const anchorOffset = selection?.getAnchorOffset();
       const anchorLength = anchorNode?.getTextContentSize();
       const isCaretPositionAtEnd =
         anchorLength != null && anchorOffset === anchorLength;

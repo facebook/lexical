@@ -64,13 +64,13 @@ function getMergeAction(
         if (selection == null || prevSelection === null) {
           return MERGE;
         }
-        const anchorKey = selection.anchorKey;
-        const prevAnchorKey = prevSelection.anchorKey;
+        const anchorKey = selection._anchorKey;
+        const prevAnchorKey = prevSelection._anchorKey;
         if (anchorKey !== prevAnchorKey) {
           return NO_MERGE;
         }
-        const anchorOffset = selection.anchorOffset;
-        const prevAnchorOffset = prevSelection.anchorOffset;
+        const anchorOffset = selection.getAnchorOffset();
+        const prevAnchorOffset = prevSelection.getAnchorOffset();
         // If we've inserted some text that is a single character
         // after, then merge it.
         if (prevAnchorOffset === anchorOffset - 1) {

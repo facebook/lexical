@@ -454,12 +454,12 @@ export class TextNode extends OutlineNode {
     } else {
       const compositionKey = getCompositionKey();
       if (
-        compositionKey === selection.anchorKey ||
-        compositionKey === selection.focusKey
+        compositionKey === selection._anchorKey ||
+        compositionKey === selection._focusKey
       ) {
         setCompositionKey(key);
       }
-      selection.setRange(key, anchorOffset, key, focusOffset);
+      selection.setBaseAndExtent(key, anchorOffset, key, focusOffset);
     }
     return selection;
   }
@@ -499,7 +499,7 @@ export class TextNode extends OutlineNode {
         invariant(false, 'spliceText: selection not found');
       }
       const newOffset = offset + handledTextLength;
-      selection.setRange(key, newOffset, key, newOffset);
+      selection.setBaseAndExtent(key, newOffset, key, newOffset);
     }
 
     const updatedText =
@@ -563,26 +563,26 @@ export class TextNode extends OutlineNode {
       const nextTextSize = textSize + partSize;
 
       if (selection !== null) {
-        const anchorOffset = selection.anchorOffset;
-        const focusOffset = selection.focusOffset;
+        const anchorOffset = selection._anchorOffset;
+        const focusOffset = selection._focusOffset;
 
         if (
-          selection.anchorKey === key &&
+          selection._anchorKey === key &&
           anchorOffset > textSize &&
           anchorOffset <= nextTextSize
         ) {
-          selection.anchorKey = siblingKey;
-          selection.anchorOffset = anchorOffset - textSize;
-          selection.isDirty = true;
+          selection._anchorKey = siblingKey;
+          selection._anchorOffset = anchorOffset - textSize;
+          selection._isDirty = true;
         }
         if (
-          selection.focusKey === key &&
+          selection._focusKey === key &&
           focusOffset > textSize &&
           focusOffset <= nextTextSize
         ) {
-          selection.focusKey = siblingKey;
-          selection.focusOffset = focusOffset - textSize;
-          selection.isDirty = true;
+          selection._focusKey = siblingKey;
+          selection._focusOffset = focusOffset - textSize;
+          selection._isDirty = true;
         }
       }
       textSize = nextTextSize;

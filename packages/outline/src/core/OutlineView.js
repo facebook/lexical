@@ -144,7 +144,7 @@ export function viewModelHasDirtySelection(
   if (pendingSelection !== null) {
     if (
       currentSelection === null ||
-      pendingSelection.isDirty ||
+      pendingSelection._isDirty ||
       !pendingSelection.is(currentSelection)
     ) {
       return true;
@@ -438,10 +438,10 @@ export class ViewModel {
           selection === null
             ? null
             : {
-                anchorKey: selection.anchorKey,
-                anchorOffset: selection.anchorOffset,
-                focusKey: selection.focusKey,
-                focusOffset: selection.focusOffset,
+                _anchorKey: selection._anchorKey,
+                _anchorOffset: selection._anchorOffset,
+                _focusKey: selection._focusKey,
+                _focusOffset: selection._focusOffset,
               },
       },
       null,

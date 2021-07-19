@@ -163,8 +163,8 @@ function shouldOverrideBrowserDefault(
   isHoldingShift: boolean,
   isBackward: boolean,
 ): boolean {
-  const anchorOffset = selection.anchorOffset;
-  const focusOffset = selection.focusOffset;
+  const anchorOffset = selection.getAnchorOffset();
+  const focusOffset = selection.getFocusOffset();
   const anchorTextContentSize = selection.getAnchorNode().getTextContentSize();
   const selectionAtBoundary = isBackward
     ? anchorOffset < 2 || focusOffset < 2
@@ -343,7 +343,7 @@ export function onKeyDownForRichText(
       if (parentBlock.canInsertTab()) {
         if (event.shiftKey) {
           const textContent = anchorNode.getTextContent();
-          const character = textContent[selection.anchorOffset - 1];
+          const character = textContent[selection.getAnchorOffset() - 1];
           if (character === '\t') {
             deleteBackward(selection);
           }
@@ -506,7 +506,7 @@ export function onCompositionStart(
   editor.update((view) => {
     const selection = view.getSelection();
     if (selection !== null && !editor.isComposing()) {
-      view.setCompositionKey(selection.anchorKey);
+      view.setCompositionKey(selection._anchorKey);
       const data = event.data;
       if (data != null && !lastKeyWasMaybeAndroidSoftKey) {
         // We insert an empty space, ready for the composition
@@ -594,7 +594,7 @@ function shouldInsertTextAfterTextNode(
     node.isSegmented() ||
     (selection.isCollapsed() &&
       (!validateOffset ||
-        node.getTextContentSize() === selection.anchorOffset) &&
+        node.getTextContentSize() === selection.getAnchorOffset()) &&
       !node.canInsertTextAtEnd())
   );
 }
@@ -624,13 +624,13 @@ function updateTextNodeFromDOMContent(
       if (
         !CAN_USE_BEFORE_INPUT &&
         selection !== null &&
-        selection.anchorKey === nodeKey &&
+        selection._anchorKey === nodeKey &&
         textContent.indexOf(originalTextContent) === 0 &&
         shouldInsertTextAfterTextNode(selection, node, false)
       ) {
         const insertionText = textContent.slice(originalTextContent.length);
         view.markNodeAsDirty(node);
-        selection.anchorOffset -= insertionText.length;
+        selection._anchorOffset -= insertionText.length;
         insertText(selection, insertionText);
         return;
       } else if (node.isSegmented()) {
@@ -644,7 +644,7 @@ function updateTextNodeFromDOMContent(
       if (
         selection !== null &&
         selection.isCollapsed() &&
-        selection.anchorKey === nodeKey
+        selection._anchorKey === nodeKey
       ) {
         const domSelection = window.getSelection();
         let offset = domSelection.focusOffset;
@@ -706,9 +706,9 @@ function isBadDoubleSpacePeriodReplacment(
   const inputType = event.inputType;
   if (
     (inputType === 'insertText' || inputType === 'insertReplacementText') &&
-    selection.anchorOffset === 0 &&
-    selection.focusOffset === 1 &&
-    selection.anchorKey === selection.focusKey
+    selection.getAnchorOffset() === 0 &&
+    selection.getFocusOffset() === 1 &&
+    selection._anchorKey === selection._focusKey
   ) {
     const dataTransfer = event.dataTransfer;
     const data =
@@ -772,8 +772,8 @@ export function onBeforeInputForPlainText(
         event.preventDefault();
         insertRichText(selection, text);
       } else if (data != null) {
-        const anchorKey = selection.anchorKey;
-        const focusKey = selection.focusKey;
+        const anchorKey = selection._anchorKey;
+        const focusKey = selection._focusKey;
 
         if (
           anchorKey !== focusKey ||
@@ -915,8 +915,8 @@ export function onBeforeInputForRichText(
         event.preventDefault();
         insertRichText(selection, text);
       } else if (data != null) {
-        const anchorKey = selection.anchorKey;
-        const focusKey = selection.focusKey;
+        const anchorKey = selection._anchorKey;
+        const focusKey = selection._focusKey;
 
         if (
           anchorKey !== focusKey ||

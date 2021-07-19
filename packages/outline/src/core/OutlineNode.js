@@ -130,7 +130,7 @@ function replaceNode<N: OutlineNode>(
     if (selection) {
       const anchorNode = selection.getAnchorNode();
       if (selection.isCollapsed() && anchorNode.__key === toReplaceKey) {
-        anchorOffset = selection.anchorOffset;
+        anchorOffset = selection._anchorOffset;
       }
     }
   }
@@ -269,8 +269,8 @@ export class OutlineNode {
     const key = this.__key;
     return (
       selection !== null &&
-      selection.anchorKey === key &&
-      selection.focusKey === key
+      selection._anchorKey === key &&
+      selection._focusKey === key
     );
   }
   getFlags(): number {

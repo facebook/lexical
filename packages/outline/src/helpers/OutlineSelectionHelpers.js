@@ -46,8 +46,8 @@ export function getNodesInRange(selection: Selection): {
 } {
   const anchorNode = selection.getAnchorNode();
   const focusNode = selection.getFocusNode();
-  const anchorOffset = selection.anchorOffset;
-  const focusOffset = selection.focusOffset;
+  const anchorOffset = selection.getAnchorOffset();
+  const focusOffset = selection.getFocusOffset();
   let startOffset;
   let endOffset;
 
@@ -163,8 +163,8 @@ export function extractSelection(selection: Selection): Array<OutlineNode> {
   if (!isTextNode(firstNode) || !isTextNode(lastNode)) {
     invariant(false, 'formatText: firstNode/lastNode not a text node');
   }
-  const anchorOffset = selection.anchorOffset;
-  const focusOffset = selection.focusOffset;
+  const anchorOffset = selection.getAnchorOffset();
+  const focusOffset = selection.getFocusOffset();
   let startOffset;
   let endOffset;
 
@@ -209,20 +209,20 @@ export function formatText(
   const firstNodeText = firstNode.getTextContent();
   const firstNodeTextLength = firstNodeText.length;
   const currentBlock = firstNode.getParentBlockOrThrow();
-  const focusOffset = selection.focusOffset;
+  const focusOffset = selection.getFocusOffset();
   let firstNextFlags = firstNode.getTextNodeFormatFlags(
     formatType,
     null,
     forceFormat,
   );
-  let anchorOffset = selection.anchorOffset;
+  let anchorOffset = selection.getAnchorOffset();
   let startOffset;
   let endOffset;
 
   if (selection.isCollapsed()) {
     if (firstNodeTextLength === 0) {
       firstNode.setFlags(firstNextFlags);
-      selection.isDirty = true;
+      selection._isDirty = true;
     } else {
       const textNode = createTextNode('');
       textNode.setFlags(firstNextFlags);
@@ -314,7 +314,7 @@ export function formatText(
         selectedNode.setFlags(selectedNextFlags);
       }
     }
-    selection.setRange(
+    selection.setBaseAndExtent(
       firstNode.getKey(),
       startOffset,
       lastNode.getKey(),
@@ -335,7 +335,7 @@ export function insertParagraph(selection: Selection): void {
   const textContentLength = textContent.length;
   const nodesToMove = anchorNode.getNextSiblings().reverse();
   const currentBlock = anchorNode.getParentBlockOrThrow();
-  let anchorOffset = selection.anchorOffset;
+  let anchorOffset = selection.getAnchorOffset();
 
   if (anchorOffset === 0) {
     nodesToMove.push(anchorNode);
@@ -468,8 +468,8 @@ export function updateCaretSelectionForUnicodeCharacter(
 
   if (anchorNode === focusNode) {
     // Handling of multibyte characters
-    const anchorOffset = selection.anchorOffset;
-    const focusOffset = selection.focusOffset;
+    const anchorOffset = selection.getAnchorOffset();
+    const focusOffset = selection.getFocusOffset();
     const isBefore = anchorOffset < focusOffset;
     const startOffset = isBefore ? anchorOffset : focusOffset;
     const endOffset = isBefore ? focusOffset : anchorOffset;
@@ -479,9 +479,9 @@ export function updateCaretSelectionForUnicodeCharacter(
       const text = anchorNode.getTextContent().slice(startOffset, endOffset);
       if (!doesContainGrapheme(text)) {
         if (isBackward) {
-          selection.focusOffset = characterOffset;
+          selection._focusOffset = characterOffset;
         } else {
-          selection.anchorOffset = characterOffset;
+          selection._anchorOffset = characterOffset;
         }
       }
     }
@@ -495,7 +495,7 @@ export function updateCaretSelectionForAdjacentHashtags(
 ): void {
   const anchorNode = selection.getAnchorNode();
   const textContent = anchorNode.getTextContent();
-  const anchorOffset = selection.anchorOffset;
+  const anchorOffset = selection.getAnchorOffset();
 
   if (anchorOffset === 0 && anchorNode.isSimpleText()) {
     const sibling = anchorNode.getPreviousSibling();
@@ -526,7 +526,7 @@ function deleteCharacter(selection: Selection, isBackward: boolean): void {
       const focusNode = selection.getFocusNode();
       if (
         focusNode.isSegmented() &&
-        selection.anchorOffset !== focusNode.getTextContentSize()
+        selection.getAnchorOffset() !== focusNode.getTextContentSize()
       ) {
         removeSegment(focusNode, isBackward);
         return;
@@ -534,7 +534,7 @@ function deleteCharacter(selection: Selection, isBackward: boolean): void {
         const nextSibling = focusNode.getNextSibling();
 
         if (
-          selection.anchorOffset === focusNode.getTextContentSize() &&
+          selection.getAnchorOffset() === focusNode.getTextContentSize() &&
           isTextNode(nextSibling) &&
           nextSibling.isSegmented()
         ) {
@@ -548,7 +548,7 @@ function deleteCharacter(selection: Selection, isBackward: boolean): void {
       const anchorNode = selection.getAnchorNode();
       const parent = anchorNode.getParentOrThrow();
       const parentType = parent.getType();
-      if (selection.anchorOffset === 0 && parentType !== 'paragraph') {
+      if (selection.getAnchorOffset() === 0 && parentType !== 'paragraph') {
         const paragraph = createParagraphNode();
         const children = parent.getChildren();
         children.forEach((child) => paragraph.append(child));
@@ -628,7 +628,7 @@ export function updateCaretSelectionForRange(
 ): void {
   const domSelection = window.getSelection();
   const focusNode = selection.getFocusNode();
-  const focusOffset = selection.focusOffset;
+  const focusOffset = selection.getFocusOffset();
   const sibling = isBackward
     ? focusNode.getPreviousSibling()
     : focusNode.getNextSibling();
@@ -669,12 +669,12 @@ export function updateCaretSelectionForRange(
     selection.applyDOMRange(range);
     // If we are going backwards as a range, we need to flip anchor and focus
     if (isBackward && !collapse) {
-      const anchorKey = selection.anchorKey;
-      const anchorOffset = selection.anchorOffset;
-      selection.anchorKey = selection.focusKey;
-      selection.anchorOffset = selection.focusOffset;
-      selection.focusKey = anchorKey;
-      selection.focusOffset = anchorOffset;
+      selection.setBaseAndExtent(
+        selection._focusKey,
+        selection._focusOffset,
+        selection._anchorKey,
+        selection._anchorOffset,
+      );
     }
   }
 }
@@ -706,7 +706,7 @@ export function insertNodes(
   if (!selection.isCollapsed()) {
     removeText(selection);
   }
-  const anchorOffset = selection.anchorOffset;
+  const anchorOffset = selection.getAnchorOffset();
   const anchorNode = selection.getAnchorNode();
   const textContent = anchorNode.getTextContent();
   const textContentLength = textContent.length;
@@ -812,8 +812,8 @@ export function insertRichText(selection: Selection, text: string): void {
 export function insertText(selection: Selection, text: string): void {
   const selectedNodes = selection.getNodes();
   const selectedNodesLength = selectedNodes.length;
-  const anchorOffset = selection.anchorOffset;
-  const focusOffset = selection.focusOffset;
+  const anchorOffset = selection.getAnchorOffset();
+  const focusOffset = selection.getFocusOffset();
   let firstNode = selectedNodes[0];
   if (!isTextNode(firstNode)) {
     invariant(false, 'insertText: firstNode not a a text node');
@@ -857,7 +857,7 @@ export function insertText(selection: Selection, text: string): void {
 
     firstNode.spliceText(startOffset, delCount, text, true);
     if (firstNode.isComposing()) {
-      selection.anchorOffset -= text.length;
+      selection._anchorOffset -= text.length;
     }
   } else {
     const lastIndex = selectedNodesLength - 1;
@@ -946,7 +946,7 @@ export function insertText(selection: Selection, text: string): void {
         true,
       );
       if (firstNode.isComposing()) {
-        selection.anchorOffset -= text.length;
+        selection._anchorOffset -= text.length;
       }
     }
 
@@ -975,7 +975,7 @@ export function selectAll(selection: Selection): void {
   const firstTextNode = root.getFirstTextNode();
   const lastTextNode = root.getLastTextNode();
   if (firstTextNode !== null && lastTextNode !== null) {
-    selection.setRange(
+    selection.setBaseAndExtent(
       firstTextNode.getKey(),
       0,
       lastTextNode.getKey(),

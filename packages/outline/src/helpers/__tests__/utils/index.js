@@ -364,7 +364,7 @@ export function setNativeSelection(
   domSelection.addRange(range);
   Promise.resolve().then(() => {
     document.dispatchEvent(new Event('selectionchange'));
-  })
+  });
 }
 
 export function setNativeSelectionWithPaths(

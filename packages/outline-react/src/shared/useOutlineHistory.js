@@ -11,7 +11,7 @@ import type {OutlineEditor, ViewModel} from 'outline';
 
 import {isTextNode} from 'outline';
 import {isRedo, isUndo} from 'outline/KeyHelpers';
-import {useEffect, useMemo} from 'react';
+import {useCallback, useEffect, useMemo} from 'react';
 import {viewModelsWithoutHistory} from 'outline/HistoryHelpers';
 
 const MERGE = 0;
@@ -90,7 +90,7 @@ type OutlineHistorySetter = (
 
 export default function useOutlineHistory(
   editor: OutlineEditor,
-): [OutlineHistoryStacks, OutlineHistorySetter] {
+): [OutlineHistoryStacks, OutlineHistorySetter, () => void] {
   const historyState: {
     current: null | ViewModel,
     redoStack: Array<ViewModel>,
@@ -212,8 +212,15 @@ export default function useOutlineHistory(
     );
   };
 
+  const clearHistory = useCallback(() => {
+    historyState.undoStack = [];
+    historyState.redoStack = [];
+    historyState.current = null;
+  }, [historyState]);
+
   return [
     [historyState.undoStack.slice(), historyState.redoStack.slice()],
     setHistoryState,
+    clearHistory,
   ];
 }

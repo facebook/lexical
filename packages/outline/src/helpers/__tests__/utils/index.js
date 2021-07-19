@@ -362,7 +362,9 @@ export function setNativeSelection(
   range.setEnd(focusNode, focusOffset);
   domSelection.removeAllRanges();
   domSelection.addRange(range);
-  document.dispatchEvent(new Event('selectionchange'));
+  Promise.resolve().then(() => {
+    document.dispatchEvent(new Event('selectionchange'));
+  })
 }
 
 export function setNativeSelectionWithPaths(

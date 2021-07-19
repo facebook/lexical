@@ -72,7 +72,7 @@ if (CAN_USE_BEFORE_INPUT) {
 export default function useOutlineRichText(
   editor: OutlineEditor,
   isReadOnly?: boolean = false,
-): void {
+): () => void {
   const eventHandlerState: EventHandlerState = useMemo(
     () => ({
       isReadOnly: false,
@@ -128,5 +128,5 @@ export default function useOutlineRichText(
 
   useOutlineEditorEvents(events, editor, eventHandlerState);
   useOutlineDragonSupport(editor);
-  useOutlineHistory(editor);
+  return useOutlineHistory(editor);
 }

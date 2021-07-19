@@ -82,15 +82,7 @@ function getMergeAction(
   return NO_MERGE;
 }
 
-type OutlineHistoryStacks = [Array<ViewModel>, Array<ViewModel>];
-type OutlineHistorySetter = (
-  undoStack: Array<ViewModel>,
-  redoStack: Array<ViewModel>,
-) => void;
-
-export default function useOutlineHistory(
-  editor: OutlineEditor,
-): [OutlineHistoryStacks, OutlineHistorySetter, () => void] {
+export default function useOutlineHistory(editor: OutlineEditor): () => void {
   const historyState: {
     current: null | ViewModel,
     redoStack: Array<ViewModel>,
@@ -199,28 +191,11 @@ export default function useOutlineHistory(
     };
   }, [historyState, editor]);
 
-  const setHistoryState: OutlineHistorySetter = (undoStack, redoStack) => {
-    historyState.undoStack.splice(
-      0,
-      historyState.undoStack.length,
-      ...undoStack,
-    );
-    historyState.redoStack.splice(
-      0,
-      historyState.redoStack.length,
-      ...redoStack,
-    );
-  };
-
   const clearHistory = useCallback(() => {
     historyState.undoStack = [];
     historyState.redoStack = [];
     historyState.current = null;
   }, [historyState]);
 
-  return [
-    [historyState.undoStack.slice(), historyState.redoStack.slice()],
-    setHistoryState,
-    clearHistory,
-  ];
+  return clearHistory;
 }

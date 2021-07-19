@@ -662,6 +662,15 @@ export function updateCaretSelectionForRange(
     const range = domSelection.getRangeAt(0);
     // Apply the DOM selection to our Outline selection.
     selection.applyDOMRange(range);
+    // If we are going backwards as a range, we need to flip anchor and focus
+    if (isBackward && !collapse) {
+      const anchorKey = selection.anchorKey;
+      const anchorOffset = selection.anchorOffset;
+      selection.anchorKey = selection.focusKey;
+      selection.anchorOffset = selection.focusOffset;
+      selection.focusKey = anchorKey;
+      selection.focusOffset = anchorOffset;
+    }
   }
 }
 

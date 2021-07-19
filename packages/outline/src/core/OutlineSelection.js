@@ -45,6 +45,14 @@ export class Selection {
     this.isDirty = false;
   }
 
+  is(selection: Selection): boolean {
+    return (
+      this.anchorKey === selection.anchorKey &&
+      this.focusKey === selection.focusKey &&
+      this.anchorOffset === selection.anchorOffset &&
+      this.focusOffset === selection.focusOffset
+    );
+  }
   isCollapsed(): boolean {
     return (
       this.anchorKey === this.focusKey && this.anchorOffset === this.focusOffset

@@ -134,21 +134,6 @@ const view: View = {
   getCompositionKey,
 };
 
-export function viewModelHasDirtySelection(
-  viewModel: ViewModel,
-  editor: OutlineEditor,
-): boolean {
-  const selection = viewModel._selection;
-  const currentSelection = editor.getViewModel()._selection;
-  if (
-    (currentSelection !== null && selection === null) ||
-    (currentSelection === null && selection !== null)
-  ) {
-    return true;
-  }
-  return selection !== null && selection.isDirty;
-}
-
 export function enterViewModelScope<V>(
   callbackFn: (view: View) => V,
   viewModel: ViewModel,

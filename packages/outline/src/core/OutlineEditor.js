@@ -16,7 +16,6 @@ import {
   cloneViewModel,
   enterViewModelScope,
   garbageCollectDetachedNodes,
-  viewModelHasDirtySelection,
   ViewModel,
   commitPendingUpdates,
   applyTextTransforms,
@@ -208,9 +207,23 @@ function updateEditor(
     commitPendingUpdates(editor);
     return false;
   }
-  const shouldUpdate =
-    pendingViewModel.hasDirtyNodes() ||
-    viewModelHasDirtySelection(pendingViewModel, editor);
+  const currentSelection = editor.getViewModel()._selection;
+  const pendingSelection = pendingViewModel._selection;
+
+  let shouldUpdate = pendingViewModel.hasDirtyNodes();
+
+  // Check if we need to update because of changes in selection
+  if (pendingSelection !== null) {
+    if (
+      currentSelection === null ||
+      pendingSelection.isDirty ||
+      !pendingSelection.is(currentSelection)
+    ) {
+      shouldUpdate = true;
+    }
+  } else if (currentSelection !== null) {
+    shouldUpdate = true;
+  }
 
   if (!shouldUpdate) {
     if (viewModelWasCloned) {

@@ -180,584 +180,584 @@ describe('OutlineSelection tests', () => {
   ];
 
   const suite = [
-    // {
-    //   name: 'Simple typing',
-    //   inputs: [
-    //     insertText('H'),
-    //     insertText('e'),
-    //     insertText('l'),
-    //     insertText('l'),
-    //     insertText('o'),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello</span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 0, 0],
-    //     anchorOffset: 5,
-    //     focusPath: [0, 0, 0],
-    //     focusOffset: 5,
-    //   },
-    // },
-    // {
-    //   name: 'Simple typing in bold',
-    //   inputs: [
-    //     formatBold(),
-    //     insertText('H'),
-    //     insertText('e'),
-    //     insertText('l'),
-    //     insertText('l'),
-    //     insertText('o'),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr">' +
-    //     '<strong class="editor-text-bold" data-outline-text="true">Hello</strong></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 0, 0],
-    //     anchorOffset: 5,
-    //     focusPath: [0, 0, 0],
-    //     focusOffset: 5,
-    //   },
-    // },
-    // {
-    //   name: 'Simple typing in italic',
-    //   inputs: [
-    //     formatItalic(),
-    //     insertText('H'),
-    //     insertText('e'),
-    //     insertText('l'),
-    //     insertText('l'),
-    //     insertText('o'),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr">' +
-    //     '<em class="editor-text-italic" data-outline-text="true">Hello</em></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 0, 0],
-    //     anchorOffset: 5,
-    //     focusPath: [0, 0, 0],
-    //     focusOffset: 5,
-    //   },
-    // },
-    // {
-    //   name: 'Simple typing in italic + bold',
-    //   inputs: [
-    //     formatItalic(),
-    //     formatBold(),
-    //     insertText('H'),
-    //     insertText('e'),
-    //     insertText('l'),
-    //     insertText('l'),
-    //     insertText('o'),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr">' +
-    //     '<strong class="editor-text-bold editor-text-italic" data-outline-text="true">Hello</strong></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 0, 0],
-    //     anchorOffset: 5,
-    //     focusPath: [0, 0, 0],
-    //     focusOffset: 5,
-    //   },
-    // },
-    // {
-    //   name: 'Simple typing in underline',
-    //   inputs: [
-    //     formatUnderline(),
-    //     insertText('H'),
-    //     insertText('e'),
-    //     insertText('l'),
-    //     insertText('l'),
-    //     insertText('o'),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr">' +
-    //     '<span data-outline-text="true" class="editor-text-underline">Hello</span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 0, 0],
-    //     anchorOffset: 5,
-    //     focusPath: [0, 0, 0],
-    //     focusOffset: 5,
-    //   },
-    // },
-    // {
-    //   name: 'Simple typing in strikethrough',
-    //   inputs: [
-    //     formatStrikeThrough(),
-    //     insertText('H'),
-    //     insertText('e'),
-    //     insertText('l'),
-    //     insertText('l'),
-    //     insertText('o'),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr">' +
-    //     '<span data-outline-text="true" class="editor-text-strikethrough">Hello</span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 0, 0],
-    //     anchorOffset: 5,
-    //     focusPath: [0, 0, 0],
-    //     focusOffset: 5,
-    //   },
-    // },
-    // {
-    //   name: 'Simple typing in underline + strikethrough',
-    //   inputs: [
-    //     formatUnderline(),
-    //     formatStrikeThrough(),
-    //     insertText('H'),
-    //     insertText('e'),
-    //     insertText('l'),
-    //     insertText('l'),
-    //     insertText('o'),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr">' +
-    //     '<span data-outline-text="true" class="editor-text-underlineStrikethrough">Hello</span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 0, 0],
-    //     anchorOffset: 5,
-    //     focusPath: [0, 0, 0],
-    //     focusOffset: 5,
-    //   },
-    // },
-    // {
-    //   name: 'Deletion',
-    //   inputs: [
-    //     insertText('1'),
-    //     insertText('2'),
-    //     insertText('3'),
-    //     deleteBackward(),
-    //     insertText('4'),
-    //     insertText('5'),
-    //     deleteBackward(),
-    //     insertText('6'),
-    //     deleteForward(),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span data-outline-text="true">1246</span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 0, 0],
-    //     anchorOffset: 4,
-    //     focusPath: [0, 0, 0],
-    //     focusOffset: 4,
-    //   },
-    // },
-    // {
-    //   name: 'Creation of an immutable node',
-    //   inputs: [insertImmutableNode('Dominic Gannaway')],
-    //   expectedHTML:
-    //     '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span data-outline-text="true"></span>' +
-    //     '<span data-outline-text="true">Dominic Gannaway</span>' +
-    //     '<span data-outline-text="true"></span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 2, 0],
-    //     anchorOffset: 0,
-    //     focusPath: [0, 2, 0],
-    //     focusOffset: 0,
-    //   },
-    // },
-    // {
-    //   name: 'Convert text to an immutable node',
-    //   inputs: [
-    //     insertText('Dominic Gannaway'),
-    //     moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 16),
-    //     convertToImmutableNode(),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span data-outline-text="true"></span>' +
-    //     '<span data-outline-text="true">Dominic Gannaway</span>' +
-    //     '<span data-outline-text="true"></span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 2, 0],
-    //     anchorOffset: 0,
-    //     focusPath: [0, 2, 0],
-    //     focusOffset: 0,
-    //   },
-    // },
-    // {
-    //   name: 'Deletion of an immutable node',
-    //   inputs: [insertImmutableNode('Dominic Gannaway'), deleteBackward()],
-    //   expectedHTML:
-    //     '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span data-outline-text="true"><br></span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 0, 0],
-    //     anchorOffset: 0,
-    //     focusPath: [0, 0, 0],
-    //     focusOffset: 0,
-    //   },
-    // },
-    // {
-    //   name: 'Creation of a segmented node',
-    //   inputs: [insertSegmentedNode('Dominic Gannaway')],
-    //   expectedHTML:
-    //     '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span data-outline-text="true"></span>' +
-    //     '<span data-outline-text="true">Dominic Gannaway</span>' +
-    //     '<span data-outline-text="true"></span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 2, 0],
-    //     anchorOffset: 0,
-    //     focusPath: [0, 2, 0],
-    //     focusOffset: 0,
-    //   },
-    // },
-    // {
-    //   name: 'Convert text to a segmented node',
-    //   inputs: [
-    //     insertText('Dominic Gannaway'),
-    //     moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 16),
-    //     convertToSegmentedNode(),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span data-outline-text="true"></span>' +
-    //     '<span data-outline-text="true">Dominic Gannaway</span>' +
-    //     '<span data-outline-text="true"></span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 2, 0],
-    //     anchorOffset: 0,
-    //     focusPath: [0, 2, 0],
-    //     focusOffset: 0,
-    //   },
-    // },
-    // {
-    //   name: 'Deletion of part of a segmented node',
-    //   inputs: [insertSegmentedNode('Dominic Gannaway'), deleteBackward()],
-    //   expectedHTML:
-    //     '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><span data-outline-text="true"></span>' +
-    //     '<span data-outline-text="true">Dominic</span>' +
-    //     '<span data-outline-text="true"></span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 2, 0],
-    //     anchorOffset: 0,
-    //     focusPath: [0, 2, 0],
-    //     focusOffset: 0,
-    //   },
-    // },
-    // {
-    //   name: 'Should correctly handle empty paragraph blocks when moving backward',
-    //   inputs: [insertParagraph(), moveBackward()],
-    //   expectedHTML:
-    //     '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span data-outline-text="true"><br></span></p>' +
-    //     '<p class="editor-paragraph"><span data-outline-text="true"><br></span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 0, 0],
-    //     anchorOffset: 0,
-    //     focusPath: [0, 0, 0],
-    //     focusOffset: 0,
-    //   },
-    // },
-    // {
-    //   name: 'Should correctly handle empty paragraph blocks when moving forward',
-    //   inputs: [
-    //     insertParagraph(),
-    //     moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 0),
-    //     moveForward(),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span data-outline-text="true"><br></span></p>' +
-    //     '<p class="editor-paragraph"><span data-outline-text="true"><br></span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [1, 0, 0],
-    //     anchorOffset: 0,
-    //     focusPath: [1, 0, 0],
-    //     focusOffset: 0,
-    //   },
-    // },
-    // // Tests need fixing:
+    {
+      name: 'Simple typing',
+      inputs: [
+        insertText('H'),
+        insertText('e'),
+        insertText('l'),
+        insertText('l'),
+        insertText('o'),
+      ],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 5,
+        focusPath: [0, 0, 0],
+        focusOffset: 5,
+      },
+    },
+    {
+      name: 'Simple typing in bold',
+      inputs: [
+        formatBold(),
+        insertText('H'),
+        insertText('e'),
+        insertText('l'),
+        insertText('l'),
+        insertText('o'),
+      ],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr">' +
+        '<strong class="editor-text-bold" data-outline-text="true">Hello</strong></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 5,
+        focusPath: [0, 0, 0],
+        focusOffset: 5,
+      },
+    },
+    {
+      name: 'Simple typing in italic',
+      inputs: [
+        formatItalic(),
+        insertText('H'),
+        insertText('e'),
+        insertText('l'),
+        insertText('l'),
+        insertText('o'),
+      ],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr">' +
+        '<em class="editor-text-italic" data-outline-text="true">Hello</em></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 5,
+        focusPath: [0, 0, 0],
+        focusOffset: 5,
+      },
+    },
+    {
+      name: 'Simple typing in italic + bold',
+      inputs: [
+        formatItalic(),
+        formatBold(),
+        insertText('H'),
+        insertText('e'),
+        insertText('l'),
+        insertText('l'),
+        insertText('o'),
+      ],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr">' +
+        '<strong class="editor-text-bold editor-text-italic" data-outline-text="true">Hello</strong></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 5,
+        focusPath: [0, 0, 0],
+        focusOffset: 5,
+      },
+    },
+    {
+      name: 'Simple typing in underline',
+      inputs: [
+        formatUnderline(),
+        insertText('H'),
+        insertText('e'),
+        insertText('l'),
+        insertText('l'),
+        insertText('o'),
+      ],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr">' +
+        '<span data-outline-text="true" class="editor-text-underline">Hello</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 5,
+        focusPath: [0, 0, 0],
+        focusOffset: 5,
+      },
+    },
+    {
+      name: 'Simple typing in strikethrough',
+      inputs: [
+        formatStrikeThrough(),
+        insertText('H'),
+        insertText('e'),
+        insertText('l'),
+        insertText('l'),
+        insertText('o'),
+      ],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr">' +
+        '<span data-outline-text="true" class="editor-text-strikethrough">Hello</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 5,
+        focusPath: [0, 0, 0],
+        focusOffset: 5,
+      },
+    },
+    {
+      name: 'Simple typing in underline + strikethrough',
+      inputs: [
+        formatUnderline(),
+        formatStrikeThrough(),
+        insertText('H'),
+        insertText('e'),
+        insertText('l'),
+        insertText('l'),
+        insertText('o'),
+      ],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr">' +
+        '<span data-outline-text="true" class="editor-text-underlineStrikethrough">Hello</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 5,
+        focusPath: [0, 0, 0],
+        focusOffset: 5,
+      },
+    },
+    {
+      name: 'Deletion',
+      inputs: [
+        insertText('1'),
+        insertText('2'),
+        insertText('3'),
+        deleteBackward(),
+        insertText('4'),
+        insertText('5'),
+        deleteBackward(),
+        insertText('6'),
+        deleteForward(),
+      ],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span data-outline-text="true">1246</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 4,
+        focusPath: [0, 0, 0],
+        focusOffset: 4,
+      },
+    },
+    {
+      name: 'Creation of an immutable node',
+      inputs: [insertImmutableNode('Dominic Gannaway')],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span data-outline-text="true"></span>' +
+        '<span data-outline-text="true">Dominic Gannaway</span>' +
+        '<span data-outline-text="true"></span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 2, 0],
+        anchorOffset: 0,
+        focusPath: [0, 2, 0],
+        focusOffset: 0,
+      },
+    },
+    {
+      name: 'Convert text to an immutable node',
+      inputs: [
+        insertText('Dominic Gannaway'),
+        moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 16),
+        convertToImmutableNode(),
+      ],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span data-outline-text="true"></span>' +
+        '<span data-outline-text="true">Dominic Gannaway</span>' +
+        '<span data-outline-text="true"></span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 2, 0],
+        anchorOffset: 0,
+        focusPath: [0, 2, 0],
+        focusOffset: 0,
+      },
+    },
+    {
+      name: 'Deletion of an immutable node',
+      inputs: [insertImmutableNode('Dominic Gannaway'), deleteBackward()],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span data-outline-text="true"><br></span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 0,
+        focusPath: [0, 0, 0],
+        focusOffset: 0,
+      },
+    },
+    {
+      name: 'Creation of a segmented node',
+      inputs: [insertSegmentedNode('Dominic Gannaway')],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span data-outline-text="true"></span>' +
+        '<span data-outline-text="true">Dominic Gannaway</span>' +
+        '<span data-outline-text="true"></span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 2, 0],
+        anchorOffset: 0,
+        focusPath: [0, 2, 0],
+        focusOffset: 0,
+      },
+    },
+    {
+      name: 'Convert text to a segmented node',
+      inputs: [
+        insertText('Dominic Gannaway'),
+        moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 16),
+        convertToSegmentedNode(),
+      ],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span data-outline-text="true"></span>' +
+        '<span data-outline-text="true">Dominic Gannaway</span>' +
+        '<span data-outline-text="true"></span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 2, 0],
+        anchorOffset: 0,
+        focusPath: [0, 2, 0],
+        focusOffset: 0,
+      },
+    },
+    {
+      name: 'Deletion of part of a segmented node',
+      inputs: [insertSegmentedNode('Dominic Gannaway'), deleteBackward()],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><span data-outline-text="true"></span>' +
+        '<span data-outline-text="true">Dominic</span>' +
+        '<span data-outline-text="true"></span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 2, 0],
+        anchorOffset: 0,
+        focusPath: [0, 2, 0],
+        focusOffset: 0,
+      },
+    },
+    {
+      name: 'Should correctly handle empty paragraph blocks when moving backward',
+      inputs: [insertParagraph(), moveBackward()],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span data-outline-text="true"><br></span></p>' +
+        '<p class="editor-paragraph"><span data-outline-text="true"><br></span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 0,
+        focusPath: [0, 0, 0],
+        focusOffset: 0,
+      },
+    },
+    {
+      name: 'Should correctly handle empty paragraph blocks when moving forward',
+      inputs: [
+        insertParagraph(),
+        moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 0),
+        moveForward(),
+      ],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span data-outline-text="true"><br></span></p>' +
+        '<p class="editor-paragraph"><span data-outline-text="true"><br></span></p></div>',
+      expectedSelection: {
+        anchorPath: [1, 0, 0],
+        anchorOffset: 0,
+        focusPath: [1, 0, 0],
+        focusOffset: 0,
+      },
+    },
+    // Tests need fixing:
 
-    // // ...GRAPHEME_SCENARIOS.flatMap(({description, grapheme}) => [
-    // //   {
-    // //     name: `Delete backward eliminates entire ${description} (${grapheme})`,
-    // //     inputs: [insertText(grapheme + grapheme), deleteBackward()],
-    // //     expectedHTML: `<div contenteditable="true" data-outline-editor="true"><p dir=\"ltr\"><span>${grapheme}</span></p></div>`,
-    // //     expectedSelection: {
-    // //       anchorPath: [0, 0, 0],
-    // //       anchorOffset: grapheme.length,
-    // //       focusPath: [0, 0, 0],
-    // //       focusOffset: grapheme.length,
-    // //     },
-    // //     setup: emptySetup,
-    // //   },
-    // //   {
-    // //     name: `Delete forward eliminates entire ${description} (${grapheme})`,
-    // //     inputs: [
-    // //       insertText(grapheme + grapheme),
-    // //       moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 0),
-    // //       deleteForward(),
-    // //     ],
-    // //     expectedHTML: `<div contenteditable="true" data-outline-editor="true"><p dir=\"ltr\"><span>${grapheme}</span></p></div>`,
-    // //     expectedSelection: {
-    // //       anchorPath: [0, 0, 0],
-    // //       anchorOffset: 0,
-    // //       focusPath: [0, 0, 0],
-    // //       focusOffset: 0,
-    // //     },
-    // //     setup: emptySetup,
-    // //   },
-    // //   {
-    // //     name: `Move backward skips over grapheme cluster (${grapheme})`,
-    // //     inputs: [insertText(grapheme + grapheme), moveBackward()],
-    // //     expectedHTML: `<div contenteditable="true" data-outline-editor="true"><p dir=\"ltr\"><span>${grapheme}${grapheme}</span></p></div>`,
-    // //     expectedSelection: {
-    // //       anchorPath: [0, 0, 0],
-    // //       anchorOffset: grapheme.length,
-    // //       focusPath: [0, 0, 0],
-    // //       focusOffset: grapheme.length,
-    // //     },
-    // //     setup: emptySetup,
-    // //   },
-    // //   {
-    // //     name: `Move forward skips over grapheme cluster (${grapheme})`,
-    // //     inputs: [
-    // //       insertText(grapheme + grapheme),
-    // //       moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 0),
-    // //       moveForward(),
-    // //     ],
-    // //     expectedHTML: `<div contenteditable="true" data-outline-editor="true"><p dir=\"ltr\"><span>${grapheme}${grapheme}</span></p></div>`,
-    // //     expectedSelection: {
-    // //       anchorPath: [0, 0, 0],
-    // //       anchorOffset: grapheme.length,
-    // //       focusPath: [0, 0, 0],
-    // //       focusOffset: grapheme.length,
-    // //     },
-    // //     setup: emptySetup,
-    // //   },
-    // // ]),
-    // {
-    //   name: 'Jump to beginning and insert',
-    //   inputs: [
-    //     insertText('1'),
-    //     insertText('1'),
-    //     insertText('2'),
-    //     insertText('3'),
-    //     moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 0),
-    //     insertText('a'),
-    //     insertText('b'),
-    //     insertText('c'),
-    //     deleteForward(),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">abc123</span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 0, 0],
-    //     anchorOffset: 3,
-    //     focusPath: [0, 0, 0],
-    //     focusOffset: 3,
+    // ...GRAPHEME_SCENARIOS.flatMap(({description, grapheme}) => [
+    //   {
+    //     name: `Delete backward eliminates entire ${description} (${grapheme})`,
+    //     inputs: [insertText(grapheme + grapheme), deleteBackward()],
+    //     expectedHTML: `<div contenteditable="true" data-outline-editor="true"><p dir=\"ltr\"><span>${grapheme}</span></p></div>`,
+    //     expectedSelection: {
+    //       anchorPath: [0, 0, 0],
+    //       anchorOffset: grapheme.length,
+    //       focusPath: [0, 0, 0],
+    //       focusOffset: grapheme.length,
+    //     },
+    //     setup: emptySetup,
     //   },
-    // },
-    // {
-    //   name: 'Select and replace',
-    //   inputs: [
-    //     insertText('Hello draft!'),
-    //     moveNativeSelection([0, 0, 0], 6, [0, 0, 0], 11),
-    //     insertText('outline'),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello outline!</span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 0, 0],
-    //     anchorOffset: 13,
-    //     focusPath: [0, 0, 0],
-    //     focusOffset: 13,
+    //   {
+    //     name: `Delete forward eliminates entire ${description} (${grapheme})`,
+    //     inputs: [
+    //       insertText(grapheme + grapheme),
+    //       moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 0),
+    //       deleteForward(),
+    //     ],
+    //     expectedHTML: `<div contenteditable="true" data-outline-editor="true"><p dir=\"ltr\"><span>${grapheme}</span></p></div>`,
+    //     expectedSelection: {
+    //       anchorPath: [0, 0, 0],
+    //       anchorOffset: 0,
+    //       focusPath: [0, 0, 0],
+    //       focusOffset: 0,
+    //     },
+    //     setup: emptySetup,
     //   },
-    // },
-    // {
-    //   name: 'Select and bold',
-    //   inputs: [
-    //     insertText('Hello draft!'),
-    //     moveNativeSelection([0, 0, 0], 6, [0, 0, 0], 11),
-    //     formatBold(),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello </span>' +
-    //     '<strong class="editor-text-bold" data-outline-text="true">draft</strong><span data-outline-text="true">!</span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 1, 0],
-    //     anchorOffset: 0,
-    //     focusPath: [0, 1, 0],
-    //     focusOffset: 5,
+    //   {
+    //     name: `Move backward skips over grapheme cluster (${grapheme})`,
+    //     inputs: [insertText(grapheme + grapheme), moveBackward()],
+    //     expectedHTML: `<div contenteditable="true" data-outline-editor="true"><p dir=\"ltr\"><span>${grapheme}${grapheme}</span></p></div>`,
+    //     expectedSelection: {
+    //       anchorPath: [0, 0, 0],
+    //       anchorOffset: grapheme.length,
+    //       focusPath: [0, 0, 0],
+    //       focusOffset: grapheme.length,
+    //     },
+    //     setup: emptySetup,
     //   },
-    // },
-    // {
-    //   name: 'Select and italic',
-    //   inputs: [
-    //     insertText('Hello draft!'),
-    //     moveNativeSelection([0, 0, 0], 6, [0, 0, 0], 11),
-    //     formatItalic(),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello </span>' +
-    //     '<em class="editor-text-italic" data-outline-text="true">draft</em><span data-outline-text="true">!</span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 1, 0],
-    //     anchorOffset: 0,
-    //     focusPath: [0, 1, 0],
-    //     focusOffset: 5,
+    //   {
+    //     name: `Move forward skips over grapheme cluster (${grapheme})`,
+    //     inputs: [
+    //       insertText(grapheme + grapheme),
+    //       moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 0),
+    //       moveForward(),
+    //     ],
+    //     expectedHTML: `<div contenteditable="true" data-outline-editor="true"><p dir=\"ltr\"><span>${grapheme}${grapheme}</span></p></div>`,
+    //     expectedSelection: {
+    //       anchorPath: [0, 0, 0],
+    //       anchorOffset: grapheme.length,
+    //       focusPath: [0, 0, 0],
+    //       focusOffset: grapheme.length,
+    //     },
+    //     setup: emptySetup,
     //   },
-    // },
-    // {
-    //   name: 'Select and bold + italic',
-    //   inputs: [
-    //     insertText('Hello draft!'),
-    //     moveNativeSelection([0, 0, 0], 6, [0, 0, 0], 11),
-    //     formatBold(),
-    //     formatItalic(),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello </span>' +
-    //     '<strong class="editor-text-bold editor-text-italic" data-outline-text="true">draft</strong><span data-outline-text="true">!</span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 1, 0],
-    //     anchorOffset: 0,
-    //     focusPath: [0, 1, 0],
-    //     focusOffset: 5,
-    //   },
-    // },
-    // {
-    //   name: 'Select and underline',
-    //   inputs: [
-    //     insertText('Hello draft!'),
-    //     moveNativeSelection([0, 0, 0], 6, [0, 0, 0], 11),
-    //     formatUnderline(),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello </span>' +
-    //     '<span class="editor-text-underline" data-outline-text="true">draft</span><span data-outline-text="true">!</span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 1, 0],
-    //     anchorOffset: 0,
-    //     focusPath: [0, 1, 0],
-    //     focusOffset: 5,
-    //   },
-    // },
-    // {
-    //   name: 'Select and strikethrough',
-    //   inputs: [
-    //     insertText('Hello draft!'),
-    //     moveNativeSelection([0, 0, 0], 6, [0, 0, 0], 11),
-    //     formatStrikeThrough(),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello </span>' +
-    //     '<span class="editor-text-strikethrough" data-outline-text="true">draft</span><span data-outline-text="true">!</span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 1, 0],
-    //     anchorOffset: 0,
-    //     focusPath: [0, 1, 0],
-    //     focusOffset: 5,
-    //   },
-    // },
-    // {
-    //   name: 'Select and underline + strikethrough',
-    //   inputs: [
-    //     insertText('Hello draft!'),
-    //     moveNativeSelection([0, 0, 0], 6, [0, 0, 0], 11),
-    //     formatUnderline(),
-    //     formatStrikeThrough(),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello </span>' +
-    //     '<span class="editor-text-underlineStrikethrough" data-outline-text="true">draft</span><span data-outline-text="true">!</span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 1, 0],
-    //     anchorOffset: 0,
-    //     focusPath: [0, 1, 0],
-    //     focusOffset: 5,
-    //   },
-    // },
-    // {
-    //   name: 'Select and replace all',
-    //   inputs: [
-    //     insertText('This is broken.'),
-    //     moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 15),
-    //     insertText('This works!'),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">This works!</span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 0, 0],
-    //     anchorOffset: 11,
-    //     focusPath: [0, 0, 0],
-    //     focusOffset: 11,
-    //   },
-    // },
-    // {
-    //   name: 'Select and delete',
-    //   inputs: [
-    //     insertText('A lion.'),
-    //     moveNativeSelection([0, 0, 0], 2, [0, 0, 0], 6),
-    //     deleteForward(),
-    //     insertText('duck'),
-    //     moveNativeSelection([0, 0, 0], 2, [0, 0, 0], 6),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">A duck.</span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 0, 0],
-    //     anchorOffset: 2,
-    //     focusPath: [0, 0, 0],
-    //     focusOffset: 6,
-    //   },
-    // },
-    // {
-    //   name: 'Inserting a paragraph',
-    //   inputs: [insertParagraph()],
-    //   expectedHTML:
-    //     '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span data-outline-text="true"><br></span></p>' +
-    //     '<p class="editor-paragraph"><span data-outline-text="true"><br></span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [1, 0, 0],
-    //     anchorOffset: 0,
-    //     focusPath: [1, 0, 0],
-    //     focusOffset: 0,
-    //   },
-    // },
-    // {
-    //   name: 'Inserting a paragraph and then removing it',
-    //   inputs: [insertParagraph(), deleteBackward()],
-    //   expectedHTML:
-    //     '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span data-outline-text="true"><br></span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 0, 0],
-    //     anchorOffset: 0,
-    //     focusPath: [0, 0, 0],
-    //     focusOffset: 0,
-    //   },
-    // },
-    // {
-    //   name: 'Inserting a paragraph part way through text',
-    //   inputs: [
-    //     insertText('Hello world'),
-    //     moveNativeSelection([0, 0, 0], 6, [0, 0, 0], 6),
-    //     insertParagraph(),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello </span></p>' +
-    //     '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">world</span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [1, 0, 0],
-    //     anchorOffset: 0,
-    //     focusPath: [1, 0, 0],
-    //     focusOffset: 0,
-    //   },
-    // },
-    // {
-    //   name: 'Inserting two paragraphs and then deleting via selection',
-    //   inputs: [
-    //     insertText('123'),
-    //     insertParagraph(),
-    //     insertText('456'),
-    //     moveNativeSelection([0, 0, 0], 0, [1, 0, 0], 3),
-    //     deleteBackward(),
-    //   ],
-    //   expectedHTML:
-    //     '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span data-outline-text="true"><br></span></p></div>',
-    //   expectedSelection: {
-    //     anchorPath: [0, 0, 0],
-    //     anchorOffset: 0,
-    //     focusPath: [0, 0, 0],
-    //     focusOffset: 0,
-    //   },
-    // },
+    // ]),
+    {
+      name: 'Jump to beginning and insert',
+      inputs: [
+        insertText('1'),
+        insertText('1'),
+        insertText('2'),
+        insertText('3'),
+        moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 0),
+        insertText('a'),
+        insertText('b'),
+        insertText('c'),
+        deleteForward(),
+      ],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">abc123</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 3,
+        focusPath: [0, 0, 0],
+        focusOffset: 3,
+      },
+    },
+    {
+      name: 'Select and replace',
+      inputs: [
+        insertText('Hello draft!'),
+        moveNativeSelection([0, 0, 0], 6, [0, 0, 0], 11),
+        insertText('outline'),
+      ],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello outline!</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 13,
+        focusPath: [0, 0, 0],
+        focusOffset: 13,
+      },
+    },
+    {
+      name: 'Select and bold',
+      inputs: [
+        insertText('Hello draft!'),
+        moveNativeSelection([0, 0, 0], 6, [0, 0, 0], 11),
+        formatBold(),
+      ],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello </span>' +
+        '<strong class="editor-text-bold" data-outline-text="true">draft</strong><span data-outline-text="true">!</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 1, 0],
+        anchorOffset: 0,
+        focusPath: [0, 1, 0],
+        focusOffset: 5,
+      },
+    },
+    {
+      name: 'Select and italic',
+      inputs: [
+        insertText('Hello draft!'),
+        moveNativeSelection([0, 0, 0], 6, [0, 0, 0], 11),
+        formatItalic(),
+      ],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello </span>' +
+        '<em class="editor-text-italic" data-outline-text="true">draft</em><span data-outline-text="true">!</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 1, 0],
+        anchorOffset: 0,
+        focusPath: [0, 1, 0],
+        focusOffset: 5,
+      },
+    },
+    {
+      name: 'Select and bold + italic',
+      inputs: [
+        insertText('Hello draft!'),
+        moveNativeSelection([0, 0, 0], 6, [0, 0, 0], 11),
+        formatBold(),
+        formatItalic(),
+      ],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello </span>' +
+        '<strong class="editor-text-bold editor-text-italic" data-outline-text="true">draft</strong><span data-outline-text="true">!</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 1, 0],
+        anchorOffset: 0,
+        focusPath: [0, 1, 0],
+        focusOffset: 5,
+      },
+    },
+    {
+      name: 'Select and underline',
+      inputs: [
+        insertText('Hello draft!'),
+        moveNativeSelection([0, 0, 0], 6, [0, 0, 0], 11),
+        formatUnderline(),
+      ],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello </span>' +
+        '<span class="editor-text-underline" data-outline-text="true">draft</span><span data-outline-text="true">!</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 1, 0],
+        anchorOffset: 0,
+        focusPath: [0, 1, 0],
+        focusOffset: 5,
+      },
+    },
+    {
+      name: 'Select and strikethrough',
+      inputs: [
+        insertText('Hello draft!'),
+        moveNativeSelection([0, 0, 0], 6, [0, 0, 0], 11),
+        formatStrikeThrough(),
+      ],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello </span>' +
+        '<span class="editor-text-strikethrough" data-outline-text="true">draft</span><span data-outline-text="true">!</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 1, 0],
+        anchorOffset: 0,
+        focusPath: [0, 1, 0],
+        focusOffset: 5,
+      },
+    },
+    {
+      name: 'Select and underline + strikethrough',
+      inputs: [
+        insertText('Hello draft!'),
+        moveNativeSelection([0, 0, 0], 6, [0, 0, 0], 11),
+        formatUnderline(),
+        formatStrikeThrough(),
+      ],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello </span>' +
+        '<span class="editor-text-underlineStrikethrough" data-outline-text="true">draft</span><span data-outline-text="true">!</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 1, 0],
+        anchorOffset: 0,
+        focusPath: [0, 1, 0],
+        focusOffset: 5,
+      },
+    },
+    {
+      name: 'Select and replace all',
+      inputs: [
+        insertText('This is broken.'),
+        moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 15),
+        insertText('This works!'),
+      ],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">This works!</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 11,
+        focusPath: [0, 0, 0],
+        focusOffset: 11,
+      },
+    },
+    {
+      name: 'Select and delete',
+      inputs: [
+        insertText('A lion.'),
+        moveNativeSelection([0, 0, 0], 2, [0, 0, 0], 6),
+        deleteForward(),
+        insertText('duck'),
+        moveNativeSelection([0, 0, 0], 2, [0, 0, 0], 6),
+      ],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">A duck.</span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 2,
+        focusPath: [0, 0, 0],
+        focusOffset: 6,
+      },
+    },
+    {
+      name: 'Inserting a paragraph',
+      inputs: [insertParagraph()],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span data-outline-text="true"><br></span></p>' +
+        '<p class="editor-paragraph"><span data-outline-text="true"><br></span></p></div>',
+      expectedSelection: {
+        anchorPath: [1, 0, 0],
+        anchorOffset: 0,
+        focusPath: [1, 0, 0],
+        focusOffset: 0,
+      },
+    },
+    {
+      name: 'Inserting a paragraph and then removing it',
+      inputs: [insertParagraph(), deleteBackward()],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span data-outline-text="true"><br></span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 0,
+        focusPath: [0, 0, 0],
+        focusOffset: 0,
+      },
+    },
+    {
+      name: 'Inserting a paragraph part way through text',
+      inputs: [
+        insertText('Hello world'),
+        moveNativeSelection([0, 0, 0], 6, [0, 0, 0], 6),
+        insertParagraph(),
+      ],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello </span></p>' +
+        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">world</span></p></div>',
+      expectedSelection: {
+        anchorPath: [1, 0, 0],
+        anchorOffset: 0,
+        focusPath: [1, 0, 0],
+        focusOffset: 0,
+      },
+    },
+    {
+      name: 'Inserting two paragraphs and then deleting via selection',
+      inputs: [
+        insertText('123'),
+        insertParagraph(),
+        insertText('456'),
+        moveNativeSelection([0, 0, 0], 0, [1, 0, 0], 3),
+        deleteBackward(),
+      ],
+      expectedHTML:
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span data-outline-text="true"><br></span></p></div>',
+      expectedSelection: {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 0,
+        focusPath: [0, 0, 0],
+        focusOffset: 0,
+      },
+    },
     ...[
       {whitespaceCharacter: ' ', whitespaceName: 'space'},
       {whitespaceCharacter: '\u00a0', whitespaceName: 'non-breaking space'},

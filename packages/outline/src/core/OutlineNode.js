@@ -129,7 +129,7 @@ function replaceNode<N: OutlineNode>(
     const selection = getSelection();
     if (selection) {
       const anchorNode = selection.getAnchorNode();
-      if (selection.isCaret() && anchorNode.__key === toReplaceKey) {
+      if (selection.isCollapsed() && anchorNode.__key === toReplaceKey) {
         anchorOffset = selection.anchorOffset;
       }
     }

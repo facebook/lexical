@@ -219,7 +219,7 @@ export function formatText(
   let startOffset;
   let endOffset;
 
-  if (selection.isCaret()) {
+  if (selection.isCollapsed()) {
     if (firstNodeTextLength === 0) {
       firstNode.setFlags(firstNextFlags);
       selection.isDirty = true;
@@ -324,7 +324,7 @@ export function formatText(
 }
 
 export function insertParagraph(selection: Selection): void {
-  if (!selection.isCaret()) {
+  if (!selection.isCollapsed()) {
     removeText(selection);
   }
   const anchorNode = selection.getAnchorNode();
@@ -432,28 +432,28 @@ export function moveWordForward(
 }
 
 export function deleteLineBackward(selection: Selection): void {
-  if (selection.isCaret()) {
+  if (selection.isCollapsed()) {
     updateCaretSelectionForRange(selection, true, 'lineboundary', false);
   }
   removeText(selection);
 }
 
 export function deleteLineForward(selection: Selection): void {
-  if (selection.isCaret()) {
+  if (selection.isCollapsed()) {
     updateCaretSelectionForRange(selection, false, 'lineboundary', false);
   }
   removeText(selection);
 }
 
 export function deleteWordBackward(selection: Selection): void {
-  if (selection.isCaret()) {
+  if (selection.isCollapsed()) {
     updateCaretSelectionForRange(selection, true, 'word', false);
   }
   removeText(selection);
 }
 
 export function deleteWordForward(selection: Selection): void {
-  if (selection.isCaret()) {
+  if (selection.isCollapsed()) {
     updateCaretSelectionForRange(selection, false, 'word', false);
   }
   removeText(selection);
@@ -461,6 +461,7 @@ export function deleteWordForward(selection: Selection): void {
 
 export function updateCaretSelectionForUnicodeCharacter(
   selection: Selection,
+  isBackward: boolean,
 ): void {
   const anchorNode = selection.getAnchorNode();
   const focusNode = selection.getFocusNode();
@@ -477,7 +478,11 @@ export function updateCaretSelectionForUnicodeCharacter(
     if (startOffset !== characterOffset) {
       const text = anchorNode.getTextContent().slice(startOffset, endOffset);
       if (!doesContainGrapheme(text)) {
-        selection.anchorOffset = characterOffset;
+        if (isBackward) {
+          selection.focusOffset = characterOffset;
+        } else {
+          selection.anchorOffset = characterOffset;
+        }
       }
     }
   } else {
@@ -514,22 +519,22 @@ export function updateCaretSelectionForAdjacentHashtags(
 }
 
 function deleteCharacter(selection: Selection, isBackward: boolean): void {
-  if (selection.isCaret()) {
+  if (selection.isCollapsed()) {
     updateCaretSelectionForRange(selection, isBackward, 'character', false);
 
-    if (!selection.isCaret()) {
-      const anchorNode = selection.getAnchorNode();
+    if (!selection.isCollapsed()) {
+      const focusNode = selection.getFocusNode();
       if (
-        anchorNode.isSegmented() &&
-        selection.anchorOffset !== anchorNode.getTextContentSize()
+        focusNode.isSegmented() &&
+        selection.anchorOffset !== focusNode.getTextContentSize()
       ) {
-        removeSegment(anchorNode, isBackward);
+        removeSegment(focusNode, isBackward);
         return;
       } else if (!isBackward) {
-        const nextSibling = anchorNode.getNextSibling();
+        const nextSibling = focusNode.getNextSibling();
 
         if (
-          selection.anchorOffset === anchorNode.getTextContentSize() &&
+          selection.anchorOffset === focusNode.getTextContentSize() &&
           isTextNode(nextSibling) &&
           nextSibling.isSegmented()
         ) {
@@ -537,7 +542,7 @@ function deleteCharacter(selection: Selection, isBackward: boolean): void {
           return;
         }
       }
-      updateCaretSelectionForUnicodeCharacter(selection);
+      updateCaretSelectionForUnicodeCharacter(selection, isBackward);
     } else if (isBackward) {
       // Special handling around rich text nodes
       const anchorNode = selection.getAnchorNode();
@@ -662,6 +667,15 @@ export function updateCaretSelectionForRange(
     const range = domSelection.getRangeAt(0);
     // Apply the DOM selection to our Outline selection.
     selection.applyDOMRange(range);
+    // If we are going backwards as a range, we need to flip anchor and focus
+    if (isBackward && !collapse) {
+      const anchorKey = selection.anchorKey;
+      const anchorOffset = selection.anchorOffset;
+      selection.anchorKey = selection.focusKey;
+      selection.anchorOffset = selection.focusOffset;
+      selection.focusKey = anchorKey;
+      selection.focusOffset = anchorOffset;
+    }
   }
 }
 
@@ -689,7 +703,7 @@ export function insertNodes(
   selectStart?: boolean,
 ): boolean {
   // If there is a range selected remove the text in it
-  if (!selection.isCaret()) {
+  if (!selection.isCollapsed()) {
     removeText(selection);
   }
   const anchorOffset = selection.anchorOffset;

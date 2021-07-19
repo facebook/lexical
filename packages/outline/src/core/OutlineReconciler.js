@@ -495,23 +495,10 @@ export function reconcileViewModel(
   // always do a full reconciliation to ensure consistency.
   const isDirty = nextViewModel._isDirty;
   const needsUpdate = isDirty || nextViewModel.hasDirtyNodes();
-  const domSelection: null | Selection = window.getSelection();
   const prevSelection = prevViewModel._selection;
   const nextSelection = nextViewModel._selection;
-  let mutationsCausedLostSelection = false;
 
   if (needsUpdate) {
-    let anchorNodeBeforeMutation;
-    let focusNodeBeforeMutation;
-    let anchorOffsetBeforeMutation;
-    let focusOffsetBeforeMutation;
-
-    if (domSelection !== null) {
-      anchorNodeBeforeMutation = domSelection.anchorNode;
-      focusNodeBeforeMutation = domSelection.focusNode;
-      anchorOffsetBeforeMutation = domSelection.anchorOffset;
-      focusOffsetBeforeMutation = domSelection.focusOffset;
-    }
     triggerListeners('mutation', editor, null);
     try {
       reconcileRoot(
@@ -525,27 +512,10 @@ export function reconcileViewModel(
     } finally {
       triggerListeners('mutation', editor, rootElement);
     }
-    // Compare the selection before mutation to the one after mutation.
-    // If there are changes, we will need to update selection anyway.
-    if (
-      domSelection !== null &&
-      (anchorNodeBeforeMutation !== domSelection.anchorNode ||
-        focusNodeBeforeMutation !== domSelection.focusNode ||
-        anchorOffsetBeforeMutation !== domSelection.anchorOffset ||
-        focusOffsetBeforeMutation !== domSelection.focusOffset)
-    ) {
-      mutationsCausedLostSelection = true;
-    }
   }
 
-  if (
-    domSelection !== null &&
-    prevSelection !== nextSelection &&
-    (!nextSelection ||
-      nextSelection.isDirty ||
-      isDirty ||
-      mutationsCausedLostSelection)
-  ) {
+  const domSelection: null | Selection = window.getSelection();
+  if (domSelection !== null) {
     reconcileSelection(prevSelection, nextSelection, editor, domSelection);
   }
 }

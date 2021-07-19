@@ -134,19 +134,25 @@ const view: View = {
   getCompositionKey,
 };
 
-export function viewModelHasDirtySelectionOrNeedsSync(
+export function viewModelHasDirtySelection(
   viewModel: ViewModel,
   editor: OutlineEditor,
 ): boolean {
-  const selection = viewModel._selection;
   const currentSelection = editor.getViewModel()._selection;
-  if (
-    (currentSelection !== null && selection === null) ||
-    (currentSelection === null && selection !== null)
-  ) {
+  const pendingSelection = viewModel._selection;
+  // Check if we need to update because of changes in selection
+  if (pendingSelection !== null) {
+    if (
+      currentSelection === null ||
+      pendingSelection.isDirty ||
+      !pendingSelection.is(currentSelection)
+    ) {
+      return true;
+    }
+  } else if (currentSelection !== null) {
     return true;
   }
-  return selection !== null && (selection.isDirty || selection.needsSync);
+  return false;
 }
 
 export function enterViewModelScope<V>(

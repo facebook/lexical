@@ -31,7 +31,6 @@ export class Selection {
   focusKey: string;
   focusOffset: number;
   isDirty: boolean;
-  needsSync: boolean;
 
   constructor(
     anchorKey: string,
@@ -44,10 +43,17 @@ export class Selection {
     this.focusKey = focusKey;
     this.focusOffset = focusOffset;
     this.isDirty = false;
-    this.needsSync = false;
   }
 
-  isCaret(): boolean {
+  is(selection: Selection): boolean {
+    return (
+      this.anchorKey === selection.anchorKey &&
+      this.focusKey === selection.focusKey &&
+      this.anchorOffset === selection.anchorOffset &&
+      this.focusOffset === selection.focusOffset
+    );
+  }
+  isCollapsed(): boolean {
     return (
       this.anchorKey === this.focusKey && this.anchorOffset === this.focusOffset
     );
@@ -156,9 +162,7 @@ export class Selection {
   }
 }
 
-function resolveNonLineBreakOrInertNode(
-  node: OutlineNode,
-): [TextNode, number, boolean] {
+function resolveNonLineBreakOrInertNode(node: OutlineNode): [TextNode, number] {
   const resolvedNode = node.getPreviousSibling();
   if (!isTextNode(resolvedNode)) {
     invariant(
@@ -167,7 +171,7 @@ function resolveNonLineBreakOrInertNode(
     );
   }
   const offset = resolvedNode.getTextContentSize();
-  return [resolvedNode, offset, true];
+  return [resolvedNode, offset];
 }
 
 function getNodeFromDOM(dom: Node): null | OutlineNode {
@@ -186,12 +190,10 @@ function resolveSelectionNodeAndOffset(
   dom: Node,
   offset: number,
   editor: OutlineEditor,
-  _isDirty: boolean,
-): null | [TextNode, number, boolean] {
+): null | [TextNode, number] {
   let resolvedDOM = dom;
   let resolvedOffset = offset;
   let resolvedNode;
-  let isDirty = _isDirty;
   // If we have selection on an element, we will
   // need to figure out (using the offset) what text
   // node should be selected.
@@ -200,7 +202,6 @@ function resolveSelectionNodeAndOffset(
     let moveSelectionToEnd = false;
     // Given we're moving selection to another node, selection is
     // definitely dirty.
-    isDirty = true;
     // We use the anchor to find which child node to select
     const childNodes = resolvedDOM.childNodes;
     const childNodesLength = childNodes.length;
@@ -249,7 +250,6 @@ function resolveSelectionNodeAndOffset(
     resolvedOffset !== 0 &&
     textNode.nodeValue[0] === ZERO_WIDTH_JOINER_CHAR
   ) {
-    isDirty = true;
     resolvedOffset--;
   }
 
@@ -257,13 +257,10 @@ function resolveSelectionNodeAndOffset(
     // Because we use a special character for whitespace
     // at the start of empty strings, we need to remove one
     // from the offset.
-    if (resolvedOffset === 0) {
-      isDirty = true;
-    }
     resolvedOffset = 0;
   }
 
-  return [resolvedNode, resolvedOffset, isDirty];
+  return [resolvedNode, resolvedOffset];
 }
 
 function resolveSelectionNodesAndOffsets(
@@ -272,7 +269,7 @@ function resolveSelectionNodesAndOffsets(
   focusDOM: null | Node,
   focusOffset: number,
   editor: OutlineEditor,
-): null | [TextNode, TextNode, number, number, boolean] {
+): null | [TextNode, TextNode, number, number] {
   if (
     anchorDOM === null ||
     focusDOM === null ||
@@ -280,31 +277,26 @@ function resolveSelectionNodesAndOffsets(
   ) {
     return null;
   }
-  let isDirty = false;
   const resolveAnchorNodeAndOffset = resolveSelectionNodeAndOffset(
     anchorDOM,
     anchorOffset,
     editor,
-    isDirty,
   );
   if (resolveAnchorNodeAndOffset === null) {
     return null;
   }
   let resolvedAnchorNode = resolveAnchorNodeAndOffset[0];
   let resolvedAnchorOffset = resolveAnchorNodeAndOffset[1];
-  isDirty = resolveAnchorNodeAndOffset[2];
   const resolveFocusNodeAndOffset = resolveSelectionNodeAndOffset(
     focusDOM,
     focusOffset,
     editor,
-    isDirty,
   );
   if (resolveFocusNodeAndOffset === null) {
     return null;
   }
   let resolvedFocusNode = resolveFocusNodeAndOffset[0];
   let resolvedFocusOffset = resolveFocusNodeAndOffset[1];
-  isDirty = resolveFocusNodeAndOffset[2];
 
   // Handle normalization of selection when it is at the boundaries.
   const textContentSize = resolvedAnchorNode.getTextContentSize();
@@ -323,7 +315,6 @@ function resolveSelectionNodesAndOffsets(
           resolvedFocusNode = prevSibling;
           resolvedAnchorOffset = offset;
           resolvedFocusOffset = offset;
-          isDirty = true;
         }
       }
     } else {
@@ -332,7 +323,6 @@ function resolveSelectionNodesAndOffsets(
         if (isTextNode(nextSibling) && !nextSibling.isImmutable()) {
           resolvedAnchorNode = nextSibling;
           resolvedAnchorOffset = 0;
-          isDirty = true;
         }
       }
     }
@@ -345,7 +335,6 @@ function resolveSelectionNodesAndOffsets(
     editor._compositionKey !== resolvedAnchorNode.__key &&
     lastSelection !== null
   ) {
-    isDirty = true;
     resolvedAnchorNode = lastSelection.getAnchorNode();
     resolvedAnchorOffset = lastSelection.anchorOffset;
     resolvedFocusNode = lastSelection.getFocusNode();
@@ -357,7 +346,6 @@ function resolveSelectionNodesAndOffsets(
     resolvedFocusNode,
     resolvedAnchorOffset,
     resolvedFocusOffset,
-    isDirty,
   ];
 }
 
@@ -451,7 +439,6 @@ export function createSelection(
     resolvedFocusNode,
     resolvedAnchorOffset,
     resolvedFocusOffset,
-    isDirty,
   ] = resolvedSelectionNodesAndOffsets;
 
   const selection = new Selection(
@@ -461,33 +448,7 @@ export function createSelection(
     resolvedFocusOffset,
   );
 
-  const selectionsMatch =
-    lastSelection !== null && isEqual(selection, lastSelection);
-
-  if (isDirty) {
-    // If the selection hasn't changed then don't add the isDirty flag.
-    // This will avoid recursive updates occurring because we keep
-    // adding isDirty.
-    if (!selectionsMatch) {
-      selection.isDirty = true;
-    }
-  } else if (isSelectionChange && !selectionsMatch) {
-    // If the selection changes, we need to update our view model
-    // regardless to keep the view in sync. If the selection is
-    // already dirty, we don't need to bother with this, as we
-    // will update the selection regardless.
-    selection.needsSync = true;
-  }
   return selection;
-}
-
-function isEqual(selectionA: Selection, selectionB: Selection): boolean {
-  return (
-    selectionA.anchorKey === selectionB.anchorKey &&
-    selectionA.focusKey === selectionB.focusKey &&
-    selectionA.anchorOffset === selectionB.anchorOffset &&
-    selectionA.focusOffset === selectionB.focusOffset
-  );
 }
 
 export function getSelection(): null | Selection {

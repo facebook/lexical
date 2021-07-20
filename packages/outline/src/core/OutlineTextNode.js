@@ -541,12 +541,23 @@ export class TextNode extends OutlineNode {
     } else if (parts[0] === textContent) {
       return [this];
     }
-    // For the first part, update the existing node
-    const writableNode = this.getWritable();
-    const parentKey = writableNode.__parent;
     const firstPart = parts[0];
-    const flags = writableNode.__flags;
-    writableNode.__text = firstPart;
+    const parent = this.getParentOrThrow();
+    const parentKey = parent.__key;
+    let writableNode;
+    let flags;
+    if (this.isSegmented()) {
+      // Create a new TextNode
+      writableNode = createTextNode(firstPart);
+      writableNode.__parent = parentKey;
+      flags = writableNode.__flags;
+      this.remove();
+    } else {
+      // For the first part, update the existing node
+      writableNode = this.getWritable();
+      writableNode.__text = firstPart;
+      flags = writableNode.__flags;
+    }
 
     // Handle selection
     const selection = getSelection();
@@ -591,7 +602,6 @@ export class TextNode extends OutlineNode {
     }
 
     // Insert the nodes into the parent's children
-    const parent = this.getParentOrThrow();
     const writableParent = parent.getWritable();
     const writableParentChildren = writableParent.__children;
     const insertionIndex = writableParentChildren.indexOf(key);

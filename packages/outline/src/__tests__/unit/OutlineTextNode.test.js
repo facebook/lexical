@@ -20,7 +20,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import {createEditor, createTextNode} from 'outline';
+import {createEditor, createTextNode, TextNode} from 'outline';
 
 import {createParagraphNode} from 'outline/ParagraphNode';
 
@@ -39,6 +39,16 @@ const editorThemeClasses = Object.freeze({
 function sanitizeHTML(html) {
   // Remove zero width characters.
   return html.replace(/[\u200B-\u200D\u2060\uFEFF]/g, '');
+}
+
+class CustomSegmentedNode extends TextNode {
+  clone() {
+    return new CustomSegmentedNode(this.__text, this.__key);
+  }
+}
+
+function createCustomSegmentedNode(text): CustomSegmentedNode {
+  return new CustomSegmentedNode(text).makeSegmented();
 }
 
 describe('OutlineTextNode tests', () => {
@@ -328,12 +338,33 @@ describe('OutlineTextNode tests', () => {
   describe('splitText()', () => {
     test('throw when immutable', async () => {
       await update(() => {
-        const textNode = createTextNode('Hello world');
+        const textNode = createTextNode('Hello World');
         textNode.makeImmutable();
 
         expect(() => {
           textNode.splitText(3);
         }).toThrow();
+      });
+    });
+
+    test('convert segmented node into plain text', async () => {
+      await update((view) => {
+        const segmentedNode = createCustomSegmentedNode('Hello World');
+        const paragraphNode = createParagraphNode();
+        paragraphNode.append(segmentedNode);
+
+        const [middle, next] = segmentedNode.splitText(5);
+
+        const children = paragraphNode.getAllTextNodes();
+        expect(paragraphNode.getTextContent()).toBe('Hello World');
+        expect(children[0].isSimpleText()).toBe(true);
+        expect(children[0].getTextContent()).toBe('');
+        expect(children[1].isSimpleText()).toBe(true);
+        expect(children[1].getTextContent()).toBe('Hello');
+        expect(children[2].isSimpleText()).toBe(true);
+        expect(children[2].getTextContent()).toBe(' World');
+        expect(middle).toBe(children[1]);
+        expect(next).toBe(children[2]);
       });
     });
 

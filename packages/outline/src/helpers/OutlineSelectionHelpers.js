@@ -713,6 +713,11 @@ export function insertNodes(
   const siblings = [];
   let target;
 
+  // Get all remaining text node siblings in this block so we can
+  // append them after the last node we're inserting.
+  const nextSiblings = anchorNode.getNextSiblings();
+  const topLevelBlock = anchorNode.getTopParentBlockOrThrow();
+
   if (anchorOffset === 0) {
     // Insert an empty text node to wrap whatever is being inserted
     // in case it's immutable
@@ -734,11 +739,7 @@ export function insertNodes(
   }
   const startingNode = target;
 
-  // Finally, get all remaining text node siblings in this block so we can
-  // append them after the last node we're inserting.
-  const nextSiblings = anchorNode.getNextSiblings();
   siblings.push(...nextSiblings);
-  const topLevelBlock = anchorNode.getTopParentBlockOrThrow();
 
   // Time to insert the nodes!
   for (let i = 0; i < nodes.length; i++) {

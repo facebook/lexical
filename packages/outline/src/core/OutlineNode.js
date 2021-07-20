@@ -219,6 +219,12 @@ export class OutlineNode {
   __key: NodeKey;
   __parent: null | NodeKey;
 
+  static deserialize(data: $FlowFixMe, ...args: $FlowFixMe): OutlineNode {
+    const instance = new this(...args);
+    instance.__flags = data.__flags;
+    return instance;
+  }
+
   clone(): OutlineNode {
     // Flow doesn't support abstract classes unfortunately, so we can't _force_
     // subclasses of Node to implement clone. All subclasses of Node should have
@@ -777,22 +783,11 @@ export function createNodeFromParse(
   if (NodeType === undefined) {
     invariant(false, 'createNodeFromParse: type "%s" + not found', nodeType);
   }
-  const node = new NodeType();
+  const node = NodeType.deserialize(parsedNode);
   const key = node.__key;
   if (isRootNode(node)) {
     const viewModel = getActiveViewModel();
     viewModel._nodeMap.set('root', node);
-  }
-  // Copy over all properties, except the key and children.
-  // We've already generated a unique key for this node, we
-  // don't want to use an old one that might already be in use.
-  // We also don't want to copy over the children as want a
-  // clean array to push the parsed children nodes into (below).
-  for (const property in parsedNode) {
-    if (property !== '__key' && property !== '__children') {
-      // $FlowFixMe: not sure how we can type this
-      node[property] = parsedNode[property];
-    }
   }
   if (node.__flags & IS_OVERFLOWED) {
     node.__flags ^= IS_OVERFLOWED;

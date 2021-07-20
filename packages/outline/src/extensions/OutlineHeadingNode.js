@@ -28,6 +28,10 @@ export type ParsedHeadingNode = {
 export class HeadingNode extends BlockNode {
   __tag: HeadingTagType;
 
+  static deserialize(data: $FlowFixMe): HeadingNode {
+    return BlockNode.deserialize.call(this, data, data.__tag);
+  }
+
   constructor(tag: HeadingTagType, key?: NodeKey) {
     super(key);
     this.__tag = tag;

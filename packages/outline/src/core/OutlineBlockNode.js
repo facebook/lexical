@@ -35,7 +35,7 @@ export type ParsedBlockNode = {
 export class BlockNode extends OutlineNode {
   __children: Array<NodeKey>;
 
-  constructor(key?: string) {
+  constructor(key?: NodeKey) {
     super(key);
     this.__children = [];
   }

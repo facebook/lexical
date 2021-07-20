@@ -43,7 +43,7 @@ type NodeParserState = {
   remappedSelection?: ParsedSelection,
 };
 export type ParsedNode = {
-  __key: string,
+  __key: NodeKey,
   __type: string,
   __flags: number,
   __parent: null | NodeKey,
@@ -232,7 +232,7 @@ export class OutlineNode {
     );
   }
 
-  constructor(key?: string) {
+  constructor(key?: NodeKey) {
     this.__type = 'node';
     this.__flags = 0;
     this.__key = key || generateKey(this);

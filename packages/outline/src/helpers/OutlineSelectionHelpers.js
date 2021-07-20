@@ -524,9 +524,11 @@ function deleteCharacter(selection: Selection, isBackward: boolean): void {
 
     if (!selection.isCollapsed()) {
       const focusNode = selection.getFocusNode();
+      const textContentSize = focusNode.getTextContentSize();
       if (
         focusNode.isSegmented() &&
-        selection.anchorOffset !== focusNode.getTextContentSize()
+        (selection.focusOffset !== textContentSize ||
+          selection.anchorOffset !== textContentSize)
       ) {
         removeSegment(focusNode, isBackward);
         return;
@@ -534,7 +536,7 @@ function deleteCharacter(selection: Selection, isBackward: boolean): void {
         const nextSibling = focusNode.getNextSibling();
 
         if (
-          selection.anchorOffset === focusNode.getTextContentSize() &&
+          selection.anchorOffset === textContentSize &&
           isTextNode(nextSibling) &&
           nextSibling.isSegmented()
         ) {

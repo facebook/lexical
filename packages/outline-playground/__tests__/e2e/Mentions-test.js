@@ -194,6 +194,55 @@ describe('Mentions', () => {
         focusPath: [0, 0, 0],
         focusOffset: 0,
       });
+
+      await page.keyboard.type('abc  def');
+
+      await page.keyboard.press('ArrowLeft');
+      await page.keyboard.press('ArrowLeft');
+      await page.keyboard.press('ArrowLeft');
+      await page.keyboard.press('ArrowLeft');
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">abc  def</span></p>',
+      );
+      await assertSelection(page, {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 4,
+        focusPath: [0, 0, 0],
+        focusOffset: 4,
+      });
+
+      await page.keyboard.type('Luke');
+
+      await page.waitForSelector('#mentions-typeahead ul li');
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span aria-controls="mentions-typeahead" data-outline-text="true">abc Luke def</span></p>',
+      );
+
+      await page.keyboard.press('Enter');
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">abc </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> def</span></p>',
+      );
+      await assertSelection(page, {
+        anchorPath: [0, 1, 0],
+        anchorOffset: 14,
+        focusPath: [0, 1, 0],
+        focusOffset: 14,
+      });
+
+      await page.keyboard.press('Backspace');
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">abc </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke</span><span data-outline-text="true"> def</span></p>',
+      );
+      await assertSelection(page, {
+        anchorPath: [0, 1, 0],
+        anchorOffset: 4,
+        focusPath: [0, 1, 0],
+        focusOffset: 4,
+      });
     });
 
     it(`Can enter multiple Luke Skywalker mentions and then delete them from start`, async () => {

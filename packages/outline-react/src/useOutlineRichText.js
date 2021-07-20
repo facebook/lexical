@@ -11,7 +11,7 @@ import type {OutlineEditor} from 'outline';
 import type {EventHandlerState} from './shared/EventHandlers';
 import type {InputEvents} from 'outline-react/useOutlineEditorEvents';
 
-import {useEffect, useMemo} from 'react';
+import {useCallback, useEffect, useMemo} from 'react';
 import {createTextNode} from 'outline';
 import useOutlineEditorEvents from './useOutlineEditorEvents';
 import {HeadingNode} from 'outline/HeadingNode';
@@ -47,7 +47,16 @@ function initEditor(editor: OutlineEditor): void {
       const paragraph = createParagraphNode();
       const text = createTextNode();
       root.append(paragraph.append(text));
+      text.select();
     }
+  });
+}
+
+function clearEditor(editor: OutlineEditor): void {
+  editor.update((view) => {
+    const root = view.getRoot();
+    root.clear();
+    initEditor(editor);
   });
 }
 
@@ -128,5 +137,10 @@ export default function useOutlineRichText(
 
   useOutlineEditorEvents(events, editor, eventHandlerState);
   useOutlineDragonSupport(editor);
-  return useOutlineHistory(editor);
+  const clearHistory = useOutlineHistory(editor);
+
+  return useCallback(() => {
+    clearEditor(editor);
+    clearHistory();
+  }, [clearHistory, editor]);
 }

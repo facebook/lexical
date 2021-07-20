@@ -788,7 +788,7 @@ pre :not(.tree-view-output) {
   padding: 10px;
 }
 
-.add-image {
+.action-button {
   background-color: #eee;
   border: 0;
   padding: 8px 12px;
@@ -800,7 +800,7 @@ pre :not(.tree-view-output) {
   cursor: pointer;
 }
 
-.add-image:hover {
+.action-button:hover {
   background-color: #ddd;
   color: #000;
 }

@@ -526,7 +526,7 @@ function deleteCharacter(selection: Selection, isBackward: boolean): void {
       const focusNode = selection.getFocusNode();
       if (
         focusNode.isSegmented() &&
-        selection.anchorOffset !== focusNode.getTextContentSize()
+        selection.focusOffset !== focusNode.getTextContentSize()
       ) {
         removeSegment(focusNode, isBackward);
         return;

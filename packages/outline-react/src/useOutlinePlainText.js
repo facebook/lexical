@@ -11,10 +11,14 @@ import type {OutlineEditor} from 'outline';
 import type {EventHandlerState} from './shared/EventHandlers';
 import type {InputEvents} from 'outline-react/useOutlineEditorEvents';
 
-import {useEffect, useMemo} from 'react';
+import {useCallback, useEffect, useMemo} from 'react';
 import {createTextNode} from 'outline';
 import useOutlineEditorEvents from './useOutlineEditorEvents';
-import {createParagraphNode, ParagraphNode} from 'outline/ParagraphNode';
+import {
+  createParagraphNode,
+  ParagraphNode,
+  isParagraphNode,
+} from 'outline/ParagraphNode';
 import {CAN_USE_BEFORE_INPUT} from 'shared/environment';
 import {
   onSelectionChange,
@@ -41,6 +45,19 @@ function initEditor(editor: OutlineEditor): void {
       const paragraph = createParagraphNode();
       const text = createTextNode();
       root.append(paragraph.append(text));
+      text.select();
+    }
+  });
+}
+
+function clearEditor(editor: OutlineEditor): void {
+  editor.update((view) => {
+    const firstChild = view.getRoot().getFirstChild();
+    if (isParagraphNode(firstChild)) {
+      firstChild.clear();
+      const textNode = createTextNode();
+      firstChild.append(textNode);
+      textNode.select();
     }
   });
 }
@@ -113,5 +130,10 @@ export default function useOutlinePlainText(
 
   useOutlineEditorEvents(events, editor, eventHandlerState);
   useOutlineDragonSupport(editor);
-  return useOutlineHistory(editor);
+  const clearHistory = useOutlineHistory(editor);
+
+  return useCallback(() => {
+    clearEditor(editor);
+    clearHistory();
+  }, [clearHistory, editor]);
 }

@@ -104,7 +104,7 @@ export const useRichTextEditor = ({
     editorThemeClasses,
   );
   const mentionsTypeahead = useMentions(editor);
-  useOutlineRichText(editor, isReadOnly);
+  const clear = useOutlineRichText(editor, isReadOnly);
   const toolbar = useToolbar(editor);
   const decorators = useOutlineDecorators(editor);
   useEmojis(editor);
@@ -145,8 +145,11 @@ export const useRichTextEditor = ({
         {isCharLimit && <CharacterLimit editor={editor} />}
         {isAutocomplete && <Typeahead editor={editor} />}
         <div className="actions">
-          <button className="add-image" onClick={handleAddImage}>
+          <button className="action-button" onClick={handleAddImage}>
             Insert Image
+          </button>
+          <button className="action-button" onClick={clear}>
+            Clear
           </button>
         </div>
       </>
@@ -155,6 +158,7 @@ export const useRichTextEditor = ({
     isReadOnly,
     rootElementRef,
     showPlaceholder,
+    clear,
     decorators,
     mentionsTypeahead,
     toolbar,
@@ -181,7 +185,7 @@ export const usePlainTextEditor = ({
     editorThemeClasses,
   );
   const mentionsTypeahead = useMentions(editor);
-  usePlainText(editor, isReadOnly);
+  const clear = usePlainText(editor, isReadOnly);
   const decorators = useOutlineDecorators(editor);
   useEmojis(editor);
   useHashtags(editor);
@@ -199,12 +203,18 @@ export const usePlainTextEditor = ({
         {mentionsTypeahead}
         {isCharLimit && <CharacterLimit editor={editor} />}
         {isAutocomplete && <Typeahead editor={editor} />}
+        <div className="actions">
+          <button className="action-button" onClick={clear}>
+            Clear
+          </button>
+        </div>
       </>
     ),
     [
       isReadOnly,
       rootElementRef,
       showPlaceholder,
+      clear,
       decorators,
       mentionsTypeahead,
       isCharLimit,

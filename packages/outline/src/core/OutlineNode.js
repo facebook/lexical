@@ -254,6 +254,13 @@ export class OutlineNode {
           );
         }
       });
+      ['deserialize'].forEach((method) => {
+        if (!proto.constructor.hasOwnProperty(method)) {
+          console.warn(
+            `${this.constructor.name} must implement static "${method}" method`,
+          );
+        }
+      });
     }
   }
   // Getters and Traversers

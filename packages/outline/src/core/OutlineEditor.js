@@ -69,7 +69,7 @@ export type EditorThemeClasses = {
 
 export type TextNodeTransform = (node: TextNode, view: View) => void;
 
-export type ErrorListener = (error: Error) => void;
+export type ErrorListener = (error: Error, debugName: string) => void;
 export type UpdateListener = (viewModel: ViewModel) => void;
 export type DecoratorListener = (decorator: {[NodeKey]: ReactNode}) => void;
 export type RootListener = (

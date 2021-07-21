@@ -16,10 +16,6 @@ import invariant from 'shared/invariant';
 import {IS_IMMUTABLE} from './OutlineConstants';
 
 export class DecoratorNode extends OutlineNode {
-  static deserialize(data: $FlowFixMe): DecoratorNode {
-    return new DecoratorNode();
-  }
-
   constructor(key?: NodeKey) {
     super(key);
     this.__type = 'decorator';

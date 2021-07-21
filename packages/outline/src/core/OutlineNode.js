@@ -220,7 +220,11 @@ export class OutlineNode {
   __parent: null | NodeKey;
 
   static deserialize(data: $FlowFixMe): OutlineNode {
-    return new OutlineNode();
+    invariant(
+      false,
+      'OutlineNode: Node type %s does not implement deserialize().',
+      this.constructor.name,
+    );
   }
 
   clone(): OutlineNode {

@@ -35,10 +35,6 @@ export type ParsedBlockNode = {
 export class BlockNode extends OutlineNode {
   __children: Array<NodeKey>;
 
-  static deserialize(data: $FlowFixMe): BlockNode {
-    return new BlockNode();
-  }
-
   constructor(key?: NodeKey) {
     super(key);
     this.__children = [];

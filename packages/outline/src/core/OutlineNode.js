@@ -219,8 +219,8 @@ export class OutlineNode {
   __key: NodeKey;
   __parent: null | NodeKey;
 
-  static deserialize(data: $FlowFixMe, ...args: $FlowFixMe): OutlineNode {
-    const instance = new this(...args);
+  static deserialize(data: $FlowFixMe): OutlineNode {
+    const instance = new this();
     instance.__flags = data.__flags;
     return instance;
   }

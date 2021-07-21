@@ -14,6 +14,12 @@ import {BlockNode} from './OutlineBlockNode';
 export class RootNode extends BlockNode {
   type: 'root';
 
+  static deserialize(data: $FlowFixMe): RootNode {
+    const instance = new this();
+    instance.__flags = data.__flags;
+    return instance;
+  }
+
   constructor() {
     super('root');
     this.__type = 'root';

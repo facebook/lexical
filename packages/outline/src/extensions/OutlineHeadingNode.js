@@ -20,8 +20,7 @@ import {createParagraphNode} from 'outline/ParagraphNode';
 
 type HeadingTagType = 'h1' | 'h2' | 'h3' | 'h4' | 'h5';
 
-export type ParsedHeadingNode = {
-  ...ParsedBlockNode,
+export type ParsedHeadingNode = ParsedBlockNode & {
   __tag: HeadingTagType,
 };
 
@@ -29,7 +28,9 @@ export class HeadingNode extends BlockNode {
   __tag: HeadingTagType;
 
   static deserialize(data: $FlowFixMe): HeadingNode {
-    return BlockNode.deserialize.call(this, data, data.__tag);
+    const instance = new this(data.__tag);
+    instance.__flags = data.__flags;
+    return instance;
   }
 
   constructor(tag: HeadingTagType, key?: NodeKey) {

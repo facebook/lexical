@@ -12,6 +12,12 @@ import type {NodeKey} from './OutlineNode';
 import {OutlineNode} from './OutlineNode';
 
 export class LineBreakNode extends OutlineNode {
+  static deserialize(data: $FlowFixMe): LineBreakNode {
+    const instance = new this();
+    instance.__flags = data.__flags;
+    return instance;
+  }
+
   constructor(key?: NodeKey) {
     super(key);
     this.__type = 'linebreak';

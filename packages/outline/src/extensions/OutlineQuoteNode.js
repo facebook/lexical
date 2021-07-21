@@ -14,6 +14,12 @@ import {BlockNode} from 'outline';
 import {createParagraphNode} from 'outline/ParagraphNode';
 
 export class QuoteNode extends BlockNode {
+  static deserialize(data: $FlowFixMe): QuoteNode {
+    const instance = new this();
+    instance.__flags = data.__flags;
+    return instance;
+  }
+
   constructor(key?: NodeKey) {
     super(key);
     this.__type = 'quote';

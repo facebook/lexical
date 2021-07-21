@@ -14,6 +14,12 @@ import {BlockNode} from 'outline';
 import {createParagraphNode} from 'outline/ParagraphNode';
 
 export class CodeNode extends BlockNode {
+  static deserialize(data: $FlowFixMe): CodeNode {
+    const instance = new this(data.__text);
+    instance.__flags = data.__flags;
+    return instance;
+  }
+
   constructor(key?: NodeKey) {
     super(key);
     this.__type = 'code';

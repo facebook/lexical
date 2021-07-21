@@ -12,6 +12,12 @@ import type {NodeKey, OutlineNode, EditorThemeClasses} from 'outline';
 import {TextNode, createTextNode} from 'outline';
 
 export class HashtagNode extends TextNode {
+  static deserialize(data: $FlowFixMe): HashtagNode {
+    const instance = new this(data.__text);
+    instance.__flags = data.__flags;
+    return instance;
+  }
+
   constructor(text: string, key?: NodeKey) {
     super(text, key);
     this.__type = 'hashtag';

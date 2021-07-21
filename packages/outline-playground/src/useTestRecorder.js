@@ -330,13 +330,16 @@ ${steps.map(formatStep).join(`\n`)}
   const toggleEditorSelection = useCallback(
     (currentEditor) => {
       if (!isRecording) {
-        currentEditor.update((view: View) => {
-          const root = view.getRoot();
-          root.clear();
-          const text = createTextNode();
-          root.append(createParagraphNode().append(text));
-          text.select();
-        });
+        currentEditor.update(
+          (view: View) => {
+            const root = view.getRoot();
+            root.clear();
+            const text = createTextNode();
+            root.append(createParagraphNode().append(text));
+            text.select();
+          },
+          'useStepRecorder',
+        );
         setSteps([]);
       }
       setIsRecording((currentIsRecording) => !currentIsRecording);

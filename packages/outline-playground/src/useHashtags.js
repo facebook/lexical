@@ -282,13 +282,16 @@ export default function useHashtags(editor: OutlineEditor): void {
     const removeTextNodeTransform =
       editor.addTextNodeTransform(textNodeTransform);
     const removeUpdateListener = editor.addListener('update', () => {
-      editor.update((view) => {
-        const selection = view.getSelection();
-        if (selection !== null) {
-          const anchorNode = selection.getAnchorNode();
-          textNodeTransform(anchorNode, view);
-        }
-      });
+      editor.update(
+        (view) => {
+          const selection = view.getSelection();
+          if (selection !== null) {
+            const anchorNode = selection.getAnchorNode();
+            textNodeTransform(anchorNode, view);
+          }
+        },
+        'useHashtags',
+      );
     });
 
     return () => {

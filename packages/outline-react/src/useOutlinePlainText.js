@@ -44,9 +44,11 @@ function initEditor(editor: OutlineEditor): void {
 
       if (root.getFirstChild() === null) {
         const paragraph = createParagraphNode();
-        const text = createTextNode();
-        root.append(paragraph.append(text));
-        text.select();
+        const textNode = createTextNode();
+        root.append(paragraph.append(textNode));
+        if (view.getSelection() !== null) {
+          textNode.select();
+        }
       }
     },
     'initEditor',
@@ -62,6 +64,9 @@ function clearEditor(editor: OutlineEditor): void {
         const textNode = createTextNode();
         firstChild.append(textNode);
         textNode.select();
+        if (view.getSelection() !== null) {
+          textNode.select();
+        }
       }
     },
     'clearEditor',

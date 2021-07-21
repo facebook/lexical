@@ -144,7 +144,6 @@ export default function CharacterLimit({
             }
           });
         },
-        undefined,
         'CharacterLimit',
       );
       setCharactersOver(0);
@@ -169,7 +168,6 @@ export default function CharacterLimit({
             }
           });
         },
-        undefined,
         'CharacterLimit',
       );
       setCharactersOver(0);

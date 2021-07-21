@@ -44,7 +44,6 @@ function Image({
             node.remove();
           }
         },
-        undefined,
         'Image.keyDown',
       );
     }

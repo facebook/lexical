@@ -51,7 +51,6 @@ function initEditor(editor: OutlineEditor): void {
         text.select();
       }
     },
-    undefined,
     'initEditor',
   );
 }
@@ -63,7 +62,6 @@ function clearEditor(editor: OutlineEditor): void {
       root.clear();
       initEditor(editor);
     },
-    undefined,
     'clearEditor',
   );
 }

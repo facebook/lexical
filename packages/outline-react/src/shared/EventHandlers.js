@@ -256,7 +256,6 @@ export function onKeyDownForPlainText(
         selectAll(selection);
       }
     },
-    undefined,
     'onKeyDownForPlainText',
   );
 }
@@ -362,7 +361,6 @@ export function onKeyDownForRichText(
         selectAll(selection);
       }
     },
-    undefined,
     'onKeyDownForRichText',
   );
 }
@@ -381,7 +379,6 @@ export function onPasteForPlainText(
         insertDataTransferForPlainText(clipboardData, selection, view);
       }
     },
-    undefined,
     'onPasteForPlainText',
   );
 }
@@ -400,7 +397,6 @@ export function onPasteForRichText(
         insertDataTransferForRichText(clipboardData, selection, view);
       }
     },
-    undefined,
     'onPasteForRichText',
   );
 }
@@ -437,7 +433,6 @@ export function onCutForPlainText(
         removeText(selection);
       }
     },
-    undefined,
     'onCutForPlainText',
   );
 }
@@ -455,7 +450,6 @@ export function onCutForRichText(
         removeText(selection);
       }
     },
-    undefined,
     'onCutForRichText',
   );
 }
@@ -488,7 +482,6 @@ export function onCopyForPlainText(
         }
       }
     },
-    undefined,
     'onCopyForPlainText',
   );
 }
@@ -525,7 +518,6 @@ export function onCopyForRichText(
         }
       }
     },
-    undefined,
     'onCopyForRichText',
   );
 }
@@ -550,7 +542,6 @@ export function onCompositionStart(
         }
       }
     },
-    undefined,
     'onCompositionStart',
   );
 }
@@ -560,7 +551,6 @@ function applyCompositionEnd(editor: OutlineEditor) {
     (view) => {
       view.setCompositionKey(null);
     },
-    undefined,
     'onCompositionEnd',
   );
 }
@@ -596,7 +586,7 @@ export function onSelectionChange(
 
   // This update functions as a way of reconciling a bad selection
   // to a good selection.
-  editor.update((view) => {}, undefined, 'onSelectionChange');
+  editor.update((view) => {}, 'onSelectionChange');
 }
 
 export function checkForBadInsertion(
@@ -718,7 +708,6 @@ export function onInput(
           updateTextNodeFromDOMContent(anchorDOM, view, editor);
         }
       },
-      undefined,
       'onInput',
     );
   }
@@ -907,7 +896,6 @@ export function onBeforeInputForPlainText(
         // NO-OP
       }
     },
-    undefined,
     'onBeforeInputForPlainText',
   );
 }
@@ -1075,7 +1063,6 @@ export function onBeforeInputForRichText(
         // NO-OP
       }
     },
-    undefined,
     'onBeforeInputForRichText',
   );
 }
@@ -1170,7 +1157,6 @@ export function onMutation(
         observer.takeRecords();
       }
     },
-    undefined,
     'onMutation',
   );
 }

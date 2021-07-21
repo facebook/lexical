@@ -290,7 +290,6 @@ export default function useHashtags(editor: OutlineEditor): void {
             textNodeTransform(anchorNode, view);
           }
         },
-        undefined,
         'useHashtags',
       );
     });

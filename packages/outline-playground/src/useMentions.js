@@ -239,7 +239,6 @@ function MentionsTypeahead({
           }
         }
       },
-      undefined,
       'useMentions',
     );
   }, [close, editor, match, results, selectedIndex]);

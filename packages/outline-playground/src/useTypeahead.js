@@ -162,7 +162,6 @@ export default function useTypeahead(editor: OutlineEditor): void {
               typeaheadTextNode?.remove();
               typeaheadNodeKey.current = null;
             },
-            undefined,
             'useTypeahead',
           );
         }

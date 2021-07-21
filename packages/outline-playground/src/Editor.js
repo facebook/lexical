@@ -130,7 +130,6 @@ export const useRichTextEditor = ({
             insertNodes(selection, [imageNode]);
           }
         },
-        undefined,
         'handleAddImage',
       );
     };

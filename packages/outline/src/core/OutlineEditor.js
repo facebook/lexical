@@ -371,15 +371,15 @@ class BaseOutlineEditor {
   }
   update(
     updateFn: (view: View) => void,
+    updateName: string,
     callbackFn?: () => void,
-    debugName?: string,
   ): boolean {
     errorOnProcessingTextNodeTransforms();
     return updateEditor(
       getSelf(this),
       updateFn,
       false,
-      debugName || '',
+      updateName,
       callbackFn,
     );
   }
@@ -401,13 +401,13 @@ class BaseOutlineEditor {
             }
           }
         },
+        'focus',
         () => {
           rootElement.removeAttribute('autocapitalize');
           if (callbackFn) {
             callbackFn();
           }
         },
-        'focus',
       );
     }
   }
@@ -479,8 +479,8 @@ declare export class OutlineEditor {
   parseViewModel(stringifiedViewModel: string): ViewModel;
   update(
     updateFn: (view: View) => void,
+    updateName: string,
     callbackFn?: () => void,
-    debugName?: string,
   ): boolean;
   focus(callbackFn?: () => void): void;
   canShowPlaceholder(): boolean;

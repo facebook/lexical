@@ -15,7 +15,7 @@ export function updateWithoutHistory(
   editor: OutlineEditor,
   updateFn: (view: View) => void,
 ): boolean {
-  const res = editor.update(updateFn, undefined, 'updateWithoutHistory');
+  const res = editor.update(updateFn, 'updateWithoutHistory');
   const pendingViewModel = editor._pendingViewModel;
   if (pendingViewModel !== null) {
     viewModelsWithoutHistory.add(pendingViewModel);

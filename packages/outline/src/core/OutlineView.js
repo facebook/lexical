@@ -309,7 +309,7 @@ export function garbageCollectDetachedNodes(
 
 export function commitPendingUpdates(
   editor: OutlineEditor,
-  debugName: string,
+  updateName: string,
 ): void {
   const pendingViewModel = editor._pendingViewModel;
   const rootElement = editor._rootElement;
@@ -329,7 +329,7 @@ export function commitPendingUpdates(
     reconcileViewModel(rootElement, currentViewModel, pendingViewModel, editor);
   } catch (error) {
     // Report errors
-    triggerListeners('error', editor, error, debugName);
+    triggerListeners('error', editor, error, updateName);
     // Reset editor and restore incoming view model to the DOM
     if (!isAttemptingToRecoverFromReconcilerError) {
       resetEditor(editor);

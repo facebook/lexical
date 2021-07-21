@@ -153,7 +153,6 @@ function DropdownList({
             parent.replace(paragraph);
           }
         },
-        undefined,
         'formatParagraph',
       );
     }
@@ -175,7 +174,6 @@ function DropdownList({
             parent.replace(paragraph);
           }
         },
-        undefined,
         'formatLargeHeading',
       );
     }
@@ -197,7 +195,6 @@ function DropdownList({
             parent.replace(paragraph);
           }
         },
-        undefined,
         'formatSmallHeading',
       );
     }
@@ -221,7 +218,6 @@ function DropdownList({
             parent.replace(list);
           }
         },
-        undefined,
         'formatBulletList',
       );
     }
@@ -245,7 +241,6 @@ function DropdownList({
             parent.replace(list);
           }
         },
-        undefined,
         'formatNumberedList',
       );
     }
@@ -267,7 +262,6 @@ function DropdownList({
             parent.replace(paragraph);
           }
         },
-        undefined,
         'formatQuote',
       );
     }
@@ -289,7 +283,6 @@ function DropdownList({
             parent.replace(paragraph);
           }
         },
-        undefined,
         'formatCode',
       );
     }

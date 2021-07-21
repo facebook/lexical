@@ -328,7 +328,6 @@ export default function useStepRecorder(
             root.append(createParagraphNode().append(text));
             text.select();
           },
-          undefined,
           'useStepRecorder',
         );
         setSteps([]);

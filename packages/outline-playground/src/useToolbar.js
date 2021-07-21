@@ -286,7 +286,6 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
             });
           }
         },
-        undefined,
         'useToolbar',
       );
     },
@@ -302,7 +301,6 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
             formatText(selection, formatType);
           }
         },
-        undefined,
         'applyFormatText',
       );
     },

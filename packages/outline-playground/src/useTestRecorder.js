@@ -338,7 +338,6 @@ ${steps.map(formatStep).join(`\n`)}
             root.append(createParagraphNode().append(text));
             text.select();
           },
-          undefined,
           'useStepRecorder',
         );
         setSteps([]);

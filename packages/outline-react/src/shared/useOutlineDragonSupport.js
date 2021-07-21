@@ -96,7 +96,6 @@ export default function useOutlineDragonSupport(editor: OutlineEditor) {
                     event.stopImmediatePropagation();
                   }
                 },
-                undefined,
                 'useOutlineDragonSupport',
               );
             }

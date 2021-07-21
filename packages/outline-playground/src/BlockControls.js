@@ -140,130 +140,158 @@ function DropdownList({
 
   const formatParagraph = () => {
     if (blockType !== 'paragraph') {
-      editor.update((view) => {
-        const selection = view.getSelection();
+      editor.update(
+        (view) => {
+          const selection = view.getSelection();
 
-        if (selection !== null) {
-          const anchorNode = selection.getAnchorNode();
-          const parent = anchorNode.getParentBlockOrThrow();
-          const children = parent.getChildren();
-          const paragraph = createParagraphNode();
-          children.forEach((child) => paragraph.append(child));
-          parent.replace(paragraph);
-        }
-      });
+          if (selection !== null) {
+            const anchorNode = selection.getAnchorNode();
+            const parent = anchorNode.getParentBlockOrThrow();
+            const children = parent.getChildren();
+            const paragraph = createParagraphNode();
+            children.forEach((child) => paragraph.append(child));
+            parent.replace(paragraph);
+          }
+        },
+        undefined,
+        'formatParagraph',
+      );
     }
     setShowDropDown(false);
   };
 
   const formatLargeHeading = () => {
     if (blockType !== 'h1') {
-      editor.update((view) => {
-        const selection = view.getSelection();
+      editor.update(
+        (view) => {
+          const selection = view.getSelection();
 
-        if (selection !== null) {
-          const anchorNode = selection.getAnchorNode();
-          const parent = anchorNode.getParentBlockOrThrow();
-          const children = parent.getChildren();
-          const paragraph = createHeadingNode('h1');
-          children.forEach((child) => paragraph.append(child));
-          parent.replace(paragraph);
-        }
-      });
+          if (selection !== null) {
+            const anchorNode = selection.getAnchorNode();
+            const parent = anchorNode.getParentBlockOrThrow();
+            const children = parent.getChildren();
+            const paragraph = createHeadingNode('h1');
+            children.forEach((child) => paragraph.append(child));
+            parent.replace(paragraph);
+          }
+        },
+        undefined,
+        'formatLargeHeading',
+      );
     }
     setShowDropDown(false);
   };
 
   const formatSmallHeading = () => {
     if (blockType !== 'h2') {
-      editor.update((view) => {
-        const selection = view.getSelection();
+      editor.update(
+        (view) => {
+          const selection = view.getSelection();
 
-        if (selection !== null) {
-          const anchorNode = selection.getAnchorNode();
-          const parent = anchorNode.getParentBlockOrThrow();
-          const children = parent.getChildren();
-          const paragraph = createHeadingNode('h2');
-          children.forEach((child) => paragraph.append(child));
-          parent.replace(paragraph);
-        }
-      });
+          if (selection !== null) {
+            const anchorNode = selection.getAnchorNode();
+            const parent = anchorNode.getParentBlockOrThrow();
+            const children = parent.getChildren();
+            const paragraph = createHeadingNode('h2');
+            children.forEach((child) => paragraph.append(child));
+            parent.replace(paragraph);
+          }
+        },
+        undefined,
+        'formatSmallHeading',
+      );
     }
     setShowDropDown(false);
   };
 
   const formatBulletList = () => {
     if (blockType !== 'ul') {
-      editor.update((view) => {
-        const selection = view.getSelection();
+      editor.update(
+        (view) => {
+          const selection = view.getSelection();
 
-        if (selection !== null) {
-          const anchorNode = selection.getAnchorNode();
-          const parent = anchorNode.getParentBlockOrThrow();
-          const children = parent.getChildren();
-          const list = createListNode('ul');
-          const listItem = createListItemNode();
-          list.append(listItem);
-          children.forEach((child) => listItem.append(child));
-          parent.replace(list);
-        }
-      });
+          if (selection !== null) {
+            const anchorNode = selection.getAnchorNode();
+            const parent = anchorNode.getParentBlockOrThrow();
+            const children = parent.getChildren();
+            const list = createListNode('ul');
+            const listItem = createListItemNode();
+            list.append(listItem);
+            children.forEach((child) => listItem.append(child));
+            parent.replace(list);
+          }
+        },
+        undefined,
+        'formatBulletList',
+      );
     }
     setShowDropDown(false);
   };
 
   const formatNumberedList = () => {
     if (blockType !== 'ol') {
-      editor.update((view) => {
-        const selection = view.getSelection();
+      editor.update(
+        (view) => {
+          const selection = view.getSelection();
 
-        if (selection !== null) {
-          const anchorNode = selection.getAnchorNode();
-          const parent = anchorNode.getParentBlockOrThrow();
-          const children = parent.getChildren();
-          const list = createListNode('ol');
-          const listItem = createListItemNode();
-          list.append(listItem);
-          children.forEach((child) => listItem.append(child));
-          parent.replace(list);
-        }
-      });
+          if (selection !== null) {
+            const anchorNode = selection.getAnchorNode();
+            const parent = anchorNode.getParentBlockOrThrow();
+            const children = parent.getChildren();
+            const list = createListNode('ol');
+            const listItem = createListItemNode();
+            list.append(listItem);
+            children.forEach((child) => listItem.append(child));
+            parent.replace(list);
+          }
+        },
+        undefined,
+        'formatNumberedList',
+      );
     }
     setShowDropDown(false);
   };
 
   const formatQuote = () => {
     if (blockType !== 'quote') {
-      editor.update((view) => {
-        const selection = view.getSelection();
+      editor.update(
+        (view) => {
+          const selection = view.getSelection();
 
-        if (selection !== null) {
-          const anchorNode = selection.getAnchorNode();
-          const parent = anchorNode.getParentBlockOrThrow();
-          const children = parent.getChildren();
-          const paragraph = createQuoteNode();
-          children.forEach((child) => paragraph.append(child));
-          parent.replace(paragraph);
-        }
-      });
+          if (selection !== null) {
+            const anchorNode = selection.getAnchorNode();
+            const parent = anchorNode.getParentBlockOrThrow();
+            const children = parent.getChildren();
+            const paragraph = createQuoteNode();
+            children.forEach((child) => paragraph.append(child));
+            parent.replace(paragraph);
+          }
+        },
+        undefined,
+        'formatQuote',
+      );
     }
     setShowDropDown(false);
   };
 
   const formatCode = () => {
     if (blockType !== 'code') {
-      editor.update((view) => {
-        const selection = view.getSelection();
+      editor.update(
+        (view) => {
+          const selection = view.getSelection();
 
-        if (selection !== null) {
-          const anchorNode = selection.getAnchorNode();
-          const parent = anchorNode.getParentBlockOrThrow();
-          const children = parent.getChildren();
-          const paragraph = createCodeNode();
-          children.forEach((child) => paragraph.append(child));
-          parent.replace(paragraph);
-        }
-      });
+          if (selection !== null) {
+            const anchorNode = selection.getAnchorNode();
+            const parent = anchorNode.getParentBlockOrThrow();
+            const children = parent.getChildren();
+            const paragraph = createCodeNode();
+            children.forEach((child) => paragraph.append(child));
+            parent.replace(paragraph);
+          }
+        },
+        undefined,
+        'formatCode',
+      );
     }
     setShowDropDown(false);
   };

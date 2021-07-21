@@ -117,18 +117,22 @@ export const useRichTextEditor = ({
 
   const element = useMemo(() => {
     const handleAddImage = () => {
-      editor.update((view) => {
-        const selection = view.getSelection();
-        if (selection !== null) {
-          const src =
-            'https://www.crawshaygallery.com/portfolio2019/New-York-Skyline-Black-White-cropped.jpg';
-          const imageNode = createImageNode(
-            src,
-            'New York Skyline, Black and White',
-          );
-          insertNodes(selection, [imageNode]);
-        }
-      });
+      editor.update(
+        (view) => {
+          const selection = view.getSelection();
+          if (selection !== null) {
+            const src =
+              'https://www.crawshaygallery.com/portfolio2019/New-York-Skyline-Black-White-cropped.jpg';
+            const imageNode = createImageNode(
+              src,
+              'New York Skyline, Black and White',
+            );
+            insertNodes(selection, [imageNode]);
+          }
+        },
+        undefined,
+        'handleAddImage',
+      );
     };
 
     return (

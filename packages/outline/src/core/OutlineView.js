@@ -307,7 +307,10 @@ export function garbageCollectDetachedNodes(
   }
 }
 
-export function commitPendingUpdates(editor: OutlineEditor): void {
+export function commitPendingUpdates(
+  editor: OutlineEditor,
+  debugName: string,
+): void {
   const pendingViewModel = editor._pendingViewModel;
   const rootElement = editor._rootElement;
   if (rootElement === null || pendingViewModel === null) {
@@ -333,7 +336,7 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
       editor._keyToDOMMap.set('root', rootElement);
       editor._pendingViewModel = pendingViewModel;
       isAttemptingToRecoverFromReconcilerError = true;
-      commitPendingUpdates(editor);
+      commitPendingUpdates(editor, 'ReconcileRecover');
       isAttemptingToRecoverFromReconcilerError = false;
     }
     return;
@@ -364,7 +367,7 @@ export function triggerListeners(
   editor: OutlineEditor,
   ...payload: Array<
     // $FlowFixMe: needs refining
-    null | Error | HTMLElement | {[NodeKey]: ReactNode} | ViewModel,
+    null | Error | HTMLElement | {[NodeKey]: ReactNode} | ViewModel | string,
   >
 ): void {
   const listeners = Array.from(editor._listeners[type]);

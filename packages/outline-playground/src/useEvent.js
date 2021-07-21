@@ -25,7 +25,11 @@ function useWrapper<E: Event>(
           return;
         }
       }
-      editor.update((view) => handler(event, view, editor));
+      editor.update(
+        (view) => handler(event, view, editor),
+        undefined,
+        event.type,
+      );
     },
     [editor, handler],
   );

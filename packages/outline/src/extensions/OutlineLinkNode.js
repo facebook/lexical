@@ -20,9 +20,7 @@ export class LinkNode extends TextNode {
   __url: string;
 
   static deserialize(data: $FlowFixMe): LinkNode {
-    const instance = new LinkNode(data.__text, data.__url);
-    instance.__flags = data.__flags;
-    return instance;
+    return new LinkNode(data.__text, data.__url);
   }
 
   constructor(text: string, url: string, key?: NodeKey) {

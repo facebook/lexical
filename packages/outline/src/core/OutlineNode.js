@@ -220,9 +220,7 @@ export class OutlineNode {
   __parent: null | NodeKey;
 
   static deserialize(data: $FlowFixMe): OutlineNode {
-    const instance = new OutlineNode();
-    instance.__flags = data.__flags;
-    return instance;
+    return new OutlineNode();
   }
 
   clone(): OutlineNode {
@@ -796,6 +794,7 @@ export function createNodeFromParse(
     const viewModel = getActiveViewModel();
     viewModel._nodeMap.set('root', node);
   }
+  node.__flags = parsedNode.__flags;
   if (node.__flags & IS_OVERFLOWED) {
     node.__flags ^= IS_OVERFLOWED;
   }

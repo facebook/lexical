@@ -205,9 +205,7 @@ export class TextNode extends OutlineNode {
   __text: string;
 
   static deserialize(data: $FlowFixMe): TextNode {
-    const instance = new TextNode(data.__text);
-    instance.__flags = data.__flags;
-    return instance;
+    return new TextNode(data.__text);
   }
 
   constructor(text: string, key?: NodeKey) {

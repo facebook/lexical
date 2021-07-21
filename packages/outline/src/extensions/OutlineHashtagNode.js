@@ -13,9 +13,7 @@ import {TextNode, createTextNode} from 'outline';
 
 export class HashtagNode extends TextNode {
   static deserialize(data: $FlowFixMe): HashtagNode {
-    const instance = new HashtagNode(data.__text);
-    instance.__flags = data.__flags;
-    return instance;
+    return new HashtagNode(data.__text);
   }
 
   constructor(text: string, key?: NodeKey) {

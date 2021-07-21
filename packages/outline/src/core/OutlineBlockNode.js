@@ -36,7 +36,7 @@ export class BlockNode extends OutlineNode {
   __children: Array<NodeKey>;
 
   static deserialize(data: $FlowFixMe): BlockNode {
-    const instance = new this();
+    const instance = new BlockNode();
     instance.__flags = data.__flags;
     return instance;
   }

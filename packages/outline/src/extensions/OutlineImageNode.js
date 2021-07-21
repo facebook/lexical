@@ -76,7 +76,7 @@ export class ImageNode extends DecoratorNode {
   __altText: string;
 
   static deserialize(data: $FlowFixMe): ImageNode {
-    const instance = new this(data.__src, data.__altText);
+    const instance = new ImageNode(data.__src, data.__altText);
     instance.__flags = data.__flags;
     return instance;
   }

@@ -28,7 +28,7 @@ export class HeadingNode extends BlockNode {
   __tag: HeadingTagType;
 
   static deserialize(data: $FlowFixMe): HeadingNode {
-    const instance = new this(data.__tag);
+    const instance = new HeadingNode(data.__tag);
     instance.__flags = data.__flags;
     return instance;
   }

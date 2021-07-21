@@ -220,7 +220,7 @@ export class OutlineNode {
   __parent: null | NodeKey;
 
   static deserialize(data: $FlowFixMe): OutlineNode {
-    const instance = new this();
+    const instance = new OutlineNode();
     instance.__flags = data.__flags;
     return instance;
   }

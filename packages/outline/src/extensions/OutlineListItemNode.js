@@ -16,7 +16,7 @@ import {createListNode, isListNode} from 'outline/ListNode';
 
 export class ListItemNode extends BlockNode {
   static deserialize(data: $FlowFixMe): ListItemNode {
-    const instance = new this();
+    const instance = new ListItemNode();
     instance.__flags = data.__flags;
     return instance;
   }

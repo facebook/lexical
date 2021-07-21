@@ -15,7 +15,7 @@ export class RootNode extends BlockNode {
   type: 'root';
 
   static deserialize(data: $FlowFixMe): RootNode {
-    const instance = new this();
+    const instance = new RootNode();
     instance.__flags = data.__flags;
     return instance;
   }

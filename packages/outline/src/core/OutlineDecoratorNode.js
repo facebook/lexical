@@ -17,7 +17,7 @@ import {IS_IMMUTABLE} from './OutlineConstants';
 
 export class DecoratorNode extends OutlineNode {
   static deserialize(data: $FlowFixMe): DecoratorNode {
-    const instance = new this();
+    const instance = new DecoratorNode();
     instance.__flags = data.__flags;
     return instance;
   }

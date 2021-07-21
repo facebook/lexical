@@ -27,7 +27,7 @@ export class ListNode extends BlockNode {
   __tag: ListNodeTagType;
 
   static deserialize(data: $FlowFixMe): ListNode {
-    const instance = new this(data.__tag);
+    const instance = new ListNode(data.__tag);
     instance.__flags = data.__flags;
     return instance;
   }

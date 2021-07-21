@@ -38,28 +38,34 @@ import useOutlineDragonSupport from './shared/useOutlineDragonSupport';
 import useOutlineHistory from './shared/useOutlineHistory';
 
 function initEditor(editor: OutlineEditor): void {
-  editor.update((view) => {
-    const root = view.getRoot();
+  editor.update(
+    (view) => {
+      const root = view.getRoot();
 
-    if (root.getFirstChild() === null) {
-      const paragraph = createParagraphNode();
-      const text = createTextNode();
-      root.append(paragraph.append(text));
-      text.select();
-    }
-  });
+      if (root.getFirstChild() === null) {
+        const paragraph = createParagraphNode();
+        const text = createTextNode();
+        root.append(paragraph.append(text));
+        text.select();
+      }
+    },
+    'initEditor',
+  );
 }
 
 function clearEditor(editor: OutlineEditor): void {
-  editor.update((view) => {
-    const firstChild = view.getRoot().getFirstChild();
-    if (isParagraphNode(firstChild)) {
-      firstChild.clear();
-      const textNode = createTextNode();
-      firstChild.append(textNode);
-      textNode.select();
-    }
-  });
+  editor.update(
+    (view) => {
+      const firstChild = view.getRoot().getFirstChild();
+      if (isParagraphNode(firstChild)) {
+        firstChild.clear();
+        const textNode = createTextNode();
+        firstChild.append(textNode);
+        textNode.select();
+      }
+    },
+    'clearEditor',
+  );
 }
 
 const events: InputEvents = [

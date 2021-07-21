@@ -69,7 +69,7 @@ export type EditorThemeClasses = {
 
 export type TextNodeTransform = (node: TextNode, view: View) => void;
 
-export type ErrorListener = (error: Error) => void;
+export type ErrorListener = (error: Error, updateName: string) => void;
 export type UpdateListener = (viewModel: ViewModel) => void;
 export type DecoratorListener = (decorator: {[NodeKey]: ReactNode}) => void;
 export type RootListener = (
@@ -127,6 +127,7 @@ function updateEditor(
   editor: OutlineEditor,
   updateFn: (view: View) => void,
   markAllTextNodesAsDirty: boolean,
+  updateName: string,
   callbackFn?: () => void,
 ): boolean {
   if (callbackFn) {
@@ -200,12 +201,12 @@ function updateEditor(
     );
   } catch (error) {
     // Report errors
-    triggerListeners('error', editor, error);
+    triggerListeners('error', editor, error, updateName);
     // Restore existing view model to the DOM
     const currentViewModel = editor._viewModel;
     currentViewModel.markDirty();
     editor._pendingViewModel = currentViewModel;
-    commitPendingUpdates(editor);
+    commitPendingUpdates(editor, 'UpdateRecover');
     return false;
   }
 
@@ -221,10 +222,10 @@ function updateEditor(
   }
   if (pendingViewModel._flushSync) {
     pendingViewModel._flushSync = false;
-    commitPendingUpdates(editor);
+    commitPendingUpdates(editor, updateName);
   } else if (viewModelWasCloned) {
     scheduleMicroTask(() => {
-      commitPendingUpdates(editor);
+      commitPendingUpdates(editor, updateName);
     });
   }
   return true;
@@ -323,7 +324,7 @@ class BaseOutlineEditor {
   }
   addTextNodeTransform(listener: TextNodeTransform): () => void {
     this._textNodeTransforms.add(listener);
-    updateEditor(getSelf(this), emptyFunction, true);
+    updateEditor(getSelf(this), emptyFunction, true, 'addTextNodeTransform');
     return () => {
       this._textNodeTransforms.delete(listener);
     };
@@ -347,7 +348,7 @@ class BaseOutlineEditor {
       if (nextRootElement !== null) {
         nextRootElement.setAttribute('data-outline-editor', 'true');
         this._keyToDOMMap.set('root', nextRootElement);
-        commitPendingUpdates(getSelf(this));
+        commitPendingUpdates(getSelf(this), 'setRootElement');
       }
       triggerListeners('root', getSelf(this), nextRootElement, prevRootElement);
     }
@@ -360,17 +361,27 @@ class BaseOutlineEditor {
   }
   setViewModel(viewModel: ViewModel): void {
     if (this._pendingViewModel !== null) {
-      commitPendingUpdates(getSelf(this));
+      commitPendingUpdates(getSelf(this), 'setViewModel #1');
     }
     this._pendingViewModel = viewModel;
-    commitPendingUpdates(getSelf(this));
+    commitPendingUpdates(getSelf(this), 'setViewModel #2');
   }
   parseViewModel(stringifiedViewModel: string): ViewModel {
     return parseViewModel(stringifiedViewModel, getSelf(this));
   }
-  update(updateFn: (view: View) => void, callbackFn?: () => void): boolean {
+  update(
+    updateFn: (view: View) => void,
+    updateName: string,
+    callbackFn?: () => void,
+  ): boolean {
     errorOnProcessingTextNodeTransforms();
-    return updateEditor(getSelf(this), updateFn, false, callbackFn);
+    return updateEditor(
+      getSelf(this),
+      updateFn,
+      false,
+      updateName,
+      callbackFn,
+    );
   }
   focus(callbackFn?: () => void): void {
     const rootElement = this._rootElement;
@@ -390,6 +401,7 @@ class BaseOutlineEditor {
             }
           }
         },
+        'focus',
         () => {
           rootElement.removeAttribute('autocapitalize');
           if (callbackFn) {
@@ -465,7 +477,11 @@ declare export class OutlineEditor {
   getViewModel(): ViewModel;
   setViewModel(viewModel: ViewModel): void;
   parseViewModel(stringifiedViewModel: string): ViewModel;
-  update(updateFn: (view: View) => void, callbackFn?: () => void): boolean;
+  update(
+    updateFn: (view: View) => void,
+    updateName: string,
+    callbackFn?: () => void,
+  ): boolean;
   focus(callbackFn?: () => void): void;
   canShowPlaceholder(): boolean;
 }

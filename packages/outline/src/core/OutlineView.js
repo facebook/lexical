@@ -329,7 +329,7 @@ export function commitPendingUpdates(
     reconcileViewModel(rootElement, currentViewModel, pendingViewModel, editor);
   } catch (error) {
     // Report errors
-    triggerListeners('error', editor, error);
+    triggerListeners('error', editor, error, debugName);
     // Reset editor and restore incoming view model to the DOM
     if (!isAttemptingToRecoverFromReconcilerError) {
       resetEditor(editor);

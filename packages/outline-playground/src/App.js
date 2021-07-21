@@ -23,7 +23,7 @@ function RichTextEditor({options, onOptionsChange}): React$Node {
   }, [onOptionsChange, opts]);
   const {measureTypingPerf, isCharLimit, isAutocomplete, showTreeView} = opts;
   const onError = useCallback((e: Error, debugName: string) => {
-    // TODO: pass in debugName?
+    e.message += ' - debug: ' + debugName;
     throw e;
   }, []);
   const [editor, editorComponent] = useRichTextEditor({

@@ -97,15 +97,15 @@ export default function useOutlineHistory(editor: OutlineEditor): () => void {
   );
 
   useEffect(() => {
-    const undoStack = historyState.undoStack;
     const rootElement = editor.getRootElement();
     if (rootElement === null) {
       return;
     }
-    let redoStack = historyState.redoStack;
 
     const applyChange = (viewModel) => {
       const current = historyState.current;
+      const redoStack = historyState.redoStack;
+      const undoStack = historyState.undoStack;
 
       if (viewModel === current) {
         return;
@@ -114,7 +114,7 @@ export default function useOutlineHistory(editor: OutlineEditor): () => void {
         const mergeAction = getMergeAction(current, viewModel);
         if (mergeAction === NO_MERGE) {
           if (redoStack.length !== 0) {
-            redoStack = historyState.redoStack = [];
+            historyState.redoStack = [];
           }
           if (current !== null) {
             undoStack.push(current);
@@ -128,6 +128,8 @@ export default function useOutlineHistory(editor: OutlineEditor): () => void {
     };
 
     const undo = () => {
+      const redoStack = historyState.redoStack;
+      const undoStack = historyState.undoStack;
       const undoStackLength = undoStack.length;
       if (undoStackLength !== 0) {
         let current = historyState.current;
@@ -146,6 +148,8 @@ export default function useOutlineHistory(editor: OutlineEditor): () => void {
     };
 
     const redo = () => {
+      const redoStack = historyState.redoStack;
+      const undoStack = historyState.undoStack;
       if (redoStack.length !== 0) {
         const current = historyState.current;
 

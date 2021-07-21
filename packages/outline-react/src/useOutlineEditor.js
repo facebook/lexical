@@ -14,7 +14,7 @@ import {createEditor} from 'outline';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
 export default function useOutlineEditor(
-  onError: (error: Error, debugName: string) => void,
+  onError: (error: Error, updateName: string) => void,
   editorThemeClasses?: EditorThemeClasses,
 ): [OutlineEditor, (null | HTMLElement) => void, boolean] {
   const [showPlaceholder, setShowPlaceholder] = useState(true);

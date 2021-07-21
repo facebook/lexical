@@ -69,7 +69,7 @@ export type EditorThemeClasses = {
 
 export type TextNodeTransform = (node: TextNode, view: View) => void;
 
-export type ErrorListener = (error: Error, debugName: string) => void;
+export type ErrorListener = (error: Error, updateName: string) => void;
 export type UpdateListener = (viewModel: ViewModel) => void;
 export type DecoratorListener = (decorator: {[NodeKey]: ReactNode}) => void;
 export type RootListener = (
@@ -127,7 +127,7 @@ function updateEditor(
   editor: OutlineEditor,
   updateFn: (view: View) => void,
   markAllTextNodesAsDirty: boolean,
-  debugName: string,
+  updateName: string,
   callbackFn?: () => void,
 ): boolean {
   if (callbackFn) {
@@ -201,7 +201,7 @@ function updateEditor(
     );
   } catch (error) {
     // Report errors
-    triggerListeners('error', editor, error, debugName);
+    triggerListeners('error', editor, error, updateName);
     // Restore existing view model to the DOM
     const currentViewModel = editor._viewModel;
     currentViewModel.markDirty();
@@ -222,10 +222,10 @@ function updateEditor(
   }
   if (pendingViewModel._flushSync) {
     pendingViewModel._flushSync = false;
-    commitPendingUpdates(editor, debugName);
+    commitPendingUpdates(editor, updateName);
   } else if (viewModelWasCloned) {
     scheduleMicroTask(() => {
-      commitPendingUpdates(editor, debugName);
+      commitPendingUpdates(editor, updateName);
     });
   }
   return true;

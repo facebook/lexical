@@ -524,25 +524,14 @@ function deleteCharacter(selection: Selection, isBackward: boolean): void {
 
     if (!selection.isCollapsed()) {
       const focusNode = selection.getFocusNode();
-      const textContentSize = focusNode.getTextContentSize();
-      if (
-        focusNode.isSegmented() &&
-        (selection.focusOffset !== textContentSize ||
-          selection.anchorOffset !== textContentSize)
-      ) {
+      const anchorNode = selection.getAnchorNode();
+
+      if (focusNode.isSegmented()) {
         removeSegment(focusNode, isBackward);
         return;
-      } else if (!isBackward) {
-        const nextSibling = focusNode.getNextSibling();
-
-        if (
-          selection.anchorOffset === textContentSize &&
-          isTextNode(nextSibling) &&
-          nextSibling.isSegmented()
-        ) {
-          removeSegment(nextSibling, false);
-          return;
-        }
+      } else if (anchorNode.isSegmented()) {
+        removeSegment(anchorNode, isBackward);
+        return;
       }
       updateCaretSelectionForUnicodeCharacter(selection, isBackward);
     } else if (isBackward) {
@@ -669,8 +658,10 @@ export function updateCaretSelectionForRange(
     const range = domSelection.getRangeAt(0);
     // Apply the DOM selection to our Outline selection.
     selection.applyDOMRange(range);
-    // If we are going backwards as a range, we need to flip anchor and focus
-    if (isBackward && !collapse) {
+    // Because a range works on start and end, we might need to flip
+    // the anchor and focus points to match what the DOM has, not what
+    // the range has specifically.
+    if (selection.focusOffset === domSelection.anchorOffset) {
       const anchorKey = selection.anchorKey;
       const anchorOffset = selection.anchorOffset;
       selection.anchorKey = selection.focusKey;

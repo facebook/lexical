@@ -89,7 +89,9 @@ function markParentsAsDirty(
   }
 }
 
-export function markNodeAsDirty(node: OutlineNode): void {
+// Never use this function directly! It will break
+// the cloning heuristic. Instead use node.getWritable().
+function internallyMarkNodeAsDirty(node: OutlineNode): void {
   const latest = node.getLatest();
   const parent = latest.__parent;
   const viewModel = getActiveViewModel();
@@ -554,7 +556,7 @@ export class OutlineNode {
       }
     }
     mutableNode.__key = key;
-    markNodeAsDirty(mutableNode);
+    internallyMarkNodeAsDirty(mutableNode);
     // Update reference in node map
     nodeMap.set(key, mutableNode);
     return mutableNode;
@@ -749,13 +751,13 @@ export function setCompositionKey(compositionKey: null | NodeKey): void {
   if (previousCompositionKey !== null) {
     const node = getNodeByKey(previousCompositionKey);
     if (node !== null) {
-      markNodeAsDirty(node);
+      node.getWritable();
     }
   }
   if (compositionKey !== null) {
     const node = getNodeByKey(compositionKey);
     if (node !== null) {
-      markNodeAsDirty(node);
+      node.getWritable();
     }
   }
 }

@@ -9,7 +9,6 @@
 import {createRootNode, createTextNode} from 'outline';
 import {createParagraphNode} from 'outline/ParagraphNode';
 import {ViewModel} from '../../core/OutlineView';
-import {markNodeAsDirty} from '../../core/OutlineNode';
 import {initializeUnitTest} from '../utils';
 
 describe('OutlineView tests', () => {
@@ -54,7 +53,7 @@ describe('OutlineView tests', () => {
       expect(editor.getViewModel().getDirtyNodes()).toEqual([]);
       await editor.update((view) => {
         const textNode = createTextNode('foo');
-        markNodeAsDirty(textNode);
+        textNode.getWritable();
         view.getRoot().append(textNode);
       });
       expect(editor.getViewModel().getDirtyNodes()).toEqual([

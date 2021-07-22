@@ -26,7 +26,6 @@ import {getSelection, createSelectionFromParse} from './OutlineSelection';
 import {
   getNodeByKey,
   createNodeFromParse,
-  markNodeAsDirty,
   setCompositionKey,
   getCompositionKey,
 } from './OutlineNode';
@@ -129,7 +128,9 @@ const view: View = {
     const editor = getActiveEditor();
     return createNodeFromParse(parsedNode, parsedNodeMap, editor, null);
   },
-  markNodeAsDirty,
+  markNodeAsDirty(node: OutlineNode): void {
+    node.getWritable();
+  },
   setCompositionKey,
   getCompositionKey,
 };

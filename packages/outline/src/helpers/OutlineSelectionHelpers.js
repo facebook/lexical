@@ -663,8 +663,8 @@ export function updateCaretSelectionForRange(
     // the range has specifically.
     if (
       !collapse &&
-      selection.focusOffset === domSelection.anchorOffset &&
-      selection.focusOffset !== domSelection.focusOffset
+      (domSelection.anchorNode !== range.startContainer ||
+        domSelection.anchorOffset !== range.startOffset)
     ) {
       const anchorKey = selection.anchorKey;
       const anchorOffset = selection.anchorOffset;

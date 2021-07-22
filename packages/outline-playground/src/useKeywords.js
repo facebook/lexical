@@ -46,6 +46,9 @@ class KeywordNode extends DecoratorNode {
     this.__type = 'keyword';
     this.__keyword = keyword;
   }
+  static deserialize(data: {__keyword: string}): KeywordNode {
+    return new KeywordNode(data.__keyword);
+  }
   clone(): KeywordNode {
     return new KeywordNode(this.__keyword, this.__key);
   }

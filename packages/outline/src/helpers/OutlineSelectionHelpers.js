@@ -524,25 +524,14 @@ function deleteCharacter(selection: Selection, isBackward: boolean): void {
 
     if (!selection.isCollapsed()) {
       const focusNode = selection.getFocusNode();
-      const textContentSize = focusNode.getTextContentSize();
-      if (
-        focusNode.isSegmented() &&
-        (selection.focusOffset !== textContentSize ||
-          selection.anchorOffset !== textContentSize)
-      ) {
+      const anchorNode = selection.getAnchorNode();
+
+      if (focusNode.isSegmented()) {
         removeSegment(focusNode, isBackward);
         return;
-      } else if (!isBackward) {
-        const nextSibling = focusNode.getNextSibling();
-
-        if (
-          selection.anchorOffset === textContentSize &&
-          isTextNode(nextSibling) &&
-          nextSibling.isSegmented()
-        ) {
-          removeSegment(nextSibling, false);
-          return;
-        }
+      } else if (anchorNode.isSegmented()) {
+        removeSegment(anchorNode, isBackward);
+        return;
       }
       updateCaretSelectionForUnicodeCharacter(selection, isBackward);
     } else if (isBackward) {

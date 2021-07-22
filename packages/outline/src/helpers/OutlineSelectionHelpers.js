@@ -661,7 +661,11 @@ export function updateCaretSelectionForRange(
     // Because a range works on start and end, we might need to flip
     // the anchor and focus points to match what the DOM has, not what
     // the range has specifically.
-    if (selection.focusOffset === domSelection.anchorOffset && !collapse) {
+    if (
+      !collapse &&
+      selection.focusOffset === domSelection.anchorOffset &&
+      selection.focusOffset !== domSelection.focusOffset
+    ) {
       const anchorKey = selection.anchorKey;
       const anchorOffset = selection.anchorOffset;
       selection.anchorKey = selection.focusKey;

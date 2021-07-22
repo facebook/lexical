@@ -570,16 +570,16 @@ describe('TextEntry', () => {
 
         if (isRichText) {
           await assertSelection(page, {
-            anchorPath: [1, 5, 0],
+            anchorPath: [0, 2, 0],
             anchorOffset: 1,
-            focusPath: [0, 2, 0],
+            focusPath: [1, 5, 0],
             focusOffset: 1,
           });
         } else {
           await assertSelection(page, {
-            anchorPath: [0, 12, 0],
+            anchorPath: [0, 2, 0],
             anchorOffset: 1,
-            focusPath: [0, 2, 0],
+            focusPath: [0, 12, 0],
             focusOffset: 1,
           });
         }

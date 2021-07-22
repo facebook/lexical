@@ -168,8 +168,10 @@ export default function useOutlineHistory(editor: OutlineEditor): () => void {
         return;
       }
       if (isUndo(event)) {
+        event.preventDefault();
         undo();
       } else if (isRedo(event)) {
+        event.preventDefault();
         redo();
       }
     };

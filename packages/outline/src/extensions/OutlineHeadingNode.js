@@ -20,13 +20,16 @@ import {createParagraphNode} from 'outline/ParagraphNode';
 
 type HeadingTagType = 'h1' | 'h2' | 'h3' | 'h4' | 'h5';
 
-export type ParsedHeadingNode = {
-  ...ParsedBlockNode,
+export type ParsedHeadingNode = ParsedBlockNode & {
   __tag: HeadingTagType,
 };
 
 export class HeadingNode extends BlockNode {
   __tag: HeadingTagType;
+
+  static deserialize(data: $FlowFixMe): HeadingNode {
+    return new HeadingNode(data.__tag);
+  }
 
   constructor(tag: HeadingTagType, key?: NodeKey) {
     super(key);

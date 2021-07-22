@@ -192,72 +192,69 @@ export function onKeyDownForPlainText(
   if (editor.isComposing()) {
     return;
   }
-  editor.update(
-    (view) => {
-      const selection = view.getSelection();
-      if (selection === null) {
-        return;
-      }
-      const isHoldingShift = event.shiftKey;
-      const isRTL = isTopLevelBlockRTL(selection);
+  editor.update((view) => {
+    const selection = view.getSelection();
+    if (selection === null) {
+      return;
+    }
+    const isHoldingShift = event.shiftKey;
+    const isRTL = isTopLevelBlockRTL(selection);
 
-      if (isMoveBackward(event)) {
-        if (shouldOverrideBrowserDefault(selection, isHoldingShift, !isRTL)) {
-          event.preventDefault();
-          moveBackward(selection, isHoldingShift, isRTL);
-        }
-      } else if (isMoveForward(event)) {
-        if (shouldOverrideBrowserDefault(selection, isHoldingShift, isRTL)) {
-          event.preventDefault();
-          moveForward(selection, isHoldingShift, isRTL);
-        }
-      } else if (isParagraph(event) || isLineBreak(event)) {
+    if (isMoveBackward(event)) {
+      if (shouldOverrideBrowserDefault(selection, isHoldingShift, !isRTL)) {
         event.preventDefault();
-        insertLineBreak(selection);
-      } else if (isOpenLineBreak(event)) {
-        event.preventDefault();
-        insertLineBreak(selection, true);
-      } else if (isDeleteBackward(event)) {
-        event.preventDefault();
-        deleteBackward(selection);
-      } else if (isDeleteForward(event)) {
-        event.preventDefault();
-        deleteForward(selection);
-      } else if (isMoveWordBackward(event)) {
-        if (
-          IS_SAFARI ||
-          shouldOverrideBrowserDefault(selection, isHoldingShift, !isRTL)
-        ) {
-          event.preventDefault();
-          moveWordBackward(selection, isHoldingShift, isRTL);
-        }
-      } else if (isMoveWordForward(event)) {
-        if (
-          IS_SAFARI ||
-          shouldOverrideBrowserDefault(selection, isHoldingShift, isRTL)
-        ) {
-          event.preventDefault();
-          moveWordForward(selection, isHoldingShift, isRTL);
-        }
-      } else if (isDeleteWordBackward(event)) {
-        event.preventDefault();
-        deleteWordBackward(selection);
-      } else if (isDeleteWordForward(event)) {
-        event.preventDefault();
-        deleteWordForward(selection);
-      } else if (isDeleteLineBackward(event)) {
-        event.preventDefault();
-        deleteLineBackward(selection);
-      } else if (isDeleteLineForward(event)) {
-        event.preventDefault();
-        deleteLineForward(selection);
-      } else if (isSelectAll(event)) {
-        event.preventDefault();
-        selectAll(selection);
+        moveBackward(selection, isHoldingShift, isRTL);
       }
-    },
-    'onKeyDownForPlainText',
-  );
+    } else if (isMoveForward(event)) {
+      if (shouldOverrideBrowserDefault(selection, isHoldingShift, isRTL)) {
+        event.preventDefault();
+        moveForward(selection, isHoldingShift, isRTL);
+      }
+    } else if (isParagraph(event) || isLineBreak(event)) {
+      event.preventDefault();
+      insertLineBreak(selection);
+    } else if (isOpenLineBreak(event)) {
+      event.preventDefault();
+      insertLineBreak(selection, true);
+    } else if (isDeleteBackward(event)) {
+      event.preventDefault();
+      deleteBackward(selection);
+    } else if (isDeleteForward(event)) {
+      event.preventDefault();
+      deleteForward(selection);
+    } else if (isMoveWordBackward(event)) {
+      if (
+        IS_SAFARI ||
+        shouldOverrideBrowserDefault(selection, isHoldingShift, !isRTL)
+      ) {
+        event.preventDefault();
+        moveWordBackward(selection, isHoldingShift, isRTL);
+      }
+    } else if (isMoveWordForward(event)) {
+      if (
+        IS_SAFARI ||
+        shouldOverrideBrowserDefault(selection, isHoldingShift, isRTL)
+      ) {
+        event.preventDefault();
+        moveWordForward(selection, isHoldingShift, isRTL);
+      }
+    } else if (isDeleteWordBackward(event)) {
+      event.preventDefault();
+      deleteWordBackward(selection);
+    } else if (isDeleteWordForward(event)) {
+      event.preventDefault();
+      deleteWordForward(selection);
+    } else if (isDeleteLineBackward(event)) {
+      event.preventDefault();
+      deleteLineBackward(selection);
+    } else if (isDeleteLineForward(event)) {
+      event.preventDefault();
+      deleteLineForward(selection);
+    } else if (isSelectAll(event)) {
+      event.preventDefault();
+      selectAll(selection);
+    }
+  }, 'onKeyDownForPlainText');
 }
 
 export function onKeyDownForRichText(
@@ -269,100 +266,97 @@ export function onKeyDownForRichText(
   if (editor.isComposing()) {
     return;
   }
-  editor.update(
-    (view) => {
-      const selection = view.getSelection();
-      if (selection === null) {
-        return;
-      }
-      const isHoldingShift = event.shiftKey;
-      const isRTL = isTopLevelBlockRTL(selection);
+  editor.update((view) => {
+    const selection = view.getSelection();
+    if (selection === null) {
+      return;
+    }
+    const isHoldingShift = event.shiftKey;
+    const isRTL = isTopLevelBlockRTL(selection);
 
-      if (isMoveBackward(event)) {
-        if (shouldOverrideBrowserDefault(selection, isHoldingShift, !isRTL)) {
-          event.preventDefault();
-          moveBackward(selection, isHoldingShift, isRTL);
-        }
-      } else if (isMoveForward(event)) {
-        if (shouldOverrideBrowserDefault(selection, isHoldingShift, isRTL)) {
-          event.preventDefault();
-          moveForward(selection, isHoldingShift, isRTL);
-        }
-      } else if (isLineBreak(event)) {
+    if (isMoveBackward(event)) {
+      if (shouldOverrideBrowserDefault(selection, isHoldingShift, !isRTL)) {
         event.preventDefault();
-        insertLineBreak(selection);
-      } else if (isOpenLineBreak(event)) {
-        event.preventDefault();
-        insertLineBreak(selection, true);
-      } else if (isParagraph(event)) {
-        event.preventDefault();
-        insertParagraph(selection);
-      } else if (isDeleteBackward(event)) {
-        event.preventDefault();
-        deleteBackward(selection);
-      } else if (isDeleteForward(event)) {
-        event.preventDefault();
-        deleteForward(selection);
-      } else if (isMoveWordBackward(event)) {
-        if (
-          IS_SAFARI ||
-          shouldOverrideBrowserDefault(selection, isHoldingShift, !isRTL)
-        ) {
-          event.preventDefault();
-          moveWordBackward(selection, isHoldingShift, isRTL);
-        }
-      } else if (isMoveWordForward(event)) {
-        if (
-          IS_SAFARI ||
-          shouldOverrideBrowserDefault(selection, isHoldingShift, isRTL)
-        ) {
-          event.preventDefault();
-          moveWordForward(selection, isHoldingShift, isRTL);
-        }
-      } else if (isDeleteWordBackward(event)) {
-        event.preventDefault();
-        deleteWordBackward(selection);
-      } else if (isDeleteWordForward(event)) {
-        event.preventDefault();
-        deleteWordForward(selection);
-      } else if (isDeleteLineBackward(event)) {
-        event.preventDefault();
-        deleteLineBackward(selection);
-      } else if (isDeleteLineForward(event)) {
-        event.preventDefault();
-        deleteLineForward(selection);
-      } else if (isBold(event)) {
-        event.preventDefault();
-        formatText(selection, 'bold');
-      } else if (isUnderline(event)) {
-        event.preventDefault();
-        formatText(selection, 'underline');
-      } else if (isItalic(event)) {
-        event.preventDefault();
-        formatText(selection, 'italic');
-      } else if (isTab(event)) {
-        // Handle code blocks
-        const anchorNode = selection.getAnchorNode();
-        const parentBlock = anchorNode.getParentBlockOrThrow();
-        if (parentBlock.canInsertTab()) {
-          if (event.shiftKey) {
-            const textContent = anchorNode.getTextContent();
-            const character = textContent[selection.anchorOffset - 1];
-            if (character === '\t') {
-              deleteBackward(selection);
-            }
-          } else {
-            insertText(selection, '\t');
-          }
-          event.preventDefault();
-        }
-      } else if (isSelectAll(event)) {
-        event.preventDefault();
-        selectAll(selection);
+        moveBackward(selection, isHoldingShift, isRTL);
       }
-    },
-    'onKeyDownForRichText',
-  );
+    } else if (isMoveForward(event)) {
+      if (shouldOverrideBrowserDefault(selection, isHoldingShift, isRTL)) {
+        event.preventDefault();
+        moveForward(selection, isHoldingShift, isRTL);
+      }
+    } else if (isLineBreak(event)) {
+      event.preventDefault();
+      insertLineBreak(selection);
+    } else if (isOpenLineBreak(event)) {
+      event.preventDefault();
+      insertLineBreak(selection, true);
+    } else if (isParagraph(event)) {
+      event.preventDefault();
+      insertParagraph(selection);
+    } else if (isDeleteBackward(event)) {
+      event.preventDefault();
+      deleteBackward(selection);
+    } else if (isDeleteForward(event)) {
+      event.preventDefault();
+      deleteForward(selection);
+    } else if (isMoveWordBackward(event)) {
+      if (
+        IS_SAFARI ||
+        shouldOverrideBrowserDefault(selection, isHoldingShift, !isRTL)
+      ) {
+        event.preventDefault();
+        moveWordBackward(selection, isHoldingShift, isRTL);
+      }
+    } else if (isMoveWordForward(event)) {
+      if (
+        IS_SAFARI ||
+        shouldOverrideBrowserDefault(selection, isHoldingShift, isRTL)
+      ) {
+        event.preventDefault();
+        moveWordForward(selection, isHoldingShift, isRTL);
+      }
+    } else if (isDeleteWordBackward(event)) {
+      event.preventDefault();
+      deleteWordBackward(selection);
+    } else if (isDeleteWordForward(event)) {
+      event.preventDefault();
+      deleteWordForward(selection);
+    } else if (isDeleteLineBackward(event)) {
+      event.preventDefault();
+      deleteLineBackward(selection);
+    } else if (isDeleteLineForward(event)) {
+      event.preventDefault();
+      deleteLineForward(selection);
+    } else if (isBold(event)) {
+      event.preventDefault();
+      formatText(selection, 'bold');
+    } else if (isUnderline(event)) {
+      event.preventDefault();
+      formatText(selection, 'underline');
+    } else if (isItalic(event)) {
+      event.preventDefault();
+      formatText(selection, 'italic');
+    } else if (isTab(event)) {
+      // Handle code blocks
+      const anchorNode = selection.getAnchorNode();
+      const parentBlock = anchorNode.getParentBlockOrThrow();
+      if (parentBlock.canInsertTab()) {
+        if (event.shiftKey) {
+          const textContent = anchorNode.getTextContent();
+          const character = textContent[selection.anchorOffset - 1];
+          if (character === '\t') {
+            deleteBackward(selection);
+          }
+        } else {
+          insertText(selection, '\t');
+        }
+        event.preventDefault();
+      }
+    } else if (isSelectAll(event)) {
+      event.preventDefault();
+      selectAll(selection);
+    }
+  }, 'onKeyDownForRichText');
 }
 
 export function onPasteForPlainText(
@@ -371,16 +365,13 @@ export function onPasteForPlainText(
   state: EventHandlerState,
 ): void {
   event.preventDefault();
-  editor.update(
-    (view) => {
-      const selection = view.getSelection();
-      const clipboardData = event.clipboardData;
-      if (clipboardData != null && selection !== null) {
-        insertDataTransferForPlainText(clipboardData, selection, view);
-      }
-    },
-    'onPasteForPlainText',
-  );
+  editor.update((view) => {
+    const selection = view.getSelection();
+    const clipboardData = event.clipboardData;
+    if (clipboardData != null && selection !== null) {
+      insertDataTransferForPlainText(clipboardData, selection, view);
+    }
+  }, 'onPasteForPlainText');
 }
 
 export function onPasteForRichText(
@@ -389,16 +380,13 @@ export function onPasteForRichText(
   state: EventHandlerState,
 ): void {
   event.preventDefault();
-  editor.update(
-    (view) => {
-      const selection = view.getSelection();
-      const clipboardData = event.clipboardData;
-      if (clipboardData != null && selection !== null) {
-        insertDataTransferForRichText(clipboardData, selection, view);
-      }
-    },
-    'onPasteForRichText',
-  );
+  editor.update((view) => {
+    const selection = view.getSelection();
+    const clipboardData = event.clipboardData;
+    if (clipboardData != null && selection !== null) {
+      insertDataTransferForRichText(clipboardData, selection, view);
+    }
+  }, 'onPasteForRichText');
 }
 
 export function onDropPolyfill(
@@ -426,15 +414,12 @@ export function onCutForPlainText(
   state: EventHandlerState,
 ): void {
   onCopyForPlainText(event, editor, state);
-  editor.update(
-    (view) => {
-      const selection = view.getSelection();
-      if (selection !== null) {
-        removeText(selection);
-      }
-    },
-    'onCutForPlainText',
-  );
+  editor.update((view) => {
+    const selection = view.getSelection();
+    if (selection !== null) {
+      removeText(selection);
+    }
+  }, 'onCutForPlainText');
 }
 
 export function onCutForRichText(
@@ -443,15 +428,12 @@ export function onCutForRichText(
   state: EventHandlerState,
 ): void {
   onCopyForRichText(event, editor, state);
-  editor.update(
-    (view) => {
-      const selection = view.getSelection();
-      if (selection !== null) {
-        removeText(selection);
-      }
-    },
-    'onCutForRichText',
-  );
+  editor.update((view) => {
+    const selection = view.getSelection();
+    if (selection !== null) {
+      removeText(selection);
+    }
+  }, 'onCutForRichText');
 }
 
 export function onCopyForPlainText(
@@ -460,30 +442,27 @@ export function onCopyForPlainText(
   state: EventHandlerState,
 ): void {
   event.preventDefault();
-  editor.update(
-    (view) => {
-      const clipboardData = event.clipboardData;
-      const selection = view.getSelection();
-      if (selection !== null) {
-        if (clipboardData != null) {
-          const domSelection = window.getSelection();
-          // If we haven't selected a range, then don't copy anything
-          if (domSelection.isCollapsed) {
-            return;
-          }
-          const range = domSelection.getRangeAt(0);
-          if (range) {
-            const container = document.createElement('div');
-            const frag = range.cloneContents();
-            container.appendChild(frag);
-            clipboardData.setData('text/html', container.innerHTML);
-          }
-          clipboardData.setData('text/plain', selection.getTextContent());
+  editor.update((view) => {
+    const clipboardData = event.clipboardData;
+    const selection = view.getSelection();
+    if (selection !== null) {
+      if (clipboardData != null) {
+        const domSelection = window.getSelection();
+        // If we haven't selected a range, then don't copy anything
+        if (domSelection.isCollapsed) {
+          return;
         }
+        const range = domSelection.getRangeAt(0);
+        if (range) {
+          const container = document.createElement('div');
+          const frag = range.cloneContents();
+          container.appendChild(frag);
+          clipboardData.setData('text/html', container.innerHTML);
+        }
+        clipboardData.setData('text/plain', selection.getTextContent());
       }
-    },
-    'onCopyForPlainText',
-  );
+    }
+  }, 'onCopyForPlainText');
 }
 
 export function onCopyForRichText(
@@ -492,34 +471,31 @@ export function onCopyForRichText(
   state: EventHandlerState,
 ): void {
   event.preventDefault();
-  editor.update(
-    (view) => {
-      const clipboardData = event.clipboardData;
-      const selection = view.getSelection();
-      if (selection !== null) {
-        if (clipboardData != null) {
-          const domSelection = window.getSelection();
-          // If we haven't selected a range, then don't copy anything
-          if (domSelection.isCollapsed) {
-            return;
-          }
-          const range = domSelection.getRangeAt(0);
-          if (range) {
-            const container = document.createElement('div');
-            const frag = range.cloneContents();
-            container.appendChild(frag);
-            clipboardData.setData('text/html', container.innerHTML);
-          }
-          clipboardData.setData('text/plain', selection.getTextContent());
-          clipboardData.setData(
-            'application/x-outline-nodes',
-            JSON.stringify(getNodesInRange(selection)),
-          );
+  editor.update((view) => {
+    const clipboardData = event.clipboardData;
+    const selection = view.getSelection();
+    if (selection !== null) {
+      if (clipboardData != null) {
+        const domSelection = window.getSelection();
+        // If we haven't selected a range, then don't copy anything
+        if (domSelection.isCollapsed) {
+          return;
         }
+        const range = domSelection.getRangeAt(0);
+        if (range) {
+          const container = document.createElement('div');
+          const frag = range.cloneContents();
+          container.appendChild(frag);
+          clipboardData.setData('text/html', container.innerHTML);
+        }
+        clipboardData.setData('text/plain', selection.getTextContent());
+        clipboardData.setData(
+          'application/x-outline-nodes',
+          JSON.stringify(getNodesInRange(selection)),
+        );
       }
-    },
-    'onCopyForRichText',
-  );
+    }
+  }, 'onCopyForRichText');
 }
 
 export function onCompositionStart(
@@ -527,32 +503,26 @@ export function onCompositionStart(
   editor: OutlineEditor,
   state: EventHandlerState,
 ): void {
-  editor.update(
-    (view) => {
-      const selection = view.getSelection();
-      if (selection !== null && !editor.isComposing()) {
-        view.setCompositionKey(selection.anchorKey);
-        const data = event.data;
-        if (data != null && !lastKeyWasMaybeAndroidSoftKey) {
-          // We insert an empty space, ready for the composition
-          // to get inserted into the new node we create. If
-          // we don't do this, Safari will fail on us because
-          // there is no text node matching the selection.
-          insertText(selection, ' ');
-        }
+  editor.update((view) => {
+    const selection = view.getSelection();
+    if (selection !== null && !editor.isComposing()) {
+      view.setCompositionKey(selection.anchorKey);
+      const data = event.data;
+      if (data != null && !lastKeyWasMaybeAndroidSoftKey) {
+        // We insert an empty space, ready for the composition
+        // to get inserted into the new node we create. If
+        // we don't do this, Safari will fail on us because
+        // there is no text node matching the selection.
+        insertText(selection, ' ');
       }
-    },
-    'onCompositionStart',
-  );
+    }
+  }, 'onCompositionStart');
 }
 
 function applyCompositionEnd(editor: OutlineEditor) {
-  editor.update(
-    (view) => {
-      view.setCompositionKey(null);
-    },
-    'onCompositionEnd',
-  );
+  editor.update((view) => {
+    view.setCompositionKey(null);
+  }, 'onCompositionEnd');
 }
 
 export function onCompositionEnd(
@@ -700,16 +670,13 @@ export function onInput(
     inputType === 'insertCompositionText' ||
     inputType === 'deleteCompositionText'
   ) {
-    editor.update(
-      (view) => {
-        const domSelection = window.getSelection();
-        const anchorDOM = domSelection.anchorNode;
-        if (anchorDOM !== null && anchorDOM.nodeType === 3) {
-          updateTextNodeFromDOMContent(anchorDOM, view, editor);
-        }
-      },
-      'onInput',
-    );
+    editor.update((view) => {
+      const domSelection = window.getSelection();
+      const anchorDOM = domSelection.anchorNode;
+      if (anchorDOM !== null && anchorDOM.nodeType === 3) {
+        updateTextNodeFromDOMContent(anchorDOM, view, editor);
+      }
+    }, 'onInput');
   }
 }
 
@@ -760,144 +727,141 @@ export function onBeforeInputForPlainText(
 ): void {
   const inputType = event.inputType;
 
-  editor.update(
-    (view) => {
-      const selection = view.getSelection();
+  editor.update((view) => {
+    const selection = view.getSelection();
 
-      if (selection === null) {
-        return;
+    if (selection === null) {
+      return;
+    }
+    if (inputType === 'deleteContentBackward') {
+      // Used for Android
+      view.setCompositionKey(null);
+      event.preventDefault();
+      deleteBackward(selection);
+      return;
+    }
+    const data = event.data;
+
+    if (selection.isCollapsed()) {
+      applyTargetRange(selection, event);
+    }
+    if (isBadDoubleSpacePeriodReplacment(event, selection)) {
+      event.preventDefault();
+      insertText(selection, '  ');
+      return;
+    }
+    // We let the browser do its own thing for composition.
+    if (
+      inputType === 'deleteCompositionText' ||
+      inputType === 'insertCompositionText'
+    ) {
+      return;
+    }
+    const anchorNode = selection.getAnchorNode();
+    const focusNode = selection.getAnchorNode();
+
+    if (inputType === 'insertText') {
+      if (data === '\n') {
+        event.preventDefault();
+        insertLineBreak(selection);
+      } else if (data === '\n\n') {
+        event.preventDefault();
+        insertLineBreak(selection);
+        insertLineBreak(selection);
+      } else if (data == null && event.dataTransfer) {
+        // Gets around a Safari text replacement bug.
+        const text = event.dataTransfer.getData('text/plain');
+        event.preventDefault();
+        insertRichText(selection, text);
+      } else if (data != null) {
+        const anchorKey = selection.anchorKey;
+        const focusKey = selection.focusKey;
+
+        if (
+          anchorKey !== focusKey ||
+          shouldInsertTextAfterTextNode(selection, anchorNode, true) ||
+          data.length > 1
+        ) {
+          event.preventDefault();
+          insertText(selection, data);
+        }
       }
-      if (inputType === 'deleteContentBackward') {
+      return;
+    }
+
+    // Prevent the browser from carrying out
+    // the input event, so we can control the
+    // output.
+    event.preventDefault();
+
+    switch (inputType) {
+      case 'insertFromComposition': {
+        if (data) {
+          // This is the end of composition
+          view.setCompositionKey(null);
+          insertText(selection, data);
+        }
+        break;
+      }
+      case 'insertLineBreak':
+      case 'insertParagraph': {
         // Used for Android
         view.setCompositionKey(null);
-        event.preventDefault();
-        deleteBackward(selection);
-        return;
+        insertLineBreak(selection);
+        break;
       }
-      const data = event.data;
-
-      if (selection.isCollapsed()) {
-        applyTargetRange(selection, event);
-      }
-      if (isBadDoubleSpacePeriodReplacment(event, selection)) {
-        event.preventDefault();
-        insertText(selection, '  ');
-        return;
-      }
-      // We let the browser do its own thing for composition.
-      if (
-        inputType === 'deleteCompositionText' ||
-        inputType === 'insertCompositionText'
-      ) {
-        return;
-      }
-      const anchorNode = selection.getAnchorNode();
-      const focusNode = selection.getAnchorNode();
-
-      if (inputType === 'insertText') {
-        if (data === '\n') {
-          event.preventDefault();
-          insertLineBreak(selection);
-        } else if (data === '\n\n') {
-          event.preventDefault();
-          insertLineBreak(selection);
-          insertLineBreak(selection);
-        } else if (data == null && event.dataTransfer) {
-          // Gets around a Safari text replacement bug.
-          const text = event.dataTransfer.getData('text/plain');
-          event.preventDefault();
-          insertRichText(selection, text);
-        } else if (data != null) {
-          const anchorKey = selection.anchorKey;
-          const focusKey = selection.focusKey;
-
-          if (
-            anchorKey !== focusKey ||
-            shouldInsertTextAfterTextNode(selection, anchorNode, true) ||
-            data.length > 1
-          ) {
-            event.preventDefault();
-            insertText(selection, data);
-          }
-        }
-        return;
-      }
-
-      // Prevent the browser from carrying out
-      // the input event, so we can control the
-      // output.
-      event.preventDefault();
-
-      switch (inputType) {
-        case 'insertFromComposition': {
+      case 'insertFromYank':
+      case 'insertFromDrop':
+      case 'insertReplacementText':
+      case 'insertFromPaste': {
+        const dataTransfer = event.dataTransfer;
+        if (dataTransfer != null) {
+          insertDataTransferForPlainText(dataTransfer, selection, view);
+        } else {
           if (data) {
-            // This is the end of composition
-            view.setCompositionKey(null);
             insertText(selection, data);
           }
-          break;
         }
-        case 'insertLineBreak':
-        case 'insertParagraph': {
-          // Used for Android
-          view.setCompositionKey(null);
-          insertLineBreak(selection);
-          break;
-        }
-        case 'insertFromYank':
-        case 'insertFromDrop':
-        case 'insertReplacementText':
-        case 'insertFromPaste': {
-          const dataTransfer = event.dataTransfer;
-          if (dataTransfer != null) {
-            insertDataTransferForPlainText(dataTransfer, selection, view);
-          } else {
-            if (data) {
-              insertText(selection, data);
-            }
-          }
-          break;
-        }
-        case 'deleteByComposition': {
-          if (canRemoveText(anchorNode, focusNode)) {
-            removeText(selection);
-          }
-          break;
-        }
-        case 'deleteByDrag':
-        case 'deleteByCut': {
-          removeText(selection);
-          break;
-        }
-        case 'deleteContent': {
-          deleteForward(selection);
-          break;
-        }
-        case 'deleteWordBackward': {
-          deleteWordBackward(selection);
-          break;
-        }
-        case 'deleteWordForward': {
-          deleteWordForward(selection);
-          break;
-        }
-        case 'deleteHardLineBackward':
-        case 'deleteSoftLineBackward': {
-          deleteLineBackward(selection);
-          break;
-        }
-        case 'deleteContentForward':
-        case 'deleteHardLineForward':
-        case 'deleteSoftLineForward': {
-          deleteLineForward(selection);
-          break;
-        }
-        default:
-        // NO-OP
+        break;
       }
-    },
-    'onBeforeInputForPlainText',
-  );
+      case 'deleteByComposition': {
+        if (canRemoveText(anchorNode, focusNode)) {
+          removeText(selection);
+        }
+        break;
+      }
+      case 'deleteByDrag':
+      case 'deleteByCut': {
+        removeText(selection);
+        break;
+      }
+      case 'deleteContent': {
+        deleteForward(selection);
+        break;
+      }
+      case 'deleteWordBackward': {
+        deleteWordBackward(selection);
+        break;
+      }
+      case 'deleteWordForward': {
+        deleteWordForward(selection);
+        break;
+      }
+      case 'deleteHardLineBackward':
+      case 'deleteSoftLineBackward': {
+        deleteLineBackward(selection);
+        break;
+      }
+      case 'deleteContentForward':
+      case 'deleteHardLineForward':
+      case 'deleteSoftLineForward': {
+        deleteLineForward(selection);
+        break;
+      }
+      default:
+      // NO-OP
+    }
+  }, 'onBeforeInputForPlainText');
 }
 
 export function onBeforeInputForRichText(
@@ -907,164 +871,161 @@ export function onBeforeInputForRichText(
 ): void {
   const inputType = event.inputType;
 
-  editor.update(
-    (view) => {
-      const selection = view.getSelection();
+  editor.update((view) => {
+    const selection = view.getSelection();
 
-      if (selection === null) {
-        return;
+    if (selection === null) {
+      return;
+    }
+    if (inputType === 'deleteContentBackward') {
+      // Used for Android
+      view.setCompositionKey(null);
+      event.preventDefault();
+      deleteBackward(selection);
+      return;
+    }
+    const data = event.data;
+
+    if (selection.isCollapsed()) {
+      applyTargetRange(selection, event);
+    }
+    if (isBadDoubleSpacePeriodReplacment(event, selection)) {
+      event.preventDefault();
+      insertText(selection, '  ');
+      return;
+    }
+    // We let the browser do its own thing for composition.
+    if (
+      inputType === 'deleteCompositionText' ||
+      inputType === 'insertCompositionText'
+    ) {
+      return;
+    }
+    const anchorNode = selection.getAnchorNode();
+    const focusNode = selection.getAnchorNode();
+
+    if (inputType === 'insertText') {
+      if (data === '\n') {
+        event.preventDefault();
+        insertLineBreak(selection);
+      } else if (data === '\n\n') {
+        event.preventDefault();
+        insertParagraph(selection);
+      } else if (data == null && event.dataTransfer) {
+        // Gets around a Safari text replacement bug.
+        const text = event.dataTransfer.getData('text/plain');
+        event.preventDefault();
+        insertRichText(selection, text);
+      } else if (data != null) {
+        const anchorKey = selection.anchorKey;
+        const focusKey = selection.focusKey;
+
+        if (
+          anchorKey !== focusKey ||
+          shouldInsertTextAfterTextNode(selection, anchorNode, true) ||
+          data.length > 1
+        ) {
+          event.preventDefault();
+          insertText(selection, data);
+        }
       }
-      if (inputType === 'deleteContentBackward') {
+      return;
+    }
+
+    // Prevent the browser from carrying out
+    // the input event, so we can control the
+    // output.
+    event.preventDefault();
+
+    switch (inputType) {
+      case 'insertFromComposition': {
+        if (data) {
+          // This is the end of composition
+          view.setCompositionKey(null);
+          insertText(selection, data);
+        }
+        break;
+      }
+      case 'insertLineBreak': {
         // Used for Android
         view.setCompositionKey(null);
-        event.preventDefault();
-        deleteBackward(selection);
-        return;
+        insertLineBreak(selection);
+        break;
       }
-      const data = event.data;
-
-      if (selection.isCollapsed()) {
-        applyTargetRange(selection, event);
+      case 'insertParagraph': {
+        // Used for Android
+        view.setCompositionKey(null);
+        insertParagraph(selection);
+        break;
       }
-      if (isBadDoubleSpacePeriodReplacment(event, selection)) {
-        event.preventDefault();
-        insertText(selection, '  ');
-        return;
+      case 'formatStrikeThrough': {
+        formatText(selection, 'strikethrough');
+        break;
       }
-      // We let the browser do its own thing for composition.
-      if (
-        inputType === 'deleteCompositionText' ||
-        inputType === 'insertCompositionText'
-      ) {
-        return;
-      }
-      const anchorNode = selection.getAnchorNode();
-      const focusNode = selection.getAnchorNode();
-
-      if (inputType === 'insertText') {
-        if (data === '\n') {
-          event.preventDefault();
-          insertLineBreak(selection);
-        } else if (data === '\n\n') {
-          event.preventDefault();
-          insertParagraph(selection);
-        } else if (data == null && event.dataTransfer) {
-          // Gets around a Safari text replacement bug.
-          const text = event.dataTransfer.getData('text/plain');
-          event.preventDefault();
-          insertRichText(selection, text);
-        } else if (data != null) {
-          const anchorKey = selection.anchorKey;
-          const focusKey = selection.focusKey;
-
-          if (
-            anchorKey !== focusKey ||
-            shouldInsertTextAfterTextNode(selection, anchorNode, true) ||
-            data.length > 1
-          ) {
-            event.preventDefault();
-            insertText(selection, data);
-          }
-        }
-        return;
-      }
-
-      // Prevent the browser from carrying out
-      // the input event, so we can control the
-      // output.
-      event.preventDefault();
-
-      switch (inputType) {
-        case 'insertFromComposition': {
+      case 'insertFromYank':
+      case 'insertFromDrop':
+      case 'insertReplacementText':
+      case 'insertFromPaste': {
+        const dataTransfer = event.dataTransfer;
+        if (dataTransfer != null) {
+          insertDataTransferForRichText(dataTransfer, selection, view);
+        } else {
           if (data) {
-            // This is the end of composition
-            view.setCompositionKey(null);
             insertText(selection, data);
           }
-          break;
         }
-        case 'insertLineBreak': {
-          // Used for Android
-          view.setCompositionKey(null);
-          insertLineBreak(selection);
-          break;
-        }
-        case 'insertParagraph': {
-          // Used for Android
-          view.setCompositionKey(null);
-          insertParagraph(selection);
-          break;
-        }
-        case 'formatStrikeThrough': {
-          formatText(selection, 'strikethrough');
-          break;
-        }
-        case 'insertFromYank':
-        case 'insertFromDrop':
-        case 'insertReplacementText':
-        case 'insertFromPaste': {
-          const dataTransfer = event.dataTransfer;
-          if (dataTransfer != null) {
-            insertDataTransferForRichText(dataTransfer, selection, view);
-          } else {
-            if (data) {
-              insertText(selection, data);
-            }
-          }
-          break;
-        }
-        case 'deleteByComposition': {
-          if (canRemoveText(anchorNode, focusNode)) {
-            removeText(selection);
-          }
-          break;
-        }
-        case 'deleteByDrag':
-        case 'deleteByCut': {
-          removeText(selection);
-          break;
-        }
-        case 'deleteContent': {
-          deleteForward(selection);
-          break;
-        }
-        case 'deleteWordBackward': {
-          deleteWordBackward(selection);
-          break;
-        }
-        case 'deleteWordForward': {
-          deleteWordForward(selection);
-          break;
-        }
-        case 'deleteHardLineBackward':
-        case 'deleteSoftLineBackward': {
-          deleteLineBackward(selection);
-          break;
-        }
-        case 'deleteContentForward':
-        case 'deleteHardLineForward':
-        case 'deleteSoftLineForward': {
-          deleteLineForward(selection);
-          break;
-        }
-        case 'formatBold': {
-          formatText(selection, 'bold');
-          break;
-        }
-        case 'formatItalic': {
-          formatText(selection, 'italic');
-          break;
-        }
-        case 'formatUnderline': {
-          formatText(selection, 'underline');
-          break;
-        }
-        default:
-        // NO-OP
+        break;
       }
-    },
-    'onBeforeInputForRichText',
-  );
+      case 'deleteByComposition': {
+        if (canRemoveText(anchorNode, focusNode)) {
+          removeText(selection);
+        }
+        break;
+      }
+      case 'deleteByDrag':
+      case 'deleteByCut': {
+        removeText(selection);
+        break;
+      }
+      case 'deleteContent': {
+        deleteForward(selection);
+        break;
+      }
+      case 'deleteWordBackward': {
+        deleteWordBackward(selection);
+        break;
+      }
+      case 'deleteWordForward': {
+        deleteWordForward(selection);
+        break;
+      }
+      case 'deleteHardLineBackward':
+      case 'deleteSoftLineBackward': {
+        deleteLineBackward(selection);
+        break;
+      }
+      case 'deleteContentForward':
+      case 'deleteHardLineForward':
+      case 'deleteSoftLineForward': {
+        deleteLineForward(selection);
+        break;
+      }
+      case 'formatBold': {
+        formatText(selection, 'bold');
+        break;
+      }
+      case 'formatItalic': {
+        formatText(selection, 'italic');
+        break;
+      }
+      case 'formatUnderline': {
+        formatText(selection, 'underline');
+        break;
+      }
+      default:
+      // NO-OP
+    }
+  }, 'onBeforeInputForRichText');
 }
 
 export function onMutation(
@@ -1072,91 +1033,88 @@ export function onMutation(
   mutations: Array<MutationRecord>,
   observer: MutationObserver,
 ): void {
-  editor.update(
-    (view: View) => {
-      for (let i = 0; i < mutations.length; i++) {
-        const mutation = mutations[i];
-        const type = mutation.type;
-        const target = mutation.target;
-        const targetNode = getClosestNodeFromDOMNode(view, target);
+  editor.update((view: View) => {
+    for (let i = 0; i < mutations.length; i++) {
+      const mutation = mutations[i];
+      const type = mutation.type;
+      const target = mutation.target;
+      const targetNode = getClosestNodeFromDOMNode(view, target);
 
-        if (isDecoratorNode(targetNode)) {
-          continue;
+      if (isDecoratorNode(targetNode)) {
+        continue;
+      }
+      if (type === 'characterData') {
+        if (target.nodeType === 3) {
+          // $FlowFixMe: nodeType === 3 is a Text DOM node
+          updateTextNodeFromDOMContent(((target: any): Text), view, editor);
         }
-        if (type === 'characterData') {
-          if (target.nodeType === 3) {
-            // $FlowFixMe: nodeType === 3 is a Text DOM node
-            updateTextNodeFromDOMContent(((target: any): Text), view, editor);
-          }
-        } else if (type === 'childList') {
-          // We attempt to "undo" any changes that have occured outside
-          // of Outline. We want Outline's view model to be source of truth.
-          // To the user, these will look like no-ops.
-          const nextSibling = mutation.nextSibling;
-          const addedNodes = mutation.addedNodes;
-          const removedNodes = mutation.removedNodes;
+      } else if (type === 'childList') {
+        // We attempt to "undo" any changes that have occured outside
+        // of Outline. We want Outline's view model to be source of truth.
+        // To the user, these will look like no-ops.
+        const nextSibling = mutation.nextSibling;
+        const addedNodes = mutation.addedNodes;
+        const removedNodes = mutation.removedNodes;
 
-          for (let s = 0; s < removedNodes.length; s++) {
-            const removedDOM = removedNodes[s];
-            if (nextSibling != null) {
-              let ancestor = nextSibling;
+        for (let s = 0; s < removedNodes.length; s++) {
+          const removedDOM = removedNodes[s];
+          if (nextSibling != null) {
+            let ancestor = nextSibling;
 
-              while (ancestor != null) {
-                const parentDOM = ancestor.parentNode;
-                if (parentDOM === target) {
-                  target.insertBefore(removedDOM, ancestor);
-                  break;
-                }
-                ancestor = parentDOM;
+            while (ancestor != null) {
+              const parentDOM = ancestor.parentNode;
+              if (parentDOM === target) {
+                target.insertBefore(removedDOM, ancestor);
+                break;
               }
-            } else {
-              target.appendChild(removedDOM);
+              ancestor = parentDOM;
             }
+          } else {
+            target.appendChild(removedDOM);
           }
-          for (let s = 0; s < addedNodes.length; s++) {
-            const addedDOM = addedNodes[s];
-            const node = getNodeFromDOMNode(view, addedDOM);
-            const parentDOM = addedDOM.parentNode;
-            if (parentDOM != null && node === null) {
-              parentDOM.removeChild(addedDOM);
-            }
+        }
+        for (let s = 0; s < addedNodes.length; s++) {
+          const addedDOM = addedNodes[s];
+          const node = getNodeFromDOMNode(view, addedDOM);
+          const parentDOM = addedDOM.parentNode;
+          if (parentDOM != null && node === null) {
+            parentDOM.removeChild(addedDOM);
           }
         }
       }
-      const selection = view.getSelection();
-      if (selection === null) {
-        // Looks like a text node was added and selection was moved to it.
-        // We can attempt to restore the last selection.
-        const lastSelection = getLastSelection(editor);
-        if (lastSelection !== null) {
-          view.setSelection(lastSelection);
-        }
+    }
+    const selection = view.getSelection();
+    if (selection === null) {
+      // Looks like a text node was added and selection was moved to it.
+      // We can attempt to restore the last selection.
+      const lastSelection = getLastSelection(editor);
+      if (lastSelection !== null) {
+        view.setSelection(lastSelection);
       }
+    }
 
-      // Capture all the mutations made during this function. This
-      // also prevents us having to process them on the next cycle
-      // of onMutation, as these mutations were made by us.
-      const records = observer.takeRecords();
+    // Capture all the mutations made during this function. This
+    // also prevents us having to process them on the next cycle
+    // of onMutation, as these mutations were made by us.
+    const records = observer.takeRecords();
 
-      // Check for any random auto-added <br> elements, and remove them.
-      // These get added by the browser when we undo the above mutations
-      // and this can lead to a broken UI.
-      if (records.length > 0) {
-        for (let i = 0; i < records.length; i++) {
-          const record = records[i];
-          const addedNodes = record.addedNodes;
-          for (let s = 0; s < addedNodes.length; s++) {
-            const addedDOM = addedNodes[s];
-            const parentDOM = addedDOM.parentNode;
-            if (parentDOM != null && addedDOM.nodeName === 'BR') {
-              parentDOM.removeChild(addedDOM);
-            }
+    // Check for any random auto-added <br> elements, and remove them.
+    // These get added by the browser when we undo the above mutations
+    // and this can lead to a broken UI.
+    if (records.length > 0) {
+      for (let i = 0; i < records.length; i++) {
+        const record = records[i];
+        const addedNodes = record.addedNodes;
+        for (let s = 0; s < addedNodes.length; s++) {
+          const addedDOM = addedNodes[s];
+          const parentDOM = addedDOM.parentNode;
+          if (parentDOM != null && addedDOM.nodeName === 'BR') {
+            parentDOM.removeChild(addedDOM);
           }
         }
-        // Clear any of those removal mutations
-        observer.takeRecords();
       }
-    },
-    'onMutation',
-  );
+      // Clear any of those removal mutations
+      observer.takeRecords();
+    }
+  }, 'onMutation');
 }

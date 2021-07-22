@@ -221,26 +221,23 @@ function MentionsTypeahead({
     }
     const selectedResult = results[selectedIndex];
     close();
-    editor.update(
-      (view) => {
-        const selection = view.getSelection();
-        if (match && selection && selection.isCollapsed()) {
-          const {leadOffset, replaceableString} = match;
-          const anchorNode = selection.getAnchorNode();
-          if (anchorNode.getTextContent().indexOf(replaceableString) !== -1) {
-            const splitNodes = anchorNode.splitText(
-              leadOffset,
-              leadOffset + replaceableString.length,
-            );
-            const target = leadOffset === 0 ? splitNodes[0] : splitNodes[1];
-            const mentionNode = createMentionNode(selectedResult);
-            target.replace(mentionNode);
-            mentionNode.selectNext(0, 0);
-          }
+    editor.update((view) => {
+      const selection = view.getSelection();
+      if (match && selection && selection.isCollapsed()) {
+        const {leadOffset, replaceableString} = match;
+        const anchorNode = selection.getAnchorNode();
+        if (anchorNode.getTextContent().indexOf(replaceableString) !== -1) {
+          const splitNodes = anchorNode.splitText(
+            leadOffset,
+            leadOffset + replaceableString.length,
+          );
+          const target = leadOffset === 0 ? splitNodes[0] : splitNodes[1];
+          const mentionNode = createMentionNode(selectedResult);
+          target.replace(mentionNode);
+          mentionNode.selectNext(0, 0);
         }
-      },
-      'useMentions',
-    );
+      }
+    }, 'useMentions');
   }, [close, editor, match, results, selectedIndex]);
 
   const updateSelectedIndex = useCallback(

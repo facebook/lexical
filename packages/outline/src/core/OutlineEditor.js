@@ -375,13 +375,7 @@ class BaseOutlineEditor {
     callbackFn?: () => void,
   ): boolean {
     errorOnProcessingTextNodeTransforms();
-    return updateEditor(
-      getSelf(this),
-      updateFn,
-      false,
-      updateName,
-      callbackFn,
-    );
+    return updateEditor(getSelf(this), updateFn, false, updateName, callbackFn);
   }
   focus(callbackFn?: () => void): void {
     const rootElement = this._rootElement;

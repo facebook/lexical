@@ -38,39 +38,33 @@ import useOutlineDragonSupport from './shared/useOutlineDragonSupport';
 import useOutlineHistory from './shared/useOutlineHistory';
 
 function initEditor(editor: OutlineEditor): void {
-  editor.update(
-    (view) => {
-      const root = view.getRoot();
+  editor.update((view) => {
+    const root = view.getRoot();
 
-      if (root.getFirstChild() === null) {
-        const paragraph = createParagraphNode();
-        const textNode = createTextNode();
-        root.append(paragraph.append(textNode));
-        if (view.getSelection() !== null) {
-          textNode.select();
-        }
+    if (root.getFirstChild() === null) {
+      const paragraph = createParagraphNode();
+      const textNode = createTextNode();
+      root.append(paragraph.append(textNode));
+      if (view.getSelection() !== null) {
+        textNode.select();
       }
-    },
-    'initEditor',
-  );
+    }
+  }, 'initEditor');
 }
 
 function clearEditor(editor: OutlineEditor): void {
-  editor.update(
-    (view) => {
-      const firstChild = view.getRoot().getFirstChild();
-      if (isParagraphNode(firstChild)) {
-        firstChild.clear();
-        const textNode = createTextNode();
-        firstChild.append(textNode);
+  editor.update((view) => {
+    const firstChild = view.getRoot().getFirstChild();
+    if (isParagraphNode(firstChild)) {
+      firstChild.clear();
+      const textNode = createTextNode();
+      firstChild.append(textNode);
+      textNode.select();
+      if (view.getSelection() !== null) {
         textNode.select();
-        if (view.getSelection() !== null) {
-          textNode.select();
-        }
       }
-    },
-    'clearEditor',
-  );
+    }
+  }, 'clearEditor');
 }
 
 const events: InputEvents = [

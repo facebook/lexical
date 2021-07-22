@@ -145,25 +145,22 @@ export default function useTypeahead(editor: OutlineEditor): void {
     if (root != null) {
       const handleEvent = (event: KeyboardEvent) => {
         if (event.key === 'Tab' || event.key === 'ArrowRight') {
-          editor.update(
-            (view: View) => {
-              const typeaheadTextNode = getTypeaheadTextNode(view);
-              const prevTextNode = typeaheadTextNode?.getPreviousSibling();
-              // Make sure that the Typeahead is visible and previous child writable
-              // before calling it a successfully handled event.
-              if (typeaheadTextNode !== null && isTextNode(prevTextNode)) {
-                event.preventDefault();
-                prevTextNode.setTextContent(
-                  prevTextNode.getTextContent() +
-                    typeaheadTextNode.getTextContent(true),
-                );
-                prevTextNode.select();
-              }
-              typeaheadTextNode?.remove();
-              typeaheadNodeKey.current = null;
-            },
-            'useTypeahead',
-          );
+          editor.update((view: View) => {
+            const typeaheadTextNode = getTypeaheadTextNode(view);
+            const prevTextNode = typeaheadTextNode?.getPreviousSibling();
+            // Make sure that the Typeahead is visible and previous child writable
+            // before calling it a successfully handled event.
+            if (typeaheadTextNode !== null && isTextNode(prevTextNode)) {
+              event.preventDefault();
+              prevTextNode.setTextContent(
+                prevTextNode.getTextContent() +
+                  typeaheadTextNode.getTextContent(true),
+              );
+              prevTextNode.select();
+            }
+            typeaheadTextNode?.remove();
+            typeaheadNodeKey.current = null;
+          }, 'useTypeahead');
         }
       };
 

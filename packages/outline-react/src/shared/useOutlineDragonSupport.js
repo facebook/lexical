@@ -48,56 +48,53 @@ export default function useOutlineDragonSupport(editor: OutlineEditor) {
               // TODO: we should probably handle formatCommand somehow?
               // eslint-disable-next-line no-unused-expressions
               formatCommand;
-              editor.update(
-                (view) => {
-                  const selection = view.getSelection();
-                  if (selection !== null) {
-                    let anchorKey = selection.anchorKey;
-                    let setSelStart = 0;
-                    let setSelEnd = 0;
-                    // set initial selection
-                    if (blockStart >= 0 && blockLength >= 0) {
-                      setSelStart = blockStart;
-                      setSelEnd = blockStart + blockLength;
-                      // If the offset is more than the end, make it the end
-                      selection.setRange(
-                        anchorKey,
-                        setSelStart,
-                        anchorKey,
-                        setSelEnd,
-                      );
-                    }
-                    if (setSelStart !== setSelEnd || text !== '') {
-                      insertRichText(selection, text);
-                      anchorKey = selection.anchorKey;
-                    }
-                    // set final selection
-                    setSelStart = selStart;
-                    setSelEnd = selStart + selLength;
-                    const anchorNodeTextLength = selection
-                      .getAnchorNode()
-                      .getTextContentSize();
+              editor.update((view) => {
+                const selection = view.getSelection();
+                if (selection !== null) {
+                  let anchorKey = selection.anchorKey;
+                  let setSelStart = 0;
+                  let setSelEnd = 0;
+                  // set initial selection
+                  if (blockStart >= 0 && blockLength >= 0) {
+                    setSelStart = blockStart;
+                    setSelEnd = blockStart + blockLength;
                     // If the offset is more than the end, make it the end
-                    setSelStart =
-                      setSelStart > anchorNodeTextLength
-                        ? anchorNodeTextLength
-                        : setSelStart;
-                    setSelEnd =
-                      setSelEnd > anchorNodeTextLength
-                        ? anchorNodeTextLength
-                        : setSelEnd;
                     selection.setRange(
                       anchorKey,
                       setSelStart,
                       anchorKey,
                       setSelEnd,
                     );
-                    // block the chrome extension from handling this event
-                    event.stopImmediatePropagation();
                   }
-                },
-                'useOutlineDragonSupport',
-              );
+                  if (setSelStart !== setSelEnd || text !== '') {
+                    insertRichText(selection, text);
+                    anchorKey = selection.anchorKey;
+                  }
+                  // set final selection
+                  setSelStart = selStart;
+                  setSelEnd = selStart + selLength;
+                  const anchorNodeTextLength = selection
+                    .getAnchorNode()
+                    .getTextContentSize();
+                  // If the offset is more than the end, make it the end
+                  setSelStart =
+                    setSelStart > anchorNodeTextLength
+                      ? anchorNodeTextLength
+                      : setSelStart;
+                  setSelEnd =
+                    setSelEnd > anchorNodeTextLength
+                      ? anchorNodeTextLength
+                      : setSelEnd;
+                  selection.setRange(
+                    anchorKey,
+                    setSelStart,
+                    anchorKey,
+                    setSelEnd,
+                  );
+                  // block the chrome extension from handling this event
+                  event.stopImmediatePropagation();
+                }
+              }, 'useOutlineDragonSupport');
             }
           }
         }

@@ -37,15 +37,12 @@ function Image({
 
   const handleKeyDown = (event) => {
     if ((hasFocus && event.key === 'Backspace') || event.key === 'Delete') {
-      editor.update(
-        (view) => {
-          const node = view.getNodeByKey(nodeKey);
-          if (node !== null) {
-            node.remove();
-          }
-        },
-        'Image.keyDown',
-      );
+      editor.update((view) => {
+        const node = view.getNodeByKey(nodeKey);
+        if (node !== null) {
+          node.remove();
+        }
+      }, 'Image.keyDown');
     }
   };
 

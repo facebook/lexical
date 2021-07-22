@@ -140,151 +140,130 @@ function DropdownList({
 
   const formatParagraph = () => {
     if (blockType !== 'paragraph') {
-      editor.update(
-        (view) => {
-          const selection = view.getSelection();
+      editor.update((view) => {
+        const selection = view.getSelection();
 
-          if (selection !== null) {
-            const anchorNode = selection.getAnchorNode();
-            const parent = anchorNode.getParentBlockOrThrow();
-            const children = parent.getChildren();
-            const paragraph = createParagraphNode();
-            children.forEach((child) => paragraph.append(child));
-            parent.replace(paragraph);
-          }
-        },
-        'formatParagraph',
-      );
+        if (selection !== null) {
+          const anchorNode = selection.getAnchorNode();
+          const parent = anchorNode.getParentBlockOrThrow();
+          const children = parent.getChildren();
+          const paragraph = createParagraphNode();
+          children.forEach((child) => paragraph.append(child));
+          parent.replace(paragraph);
+        }
+      }, 'formatParagraph');
     }
     setShowDropDown(false);
   };
 
   const formatLargeHeading = () => {
     if (blockType !== 'h1') {
-      editor.update(
-        (view) => {
-          const selection = view.getSelection();
+      editor.update((view) => {
+        const selection = view.getSelection();
 
-          if (selection !== null) {
-            const anchorNode = selection.getAnchorNode();
-            const parent = anchorNode.getParentBlockOrThrow();
-            const children = parent.getChildren();
-            const paragraph = createHeadingNode('h1');
-            children.forEach((child) => paragraph.append(child));
-            parent.replace(paragraph);
-          }
-        },
-        'formatLargeHeading',
-      );
+        if (selection !== null) {
+          const anchorNode = selection.getAnchorNode();
+          const parent = anchorNode.getParentBlockOrThrow();
+          const children = parent.getChildren();
+          const paragraph = createHeadingNode('h1');
+          children.forEach((child) => paragraph.append(child));
+          parent.replace(paragraph);
+        }
+      }, 'formatLargeHeading');
     }
     setShowDropDown(false);
   };
 
   const formatSmallHeading = () => {
     if (blockType !== 'h2') {
-      editor.update(
-        (view) => {
-          const selection = view.getSelection();
+      editor.update((view) => {
+        const selection = view.getSelection();
 
-          if (selection !== null) {
-            const anchorNode = selection.getAnchorNode();
-            const parent = anchorNode.getParentBlockOrThrow();
-            const children = parent.getChildren();
-            const paragraph = createHeadingNode('h2');
-            children.forEach((child) => paragraph.append(child));
-            parent.replace(paragraph);
-          }
-        },
-        'formatSmallHeading',
-      );
+        if (selection !== null) {
+          const anchorNode = selection.getAnchorNode();
+          const parent = anchorNode.getParentBlockOrThrow();
+          const children = parent.getChildren();
+          const paragraph = createHeadingNode('h2');
+          children.forEach((child) => paragraph.append(child));
+          parent.replace(paragraph);
+        }
+      }, 'formatSmallHeading');
     }
     setShowDropDown(false);
   };
 
   const formatBulletList = () => {
     if (blockType !== 'ul') {
-      editor.update(
-        (view) => {
-          const selection = view.getSelection();
+      editor.update((view) => {
+        const selection = view.getSelection();
 
-          if (selection !== null) {
-            const anchorNode = selection.getAnchorNode();
-            const parent = anchorNode.getParentBlockOrThrow();
-            const children = parent.getChildren();
-            const list = createListNode('ul');
-            const listItem = createListItemNode();
-            list.append(listItem);
-            children.forEach((child) => listItem.append(child));
-            parent.replace(list);
-          }
-        },
-        'formatBulletList',
-      );
+        if (selection !== null) {
+          const anchorNode = selection.getAnchorNode();
+          const parent = anchorNode.getParentBlockOrThrow();
+          const children = parent.getChildren();
+          const list = createListNode('ul');
+          const listItem = createListItemNode();
+          list.append(listItem);
+          children.forEach((child) => listItem.append(child));
+          parent.replace(list);
+        }
+      }, 'formatBulletList');
     }
     setShowDropDown(false);
   };
 
   const formatNumberedList = () => {
     if (blockType !== 'ol') {
-      editor.update(
-        (view) => {
-          const selection = view.getSelection();
+      editor.update((view) => {
+        const selection = view.getSelection();
 
-          if (selection !== null) {
-            const anchorNode = selection.getAnchorNode();
-            const parent = anchorNode.getParentBlockOrThrow();
-            const children = parent.getChildren();
-            const list = createListNode('ol');
-            const listItem = createListItemNode();
-            list.append(listItem);
-            children.forEach((child) => listItem.append(child));
-            parent.replace(list);
-          }
-        },
-        'formatNumberedList',
-      );
+        if (selection !== null) {
+          const anchorNode = selection.getAnchorNode();
+          const parent = anchorNode.getParentBlockOrThrow();
+          const children = parent.getChildren();
+          const list = createListNode('ol');
+          const listItem = createListItemNode();
+          list.append(listItem);
+          children.forEach((child) => listItem.append(child));
+          parent.replace(list);
+        }
+      }, 'formatNumberedList');
     }
     setShowDropDown(false);
   };
 
   const formatQuote = () => {
     if (blockType !== 'quote') {
-      editor.update(
-        (view) => {
-          const selection = view.getSelection();
+      editor.update((view) => {
+        const selection = view.getSelection();
 
-          if (selection !== null) {
-            const anchorNode = selection.getAnchorNode();
-            const parent = anchorNode.getParentBlockOrThrow();
-            const children = parent.getChildren();
-            const paragraph = createQuoteNode();
-            children.forEach((child) => paragraph.append(child));
-            parent.replace(paragraph);
-          }
-        },
-        'formatQuote',
-      );
+        if (selection !== null) {
+          const anchorNode = selection.getAnchorNode();
+          const parent = anchorNode.getParentBlockOrThrow();
+          const children = parent.getChildren();
+          const paragraph = createQuoteNode();
+          children.forEach((child) => paragraph.append(child));
+          parent.replace(paragraph);
+        }
+      }, 'formatQuote');
     }
     setShowDropDown(false);
   };
 
   const formatCode = () => {
     if (blockType !== 'code') {
-      editor.update(
-        (view) => {
-          const selection = view.getSelection();
+      editor.update((view) => {
+        const selection = view.getSelection();
 
-          if (selection !== null) {
-            const anchorNode = selection.getAnchorNode();
-            const parent = anchorNode.getParentBlockOrThrow();
-            const children = parent.getChildren();
-            const paragraph = createCodeNode();
-            children.forEach((child) => paragraph.append(child));
-            parent.replace(paragraph);
-          }
-        },
-        'formatCode',
-      );
+        if (selection !== null) {
+          const anchorNode = selection.getAnchorNode();
+          const parent = anchorNode.getParentBlockOrThrow();
+          const children = parent.getChildren();
+          const paragraph = createCodeNode();
+          children.forEach((child) => paragraph.append(child));
+          parent.replace(paragraph);
+        }
+      }, 'formatCode');
     }
     setShowDropDown(false);
   };

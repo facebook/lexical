@@ -247,62 +247,56 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
 
   const updateSelectedLinks = useCallback(
     (url: null | string, selection: null | Selection) => {
-      editor.update(
-        (view) => {
-          if (selection !== null) {
-            view.setSelection(selection);
-          }
-          const sel = view.getSelection();
-          if (sel !== null) {
-            const nodes = extractSelection(sel);
-            nodes.forEach((node) => {
-              if (isTextNode(node) && !node.isImmutable()) {
-                if (isLinkNode(node)) {
-                  if (url === null) {
-                    const textNode = createTextNode(node.getTextContent());
-                    let shouldSelect = false;
-                    if (node === sel.getAnchorNode()) {
-                      shouldSelect = true;
-                    }
-                    node.replace(textNode);
-                    if (shouldSelect) {
-                      textNode.select();
-                    }
-                  } else {
-                    node.setURL(url);
-                  }
-                } else if (url !== null) {
-                  const linkNode = createLinkNode(node.getTextContent(), url);
+      editor.update((view) => {
+        if (selection !== null) {
+          view.setSelection(selection);
+        }
+        const sel = view.getSelection();
+        if (sel !== null) {
+          const nodes = extractSelection(sel);
+          nodes.forEach((node) => {
+            if (isTextNode(node) && !node.isImmutable()) {
+              if (isLinkNode(node)) {
+                if (url === null) {
+                  const textNode = createTextNode(node.getTextContent());
                   let shouldSelect = false;
                   if (node === sel.getAnchorNode()) {
                     shouldSelect = true;
                   }
-                  node.replace(linkNode);
+                  node.replace(textNode);
                   if (shouldSelect) {
-                    linkNode.select();
+                    textNode.select();
                   }
+                } else {
+                  node.setURL(url);
+                }
+              } else if (url !== null) {
+                const linkNode = createLinkNode(node.getTextContent(), url);
+                let shouldSelect = false;
+                if (node === sel.getAnchorNode()) {
+                  shouldSelect = true;
+                }
+                node.replace(linkNode);
+                if (shouldSelect) {
+                  linkNode.select();
                 }
               }
-            });
-          }
-        },
-        'useToolbar',
-      );
+            }
+          });
+        }
+      }, 'useToolbar');
     },
     [editor],
   );
 
   const applyFormatText = useCallback(
     (formatType: TextFormatType) => {
-      editor.update(
-        (view) => {
-          const selection = view.getSelection();
-          if (selection !== null) {
-            formatText(selection, formatType);
-          }
-        },
-        'applyFormatText',
-      );
+      editor.update((view) => {
+        const selection = view.getSelection();
+        if (selection !== null) {
+          formatText(selection, formatType);
+        }
+      }, 'applyFormatText');
     },
     [editor],
   );

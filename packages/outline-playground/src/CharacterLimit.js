@@ -135,17 +135,14 @@ export default function CharacterLimit({
       });
     } else if (charactersOver > 0) {
       currentIntersectionRef.current = null;
-      editor.update(
-        (view: View) => {
-          const textNodes = view.getRoot().getAllTextNodes();
-          textNodes.forEach((textNode) => {
-            if (textNode.isOverflowed()) {
-              textNode.toggleOverflowed();
-            }
-          });
-        },
-        'CharacterLimit',
-      );
+      editor.update((view: View) => {
+        const textNodes = view.getRoot().getAllTextNodes();
+        textNodes.forEach((textNode) => {
+          if (textNode.isOverflowed()) {
+            textNode.toggleOverflowed();
+          }
+        });
+      }, 'CharacterLimit');
       setCharactersOver(0);
     }
   }, [charactersOver, editor]);
@@ -159,17 +156,14 @@ export default function CharacterLimit({
   useEffect(() => {
     return () => {
       currentIntersectionRef.current = null;
-      editor.update(
-        (view: View) => {
-          const textNodes = view.getRoot().getAllTextNodes();
-          textNodes.forEach((textNode) => {
-            if (textNode.isOverflowed()) {
-              textNode.toggleOverflowed();
-            }
-          });
-        },
-        'CharacterLimit',
-      );
+      editor.update((view: View) => {
+        const textNodes = view.getRoot().getAllTextNodes();
+        textNodes.forEach((textNode) => {
+          if (textNode.isOverflowed()) {
+            textNode.toggleOverflowed();
+          }
+        });
+      }, 'CharacterLimit');
       setCharactersOver(0);
     };
   }, [editor]);

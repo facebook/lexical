@@ -95,6 +95,9 @@ class EmojiNode extends TextNode {
     this.__className = className;
     this.__type = 'emoji';
   }
+  static deserialize(data: {__className: string, __text: string}): EmojiNode {
+    return new EmojiNode(data.__className, data.__text);
+  }
   clone() {
     return new EmojiNode(this.__className, this.__text, this.__key);
   }

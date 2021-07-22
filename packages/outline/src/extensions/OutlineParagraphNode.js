@@ -12,6 +12,10 @@ import type {OutlineNode, NodeKey, EditorThemeClasses} from 'outline';
 import {BlockNode} from 'outline';
 
 export class ParagraphNode extends BlockNode {
+  static deserialize(data: $FlowFixMe): ParagraphNode {
+    return new ParagraphNode();
+  }
+
   constructor(key?: NodeKey) {
     super(key);
     this.__type = 'paragraph';

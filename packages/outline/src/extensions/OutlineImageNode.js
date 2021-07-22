@@ -72,6 +72,10 @@ export class ImageNode extends DecoratorNode {
   __src: string;
   __altText: string;
 
+  static deserialize(data: $FlowFixMe): ImageNode {
+    return new ImageNode(data.__src, data.__altText);
+  }
+
   constructor(src: string, altText: string, key?: NodeKey) {
     super(key);
     this.__type = 'image';

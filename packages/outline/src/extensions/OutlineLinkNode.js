@@ -19,6 +19,10 @@ export type ParsedLinkNode = {
 export class LinkNode extends TextNode {
   __url: string;
 
+  static deserialize(data: $FlowFixMe): LinkNode {
+    return new LinkNode(data.__text, data.__url);
+  }
+
   constructor(text: string, url: string, key?: NodeKey) {
     super(text, key);
     this.__url = url;

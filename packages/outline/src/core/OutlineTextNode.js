@@ -204,6 +204,10 @@ export type ParsedTextNode = {
 export class TextNode extends OutlineNode {
   __text: string;
 
+  static deserialize(data: $FlowFixMe): TextNode {
+    return new TextNode(data.__text);
+  }
+
   constructor(text: string, key?: NodeKey) {
     super(key);
     this.__text = text;

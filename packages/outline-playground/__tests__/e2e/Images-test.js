@@ -74,7 +74,7 @@ describe('Images', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph"><span data-outline-text="true">⁠</span><span class="editor-image" data-outline-decorator="true" contenteditable="false"><img src="https://www.crawshaygallery.com/portfolio2019/New-York-Skyline-Black-White-cropped.jpg" alt="New York Skyline, Black and White" tabindex="0" class="focused"></span><span data-outline-text="true">⁠</span></p>',
+        '<p class="editor-paragraph"><span data-outline-text="true">⁠</span><span class="editor-image" data-outline-decorator="true" contenteditable="false"><img src="https://www.crawshaygallery.com/portfolio2019/New-York-Skyline-Black-White-cropped.jpg" alt="New York Skyline, Black and White" tabindex="0" class="focused"><div class="image-resizer-s"></div><div class="image-resizer-e"></div><div class="image-resizer-se"></div></span><span data-outline-text="true">⁠</span></p>',
       );
 
       await page.keyboard.press('Backspace');

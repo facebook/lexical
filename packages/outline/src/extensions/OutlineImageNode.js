@@ -311,8 +311,8 @@ export class ImageNode extends DecoratorNode {
     this.__type = 'image';
     this.__src = src;
     this.__altText = altText;
-    this.__width = 'inherit';
-    this.__height = 'inherit';
+    this.__width = width || 'inherit';
+    this.__height = height || 'inherit';
   }
   getTextContent(): string {
     return this.__altText;

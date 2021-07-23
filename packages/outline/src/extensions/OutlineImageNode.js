@@ -44,6 +44,8 @@ function LazyImage({
   onBlur,
   onKeyDown,
   src,
+  width,
+  height,
 }: {
   altText: string,
   className: ?string,
@@ -52,6 +54,8 @@ function LazyImage({
   onBlur: () => void,
   onKeyDown: (KeyboardEvent) => void,
   src: string,
+  width: 'inherit' | number,
+  height: 'inherit' | number,
 }): React.Node {
   useSuspenseImage(src);
   // TODO: This needs to be made accessible.
@@ -67,6 +71,10 @@ function LazyImage({
       ref={imageRef}
       // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
       tabIndex={0}
+      style={{
+        width,
+        height,
+      }}
     />
   );
 }
@@ -77,10 +85,19 @@ function ImageResizer({
   imageRef,
 }: {
   onResizeStart: () => void,
-  onResizeEnd: (number, number) => void,
+  onResizeEnd: ('inherit' | number, 'inherit' | number) => void,
   imageRef: {current: null | HTMLElement},
 }): React.Node {
-  const positioningRef = useRef({
+  const positioningRef = useRef<{
+    currentWidth: 'inherit' | number,
+    currentHeight: 'inherit' | number,
+    startWidth: number,
+    startHeight: number,
+    startX: number,
+    startY: number,
+    direction: 0 | 1 | 2 | 3 | 4 | 5 | 6,
+    isResizing: boolean,
+  }>({
     currentWidth: 0,
     currentHeight: 0,
     startWidth: 0,
@@ -90,13 +107,18 @@ function ImageResizer({
     direction: 0,
     isResizing: false,
   });
-  const handlePointerDown = (event: PointerEvent, direction: number) => {
+  const handlePointerDown = (
+    event: PointerEvent,
+    direction: 0 | 1 | 2 | 3 | 4 | 5 | 6,
+  ) => {
     const image = imageRef.current;
     if (image !== null) {
-      const rect = image.getBoundingClientRect();
+      const {width, height} = image.getBoundingClientRect();
       const positioning = positioningRef.current;
-      positioning.startWidth = rect.width;
-      positioning.startHeight = rect.height;
+      positioning.startWidth = width;
+      positioning.startHeight = height;
+      positioning.currentWidth = 'inherit';
+      positioning.currentHeight = 'inherit';
       positioning.startX = event.clientX;
       positioning.startY = event.clientY;
       positioning.isResizing = true;
@@ -110,18 +132,18 @@ function ImageResizer({
     const image = imageRef.current;
     const positioning = positioningRef.current;
     if (image !== null && positioning.isResizing) {
-      if (positioning.currentWidth === 0 || positioning.currentHeight === 0) {
-        image.style.width = 'inherit';
-        image.style.height = 'inherit';
-      }
       // Moving south/north
       if (positioning.direction === 4) {
         const diff = Math.floor(event.clientY - positioning.startY);
-        const minHeight = positioning.minHeight / 2;
+        const minHeight = positioning.startHeight / 2;
+        const maxHeight = positioning.startHeight;
         let height = positioning.startHeight + diff;
         if (height < minHeight) {
           height = minHeight;
+        } else if (height > maxHeight) {
+          height = maxHeight;
         }
+        image.style.width = `inherit`;
         image.style.height = `${height}px`;
         positioning.currentHeight = height;
       } else {
@@ -132,6 +154,7 @@ function ImageResizer({
           width = minWidth;
         }
         image.style.width = `${width}px`;
+        image.style.height = `inherit`;
         positioning.currentWidth = width;
       }
     }
@@ -183,11 +206,15 @@ function ImageComponent({
   src,
   altText,
   nodeKey,
+  width,
+  height,
 }: {
   editor: OutlineEditor,
   src: string,
   altText: string,
   nodeKey: NodeKey,
+  width: 'inherit' | number,
+  height: 'inherit' | number,
 }): React.Node {
   const ref = useRef(null);
   const [hasFocus, setHasFocus] = useState(false);
@@ -215,6 +242,8 @@ function ImageComponent({
           onFocus={() => setHasFocus(true)}
           onBlur={() => setHasFocus(false)}
           onKeyDown={handleKeyDown}
+          width={width}
+          height={height}
         />
         {(hasFocus || isResizing) && (
           <ImageResizer
@@ -230,12 +259,18 @@ function ImageComponent({
               }
               setIsResizing(true);
             }}
-            onResizeEnd={(width) => {
+            onResizeEnd={(nextWidth, nextHeight) => {
               const rootElement = editor.getRootElement();
               if (rootElement !== null) {
                 rootElement.style.setProperty('cursor', 'default');
               }
               setIsResizing(false);
+              editor.update((view) => {
+                const node = view.getNodeByKey(nodeKey);
+                if (isImageNode(node)) {
+                  node.setWidthAndHeight(nextWidth, nextHeight);
+                }
+              }, 'ImageNode.resize');
             }}
           />
         )}
@@ -253,22 +288,51 @@ export type ParsedImageNode = {
 export class ImageNode extends DecoratorNode {
   __src: string;
   __altText: string;
+  __width: 'inherit' | number;
+  __height: 'inherit' | number;
 
   static deserialize(data: $FlowFixMe): ImageNode {
-    return new ImageNode(data.__src, data.__altText);
+    return new ImageNode(
+      data.__src,
+      data.__altText,
+      data.__width,
+      data.__height,
+    );
   }
 
-  constructor(src: string, altText: string, key?: NodeKey) {
+  constructor(
+    src: string,
+    altText: string,
+    width?: 'inherit' | number,
+    height?: 'inherit' | number,
+    key?: NodeKey,
+  ) {
     super(key);
     this.__type = 'image';
     this.__src = src;
     this.__altText = altText;
+    this.__width = 'inherit';
+    this.__height = 'inherit';
   }
   getTextContent(): string {
     return this.__altText;
   }
   clone(): ImageNode {
-    return new ImageNode(this.__src, this.__altText, this.__key);
+    return new ImageNode(
+      this.__src,
+      this.__altText,
+      this.__width,
+      this.__height,
+      this.__key,
+    );
+  }
+  setWidthAndHeight(
+    width: 'inherit' | number,
+    height: 'inherit' | number,
+  ): void {
+    const writable = this.getWritable();
+    writable.__width = width;
+    writable.__height = height;
   }
 
   // View
@@ -290,6 +354,8 @@ export class ImageNode extends DecoratorNode {
         src={this.__src}
         altText={this.__altText}
         editor={editor}
+        width={this.__width}
+        height={this.__height}
         nodeKey={this.getKey()}
       />
     );

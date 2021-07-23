@@ -10,7 +10,7 @@ import {initializeE2E, assertHTML, assertSelection, repeat} from '../utils';
 
 describe('Keywords', () => {
   initializeE2E((e2e) => {
-    it.only(`Can create a decorator and move selection around it`, async () => {
+    it(`Can create a decorator and move selection around it`, async () => {
       const {page} = e2e;
 
       await page.focus('div.editor');

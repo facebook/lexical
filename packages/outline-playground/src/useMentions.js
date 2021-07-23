@@ -16,11 +16,22 @@ import type {
 } from 'outline';
 
 import React, {useCallback, useLayoutEffect, useMemo, useRef} from 'react';
-import {useEffect, useState} from 'react';
+import {startTransition, useEffect, useState} from 'react';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
 import {TextNode} from 'outline';
 import useEvent from './useEvent';
+
+type MentionMatch = {
+  leadOffset: number,
+  matchingString: string,
+  replaceableString: string,
+};
+
+type Resolution = {
+  match: MentionMatch,
+  range: Range,
+};
 
 const mentionStyle = 'background-color: rgba(24, 119, 232, 0.2)';
 
@@ -163,82 +174,48 @@ function MentionsTypeaheadItem({
 function MentionsTypeahead({
   close,
   editor,
-  match,
+  resolution,
   registerKeys,
 }: {
   close: () => void,
   editor: OutlineEditor,
-  match: MentionMatch,
+  resolution: Resolution,
   registerKeys: (keys: any) => () => void,
 }): React$Node {
   const divRef = useRef(null);
+  const match = resolution.match;
   const results = useMentionLookupService(match.matchingString);
   const [selectedIndex, setSelectedIndex] = useState<null | number>(null);
   const [hoveredIndex, setHoveredIndex] = useState(null);
 
   useEffect(() => {
     const div = divRef.current;
-    if (results !== null && div !== null) {
-      const res = editor.getViewModel().read((view) => {
-        const selection = view.getSelection();
+    const rootElement = editor.getRootElement();
+    if (results !== null && div !== null && rootElement !== null) {
+      const range = resolution.range;
+      const {left, top, height} = range.getBoundingClientRect();
+      div.style.top = `${top + height + 2}px`;
+      div.style.left = `${left - 14}px`;
+      div.style.display = 'block';
+      rootElement.setAttribute('aria-controls', 'mentions-typeahead');
 
-        if (selection !== null && selection.isCollapsed()) {
-          const range = document.createRange();
-          const mentionsElement = editor.getElementByKey(selection.anchorKey);
-          if (mentionsElement === null) {
-            return null;
-          }
-          const anchorTextNode = mentionsElement.firstChild;
-          if (anchorTextNode) {
-            try {
-              range.setStart(anchorTextNode, match.leadOffset);
-              range.setEnd(anchorTextNode, selection.anchorOffset);
-            } catch (e) {
-              return null;
-            }
-          }
-          return [range, mentionsElement];
-        }
-        return null;
-      });
-      if (res) {
-        const [range, mentionsElement] = res;
-        const {left, top, height} = range.getBoundingClientRect();
-        div.style.top = `${top + height + 2}px`;
-        div.style.left = `${left - 14}px`;
-        mentionsElement.setAttribute('aria-controls', 'mentions-typeahead');
-
-        return () => {
-          mentionsElement.removeAttribute('aria-controls');
-        };
-      }
+      return () => {
+        div.style.display = 'none';
+        rootElement.removeAttribute('aria-controls');
+      };
     }
-  }, [close, editor, match, results]);
+  }, [editor, resolution, results]);
 
   const applyCurrentSelected = useCallback(() => {
     if (results === null || selectedIndex === null) {
       return;
     }
-    const selectedResult = results[selectedIndex];
+    const selectedEntry = results[selectedIndex];
+
     close();
-    editor.update((view) => {
-      const selection = view.getSelection();
-      if (match && selection && selection.isCollapsed()) {
-        const {leadOffset, replaceableString} = match;
-        const anchorNode = selection.getAnchorNode();
-        if (anchorNode.getTextContent().indexOf(replaceableString) !== -1) {
-          const splitNodes = anchorNode.splitText(
-            leadOffset,
-            leadOffset + replaceableString.length,
-          );
-          const target = leadOffset === 0 ? splitNodes[0] : splitNodes[1];
-          const mentionNode = createMentionNode(selectedResult);
-          target.replace(mentionNode);
-          mentionNode.selectNext(0, 0);
-        }
-      }
-    }, 'useMentions');
-  }, [close, editor, match, results, selectedIndex]);
+
+    createMentionNodeFromSearchResult(editor, selectedEntry, match);
+  }, [close, match, editor, results, selectedIndex]);
 
   const updateSelectedIndex = useCallback(
     (index) => {
@@ -363,12 +340,6 @@ function MentionsTypeahead({
   );
 }
 
-type MentionMatch = {
-  leadOffset: number,
-  matchingString: string,
-  replaceableString: string,
-};
-
 function checkForCapitalizedNameMentions(
   text,
   minMatchLength,
@@ -431,6 +402,24 @@ function getTextUpToAnchor(selection: Selection): string | null {
   return anchorNode.getTextContent().slice(0, anchorOffset);
 }
 
+function tryToPositionRange(match: MentionMatch, range: Range): boolean {
+  const domSelection = window.getSelection();
+  if (domSelection === null || !domSelection.isCollapsed) {
+    return false;
+  }
+  const anchorNode = domSelection.anchorNode;
+  const startOffset = match.leadOffset;
+  const endOffset = domSelection.anchorOffset;
+  try {
+    range.setStart(anchorNode, startOffset);
+    range.setEnd(anchorNode, endOffset);
+  } catch {
+    return false;
+  }
+
+  return true;
+}
+
 function getMentionsTextToSearch(editor: OutlineEditor): string | null {
   let text = null;
   editor.getViewModel().read((view: View) => {
@@ -443,9 +432,75 @@ function getMentionsTextToSearch(editor: OutlineEditor): string | null {
   return text;
 }
 
+/**
+ * Walk backwards along user input and forward through entity title to try
+ * and replace more of the user's text with entity.
+ *
+ * E.g. User types "Hello Sarah Smit" and we match "Smit" to "Sarah Smith".
+ * Replacing just the match would give us "Hello Sarah Sarah Smith".
+ * Instead we find the string "Sarah Smit" and replace all of it.
+ */
+function getEntityOffset(
+  documentText: string,
+  entryText: string,
+  offset: number,
+): number {
+  let triggerOffset = offset;
+  for (let ii = triggerOffset; ii <= entryText.length; ii++) {
+    if (documentText.substr(-ii) === entryText.substr(0, ii)) {
+      triggerOffset = ii;
+    }
+  }
+
+  return triggerOffset;
+}
+
+/**
+ * From a Typeahead Search Result, replace plain text from search offset and
+ * render a newly created MentionNode.
+ */
+function createMentionNodeFromSearchResult(
+  editor: OutlineEditor,
+  entryText: string,
+  match: MentionMatch,
+): void {
+  editor.update((view: View) => {
+    const selection = view.getSelection();
+    if (selection == null || !selection.isCollapsed()) {
+      return;
+    }
+    const anchorNode = selection.getAnchorNode();
+    // We should not be attempting to extract mentions out of nodes
+    // that are already being used for other core things. This is
+    // especially true for immutable nodes, which can't be mutated at all.
+    if (!anchorNode.isSimpleText()) {
+      return;
+    }
+    const selectionOffset = selection.anchorOffset;
+    const textContent = anchorNode.getTextContent().slice(0, selectionOffset);
+    const characterOffset = match.replaceableString.length;
+
+    // Given a known offset for the mention match, look backward in the
+    // text to see if there's a longer match to replace.
+    const mentionOffset =
+      selectionOffset -
+      getEntityOffset(textContent, entryText, characterOffset);
+
+    let nodeToReplace;
+    if (mentionOffset === 0) {
+      [nodeToReplace] = anchorNode.splitText(selectionOffset);
+    } else {
+      [, nodeToReplace] = anchorNode.splitText(mentionOffset, selectionOffset);
+    }
+
+    const mentionNode = createMentionNode(entryText);
+    nodeToReplace.replace(mentionNode);
+    mentionNode.selectNext(0, 0);
+  }, 'createMentionNodeFromSearchResult');
+}
+
 export default function useMentions(editor: OutlineEditor): React$Node {
-  const [mentionMatch, setMentionMatch] = useState<MentionMatch | null>(null);
-  const hasMentionRef = useRef(false);
+  const [resolution, setResolution] = useState<Resolution | null>(null);
   const registeredKeys: Set<any> = useMemo(() => new Set(), []);
   const registerKeys = useMemo(
     () => (keys) => {
@@ -462,23 +517,43 @@ export default function useMentions(editor: OutlineEditor): React$Node {
   }, [editor]);
 
   useEffect(() => {
+    let activeRange: Range | null = document.createRange();
+    let previousText = null;
+
     const updateListener = () => {
+      const range = activeRange;
       const text = getMentionsTextToSearch(editor);
 
-      if (text) {
-        const match = getPossibleMentionMatch(text);
-        if (match !== null) {
-          hasMentionRef.current = true;
-          setMentionMatch(match);
+      if (text === previousText || range === null) {
+        return;
+      }
+      previousText = text;
+
+      if (text === null) {
+        return;
+      }
+      const match = getPossibleMentionMatch(text);
+      if (match !== null) {
+        const isRangePositioned = tryToPositionRange(match, range);
+        if (isRangePositioned !== null) {
+          startTransition(() =>
+            setResolution({
+              match,
+              range,
+            }),
+          );
           return;
         }
       }
-      if (hasMentionRef.current) {
-        hasMentionRef.current = false;
-        setMentionMatch(null);
-      }
+      startTransition(() => setResolution(null));
     };
-    return editor.addListener('update', updateListener);
+
+    const removeUpdateListener = editor.addListener('update', updateListener);
+
+    return () => {
+      activeRange = null;
+      removeUpdateListener();
+    };
   }, [editor]);
 
   const onKeyDown = useCallback(
@@ -501,18 +576,17 @@ export default function useMentions(editor: OutlineEditor): React$Node {
   );
 
   const closeTypeahead = useCallback(() => {
-    hasMentionRef.current = false;
-    setMentionMatch(null);
+    setResolution(null);
   }, []);
 
   useEvent(editor, 'keydown', onKeyDown);
 
-  return mentionMatch === null || editor === null
+  return resolution === null || editor === null
     ? null
     : createPortal(
         <MentionsTypeahead
           close={closeTypeahead}
-          match={mentionMatch}
+          resolution={resolution}
           editor={editor}
           registerKeys={registerKeys}
         />,

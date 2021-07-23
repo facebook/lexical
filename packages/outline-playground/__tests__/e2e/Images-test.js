@@ -11,7 +11,11 @@ import {initializeE2E, assertHTML, assertSelection} from '../utils';
 describe('Images', () => {
   initializeE2E((e2e) => {
     it(`Can create a decorator and move selection around it`, async () => {
-      const {page} = e2e;
+      const {isRichText, page} = e2e;
+
+      if (!isRichText) {
+        return;
+      }
 
       await page.focus('div.editor');
 

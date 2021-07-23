@@ -738,14 +738,54 @@ pre :not(.tree-view-output) {
 .editor-shell div.editor span.editor-image {
   cursor: default;
   display: inline-block;
+  position: relative;
 }
 
 .editor-shell div.editor .editor-image img {
   max-width: 100%;
 }
 
-.editor-shell div.editor .editor-image img:focus {
-  outline: 3px solid rgb(10, 177, 255);
+.editor-shell div.editor .editor-image img.focused {
+  outline: 2px solid rgb(60,132,244)
+}
+
+.editor-shell div.editor .editor-image .image-resizer-s {
+  display: block;
+  width: 7px;
+  height: 7px;
+  position: absolute;
+  bottom: -2px;
+  left: calc(50% - 5px);
+  background-color: white;
+  border: 1px solid #666;
+  cursor: ns-resize;
+  border-radius: 9px;
+}
+
+.editor-shell div.editor .editor-image .image-resizer-e {
+  display: block;
+  width: 7px;
+  height: 7px;
+  position: absolute;
+  top: calc(50% - 5px);
+  right: -6px;
+  background-color: white;
+  border: 1px solid #666;
+  cursor: ew-resize;
+  border-radius: 9px;
+}
+
+.editor-shell div.editor .editor-image .image-resizer-se {
+  display: block;
+  width: 7px;
+  height: 7px;
+  position: absolute;
+  bottom: -2px;
+  right: -6px;
+  background-color: white;
+  border: 1px solid #666;
+  cursor: nwse-resize;
+  border-radius: 9px;
 }
 
 .emoji {

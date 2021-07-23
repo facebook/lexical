@@ -19,9 +19,59 @@ import {DecoratorNode} from 'outline';
 
 import * as React from 'react';
 
-import {useRef, useState} from 'react';
+import {Suspense, useRef, useState} from 'react';
 
-function Image({
+const imageCache = new Set();
+
+function useSuspenseImage(src: string) {
+  if (!imageCache.has(src)) {
+    throw new Promise((resolve) => {
+      const img = new Image();
+      img.src = src;
+      img.onload = () => {
+        imageCache.add(src);
+        resolve();
+      };
+    });
+  }
+}
+
+function LazyImage({
+  altText,
+  className,
+  imageRef,
+  onFocus,
+  onBlur,
+  onKeyDown,
+  src,
+}: {
+  altText: string,
+  className: ?string,
+  imageRef: {current: null | HTMLElement},
+  onFocus: () => void,
+  onBlur: () => void,
+  onKeyDown: (KeyboardEvent) => void,
+  src: string,
+}) {
+  useSuspenseImage(src);
+  // TODO: This needs to be made accessible.
+  return (
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
+    <img
+      className={className}
+      src={src}
+      alt={altText}
+      onFocus={onFocus}
+      onBlur={onBlur}
+      onKeyDown={onKeyDown}
+      ref={imageRef}
+      // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
+      tabIndex={0}
+    />
+  );
+}
+
+function ImageComponent({
   editor,
   src,
   altText,
@@ -46,19 +96,18 @@ function Image({
     }
   };
 
-  // TODO: This needs to be made accessible.
   return (
-    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
-    <img
-      src={src}
-      alt={altText}
-      ref={ref}
-      onFocus={() => setHasFocus(true)}
-      onBlur={() => setHasFocus(false)}
-      onKeyDown={handleKeyDown}
-      // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
-      tabIndex={0}
-    />
+    <Suspense fallback={null}>
+      <LazyImage
+        className={hasFocus ? 'focused' : null}
+        src={src}
+        altText={altText}
+        imageRef={ref}
+        onFocus={() => setHasFocus(true)}
+        onBlur={() => setHasFocus(false)}
+        onKeyDown={handleKeyDown}
+      />
+    </Suspense>
   );
 }
 
@@ -104,7 +153,7 @@ export class ImageNode extends DecoratorNode {
   }
   decorate(editor: OutlineEditor): React.Node {
     return (
-      <Image
+      <ImageComponent
         src={this.__src}
         altText={this.__altText}
         editor={editor}

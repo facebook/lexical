@@ -32,7 +32,7 @@ describe('Mentions', () => {
       await page.waitForSelector('#mentions-typeahead ul li');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span aria-controls="mentions-typeahead" data-outline-text="true">Luke</span></p>',
+        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Luke</span></p>',
       );
 
       await page.keyboard.press('Enter');
@@ -89,7 +89,7 @@ describe('Mentions', () => {
       await page.waitForSelector('#mentions-typeahead ul li');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span aria-controls="mentions-typeahead" data-outline-text="true">Luke</span></p',
+        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Luke</span></p',
       );
 
       await page.keyboard.press('Enter');
@@ -154,7 +154,7 @@ describe('Mentions', () => {
       await page.waitForSelector('#mentions-typeahead ul li');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span aria-controls="mentions-typeahead" data-outline-text="true">Luke</span></p>',
+        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Luke</span></p>',
       );
 
       await page.keyboard.press('Enter');
@@ -217,7 +217,7 @@ describe('Mentions', () => {
       await page.waitForSelector('#mentions-typeahead ul li');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span aria-controls="mentions-typeahead" data-outline-text="true">abc Luke def</span></p>',
+        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">abc Luke def</span></p>',
       );
 
       await page.keyboard.press('Enter');

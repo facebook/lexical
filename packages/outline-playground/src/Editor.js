@@ -26,7 +26,7 @@ import useKeywords from './useKeywords';
 import BlockControls from './BlockControls';
 import CharacterLimit from './CharacterLimit';
 import {Typeahead} from './Typeahead';
-import newYorkImage from './images/image/yellow-flower.jpg';
+import yellowFlowerImage from './images/image/yellow-flower.jpg';
 
 const editorStyle = {
   outline: 0,
@@ -122,7 +122,7 @@ export const useRichTextEditor = ({
         const selection = view.getSelection();
         if (selection !== null) {
           const imageNode = createImageNode(
-            newYorkImage,
+            yellowFlowerImage,
             'Yellow flower in tilt shift lens',
           );
           insertNodes(selection, [imageNode]);

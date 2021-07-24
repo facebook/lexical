@@ -26,6 +26,7 @@ import useKeywords from './useKeywords';
 import BlockControls from './BlockControls';
 import CharacterLimit from './CharacterLimit';
 import {Typeahead} from './Typeahead';
+import yellowFlowerImage from './images/image/yellow-flower.jpg';
 
 const editorStyle = {
   outline: 0,
@@ -120,11 +121,9 @@ export const useRichTextEditor = ({
       editor.update((view) => {
         const selection = view.getSelection();
         if (selection !== null) {
-          const src =
-            'https://www.crawshaygallery.com/portfolio2019/New-York-Skyline-Black-White-cropped.jpg';
           const imageNode = createImageNode(
-            src,
-            'New York Skyline, Black and White',
+            yellowFlowerImage,
+            'Yellow flower in tilt shift lens',
           );
           insertNodes(selection, [imageNode]);
         }

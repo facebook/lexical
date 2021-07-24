@@ -346,7 +346,7 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
   );
 }
 
-export default function useToolbar(editor: OutlineEditor): React$Node {
+export default function useFloatingToolbar(editor: OutlineEditor): React$Node {
   useEffect(() => {
     editor.registerNodeType('link', LinkNode);
   }, [editor]);

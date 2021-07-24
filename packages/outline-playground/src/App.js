@@ -12,7 +12,6 @@ import {useCallback, useEffect, useState} from 'react';
 import {useRichTextEditor, usePlainTextEditor} from './Editor';
 import OutlineTreeView from 'outline-react/OutlineTreeView';
 import useOptions from './useOptions';
-import useStepRecorder from './useStepRecorder';
 import useTestRecorder from './useTestRecorder';
 import useTypingPerfTracker from './useTypingPerfTracker';
 
@@ -31,7 +30,6 @@ function RichTextEditor({options, onOptionsChange}): React$Node {
     isCharLimit,
     isAutocomplete,
   });
-  const [stepRecorderButton, stepRecorderOutput] = useStepRecorder(editor);
   const [testRecorderButton, testRecorderOutput] = useTestRecorder(editor);
   useTypingPerfTracker(measureTypingPerf);
 
@@ -41,12 +39,10 @@ function RichTextEditor({options, onOptionsChange}): React$Node {
       {showTreeView && (
         <OutlineTreeView className="tree-view-output" editor={editor} />
       )}
-      {stepRecorderOutput}
       {testRecorderOutput}
       <div className="editor-dev-toolbar">
         {optionsSwitches}
         {optionsButton}
-        {stepRecorderButton}
         {testRecorderButton}
       </div>
     </>
@@ -67,7 +63,6 @@ function PlainTextEditor({options, onOptionsChange}): React$Node {
     isCharLimit,
     isAutocomplete,
   });
-  const [stepRecorderButton, stepRecorderOutput] = useStepRecorder(editor);
   useTypingPerfTracker(measureTypingPerf);
 
   return (
@@ -76,11 +71,9 @@ function PlainTextEditor({options, onOptionsChange}): React$Node {
       {showTreeView && (
         <OutlineTreeView className="tree-view-output" editor={editor} />
       )}
-      {stepRecorderOutput}
       <div className="editor-dev-toolbar">
         {optionsSwitches}
         {optionsButton}
-        {stepRecorderButton}
       </div>
     </>
   );

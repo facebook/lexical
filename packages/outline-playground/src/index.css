@@ -132,7 +132,6 @@ header h1 {
   list-style-type: disc;
 }
 
-.step-recorder-output,
 .test-recorder-output {
   margin: 20px auto 20px auto;
   max-width: 600px;
@@ -249,10 +248,6 @@ pre :not(.tree-view-output) {
 
 #options-button::after {
   background-image: url(images/icons/gear.svg);
-}
-
-#step-recorder-button::after {
-  background-image: url(images/icons/journal-text.svg);
 }
 
 #test-recorder-button::after {
@@ -489,7 +484,7 @@ pre :not(.tree-view-output) {
   text-align: right;
   display: block;
   position: absolute;
-  right: 12px;
+  left: 12px;
   bottom: 5px;
 }
 

@@ -91,6 +91,7 @@ function ImageResizer({
   const positioningRef = useRef<{
     currentWidth: 'inherit' | number,
     currentHeight: 'inherit' | number,
+    ratio: number,
     startWidth: number,
     startHeight: number,
     startX: number,
@@ -100,6 +101,7 @@ function ImageResizer({
   }>({
     currentWidth: 0,
     currentHeight: 0,
+    ratio: 0,
     startWidth: 0,
     startHeight: 0,
     startX: 0,
@@ -117,6 +119,7 @@ function ImageResizer({
       const positioning = positioningRef.current;
       positioning.startWidth = width;
       positioning.startHeight = height;
+      positioning.ratio = width / height;
       positioning.currentWidth = 'inherit';
       positioning.currentHeight = 'inherit';
       positioning.startX = event.clientX;
@@ -135,7 +138,7 @@ function ImageResizer({
       // Moving south/north
       if (positioning.direction === 4) {
         const diff = Math.floor(event.clientY - positioning.startY);
-        const minHeight = positioning.startHeight / 2;
+        const minHeight = 20;
         const maxHeight = positioning.startHeight;
         let height = positioning.startHeight + diff;
         if (height < minHeight) {
@@ -148,7 +151,7 @@ function ImageResizer({
         positioning.currentHeight = height;
       } else {
         const diff = Math.floor(event.clientX - positioning.startX);
-        const minWidth = positioning.startWidth / 2;
+        const minWidth = 20 * positioning.ratio;
         let width = positioning.startWidth + diff;
         if (width < minWidth) {
           width = minWidth;
@@ -167,6 +170,7 @@ function ImageResizer({
       const height = positioning.currentHeight;
       positioning.startWidth = 0;
       positioning.startHeight = 0;
+      positioning.ratio = 0;
       positioning.startX = 0;
       positioning.startY = 0;
       positioning.currentWidth = 0;

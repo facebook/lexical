@@ -20,7 +20,7 @@ import useOutlineAutoFormatter from 'outline-react/useOutlineAutoFormatter';
 import useOutlineDecorators from 'outline-react/useOutlineDecorators';
 import {ImageNode, createImageNode} from 'outline/ImageNode';
 import {insertNodes} from 'outline/SelectionHelpers';
-import useToolbar from './useToolbar';
+import useFloatingToolbar from './useFloatingToolbar';
 import useHashtags from './useHashtags';
 import useKeywords from './useKeywords';
 import BlockControls from './BlockControls';
@@ -105,7 +105,7 @@ export const useRichTextEditor = ({
   );
   const mentionsTypeahead = useMentions(editor);
   const clear = useOutlineRichText(editor, isReadOnly);
-  const toolbar = useToolbar(editor);
+  const floatingToolbar = useFloatingToolbar(editor);
   const decorators = useOutlineDecorators(editor);
   useEmojis(editor);
   useHashtags(editor);
@@ -140,7 +140,7 @@ export const useRichTextEditor = ({
         {showPlaceholder && <Placeholder>Enter some rich text...</Placeholder>}
         {decorators}
         {mentionsTypeahead}
-        {toolbar}
+        {floatingToolbar}
         <BlockControls editor={editor} />
         {isCharLimit && <CharacterLimit editor={editor} />}
         {isAutocomplete && <Typeahead editor={editor} />}
@@ -161,7 +161,7 @@ export const useRichTextEditor = ({
     clear,
     decorators,
     mentionsTypeahead,
-    toolbar,
+    floatingToolbar,
     editor,
     isCharLimit,
     isAutocomplete,

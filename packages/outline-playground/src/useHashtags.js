@@ -284,7 +284,7 @@ export default function useHashtags(editor: OutlineEditor): void {
     const removeUpdateListener = editor.addListener('update', () => {
       editor.update((view) => {
         const selection = view.getSelection();
-        if (selection !== null) {
+        if (selection !== null && !editor.isComposing()) {
           const anchorNode = selection.getAnchorNode();
           textNodeTransform(anchorNode, view);
         }

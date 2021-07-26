@@ -392,7 +392,7 @@ export class TextNode extends OutlineNode {
   toggleUnmergeable(): TextNode {
     return this.setFlags(this.getFlags() ^ IS_UNMERGEABLE);
   }
-  setTextContent(text: string): boolean {
+  setTextContent(text: string): void {
     errorOnReadOnly();
     if (this.isImmutable()) {
       invariant(
@@ -425,8 +425,6 @@ export class TextNode extends OutlineNode {
     } else {
       writableSelf.__text = text;
     }
-
-    return false;
   }
   select(_anchorOffset?: number, _focusOffset?: number): Selection {
     errorOnReadOnly();

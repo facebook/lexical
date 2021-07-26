@@ -440,7 +440,7 @@ function getMentionsTextToSearch(editor: OutlineEditor): string | null {
  * Replacing just the match would give us "Hello Sarah Sarah Smith".
  * Instead we find the string "Sarah Smit" and replace all of it.
  */
-function getEntityOffset(
+function getMentionOffset(
   documentText: string,
   entryText: string,
   offset: number,
@@ -482,15 +482,21 @@ function createMentionNodeFromSearchResult(
 
     // Given a known offset for the mention match, look backward in the
     // text to see if there's a longer match to replace.
-    const mentionOffset =
-      selectionOffset -
-      getEntityOffset(textContent, entryText, characterOffset);
+    const mentionOffset = getMentionOffset(
+      textContent,
+      entryText,
+      characterOffset,
+    );
+    const startOffset = selectionOffset - mentionOffset;
+    if (startOffset < 0) {
+      return;
+    }
 
     let nodeToReplace;
-    if (mentionOffset === 0) {
+    if (startOffset === 0) {
       [nodeToReplace] = anchorNode.splitText(selectionOffset);
     } else {
-      [, nodeToReplace] = anchorNode.splitText(mentionOffset, selectionOffset);
+      [, nodeToReplace] = anchorNode.splitText(startOffset, selectionOffset);
     }
 
     const mentionNode = createMentionNode(entryText);

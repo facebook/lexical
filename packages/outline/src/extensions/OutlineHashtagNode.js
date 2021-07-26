@@ -33,20 +33,18 @@ export class HashtagNode extends TextNode {
     return element;
   }
 
-  setTextContent(text: string): boolean {
-    let requireNormalize = super.setTextContent(text);
+  setTextContent(text: string): void {
+    super.setTextContent(text);
     const isHashtag = isHashtagNode(this);
     // Handle hashtags
-    if (isHashtag && this.getParent() !== null) {
+    if (isHashtag && this.getParent() !== null && !this.isComposing()) {
       const indexOfHash = text.indexOf('#');
       let targetNode = this;
-      if (indexOfHash === -1) {
+      if (indexOfHash === -1 || targetNode.getTextContent() === '#') {
         toggleHashtag(targetNode);
-        requireNormalize = true;
       } else if (indexOfHash > 0) {
         [targetNode] = this.splitText(indexOfHash);
         toggleHashtag(targetNode);
-        requireNormalize = true;
       }
       // Check for invalid characters
       const targetTextContent = targetNode.getTextContent().slice(1);
@@ -55,14 +53,11 @@ export class HashtagNode extends TextNode {
       );
       if (indexOfInvalidChar === 0) {
         toggleHashtag(targetNode);
-        requireNormalize = true;
       } else if (indexOfInvalidChar > 0) {
         [targetNode] = targetNode.splitText(indexOfInvalidChar + 1);
         toggleHashtag(targetNode);
-        requireNormalize = true;
       }
     }
-    return requireNormalize;
   }
 }
 

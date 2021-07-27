@@ -31,8 +31,13 @@ function getMergeAction(
   if (prevViewModel === null) {
     return NO_MERGE;
   }
+  const selection = nextViewModel._selection;
+  const prevSelection = prevViewModel._selection;
   const hasDirtyNodes = nextViewModel.hasDirtyNodes();
   if (!hasDirtyNodes) {
+    if (prevSelection === null && selection !== null) {
+      return MERGE;
+    }
     return DISCARD;
   }
   const dirtyNodes = nextViewModel.getDirtyNodes();
@@ -59,8 +64,6 @@ function getMergeAction(
       // Only merge if we're adding/removing a single character
       // or if there is not change at all.
       if (textDiff === -1 || textDiff === 1) {
-        const selection = nextViewModel._selection;
-        const prevSelection = prevViewModel._selection;
         if (selection == null || prevSelection === null) {
           return MERGE;
         }

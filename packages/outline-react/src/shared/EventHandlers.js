@@ -159,9 +159,11 @@ function shouldOverrideBrowserDefault(
   isHoldingShift: boolean,
   isBackward: boolean,
 ): boolean {
-  const anchorOffset = selection.anchorOffset;
-  const focusOffset = selection.focusOffset;
-  const anchorTextContentSize = selection.getAnchorNode().getTextContentSize();
+  const anchor = selection.anchor;
+  const focus = selection.focus;
+  const anchorOffset = anchor.offset;
+  const focusOffset = focus.offset;
+  const anchorTextContentSize = anchor.getNode().getTextContentSize();
   const selectionAtBoundary = isBackward
     ? anchorOffset < 2 || focusOffset < 2
     : anchorOffset > anchorTextContentSize - 2 ||
@@ -173,7 +175,7 @@ function shouldOverrideBrowserDefault(
 }
 
 function isTopLevelBlockRTL(selection: Selection) {
-  const anchorNode = selection.getAnchorNode();
+  const anchorNode = selection.anchor.getNode();
   const topLevelBlock = anchorNode.getTopParentBlockOrThrow();
   const direction = topLevelBlock.getDirection();
   return direction === 'rtl';
@@ -332,12 +334,13 @@ export function onKeyDownForRichText(
       formatText(selection, 'italic');
     } else if (isTab(event)) {
       // Handle code blocks
-      const anchorNode = selection.getAnchorNode();
+      const anchor = selection.anchor;
+      const anchorNode = anchor.getNode();
       const parentBlock = anchorNode.getParentBlockOrThrow();
       if (parentBlock.canInsertTab()) {
         if (event.shiftKey) {
           const textContent = anchorNode.getTextContent();
-          const character = textContent[selection.anchorOffset - 1];
+          const character = textContent[anchor.offset - 1];
           if (character === '\t') {
             deleteBackward(selection);
           }
@@ -491,7 +494,7 @@ export function onCompositionStart(
   editor.update((view) => {
     const selection = view.getSelection();
     if (selection !== null && !editor.isComposing()) {
-      view.setCompositionKey(selection.anchorKey);
+      view.setCompositionKey(selection.anchor.key);
       const data = event.data;
       if (data != null && !lastKeyWasMaybeAndroidSoftKey) {
         // We insert an empty space, ready for the composition
@@ -509,8 +512,10 @@ function applyCompositionEnd(editor: OutlineEditor) {
     const selection = view.getSelection();
     // Collapse selection when composition ends
     if (selection !== null && !selection.isCollapsed()) {
-      selection.anchorOffset = selection.focusOffset;
-      selection.anchorKey = selection.focusKey;
+      const anchor = selection.anchor;
+      const focus = selection.focus;
+      anchor.offset = focus.offset;
+      anchor.key = focus.key;
       selection.isDirty = true;
     }
     view.setCompositionKey(null);
@@ -583,7 +588,7 @@ function shouldInsertTextAfterTextNode(
     node.isSegmented() ||
     (selection.isCollapsed() &&
       (!validateOffset ||
-        node.getTextContentSize() === selection.anchorOffset) &&
+        node.getTextContentSize() === selection.anchor.offset) &&
       !node.canInsertTextAtEnd())
   );
 }
@@ -620,13 +625,13 @@ function updateTextNodeFromDOMContent(
       if (
         !CAN_USE_BEFORE_INPUT &&
         selection !== null &&
-        selection.anchorKey === nodeKey &&
+        selection.anchor.key === nodeKey &&
         textContent.indexOf(originalTextContent) === 0 &&
         shouldInsertTextAfterTextNode(selection, node, false)
       ) {
         const insertionText = textContent.slice(originalTextContent.length);
         view.markNodeAsDirty(node);
-        selection.anchorOffset -= insertionText.length;
+        selection.anchor.offset -= insertionText.length;
         insertText(selection, insertionText);
         return;
       } else if (node.isSegmented()) {
@@ -640,7 +645,7 @@ function updateTextNodeFromDOMContent(
       if (
         selection !== null &&
         selection.isCollapsed() &&
-        selection.anchorKey === nodeKey
+        selection.anchor.key === nodeKey
       ) {
         const domSelection = window.getSelection();
         let offset = domSelection.focusOffset;
@@ -696,11 +701,13 @@ function isBadDoubleSpacePeriodReplacment(
   selection: Selection,
 ): boolean {
   const inputType = event.inputType;
+  const anchor = selection.anchor;
+  const focus = selection.focus;
   if (
     (inputType === 'insertText' || inputType === 'insertReplacementText') &&
-    selection.anchorOffset === 0 &&
-    selection.focusOffset === 1 &&
-    selection.anchorKey === selection.focusKey
+    anchor.offset === 0 &&
+    focus.offset === 1 &&
+    anchor.key === focus.key
   ) {
     const dataTransfer = event.dataTransfer;
     const data =
@@ -746,8 +753,10 @@ export function onBeforeInputForPlainText(
     ) {
       return;
     }
-    const anchorNode = selection.getAnchorNode();
-    const focusNode = selection.getAnchorNode();
+    const anchor = selection.anchor;
+    const focus = selection.focus;
+    const anchorNode = anchor.getNode();
+    const focusNode = focus.getNode();
 
     if (inputType === 'insertText') {
       if (data === '\n') {
@@ -763,8 +772,8 @@ export function onBeforeInputForPlainText(
         event.preventDefault();
         insertRichText(selection, text);
       } else if (data != null) {
-        const anchorKey = selection.anchorKey;
-        const focusKey = selection.focusKey;
+        const anchorKey = anchor.key;
+        const focusKey = focus.key;
 
         if (
           anchorKey !== focusKey ||
@@ -889,8 +898,10 @@ export function onBeforeInputForRichText(
     ) {
       return;
     }
-    const anchorNode = selection.getAnchorNode();
-    const focusNode = selection.getAnchorNode();
+    const anchor = selection.anchor;
+    const focus = selection.focus;
+    const anchorNode = anchor.getNode();
+    const focusNode = focus.getNode();
 
     if (inputType === 'insertText') {
       if (data === '\n') {
@@ -905,8 +916,8 @@ export function onBeforeInputForRichText(
         event.preventDefault();
         insertRichText(selection, text);
       } else if (data != null) {
-        const anchorKey = selection.anchorKey;
-        const focusKey = selection.focusKey;
+        const anchorKey = anchor.key;
+        const focusKey = focus.key;
 
         if (
           anchorKey !== focusKey ||

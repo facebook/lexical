@@ -124,8 +124,8 @@ export default function useKeywords(editor: OutlineEditor): void {
       // Restore selection if we no longer have it
       if (
         selection !== null &&
-        (!selection.getAnchorNode().isAttached() ||
-          !selection.getFocusNode().isAttached())
+        (!selection.anchor.getNode().isAttached() ||
+          !selection.focus.getNode().isAttached())
       ) {
         if (targetNode !== undefined) {
           targetNode.selectNext(0, 0);

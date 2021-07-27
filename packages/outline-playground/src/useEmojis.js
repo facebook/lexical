@@ -47,7 +47,11 @@ function findAndTransformEmoji(
       targetNode.replace(emojiNode);
       const nextSibling = emojiNode.getNextSibling();
       if (isTextNode(nextSibling)) {
-        if (selection !== null && !selection.getAnchorNode().isAttached()) {
+        if (
+          selection !== null &&
+          (!selection.anchor.getNode().isAttached() ||
+            !selection.focus.getNode().isAttached())
+        ) {
           nextSibling.select(0, 0);
         }
         return nextSibling;

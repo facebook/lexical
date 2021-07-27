@@ -86,7 +86,7 @@ if (CAN_USE_BEFORE_INPUT) {
 
 export default function useOutlinePlainText(
   editor: OutlineEditor,
-  isReadOnly?: boolean = false,
+  isReadOnly: boolean,
 ): () => void {
   useEffect(() => {
     const removeElementListner = editor.addListener('root', (rootElement) => {

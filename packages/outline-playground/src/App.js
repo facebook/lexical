@@ -28,6 +28,7 @@ function RichTextEditor({options, onOptionsChange}): React$Node {
   const [editor, editorComponent] = useRichTextEditor({
     onError,
     isCharLimit,
+    isReadOnly: false,
     isAutocomplete,
   });
   const [testRecorderButton, testRecorderOutput] = useTestRecorder(editor);
@@ -61,6 +62,7 @@ function PlainTextEditor({options, onOptionsChange}): React$Node {
   const [editor, editorComponent] = usePlainTextEditor({
     onError,
     isCharLimit,
+    isReadOnly: false,
     isAutocomplete,
   });
   useTypingPerfTracker(measureTypingPerf);

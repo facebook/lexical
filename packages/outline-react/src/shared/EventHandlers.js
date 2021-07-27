@@ -522,6 +522,13 @@ export function onCompositionStart(
 
 function applyCompositionEnd(editor: OutlineEditor) {
   editor.update((view) => {
+    const selection = view.getSelection();
+    // Collapse selection when composition ends
+    if (selection !== null && !selection.isCollapsed()) {
+      selection.anchorOffset = selection.focusOffset;
+      selection.anchorKey = selection.focusKey;
+      selection.isDirty = true;
+    }
     view.setCompositionKey(null);
   }, 'onCompositionEnd');
 }

@@ -62,7 +62,6 @@ function clearEditor(
         firstChild.clear();
         const textNode = createTextNode();
         firstChild.append(textNode);
-        textNode.select();
         if (view.getSelection() !== null) {
           textNode.select();
         }

@@ -72,12 +72,7 @@ export type EventHandler = (
   // $FlowFixMe: not sure how to handle this generic properly
   event: Object,
   editor: OutlineEditor,
-  state: EventHandlerState,
 ) => void;
-
-export type EventHandlerState = {
-  isReadOnly: boolean,
-};
 
 function updateAndroidSoftKeyFlagIfAny(event: KeyboardEvent): void {
   lastKeyWasMaybeAndroidSoftKey =
@@ -187,7 +182,6 @@ function isTopLevelBlockRTL(selection: Selection) {
 export function onKeyDownForPlainText(
   event: KeyboardEvent,
   editor: OutlineEditor,
-  state: EventHandlerState,
 ): void {
   updateAndroidSoftKeyFlagIfAny(event);
   if (editor.isComposing()) {
@@ -261,7 +255,6 @@ export function onKeyDownForPlainText(
 export function onKeyDownForRichText(
   event: KeyboardEvent,
   editor: OutlineEditor,
-  state: EventHandlerState,
 ): void {
   updateAndroidSoftKeyFlagIfAny(event);
   if (editor.isComposing()) {
@@ -363,7 +356,6 @@ export function onKeyDownForRichText(
 export function onPasteForPlainText(
   event: ClipboardEvent,
   editor: OutlineEditor,
-  state: EventHandlerState,
 ): void {
   event.preventDefault();
   editor.update((view) => {
@@ -378,7 +370,6 @@ export function onPasteForPlainText(
 export function onPasteForRichText(
   event: ClipboardEvent,
   editor: OutlineEditor,
-  state: EventHandlerState,
 ): void {
   event.preventDefault();
   editor.update((view) => {
@@ -393,7 +384,6 @@ export function onPasteForRichText(
 export function onDropPolyfill(
   event: ClipboardEvent,
   editor: OutlineEditor,
-  state: EventHandlerState,
 ): void {
   // This should only occur without beforeInput. Block it as it's too much
   // hassle to make work at this point.
@@ -403,7 +393,6 @@ export function onDropPolyfill(
 export function onDragStartPolyfill(
   event: ClipboardEvent,
   editor: OutlineEditor,
-  state: EventHandlerState,
 ): void {
   // Block dragging.
   event.preventDefault();
@@ -412,9 +401,8 @@ export function onDragStartPolyfill(
 export function onCutForPlainText(
   event: ClipboardEvent,
   editor: OutlineEditor,
-  state: EventHandlerState,
 ): void {
-  onCopyForPlainText(event, editor, state);
+  onCopyForPlainText(event, editor);
   editor.update((view) => {
     const selection = view.getSelection();
     if (selection !== null) {
@@ -426,9 +414,8 @@ export function onCutForPlainText(
 export function onCutForRichText(
   event: ClipboardEvent,
   editor: OutlineEditor,
-  state: EventHandlerState,
 ): void {
-  onCopyForRichText(event, editor, state);
+  onCopyForRichText(event, editor);
   editor.update((view) => {
     const selection = view.getSelection();
     if (selection !== null) {
@@ -440,7 +427,6 @@ export function onCutForRichText(
 export function onCopyForPlainText(
   event: ClipboardEvent,
   editor: OutlineEditor,
-  state: EventHandlerState,
 ): void {
   event.preventDefault();
   editor.update((view) => {
@@ -469,7 +455,6 @@ export function onCopyForPlainText(
 export function onCopyForRichText(
   event: ClipboardEvent,
   editor: OutlineEditor,
-  state: EventHandlerState,
 ): void {
   event.preventDefault();
   editor.update((view) => {
@@ -502,7 +487,6 @@ export function onCopyForRichText(
 export function onCompositionStart(
   event: CompositionEvent,
   editor: OutlineEditor,
-  state: EventHandlerState,
 ): void {
   editor.update((view) => {
     const selection = view.getSelection();
@@ -536,7 +520,6 @@ function applyCompositionEnd(editor: OutlineEditor) {
 export function onCompositionEnd(
   event: CompositionEvent,
   editor: OutlineEditor,
-  state: EventHandlerState,
 ): void {
   // There's a bug in FF where doing an update during
   // compositionend can cause diacritics to be lost.
@@ -549,11 +532,7 @@ export function onCompositionEnd(
   }
 }
 
-export function onSelectionChange(
-  event: Event,
-  editor: OutlineEditor,
-  state: EventHandlerState,
-): void {
+export function onSelectionChange(event: Event, editor: OutlineEditor): void {
   const domSelection = window.getSelection();
   const rootElement = editor.getRootElement();
   // This is a hot-path, so let's avoid doing an update when
@@ -674,11 +653,7 @@ function updateTextNodeFromDOMContent(
   }
 }
 
-export function onInput(
-  event: InputEvent,
-  editor: OutlineEditor,
-  state: EventHandlerState,
-): void {
+export function onInput(event: InputEvent, editor: OutlineEditor): void {
   const inputType = event.inputType;
   if (
     inputType === 'insertText' ||
@@ -738,7 +713,6 @@ function isBadDoubleSpacePeriodReplacment(
 export function onBeforeInputForPlainText(
   event: InputEvent,
   editor: OutlineEditor,
-  state: EventHandlerState,
 ): void {
   const inputType = event.inputType;
 
@@ -882,7 +856,6 @@ export function onBeforeInputForPlainText(
 export function onBeforeInputForRichText(
   event: InputEvent,
   editor: OutlineEditor,
-  state: EventHandlerState,
 ): void {
   const inputType = event.inputType;
 

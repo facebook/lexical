@@ -8,10 +8,9 @@
  */
 
 import type {OutlineEditor} from 'outline';
-import type {EventHandlerState} from './shared/EventHandlers';
 import type {InputEvents} from 'outline-react/useOutlineEditorEvents';
 
-import {useCallback, useEffect, useMemo} from 'react';
+import {useCallback, useEffect} from 'react';
 import {createTextNode} from 'outline';
 import useOutlineEditorEvents from './useOutlineEditorEvents';
 import {HeadingNode} from 'outline/HeadingNode';
@@ -84,18 +83,6 @@ export default function useOutlineRichText(
   editor: OutlineEditor,
   isReadOnly?: boolean = false,
 ): () => void {
-  const eventHandlerState: EventHandlerState = useMemo(
-    () => ({
-      isReadOnly: false,
-      richText: true,
-    }),
-    [],
-  );
-
-  useEffect(() => {
-    eventHandlerState.isReadOnly = isReadOnly;
-  }, [isReadOnly, eventHandlerState]);
-
   useEffect(() => {
     const removeElementListner = editor.addListener(
       'root',
@@ -137,7 +124,7 @@ export default function useOutlineRichText(
     };
   }, [editor]);
 
-  useOutlineEditorEvents(events, editor, eventHandlerState);
+  useOutlineEditorEvents(events, editor, isReadOnly);
   useOutlineDragonSupport(editor);
   const clearHistory = useOutlineHistory(editor);
 

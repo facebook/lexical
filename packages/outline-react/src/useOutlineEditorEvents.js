@@ -8,7 +8,7 @@
  */
 
 import type {OutlineEditor} from 'outline';
-import type {EventHandler, EventHandlerState} from './shared/EventHandlers';
+import type {EventHandler} from './shared/EventHandlers';
 
 import {useEffect} from 'react';
 
@@ -26,9 +26,12 @@ function getTarget(eventName: string, rootElement: HTMLElement): EventTarget {
 export default function useOutlineEditorEvents(
   events: InputEvents,
   editor: OutlineEditor,
-  state: EventHandlerState,
+  isReadOnly: boolean,
 ): void {
   useEffect(() => {
+    if (isReadOnly) {
+      return;
+    }
     const create = [];
     const destroy = [];
 
@@ -36,7 +39,7 @@ export default function useOutlineEditorEvents(
       const [eventName, handler] = events[i];
 
       const handlerWrapper = (event: Event) => {
-        handler(event, editor, state);
+        handler(event, editor);
       };
       create.push((rootElement: HTMLElement) => {
         getTarget(eventName, rootElement).addEventListener(
@@ -66,5 +69,5 @@ export default function useOutlineEditorEvents(
         }
       },
     );
-  }, [editor, events, state]);
+  }, [editor, events, isReadOnly]);
 }

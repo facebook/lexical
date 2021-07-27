@@ -132,11 +132,12 @@ export default function useOutlineRichText(
   useOutlineDragonSupport(editor);
   const clearHistory = useOutlineHistory(editor);
 
-  return useCallback(
-    (callbackFn?: () => void) => {
-      clearEditor(editor, callbackFn);
+  return useCallback(() => {
+    clearEditor(editor, (callbackFn?: () => void) => {
       clearHistory();
-    },
-    [clearHistory, editor],
-  );
+      if (callbackFn) {
+        callbackFn();
+      }
+    });
+  }, [clearHistory, editor]);
 }

@@ -44,5 +44,7 @@
   "42": "Reconciliation: could not find DOM element for node key \"${key}\"",
   "43": "resolveNonLineBreakOrInertNode: resolved node not a text node",
   "44": "Extraneous keys in serialized node data: %s",
-  "45": "OutlineNode: Node type %s does not implement deserialize()."
+  "45": "OutlineNode: Node type %s does not implement deserialize().",
+  "46": "getAnchorNode: anchorNode not a valid anchor node",
+  "47": "getFocusNode: focusNode not a valid focus node"
 }

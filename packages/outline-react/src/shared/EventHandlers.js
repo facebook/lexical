@@ -63,6 +63,7 @@ import {
 import {createTextNode, isTextNode, isDecoratorNode} from 'outline';
 
 const ZERO_WIDTH_JOINER_CHAR = '\u2060';
+const NO_BREAK_SPACE_CHAR = '\u00A0';
 
 let lastKeyWasMaybeAndroidSoftKey = false;
 
@@ -607,12 +608,18 @@ function updateTextNodeFromDOMContent(
   editor: OutlineEditor,
 ): void {
   let node = getClosestNodeFromDOMNode(view, dom);
-  if (node !== null && !node.isDirty()) {
+  if (isTextNode(node) && !node.isDirty()) {
     const rawTextContent = dom.nodeValue;
-    const textContent = rawTextContent.replace(/[\u2060\u00A0]/g, '');
-    const nodeKey = node.getKey();
+    let textContent = rawTextContent.replace(ZERO_WIDTH_JOINER_CHAR, '');
 
-    if (isTextNode(node) && textContent !== node.getTextContent()) {
+    if (
+      node.isComposing() &&
+      textContent[textContent.length - 1] === NO_BREAK_SPACE_CHAR
+    ) {
+      textContent = textContent.slice(0, -1);
+    }
+
+    if (textContent !== node.getTextContent()) {
       if (handleBlockTextInputOnNode(node, view)) {
         return;
       }
@@ -622,6 +629,7 @@ function updateTextNodeFromDOMContent(
       }
       const originalTextContent = node.getTextContent();
       const selection = view.getSelection();
+      const nodeKey = node.getKey();
 
       if (
         !CAN_USE_BEFORE_INPUT &&

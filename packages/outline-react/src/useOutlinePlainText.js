@@ -51,19 +51,23 @@ function initEditor(editor: OutlineEditor): void {
   }, 'initEditor');
 }
 
-function clearEditor(editor: OutlineEditor): void {
-  editor.update((view) => {
-    const firstChild = view.getRoot().getFirstChild();
-    if (isParagraphNode(firstChild)) {
-      firstChild.clear();
-      const textNode = createTextNode();
-      firstChild.append(textNode);
-      textNode.select();
-      if (view.getSelection() !== null) {
+function clearEditor(editor: OutlineEditor, callbackFn?: () => void): void {
+  editor.update(
+    (view) => {
+      const firstChild = view.getRoot().getFirstChild();
+      if (isParagraphNode(firstChild)) {
+        firstChild.clear();
+        const textNode = createTextNode();
+        firstChild.append(textNode);
         textNode.select();
+        if (view.getSelection() !== null) {
+          textNode.select();
+        }
       }
-    }
-  }, 'clearEditor');
+    },
+    'clearEditor',
+    callbackFn,
+  );
 }
 
 const events: InputEvents = [
@@ -125,8 +129,11 @@ export default function useOutlinePlainText(
   useOutlineDragonSupport(editor);
   const clearHistory = useOutlineHistory(editor);
 
-  return useCallback(() => {
-    clearEditor(editor);
-    clearHistory();
-  }, [clearHistory, editor]);
+  return useCallback(
+    (callbackFn?: () => void) => {
+      clearEditor(editor, callbackFn);
+      clearHistory();
+    },
+    [clearHistory, editor],
+  );
 }

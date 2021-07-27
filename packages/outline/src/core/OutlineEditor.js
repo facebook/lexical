@@ -380,6 +380,7 @@ class BaseOutlineEditor {
   focus(callbackFn?: () => void): void {
     const rootElement = this._rootElement;
     if (rootElement !== null) {
+      rootElement.focus({preventScroll: true});
       // This ensures that iOS does not trigger caps lock upon focus
       rootElement.setAttribute('autocapitalize', 'off');
       this.update(

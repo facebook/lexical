@@ -147,7 +147,7 @@ export const useRichTextEditor = ({
           <button className="action-button" onClick={handleAddImage}>
             Insert Image
           </button>
-          <button className="action-button" onClick={clear}>
+          <button className="action-button" onClick={() => clear()}>
             Clear
           </button>
         </div>
@@ -203,7 +203,7 @@ export const usePlainTextEditor = ({
         {isCharLimit && <CharacterLimit editor={editor} />}
         {isAutocomplete && <Typeahead editor={editor} />}
         <div className="actions">
-          <button className="action-button" onClick={clear}>
+          <button className="action-button" onClick={() => clear()}>
             Clear
           </button>
         </div>

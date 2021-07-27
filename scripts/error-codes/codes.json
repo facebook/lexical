@@ -46,6 +46,5 @@
   "44": "Extraneous keys in serialized node data: %s",
   "45": "OutlineNode: Node type %s does not implement deserialize().",
   "46": "getAnchorNode: anchorNode not a valid anchor node",
-  "47": "getFocusNode: focusNode not a valid focus node",
-  "48": "getNode: node not a text node"
+  "47": "getFocusNode: focusNode not a valid focus node"
 }

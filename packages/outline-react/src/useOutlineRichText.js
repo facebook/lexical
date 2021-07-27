@@ -53,12 +53,16 @@ function initEditor(editor: OutlineEditor): void {
   }, 'initEditor');
 }
 
-function clearEditor(editor: OutlineEditor): void {
-  editor.update((view) => {
-    const root = view.getRoot();
-    root.clear();
-    initEditor(editor);
-  }, 'clearEditor');
+function clearEditor(editor: OutlineEditor, callbackFn?: () => void): void {
+  editor.update(
+    (view) => {
+      const root = view.getRoot();
+      root.clear();
+      initEditor(editor);
+    },
+    'clearEditor',
+    callbackFn,
+  );
 }
 
 const events: InputEvents = [
@@ -128,8 +132,11 @@ export default function useOutlineRichText(
   useOutlineDragonSupport(editor);
   const clearHistory = useOutlineHistory(editor);
 
-  return useCallback(() => {
-    clearEditor(editor);
-    clearHistory();
-  }, [clearHistory, editor]);
+  return useCallback(
+    (callbackFn?: () => void) => {
+      clearEditor(editor, callbackFn);
+      clearHistory();
+    },
+    [clearHistory, editor],
+  );
 }

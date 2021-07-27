@@ -38,7 +38,7 @@ const editorStyle = {
 
 type Props = {
   onError: (Error, string) => void,
-  isReadOnly?: boolean,
+  isReadOnly: boolean,
   isCharLimit?: boolean,
   isAutocomplete?: boolean,
 };

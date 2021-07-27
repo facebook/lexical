@@ -522,6 +522,13 @@ export function onCompositionStart(
 
 function applyCompositionEnd(editor: OutlineEditor) {
   editor.update((view) => {
+    const selection = view.getSelection();
+    // Collapse selection when composition ends
+    if (selection !== null && !selection.isCollapsed()) {
+      selection.anchorOffset = selection.focusOffset;
+      selection.anchorKey = selection.focusKey;
+      selection.isDirty = true;
+    }
     view.setCompositionKey(null);
   }, 'onCompositionEnd');
 }
@@ -664,27 +671,6 @@ function updateTextNodeFromDOMContent(
         node.select(offset, offset);
       }
     }
-  }
-}
-
-export function onInput(
-  event: InputEvent,
-  editor: OutlineEditor,
-  state: EventHandlerState,
-): void {
-  const inputType = event.inputType;
-  if (
-    inputType === 'insertText' ||
-    inputType === 'insertCompositionText' ||
-    inputType === 'deleteCompositionText'
-  ) {
-    editor.update((view) => {
-      const domSelection = window.getSelection();
-      const anchorDOM = domSelection.anchorNode;
-      if (anchorDOM !== null && anchorDOM.nodeType === 3) {
-        updateTextNodeFromDOMContent(anchorDOM, view, editor);
-      }
-    }, 'onInput');
   }
 }
 

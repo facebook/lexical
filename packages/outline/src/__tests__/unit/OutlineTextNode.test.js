@@ -45,6 +45,10 @@ class CustomSegmentedNode extends TextNode {
   clone() {
     return new CustomSegmentedNode(this.__text, this.__key);
   }
+
+  static deserialize(data: $FlowFixMe): CustomSegmentedNode {
+    return new CustomSegmentedNode(data.__text);
+  }
 }
 
 function createCustomSegmentedNode(text): CustomSegmentedNode {

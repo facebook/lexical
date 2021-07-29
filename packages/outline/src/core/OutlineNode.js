@@ -51,10 +51,14 @@ export type ParsedNode = {
 };
 export type ParsedNodeMap = Map<NodeKey, ParsedNode>;
 type ParsedSelection = {
-  anchorKey: NodeKey,
-  anchorOffset: number,
-  focusKey: NodeKey,
-  focusOffset: number,
+  anchor: {
+    key: NodeKey,
+    offset: number,
+  },
+  focus: {
+    key: NodeKey,
+    offset: number,
+  }
 };
 // export type NodeMapType = {root: RootNode, [key: NodeKey]: OutlineNode};
 
@@ -130,9 +134,9 @@ function replaceNode<N: OutlineNode>(
   if (restoreSelection && isTextNode(toReplace)) {
     const selection = getSelection();
     if (selection) {
-      const anchorNode = selection.getAnchorNode();
+      const anchorNode = selection.anchor.getNode();
       if (selection.isCollapsed() && anchorNode.__key === toReplaceKey) {
-        anchorOffset = selection.anchorOffset;
+        anchorOffset = selection.anchor.offset;
       }
     }
   }
@@ -286,8 +290,8 @@ export class OutlineNode {
     const key = this.__key;
     return (
       selection !== null &&
-      selection.anchorKey === key &&
-      selection.focusKey === key
+      selection.anchor.key === key &&
+      selection.focus.key === key
     );
   }
   getFlags(): number {
@@ -829,17 +833,27 @@ export function createNodeFromParse(
   // new selection record with the old keys mapped to the new ones.
   const originalSelection = state != null ? state.originalSelection : undefined;
   if (originalSelection != null) {
-    if (parsedNode.__key === originalSelection.anchorKey) {
+    if (parsedNode.__key === originalSelection.anchor.key) {
       state.remappedSelection = state.remappedSelection || {
-        ...originalSelection,
+        anchor: {
+          ...originalSelection.anchor,
+        },
+        focus: {
+          ...originalSelection.focus,
+        }
       };
-      state.remappedSelection.anchorKey = node.__key;
+      state.remappedSelection.anchor.key = node.__key;
     }
-    if (parsedNode.__key === originalSelection.focusKey) {
+    if (parsedNode.__key === originalSelection.focus.key) {
       state.remappedSelection = state.remappedSelection || {
-        ...originalSelection,
+        anchor: {
+          ...originalSelection.anchor,
+        },
+        focus: {
+          ...originalSelection.focus,
+        }
       };
-      state.remappedSelection.focusKey = node.__key;
+      state.remappedSelection.focus.key = node.__key;
     }
   }
   return node;

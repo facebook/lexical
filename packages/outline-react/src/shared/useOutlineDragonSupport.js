@@ -51,7 +51,8 @@ export default function useOutlineDragonSupport(editor: OutlineEditor) {
               editor.update((view) => {
                 const selection = view.getSelection();
                 if (selection !== null) {
-                  let anchorKey = selection.anchorKey;
+                  const anchor = selection.anchor;
+                  let anchorKey = anchor.key;
                   let setSelStart = 0;
                   let setSelEnd = 0;
                   // set initial selection
@@ -59,7 +60,7 @@ export default function useOutlineDragonSupport(editor: OutlineEditor) {
                     setSelStart = blockStart;
                     setSelEnd = blockStart + blockLength;
                     // If the offset is more than the end, make it the end
-                    selection.setRange(
+                    selection.setBaseAndExtent(
                       anchorKey,
                       setSelStart,
                       anchorKey,
@@ -68,13 +69,13 @@ export default function useOutlineDragonSupport(editor: OutlineEditor) {
                   }
                   if (setSelStart !== setSelEnd || text !== '') {
                     insertRichText(selection, text);
-                    anchorKey = selection.anchorKey;
+                    anchorKey = anchor.key;
                   }
                   // set final selection
                   setSelStart = selStart;
                   setSelEnd = selStart + selLength;
-                  const anchorNodeTextLength = selection
-                    .getAnchorNode()
+                  const anchorNodeTextLength = anchor
+                    .getNode()
                     .getTextContentSize();
                   // If the offset is more than the end, make it the end
                   setSelStart =
@@ -85,7 +86,7 @@ export default function useOutlineDragonSupport(editor: OutlineEditor) {
                     setSelEnd > anchorNodeTextLength
                       ? anchorNodeTextLength
                       : setSelEnd;
-                  selection.setRange(
+                  selection.setBaseAndExtent(
                     anchorKey,
                     setSelStart,
                     anchorKey,

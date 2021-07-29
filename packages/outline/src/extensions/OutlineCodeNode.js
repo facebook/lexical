@@ -46,14 +46,14 @@ export class CodeNode extends BlockNode {
 
   insertNewAfter(selection: Selection): null | ParagraphNode {
     const textContent = this.getTextContent();
-    const anchorNode = selection.getAnchorNode();
+    const anchorNode = selection.anchor.getNode();
     const anchorTextContentLength = anchorNode.getTextContentSize();
     const children = this.getChildren();
     const childrenLength = children.length;
     const lastChild = children[childrenLength - 1];
     const hasTwoEndingLineBreaks = textContent.slice(-2) === '\n\n';
 
-    const offset = selection.anchorOffset;
+    const offset = selection.anchor.offset;
     if (
       anchorNode !== lastChild ||
       offset !== anchorTextContentLength ||

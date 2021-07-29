@@ -22,7 +22,11 @@ import type {ParsedNodeMap} from './OutlineNode';
 import type {ListenerType} from './OutlineEditor';
 
 import {cloneDecorators, reconcileViewModel} from './OutlineReconciler';
-import {getSelection, createSelectionFromParse} from './OutlineSelection';
+import {
+  createSelection,
+  getSelection,
+  createSelectionFromParse,
+} from './OutlineSelection';
 import {
   getNodeByKey,
   createNodeFromParse,
@@ -156,25 +160,73 @@ export function viewModelHasDirtySelection(
   return false;
 }
 
-export function enterViewModelScope<V>(
-  callbackFn: (view: View) => V,
-  viewModel: ViewModel,
-  editor: null | OutlineEditor,
-  readOnly: boolean,
-): V {
+export function preparePendingViewUpdate(
+  pendingViewModel: ViewModel,
+  updateFn: (view: View) => void,
+  viewModelWasCloned: boolean,
+  markAllTextNodesAsDirty: boolean,
+  editor: OutlineEditor,
+): null | Error {
   const previousActiveViewModel = activeViewModel;
   const previousReadOnlyMode = isReadOnlyMode;
   const previousActiveEditor = activeEditor;
-  activeViewModel = viewModel;
-  isReadOnlyMode = readOnly;
+  activeViewModel = pendingViewModel;
+  isReadOnlyMode = false;
   activeEditor = editor;
+
   try {
-    return callbackFn(view);
+    if (viewModelWasCloned) {
+      pendingViewModel._selection = createSelection(pendingViewModel, editor);
+    }
+    const startingCompositionKey = editor._compositionKey;
+    updateFn(view);
+    if (markAllTextNodesAsDirty) {
+      const currentViewModel = editor._viewModel;
+      const nodeMap = currentViewModel._nodeMap;
+      const pendingNodeMap = pendingViewModel._nodeMap;
+      const nodeMapEntries = Array.from(nodeMap);
+      // For...of would be faster here, but this will get
+      // compiled away to a slow-path with Babel.
+      for (let i = 0; i < nodeMapEntries.length; i++) {
+        const [nodeKey, node] = nodeMapEntries[i];
+        if (isTextNode(node) && pendingNodeMap.has(nodeKey)) {
+          node.getWritable();
+        }
+      }
+    }
+    applySelectionTransforms(pendingViewModel, editor);
+    if (pendingViewModel.hasDirtyNodes()) {
+      applyTextTransforms(pendingViewModel, editor);
+      garbageCollectDetachedNodes(pendingViewModel, editor);
+    }
+    const endingCompositionKey = editor._compositionKey;
+    if (startingCompositionKey !== endingCompositionKey) {
+      pendingViewModel._flushSync = true;
+    }
+    const pendingSelection = pendingViewModel._selection;
+    if (pendingSelection !== null) {
+      const pendingNodeMap = pendingViewModel._nodeMap;
+      const anchorKey = pendingSelection.anchorKey;
+      const focusKey = pendingSelection.focusKey;
+      if (
+        pendingNodeMap.get(anchorKey) === undefined ||
+        pendingNodeMap.get(focusKey) === undefined
+      ) {
+        invariant(
+          false,
+          'updateEditor: selection has been lost because the previously selected nodes have been removed and ' +
+            "selection wasn't moved to another node. Ensure selection changes after removing/replacing a selected node.",
+        );
+      }
+    }
+  } catch (e) {
+    return e;
   } finally {
     activeViewModel = previousActiveViewModel;
     isReadOnlyMode = previousReadOnlyMode;
     activeEditor = previousActiveEditor;
   }
+  return null;
 }
 
 function triggerTextMutationListeners(
@@ -431,7 +483,19 @@ export class ViewModel {
     return nodes;
   }
   read<V>(callbackFn: (view: View) => V): V {
-    return enterViewModelScope(callbackFn, this, null, true);
+    const previousActiveViewModel = activeViewModel;
+    const previousReadOnlyMode = isReadOnlyMode;
+    const previousActiveEditor = activeEditor;
+    activeViewModel = (this: ViewModel);
+    isReadOnlyMode = true;
+    activeEditor = null;
+    try {
+      return callbackFn(view);
+    } finally {
+      activeViewModel = previousActiveViewModel;
+      isReadOnlyMode = previousReadOnlyMode;
+      activeEditor = previousActiveEditor;
+    }
   }
   stringify(space?: string | number): string {
     const selection = this._selection;
@@ -464,23 +528,28 @@ export function parseViewModel(
   const state = {
     originalSelection: parsedViewModel._selection,
   };
-  enterViewModelScope(
-    () => {
-      const parsedNodeMap = new Map(parsedViewModel._nodeMap);
-      // $FlowFixMe: root always exists in Map
-      const parsedRoot = ((parsedNodeMap.get('root'): any): ParsedNode);
-      createNodeFromParse(
-        parsedRoot,
-        parsedNodeMap,
-        editor,
-        null /* parentKey */,
-        state,
-      );
-    },
-    viewModel,
-    editor,
-    false,
-  );
+  const previousActiveViewModel = viewModel;
+  const previousReadOnlyMode = isReadOnlyMode;
+  const previousActiveEditor = activeEditor;
+  activeViewModel = viewModel;
+  isReadOnlyMode = false;
+  activeEditor = editor;
+  try {
+    const parsedNodeMap = new Map(parsedViewModel._nodeMap);
+    // $FlowFixMe: root always exists in Map
+    const parsedRoot = ((parsedNodeMap.get('root'): any): ParsedNode);
+    createNodeFromParse(
+      parsedRoot,
+      parsedNodeMap,
+      editor,
+      null /* parentKey */,
+      state,
+    );
+  } finally {
+    activeViewModel = previousActiveViewModel;
+    isReadOnlyMode = previousReadOnlyMode;
+    activeEditor = previousActiveEditor;
+  }
   viewModel._selection = createSelectionFromParse(
     state.remappedSelection || state.originalSelection,
   );

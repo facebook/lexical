@@ -54,10 +54,14 @@ export type View = {
 
 export type ParsedViewModel = {
   _selection: null | {
-    anchorKey: string,
-    anchorOffset: number,
-    focusKey: string,
-    focusOffset: number,
+    anchor: {
+      key: string,
+      offset: number,
+    },
+    focus: {
+      key: string,
+      offset: number,
+    }
   },
   _nodeMap: Array<[NodeKey, ParsedNode]>,
 };
@@ -194,7 +198,6 @@ export function preparePendingViewUpdate(
         }
       }
     }
-    applySelectionTransforms(pendingViewModel, editor);
     if (pendingViewModel.hasDirtyNodes()) {
       applyTextTransforms(pendingViewModel, editor);
       garbageCollectDetachedNodes(pendingViewModel, editor);
@@ -206,8 +209,8 @@ export function preparePendingViewUpdate(
     const pendingSelection = pendingViewModel._selection;
     if (pendingSelection !== null) {
       const pendingNodeMap = pendingViewModel._nodeMap;
-      const anchorKey = pendingSelection.anchorKey;
-      const focusKey = pendingSelection.focusKey;
+      const anchorKey = pendingSelection.anchor.key;
+      const focusKey = pendingSelection.focus.key;
       if (
         pendingNodeMap.get(anchorKey) === undefined ||
         pendingNodeMap.get(focusKey) === undefined
@@ -259,23 +262,6 @@ function triggerTextMutationListeners(
           break;
         }
       }
-    }
-  }
-}
-
-export function applySelectionTransforms(
-  nextViewModel: ViewModel,
-  editor: OutlineEditor,
-): void {
-  const prevViewModel = editor.getViewModel();
-  const prevSelection = prevViewModel._selection;
-  const nextSelection = nextViewModel._selection;
-  if (nextSelection !== null) {
-    const anchorNode = nextSelection.getAnchorNode();
-    const focusNode = nextSelection.getFocusNode();
-    anchorNode.selectionTransform(prevSelection, nextSelection);
-    if (anchorNode !== focusNode) {
-      focusNode.selectionTransform(prevSelection, nextSelection);
     }
   }
 }
@@ -506,10 +492,14 @@ export class ViewModel {
           selection === null
             ? null
             : {
-                anchorKey: selection.anchorKey,
-                anchorOffset: selection.anchorOffset,
-                focusKey: selection.focusKey,
-                focusOffset: selection.focusOffset,
+                anchor: {
+                  key: selection.anchor.key,
+                  offset: selection.anchor.offset,
+                },
+                focus: {
+                  key: selection.focus.key,
+                  offset: selection.focus.offset,
+                },
               },
       },
       null,

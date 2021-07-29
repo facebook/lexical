@@ -61,8 +61,8 @@ function Button({
 }
 
 function getSelectedNode(selection: Selection): TextNode {
-  const anchorNode = selection.getAnchorNode();
-  const focusNode = selection.getFocusNode();
+  const anchorNode = selection.anchor.getNode();
+  const focusNode = selection.focus.getNode();
   if (anchorNode === focusNode) {
     return anchorNode;
   }
@@ -260,7 +260,7 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
                 if (url === null) {
                   const textNode = createTextNode(node.getTextContent());
                   let shouldSelect = false;
-                  if (node === sel.getAnchorNode()) {
+                  if (node === sel.anchor.getNode()) {
                     shouldSelect = true;
                   }
                   node.replace(textNode);
@@ -273,7 +273,7 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
               } else if (url !== null) {
                 const linkNode = createLinkNode(node.getTextContent(), url);
                 let shouldSelect = false;
-                if (node === sel.getAnchorNode()) {
+                if (node === sel.anchor.getNode()) {
                   shouldSelect = true;
                 }
                 node.replace(linkNode);

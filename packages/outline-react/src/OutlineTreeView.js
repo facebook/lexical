@@ -194,10 +194,12 @@ function printSelectedCharsLine({
   }
 
   // No selected characters.
+  const anchor = selection.anchor;
+  const focus = selection.focus;
   if (
     node.getTextContent() === '' ||
-    (selection.getAnchorNode() === selection.getFocusNode() &&
-      selection.anchorOffset === selection.focusOffset)
+    (anchor.getNode() === selection.focus.getNode() &&
+      anchor.offset === focus.offset)
   ) {
     return '';
   }
@@ -234,8 +236,10 @@ function printSelectedCharsLine({
 }
 
 function getSelectionStartEnd(node, selection): [number, number] {
-  const anchorNode = selection.getAnchorNode();
-  const focusNode = selection.getFocusNode();
+  const anchor = selection.anchor;
+  const focus = selection.focus;
+  const anchorNode = anchor.getNode();
+  const focusNode = focus.getNode();
   const textContent = node.getTextContent(true);
   const textLength = textContent.length;
 
@@ -245,20 +249,20 @@ function getSelectionStartEnd(node, selection): [number, number] {
   if (
     anchorNode === focusNode &&
     node === anchorNode &&
-    selection.anchorOffset !== selection.focusOffset
+    anchor.offset !== focus.offset
   ) {
     [start, end] =
-      selection.anchorOffset < selection.focusOffset
-        ? [selection.anchorOffset, selection.focusOffset]
-        : [selection.focusOffset, selection.anchorOffset];
+      anchor.offset < focus.offset
+        ? [anchor.offset, focus.offset]
+        : [focus.offset, anchor.offset];
   } else if (node === anchorNode) {
     [start, end] = anchorNode.isBefore(focusNode)
-      ? [selection.anchorOffset, textLength]
-      : [0, selection.anchorOffset];
+      ? [anchor.offset, textLength]
+      : [0, anchor.offset];
   } else if (node === focusNode) {
     [start, end] = focusNode.isBefore(anchorNode)
-      ? [selection.focusOffset, textLength]
-      : [0, selection.focusOffset];
+      ? [focus.offset, textLength]
+      : [0, focus.offset];
   } else {
     // Node is within selection but not the anchor nor focus.
     [start, end] = [0, textLength];

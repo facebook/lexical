@@ -391,14 +391,14 @@ function getPossibleMentionMatch(text): MentionMatch | null {
 }
 
 function getTextUpToAnchor(selection: Selection): string | null {
-  const anchorNode = selection.getAnchorNode();
+  const anchorNode = selection.anchor.getNode();
   // We should not be attempting to extract mentions out of nodes
   // that are already being used for other core things. This is
   // especially true for immutable nodes, which can't be mutated at all.
   if (!anchorNode.isSimpleText()) {
     return null;
   }
-  const anchorOffset = selection.anchorOffset;
+  const anchorOffset = selection.anchor.offset;
   return anchorNode.getTextContent().slice(0, anchorOffset);
 }
 
@@ -469,14 +469,14 @@ function createMentionNodeFromSearchResult(
     if (selection == null || !selection.isCollapsed()) {
       return;
     }
-    const anchorNode = selection.getAnchorNode();
+    const anchorNode = selection.anchor.getNode();
     // We should not be attempting to extract mentions out of nodes
     // that are already being used for other core things. This is
     // especially true for immutable nodes, which can't be mutated at all.
     if (!anchorNode.isSimpleText()) {
       return;
     }
-    const selectionOffset = selection.anchorOffset;
+    const selectionOffset = selection.anchor.offset;
     const textContent = anchorNode.getTextContent().slice(0, selectionOffset);
     const characterOffset = match.replaceableString.length;
 

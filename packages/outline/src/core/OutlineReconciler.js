@@ -537,10 +537,12 @@ function reconcileSelection(
     }
     return;
   }
-  const anchorKey = nextSelection.anchorKey;
-  const focusKey = nextSelection.focusKey;
-  const anchorNode = nextSelection.getAnchorNode();
-  const focusNode = nextSelection.getFocusNode();
+  const anchor = nextSelection.anchor;
+  const focus = nextSelection.focus;
+  const anchorKey = anchor.key;
+  const focusKey = focus.key;
+  const anchorNode = anchor.getNode();
+  const focusNode = focus.getNode();
   const anchorDOM = getElementByKeyOrThrow(editor, anchorKey);
   const focusDOM = getElementByKeyOrThrow(editor, focusKey);
 
@@ -553,8 +555,8 @@ function reconcileSelection(
   if (focusDOMTarget === null || anchorDOMTarget === null) {
     return;
   }
-  const nextSelectionAnchorOffset = nextSelection.anchorOffset;
-  const nextSelectionFocusOffset = nextSelection.focusOffset;
+  const nextSelectionAnchorOffset = anchor.offset;
+  const nextSelectionFocusOffset = focus.offset;
   const nextAnchorOffset =
     isImmutableOrInertOrSegmented(anchorNode) ||
     anchorNode.getTextContent() !== ''
@@ -647,10 +649,10 @@ function mergeAdjacentTextNodes(textNodes: Array<TextNode>): void {
   let focusKey;
 
   if (activeSelection !== null) {
-    anchorOffset = activeSelection.anchorOffset;
-    focusOffset = activeSelection.focusOffset;
-    anchorKey = activeSelection.anchorKey;
-    focusKey = activeSelection.focusKey;
+    anchorOffset = activeSelection.anchor.offset;
+    focusOffset = activeSelection.focus.offset;
+    anchorKey = activeSelection.anchor.key;
+    focusKey = activeSelection.focus.key;
   }
 
   // Merge all text nodes into the first node
@@ -665,12 +667,12 @@ function mergeAdjacentTextNodes(textNodes: Array<TextNode>): void {
       setCompositionKey(key);
     }
     if (activeSelection !== null && textNodeKey === anchorKey) {
-      activeSelection.anchorOffset = textLength + anchorOffset;
-      activeSelection.anchorKey = key;
+      activeSelection.anchor.offset = textLength + anchorOffset;
+      activeSelection.anchor.key = key;
     }
     if (activeSelection !== null && textNodeKey === focusKey) {
-      activeSelection.focusOffset = textLength + focusOffset;
-      activeSelection.focusKey = key;
+      activeSelection.focus.offset = textLength + focusOffset;
+      activeSelection.focus.key = key;
     }
     writableMergeToNode.spliceText(textLength, 0, siblingText);
     textLength += siblingText.length;

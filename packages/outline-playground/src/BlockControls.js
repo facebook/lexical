@@ -40,7 +40,7 @@ export default function BlockControls({
       viewModel.read((view) => {
         const selection = view.getSelection();
         if (selection !== null) {
-          const anchorNode = selection.getAnchorNode();
+          const anchorNode = selection.anchor.getNode();
           const block = anchorNode.getTopParentBlockOrThrow();
           const blockKey = block.getKey();
           if (blockKey !== selectedBlockKey) {
@@ -144,7 +144,7 @@ function DropdownList({
         const selection = view.getSelection();
 
         if (selection !== null) {
-          const anchorNode = selection.getAnchorNode();
+          const anchorNode = selection.anchor.getNode();
           const parent = anchorNode.getParentBlockOrThrow();
           const children = parent.getChildren();
           const paragraph = createParagraphNode();
@@ -162,7 +162,7 @@ function DropdownList({
         const selection = view.getSelection();
 
         if (selection !== null) {
-          const anchorNode = selection.getAnchorNode();
+          const anchorNode = selection.anchor.getNode();
           const parent = anchorNode.getParentBlockOrThrow();
           const children = parent.getChildren();
           const paragraph = createHeadingNode('h1');
@@ -180,7 +180,7 @@ function DropdownList({
         const selection = view.getSelection();
 
         if (selection !== null) {
-          const anchorNode = selection.getAnchorNode();
+          const anchorNode = selection.anchor.getNode();
           const parent = anchorNode.getParentBlockOrThrow();
           const children = parent.getChildren();
           const paragraph = createHeadingNode('h2');
@@ -198,7 +198,7 @@ function DropdownList({
         const selection = view.getSelection();
 
         if (selection !== null) {
-          const anchorNode = selection.getAnchorNode();
+          const anchorNode = selection.anchor.getNode();
           const parent = anchorNode.getParentBlockOrThrow();
           const children = parent.getChildren();
           const list = createListNode('ul');
@@ -218,7 +218,7 @@ function DropdownList({
         const selection = view.getSelection();
 
         if (selection !== null) {
-          const anchorNode = selection.getAnchorNode();
+          const anchorNode = selection.anchor.getNode();
           const parent = anchorNode.getParentBlockOrThrow();
           const children = parent.getChildren();
           const list = createListNode('ol');
@@ -238,7 +238,7 @@ function DropdownList({
         const selection = view.getSelection();
 
         if (selection !== null) {
-          const anchorNode = selection.getAnchorNode();
+          const anchorNode = selection.anchor.getNode();
           const parent = anchorNode.getParentBlockOrThrow();
           const children = parent.getChildren();
           const paragraph = createQuoteNode();
@@ -256,7 +256,7 @@ function DropdownList({
         const selection = view.getSelection();
 
         if (selection !== null) {
-          const anchorNode = selection.getAnchorNode();
+          const anchorNode = selection.anchor.getNode();
           const parent = anchorNode.getParentBlockOrThrow();
           const children = parent.getChildren();
           const paragraph = createCodeNode();

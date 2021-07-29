@@ -219,6 +219,9 @@ describe('OutlineEditor tests', () => {
       // Update the editor with the decorator
       await ReactTestUtils.act(async () => {
         class TestNode extends DecoratorNode {
+          static deserialize() {
+            // TODO
+          }
           clone() {
             return new TestNode(this.__key);
           }
@@ -374,15 +377,15 @@ describe('OutlineEditor tests', () => {
       });
 
       it('Parses the selection offsets of a stringified view model', async () => {
-        expect(parsedSelection.anchorOffset).toEqual(6);
-        expect(parsedSelection.focusOffset).toEqual(11);
+        expect(parsedSelection.anchor.offset).toEqual(6);
+        expect(parsedSelection.focus.offset).toEqual(11);
       });
 
       it('Remaps the selection keys of a stringified view model', async () => {
-        expect(parsedSelection.anchorKey).not.toEqual(originalText.__key);
-        expect(parsedSelection.focusKey).not.toEqual(originalText.__key);
-        expect(parsedSelection.anchorKey).toEqual(parsedText.__key);
-        expect(parsedSelection.focusKey).toEqual(parsedText.__key);
+        expect(parsedSelection.anchor.key).not.toEqual(originalText.__key);
+        expect(parsedSelection.focus.key).not.toEqual(originalText.__key);
+        expect(parsedSelection.anchor.key).toEqual(parsedText.__key);
+        expect(parsedSelection.focus.key).toEqual(parsedText.__key);
       });
     });
   });

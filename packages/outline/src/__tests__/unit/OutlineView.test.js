@@ -126,7 +126,7 @@ describe('OutlineView tests', () => {
         view.getRoot().append(paragraph);
       });
       expect(editor.getViewModel().stringify()).toEqual(
-        `{\"_nodeMap\":[[\"root\",{\"__type\":\"root\",\"__flags\":0,\"__key\":\"root\",\"__parent\":null,\"__children\":[\"0\"]}],[\"0\",{\"__type\":\"paragraph\",\"__flags\":0,\"__key\":\"0\",\"__parent\":\"root\",\"__children\":[\"1\"]}],[\"1\",{\"__type\":\"text\",\"__flags\":0,\"__key\":\"1\",\"__parent\":\"0\",\"__text\":\"Hello world\"}]],\"_selection\":{\"anchorKey\":\"1\",\"anchorOffset\":6,\"focusKey\":\"1\",\"focusOffset\":11}}`,
+        `{\"_nodeMap\":[[\"root\",{\"__type\":\"root\",\"__flags\":0,\"__key\":\"root\",\"__parent\":null,\"__children\":[\"0\"]}],[\"0\",{\"__type\":\"paragraph\",\"__flags\":0,\"__key\":\"0\",\"__parent\":\"root\",\"__children\":[\"1\"]}],[\"1\",{\"__type\":\"text\",\"__flags\":0,\"__key\":\"1\",\"__parent\":\"0\",\"__text\":\"Hello world\"}]],\"_selection\":{\"anchor\":{\"key\":\"1\",\"offset\":6},\"focus\":{\"key\":\"1\",\"offset\":11}}}`,
       );
       expect(editor.getViewModel().stringify(2)).toEqual(
         `{
@@ -167,10 +167,14 @@ describe('OutlineView tests', () => {
     ]
   ],
   "_selection": {
-    "anchorKey": "1",
-    "anchorOffset": 6,
-    "focusKey": "1",
-    "focusOffset": 11
+    "anchor": {
+      "key": "1",
+      "offset": 6
+    },
+    "focus": {
+      "key": "1",
+      "offset": 11
+    }
   }
 }`,
       );

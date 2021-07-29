@@ -14,21 +14,16 @@ import type {Node as ReactNode} from 'react';
 import {isBlockNode, isTextNode, TextNode} from '.';
 import {
   cloneViewModel,
-  enterViewModelScope,
-  garbageCollectDetachedNodes,
   viewModelHasDirtySelection,
   ViewModel,
   commitPendingUpdates,
-  applyTextTransforms,
   parseViewModel,
   errorOnProcessingTextNodeTransforms,
-  applySelectionTransforms,
   triggerListeners,
+  preparePendingViewUpdate,
 } from './OutlineView';
-import {createSelection} from './OutlineSelection';
 import {emptyFunction, scheduleMicroTask} from './OutlineUtils';
 import {createRootNode as createRoot} from './OutlineRootNode';
-import invariant from 'shared/invariant';
 import {LineBreakNode} from './OutlineLineBreakNode';
 import {RootNode} from './OutlineRootNode';
 
@@ -142,64 +137,16 @@ function updateEditor(
       cloneViewModel(currentViewModel);
     viewModelWasCloned = true;
   }
-  const currentPendingViewModel = pendingViewModel;
 
-  try {
-    enterViewModelScope(
-      (view: View) => {
-        if (viewModelWasCloned) {
-          currentPendingViewModel._selection = createSelection(
-            currentPendingViewModel,
-            editor,
-          );
-        }
-        const startingCompositionKey = editor._compositionKey;
-        updateFn(view);
-        if (markAllTextNodesAsDirty) {
-          const currentViewModel = editor._viewModel;
-          const nodeMap = currentViewModel._nodeMap;
-          const pendingNodeMap = currentPendingViewModel._nodeMap;
-          const nodeMapEntries = Array.from(nodeMap);
-          // For...of would be faster here, but this will get
-          // compiled away to a slow-path with Babel.
-          for (let i = 0; i < nodeMapEntries.length; i++) {
-            const [nodeKey, node] = nodeMapEntries[i];
-            if (isTextNode(node) && pendingNodeMap.has(nodeKey)) {
-              node.getWritable();
-            }
-          }
-        }
-        applySelectionTransforms(currentPendingViewModel, editor);
-        if (currentPendingViewModel.hasDirtyNodes()) {
-          applyTextTransforms(currentPendingViewModel, editor);
-          garbageCollectDetachedNodes(currentPendingViewModel, editor);
-        }
-        const endingCompositionKey = editor._compositionKey;
-        if (startingCompositionKey !== endingCompositionKey) {
-          currentPendingViewModel._flushSync = true;
-        }
-        const pendingSelection = currentPendingViewModel._selection;
-        if (pendingSelection !== null) {
-          const pendingNodeMap = currentPendingViewModel._nodeMap;
-          const anchorKey = pendingSelection.anchorKey;
-          const focusKey = pendingSelection.focusKey;
-          if (
-            pendingNodeMap.get(anchorKey) === undefined ||
-            pendingNodeMap.get(focusKey) === undefined
-          ) {
-            invariant(
-              false,
-              'updateEditor: selection has been lost because the previously selected nodes have been removed and ' +
-                "selection wasn't moved to another node. Ensure selection changes after removing/replacing a selected node.",
-            );
-          }
-        }
-      },
-      pendingViewModel,
-      editor,
-      false,
-    );
-  } catch (error) {
+  const error = preparePendingViewUpdate(
+    pendingViewModel,
+    updateFn,
+    viewModelWasCloned,
+    markAllTextNodesAsDirty,
+    editor,
+  );
+
+  if (error !== null) {
     // Report errors
     triggerListeners('error', editor, error, updateName);
     // Restore existing view model to the DOM

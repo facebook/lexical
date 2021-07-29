@@ -118,7 +118,13 @@ export function getNodesInRange(selection: Selection): {
           } else if (removeChildren) {
             // We need to remove any children before out last source
             // parent key.
-            node = node.getLatest().clone();
+            const prevNode = node.getLatest();
+            node = prevNode.clone();
+            node.__flags = prevNode.__flags;
+            node.__parent = prevNode.__parent;
+            if (isBlockNode(prevNode)) {
+              node.__children = Array.from(prevNode.__children);
+            }
             if (!isBlockNode(node)) {
               invariant(false, 'getNodesInRange: node is not a block node');
             }

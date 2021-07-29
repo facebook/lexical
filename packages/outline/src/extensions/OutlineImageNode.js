@@ -240,6 +240,7 @@ function ImageComponent({
   nodeKey,
   width,
   height,
+  resizable,
 }: {
   editor: OutlineEditor,
   src: string,
@@ -247,6 +248,7 @@ function ImageComponent({
   nodeKey: NodeKey,
   width: 'inherit' | number,
   height: 'inherit' | number,
+  resizable: boolean,
 }): React.Node {
   const ref = useRef(null);
   const [hasFocus, setHasFocus] = useState(false);
@@ -277,7 +279,7 @@ function ImageComponent({
           width={width}
           height={height}
         />
-        {(hasFocus || isResizing) && (
+        {(resizable && (hasFocus || isResizing)) && (
           <ImageResizer
             editor={editor}
             imageRef={ref}
@@ -390,6 +392,7 @@ export class ImageNode extends DecoratorNode {
         width={this.__width}
         height={this.__height}
         nodeKey={this.getKey()}
+        resizable={true}
       />
     );
   }

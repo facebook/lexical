@@ -156,6 +156,21 @@ describe('OutlineTextNode tests', () => {
       });
       expect(editor.getTextContent()).toBe('');
     });
+
+    test('prepend node', async () => {
+      await update((view) => {
+        const textNode = createTextNode('World').toggleUnmergeable();
+        view.getRoot().getFirstChild().append(textNode);
+      });
+
+      await update((view) => {
+        const textNode = createTextNode('Hello ').toggleUnmergeable();
+        const previousTextNode = view.getRoot().getFirstChild().getFirstChild();
+        previousTextNode.insertBefore(textNode);
+      });
+
+      expect(editor.getTextContent()).toBe('Hello World');
+    });
   });
 
   describe('setTextContent()', () => {

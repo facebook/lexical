@@ -14,7 +14,6 @@ import type {TextNode} from './OutlineTextNode';
 import type {Node as ReactNode} from 'react';
 
 import {triggerListeners, ViewModel} from './OutlineView';
-import {BlockNode, isBlockNode, isTextNode} from '.';
 import {
   isSelectionWithinEditor,
   isImmutableOrInertOrSegmented,
@@ -24,6 +23,8 @@ import {IS_INERT, IS_RTL, IS_LTR, IS_IMMUTABLE} from './OutlineConstants';
 import invariant from 'shared/invariant';
 import {isDecoratorNode} from './OutlineDecoratorNode';
 import {getCompositionKey, setCompositionKey} from './OutlineNode';
+import {BlockNode, isBlockNode} from './OutlineBlockNode';
+import {isTextNode} from './OutlineTextNode';
 
 let subTreeTextContent = '';
 let editorTextContent = '';
@@ -352,36 +353,52 @@ function reconcileNodeChildren(
   let nextEndKey = nextChildren[nextEndIndex];
   let prevKeyToIndexMap = null;
 
+  // Ensure the reconcilation happens in order by queueing the reconcile/create operations
+  // [operationsFromStart ->] [<- operationsFromEnd]
+  const operationsFromStart = [];
+  const operationsFromEnd = [];
+
   while (prevStartIndex <= prevEndIndex && nextStartIndex <= nextEndIndex) {
     if (prevStartKey === undefined) {
+      // (a) Skip. Was removed in (e)
       prevStartKey = prevChildren[++prevStartIndex];
     } else if (nextEndKey === undefined) {
+      // (b) Skip. Was removed in (e)
       nextEndKey = prevChildren[--prevEndIndex];
     } else if (prevStartKey === nextStartKey) {
-      reconcileNode(prevStartKey, dom);
+      // (c) Equal prefix [1,2,3] to [1,2,3,4]
+      const key = prevStartKey;
+      operationsFromStart.push(() => {
+        reconcileNode(key, dom);
+      });
       prevStartKey = prevChildren[++prevStartIndex];
       nextStartKey = nextChildren[++nextStartIndex];
     } else if (prevEndKey === nextEndKey) {
-      reconcileNode(prevEndKey, dom);
+      // (d) Equal suffix [4,1,2,3] to [1,2,3]
+      const key = prevEndKey;
+      operationsFromEnd.push(() => {
+        reconcileNode(key, dom);
+      });
       prevEndKey = prevChildren[--prevEndIndex];
       nextEndKey = nextChildren[--nextEndIndex];
     } else if (prevStartKey === nextEndKey) {
-      reconcileNode(prevStartKey, dom);
-      dom.insertBefore(
-        getElementByKeyOrThrow(activeEditor, prevStartKey),
-        getElementByKeyOrThrow(activeEditor, prevEndKey).nextSibling,
-      );
+      // (e) Start matches end [1,2,3] to [2,1]
+      const key = prevStartKey;
+      operationsFromEnd.push(() => {
+        reconcileNode(key, dom);
+      });
       prevStartKey = prevChildren[++prevStartIndex];
       nextEndKey = nextChildren[--nextEndIndex];
     } else if (prevEndKey === nextStartKey) {
-      reconcileNode(prevEndKey, dom);
-      dom.insertBefore(
-        getElementByKeyOrThrow(activeEditor, prevEndKey),
-        getElementByKeyOrThrow(activeEditor, prevStartKey),
-      );
+      // (f) End matches start [1,2,3] to [3,2]
+      const key = prevEndKey;
+      operationsFromStart.push(() => {
+        reconcileNode(key, dom);
+      });
       prevEndKey = prevChildren[--prevEndIndex];
       nextStartKey = nextChildren[++nextStartIndex];
     } else {
+      // (g) Find next key in previous or create
       // Lazily create Map
       if (prevKeyToIndexMap === null) {
         prevKeyToIndexMap = createKeyToIndexMap(
@@ -400,25 +417,23 @@ function reconcileNodeChildren(
               prevEndIndex,
             );
       if (indexInPrevChildren === undefined) {
-        createNode(
-          nextStartKey,
-          dom,
-          activeEditor.getElementByKey(prevStartKey),
-        );
+        const key = nextStartKey;
+        const nextKey = prevStartKey;
+        operationsFromStart.push(() => {
+          createNode(key, dom, activeEditor.getElementByKey(nextKey));
+        });
       } else {
         const keyToMove = prevChildren[indexInPrevChildren];
         if (keyToMove === nextStartKey) {
-          reconcileNode(keyToMove, dom);
+          operationsFromStart.push(() => {
+            reconcileNode(keyToMove, dom);
+          });
           if (!hasClonedPrevChildren) {
             hasClonedPrevChildren = true;
             prevChildren = Array.from(prevChildren);
           }
           // $FlowFixMe: figure a way of typing this better
           prevChildren[indexInPrevChildren] = ((undefined: any): NodeKey);
-          dom.insertBefore(
-            getElementByKeyOrThrow(activeEditor, keyToMove),
-            getElementByKeyOrThrow(activeEditor, prevStartKey),
-          );
         } else {
           invariant(
             false,
@@ -429,6 +444,11 @@ function reconcileNodeChildren(
       nextStartKey = nextChildren[++nextStartIndex];
     }
   }
+
+  for (let i = 0; i < operationsFromStart.length; i++) {
+    operationsFromStart[i]();
+  }
+
   if (prevStartIndex > prevEndIndex) {
     const previousNode = nextChildren[nextEndIndex + 1];
     const insertDOM =
@@ -438,6 +458,17 @@ function reconcileNodeChildren(
     createChildren(nextChildren, nextStartIndex, nextEndIndex, dom, insertDOM);
   } else if (nextStartIndex > nextEndIndex) {
     destroyChildren(prevChildren, prevStartIndex, prevEndIndex, dom);
+  }
+
+  for (let i = operationsFromEnd.length - 1; i >= 0; i--) {
+    operationsFromEnd[i]();
+  }
+
+  let lastNode = null;
+  for (let i = nextChildren.length - 1; i >= 0; i--) {
+    const node = getElementByKeyOrThrow(activeEditor, nextChildren[i]);
+    dom.insertBefore(node, lastNode);
+    lastNode = node;
   }
 }
 

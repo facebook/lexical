@@ -69,7 +69,7 @@ class Point {
   getNode() {
     const key = this.key;
     const node = getNodeByKey(key);
-    if (node !== null) {
+    if (node === null) {
       invariant(false, 'Point.getNode: node not found');
     }
     return node;

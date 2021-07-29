@@ -83,10 +83,12 @@ function ImageResizer({
   onResizeStart,
   onResizeEnd,
   imageRef,
+  editor,
 }: {
   onResizeStart: () => void,
   onResizeEnd: ('inherit' | number, 'inherit' | number) => void,
   imageRef: {current: null | HTMLElement},
+  editor: OutlineEditor,
 }): React.Node {
   const positioningRef = useRef<{
     currentWidth: 'inherit' | number,
@@ -96,7 +98,7 @@ function ImageResizer({
     startHeight: number,
     startX: number,
     startY: number,
-    direction: 0 | 1 | 2 | 3 | 4 | 5 | 6,
+    direction: 0 | 1 | 2 | 3,
     isResizing: boolean,
   }>({
     currentWidth: 0,
@@ -109,10 +111,14 @@ function ImageResizer({
     direction: 0,
     isResizing: false,
   });
-  const handlePointerDown = (
-    event: PointerEvent,
-    direction: 0 | 1 | 2 | 3 | 4 | 5 | 6,
-  ) => {
+  const editorRootElement = editor.getRootElement();
+  // Find max width, accounting for editor padding.
+  const maxWidthContainer =
+    editorRootElement !== null
+      ? editorRootElement.getBoundingClientRect().width - 20
+      : 100;
+
+  const handlePointerDown = (event: PointerEvent, direction: 0 | 1 | 2 | 3) => {
     const image = imageRef.current;
     if (image !== null) {
       const {width, height} = image.getBoundingClientRect();
@@ -134,12 +140,25 @@ function ImageResizer({
   const handlePointerMove = (event: PointerEvent) => {
     const image = imageRef.current;
     const positioning = positioningRef.current;
+
     if (image !== null && positioning.isResizing) {
-      // Moving south/north
-      if (positioning.direction === 4) {
+      if (positioning.direction === 3) {
+        const diff = Math.floor(positioning.startY - event.clientY) * 2;
+        const minHeight = 20 * positioning.ratio;
+        const maxHeight = maxWidthContainer / positioning.ratio;
+        let height = positioning.startHeight + diff;
+        if (height < minHeight) {
+          height = minHeight;
+        } else if (height > maxHeight) {
+          height = maxHeight;
+        }
+        image.style.width = `inherit`;
+        image.style.height = `${height}px`;
+        positioning.currentHeight = height;
+      } else if (positioning.direction === 2) {
         const diff = Math.floor(event.clientY - positioning.startY);
-        const minHeight = 20;
-        const maxHeight = positioning.startHeight;
+        const minHeight = 20 * positioning.ratio;
+        const maxHeight = maxWidthContainer / positioning.ratio;
         let height = positioning.startHeight + diff;
         if (height < minHeight) {
           height = minHeight;
@@ -152,9 +171,12 @@ function ImageResizer({
       } else {
         const diff = Math.floor(event.clientX - positioning.startX);
         const minWidth = 20 * positioning.ratio;
+        const maxWidth = maxWidthContainer;
         let width = positioning.startWidth + diff;
         if (width < minWidth) {
           width = minWidth;
+        } else if (width > maxWidth) {
+          width = maxWidth;
         }
         image.style.width = `${width}px`;
         image.style.height = `inherit`;
@@ -184,19 +206,25 @@ function ImageResizer({
   return (
     <>
       <div
-        className="image-resizer-s"
+        className="image-resizer-ne"
         onPointerDown={(event) => {
-          handlePointerDown(event, 4);
+          handlePointerDown(event, 0);
         }}
       />
       <div
-        className="image-resizer-e"
+        className="image-resizer-se"
+        onPointerDown={(event) => {
+          handlePointerDown(event, 1);
+        }}
+      />
+      <div
+        className="image-resizer-sw"
         onPointerDown={(event) => {
           handlePointerDown(event, 2);
         }}
       />
       <div
-        className="image-resizer-se"
+        className="image-resizer-nw"
         onPointerDown={(event) => {
           handlePointerDown(event, 3);
         }}
@@ -212,6 +240,7 @@ function ImageComponent({
   nodeKey,
   width,
   height,
+  resizable,
 }: {
   editor: OutlineEditor,
   src: string,
@@ -219,6 +248,7 @@ function ImageComponent({
   nodeKey: NodeKey,
   width: 'inherit' | number,
   height: 'inherit' | number,
+  resizable: boolean,
 }): React.Node {
   const ref = useRef(null);
   const [hasFocus, setHasFocus] = useState(false);
@@ -249,8 +279,9 @@ function ImageComponent({
           width={width}
           height={height}
         />
-        {(hasFocus || isResizing) && (
+        {(resizable && (hasFocus || isResizing)) && (
           <ImageResizer
+            editor={editor}
             imageRef={ref}
             onResizeStart={() => {
               const rootElement = editor.getRootElement();
@@ -361,6 +392,7 @@ export class ImageNode extends DecoratorNode {
         width={this.__width}
         height={this.__height}
         nodeKey={this.getKey()}
+        resizable={true}
       />
     );
   }

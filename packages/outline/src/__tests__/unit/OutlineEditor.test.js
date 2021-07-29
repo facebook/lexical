@@ -6,11 +6,13 @@
  *
  */
 
+import type {OutlineEditor, View} from 'outline';
+
 import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import {createEditor, createTextNode, DecoratorNode} from 'outline';
+import {createEditor, createTextNode, TextNode, DecoratorNode} from 'outline';
 import {createParagraphNode, ParagraphNode} from 'outline/ParagraphNode';
 import useOutlineRichText from 'outline-react/useOutlineRichText';
 
@@ -46,7 +48,7 @@ describe('OutlineEditor tests', () => {
     return editor;
   }
 
-  let editor = null;
+  let editor: OutlineEditor = null;
 
   function init() {
     const ref = React.createRef();
@@ -387,6 +389,136 @@ describe('OutlineEditor tests', () => {
         expect(parsedSelection.anchor.key).toEqual(parsedText.__key);
         expect(parsedSelection.focus.key).toEqual(parsedText.__key);
       });
+    });
+  });
+
+  describe('Node children', () => {
+    beforeEach(async () => {
+      init();
+      await reset();
+    });
+
+    async function reset() {
+      init();
+      await update((view) => {
+        const root = view.getRoot();
+        const paragraph = createParagraphNode();
+        root.append(paragraph);
+      });
+    }
+
+    function generatePermutations(maxLen: number): string[] {
+      if (maxLen > 26) {
+        throw new Error('maxLen <= 26');
+      }
+
+      const result = [];
+      const current = [];
+      const seen = new Set();
+
+      (function permutationsImpl() {
+        if (current.length > maxLen) {
+          return;
+        }
+
+        result.push(current.slice());
+
+        for (let i = 0; i < maxLen; i++) {
+          const key = String(String.fromCharCode('a'.charCodeAt(0) + i));
+          if (seen.has(key)) {
+            continue;
+          }
+          seen.add(key);
+          current.push(key);
+          permutationsImpl();
+          seen.delete(key);
+          current.pop();
+        }
+      })();
+
+      return result;
+    }
+
+    it('adds/removes/updates children', async () => {
+      async function forPreviousNext(previous: string[], next: string[]) {
+        const textToKey: Map<string, NodeKey> = new Map();
+
+        // Previous editor state
+        await update((view: View) => {
+          const writableParagraph: ParagraphNode = view
+            .getRoot()
+            .getFirstChild()
+            .getWritable();
+          writableParagraph.__children = [];
+          for (let i = 0; i < previous.length; i++) {
+            const previousText = previous[i];
+            const textNode = new TextNode(previousText).toggleUnmergeable();
+            textNode.__parent = writableParagraph.__key;
+            writableParagraph.__children.push(textNode.__key);
+            textToKey.set(previousText, textNode.__key);
+          }
+        });
+        expect(editor.getTextContent()).toBe(previous.join(''));
+
+        // Next editor state
+        const previousSet = new Set(previous);
+        await update((view: View) => {
+          const writableParagraph: ParagraphNode = view
+            .getRoot()
+            .getFirstChild()
+            .getWritable();
+          writableParagraph.__children = [];
+          for (let i = 0; i < next.length; i++) {
+            const nextText = next[i];
+            const nextKey = textToKey.get(nextText);
+            let textNode;
+            if (nextKey === undefined) {
+              textNode = new TextNode(nextText).toggleUnmergeable();
+              textNode.__parent = writableParagraph.__key;
+              expect(view.getNodeByKey(nextKey)).toBe(null);
+              textToKey.set(nextText, textNode.__key);
+            } else {
+              textNode = view.getNodeByKey(nextKey);
+              expect(textNode.__text).toBe(nextText);
+            }
+            writableParagraph.__children.push(textNode.__key);
+            previousSet.delete(nextText);
+          }
+          previousSet.forEach((previousText) => {
+            const previousKey = textToKey.get(previousText);
+            const textNode = view.getNodeByKey(previousKey);
+            expect(textNode.__text).toBe(previousText);
+            textNode.remove();
+          });
+        });
+        // Expect text content + HTML to be correct
+        expect(editor.getTextContent()).toBe(next.join(''));
+        expect(container.innerHTML).toBe(
+          `<div contenteditable="true" data-outline-editor="true"><p>${next
+            .map((text) => `<span data-outline-text="true">${text}</span>`)
+            .join('')}</p></div>`,
+        );
+        // Expect viewModel to have the correct latest nodes
+        editor.getViewModel().read((view: View) => {
+          for (let i = 0; i < next.length; i++) {
+            const nextText = next[i];
+            const nextKey = textToKey.get(nextText);
+            expect(view.getNodeByKey(nextKey)).not.toBe(null);
+          }
+          previousSet.forEach((previousText) => {
+            const previousKey = textToKey.get(previousText);
+            expect(view.getNodeByKey(previousKey)).toBe(null);
+          });
+        });
+      }
+
+      const permutations = generatePermutations(4);
+      for (let i = 0; i < permutations.length; i++) {
+        for (let j = 0; j < permutations.length; j++) {
+          await forPreviousNext(permutations[i], permutations[j]);
+          await reset();
+        }
+      }
     });
   });
 });

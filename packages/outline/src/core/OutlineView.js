@@ -61,7 +61,7 @@ export type ParsedViewModel = {
     focus: {
       key: string,
       offset: number,
-    }
+    },
   },
   _nodeMap: Array<[NodeKey, ParsedNode]>,
 };

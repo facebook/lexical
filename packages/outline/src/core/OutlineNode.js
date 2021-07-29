@@ -58,7 +58,7 @@ type ParsedSelection = {
   focus: {
     key: NodeKey,
     offset: number,
-  }
+  },
 };
 // export type NodeMapType = {root: RootNode, [key: NodeKey]: OutlineNode};
 
@@ -840,7 +840,7 @@ export function createNodeFromParse(
         },
         focus: {
           ...originalSelection.focus,
-        }
+        },
       };
       state.remappedSelection.anchor.key = node.__key;
     }
@@ -851,7 +851,7 @@ export function createNodeFromParse(
         },
         focus: {
           ...originalSelection.focus,
-        }
+        },
       };
       state.remappedSelection.focus.key = node.__key;
     }

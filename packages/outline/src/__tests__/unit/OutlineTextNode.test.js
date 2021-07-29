@@ -283,10 +283,10 @@ describe('OutlineTextNode tests', () => {
 
       const selection = textNode.selectNext(1, 3);
 
-      expect(selection.getAnchorNode()).toBe(textNode2);
-      expect(selection.anchorOffset).toBe(1);
-      expect(selection.getFocusNode()).toBe(textNode2);
-      expect(selection.focusOffset).toBe(3);
+      expect(selection.anchor.getNode()).toBe(textNode2);
+      expect(selection.anchor.offset).toBe(1);
+      expect(selection.focus.getNode()).toBe(textNode2);
+      expect(selection.focus.offset).toBe(3);
 
       expect(() => {
         textNode2.selectNext(1, 3);
@@ -330,10 +330,10 @@ describe('OutlineTextNode tests', () => {
 
           const selection = textNode.select(anchorOffset, focusOffset);
 
-          expect(selection.getAnchorNode()).toBe(textNode);
-          expect(selection.anchorOffset).toBe(expectedAnchorOffset);
-          expect(selection.getFocusNode()).toBe(textNode);
-          expect(selection.focusOffset).toBe(expectedFocusOffset);
+          expect(selection.focus.getNode()).toBe(textNode);
+          expect(selection.anchor.offset).toBe(expectedAnchorOffset);
+          expect(selection.focus.getNode()).toBe(textNode);
+          expect(selection.focus.offset).toBe(expectedFocusOffset);
         });
       },
     );
@@ -506,12 +506,12 @@ describe('OutlineTextNode tests', () => {
           const selection = textNode.select(...selectionOffsets);
           const childrenNodes = textNode.splitText(...splitOffsets);
 
-          expect(selection.getAnchorNode()).toBe(
+          expect(selection.anchor.getNode()).toBe(
             childrenNodes[anchorNodeIndex],
           );
-          expect(selection.anchorOffset).toBe(anchorOffset);
-          expect(selection.getFocusNode()).toBe(childrenNodes[focusNodeIndex]);
-          expect(selection.focusOffset).toBe(focusOffset);
+          expect(selection.anchor.offset).toBe(anchorOffset);
+          expect(selection.focus.getNode()).toBe(childrenNodes[focusNodeIndex]);
+          expect(selection.focus.offset).toBe(focusOffset);
         });
       },
     );

@@ -66,11 +66,11 @@ class Point {
   is(point: PointType): boolean {
     return this.key === point.key && this.offset === point.offset;
   }
-  getNode(): TextNode {
+  getNode() {
     const key = this.key;
-    const node = getNodeByKey<TextNode>(key);
-    if (!isTextNode(node)) {
-      invariant(false, 'getNode: node not a text node');
+    const node = getNodeByKey(key);
+    if (node !== null) {
+      invariant(false, 'Point.getNode: node not found');
     }
     return node;
   }

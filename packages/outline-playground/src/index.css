@@ -741,33 +741,44 @@ pre :not(.tree-view-output) {
 }
 
 .editor-shell div.editor .editor-image img.focused {
-  outline: 2px solid rgb(60,132,244)
+  outline: 2px solid rgb(60,132,244);
+  user-select: none;
 }
 
-.editor-shell div.editor .editor-image .image-resizer-s {
+.editor-shell div.editor .editor-image .image-resizer-sw {
   display: block;
   width: 7px;
   height: 7px;
   position: absolute;
   bottom: -2px;
-  left: calc(50% - 5px);
-  background-color: white;
-  border: 1px solid #666;
-  cursor: ns-resize;
-  border-radius: 9px;
+  left: -6px;
+  background-color: rgb(60,132,244);
+  border: 1px solid #fff;
+  cursor: sw-resize;
 }
 
-.editor-shell div.editor .editor-image .image-resizer-e {
+.editor-shell div.editor .editor-image .image-resizer-ne {
   display: block;
   width: 7px;
   height: 7px;
   position: absolute;
-  top: calc(50% - 5px);
+  top: -6px;
   right: -6px;
-  background-color: white;
-  border: 1px solid #666;
-  cursor: ew-resize;
-  border-radius: 9px;
+  background-color: rgb(60,132,244);
+  border: 1px solid #fff;
+  cursor: ne-resize;
+}
+
+.editor-shell div.editor .editor-image .image-resizer-nw {
+  display: block;
+  width: 7px;
+  height: 7px;
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  background-color: rgb(60,132,244);
+  border: 1px solid #fff;
+  cursor: nw-resize;
 }
 
 .editor-shell div.editor .editor-image .image-resizer-se {
@@ -777,10 +788,9 @@ pre :not(.tree-view-output) {
   position: absolute;
   bottom: -2px;
   right: -6px;
-  background-color: white;
-  border: 1px solid #666;
+  background-color: rgb(60,132,244);
+  border: 1px solid #fff;
   cursor: nwse-resize;
-  border-radius: 9px;
 }
 
 .emoji {

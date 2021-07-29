@@ -362,12 +362,16 @@ function reconcileNodeChildren(
       } else {
         // Move next
         const childDOM = getElementByKeyOrThrow(activeEditor, nextKey);
-        if (siblingDOM != null) {
-          dom.insertBefore(childDOM, siblingDOM);
+        if (childDOM === siblingDOM) {
+          siblingDOM = getNextSibling(reconcileNode(nextKey, dom));
         } else {
-          dom.appendChild(childDOM);
+          if (siblingDOM != null) {
+            dom.insertBefore(childDOM, siblingDOM);
+          } else {
+            dom.appendChild(childDOM);
+          }
+          reconcileNode(nextKey, dom);
         }
-        reconcileNode(nextKey, dom);
         prevIndex++;
         nextIndex++;
       }

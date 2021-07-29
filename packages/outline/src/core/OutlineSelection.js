@@ -25,47 +25,68 @@ import {getDOMTextNode, isSelectionWithinEditor} from './OutlineUtils';
 import invariant from 'shared/invariant';
 import {ZERO_WIDTH_JOINER_CHAR} from './OutlineConstants';
 
-// TODO
-// type BlockStartPoint = {
-//   node: BlockNode,
+declare type CharacterPointType = {
+  key: NodeKey,
+  offset: number,
+  type: 'character',
+  is: (PointType) => boolean,
+  getNode: () => TextNode,
+};
+
+// type BlockStartPointType = {
+//   key: NodeKey,
+//   offset: 0,
 //   type: 'start',
-// }
+//   is: (PointType) => boolean,
+//   getNode: () => BlockNode,
+// };
 
 // type BlockEndPoint = {
-//   node: BlockNode,
+//   key: NodeKey,
+//   offset: 1,
 //   type: 'end',
-// }
+//   is: (PointType) => boolean,
+//   getNode: () => BlockNode,
+// };
+
+// type PointType = CharacterPointType | BlockStartPointType | BlockEndPoint;
+
+type PointType = CharacterPointType;
 
 class Point {
   key: NodeKey;
   offset: number;
+  type: 'character';
 
   constructor(key: NodeKey, offset: number) {
     this.key = key;
     this.offset = offset;
+    this.type = 'character';
   }
-  is(point: Point): boolean {
+  is(point: PointType): boolean {
     return this.key === point.key && this.offset === point.offset;
   }
-  getType(): 'character' {
-    return 'character';
-  }
-  getNode(): TextNode {
+  getNode() {
     const key = this.key;
-    const node = getNodeByKey<TextNode>(key);
-    if (!isTextNode(node)) {
-      invariant(false, 'getNode: node not a text node');
+    const node = getNodeByKey(key);
+    if (node === null) {
+      invariant(false, 'Point.getNode: node not found');
     }
     return node;
   }
 }
 
+function createPoint(key: NodeKey, offset: number): PointType {
+  // $FlowFixMe: intentionally cast as we use a class for perf reasons
+  return new Point(key, offset);
+}
+
 export class Selection {
-  anchor: Point;
-  focus: Point;
+  anchor: PointType;
+  focus: PointType;
   isDirty: boolean;
 
-  constructor(anchor: Point, focus: Point) {
+  constructor(anchor: PointType, focus: PointType) {
     this.anchor = anchor;
     this.focus = focus;
     this.isDirty = false;
@@ -161,8 +182,8 @@ export class Selection {
     const anchor = this.anchor;
     const focus = this.focus;
     return new Selection(
-      new Point(anchor.key, anchor.offset),
-      new Point(focus.key, focus.offset),
+      createPoint(anchor.key, anchor.offset),
+      createPoint(focus.key, focus.offset),
     );
   }
 }
@@ -365,8 +386,8 @@ export function makeSelection(
 ): Selection {
   const viewModel = getActiveViewModel();
   const selection = new Selection(
-    new Point(anchorKey, anchorOffset),
-    new Point(focusKey, focusOffset),
+    createPoint(anchorKey, anchorOffset),
+    createPoint(focusKey, focusOffset),
   );
   selection.isDirty = true;
   viewModel._selection = selection;
@@ -419,8 +440,8 @@ export function createSelection(
     focusOffset = domSelection.focusOffset;
   } else {
     return new Selection(
-      new Point(lastSelection.anchor.key, lastSelection.anchor.offset),
-      new Point(lastSelection.focus.key, lastSelection.focus.offset),
+      createPoint(lastSelection.anchor.key, lastSelection.anchor.offset),
+      createPoint(lastSelection.focus.key, lastSelection.focus.offset),
     );
   }
   // Let's resolve the text nodes from the offsets and DOM nodes we have from
@@ -443,8 +464,8 @@ export function createSelection(
   ] = resolvedSelectionNodesAndOffsets;
 
   const selection = new Selection(
-    new Point(resolvedAnchorNode.__key, resolvedAnchorOffset),
-    new Point(resolvedFocusNode.__key, resolvedFocusOffset),
+    createPoint(resolvedAnchorNode.__key, resolvedAnchorOffset),
+    createPoint(resolvedFocusNode.__key, resolvedFocusOffset),
   );
 
   return selection;
@@ -470,7 +491,7 @@ export function createSelectionFromParse(
   return parsedSelection === null
     ? null
     : new Selection(
-        new Point(parsedSelection.anchor.key, parsedSelection.anchor.offset),
-        new Point(parsedSelection.focus.key, parsedSelection.focus.offset),
+        createPoint(parsedSelection.anchor.key, parsedSelection.anchor.offset),
+        createPoint(parsedSelection.focus.key, parsedSelection.focus.offset),
       );
 }

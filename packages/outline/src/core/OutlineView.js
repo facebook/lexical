@@ -203,7 +203,10 @@ export function preparePendingViewUpdate(
       garbageCollectDetachedNodes(pendingViewModel, editor);
     }
     const endingCompositionKey = editor._compositionKey;
-    if (startingCompositionKey !== endingCompositionKey) {
+    if (
+      endingCompositionKey !== null &&
+      startingCompositionKey !== endingCompositionKey
+    ) {
       pendingViewModel._flushSync = true;
     }
     const pendingSelection = pendingViewModel._selection;
@@ -517,6 +520,7 @@ export function parseViewModel(
   const viewModel = new ViewModel(nodeMap);
   const state = {
     originalSelection: parsedViewModel._selection,
+    remappedSelection: null,
   };
   const previousActiveViewModel = viewModel;
   const previousReadOnlyMode = isReadOnlyMode;

@@ -203,10 +203,7 @@ export function preparePendingViewUpdate(
       garbageCollectDetachedNodes(pendingViewModel, editor);
     }
     const endingCompositionKey = editor._compositionKey;
-    if (
-      endingCompositionKey !== null &&
-      startingCompositionKey !== endingCompositionKey
-    ) {
+    if (startingCompositionKey !== endingCompositionKey) {
       pendingViewModel._flushSync = true;
     }
     const pendingSelection = pendingViewModel._selection;

@@ -17,7 +17,7 @@ import type {
   View,
 } from 'outline';
 
-import {IS_SAFARI, CAN_USE_BEFORE_INPUT, IS_FIREFOX} from 'shared/environment';
+import {IS_SAFARI, CAN_USE_BEFORE_INPUT} from 'shared/environment';
 import {
   isDeleteBackward,
   isDeleteForward,
@@ -507,25 +507,14 @@ export function onCompositionStart(
   }, 'onCompositionStart');
 }
 
-function applyCompositionEnd(editor: OutlineEditor) {
-  editor.update((view) => {
-    view.setCompositionKey(null);
-  }, 'onCompositionEnd');
-}
-
 export function onCompositionEnd(
   event: CompositionEvent,
   editor: OutlineEditor,
 ): void {
-  // There's a bug in FF where doing an update during
-  // compositionend can cause diacritics to be lost.
-  if (IS_FIREFOX) {
-    setTimeout(() => {
-      applyCompositionEnd(editor);
-    });
-  } else {
-    applyCompositionEnd(editor);
-  }
+  editor.update((view) => {
+    updateTextNodeFromSelectionAnchor(view, editor);
+    view.setCompositionKey(null);
+  }, 'onCompositionEnd');
 }
 
 export function onSelectionChange(event: Event, editor: OutlineEditor): void {
@@ -649,6 +638,17 @@ function updateTextNodeFromDOMContent(
   }
 }
 
+function updateTextNodeFromSelectionAnchor(
+  view: View,
+  editor: OutlineEditor,
+): void {
+  const domSelection = window.getSelection();
+  const anchorDOM = domSelection === null ? null : domSelection.anchorNode;
+  if (anchorDOM !== null && anchorDOM.nodeType === 3) {
+    updateTextNodeFromDOMContent(anchorDOM, view, editor);
+  }
+}
+
 export function onInput(event: InputEvent, editor: OutlineEditor): void {
   const inputType = event.inputType;
   if (
@@ -657,11 +657,7 @@ export function onInput(event: InputEvent, editor: OutlineEditor): void {
     inputType === 'deleteCompositionText'
   ) {
     editor.update((view) => {
-      const domSelection = window.getSelection();
-      const anchorDOM = domSelection.anchorNode;
-      if (anchorDOM !== null && anchorDOM.nodeType === 3) {
-        updateTextNodeFromDOMContent(anchorDOM, view, editor);
-      }
+      updateTextNodeFromSelectionAnchor(view, editor);
     }, 'onInput');
   }
 }

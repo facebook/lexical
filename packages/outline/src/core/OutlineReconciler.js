@@ -530,9 +530,6 @@ function reconcileSelection(
     return;
   }
 
-  console.log(nextAnchorOffset);
-  console.log(nextFocusOffset);
-
   // Apply the updated selection to the DOM. Note: this will trigger
   // a "selectionchange" event, although it will be asynchronous.
   try {

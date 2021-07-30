@@ -509,15 +509,6 @@ export function onCompositionStart(
 
 function applyCompositionEnd(editor: OutlineEditor) {
   editor.update((view) => {
-    const selection = view.getSelection();
-    // Collapse selection when composition ends
-    if (selection !== null && !selection.isCollapsed()) {
-      const anchor = selection.anchor;
-      const focus = selection.focus;
-      anchor.offset = focus.offset;
-      anchor.key = focus.key;
-      selection.isDirty = true;
-    }
     view.setCompositionKey(null);
   }, 'onCompositionEnd');
 }

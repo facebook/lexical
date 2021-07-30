@@ -520,7 +520,6 @@ export function parseViewModel(
   const viewModel = new ViewModel(nodeMap);
   const state = {
     originalSelection: parsedViewModel._selection,
-    remappedSelection: null,
   };
   const previousActiveViewModel = viewModel;
   const previousReadOnlyMode = isReadOnlyMode;

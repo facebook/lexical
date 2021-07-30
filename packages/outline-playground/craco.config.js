@@ -5,7 +5,6 @@ module.exports = {
       'outline/HeadingNode': 'outline/dist/OutlineHeadingNode',
       'outline/ListNode': 'outline/dist/OutlineListNode',
       'outline/ListItemNode': 'outline/dist/OutlineListItemNode',
-      'outline/ImageNode': 'outline/dist/OutlineImageNode',
       'outline/QuoteNode': 'outline/dist/OutlineQuoteNode',
       'outline/ParagraphNode': 'outline/dist/OutlineParagraphNode',
       'outline/CodeNode': 'outline/dist/OutlineCodeNode',

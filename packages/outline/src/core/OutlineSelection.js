@@ -424,7 +424,6 @@ export function createSelection(
   const useDOMSelection =
     isSelectionChange ||
     eventType === 'beforeinput' ||
-    eventType === 'input' ||
     eventType === 'compositionstart' ||
     eventType === 'compositionend';
   let anchorDOM, focusDOM, anchorOffset, focusOffset;

@@ -603,8 +603,19 @@ function updateTextNodeFromDOMContent(
         view.markNodeAsDirty(node);
         return;
       }
-      const originalTextContent = node.getTextContent();
       const selection = view.getSelection();
+      const domSelection = window.getSelection();
+      const range =
+        domSelection === null || domSelection.rangeCount === 0
+          ? null
+          : domSelection.getRangeAt(0);
+
+      if (domSelection === null || selection === null || range === null) {
+        node.setTextContent(textContent);
+        return;
+      }
+      const originalTextContent = node.getTextContent();
+      selection.applyDOMRange(range);
       const nodeKey = node.getKey();
 
       if (
@@ -628,15 +639,11 @@ function updateTextNodeFromDOMContent(
       node.setTextContent(textContent);
 
       if (
-        selection !== null &&
         selection.isCollapsed() &&
-        selection.anchor.key === nodeKey
+        selection.anchor.key === nodeKey &&
+        rawTextContent[0] === ZERO_WIDTH_JOINER_CHAR
       ) {
-        const domSelection = window.getSelection();
-        let offset = domSelection.focusOffset;
-        if (rawTextContent[0] === ZERO_WIDTH_JOINER_CHAR) {
-          offset--;
-        }
+        const offset = domSelection.focusOffset - 1;
         node.select(offset, offset);
       }
     }

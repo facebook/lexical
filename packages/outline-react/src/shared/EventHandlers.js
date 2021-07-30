@@ -603,8 +603,19 @@ function updateTextNodeFromDOMContent(
         view.markNodeAsDirty(node);
         return;
       }
-      const originalTextContent = node.getTextContent();
       const selection = view.getSelection();
+      const domSelection = window.getSelection();
+      const range =
+        domSelection === null || domSelection.rangeCount === 0
+          ? null
+          : domSelection.getRangeAt(0);
+
+      if (domSelection === null || selection === null || range === null) {
+        node.setTextContent(textContent);
+        return;
+      }
+      const originalTextContent = node.getTextContent();
+      selection.applyDOMRange(range);
       const nodeKey = node.getKey();
 
       if (
@@ -628,15 +639,11 @@ function updateTextNodeFromDOMContent(
       node.setTextContent(textContent);
 
       if (
-        selection !== null &&
         selection.isCollapsed() &&
-        selection.anchor.key === nodeKey
+        selection.anchor.key === nodeKey &&
+        rawTextContent[0] === ZERO_WIDTH_JOINER_CHAR
       ) {
-        const domSelection = window.getSelection();
-        let offset = domSelection.focusOffset;
-        if (rawTextContent[0] === ZERO_WIDTH_JOINER_CHAR) {
-          offset--;
-        }
+        const offset = domSelection.focusOffset - 1;
         node.select(offset, offset);
       }
     }
@@ -1003,7 +1010,7 @@ export function onMutation(
   observer: MutationObserver,
 ): void {
   editor.update((view: View) => {
-    let needsSelectionFixing = false;
+    let shouldRevertSelection = false;
 
     for (let i = 0; i < mutations.length; i++) {
       const mutation = mutations[i];
@@ -1020,33 +1027,47 @@ export function onMutation(
           updateTextNodeFromDOMContent(((target: any): Text), view, editor);
         }
       } else if (type === 'childList') {
-        needsSelectionFixing = true;
+        shouldRevertSelection = true;
         // We attempt to "undo" any changes that have occured outside
         // of Outline. We want Outline's view model to be source of truth.
         // To the user, these will look like no-ops.
-        const nextSibling = mutation.nextSibling;
-        const addedNodes = mutation.addedNodes;
-        const removedNodes = mutation.removedNodes;
+        const addedDOMs = mutation.addedNodes;
+        const removedDOMs = mutation.removedNodes;
+        const siblingDOM = mutation.nextSibling;
 
-        for (let s = 0; s < removedNodes.length; s++) {
-          const removedDOM = removedNodes[s];
-          if (nextSibling != null) {
-            let ancestor = nextSibling;
+        for (let s = 0; s < removedDOMs.length; s++) {
+          const removedDOM = removedDOMs[s];
+          const node = getNodeFromDOMNode(view, removedDOM);
+          let placementDOM = siblingDOM;
 
-            while (ancestor != null) {
-              const parentDOM = ancestor.parentNode;
+          if (node !== null) {
+            const nextSibling = node.getNextSibling();
+            if (nextSibling !== null) {
+              const key = nextSibling.getKey();
+              const nextSiblingDOM = editor.getElementByKey(key);
+              if (
+                nextSiblingDOM !== null &&
+                nextSiblingDOM.parentNode !== null
+              ) {
+                placementDOM = nextSiblingDOM;
+              }
+            }
+          }
+          if (placementDOM != null) {
+            while (placementDOM != null) {
+              const parentDOM = placementDOM.parentNode;
               if (parentDOM === target) {
-                target.insertBefore(removedDOM, ancestor);
+                target.insertBefore(removedDOM, placementDOM);
                 break;
               }
-              ancestor = parentDOM;
+              placementDOM = parentDOM;
             }
           } else {
             target.appendChild(removedDOM);
           }
         }
-        for (let s = 0; s < addedNodes.length; s++) {
-          const addedDOM = addedNodes[s];
+        for (let s = 0; s < addedDOMs.length; s++) {
+          const addedDOM = addedDOMs[s];
           const node = getNodeFromDOMNode(view, addedDOM);
           const parentDOM = addedDOM.parentNode;
           if (parentDOM != null && node === null) {
@@ -1080,7 +1101,7 @@ export function onMutation(
       observer.takeRecords();
     }
 
-    if (needsSelectionFixing) {
+    if (shouldRevertSelection) {
       const lastSelection = getLastSelection(editor);
       if (lastSelection !== null) {
         const selection = lastSelection.clone();

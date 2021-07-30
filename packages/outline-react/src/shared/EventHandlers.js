@@ -723,6 +723,14 @@ export function onBeforeInputForPlainText(
 ): void {
   const inputType = event.inputType;
 
+  // We let the browser do its own thing for composition.
+  if (
+    inputType === 'deleteCompositionText' ||
+    inputType === 'insertCompositionText'
+  ) {
+    return;
+  }
+
   editor.update((view) => {
     const selection = view.getSelection();
 
@@ -744,13 +752,6 @@ export function onBeforeInputForPlainText(
     if (isBadDoubleSpacePeriodReplacment(event, selection)) {
       event.preventDefault();
       insertText(selection, '  ');
-      return;
-    }
-    // We let the browser do its own thing for composition.
-    if (
-      inputType === 'deleteCompositionText' ||
-      inputType === 'insertCompositionText'
-    ) {
       return;
     }
     const anchor = selection.anchor;
@@ -868,6 +869,14 @@ export function onBeforeInputForRichText(
 ): void {
   const inputType = event.inputType;
 
+  // We let the browser do its own thing for composition.
+  if (
+    inputType === 'deleteCompositionText' ||
+    inputType === 'insertCompositionText'
+  ) {
+    return;
+  }
+
   editor.update((view) => {
     const selection = view.getSelection();
 
@@ -889,13 +898,6 @@ export function onBeforeInputForRichText(
     if (isBadDoubleSpacePeriodReplacment(event, selection)) {
       event.preventDefault();
       insertText(selection, '  ');
-      return;
-    }
-    // We let the browser do its own thing for composition.
-    if (
-      inputType === 'deleteCompositionText' ||
-      inputType === 'insertCompositionText'
-    ) {
       return;
     }
     const anchor = selection.anchor;

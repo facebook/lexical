@@ -512,7 +512,12 @@ export function onCompositionEnd(
   editor: OutlineEditor,
 ): void {
   editor.update((view) => {
-    updateTextNodeFromSelectionAnchor(view, editor);
+    // Update the text content with the latest composition text
+    const domSelection = window.getSelection();
+    const anchorDOM = domSelection === null ? null : domSelection.anchorNode;
+    if (anchorDOM !== null && anchorDOM.nodeType === 3) {
+      updateTextNodeFromDOMContent(anchorDOM, view, editor);
+    }
     view.setCompositionKey(null);
   }, 'onCompositionEnd');
 }
@@ -635,30 +640,6 @@ function updateTextNodeFromDOMContent(
         node.select(offset, offset);
       }
     }
-  }
-}
-
-function updateTextNodeFromSelectionAnchor(
-  view: View,
-  editor: OutlineEditor,
-): void {
-  const domSelection = window.getSelection();
-  const anchorDOM = domSelection === null ? null : domSelection.anchorNode;
-  if (anchorDOM !== null && anchorDOM.nodeType === 3) {
-    updateTextNodeFromDOMContent(anchorDOM, view, editor);
-  }
-}
-
-export function onInput(event: InputEvent, editor: OutlineEditor): void {
-  const inputType = event.inputType;
-  if (
-    inputType === 'insertText' ||
-    inputType === 'insertCompositionText' ||
-    inputType === 'deleteCompositionText'
-  ) {
-    editor.update((view) => {
-      updateTextNodeFromSelectionAnchor(view, editor);
-    }, 'onInput');
   }
 }
 
@@ -1022,6 +1003,8 @@ export function onMutation(
   observer: MutationObserver,
 ): void {
   editor.update((view: View) => {
+    let needsSelectionFixing = false;
+
     for (let i = 0; i < mutations.length; i++) {
       const mutation = mutations[i];
       const type = mutation.type;
@@ -1037,6 +1020,7 @@ export function onMutation(
           updateTextNodeFromDOMContent(((target: any): Text), view, editor);
         }
       } else if (type === 'childList') {
+        needsSelectionFixing = true;
         // We attempt to "undo" any changes that have occured outside
         // of Outline. We want Outline's view model to be source of truth.
         // To the user, these will look like no-ops.
@@ -1071,15 +1055,6 @@ export function onMutation(
         }
       }
     }
-    const selection = view.getSelection();
-    if (selection === null) {
-      // Looks like a text node was added and selection was moved to it.
-      // We can attempt to restore the last selection.
-      const lastSelection = getLastSelection(editor);
-      if (lastSelection !== null) {
-        view.setSelection(lastSelection);
-      }
-    }
 
     // Capture all the mutations made during this function. This
     // also prevents us having to process them on the next cycle
@@ -1103,6 +1078,15 @@ export function onMutation(
       }
       // Clear any of those removal mutations
       observer.takeRecords();
+    }
+
+    if (needsSelectionFixing) {
+      const lastSelection = getLastSelection(editor);
+      if (lastSelection !== null) {
+        const selection = lastSelection.clone();
+        selection.isDirty = true;
+        view.setSelection(selection);
+      }
     }
   }, 'onMutation');
 }

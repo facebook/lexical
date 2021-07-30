@@ -18,7 +18,7 @@ import useOutlineEditor from 'outline-react/useOutlineEditor';
 import usePlainText from 'outline-react/useOutlinePlainText';
 import useOutlineAutoFormatter from 'outline-react/useOutlineAutoFormatter';
 import useOutlineDecorators from 'outline-react/useOutlineDecorators';
-import {ImageNode, createImageNode} from 'outline/ImageNode';
+import {ImageNode, createImageNode} from './ImageNode';
 import {insertNodes} from 'outline/SelectionHelpers';
 import useFloatingToolbar from './useFloatingToolbar';
 import useHashtags from './useHashtags';

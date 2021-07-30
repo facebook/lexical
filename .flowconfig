@@ -25,7 +25,6 @@ module.name_mapper='^outline/ParagraphNode' -> '<PROJECT_ROOT>/packages/outline/
 module.name_mapper='^outline/CodeNode' -> '<PROJECT_ROOT>/packages/outline/src/extensions/OutlineCodeNode.js'
 module.name_mapper='^outline/LinkNode' -> '<PROJECT_ROOT>/packages/outline/src/extensions/OutlineLinkNode.js'
 module.name_mapper='^outline/HashtagNode' -> '<PROJECT_ROOT>/packages/outline/src/extensions/OutlineHashtagNode.js'
-module.name_mapper='^outline/ImageNode' -> '<PROJECT_ROOT>/packages/outline/src/extensions/OutlineImageNode.js'
 
 module.name_mapper='^outline/HistoryHelpers' -> '<PROJECT_ROOT>/packages/outline/src/helpers/OutlineHistoryHelpers.js'
 module.name_mapper='^outline/SelectionHelpers' -> '<PROJECT_ROOT>/packages/outline/src/helpers/OutlineSelectionHelpers.js'

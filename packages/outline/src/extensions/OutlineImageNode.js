@@ -279,7 +279,7 @@ function ImageComponent({
           width={width}
           height={height}
         />
-        {(resizable && (hasFocus || isResizing)) && (
+        {resizable && (hasFocus || isResizing) && (
           <ImageResizer
             editor={editor}
             imageRef={ref}

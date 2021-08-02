@@ -397,7 +397,7 @@ function resolveSelectionPoints(
     const lastSelection = currentViewModel._selection;
     if (
       editor.isComposing() &&
-      editor._compositionKey !== resolvedAnchorPoint &&
+      editor._compositionKey !== resolvedAnchorPoint.key &&
       lastSelection !== null
     ) {
       resolvedAnchorPoint.key = lastSelection.anchor.key;

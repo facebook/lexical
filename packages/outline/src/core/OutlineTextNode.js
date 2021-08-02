@@ -448,7 +448,14 @@ export class TextNode extends OutlineNode {
       focusOffset = 0;
     }
     if (selection === null) {
-      return makeSelection(key, anchorOffset, key, focusOffset);
+      return makeSelection(
+        key,
+        anchorOffset,
+        key,
+        focusOffset,
+        'character',
+        'character',
+      );
     } else {
       const compositionKey = getCompositionKey();
       if (
@@ -457,7 +464,7 @@ export class TextNode extends OutlineNode {
       ) {
         setCompositionKey(key);
       }
-      selection.setBaseAndExtent(key, anchorOffset, key, focusOffset);
+      selection.setBaseAndExtent(this, anchorOffset, this, focusOffset);
     }
     return selection;
   }
@@ -579,6 +586,7 @@ export class TextNode extends OutlineNode {
 
         if (
           anchor.key === key &&
+          anchor.type === 'character' &&
           anchorOffset > textSize &&
           anchorOffset <= nextTextSize
         ) {
@@ -588,6 +596,7 @@ export class TextNode extends OutlineNode {
         }
         if (
           focus.key === key &&
+          focus.type === 'character' &&
           focusOffset > textSize &&
           focusOffset <= nextTextSize
         ) {

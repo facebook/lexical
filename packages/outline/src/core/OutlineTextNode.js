@@ -504,7 +504,7 @@ export class TextNode extends OutlineNode {
         invariant(false, 'spliceText: selection not found');
       }
       const newOffset = offset + handledTextLength;
-      selection.setBaseAndExtent(key, newOffset, key, newOffset);
+      selection.setBaseAndExtent(writableSelf, newOffset, writableSelf, newOffset);
     }
 
     const updatedText =

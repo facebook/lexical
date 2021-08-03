@@ -42,7 +42,7 @@ type BlockStartPointType = {
   // getNode: () => BlockNode,
 };
 
-type BlockEndPoint = {
+type BlockEndPointType = {
   key: NodeKey,
   offset: 1,
   type: 'end',
@@ -51,7 +51,7 @@ type BlockEndPoint = {
   // getNode: () => BlockNode,
 };
 
-type PointType = CharacterPointType | BlockStartPointType | BlockEndPoint;
+type PointType = CharacterPointType | BlockStartPointType | BlockEndPointType;
 
 class Point {
   key: NodeKey;

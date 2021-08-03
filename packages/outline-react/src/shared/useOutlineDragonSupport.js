@@ -52,7 +52,7 @@ export default function useOutlineDragonSupport(editor: OutlineEditor) {
                 const selection = view.getSelection();
                 if (selection !== null) {
                   const anchor = selection.anchor;
-                  let anchorKey = anchor.key;
+                  let anchorNode = anchor.getNode();
                   let setSelStart = 0;
                   let setSelEnd = 0;
                   // set initial selection
@@ -61,15 +61,15 @@ export default function useOutlineDragonSupport(editor: OutlineEditor) {
                     setSelEnd = blockStart + blockLength;
                     // If the offset is more than the end, make it the end
                     selection.setBaseAndExtent(
-                      anchorKey,
+                      anchorNode,
                       setSelStart,
-                      anchorKey,
+                      anchorNode,
                       setSelEnd,
                     );
                   }
                   if (setSelStart !== setSelEnd || text !== '') {
                     insertRichText(selection, text);
-                    anchorKey = anchor.key;
+                    anchorNode = anchor.getNode();
                   }
                   // set final selection
                   setSelStart = selStart;
@@ -87,9 +87,9 @@ export default function useOutlineDragonSupport(editor: OutlineEditor) {
                       ? anchorNodeTextLength
                       : setSelEnd;
                   selection.setBaseAndExtent(
-                    anchorKey,
+                    anchorNode,
                     setSelStart,
-                    anchorKey,
+                    anchorNode,
                     setSelEnd,
                   );
                   // block the chrome extension from handling this event

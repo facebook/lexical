@@ -33,35 +33,39 @@ declare type CharacterPointType = {
   getNode: () => TextNode,
 };
 
-// type BlockStartPointType = {
-//   key: NodeKey,
-//   offset: 0,
-//   type: 'start',
-//   is: (PointType) => boolean,
-//   getNode: () => BlockNode,
-// };
+type BlockStartPointType = {
+  key: NodeKey,
+  offset: 0,
+  type: 'start',
+  is: (PointType) => boolean,
+  getNode: () => TextNode,
+  // getNode: () => BlockNode,
+};
 
-// type BlockEndPoint = {
-//   key: NodeKey,
-//   offset: 1,
-//   type: 'end',
-//   is: (PointType) => boolean,
-//   getNode: () => BlockNode,
-// };
+type BlockEndPoint = {
+  key: NodeKey,
+  offset: 1,
+  type: 'end',
+  is: (PointType) => boolean,
+  getNode: () => TextNode,
+  // getNode: () => BlockNode,
+};
 
-// type PointType = CharacterPointType | BlockStartPointType | BlockEndPoint;
-
-type PointType = CharacterPointType;
+type PointType = CharacterPointType | BlockStartPointType | BlockEndPoint;
 
 class Point {
   key: NodeKey;
   offset: number;
-  type: 'character';
+  type: 'character' | 'start' | 'end';
 
-  constructor(key: NodeKey, offset: number) {
+  constructor(
+    key: NodeKey,
+    offset: number,
+    type: 'character' | 'start' | 'end',
+  ) {
     this.key = key;
     this.offset = offset;
-    this.type = 'character';
+    this.type = type;
   }
   is(point: PointType): boolean {
     return this.key === point.key && this.offset === point.offset;
@@ -76,9 +80,26 @@ class Point {
   }
 }
 
-function createPoint(key: NodeKey, offset: number): PointType {
+function createPoint(
+  key: NodeKey,
+  offset: number,
+  type: 'character' | 'start' | 'end',
+): PointType {
   // $FlowFixMe: intentionally cast as we use a class for perf reasons
-  return new Point(key, offset);
+  return new Point(key, offset, type);
+}
+
+function setPointValues(
+  point: PointType,
+  key: NodeKey,
+  offset: number,
+  type: 'character' | 'start' | 'end',
+): void {
+  point.key = key;
+  // $FlowFixMe: internal utility function
+  point.offset = offset;
+  // $FlowFixMe: internal utility function
+  point.type = type;
 }
 
 export class Selection {
@@ -107,15 +128,13 @@ export class Selection {
     return anchorNode.getNodesBetween(focusNode);
   }
   setBaseAndExtent(
-    anchorKey: NodeKey,
+    anchorNode: TextNode,
     anchorOffset: number,
-    focusKey: NodeKey,
+    focusNode: TextNode,
     focusOffset: number,
   ): void {
-    this.anchor.offset = anchorOffset;
-    this.focus.offset = focusOffset;
-    this.anchor.key = anchorKey;
-    this.focus.key = focusKey;
+    setPointValues(this.anchor, anchorNode.__key, anchorOffset, 'character');
+    setPointValues(this.focus, focusNode.__key, focusOffset, 'character');
     this.isDirty = true;
   }
   getTextContent(): string {
@@ -159,36 +178,51 @@ export class Selection {
   }
   applyDOMRange(range: StaticRange): void {
     const editor = getActiveEditor();
-    const resolvedSelectionNodesAndOffsets = resolveSelectionNodesAndOffsets(
+    const resolvedSelectionPoints = resolveSelectionPoints(
       range.startContainer,
       range.startOffset,
       range.endContainer,
       range.endOffset,
       editor,
     );
-    if (resolvedSelectionNodesAndOffsets === null) {
+    if (resolvedSelectionPoints === null) {
       return;
     }
-    const [anchorNode, focusNode, anchorOffset, focusOffset] =
-      resolvedSelectionNodesAndOffsets;
-    const anchor = this.anchor;
-    const focus = this.focus;
-    anchor.key = anchorNode.__key;
-    focus.key = focusNode.__key;
-    anchor.offset = anchorOffset;
-    focus.offset = focusOffset;
+    const [anchorPoint, focusPoint] = resolvedSelectionPoints;
+    setPointValues(
+      this.anchor,
+      anchorPoint.key,
+      anchorPoint.offset,
+      anchorPoint.type,
+    );
+    setPointValues(
+      this.focus,
+      focusPoint.key,
+      focusPoint.offset,
+      focusPoint.type,
+    );
   }
   clone(): Selection {
     const anchor = this.anchor;
     const focus = this.focus;
     return new Selection(
-      createPoint(anchor.key, anchor.offset),
-      createPoint(focus.key, focus.offset),
+      createPoint(anchor.key, anchor.offset, anchor.type),
+      createPoint(focus.key, focus.offset, focus.type),
     );
+  }
+  swapPoints(): void {
+    const focus = this.focus;
+    const anchor = this.anchor;
+    const anchorKey = anchor.key;
+    const anchorOffset = anchor.offset;
+    const anchorType = anchor.type;
+
+    setPointValues(anchor, focus.key, focus.offset, focus.type);
+    setPointValues(focus, anchorKey, anchorOffset, anchorType);
   }
 }
 
-function resolveNonLineBreakOrInertNode(node: OutlineNode): [TextNode, number] {
+function resolveNonLineBreakOrInertNode(node: OutlineNode): PointType {
   const resolvedNode = node.getPreviousSibling();
   if (!isTextNode(resolvedNode)) {
     invariant(
@@ -197,7 +231,7 @@ function resolveNonLineBreakOrInertNode(node: OutlineNode): [TextNode, number] {
     );
   }
   const offset = resolvedNode.getTextContentSize();
-  return [resolvedNode, offset];
+  return createPoint(resolvedNode.__key, offset, 'character');
 }
 
 function getNodeFromDOM(dom: Node): null | OutlineNode {
@@ -212,11 +246,11 @@ function domIsElement(dom: Node): boolean {
   return dom.nodeType === 1;
 }
 
-function resolveSelectionNodeAndOffset(
+function resolveSelectionPoint(
   dom: Node,
   offset: number,
   editor: OutlineEditor,
-): null | [TextNode, number] {
+): null | PointType {
   let resolvedDOM = dom;
   let resolvedOffset = offset;
   let resolvedNode;
@@ -286,16 +320,16 @@ function resolveSelectionNodeAndOffset(
     resolvedOffset = 0;
   }
 
-  return [resolvedNode, resolvedOffset];
+  return createPoint(resolvedNode.__key, resolvedOffset, 'character');
 }
 
-function resolveSelectionNodesAndOffsets(
+function resolveSelectionPoints(
   anchorDOM: null | Node,
   anchorOffset: number,
   focusDOM: null | Node,
   focusOffset: number,
   editor: OutlineEditor,
-): null | [TextNode, TextNode, number, number] {
+): null | [PointType, PointType] {
   if (
     anchorDOM === null ||
     focusDOM === null ||
@@ -303,76 +337,77 @@ function resolveSelectionNodesAndOffsets(
   ) {
     return null;
   }
-  const resolveAnchorNodeAndOffset = resolveSelectionNodeAndOffset(
+  const resolvedAnchorPoint = resolveSelectionPoint(
     anchorDOM,
     anchorOffset,
     editor,
   );
-  if (resolveAnchorNodeAndOffset === null) {
+  if (resolvedAnchorPoint === null) {
     return null;
   }
-  let resolvedAnchorNode = resolveAnchorNodeAndOffset[0];
-  let resolvedAnchorOffset = resolveAnchorNodeAndOffset[1];
-  const resolveFocusNodeAndOffset = resolveSelectionNodeAndOffset(
+  const resolvedFocusPoint = resolveSelectionPoint(
     focusDOM,
     focusOffset,
     editor,
   );
-  if (resolveFocusNodeAndOffset === null) {
+  if (resolvedFocusPoint === null) {
     return null;
   }
-  let resolvedFocusNode = resolveFocusNodeAndOffset[0];
-  let resolvedFocusOffset = resolveFocusNodeAndOffset[1];
 
-  // Handle normalization of selection when it is at the boundaries.
-  const textContentSize = resolvedAnchorNode.getTextContentSize();
-  // Once we remove zero width characters, we will no longer need this
-  // check as it will become redundant (we won't allow empty text nodes).
-  if (textContentSize !== 0) {
-    if (
-      resolvedAnchorNode === resolvedFocusNode &&
-      resolvedAnchorOffset === resolvedFocusOffset
-    ) {
-      if (resolvedAnchorOffset === 0) {
-        const prevSibling = resolvedAnchorNode.getPreviousSibling();
-        if (isTextNode(prevSibling) && !prevSibling.isImmutable()) {
-          const offset = prevSibling.getTextContentSize();
-          resolvedAnchorNode = prevSibling;
-          resolvedFocusNode = prevSibling;
-          resolvedAnchorOffset = offset;
-          resolvedFocusOffset = offset;
+  if (
+    resolvedAnchorPoint.type === 'character' &&
+    resolvedFocusPoint.type === 'character'
+  ) {
+    const resolvedAnchorNode = resolvedAnchorPoint.getNode();
+    const resolvedFocusNode = resolvedFocusPoint.getNode();
+    // Handle normalization of selection when it is at the boundaries.
+    const textContentSize = resolvedAnchorNode.getTextContentSize();
+    // Once we remove zero width characters, we will no longer need this
+    // check as it will become redundant (we won't allow empty text nodes).
+    if (textContentSize !== 0) {
+      const resolvedAnchorOffset = resolvedAnchorPoint.offset;
+      const resolvedFocusOffset = resolvedFocusPoint.offset;
+      if (
+        resolvedAnchorNode === resolvedFocusNode &&
+        resolvedAnchorOffset === resolvedFocusOffset
+      ) {
+        if (anchorOffset === 0) {
+          const prevSibling = resolvedAnchorNode.getPreviousSibling();
+          if (isTextNode(prevSibling) && !prevSibling.isImmutable()) {
+            const offset = prevSibling.getTextContentSize();
+            const key = prevSibling.__key;
+            resolvedAnchorPoint.key = key;
+            resolvedFocusPoint.key = key;
+            resolvedAnchorPoint.offset = offset;
+            resolvedFocusPoint.offset = offset;
+          }
         }
-      }
-    } else {
-      if (resolvedAnchorOffset === textContentSize) {
-        const nextSibling = resolvedAnchorNode.getNextSibling();
-        if (isTextNode(nextSibling) && !nextSibling.isImmutable()) {
-          resolvedAnchorNode = nextSibling;
-          resolvedAnchorOffset = 0;
+      } else {
+        if (resolvedAnchorOffset === textContentSize) {
+          const nextSibling = resolvedAnchorNode.getNextSibling();
+          if (isTextNode(nextSibling) && !nextSibling.isImmutable()) {
+            resolvedAnchorPoint.key = nextSibling.__key;
+            resolvedAnchorPoint.offset = 0;
+          }
         }
       }
     }
+
+    const currentViewModel = editor.getViewModel();
+    const lastSelection = currentViewModel._selection;
+    if (
+      editor.isComposing() &&
+      editor._compositionKey !== resolvedAnchorPoint.key &&
+      lastSelection !== null
+    ) {
+      resolvedAnchorPoint.key = lastSelection.anchor.key;
+      resolvedAnchorPoint.offset = lastSelection.anchor.offset;
+      resolvedFocusPoint.key = lastSelection.focus.key;
+      resolvedFocusPoint.offset = lastSelection.focus.offset;
+    }
   }
 
-  const currentViewModel = editor.getViewModel();
-  const lastSelection = currentViewModel._selection;
-  if (
-    editor.isComposing() &&
-    editor._compositionKey !== resolvedAnchorNode.__key &&
-    lastSelection !== null
-  ) {
-    resolvedAnchorNode = lastSelection.anchor.getNode();
-    resolvedAnchorOffset = lastSelection.anchor.offset;
-    resolvedFocusNode = lastSelection.focus.getNode();
-    resolvedFocusOffset = lastSelection.focus.offset;
-  }
-
-  return [
-    resolvedAnchorNode,
-    resolvedFocusNode,
-    resolvedAnchorOffset,
-    resolvedFocusOffset,
-  ];
+  return [resolvedAnchorPoint, resolvedFocusPoint];
 }
 
 // This is used to make a selection when the existing
@@ -383,11 +418,13 @@ export function makeSelection(
   anchorOffset: number,
   focusKey: NodeKey,
   focusOffset: number,
+  anchorType: 'character' | 'start' | 'end',
+  focusType: 'character' | 'start' | 'end',
 ): Selection {
   const viewModel = getActiveViewModel();
   const selection = new Selection(
-    createPoint(anchorKey, anchorOffset),
-    createPoint(focusKey, focusOffset),
+    createPoint(anchorKey, anchorOffset, anchorType),
+    createPoint(focusKey, focusOffset, focusType),
   );
   selection.isDirty = true;
   viewModel._selection = selection;
@@ -438,36 +475,27 @@ export function createSelection(
     anchorOffset = domSelection.anchorOffset;
     focusOffset = domSelection.focusOffset;
   } else {
+    const lastAnchor = lastSelection.anchor;
+    const lastFocus = lastSelection.focus;
     return new Selection(
-      createPoint(lastSelection.anchor.key, lastSelection.anchor.offset),
-      createPoint(lastSelection.focus.key, lastSelection.focus.offset),
+      createPoint(lastAnchor.key, lastAnchor.offset, lastAnchor.type),
+      createPoint(lastFocus.key, lastFocus.offset, lastFocus.type),
     );
   }
   // Let's resolve the text nodes from the offsets and DOM nodes we have from
   // native selection.
-  const resolvedSelectionNodesAndOffsets = resolveSelectionNodesAndOffsets(
+  const resolvedSelectionPoints = resolveSelectionPoints(
     anchorDOM,
     anchorOffset,
     focusDOM,
     focusOffset,
     editor,
   );
-  if (resolvedSelectionNodesAndOffsets === null) {
+  if (resolvedSelectionPoints === null) {
     return null;
   }
-  const [
-    resolvedAnchorNode,
-    resolvedFocusNode,
-    resolvedAnchorOffset,
-    resolvedFocusOffset,
-  ] = resolvedSelectionNodesAndOffsets;
-
-  const selection = new Selection(
-    createPoint(resolvedAnchorNode.__key, resolvedAnchorOffset),
-    createPoint(resolvedFocusNode.__key, resolvedFocusOffset),
-  );
-
-  return selection;
+  const [resolvedAnchorPoint, resolvedFocusPoint] = resolvedSelectionPoints;
+  return new Selection(resolvedAnchorPoint, resolvedFocusPoint);
 }
 
 export function getSelection(): null | Selection {
@@ -480,17 +508,27 @@ export function createSelectionFromParse(
     anchor: {
       key: string,
       offset: number,
+      type: 'character' | 'start' | 'end',
     },
     focus: {
       key: string,
       offset: number,
+      type: 'character' | 'start' | 'end',
     },
   },
 ): null | Selection {
   return parsedSelection === null
     ? null
     : new Selection(
-        createPoint(parsedSelection.anchor.key, parsedSelection.anchor.offset),
-        createPoint(parsedSelection.focus.key, parsedSelection.focus.offset),
+        createPoint(
+          parsedSelection.anchor.key,
+          parsedSelection.anchor.offset,
+          parsedSelection.anchor.type,
+        ),
+        createPoint(
+          parsedSelection.focus.key,
+          parsedSelection.focus.offset,
+          parsedSelection.focus.type,
+        ),
       );
 }

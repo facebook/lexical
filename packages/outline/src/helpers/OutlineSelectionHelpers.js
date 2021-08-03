@@ -320,12 +320,7 @@ export function formatText(
         selectedNode.setFlags(selectedNextFlags);
       }
     }
-    selection.setBaseAndExtent(
-      firstNode.getKey(),
-      startOffset,
-      lastNode.getKey(),
-      endOffset,
-    );
+    selection.setBaseAndExtent(firstNode, startOffset, lastNode, endOffset);
   }
 }
 
@@ -469,13 +464,19 @@ export function updateCaretSelectionForUnicodeCharacter(
   selection: Selection,
   isBackward: boolean,
 ): void {
-  const anchorNode = selection.anchor.getNode();
-  const focusNode = selection.focus.getNode();
+  const anchor = selection.anchor;
+  const focus = selection.focus;
+  const anchorNode = anchor.getNode();
+  const focusNode = focus.getNode();
 
-  if (anchorNode === focusNode) {
+  if (
+    anchorNode === focusNode &&
+    anchor.type === 'character' &&
+    focus.type === 'character'
+  ) {
     // Handling of multibyte characters
-    const anchorOffset = selection.anchor.offset;
-    const focusOffset = selection.focus.offset;
+    const anchorOffset = anchor.offset;
+    const focusOffset = focus.offset;
     const isBefore = anchorOffset < focusOffset;
     const startOffset = isBefore ? anchorOffset : focusOffset;
     const endOffset = isBefore ? focusOffset : anchorOffset;
@@ -485,9 +486,9 @@ export function updateCaretSelectionForUnicodeCharacter(
       const text = anchorNode.getTextContent().slice(startOffset, endOffset);
       if (!doesContainGrapheme(text)) {
         if (isBackward) {
-          selection.focus.offset = characterOffset;
+          focus.offset = characterOffset;
         } else {
-          selection.anchor.offset = characterOffset;
+          anchor.offset = characterOffset;
         }
       }
     }
@@ -672,14 +673,7 @@ export function updateCaretSelectionForRange(
       (domSelection.anchorNode !== range.startContainer ||
         domSelection.anchorOffset !== range.startOffset)
     ) {
-      const anchor = selection.anchor;
-      const focus = selection.focus;
-      const anchorKey = anchor.key;
-      const anchorOffset = anchor.offset;
-      anchor.key = focus.key;
-      anchor.offset = focus.offset;
-      focus.key = anchorKey;
-      focus.offset = anchorOffset;
+      selection.swapPoints();
     }
   }
 }
@@ -862,7 +856,7 @@ export function insertText(selection: Selection, text: string): void {
     const delCount = endOffset - startOffset;
 
     firstNode.spliceText(startOffset, delCount, text, true);
-    if (firstNode.isComposing()) {
+    if (firstNode.isComposing() && selection.anchor.type === 'character') {
       selection.anchor.offset -= text.length;
     }
   } else {
@@ -951,7 +945,7 @@ export function insertText(selection: Selection, text: string): void {
         text,
         true,
       );
-      if (firstNode.isComposing()) {
+      if (firstNode.isComposing() && selection.anchor.type === 'character') {
         selection.anchor.offset -= text.length;
       }
     }
@@ -982,9 +976,9 @@ export function selectAll(selection: Selection): void {
   const lastTextNode = root.getLastTextNode();
   if (firstTextNode !== null && lastTextNode !== null) {
     selection.setBaseAndExtent(
-      firstTextNode.getKey(),
+      firstTextNode,
       0,
-      lastTextNode.getKey(),
+      lastTextNode,
       lastTextNode.getTextContentSize(),
     );
   }

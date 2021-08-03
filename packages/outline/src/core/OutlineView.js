@@ -57,10 +57,12 @@ export type ParsedViewModel = {
     anchor: {
       key: string,
       offset: number,
+      type: 'character' | 'start' | 'end',
     },
     focus: {
       key: string,
       offset: number,
+      type: 'character' | 'start' | 'end',
     },
   },
   _nodeMap: Array<[NodeKey, ParsedNode]>,
@@ -495,10 +497,12 @@ export class ViewModel {
                 anchor: {
                   key: selection.anchor.key,
                   offset: selection.anchor.offset,
+                  type: selection.anchor.type,
                 },
                 focus: {
                   key: selection.focus.key,
                   offset: selection.focus.offset,
+                  type: selection.focus.type,
                 },
               },
       },

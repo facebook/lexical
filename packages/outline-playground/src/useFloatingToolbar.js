@@ -7,7 +7,13 @@
  * @flow strict-local
  */
 
-import type {OutlineEditor, Selection, TextFormatType, TextNode, BlockNode} from 'outline';
+import type {
+  OutlineEditor,
+  Selection,
+  TextFormatType,
+  TextNode,
+  BlockNode,
+} from 'outline';
 
 import {createTextNode, isTextNode} from 'outline';
 import React, {useCallback, useEffect, useRef, useState, useMemo} from 'react';

@@ -61,7 +61,7 @@ export function getNodesInRange(selection: Selection): {
       const key = firstNode.getKey();
       return {range: [key], nodeMap: [[key, firstNode]]};
     }
-    invariant(false, 'Selection block node not yet implemented.')
+    invariant(false, 'Selection block node not yet implemented.');
   }
   const nodes = selection.getNodes();
   const firstNode = nodes[0];
@@ -330,7 +330,7 @@ export function insertParagraph(selection: Selection): void {
   }
   const anchor = selection.anchor;
   if (anchor.type !== 'character') {
-    invariant(false, 'Selection block node not yet implemented.')
+    invariant(false, 'Selection block node not yet implemented.');
   }
   const anchorNode = anchor.getNode();
   if (anchorNode.isSegmented()) {
@@ -717,7 +717,7 @@ export function insertNodes(
   }
   const anchor = selection.anchor;
   if (anchor.type !== 'character') {
-    invariant(false, 'Selection block node not yet implemented.')
+    invariant(false, 'Selection block node not yet implemented.');
   }
 
   const anchorOffset = anchor.offset;

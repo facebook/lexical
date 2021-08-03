@@ -41,5 +41,6 @@
   "39": "findIndexInPrevChildren: index in prevChildren not found",
   "40": "reconcileNodeChildren: keyToMove to was not nextStartKey",
   "41": "storeDOMWithNodeKey: key was null",
-  "42": "Reconciliation: could not find DOM element for node key \"${key}\""
+  "42": "Reconciliation: could not find DOM element for node key \"${key}\"",
+  "43": "Selection block node not yet implemented."
 }

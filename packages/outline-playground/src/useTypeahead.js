@@ -66,11 +66,11 @@ export default function useTypeahead(editor: OutlineEditor): void {
                 focusNodeOffset = focusNode.getTextContent().length;
               }
             }
-            if (focusNode !== null && anchorNode !== null) {
+            if (isTextNode(focusNode) && isTextNode(anchorNode)) {
               selection.setBaseAndExtent(
-                anchorNode.getKey(),
+                anchorNode,
                 anchorNodeOffset,
-                focusNode.getKey(),
+                focusNode,
                 focusNodeOffset,
               );
             }

@@ -617,17 +617,19 @@ function updateTextNodeFromDOMContent(
       const originalTextContent = node.getTextContent();
       selection.applyDOMRange(range);
       const nodeKey = node.getKey();
+      const anchor = selection === null ? null : selection.anchor;
 
       if (
         !CAN_USE_BEFORE_INPUT &&
-        selection !== null &&
-        selection.anchor.key === nodeKey &&
+        anchor !== null &&
+        anchor.type === 'character' &&
+        anchor.key === nodeKey &&
         textContent.indexOf(originalTextContent) === 0 &&
         shouldInsertTextAfterTextNode(selection, node, false)
       ) {
         const insertionText = textContent.slice(originalTextContent.length);
         view.markNodeAsDirty(node);
-        selection.anchor.offset -= insertionText.length;
+        anchor.offset -= insertionText.length;
         insertText(selection, insertionText);
         return;
       } else if (node.isSegmented()) {

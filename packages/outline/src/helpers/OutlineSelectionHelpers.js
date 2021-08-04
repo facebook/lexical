@@ -52,16 +52,16 @@ export function getNodesInRange(selection: Selection): {
   let endOffset;
 
   if (anchorNode === focusNode) {
-    const firstNode = cloneWithProperties<TextNode>(anchorNode);
-    if (!isTextNode(firstNode)) {
-      invariant(false, 'getNodesInRange: firstNode is not a text node');
+    if (isTextNode(anchorNode)) {
+      const firstNode = cloneWithProperties<TextNode>(anchorNode);
+      const isBefore = focusOffset > anchorOffset;
+      startOffset = isBefore ? anchorOffset : focusOffset;
+      endOffset = isBefore ? focusOffset : anchorOffset;
+      firstNode.__text = firstNode.__text.slice(startOffset, endOffset);
+      const key = firstNode.getKey();
+      return {range: [key], nodeMap: [[key, firstNode]]};
     }
-    const isBefore = focusOffset > anchorOffset;
-    startOffset = isBefore ? anchorOffset : focusOffset;
-    endOffset = isBefore ? focusOffset : anchorOffset;
-    firstNode.__text = firstNode.__text.slice(startOffset, endOffset);
-    const key = firstNode.getKey();
-    return {range: [key], nodeMap: [[key, firstNode]]};
+    invariant(false, 'Selection block node not yet implemented.');
   }
   const nodes = selection.getNodes();
   const firstNode = nodes[0];
@@ -328,7 +328,11 @@ export function insertParagraph(selection: Selection): void {
   if (!selection.isCollapsed()) {
     removeText(selection);
   }
-  const anchorNode = selection.anchor.getNode();
+  const anchor = selection.anchor;
+  if (anchor.type !== 'character') {
+    invariant(false, 'Selection block node not yet implemented.');
+  }
+  const anchorNode = anchor.getNode();
   if (anchorNode.isSegmented()) {
     return;
   }
@@ -500,7 +504,11 @@ export function updateCaretSelectionForUnicodeCharacter(
 export function updateCaretSelectionForAdjacentHashtags(
   selection: Selection,
 ): void {
-  const anchorNode = selection.anchor.getNode();
+  const anchor = selection.anchor;
+  if (anchor.type !== 'character') {
+    return;
+  }
+  const anchorNode = anchor.getNode();
   const textContent = anchorNode.getTextContent();
   const anchorOffset = selection.anchor.offset;
 
@@ -528,25 +536,27 @@ export function updateCaretSelectionForAdjacentHashtags(
 function deleteCharacter(selection: Selection, isBackward: boolean): void {
   if (selection.isCollapsed()) {
     updateCaretSelectionForRange(selection, isBackward, 'character', false);
+    const anchor = selection.anchor;
+    const focus = selection.focus;
 
     if (!selection.isCollapsed()) {
-      const focusNode = selection.focus.getNode();
-      const anchorNode = selection.anchor.getNode();
+      const focusNode = focus.type === 'character' ? focus.getNode() : null;
+      const anchorNode = anchor.type === 'character' ? anchor.getNode() : null;
 
-      if (focusNode.isSegmented()) {
+      if (focusNode !== null && focusNode.isSegmented()) {
         removeSegment(focusNode, isBackward);
         return;
-      } else if (anchorNode.isSegmented()) {
+      } else if (anchorNode !== null && anchorNode.isSegmented()) {
         removeSegment(anchorNode, isBackward);
         return;
       }
       updateCaretSelectionForUnicodeCharacter(selection, isBackward);
     } else if (isBackward) {
       // Special handling around rich text nodes
-      const anchorNode = selection.anchor.getNode();
+      const anchorNode = anchor.getNode();
       const parent = anchorNode.getParentOrThrow();
       const parentType = parent.getType();
-      if (selection.anchor.offset === 0 && parentType !== 'paragraph') {
+      if (anchor.offset === 0 && parentType !== 'paragraph') {
         const paragraph = createParagraphNode();
         const children = parent.getChildren();
         children.forEach((child) => paragraph.append(child));
@@ -705,8 +715,13 @@ export function insertNodes(
   if (!selection.isCollapsed()) {
     removeText(selection);
   }
-  const anchorOffset = selection.anchor.offset;
-  const anchorNode = selection.anchor.getNode();
+  const anchor = selection.anchor;
+  if (anchor.type !== 'character') {
+    invariant(false, 'Selection block node not yet implemented.');
+  }
+
+  const anchorOffset = anchor.offset;
+  const anchorNode = anchor.getNode();
   const textContent = anchorNode.getTextContent();
   const textContentLength = textContent.length;
   const siblings = [];
@@ -965,7 +980,9 @@ export function insertText(selection: Selection, text: string): void {
 
 export function moveEnd(selection: Selection): void {
   const anchorNode = selection.anchor.getNode();
-  anchorNode.select();
+  if (isTextNode(anchorNode)) {
+    anchorNode.select();
+  }
 }
 
 export function selectAll(selection: Selection): void {

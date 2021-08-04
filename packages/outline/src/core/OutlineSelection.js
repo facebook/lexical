@@ -9,6 +9,7 @@
 
 import type {OutlineNode, NodeKey} from './OutlineNode';
 import type {OutlineEditor} from './OutlineEditor';
+import type {BlockNode} from './OutlineBlockNode';
 
 import {getActiveEditor, ViewModel} from './OutlineView';
 import {getActiveViewModel} from './OutlineView';
@@ -38,8 +39,7 @@ type BlockStartPointType = {
   offset: 0,
   type: 'start',
   is: (PointType) => boolean,
-  getNode: () => TextNode,
-  // getNode: () => BlockNode,
+  getNode: () => BlockNode,
 };
 
 type BlockEndPointType = {
@@ -47,8 +47,7 @@ type BlockEndPointType = {
   offset: 1,
   type: 'end',
   is: (PointType) => boolean,
-  getNode: () => TextNode,
-  // getNode: () => BlockNode,
+  getNode: () => BlockNode,
 };
 
 type PointType = CharacterPointType | BlockStartPointType | BlockEndPointType;

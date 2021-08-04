@@ -660,11 +660,8 @@ function normalizeTextNodes(block: BlockNode): void {
   for (let i = 0; i < children.length; i++) {
     const child = children[i];
 
-    if (!isTextNode(child)) {
-      continue;
-    }
-
     if (
+      isTextNode(child) &&
       child.__type === 'text' &&
       !child.isImmutable() &&
       !child.isSegmented() &&

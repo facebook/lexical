@@ -8,6 +8,7 @@
  */
 
 import type {NodeKey, ParsedNode} from './OutlineNode';
+import type {Selection} from './OutlineSelection';
 
 import {isTextNode, TextNode, isLineBreakNode} from '.';
 import {
@@ -16,7 +17,7 @@ import {
   wrapInTextNodes,
   updateDirectionIfNeeded,
 } from './OutlineNode';
-import {Selection} from './OutlineSelection';
+import {makeSelection, getSelection, setPointValues} from './OutlineSelection';
 import {errorOnReadOnly} from './OutlineView';
 import {
   IS_DIRECTIONLESS,
@@ -138,6 +139,19 @@ export class BlockNode extends OutlineNode {
 
   // Mutators
 
+  selectEnd(): Selection {
+    errorOnReadOnly();
+    const selection = getSelection();
+    const key = this.__key;
+    if (selection === null) {
+      return makeSelection(key, null, key, null, 'end', 'end');
+    } else {
+      setPointValues(selection.anchor, key, null, 'end');
+      setPointValues(selection.focus, key, null, 'end');
+      selection.isDirty = true;
+    }
+    return selection;
+  }
   clear(): BlockNode {
     errorOnReadOnly();
     const writableSelf = this.getWritable();

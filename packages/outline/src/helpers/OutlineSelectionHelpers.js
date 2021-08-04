@@ -44,10 +44,15 @@ export function getNodesInRange(selection: Selection): {
   range: Array<NodeKey>,
   nodeMap: Array<[NodeKey, OutlineNode]>,
 } {
-  const anchorNode = selection.anchor.getNode();
-  const focusNode = selection.focus.getNode();
-  const anchorOffset = selection.anchor.offset;
-  const focusOffset = selection.focus.offset;
+  const anchor = selection.anchor;
+  const focus = selection.focus;
+  if (anchor.type !== 'character' || focus.type !== 'character') {
+    invariant(false, 'Selection block node not yet implemented.');
+  }
+  const anchorNode = anchor.getNode();
+  const focusNode = focus.getNode();
+  const anchorOffset = anchor.offset;
+  const focusOffset = focus.offset;
   let startOffset;
   let endOffset;
 
@@ -163,14 +168,19 @@ export function extractSelection(selection: Selection): Array<OutlineNode> {
   const selectedNodes = selection.getNodes();
   const selectedNodesLength = selectedNodes.length;
   const lastIndex = selectedNodesLength - 1;
+  const anchor = selection.anchor;
+  const focus = selection.focus;
   let firstNode = selectedNodes[0];
   let lastNode = selectedNodes[lastIndex];
 
   if (!isTextNode(firstNode) || !isTextNode(lastNode)) {
     invariant(false, 'formatText: firstNode/lastNode not a text node');
   }
-  const anchorOffset = selection.anchor.offset;
-  const focusOffset = selection.focus.offset;
+  if (anchor.type !== 'character' || focus.type !== 'character') {
+    invariant(false, 'Selection block node not yet implemented.');
+  }
+  const anchorOffset = anchor.offset;
+  const focusOffset = focus.offset;
   let startOffset;
   let endOffset;
 
@@ -212,16 +222,21 @@ export function formatText(
   if (!isTextNode(firstNode) || !isTextNode(lastNode)) {
     invariant(false, 'formatText: firstNode/lastNode not a text node');
   }
+  const anchor = selection.anchor;
+  const focus = selection.focus;
+  if (anchor.type !== 'character' || focus.type !== 'character') {
+    invariant(false, 'Selection block node not yet implemented.');
+  }
   const firstNodeText = firstNode.getTextContent();
   const firstNodeTextLength = firstNodeText.length;
   const currentBlock = firstNode.getParentBlockOrThrow();
-  const focusOffset = selection.focus.offset;
+  const focusOffset = focus.offset;
   let firstNextFlags = firstNode.getTextNodeFormatFlags(
     formatType,
     null,
     forceFormat,
   );
-  let anchorOffset = selection.anchor.offset;
+  let anchorOffset = anchor.offset;
   let startOffset;
   let endOffset;
 
@@ -320,7 +335,7 @@ export function formatText(
         selectedNode.setFlags(selectedNextFlags);
       }
     }
-    selection.setBaseAndExtent(firstNode, startOffset, lastNode, endOffset);
+    selection.setTextNodeRange(firstNode, startOffset, lastNode, endOffset);
   }
 }
 
@@ -340,7 +355,7 @@ export function insertParagraph(selection: Selection): void {
   const textContentLength = textContent.length;
   const nodesToMove = anchorNode.getNextSiblings().reverse();
   const currentBlock = anchorNode.getParentBlockOrThrow();
-  let anchorOffset = selection.anchor.offset;
+  let anchorOffset = anchor.offset;
 
   if (anchorOffset === 0) {
     nodesToMove.push(anchorNode);
@@ -827,15 +842,20 @@ export function insertRichText(selection: Selection, text: string): void {
 export function insertText(selection: Selection, text: string): void {
   const selectedNodes = selection.getNodes();
   const selectedNodesLength = selectedNodes.length;
-  const anchorOffset = selection.anchor.offset;
-  const focusOffset = selection.focus.offset;
+  const anchor = selection.anchor;
+  const focus = selection.focus;
   let firstNode = selectedNodes[0];
   if (!isTextNode(firstNode)) {
     invariant(false, 'insertText: firstNode not a a text node');
   }
+  if (anchor.type !== 'character' || focus.type !== 'character') {
+    invariant(false, 'Selection block node not yet implemented.');
+  }
+  const anchorOffset = anchor.offset;
+  const focusOffset = focus.offset;
   const firstNodeText = firstNode.getTextContent();
   const firstNodeTextLength = firstNodeText.length;
-  const isBefore = firstNode === selection.anchor.getNode();
+  const isBefore = firstNode === anchor.getNode();
 
   if (firstNode.isSegmented() || !firstNode.canInsertTextAtEnd()) {
     if (selection.isCollapsed() && focusOffset === firstNodeTextLength) {
@@ -992,7 +1012,7 @@ export function selectAll(selection: Selection): void {
   const firstTextNode = root.getFirstTextNode();
   const lastTextNode = root.getLastTextNode();
   if (firstTextNode !== null && lastTextNode !== null) {
-    selection.setBaseAndExtent(
+    selection.setTextNodeRange(
       firstTextNode,
       0,
       lastTextNode,

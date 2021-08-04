@@ -162,6 +162,9 @@ function shouldOverrideBrowserDefault(
 ): boolean {
   const anchor = selection.anchor;
   const focus = selection.focus;
+  if (anchor.type !== 'character' || focus.type !== 'character') {
+    return true;
+  }
   const anchorOffset = anchor.offset;
   const focusOffset = focus.offset;
   const anchorTextContentSize = anchor.getNode().getTextContentSize();
@@ -336,19 +339,21 @@ export function onKeyDownForRichText(
     } else if (isTab(event)) {
       // Handle code blocks
       const anchor = selection.anchor;
-      const anchorNode = anchor.getNode();
-      const parentBlock = anchorNode.getParentBlockOrThrow();
-      if (parentBlock.canInsertTab()) {
-        if (event.shiftKey) {
-          const textContent = anchorNode.getTextContent();
-          const character = textContent[anchor.offset - 1];
-          if (character === '\t') {
-            deleteBackward(selection);
+      if (anchor.type === 'character') {
+        const anchorNode = anchor.getNode();
+        const parentBlock = anchorNode.getParentBlockOrThrow();
+        if (parentBlock.canInsertTab()) {
+          if (event.shiftKey) {
+            const textContent = anchorNode.getTextContent();
+            const character = textContent[anchor.offset - 1];
+            if (character === '\t') {
+              deleteBackward(selection);
+            }
+          } else {
+            insertText(selection, '\t');
           }
-        } else {
-          insertText(selection, '\t');
+          event.preventDefault();
         }
-        event.preventDefault();
       }
     } else if (isSelectAll(event)) {
       event.preventDefault();

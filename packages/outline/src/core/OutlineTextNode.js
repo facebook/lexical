@@ -424,17 +424,14 @@ export class TextNode extends OutlineNode {
   }
   select(_anchorOffset?: number, _focusOffset?: number): Selection {
     errorOnReadOnly();
+    if (this.isImmutable()) {
+      return this.selectNext(0, 0);
+    }
     let anchorOffset = _anchorOffset;
     let focusOffset = _focusOffset;
     const selection = getSelection();
     const text = this.getTextContent();
     const key = this.__key;
-    if (key === null) {
-      invariant(
-        false,
-        'select: TODO? validate nodes have keys in a more generic way',
-      );
-    }
     if (typeof text === 'string') {
       const lastOffset = text.length;
       if (anchorOffset === undefined) {
@@ -464,7 +461,7 @@ export class TextNode extends OutlineNode {
       ) {
         setCompositionKey(key);
       }
-      selection.setBaseAndExtent(this, anchorOffset, this, focusOffset);
+      selection.setTextNodeRange(this, anchorOffset, this, focusOffset);
     }
     return selection;
   }
@@ -504,7 +501,7 @@ export class TextNode extends OutlineNode {
         invariant(false, 'spliceText: selection not found');
       }
       const newOffset = offset + handledTextLength;
-      selection.setBaseAndExtent(
+      selection.setTextNodeRange(
         writableSelf,
         newOffset,
         writableSelf,
@@ -586,27 +583,25 @@ export class TextNode extends OutlineNode {
       if (selection !== null) {
         const anchor = selection.anchor;
         const focus = selection.focus;
-        const anchorOffset = anchor.offset;
-        const focusOffset = focus.offset;
 
         if (
           anchor.key === key &&
           anchor.type === 'character' &&
-          anchorOffset > textSize &&
-          anchorOffset <= nextTextSize
+          anchor.offset > textSize &&
+          anchor.offset <= nextTextSize
         ) {
           anchor.key = siblingKey;
-          anchor.offset = anchorOffset - textSize;
+          anchor.offset -= textSize;
           selection.isDirty = true;
         }
         if (
           focus.key === key &&
           focus.type === 'character' &&
-          focusOffset > textSize &&
-          focusOffset <= nextTextSize
+          focus.offset > textSize &&
+          focus.offset <= nextTextSize
         ) {
           focus.key = siblingKey;
-          focus.offset = focusOffset - textSize;
+          focus.offset -= textSize;
           selection.isDirty = true;
         }
       }

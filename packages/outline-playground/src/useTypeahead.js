@@ -50,29 +50,33 @@ export default function useTypeahead(editor: OutlineEditor): void {
         if (currentTypeaheadNode !== null) {
           const selection = view.getSelection();
           if (selection !== null) {
-            let anchorNode = selection.anchor.getNode();
-            let anchorNodeOffset = selection.anchor.offset;
-            if (anchorNode.getKey() === currentTypeaheadNode.getKey()) {
-              anchorNode = anchorNode.getPreviousSibling();
-              if (isTextNode(anchorNode)) {
-                anchorNodeOffset = anchorNode.getTextContent().length;
+            const anchor = selection.anchor;
+            const focus = selection.focus;
+            if (anchor.type === 'character' && focus.type === 'character') {
+              let anchorNode = anchor.getNode();
+              let anchorNodeOffset = anchor.offset;
+              if (anchorNode.getKey() === currentTypeaheadNode.getKey()) {
+                anchorNode = anchorNode.getPreviousSibling();
+                if (isTextNode(anchorNode)) {
+                  anchorNodeOffset = anchorNode.getTextContent().length;
+                }
               }
-            }
-            let focusNode = selection.focus.getNode();
-            let focusNodeOffset = selection.focus.offset;
-            if (focusNode.getKey() === currentTypeaheadNode.getKey()) {
-              focusNode = focusNode.getPreviousSibling();
-              if (isTextNode(focusNode)) {
-                focusNodeOffset = focusNode.getTextContent().length;
+              let focusNode = focus.getNode();
+              let focusNodeOffset = focus.offset;
+              if (focusNode.getKey() === currentTypeaheadNode.getKey()) {
+                focusNode = focusNode.getPreviousSibling();
+                if (isTextNode(focusNode)) {
+                  focusNodeOffset = focusNode.getTextContent().length;
+                }
               }
-            }
-            if (isTextNode(focusNode) && isTextNode(anchorNode)) {
-              selection.setBaseAndExtent(
-                anchorNode,
-                anchorNodeOffset,
-                focusNode,
-                focusNodeOffset,
-              );
+              if (isTextNode(focusNode) && isTextNode(anchorNode)) {
+                selection.setTextNodeRange(
+                  anchorNode,
+                  anchorNodeOffset,
+                  focusNode,
+                  focusNodeOffset,
+                );
+              }
             }
           }
           currentTypeaheadNode.remove();

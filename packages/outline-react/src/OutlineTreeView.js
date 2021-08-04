@@ -7,7 +7,13 @@
  * @flow strict-local
  */
 
-import type {BlockNode, ViewModel, View, OutlineEditor} from 'outline';
+import type {
+  BlockNode,
+  ViewModel,
+  View,
+  OutlineEditor,
+  Selection,
+} from 'outline';
 
 import {isBlockNode, isTextNode} from 'outline';
 
@@ -69,10 +75,26 @@ export default function TreeView({
   return <pre {...styles}>{content}</pre>;
 }
 
+function printSelection(selection: Selection): string {
+  let res = '';
+  const anchor = selection.anchor;
+  const focus = selection.focus;
+  const anchorOffset = anchor.offset;
+  const focusOffset = focus.offset;
+
+  res = `\n  ├ anchor { key: ${anchor.key}, offset: ${
+    anchorOffset === null ? 'null' : anchorOffset
+  }, type: ${anchor.type} }`;
+  res += `\n  └ focus { key: ${focus.key}, offset: ${
+    focusOffset === null ? 'null' : focusOffset
+  }, type: ${focus.type} }`;
+  return res;
+}
+
 function generateContent(viewModel: ViewModel): string {
   let res = ' root\n';
 
-  viewModel.read((view: View) => {
+  const selectionString = viewModel.read((view: View) => {
     const selection = view.getSelection();
     let selectedNodes = null;
     if (selection !== null) {
@@ -100,9 +122,11 @@ function generateContent(viewModel: ViewModel): string {
         typeDisplay,
       });
     });
+
+    return selection === null ? 'null' : printSelection(selection);
   });
 
-  return res;
+  return res + '\n selection' + selectionString;
 }
 
 function visitTree(view: View, currentNode: BlockNode, visitor, indent = []) {
@@ -238,34 +262,36 @@ function printSelectedCharsLine({
 function getSelectionStartEnd(node, selection): [number, number] {
   const anchor = selection.anchor;
   const focus = selection.focus;
-  const anchorNode = anchor.getNode();
-  const focusNode = focus.getNode();
   const textContent = node.getTextContent(true);
   const textLength = textContent.length;
 
   let start = -1;
   let end = -1;
   // Only one node is being selected.
-  if (
-    anchorNode === focusNode &&
-    node === anchorNode &&
-    anchor.offset !== focus.offset
-  ) {
-    [start, end] =
-      anchor.offset < focus.offset
-        ? [anchor.offset, focus.offset]
-        : [focus.offset, anchor.offset];
-  } else if (node === anchorNode) {
-    [start, end] = anchorNode.isBefore(focusNode)
-      ? [anchor.offset, textLength]
-      : [0, anchor.offset];
-  } else if (node === focusNode) {
-    [start, end] = focusNode.isBefore(anchorNode)
-      ? [focus.offset, textLength]
-      : [0, focus.offset];
-  } else {
-    // Node is within selection but not the anchor nor focus.
-    [start, end] = [0, textLength];
+  if (anchor.type === 'character' && focus.type === 'character') {
+    const anchorNode = anchor.getNode();
+    const focusNode = focus.getNode();
+    if (
+      anchorNode === focusNode &&
+      node === anchorNode &&
+      anchor.offset !== focus.offset
+    ) {
+      [start, end] =
+        anchor.offset < focus.offset
+          ? [anchor.offset, focus.offset]
+          : [focus.offset, anchor.offset];
+    } else if (node === anchorNode) {
+      [start, end] = anchorNode.isBefore(focusNode)
+        ? [anchor.offset, textLength]
+        : [0, anchor.offset];
+    } else if (node === focusNode) {
+      [start, end] = focusNode.isBefore(anchorNode)
+        ? [focus.offset, textLength]
+        : [0, focus.offset];
+    } else {
+      // Node is within selection but not the anchor nor focus.
+      [start, end] = [0, textLength];
+    }
   }
 
   // Account for non-single width characters.

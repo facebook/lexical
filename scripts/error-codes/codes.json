@@ -39,5 +39,6 @@
   "37": "reconcileNode: parentDOM is null",
   "38": "storeDOMWithNodeKey: key was null",
   "39": "Reconciliation: could not find DOM element for node key \"${key}\"",
-  "40": "insertText: this should never happen"
+  "40": "insertText: this should never happen",
+  "41": "selectPrevious: found invalid sibling"
 }

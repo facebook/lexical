@@ -126,7 +126,7 @@ function replaceNode<N: OutlineNode>(
 ): N {
   let anchorOffset;
   const toReplaceKey = toReplace.__key;
-  if (restoreSelection && isTextNode(toReplace)) {
+  if (restoreSelection) {
     const selection = getSelection();
     if (selection) {
       const anchorNode = selection.anchor.getNode();
@@ -160,7 +160,7 @@ function replaceNode<N: OutlineNode>(
   if (flags & IS_DIRECTIONLESS) {
     updateDirectionIfNeeded(writableReplaceWith);
   }
-  if (isTextNode(writableReplaceWith) && anchorOffset !== undefined) {
+  if (anchorOffset !== undefined) {
     writableReplaceWith.select(anchorOffset, anchorOffset);
   }
   if (getCompositionKey() === toReplaceKey) {
@@ -673,6 +673,21 @@ export class OutlineNode {
       updateDirectionIfNeeded(writableNodeToInsert);
     }
     return writableSelf;
+  }
+  selectPrevious(anchorOffset?: number, focusOffset?: number): Selection {
+    errorOnReadOnly();
+    const prevSibling = this.getPreviousSibling();
+    if (prevSibling === null) {
+      const parent = this.getParentBlockOrThrow();
+      return parent.selectStart();
+    }
+    if (
+      !isTextNode(prevSibling) ||
+      isImmutableOrInertOrSegmented(prevSibling)
+    ) {
+      invariant(false, 'selectPrevious: found invalid sibling');
+    }
+    return prevSibling.select(anchorOffset, focusOffset);
   }
   selectNext(anchorOffset?: number, focusOffset?: number): Selection {
     errorOnReadOnly();

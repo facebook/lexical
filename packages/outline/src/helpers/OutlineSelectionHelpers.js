@@ -12,7 +12,6 @@ import type {
   OutlineNode,
   Selection,
   TextFormatType,
-  BlockNode,
   TextNode,
 } from 'outline';
 
@@ -377,7 +376,11 @@ export function insertParagraph(selection: Selection): void {
       }
       const nodeToSelect = nodesToMove[nodesToMoveLength - 1];
       if (isTextNode(nodeToSelect)) {
-        nodeToSelect.select(anchorOffset, anchorOffset);
+        if (nodeToSelect.isImmutable()) {
+          nodeToSelect.selectPrevious();
+        } else {
+          nodeToSelect.select(anchorOffset, anchorOffset);
+        }
       }
     }
   }
@@ -544,7 +547,7 @@ function deleteCharacter(selection: Selection, isBackward: boolean): void {
         return;
       }
       updateCaretSelectionForUnicodeCharacter(selection, isBackward);
-    } else if (isBackward) {
+    } else if (isBackward && anchor.type === 'character') {
       // Special handling around rich text nodes
       const anchorNode = anchor.getNode();
       const parent = anchorNode.getParentOrThrow();
@@ -637,21 +640,10 @@ export function updateCaretSelectionForRange(
   // Ensure we don't move selection to the zero width offset
   if (isBackward && focusOffset === 0 && sibling === null) {
     const parent = focusNode.getParentOrThrow();
-    if (parent.getPreviousSibling() === null) {
+    if (parent.getType() === 'root' || parent.getPreviousSibling() === null) {
       return;
     }
   }
-
-  const textSize = focusNode.getTextContentSize();
-  const needsExtraMove = isBackward
-    ? focusOffset === 0 &&
-      focusNode.getTextContent() === '' &&
-      !isImmutableOrInert(focusNode)
-    : focusOffset === textSize &&
-      isTextNode(sibling) &&
-      !isImmutableOrInert(sibling) &&
-      sibling.getTextContent() === '';
-
   // We use the DOM selection.modify API here to "tell" us what the selection
   // will be. We then use it to update the Outline selection accordingly. This
   // is much more reliable than waiting for a beforeinput and using the ranges
@@ -659,10 +651,6 @@ export function updateCaretSelectionForRange(
   // using Intl.Segmenter or other workarounds that struggle with word segments
   // and line segments (especially with word wrapping and non-Roman languages).
   moveSelection(domSelection, collapse, isBackward, granularity);
-  // If we are at a boundary, move once again.
-  if (needsExtraMove && granularity === 'character') {
-    moveSelection(domSelection, collapse, isBackward, granularity);
-  }
   // Guard against no ranges
   if (domSelection.rangeCount > 0) {
     const range = domSelection.getRangeAt(0);
@@ -817,112 +805,97 @@ export function insertRichText(selection: Selection, text: string): void {
   }
 }
 
-function addEmptyTextNodeToBlock(node: BlockNode): void {
-  const textNode: TextNode = createTextNode();
-  textNode.select();
-  const firstChild = node.getFirstChild();
-  if (firstChild === null) {
-    node.append(textNode);
-  } else {
-    firstChild.insertBefore(textNode);
-  }
-}
-
 export function insertText(selection: Selection, text: string): void {
   const anchor = selection.anchor;
   const focus = selection.focus;
   const anchorOffset = anchor.offset;
-
-  if (anchor.type !== 'character') {
-    addEmptyTextNodeToBlock(anchor.getNode());
-  }
-  if (focus.type !== 'character') {
-    addEmptyTextNodeToBlock(focus.getNode());
-  }
   const focusOffset = focus.offset;
   const selectedNodes = selection.getNodes();
   const selectedNodesLength = selectedNodes.length;
   let firstNode = selectedNodes[0];
-  if (!isTextNode(firstNode)) {
-    invariant(false, 'insertText: firstNode not a a text node');
-  }
 
-  const firstNodeText = firstNode.getTextContent();
-  const firstNodeTextLength = firstNodeText.length;
-  const isBefore = firstNode === anchor.getNode();
+  if (isTextNode(firstNode)) {
+    const firstNodeText = firstNode.getTextContent();
+    const firstNodeTextLength = firstNodeText.length;
 
-  if (firstNode.isSegmented() || !firstNode.canInsertTextAtEnd()) {
-    if (selection.isCollapsed() && focusOffset === firstNodeTextLength) {
-      let nextSibling = firstNode.getNextSibling();
-      if (!isTextNode(nextSibling)) {
-        nextSibling = createTextNode();
-        firstNode.insertAfter(nextSibling);
+    if (firstNode.isSegmented() || !firstNode.canInsertTextAtEnd()) {
+      if (selection.isCollapsed() && focusOffset === firstNodeTextLength) {
+        let nextSibling = firstNode.getNextSibling();
+        if (!isTextNode(nextSibling)) {
+          nextSibling = createTextNode();
+          firstNode.insertAfter(nextSibling);
+        }
+        nextSibling.select(0, 0);
+        firstNode = nextSibling;
+        if (text !== '') {
+          insertText(selection, text);
+          return;
+        }
+      } else if (firstNode.isSegmented()) {
+        const textNode = createTextNode(firstNode.getTextContent());
+        firstNode.replace(textNode, true);
+        firstNode = textNode;
       }
-      nextSibling.select(0, 0);
-      firstNode = nextSibling;
-      if (text !== '') {
-        insertText(selection, text);
-        return;
-      }
-    } else if (firstNode.isSegmented()) {
-      const textNode = createTextNode(firstNode.getTextContent());
-      firstNode.replace(textNode, true);
-      firstNode = textNode;
     }
   }
-  const firstNodeParent = firstNode.getParent();
+  const firstNodeParent = firstNode.getParentOrThrow();
   let startOffset;
   let endOffset;
 
   if (selectedNodesLength === 1) {
     startOffset = anchorOffset > focusOffset ? focusOffset : anchorOffset;
     endOffset = anchorOffset > focusOffset ? anchorOffset : focusOffset;
-    if (isImmutableOrInert(firstNode)) {
-      const textNode = createTextNode(text);
-      firstNode.replace(textNode);
-      textNode.select();
-      return;
-    }
-    const delCount = endOffset - startOffset;
+    if (isTextNode(firstNode)) {
+      if (isImmutableOrInert(firstNode)) {
+        const textNode = createTextNode(text);
+        firstNode.replace(textNode);
+        textNode.select();
+        return;
+      }
+      const delCount = endOffset - startOffset;
 
-    firstNode.spliceText(startOffset, delCount, text, true);
-    if (firstNode.isComposing() && anchor.type === 'character') {
-      anchor.offset -= text.length;
-    }
-    if (
-      isTextNode(firstNode) &&
-      firstNode.getTextContent() === '' &&
-      isBlockNode(firstNodeParent)
-    ) {
-      const parentPrevSibling = firstNodeParent.getPreviousSibling();
-      const parentNextSibling = firstNodeParent.getNextSibling();
-      const parentSibling = parentPrevSibling || parentNextSibling;
-      const isBackward = parentSibling === parentPrevSibling;
-      firstNode.remove();
-      if (
-        firstNodeParent.getChildrenSize() === 0 &&
-        isBlockNode(parentSibling)
-      ) {
-        const children = parentSibling.getChildren();
-        const childrenLength = children.length;
-        if (childrenLength === 0) {
-          parentSibling.selectStart();
+      firstNode.spliceText(startOffset, delCount, text, true);
+      if (firstNode.isComposing() && anchor.type === 'character') {
+        anchor.offset -= text.length;
+      }
+      if (firstNode.getTextContent() === '' && isBlockNode(firstNodeParent)) {
+        const prevSibling = firstNode.getPreviousSibling();
+        firstNode.remove();
+        if (prevSibling === null) {
+          firstNodeParent.selectStart();
         } else {
-          if (isBackward) {
-            const lastChild = children[childrenLength - 1];
-            if (isTextNode(lastChild)) {
-              lastChild.select();
-            }
+          firstNodeParent.selectEnd();
+        }
+      }
+    } else if (isBlockNode(firstNode)) {
+      const textNode = createTextNode(text);
+
+      if (startOffset === 0) {
+        if (endOffset === 1) {
+          firstNode.clear();
+          if (text !== '') {
+            textNode.select();
+            firstNode.append(textNode);
           } else {
-            const firstChild = children[0];
-            if (isTextNode(firstChild)) {
-              firstChild.select(0, 0);
-            }
+            firstNode.selectStart();
+          }
+        } else if (text !== '') {
+          const firstChild = firstNode.getFirstChild();
+          textNode.select();
+          if (firstChild === null) {
+            firstNode.append(textNode);
+          } else {
+            firstChild.insertBefore(textNode);
           }
         }
-        firstNodeParent.remove();
-      } else {
-        firstNodeParent.selectStart();
+      } else if (text !== '') {
+        const lastChild = firstNode.getLastChild();
+        textNode.select();
+        if (lastChild === null) {
+          firstNode.append(textNode);
+        } else {
+          lastChild.insertAfter(textNode);
+        }
       }
     }
   } else {
@@ -930,97 +903,125 @@ export function insertText(selection: Selection, text: string): void {
     let lastNode = selectedNodes[lastIndex];
     const firstNodeParents = new Set(firstNode.getParents());
     const lastNodeParents = new Set(lastNode.getParents());
-    const lastNodeParent = lastNode.getParent();
+    const lastNodeParent = lastNode.getParentOrThrow();
+    const isBefore = firstNode === anchor.getNode();
     let firstNodeRemove = false;
     let lastNodeRemove = false;
     startOffset = isBefore ? anchorOffset : focusOffset;
     endOffset = isBefore ? focusOffset : anchorOffset;
 
     // Handle mutations to the last node.
-    if (endOffset === lastNode.getTextContentSize()) {
-      lastNode.remove();
-      lastNodeRemove = true;
-    } else if (isImmutableOrInert(lastNode)) {
-      lastNodeRemove = true;
-      const textNode = createTextNode('');
-      lastNode.replace(textNode);
-    } else if (isTextNode(lastNode)) {
-      if (lastNode.isSegmented()) {
-        const textNode = createTextNode(lastNode.getTextContent());
-        lastNode.replace(textNode, true);
-        lastNode = textNode;
+    if (isTextNode(lastNode)) {
+      if (endOffset === lastNode.getTextContentSize()) {
+        lastNode.remove();
+        lastNodeRemove = true;
+      } else if (isImmutableOrInert(lastNode)) {
+        lastNodeRemove = true;
+        const textNode = createTextNode('');
+        lastNode.replace(textNode);
+      } else {
+        if (lastNode.isSegmented()) {
+          const textNode = createTextNode(lastNode.getTextContent());
+          lastNode.replace(textNode, true);
+          lastNode = textNode;
+        }
+        lastNode.spliceText(0, endOffset, '', false);
       }
-      lastNode.spliceText(0, endOffset, '', false);
+    } else if (isBlockNode(lastNode)) {
+      const children = lastNode.getChildren();
+      if (endOffset === 1 || children.length === 0) {
+        lastNodeRemove = true;
+        lastNode.remove();
+      } else {
+        debugger;
+      }
     }
 
     // Either move the remaining nodes of the last parent to after
     // the first child, or remove them entirely. If the last parent
     // is the same as the first parent, this logic also works.
-    if (isBlockNode(firstNodeParent) && isBlockNode(lastNodeParent)) {
-      const lastNodeChildren = lastNodeParent.getChildren();
-      const selectedNodesSet = new Set(selectedNodes);
-      const firstAndLastParentsAreEqual = firstNodeParent.is(lastNodeParent);
+    const lastNodeChildren = lastNodeParent.getChildren();
+    const selectedNodesSet = new Set(selectedNodes);
+    const firstAndLastParentsAreEqual = firstNodeParent.is(lastNodeParent);
 
-      for (let i = lastNodeChildren.length - 1; i >= 0; i--) {
-        const lastNodeChild = lastNodeChildren[i];
+    for (let i = lastNodeChildren.length - 1; i >= 0; i--) {
+      const lastNodeChild = lastNodeChildren[i];
 
-        if (lastNodeChild.is(firstNode)) {
-          break;
-        }
+      if (lastNodeChild.is(firstNode) || firstNodeParents.has(lastNodeChild)) {
+        break;
+      }
 
-        if (lastNodeChild.isAttached()) {
-          if (
-            !selectedNodesSet.has(lastNodeChild) ||
-            lastNodeChild.is(lastNode)
-          ) {
-            if (!firstAndLastParentsAreEqual) {
+      if (lastNodeChild.isAttached()) {
+        if (
+          !selectedNodesSet.has(lastNodeChild) ||
+          lastNodeChild.is(lastNode)
+        ) {
+          if (!firstAndLastParentsAreEqual) {
+            if (isBlockNode(firstNode)) {
+              firstNode.append(lastNodeChild);
+            } else {
               firstNode.insertAfter(lastNodeChild);
             }
+          }
+        } else {
+          lastNodeChild.remove();
+        }
+      }
+    }
+
+    if (!firstAndLastParentsAreEqual) {
+      // Check if we have already moved out all the nodes of the
+      // last parent, and if so, traverse the parent tree and mark
+      // them all as being able to deleted too.
+      let parent = lastNodeParent;
+      while (parent !== null) {
+        if (parent.getChildrenSize() === 0) {
+          lastNodeParents.delete(parent);
+        }
+        parent = parent.getParent();
+      }
+    }
+
+    if (isTextNode(firstNode)) {
+      // Ensure we do splicing after moving of nodes, as splicing
+      // can have side-effects (in the case of hashtags).
+      if (isImmutableOrInert(firstNode)) {
+        firstNodeRemove = true;
+        const textNode = createTextNode(text);
+        firstNode.replace(textNode);
+        textNode.select();
+      } else {
+        firstNode.spliceText(
+          startOffset,
+          firstNode.getTextContentSize() - startOffset,
+          text,
+          true,
+        );
+        if (firstNode.isComposing() && anchor.type === 'character') {
+          anchor.offset -= text.length;
+        }
+      }
+      if (firstNode.getTextContent() === '' && isBlockNode(firstNodeParent)) {
+        firstNode.remove();
+        firstNodeParent.selectStart();
+      }
+    } else if (isBlockNode(firstNode)) {
+      if (startOffset === 0) {
+        if (text !== '') {
+          const textNode = createTextNode(text);
+          textNode.select();
+          const firstChild = firstNode.getFirstChild();
+          if (firstChild === null) {
+            firstNode.append(textNode);
           } else {
-            lastNodeChild.remove();
+            firstChild.insertBefore(textNode);
           }
+        } else {
+          firstNode.selectStart();
         }
+      } else {
+        debugger;
       }
-
-      if (!firstAndLastParentsAreEqual) {
-        // Check if we have already moved out all the nodes of the
-        // last parent, and if so, traverse the parent tree and mark
-        // them all as being able to deleted too.
-        let parent = lastNodeParent;
-        while (parent !== null) {
-          if (parent.getChildrenSize() === 0) {
-            lastNodeParents.delete(parent);
-          }
-          parent = parent.getParent();
-        }
-      }
-    }
-
-    // Ensure we do splicing after moving of nodes, as splicing
-    // can have side-effects (in the case of hashtags).
-    if (isImmutableOrInert(firstNode)) {
-      firstNodeRemove = true;
-      const textNode = createTextNode(text);
-      firstNode.replace(textNode);
-      textNode.select();
-    } else {
-      firstNode.spliceText(
-        startOffset,
-        firstNodeTextLength - startOffset,
-        text,
-        true,
-      );
-      if (firstNode.isComposing() && anchor.type === 'character') {
-        anchor.offset -= text.length;
-      }
-    }
-    if (
-      isTextNode(firstNode) &&
-      firstNode.getTextContent() === '' &&
-      isBlockNode(firstNodeParent)
-    ) {
-      firstNode.remove();
-      firstNodeParent.selectStart();
     }
     // Remove all selected nodes that haven't already been removed.
     for (let i = 1; i < lastIndex; i++) {
@@ -1039,21 +1040,5 @@ export function moveEnd(selection: Selection): void {
   const anchorNode = selection.anchor.getNode();
   if (isTextNode(anchorNode)) {
     anchorNode.select();
-  }
-}
-
-export function selectAll(selection: Selection): void {
-  const anchorNode = selection.anchor.getNode();
-  const topParent = anchorNode.getTopParentBlockOrThrow();
-  const root = topParent.getParentOrThrow();
-  const firstTextNode = root.getFirstTextNode();
-  const lastTextNode = root.getLastTextNode();
-  if (firstTextNode !== null && lastTextNode !== null) {
-    selection.setBaseAndExtent(
-      firstTextNode,
-      0,
-      lastTextNode,
-      lastTextNode.getTextContentSize(),
-    );
   }
 }

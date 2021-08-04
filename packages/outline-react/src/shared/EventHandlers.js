@@ -18,7 +18,7 @@ import type {
   BlockNode,
 } from 'outline';
 
-import {IS_SAFARI, CAN_USE_BEFORE_INPUT} from 'shared/environment';
+import {CAN_USE_BEFORE_INPUT} from 'shared/environment';
 import {
   isDeleteBackward,
   isDeleteForward,
@@ -33,11 +33,6 @@ import {
   isItalic,
   isUnderline,
   isTab,
-  isSelectAll,
-  isMoveWordBackward,
-  isMoveBackward,
-  isMoveForward,
-  isMoveWordForward,
 } from 'outline/KeyHelpers';
 import isImmutableOrInert from 'shared/isImmutableOrInert';
 import {
@@ -54,12 +49,7 @@ import {
   getNodesInRange,
   insertNodes,
   insertLineBreak,
-  selectAll,
-  moveWordBackward,
   insertRichText,
-  moveBackward,
-  moveForward,
-  moveWordForward,
 } from 'outline/SelectionHelpers';
 import {createTextNode, isTextNode, isDecoratorNode} from 'outline';
 
@@ -154,33 +144,6 @@ function insertDataTransferForPlainText(
   }
 }
 
-function shouldOverrideBrowserDefault(
-  selection: Selection,
-  isHoldingShift: boolean,
-  isBackward: boolean,
-): boolean {
-  const anchor = selection.anchor;
-  const focus = selection.focus;
-  const anchorOffset = anchor.offset;
-  const focusOffset = focus.offset;
-  const anchorTextContentSize = anchor.getNode().getTextContentSize();
-  const selectionAtBoundary = isBackward
-    ? anchorOffset < 2 || focusOffset < 2
-    : anchorOffset > anchorTextContentSize - 2 ||
-      focusOffset > anchorTextContentSize - 2;
-
-  return selection.isCollapsed()
-    ? isHoldingShift || selectionAtBoundary
-    : isHoldingShift && selectionAtBoundary;
-}
-
-function isTopLevelBlockRTL(selection: Selection) {
-  const anchorNode = selection.anchor.getNode();
-  const topLevelBlock = anchorNode.getTopParentBlockOrThrow();
-  const direction = topLevelBlock.getDirection();
-  return direction === 'rtl';
-}
-
 export function onKeyDownForPlainText(
   event: KeyboardEvent,
   editor: OutlineEditor,
@@ -194,20 +157,8 @@ export function onKeyDownForPlainText(
     if (selection === null) {
       return;
     }
-    const isHoldingShift = event.shiftKey;
-    const isRTL = isTopLevelBlockRTL(selection);
 
-    if (isMoveBackward(event)) {
-      if (shouldOverrideBrowserDefault(selection, isHoldingShift, !isRTL)) {
-        event.preventDefault();
-        moveBackward(selection, isHoldingShift, isRTL);
-      }
-    } else if (isMoveForward(event)) {
-      if (shouldOverrideBrowserDefault(selection, isHoldingShift, isRTL)) {
-        event.preventDefault();
-        moveForward(selection, isHoldingShift, isRTL);
-      }
-    } else if (isParagraph(event) || isLineBreak(event)) {
+    if (isParagraph(event) || isLineBreak(event)) {
       event.preventDefault();
       insertLineBreak(selection);
     } else if (isOpenLineBreak(event)) {
@@ -219,22 +170,6 @@ export function onKeyDownForPlainText(
     } else if (isDeleteForward(event)) {
       event.preventDefault();
       deleteForward(selection);
-    } else if (isMoveWordBackward(event)) {
-      if (
-        IS_SAFARI ||
-        shouldOverrideBrowserDefault(selection, isHoldingShift, !isRTL)
-      ) {
-        event.preventDefault();
-        moveWordBackward(selection, isHoldingShift, isRTL);
-      }
-    } else if (isMoveWordForward(event)) {
-      if (
-        IS_SAFARI ||
-        shouldOverrideBrowserDefault(selection, isHoldingShift, isRTL)
-      ) {
-        event.preventDefault();
-        moveWordForward(selection, isHoldingShift, isRTL);
-      }
     } else if (isDeleteWordBackward(event)) {
       event.preventDefault();
       deleteWordBackward(selection);
@@ -247,9 +182,6 @@ export function onKeyDownForPlainText(
     } else if (isDeleteLineForward(event)) {
       event.preventDefault();
       deleteLineForward(selection);
-    } else if (isSelectAll(event)) {
-      event.preventDefault();
-      selectAll(selection);
     }
   }, 'onKeyDownForPlainText');
 }
@@ -267,20 +199,8 @@ export function onKeyDownForRichText(
     if (selection === null) {
       return;
     }
-    const isHoldingShift = event.shiftKey;
-    const isRTL = isTopLevelBlockRTL(selection);
 
-    if (isMoveBackward(event)) {
-      if (shouldOverrideBrowserDefault(selection, isHoldingShift, !isRTL)) {
-        event.preventDefault();
-        moveBackward(selection, isHoldingShift, isRTL);
-      }
-    } else if (isMoveForward(event)) {
-      if (shouldOverrideBrowserDefault(selection, isHoldingShift, isRTL)) {
-        event.preventDefault();
-        moveForward(selection, isHoldingShift, isRTL);
-      }
-    } else if (isLineBreak(event)) {
+    if (isLineBreak(event)) {
       event.preventDefault();
       insertLineBreak(selection);
     } else if (isOpenLineBreak(event)) {
@@ -295,22 +215,6 @@ export function onKeyDownForRichText(
     } else if (isDeleteForward(event)) {
       event.preventDefault();
       deleteForward(selection);
-    } else if (isMoveWordBackward(event)) {
-      if (
-        IS_SAFARI ||
-        shouldOverrideBrowserDefault(selection, isHoldingShift, !isRTL)
-      ) {
-        event.preventDefault();
-        moveWordBackward(selection, isHoldingShift, isRTL);
-      }
-    } else if (isMoveWordForward(event)) {
-      if (
-        IS_SAFARI ||
-        shouldOverrideBrowserDefault(selection, isHoldingShift, isRTL)
-      ) {
-        event.preventDefault();
-        moveWordForward(selection, isHoldingShift, isRTL);
-      }
     } else if (isDeleteWordBackward(event)) {
       event.preventDefault();
       deleteWordBackward(selection);
@@ -349,9 +253,6 @@ export function onKeyDownForRichText(
         }
         event.preventDefault();
       }
-    } else if (isSelectAll(event)) {
-      event.preventDefault();
-      selectAll(selection);
     }
   }, 'onKeyDownForRichText');
 }

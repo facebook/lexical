@@ -124,10 +124,6 @@ export function isTab(event: KeyboardEvent): boolean {
   );
 }
 
-export function isSelectAll(event: KeyboardEvent): boolean {
-  return event.keyCode === 65 && (IS_APPLE ? event.metaKey : event.ctrlKey);
-}
-
 export function isMoveWordBackward(event: KeyboardEvent): boolean {
   const {altKey, metaKey, ctrlKey} = event;
   if (IS_APPLE) {

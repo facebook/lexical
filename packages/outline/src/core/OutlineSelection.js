@@ -25,7 +25,7 @@ import {
 import {isSelectionWithinEditor} from './OutlineUtils';
 import invariant from 'shared/invariant';
 
-declare type CharacterPointType = {
+type CharacterPointType = {
   key: NodeKey,
   offset: number,
   type: 'character',
@@ -49,7 +49,10 @@ type BlockEndPointType = {
   getNode: () => BlockNode,
 };
 
-type PointType = CharacterPointType | BlockStartPointType | BlockEndPointType;
+export type PointType =
+  | CharacterPointType
+  | BlockStartPointType
+  | BlockEndPointType;
 
 class Point {
   key: NodeKey;
@@ -290,10 +293,11 @@ function resolveSelectionPoint(
     resolvedNode = getNodeFromDOM(resolvedDOM);
     if (isBlockNode(resolvedNode)) {
       if (moveSelectionToEnd) {
-        resolvedNode = resolvedNode.getLastTextNode();
-        if (resolvedNode === null) {
-          return null;
+        const lastTextNode = resolvedNode.getLastTextNode();
+        if (lastTextNode === null || lastTextNode.isImmutable()) {
+          return createPoint(resolvedNode.__key, 1, 'end');
         }
+        resolvedNode = lastTextNode;
         resolvedOffset = resolvedNode.getTextContentSize();
       } else {
         const firstTextNode = resolvedNode.getFirstTextNode();
@@ -304,11 +308,17 @@ function resolveSelectionPoint(
         resolvedOffset = 0;
       }
     } else if (isTextNode(resolvedNode)) {
-      if (moveSelectionToEnd) {
-        resolvedOffset = resolvedNode.getTextContentSize();
-      } else {
-        resolvedOffset = 0;
+      if (resolvedNode.isImmutable()) {
+        const parentNode = resolvedNode.getParentOrThrow();
+        return createPoint(
+          parentNode.__key,
+          moveSelectionToEnd ? 1 : 0,
+          moveSelectionToEnd ? 'end' : 'start',
+        );
       }
+      resolvedOffset = moveSelectionToEnd
+        ? resolvedNode.getTextContentSize()
+        : 0;
     }
   } else {
     resolvedNode = getNodeFromDOM(resolvedDOM);

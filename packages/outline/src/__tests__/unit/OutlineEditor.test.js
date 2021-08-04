@@ -186,7 +186,7 @@ describe('OutlineEditor tests', () => {
       return decoratedPortals;
     }
 
-    it.only('Should correctly render React component into Outline node', async () => {
+    it('Should correctly render React component into Outline node', async () => {
       const listener = jest.fn();
 
       function Decorator({text}) {

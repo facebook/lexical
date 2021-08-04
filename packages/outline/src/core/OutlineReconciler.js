@@ -14,11 +14,7 @@ import type {TextNode} from './OutlineTextNode';
 import type {Node as ReactNode} from 'react';
 
 import {triggerListeners, ViewModel} from './OutlineView';
-import {
-  isSelectionWithinEditor,
-  isImmutableOrInertOrSegmented,
-  getDOMTextNode,
-} from './OutlineUtils';
+import {isSelectionWithinEditor, getDOMTextNode} from './OutlineUtils';
 import {IS_INERT, IS_RTL, IS_LTR, IS_IMMUTABLE} from './OutlineConstants';
 import invariant from 'shared/invariant';
 import {isDecoratorNode} from './OutlineDecoratorNode';
@@ -116,8 +112,14 @@ function createNode(
     // Handle block children
     normalizeTextNodes(node);
     const children = node.__children;
-    const endIndex = children.length - 1;
-    createChildren(children, 0, endIndex, dom, null);
+    const childrenLength = children.length;
+    if (childrenLength === 0) {
+      const br = document.createElement('br');
+      dom.appendChild(br);
+    } else {
+      const endIndex = childrenLength - 1;
+      createChildren(children, 0, endIndex, dom, null);
+    }
   } else {
     if (isDecoratorNode(node)) {
       const decorator = node.decorate(activeEditor);
@@ -179,6 +181,11 @@ function reconcileChildren(
     }
   } else if (prevChildrenLength === 0) {
     if (nextChildrenLength !== 0) {
+      // Remove <br>
+      const br = dom.firstChild;
+      if (br != null) {
+        dom.removeChild(br);
+      }
       createChildren(nextChildren, 0, nextChildrenLength - 1, dom, null);
     }
   } else if (nextChildrenLength === 0) {
@@ -186,6 +193,9 @@ function reconcileChildren(
       destroyChildren(prevChildren, 0, prevChildrenLength - 1, null);
       // Fast path for removing DOM nodes
       dom.textContent = '';
+      // Add a br
+      const br = document.createElement('br');
+      dom.appendChild(br);
     }
   } else {
     reconcileNodeChildren(
@@ -492,40 +502,44 @@ function reconcileSelection(
   const focus = nextSelection.focus;
   const anchorKey = anchor.key;
   const focusKey = focus.key;
-  const anchorNode = anchor.getNode();
-  const focusNode = focus.getNode();
+  const anchorType = anchor.type;
+  const focusType = focus.type;
   const anchorDOM = getElementByKeyOrThrow(editor, anchorKey);
   const focusDOM = getElementByKeyOrThrow(editor, focusKey);
+  let nextAnchorNode;
+  let nextFocusNode;
+  let nextAnchorOffset;
+  let nextFocusOffset;
 
-  // Get the underlying DOM text nodes from the representative
-  // Outline text nodes (we use elements for text nodes).
-  const anchorDOMTarget = getDOMTextNode(anchorDOM);
-  const focusDOMTarget = getDOMTextNode(focusDOM);
+  if (anchorType === 'character') {
+    nextAnchorNode = getDOMTextNode(anchorDOM);
+    nextAnchorOffset = anchor.offset;
+  } else {
+    nextAnchorNode = anchorDOM;
+    nextAnchorOffset =
+      anchorType === 'start' ? 0 : nextAnchorNode.childNodes.length;
+  }
+  if (focus.type === 'character') {
+    nextFocusNode = getDOMTextNode(focusDOM);
+    nextFocusOffset = focus.offset;
+  } else {
+    nextFocusNode = focusDOM;
+    nextFocusOffset =
+      focusType === 'start' ? 0 : nextFocusNode.childNodes.length;
+  }
   // If we can't get an underlying text node for selection, then
   // we should avoid setting selection to something incorrect.
-  if (focusDOMTarget === null || anchorDOMTarget === null) {
+  if (nextAnchorNode == null || nextFocusNode == null) {
     return;
   }
-  const nextSelectionAnchorOffset = anchor.offset;
-  const nextSelectionFocusOffset = focus.offset;
-  const nextAnchorOffset =
-    isImmutableOrInertOrSegmented(anchorNode) ||
-    anchorNode.getTextContent() !== ''
-      ? nextSelectionAnchorOffset
-      : nextSelectionAnchorOffset + 1;
-  const nextFocusOffset =
-    isImmutableOrInertOrSegmented(focusNode) ||
-    focusNode.getTextContent() !== ''
-      ? nextSelectionFocusOffset
-      : nextSelectionFocusOffset + 1;
 
   // Diff against the native DOM selection to ensure we don't do
   // an unnecessary selection update.
   if (
     anchorOffset === nextAnchorOffset &&
     focusOffset === nextFocusOffset &&
-    anchorDOMNode === anchorDOMTarget &&
-    focusDOMNode === focusDOMTarget
+    anchorDOMNode === nextAnchorNode &&
+    focusDOMNode === nextFocusNode
   ) {
     return;
   }
@@ -534,9 +548,9 @@ function reconcileSelection(
   // a "selectionchange" event, although it will be asynchronous.
   try {
     domSelection.setBaseAndExtent(
-      anchorDOMTarget,
+      nextAnchorNode,
       nextAnchorOffset,
-      focusDOMTarget,
+      nextFocusNode,
       nextFocusOffset,
     );
   } catch {

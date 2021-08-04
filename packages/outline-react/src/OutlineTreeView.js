@@ -7,7 +7,13 @@
  * @flow strict-local
  */
 
-import type {BlockNode, ViewModel, View, OutlineEditor} from 'outline';
+import type {
+  BlockNode,
+  ViewModel,
+  View,
+  OutlineEditor,
+  Selection,
+} from 'outline';
 
 import {isBlockNode, isTextNode} from 'outline';
 
@@ -69,10 +75,20 @@ export default function TreeView({
   return <pre {...styles}>{content}</pre>;
 }
 
+function printSelection(selection: Selection): string {
+  let res = '';
+  const anchor = selection.anchor;
+  const focus = selection.focus;
+
+  res = `\n  ├ anchor { key: ${anchor.key}, offset: ${anchor.offset}, type: ${anchor.type} }`;
+  res += `\n  └ focus { key: ${focus.key}, offset: ${focus.offset}, type: ${focus.type} }`;
+  return res;
+}
+
 function generateContent(viewModel: ViewModel): string {
   let res = ' root\n';
 
-  viewModel.read((view: View) => {
+  const selectionString = viewModel.read((view: View) => {
     const selection = view.getSelection();
     let selectedNodes = null;
     if (selection !== null) {
@@ -100,9 +116,11 @@ function generateContent(viewModel: ViewModel): string {
         typeDisplay,
       });
     });
+
+    return selection === null ? 'null' : printSelection(selection);
   });
 
-  return res;
+  return res + '\n selection' + selectionString;
 }
 
 function visitTree(view: View, currentNode: BlockNode, visitor, indent = []) {

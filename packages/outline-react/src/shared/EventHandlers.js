@@ -63,7 +63,6 @@ import {
 } from 'outline/SelectionHelpers';
 import {createTextNode, isTextNode, isDecoratorNode} from 'outline';
 
-const ZERO_WIDTH_JOINER_CHAR = '\u2060';
 const NO_BREAK_SPACE_CHAR = '\u00A0';
 
 let lastKeyWasMaybeAndroidSoftKey = false;
@@ -587,7 +586,7 @@ function updateTextNodeFromDOMContent(
   let node = getClosestNodeFromDOMNode(view, dom);
   if (isTextNode(node) && !node.isDirty()) {
     const rawTextContent = dom.nodeValue;
-    let textContent = rawTextContent.replace(ZERO_WIDTH_JOINER_CHAR, '');
+    let textContent = rawTextContent;
 
     if (
       node.isComposing() &&
@@ -640,15 +639,6 @@ function updateTextNodeFromDOMContent(
       }
 
       node.setTextContent(textContent);
-
-      if (
-        selection.isCollapsed() &&
-        selection.anchor.key === nodeKey &&
-        rawTextContent[0] === ZERO_WIDTH_JOINER_CHAR
-      ) {
-        const offset = domSelection.focusOffset - 1;
-        node.select(offset, offset);
-      }
     }
   }
 }

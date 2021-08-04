@@ -13,11 +13,7 @@ import type {EditorThemeClasses} from './OutlineEditor';
 
 import {OutlineNode, setCompositionKey, getCompositionKey} from './OutlineNode';
 import {getSelection, makeSelection} from './OutlineSelection';
-import {
-  getTextDirection,
-  isArray,
-  isImmutableOrInertOrSegmented,
-} from './OutlineUtils';
+import {getTextDirection, isArray} from './OutlineUtils';
 import invariant from 'shared/invariant';
 import {errorOnReadOnly} from './OutlineView';
 import {
@@ -28,7 +24,6 @@ import {
   IS_UNDERLINE,
   IS_OVERFLOWED,
   IS_UNMERGEABLE,
-  ZERO_WIDTH_JOINER_CHAR,
   NO_BREAK_SPACE_CHAR,
 } from './OutlineConstants';
 
@@ -150,15 +145,9 @@ function setTextContent(
   node: TextNode,
 ): void {
   const firstChild = dom.firstChild;
-  // We only prefix normal nodes with the byte order mark.
-  const prefix =
-    isImmutableOrInertOrSegmented(node) || nextText !== ''
-      ? ''
-      : ZERO_WIDTH_JOINER_CHAR;
-
   // Always add a suffix if we're composing a node
   const suffix = node.isComposing() ? NO_BREAK_SPACE_CHAR : '';
-  const text = prefix + nextText + suffix;
+  const text = nextText + suffix;
 
   if (firstChild == null) {
     dom.textContent = text;
@@ -429,12 +418,6 @@ export class TextNode extends OutlineNode {
     const selection = getSelection();
     const text = this.getTextContent();
     const key = this.__key;
-    if (key === null) {
-      invariant(
-        false,
-        'select: TODO? validate nodes have keys in a more generic way',
-      );
-    }
     if (typeof text === 'string') {
       const lastOffset = text.length;
       if (anchorOffset === undefined) {

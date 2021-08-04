@@ -22,9 +22,8 @@ import {
   isDecoratorNode,
   TextNode,
 } from '.';
-import {getDOMTextNode, isSelectionWithinEditor} from './OutlineUtils';
+import {isSelectionWithinEditor} from './OutlineUtils';
 import invariant from 'shared/invariant';
-import {ZERO_WIDTH_JOINER_CHAR} from './OutlineConstants';
 
 declare type CharacterPointType = {
   key: NodeKey,
@@ -101,6 +100,13 @@ function setPointValues(
   point.type = type;
 }
 
+function getTypeFromAnchorAndOffset(
+  node: TextNode | BlockNode,
+  offset: number,
+): 'character' | 'start' | 'end' {
+  return isTextNode(node) ? 'character' : offset === 0 ? 'start' : 'end';
+}
+
 export class Selection {
   anchor: PointType;
   focus: PointType;
@@ -127,13 +133,23 @@ export class Selection {
     return anchorNode.getNodesBetween(focusNode);
   }
   setBaseAndExtent(
-    anchorNode: TextNode,
+    anchorNode: BlockNode | TextNode,
     anchorOffset: number,
-    focusNode: TextNode,
+    focusNode: BlockNode | TextNode,
     focusOffset: number,
   ): void {
-    setPointValues(this.anchor, anchorNode.__key, anchorOffset, 'character');
-    setPointValues(this.focus, focusNode.__key, focusOffset, 'character');
+    setPointValues(
+      this.anchor,
+      anchorNode.__key,
+      anchorOffset,
+      getTypeFromAnchorAndOffset(anchorNode, anchorOffset),
+    );
+    setPointValues(
+      this.focus,
+      focusNode.__key,
+      focusOffset,
+      getTypeFromAnchorAndOffset(focusNode, focusOffset),
+    );
     this.isDirty = true;
   }
   getTextContent(): string {
@@ -280,7 +296,11 @@ function resolveSelectionPoint(
         }
         resolvedOffset = resolvedNode.getTextContentSize();
       } else {
-        resolvedNode = resolvedNode.getFirstTextNode();
+        const firstTextNode = resolvedNode.getFirstTextNode();
+        if (firstTextNode === null || firstTextNode.isImmutable()) {
+          return createPoint(resolvedNode.__key, 0, 'start');
+        }
+        resolvedNode = firstTextNode;
         resolvedOffset = 0;
       }
     } else if (isTextNode(resolvedNode)) {
@@ -301,22 +321,6 @@ function resolveSelectionPoint(
   }
   if (!isTextNode(resolvedNode)) {
     return null;
-  }
-  const textNode = getDOMTextNode(resolvedDOM);
-
-  if (
-    textNode !== null &&
-    resolvedOffset !== 0 &&
-    textNode.nodeValue[0] === ZERO_WIDTH_JOINER_CHAR
-  ) {
-    resolvedOffset--;
-  }
-
-  if (resolvedNode.getTextContent() === '') {
-    // Because we use a special character for whitespace
-    // at the start of empty strings, we need to remove one
-    // from the offset.
-    resolvedOffset = 0;
   }
 
   return createPoint(resolvedNode.__key, resolvedOffset, 'character');

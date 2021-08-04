@@ -8,24 +8,17 @@
  */
 
 import type {NodeKey, ParsedNode} from './OutlineNode';
+import type {Selection} from './OutlineSelection';
 
-import {isTextNode, TextNode, isLineBreakNode} from '.';
+import {isTextNode, TextNode} from '.';
 import {
   OutlineNode,
   getNodeByKey,
-  wrapInTextNodes,
   updateDirectionIfNeeded,
 } from './OutlineNode';
-import {Selection} from './OutlineSelection';
+import {getSelection, makeSelection} from './OutlineSelection';
 import {errorOnReadOnly} from './OutlineView';
-import {
-  IS_DIRECTIONLESS,
-  IS_IMMUTABLE,
-  IS_INERT,
-  IS_LTR,
-  IS_RTL,
-  IS_SEGMENTED,
-} from './OutlineConstants';
+import {IS_DIRECTIONLESS, IS_LTR, IS_RTL} from './OutlineConstants';
 
 export type ParsedBlockNode = {
   ...ParsedNode,
@@ -138,6 +131,28 @@ export class BlockNode extends OutlineNode {
 
   // Mutators
 
+  selectStart(): Selection {
+    errorOnReadOnly();
+    const selection = getSelection();
+    const key = this.__key;
+    if (selection === null) {
+      return makeSelection(key, 0, key, 0, 'start', 'start');
+    } else {
+      selection.setBaseAndExtent(this, 0, this, 0);
+    }
+    return selection;
+  }
+  selectEnd(): Selection {
+    errorOnReadOnly();
+    const selection = getSelection();
+    const key = this.__key;
+    if (selection === null) {
+      return makeSelection(key, 1, key, 1, 'end', 'end');
+    } else {
+      selection.setBaseAndExtent(this, 1, this, 1);
+    }
+    return selection;
+  }
   clear(): BlockNode {
     errorOnReadOnly();
     const writableSelf = this.getWritable();
@@ -171,15 +186,6 @@ export class BlockNode extends OutlineNode {
     // Handle direction if node is directionless
     if (flags & IS_DIRECTIONLESS) {
       updateDirectionIfNeeded(writableNodeToAppend);
-    }
-    // Handle immutable/segmented
-    if (
-      flags & IS_IMMUTABLE ||
-      flags & IS_SEGMENTED ||
-      flags & IS_INERT ||
-      isLineBreakNode(writableNodeToAppend)
-    ) {
-      wrapInTextNodes(writableNodeToAppend);
     }
     return writableSelf;
   }

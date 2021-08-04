@@ -11,7 +11,6 @@ import type {OutlineEditor} from 'outline';
 import type {InputEvents} from 'outline-react/useOutlineEditorEvents';
 
 import {useCallback, useEffect} from 'react';
-import {createTextNode} from 'outline';
 import useOutlineEditorEvents from './useOutlineEditorEvents';
 import {HeadingNode} from 'outline/HeadingNode';
 import {ListNode} from 'outline/ListNode';
@@ -43,10 +42,9 @@ function initEditor(editor: OutlineEditor): void {
 
     if (root.getFirstChild() === null) {
       const paragraph = createParagraphNode();
-      const textNode = createTextNode();
-      root.append(paragraph.append(textNode));
+      root.append(paragraph);
       if (view.getSelection() !== null) {
-        textNode.select();
+        paragraph.selectStart();
       }
     }
   }, 'initEditor');

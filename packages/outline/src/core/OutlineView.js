@@ -56,13 +56,13 @@ export type ParsedViewModel = {
   _selection: null | {
     anchor: {
       key: string,
-      offset: number,
-      type: 'character' | 'start' | 'end',
+      offset: null | number,
+      type: 'character' | 'before' | 'end',
     },
     focus: {
       key: string,
-      offset: number,
-      type: 'character' | 'start' | 'end',
+      offset: null | number,
+      type: 'character' | 'before' | 'end',
     },
   },
   _nodeMap: Array<[NodeKey, ParsedNode]>,

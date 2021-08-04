@@ -19,7 +19,7 @@ import React, {useCallback, useLayoutEffect, useMemo, useRef} from 'react';
 import {startTransition, useEffect, useState} from 'react';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
-import {TextNode, isTextNode} from 'outline';
+import {TextNode} from 'outline';
 import useEvent from './useEvent';
 
 type MentionMatch = {
@@ -391,14 +391,18 @@ function getPossibleMentionMatch(text): MentionMatch | null {
 }
 
 function getTextUpToAnchor(selection: Selection): string | null {
-  const anchorNode = selection.anchor.getNode();
+  const anchor = selection.anchor;
+  if (anchor.type !== 'character') {
+    return null;
+  }
+  const anchorNode = anchor.getNode();
   // We should not be attempting to extract mentions out of nodes
   // that are already being used for other core things. This is
   // especially true for immutable nodes, which can't be mutated at all.
-  if (!isTextNode(anchorNode) || !anchorNode.isSimpleText()) {
+  if (!anchorNode.isSimpleText()) {
     return null;
   }
-  const anchorOffset = selection.anchor.offset;
+  const anchorOffset = anchor.offset;
   return anchorNode.getTextContent().slice(0, anchorOffset);
 }
 
@@ -469,14 +473,18 @@ function createMentionNodeFromSearchResult(
     if (selection == null || !selection.isCollapsed()) {
       return;
     }
-    const anchorNode = selection.anchor.getNode();
+    const anchor = selection.anchor;
+    if (anchor.type !== 'character') {
+      return;
+    }
+    const anchorNode = anchor.getNode();
     // We should not be attempting to extract mentions out of nodes
     // that are already being used for other core things. This is
     // especially true for immutable nodes, which can't be mutated at all.
-    if (!isTextNode(anchorNode) || !anchorNode.isSimpleText()) {
+    if (!anchorNode.isSimpleText()) {
       return;
     }
-    const selectionOffset = selection.anchor.offset;
+    const selectionOffset = anchor.offset;
     const textContent = anchorNode.getTextContent().slice(0, selectionOffset);
     const characterOffset = match.replaceableString.length;
 

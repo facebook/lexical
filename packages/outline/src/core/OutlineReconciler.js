@@ -9,7 +9,10 @@
 
 import type {NodeKey, NodeMapType} from './OutlineNode';
 import type {OutlineEditor, EditorThemeClasses} from './OutlineEditor';
-import type {Selection as OutlineSelection} from './OutlineSelection';
+import type {
+  Selection as OutlineSelection,
+  PointType,
+} from './OutlineSelection';
 import type {TextNode} from './OutlineTextNode';
 import type {Node as ReactNode} from 'react';
 
@@ -496,36 +499,50 @@ function reconcileSelection(
   const focusNode = focus.getNode();
   const anchorDOM = getElementByKeyOrThrow(editor, anchorKey);
   const focusDOM = getElementByKeyOrThrow(editor, focusKey);
+  let nextAnchorNode;
+  let nextFocusNode;
+  let nextAnchorOffset;
+  let nextFocusOffset;
 
-  // Get the underlying DOM text nodes from the representative
-  // Outline text nodes (we use elements for text nodes).
-  const anchorDOMTarget = getDOMTextNode(anchorDOM);
-  const focusDOMTarget = getDOMTextNode(focusDOM);
+  if (anchor.type === 'character') {
+    const nextSelectionAnchorOffset = anchor.offset;
+    nextAnchorNode = getDOMTextNode(anchorDOM);
+    nextAnchorOffset =
+      isImmutableOrInertOrSegmented(anchorNode) ||
+      anchorNode.getTextContent() !== ''
+        ? nextSelectionAnchorOffset
+        : nextSelectionAnchorOffset + 1;
+  } else {
+    nextAnchorNode = anchorDOM;
+    // TODO
+    nextAnchorOffset = 0;
+  }
+  if (focus.type === 'character') {
+    const nextSelectionFocusOffset = focus.offset;
+    nextFocusNode = getDOMTextNode(focusDOM);
+    nextFocusOffset =
+      isImmutableOrInertOrSegmented(focusNode) ||
+      focusNode.getTextContent() !== ''
+        ? nextSelectionFocusOffset
+        : nextSelectionFocusOffset + 1;
+  } else {
+    nextFocusNode = focusDOM;
+    //  TODO
+    nextFocusOffset = 0;
+  }
   // If we can't get an underlying text node for selection, then
   // we should avoid setting selection to something incorrect.
-  if (focusDOMTarget === null || anchorDOMTarget === null) {
+  if (nextAnchorNode === null || nextFocusNode === null) {
     return;
   }
-  const nextSelectionAnchorOffset = anchor.offset;
-  const nextSelectionFocusOffset = focus.offset;
-  const nextAnchorOffset =
-    isImmutableOrInertOrSegmented(anchorNode) ||
-    anchorNode.getTextContent() !== ''
-      ? nextSelectionAnchorOffset
-      : nextSelectionAnchorOffset + 1;
-  const nextFocusOffset =
-    isImmutableOrInertOrSegmented(focusNode) ||
-    focusNode.getTextContent() !== ''
-      ? nextSelectionFocusOffset
-      : nextSelectionFocusOffset + 1;
 
   // Diff against the native DOM selection to ensure we don't do
   // an unnecessary selection update.
   if (
     anchorOffset === nextAnchorOffset &&
     focusOffset === nextFocusOffset &&
-    anchorDOMNode === anchorDOMTarget &&
-    focusDOMNode === focusDOMTarget
+    anchorDOMNode === nextAnchorNode &&
+    focusDOMNode === nextFocusNode
   ) {
     return;
   }
@@ -534,9 +551,9 @@ function reconcileSelection(
   // a "selectionchange" event, although it will be asynchronous.
   try {
     domSelection.setBaseAndExtent(
-      anchorDOMTarget,
+      nextAnchorNode,
       nextAnchorOffset,
-      focusDOMTarget,
+      nextFocusNode,
       nextFocusOffset,
     );
   } catch {
@@ -590,26 +607,18 @@ export function getElementByKeyOrThrow(
   return element;
 }
 
-function mergeAdjacentTextNodes(textNodes: Array<TextNode>): void {
-  // We're checking `selection !== null` later before we use these
-  // so initializing to 0 is safe and saves us an extra check below
-  const compositionKey = getCompositionKey();
-  let anchorOffset = 0;
-  let focusOffset = 0;
-  let anchorKey;
-  let focusKey;
-
-  if (activeSelection !== null) {
-    anchorOffset = activeSelection.anchor.offset;
-    focusOffset = activeSelection.focus.offset;
-    anchorKey = activeSelection.anchor.key;
-    focusKey = activeSelection.focus.key;
-  }
-
+function mergeAdjacentTextNodes(
+  textNodes: Array<TextNode>,
+  anchor: null | PointType,
+  focus: null | PointType,
+): void {
   // Merge all text nodes into the first node
   const writableMergeToNode = textNodes[0].getWritable();
   const key = writableMergeToNode.__key;
+  const compositionKey = getCompositionKey();
   let textLength = writableMergeToNode.getTextContentSize();
+  let selectionIsDirty = false;
+
   for (let i = 1; i < textNodes.length; i++) {
     const textNode = textNodes[i];
     const siblingText = textNode.getTextContent();
@@ -617,19 +626,21 @@ function mergeAdjacentTextNodes(textNodes: Array<TextNode>): void {
     if (compositionKey === textNodeKey) {
       setCompositionKey(key);
     }
-    if (activeSelection !== null && textNodeKey === anchorKey) {
-      activeSelection.anchor.offset = textLength + anchorOffset;
-      activeSelection.anchor.key = key;
+    if (anchor !== null && textNodeKey === anchor.key) {
+      anchor.offset = textLength + anchor.offset;
+      anchor.key = key;
+      selectionIsDirty = true;
     }
-    if (activeSelection !== null && textNodeKey === focusKey) {
-      activeSelection.focus.offset = textLength + focusOffset;
-      activeSelection.focus.key = key;
+    if (focus !== null && textNodeKey === focus.key) {
+      focus.offset = textLength + focus.offset;
+      focus.key = key;
+      selectionIsDirty = true;
     }
     writableMergeToNode.spliceText(textLength, 0, siblingText);
     textLength += siblingText.length;
     textNode.remove();
   }
-  if (activeSelection !== null) {
+  if (selectionIsDirty && activeSelection !== null) {
     activeSelection.isDirty = true;
   }
 }
@@ -638,6 +649,14 @@ function normalizeTextNodes(block: BlockNode): void {
   const children = block.getChildren();
   let toNormalize = [];
   let lastTextNodeFlags: number | null = null;
+  let anchor = null;
+  let focus = null;
+
+  if (activeSelection !== null) {
+    anchor = activeSelection.anchor;
+    focus = activeSelection.focus;
+  }
+
   for (let i = 0; i < children.length; i++) {
     const child = children[i];
 
@@ -654,20 +673,20 @@ function normalizeTextNodes(block: BlockNode): void {
         lastTextNodeFlags = flags;
       } else {
         if (toNormalize.length > 1) {
-          mergeAdjacentTextNodes(toNormalize);
+          mergeAdjacentTextNodes(toNormalize, anchor, focus);
         }
         toNormalize = [child];
         lastTextNodeFlags = flags;
       }
     } else {
       if (toNormalize.length > 1) {
-        mergeAdjacentTextNodes(toNormalize);
+        mergeAdjacentTextNodes(toNormalize, anchor, focus);
       }
       toNormalize = [];
       lastTextNodeFlags = null;
     }
   }
   if (toNormalize.length > 1) {
-    mergeAdjacentTextNodes(toNormalize);
+    mergeAdjacentTextNodes(toNormalize, anchor, focus);
   }
 }

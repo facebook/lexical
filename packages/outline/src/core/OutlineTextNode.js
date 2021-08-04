@@ -601,7 +601,7 @@ export class TextNode extends OutlineNode {
           focus.offset <= nextTextSize
         ) {
           focus.key = siblingKey;
-          focus.offset -= -textSize;
+          focus.offset -= textSize;
           selection.isDirty = true;
         }
       }

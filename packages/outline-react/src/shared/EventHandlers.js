@@ -15,6 +15,7 @@ import type {
   NodeKey,
   TextNode,
   View,
+  BlockNode,
 } from 'outline';
 
 import {IS_SAFARI, CAN_USE_BEFORE_INPUT} from 'shared/environment';
@@ -662,7 +663,10 @@ function applyTargetRange(selection: Selection, event: InputEvent): void {
   }
 }
 
-function canRemoveText(anchorNode: TextNode, focusNode: TextNode): boolean {
+function canRemoveText(
+  anchorNode: TextNode | BlockNode,
+  focusNode: TextNode | BlockNode,
+): boolean {
   return (
     anchorNode !== focusNode ||
     !isImmutableOrInert(anchorNode) ||
@@ -755,6 +759,7 @@ export function onBeforeInputForPlainText(
 
         if (
           anchorKey !== focusKey ||
+          !isTextNode(anchorNode) ||
           shouldInsertTextAfterTextNode(selection, anchorNode, true) ||
           data.length > 1
         ) {
@@ -900,6 +905,7 @@ export function onBeforeInputForRichText(
 
         if (
           anchorKey !== focusKey ||
+          !isTextNode(anchorNode) ||
           shouldInsertTextAfterTextNode(selection, anchorNode, true) ||
           data.length > 1
         ) {

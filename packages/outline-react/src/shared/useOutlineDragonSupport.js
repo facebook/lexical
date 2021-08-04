@@ -12,6 +12,7 @@ import type {OutlineEditor} from 'outline';
 import {insertRichText} from 'outline/SelectionHelpers';
 
 import {useEffect} from 'react';
+import {isTextNode} from 'outline';
 
 export default function useOutlineDragonSupport(editor: OutlineEditor) {
   useEffect(() => {
@@ -55,11 +56,39 @@ export default function useOutlineDragonSupport(editor: OutlineEditor) {
                   let anchorNode = anchor.getNode();
                   let setSelStart = 0;
                   let setSelEnd = 0;
-                  // set initial selection
-                  if (blockStart >= 0 && blockLength >= 0) {
-                    setSelStart = blockStart;
-                    setSelEnd = blockStart + blockLength;
+                  if (isTextNode(anchorNode)) {
+                    // set initial selection
+                    if (blockStart >= 0 && blockLength >= 0) {
+                      setSelStart = blockStart;
+                      setSelEnd = blockStart + blockLength;
+                      // If the offset is more than the end, make it the end
+                      selection.setBaseAndExtent(
+                        anchorNode,
+                        setSelStart,
+                        anchorNode,
+                        setSelEnd,
+                      );
+                    }
+                  }
+                  if (setSelStart !== setSelEnd || text !== '') {
+                    insertRichText(selection, text);
+                    anchorNode = anchor.getNode();
+                  }
+                  if (isTextNode(anchorNode)) {
+                    // set final selection
+                    setSelStart = selStart;
+                    setSelEnd = selStart + selLength;
+                    const anchorNodeTextLength =
+                      anchorNode.getTextContentSize();
                     // If the offset is more than the end, make it the end
+                    setSelStart =
+                      setSelStart > anchorNodeTextLength
+                        ? anchorNodeTextLength
+                        : setSelStart;
+                    setSelEnd =
+                      setSelEnd > anchorNodeTextLength
+                        ? anchorNodeTextLength
+                        : setSelEnd;
                     selection.setBaseAndExtent(
                       anchorNode,
                       setSelStart,
@@ -67,31 +96,6 @@ export default function useOutlineDragonSupport(editor: OutlineEditor) {
                       setSelEnd,
                     );
                   }
-                  if (setSelStart !== setSelEnd || text !== '') {
-                    insertRichText(selection, text);
-                    anchorNode = anchor.getNode();
-                  }
-                  // set final selection
-                  setSelStart = selStart;
-                  setSelEnd = selStart + selLength;
-                  const anchorNodeTextLength = anchor
-                    .getNode()
-                    .getTextContentSize();
-                  // If the offset is more than the end, make it the end
-                  setSelStart =
-                    setSelStart > anchorNodeTextLength
-                      ? anchorNodeTextLength
-                      : setSelStart;
-                  setSelEnd =
-                    setSelEnd > anchorNodeTextLength
-                      ? anchorNodeTextLength
-                      : setSelEnd;
-                  selection.setBaseAndExtent(
-                    anchorNode,
-                    setSelStart,
-                    anchorNode,
-                    setSelEnd,
-                  );
                   // block the chrome extension from handling this event
                   event.stopImmediatePropagation();
                 }

@@ -7,7 +7,13 @@
  * @flow strict-local
  */
 
-import type {OutlineEditor, Selection, TextFormatType, TextNode} from 'outline';
+import type {
+  OutlineEditor,
+  Selection,
+  TextFormatType,
+  TextNode,
+  BlockNode,
+} from 'outline';
 
 import {createTextNode, isTextNode} from 'outline';
 import React, {useCallback, useEffect, useRef, useState, useMemo} from 'react';
@@ -60,7 +66,7 @@ function Button({
   );
 }
 
-function getSelectedNode(selection: Selection): TextNode {
+function getSelectedNode(selection: Selection): TextNode | BlockNode {
   const anchorNode = selection.anchor.getNode();
   const focusNode = selection.focus.getNode();
   if (anchorNode === focusNode) {
@@ -189,11 +195,11 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
         ) {
           const node = getSelectedNode(selection);
           unstable_batchedUpdates(() => {
-            setIsBold(node.isBold());
-            setIsItalic(node.isItalic());
-            setIsStrikethrough(node.isStrikethrough());
-            setIsCode(node.isCode());
-            if (isLinkNode(node)) {
+            setIsBold(isTextNode(node) && node.isBold());
+            setIsItalic(isTextNode(node) && node.isItalic());
+            setIsStrikethrough(isTextNode(node) && node.isStrikethrough());
+            setIsCode(isTextNode(node) && node.isCode());
+            if (isTextNode(node) && isLinkNode(node)) {
               setIsLink(true);
               setLinkUrl(node.getURL());
             } else {

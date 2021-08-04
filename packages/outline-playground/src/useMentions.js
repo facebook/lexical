@@ -19,7 +19,7 @@ import React, {useCallback, useLayoutEffect, useMemo, useRef} from 'react';
 import {startTransition, useEffect, useState} from 'react';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
-import {TextNode} from 'outline';
+import {TextNode, isTextNode} from 'outline';
 import useEvent from './useEvent';
 
 type MentionMatch = {
@@ -395,7 +395,7 @@ function getTextUpToAnchor(selection: Selection): string | null {
   // We should not be attempting to extract mentions out of nodes
   // that are already being used for other core things. This is
   // especially true for immutable nodes, which can't be mutated at all.
-  if (!anchorNode.isSimpleText()) {
+  if (!isTextNode(anchorNode) || !anchorNode.isSimpleText()) {
     return null;
   }
   const anchorOffset = selection.anchor.offset;
@@ -473,7 +473,7 @@ function createMentionNodeFromSearchResult(
     // We should not be attempting to extract mentions out of nodes
     // that are already being used for other core things. This is
     // especially true for immutable nodes, which can't be mutated at all.
-    if (!anchorNode.isSimpleText()) {
+    if (!isTextNode(anchorNode) || !anchorNode.isSimpleText()) {
       return;
     }
     const selectionOffset = selection.anchor.offset;

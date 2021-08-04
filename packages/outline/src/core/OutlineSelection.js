@@ -26,7 +26,7 @@ import {getDOMTextNode, isSelectionWithinEditor} from './OutlineUtils';
 import invariant from 'shared/invariant';
 import {ZERO_WIDTH_JOINER_CHAR} from './OutlineConstants';
 
-declare type CharacterPointType = {
+type CharacterPointType = {
   key: NodeKey,
   offset: number,
   type: 'character',
@@ -34,33 +34,36 @@ declare type CharacterPointType = {
   getNode: () => TextNode,
 };
 
-type BlockStartPointType = {
-  key: NodeKey,
-  offset: 0,
-  type: 'start',
-  is: (PointType) => boolean,
-  getNode: () => BlockNode,
-};
-
 type BlockEndPointType = {
   key: NodeKey,
-  offset: 1,
+  offset: null,
   type: 'end',
   is: (PointType) => boolean,
   getNode: () => BlockNode,
 };
 
-type PointType = CharacterPointType | BlockStartPointType | BlockEndPointType;
+type BeforeNodePointType = {
+  key: NodeKey,
+  offset: null,
+  type: 'before',
+  is: (PointType) => boolean,
+  getNode: () => BlockNode,
+};
+
+export type PointType =
+  | CharacterPointType
+  | BeforeNodePointType
+  | BlockEndPointType;
 
 class Point {
   key: NodeKey;
   offset: number;
-  type: 'character' | 'start' | 'end';
+  type: 'character' | 'before' | 'end';
 
   constructor(
     key: NodeKey,
     offset: number,
-    type: 'character' | 'start' | 'end',
+    type: 'character' | 'before' | 'end',
   ) {
     this.key = key;
     this.offset = offset;
@@ -81,18 +84,18 @@ class Point {
 
 function createPoint(
   key: NodeKey,
-  offset: number,
-  type: 'character' | 'start' | 'end',
+  offset: null | number,
+  type: 'character' | 'before' | 'end',
 ): PointType {
   // $FlowFixMe: intentionally cast as we use a class for perf reasons
   return new Point(key, offset, type);
 }
 
-function setPointValues(
+export function setPointValues(
   point: PointType,
   key: NodeKey,
-  offset: number,
-  type: 'character' | 'start' | 'end',
+  offset: null | number,
+  type: 'character' | 'before' | 'end',
 ): void {
   point.key = key;
   // $FlowFixMe: internal utility function
@@ -126,7 +129,7 @@ export class Selection {
     }
     return anchorNode.getNodesBetween(focusNode);
   }
-  setBaseAndExtent(
+  setTextNodeRange(
     anchorNode: TextNode,
     anchorOffset: number,
     focusNode: TextNode,
@@ -144,8 +147,8 @@ export class Selection {
     const firstNode = nodes[0];
     const lastNode = nodes[nodes.length - 1];
     const isBefore = firstNode === this.anchor.getNode();
-    const anchorOffset = this.anchor.offset;
-    const focusOffset = this.focus.offset;
+    const anchorOffset = this.anchor.offset || 0;
+    const focusOffset = this.focus.offset || 0;
     let textContent = '';
     nodes.forEach((node) => {
       if (isTextNode(node)) {
@@ -399,10 +402,20 @@ function resolveSelectionPoints(
       editor._compositionKey !== resolvedAnchorPoint.key &&
       lastSelection !== null
     ) {
-      resolvedAnchorPoint.key = lastSelection.anchor.key;
-      resolvedAnchorPoint.offset = lastSelection.anchor.offset;
-      resolvedFocusPoint.key = lastSelection.focus.key;
-      resolvedFocusPoint.offset = lastSelection.focus.offset;
+      const lastAnchor = lastSelection.anchor;
+      const lastFocus = lastSelection.focus;
+      setPointValues(
+        resolvedAnchorPoint,
+        lastAnchor.key,
+        lastAnchor.offset,
+        lastAnchor.type,
+      );
+      setPointValues(
+        resolvedFocusPoint,
+        lastFocus.key,
+        lastFocus.offset,
+        lastFocus.type,
+      );
     }
   }
 
@@ -414,11 +427,11 @@ function resolveSelectionPoints(
 // when it current exists outside the editor.
 export function makeSelection(
   anchorKey: NodeKey,
-  anchorOffset: number,
+  anchorOffset: null | number,
   focusKey: NodeKey,
-  focusOffset: number,
-  anchorType: 'character' | 'start' | 'end',
-  focusType: 'character' | 'start' | 'end',
+  focusOffset: null | number,
+  anchorType: 'character' | 'before' | 'end',
+  focusType: 'character' | 'before' | 'end',
 ): Selection {
   const viewModel = getActiveViewModel();
   const selection = new Selection(
@@ -506,13 +519,13 @@ export function createSelectionFromParse(
   parsedSelection: null | {
     anchor: {
       key: string,
-      offset: number,
-      type: 'character' | 'start' | 'end',
+      offset: null | number,
+      type: 'character' | 'before' | 'end',
     },
     focus: {
       key: string,
-      offset: number,
-      type: 'character' | 'start' | 'end',
+      offset: null | number,
+      type: 'character' | 'before' | 'end',
     },
   },
 ): null | Selection {

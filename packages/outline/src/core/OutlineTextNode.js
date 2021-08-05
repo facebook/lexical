@@ -258,7 +258,6 @@ export class TextNode extends OutlineNode {
   getTextNodeFormatFlags(
     type: TextFormatType,
     alignWithFlags: null | number,
-    force?: boolean,
   ): number {
     const self = this.getLatest<TextNode>();
     const nodeFlags = self.__flags;
@@ -267,7 +266,6 @@ export class TextNode extends OutlineNode {
 
     if (
       isStateFlagPresent &&
-      !force &&
       (alignWithFlags === null || (alignWithFlags & stateFlag) === 0)
     ) {
       // Remove the state flag.

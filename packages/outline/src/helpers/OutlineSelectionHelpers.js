@@ -211,7 +211,6 @@ export function extractSelection(selection: Selection): Array<OutlineNode> {
 export function formatText(
   selection: Selection,
   formatType: TextFormatType,
-  forceFormat?: boolean,
 ): void {
   const selectedNodes = selection.getNodes();
   const selectedNodesLength = selectedNodes.length;
@@ -231,11 +230,7 @@ export function formatText(
   const firstNodeTextLength = firstNodeText.length;
   const currentBlock = firstNode.getParentBlockOrThrow();
   const focusOffset = focus.offset;
-  let firstNextFlags = firstNode.getTextNodeFormatFlags(
-    formatType,
-    null,
-    forceFormat,
-  );
+  let firstNextFlags = firstNode.getTextNodeFormatFlags(formatType, null);
   let anchorOffset = anchor.offset;
   let startOffset;
   let endOffset;
@@ -273,11 +268,7 @@ export function formatText(
       anchorOffset = 0;
       startOffset = 0;
       firstNode = nextSibling;
-      firstNextFlags = firstNode.getTextNodeFormatFlags(
-        formatType,
-        null,
-        forceFormat,
-      );
+      firstNextFlags = firstNode.getTextNodeFormatFlags(formatType, null);
     }
   }
 
@@ -309,7 +300,6 @@ export function formatText(
     const lastNextFlags = lastNode.getTextNodeFormatFlags(
       formatType,
       firstNextFlags,
-      forceFormat,
     );
     const lastNodeText = lastNode.getTextContent();
     const lastNodeTextLength = lastNodeText.length;
@@ -330,7 +320,6 @@ export function formatText(
         const selectedNextFlags = selectedNode.getTextNodeFormatFlags(
           formatType,
           firstNextFlags,
-          forceFormat,
         );
         selectedNode.setFlags(selectedNextFlags);
       }

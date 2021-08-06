@@ -79,6 +79,11 @@ function setTextThemeClassNames(
   // easy workaround for many atomic CSS systems today.
   let classNames = textClassNames.underlineStrikethrough;
   let hasUnderlineStrikethrough = false;
+  const prevUnderlineStrikethrough =
+    prevFormat & IS_UNDERLINE && prevFormat & IS_STRIKETHROUGH;
+  const nextUnderlineStrikethrough =
+    nextFormat & IS_UNDERLINE && nextFormat & IS_STRIKETHROUGH;
+
   if (classNames !== undefined) {
     if (!isArray(classNames)) {
       classNames = classNames.split(' ');
@@ -86,10 +91,6 @@ function setTextThemeClassNames(
       textClassNames.underlineStrikethrough = classNames;
     }
 
-    const prevUnderlineStrikethrough =
-      prevFormat & IS_UNDERLINE && prevFormat & IS_STRIKETHROUGH;
-    const nextUnderlineStrikethrough =
-      nextFormat & IS_UNDERLINE && nextFormat & IS_STRIKETHROUGH;
     if (nextUnderlineStrikethrough) {
       hasUnderlineStrikethrough = true;
       if (!prevUnderlineStrikethrough) {
@@ -125,7 +126,11 @@ function setTextThemeClassNames(
           }
           continue;
         }
-        if ((prevFormat & flag) === 0) {
+        if (
+          (prevFormat & flag) === 0 ||
+          (prevUnderlineStrikethrough && key === 'underline') ||
+          key === 'strikethrough'
+        ) {
           domClassList.add(...classNames);
         }
       } else if (prevFormat & flag) {

@@ -10,6 +10,7 @@
 import type {OutlineNode, NodeKey} from './OutlineNode';
 import type {OutlineEditor} from './OutlineEditor';
 import type {BlockNode} from './OutlineBlockNode';
+import type {TextFormatType} from './OutlineTextNode';
 
 import {getActiveEditor, ViewModel} from './OutlineView';
 import {getActiveViewModel} from './OutlineView';
@@ -22,7 +23,11 @@ import {
   isDecoratorNode,
   TextNode,
 } from '.';
-import {getDOMTextNode, isSelectionWithinEditor} from './OutlineUtils';
+import {
+  getDOMTextNode,
+  isSelectionWithinEditor,
+  toggleTextFormatType,
+} from './OutlineUtils';
 import invariant from 'shared/invariant';
 import {ZERO_WIDTH_JOINER_CHAR} from './OutlineConstants';
 
@@ -108,11 +113,13 @@ export class Selection {
   anchor: PointType;
   focus: PointType;
   isDirty: boolean;
+  textFormat: number;
 
-  constructor(anchor: PointType, focus: PointType) {
+  constructor(anchor: PointType, focus: PointType, textFormat: number) {
     this.anchor = anchor;
     this.focus = focus;
     this.isDirty = false;
+    this.textFormat = textFormat;
   }
 
   is(selection: Selection): boolean {
@@ -210,6 +217,7 @@ export class Selection {
     return new Selection(
       createPoint(anchor.key, anchor.offset, anchor.type),
       createPoint(focus.key, focus.offset, focus.type),
+      this.textFormat,
     );
   }
   swapPoints(): void {
@@ -221,6 +229,10 @@ export class Selection {
 
     setPointValues(anchor, focus.key, focus.offset, focus.type);
     setPointValues(focus, anchorKey, anchorOffset, anchorType);
+  }
+  toggleTextFormatType(formatType: TextFormatType): void {
+    this.textFormat = toggleTextFormatType(this.textFormat, formatType, null);
+    this.isDirty = true;
   }
 }
 
@@ -437,6 +449,7 @@ export function makeSelection(
   const selection = new Selection(
     createPoint(anchorKey, anchorOffset, anchorType),
     createPoint(focusKey, focusOffset, focusType),
+    0,
   );
   selection.isDirty = true;
   viewModel._selection = selection;
@@ -492,6 +505,7 @@ export function createSelection(
     return new Selection(
       createPoint(lastAnchor.key, lastAnchor.offset, lastAnchor.type),
       createPoint(lastFocus.key, lastFocus.offset, lastFocus.type),
+      lastSelection.textFormat,
     );
   }
   // Let's resolve the text nodes from the offsets and DOM nodes we have from
@@ -507,7 +521,11 @@ export function createSelection(
     return null;
   }
   const [resolvedAnchorPoint, resolvedFocusPoint] = resolvedSelectionPoints;
-  return new Selection(resolvedAnchorPoint, resolvedFocusPoint);
+  return new Selection(
+    resolvedAnchorPoint,
+    resolvedFocusPoint,
+    lastSelection === null ? 0 : lastSelection.textFormat,
+  );
 }
 
 export function getSelection(): null | Selection {
@@ -542,5 +560,6 @@ export function createSelectionFromParse(
           parsedSelection.focus.offset,
           parsedSelection.focus.type,
         ),
+        0,
       );
 }

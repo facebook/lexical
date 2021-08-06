@@ -633,22 +633,33 @@ function updateTextNodeFromDOMContent(
       const originalTextContent = node.getTextContent();
       selection.applyDOMRange(range);
       const nodeKey = node.getKey();
-      const anchor = selection === null ? null : selection.anchor;
 
-      if (
-        !CAN_USE_BEFORE_INPUT &&
-        anchor !== null &&
-        anchor.type === 'character' &&
-        anchor.key === nodeKey &&
-        textContent.indexOf(originalTextContent) === 0 &&
-        shouldInsertTextAfterTextNode(selection, node, false)
-      ) {
-        const insertionText = textContent.slice(originalTextContent.length);
-        view.markNodeAsDirty(node);
-        anchor.offset -= insertionText.length;
-        insertText(selection, insertionText);
-        return;
-      } else if (node.isSegmented()) {
+      if (!CAN_USE_BEFORE_INPUT && selection !== null) {
+        const anchor = selection.anchor;
+        const focus = selection.focus;
+        if (
+          anchor.type === 'character' &&
+          focus.type === 'character' &&
+          anchor.key === nodeKey &&
+          (node.getFormat() !== selection.textFormat ||
+            (textContent.indexOf(originalTextContent) === 0 &&
+              shouldInsertTextAfterTextNode(selection, node, false)))
+        ) {
+          const isCollapsed = selection.isCollapsed();
+          const insertionText = textContent.slice(originalTextContent.length);
+          view.markNodeAsDirty(node);
+          anchor.offset -= insertionText.length;
+          if (anchor.offset < 0) {
+            anchor.offset = 0;
+          }
+          if (isCollapsed) {
+            focus.offset = anchor.offset;
+          }
+          insertText(selection, insertionText);
+          return;
+        }
+      }
+      if (node.isSegmented()) {
         const replacement = createTextNode(originalTextContent);
         node.replace(replacement, true);
         node = replacement;

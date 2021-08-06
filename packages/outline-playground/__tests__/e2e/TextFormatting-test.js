@@ -199,6 +199,89 @@ describe('TextFormatting', () => {
       });
     });
 
+    it(`Can select text and underline+strikethrough`, async () => {
+      const {isRichText, page} = e2e;
+
+      if (!isRichText) {
+        return;
+      }
+
+      await page.focus('div.editor');
+      await page.keyboard.type('Hello world!');
+      await page.keyboard.press('ArrowLeft');
+      await page.keyboard.down('Shift');
+      await repeat(5, async () => {
+        await page.keyboard.press('ArrowLeft');
+      });
+      await page.keyboard.up('Shift');
+      await assertSelection(page, {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 11,
+        focusPath: [0, 0, 0],
+        focusOffset: 6,
+      });
+
+      await keyDownCtrlOrMeta(page);
+      await page.keyboard.press('u');
+      await keyUpCtrlOrMeta(page);
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello </span><span class="editor-text-underline" data-outline-text="true">world</span><span data-outline-text="true">!</span></p>',
+      );
+      await assertSelection(page, {
+        anchorPath: [0, 1, 0],
+        anchorOffset: 0,
+        focusPath: [0, 1, 0],
+        focusOffset: 5,
+      });
+
+      await keyDownCtrlOrMeta(page);
+      await page.keyboard.press('u');
+      await keyUpCtrlOrMeta(page);
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello world!</span></p>',
+      );
+      await assertSelection(page, {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 6,
+        focusPath: [0, 0, 0],
+        focusOffset: 11,
+      });
+
+      await keyDownCtrlOrMeta(page);
+      await page.keyboard.press('u');
+      await keyUpCtrlOrMeta(page);
+
+      await page.waitForSelector('.strikethrough');
+      await page.click('.strikethrough');
+
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello </span><span class="editor-text-underlineStrikethrough" data-outline-text="true">world</span><span data-outline-text="true">!</span></p>',
+      );
+      await assertSelection(page, {
+        anchorPath: [0, 1, 0],
+        anchorOffset: 0,
+        focusPath: [0, 1, 0],
+        focusOffset: 5,
+      });
+
+      await page.waitForSelector('.strikethrough');
+      await page.click('.strikethrough');
+
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello </span><span class="editor-text-underline" data-outline-text="true">world</span><span data-outline-text="true">!</span></p>',
+      );
+      await assertSelection(page, {
+        anchorPath: [0, 1, 0],
+        anchorOffset: 0,
+        focusPath: [0, 1, 0],
+        focusOffset: 5,
+      });
+    });
+
     it(`Can select multiple text parts and format them with shortcuts`, async () => {
       const {isRichText, page} = e2e;
 

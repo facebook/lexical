@@ -9,8 +9,9 @@
 
 import type {OutlineEditor} from './OutlineEditor';
 import type {OutlineNode} from './OutlineNode';
+import type {TextFormatType} from './OutlineTextNode';
 
-import {RTL_REGEX, LTR_REGEX} from './OutlineConstants';
+import {RTL_REGEX, LTR_REGEX, TEXT_TYPE_TO_FORMAT} from './OutlineConstants';
 
 export const emptyFunction = () => {};
 
@@ -89,4 +90,26 @@ export function getDOMTextNode(element: Node): Text | null {
     node = node.firstChild;
   }
   return null;
+}
+
+export function toggleTextFormatType(
+  format: number,
+  type: TextFormatType,
+  alignWithFormat: null | number,
+): number {
+  const activeFormat = TEXT_TYPE_TO_FORMAT[type];
+  const isStateFlagPresent = format & activeFormat;
+
+  if (
+    isStateFlagPresent &&
+    (alignWithFormat === null || (alignWithFormat & activeFormat) === 0)
+  ) {
+    // Remove the state flag.
+    return format ^ activeFormat;
+  }
+  if (alignWithFormat === null || alignWithFormat & activeFormat) {
+    // Add the state flag.
+    return format | activeFormat;
+  }
+  return format;
 }

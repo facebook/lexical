@@ -649,6 +649,7 @@ function normalizeTextNodes(block: BlockNode): void {
   const children = block.getChildren();
   let toNormalize = [];
   let lastTextNodeFlags: number | null = null;
+  let lastTextNodeFormat: number | null = null;
   let anchor = null;
   let focus = null;
 
@@ -668,22 +669,27 @@ function normalizeTextNodes(block: BlockNode): void {
       !child.isUnmergeable()
     ) {
       const flags = child.__flags;
-      if (lastTextNodeFlags === null || flags === lastTextNodeFlags) {
+      const format = child.__format;
+      if (
+        (lastTextNodeFlags === null || flags === lastTextNodeFlags) &&
+        (lastTextNodeFormat === null || format === lastTextNodeFormat)
+      ) {
         toNormalize.push(child);
-        lastTextNodeFlags = flags;
       } else {
         if (toNormalize.length > 1) {
           mergeAdjacentTextNodes(toNormalize, anchor, focus);
         }
         toNormalize = [child];
-        lastTextNodeFlags = flags;
       }
+      lastTextNodeFlags = flags;
+      lastTextNodeFormat = format;
     } else {
       if (toNormalize.length > 1) {
         mergeAdjacentTextNodes(toNormalize, anchor, focus);
       }
       toNormalize = [];
       lastTextNodeFlags = null;
+      lastTextNodeFormat = null;
     }
   }
   if (toNormalize.length > 1) {

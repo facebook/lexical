@@ -36,6 +36,8 @@ function cloneWithProperties<T: OutlineNode>(node: T): T {
   clone.__parent = latest.__parent;
   if (isBlockNode(latest)) {
     clone.__children = Array.from(latest.__children);
+  } else if (isTextNode(latest)) {
+    clone.__format = latest.__format;
   }
   return clone;
 }
@@ -129,6 +131,8 @@ export function getNodesInRange(selection: Selection): {
             node.__parent = prevNode.__parent;
             if (isBlockNode(prevNode)) {
               node.__children = Array.from(prevNode.__children);
+            } else if (isTextNode(prevNode)) {
+              node.__format = prevNode.__format;
             }
             if (!isBlockNode(node)) {
               invariant(false, 'getNodesInRange: node is not a block node');
@@ -221,6 +225,10 @@ export function formatText(
   if (!isTextNode(firstNode) || !isTextNode(lastNode)) {
     invariant(false, 'formatText: firstNode/lastNode not a text node');
   }
+  if (selection.isCollapsed()) {
+    selection.toggleTextFormatType(formatType);
+    return;
+  }
   const anchor = selection.anchor;
   const focus = selection.focus;
   if (anchor.type !== 'character' || focus.type !== 'character') {
@@ -228,35 +236,12 @@ export function formatText(
   }
   const firstNodeText = firstNode.getTextContent();
   const firstNodeTextLength = firstNodeText.length;
-  const currentBlock = firstNode.getParentBlockOrThrow();
   const focusOffset = focus.offset;
-  let firstNextFlags = firstNode.getTextNodeFormatFlags(formatType, null);
+  let firstNextFormat = firstNode.getTextNodeFormat(formatType, null);
   let anchorOffset = anchor.offset;
   let startOffset;
   let endOffset;
 
-  if (selection.isCollapsed()) {
-    if (firstNodeTextLength === 0) {
-      firstNode.setFlags(firstNextFlags);
-      selection.isDirty = true;
-    } else {
-      const textNode = createTextNode('');
-      textNode.setFlags(firstNextFlags);
-      if (anchorOffset === 0) {
-        firstNode.insertBefore(textNode);
-      } else if (anchorOffset === firstNodeTextLength) {
-        firstNode.insertAfter(textNode);
-      } else {
-        const [, beforeNode] = firstNode.splitText(anchorOffset);
-        beforeNode.insertBefore(textNode);
-      }
-      textNode.select();
-      if (currentBlock === null) {
-        invariant(false, 'formatText: currentBlock not be found');
-      }
-    }
-    return;
-  }
   const isBefore = firstNode === selection.anchor.getNode();
   startOffset = isBefore ? anchorOffset : focusOffset;
   endOffset = isBefore ? focusOffset : anchorOffset;
@@ -268,7 +253,7 @@ export function formatText(
       anchorOffset = 0;
       startOffset = 0;
       firstNode = nextSibling;
-      firstNextFlags = firstNode.getTextNodeFormatFlags(formatType, null);
+      firstNextFormat = firstNode.getTextNodeFormat(formatType, null);
     }
   }
 
@@ -281,12 +266,12 @@ export function formatText(
         return;
       }
       if (startOffset === 0 && endOffset === firstNodeTextLength) {
-        firstNode.setFlags(firstNextFlags);
+        firstNode.setFormat(firstNextFormat);
         firstNode.select(startOffset, endOffset);
       } else {
         const splitNodes = firstNode.splitText(startOffset, endOffset);
         const replacement = startOffset === 0 ? splitNodes[0] : splitNodes[1];
-        replacement.setFlags(firstNextFlags);
+        replacement.setFormat(firstNextFormat);
         replacement.select(0, endOffset - startOffset);
       }
     }
@@ -295,18 +280,18 @@ export function formatText(
       [, firstNode] = firstNode.splitText(startOffset);
       startOffset = 0;
     }
-    firstNode.setFlags(firstNextFlags);
+    firstNode.setFormat(firstNextFormat);
 
-    const lastNextFlags = lastNode.getTextNodeFormatFlags(
+    const lastNextFormat = lastNode.getTextNodeFormat(
       formatType,
-      firstNextFlags,
+      firstNextFormat,
     );
     const lastNodeText = lastNode.getTextContent();
     const lastNodeTextLength = lastNodeText.length;
     if (endOffset !== lastNodeTextLength) {
       [lastNode] = lastNode.splitText(endOffset);
     }
-    lastNode.setFlags(lastNextFlags);
+    lastNode.setFormat(lastNextFormat);
 
     for (let i = 1; i < lastIndex; i++) {
       const selectedNode = selectedNodes[i];
@@ -317,11 +302,11 @@ export function formatText(
         selectedNodeKey !== lastNode.getKey() &&
         !selectedNode.isImmutable()
       ) {
-        const selectedNextFlags = selectedNode.getTextNodeFormatFlags(
+        const selectedNextFormat = selectedNode.getTextNodeFormat(
           formatType,
-          firstNextFlags,
+          lastNextFormat,
         );
-        selectedNode.setFlags(selectedNextFlags);
+        selectedNode.setFormat(selectedNextFormat);
       }
     }
     selection.setTextNodeRange(firstNode, startOffset, lastNode, endOffset);
@@ -833,6 +818,8 @@ export function insertText(selection: Selection, text: string): void {
   const selectedNodesLength = selectedNodes.length;
   const anchor = selection.anchor;
   const focus = selection.focus;
+  const textFormat = selection.textFormat;
+
   let firstNode = selectedNodes[0];
   if (!isTextNode(firstNode)) {
     invariant(false, 'insertText: firstNode not a a text node');
@@ -869,13 +856,27 @@ export function insertText(selection: Selection, text: string): void {
   let endOffset;
 
   if (selectedNodesLength === 1) {
-    startOffset = anchorOffset > focusOffset ? focusOffset : anchorOffset;
-    endOffset = anchorOffset > focusOffset ? anchorOffset : focusOffset;
     if (isImmutableOrInert(firstNode)) {
       const textNode = createTextNode(text);
       firstNode.replace(textNode);
       textNode.select();
       return;
+    }
+    const firstNodeFormat = firstNode.getFormat();
+    startOffset = anchorOffset > focusOffset ? focusOffset : anchorOffset;
+    endOffset = anchorOffset > focusOffset ? anchorOffset : focusOffset;
+
+    if (startOffset === endOffset && firstNodeFormat !== textFormat) {
+      if (firstNode.getTextContent() === '') {
+        firstNode.setFormat(textFormat);
+      } else {
+        const [targetNode] = firstNode.splitText(startOffset);
+        const textNode = createTextNode(text);
+        textNode.setFormat(textFormat);
+        targetNode.insertAfter(textNode);
+        textNode.select();
+        return;
+      }
     }
     const delCount = endOffset - startOffset;
 

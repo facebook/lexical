@@ -81,13 +81,15 @@ function printSelection(selection: Selection): string {
   const focus = selection.focus;
   const anchorOffset = anchor.offset;
   const focusOffset = focus.offset;
+  const textFormat = selection.textFormat;
 
   res = `\n  ├ anchor { key: ${anchor.key}, offset: ${
     anchorOffset === null ? 'null' : anchorOffset
   }, type: ${anchor.type} }`;
-  res += `\n  └ focus { key: ${focus.key}, offset: ${
+  res += `\n  ├ focus { key: ${focus.key}, offset: ${
     focusOffset === null ? 'null' : focusOffset
   }, type: ${focus.type} }`;
+  res += `\n  └ flags: ${textFormat}`;
   return res;
 }
 
@@ -123,7 +125,7 @@ function generateContent(viewModel: ViewModel): string {
       });
     });
 
-    return selection === null ? 'null' : printSelection(selection);
+    return selection === null ? ': null' : printSelection(selection);
   });
 
   return res + '\n selection' + selectionString;

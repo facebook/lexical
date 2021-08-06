@@ -539,7 +539,17 @@ export function onSelectionChange(event: Event, editor: OutlineEditor): void {
 
   // This update functions as a way of reconciling a bad selection
   // to a good selection.
-  editor.update((view) => {}, 'onSelectionChange');
+  editor.update((view) => {
+    const selection = view.getSelection();
+    // Update the selection textFormat
+    if (selection !== null && selection.isCollapsed()) {
+      const anchor = selection.anchor;
+      if (anchor.type === 'character') {
+        const anchorNode = anchor.getNode();
+        selection.textFormat = anchorNode.getFormat();
+      }
+    }
+  }, 'onSelectionChange');
 }
 
 export function checkForBadInsertion(
@@ -765,6 +775,7 @@ export function onBeforeInputForPlainText(
         if (
           anchorKey !== focusKey ||
           !isTextNode(anchorNode) ||
+          anchorNode.getFormat() !== selection.textFormat ||
           shouldInsertTextAfterTextNode(selection, anchorNode, true) ||
           data.length > 1
         ) {
@@ -911,6 +922,7 @@ export function onBeforeInputForRichText(
         if (
           anchorKey !== focusKey ||
           !isTextNode(anchorNode) ||
+          anchorNode.getFormat() !== selection.textFormat ||
           shouldInsertTextAfterTextNode(selection, anchorNode, true) ||
           data.length > 1
         ) {

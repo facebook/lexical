@@ -44,7 +44,8 @@ export type TextFormatType =
   | 'underline'
   | 'strikethrough'
   | 'italic'
-  | 'code';
+  | 'code'
+  | 'overflowed';
 
 function getElementOuterTag(node: TextNode, format: number): string | null {
   if (format & IS_CODE) {
@@ -223,7 +224,7 @@ export class TextNode extends OutlineNode {
     return (this.getFormat() & IS_CODE) !== 0;
   }
   isOverflowed(): boolean {
-    return (this.getFlags() & IS_OVERFLOWED) !== 0;
+    return (this.getFormat() & IS_OVERFLOWED) !== 0;
   }
   isUnmergeable(): boolean {
     return (this.getFlags() & IS_UNMERGEABLE) !== 0;
@@ -352,22 +353,22 @@ export class TextNode extends OutlineNode {
     return self;
   }
   toggleBold(): TextNode {
-    return this.setFormat(this.getFlags() ^ IS_BOLD);
+    return this.setFormat(this.getFormat() ^ IS_BOLD);
   }
   toggleItalics(): TextNode {
-    return this.setFormat(this.getFlags() ^ IS_ITALIC);
+    return this.setFormat(this.getFormat() ^ IS_ITALIC);
   }
   toggleStrikethrough(): TextNode {
-    return this.setFormat(this.getFlags() ^ IS_STRIKETHROUGH);
+    return this.setFormat(this.getFormat() ^ IS_STRIKETHROUGH);
   }
   toggleUnderline(): TextNode {
-    return this.setFormat(this.getFlags() ^ IS_UNDERLINE);
+    return this.setFormat(this.getFormat() ^ IS_UNDERLINE);
   }
   toggleCode(): TextNode {
-    return this.setFormat(this.getFlags() ^ IS_CODE);
+    return this.setFormat(this.getFormat() ^ IS_CODE);
   }
   toggleOverflowed(): TextNode {
-    return this.setFlags(this.getFlags() ^ IS_OVERFLOWED);
+    return this.setFormat(this.getFormat() ^ IS_OVERFLOWED);
   }
   toggleUnmergeable(): TextNode {
     return this.setFlags(this.getFlags() ^ IS_UNMERGEABLE);

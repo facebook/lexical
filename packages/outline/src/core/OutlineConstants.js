@@ -16,12 +16,11 @@ export const IS_INERT = 1 << 2;
 export const IS_DIRECTIONLESS = 1 << 3;
 
 // Text nodes
-export const IS_OVERFLOWED = 1 << 4;
-export const IS_UNMERGEABLE = 1 << 5;
+export const IS_UNMERGEABLE = 1 << 4;
 
 // Block nodes
-export const IS_LTR = 1 << 6;
-export const IS_RTL = 1 << 7;
+export const IS_LTR = 1 << 5;
+export const IS_RTL = 1 << 6;
 
 // Text node formatting
 export const IS_BOLD = 1;
@@ -31,6 +30,7 @@ export const IS_UNDERLINE = 1 << 3;
 export const IS_CODE = 1 << 4;
 export const IS_SUBSCRIPT = 1 << 5;
 export const IS_SUPERSCRIPT = 1 << 6;
+export const IS_OVERFLOWED = 1 << 7; // This is going soon
 
 // Reconciliation
 
@@ -52,4 +52,5 @@ export const TEXT_TYPE_TO_FORMAT: {[TextFormatType]: number} = {
   strikethrough: IS_STRIKETHROUGH,
   italic: IS_ITALIC,
   code: IS_CODE,
+  overflowed: IS_OVERFLOWED,
 };

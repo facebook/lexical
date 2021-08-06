@@ -81,7 +81,6 @@ function printSelection(selection: Selection): string {
   const focus = selection.focus;
   const anchorOffset = anchor.offset;
   const focusOffset = focus.offset;
-  const textFormat = selection.textFormat;
 
   res = `\n  ├ anchor { key: ${anchor.key}, offset: ${
     anchorOffset === null ? 'null' : anchorOffset
@@ -89,7 +88,6 @@ function printSelection(selection: Selection): string {
   res += `\n  ├ focus { key: ${focus.key}, offset: ${
     focusOffset === null ? 'null' : focusOffset
   }, type: ${focus.type} }`;
-  res += `\n  └ flags: ${textFormat}`;
   return res;
 }
 

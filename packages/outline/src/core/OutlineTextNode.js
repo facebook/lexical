@@ -141,14 +141,15 @@ function setTextContent(
   node: TextNode,
 ): void {
   const firstChild = dom.firstChild;
+  const isComposing = node.isComposing();
   // We only prefix normal nodes with the byte order mark.
   const prefix =
-    isImmutableOrInertOrSegmented(node) || nextText !== ''
+    isImmutableOrInertOrSegmented(node) || nextText !== '' || isComposing
       ? ''
       : ZERO_WIDTH_JOINER_CHAR;
 
   // Always add a suffix if we're composing a node
-  const suffix = node.isComposing() ? NO_BREAK_SPACE_CHAR : '';
+  const suffix = isComposing ? NO_BREAK_SPACE_CHAR : '';
   const text = prefix + nextText + suffix;
 
   if (firstChild == null) {

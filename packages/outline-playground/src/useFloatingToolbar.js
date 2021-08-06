@@ -13,6 +13,8 @@ import type {
   TextFormatType,
   TextNode,
   BlockNode,
+  DecoratorNode,
+  LineBreakNode,
 } from 'outline';
 
 import {createTextNode, isTextNode} from 'outline';
@@ -66,7 +68,9 @@ function Button({
   );
 }
 
-function getSelectedNode(selection: Selection): TextNode | BlockNode {
+function getSelectedNode(
+  selection: Selection,
+): TextNode | BlockNode | DecoratorNode | LineBreakNode {
   const anchorNode = selection.anchor.getNode();
   const focusNode = selection.focus.getNode();
   if (anchorNode === focusNode) {

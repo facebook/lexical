@@ -19,6 +19,7 @@ export type {ParsedBlockNode} from './OutlineBlockNode';
 export type {ParsedTextNode} from './OutlineTextNode';
 export type {Selection} from './OutlineSelection';
 export type {TextFormatType} from './OutlineTextNode';
+export type {LineBreakNode} from './OutlineLineBreakNode';
 
 import {createEditor} from './OutlineEditor';
 import {createTextNode, isTextNode, TextNode} from './OutlineTextNode';

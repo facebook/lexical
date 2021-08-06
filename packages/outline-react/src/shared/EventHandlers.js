@@ -16,6 +16,8 @@ import type {
   TextNode,
   View,
   BlockNode,
+  LineBreakNode,
+  DecoratorNode,
 } from 'outline';
 
 import {IS_SAFARI, CAN_USE_BEFORE_INPUT} from 'shared/environment';
@@ -690,8 +692,8 @@ function applyTargetRange(selection: Selection, event: InputEvent): void {
 }
 
 function canRemoveText(
-  anchorNode: TextNode | BlockNode,
-  focusNode: TextNode | BlockNode,
+  anchorNode: TextNode | BlockNode | LineBreakNode | DecoratorNode,
+  focusNode: TextNode | BlockNode | LineBreakNode | DecoratorNode,
 ): boolean {
   return (
     anchorNode !== focusNode ||

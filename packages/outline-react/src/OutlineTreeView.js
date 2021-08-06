@@ -85,7 +85,7 @@ function printSelection(selection: Selection): string {
   res = `\n  ├ anchor { key: ${anchor.key}, offset: ${
     anchorOffset === null ? 'null' : anchorOffset
   }, type: ${anchor.type} }`;
-  res += `\n  ├ focus { key: ${focus.key}, offset: ${
+  res += `\n  └ focus { key: ${focus.key}, offset: ${
     focusOffset === null ? 'null' : focusOffset
   }, type: ${focus.type} }`;
   return res;

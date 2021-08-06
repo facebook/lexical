@@ -567,6 +567,8 @@ export class OutlineNode {
     mutableNode.__flags = latestNode.__flags;
     if (isBlockNode(mutableNode)) {
       mutableNode.__children = Array.from(latestNode.__children);
+    } else if (isTextNode(mutableNode)) {
+      mutableNode.__format = latestNode.__format;
     }
     if (__DEV__) {
       if (!mutableNode.constructor.prototype.hasOwnProperty('clone')) {

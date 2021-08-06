@@ -38,5 +38,6 @@
   "36": "reconcileNode: prevNode or nextNode does not exist in nodeMap",
   "37": "reconcileNode: parentDOM is null",
   "38": "storeDOMWithNodeKey: key was null",
-  "39": "Reconciliation: could not find DOM element for node key \"${key}\""
+  "39": "Reconciliation: could not find DOM element for node key \"${key}\"",
+  "40": "setFormat: can only be used on non-immutable nodes"
 }

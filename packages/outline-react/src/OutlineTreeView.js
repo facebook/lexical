@@ -123,7 +123,7 @@ function generateContent(viewModel: ViewModel): string {
       });
     });
 
-    return selection === null ? 'null' : printSelection(selection);
+    return selection === null ? ': null' : printSelection(selection);
   });
 
   return res + '\n selection' + selectionString;

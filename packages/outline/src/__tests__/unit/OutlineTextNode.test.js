@@ -13,7 +13,6 @@ import {
   IS_UNDERLINE,
   IS_CODE,
   IS_OVERFLOWED,
-  IS_UNMERGEABLE,
 } from '../../core/OutlineConstants';
 
 import React from 'react';
@@ -227,31 +226,19 @@ describe('OutlineTextNode tests', () => {
       (node) => node.toggleUnderline(),
     ],
     ['code', IS_CODE, (node) => node.isCode(), (node) => node.toggleCode()],
-    [
-      'overflowed',
-      IS_OVERFLOWED,
-      (node) => node.isOverflowed(),
-      (node) => node.toggleOverflowed(),
-    ],
-    [
-      'unmergeable',
-      IS_UNMERGEABLE,
-      (node) => node.isUnmergeable(),
-      (node) => node.toggleUnmergeable(),
-    ],
-  ])('%s flag', (formatFlag, stateFlag, flagPredicate, flagToggle) => {
+  ])('%s flag', (formatFlag, stateFormat, flagPredicate, flagToggle) => {
     test(`getTextNodeFormatFlags(${formatFlag})`, async () => {
       await update((view) => {
         const root = view.getRoot();
         const paragraphNode = root.getFirstChild();
         const textNode = paragraphNode.getFirstChild();
 
-        const newFlags = textNode.getTextNodeFormatFlags(formatFlag, null);
-        expect(newFlags).toBe(stateFlag);
+        const newFormat = textNode.getTextNodeFormat(formatFlag, null);
+        expect(newFormat).toBe(stateFormat);
 
-        textNode.setFlags(newFlags);
-        const newFlags2 = textNode.getTextNodeFormatFlags(formatFlag, null);
-        expect(newFlags2).toBe(0);
+        textNode.setFormat(newFormat);
+        const newFormat2 = textNode.getTextNodeFormat(formatFlag, null);
+        expect(newFormat2).toBe(0);
       });
     });
 
@@ -261,7 +248,7 @@ describe('OutlineTextNode tests', () => {
         const paragraphNode = root.getFirstChild();
         const textNode = paragraphNode.getFirstChild();
 
-        textNode.setFlags(stateFlag);
+        textNode.setFormat(stateFormat);
         expect(flagPredicate(textNode)).toBe(true);
       });
     });
@@ -601,10 +588,10 @@ describe('OutlineTextNode tests', () => {
           'my-italic-class my-code-class">' +
           'My text node</strong></code>',
       ],
-    ])('%s text format type', async (_type, flag, contents, expectedHTML) => {
+    ])('%s text format type', async (_type, format, contents, expectedHTML) => {
       await update(() => {
         const textNode = createTextNode(contents);
-        textNode.setFlags(flag);
+        textNode.setFormat(format);
         const element = textNode.createDOM(editorThemeClasses);
         expect(sanitizeHTML(element.outerHTML)).toBe(expectedHTML);
       });
@@ -614,17 +601,20 @@ describe('OutlineTextNode tests', () => {
       test.each([
         ['no formatting', null, 'My text node', '<span>My text node</span>'],
         ['no formatting + empty string', null, '', `<span><br></span>`],
-      ])('%s text format type', async (_type, flag, contents, expectedHTML) => {
-        await update(() => {
-          const paragraphNode = createParagraphNode();
-          const textNode = createTextNode(contents);
-          textNode.setFlags(flag);
-          paragraphNode.append(textNode);
+      ])(
+        '%s text format type',
+        async (_type, format, contents, expectedHTML) => {
+          await update(() => {
+            const paragraphNode = createParagraphNode();
+            const textNode = createTextNode(contents);
+            textNode.setFormat(format);
+            paragraphNode.append(textNode);
 
-          const element = textNode.createDOM(editorThemeClasses);
-          expect(sanitizeHTML(element.outerHTML)).toBe(expectedHTML);
-        });
-      });
+            const element = textNode.createDOM(editorThemeClasses);
+            expect(sanitizeHTML(element.outerHTML)).toBe(expectedHTML);
+          });
+        },
+      );
     });
   });
 
@@ -634,11 +624,13 @@ describe('OutlineTextNode tests', () => {
         'different tags',
         {
           text: 'My text node',
-          flags: IS_BOLD,
+          flags: 0,
+          format: IS_BOLD,
         },
         {
           text: 'My text node',
-          flags: IS_ITALIC,
+          flags: 0,
+          format: IS_ITALIC,
         },
         {
           result: true,
@@ -649,11 +641,13 @@ describe('OutlineTextNode tests', () => {
         'no change in tags',
         {
           text: 'My text node',
-          flags: IS_BOLD,
+          flags: 0,
+          format: IS_BOLD,
         },
         {
           text: 'My text node',
-          flags: IS_BOLD,
+          flags: 0,
+          format: IS_BOLD,
         },
         {
           result: false,
@@ -664,11 +658,13 @@ describe('OutlineTextNode tests', () => {
         'change in text',
         {
           text: 'My text node',
-          flags: IS_BOLD,
+          flags: 0,
+          format: IS_BOLD,
         },
         {
           text: 'My new text node',
-          flags: IS_BOLD,
+          flags: 0,
+          format: IS_BOLD,
         },
         {
           result: false,
@@ -680,11 +676,13 @@ describe('OutlineTextNode tests', () => {
         'removing code block',
         {
           text: 'My text node',
-          flags: IS_CODE | IS_BOLD,
+          flags: 0,
+          format: IS_CODE | IS_BOLD,
         },
         {
           text: 'My new text node',
-          flags: IS_BOLD,
+          flags: 0,
+          format: IS_BOLD,
         },
         {
           result: true,
@@ -695,17 +693,19 @@ describe('OutlineTextNode tests', () => {
       '%s',
       async (
         _desc,
-        {text: prevText, flags: prevFlags},
-        {text: nextText, flags: nextFlags},
+        {text: prevText, flags: prevFlags, format: prevFormat},
+        {text: nextText, flags: nextFlags, format: nextFormat},
         {result, expectedHTML},
       ) => {
         await update(() => {
           const prevTextNode = createTextNode(prevText);
           prevTextNode.setFlags(prevFlags);
+          prevTextNode.setFormat(prevFormat);
           const element = prevTextNode.createDOM(editorThemeClasses);
 
           const textNode = createTextNode(nextText);
           textNode.setFlags(nextFlags);
+          textNode.setFormat(nextFormat);
 
           expect(
             textNode.updateDOM(prevTextNode, element, editorThemeClasses),

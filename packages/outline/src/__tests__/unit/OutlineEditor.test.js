@@ -311,6 +311,7 @@ describe('OutlineEditor tests', () => {
         expect(text).toEqual({
           __text: '',
           __flags: 0,
+          __format: 0,
           __key: text.getKey(),
           __parent: paragraph.getKey(),
           __type: 'text',
@@ -372,6 +373,7 @@ describe('OutlineEditor tests', () => {
         expect(parsedText).toEqual({
           __text: 'Hello world',
           __flags: 0,
+          __format: 0,
           __key: textKey,
           __parent: paragraphKey,
           __type: 'text',

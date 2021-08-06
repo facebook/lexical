@@ -17,6 +17,7 @@ import {
   getTextDirection,
   isArray,
   isImmutableOrInertOrSegmented,
+  toggleTextFormatType,
 } from './OutlineUtils';
 import invariant from 'shared/invariant';
 import {errorOnReadOnly} from './OutlineView';
@@ -30,7 +31,13 @@ import {
   IS_UNMERGEABLE,
   ZERO_WIDTH_JOINER_CHAR,
   NO_BREAK_SPACE_CHAR,
+  TEXT_TYPE_TO_FORMAT,
 } from './OutlineConstants';
+
+export type ParsedTextNode = {
+  ...ParsedNode,
+  __text: string,
+};
 
 export type TextFormatType =
   | 'bold'
@@ -38,36 +45,20 @@ export type TextFormatType =
   | 'strikethrough'
   | 'italic'
   | 'code'
-  | 'overflowed'
-  | 'unmergeable';
+  | 'overflowed';
 
-export type SelectionFragment = {
-  root: OutlineNode,
-  nodeMap: {[string]: OutlineNode},
-};
-
-const textFormatStateFlags: {[TextFormatType]: number} = {
-  bold: IS_BOLD,
-  underline: IS_UNDERLINE,
-  strikethrough: IS_STRIKETHROUGH,
-  italic: IS_ITALIC,
-  code: IS_CODE,
-  overflowed: IS_OVERFLOWED,
-  unmergeable: IS_UNMERGEABLE,
-};
-
-function getElementOuterTag(node: TextNode, flags: number): string | null {
-  if (flags & IS_CODE) {
+function getElementOuterTag(node: TextNode, format: number): string | null {
+  if (format & IS_CODE) {
     return 'code';
   }
   return null;
 }
 
-function getElementInnerTag(node: TextNode, flags: number): string {
-  if (flags & IS_BOLD) {
+function getElementInnerTag(node: TextNode, format: number): string {
+  if (format & IS_BOLD) {
     return 'strong';
   }
-  if (flags & IS_ITALIC) {
+  if (format & IS_ITALIC) {
     return 'em';
   }
   return 'span';
@@ -75,8 +66,8 @@ function getElementInnerTag(node: TextNode, flags: number): string {
 
 function setTextThemeClassNames(
   tag: string,
-  prevFlags: number,
-  nextFlags: number,
+  prevFormat: number,
+  nextFormat: number,
   dom: HTMLElement,
   textClassNames,
 ): void {
@@ -96,9 +87,9 @@ function setTextThemeClassNames(
     }
 
     const prevUnderlineStrikethrough =
-      prevFlags & IS_UNDERLINE && prevFlags & IS_STRIKETHROUGH;
+      prevFormat & IS_UNDERLINE && prevFormat & IS_STRIKETHROUGH;
     const nextUnderlineStrikethrough =
-      nextFlags & IS_UNDERLINE && nextFlags & IS_STRIKETHROUGH;
+      nextFormat & IS_UNDERLINE && nextFormat & IS_STRIKETHROUGH;
     if (nextUnderlineStrikethrough) {
       hasUnderlineStrikethrough = true;
       if (!prevUnderlineStrikethrough) {
@@ -109,10 +100,10 @@ function setTextThemeClassNames(
     }
   }
 
-  for (const key in textFormatStateFlags) {
+  for (const key in TEXT_TYPE_TO_FORMAT) {
     // $FlowFixMe: expected cast here
     const format: TextFormatType = key;
-    const flag = textFormatStateFlags[format];
+    const flag = TEXT_TYPE_TO_FORMAT[format];
     classNames = textClassNames[key];
     if (classNames !== undefined) {
       // As we're using classList below, we need
@@ -124,20 +115,20 @@ function setTextThemeClassNames(
         classNames = classNames.split(' ');
         textClassNames[key] = classNames;
       }
-      if (nextFlags & flag) {
+      if (nextFormat & flag) {
         if (
           hasUnderlineStrikethrough &&
           (key === 'underline' || key === 'strikethrough')
         ) {
-          if (prevFlags & flag) {
+          if (prevFormat & flag) {
             domClassList.remove(...classNames);
           }
           continue;
         }
-        if ((prevFlags & flag) === 0) {
+        if ((prevFormat & flag) === 0) {
           domClassList.add(...classNames);
         }
-      } else if (prevFlags & flag) {
+      } else if (prevFormat & flag) {
         domClassList.remove(...classNames);
       }
     }
@@ -183,7 +174,7 @@ function createTextInnerDOM(
   innerDOM: HTMLElement,
   node: TextNode,
   innerTag: string,
-  flags: number,
+  format: number,
   text: string,
   editorThemeClasses: EditorThemeClasses,
 ): void {
@@ -192,17 +183,13 @@ function createTextInnerDOM(
   const textClassNames = editorThemeClasses.text;
 
   if (textClassNames !== undefined) {
-    setTextThemeClassNames(innerTag, 0, flags, innerDOM, textClassNames);
+    setTextThemeClassNames(innerTag, 0, format, innerDOM, textClassNames);
   }
 }
 
-export type ParsedTextNode = {
-  ...ParsedNode,
-  __text: string,
-};
-
 export class TextNode extends OutlineNode {
   __text: string;
+  __format: number;
 
   static deserialize(data: $FlowFixMe): TextNode {
     return new TextNode(data.__text);
@@ -212,27 +199,32 @@ export class TextNode extends OutlineNode {
     super(key);
     this.__text = text;
     this.__type = 'text';
+    this.__format = 0;
   }
   clone(): TextNode {
     return new TextNode(this.__text, this.__key);
   }
+  getFormat(): number {
+    const self = this.getLatest();
+    return self.__format;
+  }
   isBold(): boolean {
-    return (this.getFlags() & IS_BOLD) !== 0;
+    return (this.getFormat() & IS_BOLD) !== 0;
   }
   isItalic(): boolean {
-    return (this.getFlags() & IS_ITALIC) !== 0;
+    return (this.getFormat() & IS_ITALIC) !== 0;
   }
   isStrikethrough(): boolean {
-    return (this.getFlags() & IS_STRIKETHROUGH) !== 0;
+    return (this.getFormat() & IS_STRIKETHROUGH) !== 0;
   }
   isUnderline(): boolean {
-    return (this.getFlags() & IS_UNDERLINE) !== 0;
+    return (this.getFormat() & IS_UNDERLINE) !== 0;
   }
   isCode(): boolean {
-    return (this.getFlags() & IS_CODE) !== 0;
+    return (this.getFormat() & IS_CODE) !== 0;
   }
   isOverflowed(): boolean {
-    return (this.getFlags() & IS_OVERFLOWED) !== 0;
+    return (this.getFormat() & IS_OVERFLOWED) !== 0;
   }
   isUnmergeable(): boolean {
     return (this.getFlags() & IS_UNMERGEABLE) !== 0;
@@ -255,35 +247,21 @@ export class TextNode extends OutlineNode {
     const self = this.getLatest();
     return self.__text;
   }
-  getTextNodeFormatFlags(
+  getTextNodeFormat(
     type: TextFormatType,
-    alignWithFlags: null | number,
+    alignWithFormat: null | number,
   ): number {
     const self = this.getLatest<TextNode>();
-    const nodeFlags = self.__flags;
-    const stateFlag = textFormatStateFlags[type];
-    const isStateFlagPresent = nodeFlags & stateFlag;
-
-    if (
-      isStateFlagPresent &&
-      (alignWithFlags === null || (alignWithFlags & stateFlag) === 0)
-    ) {
-      // Remove the state flag.
-      return nodeFlags ^ stateFlag;
-    }
-    if (alignWithFlags === null || alignWithFlags & stateFlag) {
-      // Add the state flag.
-      return nodeFlags | stateFlag;
-    }
-    return nodeFlags;
+    const format = self.__format;
+    return toggleTextFormatType(format, type, alignWithFormat);
   }
 
   // View
 
   createDOM(editorThemeClasses: EditorThemeClasses): HTMLElement {
-    const flags = this.__flags;
-    const outerTag = getElementOuterTag(this, flags);
-    const innerTag = getElementInnerTag(this, flags);
+    const format = this.__format;
+    const outerTag = getElementOuterTag(this, format);
+    const innerTag = getElementInnerTag(this, format);
     const tag = outerTag === null ? innerTag : outerTag;
     const dom = document.createElement(tag);
     let innerDOM = dom;
@@ -296,7 +274,7 @@ export class TextNode extends OutlineNode {
       innerDOM,
       this,
       innerTag,
-      flags,
+      format,
       text,
       editorThemeClasses,
     );
@@ -308,12 +286,12 @@ export class TextNode extends OutlineNode {
     editorThemeClasses: EditorThemeClasses,
   ): boolean {
     const nextText = this.__text;
-    const prevFlags = prevNode.__flags;
-    const nextFlags = this.__flags;
-    const prevOuterTag = getElementOuterTag(this, prevFlags);
-    const nextOuterTag = getElementOuterTag(this, nextFlags);
-    const prevInnerTag = getElementInnerTag(this, prevFlags);
-    const nextInnerTag = getElementInnerTag(this, nextFlags);
+    const prevFormat = prevNode.__format;
+    const nextFormat = this.__format;
+    const prevOuterTag = getElementOuterTag(this, prevFormat);
+    const nextOuterTag = getElementOuterTag(this, nextFormat);
+    const prevInnerTag = getElementInnerTag(this, prevFormat);
+    const nextInnerTag = getElementInnerTag(this, nextFormat);
     const prevTag = prevOuterTag === null ? prevInnerTag : prevOuterTag;
     const nextTag = nextOuterTag === null ? nextInnerTag : nextOuterTag;
 
@@ -331,7 +309,7 @@ export class TextNode extends OutlineNode {
         nextInnerDOM,
         this,
         nextInnerTag,
-        nextFlags,
+        nextFormat,
         nextText,
         editorThemeClasses,
       );
@@ -352,11 +330,11 @@ export class TextNode extends OutlineNode {
     // Apply theme class names
     const textClassNames = editorThemeClasses.text;
 
-    if (textClassNames !== undefined && prevFlags !== nextFlags) {
+    if (textClassNames !== undefined && prevFormat !== nextFormat) {
       setTextThemeClassNames(
         nextInnerTag,
-        prevFlags,
-        nextFlags,
+        prevFormat,
+        nextFormat,
         innerDOM,
         textClassNames,
       );
@@ -365,23 +343,32 @@ export class TextNode extends OutlineNode {
   }
 
   // Mutators
+  setFormat(format: number): this {
+    errorOnReadOnly();
+    if (this.isImmutable()) {
+      invariant(false, 'setFormat: can only be used on non-immutable nodes');
+    }
+    const self = this.getWritable();
+    this.getWritable().__format = format;
+    return self;
+  }
   toggleBold(): TextNode {
-    return this.setFlags(this.getFlags() ^ IS_BOLD);
+    return this.setFormat(this.getFormat() ^ IS_BOLD);
   }
   toggleItalics(): TextNode {
-    return this.setFlags(this.getFlags() ^ IS_ITALIC);
+    return this.setFormat(this.getFormat() ^ IS_ITALIC);
   }
   toggleStrikethrough(): TextNode {
-    return this.setFlags(this.getFlags() ^ IS_STRIKETHROUGH);
+    return this.setFormat(this.getFormat() ^ IS_STRIKETHROUGH);
   }
   toggleUnderline(): TextNode {
-    return this.setFlags(this.getFlags() ^ IS_UNDERLINE);
+    return this.setFormat(this.getFormat() ^ IS_UNDERLINE);
   }
   toggleCode(): TextNode {
-    return this.setFlags(this.getFlags() ^ IS_CODE);
+    return this.setFormat(this.getFormat() ^ IS_CODE);
   }
   toggleOverflowed(): TextNode {
-    return this.setFlags(this.getFlags() ^ IS_OVERFLOWED);
+    return this.setFormat(this.getFormat() ^ IS_OVERFLOWED);
   }
   toggleUnmergeable(): TextNode {
     return this.setFlags(this.getFlags() ^ IS_UNMERGEABLE);
@@ -551,17 +538,20 @@ export class TextNode extends OutlineNode {
     const parentKey = parent.__key;
     let writableNode;
     let flags;
+    let format;
     if (this.isSegmented()) {
       // Create a new TextNode
       writableNode = createTextNode(firstPart);
       writableNode.__parent = parentKey;
       flags = writableNode.__flags;
+      format = writableNode.__format;
       this.remove();
     } else {
       // For the first part, update the existing node
       writableNode = this.getWritable();
       writableNode.__text = firstPart;
       flags = writableNode.__flags;
+      format = writableNode.__format;
     }
 
     // Handle selection
@@ -575,6 +565,7 @@ export class TextNode extends OutlineNode {
       const partSize = part.length;
       const sibling = createTextNode(part).getWritable();
       sibling.__flags = flags;
+      sibling.__format = format;
       const siblingKey = sibling.__key;
       const nextTextSize = textSize + partSize;
 

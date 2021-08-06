@@ -11,6 +11,8 @@ import type {OutlineNode, NodeKey} from './OutlineNode';
 import type {OutlineEditor} from './OutlineEditor';
 import type {BlockNode} from './OutlineBlockNode';
 import type {TextFormatType} from './OutlineTextNode';
+import type {LineBreakNode} from './OutlineLineBreakNode';
+import type {DecoratorNode} from './OutlineDecoratorNode';
 
 import {getActiveEditor, ViewModel} from './OutlineView';
 import {getActiveViewModel} from './OutlineView';
@@ -39,7 +41,15 @@ type CharacterPointType = {
   getNode: () => TextNode,
 };
 
-type BlockEndPointType = {
+type StartPointType = {
+  key: NodeKey,
+  offset: null,
+  type: 'start',
+  is: (PointType) => boolean,
+  getNode: () => BlockNode,
+};
+
+type EndPointType = {
   key: NodeKey,
   offset: null,
   type: 'end',
@@ -52,30 +62,35 @@ type BeforeNodePointType = {
   offset: null,
   type: 'before',
   is: (PointType) => boolean,
-  getNode: () => BlockNode,
+  getNode: () => DecoratorNode | TextNode | LineBreakNode,
 };
 
 export type PointType =
   | CharacterPointType
   | BeforeNodePointType
-  | BlockEndPointType;
+  | StartPointType
+  | EndPointType;
 
 class Point {
   key: NodeKey;
   offset: number;
-  type: 'character' | 'before' | 'end';
+  type: 'character' | 'before' | 'start' | 'end';
 
   constructor(
     key: NodeKey,
     offset: number,
-    type: 'character' | 'before' | 'end',
+    type: 'character' | 'before' | 'start' | 'end',
   ) {
     this.key = key;
     this.offset = offset;
     this.type = type;
   }
   is(point: PointType): boolean {
-    return this.key === point.key && this.offset === point.offset;
+    return (
+      this.key === point.key &&
+      this.offset === point.offset &&
+      this.type === point.type
+    );
   }
   getNode() {
     const key = this.key;
@@ -90,7 +105,7 @@ class Point {
 function createPoint(
   key: NodeKey,
   offset: null | number,
-  type: 'character' | 'before' | 'end',
+  type: 'character' | 'before' | 'start' | 'end',
 ): PointType {
   // $FlowFixMe: intentionally cast as we use a class for perf reasons
   return new Point(key, offset, type);
@@ -100,7 +115,7 @@ export function setPointValues(
   point: PointType,
   key: NodeKey,
   offset: null | number,
-  type: 'character' | 'before' | 'end',
+  type: 'character' | 'before' | 'start' | 'end',
 ): void {
   point.key = key;
   // $FlowFixMe: internal utility function

@@ -42,7 +42,7 @@
     "debug-test-e2e-plain:chromium": "cross-env E2E_BROWSER=chromium cross-env E2E_DEBUG=true cross-env E2E_EDITOR_MODE=plain-text jest --selectProjects e2e --testPathPattern",
     "debug-test-e2e-plain:firefox": "cross-env E2E_BROWSER=firefox cross-env E2E_DEBUG=true cross-env E2E_EDITOR_MODE=plain-text jest --selectProjects e2e --testPathPattern",
     "debug-test-e2e-plain:webkit": "cross-env E2E_BROWSER=webkit cross-env E2E_DEBUG=true cross-env E2E_EDITOR_MODE=plain-text jest --selectProjects e2e --testPathPattern",
-    "debug-test-unit": "node --inspect-brk node_modules/.bin/jest --runInBand",
+    "debug-test-unit": "node --inspect-brk node_modules/.bin/jest --runInBand --collectCoverage=false",
     "lint": "node ./scripts/tasks/eslint.js",
     "prettier": "node ./scripts/prettier.js write-changed",
     "prettier-all": "node ./scripts/prettier.js write",

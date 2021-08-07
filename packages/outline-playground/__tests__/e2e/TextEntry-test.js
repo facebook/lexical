@@ -43,6 +43,32 @@ describe('TextEntry', () => {
         });
       });
 
+      it(`Can type 'Hello Outline' in the editor and replace it with foo`, async () => {
+        const {page} = e2e;
+
+        const targetText = 'Hello Outline';
+        await page.focus('div.editor');
+        await page.keyboard.type(targetText);
+
+        // Select all the text
+        await keyDownCtrlOrMeta(page);
+        await page.keyboard.press('a');
+        await keyUpCtrlOrMeta(page);
+
+        await page.keyboard.type('Foo');
+
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Foo</span></p>',
+        );
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 3,
+          focusPath: [0, 0, 0],
+          focusOffset: 3,
+        });
+      });
+
       it('Paragraphed text entry and selection', async () => {
         const {isRichText, page} = e2e;
 

@@ -33,6 +33,7 @@ import {
   onDropPolyfill,
   onDragStartPolyfill,
   onMutation,
+  onInput,
 } from './shared/EventHandlers';
 import useOutlineDragonSupport from './shared/useOutlineDragonSupport';
 import useOutlineHistory from './shared/useOutlineHistory';
@@ -76,6 +77,7 @@ const events: InputEvents = [
   ['copy', onCopyForRichText],
   ['dragstart', onDragStartPolyfill],
   ['paste', onPasteForRichText],
+  ['input', onInput],
 ];
 
 if (CAN_USE_BEFORE_INPUT) {

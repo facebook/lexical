@@ -520,12 +520,7 @@ export function onCompositionEnd(
   editor: OutlineEditor,
 ): void {
   editor.update((view) => {
-    // Update the text content with the latest composition text
-    const domSelection = window.getSelection();
-    const anchorDOM = domSelection === null ? null : domSelection.anchorNode;
-    if (anchorDOM !== null && anchorDOM.nodeType === 3) {
-      updateTextNodeFromDOMContent(anchorDOM, view, editor);
-    }
+    updateSelectedTextFromDOM(editor, view);
     view.setCompositionKey(null);
   }, 'onCompositionEnd');
 }
@@ -1042,13 +1037,28 @@ export function onBeforeInputForRichText(
   }, 'onBeforeInputForRichText');
 }
 
+function updateSelectedTextFromDOM(editor: OutlineEditor, view: View) {
+  // Update the text content with the latest composition text
+  const domSelection = window.getSelection();
+  const anchorDOM = domSelection === null ? null : domSelection.anchorNode;
+  if (anchorDOM !== null && anchorDOM.nodeType === 3) {
+    updateTextNodeFromDOMContent(anchorDOM, view, editor);
+  }
+}
+
+export function onInput(event: InputEvent, editor: OutlineEditor) {
+  editor.update((view: View) => {
+    updateSelectedTextFromDOM(editor, view);
+  }, 'onInput');
+}
+
 export function onMutation(
   editor: OutlineEditor,
   mutations: Array<MutationRecord>,
   observer: MutationObserver,
 ): void {
   editor.update((view: View) => {
-    let shouldRevertSelection = false;
+    let shouldRevertSelection = true;
 
     for (let i = 0; i < mutations.length; i++) {
       const mutation = mutations[i];
@@ -1063,9 +1073,9 @@ export function onMutation(
         if (target.nodeType === 3) {
           // $FlowFixMe: nodeType === 3 is a Text DOM node
           updateTextNodeFromDOMContent(((target: any): Text), view, editor);
+          shouldRevertSelection = false;
         }
       } else if (type === 'childList') {
-        shouldRevertSelection = true;
         // We attempt to "undo" any changes that have occured outside
         // of Outline. We want Outline's view model to be source of truth.
         // To the user, these will look like no-ops.

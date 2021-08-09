@@ -267,6 +267,10 @@ class BaseOutlineEditor {
         // $FlowFixMe: TODO refine
         const rootListener: RootListener = (listener: any);
         rootListener(null, this._rootElement);
+      } else if (type === 'mutation') {
+        // $FlowFixMe: TODO refine
+        const mutationListener: MutationListener = (listener: any);
+        mutationListener(null);
       }
     };
   }

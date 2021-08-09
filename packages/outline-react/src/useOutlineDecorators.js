@@ -13,7 +13,8 @@ import type {OutlineEditor} from 'outline';
 import {createPortal, flushSync} from 'react-dom';
 
 import * as React from 'react';
-import {useEffect, useMemo, useState} from 'react';
+import {useMemo, useState} from 'react';
+import useLayoutEffect from './shared/useLayoutEffect';
 
 export default function useOutlineDecorators(
   editor: OutlineEditor,
@@ -22,7 +23,7 @@ export default function useOutlineDecorators(
     editor.getDecorators(),
   );
   // Subscribe to changes
-  useEffect(() => {
+  useLayoutEffect(() => {
     return editor.addListener('decorator', (nextDecorators) => {
       flushSync(() => {
         setDecorators(nextDecorators);

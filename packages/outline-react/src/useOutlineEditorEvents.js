@@ -10,7 +10,7 @@
 import type {OutlineEditor} from 'outline';
 import type {EventHandler} from './shared/EventHandlers';
 
-import {useEffect} from 'react';
+import useLayoutEffect from './shared/useLayoutEffect';
 
 export type InputEvents = Array<[string, EventHandler]>;
 
@@ -28,7 +28,7 @@ export default function useOutlineEditorEvents(
   editor: OutlineEditor,
   isReadOnly: boolean,
 ): void {
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (isReadOnly) {
       return;
     }

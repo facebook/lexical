@@ -10,7 +10,8 @@
 import type {OutlineEditor} from 'outline';
 import type {InputEvents} from 'outline-react/useOutlineEditorEvents';
 
-import {useCallback, useEffect} from 'react';
+import {useCallback} from 'react';
+import useLayoutEffect from './shared/useLayoutEffect';
 import {createTextNode} from 'outline';
 import useOutlineEditorEvents from './useOutlineEditorEvents';
 import {HeadingNode} from 'outline/HeadingNode';
@@ -90,7 +91,7 @@ export default function useOutlineRichText(
   editor: OutlineEditor,
   isReadOnly: boolean,
 ): () => void {
-  useEffect(() => {
+  useLayoutEffect(() => {
     const removeElementListner = editor.addListener(
       'root',
       (rootElement: null | HTMLElement) => {

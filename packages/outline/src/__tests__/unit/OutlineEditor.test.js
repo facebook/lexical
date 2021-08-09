@@ -23,9 +23,11 @@ function sanitizeHTML(html) {
 
 describe('OutlineEditor tests', () => {
   let container = null;
+  let reactRoot;
 
   beforeEach(() => {
     container = document.createElement('div');
+    reactRoot = ReactDOM.createRoot(container);
     document.body.appendChild(container);
   });
 
@@ -62,7 +64,7 @@ describe('OutlineEditor tests', () => {
     }
 
     ReactTestUtils.act(() => {
-      ReactDOM.render(<TestBase />, container);
+      reactRoot.render(<TestBase />);
     });
   }
 
@@ -85,7 +87,7 @@ describe('OutlineEditor tests', () => {
     }
 
     ReactTestUtils.act(() => {
-      ReactDOM.render(<TestBase element={null} />, container);
+      reactRoot.render(<TestBase element={null} />);
     });
 
     editor.update((view) => {
@@ -99,7 +101,7 @@ describe('OutlineEditor tests', () => {
     expect(container.innerHTML).toBe('<div contenteditable="true"></div>');
 
     ReactTestUtils.act(() => {
-      ReactDOM.render(<TestBase element={ref.current} />, container);
+      reactRoot.render(<TestBase element={ref.current} />);
     });
 
     expect(sanitizeHTML(container.innerHTML)).toBe(
@@ -140,7 +142,7 @@ describe('OutlineEditor tests', () => {
     }
 
     ReactTestUtils.act(() => {
-      ReactDOM.render(<TestBase changeElement={false} />, container);
+      reactRoot.render(<TestBase changeElement={false} />);
     });
 
     // Let Outline update
@@ -151,7 +153,7 @@ describe('OutlineEditor tests', () => {
     );
 
     ReactTestUtils.act(() => {
-      ReactDOM.render(<TestBase changeElement={true} />, container);
+      reactRoot.render(<TestBase changeElement={true} />);
     });
 
     // Let Outline update
@@ -215,7 +217,7 @@ describe('OutlineEditor tests', () => {
       }
 
       ReactTestUtils.act(() => {
-        ReactDOM.render(<Test />, container);
+        reactRoot.render(<Test />);
       });
 
       // Update the editor with the decorator
@@ -271,7 +273,7 @@ describe('OutlineEditor tests', () => {
       }
 
       ReactTestUtils.act(() => {
-        ReactDOM.render(<Test divKey={0} />, container);
+        reactRoot.render(<Test divKey={0} />);
       });
 
       expect(listener).toHaveBeenCalledTimes(1);
@@ -280,7 +282,7 @@ describe('OutlineEditor tests', () => {
       );
 
       ReactTestUtils.act(() => {
-        ReactDOM.render(<Test divKey={1} />, container);
+        reactRoot.render(<Test divKey={1} />);
       });
       expect(listener).toHaveBeenCalledTimes(3);
       expect(sanitizeHTML(container.innerHTML)).toBe(

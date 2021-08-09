@@ -69,7 +69,7 @@ export const initializeUnitTest = (runTests: (testEnv: TestEnv) => void) => {
     };
 
     ReactTestUtils.act(() => {
-      ReactDOM.render(<Editor />, testEnv.container);
+      ReactDOM.createRoot(testEnv.container).render(<Editor />);
     });
   });
 

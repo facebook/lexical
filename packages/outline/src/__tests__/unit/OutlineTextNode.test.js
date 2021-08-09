@@ -99,7 +99,7 @@ describe('OutlineTextNode tests', () => {
     }
 
     ReactTestUtils.act(() => {
-      ReactDOM.render(<TestBase />, container);
+      ReactDOM.createRoot(container).render(<TestBase />);
     });
 
     // Insert initial block

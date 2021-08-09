@@ -115,7 +115,7 @@ describe('OutlineSelection tests', () => {
     }
 
     ReactTestUtils.act(() => {
-      ReactDOM.render(<TestBase />, container);
+      ReactDOM.createRoot(container).render(<TestBase />);
     });
     ref.current.focus();
     await Promise.resolve().then();

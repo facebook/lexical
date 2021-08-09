@@ -11,7 +11,8 @@ import type {OutlineEditor, EditorThemeClasses} from 'outline';
 
 import {createEditor} from 'outline';
 
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {useCallback, useMemo, useRef, useState} from 'react';
+import useLayoutEffect from './shared/useLayoutEffect';
 
 export default function useOutlineEditor(
   onError: (error: Error, updateName: string) => void,
@@ -29,10 +30,10 @@ export default function useOutlineEditor(
     },
     [editor],
   );
-  useEffect(() => {
+  useLayoutEffect(() => {
     return editor.addListener('error', onError);
   }, [editor, onError]);
-  useEffect(() => {
+  useLayoutEffect(() => {
     return editor.addListener('update', () => {
       const canShowPlaceholder = editor.canShowPlaceholder();
       if (showPlaceholderRef.current !== canShowPlaceholder) {

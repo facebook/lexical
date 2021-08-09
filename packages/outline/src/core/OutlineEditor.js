@@ -95,6 +95,7 @@ export function resetEditor(editor: OutlineEditor): void {
   const keyToDOMMap = editor._keyToDOMMap;
   const rootElement = editor._rootElement;
 
+  triggerListeners('mutation', editor, null);
   if (rootElement !== null) {
     // Clear all DOM content from the root element.
     rootElement.textContent = '';
@@ -106,7 +107,6 @@ export function resetEditor(editor: OutlineEditor): void {
   keyToDOMMap.clear();
   editor._textContent = '';
   triggerListeners('update', editor, editor._viewModel);
-  triggerListeners('mutation', editor, null);
 }
 
 export function createEditor(
@@ -267,6 +267,10 @@ class BaseOutlineEditor {
         // $FlowFixMe: TODO refine
         const rootListener: RootListener = (listener: any);
         rootListener(null, this._rootElement);
+      } else if (type === 'mutation') {
+        // $FlowFixMe: TODO refine
+        const mutationListener: MutationListener = (listener: any);
+        mutationListener(null);
       }
     };
   }

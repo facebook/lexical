@@ -32,13 +32,16 @@ export class ListItemNode extends BlockNode {
 
   createDOM(editorThemeClasses: EditorThemeClasses): HTMLElement {
     const element = document.createElement('li');
-    const className = editorThemeClasses.listitem;
-    if (className !== undefined) {
-      element.className = className;
-    }
+    setListItemThemeClassNames(element, editorThemeClasses, this);
     return element;
   }
-  updateDOM(prevNode: ListItemNode, dom: HTMLElement): boolean {
+
+  updateDOM(
+    prevNode: ListItemNode,
+    dom: HTMLElement,
+    editorThemeClasses: EditorThemeClasses,
+  ): boolean {
+    setListItemThemeClassNames(dom, editorThemeClasses, prevNode);
     return false;
   }
 
@@ -105,6 +108,39 @@ export class ListItemNode extends BlockNode {
     }
 
     return newBlock;
+  }
+}
+
+function setListItemThemeClassNames(
+  dom: HTMLElement,
+  editorThemeClasses: EditorThemeClasses,
+  node: ListItemNode,
+): void {
+  const classesToAdd = [];
+  const classesToRemove = [];
+  const listItemClassName = editorThemeClasses.listitem;
+  let nestedListClassName;
+  if (editorThemeClasses.nestedList) {
+    nestedListClassName = editorThemeClasses.nestedList.listitem;
+  }
+
+  if (listItemClassName !== undefined) {
+    classesToAdd.push(listItemClassName);
+  }
+
+  if (nestedListClassName !== undefined) {
+    if (node.getChildren().some((child) => isListNode(child))) {
+      classesToAdd.push(nestedListClassName);
+    } else {
+      classesToRemove.push(nestedListClassName);
+    }
+  }
+
+  if (classesToAdd.length > 0) {
+    dom.classList.add(...classesToAdd);
+  }
+  if (classesToRemove.length) {
+    dom.classList.remove(...classesToRemove);
   }
 }
 

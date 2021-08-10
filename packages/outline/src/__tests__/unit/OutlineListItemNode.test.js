@@ -17,6 +17,9 @@ import {initializeUnitTest} from '../utils';
 
 const editorThemeClasses = Object.freeze({
   listitem: 'my-listItem-item-class',
+  nestedList: {
+    listitem: 'my-nested-list-listItem-class',
+  },
 });
 
 describe('OutlineListItemNode tests', () => {
@@ -43,20 +46,51 @@ describe('OutlineListItemNode tests', () => {
       });
     });
 
-    test('ListItemNode.updateDOM()', async () => {
-      const {editor} = testEnv;
-      await editor.update(() => {
-        const listItemNode = new ListItemNode('ul');
-        const domElement = listItemNode.createDOM(editorThemeClasses);
-        expect(domElement.outerHTML).toBe(
-          '<li class="my-listItem-item-class"></li>',
-        );
-        const newListItemNode = new ListItemNode();
-        const result = newListItemNode.updateDOM(listItemNode, domElement);
-        expect(result).toBe(false);
-        expect(domElement.outerHTML).toBe(
-          '<li class="my-listItem-item-class"></li>',
-        );
+    describe('ListItemNode.updateDOM()', () => {
+      test('base', async () => {
+        const {editor} = testEnv;
+        await editor.update(() => {
+          const listItemNode = new ListItemNode();
+          const domElement = listItemNode.createDOM(editorThemeClasses);
+          expect(domElement.outerHTML).toBe(
+            '<li class="my-listItem-item-class"></li>',
+          );
+          const newListItemNode = new ListItemNode();
+          const result = newListItemNode.updateDOM(
+            listItemNode,
+            domElement,
+            editorThemeClasses,
+          );
+          expect(result).toBe(false);
+          expect(domElement.outerHTML).toBe(
+            '<li class="my-listItem-item-class"></li>',
+          );
+        });
+      });
+
+      test('nested list', async () => {
+        const {editor} = testEnv;
+        await editor.update(() => {
+          const parentListNode = new ListNode('ul');
+          const parentlistItemNode = new ListItemNode();
+          parentListNode.append(parentlistItemNode);
+          const domElement = parentlistItemNode.createDOM(editorThemeClasses);
+          expect(domElement.outerHTML).toBe(
+            '<li class="my-listItem-item-class"></li>',
+          );
+          const nestedListNode = new ListNode('ul');
+          nestedListNode.append(new ListItemNode());
+          parentlistItemNode.append(nestedListNode);
+          const result = parentlistItemNode.updateDOM(
+            parentlistItemNode,
+            domElement,
+            editorThemeClasses,
+          );
+          expect(result).toBe(false);
+          expect(domElement.outerHTML).toBe(
+            '<li class="my-listItem-item-class my-nested-list-listItem-class"></li>',
+          );
+        });
       });
     });
 

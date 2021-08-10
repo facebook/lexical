@@ -136,7 +136,7 @@ function setListItemThemeClassNames(
     }
   }
 
-  if (classesToAdd.length) {
+  if (classesToAdd.length > 0) {
     dom.classList.add(...classesToAdd);
   }
   if (classesToRemove.length) {

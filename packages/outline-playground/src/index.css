@@ -104,6 +104,10 @@ header h1 {
   margin: 0
 }
 
+.editor-shell div.editor .editor-nested-list-listitem {
+  list-style-type: none;
+}
+
 .editor-shell div.editor span.editor-text-link,
 .editor-shell div.editor strong.editor-text-link,
 .editor-shell div.editor em.editor-text-link {

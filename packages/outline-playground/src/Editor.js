@@ -57,6 +57,9 @@ const editorThemeClasses = {
     ol: 'editor-list-ol',
     ul: 'editor-list-ul',
   },
+  nestedList: {
+    listitem: 'editor-nested-list-listitem',
+  },
   listitem: 'editor-listitem',
   image: 'editor-image',
   text: {

@@ -115,10 +115,11 @@ export function toggleTextFormatType(
 }
 
 function getRootNode(): ?Element {
+  const body = document.body;
   return (
     document.documentElement ||
-    ((document.body?.parentNode: $FlowFixMe): HTMLElement) ||
-    document.body
+    ((body: $FlowFixMe).parentNode: ?Element) ||
+    body
   );
 }
 

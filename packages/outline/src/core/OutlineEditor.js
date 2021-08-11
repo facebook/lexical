@@ -22,7 +22,12 @@ import {
   triggerListeners,
   preparePendingViewUpdate,
 } from './OutlineView';
-import {emptyFunction, scheduleMicroTask} from './OutlineUtils';
+import {
+  emptyFunction,
+  getWindowXScrollPosition,
+  getWindowYScrollPosition,
+  scheduleMicroTask,
+} from './OutlineUtils';
 import {createRootNode as createRoot} from './OutlineRootNode';
 import {LineBreakNode} from './OutlineLineBreakNode';
 import {RootNode} from './OutlineRootNode';
@@ -335,6 +340,16 @@ class BaseOutlineEditor {
   focus(callbackFn?: () => void): void {
     const rootElement = this._rootElement;
     if (rootElement !== null) {
+      const prevWindowScrollXPos = getWindowXScrollPosition();
+      const prevWindowScrollYPos = getWindowYScrollPosition();
+      // Hack to ensure we don't scroll the focus logic.
+      window.requestAnimationFrame(() => {
+        if (this._rootElement !== null) {
+          window.scrollTo(prevWindowScrollXPos, prevWindowScrollYPos);
+        }
+      });
+      // Note: {preventScroll: true} is only supported in Chrome 64+ and such.
+      // We can remove the above hack when we stop supporting older browsers.
       rootElement.focus({preventScroll: true});
       // This ensures that iOS does not trigger caps lock upon focus
       rootElement.setAttribute('autocapitalize', 'off');

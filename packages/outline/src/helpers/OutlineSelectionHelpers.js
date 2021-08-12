@@ -1010,3 +1010,32 @@ export function selectAll(selection: Selection): void {
     );
   }
 }
+
+export function getCommonAncestorFromNodeList(
+  nodeList: Array<OutlineNode>,
+): ?OutlineNode {
+  if (nodeList.length === 0) {
+    return null;
+  }
+  if (nodeList.length === 1) {
+    return nodeList[0].getParentOrThrow();
+  }
+  // Find all unique common ancestors for each node combination
+  const ancestorSet = new Set();
+  nodeList.forEach((node, index) => {
+    for (let i = index + 1; i < nodeList.length; i++) {
+      ancestorSet.add(node.getCommonAncestor(nodeList[i]));
+    }
+  });
+  const commonAncestors = Array.from(ancestorSet.values());
+  let commonAncestor = null;
+  // Get the common ancestor that's not in the list itself.
+  for (let i = 0; i < commonAncestors.length; i++) {
+    const ancestor = commonAncestors[i];
+    if (!nodeList.includes(ancestor)) {
+      commonAncestor = ancestor;
+      break;
+    }
+  }
+  return commonAncestor;
+}

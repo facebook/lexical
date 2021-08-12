@@ -125,21 +125,23 @@ function setListItemThemeClassNames(
   }
 
   if (listItemClassName !== undefined) {
-    classesToAdd.push(listItemClassName);
+    const listItemClasses = listItemClassName.split(' ');
+    classesToAdd.push(...listItemClasses);
   }
 
   if (nestedListClassName !== undefined) {
+    const nestedListClasses = nestedListClassName.split(' ');
     if (node.getChildren().some((child) => isListNode(child))) {
-      classesToAdd.push(nestedListClassName);
+      classesToAdd.push(...nestedListClasses);
     } else {
-      classesToRemove.push(nestedListClassName);
+      classesToRemove.push(...nestedListClasses);
     }
   }
 
   if (classesToAdd.length > 0) {
     dom.classList.add(...classesToAdd);
   }
-  if (classesToRemove.length) {
+  if (classesToRemove.length > 0) {
     dom.classList.remove(...classesToRemove);
   }
 }

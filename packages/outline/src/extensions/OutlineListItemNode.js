@@ -130,7 +130,6 @@ function setListItemThemeClassNames(
   }
 
   if (nestedListClassName !== undefined) {
-    // handle compound classNames
     const nestedListClasses = nestedListClassName.split(' ');
     if (node.getChildren().some((child) => isListNode(child))) {
       classesToAdd.push(...nestedListClasses);

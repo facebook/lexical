@@ -39,12 +39,13 @@ let activePrevNodeMap: NodeMapType;
 let activeNextNodeMap: NodeMapType;
 let activeSelection: null | OutlineSelection;
 let activeViewModelIsDirty: boolean = false;
+let activePrevKeyToDOMMap: Map<NodeKey, HTMLElement>;
 
 function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
   const node = activePrevNodeMap.get(key);
 
   if (parentDOM !== null) {
-    const dom = getElementByKeyOrThrow(activeEditor, key);
+    const dom = getPrevElementByKeyOrThrow(key);
     parentDOM.removeChild(dom);
   }
   // This logic is really important, otherwise we will leak DOM nodes
@@ -415,6 +416,7 @@ function reconcileRoot(
   activeNextNodeMap = nextViewModel._nodeMap;
   activeSelection = selection;
   activeViewModelIsDirty = nextViewModel._isDirty;
+  activePrevKeyToDOMMap = new Map(editor._keyToDOMMap);
   reconcileNode('root', null);
   editor._textContent = editorTextContent;
   // We don't want a bunch of void checks throughout the scope
@@ -435,6 +437,8 @@ function reconcileRoot(
   activeSelection = undefined;
   // $FlowFixMe
   activeEditorThemeClasses = undefined;
+  // $FlowFixMe
+  activePrevKeyToDOMMap = undefined;
 }
 
 export function reconcileViewModel(
@@ -591,6 +595,17 @@ export function getNodeKeyFromDOM(
     node = node.parentNode;
   }
   return null;
+}
+
+function getPrevElementByKeyOrThrow(key: NodeKey): HTMLElement {
+  const element = activePrevKeyToDOMMap.get(key);
+  if (element === undefined) {
+    invariant(
+      false,
+      'Reconciliation: could not find DOM element for node key "${key}"',
+    );
+  }
+  return element;
 }
 
 export function getElementByKeyOrThrow(

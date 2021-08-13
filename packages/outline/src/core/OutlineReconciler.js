@@ -37,6 +37,8 @@ let activeDirtySubTrees: Set<NodeKey>;
 let activeDirtyNodes: Set<NodeKey>;
 let activePrevNodeMap: NodeMapType;
 let activeNextNodeMap: NodeMapType;
+let activePrevDOMMap: Map<NodeKey, HTMLElement>;
+let activeNextDOMMap: Map<NodeKey, HTMLElement>;
 let activeSelection: null | OutlineSelection;
 let activeViewModelIsDirty: boolean = false;
 
@@ -44,13 +46,13 @@ function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
   const node = activePrevNodeMap.get(key);
 
   if (parentDOM !== null) {
-    const dom = getElementByKeyOrThrow(activeEditor, key);
+    const dom = getElementByKeyOrThrow(activePrevDOMMap, key);
     parentDOM.removeChild(dom);
   }
   // This logic is really important, otherwise we will leak DOM nodes
   // when their corresponding OutlineNodes are removed from the view model.
   if (!activeNextNodeMap.has(key)) {
-    activeEditor._keyToDOMMap.delete(key);
+    activeNextDOMMap.delete(key);
   }
   if (isBlockNode(node)) {
     const children = node.__children;
@@ -175,7 +177,7 @@ function reconcileChildren(
     if (prevChildKey === nextChildKey) {
       reconcileNode(prevChildKey, dom);
     } else {
-      const lastDOM = getElementByKeyOrThrow(activeEditor, prevChildKey);
+      const lastDOM = getElementByKeyOrThrow(activePrevDOMMap, prevChildKey);
       const replacementDOM = createNode(nextChildKey, null, null);
       dom.replaceChild(replacementDOM, lastDOM);
       destroyNode(prevChildKey, null);
@@ -220,7 +222,7 @@ function reconcileNode(
     activeViewModelIsDirty ||
     activeDirtyNodes.has(key) ||
     activeDirtySubTrees.has(key);
-  const dom = getElementByKeyOrThrow(activeEditor, key);
+  const dom = getElementByKeyOrThrow(activePrevDOMMap, key);
 
   if (prevNode === nextNode && !isDirty) {
     if (isBlockNode(prevNode)) {
@@ -354,7 +356,7 @@ function reconcileNodeChildren(
       if (!nextHasPrevKey) {
         // Remove prev
         siblingDOM = getNextSibling(
-          getElementByKeyOrThrow(activeEditor, prevKey),
+          getElementByKeyOrThrow(activePrevDOMMap, prevKey),
         );
         destroyNode(prevKey, dom);
         prevIndex++;
@@ -364,7 +366,7 @@ function reconcileNodeChildren(
         nextIndex++;
       } else {
         // Move next
-        const childDOM = getElementByKeyOrThrow(activeEditor, nextKey);
+        const childDOM = getElementByKeyOrThrow(activePrevDOMMap, nextKey);
         if (childDOM === siblingDOM) {
           siblingDOM = getNextSibling(reconcileNode(nextKey, dom));
         } else {
@@ -413,6 +415,9 @@ function reconcileRoot(
   activeDirtyNodes = dirtyNodes;
   activePrevNodeMap = prevViewModel._nodeMap;
   activeNextNodeMap = nextViewModel._nodeMap;
+  activePrevDOMMap = editor._keyToDOMMap;
+  activeNextDOMMap = new Map(activePrevDOMMap);
+  editor._keyToDOMMap = activeNextDOMMap;
   activeSelection = selection;
   activeViewModelIsDirty = nextViewModel._isDirty;
   reconcileNode('root', null);
@@ -497,8 +502,8 @@ function reconcileSelection(
   const focusKey = focus.key;
   const anchorNode = anchor.getNode();
   const focusNode = focus.getNode();
-  const anchorDOM = getElementByKeyOrThrow(editor, anchorKey);
-  const focusDOM = getElementByKeyOrThrow(editor, focusKey);
+  const anchorDOM = getElementByKeyOrThrow(activeNextDOMMap, anchorKey);
+  const focusDOM = getElementByKeyOrThrow(activeNextDOMMap, focusKey);
   let nextAnchorNode;
   let nextFocusNode;
   let nextAnchorOffset;
@@ -568,13 +573,9 @@ export function storeDOMWithKey(
   dom: HTMLElement,
   editor: OutlineEditor,
 ): void {
-  if (key === null) {
-    invariant(false, 'storeDOMWithNodeKey: key was null');
-  }
-  const keyToDOMMap = editor._keyToDOMMap;
   // $FlowFixMe: internal field
   dom.__outlineInternalRef = key;
-  keyToDOMMap.set(key, dom);
+  activeNextDOMMap.set(key, dom);
 }
 
 export function getNodeKeyFromDOM(
@@ -593,11 +594,11 @@ export function getNodeKeyFromDOM(
   return null;
 }
 
-export function getElementByKeyOrThrow(
-  editor: OutlineEditor,
+function getElementByKeyOrThrow(
+  map: Map<NodeKey, HTMLElement>,
   key: NodeKey,
 ): HTMLElement {
-  const element = editor._keyToDOMMap.get(key);
+  const element = map.get(key);
   if (element === undefined) {
     invariant(
       false,

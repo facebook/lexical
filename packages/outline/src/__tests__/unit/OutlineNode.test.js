@@ -816,6 +816,70 @@ describe('OutlineNode tests', () => {
       // TODO: add text direction validations
     });
 
+    test('OutlineNode.insertAfter() move blocks around', async () => {
+      const {editor} = testEnv;
+      let block1, block2, block3, text1, text2, text3;
+      await editor.update((view) => {
+        const root = view.getRoot();
+        root.clear();
+        block1 = new ParagraphNode();
+        block2 = new ParagraphNode();
+        block3 = new ParagraphNode();
+        text1 = new TextNode('A');
+        text2 = new TextNode('B');
+        text3 = new TextNode('C');
+        block1.append(text1);
+        block2.append(text2);
+        block3.append(text3);
+        root.append(block1);
+        root.append(block2);
+        root.append(block3);
+      });
+      expect(testEnv.outerHTML).toBe(
+        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">A</span></p><p><span data-outline-text="true">B</span></p><p><span data-outline-text="true">C</span></p></div>',
+      );
+      await editor.update((view) => {
+        text1.insertAfter(block2);
+      });
+      expect(testEnv.outerHTML).toBe(
+        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">A</span><p><span data-outline-text="true">B</span></p></p><p><span data-outline-text="true">C</span></p></div>',
+      );
+    });
+
+    test('OutlineNode.insertAfter() move blocks around #2', async () => {
+      const {editor} = testEnv;
+      let block1, block2, block3, text1, text2, text3;
+      await editor.update((view) => {
+        const root = view.getRoot();
+        root.clear();
+        block1 = new ParagraphNode();
+        block2 = new ParagraphNode();
+        block3 = new ParagraphNode();
+        text1 = new TextNode('A');
+        text1.toggleUnmergeable();
+        text2 = new TextNode('B');
+        text2.toggleUnmergeable();
+        text3 = new TextNode('C');
+        text3.toggleUnmergeable();
+        block1.append(text1);
+        block2.append(text2);
+        block3.append(text3);
+        root.append(block1);
+        root.append(block2);
+        root.append(block3);
+      });
+      expect(testEnv.outerHTML).toBe(
+        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">A</span></p><p><span data-outline-text="true">B</span></p><p><span data-outline-text="true">C</span></p></div>',
+      );
+      await editor.update((view) => {
+        text3.insertAfter(text1);
+        text3.insertAfter(text2);
+      });
+      expect(testEnv.outerHTML).toBe(
+        '<div contenteditable="true" data-outline-editor="true"><p></p><p></p><p><span data-outline-text="true">C</span><span data-outline-text="true">B</span><span data-outline-text="true">A</span></p></div>',
+      );
+    });
+
     test('OutlineNode.insertBefore()', async () => {
       const {editor} = testEnv;
       await editor.getViewModel().read(() => {

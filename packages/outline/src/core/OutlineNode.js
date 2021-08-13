@@ -144,21 +144,22 @@ function replaceNode<N: OutlineNode>(
   }
   const writableReplaceWith = replaceWith.getWritable();
   const oldParent = writableReplaceWith.getParent();
+  let key = writableReplaceWith.__key;
   if (oldParent !== null) {
     const writableParent = oldParent.getWritable();
     const children = writableParent.__children;
-    const index = children.indexOf(writableReplaceWith.__key);
+    const index = children.indexOf(key);
     if (index > -1) {
       children.splice(index, 1);
     }
+    key = reparentNode(writableReplaceWith);
   }
   const newParent = toReplace.getParentOrThrow();
   const writableParent = newParent.getWritable();
   const children = writableParent.__children;
   const index = children.indexOf(toReplace.__key);
-  const newKey = writableReplaceWith.__key;
   if (index > -1) {
-    children.splice(index, 0, newKey);
+    children.splice(index, 0, key);
   }
   writableReplaceWith.__parent = newParent.__key;
   toReplace.remove();
@@ -180,7 +181,7 @@ function replaceNode<N: OutlineNode>(
     writableReplaceWith.select(anchorOffset, anchorOffset);
   }
   if (getCompositionKey() === toReplaceKey) {
-    setCompositionKey(newKey);
+    setCompositionKey(key);
   }
   return writableReplaceWith;
 }
@@ -658,23 +659,25 @@ export class OutlineNode {
     const writableSelf = this.getWritable();
     const writableNodeToInsert = nodeToInsert.getWritable();
     const oldParent = writableNodeToInsert.getParent();
+    let key = writableNodeToInsert.__key;
+
     if (oldParent !== null) {
       const writableParent = oldParent.getWritable();
       const children = writableParent.__children;
-      const index = children.indexOf(writableNodeToInsert.__key);
+      const index = children.indexOf(key);
       if (index > -1) {
         children.splice(index, 1);
       }
+      key = reparentNode(writableNodeToInsert);
     }
     const writableParent = this.getParentOrThrow().getWritable();
-    const insertKey = writableNodeToInsert.__key;
     writableNodeToInsert.__parent = writableSelf.__parent;
     const children = writableParent.__children;
     const index = children.indexOf(writableSelf.__key);
     if (index > -1) {
-      children.splice(index + 1, 0, insertKey);
+      children.splice(index + 1, 0, key);
     } else {
-      children.push(insertKey);
+      children.push(key);
     }
     const flags = writableNodeToInsert.__flags;
     // Handle direction if node is directionless
@@ -698,23 +701,24 @@ export class OutlineNode {
     const writableSelf = this.getWritable();
     const writableNodeToInsert = nodeToInsert.getWritable();
     const oldParent = writableNodeToInsert.getParent();
+    let key = writableNodeToInsert.__key;
     if (oldParent !== null) {
       const writableParent = oldParent.getWritable();
       const children = writableParent.__children;
-      const index = children.indexOf(writableNodeToInsert.__key);
+      const index = children.indexOf(key);
       if (index > -1) {
         children.splice(index, 1);
       }
+      key = reparentNode(writableNodeToInsert);
     }
     const writableParent = this.getParentOrThrow().getWritable();
-    const insertKey = writableNodeToInsert.__key;
     writableNodeToInsert.__parent = writableSelf.__parent;
     const children = writableParent.__children;
     const index = children.indexOf(writableSelf.__key);
     if (index > -1) {
-      children.splice(index, 0, insertKey);
+      children.splice(index, 0, key);
     } else {
-      children.push(insertKey);
+      children.push(key);
     }
     const flags = writableNodeToInsert.__flags;
     // Handle direction if node is directionless
@@ -861,4 +865,19 @@ export function createNodeFromParse(
     }
   }
   return node;
+}
+
+export function reparentNode(node: OutlineNode): NodeKey {
+  const writableNode = node.getWritable();
+  const viewModel = getActiveViewModel();
+  const dirtyNodes = viewModel._dirtyNodes;
+  const oldKey = writableNode.__key;
+  const newKey = generateRandomKey();
+  const nodeMap = viewModel._nodeMap;
+  nodeMap.set(newKey, writableNode);
+  nodeMap.delete(oldKey);
+  dirtyNodes.add(newKey);
+  dirtyNodes.delete(oldKey);
+  writableNode.__key = newKey;
+  return newKey;
 }

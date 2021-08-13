@@ -16,6 +16,7 @@ import {
   getNodeByKey,
   wrapInTextNodes,
   updateDirectionIfNeeded,
+  reparentNode,
 } from './OutlineNode';
 import {makeSelection, getSelection, setPointValues} from './OutlineSelection';
 import {errorOnReadOnly} from './OutlineView';
@@ -164,23 +165,24 @@ export class BlockNode extends OutlineNode {
     errorOnReadOnly();
     const writableSelf = this.getWritable();
     const writableNodeToAppend = nodeToAppend.getWritable();
+    let key = writableNodeToAppend.__key;
 
     // Remove node from previous parent
     const oldParent = writableNodeToAppend.getParent();
     if (oldParent !== null) {
       const writableParent = oldParent.getWritable();
       const children = writableParent.__children;
-      const index = children.indexOf(writableNodeToAppend.__key);
+      const index = children.indexOf(key);
       if (index > -1) {
         children.splice(index, 1);
       }
+      key = reparentNode(writableNodeToAppend);
     }
     // Set child parent to self
     writableNodeToAppend.__parent = writableSelf.__key;
     const children = writableSelf.__children;
     // Append children.
-    const newKey = writableNodeToAppend.__key;
-    children.push(newKey);
+    children.push(key);
     const flags = writableNodeToAppend.__flags;
     // Handle direction if node is directionless
     if (flags & IS_DIRECTIONLESS) {

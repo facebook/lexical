@@ -108,6 +108,10 @@ header h1 {
   list-style-type: none;
 }
 
+.editor-shell .editor-list-ul .editor-list-ul {
+  margin-left: 16px;
+}
+
 .editor-shell div.editor span.editor-text-link,
 .editor-shell div.editor strong.editor-text-link,
 .editor-shell div.editor em.editor-text-link {

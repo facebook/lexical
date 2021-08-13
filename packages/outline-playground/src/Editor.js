@@ -23,6 +23,7 @@ import {insertNodes} from 'outline/SelectionHelpers';
 import useFloatingToolbar from './useFloatingToolbar';
 import useHashtags from './useHashtags';
 import useKeywords from './useKeywords';
+import useNestedList from './useNestedList';
 import BlockControls from './BlockControls';
 import CharacterLimit from './CharacterLimit';
 import {Typeahead} from './Typeahead';
@@ -115,6 +116,7 @@ export const useRichTextEditor = ({
   useHashtags(editor);
   useOutlineAutoFormatter(editor);
   useKeywords(editor);
+  useNestedList(editor);
   useEffect(() => {
     editor.registerNodeType('image', ImageNode);
   }, [editor]);

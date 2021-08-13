@@ -12,9 +12,39 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import {createEditor, createTextNode, TextNode, DecoratorNode} from 'outline';
+import {
+  createEditor,
+  createTextNode,
+  TextNode,
+  DecoratorNode,
+  BlockNode,
+} from 'outline';
 import {createParagraphNode, ParagraphNode} from 'outline/ParagraphNode';
 import useOutlineRichText from 'outline-react/useOutlineRichText';
+import {getNodeByKey} from '../../core/OutlineNode';
+
+class TestBlockNode extends BlockNode {
+  static deserialize() {
+    // TODO
+  }
+  clone() {
+    const clone = new TestBlockNode(this.__key);
+    clone.__children = [...this.__children];
+    clone.__parent = this.__parent;
+    clone.__flags = this.__flags;
+    return clone;
+  }
+  createDOM() {
+    return document.createElement('div');
+  }
+  updateDOM() {
+    return false;
+  }
+}
+
+function createTestBlockNode() {
+  return new TestBlockNode();
+}
 
 function sanitizeHTML(html) {
   // Remove zero width characters
@@ -523,6 +553,128 @@ describe('OutlineEditor tests', () => {
           await reset();
         }
       }
+    });
+
+    it('moves node to different tree branches', async () => {
+      function createBlockNodeWithText(text: string) {
+        const blockNode = createTestBlockNode();
+        const textNode = createTextNode(text);
+        blockNode.append(textNode);
+        return [blockNode, textNode];
+      }
+
+      let paragraphNodeKey;
+      let blockNode1Key;
+      let textNode1Key;
+      let blockNode2Key;
+      let textNode2Key;
+      await update((view: View) => {
+        const paragraph: ParagraphNode = view.getRoot().getFirstChild();
+        paragraphNodeKey = paragraph.getKey();
+
+        const [blockNode1, textNode1] = createBlockNodeWithText('A');
+        blockNode1Key = blockNode1.getKey();
+        textNode1Key = textNode1.getKey();
+
+        const [blockNode2, textNode2] = createBlockNodeWithText('B');
+        blockNode2Key = blockNode2.getKey();
+        textNode2Key = textNode2.getKey();
+
+        paragraph.append(blockNode1);
+        paragraph.append(blockNode2);
+      });
+      await update((view: View) => {
+        const blockNode1: BlockNode = getNodeByKey(blockNode1Key);
+        const blockNode2: TextNode = getNodeByKey(blockNode2Key);
+        blockNode1.append(blockNode2);
+      });
+      const keys = [
+        paragraphNodeKey,
+        blockNode1Key,
+        textNode1Key,
+        blockNode2Key,
+        textNode2Key,
+      ];
+      for (let i = 0; i < keys.length; i++) {
+        expect(editor._viewModel._nodeMap.has(keys[i])).toBe(true);
+        expect(editor._keyToDOMMap.has(keys[i])).toBe(true);
+      }
+      expect(editor._viewModel._nodeMap.size).toBe(keys.length + 1); // + root
+      expect(editor._keyToDOMMap.size).toBe(keys.length + 1); // + root
+      expect(container.innerHTML).toBe(
+        '<div contenteditable="true" data-outline-editor="true"><p><div><span data-outline-text="true">A</span><div><span data-outline-text="true">B</span></div></div></p></div>',
+      );
+    });
+
+    it('moves node to different tree branches (inverse)', async () => {
+      function createBlockNodeWithText(text: string) {
+        const blockNode = createTestBlockNode();
+        const textNode = createTextNode(text);
+        blockNode.append(textNode);
+        return blockNode;
+      }
+
+      let blockNode1Key;
+      let blockNode2Key;
+      await update((view: View) => {
+        const paragraph: ParagraphNode = view.getRoot().getFirstChild();
+
+        const blockNode1 = createBlockNodeWithText('A');
+        blockNode1Key = blockNode1.getKey();
+
+        const blockNode2 = createBlockNodeWithText('B');
+        blockNode2Key = blockNode2.getKey();
+
+        paragraph.append(blockNode1);
+        paragraph.append(blockNode2);
+      });
+      await update((view: View) => {
+        const blockNode1: BlockNode = getNodeByKey(blockNode1Key);
+        const blockNode2: TextNode = getNodeByKey(blockNode2Key);
+        blockNode2.append(blockNode1);
+      });
+      expect(container.innerHTML).toBe(
+        '<div contenteditable="true" data-outline-editor="true"><p><div><span data-outline-text="true">B</span><div><span data-outline-text="true">A</span></div></div></p></div>',
+      );
+    });
+
+    it('moves node to different tree branches (node appended twice in two different branches)', async () => {
+      function createBlockNodeWithText(text: string) {
+        const blockNode = createTestBlockNode();
+        const textNode = createTextNode(text);
+        blockNode.append(textNode);
+        return blockNode;
+      }
+
+      let blockNode1Key;
+      let blockNode2Key;
+      let blockNode3Key;
+      await update((view: View) => {
+        const paragraph: ParagraphNode = view.getRoot().getFirstChild();
+
+        const blockNode1 = createBlockNodeWithText('A');
+        blockNode1Key = blockNode1.getKey();
+
+        const blockNode2 = createBlockNodeWithText('B');
+        blockNode2Key = blockNode2.getKey();
+
+        const blockNode3 = createBlockNodeWithText('C');
+        blockNode3Key = blockNode3.getKey();
+
+        paragraph.append(blockNode1);
+        paragraph.append(blockNode2);
+        paragraph.append(blockNode3);
+      });
+      await update((view: View) => {
+        const blockNode1: BlockNode = getNodeByKey(blockNode1Key);
+        const blockNode2: TextNode = getNodeByKey(blockNode2Key);
+        const blockNode3: TextNode = getNodeByKey(blockNode3Key);
+        blockNode2.append(blockNode3);
+        blockNode1.append(blockNode3);
+      });
+      expect(container.innerHTML).toBe(
+        '<div contenteditable="true" data-outline-editor="true"><p><div><span data-outline-text="true">A</span><div><span data-outline-text="true">C</span></div></div><div><span data-outline-text="true">B</span></div></p></div>',
+      );
     });
   });
 });

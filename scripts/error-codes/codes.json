@@ -14,13 +14,13 @@
   "12": "spliceText: selection not found",
   "13": "splitText: can only be used on non-immutable text nodes",
   "14": "decorate: base method not extended",
-  "15": "Editor.update() cannot be used within a text node transform.",
-  "16": "Cannot use method in read-only mode.",
-  "17": "Unable to find an active view model. View methods or node methods can only be used synchronously during the callback of editor.update() or viewModel.read().",
-  "18": "Unable to find an active editor. View methods or node methods can only be used synchronously during the callback of editor.update() or viewModel.read().",
-  "19": "updateEditor: selection has been lost because the previously selected nodes have been removed and selection wasn't moved to another node. Ensure selection changes after removing/replacing a selected node.",
-  "20": "Point.getNode: node not found",
-  "21": "resolveNonLineBreakOrInertNode: resolved node not a text node",
+  "15": "Point.getNode: node not found",
+  "16": "resolveNonLineBreakOrInertNode: resolved node not a text node",
+  "17": "Editor.update() cannot be used within a text node transform.",
+  "18": "Cannot use method in read-only mode.",
+  "19": "Unable to find an active view model. View methods or node methods can only be used synchronously during the callback of editor.update() or viewModel.read().",
+  "20": "Unable to find an active editor. View methods or node methods can only be used synchronously during the callback of editor.update() or viewModel.read().",
+  "21": "updateEditor: selection has been lost because the previously selected nodes have been removed and selection wasn't moved to another node. Ensure selection changes after removing/replacing a selected node.",
   "22": "OutlineNode: Node type %s does not implement deserialize().",
   "23": "OutlineNode: Node type %s does not implement .clone().",
   "24": "Expected node %s to have a parent.",
@@ -37,6 +37,5 @@
   "35": "createNode: node does not exist in nodeMap",
   "36": "reconcileNode: prevNode or nextNode does not exist in nodeMap",
   "37": "reconcileNode: parentDOM is null",
-  "38": "storeDOMWithNodeKey: key was null",
-  "39": "Reconciliation: could not find DOM element for node key \"${key}\""
+  "38": "Reconciliation: could not find DOM element for node key \"${key}\""
 }

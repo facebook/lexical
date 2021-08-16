@@ -112,11 +112,11 @@ export const useRichTextEditor = ({
   const clear = useOutlineRichText(editor, isReadOnly);
   const floatingToolbar = useFloatingToolbar(editor);
   const decorators = useOutlineDecorators(editor);
+  const [indent, outdent] = useNestedList(editor);
   useEmojis(editor);
   useHashtags(editor);
   useOutlineAutoFormatter(editor);
   useKeywords(editor);
-  useNestedList(editor);
   useEffect(() => {
     editor.registerNodeType('image', ImageNode);
   }, [editor]);
@@ -149,6 +149,12 @@ export const useRichTextEditor = ({
         {isCharLimit && <CharacterLimit editor={editor} />}
         {isAutocomplete && <Typeahead editor={editor} />}
         <div className="actions">
+          <button className="action-button outdent" onClick={outdent}>
+            <i className="outdent" />
+          </button>
+          <button className="action-button indent" onClick={indent}>
+            <i className="indent" />
+          </button>
           <button className="action-button" onClick={handleAddImage}>
             Insert Image
           </button>
@@ -169,6 +175,8 @@ export const useRichTextEditor = ({
     editor,
     isCharLimit,
     isAutocomplete,
+    outdent,
+    indent,
   ]);
 
   return [editor, element];

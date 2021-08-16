@@ -13,29 +13,55 @@ import {useCallback} from 'react';
 import {isTextNode} from 'outline';
 import {isListItemNode} from 'outline/ListItemNode';
 import {createListNode, isListNode} from 'outline/ListNode';
+import type {ListItemNode} from '../../outline/src/extensions/OutlineListItemNode';
 
-function maybeIndent(editor: OutlineEditor): boolean {
+function maybeIndentOrOutdent(
+  editor: OutlineEditor,
+  direction: 'indent' | 'outdent',
+): boolean {
   let hasHandledIndention = false;
   editor.update((view: View) => {
     const selection = view.getSelection();
     const anchorNode = selection?.anchor.getNode();
     const anchorParentNode = anchorNode?.getParent();
+    let nodes = selection?.getNodes() || [];
+    // handle the case where user select the content of a single ListItemNode (assuming it's a TextNode for now)
+    if (nodes?.length === 1 && isTextNode(nodes[0])) {
+      nodes = [nodes[0].getParentBlockOrThrow()];
+    }
+    nodes = getUniqueListItemNodes(nodes);
     if (anchorNode != null && isListItemNode(anchorParentNode)) {
-      indent([anchorNode]);
+      direction === 'indent' ? handleIndent(nodes) : handleOutdent(nodes);
       hasHandledIndention = true;
     }
   }, 'useNestedList.maybeIndent');
   return hasHandledIndention;
 }
 
-function indent(selectedNodes: Array<OutlineNode>) {
-  let nodes = selectedNodes;
-  // handle the case where user select the content of a single ListItemNode (assumnig it's a TextNode for now)
-  if (selectedNodes.length === 1 && isTextNode(selectedNodes[0])) {
-    nodes = selectedNodes.map((node) => node.getParentBlockOrThrow());
+function nodesAreEqual(nodeA: ?OutlineNode, nodeB: ?OutlineNode): boolean {
+  if (nodeA === null && nodeB === null) {
+    return false;
   }
-  // get all selected ListItemNodes
-  const listItemNodes = nodes.filter((node) => isListItemNode(node));
+  return nodeA === nodeB || nodeA?.getKey() === nodeB?.getKey();
+}
+
+function getUniqueListItemNodes(
+  nodeList: Array<OutlineNode>,
+): Array<ListItemNode> {
+  const keys = new Set();
+  //$FlowFixMe this definitely returns ListItemNodes
+  return nodeList.filter((node) => {
+    const key = node.getKey();
+    if (keys.has(key)) {
+      return false;
+    }
+    keys.add(key);
+    return isListItemNode(node);
+  });
+}
+
+function handleIndent(listItemNodes: Array<ListItemNode>): void {
+  // go through each node and decide where to move it.
   listItemNodes.forEach((listItemNode) => {
     const nextSibling = listItemNode.getNextSibling();
     const previousSibling = listItemNode.getPreviousSibling();
@@ -43,7 +69,6 @@ function indent(selectedNodes: Array<OutlineNode>) {
     if (isListNode(nextSibling)) {
       nextSibling.getFirstChild()?.insertBefore(listItemNode);
     } else if (isListNode(previousSibling)) {
-      listItemNode.remove();
       previousSibling.append(listItemNode);
     } else {
       // otherwise, we need to create a new nested ListNode
@@ -63,12 +88,65 @@ function indent(selectedNodes: Array<OutlineNode>) {
   });
 }
 
-export default function useNestedList(editor: OutlineEditor) {
+function handleOutdent(listItemNodes: Array<ListItemNode>): void {
+  // go through each node and decide where to move it.
+  listItemNodes.forEach((listItemNode) => {
+    const parentList = listItemNode.getParentOrThrow();
+    const grandparentList = parentList.getParentOrThrow();
+    // If it doesn't have a grandparent that's a ListNode, it's not indented.
+    if (isListNode(grandparentList) && isListNode(parentList)) {
+      // if it's the first child in it's parent list, insert it into the
+      // grandparent list before the parent
+      if (nodesAreEqual(listItemNode, parentList?.getFirstChild())) {
+        parentList.insertBefore(listItemNode);
+        if (parentList.getChildrenSize() === 0) {
+          parentList.remove();
+        }
+        // if it's the last child in it's parent list, insert it into the
+        // grandparent list after the parent.
+      } else if (nodesAreEqual(listItemNode, parentList?.getLastChild())) {
+        parentList.insertAfter(listItemNode);
+        if (parentList.getChildrenSize() === 0) {
+          parentList.remove();
+        }
+      } else {
+        // otherwise, we need to split the siblings into two new lists
+        const tag = parentList.getTag();
+        const previousSiblingsList = createListNode(tag);
+        listItemNode
+          .getPreviousSiblings()
+          .forEach((sibling) => previousSiblingsList.append(sibling));
+        const nextSiblingsList = createListNode(tag);
+        listItemNode
+          .getNextSiblings()
+          .forEach((sibling) => nextSiblingsList.append(sibling));
+        // put the sibling lists on either side of the parent list in the grandparent.
+        parentList.insertBefore(previousSiblingsList);
+        parentList.insertAfter(nextSiblingsList);
+        // replace the parent list (now between the siblings) with the outdented list item.
+        parentList.replace(listItemNode);
+      }
+    }
+  });
+}
+
+function indent(editor: OutlineEditor): void {
+  maybeIndentOrOutdent(editor, 'indent');
+}
+
+function outdent(editor: OutlineEditor): void {
+  maybeIndentOrOutdent(editor, 'outdent');
+}
+
+export default function useNestedList(
+  editor: OutlineEditor,
+): [() => void, () => void] {
   const handleKeydown = useCallback(
     (e: KeyboardEvent) => {
       // TAB
       if (e.keyCode === 9) {
-        const hasHandledIndention = maybeIndent(editor);
+        let direction = e.shiftKey ? 'outdent' : 'indent';
+        let hasHandledIndention = maybeIndentOrOutdent(editor, direction);
         if (hasHandledIndention) {
           e.preventDefault();
         }
@@ -88,4 +166,5 @@ export default function useNestedList(editor: OutlineEditor) {
       }
     },
   );
+  return [() => indent(editor), () => outdent(editor)];
 }

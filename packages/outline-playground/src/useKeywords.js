@@ -159,7 +159,7 @@ class KeywordNode extends TextNode {
 }
 
 function createKeywordNode(keyword: string): KeywordNode {
-  return new KeywordNode(keyword).makeImmutable();
+  return new KeywordNode(keyword).makeSegmented();
 }
 
 function isKeywordNode(node: null | OutlineNode): boolean %checks {

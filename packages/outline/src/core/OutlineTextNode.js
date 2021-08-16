@@ -72,12 +72,22 @@ function setTextThemeClassNames(
   textClassNames,
 ): void {
   const domClassList = dom.classList;
-  // First we handle the special case: underline + strikethrough.
+  // Firstly we handle the base theme.
+  let classNames = textClassNames.base;
+  if (classNames !== undefined) {
+    if (!isArray(classNames)) {
+      classNames = classNames.split(' ');
+      // $FlowFixMe: this isn't right but we want to cache the array value
+      textClassNames.base = classNames;
+    }
+    domClassList.add(...classNames);
+  }
+  // Secondly we handle the special case: underline + strikethrough.
   // We have to do this as we need a way to compose the fact that
   // the same CSS property will need to be used: text-decoration.
   // In an ideal world we shouldn't have to do this, but there's no
   // easy workaround for many atomic CSS systems today.
-  let classNames = textClassNames.underlineStrikethrough;
+  classNames = textClassNames.underlineStrikethrough;
   let hasUnderlineStrikethrough = false;
   const prevUnderlineStrikethrough =
     prevFormat & IS_UNDERLINE && prevFormat & IS_STRIKETHROUGH;

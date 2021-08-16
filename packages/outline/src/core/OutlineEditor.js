@@ -37,6 +37,7 @@ export type EditorThemeClassName = string;
 export type EditorThemeClasses = {
   root?: EditorThemeClassName,
   text?: {
+    base?: EditorThemeClassName,
     bold?: EditorThemeClassName,
     underline?: EditorThemeClassName,
     strikethrough?: EditorThemeClassName,

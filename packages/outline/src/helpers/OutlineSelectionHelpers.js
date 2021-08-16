@@ -833,7 +833,11 @@ export function insertText(selection: Selection, text: string): void {
   const firstNodeTextLength = firstNodeText.length;
   const isBefore = firstNode === anchor.getNode();
 
-  if (firstNode.isSegmented() || !firstNode.canInsertTextAtEnd()) {
+  if (
+    firstNode.isSegmented() ||
+    firstNode.isImmutable() ||
+    !firstNode.canInsertTextAtEnd()
+  ) {
     if (selection.isCollapsed() && focusOffset === firstNodeTextLength) {
       let nextSibling = firstNode.getNextSibling();
       if (!isTextNode(nextSibling)) {

@@ -142,12 +142,14 @@ export class BlockNode extends OutlineNode {
   selectEnd(): Selection {
     errorOnReadOnly();
     const selection = getSelection();
-    const key = this.__key;
+    const lastChild = this.getLastChild();
+    const key = lastChild === null ? this.getKey() : lastChild.getKey();
+    const type = lastChild === null ? 'start' : 'after';
     if (selection === null) {
-      return makeSelection(key, null, key, null, 'end', 'end');
+      return makeSelection(key, null, key, null, type, type);
     } else {
-      setPointValues(selection.anchor, key, null, 'end');
-      setPointValues(selection.focus, key, null, 'end');
+      setPointValues(selection.anchor, key, null, type);
+      setPointValues(selection.focus, key, null, type);
       selection.isDirty = true;
     }
     return selection;

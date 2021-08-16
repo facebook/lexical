@@ -54,12 +54,12 @@ type ParsedSelection = {
   anchor: {
     key: NodeKey,
     offset: null | number,
-    type: 'character' | 'before' | 'end',
+    type: 'character' | 'after' | 'start',
   },
   focus: {
     key: NodeKey,
     offset: null | number,
-    type: 'character' | 'before' | 'end',
+    type: 'character' | 'after' | 'start',
   },
 };
 // export type NodeMapType = {root: RootNode, [key: NodeKey]: OutlineNode};

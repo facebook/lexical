@@ -564,19 +564,6 @@ export function checkForBadInsertion(
   );
 }
 
-export function handleBlockTextInputOnNode(
-  anchorNode: TextNode,
-  view: View,
-): boolean {
-  // If we are mutating an immutable or inert node, then reset
-  // the content back to what it was before, as this is not allowed.
-  if (isImmutableOrInert(anchorNode)) {
-    view.markNodeAsDirty(anchorNode);
-    return true;
-  }
-  return false;
-}
-
 function shouldInsertTextAfterTextNode(
   selection: Selection,
   node: TextNode,
@@ -587,7 +574,19 @@ function shouldInsertTextAfterTextNode(
     (selection.isCollapsed() &&
       (!validateOffset ||
         node.getTextContentSize() === selection.anchor.offset) &&
-      !node.canInsertTextAtEnd())
+      (!node.canInsertTextAtEnd() || node.isImmutable()))
+  );
+}
+
+function shouldInsertRawTextAfterTextNode(
+  selection: Selection,
+  node: TextNode,
+  textContent: string,
+  originalTextContent: string,
+): boolean {
+  return (
+    textContent.indexOf(originalTextContent) === 0 &&
+    shouldInsertTextAfterTextNode(selection, node, false)
   );
 }
 
@@ -609,13 +608,7 @@ function updateTextNodeFromDOMContent(
     }
 
     if (textContent !== node.getTextContent()) {
-      if (handleBlockTextInputOnNode(node, view)) {
-        return;
-      }
-      if (editor.isComposing() && !node.isComposing()) {
-        view.markNodeAsDirty(node);
-        return;
-      }
+      const originalTextContent = node.getTextContent();
       const selection = view.getSelection();
       const domSelection = window.getSelection();
       const range =
@@ -623,11 +616,24 @@ function updateTextNodeFromDOMContent(
           ? null
           : domSelection.getRangeAt(0);
 
+      if (
+        (isImmutableOrInert(node) &&
+          (selection === null ||
+            !shouldInsertRawTextAfterTextNode(
+              selection,
+              node,
+              textContent,
+              originalTextContent,
+            ))) ||
+        (editor.isComposing() && !node.isComposing())
+      ) {
+        view.markNodeAsDirty(node);
+        return;
+      }
       if (domSelection === null || selection === null || range === null) {
         node.setTextContent(textContent);
         return;
       }
-      const originalTextContent = node.getTextContent();
       selection.applyDOMRange(range);
       const nodeKey = node.getKey();
 
@@ -639,8 +645,12 @@ function updateTextNodeFromDOMContent(
           focus.type === 'character' &&
           anchor.key === nodeKey &&
           (node.getFormat() !== selection.textFormat ||
-            (textContent.indexOf(originalTextContent) === 0 &&
-              shouldInsertTextAfterTextNode(selection, node, false)))
+            shouldInsertRawTextAfterTextNode(
+              selection,
+              node,
+              textContent,
+              originalTextContent,
+            ))
         ) {
           const isCollapsed = selection.isCollapsed();
           const insertionText = textContent.slice(originalTextContent.length);

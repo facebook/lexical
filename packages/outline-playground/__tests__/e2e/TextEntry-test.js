@@ -101,7 +101,7 @@ describe('TextEntry', () => {
         if (isRichText) {
           await assertHTML(
             page,
-            '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello World.</span></p><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">This is another paragraph. </span><span class="emoji happysmile" contenteditable="false" data-outline-text="true">🙂</span><span data-outline-text="true"></span></p>',
+            '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello World.</span></p><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">This is another paragraph. </span><span class="emoji happysmile" data-outline-text="true">🙂</span><span data-outline-text="true"></span></p>',
           );
           await assertSelection(page, {
             anchorPath: [1, 2, 0],
@@ -112,7 +112,7 @@ describe('TextEntry', () => {
         } else {
           await assertHTML(
             page,
-            '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">⁠Hello World.</span><br><span data-outline-text="true">⁠This is another paragraph. </span><span class="emoji happysmile" contenteditable="false" data-outline-text="true">🙂</span><span data-outline-text="true">​</span></p>',
+            '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">⁠Hello World.</span><br><span data-outline-text="true">⁠This is another paragraph. </span><span class="emoji happysmile" data-outline-text="true">🙂</span><span data-outline-text="true">​</span></p>',
           );
           await assertSelection(page, {
             anchorPath: [0, 4, 0],

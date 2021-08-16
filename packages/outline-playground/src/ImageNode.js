@@ -260,6 +260,8 @@ function ImageComponent({
         const node = view.getNodeByKey(nodeKey);
         if (node !== null) {
           node.remove();
+          event.stopPropagation();
+          event.preventDefault();
         }
       }, 'Image.keyDown');
     }

@@ -349,6 +349,10 @@ export class TextNode extends OutlineNode {
   }
 
   // Mutators
+  selectionTransform(
+    prevSelection: null | Selection,
+    nextSelection: Selection,
+  ): void {}
   setFormat(format: number): this {
     errorOnReadOnly();
     if (this.isImmutable()) {

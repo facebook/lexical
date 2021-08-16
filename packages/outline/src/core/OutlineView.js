@@ -200,6 +200,7 @@ export function preparePendingViewUpdate(
         }
       }
     }
+    applySelectionTransforms(pendingViewModel, editor);
     if (pendingViewModel.hasDirtyNodes()) {
       applyTextTransforms(pendingViewModel, editor);
       garbageCollectDetachedNodes(pendingViewModel, editor);
@@ -263,6 +264,31 @@ function triggerTextMutationListeners(
         if (!node.isAttached()) {
           break;
         }
+      }
+    }
+  }
+}
+
+export function applySelectionTransforms(
+  nextViewModel: ViewModel,
+  editor: OutlineEditor,
+): void {
+  const prevViewModel = editor.getViewModel();
+  const prevSelection = prevViewModel._selection;
+  const nextSelection = nextViewModel._selection;
+  if (nextSelection !== null) {
+    const anchor = nextSelection.anchor;
+    const focus = nextSelection.focus;
+    let anchorNode;
+
+    if (anchor.type === 'character') {
+      anchorNode = anchor.getNode();
+      anchorNode.selectionTransform(prevSelection, nextSelection);
+    }
+    if (focus.type === 'character') {
+      const focusNode = focus.getNode();
+      if (anchorNode !== focusNode) {
+        focusNode.selectionTransform(prevSelection, nextSelection);
       }
     }
   }

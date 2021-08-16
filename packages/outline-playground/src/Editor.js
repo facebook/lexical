@@ -155,7 +155,9 @@ export const useRichTextEditor = ({
           <button className="action-button indent" onClick={indent}>
             <i className="indent" />
           </button>
-          <button className="action-button" onClick={handleAddImage}>
+          <button
+            className="action-button insert-image"
+            onClick={handleAddImage}>
             Insert Image
           </button>
           <button className="action-button" onClick={() => clear()}>

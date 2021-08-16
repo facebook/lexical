@@ -9,13 +9,12 @@
 
 import type {Selection} from './OutlineSelection';
 import type {NodeKey, ParsedNode} from './OutlineNode';
-import type {EditorThemeClasses} from './OutlineEditor';
+import type {EditorThemeClasses, TextNodeThemeClasses} from './OutlineEditor';
 
 import {OutlineNode, setCompositionKey, getCompositionKey} from './OutlineNode';
 import {getSelection, makeSelection} from './OutlineSelection';
 import {
   getTextDirection,
-  isArray,
   isImmutableOrInertOrSegmented,
   toggleTextFormatType,
 } from './OutlineUtils';
@@ -64,20 +63,46 @@ function getElementInnerTag(node: TextNode, format: number): string {
   return 'span';
 }
 
+function getCachedTextClassNameArray(
+  textNodeClassNamesTheme: TextNodeThemeClasses,
+  textNodeClassNameThemeType: string,
+): Array<string> | void {
+  const classNames = textNodeClassNamesTheme[textNodeClassNameThemeType];
+  // As we're using classList, we need
+  // to handle className tokens that have spaces.
+  // The easiest way to do this to convert the
+  // className tokens to an array that can be
+  // applied to classList.add()/remove().
+  if (typeof classNames === 'string') {
+    const classNamesArr = classNames.split(' ');
+    textNodeClassNamesTheme[textNodeClassNameThemeType] = classNamesArr;
+    return classNamesArr;
+  }
+  return classNames;
+}
+
 function setTextThemeClassNames(
   tag: string,
   prevFormat: number,
   nextFormat: number,
   dom: HTMLElement,
-  textClassNames,
+  textClassNames: TextNodeThemeClasses,
 ): void {
   const domClassList = dom.classList;
-  // First we handle the special case: underline + strikethrough.
+  // Firstly we handle the base theme.
+  let classNames = getCachedTextClassNameArray(textClassNames, 'base');
+  if (classNames !== undefined) {
+    domClassList.add(...classNames);
+  }
+  // Secondly we handle the special case: underline + strikethrough.
   // We have to do this as we need a way to compose the fact that
   // the same CSS property will need to be used: text-decoration.
   // In an ideal world we shouldn't have to do this, but there's no
   // easy workaround for many atomic CSS systems today.
-  let classNames = textClassNames.underlineStrikethrough;
+  classNames = getCachedTextClassNameArray(
+    textClassNames,
+    'underlineStrikethrough',
+  );
   let hasUnderlineStrikethrough = false;
   const prevUnderlineStrikethrough =
     prevFormat & IS_UNDERLINE && prevFormat & IS_STRIKETHROUGH;
@@ -85,12 +110,6 @@ function setTextThemeClassNames(
     nextFormat & IS_UNDERLINE && nextFormat & IS_STRIKETHROUGH;
 
   if (classNames !== undefined) {
-    if (!isArray(classNames)) {
-      classNames = classNames.split(' ');
-      // $FlowFixMe: this isn't right but we want to cache the array value
-      textClassNames.underlineStrikethrough = classNames;
-    }
-
     if (nextUnderlineStrikethrough) {
       hasUnderlineStrikethrough = true;
       if (!prevUnderlineStrikethrough) {
@@ -105,17 +124,8 @@ function setTextThemeClassNames(
     // $FlowFixMe: expected cast here
     const format: TextFormatType = key;
     const flag = TEXT_TYPE_TO_FORMAT[format];
-    classNames = textClassNames[key];
+    classNames = getCachedTextClassNameArray(textClassNames, key);
     if (classNames !== undefined) {
-      // As we're using classList below, we need
-      // to handle className tokens that have spaces.
-      // The easiest way to do this to convert the
-      // className tokens to an array that can be
-      // applied to classList.add()/remove().
-      if (!isArray(classNames)) {
-        classNames = classNames.split(' ');
-        textClassNames[key] = classNames;
-      }
       if (nextFormat & flag) {
         if (
           hasUnderlineStrikethrough &&

@@ -9,11 +9,14 @@
 
 import type {OutlineEditor, OutlineNode, View} from 'outline';
 
-import {useCallback} from 'react';
+import {useCallback, useMemo} from 'react';
 import {isTextNode} from 'outline';
-import {isListItemNode} from 'outline/ListItemNode';
+import {
+  ListItemNode,
+  createListItemNode,
+  isListItemNode,
+} from 'outline/ListItemNode';
 import {createListNode, isListNode} from 'outline/ListNode';
-import type {ListItemNode} from '../../outline/src/extensions/OutlineListItemNode';
 
 function maybeIndentOrOutdent(
   editor: OutlineEditor,
@@ -38,11 +41,8 @@ function maybeIndentOrOutdent(
   return hasHandledIndention;
 }
 
-function nodesAreEqual(nodeA: ?OutlineNode, nodeB: ?OutlineNode): boolean {
-  if (nodeA === null && nodeB === null) {
-    return false;
-  }
-  return nodeA === nodeB || nodeA?.getKey() === nodeB?.getKey();
+function isNestedListNode(node: ?OutlineNode): boolean %checks {
+  return isListItemNode(node) && isListNode(node.getFirstChild());
 }
 
 function getUniqueListItemNodes(
@@ -65,23 +65,31 @@ function handleIndent(listItemNodes: Array<ListItemNode>): void {
   listItemNodes.forEach((listItemNode) => {
     const nextSibling = listItemNode.getNextSibling();
     const previousSibling = listItemNode.getPreviousSibling();
-    // if the ListItemNode is next to a ListNode, merge them
-    if (isListNode(nextSibling)) {
-      nextSibling.getFirstChild()?.insertBefore(listItemNode);
-    } else if (isListNode(previousSibling)) {
-      previousSibling.append(listItemNode);
+    // if the ListItemNode is next to a nested ListNode, merge them
+    if (isNestedListNode(nextSibling)) {
+      const innerList = nextSibling.getFirstChild();
+      if (isListNode(innerList)) {
+        innerList.getFirstChild()?.insertBefore(listItemNode);
+      }
+    } else if (isNestedListNode(previousSibling)) {
+      const innerList = previousSibling.getFirstChild();
+      if (isListNode(innerList)) {
+        innerList.append(listItemNode);
+      }
     } else {
       // otherwise, we need to create a new nested ListNode
       const parent = listItemNode.getParent();
       if (isListNode(parent)) {
+        const newListItem = createListItemNode();
         const newList = createListNode(parent.getTag());
+        newListItem.append(newList);
         newList.append(listItemNode);
         if (previousSibling) {
-          previousSibling.insertAfter(newList);
+          previousSibling.insertAfter(newListItem);
         } else if (nextSibling) {
-          nextSibling.insertBefore(newList);
+          nextSibling.insertBefore(newListItem);
         } else {
-          parent.append(newList);
+          parent.append(newListItem);
         }
       }
     }
@@ -91,40 +99,49 @@ function handleIndent(listItemNodes: Array<ListItemNode>): void {
 function handleOutdent(listItemNodes: Array<ListItemNode>): void {
   // go through each node and decide where to move it.
   listItemNodes.forEach((listItemNode) => {
-    const parentList = listItemNode.getParentOrThrow();
-    const grandparentList = parentList.getParentOrThrow();
-    // If it doesn't have a grandparent that's a ListNode, it's not indented.
-    if (isListNode(grandparentList) && isListNode(parentList)) {
+    const parentList = listItemNode.getParent();
+    const grandparentListItem = parentList?.getParent();
+    const greatGrandparentList = grandparentListItem?.getParent();
+    // If it doesn't have these ancestors, it's not indented.
+    if (
+      isListNode(greatGrandparentList) &&
+      isListItemNode(grandparentListItem) &&
+      isListNode(parentList)
+    ) {
       // if it's the first child in it's parent list, insert it into the
-      // grandparent list before the parent
-      if (nodesAreEqual(listItemNode, parentList?.getFirstChild())) {
-        parentList.insertBefore(listItemNode);
+      // great grandparent list before the grandparent
+      if (listItemNode.is(parentList?.getFirstChild())) {
+        grandparentListItem.insertBefore(listItemNode);
         if (parentList.getChildrenSize() === 0) {
-          parentList.remove();
+          grandparentListItem.remove();
         }
         // if it's the last child in it's parent list, insert it into the
-        // grandparent list after the parent.
-      } else if (nodesAreEqual(listItemNode, parentList?.getLastChild())) {
-        parentList.insertAfter(listItemNode);
+        // great grandparent list after the grandparent.
+      } else if (listItemNode.is(parentList?.getLastChild())) {
+        grandparentListItem.insertAfter(listItemNode);
         if (parentList.getChildrenSize() === 0) {
-          parentList.remove();
+          grandparentListItem.remove();
         }
       } else {
-        // otherwise, we need to split the siblings into two new lists
+        // otherwise, we need to split the siblings into two new nested lists
         const tag = parentList.getTag();
+        const previousSiblingsListItem = createListItemNode();
         const previousSiblingsList = createListNode(tag);
+        previousSiblingsListItem.append(previousSiblingsList);
         listItemNode
           .getPreviousSiblings()
           .forEach((sibling) => previousSiblingsList.append(sibling));
+        const nextSiblingsListItem = createListItemNode();
         const nextSiblingsList = createListNode(tag);
+        nextSiblingsListItem.append(nextSiblingsList);
         listItemNode
           .getNextSiblings()
           .forEach((sibling) => nextSiblingsList.append(sibling));
-        // put the sibling lists on either side of the parent list in the grandparent.
-        parentList.insertBefore(previousSiblingsList);
-        parentList.insertAfter(nextSiblingsList);
-        // replace the parent list (now between the siblings) with the outdented list item.
-        parentList.replace(listItemNode);
+        // put the sibling nested lists on either side of the grandparent list item in the great grandparent.
+        grandparentListItem.insertBefore(previousSiblingsListItem);
+        grandparentListItem.insertAfter(nextSiblingsListItem);
+        // replace the grandparent list item (now between the siblings) with the outdented list item.
+        grandparentListItem.replace(listItemNode);
       }
     }
   });
@@ -166,5 +183,5 @@ export default function useNestedList(
       }
     },
   );
-  return [() => indent(editor), () => outdent(editor)];
+  return useMemo(() => [() => indent(editor), () => outdent(editor)], [editor]);
 }

@@ -34,18 +34,20 @@ import {RootNode} from './OutlineRootNode';
 
 export type EditorThemeClassName = string;
 
+export type TextNodeThemeClasses = {
+  base?: EditorThemeClassName,
+  bold?: EditorThemeClassName,
+  underline?: EditorThemeClassName,
+  strikethrough?: EditorThemeClassName,
+  underlineStrikethrough?: EditorThemeClassName,
+  italic?: EditorThemeClassName,
+  code?: EditorThemeClassName,
+  overflowed?: EditorThemeClassName,
+};
+
 export type EditorThemeClasses = {
   root?: EditorThemeClassName,
-  text?: {
-    base?: EditorThemeClassName,
-    bold?: EditorThemeClassName,
-    underline?: EditorThemeClassName,
-    strikethrough?: EditorThemeClassName,
-    underlineStrikethrough?: EditorThemeClassName,
-    italic?: EditorThemeClassName,
-    code?: EditorThemeClassName,
-    overflowed?: EditorThemeClassName,
-  },
+  text?: TextNodeThemeClasses,
   paragraph?: EditorThemeClassName,
   image?: EditorThemeClassName,
   list?: {

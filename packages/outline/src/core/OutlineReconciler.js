@@ -22,7 +22,7 @@ import {
   isImmutableOrInertOrSegmented,
   getDOMTextNode,
 } from './OutlineUtils';
-import {IS_INERT, IS_RTL, IS_LTR, IS_IMMUTABLE} from './OutlineConstants';
+import {IS_INERT, IS_RTL, IS_LTR} from './OutlineConstants';
 import invariant from 'shared/invariant';
 import {isDecoratorNode} from './OutlineDecoratorNode';
 import {getCompositionKey, setCompositionKey} from './OutlineNode';
@@ -86,7 +86,6 @@ function createNode(
   const dom = node.createDOM(activeEditorThemeClasses);
   const flags = node.__flags;
   const isInert = flags & IS_INERT;
-  const isImmutable = flags & IS_IMMUTABLE;
   storeDOMWithKey(key, dom, activeEditor);
 
   // This helps preserve the text, and stops spell check tools from
@@ -98,15 +97,11 @@ function createNode(
     dom.setAttribute('data-outline-decorator', 'true');
   }
 
-  // Immutable and inert nodes are always non-editable and should be
-  // marked so third-party tools know to not try and modify their contents.
-  if (isImmutable || isInert) {
-    dom.contentEditable = 'false';
-  }
   if (isInert) {
     const domStyle = dom.style;
     domStyle.pointerEvents = 'none';
     domStyle.userSelect = 'none';
+    dom.contentEditable = 'false';
     // To support Safari
     domStyle.setProperty('-webkit-user-select', 'none');
   }
@@ -120,14 +115,19 @@ function createNode(
     // Handle block children
     normalizeTextNodes(node);
     const children = node.__children;
-    const endIndex = children.length - 1;
-    createChildren(children, 0, endIndex, dom, null);
+    const childrenLength = children.length;
+    if (childrenLength !== 0) {
+      const endIndex = childrenLength - 1;
+      createChildren(children, 0, endIndex, dom, null);
+    }
   } else {
     if (isDecoratorNode(node)) {
       const decorator = node.decorate(activeEditor);
       if (decorator !== null) {
         reconcileDecorator(key, decorator);
       }
+      // Decorators are always non editable
+      dom.contentEditable = 'false';
     }
     const text = node.getTextContent();
     subTreeTextContent += text;

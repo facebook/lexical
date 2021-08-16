@@ -49,37 +49,28 @@ type StartPointType = {
   getNode: () => BlockNode,
 };
 
-type EndPointType = {
+type AfterNodePointType = {
   key: NodeKey,
   offset: null,
-  type: 'end',
-  is: (PointType) => boolean,
-  getNode: () => BlockNode,
-};
-
-type BeforeNodePointType = {
-  key: NodeKey,
-  offset: null,
-  type: 'before',
+  type: 'after',
   is: (PointType) => boolean,
   getNode: () => DecoratorNode | TextNode | LineBreakNode,
 };
 
 export type PointType =
   | CharacterPointType
-  | BeforeNodePointType
-  | StartPointType
-  | EndPointType;
+  | AfterNodePointType
+  | StartPointType;
 
 class Point {
   key: NodeKey;
   offset: number;
-  type: 'character' | 'before' | 'start' | 'end';
+  type: 'character' | 'after' | 'start';
 
   constructor(
     key: NodeKey,
     offset: number,
-    type: 'character' | 'before' | 'start' | 'end',
+    type: 'character' | 'after' | 'start',
   ) {
     this.key = key;
     this.offset = offset;
@@ -105,7 +96,7 @@ class Point {
 function createPoint(
   key: NodeKey,
   offset: null | number,
-  type: 'character' | 'before' | 'start' | 'end',
+  type: 'character' | 'after' | 'start',
 ): PointType {
   // $FlowFixMe: intentionally cast as we use a class for perf reasons
   return new Point(key, offset, type);
@@ -115,7 +106,7 @@ export function setPointValues(
   point: PointType,
   key: NodeKey,
   offset: null | number,
-  type: 'character' | 'before' | 'start' | 'end',
+  type: 'character' | 'after' | 'start',
 ): void {
   point.key = key;
   // $FlowFixMe: internal utility function
@@ -457,8 +448,8 @@ export function makeSelection(
   anchorOffset: null | number,
   focusKey: NodeKey,
   focusOffset: null | number,
-  anchorType: 'character' | 'before' | 'end',
-  focusType: 'character' | 'before' | 'end',
+  anchorType: 'character' | 'after' | 'start',
+  focusType: 'character' | 'after' | 'start',
 ): Selection {
   const viewModel = getActiveViewModel();
   const selection = new Selection(
@@ -553,12 +544,12 @@ export function createSelectionFromParse(
     anchor: {
       key: string,
       offset: null | number,
-      type: 'character' | 'before' | 'end',
+      type: 'character' | 'after' | 'start',
     },
     focus: {
       key: string,
       offset: null | number,
-      type: 'character' | 'before' | 'end',
+      type: 'character' | 'after' | 'start',
     },
   },
 ): null | Selection {

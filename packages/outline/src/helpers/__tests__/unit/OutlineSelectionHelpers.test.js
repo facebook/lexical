@@ -8,7 +8,12 @@
 
 import {createEditor, createTextNode, TextNode} from 'outline';
 import {createParagraphNode} from 'outline/ParagraphNode';
-import {insertText} from 'outline/SelectionHelpers';
+import {
+  insertText,
+  insertNodes,
+  insertParagraph,
+  insertLineBreak,
+} from 'outline/SelectionHelpers';
 
 function createParagraphWithNodes(editor, nodes) {
   const paragraph = createParagraphNode();
@@ -100,6 +105,39 @@ describe('OutlineSelectionHelpers tests', () => {
           type: 'character',
           offset: 4,
           key: 'a',
+        });
+        insertNodes(selection, [createTextNode('foo')]);
+        expect(selection.anchor).toEqual({
+          type: 'character',
+          offset: 3,
+          key: '2',
+        });
+        expect(selection.focus).toEqual({
+          type: 'character',
+          offset: 3,
+          key: '2',
+        });
+        insertParagraph(selection);
+        expect(selection.anchor).toEqual({
+          type: 'character',
+          offset: 0,
+          key: '4',
+        });
+        expect(selection.focus).toEqual({
+          type: 'character',
+          offset: 0,
+          key: '4',
+        });
+        insertLineBreak(selection, true);
+        expect(selection.anchor).toEqual({
+          type: 'character',
+          offset: 0,
+          key: '7',
+        });
+        expect(selection.focus).toEqual({
+          type: 'character',
+          offset: 0,
+          key: '7',
         });
       });
     });

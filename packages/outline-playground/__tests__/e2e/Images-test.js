@@ -19,9 +19,9 @@ describe('Images', () => {
 
       await page.focus('div.editor');
 
-      await page.waitForSelector('.action-button');
+      await page.waitForSelector('.action-button.insert-image');
 
-      await page.click('.action-button');
+      await page.click('.action-button.insert-image');
 
       await page.waitForSelector('.editor-image img');
 
@@ -66,7 +66,7 @@ describe('Images', () => {
         focusOffset: 0,
       });
 
-      await page.click('.action-button');
+      await page.click('.action-button.insert-image');
 
       await page.waitForSelector('.editor-image img');
 
@@ -84,7 +84,7 @@ describe('Images', () => {
         '<p class="editor-paragraph"><span data-outline-text="true">⁠<br></span></p>',
       );
 
-      await page.click('.action-button');
+      await page.click('.action-button.insert-image');
 
       await page.waitForSelector('.editor-image img');
 

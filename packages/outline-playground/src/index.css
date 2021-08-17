@@ -342,7 +342,7 @@ pre :not(.tree-view-output) {
   background-color: #eee;
 }
 
-#toolbar .button i {
+#toolbar .button i, .actions i {
   background-size: contain;
   display: inline-block;
   height: 20px;
@@ -839,6 +839,22 @@ pre :not(.tree-view-output) {
   position: relative;
   text-align: right;
   padding: 10px;
+}
+
+.actions i {
+  background-size: contain;
+  display: inline-block;
+  height: 15px;
+  width: 15px;
+  vertical-align: -0.25em;
+}
+
+.actions i.indent {
+  background-image: url(images/icons/indent.svg);
+}
+
+.actions i.outdent {
+  background-image: url(images/icons/outdent.svg);
 }
 
 .action-button {

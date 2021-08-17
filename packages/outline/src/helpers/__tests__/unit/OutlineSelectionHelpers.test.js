@@ -103,5 +103,44 @@ describe('OutlineSelectionHelpers tests', () => {
         });
       });
     });
+
+    test('Can handle a start point', () => {
+      const editor = createEditor({});
+
+      editor.addListener('error', (error) => {
+        throw error;
+      });
+
+      editor.update((view) => {
+        const root = view.getRoot();
+        const block = createParagraphWithNodes(editor, ['a', 'b', 'c']);
+        root.append(block);
+        setAnchorPoint(view, {
+          type: 'start',
+          offset: null,
+          key: block.getKey(),
+        });
+        setFocusPoint(view, {
+          type: 'start',
+          offset: null,
+          key: block.getKey(),
+        });
+
+        const selection = view.getSelection();
+
+        // getNodes
+        selection.anchor.getNode();
+        // TODO this should be an empty array
+        expect(selection.getNodes()).toEqual([
+          {
+            __children: ['a', 'b', 'c'],
+            __flags: 0,
+            __key: block.getKey(),
+            __parent: 'root',
+            __type: 'paragraph',
+          },
+        ]);
+      });
+    });
   });
 });

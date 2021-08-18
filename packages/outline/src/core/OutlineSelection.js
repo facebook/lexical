@@ -11,8 +11,6 @@ import type {OutlineNode, NodeKey} from './OutlineNode';
 import type {OutlineEditor} from './OutlineEditor';
 import type {BlockNode} from './OutlineBlockNode';
 import type {TextFormatType} from './OutlineTextNode';
-import type {LineBreakNode} from './OutlineLineBreakNode';
-import type {DecoratorNode} from './OutlineDecoratorNode';
 
 import {getActiveEditor, ViewModel} from './OutlineView';
 import {getActiveViewModel} from './OutlineView';
@@ -33,45 +31,30 @@ import {
 import invariant from 'shared/invariant';
 import {ZERO_WIDTH_JOINER_CHAR} from './OutlineConstants';
 
-type CharacterPointType = {
+type TextPointType = {
   key: NodeKey,
   offset: number,
-  type: 'character',
+  type: 'text',
   is: (PointType) => boolean,
   getNode: () => TextNode,
 };
 
-type StartPointType = {
+type BlockPointType = {
   key: NodeKey,
-  offset: null,
-  type: 'start',
+  offset: number,
+  type: 'block',
   is: (PointType) => boolean,
   getNode: () => BlockNode,
 };
 
-type AfterNodePointType = {
-  key: NodeKey,
-  offset: null,
-  type: 'after',
-  is: (PointType) => boolean,
-  getNode: () => DecoratorNode | TextNode | LineBreakNode,
-};
-
-export type PointType =
-  | CharacterPointType
-  | AfterNodePointType
-  | StartPointType;
+export type PointType = TextPointType | BlockPointType;
 
 class Point {
   key: NodeKey;
   offset: number;
-  type: 'character' | 'after' | 'start';
+  type: 'text' | 'block';
 
-  constructor(
-    key: NodeKey,
-    offset: number,
-    type: 'character' | 'after' | 'start',
-  ) {
+  constructor(key: NodeKey, offset: number, type: 'text' | 'block') {
     this.key = key;
     this.offset = offset;
     this.type = type;
@@ -95,8 +78,8 @@ class Point {
 
 function createPoint(
   key: NodeKey,
-  offset: null | number,
-  type: 'character' | 'after' | 'start',
+  offset: number,
+  type: 'text' | 'block',
 ): PointType {
   // $FlowFixMe: intentionally cast as we use a class for perf reasons
   return new Point(key, offset, type);
@@ -105,8 +88,8 @@ function createPoint(
 export function setPointValues(
   point: PointType,
   key: NodeKey,
-  offset: null | number,
-  type: 'character' | 'after' | 'start',
+  offset: number,
+  type: 'text' | 'block',
 ): void {
   point.key = key;
   // $FlowFixMe: internal utility function
@@ -148,8 +131,8 @@ export class Selection {
     focusNode: TextNode,
     focusOffset: number,
   ): void {
-    setPointValues(this.anchor, anchorNode.__key, anchorOffset, 'character');
-    setPointValues(this.focus, focusNode.__key, focusOffset, 'character');
+    setPointValues(this.anchor, anchorNode.__key, anchorOffset, 'text');
+    setPointValues(this.focus, focusNode.__key, focusOffset, 'text');
     this.isDirty = true;
   }
   getTextContent(): string {
@@ -251,7 +234,7 @@ function resolveNonLineBreakOrInertNode(node: OutlineNode): PointType {
     );
   }
   const offset = resolvedNode.getTextContentSize();
-  return createPoint(resolvedNode.__key, offset, 'character');
+  return createPoint(resolvedNode.__key, offset, 'text');
 }
 
 function getNodeFromDOM(dom: Node): null | OutlineNode {
@@ -340,7 +323,7 @@ function resolveSelectionPoint(
     resolvedOffset = 0;
   }
 
-  return createPoint(resolvedNode.__key, resolvedOffset, 'character');
+  return createPoint(resolvedNode.__key, resolvedOffset, 'text');
 }
 
 function resolveSelectionPoints(
@@ -375,8 +358,8 @@ function resolveSelectionPoints(
   }
 
   if (
-    resolvedAnchorPoint.type === 'character' &&
-    resolvedFocusPoint.type === 'character'
+    resolvedAnchorPoint.type === 'text' &&
+    resolvedFocusPoint.type === 'text'
   ) {
     const resolvedAnchorNode = resolvedAnchorPoint.getNode();
     const resolvedFocusNode = resolvedFocusPoint.getNode();
@@ -445,11 +428,11 @@ function resolveSelectionPoints(
 // when it current exists outside the editor.
 export function makeSelection(
   anchorKey: NodeKey,
-  anchorOffset: null | number,
+  anchorOffset: number,
   focusKey: NodeKey,
-  focusOffset: null | number,
-  anchorType: 'character' | 'after' | 'start',
-  focusType: 'character' | 'after' | 'start',
+  focusOffset: number,
+  anchorType: 'text' | 'block',
+  focusType: 'text' | 'block',
 ): Selection {
   const viewModel = getActiveViewModel();
   const selection = new Selection(
@@ -543,13 +526,13 @@ export function createSelectionFromParse(
   parsedSelection: null | {
     anchor: {
       key: string,
-      offset: null | number,
-      type: 'character' | 'after' | 'start',
+      offset: number,
+      type: 'text' | 'block',
     },
     focus: {
       key: string,
-      offset: null | number,
-      type: 'character' | 'after' | 'start',
+      offset: number,
+      type: 'text' | 'block',
     },
   },
 ): null | Selection {

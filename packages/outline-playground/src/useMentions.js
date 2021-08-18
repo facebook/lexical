@@ -392,7 +392,7 @@ function getPossibleMentionMatch(text): MentionMatch | null {
 
 function getTextUpToAnchor(selection: Selection): string | null {
   const anchor = selection.anchor;
-  if (anchor.type !== 'character') {
+  if (anchor.type !== 'text') {
     return null;
   }
   const anchorNode = anchor.getNode();
@@ -474,7 +474,7 @@ function createMentionNodeFromSearchResult(
       return;
     }
     const anchor = selection.anchor;
-    if (anchor.type !== 'character') {
+    if (anchor.type !== 'text') {
       return;
     }
     const anchorNode = anchor.getNode();

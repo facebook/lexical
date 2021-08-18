@@ -56,13 +56,13 @@ export type ParsedViewModel = {
   _selection: null | {
     anchor: {
       key: string,
-      offset: null | number,
-      type: 'character' | 'after' | 'start',
+      offset: number,
+      type: 'text' | 'block',
     },
     focus: {
       key: string,
-      offset: null | number,
-      type: 'character' | 'after' | 'start',
+      offset: number,
+      type: 'text' | 'block',
     },
   },
   _nodeMap: Array<[NodeKey, ParsedNode]>,
@@ -281,11 +281,11 @@ export function applySelectionTransforms(
     const focus = nextSelection.focus;
     let anchorNode;
 
-    if (anchor.type === 'character') {
+    if (anchor.type === 'text') {
       anchorNode = anchor.getNode();
       anchorNode.selectionTransform(prevSelection, nextSelection);
     }
-    if (focus.type === 'character') {
+    if (focus.type === 'text') {
       const focusNode = focus.getNode();
       if (anchorNode !== focusNode) {
         focusNode.selectionTransform(prevSelection, nextSelection);

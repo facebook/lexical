@@ -164,7 +164,7 @@ function shouldOverrideBrowserDefault(
 ): boolean {
   const anchor = selection.anchor;
   const focus = selection.focus;
-  if (anchor.type !== 'character' || focus.type !== 'character') {
+  if (anchor.type !== 'text' || focus.type !== 'text') {
     return true;
   }
   const anchorOffset = anchor.offset;
@@ -341,7 +341,7 @@ export function onKeyDownForRichText(
     } else if (isTab(event)) {
       // Handle code blocks
       const anchor = selection.anchor;
-      if (anchor.type === 'character') {
+      if (anchor.type === 'text') {
         const anchorNode = anchor.getNode();
         const parentBlock = anchorNode.getParentBlockOrThrow();
         if (parentBlock.canInsertTab()) {
@@ -541,7 +541,7 @@ export function onSelectionChange(event: Event, editor: OutlineEditor): void {
     // Update the selection textFormat
     if (selection !== null && selection.isCollapsed()) {
       const anchor = selection.anchor;
-      if (anchor.type === 'character') {
+      if (anchor.type === 'text') {
         const anchorNode = anchor.getNode();
         selection.textFormat = anchorNode.getFormat();
       }
@@ -641,8 +641,8 @@ function updateTextNodeFromDOMContent(
         const anchor = selection.anchor;
         const focus = selection.focus;
         if (
-          anchor.type === 'character' &&
-          focus.type === 'character' &&
+          anchor.type === 'text' &&
+          focus.type === 'text' &&
           anchor.key === nodeKey &&
           (node.getFormat() !== selection.textFormat ||
             shouldInsertRawTextAfterTextNode(

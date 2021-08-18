@@ -53,13 +53,13 @@ export type ParsedNodeMap = Map<NodeKey, ParsedNode>;
 type ParsedSelection = {
   anchor: {
     key: NodeKey,
-    offset: null | number,
-    type: 'character' | 'after' | 'start',
+    offset: number,
+    type: 'text' | 'block',
   },
   focus: {
     key: NodeKey,
-    offset: null | number,
-    type: 'character' | 'after' | 'start',
+    offset: number,
+    type: 'text' | 'block',
   },
 };
 // export type NodeMapType = {root: RootNode, [key: NodeKey]: OutlineNode};
@@ -303,6 +303,14 @@ export class OutlineNode {
   getKey(): NodeKey {
     // Key is stable between copies
     return this.__key;
+  }
+  getIndexWithinParent(): number {
+    const parent = this.getLatest().__parent;
+    if (parent === null) {
+      return -1;
+    }
+    const children = parent.__children;
+    return children.indexOf(this.__key);
   }
   getParent(): BlockNode | null {
     const parent = this.getLatest().__parent;

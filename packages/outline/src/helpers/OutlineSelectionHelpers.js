@@ -48,7 +48,7 @@ export function getNodesInRange(selection: Selection): {
 } {
   const anchor = selection.anchor;
   const focus = selection.focus;
-  if (anchor.type !== 'character' || focus.type !== 'character') {
+  if (anchor.type !== 'text' || focus.type !== 'text') {
     invariant(false, 'Selection block node not yet implemented.');
   }
   const anchorNode = anchor.getNode();
@@ -180,7 +180,7 @@ export function extractSelection(selection: Selection): Array<OutlineNode> {
   if (!isTextNode(firstNode) || !isTextNode(lastNode)) {
     invariant(false, 'formatText: firstNode/lastNode not a text node');
   }
-  if (anchor.type !== 'character' || focus.type !== 'character') {
+  if (anchor.type !== 'text' || focus.type !== 'text') {
     invariant(false, 'Selection block node not yet implemented.');
   }
   const anchorOffset = anchor.offset;
@@ -231,7 +231,7 @@ export function formatText(
   }
   const anchor = selection.anchor;
   const focus = selection.focus;
-  if (anchor.type !== 'character' || focus.type !== 'character') {
+  if (anchor.type !== 'text' || focus.type !== 'text') {
     invariant(false, 'Selection block node not yet implemented.');
   }
   const firstNodeText = firstNode.getTextContent();
@@ -318,7 +318,7 @@ export function insertParagraph(selection: Selection): void {
     removeText(selection);
   }
   const anchor = selection.anchor;
-  if (anchor.type !== 'character') {
+  if (anchor.type !== 'text') {
     invariant(false, 'Selection block node not yet implemented.');
   }
   const anchorNode = anchor.getNode();
@@ -464,8 +464,8 @@ export function updateCaretSelectionForUnicodeCharacter(
 
   if (
     anchorNode === focusNode &&
-    anchor.type === 'character' &&
-    focus.type === 'character'
+    anchor.type === 'text' &&
+    focus.type === 'text'
   ) {
     // Handling of multibyte characters
     const anchorOffset = anchor.offset;
@@ -494,7 +494,7 @@ export function updateCaretSelectionForAdjacentHashtags(
   selection: Selection,
 ): void {
   const anchor = selection.anchor;
-  if (anchor.type !== 'character') {
+  if (anchor.type !== 'text') {
     return;
   }
   const anchorNode = anchor.getNode();
@@ -529,8 +529,8 @@ function deleteCharacter(selection: Selection, isBackward: boolean): void {
     const focus = selection.focus;
 
     if (!selection.isCollapsed()) {
-      const focusNode = focus.type === 'character' ? focus.getNode() : null;
-      const anchorNode = anchor.type === 'character' ? anchor.getNode() : null;
+      const focusNode = focus.type === 'text' ? focus.getNode() : null;
+      const anchorNode = anchor.type === 'text' ? anchor.getNode() : null;
 
       if (focusNode !== null && focusNode.isSegmented()) {
         removeSegment(focusNode, isBackward);
@@ -705,7 +705,7 @@ export function insertNodes(
     removeText(selection);
   }
   const anchor = selection.anchor;
-  if (anchor.type !== 'character') {
+  if (anchor.type !== 'text') {
     invariant(false, 'Selection block node not yet implemented.');
   }
 
@@ -824,7 +824,7 @@ export function insertText(selection: Selection, text: string): void {
   if (!isTextNode(firstNode)) {
     invariant(false, 'insertText: firstNode not a a text node');
   }
-  if (anchor.type !== 'character' || focus.type !== 'character') {
+  if (anchor.type !== 'text' || focus.type !== 'text') {
     invariant(false, 'Selection block node not yet implemented.');
   }
   const anchorOffset = anchor.offset;
@@ -885,7 +885,7 @@ export function insertText(selection: Selection, text: string): void {
     const delCount = endOffset - startOffset;
 
     firstNode.spliceText(startOffset, delCount, text, true);
-    if (firstNode.isComposing() && selection.anchor.type === 'character') {
+    if (firstNode.isComposing() && selection.anchor.type === 'text') {
       selection.anchor.offset -= text.length;
     }
   } else {
@@ -901,20 +901,16 @@ export function insertText(selection: Selection, text: string): void {
     endOffset = isBefore ? focusOffset : anchorOffset;
 
     // Handle mutations to the last node.
-    if (endOffset === lastNode.getTextContentSize()) {
-      lastNode.remove();
-      lastNodeRemove = true;
-    } else if (isImmutableOrInert(lastNode)) {
-      lastNodeRemove = true;
-      const textNode = createTextNode('');
-      lastNode.replace(textNode);
-    } else if (isTextNode(lastNode)) {
+    if (isTextNode(lastNode) && endOffset !== lastNode.getTextContentSize()) {
       if (lastNode.isSegmented()) {
         const textNode = createTextNode(lastNode.getTextContent());
         lastNode.replace(textNode, true);
         lastNode = textNode;
       }
       lastNode.spliceText(0, endOffset, '', false);
+    } else {
+      lastNode.remove();
+      lastNodeRemove = true;
     }
 
     // Either move the remaining nodes of the last parent to after
@@ -962,21 +958,21 @@ export function insertText(selection: Selection, text: string): void {
 
     // Ensure we do splicing after moving of nodes, as splicing
     // can have side-effects (in the case of hashtags).
-    if (isImmutableOrInert(firstNode)) {
-      firstNodeRemove = true;
-      const textNode = createTextNode(text);
-      firstNode.replace(textNode);
-      textNode.select();
-    } else {
+    if (isTextNode(firstNode) && !isImmutableOrInert(firstNode)) {
       firstNode.spliceText(
         startOffset,
         firstNodeTextLength - startOffset,
         text,
         true,
       );
-      if (firstNode.isComposing() && selection.anchor.type === 'character') {
+      if (firstNode.isComposing() && selection.anchor.type === 'text') {
         selection.anchor.offset -= text.length;
       }
+    } else {
+      firstNodeRemove = true;
+      const textNode = createTextNode(text);
+      firstNode.replace(textNode);
+      textNode.select();
     }
 
     // Remove all selected nodes that haven't already been removed.

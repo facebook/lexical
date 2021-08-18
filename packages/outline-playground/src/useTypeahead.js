@@ -52,7 +52,7 @@ export default function useTypeahead(editor: OutlineEditor): void {
           if (selection !== null) {
             const anchor = selection.anchor;
             const focus = selection.focus;
-            if (anchor.type === 'character' && focus.type === 'character') {
+            if (anchor.type === 'text' && focus.type === 'text') {
               let anchorNode = anchor.getNode();
               let anchorNodeOffset = anchor.offset;
               if (anchorNode.getKey() === currentTypeaheadNode.getKey()) {

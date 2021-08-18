@@ -68,12 +68,12 @@ describe('OutlineSelectionHelpers tests', () => {
         const block = createParagraphWithNodes(editor, ['a', 'b', 'c']);
         root.append(block);
         setAnchorPoint(view, {
-          type: 'character',
+          type: 'text',
           offset: 0,
           key: 'a',
         });
         setFocusPoint(view, {
-          type: 'character',
+          type: 'text',
           offset: 0,
           key: 'a',
         });
@@ -97,52 +97,58 @@ describe('OutlineSelectionHelpers tests', () => {
         insertText(selection, 'Test');
         expect(view.getNodeByKey('a').getTextContent()).toBe('Testa');
         expect(selection.anchor).toEqual({
-          type: 'character',
+          type: 'text',
           offset: 4,
           key: 'a',
         });
         expect(selection.focus).toEqual({
-          type: 'character',
+          type: 'text',
           offset: 4,
           key: 'a',
         });
+
+        // insertNodes
         insertNodes(selection, [createTextNode('foo')]);
         expect(selection.anchor).toEqual({
-          type: 'character',
+          type: 'text',
           offset: 3,
           key: '2',
         });
         expect(selection.focus).toEqual({
-          type: 'character',
+          type: 'text',
           offset: 3,
           key: '2',
         });
+
+        // insertParagraph
         insertParagraph(selection);
         expect(selection.anchor).toEqual({
-          type: 'character',
+          type: 'text',
           offset: 0,
           key: '4',
         });
         expect(selection.focus).toEqual({
-          type: 'character',
+          type: 'text',
           offset: 0,
           key: '4',
         });
+
+        // insertLineBreak
         insertLineBreak(selection, true);
         expect(selection.anchor).toEqual({
-          type: 'character',
+          type: 'text',
           offset: 0,
           key: '7',
         });
         expect(selection.focus).toEqual({
-          type: 'character',
+          type: 'text',
           offset: 0,
           key: '7',
         });
       });
     });
 
-    test('Can handle a start point', () => {
+    test('Can handle a block point', () => {
       const editor = createEditor({});
 
       editor.addListener('error', (error) => {
@@ -154,13 +160,13 @@ describe('OutlineSelectionHelpers tests', () => {
         const block = createParagraphWithNodes(editor, ['a', 'b', 'c']);
         root.append(block);
         setAnchorPoint(view, {
-          type: 'start',
-          offset: null,
+          type: 'block',
+          offset: 0,
           key: block.getKey(),
         });
         setFocusPoint(view, {
-          type: 'start',
-          offset: null,
+          type: 'block',
+          offset: 0,
           key: block.getKey(),
         });
 
@@ -168,16 +174,22 @@ describe('OutlineSelectionHelpers tests', () => {
 
         // getNodes
         selection.anchor.getNode();
-        // TODO this should be an empty array
-        expect(selection.getNodes()).toEqual([
-          {
-            __children: ['a', 'b', 'c'],
-            __flags: 0,
-            __key: block.getKey(),
-            __parent: 'root',
-            __type: 'paragraph',
-          },
-        ]);
+        expect(selection.getNodes()).toEqual([block]);
+
+        // insertText
+        // insertText(selection, 'Test');
+        // const firstChild = block.getFirstChild();
+        // expect(firstChild.getTextContent()).toBe('Test');
+        // expect(selection.anchor).toEqual({
+        //   type: 'character',
+        //   offset: 4,
+        //   key: firstChild.getKey(),
+        // });
+        // expect(selection.focus).toEqual({
+        //   type: 'character',
+        //   offset: 4,
+        //   key: firstChild.getKey(),
+        // });
       });
     });
   });

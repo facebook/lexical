@@ -455,8 +455,8 @@ export class TextNode extends OutlineNode {
         anchorOffset,
         key,
         focusOffset,
-        'character',
-        'character',
+        'text',
+        'text',
       );
     } else {
       const compositionKey = getCompositionKey();
@@ -595,7 +595,7 @@ export class TextNode extends OutlineNode {
 
         if (
           anchor.key === key &&
-          anchor.type === 'character' &&
+          anchor.type === 'text' &&
           anchor.offset > textSize &&
           anchor.offset <= nextTextSize
         ) {
@@ -605,7 +605,7 @@ export class TextNode extends OutlineNode {
         }
         if (
           focus.key === key &&
-          focus.type === 'character' &&
+          focus.type === 'text' &&
           focus.offset > textSize &&
           focus.offset <= nextTextSize
         ) {

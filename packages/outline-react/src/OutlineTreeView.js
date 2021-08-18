@@ -268,7 +268,7 @@ function getSelectionStartEnd(node, selection): [number, number] {
   let start = -1;
   let end = -1;
   // Only one node is being selected.
-  if (anchor.type === 'character' && focus.type === 'character') {
+  if (anchor.type === 'text' && focus.type === 'text') {
     const anchorNode = anchor.getNode();
     const focusNode = focus.getNode();
     if (

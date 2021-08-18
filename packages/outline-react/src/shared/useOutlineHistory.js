@@ -70,7 +70,7 @@ function getMergeAction(
         const anchor = selection.anchor;
         const anchorKey = anchor.key;
         const prevAnchorKey = prevSelection.anchor.key;
-        if (anchorKey !== prevAnchorKey || anchor.type !== 'character') {
+        if (anchorKey !== prevAnchorKey || anchor.type !== 'text') {
           return NO_MERGE;
         }
         const anchorOffset = anchor.offset;

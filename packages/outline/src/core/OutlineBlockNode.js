@@ -113,6 +113,15 @@ export class BlockNode extends OutlineNode {
     }
     return getNodeByKey<OutlineNode>(children[childrenLength - 1]);
   }
+  getChildAtIndex(index: number): null | OutlineNode {
+    const self = this.getLatest();
+    const children = self.__children;
+    const key = children[index];
+    if (key === undefined) {
+      return null;
+    }
+    return getNodeByKey(key);
+  }
   getTextContent(includeInert?: boolean, includeDirectionless?: false): string {
     if (
       (!includeInert && this.isInert()) ||
@@ -139,17 +148,31 @@ export class BlockNode extends OutlineNode {
 
   // Mutators
 
-  selectEnd(): Selection {
+  select(_anchorOffset?: number, _focusOffset?: number): Selection {
     errorOnReadOnly();
     const selection = getSelection();
-    const lastChild = this.getLastChild();
-    const key = lastChild === null ? this.getKey() : lastChild.getKey();
-    const type = lastChild === null ? 'start' : 'after';
+    let anchorOffset = _anchorOffset;
+    let focusOffset = _focusOffset;
+    const childrenCount = this.getChildrenSize();
+    if (anchorOffset === undefined) {
+      anchorOffset = childrenCount;
+    }
+    if (focusOffset === undefined) {
+      focusOffset = childrenCount;
+    }
+    const key = this.__key;
     if (selection === null) {
-      return makeSelection(key, null, key, null, type, type);
+      return makeSelection(
+        key,
+        anchorOffset,
+        key,
+        focusOffset,
+        'block',
+        'block',
+      );
     } else {
-      setPointValues(selection.anchor, key, null, type);
-      setPointValues(selection.focus, key, null, type);
+      setPointValues(selection.anchor, key, anchorOffset, 'block');
+      setPointValues(selection.focus, key, focusOffset, 'block');
       selection.isDirty = true;
     }
     return selection;

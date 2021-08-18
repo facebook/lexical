@@ -508,7 +508,7 @@ function reconcileSelection(
   let nextAnchorOffset;
   let nextFocusOffset;
 
-  if (anchor.type === 'character') {
+  if (anchor.type === 'text') {
     const nextSelectionAnchorOffset = anchor.offset;
     nextAnchorNode = getDOMTextNode(anchorDOM);
     nextAnchorOffset =
@@ -521,7 +521,7 @@ function reconcileSelection(
     // TODO
     nextAnchorOffset = 0;
   }
-  if (focus.type === 'character') {
+  if (focus.type === 'text') {
     const nextSelectionFocusOffset = focus.offset;
     nextFocusNode = getDOMTextNode(focusDOM);
     nextFocusOffset =

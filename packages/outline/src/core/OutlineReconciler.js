@@ -290,7 +290,7 @@ function reconcileNode(
 
 export function cloneDecorators(editor: OutlineEditor): {[NodeKey]: ReactNode} {
   const currentDecorators = editor._decorators;
-  const pendingDecorators = {...currentDecorators};
+  const pendingDecorators = Object.assign({}, currentDecorators);
   editor._pendingDecorators = pendingDecorators;
   return pendingDecorators;
 }

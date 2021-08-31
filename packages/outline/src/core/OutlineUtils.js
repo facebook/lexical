@@ -61,7 +61,7 @@ export function isSelectionWithinEditor(
       rootElement.contains(anchorDOM) &&
       rootElement.contains(focusDOM)
     );
-  } catch {
+  } catch (error) {
     return false;
   }
 }

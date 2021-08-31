@@ -417,7 +417,7 @@ function tryToPositionRange(match: MentionMatch, range: Range): boolean {
   try {
     range.setStart(anchorNode, startOffset);
     range.setEnd(anchorNode, endOffset);
-  } catch {
+  } catch (error) {
     return false;
   }
 

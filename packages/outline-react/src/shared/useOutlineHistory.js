@@ -58,7 +58,7 @@ function getMergeAction(
         return NO_MERGE;
       }
       const textDiff = nextText.length - prevText.length;
-      if (textDiff === 0) {
+      if (prevText === nextText) {
         return MERGE;
       }
       // Only merge if we're adding/removing a single character

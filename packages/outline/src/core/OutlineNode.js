@@ -841,6 +841,9 @@ export function createNodeFromParse(
         node.__children.push(newChildKey);
       }
     }
+  } else if (isTextNode(node)) {
+    node.__format = parsedNode.__format;
+    node.__style = parsedNode.__style;
   }
   // The selection might refer to an old node whose key has changed. Produce a
   // new selection record with the old keys mapped to the new ones.

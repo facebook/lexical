@@ -38,6 +38,7 @@ function cloneWithProperties<T: OutlineNode>(node: T): T {
     clone.__children = Array.from(latest.__children);
   } else if (isTextNode(latest)) {
     clone.__format = latest.__format;
+    clone.__style = latest.__style;
   }
   return clone;
 }
@@ -133,6 +134,7 @@ export function getNodesInRange(selection: Selection): {
               node.__children = Array.from(prevNode.__children);
             } else if (isTextNode(prevNode)) {
               node.__format = prevNode.__format;
+              node.__style = prevNode.__style;
             }
             if (!isBlockNode(node)) {
               invariant(false, 'getNodesInRange: node is not a block node');

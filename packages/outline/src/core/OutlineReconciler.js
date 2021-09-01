@@ -665,6 +665,7 @@ function normalizeTextNodes(block: BlockNode): void {
   let toNormalize = [];
   let lastTextNodeFlags: number | null = null;
   let lastTextNodeFormat: number | null = null;
+  let lastTextNodeStyle: string | null = null;
   let anchor = null;
   let focus = null;
 
@@ -685,9 +686,11 @@ function normalizeTextNodes(block: BlockNode): void {
     ) {
       const flags = child.__flags;
       const format = child.__format;
+      const style = child.__style;
       if (
         (lastTextNodeFlags === null || flags === lastTextNodeFlags) &&
-        (lastTextNodeFormat === null || format === lastTextNodeFormat)
+        (lastTextNodeFormat === null || format === lastTextNodeFormat) &&
+        (lastTextNodeStyle === null || style === lastTextNodeStyle)
       ) {
         toNormalize.push(child);
       } else {
@@ -698,6 +701,7 @@ function normalizeTextNodes(block: BlockNode): void {
       }
       lastTextNodeFlags = flags;
       lastTextNodeFormat = format;
+      lastTextNodeStyle = style;
     } else {
       if (toNormalize.length > 1) {
         mergeAdjacentTextNodes(toNormalize, anchor, focus);
@@ -705,6 +709,7 @@ function normalizeTextNodes(block: BlockNode): void {
       toNormalize = [];
       lastTextNodeFlags = null;
       lastTextNodeFormat = null;
+      lastTextNodeStyle = null;
     }
   }
   if (toNormalize.length > 1) {

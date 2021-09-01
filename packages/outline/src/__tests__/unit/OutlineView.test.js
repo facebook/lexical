@@ -62,6 +62,7 @@ describe('OutlineView tests', () => {
           __format: 0,
           __key: '0',
           __parent: 'root',
+          __style: '',
           __text: 'foo',
           __type: 'text',
         },
@@ -114,6 +115,7 @@ describe('OutlineView tests', () => {
         __flags: 0,
         __key: '1',
         __parent: '0',
+        __style: '',
         __type: 'text',
       });
     });
@@ -128,7 +130,7 @@ describe('OutlineView tests', () => {
         view.getRoot().append(paragraph);
       });
       expect(editor.getViewModel().stringify()).toEqual(
-        `{\"_nodeMap\":[[\"root\",{\"__type\":\"root\",\"__flags\":0,\"__key\":\"root\",\"__parent\":null,\"__children\":[\"0\"]}],[\"0\",{\"__type\":\"paragraph\",\"__flags\":0,\"__key\":\"0\",\"__parent\":\"root\",\"__children\":[\"1\"]}],[\"1\",{\"__type\":\"text\",\"__flags\":0,\"__key\":\"1\",\"__parent\":\"0\",\"__text\":\"Hello world\",\"__format\":0}]],\"_selection\":{\"anchor\":{\"key\":\"1\",\"offset\":6,"type":"text"},\"focus\":{\"key\":\"1\",\"offset\":11,"type":"text"}}}`,
+        `{\"_nodeMap\":[[\"root\",{\"__type\":\"root\",\"__flags\":0,\"__key\":\"root\",\"__parent\":null,\"__children\":[\"0\"]}],[\"0\",{\"__type\":\"paragraph\",\"__flags\":0,\"__key\":\"0\",\"__parent\":\"root\",\"__children\":[\"1\"]}],[\"1\",{\"__type\":\"text\",\"__flags\":0,\"__key\":\"1\",\"__parent\":\"0\",\"__text\":\"Hello world\",\"__format\":0,"__style":""}]],\"_selection\":{\"anchor\":{\"key\":\"1\",\"offset\":6,"type":"text"},\"focus\":{\"key\":\"1\",\"offset\":11,"type":"text"}}}`,
       );
       expect(editor.getViewModel().stringify(2)).toEqual(
         `{
@@ -165,7 +167,8 @@ describe('OutlineView tests', () => {
         "__key": "1",
         "__parent": "0",
         "__text": "Hello world",
-        "__format": 0
+        "__format": 0,
+        "__style": ""
       }
     ]
   ],

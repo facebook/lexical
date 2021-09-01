@@ -206,6 +206,7 @@ function createTextInnerDOM(
 export class TextNode extends OutlineNode {
   __text: string;
   __format: number;
+  __style: string;
 
   static deserialize(data: $FlowFixMe): TextNode {
     return new TextNode(data.__text);
@@ -216,6 +217,7 @@ export class TextNode extends OutlineNode {
     this.__text = text;
     this.__type = 'text';
     this.__format = 0;
+    this.__style = '';
   }
   clone(): TextNode {
     return new TextNode(this.__text, this.__key);
@@ -223,6 +225,10 @@ export class TextNode extends OutlineNode {
   getFormat(): number {
     const self = this.getLatest();
     return self.__format;
+  }
+  getStyle(): string {
+    const self = this.getLatest();
+    return self.__style;
   }
   isBold(): boolean {
     return (this.getFormat() & IS_BOLD) !== 0;
@@ -294,6 +300,10 @@ export class TextNode extends OutlineNode {
       text,
       editorThemeClasses,
     );
+    const style = this.__style;
+    if (style !== '') {
+      dom.style.cssText = style;
+    }
     return dom;
   }
   updateDOM(
@@ -355,6 +365,11 @@ export class TextNode extends OutlineNode {
         textClassNames,
       );
     }
+    const prevStyle = prevNode.__style;
+    const nextStyle = this.__style;
+    if (prevStyle !== nextStyle) {
+      dom.style.cssText = nextStyle;
+    }
     return false;
   }
 
@@ -370,6 +385,15 @@ export class TextNode extends OutlineNode {
     }
     const self = this.getWritable();
     this.getWritable().__format = format;
+    return self;
+  }
+  setStyle(style: string): this {
+    errorOnReadOnly();
+    if (this.isImmutable()) {
+      invariant(false, 'setStyle: can only be used on non-immutable nodes');
+    }
+    const self = this.getWritable();
+    this.getWritable().__style = style;
     return self;
   }
   toggleBold(): TextNode {
@@ -450,14 +474,7 @@ export class TextNode extends OutlineNode {
       focusOffset = 0;
     }
     if (selection === null) {
-      return makeSelection(
-        key,
-        anchorOffset,
-        key,
-        focusOffset,
-        'text',
-        'text',
-      );
+      return makeSelection(key, anchorOffset, key, focusOffset, 'text', 'text');
     } else {
       const compositionKey = getCompositionKey();
       if (
@@ -559,12 +576,15 @@ export class TextNode extends OutlineNode {
     let writableNode;
     let flags;
     let format;
+    let style;
+
     if (this.isSegmented()) {
       // Create a new TextNode
       writableNode = createTextNode(firstPart);
       writableNode.__parent = parentKey;
       flags = writableNode.__flags;
       format = writableNode.__format;
+      style = writableNode.__style;
       this.remove();
     } else {
       // For the first part, update the existing node
@@ -572,6 +592,7 @@ export class TextNode extends OutlineNode {
       writableNode.__text = firstPart;
       flags = writableNode.__flags;
       format = writableNode.__format;
+      style = writableNode.__style;
     }
 
     // Handle selection
@@ -586,6 +607,7 @@ export class TextNode extends OutlineNode {
       const sibling = createTextNode(part).getWritable();
       sibling.__flags = flags;
       sibling.__format = format;
+      sibling.__style = style;
       const siblingKey = sibling.__key;
       const nextTextSize = textSize + partSize;
 

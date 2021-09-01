@@ -88,6 +88,7 @@ describe('OutlineSelectionHelpers tests', () => {
             __format: 0,
             __key: 'a',
             __parent: '0',
+            __style: '',
             __type: 'text',
             __text: 'a',
           },

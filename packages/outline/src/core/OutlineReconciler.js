@@ -518,8 +518,7 @@ function reconcileSelection(
         : nextSelectionAnchorOffset + 1;
   } else {
     nextAnchorNode = anchorDOM;
-    // TODO
-    nextAnchorOffset = 0;
+    nextAnchorOffset = anchor.offset;
   }
   if (focus.type === 'text') {
     const nextSelectionFocusOffset = focus.offset;
@@ -531,8 +530,7 @@ function reconcileSelection(
         : nextSelectionFocusOffset + 1;
   } else {
     nextFocusNode = focusDOM;
-    //  TODO
-    nextFocusOffset = 0;
+    nextFocusOffset = focus.offset;
   }
   // If we can't get an underlying text node for selection, then
   // we should avoid setting selection to something incorrect.

@@ -13,6 +13,9 @@ import {
   insertNodes,
   insertParagraph,
   insertLineBreak,
+  formatText,
+  extractSelection,
+  getNodesInRange,
 } from 'outline/SelectionHelpers';
 
 function createParagraphWithNodes(editor, nodes) {
@@ -56,7 +59,7 @@ function setFocusPoint(view, point) {
 
 describe('OutlineSelectionHelpers tests', () => {
   describe('Collapsed', () => {
-    test('Can handle a character point', () => {
+    test('Can handle a text point', () => {
       const editor = createEditor({});
 
       editor.addListener('error', (error) => {
@@ -94,6 +97,9 @@ describe('OutlineSelectionHelpers tests', () => {
           },
         ]);
 
+        // getTextContent
+        expect(selection.getTextContent()).toEqual('');
+
         // insertText
         insertText(selection, 'Test');
         expect(view.getNodeByKey('a').getTextContent()).toBe('Testa');
@@ -105,6 +111,18 @@ describe('OutlineSelectionHelpers tests', () => {
         expect(selection.focus).toEqual({
           type: 'text',
           offset: 4,
+          key: 'a',
+        });
+
+        // Reset selection back to point
+        setAnchorPoint(view, {
+          type: 'text',
+          offset: 0,
+          key: 'a',
+        });
+        setFocusPoint(view, {
+          type: 'text',
+          offset: 0,
           key: 'a',
         });
 
@@ -121,17 +139,41 @@ describe('OutlineSelectionHelpers tests', () => {
           key: '2',
         });
 
+        // Reset selection back to point
+        setAnchorPoint(view, {
+          type: 'text',
+          offset: 0,
+          key: 'a',
+        });
+        setFocusPoint(view, {
+          type: 'text',
+          offset: 0,
+          key: 'a',
+        });
+
         // insertParagraph
         insertParagraph(selection);
         expect(selection.anchor).toEqual({
           type: 'text',
           offset: 0,
-          key: '4',
+          key: 'a',
         });
         expect(selection.focus).toEqual({
           type: 'text',
           offset: 0,
-          key: '4',
+          key: 'a',
+        });
+
+        // Reset selection back to point
+        setAnchorPoint(view, {
+          type: 'text',
+          offset: 0,
+          key: 'a',
+        });
+        setFocusPoint(view, {
+          type: 'text',
+          offset: 0,
+          key: 'a',
         });
 
         // insertLineBreak
@@ -139,12 +181,85 @@ describe('OutlineSelectionHelpers tests', () => {
         expect(selection.anchor).toEqual({
           type: 'text',
           offset: 0,
-          key: '7',
+          key: '6',
         });
         expect(selection.focus).toEqual({
           type: 'text',
           offset: 0,
+          key: '6',
+        });
+
+        // Reset selection back to point
+        setAnchorPoint(view, {
+          type: 'text',
+          offset: 0,
+          key: 'a',
+        });
+        setFocusPoint(view, {
+          type: 'text',
+          offset: 0,
+          key: 'a',
+        });
+
+        // Format text
+        formatText(selection, 'bold');
+        insertText(selection, 'Test');
+        expect(view.getNodeByKey('7').getTextContent()).toBe('Test');
+        expect(selection.anchor).toEqual({
+          type: 'text',
+          offset: 4,
           key: '7',
+        });
+        expect(selection.focus).toEqual({
+          type: 'text',
+          offset: 4,
+          key: '7',
+        });
+
+        // Reset selection back to point
+        setAnchorPoint(view, {
+          type: 'text',
+          offset: 0,
+          key: 'a',
+        });
+        setFocusPoint(view, {
+          type: 'text',
+          offset: 0,
+          key: 'a',
+        });
+
+        // Extract selection
+        expect(extractSelection(selection)).toEqual([view.getNodeByKey('a')]);
+
+        // Reset selection back to point
+        setAnchorPoint(view, {
+          type: 'text',
+          offset: 0,
+          key: 'a',
+        });
+        setFocusPoint(view, {
+          type: 'text',
+          offset: 0,
+          key: 'a',
+        });
+
+        // getNodesInRange
+        expect(getNodesInRange(selection)).toEqual({
+          range: ['a'],
+          nodeMap: [
+            [
+              'a',
+              {
+                __flags: 16,
+                __format: 0,
+                __key: 'a',
+                __parent: '4',
+                __style: '',
+                __text: '',
+                __type: 'text',
+              },
+            ],
+          ],
         });
       });
     });
@@ -175,22 +290,137 @@ describe('OutlineSelectionHelpers tests', () => {
 
         // getNodes
         selection.anchor.getNode();
-        expect(selection.getNodes()).toEqual([block]);
+        expect(selection.getNodes()).toEqual([]);
+
+        // getTextContent
+        expect(selection.getTextContent()).toEqual('');
 
         // insertText
-        // insertText(selection, 'Test');
-        // const firstChild = block.getFirstChild();
-        // expect(firstChild.getTextContent()).toBe('Test');
-        // expect(selection.anchor).toEqual({
-        //   type: 'character',
-        //   offset: 4,
-        //   key: firstChild.getKey(),
-        // });
-        // expect(selection.focus).toEqual({
-        //   type: 'character',
-        //   offset: 4,
-        //   key: firstChild.getKey(),
-        // });
+        insertText(selection, 'Test');
+        let firstChild = block.getFirstChild();
+        expect(firstChild.getTextContent()).toBe('Test');
+        expect(selection.anchor).toEqual({
+          type: 'text',
+          offset: 4,
+          key: firstChild.getKey(),
+        });
+        expect(selection.focus).toEqual({
+          type: 'text',
+          offset: 4,
+          key: firstChild.getKey(),
+        });
+
+        // Reset selection back to point
+        setAnchorPoint(view, {
+          type: 'block',
+          offset: 0,
+          key: block.getKey(),
+        });
+        setFocusPoint(view, {
+          type: 'block',
+          offset: 0,
+          key: block.getKey(),
+        });
+
+        // insertParagraph
+        insertParagraph(selection);
+        expect(selection.anchor).toEqual({
+          type: 'text',
+          offset: 0,
+          key: firstChild.getKey(),
+        });
+        expect(selection.focus).toEqual({
+          type: 'text',
+          offset: 0,
+          key: firstChild.getKey(),
+        });
+
+        // Reset selection back to point
+        setAnchorPoint(view, {
+          type: 'block',
+          offset: 0,
+          key: block.getKey(),
+        });
+        setFocusPoint(view, {
+          type: 'block',
+          offset: 0,
+          key: block.getKey(),
+        });
+
+        // insertLineBreak
+        insertLineBreak(selection, true);
+        firstChild = block.getFirstChild();
+        expect(selection.anchor).toEqual({
+          type: 'text',
+          offset: 0,
+          key: firstChild.getKey(),
+        });
+        expect(selection.focus).toEqual({
+          type: 'text',
+          offset: 0,
+          key: firstChild.getKey(),
+        });
+
+        // Reset selection back to point
+        setAnchorPoint(view, {
+          type: 'block',
+          offset: 0,
+          key: block.getKey(),
+        });
+        setFocusPoint(view, {
+          type: 'block',
+          offset: 0,
+          key: block.getKey(),
+        });
+
+        // Format text
+        formatText(selection, 'bold');
+        insertText(selection, 'Test');
+        firstChild = block.getFirstChild();
+        expect(firstChild.getTextContent()).toBe('Test');
+        expect(selection.anchor).toEqual({
+          type: 'text',
+          offset: 4,
+          key: firstChild.getKey(),
+        });
+        expect(selection.focus).toEqual({
+          type: 'text',
+          offset: 4,
+          key: firstChild.getKey(),
+        });
+
+        // Reset selection back to point
+        setAnchorPoint(view, {
+          type: 'block',
+          offset: 0,
+          key: block.getKey(),
+        });
+        setFocusPoint(view, {
+          type: 'block',
+          offset: 0,
+          key: block.getKey(),
+        });
+
+        // Extract selection
+        expect(extractSelection(selection)).toEqual([]);
+
+        // Reset selection back to point
+        setAnchorPoint(view, {
+          type: 'block',
+          offset: 0,
+          key: block.getKey(),
+        });
+        setFocusPoint(view, {
+          type: 'block',
+          offset: 0,
+          key: block.getKey(),
+        });
+
+        // getNodesInRange
+        expect(getNodesInRange(selection)).toEqual({
+          range: [],
+          nodeMap: [],
+        });
       });
     });
   });

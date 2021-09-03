@@ -995,25 +995,31 @@ describe('OutlineNode tests', () => {
     test('OutlineNode.selectNext(): no next sibling', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        expect(() => textNode.selectNext()).toThrow();
+        const selection = textNode.selectNext();
+        expect(selection.anchor.getNode()).toBe(paragraphNode);
+        expect(selection.anchor.offset).toBe(1);
       });
     });
 
-    test('OutlineNode.selectNext(): immutable', async () => {
+    test('OutlineNode.selectNext(): non-text node', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const barTextNode = new TextNode('bar').makeImmutable();
-        textNode.insertAfter(barTextNode);
-        expect(() => textNode.selectNext()).toThrow();
-      });
-    });
-
-    test('OutlineNode.selectNext(): segmented', async () => {
-      const {editor} = testEnv;
-      await editor.update(() => {
-        const barTextNode = new TextNode('bar').makeSegmented();
-        textNode.insertAfter(barTextNode);
-        expect(() => textNode.selectNext()).toThrow();
+        class TestNode extends OutlineNode {
+          clone() {
+            return new TestNode(this.__key);
+          }
+          static deserialize() {
+            // TODO
+          }
+          createDOM() {
+            return document.createElement('div');
+          }
+        }
+        const barNode = new TestNode();
+        textNode.insertAfter(barNode);
+        const selection = textNode.selectNext();
+        expect(selection.anchor.getNode()).toBe(textNode.getParent());
+        expect(selection.anchor.offset).toBe(1);
       });
     });
 

@@ -17,7 +17,11 @@ export type {
 } from './OutlineNode';
 export type {ParsedBlockNode} from './OutlineBlockNode';
 export type {ParsedTextNode} from './OutlineTextNode';
-export type {Selection} from './OutlineSelection';
+export type {
+  Selection,
+  BlockPointType as BlockPoint,
+  TextPointType as TextPoint,
+} from './OutlineSelection';
 export type {TextFormatType} from './OutlineTextNode';
 export type {LineBreakNode} from './OutlineLineBreakNode';
 

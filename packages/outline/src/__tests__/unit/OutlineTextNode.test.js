@@ -273,6 +273,29 @@ describe('OutlineTextNode tests', () => {
     });
   });
 
+  test('selectPrevious()', async () => {
+    await update((view) => {
+      const paragraphNode = createParagraphNode();
+      const textNode = createTextNode('Hello World');
+      const textNode2 = createTextNode('Goodbye Earth');
+
+      paragraphNode.append(textNode);
+      paragraphNode.append(textNode2);
+      view.getRoot().append(paragraphNode);
+
+      let selection = textNode2.selectPrevious();
+
+      expect(selection.anchor.getNode()).toBe(textNode);
+      expect(selection.anchor.offset).toBe(11);
+      expect(selection.focus.getNode()).toBe(textNode);
+      expect(selection.focus.offset).toBe(11);
+
+      selection = textNode.selectPrevious();
+      expect(selection.anchor.getNode()).toBe(paragraphNode);
+      expect(selection.anchor.offset).toBe(0);
+    });
+  });
+
   test('selectNext()', async () => {
     await update((view) => {
       const paragraphNode = createParagraphNode();
@@ -283,16 +306,16 @@ describe('OutlineTextNode tests', () => {
       paragraphNode.append(textNode2);
       view.getRoot().append(paragraphNode);
 
-      const selection = textNode.selectNext(1, 3);
+      let selection = textNode.selectNext(1, 3);
 
       expect(selection.anchor.getNode()).toBe(textNode2);
       expect(selection.anchor.offset).toBe(1);
       expect(selection.focus.getNode()).toBe(textNode2);
       expect(selection.focus.offset).toBe(3);
 
-      expect(() => {
-        textNode2.selectNext(1, 3);
-      }).toThrow();
+      selection = textNode2.selectNext();
+      expect(selection.anchor.getNode()).toBe(paragraphNode);
+      expect(selection.anchor.offset).toBe(2);
     });
   });
 

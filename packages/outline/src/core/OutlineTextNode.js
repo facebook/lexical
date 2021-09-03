@@ -511,13 +511,6 @@ export class TextNode extends OutlineNode {
       }
     }
     if (restoreSelection) {
-      const key = writableSelf.__key;
-      if (key === null) {
-        invariant(
-          false,
-          'spliceText: TODO? validate nodes have keys in a more generic way',
-        );
-      }
       const selection = getSelection();
       if (selection === null) {
         invariant(false, 'spliceText: selection not found');

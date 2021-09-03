@@ -305,7 +305,7 @@ export class OutlineNode {
     return this.__key;
   }
   getIndexWithinParent(): number {
-    const parent = this.getLatest().__parent;
+    const parent = this.getParent();
     if (parent === null) {
       return -1;
     }
@@ -741,15 +741,29 @@ export class OutlineNode {
     }
     return writableSelf;
   }
+  selectPrevious(anchorOffset?: number, focusOffset?: number): Selection {
+    errorOnReadOnly();
+    const prevSibling = this.getPreviousSibling();
+    const parent = this.getParentBlockOrThrow();
+    if (prevSibling === null) {
+      return parent.select(0, 0);
+    }
+    if (!isTextNode(prevSibling)) {
+      const index = prevSibling.getIndexWithinParent();
+      return parent.select(index, index);
+    }
+    return prevSibling.select(anchorOffset, focusOffset);
+  }
   selectNext(anchorOffset?: number, focusOffset?: number): Selection {
     errorOnReadOnly();
     const nextSibling = this.getNextSibling();
-    if (
-      nextSibling === null ||
-      !isTextNode(nextSibling) ||
-      isImmutableOrInertOrSegmented(nextSibling)
-    ) {
-      invariant(false, 'selectNext: found invalid sibling');
+    const parent = this.getParentBlockOrThrow();
+    if (nextSibling === null) {
+      return parent.select();
+    }
+    if (!isTextNode(nextSibling)) {
+      const index = nextSibling.getIndexWithinParent();
+      return parent.select(index, index);
     }
     return nextSibling.select(anchorOffset, focusOffset);
   }

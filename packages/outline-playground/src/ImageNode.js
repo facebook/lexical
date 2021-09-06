@@ -8,7 +8,7 @@
  */
 
 import type {
-  EditorThemeClasses,
+  EditorConfig,
   NodeKey,
   OutlineNode,
   OutlineEditor,
@@ -374,9 +374,10 @@ export class ImageNode extends DecoratorNode {
 
   // View
 
-  createDOM(editorThemeClasses: EditorThemeClasses): HTMLElement {
+  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
     const span = document.createElement('span');
-    const className = editorThemeClasses.image;
+    const theme = config.theme;
+    const className = theme.image;
     if (className !== undefined) {
       span.className = className;
     }

@@ -10,7 +10,7 @@
 import type {
   OutlineEditor,
   NodeKey,
-  EditorThemeClasses,
+  EditorConfig,
   OutlineNode,
   View,
 } from 'outline';
@@ -150,8 +150,8 @@ class KeywordNode extends TextNode {
   clone(): KeywordNode {
     return new KeywordNode(this.__text, this.__key);
   }
-  createDOM(editorThemeClasses: EditorThemeClasses): HTMLElement {
-    const dom = super.createDOM(editorThemeClasses);
+  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
+    const dom = super.createDOM(config);
     dom.style.cursor = 'default';
     dom.className = 'keyword';
     return dom;

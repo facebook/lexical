@@ -14,16 +14,16 @@ import {createEditor} from 'outline';
 import {useCallback, useMemo, useRef, useState} from 'react';
 import useLayoutEffect from './shared/useLayoutEffect';
 
-export default function useOutlineEditor(
+export default function useOutlineEditor<EditorContext>(
   onError: (error: Error, updateName: string) => void,
-  editorThemeClasses?: EditorThemeClasses,
+  editorConfig?: {
+    theme?: EditorThemeClasses,
+    context?: EditorContext,
+  },
 ): [OutlineEditor, (null | HTMLElement) => void, boolean] {
   const [showPlaceholder, setShowPlaceholder] = useState(true);
   const showPlaceholderRef = useRef(true);
-  const editor = useMemo(
-    () => createEditor(editorThemeClasses),
-    [editorThemeClasses],
-  );
+  const editor = useMemo(() => createEditor(editorConfig), [editorConfig]);
   const rootElementRef = useCallback(
     (rootElement: null | HTMLElement) => {
       editor.setRootElement(rootElement);

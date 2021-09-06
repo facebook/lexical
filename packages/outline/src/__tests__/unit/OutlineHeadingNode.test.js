@@ -47,10 +47,10 @@ describe('OutlineHeadingNode tests', () => {
         expect(headingNode.createDOM(editorConfig).outerHTML).toBe(
           '<h1 class="my-h1-class"></h1>',
         );
-        expect(headingNode.createDOM({heading: {}}).outerHTML).toBe(
+        expect(headingNode.createDOM({theme: {heading: {}}}).outerHTML).toBe(
           '<h1></h1>',
         );
-        expect(headingNode.createDOM({}).outerHTML).toBe('<h1></h1>');
+        expect(headingNode.createDOM({theme: {}}).outerHTML).toBe('<h1></h1>');
       });
     });
 

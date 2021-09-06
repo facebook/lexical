@@ -39,7 +39,7 @@ describe('OutlineParagraphNode tests', () => {
         expect(paragraphNode.createDOM(editorConfig).outerHTML).toBe(
           '<p class="my-paragraph-class"></p>',
         );
-        expect(paragraphNode.createDOM({}).outerHTML).toBe('<p></p>');
+        expect(paragraphNode.createDOM({theme: {}}).outerHTML).toBe('<p></p>');
       });
     });
 

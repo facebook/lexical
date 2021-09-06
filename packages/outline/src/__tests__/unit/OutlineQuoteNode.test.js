@@ -36,7 +36,7 @@ describe('OutlineQuoteNode tests', () => {
         expect(quoteNode.createDOM(editorConfig).outerHTML).toBe(
           '<blockquote class="my-quote-class"></blockquote>',
         );
-        expect(quoteNode.createDOM({}).outerHTML).toBe(
+        expect(quoteNode.createDOM({theme: {}}).outerHTML).toBe(
           '<blockquote></blockquote>',
         );
       });

@@ -74,7 +74,7 @@ describe('OutlineLinkNode tests', () => {
         expect(sanitizeHTML(linkNode.createDOM(editorConfig).outerHTML)).toBe(
           '<span class="my-link-class"><span>foo</span></span>',
         );
-        expect(sanitizeHTML(linkNode.createDOM({}).outerHTML)).toBe(
+        expect(sanitizeHTML(linkNode.createDOM({theme: {}}).outerHTML)).toBe(
           '<span><span>foo</span></span>',
         );
       });

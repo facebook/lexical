@@ -44,7 +44,7 @@ describe('OutlineListItemNode tests', () => {
         expect(listItemNode.createDOM(editorConfig).outerHTML).toBe(
           '<li class="my-listItem-item-class"></li>',
         );
-        expect(listItemNode.createDOM({}).outerHTML).toBe('<li></li>');
+        expect(listItemNode.createDOM({theme: {}}).outerHTML).toBe('<li></li>');
       });
     });
 

@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {OutlineEditor, EditorThemeClasses} from './OutlineEditor';
+import type {OutlineEditor, EditorConfig} from './OutlineEditor';
 import type {Selection} from './OutlineSelection';
 
 import {
@@ -605,14 +605,14 @@ export class OutlineNode {
 
   // View
 
-  createDOM(editorThemeClasses: EditorThemeClasses): HTMLElement {
+  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
     invariant(false, 'createDOM: base method not extended');
   }
-  updateDOM(
+  updateDOM<EditorContext>(
     // $FlowFixMe: TODO
     prevNode: any,
     dom: HTMLElement,
-    editorThemeClasses: EditorThemeClasses,
+    config: EditorConfig<EditorContext>,
   ): boolean {
     invariant(false, 'updateDOM: base method not extended');
   }

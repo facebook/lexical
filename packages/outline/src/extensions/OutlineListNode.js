@@ -11,7 +11,7 @@ import type {
   OutlineNode,
   NodeKey,
   ParsedBlockNode,
-  EditorThemeClasses,
+  EditorConfig,
 } from 'outline';
 
 import {BlockNode} from 'outline';
@@ -44,10 +44,11 @@ export class ListNode extends BlockNode {
 
   // View
 
-  createDOM(editorThemeClasses: EditorThemeClasses): HTMLElement {
+  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
     const tag = this.__tag;
     const element = document.createElement(tag);
-    const classNames = editorThemeClasses.list;
+    const theme = config.theme;
+    const classNames = theme.list;
     if (classNames !== undefined) {
       // $FlowFixMe: intentional cast
       const className = classNames[tag];

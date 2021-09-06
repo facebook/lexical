@@ -7,7 +7,12 @@
  * @flow strict
  */
 
-import type {NodeKey, EditorThemeClasses, OutlineNode} from 'outline';
+import type {
+  NodeKey,
+  EditorConfig,
+  EditorThemeClasses,
+  OutlineNode,
+} from 'outline';
 import type {ParagraphNode} from 'outline/ParagraphNode';
 
 import {isBlockNode, BlockNode} from 'outline';
@@ -30,18 +35,18 @@ export class ListItemNode extends BlockNode {
 
   // View
 
-  createDOM(editorThemeClasses: EditorThemeClasses): HTMLElement {
+  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
     const element = document.createElement('li');
-    setListItemThemeClassNames(element, editorThemeClasses, this);
+    setListItemThemeClassNames(element, config.theme, this);
     return element;
   }
 
-  updateDOM(
+  updateDOM<EditorContext>(
     prevNode: ListItemNode,
     dom: HTMLElement,
-    editorThemeClasses: EditorThemeClasses,
+    config: EditorConfig<EditorContext>,
   ): boolean {
-    setListItemThemeClassNames(dom, editorThemeClasses, prevNode);
+    setListItemThemeClassNames(dom, config.theme, prevNode);
     return false;
   }
 

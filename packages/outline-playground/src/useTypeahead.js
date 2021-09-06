@@ -7,7 +7,7 @@
  * @flow strict-local
  */
 
-import type {OutlineEditor, View, NodeKey, EditorThemeClasses} from 'outline';
+import type {OutlineEditor, View, NodeKey, EditorConfig} from 'outline';
 
 import {isTextNode, isBlockNode, TextNode} from 'outline';
 import {useEffect, useRef, useState, useCallback, useMemo} from 'react';
@@ -201,8 +201,8 @@ class TypeaheadNode extends TextNode {
     return clone;
   }
 
-  createDOM(editorThemeClasses: EditorThemeClasses) {
-    const dom = super.createDOM(editorThemeClasses);
+  createDOM<EditorContext>(config: EditorConfig<EditorContext>) {
+    const dom = super.createDOM(config);
     dom.style.cssText = 'color: #ccc;';
     return dom;
   }

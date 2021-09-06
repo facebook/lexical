@@ -9,10 +9,12 @@
 import {ListNode, createListNode, isListNode} from 'outline/ListNode';
 import {initializeUnitTest} from '../utils';
 
-const editorThemeClasses = Object.freeze({
-  list: {
-    ul: 'my-ul-list-class',
-    ol: 'my-ol-list-class',
+const editorConfig = Object.freeze({
+  theme: {
+    list: {
+      ul: 'my-ul-list-class',
+      ol: 'my-ol-list-class',
+    },
   },
 });
 
@@ -44,11 +46,11 @@ describe('OutlineListNode tests', () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const listNode = new ListNode('ul');
-        expect(listNode.createDOM(editorThemeClasses).outerHTML).toBe(
+        expect(listNode.createDOM(editorConfig).outerHTML).toBe(
           '<ul class="my-ul-list-class"></ul>',
         );
-        expect(listNode.createDOM({list: {}}).outerHTML).toBe('<ul></ul>');
-        expect(listNode.createDOM({}).outerHTML).toBe('<ul></ul>');
+        expect(listNode.createDOM({theme: {list: {}}}).outerHTML).toBe('<ul></ul>');
+        expect(listNode.createDOM({theme: {}}).outerHTML).toBe('<ul></ul>');
       });
     });
 
@@ -56,7 +58,7 @@ describe('OutlineListNode tests', () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const listNode = new ListNode('ul');
-        const domElement = listNode.createDOM(editorThemeClasses);
+        const domElement = listNode.createDOM(editorConfig);
         expect(domElement.outerHTML).toBe('<ul class="my-ul-list-class"></ul>');
         const newListNode = new ListNode();
         const result = newListNode.updateDOM(listNode, domElement);

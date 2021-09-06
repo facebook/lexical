@@ -73,6 +73,11 @@ export type EditorThemeClasses = {
   [string]: EditorThemeClassName | {[string]: EditorThemeClassName},
 };
 
+export type EditorConfig<EditorContext> = {
+  theme: EditorThemeClasses,
+  context: EditorContext,
+};
+
 export type TextNodeTransform = (node: TextNode, view: View) => void;
 
 export type ErrorListener = (error: Error, updateName: string) => void;
@@ -120,14 +125,22 @@ export function resetEditor(editor: OutlineEditor): void {
   triggerListeners('update', editor, editor._viewModel);
 }
 
-export function createEditor(
-  editorThemeClasses?: EditorThemeClasses,
-): OutlineEditor {
+export function createEditor<EditorContext>(editorConfig?: {
+  theme?: EditorThemeClasses,
+  context?: EditorContext,
+}): OutlineEditor {
   const root = createRoot();
   const nodeMap = new Map([['root', root]]);
   const viewModel = new ViewModel(nodeMap);
+  const config = editorConfig || {};
+  const theme = config.theme || {};
+  const context = config.context || {};
   // $FlowFixMe: use our declared type instead
-  return new BaseOutlineEditor(viewModel, editorThemeClasses || {});
+  return new BaseOutlineEditor(viewModel, {
+    // $FlowFixMe: we use our internal type to simpify the generics
+    context,
+    theme,
+  });
 }
 
 function updateEditor(
@@ -208,9 +221,9 @@ class BaseOutlineEditor {
   _decorators: {[NodeKey]: ReactNode};
   _pendingDecorators: null | {[NodeKey]: ReactNode};
   _textContent: string;
-  _editorThemeClasses: EditorThemeClasses;
+  _config: EditorConfig<{...}>;
 
-  constructor(viewModel: ViewModel, editorThemeClasses: EditorThemeClasses) {
+  constructor(viewModel: ViewModel, config: EditorConfig<{...}>) {
     // The root element associated with this editor
     this._rootElement = null;
     // The current view model
@@ -230,8 +243,8 @@ class BaseOutlineEditor {
       root: new Set(),
       update: new Set(),
     };
-    // Class name mappings for nodes/placeholders
-    this._editorThemeClasses = editorThemeClasses;
+    // Editor configuration for theme/context.
+    this._config = config;
     // Handling of text node transforms
     this._textNodeTransforms = new Set();
     // Mapping of types to their nodes
@@ -427,7 +440,7 @@ declare export class OutlineEditor {
   _decorators: {[NodeKey]: ReactNode};
   _pendingDecorators: null | {[NodeKey]: ReactNode};
   _textContent: string;
-  _editorThemeClasses: EditorThemeClasses;
+  _config: EditorConfig<{...}>;
 
   isComposing(): boolean;
   registerNodeType(nodeType: string, klass: Class<OutlineNode>): void;

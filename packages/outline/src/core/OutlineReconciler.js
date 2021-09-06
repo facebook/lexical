@@ -8,7 +8,7 @@
  */
 
 import type {NodeKey, NodeMapType} from './OutlineNode';
-import type {OutlineEditor, EditorThemeClasses} from './OutlineEditor';
+import type {OutlineEditor, EditorConfig} from './OutlineEditor';
 import type {
   Selection as OutlineSelection,
   PointType,
@@ -31,7 +31,7 @@ import {isTextNode} from './OutlineTextNode';
 
 let subTreeTextContent = '';
 let editorTextContent = '';
-let activeEditorThemeClasses: EditorThemeClasses;
+let activeEditorConfig: EditorConfig<{...}>;
 let activeEditor: OutlineEditor;
 let activeDirtySubTrees: Set<NodeKey>;
 let activeDirtyNodes: Set<NodeKey>;
@@ -83,7 +83,7 @@ function createNode(
   if (node === undefined) {
     invariant(false, 'createNode: node does not exist in nodeMap');
   }
-  const dom = node.createDOM(activeEditorThemeClasses);
+  const dom = node.createDOM(activeEditorConfig);
   const flags = node.__flags;
   const isInert = flags & IS_INERT;
   storeDOMWithKey(key, dom, activeEditor);
@@ -239,7 +239,7 @@ function reconcileNode(
     return dom;
   }
   // Update node. If it returns true, we need to unmount and re-create the node
-  if (nextNode.updateDOM(prevNode, dom, activeEditorThemeClasses)) {
+  if (nextNode.updateDOM(prevNode, dom, activeEditorConfig)) {
     const replacementDOM = createNode(key, null, null);
     if (parentDOM === null) {
       invariant(false, 'reconcileNode: parentDOM is null');
@@ -409,7 +409,7 @@ function reconcileRoot(
   // Rather than pass around a load of arguments through the stack recursively
   // we instead set them as bindings within the scope of the module.
   activeEditor = editor;
-  activeEditorThemeClasses = editor._editorThemeClasses;
+  activeEditorConfig = editor._config;
   activeDirtySubTrees = dirtySubTrees;
   activeDirtyNodes = dirtyNodes;
   activePrevNodeMap = prevViewModel._nodeMap;
@@ -436,7 +436,7 @@ function reconcileRoot(
   // $FlowFixMe
   activeSelection = undefined;
   // $FlowFixMe
-  activeEditorThemeClasses = undefined;
+  activeEditorConfig = undefined;
   // $FlowFixMe
   activePrevKeyToDOMMap = undefined;
 }

@@ -11,8 +11,10 @@ import {ParagraphNode} from 'outline/ParagraphNode';
 import {TextNode} from 'outline';
 import {initializeUnitTest} from '../utils';
 
-const editorThemeClasses = Object.freeze({
-  code: 'my-code-class',
+const editorConfig = Object.freeze({
+  theme: {
+    code: 'my-code-class',
+  },
 });
 
 describe('OutlineCodeNode tests', () => {
@@ -32,10 +34,10 @@ describe('OutlineCodeNode tests', () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const codeNode = new CodeNode();
-        expect(codeNode.createDOM(editorThemeClasses).outerHTML).toBe(
+        expect(codeNode.createDOM(editorConfig).outerHTML).toBe(
           '<code class="my-code-class" spellcheck="false"></code>',
         );
-        expect(codeNode.createDOM({}).outerHTML).toBe(
+        expect(codeNode.createDOM({theme: {}}).outerHTML).toBe(
           '<code spellcheck="false"></code>',
         );
       });
@@ -46,7 +48,7 @@ describe('OutlineCodeNode tests', () => {
       await editor.update(() => {
         const newCodeNode = new CodeNode();
         const codeNode = new CodeNode();
-        const domElement = codeNode.createDOM({});
+        const domElement = codeNode.createDOM({theme: {}});
         expect(domElement.outerHTML).toBe('<code spellcheck="false"></code>');
         const result = newCodeNode.updateDOM(codeNode, domElement);
         expect(result).toBe(false);

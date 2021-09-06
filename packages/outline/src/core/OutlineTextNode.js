@@ -9,7 +9,7 @@
 
 import type {Selection} from './OutlineSelection';
 import type {NodeKey, ParsedNode} from './OutlineNode';
-import type {EditorThemeClasses, TextNodeThemeClasses} from './OutlineEditor';
+import type {EditorConfig, TextNodeThemeClasses} from './OutlineEditor';
 
 import {OutlineNode, setCompositionKey, getCompositionKey} from './OutlineNode';
 import {getSelection, makeSelection} from './OutlineSelection';
@@ -186,17 +186,18 @@ function setTextContent(
   }
 }
 
-function createTextInnerDOM(
+function createTextInnerDOM<EditorContext>(
   innerDOM: HTMLElement,
   node: TextNode,
   innerTag: string,
   format: number,
   text: string,
-  editorThemeClasses: EditorThemeClasses,
+  config: EditorConfig<EditorContext>,
 ): void {
   setTextContent(text, innerDOM, node);
+  const theme = config.theme;
   // Apply theme class names
-  const textClassNames = editorThemeClasses.text;
+  const textClassNames = theme.text;
 
   if (textClassNames !== undefined) {
     setTextThemeClassNames(innerTag, 0, format, innerDOM, textClassNames);
@@ -280,7 +281,7 @@ export class TextNode extends OutlineNode {
 
   // View
 
-  createDOM(editorThemeClasses: EditorThemeClasses): HTMLElement {
+  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
     const format = this.__format;
     const outerTag = getElementOuterTag(this, format);
     const innerTag = getElementInnerTag(this, format);
@@ -292,24 +293,17 @@ export class TextNode extends OutlineNode {
       dom.appendChild(innerDOM);
     }
     const text = this.__text;
-    createTextInnerDOM(
-      innerDOM,
-      this,
-      innerTag,
-      format,
-      text,
-      editorThemeClasses,
-    );
+    createTextInnerDOM(innerDOM, this, innerTag, format, text, config);
     const style = this.__style;
     if (style !== '') {
       dom.style.cssText = style;
     }
     return dom;
   }
-  updateDOM(
+  updateDOM<EditorContext>(
     prevNode: TextNode,
     dom: HTMLElement,
-    editorThemeClasses: EditorThemeClasses,
+    config: EditorConfig<EditorContext>,
   ): boolean {
     const nextText = this.__text;
     const prevFormat = prevNode.__format;
@@ -337,7 +331,7 @@ export class TextNode extends OutlineNode {
         nextInnerTag,
         nextFormat,
         nextText,
-        editorThemeClasses,
+        config,
       );
       dom.replaceChild(nextInnerDOM, prevInnerDOM);
       return false;
@@ -353,8 +347,9 @@ export class TextNode extends OutlineNode {
       }
     }
     setTextContent(nextText, innerDOM, this);
+    const theme = config.theme;
     // Apply theme class names
-    const textClassNames = editorThemeClasses.text;
+    const textClassNames = theme.text;
 
     if (textClassNames !== undefined && prevFormat !== nextFormat) {
       setTextThemeClassNames(

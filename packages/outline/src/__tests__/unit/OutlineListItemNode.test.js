@@ -15,10 +15,12 @@ import {
 import {TextNode} from 'outline';
 import {initializeUnitTest} from '../utils';
 
-const editorThemeClasses = Object.freeze({
-  listitem: 'my-listItem-item-class',
-  nestedList: {
-    listitem: 'my-nested-list-listItem-class',
+const editorConfig = Object.freeze({
+  theme: {
+    listitem: 'my-listItem-item-class',
+    nestedList: {
+      listitem: 'my-nested-list-listItem-class',
+    },
   },
 });
 
@@ -39,10 +41,10 @@ describe('OutlineListItemNode tests', () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const listItemNode = new ListItemNode();
-        expect(listItemNode.createDOM(editorThemeClasses).outerHTML).toBe(
+        expect(listItemNode.createDOM(editorConfig).outerHTML).toBe(
           '<li class="my-listItem-item-class"></li>',
         );
-        expect(listItemNode.createDOM({}).outerHTML).toBe('<li></li>');
+        expect(listItemNode.createDOM({theme: {}}).outerHTML).toBe('<li></li>');
       });
     });
 
@@ -51,7 +53,7 @@ describe('OutlineListItemNode tests', () => {
         const {editor} = testEnv;
         await editor.update(() => {
           const listItemNode = new ListItemNode();
-          const domElement = listItemNode.createDOM(editorThemeClasses);
+          const domElement = listItemNode.createDOM(editorConfig);
           expect(domElement.outerHTML).toBe(
             '<li class="my-listItem-item-class"></li>',
           );
@@ -59,7 +61,7 @@ describe('OutlineListItemNode tests', () => {
           const result = newListItemNode.updateDOM(
             listItemNode,
             domElement,
-            editorThemeClasses,
+            editorConfig,
           );
           expect(result).toBe(false);
           expect(domElement.outerHTML).toBe(
@@ -74,7 +76,7 @@ describe('OutlineListItemNode tests', () => {
           const parentListNode = new ListNode('ul');
           const parentlistItemNode = new ListItemNode();
           parentListNode.append(parentlistItemNode);
-          const domElement = parentlistItemNode.createDOM(editorThemeClasses);
+          const domElement = parentlistItemNode.createDOM(editorConfig);
           expect(domElement.outerHTML).toBe(
             '<li class="my-listItem-item-class"></li>',
           );
@@ -84,7 +86,7 @@ describe('OutlineListItemNode tests', () => {
           const result = parentlistItemNode.updateDOM(
             parentlistItemNode,
             domElement,
-            editorThemeClasses,
+            editorConfig,
           );
           expect(result).toBe(false);
           expect(domElement.outerHTML).toBe(

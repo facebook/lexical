@@ -44,38 +44,40 @@ type Props = {
   isAutocomplete?: boolean,
 };
 
-const editorThemeClasses = {
-  paragraph: 'editor-paragraph',
-  quote: 'editor-quote',
-  heading: {
-    h1: 'editor-heading-h1',
-    h2: 'editor-heading-h2',
-    h3: 'editor-heading-h3',
-    h4: 'editor-heading-h4',
-    h5: 'editor-heading-h5',
-  },
-  list: {
-    ol: 'editor-list-ol',
-    ul: 'editor-list-ul',
-  },
-  nestedList: {
-    listitem: 'editor-nested-list-listitem',
-  },
-  listitem: 'editor-listitem',
-  image: 'editor-image',
-  text: {
-    bold: 'editor-text-bold',
+const editorConfig = {
+  theme: {
+    paragraph: 'editor-paragraph',
+    quote: 'editor-quote',
+    heading: {
+      h1: 'editor-heading-h1',
+      h2: 'editor-heading-h2',
+      h3: 'editor-heading-h3',
+      h4: 'editor-heading-h4',
+      h5: 'editor-heading-h5',
+    },
+    list: {
+      ol: 'editor-list-ol',
+      ul: 'editor-list-ul',
+    },
+    nestedList: {
+      listitem: 'editor-nested-list-listitem',
+    },
+    listitem: 'editor-listitem',
+    image: 'editor-image',
+    text: {
+      bold: 'editor-text-bold',
+      link: 'editor-text-link',
+      italic: 'editor-text-italic',
+      overflowed: 'editor-text-overflowed',
+      underline: 'editor-text-underline',
+      strikethrough: 'editor-text-strikethrough',
+      underlineStrikethrough: 'editor-text-underlineStrikethrough',
+      code: 'editor-text-code',
+    },
+    hashtag: 'editor-text-hashtag',
+    code: 'editor-code',
     link: 'editor-text-link',
-    italic: 'editor-text-italic',
-    overflowed: 'editor-text-overflowed',
-    underline: 'editor-text-underline',
-    strikethrough: 'editor-text-strikethrough',
-    underlineStrikethrough: 'editor-text-underlineStrikethrough',
-    code: 'editor-text-code',
   },
-  hashtag: 'editor-text-hashtag',
-  code: 'editor-code',
-  link: 'editor-text-link',
 };
 
 function ContentEditable({
@@ -106,7 +108,7 @@ export const useRichTextEditor = ({
 }: Props): [OutlineEditor, React.MixedElement] => {
   const [editor, rootElementRef, showPlaceholder] = useOutlineEditor(
     onError,
-    editorThemeClasses,
+    editorConfig,
   );
   const mentionsTypeahead = useMentions(editor);
   const clear = useOutlineRichText(editor, isReadOnly);
@@ -196,7 +198,7 @@ export const usePlainTextEditor = ({
 }: Props): [OutlineEditor, React.MixedElement] => {
   const [editor, rootElementRef, showPlaceholder] = useOutlineEditor(
     onError,
-    editorThemeClasses,
+    editorConfig,
   );
   const mentionsTypeahead = useMentions(editor);
   const clear = usePlainText(editor, isReadOnly);

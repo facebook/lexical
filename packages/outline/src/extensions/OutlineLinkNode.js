@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {NodeKey, ParsedTextNode, EditorThemeClasses} from 'outline';
+import type {NodeKey, ParsedTextNode, EditorConfig} from 'outline';
 
 import {TextNode} from 'outline';
 
@@ -31,27 +31,28 @@ export class LinkNode extends TextNode {
   clone(): LinkNode {
     return new LinkNode(this.__text, this.__url, this.__key);
   }
-  createDOM(editorThemeClasses: EditorThemeClasses): HTMLElement {
+  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
     const element = document.createElement('span');
-    const text = super.createDOM(editorThemeClasses);
-    const className = editorThemeClasses.link;
+    const text = super.createDOM(config);
+    const theme = config.theme;
+    const className = theme.link;
     if (className !== undefined) {
       element.className = className;
     }
     element.appendChild(text);
     return element;
   }
-  updateDOM(
+  updateDOM<EditorContext>(
     // $FlowFixMe: not sure how to fix this
     prevNode: LinkNode,
     dom: HTMLElement,
-    editorThemeClasses: EditorThemeClasses,
+    config: EditorConfig<EditorContext>,
   ): boolean {
     // $FlowFixMe: this should always be right
     const text: HTMLElement = dom.firstChild;
-    const needsReplace = super.updateDOM(prevNode, text, editorThemeClasses);
+    const needsReplace = super.updateDOM(prevNode, text, config);
     if (needsReplace) {
-      const replacementText = super.createDOM(editorThemeClasses);
+      const replacementText = super.createDOM(config);
       dom.replaceChild(replacementText, text);
     }
     return false;

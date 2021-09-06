@@ -14,13 +14,15 @@ import {
 import {ParagraphNode} from 'outline/ParagraphNode';
 import {initializeUnitTest} from '../utils';
 
-const editorThemeClasses = Object.freeze({
-  heading: {
-    h1: 'my-h1-class',
-    h2: 'my-h2-class',
-    h3: 'my-h3-class',
-    h4: 'my-h4-class',
-    h5: 'my-h5-class',
+const editorConfig = Object.freeze({
+  theme: {
+    heading: {
+      h1: 'my-h1-class',
+      h2: 'my-h2-class',
+      h3: 'my-h3-class',
+      h4: 'my-h4-class',
+      h5: 'my-h5-class',
+    },
   },
 });
 
@@ -42,13 +44,13 @@ describe('OutlineHeadingNode tests', () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const headingNode = new HeadingNode('h1');
-        expect(headingNode.createDOM(editorThemeClasses).outerHTML).toBe(
+        expect(headingNode.createDOM(editorConfig).outerHTML).toBe(
           '<h1 class="my-h1-class"></h1>',
         );
-        expect(headingNode.createDOM({heading: {}}).outerHTML).toBe(
+        expect(headingNode.createDOM({theme: {heading: {}}}).outerHTML).toBe(
           '<h1></h1>',
         );
-        expect(headingNode.createDOM({}).outerHTML).toBe('<h1></h1>');
+        expect(headingNode.createDOM({theme: {}}).outerHTML).toBe('<h1></h1>');
       });
     });
 
@@ -56,7 +58,7 @@ describe('OutlineHeadingNode tests', () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const headingNode = new HeadingNode('h1');
-        const domElement = headingNode.createDOM(editorThemeClasses);
+        const domElement = headingNode.createDOM(editorConfig);
         expect(domElement.outerHTML).toBe('<h1 class="my-h1-class"></h1>');
         const newHeadingNode = new HeadingNode();
         const result = newHeadingNode.updateDOM(headingNode, domElement);

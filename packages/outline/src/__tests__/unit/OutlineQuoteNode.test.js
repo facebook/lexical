@@ -10,8 +10,10 @@ import {QuoteNode, createQuoteNode} from 'outline/QuoteNode';
 import {ParagraphNode} from 'outline/ParagraphNode';
 import {initializeUnitTest} from '../utils';
 
-const editorThemeClasses = Object.freeze({
-  quote: 'my-quote-class',
+const editorConfig = Object.freeze({
+  theme: {
+    quote: 'my-quote-class',
+  },
 });
 
 describe('OutlineQuoteNode tests', () => {
@@ -31,7 +33,7 @@ describe('OutlineQuoteNode tests', () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const quoteNode = new QuoteNode();
-        expect(quoteNode.createDOM(editorThemeClasses).outerHTML).toBe(
+        expect(quoteNode.createDOM(editorConfig).outerHTML).toBe(
           '<blockquote class="my-quote-class"></blockquote>',
         );
         expect(quoteNode.createDOM({}).outerHTML).toBe(
@@ -44,7 +46,7 @@ describe('OutlineQuoteNode tests', () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const quoteNode = new QuoteNode();
-        const domElement = quoteNode.createDOM(editorThemeClasses);
+        const domElement = quoteNode.createDOM(editorConfig);
         expect(domElement.outerHTML).toBe(
           '<blockquote class="my-quote-class"></blockquote>',
         );

@@ -23,15 +23,17 @@ import {createEditor, createTextNode, TextNode} from 'outline';
 
 import {createParagraphNode} from 'outline/ParagraphNode';
 
-const editorThemeClasses = Object.freeze({
-  text: {
-    bold: 'my-bold-class',
-    underline: 'my-underline-class',
-    strikethrough: 'my-strikethrough-class',
-    underlineStrikethrough: 'my-underline-strikethrough-class',
-    italic: 'my-italic-class',
-    code: 'my-code-class',
-    overflowed: 'my-overflowed-class',
+const editorConfig = Object.freeze({
+  theme: {
+    text: {
+      bold: 'my-bold-class',
+      underline: 'my-underline-class',
+      strikethrough: 'my-strikethrough-class',
+      underlineStrikethrough: 'my-underline-strikethrough-class',
+      italic: 'my-italic-class',
+      code: 'my-code-class',
+      overflowed: 'my-overflowed-class',
+    },
   },
 });
 
@@ -615,7 +617,7 @@ describe('OutlineTextNode tests', () => {
       await update(() => {
         const textNode = createTextNode(contents);
         textNode.setFormat(format);
-        const element = textNode.createDOM(editorThemeClasses);
+        const element = textNode.createDOM(editorConfig);
         expect(sanitizeHTML(element.outerHTML)).toBe(expectedHTML);
       });
     });
@@ -633,7 +635,7 @@ describe('OutlineTextNode tests', () => {
             textNode.setFormat(format);
             paragraphNode.append(textNode);
 
-            const element = textNode.createDOM(editorThemeClasses);
+            const element = textNode.createDOM(editorConfig);
             expect(sanitizeHTML(element.outerHTML)).toBe(expectedHTML);
           });
         },
@@ -724,15 +726,15 @@ describe('OutlineTextNode tests', () => {
           const prevTextNode = createTextNode(prevText);
           prevTextNode.setFlags(prevFlags);
           prevTextNode.setFormat(prevFormat);
-          const element = prevTextNode.createDOM(editorThemeClasses);
+          const element = prevTextNode.createDOM(editorConfig);
 
           const textNode = createTextNode(nextText);
           textNode.setFlags(nextFlags);
           textNode.setFormat(nextFormat);
 
-          expect(
-            textNode.updateDOM(prevTextNode, element, editorThemeClasses),
-          ).toBe(result);
+          expect(textNode.updateDOM(prevTextNode, element, editorConfig)).toBe(
+            result,
+          );
           // Only need to bother about DOM element contents if updateDOM()
           // returns false.
           if (!result) {

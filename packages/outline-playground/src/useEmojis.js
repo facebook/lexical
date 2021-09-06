@@ -11,7 +11,7 @@ import type {
   OutlineEditor,
   View,
   NodeKey,
-  EditorThemeClasses,
+  EditorConfig,
   Selection,
   ParsedTextNode,
 } from 'outline';
@@ -105,8 +105,8 @@ class EmojiNode extends TextNode {
   clone() {
     return new EmojiNode(this.__className, this.__text, this.__key);
   }
-  createDOM(editorThemeClasses: EditorThemeClasses) {
-    const dom = super.createDOM(editorThemeClasses);
+  createDOM<EditorContext>(config: EditorConfig<EditorContext>) {
+    const dom = super.createDOM(config);
     dom.className = this.__className;
     return dom;
   }

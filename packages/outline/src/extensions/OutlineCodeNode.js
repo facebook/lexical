@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {NodeKey, EditorThemeClasses, Selection} from 'outline';
+import type {NodeKey, EditorConfig, Selection} from 'outline';
 import type {ParagraphNode} from 'outline/ParagraphNode';
 
 import {BlockNode} from 'outline';
@@ -29,9 +29,10 @@ export class CodeNode extends BlockNode {
 
   // View
 
-  createDOM(editorThemeClasses: EditorThemeClasses): HTMLElement {
+  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
     const element = document.createElement('code');
-    const className = editorThemeClasses.code;
+    const theme = config.theme;
+    const className = theme.code;
     if (className !== undefined) {
       element.className = className;
     }

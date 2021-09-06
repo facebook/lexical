@@ -9,18 +9,20 @@
 import {LinkNode, createLinkNode, isLinkNode} from 'outline/LinkNode';
 import {initializeUnitTest, sanitizeHTML} from '../utils';
 
-const editorThemeClasses = Object.freeze({
-  text: {
-    bold: 'my-bold-class',
-    underline: 'my-underline-class',
-    strikethrough: 'my-strikethrough-class',
-    underlineStrikethrough: 'my-underline-strikethrough-class',
-    italic: 'my-italic-class',
-    code: 'my-code-class',
-    hashtag: 'my-hashtag-class',
-    overflowed: 'my-overflowed-class',
+const editorConfig = Object.freeze({
+  theme: {
+    text: {
+      bold: 'my-bold-class',
+      underline: 'my-underline-class',
+      strikethrough: 'my-strikethrough-class',
+      underlineStrikethrough: 'my-underline-strikethrough-class',
+      italic: 'my-italic-class',
+      code: 'my-code-class',
+      hashtag: 'my-hashtag-class',
+      overflowed: 'my-overflowed-class',
+    },
+    link: 'my-link-class',
   },
-  link: 'my-link-class',
 });
 
 describe('OutlineLinkNode tests', () => {
@@ -69,10 +71,10 @@ describe('OutlineLinkNode tests', () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const linkNode = new LinkNode('foo', 'https://example.com/foo');
-        expect(
-          sanitizeHTML(linkNode.createDOM(editorThemeClasses).outerHTML),
-        ).toBe('<span class="my-link-class"><span>foo</span></span>');
-        expect(sanitizeHTML(linkNode.createDOM({}).outerHTML)).toBe(
+        expect(sanitizeHTML(linkNode.createDOM(editorConfig).outerHTML)).toBe(
+          '<span class="my-link-class"><span>foo</span></span>',
+        );
+        expect(sanitizeHTML(linkNode.createDOM({theme: {}}).outerHTML)).toBe(
           '<span><span>foo</span></span>',
         );
       });
@@ -82,15 +84,15 @@ describe('OutlineLinkNode tests', () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const linkNode = new LinkNode('foo', 'https://example.com/foo');
-        const domElement = linkNode.createDOM(editorThemeClasses);
-        expect(
-          sanitizeHTML(linkNode.createDOM(editorThemeClasses).outerHTML),
-        ).toBe('<span class="my-link-class"><span>foo</span></span>');
+        const domElement = linkNode.createDOM(editorConfig);
+        expect(sanitizeHTML(linkNode.createDOM(editorConfig).outerHTML)).toBe(
+          '<span class="my-link-class"><span>foo</span></span>',
+        );
         const newLinkNode = new LinkNode('bar', 'https://example.com/bar');
         const result = newLinkNode.updateDOM(
           linkNode,
           domElement,
-          editorThemeClasses,
+          editorConfig,
         );
         expect(result).toBe(false);
         expect(sanitizeHTML(domElement.outerHTML)).toBe(

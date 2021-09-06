@@ -13,8 +13,10 @@ import {
 } from 'outline/ParagraphNode';
 import {initializeUnitTest} from '../utils';
 
-const editorThemeClasses = Object.freeze({
-  paragraph: 'my-paragraph-class',
+const editorConfig = Object.freeze({
+  theme: {
+    paragraph: 'my-paragraph-class',
+  },
 });
 
 describe('OutlineParagraphNode tests', () => {
@@ -34,10 +36,10 @@ describe('OutlineParagraphNode tests', () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const paragraphNode = new ParagraphNode();
-        expect(paragraphNode.createDOM(editorThemeClasses).outerHTML).toBe(
+        expect(paragraphNode.createDOM(editorConfig).outerHTML).toBe(
           '<p class="my-paragraph-class"></p>',
         );
-        expect(paragraphNode.createDOM({}).outerHTML).toBe('<p></p>');
+        expect(paragraphNode.createDOM({theme: {}}).outerHTML).toBe('<p></p>');
       });
     });
 
@@ -45,7 +47,7 @@ describe('OutlineParagraphNode tests', () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const paragraphNode = new ParagraphNode();
-        const domElement = paragraphNode.createDOM(editorThemeClasses);
+        const domElement = paragraphNode.createDOM(editorConfig);
         expect(domElement.outerHTML).toBe('<p class="my-paragraph-class"></p>');
         const newParagraphNode = new ParagraphNode();
         const result = newParagraphNode.updateDOM(paragraphNode, domElement);

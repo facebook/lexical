@@ -11,7 +11,7 @@ import type {
   OutlineNode,
   NodeKey,
   ParsedBlockNode,
-  EditorThemeClasses,
+  EditorConfig,
 } from 'outline';
 import type {ParagraphNode} from 'outline/ParagraphNode';
 
@@ -45,10 +45,11 @@ export class HeadingNode extends BlockNode {
 
   // View
 
-  createDOM(editorThemeClasses: EditorThemeClasses): HTMLElement {
+  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
     const tag = this.__tag;
     const element = document.createElement(tag);
-    const classNames = editorThemeClasses.heading;
+    const theme = config.theme;
+    const classNames = theme.heading;
     if (classNames !== undefined) {
       // $FlowFixMe: intentional cast
       const className = classNames[tag];

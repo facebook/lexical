@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {NodeKey, OutlineNode, EditorThemeClasses} from 'outline';
+import type {NodeKey, OutlineNode, EditorConfig} from 'outline';
 
 import {TextNode, createTextNode} from 'outline';
 
@@ -25,10 +25,11 @@ export class HashtagNode extends TextNode {
     return new HashtagNode(this.__text, this.__key);
   }
 
-  createDOM(editorThemeClasses: EditorThemeClasses): HTMLElement {
-    const element = super.createDOM(editorThemeClasses);
-    if (editorThemeClasses.hashtag) {
-      element.className = editorThemeClasses.hashtag;
+  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
+    const element = super.createDOM(config);
+    const theme = config.theme;
+    if (theme.hashtag) {
+      element.className = theme.hashtag;
     }
     return element;
   }

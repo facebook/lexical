@@ -10,7 +10,7 @@
 import type {
   OutlineEditor,
   NodeKey,
-  EditorThemeClasses,
+  EditorConfig,
   View,
   Selection,
 } from 'outline';
@@ -622,8 +622,8 @@ class MentionNode extends TextNode {
   clone() {
     return new MentionNode(this.__mention, this.__text, this.__key);
   }
-  createDOM(editorThemeClasses: EditorThemeClasses) {
-    const dom = super.createDOM(editorThemeClasses);
+  createDOM<EditorContext>(config: EditorConfig<EditorContext>) {
+    const dom = super.createDOM(config);
     dom.style.cssText = mentionStyle;
     dom.className = 'mention';
     return dom;

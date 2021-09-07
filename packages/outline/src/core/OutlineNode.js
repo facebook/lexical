@@ -503,6 +503,9 @@ export class OutlineNode {
         }
         const parent = node.getParentOrThrow();
         nodes.push(parent);
+        if (parent === targetNode) {
+          break;
+        }
         let parentSibling = null;
         let ancestor = parent;
         do {
@@ -533,6 +536,9 @@ export class OutlineNode {
         }
         const parent = node.getParentOrThrow();
         nodes.push(parent);
+        if (parent === targetNode) {
+          break;
+        }
         let parentSibling = null;
         let ancestor = parent;
         do {

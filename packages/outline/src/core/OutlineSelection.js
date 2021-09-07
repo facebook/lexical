@@ -303,19 +303,19 @@ function resolveSelectionPoint(
   offset: number,
   editor: OutlineEditor,
 ): null | PointType {
-  let resolvedDOM = dom;
   let resolvedOffset = offset;
   let resolvedNode;
+  let resolvedDOM;
   // If we have selection on an element, we will
   // need to figure out (using the offset) what text
   // node should be selected.
 
-  if (domIsElement(resolvedDOM) && resolvedDOM.nodeName !== 'BR') {
+  if (domIsElement(dom) && dom.nodeName !== 'BR') {
     let moveSelectionToEnd = false;
     // Given we're moving selection to another node, selection is
     // definitely dirty.
     // We use the anchor to find which child node to select
-    const childNodes = resolvedDOM.childNodes;
+    const childNodes = dom.childNodes;
     const childNodesLength = childNodes.length;
     // If the anchor is the same as length, then this means we
     // need to select the very last text node.
@@ -323,28 +323,28 @@ function resolveSelectionPoint(
       moveSelectionToEnd = true;
       resolvedOffset = childNodesLength - 1;
     }
-    resolvedDOM = childNodes[resolvedOffset];
-    resolvedNode = getNodeFromDOM(resolvedDOM);
-    if (isBlockNode(resolvedNode)) {
-      if (moveSelectionToEnd) {
-        resolvedNode = resolvedNode.getLastTextNode();
-        if (resolvedNode === null) {
-          return null;
-        }
-        resolvedOffset = resolvedNode.getTextContentSize();
-      } else {
-        resolvedNode = resolvedNode.getFirstTextNode();
-        resolvedOffset = 0;
-      }
-    } else if (isTextNode(resolvedNode)) {
+    const childDOM = childNodes[resolvedOffset];
+    resolvedNode = getNodeFromDOM(childDOM);
+    if (isTextNode(resolvedNode)) {
+      resolvedDOM = childDOM;
       if (moveSelectionToEnd) {
         resolvedOffset = resolvedNode.getTextContentSize();
       } else {
         resolvedOffset = 0;
       }
+    } else {
+      const resolvedBlock = getNodeFromDOM(dom);
+      if (resolvedBlock === null) {
+        return null;
+      }
+      if (moveSelectionToEnd) {
+        resolvedOffset++;
+      }
+      return createPoint(resolvedBlock.__key, resolvedOffset, 'block');
     }
   } else {
-    resolvedNode = getNodeFromDOM(resolvedDOM);
+    resolvedNode = getNodeFromDOM(dom);
+    resolvedDOM = dom;
   }
   if (
     isLineBreakNode(resolvedNode) ||

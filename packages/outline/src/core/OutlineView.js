@@ -17,7 +17,6 @@ import type {
 } from './OutlineNode';
 import type {BlockNode} from './OutlineBlockNode';
 import type {Selection} from './OutlineSelection';
-import type {Node as ReactNode} from 'react';
 import type {ParsedNodeMap} from './OutlineNode';
 import type {ListenerType} from './OutlineEditor';
 
@@ -201,9 +200,10 @@ export function preparePendingViewUpdate(
       }
     }
     applySelectionTransforms(pendingViewModel, editor);
-    if (pendingViewModel.hasDirtyNodes()) {
-      applyTextTransforms(pendingViewModel, editor);
-      garbageCollectDetachedNodes(pendingViewModel, editor);
+    const dirtyNodes = editor._dirtyNodes;
+    if (dirtyNodes !== null && dirtyNodes.size > 0) {
+      applyTextTransforms(pendingViewModel, dirtyNodes, editor);
+      garbageCollectDetachedNodes(pendingViewModel, dirtyNodes, editor);
     }
     const endingCompositionKey = editor._compositionKey;
     if (startingCompositionKey !== endingCompositionKey) {
@@ -296,17 +296,18 @@ export function applySelectionTransforms(
 
 export function applyTextTransforms(
   viewModel: ViewModel,
+  dirtyNodes: Set<NodeKey>,
   editor: OutlineEditor,
 ): void {
   const textNodeTransforms = editor._textNodeTransforms;
   if (textNodeTransforms.size > 0) {
     const nodeMap = viewModel._nodeMap;
-    const dirtyNodes = Array.from(viewModel._dirtyNodes);
+    const dirtyNodesArr = Array.from(dirtyNodes);
     const transforms = Array.from(textNodeTransforms);
 
     try {
       isProcessingTextNodeTransforms = true;
-      triggerTextMutationListeners(nodeMap, dirtyNodes, transforms);
+      triggerTextMutationListeners(nodeMap, dirtyNodesArr, transforms);
     } finally {
       isProcessingTextNodeTransforms = false;
     }
@@ -353,13 +354,14 @@ function garbageCollectDetachedDeepChildNodes(
 
 export function garbageCollectDetachedNodes(
   viewModel: ViewModel,
+  dirtyNodes: Set<NodeKey>,
   editor: OutlineEditor,
 ): void {
-  const dirtyNodes = Array.from(viewModel._dirtyNodes);
+  const dirtyNodesArr = Array.from(dirtyNodes);
   const nodeMap = viewModel._nodeMap;
 
-  for (let s = 0; s < dirtyNodes.length; s++) {
-    const nodeKey = dirtyNodes[s];
+  for (let s = 0; s < dirtyNodesArr.length; s++) {
+    const nodeKey = dirtyNodesArr[s];
     const node = nodeMap.get(nodeKey);
 
     if (node !== undefined) {
@@ -402,6 +404,8 @@ export function commitPendingUpdates(
       resetEditor(editor);
       editor._keyToDOMMap.set('root', rootElement);
       editor._pendingViewModel = pendingViewModel;
+      editor._dirtyNodes = null;
+      editor._dirtySubTrees = null;
       isAttemptingToRecoverFromReconcilerError = true;
       commitPendingUpdates(editor, 'ReconcileRecover');
       isAttemptingToRecoverFromReconcilerError = false;
@@ -412,6 +416,9 @@ export function commitPendingUpdates(
     isReadOnlyMode = previousReadOnlyMode;
     activeEditor = previousActiveEditor;
   }
+  const dirtyNodes = editor._dirtyNodes;
+  editor._dirtyNodes = null;
+  editor._dirtySubTrees = null;
   garbageCollectDetachedDecorators(editor, pendingViewModel);
   const pendingDecorators = editor._pendingDecorators;
   if (pendingDecorators !== null) {
@@ -419,7 +426,7 @@ export function commitPendingUpdates(
     editor._pendingDecorators = null;
     triggerListeners('decorator', editor, pendingDecorators);
   }
-  triggerListeners('update', editor, pendingViewModel);
+  triggerListeners('update', editor, pendingViewModel, dirtyNodes);
   const deferred = editor._deferred;
   if (deferred.length !== 0) {
     for (let i = 0; i < deferred.length; i++) {
@@ -432,10 +439,8 @@ export function commitPendingUpdates(
 export function triggerListeners(
   type: ListenerType,
   editor: OutlineEditor,
-  ...payload: Array<
-    // $FlowFixMe: needs refining
-    null | Error | HTMLElement | {[NodeKey]: ReactNode} | ViewModel | string,
-  >
+  // $FlowFixMe: needs refining
+  ...payload: Array<any>
 ): void {
   const listeners = Array.from(editor._listeners[type]);
   for (let i = 0; i < listeners.length; i++) {
@@ -451,51 +456,37 @@ export function cloneViewModel(current: ViewModel): ViewModel {
 export class ViewModel {
   _nodeMap: NodeMapType;
   _selection: null | Selection;
-  _dirtyNodes: Set<NodeKey>;
-  _dirtySubTrees: Set<NodeKey>;
-  _isDirty: boolean;
   _flushSync: boolean;
 
   constructor(nodeMap: NodeMapType) {
     this._nodeMap = nodeMap;
     this._selection = null;
-    // Dirty nodes are nodes that have been added or updated
-    // in comparison to the previous view model. We also use
-    // this Set for performance optimizations during the
-    // production of a draft view model and during undo/redo.
-    this._dirtyNodes = new Set();
-    // We make nodes as "dirty" in that their have a child
-    // that is dirty, which means we need to reconcile
-    // the given sub-tree to find the dirty node.
-    this._dirtySubTrees = new Set();
-    // Used to mark as needing a full reconciliation
-    this._isDirty = false;
     this._flushSync = false;
   }
-  hasDirtyNodes(): boolean {
-    return this._dirtyNodes.size > 0;
-  }
-  isDirty(): boolean {
-    return this._isDirty;
-  }
-  markDirty(): void {
-    this._isDirty = true;
-  }
-  getDirtyNodes(): Array<OutlineNode> {
-    const dirtyNodes = Array.from(this._dirtyNodes);
-    const nodeMap = this._nodeMap;
-    const nodes = [];
+  // hasDirtyNodes(): boolean {
+  //   return this._dirtyNodes.size > 0;
+  // }
+  // isDirty(): boolean {
+  //   return this._isDirty;
+  // }
+  // markDirty(): void {
+  //   this._isDirty = true;
+  // }
+  // getDirtyNodes(): Array<OutlineNode> {
+  //   const dirtyNodes = Array.from(this._dirtyNodes);
+  //   const nodeMap = this._nodeMap;
+  //   const nodes = [];
 
-    for (let i = 0; i < dirtyNodes.length; i++) {
-      const dirtyNodeKey = dirtyNodes[i];
-      const dirtyNode = nodeMap.get(dirtyNodeKey);
+  //   for (let i = 0; i < dirtyNodes.length; i++) {
+  //     const dirtyNodeKey = dirtyNodes[i];
+  //     const dirtyNode = nodeMap.get(dirtyNodeKey);
 
-      if (dirtyNode !== undefined) {
-        nodes.push(dirtyNode);
-      }
-    }
-    return nodes;
-  }
+  //     if (dirtyNode !== undefined) {
+  //       nodes.push(dirtyNode);
+  //     }
+  //   }
+  //   return nodes;
+  // }
   read<V>(callbackFn: (view: View) => V): V {
     const previousActiveViewModel = activeViewModel;
     const previousReadOnlyMode = isReadOnlyMode;
@@ -573,6 +564,5 @@ export function parseViewModel(
   viewModel._selection = createSelectionFromParse(
     state.remappedSelection || state.originalSelection,
   );
-  viewModel._isDirty = true;
   return viewModel;
 }

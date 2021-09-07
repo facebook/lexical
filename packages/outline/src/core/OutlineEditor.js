@@ -81,7 +81,10 @@ export type EditorConfig<EditorContext> = {
 export type TextNodeTransform = (node: TextNode, view: View) => void;
 
 export type ErrorListener = (error: Error, updateName: string) => void;
-export type UpdateListener = (viewModel: ViewModel) => void;
+export type UpdateListener = (
+  viewModel: ViewModel,
+  dirtyNodes: null | Set<NodeKey>,
+) => void;
 export type DecoratorListener = (decorator: {[NodeKey]: ReactNode}) => void;
 export type RootListener = (
   element: null | HTMLElement,
@@ -120,9 +123,11 @@ export function resetEditor(editor: OutlineEditor): void {
   editor._pendingViewModel = null;
   editor._compositionKey = null;
   editor._rootElement = null;
+  editor._dirtyNodes = null;
+  editor._dirtySubTrees = null;
   keyToDOMMap.clear();
   editor._textContent = '';
-  triggerListeners('update', editor, editor._viewModel);
+  triggerListeners('update', editor, editor._viewModel, null);
 }
 
 export function createEditor<EditorContext>(editorConfig?: {
@@ -176,14 +181,16 @@ function updateEditor(
     triggerListeners('error', editor, error, updateName);
     // Restore existing view model to the DOM
     const currentViewModel = editor._viewModel;
-    currentViewModel.markDirty();
     editor._pendingViewModel = currentViewModel;
+    editor._dirtyNodes = null;
+    editor._dirtySubTrees = null;
     commitPendingUpdates(editor, 'UpdateRecover');
     return false;
   }
+  const dirtyNodes = editor._dirtyNodes;
 
   const shouldUpdate =
-    pendingViewModel.hasDirtyNodes() ||
+    (dirtyNodes !== null && dirtyNodes.size > 0) ||
     viewModelHasDirtySelection(pendingViewModel, editor);
 
   if (!shouldUpdate) {
@@ -222,6 +229,8 @@ class BaseOutlineEditor {
   _pendingDecorators: null | {[NodeKey]: ReactNode};
   _textContent: string;
   _config: EditorConfig<{...}>;
+  _dirtyNodes: null | Set<NodeKey>;
+  _dirtySubTrees: null | Set<NodeKey>;
 
   constructor(viewModel: ViewModel, config: EditorConfig<{...}>) {
     // The root element associated with this editor
@@ -258,6 +267,9 @@ class BaseOutlineEditor {
     this._pendingDecorators = null;
     // Editor fast-path for text content
     this._textContent = '';
+    // Used to optimize reconcilation
+    this._dirtyNodes = null;
+    this._dirtySubTrees = null;
   }
   isComposing(): boolean {
     return this._compositionKey != null;
@@ -441,6 +453,8 @@ declare export class OutlineEditor {
   _pendingDecorators: null | {[NodeKey]: ReactNode};
   _textContent: string;
   _config: EditorConfig<{...}>;
+  _dirtyNodes: null | Set<NodeKey>;
+  _dirtySubTrees: null | Set<NodeKey>;
 
   isComposing(): boolean;
   registerNodeType(nodeType: string, klass: Class<OutlineNode>): void;

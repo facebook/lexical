@@ -7,7 +7,7 @@
  * @flow strict-local
  */
 
-import type {OutlineEditor, ViewModel} from 'outline';
+import type {OutlineEditor, ViewModel, OutlineNode, NodeKey} from 'outline';
 
 import {isTextNode} from 'outline';
 import {isRedo, isUndo} from 'outline/KeyHelpers';
@@ -18,9 +18,29 @@ const MERGE = 0;
 const NO_MERGE = 1;
 const DISCARD = 2;
 
+function getDirtyNodes(
+  viewModel: ViewModel,
+  dirtyNodesSet: Set<NodeKey>,
+): Array<OutlineNode> {
+  const dirtyNodes = Array.from(dirtyNodesSet);
+  const nodeMap = viewModel._nodeMap;
+  const nodes = [];
+
+  for (let i = 0; i < dirtyNodes.length; i++) {
+    const dirtyNodeKey = dirtyNodes[i];
+    const dirtyNode = nodeMap.get(dirtyNodeKey);
+
+    if (dirtyNode !== undefined) {
+      nodes.push(dirtyNode);
+    }
+  }
+  return nodes;
+}
+
 function getMergeAction(
   prevViewModel: null | ViewModel,
   nextViewModel: ViewModel,
+  dirtyNodesSet: Set<NodeKey>,
 ): 0 | 1 | 2 {
   // If we have a view model that doesn't want its history
   // recorded then we always merge the changes.
@@ -33,14 +53,14 @@ function getMergeAction(
   }
   const selection = nextViewModel._selection;
   const prevSelection = prevViewModel._selection;
-  const hasDirtyNodes = nextViewModel.hasDirtyNodes();
+  const hasDirtyNodes = dirtyNodesSet.size > 0;
   if (!hasDirtyNodes) {
     if (prevSelection === null && selection !== null) {
       return MERGE;
     }
     return DISCARD;
   }
-  const dirtyNodes = nextViewModel.getDirtyNodes();
+  const dirtyNodes = getDirtyNodes(nextViewModel, dirtyNodesSet);
   if (dirtyNodes.length === 1) {
     const prevNodeMap = prevViewModel._nodeMap;
     const nextDirtyNode = dirtyNodes[0];
@@ -106,7 +126,10 @@ export default function useOutlineHistory(editor: OutlineEditor): () => void {
       return;
     }
 
-    const applyChange = (viewModel) => {
+    const applyChange = (
+      viewModel: ViewModel,
+      dirtyNodes: null | Set<NodeKey>,
+    ) => {
       const current = historyState.current;
       const redoStack = historyState.redoStack;
       const undoStack = historyState.undoStack;
@@ -114,8 +137,8 @@ export default function useOutlineHistory(editor: OutlineEditor): () => void {
       if (viewModel === current) {
         return;
       }
-      if (!viewModel.isDirty()) {
-        const mergeAction = getMergeAction(current, viewModel);
+      if (dirtyNodes !== null) {
+        const mergeAction = getMergeAction(current, viewModel, dirtyNodes);
         if (mergeAction === NO_MERGE) {
           if (redoStack.length !== 0) {
             historyState.redoStack = [];
@@ -136,17 +159,13 @@ export default function useOutlineHistory(editor: OutlineEditor): () => void {
       const undoStack = historyState.undoStack;
       const undoStackLength = undoStack.length;
       if (undoStackLength !== 0) {
-        let current = historyState.current;
+        const current = historyState.current;
 
         if (current !== null) {
-          if (undoStackLength !== 1 && !current.hasDirtyNodes()) {
-            current = undoStack.pop();
-          }
           redoStack.push(current);
         }
         const viewModel = undoStack.pop();
         historyState.current = viewModel;
-        viewModel.markDirty();
         editor.setViewModel(viewModel);
       }
     };
@@ -162,7 +181,6 @@ export default function useOutlineHistory(editor: OutlineEditor): () => void {
         }
         const viewModel = redoStack.pop();
         historyState.current = viewModel;
-        viewModel.markDirty();
         editor.setViewModel(viewModel);
       }
     };

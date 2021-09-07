@@ -7,7 +7,7 @@
  * @flow strict-local
  */
 
-import type {OutlineEditor, View, ViewModel} from 'outline';
+import type {OutlineEditor, View, ViewModel, NodeKey} from 'outline';
 
 import {createTextNode} from 'outline';
 import {createParagraphNode} from 'outline/ParagraphNode';
@@ -286,7 +286,7 @@ ${steps.map(formatStep).join(`\n`)}
   useEffect(() => {
     const removeUpdateListener = editor.addListener(
       'update',
-      (viewModel: ViewModel) => {
+      (viewModel: ViewModel, dirtyNodes: null | Set<NodeKey>) => {
         if (!isRecording) {
           return;
         }
@@ -294,7 +294,7 @@ ${steps.map(formatStep).join(`\n`)}
         const previousSelection = previousSelectionRef.current;
         const skipNextSelectionChange = skipNextSelectionChangeRef.current;
         if (previousSelection !== currentSelection) {
-          if (!viewModel.hasDirtyNodes() && !skipNextSelectionChange) {
+          if (dirtyNodes === null && !skipNextSelectionChange) {
             const browserSelection = window.getSelection();
             if (
               browserSelection.anchorNode == null ||

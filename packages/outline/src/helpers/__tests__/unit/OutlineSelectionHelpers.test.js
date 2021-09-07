@@ -147,14 +147,14 @@ describe('OutlineSelectionHelpers tests', () => {
       setupTestCase((selection, view, block) => {
         insertLineBreak(selection, true);
         expect(selection.anchor).toEqual({
-          type: 'text',
+          type: 'block',
           offset: 0,
-          key: block.getFirstChild().getKey(),
+          key: block.getKey(),
         });
         expect(selection.focus).toEqual({
-          type: 'text',
+          type: 'block',
           offset: 0,
-          key: block.getFirstChild().getKey(),
+          key: block.getKey(),
         });
       });
 
@@ -265,16 +265,15 @@ describe('OutlineSelectionHelpers tests', () => {
       // insertLineBreak
       setupTestCase((selection, view, block) => {
         insertLineBreak(selection, true);
-        const firstChild = block.getFirstChild();
         expect(selection.anchor).toEqual({
-          type: 'text',
+          type: 'block',
           offset: 0,
-          key: firstChild.getKey(),
+          key: block.getKey(),
         });
         expect(selection.focus).toEqual({
-          type: 'text',
+          type: 'block',
           offset: 0,
-          key: firstChild.getKey(),
+          key: block.getKey(),
         });
       });
 

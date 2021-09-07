@@ -389,13 +389,9 @@ describe('OutlineTextNode tests', () => {
         const children = paragraphNode.getAllTextNodes();
         expect(paragraphNode.getTextContent()).toBe('Hello World');
         expect(children[0].isSimpleText()).toBe(true);
-        expect(children[0].getTextContent()).toBe('');
-        expect(children[1].isSimpleText()).toBe(true);
-        expect(children[1].getTextContent()).toBe('Hello');
-        expect(children[2].isSimpleText()).toBe(true);
-        expect(children[2].getTextContent()).toBe(' World');
-        expect(middle).toBe(children[1]);
-        expect(next).toBe(children[2]);
+        expect(children[0].getTextContent()).toBe('Hello');
+        expect(middle).toBe(children[0]);
+        expect(next).toBe(children[1]);
       });
     });
 

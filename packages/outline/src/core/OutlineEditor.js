@@ -123,6 +123,8 @@ export function resetEditor(editor: OutlineEditor): void {
   editor._pendingViewModel = null;
   editor._compositionKey = null;
   editor._rootElement = null;
+  editor._dirtyNodes = null;
+  editor._dirtySubTrees = null;
   keyToDOMMap.clear();
   editor._textContent = '';
   triggerListeners('update', editor, editor._viewModel, null);

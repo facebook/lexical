@@ -626,7 +626,7 @@ describe('OutlineNode tests', () => {
         expect(node.getParent()).toBe(null);
         textNode.remove();
         expect(textNode.getParent()).toBe(null);
-        expect(editor.getViewModel()._dirtyNodes.has(textNode.getKey()));
+        expect(editor._dirtyNodes.has(textNode.getKey()));
       });
       expect(testEnv.outerHTML).toBe(
         '<div contenteditable="true" data-outline-editor="true"><p></p></div>',

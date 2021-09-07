@@ -33,12 +33,11 @@ let subTreeTextContent = '';
 let editorTextContent = '';
 let activeEditorConfig: EditorConfig<{...}>;
 let activeEditor: OutlineEditor;
-let activeDirtySubTrees: Set<NodeKey>;
-let activeDirtyNodes: Set<NodeKey>;
+let activeDirtySubTrees: null | Set<NodeKey>;
+let activeDirtyNodes: null | Set<NodeKey>;
 let activePrevNodeMap: NodeMapType;
 let activeNextNodeMap: NodeMapType;
 let activeSelection: null | OutlineSelection;
-let activeViewModelIsDirty: boolean = false;
 let activePrevKeyToDOMMap: Map<NodeKey, HTMLElement>;
 
 function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
@@ -218,7 +217,8 @@ function reconcileNode(
     );
   }
   const isDirty =
-    activeViewModelIsDirty ||
+    activeDirtyNodes === null ||
+    activeDirtySubTrees === null ||
     activeDirtyNodes.has(key) ||
     activeDirtySubTrees.has(key);
   const dom = getElementByKeyOrThrow(activeEditor, key);
@@ -401,8 +401,8 @@ function reconcileRoot(
   nextViewModel: ViewModel,
   editor: OutlineEditor,
   selection: null | OutlineSelection,
-  dirtySubTrees: Set<NodeKey>,
-  dirtyNodes: Set<NodeKey>,
+  dirtySubTrees: null | Set<NodeKey>,
+  dirtyNodes: null | Set<NodeKey>,
 ): void {
   subTreeTextContent = '';
   editorTextContent = '';
@@ -415,7 +415,6 @@ function reconcileRoot(
   activePrevNodeMap = prevViewModel._nodeMap;
   activeNextNodeMap = nextViewModel._nodeMap;
   activeSelection = selection;
-  activeViewModelIsDirty = nextViewModel._isDirty;
   activePrevKeyToDOMMap = new Map(editor._keyToDOMMap);
   reconcileNode('root', null);
   editor._textContent = editorTextContent;
@@ -447,12 +446,11 @@ export function reconcileViewModel(
   nextViewModel: ViewModel,
   editor: OutlineEditor,
 ): void {
-  const dirtySubTrees = nextViewModel._dirtySubTrees;
-  const dirtyNodes = nextViewModel._dirtyNodes;
+  const dirtySubTrees = editor._dirtySubTrees;
+  const dirtyNodes = editor._dirtyNodes;
   // When a view model is historic, we bail out of using dirty checks and
   // always do a full reconciliation to ensure consistency.
-  const isDirty = nextViewModel._isDirty;
-  const needsUpdate = isDirty || nextViewModel.hasDirtyNodes();
+  const needsUpdate = dirtyNodes === null || dirtyNodes.size > 0;
   const prevSelection = prevViewModel._selection;
   const nextSelection = nextViewModel._selection;
 

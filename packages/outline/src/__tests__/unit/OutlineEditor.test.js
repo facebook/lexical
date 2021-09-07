@@ -218,7 +218,7 @@ describe('OutlineEditor tests', () => {
       return decoratedPortals;
     }
 
-    it('Should correctly render React component into Outline node', async () => {
+    it('Should correctly render React component into Outline node #1', async () => {
       const listener = jest.fn();
 
       function Decorator({text}) {
@@ -284,7 +284,7 @@ describe('OutlineEditor tests', () => {
       );
     });
 
-    it('Should correctly render React component into Outline node', async () => {
+    it('Should correctly render React component into Outline node #2', async () => {
       const listener = jest.fn();
 
       function Test({divKey}) {
@@ -293,6 +293,9 @@ describe('OutlineEditor tests', () => {
 
         React.useEffect(() => {
           editor.addListener('root', listener);
+          editor.addListener('error', (error) => {
+            throw error;
+          });
         }, []);
 
         const ref = React.useCallback((node) => {

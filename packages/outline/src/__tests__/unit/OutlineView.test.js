@@ -19,61 +19,6 @@ describe('OutlineView tests', () => {
       const viewModel = new ViewModel(nodeMap);
       expect(viewModel._nodeMap).toBe(nodeMap);
       expect(viewModel._selection).toBe(null);
-      expect(viewModel._dirtyNodes).toBeInstanceOf(Set);
-      expect(viewModel._dirtyNodes.size).toBe(0);
-      expect(viewModel._dirtySubTrees).toBeInstanceOf(Set);
-      expect(viewModel._dirtySubTrees.size).toBe(0);
-      expect(viewModel._isDirty).toBe(false);
-    });
-
-    test('hasDirtyNodes()', () => {
-      const root = createRootNode();
-      const nodeMap = {root};
-      const viewModel = new ViewModel(nodeMap);
-      expect(viewModel.hasDirtyNodes()).toEqual(viewModel._dirtyNodes.size > 0);
-    });
-
-    test('isDirty()', () => {
-      const root = createRootNode();
-      const nodeMap = {root};
-      const viewModel = new ViewModel(nodeMap);
-      expect(viewModel.isDirty()).toEqual(viewModel._isDirty);
-    });
-
-    test('markDirty()', () => {
-      const root = createRootNode();
-      const nodeMap = {root};
-      const viewModel = new ViewModel(nodeMap);
-      viewModel.markDirty();
-      expect(viewModel.isDirty()).toEqual(true);
-    });
-
-    test('getDirtyNodes()', async () => {
-      const {editor} = testEnv;
-      expect(editor.getViewModel().getDirtyNodes()).toEqual([]);
-      await editor.update((view) => {
-        const textNode = createTextNode('foo');
-        textNode.getWritable();
-        view.getRoot().append(textNode);
-      });
-      expect(editor.getViewModel().getDirtyNodes()).toEqual([
-        {
-          __flags: 0,
-          __format: 0,
-          __key: '0',
-          __parent: 'root',
-          __style: '',
-          __text: 'foo',
-          __type: 'text',
-        },
-        {
-          __children: ['0'],
-          __flags: 0,
-          __key: 'root',
-          __parent: null,
-          __type: 'root',
-        },
-      ]);
     });
 
     test('read()', async () => {

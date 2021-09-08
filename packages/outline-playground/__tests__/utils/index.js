@@ -17,7 +17,7 @@ export const IS_LINUX = !IS_MAC && !IS_WINDOWS;
 
 jest.setTimeout(60000);
 
-const retryCount = 10;
+const retryCount = 20;
 
 export function initializeE2E(runTests) {
   const isRichText = process.env.E2E_EDITOR_MODE !== 'plain-text';

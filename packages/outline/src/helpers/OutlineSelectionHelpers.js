@@ -786,7 +786,7 @@ export function insertNodes(
         target = topLevelBlock;
       }
     }
-    if (isBlockNode(target)) {
+    if (isBlockNode(target) && !isBlockNode(node)) {
       const firstChild = target.getFirstChild();
       if (firstChild !== null) {
         firstChild.insertBefore(node);

@@ -800,19 +800,26 @@ export function insertNodes(
     }
   }
 
+  if (selectStart) {
+    if (isTextNode(startingNode)) {
+      startingNode.select();
+    } else {
+      const prevSibling = target.getPreviousSibling();
+      if (isTextNode(prevSibling)) {
+        prevSibling.select();
+      } else {
+        const index = startingNode.getIndexWithinParent();
+        startingNode.getParentOrThrow().select(index, index);
+      }
+    }
+  }
+
   if (isBlockNode(target)) {
     const lastChild = target.getLastTextNode();
     if (!isTextNode(lastChild)) {
       invariant(false, 'insertNodes: lastChild not a text node');
     }
-    if (selectStart) {
-      if (isTextNode(startingNode)) {
-        startingNode.select();
-      } else {
-        const index = startingNode.getIndexWithinParent();
-        startingNode.getParentOrThrow().select(index, index);
-      }
-    } else {
+    if (!selectStart) {
       lastChild.select();
     }
     if (siblings.length !== 0) {
@@ -824,20 +831,15 @@ export function insertNodes(
       }
     }
   } else if (isTextNode(target)) {
-    if (selectStart) {
-      if (isTextNode(startingNode)) {
-        startingNode.select();
-      } else {
-        const index = startingNode.getIndexWithinParent();
-        startingNode.getParentOrThrow().select(index, index);
-      }
-    } else {
+    if (!selectStart) {
       target.select();
     }
   } else {
-    const block = target.getParentOrThrow();
-    const index = target.getIndexWithinParent() + 1;
-    block.select(index, index);
+    if (!selectStart) {
+      const block = target.getParentOrThrow();
+      const index = target.getIndexWithinParent() + 1;
+      block.select(index, index);
+    }
   }
   return true;
 }

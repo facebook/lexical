@@ -209,6 +209,70 @@ describe('TextEntry', () => {
         });
       });
 
+      it('First paragraph backspace handling', async () => {
+        const {isRichText, page} = e2e;
+
+        await page.focus('div.editor');
+
+        // Add some trimmable text
+        await page.keyboard.type('  ');
+
+        // Add paragraph
+        await page.keyboard.press('Enter');
+
+        if (isRichText) {
+          await assertHTML(
+            page,
+            '<p class="editor-paragraph"><span data-outline-text="true">  </span></p><p class="editor-paragraph"><span data-outline-text="true"><br></span></p>',
+          );
+          await assertSelection(page, {
+            anchorPath: [1, 0, 0],
+            anchorOffset: 0,
+            focusPath: [1, 0, 0],
+            focusOffset: 0,
+          });
+        } else {
+          await assertHTML(
+            page,
+            '<p class="editor-paragraph"><span data-outline-text="true">  </span><br><span data-outline-text="true"></span></p>',
+          );
+          await assertSelection(page, {
+            anchorPath: [0, 2, 0],
+            anchorOffset: 0,
+            focusPath: [0, 2, 0],
+            focusOffset: 0,
+          });
+        }
+
+        // Move to previous paragraph and press backspace
+        await page.keyboard.press('ArrowUp');
+        await page.keyboard.press('Backspace');
+
+        if (isRichText) {
+          await assertHTML(
+            page,
+            '<p class="editor-paragraph"><span data-outline-text="true"><br></span></p>',
+          );
+          await assertSelection(page, {
+            anchorPath: [0, 0, 0],
+            anchorOffset: 0,
+            focusPath: [0, 0, 0],
+            focusOffset: 0,
+          });
+        } else {
+          await assertHTML(
+            page,
+            '<p class="editor-paragraph"><span data-outline-text="true">  </span><br><span data-outline-text="true"></span></p>',
+          );
+          await assertSelection(page, {
+            anchorPath: [0, 0, 0],
+            anchorOffset: 0,
+            focusPath: [0, 0, 0],
+            focusOffset: 0,
+          });
+        }
+      });
+
       it('Empty paragraph and new line node selection', async () => {
         const {isRichText, page} = e2e;
 

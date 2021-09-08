@@ -30,14 +30,6 @@ describe('Images', () => {
         '<p class="editor-paragraph"><span data-outline-text="true">⁠</span><span class="editor-image" data-outline-decorator="true" contenteditable="false"><img src="/static/media/yellow-flower.95d22651.jpg" alt="Yellow flower in tilt shift lens" tabindex="0" style="width: inherit; height: inherit;"></span><span data-outline-text="true">⁠</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
-        anchorOffset: 0,
-        focusPath: [0, 0, 0],
-        focusOffset: 0,
-      });
-
-      await page.keyboard.press('ArrowRight');
-      await assertSelection(page, {
         anchorPath: [0, 2, 0],
         anchorOffset: 0,
         focusPath: [0, 2, 0],
@@ -49,6 +41,14 @@ describe('Images', () => {
         anchorPath: [0, 0, 0],
         anchorOffset: 0,
         focusPath: [0, 0, 0],
+        focusOffset: 0,
+      });
+
+      await page.keyboard.press('ArrowRight');
+      await assertSelection(page, {
+        anchorPath: [0, 2, 0],
+        anchorOffset: 0,
+        focusPath: [0, 2, 0],
         focusOffset: 0,
       });
 

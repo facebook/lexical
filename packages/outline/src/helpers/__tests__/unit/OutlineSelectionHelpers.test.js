@@ -119,12 +119,12 @@ describe('OutlineSelectionHelpers tests', () => {
         expect(selection.anchor).toEqual({
           type: 'text',
           offset: 3,
-          key: block.getFirstChild().getNextSibling().getKey(),
+          key: block.getFirstChild().getKey(),
         });
         expect(selection.focus).toEqual({
           type: 'text',
           offset: 3,
-          key: block.getFirstChild().getNextSibling().getKey(),
+          key: block.getFirstChild().getKey(),
         });
       });
 

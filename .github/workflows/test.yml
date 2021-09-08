@@ -46,7 +46,6 @@ jobs:
         path: '**/node_modules'
         key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
     - run: npm install
-    - run: npm run build
     - run: npm run test-unit
 
   e2e-mac:

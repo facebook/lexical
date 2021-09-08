@@ -566,23 +566,44 @@ function deleteCharacter(selection: Selection, isBackward: boolean): void {
       const anchorNode = anchor.getNode();
       const parent = anchorNode.getParentOrThrow();
       const parentType = parent.getType();
-      if (anchor.offset === 0 && parentType !== 'paragraph') {
-        const paragraph = createParagraphNode();
+      if (anchor.offset === 0) {
         const children = parent.getChildren();
-        children.forEach((child) => paragraph.append(child));
-
-        if (parentType === 'listitem') {
-          const listNode = parent.getParentOrThrow();
-          if (listNode.getChildrenSize() === 1) {
-            listNode.replace(paragraph);
-          } else {
-            listNode.insertBefore(paragraph);
+        if (parentType === 'paragraph') {
+          const sibling = parent.getNextSibling();
+          // If we have an empty (trimmed) first paragraph and try and remove it,
+          // delete the paragraph as long as we have another sibling to go to
+          if (
+            isBlockNode(sibling) &&
+            parent.getIndexWithinParent() === 0 &&
+            (children.length === 0 ||
+              (isTextNode(children[0]) &&
+                children[0].getTextContent().trim() === ''))
+          ) {
+            const firstChild = sibling.getFirstChild();
+            if (isTextNode(firstChild)) {
+              firstChild.select(0, 0);
+            } else {
+              sibling.select(0, 0);
+            }
             parent.remove();
           }
         } else {
-          parent.replace(paragraph);
+          const paragraph = createParagraphNode();
+          children.forEach((child) => paragraph.append(child));
+
+          if (parentType === 'listitem') {
+            const listNode = parent.getParentOrThrow();
+            if (listNode.getChildrenSize() === 1) {
+              listNode.replace(paragraph);
+            } else {
+              listNode.insertBefore(paragraph);
+              parent.remove();
+            }
+          } else {
+            parent.replace(paragraph);
+          }
+          return;
         }
-        return;
       }
     }
   }

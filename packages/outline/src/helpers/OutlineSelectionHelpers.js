@@ -734,14 +734,7 @@ export function insertNodes(
     const block = anchor.getNode();
     const placementNode = block.getChildAtIndex(anchorOffset - 1);
     if (placementNode === null) {
-      // Create an empty text node to use as a placeholder
-      target = createTextNode('');
-      const firstChild = block.getFirstChild();
-      if (firstChild !== null) {
-        firstChild.insertBefore(target);
-      } else {
-        block.append(target);
-      }
+      target = block;
     } else {
       target = placementNode;
     }
@@ -756,11 +749,13 @@ export function insertNodes(
   if (isTextNode(anchorNode)) {
     const textContent = anchorNode.getTextContent();
     const textContentLength = textContent.length;
-    if (anchorOffset === 0) {
-      // Insert an empty text node to wrap whatever is being inserted
-      // in case it's immutable
-      target = createTextNode('');
-      anchorNode.insertBefore(target);
+    if (anchorOffset === 0 && textContentLength !== 0) {
+      const prevSibling = anchorNode.getPreviousSibling();
+      if (prevSibling !== null) {
+        target = prevSibling;
+      } else {
+        target = anchorNode.getParentOrThrow();
+      }
       siblings.push(anchorNode);
     } else if (anchorOffset === textContentLength) {
       target = anchorNode;
@@ -790,7 +785,14 @@ export function insertNodes(
       if (isTextNode(target)) {
         target = topLevelBlock;
       }
-      target.insertAfter(node);
+    }
+    if (isBlockNode(target)) {
+      const firstChild = target.getFirstChild();
+      if (firstChild !== null) {
+        firstChild.insertBefore(node);
+      } else {
+        target.append(node);
+      }
       target = node;
     } else {
       target.insertAfter(node);
@@ -833,10 +835,9 @@ export function insertNodes(
       target.select();
     }
   } else {
-    const prevSibling = target.getPreviousSibling();
-    if (isTextNode(prevSibling)) {
-      prevSibling.select();
-    }
+    const block = target.getParentOrThrow();
+    const index = target.getIndexWithinParent() + 1;
+    block.select(index, index);
   }
   return true;
 }

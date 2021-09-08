@@ -566,23 +566,44 @@ function deleteCharacter(selection: Selection, isBackward: boolean): void {
       const anchorNode = anchor.getNode();
       const parent = anchorNode.getParentOrThrow();
       const parentType = parent.getType();
-      if (anchor.offset === 0 && parentType !== 'paragraph') {
-        const paragraph = createParagraphNode();
+      if (anchor.offset === 0) {
         const children = parent.getChildren();
-        children.forEach((child) => paragraph.append(child));
-
-        if (parentType === 'listitem') {
-          const listNode = parent.getParentOrThrow();
-          if (listNode.getChildrenSize() === 1) {
-            listNode.replace(paragraph);
-          } else {
-            listNode.insertBefore(paragraph);
+        if (parentType === 'paragraph') {
+          const sibling = parent.getNextSibling();
+          // If we have an empty (trimmed) first paragraph and try and remove it,
+          // delete the paragraph as long as we have another sibling to go to
+          if (
+            isBlockNode(sibling) &&
+            parent.getIndexWithinParent() === 0 &&
+            (children.length === 0 ||
+              (isTextNode(children[0]) &&
+                children[0].getTextContent().trim() === ''))
+          ) {
+            const firstChild = sibling.getFirstChild();
+            if (isTextNode(firstChild)) {
+              firstChild.select(0, 0);
+            } else {
+              sibling.select(0, 0);
+            }
             parent.remove();
           }
         } else {
-          parent.replace(paragraph);
+          const paragraph = createParagraphNode();
+          children.forEach((child) => paragraph.append(child));
+
+          if (parentType === 'listitem') {
+            const listNode = parent.getParentOrThrow();
+            if (listNode.getChildrenSize() === 1) {
+              listNode.replace(paragraph);
+            } else {
+              listNode.insertBefore(paragraph);
+              parent.remove();
+            }
+          } else {
+            parent.replace(paragraph);
+          }
+          return;
         }
-        return;
       }
     }
   }
@@ -734,14 +755,7 @@ export function insertNodes(
     const block = anchor.getNode();
     const placementNode = block.getChildAtIndex(anchorOffset - 1);
     if (placementNode === null) {
-      // Create an empty text node to use as a placeholder
-      target = createTextNode('');
-      const firstChild = block.getFirstChild();
-      if (firstChild !== null) {
-        firstChild.insertBefore(target);
-      } else {
-        block.append(target);
-      }
+      target = block;
     } else {
       target = placementNode;
     }
@@ -756,11 +770,13 @@ export function insertNodes(
   if (isTextNode(anchorNode)) {
     const textContent = anchorNode.getTextContent();
     const textContentLength = textContent.length;
-    if (anchorOffset === 0) {
-      // Insert an empty text node to wrap whatever is being inserted
-      // in case it's immutable
-      target = createTextNode('');
-      anchorNode.insertBefore(target);
+    if (anchorOffset === 0 && textContentLength !== 0) {
+      const prevSibling = anchorNode.getPreviousSibling();
+      if (prevSibling !== null) {
+        target = prevSibling;
+      } else {
+        target = anchorNode.getParentOrThrow();
+      }
       siblings.push(anchorNode);
     } else if (anchorOffset === textContentLength) {
       target = anchorNode;
@@ -790,11 +806,32 @@ export function insertNodes(
       if (isTextNode(target)) {
         target = topLevelBlock;
       }
-      target.insertAfter(node);
+    }
+    if (isBlockNode(target) && !isBlockNode(node)) {
+      const firstChild = target.getFirstChild();
+      if (firstChild !== null) {
+        firstChild.insertBefore(node);
+      } else {
+        target.append(node);
+      }
       target = node;
     } else {
       target.insertAfter(node);
       target = node;
+    }
+  }
+
+  if (selectStart) {
+    if (isTextNode(startingNode)) {
+      startingNode.select();
+    } else {
+      const prevSibling = target.getPreviousSibling();
+      if (isTextNode(prevSibling)) {
+        prevSibling.select();
+      } else {
+        const index = startingNode.getIndexWithinParent();
+        startingNode.getParentOrThrow().select(index, index);
+      }
     }
   }
 
@@ -803,14 +840,7 @@ export function insertNodes(
     if (!isTextNode(lastChild)) {
       invariant(false, 'insertNodes: lastChild not a text node');
     }
-    if (selectStart) {
-      if (isTextNode(startingNode)) {
-        startingNode.select();
-      } else {
-        const index = startingNode.getIndexWithinParent();
-        startingNode.getParentOrThrow().select(index, index);
-      }
-    } else {
+    if (!selectStart) {
       lastChild.select();
     }
     if (siblings.length !== 0) {
@@ -822,20 +852,14 @@ export function insertNodes(
       }
     }
   } else if (isTextNode(target)) {
-    if (selectStart) {
-      if (isTextNode(startingNode)) {
-        startingNode.select();
-      } else {
-        const index = startingNode.getIndexWithinParent();
-        startingNode.getParentOrThrow().select(index, index);
-      }
-    } else {
+    if (!selectStart) {
       target.select();
     }
   } else {
-    const prevSibling = target.getPreviousSibling();
-    if (isTextNode(prevSibling)) {
-      prevSibling.select();
+    if (!selectStart) {
+      const block = target.getParentOrThrow();
+      const index = target.getIndexWithinParent() + 1;
+      block.select(index, index);
     }
   }
   return true;

@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [16.x]
+        node-version: [16.8]
     env:
       CI: true
       PLAYWRIGHT_BROWSERS_PATH: 0

@@ -14,6 +14,7 @@ import type {
   TextFormatType,
   TextNode,
   BlockPoint,
+  Point,
 } from 'outline';
 
 import {
@@ -624,6 +625,11 @@ function moveSelection(
   );
 }
 
+function isEmptyTextNodePoint(point: Point): boolean {
+  const node = point.getNode();
+  return isTextNode(node) && node.getTextContent() === '';
+}
+
 export function updateCaretSelectionForRange(
   selection: Selection,
   isBackward: boolean,
@@ -663,6 +669,15 @@ export function updateCaretSelectionForRange(
     const range = domSelection.getRangeAt(0);
     // Apply the DOM selection to our Outline selection.
     selection.applyDOMRange(range);
+    // Check if we are on an empty text node, make the selection dirty.
+    // TODO: remove once we get rid of empty text nodes.
+    if (domSelection.anchorOffset === 0 || domSelection.focusOffset === 0) {
+      const anchor = selection.anchor;
+      const focus = selection.focus;
+      if (isEmptyTextNodePoint(anchor) || isEmptyTextNodePoint(focus)) {
+        selection.isDirty = true;
+      }
+    }
     // Because a range works on start and end, we might need to flip
     // the anchor and focus points to match what the DOM has, not what
     // the range has specifically.

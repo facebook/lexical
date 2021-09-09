@@ -52,7 +52,7 @@ export class QuoteNode extends BlockNode {
     return newBlock;
   }
 
-  backspaceAtStart(): true {
+  collapseAtStart(): true {
     const paragraph = createParagraphNode();
     const children = this.getChildren();
     children.forEach((child) => paragraph.append(child));

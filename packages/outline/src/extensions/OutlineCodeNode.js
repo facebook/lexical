@@ -81,7 +81,7 @@ export class CodeNode extends BlockNode {
     return true;
   }
 
-  backspaceAtStart(): true {
+  collapseAtStart(): true {
     const paragraph = createParagraphNode();
     const children = this.getChildren();
     children.forEach((child) => paragraph.append(child));

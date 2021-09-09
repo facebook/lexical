@@ -566,7 +566,7 @@ function deleteCharacter(selection: Selection, isBackward: boolean): void {
       const parent = anchorNode.getParentOrThrow();
 
       if (anchor.offset === 0) {
-        if (parent.backspaceAtStart()) {
+        if (parent.collapseAtStart()) {
           return;
         }
       }

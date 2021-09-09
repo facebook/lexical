@@ -50,7 +50,7 @@ export class ParagraphNode extends BlockNode {
     return newBlock;
   }
 
-  backspaceAtStart(): boolean {
+  collapseAtStart(): boolean {
     const children = this.getChildren();
     const sibling = this.getNextSibling();
     // If we have an empty (trimmed) first paragraph and try and remove it,

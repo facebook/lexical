@@ -245,7 +245,7 @@ export class BlockNode extends OutlineNode {
     }
     return self;
   }
-  backspaceAtStart(): boolean {
+  collapseAtStart(): boolean {
     return false;
   }
 }

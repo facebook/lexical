@@ -28,9 +28,11 @@ export class LinkNode extends TextNode {
     this.__url = url;
     this.__type = 'link';
   }
+
   clone(): LinkNode {
     return new LinkNode(this.__text, this.__url, this.__key);
   }
+
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
     const element = document.createElement('span');
     const text = super.createDOM(config);
@@ -42,6 +44,7 @@ export class LinkNode extends TextNode {
     element.appendChild(text);
     return element;
   }
+
   updateDOM<EditorContext>(
     // $FlowFixMe: not sure how to fix this
     prevNode: LinkNode,
@@ -57,13 +60,16 @@ export class LinkNode extends TextNode {
     }
     return false;
   }
+
   getURL(): string {
     return this.getLatest().__url;
   }
+
   setURL(url: string): void {
     const writable = this.getWritable<LinkNode>();
     writable.__url = url;
   }
+
   canInsertTextAtEnd(): false {
     return false;
   }

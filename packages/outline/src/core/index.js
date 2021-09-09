@@ -23,6 +23,7 @@ export type {ParsedBlockNode} from './OutlineBlockNode';
 export type {ParsedTextNode} from './OutlineTextNode';
 export type {
   Selection,
+  PointType as Point,
   BlockPointType as BlockPoint,
   TextPointType as TextPoint,
 } from './OutlineSelection';

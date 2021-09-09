@@ -514,6 +514,9 @@ export class OutlineNode {
           }
           parentSibling = ancestor.getNextSibling();
           ancestor = ancestor.getParent();
+          if (parentSibling === null && ancestor !== null) {
+            nodes.push(ancestor);
+          }
         } while (parentSibling === null);
         node = parentSibling;
       }
@@ -547,6 +550,9 @@ export class OutlineNode {
           }
           parentSibling = ancestor.getPreviousSibling();
           ancestor = ancestor.getParent();
+          if (parentSibling === null && ancestor !== null) {
+            nodes.push(ancestor);
+          }
         } while (parentSibling === null);
         node = parentSibling;
       }

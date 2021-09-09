@@ -114,6 +114,20 @@ export class ListItemNode extends BlockNode {
 
     return newBlock;
   }
+
+  collapseAtStart(): true {
+    const paragraph = createParagraphNode();
+    const children = this.getChildren();
+    children.forEach((child) => paragraph.append(child));
+    const listNode = this.getParentOrThrow();
+    if (listNode.getChildrenSize() === 1) {
+      listNode.replace(paragraph);
+    } else {
+      listNode.insertBefore(paragraph);
+      this.remove();
+    }
+    return true;
+  }
 }
 
 function setListItemThemeClassNames(

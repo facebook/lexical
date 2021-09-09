@@ -80,6 +80,14 @@ export class CodeNode extends BlockNode {
   canInsertTab(): true {
     return true;
   }
+
+  collapseAtStart(): true {
+    const paragraph = createParagraphNode();
+    const children = this.getChildren();
+    children.forEach((child) => paragraph.append(child));
+    this.replace(paragraph);
+    return true;
+  }
 }
 
 export function createCodeNode(): CodeNode {

@@ -9,7 +9,7 @@
 
 import type {OutlineNode, NodeKey, EditorConfig} from 'outline';
 
-import {BlockNode} from 'outline';
+import {isBlockNode, isTextNode, BlockNode} from 'outline';
 
 export class ParagraphNode extends BlockNode {
   static deserialize(data: $FlowFixMe): ParagraphNode {
@@ -48,6 +48,29 @@ export class ParagraphNode extends BlockNode {
     newBlock.setDirection(direction);
     this.insertAfter(newBlock);
     return newBlock;
+  }
+
+  collapseAtStart(): boolean {
+    const children = this.getChildren();
+    const sibling = this.getNextSibling();
+    // If we have an empty (trimmed) first paragraph and try and remove it,
+    // delete the paragraph as long as we have another sibling to go to
+    if (
+      isBlockNode(sibling) &&
+      this.getIndexWithinParent() === 0 &&
+      (children.length === 0 ||
+        (isTextNode(children[0]) && children[0].getTextContent().trim() === ''))
+    ) {
+      const firstChild = sibling.getFirstChild();
+      if (isTextNode(firstChild)) {
+        firstChild.select(0, 0);
+      } else {
+        sibling.select(0, 0);
+      }
+      this.remove();
+      return true;
+    }
+    return false;
   }
 }
 

@@ -59,6 +59,7 @@ export class HeadingNode extends BlockNode {
     }
     return element;
   }
+
   updateDOM(prevNode: HeadingNode, dom: HTMLElement): boolean {
     return false;
   }
@@ -71,6 +72,14 @@ export class HeadingNode extends BlockNode {
     newBlock.setDirection(direction);
     this.insertAfter(newBlock);
     return newBlock;
+  }
+
+  collapseAtStart(): true {
+    const paragraph = createParagraphNode();
+    const children = this.getChildren();
+    children.forEach((child) => paragraph.append(child));
+    this.replace(paragraph);
+    return true;
   }
 }
 

@@ -245,6 +245,9 @@ export class BlockNode extends OutlineNode {
     }
     return self;
   }
+  collapseAtStart(): boolean {
+    return false;
+  }
 }
 
 export function isBlockNode(node: ?OutlineNode): boolean %checks {

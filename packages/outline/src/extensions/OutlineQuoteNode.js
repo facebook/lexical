@@ -51,6 +51,14 @@ export class QuoteNode extends BlockNode {
     this.insertAfter(newBlock);
     return newBlock;
   }
+
+  collapseAtStart(): true {
+    const paragraph = createParagraphNode();
+    const children = this.getChildren();
+    children.forEach((child) => paragraph.append(child));
+    this.replace(paragraph);
+    return true;
+  }
 }
 
 export function createQuoteNode(): QuoteNode {

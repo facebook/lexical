@@ -245,6 +245,9 @@ export class BlockNode extends OutlineNode {
     }
     return self;
   }
+  backspaceAtStart(): boolean {
+    return false;
+  }
 }
 
 export function isBlockNode(node: ?OutlineNode): boolean %checks {

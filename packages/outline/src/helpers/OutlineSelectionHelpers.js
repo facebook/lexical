@@ -23,7 +23,6 @@ import {
   isRootNode,
   createTextNode,
 } from 'outline';
-import {createParagraphNode} from 'outline/ParagraphNode';
 import {isHashtagNode} from 'outline/HashtagNode';
 
 import isImmutableOrInert from 'shared/isImmutableOrInert';
@@ -565,43 +564,9 @@ function deleteCharacter(selection: Selection, isBackward: boolean): void {
       // Special handling around rich text nodes
       const anchorNode = anchor.getNode();
       const parent = anchorNode.getParentOrThrow();
-      const parentType = parent.getType();
-      if (anchor.offset === 0) {
-        const children = parent.getChildren();
-        if (parentType === 'paragraph') {
-          const sibling = parent.getNextSibling();
-          // If we have an empty (trimmed) first paragraph and try and remove it,
-          // delete the paragraph as long as we have another sibling to go to
-          if (
-            isBlockNode(sibling) &&
-            parent.getIndexWithinParent() === 0 &&
-            (children.length === 0 ||
-              (isTextNode(children[0]) &&
-                children[0].getTextContent().trim() === ''))
-          ) {
-            const firstChild = sibling.getFirstChild();
-            if (isTextNode(firstChild)) {
-              firstChild.select(0, 0);
-            } else {
-              sibling.select(0, 0);
-            }
-            parent.remove();
-          }
-        } else {
-          const paragraph = createParagraphNode();
-          children.forEach((child) => paragraph.append(child));
 
-          if (parentType === 'listitem') {
-            const listNode = parent.getParentOrThrow();
-            if (listNode.getChildrenSize() === 1) {
-              listNode.replace(paragraph);
-            } else {
-              listNode.insertBefore(paragraph);
-              parent.remove();
-            }
-          } else {
-            parent.replace(paragraph);
-          }
+      if (anchor.offset === 0) {
+        if (parent.backspaceAtStart()) {
           return;
         }
       }
@@ -671,14 +636,6 @@ export function updateCaretSelectionForRange(
   const sibling = isBackward
     ? focusNode.getPreviousSibling()
     : focusNode.getNextSibling();
-
-  // Ensure we don't move selection to the zero width offset
-  if (isBackward && focusOffset === 0 && sibling === null) {
-    const parent = focusNode.getParentOrThrow();
-    if (parent.getPreviousSibling() === null) {
-      return;
-    }
-  }
 
   const textSize = focusNode.getTextContentSize();
   const needsExtraMove = isBackward
@@ -1037,9 +994,16 @@ export function insertText(selection: Selection, text: string): void {
         // last parent, and if so, traverse the parent tree and mark
         // them all as being able to deleted too.
         let parent = lastNodeParent;
+        let lastRemovedParent = null;
         while (parent !== null) {
-          if (parent.getChildrenSize() === 0) {
+          const children = parent.getChildren();
+          const childrenLength = children.length;
+          if (
+            childrenLength === 0 ||
+            (childrenLength === 1 && children[0].is(lastRemovedParent))
+          ) {
             lastNodeParents.delete(parent);
+            lastRemovedParent = parent;
           }
           parent = parent.getParent();
         }

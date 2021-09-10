@@ -17,7 +17,7 @@ import type {
 } from 'outline';
 
 import {useEffect} from 'react';
-import {TextNode, isTextNode} from 'outline';
+import {TextNode} from 'outline';
 
 const emojis: {[string]: [string, string]} = {
   ':)': ['emoji happysmile', '🙂'],
@@ -45,18 +45,14 @@ function findAndTransformEmoji(
       }
       const emojiNode = createEmojiNode(emojiStyle, emojiText);
       targetNode.replace(emojiNode);
-      const nextSibling = emojiNode.getNextSibling();
-      if (isTextNode(nextSibling)) {
-        if (
-          selection !== null &&
-          (!selection.anchor.getNode().isAttached() ||
-            !selection.focus.getNode().isAttached())
-        ) {
-          nextSibling.select(0, 0);
-        }
-        return nextSibling;
+      if (
+        selection !== null &&
+        (!selection.anchor.getNode().isAttached() ||
+          !selection.focus.getNode().isAttached())
+      ) {
+        emojiNode.select();
       }
-      break;
+      return emojiNode;
     }
   }
   return null;

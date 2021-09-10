@@ -73,6 +73,13 @@ function destroyChildren(
   }
 }
 
+function createBRForBlock(): HTMLElement {
+  const br = document.createElement('br');
+  // $FlowFixMe: internal field
+  br.__outlineControlled = true;
+  return br;
+}
+
 function createNode(
   key: NodeKey,
   parentDOM: null | HTMLElement,
@@ -116,7 +123,7 @@ function createNode(
     const children = node.__children;
     const childrenLength = children.length;
     if (childrenLength === 0) {
-      const br = document.createElement('br');
+      const br = createBRForBlock();
       dom.appendChild(br);
     } else {
       const endIndex = childrenLength - 1;
@@ -198,7 +205,7 @@ function reconcileChildren(
       // Fast path for removing DOM nodes
       dom.textContent = '';
       // Add a br
-      const br = document.createElement('br');
+      const br = createBRForBlock();
       dom.appendChild(br);
     }
   } else {
@@ -579,9 +586,6 @@ export function storeDOMWithKey(
   dom: HTMLElement,
   editor: OutlineEditor,
 ): void {
-  if (key === null) {
-    invariant(false, 'storeDOMWithNodeKey: key was null');
-  }
   const keyToDOMMap = editor._keyToDOMMap;
   // $FlowFixMe: internal field
   dom.__outlineInternalRef = key;

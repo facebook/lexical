@@ -17,7 +17,7 @@ import type {
 } from 'outline';
 
 import {useEffect} from 'react';
-import {TextNode, isTextNode} from 'outline';
+import {TextNode} from 'outline';
 
 const emojis: {[string]: [string, string]} = {
   ':)': ['emoji happysmile', '🙂'],

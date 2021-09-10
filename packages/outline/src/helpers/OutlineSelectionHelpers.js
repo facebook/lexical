@@ -598,19 +598,16 @@ function removeSegment(node: TextNode, isBackward: boolean): void {
     split.shift();
   }
   const nextTextContent = split.join(' ');
-  const sibling = isBackward
-    ? node.getNextSibling()
-    : node.getPreviousSibling();
-  if (isTextNode(sibling)) {
-    if (nextTextContent === '') {
-      node.remove();
-    } else {
-      node.setTextContent(nextTextContent);
-    }
+
+  if (nextTextContent === '') {
+    node.selectPrevious();
+    node.remove();
+  } else {
+    node.setTextContent(nextTextContent);
     if (isBackward) {
-      sibling.select(0, 0);
+      node.select();
     } else {
-      sibling.select();
+      node.select(0, 0);
     }
   }
 }
@@ -804,8 +801,8 @@ export function insertNodes(
       if (isTextNode(prevSibling)) {
         prevSibling.select();
       } else {
-        const index = startingNode.getIndexWithinParent();
-        startingNode.getParentOrThrow().select(index, index);
+        const index = target.getIndexWithinParent();
+        target.getParentOrThrow().select(index, index);
       }
     }
   }

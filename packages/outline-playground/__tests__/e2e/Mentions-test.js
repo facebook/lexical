@@ -177,10 +177,10 @@ describe('Mentions', () => {
         '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true"></span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke</span><span data-outline-text="true"></span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 2, 0],
-        anchorOffset: 0,
-        focusPath: [0, 2, 0],
-        focusOffset: 0,
+        anchorPath: [0, 1, 0],
+        anchorOffset: 4,
+        focusPath: [0, 1, 0],
+        focusOffset: 4,
       });
 
       await page.keyboard.press('Backspace');

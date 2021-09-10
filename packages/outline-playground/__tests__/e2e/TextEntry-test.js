@@ -104,10 +104,10 @@ describe('TextEntry', () => {
             '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello World.</span></p><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">This is another paragraph. </span><span class="emoji happysmile" data-outline-text="true">🙂</span><span data-outline-text="true"></span></p>',
           );
           await assertSelection(page, {
-            anchorPath: [1, 2, 0],
-            anchorOffset: 0,
-            focusPath: [1, 2, 0],
-            focusOffset: 0,
+            anchorPath: [1, 1, 0],
+            anchorOffset: 2,
+            focusPath: [1, 1, 0],
+            focusOffset: 2,
           });
         } else {
           await assertHTML(
@@ -115,10 +115,10 @@ describe('TextEntry', () => {
             '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">⁠Hello World.</span><br><span data-outline-text="true">⁠This is another paragraph. </span><span class="emoji happysmile" data-outline-text="true">🙂</span><span data-outline-text="true">​</span></p>',
           );
           await assertSelection(page, {
-            anchorPath: [0, 4, 0],
-            anchorOffset: 0,
-            focusPath: [0, 4, 0],
-            focusOffset: 0,
+            anchorPath: [0, 3, 0],
+            anchorOffset: 2,
+            focusPath: [0, 3, 0],
+            focusOffset: 2,
           });
         }
       });
@@ -226,9 +226,9 @@ describe('TextEntry', () => {
             '<p class="editor-paragraph"><span data-outline-text="true">  </span></p><p class="editor-paragraph"><span data-outline-text="true"><br></span></p>',
           );
           await assertSelection(page, {
-            anchorPath: [1, 0, 0],
+            anchorPath: [1],
             anchorOffset: 0,
-            focusPath: [1, 0, 0],
+            focusPath: [1],
             focusOffset: 0,
           });
         } else {
@@ -249,14 +249,11 @@ describe('TextEntry', () => {
         await page.keyboard.press('Backspace');
 
         if (isRichText) {
-          await assertHTML(
-            page,
-            '<p class="editor-paragraph"><span data-outline-text="true"><br></span></p>',
-          );
+          await assertHTML(page, '<p class="editor-paragraph"><br></p>');
           await assertSelection(page, {
-            anchorPath: [0, 0, 0],
+            anchorPath: [0],
             anchorOffset: 0,
-            focusPath: [0, 0, 0],
+            focusPath: [0],
             focusOffset: 0,
           });
         } else {

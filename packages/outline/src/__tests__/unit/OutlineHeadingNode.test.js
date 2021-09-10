@@ -76,7 +76,7 @@ describe('OutlineHeadingNode tests', () => {
         root.append(headingNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><h1></h1></div>',
+        '<div contenteditable="true" data-outline-editor="true"><h1><br></h1></div>',
       );
       await editor.update((view) => {
         const result = headingNode.insertNewAfter();
@@ -84,7 +84,7 @@ describe('OutlineHeadingNode tests', () => {
         expect(result.getDirection()).toEqual(headingNode.getDirection());
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><h1></h1><p></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><h1><br></h1><p><br></p></div>',
       );
     });
 

@@ -73,6 +73,13 @@ function destroyChildren(
   }
 }
 
+function createBRForBlock(): HTMLElement {
+  const br = document.createElement('br');
+  // $FlowFixMe: internal field
+  br.__outlineControlled = true;
+  return br;
+}
+
 function createNode(
   key: NodeKey,
   parentDOM: null | HTMLElement,
@@ -115,7 +122,10 @@ function createNode(
     normalizeTextNodes(node);
     const children = node.__children;
     const childrenLength = children.length;
-    if (childrenLength !== 0) {
+    if (childrenLength === 0) {
+      const br = createBRForBlock();
+      dom.appendChild(br);
+    } else {
       const endIndex = childrenLength - 1;
       createChildren(children, 0, endIndex, dom, null);
     }
@@ -182,6 +192,11 @@ function reconcileChildren(
     }
   } else if (prevChildrenLength === 0) {
     if (nextChildrenLength !== 0) {
+      // Remove <br>
+      const br = dom.firstChild;
+      if (br != null) {
+        dom.removeChild(br);
+      }
       createChildren(nextChildren, 0, nextChildrenLength - 1, dom, null);
     }
   } else if (nextChildrenLength === 0) {
@@ -189,6 +204,9 @@ function reconcileChildren(
       destroyChildren(prevChildren, 0, prevChildrenLength - 1, null);
       // Fast path for removing DOM nodes
       dom.textContent = '';
+      // Add a br
+      const br = createBRForBlock();
+      dom.appendChild(br);
     }
   } else {
     reconcileNodeChildren(
@@ -568,9 +586,6 @@ export function storeDOMWithKey(
   dom: HTMLElement,
   editor: OutlineEditor,
 ): void {
-  if (key === null) {
-    invariant(false, 'storeDOMWithNodeKey: key was null');
-  }
   const keyToDOMMap = editor._keyToDOMMap;
   // $FlowFixMe: internal field
   dom.__outlineInternalRef = key;

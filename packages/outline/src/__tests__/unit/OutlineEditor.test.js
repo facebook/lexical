@@ -533,9 +533,15 @@ describe('OutlineEditor tests', () => {
         // Expect text content + HTML to be correct
         expect(editor.getTextContent()).toBe(next.join(''));
         expect(container.innerHTML).toBe(
-          `<div contenteditable="true" data-outline-editor="true"><p>${next
-            .map((text) => `<span data-outline-text="true">${text}</span>`)
-            .join('')}</p></div>`,
+          `<div contenteditable="true" data-outline-editor="true"><p>${
+            next.length > 0
+              ? next
+                  .map(
+                    (text) => `<span data-outline-text="true">${text}</span>`,
+                  )
+                  .join('')
+              : `<br>`
+          }</p></div>`,
         );
         // Expect viewModel to have the correct latest nodes
         editor.getViewModel().read((view: View) => {

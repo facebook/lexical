@@ -1079,9 +1079,9 @@ export function onInput(event: InputEvent, editor: OutlineEditor) {
   }, 'onInput');
 }
 
-function isBROutlineControlled(dom: Node): boolean {
+function isBlockLineBreak(dom: Node, target: Node): boolean {
   // $FlowFixMe: internal field
-  return dom.__outlineControlled === true;
+  return target.__outlineLineBreak === dom;
 }
 
 export function onMutation(
@@ -1169,13 +1169,15 @@ export function onMutation(
       for (let i = 0; i < records.length; i++) {
         const record = records[i];
         const addedNodes = record.addedNodes;
+        const target = record.target;
+
         for (let s = 0; s < addedNodes.length; s++) {
           const addedDOM = addedNodes[s];
           const parentDOM = addedDOM.parentNode;
           if (
             parentDOM != null &&
             addedDOM.nodeName === 'BR' &&
-            !isBROutlineControlled(addedDOM)
+            !isBlockLineBreak(addedDOM, target)
           ) {
             parentDOM.removeChild(addedDOM);
           }

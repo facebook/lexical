@@ -425,6 +425,12 @@ export class OutlineNode {
   getCommonAncestor(node: OutlineNode): BlockNode | null {
     const a = this.getParents();
     const b = node.getParents();
+    if (isBlockNode(this)) {
+      a.unshift(this);
+    }
+    if (isBlockNode(node)) {
+      b.unshift(node);
+    }
     const aLength = a.length;
     const bLength = b.length;
     if (aLength === 0 || bLength === 0 || a[aLength - 1] !== b[bLength - 1]) {
@@ -446,6 +452,12 @@ export class OutlineNode {
     return this.getKey() === object.getKey();
   }
   isBefore(targetNode: OutlineNode): boolean {
+    if (targetNode.isParentOf(this)) {
+      return true;
+    }
+    if (this.isParentOf(targetNode)) {
+      return false;
+    }
     const commonAncestor = this.getCommonAncestor(targetNode);
     let indexA = 0;
     let indexB = 0;

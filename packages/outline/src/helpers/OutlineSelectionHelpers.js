@@ -874,6 +874,9 @@ export function insertText(selection: Selection, text: string): void {
   const isBefore = selection.isCollapsed() || anchor.isBefore(focus);
 
   if (isBefore && anchor.type === 'block') {
+    if (focus.type === 'block' && focus.getNode() === anchor.getNode()) {
+      focus.offset++;
+    }
     transferBlockPointToTextPoint(anchor);
   } else if (!isBefore && focus.type === 'block') {
     transferBlockPointToTextPoint(focus);

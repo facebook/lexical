@@ -28,6 +28,7 @@ import {isDecoratorNode} from './OutlineDecoratorNode';
 import {getCompositionKey, setCompositionKey} from './OutlineNode';
 import {BlockNode, isBlockNode} from './OutlineBlockNode';
 import {isTextNode} from './OutlineTextNode';
+import {isLineBreakNode} from './OutlineLineBreakNode';
 
 let subTreeTextContent = '';
 let editorTextContent = '';
@@ -73,13 +74,6 @@ function destroyChildren(
   }
 }
 
-function createBRForBlock(): HTMLElement {
-  const br = document.createElement('br');
-  // $FlowFixMe: internal field
-  br.__outlineControlled = true;
-  return br;
-}
-
 function createNode(
   key: NodeKey,
   parentDOM: null | HTMLElement,
@@ -122,13 +116,11 @@ function createNode(
     normalizeTextNodes(node);
     const children = node.__children;
     const childrenLength = children.length;
-    if (childrenLength === 0) {
-      const br = createBRForBlock();
-      dom.appendChild(br);
-    } else {
+    if (childrenLength !== 0) {
       const endIndex = childrenLength - 1;
       createChildren(children, 0, endIndex, dom, null);
     }
+    reconcileBlockTerminatingLineBreak(null, children, dom);
   } else {
     if (isDecoratorNode(node)) {
       const decorator = node.decorate(activeEditor);
@@ -170,6 +162,48 @@ function createChildren(
   subTreeTextContent = previousSubTreeTextContent + subTreeTextContent;
 }
 
+function isLastChildLineBreak(
+  children: Array<NodeKey>,
+  nodeMap: NodeMapType,
+): boolean {
+  const childKey = children[children.length - 1];
+  const node = nodeMap.get(childKey);
+  return isLineBreakNode(node);
+}
+
+// If we end a block with a LinkBreakNode, then we need to add an additonal <br>
+function reconcileBlockTerminatingLineBreak(
+  prevChildren: null | Array<NodeKey>,
+  nextChildren: Array<NodeKey>,
+  dom: HTMLElement,
+): void {
+  const prevLineBreak =
+    prevChildren !== null &&
+    (prevChildren.length === 0 ||
+      isLastChildLineBreak(prevChildren, activePrevNodeMap));
+  const nextLineBreak =
+    nextChildren !== null &&
+    (nextChildren.length === 0 ||
+      isLastChildLineBreak(nextChildren, activeNextNodeMap));
+
+  if (prevLineBreak) {
+    if (!nextLineBreak) {
+      // $FlowFixMe: internal field
+      const element = dom.__outlineLineBreak;
+      if (element != null) {
+        dom.removeChild(element);
+      }
+      // $FlowFixMe: internal field
+      dom.__outlineLineBreak = null;
+    }
+  } else if (nextLineBreak) {
+    const element = document.createElement('br');
+    // $FlowFixMe: internal field
+    dom.__outlineLineBreak = element;
+    dom.appendChild(element);
+  }
+}
+
 function reconcileChildren(
   prevChildren: Array<NodeKey>,
   nextChildren: Array<NodeKey>,
@@ -192,11 +226,6 @@ function reconcileChildren(
     }
   } else if (prevChildrenLength === 0) {
     if (nextChildrenLength !== 0) {
-      // Remove <br>
-      const br = dom.firstChild;
-      if (br != null) {
-        dom.removeChild(br);
-      }
       createChildren(nextChildren, 0, nextChildrenLength - 1, dom, null);
     }
   } else if (nextChildrenLength === 0) {
@@ -204,9 +233,6 @@ function reconcileChildren(
       destroyChildren(prevChildren, 0, prevChildrenLength - 1, null);
       // Fast path for removing DOM nodes
       dom.textContent = '';
-      // Add a br
-      const br = createBRForBlock();
-      dom.appendChild(br);
     }
   } else {
     reconcileNodeChildren(
@@ -290,6 +316,7 @@ function reconcileNode(
     if (childrenAreDifferent || isDirty) {
       // We get the children again, in case they change.
       reconcileChildren(prevChildren, nextChildren, dom);
+      reconcileBlockTerminatingLineBreak(prevChildren, nextChildren, dom);
     }
   } else {
     if (isDecoratorNode(nextNode)) {

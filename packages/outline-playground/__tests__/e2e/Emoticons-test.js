@@ -20,10 +20,10 @@ describe('Emoticons', () => {
         '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">This is an emoji </span><span class="emoji happysmile" data-outline-text="true">🙂</span><span data-outline-text="true"></span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 2, 0],
-        anchorOffset: 0,
-        focusPath: [0, 2, 0],
-        focusOffset: 0,
+        anchorPath: [0, 1, 0],
+        anchorOffset: 2,
+        focusPath: [0, 1, 0],
+        focusOffset: 2,
       });
 
       await page.keyboard.press('Backspace');
@@ -79,10 +79,10 @@ describe('Emoticons', () => {
         '<p class="editor-paragraph"><span data-outline-text="true"></span><span class="emoji happysmile" data-outline-text="true">🙂</span><span data-outline-text="true"> </span><span class="emoji happysmile" data-outline-text="true">🙂</span><span data-outline-text="true"> </span><span class="emoji heart" data-outline-text="true">❤</span><span data-outline-text="true"> </span><span class="emoji unhappysmile" data-outline-text="true">🙁</span><span data-outline-text="true"></span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 8, 0],
-        anchorOffset: 0,
-        focusPath: [0, 8, 0],
-        focusOffset: 0,
+        anchorPath: [0, 7, 0],
+        anchorOffset: 2,
+        focusPath: [0, 7, 0],
+        focusOffset: 2,
       });
 
       await page.keyboard.down('Shift');
@@ -105,10 +105,10 @@ describe('Emoticons', () => {
         '<p class="editor-paragraph"><span data-outline-text="true"></span><span class="emoji happysmile" data-outline-text="true">🙂</span><span data-outline-text="true"> </span><span class="emoji happysmile" data-outline-text="true">🙂</span><span data-outline-text="true"> </span><span class="emoji heart" data-outline-text="true">❤</span><span data-outline-text="true"> </span><span class="emoji unhappysmile" data-outline-text="true">🙁</span><span data-outline-text="true"></span><br><span data-outline-text="true"></span><span class="emoji happysmile" data-outline-text="true">🙂</span><span data-outline-text="true"> </span><span class="emoji happysmile" data-outline-text="true">🙂</span><span data-outline-text="true"> </span><span class="emoji heart" data-outline-text="true">❤</span><span data-outline-text="true"> </span><span class="emoji unhappysmile" data-outline-text="true">🙁</span><span data-outline-text="true"></span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 18, 0],
-        anchorOffset: 0,
-        focusPath: [0, 18, 0],
-        focusOffset: 0,
+        anchorPath: [0, 17, 0],
+        anchorOffset: 2,
+        focusPath: [0, 17, 0],
+        focusOffset: 2,
       });
 
       await page.keyboard.press('Enter');
@@ -143,10 +143,10 @@ describe('Emoticons', () => {
           '<p class="editor-paragraph"><span data-outline-text="true"></span><span class="emoji happysmile" data-outline-text="true">🙂</span><span data-outline-text="true"> </span><span class="emoji happysmile" data-outline-text="true">🙂</span><span data-outline-text="true"> </span><span class="emoji heart" data-outline-text="true">❤</span><span data-outline-text="true"> </span><span class="emoji unhappysmile" data-outline-text="true">🙁</span><span data-outline-text="true"></span><br><span data-outline-text="true"></span><span class="emoji happysmile" data-outline-text="true">🙂</span><span data-outline-text="true"> </span><span class="emoji happysmile" data-outline-text="true">🙂</span><span data-outline-text="true"> </span><span class="emoji heart" data-outline-text="true">❤</span><span data-outline-text="true"> </span><span class="emoji unhappysmile" data-outline-text="true">🙁</span><span data-outline-text="true"></span></p><p class="editor-paragraph"><span data-outline-text="true"></span><span class="emoji happysmile" data-outline-text="true">🙂</span><span data-outline-text="true"> </span><span class="emoji happysmile" data-outline-text="true">🙂</span><span data-outline-text="true"> </span><span class="emoji heart" data-outline-text="true">❤</span><span data-outline-text="true"> </span><span class="emoji unhappysmile" data-outline-text="true">🙁</span><span data-outline-text="true"></span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [1, 8, 0],
-          anchorOffset: 0,
-          focusPath: [1, 8, 0],
-          focusOffset: 0,
+          anchorPath: [1, 7, 0],
+          anchorOffset: 2,
+          focusPath: [1, 7, 0],
+          focusOffset: 2,
         });
       } else {
         await assertHTML(
@@ -154,10 +154,10 @@ describe('Emoticons', () => {
           '<p class="editor-paragraph"><span data-outline-text="true">​</span><span class="emoji happysmile" data-outline-text="true">🙂</span><span data-outline-text="true">​ </span><span class="emoji happysmile" data-outline-text="true">🙂</span><span data-outline-text="true">​ </span><span class="emoji heart" data-outline-text="true">❤</span><span data-outline-text="true">​ </span><span class="emoji unhappysmile" data-outline-text="true">🙁</span><span data-outline-text="true">​</span><br><span data-outline-text="true">​</span><span class="emoji happysmile" data-outline-text="true">🙂</span><span data-outline-text="true">​ </span><span class="emoji happysmile" data-outline-text="true">🙂</span><span data-outline-text="true">​ </span><span class="emoji heart" data-outline-text="true">❤</span><span data-outline-text="true">​ </span><span class="emoji unhappysmile" data-outline-text="true">🙁</span><span data-outline-text="true">​</span><br><span data-outline-text="true">​</span><span class="emoji happysmile" data-outline-text="true">🙂</span><span data-outline-text="true">​ </span><span class="emoji happysmile" data-outline-text="true">🙂</span><span data-outline-text="true">​ </span><span class="emoji heart" data-outline-text="true">❤</span><span data-outline-text="true">​ </span><span class="emoji unhappysmile" data-outline-text="true">🙁</span><span data-outline-text="true">​</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 28, 0],
-          anchorOffset: 0,
-          focusPath: [0, 28, 0],
-          focusOffset: 0,
+          anchorPath: [0, 27, 0],
+          anchorOffset: 2,
+          focusPath: [0, 27, 0],
+          focusOffset: 2,
         });
       }
 

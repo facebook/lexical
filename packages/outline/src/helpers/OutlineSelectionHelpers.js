@@ -333,9 +333,6 @@ export function insertParagraph(selection: Selection): void {
 
   if (anchor.type === 'text') {
     const anchorNode = anchor.getNode();
-    if (anchorNode.isSegmented()) {
-      return;
-    }
     const textContent = anchorNode.getTextContent();
     const textContentLength = textContent.length;
     nodesToMove = anchorNode.getNextSiblings().reverse();
@@ -343,14 +340,11 @@ export function insertParagraph(selection: Selection): void {
 
     if (anchorOffset === 0) {
       nodesToMove.push(anchorNode);
-    } else if (anchorOffset === textContentLength) {
-      const clonedNode = createTextNode('');
-      clonedNode.setFlags(anchorNode.getFlags());
-      nodesToMove.push(clonedNode);
-      anchorOffset = 0;
-    } else {
+    } else if (anchorOffset !== textContentLength) {
       const [, splitNode] = anchorNode.splitText(anchorOffset);
       nodesToMove.push(splitNode);
+      anchorOffset = 0;
+    } else {
       anchorOffset = 0;
     }
   } else {
@@ -380,11 +374,7 @@ export function insertParagraph(selection: Selection): void {
       }
       const nodeToSelect = nodesToMove[nodesToMoveLength - 1];
       if (isTextNode(nodeToSelect)) {
-        if (nodeToSelect.isImmutable()) {
-          nodeToSelect.selectPrevious();
-        } else {
-          nodeToSelect.select(anchorOffset, anchorOffset);
-        }
+        nodeToSelect.select(anchorOffset, anchorOffset);
       }
       // TODO remove this logic when we get rid of empty text nodes
       const blockFirstChild = currentBlock.getFirstChild();
@@ -963,22 +953,27 @@ export function insertText(selection: Selection, text: string): void {
     const lastBlock = isBlockNode(lastNode)
       ? lastNode
       : lastNode.getParentOrThrow();
-    let firstNodeRemove = false;
     let lastNodeRemove = false;
     startOffset = isBefore ? anchorOffset : focusOffset;
     endOffset = isBefore ? focusOffset : anchorOffset;
 
     // Handle mutations to the last node.
-    if (isTextNode(lastNode) && endOffset !== lastNode.getTextContentSize()) {
-      if (lastNode.isSegmented()) {
-        const textNode = createTextNode(lastNode.getTextContent());
-        lastNode.replace(textNode, true);
-        lastNode = textNode;
+    if (endOffset !== 0) {
+      if (
+        isTextNode(lastNode) &&
+        !isImmutableOrInert(lastNode) &&
+        endOffset !== lastNode.getTextContentSize()
+      ) {
+        if (lastNode.isSegmented()) {
+          const textNode = createTextNode(lastNode.getTextContent());
+          lastNode.replace(textNode, true);
+          lastNode = textNode;
+        }
+        lastNode.spliceText(0, endOffset, '', false);
+      } else {
+        lastNode.remove();
+        lastNodeRemove = true;
       }
-      lastNode.spliceText(0, endOffset, '', false);
-    } else {
-      lastNode.remove();
-      lastNodeRemove = true;
     }
 
     // Either move the remaining nodes of the last parent to after
@@ -1031,7 +1026,7 @@ export function insertText(selection: Selection, text: string): void {
 
     // Ensure we do splicing after moving of nodes, as splicing
     // can have side-effects (in the case of hashtags).
-    if (isTextNode(firstNode) && !isImmutableOrInert(firstNode)) {
+    if (!isImmutableOrInert(firstNode)) {
       firstNode.spliceText(
         startOffset,
         firstNodeTextLength - startOffset,
@@ -1041,18 +1036,18 @@ export function insertText(selection: Selection, text: string): void {
       if (firstNode.isComposing() && selection.anchor.type === 'text') {
         selection.anchor.offset -= text.length;
       }
+    } else if (startOffset === firstNodeTextLength) {
+      firstNode.select();
     } else {
-      firstNodeRemove = true;
-      const textNode = createTextNode(text);
-      firstNode.replace(textNode);
-      textNode.select();
+      firstNode.selectPrevious();
+      firstNode.remove();
     }
 
     // Remove all selected nodes that haven't already been removed.
     for (let i = 1; i < lastIndex; i++) {
       const selectedNode = selectedNodes[i];
       if (
-        (firstNodeRemove || !firstNodeParents.has(selectedNode)) &&
+        !firstNodeParents.has(selectedNode) &&
         (lastNodeRemove || !lastNodeParents.has(selectedNode))
       ) {
         selectedNode.remove();

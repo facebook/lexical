@@ -794,7 +794,7 @@ export class OutlineNode {
       return parent.select(0, 0);
     }
     if (!isTextNode(prevSibling)) {
-      const index = prevSibling.getIndexWithinParent();
+      const index = prevSibling.getIndexWithinParent() + 1;
       return parent.select(index, index);
     }
     return prevSibling.select(anchorOffset, focusOffset);

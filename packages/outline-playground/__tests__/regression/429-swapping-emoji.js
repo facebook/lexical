@@ -20,10 +20,10 @@ describe('Regression test #429', () => {
         '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true"></span><span class="emoji happysmile" data-outline-text="true">🙂</span><span data-outline-text="true"> or </span><span class="emoji unhappysmile" data-outline-text="true">🙁</span><span data-outline-text="true"></span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 4, 0],
-        anchorOffset: 0,
-        focusPath: [0, 4, 0],
-        focusOffset: 0,
+        anchorPath: [0, 3, 0],
+        anchorOffset: 2,
+        focusPath: [0, 3, 0],
+        focusOffset: 2,
       });
 
       await repeat(6, async () => {

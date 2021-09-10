@@ -865,16 +865,13 @@ function transferBlockPointToTextPoint(point: BlockPoint) {
     placementNode.insertBefore(textNode);
   }
   // Transfer the block point to a text point.
-  // $FlowFixMe: this is intentional
-  point.type = 'text';
-  point.offset = 0;
-  point.key = textNode.getKey();
+  point.set(textNode.getKey(), 0, 'text');
 }
 
 export function insertText(selection: Selection, text: string): void {
   const anchor = selection.anchor;
   const focus = selection.focus;
-  const isBefore = anchor.isBefore(focus);
+  const isBefore = selection.isCollapsed() || anchor.isBefore(focus);
 
   if (isBefore && anchor.type === 'block') {
     transferBlockPointToTextPoint(anchor);

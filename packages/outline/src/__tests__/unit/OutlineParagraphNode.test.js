@@ -65,7 +65,7 @@ describe('OutlineParagraphNode tests', () => {
         root.append(paragraphNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p><br></p></div>',
       );
       await editor.update((view) => {
         const result = paragraphNode.insertNewAfter();
@@ -73,7 +73,7 @@ describe('OutlineParagraphNode tests', () => {
         expect(result.getDirection()).toEqual(paragraphNode.getDirection());
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p></p><p></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p><br></p><p><br></p></div>',
       );
     });
 

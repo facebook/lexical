@@ -15,7 +15,11 @@ import type {TextFormatType} from './OutlineTextNode';
 import {getActiveEditor, ViewModel} from './OutlineView';
 import {getActiveViewModel} from './OutlineView';
 import {getNodeKeyFromDOM} from './OutlineReconciler';
-import {getNodeByKey} from './OutlineNode';
+import {
+  getNodeByKey,
+  getCompositionKey,
+  setCompositionKey,
+} from './OutlineNode';
 import {
   isTextNode,
   isBlockNode,
@@ -38,6 +42,7 @@ export type TextPointType = {
   is: (PointType) => boolean,
   isBefore: (PointType) => boolean,
   getNode: () => TextNode,
+  set: (key: NodeKey, offset: number, type: 'text' | 'block') => void,
 };
 
 export type BlockPointType = {
@@ -47,6 +52,7 @@ export type BlockPointType = {
   is: (PointType) => boolean,
   isBefore: (PointType) => boolean,
   getNode: () => BlockNode,
+  set: (key: NodeKey, offset: number, type: 'text' | 'block') => void,
 };
 
 export type PointType = TextPointType | BlockPointType;
@@ -92,6 +98,15 @@ class Point {
       invariant(false, 'Point.getNode: node not found');
     }
     return node;
+  }
+  set(key: NodeKey, offset: number, type: 'text' | 'block'): void {
+    const oldKey = this.key;
+    this.key = key;
+    this.offset = offset;
+    this.type = type;
+    if (getCompositionKey() === oldKey) {
+      setCompositionKey(key);
+    }
   }
 }
 

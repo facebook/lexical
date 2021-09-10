@@ -68,7 +68,7 @@ describe('OutlineQuoteNode tests', () => {
         root.append(quoteNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><blockquote></blockquote></div>',
+        '<div contenteditable="true" data-outline-editor="true"><blockquote><br></blockquote></div>',
       );
       await editor.update((view) => {
         const result = quoteNode.insertNewAfter();
@@ -76,7 +76,7 @@ describe('OutlineQuoteNode tests', () => {
         expect(result.getDirection()).toEqual(quoteNode.getDirection());
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><blockquote></blockquote><p></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><blockquote><br></blockquote><p><br></p></div>',
       );
     });
 

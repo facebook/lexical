@@ -1063,8 +1063,25 @@ function updateSelectedTextFromDOM(editor: OutlineEditor, view: View) {
 
 export function onInput(event: InputEvent, editor: OutlineEditor) {
   editor.update((view: View) => {
+    if (!CAN_USE_BEFORE_INPUT) {
+      const selection = view.getSelection();
+      const data = event.data;
+      if (selection !== null && data != null) {
+        const anchor = selection.anchor;
+        const focus = selection.focus;
+        if (anchor.type === 'block' || focus.type === 'block') {
+          insertText(selection, data);
+          return;
+        }
+      }
+    }
     updateSelectedTextFromDOM(editor, view);
   }, 'onInput');
+}
+
+function isBROutlineControlled(dom: Node): boolean {
+  // $FlowFixMe: internal field
+  return dom.__outlineControlled === true;
 }
 
 export function onMutation(
@@ -1155,7 +1172,11 @@ export function onMutation(
         for (let s = 0; s < addedNodes.length; s++) {
           const addedDOM = addedNodes[s];
           const parentDOM = addedDOM.parentNode;
-          if (parentDOM != null && addedDOM.nodeName === 'BR') {
+          if (
+            parentDOM != null &&
+            addedDOM.nodeName === 'BR' &&
+            !isBROutlineControlled(addedDOM)
+          ) {
             parentDOM.removeChild(addedDOM);
           }
         }

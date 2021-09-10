@@ -52,8 +52,8 @@ export function getNodesInRange(selection: Selection): {
   const focus = selection.focus;
   const anchorNode = anchor.getNode();
   const focusNode = focus.getNode();
-  const anchorOffset = anchor.offset;
-  const focusOffset = focus.offset;
+  const anchorOffset = anchor.getCharacterOffset();
+  const focusOffset = focus.getCharacterOffset();
   let startOffset;
   let endOffset;
 
@@ -96,7 +96,10 @@ export function getNodesInRange(selection: Selection): {
 
       if (i === 0) {
         node = cloneWithProperties<TextNode>(node);
-        node.__text = text.slice(startOffset, text.length);
+        node.__text = text.slice(
+          startOffset,
+          nodesLength === 1 ? endOffset : text.length,
+        );
       } else if (i === nodesLength - 1) {
         node = cloneWithProperties<TextNode>(node);
         node.__text = text.slice(0, endOffset);
@@ -178,8 +181,8 @@ export function extractSelection(selection: Selection): Array<OutlineNode> {
   let firstNode = selectedNodes[0];
   let lastNode = selectedNodes[lastIndex];
 
-  const anchorOffset = anchor.offset;
-  const focusOffset = focus.offset;
+  const anchorOffset = anchor.getCharacterOffset();
+  const focusOffset = focus.getCharacterOffset();
   let startOffset;
   let endOffset;
 
@@ -874,6 +877,11 @@ export function insertText(selection: Selection, text: string): void {
   const isBefore = selection.isCollapsed() || anchor.isBefore(focus);
 
   if (isBefore && anchor.type === 'block') {
+    // If we are inserting a node in the anchor, then we'll need to
+    // increase the focus offset by one if it references the same block.
+    if (focus.type === 'block' && focus.getNode() === anchor.getNode()) {
+      focus.offset++;
+    }
     transferBlockPointToTextPoint(anchor);
   } else if (!isBefore && focus.type === 'block') {
     transferBlockPointToTextPoint(focus);

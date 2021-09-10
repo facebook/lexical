@@ -220,8 +220,8 @@ describe('OutlineSelectionHelpers tests', () => {
       };
 
       // getNodes
-      setupTestCase((selection) => {
-        expect(selection.getNodes()).toEqual([]);
+      setupTestCase((selection, view) => {
+        expect(selection.getNodes()).toEqual([view.getNodeByKey('a')]);
       });
 
       // getTextContent
@@ -298,14 +298,14 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // Extract selection
       setupTestCase((selection, view, block) => {
-        expect(extractSelection(selection)).toEqual([]);
+        expect(extractSelection(selection)).toEqual([view.getNodeByKey('a')]);
       });
 
       // getNodesInRange
       setupTestCase((selection, view, block) => {
         expect(getNodesInRange(selection)).toEqual({
-          range: [],
-          nodeMap: [],
+          range: ['a'],
+          nodeMap: [['a', {...view.getNodeByKey('a'), __text: ''}]],
         });
       });
     });
@@ -339,8 +339,8 @@ describe('OutlineSelectionHelpers tests', () => {
       };
 
       // getNodes
-      setupTestCase((selection) => {
-        expect(selection.getNodes()).toEqual([]);
+      setupTestCase((selection, view) => {
+        expect(selection.getNodes()).toEqual([view.getNodeByKey('c')]);
       });
 
       // getTextContent
@@ -417,14 +417,14 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // Extract selection
       setupTestCase((selection, view, block) => {
-        expect(extractSelection(selection)).toEqual([]);
+        expect(extractSelection(selection)).toEqual([view.getNodeByKey('c')]);
       });
 
       // getNodesInRange
       setupTestCase((selection, view, block) => {
         expect(getNodesInRange(selection)).toEqual({
-          range: [],
-          nodeMap: [],
+          range: ['c'],
+          nodeMap: [['c', {...view.getNodeByKey('c'), __text: ''}]],
         });
       });
     });
@@ -600,7 +600,10 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // getNodes
       setupTestCase((selection, view) => {
-        expect(selection.getNodes()).toEqual([view.getNodeByKey('a')]);
+        expect(selection.getNodes()).toEqual([
+          view.getNodeByKey('a'),
+          view.getNodeByKey('b'),
+        ]);
       });
 
       // getTextContent
@@ -678,14 +681,20 @@ describe('OutlineSelectionHelpers tests', () => {
       // Extract selection
       setupTestCase((selection, view, block) => {
         const firstChild = block.getFirstChild();
-        expect(extractSelection(selection)).toEqual([firstChild]);
+        expect(extractSelection(selection)).toEqual([
+          firstChild,
+          firstChild.getNextSibling(),
+        ]);
       });
 
       // getNodesInRange
       setupTestCase((selection, view, block) => {
         expect(getNodesInRange(selection)).toEqual({
-          range: ['a'],
-          nodeMap: [['a', view.getNodeByKey('a')]],
+          range: ['a', 'b'],
+          nodeMap: [
+            ['a', view.getNodeByKey('a')],
+            ['b', {...view.getNodeByKey('b'), __text: ''}],
+          ],
         });
       });
     });

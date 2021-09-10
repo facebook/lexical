@@ -671,7 +671,12 @@ function updateTextNodeFromDOMContent(
         node.replace(replacement, true);
         node = replacement;
       }
-
+      // TODO: somtimes we slip through to this even though this should
+      // be captured above. We need to find out why.
+      if (isImmutableOrInert(node)) {
+        view.markNodeAsDirty(node);
+        return;
+      }
       node.setTextContent(textContent);
 
       if (

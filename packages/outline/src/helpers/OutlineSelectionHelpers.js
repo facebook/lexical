@@ -874,6 +874,8 @@ export function insertText(selection: Selection, text: string): void {
   const isBefore = selection.isCollapsed() || anchor.isBefore(focus);
 
   if (isBefore && anchor.type === 'block') {
+    // If we are inserting a node in the anchor, then we'll need to
+    // increase the focus offset by one if it references the same block.
     if (focus.type === 'block' && focus.getNode() === anchor.getNode()) {
       focus.offset++;
     }

@@ -428,10 +428,10 @@ describe('OutlineSelection tests', () => {
         '<span data-outline-text="true">Dominic</span>' +
         '<span data-outline-text="true"></span></p></div>',
       expectedSelection: {
-        anchorPath: [0, 2, 0],
-        anchorOffset: 0,
-        focusPath: [0, 2, 0],
-        focusOffset: 0,
+        anchorPath: [0, 1, 0],
+        anchorOffset: 7,
+        focusPath: [0, 1, 0],
+        focusOffset: 7,
       },
     },
     {

@@ -333,9 +333,6 @@ export function insertParagraph(selection: Selection): void {
 
   if (anchor.type === 'text') {
     const anchorNode = anchor.getNode();
-    if (anchorNode.isSegmented()) {
-      return;
-    }
     const textContent = anchorNode.getTextContent();
     const textContentLength = textContent.length;
     nodesToMove = anchorNode.getNextSiblings().reverse();
@@ -346,6 +343,8 @@ export function insertParagraph(selection: Selection): void {
     } else if (anchorOffset !== textContentLength) {
       const [, splitNode] = anchorNode.splitText(anchorOffset);
       nodesToMove.push(splitNode);
+      anchorOffset = 0;
+    } else {
       anchorOffset = 0;
     }
   } else {
@@ -375,11 +374,7 @@ export function insertParagraph(selection: Selection): void {
       }
       const nodeToSelect = nodesToMove[nodesToMoveLength - 1];
       if (isTextNode(nodeToSelect)) {
-        if (nodeToSelect.isImmutable()) {
-          nodeToSelect.selectPrevious();
-        } else {
-          nodeToSelect.select(anchorOffset, anchorOffset);
-        }
+        nodeToSelect.select(anchorOffset, anchorOffset);
       }
       // TODO remove this logic when we get rid of empty text nodes
       const blockFirstChild = currentBlock.getFirstChild();

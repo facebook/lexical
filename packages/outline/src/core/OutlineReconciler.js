@@ -546,10 +546,10 @@ function reconcileSelection(
   const focusNode = focus.getNode();
   const anchorDOM = getElementByKeyOrThrow(editor, anchorKey);
   const focusDOM = getElementByKeyOrThrow(editor, focusKey);
-  let nextAnchorNode;
-  let nextFocusNode;
-  let nextAnchorOffset;
-  let nextFocusOffset;
+  let nextAnchorNode = anchorDOM;
+  let nextFocusNode = focusDOM;
+  let nextAnchorOffset = anchor.offset;
+  let nextFocusOffset = focus.offset;
 
   if (anchor.type === 'text') {
     const nextSelectionAnchorOffset = anchor.offset;
@@ -559,9 +559,6 @@ function reconcileSelection(
       anchorNode.getTextContent() !== ''
         ? nextSelectionAnchorOffset
         : nextSelectionAnchorOffset + 1;
-  } else {
-    nextAnchorNode = anchorDOM;
-    nextAnchorOffset = anchor.offset;
   }
   if (focus.type === 'text') {
     const nextSelectionFocusOffset = focus.offset;
@@ -571,9 +568,6 @@ function reconcileSelection(
       focusNode.getTextContent() !== ''
         ? nextSelectionFocusOffset
         : nextSelectionFocusOffset + 1;
-  } else {
-    nextFocusNode = focusDOM;
-    nextFocusOffset = focus.offset;
   }
   // If we can't get an underlying text node for selection, then
   // we should avoid setting selection to something incorrect.

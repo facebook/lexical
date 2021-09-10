@@ -312,11 +312,13 @@ describe('OutlineNode tests', () => {
       );
       await editor.getViewModel().read((view) => {
         const rootNode = view.getRoot();
-        expect(textNode.getCommonAncestor(rootNode)).toBe(null);
-        expect(quxTextNode.getCommonAncestor(rootNode)).toBe(null);
-        expect(barTextNode.getCommonAncestor(rootNode)).toBe(null);
-        expect(bazTextNode.getCommonAncestor(rootNode)).toBe(null);
-        // expect(textNode.getCommonAncestor(quxTextNode)).toBe(paragraphNode);
+        expect(textNode.getCommonAncestor(rootNode)).toBe(rootNode);
+        expect(quxTextNode.getCommonAncestor(rootNode)).toBe(rootNode);
+        expect(barTextNode.getCommonAncestor(rootNode)).toBe(rootNode);
+        expect(bazTextNode.getCommonAncestor(rootNode)).toBe(rootNode);
+        expect(textNode.getCommonAncestor(quxTextNode)).toBe(
+          paragraphNode.getLatest(),
+        );
         expect(barTextNode.getCommonAncestor(bazTextNode)).toBe(rootNode);
         expect(barTextNode.getCommonAncestor(bazTextNode)).toBe(rootNode);
       });
@@ -339,7 +341,7 @@ describe('OutlineNode tests', () => {
         '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span><span data-outline-text="true">bar</span><span data-outline-text="true">baz</span></p></div>',
       );
       await editor.getViewModel().read(() => {
-        expect(textNode.isBefore(textNode)).toBe(false);
+        expect(textNode.isBefore(textNode)).toBe(true);
         expect(textNode.isBefore(barTextNode)).toBe(true);
         expect(textNode.isBefore(bazTextNode)).toBe(true);
         expect(barTextNode.isBefore(bazTextNode)).toBe(true);

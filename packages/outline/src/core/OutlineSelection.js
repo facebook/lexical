@@ -43,6 +43,7 @@ export type TextPointType = {
   isBefore: (PointType) => boolean,
   getNode: () => TextNode,
   set: (key: NodeKey, offset: number, type: 'text' | 'block') => void,
+  getCharacterOffset: () => number,
 };
 
 export type BlockPointType = {
@@ -53,6 +54,7 @@ export type BlockPointType = {
   isBefore: (PointType) => boolean,
   getNode: () => BlockNode,
   set: (key: NodeKey, offset: number, type: 'text' | 'block') => void,
+  getCharacterOffset: () => number,
 };
 
 export type PointType = TextPointType | BlockPointType;
@@ -81,15 +83,18 @@ class Point {
     const bOffset = b.offset;
 
     if (isBlockNode(aNode)) {
-      aNode = resolveBlockNode(aNode, aOffset);
+      aNode = resolveBlockChild(aNode, aOffset);
     }
     if (isBlockNode(bNode)) {
-      bNode = resolveBlockNode(bNode, bOffset);
+      bNode = resolveBlockChild(bNode, bOffset);
     }
     if (aNode === bNode) {
       return aOffset < bOffset;
     }
     return aNode.isBefore(bNode);
+  }
+  getCharacterOffset(): number {
+    return this.type === 'text' ? this.offset : 0;
   }
   getNode() {
     const key = this.key;
@@ -132,9 +137,16 @@ export function setPointValues(
   point.type = type;
 }
 
-function resolveBlockNode(node: BlockNode, offset: number): OutlineNode {
-  const child = node.getChildAtIndex(offset);
-  return child === null ? node : child;
+function resolveBlockChild(node: BlockNode, offset: number): OutlineNode {
+  const children = node.getChildren();
+  const childrenLength = children.length;
+  if (childrenLength === 0) {
+    return node;
+  }
+  if (offset >= childrenLength) {
+    return children[childrenLength - 1];
+  }
+  return children[offset];
 }
 
 export class Selection {
@@ -161,30 +173,17 @@ export class Selection {
     const focus = this.focus;
     let firstNode = anchor.getNode();
     let lastNode = focus.getNode();
-    let removeFirstNode = false;
-    let removeLastNode = false;
 
     if (isBlockNode(firstNode)) {
-      firstNode = resolveBlockNode(firstNode, anchor.offset);
-      removeFirstNode = true;
+      firstNode = resolveBlockChild(firstNode, anchor.offset);
     }
     if (isBlockNode(lastNode)) {
-      lastNode = resolveBlockNode(lastNode, focus.offset);
-      removeLastNode = true;
+      lastNode = resolveBlockChild(lastNode, focus.offset);
     }
     if (firstNode === lastNode) {
-      if (removeFirstNode && removeLastNode) {
-        return [];
-      }
       return [firstNode];
     }
     const nodes = firstNode.getNodesBetween(lastNode);
-    if (removeFirstNode) {
-      nodes.unshift();
-    }
-    if (removeLastNode) {
-      nodes.pop();
-    }
     return nodes;
   }
   setTextNodeRange(
@@ -207,8 +206,8 @@ export class Selection {
     const anchor = this.anchor;
     const focus = this.focus;
     const isBefore = anchor.isBefore(focus);
-    const anchorOffset = anchor.offset || 0;
-    const focusOffset = focus.offset || 0;
+    const anchorOffset = anchor.getCharacterOffset();
+    const focusOffset = focus.getCharacterOffset();
     let textContent = '';
     nodes.forEach((node) => {
       if (isTextNode(node)) {

@@ -629,7 +629,7 @@ describe('OutlineNode tests', () => {
         expect(editor._dirtyNodes.has(textNode.getKey()));
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p><br></p></div>',
       );
       expect(() => textNode.remove()).toThrow();
     });
@@ -662,7 +662,7 @@ describe('OutlineNode tests', () => {
         textNode.replace(barTextNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">bar</span></p><p></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">bar</span></p><p><br></p></div>',
       );
     });
 
@@ -876,7 +876,7 @@ describe('OutlineNode tests', () => {
         text3.insertAfter(text2);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p></p><p></p><p><span data-outline-text="true">C</span><span data-outline-text="true">B</span><span data-outline-text="true">A</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p><br></p><p><br></p><p><span data-outline-text="true">C</span><span data-outline-text="true">B</span><span data-outline-text="true">A</span></p></div>',
       );
     });
 

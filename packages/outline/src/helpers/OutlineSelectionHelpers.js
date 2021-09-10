@@ -646,6 +646,7 @@ export function updateCaretSelectionForRange(
   const textSize = focusNode.getTextContentSize();
   const needsExtraMove = isBackward
     ? focusOffset === 0 &&
+      isTextNode(focusNode) &&
       focusNode.getTextContent() === '' &&
       !isImmutableOrInert(focusNode)
     : focusOffset === textSize &&
@@ -919,7 +920,6 @@ export function insertText(selection: Selection, text: string): void {
       firstNode = textNode;
     }
   }
-
   let startOffset;
   let endOffset;
 
@@ -957,8 +957,12 @@ export function insertText(selection: Selection, text: string): void {
     let lastNode = selectedNodes[lastIndex];
     const firstNodeParents = new Set(firstNode.getParents());
     const lastNodeParents = new Set(lastNode.getParents());
-    const firstNodeParent = firstNode.getParent();
-    const lastNodeParent = lastNode.getParent();
+    const firstBlock = isBlockNode(firstNode)
+      ? firstNode
+      : firstNode.getParentOrThrow();
+    const lastBlock = isBlockNode(lastNode)
+      ? lastNode
+      : lastNode.getParentOrThrow();
     let firstNodeRemove = false;
     let lastNodeRemove = false;
     startOffset = isBefore ? anchorOffset : focusOffset;
@@ -980,50 +984,48 @@ export function insertText(selection: Selection, text: string): void {
     // Either move the remaining nodes of the last parent to after
     // the first child, or remove them entirely. If the last parent
     // is the same as the first parent, this logic also works.
-    if (isBlockNode(firstNodeParent) && isBlockNode(lastNodeParent)) {
-      const lastNodeChildren = lastNodeParent.getChildren();
-      const selectedNodesSet = new Set(selectedNodes);
-      const firstAndLastParentsAreEqual = firstNodeParent.is(lastNodeParent);
+    const lastNodeChildren = lastBlock.getChildren();
+    const selectedNodesSet = new Set(selectedNodes);
+    const firstAndLastBlocksAreEqual = firstBlock.is(lastBlock);
 
-      for (let i = lastNodeChildren.length - 1; i >= 0; i--) {
-        const lastNodeChild = lastNodeChildren[i];
+    for (let i = lastNodeChildren.length - 1; i >= 0; i--) {
+      const lastNodeChild = lastNodeChildren[i];
 
-        if (lastNodeChild.is(firstNode)) {
-          break;
-        }
-
-        if (lastNodeChild.isAttached()) {
-          if (
-            !selectedNodesSet.has(lastNodeChild) ||
-            lastNodeChild.is(lastNode)
-          ) {
-            if (!firstAndLastParentsAreEqual) {
-              firstNode.insertAfter(lastNodeChild);
-            }
-          } else {
-            lastNodeChild.remove();
-          }
-        }
+      if (lastNodeChild.is(firstNode)) {
+        break;
       }
 
-      if (!firstAndLastParentsAreEqual) {
-        // Check if we have already moved out all the nodes of the
-        // last parent, and if so, traverse the parent tree and mark
-        // them all as being able to deleted too.
-        let parent = lastNodeParent;
-        let lastRemovedParent = null;
-        while (parent !== null) {
-          const children = parent.getChildren();
-          const childrenLength = children.length;
-          if (
-            childrenLength === 0 ||
-            (childrenLength === 1 && children[0].is(lastRemovedParent))
-          ) {
-            lastNodeParents.delete(parent);
-            lastRemovedParent = parent;
+      if (lastNodeChild.isAttached()) {
+        if (
+          !selectedNodesSet.has(lastNodeChild) ||
+          lastNodeChild.is(lastNode)
+        ) {
+          if (!firstAndLastBlocksAreEqual) {
+            firstNode.insertAfter(lastNodeChild);
           }
-          parent = parent.getParent();
+        } else {
+          lastNodeChild.remove();
         }
+      }
+    }
+
+    if (!firstAndLastBlocksAreEqual) {
+      // Check if we have already moved out all the nodes of the
+      // last parent, and if so, traverse the parent tree and mark
+      // them all as being able to deleted too.
+      let parent = lastBlock;
+      let lastRemovedParent = null;
+      while (parent !== null) {
+        const children = parent.getChildren();
+        const childrenLength = children.length;
+        if (
+          childrenLength === 0 ||
+          (childrenLength === 1 && children[0].is(lastRemovedParent))
+        ) {
+          lastNodeParents.delete(parent);
+          lastRemovedParent = parent;
+        }
+        parent = parent.getParent();
       }
     }
 

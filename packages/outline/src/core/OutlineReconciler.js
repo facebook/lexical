@@ -115,7 +115,10 @@ function createNode(
     normalizeTextNodes(node);
     const children = node.__children;
     const childrenLength = children.length;
-    if (childrenLength !== 0) {
+    if (childrenLength === 0) {
+      const br = document.createElement('br');
+      dom.appendChild(br);
+    } else {
       const endIndex = childrenLength - 1;
       createChildren(children, 0, endIndex, dom, null);
     }
@@ -182,6 +185,11 @@ function reconcileChildren(
     }
   } else if (prevChildrenLength === 0) {
     if (nextChildrenLength !== 0) {
+      // Remove <br>
+      const br = dom.firstChild;
+      if (br != null) {
+        dom.removeChild(br);
+      }
       createChildren(nextChildren, 0, nextChildrenLength - 1, dom, null);
     }
   } else if (nextChildrenLength === 0) {
@@ -189,6 +197,9 @@ function reconcileChildren(
       destroyChildren(prevChildren, 0, prevChildrenLength - 1, null);
       // Fast path for removing DOM nodes
       dom.textContent = '';
+      // Add a br
+      const br = document.createElement('br');
+      dom.appendChild(br);
     }
   } else {
     reconcileNodeChildren(

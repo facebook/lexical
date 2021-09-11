@@ -439,7 +439,7 @@ function resolveSelectionPoints(
       ) {
         if (anchorOffset === 0) {
           const prevSibling = resolvedAnchorNode.getPreviousSibling();
-          if (isTextNode(prevSibling) && !prevSibling.isImmutable()) {
+          if (isTextNode(prevSibling) && !prevSibling.isInert()) {
             const offset = prevSibling.getTextContentSize();
             const key = prevSibling.__key;
             resolvedAnchorPoint.key = key;
@@ -451,7 +451,7 @@ function resolveSelectionPoints(
       } else {
         if (resolvedAnchorOffset === textContentSize) {
           const nextSibling = resolvedAnchorNode.getNextSibling();
-          if (isTextNode(nextSibling) && !nextSibling.isImmutable()) {
+          if (isTextNode(nextSibling) && !nextSibling.isInert()) {
             resolvedAnchorPoint.key = nextSibling.__key;
             resolvedAnchorPoint.offset = 0;
           }

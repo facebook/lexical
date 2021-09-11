@@ -1013,7 +1013,7 @@ export function insertText(selection: Selection, text: string): void {
     if (
       (endPoint.type === 'text' && endOffset !== 0) ||
       (endPoint.type === 'block' &&
-        lastNode.getIndexWithinParent() <= endOffset)
+        lastNode.getIndexWithinParent() < endOffset)
     ) {
       if (
         isTextNode(lastNode) &&

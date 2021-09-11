@@ -653,7 +653,9 @@ export function updateCaretSelectionForRange(
 
   if (focus.type === 'block') {
     const block = focus.getNode();
-    possibleDecoratorNode = block.getChildAtIndex(isBackward ? focusOffset - 1 : focusOffset + 1);
+    possibleDecoratorNode = block.getChildAtIndex(
+      isBackward ? focusOffset - 1 : focusOffset + 1,
+    );
   } else {
     const focusNode = focus.getNode();
     if (

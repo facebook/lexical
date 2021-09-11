@@ -37,7 +37,6 @@ export default function useKeywords(editor: OutlineEditor): void {
         if (isKeywordNode(prevSibling)) {
           convertKeywordNodeToPlainTextNode(prevSibling);
         }
-        const nextSibling = node.getNextSibling();
         if (isKeywordNode(nextSibling)) {
           convertKeywordNodeToPlainTextNode(nextSibling);
         }

@@ -138,7 +138,13 @@ function createNode(
     if (insertDOM != null) {
       parentDOM.insertBefore(dom, insertDOM);
     } else {
-      parentDOM.appendChild(dom);
+      // $FlowFixMe: internal field
+      const possibleLineBreak = parentDOM.__outlineLineBreak;
+      if (possibleLineBreak != null) {
+        parentDOM.insertBefore(dom, possibleLineBreak);
+      } else {
+        parentDOM.appendChild(dom);
+      }
     }
   }
   return dom;
@@ -162,13 +168,13 @@ function createChildren(
   subTreeTextContent = previousSubTreeTextContent + subTreeTextContent;
 }
 
-function isLastChildLineBreak(
+function isLastChildLineBreakOrDecorator(
   children: Array<NodeKey>,
   nodeMap: NodeMapType,
 ): boolean {
   const childKey = children[children.length - 1];
   const node = nodeMap.get(childKey);
-  return isLineBreakNode(node);
+  return isLineBreakNode(node) || isDecoratorNode(node);
 }
 
 // If we end a block with a LinkBreakNode, then we need to add an additonal <br>
@@ -180,11 +186,11 @@ function reconcileBlockTerminatingLineBreak(
   const prevLineBreak =
     prevChildren !== null &&
     (prevChildren.length === 0 ||
-      isLastChildLineBreak(prevChildren, activePrevNodeMap));
+      isLastChildLineBreakOrDecorator(prevChildren, activePrevNodeMap));
   const nextLineBreak =
     nextChildren !== null &&
     (nextChildren.length === 0 ||
-      isLastChildLineBreak(nextChildren, activeNextNodeMap));
+      isLastChildLineBreakOrDecorator(nextChildren, activeNextNodeMap));
 
   if (prevLineBreak) {
     if (!nextLineBreak) {

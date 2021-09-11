@@ -650,15 +650,14 @@ export function updateCaretSelectionForRange(
 
   // Handle the selection movement around decorators.
   let possibleDecoratorNode;
-  let targetDecoratorOffset;
 
   if (focus.type === 'block') {
     const block = focus.getNode();
-    targetDecoratorOffset = isBackward ? focusOffset - 1 : focusOffset + 1;
-    possibleDecoratorNode = block.getChildAtIndex(targetDecoratorOffset);
+    possibleDecoratorNode = block.getChildAtIndex(
+      isBackward ? focusOffset - 1 : focusOffset + 1,
+    );
   } else {
     const focusNode = focus.getNode();
-    targetDecoratorOffset = focusNode.getIndexWithinParent();
     if (
       (isBackward && focusOffset === 0) ||
       (!isBackward && focusOffset === focusNode.getTextContentSize())
@@ -666,9 +665,6 @@ export function updateCaretSelectionForRange(
       possibleDecoratorNode = isBackward
         ? focusNode.getPreviousSibling()
         : focusNode.getNextSibling();
-      targetDecoratorOffset = isBackward
-        ? targetDecoratorOffset - 1
-        : targetDecoratorOffset + 1;
     }
   }
   if (isDecoratorNode(possibleDecoratorNode)) {
@@ -677,9 +673,11 @@ export function updateCaretSelectionForRange(
       : possibleDecoratorNode.getNextSibling();
     if (!isTextNode(sibling)) {
       const blockKey = possibleDecoratorNode.getParentOrThrow().getKey();
-      focus.set(blockKey, targetDecoratorOffset, 'block');
+      const decoratorIndex = possibleDecoratorNode.getIndexWithinParent();
+      const offset = isBackward ? decoratorIndex : decoratorIndex + 1;
+      focus.set(blockKey, offset, 'block');
       if (collapse) {
-        anchor.set(blockKey, targetDecoratorOffset, 'block');
+        anchor.set(blockKey, offset, 'block');
       }
       return;
     }

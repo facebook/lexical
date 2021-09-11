@@ -975,8 +975,9 @@ export function insertText(selection: Selection, text: string): void {
     endOffset = isBefore ? focusOffset : anchorOffset;
 
     // Handle mutations to the last node.
-    if (isTextNode(lastNode) && endOffset !== 0) {
+    if (endOffset !== 0) {
       if (
+        isTextNode(lastNode) &&
         !isImmutableOrInert(lastNode) &&
         endOffset !== lastNode.getTextContentSize()
       ) {

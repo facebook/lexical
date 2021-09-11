@@ -550,6 +550,7 @@ function deleteCharacter(selection: Selection, isBackward: boolean): void {
         const offset = focus.offset;
         const textContentSize = focusNode.getTextContentSize();
         if (
+          focusNode.is(anchorNode) ||
           (isBackward && offset !== textContentSize) ||
           (!isBackward && offset !== 0)
         ) {
@@ -560,6 +561,7 @@ function deleteCharacter(selection: Selection, isBackward: boolean): void {
         const offset = anchor.offset;
         const textContentSize = anchorNode.getTextContentSize();
         if (
+          anchorNode.is(focusNode) ||
           (isBackward && offset !== 0) ||
           (!isBackward && offset !== textContentSize)
         ) {

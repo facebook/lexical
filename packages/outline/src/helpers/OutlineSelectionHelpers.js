@@ -19,6 +19,7 @@ import type {
 
 import {
   createLineBreakNode,
+  isDecoratorNode,
   isTextNode,
   isBlockNode,
   isRootNode,
@@ -643,8 +644,48 @@ export function updateCaretSelectionForRange(
   collapse: boolean,
 ): void {
   const domSelection = window.getSelection();
-  const focusNode = selection.focus.getNode();
-  const focusOffset = selection.focus.offset;
+  const focus = selection.focus;
+  const anchor = selection.anchor;
+  const focusOffset = focus.offset;
+
+  // Handle the selection movement around decorators.
+  let possibleDecoratorNode;
+  let targetDecoratorOffset;
+
+  if (focus.type === 'block') {
+    const block = focus.getNode();
+    targetDecoratorOffset = isBackward ? focusOffset - 1 : focusOffset + 1;
+    possibleDecoratorNode = block.getChildAtIndex(targetDecoratorOffset);
+  } else {
+    const focusNode = focus.getNode();
+    targetDecoratorOffset = focusNode.getIndexWithinParent();
+    if (
+      (isBackward && focusOffset === 0) ||
+      (!isBackward && focusOffset === focusNode.getTextContentSize())
+    ) {
+      possibleDecoratorNode = isBackward
+        ? focusNode.getPreviousSibling()
+        : focusNode.getNextSibling();
+      targetDecoratorOffset = isBackward
+        ? targetDecoratorOffset - 1
+        : targetDecoratorOffset + 1;
+    }
+  }
+  if (isDecoratorNode(possibleDecoratorNode)) {
+    const sibling = isBackward
+      ? possibleDecoratorNode.getPreviousSibling()
+      : possibleDecoratorNode.getNextSibling();
+    if (!isTextNode(sibling)) {
+      const blockKey = possibleDecoratorNode.getParentOrThrow().getKey();
+      focus.set(blockKey, targetDecoratorOffset, 'block');
+      if (collapse) {
+        anchor.set(blockKey, targetDecoratorOffset, 'block');
+      }
+      return;
+    }
+  }
+
+  const focusNode = focus.getNode();
   const sibling = isBackward
     ? focusNode.getPreviousSibling()
     : focusNode.getNextSibling();
@@ -679,9 +720,9 @@ export function updateCaretSelectionForRange(
     // Check if we are on an empty text node, make the selection dirty.
     // TODO: remove once we get rid of empty text nodes.
     if (domSelection.anchorOffset === 0 || domSelection.focusOffset === 0) {
-      const anchor = selection.anchor;
-      const focus = selection.focus;
-      if (isEmptyTextNodePoint(anchor) || isEmptyTextNodePoint(focus)) {
+      const nextAnchor = selection.anchor;
+      const nextFocus = selection.focus;
+      if (isEmptyTextNodePoint(nextAnchor) || isEmptyTextNodePoint(nextFocus)) {
         selection.isDirty = true;
       }
     }
@@ -899,8 +940,8 @@ export function insertText(selection: Selection, text: string): void {
   if (!isTextNode(firstNode)) {
     invariant(false, 'insertText: first node is not a text node');
   }
-  const anchorOffset = anchor.offset;
-  const focusOffset = focus.offset;
+  const anchorOffset = anchor.getCharacterOffset();
+  const focusOffset = focus.getCharacterOffset();
   const firstNodeText = firstNode.getTextContent();
   const firstNodeTextLength = firstNodeText.length;
   if (

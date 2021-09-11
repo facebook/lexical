@@ -105,12 +105,16 @@ class Point {
     return node;
   }
   set(key: NodeKey, offset: number, type: 'text' | 'block'): void {
+    const selection = getSelection();
     const oldKey = this.key;
     this.key = key;
     this.offset = offset;
     this.type = type;
     if (getCompositionKey() === oldKey) {
       setCompositionKey(key);
+    }
+    if (selection !== null) {
+      selection.isDirty = true;
     }
   }
 }
@@ -347,11 +351,15 @@ function resolveSelectionPoint(
         resolvedOffset = 0;
       }
     } else {
-      const resolvedBlock = getNodeFromDOM(dom);
+      let resolvedBlock = getNodeFromDOM(dom);
+      // Ensure resolvedBlock is actually a block.
       if (resolvedBlock === null) {
         return null;
       }
-      if (moveSelectionToEnd) {
+      if (!isBlockNode(resolvedBlock)) {
+        resolvedOffset = resolvedBlock.getIndexWithinParent() + 1;
+        resolvedBlock = resolvedBlock.getParentOrThrow();
+      } else if (moveSelectionToEnd) {
         resolvedOffset++;
       }
       return createPoint(resolvedBlock.__key, resolvedOffset, 'block');

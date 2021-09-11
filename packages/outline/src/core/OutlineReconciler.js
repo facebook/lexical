@@ -270,7 +270,9 @@ function reconcileNode(
     activeDirtyNodes === null ||
     activeDirtySubTrees === null ||
     activeDirtyNodes.has(key) ||
-    activeDirtySubTrees.has(key);
+    activeDirtySubTrees.has(key) ||
+    // TODO remove once we get rid of empty text nodes
+    prevNode.getTextContent() === '';
   const dom = getElementByKeyOrThrow(activeEditor, key);
 
   if (prevNode === nextNode && !isDirty) {
@@ -548,8 +550,6 @@ function reconcileSelection(
   const focus = nextSelection.focus;
   const anchorKey = anchor.key;
   const focusKey = focus.key;
-  const anchorNode = anchor.getNode();
-  const focusNode = focus.getNode();
   const anchorDOM = getElementByKeyOrThrow(editor, anchorKey);
   const focusDOM = getElementByKeyOrThrow(editor, focusKey);
   let nextAnchorNode = anchorDOM;
@@ -558,6 +558,7 @@ function reconcileSelection(
   let nextFocusOffset = focus.offset;
 
   if (anchor.type === 'text') {
+    const anchorNode = anchor.getNode();
     const nextSelectionAnchorOffset = anchor.offset;
     nextAnchorNode = getDOMTextNode(anchorDOM);
     nextAnchorOffset =
@@ -565,8 +566,17 @@ function reconcileSelection(
       anchorNode.getTextContent() !== ''
         ? nextSelectionAnchorOffset
         : nextSelectionAnchorOffset + 1;
+  } else {
+    const anchorNode = anchor.getNode();
+    const childrenSize = anchorNode.getChildrenSize();
+    // Sanitize the offset for when it's longer than the children size
+    if (nextAnchorOffset > childrenSize) {
+      nextAnchorOffset = childrenSize;
+      anchor.offset = nextAnchorOffset;
+    }
   }
   if (focus.type === 'text') {
+    const focusNode = focus.getNode();
     const nextSelectionFocusOffset = focus.offset;
     nextFocusNode = getDOMTextNode(focusDOM);
     nextFocusOffset =
@@ -574,6 +584,14 @@ function reconcileSelection(
       focusNode.getTextContent() !== ''
         ? nextSelectionFocusOffset
         : nextSelectionFocusOffset + 1;
+  } else {
+    const focusNode = focus.getNode();
+    const childrenSize = focusNode.getChildrenSize();
+    // Sanitize the offset for when it's longer than the children size
+    if (nextFocusOffset > childrenSize) {
+      nextFocusOffset = childrenSize;
+      focus.offset = nextFocusOffset;
+    }
   }
   // If we can't get an underlying text node for selection, then
   // we should avoid setting selection to something incorrect.

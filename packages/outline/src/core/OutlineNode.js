@@ -387,6 +387,15 @@ export class OutlineNode {
     }
     return parents;
   }
+  getParentKeys(): Array<NodeKey> {
+    const parents = [];
+    let node = this.getParent();
+    while (node !== null) {
+      parents.push(node.__key);
+      node = node.getParent();
+    }
+    return parents;
+  }
   getPreviousSibling(): OutlineNode | null {
     const parent = this.getParentOrThrow();
     const children = parent.__children;

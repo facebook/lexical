@@ -547,11 +547,25 @@ function deleteCharacter(selection: Selection, isBackward: boolean): void {
       const anchorNode = anchor.type === 'text' ? anchor.getNode() : null;
 
       if (focusNode !== null && focusNode.isSegmented()) {
-        removeSegment(focusNode, isBackward);
-        return;
+        const offset = focus.offset;
+        const textContentSize = focusNode.getTextContentSize();
+        if (
+          (isBackward && offset !== textContentSize) ||
+          (!isBackward && offset !== 0)
+        ) {
+          removeSegment(focusNode, isBackward);
+          return;
+        }
       } else if (anchorNode !== null && anchorNode.isSegmented()) {
-        removeSegment(anchorNode, isBackward);
-        return;
+        const offset = anchor.offset;
+        const textContentSize = anchorNode.getTextContentSize();
+        if (
+          (isBackward && offset !== 0) ||
+          (!isBackward && offset !== textContentSize)
+        ) {
+          removeSegment(anchorNode, isBackward);
+          return;
+        }
       }
       updateCaretSelectionForUnicodeCharacter(selection, isBackward);
     } else if (isBackward) {
@@ -904,7 +918,7 @@ export function insertText(selection: Selection, text: string): void {
         insertText(selection, text);
         return;
       }
-    } else if (firstNode.isSegmented()) {
+    } else if (firstNode.isSegmented() && focusOffset !== firstNodeTextLength) {
       const textNode = createTextNode(firstNode.getTextContent());
       firstNode.replace(textNode, true);
       firstNode = textNode;
@@ -945,22 +959,22 @@ export function insertText(selection: Selection, text: string): void {
   } else {
     const lastIndex = selectedNodesLength - 1;
     let lastNode = selectedNodes[lastIndex];
-    const firstNodeParents = new Set(firstNode.getParents());
-    const lastNodeParents = new Set(lastNode.getParents());
+    const markedNodeKeysForKeep = new Set([
+      ...firstNode.getParentKeys(),
+      ...lastNode.getParentKeys(),
+    ]);
     const firstBlock = isBlockNode(firstNode)
       ? firstNode
       : firstNode.getParentOrThrow();
     const lastBlock = isBlockNode(lastNode)
       ? lastNode
       : lastNode.getParentOrThrow();
-    let lastNodeRemove = false;
     startOffset = isBefore ? anchorOffset : focusOffset;
     endOffset = isBefore ? focusOffset : anchorOffset;
 
     // Handle mutations to the last node.
-    if (endOffset !== 0) {
+    if (isTextNode(lastNode) && endOffset !== 0) {
       if (
-        isTextNode(lastNode) &&
         !isImmutableOrInert(lastNode) &&
         endOffset !== lastNode.getTextContentSize()
       ) {
@@ -972,8 +986,9 @@ export function insertText(selection: Selection, text: string): void {
         lastNode.spliceText(0, endOffset, '', false);
       } else {
         lastNode.remove();
-        lastNodeRemove = true;
       }
+    } else {
+      markedNodeKeysForKeep.add(lastNode.getKey());
     }
 
     // Either move the remaining nodes of the last parent to after
@@ -1017,7 +1032,7 @@ export function insertText(selection: Selection, text: string): void {
           childrenLength === 0 ||
           (childrenLength === 1 && children[0].is(lastRemovedParent))
         ) {
-          lastNodeParents.delete(parent);
+          markedNodeKeysForKeep.delete(parent.getKey());
           lastRemovedParent = parent;
         }
         parent = parent.getParent();
@@ -1044,12 +1059,9 @@ export function insertText(selection: Selection, text: string): void {
     }
 
     // Remove all selected nodes that haven't already been removed.
-    for (let i = 1; i < lastIndex; i++) {
+    for (let i = 1; i < selectedNodesLength; i++) {
       const selectedNode = selectedNodes[i];
-      if (
-        !firstNodeParents.has(selectedNode) &&
-        (lastNodeRemove || !lastNodeParents.has(selectedNode))
-      ) {
+      if (!markedNodeKeysForKeep.has(selectedNode.getKey())) {
         selectedNode.remove();
       }
     }

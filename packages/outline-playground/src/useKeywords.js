@@ -59,14 +59,15 @@ export default function useKeywords(editor: OutlineEditor): void {
         }
         return;
       }
-      if (
-        // If the next sibling is a text node that starts with an invalid character
-        // do not continue.
-        isTextNode(nextSibling) &&
-        nextSibling.getTextContentSize() > 0 &&
-        !isCharacterBetweenValid(nextSibling.getTextContent()[0])
-      ) {
-        return;
+      // If the next sibling is a text node that starts with an invalid character
+      // do not continue.
+      let adjacentTextNode = nextSibling;
+      while (isTextNode(adjacentTextNode)) {
+        const textContent = adjacentTextNode.getTextContent();
+        if (!textContent !== '' && !isCharacterBetweenValid(textContent[0])) {
+          return;
+        }
+        adjacentTextNode = adjacentTextNode.getNextSibling();
       }
       const selection = view.getSelection();
 

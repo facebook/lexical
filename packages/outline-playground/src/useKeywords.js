@@ -30,19 +30,19 @@ export default function useKeywords(editor: OutlineEditor): void {
     editor.registerNodeType('keyword', KeywordNode);
     return editor.addTextNodeTransform((node: TextNode, view: View) => {
       const text = node.getTextContent();
+      const prevSibling = node.getPreviousSibling();
+      const nextSibling = node.getNextSibling();
+
       if (!node.isSimpleText()) {
-        const prevSibling = node.getPreviousSibling();
         if (isKeywordNode(prevSibling)) {
           convertKeywordNodeToPlainTextNode(prevSibling);
         }
-        const nextSibling = node.getNextSibling();
         if (isKeywordNode(nextSibling)) {
           convertKeywordNodeToPlainTextNode(nextSibling);
         }
         return;
-      } else if (text.length === 0) {
-        const prevSibling = node.getPreviousSibling();
-        const nextSibling = node.getNextSibling();
+      }
+      if (text.length === 0) {
         if (
           isTextNode(prevSibling) &&
           !prevSibling.isSimpleText() &&
@@ -57,6 +57,14 @@ export default function useKeywords(editor: OutlineEditor): void {
         ) {
           convertKeywordNodeToPlainTextNode(prevSibling);
         }
+        return;
+      }
+      if (
+        // If the next sibling is a text node that starts with an invalid character
+        // do not continue.
+        isTextNode(nextSibling) &&
+        !isCharacterBetweenValid(nextSibling.getTextContent()[0])
+      ) {
         return;
       }
       const selection = view.getSelection();
@@ -85,7 +93,7 @@ export default function useKeywords(editor: OutlineEditor): void {
         const endOffset = startOffset + matchArr[2].length;
         const lastTargetNode = targetNode;
         prefixLength += endOffset;
-        // Ensure there is no prefix or that one ends in a valid character
+        // Ensure there is no prefix or that one ends in a valid character and
         if (
           prefix !== '' &&
           !isCharacterBetweenValid(prefix[prefix.length - 1])

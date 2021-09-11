@@ -901,17 +901,22 @@ export function insertRichText(selection: Selection, text: string): void {
   }
 }
 
-function transferBlockPointToTextPoint(point: BlockPoint) {
-  const block = point.getNode();
-  const placementNode = block.getChildAtIndex(point.offset);
+function transferStartingBlockPointToTextPoint(start: BlockPoint, end: Point) {
+  const block = start.getNode();
+  const placementNode = block.getChildAtIndex(start.offset);
   const textNode = createTextNode();
   if (placementNode === null) {
     block.append(textNode);
   } else {
     placementNode.insertBefore(textNode);
   }
+  // If we are inserting a node in the anchor, then we'll need to
+  // increase the other point by one if it references the same block.
+  if (end.type === 'block' && block.is(end.getNode())) {
+    end.offset++;
+  }
   // Transfer the block point to a text point.
-  point.set(textNode.getKey(), 0, 'text');
+  start.set(textNode.getKey(), 0, 'text');
 }
 
 export function insertText(selection: Selection, text: string): void {
@@ -920,14 +925,9 @@ export function insertText(selection: Selection, text: string): void {
   const isBefore = selection.isCollapsed() || anchor.isBefore(focus);
 
   if (isBefore && anchor.type === 'block') {
-    // If we are inserting a node in the anchor, then we'll need to
-    // increase the focus offset by one if it references the same block.
-    if (focus.type === 'block' && focus.getNode() === anchor.getNode()) {
-      focus.offset++;
-    }
-    transferBlockPointToTextPoint(anchor);
+    transferStartingBlockPointToTextPoint(anchor, focus);
   } else if (!isBefore && focus.type === 'block') {
-    transferBlockPointToTextPoint(focus);
+    transferStartingBlockPointToTextPoint(focus, anchor);
   }
   const selectedNodes = selection.getNodes();
   const selectedNodesLength = selectedNodes.length;
@@ -1012,8 +1012,7 @@ export function insertText(selection: Selection, text: string): void {
     // Handle mutations to the last node.
     if (
       (endPoint.type === 'text' && endOffset !== 0) ||
-      (endPoint.type === 'block' &&
-        lastNode.getIndexWithinParent() < endOffset)
+      (endPoint.type === 'block' && lastNode.getIndexWithinParent() < endOffset)
     ) {
       if (
         isTextNode(lastNode) &&

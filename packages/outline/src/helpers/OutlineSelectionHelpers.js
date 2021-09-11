@@ -932,14 +932,15 @@ export function insertText(selection: Selection, text: string): void {
   const selectedNodes = selection.getNodes();
   const selectedNodesLength = selectedNodes.length;
   const textFormat = selection.textFormat;
-
+  const firstPoint = isBefore ? anchor : focus;
+  const endPoint = isBefore ? focus : anchor;
+  const startOffset = firstPoint.offset;
+  const endOffset = endPoint.offset;
   let firstNode = selectedNodes[0];
 
   if (!isTextNode(firstNode)) {
     invariant(false, 'insertText: first node is not a text node');
   }
-  const anchorOffset = anchor.getCharacterOffset();
-  const focusOffset = focus.getCharacterOffset();
   const firstNodeText = firstNode.getTextContent();
   const firstNodeTextLength = firstNodeText.length;
   if (
@@ -947,7 +948,8 @@ export function insertText(selection: Selection, text: string): void {
     firstNode.isImmutable() ||
     !firstNode.canInsertTextAtEnd()
   ) {
-    if (selection.isCollapsed() && focusOffset === firstNodeTextLength) {
+    const offset = firstPoint.offset;
+    if (selection.isCollapsed() && offset === firstNodeTextLength) {
       let nextSibling = firstNode.getNextSibling();
       if (!isTextNode(nextSibling)) {
         nextSibling = createTextNode();
@@ -959,18 +961,14 @@ export function insertText(selection: Selection, text: string): void {
         insertText(selection, text);
         return;
       }
-    } else if (firstNode.isSegmented() && focusOffset !== firstNodeTextLength) {
+    } else if (firstNode.isSegmented() && offset !== firstNodeTextLength) {
       const textNode = createTextNode(firstNode.getTextContent());
       firstNode.replace(textNode, true);
       firstNode = textNode;
     }
   }
-  let startOffset;
-  let endOffset;
 
   if (selectedNodesLength === 1) {
-    startOffset = anchorOffset > focusOffset ? focusOffset : anchorOffset;
-    endOffset = anchorOffset > focusOffset ? anchorOffset : focusOffset;
     if (isImmutableOrInert(firstNode)) {
       const textNode = createTextNode(text);
       firstNode.replace(textNode);
@@ -1010,11 +1008,13 @@ export function insertText(selection: Selection, text: string): void {
     const lastBlock = isBlockNode(lastNode)
       ? lastNode
       : lastNode.getParentOrThrow();
-    startOffset = isBefore ? anchorOffset : focusOffset;
-    endOffset = isBefore ? focusOffset : anchorOffset;
 
     // Handle mutations to the last node.
-    if (endOffset !== 0) {
+    if (
+      (endPoint.type === 'text' && endOffset !== 0) ||
+      (endPoint.type === 'block' &&
+        lastNode.getIndexWithinParent() < endOffset)
+    ) {
       if (
         isTextNode(lastNode) &&
         !isImmutableOrInert(lastNode) &&

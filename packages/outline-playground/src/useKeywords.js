@@ -63,6 +63,7 @@ export default function useKeywords(editor: OutlineEditor): void {
         // If the next sibling is a text node that starts with an invalid character
         // do not continue.
         isTextNode(nextSibling) &&
+        nextSibling.getTextContentSize() > 0 &&
         !isCharacterBetweenValid(nextSibling.getTextContent()[0])
       ) {
         return;

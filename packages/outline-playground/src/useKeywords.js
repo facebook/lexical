@@ -42,7 +42,8 @@ export default function useKeywords(editor: OutlineEditor): void {
           convertKeywordNodeToPlainTextNode(nextSibling);
         }
         return;
-      } else if (text.length === 0) {
+      }
+      if (text.length === 0) {
         if (
           isTextNode(prevSibling) &&
           !prevSibling.isSimpleText() &&
@@ -58,7 +59,8 @@ export default function useKeywords(editor: OutlineEditor): void {
           convertKeywordNodeToPlainTextNode(prevSibling);
         }
         return;
-      } else if (
+      }
+      if (
         // If the next sibling is a text node that starts with an invalid character
         // do not continue.
         isTextNode(nextSibling) &&

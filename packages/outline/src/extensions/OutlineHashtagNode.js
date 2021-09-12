@@ -9,7 +9,7 @@
 
 import type {NodeKey, OutlineNode, EditorConfig} from 'outline';
 
-import {TextNode, createTextNode} from 'outline';
+import {TextNode, isTextNode, createTextNode} from 'outline';
 
 export class HashtagNode extends TextNode {
   static deserialize(data: $FlowFixMe): HashtagNode {
@@ -36,9 +36,8 @@ export class HashtagNode extends TextNode {
 
   setTextContent(text: string): void {
     super.setTextContent(text);
-    const isHashtag = isHashtagNode(this);
     // Handle hashtags
-    if (isHashtag && this.getParent() !== null && !this.isComposing()) {
+    if (this.getParent() !== null && !this.isComposing()) {
       const indexOfHash = text.indexOf('#');
       let targetNode = this;
       if (indexOfHash === -1 || targetNode.getTextContent() === '#') {
@@ -48,15 +47,17 @@ export class HashtagNode extends TextNode {
         toggleHashtag(targetNode);
       }
       // Check for invalid characters
-      const targetTextContent = targetNode.getTextContent().slice(1);
-      const indexOfInvalidChar = targetTextContent.search(
-        /[\s.,\\\/#!$%\^&\*;:{}=\-`~()@]/,
-      );
-      if (indexOfInvalidChar === 0) {
-        toggleHashtag(targetNode);
-      } else if (indexOfInvalidChar > 0) {
-        [targetNode] = targetNode.splitText(indexOfInvalidChar + 1);
-        toggleHashtag(targetNode);
+      if (isTextNode(targetNode) && targetNode.isAttached()) {
+        const targetTextContent = targetNode.getTextContent().slice(1);
+        const indexOfInvalidChar = targetTextContent.search(
+          /[\s.,\\\/#!$%\^&\*;:{}=\-`~()@]/,
+        );
+        if (indexOfInvalidChar === 0) {
+          toggleHashtag(targetNode);
+        } else if (indexOfInvalidChar > 0) {
+          [targetNode] = targetNode.splitText(indexOfInvalidChar + 1);
+          toggleHashtag(targetNode);
+        }
       }
     }
   }

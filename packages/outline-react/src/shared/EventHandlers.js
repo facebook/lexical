@@ -1120,7 +1120,7 @@ export function onMutation(
           const node = getNodeFromDOMNode(view, removedDOM);
           let placementDOM = siblingDOM;
 
-          if (node !== null) {
+          if (node !== null && node.isAttached()) {
             const nextSibling = node.getNextSibling();
             if (nextSibling !== null) {
               const key = nextSibling.getKey();

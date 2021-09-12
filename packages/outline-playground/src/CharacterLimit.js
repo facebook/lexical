@@ -110,9 +110,7 @@ export default function CharacterLimit({
             return;
           }
           let targetNode = node;
-          if (node.isSegmented() || node.isImmutable()) {
-            node.toggleOverflowed();
-          } else {
+          if (!node.isSegmented() && !node.isInert() && !node.isImmutable()) {
             if (startOffset !== 0) {
               [, targetNode] = node.splitText(startOffset);
             }

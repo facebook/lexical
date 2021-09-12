@@ -9,8 +9,7 @@
 
 import type {NodeKey, OutlineNode, EditorConfig} from 'outline';
 
-import {isTextNode} from '../core/OutlineTextNode';
-import {TextNode, createTextNode} from 'outline';
+import {TextNode, isTextNode, createTextNode} from 'outline';
 
 export class HashtagNode extends TextNode {
   static deserialize(data: $FlowFixMe): HashtagNode {

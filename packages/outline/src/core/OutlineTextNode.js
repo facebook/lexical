@@ -31,6 +31,7 @@ import {
   ZERO_WIDTH_JOINER_CHAR,
   NO_BREAK_SPACE_CHAR,
   TEXT_TYPE_TO_FORMAT,
+  IS_SEGMENTED,
 } from './OutlineConstants';
 
 export type ParsedTextNode = {
@@ -558,25 +559,23 @@ export class TextNode extends OutlineNode {
     const parent = this.getParentOrThrow();
     const parentKey = parent.__key;
     let writableNode;
-    let flags;
-    let format;
-    let style;
+    const flags = this.getFlags();
+    const format = this.getFormat();
+    const style = this.getStyle();
+    let hasReplacedSelf = false;
 
     if (this.isSegmented()) {
       // Create a new TextNode
       writableNode = createTextNode(firstPart);
       writableNode.__parent = parentKey;
-      flags = writableNode.__flags;
-      format = writableNode.__format;
-      style = writableNode.__style;
-      this.remove();
+      writableNode.__flags = flags ^ IS_SEGMENTED;
+      writableNode.__format = format;
+      writableNode.__style = style;
+      hasReplacedSelf = true;
     } else {
       // For the first part, update the existing node
       writableNode = this.getWritable();
       writableNode.__text = firstPart;
-      flags = writableNode.__flags;
-      format = writableNode.__format;
-      style = writableNode.__style;
     }
 
     // Handle selection
@@ -631,6 +630,10 @@ export class TextNode extends OutlineNode {
     const insertionIndex = writableParentChildren.indexOf(key);
     const splitNodesKeys = splitNodes.map((splitNode) => splitNode.__key);
     writableParentChildren.splice(insertionIndex, 1, ...splitNodesKeys);
+
+    if (hasReplacedSelf) {
+      this.remove();
+    }
 
     return splitNodes;
   }

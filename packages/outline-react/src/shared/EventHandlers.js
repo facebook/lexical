@@ -564,29 +564,31 @@ export function checkForBadInsertion(
   );
 }
 
-function shouldInsertTextAfterTextNode(
+function shouldInsertTextAfterOrBeforeTextNode(
   selection: Selection,
   node: TextNode,
   validateOffset: boolean,
 ): boolean {
+  const offset = selection.anchor.offset;
   return (
     node.isSegmented() ||
     (selection.isCollapsed() &&
       (!validateOffset ||
-        node.getTextContentSize() === selection.anchor.offset) &&
+        node.getTextContentSize() === offset ||
+        offset === 0) &&
       (!node.canInsertTextAtEnd() || node.isImmutable()))
   );
 }
 
-function shouldInsertRawTextAfterTextNode(
+function shouldInsertRawTextAfterOrBeforeTextNode(
   selection: Selection,
   node: TextNode,
   textContent: string,
   originalTextContent: string,
 ): boolean {
   return (
-    textContent.indexOf(originalTextContent) === 0 &&
-    shouldInsertTextAfterTextNode(selection, node, false)
+    textContent.indexOf(originalTextContent) !== -1 &&
+    shouldInsertTextAfterOrBeforeTextNode(selection, node, false)
   );
 }
 
@@ -619,7 +621,7 @@ function updateTextNodeFromDOMContent(
       if (
         (isImmutableOrInert(node) &&
           (selection === null ||
-            !shouldInsertRawTextAfterTextNode(
+            !shouldInsertRawTextAfterOrBeforeTextNode(
               selection,
               node,
               textContent,
@@ -645,7 +647,7 @@ function updateTextNodeFromDOMContent(
           focus.type === 'text' &&
           anchor.key === nodeKey &&
           (node.getFormat() !== selection.textFormat ||
-            shouldInsertRawTextAfterTextNode(
+            shouldInsertRawTextAfterOrBeforeTextNode(
               selection,
               node,
               textContent,
@@ -653,9 +655,16 @@ function updateTextNodeFromDOMContent(
             ))
         ) {
           const isCollapsed = selection.isCollapsed();
-          const insertionText = textContent.slice(originalTextContent.length);
+          const intersection = textContent.indexOf(originalTextContent);
+          const insertionText =
+            intersection === 0
+              ? textContent.slice(originalTextContent.length)
+              : textContent.slice(0, intersection);
           view.markNodeAsDirty(node);
-          anchor.offset -= insertionText.length;
+          anchor.offset -=
+            intersection === 0
+              ? insertionText.length
+              : originalTextContent.length;
           if (anchor.offset < 0) {
             anchor.offset = 0;
           }
@@ -799,7 +808,7 @@ export function onBeforeInputForPlainText(
           anchorKey !== focusKey ||
           !isTextNode(anchorNode) ||
           anchorNode.getFormat() !== selection.textFormat ||
-          shouldInsertTextAfterTextNode(selection, anchorNode, true) ||
+          shouldInsertTextAfterOrBeforeTextNode(selection, anchorNode, true) ||
           data.length > 1
         ) {
           event.preventDefault();
@@ -946,7 +955,7 @@ export function onBeforeInputForRichText(
           anchorKey !== focusKey ||
           !isTextNode(anchorNode) ||
           anchorNode.getFormat() !== selection.textFormat ||
-          shouldInsertTextAfterTextNode(selection, anchorNode, true) ||
+          shouldInsertTextAfterOrBeforeTextNode(selection, anchorNode, true) ||
           data.length > 1
         ) {
           event.preventDefault();

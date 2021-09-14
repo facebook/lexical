@@ -18,10 +18,10 @@ import {createListNode} from 'outline/ListNode';
 import {createQuoteNode} from 'outline/QuoteNode';
 
 function updateTextNode(node: TextNode, count: number): void {
-  node.spliceText(0, count, '', true);
-  if (node.getTextContent() === '') {
-    node.selectPrevious();
-    node.remove();
+  const textNode = node.spliceText(0, count, '', true);
+  if (textNode.getTextContent() === '') {
+    textNode.selectPrevious();
+    textNode.remove();
   }
 }
 

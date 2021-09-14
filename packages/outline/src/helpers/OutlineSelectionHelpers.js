@@ -514,16 +514,16 @@ export function updateCaretSelectionForAdjacentHashtags(
   if (anchor.type !== 'text') {
     return;
   }
-  const anchorNode = anchor.getNode();
+  let anchorNode = anchor.getNode();
   const textContent = anchorNode.getTextContent();
   const anchorOffset = selection.anchor.offset;
 
   if (anchorOffset === 0 && anchorNode.isSimpleText()) {
-    const sibling = anchorNode.getPreviousSibling();
+    let sibling = anchorNode.getPreviousSibling();
     if (isTextNode(sibling) && isHashtagNode(sibling)) {
       sibling.select();
       const siblingTextContent = sibling.getTextContent();
-      sibling.setTextContent(siblingTextContent + textContent);
+      sibling = sibling.setTextContent(siblingTextContent + textContent);
       anchorNode.remove();
     }
   } else if (
@@ -533,7 +533,7 @@ export function updateCaretSelectionForAdjacentHashtags(
     const sibling = anchorNode.getNextSibling();
     if (isTextNode(sibling) && sibling.isSimpleText()) {
       const siblingTextContent = sibling.getTextContent();
-      anchorNode.setTextContent(textContent + siblingTextContent);
+      anchorNode = anchorNode.setTextContent(textContent + siblingTextContent);
       sibling.remove();
     }
   }
@@ -598,7 +598,8 @@ export function deleteForward(selection: Selection): void {
 }
 
 function removeSegment(node: TextNode, isBackward: boolean): void {
-  const textContent = node.getTextContent();
+  let textNode = node;
+  const textContent = textNode.getTextContent();
   const split = textContent.split(/\s/g);
 
   if (isBackward) {
@@ -609,14 +610,14 @@ function removeSegment(node: TextNode, isBackward: boolean): void {
   const nextTextContent = split.join(' ');
 
   if (nextTextContent === '') {
-    node.selectPrevious();
-    node.remove();
+    textNode.selectPrevious();
+    textNode.remove();
   } else {
-    node.setTextContent(nextTextContent);
+    textNode = textNode.setTextContent(nextTextContent);
     if (isBackward) {
-      node.select();
+      textNode.select();
     } else {
-      node.select(0, 0);
+      textNode.select(0, 0);
     }
   }
 }
@@ -1004,7 +1005,7 @@ export function insertText(selection: Selection, text: string): void {
     }
     const delCount = endOffset - startOffset;
 
-    firstNode.spliceText(startOffset, delCount, text, true);
+    firstNode = firstNode.spliceText(startOffset, delCount, text, true);
     if (firstNode.getTextContent() === '') {
       firstNode.selectPrevious();
       firstNode.remove();
@@ -1041,7 +1042,7 @@ export function insertText(selection: Selection, text: string): void {
           lastNode.replace(textNode, true);
           lastNode = textNode;
         }
-        lastNode.spliceText(0, endOffset, '', false);
+        lastNode = lastNode.spliceText(0, endOffset, '', false);
       } else {
         lastNode.remove();
       }
@@ -1100,7 +1101,7 @@ export function insertText(selection: Selection, text: string): void {
     // Ensure we do splicing after moving of nodes, as splicing
     // can have side-effects (in the case of hashtags).
     if (!isImmutableOrInert(firstNode)) {
-      firstNode.spliceText(
+      firstNode = firstNode.spliceText(
         startOffset,
         firstNodeTextLength - startOffset,
         text,

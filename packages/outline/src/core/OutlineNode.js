@@ -142,7 +142,7 @@ function replaceNode<N: OutlineNode>(
 ): N {
   let anchorOffset;
   const toReplaceKey = toReplace.__key;
-  if (restoreSelection && isTextNode(toReplace)) {
+  if (restoreSelection) {
     const selection = getSelection();
     if (selection) {
       const anchorNode = selection.anchor.getNode();
@@ -176,8 +176,19 @@ function replaceNode<N: OutlineNode>(
   if (flags & IS_DIRECTIONLESS) {
     updateDirectionIfNeeded(writableReplaceWith);
   }
-  if (isTextNode(writableReplaceWith) && anchorOffset !== undefined) {
-    writableReplaceWith.select(anchorOffset, anchorOffset);
+  if (anchorOffset !== undefined) {
+    if (isBlockNode(writableReplaceWith)) {
+      const lastChild = writableReplaceWith.getLastChild();
+      if (isTextNode(lastChild)) {
+        lastChild.select(anchorOffset, anchorOffset);
+      } else if (isBlockNode(lastChild)) {
+        lastChild.select();
+      } else {
+        lastChild.selectNext();
+      }
+    } else {
+      writableReplaceWith.select(anchorOffset, anchorOffset);
+    }
   }
   if (getCompositionKey() === toReplaceKey) {
     setCompositionKey(newKey);

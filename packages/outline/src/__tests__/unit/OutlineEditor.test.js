@@ -327,7 +327,6 @@ describe('OutlineEditor tests', () => {
       editor.getViewModel().read((view) => {
         const root = view.getRoot();
         const paragraph = root.getFirstChild();
-        const text = paragraph.getFirstChild();
 
         expect(root).toEqual({
           __children: [paragraph.getKey()],
@@ -337,20 +336,11 @@ describe('OutlineEditor tests', () => {
           __type: 'root',
         });
         expect(paragraph).toEqual({
-          __children: [text.getKey()],
+          __children: [],
           __flags: 0,
           __key: paragraph.getKey(),
           __parent: 'root',
           __type: 'paragraph',
-        });
-        expect(text).toEqual({
-          __text: '',
-          __flags: 0,
-          __format: 0,
-          __key: text.getKey(),
-          __parent: paragraph.getKey(),
-          __style: '',
-          __type: 'text',
         });
       });
     });

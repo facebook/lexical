@@ -26,14 +26,11 @@ describe('Regression test #231', () => {
       await repeat(5, async () => {
         await page.keyboard.press('Backspace');
       });
-      await assertHTML(
-        page,
-        '<p class="editor-paragraph"><span data-outline-text="true"><br></span></p>',
-      );
+      await assertHTML(page, '<p class="editor-paragraph"><br></p>');
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
+        anchorPath: [0],
         anchorOffset: 0,
-        focusPath: [0, 0, 0],
+        focusPath: [0],
         focusOffset: 0,
       });
     });

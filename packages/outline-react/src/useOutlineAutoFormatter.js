@@ -17,6 +17,14 @@ import {createHeadingNode} from 'outline/HeadingNode';
 import {createListNode} from 'outline/ListNode';
 import {createQuoteNode} from 'outline/QuoteNode';
 
+function updateTextNode(node: TextNode, count: number): void {
+  const textNode = node.spliceText(0, count, '', true);
+  if (textNode.getTextContent() === '') {
+    textNode.selectPrevious();
+    textNode.remove();
+  }
+}
+
 function textNodeTransform(node: TextNode, view: View): void {
   const block = node.getParentBlockOrThrow();
 
@@ -32,41 +40,41 @@ function textNodeTransform(node: TextNode, view: View): void {
 
     if (textContent.length > 1 && secondChar === ' ') {
       if (firstChar === '#') {
-        node.spliceText(0, 2, '', true);
+        updateTextNode(node, 2);
         const heading = createHeadingNode('h1');
         const children = block.getChildren();
         children.forEach((child) => heading.append(child));
-        block.replace(heading);
+        block.replace(heading, true);
       } else if (firstChar === '>') {
-        node.spliceText(0, 2, '', true);
+        updateTextNode(node, 2);
         const quote = createQuoteNode();
         const children = block.getChildren();
         children.forEach((child) => quote.append(child));
-        block.replace(quote);
+        block.replace(quote, true);
       } else if (firstChar === '-' || firstChar === '*') {
-        node.spliceText(0, 2, '', true);
+        updateTextNode(node, 2);
         const list = createListNode('ul');
         const listItem = createListItemNode();
         const children = block.getChildren();
         children.forEach((child) => listItem.append(child));
         list.append(listItem);
-        block.replace(list);
+        block.replace(list, true);
       }
     } else if (textContent.length > 2 && thirdChar === ' ') {
       if (firstChar === '#' && secondChar === '#') {
-        node.spliceText(0, 2, '', true);
+        updateTextNode(node, 3);
         const heading = createHeadingNode('h2');
         const children = block.getChildren();
         children.forEach((child) => heading.append(child));
-        block.replace(heading);
+        block.replace(heading, true);
       } else if (firstChar === '1' && secondChar === '.') {
-        node.spliceText(0, 2, '', true);
+        updateTextNode(node, 3);
         const list = createListNode('ol');
         const listItem = createListItemNode();
         const children = block.getChildren();
         children.forEach((child) => listItem.append(child));
         list.append(listItem);
-        block.replace(list);
+        block.replace(list, true);
       }
     }
   }

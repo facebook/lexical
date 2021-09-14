@@ -144,12 +144,15 @@ function DropdownList({
         const selection = view.getSelection();
 
         if (selection !== null) {
-          const anchorNode = selection.anchor.getNode();
-          const parent = anchorNode.getParentBlockOrThrow();
-          const children = parent.getChildren();
+          const anchor = selection.anchor;
+          const block =
+            anchor.type === 'text'
+              ? anchor.getNode().getParentBlockOrThrow()
+              : anchor.getNode();
+          const children = block.getChildren();
           const paragraph = createParagraphNode();
           children.forEach((child) => paragraph.append(child));
-          parent.replace(paragraph);
+          block.replace(paragraph, true);
         }
       }, 'formatParagraph');
     }
@@ -162,12 +165,15 @@ function DropdownList({
         const selection = view.getSelection();
 
         if (selection !== null) {
-          const anchorNode = selection.anchor.getNode();
-          const parent = anchorNode.getParentBlockOrThrow();
-          const children = parent.getChildren();
+          const anchor = selection.anchor;
+          const block =
+            anchor.type === 'text'
+              ? anchor.getNode().getParentBlockOrThrow()
+              : anchor.getNode();
+          const children = block.getChildren();
           const paragraph = createHeadingNode('h1');
           children.forEach((child) => paragraph.append(child));
-          parent.replace(paragraph);
+          block.replace(paragraph, true);
         }
       }, 'formatLargeHeading');
     }
@@ -180,12 +186,15 @@ function DropdownList({
         const selection = view.getSelection();
 
         if (selection !== null) {
-          const anchorNode = selection.anchor.getNode();
-          const parent = anchorNode.getParentBlockOrThrow();
-          const children = parent.getChildren();
+          const anchor = selection.anchor;
+          const block =
+            anchor.type === 'text'
+              ? anchor.getNode().getParentBlockOrThrow()
+              : anchor.getNode();
+          const children = block.getChildren();
           const paragraph = createHeadingNode('h2');
           children.forEach((child) => paragraph.append(child));
-          parent.replace(paragraph);
+          block.replace(paragraph, true);
         }
       }, 'formatSmallHeading');
     }
@@ -198,14 +207,17 @@ function DropdownList({
         const selection = view.getSelection();
 
         if (selection !== null) {
-          const anchorNode = selection.anchor.getNode();
-          const parent = anchorNode.getParentBlockOrThrow();
-          const children = parent.getChildren();
+          const anchor = selection.anchor;
+          const block =
+            anchor.type === 'text'
+              ? anchor.getNode().getParentBlockOrThrow()
+              : anchor.getNode();
+          const children = block.getChildren();
           const list = createListNode('ul');
           const listItem = createListItemNode();
           list.append(listItem);
           children.forEach((child) => listItem.append(child));
-          parent.replace(list);
+          block.replace(list, true);
         }
       }, 'formatBulletList');
     }
@@ -218,14 +230,17 @@ function DropdownList({
         const selection = view.getSelection();
 
         if (selection !== null) {
-          const anchorNode = selection.anchor.getNode();
-          const parent = anchorNode.getParentBlockOrThrow();
-          const children = parent.getChildren();
+          const anchor = selection.anchor;
+          const block =
+            anchor.type === 'text'
+              ? anchor.getNode().getParentBlockOrThrow()
+              : anchor.getNode();
+          const children = block.getChildren();
           const list = createListNode('ol');
           const listItem = createListItemNode();
           list.append(listItem);
           children.forEach((child) => listItem.append(child));
-          parent.replace(list);
+          block.replace(list, true);
         }
       }, 'formatNumberedList');
     }
@@ -238,12 +253,15 @@ function DropdownList({
         const selection = view.getSelection();
 
         if (selection !== null) {
-          const anchorNode = selection.anchor.getNode();
-          const parent = anchorNode.getParentBlockOrThrow();
-          const children = parent.getChildren();
-          const paragraph = createQuoteNode();
-          children.forEach((child) => paragraph.append(child));
-          parent.replace(paragraph);
+          const anchor = selection.anchor;
+          const block =
+            anchor.type === 'text'
+              ? anchor.getNode().getParentBlockOrThrow()
+              : anchor.getNode();
+          const children = block.getChildren();
+          const quoteNode = createQuoteNode();
+          children.forEach((child) => quoteNode.append(child));
+          block.replace(quoteNode, true);
         }
       }, 'formatQuote');
     }
@@ -256,12 +274,15 @@ function DropdownList({
         const selection = view.getSelection();
 
         if (selection !== null) {
-          const anchorNode = selection.anchor.getNode();
-          const parent = anchorNode.getParentBlockOrThrow();
-          const children = parent.getChildren();
-          const paragraph = createCodeNode();
-          children.forEach((child) => paragraph.append(child));
-          parent.replace(paragraph);
+          const anchor = selection.anchor;
+          const block =
+            anchor.type === 'text'
+              ? anchor.getNode().getParentBlockOrThrow()
+              : anchor.getNode();
+          const children = block.getChildren();
+          const codeNode = createCodeNode();
+          children.forEach((child) => codeNode.append(child));
+          block.replace(codeNode, true);
         }
       }, 'formatCode');
     }

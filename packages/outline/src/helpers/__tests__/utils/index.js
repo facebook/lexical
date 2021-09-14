@@ -66,28 +66,66 @@ if (!Selection.prototype.modify) {
     const impl = this[symbol];
     const focus = impl._focus;
     const anchor = impl._anchor;
+
     if (granularity === 'character') {
+      let anchorNode = anchor.node;
+      let anchorOffset = anchor.offset;
+      let isTextNode = false;
+
+      if (anchorNode.nodeType === 3) {
+        isTextNode = true;
+        anchorNode = anchorNode.parentElement;
+      } else if (anchorNode.nodeName === 'BR') {
+        const parentNode = anchorNode.parentElement;
+        const childNodes = Array.from(parentNode.childNodes);
+        anchorOffset = childNodes.indexOf(anchorNode);
+        anchorNode = parentNode;
+      }
+
       if (direction === 'backward') {
-        if (anchor.offset === 0) {
-          let node = anchor.node.parentElement.previousSibling;
-          if (node === null) {
-            node =
-              anchor.node.parentElement.parentElement.previousSibling.lastChild;
+        if (anchorOffset === 0) {
+          let prevSibling = anchorNode.previousSibling;
+          if (prevSibling === null) {
+            prevSibling = anchorNode.parentElement.previousSibling.lastChild;
           }
-          anchor.node = node.firstChild;
+          if (prevSibling.nodeName === 'P') {
+            prevSibling = prevSibling.firstChild;
+          }
+          if (prevSibling.nodeName === 'BR') {
+            anchor.node = prevSibling;
+            anchor.offset = 0;
+          } else {
+            anchor.node = prevSibling.firstChild;
+            anchor.offset = anchor.node.nodeValue.length - 1;
+          }
+        } else if (!isTextNode) {
+          anchor.node = anchorNode.childNodes[anchorOffset - 1];
           anchor.offset = anchor.node.nodeValue.length - 1;
         } else {
           anchor.offset--;
         }
       } else {
-        if (anchor.offset === anchor.node.textContent.length) {
-          let node = anchor.node.parentElement.nextSibling;
-          if (node === null) {
-            node =
-              anchor.node.parentElement.parentElement.nextSibling.firstChild;
+        if (
+          (isTextNode && anchorOffset === anchorNode.textContent.length) ||
+          (!isTextNode &&
+            (anchorNode.childNodes.length === anchorOffset ||
+              (anchorNode.childNodes.length === 1 &&
+                anchorNode.firstChild.nodeName === 'BR')))
+        ) {
+          let nextSibling = anchorNode.nextSibling;
+          if (nextSibling === null) {
+            nextSibling = anchorNode.parentElement.nextSibling.lastChild;
           }
-          anchor.node = node.firstChild;
-          anchor.offset = 0;
+          if (nextSibling.nodeName === 'P') {
+            nextSibling = nextSibling.lastChild;
+          }
+          if (nextSibling.nodeName === 'BR') {
+            anchor.node = nextSibling;
+            anchor.offset = 0;
+          } else {
+            anchor.node = nextSibling.firstChild;
+            anchor.offset = 0;
+          }
         } else {
           anchor.offset++;
         }
@@ -452,7 +490,7 @@ function getNextTextNode(startingNode) {
 
 function moveNativeSelectionBackward() {
   const domSelection = window.getSelection();
-  const {anchorNode, anchorOffset} = domSelection;
+  let {anchorNode, anchorOffset} = domSelection;
 
   if (domSelection.isCollapsed) {
     const target =
@@ -488,6 +526,16 @@ function moveNativeSelectionBackward() {
             anchorOffset - 1,
           );
         }
+      } else if (anchorNode.nodeType === 1) {
+        if (anchorNode.nodeName === 'BR') {
+          const parentNode = anchorNode.parentNode;
+          const childNodes = Array.from(parentNode.childNodes);
+          anchorOffset = childNodes.indexOf(anchorNode);
+          anchorNode = parentNode;
+        } else {
+          anchorOffset--;
+        }
+        setNativeSelection(anchorNode, anchorOffset, anchorNode, anchorOffset);
       } else {
         throw new Error('moveNativeSelectionBackward: TODO');
       }

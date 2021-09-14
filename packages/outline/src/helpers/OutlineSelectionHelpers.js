@@ -857,7 +857,7 @@ export function insertNodes(
   }
 
   if (isBlockNode(target)) {
-    const lastChild = target.getLastLeafNode();
+    const lastChild = target.getLastDescendant();
     if (!selectStart) {
       if (lastChild === null) {
         target.select();
@@ -1143,8 +1143,8 @@ export function selectAll(selection: Selection): void {
   const anchorNode = anchor.getNode();
   const topParent = anchorNode.getTopParentBlockOrThrow();
   const root = topParent.getParentOrThrow();
-  const firstNode = root.getFirstLeafNode();
-  const lastNode = root.getLastLeafNode();
+  const firstNode = root.getFirstDescendant();
+  const lastNode = root.getLastDescendant();
   let firstType = 'block';
   let lastType = 'block';
   let lastOffset = 0;

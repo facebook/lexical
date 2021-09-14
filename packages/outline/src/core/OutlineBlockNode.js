@@ -63,7 +63,7 @@ export class BlockNode extends OutlineNode {
     }
     return textNodes;
   }
-  getFirstLeafNode(): null | OutlineNode {
+  getFirstDescendant(): null | OutlineNode {
     let node = this.getFirstChild();
     while (node !== null) {
       if (isBlockNode(node)) {
@@ -77,7 +77,7 @@ export class BlockNode extends OutlineNode {
     }
     return node;
   }
-  getLastLeafNode(): null | OutlineNode {
+  getLastDescendant(): null | OutlineNode {
     let node = this.getLastChild();
     while (node !== null) {
       if (isBlockNode(node)) {

@@ -677,7 +677,7 @@ function updateTextNodeFromDOMContent(
         view.markNodeAsDirty(node);
         return;
       }
-      node.setTextContent(textContent);
+      node = node.setTextContent(textContent);
 
       if (
         selection.isCollapsed() &&

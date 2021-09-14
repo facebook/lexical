@@ -63,29 +63,33 @@ export class BlockNode extends OutlineNode {
     }
     return textNodes;
   }
-  getFirstTextNode(includeInert?: boolean): null | TextNode {
-    const children = this.getChildren();
-    for (let i = 0; i < children.length; i++) {
-      const child = children[i];
-      if (isTextNode(child) && (includeInert || !child.isInert())) {
-        return child;
-      } else if (isBlockNode(child)) {
-        return child.getFirstTextNode();
+  getFirstDescendant(): null | OutlineNode {
+    let node = this.getFirstChild();
+    while (node !== null) {
+      if (isBlockNode(node)) {
+        const child = node.getFirstChild();
+        if (child !== null) {
+          node = child;
+          continue;
+        }
       }
+      break;
     }
-    return null;
+    return node;
   }
-  getLastTextNode(includeInert?: boolean): null | TextNode {
-    const children = this.getChildren();
-    for (let i = children.length - 1; i >= 0; i--) {
-      const child = children[i];
-      if (isTextNode(child) && (includeInert || !child.isInert())) {
-        return child;
-      } else if (isBlockNode(child)) {
-        return child.getLastTextNode();
+  getLastDescendant(): null | OutlineNode {
+    let node = this.getLastChild();
+    while (node !== null) {
+      if (isBlockNode(node)) {
+        const child = node.getLastChild();
+        if (child !== null) {
+          node = child;
+          continue;
+        }
       }
+      break;
     }
-    return null;
+    return node;
   }
   getFirstChild(): null | OutlineNode {
     const self = this.getLatest();

@@ -25,11 +25,16 @@ function maybeIndentOrOutdent(
   let hasHandledIndention = false;
   editor.update((view: View) => {
     const selection = view.getSelection();
-    const anchorNode = selection?.anchor.getNode();
-    const anchorParentNode = anchorNode?.getParent();
-    let nodes = selection?.getNodes() || [];
+    if (selection === null) {
+      return;
+    }
+    const anchor = selection.anchor;
+    const anchorNode = anchor.getNode();
+    const anchorParentNode =
+      anchor.type === 'text' ? anchorNode.getParent() : anchorNode;
+    let nodes = selection.getNodes() || [];
     // handle the case where user select the content of a single ListItemNode (assuming it's a TextNode for now)
-    if (nodes?.length === 1 && isTextNode(nodes[0])) {
+    if (nodes.length === 1 && isTextNode(nodes[0])) {
       nodes = [nodes[0].getParentBlockOrThrow()];
     }
     nodes = getUniqueListItemNodes(nodes);

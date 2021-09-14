@@ -127,10 +127,7 @@ describe('Mentions', () => {
       });
 
       await page.keyboard.press('Delete');
-      await assertHTML(
-        page,
-        '<p class="editor-paragraph" dir="ltr"><br></p>',
-      );
+      await assertHTML(page, '<p class="editor-paragraph" dir="ltr"><br></p>');
       await assertSelection(page, {
         anchorPath: [0],
         anchorOffset: 0,
@@ -184,10 +181,7 @@ describe('Mentions', () => {
       });
 
       await page.keyboard.press('Backspace');
-      await assertHTML(
-        page,
-        '<p class="editor-paragraph" dir="ltr"><br></p>',
-      );
+      await assertHTML(page, '<p class="editor-paragraph" dir="ltr"><br></p>');
       await assertSelection(page, {
         anchorPath: [0],
         anchorOffset: 0,
@@ -333,7 +327,7 @@ describe('Mentions', () => {
       if (IS_WINDOWS && E2E_BROWSER === 'chromium') {
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">⁠</span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span></p>',
+          '<p class="editor-paragraph" dir="ltr"><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span></p>',
         );
       } else {
         await assertHTML(
@@ -373,14 +367,11 @@ describe('Mentions', () => {
       await deleteNextWord(page);
       await deleteNextWord(page);
 
-      await assertHTML(
-        page,
-        '<p class="editor-paragraph"><span data-outline-text="true">⁠<br></span></p>',
-      );
+      await assertHTML(page, '<p class="editor-paragraph">⁠<br></p>');
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
+        anchorPath: [0],
         anchorOffset: 0,
-        focusPath: [0, 0, 0],
+        focusPath: [0],
         focusOffset: 0,
       });
     });

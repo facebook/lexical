@@ -80,13 +80,15 @@ export function getNodesInRange(selection: Selection): {
   endOffset = isBefore ? focusOffset : anchorOffset;
 
   const nodesLength = nodes.length;
-  const sourceParent = firstNode.getParentOrThrow();
+  const sourceParent = isBlockNode(firstNode)
+    ? firstNode
+    : firstNode.getParentOrThrow();
   const sourceParentKey = sourceParent.getKey();
   const topLevelNodeKeys = new Set();
 
   for (let i = 0; i < nodesLength; i++) {
     let node = nodes[i];
-    if (node.isInert()) {
+    if (node.isInert() || node.getKey() === sourceParentKey) {
       continue;
     }
     const parent = node.getParent();
@@ -512,16 +514,16 @@ export function updateCaretSelectionForAdjacentHashtags(
   if (anchor.type !== 'text') {
     return;
   }
-  const anchorNode = anchor.getNode();
+  let anchorNode = anchor.getNode();
   const textContent = anchorNode.getTextContent();
   const anchorOffset = selection.anchor.offset;
 
   if (anchorOffset === 0 && anchorNode.isSimpleText()) {
-    const sibling = anchorNode.getPreviousSibling();
+    let sibling = anchorNode.getPreviousSibling();
     if (isTextNode(sibling) && isHashtagNode(sibling)) {
       sibling.select();
       const siblingTextContent = sibling.getTextContent();
-      sibling.setTextContent(siblingTextContent + textContent);
+      sibling = sibling.setTextContent(siblingTextContent + textContent);
       anchorNode.remove();
     }
   } else if (
@@ -531,7 +533,7 @@ export function updateCaretSelectionForAdjacentHashtags(
     const sibling = anchorNode.getNextSibling();
     if (isTextNode(sibling) && sibling.isSimpleText()) {
       const siblingTextContent = sibling.getTextContent();
-      anchorNode.setTextContent(textContent + siblingTextContent);
+      anchorNode = anchorNode.setTextContent(textContent + siblingTextContent);
       sibling.remove();
     }
   }
@@ -596,7 +598,8 @@ export function deleteForward(selection: Selection): void {
 }
 
 function removeSegment(node: TextNode, isBackward: boolean): void {
-  const textContent = node.getTextContent();
+  let textNode = node;
+  const textContent = textNode.getTextContent();
   const split = textContent.split(/\s/g);
 
   if (isBackward) {
@@ -607,14 +610,14 @@ function removeSegment(node: TextNode, isBackward: boolean): void {
   const nextTextContent = split.join(' ');
 
   if (nextTextContent === '') {
-    node.selectPrevious();
-    node.remove();
+    textNode.selectPrevious();
+    textNode.remove();
   } else {
-    node.setTextContent(nextTextContent);
+    textNode = textNode.setTextContent(nextTextContent);
     if (isBackward) {
-      node.select();
+      textNode.select();
     } else {
-      node.select(0, 0);
+      textNode.select(0, 0);
     }
   }
 }
@@ -854,18 +857,23 @@ export function insertNodes(
   }
 
   if (isBlockNode(target)) {
-    const lastChild = target.getLastTextNode();
-    if (!isTextNode(lastChild)) {
-      invariant(false, 'insertNodes: lastChild not a text node');
-    }
+    const lastChild = target.getLastDescendant();
     if (!selectStart) {
-      lastChild.select();
+      if (lastChild === null) {
+        target.select();
+      } else {
+        lastChild.selectNext();
+      }
     }
     if (siblings.length !== 0) {
       let prevSibling = lastChild;
       for (let i = 0; i < siblings.length; i++) {
         const sibling = siblings[i];
-        prevSibling.insertAfter(sibling);
+        if (prevSibling === null) {
+          target.append(sibling);
+        } else {
+          prevSibling.insertAfter(sibling);
+        }
         prevSibling = sibling;
       }
     }
@@ -910,10 +918,16 @@ function transferStartingBlockPointToTextPoint(start: BlockPoint, end: Point) {
   } else {
     placementNode.insertBefore(textNode);
   }
-  // If we are inserting a node in the anchor, then we'll need to
-  // increase the other point by one if it references the same block.
+  // If we are inserting a node to the start point, then we'll need to
+  // adjust the offset of the end point accordingly. Either by making it
+  // the same text node, or by increasing the offset to account for the
+  //
   if (end.type === 'block' && block.is(end.getNode())) {
-    end.offset++;
+    if (end.offset === start.offset) {
+      end.set(textNode.getKey(), 0, 'text');
+    } else {
+      end.offset++;
+    }
   }
   // Transfer the block point to a text point.
   start.set(textNode.getKey(), 0, 'text');
@@ -991,8 +1005,11 @@ export function insertText(selection: Selection, text: string): void {
     }
     const delCount = endOffset - startOffset;
 
-    firstNode.spliceText(startOffset, delCount, text, true);
-    if (firstNode.isComposing() && selection.anchor.type === 'text') {
+    firstNode = firstNode.spliceText(startOffset, delCount, text, true);
+    if (firstNode.getTextContent() === '') {
+      firstNode.selectPrevious();
+      firstNode.remove();
+    } else if (firstNode.isComposing() && selection.anchor.type === 'text') {
       selection.anchor.offset -= text.length;
     }
   } else {
@@ -1011,7 +1028,8 @@ export function insertText(selection: Selection, text: string): void {
 
     // Handle mutations to the last node.
     if (
-      (endPoint.type === 'text' && endOffset !== 0) ||
+      (endPoint.type === 'text' &&
+        (endOffset !== 0 || lastNode.getTextContent() === '')) ||
       (endPoint.type === 'block' && lastNode.getIndexWithinParent() < endOffset)
     ) {
       if (
@@ -1024,7 +1042,7 @@ export function insertText(selection: Selection, text: string): void {
           lastNode.replace(textNode, true);
           lastNode = textNode;
         }
-        lastNode.spliceText(0, endOffset, '', false);
+        lastNode = lastNode.spliceText(0, endOffset, '', false);
       } else {
         lastNode.remove();
       }
@@ -1083,13 +1101,16 @@ export function insertText(selection: Selection, text: string): void {
     // Ensure we do splicing after moving of nodes, as splicing
     // can have side-effects (in the case of hashtags).
     if (!isImmutableOrInert(firstNode)) {
-      firstNode.spliceText(
+      firstNode = firstNode.spliceText(
         startOffset,
         firstNodeTextLength - startOffset,
         text,
         true,
       );
-      if (firstNode.isComposing() && selection.anchor.type === 'text') {
+      if (firstNode.getTextContent() === '') {
+        firstNode.selectPrevious();
+        firstNode.remove();
+      } else if (firstNode.isComposing() && selection.anchor.type === 'text') {
         selection.anchor.offset -= text.length;
       }
     } else if (startOffset === firstNodeTextLength) {
@@ -1117,17 +1138,26 @@ export function moveEnd(selection: Selection): void {
 }
 
 export function selectAll(selection: Selection): void {
-  const anchorNode = selection.anchor.getNode();
+  const anchor = selection.anchor;
+  const focus = selection.focus;
+  const anchorNode = anchor.getNode();
   const topParent = anchorNode.getTopParentBlockOrThrow();
   const root = topParent.getParentOrThrow();
-  const firstTextNode = root.getFirstTextNode();
-  const lastTextNode = root.getLastTextNode();
-  if (firstTextNode !== null && lastTextNode !== null) {
-    selection.setTextNodeRange(
-      firstTextNode,
-      0,
-      lastTextNode,
-      lastTextNode.getTextContentSize(),
-    );
+  const firstNode = root.getFirstDescendant();
+  const lastNode = root.getLastDescendant();
+  let firstType = 'block';
+  let lastType = 'block';
+  let lastOffset = 0;
+
+  if (isTextNode(firstNode)) {
+    firstType = 'text';
+  }
+  if (isTextNode(lastNode)) {
+    lastType = 'text';
+    lastOffset = lastNode.getTextContentSize();
+  }
+  if (firstNode && lastNode) {
+    anchor.set(firstNode.getKey(), 0, firstType);
+    focus.set(lastNode.getKey(), lastOffset, lastType);
   }
 }

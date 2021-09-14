@@ -292,18 +292,6 @@ export class Selection {
   }
 }
 
-function resolveNonLineBreakOrInertNode(node: OutlineNode): PointType {
-  const resolvedNode = node.getPreviousSibling();
-  if (!isTextNode(resolvedNode)) {
-    invariant(
-      false,
-      'resolveNonLineBreakOrInertNode: resolved node not a text node',
-    );
-  }
-  const offset = resolvedNode.getTextContentSize();
-  return createPoint(resolvedNode.__key, offset, 'text');
-}
-
 function getNodeFromDOM(dom: Node): null | OutlineNode {
   const nodeKey = getNodeKeyFromDOM(dom);
   if (nodeKey === null) {
@@ -328,7 +316,7 @@ function resolveSelectionPoint(
   // need to figure out (using the offset) what text
   // node should be selected.
 
-  if (domIsElement(dom) && dom.nodeName !== 'BR') {
+  if (domIsElement(dom)) {
     let moveSelectionToEnd = false;
     // Given we're moving selection to another node, selection is
     // definitely dirty.
@@ -367,12 +355,6 @@ function resolveSelectionPoint(
   } else {
     resolvedNode = getNodeFromDOM(dom);
     resolvedDOM = dom;
-  }
-  if (
-    isLineBreakNode(resolvedNode) ||
-    (isTextNode(resolvedNode) && resolvedNode.isInert())
-  ) {
-    return resolveNonLineBreakOrInertNode(resolvedNode);
   }
   if (!isTextNode(resolvedNode)) {
     return null;

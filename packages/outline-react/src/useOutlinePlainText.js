@@ -12,7 +12,6 @@ import type {InputEvents} from 'outline-react/useOutlineEditorEvents';
 
 import {useCallback} from 'react';
 import useLayoutEffect from './shared/useLayoutEffect';
-import {createTextNode} from 'outline';
 import useOutlineEditorEvents from './useOutlineEditorEvents';
 import {
   createParagraphNode,
@@ -43,10 +42,9 @@ function initEditor(editor: OutlineEditor): void {
 
     if (root.getFirstChild() === null) {
       const paragraph = createParagraphNode();
-      const textNode = createTextNode();
-      root.append(paragraph.append(textNode));
+      root.append(paragraph);
       if (view.getSelection() !== null) {
-        textNode.select();
+        paragraph.select();
       }
     }
   }, 'initEditor');
@@ -61,10 +59,8 @@ function clearEditor(
       const firstChild = view.getRoot().getFirstChild();
       if (isParagraphNode(firstChild)) {
         firstChild.clear();
-        const textNode = createTextNode();
-        firstChild.append(textNode);
         if (view.getSelection() !== null) {
-          textNode.select();
+          firstChild.select();
         }
       }
     },

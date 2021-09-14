@@ -236,9 +236,19 @@ function reconcileChildren(
     }
   } else if (nextChildrenLength === 0) {
     if (prevChildrenLength !== 0) {
-      destroyChildren(prevChildren, 0, prevChildrenLength - 1, null);
-      // Fast path for removing DOM nodes
-      dom.textContent = '';
+      // $FlowFixMe: internal field
+      const outlineLineBreak = dom.__outlineLineBreak;
+      const canUseFastPath = outlineLineBreak == null;
+      destroyChildren(
+        prevChildren,
+        0,
+        prevChildrenLength - 1,
+        canUseFastPath ? null : dom,
+      );
+      if (canUseFastPath) {
+        // Fast path for removing DOM nodes
+        dom.textContent = '';
+      }
     }
   } else {
     reconcileNodeChildren(

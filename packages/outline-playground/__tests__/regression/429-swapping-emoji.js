@@ -57,7 +57,7 @@ describe('Regression test #429', () => {
       await page.keyboard.press('Backspace');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true"></span><span class="emoji happysmile" data-outline-text="true">🙂</span><span data-outline-text="true"> or </span><span class="emoji unhappysmile" data-outline-text="true">🙁</span></p>',
+        '<p class="editor-paragraph" dir="ltr"><span class="emoji happysmile" data-outline-text="true">🙂</span><span data-outline-text="true"> or </span><span class="emoji unhappysmile" data-outline-text="true">🙁</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],

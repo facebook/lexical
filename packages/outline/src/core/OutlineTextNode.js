@@ -412,7 +412,7 @@ export class TextNode extends OutlineNode {
   toggleUnmergeable(): TextNode {
     return this.setFlags(this.getFlags() ^ IS_UNMERGEABLE);
   }
-  setTextContent(text: string): void {
+  setTextContent(text: string): TextNode {
     errorOnReadOnly();
     if (this.isImmutable()) {
       invariant(
@@ -445,6 +445,7 @@ export class TextNode extends OutlineNode {
     } else {
       writableSelf.__text = text;
     }
+    return writableSelf;
   }
   select(_anchorOffset?: number, _focusOffset?: number): Selection {
     errorOnReadOnly();
@@ -518,9 +519,7 @@ export class TextNode extends OutlineNode {
 
     const updatedText =
       text.slice(0, index) + newText + text.slice(index + delCount);
-    writableSelf.setTextContent(updatedText);
-
-    return writableSelf;
+    return writableSelf.setTextContent(updatedText);
   }
   canInsertTextAtEnd(): boolean {
     return true;

@@ -34,17 +34,16 @@ export class HashtagNode extends TextNode {
     return element;
   }
 
-  setTextContent(text: string): void {
-    super.setTextContent(text);
+  setTextContent(text: string): TextNode {
+    let targetNode = super.setTextContent(text);
     // Handle hashtags
-    if (this.getParent() !== null && !this.isComposing()) {
+    if (targetNode.getParent() !== null && !targetNode.isComposing()) {
       const indexOfHash = text.indexOf('#');
-      let targetNode = this;
       if (indexOfHash === -1 || targetNode.getTextContent() === '#') {
-        toggleHashtag(targetNode);
+        targetNode = toggleHashtag(targetNode);
       } else if (indexOfHash > 0) {
-        [targetNode] = this.splitText(indexOfHash);
-        toggleHashtag(targetNode);
+        [targetNode] = targetNode.splitText(indexOfHash);
+        targetNode = toggleHashtag(targetNode);
       }
       // Check for invalid characters
       if (isTextNode(targetNode) && targetNode.isAttached()) {
@@ -53,22 +52,25 @@ export class HashtagNode extends TextNode {
           /[\s.,\\\/#!$%\^&\*;:{}=\-`~()@]/,
         );
         if (indexOfInvalidChar === 0) {
-          toggleHashtag(targetNode);
+          targetNode = toggleHashtag(targetNode);
         } else if (indexOfInvalidChar > 0) {
           [targetNode] = targetNode.splitText(indexOfInvalidChar + 1);
-          toggleHashtag(targetNode);
+          targetNode = toggleHashtag(targetNode);
         }
       }
+      return targetNode;
     }
+    return this;
   }
 }
 
-export function toggleHashtag(node: TextNode): void {
+export function toggleHashtag(node: TextNode): TextNode {
   const text = node.getTextContent();
   const replacement = !isHashtagNode(node)
     ? createHashtagNode(text)
     : createTextNode(text);
   node.replace(replacement, true);
+  return replacement;
 }
 
 export function createHashtagNode(text?: string = ''): TextNode {

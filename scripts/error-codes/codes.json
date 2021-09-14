@@ -35,5 +35,6 @@
   "33": "reconcileNode: prevNode or nextNode does not exist in nodeMap",
   "34": "reconcileNode: parentDOM is null",
   "35": "storeDOMWithNodeKey: key was null",
-  "36": "Reconciliation: could not find DOM element for node key \"${key}\""
+  "36": "Reconciliation: could not find DOM element for node key \"${key}\"",
+  "37": "insertNodes: lastChild not a node"
 }

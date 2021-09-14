@@ -219,6 +219,18 @@ describe('Emoticons', () => {
         focusPath: [0, 0, 0],
         focusOffset: 0,
       });
+
+      await page.keyboard.type('Hey');
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hey</span><span class="emoji happysmile" data-outline-text="true">🙂</span><span class="emoji happysmile" data-outline-text="true">🙂</span><span class="emoji happysmile" data-outline-text="true">🙂</span><span class="emoji happysmile" data-outline-text="true">🙂</span><span class="emoji happysmile" data-outline-text="true">🙂</span></p>',
+      );
+      await assertSelection(page, {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 3,
+        focusPath: [0, 0, 0],
+        focusOffset: 3,
+      });
     });
   });
 });

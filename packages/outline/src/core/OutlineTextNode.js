@@ -559,7 +559,6 @@ export class TextNode extends OutlineNode {
     const parent = this.getParentOrThrow();
     const parentKey = parent.__key;
     let writableNode;
-    const flags = this.getFlags();
     const format = this.getFormat();
     const style = this.getStyle();
     let hasReplacedSelf = false;
@@ -568,7 +567,6 @@ export class TextNode extends OutlineNode {
       // Create a new TextNode
       writableNode = createTextNode(firstPart);
       writableNode.__parent = parentKey;
-      writableNode.__flags = flags ^ IS_SEGMENTED;
       writableNode.__format = format;
       writableNode.__style = style;
       hasReplacedSelf = true;
@@ -588,7 +586,6 @@ export class TextNode extends OutlineNode {
       const part = parts[i];
       const partSize = part.length;
       const sibling = createTextNode(part).getWritable();
-      sibling.__flags = flags;
       sibling.__format = format;
       sibling.__style = style;
       const siblingKey = sibling.__key;

@@ -126,7 +126,7 @@ export async function assertHTML(page, expectedHtml) {
   actual.innerHTML = actualHtml.replace(/[\u200B-\u200D\u2060\uFEFF]/g, '');
   const expected = document.createElement('div');
   expected.innerHTML = expectedHtml.replace(/[\u200B-\u200D\u2060\uFEFF]/g, '');
-  expect(actual.firstChild).toEqual(expected.firstChild);
+  expect(actual).toEqual(expected);
 }
 
 export async function assertSelection(page, expected) {

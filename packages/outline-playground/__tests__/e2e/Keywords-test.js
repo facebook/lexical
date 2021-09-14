@@ -20,13 +20,13 @@ describe('Keywords', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">⁠</span><span class="keyword" data-outline-text="true" style="cursor: default;">congrats</span><span data-outline-text="true">⁠</span></p>',
+        '<p class="editor-paragraph" dir="ltr"><span class="keyword" data-outline-text="true" style="cursor: default;">congrats</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 2, 0],
-        anchorOffset: 0,
-        focusPath: [0, 2, 0],
-        focusOffset: 0,
+        anchorPath: [0, 0, 0],
+        anchorOffset: 8,
+        focusPath: [0, 0, 0],
+        focusOffset: 8,
       });
 
       await page.keyboard.type('c');
@@ -47,12 +47,12 @@ describe('Keywords', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">⁠</span><span class="keyword" data-outline-text="true" style="cursor: default;">congrats</span><span data-outline-text="true"> c</span></p>',
+        '<p class="editor-paragraph" dir="ltr"><span class="keyword" data-outline-text="true" style="cursor: default;">congrats</span><span data-outline-text="true"> c</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 2, 0],
+        anchorPath: [0, 1, 0],
         anchorOffset: 1,
-        focusPath: [0, 2, 0],
+        focusPath: [0, 1, 0],
         focusOffset: 1,
       });
 
@@ -61,22 +61,22 @@ describe('Keywords', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">⁠</span><span class="keyword" data-outline-text="true" style="cursor: default;">congrats</span><span data-outline-text="true"> </span><span class="keyword" data-outline-text="true" style="cursor: default;">congrats</span><span data-outline-text="true">⁠</span></p>',
+        '<p class="editor-paragraph" dir="ltr"><span class="keyword" data-outline-text="true" style="cursor: default;">congrats</span><span data-outline-text="true"> </span><span class="keyword" data-outline-text="true" style="cursor: default;">congrats</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 4, 0],
-        anchorOffset: 0,
-        focusPath: [0, 4, 0],
-        focusOffset: 0,
+        anchorPath: [0, 2, 0],
+        anchorOffset: 8,
+        focusPath: [0, 2, 0],
+        focusOffset: 8,
       });
 
       await repeat(8, async () => {
         await page.keyboard.press('ArrowLeft');
       });
       await assertSelection(page, {
-        anchorPath: [0, 2, 0],
+        anchorPath: [0, 1, 0],
         anchorOffset: 1,
-        focusPath: [0, 2, 0],
+        focusPath: [0, 1, 0],
         focusOffset: 1,
       });
 
@@ -97,12 +97,12 @@ describe('Keywords', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">⁠</span><span class="keyword" data-outline-text="true" style="cursor: default;">congrats</span><span data-outline-text="true"> </span><span class="keyword" data-outline-text="true" style="cursor: default;">congrats</span><span data-outline-text="true">⁠</span></p>',
+        '<p class="editor-paragraph" dir="ltr"><span class="keyword" data-outline-text="true" style="cursor: default;">congrats</span><span data-outline-text="true"> </span><span class="keyword" data-outline-text="true" style="cursor: default;">congrats</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 2, 0],
+        anchorPath: [0, 1, 0],
         anchorOffset: 1,
-        focusPath: [0, 2, 0],
+        focusPath: [0, 1, 0],
         focusOffset: 1,
       });
     });

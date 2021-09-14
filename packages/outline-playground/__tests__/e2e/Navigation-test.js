@@ -825,18 +825,18 @@ describe('Keyboard Navigation', () => {
       // type sample text
       await page.keyboard.type('123:)456 abc:):)de fg');
       await assertSelection(page, {
-        anchorPath: [0, 6, 0],
+        anchorPath: [0, 5, 0],
         anchorOffset: 5,
-        focusPath: [0, 6, 0],
+        focusPath: [0, 5, 0],
         focusOffset: 5,
       });
       // navigate through the text
       // 1 left
       await moveToPrevWord(page);
       await assertSelection(page, {
-        anchorPath: [0, 6, 0],
+        anchorPath: [0, 5, 0],
         anchorOffset: 3,
-        focusPath: [0, 6, 0],
+        focusPath: [0, 5, 0],
         focusOffset: 3,
       });
       // 2 left
@@ -850,16 +850,16 @@ describe('Keyboard Navigation', () => {
         });
       } else if (E2E_BROWSER === 'webkit') {
         await assertSelection(page, {
-          anchorPath: [0, 5, 0],
+          anchorPath: [0, 4, 0],
           anchorOffset: 2,
-          focusPath: [0, 5, 0],
+          focusPath: [0, 4, 0],
           focusOffset: 2,
         });
       } else {
         await assertSelection(page, {
-          anchorPath: [0, 5, 0],
+          anchorPath: [0, 4, 0],
           anchorOffset: 2,
-          focusPath: [0, 5, 0],
+          focusPath: [0, 4, 0],
           focusOffset: 2,
         });
       }
@@ -1020,16 +1020,16 @@ describe('Keyboard Navigation', () => {
       } else if (E2E_BROWSER === 'firefox') {
         if (IS_WINDOWS) {
           await assertSelection(page, {
-            anchorPath: [0, 6, 0],
+            anchorPath: [0, 5, 0],
             anchorOffset: 3,
-            focusPath: [0, 6, 0],
+            focusPath: [0, 5, 0],
             focusOffset: 3,
           });
         } else {
           await assertSelection(page, {
-            anchorPath: [0, 6, 0],
+            anchorPath: [0, 5, 0],
             anchorOffset: 2,
-            focusPath: [0, 6, 0],
+            focusPath: [0, 5, 0],
             focusOffset: 2,
           });
         }
@@ -1061,9 +1061,9 @@ describe('Keyboard Navigation', () => {
         });
       } else if (E2E_BROWSER === 'firefox') {
         await assertSelection(page, {
-          anchorPath: [0, 6, 0],
+          anchorPath: [0, 5, 0],
           anchorOffset: 5,
-          focusPath: [0, 6, 0],
+          focusPath: [0, 5, 0],
           focusOffset: 5,
         });
       } else if (IS_WINDOWS) {
@@ -1085,9 +1085,9 @@ describe('Keyboard Navigation', () => {
       await moveToNextWord(page);
       if (E2E_BROWSER === 'firefox') {
         await assertSelection(page, {
-          anchorPath: [0, 6, 0],
+          anchorPath: [0, 5, 0],
           anchorOffset: 5,
-          focusPath: [0, 6, 0],
+          focusPath: [0, 5, 0],
           focusOffset: 5,
         });
       } else {
@@ -1095,37 +1095,46 @@ describe('Keyboard Navigation', () => {
         await moveToNextWord(page);
         if (E2E_BROWSER === 'webkit') {
           await assertSelection(page, {
-            anchorPath: [0, 4, 0],
-            anchorOffset: 0,
-            focusPath: [0, 4, 0],
-            focusOffset: 0,
+            anchorPath: [0, 3, 0],
+            anchorOffset: 2,
+            focusPath: [0, 3, 0],
+            focusOffset: 2,
           });
         } else if (IS_WINDOWS) {
           await assertSelection(page, {
-            anchorPath: [0, 5, 0],
+            anchorPath: [0, 4, 0],
             anchorOffset: 2,
-            focusPath: [0, 5, 0],
+            focusPath: [0, 4, 0],
             focusOffset: 2,
           });
 
           // 6 right
           await moveToNextWord(page);
           await assertSelection(page, {
-            anchorPath: [0, 6, 0],
+            anchorPath: [0, 5, 0],
             anchorOffset: 3,
-            focusPath: [0, 6, 0],
+            focusPath: [0, 5, 0],
             focusOffset: 3,
           });
 
           // 7 right
           await moveToNextWord(page);
           await assertSelection(page, {
-            anchorPath: [0, 6, 0],
+            anchorPath: [0, 5, 0],
             anchorOffset: 5,
-            focusPath: [0, 6, 0],
+            focusPath: [0, 5, 0],
             focusOffset: 5,
           });
         } else {
+          await assertSelection(page, {
+            anchorPath: [0, 4, 0],
+            anchorOffset: 2,
+            focusPath: [0, 4, 0],
+            focusOffset: 2,
+          });
+
+          // 6 right
+          await moveToNextWord(page);
           await assertSelection(page, {
             anchorPath: [0, 5, 0],
             anchorOffset: 2,
@@ -1133,13 +1142,13 @@ describe('Keyboard Navigation', () => {
             focusOffset: 2,
           });
 
-          // 6 right
+          // 7 right
           await moveToNextWord(page);
           await assertSelection(page, {
-            anchorPath: [0, 6, 0],
-            anchorOffset: 2,
-            focusPath: [0, 6, 0],
-            focusOffset: 2,
+            anchorPath: [0, 5, 0],
+            anchorOffset: 5,
+            focusPath: [0, 5, 0],
+            focusOffset: 5,
           });
         }
 
@@ -1147,27 +1156,36 @@ describe('Keyboard Navigation', () => {
           // 6 right
           await moveToNextWord(page);
           await assertSelection(page, {
-            anchorPath: [0, 5, 0],
+            anchorPath: [0, 4, 0],
             anchorOffset: 2,
-            focusPath: [0, 5, 0],
+            focusPath: [0, 4, 0],
             focusOffset: 2,
           });
 
           // 7 right
           await moveToNextWord(page);
           await assertSelection(page, {
-            anchorPath: [0, 6, 0],
+            anchorPath: [0, 5, 0],
             anchorOffset: 2,
-            focusPath: [0, 6, 0],
+            focusPath: [0, 5, 0],
             focusOffset: 2,
           });
 
           // 8 right
           await moveToNextWord(page);
           await assertSelection(page, {
-            anchorPath: [0, 6, 0],
+            anchorPath: [0, 5, 0],
             anchorOffset: 5,
-            focusPath: [0, 6, 0],
+            focusPath: [0, 5, 0],
+            focusOffset: 5,
+          });
+
+          // 9 right
+          await moveToNextWord(page);
+          await assertSelection(page, {
+            anchorPath: [0, 5, 0],
+            anchorOffset: 5,
+            focusPath: [0, 5, 0],
             focusOffset: 5,
           });
         }

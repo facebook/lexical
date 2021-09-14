@@ -279,8 +279,8 @@ describe('OutlineEditor tests', () => {
 
       expect(listener).toHaveBeenCalledTimes(1);
       expect(sanitizeHTML(container.innerHTML)).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true"></span>' +
-          '<span data-outline-decorator="true"><span>Hello world</span></span><span data-outline-text="true"></span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p>' +
+          '<span data-outline-decorator="true"><span>Hello world</span></span><br></p></div>',
       );
     });
 

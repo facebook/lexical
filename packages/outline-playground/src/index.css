@@ -808,7 +808,6 @@ pre :not(.tree-view-output) {
   width: 16px;
   background-position: center;
   background-repeat: no-repeat;
-  display: inline-block;
   margin: 0 1px;
   text-align: center;
   vertical-align: middle;

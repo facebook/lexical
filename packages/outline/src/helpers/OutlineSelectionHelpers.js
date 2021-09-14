@@ -802,7 +802,7 @@ export function insertNodes(
     } else if (anchorOffset === textContentLength) {
       target = anchorNode;
     } else if (isImmutableOrInert(anchorNode)) {
-      // Do nothing if we're inside an immutable/segmented node
+      // Do nothing if we're inside an immutable/inert node
       return false;
     } else {
       // If we started with a range selected grab the danglingText after the
@@ -965,12 +965,32 @@ export function insertText(selection: Selection, text: string): void {
     const offset = firstPoint.offset;
     if (selection.isCollapsed() && offset === firstNodeTextLength) {
       let nextSibling = firstNode.getNextSibling();
-      if (!isTextNode(nextSibling)) {
+      if (
+        !isTextNode(nextSibling) ||
+        isImmutableOrInert(nextSibling) ||
+        nextSibling.isSegmented()
+      ) {
         nextSibling = createTextNode();
         firstNode.insertAfter(nextSibling);
       }
       nextSibling.select(0, 0);
       firstNode = nextSibling;
+      if (text !== '') {
+        insertText(selection, text);
+        return;
+      }
+    } else if (selection.isCollapsed() && offset === 0) {
+      let prevSibling = firstNode.getPreviousSibling();
+      if (
+        !isTextNode(prevSibling) ||
+        isImmutableOrInert(prevSibling) ||
+        prevSibling.isSegmented()
+      ) {
+        prevSibling = createTextNode();
+        firstNode.insertBefore(prevSibling);
+      }
+      prevSibling.select();
+      firstNode = prevSibling;
       if (text !== '') {
         insertText(selection, text);
         return;

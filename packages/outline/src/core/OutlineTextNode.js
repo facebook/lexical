@@ -558,25 +558,21 @@ export class TextNode extends OutlineNode {
     const parent = this.getParentOrThrow();
     const parentKey = parent.__key;
     let writableNode;
-    let flags;
-    let format;
-    let style;
+    const format = this.getFormat();
+    const style = this.getStyle();
+    let hasReplacedSelf = false;
 
     if (this.isSegmented()) {
       // Create a new TextNode
       writableNode = createTextNode(firstPart);
       writableNode.__parent = parentKey;
-      flags = writableNode.__flags;
-      format = writableNode.__format;
-      style = writableNode.__style;
-      this.remove();
+      writableNode.__format = format;
+      writableNode.__style = style;
+      hasReplacedSelf = true;
     } else {
       // For the first part, update the existing node
       writableNode = this.getWritable();
       writableNode.__text = firstPart;
-      flags = writableNode.__flags;
-      format = writableNode.__format;
-      style = writableNode.__style;
     }
 
     // Handle selection
@@ -589,7 +585,6 @@ export class TextNode extends OutlineNode {
       const part = parts[i];
       const partSize = part.length;
       const sibling = createTextNode(part).getWritable();
-      sibling.__flags = flags;
       sibling.__format = format;
       sibling.__style = style;
       const siblingKey = sibling.__key;
@@ -631,6 +626,10 @@ export class TextNode extends OutlineNode {
     const insertionIndex = writableParentChildren.indexOf(key);
     const splitNodesKeys = splitNodes.map((splitNode) => splitNode.__key);
     writableParentChildren.splice(insertionIndex, 1, ...splitNodesKeys);
+
+    if (hasReplacedSelf) {
+      this.remove();
+    }
 
     return splitNodes;
   }

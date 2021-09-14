@@ -31,7 +31,6 @@ import {
   ZERO_WIDTH_JOINER_CHAR,
   NO_BREAK_SPACE_CHAR,
   TEXT_TYPE_TO_FORMAT,
-  IS_SEGMENTED,
 } from './OutlineConstants';
 
 export type ParsedTextNode = {

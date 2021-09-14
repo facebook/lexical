@@ -59,24 +59,24 @@ describe('Regression test #399', () => {
       if (isRichText) {
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">foo</span></p><p class="editor-paragraph" dir="ltr"><span data-outline-text="true"></span><br><span data-outline-text="true">bar</span></p>',
+          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">foo</span></p><p class="editor-paragraph" dir="ltr"><br><span data-outline-text="true">bar</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [1, 0, 0],
+          anchorPath: [1],
           anchorOffset: 0,
-          focusPath: [1, 0, 0],
+          focusPath: [1],
           focusOffset: 0,
         });
       } else {
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">⁠foo</span><br><span data-outline-text="true">​</span><br><span data-outline-text="true">⁠bar</span></p>',
+          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">⁠foo</span><br><br><span data-outline-text="true">⁠bar</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 2, 0],
-          anchorOffset: 0,
-          focusPath: [0, 2, 0],
-          focusOffset: 0,
+          anchorPath: [0],
+          anchorOffset: 2,
+          focusPath: [0],
+          focusOffset: 2,
         });
       }
     });

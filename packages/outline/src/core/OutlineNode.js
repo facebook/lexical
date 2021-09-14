@@ -10,24 +10,13 @@
 import type {OutlineEditor, EditorConfig} from './OutlineEditor';
 import type {Selection} from './OutlineSelection';
 
-import {
-  createTextNode,
-  isBlockNode,
-  isLineBreakNode,
-  isTextNode,
-  isRootNode,
-  BlockNode,
-} from '.';
+import {isBlockNode, isTextNode, isRootNode, BlockNode} from '.';
 import {
   getActiveViewModel,
   errorOnReadOnly,
   getActiveEditor,
 } from './OutlineView';
-import {
-  generateRandomKey,
-  getTextDirection,
-  isImmutableOrInertOrSegmented,
-} from './OutlineUtils';
+import {generateRandomKey, getTextDirection} from './OutlineUtils';
 import invariant from 'shared/invariant';
 import {
   IS_DIRECTIONLESS,
@@ -187,15 +176,6 @@ function replaceNode<N: OutlineNode>(
   if (flags & IS_DIRECTIONLESS) {
     updateDirectionIfNeeded(writableReplaceWith);
   }
-  // Handle immutable/segmented
-  if (
-    flags & IS_IMMUTABLE ||
-    flags & IS_SEGMENTED ||
-    flags & IS_INERT ||
-    isLineBreakNode(writableReplaceWith)
-  ) {
-    wrapInTextNodes(writableReplaceWith);
-  }
   if (isTextNode(writableReplaceWith) && anchorOffset !== undefined) {
     writableReplaceWith.select(anchorOffset, anchorOffset);
   }
@@ -215,28 +195,6 @@ export function updateDirectionIfNeeded(node: OutlineNode): void {
       topBlock.setDirection(null);
     }
   }
-}
-
-export function wrapInTextNodes<N: OutlineNode>(node: N): N {
-  const prevSibling = node.getPreviousSibling();
-  if (
-    prevSibling === null ||
-    !isTextNode(prevSibling) ||
-    isImmutableOrInertOrSegmented(prevSibling)
-  ) {
-    const text = createTextNode('');
-    node.insertBefore(text);
-  }
-  const nextSibling = node.getNextSibling();
-  if (
-    nextSibling === null ||
-    !isTextNode(nextSibling) ||
-    isImmutableOrInertOrSegmented(nextSibling)
-  ) {
-    const text = createTextNode('');
-    node.insertAfter(text);
-  }
-  return node;
 }
 
 export type NodeKey = string;
@@ -744,15 +702,6 @@ export class OutlineNode {
     if (flags & IS_DIRECTIONLESS) {
       updateDirectionIfNeeded(writableNodeToInsert);
     }
-    // Handle immutable/segmented
-    if (
-      flags & IS_IMMUTABLE ||
-      flags & IS_SEGMENTED ||
-      flags & IS_INERT ||
-      isLineBreakNode(writableNodeToInsert)
-    ) {
-      wrapInTextNodes(writableNodeToInsert);
-    }
     return writableSelf;
   }
   // TODO add support for inserting multiple nodes?
@@ -783,15 +732,6 @@ export class OutlineNode {
     // Handle direction if node is directionless
     if (flags & IS_DIRECTIONLESS) {
       updateDirectionIfNeeded(writableNodeToInsert);
-    }
-    // Handle immutable/segmented
-    if (
-      flags & IS_IMMUTABLE ||
-      flags & IS_SEGMENTED ||
-      flags & IS_INERT ||
-      isLineBreakNode(writableNodeToInsert)
-    ) {
-      wrapInTextNodes(writableNodeToInsert);
     }
     return writableSelf;
   }

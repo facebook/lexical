@@ -10,23 +10,15 @@
 import type {NodeKey, ParsedNode} from './OutlineNode';
 import type {Selection} from './OutlineSelection';
 
-import {isTextNode, TextNode, isLineBreakNode} from '.';
+import {isTextNode, TextNode} from '.';
 import {
   OutlineNode,
   getNodeByKey,
-  wrapInTextNodes,
   updateDirectionIfNeeded,
 } from './OutlineNode';
 import {makeSelection, getSelection, setPointValues} from './OutlineSelection';
 import {errorOnReadOnly} from './OutlineView';
-import {
-  IS_DIRECTIONLESS,
-  IS_IMMUTABLE,
-  IS_INERT,
-  IS_LTR,
-  IS_RTL,
-  IS_SEGMENTED,
-} from './OutlineConstants';
+import {IS_DIRECTIONLESS, IS_LTR, IS_RTL} from './OutlineConstants';
 
 export type ParsedBlockNode = {
   ...ParsedNode,
@@ -210,15 +202,6 @@ export class BlockNode extends OutlineNode {
     // Handle direction if node is directionless
     if (flags & IS_DIRECTIONLESS) {
       updateDirectionIfNeeded(writableNodeToAppend);
-    }
-    // Handle immutable/segmented
-    if (
-      flags & IS_IMMUTABLE ||
-      flags & IS_SEGMENTED ||
-      flags & IS_INERT ||
-      isLineBreakNode(writableNodeToAppend)
-    ) {
-      wrapInTextNodes(writableNodeToAppend);
     }
     return writableSelf;
   }

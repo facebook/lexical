@@ -350,12 +350,12 @@ describe('OutlineSelection tests', () => {
       expectedHTML:
         '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span data-outline-text="true"></span>' +
         '<span data-outline-text="true">Dominic Gannaway</span>' +
-        '<span data-outline-text="true"></span></p></div>',
+        '</p></div>',
       expectedSelection: {
-        anchorPath: [0, 2, 0],
-        anchorOffset: 0,
-        focusPath: [0, 2, 0],
-        focusOffset: 0,
+        anchorPath: [0],
+        anchorOffset: 2,
+        focusPath: [0],
+        focusOffset: 2,
       },
     },
     {
@@ -368,12 +368,12 @@ describe('OutlineSelection tests', () => {
       expectedHTML:
         '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span data-outline-text="true"></span>' +
         '<span data-outline-text="true">Dominic Gannaway</span>' +
-        '<span data-outline-text="true"></span></p></div>',
+        '</p></div>',
       expectedSelection: {
-        anchorPath: [0, 2, 0],
-        anchorOffset: 0,
-        focusPath: [0, 2, 0],
-        focusOffset: 0,
+        anchorPath: [0],
+        anchorOffset: 2,
+        focusPath: [0],
+        focusOffset: 2,
       },
     },
     {
@@ -394,12 +394,12 @@ describe('OutlineSelection tests', () => {
       expectedHTML:
         '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span data-outline-text="true"></span>' +
         '<span data-outline-text="true">Dominic Gannaway</span>' +
-        '<span data-outline-text="true"></span></p></div>',
+        '</p></div>',
       expectedSelection: {
-        anchorPath: [0, 2, 0],
-        anchorOffset: 0,
-        focusPath: [0, 2, 0],
-        focusOffset: 0,
+        anchorPath: [0],
+        anchorOffset: 2,
+        focusPath: [0],
+        focusOffset: 2,
       },
     },
     {
@@ -412,12 +412,12 @@ describe('OutlineSelection tests', () => {
       expectedHTML:
         '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span data-outline-text="true"></span>' +
         '<span data-outline-text="true">Dominic Gannaway</span>' +
-        '<span data-outline-text="true"></span></p></div>',
+        '</p></div>',
       expectedSelection: {
-        anchorPath: [0, 2, 0],
-        anchorOffset: 0,
-        focusPath: [0, 2, 0],
-        focusOffset: 0,
+        anchorPath: [0],
+        anchorOffset: 2,
+        focusPath: [0],
+        focusOffset: 2,
       },
     },
     {
@@ -426,7 +426,7 @@ describe('OutlineSelection tests', () => {
       expectedHTML:
         '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><span data-outline-text="true"></span>' +
         '<span data-outline-text="true">Dominic</span>' +
-        '<span data-outline-text="true"></span></p></div>',
+        '</p></div>',
       expectedSelection: {
         anchorPath: [0, 1, 0],
         anchorOffset: 7,
@@ -899,7 +899,6 @@ describe('OutlineSelection tests', () => {
           '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr">' +
           '<span data-outline-text="true">Hello </span>' +
           '<span data-outline-text="true">Bob</span>' +
-          '<span data-outline-text="true"></span>' +
           '</p></div>',
         expectedSelection: {
           anchorPath: [0, 1, 0],

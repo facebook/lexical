@@ -419,7 +419,7 @@ describe('OutlineNode tests', () => {
         paragraphNode.append(immutableTextNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span><span data-outline-text="true">immutable</span><span data-outline-text="true"></span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span><span data-outline-text="true">immutable</span></p></div>',
       );
       await editor.getViewModel().read(() => {
         expect(textNode.isImmutable(textNode)).toBe(false);
@@ -438,7 +438,7 @@ describe('OutlineNode tests', () => {
         paragraphNode.append(segmentedTextNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span><span data-outline-text="true">segmented</span><span data-outline-text="true"></span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span><span data-outline-text="true">segmented</span></p></div>',
       );
       await editor.getViewModel().read(() => {
         expect(textNode.isSegmented(textNode)).toBe(false);
@@ -692,7 +692,7 @@ describe('OutlineNode tests', () => {
         textNode.replace(barTextNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true"></span><span data-outline-text="true">bar</span><span data-outline-text="true"></span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">bar</span></p></div>',
       );
     });
 
@@ -706,7 +706,7 @@ describe('OutlineNode tests', () => {
         textNode.replace(barTextNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true"></span><span data-outline-text="true" style="pointer-events: none; user-select: none;">bar</span><span data-outline-text="true"></span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true" style="pointer-events: none; user-select: none;">bar</span></p></div>',
       );
     });
 
@@ -720,7 +720,7 @@ describe('OutlineNode tests', () => {
         textNode.replace(barTextNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true"></span><span data-outline-text="true">bar</span><span data-outline-text="true"></span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">bar</span></p></div>',
       );
     });
 
@@ -771,7 +771,7 @@ describe('OutlineNode tests', () => {
         textNode.insertAfter(barTextNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span><span data-outline-text="true">bar</span><span data-outline-text="true"></span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span><span data-outline-text="true">bar</span></p></div>',
       );
     });
 
@@ -785,7 +785,7 @@ describe('OutlineNode tests', () => {
         textNode.insertAfter(barTextNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span><span data-outline-text="true">bar</span><span data-outline-text="true"></span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span><span data-outline-text="true">bar</span></p></div>',
       );
     });
 
@@ -799,7 +799,7 @@ describe('OutlineNode tests', () => {
         textNode.insertAfter(barTextNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span><span data-outline-text="true" style="pointer-events: none; user-select: none;">bar</span><span data-outline-text="true"></span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span><span data-outline-text="true" style="pointer-events: none; user-select: none;">bar</span></p></div>',
       );
     });
 
@@ -935,7 +935,7 @@ describe('OutlineNode tests', () => {
         textNode.insertBefore(barTextNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true"></span><span data-outline-text="true">bar</span><span data-outline-text="true">foo</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">bar</span><span data-outline-text="true">foo</span></p></div>',
       );
     });
 
@@ -949,7 +949,7 @@ describe('OutlineNode tests', () => {
         textNode.insertBefore(barTextNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true"></span><span data-outline-text="true">bar</span><span data-outline-text="true">foo</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">bar</span><span data-outline-text="true">foo</span></p></div>',
       );
     });
 
@@ -963,7 +963,7 @@ describe('OutlineNode tests', () => {
         textNode.insertBefore(barTextNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true"></span><span data-outline-text="true" style="pointer-events: none; user-select: none;">bar</span><span data-outline-text="true">foo</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true" style="pointer-events: none; user-select: none;">bar</span><span data-outline-text="true">foo</span></p></div>',
       );
     });
 

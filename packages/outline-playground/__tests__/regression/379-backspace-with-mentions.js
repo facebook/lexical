@@ -19,20 +19,20 @@ describe('Regression test #379', () => {
       await page.keyboard.press('Enter');
       await assertHTML(
         page,
-        '<p class="editor-paragraph"><span data-outline-text="true"></span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"></span></p>',
+        '<p class="editor-paragraph"></span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 2, 0],
-        anchorOffset: 0,
-        focusPath: [0, 2, 0],
-        focusOffset: 0,
+        anchorPath: [0, 0, 0],
+        anchorOffset: 14,
+        focusPath: [0, 0, 0],
+        focusOffset: 14,
       });
       await moveToEditorBeginning(page);
       await page.keyboard.press('Enter');
       await page.keyboard.press('Backspace');
       await assertHTML(
         page,
-        '<p class="editor-paragraph"><span data-outline-text="true"></span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"></span></p>',
+        '<p class="editor-paragraph"><span data-outline-text="true"></span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],

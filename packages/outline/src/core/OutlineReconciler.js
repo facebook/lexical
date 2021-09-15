@@ -29,6 +29,7 @@ import {getCompositionKey, setCompositionKey} from './OutlineNode';
 import {BlockNode, isBlockNode} from './OutlineBlockNode';
 import {isTextNode} from './OutlineTextNode';
 import {isLineBreakNode} from './OutlineLineBreakNode';
+import {isRootNode} from './OutlineRootNode';
 
 let subTreeTextContent = '';
 let editorTextContent = '';
@@ -334,7 +335,9 @@ function reconcileNode(
     if (childrenAreDifferent || isDirty) {
       // We get the children again, in case they change.
       reconcileChildren(prevChildren, nextChildren, dom);
-      reconcileBlockTerminatingLineBreak(prevChildren, nextChildren, dom);
+      if (!isRootNode(nextNode)) {
+        reconcileBlockTerminatingLineBreak(prevChildren, nextChildren, dom);
+      }
     }
   } else {
     if (isDecoratorNode(nextNode)) {

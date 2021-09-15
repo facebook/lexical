@@ -193,6 +193,10 @@ function replaceNode<N: OutlineNode>(
   if (getCompositionKey() === toReplaceKey) {
     setCompositionKey(newKey);
   }
+  // Handle direction if node is directionless
+  if (flags & IS_DIRECTIONLESS) {
+    updateDirectionIfNeeded(writableReplaceWith);
+  }
   return writableReplaceWith;
 }
 

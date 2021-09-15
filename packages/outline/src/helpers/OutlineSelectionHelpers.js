@@ -330,9 +330,9 @@ export function insertParagraph(selection: Selection): void {
     removeText(selection);
   }
   const anchor = selection.anchor;
+  const anchorOffset = anchor.offset;
   let currentBlock;
   let nodesToMove = [];
-  let anchorOffset = anchor.offset;
 
   if (anchor.type === 'text') {
     const anchorNode = anchor.getNode();
@@ -346,14 +346,10 @@ export function insertParagraph(selection: Selection): void {
     } else if (anchorOffset !== textContentLength) {
       const [, splitNode] = anchorNode.splitText(anchorOffset);
       nodesToMove.push(splitNode);
-      anchorOffset = 0;
-    } else {
-      anchorOffset = 0;
     }
   } else {
     currentBlock = anchor.getNode();
     nodesToMove = currentBlock.getChildren().slice(anchorOffset).reverse();
-    anchorOffset = 0;
   }
   const newBlock = currentBlock.insertNewAfter(selection);
   if (newBlock === null) {
@@ -375,24 +371,8 @@ export function insertParagraph(selection: Selection): void {
         }
         firstChild = nodeToMove;
       }
-      const nodeToSelect = nodesToMove[nodesToMoveLength - 1];
-      if (isTextNode(nodeToSelect)) {
-        nodeToSelect.select(anchorOffset, anchorOffset);
-      }
-      // TODO remove this logic when we get rid of empty text nodes
-      const blockFirstChild = currentBlock.getFirstChild();
-      const blockLastChild = currentBlock.getLastChild();
-      if (
-        blockFirstChild === null ||
-        blockLastChild === null ||
-        blockLastChild.isImmutable() ||
-        blockLastChild.isSegmented() ||
-        !isTextNode(blockLastChild)
-      ) {
-        const textNode = createTextNode('');
-        currentBlock.append(textNode);
-      }
     }
+    newBlock.selectStart();
   }
 }
 

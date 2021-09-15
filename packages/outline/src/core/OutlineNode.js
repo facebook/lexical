@@ -151,7 +151,7 @@ function replaceNode<N: OutlineNode>(
       }
     }
   }
-  let writableReplaceWith = replaceWith.getWritable();
+  const writableReplaceWith = replaceWith.getWritable();
   const oldParent = writableReplaceWith.getParent();
   if (oldParent !== null) {
     const writableParent = oldParent.getWritable();
@@ -192,12 +192,6 @@ function replaceNode<N: OutlineNode>(
   }
   if (getCompositionKey() === toReplaceKey) {
     setCompositionKey(newKey);
-  }
-  // If text node, then setTextContent to ensure it is final state
-  if (isTextNode(writableReplaceWith)) {
-    writableReplaceWith = writableReplaceWith.setTextContent(
-      writableReplaceWith.__text,
-    );
   }
   // Handle direction if node is directionless
   if (flags & IS_DIRECTIONLESS) {
@@ -698,7 +692,7 @@ export class OutlineNode {
   insertAfter(nodeToInsert: OutlineNode): this {
     errorOnReadOnly();
     const writableSelf = this.getWritable();
-    let writableNodeToInsert = nodeToInsert.getWritable();
+    const writableNodeToInsert = nodeToInsert.getWritable();
     const oldParent = writableNodeToInsert.getParent();
     if (oldParent !== null) {
       const writableParent = oldParent.getWritable();
@@ -717,12 +711,6 @@ export class OutlineNode {
       children.splice(index + 1, 0, insertKey);
     } else {
       children.push(insertKey);
-    }
-    // If text node, then setTextContent to ensure it is final state
-    if (isTextNode(writableNodeToInsert)) {
-      writableNodeToInsert = writableNodeToInsert.setTextContent(
-        writableNodeToInsert.__text,
-      );
     }
     const flags = writableNodeToInsert.__flags;
     // Handle direction if node is directionless

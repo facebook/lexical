@@ -194,7 +194,7 @@ export class BlockNode extends OutlineNode {
   append(nodeToAppend: OutlineNode): BlockNode {
     errorOnReadOnly();
     const writableSelf = this.getWritable();
-    let writableNodeToAppend = nodeToAppend.getWritable();
+    const writableNodeToAppend = nodeToAppend.getWritable();
 
     // Remove node from previous parent
     const oldParent = writableNodeToAppend.getParent();
@@ -212,12 +212,6 @@ export class BlockNode extends OutlineNode {
     // Append children.
     const newKey = writableNodeToAppend.__key;
     children.push(newKey);
-    // If text node, then setTextContent to ensure it is final state
-    if (isTextNode(writableNodeToAppend)) {
-      writableNodeToAppend = writableNodeToAppend.setTextContent(
-        writableNodeToAppend.__text,
-      );
-    }
     const flags = writableNodeToAppend.__flags;
     // Handle direction if node is directionless
     if (flags & IS_DIRECTIONLESS) {

@@ -428,11 +428,11 @@ export function commitPendingUpdates(
   }
   triggerListeners('update', editor, pendingViewModel, dirtyNodes);
   const deferred = editor._deferred;
+  editor._deferred = [];
   if (deferred.length !== 0) {
     for (let i = 0; i < deferred.length; i++) {
       deferred[i]();
     }
-    editor._deferred = [];
   }
 }
 

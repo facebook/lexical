@@ -1088,9 +1088,9 @@ export function onInput(event: InputEvent, editor: OutlineEditor) {
   }, 'onInput');
 }
 
-function isBlockLineBreak(dom: Node, target: Node): boolean {
+function isManagedLineBreak(dom: Node, target: Node): boolean {
   // $FlowFixMe: internal field
-  return target.__outlineLineBreak === dom;
+  return target.__outlineLineBreak === dom || dom.__outlineInternalRef !== undefined;
 }
 
 export function onMutation(
@@ -1186,7 +1186,7 @@ export function onMutation(
           if (
             parentDOM != null &&
             addedDOM.nodeName === 'BR' &&
-            !isBlockLineBreak(addedDOM, target)
+            !isManagedLineBreak(addedDOM, target)
           ) {
             parentDOM.removeChild(addedDOM);
           }

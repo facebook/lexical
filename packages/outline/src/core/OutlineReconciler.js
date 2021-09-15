@@ -707,6 +707,7 @@ function mergeAdjacentTextNodes(
     if (compositionKey === textNodeKey) {
       setCompositionKey(key);
     }
+    // TODO handle block points?
     if (anchor !== null && textNodeKey === anchor.key) {
       anchor.offset = textLength + anchor.offset;
       anchor.key = key;

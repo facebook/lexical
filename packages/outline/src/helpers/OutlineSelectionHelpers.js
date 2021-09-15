@@ -1163,18 +1163,23 @@ export function selectAll(selection: Selection): void {
   const anchorNode = anchor.getNode();
   const topParent = anchorNode.getTopParentBlockOrThrow();
   const root = topParent.getParentOrThrow();
-  const firstNode = root.getFirstDescendant();
-  const lastNode = root.getLastDescendant();
+  let firstNode = root.getFirstDescendant();
+  let lastNode = root.getLastDescendant();
   let firstType = 'block';
   let lastType = 'block';
   let lastOffset = 0;
 
   if (isTextNode(firstNode)) {
     firstType = 'text';
+  } else if (!isBlockNode(firstNode) && firstNode !== null) {
+    firstNode = firstNode.getParentOrThrow(); 
   }
   if (isTextNode(lastNode)) {
     lastType = 'text';
     lastOffset = lastNode.getTextContentSize();
+  } else if (!isBlockNode(lastNode) && lastNode !== null) {
+    lastNode = lastNode.getParentOrThrow(); 
+    lastOffset = lastNode.getChildrenSize();
   }
   if (firstNode && lastNode) {
     anchor.set(firstNode.getKey(), 0, firstType);

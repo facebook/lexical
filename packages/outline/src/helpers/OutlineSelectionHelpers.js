@@ -372,9 +372,7 @@ export function insertParagraph(selection: Selection): void {
         firstChild = nodeToMove;
       }
     }
-    if (anchor.type === 'block') {
-      newBlock.selectStart();
-    }
+    newBlock.selectStart();
   }
 }
 

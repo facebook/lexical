@@ -531,12 +531,12 @@ describe('TextEntry', () => {
       } else {
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">⁠Copy + pasting?</span><br><br><span data-outline-text="true">⁠Sounds good!Copy + pasting?</span><br><span data-outline-text="true">​</span><br><span data-outline-text="true">⁠Sounds good!</span></p>',
+          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">⁠Copy + pasting?</span><br><br><span data-outline-text="true">⁠Sounds good!Copy + pasting?</span><br><br><span data-outline-text="true">⁠Sounds good!</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 7, 0],
+          anchorPath: [0, 6, 0],
           anchorOffset: 12,
-          focusPath: [0, 7, 0],
+          focusPath: [0, 6, 0],
           focusOffset: 12,
         });
       }

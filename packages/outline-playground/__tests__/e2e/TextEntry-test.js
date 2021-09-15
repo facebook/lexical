@@ -269,6 +269,90 @@ describe('TextEntry', () => {
       }
     });
 
+    it('Mix of paragraphs and break points', async () => {
+      const {isRichText, page} = e2e;
+
+      await page.focus('div.editor');
+
+      // Add some line breaks
+      await page.keyboard.down('Shift');
+      await page.keyboard.press('Enter');
+      await page.keyboard.press('Enter');
+      await page.keyboard.press('Enter');
+      await page.keyboard.up('Shift');
+
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph"><br><br><br><br></p>',
+      );
+      await assertSelection(page, {
+        anchorPath: [0],
+        anchorOffset: 3,
+        focusPath: [0],
+        focusOffset: 3,
+      });
+
+      // Move to top
+      await page.keyboard.press('ArrowUp');
+      await page.keyboard.press('ArrowUp');
+      await page.keyboard.press('ArrowUp');
+      await assertSelection(page, {
+        anchorPath: [0],
+        anchorOffset: 0,
+        focusPath: [0],
+        focusOffset: 0,
+      });
+
+      // Add paragraph
+      await page.keyboard.press('Enter');
+
+      if (isRichText) {
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph"><br></p><p class="editor-paragraph"><br><br><br><br></p>',
+        );
+        await assertSelection(page, {
+          anchorPath: [1],
+          anchorOffset: 0,
+          focusPath: [1],
+          focusOffset: 0,
+        });
+      } else {
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph"><br><br><br><br><br></p>',
+        );
+        await assertSelection(page, {
+          anchorPath: [0],
+          anchorOffset: 1,
+          focusPath: [0],
+          focusOffset: 1,
+        });
+      }
+
+      await page.keyboard.press('ArrowUp');
+      await page.keyboard.type('هَ');
+
+      if (isRichText) {
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph" dir="rtl"><span data-outline-text="true">هَ</span></p><p class="editor-paragraph"><br><br><br><br></p>',
+        );
+      } else {
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph" dir="rtl"><span data-outline-text="true">هَ</span><br><br><br><br><br></p>',
+        );
+      }
+
+      await assertSelection(page, {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 2,
+        focusPath: [0, 0, 0],
+        focusOffset: 2,
+      });
+    });
+
     it('Empty paragraph and new line node selection', async () => {
       const {isRichText, page} = e2e;
 

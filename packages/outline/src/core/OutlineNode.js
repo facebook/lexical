@@ -723,7 +723,7 @@ export class OutlineNode {
   insertBefore(nodeToInsert: OutlineNode): this {
     errorOnReadOnly();
     const writableSelf = this.getWritable();
-    let writableNodeToInsert = nodeToInsert.getWritable();
+    const writableNodeToInsert = nodeToInsert.getWritable();
     const oldParent = writableNodeToInsert.getParent();
     if (oldParent !== null) {
       const writableParent = oldParent.getWritable();
@@ -742,12 +742,6 @@ export class OutlineNode {
       children.splice(index, 0, insertKey);
     } else {
       children.push(insertKey);
-    }
-    // If text node, then setTextContent to ensure it is final state
-    if (isTextNode(writableNodeToInsert)) {
-      writableNodeToInsert = writableNodeToInsert.setTextContent(
-        writableNodeToInsert.__text,
-      );
     }
     const flags = writableNodeToInsert.__flags;
     // Handle direction if node is directionless

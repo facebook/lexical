@@ -173,6 +173,16 @@ export class BlockNode extends OutlineNode {
     }
     return selection;
   }
+  selectEnd(): Selection {
+    const lastNode = this.getLastDescendant();
+    if (isBlockNode(lastNode) || isTextNode(lastNode)) {
+      return lastNode.select();
+    }
+    if (lastNode !== null) {
+      return lastNode.selectNext();
+    }
+    return this.select();
+  }
   clear(): BlockNode {
     errorOnReadOnly();
     const writableSelf = this.getWritable();

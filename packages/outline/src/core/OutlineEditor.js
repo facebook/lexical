@@ -388,12 +388,7 @@ class BaseOutlineEditor {
             // Marking the selection dirty will force the selection back to it
             selection.isDirty = true;
           } else {
-            const lastNode = view.getRoot().getLastDescendant();
-            if (isBlockNode(lastNode)) {
-              lastNode.select();
-            } else if (lastNode !== null) {
-              lastNode.selectNext();
-            }
+            view.getRoot().selectEnd();
           }
         },
         'focus',

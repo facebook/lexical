@@ -508,7 +508,7 @@ export function onCompositionStart(
       view.setCompositionKey(selection.anchor.key);
       const data = event.data;
       if (data != null && !lastKeyWasMaybeAndroidSoftKey) {
-        // We insertthe last keydown key string, ready for
+        // We insert the last keydown key string, ready for
         // composition. If we don't do this, an use a collapsed
         // selection point, it causes the composed text to appear
         // along with the non-composed character entered.

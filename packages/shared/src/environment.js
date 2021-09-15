@@ -38,7 +38,7 @@ export const IS_CHROME: boolean =
 export const canUseTextInputEvent: boolean =
   CAN_USE_DOM && 'TextEvent' in window && !documentMode;
 
-export const CAN_USE_BEFORE_INPUT: boolean = false;
-  // CAN_USE_DOM && 'InputEvent' in window && !documentMode
-  //   ? 'getTargetRanges' in new window.InputEvent('input')
-  //   : false;
+export const CAN_USE_BEFORE_INPUT: boolean =
+  CAN_USE_DOM && 'InputEvent' in window && !documentMode
+    ? 'getTargetRanges' in new window.InputEvent('input')
+    : false;

@@ -130,7 +130,7 @@ describe('OutlineListItemNode tests', () => {
           listNode.remove();
         });
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" data-outline-editor="true"><br></div>',
+          '<div contenteditable="true" data-outline-editor="true"></div>',
         );
         await editor.update((view) => {
           const root = view.getRoot();

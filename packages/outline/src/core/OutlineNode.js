@@ -151,7 +151,7 @@ function replaceNode<N: OutlineNode>(
       }
     }
   }
-  const writableReplaceWith = replaceWith.getWritable();
+  const writableReplaceWith = replaceWith.getWritable<N>();
   const oldParent = writableReplaceWith.getParent();
   if (oldParent !== null) {
     const writableParent = oldParent.getWritable();
@@ -178,15 +178,8 @@ function replaceNode<N: OutlineNode>(
   }
   if (anchorOffset !== undefined) {
     if (isBlockNode(writableReplaceWith)) {
-      const lastChild = writableReplaceWith.getLastChild();
-      if (isTextNode(lastChild)) {
-        lastChild.select(anchorOffset, anchorOffset);
-      } else if (isBlockNode(lastChild)) {
-        lastChild.select();
-      } else {
-        lastChild.selectNext();
-      }
-    } else {
+      writableReplaceWith.selectEnd();
+    } else if (isTextNode(writableReplaceWith)) {
       writableReplaceWith.select(anchorOffset, anchorOffset);
     }
   }

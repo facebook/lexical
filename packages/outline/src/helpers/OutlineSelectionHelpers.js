@@ -900,7 +900,9 @@ export function insertRichText(selection: Selection, text: string): void {
     const length = parts.length;
     for (let i = 0; i < length; i++) {
       const part = parts[i];
-      nodes.push(createTextNode(part));
+      if (part !== '') {
+        nodes.push(createTextNode(part));
+      }
       if (i !== length - 1) {
         nodes.push(createLineBreakNode());
       }

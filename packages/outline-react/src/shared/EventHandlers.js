@@ -69,6 +69,7 @@ const ZERO_WIDTH_JOINER_CHAR = '\u2060';
 const NO_BREAK_SPACE_CHAR = '\u00A0';
 
 let lastKeyWasMaybeAndroidSoftKey = false;
+let lastKeyDownKeyString = '';
 
 // TODO the Flow types here needs fixing
 export type EventHandler = (
@@ -191,6 +192,7 @@ export function onKeyDownForPlainText(
   event: KeyboardEvent,
   editor: OutlineEditor,
 ): void {
+  lastKeyDownKeyString = event.key;
   updateAndroidSoftKeyFlagIfAny(event);
   if (editor.isComposing()) {
     return;
@@ -264,6 +266,7 @@ export function onKeyDownForRichText(
   event: KeyboardEvent,
   editor: OutlineEditor,
 ): void {
+  lastKeyDownKeyString = event.key;
   updateAndroidSoftKeyFlagIfAny(event);
   if (editor.isComposing()) {
     return;
@@ -505,11 +508,11 @@ export function onCompositionStart(
       view.setCompositionKey(selection.anchor.key);
       const data = event.data;
       if (data != null && !lastKeyWasMaybeAndroidSoftKey) {
-        // We insert an empty space, ready for the composition
-        // to get inserted into the new node we create. If
-        // we don't do this, Safari will fail on us because
-        // there is no text node matching the selection.
-        insertText(selection, ' ');
+        // We insertthe last keydown key string, ready for
+        // composition. If we don't do this, an use a collapsed
+        // selection point, it causes the composed text to appear
+        // along with the non-composed character entered.
+        insertText(selection, lastKeyDownKeyString);
       }
     }
   }, 'onCompositionStart');

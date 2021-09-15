@@ -463,30 +463,6 @@ export class ViewModel {
     this._selection = null;
     this._flushSync = false;
   }
-  // hasDirtyNodes(): boolean {
-  //   return this._dirtyNodes.size > 0;
-  // }
-  // isDirty(): boolean {
-  //   return this._isDirty;
-  // }
-  // markDirty(): void {
-  //   this._isDirty = true;
-  // }
-  // getDirtyNodes(): Array<OutlineNode> {
-  //   const dirtyNodes = Array.from(this._dirtyNodes);
-  //   const nodeMap = this._nodeMap;
-  //   const nodes = [];
-
-  //   for (let i = 0; i < dirtyNodes.length; i++) {
-  //     const dirtyNodeKey = dirtyNodes[i];
-  //     const dirtyNode = nodeMap.get(dirtyNodeKey);
-
-  //     if (dirtyNode !== undefined) {
-  //       nodes.push(dirtyNode);
-  //     }
-  //   }
-  //   return nodes;
-  // }
   read<V>(callbackFn: (view: View) => V): V {
     const previousActiveViewModel = activeViewModel;
     const previousReadOnlyMode = isReadOnlyMode;

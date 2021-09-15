@@ -69,7 +69,7 @@ const ZERO_WIDTH_JOINER_CHAR = '\u2060';
 const NO_BREAK_SPACE_CHAR = '\u00A0';
 
 let lastKeyWasMaybeAndroidSoftKey = false;
-let lastKeyDownKeyString = '';
+let lastKeyDownKeyString = ' ';
 
 // TODO the Flow types here needs fixing
 export type EventHandler = (
@@ -192,7 +192,7 @@ export function onKeyDownForPlainText(
   event: KeyboardEvent,
   editor: OutlineEditor,
 ): void {
-  lastKeyDownKeyString = event.key;
+  lastKeyDownKeyString = event.which > 47 && event.which < 91 ? event.key : ' ';
   updateAndroidSoftKeyFlagIfAny(event);
   if (editor.isComposing()) {
     return;
@@ -266,7 +266,7 @@ export function onKeyDownForRichText(
   event: KeyboardEvent,
   editor: OutlineEditor,
 ): void {
-  lastKeyDownKeyString = event.key;
+  lastKeyDownKeyString = event.which > 47 && event.which < 91 ? event.key : ' ';
   updateAndroidSoftKeyFlagIfAny(event);
   if (editor.isComposing()) {
     return;
@@ -508,11 +508,11 @@ export function onCompositionStart(
       view.setCompositionKey(selection.anchor.key);
       const data = event.data;
       if (data != null && !lastKeyWasMaybeAndroidSoftKey) {
-        // We insert the last keydown key string, ready for
-        // composition. If we don't do this, an use a collapsed
-        // selection point, it causes the composed text to appear
-        // along with the non-composed character entered.
-        insertText(selection, lastKeyDownKeyString);
+        // We insert the event data, keydown key string, or space if not
+        // available. If we don't do this, an use a collapsed selection
+        // point, it causes the composed text to appear along with the
+        // non-composed character entered.
+        insertText(selection, event.data || lastKeyDownKeyString);
       }
     }
   }, 'onCompositionStart');

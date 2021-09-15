@@ -175,10 +175,7 @@ export class BlockNode extends OutlineNode {
   }
   selectEnd(): Selection {
     const lastNode = this.getLastDescendant();
-    if (isBlockNode(lastNode)) {
-      return lastNode.select();
-    }
-    if (isTextNode(lastNode)) {
+    if (isBlockNode(lastNode) || isTextNode(lastNode)) {
       return lastNode.select();
     }
     if (lastNode !== null) {

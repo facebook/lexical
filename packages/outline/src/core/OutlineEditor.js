@@ -107,36 +107,27 @@ export type ListenerType =
   | 'root'
   | 'decorator';
 
-export function resetEditor(editor: OutlineEditor): void {
-  const root = createRoot();
-  const nodeMap = new Map([['root', root]]);
-  const emptyViewModel = new ViewModel(nodeMap);
-  const keyToDOMMap = editor._keyToDOMMap;
-  const rootElement = editor._rootElement;
-
-  triggerListeners('mutation', editor, null);
-  if (rootElement !== null) {
-    // Clear all DOM content from the root element.
-    rootElement.textContent = '';
-  }
-  editor._viewModel = emptyViewModel;
-  editor._pendingViewModel = null;
+export function clearEditor(
+  editor: OutlineEditor,
+  rootElement: HTMLElement,
+): void {
+  const keyNodeMap = editor._keyToDOMMap;
+  keyNodeMap.clear();
+  // Clear the root element
+  rootElement.textContent = '';
   editor._compositionKey = null;
-  editor._rootElement = null;
   editor._dirtyNodes = null;
   editor._dirtySubTrees = null;
-  keyToDOMMap.clear();
   editor._textContent = '';
-  triggerListeners('update', editor, editor._viewModel, null);
+  editor._viewModel = createEmptyViewModel();
+  keyNodeMap.set('root', rootElement);
 }
 
 export function createEditor<EditorContext>(editorConfig?: {
   theme?: EditorThemeClasses,
   context?: EditorContext,
 }): OutlineEditor {
-  const root = createRoot();
-  const nodeMap = new Map([['root', root]]);
-  const viewModel = new ViewModel(nodeMap);
+  const viewModel = createEmptyViewModel();
   const config = editorConfig || {};
   const theme = config.theme || {};
   const context = config.context || {};
@@ -208,6 +199,10 @@ function updateEditor(
     });
   }
   return true;
+}
+
+function createEmptyViewModel(): ViewModel {
+  return new ViewModel(new Map([['root', createRoot()]]));
 }
 
 function getSelf(self: BaseOutlineEditor): OutlineEditor {
@@ -329,13 +324,13 @@ class BaseOutlineEditor {
   setRootElement(nextRootElement: null | HTMLElement): void {
     const prevRootElement = this._rootElement;
     if (nextRootElement !== prevRootElement) {
-      if (nextRootElement === null || prevRootElement !== null) {
-        resetEditor(getSelf(this));
-      }
       this._rootElement = nextRootElement;
       if (nextRootElement !== null) {
         nextRootElement.setAttribute('data-outline-editor', 'true');
-        this._keyToDOMMap.set('root', nextRootElement);
+        if (this._pendingViewModel === null) {
+          this._pendingViewModel = this._viewModel;
+        }
+        clearEditor(getSelf(this), nextRootElement);
         commitPendingUpdates(getSelf(this), 'setRootElement');
       }
       triggerListeners('root', getSelf(this), nextRootElement, prevRootElement);

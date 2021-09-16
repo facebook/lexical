@@ -309,9 +309,12 @@ describe('OutlineEditor tests', () => {
         reactRoot.render(<Test divKey={0} />);
       });
 
+      // Wait for update to complete
+      await Promise.resolve().then();
+
       expect(listener).toHaveBeenCalledTimes(1);
       expect(sanitizeHTML(container.innerHTML)).toBe(
-        '<div contenteditable="true" data-outline-editor="true"></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p><br></p></div>',
       );
 
       ReactTestUtils.act(() => {
@@ -319,7 +322,7 @@ describe('OutlineEditor tests', () => {
       });
       expect(listener).toHaveBeenCalledTimes(3);
       expect(sanitizeHTML(container.innerHTML)).toBe(
-        '<div contenteditable="true" data-outline-editor="true"></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p><br></p></div>',
       );
       // Wait for update to complete
       await Promise.resolve().then();

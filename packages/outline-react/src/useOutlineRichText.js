@@ -90,20 +90,14 @@ export default function useOutlineRichText(
   isReadOnly: boolean,
 ): () => void {
   useLayoutEffect(() => {
-    const removeElementListner = editor.addListener(
-      'root',
-      (rootElement: null | HTMLElement) => {
-        if (rootElement !== null) {
-          editor.registerNodeType('heading', HeadingNode);
-          editor.registerNodeType('list', ListNode);
-          editor.registerNodeType('quote', QuoteNode);
-          editor.registerNodeType('code', CodeNode);
-          editor.registerNodeType('paragraph', ParagraphNode);
-          editor.registerNodeType('listitem', ListItemNode);
-          initEditor(editor);
-        }
-      },
-    );
+    editor.registerNodeType('heading', HeadingNode);
+    editor.registerNodeType('list', ListNode);
+    editor.registerNodeType('quote', QuoteNode);
+    editor.registerNodeType('code', CodeNode);
+    editor.registerNodeType('paragraph', ParagraphNode);
+    editor.registerNodeType('listitem', ListItemNode);
+    initEditor(editor);
+
     const observer = new MutationObserver(
       (mutations: Array<MutationRecord>) => {
         onMutation(editor, mutations, observer);
@@ -126,7 +120,6 @@ export default function useOutlineRichText(
 
     return () => {
       removeMutationListener();
-      removeElementListner();
     };
   }, [editor]);
 

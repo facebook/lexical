@@ -92,12 +92,9 @@ export default function useOutlinePlainText(
   isReadOnly: boolean,
 ): () => void {
   useLayoutEffect(() => {
-    const removeElementListner = editor.addListener('root', (rootElement) => {
-      if (rootElement !== null) {
-        initEditor(editor);
-        editor.registerNodeType('paragraph', ParagraphNode);
-      }
-    });
+    editor.registerNodeType('paragraph', ParagraphNode);
+    initEditor(editor);
+
     const observer = new MutationObserver(
       (mutations: Array<MutationRecord>) => {
         onMutation(editor, mutations, observer);
@@ -120,7 +117,6 @@ export default function useOutlinePlainText(
 
     return () => {
       removeMutationListener();
-      removeElementListner();
     };
   }, [editor]);
 

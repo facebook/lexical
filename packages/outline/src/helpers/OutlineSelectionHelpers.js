@@ -986,9 +986,8 @@ export function insertText(selection: Selection, text: string): void {
 
   if (selectedNodesLength === 1) {
     if (isImmutableOrInert(firstNode)) {
-      const textNode = createTextNode(text);
-      firstNode.replace(textNode);
-      textNode.select();
+      firstNode.selectPrevious();
+      firstNode.remove();
       return;
     }
     const firstNodeFormat = firstNode.getFormat();

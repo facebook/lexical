@@ -108,6 +108,7 @@ describe('OutlineTextNode tests', () => {
     await update((view) => {
       const paragraph = createParagraphNode();
       const text = createTextNode();
+      text.toggleUnmergeable();
       paragraph.append(text);
       view.getRoot().append(paragraph);
     });

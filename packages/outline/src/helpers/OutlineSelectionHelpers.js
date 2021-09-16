@@ -986,9 +986,8 @@ export function insertText(selection: Selection, text: string): void {
 
   if (selectedNodesLength === 1) {
     if (isImmutableOrInert(firstNode)) {
-      const textNode = createTextNode(text);
-      firstNode.replace(textNode);
-      textNode.select();
+      firstNode.selectPrevious();
+      firstNode.remove();
       return;
     }
     const firstNodeFormat = firstNode.getFormat();
@@ -1154,13 +1153,13 @@ export function selectAll(selection: Selection): void {
   if (isTextNode(firstNode)) {
     firstType = 'text';
   } else if (!isBlockNode(firstNode) && firstNode !== null) {
-    firstNode = firstNode.getParentOrThrow(); 
+    firstNode = firstNode.getParentOrThrow();
   }
   if (isTextNode(lastNode)) {
     lastType = 'text';
     lastOffset = lastNode.getTextContentSize();
   } else if (!isBlockNode(lastNode) && lastNode !== null) {
-    lastNode = lastNode.getParentOrThrow(); 
+    lastNode = lastNode.getParentOrThrow();
     lastOffset = lastNode.getChildrenSize();
   }
   if (firstNode && lastNode) {

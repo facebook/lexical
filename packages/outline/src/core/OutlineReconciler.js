@@ -805,6 +805,10 @@ function removeStrandedEmptyTextNode(
   const blockKey = node.__parent;
   let selectionIsDirty = false;
 
+  if (getCompositionKey() === key) {
+    setCompositionKey(null);
+  }
+
   if (anchor !== null && blockKey !== null) {
     if (adjustPointForDeletion(anchor, key, blockKey, index)) {
       selectionIsDirty = true;

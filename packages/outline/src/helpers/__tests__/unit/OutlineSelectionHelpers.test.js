@@ -18,14 +18,14 @@ import {
   getNodesInRange,
 } from 'outline/SelectionHelpers';
 
-function createParagraphWithNodes(editor, nodes, canMerge) {
+function createParagraphWithNodes(editor, nodes) {
   const paragraph = createParagraphNode();
   const nodeMap = editor._pendingViewModel._nodeMap;
   for (let i = 0; i < nodes.length; i++) {
-    const key = nodes[i];
-    const textNode = new TextNode(key, key);
+    const {text, key, mergeable} = nodes[i];
+    const textNode = new TextNode(text, key);
     nodeMap.set(key, textNode);
-    if (!canMerge) {
+    if (!mergeable) {
       textNode.toggleUnmergeable();
     }
     paragraph.append(textNode);
@@ -71,7 +71,11 @@ describe('OutlineSelectionHelpers tests', () => {
 
         editor.update((view) => {
           const root = view.getRoot();
-          const block = createParagraphWithNodes(editor, ['a', 'b', 'c']);
+          const block = createParagraphWithNodes(editor, [
+            {text: 'a', key: 'a', mergeable: false},
+            {text: 'b', key: 'b', mergeable: false},
+            {text: 'c', key: 'c', mergeable: false},
+          ]);
           root.append(block);
           setAnchorPoint(view, {
             type: 'text',
@@ -193,6 +197,215 @@ describe('OutlineSelectionHelpers tests', () => {
       });
     });
 
+    test('Has correct text point adjust to block point after removal of a single empty text node', async () => {
+      const editor = createEditor({});
+
+      editor.addListener('error', (error) => {
+        throw error;
+      });
+
+      const element = document.createElement('div');
+      let block;
+
+      editor.setRootElement(element);
+
+      editor.update((view) => {
+        const root = view.getRoot();
+        block = createParagraphWithNodes(
+          editor,
+          [{text: '', key: 'a', mergeable: true}],
+          true,
+        );
+        root.append(block);
+        setAnchorPoint(view, {
+          type: 'text',
+          key: 'a',
+          offset: 0,
+        });
+        setFocusPoint(view, {
+          type: 'text',
+          key: 'a',
+          offset: 0,
+        });
+      });
+
+      await Promise.resolve().then();
+
+      editor.getViewModel().read((view) => {
+        const selection = view.getSelection();
+        expect(selection.anchor).toEqual({
+          type: 'block',
+          key: block.getKey(),
+          offset: 0,
+        });
+        expect(selection.focus).toEqual({
+          type: 'block',
+          key: block.getKey(),
+          offset: 0,
+        });
+      });
+    });
+
+    test('Has correct block point after removal of an empty text node in a group #1', async () => {
+      const editor = createEditor({});
+
+      editor.addListener('error', (error) => {
+        throw error;
+      });
+
+      const element = document.createElement('div');
+      let block;
+
+      editor.setRootElement(element);
+
+      editor.update((view) => {
+        const root = view.getRoot();
+        block = createParagraphWithNodes(
+          editor,
+          [
+            {text: '', key: 'a', mergeable: true},
+            {text: 'b', key: 'b', mergeable: false},
+          ],
+          true,
+        );
+        root.append(block);
+        setAnchorPoint(view, {
+          type: 'block',
+          key: block.getKey(),
+          offset: 2,
+        });
+        setFocusPoint(view, {
+          type: 'block',
+          key: block.getKey(),
+          offset: 2,
+        });
+      });
+
+      await Promise.resolve().then();
+
+      editor.getViewModel().read((view) => {
+        const selection = view.getSelection();
+        expect(selection.anchor).toEqual({
+          type: 'block',
+          key: block.getKey(),
+          offset: 1,
+        });
+        expect(selection.focus).toEqual({
+          type: 'block',
+          key: block.getKey(),
+          offset: 1,
+        });
+      });
+    });
+
+    test('Has correct block point after removal of an empty text node in a group #2', async () => {
+      const editor = createEditor({});
+
+      editor.addListener('error', (error) => {
+        throw error;
+      });
+
+      const element = document.createElement('div');
+      let block;
+
+      editor.setRootElement(element);
+
+      editor.update((view) => {
+        const root = view.getRoot();
+        block = createParagraphWithNodes(
+          editor,
+          [
+            {text: '', key: 'a', mergeable: true},
+            {text: 'b', key: 'b', mergeable: false},
+            {text: 'c', key: 'c', mergeable: true},
+            {text: 'd', key: 'd', mergeable: true},
+          ],
+          true,
+        );
+        root.append(block);
+        setAnchorPoint(view, {
+          type: 'block',
+          key: block.getKey(),
+          offset: 4,
+        });
+        setFocusPoint(view, {
+          type: 'block',
+          key: block.getKey(),
+          offset: 4,
+        });
+      });
+
+      await Promise.resolve().then();
+
+      editor.getViewModel().read((view) => {
+        const selection = view.getSelection();
+        expect(selection.anchor).toEqual({
+          type: 'block',
+          key: block.getKey(),
+          offset: 2,
+        });
+        expect(selection.focus).toEqual({
+          type: 'block',
+          key: block.getKey(),
+          offset: 2,
+        });
+      });
+    });
+
+    test('Has correct text point after removal of an empty text node in a group #3', async () => {
+      const editor = createEditor({});
+
+      editor.addListener('error', (error) => {
+        throw error;
+      });
+
+      const element = document.createElement('div');
+      let block;
+
+      editor.setRootElement(element);
+
+      editor.update((view) => {
+        const root = view.getRoot();
+        block = createParagraphWithNodes(
+          editor,
+          [
+            {text: '', key: 'a', mergeable: true},
+            {text: 'b', key: 'b', mergeable: false},
+            {text: 'c', key: 'c', mergeable: true},
+            {text: 'd', key: 'd', mergeable: true},
+          ],
+          true,
+        );
+        root.append(block);
+        setAnchorPoint(view, {
+          type: 'text',
+          key: 'd',
+          offset: 1,
+        });
+        setFocusPoint(view, {
+          type: 'text',
+          key: 'd',
+          offset: 1,
+        });
+      });
+
+      await Promise.resolve().then();
+
+      editor.getViewModel().read((view) => {
+        const selection = view.getSelection();
+        expect(selection.anchor).toEqual({
+          type: 'text',
+          key: 'c',
+          offset: 2,
+        });
+        expect(selection.focus).toEqual({
+          type: 'text',
+          key: 'c',
+          offset: 2,
+        });
+      });
+    });
+
     test('Can handle a start block point', () => {
       const setupTestCase = (cb) => {
         const editor = createEditor({});
@@ -203,7 +416,11 @@ describe('OutlineSelectionHelpers tests', () => {
 
         editor.update((view) => {
           const root = view.getRoot();
-          const block = createParagraphWithNodes(editor, ['a', 'b', 'c']);
+          const block = createParagraphWithNodes(editor, [
+            {text: 'a', key: 'a', mergeable: false},
+            {text: 'b', key: 'b', mergeable: false},
+            {text: 'c', key: 'c', mergeable: false},
+          ]);
           root.append(block);
           setAnchorPoint(view, {
             type: 'block',
@@ -321,7 +538,11 @@ describe('OutlineSelectionHelpers tests', () => {
 
         editor.update((view) => {
           const root = view.getRoot();
-          const block = createParagraphWithNodes(editor, ['a', 'b', 'c']);
+          const block = createParagraphWithNodes(editor, [
+            {text: 'a', key: 'a', mergeable: false},
+            {text: 'b', key: 'b', mergeable: false},
+            {text: 'c', key: 'c', mergeable: false},
+          ]);
           root.append(block);
           setAnchorPoint(view, {
             type: 'block',
@@ -444,7 +665,11 @@ describe('OutlineSelectionHelpers tests', () => {
 
       editor.update((view) => {
         const root = view.getRoot();
-        block = createParagraphWithNodes(editor, ['a', 'b', 'c'], true);
+        block = createParagraphWithNodes(editor, [
+          {text: 'a', key: 'a', mergeable: true},
+          {text: 'b', key: 'b', mergeable: true},
+          {text: 'c', key: 'c', mergeable: true},
+        ]);
         root.append(block);
         setAnchorPoint(view, {
           type: 'block',
@@ -489,7 +714,11 @@ describe('OutlineSelectionHelpers tests', () => {
 
       editor.update((view) => {
         const root = view.getRoot();
-        block = createParagraphWithNodes(editor, ['a', 'b', 'c'], true);
+        block = createParagraphWithNodes(editor, [
+          {text: 'a', key: 'a', mergeable: true},
+          {text: 'b', key: 'b', mergeable: true},
+          {text: 'c', key: 'c', mergeable: true},
+        ]);
         root.append(block);
         setAnchorPoint(view, {
           type: 'block',
@@ -532,7 +761,11 @@ describe('OutlineSelectionHelpers tests', () => {
 
         editor.update((view) => {
           const root = view.getRoot();
-          const block = createParagraphWithNodes(editor, ['a', 'b', 'c']);
+          const block = createParagraphWithNodes(editor, [
+            {text: 'a', key: 'a', mergeable: false},
+            {text: 'b', key: 'b', mergeable: false},
+            {text: 'c', key: 'c', mergeable: false},
+          ]);
           root.append(block);
           setAnchorPoint(view, {
             type: 'text',
@@ -671,7 +904,11 @@ describe('OutlineSelectionHelpers tests', () => {
 
         editor.update((view) => {
           const root = view.getRoot();
-          const block = createParagraphWithNodes(editor, ['a', 'b', 'c']);
+          const block = createParagraphWithNodes(editor, [
+            {text: 'a', key: 'a', mergeable: false},
+            {text: 'b', key: 'b', mergeable: false},
+            {text: 'c', key: 'c', mergeable: false},
+          ]);
           root.append(block);
           setAnchorPoint(view, {
             type: 'block',

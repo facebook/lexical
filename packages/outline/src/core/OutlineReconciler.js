@@ -675,11 +675,11 @@ export function getElementByKeyOrThrow(
   return element;
 }
 
-function adjustPoint(
+function adjustPointForMerge(
   point: PointType,
   currentKey: NodeKey,
   startingKey: NodeKey,
-  blockKey: NodeKey,
+  blockKey: null | NodeKey,
   textLength: number,
   index: number,
 ): boolean {
@@ -710,7 +710,7 @@ function mergeAdjacentTextNodes(
   focus: null | PointType,
 ): void {
   // Merge all text nodes into the first node
-  let writableMergeToNode = placements[0][0].getWritable();
+  let writableMergeToNode: TextNode = placements[0][0].getWritable();
   const key = writableMergeToNode.__key;
   const compositionKey = getCompositionKey();
   const blockKey = writableMergeToNode.__parent;
@@ -730,12 +730,30 @@ function mergeAdjacentTextNodes(
       setCompositionKey(key);
     }
     if (anchor !== null) {
-      if (adjustPoint(anchor, textNodeKey, key, blockKey, textLength, index)) {
+      if (
+        adjustPointForMerge(
+          anchor,
+          textNodeKey,
+          key,
+          blockKey,
+          textLength,
+          index,
+        )
+      ) {
         selectionIsDirty = true;
       }
     }
     if (focus !== null) {
-      if (adjustPoint(focus, textNodeKey, key, blockKey, textLength, index)) {
+      if (
+        adjustPointForMerge(
+          focus,
+          textNodeKey,
+          key,
+          blockKey,
+          textLength,
+          index,
+        )
+      ) {
         selectionIsDirty = true;
       }
     }
@@ -752,6 +770,56 @@ function mergeAdjacentTextNodes(
   }
 }
 
+function adjustPointForDeletion(
+  point: PointType,
+  key: NodeKey,
+  blockKey: NodeKey,
+  index: number,
+): boolean {
+  const anchorKey = point.key;
+  const anchorOffset = point.offset;
+  if (key === anchorKey) {
+    point.offset = index;
+    point.key = blockKey;
+    // $FlowFixMe: internal
+    point.type = 'block';
+    return true;
+  } else if (blockKey === anchorKey) {
+    if (anchorOffset > index) {
+      point.offset--;
+      return true;
+    }
+  }
+  return false;
+}
+
+function removeStrandedEmptyTextNode(
+  placements: Array<[TextNode, number]>,
+  anchor: null | PointType,
+  focus: null | PointType,
+): void {
+  const placement = placements[0];
+  const node: TextNode = placement[0];
+  const index = placement[1];
+  const key = node.__key;
+  const blockKey = node.__parent;
+  let selectionIsDirty = false;
+
+  if (anchor !== null && blockKey !== null) {
+    if (adjustPointForDeletion(anchor, key, blockKey, index)) {
+      selectionIsDirty = true;
+    }
+  }
+  if (focus !== null && blockKey !== null) {
+    if (adjustPointForDeletion(focus, key, blockKey, index)) {
+      selectionIsDirty = true;
+    }
+  }
+  if (selectionIsDirty && activeSelection !== null) {
+    activeSelection.isDirty = true;
+  }
+}
+
 function normalizeTextNodes(block: BlockNode): void {
   const children = block.getChildren();
   let placements: Array<[TextNode, number]> = [];
@@ -760,14 +828,17 @@ function normalizeTextNodes(block: BlockNode): void {
   let lastTextNodeStyle: string | null = null;
   let anchor = null;
   let focus = null;
+  let lastTextNodeWasEmpty = false;
 
   if (activeSelection !== null) {
     anchor = activeSelection.anchor;
     focus = activeSelection.focus;
   }
 
+  let removedNodes = 0;
   for (let i = 0; i < children.length; i++) {
     const child = children[i];
+    const index = i - removedNodes;
 
     if (
       isTextNode(child) &&
@@ -779,25 +850,34 @@ function normalizeTextNodes(block: BlockNode): void {
       const flags = child.__flags;
       const format = child.__format;
       const style = child.__style;
+
       if (
         (lastTextNodeFlags === null || flags === lastTextNodeFlags) &&
         (lastTextNodeFormat === null || format === lastTextNodeFormat) &&
         (lastTextNodeStyle === null || style === lastTextNodeStyle)
       ) {
-        placements.push([child, i]);
+        placements.push([child, index]);
       } else {
         if (placements.length > 1) {
           mergeAdjacentTextNodes(placements, anchor, focus);
+        } else if (lastTextNodeWasEmpty) {
+          removeStrandedEmptyTextNode(placements, anchor, focus);
+          removedNodes++;
         }
-        placements = [[child, i]];
+        placements = [[child, index]];
       }
+      lastTextNodeWasEmpty = child.__text === '';
       lastTextNodeFlags = flags;
       lastTextNodeFormat = format;
       lastTextNodeStyle = style;
     } else {
       if (placements.length > 1) {
         mergeAdjacentTextNodes(placements, anchor, focus);
+      } else if (lastTextNodeWasEmpty) {
+        removeStrandedEmptyTextNode(placements, anchor, focus);
+        removedNodes++;
       }
+      lastTextNodeWasEmpty = false;
       placements = [];
       lastTextNodeFlags = null;
       lastTextNodeFormat = null;
@@ -806,5 +886,7 @@ function normalizeTextNodes(block: BlockNode): void {
   }
   if (placements.length > 1) {
     mergeAdjacentTextNodes(placements, anchor, focus);
+  } else if (lastTextNodeWasEmpty) {
+    removeStrandedEmptyTextNode(placements, anchor, focus);
   }
 }

@@ -625,7 +625,7 @@ export function updateCaretSelectionForRange(
     if (!isTextNode(sibling)) {
       const blockKey = possibleDecoratorNode.getParentOrThrow().getKey();
       const decoratorIndex = possibleDecoratorNode.getIndexWithinParent();
-      const offset = isBackward ? decoratorIndex : decoratorIndex + 1;
+      const offset = isBackward ? decoratorIndex : decoratorIndex;
       focus.set(blockKey, offset, 'block');
       if (collapse) {
         anchor.set(blockKey, offset, 'block');

@@ -10,6 +10,7 @@
 import type {OutlineNode} from './OutlineNode';
 
 import {BlockNode} from './OutlineBlockNode';
+import {getActiveViewModel} from './OutlineView';
 
 export class RootNode extends BlockNode {
   type: 'root';
@@ -31,6 +32,8 @@ export class RootNode extends BlockNode {
   }
   select(): null {
     // You can't select root nodes.
+    const viewModel = getActiveViewModel();
+    viewModel._selection = null;
     return null;
   }
 

@@ -100,7 +100,8 @@ export default function useOutlinePlainText(
         onMutation(editor, mutations, observer);
       },
     );
-    const removeMutationListener = editor.addListener(
+    
+    return editor.addListener(
       'mutation',
       (rootElement: null | HTMLElement) => {
         if (rootElement === null) {
@@ -114,10 +115,6 @@ export default function useOutlinePlainText(
         }
       },
     );
-
-    return () => {
-      removeMutationListener();
-    };
   }, [editor]);
 
   useOutlineEditorEvents(events, editor, isReadOnly);

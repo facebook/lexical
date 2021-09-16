@@ -103,7 +103,8 @@ export default function useOutlineRichText(
         onMutation(editor, mutations, observer);
       },
     );
-    const removeMutationListener = editor.addListener(
+
+    return editor.addListener(
       'mutation',
       (rootElement: null | HTMLElement) => {
         if (rootElement === null) {
@@ -117,10 +118,6 @@ export default function useOutlineRichText(
         }
       },
     );
-
-    return () => {
-      removeMutationListener();
-    };
   }, [editor]);
 
   useOutlineEditorEvents(events, editor, isReadOnly);

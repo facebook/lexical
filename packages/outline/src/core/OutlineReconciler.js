@@ -579,14 +579,6 @@ function reconcileSelection(
       anchorNode.getTextContent() !== ''
         ? nextSelectionAnchorOffset
         : nextSelectionAnchorOffset + 1;
-  } else {
-    const anchorNode = anchor.getNode();
-    const childrenSize = anchorNode.getChildrenSize();
-    // Sanitize the offset for when it's longer than the children size
-    if (nextAnchorOffset > childrenSize) {
-      nextAnchorOffset = childrenSize;
-      anchor.offset = nextAnchorOffset;
-    }
   }
   if (focus.type === 'text') {
     const focusNode = focus.getNode();
@@ -597,14 +589,6 @@ function reconcileSelection(
       focusNode.getTextContent() !== ''
         ? nextSelectionFocusOffset
         : nextSelectionFocusOffset + 1;
-  } else {
-    const focusNode = focus.getNode();
-    const childrenSize = focusNode.getChildrenSize();
-    // Sanitize the offset for when it's longer than the children size
-    if (nextFocusOffset > childrenSize) {
-      nextFocusOffset = childrenSize;
-      focus.offset = nextFocusOffset;
-    }
   }
   // If we can't get an underlying text node for selection, then
   // we should avoid setting selection to something incorrect.
@@ -691,37 +675,75 @@ export function getElementByKeyOrThrow(
   return element;
 }
 
+function adjustPoint(
+  point: PointType,
+  currentKey: NodeKey,
+  startingKey: NodeKey,
+  blockKey: NodeKey,
+  textLength: number,
+  index: number,
+): boolean {
+  const anchorKey = point.key;
+  const anchorOffset = point.offset;
+  if (currentKey === anchorKey) {
+    point.offset = textLength + anchorOffset;
+    point.key = startingKey;
+    return true;
+  } else if (blockKey === anchorKey) {
+    if (anchorOffset > index) {
+      point.offset--;
+      return true;
+    } else if (index === anchorOffset) {
+      point.offset = textLength;
+      point.key = startingKey;
+      // $FlowFixMe: internally accessed
+      point.type = 'text';
+      return true;
+    }
+  }
+  return false;
+}
+
 function mergeAdjacentTextNodes(
-  textNodes: Array<TextNode>,
+  placements: Array<[TextNode, number]>,
   anchor: null | PointType,
   focus: null | PointType,
 ): void {
   // Merge all text nodes into the first node
-  const writableMergeToNode = textNodes[0].getWritable();
+  let writableMergeToNode = placements[0][0].getWritable();
   const key = writableMergeToNode.__key;
   const compositionKey = getCompositionKey();
+  const blockKey = writableMergeToNode.__parent;
   let textLength = writableMergeToNode.getTextContentSize();
   let selectionIsDirty = false;
 
-  for (let i = 1; i < textNodes.length; i++) {
-    const textNode = textNodes[i];
+  for (let i = 1; i < placements.length; i++) {
+    const placement = placements[i];
+    const textNode = placement[0];
+    // Adjust the index by the current index of the placement + 1.
+    // This is because we mutate the point offsets for block offsets
+    // as we go, so we need to account for this.
+    const index = placement[1] - i + 1;
     const siblingText = textNode.getTextContent();
     const textNodeKey = textNode.__key;
     if (compositionKey === textNodeKey) {
       setCompositionKey(key);
     }
-    // TODO handle block points?
-    if (anchor !== null && textNodeKey === anchor.key) {
-      anchor.offset = textLength + anchor.offset;
-      anchor.key = key;
-      selectionIsDirty = true;
+    if (anchor !== null) {
+      if (adjustPoint(anchor, textNodeKey, key, blockKey, textLength, index)) {
+        selectionIsDirty = true;
+      }
     }
-    if (focus !== null && textNodeKey === focus.key) {
-      focus.offset = textLength + focus.offset;
-      focus.key = key;
-      selectionIsDirty = true;
+    if (focus !== null) {
+      if (adjustPoint(focus, textNodeKey, key, blockKey, textLength, index)) {
+        selectionIsDirty = true;
+      }
     }
-    writableMergeToNode.spliceText(textLength, 0, siblingText);
+    writableMergeToNode = writableMergeToNode.spliceText(
+      textLength,
+      0,
+      siblingText,
+    );
     textLength += siblingText.length;
     textNode.remove();
   }
@@ -732,7 +754,7 @@ function mergeAdjacentTextNodes(
 
 function normalizeTextNodes(block: BlockNode): void {
   const children = block.getChildren();
-  let toNormalize = [];
+  let placements: Array<[TextNode, number]> = [];
   let lastTextNodeFlags: number | null = null;
   let lastTextNodeFormat: number | null = null;
   let lastTextNodeStyle: string | null = null;
@@ -762,27 +784,27 @@ function normalizeTextNodes(block: BlockNode): void {
         (lastTextNodeFormat === null || format === lastTextNodeFormat) &&
         (lastTextNodeStyle === null || style === lastTextNodeStyle)
       ) {
-        toNormalize.push(child);
+        placements.push([child, i]);
       } else {
-        if (toNormalize.length > 1) {
-          mergeAdjacentTextNodes(toNormalize, anchor, focus);
+        if (placements.length > 1) {
+          mergeAdjacentTextNodes(placements, anchor, focus);
         }
-        toNormalize = [child];
+        placements = [[child, i]];
       }
       lastTextNodeFlags = flags;
       lastTextNodeFormat = format;
       lastTextNodeStyle = style;
     } else {
-      if (toNormalize.length > 1) {
-        mergeAdjacentTextNodes(toNormalize, anchor, focus);
+      if (placements.length > 1) {
+        mergeAdjacentTextNodes(placements, anchor, focus);
       }
-      toNormalize = [];
+      placements = [];
       lastTextNodeFlags = null;
       lastTextNodeFormat = null;
       lastTextNodeStyle = null;
     }
   }
-  if (toNormalize.length > 1) {
-    mergeAdjacentTextNodes(toNormalize, anchor, focus);
+  if (placements.length > 1) {
+    mergeAdjacentTextNodes(placements, anchor, focus);
   }
 }

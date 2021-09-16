@@ -1154,13 +1154,13 @@ export function selectAll(selection: Selection): void {
   if (isTextNode(firstNode)) {
     firstType = 'text';
   } else if (!isBlockNode(firstNode) && firstNode !== null) {
-    firstNode = firstNode.getParentOrThrow(); 
+    firstNode = firstNode.getParentOrThrow();
   }
   if (isTextNode(lastNode)) {
     lastType = 'text';
     lastOffset = lastNode.getTextContentSize();
   } else if (!isBlockNode(lastNode) && lastNode !== null) {
-    lastNode = lastNode.getParentOrThrow(); 
+    lastNode = lastNode.getParentOrThrow();
     lastOffset = lastNode.getChildrenSize();
   }
   if (firstNode && lastNode) {

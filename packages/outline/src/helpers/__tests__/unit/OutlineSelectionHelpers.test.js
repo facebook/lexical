@@ -18,14 +18,16 @@ import {
   getNodesInRange,
 } from 'outline/SelectionHelpers';
 
-function createParagraphWithNodes(editor, nodes) {
+function createParagraphWithNodes(editor, nodes, canMerge) {
   const paragraph = createParagraphNode();
   const nodeMap = editor._pendingViewModel._nodeMap;
   for (let i = 0; i < nodes.length; i++) {
     const key = nodes[i];
     const textNode = new TextNode(key, key);
     nodeMap.set(key, textNode);
-    textNode.toggleUnmergeable();
+    if (!canMerge) {
+      textNode.toggleUnmergeable();
+    }
     paragraph.append(textNode);
   }
   return paragraph;
@@ -424,6 +426,96 @@ describe('OutlineSelectionHelpers tests', () => {
         expect(getNodesInRange(selection)).toEqual({
           range: ['c'],
           nodeMap: [['c', {...view.getNodeByKey('c'), __text: ''}]],
+        });
+      });
+    });
+
+    test('Has correct block point after merge from middle', async () => {
+      const editor = createEditor({});
+
+      editor.addListener('error', (error) => {
+        throw error;
+      });
+
+      const element = document.createElement('div');
+      let block;
+
+      editor.setRootElement(element);
+
+      editor.update((view) => {
+        const root = view.getRoot();
+        block = createParagraphWithNodes(editor, ['a', 'b', 'c'], true);
+        root.append(block);
+        setAnchorPoint(view, {
+          type: 'block',
+          key: block.getKey(),
+          offset: 2,
+        });
+        setFocusPoint(view, {
+          type: 'block',
+          key: block.getKey(),
+          offset: 2,
+        });
+      });
+
+      await Promise.resolve().then();
+
+      editor.getViewModel().read((view) => {
+        const selection = view.getSelection();
+        expect(selection.anchor).toEqual({
+          type: 'text',
+          key: 'a',
+          offset: 2,
+        });
+        expect(selection.focus).toEqual({
+          type: 'text',
+          key: 'a',
+          offset: 2,
+        });
+      });
+    });
+
+    test('Has correct block point after merge from end', async () => {
+      const editor = createEditor({});
+
+      editor.addListener('error', (error) => {
+        throw error;
+      });
+
+      const element = document.createElement('div');
+      let block;
+
+      editor.setRootElement(element);
+
+      editor.update((view) => {
+        const root = view.getRoot();
+        block = createParagraphWithNodes(editor, ['a', 'b', 'c'], true);
+        root.append(block);
+        setAnchorPoint(view, {
+          type: 'block',
+          key: block.getKey(),
+          offset: 3,
+        });
+        setFocusPoint(view, {
+          type: 'block',
+          key: block.getKey(),
+          offset: 3,
+        });
+      });
+
+      await Promise.resolve().then();
+
+      editor.getViewModel().read((view) => {
+        const selection = view.getSelection();
+        expect(selection.anchor).toEqual({
+          type: 'block',
+          key: block.getKey(),
+          offset: 1,
+        });
+        expect(selection.focus).toEqual({
+          type: 'block',
+          key: block.getKey(),
+          offset: 1,
         });
       });
     });

@@ -743,7 +743,7 @@ export class OutlineNode {
     }
     return writableSelf;
   }
-  selectPrevious(anchorOffset?: number, focusOffset?: number): Selection | null {
+  selectPrevious(anchorOffset?: number, focusOffset?: number): Selection {
     errorOnReadOnly();
     const prevSibling = this.getPreviousSibling();
     const parent = this.getParentBlockOrThrow();
@@ -756,7 +756,7 @@ export class OutlineNode {
     }
     return prevSibling.select(anchorOffset, focusOffset);
   }
-  selectNext(anchorOffset?: number, focusOffset?: number): Selection | null {
+  selectNext(anchorOffset?: number, focusOffset?: number): Selection {
     errorOnReadOnly();
     const nextSibling = this.getNextSibling();
     const parent = this.getParentBlockOrThrow();

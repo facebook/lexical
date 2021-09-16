@@ -281,9 +281,7 @@ function reconcileNode(
     activeDirtyNodes === null ||
     activeDirtySubTrees === null ||
     activeDirtyNodes.has(key) ||
-    activeDirtySubTrees.has(key) ||
-    // TODO remove once we get rid of empty text nodes
-    prevNode.getTextContent() === '';
+    activeDirtySubTrees.has(key);
   const dom = getElementByKeyOrThrow(activeEditor, key);
 
   if (prevNode === nextNode && !isDirty) {

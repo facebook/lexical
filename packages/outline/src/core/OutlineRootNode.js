@@ -26,9 +26,12 @@ export class RootNode extends BlockNode {
   clone(): RootNode {
     return new RootNode();
   }
-
   isAttached(): true {
     return true;
+  }
+  select(): null {
+    // You can't select root nodes.
+    return null;
   }
 
   // View

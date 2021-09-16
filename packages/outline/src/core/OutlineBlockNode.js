@@ -144,7 +144,7 @@ export class BlockNode extends OutlineNode {
 
   // Mutators
 
-  select(_anchorOffset?: number, _focusOffset?: number): Selection {
+  select(_anchorOffset?: number, _focusOffset?: number): null | Selection {
     errorOnReadOnly();
     const selection = getSelection();
     let anchorOffset = _anchorOffset;
@@ -173,14 +173,14 @@ export class BlockNode extends OutlineNode {
     }
     return selection;
   }
-  selectStart(): Selection {
+  selectStart(): Selection | null {
     const firstNode = this.getFirstDescendant();
     if (isBlockNode(firstNode) || isTextNode(firstNode)) {
       return firstNode.select(0, 0);
     }
     return this.select(0, 0);
   }
-  selectEnd(): Selection {
+  selectEnd(): Selection | null {
     const lastNode = this.getLastDescendant();
     if (isBlockNode(lastNode) || isTextNode(lastNode)) {
       return lastNode.select();

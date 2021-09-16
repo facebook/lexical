@@ -8,8 +8,10 @@
  */
 
 import type {OutlineNode} from './OutlineNode';
+import type {Selection} from './OutlineSelection';
 
 import {BlockNode} from './OutlineBlockNode';
+import invariant from 'shared/invariant';
 
 export class RootNode extends BlockNode {
   type: 'root';
@@ -26,9 +28,20 @@ export class RootNode extends BlockNode {
   clone(): RootNode {
     return new RootNode();
   }
-
   isAttached(): true {
     return true;
+  }
+  select(): Selection {
+    // You can't select root nodes.
+    invariant(false, 'select: cannot be called on root nodes');
+  }
+  remove(): void {
+    // You can't select root nodes.
+    invariant(false, 'remove: cannot be called on root nodes');
+  }
+  replace<N: OutlineNode>(): N {
+    // You can't select root nodes.
+    invariant(false, 'replace: cannot be called on root nodes');
   }
 
   // View

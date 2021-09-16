@@ -384,11 +384,12 @@ class BaseOutlineEditor {
       this.update(
         (view: View) => {
           const selection = view.getSelection();
+          const root = view.getRoot();
           if (selection !== null) {
             // Marking the selection dirty will force the selection back to it
             selection.isDirty = true;
-          } else {
-            view.getRoot().selectEnd();
+          } else if (root.getChildrenSize() !== 0) {
+            root.selectEnd();
           }
         },
         'focus',

@@ -25,6 +25,7 @@ import {
   isBlockNode,
   isLineBreakNode,
   isDecoratorNode,
+  isRootNode,
   TextNode,
 } from '.';
 import {
@@ -349,6 +350,10 @@ function resolveSelectionPoint(
         resolvedBlock = resolvedBlock.getParentOrThrow();
       } else if (moveSelectionToEnd) {
         resolvedOffset++;
+      }
+      // You can't select root nodes
+      if (isRootNode(resolvedBlock)) {
+        return null;
       }
       return createPoint(resolvedBlock.__key, resolvedOffset, 'block');
     }

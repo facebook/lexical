@@ -1089,8 +1089,8 @@ export function onInput(event: InputEvent, editor: OutlineEditor) {
 }
 
 function isManagedLineBreak(dom: Node, target: Node): boolean {
-  // $FlowFixMe: internal field
   return (
+    // $FlowFixMe: internal field
     target.__outlineLineBreak === dom || dom.__outlineInternalRef !== undefined
   );
 }

@@ -14,6 +14,15 @@ import ReactTestUtils from 'react-dom/test-utils';
 
 import useOutlineRichText from 'outline-react/useOutlineRichText';
 
+jest.mock('shared/environment', () => {
+  const originalModule = jest.requireActual('shared/environment');
+
+  return {
+    ...originalModule,
+    IS_FIREFOX: true,
+  };
+});
+
 import {
   insertText,
   sanitizeSelection,
@@ -25,14 +34,12 @@ import {
   formatUnderline,
   formatStrikeThrough,
   deleteBackward,
-  insertParagraph,
   moveNativeSelection,
   insertImmutableNode,
   convertToImmutableNode,
   insertSegmentedNode,
   convertToSegmentedNode,
   moveBackward,
-  moveForward,
   moveEnd,
   deleteWordBackward,
   deleteWordForward,
@@ -408,36 +415,6 @@ describe('OutlineSelection tests', () => {
         anchorOffset: 1,
         focusPath: [0],
         focusOffset: 1,
-      },
-    },
-    {
-      name: 'Should correctly handle empty paragraph blocks when moving backward',
-      inputs: [insertParagraph(), moveBackward()],
-      expectedHTML:
-        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><br></p>' +
-        '<p class="editor-paragraph"><br></p></div>',
-      expectedSelection: {
-        anchorPath: [0],
-        anchorOffset: 0,
-        focusPath: [0],
-        focusOffset: 0,
-      },
-    },
-    {
-      name: 'Should correctly handle empty paragraph blocks when moving forward',
-      inputs: [
-        insertParagraph(),
-        moveNativeSelection([0], 0, [0], 0),
-        moveForward(),
-      ],
-      expectedHTML:
-        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><br></p>' +
-        '<p class="editor-paragraph"><br></p></div>',
-      expectedSelection: {
-        anchorPath: [1],
-        anchorOffset: 0,
-        focusPath: [1],
-        focusOffset: 0,
       },
     },
     // Tests need fixing:

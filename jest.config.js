@@ -51,6 +51,8 @@ module.exports = {
           '<rootDir>/packages/shared/src/isImmutableOrInert.js',
         '^shared/invariant$': '<rootDir>/packages/shared/src/invariant.js',
         '^shared/environment$': '<rootDir>/packages/shared/src/environment.js',
+        '^shared/getPossibleDecoratorNode$':
+          '<rootDir>/packages/shared/src/getPossibleDecoratorNode.js',
         '^./dist/(.+)': './src/$1',
       },
       globals: {

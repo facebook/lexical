@@ -20,7 +20,7 @@ import type {
   DecoratorNode,
 } from 'outline';
 
-import {IS_SAFARI, CAN_USE_BEFORE_INPUT} from 'shared/environment';
+import {CAN_USE_BEFORE_INPUT} from 'shared/environment';
 import {
   isDeleteBackward,
   isDeleteForward,
@@ -36,10 +36,8 @@ import {
   isUnderline,
   isTab,
   isSelectAll,
-  isMoveWordBackward,
   isMoveBackward,
   isMoveForward,
-  isMoveWordForward,
 } from 'outline/KeyHelpers';
 import isImmutableOrInert from 'shared/isImmutableOrInert';
 import {
@@ -57,13 +55,11 @@ import {
   insertNodes,
   insertLineBreak,
   selectAll,
-  moveWordBackward,
   insertRichText,
-  moveBackward,
-  moveForward,
-  moveWordForward,
+  moveCharacter,
 } from 'outline/SelectionHelpers';
 import {createTextNode, isTextNode, isDecoratorNode} from 'outline';
+import getPossibleDecoratorNode from 'shared/getPossibleDecoratorNode';
 
 const ZERO_WIDTH_JOINER_CHAR = '\u2060';
 const NO_BREAK_SPACE_CHAR = '\u00A0';
@@ -157,34 +153,15 @@ function insertDataTransferForPlainText(
   }
 }
 
-function shouldOverrideBrowserDefault(
+function shouldOverrideDefaultCharacterSelection(
   selection: Selection,
-  isHoldingShift: boolean,
   isBackward: boolean,
 ): boolean {
-  const anchor = selection.anchor;
-  const focus = selection.focus;
-  if (anchor.type !== 'text' || focus.type !== 'text') {
-    return true;
-  }
-  const anchorOffset = anchor.offset;
-  const focusOffset = focus.offset;
-  const anchorTextContentSize = anchor.getNode().getTextContentSize();
-  const selectionAtBoundary = isBackward
-    ? anchorOffset < 2 || focusOffset < 2
-    : anchorOffset > anchorTextContentSize - 2 ||
-      focusOffset > anchorTextContentSize - 2;
-
-  return selection.isCollapsed()
-    ? isHoldingShift || selectionAtBoundary
-    : isHoldingShift && selectionAtBoundary;
-}
-
-function isTopLevelBlockRTL(selection: Selection) {
-  const anchorNode = selection.anchor.getNode();
-  const topLevelBlock = anchorNode.getTopParentBlockOrThrow();
-  const direction = topLevelBlock.getDirection();
-  return direction === 'rtl';
+  const possibleDecoratorNode = getPossibleDecoratorNode(
+    selection.focus,
+    isBackward,
+  );
+  return isDecoratorNode(possibleDecoratorNode);
 }
 
 export function onKeyDownForPlainText(
@@ -201,17 +178,16 @@ export function onKeyDownForPlainText(
       return;
     }
     const isHoldingShift = event.shiftKey;
-    const isRTL = isTopLevelBlockRTL(selection);
 
     if (isMoveBackward(event)) {
-      if (shouldOverrideBrowserDefault(selection, isHoldingShift, !isRTL)) {
+      if (shouldOverrideDefaultCharacterSelection(selection, true)) {
         event.preventDefault();
-        moveBackward(selection, isHoldingShift, isRTL);
+        moveCharacter(selection, isHoldingShift, true);
       }
     } else if (isMoveForward(event)) {
-      if (shouldOverrideBrowserDefault(selection, isHoldingShift, isRTL)) {
+      if (shouldOverrideDefaultCharacterSelection(selection, false)) {
         event.preventDefault();
-        moveForward(selection, isHoldingShift, isRTL);
+        moveCharacter(selection, isHoldingShift, false);
       }
     } else if (isParagraph(event) || isLineBreak(event)) {
       event.preventDefault();
@@ -225,22 +201,6 @@ export function onKeyDownForPlainText(
     } else if (isDeleteForward(event)) {
       event.preventDefault();
       deleteForward(selection);
-    } else if (isMoveWordBackward(event)) {
-      if (
-        IS_SAFARI ||
-        shouldOverrideBrowserDefault(selection, isHoldingShift, !isRTL)
-      ) {
-        event.preventDefault();
-        moveWordBackward(selection, isHoldingShift, isRTL);
-      }
-    } else if (isMoveWordForward(event)) {
-      if (
-        IS_SAFARI ||
-        shouldOverrideBrowserDefault(selection, isHoldingShift, isRTL)
-      ) {
-        event.preventDefault();
-        moveWordForward(selection, isHoldingShift, isRTL);
-      }
     } else if (isDeleteWordBackward(event)) {
       event.preventDefault();
       deleteWordBackward(selection);
@@ -274,17 +234,16 @@ export function onKeyDownForRichText(
       return;
     }
     const isHoldingShift = event.shiftKey;
-    const isRTL = isTopLevelBlockRTL(selection);
 
     if (isMoveBackward(event)) {
-      if (shouldOverrideBrowserDefault(selection, isHoldingShift, !isRTL)) {
+      if (shouldOverrideDefaultCharacterSelection(selection, true)) {
         event.preventDefault();
-        moveBackward(selection, isHoldingShift, isRTL);
+        moveCharacter(selection, isHoldingShift, true);
       }
     } else if (isMoveForward(event)) {
-      if (shouldOverrideBrowserDefault(selection, isHoldingShift, isRTL)) {
+      if (shouldOverrideDefaultCharacterSelection(selection, false)) {
         event.preventDefault();
-        moveForward(selection, isHoldingShift, isRTL);
+        moveCharacter(selection, isHoldingShift, false);
       }
     } else if (isLineBreak(event)) {
       event.preventDefault();
@@ -301,22 +260,6 @@ export function onKeyDownForRichText(
     } else if (isDeleteForward(event)) {
       event.preventDefault();
       deleteForward(selection);
-    } else if (isMoveWordBackward(event)) {
-      if (
-        IS_SAFARI ||
-        shouldOverrideBrowserDefault(selection, isHoldingShift, !isRTL)
-      ) {
-        event.preventDefault();
-        moveWordBackward(selection, isHoldingShift, isRTL);
-      }
-    } else if (isMoveWordForward(event)) {
-      if (
-        IS_SAFARI ||
-        shouldOverrideBrowserDefault(selection, isHoldingShift, isRTL)
-      ) {
-        event.preventDefault();
-        moveWordForward(selection, isHoldingShift, isRTL);
-      }
     } else if (isDeleteWordBackward(event)) {
       event.preventDefault();
       deleteWordBackward(selection);

@@ -43,6 +43,7 @@ module.name_mapper='^shared/isImmutableOrInert' -> '<PROJECT_ROOT>/packages/shar
 module.name_mapper='^shared/invariant' -> '<PROJECT_ROOT>/packages/shared/src/invariant.js'
 module.name_mapper='^shared/getDOMTextNodeFromElement' -> '<PROJECT_ROOT>/packages/shared/src/getDOMTextNodeFromElement.js'
 module.name_mapper='^shared/environment' -> '<PROJECT_ROOT>/packages/shared/src/environment.js'
+module.name_mapper='^shared/getPossibleDecoratorNode' -> '<PROJECT_ROOT>/packages/shared/src/getPossibleDecoratorNode.js'
 
 munge_underscores=false
 

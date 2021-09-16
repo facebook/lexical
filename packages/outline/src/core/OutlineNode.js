@@ -676,12 +676,10 @@ export class OutlineNode {
     errorOnReadOnly();
     return removeNode(this);
   }
-  // TODO add support for replacing with multiple nodes?
   replace<N: OutlineNode>(targetNode: N, restoreSelection?: boolean): N {
     errorOnReadOnly();
     return replaceNode(this, targetNode, restoreSelection);
   }
-  // TODO add support for inserting multiple nodes?
   insertAfter(nodeToInsert: OutlineNode): this {
     errorOnReadOnly();
     const writableSelf = this.getWritable();
@@ -712,7 +710,6 @@ export class OutlineNode {
     }
     return writableSelf;
   }
-  // TODO add support for inserting multiple nodes?
   insertBefore(nodeToInsert: OutlineNode): this {
     errorOnReadOnly();
     const writableSelf = this.getWritable();

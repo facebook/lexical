@@ -30,6 +30,7 @@ import {isHashtagNode} from 'outline/HashtagNode';
 import isImmutableOrInert from 'shared/isImmutableOrInert';
 import invariant from 'shared/invariant';
 import {doesContainGrapheme} from 'outline/TextHelpers';
+import getPossibleDecoratorNode from 'shared/getPossibleDecoratorNode';
 
 function cloneWithProperties<T: OutlineNode>(node: T): T {
   const latest = node.getLatest();
@@ -390,36 +391,25 @@ function moveCaretSelection(
   );
 }
 
-export function moveBackward(
-  selection: Selection,
-  isHoldingShift: boolean,
-  isRTL: boolean,
-): void {
-  moveCaretSelection(selection, isHoldingShift, !isRTL, 'character');
+function isTopLevelBlockRTL(selection: Selection): boolean {
+  const anchorNode = selection.anchor.getNode();
+  const topLevelBlock = anchorNode.getTopParentBlockOrThrow();
+  const direction = topLevelBlock.getDirection();
+  return direction === 'rtl';
 }
 
-export function moveForward(
+export function moveCharacter(
   selection: Selection,
   isHoldingShift: boolean,
-  isRTL: boolean,
+  isBackward: boolean,
 ): void {
-  moveCaretSelection(selection, isHoldingShift, isRTL, 'character');
-}
-
-export function moveWordBackward(
-  selection: Selection,
-  isHoldingShift: boolean,
-  isRTL: boolean,
-): void {
-  moveCaretSelection(selection, isHoldingShift, !isRTL, 'word');
-}
-
-export function moveWordForward(
-  selection: Selection,
-  isHoldingShift: boolean,
-  isRTL: boolean,
-): void {
-  moveCaretSelection(selection, isHoldingShift, isRTL, 'word');
+  const isRTL = isTopLevelBlockRTL(selection);
+  moveCaretSelection(
+    selection,
+    isHoldingShift,
+    isBackward ? !isRTL : isRTL,
+    'character',
+  );
 }
 
 export function deleteLineBackward(selection: Selection): void {
@@ -615,11 +605,6 @@ function moveSelection(
   );
 }
 
-function isEmptyTextNodePoint(point: Point): boolean {
-  const node = point.getNode();
-  return isTextNode(node) && node.getTextContent() === '';
-}
-
 export function updateCaretSelectionForRange(
   selection: Selection,
   isBackward: boolean,
@@ -629,27 +614,10 @@ export function updateCaretSelectionForRange(
   const domSelection = window.getSelection();
   const focus = selection.focus;
   const anchor = selection.anchor;
-  const focusOffset = focus.offset;
 
   // Handle the selection movement around decorators.
-  let possibleDecoratorNode;
+  const possibleDecoratorNode = getPossibleDecoratorNode(focus, isBackward);
 
-  if (focus.type === 'block') {
-    const block = focus.getNode();
-    possibleDecoratorNode = block.getChildAtIndex(
-      isBackward ? focusOffset - 1 : focusOffset + 1,
-    );
-  } else {
-    const focusNode = focus.getNode();
-    if (
-      (isBackward && focusOffset === 0) ||
-      (!isBackward && focusOffset === focusNode.getTextContentSize())
-    ) {
-      possibleDecoratorNode = isBackward
-        ? focusNode.getPreviousSibling()
-        : focusNode.getNextSibling();
-    }
-  }
   if (isDecoratorNode(possibleDecoratorNode)) {
     const sibling = isBackward
       ? possibleDecoratorNode.getPreviousSibling()
@@ -665,23 +633,6 @@ export function updateCaretSelectionForRange(
       return;
     }
   }
-
-  const focusNode = focus.getNode();
-  const sibling = isBackward
-    ? focusNode.getPreviousSibling()
-    : focusNode.getNextSibling();
-
-  const textSize = focusNode.getTextContentSize();
-  const needsExtraMove = isBackward
-    ? focusOffset === 0 &&
-      isTextNode(focusNode) &&
-      focusNode.getTextContent() === '' &&
-      !isImmutableOrInert(focusNode)
-    : focusOffset === textSize &&
-      isTextNode(sibling) &&
-      !isImmutableOrInert(sibling) &&
-      sibling.getTextContent() === '';
-
   // We use the DOM selection.modify API here to "tell" us what the selection
   // will be. We then use it to update the Outline selection accordingly. This
   // is much more reliable than waiting for a beforeinput and using the ranges
@@ -689,24 +640,11 @@ export function updateCaretSelectionForRange(
   // using Intl.Segmenter or other workarounds that struggle with word segments
   // and line segments (especially with word wrapping and non-Roman languages).
   moveSelection(domSelection, collapse, isBackward, granularity);
-  // If we are at a boundary, move once again.
-  if (needsExtraMove && granularity === 'character') {
-    moveSelection(domSelection, collapse, isBackward, granularity);
-  }
   // Guard against no ranges
   if (domSelection.rangeCount > 0) {
     const range = domSelection.getRangeAt(0);
     // Apply the DOM selection to our Outline selection.
     selection.applyDOMRange(range);
-    // Check if we are on an empty text node, make the selection dirty.
-    // TODO: remove once we get rid of empty text nodes.
-    if (domSelection.anchorOffset === 0 || domSelection.focusOffset === 0) {
-      const nextAnchor = selection.anchor;
-      const nextFocus = selection.focus;
-      if (isEmptyTextNodePoint(nextAnchor) || isEmptyTextNodePoint(nextFocus)) {
-        selection.isDirty = true;
-      }
-    }
     // Because a range works on start and end, we might need to flip
     // the anchor and focus points to match what the DOM has, not what
     // the range has specifically.

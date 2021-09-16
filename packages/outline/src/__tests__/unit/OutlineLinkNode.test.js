@@ -72,10 +72,10 @@ describe('OutlineLinkNode tests', () => {
       await editor.update(() => {
         const linkNode = new LinkNode('foo', 'https://example.com/foo');
         expect(sanitizeHTML(linkNode.createDOM(editorConfig).outerHTML)).toBe(
-          '<span class="my-link-class"><span>foo</span></span>',
+          '<a href="https://example.com/foo" class="my-link-class"><span>foo</span></a>',
         );
         expect(sanitizeHTML(linkNode.createDOM({theme: {}}).outerHTML)).toBe(
-          '<span><span>foo</span></span>',
+          '<a href="https://example.com/foo"><span>foo</span></a>',
         );
       });
     });
@@ -86,7 +86,7 @@ describe('OutlineLinkNode tests', () => {
         const linkNode = new LinkNode('foo', 'https://example.com/foo');
         const domElement = linkNode.createDOM(editorConfig);
         expect(sanitizeHTML(linkNode.createDOM(editorConfig).outerHTML)).toBe(
-          '<span class="my-link-class"><span>foo</span></span>',
+          '<a href="https://example.com/foo" class="my-link-class"><span>foo</span></a>',
         );
         const newLinkNode = new LinkNode('bar', 'https://example.com/bar');
         const result = newLinkNode.updateDOM(
@@ -96,7 +96,7 @@ describe('OutlineLinkNode tests', () => {
         );
         expect(result).toBe(false);
         expect(sanitizeHTML(domElement.outerHTML)).toBe(
-          '<span class="my-link-class"><span>bar</span></span>',
+          '<a href="https://example.com/foo" class="my-link-class"><span>bar</span></a>',
         );
       });
     });

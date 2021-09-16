@@ -34,10 +34,11 @@ export class LinkNode extends TextNode {
   }
 
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
-    const element = document.createElement('span');
+    const element = document.createElement('a');
     const text = super.createDOM(config);
     const theme = config.theme;
     const className = theme.link;
+    element.href = this.__url;
     if (className !== undefined) {
       element.className = className;
     }

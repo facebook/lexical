@@ -112,10 +112,9 @@ header h1 {
   margin-left: 16px;
 }
 
-.editor-shell div.editor span.editor-text-link,
-.editor-shell div.editor strong.editor-text-link,
-.editor-shell div.editor em.editor-text-link {
+.editor-shell div.editor a.editor-text-link {
   color: rgb(33, 111, 219);
+  text-decoration: none;
 }
 
 .editor-shell div.editor blockquote {

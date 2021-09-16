@@ -818,6 +818,7 @@ function removeStrandedEmptyTextNode(
   if (selectionIsDirty && activeSelection !== null) {
     activeSelection.isDirty = true;
   }
+  node.remove();
 }
 
 function normalizeTextNodes(block: BlockNode): void {

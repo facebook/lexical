@@ -274,6 +274,9 @@ function getNodesBetween(
     } while (parentSibling === null);
     node = parentSibling;
   }
+  if (!isBefore) {
+    nodes.reverse();
+  }
   return nodes;
 }
 

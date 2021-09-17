@@ -34,7 +34,7 @@ import {
 } from './OutlineNode';
 import {isBlockNode, isTextNode, isLineBreakNode} from '.';
 import invariant from 'shared/invariant';
-import {resetEditor} from './OutlineEditor';
+import {clearEditor} from './OutlineEditor';
 
 export type View = {
   clearSelection(): void,
@@ -401,11 +401,8 @@ export function commitPendingUpdates(
     triggerListeners('error', editor, error, updateName);
     // Reset editor and restore incoming view model to the DOM
     if (!isAttemptingToRecoverFromReconcilerError) {
-      resetEditor(editor);
-      editor._keyToDOMMap.set('root', rootElement);
+      clearEditor(editor, rootElement);
       editor._pendingViewModel = pendingViewModel;
-      editor._dirtyNodes = null;
-      editor._dirtySubTrees = null;
       isAttemptingToRecoverFromReconcilerError = true;
       commitPendingUpdates(editor, 'ReconcileRecover');
       isAttemptingToRecoverFromReconcilerError = false;

@@ -147,12 +147,18 @@ describe('OutlineEditor tests', () => {
 
       React.useEffect(() => {
         editor.update((view) => {
-          const paragraph = createParagraphNode();
-          const text = createTextNode(
-            changeElement ? 'Change successful' : 'Not changed',
-          );
-          paragraph.append(text);
-          view.getRoot().append(paragraph);
+          const root = view.getRoot();
+          const firstChild = root.getFirstChild();
+          const text = changeElement ? 'Change successful' : 'Not changed';
+          if (firstChild === null) {
+            const paragraph = createParagraphNode();
+            const textNode = createTextNode(text);
+            paragraph.append(textNode);
+            root.append(paragraph);
+          } else {
+            const textNode = firstChild.getFirstChild();
+            textNode.setTextContent(text);
+          }
         });
       }, [changeElement]);
 
@@ -171,27 +177,21 @@ describe('OutlineEditor tests', () => {
       );
     }
 
-    ReactTestUtils.act(() => {
+    await ReactTestUtils.act(() => {
       reactRoot.render(<TestBase changeElement={false} />);
     });
-
-    // Let Outline update
-    await Promise.resolve().then();
 
     expect(sanitizeHTML(container.innerHTML)).toBe(
       '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">Not changed</span></p></div>',
     );
 
-    ReactTestUtils.act(() => {
+    await ReactTestUtils.act(() => {
       reactRoot.render(<TestBase changeElement={true} />);
     });
 
-    // Let Outline update
-    await Promise.resolve().then();
-
     expect(listener).toHaveBeenCalledTimes(3);
     expect(sanitizeHTML(container.innerHTML)).toBe(
-      '<span contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">Change successful</span></p></span>',
+      '<span contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">Change successful</span></p></span>',
     );
   });
 
@@ -309,9 +309,12 @@ describe('OutlineEditor tests', () => {
         reactRoot.render(<Test divKey={0} />);
       });
 
+      // Wait for update to complete
+      await Promise.resolve().then();
+
       expect(listener).toHaveBeenCalledTimes(1);
       expect(sanitizeHTML(container.innerHTML)).toBe(
-        '<div contenteditable="true" data-outline-editor="true"></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p><br></p></div>',
       );
 
       ReactTestUtils.act(() => {
@@ -319,7 +322,7 @@ describe('OutlineEditor tests', () => {
       });
       expect(listener).toHaveBeenCalledTimes(3);
       expect(sanitizeHTML(container.innerHTML)).toBe(
-        '<div contenteditable="true" data-outline-editor="true"></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p><br></p></div>',
       );
       // Wait for update to complete
       await Promise.resolve().then();

@@ -484,7 +484,7 @@ export class TextNode extends OutlineNode {
     offset: number,
     delCount: number,
     newText: string,
-    restoreSelection?: boolean,
+    moveSelection?: boolean,
   ): TextNode {
     errorOnReadOnly();
     if (this.isImmutable()) {
@@ -503,7 +503,7 @@ export class TextNode extends OutlineNode {
         index = 0;
       }
     }
-    if (restoreSelection) {
+    if (moveSelection) {
       const selection = getSelection();
       if (selection === null) {
         invariant(false, 'spliceText: selection not found');

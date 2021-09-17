@@ -620,7 +620,7 @@ function updateTextNodeFromDOMContent(
       }
       if (node.isSegmented()) {
         const replacement = createTextNode(originalTextContent);
-        node.replace(replacement, true);
+        node.replace(replacement);
         node = replacement;
       }
       // TODO: somtimes we slip through to this even though this should

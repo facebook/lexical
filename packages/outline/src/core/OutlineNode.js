@@ -9,9 +9,6 @@
 
 import type {OutlineEditor, EditorConfig} from './OutlineEditor';
 import type {Selection, PointType} from './OutlineSelection';
-import type {TextNode} from './OutlineTextNode';
-import type {LineBreakNode} from './OutlineLineBreakNode';
-import type {DecoratorNode} from './OutlineDecoratorNode';
 
 import {
   isBlockNode,
@@ -174,55 +171,6 @@ function replaceSelectionPoint(point: PointType, node: OutlineNode): void {
 
 export function isLeafNode(node: OutlineNode): boolean %checks {
   return isTextNode(node) || isLineBreakNode(node) || isDecoratorNode(node);
-}
-
-function traverseLeafNodes(
-  startingNode: OutlineNode,
-  isBackward: boolean,
-): TextNode | DecoratorNode | LineBreakNode | null {
-  let node = startingNode;
-  while (node !== null) {
-    if (!node.is(startingNode)) {
-      if (isLeafNode(node)) {
-        return node;
-      }
-      if (isBlockNode(node)) {
-        const child = isBackward ? node.getLastChild() : node.getFirstChild();
-        if (child !== null) {
-          node = child;
-          continue;
-        }
-      }
-    }
-    const previousSibling = isBackward
-      ? node.getPreviousSibling()
-      : node.getNextSibling();
-    if (previousSibling !== null) {
-      node = previousSibling;
-      continue;
-    }
-    const parent = node.getParent();
-    if (parent === null) {
-      return null;
-    }
-    let ancestor = parent;
-    let parentSibling = null;
-    do {
-      if (ancestor === null) {
-        return null;
-      }
-      parentSibling = isBackward
-        ? ancestor.getPreviousSibling()
-        : ancestor.getNextSibling();
-      if (parentSibling !== null) {
-        node = parentSibling;
-        continue;
-      }
-      ancestor = ancestor.getParent();
-    } while (parentSibling === null);
-    node = parentSibling;
-  }
-  return null;
 }
 
 function getNodesBetween(
@@ -497,12 +445,6 @@ export class OutlineNode {
       node = node.getParent();
     }
     return parents;
-  }
-  getPreviousLeafNode(): TextNode | DecoratorNode | LineBreakNode | null {
-    return traverseLeafNodes(this, true);
-  }
-  getNextLeafNode(): TextNode | DecoratorNode | LineBreakNode | null {
-    return traverseLeafNodes(this, false);
   }
   getPreviousSibling(): OutlineNode | null {
     const parent = this.getParentOrThrow();

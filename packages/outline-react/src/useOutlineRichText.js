@@ -104,20 +104,17 @@ export default function useOutlineRichText(
       },
     );
 
-    return editor.addListener(
-      'mutation',
-      (rootElement: null | HTMLElement) => {
-        if (rootElement === null) {
-          observer.disconnect();
-        } else {
-          observer.observe(rootElement, {
-            childList: true,
-            subtree: true,
-            characterData: true,
-          });
-        }
-      },
-    );
+    return editor.addListener('mutation', (rootElement: null | HTMLElement) => {
+      if (rootElement === null) {
+        observer.disconnect();
+      } else {
+        observer.observe(rootElement, {
+          childList: true,
+          subtree: true,
+          characterData: true,
+        });
+      }
+    });
   }, [editor]);
 
   useOutlineEditorEvents(events, editor, isReadOnly);

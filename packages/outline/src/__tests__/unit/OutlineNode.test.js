@@ -15,10 +15,8 @@ import {
   IS_INERT,
   IS_SEGMENTED,
 } from '../../core/OutlineConstants';
-import {createParagraphNode} from 'outline/ParagraphNode';
 
 import {initializeUnitTest} from '../utils';
-import {createTextNode} from '../../core/OutlineTextNode';
 
 describe('OutlineNode tests', () => {
   initializeUnitTest((testEnv) => {

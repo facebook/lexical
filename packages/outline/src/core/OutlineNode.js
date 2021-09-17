@@ -9,8 +9,18 @@
 
 import type {OutlineEditor, EditorConfig} from './OutlineEditor';
 import type {Selection, PointType} from './OutlineSelection';
+import type {TextNode} from './OutlineTextNode';
+import type {LineBreakNode} from './OutlineLineBreakNode';
+import type {DecoratorNode} from './OutlineDecoratorNode';
 
-import {isBlockNode, isTextNode, isRootNode, BlockNode} from '.';
+import {
+  isBlockNode,
+  isTextNode,
+  isRootNode,
+  BlockNode,
+  isLineBreakNode,
+  isDecoratorNode,
+} from '.';
 import {
   getActiveViewModel,
   errorOnReadOnly,
@@ -160,6 +170,114 @@ function replaceSelectionPoint(point: PointType, node: OutlineNode): void {
   } else if (isTextNode(node)) {
     selectPointOnNode(point, node);
   }
+}
+
+export function isLeafNode(node: OutlineNode): boolean %checks {
+  return isTextNode(node) || isLineBreakNode(node) || isDecoratorNode(node);
+}
+
+function traverseLeafNodes(
+  startingNode: OutlineNode,
+  isBackward: boolean,
+): TextNode | DecoratorNode | LineBreakNode | null {
+  let node = startingNode;
+  while (node !== null) {
+    if (!node.is(startingNode)) {
+      if (isLeafNode(node)) {
+        return node;
+      }
+      if (isBlockNode(node)) {
+        const child = isBackward ? node.getLastChild() : node.getFirstChild();
+        if (child !== null) {
+          node = child;
+          continue;
+        }
+      }
+    }
+    const previousSibling = isBackward
+      ? node.getPreviousSibling()
+      : node.getNextSibling();
+    if (previousSibling !== null) {
+      node = previousSibling;
+      continue;
+    }
+    const parent = node.getParent();
+    if (parent === null) {
+      return null;
+    }
+    let ancestor = parent;
+    let parentSibling = null;
+    do {
+      if (ancestor === null) {
+        return null;
+      }
+      parentSibling = isBackward
+        ? ancestor.getPreviousSibling()
+        : ancestor.getNextSibling();
+      if (parentSibling !== null) {
+        node = parentSibling;
+        continue;
+      }
+      ancestor = ancestor.getParent();
+    } while (parentSibling === null);
+    node = parentSibling;
+  }
+  return null;
+}
+
+function getNodesBetween(
+  startingNode: OutlineNode,
+  endingNode: OutlineNode,
+  isBefore: boolean,
+): Array<OutlineNode> {
+  const nodes = [];
+  let node = startingNode;
+  while (true) {
+    nodes.push(node);
+    if (node === endingNode) {
+      break;
+    }
+    const child = isBlockNode(node)
+      ? isBefore
+        ? node.getFirstChild()
+        : node.getLastChild()
+      : null;
+    if (child !== null) {
+      node = child;
+      continue;
+    }
+    const nextSibling = isBefore
+      ? node.getNextSibling()
+      : node.getPreviousSibling();
+    if (nextSibling !== null) {
+      node = nextSibling;
+      continue;
+    }
+    const parent = node.getParentOrThrow();
+    nodes.push(parent);
+    if (parent === endingNode) {
+      break;
+    }
+    let parentSibling = null;
+    let ancestor = parent;
+    do {
+      if (ancestor === null) {
+        return nodes;
+      }
+      parentSibling = isBefore
+        ? ancestor.getNextSibling()
+        : ancestor.getPreviousSibling();
+      ancestor = ancestor.getParent();
+      if (parentSibling === null && ancestor !== null) {
+        nodes.push(ancestor);
+      }
+    } while (parentSibling === null);
+    node = parentSibling;
+  }
+  if (!isBefore) {
+    nodes.reverse();
+  }
+  return nodes;
 }
 
 function replaceNode<N: OutlineNode>(
@@ -380,6 +498,12 @@ export class OutlineNode {
     }
     return parents;
   }
+  getPreviousLeafNode(): TextNode | DecoratorNode | LineBreakNode | null {
+    return traverseLeafNodes(this, true);
+  }
+  getNextLeafNode(): TextNode | DecoratorNode | LineBreakNode | null {
+    return traverseLeafNodes(this, false);
+  }
   getPreviousSibling(): OutlineNode | null {
     const parent = this.getParentOrThrow();
     const children = parent.__children;
@@ -487,83 +611,7 @@ export class OutlineNode {
   }
   getNodesBetween(targetNode: OutlineNode): Array<OutlineNode> {
     const isBefore = this.isBefore(targetNode);
-    const nodes = [];
-
-    if (isBefore) {
-      let node = this;
-      while (true) {
-        nodes.push(node);
-        if (node === targetNode) {
-          break;
-        }
-        const child = isBlockNode(node) ? node.getFirstChild() : null;
-        if (child !== null) {
-          node = child;
-          continue;
-        }
-        const nextSibling = node.getNextSibling();
-        if (nextSibling !== null) {
-          node = nextSibling;
-          continue;
-        }
-        const parent = node.getParentOrThrow();
-        nodes.push(parent);
-        if (parent === targetNode) {
-          break;
-        }
-        let parentSibling = null;
-        let ancestor = parent;
-        do {
-          if (ancestor === null) {
-            invariant(false, 'getNodesBetween: ancestor is null');
-          }
-          parentSibling = ancestor.getNextSibling();
-          ancestor = ancestor.getParent();
-          if (parentSibling === null && ancestor !== null) {
-            nodes.push(ancestor);
-          }
-        } while (parentSibling === null);
-        node = parentSibling;
-      }
-    } else {
-      let node = this;
-      while (true) {
-        nodes.push(node);
-        if (node === targetNode) {
-          break;
-        }
-        const child = isBlockNode(node) ? node.getLastChild() : null;
-        if (child !== null) {
-          node = child;
-          continue;
-        }
-        const prevSibling = node.getPreviousSibling();
-        if (prevSibling !== null) {
-          node = prevSibling;
-          continue;
-        }
-        const parent = node.getParentOrThrow();
-        nodes.push(parent);
-        if (parent === targetNode) {
-          break;
-        }
-        let parentSibling = null;
-        let ancestor = parent;
-        do {
-          if (ancestor === null) {
-            invariant(false, 'getNodesBetween: ancestor is null');
-          }
-          parentSibling = ancestor.getPreviousSibling();
-          ancestor = ancestor.getParent();
-          if (parentSibling === null && ancestor !== null) {
-            nodes.push(ancestor);
-          }
-        } while (parentSibling === null);
-        node = parentSibling;
-      }
-      nodes.reverse();
-    }
-    return nodes;
+    return getNodesBetween(this, targetNode, isBefore);
   }
   isImmutable(): boolean {
     return (this.getLatest().__flags & IS_IMMUTABLE) !== 0;

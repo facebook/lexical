@@ -36,6 +36,7 @@ import {isBlockNode, BlockNode} from './OutlineBlockNode';
 import {createRootNode, isRootNode, RootNode} from './OutlineRootNode';
 import {createLineBreakNode, isLineBreakNode} from './OutlineLineBreakNode';
 import {DecoratorNode, isDecoratorNode} from './OutlineDecoratorNode';
+import {isLeafNode} from './OutlineNode';
 
 export {
   createEditor,
@@ -44,6 +45,7 @@ export {
   createRootNode,
   createTextNode,
   // Node validation
+  isLeafNode,
   isBlockNode,
   isDecoratorNode,
   isLineBreakNode,

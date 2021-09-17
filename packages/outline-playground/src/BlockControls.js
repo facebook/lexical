@@ -152,7 +152,7 @@ function DropdownList({
           const children = block.getChildren();
           const paragraph = createParagraphNode();
           children.forEach((child) => paragraph.append(child));
-          block.replace(paragraph, true);
+          block.replace(paragraph);
         }
       }, 'formatParagraph');
     }
@@ -173,7 +173,7 @@ function DropdownList({
           const children = block.getChildren();
           const paragraph = createHeadingNode('h1');
           children.forEach((child) => paragraph.append(child));
-          block.replace(paragraph, true);
+          block.replace(paragraph);
         }
       }, 'formatLargeHeading');
     }
@@ -194,7 +194,7 @@ function DropdownList({
           const children = block.getChildren();
           const paragraph = createHeadingNode('h2');
           children.forEach((child) => paragraph.append(child));
-          block.replace(paragraph, true);
+          block.replace(paragraph);
         }
       }, 'formatSmallHeading');
     }
@@ -217,7 +217,7 @@ function DropdownList({
           const listItem = createListItemNode();
           list.append(listItem);
           children.forEach((child) => listItem.append(child));
-          block.replace(list, true);
+          block.replace(list);
         }
       }, 'formatBulletList');
     }
@@ -240,7 +240,7 @@ function DropdownList({
           const listItem = createListItemNode();
           list.append(listItem);
           children.forEach((child) => listItem.append(child));
-          block.replace(list, true);
+          block.replace(list);
         }
       }, 'formatNumberedList');
     }
@@ -261,7 +261,7 @@ function DropdownList({
           const children = block.getChildren();
           const quoteNode = createQuoteNode();
           children.forEach((child) => quoteNode.append(child));
-          block.replace(quoteNode, true);
+          block.replace(quoteNode);
         }
       }, 'formatQuote');
     }
@@ -282,7 +282,7 @@ function DropdownList({
           const children = block.getChildren();
           const codeNode = createCodeNode();
           children.forEach((child) => codeNode.append(child));
-          block.replace(codeNode, true);
+          block.replace(codeNode);
         }
       }, 'formatCode');
     }

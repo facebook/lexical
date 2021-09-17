@@ -69,7 +69,7 @@ export function toggleHashtag(node: TextNode): TextNode {
   const replacement = !isHashtagNode(node)
     ? createHashtagNode(text)
     : createTextNode(text);
-  node.replace(replacement, true);
+  node.replace(replacement);
   return replacement;
 }
 

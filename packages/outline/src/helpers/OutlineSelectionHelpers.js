@@ -916,7 +916,7 @@ export function insertText(selection: Selection, text: string): void {
       }
     } else if (firstNode.isSegmented() && offset !== firstNodeTextLength) {
       const textNode = createTextNode(firstNode.getTextContent());
-      firstNode.replace(textNode, true);
+      firstNode.replace(textNode);
       firstNode = textNode;
     }
   }
@@ -977,10 +977,10 @@ export function insertText(selection: Selection, text: string): void {
       ) {
         if (lastNode.isSegmented()) {
           const textNode = createTextNode(lastNode.getTextContent());
-          lastNode.replace(textNode, true);
+          lastNode.replace(textNode);
           lastNode = textNode;
         }
-        lastNode = lastNode.spliceText(0, endOffset, '', false);
+        lastNode = lastNode.spliceText(0, endOffset, '');
       } else {
         lastNode.remove();
       }

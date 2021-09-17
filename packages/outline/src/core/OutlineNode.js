@@ -8,7 +8,7 @@
  */
 
 import type {OutlineEditor, EditorConfig} from './OutlineEditor';
-import type {Selection} from './OutlineSelection';
+import type {Selection, PointType} from './OutlineSelection';
 
 import {isBlockNode, isTextNode, isRootNode, BlockNode} from '.';
 import {
@@ -135,22 +135,38 @@ function removeNode(nodeToRemove: OutlineNode): void {
   writableNodeToRemove.__parent = null;
 }
 
+function selectPointOnNode(point: PointType, node: OutlineNode): void {
+  const key = node.getKey();
+  let offset = point.offset;
+  let type = 'block';
+  if (isTextNode(node)) {
+    type = 'text';
+    const textContentLength = node.getTextContentSize();
+    if (offset > textContentLength) {
+      offset = textContentLength;
+    }
+  }
+  point.set(key, offset, type);
+}
+
+function replaceSelectionPoint(point: PointType, node: OutlineNode): void {
+  if (isBlockNode(node)) {
+    const lastNode = node.getLastDescendant();
+    if (isBlockNode(lastNode) || isTextNode(lastNode)) {
+      selectPointOnNode(point, lastNode);
+    } else {
+      selectPointOnNode(point, node);
+    }
+  } else if (isTextNode(node)) {
+    selectPointOnNode(point, node);
+  }
+}
+
 function replaceNode<N: OutlineNode>(
   toReplace: OutlineNode,
   replaceWith: N,
-  restoreSelection?: boolean,
 ): N {
-  let anchorOffset;
   const toReplaceKey = toReplace.__key;
-  if (restoreSelection) {
-    const selection = getSelection();
-    if (selection) {
-      const anchorNode = selection.anchor.getNode();
-      if (selection.isCollapsed() && anchorNode.__key === toReplaceKey) {
-        anchorOffset = selection.anchor.offset;
-      }
-    }
-  }
   const writableReplaceWith = replaceWith.getWritable<N>();
   const oldParent = writableReplaceWith.getParent();
   if (oldParent !== null) {
@@ -176,12 +192,14 @@ function replaceNode<N: OutlineNode>(
   if (flags & IS_DIRECTIONLESS) {
     updateDirectionIfNeeded(writableReplaceWith);
   }
-  if (anchorOffset !== undefined) {
-    if (isBlockNode(writableReplaceWith)) {
-      writableReplaceWith.selectEnd();
-    } else if (isTextNode(writableReplaceWith)) {
-      writableReplaceWith.select(anchorOffset, anchorOffset);
-    }
+  const selection = getSelection();
+  const anchor = selection && selection.anchor;
+  const focus = selection && selection.focus;
+  if (anchor !== null && anchor.key === toReplaceKey) {
+    replaceSelectionPoint(anchor, writableReplaceWith);
+  }
+  if (focus !== null && focus.key === toReplaceKey) {
+    replaceSelectionPoint(focus, writableReplaceWith);
   }
   if (getCompositionKey() === toReplaceKey) {
     setCompositionKey(newKey);
@@ -676,9 +694,9 @@ export class OutlineNode {
     errorOnReadOnly();
     return removeNode(this);
   }
-  replace<N: OutlineNode>(targetNode: N, restoreSelection?: boolean): N {
+  replace<N: OutlineNode>(targetNode: N): N {
     errorOnReadOnly();
-    return replaceNode(this, targetNode, restoreSelection);
+    return replaceNode(this, targetNode);
   }
   insertAfter(nodeToInsert: OutlineNode): this {
     errorOnReadOnly();

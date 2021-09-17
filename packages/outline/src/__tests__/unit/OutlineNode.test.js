@@ -15,8 +15,10 @@ import {
   IS_INERT,
   IS_SEGMENTED,
 } from '../../core/OutlineConstants';
+import {createParagraphNode} from 'outline/ParagraphNode';
 
 import {initializeUnitTest} from '../utils';
+import {createTextNode} from '../../core/OutlineTextNode';
 
 describe('OutlineNode tests', () => {
   initializeUnitTest((testEnv) => {
@@ -409,6 +411,82 @@ describe('OutlineNode tests', () => {
         ]);
       });
       expect(() => textNode.getNodesBetween(bazTextNode)).toThrow();
+    });
+
+    test('OutlineNode.getPreviousLeafNode()', async () => {
+      const {editor} = testEnv;
+      let aBlock;
+      let bBlock;
+      let cBlock;
+      let aLeaf;
+      let bLeaf;
+      let cLeaf;
+      let dLeaf;
+      let eLeaf;
+      await editor.update((view) => {
+        const rootNode = view.getRoot();
+        aBlock = createParagraphNode();
+        bBlock = createParagraphNode();
+        cBlock = createParagraphNode();
+        aLeaf = createTextNode();
+        bLeaf = createTextNode();
+        cLeaf = createTextNode();
+        dLeaf = createTextNode();
+        eLeaf = createTextNode();
+
+        aBlock.append(aLeaf);
+        aBlock.append(bLeaf);
+        bBlock.append(cLeaf);
+        cBlock.append(dLeaf);
+        cBlock.append(eLeaf);
+
+        rootNode.append(aBlock);
+        rootNode.append(bBlock);
+        bBlock.append(cBlock);
+
+        expect(eLeaf.getPreviousLeafNode()).toBe(dLeaf);
+        expect(dLeaf.getPreviousLeafNode()).toBe(cLeaf);
+        expect(cLeaf.getPreviousLeafNode()).toBe(bLeaf);
+        expect(bLeaf.getPreviousLeafNode()).toBe(aLeaf);
+      });
+    });
+
+    test('OutlineNode.getNextLeafNode()', async () => {
+      const {editor} = testEnv;
+      let aBlock;
+      let bBlock;
+      let cBlock;
+      let aLeaf;
+      let bLeaf;
+      let cLeaf;
+      let dLeaf;
+      let eLeaf;
+      await editor.update((view) => {
+        const rootNode = view.getRoot();
+        aBlock = createParagraphNode();
+        bBlock = createParagraphNode();
+        cBlock = createParagraphNode();
+        aLeaf = createTextNode();
+        bLeaf = createTextNode();
+        cLeaf = createTextNode();
+        dLeaf = createTextNode();
+        eLeaf = createTextNode();
+
+        aBlock.append(aLeaf);
+        aBlock.append(bLeaf);
+        bBlock.append(cLeaf);
+        cBlock.append(dLeaf);
+        cBlock.append(eLeaf);
+
+        rootNode.append(aBlock);
+        rootNode.append(bBlock);
+        bBlock.append(cBlock);
+
+        expect(aLeaf.getNextLeafNode()).toBe(bLeaf);
+        expect(bLeaf.getNextLeafNode()).toBe(cLeaf);
+        expect(cLeaf.getNextLeafNode()).toBe(dLeaf);
+        expect(dLeaf.getNextLeafNode()).toBe(eLeaf);
+      });
     });
 
     test('OutlineNode.isImmutable()', async () => {

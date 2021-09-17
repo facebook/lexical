@@ -176,22 +176,22 @@ export function isLeafNode(node: OutlineNode): boolean %checks {
   return isTextNode(node) || isLineBreakNode(node) || isDecoratorNode(node);
 }
 
-function findNextLeafNode(
+function traverseLeafNodes(
   startingNode: OutlineNode,
   isBackward: boolean,
 ): TextNode | DecoratorNode | LineBreakNode | null {
-  let node = isBackward
-    ? startingNode.getPreviousSibling()
-    : startingNode.getNextSibling();
+  let node = startingNode;
   while (node !== null) {
-    if (isLeafNode(node)) {
-      return node;
-    }
-    if (isBlockNode(node)) {
-      const child = isBackward ? node.getLastChild() : node.getFirstChild();
-      if (child !== null) {
-        node = child;
-        continue;
+    if (!node.is(startingNode)) {
+      if (isLeafNode(node)) {
+        return node;
+      }
+      if (isBlockNode(node)) {
+        const child = isBackward ? node.getLastChild() : node.getFirstChild();
+        if (child !== null) {
+          node = child;
+          continue;
+        }
       }
     }
     const previousSibling = isBackward
@@ -206,8 +206,12 @@ function findNextLeafNode(
       return null;
     }
     let ancestor = parent;
-    while (ancestor !== null) {
-      const parentSibling = isBackward
+    let parentSibling = null;
+    do {
+      if (ancestor === null) {
+        return null;
+      }
+      parentSibling = isBackward
         ? ancestor.getPreviousSibling()
         : ancestor.getNextSibling();
       if (parentSibling !== null) {
@@ -215,8 +219,8 @@ function findNextLeafNode(
         continue;
       }
       ancestor = ancestor.getParent();
-    }
-    return null;
+    } while (parentSibling === null);
+    node = parentSibling;
   }
   return null;
 }
@@ -258,7 +262,7 @@ function getNodesBetween(
     let ancestor = parent;
     do {
       if (ancestor === null) {
-        invariant(false, 'getNodesBetween: ancestor is null');
+        return nodes;
       }
       parentSibling = isBefore
         ? ancestor.getNextSibling()
@@ -492,7 +496,10 @@ export class OutlineNode {
     return parents;
   }
   getPreviousLeafNode(): TextNode | DecoratorNode | LineBreakNode | null {
-    return findNextLeafNode(this, true);
+    return traverseLeafNodes(this, true);
+  }
+  getNextLeafNode(): TextNode | DecoratorNode | LineBreakNode | null {
+    return traverseLeafNodes(this, false);
   }
   getPreviousSibling(): OutlineNode | null {
     const parent = this.getParentOrThrow();

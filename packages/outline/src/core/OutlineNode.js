@@ -210,7 +210,7 @@ function getNodesBetween(
     let ancestor = parent;
     do {
       if (ancestor === null) {
-        return nodes;
+        invariant(false, 'getNodesBetween: ancestor is null');
       }
       parentSibling = isBefore
         ? ancestor.getNextSibling()

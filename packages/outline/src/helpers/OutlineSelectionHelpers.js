@@ -1154,6 +1154,7 @@ export function insertText(selection: Selection, text: string): void {
           lastNode = textNode;
         }
         lastNode = lastNode.spliceText(0, endOffset, '');
+        markedNodeKeysForKeep.add(lastNode.getKey());
       } else {
         lastNode.remove();
       }

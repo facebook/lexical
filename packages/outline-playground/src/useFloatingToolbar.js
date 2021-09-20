@@ -21,8 +21,13 @@ import {createTextNode, isTextNode} from 'outline';
 import React, {useCallback, useEffect, useRef, useState, useMemo} from 'react';
 // $FlowFixMe
 import {unstable_batchedUpdates, createPortal} from 'react-dom';
-import {formatText, extractSelection} from 'outline/SelectionHelpers';
+import {
+  formatText,
+  extractSelection,
+  styleText,
+} from 'outline/SelectionHelpers';
 import {createLinkNode, isLinkNode, LinkNode} from 'outline/LinkNode';
+import {getSelectionFontSize} from './utils/styleTextUtils';
 
 function positionToolbar(toolbar, rect) {
   if (rect === null) {
@@ -65,6 +70,29 @@ function Button({
       }}>
       <i className={className} />
     </div>
+  );
+}
+
+function Select({
+  onChange,
+  className,
+  options,
+  value,
+}: {
+  onChange: (event: {target: {value: string}}) => void,
+  className: string,
+  options: Array<string>,
+  value: string,
+}) {
+  return (
+    <select className={className} onChange={onChange} value={value}>
+      <option hidden value=""></option>
+      {options.map((option) => (
+        <option key={option} value={option}>
+          {option}
+        </option>
+      ))}
+    </select>
   );
 }
 
@@ -138,6 +166,7 @@ function LinkBar({
 
 function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
   const toolbarRef = useRef(null);
+  const [fontSize, setFontSize] = useState<string>('15px');
   const [isBold, setIsBold] = useState(false);
   const [isItalic, setIsItalic] = useState(false);
   const [isStrikethrough, setIsStrikethrough] = useState(false);
@@ -199,6 +228,7 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
         ) {
           const node = getSelectedNode(selection);
           unstable_batchedUpdates(() => {
+            setFontSize(getSelectionFontSize(selection, '15px'));
             setIsBold(isTextNode(node) && node.isBold());
             setIsItalic(isTextNode(node) && node.isItalic());
             setIsStrikethrough(isTextNode(node) && node.isStrikethrough());
@@ -311,6 +341,24 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
     [editor],
   );
 
+  const applyStyleText = useCallback(
+    (styles: {[string]: string}) => {
+      editor.update((view) => {
+        const selection = view.getSelection();
+        if (selection !== null) {
+          styleText(selection, styles);
+        }
+      }, 'applyStyleText');
+    },
+    [editor],
+  );
+
+  const onFontSizeSelect = useCallback(
+    (e) => {
+      applyStyleText({'font-size': e.target.value});
+    },
+    [applyStyleText],
+  );
   const bold = useCallback(() => applyFormatText('bold'), [applyFormatText]);
   const italic = useCallback(
     () => applyFormatText('italic'),
@@ -332,26 +380,48 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
 
   return (
     <div ref={toolbarRef} id="toolbar">
-      <Button className="bold" onClick={bold} active={isBold} />
-      <Button className="italic" onClick={italic} active={isItalic} />
-      <Button className="code" onClick={code} active={isCode} />
-      <Button
-        className="strikethrough"
-        onClick={strikethrough}
-        active={isStrikethrough}
-      />
-      <Button className="link" onClick={link} active={isLink} />
-      {isLink ? (
-        <LinkBar
-          lastSelection={lastSelection}
-          editor={editor}
-          linkUrl={linkUrl}
-          setLinkUrl={setLinkUrl}
-          isEditMode={isEditMode}
-          setEditMode={setEditMode}
-          updateSelectedLinks={updateSelectedLinks}
+      <div className="font-size-wrapper">
+        <Select
+          className="font-size"
+          onChange={onFontSizeSelect}
+          options={[
+            '10px',
+            '11px',
+            '12px',
+            '13px',
+            '14px',
+            '15px',
+            '16px',
+            '17px',
+            '18px',
+            '19px',
+            '20px',
+          ]}
+          value={fontSize}
         />
-      ) : null}
+      </div>
+      <div>
+        <Button className="bold" onClick={bold} active={isBold} />
+        <Button className="italic" onClick={italic} active={isItalic} />
+        <Button className="code" onClick={code} active={isCode} />
+        <Button
+          className="strikethrough"
+          onClick={strikethrough}
+          active={isStrikethrough}
+        />
+        <Button className="link" onClick={link} active={isLink} />
+        {isLink ? (
+          <LinkBar
+            lastSelection={lastSelection}
+            editor={editor}
+            linkUrl={linkUrl}
+            setLinkUrl={setLinkUrl}
+            isEditMode={isEditMode}
+            setEditMode={setEditMode}
+            updateSelectedLinks={updateSelectedLinks}
+          />
+        ) : null}
+      </div>
     </div>
   );
 }

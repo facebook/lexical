@@ -322,6 +322,7 @@ pre :not(.tree-view-output) {
   box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.3);
   border-radius: 8px;
   transition: opacity 0.5s;
+  display: flex;
 }
 
 #toolbar .button {
@@ -408,6 +409,18 @@ pre :not(.tree-view-output) {
 
 #toolbar .link-input a:hover {
   text-decoration: underline;
+}
+
+#toolbar .font-size-wrapper, #toolbar .font-family-wrapper {
+  display: flex;
+  margin: 0 4px;
+}
+
+#toolbar select {
+  padding: 6px;
+  border: none;
+  background-color: rgba(0, 0, 0, 0.075);
+  border-radius: 4px;
 }
 
 .mention:focus {

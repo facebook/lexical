@@ -282,6 +282,114 @@ describe('TextFormatting', () => {
       });
     });
 
+    it(`Can select text and change the font-size`, async () => {
+      const {isRichText, page} = e2e;
+
+      if (!isRichText) {
+        return;
+      }
+
+      await page.focus('div.editor');
+      await page.keyboard.type('Hello world!');
+      await page.keyboard.press('ArrowLeft');
+      await page.keyboard.down('Shift');
+      await repeat(5, async () => {
+        await page.keyboard.press('ArrowLeft');
+      });
+      await page.keyboard.up('Shift');
+
+      await assertSelection(page, {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 11,
+        focusPath: [0, 0, 0],
+        focusOffset: 6,
+      });
+
+      await page.waitForSelector('.font-size');
+      await page.selectOption('.font-size', {value: '10px'});
+
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello </span><span data-outline-text="true" style="font-size: 10px;">world</span><span data-outline-text="true">!</span></p>',
+      );
+
+      await assertSelection(page, {
+        anchorPath: [0, 1, 0],
+        anchorOffset: 0,
+        focusPath: [0, 1, 0],
+        focusOffset: 5,
+      });
+    });
+
+    it(`Can select text and change the font-size and font-family`, async () => {
+      const {isRichText, page} = e2e;
+
+      if (!isRichText) {
+        return;
+      }
+
+      await page.focus('div.editor');
+      await page.keyboard.type('Hello world!');
+      await page.keyboard.press('ArrowLeft');
+      await page.keyboard.down('Shift');
+      await repeat(5, async () => {
+        await page.keyboard.press('ArrowLeft');
+      });
+      await page.keyboard.up('Shift');
+
+      await assertSelection(page, {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 11,
+        focusPath: [0, 0, 0],
+        focusOffset: 6,
+      });
+
+      await page.waitForSelector('.font-size');
+      await page.selectOption('.font-size', {value: '10px'});
+
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello </span><span data-outline-text="true" style="font-size: 10px;">world</span><span data-outline-text="true">!</span></p>',
+      );
+
+      await assertSelection(page, {
+        anchorPath: [0, 1, 0],
+        anchorOffset: 0,
+        focusPath: [0, 1, 0],
+        focusOffset: 5,
+      });
+
+      await page.waitForSelector('.font-family');
+      await page.selectOption('.font-family', {value: 'Georgia'});
+
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello </span><span data-outline-text="true" style="font-size: 10px; font-family: Georgia;">world</span><span data-outline-text="true">!</span></p>',
+      );
+
+      await assertSelection(page, {
+        anchorPath: [0, 1, 0],
+        anchorOffset: 0,
+        focusPath: [0, 1, 0],
+        focusOffset: 5,
+      });
+
+      await page.waitForSelector('.font-size');
+      await page.selectOption('.font-size', {value: '20px'});
+
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello </span><span data-outline-text="true" style="font-size: 20px; font-family: Georgia;">world</span><span data-outline-text="true">!</span></p>',
+      );
+
+      await assertSelection(page, {
+        anchorPath: [0, 1, 0],
+        anchorOffset: 0,
+        focusPath: [0, 1, 0],
+        focusOffset: 5,
+      });
+    });
+
     it(`Can select multiple text parts and format them with shortcuts`, async () => {
       const {isRichText, page} = e2e;
 

@@ -223,6 +223,167 @@ export function extractSelection(selection: Selection): Array<OutlineNode> {
   return selectedNodes;
 }
 
+const cssToStyles: Map<string, {[string]: string}> = new Map();
+
+export function getStyleObjectFromCSS(css: string): {[string]: string} | null {
+  return cssToStyles.get(css) || null;
+}
+
+function getCSSFromStyleObject(styles: {[string]: string}): string {
+  let css = '';
+  for (const style in styles) {
+    if (style) {
+      css += `${style}: ${styles[style]};`;
+    }
+  }
+  return css;
+}
+
+function patchNodeStyle(node: TextNode, patch: {[string]: string}): void {
+  const prevStyles = getStyleObjectFromCSS(node.getStyle());
+  const newStyles = prevStyles ? {...prevStyles, ...patch} : patch;
+  const newCSSText = getCSSFromStyleObject(newStyles);
+  node.setStyle(newCSSText);
+  cssToStyles.set(newCSSText, newStyles);
+}
+
+export function patchStyleText(
+  selection: Selection,
+  patch: {[string]: string},
+): void {
+  const selectedNodes = selection.getNodes();
+  const selectedNodesLength = selectedNodes.length;
+  const lastIndex = selectedNodesLength - 1;
+  let firstNode = selectedNodes[0];
+  let lastNode = selectedNodes[lastIndex];
+
+  if (selection.isCollapsed()) {
+    return;
+  }
+  const anchor = selection.anchor;
+  const focus = selection.focus;
+  const firstNodeText = firstNode.getTextContent();
+  const firstNodeTextLength = firstNodeText.length;
+  const focusOffset = focus.offset;
+  let anchorOffset = anchor.offset;
+  let startOffset;
+  let endOffset;
+
+  const isBefore = anchor.isBefore(focus);
+  startOffset = isBefore ? anchorOffset : focusOffset;
+  endOffset = isBefore ? focusOffset : anchorOffset;
+
+  // This is the case where the user only selected the very end of the
+  // first node so we don't want to include it in the formatting change.
+  if (startOffset === firstNode.getTextContentSize()) {
+    const nextSibling = firstNode.getNextSibling();
+
+    if (isTextNode(nextSibling)) {
+      // we basically make the second node the firstNode, changing offsets accordingly
+      anchorOffset = 0;
+      startOffset = 0;
+      firstNode = nextSibling;
+    }
+  }
+
+  // This is the case where we only selected a single node
+  if (firstNode === lastNode) {
+    if (isTextNode(firstNode)) {
+      startOffset = anchorOffset > focusOffset ? focusOffset : anchorOffset;
+      endOffset = anchorOffset > focusOffset ? anchorOffset : focusOffset;
+
+      // No actual text is selected, so do nothing.
+      if (startOffset === endOffset) {
+        return;
+      }
+      // The entire node is selected, so just format it
+      if (startOffset === 0 && endOffset === firstNodeTextLength) {
+        patchNodeStyle(firstNode, patch);
+        firstNode.select(startOffset, endOffset);
+      } else {
+        // The node is partially selected, so split it into two nodes
+        // and style the selected one.
+        const splitNodes = firstNode.splitText(startOffset, endOffset);
+        const replacement = startOffset === 0 ? splitNodes[0] : splitNodes[1];
+        patchNodeStyle(replacement, patch);
+        replacement.select(0, endOffset - startOffset);
+      }
+    }
+    // multiple nodes selected.
+  } else {
+    if (isTextNode(firstNode)) {
+      if (startOffset !== 0) {
+        // the entire first node isn't selected, so split it
+        [, firstNode] = firstNode.splitText(startOffset);
+        startOffset = 0;
+      }
+      patchNodeStyle(firstNode, patch);
+    }
+
+    if (isTextNode(lastNode)) {
+      const lastNodeText = lastNode.getTextContent();
+      const lastNodeTextLength = lastNodeText.length;
+      // if the entire last node isn't selected, split it
+      if (endOffset !== lastNodeTextLength) {
+        [lastNode] = lastNode.splitText(endOffset);
+      }
+      patchNodeStyle(lastNode, patch);
+    }
+
+    // style all the text nodes in between
+    for (let i = 1; i < lastIndex; i++) {
+      const selectedNode = selectedNodes[i];
+      const selectedNodeKey = selectedNode.getKey();
+      if (
+        isTextNode(selectedNode) &&
+        selectedNodeKey !== firstNode.getKey() &&
+        selectedNodeKey !== lastNode.getKey() &&
+        !selectedNode.isImmutable()
+      ) {
+        patchNodeStyle(selectedNode, patch);
+      }
+    }
+  }
+}
+
+export function getSelectionStyleValueForProperty(
+  selection: Selection,
+  styleProperty: string,
+  defaultValue: string = '',
+): string {
+  let styleValue = null;
+  const nodes = selection.getNodes();
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
+    if (isTextNode(node)) {
+      const nodeStyleValue = getNodeStyleValueForProperty(
+        node,
+        styleProperty,
+        defaultValue,
+      );
+      if (styleValue === null) {
+        styleValue = nodeStyleValue;
+      } else if (styleValue !== nodeStyleValue) {
+        // multiple text nodes are in the selection and they don't all
+        // have the same font size.
+        styleValue = '';
+        break;
+      }
+    }
+  }
+  return styleValue === null ? defaultValue : styleValue;
+}
+
+function getNodeStyleValueForProperty(
+  node: TextNode,
+  styleProperty: string,
+  defaultValue: string,
+): string {
+  const css = node.getStyle();
+  const styleObject = getStyleObjectFromCSS(css);
+  return styleObject ? styleObject[styleProperty] : defaultValue;
+}
+
 export function formatText(
   selection: Selection,
   formatType: TextFormatType,
@@ -258,10 +419,13 @@ export function formatText(
   startOffset = isBefore ? anchorOffset : focusOffset;
   endOffset = isBefore ? focusOffset : anchorOffset;
 
+  // This is the case where the user only selected the very end of the
+  // first node so we don't want to include it in the formatting change.
   if (startOffset === firstNode.getTextContentSize()) {
     const nextSibling = firstNode.getNextSibling();
 
     if (isTextNode(nextSibling)) {
+      // we basically make the second node the firstNode, changing offsets accordingly
       anchorOffset = 0;
       startOffset = 0;
       firstNode = nextSibling;
@@ -269,27 +433,34 @@ export function formatText(
     }
   }
 
+  // This is the case where we only selected a single node
   if (firstNode === lastNode) {
     if (isTextNode(firstNode)) {
       startOffset = anchorOffset > focusOffset ? focusOffset : anchorOffset;
       endOffset = anchorOffset > focusOffset ? anchorOffset : focusOffset;
 
+      // No actual text is selected, so do nothing.
       if (startOffset === endOffset) {
         return;
       }
+      // The entire node is selected, so just format it
       if (startOffset === 0 && endOffset === firstNodeTextLength) {
         firstNode.setFormat(firstNextFormat);
         firstNode.select(startOffset, endOffset);
       } else {
+        // ndoe is partially selected, so split it into two nodes
+        // adnd style the selected one.
         const splitNodes = firstNode.splitText(startOffset, endOffset);
         const replacement = startOffset === 0 ? splitNodes[0] : splitNodes[1];
         replacement.setFormat(firstNextFormat);
         replacement.select(0, endOffset - startOffset);
       }
     }
+    // multiple nodes selected.
   } else {
     if (isTextNode(firstNode)) {
       if (startOffset !== 0) {
+        // the entire first node isn't selected, so split it
         [, firstNode] = firstNode.splitText(startOffset);
         startOffset = 0;
       }
@@ -301,12 +472,14 @@ export function formatText(
       lastNextFormat = lastNode.getTextNodeFormat(formatType, firstNextFormat);
       const lastNodeText = lastNode.getTextContent();
       const lastNodeTextLength = lastNodeText.length;
+      // if the entire last node isn't selected, so split it
       if (endOffset !== lastNodeTextLength) {
         [lastNode] = lastNode.splitText(endOffset);
       }
       lastNode.setFormat(lastNextFormat);
     }
 
+    // deal with all the nodes in between
     for (let i = 1; i < lastIndex; i++) {
       const selectedNode = selectedNodes[i];
       const selectedNodeKey = selectedNode.getKey();

@@ -178,12 +178,20 @@ export class BlockNode extends OutlineNode {
     if (isBlockNode(firstNode) || isTextNode(firstNode)) {
       return firstNode.select(0, 0);
     }
+    // Decorator or LineBreak
+    if (firstNode !== null) {
+      return firstNode.selectPrevious();
+    }
     return this.select(0, 0);
   }
   selectEnd(): Selection {
     const lastNode = this.getLastDescendant();
     if (isBlockNode(lastNode) || isTextNode(lastNode)) {
       return lastNode.select();
+    }
+    // Decorator or LineBreak
+    if (lastNode !== null) {
+      return lastNode.selectNext();
     }
     return this.select();
   }

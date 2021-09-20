@@ -411,12 +411,12 @@ pre :not(.tree-view-output) {
   text-decoration: underline;
 }
 
-#toolbar .font-size-wrapper {
+#toolbar .font-size-wrapper, #toolbar .font-family-wrapper {
   display: flex;
   margin: 0 4px;
 }
 
-#toolbar .font-size-wrapper select {
+#toolbar select {
   padding: 6px;
   border: none;
   background-color: rgba(0, 0, 0, 0.075);

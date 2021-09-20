@@ -233,18 +233,24 @@ function getCSSFromStyleObject(styles: {[string]: string}): string {
   let css = '';
   for (const style in styles) {
     if (style) {
-      css += `${style}: ${styles[style]}`;
+      css += `${style}: ${styles[style]};`;
     }
   }
   return css;
 }
 
-export function styleText(
+function patchNodeStyle(node: TextNode, patch: {[string]: string}): void {
+  const prevStyles = getStyleObjectFromCSS(node.getStyle());
+  const newStyles = prevStyles ? {...prevStyles, ...patch} : patch;
+  const newCSSText = getCSSFromStyleObject(newStyles);
+  node.setStyle(newCSSText);
+  cssToStyles.set(newCSSText, newStyles);
+}
+
+export function patchStyleText(
   selection: Selection,
-  styles: {[string]: string},
+  patch: {[string]: string},
 ): void {
-  const cssText = getCSSFromStyleObject(styles);
-  cssToStyles.set(cssText, styles);
   const selectedNodes = selection.getNodes();
   const selectedNodesLength = selectedNodes.length;
   const lastIndex = selectedNodesLength - 1;
@@ -292,14 +298,14 @@ export function styleText(
       }
       // The entire node is selected, so just format it
       if (startOffset === 0 && endOffset === firstNodeTextLength) {
-        firstNode.setStyle(cssText);
+        patchNodeStyle(firstNode, patch);
         firstNode.select(startOffset, endOffset);
       } else {
         // The node is partially selected, so split it into two nodes
         // and style the selected one.
         const splitNodes = firstNode.splitText(startOffset, endOffset);
         const replacement = startOffset === 0 ? splitNodes[0] : splitNodes[1];
-        replacement.setStyle(cssText);
+        patchNodeStyle(replacement, patch);
         replacement.select(0, endOffset - startOffset);
       }
     }
@@ -311,7 +317,7 @@ export function styleText(
         [, firstNode] = firstNode.splitText(startOffset);
         startOffset = 0;
       }
-      firstNode.setStyle(cssText);
+      patchNodeStyle(firstNode, patch);
     }
 
     if (isTextNode(lastNode)) {
@@ -321,7 +327,7 @@ export function styleText(
       if (endOffset !== lastNodeTextLength) {
         [lastNode] = lastNode.splitText(endOffset);
       }
-      lastNode.setStyle(cssText);
+      patchNodeStyle(lastNode, patch);
     }
 
     // style all the text nodes in between
@@ -334,10 +340,48 @@ export function styleText(
         selectedNodeKey !== lastNode.getKey() &&
         !selectedNode.isImmutable()
       ) {
-        selectedNode.setStyle(cssText);
+        patchNodeStyle(selectedNode, patch);
       }
     }
   }
+}
+
+export function getSelectionStyleValueForProperty(
+  selection: Selection,
+  styleProperty: string,
+  defaultValue: string = '',
+): string {
+  let styleValue = null;
+  const nodes = selection.getNodes();
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
+    if (isTextNode(node)) {
+      const nodeStyleValue = getNodeStyleValueForProperty(
+        node,
+        styleProperty,
+        defaultValue,
+      );
+      if (styleValue === null) {
+        styleValue = nodeStyleValue;
+      } else if (styleValue !== nodeStyleValue) {
+        // multiple text nodes are in the selection and they don't all
+        // have the same font size.
+        styleValue = '';
+        break;
+      }
+    }
+  }
+  return styleValue === null ? defaultValue : styleValue;
+}
+
+function getNodeStyleValueForProperty(
+  node: TextNode,
+  styleProperty: string,
+  defaultValue: string,
+): string {
+  const css = node.getStyle();
+  const styleObject = getStyleObjectFromCSS(css);
+  return styleObject ? styleObject[styleProperty] : defaultValue;
 }
 
 export function formatText(

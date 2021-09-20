@@ -45,6 +45,9 @@ function initEditor(editor: OutlineEditor): void {
     if (root.getFirstChild() === null) {
       const paragraph = createParagraphNode();
       root.append(paragraph);
+      if (view.getSelection() !== null) {
+        paragraph.select();
+      }
     }
   }, 'initEditor');
 }

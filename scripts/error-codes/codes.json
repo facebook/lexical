@@ -35,5 +35,7 @@
   "33": "createNode: node does not exist in nodeMap",
   "34": "reconcileNode: prevNode or nextNode does not exist in nodeMap",
   "35": "reconcileNode: parentDOM is null",
-  "36": "Reconciliation: could not find DOM element for node key \"${key}\""
+  "36": "Reconciliation: could not find DOM element for node key \"${key}\"",
+  "37": "insertBefore: cannot be called on root nodes",
+  "38": "insertAfter: cannot be called on root nodes"
 }

@@ -43,6 +43,12 @@ export class RootNode extends BlockNode {
     // You can't select root nodes.
     invariant(false, 'replace: cannot be called on root nodes');
   }
+  insertBefore() {
+    invariant(false, 'insertBefore: cannot be called on root nodes');
+  }
+  insertAfter() {
+    invariant(false, 'insertAfter: cannot be called on root nodes');
+  }
 
   // View
 

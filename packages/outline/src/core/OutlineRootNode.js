@@ -28,18 +28,6 @@ export class RootNode extends BlockNode {
   clone(): RootNode {
     return new RootNode();
   }
-  getPreviousSibling(): null {
-    return null;
-  }
-  getPreviousSiblings(): Array<OutlineNode> {
-    return [];
-  }
-  getNextSiblings(): Array<OutlineNode> {
-    return [];
-  }
-  getNextSibling(): null {
-    return null;
-  }
   isAttached(): true {
     return true;
   }

@@ -37,7 +37,6 @@ import {
 } from './shared/EventHandlers';
 import useOutlineDragonSupport from './shared/useOutlineDragonSupport';
 import useOutlineHistory from './shared/useOutlineHistory';
-import {createLineBreakNode, createTextNode} from 'outline';
 
 function initEditor(editor: OutlineEditor): void {
   editor.update((view) => {
@@ -46,17 +45,6 @@ function initEditor(editor: OutlineEditor): void {
     if (root.getFirstChild() === null) {
       const paragraph = createParagraphNode();
       root.append(paragraph);
-      const text = createTextNode('foo');
-      paragraph.append(text);
-      const lineBreak = createLineBreakNode();
-      paragraph.append(lineBreak);
-      const text2 = createTextNode();
-      paragraph.append(text2);
-      const lineBreak2 = createLineBreakNode();
-      paragraph.append(lineBreak2);
-      const text3 = createTextNode('foo');
-      paragraph.append(text3);
-      editor.focus();
     }
   }, 'initEditor');
 }

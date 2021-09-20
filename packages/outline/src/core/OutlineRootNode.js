@@ -28,6 +28,18 @@ export class RootNode extends BlockNode {
   clone(): RootNode {
     return new RootNode();
   }
+  getPreviousSibling(): null {
+    return null;
+  }
+  getPreviousSiblings(): Array<OutlineNode> {
+    return [];
+  }
+  getNextSiblings(): Array<OutlineNode> {
+    return [];
+  }
+  getNextSibling(): null {
+    return null;
+  }
   isAttached(): true {
     return true;
   }
@@ -42,6 +54,12 @@ export class RootNode extends BlockNode {
   replace<N: OutlineNode>(): N {
     // You can't select root nodes.
     invariant(false, 'replace: cannot be called on root nodes');
+  }
+  insertBefore() {
+    invariant(false, 'insertBefore: cannot be called on root nodes');
+  }
+  insertAfter() {
+    invariant(false, 'insertAfter: cannot be called on root nodes');
   }
 
   // View

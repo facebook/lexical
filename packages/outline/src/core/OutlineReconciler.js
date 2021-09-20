@@ -80,12 +80,12 @@ function createNode(
   parentDOM: null | HTMLElement,
   insertDOM: null | Node,
 ): HTMLElement {
-  const node = activeNextNodeMap.get(key);
+  let node = activeNextNodeMap.get(key);
   if (node === undefined) {
     invariant(false, 'createNode: node does not exist in nodeMap');
   }
   const dom = node.createDOM(activeEditorConfig);
-  const flags = node.__flags;
+  let flags = node.__flags;
   const isInert = flags & IS_INERT;
   storeDOMWithKey(key, dom, activeEditor);
 
@@ -108,13 +108,14 @@ function createNode(
   }
 
   if (isBlockNode(node)) {
+    // Handle block children
+    node = normalizeTextNodes(node);
+    flags = node.__flags;
     if (flags & IS_LTR) {
       dom.dir = 'ltr';
     } else if (flags & IS_RTL) {
       dom.dir = 'rtl';
     }
-    // Handle block children
-    normalizeTextNodes(node);
     const children = node.__children;
     const childrenLength = children.length;
     if (childrenLength !== 0) {
@@ -270,7 +271,7 @@ function reconcileNode(
   parentDOM: HTMLElement | null,
 ): HTMLElement {
   const prevNode = activePrevNodeMap.get(key);
-  const nextNode = activeNextNodeMap.get(key);
+  let nextNode = activeNextNodeMap.get(key);
   if (prevNode === undefined || nextNode === undefined) {
     invariant(
       false,
@@ -312,9 +313,9 @@ function reconcileNode(
 
   if (isBlockNode(prevNode) && isBlockNode(nextNode)) {
     // Reconcile block children
-    normalizeTextNodes(nextNode);
+    nextNode = normalizeTextNodes(nextNode);
     const prevFlags = prevNode.__flags;
-    const nextFlags = nextNode.getLatest().__flags;
+    const nextFlags = nextNode.__flags;
     if (nextFlags & IS_LTR) {
       if ((prevFlags & IS_LTR) === 0) {
         dom.dir = 'ltr';
@@ -327,7 +328,7 @@ function reconcileNode(
       dom.removeAttribute('dir');
     }
     const prevChildren = prevNode.__children;
-    const nextChildren = nextNode.getLatest().__children;
+    const nextChildren = nextNode.__children;
     const childrenAreDifferent = prevChildren !== nextChildren;
 
     if (childrenAreDifferent || isDirty) {
@@ -823,7 +824,7 @@ function removeStrandedEmptyTextNode(
   node.remove();
 }
 
-function normalizeTextNodes(block: BlockNode): void {
+function normalizeTextNodes(block: BlockNode): BlockNode {
   const children = block.getChildren();
   let placements: Array<[TextNode, number]> = [];
   let lastTextNodeFlags: number | null = null;
@@ -892,4 +893,5 @@ function normalizeTextNodes(block: BlockNode): void {
   } else if (lastTextNodeWasEmpty) {
     removeStrandedEmptyTextNode(placements, anchor, focus);
   }
+  return block.getLatest();
 }

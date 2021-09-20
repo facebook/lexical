@@ -447,7 +447,10 @@ export class OutlineNode {
     return parents;
   }
   getPreviousSibling(): OutlineNode | null {
-    const parent = this.getParentOrThrow();
+    const parent = this.getParent();
+    if (parent === null) {
+      return null;
+    }
     const children = parent.__children;
     const index = children.indexOf(this.__key);
     if (index <= 0) {
@@ -456,7 +459,10 @@ export class OutlineNode {
     return getNodeByKey<OutlineNode>(children[index - 1]);
   }
   getPreviousSiblings(): Array<OutlineNode> {
-    const parent = this.getParentOrThrow();
+    const parent = this.getParent();
+    if (parent === null) {
+      return [];
+    }
     const children = parent.__children;
     const index = children.indexOf(this.__key);
     return children
@@ -464,7 +470,10 @@ export class OutlineNode {
       .map((childKey) => getNodeByKeyOrThrow<OutlineNode>(childKey));
   }
   getNextSibling(): OutlineNode | null {
-    const parent = this.getParentOrThrow();
+    const parent = this.getParent();
+    if (parent === null) {
+      return null;
+    }
     const children = parent.__children;
     const childrenLength = children.length;
     const index = children.indexOf(this.__key);
@@ -474,7 +483,10 @@ export class OutlineNode {
     return getNodeByKey<OutlineNode>(children[index + 1]);
   }
   getNextSiblings(): Array<OutlineNode> {
-    const parent = this.getParentOrThrow();
+    const parent = this.getParent();
+    if (parent === null) {
+      return [];
+    }
     const children = parent.__children;
     const index = children.indexOf(this.__key);
     return children

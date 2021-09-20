@@ -12,6 +12,7 @@ import {
   assertSelection,
   IS_WINDOWS,
   E2E_BROWSER,
+  repeat,
 } from '../utils';
 import {deleteNextWord, moveToEditorBeginning} from '../keyboardShortcuts';
 
@@ -372,6 +373,68 @@ describe('Mentions', () => {
         anchorPath: [0],
         anchorOffset: 0,
         focusPath: [0],
+        focusOffset: 0,
+      });
+    });
+
+    it(`Can enter a mention then delete it and partially remove text after`, async () => {
+      const {page} = e2e;
+
+      await page.focus('div.editor');
+      await page.keyboard.type('Luke');
+      await assertSelection(page, {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 4,
+        focusPath: [0, 0, 0],
+        focusOffset: 4,
+      });
+
+      await page.waitForSelector('#mentions-typeahead ul li');
+      await page.keyboard.press('Enter');
+
+      await page.waitForSelector('.mention');
+
+      await page.keyboard.type(' foo bar');
+
+      await assertHTML(page, '<p class="editor-paragraph" dir="ltr"><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> foo bar</span></p>');
+      await assertSelection(page, {
+        anchorPath: [0, 1, 0],
+        anchorOffset: 8,
+        focusPath: [0, 1, 0],
+        focusOffset: 8,
+      });
+
+      await repeat(4, async () => {
+        await page.keyboard.press('ArrowLeft');
+      })
+
+      await assertSelection(page, {
+        anchorPath: [0, 1, 0],
+        anchorOffset: 4,
+        focusPath: [0, 1, 0],
+        focusOffset: 4,
+      });
+  
+      await page.keyboard.down('Shift');
+      await repeat(18, async () => {
+        await page.keyboard.press('ArrowLeft');
+      })
+      await page.keyboard.up('Shift');
+
+      await assertSelection(page, {
+        anchorPath: [0, 1, 0],
+        anchorOffset: 4,
+        focusPath: [0, 0, 0],
+        focusOffset: 0,
+      });
+
+      await page.keyboard.press('Backspace');
+
+      await assertHTML(page, '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true"> bar</span></p>');
+      await assertSelection(page, {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 0,
+        focusPath: [0, 0, 0],
         focusOffset: 0,
       });
     });

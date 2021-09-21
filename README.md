@@ -1,9 +1,12 @@
 # Outline
 
-Outline is a fast, light-weight, extensible library for building rich text editors on the web. The core of Outline is a dependency-free
-text editor engine that allows for powerful, simple and complex, editor implementations to be built on top. Outline's engine provides three
-main parts: state, a reconciler for rendering to the DOM, and a set of APIs that allow you to incrementally read, update, and subscribe to
-editor instances.
+Outline is a fast, light-weight, extensible library for building rich text editors on the web.
+
+The core of Outline is a dependency-free text editor engine that allows for powerful, simple and complex,
+editor implementations to be built on top. Outline's engine provides three main parts:
+- the editor instance that attaches itself to a content editable element
+- a set of view models that represent the current and pending states of the editor at any given time
+- a DOM reconciler that takes a set of view models, diffs the changes, and updates the DOM according to their state
 
 Outline has tight intergration with React 18+ via the optional `outline-react` package. This package provides a set of hooks, utility functions
 and helpers that wire toghether event listeners and effects in React, to editor instances running with Outline.

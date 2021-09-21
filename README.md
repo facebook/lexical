@@ -8,18 +8,6 @@ editor instances.
 Outline has tight intergration with React 18+ via the optional `outline-react` package. This package provides a set of hooks, utility functions
 and helpers that wire toghether event listeners and effects in React, to editor instances running with Outline.
 
-## Environment setup
-
-1. Clone this repository
-
-2. Install dependencies
-   - `npm install`
-
-3. Start local server and run tests
-   - `npm run start`
-   - `npm run test`
-     - The server needs to be running for the e2e tests
-
 ## Getting started with React
 
 Below is an example of a basic plain text editor using `outline` and `outline-react` ([try it yourself](https://codesandbox.io/s/outline-plain-text-example-g932e)).
@@ -118,6 +106,18 @@ TODO
 There are two ways to update an editor instance, either with `editor.update()` or `editor.setViewModel()`. 
 
 TODO
+
+## Contributing to Outline
+
+1. Clone this repository
+
+2. Install dependencies
+   - `npm install`
+
+3. Start local server and run tests
+   - `npm run start`
+   - `npm run test`
+     - The server needs to be running for the e2e tests
 
 ### Optional but recommended, use VSCode for development
 

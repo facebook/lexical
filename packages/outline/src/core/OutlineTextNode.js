@@ -209,8 +209,8 @@ export class TextNode extends OutlineNode {
   __format: number;
   __style: string;
 
-  static deserialize(data: $FlowFixMe): TextNode {
-    return new TextNode(data.__text);
+  static clone(node: $FlowFixMe): TextNode {
+    return new TextNode(node.__text, node.__key);
   }
 
   constructor(text: string, key?: NodeKey) {
@@ -220,9 +220,7 @@ export class TextNode extends OutlineNode {
     this.__format = 0;
     this.__style = '';
   }
-  clone(): TextNode {
-    return new TextNode(this.__text, this.__key);
-  }
+
   getFormat(): number {
     const self = this.getLatest();
     return self.__format;

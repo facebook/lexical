@@ -24,15 +24,8 @@ import useOutlineRichText from 'outline-react/useOutlineRichText';
 import {getNodeByKey} from '../../core/OutlineNode';
 
 class TestBlockNode extends BlockNode {
-  static deserialize() {
-    // TODO
-  }
-  clone() {
-    const clone = new TestBlockNode(this.__key);
-    clone.__children = [...this.__children];
-    clone.__parent = this.__parent;
-    clone.__flags = this.__flags;
-    return clone;
+  static clone(node: TestBlockNode) {
+    return new TestBlockNode(node.__key);
   }
   createDOM() {
     return document.createElement('div');
@@ -253,11 +246,8 @@ describe('OutlineEditor tests', () => {
       // Update the editor with the decorator
       await ReactTestUtils.act(async () => {
         class TestNode extends DecoratorNode {
-          static deserialize() {
-            // TODO
-          }
-          clone() {
-            return new TestNode(this.__key);
+          static clone(node: TestNode) {
+            return new TestNode(node.__key);
           }
           getTextContent() {
             return 'Hello world';

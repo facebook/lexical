@@ -16,7 +16,7 @@ import invariant from 'shared/invariant';
 export class RootNode extends BlockNode {
   type: 'root';
 
-  static deserialize(data: $FlowFixMe): RootNode {
+  static clone(): RootNode {
     return new RootNode();
   }
 
@@ -25,9 +25,6 @@ export class RootNode extends BlockNode {
     this.__type = 'root';
   }
 
-  clone(): RootNode {
-    return new RootNode();
-  }
   isAttached(): true {
     return true;
   }

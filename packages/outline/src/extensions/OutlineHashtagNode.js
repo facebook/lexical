@@ -12,17 +12,13 @@ import type {NodeKey, OutlineNode, EditorConfig} from 'outline';
 import {TextNode, isTextNode, createTextNode} from 'outline';
 
 export class HashtagNode extends TextNode {
-  static deserialize(data: $FlowFixMe): HashtagNode {
-    return new HashtagNode(data.__text);
+  static clone(node: HashtagNode): HashtagNode {
+    return new HashtagNode(node.__text, node.__key);
   }
 
   constructor(text: string, key?: NodeKey) {
     super(text, key);
     this.__type = 'hashtag';
-  }
-
-  clone(): HashtagNode {
-    return new HashtagNode(this.__text, this.__key);
   }
 
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {

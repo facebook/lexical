@@ -20,17 +20,13 @@ import {createParagraphNode} from 'outline/ParagraphNode';
 import {createListNode, isListNode} from 'outline/ListNode';
 
 export class ListItemNode extends BlockNode {
-  static deserialize(data: $FlowFixMe): ListItemNode {
-    return new ListItemNode();
+  static clone(node: ListItemNode): ListItemNode {
+    return new ListItemNode(node.__key);
   }
 
   constructor(key?: NodeKey) {
     super(key);
     this.__type = 'listitem';
-  }
-
-  clone(): ListItemNode {
-    return new ListItemNode(this.__key);
   }
 
   // View

@@ -19,18 +19,14 @@ export type ParsedLinkNode = {
 export class LinkNode extends TextNode {
   __url: string;
 
-  static deserialize(data: $FlowFixMe): LinkNode {
-    return new LinkNode(data.__text, data.__url);
+  static clone(node: LinkNode): LinkNode {
+    return new LinkNode(node.__text, node.__url, node.__key);
   }
 
   constructor(text: string, url: string, key?: NodeKey) {
     super(text, key);
     this.__url = url;
     this.__type = 'link';
-  }
-
-  clone(): LinkNode {
-    return new LinkNode(this.__text, this.__url, this.__key);
   }
 
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {

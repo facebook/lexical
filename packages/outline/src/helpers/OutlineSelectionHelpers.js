@@ -36,7 +36,8 @@ const cssToStyles: Map<string, {[string]: string}> = new Map();
 
 function cloneWithProperties<T: OutlineNode>(node: T): T {
   const latest = node.getLatest();
-  const clone = latest.clone();
+  const constructor = latest.constructor;
+  const clone = constructor.clone(latest);
   clone.__flags = latest.__flags;
   clone.__parent = latest.__parent;
   if (isBlockNode(latest)) {

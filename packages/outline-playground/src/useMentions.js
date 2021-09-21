@@ -611,17 +611,16 @@ export default function useMentions(editor: OutlineEditor): React$Node {
 class MentionNode extends TextNode {
   __mention: string;
 
+  static clone(node: MentionNode): MentionNode {
+    return new MentionNode(node.__mention, node.__text, node.__key);
+  }
+
   constructor(mentionName: string, text?: string, key?: NodeKey) {
     super(text ?? mentionName, key);
     this.__mention = mentionName;
     this.__type = 'mention';
   }
-  static deserialize(data: {__mention: string, __text: string}): MentionNode {
-    return new MentionNode(data.__mention, data.__text);
-  }
-  clone() {
-    return new MentionNode(this.__mention, this.__text, this.__key);
-  }
+
   createDOM<EditorContext>(config: EditorConfig<EditorContext>) {
     const dom = super.createDOM(config);
     dom.style.cssText = mentionStyle;

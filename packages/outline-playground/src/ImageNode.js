@@ -328,12 +328,13 @@ export class ImageNode extends DecoratorNode {
   __width: 'inherit' | number;
   __height: 'inherit' | number;
 
-  static deserialize(data: $FlowFixMe): ImageNode {
+  static clone(node: ImageNode): ImageNode {
     return new ImageNode(
-      data.__src,
-      data.__altText,
-      data.__width,
-      data.__height,
+      node.__src,
+      node.__altText,
+      node.__width,
+      node.__height,
+      node.__key,
     );
   }
 
@@ -353,15 +354,6 @@ export class ImageNode extends DecoratorNode {
   }
   getTextContent(): string {
     return this.__altText;
-  }
-  clone(): ImageNode {
-    return new ImageNode(
-      this.__src,
-      this.__altText,
-      this.__width,
-      this.__height,
-      this.__key,
-    );
   }
   setWidthAndHeight(
     width: 'inherit' | number,

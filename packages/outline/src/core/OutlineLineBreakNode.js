@@ -12,8 +12,8 @@ import type {NodeKey} from './OutlineNode';
 import {OutlineNode} from './OutlineNode';
 
 export class LineBreakNode extends OutlineNode {
-  static deserialize(data: $FlowFixMe): LineBreakNode {
-    return new LineBreakNode();
+  static clone(node: LineBreakNode): LineBreakNode {
+    return new LineBreakNode(node.__key);
   }
 
   constructor(key?: NodeKey) {
@@ -23,10 +23,6 @@ export class LineBreakNode extends OutlineNode {
 
   getTextContent(): '\n' {
     return '\n';
-  }
-
-  clone(): LineBreakNode {
-    return new LineBreakNode(this.__key);
   }
 
   createDOM(): HTMLElement {

@@ -12,17 +12,13 @@ import type {OutlineNode, NodeKey, EditorConfig} from 'outline';
 import {isBlockNode, isTextNode, BlockNode} from 'outline';
 
 export class ParagraphNode extends BlockNode {
-  static deserialize(data: $FlowFixMe): ParagraphNode {
-    return new ParagraphNode();
+  static clone(node: ParagraphNode): ParagraphNode {
+    return new ParagraphNode(node.__key);
   }
 
   constructor(key?: NodeKey) {
     super(key);
     this.__type = 'paragraph';
-  }
-
-  clone(): ParagraphNode {
-    return new ParagraphNode(this.__key);
   }
 
   // View

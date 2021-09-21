@@ -206,16 +206,13 @@ export default function useTypeahead(editor: OutlineEditor): void {
 }
 
 class TypeaheadNode extends TextNode {
+  static clone(node: TypeaheadNode) {
+    return new TypeaheadNode(node.__text, node.__key);
+  }
+
   constructor(text: string, key?: NodeKey) {
     super(text, key);
     this.__type = 'typeahead';
-  }
-
-  clone() {
-    const clone = new TypeaheadNode(this.__text, this.__key);
-    clone.__parent = this.__parent;
-    clone.__flags = this.__flags;
-    return clone;
   }
 
   createDOM<EditorContext>(config: EditorConfig<EditorContext>) {

@@ -162,15 +162,13 @@ export default function useKeywords(editor: OutlineEditor): void {
 class KeywordNode extends TextNode {
   __keyword: string;
 
+  static clone(node: KeywordNode): KeywordNode {
+    return new KeywordNode(node.__text, node.__key);
+  }
+
   constructor(keyword: string, key?: NodeKey) {
     super(keyword, key);
     this.__type = 'keyword';
-  }
-  static deserialize(data: {__text: string}): KeywordNode {
-    return new KeywordNode(data.__text);
-  }
-  clone(): KeywordNode {
-    return new KeywordNode(this.__text, this.__key);
   }
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
     const dom = super.createDOM(config);

@@ -27,17 +27,14 @@ export type ParsedHeadingNode = ParsedBlockNode & {
 export class HeadingNode extends BlockNode {
   __tag: HeadingTagType;
 
-  static deserialize(data: $FlowFixMe): HeadingNode {
-    return new HeadingNode(data.__tag);
+  static clone(node: HeadingNode): HeadingNode {
+    return new HeadingNode(node.__tag, node.__key);
   }
 
   constructor(tag: HeadingTagType, key?: NodeKey) {
     super(key);
     this.__tag = tag;
     this.__type = 'heading';
-  }
-  clone(): HeadingNode {
-    return new HeadingNode(this.__tag, this.__key);
   }
   getTag(): HeadingTagType {
     return this.__tag;

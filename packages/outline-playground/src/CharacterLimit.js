@@ -50,87 +50,94 @@ export default function CharacterLimit({
     if (characters > CHARACTER_LIMIT) {
       const diff = characters - CHARACTER_LIMIT;
       setCharactersOver(diff);
-      updateWithoutHistory(editor, (view: View) => {
-        const root = view.getRoot();
-        const intersection = findTextIntersectionFromCharacters(
-          root,
-          CHARACTER_LIMIT,
-        );
+      updateWithoutHistory(
+        editor,
+        (view: View) => {
+          const root = view.getRoot();
+          const intersection = findTextIntersectionFromCharacters(
+            root,
+            CHARACTER_LIMIT,
+          );
 
-        if (intersection !== null) {
-          const {node, offset: startOffset} = intersection;
-          const currentIntersection = currentIntersectionRef.current;
-          if (currentIntersection !== null) {
-            const {
-              nodeKey: existingOverflowNodeKey,
-              // eslint-disable-next-line no-unused-vars
-              offset: existingOffset,
-            } = currentIntersection;
-            const existingOverflowNode = view.getNodeByKey(
-              existingOverflowNodeKey,
-            );
-            // existingOverflowNode and is always a TextNode, we do this for Flow
-            if (
-              isTextNode(existingOverflowNode) &&
-              existingOverflowNode.isOverflowed()
-            ) {
-              if (existingOverflowNodeKey === node.getKey()) {
-                if (startOffset > existingOffset) {
-                  const offset = startOffset - existingOffset;
-                  const [targetNode, nextOverflowNode] =
-                    existingOverflowNode.splitText(offset);
-                  targetNode.toggleOverflowed();
-                  currentIntersectionRef.current = {
-                    nodeKey: nextOverflowNode.getKey(),
-                    offset: 0,
-                  };
+          if (intersection !== null) {
+            const {node, offset: startOffset} = intersection;
+            const currentIntersection = currentIntersectionRef.current;
+            if (currentIntersection !== null) {
+              const {
+                nodeKey: existingOverflowNodeKey,
+                // eslint-disable-next-line no-unused-vars
+                offset: existingOffset,
+              } = currentIntersection;
+              const existingOverflowNode = view.getNodeByKey(
+                existingOverflowNodeKey,
+              );
+              // existingOverflowNode and is always a TextNode, we do this for Flow
+              if (
+                isTextNode(existingOverflowNode) &&
+                existingOverflowNode.isOverflowed()
+              ) {
+                if (existingOverflowNodeKey === node.getKey()) {
+                  if (startOffset > existingOffset) {
+                    const offset = startOffset - existingOffset;
+                    const [targetNode, nextOverflowNode] =
+                      existingOverflowNode.splitText(offset);
+                    targetNode.toggleOverflowed();
+                    currentIntersectionRef.current = {
+                      nodeKey: nextOverflowNode.getKey(),
+                      offset: 0,
+                    };
+                  } else {
+                    // Handle next siblings
+                    const parentBlock = node.getParentBlockOrThrow();
+                    const siblings = node.getNextSiblings();
+                    recursivelySetBlockOverflowedNodes(siblings, true);
+                    // Handle next sibling blocks
+                    const parentBlockSiblings = parentBlock.getNextSiblings();
+                    recursivelySetBlockOverflowedNodes(
+                      parentBlockSiblings,
+                      true,
+                    );
+                  }
+                  return;
                 } else {
-                  // Handle next siblings
-                  const parentBlock = node.getParentBlockOrThrow();
-                  const siblings = node.getNextSiblings();
-                  recursivelySetBlockOverflowedNodes(siblings, true);
-                  // Handle next sibling blocks
-                  const parentBlockSiblings = parentBlock.getNextSiblings();
-                  recursivelySetBlockOverflowedNodes(parentBlockSiblings, true);
+                  existingOverflowNode.toggleOverflowed();
+                  // Handle previous siblings
+                  const siblings = node.getPreviousSiblings();
+                  recursivelySetBlockOverflowedNodes(siblings, false);
+                  currentIntersectionRef.current = {
+                    nodeKey: node.getKey(),
+                    offset: startOffset,
+                  };
                 }
-                return;
-              } else {
-                existingOverflowNode.toggleOverflowed();
-                // Handle previous siblings
-                const siblings = node.getPreviousSiblings();
-                recursivelySetBlockOverflowedNodes(siblings, false);
-                currentIntersectionRef.current = {
-                  nodeKey: node.getKey(),
-                  offset: startOffset,
-                };
               }
             }
-          }
-          if (node.isOverflowed()) {
-            return;
-          }
-          let targetNode = node;
-          if (!node.isSegmented() && !node.isInert() && !node.isImmutable()) {
-            if (startOffset !== 0) {
-              [, targetNode] = node.splitText(startOffset);
+            if (node.isOverflowed()) {
+              return;
             }
-            if (!targetNode.isOverflowed()) {
-              targetNode.toggleOverflowed();
+            let targetNode = node;
+            if (!node.isSegmented() && !node.isInert() && !node.isImmutable()) {
+              if (startOffset !== 0) {
+                [, targetNode] = node.splitText(startOffset);
+              }
+              if (!targetNode.isOverflowed()) {
+                targetNode.toggleOverflowed();
+              }
             }
+            // Handle next siblings
+            const siblings = node.getNextSiblings();
+            const parentBlock = node.getParentBlockOrThrow();
+            recursivelySetBlockOverflowedNodes(siblings, true);
+            // Handle next sibling blocks
+            const parentBlockSiblings = parentBlock.getNextSiblings();
+            currentIntersectionRef.current = {
+              nodeKey: targetNode.getKey(),
+              offset: 0,
+            };
+            recursivelySetBlockOverflowedNodes(parentBlockSiblings, true);
           }
-          // Handle next siblings
-          const siblings = node.getNextSiblings();
-          const parentBlock = node.getParentBlockOrThrow();
-          recursivelySetBlockOverflowedNodes(siblings, true);
-          // Handle next sibling blocks
-          const parentBlockSiblings = parentBlock.getNextSiblings();
-          currentIntersectionRef.current = {
-            nodeKey: targetNode.getKey(),
-            offset: 0,
-          };
-          recursivelySetBlockOverflowedNodes(parentBlockSiblings, true);
-        }
-      });
+        },
+        'CharacterLimit add/update',
+      );
     } else if (charactersOver > 0) {
       currentIntersectionRef.current = null;
       editor.update((view: View) => {
@@ -140,7 +147,7 @@ export default function CharacterLimit({
             textNode.toggleOverflowed();
           }
         });
-      }, 'CharacterLimit');
+      }, 'CharacterLimit delete');
       setCharactersOver(0);
     }
   }, [charactersOver, editor]);

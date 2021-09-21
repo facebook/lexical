@@ -4,12 +4,16 @@ Outline is a fast, light-weight, extensible library for building rich text edito
 
 The core of Outline is a dependency-free text editor engine that allows for powerful, simple and complex,
 editor implementations to be built on top. Outline's engine provides three main parts:
-- the editor instance that attaches itself to a content editable element
-- a set of view models that represent the current and pending states of the editor at any given time
-- a DOM reconciler that takes a set of view models, diffs the changes, and updates the DOM according to their state
+- editor instances that each attach to a single content editable element.
+- a set of view models that represent the current and pending states of the editor at any given time.
+- a DOM reconciler that takes a set of view models, diffs the changes, and updates the DOM according to their state.
 
-Outline has tight intergration with React 18+ via the optional `outline-react` package. This package provides a set of hooks, utility functions
-and helpers that wire toghether event listeners and effects in React, to editor instances running with Outline.
+By design, the core of Outline doesn't do anything else, such as listen for keyboard input or other events. Instead
+this logic can be wired up manually, or via a preshipped package. This ensures tight extensibilty and keeps code-sizes
+to a minimal – ensuring apps only pay the cost for what they actually import.
+
+For React apps, Outline has tight intergration with React 18+ via the optional `outline-react` package. This package provides
+production-ready utility functions, helpers and React hooks that make it seemless to create text editors within React.
 
 ## Getting started with React
 
@@ -63,8 +67,6 @@ function Editor() {
 ```
 
 ## Working with Outline
-
-### Overview
 
 This section covers how to use Outline, independently of any framework or library. For those intending to use Outline in their React applications,
 it's advisable to [check out the source-code for the hooks that are shipped in `outline-react`](https://github.com/facebookexternal/Outline/tree/main/packages/outline-react/src).

@@ -7,7 +7,7 @@
  */
 
 import * as SelectionHelpers from 'outline/SelectionHelpers';
-import {createTextNode} from 'outline';
+import {createTextNode, isTextNode} from 'outline';
 
 const ZERO_WIDTH_JOINER_CHAR = '\u2060';
 
@@ -70,10 +70,10 @@ if (!Selection.prototype.modify) {
     if (granularity === 'character') {
       let anchorNode = anchor.node;
       let anchorOffset = anchor.offset;
-      let isTextNode = false;
+      let _isTextNode = false;
 
       if (anchorNode.nodeType === 3) {
-        isTextNode = true;
+        _isTextNode = true;
         anchorNode = anchorNode.parentElement;
       } else if (anchorNode.nodeName === 'BR') {
         const parentNode = anchorNode.parentElement;
@@ -98,7 +98,7 @@ if (!Selection.prototype.modify) {
             anchor.node = prevSibling.firstChild;
             anchor.offset = anchor.node.nodeValue.length - 1;
           }
-        } else if (!isTextNode) {
+        } else if (!_isTextNode) {
           anchor.node = anchorNode.childNodes[anchorOffset - 1];
           anchor.offset = anchor.node.nodeValue.length - 1;
         } else {
@@ -106,8 +106,8 @@ if (!Selection.prototype.modify) {
         }
       } else {
         if (
-          (isTextNode && anchorOffset === anchorNode.textContent.length) ||
-          (!isTextNode &&
+          (_isTextNode && anchorOffset === anchorNode.textContent.length) ||
+          (!_isTextNode &&
             (anchorNode.childNodes.length === anchorOffset ||
               (anchorNode.childNodes.length === 1 &&
                 anchorNode.firstChild.nodeName === 'BR')))
@@ -629,7 +629,10 @@ export async function applySelectionInputs(inputs, update, editor) {
             break;
           }
           case 'move_end': {
-            SelectionHelpers.moveEnd(selection);
+            const anchorNode = selection.anchor.getNode();
+            if (isTextNode(anchorNode)) {
+              anchorNode.select();
+            }
             break;
           }
           case 'delete_backward': {

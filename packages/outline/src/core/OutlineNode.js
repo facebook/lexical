@@ -646,7 +646,9 @@ export class OutlineNode {
   // View
 
   // $FlowFixMe: Revise typings for EditorContext
-  createDOM<EditorContext: Object>(config: EditorConfig<EditorContext>): HTMLElement {
+  createDOM<EditorContext: Object>(
+    config: EditorConfig<EditorContext>,
+  ): HTMLElement {
     invariant(false, 'createDOM: base method not extended');
   }
   // $FlowFixMe: Revise typings for EditorContext

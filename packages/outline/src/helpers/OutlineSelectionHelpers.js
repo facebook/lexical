@@ -32,6 +32,8 @@ import invariant from 'shared/invariant';
 import {doesContainGrapheme} from 'outline/TextHelpers';
 import getPossibleDecoratorNode from 'shared/getPossibleDecoratorNode';
 
+const cssToStyles: Map<string, {[string]: string}> = new Map();
+
 function cloneWithProperties<T: OutlineNode>(node: T): T {
   const latest = node.getLatest();
   const clone = latest.clone();
@@ -222,8 +224,6 @@ export function extractSelection(selection: Selection): Array<OutlineNode> {
   }
   return selectedNodes;
 }
-
-const cssToStyles: Map<string, {[string]: string}> = new Map();
 
 export function getStyleObjectFromCSS(css: string): {[string]: string} | null {
   return cssToStyles.get(css) || null;
@@ -1239,13 +1239,6 @@ export function insertText(selection: Selection, text: string): void {
         selectedNode.remove();
       }
     }
-  }
-}
-
-export function moveEnd(selection: Selection): void {
-  const anchorNode = selection.anchor.getNode();
-  if (isTextNode(anchorNode)) {
-    anchorNode.select();
   }
 }
 

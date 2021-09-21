@@ -49,79 +49,87 @@ export default function useTypeahead(editor: OutlineEditor): void {
   }, [editor]);
 
   const renderTypeahead = useCallback(() => {
-    updateWithoutHistory(editor, (view: View) => {
-      const currentTypeaheadNode = getTypeaheadTextNode(view);
+    updateWithoutHistory(
+      editor,
+      (view: View) => {
+        const currentTypeaheadNode = getTypeaheadTextNode(view);
 
-      function maybeRemoveTypeahead() {
-        if (currentTypeaheadNode !== null) {
-          const selection = view.getSelection();
-          if (selection !== null) {
-            const anchor = selection.anchor;
-            const focus = selection.focus;
-            if (anchor.type === 'text' && focus.type === 'text') {
-              let anchorNode = anchor.getNode();
-              let anchorNodeOffset = anchor.offset;
-              if (anchorNode.getKey() === currentTypeaheadNode.getKey()) {
-                anchorNode = anchorNode.getPreviousSibling();
-                if (isTextNode(anchorNode)) {
-                  anchorNodeOffset = anchorNode.getTextContent().length;
+        function maybeRemoveTypeahead() {
+          if (currentTypeaheadNode !== null) {
+            const selection = view.getSelection();
+            if (selection !== null) {
+              const anchor = selection.anchor;
+              const focus = selection.focus;
+              if (anchor.type === 'text' && focus.type === 'text') {
+                let anchorNode = anchor.getNode();
+                let anchorNodeOffset = anchor.offset;
+                if (anchorNode.getKey() === currentTypeaheadNode.getKey()) {
+                  anchorNode = anchorNode.getPreviousSibling();
+                  if (isTextNode(anchorNode)) {
+                    anchorNodeOffset = anchorNode.getTextContent().length;
+                  }
                 }
-              }
-              let focusNode = focus.getNode();
-              let focusNodeOffset = focus.offset;
-              if (focusNode.getKey() === currentTypeaheadNode.getKey()) {
-                focusNode = focusNode.getPreviousSibling();
-                if (isTextNode(focusNode)) {
-                  focusNodeOffset = focusNode.getTextContent().length;
+                let focusNode = focus.getNode();
+                let focusNodeOffset = focus.offset;
+                if (focusNode.getKey() === currentTypeaheadNode.getKey()) {
+                  focusNode = focusNode.getPreviousSibling();
+                  if (isTextNode(focusNode)) {
+                    focusNodeOffset = focusNode.getTextContent().length;
+                  }
                 }
-              }
-              if (isTextNode(focusNode) && isTextNode(anchorNode)) {
-                selection.setTextNodeRange(
-                  anchorNode,
-                  anchorNodeOffset,
-                  focusNode,
-                  focusNodeOffset,
-                );
+                if (isTextNode(focusNode) && isTextNode(anchorNode)) {
+                  selection.setTextNodeRange(
+                    anchorNode,
+                    anchorNodeOffset,
+                    focusNode,
+                    focusNodeOffset,
+                  );
+                }
               }
             }
+            currentTypeaheadNode.remove();
           }
-          currentTypeaheadNode.remove();
+          typeaheadNodeKey.current = null;
         }
-        typeaheadNodeKey.current = null;
-      }
 
-      function maybeAddOrEditTypeahead() {
-        if (currentTypeaheadNode !== null) {
-          // Edit
-          if (currentTypeaheadNode.getTextContent(true) !== suggestion) {
-            currentTypeaheadNode.setTextContent(suggestion ?? '');
+        function maybeAddOrEditTypeahead() {
+          if (currentTypeaheadNode !== null) {
+            // Edit
+            if (currentTypeaheadNode.getTextContent(true) !== suggestion) {
+              currentTypeaheadNode.setTextContent(suggestion ?? '');
+            }
+            return;
           }
-          return;
-        }
-        // Add
-        const lastParagraph = view.getRoot().getLastChild();
-        if (isBlockNode(lastParagraph)) {
-          const lastTextNode = lastParagraph.getLastChild();
-          if (isTextNode(lastTextNode)) {
-            const newTypeaheadNode = createTypeaheadNode(suggestion ?? '');
-            lastTextNode.insertAfter(newTypeaheadNode);
-            typeaheadNodeKey.current = newTypeaheadNode.getKey();
+          // Add
+          const lastParagraph = view.getRoot().getLastChild();
+          if (isBlockNode(lastParagraph)) {
+            const lastTextNode = lastParagraph.getLastChild();
+            if (isTextNode(lastTextNode)) {
+              const newTypeaheadNode = createTypeaheadNode(suggestion ?? '');
+              lastTextNode.insertAfter(newTypeaheadNode);
+              typeaheadNodeKey.current = newTypeaheadNode.getKey();
+            }
           }
         }
-      }
 
-      const selection = view.getSelection();
-      const anchorNode = selection?.anchor.getNode();
-      const anchorOffset = selection?.anchor.offset;
-      const anchorLength = anchorNode?.getTextContentSize();
-      const isCaretPositionAtEnd =
-        anchorLength != null && anchorOffset === anchorLength;
-      if (suggestion === null || !selectionCollapsed || !isCaretPositionAtEnd) {
-        maybeRemoveTypeahead();
-      } else {
-        maybeAddOrEditTypeahead();
-      }
-    });
+        const selection = view.getSelection();
+        const anchorNode = selection?.anchor.getNode();
+        const anchorOffset = selection?.anchor.offset;
+        const anchorLength = anchorNode?.getTextContentSize();
+        const isCaretPositionAtEnd =
+          anchorLength != null && anchorOffset === anchorLength;
+        if (
+          suggestion === null ||
+          !selectionCollapsed ||
+          !isCaretPositionAtEnd
+        ) {
+          maybeRemoveTypeahead();
+        } else {
+          maybeAddOrEditTypeahead();
+        }
+      },
+      'useTypeahead',
+    );
   }, [editor, getTypeaheadTextNode, selectionCollapsed, suggestion]);
 
   // Rerender on suggestion change

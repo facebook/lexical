@@ -107,10 +107,17 @@ export type ListenerType =
   | 'root'
   | 'decorator';
 
-export function clearEditor(
+export function resetEditor(
   editor: OutlineEditor,
   rootElement: HTMLElement,
 ): void {
+  editor._viewModel = createEmptyViewModel();
+  clearEditor(editor, rootElement);
+  const keyNodeMap = editor._keyToDOMMap;
+  keyNodeMap.set('root', rootElement);
+}
+
+function clearEditor(editor: OutlineEditor, rootElement: HTMLElement): void {
   const keyNodeMap = editor._keyToDOMMap;
   keyNodeMap.clear();
   // Clear the root element
@@ -119,8 +126,6 @@ export function clearEditor(
   editor._dirtyNodes = null;
   editor._dirtySubTrees = null;
   editor._textContent = '';
-  editor._viewModel = createEmptyViewModel();
-  keyNodeMap.set('root', rootElement);
 }
 
 export function createEditor<EditorContext>(editorConfig?: {
@@ -325,12 +330,16 @@ class BaseOutlineEditor {
     const prevRootElement = this._rootElement;
     if (nextRootElement !== prevRootElement) {
       this._rootElement = nextRootElement;
-      if (nextRootElement !== null) {
+      if (nextRootElement === null) {
+        if (prevRootElement !== null) {
+          clearEditor(getSelf(this), prevRootElement);
+        }
+      } else {
         nextRootElement.setAttribute('data-outline-editor', 'true');
         if (this._pendingViewModel === null) {
           this._pendingViewModel = this._viewModel;
         }
-        clearEditor(getSelf(this), nextRootElement);
+        resetEditor(getSelf(this), nextRootElement);
         commitPendingUpdates(getSelf(this), 'setRootElement');
       }
       triggerListeners('root', getSelf(this), nextRootElement, prevRootElement);

@@ -396,7 +396,10 @@ describe('Mentions', () => {
 
       await page.keyboard.type(' foo bar');
 
-      await assertHTML(page, '<p class="editor-paragraph" dir="ltr"><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> foo bar</span></p>');
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> foo bar</span></p>',
+      );
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
         anchorOffset: 8,
@@ -406,7 +409,7 @@ describe('Mentions', () => {
 
       await repeat(4, async () => {
         await page.keyboard.press('ArrowLeft');
-      })
+      });
 
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
@@ -414,11 +417,11 @@ describe('Mentions', () => {
         focusPath: [0, 1, 0],
         focusOffset: 4,
       });
-  
+
       await page.keyboard.down('Shift');
       await repeat(18, async () => {
         await page.keyboard.press('ArrowLeft');
-      })
+      });
       await page.keyboard.up('Shift');
 
       await assertSelection(page, {
@@ -430,7 +433,10 @@ describe('Mentions', () => {
 
       await page.keyboard.press('Backspace');
 
-      await assertHTML(page, '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true"> bar</span></p>');
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true"> bar</span></p>',
+      );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
         anchorOffset: 0,

@@ -8,7 +8,7 @@
  */
 
 import * as React from 'react';
-import {useState, useMemo} from 'react';
+import {useState} from 'react';
 import Switch from './Switch';
 
 export type Options = {
@@ -17,22 +17,20 @@ export type Options = {
   isCharLimit: boolean,
   isAutocomplete: boolean,
   showTreeView: boolean,
-  showOptions: boolean,
 };
 
 function useOptions(
-  initialOptions: Options,
-): [React$Node, React$Node, Options] {
-  const [showOptions, setShowOptions] = useState(initialOptions.showOptions);
-  const [measureTypingPerf, setMeasureTypingPerf] = useState(
-    initialOptions.measureTypingPerf,
-  );
-  const [isRichText, setRichText] = useState(initialOptions.isRichText);
-  const [isCharLimit, setCharLimit] = useState(initialOptions.isCharLimit);
-  const [isAutocomplete, setAutocomplete] = useState(
-    initialOptions.isAutocomplete,
-  );
-  const [showTreeView, setShowTreeView] = useState(initialOptions.showTreeView);
+  options: Options,
+  onChange: (option: $Keys<Options>, value: boolean) => void = () => {},
+): [React$Node, React$Node] {
+  const {
+    measureTypingPerf,
+    isRichText,
+    isCharLimit,
+    isAutocomplete,
+    showTreeView,
+  } = options;
+  const [showOptions, setShowOptions] = useState(false);
 
   const button = (
     <button
@@ -45,53 +43,34 @@ function useOptions(
   const switches = showOptions ? (
     <div className="switches">
       <Switch
-        onClick={() => setMeasureTypingPerf(!measureTypingPerf)}
+        onClick={() => onChange('measureTypingPerf', !measureTypingPerf)}
         checked={measureTypingPerf}
         text="Measure Perf"
       />
       <Switch
-        onClick={() => setShowTreeView(!showTreeView)}
+        onClick={() => onChange('showTreeView', !showTreeView)}
         checked={showTreeView}
         text="Tree View"
       />
       <Switch
-        onClick={() => setRichText(!isRichText)}
+        onClick={() => onChange('isRichText', !isRichText)}
         checked={isRichText}
         text="Rich Text"
       />
       <Switch
-        onClick={() => setCharLimit(!isCharLimit)}
+        onClick={() => onChange('isCharLimit', !isCharLimit)}
         checked={isCharLimit}
         text="Char Limit"
       />
       <Switch
-        onClick={() => setAutocomplete(!isAutocomplete)}
+        onClick={() => onChange('isAutocomplete', !isAutocomplete)}
         checked={isAutocomplete}
         text="Autocomplete"
       />
     </div>
   ) : null;
 
-  const options: Options = useMemo(
-    () => ({
-      measureTypingPerf,
-      isRichText,
-      isCharLimit,
-      isAutocomplete,
-      showTreeView,
-      showOptions,
-    }),
-    [
-      measureTypingPerf,
-      isRichText,
-      isCharLimit,
-      isAutocomplete,
-      showTreeView,
-      showOptions,
-    ],
-  );
-
-  return [button, switches, options];
+  return [button, switches];
 }
 
 export default useOptions;

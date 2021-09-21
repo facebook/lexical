@@ -7,20 +7,20 @@
  * @flow strict-local
  */
 
+import type {Options} from './useOptions';
+
 import * as React from 'react';
-import {useCallback, useEffect, useState} from 'react';
+import {useCallback, useState} from 'react';
 import {useRichTextEditor, usePlainTextEditor} from './Editor';
 import OutlineTreeView from 'outline-react/OutlineTreeView';
 import useOptions from './useOptions';
 import useTestRecorder from './useTestRecorder';
 import useTypingPerfTracker from './useTypingPerfTracker';
 
-function RichTextEditor({options, onOptionsChange}): React$Node {
-  const [optionsButton, optionsSwitches, opts] = useOptions(options);
-  useEffect(() => {
-    onOptionsChange(opts);
-  }, [onOptionsChange, opts]);
-  const {measureTypingPerf, isCharLimit, isAutocomplete, showTreeView} = opts;
+function RichTextEditor({options, onOptionChange}): React$Node {
+  const [optionsButton, optionsSwitches] = useOptions(options, onOptionChange);
+  const {measureTypingPerf, isCharLimit, isAutocomplete, showTreeView} =
+    options;
   const onError = useCallback((e: Error, updateName: string) => {
     throw e;
   }, []);
@@ -49,12 +49,10 @@ function RichTextEditor({options, onOptionsChange}): React$Node {
   );
 }
 
-function PlainTextEditor({options, onOptionsChange}): React$Node {
-  const [optionsButton, optionsSwitches, opts] = useOptions(options);
-  const {measureTypingPerf, isCharLimit, isAutocomplete, showTreeView} = opts;
-  useEffect(() => {
-    onOptionsChange(opts);
-  }, [onOptionsChange, opts]);
+function PlainTextEditor({options, onOptionChange}): React$Node {
+  const [optionsButton, optionsSwitches] = useOptions(options, onOptionChange);
+  const {measureTypingPerf, isCharLimit, isAutocomplete, showTreeView} =
+    options;
   const onError = useCallback((e: Error) => {
     throw e;
   }, []);
@@ -80,18 +78,17 @@ function PlainTextEditor({options, onOptionsChange}): React$Node {
   );
 }
 
-const DEFAULT_OPTIONS = {
+const DEFAULT_OPTIONS: {[$Keys<Options>]: boolean} = {
   measureTypingPerf: false,
   isRichText: true,
   isCharLimit: false,
   isAutocomplete: false,
   showTreeView: true,
-  showOptions: false,
 };
 
 // override default options with query parameters if any
 const urlSearchParams = new URLSearchParams(window.location.search);
-for (let param in DEFAULT_OPTIONS) {
+for (const param of Object.keys(DEFAULT_OPTIONS)) {
   if (urlSearchParams.has(param)) {
     try {
       const value = JSON.parse(urlSearchParams.get(param) ?? 'true');
@@ -102,8 +99,29 @@ for (let param in DEFAULT_OPTIONS) {
   }
 }
 
+function setURLParam(param: $Keys<Options>, value: boolean) {
+  const url = new URL(window.location.href);
+  const params = new URLSearchParams(url.search);
+  if (value) {
+    if (!params.has(param)) {
+      params.append(param, 'true');
+    }
+  } else {
+    params.delete(param);
+  }
+  url.search = params.toString();
+  window.history.pushState(null, '', url.toString());
+}
+
 function App(): React$Node {
   const [options, setOptions] = useState(DEFAULT_OPTIONS);
+  const setOption = useCallback((option: $Keys<Options>, value: boolean) => {
+    setOptions((options) => ({
+      ...options,
+      [(option: string)]: value,
+    }));
+    setURLParam(option, value);
+  }, []);
 
   return (
     <>
@@ -111,9 +129,9 @@ function App(): React$Node {
         <img src="logo.svg" alt="Outline Logo" />
       </header>
       {options.isRichText ? (
-        <RichTextEditor options={options} onOptionsChange={setOptions} />
+        <RichTextEditor options={options} onOptionChange={setOption} />
       ) : (
-        <PlainTextEditor options={options} onOptionsChange={setOptions} />
+        <PlainTextEditor options={options} onOptionChange={setOption} />
       )}
     </>
   );

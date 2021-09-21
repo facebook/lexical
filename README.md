@@ -64,12 +64,12 @@ function Editor() {
 
 ## Working with Outline
 
-## Overview
+### Overview
 
 This section covers how to use Outline, independently of any framework or library. For those intending to use Outline in their React applications,
 it's advisable to [check out the source-code for the hooks that are shipped in `outline-react`](https://github.com/facebookexternal/Outline/tree/main/packages/outline-react/src).
 
-## Creating an editor instance and using it
+### Creating an editor instance and using it
 
 When you work with Outline, you normally work with a single editor instance. An editor instance can be created from the `outline` package and accepts
 an optional configuration object that allows for theming and the passing of context:
@@ -100,11 +100,11 @@ editor.setRootElement(contentEditableElement);
 If you want to clear the editor instance from the element, you can pass `null`. Alternatively, you can switch to another element if need be,
 just pass an alternative element reference to `setRootElement`.
 
-## Understanding the View Model
+### Understanding the View Model
 
 TODO
 
-## Updating an editor instance
+### Updating an editor instance
 
 There are two ways to update an editor instance, either with `editor.update()` or `editor.setViewModel()`. 
 

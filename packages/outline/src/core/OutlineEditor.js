@@ -109,23 +109,26 @@ export type ListenerType =
 
 export function resetEditor(
   editor: OutlineEditor,
-  rootElement: HTMLElement,
+  prevRootElement: null | HTMLElement,
+  nextRootElement: null | HTMLElement,
+  pendingViewModel: ViewModel | null,
 ): void {
-  editor._viewModel = createEmptyViewModel();
-  clearEditor(editor, rootElement);
-  const keyNodeMap = editor._keyToDOMMap;
-  keyNodeMap.set('root', rootElement);
-}
-
-function clearEditor(editor: OutlineEditor, rootElement: HTMLElement): void {
   const keyNodeMap = editor._keyToDOMMap;
   keyNodeMap.clear();
-  // Clear the root element
-  rootElement.textContent = '';
+  editor._viewModel = createEmptyViewModel();
+  editor._pendingViewModel = pendingViewModel;
   editor._compositionKey = null;
   editor._dirtyNodes = null;
   editor._dirtySubTrees = null;
   editor._textContent = '';
+  // Remove all the DOM nodes from the root element
+  if (prevRootElement !== null) {
+    prevRootElement.textContent = '';
+  }
+  if (nextRootElement !== null) {
+    nextRootElement.textContent = '';
+    keyNodeMap.set('root', nextRootElement);
+  }
 }
 
 export function createEditor<EditorContext>(editorConfig?: {
@@ -329,17 +332,17 @@ class BaseOutlineEditor {
   setRootElement(nextRootElement: null | HTMLElement): void {
     const prevRootElement = this._rootElement;
     if (nextRootElement !== prevRootElement) {
+      const pendingViewModel = this._pendingViewModel || this._viewModel;
       this._rootElement = nextRootElement;
-      if (nextRootElement === null) {
-        if (prevRootElement !== null) {
-          clearEditor(getSelf(this), prevRootElement);
-        }
-      } else {
+
+      resetEditor(
+        getSelf(this),
+        prevRootElement,
+        nextRootElement,
+        pendingViewModel,
+      );
+      if (nextRootElement !== null) {
         nextRootElement.setAttribute('data-outline-editor', 'true');
-        if (this._pendingViewModel === null) {
-          this._pendingViewModel = this._viewModel;
-        }
-        resetEditor(getSelf(this), nextRootElement);
         commitPendingUpdates(getSelf(this), 'setRootElement');
       }
       triggerListeners('root', getSelf(this), nextRootElement, prevRootElement);

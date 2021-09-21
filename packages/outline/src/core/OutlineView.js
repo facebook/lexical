@@ -401,8 +401,7 @@ export function commitPendingUpdates(
     triggerListeners('error', editor, error, updateName);
     // Reset editor and restore incoming view model to the DOM
     if (!isAttemptingToRecoverFromReconcilerError) {
-      resetEditor(editor, rootElement);
-      editor._pendingViewModel = pendingViewModel;
+      resetEditor(editor, null, rootElement, pendingViewModel);
       isAttemptingToRecoverFromReconcilerError = true;
       commitPendingUpdates(editor, 'ReconcileRecover');
       isAttemptingToRecoverFromReconcilerError = false;

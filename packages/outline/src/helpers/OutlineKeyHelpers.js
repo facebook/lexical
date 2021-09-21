@@ -128,34 +128,6 @@ export function isSelectAll(event: KeyboardEvent): boolean {
   return event.keyCode === 65 && (IS_APPLE ? event.metaKey : event.ctrlKey);
 }
 
-export function isMoveWordBackward(event: KeyboardEvent): boolean {
-  const {altKey, metaKey, ctrlKey} = event;
-  if (IS_APPLE) {
-    if (ctrlKey || metaKey) {
-      return false;
-    }
-    return isArrowLeft(event) && altKey;
-  }
-  if (altKey || metaKey) {
-    return false;
-  }
-  return isArrowLeft(event) && ctrlKey;
-}
-
-export function isMoveWordForward(event: KeyboardEvent): boolean {
-  const {altKey, metaKey, ctrlKey} = event;
-  if (IS_APPLE) {
-    if (ctrlKey || metaKey) {
-      return false;
-    }
-    return isArrowRight(event) && altKey;
-  }
-  if (altKey || metaKey) {
-    return false;
-  }
-  return isArrowRight(event) && ctrlKey;
-}
-
 export function isMoveBackward(event: KeyboardEvent): boolean {
   return (
     isArrowLeft(event) && !event.ctrlKey && !event.metaKey && !event.altKey

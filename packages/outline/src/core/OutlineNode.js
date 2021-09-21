@@ -645,10 +645,12 @@ export class OutlineNode {
 
   // View
 
-  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
+  // $FlowFixMe: Revise typings for EditorContext
+  createDOM<EditorContext: Object>(config: EditorConfig<EditorContext>): HTMLElement {
     invariant(false, 'createDOM: base method not extended');
   }
-  updateDOM<EditorContext>(
+  // $FlowFixMe: Revise typings for EditorContext
+  updateDOM<EditorContext: Object>(
     // $FlowFixMe: TODO
     prevNode: any,
     dom: HTMLElement,

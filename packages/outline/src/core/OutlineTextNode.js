@@ -281,7 +281,8 @@ export class TextNode extends OutlineNode {
 
   // View
 
-  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
+  // $FlowFixMe: Revise typings for EditorContext
+  createDOM<EditorContext: Object>(config: EditorConfig<EditorContext>): HTMLElement {
     const format = this.__format;
     const outerTag = getElementOuterTag(this, format);
     const innerTag = getElementInnerTag(this, format);
@@ -300,7 +301,8 @@ export class TextNode extends OutlineNode {
     }
     return dom;
   }
-  updateDOM<EditorContext>(
+  // $FlowFixMe: Revise typings for EditorContext
+  updateDOM<EditorContext: Object>(
     prevNode: TextNode,
     dom: HTMLElement,
     config: EditorConfig<EditorContext>,

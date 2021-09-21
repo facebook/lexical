@@ -132,6 +132,115 @@ describe('OutlineEditor tests', () => {
     );
   });
 
+  it('Should be able to recover from an update error', async () => {
+    function TestBase() {
+      editor = React.useMemo(() => createEditor(), []);
+
+      const ref = React.useCallback((node) => {
+        editor.setRootElement(node);
+      }, []);
+
+      return <div ref={ref} contentEditable={true} />;
+    }
+
+    ReactTestUtils.act(() => {
+      reactRoot.render(<TestBase element={null} />);
+    });
+
+    editor.update((view) => {
+      const root = view.getRoot();
+      if (root.getFirstChild() === null) {
+        const paragraph = createParagraphNode();
+        const text = createTextNode('This works!');
+        root.append(paragraph);
+        paragraph.append(text);
+      }
+    });
+
+    // Wait for update to complete
+    await Promise.resolve().then();
+
+    expect(sanitizeHTML(container.innerHTML)).toBe(
+      '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">This works!</span></p></div>',
+    );
+
+    const listener = jest.fn();
+    editor.addListener('error', listener);
+
+    expect(listener).toHaveBeenCalledTimes(0);
+
+    editor.update((view) => {
+      const root = view.getRoot();
+      root
+        .getFirstChild()
+        .getFirstChild()
+        .getFirstChild()
+        .setTextContent('Foo');
+    });
+
+    expect(listener).toHaveBeenCalledTimes(1);
+
+    expect(sanitizeHTML(container.innerHTML)).toBe(
+      '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">This works!</span></p></div>',
+    );
+  });
+
+  it('Should be able to recover from a reconciliation error', async () => {
+    function TestBase() {
+      editor = React.useMemo(() => createEditor(), []);
+
+      const ref = React.useCallback((node) => {
+        editor.setRootElement(node);
+      }, []);
+
+      return <div ref={ref} contentEditable={true} />;
+    }
+
+    ReactTestUtils.act(() => {
+      reactRoot.render(<TestBase element={null} />);
+    });
+
+    editor.update((view) => {
+      const root = view.getRoot();
+      if (root.getFirstChild() === null) {
+        const paragraph = createParagraphNode();
+        const text = createTextNode('This works!');
+        root.append(paragraph);
+        paragraph.append(text);
+      }
+    });
+
+    // Wait for update to complete
+    await Promise.resolve().then();
+
+    expect(sanitizeHTML(container.innerHTML)).toBe(
+      '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">This works!</span></p></div>',
+    );
+
+    const listener = jest.fn();
+    editor.addListener('error', listener);
+
+    expect(listener).toHaveBeenCalledTimes(0);
+
+    editor.update((view) => {
+      const root = view.getRoot();
+      root.getFirstChild().getFirstChild().setTextContent('Foo');
+    });
+
+    expect(listener).toHaveBeenCalledTimes(0);
+
+    editor._viewModel = null;
+
+    // Wait for update to complete
+    await Promise.resolve().then();
+
+    expect(listener).toHaveBeenCalledTimes(1);
+
+    expect(sanitizeHTML(container.innerHTML)).toBe(
+      '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">Foo</span></p></div>',
+    );
+  });
+
   it('Should be able to handle a change in root element', async () => {
     const listener = jest.fn();
 

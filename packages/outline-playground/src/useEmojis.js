@@ -90,17 +90,16 @@ export type ParsedEmojiNode = {
 class EmojiNode extends TextNode {
   __className: string;
 
-  constructor(className: string, text: string, key?: NodeKey) {
+  static clone(node: EmojiNode): EmojiNode {
+    return new EmojiNode(node.__className, node.__text, node.__key);
+  }
+
+  constructor(className: string, text: string, key: void | NodeKey) {
     super(text, key);
     this.__className = className;
     this.__type = 'emoji';
   }
-  static deserialize(data: {__className: string, __text: string}): EmojiNode {
-    return new EmojiNode(data.__className, data.__text);
-  }
-  clone() {
-    return new EmojiNode(this.__className, this.__text, this.__key);
-  }
+
   createDOM<EditorContext>(config: EditorConfig<EditorContext>) {
     const dom = super.createDOM(config);
     dom.className = this.__className;

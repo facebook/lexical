@@ -26,8 +26,8 @@ export type ParsedListNode = {
 export class ListNode extends BlockNode {
   __tag: ListNodeTagType;
 
-  static deserialize(data: $FlowFixMe): ListNode {
-    return new ListNode(data.__tag);
+  static clone(node: ListNode): ListNode {
+    return new ListNode(node.__tag, node.__key);
   }
 
   constructor(tag: ListNodeTagType, key?: NodeKey) {
@@ -35,9 +35,7 @@ export class ListNode extends BlockNode {
     this.__tag = tag;
     this.__type = 'list';
   }
-  clone(): ListNode {
-    return new ListNode(this.__tag, this.__key);
-  }
+
   getTag(): ListNodeTagType {
     return this.__tag;
   }

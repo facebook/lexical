@@ -15,15 +15,8 @@ import ReactTestUtils from 'react-dom/test-utils';
 import {BlockNode, createEditor, createTextNode} from 'outline';
 
 class TestBlockNode extends BlockNode {
-  static deserialize() {
-    // TODO
-  }
-  clone() {
-    const clone = new TestBlockNode(this.__key);
-    clone.__children = [...this.__children];
-    clone.__parent = this.__parent;
-    clone.__flags = this.__flags;
-    return clone;
+  static clone(node: BlockNode) {
+    return new TestBlockNode(node.__key);
   }
   createDOM() {
     return document.createElement('div');

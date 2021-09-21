@@ -43,7 +43,7 @@ describe('OutlineLinkNode tests', () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const linkNode = new LinkNode('foo', '/');
-        const linkNodeClone = linkNode.clone();
+        const linkNodeClone = linkNode.constructor.clone(linkNode);
         expect(linkNodeClone).not.toBe(linkNode);
         expect(linkNodeClone).toStrictEqual(linkNode);
       });

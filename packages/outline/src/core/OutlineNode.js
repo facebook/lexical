@@ -297,19 +297,11 @@ export class OutlineNode {
   __key: NodeKey;
   __parent: null | NodeKey;
 
-  static deserialize(data: $FlowFixMe): OutlineNode {
-    invariant(
-      false,
-      'OutlineNode: Node type %s does not implement deserialize().',
-      this.constructor.name,
-    );
-  }
-
-  clone(): OutlineNode {
+  static clone(data: $FlowFixMe): OutlineNode {
     // Flow doesn't support abstract classes unfortunately, so we can't _force_
     // subclasses of Node to implement clone. All subclasses of Node should have
-    // a clone method though. We define clone here so we can call it on any Node,
-    // and we throw this error by default since the subclass should provide
+    // a static clone method though. We define clone here so we can call it on any
+    // Node, and we throw this error by default since the subclass should provide
     // their own implementation.
     invariant(
       false,
@@ -327,20 +319,11 @@ export class OutlineNode {
     // Ensure custom nodes implement required methods.
     if (__DEV__) {
       const proto = Object.getPrototypeOf(this);
-      ['clone'].forEach((method) => {
-        if (!proto.hasOwnProperty(method)) {
-          console.warn(
-            `${this.constructor.name} must implement "${method}" method`,
-          );
-        }
-      });
-      ['deserialize'].forEach((method) => {
-        if (!proto.constructor.hasOwnProperty(method)) {
-          console.warn(
-            `${this.constructor.name} must implement static "${method}" method`,
-          );
-        }
-      });
+      if (!proto.constructor.hasOwnProperty('clone')) {
+        console.warn(
+          `${this.constructor.name} must implement static "clone" method`,
+        );
+      }
     }
   }
   // Getters and Traversers
@@ -610,7 +593,8 @@ export class OutlineNode {
     if (dirtyNodes.has(key)) {
       return latestNode;
     }
-    const mutableNode = latestNode.clone();
+    const constructor = latestNode.constructor;
+    const mutableNode = constructor.clone(latestNode);
     mutableNode.__parent = parent;
     mutableNode.__flags = latestNode.__flags;
     if (isBlockNode(mutableNode)) {
@@ -618,14 +602,6 @@ export class OutlineNode {
     } else if (isTextNode(mutableNode)) {
       mutableNode.__format = latestNode.__format;
       mutableNode.__style = latestNode.__style;
-    }
-    if (__DEV__) {
-      if (!mutableNode.constructor.prototype.hasOwnProperty('clone')) {
-        throw new Error(
-          latestNode.constructor.name +
-            ': "clone" method was either missing or incorrectly implemented.',
-        );
-      }
     }
     mutableNode.__key = key;
     internallyMarkNodeAsDirty(mutableNode);
@@ -848,7 +824,12 @@ export function createNodeFromParse(
   if (NodeType === undefined) {
     invariant(false, 'createNodeFromParse: type "%s" + not found', nodeType);
   }
-  const node = NodeType.deserialize(parsedNode);
+  const parsedKey = parsedNode.__key;
+  // We set the parsedKey to undefined before calling clone() so that
+  // we get a new random key assigned.
+  parsedNode.__key = undefined;
+  const node = NodeType.clone(parsedNode);
+  parsedNode.__key = parsedKey;
   const key = node.__key;
   if (isRootNode(node)) {
     const viewModel = getActiveViewModel();

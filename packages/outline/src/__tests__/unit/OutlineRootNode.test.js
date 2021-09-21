@@ -31,7 +31,7 @@ describe('OutlineRootNode tests', () => {
     });
 
     test('RootNode.clone()', async () => {
-      const rootNodeClone = rootNode.clone();
+      const rootNodeClone = rootNode.constructor.clone();
       expect(rootNodeClone).not.toBe(rootNode);
       expect(rootNodeClone).toStrictEqual(rootNode);
     });

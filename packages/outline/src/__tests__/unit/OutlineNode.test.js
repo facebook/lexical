@@ -1007,11 +1007,8 @@ describe('OutlineNode tests', () => {
       const {editor} = testEnv;
       await editor.update(() => {
         class TestNode extends OutlineNode {
-          clone() {
-            return new TestNode(this.__key);
-          }
-          static deserialize() {
-            // TODO
+          static clone(node: TestNode) {
+            return new TestNode(node.__key);
           }
           createDOM() {
             return document.createElement('div');

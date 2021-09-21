@@ -111,7 +111,7 @@ export function resetEditor(
   editor: OutlineEditor,
   prevRootElement: null | HTMLElement,
   nextRootElement: null | HTMLElement,
-  pendingViewModel: ViewModel | null,
+  pendingViewModel: ViewModel,
 ): void {
   const keyNodeMap = editor._keyToDOMMap;
   keyNodeMap.clear();

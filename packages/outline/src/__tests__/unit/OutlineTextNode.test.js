@@ -43,12 +43,8 @@ function sanitizeHTML(html) {
 }
 
 class CustomSegmentedNode extends TextNode {
-  clone() {
-    return new CustomSegmentedNode(this.__text, this.__key);
-  }
-
-  static deserialize(data: $FlowFixMe): CustomSegmentedNode {
-    return new CustomSegmentedNode(data.__text);
+  static clone(node: $FlowFixMe): CustomSegmentedNode {
+    return new CustomSegmentedNode(node.__text, node.__key);
   }
 }
 

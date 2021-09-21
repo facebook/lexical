@@ -12,7 +12,7 @@
     "rich-text"
   ],
   "license": "MIT",
-  "version": "0.0.36",
+  "version": "0.0.37",
   "main": "index.js",
   "repository": {
     "type": "git",

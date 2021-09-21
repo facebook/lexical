@@ -1,6 +1,12 @@
 # Outline
 
-Outline is a fast, light-weight, extensible library for building rich text editors on the web.
+Outline is a fast, light-weight, extensible library for building rich text editors on the web. The core of Outline is a dependency-free
+text editor engine that allows for powerful, simple and complex, editor implementations to be built on top. Outline's engine provides three
+main parts: state, a reconciler for rendering to the DOM, and a set of APIs that allow you to incrementally read, update, and subscribe to
+editor instances.
+
+Outline has tight intergration with React 18+ via the optional `outline-react` package. This package provides a set of hooks, utility functions
+and helpers that wire toghether event listeners and effects in React, to editor instances running with Outline.
 
 ## Environment setup
 
@@ -64,6 +70,54 @@ function Editor() {
   );
 }
 ```
+
+## Working with Outline
+
+## Overview
+
+This section covers how to use Outline, independently of any framework or library. For those intending to use Outline in their React applications,
+it's advisable to [check out the source-code for the hooks that are shipped in `outline-react`](https://github.com/facebookexternal/Outline/tree/main/packages/outline-react/src).
+
+## Creating an editor instance and using it
+
+When you work with Outline, you normally work with a single editor instance. An editor instance can be created from the `outline` package and accepts
+an optional configuration object that allows for theming and the passing of context:
+
+```js
+import {createEditor} from 'outline';
+
+const config = {
+  theme: {
+    ...
+  },
+  context: {
+    ...
+  },
+};
+
+const editor = createEditor(config);
+```
+
+Once you have an editor instance, when ready, you can associate the editor instance with a content editable `<div>` element in your document:
+
+```js
+const contentEditableElement = document.getElementById('editor');
+
+editor.setRootElement(contentEditableElement);
+```
+
+If you want to clear the editor instance from the element, you can pass `null`. Alternatively, you can switch to another element if need be,
+just pass an alternative element reference to `setRootElement`.
+
+## Understanding the View Model
+
+TODO
+
+## Updating an editor instance
+
+There are two ways to update an editor instance, either with `editor.update()` or `editor.setViewModel()`. 
+
+TODO
 
 ### Optional but recommended, use VSCode for development
 

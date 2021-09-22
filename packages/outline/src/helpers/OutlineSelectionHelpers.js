@@ -13,6 +13,7 @@ import type {
   Selection,
   TextFormatType,
   TextNode,
+  BlockNode,
   BlockPoint,
   Point,
 } from 'outline';
@@ -84,18 +85,25 @@ export function getNodesInRange(selection: Selection): {
   endOffset = isBefore ? focusOffset : anchorOffset;
 
   const nodesLength = nodes.length;
-  const sourceParent = isBlockNode(firstNode)
+  let sourceParent = isBlockNode(firstNode)
     ? firstNode
     : firstNode.getParentOrThrow();
+  while (sourceParent.excludeFromCopy()) {
+    sourceParent = sourceParent.getParentOrThrow();
+  }
   const sourceParentKey = sourceParent.getKey();
   const topLevelNodeKeys = new Set();
 
   for (let i = 0; i < nodesLength; i++) {
     let node = nodes[i];
-    if (node.isInert() || node.getKey() === sourceParentKey) {
+    if (
+      node.isInert() ||
+      node.getKey() === sourceParentKey ||
+      (isBlockNode(node) && node.excludeFromCopy())
+    ) {
       continue;
     }
-    const parent = node.getParent();
+    let parent = node.getParent();
     const nodeKey = node.getKey();
 
     if (isTextNode(node) && !node.isSegmented() && !node.isImmutable()) {
@@ -110,6 +118,25 @@ export function getNodesInRange(selection: Selection): {
       } else if (i === nodesLength - 1) {
         node = cloneWithProperties<TextNode>(node);
         node.__text = text.slice(0, endOffset);
+      }
+    }
+
+    if (parent !== null && isBlockNode(parent) && parent.excludeFromCopy()) {
+      const parentKey = parent.getKey();
+      const parentParent = parent.getParent();
+      if (parentParent !== null) {
+        const parentParentKey = parentParent.getKey();
+        node = cloneWithProperties<OutlineNode>(node);
+        node.__parent = parentParentKey;
+        const latestParentParent = nodeMap.get(parentParentKey);
+        if (isBlockNode(latestParentParent)) {
+          const parentParentCopy =
+            cloneWithProperties<BlockNode>(latestParentParent);
+          const parentKeyIndex = parentParentCopy.__children.indexOf(parentKey);
+          parentParentCopy.__children.splice(parentKeyIndex, 0, nodeKey);
+          nodeMap.set(parentParentKey, parentParentCopy);
+        }
+        parent = parentParent;
       }
     }
 
@@ -136,7 +163,7 @@ export function getNodesInRange(selection: Selection): {
             // We need to remove any children before out last source
             // parent key.
             const prevNode = node.getLatest();
-            node = prevNode.clone();
+            node = prevNode.constructor.clone(prevNode);
             node.__flags = prevNode.__flags;
             node.__parent = prevNode.__parent;
             if (isBlockNode(prevNode)) {
@@ -156,7 +183,11 @@ export function getNodesInRange(selection: Selection): {
             childrenKeys.splice(0, index + 1);
             includeTopLevelBlock = true;
           }
-          if (!nodeMap.has(currKey)) {
+          if (
+            !nodeMap.has(currKey) &&
+            !node.isInert() &&
+            !(isBlockNode(node) && node.excludeFromCopy())
+          ) {
             nodeMap.set(currKey, node);
           }
 

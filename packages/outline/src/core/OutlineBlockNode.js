@@ -257,6 +257,9 @@ export class BlockNode extends OutlineNode {
   collapseAtStart(): boolean {
     return false;
   }
+  excludeFromCopy(): boolean {
+    return false;
+  }
 }
 
 export function isBlockNode(node: ?OutlineNode): boolean %checks {

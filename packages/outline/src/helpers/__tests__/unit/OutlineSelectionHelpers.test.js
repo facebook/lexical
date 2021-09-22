@@ -6,7 +6,9 @@
  *
  */
 
-import {createEditor, createTextNode, TextNode} from 'outline';
+import type {View} from 'outline';
+
+import {createEditor, createTextNode, TextNode, BlockNode} from 'outline';
 import {createParagraphNode} from 'outline/ParagraphNode';
 import {
   insertText,
@@ -17,6 +19,26 @@ import {
   extractSelection,
   getNodesInRange,
 } from 'outline/SelectionHelpers';
+// import {createTestBlockNode} from '../../../__tests__/utils';
+
+export class ExcludeFromCopyBlockNode extends BlockNode {
+  static clone(node: BlockNode) {
+    return new ExcludeFromCopyBlockNode(node.__key);
+  }
+  createDOM() {
+    return document.createElement('div');
+  }
+  updateDOM() {
+    return false;
+  }
+  excludeFromCopy() {
+    return true;
+  }
+}
+
+export function createExcludeFromCopyBlockNode(): ExcludeFromCopyBlockNode {
+  return new ExcludeFromCopyBlockNode();
+}
 
 function createParagraphWithNodes(editor, nodes) {
   const paragraph = createParagraphNode();
@@ -1158,6 +1180,86 @@ describe('OutlineSelectionHelpers tests', () => {
           ],
         });
       });
+    });
+  });
+
+  test('range with excludeFromCopy nodes', async () => {
+    const editor = createEditor({});
+
+    editor.addListener('error', (error) => {
+      throw error;
+    });
+
+    const element = document.createElement('div');
+
+    editor.setRootElement(element);
+
+    await editor.update((view: View) => {
+      const root = view.getRoot();
+      const paragraph = createParagraphNode(); // 0
+      const text1 = createTextNode('1'); // 1
+      const text2 = createTextNode('2'); // 2
+      const excludeBlockNode1 = createExcludeFromCopyBlockNode(); // 3
+      root.append(paragraph);
+      paragraph.append(text1);
+      paragraph.append(excludeBlockNode1);
+      paragraph.append(text2);
+
+      paragraph.select(0, 2);
+      const selectedNodes1 = getNodesInRange(view.getSelection());
+      expect(selectedNodes1.range).toEqual([text1.getKey(), text2.getKey()]);
+      expect(selectedNodes1.nodeMap[0][0]).toEqual(text1.getKey());
+      expect(selectedNodes1.nodeMap[1][0]).toEqual(text2.getKey());
+
+      const text3 = createTextNode('3'); // 4
+      excludeBlockNode1.append(text3);
+      paragraph.select(0, 2);
+      const selectedNodes2 = getNodesInRange(view.getSelection());
+      expect(selectedNodes2.range).toEqual([
+        text1.getKey(),
+        text3.getKey(),
+        text2.getKey(),
+      ]);
+      expect(selectedNodes2.nodeMap[0][0]).toEqual(text1.getKey());
+      expect(selectedNodes2.nodeMap[1][0]).toEqual(text3.getKey());
+      expect(selectedNodes2.nodeMap[2][0]).toEqual(text2.getKey());
+
+      // Disabled until getNodesInRange is fixed
+      // const testBlockNode = createTestBlockNode(); // 5
+      // const excludeBlockNode2 = createExcludeFromCopyBlockNode(); // 6
+      // const text4 = createTextNode('4'); // 7
+      // text1.insertBefore(testBlockNode);
+      // testBlockNode.append(excludeBlockNode2);
+      // excludeBlockNode2.append(text4);
+      // paragraph.select(0, 3);
+      // const selectedNodes3 = getNodesInRange(view.getSelection());
+      // expect(selectedNodes3.range).toEqual([
+      //   testBlockNode.getKey(),
+      //   text4.getKey(),
+      //   text1.getKey(),
+      //   text3.getKey(),
+      //   text2.getKey(),
+      // ]);
+      // expect(selectedNodes3.nodeMap[0][0]).toEqual(text4.getKey());
+      // expect(selectedNodes3.nodeMap[1][0]).toEqual(text1.getKey());
+      // expect(selectedNodes3.nodeMap[2][0]).toEqual(testBlockNode.getKey());
+      // expect(selectedNodes3.nodeMap[3][0]).toEqual(text1.getKey());
+      // expect(selectedNodes3.nodeMap[4][0]).toEqual(text2.getKey());
+
+      // text4.remove();
+      // paragraph.select(0, 3);
+      // const selectedNodes3 = getNodesInRange(view.getSelection());
+      // expect(selectedNodes3.range).toEqual([
+      //   testBlockNode.getKey(),
+      //   text4.getKey(),
+      //   text1.getKey(),
+      //   text3.getKey(),
+      //   text2.getKey(),
+      // ]);
+      // expect(selectedNodes3.nodeMap[1][0]).toEqual(text1.getKey());
+      // expect(selectedNodes3.nodeMap[2][0]).toEqual(testBlockNode.getKey());
+      // expect(selectedNodes3.nodeMap[3][0]).toEqual(text1.getKey());
+      // expect(selectedNodes3.nodeMap[4][0]).toEqual(text2.getKey());
     });
   });
 });

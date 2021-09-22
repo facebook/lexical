@@ -459,6 +459,9 @@ export class ViewModel {
     this._selection = null;
     this._flushSync = false;
   }
+  isEmpty(): boolean {
+    return this._nodeMap.size === 1 && this._selection === null;
+  }
   read<V>(callbackFn: (view: View) => V): V {
     const previousActiveViewModel = activeViewModel;
     const previousReadOnlyMode = isReadOnlyMode;

@@ -341,7 +341,9 @@ class BaseOutlineEditor {
         nextRootElement,
         pendingViewModel,
       );
-      if (nextRootElement !== null) {
+      if (nextRootElement === null) {
+        triggerListeners('update', getSelf(this), this._viewModel, null);
+      } else {
         nextRootElement.setAttribute('data-outline-editor', 'true');
         commitPendingUpdates(getSelf(this), 'setRootElement');
       }

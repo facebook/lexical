@@ -173,9 +173,13 @@ export class OverflowNode extends BlockNode {
     return false;
   }
 
-  insertNewAfter(selection: Selection): BlockNode | null {
+  insertNewAfter(selection: Selection): null | BlockNode {
     const parent = this.getParentOrThrow();
     return parent.insertNewAfter(selection);
+  }
+
+  excludeFromCopy(): boolean {
+    return true;
   }
 }
 

@@ -242,8 +242,7 @@ describe('OutlineEditor tests', () => {
   });
 
   it('Should be able to handle a change in root element', async () => {
-    const rootListener = jest.fn();
-    const updateListener = jest.fn();
+    const listener = jest.fn();
 
     function TestBase({changeElement}) {
       editor = React.useMemo(() => createEditor(), []);
@@ -266,11 +265,7 @@ describe('OutlineEditor tests', () => {
       }, [changeElement]);
 
       React.useEffect(() => {
-        return editor.addListener('root', rootListener);
-      }, []);
-
-      React.useEffect(() => {
-        return editor.addListener('update', updateListener);
+        editor.addListener('root', listener);
       }, []);
 
       const ref = React.useCallback((node) => {
@@ -296,8 +291,7 @@ describe('OutlineEditor tests', () => {
       reactRoot.render(<TestBase changeElement={true} />);
     });
 
-    expect(rootListener).toHaveBeenCalledTimes(3);
-    expect(updateListener).toHaveBeenCalledTimes(4);
+    expect(listener).toHaveBeenCalledTimes(3);
     expect(sanitizeHTML(container.innerHTML)).toBe(
       '<span contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">Change successful</span></p></span>',
     );

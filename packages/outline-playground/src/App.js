@@ -7,20 +7,24 @@
  * @flow strict-local
  */
 
-import type {Options} from './useOptions';
+import type {SettingName} from './appSettings';
 
 import * as React from 'react';
 import {useCallback, useState} from 'react';
 import {useRichTextEditor, usePlainTextEditor} from './Editor';
 import OutlineTreeView from 'outline-react/OutlineTreeView';
-import useOptions from './useOptions';
+import useSettings from './useSettings';
 import useTestRecorder from './useTestRecorder';
 import useTypingPerfTracker from './useTypingPerfTracker';
+import {DEFAULT_SETTINGS} from './appSettings';
 
-function RichTextEditor({options, onOptionChange}): React$Node {
-  const [optionsButton, optionsSwitches] = useOptions(options, onOptionChange);
+function RichTextEditor({settings, onSettingsChange}): React$Node {
+  const [settingsButton, settingsSwitches] = useSettings(
+    settings,
+    onSettingsChange,
+  );
   const {measureTypingPerf, isCharLimit, isAutocomplete, showTreeView} =
-    options;
+    settings;
   const onError = useCallback((e: Error, updateName: string) => {
     throw e;
   }, []);
@@ -41,18 +45,21 @@ function RichTextEditor({options, onOptionChange}): React$Node {
       )}
       {testRecorderOutput}
       <div className="editor-dev-toolbar">
-        {optionsSwitches}
-        {optionsButton}
+        {settingsSwitches}
+        {settingsButton}
         {testRecorderButton}
       </div>
     </>
   );
 }
 
-function PlainTextEditor({options, onOptionChange}): React$Node {
-  const [optionsButton, optionsSwitches] = useOptions(options, onOptionChange);
+function PlainTextEditor({settings, onSettingsChange}): React$Node {
+  const [settingsButton, settingsSwitches] = useSettings(
+    settings,
+    onSettingsChange,
+  );
   const {measureTypingPerf, isCharLimit, isAutocomplete, showTreeView} =
-    options;
+    settings;
   const onError = useCallback((e: Error) => {
     throw e;
   }, []);
@@ -71,35 +78,27 @@ function PlainTextEditor({options, onOptionChange}): React$Node {
         <OutlineTreeView className="tree-view-output" editor={editor} />
       )}
       <div className="editor-dev-toolbar">
-        {optionsSwitches}
-        {optionsButton}
+        {settingsSwitches}
+        {settingsButton}
       </div>
     </>
   );
 }
 
-const DEFAULT_OPTIONS: {[$Keys<Options>]: boolean} = {
-  measureTypingPerf: false,
-  isRichText: true,
-  isCharLimit: false,
-  isAutocomplete: false,
-  showTreeView: true,
-};
-
 // override default options with query parameters if any
 const urlSearchParams = new URLSearchParams(window.location.search);
-for (const param of Object.keys(DEFAULT_OPTIONS)) {
+for (const param of Object.keys(DEFAULT_SETTINGS)) {
   if (urlSearchParams.has(param)) {
     try {
       const value = JSON.parse(urlSearchParams.get(param) ?? 'true');
-      DEFAULT_OPTIONS[param] = Boolean(value);
+      DEFAULT_SETTINGS[param] = Boolean(value);
     } catch (error) {
       console.warn(`Unable to parse query parameter "${param}"`);
     }
   }
 }
 
-function setURLParam(param: $Keys<Options>, value: boolean) {
+function setURLParam(param: SettingName, value: boolean) {
   const url = new URL(window.location.href);
   const params = new URLSearchParams(url.search);
   if (value) {
@@ -114,24 +113,27 @@ function setURLParam(param: $Keys<Options>, value: boolean) {
 }
 
 function App(): React$Node {
-  const [options, setOptions] = useState(DEFAULT_OPTIONS);
-  const setOption = useCallback((option: $Keys<Options>, value: boolean) => {
-    setOptions((options) => ({
-      ...options,
-      [(option: string)]: value,
-    }));
-    setURLParam(option, value);
-  }, []);
+  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
+  const setOption = useCallback(
+    (setting: SettingName, value: boolean) => {
+      setSettings((options) => ({
+        ...settings,
+        [(setting: string)]: value,
+      }));
+      setURLParam(setting, value);
+    },
+    [settings],
+  );
 
   return (
     <>
       <header>
         <img src="logo.svg" alt="Outline Logo" />
       </header>
-      {options.isRichText ? (
-        <RichTextEditor options={options} onOptionChange={setOption} />
+      {settings.isRichText ? (
+        <RichTextEditor settings={settings} onSettingsChange={setOption} />
       ) : (
-        <PlainTextEditor options={options} onOptionChange={setOption} />
+        <PlainTextEditor settings={settings} onSettingsChange={setOption} />
       )}
     </>
   );

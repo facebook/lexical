@@ -4,8 +4,10 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
+ * @flow strict-local
  */
 
+import type {Settings as AppSettings} from '../../src/appSettings';
 import {chromium, firefox, webkit} from 'playwright';
 
 export const E2E_DEBUG = process.env.E2E_DEBUG;
@@ -19,18 +21,23 @@ jest.setTimeout(60000);
 
 const retryCount = 20;
 
-export function initializeE2E(runTests) {
+type Config = $ReadOnly<{
+  appSettings?: AppSettings,
+}>;
+
+export function initializeE2E(runTests, config: Config = {}) {
   const isRichText = process.env.E2E_EDITOR_MODE !== 'plain-text';
+  const {appSettings = {}} = config;
   const e2e = {
     isRichText,
     browser: null,
     page: null,
-    async saveScreenshot(print) {
+    async saveScreenshot() {
       const currentTest = expect.getState().currentTestName;
       const path = currentTest.replace(/\s/g, '_') + '.png';
       await e2e.page.screenshot({path});
     },
-    async logScreenshot(print) {
+    async logScreenshot() {
       const currentTest = expect.getState().currentTestName;
       const buffer = await e2e.page.screenshot();
       console.log(
@@ -49,7 +56,12 @@ export function initializeE2E(runTests) {
   });
   beforeEach(async () => {
     const isRichText = process.env.E2E_EDITOR_MODE !== 'plain-text';
-    const url = `http://localhost:${E2E_PORT}/?isRichText=${isRichText}`;
+    const isRichTextParam = `isRichText=${isRichText}`;
+    const appSettingsParams = Object.entries(appSettings).map(
+      ([setting, value]) => `${setting}=${value}`,
+    );
+    const params = [isRichTextParam, ...appSettingsParams];
+    const url = `http://localhost:${E2E_PORT}/?${params.join('&')}`;
     const page = await e2e.browser.newPage();
     await page.goto(url);
     e2e.page = page;

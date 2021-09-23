@@ -8,13 +8,9 @@
  */
 
 import type {OutlineEditor, OutlineNode, View} from 'outline';
-
+import type {ListItemNode} from 'outline/ListItemNode';
 import {useCallback, useMemo} from 'react';
-import {
-  ListItemNode,
-  createListItemNode,
-  isListItemNode,
-} from 'outline/ListItemNode';
+import {createListItemNode, isListItemNode} from 'outline/ListItemNode';
 import {createListNode, isListNode} from 'outline/ListNode';
 
 function maybeIndentOrOutdent(
@@ -88,7 +84,10 @@ function handleIndent(listItemNodes: Array<ListItemNode>): void {
     if (isNestedListNode(nextSibling)) {
       const innerList = nextSibling.getFirstChild();
       if (isListNode(innerList)) {
-        innerList.getFirstChild()?.insertBefore(listItemNode);
+        const firstChild = innerList.getFirstChild();
+        if (firstChild !== null) {
+          firstChild.insertBefore(listItemNode);
+        }
       }
     } else if (isNestedListNode(previousSibling)) {
       const innerList = previousSibling.getFirstChild();
@@ -119,8 +118,10 @@ function handleOutdent(listItemNodes: Array<ListItemNode>): void {
   // go through each node and decide where to move it.
   listItemNodes.forEach((listItemNode) => {
     const parentList = listItemNode.getParent();
-    const grandparentListItem = parentList?.getParent();
-    const greatGrandparentList = grandparentListItem?.getParent();
+    const grandparentListItem = parentList ? parentList.getParent() : undefined;
+    const greatGrandparentList = grandparentListItem
+      ? grandparentListItem.getParent()
+      : undefined;
     // If it doesn't have these ancestors, it's not indented.
     if (
       isListNode(greatGrandparentList) &&
@@ -129,14 +130,16 @@ function handleOutdent(listItemNodes: Array<ListItemNode>): void {
     ) {
       // if it's the first child in it's parent list, insert it into the
       // great grandparent list before the grandparent
-      if (listItemNode.is(parentList?.getFirstChild())) {
+      const firstChild = parentList ? parentList.getFirstChild() : undefined;
+      const lastChild = parentList ? parentList.getLastChild() : undefined;
+      if (listItemNode.is(firstChild)) {
         grandparentListItem.insertBefore(listItemNode);
         if (parentList.getChildrenSize() === 0) {
           grandparentListItem.remove();
         }
         // if it's the last child in it's parent list, insert it into the
         // great grandparent list after the grandparent.
-      } else if (listItemNode.is(parentList?.getLastChild())) {
+      } else if (listItemNode.is(lastChild)) {
         grandparentListItem.insertAfter(listItemNode);
         if (parentList.getChildrenSize() === 0) {
           grandparentListItem.remove();
@@ -174,15 +177,15 @@ function outdent(editor: OutlineEditor): void {
   maybeIndentOrOutdent(editor, 'outdent');
 }
 
-export default function useNestedList(
+export default function useOutlineNestedList(
   editor: OutlineEditor,
 ): [() => void, () => void] {
   const handleKeydown = useCallback(
     (e: KeyboardEvent) => {
       // TAB
       if (e.keyCode === 9) {
-        let direction = e.shiftKey ? 'outdent' : 'indent';
-        let hasHandledIndention = maybeIndentOrOutdent(editor, direction);
+        const direction = e.shiftKey ? 'outdent' : 'indent';
+        const hasHandledIndention = maybeIndentOrOutdent(editor, direction);
         if (hasHandledIndention) {
           e.preventDefault();
         }

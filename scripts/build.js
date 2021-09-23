@@ -144,6 +144,12 @@ async function build(name, inputFile, outputFile) {
             ),
           },
           {
+            find: isWWW ? 'Outline/NodeHelpers' : 'outline/NodeHelpers',
+            replacement: path.resolve(
+              'packages/outline/src/helpers/OutlineNodeHelpers',
+            ),
+          },
+          {
             find: isWWW ? 'Outline/TextHelpers' : 'outline/TextHelpers',
             replacement: path.resolve(
               'packages/outline/src/helpers/OutlineTextHelpers',

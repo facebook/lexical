@@ -7,21 +7,15 @@
  * @flow strict-local
  */
 
+import type {Settings, SettingName} from './appSettings';
+
 import * as React from 'react';
 import {useState} from 'react';
 import Switch from './Switch';
 
-export type Options = {
-  measureTypingPerf: boolean,
-  isRichText: boolean,
-  isCharLimit: boolean,
-  isAutocomplete: boolean,
-  showTreeView: boolean,
-};
-
-function useOptions(
-  options: Options,
-  onChange: (option: $Keys<Options>, value: boolean) => void = () => {},
+function useSettings(
+  settings: Settings,
+  onChange: (setting: SettingName, value: boolean) => void = () => {},
 ): [React$Node, React$Node] {
   const {
     measureTypingPerf,
@@ -29,18 +23,18 @@ function useOptions(
     isCharLimit,
     isAutocomplete,
     showTreeView,
-  } = options;
-  const [showOptions, setShowOptions] = useState(false);
+  } = settings;
+  const [showSettings, setShowSettings] = useState(false);
 
   const button = (
     <button
-      id="options-button"
-      className={`editor-dev-button ${showOptions ? 'active' : ''}`}
-      onClick={() => setShowOptions(!showOptions)}
+      id="Settings-button"
+      className={`editor-dev-button ${showSettings ? 'active' : ''}`}
+      onClick={() => setShowSettings(!showSettings)}
     />
   );
 
-  const switches = showOptions ? (
+  const switches = showSettings ? (
     <div className="switches">
       <Switch
         onClick={() => onChange('measureTypingPerf', !measureTypingPerf)}
@@ -73,4 +67,4 @@ function useOptions(
   return [button, switches];
 }
 
-export default useOptions;
+export default useSettings;

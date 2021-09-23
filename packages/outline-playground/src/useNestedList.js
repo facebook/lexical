@@ -76,7 +76,7 @@ function getUniqueListItemNodes(
       keys.add(node);
     }
   }
-  return Array.from(keys.values());
+  return Array.from(keys);
 }
 
 function handleIndent(listItemNodes: Array<ListItemNode>): void {

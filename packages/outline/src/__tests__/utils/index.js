@@ -6,14 +6,14 @@
  *
  */
 
+import type {OutlineEditor} from 'outline';
+
 import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import {createEditor} from 'outline';
+import {createEditor, BlockNode} from 'outline';
 import {resetRandomKey} from '../../core/OutlineUtils';
-
-import type {OutlineEditor} from 'outline';
 
 type TestEnv = {
   editor: OutlineEditor | null,
@@ -80,3 +80,19 @@ export const initializeUnitTest = (runTests: (testEnv: TestEnv) => void) => {
 
   runTests(testEnv);
 };
+
+export class TestBlockNode extends BlockNode {
+  static clone(node: BlockNode) {
+    return new TestBlockNode(node.__key);
+  }
+  createDOM() {
+    return document.createElement('div');
+  }
+  updateDOM() {
+    return false;
+  }
+}
+
+export function createTestBlockNode(): TestBlockNode {
+  return new TestBlockNode();
+}

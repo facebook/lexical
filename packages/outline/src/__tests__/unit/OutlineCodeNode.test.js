@@ -7,8 +7,8 @@
  */
 
 import {createCodeNode, CodeNode} from 'outline/CodeNode';
-import {ParagraphNode} from 'outline/ParagraphNode';
-import {TextNode} from 'outline';
+import {createParagraphNode} from 'outline/ParagraphNode';
+import {createTextNode} from 'outline';
 import {initializeUnitTest} from '../utils';
 
 const editorConfig = Object.freeze({
@@ -60,8 +60,8 @@ describe('OutlineCodeNode tests', () => {
       const {editor} = testEnv;
       await editor.update((view) => {
         const root = view.getRoot();
-        const paragraphNode = new ParagraphNode();
-        const textNode = new TextNode('foo');
+        const paragraphNode = createParagraphNode();
+        const textNode = createTextNode('foo');
         paragraphNode.append(textNode);
         root.append(paragraphNode);
         textNode.select(0, 0);

@@ -22,22 +22,7 @@ import {
 import {createParagraphNode, ParagraphNode} from 'outline/ParagraphNode';
 import useOutlineRichText from 'outline-react/useOutlineRichText';
 import {getNodeByKey} from '../../core/OutlineNode';
-
-class TestBlockNode extends BlockNode {
-  static clone(node: TestBlockNode) {
-    return new TestBlockNode(node.__key);
-  }
-  createDOM() {
-    return document.createElement('div');
-  }
-  updateDOM() {
-    return false;
-  }
-}
-
-function createTestBlockNode() {
-  return new TestBlockNode();
-}
+import {createTestBlockNode} from '../utils';
 
 function sanitizeHTML(html) {
   // Remove zero width characters

@@ -29,6 +29,8 @@ module.exports = {
         'outline-react/dist/useOutlineAutoFormatter',
       'outline-react/useOutlineDecorators':
         'outline-react/dist/useOutlineDecorators',
+      'outline-react/useOutlineNestedList':
+        'outline-react/dist/useOutlineNestedList',
     },
   },
 };

@@ -8,13 +8,9 @@
  */
 
 import type {OutlineEditor, OutlineNode, View} from 'outline';
-
+import type {ListItemNode} from 'outline/ListItemNode';
 import {useCallback, useMemo} from 'react';
-import {
-  ListItemNode,
-  createListItemNode,
-  isListItemNode,
-} from 'outline/ListItemNode';
+import {createListItemNode, isListItemNode} from 'outline/ListItemNode';
 import {createListNode, isListNode} from 'outline/ListNode';
 
 function maybeIndentOrOutdent(
@@ -174,15 +170,15 @@ function outdent(editor: OutlineEditor): void {
   maybeIndentOrOutdent(editor, 'outdent');
 }
 
-export default function useNestedList(
+export default function useOutlineNestedList(
   editor: OutlineEditor,
 ): [() => void, () => void] {
   const handleKeydown = useCallback(
     (e: KeyboardEvent) => {
       // TAB
       if (e.keyCode === 9) {
-        let direction = e.shiftKey ? 'outdent' : 'indent';
-        let hasHandledIndention = maybeIndentOrOutdent(editor, direction);
+        const direction = e.shiftKey ? 'outdent' : 'indent';
+        const hasHandledIndention = maybeIndentOrOutdent(editor, direction);
         if (hasHandledIndention) {
           e.preventDefault();
         }

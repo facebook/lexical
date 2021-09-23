@@ -10,7 +10,6 @@
 import type {OutlineEditor, OutlineNode, View} from 'outline';
 
 import {useCallback, useMemo} from 'react';
-import {isTextNode} from 'outline';
 import {
   ListItemNode,
   createListItemNode,
@@ -28,18 +27,24 @@ function maybeIndentOrOutdent(
     if (selection === null) {
       return;
     }
-    const anchor = selection.anchor;
-    const anchorNode = anchor.getNode();
-    const anchorParentNode =
-      anchor.type === 'text' ? anchorNode.getParent() : anchorNode;
-    let nodes = selection.getNodes() || [];
-    // handle the case where user select the content of a single ListItemNode (assuming it's a TextNode for now)
-    if (nodes.length === 1 && isTextNode(nodes[0])) {
-      nodes = [nodes[0].getParentBlockOrThrow()];
+    const selectedNodes = selection.getNodes() || [];
+    let listItemNodes = [];
+    if (selectedNodes.length === 1) {
+      // Only 1 node selected. Selection may not contain the ListNodeItem so we traverse the tree to
+      // find whether this is part of a ListItemNode
+      const nearestListItemNode = findNearestListItemNode(selectedNodes[0]);
+      if (nearestListItemNode !== null) {
+        listItemNodes = [nearestListItemNode];
+      }
+    } else {
+      listItemNodes = getUniqueListItemNodes(selectedNodes);
     }
-    nodes = getUniqueListItemNodes(nodes);
-    if (anchorNode != null && isListItemNode(anchorParentNode)) {
-      direction === 'indent' ? handleIndent(nodes) : handleOutdent(nodes);
+    if (listItemNodes.length > 0) {
+      if (direction === 'indent') {
+        handleIndent(listItemNodes);
+      } else {
+        handleOutdent(listItemNodes);
+      }
       hasHandledIndention = true;
     }
   }, 'useNestedList.maybeIndent');
@@ -50,19 +55,28 @@ function isNestedListNode(node: ?OutlineNode): boolean %checks {
   return isListItemNode(node) && isListNode(node.getFirstChild());
 }
 
+function findNearestListItemNode(node: OutlineNode): ListItemNode | null {
+  let currentNode = node;
+  while (currentNode !== null) {
+    if (isListItemNode(currentNode)) {
+      return currentNode;
+    }
+    currentNode = currentNode.getParent();
+  }
+  return null;
+}
+
 function getUniqueListItemNodes(
   nodeList: Array<OutlineNode>,
 ): Array<ListItemNode> {
-  const keys = new Set();
-  //$FlowFixMe this definitely returns ListItemNodes
-  return nodeList.filter((node) => {
-    const key = node.getKey();
-    if (keys.has(key)) {
-      return false;
+  const keys = new Set<ListItemNode>();
+  for (let i = 0; i < nodeList.length; i++) {
+    const node = nodeList[i];
+    if (isListItemNode(node)) {
+      keys.add(node);
     }
-    keys.add(key);
-    return isListItemNode(node);
-  });
+  }
+  return Array.from(keys.values());
 }
 
 function handleIndent(listItemNodes: Array<ListItemNode>): void {

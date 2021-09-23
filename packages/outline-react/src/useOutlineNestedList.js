@@ -85,7 +85,7 @@ function handleIndent(listItemNodes: Array<ListItemNode>): void {
       const innerList = nextSibling.getFirstChild();
       if (isListNode(innerList)) {
         const firstChild = innerList.getFirstChild();
-        if (firstChild) {
+        if (firstChild !== null) {
           firstChild.insertBefore(listItemNode);
         }
       }

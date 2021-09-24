@@ -32,7 +32,7 @@ import {
   onDragStartPolyfill,
   onMutation,
   onInput,
-} from './shared/EventHandlers';
+} from 'outline/EventHelpers';
 import useOutlineDragonSupport from './shared/useOutlineDragonSupport';
 import useOutlineHistory from './shared/useOutlineHistory';
 

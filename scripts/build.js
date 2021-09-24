@@ -85,8 +85,6 @@ const externals = [
   'outline',
   'Outline',
   'outline-react',
-  'outline/HistoryHelpers',
-  'Outline/HistoryHelpers',
   'react-dom',
   'ReactDOMComet',
   'react',
@@ -153,6 +151,18 @@ async function build(name, inputFile, outputFile) {
             find: isWWW ? 'Outline/TextHelpers' : 'outline/TextHelpers',
             replacement: path.resolve(
               'packages/outline/src/helpers/OutlineTextHelpers',
+            ),
+          },
+          {
+            find: isWWW ? 'Outline/HistoryHelpers' : 'outline/HistoryHelpers',
+            replacement: path.resolve(
+              'packages/outline/src/helpers/OutlineHistoryHelpers',
+            ),
+          },
+          {
+            find: isWWW ? 'Outline/EventHelpers' : 'outline/EventHelpers',
+            replacement: path.resolve(
+              'packages/outline/src/helpers/OutlineEventHelpers',
             ),
           },
         ],

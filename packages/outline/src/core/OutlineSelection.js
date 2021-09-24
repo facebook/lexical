@@ -12,7 +12,7 @@ import type {OutlineEditor} from './OutlineEditor';
 import type {BlockNode} from './OutlineBlockNode';
 import type {TextFormatType} from './OutlineTextNode';
 
-import {getActiveEditor, ViewModel} from './OutlineView';
+import {getActiveEditor, ViewModel, isViewReadOnlyMode} from './OutlineView';
 import {getActiveViewModel} from './OutlineView';
 import {getNodeKeyFromDOM} from './OutlineReconciler';
 import {
@@ -111,7 +111,7 @@ class Point {
     this.key = key;
     this.offset = offset;
     this.type = type;
-    if (getCompositionKey() === oldKey) {
+    if (!isViewReadOnlyMode() && getCompositionKey() === oldKey) {
       setCompositionKey(key);
     }
     if (selection !== null) {

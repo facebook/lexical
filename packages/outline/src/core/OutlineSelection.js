@@ -111,7 +111,7 @@ class Point {
     this.key = key;
     this.offset = offset;
     this.type = type;
-    if (getCompositionKey() === oldKey && !isReadOnly()) {
+    if (!isReadOnly() && getCompositionKey() === oldKey) {
       setCompositionKey(key);
     }
     if (selection !== null) {

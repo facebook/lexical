@@ -47,6 +47,8 @@ module.exports = {
           '<rootDir>/packages/outline/src/helpers/OutlineKeyHelpers.js',
         '^outline/NodeHelpers$':
           '<rootDir>/packages/outline/src/helpers/OutlineNodeHelpers.js',
+        '^outline/EventHelpers$':
+          '<rootDir>/packages/outline/src/helpers/OutlineEventHelpers.js',
         '^shared/getDOMTextNodeFromElement$':
           '<rootDir>/packages/shared/src/getDOMTextNodeFromElement.js',
         '^shared/isImmutableOrInert$':

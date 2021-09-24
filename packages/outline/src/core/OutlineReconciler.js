@@ -480,9 +480,7 @@ function reconcileRoot(
   activePrevNodeMap = prevViewModel._nodeMap;
   activeNextNodeMap = nextViewModel._nodeMap;
   activeSelection = selection;
-  console.time('map')
   activePrevKeyToDOMMap = new Map(editor._keyToDOMMap);
-  console.timeEnd('map')
   reconcileNode('root', null);
   editor._textContent = editorTextContent;
   // We don't want a bunch of void checks throughout the scope

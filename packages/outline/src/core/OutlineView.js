@@ -73,7 +73,7 @@ let isReadOnlyMode = false;
 let isProcessingTextNodeTransforms = false;
 let isAttemptingToRecoverFromReconcilerError = false;
 
-export function isReadOnly(): boolean {
+export function isViewReadOnlyMode(): boolean {
   return isReadOnlyMode;
 }
 

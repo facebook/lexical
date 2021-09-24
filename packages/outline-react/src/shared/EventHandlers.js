@@ -664,6 +664,24 @@ function canRemoveText(
   );
 }
 
+function shouldPreventDefaultAndInsertText(
+  selection: Selection,
+  text: string,
+): boolean {
+  const anchor = selection.anchor;
+  const focus = selection.focus;
+  const anchorNode = anchor.getNode();
+
+  return (
+    anchor.key !== focus.key ||
+    !isTextNode(anchorNode) ||
+    anchorNode.getFormat() !== selection.textFormat ||
+    shouldInsertTextAfterOrBeforeTextNode(selection, anchorNode, true) ||
+    text.length > 1 ||
+    (text === ' ' && anchor.offset !== focus.offset)
+  );
+}
+
 export function onBeforeInputForPlainText(
   event: InputEvent,
   editor: OutlineEditor,
@@ -714,20 +732,12 @@ export function onBeforeInputForPlainText(
         const text = event.dataTransfer.getData('text/plain');
         event.preventDefault();
         insertRichText(selection, text);
-      } else if (data != null) {
-        const anchorKey = anchor.key;
-        const focusKey = focus.key;
-
-        if (
-          anchorKey !== focusKey ||
-          !isTextNode(anchorNode) ||
-          anchorNode.getFormat() !== selection.textFormat ||
-          shouldInsertTextAfterOrBeforeTextNode(selection, anchorNode, true) ||
-          data.length > 1
-        ) {
-          event.preventDefault();
-          insertText(selection, data);
-        }
+      } else if (
+        data != null &&
+        shouldPreventDefaultAndInsertText(selection, data)
+      ) {
+        event.preventDefault();
+        insertText(selection, data);
       }
       return;
     }
@@ -856,20 +866,12 @@ export function onBeforeInputForRichText(
         const text = event.dataTransfer.getData('text/plain');
         event.preventDefault();
         insertRichText(selection, text);
-      } else if (data != null) {
-        const anchorKey = anchor.key;
-        const focusKey = focus.key;
-
-        if (
-          anchorKey !== focusKey ||
-          !isTextNode(anchorNode) ||
-          anchorNode.getFormat() !== selection.textFormat ||
-          shouldInsertTextAfterOrBeforeTextNode(selection, anchorNode, true) ||
-          data.length > 1
-        ) {
-          event.preventDefault();
-          insertText(selection, data);
-        }
+      } else if (
+        data != null &&
+        shouldPreventDefaultAndInsertText(selection, data)
+      ) {
+        event.preventDefault();
+        insertText(selection, data);
       }
       return;
     }

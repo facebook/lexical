@@ -382,11 +382,10 @@ function getNodeStyleValueForProperty(
 ): string {
   const css = node.getStyle();
   const styleObject = getStyleObjectFromCSS(css);
-  if (styleObject) {
+  if (styleObject !== null) {
     return styleObject[styleProperty] || defaultValue;
-  } else {
-    return defaultValue;
   }
+  return defaultValue;
 }
 
 export function formatText(

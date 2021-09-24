@@ -1025,5 +1025,139 @@ describe('OutlineSelectionHelpers tests', () => {
         });
       });
     });
+
+    test('Can handle a mix of text and block points', () => {
+      const setupTestCase = (cb) => {
+        const editor = createEditor({});
+
+        editor.addListener('error', (error) => {
+          throw error;
+        });
+
+        editor.update((view) => {
+          const root = view.getRoot();
+          const block = createParagraphWithNodes(editor, [
+            {text: 'a', key: 'a', mergeable: false},
+            {text: 'b', key: 'b', mergeable: false},
+            {text: 'c', key: 'c', mergeable: false},
+          ]);
+          root.append(block);
+          setAnchorPoint(view, {
+            type: 'block',
+            offset: 0,
+            key: block.getKey(),
+          });
+          setFocusPoint(view, {
+            type: 'text',
+            offset: 1,
+            key: 'c',
+          });
+
+          const selection = view.getSelection();
+          cb(selection, view, block);
+        });
+      };
+
+      // getNodes
+      setupTestCase((selection, view) => {
+        expect(selection.getNodes()).toEqual([
+          view.getNodeByKey('a'),
+          view.getNodeByKey('b'),
+          view.getNodeByKey('c'),
+        ]);
+      });
+
+      // getTextContent
+      setupTestCase((selection) => {
+        expect(selection.getTextContent()).toEqual('abc');
+      });
+
+      // insertText
+      setupTestCase((selection, view, block) => {
+        insertText(selection, 'Test');
+        const firstChild = block.getFirstChild();
+        expect(firstChild.getTextContent()).toBe('Test');
+        expect(selection.anchor).toEqual({
+          type: 'text',
+          offset: 4,
+          key: firstChild.getKey(),
+        });
+        expect(selection.focus).toEqual({
+          type: 'text',
+          offset: 4,
+          key: firstChild.getKey(),
+        });
+      });
+
+      // insertParagraph
+      setupTestCase((selection, view, block) => {
+        insertParagraph(selection);
+        const nextBlock = block.getNextSibling();
+        expect(selection.anchor).toEqual({
+          type: 'block',
+          offset: 0,
+          key: nextBlock.getKey(),
+        });
+        expect(selection.focus).toEqual({
+          type: 'block',
+          offset: 0,
+          key: nextBlock.getKey(),
+        });
+      });
+
+      // insertLineBreak
+      setupTestCase((selection, view, block) => {
+        insertLineBreak(selection, true);
+        expect(selection.anchor).toEqual({
+          type: 'block',
+          offset: 0,
+          key: block.getKey(),
+        });
+        expect(selection.focus).toEqual({
+          type: 'block',
+          offset: 0,
+          key: block.getKey(),
+        });
+      });
+
+      // Format text
+      setupTestCase((selection, view, block) => {
+        formatText(selection, 'bold');
+        insertText(selection, 'Test');
+        const firstChild = block.getFirstChild();
+        expect(firstChild.getTextContent()).toBe('Test');
+        expect(selection.anchor).toEqual({
+          type: 'text',
+          offset: 4,
+          key: firstChild.getKey(),
+        });
+        expect(selection.focus).toEqual({
+          type: 'text',
+          offset: 4,
+          key: firstChild.getKey(),
+        });
+      });
+
+      // Extract selection
+      setupTestCase((selection, view, block) => {
+        expect(extractSelection(selection)).toEqual([
+          view.getNodeByKey('a'),
+          view.getNodeByKey('b'),
+          view.getNodeByKey('c')
+        ]);
+      });
+
+      // getNodesInRange
+      setupTestCase((selection, view, block) => {
+        expect(getNodesInRange(selection)).toEqual({
+          range: ['a', 'b', 'c'],
+          nodeMap: [
+            ['a', view.getNodeByKey('a')],
+            ['b', view.getNodeByKey('b')],
+            ['c', view.getNodeByKey('c')]
+          ],
+        });
+      });
+    });
   });
 });

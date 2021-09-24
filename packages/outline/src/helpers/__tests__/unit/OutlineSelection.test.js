@@ -6,13 +6,14 @@
  *
  */
 
-import {createEditor} from 'outline';
+import {createEditor, createTextNode} from 'outline';
 
 import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
 import useOutlineRichText from 'outline-react/useOutlineRichText';
+import {createTestBlockNode} from '../../../__tests__/utils';
 
 jest.mock('shared/environment', () => {
   const originalModule = jest.requireActual('shared/environment');
@@ -891,6 +892,21 @@ describe('OutlineSelection tests', () => {
       const rootElement = editor.getRootElement();
       const expectedSelection = testUnit.expectedSelection;
       assertSelection(rootElement, expectedSelection);
+    });
+  });
+
+  test('getNodes resolves nested block nodes', async () => {
+    await editor.update((view) => {
+      const root = view.getRoot();
+      const paragraph = root.getFirstChild();
+      const blockNode = createTestBlockNode();
+      const text = createTextNode();
+      paragraph.append(blockNode);
+      blockNode.append(text);
+
+      const selectedNodes = view.getSelection().getNodes();
+      expect(selectedNodes.length).toBe(1);
+      expect(selectedNodes[0].getKey()).toBe(text.getKey());
     });
   });
 });

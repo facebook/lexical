@@ -84,10 +84,6 @@ function createNode(
   if (node === undefined) {
     invariant(false, 'createNode: node does not exist in nodeMap');
   }
-  if (__DEV__) {
-    // Freeze the node in DEV to prevent accidental mutations
-    Object.freeze(node);
-  }
   const dom = node.createDOM(activeEditorConfig);
   let flags = node.__flags;
   const isInert = flags & IS_INERT;
@@ -152,6 +148,10 @@ function createNode(
         parentDOM.appendChild(dom);
       }
     }
+  }
+  if (__DEV__) {
+    // Freeze the node in DEV to prevent accidental mutations
+    Object.freeze(node);
   }
   return dom;
 }
@@ -304,10 +304,6 @@ function reconcileNode(
     }
     return dom;
   }
-  if (__DEV__) {
-    // Freeze the node in DEV to prevent accidental mutations
-    Object.freeze(nextNode);
-  }
   // Update node. If it returns true, we need to unmount and re-create the node
   if (nextNode.updateDOM(prevNode, dom, activeEditorConfig)) {
     const replacementDOM = createNode(key, null, null);
@@ -357,6 +353,10 @@ function reconcileNode(
     const text = nextNode.getTextContent();
     subTreeTextContent += text;
     editorTextContent += text;
+  }
+  if (__DEV__) {
+    // Freeze the node in DEV to prevent accidental mutations
+    Object.freeze(nextNode);
   }
   return dom;
 }

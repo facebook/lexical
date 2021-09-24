@@ -31,6 +31,7 @@ module.name_mapper='^outline/SelectionHelpers' -> '<PROJECT_ROOT>/packages/outli
 module.name_mapper='^outline/TextHelpers' -> '<PROJECT_ROOT>/packages/outline/src/helpers/OutlineTextHelpers.js'
 module.name_mapper='^outline/KeyHelpers' -> '<PROJECT_ROOT>/packages/outline/src/helpers/OutlineKeyHelpers.js'
 module.name_mapper='^outline/NodeHelpers' -> '<PROJECT_ROOT>/packages/outline/src/helpers/OutlineNodeHelpers.js'
+module.name_mapper='^outline/EventHelpers' -> '<PROJECT_ROOT>/packages/outline/src/helpers/OutlineEventHelpers.js'
 
 module.name_mapper='^outline-react/OutlineTreeView' -> '<PROJECT_ROOT>/packages/outline-react/src/OutlineTreeView.js'
 module.name_mapper='^outline-react/useOutlineEditor' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlineEditor.js'

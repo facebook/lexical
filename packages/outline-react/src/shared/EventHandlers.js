@@ -986,13 +986,13 @@ export function onInput(event: InputEvent, editor: OutlineEditor) {
     if (!CAN_USE_BEFORE_INPUT) {
       const selection = view.getSelection();
       const data = event.data;
-      if (selection !== null && data != null) {
-        const anchor = selection.anchor;
-        const focus = selection.focus;
-        if (anchor.type === 'block' || focus.type === 'block') {
-          insertText(selection, data);
-          return;
-        }
+      if (
+        data != null &&
+        selection !== null &&
+        shouldPreventDefaultAndInsertText(selection, data)
+      ) {
+        insertText(selection, data);
+        return;
       }
     }
     updateSelectedTextFromDOM(editor, view);

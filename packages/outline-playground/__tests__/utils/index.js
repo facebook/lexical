@@ -9,6 +9,7 @@
 
 import type {Settings as AppSettings} from '../../src/appSettings';
 import {chromium, firefox, webkit} from 'playwright';
+import {URLSearchParams} from 'url';
 
 export const E2E_DEBUG = process.env.E2E_DEBUG;
 export const E2E_PORT = process.env.E2E_PORT || 3000;
@@ -26,10 +27,13 @@ type Config = $ReadOnly<{
 }>;
 
 export function initializeE2E(runTests, config: Config = {}) {
-  const isRichText = process.env.E2E_EDITOR_MODE !== 'plain-text';
   const {appSettings = {}} = config;
+  if (appSettings.isRichText === undefined) {
+    appSettings.isRichText = process.env.E2E_EDITOR_MODE !== 'plain-text';
+  }
+  const urlParams = appSettingsToURLParams(appSettings);
   const e2e = {
-    isRichText,
+    isRichText: appSettings.isRichText,
     browser: null,
     page: null,
     async saveScreenshot() {
@@ -55,13 +59,7 @@ export function initializeE2E(runTests, config: Config = {}) {
     e2e.browser = browser;
   });
   beforeEach(async () => {
-    const isRichText = process.env.E2E_EDITOR_MODE !== 'plain-text';
-    const isRichTextParam = `isRichText=${isRichText}`;
-    const appSettingsParams = Object.entries(appSettings).map(
-      ([setting, value]) => `${setting}=${value}`,
-    );
-    const params = [isRichTextParam, ...appSettingsParams];
-    const url = `http://localhost:${E2E_PORT}/?${params.join('&')}`;
+    const url = `http://localhost:${E2E_PORT}/?${urlParams.toString()}`;
     const page = await e2e.browser.newPage();
     await page.goto(url);
     e2e.page = page;
@@ -94,8 +92,7 @@ export function initializeE2E(runTests, config: Config = {}) {
               count++;
               // Close and re-open page
               await e2e.page.close();
-              const isRichText = process.env.E2E_EDITOR_MODE !== 'plain-text';
-              const url = `http://localhost:${E2E_PORT}/?isRichText=${isRichText}`;
+              const url = `http://localhost:${E2E_PORT}/?${urlParams.toString()}`;
               const page = await e2e.browser.newPage();
               await page.goto(url);
               e2e.page = page;
@@ -116,6 +113,14 @@ export function initializeE2E(runTests, config: Config = {}) {
   }
 
   runTests(e2e);
+}
+
+function appSettingsToURLParams(settings: AppSettings): URLSearchParams {
+  const params = new URLSearchParams();
+  Object.entries(settings).forEach(([setting, value]) => {
+    params.append(setting, value);
+  });
+  return params;
 }
 
 export async function repeat(times, cb) {

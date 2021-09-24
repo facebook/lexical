@@ -149,6 +149,10 @@ function createNode(
       }
     }
   }
+  if (__DEV__) {
+    // Freeze the node in DEV to prevent accidental mutations
+    Object.freeze(node);
+  }
   return dom;
 }
 
@@ -349,6 +353,10 @@ function reconcileNode(
     const text = nextNode.getTextContent();
     subTreeTextContent += text;
     editorTextContent += text;
+  }
+  if (__DEV__) {
+    // Freeze the node in DEV to prevent accidental mutations
+    Object.freeze(nextNode);
   }
   return dom;
 }

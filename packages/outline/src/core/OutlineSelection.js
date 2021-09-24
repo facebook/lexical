@@ -148,10 +148,19 @@ function resolveBlockChild(node: BlockNode, offset: number): OutlineNode {
   if (childrenLength === 0) {
     return node;
   }
+  // For non-empty block nodes, we resolve its descendant (either a leaf node or the bottom-most block)
   if (offset >= childrenLength) {
-    return children[childrenLength - 1];
+    const resolvedNode = children[childrenLength - 1];
+    return (
+      (isBlockNode(resolvedNode) && resolvedNode.getLastDescendant()) ||
+      resolvedNode
+    );
   }
-  return children[offset];
+  const resolvedNode = children[offset];
+  return (
+    (isBlockNode(resolvedNode) && resolvedNode.getFirstDescendant()) ||
+    resolvedNode
+  );
 }
 
 export class Selection {

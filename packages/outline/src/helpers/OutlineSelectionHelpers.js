@@ -136,7 +136,7 @@ export function getNodesInRange(selection: Selection): {
             // We need to remove any children before out last source
             // parent key.
             const prevNode = node.getLatest();
-            node = prevNode.clone();
+            node = prevNode.constructor.clone(prevNode);
             node.__flags = prevNode.__flags;
             node.__parent = prevNode.__parent;
             if (isBlockNode(prevNode)) {

@@ -182,7 +182,7 @@ export class Selection {
   isCollapsed(): boolean {
     return this.anchor.is(this.focus);
   }
-  getNodes(): Array<OutlineNode> {
+  getNodes(depthFirstOrder?: boolean): Array<OutlineNode> {
     const anchor = this.anchor;
     const focus = this.focus;
     let firstNode = anchor.getNode();
@@ -197,7 +197,7 @@ export class Selection {
     if (firstNode === lastNode) {
       return [firstNode];
     }
-    const nodes = firstNode.getNodesBetween(lastNode);
+    const nodes = firstNode.getNodesBetween(lastNode, depthFirstOrder);
     return nodes;
   }
   setTextNodeRange(
@@ -210,7 +210,7 @@ export class Selection {
     setPointValues(this.focus, focusNode.__key, focusOffset, 'text');
     this.isDirty = true;
   }
-  getTextContent(): string {
+  getTextContent(blockDelimiter?: string): string {
     const nodes = this.getNodes();
     if (nodes.length === 0) {
       return '';
@@ -223,32 +223,42 @@ export class Selection {
     const anchorOffset = anchor.getCharacterOffset();
     const focusOffset = focus.getCharacterOffset();
     let textContent = '';
-    nodes.forEach((node) => {
-      if (isTextNode(node)) {
-        let text = node.getTextContent();
-        if (node === firstNode) {
-          if (node === lastNode) {
-            text =
-              anchorOffset < focusOffset
-                ? text.slice(anchorOffset, focusOffset)
-                : text.slice(focusOffset, anchorOffset);
-          } else {
-            text = isBefore
-              ? text.slice(anchorOffset)
-              : text.slice(focusOffset);
-          }
-        } else if (node === lastNode) {
-          text = isBefore
-            ? text.slice(0, focusOffset)
-            : text.slice(0, anchorOffset);
+    let prevWasBlock = false;
+    for (let i = 0; i < nodes.length; i++) {
+      const node = nodes[i];
+      if (isBlockNode(node)) {
+        if (!prevWasBlock) {
+          textContent += blockDelimiter || '\n';
         }
-        textContent += text;
-      } else if (isBlockNode(node) || isLineBreakNode(node)) {
-        textContent += '\n';
-      } else if (isDecoratorNode(node)) {
-        textContent += node.getTextContent();
+        prevWasBlock = true;
+      } else {
+        prevWasBlock = false;
+        if (isTextNode(node)) {
+          let text = node.getTextContent();
+          if (node === firstNode) {
+            if (node === lastNode) {
+              text =
+                anchorOffset < focusOffset
+                  ? text.slice(anchorOffset, focusOffset)
+                  : text.slice(focusOffset, anchorOffset);
+            } else {
+              text = isBefore
+                ? text.slice(anchorOffset)
+                : text.slice(focusOffset);
+            }
+          } else if (node === lastNode) {
+            text = isBefore
+              ? text.slice(0, focusOffset)
+              : text.slice(0, anchorOffset);
+          }
+          textContent += text;
+        } else if (isLineBreakNode(node)) {
+          textContent += '\n';
+        } else if (isDecoratorNode(node)) {
+          textContent += node.getTextContent();
+        }
       }
-    });
+    }
     return textContent;
   }
   applyDOMRange(range: StaticRange): void {

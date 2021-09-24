@@ -1165,7 +1165,7 @@ describe('OutlineSelectionHelpers tests', () => {
         expect(extractSelection(selection)).toEqual([
           view.getNodeByKey('a'),
           view.getNodeByKey('b'),
-          view.getNodeByKey('c')
+          view.getNodeByKey('c'),
         ]);
       });
 
@@ -1176,7 +1176,7 @@ describe('OutlineSelectionHelpers tests', () => {
           nodeMap: [
             ['a', view.getNodeByKey('a')],
             ['b', view.getNodeByKey('b')],
-            ['c', view.getNodeByKey('c')]
+            ['c', view.getNodeByKey('c')],
           ],
         });
       });

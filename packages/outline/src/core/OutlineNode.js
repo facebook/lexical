@@ -493,7 +493,6 @@ export class OutlineNode {
   }
   getNodesBetween(
     targetNode: OutlineNode,
-    depthFirstOrder?: boolean,
   ): Array<OutlineNode> {
     const isBefore = this.isBefore(targetNode);
     const nodes = [];
@@ -502,27 +501,11 @@ export class OutlineNode {
     let dfsAncestor = null;
     while (true) {
       const key = node.__key;
-      if (!depthFirstOrder && !visited.has(key)) {
+      if (!visited.has(key)) {
         visited.add(key);
         nodes.push(node);
       }
       if (node === targetNode) {
-        if (depthFirstOrder) {
-          nodes.push(node);
-          if (dfsAncestor !== null) {
-            let parent = node;
-            while (true) {
-              parent = parent.getParent();
-              if (parent === null) {
-                break;
-              }
-              nodes.push(parent);
-              if (parent.is(dfsAncestor)) {
-                break;
-              }
-            }
-          }
-        }
         break;
       }
       const child = isBlockNode(node)
@@ -536,10 +519,6 @@ export class OutlineNode {
         }
         node = child;
         continue;
-      }
-      if (depthFirstOrder && !visited.has(key)) {
-        visited.add(key);
-        nodes.push(node);
       }
       const nextSibling = isBefore
         ? node.getNextSibling()

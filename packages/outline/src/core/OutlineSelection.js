@@ -182,7 +182,7 @@ export class Selection {
   isCollapsed(): boolean {
     return this.anchor.is(this.focus);
   }
-  getNodes(depthFirstOrder?: boolean): Array<OutlineNode> {
+  getNodes(): Array<OutlineNode> {
     const anchor = this.anchor;
     const focus = this.focus;
     let firstNode = anchor.getNode();
@@ -197,7 +197,7 @@ export class Selection {
     if (firstNode === lastNode) {
       return [firstNode];
     }
-    const nodes = firstNode.getNodesBetween(lastNode, depthFirstOrder);
+    const nodes = firstNode.getNodesBetween(lastNode);
     return nodes;
   }
   setTextNodeRange(

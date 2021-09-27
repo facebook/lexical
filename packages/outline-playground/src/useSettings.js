@@ -28,7 +28,7 @@ function useSettings(
 
   const button = (
     <button
-      id="Settings-button"
+      id="options-button"
       className={`editor-dev-button ${showSettings ? 'active' : ''}`}
       onClick={() => setShowSettings(!showSettings)}
     />

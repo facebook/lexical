@@ -7,175 +7,231 @@
  * @flow strict-local
  */
 
-import type {OutlineEditor, View, OutlineNode} from 'outline';
+import type {
+  OutlineEditor,
+  View,
+  ViewModel,
+  EditorConfig,
+  NodeKey,
+  OutlineNode,
+  Selection,
+} from 'outline';
 
-import * as React from 'react';
-
-import {isBlockNode, isTextNode} from 'outline';
-import {useCallback, useEffect, useRef, useState} from 'react';
-import {findTextIntersectionFromCharacters} from 'outline/TextHelpers';
+import {BlockNode, isLeafNode, isTextNode} from 'outline';
 import {updateWithoutHistory} from 'outline/HistoryHelpers';
+import {dfs} from 'outline/NodeHelpers';
+import * as React from 'react';
+import {useState, useEffect} from 'react';
 
-const CHARACTER_LIMIT = 30;
-
-function recursivelySetBlockOverflowedNodes(
-  nodes: Array<OutlineNode>,
-  value: boolean,
-) {
-  nodes.forEach((node) => {
-    if (isBlockNode(node)) {
-      recursivelySetBlockOverflowedNodes(node.getChildren(), value);
-    } else if (
-      isTextNode(node) &&
-      node.isOverflowed() !== value &&
-      !node.isImmutable() &&
-      !node.isSegmented() &&
-      !node.isInert()
-    ) {
-      node.toggleOverflowed();
-    }
-  });
-}
+const CHARACTER_LIMIT = 5;
 
 export default function CharacterLimit({
   editor,
 }: {
   editor: OutlineEditor,
 }): React$Node {
-  const [charactersOver, setCharactersOver] = useState(0);
-  const currentIntersectionRef = useRef(null);
+  const [remainingCharacters, setRemainingCharacters] = useState(0);
 
-  const handleTextNodeOverflows = useCallback(() => {
-    const characters = editor.getTextContent().length;
-    if (characters > CHARACTER_LIMIT) {
-      const diff = characters - CHARACTER_LIMIT;
-      setCharactersOver(diff);
+  useEffect(() => {
+    editor.registerNodeType('overflow', OverflowNode);
+    return editor.addListener('update', (_view: ViewModel) => {
+      const characters = editor.getTextContent().length;
+      const diff = CHARACTER_LIMIT - characters;
+      setRemainingCharacters(diff);
       updateWithoutHistory(
         editor,
         (view: View) => {
-          const root = view.getRoot();
-          const intersection = findTextIntersectionFromCharacters(
-            root,
-            CHARACTER_LIMIT,
-          );
-
-          if (intersection !== null) {
-            const {node, offset: startOffset} = intersection;
-            const currentIntersection = currentIntersectionRef.current;
-            if (currentIntersection !== null) {
-              const {
-                nodeKey: existingOverflowNodeKey,
-                // eslint-disable-next-line no-unused-vars
-                offset: existingOffset,
-              } = currentIntersection;
-              const existingOverflowNode = view.getNodeByKey(
-                existingOverflowNodeKey,
-              );
-              // existingOverflowNode and is always a TextNode, we do this for Flow
-              if (
-                isTextNode(existingOverflowNode) &&
-                existingOverflowNode.isOverflowed()
-              ) {
-                if (existingOverflowNodeKey === node.getKey()) {
-                  if (startOffset > existingOffset) {
-                    const offset = startOffset - existingOffset;
-                    const [targetNode, nextOverflowNode] =
-                      existingOverflowNode.splitText(offset);
-                    targetNode.toggleOverflowed();
-                    currentIntersectionRef.current = {
-                      nodeKey: nextOverflowNode.getKey(),
-                      offset: 0,
-                    };
-                  } else {
-                    // Handle next siblings
-                    const parentBlock = node.getParentBlockOrThrow();
-                    const siblings = node.getNextSiblings();
-                    recursivelySetBlockOverflowedNodes(siblings, true);
-                    // Handle next sibling blocks
-                    const parentBlockSiblings = parentBlock.getNextSiblings();
-                    recursivelySetBlockOverflowedNodes(
-                      parentBlockSiblings,
-                      true,
-                    );
-                  }
-                  return;
-                } else {
-                  existingOverflowNode.toggleOverflowed();
-                  // Handle previous siblings
-                  const siblings = node.getPreviousSiblings();
-                  recursivelySetBlockOverflowedNodes(siblings, false);
-                  currentIntersectionRef.current = {
-                    nodeKey: node.getKey(),
-                    offset: startOffset,
-                  };
-                }
-              }
-            }
-            if (node.isOverflowed()) {
-              return;
-            }
-            let targetNode = node;
-            if (!node.isSegmented() && !node.isInert() && !node.isImmutable()) {
-              if (startOffset !== 0) {
-                [, targetNode] = node.splitText(startOffset);
-              }
-              if (!targetNode.isOverflowed()) {
-                targetNode.toggleOverflowed();
-              }
-            }
-            // Handle next siblings
-            const siblings = node.getNextSiblings();
-            const parentBlock = node.getParentBlockOrThrow();
-            recursivelySetBlockOverflowedNodes(siblings, true);
-            // Handle next sibling blocks
-            const parentBlockSiblings = parentBlock.getNextSiblings();
-            currentIntersectionRef.current = {
-              nodeKey: targetNode.getKey(),
-              offset: 0,
-            };
-            recursivelySetBlockOverflowedNodes(parentBlockSiblings, true);
-          }
+          wrapOverflowedNodes(view, CHARACTER_LIMIT);
         },
-        'CharacterLimit add/update',
+        'CharacterLimit',
       );
-    } else if (charactersOver > 0) {
-      currentIntersectionRef.current = null;
-      editor.update((view: View) => {
-        const textNodes = view.getRoot().getAllTextNodes();
-        textNodes.forEach((textNode) => {
-          if (textNode.isOverflowed()) {
-            textNode.toggleOverflowed();
-          }
-        });
-      }, 'CharacterLimit delete');
-      setCharactersOver(0);
-    }
-  }, [charactersOver, editor]);
-
-  useEffect(() => {
-    handleTextNodeOverflows();
-    return editor.addListener('update', handleTextNodeOverflows);
-  }, [charactersOver, editor, handleTextNodeOverflows]);
-
-  // Handle garbage collection if the character limit is disabled
-  useEffect(() => {
-    return () => {
-      currentIntersectionRef.current = null;
-      editor.update((view: View) => {
-        const textNodes = view.getRoot().getAllTextNodes();
-        textNodes.forEach((textNode) => {
-          if (textNode.isOverflowed()) {
-            textNode.toggleOverflowed();
-          }
-        });
-      }, 'CharacterLimit');
-      setCharactersOver(0);
-    };
+    });
   }, [editor]);
 
-  return charactersOver > 0 ? (
-    <span className="characters-over">
-      Character Limit: <span>-{charactersOver}</span>
+  return (
+    <span
+      className={`characters-limit ${
+        remainingCharacters < 0 ? 'characters-limit-exceeded' : ''
+      }`}>
+      {remainingCharacters}
     </span>
-  ) : null;
+  );
+}
+
+function wrapOverflowedNodes(view: View, offset: number) {
+  const root = view.getRoot();
+  let accumulatedLength = 0;
+
+  dfs(root, (node: OutlineNode) => {
+    if (isOverflowNode(node)) {
+      const previousLength = accumulatedLength;
+      const nextLength = accumulatedLength + node.getTextContentSize();
+      if (nextLength <= offset) {
+        const parent = node.getParent();
+        const previousSibling = node.getPreviousSibling();
+        const nextSibling = node.getNextSibling();
+        const nextNode = unwrapNode(node);
+        const selection = view.getSelection();
+        // Restore selection when the overflow children are removed
+        if (
+          selection !== null &&
+          (!selection.anchor.getNode().isAttached() ||
+            !selection.focus.getNode().isAttached())
+        ) {
+          if (isTextNode(previousSibling)) {
+            previousSibling.select();
+          } else if (isTextNode(nextSibling)) {
+            nextSibling.select();
+          } else if (parent !== null) {
+            parent.select();
+          }
+        }
+        if (nextNode !== null) {
+          return nextNode;
+        } else {
+          return parent;
+        }
+      } else if (previousLength < offset) {
+        const descendant = node.getFirstDescendant();
+        const descendantLength =
+          descendant !== null ? descendant.getTextContentSize() : 0;
+        const previousPlusDescendantLength = previousLength + descendantLength;
+        if (isTextNode(descendant) && descendant.isSimpleText()) {
+          // For simple text we can redimension the overflow into a smaller and more accurate
+          // container
+          return unwrapNode(node);
+        } else if (previousPlusDescendantLength <= offset) {
+          return unwrapNode(node);
+        }
+      }
+    } else if (isLeafNode(node)) {
+      const previousAccumulatedLength = accumulatedLength;
+      accumulatedLength += node.getTextContentSize();
+      if (accumulatedLength > offset && !isOverflowNode(node.getParent())) {
+        const previousSelection = view.getSelection();
+        let overflowNode;
+        // For simple text we can improve the limit accuracy by splitting the TextNode
+        // on the split point
+        if (
+          previousAccumulatedLength < offset &&
+          isTextNode(node) &&
+          node.isSimpleText()
+        ) {
+          const [, overflowedText] = node.splitText(
+            offset - previousAccumulatedLength,
+          );
+          overflowNode = wrapNode(overflowedText);
+        } else {
+          overflowNode = wrapNode(node);
+        }
+        if (previousSelection !== null) {
+          view.setSelection(previousSelection);
+        }
+        mergePrevious(overflowNode, view);
+      }
+    }
+    return node;
+  });
+}
+
+export class OverflowNode extends BlockNode {
+  static clone(node: OverflowNode): OverflowNode {
+    return new OverflowNode(node.__key);
+  }
+
+  constructor(key?: NodeKey) {
+    super(key);
+    this.__type = 'overflow';
+  }
+
+  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
+    const div = document.createElement('div');
+    const className = config.theme.characterLimit;
+    if (typeof className === 'string') {
+      div.className = className;
+    }
+    return div;
+  }
+
+  updateDOM(prevNode: OverflowNode, dom: HTMLElement): boolean {
+    return false;
+  }
+
+  insertNewAfter(selection: Selection): BlockNode | null {
+    const parent = this.getParentOrThrow();
+    return parent.insertNewAfter(selection);
+  }
+}
+
+export function createOverflowNode(): OverflowNode {
+  return new OverflowNode();
+}
+
+export function isOverflowNode(node: ?OutlineNode): boolean %checks {
+  return node instanceof OverflowNode;
+}
+
+function wrapNode(node: OutlineNode): OverflowNode {
+  const overflowNode = createOverflowNode();
+  node.insertBefore(overflowNode);
+  overflowNode.append(node);
+  return overflowNode;
+}
+
+function unwrapNode(node: OverflowNode): OutlineNode | null {
+  const children = node.getChildren();
+  const childrenLength = children.length;
+  for (let i = 0; i < childrenLength; i++) {
+    node.insertBefore(children[i]);
+  }
+  node.remove();
+  return childrenLength > 0 ? children[childrenLength - 1] : null;
+}
+
+export function mergePrevious(overflowNode: OverflowNode, view: View) {
+  const previousNode = overflowNode.getPreviousSibling();
+  if (!isOverflowNode(previousNode)) {
+    return;
+  }
+
+  const firstChild = overflowNode.getFirstChild();
+  const previousNodeChildren = previousNode.getChildren();
+  const previousNodeChildrenLength = previousNodeChildren.length;
+  if (firstChild === null) {
+    for (let i = 0; i < previousNodeChildrenLength; i++) {
+      overflowNode.append(previousNodeChildren[i]);
+    }
+  } else {
+    for (let i = 0; i < previousNodeChildrenLength; i++) {
+      firstChild.insertBefore(previousNodeChildren[i]);
+    }
+  }
+
+  const selection = view.getSelection();
+  if (selection !== null) {
+    const anchor = selection.anchor;
+    const anchorNode = anchor.getNode();
+    const focus = selection.focus;
+    const focusNode = anchor.getNode();
+    if (anchorNode.is(previousNode)) {
+      anchor.set(overflowNode.getKey(), anchor.offset, 'block');
+    } else if (anchorNode.is(overflowNode)) {
+      anchor.set(
+        overflowNode.getKey(),
+        previousNodeChildrenLength + anchor.offset,
+        'block',
+      );
+    }
+    if (focusNode.is(previousNode)) {
+      focus.set(overflowNode.getKey(), focus.offset, 'block');
+    } else if (focusNode.is(overflowNode)) {
+      focus.set(
+        overflowNode.getKey(),
+        previousNodeChildrenLength + focus.offset,
+        'block',
+      );
+    }
+  }
+
+  previousNode.remove();
 }

@@ -7,7 +7,7 @@
  * @flow strict
  */
 
- import type {
+import type {
   OutlineEditor,
   Selection,
   OutlineNode,

@@ -365,7 +365,7 @@ describe('OutlineNode tests', () => {
       expect(() => paragraphNode.isParentOf(textNode)).toThrow();
     });
 
-    test.only('OutlineNode.getNodesBetween()', async () => {
+    test('OutlineNode.getNodesBetween()', async () => {
       const {editor} = testEnv;
       let barTextNode;
       let bazTextNode;

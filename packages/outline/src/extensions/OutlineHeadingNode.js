@@ -36,6 +36,7 @@ export class HeadingNode extends BlockNode {
     this.__tag = tag;
     this.__type = 'heading';
   }
+
   getTag(): HeadingTagType {
     return this.__tag;
   }

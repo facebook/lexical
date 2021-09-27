@@ -173,61 +173,6 @@ export function isLeafNode(node: OutlineNode): boolean %checks {
   return isTextNode(node) || isLineBreakNode(node) || isDecoratorNode(node);
 }
 
-function getNodesBetween(
-  startingNode: OutlineNode,
-  endingNode: OutlineNode,
-  isBefore: boolean,
-): Array<OutlineNode> {
-  const nodes = [];
-  let node = startingNode;
-  while (true) {
-    nodes.push(node);
-    if (node === endingNode) {
-      break;
-    }
-    const child = isBlockNode(node)
-      ? isBefore
-        ? node.getFirstChild()
-        : node.getLastChild()
-      : null;
-    if (child !== null) {
-      node = child;
-      continue;
-    }
-    const nextSibling = isBefore
-      ? node.getNextSibling()
-      : node.getPreviousSibling();
-    if (nextSibling !== null) {
-      node = nextSibling;
-      continue;
-    }
-    const parent = node.getParentOrThrow();
-    nodes.push(parent);
-    if (parent === endingNode) {
-      break;
-    }
-    let parentSibling = null;
-    let ancestor = parent;
-    do {
-      if (ancestor === null) {
-        invariant(false, 'getNodesBetween: ancestor is null');
-      }
-      parentSibling = isBefore
-        ? ancestor.getNextSibling()
-        : ancestor.getPreviousSibling();
-      ancestor = ancestor.getParent();
-      if (parentSibling === null && ancestor !== null) {
-        nodes.push(ancestor);
-      }
-    } while (parentSibling === null);
-    node = parentSibling;
-  }
-  if (!isBefore) {
-    nodes.reverse();
-  }
-  return nodes;
-}
-
 function replaceNode<N: OutlineNode>(
   toReplace: OutlineNode,
   replaceWith: N,
@@ -546,9 +491,77 @@ export class OutlineNode {
     }
     return false;
   }
-  getNodesBetween(targetNode: OutlineNode): Array<OutlineNode> {
+  getNodesBetween(
+    targetNode: OutlineNode,
+  ): Array<OutlineNode> {
     const isBefore = this.isBefore(targetNode);
-    return getNodesBetween(this, targetNode, isBefore);
+    const nodes = [];
+    const visited = new Set();
+    let node = this;
+    let dfsAncestor = null;
+    while (true) {
+      const key = node.__key;
+      if (!visited.has(key)) {
+        visited.add(key);
+        nodes.push(node);
+      }
+      if (node === targetNode) {
+        break;
+      }
+      const child = isBlockNode(node)
+        ? isBefore
+          ? node.getFirstChild()
+          : node.getLastChild()
+        : null;
+      if (child !== null) {
+        if (dfsAncestor === null) {
+          dfsAncestor = node;
+        }
+        node = child;
+        continue;
+      }
+      const nextSibling = isBefore
+        ? node.getNextSibling()
+        : node.getPreviousSibling();
+      if (nextSibling !== null) {
+        node = nextSibling;
+        continue;
+      }
+      const parent = node.getParentOrThrow();
+      if (!visited.has(parent.__key)) {
+        nodes.push(parent);
+      }
+      if (parent === targetNode) {
+        break;
+      }
+      let parentSibling = null;
+      let ancestor = parent;
+      if (parent.is(dfsAncestor)) {
+        dfsAncestor = null;
+      }
+      do {
+        if (ancestor === null) {
+          invariant(false, 'getNodesBetween: ancestor is null');
+        }
+        parentSibling = isBefore
+          ? ancestor.getNextSibling()
+          : ancestor.getPreviousSibling();
+        ancestor = ancestor.getParent();
+        if (ancestor !== null) {
+          if (ancestor.is(dfsAncestor)) {
+            dfsAncestor = null;
+          }
+          if (parentSibling === null && !visited.has(ancestor.__key)) {
+            nodes.push(ancestor);
+          }
+        }
+      } while (parentSibling === null);
+      node = parentSibling;
+    }
+    if (!isBefore) {
+      nodes.reverse();
+    }
+    return nodes;
   }
   isImmutable(): boolean {
     return (this.getLatest().__flags & IS_IMMUTABLE) !== 0;

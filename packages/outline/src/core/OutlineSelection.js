@@ -223,32 +223,42 @@ export class Selection {
     const anchorOffset = anchor.getCharacterOffset();
     const focusOffset = focus.getCharacterOffset();
     let textContent = '';
-    nodes.forEach((node) => {
-      if (isTextNode(node)) {
-        let text = node.getTextContent();
-        if (node === firstNode) {
-          if (node === lastNode) {
-            text =
-              anchorOffset < focusOffset
-                ? text.slice(anchorOffset, focusOffset)
-                : text.slice(focusOffset, anchorOffset);
-          } else {
-            text = isBefore
-              ? text.slice(anchorOffset)
-              : text.slice(focusOffset);
-          }
-        } else if (node === lastNode) {
-          text = isBefore
-            ? text.slice(0, focusOffset)
-            : text.slice(0, anchorOffset);
+    let prevWasBlock = false;
+    for (let i = 0; i < nodes.length; i++) {
+      const node = nodes[i];
+      if (isBlockNode(node)) {
+        if (!prevWasBlock) {
+          textContent += '\n';
         }
-        textContent += text;
-      } else if (isBlockNode(node) || isLineBreakNode(node)) {
-        textContent += '\n';
-      } else if (isDecoratorNode(node)) {
-        textContent += node.getTextContent();
+        prevWasBlock = true;
+      } else {
+        prevWasBlock = false;
+        if (isTextNode(node)) {
+          let text = node.getTextContent();
+          if (node === firstNode) {
+            if (node === lastNode) {
+              text =
+                anchorOffset < focusOffset
+                  ? text.slice(anchorOffset, focusOffset)
+                  : text.slice(focusOffset, anchorOffset);
+            } else {
+              text = isBefore
+                ? text.slice(anchorOffset)
+                : text.slice(focusOffset);
+            }
+          } else if (node === lastNode) {
+            text = isBefore
+              ? text.slice(0, focusOffset)
+              : text.slice(0, anchorOffset);
+          }
+          textContent += text;
+        } else if (isLineBreakNode(node)) {
+          textContent += '\n';
+        } else if (isDecoratorNode(node)) {
+          textContent += node.getTextContent();
+        }
       }
-    });
+    }
     return textContent;
   }
   applyDOMRange(range: StaticRange): void {

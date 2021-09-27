@@ -254,7 +254,7 @@ export class BlockNode extends OutlineNode {
     }
     return self;
   }
-  collapseAtStart(): boolean {
+  collapseAtStart(selection: Selection): boolean {
     return false;
   }
   excludeFromCopy(): boolean {

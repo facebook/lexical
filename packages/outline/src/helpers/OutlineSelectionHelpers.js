@@ -751,15 +751,14 @@ function deleteCharacter(selection: Selection, isBackward: boolean): void {
         }
       }
       updateCaretSelectionForUnicodeCharacter(selection, isBackward);
-    } else if (isBackward) {
+    } else if (isBackward && anchor.offset === 0) {
       // Special handling around rich text nodes
-      const anchorNode = anchor.getNode();
-      const parent = anchorNode.getParentOrThrow();
-
-      if (anchor.offset === 0) {
-        if (parent.collapseAtStart()) {
-          return;
-        }
+      const block =
+        anchor.type === 'block'
+          ? anchor.getNode()
+          : anchor.getNode().getParentOrThrow();
+      if (block.collapseAtStart(selection)) {
+        return;
       }
     }
   }

@@ -85,6 +85,7 @@ const externals = [
   'outline',
   'Outline',
   'outline-react',
+  // These need to be here so we never inline HistoryHelpers
   'outline/HistoryHelpers',
   'Outline/HistoryHelpers',
   'react-dom',

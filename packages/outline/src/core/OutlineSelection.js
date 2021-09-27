@@ -210,7 +210,7 @@ export class Selection {
     setPointValues(this.focus, focusNode.__key, focusOffset, 'text');
     this.isDirty = true;
   }
-  getTextContent(blockDelimiter?: string): string {
+  getTextContent(): string {
     const nodes = this.getNodes();
     if (nodes.length === 0) {
       return '';
@@ -228,7 +228,7 @@ export class Selection {
       const node = nodes[i];
       if (isBlockNode(node)) {
         if (!prevWasBlock) {
-          textContent += blockDelimiter || '\n';
+          textContent += '\n';
         }
         prevWasBlock = true;
       } else {

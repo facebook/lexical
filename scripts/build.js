@@ -85,6 +85,8 @@ const externals = [
   'outline',
   'Outline',
   'outline-react',
+  'outline/HistoryHelpers',
+  'Outline/HistoryHelpers',
   'react-dom',
   'ReactDOMComet',
   'react',

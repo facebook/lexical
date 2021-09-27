@@ -12,6 +12,7 @@ import type {
   EditorConfig,
   EditorThemeClasses,
   OutlineNode,
+  Selection,
 } from 'outline';
 import type {ParagraphNode} from 'outline/ParagraphNode';
 
@@ -111,13 +112,24 @@ export class ListItemNode extends BlockNode {
     return newBlock;
   }
 
-  collapseAtStart(): true {
+  collapseAtStart(selection: Selection): true {
     const paragraph = createParagraphNode();
     const children = this.getChildren();
     children.forEach((child) => paragraph.append(child));
     const listNode = this.getParentOrThrow();
     if (listNode.getChildrenSize() === 1) {
       listNode.replace(paragraph);
+      // If we have selection on the list item, we'll need to move it
+      // to the paragraph
+      const anchor = selection.anchor;
+      const focus = selection.focus;
+      const key = paragraph.getKey();
+      if (anchor.type === 'block' && anchor.getNode().is(this)) {
+        anchor.set(key, anchor.offset, 'block');
+      }
+      if (focus.type === 'block' && focus.getNode().is(this)) {
+        focus.set(key, focus.offset, 'block');
+      }
     } else {
       listNode.insertBefore(paragraph);
       this.remove();

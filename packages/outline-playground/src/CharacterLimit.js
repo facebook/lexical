@@ -33,19 +33,34 @@ export default function CharacterLimit({
   const [remainingCharacters, setRemainingCharacters] = useState(0);
 
   useEffect(() => {
+    let lastTextLength = null;
     editor.registerNodeType('overflow', OverflowNode);
-    return editor.addListener('update', (_view: ViewModel) => {
-      const characters = editor.getTextContent().length;
-      const diff = CHARACTER_LIMIT - characters;
-      setRemainingCharacters(diff);
-      updateWithoutHistory(
-        editor,
-        (view: View) => {
-          wrapOverflowedNodes(view, CHARACTER_LIMIT);
-        },
-        'CharacterLimit',
-      );
-    });
+    return editor.addListener(
+      'update',
+      (viewModel: ViewModel, dirtyNodes: Set<NodeKey> | null) => {
+        const textLength = editor.getTextContent().length;
+        const textLengthAboveThreshold =
+          textLength > CHARACTER_LIMIT ||
+          (lastTextLength !== null && lastTextLength > CHARACTER_LIMIT);
+        const hasDirtyNodes = dirtyNodes === null || dirtyNodes.size === 0;
+        if (
+          lastTextLength === null ||
+          textLengthAboveThreshold ||
+          hasDirtyNodes
+        ) {
+          const diff = CHARACTER_LIMIT - textLength;
+          setRemainingCharacters(diff);
+          updateWithoutHistory(
+            editor,
+            (view: View) => {
+              wrapOverflowedNodes(view, CHARACTER_LIMIT);
+            },
+            'CharacterLimit',
+          );
+        }
+        lastTextLength = textLength;
+      },
+    );
   }, [editor]);
 
   return (
@@ -62,6 +77,7 @@ function wrapOverflowedNodes(view: View, offset: number) {
   const root = view.getRoot();
   let accumulatedLength = 0;
 
+  let previousNode = root;
   dfs(root, (node: OutlineNode) => {
     if (isOverflowNode(node)) {
       const previousLength = accumulatedLength;
@@ -70,7 +86,7 @@ function wrapOverflowedNodes(view: View, offset: number) {
         const parent = node.getParent();
         const previousSibling = node.getPreviousSibling();
         const nextSibling = node.getNextSibling();
-        const nextNode = unwrapNode(node);
+        unwrapNode(node);
         const selection = view.getSelection();
         // Restore selection when the overflow children are removed
         if (
@@ -86,22 +102,21 @@ function wrapOverflowedNodes(view: View, offset: number) {
             parent.select();
           }
         }
-        if (nextNode !== null) {
-          return nextNode;
-        } else {
-          return parent;
-        }
+        return previousNode;
       } else if (previousLength < offset) {
         const descendant = node.getFirstDescendant();
         const descendantLength =
           descendant !== null ? descendant.getTextContentSize() : 0;
         const previousPlusDescendantLength = previousLength + descendantLength;
-        if (isTextNode(descendant) && descendant.isSimpleText()) {
-          // For simple text we can redimension the overflow into a smaller and more accurate
-          // container
-          return unwrapNode(node);
-        } else if (previousPlusDescendantLength <= offset) {
-          return unwrapNode(node);
+        // For simple text we can redimension the overflow into a smaller and more accurate
+        // container
+        const firstDescendantIsSimpleText =
+          isTextNode(descendant) && descendant.isSimpleText();
+        const firstDescendantDoesNotOverflow =
+          previousPlusDescendantLength <= offset;
+        if (firstDescendantIsSimpleText || firstDescendantDoesNotOverflow) {
+          unwrapNode(node);
+          return previousNode;
         }
       }
     } else if (isLeafNode(node)) {
@@ -130,6 +145,7 @@ function wrapOverflowedNodes(view: View, offset: number) {
         mergePrevious(overflowNode, view);
       }
     }
+    previousNode = node;
     return node;
   });
 }

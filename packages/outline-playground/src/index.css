@@ -498,8 +498,8 @@ pre :not(.tree-view-output) {
   background-image: url(images/icons/code.svg);
 }
 
-.characters-over {
-  color: #999;
+.characters-limit {
+  color: #888;
   font-size: 12px;
   text-align: right;
   display: block;
@@ -508,7 +508,7 @@ pre :not(.tree-view-output) {
   bottom: 5px;
 }
 
-.characters-over span {
+.characters-limit.characters-limit-exceeded {
   color: red;
 }
 
@@ -553,6 +553,11 @@ pre :not(.tree-view-output) {
 .editor-shell div.editor em.editor-text-hashtag {
   background-color: rgba(88, 144, 255, .15);
   border-bottom: 1px solid rgba(88, 144, 255, .3);
+}
+
+.editor-shell div.editor .editor-character-limit {
+  display: inline;
+  background-color: #ffbbbb !important;
 }
 
 .dropdown {

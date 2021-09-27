@@ -77,6 +77,7 @@ const editorConfig = {
     hashtag: 'editor-text-hashtag',
     code: 'editor-code',
     link: 'editor-text-link',
+    characterLimit: 'editor-character-limit',
   },
 };
 

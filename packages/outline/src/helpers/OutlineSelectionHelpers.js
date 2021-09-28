@@ -32,6 +32,7 @@ import isImmutableOrInert from 'shared/isImmutableOrInert';
 import invariant from 'shared/invariant';
 import {doesContainGrapheme} from 'outline/TextHelpers';
 import getPossibleDecoratorNode from 'shared/getPossibleDecoratorNode';
+import {getCommonAncestor} from 'outline/NodeHelpers';
 
 const cssToStyles: Map<string, {[string]: string}> = new Map();
 
@@ -91,20 +92,32 @@ export function getNodesInRange(selection: Selection): {
   while (sourceParent.excludeFromCopy()) {
     sourceParent = sourceParent.getParentOrThrow();
   }
+  if (sourceParent === null) {
+    invariant(false, 'getNodesInRange: first node does not have parent');
+  }
+  let commonParent = getCommonAncestor(nodes);
+  if (commonParent === null) {
+    invariant(false, 'getNodesInRange: no common ancestor');
+  }
+  while (commonParent.excludeFromCopy()) {
+    commonParent = commonParent.getParentOrThrow();
+  }
   const sourceParentKey = sourceParent.getKey();
   const topLevelNodeKeys = new Set();
-
+  const seen = new Set();
   for (let i = 0; i < nodesLength; i++) {
     let node = nodes[i];
     if (
       node.isInert() ||
       node.getKey() === sourceParentKey ||
-      (isBlockNode(node) && node.excludeFromCopy())
+      (isBlockNode(node) && node.excludeFromCopy()) ||
+      seen.has(node)
     ) {
       continue;
     }
     let parent = node.getParent();
     const nodeKey = node.getKey();
+    seen.add(node);
 
     if (isTextNode(node) && !node.isSegmented() && !node.isImmutable()) {
       const text = node.getTextContent();
@@ -123,30 +136,36 @@ export function getNodesInRange(selection: Selection): {
 
     if (parent !== null && isBlockNode(parent) && parent.excludeFromCopy()) {
       const parentKey = parent.getKey();
-      const parentParent = parent.getParent();
-      if (parentParent !== null) {
-        const parentParentKey = parentParent.getKey();
-        node = cloneWithProperties<OutlineNode>(node);
-        node.__parent = parentParentKey;
-        const latestParentParent = nodeMap.get(parentParentKey);
-        if (isBlockNode(latestParentParent)) {
-          const parentParentCopy =
-            cloneWithProperties<BlockNode>(latestParentParent);
-          const parentKeyIndex = parentParentCopy.__children.indexOf(parentKey);
-          parentParentCopy.__children.splice(parentKeyIndex, 0, nodeKey);
-          nodeMap.set(parentParentKey, parentParentCopy);
-        }
-        parent = parentParent;
+      let parentParent = parent.getParent();
+      while (isBlockNode(parentParent) && parentParent.excludeFromCopy()) {
+        parentParent = parentParent.getParent();
       }
+      if (parentParent === null) {
+        invariant(
+          false,
+          'getNodesInRange: excludeFromCopy node does not have non-excluded parent',
+        );
+      }
+      const parentParentKey = parentParent.getKey();
+      node = cloneWithProperties<OutlineNode>(node);
+      node.__parent = parentParentKey;
+      const latestParentParent = nodeMap.get(parentParentKey);
+      if (isBlockNode(latestParentParent)) {
+        const parentParentCopy =
+          cloneWithProperties<BlockNode>(latestParentParent);
+        const parentKeyIndex = parentParentCopy.__children.indexOf(parentKey);
+        parentParentCopy.__children.splice(parentKeyIndex, 0, nodeKey);
+        nodeMap.set(parentParentKey, parentParentCopy);
+      }
+      parent = parentParent;
     }
 
     if (!nodeMap.has(nodeKey)) {
       nodeMap.set(nodeKey, node);
     }
 
-    if (parent === sourceParent && parent !== null) {
+    if (parent === sourceParent || parent === commonParent) {
       nodeKeys.push(nodeKey);
-
       const topLevelBlock = node.getTopParentBlockOrThrow();
       topLevelNodeKeys.add(topLevelBlock.getKey());
     } else {
@@ -168,9 +187,6 @@ export function getNodesInRange(selection: Selection): {
             node.__parent = prevNode.__parent;
             if (isBlockNode(prevNode)) {
               node.__children = Array.from(prevNode.__children);
-            } else if (isTextNode(prevNode)) {
-              node.__format = prevNode.__format;
-              node.__style = prevNode.__style;
             }
             if (!isBlockNode(node)) {
               invariant(false, 'getNodesInRange: node is not a block node');

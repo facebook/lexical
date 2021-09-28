@@ -36,5 +36,8 @@
   "34": "createNode: node does not exist in nodeMap",
   "35": "reconcileNode: prevNode or nextNode does not exist in nodeMap",
   "36": "reconcileNode: parentDOM is null",
-  "37": "Reconciliation: could not find DOM element for node key \"${key}\""
+  "37": "Reconciliation: could not find DOM element for node key \"${key}\"",
+  "38": "getNodesInRange: first node does not have parent",
+  "39": "getNodesInRange: no common ancestor",
+  "40": "getNodesInRange: excludeFromCopy node does not have non-excluded parent"
 }

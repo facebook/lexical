@@ -7,13 +7,13 @@
  * @flow strict
  */
 
-import type {OutlineNode} from 'outline';
+import type {OutlineNode, BlockNode} from 'outline';
 
 import {isBlockNode} from 'outline';
 
 export function dfs(
   startingNode: OutlineNode,
-  nextNode: (OutlineNode) => OutlineNode | null,
+  nextNode: (OutlineNode) => null | OutlineNode,
 ) {
   let node = startingNode;
   nextNode(node);
@@ -36,4 +36,20 @@ export function dfs(
       node = nextNode(node);
     }
   }
+}
+
+export function getCommonAncestor(nodes: OutlineNode[]): null | BlockNode {
+  let commonAncestor = nodes[0].getParent();
+  const nodesLength = nodes.length;
+  for (let i = 1; i < nodesLength; i++) {
+    if (commonAncestor === null) {
+      return null;
+    }
+    // Flow -- an ancestor always has a child
+    const ancestorFirstChild = commonAncestor.getFirstChild();
+    if (ancestorFirstChild !== null) {
+      commonAncestor = ancestorFirstChild.getCommonAncestor(nodes[i]);
+    }
+  }
+  return commonAncestor;
 }

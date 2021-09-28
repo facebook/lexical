@@ -278,8 +278,7 @@ describe('OutlineTextNode tests', () => {
       const textNode = createTextNode('Hello World');
       const textNode2 = createTextNode('Goodbye Earth');
 
-      paragraphNode.append(textNode);
-      paragraphNode.append(textNode2);
+      paragraphNode.append(textNode, textNode2);
       view.getRoot().append(paragraphNode);
 
       let selection = textNode2.selectPrevious();
@@ -301,8 +300,7 @@ describe('OutlineTextNode tests', () => {
       const textNode = createTextNode('Hello World');
       const textNode2 = createTextNode('Goodbye Earth');
 
-      paragraphNode.append(textNode);
-      paragraphNode.append(textNode2);
+      paragraphNode.append(textNode, textNode2);
       view.getRoot().append(paragraphNode);
 
       let selection = textNode.selectNext(1, 3);

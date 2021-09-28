@@ -43,20 +43,20 @@ function textNodeTransform(node: TextNode, view: View): void {
         updateTextNode(node, 2);
         const heading = createHeadingNode('h1');
         const children = block.getChildren();
-        children.forEach((child) => heading.append(child));
+        heading.append(...children);
         block.replace(heading);
       } else if (firstChar === '>') {
         updateTextNode(node, 2);
         const quote = createQuoteNode();
         const children = block.getChildren();
-        children.forEach((child) => quote.append(child));
+        quote.append(...children);
         block.replace(quote);
       } else if (firstChar === '-' || firstChar === '*') {
         updateTextNode(node, 2);
         const list = createListNode('ul');
         const listItem = createListItemNode();
         const children = block.getChildren();
-        children.forEach((child) => listItem.append(child));
+        listItem.append(...children);
         list.append(listItem);
         block.replace(list);
       }
@@ -65,14 +65,14 @@ function textNodeTransform(node: TextNode, view: View): void {
         updateTextNode(node, 3);
         const heading = createHeadingNode('h2');
         const children = block.getChildren();
-        children.forEach((child) => heading.append(child));
+        heading.append(...children);
         block.replace(heading);
       } else if (firstChar === '1' && secondChar === '.') {
         updateTextNode(node, 3);
         const list = createListNode('ol');
         const listItem = createListItemNode();
         const children = block.getChildren();
-        children.forEach((child) => listItem.append(child));
+        listItem.append(...children);
         list.append(listItem);
         block.replace(list);
       }

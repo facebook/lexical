@@ -43,17 +43,13 @@ describe('OutlineNodeHelpers tests', () => {
         const text4 = createTextNode('text4');
         const text5 = createTextNode('text5');
         const text6 = createTextNode('text6');
-        root.append(paragraph1);
-        root.append(paragraph2);
-        paragraph1.append(block1);
-        paragraph1.append(block2);
-        paragraph2.append(text4);
-        paragraph2.append(text5);
+        root.append(paragraph1, paragraph2);
+        paragraph1.append(block1, block2);
+        paragraph2.append(text4, text5);
         text5.toggleBold(); // Prevent from merging with text 4
         paragraph2.append(block3);
         block1.append(text1);
-        block2.append(text2);
-        block2.append(text3);
+        block2.append(text2, text3);
         text3.toggleBold(); // Prevent from merging with text2
         block3.append(text6);
 
@@ -94,9 +90,7 @@ describe('OutlineNodeHelpers tests', () => {
         const block2 = createTestBlockNode();
         const block3 = createTestBlockNode();
         root.append(paragraph1);
-        paragraph1.append(block1);
-        paragraph1.append(block2);
-        paragraph1.append(block3);
+        paragraph1.append(block1, block2, block3);
 
         expectedKeys = [root.getKey(), paragraph1.getKey(), block3.getKey()];
       });

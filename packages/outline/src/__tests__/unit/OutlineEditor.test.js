@@ -674,8 +674,7 @@ describe('OutlineEditor tests', () => {
         blockNode2Key = blockNode2.getKey();
         textNode2Key = textNode2.getKey();
 
-        paragraph.append(blockNode1);
-        paragraph.append(blockNode2);
+        paragraph.append(blockNode1, blockNode2);
       });
       await update((view: View) => {
         const blockNode1: BlockNode = getNodeByKey(blockNode1Key);
@@ -719,8 +718,7 @@ describe('OutlineEditor tests', () => {
         const blockNode2 = createBlockNodeWithText('B');
         blockNode2Key = blockNode2.getKey();
 
-        paragraph.append(blockNode1);
-        paragraph.append(blockNode2);
+        paragraph.append(blockNode1, blockNode2);
       });
       await update((view: View) => {
         const blockNode1: BlockNode = getNodeByKey(blockNode1Key);
@@ -755,9 +753,7 @@ describe('OutlineEditor tests', () => {
         const blockNode3 = createBlockNodeWithText('C');
         blockNode3Key = blockNode3.getKey();
 
-        paragraph.append(blockNode1);
-        paragraph.append(blockNode2);
-        paragraph.append(blockNode3);
+        paragraph.append(blockNode1, blockNode2, blockNode3);
       });
       await update((view: View) => {
         const blockNode1: BlockNode = getNodeByKey(blockNode1Key);

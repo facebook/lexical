@@ -202,32 +202,36 @@ export class BlockNode extends OutlineNode {
     children.forEach((child) => child.remove());
     return writableSelf;
   }
-  // TODO add support for appending multiple nodes?
-  append(nodeToAppend: OutlineNode): BlockNode {
+  append(...nodesToAppend: OutlineNode[]): BlockNode {
     errorOnReadOnly();
     const writableSelf = this.getWritable();
-    const writableNodeToAppend = nodeToAppend.getWritable();
+    const writableSelfKey = writableSelf.__key;
+    const writableSelfChildren = writableSelf.__children;
+    const nodesToAppendLength = nodesToAppend.length;
+    for (let i = 0; i < nodesToAppendLength; i++) {
+      const nodeToAppend = nodesToAppend[i];
+      const writableNodeToAppend = nodeToAppend.getWritable();
 
-    // Remove node from previous parent
-    const oldParent = writableNodeToAppend.getParent();
-    if (oldParent !== null) {
-      const writableParent = oldParent.getWritable();
-      const children = writableParent.__children;
-      const index = children.indexOf(writableNodeToAppend.__key);
-      if (index > -1) {
-        children.splice(index, 1);
+      // Remove node from previous parent
+      const oldParent = writableNodeToAppend.getParent();
+      if (oldParent !== null) {
+        const writableParent = oldParent.getWritable();
+        const children = writableParent.__children;
+        const index = children.indexOf(writableNodeToAppend.__key);
+        if (index > -1) {
+          children.splice(index, 1);
+        }
       }
-    }
-    // Set child parent to self
-    writableNodeToAppend.__parent = writableSelf.__key;
-    const children = writableSelf.__children;
-    // Append children.
-    const newKey = writableNodeToAppend.__key;
-    children.push(newKey);
-    const flags = writableNodeToAppend.__flags;
-    // Handle direction if node is directionless
-    if (flags & IS_DIRECTIONLESS) {
-      updateDirectionIfNeeded(writableNodeToAppend);
+      // Set child parent to self
+      writableNodeToAppend.__parent = writableSelfKey;
+      // Append children.
+      const newKey = writableNodeToAppend.__key;
+      writableSelfChildren.push(newKey);
+      const flags = writableNodeToAppend.__flags;
+      // Handle direction if node is directionless
+      if (flags & IS_DIRECTIONLESS) {
+        updateDirectionIfNeeded(writableNodeToAppend);
+      }
     }
     return writableSelf;
   }

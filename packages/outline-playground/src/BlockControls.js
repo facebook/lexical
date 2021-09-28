@@ -193,7 +193,7 @@ function DropdownList({
               : anchor.getNode();
           const children = block.getChildren();
           const paragraph = createHeadingNode('h2');
-          children.forEach((child) => paragraph.append(child));
+          paragraph.append(...children);
           block.replace(paragraph);
         }
       }, 'formatSmallHeading');

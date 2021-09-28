@@ -109,14 +109,12 @@ describe('OutlineListItemNode tests', () => {
           listNode = new ListNode('ul');
           listItemNode1 = new ListItemNode();
           listItemNode1.append(new TextNode('one'));
-          listNode.append(listItemNode1);
           listItemNode2 = new ListItemNode();
           listItemNode2.append(new TextNode('two'));
-          listNode.append(listItemNode2);
           listItemNode3 = new ListItemNode();
           listItemNode3.append(new TextNode('three'));
-          listNode.append(listItemNode3);
           root.append(listNode);
+          listNode.append(listItemNode1, listItemNode2, listItemNode3);
         });
         expect(testEnv.outerHTML).toBe(
           '<div contenteditable="true" data-outline-editor="true"><ul><li><span data-outline-text="true">one</span></li><li><span data-outline-text="true">two</span></li><li><span data-outline-text="true">three</span></li></ul></div>',
@@ -229,15 +227,13 @@ describe('OutlineListItemNode tests', () => {
           const root = view.getRoot();
           listNode = new ListNode('ul');
           listItemNode1 = new ListItemNode();
-          listItemNode1.append(new TextNode('one'));
-          listNode.append(listItemNode1);
           listItemNode2 = new ListItemNode();
-          listItemNode2.append(new TextNode('two'));
-          listNode.append(listItemNode2);
           listItemNode3 = new ListItemNode();
-          listItemNode3.append(new TextNode('three'));
-          listNode.append(listItemNode3);
           root.append(listNode);
+          listNode.append(listItemNode1, listItemNode2, listItemNode3);
+          listItemNode1.append(new TextNode('one'));
+          listItemNode2.append(new TextNode('two'));
+          listItemNode3.append(new TextNode('three'));
         });
         expect(testEnv.outerHTML).toBe(
           '<div contenteditable="true" data-outline-editor="true"><ul><li><span data-outline-text="true">one</span></li><li><span data-outline-text="true">two</span></li><li><span data-outline-text="true">three</span></li></ul></div>',
@@ -304,12 +300,10 @@ describe('OutlineListItemNode tests', () => {
           const root = view.getRoot();
           listNode = new ListNode('ul');
           listItemNode1 = new ListItemNode();
-          listNode.append(listItemNode1);
           listItemNode2 = new ListItemNode();
-          listNode.append(listItemNode2);
           listItemNode3 = new ListItemNode();
-          listNode.append(listItemNode3);
           root.append(listNode);
+          listNode.append(listItemNode1, listItemNode2, listItemNode3);
         });
         expect(testEnv.outerHTML).toBe(
           '<div contenteditable="true" data-outline-editor="true"><ul><li><br></li><li><br></li><li><br></li></ul></div>',

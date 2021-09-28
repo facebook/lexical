@@ -428,6 +428,124 @@ describe('OutlineSelectionHelpers tests', () => {
       });
     });
 
+    test('Can handle a block point on empty block', () => {
+      const setupTestCase = (cb) => {
+        const editor = createEditor({});
+
+        editor.addListener('error', (error) => {
+          throw error;
+        });
+
+        editor.update((view) => {
+          const root = view.getRoot();
+          const block = createParagraphWithNodes(editor, []);
+          root.append(block);
+          setAnchorPoint(view, {
+            type: 'block',
+            offset: 0,
+            key: block.getKey(),
+          });
+          setFocusPoint(view, {
+            type: 'block',
+            offset: 0,
+            key: block.getKey(),
+          });
+
+          const selection = view.getSelection();
+          cb(selection, view, block);
+        });
+      };
+
+      // getNodes
+      setupTestCase((selection, view) => {
+        expect(selection.getNodes()).toEqual([]);
+      });
+
+      // getTextContent
+      setupTestCase((selection) => {
+        expect(selection.getTextContent()).toEqual('');
+      });
+
+      // insertText
+      setupTestCase((selection, view, block) => {
+        insertText(selection, 'Test');
+        const firstChild = block.getFirstChild();
+        expect(firstChild.getTextContent()).toBe('Test');
+        expect(selection.anchor).toEqual({
+          type: 'text',
+          offset: 4,
+          key: firstChild.getKey(),
+        });
+        expect(selection.focus).toEqual({
+          type: 'text',
+          offset: 4,
+          key: firstChild.getKey(),
+        });
+      });
+
+      // insertParagraph
+      setupTestCase((selection, view, block) => {
+        insertParagraph(selection);
+        const nextBlock = block.getNextSibling();
+        expect(selection.anchor).toEqual({
+          type: 'block',
+          offset: 0,
+          key: nextBlock.getKey(),
+        });
+        expect(selection.focus).toEqual({
+          type: 'block',
+          offset: 0,
+          key: nextBlock.getKey(),
+        });
+      });
+
+      // insertLineBreak
+      setupTestCase((selection, view, block) => {
+        insertLineBreak(selection, true);
+        expect(selection.anchor).toEqual({
+          type: 'block',
+          offset: 0,
+          key: block.getKey(),
+        });
+        expect(selection.focus).toEqual({
+          type: 'block',
+          offset: 0,
+          key: block.getKey(),
+        });
+      });
+
+      // Format text
+      setupTestCase((selection, view, block) => {
+        formatText(selection, 'bold');
+        insertText(selection, 'Test');
+        const firstChild = block.getFirstChild();
+        expect(firstChild.getTextContent()).toBe('Test');
+        expect(selection.anchor).toEqual({
+          type: 'text',
+          offset: 4,
+          key: firstChild.getKey(),
+        });
+        expect(selection.focus).toEqual({
+          type: 'text',
+          offset: 4,
+          key: firstChild.getKey(),
+        });
+      });
+
+      // Extract selection
+      setupTestCase((selection, view, block) => {
+        expect(extractSelection(selection)).toEqual([]);
+      });
+
+      // getNodesInRange
+      setupTestCase((selection, view, block) => {
+        expect(getNodesInRange(selection)).toEqual({
+          range: [],
+          nodeMap: [],
+        });
+      });
+    });
+
     test('Can handle a start block point', () => {
       const setupTestCase = (cb) => {
         const editor = createEditor({});

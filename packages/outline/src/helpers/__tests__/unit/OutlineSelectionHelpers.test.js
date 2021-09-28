@@ -1199,9 +1199,7 @@ describe('OutlineSelectionHelpers tests', () => {
       const text1 = createTextNode('First');
       const text2 = createTextNode('Second');
       const text3 = createTextNode('Third');
-      root.append(paragraph1);
-      root.append(paragraph2);
-      root.append(paragraph3);
+      root.append(paragraph1, paragraph2, paragraph3);
       paragraph1.append(text1);
       paragraph2.append(text2);
       paragraph3.append(text3);

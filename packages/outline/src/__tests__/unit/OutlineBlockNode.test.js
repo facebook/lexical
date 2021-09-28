@@ -75,9 +75,7 @@ describe('OutlineBlockNode tests', () => {
       // Some operations require a selection to exist, hence
       // we make a selection in the setup code.
       text.select(0, 0);
-      block.append(text);
-      block.append(text2);
-      block.append(text3);
+      block.append(text, text2, text3);
       view.getRoot().append(block);
     });
   }
@@ -118,12 +116,8 @@ describe('OutlineBlockNode tests', () => {
         const text3 = createTextNode('Baz');
         const text4 = createTextNode('Qux');
 
-        block.append(text);
-        block.append(innerBlock);
-        block.append(text4);
-
-        innerBlock.append(text2);
-        innerBlock.append(text3);
+        block.append(text, innerBlock, text4);
+        innerBlock.append(text2, text3);
 
         const children = block.getAllTextNodes();
         expect(children).toHaveLength(4);
@@ -132,8 +126,7 @@ describe('OutlineBlockNode tests', () => {
         const innerInnerBlock = createTestBlockNode();
         const text5 = createTextNode('More');
         const text6 = createTextNode('Stuff');
-        innerInnerBlock.append(text5);
-        innerInnerBlock.append(text6);
+        innerInnerBlock.append(text5, text6);
         innerBlock.append(innerInnerBlock);
 
         const children2 = block.getAllTextNodes();
@@ -207,12 +200,8 @@ describe('OutlineBlockNode tests', () => {
         text3.makeInert();
         const text4 = createTextNode('Qux');
 
-        block.append(text);
-        block.append(innerBlock);
-        block.append(text4);
-
-        innerBlock.append(text2);
-        innerBlock.append(text3);
+        block.append(text, innerBlock, text4);
+        innerBlock.append(text2, text3);
 
         expect(block.getTextContent()).toEqual('FooBar\n\nQux');
         expect(block.getTextContent(true)).toEqual('FooBarBaz\n\nQux');
@@ -221,8 +210,7 @@ describe('OutlineBlockNode tests', () => {
         const text5 = createTextNode('More');
         text5.makeInert();
         const text6 = createTextNode('Stuff');
-        innerInnerBlock.append(text5);
-        innerInnerBlock.append(text6);
+        innerInnerBlock.append(text5, text6);
         innerBlock.append(innerInnerBlock);
 
         expect(block.getTextContent()).toEqual('FooBarStuff\n\nQux');

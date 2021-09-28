@@ -491,9 +491,10 @@ export class OutlineNode {
     }
     return false;
   }
-  getNodesBetween(
-    targetNode: OutlineNode,
-  ): Array<OutlineNode> {
+  getNodesBetween(targetNode: OutlineNode): Array<OutlineNode> {
+    if (this.is(targetNode)) {
+      return [];
+    }
     const isBefore = this.isBefore(targetNode);
     const nodes = [];
     const visited = new Set();

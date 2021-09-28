@@ -492,7 +492,7 @@ export class OutlineNode {
     return false;
   }
   getNodesBetween(targetNode: OutlineNode): Array<OutlineNode> {
-    if (this.is(targetNode)) {
+    if (this.is(targetNode) && isBlockNode(this)) {
       return [];
     }
     const isBefore = this.isBefore(targetNode);

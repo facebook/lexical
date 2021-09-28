@@ -222,10 +222,9 @@ describe('OutlineNode tests', () => {
       await editor.update(() => {
         barTextNode = new TextNode('bar');
         barTextNode.toggleUnmergeable();
-        paragraphNode.append(barTextNode);
         bazTextNode = new TextNode('baz');
         bazTextNode.toggleUnmergeable();
-        paragraphNode.append(bazTextNode);
+        paragraphNode.append(barTextNode, bazTextNode);
       });
       expect(testEnv.outerHTML).toBe(
         '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span><span data-outline-text="true">bar</span><span data-outline-text="true">baz</span></p></div>',
@@ -266,10 +265,9 @@ describe('OutlineNode tests', () => {
       await editor.update(() => {
         barTextNode = new TextNode('bar');
         barTextNode.toggleUnmergeable();
-        paragraphNode.append(barTextNode);
         bazTextNode = new TextNode('baz');
         bazTextNode.toggleUnmergeable();
-        paragraphNode.append(bazTextNode);
+        paragraphNode.append(barTextNode, bazTextNode);
       });
       expect(testEnv.outerHTML).toBe(
         '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span><span data-outline-text="true">bar</span><span data-outline-text="true">baz</span></p></div>',
@@ -304,8 +302,7 @@ describe('OutlineNode tests', () => {
         barParagraphNode.append(barTextNode);
         bazParagraphNode.append(bazTextNode);
         expect(barTextNode.getCommonAncestor(bazTextNode)).toBe(null);
-        rootNode.append(barParagraphNode);
-        rootNode.append(bazParagraphNode);
+        rootNode.append(barParagraphNode, bazParagraphNode);
       });
       expect(testEnv.outerHTML).toBe(
         '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span><span data-outline-text="true">qux</span></p><p><span data-outline-text="true">bar</span></p><p><span data-outline-text="true">baz</span></p></div>',
@@ -332,10 +329,9 @@ describe('OutlineNode tests', () => {
       await editor.update(() => {
         barTextNode = new TextNode('bar');
         barTextNode.toggleUnmergeable();
-        paragraphNode.append(barTextNode);
         bazTextNode = new TextNode('baz');
         bazTextNode.toggleUnmergeable();
-        paragraphNode.append(bazTextNode);
+        paragraphNode.append(barTextNode, bazTextNode);
       });
       expect(testEnv.outerHTML).toBe(
         '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span><span data-outline-text="true">bar</span><span data-outline-text="true">baz</span></p></div>',
@@ -375,15 +371,14 @@ describe('OutlineNode tests', () => {
         const rootNode = view.getRoot();
         barTextNode = new TextNode('bar');
         barTextNode.toggleUnmergeable();
-        paragraphNode.append(barTextNode);
         bazTextNode = new TextNode('baz');
         bazTextNode.toggleUnmergeable();
-        paragraphNode.append(bazTextNode);
         newParagraphNode = new ParagraphNode();
         quxTextNode = new TextNode('qux');
         quxTextNode.toggleUnmergeable();
-        newParagraphNode.append(quxTextNode);
         rootNode.append(newParagraphNode);
+        paragraphNode.append(barTextNode, bazTextNode);
+        newParagraphNode.append(quxTextNode);
       });
       expect(testEnv.outerHTML).toBe(
         '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span><span data-outline-text="true">bar</span><span data-outline-text="true">baz</span></p><p><span data-outline-text="true">qux</span></p></div>',
@@ -833,9 +828,7 @@ describe('OutlineNode tests', () => {
         block1.append(text1);
         block2.append(text2);
         block3.append(text3);
-        root.append(block1);
-        root.append(block2);
-        root.append(block3);
+        root.append(block1, block2, block3);
       });
       expect(testEnv.outerHTML).toBe(
         '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">A</span></p><p><span data-outline-text="true">B</span></p><p><span data-outline-text="true">C</span></p></div>',

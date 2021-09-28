@@ -53,8 +53,7 @@ describe('OutlineNodeHelpers tests', () => {
           const overflowRight = view.getNodeByKey(overflowRightKey);
           const text1 = createTextNode('1');
           const text2 = createTextNode('2');
-          overflowRight.append(text1);
-          overflowRight.append(text2);
+          overflowRight.append(text1, text2);
           text2.toggleBold(); // Prevent merging with text1
 
           overflowLeft.select();
@@ -89,11 +88,9 @@ describe('OutlineNodeHelpers tests', () => {
           const text3 = createTextNode('3');
           const text4 = createTextNode('4');
           text2Key = text2.getKey();
-          overflowLeft.append(text1);
-          overflowLeft.append(text2);
+          overflowLeft.append(text1, text2);
           text2.toggleBold(); // Prevent merging with text1
-          overflowRight.append(text3);
-          overflowRight.append(text4);
+          overflowRight.append(text3, text4);
           text4.toggleBold(); // Prevent merging with text3
 
           overflowLeft.select(1, 1);

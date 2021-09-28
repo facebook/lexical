@@ -156,9 +156,7 @@ function handleOutdent(listItemNodes: Array<ListItemNode>): void {
         const nextSiblingsListItem = createListItemNode();
         const nextSiblingsList = createListNode(tag);
         nextSiblingsListItem.append(nextSiblingsList);
-        listItemNode
-          .getNextSiblings()
-          .forEach((sibling) => nextSiblingsList.append(sibling));
+        nextSiblingsList.append(...listItemNode.getNextSiblings());
         // put the sibling nested lists on either side of the grandparent list item in the great grandparent.
         grandparentListItem.insertBefore(previousSiblingsListItem);
         grandparentListItem.insertAfter(nextSiblingsListItem);

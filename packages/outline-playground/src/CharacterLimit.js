@@ -218,9 +218,7 @@ export function mergePrevious(overflowNode: OverflowNode, view: View) {
   const previousNodeChildren = previousNode.getChildren();
   const previousNodeChildrenLength = previousNodeChildren.length;
   if (firstChild === null) {
-    for (let i = 0; i < previousNodeChildrenLength; i++) {
-      overflowNode.append(previousNodeChildren[i]);
-    }
+    overflowNode.append(...previousNodeChildren);
   } else {
     for (let i = 0; i < previousNodeChildrenLength; i++) {
       firstChild.insertBefore(previousNodeChildren[i]);

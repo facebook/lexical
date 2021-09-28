@@ -104,20 +104,17 @@ export function getNodesInRange(selection: Selection): {
   }
   const sourceParentKey = sourceParent.getKey();
   const topLevelNodeKeys = new Set();
-  const seen = new Set();
   for (let i = 0; i < nodesLength; i++) {
     let node = nodes[i];
     if (
       node.isInert() ||
       node.getKey() === sourceParentKey ||
-      (isBlockNode(node) && node.excludeFromCopy()) ||
-      seen.has(node)
+      (isBlockNode(node) && node.excludeFromCopy())
     ) {
       continue;
     }
     let parent = node.getParent();
     const nodeKey = node.getKey();
-    seen.add(node);
 
     if (isTextNode(node) && !node.isSegmented() && !node.isImmutable()) {
       const text = node.getTextContent();

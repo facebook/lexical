@@ -24,11 +24,6 @@ import useOutlineRichText from 'outline-react/useOutlineRichText';
 import {getNodeByKey} from '../../core/OutlineNode';
 import {createTestBlockNode} from '../utils';
 
-function sanitizeHTML(html) {
-  // Remove zero width characters
-  return html.replace(/[\u200B-\u200D\u2060\uFEFF]/g, '');
-}
-
 describe('OutlineEditor tests', () => {
   let container = null;
   let reactRoot;
@@ -112,7 +107,7 @@ describe('OutlineEditor tests', () => {
       reactRoot.render(<TestBase element={ref.current} />);
     });
 
-    expect(sanitizeHTML(container.innerHTML)).toBe(
+    expect(container.innerHTML).toBe(
       '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">This works!</span></p></div>',
     );
   });
@@ -145,7 +140,7 @@ describe('OutlineEditor tests', () => {
     // Wait for update to complete
     await Promise.resolve().then();
 
-    expect(sanitizeHTML(container.innerHTML)).toBe(
+    expect(container.innerHTML).toBe(
       '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">This works!</span></p></div>',
     );
 
@@ -165,7 +160,7 @@ describe('OutlineEditor tests', () => {
 
     expect(listener).toHaveBeenCalledTimes(1);
 
-    expect(sanitizeHTML(container.innerHTML)).toBe(
+    expect(container.innerHTML).toBe(
       '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">This works!</span></p></div>',
     );
   });
@@ -198,7 +193,7 @@ describe('OutlineEditor tests', () => {
     // Wait for update to complete
     await Promise.resolve().then();
 
-    expect(sanitizeHTML(container.innerHTML)).toBe(
+    expect(container.innerHTML).toBe(
       '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">This works!</span></p></div>',
     );
 
@@ -221,7 +216,7 @@ describe('OutlineEditor tests', () => {
 
     expect(listener).toHaveBeenCalledTimes(1);
 
-    expect(sanitizeHTML(container.innerHTML)).toBe(
+    expect(container.innerHTML).toBe(
       '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">Foo</span></p></div>',
     );
   });
@@ -273,7 +268,7 @@ describe('OutlineEditor tests', () => {
       reactRoot.render(<TestBase changeElement={false} />);
     });
 
-    expect(sanitizeHTML(container.innerHTML)).toBe(
+    expect(container.innerHTML).toBe(
       '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">Not changed</span></p></div>',
     );
 
@@ -283,7 +278,7 @@ describe('OutlineEditor tests', () => {
 
     expect(rootListener).toHaveBeenCalledTimes(3);
     expect(updateListener).toHaveBeenCalledTimes(3);
-    expect(sanitizeHTML(container.innerHTML)).toBe(
+    expect(container.innerHTML).toBe(
       '<span contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">Change successful</span></p></span>',
     );
   });
@@ -368,7 +363,7 @@ describe('OutlineEditor tests', () => {
       });
 
       expect(listener).toHaveBeenCalledTimes(1);
-      expect(sanitizeHTML(container.innerHTML)).toBe(
+      expect(container.innerHTML).toBe(
         '<div contenteditable="true" data-outline-editor="true"><p>' +
           '<span data-outline-decorator="true"><span>Hello world</span></span><br></p></div>',
       );
@@ -403,7 +398,7 @@ describe('OutlineEditor tests', () => {
       await Promise.resolve().then();
 
       expect(listener).toHaveBeenCalledTimes(1);
-      expect(sanitizeHTML(container.innerHTML)).toBe(
+      expect(container.innerHTML).toBe(
         '<div contenteditable="true" data-outline-editor="true"><p><br></p></div>',
       );
 
@@ -411,7 +406,7 @@ describe('OutlineEditor tests', () => {
         reactRoot.render(<Test divKey={1} />);
       });
       expect(listener).toHaveBeenCalledTimes(3);
-      expect(sanitizeHTML(container.innerHTML)).toBe(
+      expect(container.innerHTML).toBe(
         '<div contenteditable="true" data-outline-editor="true"><p><br></p></div>',
       );
       // Wait for update to complete

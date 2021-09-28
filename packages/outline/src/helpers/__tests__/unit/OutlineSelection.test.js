@@ -26,8 +26,6 @@ jest.mock('shared/environment', () => {
 
 import {
   insertText,
-  sanitizeSelection,
-  sanitizeHTML,
   setNativeSelectionWithPaths,
   getNodeFromPath,
   formatBold,
@@ -142,13 +140,13 @@ describe('OutlineSelection tests', () => {
   }
 
   test('Expect initial output to be a block with no text', () => {
-    expect(sanitizeHTML(container.innerHTML)).toBe(
+    expect(container.innerHTML).toBe(
       '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><br></p></div>',
     );
   });
 
   function assertSelection(rootElement, expectedSelection) {
-    const acutalSelection = sanitizeSelection(window.getSelection());
+    const acutalSelection = window.getSelection();
     expect(acutalSelection.anchorNode).toBe(
       getNodeFromPath(expectedSelection.anchorPath, rootElement),
     );
@@ -887,7 +885,7 @@ describe('OutlineSelection tests', () => {
     test(name + ` (#${i + 1})`, async () => {
       await applySelectionInputs(testUnit.inputs, update, editor);
       // Validate HTML matches
-      expect(sanitizeHTML(container.innerHTML)).toBe(testUnit.expectedHTML);
+      expect(container.innerHTML).toBe(testUnit.expectedHTML);
       // Validate selection matches
       const rootElement = editor.getRootElement();
       const expectedSelection = testUnit.expectedSelection;

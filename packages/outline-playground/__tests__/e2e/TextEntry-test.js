@@ -137,7 +137,7 @@ describe('TextEntry', () => {
       } else {
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">⁠Hello World.</span><br><span data-outline-text="true">⁠This is another paragraph. </span><span class="emoji happysmile" data-outline-text="true">🙂</span></p>',
+          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello World.</span><br><span data-outline-text="true">This is another paragraph. </span><span class="emoji happysmile" data-outline-text="true">🙂</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 3, 0],
@@ -572,7 +572,7 @@ describe('TextEntry', () => {
       } else {
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">⁠Copy + pasting?</span><br><br><span data-outline-text="true">⁠Sounds good!</span></p>',
+          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Copy + pasting?</span><br><br><span data-outline-text="true">Sounds good!</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 3, 0],
@@ -600,7 +600,7 @@ describe('TextEntry', () => {
       } else {
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">⁠Copy + pasting?</span><br><br><span data-outline-text="true">⁠Sounds good!</span></p>',
+          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Copy + pasting?</span><br><br><span data-outline-text="true">Sounds good!</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 0, 0],
@@ -620,7 +620,7 @@ describe('TextEntry', () => {
       } else {
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">⁠Copy + pasting?</span><br><br><span data-outline-text="true">⁠Sounds good!</span></p>',
+          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Copy + pasting?</span><br><br><span data-outline-text="true">Sounds good!</span></p>',
         );
       }
 
@@ -641,7 +641,7 @@ describe('TextEntry', () => {
       } else {
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">⁠Copy + pasting?</span><br><br><span data-outline-text="true">⁠Sounds good!Copy + pasting?</span><br><br><span data-outline-text="true">⁠Sounds good!</span></p>',
+          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Copy + pasting?</span><br><br><span data-outline-text="true">Sounds good!Copy + pasting?</span><br><br><span data-outline-text="true">Sounds good!</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 6, 0],
@@ -815,12 +815,9 @@ describe('TextEntry', () => {
 
       await page.keyboard.press('Delete');
       if (isRichText) {
-        await assertHTML(
-          page,
-          '<p class="editor-paragraph" dir="ltr">⁠<br></p>',
-        );
+        await assertHTML(page, '<p class="editor-paragraph" dir="ltr"><br></p>');
       } else {
-        await assertHTML(page, '<p class="editor-paragraph">⁠<br></p>');
+        await assertHTML(page, '<p class="editor-paragraph"><br></p>');
       }
       await assertSelection(page, {
         anchorPath: [0],

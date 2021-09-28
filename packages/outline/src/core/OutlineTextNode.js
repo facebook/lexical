@@ -13,11 +13,7 @@ import type {EditorConfig, TextNodeThemeClasses} from './OutlineEditor';
 
 import {OutlineNode, setCompositionKey, getCompositionKey} from './OutlineNode';
 import {getSelection, makeSelection} from './OutlineSelection';
-import {
-  getTextDirection,
-  isImmutableOrInertOrSegmented,
-  toggleTextFormatType,
-} from './OutlineUtils';
+import {getTextDirection, toggleTextFormatType} from './OutlineUtils';
 import invariant from 'shared/invariant';
 import {errorOnReadOnly} from './OutlineView';
 import {
@@ -28,7 +24,6 @@ import {
   IS_UNDERLINE,
   IS_OVERFLOWED,
   IS_UNMERGEABLE,
-  ZERO_WIDTH_JOINER_CHAR,
   NO_BREAK_SPACE_CHAR,
   TEXT_TYPE_TO_FORMAT,
 } from './OutlineConstants';
@@ -157,32 +152,14 @@ function setTextContent(
 ): void {
   const firstChild = dom.firstChild;
   const isComposing = node.isComposing();
-  // We only prefix normal nodes with the byte order mark.
-  const prefix =
-    isImmutableOrInertOrSegmented(node) || nextText !== '' || isComposing
-      ? ''
-      : ZERO_WIDTH_JOINER_CHAR;
-
   // Always add a suffix if we're composing a node
   const suffix = isComposing ? NO_BREAK_SPACE_CHAR : '';
-  const text = prefix + nextText + suffix;
+  const text = nextText + suffix;
 
   if (firstChild == null) {
     dom.textContent = text;
   } else if (firstChild.nodeValue !== text) {
     firstChild.nodeValue = text;
-  }
-  let possibleLineBreak = dom.lastChild;
-  if (possibleLineBreak != null) {
-    const parent = node.getParent();
-    const needsLineBreak =
-      nextText === '' && parent !== null && parent.__children.length === 1;
-    if (needsLineBreak && possibleLineBreak.nodeType === 3) {
-      possibleLineBreak = document.createElement('br');
-      dom.appendChild(possibleLineBreak);
-    } else if (!needsLineBreak && possibleLineBreak.nodeType !== 3) {
-      dom.removeChild(possibleLineBreak);
-    }
   }
 }
 

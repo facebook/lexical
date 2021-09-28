@@ -44,7 +44,7 @@ describe('Regression test #429', () => {
       } else {
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><br><span class="emoji happysmile" data-outline-text="true">🙂</span><span data-outline-text="true">​ or </span><span class="emoji unhappysmile" data-outline-text="true">🙁</span></p>',
+          '<p class="editor-paragraph" dir="ltr"><br><span class="emoji happysmile" data-outline-text="true">🙂</span><span data-outline-text="true"> or </span><span class="emoji unhappysmile" data-outline-text="true">🙁</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 1, 0],

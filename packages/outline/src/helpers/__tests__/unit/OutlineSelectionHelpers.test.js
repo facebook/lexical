@@ -1183,15 +1183,71 @@ describe('OutlineSelectionHelpers tests', () => {
     });
   });
 
-  test('range with excludeFromCopy nodes', async () => {
+  test('range with multiple paragraphs', async () => {
     const editor = createEditor({});
-
     editor.addListener('error', (error) => {
       throw error;
     });
-
     const element = document.createElement('div');
+    editor.setRootElement(element);
 
+    await editor.update((view: View) => {
+      const root = view.getRoot();
+      const paragraph1 = createParagraphNode();
+      const paragraph2 = createParagraphNode();
+      const paragraph3 = createParagraphNode();
+      const text1 = createTextNode('First');
+      const text2 = createTextNode('Second');
+      const text3 = createTextNode('Third');
+      root.append(paragraph1);
+      root.append(paragraph2);
+      root.append(paragraph3);
+      paragraph1.append(text1);
+      paragraph2.append(text2);
+      paragraph3.append(text3);
+
+      text1.select(0, 0);
+      const selection1 = view.getSelection();
+      selection1.focus.set(text3.getKey(), 1, 'text');
+      const selectedNodes1 = getNodesInRange(view.getSelection());
+      expect(selectedNodes1.range).toEqual([
+        text1.getKey(),
+        paragraph2.getKey(),
+        paragraph3.getKey(),
+      ]);
+      expect(selectedNodes1.nodeMap[0][0]).toEqual(text1.getKey());
+      expect(selectedNodes1.nodeMap[0][1].getTextContent()).toBe('First');
+      expect(selectedNodes1.nodeMap[1][0]).toEqual(paragraph2.getKey());
+      expect(selectedNodes1.nodeMap[2][0]).toEqual(text2.getKey());
+      expect(selectedNodes1.nodeMap[3][0]).toEqual(paragraph3.getKey());
+      expect(selectedNodes1.nodeMap[4][0]).toEqual(text3.getKey());
+      expect(selectedNodes1.nodeMap[4][1].getTextContent()).toBe('Third');
+
+      text1.select(1, 1);
+      const selection2 = view.getSelection();
+      selection2.focus.set(text3.getKey(), 4, 'text');
+      const selectedNodes2 = getNodesInRange(view.getSelection());
+      expect(selectedNodes2.range).toEqual([
+        text1.getKey(),
+        paragraph2.getKey(),
+        paragraph3.getKey(),
+      ]);
+      expect(selectedNodes2.nodeMap[0][0]).toEqual(text1.getKey());
+      expect(selectedNodes2.nodeMap[0][1].__text).toBe('irst');
+      expect(selectedNodes2.nodeMap[1][0]).toEqual(paragraph2.getKey());
+      expect(selectedNodes2.nodeMap[2][0]).toEqual(text2.getKey());
+      expect(selectedNodes2.nodeMap[3][0]).toEqual(paragraph3.getKey());
+      expect(selectedNodes2.nodeMap[4][0]).toEqual(text3.getKey());
+      expect(selectedNodes2.nodeMap[4][1].__text).toBe('Thir');
+    });
+  });
+
+  test('range with excludeFromCopy nodes', async () => {
+    const editor = createEditor({});
+    editor.addListener('error', (error) => {
+      throw error;
+    });
+    const element = document.createElement('div');
     editor.setRootElement(element);
 
     await editor.update((view: View) => {

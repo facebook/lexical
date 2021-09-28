@@ -194,7 +194,10 @@ export class Selection {
     if (isBlockNode(lastNode)) {
       lastNode = resolveBlockChild(lastNode, focus.offset);
     }
-    if (firstNode === lastNode && !isBlockNode(firstNode)) {
+    if (firstNode === lastNode) {
+      if (isBlockNode(firstNode)) {
+        return [];
+      }
       return [firstNode];
     }
     const nodes = firstNode.getNodesBetween(lastNode);

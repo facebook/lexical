@@ -1198,6 +1198,11 @@ describe('OutlineSelectionHelpers tests', () => {
         });
       };
 
+      // isBefore
+      setupTestCase((selection, view) => {
+        expect(selection.anchor.isBefore(selection.focus)).toEqual(true);
+      });
+
       // getNodes
       setupTestCase((selection, view) => {
         expect(selection.getNodes()).toEqual([

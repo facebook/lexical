@@ -126,11 +126,26 @@ function internallyMarkNodeAsDirty(node: OutlineNode): void {
   dirtyNodes.add(latest.__key);
 }
 
-function removeNode(nodeToRemove: OutlineNode): void {
+function removeNode(
+  nodeToRemove: OutlineNode,
+  restoreSelection: boolean,
+): void {
+  errorOnReadOnly();
   const key = nodeToRemove.__key;
   const parent = nodeToRemove.getParent();
   if (parent === null) {
     return;
+  }
+  if (restoreSelection) {
+    const selection = getSelection();
+    const anchor = selection && selection.anchor;
+    const focus = selection && selection.focus;
+    if (anchor !== null && anchor.key === key) {
+      moveSelectionPointToSibling(anchor, nodeToRemove, parent);
+    }
+    if (focus !== null && focus.key === key) {
+      moveSelectionPointToSibling(focus, nodeToRemove, parent);
+    }
   }
   const writableParent = parent.getWritable();
   const parentChildren = writableParent.__children;
@@ -169,57 +184,33 @@ function replaceSelectionPoint(point: PointType, node: OutlineNode): void {
   }
 }
 
-export function isLeafNode(node: OutlineNode): boolean %checks {
-  return isTextNode(node) || isLineBreakNode(node) || isDecoratorNode(node);
-}
-
-function replaceNode<N: OutlineNode>(
-  toReplace: OutlineNode,
-  replaceWith: N,
-): N {
-  const toReplaceKey = toReplace.__key;
-  const writableReplaceWith = replaceWith.getWritable<N>();
-  const oldParent = writableReplaceWith.getParent();
-  if (oldParent !== null) {
-    const writableParent = oldParent.getWritable();
-    const children = writableParent.__children;
-    const index = children.indexOf(writableReplaceWith.__key);
-    if (index > -1) {
-      children.splice(index, 1);
+function moveSelectionPointToSibling(
+  point: PointType,
+  node: OutlineNode,
+  parent: BlockNode,
+): void {
+  let siblingKey = null;
+  let offset = 0;
+  const prevSibling = node.getPreviousSibling();
+  if (isTextNode(prevSibling)) {
+    siblingKey = prevSibling.__key;
+    offset = prevSibling.getTextContentSize();
+  } else {
+    const nextSibling = node.getNextSibling();
+    if (isTextNode(nextSibling)) {
+      siblingKey = nextSibling.__key;
     }
   }
-  const newParent = toReplace.getParentOrThrow();
-  const writableParent = newParent.getWritable();
-  const children = writableParent.__children;
-  const index = children.indexOf(toReplace.__key);
-  const newKey = writableReplaceWith.__key;
-  if (index > -1) {
-    children.splice(index, 0, newKey);
+  if (siblingKey !== null) {
+    point.set(siblingKey, offset, 'text');
+  } else {
+    offset = node.getIndexWithinParent();
+    point.set(parent.__key, offset, 'block');
   }
-  writableReplaceWith.__parent = newParent.__key;
-  toReplace.remove();
-  const flags = writableReplaceWith.__flags;
-  // Handle direction if node is directionless
-  if (flags & IS_DIRECTIONLESS) {
-    updateDirectionIfNeeded(writableReplaceWith);
-  }
-  const selection = getSelection();
-  const anchor = selection && selection.anchor;
-  const focus = selection && selection.focus;
-  if (anchor !== null && anchor.key === toReplaceKey) {
-    replaceSelectionPoint(anchor, writableReplaceWith);
-  }
-  if (focus !== null && focus.key === toReplaceKey) {
-    replaceSelectionPoint(focus, writableReplaceWith);
-  }
-  if (getCompositionKey() === toReplaceKey) {
-    setCompositionKey(newKey);
-  }
-  // Handle direction if node is directionless
-  if (flags & IS_DIRECTIONLESS) {
-    updateDirectionIfNeeded(writableReplaceWith);
-  }
-  return writableReplaceWith;
+}
+
+export function isLeafNode(node: OutlineNode): boolean %checks {
+  return isTextNode(node) || isLineBreakNode(node) || isDecoratorNode(node);
 }
 
 export function updateDirectionIfNeeded(node: OutlineNode): void {
@@ -685,11 +676,53 @@ export class OutlineNode {
   }
   remove(): void {
     errorOnReadOnly();
-    return removeNode(this);
+    removeNode(this, true);
   }
-  replace<N: OutlineNode>(targetNode: N): N {
+  replace<N: OutlineNode>(replaceWith: N): N {
     errorOnReadOnly();
-    return replaceNode(this, targetNode);
+    const toReplaceKey = this.__key;
+    const writableReplaceWith = replaceWith.getWritable<N>();
+    const oldParent = writableReplaceWith.getParent();
+    if (oldParent !== null) {
+      const writableParent = oldParent.getWritable();
+      const children = writableParent.__children;
+      const index = children.indexOf(writableReplaceWith.__key);
+      if (index > -1) {
+        children.splice(index, 1);
+      }
+    }
+    const newParent = this.getParentOrThrow();
+    const writableParent = newParent.getWritable();
+    const children = writableParent.__children;
+    const index = children.indexOf(this.__key);
+    const newKey = writableReplaceWith.__key;
+    if (index > -1) {
+      children.splice(index, 0, newKey);
+    }
+    writableReplaceWith.__parent = newParent.__key;
+    removeNode(this, false);
+    const flags = writableReplaceWith.__flags;
+    // Handle direction if node is directionless
+    if (flags & IS_DIRECTIONLESS) {
+      updateDirectionIfNeeded(writableReplaceWith);
+    }
+    const selection = getSelection();
+    const anchor = selection && selection.anchor;
+    const focus = selection && selection.focus;
+    if (anchor !== null && anchor.key === toReplaceKey) {
+      replaceSelectionPoint(anchor, writableReplaceWith);
+    }
+    if (focus !== null && focus.key === toReplaceKey) {
+      replaceSelectionPoint(focus, writableReplaceWith);
+    }
+    if (getCompositionKey() === toReplaceKey) {
+      setCompositionKey(newKey);
+    }
+    // Handle direction if node is directionless
+    if (flags & IS_DIRECTIONLESS) {
+      updateDirectionIfNeeded(writableReplaceWith);
+    }
+    return writableReplaceWith;
   }
   insertAfter(nodeToInsert: OutlineNode): this {
     errorOnReadOnly();

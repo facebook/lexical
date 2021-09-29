@@ -9,12 +9,7 @@
 
 import type {RootNode} from './OutlineRootNode';
 import type {OutlineEditor, TextNodeTransform} from './OutlineEditor';
-import type {
-  OutlineNode,
-  NodeKey,
-  ParsedNode,
-  NodeMapType,
-} from './OutlineNode';
+import type {OutlineNode, NodeKey, ParsedNode, NodeMap} from './OutlineNode';
 import type {BlockNode} from './OutlineBlockNode';
 import type {Selection} from './OutlineSelection';
 import type {ParsedNodeMap} from './OutlineNode';
@@ -147,7 +142,6 @@ const view: View = {
   setCompositionKey,
   getCompositionKey,
 };
-
 export function viewModelHasDirtySelection(
   viewModel: ViewModel,
   editor: OutlineEditor,
@@ -240,7 +234,7 @@ export function preparePendingViewUpdate(
 }
 
 function triggerTextMutationListeners(
-  nodeMap: NodeMapType,
+  nodeMap: NodeMap,
   dirtyNodes: Array<NodeKey>,
   transforms: Array<TextNodeTransform>,
 ): void {
@@ -340,7 +334,7 @@ function garbageCollectDetachedDecorators(
 function garbageCollectDetachedDeepChildNodes(
   node: BlockNode,
   parentKey: NodeKey,
-  nodeMap: NodeMapType,
+  nodeMap: NodeMap,
 ): void {
   const children = node.__children;
   const childrenLength = children.length;
@@ -454,11 +448,11 @@ export function cloneViewModel(current: ViewModel): ViewModel {
 }
 
 export class ViewModel {
-  _nodeMap: NodeMapType;
+  _nodeMap: NodeMap;
   _selection: null | Selection;
   _flushSync: boolean;
 
-  constructor(nodeMap: NodeMapType) {
+  constructor(nodeMap: NodeMap) {
     this._nodeMap = nodeMap;
     this._selection = null;
     this._flushSync = false;

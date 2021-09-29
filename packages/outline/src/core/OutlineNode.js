@@ -58,9 +58,8 @@ type ParsedSelection = {
     type: 'text' | 'block',
   },
 };
-// export type NodeMapType = {root: RootNode, [key: NodeKey]: OutlineNode};
 
-export type NodeMapType = Map<NodeKey, OutlineNode>;
+export type NodeMap = Map<NodeKey, OutlineNode>;
 
 function getOrInitDirtyNodes(): Set<NodeKey> {
   const editor = getActiveEditor();
@@ -94,7 +93,7 @@ function generateKey(node: OutlineNode): NodeKey {
 
 function markParentsAsDirty(
   parentKey: NodeKey,
-  nodeMap: NodeMapType,
+  nodeMap: NodeMap,
   dirtySubTrees: Set<NodeKey>,
 ): void {
   let nextParentKey = parentKey;

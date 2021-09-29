@@ -27,7 +27,7 @@ type OptionalProps = {
   remainingCharacters?: (characters: number) => void,
 };
 
-export default function useCharacterLimit(
+export function useCharacterLimit(
   editor: OutlineEditor,
   maxCharacters: number,
   optional: OptionalProps = {},

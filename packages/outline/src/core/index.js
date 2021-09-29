@@ -18,6 +18,7 @@ export type {
   ParsedNode,
   ParsedNodeMap,
   OutlineNode,
+  NodeMap,
 } from './OutlineNode';
 export type {ParsedBlockNode} from './OutlineBlockNode';
 export type {ParsedTextNode} from './OutlineTextNode';

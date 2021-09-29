@@ -27,6 +27,7 @@ import useKeywords from './useKeywords';
 import BlockControls from './BlockControls';
 import CharacterLimit from './CharacterLimit';
 import {Typeahead} from './Typeahead';
+import {createOffsetView} from 'outline/OffsetHelpers'
 import yellowFlowerImage from './images/image/yellow-flower.jpg';
 
 const editorStyle = {
@@ -123,6 +124,26 @@ export const useRichTextEditor = ({
   useEffect(() => {
     editor.registerNodeType('image', ImageNode);
   }, [editor]);
+  useEffect(() => {
+    return editor.addListener('update', (viewModel) => {
+      editor.update(view => {
+        const selection = view.getSelection();
+        if (selection === null) {
+          return;
+        }
+        const offsetView = createOffsetView(editor);
+        const offsets = offsetView.getOffsetsFromSelection(selection);
+        const sel = offsetView.createSelectionFromOffsets(view, ...offsets);
+        if (sel) {
+          if (!sel.is(selection)) {
+            debugger
+            offsetView.createSelectionFromOffsets(view, ...offsets);
+            throw new Error('NOOO')
+          }
+        }
+      }, 'FOO')
+    })
+  }, [editor])
 
   const element = useMemo(() => {
     const handleAddImage = () => {

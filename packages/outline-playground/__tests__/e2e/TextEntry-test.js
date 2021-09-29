@@ -652,7 +652,7 @@ describe('TextEntry', () => {
       }
     });
 
-    it(`Copy and paste between sections`, async () => {
+    it.only(`Copy and paste between sections`, async () => {
       const {isRichText, page} = e2e;
 
       await page.focus('div.editor');
@@ -684,6 +684,8 @@ describe('TextEntry', () => {
           focusOffset: 4,
         });
       }
+
+      return;
 
       // Select all the content
       await keyDownCtrlOrMeta(page);

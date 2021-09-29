@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {NodeKey, NodeMapType} from './OutlineNode';
+import type {NodeKey, NodeMap} from './OutlineNode';
 import type {OutlineEditor, EditorConfig} from './OutlineEditor';
 import type {
   Selection as OutlineSelection,
@@ -37,8 +37,8 @@ let activeEditorConfig: EditorConfig<{...}>;
 let activeEditor: OutlineEditor;
 let activeDirtySubTrees: null | Set<NodeKey>;
 let activeDirtyNodes: null | Set<NodeKey>;
-let activePrevNodeMap: NodeMapType;
-let activeNextNodeMap: NodeMapType;
+let activePrevNodeMap: NodeMap;
+let activeNextNodeMap: NodeMap;
 let activeSelection: null | OutlineSelection;
 let activePrevKeyToDOMMap: Map<NodeKey, HTMLElement>;
 
@@ -176,7 +176,7 @@ function createChildren(
 
 function isLastChildLineBreakOrDecorator(
   children: Array<NodeKey>,
-  nodeMap: NodeMapType,
+  nodeMap: NodeMap,
 ): boolean {
   const childKey = children[children.length - 1];
   const node = nodeMap.get(childKey);

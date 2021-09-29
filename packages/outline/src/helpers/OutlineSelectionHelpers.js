@@ -800,7 +800,6 @@ function removeSegment(node: TextNode, isBackward: boolean): void {
   const nextTextContent = split.join(' ');
 
   if (nextTextContent === '') {
-    textNode.selectPrevious();
     textNode.remove();
   } else {
     textNode = textNode.setTextContent(nextTextContent);
@@ -1089,7 +1088,7 @@ export function insertText(selection: Selection, text: string): void {
   const endPoint = isBefore ? focus : anchor;
   const startOffset = firstPoint.offset;
   const endOffset = endPoint.offset;
-  let firstNode = selectedNodes[0];
+  let firstNode: OutlineNode = selectedNodes[0];
 
   if (!isTextNode(firstNode)) {
     invariant(false, 'insertText: first node is not a text node');
@@ -1143,7 +1142,6 @@ export function insertText(selection: Selection, text: string): void {
 
   if (selectedNodesLength === 1) {
     if (isImmutableOrInert(firstNode)) {
-      firstNode.selectPrevious();
       firstNode.remove();
       return;
     }
@@ -1165,7 +1163,6 @@ export function insertText(selection: Selection, text: string): void {
 
     firstNode = firstNode.spliceText(startOffset, delCount, text, true);
     if (firstNode.getTextContent() === '') {
-      firstNode.selectPrevious();
       firstNode.remove();
     } else if (firstNode.isComposing() && selection.anchor.type === 'text') {
       selection.anchor.offset -= text.length;
@@ -1267,7 +1264,6 @@ export function insertText(selection: Selection, text: string): void {
         true,
       );
       if (firstNode.getTextContent() === '') {
-        firstNode.selectPrevious();
         firstNode.remove();
       } else if (firstNode.isComposing() && selection.anchor.type === 'text') {
         selection.anchor.offset -= text.length;
@@ -1275,7 +1271,6 @@ export function insertText(selection: Selection, text: string): void {
     } else if (startOffset === firstNodeTextLength) {
       firstNode.select();
     } else {
-      firstNode.selectPrevious();
       firstNode.remove();
     }
 

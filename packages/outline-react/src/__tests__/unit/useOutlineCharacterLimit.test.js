@@ -9,15 +9,15 @@
 
 import type {OutlineEditor, View, NodeKey} from 'outline';
 
-import {initializeUnitTest} from '../../../outline/src/__tests__/utils';
+import {initializeUnitTest} from '../../../../outline/src/__tests__/utils';
 import {createTextNode} from 'outline';
 import {createParagraphNode} from 'outline/ParagraphNode';
 import {
   createOverflowNode,
   mergePrevious,
   isOverflowNode,
-} from '../../src/useCharacterLimit';
-import type {ParagraphNode} from '../../../outline/src/extensions/OutlineParagraphNode';
+} from '../../useOutlineCharacterLimit';
+import type {ParagraphNode} from '../../../../outline/src/extensions/OutlineParagraphNode';
 
 describe('OutlineNodeHelpers tests', () => {
   initializeUnitTest((testEnv) => {

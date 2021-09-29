@@ -41,6 +41,7 @@ type Props = {
   onError: (Error, string) => void,
   isReadOnly: boolean,
   isCharLimit?: boolean,
+  isCharLimitUtf8?: boolean,
   isAutocomplete?: boolean,
 };
 
@@ -105,6 +106,7 @@ export const useRichTextEditor = ({
   onError,
   isReadOnly,
   isCharLimit,
+  isCharLimitUtf8,
   isAutocomplete,
 }: Props): [OutlineEditor, React.MixedElement] => {
   const [editor, rootElementRef, showPlaceholder] = useOutlineEditor(
@@ -149,7 +151,12 @@ export const useRichTextEditor = ({
         {mentionsTypeahead}
         {floatingToolbar}
         <BlockControls editor={editor} />
-        {isCharLimit && <CharacterLimit editor={editor} />}
+        {(isCharLimit || isCharLimitUtf8) && (
+          <CharacterLimit
+            editor={editor}
+            charset={isCharLimit ? 'UTF-16' : 'UTF-8'}
+          />
+        )}
         {isAutocomplete && <Typeahead editor={editor} />}
         <div className="actions">
           <button className="action-button outdent" onClick={outdent}>
@@ -173,15 +180,16 @@ export const useRichTextEditor = ({
     isReadOnly,
     rootElementRef,
     showPlaceholder,
-    clear,
     decorators,
     mentionsTypeahead,
     floatingToolbar,
     editor,
     isCharLimit,
+    isCharLimitUtf8,
     isAutocomplete,
     outdent,
     indent,
+    clear,
   ]);
 
   return [editor, element];
@@ -195,6 +203,7 @@ export const usePlainTextEditor = ({
   onError,
   isReadOnly,
   isCharLimit,
+  isCharLimitUtf8,
   isAutocomplete,
 }: Props): [OutlineEditor, React.MixedElement] => {
   const [editor, rootElementRef, showPlaceholder] = useOutlineEditor(
@@ -218,7 +227,12 @@ export const usePlainTextEditor = ({
         {showPlaceholder && <Placeholder>Enter some plain text...</Placeholder>}
         {decorators}
         {mentionsTypeahead}
-        {isCharLimit && <CharacterLimit editor={editor} />}
+        {(isCharLimit || isCharLimitUtf8) && (
+          <CharacterLimit
+            editor={editor}
+            charset={isCharLimit ? 'UTF-16' : 'UTF-8'}
+          />
+        )}
         {isAutocomplete && <Typeahead editor={editor} />}
         <div className="actions">
           <button className="action-button" onClick={() => clear()}>
@@ -231,12 +245,13 @@ export const usePlainTextEditor = ({
       isReadOnly,
       rootElementRef,
       showPlaceholder,
-      clear,
       decorators,
       mentionsTypeahead,
       isCharLimit,
+      isCharLimitUtf8,
       editor,
       isAutocomplete,
+      clear,
     ],
   );
 

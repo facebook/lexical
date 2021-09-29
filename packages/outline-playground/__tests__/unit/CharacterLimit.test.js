@@ -16,7 +16,7 @@ import {
   createOverflowNode,
   mergePrevious,
   isOverflowNode,
-} from '../../src/CharacterLimit';
+} from '../../src/useCharacterLimit';
 import type {ParagraphNode} from '../../../outline/src/extensions/OutlineParagraphNode';
 
 describe('OutlineNodeHelpers tests', () => {

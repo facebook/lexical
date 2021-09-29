@@ -81,7 +81,7 @@ class OffsetView {
     } else if (startNode.type === 'inline') {
       const node = view.getNodeByKey(startNode.key);
       if (node === null) {
-        return null
+        return null;
       }
       startKey = node.getParentOrThrow().getKey();
       startOffset = end > startNode.start ? startNode.end : startNode.start;
@@ -92,7 +92,7 @@ class OffsetView {
     } else if (endNode.type === 'inline') {
       const node = view.getNodeByKey(endNode.key);
       if (node === null) {
-        return null
+        return null;
       }
       endKey = node.getParentOrThrow().getKey();
       endOffset = end > endNode.start ? endNode.end : endNode.start;

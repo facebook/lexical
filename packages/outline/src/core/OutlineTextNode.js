@@ -469,14 +469,7 @@ export class TextNode extends OutlineNode {
       focusOffset = 0;
     }
     if (selection === null) {
-      return makeSelection(
-        key,
-        anchorOffset,
-        key,
-        focusOffset,
-        'text',
-        'text',
-      );
+      return makeSelection(key, anchorOffset, key, focusOffset, 'text', 'text');
     } else {
       const compositionKey = getCompositionKey();
       if (

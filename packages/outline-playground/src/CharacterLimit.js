@@ -9,7 +9,7 @@
 
 import type {OutlineEditor} from 'outline';
 
-import useCharacterLimit from './useCharacterLimit';
+import {useCharacterLimit} from 'outline-react/useOutlineCharacterLimit';
 import * as React from 'react';
 import {useState} from 'react';
 

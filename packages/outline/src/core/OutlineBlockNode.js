@@ -91,6 +91,27 @@ export class BlockNode extends OutlineNode {
     }
     return node;
   }
+  getDescendantByIndex(index: number): OutlineNode {
+    const children = this.getChildren();
+    const childrenLength = children.length;
+    if (childrenLength === 0) {
+      return this;
+    }
+    // For non-empty block nodes, we resolve its descendant
+    // (either a leaf node or the bottom-most block)
+    if (index >= childrenLength) {
+      const resolvedNode = children[childrenLength - 1];
+      return (
+        (isBlockNode(resolvedNode) && resolvedNode.getLastDescendant()) ||
+        resolvedNode
+      );
+    }
+    const resolvedNode = children[index];
+    return (
+      (isBlockNode(resolvedNode) && resolvedNode.getFirstDescendant()) ||
+      resolvedNode
+    );
+  }
   getFirstChild(): null | OutlineNode {
     const self = this.getLatest();
     const children = self.__children;

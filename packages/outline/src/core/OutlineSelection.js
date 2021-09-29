@@ -84,10 +84,10 @@ class Point {
     const bOffset = b.offset;
 
     if (isBlockNode(aNode)) {
-      aNode = resolveBlockChild(aNode, aOffset);
+      aNode = aNode.getDescendantByIndex(aOffset);
     }
     if (isBlockNode(bNode)) {
-      bNode = resolveBlockChild(bNode, bOffset);
+      bNode = bNode.getDescendantByIndex(bOffset);
     }
     if (aNode === bNode) {
       return aOffset < bOffset;
@@ -111,11 +111,16 @@ class Point {
     this.key = key;
     this.offset = offset;
     this.type = type;
-    if (!isViewReadOnlyMode() && getCompositionKey() === oldKey) {
-      setCompositionKey(key);
-    }
-    if (selection !== null) {
-      selection.isDirty = true;
+    if (!isViewReadOnlyMode()) {
+      if (getCompositionKey() === oldKey) {
+        setCompositionKey(key);
+      }
+      if (
+        selection !== null &&
+        (selection.anchor === this || selection.focus === this)
+      ) {
+        selection.isDirty = true;
+      }
     }
   }
 }
@@ -140,27 +145,6 @@ export function setPointValues(
   point.offset = offset;
   // $FlowFixMe: internal utility function
   point.type = type;
-}
-
-function resolveBlockChild(node: BlockNode, offset: number): OutlineNode {
-  const children = node.getChildren();
-  const childrenLength = children.length;
-  if (childrenLength === 0) {
-    return node;
-  }
-  // For non-empty block nodes, we resolve its descendant (either a leaf node or the bottom-most block)
-  if (offset >= childrenLength) {
-    const resolvedNode = children[childrenLength - 1];
-    return (
-      (isBlockNode(resolvedNode) && resolvedNode.getLastDescendant()) ||
-      resolvedNode
-    );
-  }
-  const resolvedNode = children[offset];
-  return (
-    (isBlockNode(resolvedNode) && resolvedNode.getFirstDescendant()) ||
-    resolvedNode
-  );
 }
 
 export class Selection {
@@ -189,10 +173,10 @@ export class Selection {
     let lastNode = focus.getNode();
 
     if (isBlockNode(firstNode)) {
-      firstNode = resolveBlockChild(firstNode, anchor.offset);
+      firstNode = firstNode.getDescendantByIndex(anchor.offset);
     }
     if (isBlockNode(lastNode)) {
-      lastNode = resolveBlockChild(lastNode, focus.offset);
+      lastNode = lastNode.getDescendantByIndex(focus.offset);
     }
     if (firstNode === lastNode) {
       if (isBlockNode(firstNode)) {

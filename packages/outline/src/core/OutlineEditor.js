@@ -31,6 +31,7 @@ import {
 import {createRootNode as createRoot} from './OutlineRootNode';
 import {LineBreakNode} from './OutlineLineBreakNode';
 import {RootNode} from './OutlineRootNode';
+import invariant from 'shared/invariant';
 
 export type EditorThemeClassName = string;
 
@@ -355,6 +356,9 @@ class BaseOutlineEditor {
     return this._viewModel;
   }
   setViewModel(viewModel: ViewModel): void {
+    if (viewModel.isEmpty()) {
+      invariant(false, 'setViewModel: the view model is empty. Ensure the view model\'s root node never becomes empty.')
+    }
     if (this._pendingViewModel !== null) {
       commitPendingUpdates(getSelf(this), 'setViewModel #1');
     }

@@ -201,7 +201,10 @@ export function preparePendingViewUpdate(
     const dirtyNodes = editor._dirtyNodes;
     if (dirtyNodes !== null && dirtyNodes.size > 0) {
       if (pendingViewModel.isEmpty()) {
-        invariant(false, 'updateEditor: the pending view model is empty. Ensure the root not never becomes empty from an update.')
+        invariant(
+          false,
+          'updateEditor: the pending view model is empty. Ensure the root not never becomes empty from an update.',
+        );
       }
       applyTextTransforms(pendingViewModel, dirtyNodes, editor);
       garbageCollectDetachedNodes(pendingViewModel, dirtyNodes, editor);

@@ -187,7 +187,6 @@ const LABEL_PREDICATES = [
   (node) => node.isSegmented() && 'Segmented',
   (node) => node.isStrikethrough() && 'Strikethrough',
   (node) => node.isUnderline() && 'Underline',
-  (node) => node.isOverflowed() && 'Overflowed',
   (node) => node.isInert() && 'Inert',
   (node) => node.isDirectionless() && 'Directionless',
   (node) => node.isUnmergeable() && 'Unmergeable',

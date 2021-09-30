@@ -536,6 +536,7 @@ export class TextNode extends OutlineNode {
     }
     const textContent = this.getTextContent();
     const key = this.__key;
+    const compositionKey = getCompositionKey();
     const offsetsSet = new Set(splitOffsets);
     const parts = [];
     const textLength = textContent.length;
@@ -616,6 +617,9 @@ export class TextNode extends OutlineNode {
           focus.offset -= textSize;
           selection.isDirty = true;
         }
+      }
+      if (compositionKey === key) {
+        setCompositionKey(siblingKey);
       }
       textSize = nextTextSize;
       sibling.__parent = parentKey;

@@ -10,7 +10,7 @@
 import type {OutlineNode} from './OutlineNode';
 import type {Selection} from './OutlineSelection';
 
-import {BlockNode} from './OutlineBlockNode';
+import {BlockNode, isBlockNode} from './OutlineBlockNode';
 import invariant from 'shared/invariant';
 
 export class RootNode extends BlockNode {
@@ -51,6 +51,20 @@ export class RootNode extends BlockNode {
 
   updateDOM(prevNode: RootNode, dom: HTMLElement): false {
     return false;
+  }
+
+  // Mutate
+
+  append(...nodesToAppend: OutlineNode[]): BlockNode {
+    for (let i = 0; i < nodesToAppend.length; i++) {
+      if (!isBlockNode(nodesToAppend[i])) {
+        invariant(
+          false,
+          'rootNode.append: Only block nodes can be appended to the root node',
+        );
+      }
+    }
+    return super.append(...nodesToAppend);
   }
 }
 

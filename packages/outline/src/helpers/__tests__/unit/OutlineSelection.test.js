@@ -88,7 +88,6 @@ describe('OutlineSelection tests', () => {
               bold: 'editor-text-bold',
               link: 'editor-text-link',
               italic: 'editor-text-italic',
-              overflowed: 'editor-text-overflowed',
               hashtag: 'editor-text-hashtag',
               underline: 'editor-text-underline',
               strikethrough: 'editor-text-strikethrough',

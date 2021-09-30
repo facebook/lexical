@@ -43,7 +43,6 @@ export type TextNodeThemeClasses = {
   underlineStrikethrough?: EditorThemeClassName,
   italic?: EditorThemeClassName,
   code?: EditorThemeClassName,
-  overflowed?: EditorThemeClassName,
 };
 
 export type EditorThemeClasses = {
@@ -357,7 +356,10 @@ class BaseOutlineEditor {
   }
   setViewModel(viewModel: ViewModel): void {
     if (viewModel.isEmpty()) {
-      invariant(false, 'setViewModel: the view model is empty. Ensure the view model\'s root node never becomes empty.')
+      invariant(
+        false,
+        "setViewModel: the view model is empty. Ensure the view model's root node never becomes empty.",
+      );
     }
     if (this._pendingViewModel !== null) {
       commitPendingUpdates(getSelf(this), 'setViewModel #1');

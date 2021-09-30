@@ -815,7 +815,10 @@ describe('TextEntry', () => {
 
       await page.keyboard.press('Delete');
       if (isRichText) {
-        await assertHTML(page, '<p class="editor-paragraph" dir="ltr"><br></p>');
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph" dir="ltr"><br></p>',
+        );
       } else {
         await assertHTML(page, '<p class="editor-paragraph"><br></p>');
       }

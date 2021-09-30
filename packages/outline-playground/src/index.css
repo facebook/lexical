@@ -512,12 +512,6 @@ pre :not(.tree-view-output) {
   color: red;
 }
 
-.editor-shell div.editor span.editor-text-overflowed,
-.editor-shell div.editor strong.editor-text-overflowed,
-.editor-shell div.editor em.editor-text-overflowed {
-  color: red;
-}
-
 .editor-shell div.editor span.editor-text-bold,
 .editor-shell div.editor strong.editor-text-bold,
 .editor-shell div.editor em.editor-text-bold {

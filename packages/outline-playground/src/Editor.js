@@ -69,7 +69,6 @@ const editorConfig = {
       bold: 'editor-text-bold',
       link: 'editor-text-link',
       italic: 'editor-text-italic',
-      overflowed: 'editor-text-overflowed',
       underline: 'editor-text-underline',
       strikethrough: 'editor-text-strikethrough',
       underlineStrikethrough: 'editor-text-underlineStrikethrough',

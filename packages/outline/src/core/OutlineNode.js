@@ -29,7 +29,6 @@ import {
   IS_DIRECTIONLESS,
   IS_IMMUTABLE,
   IS_INERT,
-  IS_OVERFLOWED,
   IS_SEGMENTED,
 } from './OutlineConstants';
 import {getSelection} from './OutlineSelection';
@@ -879,9 +878,6 @@ export function createNodeFromParse(
     viewModel._nodeMap.set('root', node);
   }
   node.__flags = parsedNode.__flags;
-  if (node.__flags & IS_OVERFLOWED) {
-    node.__flags ^= IS_OVERFLOWED;
-  }
   node.__parent = parentKey;
   // We will need to recursively handle the children in the case
   // of a BlockNode.

@@ -22,6 +22,7 @@ import ReactTestUtils from 'react-dom/test-utils';
 import {createEditor, createTextNode, TextNode} from 'outline';
 
 import {createParagraphNode} from 'outline/ParagraphNode';
+import {getCompositionKey, setCompositionKey} from '../../core/OutlineNode';
 
 const editorConfig = Object.freeze({
   theme: {
@@ -417,6 +418,18 @@ describe('OutlineTextNode tests', () => {
         });
       },
     );
+
+    test('splitText moves composition key to last node', async () => {
+      await update((view) => {
+        const paragraphNode = createParagraphNode();
+        const textNode = createTextNode('12345');
+        paragraphNode.append(textNode);
+        setCompositionKey(textNode.getKey());
+
+        const [, splitNode2] = textNode.splitText(1);
+        expect(getCompositionKey()).toBe(splitNode2.getKey());
+      });
+    });
 
     test.each([
       [

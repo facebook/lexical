@@ -19,6 +19,7 @@ import {
   isParagraphNode,
 } from 'outline/ParagraphNode';
 import {CAN_USE_BEFORE_INPUT} from 'shared/environment';
+import invariant from 'shared/invariant';
 import {
   onSelectionChange,
   onKeyDownForPlainText,
@@ -39,8 +40,15 @@ import useOutlineHistory from './shared/useOutlineHistory';
 function initEditor(editor: OutlineEditor): void {
   editor.update((view) => {
     const root = view.getRoot();
-
-    if (root.getFirstChild() === null) {
+    const firstChild = root.getFirstChild();
+    if (firstChild !== null) {
+      if (!isParagraphNode(firstChild)) {
+        invariant(
+          'false',
+          'Expected plain text root first child to be a ParagraphNode',
+        );
+      }
+    } else {
       const paragraph = createParagraphNode();
       root.append(paragraph);
       if (view.getSelection() !== null) {

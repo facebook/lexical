@@ -12,7 +12,6 @@ import {
   IS_STRIKETHROUGH,
   IS_UNDERLINE,
   IS_CODE,
-  IS_OVERFLOWED,
 } from '../../core/OutlineConstants';
 
 import React from 'react';
@@ -33,7 +32,6 @@ const editorConfig = Object.freeze({
       underlineStrikethrough: 'my-underline-strikethrough-class',
       italic: 'my-italic-class',
       code: 'my-code-class',
-      overflowed: 'my-overflowed-class',
     },
   },
 });
@@ -576,12 +574,6 @@ describe('OutlineTextNode tests', () => {
         IS_CODE,
         'My text node',
         '<code><span class="my-code-class">My text node</span></code>',
-      ],
-      [
-        'overflowed',
-        IS_OVERFLOWED,
-        'My text node',
-        '<span class="my-overflowed-class">My text node</span>',
       ],
       [
         'underline + strikethrough',

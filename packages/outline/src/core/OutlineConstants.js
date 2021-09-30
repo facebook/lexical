@@ -30,7 +30,6 @@ export const IS_UNDERLINE = 1 << 3;
 export const IS_CODE = 1 << 4;
 export const IS_SUBSCRIPT = 1 << 5;
 export const IS_SUPERSCRIPT = 1 << 6;
-export const IS_OVERFLOWED = 1 << 7; // This is going soon
 
 // Reconciliation
 
@@ -51,5 +50,4 @@ export const TEXT_TYPE_TO_FORMAT: {[TextFormatType]: number} = {
   strikethrough: IS_STRIKETHROUGH,
   italic: IS_ITALIC,
   code: IS_CODE,
-  overflowed: IS_OVERFLOWED,
 };

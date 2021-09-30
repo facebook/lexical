@@ -22,7 +22,6 @@ import {
   IS_ITALIC,
   IS_STRIKETHROUGH,
   IS_UNDERLINE,
-  IS_OVERFLOWED,
   IS_UNMERGEABLE,
   NO_BREAK_SPACE_CHAR,
   TEXT_TYPE_TO_FORMAT,
@@ -38,8 +37,7 @@ export type TextFormatType =
   | 'underline'
   | 'strikethrough'
   | 'italic'
-  | 'code'
-  | 'overflowed';
+  | 'code';
 
 function getElementOuterTag(node: TextNode, format: number): string | null {
   if (format & IS_CODE) {
@@ -221,9 +219,6 @@ export class TextNode extends OutlineNode {
   isCode(): boolean {
     return (this.getFormat() & IS_CODE) !== 0;
   }
-  isOverflowed(): boolean {
-    return (this.getFormat() & IS_OVERFLOWED) !== 0;
-  }
   isUnmergeable(): boolean {
     return (this.getFlags() & IS_UNMERGEABLE) !== 0;
   }
@@ -384,9 +379,6 @@ export class TextNode extends OutlineNode {
   }
   toggleCode(): TextNode {
     return this.setFormat(this.getFormat() ^ IS_CODE);
-  }
-  toggleOverflowed(): TextNode {
-    return this.setFormat(this.getFormat() ^ IS_OVERFLOWED);
   }
   toggleUnmergeable(): TextNode {
     return this.setFlags(this.getFlags() ^ IS_UNMERGEABLE);

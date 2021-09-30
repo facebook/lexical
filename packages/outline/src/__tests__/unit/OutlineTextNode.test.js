@@ -38,11 +38,6 @@ const editorConfig = Object.freeze({
   },
 });
 
-function sanitizeHTML(html) {
-  // Remove zero width characters.
-  return html.replace(/[\u200B-\u200D\u2060\uFEFF]/g, '');
-}
-
 class CustomSegmentedNode extends TextNode {
   static clone(node: $FlowFixMe): CustomSegmentedNode {
     return new CustomSegmentedNode(node.__text, node.__key);
@@ -622,14 +617,14 @@ describe('OutlineTextNode tests', () => {
         const textNode = createTextNode(contents);
         textNode.setFormat(format);
         const element = textNode.createDOM(editorConfig);
-        expect(sanitizeHTML(element.outerHTML)).toBe(expectedHTML);
+        expect(element.outerHTML).toBe(expectedHTML);
       });
     });
 
     describe('has parent node', () => {
       test.each([
         ['no formatting', null, 'My text node', '<span>My text node</span>'],
-        ['no formatting + empty string', null, '', `<span><br></span>`],
+        ['no formatting + empty string', null, '', `<span></span>`],
       ])(
         '%s text format type',
         async (_type, format, contents, expectedHTML) => {
@@ -640,7 +635,7 @@ describe('OutlineTextNode tests', () => {
             paragraphNode.append(textNode);
 
             const element = textNode.createDOM(editorConfig);
-            expect(sanitizeHTML(element.outerHTML)).toBe(expectedHTML);
+            expect(element.outerHTML).toBe(expectedHTML);
           });
         },
       );
@@ -742,7 +737,7 @@ describe('OutlineTextNode tests', () => {
           // Only need to bother about DOM element contents if updateDOM()
           // returns false.
           if (!result) {
-            expect(sanitizeHTML(element.outerHTML)).toBe(expectedHTML);
+            expect(element.outerHTML).toBe(expectedHTML);
           }
         });
       },

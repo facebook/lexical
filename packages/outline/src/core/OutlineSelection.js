@@ -28,13 +28,8 @@ import {
   isRootNode,
   TextNode,
 } from '.';
-import {
-  getDOMTextNode,
-  isSelectionWithinEditor,
-  toggleTextFormatType,
-} from './OutlineUtils';
+import {isSelectionWithinEditor, toggleTextFormatType} from './OutlineUtils';
 import invariant from 'shared/invariant';
-import {ZERO_WIDTH_JOINER_CHAR} from './OutlineConstants';
 
 export type TextPointType = {
   key: NodeKey,
@@ -311,19 +306,26 @@ function domIsElement(dom: Node): boolean {
   return dom.nodeType === 1;
 }
 
+function getTextNodeOffset(
+  node: TextNode,
+  moveSelectionToEnd: boolean,
+): number {
+  return moveSelectionToEnd ? node.getTextContentSize() : 0;
+}
+
 function resolveSelectionPoint(
   dom: Node,
   offset: number,
   editor: OutlineEditor,
 ): null | PointType {
   let resolvedOffset = offset;
-  let resolvedNode;
-  let resolvedDOM;
+  let resolvedNode: OutlineNode | null;
   // If we have selection on an element, we will
   // need to figure out (using the offset) what text
   // node should be selected.
 
   if (domIsElement(dom)) {
+    // Resolve element to a BlockNode, or TextNode, or null
     let moveSelectionToEnd = false;
     // Given we're moving selection to another node, selection is
     // definitely dirty.
@@ -338,55 +340,48 @@ function resolveSelectionPoint(
     }
     const childDOM = childNodes[resolvedOffset];
     resolvedNode = getNodeFromDOM(childDOM);
+
     if (isTextNode(resolvedNode)) {
-      resolvedDOM = childDOM;
-      if (moveSelectionToEnd) {
-        resolvedOffset = resolvedNode.getTextContentSize();
-      } else {
-        resolvedOffset = 0;
-      }
+      resolvedOffset = getTextNodeOffset(resolvedNode, moveSelectionToEnd);
     } else {
       let resolvedBlock = getNodeFromDOM(dom);
       // Ensure resolvedBlock is actually a block.
       if (resolvedBlock === null) {
         return null;
       }
-      if (!isBlockNode(resolvedBlock)) {
+      if (isBlockNode(resolvedBlock)) {
+        let child = resolvedBlock.getChildAtIndex(resolvedOffset);
+        if (isBlockNode(child)) {
+          child = moveSelectionToEnd
+            ? child.getLastDescendant()
+            : child.getFirstDescendant();
+        }
+        if (isTextNode(child)) {
+          resolvedNode = child;
+          resolvedBlock = null;
+          resolvedOffset = getTextNodeOffset(resolvedNode, moveSelectionToEnd);
+        } else if (moveSelectionToEnd) {
+          resolvedOffset++;
+        }
+      } else {
         resolvedOffset = resolvedBlock.getIndexWithinParent() + 1;
         resolvedBlock = resolvedBlock.getParentOrThrow();
-      } else if (moveSelectionToEnd) {
-        resolvedOffset++;
       }
       // You can't select root nodes
       if (isRootNode(resolvedBlock)) {
         return null;
       }
-      return createPoint(resolvedBlock.__key, resolvedOffset, 'block');
+      if (isBlockNode(resolvedBlock)) {
+        return createPoint(resolvedBlock.__key, resolvedOffset, 'block');
+      }
     }
   } else {
+    // TextNode or null
     resolvedNode = getNodeFromDOM(dom);
-    resolvedDOM = dom;
   }
   if (!isTextNode(resolvedNode)) {
     return null;
   }
-  const textNode = getDOMTextNode(resolvedDOM);
-
-  if (
-    textNode !== null &&
-    resolvedOffset !== 0 &&
-    textNode.nodeValue[0] === ZERO_WIDTH_JOINER_CHAR
-  ) {
-    resolvedOffset--;
-  }
-
-  if (resolvedNode.getTextContent() === '') {
-    // Because we use a special character for whitespace
-    // at the start of empty strings, we need to remove one
-    // from the offset.
-    resolvedOffset = 0;
-  }
-
   return createPoint(resolvedNode.__key, resolvedOffset, 'text');
 }
 

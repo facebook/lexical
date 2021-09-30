@@ -140,16 +140,15 @@ export async function assertHTML(page, expectedHtml) {
   // outputs to an element using JSDOM to normalize and prettify
   // the output. Plus we strip out the zero width character.
   const actual = document.createElement('div');
-  actual.innerHTML = actualHtml.replace(/[\u200B-\u200D\u2060\uFEFF]/g, '');
+  actual.innerHTML = actualHtml;
   const expected = document.createElement('div');
-  expected.innerHTML = expectedHtml.replace(/[\u200B-\u200D\u2060\uFEFF]/g, '');
+  expected.innerHTML = expectedHtml;
   expect(actual).toEqual(expected);
 }
 
 export async function assertSelection(page, expected) {
   // Assert the selection of the editor matches the snapshot
   const selection = await page.evaluate(() => {
-    const ZERO_WIDTH_JOINER_CHAR = '\u2060';
     const rootElement = document.querySelector('div.editor');
 
     const getPathFromNode = (node) => {
@@ -170,15 +169,9 @@ export async function assertSelection(page, expected) {
 
     return {
       anchorPath: getPathFromNode(anchorNode),
-      anchorOffset:
-        anchorNode.textContent === ZERO_WIDTH_JOINER_CHAR
-          ? anchorOffset - 1
-          : anchorOffset,
+      anchorOffset,
       focusPath: getPathFromNode(focusNode),
-      focusOffset:
-        focusNode.textContent === ZERO_WIDTH_JOINER_CHAR
-          ? focusOffset - 1
-          : focusOffset,
+      focusOffset,
     };
   }, expected);
   expect(selection.anchorPath).toEqual(expected.anchorPath);

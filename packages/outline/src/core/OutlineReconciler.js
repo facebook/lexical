@@ -17,11 +17,7 @@ import type {TextNode} from './OutlineTextNode';
 import type {Node as ReactNode} from 'react';
 
 import {triggerListeners, ViewModel} from './OutlineView';
-import {
-  isSelectionWithinEditor,
-  isImmutableOrInertOrSegmented,
-  getDOMTextNode,
-} from './OutlineUtils';
+import {isSelectionWithinEditor, getDOMTextNode} from './OutlineUtils';
 import {IS_INERT, IS_RTL, IS_LTR} from './OutlineConstants';
 import invariant from 'shared/invariant';
 import {isDecoratorNode} from './OutlineDecoratorNode';
@@ -572,30 +568,16 @@ function reconcileSelection(
   const focusKey = focus.key;
   const anchorDOM = getElementByKeyOrThrow(editor, anchorKey);
   const focusDOM = getElementByKeyOrThrow(editor, focusKey);
+  const nextAnchorOffset = anchor.offset;
+  const nextFocusOffset = focus.offset;
   let nextAnchorNode = anchorDOM;
   let nextFocusNode = focusDOM;
-  let nextAnchorOffset = anchor.offset;
-  let nextFocusOffset = focus.offset;
 
   if (anchor.type === 'text') {
-    const anchorNode = anchor.getNode();
-    const nextSelectionAnchorOffset = anchor.offset;
     nextAnchorNode = getDOMTextNode(anchorDOM);
-    nextAnchorOffset =
-      isImmutableOrInertOrSegmented(anchorNode) ||
-      anchorNode.getTextContent() !== ''
-        ? nextSelectionAnchorOffset
-        : nextSelectionAnchorOffset + 1;
   }
   if (focus.type === 'text') {
-    const focusNode = focus.getNode();
-    const nextSelectionFocusOffset = focus.offset;
     nextFocusNode = getDOMTextNode(focusDOM);
-    nextFocusOffset =
-      isImmutableOrInertOrSegmented(focusNode) ||
-      focusNode.getTextContent() !== ''
-        ? nextSelectionFocusOffset
-        : nextSelectionFocusOffset + 1;
   }
   // If we can't get an underlying text node for selection, then
   // we should avoid setting selection to something incorrect.

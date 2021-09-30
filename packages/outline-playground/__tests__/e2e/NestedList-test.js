@@ -34,7 +34,7 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem">⁠<br></li></ul>',
+        '<ul class="editor-list-ul"><li class="editor-listitem"><br></li></ul>',
       );
 
       await page.keyboard.type('Hello');

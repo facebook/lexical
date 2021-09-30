@@ -23,14 +23,20 @@ function RichTextEditor({settings, onSettingsChange}): React$Node {
     settings,
     onSettingsChange,
   );
-  const {measureTypingPerf, isCharLimit, isAutocomplete, showTreeView} =
-    settings;
+  const {
+    measureTypingPerf,
+    isCharLimit,
+    isCharLimitUtf8,
+    isAutocomplete,
+    showTreeView,
+  } = settings;
   const onError = useCallback((e: Error, updateName: string) => {
     throw e;
   }, []);
   const [editor, editorComponent] = useRichTextEditor({
     onError,
     isCharLimit,
+    isCharLimitUtf8,
     isReadOnly: false,
     isAutocomplete,
   });
@@ -58,14 +64,20 @@ function PlainTextEditor({settings, onSettingsChange}): React$Node {
     settings,
     onSettingsChange,
   );
-  const {measureTypingPerf, isCharLimit, isAutocomplete, showTreeView} =
-    settings;
+  const {
+    measureTypingPerf,
+    isCharLimit,
+    isCharLimitUtf8,
+    isAutocomplete,
+    showTreeView,
+  } = settings;
   const onError = useCallback((e: Error) => {
     throw e;
   }, []);
   const [editor, editorComponent] = usePlainTextEditor({
     onError,
     isCharLimit,
+    isCharLimitUtf8,
     isReadOnly: false,
     isAutocomplete,
   });

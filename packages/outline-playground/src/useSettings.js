@@ -21,6 +21,7 @@ function useSettings(
     measureTypingPerf,
     isRichText,
     isCharLimit,
+    isCharLimitUtf8,
     isAutocomplete,
     showTreeView,
   } = settings;
@@ -55,6 +56,11 @@ function useSettings(
         onClick={() => onChange('isCharLimit', !isCharLimit)}
         checked={isCharLimit}
         text="Char Limit"
+      />
+      <Switch
+        onClick={() => onChange('isCharLimitUtf8', !isCharLimitUtf8)}
+        checked={isCharLimitUtf8}
+        text="Char Limit (UTF-8)"
       />
       <Switch
         onClick={() => onChange('isAutocomplete', !isAutocomplete)}

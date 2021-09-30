@@ -9,8 +9,6 @@
 import * as SelectionHelpers from 'outline/SelectionHelpers';
 import {createTextNode, isTextNode} from 'outline';
 
-const ZERO_WIDTH_JOINER_CHAR = '\u2060';
-
 if (!Selection.prototype.modify) {
   const wordBreakPolyfillRegex =
     /[\s.,\\\/#!$%\^&\*;:{}=\-`~()\uD800-\uDBFF\uDC00-\uDFFF\u3000-\u303F]/;
@@ -180,23 +178,6 @@ if (!Selection.prototype.modify) {
       focus.node = anchor.node;
     }
   };
-}
-
-export function sanitizeHTML(html) {
-  // Remove zero width characters.
-  return html.replace(/[\u200B-\u200D\u2060\uFEFF]/g, '');
-}
-
-export function sanitizeSelection(selection) {
-  // eslint-disable-next-line prefer-const
-  let {anchorNode, anchorOffset, focusNode, focusOffset} = selection;
-  if (anchorNode.textContent === ZERO_WIDTH_JOINER_CHAR) {
-    anchorOffset = 0;
-  }
-  if (focusNode.textContent === ZERO_WIDTH_JOINER_CHAR) {
-    focusOffset = 0;
-  }
-  return {anchorNode, focusNode, anchorOffset, focusOffset};
 }
 
 export function printWhitespace(whitespaceCharacter) {
@@ -389,13 +370,6 @@ export function setNativeSelection(
 ) {
   const domSelection = window.getSelection();
   const range = document.createRange();
-  if (
-    anchorNode.nodeType === 3 &&
-    anchorNode.nodeValue === ZERO_WIDTH_JOINER_CHAR
-  ) {
-    anchorOffset = 1;
-    focusOffset = 1;
-  }
   range.setStart(anchorNode, anchorOffset);
   range.setEnd(focusNode, focusOffset);
   domSelection.removeAllRanges();
@@ -414,16 +388,7 @@ export function setNativeSelectionWithPaths(
 ) {
   const anchorNode = getNodeFromPath(anchorPath, rootElement);
   const focusNode = getNodeFromPath(focusPath, rootElement);
-  setNativeSelection(
-    anchorNode,
-    anchorNode.textContent === ZERO_WIDTH_JOINER_CHAR
-      ? anchorOffset + 1
-      : anchorOffset,
-    focusNode,
-    focusNode.textContent === ZERO_WIDTH_JOINER_CHAR
-      ? focusOffset + 1
-      : focusOffset,
-  );
+  setNativeSelection(anchorNode, anchorOffset, focusNode, focusOffset);
 }
 
 function getLastTextNode(startingNode) {
@@ -569,7 +534,7 @@ function moveNativeSelectionForward() {
     if (!keyDownEvent.defaultPrevented) {
       if (anchorNode.nodeType === 3) {
         const text = anchorNode.nodeValue;
-        if (text.length === anchorOffset || text === ZERO_WIDTH_JOINER_CHAR) {
+        if (text.length === anchorOffset) {
           const nextTextNode = getNextTextNode(anchorNode);
 
           if (nextTextNode === null) {

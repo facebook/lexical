@@ -7,7 +7,7 @@
  */
 
 import {LinkNode, createLinkNode, isLinkNode} from 'outline/LinkNode';
-import {initializeUnitTest, sanitizeHTML} from '../utils';
+import {initializeUnitTest} from '../utils';
 
 const editorConfig = Object.freeze({
   theme: {
@@ -71,10 +71,10 @@ describe('OutlineLinkNode tests', () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const linkNode = new LinkNode('foo', 'https://example.com/foo');
-        expect(sanitizeHTML(linkNode.createDOM(editorConfig).outerHTML)).toBe(
+        expect(linkNode.createDOM(editorConfig).outerHTML).toBe(
           '<a href="https://example.com/foo" class="my-link-class"><span>foo</span></a>',
         );
-        expect(sanitizeHTML(linkNode.createDOM({theme: {}}).outerHTML)).toBe(
+        expect(linkNode.createDOM({theme: {}}).outerHTML).toBe(
           '<a href="https://example.com/foo"><span>foo</span></a>',
         );
       });
@@ -85,7 +85,7 @@ describe('OutlineLinkNode tests', () => {
       await editor.update(() => {
         const linkNode = new LinkNode('foo', 'https://example.com/foo');
         const domElement = linkNode.createDOM(editorConfig);
-        expect(sanitizeHTML(linkNode.createDOM(editorConfig).outerHTML)).toBe(
+        expect(linkNode.createDOM(editorConfig).outerHTML).toBe(
           '<a href="https://example.com/foo" class="my-link-class"><span>foo</span></a>',
         );
         const newLinkNode = new LinkNode('bar', 'https://example.com/bar');
@@ -95,7 +95,7 @@ describe('OutlineLinkNode tests', () => {
           editorConfig,
         );
         expect(result).toBe(false);
-        expect(sanitizeHTML(domElement.outerHTML)).toBe(
+        expect(domElement.outerHTML).toBe(
           '<a href="https://example.com/foo" class="my-link-class"><span>bar</span></a>',
         );
       });

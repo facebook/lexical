@@ -56,7 +56,7 @@ describe('Images', () => {
       await page.keyboard.press('ArrowRight');
       await page.keyboard.press('Backspace');
 
-      await assertHTML(page, '<p class="editor-paragraph">⁠<br></p>');
+      await assertHTML(page, '<p class="editor-paragraph"><br></p>');
       await assertSelection(page, {
         anchorPath: [0],
         anchorOffset: 0,

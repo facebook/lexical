@@ -20,6 +20,7 @@ import {
 } from '../../core/OutlineUtils';
 
 import {initializeUnitTest} from '../utils';
+import {createParagraphNode} from 'outline/ParagraphNode';
 
 describe('OutlineUtils tests', () => {
   initializeUnitTest((testEnv) => {
@@ -97,8 +98,10 @@ describe('OutlineUtils tests', () => {
       let textNode;
       await editor.update((view) => {
         const root = view.getRoot();
+        const paragraph = createParagraphNode();
         textNode = createTextNode('foo');
-        root.append(textNode);
+        paragraph.append(textNode);
+        root.append(paragraph);
       });
       const domSelection = window.getSelection();
       expect(

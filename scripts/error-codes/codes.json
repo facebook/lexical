@@ -40,5 +40,6 @@
   "38": "getNodesInRange: first node does not have parent",
   "39": "getNodesInRange: no common ancestor",
   "40": "getNodesInRange: excludeFromCopy node does not have non-excluded parent",
-  "41": "createOffsetModel: could not find node by key"
+  "41": "createOffsetModel: could not find node by key",
+  "42": "rootNode.append: Only block nodes can be appended to the root node"
 }

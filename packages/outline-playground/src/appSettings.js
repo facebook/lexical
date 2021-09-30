@@ -11,6 +11,7 @@ export type SettingName =
   | 'measureTypingPerf'
   | 'isRichText'
   | 'isCharLimit'
+  | 'isCharLimitUtf8'
   | 'isAutocomplete'
   | 'showTreeView';
 
@@ -20,6 +21,7 @@ export const DEFAULT_SETTINGS: Settings = {
   measureTypingPerf: false,
   isRichText: true,
   isCharLimit: false,
+  isCharLimitUtf8: false,
   isAutocomplete: false,
   showTreeView: true,
 };

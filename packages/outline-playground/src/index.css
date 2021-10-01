@@ -867,6 +867,14 @@ pre :not(.tree-view-output) {
   background-image: url(images/icons/outdent.svg);
 }
 
+.actions i.lock {
+  background-image: url(images/icons/lock-fill.svg);
+}
+
+.actions i.unlock {
+  background-image: url(images/icons/lock.svg);
+}
+
 .action-button {
   background-color: #eee;
   border: 0;

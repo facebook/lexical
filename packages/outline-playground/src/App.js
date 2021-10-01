@@ -37,7 +37,6 @@ function RichTextEditor({settings, onSettingsChange}): React$Node {
     onError,
     isCharLimit,
     isCharLimitUtf8,
-    isReadOnly: false,
     isAutocomplete,
   });
   const [testRecorderButton, testRecorderOutput] = useTestRecorder(editor);
@@ -78,7 +77,6 @@ function PlainTextEditor({settings, onSettingsChange}): React$Node {
     onError,
     isCharLimit,
     isCharLimitUtf8,
-    isReadOnly: false,
     isAutocomplete,
   });
   useTypingPerfTracker(measureTypingPerf);

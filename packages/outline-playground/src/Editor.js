@@ -10,7 +10,7 @@
 import type {OutlineEditor} from 'outline';
 
 import * as React from 'react';
-import {useEffect, useMemo} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import useOutlineRichText from 'outline-react/useOutlineRichText';
 import useEmojis from './useEmojis';
 import useMentions from './useMentions';
@@ -39,7 +39,6 @@ const editorStyle = {
 
 type Props = {
   onError: (Error, string) => void,
-  isReadOnly: boolean,
   isCharLimit?: boolean,
   isCharLimitUtf8?: boolean,
   isAutocomplete?: boolean,
@@ -103,7 +102,6 @@ function ContentEditable({
 
 export const useRichTextEditor = ({
   onError,
-  isReadOnly,
   isCharLimit,
   isCharLimitUtf8,
   isAutocomplete,
@@ -113,6 +111,7 @@ export const useRichTextEditor = ({
     editorConfig,
   );
   const mentionsTypeahead = useMentions(editor);
+  const [isReadOnly, setIsReadyOnly] = useState(false);
   const clear = useOutlineRichText(editor, isReadOnly);
   const floatingToolbar = useFloatingToolbar(editor);
   const decorators = useOutlineDecorators(editor);
@@ -177,6 +176,11 @@ export const useRichTextEditor = ({
             }}>
             Clear
           </button>
+          <button
+            className="action-button lock"
+            onClick={() => setIsReadyOnly(!isReadOnly)}>
+            <i className={isReadOnly ? 'unlock' : 'lock'} />
+          </button>
         </div>
       </>
     );
@@ -205,7 +209,6 @@ function Placeholder({children}: {children: string}): React.Node {
 
 export const usePlainTextEditor = ({
   onError,
-  isReadOnly,
   isCharLimit,
   isCharLimitUtf8,
   isAutocomplete,
@@ -215,6 +218,7 @@ export const usePlainTextEditor = ({
     editorConfig,
   );
   const mentionsTypeahead = useMentions(editor);
+  const [isReadOnly, setIsReadyOnly] = useState(false);
   const clear = usePlainText(editor, isReadOnly);
   const decorators = useOutlineDecorators(editor);
   useEmojis(editor);
@@ -246,6 +250,11 @@ export const usePlainTextEditor = ({
               editor.focus();
             }}>
             Clear
+          </button>
+          <button
+            className="action-button lock"
+            onClick={() => setIsReadyOnly(!isReadOnly)}>
+            <i className={isReadOnly ? 'unlock' : 'lock'} />
           </button>
         </div>
       </>

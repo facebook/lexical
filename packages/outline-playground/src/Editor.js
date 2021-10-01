@@ -112,7 +112,7 @@ export const useRichTextEditor = ({
   );
   const mentionsTypeahead = useMentions(editor);
   const [isReadOnly, setIsReadyOnly] = useState(false);
-  const clear = useOutlineRichText(editor, isReadOnly);
+  const clear = useOutlineRichText(editor);
   const floatingToolbar = useFloatingToolbar(editor);
   const decorators = useOutlineDecorators(editor);
   const [indent, outdent] = useOutlineNestedList(editor);
@@ -219,7 +219,7 @@ export const usePlainTextEditor = ({
   );
   const mentionsTypeahead = useMentions(editor);
   const [isReadOnly, setIsReadyOnly] = useState(false);
-  const clear = usePlainText(editor, isReadOnly);
+  const clear = usePlainText(editor);
   const decorators = useOutlineDecorators(editor);
   useEmojis(editor);
   useHashtags(editor);

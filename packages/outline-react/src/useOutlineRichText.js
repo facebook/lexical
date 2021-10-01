@@ -93,10 +93,7 @@ if (CAN_USE_BEFORE_INPUT) {
   events.push(['drop', onDropPolyfill]);
 }
 
-export default function useOutlineRichText(
-  editor: OutlineEditor,
-  isReadOnly: boolean,
-): () => void {
+export default function useOutlineRichText(editor: OutlineEditor): () => void {
   useLayoutEffect(() => {
     editor.registerNodeType('heading', HeadingNode);
     editor.registerNodeType('list', ListNode);

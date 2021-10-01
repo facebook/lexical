@@ -663,11 +663,11 @@ function shouldPreventDefaultAndInsertText(
 
   return (
     anchor.key !== focus.key ||
+    anchor.offset !== focus.offset ||
+    text.length > 1 ||
     !isTextNode(anchorNode) ||
     anchorNode.getFormat() !== selection.textFormat ||
-    shouldInsertTextAfterOrBeforeTextNode(selection, anchorNode, true) ||
-    text.length > 1 ||
-    (text === ' ' && anchor.offset !== focus.offset)
+    shouldInsertTextAfterOrBeforeTextNode(selection, anchorNode, true)
   );
 }
 

@@ -972,15 +972,17 @@ function updateSelectedTextFromDOM(editor: OutlineEditor, view: View) {
 
 export function onInput(event: InputEvent, editor: OutlineEditor) {
   editor.update((view: View) => {
-    const selection = view.getSelection();
-    const data = event.data;
-    if (
-      data != null &&
-      selection !== null &&
-      shouldPreventDefaultAndInsertText(selection, data)
-    ) {
-      insertText(selection, data);
-      return;
+    if (!CAN_USE_BEFORE_INPUT) {
+      const selection = view.getSelection();
+      const data = event.data;
+      if (
+        data != null &&
+        selection !== null &&
+        shouldPreventDefaultAndInsertText(selection, data)
+      ) {
+        insertText(selection, data);
+        return;
+      }
     }
     updateSelectedTextFromDOM(editor, view);
   }, 'onInput');

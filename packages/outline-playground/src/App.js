@@ -108,15 +108,19 @@ for (const param of Object.keys(DEFAULT_SETTINGS)) {
   }
 }
 
-function setURLParam(param: SettingName, value: boolean) {
+function setURLParam(param: SettingName, value: null | boolean) {
   const url = new URL(window.location.href);
   const params = new URLSearchParams(url.search);
-  if (value) {
-    if (!params.has(param)) {
-      params.append(param, 'true');
+  if (value !== null) {
+    if (params.has(param)) {
+      params.set(param, String(value));
+    } else {
+      params.append(param, String(value));
     }
   } else {
-    params.delete(param);
+    if (params.has(param)) {
+      params.delete(param);
+    }
   }
   url.search = params.toString();
   window.history.pushState(null, '', url.toString());
@@ -130,7 +134,11 @@ function App(): React$Node {
         ...settings,
         [(setting: string)]: value,
       }));
-      setURLParam(setting, value);
+      if (DEFAULT_SETTINGS[setting] === value) {
+        setURLParam(setting, null);
+      } else {
+        setURLParam(setting, value);
+      }
     },
     [settings],
   );

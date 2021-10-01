@@ -65,11 +65,16 @@ function clearEditor(
   editor.update(
     (view) => {
       const firstChild = view.getRoot().getFirstChild();
-      if (isParagraphNode(firstChild)) {
-        firstChild.clear();
-        if (view.getSelection() !== null) {
-          firstChild.select();
-        }
+      if (!isParagraphNode(firstChild)) {
+        invariant(
+          'false',
+          'clearEditor expected plain text root first child to be a ParagraphNode',
+        );
+        return;
+      }
+      firstChild.clear();
+      if (view.getSelection() !== null) {
+        firstChild.select();
       }
     },
     'clearEditor',

@@ -45,5 +45,6 @@
   "43": "createNode: node does not exist in nodeMap",
   "44": "reconcileNode: prevNode or nextNode does not exist in nodeMap",
   "45": "reconcileNode: parentDOM is null",
-  "46": "Reconciliation: could not find DOM element for node key \"${key}\""
+  "46": "Reconciliation: could not find DOM element for node key \"${key}\"",
+  "47": "clearEditor expected plain text root first child to be a ParagraphNode"
 }

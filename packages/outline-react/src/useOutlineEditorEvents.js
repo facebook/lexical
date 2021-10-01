@@ -25,7 +25,6 @@ function getTarget(eventName: string, rootElement: HTMLElement): EventTarget {
 
 function isRootEditable(editor: OutlineEditor) {
   const rootElement = editor.getRootElement();
-  debugger
   return rootElement !== null && rootElement.contentEditable === 'true';
 }
 

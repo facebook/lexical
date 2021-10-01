@@ -100,10 +100,7 @@ if (CAN_USE_BEFORE_INPUT) {
   events.push(['drop', onDropPolyfill]);
 }
 
-export default function useOutlinePlainText(
-  editor: OutlineEditor,
-  isReadOnly: boolean,
-): () => void {
+export default function useOutlinePlainText(editor: OutlineEditor): () => void {
   useLayoutEffect(() => {
     editor.registerNodeType('paragraph', ParagraphNode);
     initEditor(editor);

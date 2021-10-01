@@ -215,7 +215,7 @@ export class Selection {
         if (node.getChildrenSize() === 0) {
           prevWasBlock = false;
         } else {
-          prevWasBlock = true
+          prevWasBlock = true;
         }
       } else {
         prevWasBlock = false;

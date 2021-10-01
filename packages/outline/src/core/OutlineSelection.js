@@ -205,14 +205,18 @@ export class Selection {
     const anchorOffset = anchor.getCharacterOffset();
     const focusOffset = focus.getCharacterOffset();
     let textContent = '';
-    let prevWasBlock = false;
+    let prevWasBlock = true;
     for (let i = 0; i < nodes.length; i++) {
       const node = nodes[i];
       if (isBlockNode(node)) {
-        if (!prevWasBlock || node.getChildrenSize() === 0) {
+        if (!prevWasBlock) {
           textContent += '\n';
         }
-        prevWasBlock = true;
+        if (node.getChildrenSize() === 0) {
+          prevWasBlock = false;
+        } else {
+          prevWasBlock = true
+        }
       } else {
         prevWasBlock = false;
         if (isTextNode(node)) {

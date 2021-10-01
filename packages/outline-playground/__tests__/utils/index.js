@@ -138,7 +138,7 @@ export async function assertHTML(page, expectedHtml) {
   }
   // HTML might differ between browsers, so we use attach
   // outputs to an element using JSDOM to normalize and prettify
-  // the output. Plus we strip out the zero width character.
+  // the output.
   const actual = document.createElement('div');
   actual.innerHTML = actualHtml;
   const expected = document.createElement('div');

@@ -209,7 +209,7 @@ export class Selection {
     for (let i = 0; i < nodes.length; i++) {
       const node = nodes[i];
       if (isBlockNode(node)) {
-        if (!prevWasBlock) {
+        if (!prevWasBlock || node.getChildrenSize() === 0) {
           textContent += '\n';
         }
         prevWasBlock = true;

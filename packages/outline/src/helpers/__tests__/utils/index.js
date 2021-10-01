@@ -9,6 +9,15 @@
 import * as SelectionHelpers from 'outline/SelectionHelpers';
 import {createTextNode, isTextNode} from 'outline';
 
+Object.defineProperty(HTMLElement.prototype, 'contentEditable', {
+  get() {
+    return this.getAttribute('contenteditable');
+  },
+  set(value) {
+    this.setAttribute('contenteditable', value);
+  },
+});
+
 if (!Selection.prototype.modify) {
   const wordBreakPolyfillRegex =
     /[\s.,\\\/#!$%\^&\*;:{}=\-`~()\uD800-\uDBFF\uDC00-\uDFFF\u3000-\u303F]/;

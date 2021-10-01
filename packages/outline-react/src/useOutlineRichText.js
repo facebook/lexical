@@ -125,7 +125,7 @@ export default function useOutlineRichText(
     });
   }, [editor]);
 
-  useOutlineEditorEvents(events, editor, isReadOnly);
+  useOutlineEditorEvents(events, editor);
   useOutlineDragonSupport(editor);
   const clearHistory = useOutlineHistory(editor);
 

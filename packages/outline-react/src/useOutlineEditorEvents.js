@@ -23,15 +23,16 @@ function getTarget(eventName: string, rootElement: HTMLElement): EventTarget {
     : rootElement;
 }
 
+function isRootEditable(editor: OutlineEditor) {
+  const rootElement = editor.getRootElement();
+  return rootElement !== null && rootElement.contentEditable === 'true';
+}
+
 export default function useOutlineEditorEvents(
   events: InputEvents,
   editor: OutlineEditor,
-  isReadOnly: boolean,
 ): void {
   useLayoutEffect(() => {
-    if (isReadOnly) {
-      return;
-    }
     const create = [];
     const destroy = [];
 
@@ -39,7 +40,9 @@ export default function useOutlineEditorEvents(
       const [eventName, handler] = events[i];
 
       const handlerWrapper = (event: Event) => {
-        handler(event, editor);
+        if (isRootEditable(editor)) {
+          handler(event, editor);
+        }
       };
       create.push((rootElement: HTMLElement) => {
         getTarget(eventName, rootElement).addEventListener(
@@ -69,5 +72,5 @@ export default function useOutlineEditorEvents(
         }
       },
     );
-  }, [editor, events, isReadOnly]);
+  }, [editor, events]);
 }

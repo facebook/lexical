@@ -444,9 +444,13 @@ export function onCompositionStart(
   editor.update((view) => {
     const selection = view.getSelection();
     if (selection !== null && !editor.isComposing()) {
-      view.setCompositionKey(selection.anchor.key);
+      const anchor = selection.anchor;
+      view.setCompositionKey(anchor.key);
       const data = event.data;
-      if (data != null && !lastKeyWasMaybeAndroidSoftKey) {
+      if (
+        data != null &&
+        (!lastKeyWasMaybeAndroidSoftKey || anchor.type === 'block' || !selection.isCollapsed())
+      ) {
         // We insert an empty space, ready for the composition
         // to get inserted into the new node we create. If
         // we don't do this, Safari will fail on us because

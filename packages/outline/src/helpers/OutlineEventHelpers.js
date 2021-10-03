@@ -70,6 +70,16 @@ import {
 } from 'outline';
 import {IS_FIREFOX} from 'shared/environment';
 import getPossibleDecoratorNode from 'shared/getPossibleDecoratorNode';
+import {ListNode, createListNode} from '../extensions/OutlineListNode';
+import {
+  ListItemNode,
+  createListItemNode,
+} from '../extensions/OutlineListItemNode';
+import {
+  ParagraphNode,
+  createParagraphNode,
+} from '../extensions/OutlineParagraphNode';
+import {isBlockNode} from '../core';
 
 const NO_BREAK_SPACE_CHAR = '\u00A0';
 
@@ -105,13 +115,83 @@ function generateNodes(nodeRange: {
   return nodes;
 }
 
+const NODE_TYPE = {
+  ELEMENT_NODE: 1,
+  TEXT_NODE: 3,
+};
+
+type DOMNodeToOutlineConversion = (element: Node) => OutlineNode;
+
+const DOM_NODE_NAME_TO_OUTLINE_NODE_TYPE: {
+  [string]: DOMNodeToOutlineConversion,
+} = {
+  ul: () => createListNode('ul'),
+  ol: () => createListNode('ol'),
+  li: () => createListItemNode(),
+  p: () => createParagraphNode(),
+  u: (domNode: Node) => {
+    const textNode = createTextNode(domNode.textContent);
+    textNode.toggleUnderline();
+    return textNode;
+  },
+  '#text': (domNode: Node) => createTextNode(domNode.textContent),
+};
+
+function generateNodesFromDOM(dom: Document, view: View): Array<OutlineNode> {
+  const outlineNodes = [];
+  const elements: Array<Node> = dom.body ? [...dom.body.childNodes] : [];
+  for (let i = 0; i < elements.length; i++) {
+    const outlineNode = createOutlineNodeFromDOMNode(elements[i], null);
+    if (outlineNode !== null) {
+      outlineNodes.push(outlineNode);
+    }
+  }
+  return outlineNodes;
+}
+
+function createOutlineNodeFromDOMNode(
+  node: Node,
+  parentKey: null | NodeKey,
+): OutlineNode | null {
+  let outlineNode: OutlineNode | null = null;
+  const createFunction =
+    DOM_NODE_NAME_TO_OUTLINE_NODE_TYPE[node.nodeName.toLowerCase()];
+  debugger;
+  if (createFunction) {
+    outlineNode = createFunction(node);
+    debugger;
+    console.log(isBlockNode(outlineNode));
+    if (isBlockNode(outlineNode)) {
+      const children = node.childNodes;
+      const parentKey = outlineNode.getKey();
+      if (children.length > 0) {
+        for (let i = 0; i < children.length; i++) {
+          const child = createOutlineNodeFromDOMNode(children[i], parentKey);
+          if (child !== null) {
+            const newKey = child.getKey();
+            //$FlowFixMe
+            outlineNode.__children.push(newKey);
+          }
+        }
+      }
+    }
+  }
+  if (outlineNode !== null) {
+    outlineNode.__parent = parentKey;
+  }
+  return outlineNode;
+}
+
 function insertDataTransferForRichText(
   dataTransfer: DataTransfer,
   selection: Selection,
 ): void {
+  const textHtmlMimeType = 'text/html';
   const outlineNodesString = dataTransfer.getData(
     'application/x-outline-nodes',
   );
+
+  const htmlString = dataTransfer.getData(textHtmlMimeType);
 
   if (outlineNodesString) {
     try {
@@ -122,6 +202,15 @@ function insertDataTransferForRichText(
     } catch (e) {
       // Malformed, missing nodes..
     }
+  }
+
+  if (htmlString) {
+    const parser = new DOMParser();
+    const dom = parser.parseFromString(htmlString, textHtmlMimeType);
+    const nodes = generateNodesFromDOM(dom, view);
+    console.log(nodes);
+    insertNodes(selection, nodes);
+    return;
   }
   insertDataTransferForPlainText(dataTransfer, selection);
 }

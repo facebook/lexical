@@ -7,7 +7,13 @@
  * @flow strict-local
  */
 
-import {initializeE2E, assertHTML, assertSelection, repeat} from '../utils';
+import {
+  initializeE2E,
+  assertHTML,
+  assertSelection,
+  repeat,
+  E2E_BROWSER,
+} from '../utils';
 import {moveToEditorBeginning, moveToLineBeginning} from '../keyboardShortcuts';
 
 function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
@@ -217,6 +223,31 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
         page,
         '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">àà</span><div class="editor-character-limit"><span data-outline-text="true">àààà</span></div></p>',
       );
+    }
+  });
+
+  it('handles graphemes', async () => {
+    const {page} = e2e;
+    await page.focus('div.editor');
+
+    await page.keyboard.type('👨‍👩‍👦‍👦');
+    if (['chromium', 'webkit'].includes(E2E_BROWSER)) {
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><div class="editor-character-limit"><span data-outline-text="true">👨‍👩‍👦‍👦</span></div></p>',
+      );
+    } else {
+      if (charset === 'UTF-16') {
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">👨‍👩</span><div class="editor-character-limit"><span data-outline-text="true">‍👦‍👦</span></div></p>',
+        );
+      } else {
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">👨</span><div class="editor-character-limit"><span data-outline-text="true">‍👩‍👦‍👦</span></div></p>',
+        );
+      }
     }
   });
 }

@@ -18,6 +18,7 @@ import type {
   LineBreakNode,
   DecoratorNode,
   TextMutation,
+  BlockNode,
 } from 'outline';
 
 import {
@@ -70,16 +71,12 @@ import {
 } from 'outline';
 import {IS_FIREFOX} from 'shared/environment';
 import getPossibleDecoratorNode from 'shared/getPossibleDecoratorNode';
-import {ListNode, createListNode} from '../extensions/OutlineListNode';
-import {
-  ListItemNode,
-  createListItemNode,
-} from '../extensions/OutlineListItemNode';
-import {
-  ParagraphNode,
-  createParagraphNode,
-} from '../extensions/OutlineParagraphNode';
-import {isBlockNode} from '../core';
+import {createListNode} from '../extensions/OutlineListNode';
+import {createListItemNode} from '../extensions/OutlineListItemNode';
+import {createParagraphNode} from '../extensions/OutlineParagraphNode';
+import type {DOMNodeToOutlineConversion} from '../core/OutlineNode';
+import {createHeadingNode} from '../extensions/OutlineHeadingNode';
+import {createLinkNode} from '../extensions/OutlineLinkNode';
 
 const NO_BREAK_SPACE_CHAR = '\u00A0';
 
@@ -115,71 +112,69 @@ function generateNodes(nodeRange: {
   return nodes;
 }
 
-const NODE_TYPE = {
-  ELEMENT_NODE: 1,
-  TEXT_NODE: 3,
-};
-
-type DOMNodeToOutlineConversion = (element: Node) => OutlineNode;
-
 const DOM_NODE_NAME_TO_OUTLINE_NODE_TYPE: {
   [string]: DOMNodeToOutlineConversion,
 } = {
   ul: () => createListNode('ul'),
   ol: () => createListNode('ol'),
   li: () => createListItemNode(),
+  h1: () => createHeadingNode('h1'),
+  h2: () => createHeadingNode('h2'),
+  h3: () => createHeadingNode('h3'),
+  h4: () => createHeadingNode('h4'),
+  h5: () => createHeadingNode('h5'),
   p: () => createParagraphNode(),
   u: (domNode: Node) => {
     const textNode = createTextNode(domNode.textContent);
     textNode.toggleUnderline();
     return textNode;
   },
+  b: (domNode: Node) => {
+    const textNode = createTextNode(domNode.textContent);
+    textNode.toggleBold();
+    return textNode;
+  },
+  strong: (domNode: Node) => {
+    const textNode = createTextNode(domNode.textContent);
+    textNode.toggleBold();
+    return textNode;
+  },
+  i: (domNode: Node) => {
+    const textNode = createTextNode(domNode.textContent);
+    textNode.toggleItalics();
+    return textNode;
+  },
+  em: (domNode: Node) => {
+    const textNode = createTextNode(domNode.textContent);
+    textNode.toggleItalics();
+    return textNode;
+  },
   '#text': (domNode: Node) => createTextNode(domNode.textContent),
+  //$FlowFixMe - not sure how to type this map yet.
+  a: (domNode: HTMLAnchorElement) => {
+    return createLinkNode(domNode.textContent, domNode.href);
+  },
 };
 
-function generateNodesFromDOM(dom: Document, view: View): Array<OutlineNode> {
+function generateNodesFromDOM(
+  dom: Document,
+  view: View,
+  conversionMap: {
+    [string]: DOMNodeToOutlineConversion,
+  },
+): Array<OutlineNode> {
   const outlineNodes = [];
   const elements: Array<Node> = dom.body ? [...dom.body.childNodes] : [];
   for (let i = 0; i < elements.length; i++) {
-    const outlineNode = createOutlineNodeFromDOMNode(elements[i], null);
+    const outlineNode = view.createOutlineNodeFromDOMNode(
+      elements[i],
+      conversionMap,
+    );
     if (outlineNode !== null) {
       outlineNodes.push(outlineNode);
     }
   }
   return outlineNodes;
-}
-
-function createOutlineNodeFromDOMNode(
-  node: Node,
-  parentKey: null | NodeKey,
-): OutlineNode | null {
-  let outlineNode: OutlineNode | null = null;
-  const createFunction =
-    DOM_NODE_NAME_TO_OUTLINE_NODE_TYPE[node.nodeName.toLowerCase()];
-  debugger;
-  if (createFunction) {
-    outlineNode = createFunction(node);
-    debugger;
-    console.log(isBlockNode(outlineNode));
-    if (isBlockNode(outlineNode)) {
-      const children = node.childNodes;
-      const parentKey = outlineNode.getKey();
-      if (children.length > 0) {
-        for (let i = 0; i < children.length; i++) {
-          const child = createOutlineNodeFromDOMNode(children[i], parentKey);
-          if (child !== null) {
-            const newKey = child.getKey();
-            //$FlowFixMe
-            outlineNode.__children.push(newKey);
-          }
-        }
-      }
-    }
-  }
-  if (outlineNode !== null) {
-    outlineNode.__parent = parentKey;
-  }
-  return outlineNode;
 }
 
 function insertDataTransferForRichText(
@@ -205,11 +200,26 @@ function insertDataTransferForRichText(
   }
 
   if (htmlString) {
+    console.log(htmlString);
     const parser = new DOMParser();
     const dom = parser.parseFromString(htmlString, textHtmlMimeType);
-    const nodes = generateNodesFromDOM(dom, view);
+    const nodes = generateNodesFromDOM(
+      dom,
+      view,
+      DOM_NODE_NAME_TO_OUTLINE_NODE_TYPE,
+    );
+    console.log(dom);
     console.log(nodes);
-    insertNodes(selection, nodes);
+    // wrap top-level text nodes in p tags
+    const mapped = nodes.map((node) => {
+      if (isTextNode(node)) {
+        const p = createParagraphNode();
+        p.append(node);
+        return p;
+      }
+      return node;
+    });
+    insertNodes(selection, mapped);
     return;
   }
   insertDataTransferForPlainText(dataTransfer, selection);

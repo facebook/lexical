@@ -6,14 +6,12 @@
  *
  */
 
-import {moveToPrevWord} from '../keyboardShortcuts';
+import {moveToPrevWord, selectAll} from '../keyboardShortcuts';
 import {
   initializeE2E,
   repeat,
   assertSelection,
   assertHTML,
-  keyDownCtrlOrMeta,
-  keyUpCtrlOrMeta,
   copyToClipboard,
   pasteFromClipboard,
   keyDownCtrlOrAlt,
@@ -50,11 +48,7 @@ describe('TextEntry', () => {
       await page.keyboard.type(targetText);
 
       // Select all the text
-      await keyDownCtrlOrMeta(page);
-      await page.keyboard.down('Meta');
-      await page.keyboard.press('a');
-      await keyUpCtrlOrMeta(page);
-      await page.keyboard.up('Meta');
+      await selectAll(page);
 
       await page.keyboard.type('Foo');
 
@@ -78,11 +72,7 @@ describe('TextEntry', () => {
       await page.keyboard.type(targetText);
 
       // Select all the text
-      await keyDownCtrlOrMeta(page);
-      await page.keyboard.down('Meta');
-      await page.keyboard.press('a');
-      await keyUpCtrlOrMeta(page);
-      await page.keyboard.up('Meta');
+      await selectAll(page);
 
       await page.keyboard.type(' ');
 
@@ -587,11 +577,7 @@ describe('TextEntry', () => {
       }
 
       // Select all the text
-      await keyDownCtrlOrMeta(page);
-      await page.keyboard.down('Meta');
-      await page.keyboard.press('a');
-      await keyUpCtrlOrMeta(page);
-      await page.keyboard.up('Meta');
+      await selectAll(page);
       if (isRichText) {
         await assertHTML(
           page,
@@ -658,7 +644,7 @@ describe('TextEntry', () => {
       }
     });
 
-    it(`Copy and paste between sections`, async () => {
+    it.only(`Copy and paste between sections`, async () => {
       const {isRichText, page} = e2e;
 
       await page.focus('div.editor');
@@ -672,6 +658,7 @@ describe('TextEntry', () => {
           page,
           '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello world </span><span class="editor-text-hashtag" data-outline-text="true">#foobar</span><span data-outline-text="true"> test </span><span class="editor-text-hashtag" data-outline-text="true">#foobar2</span><span data-outline-text="true"> when </span><span class="editor-text-hashtag" data-outline-text="true">#not</span></p><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Next </span><span class="editor-text-hashtag" data-outline-text="true">#line</span><span data-outline-text="true"> of </span><span class="editor-text-hashtag" data-outline-text="true">#text</span><span data-outline-text="true"> test </span><span class="editor-text-hashtag" data-outline-text="true">#foo</span></p>',
         );
+
         await assertSelection(page, {
           anchorPath: [1, 5, 0],
           anchorOffset: 4,
@@ -692,11 +679,7 @@ describe('TextEntry', () => {
       }
 
       // Select all the content
-      await keyDownCtrlOrMeta(page);
-      await page.keyboard.down('Meta');
-      await page.keyboard.press('a');
-      await keyUpCtrlOrMeta(page);
-      await page.keyboard.up('Meta');
+      await selectAll(page);
 
       if (isRichText) {
         await assertSelection(page, {
@@ -801,11 +784,7 @@ describe('TextEntry', () => {
       }
 
       // Select all the content
-      await keyDownCtrlOrMeta(page);
-      await page.keyboard.down('Meta');
-      await page.keyboard.press('a');
-      await keyUpCtrlOrMeta(page);
-      await page.keyboard.up('Meta');
+      await selectAll(page);
 
       if (isRichText) {
         await assertSelection(page, {

@@ -644,7 +644,7 @@ describe('TextEntry', () => {
       }
     });
 
-    it.only(`Copy and paste between sections`, async () => {
+    it(`Copy and paste between sections`, async () => {
       const {isRichText, page} = e2e;
 
       await page.focus('div.editor');

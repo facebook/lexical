@@ -361,10 +361,14 @@ function resolveSelectionPoint(
       if (isBlockNode(resolvedBlock)) {
         let child = resolvedBlock.getChildAtIndex(resolvedOffset);
         if (isBlockNode(child)) {
-          child = moveSelectionToEnd
+          const descendant = moveSelectionToEnd
             ? child.getLastDescendant()
             : child.getFirstDescendant();
-          if (child !== null) {
+          if (descendant === null) {
+            resolvedBlock = child;
+            resolvedOffset = 0;
+          } else {
+            child = descendant;
             resolvedBlock = child.getParentOrThrow();
           }
         }
@@ -372,7 +376,7 @@ function resolveSelectionPoint(
           resolvedNode = child;
           resolvedBlock = null;
           resolvedOffset = getTextNodeOffset(resolvedNode, moveSelectionToEnd);
-        } else if (moveSelectionToEnd) {
+        } else if (child !== resolvedBlock && moveSelectionToEnd) {
           resolvedOffset++;
         }
       } else {

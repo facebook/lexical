@@ -51,8 +51,10 @@ describe('TextEntry', () => {
 
       // Select all the text
       await keyDownCtrlOrMeta(page);
+      await page.keyboard.down('Meta');
       await page.keyboard.press('a');
       await keyUpCtrlOrMeta(page);
+      await page.keyboard.up('Meta');
 
       await page.keyboard.type('Foo');
 
@@ -77,8 +79,10 @@ describe('TextEntry', () => {
 
       // Select all the text
       await keyDownCtrlOrMeta(page);
+      await page.keyboard.down('Meta');
       await page.keyboard.press('a');
       await keyUpCtrlOrMeta(page);
+      await page.keyboard.up('Meta');
 
       await page.keyboard.type(' ');
 
@@ -584,8 +588,10 @@ describe('TextEntry', () => {
 
       // Select all the text
       await keyDownCtrlOrMeta(page);
+      await page.keyboard.down('Meta');
       await page.keyboard.press('a');
       await keyUpCtrlOrMeta(page);
+      await page.keyboard.up('Meta');
       if (isRichText) {
         await assertHTML(
           page,
@@ -687,8 +693,10 @@ describe('TextEntry', () => {
 
       // Select all the content
       await keyDownCtrlOrMeta(page);
+      await page.keyboard.down('Meta');
       await page.keyboard.press('a');
       await keyUpCtrlOrMeta(page);
+      await page.keyboard.up('Meta');
 
       if (isRichText) {
         await assertSelection(page, {
@@ -794,8 +802,10 @@ describe('TextEntry', () => {
 
       // Select all the content
       await keyDownCtrlOrMeta(page);
+      await page.keyboard.down('Meta');
       await page.keyboard.press('a');
       await keyUpCtrlOrMeta(page);
+      await page.keyboard.up('Meta');
 
       if (isRichText) {
         await assertSelection(page, {

@@ -301,6 +301,11 @@ export class Selection {
 function getNodeFromDOM(dom: Node): null | OutlineNode {
   const nodeKey = getNodeKeyFromDOM(dom);
   if (nodeKey === null) {
+    const editor = getActiveEditor();
+    const rootElement = editor.getRootElement();
+    if (dom === rootElement) {
+      return getNodeByKey('root');
+    }
     return null;
   }
   return getNodeByKey(nodeKey);
@@ -359,6 +364,9 @@ function resolveSelectionPoint(
           child = moveSelectionToEnd
             ? child.getLastDescendant()
             : child.getFirstDescendant();
+          if (child !== null) {
+            resolvedBlock = child.getParentOrThrow();
+          }
         }
         if (isTextNode(child)) {
           resolvedNode = child;

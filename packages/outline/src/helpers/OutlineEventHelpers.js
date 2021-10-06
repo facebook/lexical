@@ -35,7 +35,6 @@ import {
   isItalic,
   isUnderline,
   isTab,
-  isSelectAll,
   isMoveBackward,
   isMoveForward,
 } from 'outline/KeyHelpers';
@@ -54,7 +53,6 @@ import {
   getNodesInRange,
   insertNodes,
   insertLineBreak,
-  selectAll,
   insertRichText,
   moveCharacter,
 } from 'outline/SelectionHelpers';
@@ -212,9 +210,6 @@ export function onKeyDownForPlainText(
     } else if (isDeleteLineForward(event)) {
       event.preventDefault();
       deleteLineForward(selection);
-    } else if (isSelectAll(event)) {
-      event.preventDefault();
-      selectAll(selection);
     }
   }, 'onKeyDownForPlainText');
 }
@@ -299,9 +294,6 @@ export function onKeyDownForRichText(
           event.preventDefault();
         }
       }
-    } else if (isSelectAll(event)) {
-      event.preventDefault();
-      selectAll(selection);
     }
   }, 'onKeyDownForRichText');
 }
@@ -449,7 +441,9 @@ export function onCompositionStart(
       const data = event.data;
       if (
         data != null &&
-        (!lastKeyWasMaybeAndroidSoftKey || anchor.type === 'block' || !selection.isCollapsed())
+        (!lastKeyWasMaybeAndroidSoftKey ||
+          anchor.type === 'block' ||
+          !selection.isCollapsed())
       ) {
         // We insert an empty space, ready for the composition
         // to get inserted into the new node we create. If

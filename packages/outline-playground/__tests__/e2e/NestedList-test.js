@@ -6,12 +6,8 @@
  *
  */
 
-import {
-  initializeE2E,
-  assertHTML,
-  keyDownCtrlOrMeta,
-  keyUpCtrlOrMeta,
-} from '../utils';
+import {selectAll} from '../keyboardShortcuts';
+import {initializeE2E, assertHTML} from '../utils';
 
 describe('Nested List', () => {
   initializeE2E((e2e) => {
@@ -52,9 +48,7 @@ describe('Nested List', () => {
         '<ul class="editor-list-ul" dir="ltr"><li class="editor-listitem"><span data-outline-text="true">Hello</span></li><li class="editor-listitem"><span data-outline-text="true">from</span></li><li class="editor-listitem"><span data-outline-text="true">the</span></li><li class="editor-listitem"><span data-outline-text="true">other</span></li><li class="editor-listitem"><span data-outline-text="true">side</span></li></ul>',
       );
 
-      await keyDownCtrlOrMeta(page);
-      await page.keyboard.press('a');
-      await keyUpCtrlOrMeta(page);
+      await selectAll(page);
 
       await page.waitForSelector('button.action-button.indent');
       await page.click('button.action-button.indent');

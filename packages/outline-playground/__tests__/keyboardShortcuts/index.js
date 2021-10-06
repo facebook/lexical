@@ -8,6 +8,7 @@
 
 import {
   IS_MAC,
+  IS_LINUX,
   keyDownCtrlOrAlt,
   keyDownCtrlOrMeta,
   keyUpCtrlOrAlt,
@@ -107,5 +108,24 @@ export async function moveToParagraphEnd(page) {
     await keyUpCtrlOrMeta(page);
   } else {
     await page.keyboard.press('End');
+  }
+}
+
+export async function selectAll(page) {
+  if (E2E_BROWSER === 'firefox' && IS_LINUX) {
+    await page.evaluate(() => {
+      const rootElement = document.querySelector('div.editor');
+      const selection = window.getSelection();
+      selection.setBaseAndExtent(
+        rootElement,
+        0,
+        rootElement,
+        rootElement.childNodes.length,
+      );
+    });
+  } else {
+    await keyDownCtrlOrMeta(page);
+    await page.keyboard.press('a');
+    await keyUpCtrlOrMeta(page);
   }
 }

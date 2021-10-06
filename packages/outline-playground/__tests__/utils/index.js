@@ -153,6 +153,9 @@ export async function assertSelection(page, expected) {
 
     const getPathFromNode = (node) => {
       const path = [];
+      if (node === rootElement) {
+        return [];
+      }
       while (node !== null) {
         const parent = node.parentNode;
         if (parent === null || node === rootElement) {

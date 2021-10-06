@@ -6,11 +6,8 @@
  *
  */
 
-import {
-  initializeE2E,
-  assertHTML,
-  selectAll,
-} from '../utils';
+import {selectAll} from '../keyboardShortcuts';
+import {initializeE2E, assertHTML} from '../utils';
 
 describe('Nested List', () => {
   initializeE2E((e2e) => {

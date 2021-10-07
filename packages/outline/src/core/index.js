@@ -20,8 +20,6 @@ export type {
   OutlineNode,
   NodeMap,
 } from './OutlineNode';
-export type {ParsedBlockNode} from './OutlineBlockNode';
-export type {ParsedTextNode} from './OutlineTextNode';
 export type {
   Selection,
   PointType as Point,

@@ -7,21 +7,11 @@
  * @flow strict
  */
 
-import type {
-  OutlineNode,
-  NodeKey,
-  ParsedBlockNode,
-  EditorConfig,
-} from 'outline';
+import type {OutlineNode, NodeKey, EditorConfig} from 'outline';
 
 import {BlockNode} from 'outline';
 
 type ListNodeTagType = 'ul' | 'ol';
-
-export type ParsedListNode = {
-  ...ParsedBlockNode,
-  __tag: ListNodeTagType,
-};
 
 export class ListNode extends BlockNode {
   __tag: ListNodeTagType;

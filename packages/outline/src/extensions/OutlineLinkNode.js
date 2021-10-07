@@ -7,14 +7,9 @@
  * @flow strict
  */
 
-import type {NodeKey, ParsedTextNode, EditorConfig} from 'outline';
+import type {NodeKey, EditorConfig} from 'outline';
 
 import {TextNode} from 'outline';
-
-export type ParsedLinkNode = {
-  ...ParsedTextNode,
-  __text: string,
-};
 
 export class LinkNode extends TextNode {
   __url: string;

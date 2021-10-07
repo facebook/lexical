@@ -7,22 +7,13 @@
  * @flow strict
  */
 
-import type {
-  OutlineNode,
-  NodeKey,
-  ParsedBlockNode,
-  EditorConfig,
-} from 'outline';
+import type {OutlineNode, NodeKey, EditorConfig} from 'outline';
 import type {ParagraphNode} from 'outline/ParagraphNode';
 
 import {BlockNode} from 'outline';
 import {createParagraphNode} from 'outline/ParagraphNode';
 
 type HeadingTagType = 'h1' | 'h2' | 'h3' | 'h4' | 'h5';
-
-export type ParsedHeadingNode = ParsedBlockNode & {
-  __tag: HeadingTagType,
-};
 
 export class HeadingNode extends BlockNode {
   __tag: HeadingTagType;

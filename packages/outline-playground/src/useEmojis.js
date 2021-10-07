@@ -13,7 +13,6 @@ import type {
   NodeKey,
   EditorConfig,
   Selection,
-  ParsedTextNode,
 } from 'outline';
 
 import {useEffect} from 'react';
@@ -81,11 +80,6 @@ export default function useEmojis(editor: OutlineEditor): void {
     };
   }, [editor]);
 }
-
-export type ParsedEmojiNode = {
-  ...ParsedTextNode,
-  __className: string,
-};
 
 class EmojiNode extends TextNode {
   __className: string;

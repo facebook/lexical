@@ -118,13 +118,13 @@ describe('OutlineTextNode tests', () => {
         view.getRoot().getFirstChild().append(textNode);
       });
 
-      expect(editor.getTextContent()).toBe('Text');
+      expect(editor.getCurrentTextContent()).toBe('Text');
 
       // Make sure that the editor content is still set after further reconciliations
       await update((view) => {
         view.markNodeAsDirty(view.getNodeByKey(nodeKey));
       });
-      expect(editor.getTextContent()).toBe('Text');
+      expect(editor.getCurrentTextContent()).toBe('Text');
     });
 
     test('inert nodes', async () => {
@@ -140,13 +140,13 @@ describe('OutlineTextNode tests', () => {
         view.getRoot().getFirstChild().append(textNode);
       });
 
-      expect(editor.getTextContent()).toBe('');
+      expect(editor.getCurrentTextContent()).toBe('');
 
       // Make sure that the editor content is still empty after further reconciliations
       await update((view) => {
         view.markNodeAsDirty(view.getNodeByKey(nodeKey));
       });
-      expect(editor.getTextContent()).toBe('');
+      expect(editor.getCurrentTextContent()).toBe('');
     });
 
     test('prepend node', async () => {
@@ -161,7 +161,7 @@ describe('OutlineTextNode tests', () => {
         previousTextNode.insertBefore(textNode);
       });
 
-      expect(editor.getTextContent()).toBe('Hello World');
+      expect(editor.getCurrentTextContent()).toBe('Hello World');
     });
   });
 

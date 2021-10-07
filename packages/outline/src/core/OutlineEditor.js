@@ -107,6 +107,22 @@ export type ListenerType =
   | 'root'
   | 'decorator';
 
+let isPreparingPendingViewUpdate = false;
+
+export function asyncErrorOnPreparingPendingViewUpdate(
+  fnName: 'Editor.getLatestTextContent()',
+): void {
+  if (
+    isPreparingPendingViewUpdate &&
+    fnName === 'Editor.getLatestTextContent()'
+  ) {
+    invariant(
+      false,
+      'Editor.getLatestTextContent() can be asynchronous and cannot be used within Editor.update()',
+    );
+  }
+}
+
 export function resetEditor(
   editor: OutlineEditor,
   prevRootElement: null | HTMLElement,
@@ -167,6 +183,7 @@ function updateEditor(
     viewModelWasCloned = true;
   }
 
+  isPreparingPendingViewUpdate = true;
   const error = preparePendingViewUpdate(
     pendingViewModel,
     updateFn,
@@ -174,6 +191,7 @@ function updateEditor(
     markAllTextNodesAsDirty,
     editor,
   );
+  isPreparingPendingViewUpdate = false;
 
   if (error !== null) {
     // Report errors
@@ -326,8 +344,16 @@ class BaseOutlineEditor {
   getRootElement(): null | HTMLElement {
     return this._rootElement;
   }
-  getTextContent(): string {
+  getCurrentTextContent(): string {
     return this._textContent;
+  }
+  getLatestTextContent(callback: (text: string) => void): void {
+    asyncErrorOnPreparingPendingViewUpdate('Editor.getLatestTextContent()');
+    if (this._pendingViewModel === null) {
+      callback(this._textContent);
+      return;
+    }
+    this._deferred.push(() => callback(this._textContent));
   }
   setRootElement(nextRootElement: null | HTMLElement): void {
     const prevRootElement = this._rootElement;
@@ -478,7 +504,8 @@ declare export class OutlineEditor {
   getDecorators(): {[NodeKey]: ReactNode};
   getRootElement(): null | HTMLElement;
   setRootElement(rootElement: null | HTMLElement): void;
-  getTextContent(): string;
+  getCurrentTextContent(): string;
+  getLatestTextContent((text: string) => void): () => void;
   getElementByKey(key: NodeKey): null | HTMLElement;
   getViewModel(): ViewModel;
   setViewModel(viewModel: ViewModel): void;

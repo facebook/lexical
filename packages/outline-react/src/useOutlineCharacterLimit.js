@@ -41,7 +41,7 @@ export function useCharacterLimit(
     const Segmenter = Intl.Segmenter;
     let offsetUtf16 = 0;
     let offset = 0;
-    const text = editor.getTextContent();
+    const text = editor.getCurrentTextContent();
     if (typeof Segmenter === 'function') {
       const segmenter = new Segmenter();
       const graphemes = segmenter.segment(text);
@@ -79,7 +79,7 @@ export function useCharacterLimit(
   useEffect(() => {
     editor.registerNodeType('overflow', OverflowNode);
     (() => {
-      const textLength = strlen(editor.getTextContent());
+      const textLength = strlen(editor.getCurrentTextContent());
       const diff = maxCharacters - textLength;
       remainingCharacters(diff);
       execute();
@@ -90,7 +90,7 @@ export function useCharacterLimit(
       'update',
       (viewModel: ViewModel, dirtyNodes: Set<NodeKey> | null) => {
         const isComposing = editor.isComposing();
-        const text = editor.getTextContent();
+        const text = editor.getCurrentTextContent();
         const utf16TextLength = text.length;
         const hasDirtyNodes = dirtyNodes !== null && dirtyNodes.size > 0;
         if (
@@ -99,7 +99,7 @@ export function useCharacterLimit(
         ) {
           return;
         }
-        const textLength = strlen(editor.getTextContent());
+        const textLength = strlen(editor.getCurrentTextContent());
         const textLengthAboveThreshold =
           textLength > maxCharacters ||
           (lastTextLength !== null && lastTextLength > maxCharacters);

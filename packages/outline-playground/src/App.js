@@ -30,11 +30,7 @@ function RichTextEditor({settings, onSettingsChange}): React$Node {
     isAutocomplete,
     showTreeView,
   } = settings;
-  const onError = useCallback((e: Error, updateName: string) => {
-    throw e;
-  }, []);
   const [editor, editorComponent] = useRichTextEditor({
-    onError,
     isCharLimit,
     isCharLimitUtf8,
     isAutocomplete,

@@ -38,7 +38,6 @@ const editorStyle = {
 };
 
 type Props = {
-  onError: (Error, string) => void,
   isCharLimit?: boolean,
   isCharLimitUtf8?: boolean,
   isAutocomplete?: boolean,
@@ -101,15 +100,12 @@ function ContentEditable({
 }
 
 export const useRichTextEditor = ({
-  onError,
   isCharLimit,
   isCharLimitUtf8,
   isAutocomplete,
 }: Props): [OutlineEditor, React.MixedElement] => {
-  const [editor, rootElementRef, showPlaceholder] = useOutlineEditor(
-    onError,
-    editorConfig,
-  );
+  const [editor, rootElementRef, showPlaceholder] =
+    useOutlineEditor(editorConfig);
   const mentionsTypeahead = useMentions(editor);
   const [isReadOnly, setIsReadyOnly] = useState(false);
   const clear = useOutlineRichText(editor);
@@ -208,15 +204,12 @@ function Placeholder({children}: {children: string}): React.Node {
 }
 
 export const usePlainTextEditor = ({
-  onError,
   isCharLimit,
   isCharLimitUtf8,
   isAutocomplete,
 }: Props): [OutlineEditor, React.MixedElement] => {
-  const [editor, rootElementRef, showPlaceholder] = useOutlineEditor(
-    onError,
-    editorConfig,
-  );
+  const [editor, rootElementRef, showPlaceholder] =
+    useOutlineEditor(editorConfig);
   const mentionsTypeahead = useMentions(editor);
   const [isReadOnly, setIsReadyOnly] = useState(false);
   const clear = usePlainText(editor);

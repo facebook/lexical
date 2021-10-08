@@ -7,16 +7,21 @@
  * @flow strict
  */
 
-import type {OutlineEditor, EditorThemeClasses} from 'outline';
+import type {OutlineEditor, EditorThemeClasses, ViewModel} from 'outline';
 
 import {createEditor} from 'outline';
 
 import {useCallback, useMemo, useRef, useState} from 'react';
 import useLayoutEffect from './shared/useLayoutEffect';
 
+function defaultOnErrorHandler(e: Error): void {
+  throw e;
+}
+
 export default function useOutlineEditor<EditorContext>(
-  onError: (error: Error, updateName: string) => void,
   editorConfig?: {
+    onError?: (error: Error, updateName: string) => void,
+    initialViewModel?: ViewModel,
     theme?: EditorThemeClasses,
     context?: EditorContext,
   },

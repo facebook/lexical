@@ -148,13 +148,14 @@ export function resetEditor(
 }
 
 export function createEditor<EditorContext>(editorConfig?: {
+  initialViewModel?: ViewModel,
   theme?: EditorThemeClasses,
   context?: EditorContext,
 }): OutlineEditor {
-  const viewModel = createEmptyViewModel();
   const config = editorConfig || {};
   const theme = config.theme || {};
   const context = config.context || {};
+  const viewModel = config.initialViewModel || createEmptyViewModel();
   // $FlowFixMe: use our declared type instead
   return new BaseOutlineEditor(viewModel, {
     // $FlowFixMe: we use our internal type to simpify the generics

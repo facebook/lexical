@@ -80,6 +80,9 @@ an optional configuration object that allows for theming and the passing of cont
 import {createEditor} from 'outline';
 
 const config = {
+  onError(error) {
+    throw error;
+  },
   theme: {
     ...
   },

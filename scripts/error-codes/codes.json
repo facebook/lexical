@@ -46,5 +46,6 @@
   "44": "reconcileNode: prevNode or nextNode does not exist in nodeMap",
   "45": "reconcileNode: parentDOM is null",
   "46": "Reconciliation: could not find DOM element for node key \"${key}\"",
-  "47": "clearEditor expected plain text root first child to be a ParagraphNode"
+  "47": "clearEditor expected plain text root first child to be a ParagraphNode",
+  "48": "Editor.getLatestTextContent() can be asynchronous and cannot be used within Editor.update()"
 }

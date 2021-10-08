@@ -507,6 +507,32 @@ describe('OutlineEditor tests', () => {
         expect(parsedSelection.focus.key).toEqual(parsedText.__key);
       });
     });
+
+    it('getCurrentTextContent() / getLatestTextContent()', async () => {
+      editor.update((view: View) => {
+        const root = view.getRoot();
+        const paragraph = createParagraphNode();
+        const text1 = createTextNode('1');
+        root.append(paragraph);
+        paragraph.append(text1);
+      });
+      editor.update((view: View) => {
+        const root = view.getRoot();
+        const paragraph = root.getFirstChild();
+        const text2 = createTextNode('2');
+        paragraph.append(text2);
+      });
+
+      expect(editor.getCurrentTextContent()).toBe('');
+      expect(
+        editor.getLatestTextContent((text) => {
+          expect(text).toBe('12');
+        }),
+      );
+
+      await Promise.resolve();
+      expect(editor.getCurrentTextContent()).toBe('12');
+    });
   });
 
   describe('Node children', () => {
@@ -575,7 +601,7 @@ describe('OutlineEditor tests', () => {
             textToKey.set(previousText, textNode.__key);
           }
         });
-        expect(editor.getTextContent()).toBe(previous.join(''));
+        expect(editor.getCurrentTextContent()).toBe(previous.join(''));
 
         // Next editor state
         const previousSet = new Set(previous);
@@ -609,7 +635,7 @@ describe('OutlineEditor tests', () => {
           });
         });
         // Expect text content + HTML to be correct
-        expect(editor.getTextContent()).toBe(next.join(''));
+        expect(editor.getCurrentTextContent()).toBe(next.join(''));
         expect(container.innerHTML).toBe(
           `<div contenteditable="true" data-outline-editor="true"><p>${
             next.length > 0

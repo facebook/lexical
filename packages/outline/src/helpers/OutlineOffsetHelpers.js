@@ -81,6 +81,18 @@ class OffsetView {
     if (startOffsetNode.type === 'text') {
       startOffset = start - startOffsetNode.start;
       startType = 'text';
+      // If we are at the edge of a text node and we
+      // don't have a collapsed selection, then let's
+      // try and correct the offset node.
+      const sibling = startNode.getNextSibling();
+      if (
+        start !== end &&
+        startOffset === startNode.getTextContentSize() &&
+        isTextNode(sibling)
+      ) {
+        startOffset = 0;
+        startKey = sibling.__key;
+      }
     } else if (startOffsetNode.type === 'inline') {
       startKey = startNode.getParentOrThrow().getKey();
       startOffset =

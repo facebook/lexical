@@ -979,6 +979,7 @@ export function insertNodes(
   }
 
   if (selectStart) {
+    // Handle moving selection to start for all nodes
     if (isTextNode(startingNode)) {
       startingNode.select();
     } else {
@@ -995,8 +996,11 @@ export function insertNodes(
   if (isBlockNode(target)) {
     const lastChild = target.getLastDescendant();
     if (!selectStart) {
+      // Handle moving selection to end for blocks
       if (lastChild === null) {
         target.select();
+      } else if (isTextNode(lastChild)) {
+        lastChild.select();
       } else {
         lastChild.selectNext();
       }
@@ -1013,12 +1017,11 @@ export function insertNodes(
         prevSibling = sibling;
       }
     }
-  } else if (isTextNode(target)) {
-    if (!selectStart) {
+  } else if (!selectStart) {
+    // Handle moving selection to end for other nodes
+    if (isTextNode(target)) {
       target.select();
-    }
-  } else {
-    if (!selectStart) {
+    } else {
       const block = target.getParentOrThrow();
       const index = target.getIndexWithinParent() + 1;
       block.select(index, index);

@@ -58,8 +58,7 @@ class OffsetView {
     end: number,
   ): null | Selection {
     const firstNode = this._firstNode;
-    const selection = view.getSelection();
-    if (firstNode === null || selection === null) {
+    if (firstNode === null) {
       return null;
     }
     const isCollapsed = start === end;
@@ -97,10 +96,13 @@ class OffsetView {
       endKey = node.getParentOrThrow().getKey();
       endOffset = end > endNode.start ? endNode.end : endNode.start;
     }
-    const newSelection = selection.clone();
-    newSelection.anchor.set(startKey, startOffset, startType);
-    newSelection.focus.set(endKey, endOffset, endType);
-    return newSelection;
+    const selection = view.createSelection();
+    if (selection === null) {
+      return null;
+    }
+    selection.anchor.set(startKey, startOffset, startType);
+    selection.focus.set(endKey, endOffset, endType);
+    return selection;
   }
 
   getOffsetsFromSelection(selection: Selection): [number, number] {

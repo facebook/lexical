@@ -149,7 +149,8 @@ function searchForNodeWithOffset(
 ): OffsetNode | null {
   let currentNode = firstNode;
   while (currentNode !== null) {
-    const end = currentNode.end + (isCollapsed ? 1 : 0);
+    const end =
+      currentNode.end + (isCollapsed && currentNode.type !== 'block' ? 1 : 0);
     if (offset < end) {
       const child = currentNode.child;
       if (child !== null) {
@@ -159,11 +160,10 @@ function searchForNodeWithOffset(
       return currentNode;
     }
     const sibling = currentNode.sibling;
-    if (sibling !== null) {
-      currentNode = sibling;
-      continue;
+    if (sibling === null) {
+      break;
     }
-    currentNode = currentNode.sibling;
+    currentNode = sibling;
   }
   return null;
 }

@@ -11,6 +11,7 @@ import type {OutlineNode, NodeKey} from './OutlineNode';
 import type {OutlineEditor} from './OutlineEditor';
 import type {BlockNode} from './OutlineBlockNode';
 import type {TextFormatType} from './OutlineTextNode';
+import type {RootNode} from './OutlineRootNode';
 
 import {getActiveEditor, ViewModel, isViewReadOnlyMode} from './OutlineView';
 import {getActiveViewModel} from './OutlineView';
@@ -127,6 +128,33 @@ function createPoint(
 ): PointType {
   // $FlowFixMe: intentionally cast as we use a class for perf reasons
   return new Point(key, offset, type);
+}
+
+function selectPointOnNode(point: PointType, node: OutlineNode): void {
+  const key = node.getKey();
+  let offset = point.offset;
+  let type = 'block';
+  if (isTextNode(node)) {
+    type = 'text';
+    const textContentLength = node.getTextContentSize();
+    if (offset > textContentLength) {
+      offset = textContentLength;
+    }
+  }
+  point.set(key, offset, type);
+}
+
+export function moveSelectionPointToEnd(point: PointType, node: OutlineNode): void {
+  if (isBlockNode(node)) {
+    const lastNode = node.getLastDescendant();
+    if (isBlockNode(lastNode) || isTextNode(lastNode)) {
+      selectPointOnNode(point, lastNode);
+    } else {
+      selectPointOnNode(point, node);
+    }
+  } else if (isTextNode(node)) {
+    selectPointOnNode(point, node);
+  }
 }
 
 export function setPointValues(
@@ -518,6 +546,21 @@ export function makeSelection(
   selection.isDirty = true;
   viewModel._selection = selection;
   return selection;
+}
+
+export function createSelectionAtEnd(root: RootNode): Selection | null {
+  // This is a temp point, we will move to end after
+  const anchor = createPoint('root', 0, 'block');
+  moveSelectionPointToEnd(anchor, root);
+  if (anchor.key === 'root') {
+    return null;
+  }
+  const focus = createPoint(anchor.key, anchor.offset, anchor.type);
+  return new Selection(
+    anchor,
+    focus,
+    0
+  )
 }
 
 function getActiveEventType(): string | void {

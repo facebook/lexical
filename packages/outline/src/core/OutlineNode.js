@@ -31,7 +31,7 @@ import {
   IS_INERT,
   IS_SEGMENTED,
 } from './OutlineConstants';
-import {getSelection} from './OutlineSelection';
+import {getSelection, moveSelectionPointToEnd} from './OutlineSelection';
 
 type NodeParserState = {
   originalSelection: null | ParsedSelection,
@@ -153,33 +153,6 @@ function removeNode(
   }
   const writableNodeToRemove = nodeToRemove.getWritable();
   writableNodeToRemove.__parent = null;
-}
-
-function selectPointOnNode(point: PointType, node: OutlineNode): void {
-  const key = node.getKey();
-  let offset = point.offset;
-  let type = 'block';
-  if (isTextNode(node)) {
-    type = 'text';
-    const textContentLength = node.getTextContentSize();
-    if (offset > textContentLength) {
-      offset = textContentLength;
-    }
-  }
-  point.set(key, offset, type);
-}
-
-function replaceSelectionPoint(point: PointType, node: OutlineNode): void {
-  if (isBlockNode(node)) {
-    const lastNode = node.getLastDescendant();
-    if (isBlockNode(lastNode) || isTextNode(lastNode)) {
-      selectPointOnNode(point, lastNode);
-    } else {
-      selectPointOnNode(point, node);
-    }
-  } else if (isTextNode(node)) {
-    selectPointOnNode(point, node);
-  }
 }
 
 function moveSelectionPointToSibling(
@@ -708,10 +681,10 @@ export class OutlineNode {
     const anchor = selection && selection.anchor;
     const focus = selection && selection.focus;
     if (anchor !== null && anchor.key === toReplaceKey) {
-      replaceSelectionPoint(anchor, writableReplaceWith);
+      moveSelectionPointToEnd(anchor, writableReplaceWith);
     }
     if (focus !== null && focus.key === toReplaceKey) {
-      replaceSelectionPoint(focus, writableReplaceWith);
+      moveSelectionPointToEnd(focus, writableReplaceWith);
     }
     if (getCompositionKey() === toReplaceKey) {
       setCompositionKey(newKey);

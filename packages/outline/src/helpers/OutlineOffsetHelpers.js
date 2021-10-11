@@ -61,40 +61,52 @@ class OffsetView {
     if (firstNode === null) {
       return null;
     }
-    const isCollapsed = start === end;
-    const startNode = searchForNodeWithOffset(firstNode, start, isCollapsed);
-    const endNode = searchForNodeWithOffset(firstNode, end, isCollapsed);
+    const startOffsetNode = searchForNodeWithOffset(firstNode, start);
+    const endOffsetNode = searchForNodeWithOffset(firstNode, end);
+    if (startOffsetNode === null || endOffsetNode === null) {
+      return null;
+    }
+    let startKey = startOffsetNode.key;
+    let endKey = endOffsetNode.key;
+    const startNode = view.getNodeByKey(startKey);
+    const endNode = view.getNodeByKey(endKey);
     if (startNode === null || endNode === null) {
       return null;
     }
-    let startKey = startNode.key;
-    let endKey = endNode.key;
     let startOffset = 0;
     let endOffset = 0;
     let startType = 'block';
     let endType = 'block';
 
-    if (startNode.type === 'text') {
-      startOffset = start - startNode.start;
+    if (startOffsetNode.type === 'text') {
+      startOffset = start - startOffsetNode.start;
       startType = 'text';
-    } else if (startNode.type === 'inline') {
-      const node = view.getNodeByKey(startNode.key);
-      if (node === null) {
-        return null;
+      // If we are at the edge of a text node and we
+      // don't have a collapsed selection, then let's
+      // try and correct the offset node.
+      const sibling = startNode.getNextSibling();
+      if (
+        start !== end &&
+        startOffset === startNode.getTextContentSize() &&
+        isTextNode(sibling)
+      ) {
+        startOffset = 0;
+        startKey = sibling.__key;
       }
-      startKey = node.getParentOrThrow().getKey();
-      startOffset = end > startNode.start ? startNode.end : startNode.start;
+    } else if (startOffsetNode.type === 'inline') {
+      startKey = startNode.getParentOrThrow().getKey();
+      startOffset =
+        end > startOffsetNode.start
+          ? startOffsetNode.end
+          : startOffsetNode.start;
     }
-    if (endNode.type === 'text') {
-      endOffset = end - endNode.start;
+    if (endOffsetNode.type === 'text') {
+      endOffset = end - endOffsetNode.start;
       endType = 'text';
-    } else if (endNode.type === 'inline') {
-      const node = view.getNodeByKey(endNode.key);
-      if (node === null) {
-        return null;
-      }
-      endKey = node.getParentOrThrow().getKey();
-      endOffset = end > endNode.start ? endNode.end : endNode.start;
+    } else if (endOffsetNode.type === 'inline') {
+      endKey = endNode.getParentOrThrow().getKey();
+      endOffset =
+        end > endOffsetNode.start ? endOffsetNode.end : endOffsetNode.start;
     }
     const selection = view.createSelection();
     if (selection === null) {
@@ -147,12 +159,10 @@ class OffsetView {
 function searchForNodeWithOffset(
   firstNode: OffsetNode,
   offset: number,
-  isCollapsed: boolean,
 ): OffsetNode | null {
   let currentNode = firstNode;
   while (currentNode !== null) {
-    const end =
-      currentNode.end + (isCollapsed && currentNode.type !== 'block' ? 1 : 0);
+    const end = currentNode.end + (currentNode.type !== 'block' ? 1 : 0);
     if (offset < end) {
       const child = currentNode.child;
       if (child !== null) {

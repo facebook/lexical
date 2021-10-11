@@ -144,7 +144,10 @@ function selectPointOnNode(point: PointType, node: OutlineNode): void {
   point.set(key, offset, type);
 }
 
-export function moveSelectionPointToEnd(point: PointType, node: OutlineNode): void {
+export function moveSelectionPointToEnd(
+  point: PointType,
+  node: OutlineNode,
+): void {
   if (isBlockNode(node)) {
     const lastNode = node.getLastDescendant();
     if (isBlockNode(lastNode) || isTextNode(lastNode)) {
@@ -468,33 +471,29 @@ function resolveSelectionPoints(
     const resolvedFocusNode = resolvedFocusPoint.getNode();
     // Handle normalization of selection when it is at the boundaries.
     const textContentSize = resolvedAnchorNode.getTextContentSize();
-    // Once we remove zero width characters, we will no longer need this
-    // check as it will become redundant (we won't allow empty text nodes).
-    if (textContentSize !== 0) {
-      const resolvedAnchorOffset = resolvedAnchorPoint.offset;
-      const resolvedFocusOffset = resolvedFocusPoint.offset;
-      if (
-        resolvedAnchorNode === resolvedFocusNode &&
-        resolvedAnchorOffset === resolvedFocusOffset
-      ) {
-        if (anchorOffset === 0) {
-          const prevSibling = resolvedAnchorNode.getPreviousSibling();
-          if (isTextNode(prevSibling) && !prevSibling.isInert()) {
-            const offset = prevSibling.getTextContentSize();
-            const key = prevSibling.__key;
-            resolvedAnchorPoint.key = key;
-            resolvedFocusPoint.key = key;
-            resolvedAnchorPoint.offset = offset;
-            resolvedFocusPoint.offset = offset;
-          }
+    const resolvedAnchorOffset = resolvedAnchorPoint.offset;
+    const resolvedFocusOffset = resolvedFocusPoint.offset;
+    if (
+      resolvedAnchorNode === resolvedFocusNode &&
+      resolvedAnchorOffset === resolvedFocusOffset
+    ) {
+      if (anchorOffset === 0) {
+        const prevSibling = resolvedAnchorNode.getPreviousSibling();
+        if (isTextNode(prevSibling) && !prevSibling.isInert()) {
+          const offset = prevSibling.getTextContentSize();
+          const key = prevSibling.__key;
+          resolvedAnchorPoint.key = key;
+          resolvedFocusPoint.key = key;
+          resolvedAnchorPoint.offset = offset;
+          resolvedFocusPoint.offset = offset;
         }
-      } else {
-        if (resolvedAnchorOffset === textContentSize) {
-          const nextSibling = resolvedAnchorNode.getNextSibling();
-          if (isTextNode(nextSibling) && !nextSibling.isInert()) {
-            resolvedAnchorPoint.key = nextSibling.__key;
-            resolvedAnchorPoint.offset = 0;
-          }
+      }
+    } else {
+      if (resolvedAnchorOffset === textContentSize) {
+        const nextSibling = resolvedAnchorNode.getNextSibling();
+        if (isTextNode(nextSibling) && !nextSibling.isInert()) {
+          resolvedAnchorPoint.key = nextSibling.__key;
+          resolvedAnchorPoint.offset = 0;
         }
       }
     }
@@ -556,11 +555,7 @@ export function createSelectionAtEnd(root: RootNode): Selection | null {
     return null;
   }
   const focus = createPoint(anchor.key, anchor.offset, anchor.type);
-  return new Selection(
-    anchor,
-    focus,
-    0
-  )
+  return new Selection(anchor, focus, 0);
 }
 
 function getActiveEventType(): string | void {

@@ -74,9 +74,11 @@ import getPossibleDecoratorNode from 'shared/getPossibleDecoratorNode';
 import {createListNode} from '../extensions/OutlineListNode';
 import {createListItemNode} from '../extensions/OutlineListItemNode';
 import {createParagraphNode} from '../extensions/OutlineParagraphNode';
-import type {DOMNodeToOutlineConversion} from '../core/OutlineNode';
+import type {
+  DOMNodeToOutlineConversion,
+  DOMNodeToOutlineConversionMap,
+} from '../core/OutlineNode';
 import {createHeadingNode} from '../extensions/OutlineHeadingNode';
-import {createLinkNode} from '../extensions/OutlineLinkNode';
 
 const NO_BREAK_SPACE_CHAR = '\u00A0';
 
@@ -112,9 +114,7 @@ function generateNodes(nodeRange: {
   return nodes;
 }
 
-const DOM_NODE_NAME_TO_OUTLINE_NODE_TYPE: {
-  [string]: DOMNodeToOutlineConversion,
-} = {
+const DOM_NODE_NAME_TO_OUTLINE_NODE: DOMNodeToOutlineConversionMap = {
   ul: () => createListNode('ul'),
   ol: () => createListNode('ol'),
   li: () => createListItemNode(),
@@ -124,6 +124,10 @@ const DOM_NODE_NAME_TO_OUTLINE_NODE_TYPE: {
   h4: () => createHeadingNode('h4'),
   h5: () => createHeadingNode('h5'),
   p: () => createParagraphNode(),
+  span: (domNode: Node) => {
+    const textNode = createTextNode(domNode.textContent);
+    return textNode;
+  },
   u: (domNode: Node) => {
     const textNode = createTextNode(domNode.textContent);
     textNode.toggleUnderline();
@@ -150,10 +154,6 @@ const DOM_NODE_NAME_TO_OUTLINE_NODE_TYPE: {
     return textNode;
   },
   '#text': (domNode: Node) => createTextNode(domNode.textContent),
-  //$FlowFixMe - not sure how to type this map yet.
-  a: (domNode: HTMLAnchorElement) => {
-    return createLinkNode(domNode.textContent, domNode.href);
-  },
 };
 
 function generateNodesFromDOM(
@@ -200,17 +200,14 @@ function insertDataTransferForRichText(
   }
 
   if (htmlString) {
-    console.log(htmlString);
     const parser = new DOMParser();
     const dom = parser.parseFromString(htmlString, textHtmlMimeType);
     const nodes = generateNodesFromDOM(
       dom,
       view,
-      DOM_NODE_NAME_TO_OUTLINE_NODE_TYPE,
+      DOM_NODE_NAME_TO_OUTLINE_NODE,
     );
-    console.log(dom);
-    console.log(nodes);
-    // wrap top-level text nodes in p tags
+    // Wrap text nodes in paragraph nodes so we have all blocks at the top-level
     const mapped = nodes.map((node) => {
       if (isTextNode(node)) {
         const p = createParagraphNode();

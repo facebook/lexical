@@ -97,7 +97,10 @@ class OffsetView {
       endKey = node.getParentOrThrow().getKey();
       endOffset = end > endNode.start ? endNode.end : endNode.start;
     }
-    const newSelection = selection.clone();
+    const newSelection = view.createSelection();
+    if (newSelection === null) {
+      return null;
+    }
     newSelection.anchor.set(startKey, startOffset, startType);
     newSelection.focus.set(endKey, endOffset, endType);
     return newSelection;

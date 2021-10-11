@@ -20,6 +20,7 @@ import {
   createSelection,
   getSelection,
   createSelectionFromParse,
+  createSelectionAtEnd,
 } from './OutlineSelection';
 import {
   getNodeByKey,
@@ -35,6 +36,7 @@ export type View = {
   clearSelection(): void,
   getRoot: () => RootNode,
   getNodeByKey: (key: NodeKey) => null | OutlineNode,
+  createSelection: () => Selection | null,
   getSelection: () => null | Selection,
   setSelection: (selection: Selection) => void,
   createNodeFromParse: (
@@ -120,6 +122,10 @@ const view: View = {
   },
   getNodeByKey,
   getSelection,
+  createSelection(): Selection | null {
+    const root = view.getRoot();
+    return createSelectionAtEnd(root);
+  },
   clearSelection(): void {
     const viewModel = getActiveViewModel();
     viewModel._selection = null;

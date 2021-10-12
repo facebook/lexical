@@ -20,6 +20,7 @@ import {
   getNodesInRange,
 } from 'outline/SelectionHelpers';
 import {createTestBlockNode} from '../../../__tests__/utils';
+import {createListNode} from '../../../extensions/OutlineListNode';
 
 export class ExcludeFromCopyBlockNode extends BlockNode {
   static clone(node: BlockNode) {
@@ -965,6 +966,24 @@ describe('OutlineSelectionHelpers tests', () => {
           offset: 3,
           key: block.getFirstChild().getKey(),
         });
+      });
+
+      setupTestCase((selection, view, block) => {
+        insertNodes(selection, [
+          createParagraphNode(),
+          createTextNode('1'),
+          createTextNode('2').toggleBold(),
+          createListNode(),
+          createParagraphNode(),
+          createTextNode('3'),
+        ]);
+        const firstParagraph = view.getRoot().getFirstChild();
+        const secondParagraph = firstParagraph.getNextSibling();
+        const thirdParagraph = secondParagraph.getNextSibling();
+        expect(secondParagraph.__children.length).toBe(3);
+        expect(secondParagraph.getTextContent()).toBe('12');
+        expect(thirdParagraph.__children.length).toBe(1);
+        expect(thirdParagraph.getTextContent()).toBe('3');
       });
 
       // insertParagraph

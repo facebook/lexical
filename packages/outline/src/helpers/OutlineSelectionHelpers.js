@@ -26,6 +26,7 @@ import {
   isRootNode,
   createTextNode,
 } from 'outline';
+import {isParagraphNode} from 'outline/ParagraphNode';
 import {isHashtagNode} from 'outline/HashtagNode';
 
 import isImmutableOrInert from 'shared/isImmutableOrInert';
@@ -898,6 +899,7 @@ export function insertNodes(
   selection: Selection,
   nodes: Array<OutlineNode>,
   selectStart?: boolean,
+  log?: boolean,
 ): boolean {
   // If there is a range selected remove the text in it
   if (!selection.isCollapsed()) {
@@ -922,7 +924,9 @@ export function insertNodes(
   // Get all remaining text node siblings in this block so we can
   // append them after the last node we're inserting.
   const nextSiblings = anchorNode.getNextSiblings();
-  const topLevelBlock = anchorNode.getTopParentBlockOrThrow();
+  let parentBlock = isBlockNode(anchorNode)
+    ? anchorNode
+    : anchorNode.getParentBlockOrThrow();
 
   if (isTextNode(anchorNode)) {
     const textContent = anchorNode.getTextContent();
@@ -957,14 +961,11 @@ export function insertNodes(
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
 
-    if (isBlockNode(node)) {
-      // If it's a block node make sure target refers to a block
-      // and then insert after our target block
-      if (isTextNode(target)) {
-        target = topLevelBlock;
-      }
-    }
-    if (isBlockNode(target) && !isBlockNode(node)) {
+    if (isParagraphNode(node)) {
+      parentBlock.insertAfter(node);
+      target = node;
+      parentBlock = node;
+    } else if (isBlockNode(target)) {
       const firstChild = target.getFirstChild();
       if (firstChild !== null) {
         firstChild.insertBefore(node);

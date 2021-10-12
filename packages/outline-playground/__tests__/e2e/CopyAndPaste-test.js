@@ -299,7 +299,7 @@ describe('CopyAndPaste', () => {
     // it('Copy and paste of partial list items', async () => {
     //   const {isRichText, page} = e2e;
 
-    //   //
+    //   // 
     //   if (!isRichText) {
     //     return;
     //   }

@@ -296,77 +296,77 @@ describe('CopyAndPaste', () => {
       });
     });
 
-    it.skip('Copy and paste of partial list items', async () => {
-      const {isRichText, page} = e2e;
+    // it('Copy and paste of partial list items', async () => {
+    //   const {isRichText, page} = e2e;
 
-      // 
-      if (!isRichText) {
-        return;
-      }
+    //   // 
+    //   if (!isRichText) {
+    //     return;
+    //   }
 
-      await page.focus('div.editor');
+    //   await page.focus('div.editor');
 
-      // Add three list items
-      await page.keyboard.type('- One');
-      await page.keyboard.press('Enter');
-      await page.keyboard.type('Two');
-      await page.keyboard.press('Enter');
-      await page.keyboard.type('Three');
+    //   // Add three list items
+    //   await page.keyboard.type('- One');
+    //   await page.keyboard.press('Enter');
+    //   await page.keyboard.type('Two');
+    //   await page.keyboard.press('Enter');
+    //   await page.keyboard.type('Three');
 
-      await page.keyboard.press('Enter');
-      await page.keyboard.press('Enter');
+    //   await page.keyboard.press('Enter');
+    //   await page.keyboard.press('Enter');
 
-      // Add a paragraph
-      await page.keyboard.type('Some text.');
+    //   // Add a paragraph
+    //   await page.keyboard.type('Some text.');
 
-      await assertHTML(
-        page,
-        '<ul class="editor-list-ul" dir="ltr"><li class="editor-listitem"><span data-outline-text="true">One</span></li><li class="editor-listitem"><span data-outline-text="true">Two</span></li><li class="editor-listitem"><span data-outline-text="true">Three</span></li></ul><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Some text.</span></p>',
-      );
-      await assertSelection(page, {
-        anchorPath: [1, 0, 0],
-        anchorOffset: 10,
-        focusPath: [1, 0, 0],
-        focusOffset: 10,
-      });
+    //   await assertHTML(
+    //     page,
+    //     '<ul class="editor-list-ul" dir="ltr"><li class="editor-listitem"><span data-outline-text="true">One</span></li><li class="editor-listitem"><span data-outline-text="true">Two</span></li><li class="editor-listitem"><span data-outline-text="true">Three</span></li></ul><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Some text.</span></p>',
+    //   );
+    //   await assertSelection(page, {
+    //     anchorPath: [1, 0, 0],
+    //     anchorOffset: 10,
+    //     focusPath: [1, 0, 0],
+    //     focusOffset: 10,
+    //   });
 
-      await page.keyboard.down('Shift');
-      await moveToLineBeginning(page);
-      await page.keyboard.press('ArrowLeft');
-      await page.keyboard.press('ArrowLeft');
-      await page.keyboard.press('ArrowLeft');
-      await page.keyboard.up('Shift');
+    //   await page.keyboard.down('Shift');
+    //   await moveToLineBeginning(page);
+    //   await page.keyboard.press('ArrowLeft');
+    //   await page.keyboard.press('ArrowLeft');
+    //   await page.keyboard.press('ArrowLeft');
+    //   await page.keyboard.up('Shift');
 
-      await assertSelection(page, {
-        anchorPath: [1, 0, 0],
-        anchorOffset: 10,
-        focusPath: [0, 2, 0, 0],
-        focusOffset: 3,
-      });
+    //   await assertSelection(page, {
+    //     anchorPath: [1, 0, 0],
+    //     anchorOffset: 10,
+    //     focusPath: [0, 2, 0, 0],
+    //     focusOffset: 3,
+    //   });
 
-      // Copy the partial list item and paragraph
-      const clipboard = await copyToClipboard(page);
+    //   // Copy the partial list item and paragraph
+    //   const clipboard = await copyToClipboard(page);
 
-      // Select all and remove content
-      await selectAll(page);
-      await page.keyboard.press('Backspace');
-      await page.keyboard.press('Backspace');
+    //   // Select all and remove content
+    //   await selectAll(page);
+    //   await page.keyboard.press('Backspace');
+    //   await page.keyboard.press('Backspace');
 
-      await assertHTML(
-        page,
-        '<p class="editor-paragraph"><br></p>',
-      );
-      await assertSelection(page, {
-        anchorPath: [0],
-        anchorOffset: 0,
-        focusPath: [0],
-        focusOffset: 0,
-      });
+    //   await assertHTML(
+    //     page,
+    //     '<p class="editor-paragraph"><br></p>',
+    //   );
+    //   await assertSelection(page, {
+    //     anchorPath: [0],
+    //     anchorOffset: 0,
+    //     focusPath: [0],
+    //     focusOffset: 0,
+    //   });
 
-      // Paste
+    //   // Paste
 
-      await pasteFromClipboard(page, clipboard);
+    //   await pasteFromClipboard(page, clipboard);
 
-    });
+    // });
   });
 });

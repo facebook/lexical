@@ -109,6 +109,7 @@ export type ListenerType =
 
 let isPreparingPendingViewUpdate = false;
 
+// Test comment
 export function asyncErrorOnPreparingPendingViewUpdate(
   fnName: 'Editor.getLatestTextContent()',
 ): void {

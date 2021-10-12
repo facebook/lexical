@@ -28,6 +28,7 @@ import BlockControls from './BlockControls';
 import CharacterLimit from './CharacterLimit';
 import {Typeahead} from './Typeahead';
 import yellowFlowerImage from './images/image/yellow-flower.jpg';
+import OutlineComposer from 'outline-react/OutlineComposer';
 
 const editorStyle = {
   outline: 0,
@@ -87,15 +88,18 @@ function ContentEditable({
   rootElementRef: (null | HTMLElement) => void,
 }): React$Node {
   return (
-    <div
-      className="editor"
-      contentEditable={isReadOnly !== true}
-      role="textbox"
-      ref={rootElementRef}
-      spellCheck={true}
-      style={editorStyle}
-      tabIndex={0}
-    />
+    <>
+      <OutlineComposer />
+      <div
+        className="editor"
+        contentEditable={isReadOnly !== true}
+        role="textbox"
+        ref={rootElementRef}
+        spellCheck={true}
+        style={editorStyle}
+        tabIndex={0}
+      />
+    </>
   );
 }
 

@@ -17,7 +17,7 @@ import {
   insertLineBreak,
   formatText,
   extractSelection,
-  getNodesInRange,
+  cloneContents,
 } from 'outline/SelectionHelpers';
 import {createTestBlockNode} from '../../../__tests__/utils';
 
@@ -210,9 +210,9 @@ describe('OutlineSelectionHelpers tests', () => {
         expect(extractSelection(selection)).toEqual([view.getNodeByKey('a')]);
       });
 
-      // getNodesInRange
+      // cloneContents
       setupTestCase((selection, view, block) => {
-        expect(getNodesInRange(selection)).toEqual({
+        expect(cloneContents(selection)).toEqual({
           range: ['a'],
           nodeMap: [['a', {...view.getNodeByKey('a'), __text: ''}]],
         });
@@ -537,9 +537,9 @@ describe('OutlineSelectionHelpers tests', () => {
         expect(extractSelection(selection)).toEqual([]);
       });
 
-      // getNodesInRange
+      // cloneContents
       setupTestCase((selection, view, block) => {
-        expect(getNodesInRange(selection)).toEqual({
+        expect(cloneContents(selection)).toEqual({
           range: [],
           nodeMap: [],
         });
@@ -659,11 +659,14 @@ describe('OutlineSelectionHelpers tests', () => {
         expect(extractSelection(selection)).toEqual([view.getNodeByKey('a')]);
       });
 
-      // getNodesInRange
+      // cloneContents
       setupTestCase((selection, view, block) => {
-        expect(getNodesInRange(selection)).toEqual({
-          range: ['a'],
-          nodeMap: [['a', {...view.getNodeByKey('a'), __text: ''}]],
+        expect(cloneContents(selection)).toEqual({
+          range: [block.getKey()],
+          nodeMap: [
+            ['a', {...view.getNodeByKey('a'), __text: ''}],
+            [block.getKey(), {...block, __children: ['a']}],
+          ],
         });
       });
     });
@@ -782,11 +785,14 @@ describe('OutlineSelectionHelpers tests', () => {
         expect(extractSelection(selection)).toEqual([view.getNodeByKey('c')]);
       });
 
-      // getNodesInRange
+      // cloneContents
       setupTestCase((selection, view, block) => {
-        expect(getNodesInRange(selection)).toEqual({
-          range: ['c'],
-          nodeMap: [['c', {...view.getNodeByKey('c'), __text: ''}]],
+        expect(cloneContents(selection)).toEqual({
+          range: [block.getKey()],
+          nodeMap: [
+            ['c', {...view.getNodeByKey('c'), __text: ''}],
+            [block.getKey(), {...block, __children: ['c']}],
+          ],
         });
       });
     });
@@ -1022,12 +1028,13 @@ describe('OutlineSelectionHelpers tests', () => {
         ]);
       });
 
-      // getNodesInRange
+      // cloneContents
       setupTestCase((selection, view, block) => {
-        expect(getNodesInRange(selection)).toEqual({
-          range: ['a', 'b'],
+        expect(cloneContents(selection)).toEqual({
+          range: [block.getKey()],
           nodeMap: [
             ['a', view.getNodeByKey('a')],
+            [block.getKey(), {...block, __children: ['a', 'b']}],
             ['b', {...view.getNodeByKey('b'), __text: ''}],
           ],
         });
@@ -1154,12 +1161,13 @@ describe('OutlineSelectionHelpers tests', () => {
         ]);
       });
 
-      // getNodesInRange
+      // cloneContents
       setupTestCase((selection, view, block) => {
-        expect(getNodesInRange(selection)).toEqual({
-          range: ['a', 'b'],
+        expect(cloneContents(selection)).toEqual({
+          range: [block.getKey()],
           nodeMap: [
             ['a', view.getNodeByKey('a')],
+            [block.getKey(), {...block, __children: ['a', 'b']}],
             ['b', {...view.getNodeByKey('b'), __text: ''}],
           ],
         });
@@ -1292,12 +1300,13 @@ describe('OutlineSelectionHelpers tests', () => {
         ]);
       });
 
-      // getNodesInRange
+      // cloneContents
       setupTestCase((selection, view, block) => {
-        expect(getNodesInRange(selection)).toEqual({
-          range: ['a', 'b', 'c'],
+        expect(cloneContents(selection)).toEqual({
+          range: [block.getKey()],
           nodeMap: [
             ['a', view.getNodeByKey('a')],
+            [block.getKey(), block],
             ['b', view.getNodeByKey('b')],
             ['c', view.getNodeByKey('c')],
           ],
@@ -1330,36 +1339,38 @@ describe('OutlineSelectionHelpers tests', () => {
       text1.select(0, 0);
       const selection1 = view.getSelection();
       selection1.focus.set(text3.getKey(), 1, 'text');
-      const selectedNodes1 = getNodesInRange(view.getSelection());
+      const selectedNodes1 = cloneContents(view.getSelection());
       expect(selectedNodes1.range).toEqual([
-        text1.getKey(),
+        paragraph1.getKey(),
         paragraph2.getKey(),
         paragraph3.getKey(),
       ]);
       expect(selectedNodes1.nodeMap[0][0]).toEqual(text1.getKey());
       expect(selectedNodes1.nodeMap[0][1].getTextContent()).toBe('First');
-      expect(selectedNodes1.nodeMap[1][0]).toEqual(paragraph2.getKey());
-      expect(selectedNodes1.nodeMap[2][0]).toEqual(text2.getKey());
-      expect(selectedNodes1.nodeMap[3][0]).toEqual(paragraph3.getKey());
-      expect(selectedNodes1.nodeMap[4][0]).toEqual(text3.getKey());
-      expect(selectedNodes1.nodeMap[4][1].getTextContent()).toBe('Third');
+      expect(selectedNodes1.nodeMap[1][0]).toEqual(paragraph1.getKey());
+      expect(selectedNodes1.nodeMap[2][0]).toEqual(paragraph2.getKey());
+      expect(selectedNodes1.nodeMap[3][0]).toEqual(text2.getKey());
+      expect(selectedNodes1.nodeMap[4][0]).toEqual(paragraph3.getKey());
+      expect(selectedNodes1.nodeMap[5][0]).toEqual(text3.getKey());
+      expect(selectedNodes1.nodeMap[5][1].getTextContent()).toBe('Third');
 
       text1.select(1, 1);
       const selection2 = view.getSelection();
       selection2.focus.set(text3.getKey(), 4, 'text');
-      const selectedNodes2 = getNodesInRange(view.getSelection());
+      const selectedNodes2 = cloneContents(view.getSelection());
       expect(selectedNodes2.range).toEqual([
-        text1.getKey(),
+        paragraph1.getKey(),
         paragraph2.getKey(),
         paragraph3.getKey(),
       ]);
       expect(selectedNodes2.nodeMap[0][0]).toEqual(text1.getKey());
       expect(selectedNodes2.nodeMap[0][1].__text).toBe('irst');
-      expect(selectedNodes2.nodeMap[1][0]).toEqual(paragraph2.getKey());
-      expect(selectedNodes2.nodeMap[2][0]).toEqual(text2.getKey());
-      expect(selectedNodes2.nodeMap[3][0]).toEqual(paragraph3.getKey());
-      expect(selectedNodes2.nodeMap[4][0]).toEqual(text3.getKey());
-      expect(selectedNodes2.nodeMap[4][1].__text).toBe('Thir');
+      expect(selectedNodes2.nodeMap[1][0]).toEqual(paragraph1.getKey());
+      expect(selectedNodes2.nodeMap[2][0]).toEqual(paragraph2.getKey());
+      expect(selectedNodes2.nodeMap[3][0]).toEqual(text2.getKey());
+      expect(selectedNodes2.nodeMap[4][0]).toEqual(paragraph3.getKey());
+      expect(selectedNodes2.nodeMap[5][0]).toEqual(text3.getKey());
+      expect(selectedNodes2.nodeMap[5][1].__text).toBe('Thir');
     });
   });
 
@@ -1379,39 +1390,37 @@ describe('OutlineSelectionHelpers tests', () => {
       const excludeBlockNode1 = createExcludeFromCopyBlockNode();
       paragraph.append(excludeBlockNode1);
       paragraph.select(0, 0);
-      const selectedNodes1 = getNodesInRange(view.getSelection());
+      const selectedNodes1 = cloneContents(view.getSelection());
       expect(selectedNodes1.range).toEqual([]);
 
       const text1 = createTextNode('1');
       excludeBlockNode1.append(text1);
       excludeBlockNode1.select(0, 0);
-      const selectedNodes2 = getNodesInRange(view.getSelection());
-      expect(selectedNodes2.range).toEqual([text1.getKey()]);
+      const selectedNodes2 = cloneContents(view.getSelection());
+      expect(selectedNodes2.range).toEqual([paragraph.getKey()]);
 
       paragraph.select(0, 0);
-      const selectedNodes3 = getNodesInRange(view.getSelection());
-      expect(selectedNodes3.range).toEqual([text1.getKey()]);
+      const selectedNodes3 = cloneContents(view.getSelection());
+      expect(selectedNodes3.range).toEqual([paragraph.getKey()]);
 
       const text2 = createTextNode('2');
       excludeBlockNode1.insertAfter(text2);
       paragraph.select(0, 2);
-      const selectedNodes4 = getNodesInRange(view.getSelection());
-      expect(selectedNodes4.range).toEqual([text1.getKey(), text2.getKey()]);
+      const selectedNodes4 = cloneContents(view.getSelection());
+      expect(selectedNodes4.range).toEqual([paragraph.getKey()]);
       expect(selectedNodes4.nodeMap[0][0]).toEqual(text1.getKey());
-      expect(selectedNodes4.nodeMap[1][0]).toEqual(text2.getKey());
+      expect(selectedNodes4.nodeMap[1][0]).toEqual(paragraph.getKey());
+      expect(selectedNodes4.nodeMap[2][0]).toEqual(text2.getKey());
 
       const text3 = createTextNode('3');
       excludeBlockNode1.append(text3);
       paragraph.select(0, 2);
-      const selectedNodes5 = getNodesInRange(view.getSelection());
-      expect(selectedNodes5.range).toEqual([
-        text1.getKey(),
-        text3.getKey(),
-        text2.getKey(),
-      ]);
+      const selectedNodes5 = cloneContents(view.getSelection());
+      expect(selectedNodes5.range).toEqual([paragraph.getKey()]);
       expect(selectedNodes5.nodeMap[0][0]).toEqual(text1.getKey());
-      expect(selectedNodes5.nodeMap[1][0]).toEqual(text3.getKey());
-      expect(selectedNodes5.nodeMap[2][0]).toEqual(text2.getKey());
+      expect(selectedNodes5.nodeMap[1][0]).toEqual(paragraph.getKey());
+      expect(selectedNodes5.nodeMap[2][0]).toEqual(text3.getKey());
+      expect(selectedNodes5.nodeMap[3][0]).toEqual(text2.getKey());
 
       const testBlockNode = createTestBlockNode();
       const excludeBlockNode2 = createExcludeFromCopyBlockNode();
@@ -1420,29 +1429,24 @@ describe('OutlineSelectionHelpers tests', () => {
       testBlockNode.append(excludeBlockNode2);
       excludeBlockNode2.append(text4);
       paragraph.select(0, 3);
-      const selectedNodes6 = getNodesInRange(view.getSelection());
-      expect(selectedNodes6.range).toEqual([
-        text4.getKey(),
-        text1.getKey(),
-        text3.getKey(),
-        text2.getKey(),
-      ]);
+      const selectedNodes6 = cloneContents(view.getSelection());
+      expect(selectedNodes6.range).toEqual([paragraph.getKey()]);
       expect(selectedNodes6.nodeMap[0][0]).toEqual(text4.getKey());
-      expect(selectedNodes6.nodeMap[1][0]).toEqual(text1.getKey());
-      expect(selectedNodes6.nodeMap[2][0]).toEqual(text3.getKey());
-      expect(selectedNodes6.nodeMap[3][0]).toEqual(text2.getKey());
+      expect(selectedNodes6.nodeMap[1][0]).toEqual(testBlockNode.getKey());
+      expect(selectedNodes6.nodeMap[2][0]).toEqual(paragraph.getKey());
+      expect(selectedNodes6.nodeMap[3][0]).toEqual(text1.getKey());
+      expect(selectedNodes6.nodeMap[4][0]).toEqual(text3.getKey());
+      expect(selectedNodes6.nodeMap[5][0]).toEqual(text2.getKey());
 
       text4.remove();
       paragraph.select(0, 3);
-      const selectedNodes7 = getNodesInRange(view.getSelection());
-      expect(selectedNodes7.range).toEqual([
-        text1.getKey(),
-        text3.getKey(),
-        text2.getKey(),
-      ]);
-      expect(selectedNodes7.nodeMap[0][0]).toEqual(text1.getKey());
-      expect(selectedNodes7.nodeMap[1][0]).toEqual(text3.getKey());
-      expect(selectedNodes7.nodeMap[2][0]).toEqual(text2.getKey());
+      const selectedNodes7 = cloneContents(view.getSelection());
+      expect(selectedNodes7.range).toEqual([paragraph.getKey()]);
+      expect(selectedNodes7.nodeMap[0][0]).toEqual(testBlockNode.getKey());
+      expect(selectedNodes7.nodeMap[1][0]).toEqual(paragraph.getKey());
+      expect(selectedNodes7.nodeMap[2][0]).toEqual(text1.getKey());
+      expect(selectedNodes7.nodeMap[3][0]).toEqual(text3.getKey());
+      expect(selectedNodes7.nodeMap[4][0]).toEqual(text2.getKey());
     });
   });
 });

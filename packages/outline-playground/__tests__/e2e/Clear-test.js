@@ -21,6 +21,7 @@ describe('Clear', () => {
       );
 
       await page.click('.action-button.clear');
+      await page.focus('div.editor');
       await page.keyboard.type('bar');
       await assertHTML(
         page,

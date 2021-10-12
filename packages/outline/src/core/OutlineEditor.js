@@ -411,11 +411,11 @@ class BaseOutlineEditor {
       const prevWindowScrollXPos = getWindowXScrollPosition();
       const prevWindowScrollYPos = getWindowYScrollPosition();
       // Hack to ensure we don't scroll the focus logic.
-      window.requestAnimationFrame(() => {
+      window.setTimeout(() => {
         if (this._rootElement !== null) {
           window.scrollTo(prevWindowScrollXPos, prevWindowScrollYPos);
         }
-      });
+      }, 0);
       // Note: {preventScroll: true} is only supported in Chrome 64+ and such.
       // We can remove the above hack when we stop supporting older browsers.
       rootElement.focus({preventScroll: true});

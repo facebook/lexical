@@ -13,18 +13,19 @@ import type {
   Selection,
   TextFormatType,
   TextNode,
-  BlockNode,
   BlockPoint,
+  BlockNode,
   Point,
 } from 'outline';
 
 import {
   createLineBreakNode,
   isDecoratorNode,
+  isLeafNode,
   isTextNode,
   isBlockNode,
-  isRootNode,
   createTextNode,
+  isRootNode,
 } from 'outline';
 import {isHashtagNode} from 'outline/HashtagNode';
 
@@ -32,7 +33,6 @@ import isImmutableOrInert from 'shared/isImmutableOrInert';
 import invariant from 'shared/invariant';
 import {doesContainGrapheme} from 'outline/TextHelpers';
 import getPossibleDecoratorNode from 'shared/getPossibleDecoratorNode';
-import {getCommonAncestor} from 'outline/NodeHelpers';
 
 const cssToStyles: Map<string, {[string]: string}> = new Map();
 
@@ -51,7 +51,72 @@ function cloneWithProperties<T: OutlineNode>(node: T): T {
   return clone;
 }
 
-export function getNodesInRange(selection: Selection): {
+function getIndexFromPossibleClone(
+  node: OutlineNode,
+  parent: BlockNode,
+  nodeMap: Map<NodeKey, OutlineNode>,
+): number {
+  const parentClone = nodeMap.get(parent.getKey());
+  if (isBlockNode(parentClone)) {
+    return parentClone.__children.indexOf(node.getKey());
+  }
+  return node.getIndexWithinParent();
+}
+
+function getParentAvoidingExcludedBlocks(node: OutlineNode): BlockNode | null {
+  let parent = node.getParent();
+  while (parent !== null && parent.excludeFromCopy()) {
+    parent = parent.getParent();
+  }
+  return parent;
+}
+
+function copyLeafNodeBranchToRoot(
+  leaf: OutlineNode,
+  startingOffset: number,
+  isLeftSide: boolean,
+  range: Array<NodeKey>,
+  nodeMap: Map<NodeKey, OutlineNode>,
+) {
+  let node = leaf;
+  let offset = startingOffset;
+  while (node !== null) {
+    const parent = getParentAvoidingExcludedBlocks(node);
+    if (parent === null) {
+      break;
+    }
+    if (!isBlockNode(node) || !node.excludeFromCopy()) {
+      const key = node.getKey();
+      let clone = nodeMap.get(key);
+      const needsClone = clone === undefined;
+      if (needsClone) {
+        clone = cloneWithProperties<OutlineNode>(node);
+        nodeMap.set(key, clone);
+      }
+      if (isTextNode(clone) && !clone.isSegmented() && !clone.isImmutable()) {
+        clone.__text = clone.__text.slice(
+          isLeftSide ? offset : 0,
+          isLeftSide ? undefined : offset,
+        );
+      } else if (isBlockNode(clone)) {
+        clone.__children = clone.__children.slice(
+          isLeftSide ? offset : 0,
+          isLeftSide ? undefined : offset + 1,
+        );
+      }
+      if (isRootNode(parent)) {
+        if (needsClone) {
+          range.push(key);
+        }
+        break;
+      }
+    }
+    offset = getIndexFromPossibleClone(node, parent, nodeMap);
+    node = parent;
+  }
+}
+
+export function cloneContents(selection: Selection): {
   range: Array<NodeKey>,
   nodeMap: Array<[NodeKey, OutlineNode]>,
 } {
@@ -77,150 +142,42 @@ export function getNodesInRange(selection: Selection): {
   if (nodes.length === 0) {
     return {range: [], nodeMap: []};
   }
-
-  const firstNode = nodes[0];
-  const isBefore = anchor.isBefore(focus);
-  const nodeKeys = [];
-  const nodeMap = new Map();
-  startOffset = isBefore ? anchorOffset : focusOffset;
-  endOffset = isBefore ? focusOffset : anchorOffset;
-
   const nodesLength = nodes.length;
-  let sourceParent = isBlockNode(firstNode)
-    ? firstNode
-    : firstNode.getParentOrThrow();
-  while (sourceParent.excludeFromCopy()) {
-    sourceParent = sourceParent.getParentOrThrow();
-  }
-  if (sourceParent === null) {
-    invariant(false, 'getNodesInRange: first node does not have parent');
-  }
-  let commonParent = getCommonAncestor(nodes);
-  if (commonParent === null) {
-    invariant(false, 'getNodesInRange: no common ancestor');
-  }
-  while (commonParent.excludeFromCopy()) {
-    commonParent = commonParent.getParentOrThrow();
-  }
-  const sourceParentKey = sourceParent.getKey();
-  const topLevelNodeKeys = new Set();
+  const firstNode = nodes[0];
+  const lastNode = nodes[nodesLength - 1];
+  const isBefore = anchor.isBefore(focus);
+  const nodeMap = new Map();
+  const range = [];
+
+  // Do first node to root
+  copyLeafNodeBranchToRoot(
+    firstNode,
+    isBefore ? anchorOffset : focusOffset,
+    true,
+    range,
+    nodeMap,
+  );
+  // Copy all nodes between
   for (let i = 0; i < nodesLength; i++) {
-    let node = nodes[i];
-    if (
-      node.isInert() ||
-      node.getKey() === sourceParentKey ||
-      (isBlockNode(node) && node.excludeFromCopy())
-    ) {
-      continue;
-    }
-    let parent = node.getParent();
-    const nodeKey = node.getKey();
-
-    if (isTextNode(node) && !node.isSegmented() && !node.isImmutable()) {
-      const text = node.getTextContent();
-
-      if (i === 0) {
-        node = cloneWithProperties<TextNode>(node);
-        node.__text = text.slice(
-          startOffset,
-          nodesLength === 1 ? endOffset : text.length,
-        );
-      } else if (i === nodesLength - 1) {
-        node = cloneWithProperties<TextNode>(node);
-        node.__text = text.slice(0, endOffset);
+    const node = nodes[i];
+    const key = node.getKey();
+    if (!nodeMap.has(key) && (!isBlockNode(node) || !node.excludeFromCopy())) {
+      const clone = cloneWithProperties<OutlineNode>(node);
+      if (isRootNode(node.getParent())) {
+        range.push(node.getKey());
       }
-    }
-
-    if (parent !== null && isBlockNode(parent) && parent.excludeFromCopy()) {
-      const parentKey = parent.getKey();
-      let parentParent = parent.getParent();
-      while (isBlockNode(parentParent) && parentParent.excludeFromCopy()) {
-        parentParent = parentParent.getParent();
-      }
-      if (parentParent === null) {
-        invariant(
-          false,
-          'getNodesInRange: excludeFromCopy node does not have non-excluded parent',
-        );
-      }
-      const parentParentKey = parentParent.getKey();
-      node = cloneWithProperties<OutlineNode>(node);
-      node.__parent = parentParentKey;
-      const latestParentParent = nodeMap.get(parentParentKey);
-      if (isBlockNode(latestParentParent)) {
-        const parentParentCopy =
-          cloneWithProperties<BlockNode>(latestParentParent);
-        const parentKeyIndex = parentParentCopy.__children.indexOf(parentKey);
-        parentParentCopy.__children.splice(parentKeyIndex, 0, nodeKey);
-        nodeMap.set(parentParentKey, parentParentCopy);
-      }
-      parent = parentParent;
-    }
-
-    if (!nodeMap.has(nodeKey)) {
-      nodeMap.set(nodeKey, node);
-    }
-
-    if (parent === sourceParent || parent === commonParent) {
-      nodeKeys.push(nodeKey);
-      const topLevelBlock = node.getTopParentBlockOrThrow();
-      topLevelNodeKeys.add(topLevelBlock.getKey());
-    } else {
-      let includeTopLevelBlock = false;
-
-      if (!isRootNode(parent)) {
-        let removeChildren = false;
-
-        while (node !== null) {
-          const currKey = node.getKey();
-          if (currKey === sourceParentKey) {
-            removeChildren = true;
-          } else if (removeChildren) {
-            // We need to remove any children before out last source
-            // parent key.
-            const prevNode = node.getLatest();
-            node = prevNode.constructor.clone(prevNode);
-            node.__flags = prevNode.__flags;
-            node.__parent = prevNode.__parent;
-            if (isBlockNode(prevNode)) {
-              node.__children = Array.from(prevNode.__children);
-            }
-            if (!isBlockNode(node)) {
-              invariant(false, 'getNodesInRange: node is not a block node');
-            }
-            const childrenKeys = node.__children;
-            const index = childrenKeys.indexOf(sourceParentKey);
-            if (index === -1) {
-              invariant(false, 'getNodesInRange: child is not inside parent');
-            }
-            childrenKeys.splice(0, index + 1);
-            includeTopLevelBlock = true;
-          }
-          if (
-            !nodeMap.has(currKey) &&
-            !node.isInert() &&
-            !(isBlockNode(node) && node.excludeFromCopy())
-          ) {
-            nodeMap.set(currKey, node);
-          }
-
-          const nextParent = node.getParent();
-          if (isRootNode(nextParent)) {
-            break;
-          }
-          node = nextParent;
-        }
-      }
-      if (node !== null) {
-        const key = node.getKey();
-        if (!topLevelNodeKeys.has(key) || includeTopLevelBlock) {
-          topLevelNodeKeys.add(key);
-          nodeKeys.push(key);
-        }
-      }
+      nodeMap.set(key, clone);
     }
   }
-  return {range: nodeKeys, nodeMap: Array.from(nodeMap.entries())};
+  // Do last node to root
+  copyLeafNodeBranchToRoot(
+    lastNode,
+    isBefore ? focusOffset : anchorOffset,
+    false,
+    range,
+    nodeMap,
+  );
+  return {range, nodeMap: Array.from(nodeMap.entries())};
 }
 
 export function extractSelection(selection: Selection): Array<OutlineNode> {
@@ -958,8 +915,37 @@ export function insertNodes(
     const node = nodes[i];
 
     if (isBlockNode(node)) {
-      // If it's a block node make sure target refers to a block
-      // and then insert after our target block
+      // If we have an incoming block node as the first node, then we'll need
+      // see if we can merge it nicely into our existing target. We can do this
+      // by finding the first descendant in our node, and if we have one, we can
+      // pluck it and its parent (siblings included) out and insert them directly
+      // into our target.
+      if (i === 0) {
+        if (isBlockNode(target) && target.getChildrenSize() === 0) {
+          target.replace(node);
+          target = node;
+          continue;
+        }
+        const firstDescendant = node.getFirstDescendant();
+        if (isLeafNode(firstDescendant)) {
+          const block = firstDescendant.getParentOrThrow();
+          const children = block.getChildren();
+          const childrenLength = children.length;
+          if (isBlockNode(target)) {
+            for (let s = 0; s < childrenLength; s++) {
+              target.append(children[s]);
+            }
+          } else {
+            for (let s = childrenLength - 1; s >= 0; s--) {
+              target.insertAfter(children[s]);
+            }
+          }
+          block.remove();
+          if (block.is(node)) {
+            continue;
+          }
+        }
+      }
       if (isTextNode(target)) {
         target = topLevelBlock;
       }
@@ -1009,10 +995,14 @@ export function insertNodes(
       let prevSibling = lastChild;
       for (let i = 0; i < siblings.length; i++) {
         const sibling = siblings[i];
-        if (prevSibling === null) {
+        if (isBlockNode(sibling)) {
           target.append(sibling);
         } else {
-          prevSibling.insertAfter(sibling);
+          if (prevSibling === null) {
+            target.append(sibling);
+          } else {
+            prevSibling.insertAfter(sibling);
+          }
         }
         prevSibling = sibling;
       }

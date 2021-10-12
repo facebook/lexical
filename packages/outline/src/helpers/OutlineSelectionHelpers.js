@@ -1248,7 +1248,7 @@ export function insertText(selection: Selection, text: string): void {
         const childrenLength = children.length;
         if (
           childrenLength === 0 ||
-          (childrenLength === 1 && children[0].is(lastRemovedParent))
+          children[childrenLength - 1].is(lastRemovedParent)
         ) {
           markedNodeKeysForKeep.delete(parent.getKey());
           lastRemovedParent = parent;

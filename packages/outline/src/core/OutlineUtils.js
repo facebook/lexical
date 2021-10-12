@@ -113,30 +113,3 @@ export function toggleTextFormatType(
   }
   return format;
 }
-
-function getRootNode(): ?Element {
-  const body = document.body;
-  return (
-    document.documentElement ||
-    ((body: $FlowFixMe).parentNode: ?Element) ||
-    body
-  );
-}
-
-export function getWindowXScrollPosition(): number {
-  const pageXOffset = window.pageXOffset;
-  if (pageXOffset != null) {
-    return pageXOffset;
-  }
-  const rootNode = getRootNode();
-  return rootNode ? rootNode.scrollLeft : 0;
-}
-
-export function getWindowYScrollPosition(): number {
-  const pageYOffset = window.pageYOffset;
-  if (pageYOffset != null) {
-    return pageYOffset;
-  }
-  const rootNode = getRootNode();
-  return rootNode ? rootNode.scrollTop : 0;
-}

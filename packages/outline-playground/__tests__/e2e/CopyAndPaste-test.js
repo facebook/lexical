@@ -6,7 +6,7 @@
  *
  */
 
-import {moveToPrevWord, selectAll, moveToLineBeginning} from '../keyboardShortcuts';
+import {moveToPrevWord, selectAll} from '../keyboardShortcuts';
 import {
   initializeE2E,
   assertSelection,

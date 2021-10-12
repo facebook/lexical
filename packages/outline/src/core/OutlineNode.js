@@ -180,7 +180,7 @@ function moveSelectionPointToSibling(
   }
 }
 
-export function isLeafNode(node: OutlineNode): boolean %checks {
+export function isLeafNode(node: ?OutlineNode): boolean %checks {
   return isTextNode(node) || isLineBreakNode(node) || isDecoratorNode(node);
 }
 

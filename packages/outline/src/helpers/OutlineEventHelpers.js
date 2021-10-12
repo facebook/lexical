@@ -50,7 +50,7 @@ import {
   formatText,
   insertText,
   removeText,
-  getNodesInRange,
+  cloneContents,
   insertNodes,
   insertLineBreak,
   insertRichText,
@@ -422,7 +422,7 @@ export function onCopyForRichText(
         clipboardData.setData('text/plain', selection.getTextContent());
         clipboardData.setData(
           'application/x-outline-nodes',
-          JSON.stringify(getNodesInRange(selection)),
+          JSON.stringify(cloneContents(selection)),
         );
       }
     }

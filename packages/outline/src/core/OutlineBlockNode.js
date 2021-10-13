@@ -190,7 +190,7 @@ export class BlockNode extends OutlineNode {
     } else {
       setPointValues(selection.anchor, key, anchorOffset, 'block');
       setPointValues(selection.focus, key, focusOffset, 'block');
-      selection.isDirty = true;
+      selection.dirty = true;
     }
     return selection;
   }

@@ -574,7 +574,7 @@ export class TextNode extends OutlineNode {
         ) {
           anchor.key = siblingKey;
           anchor.offset -= textSize;
-          selection.isDirty = true;
+          selection.dirty = true;
         }
         if (
           focus.key === key &&
@@ -584,7 +584,7 @@ export class TextNode extends OutlineNode {
         ) {
           focus.key = siblingKey;
           focus.offset -= textSize;
-          selection.isDirty = true;
+          selection.dirty = true;
         }
       }
       if (compositionKey === key) {

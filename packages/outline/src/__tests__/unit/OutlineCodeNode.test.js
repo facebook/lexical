@@ -71,7 +71,7 @@ describe('OutlineCodeNode tests', () => {
           anchorOffset: 0,
           focusKey: '_2',
           focusOffset: 0,
-          isDirty: true,
+          dirty: true,
           needsSync: false,
         });
       });

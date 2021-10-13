@@ -411,7 +411,7 @@ class BaseOutlineEditor {
           const root = view.getRoot();
           if (selection !== null) {
             // Marking the selection dirty will force the selection back to it
-            selection.isDirty = true;
+            selection.dirty = true;
           } else if (root.getChildrenSize() !== 0) {
             root.selectEnd();
           }

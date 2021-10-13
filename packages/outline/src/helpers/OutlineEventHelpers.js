@@ -487,7 +487,7 @@ export function onClick(event: MouseEvent, editor: OutlineEditor): void {
       const lastSelection = getLastSelection(editor);
       if (lastSelection !== null && selection.is(lastSelection)) {
         window.getSelection().removeAllRanges();
-        selection.isDirty = true;
+        selection.dirty = true;
       }
     }
   }, 'onClick');
@@ -1128,7 +1128,7 @@ export function onMutation(
       const lastSelection = getLastSelection(editor);
       if (lastSelection !== null) {
         const selection = lastSelection.clone();
-        selection.isDirty = true;
+        selection.dirty = true;
         view.setSelection(selection);
       }
     }

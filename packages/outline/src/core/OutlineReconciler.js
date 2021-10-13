@@ -27,6 +27,11 @@ import {isTextNode} from './OutlineTextNode';
 import {isLineBreakNode} from './OutlineLineBreakNode';
 import {isRootNode} from './OutlineRootNode';
 
+const SUPPORTS_SCROLL_INTO_VIEW_IF_NEEDED =
+  typeof Element !== 'undefined' &&
+  // $FlowFixMe: scrollIntoViewIfNeeded is available on most browsers
+  typeof Element.prototype.scrollIntoViewIfNeeded === 'function';
+
 let subTreeTextContent = '';
 let editorTextContent = '';
 let activeEditorConfig: EditorConfig<{...}>;
@@ -545,6 +550,19 @@ export function reconcileViewModel(
   }
 }
 
+function scrollIntoViewIfNeeded(node: Node): void {
+  // $FlowFixMe: this is valid, as we are checking the nodeType
+  const element: Element = node.nodeType === 3 ? node.parentNode : node;
+  if (element !== null) {
+    if (SUPPORTS_SCROLL_INTO_VIEW_IF_NEEDED) {
+      // $FlowFixMe: scrollIntoViewIfNeeded is available on most browsers
+      element.scrollIntoViewIfNeeded(false);
+    } else {
+      element.scrollIntoView(false);
+    }
+  }
+}
+
 function reconcileSelection(
   prevSelection: OutlineSelection | null,
   nextSelection: OutlineSelection | null,
@@ -585,6 +603,8 @@ function reconcileSelection(
     return;
   }
 
+  const activeElement = document.activeElement;
+  const rootElement = editor._rootElement;
   // Diff against the native DOM selection to ensure we don't do
   // an unnecessary selection update.
   if (
@@ -593,8 +613,6 @@ function reconcileSelection(
     anchorDOMNode === nextAnchorNode &&
     focusDOMNode === nextFocusNode
   ) {
-    const rootElement = editor._rootElement;
-    const activeElement = document.activeElement;
     // If the root element does not have focus, ensure it has focus
     if (
       rootElement !== null &&
@@ -614,7 +632,9 @@ function reconcileSelection(
       nextFocusNode,
       nextFocusOffset,
     );
-
+    if (nextSelection.isCollapsed() && rootElement === activeElement) {
+      scrollIntoViewIfNeeded(nextAnchorNode);
+    }
   } catch (error) {
     // If we encounter an error, continue. This can sometimes
     // occur with FF and there's no good reason as to why it

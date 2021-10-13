@@ -558,7 +558,14 @@ function scrollIntoViewIfNeeded(node: Node): void {
       // $FlowFixMe: scrollIntoViewIfNeeded is available on most browsers
       element.scrollIntoViewIfNeeded(false);
     } else {
-      element.scrollIntoView(false);
+      // Mostly for FF.
+      const rect = element.getBoundingClientRect();
+
+      if (rect.bottom > window.innerHeight) {
+        element.scrollIntoView(false);
+      } else if (rect.top < 0) {
+        element.scrollIntoView();
+      }
     }
   }
 }

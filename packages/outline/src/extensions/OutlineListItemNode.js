@@ -136,6 +136,14 @@ export class ListItemNode extends BlockNode {
     }
     return true;
   }
+
+  canReplaceWith(replacement: OutlineNode): boolean {
+    return isListItemNode(replacement);
+  }
+
+  canInsertAfter(node: OutlineNode): boolean {
+    return isListItemNode(node);
+  }
 }
 
 function setListItemThemeClassNames(

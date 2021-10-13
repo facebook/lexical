@@ -106,6 +106,8 @@ function copyLeafNodeBranchToRoot(
       }
       if (isRootNode(parent)) {
         if (needsClone) {
+          // We only want to collect a range of top level nodes.
+          // So if the parent is the root, we know this is a top level.
           range.push(key);
         }
         break;
@@ -919,13 +921,21 @@ export function insertNodes(
       // see if we can merge it nicely into our existing target. We can do this
       // by finding the first descendant in our node, and if we have one, we can
       // pluck it and its parent (siblings included) out and insert them directly
-      // into our target.
+      // into our target. We only do this for the first node, as we are only
+      // interested in merging with the anchor, which is our target.
       if (i === 0) {
-        if (isBlockNode(target) && target.getChildrenSize() === 0) {
+        if (
+          isBlockNode(target) &&
+          target.getChildrenSize() === 0 &&
+          target.canReplaceWith(node)
+        ) {
           target.replace(node);
           target = node;
           continue;
         }
+        // We may have a node tree where there are many levels, for example with
+        // lists and tables. So let's find the first descendant to try and merge
+        // with.
         const firstDescendant = node.getFirstDescendant();
         if (isLeafNode(firstDescendant)) {
           const block = firstDescendant.getParentOrThrow();
@@ -959,6 +969,16 @@ export function insertNodes(
       }
       target = node;
     } else {
+      while (isBlockNode(target) && !target.canInsertAfter(node)) {
+        const parent = target.getParent();
+        if (parent === null) {
+          invariant(
+            false,
+            'insertNodes: cannot insert node after, target is null',
+          );
+        }
+        target = parent;
+      }
       target.insertAfter(node);
       target = node;
     }

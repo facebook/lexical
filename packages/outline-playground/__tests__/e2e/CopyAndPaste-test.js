@@ -438,12 +438,12 @@ describe('CopyAndPaste', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul" dir="ltr"><li class="editor-listitem"><span data-outline-text="true">One</span></li><li class="editor-listitem"><span data-outline-text="true">Two</span></li></ul><ul class="editor-list-ul" dir="ltr"><li class="editor-listitem"><span data-outline-text="true">Three</span></li><li class="editor-listitem"><span data-outline-text="true">Four</span></li><li class="editor-listitem"><span data-outline-text="true">Five</span></li></ul><ul class="editor-list-ul"><br></ul>',
+        '<ul class="editor-list-ul" dir="ltr"><li class="editor-listitem"><span data-outline-text="true">One</span></li><li class="editor-listitem"><span data-outline-text="true">Two</span></li><li class="editor-listitem"><span data-outline-text="true">Three</span></li></ul><ul class="editor-list-ul" dir="ltr"><li class="editor-listitem"><span data-outline-text="true">Four</span></li><li class="editor-listitem"><span data-outline-text="true">Five</span></li></ul>',
       );
       await assertSelection(page, {
-        anchorPath: [1, 1, 0, 0],
+        anchorPath: [1, 0, 0, 0],
         anchorOffset: 4,
-        focusPath: [1, 1, 0, 0],
+        focusPath: [1, 0, 0, 0],
         focusOffset: 4,
       });
     });

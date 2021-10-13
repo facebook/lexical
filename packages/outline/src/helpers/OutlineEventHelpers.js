@@ -465,6 +465,33 @@ export function onCompositionEnd(
   }, 'onCompositionEnd');
 }
 
+export function onClick(event: MouseEvent, editor: OutlineEditor): void {
+  editor.update((view) => {
+    const selection = view.getSelection();
+    if (selection === null) {
+      return;
+    }
+    const anchor = selection.anchor;
+    // This is a work-around is mainly Chrome specific bug where if you select
+    // the contents of an empty block, you cannot easily unselect anything.
+    // This results in a tiny selection box that looks buggy/broken. This can
+    // also help other browsers when selection might "appear" lost, when it
+    // really isn't.
+    if (
+      selection.isCollapsed() &&
+      anchor.type === 'block' &&
+      anchor.offset === 0 &&
+      anchor.getNode().getChildrenSize() === 0
+    ) {
+      const lastSelection = getLastSelection(editor);
+      if (lastSelection !== null && selection.is(lastSelection)) {
+        window.getSelection().removeAllRanges();
+        selection.isDirty = true;
+      }
+    }
+  }, 'onClick');
+}
+
 export function onSelectionChange(event: Event, editor: OutlineEditor): void {
   const domSelection = window.getSelection();
   const rootElement = editor.getRootElement();

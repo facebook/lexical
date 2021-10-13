@@ -918,11 +918,12 @@ export function insertNodes(
 
     if (isBlockNode(node)) {
       // If we have an incoming block node as the first node, then we'll need
-      // see if we can merge it nicely into our existing target. We can do this
-      // by finding the first descendant in our node, and if we have one, we can
+      // see if we can merge any descendant leafe nodes into our existing target.
+      // We can do this by finding the first descendant in our node and then we can
       // pluck it and its parent (siblings included) out and insert them directly
       // into our target. We only do this for the first node, as we are only
       // interested in merging with the anchor, which is our target.
+
       if (i === 0) {
         if (
           isBlockNode(target) &&
@@ -935,7 +936,25 @@ export function insertNodes(
         }
         // We may have a node tree where there are many levels, for example with
         // lists and tables. So let's find the first descendant to try and merge
-        // with.
+        // with. So if we have the target:
+        //
+        // Paragraph (1)
+        //   Text (2)
+        //
+        // and we are trying to insert:
+        //
+        // ListNode (3)
+        //   ListItemNode (4)
+        //     Text (5)
+        //   ListItemNode (6)
+        //
+        // The result would be:
+        //
+        // Paragraph (1)
+        //   Text (2)
+        //   Text (5)
+        //
+
         const firstDescendant = node.getFirstDescendant();
         if (isLeafNode(firstDescendant)) {
           const block = firstDescendant.getParentOrThrow();

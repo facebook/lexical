@@ -419,7 +419,6 @@ class BaseOutlineEditor {
         'focus',
         () => {
           rootElement.removeAttribute('autocapitalize');
-          rootElement.focus({preventScroll: true})
           if (callbackFn) {
             callbackFn();
           }

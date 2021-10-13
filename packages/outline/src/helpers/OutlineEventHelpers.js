@@ -57,6 +57,7 @@ import {
   moveCharacter,
 } from 'outline/SelectionHelpers';
 import {createTextNode, isTextNode, isDecoratorNode} from 'outline';
+import {isParagraphNode} from 'outline/ParagraphNode';
 import getPossibleDecoratorNode from 'shared/getPossibleDecoratorNode';
 
 const NO_BREAK_SPACE_CHAR = '\u00A0';
@@ -538,7 +539,14 @@ function updateTextNodeFromDOMContent(
   editor: OutlineEditor,
 ): void {
   let node = getClosestNodeFromDOMNode(view, dom);
-  if (isTextNode(node) && !node.isDirty()) {
+  let isNewNode = false;
+  if (isParagraphNode(node) && node.getChildrenSize() === 0) {
+    const emptyTextNode = createTextNode();
+    node.append(emptyTextNode);
+    node = emptyTextNode;
+    isNewNode = true;
+  }
+  if (isTextNode(node) && (!node.isDirty() || isNewNode)) {
     let textContent = dom.nodeValue;
 
     if (

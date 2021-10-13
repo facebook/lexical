@@ -158,7 +158,7 @@ export function viewModelHasDirtySelection(
   if (pendingSelection !== null) {
     if (
       currentSelection === null ||
-      pendingSelection.isDirty ||
+      pendingSelection.dirty ||
       !pendingSelection.is(currentSelection)
     ) {
       return true;

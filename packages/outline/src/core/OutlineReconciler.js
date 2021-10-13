@@ -792,7 +792,7 @@ function mergeAdjacentTextNodes(
     textNode.remove();
   }
   if (selectionIsDirty && activeSelection !== null) {
-    activeSelection.isDirty = true;
+    activeSelection.dirty = true;
   }
 }
 
@@ -846,7 +846,7 @@ function removeStrandedEmptyTextNode(
     }
   }
   if (selectionIsDirty && activeSelection !== null) {
-    activeSelection.isDirty = true;
+    activeSelection.dirty = true;
   }
   node.remove();
 }

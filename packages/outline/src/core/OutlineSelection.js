@@ -115,7 +115,7 @@ class Point {
         selection !== null &&
         (selection.anchor === this || selection.focus === this)
       ) {
-        selection.isDirty = true;
+        selection.dirty = true;
       }
     }
   }
@@ -176,13 +176,13 @@ export function setPointValues(
 export class Selection {
   anchor: PointType;
   focus: PointType;
-  isDirty: boolean;
+  dirty: boolean;
   textFormat: number;
 
   constructor(anchor: PointType, focus: PointType, textFormat: number) {
     this.anchor = anchor;
     this.focus = focus;
-    this.isDirty = false;
+    this.dirty = false;
     this.textFormat = textFormat;
   }
 
@@ -221,7 +221,7 @@ export class Selection {
   ): void {
     setPointValues(this.anchor, anchorNode.__key, anchorOffset, 'text');
     setPointValues(this.focus, focusNode.__key, focusOffset, 'text');
-    this.isDirty = true;
+    this.dirty = true;
   }
   getTextContent(): string {
     const nodes = this.getNodes();
@@ -325,7 +325,7 @@ export class Selection {
   }
   toggleTextFormatType(formatType: TextFormatType): void {
     this.textFormat = toggleTextFormatType(this.textFormat, formatType, null);
-    this.isDirty = true;
+    this.dirty = true;
   }
 }
 
@@ -542,7 +542,7 @@ export function makeSelection(
     createPoint(focusKey, focusOffset, focusType),
     0,
   );
-  selection.isDirty = true;
+  selection.dirty = true;
   viewModel._selection = selection;
   return selection;
 }

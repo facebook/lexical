@@ -285,6 +285,12 @@ export class BlockNode extends OutlineNode {
   excludeFromCopy(): boolean {
     return false;
   }
+  canReplaceWith(replacement: OutlineNode): boolean {
+    return true;
+  }
+  canInsertAfter(node: OutlineNode): boolean {
+    return true;
+  }
 }
 
 export function isBlockNode(node: ?OutlineNode): boolean %checks {

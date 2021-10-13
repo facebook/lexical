@@ -42,5 +42,6 @@
   "40": "createNode: node does not exist in nodeMap",
   "41": "reconcileNode: prevNode or nextNode does not exist in nodeMap",
   "42": "reconcileNode: parentDOM is null",
-  "43": "Reconciliation: could not find DOM element for node key \"${key}\""
+  "43": "Reconciliation: could not find DOM element for node key \"${key}\"",
+  "44": "insertNodes: cannot insert node after, target is null"
 }

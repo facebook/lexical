@@ -6,7 +6,7 @@
  *
  */
 
-import {initializeE2E, assertHTML} from '../utils';
+import {initializeE2E, assertHTML, sleep} from '../utils';
 
 describe('Clear', () => {
   initializeE2E((e2e) => {
@@ -20,8 +20,8 @@ describe('Clear', () => {
         '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">foo</span></p>',
       );
 
+      await sleep(2000);
       await page.click('.action-button.clear');
-      await page.focus('div.editor');
       await page.keyboard.type('bar');
       await assertHTML(
         page,

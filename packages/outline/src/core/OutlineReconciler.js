@@ -612,8 +612,12 @@ function reconcileSelection(
     focusDOMNode === nextFocusNode
   ) {
     const rootElement = editor._rootElement;
+    const activeElement = document.activeElement;
     // If the root element does not have focus, ensure it has focus
-    if (document.activeElement !== rootElement && rootElement !== null) {
+    if (
+      rootElement !== null &&
+      (activeElement === null || !rootElement.contains(activeElement))
+    ) {
       rootElement.focus({preventScroll: true});
     }
     return;

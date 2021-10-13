@@ -11,6 +11,7 @@ export type {
   OutlineEditor,
   EditorConfig,
   EditorThemeClasses,
+  TextMutation,
 } from './OutlineEditor';
 export type {ViewModel, View, ParsedViewModel} from './OutlineView';
 export type {

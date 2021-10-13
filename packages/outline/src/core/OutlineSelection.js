@@ -16,6 +16,7 @@ import type {RootNode} from './OutlineRootNode';
 import {getActiveEditor, ViewModel, isViewReadOnlyMode} from './OutlineView';
 import {getActiveViewModel} from './OutlineView';
 import {getNodeKeyFromDOM} from './OutlineReconciler';
+import {getIsProcesssingMutations} from './OutlineMutations';
 import {
   getNodeByKey,
   getCompositionKey,
@@ -589,13 +590,15 @@ export function createSelection(
   const eventType = getActiveEventType();
   const isSelectionChange = eventType === 'selectionchange';
   const useDOMSelection =
-    isSelectionChange ||
-    eventType === 'beforeinput' ||
-    eventType === 'compositionstart' ||
-    eventType === 'compositionend';
+    !getIsProcesssingMutations() &&
+    (isSelectionChange ||
+      eventType === 'beforeinput' ||
+      eventType === 'compositionstart' ||
+      eventType === 'compositionend' ||
+      eventType === undefined);
   let anchorDOM, focusDOM, anchorOffset, focusOffset;
 
-  if (eventType === undefined || lastSelection === null || useDOMSelection) {
+  if (lastSelection === null || useDOMSelection) {
     const domSelection = window.getSelection();
     if (domSelection === null) {
       return null;

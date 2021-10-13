@@ -807,6 +807,29 @@ export function setCompositionKey(compositionKey: null | NodeKey): void {
   }
 }
 
+export function getNodeFromDOMNode(dom: Node): OutlineNode | null {
+  // $FlowFixMe: internal field
+  const key: NodeKey | undefined = dom.__outlineInternalRef;
+  if (key !== undefined) {
+    return getNodeByKey(key);
+  }
+  return null;
+}
+
+export function getNearestNodeFromDOMNode(
+  startingDOM: Node,
+): OutlineNode | null {
+  let dom = startingDOM;
+  while (dom != null) {
+    const node = getNodeFromDOMNode(dom);
+    if (node !== null) {
+      return node;
+    }
+    dom = dom.parentNode;
+  }
+  return null;
+}
+
 export function getCompositionKey(): null | NodeKey {
   const editor = getActiveEditor();
   return editor._compositionKey;

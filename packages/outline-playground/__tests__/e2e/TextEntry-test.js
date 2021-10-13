@@ -37,6 +37,26 @@ describe('TextEntry', () => {
       });
     });
 
+    it(`Can enter 'Hello Outline' in the editor with execCommand`, async () => {
+      const {page} = e2e;
+
+      const targetText = 'Hello Outline';
+      await page.focus('div.editor');
+      await page.evaluate(() => {
+        document.execCommand('insertText', false, 'Hello Outline');
+      });
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello Outline</span></p>',
+      );
+      await assertSelection(page, {
+        anchorPath: [0, 0, 0],
+        anchorOffset: targetText.length,
+        focusPath: [0, 0, 0],
+        focusOffset: targetText.length,
+      });
+    });
+
     it(`Can type 'Hello Outline' in the editor and replace it with foo`, async () => {
       const {page} = e2e;
 

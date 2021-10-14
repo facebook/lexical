@@ -20,6 +20,7 @@ import {
   pasteFromClipboard,
   E2E_BROWSER,
   IS_LINUX,
+  IS_WINDOWS,
 } from '../utils';
 
 describe('CopyAndPaste', () => {
@@ -433,7 +434,7 @@ describe('CopyAndPaste', () => {
       // Select all and remove content
       await page.keyboard.press('ArrowUp');
       await page.keyboard.press('ArrowUp');
-      if (E2E_BROWSER === 'firefox') {
+      if (!IS_WINDOWS && E2E_BROWSER === 'firefox') {
         await page.keyboard.press('ArrowUp');
       }
       await moveToLineEnd(page);

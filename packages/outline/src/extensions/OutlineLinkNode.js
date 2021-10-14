@@ -40,7 +40,8 @@ export class LinkNode extends TextNode {
   updateDOM<EditorContext>(
     // $FlowFixMe: not sure how to fix this
     prevNode: LinkNode,
-    dom: HTMLElement,
+    // $FlowFixMe: not sure how to fix this
+    dom: HTMLAnchorElement,
     config: EditorConfig<EditorContext>,
   ): boolean {
     // $FlowFixMe: this should always be right
@@ -49,6 +50,10 @@ export class LinkNode extends TextNode {
     if (needsReplace) {
       const replacementText = super.createDOM(config);
       dom.replaceChild(replacementText, text);
+    }
+    const url = this.__url;
+    if (url !== prevNode.__url) {
+      dom.href = url;
     }
     return false;
   }

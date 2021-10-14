@@ -17,6 +17,7 @@ import useSettings from './useSettings';
 import useTestRecorder from './useTestRecorder';
 import useTypingPerfTracker from './useTypingPerfTracker';
 import {DEFAULT_SETTINGS} from './appSettings';
+import OutlineComposerWithPlugins from './OutlineComposerWithPlugins.react';
 
 function RichTextEditor({settings, onSettingsChange}): React$Node {
   const [settingsButton, settingsSwitches] = useSettings(
@@ -91,6 +92,14 @@ function PlainTextEditor({settings, onSettingsChange}): React$Node {
   );
 }
 
+function OutlineComposerWrapper(): React$Node {
+  return (
+    <div className="editor-shell">
+      <OutlineComposerWithPlugins />
+    </div>
+  );
+}
+
 // override default options with query parameters if any
 const urlSearchParams = new URLSearchParams(window.location.search);
 for (const param of Object.keys(DEFAULT_SETTINGS)) {
@@ -149,6 +158,7 @@ function App(): React$Node {
       ) : (
         <PlainTextEditor settings={settings} onSettingsChange={setOption} />
       )}
+      <OutlineComposerWrapper />
     </>
   );
 }

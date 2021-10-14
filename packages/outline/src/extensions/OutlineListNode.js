@@ -46,7 +46,12 @@ export class ListNode extends BlockNode {
     }
     return element;
   }
+
   updateDOM(prevNode: ListNode, dom: HTMLElement): boolean {
+    return false;
+  }
+
+  canBeEmpty(): false {
     return false;
   }
 }

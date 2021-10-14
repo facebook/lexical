@@ -695,7 +695,7 @@ export class OutlineNode {
     }
     return writableReplaceWith;
   }
-  insertAfter(nodeToInsert: OutlineNode): this {
+  insertAfter(nodeToInsert: OutlineNode): OutlineNode {
     errorOnReadOnly();
     const writableSelf = this.getWritable();
     const writableNodeToInsert = nodeToInsert.getWritable();
@@ -723,9 +723,9 @@ export class OutlineNode {
     if (flags & IS_DIRECTIONLESS) {
       updateDirectionIfNeeded(writableNodeToInsert);
     }
-    return writableSelf;
+    return nodeToInsert;
   }
-  insertBefore(nodeToInsert: OutlineNode): this {
+  insertBefore(nodeToInsert: OutlineNode): OutlineNode {
     errorOnReadOnly();
     const writableSelf = this.getWritable();
     const writableNodeToInsert = nodeToInsert.getWritable();
@@ -753,7 +753,7 @@ export class OutlineNode {
     if (flags & IS_DIRECTIONLESS) {
       updateDirectionIfNeeded(writableNodeToInsert);
     }
-    return writableSelf;
+    return nodeToInsert;
   }
   selectPrevious(anchorOffset?: number, focusOffset?: number): Selection {
     errorOnReadOnly();

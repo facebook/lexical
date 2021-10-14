@@ -6,10 +6,10 @@
  *
  */
 
- import {initializeE2E, assertSelection, assertHTML} from '../utils';
+import {initializeE2E, assertSelection, assertHTML} from '../utils';
 
- describe('Composition', () => {
-   initializeE2E((e2e) => {
+describe('Composition', () => {
+  initializeE2E((e2e) => {
     it('Handles Hiragana characters', async () => {
       const {page} = e2e;
 
@@ -30,10 +30,7 @@
 
       await page.keyboard.press('Backspace');
 
-      await assertHTML(
-        page,
-        '<p class="editor-paragraph"><br></p>',
-      );
+      await assertHTML(page, '<p class="editor-paragraph"><br></p>');
       await assertSelection(page, {
         anchorPath: [0],
         anchorOffset: 0,
@@ -120,5 +117,5 @@
         focusOffset: 1,
       });
     });
-   })
-})
+  });
+});

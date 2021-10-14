@@ -912,6 +912,8 @@ export function insertNodes(
 
   siblings.push(...nextSiblings);
 
+  const firstNode = nodes[0];
+
   // Time to insert the nodes!
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
@@ -924,10 +926,10 @@ export function insertNodes(
       // into our target. We only do this for the first node, as we are only
       // interested in merging with the anchor, which is our target.
 
-      if (i === 0) {
+      if (node.is(firstNode)) {
         if (
           isBlockNode(target) &&
-          target.getChildrenSize() === 0 &&
+          target.isEmpty() &&
           target.canReplaceWith(node)
         ) {
           target.replace(node);
@@ -968,6 +970,7 @@ export function insertNodes(
             for (let s = childrenLength - 1; s >= 0; s--) {
               target.insertAfter(children[s]);
             }
+            target = target.getParentOrThrow();
           }
           block.remove();
           if (block.is(node)) {
@@ -979,27 +982,28 @@ export function insertNodes(
         target = topLevelBlock;
       }
     }
-    if (isBlockNode(target) && !isBlockNode(node)) {
-      const firstChild = target.getFirstChild();
-      if (firstChild !== null) {
-        firstChild.insertBefore(node);
-      } else {
-        target.append(node);
-      }
-      target = node;
-    } else {
-      while (isBlockNode(target) && !target.canInsertAfter(node)) {
-        const parent = target.getParent();
-        if (parent === null) {
-          invariant(
-            false,
-            'insertNodes: cannot insert node after, target is null',
-          );
+    if (isBlockNode(target)) {
+      if (!isBlockNode(node)) {
+        const firstChild = target.getFirstChild();
+        if (firstChild !== null) {
+          firstChild.insertBefore(node);
+        } else {
+          target.append(node);
         }
-        target = parent;
+        target = node;
+      } else {
+        if (!node.canBeEmpty() && node.isEmpty()) {
+          continue;
+        }
+        target = target.insertAfter(node);
       }
-      target.insertAfter(node);
-      target = node;
+    } else if (!isBlockNode(node)) {
+      target = target.insertAfter(node);
+    } else {
+      target = node.getParentOrThrow();
+      // Re-try again with the target being the parent
+      i--;
+      continue;
     }
   }
 
@@ -1031,19 +1035,25 @@ export function insertNodes(
       }
     }
     if (siblings.length !== 0) {
-      let prevSibling = lastChild;
-      for (let i = 0; i < siblings.length; i++) {
+      for (let i = siblings.length - 1; i >= 0; i--) {
         const sibling = siblings[i];
-        if (isBlockNode(sibling)) {
+        const prevParent = sibling.getParent();
+
+        if (isBlockNode(target) && !isBlockNode(sibling)) {
           target.append(sibling);
+          target = sibling;
         } else {
-          if (prevSibling === null) {
-            target.append(sibling);
-          } else {
-            prevSibling.insertAfter(sibling);
-          }
+          target.insertAfter(sibling);
         }
-        prevSibling = sibling;
+        // Check if the prev parent is empty, as it might need
+        // removing.
+        if (
+          isBlockNode(prevParent) &&
+          prevParent.isEmpty() &&
+          !prevParent.canBeEmpty()
+        ) {
+          prevParent.remove();
+        }
       }
     }
   } else if (!selectStart) {

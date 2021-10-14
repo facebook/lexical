@@ -243,7 +243,7 @@ export class Selection {
         if (!prevWasBlock) {
           textContent += '\n';
         }
-        if (node.getChildrenSize() === 0) {
+        if (node.isEmpty()) {
           prevWasBlock = false;
         } else {
           prevWasBlock = true;

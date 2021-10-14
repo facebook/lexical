@@ -134,14 +134,14 @@ function handleOutdent(listItemNodes: Array<ListItemNode>): void {
       const lastChild = parentList ? parentList.getLastChild() : undefined;
       if (listItemNode.is(firstChild)) {
         grandparentListItem.insertBefore(listItemNode);
-        if (parentList.getChildrenSize() === 0) {
+        if (parentList.isEmpty()) {
           grandparentListItem.remove();
         }
         // if it's the last child in it's parent list, insert it into the
         // great grandparent list after the grandparent.
       } else if (listItemNode.is(lastChild)) {
         grandparentListItem.insertAfter(listItemNode);
-        if (parentList.getChildrenSize() === 0) {
+        if (parentList.isEmpty()) {
           grandparentListItem.remove();
         }
       } else {

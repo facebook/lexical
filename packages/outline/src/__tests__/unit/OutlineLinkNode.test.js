@@ -95,7 +95,7 @@ describe('OutlineLinkNode tests', () => {
         );
         expect(result).toBe(false);
         expect(domElement.outerHTML).toBe(
-          '<a href="https://example.com/foo" class="my-link-class"><span>bar</span></a>',
+          '<a href="https://example.com/bar" class="my-link-class"><span>bar</span></a>',
         );
       });
     });

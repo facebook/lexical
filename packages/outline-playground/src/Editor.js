@@ -28,7 +28,7 @@ import BlockControls from './BlockControls';
 import CharacterLimit from './CharacterLimit';
 import {Typeahead} from './Typeahead';
 import yellowFlowerImage from './images/image/yellow-flower.jpg';
-import OutlineComposer from 'outline-react/OutlineComposer';
+import OutlineComposer from 'outline-react/OutlineComposer.react';
 
 const editorStyle = {
   outline: 0,

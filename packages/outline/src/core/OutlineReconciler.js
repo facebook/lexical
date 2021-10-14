@@ -27,11 +27,6 @@ import {isTextNode} from './OutlineTextNode';
 import {isLineBreakNode} from './OutlineLineBreakNode';
 import {isRootNode} from './OutlineRootNode';
 
-const SUPPORTS_SCROLL_INTO_VIEW_IF_NEEDED =
-  typeof Element !== 'undefined' &&
-  // $FlowFixMe: scrollIntoViewIfNeeded is available on most browsers
-  typeof Element.prototype.scrollIntoViewIfNeeded === 'function';
-
 let subTreeTextContent = '';
 let editorTextContent = '';
 let activeEditorConfig: EditorConfig<{...}>;
@@ -554,18 +549,12 @@ function scrollIntoViewIfNeeded(node: Node): void {
   // $FlowFixMe: this is valid, as we are checking the nodeType
   const element: Element = node.nodeType === 3 ? node.parentNode : node;
   if (element !== null) {
-    if (SUPPORTS_SCROLL_INTO_VIEW_IF_NEEDED) {
-      // $FlowFixMe: scrollIntoViewIfNeeded is available on most browsers
-      element.scrollIntoViewIfNeeded(false);
-    } else {
-      // Mostly for FF.
-      const rect = element.getBoundingClientRect();
+    const rect = element.getBoundingClientRect();
 
-      if (rect.bottom > window.innerHeight) {
-        element.scrollIntoView(false);
-      } else if (rect.top < 0) {
-        element.scrollIntoView();
-      }
+    if (rect.bottom > window.innerHeight) {
+      element.scrollIntoView(false);
+    } else if (rect.top < 0) {
+      element.scrollIntoView();
     }
   }
 }

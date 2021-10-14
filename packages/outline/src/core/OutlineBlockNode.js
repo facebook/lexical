@@ -291,6 +291,9 @@ export class BlockNode extends OutlineNode {
   canReplaceWith(replacement: OutlineNode): boolean {
     return true;
   }
+  canInsertAfter(node: OutlineNode): boolean {
+    return true;
+  }
   canBeEmpty(): boolean {
     return true;
   }

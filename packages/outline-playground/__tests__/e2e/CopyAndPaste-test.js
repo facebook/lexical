@@ -20,6 +20,7 @@ import {
   pasteFromClipboard,
   E2E_BROWSER,
   IS_LINUX,
+  IS_WINDOWS,
 } from '../utils';
 
 describe('CopyAndPaste', () => {
@@ -301,7 +302,7 @@ describe('CopyAndPaste', () => {
       });
     });
 
-    it('Copy and paste of partial list items', async () => {
+    it('Copy and paste of partial list items into an empty editor', async () => {
       const {isRichText, page} = e2e;
 
       if (!isRichText) {
@@ -371,6 +372,91 @@ describe('CopyAndPaste', () => {
       await assertHTML(
         page,
         '<ul class="editor-list-ul" dir="ltr"><li class="editor-listitem"><span data-outline-text="true">ee</span></li></ul><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Some text.</span></p>',
+      );
+      await assertSelection(page, {
+        anchorPath: [1, 0, 0],
+        anchorOffset: 10,
+        focusPath: [1, 0, 0],
+        focusOffset: 10,
+      });
+    });
+
+    it('Copy and paste of partial list items into the list', async () => {
+      const {isRichText, page} = e2e;
+
+      if (!isRichText) {
+        return;
+      }
+
+      await page.focus('div.editor');
+
+      // Add three list items
+      await page.keyboard.type('- One');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('Two');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('Three');
+
+      await page.keyboard.press('Enter');
+      await page.keyboard.press('Enter');
+
+      // Add a paragraph
+      await page.keyboard.type('Some text.');
+
+      await assertHTML(
+        page,
+        '<ul class="editor-list-ul" dir="ltr"><li class="editor-listitem"><span data-outline-text="true">One</span></li><li class="editor-listitem"><span data-outline-text="true">Two</span></li><li class="editor-listitem"><span data-outline-text="true">Three</span></li></ul><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Some text.</span></p>',
+      );
+      await assertSelection(page, {
+        anchorPath: [1, 0, 0],
+        anchorOffset: 10,
+        focusPath: [1, 0, 0],
+        focusOffset: 10,
+      });
+
+      await page.keyboard.down('Shift');
+      await moveToLineBeginning(page);
+      await page.keyboard.press('ArrowLeft');
+      await page.keyboard.press('ArrowLeft');
+      await page.keyboard.press('ArrowLeft');
+      await page.keyboard.up('Shift');
+
+      await assertSelection(page, {
+        anchorPath: [1, 0, 0],
+        anchorOffset: 10,
+        focusPath: [0, 2, 0, 0],
+        focusOffset: 3,
+      });
+
+      // Copy the partial list item and paragraph
+      const clipboard = await copyToClipboard(page);
+
+      // Select all and remove content
+      await page.keyboard.press('ArrowUp');
+      await page.keyboard.press('ArrowUp');
+      if (!IS_WINDOWS && E2E_BROWSER === 'firefox') {
+        await page.keyboard.press('ArrowUp');
+      }
+      await moveToLineEnd(page);
+
+      await page.keyboard.down('Enter');
+
+      await assertHTML(
+        page,
+        '<ul class="editor-list-ul" dir="ltr"><li class="editor-listitem"><span data-outline-text="true">One</span></li><li class="editor-listitem"><br></li><li class="editor-listitem"><span data-outline-text="true">Two</span></li><li class="editor-listitem"><span data-outline-text="true">Three</span></li></ul><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Some text.</span></p>',
+      );
+      await assertSelection(page, {
+        anchorPath: [0, 1],
+        anchorOffset: 0,
+        focusPath: [0, 1],
+        focusOffset: 0,
+      });
+
+      await pasteFromClipboard(page, clipboard);
+
+      await assertHTML(
+        page,
+        '<ul class="editor-list-ul" dir="ltr"><li class="editor-listitem"><span data-outline-text="true">One</span></li><li class="editor-listitem"><span data-outline-text="true">ee</span></li></ul><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Some text.</span></p><ul class="editor-list-ul"><li class="editor-listitem"><span data-outline-text="true">Three</span></li><li class="editor-listitem"><span data-outline-text="true">Two</span></li></ul><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Some text.</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [1, 0, 0],

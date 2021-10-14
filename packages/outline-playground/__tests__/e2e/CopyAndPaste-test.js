@@ -433,6 +433,9 @@ describe('CopyAndPaste', () => {
       // Select all and remove content
       await page.keyboard.press('ArrowUp');
       await page.keyboard.press('ArrowUp');
+      if (E2E_BROWSER === 'firefox') {
+        await page.keyboard.press('ArrowUp');
+      }
       await moveToLineEnd(page);
 
       await page.keyboard.down('Enter');

@@ -122,19 +122,19 @@ describe('OutlineEventHelpers', () => {
         name: 'onPasteForRichText should produce the correct editor state from a pasted HTML h1 element',
         inputs: [pasteHTML(`<meta charset='utf-8'><h1>Hello</h1>`)],
         expectedHTML:
-          '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><br></p><h1 class="editor-heading-h1"><span data-outline-text="true">Hello</span></h1></div>',
+          '<div contenteditable="true" data-outline-editor="true"><h1 class="editor-heading-h1"><span data-outline-text="true">Hello</span></h1></div>',
       },
       {
         name: 'onPasteForRichText should produce the correct editor state from a pasted HTML h2 element',
         inputs: [pasteHTML(`<meta charset='utf-8'><h2>From</h2>`)],
         expectedHTML:
-          '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><br></p><h2 class="editor-heading-h2"><span data-outline-text="true">From</span></h2></div>',
+          '<div contenteditable="true" data-outline-editor="true"><h2 class="editor-heading-h2"><span data-outline-text="true">From</span></h2></div>',
       },
       {
         name: 'onPasteForRichText should produce the correct editor state from a pasted HTML h3 element',
         inputs: [pasteHTML(`<meta charset='utf-8'><h3>The</h3>`)],
         expectedHTML:
-          '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><br></p><h3 class="editor-heading-h3"><span data-outline-text="true">The</span></h3></div>',
+          '<div contenteditable="true" data-outline-editor="true"><h3 class="editor-heading-h3"><span data-outline-text="true">The</span></h3></div>',
       },
       {
         name: 'onPasteForRichText should produce the correct editor state from a pasted HTML ul element',
@@ -144,7 +144,7 @@ describe('OutlineEventHelpers', () => {
           ),
         ],
         expectedHTML:
-          '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><br></p><ul class="editor-list-ul"><li class="editor-listitem"><span data-outline-text="true">Other side</span></li><li class="editor-listitem"><span data-outline-text="true">I must have called</span></li></ul></div>',
+          '<div contenteditable="true" data-outline-editor="true"><ul class="editor-list-ul"><li class="editor-listitem"><span data-outline-text="true">Other side</span></li><li class="editor-listitem"><span data-outline-text="true">I must have called</span></li></ul></div>',
       },
       {
         name: 'onPasteForRichText should produce the correct editor state from pasted HTML ol element',
@@ -154,31 +154,31 @@ describe('OutlineEventHelpers', () => {
           ),
         ],
         expectedHTML:
-          '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><br></p><ol class="editor-list-ol"><li class="editor-listitem"><span data-outline-text="true">To tell you</span></li><li class="editor-listitem"><span data-outline-text="true">I’m sorry</span></li></ol></div>',
+          '<div contenteditable="true" data-outline-editor="true"><ol class="editor-list-ol"><li class="editor-listitem"><span data-outline-text="true">To tell you</span></li><li class="editor-listitem"><span data-outline-text="true">I’m sorry</span></li></ol></div>',
       },
       {
         name: 'onPasteForRichText should produce the correct editor state from pasted DOM Text Node',
         inputs: [pasteHTML(`<meta charset='utf-8'>A thousand times`)],
         expectedHTML:
-          '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><br></p><p class="editor-paragraph"><span data-outline-text="true">A thousand times</span></p></div>',
+          '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span data-outline-text="true">A thousand times</span></p></div>',
       },
       {
         name: 'onPasteForRichText should produce the correct editor state from a pasted HTML b element',
         inputs: [pasteHTML(`<meta charset='utf-8'><b>Bold</b>`)],
         expectedHTML:
-          '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><br></p><p class="editor-paragraph"><strong class="editor-text-bold" data-outline-text="true">Bold</strong></p></div>',
+          '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><strong class="editor-text-bold" data-outline-text="true">Bold</strong></p></div>',
       },
       {
         name: 'onPasteForRichText should produce the correct editor state from a pasted HTML i element',
         inputs: [pasteHTML(`<meta charset='utf-8'><i>Italic</i>`)],
         expectedHTML:
-          '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><br></p><p class="editor-paragraph"><em class="editor-text-italic" data-outline-text="true">Italic</em></p></div>',
+          '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><em class="editor-text-italic" data-outline-text="true">Italic</em></p></div>',
       },
       {
         name: 'onPasteForRichText should produce the correct editor state from a pasted HTML u element',
         inputs: [pasteHTML(`<meta charset='utf-8'><u>Underline</u>`)],
         expectedHTML:
-          '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><br></p><p class="editor-paragraph"><span class="editor-text-underline" data-outline-text="true">Underline</span></p></div>',
+          '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span class="editor-text-underline" data-outline-text="true">Underline</span></p></div>',
       },
     ];
     suite.forEach((testUnit, i) => {

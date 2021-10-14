@@ -1037,21 +1037,29 @@ export function insertNodes(
     if (siblings.length !== 0) {
       for (let i = siblings.length - 1; i >= 0; i--) {
         const sibling = siblings[i];
-        const prevParent = sibling.getParent();
+        const prevParent = sibling.getParentOrThrow();
 
         if (isBlockNode(target) && !isBlockNode(sibling)) {
           target.append(sibling);
           target = sibling;
         } else {
-          target.insertAfter(sibling);
+          if (isBlockNode(sibling) && !sibling.canInsertAfter(target)) {
+            const prevParentClone = prevParent.constructor.clone(prevParent);
+            if (!isBlockNode(prevParentClone)) {
+              invariant(
+                false,
+                'insertNodes: cloned parent clone is not a block',
+              );
+            }
+            prevParentClone.append(sibling);
+            target.insertAfter(prevParentClone);
+          } else {
+            target.insertAfter(sibling);
+          }
         }
         // Check if the prev parent is empty, as it might need
         // removing.
-        if (
-          isBlockNode(prevParent) &&
-          prevParent.isEmpty() &&
-          !prevParent.canBeEmpty()
-        ) {
+        if (prevParent.isEmpty() && !prevParent.canBeEmpty()) {
           prevParent.remove();
         }
       }

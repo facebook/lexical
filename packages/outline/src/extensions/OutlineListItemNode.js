@@ -171,6 +171,10 @@ export class ListItemNode extends BlockNode {
     return true;
   }
 
+  canInsertAfter(node: OutlineNode): boolean {
+    return isListItemNode(node);
+  }
+
   canReplaceWith(replacement: OutlineNode): boolean {
     return isListItemNode(replacement);
   }

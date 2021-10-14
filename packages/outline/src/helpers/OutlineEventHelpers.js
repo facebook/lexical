@@ -482,7 +482,7 @@ export function onClick(event: MouseEvent, editor: OutlineEditor): void {
       anchor.offset === 0 &&
       selection.isCollapsed() &&
       view.getRoot().getChildrenSize() === 1 &&
-      anchor.getNode().getTopParentBlockOrThrow().getChildrenSize() === 0
+      anchor.getNode().getTopParentBlockOrThrow().isEmpty()
     ) {
       const lastSelection = getLastSelection(editor);
       if (lastSelection !== null && selection.is(lastSelection)) {

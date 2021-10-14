@@ -48,6 +48,9 @@ export class BlockNode extends OutlineNode {
     const self = this.getLatest();
     return self.__children.length;
   }
+  isEmpty(): boolean {
+    return this.getChildrenSize() === 0;
+  }
   getAllTextNodes(includeInert?: boolean): Array<TextNode> {
     const textNodes = [];
     const self = this.getLatest();
@@ -288,7 +291,7 @@ export class BlockNode extends OutlineNode {
   canReplaceWith(replacement: OutlineNode): boolean {
     return true;
   }
-  canInsertAfter(node: OutlineNode): boolean {
+  canBeEmpty(): boolean {
     return true;
   }
 }

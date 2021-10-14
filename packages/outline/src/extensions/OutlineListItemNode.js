@@ -19,6 +19,7 @@ import type {ParagraphNode} from 'outline/ParagraphNode';
 import {isBlockNode, BlockNode} from 'outline';
 import {createParagraphNode} from 'outline/ParagraphNode';
 import {createListNode, isListNode} from 'outline/ListNode';
+import invariant from 'shared/invariant';
 
 export class ListItemNode extends BlockNode {
   static clone(node: ListItemNode): ListItemNode {
@@ -81,6 +82,39 @@ export class ListItemNode extends BlockNode {
     return replaceWithNode;
   }
 
+  insertAfter(node: OutlineNode): OutlineNode {
+    if (isListItemNode(node)) {
+      return super.insertAfter(node);
+    }
+    if (isListNode(node)) {
+      // Attempt to merge tables
+      let child = node;
+      const children = node.getChildren();
+      for (let i = children.length - 1; i >= 0; i--) {
+        child = children[i];
+        this.insertAfter(child);
+      }
+      return child;
+    }
+    // Otherwise, split the list
+    const listNode = this.getParentOrThrow();
+    if (!isListNode(listNode)) {
+      invariant(
+        false,
+        'insertAfter: list node is not parent of list item node',
+      );
+    }
+    // Split the lists and insert the node in between them
+    const siblings = this.getNextSiblings();
+    listNode.insertAfter(node);
+    if (siblings.length !== 0) {
+      const newListNode = createListNode(listNode.getTag());
+      siblings.forEach((sibling) => newListNode.append(sibling));
+      node.insertAfter(newListNode);
+    }
+    return node;
+  }
+
   insertNewAfter(): ListItemNode | ParagraphNode {
     const nextSibling = this.getNextSibling();
     const prevSibling = this.getPreviousSibling();
@@ -101,7 +135,7 @@ export class ListItemNode extends BlockNode {
         this.remove();
         list.insertBefore(newBlock);
       }
-      if (list.getChildrenSize() === 0) {
+      if (list.isEmpty()) {
         list.remove();
       }
     } else {
@@ -139,10 +173,6 @@ export class ListItemNode extends BlockNode {
 
   canReplaceWith(replacement: OutlineNode): boolean {
     return isListItemNode(replacement);
-  }
-
-  canInsertAfter(node: OutlineNode): boolean {
-    return isListItemNode(node);
   }
 }
 

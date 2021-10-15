@@ -82,7 +82,7 @@
     "jest": "26.6.0",
     "lint-staged": "^11.1.0",
     "minimist": "^1.2.5",
-    "playwright": "1.16.0-next-alpha-oct-15-2021",
+    "playwright": "1.16.0-next-alpha-trueadm-fork",
     "prettier": "^2.3.2",
     "react-test-renderer": "^17.0.2",
     "rollup": "^2.53.3",

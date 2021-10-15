@@ -542,7 +542,7 @@ export function reconcileViewModel(
   const domSelection: null | Selection = window.getSelection();
   if (
     domSelection !== null &&
-    (!needsUpdate || nextSelection === null || nextSelection.dirty)
+    (needsUpdate || nextSelection === null || nextSelection.dirty)
   ) {
     reconcileSelection(prevSelection, nextSelection, editor, domSelection);
   }

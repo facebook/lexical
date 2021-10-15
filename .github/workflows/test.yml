@@ -68,7 +68,7 @@ jobs:
       - uses: actions/cache@v2
         with:
           path: '**/node_modules'
-          key: ${{ runner.os }}-{{ matrix.browser }}-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
       - run: npm install
       - run: npm run build
       - run: npm run test-e2e-ci:${{ matrix.browser }}
@@ -97,7 +97,7 @@ jobs:
     - uses: actions/cache@v2
       with:
         path: '**/node_modules'
-        key: ${{ runner.os }}-{{ matrix.browser }}-${{ hashFiles('**/package-lock.json') }}
+        key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
     - run: npm install
     - run: npm run build
     - run: npm run test-e2e-ci:${{ matrix.browser }}
@@ -122,7 +122,7 @@ jobs:
     - uses: actions/cache@v2
       with:
         path: '**/node_modules'
-        key: ${{ runner.os }}-{{ matrix.browser }}-${{ hashFiles('**/package-lock.json') }}
+        key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
     - run: npm install
     - run: npm run build
     - run: npm run test-e2e-ci:${{ matrix.browser }}

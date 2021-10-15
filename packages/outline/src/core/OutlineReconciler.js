@@ -18,7 +18,13 @@ import type {Node as ReactNode} from 'react';
 
 import {triggerListeners, ViewModel} from './OutlineView';
 import {isSelectionWithinEditor, getDOMTextNode} from './OutlineUtils';
-import {IS_INERT, IS_RTL, IS_LTR} from './OutlineConstants';
+import {
+  IS_INERT,
+  IS_RTL,
+  IS_LTR,
+  NO_DIRTY_NODES,
+  FULL_RECONCILE,
+} from './OutlineConstants';
 import invariant from 'shared/invariant';
 import {isDecoratorNode} from './OutlineDecoratorNode';
 import {getCompositionKey, setCompositionKey} from './OutlineNode';
@@ -31,8 +37,9 @@ let subTreeTextContent = '';
 let editorTextContent = '';
 let activeEditorConfig: EditorConfig<{...}>;
 let activeEditor: OutlineEditor;
-let activeDirtySubTrees: null | Set<NodeKey>;
-let activeDirtyNodes: null | Set<NodeKey>;
+let treatAllNodesAsDirty: boolean = false;
+let activeDirtySubTrees: Set<NodeKey>;
+let activeDirtyNodes: Set<NodeKey>;
 let activePrevNodeMap: NodeMap;
 let activeNextNodeMap: NodeMap;
 let activeSelection: null | OutlineSelection;
@@ -279,8 +286,7 @@ function reconcileNode(
     );
   }
   const isDirty =
-    activeDirtyNodes === null ||
-    activeDirtySubTrees === null ||
+    treatAllNodesAsDirty ||
     activeDirtyNodes.has(key) ||
     activeDirtySubTrees.has(key);
   const dom = getElementByKeyOrThrow(activeEditor, key);
@@ -470,13 +476,15 @@ function reconcileRoot(
   nextViewModel: ViewModel,
   editor: OutlineEditor,
   selection: null | OutlineSelection,
-  dirtySubTrees: null | Set<NodeKey>,
-  dirtyNodes: null | Set<NodeKey>,
+  dirtyType: 0 | 1 | 2,
+  dirtySubTrees: Set<NodeKey>,
+  dirtyNodes: Set<NodeKey>,
 ): void {
   subTreeTextContent = '';
   editorTextContent = '';
   // Rather than pass around a load of arguments through the stack recursively
   // we instead set them as bindings within the scope of the module.
+  treatAllNodesAsDirty = dirtyType === FULL_RECONCILE;
   activeEditor = editor;
   activeEditorConfig = editor._config;
   activeDirtySubTrees = dirtySubTrees;
@@ -487,6 +495,7 @@ function reconcileRoot(
   activePrevKeyToDOMMap = new Map(editor._keyToDOMMap);
   reconcileNode('root', null);
   editor._textContent = editorTextContent;
+
   // We don't want a bunch of void checks throughout the scope
   // so instead we make it seem that these values are always set.
   // We also want to make sure we clear them down, otherwise we
@@ -515,15 +524,14 @@ export function reconcileViewModel(
   nextViewModel: ViewModel,
   editor: OutlineEditor,
 ): void {
-  const dirtySubTrees = editor._dirtySubTrees;
-  const dirtyNodes = editor._dirtyNodes;
-  // When a view model is historic, we bail out of using dirty checks and
-  // always do a full reconciliation to ensure consistency.
-  const needsUpdate = dirtyNodes === null || dirtyNodes.size > 0;
+  const dirtyType = editor._dirtyType;
+  const needsUpdate = editor._dirtyType !== NO_DIRTY_NODES;
   const prevSelection = prevViewModel._selection;
   const nextSelection = nextViewModel._selection;
 
   if (needsUpdate) {
+    const dirtySubTrees = editor._dirtySubTrees;
+    const dirtyNodes = editor._dirtyNodes;
     triggerListeners('mutation', editor, null);
     try {
       reconcileRoot(
@@ -531,6 +539,7 @@ export function reconcileViewModel(
         nextViewModel,
         editor,
         nextSelection,
+        dirtyType,
         dirtySubTrees,
         dirtyNodes,
       );

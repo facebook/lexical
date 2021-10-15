@@ -30,6 +30,7 @@ import {
   IS_IMMUTABLE,
   IS_INERT,
   IS_SEGMENTED,
+  HAS_DIRTY_NODES,
 } from './OutlineConstants';
 import {getSelection, moveSelectionPointToEnd} from './OutlineSelection';
 
@@ -60,33 +61,14 @@ type ParsedSelection = {
 
 export type NodeMap = Map<NodeKey, OutlineNode>;
 
-function getOrInitDirtyNodes(): Set<NodeKey> {
-  const editor = getActiveEditor();
-  let dirtyNodes = editor._dirtyNodes;
-  if (dirtyNodes === null) {
-    dirtyNodes = new Set();
-    editor._dirtyNodes = dirtyNodes;
-  }
-  return dirtyNodes;
-}
-
-function getOrInitDirtSubtrees(): Set<NodeKey> {
-  const editor = getActiveEditor();
-  let dirtySubTrees = editor._dirtySubTrees;
-  if (dirtySubTrees === null) {
-    dirtySubTrees = new Set();
-    editor._dirtySubTrees = dirtySubTrees;
-  }
-  return dirtySubTrees;
-}
-
 function generateKey(node: OutlineNode): NodeKey {
   errorOnReadOnly();
-  const dirtyNodes = getOrInitDirtyNodes();
+  const editor = getActiveEditor();
   const viewModel = getActiveViewModel();
   const key = generateRandomKey();
   viewModel._nodeMap.set(key, node);
-  dirtyNodes.add(key);
+  editor._dirtyNodes.add(key);
+  editor._dirtyType = HAS_DIRTY_NODES;
   return key;
 }
 
@@ -115,12 +97,14 @@ function internallyMarkNodeAsDirty(node: OutlineNode): void {
   const latest = node.getLatest();
   const parent = latest.__parent;
   const viewModel = getActiveViewModel();
+  const editor = getActiveEditor();
   const nodeMap = viewModel._nodeMap;
   if (parent !== null) {
-    const dirtySubTrees = getOrInitDirtSubtrees();
+    const dirtySubTrees = editor._dirtySubTrees;
     markParentsAsDirty(parent, nodeMap, dirtySubTrees);
   }
-  const dirtyNodes = getOrInitDirtyNodes();
+  const dirtyNodes = editor._dirtyNodes;
+  editor._dirtyType = HAS_DIRTY_NODES;
   dirtyNodes.add(latest.__key);
 }
 
@@ -553,16 +537,17 @@ export class OutlineNode {
   getWritable<N>(): N {
     errorOnReadOnly();
     const viewModel = getActiveViewModel();
-    const dirtyNodes = getOrInitDirtyNodes();
+    const editor = getActiveEditor();
     const nodeMap = viewModel._nodeMap;
     const key = this.__key;
     // Ensure we get the latest node from pending state
     const latestNode = this.getLatest();
     const parent = latestNode.__parent;
     if (parent !== null) {
-      const dirtySubTrees = getOrInitDirtSubtrees();
+      const dirtySubTrees = editor._dirtySubTrees;
       markParentsAsDirty(parent, nodeMap, dirtySubTrees);
     }
+    const dirtyNodes = editor._dirtyNodes;
     if (dirtyNodes.has(key)) {
       return latestNode;
     }

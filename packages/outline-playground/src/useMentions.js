@@ -509,7 +509,7 @@ function createMentionNodeFromSearchResult(
 
     const mentionNode = createMentionNode(entryText);
     nodeToReplace.replace(mentionNode);
-    mentionNode.selectNext(0, 0);
+    mentionNode.select();
   }, 'createMentionNodeFromSearchResult');
 }
 

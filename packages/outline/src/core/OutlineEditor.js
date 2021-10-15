@@ -26,6 +26,7 @@ import {emptyFunction, scheduleMicroTask} from './OutlineUtils';
 import {createRootNode as createRoot} from './OutlineRootNode';
 import {LineBreakNode} from './OutlineLineBreakNode';
 import {RootNode} from './OutlineRootNode';
+import {NO_DIRTY_NODES, FULL_RECONCILE} from './OutlineConstants';
 import invariant from 'shared/invariant';
 
 export type EditorThemeClassName = string;
@@ -129,8 +130,9 @@ export function resetEditor(
   editor._viewModel = createEmptyViewModel();
   editor._pendingViewModel = pendingViewModel;
   editor._compositionKey = null;
-  editor._dirtyNodes = null;
-  editor._dirtySubTrees = null;
+  editor._dirtyType = NO_DIRTY_NODES;
+  editor._dirtyNodes = new Set();
+  editor._dirtySubTrees = new Set();
   editor._textContent = '';
   // Remove all the DOM nodes from the root element
   if (prevRootElement !== null) {
@@ -195,15 +197,15 @@ function updateEditor(
     // Restore existing view model to the DOM
     const currentViewModel = editor._viewModel;
     editor._pendingViewModel = currentViewModel;
-    editor._dirtyNodes = null;
-    editor._dirtySubTrees = null;
+    editor._dirtyType = FULL_RECONCILE;
+    editor._dirtyNodes = new Set();
+    editor._dirtySubTrees = new Set();
     commitPendingUpdates(editor, 'UpdateRecover');
     return false;
   }
-  const dirtyNodes = editor._dirtyNodes;
 
   const shouldUpdate =
-    (dirtyNodes !== null && dirtyNodes.size > 0) ||
+    editor._dirtyType !== NO_DIRTY_NODES ||
     viewModelHasDirtySelection(pendingViewModel, editor);
 
   if (!shouldUpdate) {
@@ -246,8 +248,9 @@ class BaseOutlineEditor {
   _pendingDecorators: null | {[NodeKey]: ReactNode};
   _textContent: string;
   _config: EditorConfig<{...}>;
-  _dirtyNodes: null | Set<NodeKey>;
-  _dirtySubTrees: null | Set<NodeKey>;
+  _dirtyType: 0 | 1 | 2;
+  _dirtyNodes: Set<NodeKey>;
+  _dirtySubTrees: Set<NodeKey>;
 
   constructor(viewModel: ViewModel, config: EditorConfig<{...}>) {
     // The root element associated with this editor
@@ -285,8 +288,9 @@ class BaseOutlineEditor {
     // Editor fast-path for text content
     this._textContent = '';
     // Used to optimize reconcilation
-    this._dirtyNodes = null;
-    this._dirtySubTrees = null;
+    this._dirtyType = NO_DIRTY_NODES;
+    this._dirtyNodes = new Set();
+    this._dirtySubTrees = new Set();
   }
   isComposing(): boolean {
     return this._compositionKey != null;
@@ -365,6 +369,7 @@ class BaseOutlineEditor {
       );
       if (nextRootElement !== null) {
         nextRootElement.setAttribute('data-outline-editor', 'true');
+        this._dirtyType = FULL_RECONCILE;
         commitPendingUpdates(getSelf(this), 'setRootElement');
       }
       triggerListeners('root', getSelf(this), nextRootElement, prevRootElement);
@@ -387,6 +392,7 @@ class BaseOutlineEditor {
       commitPendingUpdates(getSelf(this), 'setViewModel #1');
     }
     this._pendingViewModel = viewModel;
+    this._dirtyType = FULL_RECONCILE;
     commitPendingUpdates(getSelf(this), 'setViewModel #2');
   }
   parseViewModel(stringifiedViewModel: string): ViewModel {
@@ -475,8 +481,9 @@ declare export class OutlineEditor {
   _pendingDecorators: null | {[NodeKey]: ReactNode};
   _textContent: string;
   _config: EditorConfig<{...}>;
-  _dirtyNodes: null | Set<NodeKey>;
-  _dirtySubTrees: null | Set<NodeKey>;
+  _dirtyType: 0 | 1 | 2;
+  _dirtyNodes: Set<NodeKey>;
+  _dirtySubTrees: Set<NodeKey>;
 
   isComposing(): boolean;
   registerNodeType(nodeType: string, klass: Class<OutlineNode>): void;

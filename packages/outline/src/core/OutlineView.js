@@ -29,8 +29,9 @@ import {
   getCompositionKey,
 } from './OutlineNode';
 import {isBlockNode, isTextNode, isLineBreakNode} from '.';
-import invariant from 'shared/invariant';
+import {FULL_RECONCILE, NO_DIRTY_NODES} from './OutlineConstants';
 import {resetEditor} from './OutlineEditor';
+import invariant from 'shared/invariant';
 
 export type View = {
   clearSelection(): void,
@@ -204,8 +205,8 @@ export function preparePendingViewUpdate(
       }
     }
     applySelectionTransforms(pendingViewModel, editor);
-    const dirtyNodes = editor._dirtyNodes;
-    if (dirtyNodes !== null && dirtyNodes.size > 0) {
+    if (editor._dirtyType !== NO_DIRTY_NODES) {
+      const dirtyNodes = editor._dirtyNodes;
       if (pendingViewModel.isEmpty()) {
         invariant(
           false,
@@ -412,6 +413,7 @@ export function commitPendingUpdates(
     // Reset editor and restore incoming view model to the DOM
     if (!isAttemptingToRecoverFromReconcilerError) {
       resetEditor(editor, null, rootElement, pendingViewModel);
+      editor._dirtyType = FULL_RECONCILE;
       isAttemptingToRecoverFromReconcilerError = true;
       commitPendingUpdates(editor, 'ReconcileRecover');
       isAttemptingToRecoverFromReconcilerError = false;
@@ -423,8 +425,11 @@ export function commitPendingUpdates(
     activeEditor = previousActiveEditor;
   }
   const dirtyNodes = editor._dirtyNodes;
-  editor._dirtyNodes = null;
-  editor._dirtySubTrees = null;
+  if (editor._dirtyType !== NO_DIRTY_NODES) {
+    editor._dirtyType = NO_DIRTY_NODES;
+    editor._dirtyNodes = new Set();
+    editor._dirtySubTrees = new Set();
+  }
   garbageCollectDetachedDecorators(editor, pendingViewModel);
   const pendingDecorators = editor._pendingDecorators;
   if (pendingDecorators !== null) {

@@ -66,23 +66,41 @@ describe('CopyAndPaste', () => {
           page,
           '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Copy + pasting?</span></p><p class="editor-paragraph" dir="ltr"><br></p><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Sounds good!</span></p>',
         );
-        await assertSelection(page, {
-          anchorPath: [0, 0, 0],
-          anchorOffset: 0,
-          focusPath: [2, 0, 0],
-          focusOffset: 12,
-        });
+        if (E2E_BROWSER === 'firefox') {
+          await assertSelection(page, {
+            anchorPath: [],
+            anchorOffset: 0,
+            focusPath: [],
+            focusOffset: 3,
+          });
+        } else {
+          await assertSelection(page, {
+            anchorPath: [0, 0, 0],
+            anchorOffset: 0,
+            focusPath: [2, 0, 0],
+            focusOffset: 12,
+          });
+        }
       } else {
         await assertHTML(
           page,
           '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Copy + pasting?</span><br><br><span data-outline-text="true">Sounds good!</span></p>',
         );
-        await assertSelection(page, {
-          anchorPath: [0, 0, 0],
-          anchorOffset: 0,
-          focusPath: [0, 3, 0],
-          focusOffset: 12,
-        });
+        if (E2E_BROWSER === 'firefox') {
+          await assertSelection(page, {
+            anchorPath: [],
+            anchorOffset: 0,
+            focusPath: [],
+            focusOffset: 1,
+          });
+        } else {
+          await assertSelection(page, {
+            anchorPath: [0, 0, 0],
+            anchorOffset: 0,
+            focusPath: [0, 3, 0],
+            focusOffset: 12,
+          });
+        }
       }
 
       // Copy all the text
@@ -165,19 +183,37 @@ describe('CopyAndPaste', () => {
       await selectAll(page);
 
       if (isRichText) {
-        await assertSelection(page, {
-          anchorPath: [0, 0, 0],
-          anchorOffset: 0,
-          focusPath: [1, 5, 0],
-          focusOffset: 4,
-        });
+        if (E2E_BROWSER === 'firefox') {
+          await assertSelection(page, {
+            anchorPath: [],
+            anchorOffset: 0,
+            focusPath: [],
+            focusOffset: 2,
+          });
+        } else {
+          await assertSelection(page, {
+            anchorPath: [0, 0, 0],
+            anchorOffset: 0,
+            focusPath: [1, 5, 0],
+            focusOffset: 4,
+          });
+        }
       } else {
-        await assertSelection(page, {
-          anchorPath: [0, 0, 0],
-          anchorOffset: 0,
-          focusPath: [0, 12, 0],
-          focusOffset: 4,
-        });
+        if (E2E_BROWSER === 'firefox') {
+          await assertSelection(page, {
+            anchorPath: [],
+            anchorOffset: 0,
+            focusPath: [],
+            focusOffset: 1,
+          });
+        } else {
+          await assertSelection(page, {
+            anchorPath: [0, 0, 0],
+            anchorOffset: 0,
+            focusPath: [0, 12, 0],
+            focusOffset: 4,
+          });
+        }
       }
 
       // Copy all the text
@@ -270,19 +306,37 @@ describe('CopyAndPaste', () => {
       await selectAll(page);
 
       if (isRichText) {
-        await assertSelection(page, {
-          anchorPath: [0, 0, 0],
-          anchorOffset: 0,
-          focusPath: [1, 6, 0],
-          focusOffset: 3,
-        });
+        if (E2E_BROWSER === 'firefox') {
+          await assertSelection(page, {
+            anchorPath: [],
+            anchorOffset: 0,
+            focusPath: [],
+            focusOffset: 2,
+          });
+        } else {
+          await assertSelection(page, {
+            anchorPath: [0, 0, 0],
+            anchorOffset: 0,
+            focusPath: [1, 6, 0],
+            focusOffset: 3,
+          });
+        }
       } else {
-        await assertSelection(page, {
-          anchorPath: [0, 0, 0],
-          anchorOffset: 0,
-          focusPath: [0, 12, 0],
-          focusOffset: 4,
-        });
+        if (E2E_BROWSER === 'firefox') {
+          await assertSelection(page, {
+            anchorPath: [],
+            anchorOffset: 0,
+            focusPath: [],
+            focusOffset: 1,
+          });
+        } else {
+          await assertSelection(page, {
+            anchorPath: [0, 0, 0],
+            anchorOffset: 0,
+            focusPath: [0, 12, 0],
+            focusOffset: 4,
+          });
+        }
       }
 
       await page.keyboard.press('Delete');

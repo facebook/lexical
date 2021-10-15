@@ -3368,12 +3368,10 @@ var pwExport;
         );
       }
       strictModeViolationError(e, t) {
-        const n = t
-            .slice(0, 10)
-            .map((e) => ({
-              preview: this.previewNode(e),
-              selector: (0, a.generateSelector)(this, e).selector,
-            })),
+        const n = t.slice(0, 10).map((e) => ({
+            preview: this.previewNode(e),
+            selector: (0, a.generateSelector)(this, e).selector,
+          })),
           r = n.map(
             (e, t) =>
               `\n    ${t + 1}) ${e.preview} aka playwright.$("${e.selector}")`,

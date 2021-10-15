@@ -1,6 +1,6 @@
 {
   "name": "playwright-core",
-  "version": "1.16.0-next-alpha-oct-15-2021",
+  "version": "1.16.0-next-alpha-trueadm-fork",
   "description": "A high-level API to automate web browsers",
   "repository": "github:Microsoft/playwright",
   "homepage": "https://playwright.dev",

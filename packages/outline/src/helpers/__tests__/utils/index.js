@@ -643,7 +643,6 @@ export async function applySelectionInputs(inputs, update, editor) {
             const text = createTextNode(input.text);
             text.makeImmutable();
             SelectionHelpers.insertNodes(selection, [text]);
-            text.selectNext();
             break;
           }
           case 'insert_segmented_node': {

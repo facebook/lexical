@@ -33,7 +33,6 @@ import {
   onDragStartPolyfill,
   onMutation,
   onInput,
-  onClick,
 } from 'outline/EventHelpers';
 import useOutlineDragonSupport from './shared/useOutlineDragonSupport';
 import useOutlineHistory from './shared/useOutlineHistory';
@@ -93,7 +92,6 @@ const events: InputEvents = [
   ['dragstart', onDragStartPolyfill],
   ['paste', onPasteForPlainText],
   ['input', onInput],
-  ['click', onClick],
 ];
 
 if (CAN_USE_BEFORE_INPUT) {

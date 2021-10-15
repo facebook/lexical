@@ -9,8 +9,6 @@
 
 import type {OutlineEditor} from 'outline';
 
-import type {TextEncoder} from 'util';
-
 import {useCharacterLimit} from 'outline-react/useOutlineCharacterLimit';
 import * as React from 'react';
 import {useState, useMemo} from 'react';

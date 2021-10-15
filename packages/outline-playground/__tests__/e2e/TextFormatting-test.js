@@ -13,6 +13,7 @@ import {
   keyDownCtrlOrMeta,
   keyUpCtrlOrMeta,
   repeat,
+  E2E_BROWSER,
 } from '../utils';
 
 describe('TextFormatting', () => {
@@ -502,12 +503,22 @@ describe('TextFormatting', () => {
         page,
         '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello </span><em class="editor-text-italic" data-outline-text="true">world</em><span data-outline-text="true">!</span></p>',
       );
-      await assertSelection(page, {
-        anchorPath: [0, 1, 0],
-        anchorOffset: 0,
-        focusPath: [0, 1, 0],
-        focusOffset: 5,
-      });
+
+      if (E2E_BROWSER === 'webkit') {
+        await assertSelection(page, {
+          anchorPath: [0, 1, 0],
+          anchorOffset: 0,
+          focusPath: [0, 1, 0],
+          focusOffset: 5,
+        });
+      } else {
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 6,
+          focusPath: [0, 1, 0],
+          focusOffset: 5,
+        });
+      }
 
       await keyDownCtrlOrMeta(page);
       await page.keyboard.press('i');

@@ -473,12 +473,10 @@ class FFBrowserContext extends _browserContext.BrowserContext {
   }
 
   async addCookies(cookies) {
-    const cc = network
-      .rewriteCookies(cookies)
-      .map((c) => ({
-        ...c,
-        expires: c.expires && c.expires !== -1 ? c.expires : undefined,
-      }));
+    const cc = network.rewriteCookies(cookies).map((c) => ({
+      ...c,
+      expires: c.expires && c.expires !== -1 ? c.expires : undefined,
+    }));
     await this._browser._connection.send('Browser.setCookies', {
       browserContextId: this._browserContextId,
       cookies: cc,

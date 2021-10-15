@@ -424,13 +424,11 @@ class WKBrowserContext extends _browserContext.BrowserContext {
   }
 
   async addCookies(cookies) {
-    const cc = network
-      .rewriteCookies(cookies)
-      .map((c) => ({
-        ...c,
-        session: c.expires === -1 || c.expires === undefined,
-        expires: c.expires && c.expires !== -1 ? c.expires * 1000 : c.expires,
-      }));
+    const cc = network.rewriteCookies(cookies).map((c) => ({
+      ...c,
+      session: c.expires === -1 || c.expires === undefined,
+      expires: c.expires && c.expires !== -1 ? c.expires * 1000 : c.expires,
+    }));
     await this._browser._browserSession.send('Playwright.setCookies', {
       cookies: cc,
       browserContextId: this._browserContextId,

@@ -9,6 +9,11 @@
 
 import type {TextFormatType} from './OutlineTextNode';
 
+// Reconciling
+export const NO_DIRTY_NODES = 0;
+export const HAS_DIRTY_NODES = 1;
+export const FULL_RECONCILE = 2;
+
 // Nodes
 export const IS_IMMUTABLE = 1;
 export const IS_SEGMENTED = 1 << 1;

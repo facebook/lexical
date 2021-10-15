@@ -6,7 +6,13 @@
  *
  */
 
-import {initializeE2E, assertHTML, assertSelection, repeat} from '../utils';
+import {
+  initializeE2E,
+  assertHTML,
+  assertSelection,
+  repeat,
+  E2E_BROWSER,
+} from '../utils';
 
 describe('Keywords', () => {
   initializeE2E((e2e) => {
@@ -73,12 +79,21 @@ describe('Keywords', () => {
       await repeat(8, async () => {
         await page.keyboard.press('ArrowLeft');
       });
-      await assertSelection(page, {
-        anchorPath: [0, 1, 0],
-        anchorOffset: 1,
-        focusPath: [0, 1, 0],
-        focusOffset: 1,
-      });
+      if (E2E_BROWSER === 'firefox') {
+        await assertSelection(page, {
+          anchorPath: [0, 2, 0],
+          anchorOffset: 0,
+          focusPath: [0, 2, 0],
+          focusOffset: 0,
+        });
+      } else {
+        await assertSelection(page, {
+          anchorPath: [0, 1, 0],
+          anchorOffset: 1,
+          focusPath: [0, 1, 0],
+          focusOffset: 1,
+        });
+      }
 
       await page.keyboard.press('Backspace');
 

@@ -6,7 +6,13 @@
  *
  */
 
-import {initializeE2E, assertHTML, assertSelection, repeat} from '../utils';
+import {
+  initializeE2E,
+  assertHTML,
+  assertSelection,
+  repeat,
+  E2E_BROWSER,
+} from '../utils';
 import {moveToLineBeginning, moveToLineEnd} from '../keyboardShortcuts';
 
 describe('Emoticons', () => {
@@ -41,12 +47,21 @@ describe('Emoticons', () => {
 
       await page.keyboard.type(':)');
       await page.keyboard.press('ArrowLeft');
-      await assertSelection(page, {
-        anchorPath: [0, 0, 0],
-        anchorOffset: 17,
-        focusPath: [0, 0, 0],
-        focusOffset: 17,
-      });
+      if (E2E_BROWSER === 'firefox') {
+        await assertSelection(page, {
+          anchorPath: [0, 1, 0],
+          anchorOffset: 0,
+          focusPath: [0, 1, 0],
+          focusOffset: 0,
+        });
+      } else {
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 17,
+          focusPath: [0, 0, 0],
+          focusOffset: 17,
+        });
+      }
 
       await page.keyboard.press('ArrowRight');
       await assertSelection(page, {
@@ -178,36 +193,72 @@ describe('Emoticons', () => {
 
       await page.keyboard.type(':):):):):)');
       await page.keyboard.press('ArrowLeft');
-      await assertSelection(page, {
-        anchorPath: [0, 3, 0],
-        anchorOffset: 2,
-        focusPath: [0, 3, 0],
-        focusOffset: 2,
-      });
+      if (E2E_BROWSER === 'firefox') {
+        await assertSelection(page, {
+          anchorPath: [0, 4, 0],
+          anchorOffset: 0,
+          focusPath: [0, 4, 0],
+          focusOffset: 0,
+        });
+      } else {
+        await assertSelection(page, {
+          anchorPath: [0, 3, 0],
+          anchorOffset: 2,
+          focusPath: [0, 3, 0],
+          focusOffset: 2,
+        });
+      }
 
       await page.keyboard.press('ArrowLeft');
-      await assertSelection(page, {
-        anchorPath: [0, 2, 0],
-        anchorOffset: 2,
-        focusPath: [0, 2, 0],
-        focusOffset: 2,
-      });
+      if (E2E_BROWSER === 'firefox') {
+        await assertSelection(page, {
+          anchorPath: [0, 3, 0],
+          anchorOffset: 0,
+          focusPath: [0, 3, 0],
+          focusOffset: 0,
+        });
+      } else {
+        await assertSelection(page, {
+          anchorPath: [0, 2, 0],
+          anchorOffset: 2,
+          focusPath: [0, 2, 0],
+          focusOffset: 2,
+        });
+      }
 
       await page.keyboard.press('ArrowLeft');
-      await assertSelection(page, {
-        anchorPath: [0, 1, 0],
-        anchorOffset: 2,
-        focusPath: [0, 1, 0],
-        focusOffset: 2,
-      });
+      if (E2E_BROWSER === 'firefox') {
+        await assertSelection(page, {
+          anchorPath: [0, 2, 0],
+          anchorOffset: 0,
+          focusPath: [0, 2, 0],
+          focusOffset: 0,
+        });
+      } else {
+        await assertSelection(page, {
+          anchorPath: [0, 1, 0],
+          anchorOffset: 2,
+          focusPath: [0, 1, 0],
+          focusOffset: 2,
+        });
+      }
 
       await page.keyboard.press('ArrowLeft');
-      await assertSelection(page, {
-        anchorPath: [0, 0, 0],
-        anchorOffset: 2,
-        focusPath: [0, 0, 0],
-        focusOffset: 2,
-      });
+      if (E2E_BROWSER === 'firefox') {
+        await assertSelection(page, {
+          anchorPath: [0, 1, 0],
+          anchorOffset: 0,
+          focusPath: [0, 1, 0],
+          focusOffset: 0,
+        });
+      } else {
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 2,
+          focusPath: [0, 0, 0],
+          focusOffset: 2,
+        });
+      }
 
       await page.keyboard.press('ArrowLeft');
       await assertSelection(page, {

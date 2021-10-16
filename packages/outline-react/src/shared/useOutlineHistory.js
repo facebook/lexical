@@ -129,7 +129,7 @@ export default function useOutlineHistory(editor: OutlineEditor): () => void {
 
     const applyChange = (
       viewModel: ViewModel,
-      isViewDirty: boolean,
+      dirty: boolean,
       dirtyNodes: Set<NodeKey>,
     ) => {
       const current = historyState.current;
@@ -139,7 +139,7 @@ export default function useOutlineHistory(editor: OutlineEditor): () => void {
       if (viewModel === current) {
         return;
       }
-      if (isViewDirty) {
+      if (dirty) {
         const mergeAction = getMergeAction(current, viewModel, dirtyNodes);
         if (mergeAction === NO_MERGE) {
           if (redoStack.length !== 0) {

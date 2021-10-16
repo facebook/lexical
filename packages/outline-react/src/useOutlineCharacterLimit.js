@@ -88,11 +88,11 @@ export function useCharacterLimit(
     let lastTextLength = null;
     return editor.addListener(
       'update',
-      (viewModel: ViewModel, isDirty: boolean, dirtyNodes: Set<NodeKey>) => {
+      (viewModel: ViewModel, dirty: boolean, dirtyNodes: Set<NodeKey>) => {
         const isComposing = editor.isComposing();
         const text = editor.getCurrentTextContent();
         const utf16TextLength = text.length;
-        const hasDirtyNodes = isDirty && dirtyNodes.size > 0;
+        const hasDirtyNodes = dirty && dirtyNodes.size > 0;
         if (
           isComposing ||
           (utf16TextLength === lastUtf16TextLength && !hasDirtyNodes)

@@ -79,7 +79,7 @@ export type TextNodeTransform = (node: TextNode, view: View) => void;
 export type ErrorListener = (error: Error, updateName: string) => void;
 export type UpdateListener = (
   viewModel: ViewModel,
-  isViewDirty: boolean,
+  dirty: boolean,
   dirtyNodes: Set<NodeKey>,
 ) => void;
 export type DecoratorListener = (decorator: {[NodeKey]: ReactNode}) => void;

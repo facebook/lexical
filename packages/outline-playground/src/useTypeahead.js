@@ -141,8 +141,8 @@ export default function useTypeahead(editor: OutlineEditor): void {
   useEffect(() => {
     return editor.addListener(
       'update',
-      (viewModel: ViewModel, isViewDirty: boolean) => {
-        if (isViewDirty) {
+      (viewModel: ViewModel, dirty: boolean) => {
+        if (dirty) {
           viewModel.read((view) => {
             const typeaheadNode = view
               .getRoot()

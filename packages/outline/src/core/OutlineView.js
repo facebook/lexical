@@ -15,7 +15,7 @@ import type {Selection} from './OutlineSelection';
 import type {ParsedNodeMap} from './OutlineNode';
 import type {ListenerType} from './OutlineEditor';
 
-import {cloneDecorators, reconcileViewModel} from './OutlineReconciler';
+import {cloneDecorators, updateViewModel} from './OutlineReconciler';
 import {
   createSelection,
   getSelection,
@@ -394,16 +394,28 @@ export function commitPendingUpdates(
   }
   const currentViewModel = editor._viewModel;
   const currentSelection = currentViewModel._selection;
+  const pendingSelection = pendingViewModel._selection;
+  const needsUpdate = editor._dirtyType !== NO_DIRTY_NODES;
   editor._pendingViewModel = null;
   editor._viewModel = pendingViewModel;
+
   const previousActiveViewModel = activeViewModel;
   const previousReadOnlyMode = isReadOnlyMode;
   const previousActiveEditor = activeEditor;
   activeEditor = editor;
   activeViewModel = pendingViewModel;
   isReadOnlyMode = false;
+
   try {
-    reconcileViewModel(rootElement, currentViewModel, pendingViewModel, editor);
+    updateViewModel(
+      rootElement,
+      currentViewModel,
+      pendingViewModel,
+      currentSelection,
+      pendingSelection,
+      needsUpdate,
+      editor,
+    );
   } catch (error) {
     // Report errors
     triggerListeners('error', editor, error, updateName);
@@ -422,11 +434,8 @@ export function commitPendingUpdates(
     activeEditor = previousActiveEditor;
   }
   const dirtyNodes = editor._dirtyNodes;
-  const dirtyState = editor._dirtyType;
-  const isDirty = dirtyState !== NO_DIRTY_NODES;
-  const pendingSelection = pendingViewModel._selection;
 
-  if (isDirty) {
+  if (needsUpdate) {
     editor._dirtyType = NO_DIRTY_NODES;
     editor._dirtyNodes = new Set();
     editor._dirtySubTrees = new Set();
@@ -438,12 +447,18 @@ export function commitPendingUpdates(
     editor._pendingDecorators = null;
     triggerListeners('decorator', editor, pendingDecorators);
   }
-  const isViewDirty =
-    isDirty ||
+  const isViewModelDirty =
+    needsUpdate ||
     pendingSelection === null ||
     pendingSelection.dirty ||
     !pendingSelection.is(currentSelection);
-  triggerListeners('update', editor, pendingViewModel, isViewDirty, dirtyNodes);
+  triggerListeners(
+    'update',
+    editor,
+    pendingViewModel,
+    isViewModelDirty,
+    dirtyNodes,
+  );
   const deferred = editor._deferred;
   editor._deferred = [];
   if (deferred.length !== 0) {

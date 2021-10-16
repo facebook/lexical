@@ -350,8 +350,8 @@ function garbageCollectDetachedDeepChildNodes(
   for (let i = 0; i < childrenLength; i++) {
     const childKey = children[i];
     const child = nodeMap.get(childKey);
-    if (child !== undefined) {
-      if (isBlockNode(child) && child.__parent === parentKey) {
+    if (child !== undefined && child.__parent === parentKey) {
+      if (isBlockNode(child)) {
         garbageCollectDetachedDeepChildNodes(child, childKey, nodeMap);
       }
       child.__parent = null;

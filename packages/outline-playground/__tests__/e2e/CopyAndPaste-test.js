@@ -451,6 +451,8 @@ describe('CopyAndPaste', () => {
       await page.keyboard.press('Enter');
       await page.keyboard.type('Three');
 
+      // Sometimes mentions gets triggered
+      await page.keyboard.press('Escape');
       await page.keyboard.press('Enter');
       await page.keyboard.press('Enter');
 
@@ -539,6 +541,8 @@ describe('CopyAndPaste', () => {
       await page.keyboard.press('Enter');
       await page.keyboard.type('Five');
 
+      // Sometimes mentions gets triggered
+      await page.keyboard.press('Escape');
       await page.keyboard.press('ArrowUp');
       await page.keyboard.press('ArrowUp');
 

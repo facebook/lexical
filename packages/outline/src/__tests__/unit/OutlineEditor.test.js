@@ -209,7 +209,8 @@ describe('OutlineEditor tests', () => {
 
     expect(listener).toHaveBeenCalledTimes(0);
 
-    editor._viewModel = null;
+    // This is an intentional bug, to trigger the recovery
+    editor._viewModel._nodeMap = null;
 
     // Wait for update to complete
     await Promise.resolve().then();

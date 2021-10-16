@@ -366,11 +366,11 @@ describe('CopyAndPaste', () => {
       await page.focus('div.editor');
 
       // Add three list items
-      await page.keyboard.type('- One');
+      await page.keyboard.type('- one');
       await page.keyboard.press('Enter');
-      await page.keyboard.type('Two');
+      await page.keyboard.type('two');
       await page.keyboard.press('Enter');
-      await page.keyboard.type('Three');
+      await page.keyboard.type('three');
 
       await page.keyboard.press('Enter');
       await page.keyboard.press('Enter');
@@ -380,7 +380,7 @@ describe('CopyAndPaste', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul" dir="ltr"><li class="editor-listitem"><span data-outline-text="true">One</span></li><li class="editor-listitem"><span data-outline-text="true">Two</span></li><li class="editor-listitem"><span data-outline-text="true">Three</span></li></ul><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Some text.</span></p>',
+        '<ul class="editor-list-ul" dir="ltr"><li class="editor-listitem"><span data-outline-text="true">one</span></li><li class="editor-listitem"><span data-outline-text="true">two</span></li><li class="editor-listitem"><span data-outline-text="true">three</span></li></ul><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Some text.</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [1, 0, 0],
@@ -445,11 +445,11 @@ describe('CopyAndPaste', () => {
       await page.focus('div.editor');
 
       // Add three list items
-      await page.keyboard.type('- One');
+      await page.keyboard.type('- one');
       await page.keyboard.press('Enter');
-      await page.keyboard.type('Two');
+      await page.keyboard.type('two');
       await page.keyboard.press('Enter');
-      await page.keyboard.type('Three');
+      await page.keyboard.type('three');
 
       await page.keyboard.press('Enter');
       await page.keyboard.press('Enter');
@@ -459,7 +459,7 @@ describe('CopyAndPaste', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul" dir="ltr"><li class="editor-listitem"><span data-outline-text="true">One</span></li><li class="editor-listitem"><span data-outline-text="true">Two</span></li><li class="editor-listitem"><span data-outline-text="true">Three</span></li></ul><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Some text.</span></p>',
+        '<ul class="editor-list-ul" dir="ltr"><li class="editor-listitem"><span data-outline-text="true">one</span></li><li class="editor-listitem"><span data-outline-text="true">two</span></li><li class="editor-listitem"><span data-outline-text="true">three</span></li></ul><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Some text.</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [1, 0, 0],
@@ -497,7 +497,7 @@ describe('CopyAndPaste', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul" dir="ltr"><li class="editor-listitem"><span data-outline-text="true">One</span></li><li class="editor-listitem"><br></li><li class="editor-listitem"><span data-outline-text="true">Two</span></li><li class="editor-listitem"><span data-outline-text="true">Three</span></li></ul><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Some text.</span></p>',
+        '<ul class="editor-list-ul" dir="ltr"><li class="editor-listitem"><span data-outline-text="true">one</span></li><li class="editor-listitem"><br></li><li class="editor-listitem"><span data-outline-text="true">two</span></li><li class="editor-listitem"><span data-outline-text="true">three</span></li></ul><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Some text.</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 1],
@@ -510,7 +510,7 @@ describe('CopyAndPaste', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul" dir="ltr"><li class="editor-listitem"><span data-outline-text="true">One</span></li><li class="editor-listitem"><span data-outline-text="true">ee</span></li></ul><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Some text.</span></p><ul class="editor-list-ul"><li class="editor-listitem"><span data-outline-text="true">Three</span></li><li class="editor-listitem"><span data-outline-text="true">Two</span></li></ul><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Some text.</span></p>',
+        '<ul class="editor-list-ul" dir="ltr"><li class="editor-listitem"><span data-outline-text="true">one</span></li><li class="editor-listitem"><span data-outline-text="true">ee</span></li></ul><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Some text.</span></p><ul class="editor-list-ul"><li class="editor-listitem"><span data-outline-text="true">three</span></li><li class="editor-listitem"><span data-outline-text="true">two</span></li></ul><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Some text.</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [1, 0, 0],
@@ -529,15 +529,15 @@ describe('CopyAndPaste', () => {
 
       await page.focus('div.editor');
 
-      await page.keyboard.type('- One');
+      await page.keyboard.type('- one');
       await page.keyboard.press('Enter');
-      await page.keyboard.type('Two');
+      await page.keyboard.type('two');
       await page.keyboard.press('Enter');
-      await page.keyboard.type('Three');
+      await page.keyboard.type('three');
       await page.keyboard.press('Enter');
-      await page.keyboard.type('Four');
+      await page.keyboard.type('four');
       await page.keyboard.press('Enter');
-      await page.keyboard.type('Five');
+      await page.keyboard.type('five');
 
       await page.keyboard.press('ArrowUp');
       await page.keyboard.press('ArrowUp');
@@ -550,7 +550,7 @@ describe('CopyAndPaste', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul" dir="ltr"><li class="editor-listitem"><span data-outline-text="true">One</span></li><li class="editor-listitem"><span data-outline-text="true">Two</span></li><li class="editor-listitem"><span data-outline-text="true">Three</span></li><li class="editor-listitem"><span data-outline-text="true">Four</span></li><li class="editor-listitem"><span data-outline-text="true">Five</span></li></ul>',
+        '<ul class="editor-list-ul" dir="ltr"><li class="editor-listitem"><span data-outline-text="true">one</span></li><li class="editor-listitem"><span data-outline-text="true">two</span></li><li class="editor-listitem"><span data-outline-text="true">three</span></li><li class="editor-listitem"><span data-outline-text="true">four</span></li><li class="editor-listitem"><span data-outline-text="true">five</span></li></ul>',
       );
       await assertSelection(page, {
         anchorPath: [0, 2, 0, 0],
@@ -565,7 +565,7 @@ describe('CopyAndPaste', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul" dir="ltr"><li class="editor-listitem"><span data-outline-text="true">One</span></li><li class="editor-listitem"><span data-outline-text="true">Two</span></li><li class="editor-listitem"><br></li><li class="editor-listitem"><span data-outline-text="true">Five</span></li></ul>',
+        '<ul class="editor-list-ul" dir="ltr"><li class="editor-listitem"><span data-outline-text="true">one</span></li><li class="editor-listitem"><span data-outline-text="true">two</span></li><li class="editor-listitem"><br></li><li class="editor-listitem"><span data-outline-text="true">five</span></li></ul>',
       );
       await assertSelection(page, {
         anchorPath: [0, 2],
@@ -578,7 +578,7 @@ describe('CopyAndPaste', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul" dir="ltr"><li class="editor-listitem"><span data-outline-text="true">One</span></li><li class="editor-listitem"><span data-outline-text="true">Two</span></li><li class="editor-listitem"><span data-outline-text="true">Three</span></li><li class="editor-listitem"><span data-outline-text="true">Four</span></li><li class="editor-listitem"><span data-outline-text="true">Five</span></li></ul>',
+        '<ul class="editor-list-ul" dir="ltr"><li class="editor-listitem"><span data-outline-text="true">one</span></li><li class="editor-listitem"><span data-outline-text="true">two</span></li><li class="editor-listitem"><span data-outline-text="true">three</span></li><li class="editor-listitem"><span data-outline-text="true">four</span></li><li class="editor-listitem"><span data-outline-text="true">five</span></li></ul>',
       );
       await assertSelection(page, {
         anchorPath: [0, 3, 0, 0],
@@ -597,15 +597,15 @@ describe('CopyAndPaste', () => {
 
       await page.focus('div.editor');
 
-      await page.keyboard.type('- One');
+      await page.keyboard.type('- one');
       await page.keyboard.press('Enter');
-      await page.keyboard.type('Two');
+      await page.keyboard.type('two');
       await page.keyboard.press('Enter');
-      await page.keyboard.type('Three');
+      await page.keyboard.type('three');
       await page.keyboard.press('Enter');
-      await page.keyboard.type('Four');
+      await page.keyboard.type('four');
       await page.keyboard.press('Enter');
-      await page.keyboard.type('Five');
+      await page.keyboard.type('five');
 
       await page.keyboard.press('ArrowUp');
       await page.keyboard.press('ArrowUp');
@@ -618,7 +618,7 @@ describe('CopyAndPaste', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul" dir="ltr"><li class="editor-listitem"><span data-outline-text="true">One</span></li><li class="editor-listitem"><span data-outline-text="true">Two</span></li><li class="editor-listitem"><span data-outline-text="true">Three</span></li><li class="editor-listitem"><span data-outline-text="true">Four</span></li><li class="editor-listitem"><span data-outline-text="true">Five</span></li></ul>',
+        '<ul class="editor-list-ul" dir="ltr"><li class="editor-listitem"><span data-outline-text="true">one</span></li><li class="editor-listitem"><span data-outline-text="true">two</span></li><li class="editor-listitem"><span data-outline-text="true">three</span></li><li class="editor-listitem"><span data-outline-text="true">four</span></li><li class="editor-listitem"><span data-outline-text="true">five</span></li></ul>',
       );
       await assertSelection(page, {
         anchorPath: [0, 2, 0, 0],
@@ -633,7 +633,7 @@ describe('CopyAndPaste', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul" dir="ltr"><li class="editor-listitem"><span data-outline-text="true">One</span></li><li class="editor-listitem"><span data-outline-text="true">Two</span></li><li class="editor-listitem"><span data-outline-text="true">Three</span></li><li class="editor-listitem"><span data-outline-text="true">Four</span></li><li class="editor-listitem"><span data-outline-text="true">Five</span></li></ul>',
+        '<ul class="editor-list-ul" dir="ltr"><li class="editor-listitem"><span data-outline-text="true">one</span></li><li class="editor-listitem"><span data-outline-text="true">two</span></li><li class="editor-listitem"><span data-outline-text="true">three</span></li><li class="editor-listitem"><span data-outline-text="true">four</span></li><li class="editor-listitem"><span data-outline-text="true">five</span></li></ul>',
       );
       await assertSelection(page, {
         anchorPath: [0, 3, 0, 0],
@@ -646,7 +646,7 @@ describe('CopyAndPaste', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul" dir="ltr"><li class="editor-listitem"><span data-outline-text="true">One</span></li><li class="editor-listitem"><span data-outline-text="true">Two</span></li><li class="editor-listitem"><span data-outline-text="true">Three</span></li><li class="editor-listitem"><span data-outline-text="true">FourThree</span></li><li class="editor-listitem"><span data-outline-text="true">Four</span></li><li class="editor-listitem"><span data-outline-text="true">Five</span></li></ul>',
+        '<ul class="editor-list-ul" dir="ltr"><li class="editor-listitem"><span data-outline-text="true">one</span></li><li class="editor-listitem"><span data-outline-text="true">two</span></li><li class="editor-listitem"><span data-outline-text="true">three</span></li><li class="editor-listitem"><span data-outline-text="true">fourthree</span></li><li class="editor-listitem"><span data-outline-text="true">four</span></li><li class="editor-listitem"><span data-outline-text="true">five</span></li></ul>',
       );
       await assertSelection(page, {
         anchorPath: [0, 4, 0, 0],
@@ -675,15 +675,15 @@ describe('CopyAndPaste', () => {
 
       await page.keyboard.press('Backspace');
 
-      await page.keyboard.type('- One');
+      await page.keyboard.type('- one');
       await page.keyboard.press('Enter');
-      await page.keyboard.type('Two');
+      await page.keyboard.type('two');
       await page.keyboard.press('Enter');
-      await page.keyboard.type('Three');
+      await page.keyboard.type('three');
       await page.keyboard.press('Enter');
-      await page.keyboard.type('Four');
+      await page.keyboard.type('four');
       await page.keyboard.press('Enter');
-      await page.keyboard.type('Five');
+      await page.keyboard.type('five');
 
       await page.keyboard.press('ArrowUp');
       await page.keyboard.press('ArrowUp');
@@ -696,7 +696,7 @@ describe('CopyAndPaste', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul" dir="ltr"><li class="editor-listitem"><span data-outline-text="true">One</span></li><li class="editor-listitem"><span data-outline-text="true">Two</span></li><li class="editor-listitem"><span data-outline-text="true">Three</span></li><li class="editor-listitem"><span data-outline-text="true">Four</span></li><li class="editor-listitem"><span data-outline-text="true">Five</span></li></ul>',
+        '<ul class="editor-list-ul" dir="ltr"><li class="editor-listitem"><span data-outline-text="true">one</span></li><li class="editor-listitem"><span data-outline-text="true">two</span></li><li class="editor-listitem"><span data-outline-text="true">three</span></li><li class="editor-listitem"><span data-outline-text="true">four</span></li><li class="editor-listitem"><span data-outline-text="true">five</span></li></ul>',
       );
       await assertSelection(page, {
         anchorPath: [0, 3, 0, 0],
@@ -709,7 +709,7 @@ describe('CopyAndPaste', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul" dir="ltr"><li class="editor-listitem"><span data-outline-text="true">One</span></li><li class="editor-listitem"><span data-outline-text="true">Two</span></li><li class="editor-listitem"><span data-outline-text="true">Three</span></li><li class="editor-listitem"><span data-outline-text="true">FoHello</span></li></ul><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Worldur</span></p><ul class="editor-list-ul"><li class="editor-listitem"><span data-outline-text="true">Five</span></li></ul>',
+        '<ul class="editor-list-ul" dir="ltr"><li class="editor-listitem"><span data-outline-text="true">one</span></li><li class="editor-listitem"><span data-outline-text="true">two</span></li><li class="editor-listitem"><span data-outline-text="true">three</span></li><li class="editor-listitem"><span data-outline-text="true">foHello</span></li></ul><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Worldur</span></p><ul class="editor-list-ul"><li class="editor-listitem"><span data-outline-text="true">five</span></li></ul>',
       );
       await assertSelection(page, {
         anchorPath: [1, 0, 0],
@@ -738,22 +738,22 @@ describe('CopyAndPaste', () => {
 
       await page.keyboard.press('Backspace');
 
-      await page.keyboard.type('- One');
+      await page.keyboard.type('- one');
       await page.keyboard.press('Enter');
-      await page.keyboard.type('Two');
+      await page.keyboard.type('two');
       await page.keyboard.press('Enter');
-      await page.keyboard.type('Three');
+      await page.keyboard.type('three');
       await page.keyboard.press('Enter');
-      await page.keyboard.type('Four');
+      await page.keyboard.type('four');
       await page.keyboard.press('Enter');
-      await page.keyboard.type('Five');
+      await page.keyboard.type('five');
       await page.keyboard.press('Enter');
 
       await pasteFromClipboard(page, clipboard);
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul" dir="ltr"><li class="editor-listitem"><span data-outline-text="true">One</span></li><li class="editor-listitem"><span data-outline-text="true">Two</span></li><li class="editor-listitem"><span data-outline-text="true">Three</span></li><li class="editor-listitem"><span data-outline-text="true">Four</span></li><li class="editor-listitem"><span data-outline-text="true">Five</span></li><li class="editor-listitem"><span data-outline-text="true">Hello</span></li></ul><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">World</span></p>',
+        '<ul class="editor-list-ul" dir="ltr"><li class="editor-listitem"><span data-outline-text="true">one</span></li><li class="editor-listitem"><span data-outline-text="true">two</span></li><li class="editor-listitem"><span data-outline-text="true">three</span></li><li class="editor-listitem"><span data-outline-text="true">four</span></li><li class="editor-listitem"><span data-outline-text="true">five</span></li><li class="editor-listitem"><span data-outline-text="true">Hello</span></li></ul><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">World</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [1, 0, 0],
@@ -766,7 +766,7 @@ describe('CopyAndPaste', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul" dir="ltr"><li class="editor-listitem"><span data-outline-text="true">One</span></li><li class="editor-listitem"><span data-outline-text="true">Two</span></li><li class="editor-listitem"><span data-outline-text="true">Three</span></li><li class="editor-listitem"><span data-outline-text="true">Four</span></li><li class="editor-listitem"><span data-outline-text="true">Five</span></li><li class="editor-listitem"><span data-outline-text="true">Hello</span></li></ul><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">WorldHello</span></p><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">World</span></p>',
+        '<ul class="editor-list-ul" dir="ltr"><li class="editor-listitem"><span data-outline-text="true">one</span></li><li class="editor-listitem"><span data-outline-text="true">two</span></li><li class="editor-listitem"><span data-outline-text="true">three</span></li><li class="editor-listitem"><span data-outline-text="true">four</span></li><li class="editor-listitem"><span data-outline-text="true">five</span></li><li class="editor-listitem"><span data-outline-text="true">Hello</span></li></ul><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">WorldHello</span></p><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">World</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [2, 0, 0],

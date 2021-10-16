@@ -129,3 +129,23 @@ export async function selectAll(page) {
     await keyUpCtrlOrMeta(page);
   }
 }
+
+export async function undo(page) {
+  await keyDownCtrlOrMeta(page);
+  await page.keyboard.press('z');
+  await keyUpCtrlOrMeta(page);
+}
+
+export async function redo(page) {
+  if (IS_MAC) {
+    await page.keyboard.down('Meta');
+    await page.keyboard.down('Shift');
+    await page.keyboard.press('z');
+    await page.keyboard.up('Shift');
+    await page.keyboard.up('Meta');
+  } else {
+    await page.keyboard.down('Control');
+    await page.keyboard.press('y');
+    await page.keyboard.up('Control');
+  }
+}

@@ -460,8 +460,8 @@ export function onCompositionEnd(
   editor: OutlineEditor,
 ): void {
   editor.update((view) => {
-    updateSelectedTextFromDOM(editor, view);
     view.setCompositionKey(null);
+    updateSelectedTextFromDOM(editor, view, true);
   }, 'onCompositionEnd');
 }
 
@@ -564,19 +564,20 @@ function updateTextNodeFromDOMContent(
   dom: Text,
   view: View,
   editor: OutlineEditor,
+  compositionEnd: boolean,
 ): void {
   let node = getClosestNodeFromDOMNode(view, dom);
-  if (isTextNode(node) && !node.isDirty()) {
+  if (isTextNode(node) && (!node.isDirty() || compositionEnd)) {
     let textContent = dom.nodeValue;
 
     if (
-      node.isComposing() &&
+      (node.isComposing() || compositionEnd) &&
       textContent[textContent.length - 1] === NO_BREAK_SPACE_CHAR
     ) {
       textContent = textContent.slice(0, -1);
     }
 
-    if (textContent !== node.getTextContent()) {
+    if (compositionEnd || textContent !== node.getTextContent()) {
       const originalTextContent = node.getTextContent();
       const selection = view.getSelection();
       const domSelection = window.getSelection();
@@ -987,12 +988,16 @@ export function onBeforeInputForRichText(
   }, 'onBeforeInputForRichText');
 }
 
-function updateSelectedTextFromDOM(editor: OutlineEditor, view: View) {
+function updateSelectedTextFromDOM(
+  editor: OutlineEditor,
+  view: View,
+  compositionEnd: boolean,
+) {
   // Update the text content with the latest composition text
   const domSelection = window.getSelection();
   const anchorDOM = domSelection === null ? null : domSelection.anchorNode;
   if (anchorDOM !== null && anchorDOM.nodeType === 3) {
-    updateTextNodeFromDOMContent(anchorDOM, view, editor);
+    updateTextNodeFromDOMContent(anchorDOM, view, editor, compositionEnd);
   }
 }
 
@@ -1010,7 +1015,7 @@ export function onInput(event: InputEvent, editor: OutlineEditor) {
         return;
       }
     }
-    updateSelectedTextFromDOM(editor, view);
+    updateSelectedTextFromDOM(editor, view, false);
   }, 'onInput');
 }
 

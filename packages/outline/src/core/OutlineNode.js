@@ -224,7 +224,7 @@ export class OutlineNode {
   }
   isAttached(): boolean {
     const parentKey = this.__parent;
-    if (parentKey === null || getNodeByKey(this.__key) === null) {
+    if (parentKey === null) {
       return false;
     }
     const parent = getNodeByKey<BlockNode>(parentKey);
@@ -805,29 +805,6 @@ export function setCompositionKey(compositionKey: null | NodeKey): void {
       node.getWritable();
     }
   }
-}
-
-export function getNodeFromDOMNode(dom: Node): OutlineNode | null {
-  // $FlowFixMe: internal field
-  const key: NodeKey | undefined = dom.__outlineInternalRef;
-  if (key !== undefined) {
-    return getNodeByKey(key);
-  }
-  return null;
-}
-
-export function getNearestNodeFromDOMNode(
-  startingDOM: Node,
-): OutlineNode | null {
-  let dom = startingDOM;
-  while (dom != null) {
-    const node = getNodeFromDOMNode(dom);
-    if (node !== null) {
-      return node;
-    }
-    dom = dom.parentNode;
-  }
-  return null;
 }
 
 export function getCompositionKey(): null | NodeKey {

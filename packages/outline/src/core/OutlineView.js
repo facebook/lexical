@@ -350,12 +350,13 @@ function garbageCollectDetachedDeepChildNodes(
   for (let i = 0; i < childrenLength; i++) {
     const childKey = children[i];
     const child = nodeMap.get(childKey);
-    if (child !== undefined && child.__parent === parentKey) {
-      if (isBlockNode(child)) {
+    if (child !== undefined) {
+      if (isBlockNode(child) && child.__parent === parentKey) {
         garbageCollectDetachedDeepChildNodes(child, childKey, nodeMap);
       }
-      nodeMap.delete(childKey);
+      child.__parent = null;
     }
+    nodeMap.delete(childKey);
   }
 }
 
@@ -377,6 +378,7 @@ export function garbageCollectDetachedNodes(
         if (isBlockNode(node)) {
           garbageCollectDetachedDeepChildNodes(node, nodeKey, nodeMap);
         }
+        node.__parent = null;
         nodeMap.delete(nodeKey);
       }
     }

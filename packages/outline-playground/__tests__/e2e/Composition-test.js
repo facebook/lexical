@@ -6,6 +6,7 @@
  *
  */
 
+import {moveToLineBeginning} from '../keyboardShortcuts';
 import {
   initializeE2E,
   assertSelection,
@@ -337,6 +338,66 @@ describe('Composition', () => {
           anchorOffset: 11,
           focusPath: [0, 0, 0],
           focusOffset: 11,
+        });
+      });
+
+      it('Can type Hiragana via IME with hashtags', async () => {
+        const {page} = e2e;
+
+        // This only runs on Chrome for now due to imeSetComposition not being implemented
+        // in other browsers.
+        if (E2E_BROWSER !== 'chromium') {
+          return;
+        }
+
+        await page.focus('div.editor');
+
+        await page.keyboard.type('#');
+
+        await page.keyboard.imeSetComposition('ｓ', 1, 1);
+        await page.keyboard.imeSetComposition('す', 1, 1);
+        await page.keyboard.imeSetComposition('すｓ', 2, 2);
+        await page.keyboard.imeSetComposition('すｓｈ', 3, 3);
+        await page.keyboard.imeSetComposition('すし', 2, 2);
+        await page.keyboard.insertText('すし');
+
+        await page.keyboard.type(' ');
+        await page.keyboard.imeSetComposition('m', 1, 1);
+        await page.keyboard.imeSetComposition('も', 1, 1);
+        await page.keyboard.imeSetComposition('もj', 2, 2);
+        await page.keyboard.imeSetComposition('もじ', 3, 3);
+        await page.keyboard.imeSetComposition('もじあ', 4, 4);
+        await page.keyboard.insertText('もじあ');
+
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph" dir="ltr"><span class="editor-text-hashtag" data-outline-text="true">#すし</span><span data-outline-text="true"> もじあ</span></p>',
+        );
+        await assertSelection(page, {
+          anchorPath: [0, 1, 0],
+          anchorOffset: 4,
+          focusPath: [0, 1, 0],
+          focusOffset: 4,
+        });
+
+        await moveToLineBeginning(page);
+
+        await page.keyboard.imeSetComposition('ｓ', 1, 1);
+        await page.keyboard.imeSetComposition('す', 1, 1);
+        await page.keyboard.imeSetComposition('すｓ', 2, 2);
+        await page.keyboard.imeSetComposition('すｓｈ', 3, 3);
+        await page.keyboard.imeSetComposition('すし', 2, 2);
+        await page.keyboard.insertText('すし');
+
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">すし</span><span class="editor-text-hashtag" data-outline-text="true">#すし</span><span data-outline-text="true"> もじあ</span></p>',
+        );
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 2,
+          focusPath: [0, 0, 0],
+          focusOffset: 2,
         });
       });
 

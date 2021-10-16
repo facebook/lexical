@@ -18,13 +18,7 @@ import type {Node as ReactNode} from 'react';
 
 import {triggerListeners, ViewModel} from './OutlineView';
 import {isSelectionWithinEditor, getDOMTextNode} from './OutlineUtils';
-import {
-  IS_INERT,
-  IS_RTL,
-  IS_LTR,
-  NO_DIRTY_NODES,
-  FULL_RECONCILE,
-} from './OutlineConstants';
+import {IS_INERT, IS_RTL, IS_LTR, FULL_RECONCILE} from './OutlineConstants';
 import invariant from 'shared/invariant';
 import {isDecoratorNode} from './OutlineDecoratorNode';
 import {getCompositionKey, setCompositionKey} from './OutlineNode';
@@ -518,27 +512,26 @@ function reconcileRoot(
   activePrevKeyToDOMMap = undefined;
 }
 
-export function reconcileViewModel(
+export function updateViewModel(
   rootElement: HTMLElement,
-  prevViewModel: ViewModel,
-  nextViewModel: ViewModel,
+  currentViewModel: ViewModel,
+  pendingViewModel: ViewModel,
+  currentSelection: OutlineSelection | null,
+  pendingSelection: OutlineSelection | null,
+  needsUpdate: boolean,
   editor: OutlineEditor,
 ): void {
-  const dirtyType = editor._dirtyType;
-  const needsUpdate = editor._dirtyType !== NO_DIRTY_NODES;
-  const prevSelection = prevViewModel._selection;
-  const nextSelection = nextViewModel._selection;
-
   if (needsUpdate) {
+    const dirtyType = editor._dirtyType;
     const dirtySubTrees = editor._dirtySubTrees;
     const dirtyNodes = editor._dirtyNodes;
     triggerListeners('mutation', editor, null);
     try {
       reconcileRoot(
-        prevViewModel,
-        nextViewModel,
+        currentViewModel,
+        pendingViewModel,
         editor,
-        nextSelection,
+        pendingSelection,
         dirtyType,
         dirtySubTrees,
         dirtyNodes,
@@ -551,9 +544,9 @@ export function reconcileViewModel(
   const domSelection: null | Selection = window.getSelection();
   if (
     domSelection !== null &&
-    (needsUpdate || nextSelection === null || nextSelection.dirty)
+    (needsUpdate || pendingSelection === null || pendingSelection.dirty)
   ) {
-    reconcileSelection(prevSelection, nextSelection, editor, domSelection);
+    reconcileSelection(pendingSelection, editor, domSelection);
   }
 }
 
@@ -572,8 +565,7 @@ function scrollIntoViewIfNeeded(node: Node): void {
 }
 
 function reconcileSelection(
-  prevSelection: OutlineSelection | null,
-  nextSelection: OutlineSelection | null,
+  selection: OutlineSelection | null,
   editor: OutlineEditor,
   domSelection: Selection,
 ): void {
@@ -582,14 +574,14 @@ function reconcileSelection(
   const anchorOffset = domSelection.anchorOffset;
   const focusOffset = domSelection.focusOffset;
 
-  if (nextSelection === null) {
+  if (selection === null) {
     if (isSelectionWithinEditor(editor, anchorDOMNode, focusDOMNode)) {
       domSelection.removeAllRanges();
     }
     return;
   }
-  const anchor = nextSelection.anchor;
-  const focus = nextSelection.focus;
+  const anchor = selection.anchor;
+  const focus = selection.focus;
   const anchorKey = anchor.key;
   const focusKey = focus.key;
   const anchorDOM = getElementByKeyOrThrow(editor, anchorKey);
@@ -640,7 +632,7 @@ function reconcileSelection(
       nextFocusNode,
       nextFocusOffset,
     );
-    if (nextSelection.isCollapsed() && rootElement === activeElement) {
+    if (selection.isCollapsed() && rootElement === activeElement) {
       scrollIntoViewIfNeeded(nextAnchorNode);
     }
   } catch (error) {

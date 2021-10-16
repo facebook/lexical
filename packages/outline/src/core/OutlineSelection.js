@@ -186,7 +186,10 @@ export class Selection {
     this.textFormat = textFormat;
   }
 
-  is(selection: Selection): boolean {
+  is(selection: null | Selection): boolean {
+    if (selection === null) {
+      return false;
+    }
     return this.anchor.is(selection.anchor) && this.focus.is(selection.focus);
   }
   isCollapsed(): boolean {

@@ -286,7 +286,7 @@ ${steps.map(formatStep).join(`\n`)}
   useEffect(() => {
     const removeUpdateListener = editor.addListener(
       'update',
-      (viewModel: ViewModel, dirtyNodes: null | Set<NodeKey>) => {
+      (viewModel: ViewModel, _, dirtyNodes: Set<NodeKey>) => {
         if (!isRecording) {
           return;
         }
@@ -294,7 +294,7 @@ ${steps.map(formatStep).join(`\n`)}
         const previousSelection = previousSelectionRef.current;
         const skipNextSelectionChange = skipNextSelectionChangeRef.current;
         if (previousSelection !== currentSelection) {
-          if (dirtyNodes === null && !skipNextSelectionChange) {
+          if (dirtyNodes.size === 0 && !skipNextSelectionChange) {
             const browserSelection = window.getSelection();
             if (
               browserSelection.anchorNode == null ||

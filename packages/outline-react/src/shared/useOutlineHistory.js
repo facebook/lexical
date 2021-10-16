@@ -84,17 +84,18 @@ function getMergeAction(
       // Only merge if we're adding/removing a single character
       // or if there is not change at all.
       if (textDiff === -1 || textDiff === 1) {
-        if (selection == null || prevSelection === null) {
+        if (selection === null || prevSelection === null) {
           return MERGE;
         }
         const anchor = selection.anchor;
+        const prevAnchor = prevSelection.anchor;
         const anchorKey = anchor.key;
-        const prevAnchorKey = prevSelection.anchor.key;
+        const prevAnchorKey = prevAnchor.key;
         if (anchorKey !== prevAnchorKey || anchor.type !== 'text') {
           return NO_MERGE;
         }
         const anchorOffset = anchor.offset;
-        const prevAnchorOffset = prevSelection.anchor.offset;
+        const prevAnchorOffset = prevAnchor.offset;
         // If we've inserted some text that is a single character
         // after, then merge it.
         if (prevAnchorOffset === anchorOffset - 1) {
@@ -128,7 +129,8 @@ export default function useOutlineHistory(editor: OutlineEditor): () => void {
 
     const applyChange = (
       viewModel: ViewModel,
-      dirtyNodes: null | Set<NodeKey>,
+      dirty: boolean,
+      dirtyNodes: Set<NodeKey>,
     ) => {
       const current = historyState.current;
       const redoStack = historyState.redoStack;
@@ -137,7 +139,7 @@ export default function useOutlineHistory(editor: OutlineEditor): () => void {
       if (viewModel === current) {
         return;
       }
-      if (dirtyNodes !== null) {
+      if (dirty) {
         const mergeAction = getMergeAction(current, viewModel, dirtyNodes);
         if (mergeAction === NO_MERGE) {
           if (redoStack.length !== 0) {

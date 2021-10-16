@@ -141,10 +141,8 @@ export default function useTypeahead(editor: OutlineEditor): void {
   useEffect(() => {
     return editor.addListener(
       'update',
-      (viewModel: ViewModel, dirtyNodes: null | Set<NodeKey>) => {
-        if (dirtyNodes === null) {
-          // We are loading a view model with no dirty nodes Set,
-          // so ensure we process all nodes in the view.
+      (viewModel: ViewModel, dirty: boolean) => {
+        if (dirty) {
           viewModel.read((view) => {
             const typeaheadNode = view
               .getRoot()

@@ -224,7 +224,7 @@ export class OutlineNode {
   }
   isAttached(): boolean {
     const parentKey = this.__parent;
-    if (parentKey === null) {
+    if (parentKey === null || getNodeByKey(this.__key) === null) {
       return false;
     }
     const parent = getNodeByKey<BlockNode>(parentKey);

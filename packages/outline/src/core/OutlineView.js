@@ -354,8 +354,8 @@ function garbageCollectDetachedDeepChildNodes(
       if (isBlockNode(child)) {
         garbageCollectDetachedDeepChildNodes(child, childKey, nodeMap);
       }
+      nodeMap.delete(childKey);
     }
-    nodeMap.delete(childKey);
   }
 }
 

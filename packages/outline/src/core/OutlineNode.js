@@ -32,7 +32,11 @@ import {
   IS_SEGMENTED,
   HAS_DIRTY_NODES,
 } from './OutlineConstants';
-import {getSelection, moveSelectionPointToEnd} from './OutlineSelection';
+import {
+  getSelection,
+  moveSelectionPointToEnd,
+  updateBlockSelectionOnCreateDeleteNode,
+} from './OutlineSelection';
 
 type NodeParserState = {
   originalSelection: null | ParsedSelection,
@@ -118,17 +122,6 @@ function removeNode(
   if (parent === null) {
     return;
   }
-  if (restoreSelection) {
-    const selection = getSelection();
-    const anchor = selection && selection.anchor;
-    const focus = selection && selection.focus;
-    if (anchor !== null && anchor.key === key) {
-      moveSelectionPointToSibling(anchor, nodeToRemove, parent);
-    }
-    if (focus !== null && focus.key === key) {
-      moveSelectionPointToSibling(focus, nodeToRemove, parent);
-    }
-  }
   const writableParent = parent.getWritable();
   const parentChildren = writableParent.__children;
   const index = parentChildren.indexOf(key);
@@ -137,6 +130,21 @@ function removeNode(
   }
   const writableNodeToRemove = nodeToRemove.getWritable();
   writableNodeToRemove.__parent = null;
+
+  const selection = getSelection();
+  if (selection !== null) {
+    if (restoreSelection) {
+      const anchor = selection.anchor;
+      const focus = selection.focus;
+      if (anchor !== null && anchor.key === key) {
+        moveSelectionPointToSibling(anchor, nodeToRemove, parent);
+      }
+      if (focus !== null && focus.key === key) {
+        moveSelectionPointToSibling(focus, nodeToRemove, parent);
+      }
+    }
+    updateBlockSelectionOnCreateDeleteNode(selection, parent, index, -1);
+  }
 }
 
 function moveSelectionPointToSibling(
@@ -708,6 +716,14 @@ export class OutlineNode {
     if (flags & IS_DIRECTIONLESS) {
       updateDirectionIfNeeded(writableNodeToInsert);
     }
+    const selection = getSelection();
+    if (selection !== null) {
+      updateBlockSelectionOnCreateDeleteNode(
+        selection,
+        writableParent,
+        index + 1,
+      );
+    }
     return nodeToInsert;
   }
   insertBefore(nodeToInsert: OutlineNode): OutlineNode {
@@ -737,6 +753,10 @@ export class OutlineNode {
     // Handle direction if node is directionless
     if (flags & IS_DIRECTIONLESS) {
       updateDirectionIfNeeded(writableNodeToInsert);
+    }
+    const selection = getSelection();
+    if (selection !== null) {
+      updateBlockSelectionOnCreateDeleteNode(selection, writableParent, index);
     }
     return nodeToInsert;
   }

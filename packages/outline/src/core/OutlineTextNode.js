@@ -12,7 +12,11 @@ import type {NodeKey, ParsedNode} from './OutlineNode';
 import type {EditorConfig, TextNodeThemeClasses} from './OutlineEditor';
 
 import {OutlineNode, setCompositionKey, getCompositionKey} from './OutlineNode';
-import {getSelection, makeSelection} from './OutlineSelection';
+import {
+  getSelection,
+  makeSelection,
+  updateBlockSelectionOnCreateDeleteNode,
+} from './OutlineSelection';
 import {getTextDirection, toggleTextFormatType} from './OutlineUtils';
 import invariant from 'shared/invariant';
 import {errorOnReadOnly} from './OutlineView';
@@ -604,6 +608,15 @@ export class TextNode extends OutlineNode {
 
     if (hasReplacedSelf) {
       this.remove();
+    }
+
+    if (selection !== null) {
+      updateBlockSelectionOnCreateDeleteNode(
+        selection,
+        parent,
+        insertionIndex,
+        partsLength - 1,
+      );
     }
 
     return splitNodes;

@@ -586,6 +586,7 @@ function reconcileSelection(
   const focusKey = focus.key;
   const anchorDOM = getElementByKeyOrThrow(editor, anchorKey);
   const focusDOM = getElementByKeyOrThrow(editor, focusKey);
+  console.info('nextAnchor', anchor, anchor.offset);
   const nextAnchorOffset = anchor.offset;
   const nextFocusOffset = focus.offset;
   let nextAnchorNode = anchorDOM;
@@ -620,13 +621,18 @@ function reconcileSelection(
     ) {
       rootElement.focus({preventScroll: true});
     }
-    return;
   }
 
   // Apply the updated selection to the DOM. Note: this will trigger
   // a "selectionchange" event, although it will be asynchronous.
   try {
     domSelection.setBaseAndExtent(
+      nextAnchorNode,
+      nextAnchorOffset,
+      nextFocusNode,
+      nextFocusOffset,
+    );
+    console.info(
       nextAnchorNode,
       nextAnchorOffset,
       nextFocusNode,

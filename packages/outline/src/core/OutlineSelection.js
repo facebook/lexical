@@ -195,6 +195,13 @@ export class Selection {
   isCollapsed(): boolean {
     return this.anchor.is(this.focus);
   }
+  isForward(): boolean {
+    const anchor = this.anchor;
+    const anchorKey = anchor.getNode().getKey();
+    const focus = this.focus;
+    const focusKey = focus.getNode().getKey();
+    return anchorKey === focusKey || focus.isBefore(anchor);
+  }
   getNodes(): Array<OutlineNode> {
     const anchor = this.anchor;
     const focus = this.focus;
@@ -667,4 +674,48 @@ export function createSelectionFromParse(
         ),
         0,
       );
+}
+
+export function updateBlockSelectionOnCreateDeleteNode(
+  selection: Selection,
+  parentNode: OutlineNode,
+  nodeOffset: number,
+  times: number = 1,
+) {
+  const anchor = selection.anchor;
+  const focus = selection.focus;
+  const anchorNode = anchor.getNode();
+  const focusNode = focus.getNode();
+  if (!parentNode.is(anchorNode) && !parentNode.is(focusNode)) {
+    return;
+  }
+  const parentKey = parentNode.getKey();
+  // Single node. We shift selection but never redimension it
+  if (selection.isCollapsed()) {
+    const selectionOffset = anchor.offset;
+    if (nodeOffset <= selectionOffset) {
+      anchor.set(parentKey, Math.max(0, selectionOffset + times), 'block');
+      focus.set(parentKey, Math.max(0, selectionOffset + times), 'block');
+    }
+    return;
+  }
+  // Multiple nodes selected. We shift or redimension selection
+  const isForward = selection.isForward();
+  const firstPoint = isForward ? anchor : focus;
+  const firstPointNode = firstPoint.getNode();
+  const lastPoint = isForward ? focus : anchor;
+  const lastPointNode = lastPoint.getNode();
+  if (parentNode.is(firstPointNode)) {
+    const firstPointOffset = firstPoint.offset;
+    if (nodeOffset <= firstPointOffset) {
+      firstPoint.set(parentKey, Math.max(0, firstPointOffset + times), 'block');
+    }
+  }
+
+  if (parentNode.is(lastPointNode)) {
+    const lastPointOffset = lastPoint.offset;
+    if (nodeOffset <= lastPointOffset) {
+      lastPoint.set(parentKey, Math.max(0, lastPointOffset + times), 'block');
+    }
+  }
 }

@@ -33,7 +33,7 @@ import {
   onPasteForRichText,
   onDropPolyfill,
   onDragStartPolyfill,
-  onMutation,
+  onTextMutation,
   onInput,
   onClick,
 } from 'outline/EventHelpers';
@@ -105,23 +105,7 @@ export default function useOutlineRichText(editor: OutlineEditor): () => void {
     editor.registerNodeType('listitem', ListItemNode);
     initEditor(editor);
 
-    const observer = new MutationObserver(
-      (mutations: Array<MutationRecord>) => {
-        onMutation(editor, mutations, observer);
-      },
-    );
-
-    return editor.addListener('mutation', (rootElement: null | HTMLElement) => {
-      if (rootElement === null) {
-        observer.disconnect();
-      } else {
-        observer.observe(rootElement, {
-          childList: true,
-          subtree: true,
-          characterData: true,
-        });
-      }
-    });
+    return editor.addListener('textmutation', onTextMutation);
   }, [editor]);
 
   useOutlineEditorEvents(events, editor);

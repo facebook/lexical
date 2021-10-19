@@ -27,6 +27,7 @@ import {createRootNode as createRoot} from './OutlineRootNode';
 import {LineBreakNode} from './OutlineLineBreakNode';
 import {RootNode} from './OutlineRootNode';
 import {NO_DIRTY_NODES, FULL_RECONCILE} from './OutlineConstants';
+import {handleRootMutations} from './OutlineMutations';
 import invariant from 'shared/invariant';
 
 export type EditorThemeClassName = string;
@@ -87,12 +88,22 @@ export type RootListener = (
   element: null | HTMLElement,
   element: null | HTMLElement,
 ) => void;
-export type MutationListener = (rootElement: null | HTMLElement) => void;
+export type TextMutationListener = (
+  editor: OutlineEditor,
+  mutations: Array<TextMutation>,
+) => void;
+
+export type TextMutation = {
+  node: TextNode,
+  anchorOffset: null | number,
+  focusOffset: null | number,
+  text: string,
+};
 
 type Listeners = {
   decorator: Set<DecoratorListener>,
   error: Set<ErrorListener>,
-  mutation: Set<MutationListener>,
+  textmutation: Set<TextMutationListener>,
   root: Set<RootListener>,
   update: Set<UpdateListener>,
 };
@@ -100,7 +111,7 @@ type Listeners = {
 export type ListenerType =
   | 'update'
   | 'error'
-  | 'mutation'
+  | 'textmutation'
   | 'root'
   | 'decorator';
 
@@ -135,6 +146,9 @@ export function resetEditor(
   editor._dirtyNodes = new Set();
   editor._dirtySubTrees = new Set();
   editor._textContent = '';
+  editor._textMutations = [];
+  editor._mutationRAF = null;
+  editor._observer.disconnect();
   // Remove all the DOM nodes from the root element
   if (prevRootElement !== null) {
     prevRootElement.textContent = '';
@@ -252,6 +266,9 @@ class BaseOutlineEditor {
   _dirtyType: 0 | 1 | 2;
   _dirtyNodes: Set<NodeKey>;
   _dirtySubTrees: Set<NodeKey>;
+  _observer: MutationObserver;
+  _textMutations: Array<TextMutation>;
+  _mutationRAF: null | number;
 
   constructor(viewModel: ViewModel, config: EditorConfig<{...}>) {
     // The root element associated with this editor
@@ -269,7 +286,7 @@ class BaseOutlineEditor {
     this._listeners = {
       decorator: new Set(),
       error: new Set(),
-      mutation: new Set(),
+      textmutation: new Set(),
       root: new Set(),
       update: new Set(),
     };
@@ -292,6 +309,31 @@ class BaseOutlineEditor {
     this._dirtyType = NO_DIRTY_NODES;
     this._dirtyNodes = new Set();
     this._dirtySubTrees = new Set();
+    // Handling of text mutations
+    this._textMutations = [];
+    this._mutationRAF = null;
+    this._observer = new MutationObserver(
+      (mutations: Array<MutationRecord>) => {
+        handleRootMutations(getSelf(this), mutations, this._observer);
+      },
+    );
+  }
+  flushTextMutations(): void {
+    const rAF = this._mutationRAF;
+
+    if (rAF !== null) {
+      this._mutationRAF = null;
+      window.cancelAnimationFrame(rAF);
+    }
+    const mutations = this._observer.takeRecords();
+    if (mutations.length > 0) {
+      handleRootMutations(getSelf(this), mutations, this._observer);
+    }
+    const textMutations = this._textMutations;
+    if (textMutations.length > 0) {
+      this._textMutations = [];
+      triggerListeners('textmutation', getSelf(this), this, textMutations);
+    }
   }
   isComposing(): boolean {
     return this._compositionKey != null;
@@ -306,7 +348,7 @@ class BaseOutlineEditor {
       | UpdateListener
       | DecoratorListener
       | RootListener
-      | MutationListener,
+      | TextMutationListener,
   ): () => void {
     const listenerSet = this._listeners[type];
     // $FlowFixMe: TODO refine this from the above types
@@ -325,10 +367,6 @@ class BaseOutlineEditor {
         // $FlowFixMe: TODO refine
         const rootListener: RootListener = (listener: any);
         rootListener(null, this._rootElement);
-      } else if (type === 'mutation') {
-        // $FlowFixMe: TODO refine
-        const mutationListener: MutationListener = (listener: any);
-        mutationListener(null);
       }
     };
   }
@@ -485,14 +523,18 @@ declare export class OutlineEditor {
   _dirtyType: 0 | 1 | 2;
   _dirtyNodes: Set<NodeKey>;
   _dirtySubTrees: Set<NodeKey>;
+  _observer: MutationObserver;
+  _textMutations: Array<TextMutation>;
+  _mutationRAF: null | number;
 
+  flushTextMutations(): void;
   isComposing(): boolean;
   registerNodeType(nodeType: string, klass: Class<OutlineNode>): void;
   addListener(type: 'error', listener: ErrorListener): () => void;
   addListener(type: 'update', listener: UpdateListener): () => void;
   addListener(type: 'root', listener: RootListener): () => void;
   addListener(type: 'decorator', listener: DecoratorListener): () => void;
-  addListener(type: 'mutation', listener: MutationListener): () => void;
+  addListener(type: 'textmutation', listener: TextMutationListener): () => void;
   addTextNodeTransform(listener: TextNodeTransform): () => void;
   getDecorators(): {[NodeKey]: ReactNode};
   getRootElement(): null | HTMLElement;

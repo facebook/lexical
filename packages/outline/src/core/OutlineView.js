@@ -27,6 +27,7 @@ import {
   createNodeFromParse,
   setCompositionKey,
   getCompositionKey,
+  getNearestNodeFromDOMNode,
 } from './OutlineNode';
 import {isBlockNode, isTextNode, isLineBreakNode} from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './OutlineConstants';
@@ -47,6 +48,7 @@ export type View = {
   markNodeAsDirty: (node: OutlineNode) => void,
   setCompositionKey: (compositionKey: NodeKey | null) => void,
   getCompositionKey: () => null | NodeKey,
+  getNearestNodeFromDOMNode: (dom: Node) => null | OutlineNode,
 };
 
 export type ParsedViewModel = {
@@ -148,6 +150,7 @@ const view: View = {
   },
   setCompositionKey,
   getCompositionKey,
+  getNearestNodeFromDOMNode,
 };
 export function viewModelHasDirtySelection(
   viewModel: ViewModel,

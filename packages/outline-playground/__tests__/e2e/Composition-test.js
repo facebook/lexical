@@ -419,6 +419,8 @@ describe('Composition', () => {
         await page.keyboard.imeSetComposition('すし', 2, 2);
         await page.keyboard.imeSetComposition('す', 1, 1);
         await page.keyboard.imeSetComposition('', 0, 0);
+        await page.keyboard.imeSetComposition('す', 1, 1);
+        await page.keyboard.imeSetComposition('', 0, 0);
         // Escape would fire here
         await page.keyboard.insertText('');
 

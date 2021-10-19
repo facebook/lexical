@@ -1,62 +1,21 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
-exports.RawTouchscreenImpl =
-  exports.RawMouseImpl =
-  exports.RawKeyboardImpl =
-    void 0;
+exports.RawTouchscreenImpl = exports.RawMouseImpl = exports.RawKeyboardImpl = void 0;
 
-var input = _interopRequireWildcard(require('../input'));
+var input = _interopRequireWildcard(require("../input"));
 
-var _macEditingCommands = require('../macEditingCommands');
+var _macEditingCommands = require("../macEditingCommands");
 
-var _utils = require('../../utils/utils');
+var _utils = require("../../utils/utils");
 
-var _crProtocolHelper = require('./crProtocolHelper');
+var _crProtocolHelper = require("./crProtocolHelper");
 
-function _getRequireWildcardCache(nodeInterop) {
-  if (typeof WeakMap !== 'function') return null;
-  var cacheBabelInterop = new WeakMap();
-  var cacheNodeInterop = new WeakMap();
-  return (_getRequireWildcardCache = function (nodeInterop) {
-    return nodeInterop ? cacheNodeInterop : cacheBabelInterop;
-  })(nodeInterop);
-}
+function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 
-function _interopRequireWildcard(obj, nodeInterop) {
-  if (!nodeInterop && obj && obj.__esModule) {
-    return obj;
-  }
-  if (obj === null || (typeof obj !== 'object' && typeof obj !== 'function')) {
-    return {default: obj};
-  }
-  var cache = _getRequireWildcardCache(nodeInterop);
-  if (cache && cache.has(obj)) {
-    return cache.get(obj);
-  }
-  var newObj = {};
-  var hasPropertyDescriptor =
-    Object.defineProperty && Object.getOwnPropertyDescriptor;
-  for (var key in obj) {
-    if (key !== 'default' && Object.prototype.hasOwnProperty.call(obj, key)) {
-      var desc = hasPropertyDescriptor
-        ? Object.getOwnPropertyDescriptor(obj, key)
-        : null;
-      if (desc && (desc.get || desc.set)) {
-        Object.defineProperty(newObj, key, desc);
-      } else {
-        newObj[key] = obj[key];
-      }
-    }
-  }
-  newObj.default = obj;
-  if (cache) {
-    cache.set(obj, newObj);
-  }
-  return newObj;
-}
+function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 
 /**
  * Copyright 2017 Google Inc. All rights reserved.
@@ -94,21 +53,12 @@ class RawKeyboardImpl {
     let commands = _macEditingCommands.macEditingCommands[shortcut] || [];
     if ((0, _utils.isString)(commands)) commands = [commands]; // Commands that insert text are not supported
 
-    commands = commands.filter((x) => !x.startsWith('insert')); // remove the trailing : to match the Chromium command names.
+    commands = commands.filter(x => !x.startsWith('insert')); // remove the trailing : to match the Chromium command names.
 
-    return commands.map((c) => c.substring(0, c.length - 1));
+    return commands.map(c => c.substring(0, c.length - 1));
   }
 
-  async keydown(
-    modifiers,
-    code,
-    keyCode,
-    keyCodeWithoutLocation,
-    key,
-    location,
-    autoRepeat,
-    text,
-  ) {
+  async keydown(modifiers, code, keyCode, keyCodeWithoutLocation, key, location, autoRepeat, text) {
     if (code === 'Escape' && (await this._dragManger.cancelDrag())) return;
 
     const commands = this._commandsForCode(code, modifiers);
@@ -124,7 +74,7 @@ class RawKeyboardImpl {
       unmodifiedText: text,
       autoRepeat,
       location,
-      isKeypad: location === input.keypadLocation,
+      isKeypad: location === input.keypadLocation
     });
   }
 
@@ -135,38 +85,30 @@ class RawKeyboardImpl {
       key,
       windowsVirtualKeyCode: keyCodeWithoutLocation,
       code,
-      location,
+      location
     });
   }
 
   async sendText(text) {
     await this._client.send('Input.insertText', {
-      text,
+      text
     });
   }
 
-  async imeSetComposition(
-    text,
-    selectionStart,
-    selectionEnd,
-    replacementStart,
-    replacementEnd,
-  ) {
-    if (replacementStart === -1 && replacementEnd === -1)
-      await this._client.send('Input.imeSetComposition', {
-        text,
-        selectionStart,
-        selectionEnd,
-      });
-    else
-      await this._client.send('Input.imeSetComposition', {
-        text,
-        selectionStart,
-        selectionEnd,
-        replacementStart,
-        replacementEnd,
-      });
+  async imeSetComposition(text, selectionStart, selectionEnd, replacementStart, replacementEnd) {
+    if (replacementStart === -1 && replacementEnd === -1) await this._client.send('Input.imeSetComposition', {
+      text,
+      selectionStart,
+      selectionEnd
+    });else await this._client.send('Input.imeSetComposition', {
+      text,
+      selectionStart,
+      selectionEnd,
+      replacementStart,
+      replacementEnd
+    });
   }
+
 }
 
 exports.RawKeyboardImpl = RawKeyboardImpl;
@@ -182,22 +124,15 @@ class RawMouseImpl {
   }
 
   async move(x, y, button, buttons, modifiers) {
-    await this._dragManager.interceptDragCausedByMove(
-      x,
-      y,
-      button,
-      buttons,
-      modifiers,
-      async () => {
-        await this._client.send('Input.dispatchMouseEvent', {
-          type: 'mouseMoved',
-          button,
-          x,
-          y,
-          modifiers: (0, _crProtocolHelper.toModifiersMask)(modifiers),
-        });
-      },
-    );
+    await this._dragManager.interceptDragCausedByMove(x, y, button, buttons, modifiers, async () => {
+      await this._client.send('Input.dispatchMouseEvent', {
+        type: 'mouseMoved',
+        button,
+        x,
+        y,
+        modifiers: (0, _crProtocolHelper.toModifiersMask)(modifiers)
+      });
+    });
   }
 
   async down(x, y, button, buttons, modifiers, clickCount) {
@@ -208,7 +143,7 @@ class RawMouseImpl {
       x,
       y,
       modifiers: (0, _crProtocolHelper.toModifiersMask)(modifiers),
-      clickCount,
+      clickCount
     });
   }
 
@@ -224,7 +159,7 @@ class RawMouseImpl {
       x,
       y,
       modifiers: (0, _crProtocolHelper.toModifiersMask)(modifiers),
-      clickCount,
+      clickCount
     });
   }
 
@@ -235,9 +170,10 @@ class RawMouseImpl {
       y,
       modifiers: (0, _crProtocolHelper.toModifiersMask)(modifiers),
       deltaX,
-      deltaY,
+      deltaY
     });
   }
+
 }
 
 exports.RawMouseImpl = RawMouseImpl;
@@ -249,24 +185,20 @@ class RawTouchscreenImpl {
   }
 
   async tap(x, y, modifiers) {
-    await Promise.all([
-      this._client.send('Input.dispatchTouchEvent', {
-        type: 'touchStart',
-        modifiers: (0, _crProtocolHelper.toModifiersMask)(modifiers),
-        touchPoints: [
-          {
-            x,
-            y,
-          },
-        ],
-      }),
-      this._client.send('Input.dispatchTouchEvent', {
-        type: 'touchEnd',
-        modifiers: (0, _crProtocolHelper.toModifiersMask)(modifiers),
-        touchPoints: [],
-      }),
-    ]);
+    await Promise.all([this._client.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      modifiers: (0, _crProtocolHelper.toModifiersMask)(modifiers),
+      touchPoints: [{
+        x,
+        y
+      }]
+    }), this._client.send('Input.dispatchTouchEvent', {
+      type: 'touchEnd',
+      modifiers: (0, _crProtocolHelper.toModifiersMask)(modifiers),
+      touchPoints: []
+    })]);
   }
+
 }
 
 exports.RawTouchscreenImpl = RawTouchscreenImpl;

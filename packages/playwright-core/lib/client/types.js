@@ -1,53 +1,53 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
-Object.defineProperty(exports, 'Size', {
+Object.defineProperty(exports, "Size", {
   enumerable: true,
   get: function () {
     return _types.Size;
-  },
+  }
 });
-Object.defineProperty(exports, 'Point', {
+Object.defineProperty(exports, "Point", {
   enumerable: true,
   get: function () {
     return _types.Point;
-  },
+  }
 });
-Object.defineProperty(exports, 'Rect', {
+Object.defineProperty(exports, "Rect", {
   enumerable: true,
   get: function () {
     return _types.Rect;
-  },
+  }
 });
-Object.defineProperty(exports, 'Quad', {
+Object.defineProperty(exports, "Quad", {
   enumerable: true,
   get: function () {
     return _types.Quad;
-  },
+  }
 });
-Object.defineProperty(exports, 'URLMatch', {
+Object.defineProperty(exports, "URLMatch", {
   enumerable: true,
   get: function () {
     return _types.URLMatch;
-  },
+  }
 });
-Object.defineProperty(exports, 'TimeoutOptions', {
+Object.defineProperty(exports, "TimeoutOptions", {
   enumerable: true,
   get: function () {
     return _types.TimeoutOptions;
-  },
+  }
 });
-Object.defineProperty(exports, 'HeadersArray', {
+Object.defineProperty(exports, "HeadersArray", {
   enumerable: true,
   get: function () {
     return _types.HeadersArray;
-  },
+  }
 });
 exports.kLifecycleEvents = void 0;
 
-var _types = require('../common/types');
+var _types = require("../common/types");
 
 /**
  * Copyright 2018 Google Inc. All rights reserved.

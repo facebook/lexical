@@ -1,19 +1,19 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.VideoRecorder = void 0;
 
-var _utils = require('../../utils/utils');
+var _utils = require("../../utils/utils");
 
-var _page = require('../page');
+var _page = require("../page");
 
-var _processLauncher = require('../../utils/processLauncher');
+var _processLauncher = require("../../utils/processLauncher");
 
-var _progress = require('../progress');
+var _progress = require("../progress");
 
-var _instrumentation = require('../instrumentation');
+var _instrumentation = require("../instrumentation");
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -34,14 +34,10 @@ const fps = 25;
 
 class VideoRecorder {
   static async launch(page, ffmpegPath, options) {
-    if (!options.outputFile.endsWith('.webm'))
-      throw new Error('File must have .webm extension');
-    const controller = new _progress.ProgressController(
-      (0, _instrumentation.internalCallMetadata)(),
-      page,
-    );
+    if (!options.outputFile.endsWith('.webm')) throw new Error('File must have .webm extension');
+    const controller = new _progress.ProgressController((0, _instrumentation.internalCallMetadata)(), page);
     controller.setLogName('browser');
-    return await controller.run(async (progress) => {
+    return await controller.run(async progress => {
       const recorder = new VideoRecorder(page, ffmpegPath, progress);
       await recorder._launch(options);
       return recorder;
@@ -61,9 +57,7 @@ class VideoRecorder {
     this._ffmpegPath = void 0;
     this._progress = progress;
     this._ffmpegPath = ffmpegPath;
-    page.on(_page.Page.Events.ScreencastFrame, (frame) =>
-      this.writeFrame(frame.buffer, frame.timestamp),
-    );
+    page.on(_page.Page.Events.ScreencastFrame, frame => this.writeFrame(frame.buffer, frame.timestamp));
   }
 
   async _launch(options) {
@@ -107,18 +101,17 @@ class VideoRecorder {
     //   cpu is overbooked. By default vp8 tries to use all available threads?
     const w = options.width;
     const h = options.height;
-    const args =
-      `-loglevel error -f image2pipe -avioflags direct -fpsprobesize 0 -probesize 32 -analyzeduration 0 -c:v mjpeg -i - -y -an -r ${fps} -c:v vp8 -qmin 0 -qmax 50 -crf 8 -deadline realtime -speed 8 -b:v 1M -threads 1 -vf pad=${w}:${h}:0:0:gray,crop=${w}:${h}:0:0`.split(
-        ' ',
-      );
+    const args = `-loglevel error -f image2pipe -avioflags direct -fpsprobesize 0 -probesize 32 -analyzeduration 0 -c:v mjpeg -i - -y -an -r ${fps} -c:v vp8 -qmin 0 -qmax 50 -crf 8 -deadline realtime -speed 8 -b:v 1M -threads 1 -vf pad=${w}:${h}:0:0:gray,crop=${w}:${h}:0:0`.split(' ');
     args.push(options.outputFile);
     const progress = this._progress;
-    const {launchedProcess, gracefullyClose} = await (0,
-    _processLauncher.launchProcess)({
+    const {
+      launchedProcess,
+      gracefullyClose
+    } = await (0, _processLauncher.launchProcess)({
       command: this._ffmpegPath,
       args,
       stdio: 'stdin',
-      log: (message) => progress.log(message),
+      log: message => progress.log(message),
       tempDirectories: [],
       attemptToGracefullyClose: async () => {
         progress.log('Closing stdin...');
@@ -126,7 +119,7 @@ class VideoRecorder {
       },
       onExit: (exitCode, signal) => {
         progress.log(`ffmpeg onkill exitCode=${exitCode} signal=${signal}`);
-      },
+      }
     });
     launchedProcess.stdin.on('finish', () => {
       progress.log('ffmpeg finished input.');
@@ -148,12 +141,9 @@ class VideoRecorder {
       const durationSec = timestamp - this._lastFrameTimestamp;
       const repeatCount = Math.max(1, Math.round(fps * durationSec));
 
-      for (let i = 0; i < repeatCount; ++i)
-        this._frameQueue.push(this._lastFrameBuffer);
+      for (let i = 0; i < repeatCount; ++i) this._frameQueue.push(this._lastFrameBuffer);
 
-      this._lastWritePromise = this._lastWritePromise.then(() =>
-        this._sendFrames(),
-      );
+      this._lastWritePromise = this._lastWritePromise.then(() => this._sendFrames());
     }
 
     this._lastFrameBuffer = frame;
@@ -162,29 +152,23 @@ class VideoRecorder {
   }
 
   async _sendFrames() {
-    while (this._frameQueue.length)
-      await this._sendFrame(this._frameQueue.shift());
+    while (this._frameQueue.length) await this._sendFrame(this._frameQueue.shift());
   }
 
   async _sendFrame(frame) {
-    return new Promise((f) => this._process.stdin.write(frame, f)).then(
-      (error) => {
-        if (error) this._progress.log(`ffmpeg failed to write: ${error}`);
-      },
-    );
+    return new Promise(f => this._process.stdin.write(frame, f)).then(error => {
+      if (error) this._progress.log(`ffmpeg failed to write: ${error}`);
+    });
   }
 
   async stop() {
     if (this._isStopped) return;
-    this.writeFrame(
-      Buffer.from([]),
-      this._lastFrameTimestamp +
-        ((0, _utils.monotonicTime)() - this._lastWriteTimestamp) / 1000,
-    );
+    this.writeFrame(Buffer.from([]), this._lastFrameTimestamp + ((0, _utils.monotonicTime)() - this._lastWriteTimestamp) / 1000);
     this._isStopped = true;
     await this._lastWritePromise;
     await this._gracefullyClose();
   }
+
 }
 
 exports.VideoRecorder = VideoRecorder;

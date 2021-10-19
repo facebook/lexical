@@ -1,7 +1,7 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.eventsHelper = void 0;
 
@@ -27,16 +27,16 @@ class EventsHelper {
     return {
       emitter,
       eventName,
-      handler,
+      handler
     };
   }
 
   static removeEventListeners(listeners) {
-    for (const listener of listeners)
-      listener.emitter.removeListener(listener.eventName, listener.handler);
+    for (const listener of listeners) listener.emitter.removeListener(listener.eventName, listener.handler);
 
     listeners.splice(0, listeners.length);
   }
+
 }
 
 const eventsHelper = EventsHelper;

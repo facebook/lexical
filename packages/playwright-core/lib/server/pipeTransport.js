@@ -1,13 +1,13 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.PipeTransport = void 0;
 
-var _utils = require('../utils/utils');
+var _utils = require("../utils/utils");
 
-var _debugLogger = require('../utils/debugLogger');
+var _debugLogger = require("../utils/debugLogger");
 
 /**
  * Copyright 2018 Google Inc. All rights reserved.
@@ -34,13 +34,13 @@ class PipeTransport {
     this.onmessage = void 0;
     this.onclose = void 0;
     this._pipeWrite = pipeWrite;
-    pipeRead.on('data', (buffer) => this._dispatch(buffer));
+    pipeRead.on('data', buffer => this._dispatch(buffer));
     pipeRead.on('close', () => {
       this._closed = true;
       if (this.onclose) this.onclose.call(null);
     });
-    pipeRead.on('error', (e) => _debugLogger.debugLogger.log('error', e));
-    pipeWrite.on('error', (e) => _debugLogger.debugLogger.log('error', e));
+    pipeRead.on('error', e => _debugLogger.debugLogger.log('error', e));
+    pipeWrite.on('error', e => _debugLogger.debugLogger.log('error', e));
     this.onmessage = undefined;
     this.onclose = undefined;
   }
@@ -87,6 +87,7 @@ class PipeTransport {
 
     this._pendingMessage = buffer.toString(undefined, start);
   }
+
 }
 
 exports.PipeTransport = PipeTransport;

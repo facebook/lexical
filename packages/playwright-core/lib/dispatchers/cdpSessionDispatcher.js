@@ -1,13 +1,13 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.CDPSessionDispatcher = void 0;
 
-var _crConnection = require('../server/chromium/crConnection');
+var _crConnection = require("../server/chromium/crConnection");
 
-var _dispatcher = require('./dispatcher');
+var _dispatcher = require("./dispatcher");
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -31,24 +31,23 @@ class CDPSessionDispatcher extends _dispatcher.Dispatcher {
     crSession._eventListener = (method, params) => {
       this._dispatchEvent('event', {
         method,
-        params,
+        params
       });
     };
 
-    crSession.on(_crConnection.CRSessionEvents.Disconnected, () =>
-      this._dispose(),
-    );
+    crSession.on(_crConnection.CRSessionEvents.Disconnected, () => this._dispose());
   }
 
   async send(params) {
     return {
-      result: await this._object.send(params.method, params.params),
+      result: await this._object.send(params.method, params.params)
     };
   }
 
   async detach() {
     return this._object.detach();
   }
+
 }
 
 exports.CDPSessionDispatcher = CDPSessionDispatcher;

@@ -1,7 +1,7 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.actionTitle = actionTitle;
 
@@ -35,27 +35,25 @@ function actionTitle(action) {
     case 'uncheck':
       return `Uncheck ${action.selector}`;
 
-    case 'click': {
-      if (action.clickCount === 1) return `Click ${action.selector}`;
-      if (action.clickCount === 2) return `Double click ${action.selector}`;
-      if (action.clickCount === 3) return `Triple click ${action.selector}`;
-      return `${action.clickCount}× click`;
-    }
+    case 'click':
+      {
+        if (action.clickCount === 1) return `Click ${action.selector}`;
+        if (action.clickCount === 2) return `Double click ${action.selector}`;
+        if (action.clickCount === 3) return `Triple click ${action.selector}`;
+        return `${action.clickCount}× click`;
+      }
 
     case 'fill':
       return `Fill ${action.selector}`;
 
     case 'setInputFiles':
-      if (action.files.length === 0) return `Clear selected files`;
-      else return `Upload ${action.files.join(', ')}`;
+      if (action.files.length === 0) return `Clear selected files`;else return `Upload ${action.files.join(', ')}`;
 
     case 'navigate':
       return `Go to ${action.url}`;
 
     case 'press':
-      return (
-        `Press ${action.key}` + (action.modifiers ? ' with modifiers' : '')
-      );
+      return `Press ${action.key}` + (action.modifiers ? ' with modifiers' : '');
 
     case 'select':
       return `Select ${action.options.join(', ')}`;

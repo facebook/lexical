@@ -1,7 +1,7 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.getExceptionMessage = getExceptionMessage;
 exports.releaseObject = releaseObject;
@@ -10,15 +10,13 @@ exports.toConsoleMessageLocation = toConsoleMessageLocation;
 exports.exceptionToError = exceptionToError;
 exports.toModifiersMask = toModifiersMask;
 
-var _fs = _interopRequireDefault(require('fs'));
+var _fs = _interopRequireDefault(require("fs"));
 
-var _utils = require('../../utils/utils');
+var _utils = require("../../utils/utils");
 
-var _stackTrace = require('../../utils/stackTrace');
+var _stackTrace = require("../../utils/stackTrace");
 
-function _interopRequireDefault(obj) {
-  return obj && obj.__esModule ? obj : {default: obj};
-}
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
  * Copyright 2017 Google Inc. All rights reserved.
@@ -37,21 +35,12 @@ function _interopRequireDefault(obj) {
  * limitations under the License.
  */
 function getExceptionMessage(exceptionDetails) {
-  if (exceptionDetails.exception)
-    return (
-      exceptionDetails.exception.description ||
-      String(exceptionDetails.exception.value)
-    );
+  if (exceptionDetails.exception) return exceptionDetails.exception.description || String(exceptionDetails.exception.value);
   let message = exceptionDetails.text;
 
   if (exceptionDetails.stackTrace) {
     for (const callframe of exceptionDetails.stackTrace.callFrames) {
-      const location =
-        callframe.url +
-        ':' +
-        callframe.lineNumber +
-        ':' +
-        callframe.columnNumber;
+      const location = callframe.url + ':' + callframe.lineNumber + ':' + callframe.columnNumber;
       const functionName = callframe.functionName || '<anonymous>';
       message += `\n    at ${functionName} (${location})`;
     }
@@ -61,11 +50,9 @@ function getExceptionMessage(exceptionDetails) {
 }
 
 async function releaseObject(client, objectId) {
-  await client
-    .send('Runtime.releaseObject', {
-      objectId,
-    })
-    .catch((error) => {});
+  await client.send('Runtime.releaseObject', {
+    objectId
+  }).catch(error => {});
 }
 
 async function readProtocolStream(client, handle, path) {
@@ -81,44 +68,37 @@ async function readProtocolStream(client, handle, path) {
 
   while (!eof) {
     const response = await client.send('IO.read', {
-      handle,
+      handle
     });
     eof = response.eof;
-    const buf = Buffer.from(
-      response.data,
-      response.base64Encoded ? 'base64' : undefined,
-    );
+    const buf = Buffer.from(response.data, response.base64Encoded ? 'base64' : undefined);
     bufs.push(buf);
     if (fd) await fd.write(buf);
   }
 
   if (fd) await fd.close();
   await client.send('IO.close', {
-    handle,
+    handle
   });
   return Buffer.concat(bufs);
 }
 
 function toConsoleMessageLocation(stackTrace) {
-  return stackTrace && stackTrace.callFrames.length
-    ? {
-        url: stackTrace.callFrames[0].url,
-        lineNumber: stackTrace.callFrames[0].lineNumber,
-        columnNumber: stackTrace.callFrames[0].columnNumber,
-      }
-    : {
-        url: '',
-        lineNumber: 0,
-        columnNumber: 0,
-      };
+  return stackTrace && stackTrace.callFrames.length ? {
+    url: stackTrace.callFrames[0].url,
+    lineNumber: stackTrace.callFrames[0].lineNumber,
+    columnNumber: stackTrace.callFrames[0].columnNumber
+  } : {
+    url: '',
+    lineNumber: 0,
+    columnNumber: 0
+  };
 }
 
 function exceptionToError(exceptionDetails) {
   const messageWithStack = getExceptionMessage(exceptionDetails);
   const lines = messageWithStack.split('\n');
-  const firstStackTraceLine = lines.findIndex((line) =>
-    line.startsWith('    at'),
-  );
+  const firstStackTraceLine = lines.findIndex(line => line.startsWith('    at'));
   let messageWithName = '';
   let stack = '';
 
@@ -129,7 +109,10 @@ function exceptionToError(exceptionDetails) {
     stack = messageWithStack;
   }
 
-  const {name, message} = (0, _stackTrace.splitErrorMessage)(messageWithName);
+  const {
+    name,
+    message
+  } = (0, _stackTrace.splitErrorMessage)(messageWithName);
   const err = new Error(message);
   err.stack = stack;
   err.name = name;

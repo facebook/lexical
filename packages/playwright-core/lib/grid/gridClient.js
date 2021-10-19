@@ -1,19 +1,17 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.GridClient = void 0;
 
-var _ws = _interopRequireDefault(require('ws'));
+var _ws = _interopRequireDefault(require("ws"));
 
-var _connection = require('../client/connection');
+var _connection = require("../client/connection");
 
-var _utils = require('../utils/utils');
+var _utils = require("../utils/utils");
 
-function _interopRequireDefault(obj) {
-  return obj && obj.__esModule ? obj : {default: obj};
-}
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -33,27 +31,18 @@ function _interopRequireDefault(obj) {
 class GridClient {
   static async connect(gridURL) {
     const params = new URLSearchParams();
-    params.set(
-      'pwVersion',
-      (0, _utils.getPlaywrightVersion)(
-        true,
-        /* majorMinorOnly */
-      ),
-    );
+    params.set('pwVersion', (0, _utils.getPlaywrightVersion)(true
+    /* majorMinorOnly */
+    ));
     const ws = new _ws.default(`${gridURL}/claimWorker?` + params.toString());
-    const errorText = await Promise.race([
-      new Promise((f) => ws.once('message', () => f(undefined))),
-      new Promise((f) => ws.once('close', (code, reason) => f(reason))),
-    ]);
+    const errorText = await Promise.race([new Promise(f => ws.once('message', () => f(undefined))), new Promise(f => ws.once('close', (code, reason) => f(reason)))]);
     if (errorText) throw errorText;
     const connection = new _connection.Connection();
     connection.markAsRemote();
 
-    connection.onmessage = (message) => ws.send(JSON.stringify(message));
+    connection.onmessage = message => ws.send(JSON.stringify(message));
 
-    ws.on('message', (message) =>
-      connection.dispatch(JSON.parse(message.toString())),
-    );
+    ws.on('message', message => connection.dispatch(JSON.parse(message.toString())));
     ws.on('close', (code, reason) => connection.close(reason));
     const playwright = await connection.initializePlaywright();
 
@@ -76,6 +65,7 @@ class GridClient {
   close() {
     this._ws.close();
   }
+
 }
 
 exports.GridClient = GridClient;

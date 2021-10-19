@@ -1,7 +1,7 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.FileChooser = void 0;
 
@@ -47,6 +47,7 @@ class FileChooser {
       return this._elementHandle.setInputFiles(files, options);
     });
   }
+
 }
 
 exports.FileChooser = FileChooser;

@@ -1,60 +1,19 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
-exports.RawTouchscreenImpl =
-  exports.RawMouseImpl =
-  exports.RawKeyboardImpl =
-    void 0;
+exports.RawTouchscreenImpl = exports.RawMouseImpl = exports.RawKeyboardImpl = void 0;
 
-var input = _interopRequireWildcard(require('../input'));
+var input = _interopRequireWildcard(require("../input"));
 
-var _macEditingCommands = require('../macEditingCommands');
+var _macEditingCommands = require("../macEditingCommands");
 
-var _utils = require('../../utils/utils');
+var _utils = require("../../utils/utils");
 
-function _getRequireWildcardCache(nodeInterop) {
-  if (typeof WeakMap !== 'function') return null;
-  var cacheBabelInterop = new WeakMap();
-  var cacheNodeInterop = new WeakMap();
-  return (_getRequireWildcardCache = function (nodeInterop) {
-    return nodeInterop ? cacheNodeInterop : cacheBabelInterop;
-  })(nodeInterop);
-}
+function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 
-function _interopRequireWildcard(obj, nodeInterop) {
-  if (!nodeInterop && obj && obj.__esModule) {
-    return obj;
-  }
-  if (obj === null || (typeof obj !== 'object' && typeof obj !== 'function')) {
-    return {default: obj};
-  }
-  var cache = _getRequireWildcardCache(nodeInterop);
-  if (cache && cache.has(obj)) {
-    return cache.get(obj);
-  }
-  var newObj = {};
-  var hasPropertyDescriptor =
-    Object.defineProperty && Object.getOwnPropertyDescriptor;
-  for (var key in obj) {
-    if (key !== 'default' && Object.prototype.hasOwnProperty.call(obj, key)) {
-      var desc = hasPropertyDescriptor
-        ? Object.getOwnPropertyDescriptor(obj, key)
-        : null;
-      if (desc && (desc.get || desc.set)) {
-        Object.defineProperty(newObj, key, desc);
-      } else {
-        newObj[key] = obj[key];
-      }
-    }
-  }
-  newObj.default = obj;
-  if (cache) {
-    cache.set(obj, newObj);
-  }
-  return newObj;
-}
+function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 
 /**
  * Copyright 2017 Google Inc. All rights reserved.
@@ -101,16 +60,7 @@ class RawKeyboardImpl {
     this._session = session;
   }
 
-  async keydown(
-    modifiers,
-    code,
-    keyCode,
-    keyCodeWithoutLocation,
-    key,
-    location,
-    autoRepeat,
-    text,
-  ) {
+  async keydown(modifiers, code, keyCode, keyCodeWithoutLocation, key, location, autoRepeat, text) {
     const parts = [];
 
     for (const modifier of ['Shift', 'Control', 'Alt', 'Meta']) {
@@ -131,7 +81,7 @@ class RawKeyboardImpl {
       unmodifiedText: text,
       autoRepeat,
       macCommands: commands,
-      isKeypad: location === input.keypadLocation,
+      isKeypad: location === input.keypadLocation
     });
   }
 
@@ -142,25 +92,20 @@ class RawKeyboardImpl {
       key,
       windowsVirtualKeyCode: keyCode,
       code,
-      isKeypad: location === input.keypadLocation,
+      isKeypad: location === input.keypadLocation
     });
   }
 
   async sendText(text) {
     await this._session.send('Page.insertText', {
-      text,
+      text
     });
   }
 
-  async imeSetComposition(
-    text,
-    selectionStart,
-    selectionEnd,
-    replacementStart,
-    replacementEnd,
-  ) {
+  async imeSetComposition(text, selectionStart, selectionEnd, replacementStart, replacementEnd) {
     throw new Error('unimplemented');
   }
+
 }
 
 exports.RawKeyboardImpl = RawKeyboardImpl;
@@ -184,7 +129,7 @@ class RawMouseImpl {
       buttons: toButtonsMask(buttons),
       x,
       y,
-      modifiers: toModifiersMask(modifiers),
+      modifiers: toModifiersMask(modifiers)
     });
   }
 
@@ -196,7 +141,7 @@ class RawMouseImpl {
       x,
       y,
       modifiers: toModifiersMask(modifiers),
-      clickCount,
+      clickCount
     });
   }
 
@@ -208,33 +153,27 @@ class RawMouseImpl {
       x,
       y,
       modifiers: toModifiersMask(modifiers),
-      clickCount,
+      clickCount
     });
   }
 
   async wheel(x, y, buttons, modifiers, deltaX, deltaY) {
     await this._session.send('Page.updateScrollingState'); // Wheel events hit the compositor first, so wait one frame for it to be synced.
 
-    await this._page
-      .mainFrame()
-      .evaluateExpression(
-        `new Promise(requestAnimationFrame)`,
-        false,
-        false,
-        'utility',
-      );
+    await this._page.mainFrame().evaluateExpression(`new Promise(requestAnimationFrame)`, false, false, 'utility');
     await this._pageProxySession.send('Input.dispatchWheelEvent', {
       x,
       y,
       deltaX,
       deltaY,
-      modifiers: toModifiersMask(modifiers),
+      modifiers: toModifiersMask(modifiers)
     });
   }
 
   setPage(page) {
     this._page = page;
   }
+
 }
 
 exports.RawMouseImpl = RawMouseImpl;
@@ -249,9 +188,10 @@ class RawTouchscreenImpl {
     await this._pageProxySession.send('Input.dispatchTapEvent', {
       x,
       y,
-      modifiers: toModifiersMask(modifiers),
+      modifiers: toModifiersMask(modifiers)
     });
   }
+
 }
 
 exports.RawTouchscreenImpl = RawTouchscreenImpl;

@@ -1,69 +1,25 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.evaluate = evaluate;
 exports.evaluateExpression = evaluateExpression;
-exports.evaluateExpressionAndWaitForSignals =
-  evaluateExpressionAndWaitForSignals;
+exports.evaluateExpressionAndWaitForSignals = evaluateExpressionAndWaitForSignals;
 exports.parseUnserializableValue = parseUnserializableValue;
 exports.normalizeEvaluationExpression = normalizeEvaluationExpression;
 exports.isJavaScriptErrorInEvaluate = isJavaScriptErrorInEvaluate;
-exports.JavaScriptErrorInEvaluate =
-  exports.JSHandle =
-  exports.ExecutionContext =
-    void 0;
+exports.JavaScriptErrorInEvaluate = exports.JSHandle = exports.ExecutionContext = void 0;
 
-var utilityScriptSource = _interopRequireWildcard(
-  require('../generated/utilityScriptSource'),
-);
+var utilityScriptSource = _interopRequireWildcard(require("../generated/utilityScriptSource"));
 
-var _utilityScriptSerializers = require('./common/utilityScriptSerializers');
+var _utilityScriptSerializers = require("./common/utilityScriptSerializers");
 
-var _instrumentation = require('./instrumentation');
+var _instrumentation = require("./instrumentation");
 
-function _getRequireWildcardCache(nodeInterop) {
-  if (typeof WeakMap !== 'function') return null;
-  var cacheBabelInterop = new WeakMap();
-  var cacheNodeInterop = new WeakMap();
-  return (_getRequireWildcardCache = function (nodeInterop) {
-    return nodeInterop ? cacheNodeInterop : cacheBabelInterop;
-  })(nodeInterop);
-}
+function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 
-function _interopRequireWildcard(obj, nodeInterop) {
-  if (!nodeInterop && obj && obj.__esModule) {
-    return obj;
-  }
-  if (obj === null || (typeof obj !== 'object' && typeof obj !== 'function')) {
-    return {default: obj};
-  }
-  var cache = _getRequireWildcardCache(nodeInterop);
-  if (cache && cache.has(obj)) {
-    return cache.get(obj);
-  }
-  var newObj = {};
-  var hasPropertyDescriptor =
-    Object.defineProperty && Object.getOwnPropertyDescriptor;
-  for (var key in obj) {
-    if (key !== 'default' && Object.prototype.hasOwnProperty.call(obj, key)) {
-      var desc = hasPropertyDescriptor
-        ? Object.getOwnPropertyDescriptor(obj, key)
-        : null;
-      if (desc && (desc.get || desc.set)) {
-        Object.defineProperty(newObj, key, desc);
-      } else {
-        newObj[key] = obj[key];
-      }
-    }
-  }
-  newObj.default = obj;
-  if (cache) {
-    cache.set(obj, newObj);
-  }
-  return newObj;
-}
+function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -103,9 +59,7 @@ class ExecutionContext extends _instrumentation.SdkObject {
         ${utilityScriptSource.source}
         return new pwExport();
       })();`;
-      this._utilityScriptPromise = this._delegate
-        .rawEvaluateHandle(source)
-        .then((objectId) => new JSHandle(this, 'object', undefined, objectId));
+      this._utilityScriptPromise = this._delegate.rawEvaluateHandle(source).then(objectId => new JSHandle(this, 'object', undefined, objectId));
     }
 
     return this._utilityScriptPromise;
@@ -119,9 +73,9 @@ class ExecutionContext extends _instrumentation.SdkObject {
     return await this._delegate.rawEvaluateJSON(expression);
   }
 
-  async doSlowMo() {
-    // overridden in FrameExecutionContext
+  async doSlowMo() {// overridden in FrameExecutionContext
   }
+
 }
 
 exports.ExecutionContext = ExecutionContext;
@@ -140,9 +94,7 @@ class JSHandle extends _instrumentation.SdkObject {
     this._objectId = objectId;
     this._value = value;
     this._objectType = type;
-    this._preview = this._objectId
-      ? preview || `JSHandle@${this._objectType}`
-      : String(value);
+    this._preview = this._objectId ? preview || `JSHandle@${this._objectType}` : String(value);
   }
 
   callFunctionNoReply(func, arg) {
@@ -150,41 +102,19 @@ class JSHandle extends _instrumentation.SdkObject {
   }
 
   async evaluate(pageFunction, arg) {
-    return evaluate(
-      this._context,
-      true,
-      /* returnByValue */
-      pageFunction,
-      this,
-      arg,
-    );
+    return evaluate(this._context, true
+    /* returnByValue */
+    , pageFunction, this, arg);
   }
 
   async evaluateHandle(pageFunction, arg) {
-    return evaluate(
-      this._context,
-      false,
-      /* returnByValue */
-      pageFunction,
-      this,
-      arg,
-    );
+    return evaluate(this._context, false
+    /* returnByValue */
+    , pageFunction, this, arg);
   }
 
-  async evaluateExpressionAndWaitForSignals(
-    expression,
-    isFunction,
-    returnByValue,
-    arg,
-  ) {
-    const value = await evaluateExpressionAndWaitForSignals(
-      this._context,
-      returnByValue,
-      expression,
-      isFunction,
-      this,
-      arg,
-    );
+  async evaluateExpressionAndWaitForSignals(expression, isFunction, returnByValue, arg) {
+    const value = await evaluateExpressionAndWaitForSignals(this._context, returnByValue, expression, isFunction, this, arg);
     await this._context.doSlowMo();
     return value;
   }
@@ -192,7 +122,7 @@ class JSHandle extends _instrumentation.SdkObject {
   async getProperty(propertyName) {
     const objectHandle = await this.evaluateHandle((object, propertyName) => {
       const result = {
-        __proto__: null,
+        __proto__: null
       };
       result[propertyName] = object[propertyName];
       return result;
@@ -216,13 +146,7 @@ class JSHandle extends _instrumentation.SdkObject {
     if (!this._objectId) return this._value;
     const utilityScript = await this._context.utilityScript();
     const script = `(utilityScript, ...args) => utilityScript.jsonValue(...args)`;
-    return this._context._delegate.evaluateWithArguments(
-      script,
-      true,
-      utilityScript,
-      [true],
-      [this._objectId],
-    );
+    return this._context._delegate.evaluateWithArguments(script, true, utilityScript, [true], [this._objectId]);
   }
 
   asElement() {
@@ -232,8 +156,7 @@ class JSHandle extends _instrumentation.SdkObject {
   dispose() {
     if (this._disposed) return;
     this._disposed = true;
-    if (this._objectId)
-      this._context._delegate.releaseHandle(this._objectId).catch((e) => {});
+    if (this._objectId) this._context._delegate.releaseHandle(this._objectId).catch(e => {});
   }
 
   toString() {
@@ -252,105 +175,66 @@ class JSHandle extends _instrumentation.SdkObject {
     this._preview = preview;
     if (this._previewCallback) this._previewCallback(preview);
   }
+
 }
 
 exports.JSHandle = JSHandle;
 
 async function evaluate(context, returnByValue, pageFunction, ...args) {
-  return evaluateExpression(
-    context,
-    returnByValue,
-    String(pageFunction),
-    typeof pageFunction === 'function',
-    ...args,
-  );
+  return evaluateExpression(context, returnByValue, String(pageFunction), typeof pageFunction === 'function', ...args);
 }
 
-async function evaluateExpression(
-  context,
-  returnByValue,
-  expression,
-  isFunction,
-  ...args
-) {
+async function evaluateExpression(context, returnByValue, expression, isFunction, ...args) {
   const utilityScript = await context.utilityScript();
   expression = normalizeEvaluationExpression(expression, isFunction);
   const handles = [];
   const toDispose = [];
 
-  const pushHandle = (handle) => {
+  const pushHandle = handle => {
     handles.push(handle);
     return handles.length - 1;
   };
 
-  args = args.map((arg) =>
-    (0, _utilityScriptSerializers.serializeAsCallArgument)(arg, (handle) => {
-      if (handle instanceof JSHandle) {
-        if (!handle._objectId)
-          return {
-            fallThrough: handle._value,
-          };
-        if (handle._disposed) throw new Error('JSHandle is disposed!');
-        const adopted = context.adoptIfNeeded(handle);
-        if (adopted === null)
-          return {
-            h: pushHandle(Promise.resolve(handle)),
-          };
-        toDispose.push(adopted);
-        return {
-          h: pushHandle(adopted),
-        };
-      }
-
-      return {
-        fallThrough: handle,
+  args = args.map(arg => (0, _utilityScriptSerializers.serializeAsCallArgument)(arg, handle => {
+    if (handle instanceof JSHandle) {
+      if (!handle._objectId) return {
+        fallThrough: handle._value
       };
-    }),
-  );
+      if (handle._disposed) throw new Error('JSHandle is disposed!');
+      const adopted = context.adoptIfNeeded(handle);
+      if (adopted === null) return {
+        h: pushHandle(Promise.resolve(handle))
+      };
+      toDispose.push(adopted);
+      return {
+        h: pushHandle(adopted)
+      };
+    }
+
+    return {
+      fallThrough: handle
+    };
+  }));
   const utilityScriptObjectIds = [];
 
   for (const handle of await Promise.all(handles)) {
-    if (handle._context !== context)
-      throw new Error(
-        'JSHandles can be evaluated only in the context they were created!',
-      );
+    if (handle._context !== context) throw new Error('JSHandles can be evaluated only in the context they were created!');
     utilityScriptObjectIds.push(handle._objectId);
   } // See UtilityScript for arguments.
 
-  const utilityScriptValues = [
-    isFunction,
-    returnByValue,
-    expression,
-    args.length,
-    ...args,
-  ];
+
+  const utilityScriptValues = [isFunction, returnByValue, expression, args.length, ...args];
   const script = `(utilityScript, ...args) => utilityScript.evaluate(...args)`;
 
   try {
-    return await context._delegate.evaluateWithArguments(
-      script,
-      returnByValue,
-      utilityScript,
-      utilityScriptValues,
-      utilityScriptObjectIds,
-    );
+    return await context._delegate.evaluateWithArguments(script, returnByValue, utilityScript, utilityScriptValues, utilityScriptObjectIds);
   } finally {
-    toDispose.map((handlePromise) =>
-      handlePromise.then((handle) => handle.dispose()),
-    );
+    toDispose.map(handlePromise => handlePromise.then(handle => handle.dispose()));
   }
 }
 
-async function evaluateExpressionAndWaitForSignals(
-  context,
-  returnByValue,
-  expression,
-  isFunction,
-  ...args
-) {
-  return await context.waitForSignalsCreatedBy(() =>
-    evaluateExpression(context, returnByValue, expression, isFunction, ...args),
-  );
+async function evaluateExpressionAndWaitForSignals(context, returnByValue, expression, isFunction, ...args) {
+  return await context.waitForSignalsCreatedBy(() => evaluateExpression(context, returnByValue, expression, isFunction, ...args));
 }
 
 function parseUnserializableValue(unserializableValue) {
@@ -369,9 +253,7 @@ function normalizeEvaluationExpression(expression, isFunction) {
     } catch (e1) {
       // This means we might have a function shorthand. Try another
       // time prefixing 'function '.
-      if (expression.startsWith('async '))
-        expression = 'async function ' + expression.substring('async '.length);
-      else expression = 'function ' + expression;
+      if (expression.startsWith('async ')) expression = 'async function ' + expression.substring('async '.length);else expression = 'function ' + expression;
 
       try {
         new Function('(' + expression + ')');
@@ -382,10 +264,10 @@ function normalizeEvaluationExpression(expression, isFunction) {
     }
   }
 
-  if (/^(async)?\s*function(\s|\()/.test(expression))
-    expression = '(' + expression + ')';
+  if (/^(async)?\s*function(\s|\()/.test(expression)) expression = '(' + expression + ')';
   return expression;
 } // Error inside the expression evaluation as opposed to a protocol error.
+
 
 class JavaScriptErrorInEvaluate extends Error {}
 

@@ -1,13 +1,13 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.ConsoleMessageDispatcher = void 0;
 
-var _dispatcher = require('./dispatcher');
+var _dispatcher = require("./dispatcher");
 
-var _elementHandlerDispatcher = require('./elementHandlerDispatcher');
+var _elementHandlerDispatcher = require("./elementHandlerDispatcher");
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -29,17 +29,11 @@ class ConsoleMessageDispatcher extends _dispatcher.Dispatcher {
     super(scope, message, 'ConsoleMessage', {
       type: message.type(),
       text: message.text(),
-      args: message
-        .args()
-        .map((a) =>
-          _elementHandlerDispatcher.ElementHandleDispatcher.fromJSHandle(
-            scope,
-            a,
-          ),
-        ),
-      location: message.location(),
+      args: message.args().map(a => _elementHandlerDispatcher.ElementHandleDispatcher.fromJSHandle(scope, a)),
+      location: message.location()
     });
   }
+
 }
 
 exports.ConsoleMessageDispatcher = ConsoleMessageDispatcher;

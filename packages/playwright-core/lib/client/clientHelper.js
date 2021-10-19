@@ -1,7 +1,7 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.deprecate = deprecate;
 exports.envObjectToArray = envObjectToArray;
@@ -10,13 +10,11 @@ exports.parsedURL = parsedURL;
 exports.urlMatches = urlMatches;
 exports.globToRegex = globToRegex;
 
-var _fs = _interopRequireDefault(require('fs'));
+var _fs = _interopRequireDefault(require("fs"));
 
-var _utils = require('../utils/utils');
+var _utils = require("../utils/utils");
 
-function _interopRequireDefault(obj) {
-  return obj && obj.__esModule ? obj : {default: obj};
-}
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
  * Copyright 2017 Google Inc. All rights reserved.
@@ -46,11 +44,10 @@ function envObjectToArray(env) {
   const result = [];
 
   for (const name in env) {
-    if (!Object.is(env[name], undefined))
-      result.push({
-        name,
-        value: String(env[name]),
-      });
+    if (!Object.is(env[name], undefined)) result.push({
+      name,
+      value: String(env[name])
+    });
   }
 
   return result;
@@ -59,14 +56,11 @@ function envObjectToArray(env) {
 async function evaluationScript(fun, arg, addSourceUrl = true) {
   if (typeof fun === 'function') {
     const source = fun.toString();
-    const argString = Object.is(arg, undefined)
-      ? 'undefined'
-      : JSON.stringify(arg);
+    const argString = Object.is(arg, undefined) ? 'undefined' : JSON.stringify(arg);
     return `(${source})(${argString})`;
   }
 
-  if (arg !== undefined)
-    throw new Error('Cannot evaluate a string with arguments');
+  if (arg !== undefined) throw new Error('Cannot evaluate a string with arguments');
   if ((0, _utils.isString)(fun)) return fun;
   if (fun.content !== undefined) return fun.content;
 
@@ -89,31 +83,18 @@ function parsedURL(url) {
 
 function urlMatches(baseURL, urlString, match) {
   if (match === undefined || match === '') return true;
-  if ((0, _utils.isString)(match) && !match.startsWith('*'))
-    match = (0, _utils.constructURLBasedOnBaseURL)(baseURL, match);
+  if ((0, _utils.isString)(match) && !match.startsWith('*')) match = (0, _utils.constructURLBasedOnBaseURL)(baseURL, match);
   if ((0, _utils.isString)(match)) match = globToRegex(match);
   if ((0, _utils.isRegExp)(match)) return match.test(urlString);
   if (typeof match === 'string' && match === urlString) return true;
   const url = parsedURL(urlString);
   if (!url) return false;
   if (typeof match === 'string') return url.pathname === match;
-  if (typeof match !== 'function')
-    throw new Error('url parameter should be string, RegExp or function');
+  if (typeof match !== 'function') throw new Error('url parameter should be string, RegExp or function');
   return match(url);
 }
 
-const escapeGlobChars = new Set([
-  '/',
-  '$',
-  '^',
-  '+',
-  '.',
-  '(',
-  ')',
-  '=',
-  '!',
-  '|',
-]);
+const escapeGlobChars = new Set(['/', '$', '^', '+', '.', '(', ')', '=', '!', '|']);
 
 function globToRegex(glob) {
   const tokens = ['^'];
@@ -137,13 +118,10 @@ function globToRegex(glob) {
       }
 
       const afterDeep = glob[i + 1];
-      const isDeep =
-        starCount > 1 &&
-        (beforeDeep === '/' || beforeDeep === undefined) &&
-        (afterDeep === '/' || afterDeep === undefined);
+      const isDeep = starCount > 1 && (beforeDeep === '/' || beforeDeep === undefined) && (afterDeep === '/' || afterDeep === undefined);
 
       if (isDeep) {
-        tokens.push('((?:[^/]*(?:/|$))*)');
+        tokens.push('((?:[^/]*(?:\/|$))*)');
         i++;
       } else {
         tokens.push('([^/]*)');

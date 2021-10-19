@@ -1,11 +1,11 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.default = exports.ConsoleAPI = void 0;
 
-var _selectorGenerator = require('../../injected/selectorGenerator');
+var _selectorGenerator = require("../../injected/selectorGenerator");
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -29,16 +29,15 @@ class ConsoleAPI {
     if (window.playwright) return;
     window.playwright = {
       $: (selector, strict) => this._querySelector(selector, !!strict),
-      $$: (selector) => this._querySelectorAll(selector),
-      inspect: (selector) => this._inspect(selector),
-      selector: (element) => this._selector(element),
-      resume: () => this._resume(),
+      $$: selector => this._querySelectorAll(selector),
+      inspect: selector => this._inspect(selector),
+      selector: element => this._selector(element),
+      resume: () => this._resume()
     };
   }
 
   _querySelector(selector, strict) {
-    if (typeof selector !== 'string')
-      throw new Error(`Usage: playwright.query('Playwright >> selector').`);
+    if (typeof selector !== 'string') throw new Error(`Usage: playwright.query('Playwright >> selector').`);
 
     const parsed = this._injectedScript.parseSelector(selector);
 
@@ -46,8 +45,7 @@ class ConsoleAPI {
   }
 
   _querySelectorAll(selector) {
-    if (typeof selector !== 'string')
-      throw new Error(`Usage: playwright.$$('Playwright >> selector').`);
+    if (typeof selector !== 'string') throw new Error(`Usage: playwright.$$('Playwright >> selector').`);
 
     const parsed = this._injectedScript.parseSelector(selector);
 
@@ -55,23 +53,19 @@ class ConsoleAPI {
   }
 
   _inspect(selector) {
-    if (typeof selector !== 'string')
-      throw new Error(`Usage: playwright.inspect('Playwright >> selector').`);
+    if (typeof selector !== 'string') throw new Error(`Usage: playwright.inspect('Playwright >> selector').`);
     window.inspect(this._querySelector(selector, false));
   }
 
   _selector(element) {
-    if (!(element instanceof Element))
-      throw new Error(`Usage: playwright.selector(element).`);
-    return (0, _selectorGenerator.generateSelector)(
-      this._injectedScript,
-      element,
-    ).selector;
+    if (!(element instanceof Element)) throw new Error(`Usage: playwright.selector(element).`);
+    return (0, _selectorGenerator.generateSelector)(this._injectedScript, element).selector;
   }
 
   _resume() {
     window._playwrightResume().catch(() => {});
   }
+
 }
 
 exports.ConsoleAPI = ConsoleAPI;

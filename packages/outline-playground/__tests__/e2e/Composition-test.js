@@ -147,8 +147,8 @@ describe('Composition', () => {
         await page.keyboard.imeSetComposition('m', 1, 1);
         await page.keyboard.imeSetComposition('も', 1, 1);
         await page.keyboard.imeSetComposition('もj', 2, 2);
-        await page.keyboard.imeSetComposition('もじ', 3, 3);
-        await page.keyboard.imeSetComposition('もじあ', 4, 4);
+        await page.keyboard.imeSetComposition('もじ', 2, 2);
+        await page.keyboard.imeSetComposition('もじあ', 3, 3);
         await page.keyboard.insertText('もじあ');
 
         await assertHTML(
@@ -194,8 +194,8 @@ describe('Composition', () => {
         await page.keyboard.imeSetComposition('m', 1, 1);
         await page.keyboard.imeSetComposition('も', 1, 1);
         await page.keyboard.imeSetComposition('もj', 2, 2);
-        await page.keyboard.imeSetComposition('もじ', 3, 3);
-        await page.keyboard.imeSetComposition('もじあ', 4, 4);
+        await page.keyboard.imeSetComposition('もじ', 2, 2);
+        await page.keyboard.imeSetComposition('もじあ', 3, 3);
         await page.keyboard.insertText('もじあ');
 
         await assertHTML(
@@ -235,8 +235,8 @@ describe('Composition', () => {
         await page.keyboard.imeSetComposition('m', 1, 1);
         await page.keyboard.imeSetComposition('も', 1, 1);
         await page.keyboard.imeSetComposition('もj', 2, 2);
-        await page.keyboard.imeSetComposition('もじ', 3, 3);
-        await page.keyboard.imeSetComposition('もじあ', 4, 4);
+        await page.keyboard.imeSetComposition('もじ', 2, 2);
+        await page.keyboard.imeSetComposition('もじあ', 3, 3);
         await page.keyboard.insertText('もじあ');
 
         await assertHTML(
@@ -278,8 +278,8 @@ describe('Composition', () => {
         await page.keyboard.imeSetComposition('m', 1, 1);
         await page.keyboard.imeSetComposition('も', 1, 1);
         await page.keyboard.imeSetComposition('もj', 2, 2);
-        await page.keyboard.imeSetComposition('もじ', 3, 3);
-        await page.keyboard.imeSetComposition('もじあ', 4, 4);
+        await page.keyboard.imeSetComposition('もじ', 2, 2);
+        await page.keyboard.imeSetComposition('もじあ', 3, 3);
         await page.keyboard.insertText('もじあ');
 
         await assertHTML(
@@ -325,8 +325,8 @@ describe('Composition', () => {
         await page.keyboard.imeSetComposition('m', 1, 1);
         await page.keyboard.imeSetComposition('も', 1, 1);
         await page.keyboard.imeSetComposition('もj', 2, 2);
-        await page.keyboard.imeSetComposition('もじ', 3, 3);
-        await page.keyboard.imeSetComposition('もじあ', 4, 4);
+        await page.keyboard.imeSetComposition('もじ', 2, 2);
+        await page.keyboard.imeSetComposition('もじあ', 3, 3);
         await page.keyboard.insertText('もじあ');
 
         await assertHTML(
@@ -365,8 +365,8 @@ describe('Composition', () => {
         await page.keyboard.imeSetComposition('m', 1, 1);
         await page.keyboard.imeSetComposition('も', 1, 1);
         await page.keyboard.imeSetComposition('もj', 2, 2);
-        await page.keyboard.imeSetComposition('もじ', 3, 3);
-        await page.keyboard.imeSetComposition('もじあ', 4, 4);
+        await page.keyboard.imeSetComposition('もじ', 2, 2);
+        await page.keyboard.imeSetComposition('もじあ', 3, 3);
         await page.keyboard.insertText('もじあ');
 
         await assertHTML(

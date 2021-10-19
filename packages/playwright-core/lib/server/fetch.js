@@ -1,84 +1,41 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
-exports.GlobalFetchRequest =
-  exports.BrowserContextFetchRequest =
-  exports.FetchRequest =
-    void 0;
+exports.GlobalFetchRequest = exports.BrowserContextFetchRequest = exports.FetchRequest = void 0;
 
-var http = _interopRequireWildcard(require('http'));
+var http = _interopRequireWildcard(require("http"));
 
-var https = _interopRequireWildcard(require('https'));
+var https = _interopRequireWildcard(require("https"));
 
-var _httpsProxyAgent = require('https-proxy-agent');
+var _httpsProxyAgent = require("https-proxy-agent");
 
-var _stream = require('stream');
+var _stream = require("stream");
 
-var _url = _interopRequireDefault(require('url'));
+var _url = _interopRequireDefault(require("url"));
 
-var _zlib = _interopRequireDefault(require('zlib'));
+var _zlib = _interopRequireDefault(require("zlib"));
 
-var _debugLogger = require('../utils/debugLogger');
+var _debugLogger = require("../utils/debugLogger");
 
-var _timeoutSettings = require('../utils/timeoutSettings');
+var _timeoutSettings = require("../utils/timeoutSettings");
 
-var _utils = require('../utils/utils');
+var _utils = require("../utils/utils");
 
-var _browserContext = require('./browserContext');
+var _browserContext = require("./browserContext");
 
-var _cookieStore = require('./cookieStore');
+var _cookieStore = require("./cookieStore");
 
-var _formData = require('./formData');
+var _formData = require("./formData");
 
-var _instrumentation = require('./instrumentation');
+var _instrumentation = require("./instrumentation");
 
-function _interopRequireDefault(obj) {
-  return obj && obj.__esModule ? obj : {default: obj};
-}
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function _getRequireWildcardCache(nodeInterop) {
-  if (typeof WeakMap !== 'function') return null;
-  var cacheBabelInterop = new WeakMap();
-  var cacheNodeInterop = new WeakMap();
-  return (_getRequireWildcardCache = function (nodeInterop) {
-    return nodeInterop ? cacheNodeInterop : cacheBabelInterop;
-  })(nodeInterop);
-}
+function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 
-function _interopRequireWildcard(obj, nodeInterop) {
-  if (!nodeInterop && obj && obj.__esModule) {
-    return obj;
-  }
-  if (obj === null || (typeof obj !== 'object' && typeof obj !== 'function')) {
-    return {default: obj};
-  }
-  var cache = _getRequireWildcardCache(nodeInterop);
-  if (cache && cache.has(obj)) {
-    return cache.get(obj);
-  }
-  var newObj = {};
-  var hasPropertyDescriptor =
-    Object.defineProperty && Object.getOwnPropertyDescriptor;
-  for (var key in obj) {
-    if (key !== 'default' && Object.prototype.hasOwnProperty.call(obj, key)) {
-      var desc = hasPropertyDescriptor
-        ? Object.getOwnPropertyDescriptor(obj, key)
-        : null;
-      if (desc && (desc.get || desc.set)) {
-        Object.defineProperty(newObj, key, desc);
-      } else {
-        newObj[key] = obj[key];
-      }
-    }
-  }
-  newObj.default = obj;
-  if (cache) {
-    cache.set(obj, newObj);
-  }
-  return newObj;
-}
+function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -136,19 +93,20 @@ class FetchRequest extends _instrumentation.SdkObject {
       headers['accept-encoding'] = 'gzip,deflate,br';
 
       if (defaults.extraHTTPHeaders) {
-        for (const {name, value} of defaults.extraHTTPHeaders)
-          headers[name.toLowerCase()] = value;
+        for (const {
+          name,
+          value
+        } of defaults.extraHTTPHeaders) headers[name.toLowerCase()] = value;
       }
 
       if (params.headers) {
-        for (const {name, value} of params.headers)
-          headers[name.toLowerCase()] = value;
+        for (const {
+          name,
+          value
+        } of params.headers) headers[name.toLowerCase()] = value;
       }
 
-      const method =
-        ((_params$method = params.method) === null || _params$method === void 0
-          ? void 0
-          : _params$method.toUpperCase()) || 'GET';
+      const method = ((_params$method = params.method) === null || _params$method === void 0 ? void 0 : _params$method.toUpperCase()) || 'GET';
       const proxy = defaults.proxy;
       let agent;
 
@@ -156,8 +114,7 @@ class FetchRequest extends _instrumentation.SdkObject {
         // TODO: support bypass proxy
         const proxyOpts = _url.default.parse(proxy.server);
 
-        if (proxy.username)
-          proxyOpts.auth = `${proxy.username}:${proxy.password || ''}`;
+        if (proxy.username) proxyOpts.auth = `${proxy.username}:${proxy.password || ''}`;
         agent = new _httpsProxyAgent.HttpsProxyAgent(proxyOpts);
       }
 
@@ -169,50 +126,37 @@ class FetchRequest extends _instrumentation.SdkObject {
         agent,
         maxRedirects: 20,
         timeout,
-        deadline,
+        deadline
       }; // rejectUnauthorized = undefined is treated as true in node 12.
 
-      if (params.ignoreHTTPSErrors || defaults.ignoreHTTPSErrors)
-        options.rejectUnauthorized = false;
+      if (params.ignoreHTTPSErrors || defaults.ignoreHTTPSErrors) options.rejectUnauthorized = false;
       const requestUrl = new URL(params.url, defaults.baseURL);
 
       if (params.params) {
-        for (const {name, value} of params.params)
-          requestUrl.searchParams.set(name, value);
+        for (const {
+          name,
+          value
+        } of params.params) requestUrl.searchParams.set(name, value);
       }
 
       let postData;
-      if (['POST', 'PUT', 'PATCH'].includes(method))
-        postData = serializePostData(params, headers);
-      else if (
-        params.postData ||
-        params.jsonData ||
-        params.formData ||
-        params.multipartData
-      )
-        throw new Error(`Method ${method} does not accept post data`);
+      if (['POST', 'PUT', 'PATCH'].includes(method)) postData = serializePostData(params, headers);else if (params.postData || params.jsonData || params.formData || params.multipartData) throw new Error(`Method ${method} does not accept post data`);
       if (postData) headers['content-length'] = String(postData.byteLength);
-      const fetchResponse = await this._sendRequest(
-        requestUrl,
-        options,
-        postData,
-      );
+      const fetchResponse = await this._sendRequest(requestUrl, options, postData);
 
       const fetchUid = this._storeResponseBody(fetchResponse.body);
 
-      if (
-        params.failOnStatusCode &&
-        (fetchResponse.status < 200 || fetchResponse.status >= 400)
-      )
-        return {
-          error: `${fetchResponse.status} ${fetchResponse.statusText}`,
-        };
+      if (params.failOnStatusCode && (fetchResponse.status < 200 || fetchResponse.status >= 400)) return {
+        error: `${fetchResponse.status} ${fetchResponse.statusText}`
+      };
       return {
-        fetchResponse: {...fetchResponse, fetchUid},
+        fetchResponse: { ...fetchResponse,
+          fetchUid
+        }
       };
     } catch (e) {
       return {
-        error: String(e),
+        error: String(e)
       };
     }
   }
@@ -220,8 +164,7 @@ class FetchRequest extends _instrumentation.SdkObject {
   async _updateCookiesFromHeader(responseUrl, setCookie) {
     const url = new URL(responseUrl); // https://datatracker.ietf.org/doc/html/rfc6265#section-5.1.4
 
-    const defaultPath =
-      '/' + url.pathname.substr(1).split('/').slice(0, -1).join('/');
+    const defaultPath = '/' + url.pathname.substr(1).split('/').slice(0, -1).join('/');
     const cookies = [];
 
     for (const header of setCookie) {
@@ -229,13 +172,10 @@ class FetchRequest extends _instrumentation.SdkObject {
       const cookie = parseCookie(header);
       if (!cookie) continue; // https://datatracker.ietf.org/doc/html/rfc6265#section-5.2.3
 
-      if (!cookie.domain) cookie.domain = url.hostname;
-      else (0, _utils.assert)(cookie.domain.startsWith('.'));
-      if (!(0, _cookieStore.domainMatches)(url.hostname, cookie.domain))
-        continue; // https://datatracker.ietf.org/doc/html/rfc6265#section-5.2.4
+      if (!cookie.domain) cookie.domain = url.hostname;else (0, _utils.assert)(cookie.domain.startsWith('.'));
+      if (!(0, _cookieStore.domainMatches)(url.hostname, cookie.domain)) continue; // https://datatracker.ietf.org/doc/html/rfc6265#section-5.2.4
 
-      if (!cookie.path || !cookie.path.startsWith('/'))
-        cookie.path = defaultPath;
+      if (!cookie.path || !cookie.path.startsWith('/')) cookie.path = defaultPath;
       cookies.push(cookie);
     }
 
@@ -247,7 +187,7 @@ class FetchRequest extends _instrumentation.SdkObject {
     const cookies = await this._cookies(url);
 
     if (cookies.length) {
-      const valueArray = cookies.map((c) => `${c.name}=${c.value}`);
+      const valueArray = cookies.map(c => `${c.name}=${c.value}`);
       options.headers['cookie'] = valueArray.join('; ');
     }
   }
@@ -255,24 +195,15 @@ class FetchRequest extends _instrumentation.SdkObject {
   async _sendRequest(url, options, postData) {
     await this._updateRequestCookieHeader(url, options);
     return new Promise((fulfill, reject) => {
-      const requestConstructor = (url.protocol === 'https:' ? https : http)
-        .request;
-      const request = requestConstructor(url, options, async (response) => {
+      const requestConstructor = (url.protocol === 'https:' ? https : http).request;
+      const request = requestConstructor(url, options, async response => {
         if (_debugLogger.debugLogger.isEnabled('api')) {
-          _debugLogger.debugLogger.log(
-            'api',
-            `← ${response.statusCode} ${response.statusMessage}`,
-          );
+          _debugLogger.debugLogger.log('api', `← ${response.statusCode} ${response.statusMessage}`);
 
-          for (const [name, value] of Object.entries(response.headers))
-            _debugLogger.debugLogger.log('api', `  ${name}: ${value}`);
+          for (const [name, value] of Object.entries(response.headers)) _debugLogger.debugLogger.log('api', `  ${name}: ${value}`);
         }
 
-        if (response.headers['set-cookie'])
-          await this._updateCookiesFromHeader(
-            response.url || url.toString(),
-            response.headers['set-cookie'],
-          );
+        if (response.headers['set-cookie']) await this._updateCookiesFromHeader(response.url || url.toString(), response.headers['set-cookie']);
 
         if (redirectStatus.includes(response.statusCode)) {
           if (!options.maxRedirects) {
@@ -281,16 +212,14 @@ class FetchRequest extends _instrumentation.SdkObject {
             return;
           }
 
-          const headers = {...options.headers};
+          const headers = { ...options.headers
+          };
           delete headers[`cookie`]; // HTTP-redirect fetch step 13 (https://fetch.spec.whatwg.org/#http-redirect-fetch)
 
           const status = response.statusCode;
           let method = options.method;
 
-          if (
-            ((status === 301 || status === 302) && method === 'POST') ||
-            (status === 303 && !['GET', 'HEAD'].includes(method))
-          ) {
+          if ((status === 301 || status === 302) && method === 'POST' || status === 303 && !['GET', 'HEAD'].includes(method)) {
             method = 'GET';
             postData = undefined;
             delete headers[`content-encoding`];
@@ -305,7 +234,7 @@ class FetchRequest extends _instrumentation.SdkObject {
             agent: options.agent,
             maxRedirects: options.maxRedirects - 1,
             timeout: options.timeout,
-            deadline: options.deadline,
+            deadline: options.deadline
           }; // HTTP-redirect fetch step 4: If locationURL is null, then return response.
 
           if (response.headers.location) {
@@ -321,16 +250,12 @@ class FetchRequest extends _instrumentation.SdkObject {
 
           const credentials = this._defaultOptions().httpCredentials;
 
-          if (
-            auth !== null &&
-            auth !== void 0 &&
-            auth.trim().startsWith('Basic ') &&
-            credentials
-          ) {
-            const {username, password} = credentials;
-            const encoded = Buffer.from(
-              `${username || ''}:${password || ''}`,
-            ).toString('base64');
+          if (auth !== null && auth !== void 0 && auth.trim().startsWith('Basic ') && credentials) {
+            const {
+              username,
+              password
+            } = credentials;
+            const encoded = Buffer.from(`${username || ''}:${password || ''}`).toString('base64');
             options.headers['authorization'] = `Basic ${encoded}`;
             fulfill(this._sendRequest(url, options, postData));
             request.abort();
@@ -346,7 +271,7 @@ class FetchRequest extends _instrumentation.SdkObject {
         if (encoding === 'gzip' || encoding === 'x-gzip') {
           transform = _zlib.default.createGunzip({
             flush: _zlib.default.constants.Z_SYNC_FLUSH,
-            finishFlush: _zlib.default.constants.Z_SYNC_FLUSH,
+            finishFlush: _zlib.default.constants.Z_SYNC_FLUSH
           });
         } else if (encoding === 'br') {
           transform = _zlib.default.createBrotliDecompress();
@@ -355,16 +280,13 @@ class FetchRequest extends _instrumentation.SdkObject {
         }
 
         if (transform) {
-          body = (0, _stream.pipeline)(response, transform, (e) => {
-            if (e)
-              reject(
-                new Error(`failed to decompress '${encoding}' encoding: ${e}`),
-              );
+          body = (0, _stream.pipeline)(response, transform, e => {
+            if (e) reject(new Error(`failed to decompress '${encoding}' encoding: ${e}`));
           });
         }
 
         const chunks = [];
-        body.on('data', (chunk) => chunks.push(chunk));
+        body.on('data', chunk => chunks.push(chunk));
         body.on('end', () => {
           const body = Buffer.concat(chunks);
           fulfill({
@@ -372,7 +294,7 @@ class FetchRequest extends _instrumentation.SdkObject {
             status: response.statusCode || 0,
             statusText: response.statusMessage || '',
             headers: toHeadersArray(response.rawHeaders),
-            body,
+            body
           });
         });
         body.on('error', reject);
@@ -380,14 +302,10 @@ class FetchRequest extends _instrumentation.SdkObject {
       request.on('error', reject);
 
       if (_debugLogger.debugLogger.isEnabled('api')) {
-        _debugLogger.debugLogger.log(
-          'api',
-          `→ ${options.method} ${url.toString()}`,
-        );
+        _debugLogger.debugLogger.log('api', `→ ${options.method} ${url.toString()}`);
 
         if (options.headers) {
-          for (const [name, value] of Object.entries(options.headers))
-            _debugLogger.debugLogger.log('api', `  ${name}: ${value}`);
+          for (const [name, value] of Object.entries(options.headers)) _debugLogger.debugLogger.log('api', `  ${name}: ${value}`);
         }
       }
 
@@ -411,11 +329,12 @@ class FetchRequest extends _instrumentation.SdkObject {
       request.end();
     });
   }
+
 }
 
 exports.FetchRequest = FetchRequest;
 FetchRequest.Events = {
-  Dispose: 'dispose',
+  Dispose: 'dispose'
 };
 FetchRequest.allInstances = new Set();
 
@@ -424,9 +343,7 @@ class BrowserContextFetchRequest extends FetchRequest {
     super(context);
     this._context = void 0;
     this._context = context;
-    context.once(_browserContext.BrowserContext.Events.Close, () =>
-      this._disposeImpl(),
-    );
+    context.once(_browserContext.BrowserContext.Events.Close, () => this._disposeImpl());
   }
 
   dispose() {
@@ -435,15 +352,13 @@ class BrowserContextFetchRequest extends FetchRequest {
 
   _defaultOptions() {
     return {
-      userAgent:
-        this._context._options.userAgent || this._context._browser.userAgent(),
+      userAgent: this._context._options.userAgent || this._context._browser.userAgent(),
       extraHTTPHeaders: this._context._options.extraHTTPHeaders,
       httpCredentials: this._context._options.httpCredentials,
-      proxy:
-        this._context._options.proxy || this._context._browser.options.proxy,
+      proxy: this._context._options.proxy || this._context._browser.options.proxy,
       timeoutSettings: this._context._timeoutSettings,
       ignoreHTTPSErrors: this._context._options.ignoreHTTPSErrors,
-      baseURL: this._context._options.baseURL,
+      baseURL: this._context._options.baseURL
     };
   }
 
@@ -458,6 +373,7 @@ class BrowserContextFetchRequest extends FetchRequest {
   async storageState() {
     return this._context.storageState();
   }
+
 }
 
 exports.BrowserContextFetchRequest = BrowserContextFetchRequest;
@@ -469,13 +385,11 @@ class GlobalFetchRequest extends FetchRequest {
     this._options = void 0;
     this._origins = void 0;
     const timeoutSettings = new _timeoutSettings.TimeoutSettings();
-    if (options.timeout !== undefined)
-      timeoutSettings.setDefaultTimeout(options.timeout);
+    if (options.timeout !== undefined) timeoutSettings.setDefaultTimeout(options.timeout);
     const proxy = options.proxy;
 
     if (proxy !== null && proxy !== void 0 && proxy.server) {
-      let url =
-        proxy === null || proxy === void 0 ? void 0 : proxy.server.trim();
+      let url = proxy === null || proxy === void 0 ? void 0 : proxy.server.trim();
       if (!/^\w+:\/\//.test(url)) url = 'http://' + url;
       proxy.server = url;
     }
@@ -488,13 +402,12 @@ class GlobalFetchRequest extends FetchRequest {
 
     this._options = {
       baseURL: options.baseURL,
-      userAgent:
-        options.userAgent || `Playwright/${(0, _utils.getPlaywrightVersion)()}`,
+      userAgent: options.userAgent || `Playwright/${(0, _utils.getPlaywrightVersion)()}`,
       extraHTTPHeaders: options.extraHTTPHeaders,
       ignoreHTTPSErrors: !!options.ignoreHTTPSErrors,
       httpCredentials: options.httpCredentials,
       proxy,
-      timeoutSettings,
+      timeoutSettings
     };
   }
 
@@ -517,9 +430,10 @@ class GlobalFetchRequest extends FetchRequest {
   async storageState() {
     return {
       cookies: this._cookieStore.allCookies(),
-      origins: this._origins || [],
+      origins: this._origins || []
     };
   }
+
 }
 
 exports.GlobalFetchRequest = GlobalFetchRequest;
@@ -527,11 +441,10 @@ exports.GlobalFetchRequest = GlobalFetchRequest;
 function toHeadersArray(rawHeaders) {
   const result = [];
 
-  for (let i = 0; i < rawHeaders.length; i += 2)
-    result.push({
-      name: rawHeaders[i],
-      value: rawHeaders[i + 1],
-    });
+  for (let i = 0; i < rawHeaders.length; i += 2) result.push({
+    name: rawHeaders[i],
+    value: rawHeaders[i + 1]
+  });
 
   return result;
 }
@@ -539,10 +452,7 @@ function toHeadersArray(rawHeaders) {
 const redirectStatus = [301, 302, 303, 307, 308];
 
 function parseCookie(header) {
-  const pairs = header
-    .split(';')
-    .filter((s) => s.trim().length > 0)
-    .map((p) => p.split('=').map((s) => s.trim()));
+  const pairs = header.split(';').filter(s => s.trim().length > 0).map(p => p.split('=').map(s => s.trim()));
   if (!pairs.length) return null;
   const [name, value] = pairs[0];
   const cookie = {
@@ -553,7 +463,8 @@ function parseCookie(header) {
     expires: -1,
     httpOnly: false,
     secure: false,
-    sameSite: 'Lax', // None for non-chromium
+    sameSite: 'Lax' // None for non-chromium
+
   };
 
   for (let i = 1; i < pairs.length; i++) {
@@ -572,8 +483,7 @@ function parseCookie(header) {
 
       case 'domain':
         cookie.domain = value.toLocaleLowerCase() || '';
-        if (cookie.domain && !cookie.domain.startsWith('.'))
-          cookie.domain = '.' + cookie.domain;
+        if (cookie.domain && !cookie.domain.startsWith('.')) cookie.domain = '.' + cookie.domain;
         break;
 
       case 'path':
@@ -594,36 +504,25 @@ function parseCookie(header) {
 }
 
 function serializePostData(params, headers) {
-  (0, _utils.assert)(
-    (params.postData ? 1 : 0) +
-      (params.jsonData ? 1 : 0) +
-      (params.formData ? 1 : 0) +
-      (params.multipartData ? 1 : 0) <=
-      1,
-    `Only one of 'data', 'form' or 'multipart' can be specified`,
-  );
+  (0, _utils.assert)((params.postData ? 1 : 0) + (params.jsonData ? 1 : 0) + (params.formData ? 1 : 0) + (params.multipartData ? 1 : 0) <= 1, `Only one of 'data', 'form' or 'multipart' can be specified`);
 
   if (params.jsonData) {
     var _contentType, _headers$_contentType;
 
     const json = JSON.stringify(params.jsonData);
-    (_headers$_contentType = headers[(_contentType = 'content-type')]) !==
-      null && _headers$_contentType !== void 0
-      ? _headers$_contentType
-      : (headers[_contentType] = 'application/json');
+    (_headers$_contentType = headers[_contentType = 'content-type']) !== null && _headers$_contentType !== void 0 ? _headers$_contentType : headers[_contentType] = 'application/json';
     return Buffer.from(json, 'utf8');
   } else if (params.formData) {
     var _contentType2, _headers$_contentType2;
 
     const searchParams = new URLSearchParams();
 
-    for (const {name, value} of params.formData)
-      searchParams.append(name, value);
+    for (const {
+      name,
+      value
+    } of params.formData) searchParams.append(name, value);
 
-    (_headers$_contentType2 = headers[(_contentType2 = 'content-type')]) !==
-      null && _headers$_contentType2 !== void 0
-      ? _headers$_contentType2
-      : (headers[_contentType2] = 'application/x-www-form-urlencoded');
+    (_headers$_contentType2 = headers[_contentType2 = 'content-type']) !== null && _headers$_contentType2 !== void 0 ? _headers$_contentType2 : headers[_contentType2] = 'application/x-www-form-urlencoded';
     return Buffer.from(searchParams.toString(), 'utf8');
   } else if (params.multipartData) {
     var _contentType3, _headers$_contentType3;
@@ -631,22 +530,15 @@ function serializePostData(params, headers) {
     const formData = new _formData.MultipartFormData();
 
     for (const field of params.multipartData) {
-      if (field.file) formData.addFileField(field.name, field.file);
-      else if (field.value) formData.addField(field.name, field.value);
+      if (field.file) formData.addFileField(field.name, field.file);else if (field.value) formData.addField(field.name, field.value);
     }
 
-    (_headers$_contentType3 = headers[(_contentType3 = 'content-type')]) !==
-      null && _headers$_contentType3 !== void 0
-      ? _headers$_contentType3
-      : (headers[_contentType3] = formData.contentTypeHeader());
+    (_headers$_contentType3 = headers[_contentType3 = 'content-type']) !== null && _headers$_contentType3 !== void 0 ? _headers$_contentType3 : headers[_contentType3] = formData.contentTypeHeader();
     return formData.finish();
   } else if (params.postData) {
     var _contentType4, _headers$_contentType4;
 
-    (_headers$_contentType4 = headers[(_contentType4 = 'content-type')]) !==
-      null && _headers$_contentType4 !== void 0
-      ? _headers$_contentType4
-      : (headers[_contentType4] = 'application/octet-stream');
+    (_headers$_contentType4 = headers[_contentType4 = 'content-type']) !== null && _headers$_contentType4 !== void 0 ? _headers$_contentType4 : headers[_contentType4] = 'application/octet-stream';
     return Buffer.from(params.postData, 'base64');
   }
 

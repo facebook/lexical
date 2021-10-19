@@ -1,19 +1,17 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.PlaywrightClient = void 0;
 
-var _ws = _interopRequireDefault(require('ws'));
+var _ws = _interopRequireDefault(require("ws"));
 
-var _connection = require('../client/connection');
+var _connection = require("../client/connection");
 
-var _utils = require('../utils/utils');
+var _utils = require("../utils/utils");
 
-function _interopRequireDefault(obj) {
-  return obj && obj.__esModule ? obj : {default: obj};
-}
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -32,36 +30,27 @@ function _interopRequireDefault(obj) {
  */
 class PlaywrightClient {
   static async connect(options) {
-    const {wsEndpoint, timeout = 30000} = options;
+    const {
+      wsEndpoint,
+      timeout = 30000
+    } = options;
     const connection = new _connection.Connection();
     connection.markAsRemote();
     const ws = new _ws.default(wsEndpoint);
     const waitForNextTask = (0, _utils.makeWaitForNextTask)();
 
-    connection.onmessage = (message) => {
-      if (
-        ws.readyState === 2 ||
-        /** CLOSING */
-        ws.readyState === 3
-        /** CLOSED */
-      )
-        throw new Error(
-          'PlaywrightClient: writing to closed WebSocket connection',
-        );
+    connection.onmessage = message => {
+      if (ws.readyState === 2
+      /** CLOSING */
+      || ws.readyState === 3
+      /** CLOSED */
+      ) throw new Error('PlaywrightClient: writing to closed WebSocket connection');
       ws.send(JSON.stringify(message));
     };
 
-    ws.on('message', (message) =>
-      waitForNextTask(() =>
-        connection.dispatch(JSON.parse(message.toString())),
-      ),
-    );
-    const errorPromise = new Promise((_, reject) =>
-      ws.on('error', (error) => reject(error)),
-    );
-    const closePromise = new Promise((_, reject) =>
-      ws.on('close', () => reject(new Error('Connection closed'))),
-    );
+    ws.on('message', message => waitForNextTask(() => connection.dispatch(JSON.parse(message.toString()))));
+    const errorPromise = new Promise((_, reject) => ws.on('error', error => reject(error)));
+    const closePromise = new Promise((_, reject) => ws.on('close', () => reject(new Error('Connection closed'))));
     const playwrightClientPromise = new Promise((resolve, reject) => {
       let playwright;
       ws.on('open', async () => {
@@ -73,19 +62,7 @@ class PlaywrightClient {
     let timer;
 
     try {
-      await Promise.race([
-        playwrightClientPromise,
-        errorPromise,
-        closePromise,
-        new Promise(
-          (_, reject) =>
-            (timer = setTimeout(
-              () =>
-                reject(`Timeout of ${timeout}ms exceeded while connecting.`),
-              timeout,
-            )),
-        ),
-      ]);
+      await Promise.race([playwrightClientPromise, errorPromise, closePromise, new Promise((_, reject) => timer = setTimeout(() => reject(`Timeout of ${timeout}ms exceeded while connecting.`), timeout))]);
       return await playwrightClientPromise;
     } finally {
       clearTimeout(timer);
@@ -98,7 +75,7 @@ class PlaywrightClient {
     this._closePromise = void 0;
     this._playwright = playwright;
     this._ws = ws;
-    this._closePromise = new Promise((f) => ws.on('close', f));
+    this._closePromise = new Promise(f => ws.on('close', f));
   }
 
   playwright() {
@@ -110,6 +87,7 @@ class PlaywrightClient {
 
     await this._closePromise;
   }
+
 }
 
 exports.PlaywrightClient = PlaywrightClient;

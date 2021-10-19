@@ -1,34 +1,31 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
-exports.BindingCallDispatcher =
-  exports.WorkerDispatcher =
-  exports.PageDispatcher =
-    void 0;
+exports.BindingCallDispatcher = exports.WorkerDispatcher = exports.PageDispatcher = void 0;
 
-var _page = require('../server/page');
+var _page = require("../server/page");
 
-var _dispatcher = require('./dispatcher');
+var _dispatcher = require("./dispatcher");
 
-var _serializers = require('../protocol/serializers');
+var _serializers = require("../protocol/serializers");
 
-var _consoleMessageDispatcher = require('./consoleMessageDispatcher');
+var _consoleMessageDispatcher = require("./consoleMessageDispatcher");
 
-var _dialogDispatcher = require('./dialogDispatcher');
+var _dialogDispatcher = require("./dialogDispatcher");
 
-var _frameDispatcher = require('./frameDispatcher');
+var _frameDispatcher = require("./frameDispatcher");
 
-var _networkDispatchers = require('./networkDispatchers');
+var _networkDispatchers = require("./networkDispatchers");
 
-var _jsHandleDispatcher = require('./jsHandleDispatcher');
+var _jsHandleDispatcher = require("./jsHandleDispatcher");
 
-var _elementHandlerDispatcher = require('./elementHandlerDispatcher');
+var _elementHandlerDispatcher = require("./elementHandlerDispatcher");
 
-var _artifactDispatcher = require('./artifactDispatcher');
+var _artifactDispatcher = require("./artifactDispatcher");
 
-var _utils = require('../utils/utils');
+var _utils = require("../utils/utils");
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -55,21 +52,12 @@ class PageDispatcher extends _dispatcher.Dispatcher {
   constructor(scope, page) {
     // TODO: theoretically, there could be more than one frame already.
     // If we split pageCreated and pageReady, there should be no main frame during pageCreated.
-    super(
-      scope,
-      page,
-      'Page',
-      {
-        mainFrame: _frameDispatcher.FrameDispatcher.from(
-          scope,
-          page.mainFrame(),
-        ),
-        viewportSize: page.viewportSize() || undefined,
-        isClosed: page.isClosed(),
-        opener: PageDispatcher.fromNullable(scope, page.opener()),
-      },
-      true,
-    );
+    super(scope, page, 'Page', {
+      mainFrame: _frameDispatcher.FrameDispatcher.from(scope, page.mainFrame()),
+      viewportSize: page.viewportSize() || undefined,
+      isClosed: page.isClosed(),
+      opener: PageDispatcher.fromNullable(scope, page.opener())
+    }, true);
     this._page = void 0;
     this._page = page;
     page.on(_page.Page.Events.Close, () => {
@@ -77,78 +65,45 @@ class PageDispatcher extends _dispatcher.Dispatcher {
 
       this._dispose();
     });
-    page.on(_page.Page.Events.Console, (message) =>
-      this._dispatchEvent('console', {
-        message: new _consoleMessageDispatcher.ConsoleMessageDispatcher(
-          this._scope,
-          message,
-        ),
-      }),
-    );
+    page.on(_page.Page.Events.Console, message => this._dispatchEvent('console', {
+      message: new _consoleMessageDispatcher.ConsoleMessageDispatcher(this._scope, message)
+    }));
     page.on(_page.Page.Events.Crash, () => this._dispatchEvent('crash'));
-    page.on(_page.Page.Events.DOMContentLoaded, () =>
-      this._dispatchEvent('domcontentloaded'),
-    );
-    page.on(_page.Page.Events.Dialog, (dialog) =>
-      this._dispatchEvent('dialog', {
-        dialog: new _dialogDispatcher.DialogDispatcher(this._scope, dialog),
-      }),
-    );
-    page.on(_page.Page.Events.Download, (download) => {
+    page.on(_page.Page.Events.DOMContentLoaded, () => this._dispatchEvent('domcontentloaded'));
+    page.on(_page.Page.Events.Dialog, dialog => this._dispatchEvent('dialog', {
+      dialog: new _dialogDispatcher.DialogDispatcher(this._scope, dialog)
+    }));
+    page.on(_page.Page.Events.Download, download => {
       this._dispatchEvent('download', {
         url: download.url,
         suggestedFilename: download.suggestedFilename(),
-        artifact: new _artifactDispatcher.ArtifactDispatcher(
-          scope,
-          download.artifact,
-        ),
+        artifact: new _artifactDispatcher.ArtifactDispatcher(scope, download.artifact)
       });
     });
 
-    this._page.on(_page.Page.Events.FileChooser, (fileChooser) =>
-      this._dispatchEvent('fileChooser', {
-        element: _elementHandlerDispatcher.ElementHandleDispatcher.from(
-          this._scope,
-          fileChooser.element(),
-        ),
-        isMultiple: fileChooser.isMultiple(),
-      }),
-    );
+    this._page.on(_page.Page.Events.FileChooser, fileChooser => this._dispatchEvent('fileChooser', {
+      element: _elementHandlerDispatcher.ElementHandleDispatcher.from(this._scope, fileChooser.element()),
+      isMultiple: fileChooser.isMultiple()
+    }));
 
-    page.on(_page.Page.Events.FrameAttached, (frame) =>
-      this._onFrameAttached(frame),
-    );
-    page.on(_page.Page.Events.FrameDetached, (frame) =>
-      this._onFrameDetached(frame),
-    );
+    page.on(_page.Page.Events.FrameAttached, frame => this._onFrameAttached(frame));
+    page.on(_page.Page.Events.FrameDetached, frame => this._onFrameDetached(frame));
     page.on(_page.Page.Events.Load, () => this._dispatchEvent('load'));
-    page.on(_page.Page.Events.PageError, (error) =>
-      this._dispatchEvent('pageError', {
-        error: (0, _serializers.serializeError)(error),
-      }),
-    );
-    page.on(_page.Page.Events.WebSocket, (webSocket) =>
-      this._dispatchEvent('webSocket', {
-        webSocket: new _networkDispatchers.WebSocketDispatcher(
-          this._scope,
-          webSocket,
-        ),
-      }),
-    );
-    page.on(_page.Page.Events.Worker, (worker) =>
-      this._dispatchEvent('worker', {
-        worker: new WorkerDispatcher(this._scope, worker),
-      }),
-    );
-    page.on(_page.Page.Events.Video, (artifact) =>
-      this._dispatchEvent('video', {
-        artifact: (0, _dispatcher.existingDispatcher)(artifact),
-      }),
-    );
-    if (page._video)
-      this._dispatchEvent('video', {
-        artifact: (0, _dispatcher.existingDispatcher)(page._video),
-      }); // Ensure client knows about all frames.
+    page.on(_page.Page.Events.PageError, error => this._dispatchEvent('pageError', {
+      error: (0, _serializers.serializeError)(error)
+    }));
+    page.on(_page.Page.Events.WebSocket, webSocket => this._dispatchEvent('webSocket', {
+      webSocket: new _networkDispatchers.WebSocketDispatcher(this._scope, webSocket)
+    }));
+    page.on(_page.Page.Events.Worker, worker => this._dispatchEvent('worker', {
+      worker: new WorkerDispatcher(this._scope, worker)
+    }));
+    page.on(_page.Page.Events.Video, artifact => this._dispatchEvent('video', {
+      artifact: (0, _dispatcher.existingDispatcher)(artifact)
+    }));
+    if (page._video) this._dispatchEvent('video', {
+      artifact: (0, _dispatcher.existingDispatcher)(page._video)
+    }); // Ensure client knows about all frames.
 
     const frames = page._frameManager.frames();
 
@@ -168,25 +123,15 @@ class PageDispatcher extends _dispatcher.Dispatcher {
   }
 
   async exposeBinding(params, metadata) {
-    await this._page.exposeBinding(
-      params.name,
-      !!params.needsHandle,
-      (source, ...args) => {
-        const binding = new BindingCallDispatcher(
-          this._scope,
-          params.name,
-          !!params.needsHandle,
-          source,
-          args,
-        );
+    await this._page.exposeBinding(params.name, !!params.needsHandle, (source, ...args) => {
+      const binding = new BindingCallDispatcher(this._scope, params.name, !!params.needsHandle, source, args);
 
-        this._dispatchEvent('bindingCall', {
-          binding,
-        });
+      this._dispatchEvent('bindingCall', {
+        binding
+      });
 
-        return binding.promise();
-      },
-    );
+      return binding.promise();
+    });
   }
 
   async setExtraHTTPHeaders(params, metadata) {
@@ -195,25 +140,19 @@ class PageDispatcher extends _dispatcher.Dispatcher {
 
   async reload(params, metadata) {
     return {
-      response: (0, _dispatcher.lookupNullableDispatcher)(
-        await this._page.reload(metadata, params),
-      ),
+      response: (0, _dispatcher.lookupNullableDispatcher)(await this._page.reload(metadata, params))
     };
   }
 
   async goBack(params, metadata) {
     return {
-      response: (0, _dispatcher.lookupNullableDispatcher)(
-        await this._page.goBack(metadata, params),
-      ),
+      response: (0, _dispatcher.lookupNullableDispatcher)(await this._page.goBack(metadata, params))
     };
   }
 
   async goForward(params, metadata) {
     return {
-      response: (0, _dispatcher.lookupNullableDispatcher)(
-        await this._page.goForward(metadata, params),
-      ),
+      response: (0, _dispatcher.lookupNullableDispatcher)(await this._page.goForward(metadata, params))
     };
   }
 
@@ -221,9 +160,8 @@ class PageDispatcher extends _dispatcher.Dispatcher {
     await this._page.emulateMedia({
       media: params.media === 'null' ? null : params.media,
       colorScheme: params.colorScheme === 'null' ? null : params.colorScheme,
-      reducedMotion:
-        params.reducedMotion === 'null' ? null : params.reducedMotion,
-      forcedColors: params.forcedColors === 'null' ? null : params.forcedColors,
+      reducedMotion: params.reducedMotion === 'null' ? null : params.reducedMotion,
+      forcedColors: params.forcedColors === 'null' ? null : params.forcedColors
     });
   }
 
@@ -244,19 +182,14 @@ class PageDispatcher extends _dispatcher.Dispatcher {
     await this._page._setClientRequestInterceptor((route, request) => {
       this._dispatchEvent('route', {
         route: _networkDispatchers.RouteDispatcher.from(this._scope, route),
-        request: _networkDispatchers.RequestDispatcher.from(
-          this._scope,
-          request,
-        ),
+        request: _networkDispatchers.RequestDispatcher.from(this._scope, request)
       });
     });
   }
 
   async screenshot(params, metadata) {
     return {
-      binary: (await this._page.screenshot(metadata, params)).toString(
-        'base64',
-      ),
+      binary: (await this._page.screenshot(metadata, params)).toString('base64')
     };
   }
 
@@ -277,12 +210,7 @@ class PageDispatcher extends _dispatcher.Dispatcher {
   }
 
   async keyboardImeSetComposition(params, metadata) {
-    await this._page.keyboard.imeSetComposition(
-      params.text,
-      params.selectionStart,
-      params.selectionEnd,
-      params,
-    );
+    await this._page.keyboard.imeSetComposition(params.text, params.selectionStart, params.selectionEnd, params);
   }
 
   async keyboardInsertText(params, metadata) {
@@ -324,19 +252,18 @@ class PageDispatcher extends _dispatcher.Dispatcher {
   async accessibilitySnapshot(params, metadata) {
     const rootAXNode = await this._page.accessibility.snapshot({
       interestingOnly: params.interestingOnly,
-      root: params.root ? params.root._elementHandle : undefined,
+      root: params.root ? params.root._elementHandle : undefined
     });
     return {
-      rootAXNode: rootAXNode || undefined,
+      rootAXNode: rootAXNode || undefined
     };
   }
 
   async pdf(params, metadata) {
-    if (!this._page.pdf)
-      throw new Error('PDF generation is only supported for Headless Chromium');
+    if (!this._page.pdf) throw new Error('PDF generation is only supported for Headless Chromium');
     const buffer = await this._page.pdf(params);
     return {
-      pdf: buffer.toString('base64'),
+      pdf: buffer.toString('base64')
     };
   }
 
@@ -352,7 +279,7 @@ class PageDispatcher extends _dispatcher.Dispatcher {
   async stopJSCoverage(params, metadata) {
     const coverage = this._page.coverage;
     return {
-      entries: await coverage.stopJSCoverage(),
+      entries: await coverage.stopJSCoverage()
     };
   }
 
@@ -364,21 +291,22 @@ class PageDispatcher extends _dispatcher.Dispatcher {
   async stopCSSCoverage(params, metadata) {
     const coverage = this._page.coverage;
     return {
-      entries: await coverage.stopCSSCoverage(),
+      entries: await coverage.stopCSSCoverage()
     };
   }
 
   _onFrameAttached(frame) {
     this._dispatchEvent('frameAttached', {
-      frame: _frameDispatcher.FrameDispatcher.from(this._scope, frame),
+      frame: _frameDispatcher.FrameDispatcher.from(this._scope, frame)
     });
   }
 
   _onFrameDetached(frame) {
     this._dispatchEvent('frameDetached', {
-      frame: (0, _dispatcher.lookupDispatcher)(frame),
+      frame: (0, _dispatcher.lookupDispatcher)(frame)
     });
   }
+
 }
 
 exports.PageDispatcher = PageDispatcher;
@@ -386,61 +314,37 @@ exports.PageDispatcher = PageDispatcher;
 class WorkerDispatcher extends _dispatcher.Dispatcher {
   constructor(scope, worker) {
     super(scope, worker, 'Worker', {
-      url: worker.url(),
+      url: worker.url()
     });
     worker.on(_page.Worker.Events.Close, () => this._dispatchEvent('close'));
   }
 
   async evaluateExpression(params, metadata) {
     return {
-      value: (0, _jsHandleDispatcher.serializeResult)(
-        await this._object.evaluateExpression(
-          params.expression,
-          params.isFunction,
-          (0, _jsHandleDispatcher.parseArgument)(params.arg),
-        ),
-      ),
+      value: (0, _jsHandleDispatcher.serializeResult)(await this._object.evaluateExpression(params.expression, params.isFunction, (0, _jsHandleDispatcher.parseArgument)(params.arg)))
     };
   }
 
   async evaluateExpressionHandle(params, metadata) {
     return {
-      handle: _elementHandlerDispatcher.ElementHandleDispatcher.fromJSHandle(
-        this._scope,
-        await this._object.evaluateExpressionHandle(
-          params.expression,
-          params.isFunction,
-          (0, _jsHandleDispatcher.parseArgument)(params.arg),
-        ),
-      ),
+      handle: _elementHandlerDispatcher.ElementHandleDispatcher.fromJSHandle(this._scope, await this._object.evaluateExpressionHandle(params.expression, params.isFunction, (0, _jsHandleDispatcher.parseArgument)(params.arg)))
     };
   }
+
 }
 
 exports.WorkerDispatcher = WorkerDispatcher;
 
 class BindingCallDispatcher extends _dispatcher.Dispatcher {
   constructor(scope, name, needsHandle, source, args) {
-    super(
-      scope,
-      {
-        guid: 'bindingCall@' + (0, _utils.createGuid)(),
-      },
-      'BindingCall',
-      {
-        frame: (0, _dispatcher.lookupDispatcher)(source.frame),
-        name,
-        args: needsHandle
-          ? undefined
-          : args.map(_jsHandleDispatcher.serializeResult),
-        handle: needsHandle
-          ? _elementHandlerDispatcher.ElementHandleDispatcher.fromJSHandle(
-              scope,
-              args[0],
-            )
-          : undefined,
-      },
-    );
+    super(scope, {
+      guid: 'bindingCall@' + (0, _utils.createGuid)()
+    }, 'BindingCall', {
+      frame: (0, _dispatcher.lookupDispatcher)(source.frame),
+      name,
+      args: needsHandle ? undefined : args.map(_jsHandleDispatcher.serializeResult),
+      handle: needsHandle ? _elementHandlerDispatcher.ElementHandleDispatcher.fromJSHandle(scope, args[0]) : undefined
+    });
     this._resolve = void 0;
     this._reject = void 0;
     this._promise = void 0;
@@ -461,6 +365,7 @@ class BindingCallDispatcher extends _dispatcher.Dispatcher {
   async reject(params, metadata) {
     this._reject((0, _serializers.parseError)(params.error));
   }
+
 }
 
 exports.BindingCallDispatcher = BindingCallDispatcher;

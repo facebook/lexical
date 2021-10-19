@@ -1,13 +1,13 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.sharedSelectors = exports.SelectorsOwner = exports.Selectors = void 0;
 
-var _clientHelper = require('./clientHelper');
+var _clientHelper = require("./clientHelper");
 
-var _channelOwner = require('./channelOwner');
+var _channelOwner = require("./channelOwner");
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -31,15 +31,13 @@ class Selectors {
   }
 
   async register(name, script, options = {}) {
-    const source = await (0, _clientHelper.evaluationScript)(
-      script,
-      undefined,
-      false,
-    );
-    const params = {...options, name, source};
+    const source = await (0, _clientHelper.evaluationScript)(script, undefined, false);
+    const params = { ...options,
+      name,
+      source
+    };
 
-    for (const channel of this._channels)
-      await channel._channel.register(params);
+    for (const channel of this._channels) await channel._channel.register(params);
 
     this._registrations.push(params);
   }
@@ -49,13 +47,14 @@ class Selectors {
 
     for (const params of this._registrations) {
       // This should not fail except for connection closure, but just in case we catch.
-      channel._channel.register(params).catch((e) => {});
+      channel._channel.register(params).catch(e => {});
     }
   }
 
   _removeChannel(channel) {
     this._channels.delete(channel);
   }
+
 }
 
 exports.Selectors = Selectors;
@@ -64,6 +63,7 @@ class SelectorsOwner extends _channelOwner.ChannelOwner {
   static from(browser) {
     return browser._object;
   }
+
 }
 
 exports.SelectorsOwner = SelectorsOwner;

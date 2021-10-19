@@ -1,7 +1,7 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.Touchscreen = exports.Mouse = exports.Keyboard = void 0;
 
@@ -28,57 +28,58 @@ class Keyboard {
   }
 
   async down(key) {
-    await this._page._wrapApiCall(async (channel) => {
+    await this._page._wrapApiCall(async channel => {
       await channel.keyboardDown({
-        key,
+        key
       });
     });
   }
 
   async up(key) {
-    await this._page._wrapApiCall(async (channel) => {
+    await this._page._wrapApiCall(async channel => {
       await channel.keyboardUp({
-        key,
+        key
       });
     });
   }
 
   async insertText(text) {
-    await this._page._wrapApiCall(async (channel) => {
+    await this._page._wrapApiCall(async channel => {
       await channel.keyboardInsertText({
-        text,
+        text
       });
     });
   }
 
   async imeSetComposition(text, selectionStart, selectionEnd, options) {
-    await this._page._wrapApiCall(async (channel) => {
+    await this._page._wrapApiCall(async channel => {
       await channel.keyboardImeSetComposition({
         text,
         selectionStart,
         selectionEnd,
-        ...options,
+        ...options
       });
     });
   }
 
   async type(text, options = {}) {
-    await this._page._wrapApiCall(async (channel) => {
+    await this._page._wrapApiCall(async channel => {
       await channel.keyboardType({
         text,
-        ...options,
+        ...options
       });
     });
   }
 
   async press(key, options = {}) {
-    await this._page._wrapApiCall(async (channel) => {
+    await this._page._wrapApiCall(async channel => {
       await channel.keyboardPress({
         key,
-        ...options,
+        ...options
       });
     });
   }
+
 }
 
 exports.Keyboard = Keyboard;
@@ -90,49 +91,53 @@ class Mouse {
   }
 
   async move(x, y, options = {}) {
-    await this._page._wrapApiCall(async (channel) => {
+    await this._page._wrapApiCall(async channel => {
       await channel.mouseMove({
         x,
         y,
-        ...options,
+        ...options
       });
     });
   }
 
   async down(options = {}) {
-    await this._page._wrapApiCall(async (channel) => {
-      await channel.mouseDown({...options});
+    await this._page._wrapApiCall(async channel => {
+      await channel.mouseDown({ ...options
+      });
     });
   }
 
   async up(options = {}) {
-    await this._page._wrapApiCall(async (channel) => {
+    await this._page._wrapApiCall(async channel => {
       await channel.mouseUp(options);
     });
   }
 
   async click(x, y, options = {}) {
-    await this._page._wrapApiCall(async (channel) => {
+    await this._page._wrapApiCall(async channel => {
       await channel.mouseClick({
         x,
         y,
-        ...options,
+        ...options
       });
     });
   }
 
   async dblclick(x, y, options = {}) {
-    await this.click(x, y, {...options, clickCount: 2});
+    await this.click(x, y, { ...options,
+      clickCount: 2
+    });
   }
 
   async wheel(deltaX, deltaY) {
-    await this._page._wrapApiCall(async (channel) => {
+    await this._page._wrapApiCall(async channel => {
       await channel.mouseWheel({
         deltaX,
-        deltaY,
+        deltaY
       });
     });
   }
+
 }
 
 exports.Mouse = Mouse;
@@ -144,13 +149,14 @@ class Touchscreen {
   }
 
   async tap(x, y) {
-    await this._page._wrapApiCall(async (channel) => {
+    await this._page._wrapApiCall(async channel => {
       await channel.touchscreenTap({
         x,
-        y,
+        y
       });
     });
   }
+
 }
 
 exports.Touchscreen = Touchscreen;

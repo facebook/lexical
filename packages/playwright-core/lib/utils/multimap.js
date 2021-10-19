@@ -1,7 +1,7 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.MultiMap = void 0;
 
@@ -72,6 +72,7 @@ class MultiMap {
   clear() {
     this._map.clear();
   }
+
 }
 
 exports.MultiMap = MultiMap;

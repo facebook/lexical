@@ -295,6 +295,7 @@ export function onKeyDownForRichText(
         }
       }
     }
+    eventFlushSync(editor);
   }, 'onKeyDownForRichText');
 }
 
@@ -309,6 +310,7 @@ export function onPasteForPlainText(
     if (clipboardData != null && selection !== null) {
       insertDataTransferForPlainText(clipboardData, selection, view);
     }
+    eventFlushSync(editor);
   }, 'onPasteForPlainText');
 }
 
@@ -323,6 +325,7 @@ export function onPasteForRichText(
     if (clipboardData != null && selection !== null) {
       insertDataTransferForRichText(clipboardData, selection, view);
     }
+    eventFlushSync(editor);
   }, 'onPasteForRichText');
 }
 
@@ -353,6 +356,7 @@ export function onCutForPlainText(
     if (selection !== null) {
       removeText(selection);
     }
+    eventFlushSync(editor);
   }, 'onCutForPlainText');
 }
 
@@ -366,6 +370,7 @@ export function onCutForRichText(
     if (selection !== null) {
       removeText(selection);
     }
+    eventFlushSync(editor);
   }, 'onCutForRichText');
 }
 
@@ -392,6 +397,7 @@ export function onCopyForPlainText(
           clipboardData.setData('text/html', container.innerHTML);
         }
         clipboardData.setData('text/plain', selection.getTextContent());
+        eventFlushSync(editor);
       }
     }
   }, 'onCopyForPlainText');
@@ -424,6 +430,7 @@ export function onCopyForRichText(
           'application/x-outline-nodes',
           JSON.stringify(cloneContents(selection)),
         );
+        eventFlushSync(editor);
       }
     }
   }, 'onCopyForRichText');
@@ -451,6 +458,7 @@ export function onCompositionStart(
         // there is no text node matching the selection.
         insertText(selection, ' ');
       }
+      eventFlushSync(editor);
     }
   }, 'onCompositionStart');
 }
@@ -462,6 +470,7 @@ export function onCompositionEnd(
   editor.update((view) => {
     view.setCompositionKey(null);
     updateSelectedTextFromDOM(editor, view, true);
+    eventFlushSync(editor);
   }, 'onCompositionEnd');
 }
 
@@ -488,6 +497,7 @@ export function onClick(event: MouseEvent, editor: OutlineEditor): void {
       if (lastSelection !== null && selection.is(lastSelection)) {
         window.getSelection().removeAllRanges();
         selection.dirty = true;
+        eventFlushSync(editor);
       }
     }
   }, 'onClick');
@@ -512,6 +522,7 @@ export function onSelectionChange(event: Event, editor: OutlineEditor): void {
       if (anchor.type === 'text') {
         const anchorNode = anchor.getNode();
         selection.textFormat = anchorNode.getFormat();
+        eventFlushSync(editor);
       }
     }
   }, 'onSelectionChange');
@@ -755,6 +766,7 @@ export function onBeforeInputForPlainText(
         event.preventDefault();
         insertText(selection, data);
       }
+      eventFlushSync(editor);
       return;
     }
 
@@ -830,6 +842,7 @@ export function onBeforeInputForPlainText(
       default:
       // NO-OP
     }
+    eventFlushSync(editor);
   }, 'onBeforeInputForPlainText');
 }
 
@@ -858,6 +871,7 @@ export function onBeforeInputForRichText(
       view.setCompositionKey(null);
       event.preventDefault();
       deleteBackward(selection);
+      eventFlushSync(editor);
       return;
     }
     const data = event.data;
@@ -889,6 +903,7 @@ export function onBeforeInputForRichText(
         event.preventDefault();
         insertText(selection, data);
       }
+      eventFlushSync(editor);
       return;
     }
 
@@ -985,6 +1000,7 @@ export function onBeforeInputForRichText(
       default:
       // NO-OP
     }
+    eventFlushSync(editor);
   }, 'onBeforeInputForRichText');
 }
 
@@ -1016,6 +1032,7 @@ export function onInput(event: InputEvent, editor: OutlineEditor) {
       }
     }
     updateSelectedTextFromDOM(editor, view, false);
+    eventFlushSync(editor);
   }, 'onInput');
 }
 
@@ -1137,5 +1154,14 @@ export function onMutation(
         view.setSelection(selection);
       }
     }
+
+    eventFlushSync(editor);
   }, 'onMutation');
+}
+
+function eventFlushSync(editor: OutlineEditor) {
+  const pendingViewModel = editor._pendingViewModel;
+  if (pendingViewModel !== null) {
+    pendingViewModel._flushSync = true;
+  }
 }

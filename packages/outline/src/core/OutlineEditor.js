@@ -313,10 +313,15 @@ class BaseOutlineEditor {
     listenerSet.add(listener);
 
     const isRootType = type === 'root';
+    const isMutation = type === 'mutation';
     if (isRootType) {
       // $FlowFixMe: TODO refine
       const rootListener: RootListener = (listener: any);
       rootListener(this._rootElement, null);
+    } else if (isMutation) {
+      // $FlowFixMe: TODO refine
+      const mutationListener: MutationListener = (listener: any);
+      mutationListener(this._rootElement);
     }
     return () => {
       // $FlowFixMe: TODO refine this from the above types
@@ -325,7 +330,7 @@ class BaseOutlineEditor {
         // $FlowFixMe: TODO refine
         const rootListener: RootListener = (listener: any);
         rootListener(null, this._rootElement);
-      } else if (type === 'mutation') {
+      } else if (isMutation) {
         // $FlowFixMe: TODO refine
         const mutationListener: MutationListener = (listener: any);
         mutationListener(null);

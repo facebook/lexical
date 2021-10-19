@@ -620,6 +620,7 @@ function reconcileSelection(
     ) {
       rootElement.focus({preventScroll: true});
     }
+    return;
   }
 
   // Apply the updated selection to the DOM. Note: this will trigger

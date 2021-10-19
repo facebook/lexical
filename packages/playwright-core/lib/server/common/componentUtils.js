@@ -1,7 +1,7 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.checkComponentAttribute = checkComponentAttribute;
 exports.parseComponentSelector = parseComponentSelector;
@@ -26,21 +26,15 @@ function checkComponentAttribute(obj, attr) {
     if (obj !== undefined && obj !== null) obj = obj[token];
   }
 
-  const objValue =
-    typeof obj === 'string' && !attr.caseSensetive ? obj.toUpperCase() : obj;
-  const attrValue =
-    typeof attr.value === 'string' && !attr.caseSensetive
-      ? attr.value.toUpperCase()
-      : attr.value;
+  const objValue = typeof obj === 'string' && !attr.caseSensetive ? obj.toUpperCase() : obj;
+  const attrValue = typeof attr.value === 'string' && !attr.caseSensetive ? attr.value.toUpperCase() : attr.value;
   if (attr.op === '<truthy>') return !!objValue;
   if (attr.op === '=') return objValue === attrValue;
-  if (typeof objValue !== 'string' || typeof attrValue !== 'string')
-    return false;
+  if (typeof objValue !== 'string' || typeof attrValue !== 'string') return false;
   if (attr.op === '*=') return objValue.includes(attrValue);
   if (attr.op === '^=') return objValue.startsWith(attrValue);
   if (attr.op === '$=') return objValue.endsWith(attrValue);
-  if (attr.op === '|=')
-    return objValue === attrValue || objValue.startsWith(attrValue + '-');
+  if (attr.op === '|=') return objValue === attrValue || objValue.startsWith(attrValue + '-');
   if (attr.op === '~=') return objValue.split(' ').includes(attrValue);
   return false;
 }
@@ -58,15 +52,9 @@ function parseComponentSelector(selector) {
     return result;
   };
 
-  const syntaxError = (stage) => {
-    if (EOL)
-      throw new Error(
-        `Unexpected end of selector while parsing selector \`${selector}\``,
-      );
-    throw new Error(
-      `Error while parsing selector \`${selector}\` - unexpected symbol "${next()}" at position ${wp}` +
-        (stage ? ' during ' + stage : ''),
-    );
+  const syntaxError = stage => {
+    if (EOL) throw new Error(`Unexpected end of selector while parsing selector \`${selector}\``);
+    throw new Error(`Error while parsing selector \`${selector}\` - unexpected symbol "${next()}" at position ${wp}` + (stage ? ' during ' + stage : ''));
   };
 
   function skipSpaces() {
@@ -99,9 +87,7 @@ function parseComponentSelector(selector) {
   function readAttributeToken() {
     let token = '';
     skipSpaces();
-    if (next() === `'` || next() === `"`)
-      token = readQuotedString(next()).slice(1, -1);
-    else token = readIdentifier();
+    if (next() === `'` || next() === `"`) token = readQuotedString(next()).slice(1, -1);else token = readIdentifier();
     if (!token) syntaxError('parsing property path');
     return token;
   }
@@ -111,8 +97,7 @@ function parseComponentSelector(selector) {
     let op = '';
     if (!EOL) op += eat1();
     if (!EOL && op !== '=') op += eat1();
-    if (!['=', '*=', '^=', '$=', '|=', '~='].includes(op))
-      syntaxError('parsing operator');
+    if (!['=', '*=', '^=', '$=', '|=', '~='].includes(op)) syntaxError('parsing operator');
     return op;
   }
 
@@ -132,13 +117,14 @@ function parseComponentSelector(selector) {
       skipSpaces();
     } // check property is truthy: [enabled]
 
+
     if (next() === ']') {
       eat1();
       return {
         jsonPath,
         op: '<truthy>',
         value: null,
-        caseSensetive: false,
+        caseSensetive: false
       };
     }
 
@@ -176,21 +162,18 @@ function parseComponentSelector(selector) {
     skipSpaces();
     if (next() !== ']') syntaxError('parsing attribute value');
     eat1();
-    if (operator !== '=' && typeof value !== 'string')
-      throw new Error(
-        `Error while parsing selector \`${selector}\` - cannot use ${operator} in attribute with non-string matching value - ${value}`,
-      );
+    if (operator !== '=' && typeof value !== 'string') throw new Error(`Error while parsing selector \`${selector}\` - cannot use ${operator} in attribute with non-string matching value - ${value}`);
     return {
       jsonPath,
       op: operator,
       value,
-      caseSensetive,
+      caseSensetive
     };
   }
 
   const result = {
     name: '',
-    attributes: [],
+    attributes: []
   };
   result.name = readIdentifier();
   skipSpaces();
@@ -201,9 +184,6 @@ function parseComponentSelector(selector) {
   }
 
   if (!EOL) syntaxError(undefined);
-  if (!result.name && !result.attributes.length)
-    throw new Error(
-      `Error while parsing selector \`${selector}\` - selector cannot be empty`,
-    );
+  if (!result.name && !result.attributes.length) throw new Error(`Error while parsing selector \`${selector}\` - selector cannot be empty`);
   return result;
 }

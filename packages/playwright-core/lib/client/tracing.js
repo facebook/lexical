@@ -1,11 +1,11 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.Tracing = void 0;
 
-var _artifact = require('./artifact');
+var _artifact = require("./artifact");
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -29,26 +29,26 @@ class Tracing {
   }
 
   async start(options = {}) {
-    await this._context._wrapApiCall(async (channel) => {
+    await this._context._wrapApiCall(async channel => {
       await channel.tracingStart(options);
       await channel.tracingStartChunk();
     });
   }
 
   async startChunk() {
-    await this._context._wrapApiCall(async (channel) => {
+    await this._context._wrapApiCall(async channel => {
       await channel.tracingStartChunk();
     });
   }
 
   async stopChunk(options) {
-    await this._context._wrapApiCall(async (channel) => {
+    await this._context._wrapApiCall(async channel => {
       await this._doStopChunk(channel, options.path);
     });
   }
 
   async stop(options = {}) {
-    await this._context._wrapApiCall(async (channel) => {
+    await this._context._wrapApiCall(async channel => {
       await this._doStopChunk(channel, options.path);
       await channel.tracingStop();
     });
@@ -56,7 +56,7 @@ class Tracing {
 
   async _doStopChunk(channel, path) {
     const result = await channel.tracingStopChunk({
-      save: !!path,
+      save: !!path
     });
     if (!result.artifact) return;
 
@@ -65,6 +65,7 @@ class Tracing {
     await artifact.saveAs(path);
     await artifact.delete();
   }
+
 }
 
 exports.Tracing = Tracing;

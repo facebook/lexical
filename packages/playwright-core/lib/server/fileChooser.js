@@ -1,7 +1,7 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.FileChooser = void 0;
 
@@ -41,6 +41,7 @@ class FileChooser {
   page() {
     return this._page;
   }
+
 }
 
 exports.FileChooser = FileChooser;

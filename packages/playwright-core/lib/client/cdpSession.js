@@ -1,11 +1,11 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.CDPSession = void 0;
 
-var _channelOwner = require('./channelOwner');
+var _channelOwner = require("./channelOwner");
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -30,7 +30,10 @@ class CDPSession extends _channelOwner.ChannelOwner {
   constructor(parent, type, guid, initializer) {
     super(parent, type, guid, initializer);
 
-    this._channel.on('event', ({method, params}) => {
+    this._channel.on('event', ({
+      method,
+      params
+    }) => {
       this.emit(method, params);
     });
 
@@ -42,20 +45,21 @@ class CDPSession extends _channelOwner.ChannelOwner {
   }
 
   async send(method, params) {
-    return this._wrapApiCall(async (channel) => {
+    return this._wrapApiCall(async channel => {
       const result = await channel.send({
         method,
-        params,
+        params
       });
       return result.result;
     });
   }
 
   async detach() {
-    return this._wrapApiCall(async (channel) => {
+    return this._wrapApiCall(async channel => {
       return channel.detach();
     });
   }
+
 }
 
 exports.CDPSession = CDPSession;

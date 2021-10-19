@@ -1,27 +1,25 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.BrowserTypeDispatcher = void 0;
 
-var _browserDispatcher = require('./browserDispatcher');
+var _browserDispatcher = require("./browserDispatcher");
 
-var _dispatcher = require('./dispatcher');
+var _dispatcher = require("./dispatcher");
 
-var _browserContextDispatcher = require('./browserContextDispatcher');
+var _browserContextDispatcher = require("./browserContextDispatcher");
 
-var _ws = _interopRequireDefault(require('ws'));
+var _ws = _interopRequireDefault(require("ws"));
 
-var _jsonPipeDispatcher = require('../dispatchers/jsonPipeDispatcher');
+var _jsonPipeDispatcher = require("../dispatchers/jsonPipeDispatcher");
 
-var _utils = require('../utils/utils');
+var _utils = require("../utils/utils");
 
-var _async = require('../utils/async');
+var _async = require("../utils/async");
 
-function _interopRequireDefault(obj) {
-  return obj && obj.__esModule ? obj : {default: obj};
-}
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -40,87 +38,54 @@ function _interopRequireDefault(obj) {
  */
 class BrowserTypeDispatcher extends _dispatcher.Dispatcher {
   constructor(scope, browserType) {
-    super(
-      scope,
-      browserType,
-      'BrowserType',
-      {
-        executablePath: browserType.executablePath(),
-        name: browserType.name(),
-      },
-      true,
-    );
+    super(scope, browserType, 'BrowserType', {
+      executablePath: browserType.executablePath(),
+      name: browserType.name()
+    }, true);
   }
 
   async launch(params, metadata) {
     const browser = await this._object.launch(metadata, params);
     return {
-      browser: new _browserDispatcher.BrowserDispatcher(this._scope, browser),
+      browser: new _browserDispatcher.BrowserDispatcher(this._scope, browser)
     };
   }
 
   async launchPersistentContext(params, metadata) {
-    const browserContext = await this._object.launchPersistentContext(
-      metadata,
-      params.userDataDir,
-      params,
-    );
+    const browserContext = await this._object.launchPersistentContext(metadata, params.userDataDir, params);
     return {
-      context: new _browserContextDispatcher.BrowserContextDispatcher(
-        this._scope,
-        browserContext,
-      ),
+      context: new _browserContextDispatcher.BrowserContextDispatcher(this._scope, browserContext)
     };
   }
 
   async connectOverCDP(params, metadata) {
-    const browser = await this._object.connectOverCDP(
-      metadata,
-      params.endpointURL,
-      params,
-      params.timeout,
-    );
-    const browserDispatcher = new _browserDispatcher.BrowserDispatcher(
-      this._scope,
-      browser,
-    );
+    const browser = await this._object.connectOverCDP(metadata, params.endpointURL, params, params.timeout);
+    const browserDispatcher = new _browserDispatcher.BrowserDispatcher(this._scope, browser);
     return {
       browser: browserDispatcher,
-      defaultContext: browser._defaultContext
-        ? new _browserContextDispatcher.BrowserContextDispatcher(
-            browserDispatcher._scope,
-            browser._defaultContext,
-          )
-        : undefined,
+      defaultContext: browser._defaultContext ? new _browserContextDispatcher.BrowserContextDispatcher(browserDispatcher._scope, browser._defaultContext) : undefined
     };
   }
 
   async connect(params) {
-    const waitForNextTask = params.slowMo
-      ? (cb) => setTimeout(cb, params.slowMo)
-      : (0, _utils.makeWaitForNextTask)();
-    const paramsHeaders = Object.assign(
-      {
-        'User-Agent': (0, _utils.getUserAgent)(),
-      },
-      params.headers || {},
-    );
+    const waitForNextTask = params.slowMo ? cb => setTimeout(cb, params.slowMo) : (0, _utils.makeWaitForNextTask)();
+    const paramsHeaders = Object.assign({
+      'User-Agent': (0, _utils.getUserAgent)()
+    }, params.headers || {});
     const ws = new _ws.default(params.wsEndpoint, [], {
       perMessageDeflate: false,
       maxPayload: 256 * 1024 * 1024,
       // 256Mb,
       handshakeTimeout: params.timeout,
-      headers: paramsHeaders,
+      headers: paramsHeaders
     });
     const pipe = new _jsonPipeDispatcher.JsonPipeDispatcher(this._scope);
     const openPromise = new _async.ManualPromise();
-    ws.on('open', () =>
-      openPromise.resolve({
-        pipe,
-      }),
-    );
+    ws.on('open', () => openPromise.resolve({
+      pipe
+    }));
     ws.on('close', () => pipe.wasClosed());
-    ws.on('error', (error) => {
+    ws.on('error', error => {
       if (openPromise.isDone()) {
         pipe.wasClosed(error);
       } else {
@@ -129,8 +94,8 @@ class BrowserTypeDispatcher extends _dispatcher.Dispatcher {
       }
     });
     pipe.on('close', () => ws.close());
-    pipe.on('message', (message) => ws.send(JSON.stringify(message)));
-    ws.addEventListener('message', (event) => {
+    pipe.on('message', message => ws.send(JSON.stringify(message)));
+    ws.addEventListener('message', event => {
       waitForNextTask(() => {
         try {
           pipe.dispatch(JSON.parse(event.data));
@@ -141,6 +106,7 @@ class BrowserTypeDispatcher extends _dispatcher.Dispatcher {
     });
     return openPromise;
   }
+
 }
 
 exports.BrowserTypeDispatcher = BrowserTypeDispatcher;

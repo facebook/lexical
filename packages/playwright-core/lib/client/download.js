@@ -1,7 +1,7 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.Download = void 0;
 
@@ -67,6 +67,7 @@ class Download {
   async delete() {
     return this._artifact.delete();
   }
+
 }
 
 exports.Download = Download;

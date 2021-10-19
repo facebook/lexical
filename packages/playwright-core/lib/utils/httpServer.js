@@ -1,67 +1,27 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.HttpServer = void 0;
 
-var http = _interopRequireWildcard(require('http'));
+var http = _interopRequireWildcard(require("http"));
 
-var _fs = _interopRequireDefault(require('fs'));
+var _fs = _interopRequireDefault(require("fs"));
 
-var _path = _interopRequireDefault(require('path'));
+var _path = _interopRequireDefault(require("path"));
 
-var _ws = require('ws');
+var _ws = require("ws");
 
-var mime = _interopRequireWildcard(require('mime'));
+var mime = _interopRequireWildcard(require("mime"));
 
-var _utils = require('./utils');
+var _utils = require("./utils");
 
-function _interopRequireDefault(obj) {
-  return obj && obj.__esModule ? obj : {default: obj};
-}
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function _getRequireWildcardCache(nodeInterop) {
-  if (typeof WeakMap !== 'function') return null;
-  var cacheBabelInterop = new WeakMap();
-  var cacheNodeInterop = new WeakMap();
-  return (_getRequireWildcardCache = function (nodeInterop) {
-    return nodeInterop ? cacheNodeInterop : cacheBabelInterop;
-  })(nodeInterop);
-}
+function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 
-function _interopRequireWildcard(obj, nodeInterop) {
-  if (!nodeInterop && obj && obj.__esModule) {
-    return obj;
-  }
-  if (obj === null || (typeof obj !== 'object' && typeof obj !== 'function')) {
-    return {default: obj};
-  }
-  var cache = _getRequireWildcardCache(nodeInterop);
-  if (cache && cache.has(obj)) {
-    return cache.get(obj);
-  }
-  var newObj = {};
-  var hasPropertyDescriptor =
-    Object.defineProperty && Object.getOwnPropertyDescriptor;
-  for (var key in obj) {
-    if (key !== 'default' && Object.prototype.hasOwnProperty.call(obj, key)) {
-      var desc = hasPropertyDescriptor
-        ? Object.getOwnPropertyDescriptor(obj, key)
-        : null;
-      if (desc && (desc.get || desc.set)) {
-        Object.defineProperty(newObj, key, desc);
-      } else {
-        newObj[key] = obj[key];
-      }
-    }
-  }
-  newObj.default = obj;
-  if (cache) {
-    cache.set(obj, newObj);
-  }
-  return newObj;
-}
+function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -91,21 +51,21 @@ class HttpServer {
 
   createWebSocketServer() {
     return new _ws.Server({
-      server: this._server,
+      server: this._server
     });
   }
 
   routePrefix(prefix, handler) {
     this._routes.push({
       prefix,
-      handler,
+      handler
     });
   }
 
   routePath(path, handler) {
     this._routes.push({
       exact: path,
-      handler,
+      handler
     });
   }
 
@@ -116,7 +76,7 @@ class HttpServer {
   async start(port) {
     console.assert(!this._urlPrefix, 'server already started');
 
-    this._server.on('connection', (socket) => {
+    this._server.on('connection', socket => {
       this._activeSockets.add(socket);
 
       socket.once('close', () => this._activeSockets.delete(socket));
@@ -124,7 +84,7 @@ class HttpServer {
 
     this._server.listen(port);
 
-    await new Promise((cb) => this._server.once('listening', cb));
+    await new Promise(cb => this._server.once('listening', cb));
 
     const address = this._server.address();
 
@@ -142,7 +102,7 @@ class HttpServer {
   async stop() {
     for (const socket of this._activeSockets) socket.destroy();
 
-    await new Promise((cb) => this._server.close(cb));
+    await new Promise(cb => this._server.close(cb));
   }
 
   urlPrefix() {
@@ -154,14 +114,11 @@ class HttpServer {
       const content = _fs.default.readFileSync(absoluteFilePath);
 
       response.statusCode = 200;
-      const contentType =
-        mime.getType(_path.default.extname(absoluteFilePath)) ||
-        'application/octet-stream';
+      const contentType = mime.getType(_path.default.extname(absoluteFilePath)) || 'application/octet-stream';
       response.setHeader('Content-Type', contentType);
       response.setHeader('Content-Length', content.byteLength);
 
-      for (const [name, value] of Object.entries(headers || {}))
-        response.setHeader(name, value);
+      for (const [name, value] of Object.entries(headers || {})) response.setHeader(name, value);
 
       response.end(content);
       return true;
@@ -174,14 +131,11 @@ class HttpServer {
     try {
       const content = await vfs.read(entry);
       response.statusCode = 200;
-      const contentType =
-        mime.getType(_path.default.extname(entry)) ||
-        'application/octet-stream';
+      const contentType = mime.getType(_path.default.extname(entry)) || 'application/octet-stream';
       response.setHeader('Content-Type', contentType);
       response.setHeader('Content-Length', content.byteLength);
 
-      for (const [name, value] of Object.entries(headers || {}))
-        response.setHeader(name, value);
+      for (const [name, value] of Object.entries(headers || {})) response.setHeader(name, value);
 
       response.end(content);
       return true;
@@ -194,11 +148,7 @@ class HttpServer {
     response.setHeader('Access-Control-Allow-Origin', '*');
     response.setHeader('Access-Control-Request-Method', '*');
     response.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET');
-    if (request.headers.origin)
-      response.setHeader(
-        'Access-Control-Allow-Headers',
-        request.headers.origin,
-      );
+    if (request.headers.origin) response.setHeader('Access-Control-Allow-Headers', request.headers.origin);
 
     if (request.method === 'OPTIONS') {
       response.writeHead(200);
@@ -217,18 +167,8 @@ class HttpServer {
       const url = new URL('http://localhost' + request.url);
 
       for (const route of this._routes) {
-        if (
-          route.exact &&
-          url.pathname === route.exact &&
-          route.handler(request, response)
-        )
-          return;
-        if (
-          route.prefix &&
-          url.pathname.startsWith(route.prefix) &&
-          route.handler(request, response)
-        )
-          return;
+        if (route.exact && url.pathname === route.exact && route.handler(request, response)) return;
+        if (route.prefix && url.pathname.startsWith(route.prefix) && route.handler(request, response)) return;
       }
 
       response.statusCode = 404;
@@ -237,6 +177,7 @@ class HttpServer {
       response.end();
     }
   }
+
 }
 
 exports.HttpServer = HttpServer;

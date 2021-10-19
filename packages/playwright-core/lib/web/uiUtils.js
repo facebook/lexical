@@ -1,7 +1,7 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.msToString = msToString;
 exports.lowerBound = lowerBound;
@@ -41,9 +41,8 @@ function lowerBound(array, object, comparator, left, right) {
   let r = right !== undefined ? right : array.length;
 
   while (l < r) {
-    const m = (l + r) >> 1;
-    if (comparator(object, array[m]) > 0) l = m + 1;
-    else r = m;
+    const m = l + r >> 1;
+    if (comparator(object, array[m]) > 0) l = m + 1;else r = m;
   }
 
   return r;
@@ -54,9 +53,8 @@ function upperBound(array, object, comparator, left, right) {
   let r = right !== undefined ? right : array.length;
 
   while (l < r) {
-    const m = (l + r) >> 1;
-    if (comparator(object, array[m]) >= 0) l = m + 1;
-    else r = m;
+    const m = l + r >> 1;
+    if (comparator(object, array[m]) >= 0) l = m + 1;else r = m;
   }
 
   return r;

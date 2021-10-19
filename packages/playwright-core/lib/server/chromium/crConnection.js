@@ -1,26 +1,21 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
-exports.CRSession =
-  exports.CRSessionEvents =
-  exports.CRConnection =
-  exports.kBrowserCloseMessageId =
-  exports.ConnectionEvents =
-    void 0;
+exports.CRSession = exports.CRSessionEvents = exports.CRConnection = exports.kBrowserCloseMessageId = exports.ConnectionEvents = void 0;
 
-var _utils = require('../../utils/utils');
+var _utils = require("../../utils/utils");
 
-var _events = require('events');
+var _events = require("events");
 
-var _stackTrace = require('../../utils/stackTrace');
+var _stackTrace = require("../../utils/stackTrace");
 
-var _debugLogger = require('../../utils/debugLogger');
+var _debugLogger = require("../../utils/debugLogger");
 
-var _helper = require('../helper');
+var _helper = require("../helper");
 
-var _protocolError = require('../common/protocolError');
+var _protocolError = require("../common/protocolError");
 
 /**
  * Copyright 2017 Google Inc. All rights reserved.
@@ -39,7 +34,7 @@ var _protocolError = require('../common/protocolError');
  * limitations under the License.
  */
 const ConnectionEvents = {
-  Disconnected: Symbol('ConnectionEvents.Disconnected'),
+  Disconnected: Symbol('ConnectionEvents.Disconnected')
 }; // CRPlaywright uses this special id to issue Browser.close command which we
 // should ignore.
 
@@ -81,7 +76,7 @@ class CRConnection extends _events.EventEmitter {
     const message = {
       id,
       method,
-      params,
+      params
     };
     if (sessionId) message.sessionId = sessionId;
 
@@ -100,12 +95,7 @@ class CRConnection extends _events.EventEmitter {
     if (message.method === 'Target.attachedToTarget') {
       const sessionId = message.params.sessionId;
       const rootSessionId = message.sessionId || '';
-      const session = new CRSession(
-        this,
-        rootSessionId,
-        message.params.targetInfo.type,
-        sessionId,
-      );
+      const session = new CRSession(this, rootSessionId, message.params.targetInfo.type, sessionId);
 
       this._sessions.set(sessionId, session);
     } else if (message.method === 'Target.detachedFromTarget') {
@@ -128,12 +118,9 @@ class CRConnection extends _events.EventEmitter {
     this._transport.onmessage = undefined;
     this._transport.onclose = undefined;
 
-    const browserDisconnectedLogs = _helper.helper.formatBrowserLogs(
-      this._browserLogsCollector.recentLogs(),
-    );
+    const browserDisconnectedLogs = _helper.helper.formatBrowserLogs(this._browserLogsCollector.recentLogs());
 
-    for (const session of this._sessions.values())
-      session._onClosed(browserDisconnectedLogs);
+    for (const session of this._sessions.values()) session._onClosed(browserDisconnectedLogs);
 
     this._sessions.clear();
 
@@ -145,24 +132,27 @@ class CRConnection extends _events.EventEmitter {
   }
 
   async createSession(targetInfo) {
-    const {sessionId} = await this.rootSession.send('Target.attachToTarget', {
+    const {
+      sessionId
+    } = await this.rootSession.send('Target.attachToTarget', {
       targetId: targetInfo.targetId,
-      flatten: true,
+      flatten: true
     });
     return this._sessions.get(sessionId);
   }
 
   async createBrowserSession() {
-    const {sessionId} = await this.rootSession.send(
-      'Target.attachToBrowserTarget',
-    );
+    const {
+      sessionId
+    } = await this.rootSession.send('Target.attachToBrowserTarget');
     return this._sessions.get(sessionId);
   }
+
 }
 
 exports.CRConnection = CRConnection;
 const CRSessionEvents = {
-  Disconnected: Symbol('Events.CDPSession.Disconnected'),
+  Disconnected: Symbol('Events.CDPSession.Disconnected')
 };
 exports.CRSessionEvents = CRSessionEvents;
 
@@ -201,15 +191,9 @@ class CRSession extends _events.EventEmitter {
   }
 
   async send(method, params) {
-    if (this._crashed)
-      throw new _protocolError.ProtocolError(true, 'Target crashed');
-    if (this._browserDisconnectedLogs !== undefined)
-      throw new _protocolError.ProtocolError(
-        true,
-        `Browser closed.` + this._browserDisconnectedLogs,
-      );
-    if (!this._connection)
-      throw new _protocolError.ProtocolError(true, `Target closed`);
+    if (this._crashed) throw new _protocolError.ProtocolError(true, 'Target crashed');
+    if (this._browserDisconnectedLogs !== undefined) throw new _protocolError.ProtocolError(true, `Browser closed.` + this._browserDisconnectedLogs);
+    if (!this._connection) throw new _protocolError.ProtocolError(true, `Target closed`);
 
     const id = this._connection._rawSend(this._sessionId, method, params);
 
@@ -218,15 +202,13 @@ class CRSession extends _events.EventEmitter {
         resolve,
         reject,
         error: new _protocolError.ProtocolError(false),
-        method,
+        method
       });
     });
   }
 
   _sendMayFail(method, params) {
-    return this.send(method, params).catch((error) =>
-      _debugLogger.debugLogger.log('error', error),
-    );
+    return this.send(method, params).catch(error => _debugLogger.debugLogger.log('error', error));
   }
 
   _onMessage(object) {
@@ -235,47 +217,34 @@ class CRSession extends _events.EventEmitter {
 
       this._callbacks.delete(object.id);
 
-      if (object.error)
-        callback.reject(
-          createProtocolError(callback.error, callback.method, object.error),
-        );
-      else callback.resolve(object.result);
+      if (object.error) callback.reject(createProtocolError(callback.error, callback.method, object.error));else callback.resolve(object.result);
     } else {
       (0, _utils.assert)(!object.id);
       Promise.resolve().then(() => {
-        if (this._eventListener)
-          this._eventListener(object.method, object.params);
+        if (this._eventListener) this._eventListener(object.method, object.params);
         this.emit(object.method, object.params);
       });
     }
   }
 
   async detach() {
-    if (!this._connection)
-      throw new Error(
-        `Session already detached. Most likely the ${this._targetType} has been closed.`,
-      );
+    if (!this._connection) throw new Error(`Session already detached. Most likely the ${this._targetType} has been closed.`);
 
     const rootSession = this._connection.session(this._rootSessionId);
 
     if (!rootSession) throw new Error('Root session has been closed');
     await rootSession.send('Target.detachFromTarget', {
-      sessionId: this._sessionId,
+      sessionId: this._sessionId
     });
   }
 
   _onClosed(browserDisconnectedLogs) {
     this._browserDisconnectedLogs = browserDisconnectedLogs;
-    const errorMessage =
-      browserDisconnectedLogs !== undefined
-        ? 'Browser closed.' + browserDisconnectedLogs
-        : 'Target closed';
+    const errorMessage = browserDisconnectedLogs !== undefined ? 'Browser closed.' + browserDisconnectedLogs : 'Target closed';
 
     for (const callback of this._callbacks.values()) {
       callback.error.sessionClosed = true;
-      callback.reject(
-        (0, _stackTrace.rewriteErrorMessage)(callback.error, errorMessage),
-      );
+      callback.reject((0, _stackTrace.rewriteErrorMessage)(callback.error, errorMessage));
     }
 
     this._callbacks.clear();
@@ -283,6 +252,7 @@ class CRSession extends _events.EventEmitter {
     this._connection = null;
     Promise.resolve().then(() => this.emit(CRSessionEvents.Disconnected));
   }
+
 }
 
 exports.CRSession = CRSession;

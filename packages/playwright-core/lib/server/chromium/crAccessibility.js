@@ -1,7 +1,7 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.getAccessibilityTree = getAccessibilityTree;
 
@@ -22,11 +22,13 @@ exports.getAccessibilityTree = getAccessibilityTree;
  * limitations under the License.
  */
 async function getAccessibilityTree(client, needle) {
-  const {nodes} = await client.send('Accessibility.getFullAXTree');
+  const {
+    nodes
+  } = await client.send('Accessibility.getFullAXTree');
   const tree = CRAXNode.createTree(client, nodes);
   return {
     tree,
-    needle: needle ? await tree._findElement(needle) : null,
+    needle: needle ? await tree._findElement(needle) : null
   };
 }
 
@@ -63,21 +65,12 @@ class CRAXNode {
   _isPlainTextField() {
     if (this._richlyEditable) return false;
     if (this._editable) return true;
-    return (
-      this._role === 'textbox' ||
-      this._role === 'ComboBox' ||
-      this._role === 'searchbox'
-    );
+    return this._role === 'textbox' || this._role === 'ComboBox' || this._role === 'searchbox';
   }
 
   _isTextOnlyObject() {
     const role = this._role;
-    return (
-      role === 'LineBreak' ||
-      role === 'text' ||
-      role === 'InlineTextBox' ||
-      role === 'StaticText'
-    );
+    return role === 'LineBreak' || role === 'text' || role === 'InlineTextBox' || role === 'StaticText';
   }
 
   _hasFocusableChild() {
@@ -102,13 +95,13 @@ class CRAXNode {
   async _findElement(element) {
     const objectId = element._objectId;
     const {
-      node: {backendNodeId},
+      node: {
+        backendNodeId
+      }
     } = await this._client.send('DOM.describeNode', {
-      objectId,
+      objectId
     });
-    const needle = this.find(
-      (node) => node._payload.backendDOMNodeId === backendNodeId,
-    );
+    const needle = this.find(node => node._payload.backendDOMNodeId === backendNodeId);
     return needle || null;
   }
 
@@ -149,14 +142,9 @@ class CRAXNode {
         break;
     } // Here and below: Android heuristics
 
+
     if (this._hasFocusableChild()) return false;
-    if (
-      this._focusable &&
-      this._role !== 'WebArea' &&
-      this._role !== 'RootWebArea' &&
-      this._name
-    )
-      return true;
+    if (this._focusable && this._role !== 'WebArea' && this._role !== 'RootWebArea' && this._name) return true;
     if (this._role === 'heading' && this._name) return true;
     return false;
   }
@@ -217,47 +205,26 @@ class CRAXNode {
   serialize() {
     const properties = new Map();
 
-    for (const property of this._payload.properties || [])
-      properties.set(property.name.toLowerCase(), property.value.value);
+    for (const property of this._payload.properties || []) properties.set(property.name.toLowerCase(), property.value.value);
 
-    if (this._payload.description)
-      properties.set('description', this._payload.description.value);
+    if (this._payload.description) properties.set('description', this._payload.description.value);
     const node = {
       role: this.normalizedRole(),
-      name: this._payload.name ? this._payload.name.value || '' : '',
+      name: this._payload.name ? this._payload.name.value || '' : ''
     };
-    const userStringProperties = [
-      'description',
-      'keyshortcuts',
-      'roledescription',
-      'valuetext',
-    ];
+    const userStringProperties = ['description', 'keyshortcuts', 'roledescription', 'valuetext'];
 
     for (const userStringProperty of userStringProperties) {
       if (!properties.has(userStringProperty)) continue;
       node[userStringProperty] = properties.get(userStringProperty);
     }
 
-    const booleanProperties = [
-      'disabled',
-      'expanded',
-      'focused',
-      'modal',
-      'multiline',
-      'multiselectable',
-      'readonly',
-      'required',
-      'selected',
-    ];
+    const booleanProperties = ['disabled', 'expanded', 'focused', 'modal', 'multiline', 'multiselectable', 'readonly', 'required', 'selected'];
 
     for (const booleanProperty of booleanProperties) {
       // WebArea's treat focus differently than other nodes. They report whether their frame  has focus,
       // not whether focus is specifically on the root node.
-      if (
-        booleanProperty === 'focused' &&
-        (this._role === 'WebArea' || this._role === 'RootWebArea')
-      )
-        continue;
+      if (booleanProperty === 'focused' && (this._role === 'WebArea' || this._role === 'RootWebArea')) continue;
       const value = properties.get(booleanProperty);
       if (!value) continue;
       node[booleanProperty] = value;
@@ -270,12 +237,7 @@ class CRAXNode {
       node[numericalProperty] = properties.get(numericalProperty);
     }
 
-    const tokenProperties = [
-      'autocomplete',
-      'haspopup',
-      'invalid',
-      'orientation',
-    ];
+    const tokenProperties = ['autocomplete', 'haspopup', 'invalid', 'orientation'];
 
     for (const tokenProperty of tokenProperties) {
       const value = properties.get(tokenProperty);
@@ -286,40 +248,25 @@ class CRAXNode {
     const axNode = node;
 
     if (this._payload.value) {
-      if (typeof this._payload.value.value === 'string')
-        axNode.valueString = this._payload.value.value;
-      if (typeof this._payload.value.value === 'number')
-        axNode.valueNumber = this._payload.value.value;
+      if (typeof this._payload.value.value === 'string') axNode.valueString = this._payload.value.value;
+      if (typeof this._payload.value.value === 'number') axNode.valueNumber = this._payload.value.value;
     }
 
-    if (properties.has('checked'))
-      axNode.checked =
-        properties.get('checked') === 'true'
-          ? 'checked'
-          : properties.get('checked') === 'false'
-          ? 'unchecked'
-          : 'mixed';
-    if (properties.has('pressed'))
-      axNode.pressed =
-        properties.get('pressed') === 'true'
-          ? 'pressed'
-          : properties.get('pressed') === 'false'
-          ? 'released'
-          : 'mixed';
+    if (properties.has('checked')) axNode.checked = properties.get('checked') === 'true' ? 'checked' : properties.get('checked') === 'false' ? 'unchecked' : 'mixed';
+    if (properties.has('pressed')) axNode.pressed = properties.get('pressed') === 'true' ? 'pressed' : properties.get('pressed') === 'false' ? 'released' : 'mixed';
     return axNode;
   }
 
   static createTree(client, payloads) {
     const nodeById = new Map();
 
-    for (const payload of payloads)
-      nodeById.set(payload.nodeId, new CRAXNode(client, payload));
+    for (const payload of payloads) nodeById.set(payload.nodeId, new CRAXNode(client, payload));
 
     for (const node of nodeById.values()) {
-      for (const childId of node._payload.childIds || [])
-        node._children.push(nodeById.get(childId));
+      for (const childId of node._payload.childIds || []) node._children.push(nodeById.get(childId));
     }
 
     return nodeById.values().next().value;
   }
+
 }

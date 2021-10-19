@@ -1,7 +1,7 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.SnapshotServer = void 0;
 
@@ -30,15 +30,11 @@ class SnapshotServer {
   }
 
   serveSnapshot(pathname, searchParams, snapshotUrl) {
-    const snapshot = this._snapshot(
-      pathname.substring('/snapshot'.length),
-      searchParams,
-    );
+    const snapshot = this._snapshot(pathname.substring('/snapshot'.length), searchParams);
 
-    if (!snapshot)
-      return new Response(null, {
-        status: 404,
-      });
+    if (!snapshot) return new Response(null, {
+      status: 404
+    });
     const renderedSnapshot = snapshot.render();
 
     this._snapshotIds.set(snapshotUrl, snapshot);
@@ -46,16 +42,13 @@ class SnapshotServer {
     return new Response(renderedSnapshot.html, {
       status: 200,
       headers: {
-        'Content-Type': 'text/html',
-      },
+        'Content-Type': 'text/html'
+      }
     });
   }
 
   serveSnapshotSize(pathname, searchParams) {
-    const snapshot = this._snapshot(
-      pathname.substring('/snapshotSize'.length),
-      searchParams,
-    );
+    const snapshot = this._snapshot(pathname.substring('/snapshotSize'.length), searchParams);
 
     return this._respondWithJson(snapshot ? snapshot.viewport() : {});
   }
@@ -70,50 +63,41 @@ class SnapshotServer {
       status: 200,
       headers: {
         'Cache-Control': 'public, max-age=31536000',
-        'Content-Type': 'application/json',
-      },
+        'Content-Type': 'application/json'
+      }
     });
   }
 
   async serveResource(requestUrl, snapshotUrl) {
     const snapshot = this._snapshotIds.get(snapshotUrl);
 
-    const url = requestUrl.startsWith(kBlobUrlPrefix)
-      ? requestUrl.substring(kBlobUrlPrefix.length)
-      : removeHash(requestUrl);
-    const resource =
-      snapshot === null || snapshot === void 0
-        ? void 0
-        : snapshot.resourceByUrl(url);
-    if (!resource)
-      return new Response(null, {
-        status: 404,
-      });
+    const url = requestUrl.startsWith(kBlobUrlPrefix) ? requestUrl.substring(kBlobUrlPrefix.length) : removeHash(requestUrl);
+    const resource = snapshot === null || snapshot === void 0 ? void 0 : snapshot.resourceByUrl(url);
+    if (!resource) return new Response(null, {
+      status: 404
+    });
     const sha1 = resource.response.content._sha1;
-    if (!sha1)
-      return new Response(null, {
-        status: 404,
-      });
+    if (!sha1) return new Response(null, {
+      status: 404
+    });
     return this._innerServeResource(sha1, resource);
   }
 
   async _innerServeResource(sha1, resource) {
     const content = await this._snapshotStorage.resourceContent(sha1);
-    if (!content)
-      return new Response(null, {
-        status: 404,
-      });
+    if (!content) return new Response(null, {
+      status: 404
+    });
     let contentType = resource.response.content.mimeType;
-    const isTextEncoding = /^text\/|^application\/(javascript|json)/.test(
-      contentType,
-    );
-    if (isTextEncoding && !contentType.includes('charset'))
-      contentType = `${contentType}; charset=utf-8`;
+    const isTextEncoding = /^text\/|^application\/(javascript|json)/.test(contentType);
+    if (isTextEncoding && !contentType.includes('charset')) contentType = `${contentType}; charset=utf-8`;
     const headers = new Headers();
     headers.set('Content-Type', contentType);
 
-    for (const {name, value} of resource.response.headers)
-      headers.set(name, value);
+    for (const {
+      name,
+      value
+    } of resource.response.headers) headers.set(name, value);
 
     headers.delete('Content-Encoding');
     headers.delete('Access-Control-Allow-Origin');
@@ -122,9 +106,10 @@ class SnapshotServer {
     headers.set('Content-Length', String(content.size));
     headers.set('Cache-Control', 'public, max-age=31536000');
     return new Response(content, {
-      headers,
+      headers
     });
   }
+
 }
 
 exports.SnapshotServer = SnapshotServer;

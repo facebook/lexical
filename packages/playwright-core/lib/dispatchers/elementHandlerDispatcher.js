@@ -1,13 +1,13 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.ElementHandleDispatcher = void 0;
 
-var _dispatcher = require('./dispatcher');
+var _dispatcher = require("./dispatcher");
 
-var _jsHandleDispatcher = require('./jsHandleDispatcher');
+var _jsHandleDispatcher = require("./jsHandleDispatcher");
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -26,26 +26,18 @@ var _jsHandleDispatcher = require('./jsHandleDispatcher');
  */
 class ElementHandleDispatcher extends _jsHandleDispatcher.JSHandleDispatcher {
   static from(scope, handle) {
-    return (
-      (0, _dispatcher.existingDispatcher)(handle) ||
-      new ElementHandleDispatcher(scope, handle)
-    );
+    return (0, _dispatcher.existingDispatcher)(handle) || new ElementHandleDispatcher(scope, handle);
   }
 
   static fromNullable(scope, handle) {
     if (!handle) return undefined;
-    return (
-      (0, _dispatcher.existingDispatcher)(handle) ||
-      new ElementHandleDispatcher(scope, handle)
-    );
+    return (0, _dispatcher.existingDispatcher)(handle) || new ElementHandleDispatcher(scope, handle);
   }
 
   static fromJSHandle(scope, handle) {
     const result = (0, _dispatcher.existingDispatcher)(handle);
     if (result) return result;
-    return handle.asElement()
-      ? new ElementHandleDispatcher(scope, handle.asElement())
-      : new _jsHandleDispatcher.JSHandleDispatcher(scope, handle);
+    return handle.asElement() ? new ElementHandleDispatcher(scope, handle.asElement()) : new _jsHandleDispatcher.JSHandleDispatcher(scope, handle);
   }
 
   constructor(scope, elementHandle) {
@@ -56,94 +48,87 @@ class ElementHandleDispatcher extends _jsHandleDispatcher.JSHandleDispatcher {
 
   async ownerFrame(params, metadata) {
     return {
-      frame: (0, _dispatcher.lookupNullableDispatcher)(
-        await this._elementHandle.ownerFrame(),
-      ),
+      frame: (0, _dispatcher.lookupNullableDispatcher)(await this._elementHandle.ownerFrame())
     };
   }
 
   async contentFrame(params, metadata) {
     return {
-      frame: (0, _dispatcher.lookupNullableDispatcher)(
-        await this._elementHandle.contentFrame(),
-      ),
+      frame: (0, _dispatcher.lookupNullableDispatcher)(await this._elementHandle.contentFrame())
     };
   }
 
   async getAttribute(params, metadata) {
     const value = await this._elementHandle.getAttribute(params.name);
     return {
-      value: value === null ? undefined : value,
+      value: value === null ? undefined : value
     };
   }
 
   async inputValue(params, metadata) {
     const value = await this._elementHandle.inputValue();
     return {
-      value,
+      value
     };
   }
 
   async textContent(params, metadata) {
     const value = await this._elementHandle.textContent();
     return {
-      value: value === null ? undefined : value,
+      value: value === null ? undefined : value
     };
   }
 
   async innerText(params, metadata) {
     return {
-      value: await this._elementHandle.innerText(),
+      value: await this._elementHandle.innerText()
     };
   }
 
   async innerHTML(params, metadata) {
     return {
-      value: await this._elementHandle.innerHTML(),
+      value: await this._elementHandle.innerHTML()
     };
   }
 
   async isChecked(params, metadata) {
     return {
-      value: await this._elementHandle.isChecked(),
+      value: await this._elementHandle.isChecked()
     };
   }
 
   async isDisabled(params, metadata) {
     return {
-      value: await this._elementHandle.isDisabled(),
+      value: await this._elementHandle.isDisabled()
     };
   }
 
   async isEditable(params, metadata) {
     return {
-      value: await this._elementHandle.isEditable(),
+      value: await this._elementHandle.isEditable()
     };
   }
 
   async isEnabled(params, metadata) {
     return {
-      value: await this._elementHandle.isEnabled(),
+      value: await this._elementHandle.isEnabled()
     };
   }
 
   async isHidden(params, metadata) {
     return {
-      value: await this._elementHandle.isHidden(),
+      value: await this._elementHandle.isHidden()
     };
   }
 
   async isVisible(params, metadata) {
     return {
-      value: await this._elementHandle.isVisible(),
+      value: await this._elementHandle.isVisible()
     };
   }
 
   async dispatchEvent(params, metadata) {
-    await this._elementHandle.dispatchEvent(
-      params.type,
-      (0, _jsHandleDispatcher.parseArgument)(params.eventInit),
-    );
+    await this._elementHandle.dispatchEvent(params.type, (0, _jsHandleDispatcher.parseArgument)(params.eventInit));
   }
 
   async scrollIntoViewIfNeeded(params, metadata) {
@@ -167,14 +152,9 @@ class ElementHandleDispatcher extends _jsHandleDispatcher.JSHandleDispatcher {
   }
 
   async selectOption(params, metadata) {
-    const elements = (params.elements || []).map((e) => e._elementHandle);
+    const elements = (params.elements || []).map(e => e._elementHandle);
     return {
-      values: await this._elementHandle.selectOption(
-        metadata,
-        elements,
-        params.options || [],
-        params,
-      ),
+      values: await this._elementHandle.selectOption(metadata, elements, params.options || [], params)
     };
   }
 
@@ -187,11 +167,7 @@ class ElementHandleDispatcher extends _jsHandleDispatcher.JSHandleDispatcher {
   }
 
   async setInputFiles(params, metadata) {
-    return await this._elementHandle.setInputFiles(
-      metadata,
-      params.files,
-      params,
-    );
+    return await this._elementHandle.setInputFiles(metadata, params.files, params);
   }
 
   async focus(params, metadata) {
@@ -217,86 +193,52 @@ class ElementHandleDispatcher extends _jsHandleDispatcher.JSHandleDispatcher {
   async boundingBox(params, metadata) {
     const value = await this._elementHandle.boundingBox();
     return {
-      value: value || undefined,
+      value: value || undefined
     };
   }
 
   async screenshot(params, metadata) {
     return {
-      binary: (await this._elementHandle.screenshot(metadata, params)).toString(
-        'base64',
-      ),
+      binary: (await this._elementHandle.screenshot(metadata, params)).toString('base64')
     };
   }
 
   async querySelector(params, metadata) {
-    const handle = await this._elementHandle.querySelector(
-      params.selector,
-      params,
-    );
+    const handle = await this._elementHandle.querySelector(params.selector, params);
     return {
-      element: ElementHandleDispatcher.fromNullable(this._scope, handle),
+      element: ElementHandleDispatcher.fromNullable(this._scope, handle)
     };
   }
 
   async querySelectorAll(params, metadata) {
-    const elements = await this._elementHandle.querySelectorAll(
-      params.selector,
-    );
+    const elements = await this._elementHandle.querySelectorAll(params.selector);
     return {
-      elements: elements.map((e) =>
-        ElementHandleDispatcher.from(this._scope, e),
-      ),
+      elements: elements.map(e => ElementHandleDispatcher.from(this._scope, e))
     };
   }
 
   async evalOnSelector(params, metadata) {
     return {
-      value: (0, _jsHandleDispatcher.serializeResult)(
-        await this._elementHandle.evalOnSelectorAndWaitForSignals(
-          params.selector,
-          !!params.strict,
-          params.expression,
-          params.isFunction,
-          (0, _jsHandleDispatcher.parseArgument)(params.arg),
-        ),
-      ),
+      value: (0, _jsHandleDispatcher.serializeResult)(await this._elementHandle.evalOnSelectorAndWaitForSignals(params.selector, !!params.strict, params.expression, params.isFunction, (0, _jsHandleDispatcher.parseArgument)(params.arg)))
     };
   }
 
   async evalOnSelectorAll(params, metadata) {
     return {
-      value: (0, _jsHandleDispatcher.serializeResult)(
-        await this._elementHandle.evalOnSelectorAllAndWaitForSignals(
-          params.selector,
-          params.expression,
-          params.isFunction,
-          (0, _jsHandleDispatcher.parseArgument)(params.arg),
-        ),
-      ),
+      value: (0, _jsHandleDispatcher.serializeResult)(await this._elementHandle.evalOnSelectorAllAndWaitForSignals(params.selector, params.expression, params.isFunction, (0, _jsHandleDispatcher.parseArgument)(params.arg)))
     };
   }
 
   async waitForElementState(params, metadata) {
-    await this._elementHandle.waitForElementState(
-      metadata,
-      params.state,
-      params,
-    );
+    await this._elementHandle.waitForElementState(metadata, params.state, params);
   }
 
   async waitForSelector(params, metadata) {
     return {
-      element: ElementHandleDispatcher.fromNullable(
-        this._scope,
-        await this._elementHandle.waitForSelector(
-          metadata,
-          params.selector,
-          params,
-        ),
-      ),
+      element: ElementHandleDispatcher.fromNullable(this._scope, await this._elementHandle.waitForSelector(metadata, params.selector, params))
     };
   }
+
 }
 
 exports.ElementHandleDispatcher = ElementHandleDispatcher;

@@ -6,7 +6,12 @@
  *
  */
 
-import {initializeE2E, assertSelection, assertHTML} from '../utils';
+import {
+  initializeE2E,
+  assertSelection,
+  assertHTML,
+  E2E_BROWSER,
+} from '../utils';
 
 describe('Extensions', () => {
   initializeE2E((e2e) => {
@@ -30,6 +35,12 @@ describe('Extensions', () => {
     });
 
     it(`ClipboardEvent("paste")`, async () => {
+      // Pasting this way doesn't work in FF due to content
+      // privacy reasons.
+      if (E2E_BROWSER === 'firefox') {
+        return;
+      }
+
       const {page} = e2e;
       await page.focus('div.editor');
 
@@ -116,16 +127,31 @@ describe('Extensions', () => {
         document.execCommand('InsertText', false, 'bar');
       });
 
-      await assertHTML(
-        page,
-        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">foobar</span></p>',
-      );
-      await assertSelection(page, {
-        anchorPath: [0, 0, 0],
-        anchorOffset: 6,
-        focusPath: [0, 0, 0],
-        focusOffset: 6,
-      });
+      // Pasting this way doesn't work in FF due to content
+      // privacy reasons. So we only look for the execCommand output.
+      if (E2E_BROWSER === 'firefox') {
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">bar</span></p>',
+        );
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 3,
+          focusPath: [0, 0, 0],
+          focusOffset: 3,
+        });
+      } else {
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">foobar</span></p>',
+        );
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 6,
+          focusPath: [0, 0, 0],
+          focusOffset: 6,
+        });
+      }
     });
   });
 });

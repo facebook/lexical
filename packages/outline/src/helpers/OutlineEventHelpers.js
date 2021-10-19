@@ -654,7 +654,7 @@ export function onBeforeInputForPlainText(
     }
     const data = event.data;
 
-    if (selection.isCollapsed()) {
+    if (!selection.dirty && selection.isCollapsed()) {
       applyTargetRange(selection, event);
     }
     const anchor = selection.anchor;
@@ -789,7 +789,7 @@ export function onBeforeInputForRichText(
     }
     const data = event.data;
 
-    if (selection.isCollapsed()) {
+    if (!selection.dirty && selection.isCollapsed()) {
       applyTargetRange(selection, event);
     }
     const anchor = selection.anchor;

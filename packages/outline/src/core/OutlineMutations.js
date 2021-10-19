@@ -13,6 +13,7 @@ import type {Selection} from './OutlineSelection';
 import type {TextNode} from './OutlineTextNode';
 
 import {isTextNode, isDecoratorNode} from '.';
+import {triggerListeners} from './OutlineView';
 import {getNearestNodeFromDOMNode, getNodeFromDOMNode} from './OutlineNode';
 
 let isProcessingMutations: boolean = false;
@@ -69,7 +70,7 @@ function pushTextMutation(
   editor._textMutations.push({node, anchorOffset, focusOffset, text});
 }
 
-export function handleRootMutations(
+function handleRootMutations(
   editor: OutlineEditor,
   mutations: Array<MutationRecord>,
   observer: MutationObserver,
@@ -190,3 +191,30 @@ export function handleRootMutations(
     isProcessingMutations = false;
   }
 }
+
+export function flushPendingTextMutations(editor: OutlineEditor): void {
+  const observer = editor._observer;
+  if (observer !== null) {
+    const mutations = observer.takeRecords();
+    if (mutations.length > 0) {
+      handleRootMutations(editor, mutations, observer);
+    }
+  }
+  const textMutations = editor._textMutations;
+  if (textMutations.length > 0) {
+    editor._textMutations = [];
+    triggerListeners('textmutation', editor, editor, textMutations);
+  }
+}
+
+export function initMutationObserver(editor: OutlineEditor): void {
+  editor._observer = new MutationObserver(
+    (mutations: Array<MutationRecord>) => {
+      const observer = editor._observer;
+      if (observer !== null) {
+        handleRootMutations(editor, mutations, observer);
+      }
+    },
+  );
+}
+

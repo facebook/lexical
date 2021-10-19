@@ -106,6 +106,7 @@ export default function OutlineComposer({
   const pluginComponents: $ReadOnlyArray<React$Node> = plugins.map(
     ({component: Component}) => <Component editor={editor} />,
   );
+  const pluginNames = plugins.map((plugin) => plugin.name);
 
   return (
     <>
@@ -116,6 +117,14 @@ export default function OutlineComposer({
       {showPlaceholder && <Placeholder>Enter some plain text...</Placeholder>}
       {decorators}
       {pluginComponents}
+      <div>
+        Current plugins:
+        <ul>
+          {pluginNames.map((name) => (
+            <li>{name}</li>
+          ))}
+        </ul>
+      </div>
       <div className="actions">
         <button
           className="action-button clear"

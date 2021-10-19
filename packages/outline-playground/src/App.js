@@ -154,16 +154,3 @@ function App(): React$Node {
 }
 
 export default App;
-
-
-const events = [];
-// document.addEventListener('keydown', e => events.push(e.type));
-// document.addEventListener('keyup', e => events.push(e.type));
-document.addEventListener('compositionstart', e => events.push(e.type));
-document.addEventListener('input', e => events.push(e.type));
-document.addEventListener('compositionupdate', e => events.push(e.type));
-document.addEventListener('compositionend', e => events.push(e.type));
-
-setTimeout(() => {
-  console.log(events)
-}, 5000)

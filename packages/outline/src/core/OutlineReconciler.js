@@ -521,11 +521,12 @@ export function updateViewModel(
   needsUpdate: boolean,
   editor: OutlineEditor,
 ): void {
-  if (needsUpdate) {
+  const observer = editor._observer;
+
+  if (needsUpdate && observer !== null) {
     const dirtyType = editor._dirtyType;
     const dirtySubTrees = editor._dirtySubTrees;
     const dirtyNodes = editor._dirtyNodes;
-    const observer = editor._observer;
 
     observer.disconnect();
     try {

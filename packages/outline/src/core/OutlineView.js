@@ -32,6 +32,7 @@ import {
 import {isBlockNode, isTextNode, isLineBreakNode} from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './OutlineConstants';
 import {resetEditor} from './OutlineEditor';
+import {initMutationObserver} from './OutlineMutations';
 import invariant from 'shared/invariant';
 
 export type View = {
@@ -425,6 +426,7 @@ export function commitPendingUpdates(
     // Reset editor and restore incoming view model to the DOM
     if (!isAttemptingToRecoverFromReconcilerError) {
       resetEditor(editor, null, rootElement, pendingViewModel);
+      initMutationObserver(editor);
       editor._dirtyType = FULL_RECONCILE;
       isAttemptingToRecoverFromReconcilerError = true;
       commitPendingUpdates(editor, 'ReconcileRecover');

@@ -610,10 +610,17 @@ function shouldPreventDefaultAndInsertText(
 
   return (
     anchor.key !== focus.key ||
+    // If we're working with a range that is not during composition.
     (anchor.offset !== focus.offset && !anchorNode.isComposing()) ||
-    (isBeforeInput && text.length > 1) ||
+    // If the text length is more than a single character and we're either
+    // dealing with this in "beforeinput" or where the node has already recently
+    // been changed (thus is dirty).
+    ((isBeforeInput || anchorNode.isDirty()) && text.length > 1) ||
+    // If we're working with a non-text node.
     !isTextNode(anchorNode) ||
+    // Check if we're changing from bold to italics, or some other format.
     anchorNode.getFormat() !== selection.textFormat ||
+    // One last set of heuristics to check against.
     shouldInsertTextAfterOrBeforeTextNode(selection, anchorNode, true)
   );
 }

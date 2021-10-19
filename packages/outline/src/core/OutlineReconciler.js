@@ -527,7 +527,7 @@ export function updateViewModel(
     const dirtyNodes = editor._dirtyNodes;
     const observer = editor._observer;
 
-      observer.disconnect();
+    observer.disconnect();
     try {
       reconcileRoot(
         currentViewModel,

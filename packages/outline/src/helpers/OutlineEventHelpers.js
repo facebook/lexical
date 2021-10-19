@@ -18,9 +18,9 @@ import type {
   BlockNode,
   LineBreakNode,
   DecoratorNode,
+  TextMutation,
 } from 'outline';
 
-import {CAN_USE_BEFORE_INPUT} from 'shared/environment';
 import {
   isDeleteBackward,
   isDeleteForward,
@@ -73,34 +73,6 @@ export type EventHandler = (
 function updateAndroidSoftKeyFlagIfAny(event: KeyboardEvent): void {
   lastKeyWasMaybeAndroidSoftKey =
     event.key === 'Unidentified' && event.keyCode === 229;
-}
-
-function getNodeFromDOMNode(view: View, dom: Node): OutlineNode | null {
-  // $FlowFixMe: internal field
-  const key: NodeKey | undefined = dom.__outlineInternalRef;
-  if (key !== undefined) {
-    return view.getNodeByKey(key);
-  }
-  return null;
-}
-
-function getClosestNodeFromDOMNode(
-  view: View,
-  startingDOM: Node,
-): OutlineNode | null {
-  let dom = startingDOM;
-  while (dom != null) {
-    const node = getNodeFromDOMNode(view, dom);
-    if (node !== null) {
-      return node;
-    }
-    dom = dom.parentNode;
-  }
-  return null;
-}
-
-function getLastSelection(editor: OutlineEditor): null | Selection {
-  return editor.getViewModel().read((lastView) => lastView.getSelection());
 }
 
 function generateNodes(
@@ -463,6 +435,12 @@ export function onCompositionEnd(
     view.setCompositionKey(null);
     updateSelectedTextFromDOM(editor, view, true);
   }, 'onCompositionEnd');
+  // Flush any pending text mutations
+  editor.flushTextMutations();
+}
+
+function getLastSelection(editor: OutlineEditor): null | Selection {
+  return editor.getViewModel().read((lastView) => lastView.getSelection());
 }
 
 // This is a work-around is mainly Chrome specific bug where if you select
@@ -548,113 +526,54 @@ function shouldInsertTextAfterOrBeforeTextNode(
   );
 }
 
-function shouldInsertRawTextAfterOrBeforeTextNode(
-  selection: Selection,
-  node: TextNode,
-  textContent: string,
-  originalTextContent: string,
-): boolean {
-  return (
-    textContent.indexOf(originalTextContent) !== -1 &&
-    shouldInsertTextAfterOrBeforeTextNode(selection, node, false)
-  );
-}
-
 function updateTextNodeFromDOMContent(
-  dom: Text,
+  textNode: TextNode,
+  textContent: string,
+  anchorOffset: null | number,
+  focusOffset: null | number,
   view: View,
   editor: OutlineEditor,
   compositionEnd: boolean,
 ): void {
-  let node = getClosestNodeFromDOMNode(view, dom);
-  if (isTextNode(node) && (!node.isDirty() || compositionEnd)) {
-    let textContent = dom.nodeValue;
+  let node = textNode;
+  if (node.isAttached() && (compositionEnd || !node.isDirty())) {
+    let normalizedTextContent = textContent;
 
     if (
       (node.isComposing() || compositionEnd) &&
       textContent[textContent.length - 1] === NO_BREAK_SPACE_CHAR
     ) {
-      textContent = textContent.slice(0, -1);
+      normalizedTextContent = textContent.slice(0, -1);
     }
 
-    if (compositionEnd || textContent !== node.getTextContent()) {
-      const originalTextContent = node.getTextContent();
-      const selection = view.getSelection();
-      const domSelection = window.getSelection();
-      const range =
-        domSelection === null || domSelection.rangeCount === 0
-          ? null
-          : domSelection.getRangeAt(0);
-
+    if (compositionEnd || normalizedTextContent !== node.getTextContent()) {
       if (
-        (isImmutableOrInert(node) &&
-          (selection === null ||
-            !shouldInsertRawTextAfterOrBeforeTextNode(
-              selection,
-              node,
-              textContent,
-              originalTextContent,
-            ))) ||
+        isImmutableOrInert(node) ||
         (editor.isComposing() && !node.isComposing())
       ) {
         view.markNodeAsDirty(node);
         return;
       }
-      if (domSelection === null || selection === null || range === null) {
-        node.setTextContent(textContent);
+      const selection = view.getSelection();
+
+      if (
+        selection === null ||
+        anchorOffset === null ||
+        focusOffset === null ||
+        selection.anchor.getNode() !== node
+      ) {
+        node.setTextContent(normalizedTextContent);
         return;
       }
-      selection.applyDOMRange(range);
-      const nodeKey = node.getKey();
+      selection.setTextNodeRange(node, anchorOffset, node, focusOffset);
 
-      if (!CAN_USE_BEFORE_INPUT && selection !== null) {
-        const anchor = selection.anchor;
-        const focus = selection.focus;
-        if (
-          anchor.type === 'text' &&
-          focus.type === 'text' &&
-          anchor.key === nodeKey &&
-          (node.getFormat() !== selection.textFormat ||
-            shouldInsertRawTextAfterOrBeforeTextNode(
-              selection,
-              node,
-              textContent,
-              originalTextContent,
-            ))
-        ) {
-          const isCollapsed = selection.isCollapsed();
-          const intersection = textContent.indexOf(originalTextContent);
-          const insertionText =
-            intersection === 0
-              ? textContent.slice(originalTextContent.length)
-              : textContent.slice(0, intersection);
-          view.markNodeAsDirty(node);
-          anchor.offset -=
-            intersection === 0
-              ? insertionText.length
-              : originalTextContent.length;
-          if (anchor.offset < 0) {
-            anchor.offset = 0;
-          }
-          if (isCollapsed) {
-            focus.offset = anchor.offset;
-          }
-          insertText(selection, insertionText);
-          return;
-        }
-      }
       if (node.isSegmented()) {
+        const originalTextContent = node.getTextContent();
         const replacement = createTextNode(originalTextContent);
         node.replace(replacement);
         node = replacement;
       }
-      // TODO: somtimes we slip through to this even though this should
-      // be captured above. We need to find out why.
-      if (isImmutableOrInert(node)) {
-        view.markNodeAsDirty(node);
-        return;
-      }
-      node = node.setTextContent(textContent);
+      node = node.setTextContent(normalizedTextContent);
     }
   }
 }
@@ -683,6 +602,7 @@ function canRemoveText(
 function shouldPreventDefaultAndInsertText(
   selection: Selection,
   text: string,
+  isBeforeInput: boolean,
 ): boolean {
   const anchor = selection.anchor;
   const focus = selection.focus;
@@ -690,10 +610,17 @@ function shouldPreventDefaultAndInsertText(
 
   return (
     anchor.key !== focus.key ||
-    anchor.offset !== focus.offset ||
-    text.length > 1 ||
+    // If we're working with a range that is not during composition.
+    (anchor.offset !== focus.offset && !anchorNode.isComposing()) ||
+    // If the text length is more than a single character and we're either
+    // dealing with this in "beforeinput" or where the node has already recently
+    // been changed (thus is dirty).
+    ((isBeforeInput || anchorNode.isDirty()) && text.length > 1) ||
+    // If we're working with a non-text node.
     !isTextNode(anchorNode) ||
+    // Check if we're changing from bold to italics, or some other format.
     anchorNode.getFormat() !== selection.textFormat ||
+    // One last set of heuristics to check against.
     shouldInsertTextAfterOrBeforeTextNode(selection, anchorNode, true)
   );
 }
@@ -727,7 +654,7 @@ export function onBeforeInputForPlainText(
     }
     const data = event.data;
 
-    if (selection.isCollapsed()) {
+    if (!selection.dirty && selection.isCollapsed()) {
       applyTargetRange(selection, event);
     }
     const anchor = selection.anchor;
@@ -750,7 +677,7 @@ export function onBeforeInputForPlainText(
         insertRichText(selection, text);
       } else if (
         data != null &&
-        shouldPreventDefaultAndInsertText(selection, data)
+        shouldPreventDefaultAndInsertText(selection, data, true)
       ) {
         event.preventDefault();
         insertText(selection, data);
@@ -862,7 +789,7 @@ export function onBeforeInputForRichText(
     }
     const data = event.data;
 
-    if (selection.isCollapsed()) {
+    if (!selection.dirty && selection.isCollapsed()) {
       applyTargetRange(selection, event);
     }
     const anchor = selection.anchor;
@@ -884,7 +811,7 @@ export function onBeforeInputForRichText(
         insertRichText(selection, text);
       } else if (
         data != null &&
-        shouldPreventDefaultAndInsertText(selection, data)
+        shouldPreventDefaultAndInsertText(selection, data, true)
       ) {
         event.preventDefault();
         insertText(selection, data);
@@ -995,147 +922,67 @@ function updateSelectedTextFromDOM(
 ) {
   // Update the text content with the latest composition text
   const domSelection = window.getSelection();
-  const anchorDOM = domSelection === null ? null : domSelection.anchorNode;
-  if (anchorDOM !== null && anchorDOM.nodeType === 3) {
-    updateTextNodeFromDOMContent(anchorDOM, view, editor, compositionEnd);
+  if (domSelection === null) {
+    return;
+  }
+  const {anchorNode, anchorOffset, focusOffset} = domSelection;
+  if (anchorNode !== null && anchorNode.nodeType === 3) {
+    const node = view.getNearestNodeFromDOMNode(anchorNode);
+    if (isTextNode(node)) {
+      updateTextNodeFromDOMContent(
+        node,
+        anchorNode.nodeValue,
+        anchorOffset,
+        focusOffset,
+        view,
+        editor,
+        compositionEnd,
+      );
+    }
   }
 }
 
 export function onInput(event: InputEvent, editor: OutlineEditor) {
   editor.update((view: View) => {
-    if (!CAN_USE_BEFORE_INPUT) {
-      const selection = view.getSelection();
-      const data = event.data;
-      if (
-        data != null &&
-        selection !== null &&
-        shouldPreventDefaultAndInsertText(selection, data)
-      ) {
-        insertText(selection, data);
-        return;
-      }
+    const selection = view.getSelection();
+    const data = event.data;
+    if (
+      data != null &&
+      selection !== null &&
+      shouldPreventDefaultAndInsertText(selection, data, false)
+    ) {
+      insertText(selection, data);
+      return;
     }
     updateSelectedTextFromDOM(editor, view, false);
   }, 'onInput');
+  // Flush any pending text mutations
+  editor.flushTextMutations();
 }
 
-function isManagedLineBreak(dom: Node, target: Node): boolean {
-  return (
-    // $FlowFixMe: internal field
-    target.__outlineLineBreak === dom || dom.__outlineInternalRef !== undefined
-  );
-}
-
-export function onMutation(
+export function onTextMutation(
   editor: OutlineEditor,
-  mutations: Array<MutationRecord>,
-  observer: MutationObserver,
+  mutations: Array<TextMutation>,
 ): void {
+  // We attempt to merge any text mutations that have occured outside of Outline
+  // back into Outline's view model, where possible. This can occur due to
+  // third-party extensions or other tooling that mutates text nodes directly.
   editor.update((view: View) => {
-    let shouldRevertSelection = true;
-
     for (let i = 0; i < mutations.length; i++) {
-      const mutation = mutations[i];
-      const type = mutation.type;
-      const target = mutation.target;
-      const targetNode = getClosestNodeFromDOMNode(view, target);
-
-      if (isDecoratorNode(targetNode)) {
-        continue;
-      }
-      if (type === 'characterData') {
-        if (target.nodeType === 3) {
-          // $FlowFixMe: nodeType === 3 is a Text DOM node
-          updateTextNodeFromDOMContent(((target: any): Text), view, editor);
-          shouldRevertSelection = false;
-        }
-      } else if (type === 'childList') {
-        // We attempt to "undo" any changes that have occured outside
-        // of Outline. We want Outline's view model to be source of truth.
-        // To the user, these will look like no-ops.
-        const addedDOMs = mutation.addedNodes;
-        const removedDOMs = mutation.removedNodes;
-        const siblingDOM = mutation.nextSibling;
-
-        for (let s = 0; s < removedDOMs.length; s++) {
-          const removedDOM = removedDOMs[s];
-          const node = getNodeFromDOMNode(view, removedDOM);
-          let placementDOM = siblingDOM;
-
-          if (node !== null && node.isAttached()) {
-            const nextSibling = node.getNextSibling();
-            if (nextSibling !== null) {
-              const key = nextSibling.getKey();
-              const nextSiblingDOM = editor.getElementByKey(key);
-              if (
-                nextSiblingDOM !== null &&
-                nextSiblingDOM.parentNode !== null
-              ) {
-                placementDOM = nextSiblingDOM;
-              }
-            }
-          }
-          if (placementDOM != null) {
-            while (placementDOM != null) {
-              const parentDOM = placementDOM.parentNode;
-              if (parentDOM === target) {
-                target.insertBefore(removedDOM, placementDOM);
-                break;
-              }
-              placementDOM = parentDOM;
-            }
-          } else {
-            target.appendChild(removedDOM);
-          }
-        }
-        for (let s = 0; s < addedDOMs.length; s++) {
-          const addedDOM = addedDOMs[s];
-          const node = getNodeFromDOMNode(view, addedDOM);
-          const parentDOM = addedDOM.parentNode;
-          if (parentDOM != null && node === null) {
-            parentDOM.removeChild(addedDOM);
-          }
-        }
-      }
-    }
-
-    // Capture all the mutations made during this function. This
-    // also prevents us having to process them on the next cycle
-    // of onMutation, as these mutations were made by us.
-    const records = observer.takeRecords();
-
-    // Check for any random auto-added <br> elements, and remove them.
-    // These get added by the browser when we undo the above mutations
-    // and this can lead to a broken UI.
-    if (records.length > 0) {
-      for (let i = 0; i < records.length; i++) {
-        const record = records[i];
-        const addedNodes = record.addedNodes;
-        const target = record.target;
-
-        for (let s = 0; s < addedNodes.length; s++) {
-          const addedDOM = addedNodes[s];
-          const parentDOM = addedDOM.parentNode;
-          if (
-            parentDOM != null &&
-            addedDOM.nodeName === 'BR' &&
-            !isManagedLineBreak(addedDOM, target)
-          ) {
-            parentDOM.removeChild(addedDOM);
-          }
-        }
-      }
-      // Clear any of those removal mutations
-      observer.takeRecords();
-    }
-
-    if (shouldRevertSelection) {
-      const lastSelection = getLastSelection(editor);
-      if (lastSelection !== null) {
-        const selection = lastSelection.clone();
-        selection.dirty = true;
-        view.setSelection(selection);
-      }
+      const mutation: TextMutation = mutations[i];
+      const node = mutation.node;
+      const anchorOffset = mutation.anchorOffset;
+      const focusOffset = mutation.focusOffset;
+      const text = mutation.text;
+      updateTextNodeFromDOMContent(
+        node,
+        text,
+        anchorOffset,
+        focusOffset,
+        view,
+        editor,
+        false,
+      );
     }
   }, 'onMutation');
 }

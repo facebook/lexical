@@ -16,7 +16,7 @@ import type {
 import type {TextNode} from './OutlineTextNode';
 import type {Node as ReactNode} from 'react';
 
-import {triggerListeners, ViewModel} from './OutlineView';
+import {ViewModel} from './OutlineView';
 import {isSelectionWithinEditor, getDOMTextNode} from './OutlineUtils';
 import {IS_INERT, IS_RTL, IS_LTR, FULL_RECONCILE} from './OutlineConstants';
 import invariant from 'shared/invariant';
@@ -525,7 +525,9 @@ export function updateViewModel(
     const dirtyType = editor._dirtyType;
     const dirtySubTrees = editor._dirtySubTrees;
     const dirtyNodes = editor._dirtyNodes;
-    triggerListeners('mutation', editor, null);
+    const observer = editor._observer;
+
+    observer.disconnect();
     try {
       reconcileRoot(
         currentViewModel,
@@ -537,7 +539,11 @@ export function updateViewModel(
         dirtyNodes,
       );
     } finally {
-      triggerListeners('mutation', editor, rootElement);
+      observer.observe(rootElement, {
+        childList: true,
+        subtree: true,
+        characterData: true,
+      });
     }
   }
 

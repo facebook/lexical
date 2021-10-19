@@ -122,6 +122,23 @@ function removeNode(
   if (parent === null) {
     return;
   }
+  const selection = getSelection();
+  let selectionRestored = false;
+  if (selection !== null) {
+    if (restoreSelection) {
+      const anchor = selection.anchor;
+      const focus = selection.focus;
+      if (anchor !== null && anchor.key === key) {
+        moveSelectionPointToSibling(anchor, nodeToRemove, parent);
+        selectionRestored = true;
+      }
+      if (focus !== null && focus.key === key) {
+        moveSelectionPointToSibling(focus, nodeToRemove, parent);
+        selectionRestored = true;
+      }
+    }
+  }
+
   const writableParent = parent.getWritable();
   const parentChildren = writableParent.__children;
   const index = parentChildren.indexOf(key);
@@ -131,18 +148,7 @@ function removeNode(
   const writableNodeToRemove = nodeToRemove.getWritable();
   writableNodeToRemove.__parent = null;
 
-  const selection = getSelection();
-  if (selection !== null) {
-    if (restoreSelection) {
-      const anchor = selection.anchor;
-      const focus = selection.focus;
-      if (anchor !== null && anchor.key === key) {
-        moveSelectionPointToSibling(anchor, nodeToRemove, parent);
-      }
-      if (focus !== null && focus.key === key) {
-        moveSelectionPointToSibling(focus, nodeToRemove, parent);
-      }
-    }
+  if (selection !== null && !selectionRestored) {
     updateBlockSelectionOnCreateDeleteNode(selection, parent, index, -1);
   }
 }

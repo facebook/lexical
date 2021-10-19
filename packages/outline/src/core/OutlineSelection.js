@@ -689,13 +689,25 @@ export function updateBlockSelectionOnCreateDeleteNode(
   if (!parentNode.is(anchorNode) && !parentNode.is(focusNode)) {
     return;
   }
+  // Flow
+  if (!isBlockNode(anchorNode)) {
+    return;
+  }
   const parentKey = parentNode.getKey();
   // Single node. We shift selection but never redimension it
   if (selection.isCollapsed()) {
     const selectionOffset = anchor.offset;
     if (nodeOffset <= selectionOffset) {
-      anchor.set(parentKey, Math.max(0, selectionOffset + times), 'block');
-      focus.set(parentKey, Math.max(0, selectionOffset + times), 'block');
+      const newSelectionOffset = Math.max(0, selectionOffset + times);
+      const child = anchorNode.getChildAtIndex(newSelectionOffset);
+      if (isTextNode(child) && child.isAttached()) {
+        // Move selection to text
+        anchor.set(child.getKey(), 0, 'text');
+        focus.set(child.getKey(), 0, 'text');
+      } else {
+        anchor.set(parentKey, newSelectionOffset, 'block');
+        focus.set(parentKey, newSelectionOffset, 'block');
+      }
     }
     return;
   }

@@ -858,7 +858,6 @@ export function insertNodes(
   nodes: Array<OutlineNode>,
   selectStart?: boolean,
 ): boolean {
-  console.info(nodes, selectStart);
   // If there is a range selected remove the text in it
   if (!selection.isCollapsed()) {
     removeText(selection);

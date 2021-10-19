@@ -8,14 +8,12 @@
  */
 
 import type {OutlineEditor} from 'outline';
-import type {NodeKey} from 'outline';
 
 import * as React from 'react';
 import {useEffect, useMemo, useState} from 'react';
 import useOutlineRichText from 'outline-react/useOutlineRichText';
 import useEmojis from './useEmojis';
 import useMentions from './useMentions';
-import {TextNode} from 'outline';
 import useOutlineEditor from 'outline-react/useOutlineEditor';
 import usePlainText from 'outline-react/useOutlinePlainText';
 import useOutlineAutoFormatter from 'outline-react/useOutlineAutoFormatter';
@@ -99,31 +97,6 @@ function ContentEditable({
       tabIndex={0}
     />
   );
-}
-
-class XNode extends TextNode {
-  __className: string;
-
-  static clone(node: XNode): XNode {
-    return new XNode(node.__className, node.__text, node.__key);
-  }
-
-  constructor(className: string, text: string, key: void | NodeKey) {
-    super(text, key);
-    this.__className = className;
-    this.__type = 'x';
-  }
-
-  createDOM<EditorContext>(config) {
-    const dom = super.createDOM(config);
-    // dom.className = this.__className;
-    dom.style.backgroundColor = 'blue';
-    return dom;
-  }
-}
-
-function createXNode(className: string, emojiText: string): XNode {
-  return new XNode(className, emojiText).makeImmutable();
 }
 
 export const useRichTextEditor = ({

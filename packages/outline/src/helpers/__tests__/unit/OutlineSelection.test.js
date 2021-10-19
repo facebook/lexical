@@ -1157,69 +1157,58 @@ describe('OutlineSelection tests', () => {
         expectedAnchorOffset: 0,
         expectedFocusOffset: 1,
       },
-    ].forEach(
-      ({
-        name,
-        fn,
-        fnBefore = () => {},
-        anchorOffset,
-        focusOffset,
-        expectedAnchorOffset,
-        expectedFocusOffset,
-      }) => {
-        test.only(name, async () => {
-          await editor.update((view) => {
-            const root = view.getRoot();
-            const paragraph = root.getFirstChild();
-            const textNode = createTextNode('foo');
-            // Note: line break can't be selected by the DOM
-            const linebreak = createLineBreakNode();
-            const selection: Selection = view.getSelection();
-            const anchor = selection.anchor;
-            const focus = selection.focus;
+    ]
+      .reduce((testSuite, testCase) => {
+        // Test inverse selection
+        const inverse = {
+          ...testCase,
+          name: testCase.name + ' (inverse selection)',
+          anchorOffset: testCase.focusOffset,
+          focusOffset: testCase.anchorOffset,
+          expectedAnchorOffset: testCase.expectedFocusOffset,
+          expectedFocusOffset: testCase.expectedAnchorOffset,
+        };
+        return testSuite.concat(testCase, inverse);
+      }, [])
+      .forEach(
+        ({
+          name,
+          fn,
+          fnBefore = () => {},
+          anchorOffset,
+          focusOffset,
+          expectedAnchorOffset,
+          expectedFocusOffset,
+          only,
+        }) => {
+          const test_ = only === true ? test.only : test;
+          test_(name, async () => {
+            await editor.update((view) => {
+              const root = view.getRoot();
+              const paragraph = root.getFirstChild();
+              const textNode = createTextNode('foo');
+              // Note: line break can't be selected by the DOM
+              const linebreak = createLineBreakNode();
+              const selection: Selection = view.getSelection();
+              const anchor = selection.anchor;
+              const focus = selection.focus;
 
-            paragraph.append(textNode, linebreak);
+              paragraph.append(textNode, linebreak);
 
-            fnBefore(paragraph, textNode);
+              fnBefore(paragraph, textNode);
 
-            anchor.set(paragraph.getKey(), anchorOffset, 'block');
-            focus.set(paragraph.getKey(), focusOffset, 'block');
+              anchor.set(paragraph.getKey(), anchorOffset, 'block');
+              focus.set(paragraph.getKey(), focusOffset, 'block');
 
-            fn(paragraph, textNode);
+              fn(paragraph, textNode);
 
-            expect(selection.anchor.is(paragraph));
-            expect(selection.anchor.offset).toBe(expectedAnchorOffset);
-            expect(selection.focus.is(paragraph));
-            expect(selection.focus.offset).toBe(expectedFocusOffset);
+              expect(selection.anchor.is(paragraph));
+              expect(selection.anchor.offset).toBe(expectedAnchorOffset);
+              expect(selection.focus.is(paragraph));
+              expect(selection.focus.offset).toBe(expectedFocusOffset);
+            });
           });
-        });
-      },
-    );
-
-    test('insertBeforex', async () => {
-      await editor.update((view) => {
-        const root = view.getRoot();
-        const paragraph = root.getFirstChild();
-        const text1 = createTextNode(1);
-        const text2 = createTextNode(2);
-        text2.toggleBold();
-        // Note: line break can't be selected by the DOM
-        const linebreak = createLineBreakNode();
-
-        paragraph.append(text1, linebreak);
-
-        const selection: Selection = view.getSelection();
-        const anchor = selection.anchor;
-        const focus = selection.focus;
-        anchor.set(paragraph.getKey(), 1, 'block');
-        focus.set(paragraph.getKey(), 1, 'block');
-
-        text1.insertBefore(text2);
-        expect(selection.anchor.is(paragraph));
-        expect(selection.anchor.offset).toBe(2);
-        expect(selection.focus.is(paragraph));
-        expect(selection.focus.offset).toBe(2);
-      });
-    });
+        },
+      );
   });
 });

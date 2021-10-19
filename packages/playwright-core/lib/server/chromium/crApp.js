@@ -1,15 +1,13 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.installAppIcon = installAppIcon;
 
-var _fs = _interopRequireDefault(require('fs'));
+var _fs = _interopRequireDefault(require("fs"));
 
-function _interopRequireDefault(obj) {
-  return obj && obj.__esModule ? obj : {default: obj};
-}
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -27,11 +25,9 @@ function _interopRequireDefault(obj) {
  * limitations under the License.
  */
 async function installAppIcon(page) {
-  const icon = await _fs.default.promises.readFile(
-    require.resolve('./appIcon.png'),
-  );
+  const icon = await _fs.default.promises.readFile(require.resolve('./appIcon.png'));
   const crPage = page._delegate;
   await crPage._mainFrameSession._client.send('Browser.setDockTile', {
-    image: icon.toString('base64'),
+    image: icon.toString('base64')
   });
 }

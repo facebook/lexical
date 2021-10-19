@@ -1,7 +1,7 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.Coverage = void 0;
 
@@ -41,6 +41,7 @@ class Coverage {
   async stopCSSCoverage() {
     return (await this._channel.stopCSSCoverage()).entries;
   }
+
 }
 
 exports.Coverage = Coverage;

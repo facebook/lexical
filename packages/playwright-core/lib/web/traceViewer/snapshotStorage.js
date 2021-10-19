@@ -1,13 +1,13 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.BaseSnapshotStorage = void 0;
 
-var _events = require('events');
+var _events = require("events");
 
-var _snapshotRenderer = require('./snapshotRenderer');
+var _snapshotRenderer = require("./snapshotRenderer");
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -47,21 +47,16 @@ class BaseSnapshotStorage extends _events.EventEmitter {
     if (!frameSnapshots) {
       frameSnapshots = {
         raw: [],
-        renderer: [],
+        renderer: []
       };
 
       this._frameSnapshots.set(snapshot.frameId, frameSnapshots);
 
-      if (snapshot.isMainFrame)
-        this._frameSnapshots.set(snapshot.pageId, frameSnapshots);
+      if (snapshot.isMainFrame) this._frameSnapshots.set(snapshot.pageId, frameSnapshots);
     }
 
     frameSnapshots.raw.push(snapshot);
-    const renderer = new _snapshotRenderer.SnapshotRenderer(
-      this._resources,
-      frameSnapshots.raw,
-      frameSnapshots.raw.length - 1,
-    );
+    const renderer = new _snapshotRenderer.SnapshotRenderer(this._resources, frameSnapshots.raw, frameSnapshots.raw.length - 1);
     frameSnapshots.renderer.push(renderer);
     this.emit('snapshot', renderer);
   }
@@ -73,18 +68,15 @@ class BaseSnapshotStorage extends _events.EventEmitter {
   snapshotByName(pageOrFrameId, snapshotName) {
     const snapshot = this._frameSnapshots.get(pageOrFrameId);
 
-    return snapshot === null || snapshot === void 0
-      ? void 0
-      : snapshot.renderer.find((r) => r.snapshotName === snapshotName);
+    return snapshot === null || snapshot === void 0 ? void 0 : snapshot.renderer.find(r => r.snapshotName === snapshotName);
   }
 
   snapshotByIndex(frameId, index) {
     const snapshot = this._frameSnapshots.get(frameId);
 
-    return snapshot === null || snapshot === void 0
-      ? void 0
-      : snapshot.renderer[index];
+    return snapshot === null || snapshot === void 0 ? void 0 : snapshot.renderer[index];
   }
+
 }
 
 exports.BaseSnapshotStorage = BaseSnapshotStorage;

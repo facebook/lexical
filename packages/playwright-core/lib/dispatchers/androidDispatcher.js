@@ -1,18 +1,15 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
-exports.AndroidSocketDispatcher =
-  exports.AndroidDeviceDispatcher =
-  exports.AndroidDispatcher =
-    void 0;
+exports.AndroidSocketDispatcher = exports.AndroidDeviceDispatcher = exports.AndroidDispatcher = void 0;
 
-var _dispatcher = require('./dispatcher');
+var _dispatcher = require("./dispatcher");
 
-var _android = require('../server/android/android');
+var _android = require("../server/android/android");
 
-var _browserContextDispatcher = require('./browserContextDispatcher');
+var _browserContextDispatcher = require("./browserContextDispatcher");
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -37,13 +34,14 @@ class AndroidDispatcher extends _dispatcher.Dispatcher {
   async devices(params) {
     const devices = await this._object.devices();
     return {
-      devices: devices.map((d) => AndroidDeviceDispatcher.from(this._scope, d)),
+      devices: devices.map(d => AndroidDeviceDispatcher.from(this._scope, d))
     };
   }
 
   async setDefaultTimeoutNoReply(params) {
     this._object.setDefaultTimeout(params.timeout);
   }
+
 }
 
 exports.AndroidDispatcher = AndroidDispatcher;
@@ -55,32 +53,21 @@ class AndroidDeviceDispatcher extends _dispatcher.Dispatcher {
   }
 
   constructor(scope, device) {
-    super(
-      scope,
-      device,
-      'AndroidDevice',
-      {
-        model: device.model,
-        serial: device.serial,
-      },
-      true,
-    );
+    super(scope, device, 'AndroidDevice', {
+      model: device.model,
+      serial: device.serial
+    }, true);
 
-    for (const webView of device.webViews())
-      this._dispatchEvent('webViewAdded', {
-        webView,
-      });
+    for (const webView of device.webViews()) this._dispatchEvent('webViewAdded', {
+      webView
+    });
 
-    device.on(_android.AndroidDevice.Events.WebViewAdded, (webView) =>
-      this._dispatchEvent('webViewAdded', {
-        webView,
-      }),
-    );
-    device.on(_android.AndroidDevice.Events.WebViewRemoved, (pid) =>
-      this._dispatchEvent('webViewRemoved', {
-        pid,
-      }),
-    );
+    device.on(_android.AndroidDevice.Events.WebViewAdded, webView => this._dispatchEvent('webViewAdded', {
+      webView
+    }));
+    device.on(_android.AndroidDevice.Events.WebViewRemoved, pid => this._dispatchEvent('webViewRemoved', {
+      pid
+    }));
   }
 
   async wait(params) {
@@ -89,7 +76,7 @@ class AndroidDeviceDispatcher extends _dispatcher.Dispatcher {
 
   async fill(params) {
     await this._object.send('click', {
-      selector: params.selector,
+      selector: params.selector
     });
     await this._object.send('fill', params);
   }
@@ -128,7 +115,7 @@ class AndroidDeviceDispatcher extends _dispatcher.Dispatcher {
 
   async info(params) {
     return {
-      info: await this._object.send('info', params),
+      info: await this._object.send('info', params)
     };
   }
 
@@ -138,24 +125,19 @@ class AndroidDeviceDispatcher extends _dispatcher.Dispatcher {
 
     for (let i = 0; i < text.length; ++i) {
       const code = keyMap.get(text[i].toUpperCase());
-      if (code === undefined)
-        throw new Error('No mapping for ' + text[i] + ' found');
+      if (code === undefined) throw new Error('No mapping for ' + text[i] + ' found');
       keyCodes.push(code);
     }
 
-    await Promise.all(
-      keyCodes.map((keyCode) =>
-        this._object.send('inputPress', {
-          keyCode,
-        }),
-      ),
-    );
+    await Promise.all(keyCodes.map(keyCode => this._object.send('inputPress', {
+      keyCode
+    })));
   }
 
   async inputPress(params) {
     if (!keyMap.has(params.key)) throw new Error('Unknown key: ' + params.key);
     await this._object.send('inputPress', {
-      keyCode: keyMap.get(params.key),
+      keyCode: keyMap.get(params.key)
     });
   }
 
@@ -173,44 +155,37 @@ class AndroidDeviceDispatcher extends _dispatcher.Dispatcher {
 
   async screenshot(params) {
     return {
-      binary: (await this._object.screenshot()).toString('base64'),
+      binary: (await this._object.screenshot()).toString('base64')
     };
   }
 
   async shell(params) {
     return {
-      result: (await this._object.shell(params.command)).toString('base64'),
+      result: (await this._object.shell(params.command)).toString('base64')
     };
   }
 
   async open(params, metadata) {
     const socket = await this._object.open(params.command);
     return {
-      socket: new AndroidSocketDispatcher(this._scope, socket),
+      socket: new AndroidSocketDispatcher(this._scope, socket)
     };
   }
 
   async installApk(params) {
     await this._object.installApk(Buffer.from(params.file, 'base64'), {
-      args: params.args,
+      args: params.args
     });
   }
 
   async push(params) {
-    await this._object.push(
-      Buffer.from(params.file, 'base64'),
-      params.path,
-      params.mode,
-    );
+    await this._object.push(Buffer.from(params.file, 'base64'), params.path, params.mode);
   }
 
   async launchBrowser(params) {
     const context = await this._object.launchBrowser(params.pkg, params);
     return {
-      context: new _browserContextDispatcher.BrowserContextDispatcher(
-        this._scope,
-        context,
-      ),
+      context: new _browserContextDispatcher.BrowserContextDispatcher(this._scope, context)
     };
   }
 
@@ -224,12 +199,10 @@ class AndroidDeviceDispatcher extends _dispatcher.Dispatcher {
 
   async connectToWebView(params) {
     return {
-      context: new _browserContextDispatcher.BrowserContextDispatcher(
-        this._scope,
-        await this._object.connectToWebView(params.pid),
-      ),
+      context: new _browserContextDispatcher.BrowserContextDispatcher(this._scope, await this._object.connectToWebView(params.pid))
     };
   }
+
 }
 
 exports.AndroidDeviceDispatcher = AndroidDeviceDispatcher;
@@ -237,11 +210,9 @@ exports.AndroidDeviceDispatcher = AndroidDeviceDispatcher;
 class AndroidSocketDispatcher extends _dispatcher.Dispatcher {
   constructor(scope, socket) {
     super(scope, socket, 'AndroidSocket', {}, true);
-    socket.on('data', (data) =>
-      this._dispatchEvent('data', {
-        data: data.toString('base64'),
-      }),
-    );
+    socket.on('data', data => this._dispatchEvent('data', {
+      data: data.toString('base64')
+    }));
     socket.on('close', () => {
       this._dispatchEvent('close');
 
@@ -256,113 +227,8 @@ class AndroidSocketDispatcher extends _dispatcher.Dispatcher {
   async close(params, metadata) {
     this._object.close();
   }
+
 }
 
 exports.AndroidSocketDispatcher = AndroidSocketDispatcher;
-const keyMap = new Map([
-  ['Unknown', 0],
-  ['SoftLeft', 1],
-  ['SoftRight', 2],
-  ['Home', 3],
-  ['Back', 4],
-  ['Call', 5],
-  ['EndCall', 6],
-  ['0', 7],
-  ['1', 8],
-  ['2', 9],
-  ['3', 10],
-  ['4', 11],
-  ['5', 12],
-  ['6', 13],
-  ['7', 14],
-  ['8', 15],
-  ['9', 16],
-  ['Star', 17],
-  ['*', 17],
-  ['Pound', 18],
-  ['#', 18],
-  ['DialUp', 19],
-  ['DialDown', 20],
-  ['DialLeft', 21],
-  ['DialRight', 22],
-  ['DialCenter', 23],
-  ['VolumeUp', 24],
-  ['VolumeDown', 25],
-  ['Power', 26],
-  ['Camera', 27],
-  ['Clear', 28],
-  ['A', 29],
-  ['B', 30],
-  ['C', 31],
-  ['D', 32],
-  ['E', 33],
-  ['F', 34],
-  ['G', 35],
-  ['H', 36],
-  ['I', 37],
-  ['J', 38],
-  ['K', 39],
-  ['L', 40],
-  ['M', 41],
-  ['N', 42],
-  ['O', 43],
-  ['P', 44],
-  ['Q', 45],
-  ['R', 46],
-  ['S', 47],
-  ['T', 48],
-  ['U', 49],
-  ['V', 50],
-  ['W', 51],
-  ['X', 52],
-  ['Y', 53],
-  ['Z', 54],
-  ['Comma', 55],
-  [',', 55],
-  ['Period', 56],
-  ['.', 56],
-  ['AltLeft', 57],
-  ['AltRight', 58],
-  ['ShiftLeft', 59],
-  ['ShiftRight', 60],
-  ['Tab', 61],
-  ['\t', 61],
-  ['Space', 62],
-  [' ', 62],
-  ['Sym', 63],
-  ['Explorer', 64],
-  ['Envelop', 65],
-  ['Enter', 66],
-  ['Del', 67],
-  ['Grave', 68],
-  ['Minus', 69],
-  ['-', 69],
-  ['Equals', 70],
-  ['=', 70],
-  ['LeftBracket', 71],
-  ['(', 71],
-  ['RightBracket', 72],
-  [')', 72],
-  ['Backslash', 73],
-  ['\\', 73],
-  ['Semicolon', 74],
-  [';', 74],
-  ['Apostrophe', 75],
-  ['`', 75],
-  ['Slash', 76],
-  ['/', 76],
-  ['At', 77],
-  ['@', 77],
-  ['Num', 78],
-  ['HeadsetHook', 79],
-  ['Focus', 80],
-  ['Plus', 81],
-  ['Menu', 82],
-  ['Notification', 83],
-  ['Search', 84],
-  ['AppSwitch', 187],
-  ['Assist', 219],
-  ['Cut', 277],
-  ['Copy', 278],
-  ['Paste', 279],
-]);
+const keyMap = new Map([['Unknown', 0], ['SoftLeft', 1], ['SoftRight', 2], ['Home', 3], ['Back', 4], ['Call', 5], ['EndCall', 6], ['0', 7], ['1', 8], ['2', 9], ['3', 10], ['4', 11], ['5', 12], ['6', 13], ['7', 14], ['8', 15], ['9', 16], ['Star', 17], ['*', 17], ['Pound', 18], ['#', 18], ['DialUp', 19], ['DialDown', 20], ['DialLeft', 21], ['DialRight', 22], ['DialCenter', 23], ['VolumeUp', 24], ['VolumeDown', 25], ['Power', 26], ['Camera', 27], ['Clear', 28], ['A', 29], ['B', 30], ['C', 31], ['D', 32], ['E', 33], ['F', 34], ['G', 35], ['H', 36], ['I', 37], ['J', 38], ['K', 39], ['L', 40], ['M', 41], ['N', 42], ['O', 43], ['P', 44], ['Q', 45], ['R', 46], ['S', 47], ['T', 48], ['U', 49], ['V', 50], ['W', 51], ['X', 52], ['Y', 53], ['Z', 54], ['Comma', 55], [',', 55], ['Period', 56], ['.', 56], ['AltLeft', 57], ['AltRight', 58], ['ShiftLeft', 59], ['ShiftRight', 60], ['Tab', 61], ['\t', 61], ['Space', 62], [' ', 62], ['Sym', 63], ['Explorer', 64], ['Envelop', 65], ['Enter', 66], ['Del', 67], ['Grave', 68], ['Minus', 69], ['-', 69], ['Equals', 70], ['=', 70], ['LeftBracket', 71], ['(', 71], ['RightBracket', 72], [')', 72], ['Backslash', 73], ['\\', 73], ['Semicolon', 74], [';', 74], ['Apostrophe', 75], ['`', 75], ['Slash', 76], ['/', 76], ['At', 77], ['@', 77], ['Num', 78], ['HeadsetHook', 79], ['Focus', 80], ['Plus', 81], ['Menu', 82], ['Notification', 83], ['Search', 84], ['AppSwitch', 187], ['Assist', 219], ['Cut', 277], ['Copy', 278], ['Paste', 279]]);

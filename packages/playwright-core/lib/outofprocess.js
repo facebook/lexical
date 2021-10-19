@@ -1,59 +1,21 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.start = start;
 
-var _connection = require('./client/connection');
+var _connection = require("./client/connection");
 
-var _transport = require('./protocol/transport');
+var _transport = require("./protocol/transport");
 
-var childProcess = _interopRequireWildcard(require('child_process'));
+var childProcess = _interopRequireWildcard(require("child_process"));
 
-var path = _interopRequireWildcard(require('path'));
+var path = _interopRequireWildcard(require("path"));
 
-function _getRequireWildcardCache(nodeInterop) {
-  if (typeof WeakMap !== 'function') return null;
-  var cacheBabelInterop = new WeakMap();
-  var cacheNodeInterop = new WeakMap();
-  return (_getRequireWildcardCache = function (nodeInterop) {
-    return nodeInterop ? cacheNodeInterop : cacheBabelInterop;
-  })(nodeInterop);
-}
+function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 
-function _interopRequireWildcard(obj, nodeInterop) {
-  if (!nodeInterop && obj && obj.__esModule) {
-    return obj;
-  }
-  if (obj === null || (typeof obj !== 'object' && typeof obj !== 'function')) {
-    return {default: obj};
-  }
-  var cache = _getRequireWildcardCache(nodeInterop);
-  if (cache && cache.has(obj)) {
-    return cache.get(obj);
-  }
-  var newObj = {};
-  var hasPropertyDescriptor =
-    Object.defineProperty && Object.getOwnPropertyDescriptor;
-  for (var key in obj) {
-    if (key !== 'default' && Object.prototype.hasOwnProperty.call(obj, key)) {
-      var desc = hasPropertyDescriptor
-        ? Object.getOwnPropertyDescriptor(obj, key)
-        : null;
-      if (desc && (desc.get || desc.set)) {
-        Object.defineProperty(newObj, key, desc);
-      } else {
-        newObj[key] = obj[key];
-      }
-    }
-  }
-  newObj.default = obj;
-  if (cache) {
-    cache.set(obj, newObj);
-  }
-  return newObj;
-}
+function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -88,36 +50,29 @@ class PlaywrightClient {
     this._onExit = void 0;
 
     this._onExit = (exitCode, signal) => {
-      throw new Error(
-        `Server closed with exitCode=${exitCode} signal=${signal}`,
-      );
+      throw new Error(`Server closed with exitCode=${exitCode} signal=${signal}`);
     };
 
-    this._driverProcess = childProcess.fork(
-      path.join(__dirname, 'cli', 'cli.js'),
-      ['run-driver'],
-      {
-        stdio: 'pipe',
-        detached: true,
-        env: {...process.env, ...env},
-      },
-    );
+    this._driverProcess = childProcess.fork(path.join(__dirname, 'cli', 'cli.js'), ['run-driver'], {
+      stdio: 'pipe',
+      detached: true,
+      env: { ...process.env,
+        ...env
+      }
+    });
 
     this._driverProcess.unref();
 
     this._driverProcess.on('exit', this._onExit);
 
     const connection = new _connection.Connection();
-    const transport = new _transport.Transport(
-      this._driverProcess.stdin,
-      this._driverProcess.stdout,
-    );
+    const transport = new _transport.Transport(this._driverProcess.stdin, this._driverProcess.stdout);
 
-    connection.onmessage = (message) => transport.send(JSON.stringify(message));
+    connection.onmessage = message => transport.send(JSON.stringify(message));
 
-    transport.onmessage = (message) => connection.dispatch(JSON.parse(message));
+    transport.onmessage = message => connection.dispatch(JSON.parse(message));
 
-    this._closePromise = new Promise((f) => (transport.onclose = f));
+    this._closePromise = new Promise(f => transport.onclose = f);
     this._playwright = connection.initializePlaywright();
   }
 
@@ -132,4 +87,5 @@ class PlaywrightClient {
 
     await this._closePromise;
   }
+
 }

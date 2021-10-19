@@ -1,57 +1,57 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.Connection = void 0;
 
-var _browser = require('./browser');
+var _browser = require("./browser");
 
-var _browserContext = require('./browserContext');
+var _browserContext = require("./browserContext");
 
-var _browserType = require('./browserType');
+var _browserType = require("./browserType");
 
-var _channelOwner = require('./channelOwner');
+var _channelOwner = require("./channelOwner");
 
-var _elementHandle = require('./elementHandle');
+var _elementHandle = require("./elementHandle");
 
-var _frame = require('./frame');
+var _frame = require("./frame");
 
-var _jsHandle = require('./jsHandle');
+var _jsHandle = require("./jsHandle");
 
-var _network = require('./network');
+var _network = require("./network");
 
-var _page = require('./page');
+var _page = require("./page");
 
-var _worker = require('./worker');
+var _worker = require("./worker");
 
-var _consoleMessage = require('./consoleMessage');
+var _consoleMessage = require("./consoleMessage");
 
-var _dialog = require('./dialog');
+var _dialog = require("./dialog");
 
-var _serializers = require('../protocol/serializers');
+var _serializers = require("../protocol/serializers");
 
-var _cdpSession = require('./cdpSession');
+var _cdpSession = require("./cdpSession");
 
-var _playwright = require('./playwright');
+var _playwright = require("./playwright");
 
-var _electron = require('./electron');
+var _electron = require("./electron");
 
-var _stream = require('./stream');
+var _stream = require("./stream");
 
-var _debugLogger = require('../utils/debugLogger');
+var _debugLogger = require("../utils/debugLogger");
 
-var _selectors = require('./selectors');
+var _selectors = require("./selectors");
 
-var _android = require('./android');
+var _android = require("./android");
 
-var _artifact = require('./artifact');
+var _artifact = require("./artifact");
 
-var _events = require('events');
+var _events = require("events");
 
-var _jsonPipe = require('./jsonPipe');
+var _jsonPipe = require("./jsonPipe");
 
-var _fetch = require('./fetch');
+var _fetch = require("./fetch");
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -74,14 +74,11 @@ class Root extends _channelOwner.ChannelOwner {
   }
 
   async initialize() {
-    return _playwright.Playwright.from(
-      (
-        await this._channel.initialize({
-          sdkLanguage: 'javascript',
-        })
-      ).playwright,
-    );
+    return _playwright.Playwright.from((await this._channel.initialize({
+      sdkLanguage: 'javascript'
+    })).playwright);
   }
+
 }
 
 class Connection extends _events.EventEmitter {
@@ -90,7 +87,7 @@ class Connection extends _events.EventEmitter {
     this._objects = new Map();
     this._waitingForObject = new Map();
 
-    this.onmessage = (message) => {};
+    this.onmessage = message => {};
 
     this._lastId = 0;
     this._callbacks = new Map();
@@ -113,9 +110,7 @@ class Connection extends _events.EventEmitter {
   }
 
   pendingProtocolCalls() {
-    return Array.from(this._callbacks.values()).map(
-      (callback) => callback.stackTrace,
-    );
+    return Array.from(this._callbacks.values()).map(callback => callback.stackTrace);
   }
 
   getObjectWithKnownName(guid) {
@@ -129,31 +124,34 @@ class Connection extends _events.EventEmitter {
       frameTexts: [],
       frames: [],
       apiName: '',
-      allFrames: [],
+      allFrames: []
     };
-    const {frames, apiName} = stackTrace;
+    const {
+      frames,
+      apiName
+    } = stackTrace;
     const id = ++this._lastId;
     const converted = {
       id,
       guid,
       method,
-      params,
+      params
     }; // Do not include metadata in debug logs to avoid noise.
 
     _debugLogger.debugLogger.log('channel:command', converted);
 
     const metadata = {
       stack: frames,
-      apiName,
+      apiName
     };
-    this.onmessage({...converted, metadata});
-    return await new Promise((resolve, reject) =>
-      this._callbacks.set(id, {
-        resolve,
-        reject,
-        stackTrace,
-      }),
-    );
+    this.onmessage({ ...converted,
+      metadata
+    });
+    return await new Promise((resolve, reject) => this._callbacks.set(id, {
+      resolve,
+      reject,
+      stackTrace
+    }));
   }
 
   _debugScopeState() {
@@ -162,7 +160,14 @@ class Connection extends _events.EventEmitter {
 
   dispatch(message) {
     if (this._closedErrorMessage) return;
-    const {id, guid, method, params, result, error} = message;
+    const {
+      id,
+      guid,
+      method,
+      params,
+      result,
+      error
+    } = message;
 
     if (id) {
       _debugLogger.debugLogger.log('channel:response', message);
@@ -173,21 +178,14 @@ class Connection extends _events.EventEmitter {
 
       this._callbacks.delete(id);
 
-      if (error && !result)
-        callback.reject((0, _serializers.parseError)(error));
-      else callback.resolve(this._replaceGuidsWithChannels(result));
+      if (error && !result) callback.reject((0, _serializers.parseError)(error));else callback.resolve(this._replaceGuidsWithChannels(result));
       return;
     }
 
     _debugLogger.debugLogger.log('channel:event', message);
 
     if (method === '__create__') {
-      this._createRemoteObject(
-        guid,
-        params.type,
-        params.guid,
-        params.initializer,
-      );
+      this._createRemoteObject(guid, params.type, params.guid, params.initializer);
 
       return;
     }
@@ -204,22 +202,15 @@ class Connection extends _events.EventEmitter {
 
     const object = this._objects.get(guid);
 
-    if (!object)
-      throw new Error(`Cannot find object to emit "${method}": ${guid}`);
+    if (!object) throw new Error(`Cannot find object to emit "${method}": ${guid}`);
 
-    object._channel.emit(
-      method,
-      object._type === 'JsonPipe'
-        ? params
-        : this._replaceGuidsWithChannels(params),
-    );
+    object._channel.emit(method, object._type === 'JsonPipe' ? params : this._replaceGuidsWithChannels(params));
   }
 
   close(errorMessage = 'Connection closed') {
     this._closedErrorMessage = errorMessage;
 
-    for (const callback of this._callbacks.values())
-      callback.reject(new Error(errorMessage));
+    for (const callback of this._callbacks.values()) callback.reject(new Error(errorMessage));
 
     this._callbacks.clear();
 
@@ -228,16 +219,13 @@ class Connection extends _events.EventEmitter {
 
   _replaceGuidsWithChannels(payload) {
     if (!payload) return payload;
-    if (Array.isArray(payload))
-      return payload.map((p) => this._replaceGuidsWithChannels(p));
-    if (payload.guid && this._objects.has(payload.guid))
-      return this._objects.get(payload.guid)._channel;
+    if (Array.isArray(payload)) return payload.map(p => this._replaceGuidsWithChannels(p));
+    if (payload.guid && this._objects.has(payload.guid)) return this._objects.get(payload.guid)._channel;
 
     if (typeof payload === 'object') {
       const result = {};
 
-      for (const key of Object.keys(payload))
-        result[key] = this._replaceGuidsWithChannels(payload[key]);
+      for (const key of Object.keys(payload)) result[key] = this._replaceGuidsWithChannels(payload[key]);
 
       return result;
     }
@@ -248,10 +236,7 @@ class Connection extends _events.EventEmitter {
   _createRemoteObject(parentGuid, type, guid, initializer) {
     const parent = this._objects.get(parentGuid);
 
-    if (!parent)
-      throw new Error(
-        `Cannot find parent object ${parentGuid} to create ${guid}`,
-      );
+    if (!parent) throw new Error(`Cannot find parent object ${parentGuid} to create ${guid}`);
     let result;
     initializer = this._replaceGuidsWithChannels(initializer);
 
@@ -281,12 +266,7 @@ class Connection extends _events.EventEmitter {
         break;
 
       case 'BrowserContext':
-        result = new _browserContext.BrowserContext(
-          parent,
-          type,
-          guid,
-          initializer,
-        );
+        result = new _browserContext.BrowserContext(parent, type, guid, initializer);
         break;
 
       case 'BrowserType':
@@ -298,12 +278,7 @@ class Connection extends _events.EventEmitter {
         break;
 
       case 'ConsoleMessage':
-        result = new _consoleMessage.ConsoleMessage(
-          parent,
-          type,
-          guid,
-          initializer,
-        );
+        result = new _consoleMessage.ConsoleMessage(parent, type, guid, initializer);
         break;
 
       case 'Dialog':
@@ -315,21 +290,11 @@ class Connection extends _events.EventEmitter {
         break;
 
       case 'ElectronApplication':
-        result = new _electron.ElectronApplication(
-          parent,
-          type,
-          guid,
-          initializer,
-        );
+        result = new _electron.ElectronApplication(parent, type, guid, initializer);
         break;
 
       case 'ElementHandle':
-        result = new _elementHandle.ElementHandle(
-          parent,
-          type,
-          guid,
-          initializer,
-        );
+        result = new _elementHandle.ElementHandle(parent, type, guid, initializer);
         break;
 
       case 'FetchRequest':
@@ -398,6 +363,7 @@ class Connection extends _events.EventEmitter {
 
     return result;
   }
+
 }
 
 exports.Connection = Connection;

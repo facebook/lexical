@@ -1,34 +1,27 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
-exports.AndroidWebView =
-  exports.AndroidInput =
-  exports.AndroidSocket =
-  exports.AndroidDevice =
-  exports.Android =
-    void 0;
+exports.AndroidWebView = exports.AndroidInput = exports.AndroidSocket = exports.AndroidDevice = exports.Android = void 0;
 
-var _fs = _interopRequireDefault(require('fs'));
+var _fs = _interopRequireDefault(require("fs"));
 
-var _utils = require('../utils/utils');
+var _utils = require("../utils/utils");
 
-var _events = require('./events');
+var _events = require("./events");
 
-var _browserContext = require('./browserContext');
+var _browserContext = require("./browserContext");
 
-var _channelOwner = require('./channelOwner');
+var _channelOwner = require("./channelOwner");
 
-var _timeoutSettings = require('../utils/timeoutSettings');
+var _timeoutSettings = require("../utils/timeoutSettings");
 
-var _waiter = require('./waiter');
+var _waiter = require("./waiter");
 
-var _events2 = require('events');
+var _events2 = require("events");
 
-function _interopRequireDefault(obj) {
-  return obj && obj.__esModule ? obj : {default: obj};
-}
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -60,16 +53,19 @@ class Android extends _channelOwner.ChannelOwner {
     this._timeoutSettings.setDefaultTimeout(timeout);
 
     this._channel.setDefaultTimeoutNoReply({
-      timeout,
+      timeout
     });
   }
 
   async devices() {
-    return this._wrapApiCall(async (channel) => {
-      const {devices} = await channel.devices();
-      return devices.map((d) => AndroidDevice.from(d));
+    return this._wrapApiCall(async channel => {
+      const {
+        devices
+      } = await channel.devices();
+      return devices.map(d => AndroidDevice.from(d));
     });
   }
+
 }
 
 exports.Android = Android;
@@ -85,15 +81,15 @@ class AndroidDevice extends _channelOwner.ChannelOwner {
     this._webViews = new Map();
     this.input = void 0;
     this.input = new AndroidInput(this);
-    this._timeoutSettings = new _timeoutSettings.TimeoutSettings(
-      parent._timeoutSettings,
-    );
+    this._timeoutSettings = new _timeoutSettings.TimeoutSettings(parent._timeoutSettings);
 
-    this._channel.on('webViewAdded', ({webView}) =>
-      this._onWebViewAdded(webView),
-    );
+    this._channel.on('webViewAdded', ({
+      webView
+    }) => this._onWebViewAdded(webView));
 
-    this._channel.on('webViewRemoved', ({pid}) => this._onWebViewRemoved(pid));
+    this._channel.on('webViewRemoved', ({
+      pid
+    }) => this._onWebViewRemoved(pid));
   }
 
   _onWebViewAdded(webView) {
@@ -116,7 +112,7 @@ class AndroidDevice extends _channelOwner.ChannelOwner {
     this._timeoutSettings.setDefaultTimeout(timeout);
 
     this._channel.setDefaultTimeoutNoReply({
-      timeout,
+      timeout
     });
   }
 
@@ -133,31 +129,28 @@ class AndroidDevice extends _channelOwner.ChannelOwner {
   }
 
   async webView(selector, options) {
-    const webView = [...this._webViews.values()].find(
-      (v) => v.pkg() === selector.pkg,
-    );
+    const webView = [...this._webViews.values()].find(v => v.pkg() === selector.pkg);
     if (webView) return webView;
-    return this.waitForEvent('webview', {
-      ...options,
-      predicate: (view) => view.pkg() === selector.pkg,
+    return this.waitForEvent('webview', { ...options,
+      predicate: view => view.pkg() === selector.pkg
     });
   }
 
   async wait(selector, options) {
-    await this._wrapApiCall(async (channel) => {
+    await this._wrapApiCall(async channel => {
       await channel.wait({
         selector: toSelectorChannel(selector),
-        ...options,
+        ...options
       });
     });
   }
 
   async fill(selector, text, options) {
-    await this._wrapApiCall(async (channel) => {
+    await this._wrapApiCall(async channel => {
       await channel.fill({
         selector: toSelectorChannel(selector),
         text,
-        ...options,
+        ...options
       });
     });
   }
@@ -168,189 +161,175 @@ class AndroidDevice extends _channelOwner.ChannelOwner {
   }
 
   async tap(selector, options) {
-    await this._wrapApiCall(async (channel) => {
+    await this._wrapApiCall(async channel => {
       await channel.tap({
         selector: toSelectorChannel(selector),
-        ...options,
+        ...options
       });
     });
   }
 
   async drag(selector, dest, options) {
-    await this._wrapApiCall(async (channel) => {
+    await this._wrapApiCall(async channel => {
       await channel.drag({
         selector: toSelectorChannel(selector),
         dest,
-        ...options,
+        ...options
       });
     });
   }
 
   async fling(selector, direction, options) {
-    await this._wrapApiCall(async (channel) => {
+    await this._wrapApiCall(async channel => {
       await channel.fling({
         selector: toSelectorChannel(selector),
         direction,
-        ...options,
+        ...options
       });
     });
   }
 
   async longTap(selector, options) {
-    await this._wrapApiCall(async (channel) => {
+    await this._wrapApiCall(async channel => {
       await channel.longTap({
         selector: toSelectorChannel(selector),
-        ...options,
+        ...options
       });
     });
   }
 
   async pinchClose(selector, percent, options) {
-    await this._wrapApiCall(async (channel) => {
+    await this._wrapApiCall(async channel => {
       await channel.pinchClose({
         selector: toSelectorChannel(selector),
         percent,
-        ...options,
+        ...options
       });
     });
   }
 
   async pinchOpen(selector, percent, options) {
-    await this._wrapApiCall(async (channel) => {
+    await this._wrapApiCall(async channel => {
       await channel.pinchOpen({
         selector: toSelectorChannel(selector),
         percent,
-        ...options,
+        ...options
       });
     });
   }
 
   async scroll(selector, direction, percent, options) {
-    await this._wrapApiCall(async (channel) => {
+    await this._wrapApiCall(async channel => {
       await channel.scroll({
         selector: toSelectorChannel(selector),
         direction,
         percent,
-        ...options,
+        ...options
       });
     });
   }
 
   async swipe(selector, direction, percent, options) {
-    await this._wrapApiCall(async (channel) => {
+    await this._wrapApiCall(async channel => {
       await channel.swipe({
         selector: toSelectorChannel(selector),
         direction,
         percent,
-        ...options,
+        ...options
       });
     });
   }
 
   async info(selector) {
-    return await this._wrapApiCall(async (channel) => {
-      return (
-        await channel.info({
-          selector: toSelectorChannel(selector),
-        })
-      ).info;
+    return await this._wrapApiCall(async channel => {
+      return (await channel.info({
+        selector: toSelectorChannel(selector)
+      })).info;
     });
   }
 
   async screenshot(options = {}) {
-    return await this._wrapApiCall(async (channel) => {
-      const {binary} = await channel.screenshot();
+    return await this._wrapApiCall(async channel => {
+      const {
+        binary
+      } = await channel.screenshot();
       const buffer = Buffer.from(binary, 'base64');
-      if (options.path)
-        await _fs.default.promises.writeFile(options.path, buffer);
+      if (options.path) await _fs.default.promises.writeFile(options.path, buffer);
       return buffer;
     });
   }
 
   async close() {
-    return this._wrapApiCall(async (channel) => {
+    return this._wrapApiCall(async channel => {
       await channel.close();
       this.emit(_events.Events.AndroidDevice.Close);
     });
   }
 
   async shell(command) {
-    return this._wrapApiCall(async (channel) => {
-      const {result} = await channel.shell({
-        command,
+    return this._wrapApiCall(async channel => {
+      const {
+        result
+      } = await channel.shell({
+        command
       });
       return Buffer.from(result, 'base64');
     });
   }
 
   async open(command) {
-    return this._wrapApiCall(async (channel) => {
-      return AndroidSocket.from(
-        (
-          await channel.open({
-            command,
-          })
-        ).socket,
-      );
+    return this._wrapApiCall(async channel => {
+      return AndroidSocket.from((await channel.open({
+        command
+      })).socket);
     });
   }
 
   async installApk(file, options) {
-    return this._wrapApiCall(async (channel) => {
+    return this._wrapApiCall(async channel => {
       await channel.installApk({
         file: await loadFile(file),
-        args: options && options.args,
+        args: options && options.args
       });
     });
   }
 
   async push(file, path, options) {
-    return this._wrapApiCall(async (channel) => {
+    return this._wrapApiCall(async channel => {
       await channel.push({
         file: await loadFile(file),
         path,
-        mode: options ? options.mode : undefined,
+        mode: options ? options.mode : undefined
       });
     });
   }
 
   async launchBrowser(options = {}) {
-    return this._wrapApiCall(async (channel) => {
-      const contextOptions = await (0,
-      _browserContext.prepareBrowserContextParams)(options);
-      const {context} = await channel.launchBrowser(contextOptions);
+    return this._wrapApiCall(async channel => {
+      const contextOptions = await (0, _browserContext.prepareBrowserContextParams)(options);
+      const {
+        context
+      } = await channel.launchBrowser(contextOptions);
       return _browserContext.BrowserContext.from(context);
     });
   }
 
   async waitForEvent(event, optionsOrPredicate = {}) {
-    return this._wrapApiCall(async (channel) => {
-      const timeout = this._timeoutSettings.timeout(
-        typeof optionsOrPredicate === 'function' ? {} : optionsOrPredicate,
-      );
+    return this._wrapApiCall(async channel => {
+      const timeout = this._timeoutSettings.timeout(typeof optionsOrPredicate === 'function' ? {} : optionsOrPredicate);
 
-      const predicate =
-        typeof optionsOrPredicate === 'function'
-          ? optionsOrPredicate
-          : optionsOrPredicate.predicate;
+      const predicate = typeof optionsOrPredicate === 'function' ? optionsOrPredicate : optionsOrPredicate.predicate;
 
       const waiter = _waiter.Waiter.createForEvent(this, event);
 
-      waiter.rejectOnTimeout(
-        timeout,
-        `Timeout while waiting for event "${event}"`,
-      );
-      if (event !== _events.Events.AndroidDevice.Close)
-        waiter.rejectOnEvent(
-          this,
-          _events.Events.AndroidDevice.Close,
-          new Error('Device closed'),
-        );
+      waiter.rejectOnTimeout(timeout, `Timeout while waiting for event "${event}"`);
+      if (event !== _events.Events.AndroidDevice.Close) waiter.rejectOnEvent(this, _events.Events.AndroidDevice.Close, new Error('Device closed'));
       const result = await waiter.waitForEvent(this, event, predicate);
       waiter.dispose();
       return result;
     });
   }
+
 }
 
 exports.AndroidDevice = AndroidDevice;
@@ -363,39 +342,35 @@ class AndroidSocket extends _channelOwner.ChannelOwner {
   constructor(parent, type, guid, initializer) {
     super(parent, type, guid, initializer);
 
-    this._channel.on('data', ({data}) =>
-      this.emit(_events.Events.AndroidSocket.Data, Buffer.from(data, 'base64')),
-    );
+    this._channel.on('data', ({
+      data
+    }) => this.emit(_events.Events.AndroidSocket.Data, Buffer.from(data, 'base64')));
 
-    this._channel.on('close', () =>
-      this.emit(_events.Events.AndroidSocket.Close),
-    );
+    this._channel.on('close', () => this.emit(_events.Events.AndroidSocket.Close));
   }
 
   async write(data) {
-    return this._wrapApiCall(async (channel) => {
+    return this._wrapApiCall(async channel => {
       await channel.write({
-        data: data.toString('base64'),
+        data: data.toString('base64')
       });
     });
   }
 
   async close() {
-    return this._wrapApiCall(async (channel) => {
+    return this._wrapApiCall(async channel => {
       await channel.close();
     });
   }
+
 }
 
 exports.AndroidSocket = AndroidSocket;
 
 async function loadFile(file) {
-  if ((0, _utils.isString)(file))
-    return _fs.default.promises
-      .readFile(file, {
-        encoding: 'base64',
-      })
-      .toString();
+  if ((0, _utils.isString)(file)) return _fs.default.promises.readFile(file, {
+    encoding: 'base64'
+  }).toString();
   return file.toString('base64');
 }
 
@@ -406,47 +381,48 @@ class AndroidInput {
   }
 
   async type(text) {
-    return this._device._wrapApiCall(async (channel) => {
+    return this._device._wrapApiCall(async channel => {
       await channel.inputType({
-        text,
+        text
       });
     });
   }
 
   async press(key) {
-    return this._device._wrapApiCall(async (channel) => {
+    return this._device._wrapApiCall(async channel => {
       await channel.inputPress({
-        key,
+        key
       });
     });
   }
 
   async tap(point) {
-    return this._device._wrapApiCall(async (channel) => {
+    return this._device._wrapApiCall(async channel => {
       await channel.inputTap({
-        point,
+        point
       });
     });
   }
 
   async swipe(from, segments, steps) {
-    return this._device._wrapApiCall(async (channel) => {
+    return this._device._wrapApiCall(async channel => {
       await channel.inputSwipe({
         segments,
-        steps,
+        steps
       });
     });
   }
 
   async drag(from, to, steps) {
-    return this._device._wrapApiCall(async (channel) => {
+    return this._device._wrapApiCall(async channel => {
       await channel.inputDrag({
         from,
         to,
-        steps,
+        steps
       });
     });
   }
+
 }
 
 exports.AndroidInput = AndroidInput;
@@ -469,17 +445,13 @@ function toSelectorChannel(selector) {
     res,
     scrollable,
     selected,
-    text,
+    text
   } = selector;
 
-  const toRegex = (value) => {
+  const toRegex = value => {
     if (value === undefined) return undefined;
     if (value instanceof RegExp) return value.source;
-    return (
-      '^' +
-      value.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&').replace(/-/g, '\\x2d') +
-      '$'
-    );
+    return '^' + value.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&').replace(/-/g, '\\x2d') + '$';
   };
 
   return {
@@ -495,20 +467,16 @@ function toSelectorChannel(selector) {
     enabled,
     focusable,
     focused,
-    hasChild: hasChild
-      ? {
-          selector: toSelectorChannel(hasChild.selector),
-        }
-      : undefined,
-    hasDescendant: hasDescendant
-      ? {
-          selector: toSelectorChannel(hasDescendant.selector),
-          maxDepth: hasDescendant.maxDepth,
-        }
-      : undefined,
+    hasChild: hasChild ? {
+      selector: toSelectorChannel(hasChild.selector)
+    } : undefined,
+    hasDescendant: hasDescendant ? {
+      selector: toSelectorChannel(hasDescendant.selector),
+      maxDepth: hasDescendant.maxDepth
+    } : undefined,
     longClickable,
     scrollable,
-    selected,
+    selected
   };
 }
 
@@ -536,13 +504,16 @@ class AndroidWebView extends _events2.EventEmitter {
   }
 
   async _fetchPage() {
-    return this._device._wrapApiCall(async (channel) => {
-      const {context} = await channel.connectToWebView({
-        pid: this._data.pid,
+    return this._device._wrapApiCall(async channel => {
+      const {
+        context
+      } = await channel.connectToWebView({
+        pid: this._data.pid
       });
       return _browserContext.BrowserContext.from(context).pages()[0];
     });
   }
+
 }
 
 exports.AndroidWebView = AndroidWebView;

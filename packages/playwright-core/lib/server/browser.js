@@ -1,19 +1,19 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.Browser = void 0;
 
-var _browserContext = require('./browserContext');
+var _browserContext = require("./browserContext");
 
-var _page = require('./page');
+var _page = require("./page");
 
-var _download = require('./download');
+var _download = require("./download");
 
-var _instrumentation = require('./instrumentation');
+var _instrumentation = require("./instrumentation");
 
-var _artifact = require('./artifact');
+var _artifact = require("./artifact");
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -43,13 +43,7 @@ class Browser extends _instrumentation.SdkObject {
   }
 
   _downloadCreated(page, uuid, url, suggestedFilename) {
-    const download = new _download.Download(
-      page,
-      this.options.downloadsPath || '',
-      uuid,
-      url,
-      suggestedFilename,
-    );
+    const download = new _download.Download(page, this.options.downloadsPath || '', uuid, url, suggestedFilename);
 
     this._downloads.set(uuid, download);
   }
@@ -76,11 +70,11 @@ class Browser extends _instrumentation.SdkObject {
 
     this._idToVideo.set(videoId, {
       context,
-      artifact,
+      artifact
     });
 
     context.emit(_browserContext.BrowserContext.Events.VideoStarted, artifact);
-    pageOrError.then((page) => {
+    pageOrError.then(page => {
       if (page instanceof _page.Page) {
         page._video = artifact;
         page.emit(_page.Page.Events.Video, artifact);
@@ -109,16 +103,16 @@ class Browser extends _instrumentation.SdkObject {
       await this.options.browserProcess.close();
     }
 
-    if (this.isConnected())
-      await new Promise((x) => this.once(Browser.Events.Disconnected, x));
+    if (this.isConnected()) await new Promise(x => this.once(Browser.Events.Disconnected, x));
   }
 
   async killForTests() {
     await this.options.browserProcess.kill();
   }
+
 }
 
 exports.Browser = Browser;
 Browser.Events = {
-  Disconnected: 'disconnected',
+  Disconnected: 'disconnected'
 };

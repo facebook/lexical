@@ -1,12 +1,12 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.parseSelector = parseSelector;
 exports.customCSSNames = void 0;
 
-var _cssParser = require('./cssParser');
+var _cssParser = require("./cssParser");
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -23,36 +23,18 @@ var _cssParser = require('./cssParser');
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-const customCSSNames = new Set([
-  'not',
-  'is',
-  'where',
-  'has',
-  'scope',
-  'light',
-  'visible',
-  'text',
-  'text-matches',
-  'text-is',
-  'has-text',
-  'above',
-  'below',
-  'right-of',
-  'left-of',
-  'near',
-  'nth-match',
-]);
+const customCSSNames = new Set(['not', 'is', 'where', 'has', 'scope', 'light', 'visible', 'text', 'text-matches', 'text-is', 'has-text', 'above', 'below', 'right-of', 'left-of', 'near', 'nth-match']);
 exports.customCSSNames = customCSSNames;
 
 function parseSelector(selector) {
   const result = parseSelectorString(selector);
-  const parts = result.parts.map((part) => {
+  const parts = result.parts.map(part => {
     if (part.name === 'css' || part.name === 'css:light') {
       if (part.name === 'css:light') part.body = ':light(' + part.body + ')';
       const parsedCSS = (0, _cssParser.parseCSS)(part.body, customCSSNames);
       return {
         name: 'css',
-        body: parsedCSS.selector,
+        body: parsedCSS.selector
       };
     }
 
@@ -61,7 +43,7 @@ function parseSelector(selector) {
   return {
     selector,
     capture: result.capture,
-    parts,
+    parts
   };
 }
 
@@ -70,7 +52,7 @@ function parseSelectorString(selector) {
   let quote;
   let start = 0;
   const result = {
-    parts: [],
+    parts: []
   };
 
   const append = () => {
@@ -79,27 +61,13 @@ function parseSelectorString(selector) {
     let name;
     let body;
 
-    if (
-      eqIndex !== -1 &&
-      part
-        .substring(0, eqIndex)
-        .trim()
-        .match(/^[a-zA-Z_0-9-+:*]+$/)
-    ) {
+    if (eqIndex !== -1 && part.substring(0, eqIndex).trim().match(/^[a-zA-Z_0-9-+:*]+$/)) {
       name = part.substring(0, eqIndex).trim();
       body = part.substring(eqIndex + 1);
-    } else if (
-      part.length > 1 &&
-      part[0] === '"' &&
-      part[part.length - 1] === '"'
-    ) {
+    } else if (part.length > 1 && part[0] === '"' && part[part.length - 1] === '"') {
       name = 'text';
       body = part;
-    } else if (
-      part.length > 1 &&
-      part[0] === "'" &&
-      part[part.length - 1] === "'"
-    ) {
+    } else if (part.length > 1 && part[0] === "'" && part[part.length - 1] === "'") {
       name = 'text';
       body = part;
     } else if (/^\(*\/\//.test(part) || part.startsWith('..')) {
@@ -122,14 +90,11 @@ function parseSelectorString(selector) {
 
     result.parts.push({
       name,
-      body,
+      body
     });
 
     if (capture) {
-      if (result.capture !== undefined)
-        throw new Error(
-          `Only one of the selectors can capture using * modifier`,
-        );
+      if (result.capture !== undefined) throw new Error(`Only one of the selectors can capture using * modifier`);
       result.capture = result.parts.length - 1;
     }
   };
@@ -148,7 +113,7 @@ function parseSelectorString(selector) {
     } else if (c === quote) {
       quote = undefined;
       index++;
-    } else if (!quote && (c === '"' || c === "'" || c === '`')) {
+    } else if (!quote && (c === '"' || c === '\'' || c === '`')) {
       quote = c;
       index++;
     } else if (!quote && c === '>' && selector[index + 1] === '>') {

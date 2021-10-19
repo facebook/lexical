@@ -1,19 +1,17 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.HarRecorder = void 0;
 
-var _fs = _interopRequireDefault(require('fs'));
+var _fs = _interopRequireDefault(require("fs"));
 
-var _artifact = require('../../artifact');
+var _artifact = require("../../artifact");
 
-var _harTracer = require('./harTracer');
+var _harTracer = require("./harTracer");
 
-function _interopRequireDefault(obj) {
-  return obj && obj.__esModule ? obj : {default: obj};
-}
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -42,7 +40,7 @@ class HarRecorder {
     this._tracer = new _harTracer.HarTracer(context, this, {
       content: options.omitContent ? 'omit' : 'embedded',
       waitForContentOnStop: true,
-      skipScripts: false,
+      skipScripts: false
     });
 
     this._tracer.start();
@@ -64,16 +62,9 @@ class HarRecorder {
     const log = this._tracer.stop();
 
     log.entries = this._entries;
-    await _fs.default.promises.writeFile(
-      this._options.path,
-      JSON.stringify(
-        {
-          log,
-        },
-        undefined,
-        2,
-      ),
-    );
+    await _fs.default.promises.writeFile(this._options.path, JSON.stringify({
+      log
+    }, undefined, 2));
   }
 
   async export() {
@@ -83,6 +74,7 @@ class HarRecorder {
 
     return this._artifact;
   }
+
 }
 
 exports.HarRecorder = HarRecorder;

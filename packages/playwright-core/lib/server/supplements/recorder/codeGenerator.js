@@ -1,13 +1,13 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.CodeGenerator = void 0;
 
-var _events = require('events');
+var _events = require("events");
 
-var _utils = require('./utils');
+var _utils = require("./utils");
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -25,14 +25,7 @@ var _utils = require('./utils');
  * limitations under the License.
  */
 class CodeGenerator extends _events.EventEmitter {
-  constructor(
-    browserName,
-    generateHeaders,
-    launchOptions,
-    contextOptions,
-    deviceName,
-    saveStorage,
-  ) {
+  constructor(browserName, generateHeaders, launchOptions, contextOptions, deviceName, saveStorage) {
     super(); // Make a copy of options to modify them later.
 
     this._currentAction = null;
@@ -42,9 +35,10 @@ class CodeGenerator extends _events.EventEmitter {
     this._options = void 0;
     launchOptions = {
       headless: false,
-      ...launchOptions,
+      ...launchOptions
     };
-    contextOptions = {...contextOptions};
+    contextOptions = { ...contextOptions
+    };
     this._enabled = generateHeaders;
     this._options = {
       browserName,
@@ -52,7 +46,7 @@ class CodeGenerator extends _events.EventEmitter {
       launchOptions,
       contextOptions,
       deviceName,
-      saveStorage,
+      saveStorage
     };
     this.restart();
   }
@@ -86,37 +80,26 @@ class CodeGenerator extends _events.EventEmitter {
 
   didPerformAction(actionInContext) {
     if (!this._enabled) return;
-    const {action, pageAlias} = actionInContext;
+    const {
+      action,
+      pageAlias
+    } = actionInContext;
     let eraseLastAction = false;
 
     if (this._lastAction && this._lastAction.pageAlias === pageAlias) {
-      const {action: lastAction} = this._lastAction; // We augment last action based on the type.
+      const {
+        action: lastAction
+      } = this._lastAction; // We augment last action based on the type.
 
-      if (
-        this._lastAction &&
-        action.name === 'fill' &&
-        lastAction.name === 'fill'
-      ) {
+      if (this._lastAction && action.name === 'fill' && lastAction.name === 'fill') {
         if (action.selector === lastAction.selector) eraseLastAction = true;
       }
 
-      if (
-        lastAction &&
-        action.name === 'click' &&
-        lastAction.name === 'click'
-      ) {
-        if (
-          action.selector === lastAction.selector &&
-          action.clickCount > lastAction.clickCount
-        )
-          eraseLastAction = true;
+      if (lastAction && action.name === 'click' && lastAction.name === 'click') {
+        if (action.selector === lastAction.selector && action.clickCount > lastAction.clickCount) eraseLastAction = true;
       }
 
-      if (
-        lastAction &&
-        action.name === 'navigate' &&
-        lastAction.name === 'navigate'
-      ) {
+      if (lastAction && action.name === 'navigate' && lastAction.name === 'navigate') {
         if (action.url === lastAction.url) {
           // Already at a target URL.
           this._currentAction = null;
@@ -124,11 +107,8 @@ class CodeGenerator extends _events.EventEmitter {
         }
       } // Check and uncheck erase click.
 
-      if (
-        lastAction &&
-        (action.name === 'check' || action.name === 'uncheck') &&
-        lastAction.name === 'click'
-      ) {
+
+      if (lastAction && (action.name === 'check' || action.name === 'uncheck') && lastAction.name === 'click') {
         if (action.selector === lastAction.selector) eraseLastAction = true;
       }
     }
@@ -151,8 +131,7 @@ class CodeGenerator extends _events.EventEmitter {
   signal(pageAlias, frame, signal) {
     if (!this._enabled) return; // We'll need to pass acceptDownloads for any generated downloads code to work.
 
-    if (signal.name === 'download')
-      this._options.contextOptions.acceptDownloads = true; // Signal either arrives while action is being performed or shortly after.
+    if (signal.name === 'download') this._options.contextOptions.acceptDownloads = true; // Signal either arrives while action is being performed or shortly after.
 
     if (this._currentAction) {
       this._currentAction.action.signals.push(signal);
@@ -162,18 +141,8 @@ class CodeGenerator extends _events.EventEmitter {
 
     if (this._lastAction && !this._lastAction.committed) {
       const signals = this._lastAction.action.signals;
-      if (
-        signal.name === 'navigation' &&
-        signals.length &&
-        signals[signals.length - 1].name === 'download'
-      )
-        return;
-      if (
-        signal.name === 'download' &&
-        signals.length &&
-        signals[signals.length - 1].name === 'navigation'
-      )
-        signals.length = signals.length - 1;
+      if (signal.name === 'navigation' && signals.length && signals[signals.length - 1].name === 'download') return;
+      if (signal.name === 'download' && signals.length && signals[signals.length - 1].name === 'navigation') signals.length = signals.length - 1;
       signal.isAsync = true;
 
       this._lastAction.action.signals.push(signal);
@@ -190,26 +159,25 @@ class CodeGenerator extends _events.EventEmitter {
         action: {
           name: 'navigate',
           url: frame.url(),
-          signals: [],
-        },
+          signals: []
+        }
       });
     }
   }
 
   generateText(languageGenerator) {
     const text = [];
-    if (this._options.generateHeaders)
-      text.push(languageGenerator.generateHeader(this._options));
+    if (this._options.generateHeaders) text.push(languageGenerator.generateHeader(this._options));
 
     for (const action of this._actions) {
       const actionText = languageGenerator.generateAction(action);
       if (actionText) text.push(actionText);
     }
 
-    if (this._options.generateHeaders)
-      text.push(languageGenerator.generateFooter(this._options.saveStorage));
+    if (this._options.generateHeaders) text.push(languageGenerator.generateFooter(this._options.saveStorage));
     return text.join('\n');
   }
+
 }
 
 exports.CodeGenerator = CodeGenerator;

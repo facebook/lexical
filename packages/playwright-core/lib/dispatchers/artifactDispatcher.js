@@ -1,21 +1,19 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.ArtifactDispatcher = void 0;
 
-var _dispatcher = require('./dispatcher');
+var _dispatcher = require("./dispatcher");
 
-var _streamDispatcher = require('./streamDispatcher');
+var _streamDispatcher = require("./streamDispatcher");
 
-var _fs = _interopRequireDefault(require('fs'));
+var _fs = _interopRequireDefault(require("fs"));
 
-var _utils = require('../utils/utils');
+var _utils = require("../utils/utils");
 
-function _interopRequireDefault(obj) {
-  return obj && obj.__esModule ? obj : {default: obj};
-}
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -35,14 +33,14 @@ function _interopRequireDefault(obj) {
 class ArtifactDispatcher extends _dispatcher.Dispatcher {
   constructor(scope, artifact) {
     super(scope, artifact, 'Artifact', {
-      absolutePath: artifact.localPath(),
+      absolutePath: artifact.localPath()
     });
   }
 
   async pathAfterFinished() {
     const path = await this._object.localPathAfterFinished();
     return {
-      value: path || undefined,
+      value: path || undefined
     };
   }
 
@@ -76,16 +74,13 @@ class ArtifactDispatcher extends _dispatcher.Dispatcher {
         try {
           const readable = _fs.default.createReadStream(localPath);
 
-          const stream = new _streamDispatcher.StreamDispatcher(
-            this._scope,
-            readable,
-          ); // Resolve with a stream, so that client starts saving the data.
+          const stream = new _streamDispatcher.StreamDispatcher(this._scope, readable); // Resolve with a stream, so that client starts saving the data.
 
           resolve({
-            stream,
+            stream
           }); // Block the Artifact until the stream is consumed.
 
-          await new Promise((resolve) => {
+          await new Promise(resolve => {
             readable.on('close', resolve);
             readable.on('end', resolve);
             readable.on('error', resolve);
@@ -104,14 +99,14 @@ class ArtifactDispatcher extends _dispatcher.Dispatcher {
     const readable = _fs.default.createReadStream(fileName);
 
     return {
-      stream: new _streamDispatcher.StreamDispatcher(this._scope, readable),
+      stream: new _streamDispatcher.StreamDispatcher(this._scope, readable)
     };
   }
 
   async failure() {
     const error = await this._object.failureError();
     return {
-      error: error || undefined,
+      error: error || undefined
     };
   }
 
@@ -124,6 +119,7 @@ class ArtifactDispatcher extends _dispatcher.Dispatcher {
 
     this._dispose();
   }
+
 }
 
 exports.ArtifactDispatcher = ArtifactDispatcher;

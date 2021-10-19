@@ -1,12 +1,9 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
-exports.RawTouchscreenImpl =
-  exports.RawMouseImpl =
-  exports.RawKeyboardImpl =
-    void 0;
+exports.RawTouchscreenImpl = exports.RawMouseImpl = exports.RawKeyboardImpl = void 0;
 
 /**
  * Copyright 2017 Google Inc. All rights reserved.
@@ -54,16 +51,7 @@ class RawKeyboardImpl {
     this._client = client;
   }
 
-  async keydown(
-    modifiers,
-    code,
-    keyCode,
-    keyCodeWithoutLocation,
-    key,
-    location,
-    autoRepeat,
-    text,
-  ) {
+  async keydown(modifiers, code, keyCode, keyCodeWithoutLocation, key, location, autoRepeat, text) {
     if (code === 'MetaLeft') code = 'OSLeft';
     if (code === 'MetaRight') code = 'OSRight'; // Firefox will figure out Enter by itself
 
@@ -75,7 +63,7 @@ class RawKeyboardImpl {
       key,
       repeat: autoRepeat,
       location,
-      text,
+      text
     });
   }
 
@@ -88,25 +76,30 @@ class RawKeyboardImpl {
       keyCode: keyCodeWithoutLocation,
       code,
       location,
-      repeat: false,
+      repeat: false
     });
   }
 
   async sendText(text) {
     await this._client.send('Page.insertText', {
-      text,
+      text
     });
   }
 
-  async imeSetComposition(
-    text,
-    selectionStart,
-    selectionEnd,
-    replacementStart,
-    replacementEnd,
-  ) {
-    throw new Error('unimplemented');
+  async imeSetComposition(text, selectionStart, selectionEnd, replacementStart, replacementEnd) {
+    if (replacementStart === -1 && replacementEnd === -1) await this._client.send('Page.imeSetComposition', {
+      text,
+      selectionStart,
+      selectionEnd
+    });else await this._client.send('Page.imeSetComposition', {
+      text,
+      selectionStart,
+      selectionEnd,
+      replacementStart,
+      replacementEnd
+    });
   }
+
 }
 
 exports.RawKeyboardImpl = RawKeyboardImpl;
@@ -125,7 +118,7 @@ class RawMouseImpl {
       buttons: toButtonsMask(buttons),
       x,
       y,
-      modifiers: toModifiersMask(modifiers),
+      modifiers: toModifiersMask(modifiers)
     });
   }
 
@@ -137,7 +130,7 @@ class RawMouseImpl {
       x,
       y,
       modifiers: toModifiersMask(modifiers),
-      clickCount,
+      clickCount
     });
   }
 
@@ -149,33 +142,27 @@ class RawMouseImpl {
       x,
       y,
       modifiers: toModifiersMask(modifiers),
-      clickCount,
+      clickCount
     });
   }
 
   async wheel(x, y, buttons, modifiers, deltaX, deltaY) {
     // Wheel events hit the compositor first, so wait one frame for it to be synced.
-    await this._page
-      .mainFrame()
-      .evaluateExpression(
-        `new Promise(requestAnimationFrame)`,
-        false,
-        false,
-        'utility',
-      );
+    await this._page.mainFrame().evaluateExpression(`new Promise(requestAnimationFrame)`, false, false, 'utility');
     await this._client.send('Page.dispatchWheelEvent', {
       deltaX,
       deltaY,
       x,
       y,
       deltaZ: 0,
-      modifiers: toModifiersMask(modifiers),
+      modifiers: toModifiersMask(modifiers)
     });
   }
 
   setPage(page) {
     this._page = page;
   }
+
 }
 
 exports.RawMouseImpl = RawMouseImpl;
@@ -190,9 +177,10 @@ class RawTouchscreenImpl {
     await this._client.send('Page.dispatchTapEvent', {
       x,
       y,
-      modifiers: toModifiersMask(modifiers),
+      modifiers: toModifiersMask(modifiers)
     });
   }
+
 }
 
 exports.RawTouchscreenImpl = RawTouchscreenImpl;

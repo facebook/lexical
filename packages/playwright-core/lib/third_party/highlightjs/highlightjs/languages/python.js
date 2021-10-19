@@ -126,25 +126,23 @@ function python(hljs) {
   const KEYWORDS = {
     keyword: RESERVED_WORDS.join(' '),
     built_in: BUILT_INS.join(' '),
-    literal: LITERALS.join(' '),
+    literal: LITERALS.join(' ')
   };
 
   const PROMPT = {
-    className: 'meta',
-    begin: /^(>>>|\.\.\.) /,
+    className: 'meta',  begin: /^(>>>|\.\.\.) /
   };
 
   const SUBST = {
     className: 'subst',
-    begin: /\{/,
-    end: /\}/,
+    begin: /\{/, end: /\}/,
     keywords: KEYWORDS,
-    illegal: /#/,
+    illegal: /#/
   };
 
   const LITERAL_BRACKET = {
     begin: /\{\{/,
-    relevance: 0,
+    relevance: 0
   };
 
   const STRING = {
@@ -152,66 +150,55 @@ function python(hljs) {
     contains: [hljs.BACKSLASH_ESCAPE],
     variants: [
       {
-        begin: /([uU]|[bB]|[rR]|[bB][rR]|[rR][bB])?'''/,
-        end: /'''/,
+        begin: /([uU]|[bB]|[rR]|[bB][rR]|[rR][bB])?'''/, end: /'''/,
         contains: [hljs.BACKSLASH_ESCAPE, PROMPT],
-        relevance: 10,
+        relevance: 10
       },
       {
-        begin: /([uU]|[bB]|[rR]|[bB][rR]|[rR][bB])?"""/,
-        end: /"""/,
+        begin: /([uU]|[bB]|[rR]|[bB][rR]|[rR][bB])?"""/, end: /"""/,
         contains: [hljs.BACKSLASH_ESCAPE, PROMPT],
-        relevance: 10,
+        relevance: 10
       },
       {
-        begin: /([fF][rR]|[rR][fF]|[fF])'''/,
-        end: /'''/,
-        contains: [hljs.BACKSLASH_ESCAPE, PROMPT, LITERAL_BRACKET, SUBST],
+        begin: /([fF][rR]|[rR][fF]|[fF])'''/, end: /'''/,
+        contains: [hljs.BACKSLASH_ESCAPE, PROMPT, LITERAL_BRACKET, SUBST]
       },
       {
-        begin: /([fF][rR]|[rR][fF]|[fF])"""/,
-        end: /"""/,
-        contains: [hljs.BACKSLASH_ESCAPE, PROMPT, LITERAL_BRACKET, SUBST],
+        begin: /([fF][rR]|[rR][fF]|[fF])"""/, end: /"""/,
+        contains: [hljs.BACKSLASH_ESCAPE, PROMPT, LITERAL_BRACKET, SUBST]
       },
       {
-        begin: /([uU]|[rR])'/,
-        end: /'/,
-        relevance: 10,
+        begin: /([uU]|[rR])'/, end: /'/,
+        relevance: 10
       },
       {
-        begin: /([uU]|[rR])"/,
-        end: /"/,
-        relevance: 10,
+        begin: /([uU]|[rR])"/, end: /"/,
+        relevance: 10
       },
       {
-        begin: /([bB]|[bB][rR]|[rR][bB])'/,
-        end: /'/,
+        begin: /([bB]|[bB][rR]|[rR][bB])'/, end: /'/
       },
       {
-        begin: /([bB]|[bB][rR]|[rR][bB])"/,
-        end: /"/,
+        begin: /([bB]|[bB][rR]|[rR][bB])"/, end: /"/
       },
       {
-        begin: /([fF][rR]|[rR][fF]|[fF])'/,
-        end: /'/,
-        contains: [hljs.BACKSLASH_ESCAPE, LITERAL_BRACKET, SUBST],
+        begin: /([fF][rR]|[rR][fF]|[fF])'/, end: /'/,
+        contains: [hljs.BACKSLASH_ESCAPE, LITERAL_BRACKET, SUBST]
       },
       {
-        begin: /([fF][rR]|[rR][fF]|[fF])"/,
-        end: /"/,
-        contains: [hljs.BACKSLASH_ESCAPE, LITERAL_BRACKET, SUBST],
+        begin: /([fF][rR]|[rR][fF]|[fF])"/, end: /"/,
+        contains: [hljs.BACKSLASH_ESCAPE, LITERAL_BRACKET, SUBST]
       },
       hljs.APOS_STRING_MODE,
-      hljs.QUOTE_STRING_MODE,
-    ],
+      hljs.QUOTE_STRING_MODE
+    ]
   };
 
   // https://docs.python.org/3.9/reference/lexical_analysis.html#numeric-literals
   const digitpart = '[0-9](_?[0-9])*';
   const pointfloat = `(\\b(${digitpart}))?\\.(${digitpart})|\\b(${digitpart})\\.`;
   const NUMBER = {
-    className: 'number',
-    relevance: 0,
+    className: 'number', relevance: 0,
     variants: [
       // exponentfloat, pointfloat
       // https://docs.python.org/3.9/reference/lexical_analysis.html#floating-point-literals
@@ -223,10 +210,8 @@ function python(hljs) {
       // and we don't want to mishandle e.g. `0..hex()`; this should be safe
       // because both MUST contain a decimal point and so cannot be confused with
       // the interior part of an identifier
-      {
-        begin: `(\\b(${digitpart})|(${pointfloat}))[eE][+-]?(${digitpart})[jJ]?\\b`,
-      },
-      {begin: `(${pointfloat})[jJ]?`},
+      { begin: `(\\b(${digitpart})|(${pointfloat}))[eE][+-]?(${digitpart})[jJ]?\\b` },
+      { begin: `(${pointfloat})[jJ]?` },
 
       // decinteger, bininteger, octinteger, hexinteger
       // https://docs.python.org/3.9/reference/lexical_analysis.html#integer-literals
@@ -234,27 +219,24 @@ function python(hljs) {
       // https://docs.python.org/2.7/reference/lexical_analysis.html#integer-and-long-integer-literals
       // decinteger is optionally imaginary
       // https://docs.python.org/3.9/reference/lexical_analysis.html#imaginary-literals
-      {begin: '\\b([1-9](_?[0-9])*|0+(_?0)*)[lLjJ]?\\b'},
-      {begin: '\\b0[bB](_?[01])+[lL]?\\b'},
-      {begin: '\\b0[oO](_?[0-7])+[lL]?\\b'},
-      {begin: '\\b0[xX](_?[0-9a-fA-F])+[lL]?\\b'},
+      { begin: '\\b([1-9](_?[0-9])*|0+(_?0)*)[lLjJ]?\\b' },
+      { begin: '\\b0[bB](_?[01])+[lL]?\\b' },
+      { begin: '\\b0[oO](_?[0-7])+[lL]?\\b' },
+      { begin: '\\b0[xX](_?[0-9a-fA-F])+[lL]?\\b' },
 
       // imagnumber (digitpart-based)
       // https://docs.python.org/3.9/reference/lexical_analysis.html#imaginary-literals
-      {begin: `\\b(${digitpart})[jJ]\\b`},
-    ],
+      { begin: `\\b(${digitpart})[jJ]\\b` },
+    ]
   };
 
   const PARAMS = {
     className: 'params',
     variants: [
       // Exclude params at functions without params
-      {begin: /\(\s*\)/, skip: true, className: null},
+      {begin: /\(\s*\)/, skip: true, className: null },
       {
-        begin: /\(/,
-        end: /\)/,
-        excludeBegin: true,
-        excludeEnd: true,
+        begin: /\(/, end: /\)/, excludeBegin: true, excludeEnd: true,
         keywords: KEYWORDS,
         contains: ['self', PROMPT, NUMBER, STRING, hljs.HASH_COMMENT_MODE],
       },
@@ -272,14 +254,14 @@ function python(hljs) {
       NUMBER,
       // eat "if" prior to string so that it won't accidentally be
       // labeled as an f-string as in:
-      {begin: /\bself\b/}, // very common convention
-      {beginKeywords: 'if', relevance: 0},
+      { begin: /\bself\b/, }, // very common convention
+      { beginKeywords: "if", relevance: 0 },
       STRING,
       hljs.HASH_COMMENT_MODE,
       {
         variants: [
           {className: 'function', beginKeywords: 'def'},
-          {className: 'class', beginKeywords: 'class'},
+          {className: 'class', beginKeywords: 'class'}
         ],
         end: /:/,
         illegal: /[${=;\n,]/,
@@ -287,22 +269,20 @@ function python(hljs) {
           hljs.UNDERSCORE_TITLE_MODE,
           PARAMS,
           {
-            begin: /->/,
-            endsWithParent: true,
-            keywords: 'None',
-          },
-        ],
+            begin: /->/, endsWithParent: true,
+            keywords: 'None'
+          }
+        ]
       },
       {
         className: 'meta',
-        begin: /^[\t ]*@/,
-        end: /(?=#)|$/,
-        contains: [NUMBER, PARAMS, STRING],
+        begin: /^[\t ]*@/, end: /(?=#)|$/,
+        contains: [NUMBER, PARAMS, STRING]
       },
       {
-        begin: /\b(print|exec)\(/, // don’t highlight keywords-turned-functions in Python 3
-      },
-    ],
+        begin: /\b(print|exec)\(/ // don’t highlight keywords-turned-functions in Python 3
+      }
+    ]
   };
 }
 

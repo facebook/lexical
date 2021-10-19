@@ -1,23 +1,19 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.CSharpLanguageGenerator = void 0;
 
-var _language = require('./language');
+var _language = require("./language");
 
-var _recorderActions = require('./recorderActions');
+var _recorderActions = require("./recorderActions");
 
-var _utils = require('./utils');
+var _utils = require("./utils");
 
-var _deviceDescriptors = _interopRequireDefault(
-  require('../../deviceDescriptors'),
-);
+var _deviceDescriptors = _interopRequireDefault(require("../../deviceDescriptors"));
 
-function _interopRequireDefault(obj) {
-  return obj && obj.__esModule ? obj : {default: obj};
-}
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -42,27 +38,21 @@ class CSharpLanguageGenerator {
   }
 
   generateAction(actionInContext) {
-    const {action, pageAlias} = actionInContext;
+    const {
+      action,
+      pageAlias
+    } = actionInContext;
     const formatter = new CSharpFormatter(8);
     formatter.newLine();
     formatter.add('// ' + (0, _recorderActions.actionTitle)(action));
 
     if (action.name === 'openPage') {
       formatter.add(`var ${pageAlias} = await context.NewPageAsync();`);
-      if (
-        action.url &&
-        action.url !== 'about:blank' &&
-        action.url !== 'chrome://newtab/'
-      )
-        formatter.add(`await ${pageAlias}.GotoAsync(${quote(action.url)});`);
+      if (action.url && action.url !== 'about:blank' && action.url !== 'chrome://newtab/') formatter.add(`await ${pageAlias}.GotoAsync(${quote(action.url)});`);
       return formatter.format();
     }
 
-    const subject = actionInContext.isMainFrame
-      ? pageAlias
-      : actionInContext.frameName
-      ? `${pageAlias}.Frame(${quote(actionInContext.frameName)})`
-      : `${pageAlias}.FrameByUrl(${quote(actionInContext.frameUrl)})`;
+    const subject = actionInContext.isMainFrame ? pageAlias : actionInContext.frameName ? `${pageAlias}.Frame(${quote(actionInContext.frameName)})` : `${pageAlias}.FrameByUrl(${quote(actionInContext.frameUrl)})`;
     const signals = (0, _language.toSignalMap)(action);
 
     if (signals.dialog) {
@@ -77,20 +67,13 @@ class CSharpLanguageGenerator {
 
     const lines = [];
 
-    const actionCall = this._generateActionCall(
-      action,
-      actionInContext.isMainFrame,
-    );
+    const actionCall = this._generateActionCall(action, actionInContext.isMainFrame);
 
     if (signals.waitForNavigation) {
       lines.push(`await ${pageAlias}.RunAndWaitForNavigationAsync(async () =>`);
       lines.push(`{`);
       lines.push(`    await ${subject}.${actionCall};`);
-      lines.push(
-        `}/*, new ${
-          actionInContext.isMainFrame ? 'Page' : 'Frame'
-        }WaitForNavigationOptions`,
-      );
+      lines.push(`}/*, new ${actionInContext.isMainFrame ? 'Page' : 'Frame'}WaitForNavigationOptions`);
       lines.push(`{`);
       lines.push(`    UrlString = ${quote(signals.waitForNavigation.url)}`);
       lines.push(`}*/);`);
@@ -99,27 +82,18 @@ class CSharpLanguageGenerator {
     }
 
     if (signals.download) {
-      lines.unshift(
-        `var download${signals.download.downloadAlias} = await ${pageAlias}.RunAndWaitForDownloadAsync(async () =>\n{`,
-      );
+      lines.unshift(`var download${signals.download.downloadAlias} = await ${pageAlias}.RunAndWaitForDownloadAsync(async () =>\n{`);
       lines.push(`});`);
     }
 
     if (signals.popup) {
-      lines.unshift(
-        `var ${signals.popup.popupAlias} = await ${pageAlias}.RunAndWaitForPopupAsync(async () =>\n{`,
-      );
+      lines.unshift(`var ${signals.popup.popupAlias} = await ${pageAlias}.RunAndWaitForPopupAsync(async () =>\n{`);
       lines.push(`});`);
     }
 
     for (const line of lines) formatter.add(line);
 
-    if (signals.assertNavigation)
-      formatter.add(
-        `  // Assert.AreEqual(${quote(
-          signals.assertNavigation.url,
-        )}, ${pageAlias}.Url);`,
-      );
+    if (signals.assertNavigation) formatter.add(`  // Assert.AreEqual(${quote(signals.assertNavigation.url)}, ${pageAlias}.Url);`);
     return formatter.format();
   }
 
@@ -131,24 +105,20 @@ class CSharpLanguageGenerator {
       case 'closePage':
         return 'CloseAsync()';
 
-      case 'click': {
-        let method = 'Click';
-        if (action.clickCount === 2) method = 'DblClick';
-        const modifiers = (0, _utils.toModifiers)(action.modifiers);
-        const options = {};
-        if (action.button !== 'left') options.button = action.button;
-        if (modifiers.length) options.modifiers = modifiers;
-        if (action.clickCount > 2) options.clickCount = action.clickCount;
-        if (action.position) options.position = action.position;
-        if (!Object.entries(options).length)
-          return `${method}Async(${quote(action.selector)})`;
-        const optionsString = formatObject(
-          options,
-          '    ',
-          (isPage ? 'Page' : 'Frame') + method + 'Options',
-        );
-        return `${method}Async(${quote(action.selector)}, ${optionsString})`;
-      }
+      case 'click':
+        {
+          let method = 'Click';
+          if (action.clickCount === 2) method = 'DblClick';
+          const modifiers = (0, _utils.toModifiers)(action.modifiers);
+          const options = {};
+          if (action.button !== 'left') options.button = action.button;
+          if (modifiers.length) options.modifiers = modifiers;
+          if (action.clickCount > 2) options.clickCount = action.clickCount;
+          if (action.position) options.position = action.position;
+          if (!Object.entries(options).length) return `${method}Async(${quote(action.selector)})`;
+          const optionsString = formatObject(options, '    ', (isPage ? 'Page' : 'Frame') + method + 'Options');
+          return `${method}Async(${quote(action.selector)}, ${optionsString})`;
+        }
 
       case 'check':
         return `CheckAsync(${quote(action.selector)})`;
@@ -160,23 +130,20 @@ class CSharpLanguageGenerator {
         return `FillAsync(${quote(action.selector)}, ${quote(action.text)})`;
 
       case 'setInputFiles':
-        return `SetInputFilesAsync(${quote(action.selector)}, ${formatObject(
-          action.files,
-        )})`;
+        return `SetInputFilesAsync(${quote(action.selector)}, ${formatObject(action.files)})`;
 
-      case 'press': {
-        const modifiers = (0, _utils.toModifiers)(action.modifiers);
-        const shortcut = [...modifiers, action.key].join('+');
-        return `PressAsync(${quote(action.selector)}, ${quote(shortcut)})`;
-      }
+      case 'press':
+        {
+          const modifiers = (0, _utils.toModifiers)(action.modifiers);
+          const shortcut = [...modifiers, action.key].join('+');
+          return `PressAsync(${quote(action.selector)}, ${quote(shortcut)})`;
+        }
 
       case 'navigate':
         return `GotoAsync(${quote(action.url)})`;
 
       case 'select':
-        return `SelectOptionAsync(${quote(action.selector)}, ${formatObject(
-          action.options,
-        )})`;
+        return `SelectOptionAsync(${quote(action.selector)}, ${formatObject(action.options)})`;
     }
   }
 
@@ -192,44 +159,28 @@ class CSharpLanguageGenerator {
           public static async Task Main()
           {
               using var playwright = await Playwright.CreateAsync();
-              await using var browser = await playwright.${toPascal(
-                options.browserName,
-              )}.LaunchAsync(${formatObject(
-      options.launchOptions,
-      '    ',
-      'BrowserTypeLaunchOptions',
-    )});
-              var context = await browser.NewContextAsync(${formatContextOptions(
-                options.contextOptions,
-                options.deviceName,
-              )});`);
+              await using var browser = await playwright.${toPascal(options.browserName)}.LaunchAsync(${formatObject(options.launchOptions, '    ', 'BrowserTypeLaunchOptions')});
+              var context = await browser.NewContextAsync(${formatContextOptions(options.contextOptions, options.deviceName)});`);
     return formatter.format();
   }
 
   generateFooter(saveStorage) {
-    const storageStateLine = saveStorage
-      ? `\n        await context.StorageStateAsync(new BrowserContextStorageStateOptions\n        {\n            Path = ${quote(
-          saveStorage,
-        )}\n        });\n`
-      : '';
+    const storageStateLine = saveStorage ? `\n        await context.StorageStateAsync(new BrowserContextStorageStateOptions\n        {\n            Path = ${quote(saveStorage)}\n        });\n` : '';
     return `${storageStateLine}    }
 }\n`;
   }
+
 }
 
 exports.CSharpLanguageGenerator = CSharpLanguageGenerator;
 
 function formatObject(value, indent = '    ', name = '') {
   if (typeof value === 'string') {
-    if (['permissions', 'colorScheme', 'modifiers', 'button'].includes(name))
-      return `${getClassName(name)}.${toPascal(value)}`;
+    if (['permissions', 'colorScheme', 'modifiers', 'button'].includes(name)) return `${getClassName(name)}.${toPascal(value)}`;
     return quote(value);
   }
 
-  if (Array.isArray(value))
-    return `new[] { ${value
-      .map((o) => formatObject(o, indent, name))
-      .join(', ')} }`;
+  if (Array.isArray(value)) return `new[] { ${value.map(o => formatObject(o, indent, name)).join(', ')} }`;
 
   if (typeof value === 'object') {
     const keys = Object.keys(value);
@@ -241,10 +192,7 @@ function formatObject(value, indent = '    ', name = '') {
       tokens.push(`${property} = ${formatObject(value[key], indent, key)},`);
     }
 
-    if (name)
-      return `new ${getClassName(name)}\n{\n${indent}${tokens.join(
-        `\n${indent}`,
-      )}\n${indent}}`;
+    if (name) return `new ${getClassName(name)}\n{\n${indent}${tokens.join(`\n${indent}`)}\n${indent}}`;
     return `{\n${indent}${tokens.join(`\n${indent}`)}\n${indent}}`;
   }
 
@@ -300,13 +248,8 @@ function formatContextOptions(options, deviceName) {
   }
 
   options = (0, _language.sanitizeDeviceOptions)(device, options);
-  if (!Object.entries(options).length)
-    return `playwright.Devices[${quote(deviceName)}]`;
-  return formatObject(
-    options,
-    '    ',
-    `BrowserNewContextOptions(playwright.Devices[${quote(deviceName)}])`,
-  );
+  if (!Object.entries(options).length) return `playwright.Devices[${quote(deviceName)}]`;
+  return formatObject(options, '    ', `BrowserNewContextOptions(playwright.Devices[${quote(deviceName)}])`);
 }
 
 class CSharpFormatter {
@@ -319,20 +262,11 @@ class CSharpFormatter {
   }
 
   prepend(text) {
-    this._lines = text
-      .trim()
-      .split('\n')
-      .map((line) => line.trim())
-      .concat(this._lines);
+    this._lines = text.trim().split('\n').map(line => line.trim()).concat(this._lines);
   }
 
   add(text) {
-    this._lines.push(
-      ...text
-        .trim()
-        .split('\n')
-        .map((line) => line.trim()),
-    );
+    this._lines.push(...text.trim().split('\n').map(line => line.trim()));
   }
 
   newLine() {
@@ -342,31 +276,20 @@ class CSharpFormatter {
   format() {
     let spaces = '';
     let previousLine = '';
-    return this._lines
-      .map((line) => {
-        if (line === '') return line;
-        if (
-          line.startsWith('}') ||
-          line.startsWith(']') ||
-          line.includes('});') ||
-          line === ');'
-        )
-          spaces = spaces.substring(this._baseIndent.length);
-        const extraSpaces = /^(for|while|if).*\(.*\)$/.test(previousLine)
-          ? this._baseIndent
-          : '';
-        previousLine = line;
-        line = spaces + extraSpaces + line;
-        if (line.endsWith('{') || line.endsWith('[') || line.endsWith('('))
-          spaces += this._baseIndent;
-        if (line.endsWith('));'))
-          spaces = spaces.substring(this._baseIndent.length);
-        return this._baseOffset + line;
-      })
-      .join('\n');
+    return this._lines.map(line => {
+      if (line === '') return line;
+      if (line.startsWith('}') || line.startsWith(']') || line.includes('});') || line === ');') spaces = spaces.substring(this._baseIndent.length);
+      const extraSpaces = /^(for|while|if).*\(.*\)$/.test(previousLine) ? this._baseIndent : '';
+      previousLine = line;
+      line = spaces + extraSpaces + line;
+      if (line.endsWith('{') || line.endsWith('[') || line.endsWith('(')) spaces += this._baseIndent;
+      if (line.endsWith('));')) spaces = spaces.substring(this._baseIndent.length);
+      return this._baseOffset + line;
+    }).join('\n');
   }
+
 }
 
 function quote(text) {
-  return (0, _utils.escapeWithQuotes)(text, '"');
+  return (0, _utils.escapeWithQuotes)(text, '\"');
 }

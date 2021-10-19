@@ -1,74 +1,34 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.printApiJson = printApiJson;
 exports.runDriver = runDriver;
 exports.runServer = runServer;
 exports.launchBrowserServer = launchBrowserServer;
 
-var _fs = _interopRequireDefault(require('fs'));
+var _fs = _interopRequireDefault(require("fs"));
 
-var playwright = _interopRequireWildcard(require('../..'));
+var playwright = _interopRequireWildcard(require("../.."));
 
-var _dispatcher = require('../dispatchers/dispatcher');
+var _dispatcher = require("../dispatchers/dispatcher");
 
-var _playwrightDispatcher = require('../dispatchers/playwrightDispatcher');
+var _playwrightDispatcher = require("../dispatchers/playwrightDispatcher");
 
-var _transport = require('../protocol/transport');
+var _transport = require("../protocol/transport");
 
-var _playwrightServer = require('../remote/playwrightServer');
+var _playwrightServer = require("../remote/playwrightServer");
 
-var _playwright = require('../server/playwright');
+var _playwright = require("../server/playwright");
 
-var _processLauncher = require('../utils/processLauncher');
+var _processLauncher = require("../utils/processLauncher");
 
-function _getRequireWildcardCache(nodeInterop) {
-  if (typeof WeakMap !== 'function') return null;
-  var cacheBabelInterop = new WeakMap();
-  var cacheNodeInterop = new WeakMap();
-  return (_getRequireWildcardCache = function (nodeInterop) {
-    return nodeInterop ? cacheNodeInterop : cacheBabelInterop;
-  })(nodeInterop);
-}
+function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 
-function _interopRequireWildcard(obj, nodeInterop) {
-  if (!nodeInterop && obj && obj.__esModule) {
-    return obj;
-  }
-  if (obj === null || (typeof obj !== 'object' && typeof obj !== 'function')) {
-    return {default: obj};
-  }
-  var cache = _getRequireWildcardCache(nodeInterop);
-  if (cache && cache.has(obj)) {
-    return cache.get(obj);
-  }
-  var newObj = {};
-  var hasPropertyDescriptor =
-    Object.defineProperty && Object.getOwnPropertyDescriptor;
-  for (var key in obj) {
-    if (key !== 'default' && Object.prototype.hasOwnProperty.call(obj, key)) {
-      var desc = hasPropertyDescriptor
-        ? Object.getOwnPropertyDescriptor(obj, key)
-        : null;
-      if (desc && (desc.get || desc.set)) {
-        Object.defineProperty(newObj, key, desc);
-      } else {
-        newObj[key] = obj[key];
-      }
-    }
-  }
-  newObj.default = obj;
-  if (cache) {
-    cache.set(obj, newObj);
-  }
-  return newObj;
-}
+function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 
-function _interopRequireDefault(obj) {
-  return obj && obj.__esModule ? obj : {default: obj};
-}
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -94,27 +54,22 @@ function printApiJson() {
 
 function runDriver() {
   const dispatcherConnection = new _dispatcher.DispatcherConnection();
-  new _dispatcher.Root(
-    dispatcherConnection,
-    async (rootScope, {sdkLanguage}) => {
-      const playwright = (0, _playwright.createPlaywright)(sdkLanguage);
-      return new _playwrightDispatcher.PlaywrightDispatcher(
-        rootScope,
-        playwright,
-      );
-    },
-  );
+  new _dispatcher.Root(dispatcherConnection, async (rootScope, {
+    sdkLanguage
+  }) => {
+    const playwright = (0, _playwright.createPlaywright)(sdkLanguage);
+    return new _playwrightDispatcher.PlaywrightDispatcher(rootScope, playwright);
+  });
   const transport = new _transport.Transport(process.stdout, process.stdin);
 
-  transport.onmessage = (message) =>
-    dispatcherConnection.dispatch(JSON.parse(message));
+  transport.onmessage = message => dispatcherConnection.dispatch(JSON.parse(message));
 
-  dispatcherConnection.onmessage = (message) =>
-    transport.send(JSON.stringify(message));
+  dispatcherConnection.onmessage = message => transport.send(JSON.stringify(message));
 
   transport.onclose = async () => {
     // Drop any messages during shutdown on the floor.
     dispatcherConnection.onmessage = () => {}; // Force exit after 30 seconds.
+
 
     setTimeout(() => process.exit(0), 30000); // Meanwhile, try to gracefully close all browsers.
 
@@ -132,8 +87,7 @@ async function runServer(port) {
 
 async function launchBrowserServer(browserName, configFile) {
   let options = {};
-  if (configFile)
-    options = JSON.parse(_fs.default.readFileSync(configFile).toString());
+  if (configFile) options = JSON.parse(_fs.default.readFileSync(configFile).toString());
   const browserType = playwright[browserName];
   const server = await browserType.launchServer(options);
   console.log(server.wsEndpoint());

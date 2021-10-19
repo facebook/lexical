@@ -1,17 +1,15 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.WebSocketTransport = void 0;
 
-var _ws = _interopRequireDefault(require('ws'));
+var _ws = _interopRequireDefault(require("ws"));
 
-var _utils = require('../utils/utils');
+var _utils = require("../utils/utils");
 
-function _interopRequireDefault(obj) {
-  return obj && obj.__esModule ? obj : {default: obj};
-}
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
  * Copyright 2018 Google Inc. All rights reserved.
@@ -35,7 +33,7 @@ class WebSocketTransport {
     const transport = new WebSocketTransport(progress, url, headers);
     let success = false;
     progress.cleanupWhenAborted(async () => {
-      if (!success) await transport.closeAndWait().catch((e) => null);
+      if (!success) await transport.closeAndWait().catch(e => null);
     });
     await new Promise((fulfill, reject) => {
       transport._ws.addEventListener('open', async () => {
@@ -43,7 +41,7 @@ class WebSocketTransport {
         fulfill(transport);
       });
 
-      transport._ws.addEventListener('error', (event) => {
+      transport._ws.addEventListener('error', event => {
         progress.log(`<ws connect error> ${url} ${event.message}`);
         reject(new Error('WebSocket error: ' + event.message));
 
@@ -66,7 +64,7 @@ class WebSocketTransport {
       maxPayload: 256 * 1024 * 1024,
       // 256Mb,
       handshakeTimeout: progress.timeUntilDeadline(),
-      headers,
+      headers
     });
     this._progress = progress; // The 'ws' module in node sometimes sends us multiple messages in a single task.
     // In Web, all IO callbacks (e.g. WebSocket callbacks)
@@ -75,7 +73,7 @@ class WebSocketTransport {
 
     const messageWrap = (0, _utils.makeWaitForNextTask)();
 
-    this._ws.addEventListener('message', (event) => {
+    this._ws.addEventListener('message', event => {
       messageWrap(() => {
         try {
           if (this.onmessage) this.onmessage.call(null, JSON.parse(event.data));
@@ -85,10 +83,11 @@ class WebSocketTransport {
       });
     });
 
-    this._ws.addEventListener('close', (event) => {
+    this._ws.addEventListener('close', event => {
       this._progress && this._progress.log(`<ws disconnected> ${url}`);
       if (this.onclose) this.onclose.call(null);
     }); // Prevent Error: read ECONNRESET.
+
 
     this._ws.addEventListener('error', () => {});
   }
@@ -104,10 +103,11 @@ class WebSocketTransport {
   }
 
   async closeAndWait() {
-    const promise = new Promise((f) => this._ws.once('close', f));
+    const promise = new Promise(f => this._ws.once('close', f));
     this.close();
     await promise; // Make sure to await the actual disconnect.
   }
+
 }
 
 exports.WebSocketTransport = WebSocketTransport;

@@ -1,11 +1,11 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.SelectorsDispatcher = void 0;
 
-var _dispatcher = require('./dispatcher');
+var _dispatcher = require("./dispatcher");
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -28,12 +28,9 @@ class SelectorsDispatcher extends _dispatcher.Dispatcher {
   }
 
   async register(params) {
-    await this._object.register(
-      params.name,
-      params.source,
-      params.contentScript,
-    );
+    await this._object.register(params.name, params.source, params.contentScript);
   }
+
 }
 
 exports.SelectorsDispatcher = SelectorsDispatcher;

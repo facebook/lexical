@@ -1,26 +1,24 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.downloadBrowserWithProgressBar = downloadBrowserWithProgressBar;
 exports.logPolitely = logPolitely;
 
-var _extractZip = _interopRequireDefault(require('extract-zip'));
+var _extractZip = _interopRequireDefault(require("extract-zip"));
 
-var _fs = _interopRequireDefault(require('fs'));
+var _fs = _interopRequireDefault(require("fs"));
 
-var _os = _interopRequireDefault(require('os'));
+var _os = _interopRequireDefault(require("os"));
 
-var _path = _interopRequireDefault(require('path'));
+var _path = _interopRequireDefault(require("path"));
 
-var _utils = require('./utils');
+var _utils = require("./utils");
 
-var _debugLogger = require('./debugLogger');
+var _debugLogger = require("./debugLogger");
 
-function _interopRequireDefault(obj) {
-  return obj && obj.__esModule ? obj : {default: obj};
-}
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
  * Copyright 2017 Google Inc. All rights reserved.
@@ -38,21 +36,12 @@ function _interopRequireDefault(obj) {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-async function downloadBrowserWithProgressBar(
-  title,
-  browserDirectory,
-  executablePath,
-  downloadURL,
-  downloadFileName,
-) {
+async function downloadBrowserWithProgressBar(title, browserDirectory, executablePath, downloadURL, downloadFileName) {
   const progressBarName = `Playwright build of ${title}`;
 
   if (await (0, _utils.existsAsync)(browserDirectory)) {
     // Already downloaded.
-    _debugLogger.debugLogger.log(
-      'install',
-      `browser ${title} is already downloaded.`,
-    );
+    _debugLogger.debugLogger.log('install', `browser ${title} is already downloaded.`);
 
     return false;
   }
@@ -64,10 +53,7 @@ async function downloadBrowserWithProgressBar(
   try {
     await (0, _utils.download)(url, zipPath, {
       progressBarName,
-      log: _debugLogger.debugLogger.log.bind(
-        _debugLogger.debugLogger,
-        'install',
-      ),
+      log: _debugLogger.debugLogger.log.bind(_debugLogger.debugLogger, 'install')
     });
 
     _debugLogger.debugLogger.log('install', `extracting archive`);
@@ -77,26 +63,19 @@ async function downloadBrowserWithProgressBar(
     _debugLogger.debugLogger.log('install', `-- location: ${browserDirectory}`);
 
     await (0, _extractZip.default)(zipPath, {
-      dir: browserDirectory,
+      dir: browserDirectory
     });
 
-    _debugLogger.debugLogger.log(
-      'install',
-      `fixing permissions at ${executablePath}`,
-    );
+    _debugLogger.debugLogger.log('install', `fixing permissions at ${executablePath}`);
 
     await _fs.default.promises.chmod(executablePath, 0o755);
   } catch (e) {
-    _debugLogger.debugLogger.log(
-      'install',
-      `FAILED installation ${progressBarName} with error: ${e}`,
-    );
+    _debugLogger.debugLogger.log('install', `FAILED installation ${progressBarName} with error: ${e}`);
 
     process.exitCode = 1;
     throw e;
   } finally {
-    if (await (0, _utils.existsAsync)(zipPath))
-      await _fs.default.promises.unlink(zipPath);
+    if (await (0, _utils.existsAsync)(zipPath)) await _fs.default.promises.unlink(zipPath);
   }
 
   logPolitely(`${progressBarName} downloaded to ${browserDirectory}`);
@@ -105,7 +84,6 @@ async function downloadBrowserWithProgressBar(
 
 function logPolitely(toBeLogged) {
   const logLevel = process.env.npm_config_loglevel;
-  const logLevelDisplay =
-    ['silent', 'error', 'warn'].indexOf(logLevel || '') > -1;
+  const logLevelDisplay = ['silent', 'error', 'warn'].indexOf(logLevel || '') > -1;
   if (!logLevelDisplay) console.log(toBeLogged); // eslint-disable-line no-console
 }

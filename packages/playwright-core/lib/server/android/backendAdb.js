@@ -1,65 +1,25 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.AdbBackend = void 0;
 
-var _assert = _interopRequireDefault(require('assert'));
+var _assert = _interopRequireDefault(require("assert"));
 
-var _debug = _interopRequireDefault(require('debug'));
+var _debug = _interopRequireDefault(require("debug"));
 
-var net = _interopRequireWildcard(require('net'));
+var net = _interopRequireWildcard(require("net"));
 
-var _events = require('events');
+var _events = require("events");
 
-var _utils = require('../../utils/utils');
+var _utils = require("../../utils/utils");
 
-function _getRequireWildcardCache(nodeInterop) {
-  if (typeof WeakMap !== 'function') return null;
-  var cacheBabelInterop = new WeakMap();
-  var cacheNodeInterop = new WeakMap();
-  return (_getRequireWildcardCache = function (nodeInterop) {
-    return nodeInterop ? cacheNodeInterop : cacheBabelInterop;
-  })(nodeInterop);
-}
+function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 
-function _interopRequireWildcard(obj, nodeInterop) {
-  if (!nodeInterop && obj && obj.__esModule) {
-    return obj;
-  }
-  if (obj === null || (typeof obj !== 'object' && typeof obj !== 'function')) {
-    return {default: obj};
-  }
-  var cache = _getRequireWildcardCache(nodeInterop);
-  if (cache && cache.has(obj)) {
-    return cache.get(obj);
-  }
-  var newObj = {};
-  var hasPropertyDescriptor =
-    Object.defineProperty && Object.getOwnPropertyDescriptor;
-  for (var key in obj) {
-    if (key !== 'default' && Object.prototype.hasOwnProperty.call(obj, key)) {
-      var desc = hasPropertyDescriptor
-        ? Object.getOwnPropertyDescriptor(obj, key)
-        : null;
-      if (desc && (desc.get || desc.set)) {
-        Object.defineProperty(newObj, key, desc);
-      } else {
-        newObj[key] = obj[key];
-      }
-    }
-  }
-  newObj.default = obj;
-  if (cache) {
-    cache.set(obj, newObj);
-  }
-  return newObj;
-}
+function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 
-function _interopRequireDefault(obj) {
-  return obj && obj.__esModule ? obj : {default: obj};
-}
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
  * Copyright Microsoft Corporation. All rights reserved.
@@ -80,11 +40,12 @@ class AdbBackend {
   async devices() {
     const result = await runCommand('host:devices');
     const lines = result.toString().trim().split('\n');
-    return lines.map((line) => {
+    return lines.map(line => {
       const [serial, status] = line.trim().split('\t');
       return new AdbDevice(serial, status);
     });
   }
+
 }
 
 exports.AdbBackend = AdbBackend;
@@ -110,16 +71,14 @@ class AdbDevice {
     result.becomeSocket();
     return result;
   }
+
 }
 
 async function runCommand(command, serial) {
   (0, _debug.default)('pw:adb:runCommand')(command, serial);
-  const socket = new BufferedSocketWrapper(
-    command,
-    net.createConnection({
-      port: 5037,
-    }),
-  );
+  const socket = new BufferedSocketWrapper(command, net.createConnection({
+    port: 5037
+  }));
 
   if (serial) {
     await socket.write(encodeMessage(`host:transport:${serial}`));
@@ -144,12 +103,9 @@ async function runCommand(command, serial) {
 }
 
 async function open(command, serial) {
-  const socket = new BufferedSocketWrapper(
-    command,
-    net.createConnection({
-      port: 5037,
-    }),
-  );
+  const socket = new BufferedSocketWrapper(command, net.createConnection({
+    port: 5037
+  }));
 
   if (serial) {
     await socket.write(encodeMessage(`host:transport:${serial}`));
@@ -182,9 +138,9 @@ class BufferedSocketWrapper extends _events.EventEmitter {
     this._command = void 0;
     this._command = command;
     this._socket = socket;
-    this._connectPromise = new Promise((f) => this._socket.on('connect', f));
+    this._connectPromise = new Promise(f => this._socket.on('connect', f));
 
-    this._socket.on('data', (data) => {
+    this._socket.on('data', data => {
       (0, _debug.default)('pw:adb:data')(data.toString());
 
       if (this._isSocket) {
@@ -203,15 +159,13 @@ class BufferedSocketWrapper extends _events.EventEmitter {
       this.emit('close');
     });
 
-    this._socket.on('error', (error) => this.emit('error', error));
+    this._socket.on('error', error => this.emit('error', error));
   }
 
   async write(data) {
-    (0, _debug.default)('pw:adb:send')(
-      data.toString().substring(0, 100) + '...',
-    );
+    (0, _debug.default)('pw:adb:send')(data.toString().substring(0, 100) + '...');
     await this._connectPromise;
-    await new Promise((f) => this._socket.write(data, f));
+    await new Promise(f => this._socket.write(data, f));
   }
 
   close() {
@@ -223,25 +177,19 @@ class BufferedSocketWrapper extends _events.EventEmitter {
 
   async read(length) {
     await this._connectPromise;
-    (0, _assert.default)(
-      !this._isSocket,
-      'Can not read by length in socket mode',
-    );
+    (0, _assert.default)(!this._isSocket, 'Can not read by length in socket mode');
 
-    while (this._buffer.length < length)
-      await new Promise((f) => (this._notifyReader = f));
+    while (this._buffer.length < length) await new Promise(f => this._notifyReader = f);
 
     const result = this._buffer.slice(0, length);
 
     this._buffer = this._buffer.slice(length);
-    (0, _debug.default)('pw:adb:recv')(
-      result.toString().substring(0, 100) + '...',
-    );
+    (0, _debug.default)('pw:adb:recv')(result.toString().substring(0, 100) + '...');
     return result;
   }
 
   async readAll() {
-    while (!this._isClosed) await new Promise((f) => (this._notifyReader = f));
+    while (!this._isClosed) await new Promise(f => this._notifyReader = f);
 
     return this._buffer;
   }
@@ -250,4 +198,5 @@ class BufferedSocketWrapper extends _events.EventEmitter {
     (0, _assert.default)(!this._buffer.length);
     this._isSocket = true;
   }
+
 }

@@ -1,54 +1,16 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.parseCSS = parseCSS;
 exports.serializeSelector = serializeSelector;
 
-var css = _interopRequireWildcard(require('./cssTokenizer'));
+var css = _interopRequireWildcard(require("./cssTokenizer"));
 
-function _getRequireWildcardCache(nodeInterop) {
-  if (typeof WeakMap !== 'function') return null;
-  var cacheBabelInterop = new WeakMap();
-  var cacheNodeInterop = new WeakMap();
-  return (_getRequireWildcardCache = function (nodeInterop) {
-    return nodeInterop ? cacheNodeInterop : cacheBabelInterop;
-  })(nodeInterop);
-}
+function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 
-function _interopRequireWildcard(obj, nodeInterop) {
-  if (!nodeInterop && obj && obj.__esModule) {
-    return obj;
-  }
-  if (obj === null || (typeof obj !== 'object' && typeof obj !== 'function')) {
-    return {default: obj};
-  }
-  var cache = _getRequireWildcardCache(nodeInterop);
-  if (cache && cache.has(obj)) {
-    return cache.get(obj);
-  }
-  var newObj = {};
-  var hasPropertyDescriptor =
-    Object.defineProperty && Object.getOwnPropertyDescriptor;
-  for (var key in obj) {
-    if (key !== 'default' && Object.prototype.hasOwnProperty.call(obj, key)) {
-      var desc = hasPropertyDescriptor
-        ? Object.getOwnPropertyDescriptor(obj, key)
-        : null;
-      if (desc && (desc.get || desc.set)) {
-        Object.defineProperty(newObj, key, desc);
-      } else {
-        newObj[key] = obj[key];
-      }
-    }
-  }
-  newObj.default = obj;
-  if (cache) {
-    cache.set(obj, newObj);
-  }
-  return newObj;
-}
+function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -70,48 +32,24 @@ function parseCSS(selector, customNames) {
 
   try {
     tokens = css.tokenize(selector);
-    if (!(tokens[tokens.length - 1] instanceof css.EOFToken))
-      tokens.push(new css.EOFToken());
+    if (!(tokens[tokens.length - 1] instanceof css.EOFToken)) tokens.push(new css.EOFToken());
   } catch (e) {
     const newMessage = e.message + ` while parsing selector "${selector}"`;
     const index = (e.stack || '').indexOf(e.message);
-    if (index !== -1)
-      e.stack =
-        e.stack.substring(0, index) +
-        newMessage +
-        e.stack.substring(index + e.message.length);
+    if (index !== -1) e.stack = e.stack.substring(0, index) + newMessage + e.stack.substring(index + e.message.length);
     e.message = newMessage;
     throw e;
   }
 
-  const unsupportedToken = tokens.find((token) => {
-    return (
-      token instanceof css.AtKeywordToken ||
-      token instanceof css.BadStringToken ||
-      token instanceof css.BadURLToken ||
-      token instanceof css.ColumnToken ||
-      token instanceof css.CDOToken ||
-      token instanceof css.CDCToken ||
-      token instanceof css.SemicolonToken ||
-      token instanceof css.OpenCurlyToken ||
-      token instanceof css.CloseCurlyToken ||
-      token instanceof css.URLToken ||
-      token instanceof css.PercentageToken
-    );
+  const unsupportedToken = tokens.find(token => {
+    return token instanceof css.AtKeywordToken || token instanceof css.BadStringToken || token instanceof css.BadURLToken || token instanceof css.ColumnToken || token instanceof css.CDOToken || token instanceof css.CDCToken || token instanceof css.SemicolonToken || token instanceof css.OpenCurlyToken || token instanceof css.CloseCurlyToken || token instanceof css.URLToken || token instanceof css.PercentageToken;
   });
-  if (unsupportedToken)
-    throw new Error(
-      `Unsupported token "${unsupportedToken.toSource()}" while parsing selector "${selector}"`,
-    );
+  if (unsupportedToken) throw new Error(`Unsupported token "${unsupportedToken.toSource()}" while parsing selector "${selector}"`);
   let pos = 0;
   const names = new Set();
 
   function unexpected() {
-    return new Error(
-      `Unexpected token "${tokens[
-        pos
-      ].toSource()}" while parsing selector "${selector}"`,
-    );
+    return new Error(`Unexpected token "${tokens[pos].toSource()}" while parsing selector "${selector}"`);
   }
 
   function skipWhitespace() {
@@ -147,20 +85,11 @@ function parseCSS(selector, customNames) {
   }
 
   function isClauseCombinator(p = pos) {
-    return (
-      tokens[p] instanceof css.DelimToken &&
-      ['>', '+', '~'].includes(tokens[p].value)
-    );
+    return tokens[p] instanceof css.DelimToken && ['>', '+', '~'].includes(tokens[p].value);
   }
 
   function isSelectorClauseEnd(p = pos) {
-    return (
-      isComma(p) ||
-      isCloseParen(p) ||
-      isEOF(p) ||
-      isClauseCombinator(p) ||
-      tokens[p] instanceof css.WhitespaceToken
-    );
+    return isComma(p) || isCloseParen(p) || isEOF(p) || isClauseCombinator(p) || tokens[p] instanceof css.WhitespaceToken;
   }
 
   function consumeFunctionArguments() {
@@ -185,7 +114,7 @@ function parseCSS(selector, customNames) {
 
   function consumeComplexSelector() {
     const result = {
-      simples: [],
+      simples: []
     };
     skipWhitespace();
 
@@ -193,19 +122,17 @@ function parseCSS(selector, customNames) {
       // Put implicit ":scope" at the start. https://drafts.csswg.org/selectors-4/#absolutize
       result.simples.push({
         selector: {
-          functions: [
-            {
-              name: 'scope',
-              args: [],
-            },
-          ],
+          functions: [{
+            name: 'scope',
+            args: []
+          }]
         },
-        combinator: '',
+        combinator: ''
       });
     } else {
       result.simples.push({
         selector: consumeSimpleSelector(),
-        combinator: '',
+        combinator: ''
       });
     }
 
@@ -213,8 +140,7 @@ function parseCSS(selector, customNames) {
       skipWhitespace();
 
       if (isClauseCombinator()) {
-        result.simples[result.simples.length - 1].combinator =
-          tokens[pos++].value;
+        result.simples[result.simples.length - 1].combinator = tokens[pos++].value;
         skipWhitespace();
       } else if (isSelectorClauseEnd()) {
         break;
@@ -222,7 +148,7 @@ function parseCSS(selector, customNames) {
 
       result.simples.push({
         combinator: '',
-        selector: consumeSimpleSelector(),
+        selector: consumeSimpleSelector()
       });
     }
 
@@ -238,13 +164,9 @@ function parseCSS(selector, customNames) {
         rawCSSString += tokens[pos++].toSource();
       } else if (tokens[pos] instanceof css.HashToken) {
         rawCSSString += tokens[pos++].toSource();
-      } else if (
-        tokens[pos] instanceof css.DelimToken &&
-        tokens[pos].value === '.'
-      ) {
+      } else if (tokens[pos] instanceof css.DelimToken && tokens[pos].value === '.') {
         pos++;
-        if (isIdent()) rawCSSString += '.' + tokens[pos++].toSource();
-        else throw unexpected();
+        if (isIdent()) rawCSSString += '.' + tokens[pos++].toSource();else throw unexpected();
       } else if (tokens[pos] instanceof css.ColonToken) {
         pos++;
 
@@ -255,7 +177,7 @@ function parseCSS(selector, customNames) {
             const name = tokens[pos++].value.toLowerCase();
             functions.push({
               name,
-              args: [],
+              args: []
             });
             names.add(name);
           }
@@ -267,7 +189,7 @@ function parseCSS(selector, customNames) {
           } else {
             functions.push({
               name,
-              args: consumeFunctionArguments(),
+              args: consumeFunctionArguments()
             });
             names.add(name);
           }
@@ -282,8 +204,7 @@ function parseCSS(selector, customNames) {
         rawCSSString += '[';
         pos++;
 
-        while (!(tokens[pos] instanceof css.CloseSquareToken) && !isEOF())
-          rawCSSString += tokens[pos++].toSource();
+        while (!(tokens[pos] instanceof css.CloseSquareToken) && !isEOF()) rawCSSString += tokens[pos++].toSource();
 
         if (!(tokens[pos] instanceof css.CloseSquareToken)) throw unexpected();
         rawCSSString += ']';
@@ -296,7 +217,7 @@ function parseCSS(selector, customNames) {
     if (!rawCSSString && !functions.length) throw unexpected();
     return {
       css: rawCSSString || undefined,
-      functions,
+      functions
     };
   }
 
@@ -310,31 +231,25 @@ function parseCSS(selector, customNames) {
 
   const result = consumeFunctionArguments();
   if (!isEOF()) throw new Error(`Error while parsing selector "${selector}"`);
-  if (result.some((arg) => typeof arg !== 'object' || !('simples' in arg)))
-    throw new Error(`Error while parsing selector "${selector}"`);
+  if (result.some(arg => typeof arg !== 'object' || !('simples' in arg))) throw new Error(`Error while parsing selector "${selector}"`);
   return {
     selector: result,
-    names: Array.from(names),
+    names: Array.from(names)
   };
 }
 
 function serializeSelector(args) {
-  return args
-    .map((arg) => {
-      if (typeof arg === 'string') return `"${arg}"`;
-      if (typeof arg === 'number') return String(arg);
-      return arg.simples
-        .map(({selector, combinator}) => {
-          let s = selector.css || '';
-          s =
-            s +
-            selector.functions
-              .map((func) => `:${func.name}(${serializeSelector(func.args)})`)
-              .join('');
-          if (combinator) s += ' ' + combinator;
-          return s;
-        })
-        .join(' ');
-    })
-    .join(', ');
+  return args.map(arg => {
+    if (typeof arg === 'string') return `"${arg}"`;
+    if (typeof arg === 'number') return String(arg);
+    return arg.simples.map(({
+      selector,
+      combinator
+    }) => {
+      let s = selector.css || '';
+      s = s + selector.functions.map(func => `:${func.name}(${serializeSelector(func.args)})`).join('');
+      if (combinator) s += ' ' + combinator;
+      return s;
+    }).join(' ');
+  }).join(', ');
 }

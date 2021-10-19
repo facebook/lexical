@@ -1,6 +1,6 @@
-'use strict';
+"use strict";
 
-var _inProcessFactory = require('./inProcessFactory');
+var _inProcessFactory = require("./inProcessFactory");
 
 /**
  * Copyright (c) Microsoft Corporation.

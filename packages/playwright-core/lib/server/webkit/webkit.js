@@ -1,21 +1,19 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.WebKit = void 0;
 
-var _wkBrowser = require('../webkit/wkBrowser');
+var _wkBrowser = require("../webkit/wkBrowser");
 
-var _path = _interopRequireDefault(require('path'));
+var _path = _interopRequireDefault(require("path"));
 
-var _wkConnection = require('./wkConnection');
+var _wkConnection = require("./wkConnection");
 
-var _browserType = require('../browserType');
+var _browserType = require("../browserType");
 
-function _interopRequireDefault(obj) {
-  return obj && obj.__esModule ? obj : {default: obj};
-}
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
  * Copyright 2017 Google Inc. All rights reserved.
@@ -43,9 +41,8 @@ class WebKit extends _browserType.BrowserType {
   }
 
   _amendEnvironment(env, userDataDir, executable, browserArguments) {
-    return {
-      ...env,
-      CURL_COOKIE_JAR_PATH: _path.default.join(userDataDir, 'cookiejar.db'),
+    return { ...env,
+      CURL_COOKIE_JAR_PATH: _path.default.join(userDataDir, 'cookiejar.db')
     };
   }
 
@@ -57,45 +54,35 @@ class WebKit extends _browserType.BrowserType {
     transport.send({
       method: 'Playwright.close',
       params: {},
-      id: _wkConnection.kBrowserCloseMessageId,
+      id: _wkConnection.kBrowserCloseMessageId
     });
   }
 
   _defaultArgs(options, isPersistent, userDataDir) {
-    const {args = [], proxy, devtools, headless} = options;
-    if (devtools)
-      console.warn(
-        'devtools parameter as a launch argument in WebKit is not supported. Also starting Web Inspector manually will terminate the execution in WebKit.',
-      );
-    const userDataDirArg = args.find((arg) =>
-      arg.startsWith('--user-data-dir'),
-    );
-    if (userDataDirArg)
-      throw new Error(
-        'Pass userDataDir parameter to `browserType.launchPersistentContext(userDataDir, ...)` instead of specifying --user-data-dir argument',
-      );
-    if (args.find((arg) => !arg.startsWith('-')))
-      throw new Error('Arguments can not specify page to be opened');
+    const {
+      args = [],
+      proxy,
+      devtools,
+      headless
+    } = options;
+    if (devtools) console.warn('devtools parameter as a launch argument in WebKit is not supported. Also starting Web Inspector manually will terminate the execution in WebKit.');
+    const userDataDirArg = args.find(arg => arg.startsWith('--user-data-dir'));
+    if (userDataDirArg) throw new Error('Pass userDataDir parameter to `browserType.launchPersistentContext(userDataDir, ...)` instead of specifying --user-data-dir argument');
+    if (args.find(arg => !arg.startsWith('-'))) throw new Error('Arguments can not specify page to be opened');
     const webkitArguments = ['--inspector-pipe'];
     if (headless) webkitArguments.push('--headless');
-    if (isPersistent) webkitArguments.push(`--user-data-dir=${userDataDir}`);
-    else webkitArguments.push(`--no-startup-window`);
+    if (isPersistent) webkitArguments.push(`--user-data-dir=${userDataDir}`);else webkitArguments.push(`--no-startup-window`);
 
     if (proxy) {
       if (process.platform === 'darwin') {
         webkitArguments.push(`--proxy=${proxy.server}`);
-        if (proxy.bypass)
-          webkitArguments.push(`--proxy-bypass-list=${proxy.bypass}`);
+        if (proxy.bypass) webkitArguments.push(`--proxy-bypass-list=${proxy.bypass}`);
       } else if (process.platform === 'linux') {
         webkitArguments.push(`--proxy=${proxy.server}`);
-        if (proxy.bypass)
-          webkitArguments.push(
-            ...proxy.bypass.split(',').map((t) => `--ignore-host=${t}`),
-          );
+        if (proxy.bypass) webkitArguments.push(...proxy.bypass.split(',').map(t => `--ignore-host=${t}`));
       } else if (process.platform === 'win32') {
         webkitArguments.push(`--curl-proxy=${proxy.server}`);
-        if (proxy.bypass)
-          webkitArguments.push(`--curl-noproxy=${proxy.bypass}`);
+        if (proxy.bypass) webkitArguments.push(`--curl-noproxy=${proxy.bypass}`);
       }
     }
 
@@ -103,6 +90,7 @@ class WebKit extends _browserType.BrowserType {
     if (isPersistent) webkitArguments.push('about:blank');
     return webkitArguments;
   }
+
 }
 
 exports.WebKit = WebKit;

@@ -1,33 +1,31 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.Playwright = void 0;
 
-var _dns = _interopRequireDefault(require('dns'));
+var _dns = _interopRequireDefault(require("dns"));
 
-var _util = _interopRequireDefault(require('util'));
+var _util = _interopRequireDefault(require("util"));
 
-var _errors = require('../utils/errors');
+var _errors = require("../utils/errors");
 
-var _netUtils = require('../utils/netUtils');
+var _netUtils = require("../utils/netUtils");
 
-var _android = require('./android');
+var _android = require("./android");
 
-var _browserType = require('./browserType');
+var _browserType = require("./browserType");
 
-var _channelOwner = require('./channelOwner');
+var _channelOwner = require("./channelOwner");
 
-var _electron = require('./electron');
+var _electron = require("./electron");
 
-var _fetch = require('./fetch');
+var _fetch = require("./fetch");
 
-var _selectors = require('./selectors');
+var _selectors = require("./selectors");
 
-function _interopRequireDefault(obj) {
-  return obj && obj.__esModule ? obj : {default: obj};
-}
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -68,17 +66,17 @@ class Playwright extends _channelOwner.ChannelOwner {
     this._electron = _electron.Electron.from(initializer.electron);
     this.devices = {};
 
-    for (const {name, descriptor} of initializer.deviceDescriptors)
-      this.devices[name] = descriptor;
+    for (const {
+      name,
+      descriptor
+    } of initializer.deviceDescriptors) this.devices[name] = descriptor;
 
     this.selectors = _selectors.sharedSelectors;
     this.errors = {
-      TimeoutError: _errors.TimeoutError,
+      TimeoutError: _errors.TimeoutError
     };
 
-    const selectorsOwner = _selectors.SelectorsOwner.from(
-      initializer.selectors,
-    );
+    const selectorsOwner = _selectors.SelectorsOwner.from(initializer.selectors);
 
     this.selectors._addChannel(selectorsOwner);
 
@@ -92,15 +90,20 @@ class Playwright extends _channelOwner.ChannelOwner {
   _enablePortForwarding(redirectPortForTest) {
     this._redirectPortForTest = redirectPortForTest;
 
-    this._channel.on('socksRequested', ({uid, host, port}) =>
-      this._onSocksRequested(uid, host, port),
-    );
+    this._channel.on('socksRequested', ({
+      uid,
+      host,
+      port
+    }) => this._onSocksRequested(uid, host, port));
 
-    this._channel.on('socksData', ({uid, data}) =>
-      this._onSocksData(uid, Buffer.from(data, 'base64')),
-    );
+    this._channel.on('socksData', ({
+      uid,
+      data
+    }) => this._onSocksData(uid, Buffer.from(data, 'base64')));
 
-    this._channel.on('socksClosed', ({uid}) => this._onSocksClosed(uid));
+    this._channel.on('socksClosed', ({
+      uid
+    }) => this._onSocksClosed(uid));
   }
 
   async _onSocksRequested(uid, host, port) {
@@ -108,32 +111,26 @@ class Playwright extends _channelOwner.ChannelOwner {
 
     try {
       if (this._redirectPortForTest) port = this._redirectPortForTest;
-      const {address} = await dnsLookupAsync(host);
+      const {
+        address
+      } = await dnsLookupAsync(host);
       const socket = await (0, _netUtils.createSocket)(address, port);
-      socket.on('data', (data) =>
-        this._channel
-          .socksData({
-            uid,
-            data: data.toString('base64'),
-          })
-          .catch(() => {}),
-      );
-      socket.on('error', (error) => {
-        this._channel
-          .socksError({
-            uid,
-            error: error.message,
-          })
-          .catch(() => {});
+      socket.on('data', data => this._channel.socksData({
+        uid,
+        data: data.toString('base64')
+      }).catch(() => {}));
+      socket.on('error', error => {
+        this._channel.socksError({
+          uid,
+          error: error.message
+        }).catch(() => {});
 
         this._sockets.delete(uid);
       });
       socket.on('end', () => {
-        this._channel
-          .socksEnd({
-            uid,
-          })
-          .catch(() => {});
+        this._channel.socksEnd({
+          uid
+        }).catch(() => {});
 
         this._sockets.delete(uid);
       });
@@ -142,30 +139,23 @@ class Playwright extends _channelOwner.ChannelOwner {
 
       this._sockets.set(uid, socket);
 
-      this._channel
-        .socksConnected({
-          uid,
-          host: localAddress,
-          port: localPort,
-        })
-        .catch(() => {});
+      this._channel.socksConnected({
+        uid,
+        host: localAddress,
+        port: localPort
+      }).catch(() => {});
     } catch (error) {
-      this._channel
-        .socksFailed({
-          uid,
-          errorCode: error.code,
-        })
-        .catch(() => {});
+      this._channel.socksFailed({
+        uid,
+        errorCode: error.code
+      }).catch(() => {});
     }
   }
 
   _onSocksData(uid, data) {
     var _this$_sockets$get;
 
-    (_this$_sockets$get = this._sockets.get(uid)) === null ||
-    _this$_sockets$get === void 0
-      ? void 0
-      : _this$_sockets$get.write(data);
+    (_this$_sockets$get = this._sockets.get(uid)) === null || _this$_sockets$get === void 0 ? void 0 : _this$_sockets$get.write(data);
   }
 
   static from(channel) {
@@ -175,13 +165,11 @@ class Playwright extends _channelOwner.ChannelOwner {
   _onSocksClosed(uid) {
     var _this$_sockets$get2;
 
-    (_this$_sockets$get2 = this._sockets.get(uid)) === null ||
-    _this$_sockets$get2 === void 0
-      ? void 0
-      : _this$_sockets$get2.destroy();
+    (_this$_sockets$get2 = this._sockets.get(uid)) === null || _this$_sockets$get2 === void 0 ? void 0 : _this$_sockets$get2.destroy();
 
     this._sockets.delete(uid);
   }
+
 }
 
 exports.Playwright = Playwright;

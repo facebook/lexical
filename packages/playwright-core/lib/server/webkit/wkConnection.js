@@ -1,28 +1,24 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.createProtocolError = createProtocolError;
-exports.WKSession =
-  exports.WKConnection =
-  exports.kPageProxyMessageReceived =
-  exports.kBrowserCloseMessageId =
-    void 0;
+exports.WKSession = exports.WKConnection = exports.kPageProxyMessageReceived = exports.kBrowserCloseMessageId = void 0;
 
-var _events = require('events');
+var _events = require("events");
 
-var _utils = require('../../utils/utils');
+var _utils = require("../../utils/utils");
 
-var _stackTrace = require('../../utils/stackTrace');
+var _stackTrace = require("../../utils/stackTrace");
 
-var _debugLogger = require('../../utils/debugLogger');
+var _debugLogger = require("../../utils/debugLogger");
 
-var _helper = require('../helper');
+var _helper = require("../helper");
 
-var _errors = require('../../utils/errors');
+var _errors = require("../../utils/errors");
 
-var _protocolError = require('../common/protocolError');
+var _protocolError = require("../common/protocolError");
 
 /**
  * Copyright 2017 Google Inc. All rights reserved.
@@ -64,14 +60,9 @@ class WKConnection {
     this._onDisconnect = onDisconnect;
     this._protocolLogger = protocolLogger;
     this._browserLogsCollector = browserLogsCollector;
-    this.browserSession = new WKSession(
-      this,
-      '',
-      _errors.kBrowserClosedError,
-      (message) => {
-        this.rawSend(message);
-      },
-    );
+    this.browserSession = new WKSession(this, '', _errors.kBrowserClosedError, message => {
+      this.rawSend(message);
+    });
   }
 
   nextMessageId() {
@@ -92,11 +83,11 @@ class WKConnection {
     if (message.pageProxyId) {
       const payload = {
         message: message,
-        pageProxyId: message.pageProxyId,
+        pageProxyId: message.pageProxyId
       };
       this.browserSession.dispatchMessage({
         method: kPageProxyMessageReceived,
-        params: payload,
+        params: payload
       });
       return;
     }
@@ -120,6 +111,7 @@ class WKConnection {
   close() {
     if (!this._closed) this._transport.close();
   }
+
 }
 
 exports.WKConnection = WKConnection;
@@ -152,15 +144,13 @@ class WKSession extends _events.EventEmitter {
   }
 
   async send(method, params) {
-    if (this._crashed)
-      throw new _protocolError.ProtocolError(true, 'Target crashed');
-    if (this._disposed)
-      throw new _protocolError.ProtocolError(true, `Target closed`);
+    if (this._crashed) throw new _protocolError.ProtocolError(true, 'Target crashed');
+    if (this._disposed) throw new _protocolError.ProtocolError(true, `Target closed`);
     const id = this.connection.nextMessageId();
     const messageObj = {
       id,
       method,
-      params,
+      params
     };
 
     this._rawSend(messageObj);
@@ -170,15 +160,13 @@ class WKSession extends _events.EventEmitter {
         resolve,
         reject,
         error: new _protocolError.ProtocolError(false),
-        method,
+        method
       });
     });
   }
 
   sendMayFail(method, params) {
-    return this.send(method, params).catch((error) =>
-      _debugLogger.debugLogger.log('error', error),
-    );
+    return this.send(method, params).catch(error => _debugLogger.debugLogger.log('error', error));
   }
 
   markAsCrashed() {
@@ -190,18 +178,11 @@ class WKSession extends _events.EventEmitter {
   }
 
   dispose(disconnected) {
-    if (disconnected)
-      this.errorText =
-        'Browser closed.' +
-        _helper.helper.formatBrowserLogs(
-          this.connection._browserLogsCollector.recentLogs(),
-        );
+    if (disconnected) this.errorText = 'Browser closed.' + _helper.helper.formatBrowserLogs(this.connection._browserLogsCollector.recentLogs());
 
     for (const callback of this._callbacks.values()) {
       callback.error.sessionClosed = true;
-      callback.reject(
-        (0, _stackTrace.rewriteErrorMessage)(callback.error, this.errorText),
-      );
+      callback.reject((0, _stackTrace.rewriteErrorMessage)(callback.error, this.errorText));
     }
 
     this._callbacks.clear();
@@ -215,11 +196,7 @@ class WKSession extends _events.EventEmitter {
 
       this._callbacks.delete(object.id);
 
-      if (object.error)
-        callback.reject(
-          createProtocolError(callback.error, callback.method, object.error),
-        );
-      else callback.resolve(object.result);
+      if (object.error) callback.reject(createProtocolError(callback.error, callback.method, object.error));else callback.resolve(object.result);
     } else if (object.id && !object.error) {
       // Response might come after session has been disposed and rejected all callbacks.
       (0, _utils.assert)(this.isDisposed());
@@ -227,13 +204,13 @@ class WKSession extends _events.EventEmitter {
       Promise.resolve().then(() => this.emit(object.method, object.params));
     }
   }
+
 }
 
 exports.WKSession = WKSession;
 
 function createProtocolError(error, method, protocolError) {
   let message = `Protocol error (${method}): ${protocolError.message}`;
-  if ('data' in protocolError)
-    message += ` ${JSON.stringify(protocolError.data)}`;
+  if ('data' in protocolError) message += ` ${JSON.stringify(protocolError.data)}`;
   return (0, _stackTrace.rewriteErrorMessage)(error, message);
 }

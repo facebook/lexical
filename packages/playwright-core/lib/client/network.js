@@ -1,87 +1,40 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.validateHeaders = validateHeaders;
-exports.RawHeaders =
-  exports.RouteHandler =
-  exports.WebSocket =
-  exports.Response =
-  exports.Route =
-  exports.InterceptedResponse =
-  exports.Request =
-    void 0;
+exports.RawHeaders = exports.RouteHandler = exports.WebSocket = exports.Response = exports.Route = exports.InterceptedResponse = exports.Request = void 0;
 
-var _url = require('url');
+var _url = require("url");
 
-var _channelOwner = require('./channelOwner');
+var _channelOwner = require("./channelOwner");
 
-var _frame = require('./frame');
+var _frame = require("./frame");
 
-var _fs = _interopRequireDefault(require('fs'));
+var _fs = _interopRequireDefault(require("fs"));
 
-var mime = _interopRequireWildcard(require('mime'));
+var mime = _interopRequireWildcard(require("mime"));
 
-var _utils = require('../utils/utils');
+var _utils = require("../utils/utils");
 
-var _async = require('../utils/async');
+var _async = require("../utils/async");
 
-var _events = require('./events');
+var _events = require("./events");
 
-var _waiter = require('./waiter');
+var _waiter = require("./waiter");
 
-var _clientHelper = require('./clientHelper');
+var _clientHelper = require("./clientHelper");
 
-var _multimap = require('../utils/multimap');
+var _multimap = require("../utils/multimap");
 
-var _fetch = require('./fetch');
+var _fetch = require("./fetch");
 
-function _getRequireWildcardCache(nodeInterop) {
-  if (typeof WeakMap !== 'function') return null;
-  var cacheBabelInterop = new WeakMap();
-  var cacheNodeInterop = new WeakMap();
-  return (_getRequireWildcardCache = function (nodeInterop) {
-    return nodeInterop ? cacheNodeInterop : cacheBabelInterop;
-  })(nodeInterop);
-}
+function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 
-function _interopRequireWildcard(obj, nodeInterop) {
-  if (!nodeInterop && obj && obj.__esModule) {
-    return obj;
-  }
-  if (obj === null || (typeof obj !== 'object' && typeof obj !== 'function')) {
-    return {default: obj};
-  }
-  var cache = _getRequireWildcardCache(nodeInterop);
-  if (cache && cache.has(obj)) {
-    return cache.get(obj);
-  }
-  var newObj = {};
-  var hasPropertyDescriptor =
-    Object.defineProperty && Object.getOwnPropertyDescriptor;
-  for (var key in obj) {
-    if (key !== 'default' && Object.prototype.hasOwnProperty.call(obj, key)) {
-      var desc = hasPropertyDescriptor
-        ? Object.getOwnPropertyDescriptor(obj, key)
-        : null;
-      if (desc && (desc.get || desc.set)) {
-        Object.defineProperty(newObj, key, desc);
-      } else {
-        newObj[key] = obj[key];
-      }
-    }
-  }
-  newObj.default = obj;
-  if (cache) {
-    cache.set(obj, newObj);
-  }
-  return newObj;
-}
+function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 
-function _interopRequireDefault(obj) {
-  return obj && obj.__esModule ? obj : {default: obj};
-}
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -119,9 +72,7 @@ class Request extends _channelOwner.ChannelOwner {
     this._redirectedFrom = Request.fromNullable(initializer.redirectedFrom);
     if (this._redirectedFrom) this._redirectedFrom._redirectedTo = this;
     this._provisionalHeaders = new RawHeaders(initializer.headers);
-    this._postData = initializer.postData
-      ? Buffer.from(initializer.postData, 'base64')
-      : null;
+    this._postData = initializer.postData ? Buffer.from(initializer.postData, 'base64') : null;
     this._timing = {
       startTime: 0,
       domainLookupStart: -1,
@@ -131,7 +82,7 @@ class Request extends _channelOwner.ChannelOwner {
       connectEnd: -1,
       requestStart: -1,
       responseStart: -1,
-      responseEnd: -1,
+      responseEnd: -1
     };
   }
 
@@ -179,13 +130,14 @@ class Request extends _channelOwner.ChannelOwner {
    * @deprecated
    */
 
+
   headers() {
     return this._provisionalHeaders.headers();
   }
 
   _actualHeaders() {
     if (!this._actualHeadersPromise) {
-      this._actualHeadersPromise = this._wrapApiCall(async (channel) => {
+      this._actualHeadersPromise = this._wrapApiCall(async channel => {
         return new RawHeaders((await channel.rawRequestHeaders()).headers);
       });
     }
@@ -206,7 +158,7 @@ class Request extends _channelOwner.ChannelOwner {
   }
 
   async response() {
-    return this._wrapApiCall(async (channel) => {
+    return this._wrapApiCall(async channel => {
       return Response.fromNullable((await channel.response()).response);
     });
   }
@@ -230,7 +182,7 @@ class Request extends _channelOwner.ChannelOwner {
   failure() {
     if (this._failureText === null) return null;
     return {
-      errorText: this._failureText,
+      errorText: this._failureText
     };
   }
 
@@ -241,7 +193,7 @@ class Request extends _channelOwner.ChannelOwner {
   async sizes() {
     const response = await this.response();
     if (!response) throw new Error('Unable to fetch sizes for failed request');
-    return response._wrapApiCall(async (channel) => {
+    return response._wrapApiCall(async channel => {
       return (await channel.sizes()).sizes;
     });
   }
@@ -249,6 +201,7 @@ class Request extends _channelOwner.ChannelOwner {
   _finalRequest() {
     return this._redirectedTo ? this._redirectedTo._finalRequest() : this;
   }
+
 }
 
 exports.Request = Request;
@@ -284,10 +237,7 @@ class InterceptedResponse {
   }
 
   ok() {
-    return (
-      this._initializer.status === 0 ||
-      (this._initializer.status >= 200 && this._initializer.status <= 299)
-    );
+    return this._initializer.status === 0 || this._initializer.status >= 200 && this._initializer.status <= 299;
   }
 
   url() {
@@ -339,6 +289,7 @@ class InterceptedResponse {
   request() {
     return this._request;
   }
+
 }
 
 exports.InterceptedResponse = InterceptedResponse;
@@ -358,21 +309,21 @@ class Route extends _channelOwner.ChannelOwner {
   }
 
   async abort(errorCode) {
-    return this._wrapApiCall(async (channel) => {
+    return this._wrapApiCall(async channel => {
       await channel.abort({
-        errorCode,
+        errorCode
       });
     });
   }
 
   async fulfill(options = {}) {
-    return this._wrapApiCall(async (channel) => {
+    return this._wrapApiCall(async channel => {
       let useInterceptedResponseBody;
       let fetchResponseUid;
       let {
         status: statusOption,
         headers: headersOption,
-        body: bodyOption,
+        body: bodyOption
       } = options;
 
       if (options.response) {
@@ -380,11 +331,7 @@ class Route extends _channelOwner.ChannelOwner {
         headersOption || (headersOption = options.response.headers());
 
         if (options.body === undefined && options.path === undefined) {
-          if (options.response instanceof _fetch.FetchResponse)
-            fetchResponseUid = options.response._fetchUid();
-          else if (options.response === this._interceptedResponse)
-            useInterceptedResponseBody = true;
-          else bodyOption = await options.response.body();
+          if (options.response instanceof _fetch.FetchResponse) fetchResponseUid = options.response._fetchUid();else if (options.response === this._interceptedResponse) useInterceptedResponseBody = true;else bodyOption = await options.response.body();
         }
       }
 
@@ -409,23 +356,17 @@ class Route extends _channelOwner.ChannelOwner {
 
       const headers = {};
 
-      for (const header of Object.keys(headersOption || {}))
-        headers[header.toLowerCase()] = String(headersOption[header]);
+      for (const header of Object.keys(headersOption || {})) headers[header.toLowerCase()] = String(headersOption[header]);
 
-      if (options.contentType)
-        headers['content-type'] = String(options.contentType);
-      else if (options.path)
-        headers['content-type'] =
-          mime.getType(options.path) || 'application/octet-stream';
-      if (length && !('content-length' in headers))
-        headers['content-length'] = String(length);
+      if (options.contentType) headers['content-type'] = String(options.contentType);else if (options.path) headers['content-type'] = mime.getType(options.path) || 'application/octet-stream';
+      if (length && !('content-length' in headers)) headers['content-length'] = String(length);
       await channel.fulfill({
         status: statusOption || 200,
         headers: (0, _utils.headersObjectToArray)(headers),
         body,
         isBase64,
         useInterceptedResponseBody,
-        fetchResponseUid,
+        fetchResponseUid
       });
     });
   }
@@ -440,32 +381,26 @@ class Route extends _channelOwner.ChannelOwner {
   }
 
   async _continue(options, interceptResponse) {
-    return await this._wrapApiCall(async (channel) => {
-      const postDataBuffer = (0, _utils.isString)(options.postData)
-        ? Buffer.from(options.postData, 'utf8')
-        : options.postData;
+    return await this._wrapApiCall(async channel => {
+      const postDataBuffer = (0, _utils.isString)(options.postData) ? Buffer.from(options.postData, 'utf8') : options.postData;
       const result = await channel.continue({
         url: options.url,
         method: options.method,
-        headers: options.headers
-          ? (0, _utils.headersObjectToArray)(options.headers)
-          : undefined,
-        postData: postDataBuffer
-          ? postDataBuffer.toString('base64')
-          : undefined,
-        interceptResponse,
+        headers: options.headers ? (0, _utils.headersObjectToArray)(options.headers) : undefined,
+        postData: postDataBuffer ? postDataBuffer.toString('base64') : undefined,
+        interceptResponse
       });
-      if (result.response)
-        return new InterceptedResponse(this, result.response);
+      if (result.response) return new InterceptedResponse(this, result.response);
       return null;
     });
   }
 
   async _responseBody() {
-    return this._wrapApiCall(async (channel) => {
+    return this._wrapApiCall(async channel => {
       return Buffer.from((await channel.responseBody()).binary, 'base64');
     });
   }
+
 }
 
 exports.Route = Route;
@@ -495,10 +430,7 @@ class Response extends _channelOwner.ChannelOwner {
   }
 
   ok() {
-    return (
-      this._initializer.status === 0 ||
-      (this._initializer.status >= 200 && this._initializer.status <= 299)
-    );
+    return this._initializer.status === 0 || this._initializer.status >= 200 && this._initializer.status <= 299;
   }
 
   status() {
@@ -512,13 +444,14 @@ class Response extends _channelOwner.ChannelOwner {
    * @deprecated
    */
 
+
   headers() {
     return this._provisionalHeaders.headers();
   }
 
   async _actualHeaders() {
     if (!this._actualHeadersPromise) {
-      this._actualHeadersPromise = this._wrapApiCall(async (channel) => {
+      this._actualHeadersPromise = this._wrapApiCall(async channel => {
         return new RawHeaders((await channel.rawResponseHeaders()).headers);
       });
     }
@@ -547,7 +480,7 @@ class Response extends _channelOwner.ChannelOwner {
   }
 
   async body() {
-    return this._wrapApiCall(async (channel) => {
+    return this._wrapApiCall(async channel => {
       return Buffer.from((await channel.body()).binary, 'base64');
     });
   }
@@ -571,16 +504,17 @@ class Response extends _channelOwner.ChannelOwner {
   }
 
   async serverAddr() {
-    return this._wrapApiCall(async (channel) => {
+    return this._wrapApiCall(async channel => {
       return (await channel.serverAddr()).value || null;
     });
   }
 
   async securityDetails() {
-    return this._wrapApiCall(async (channel) => {
+    return this._wrapApiCall(async channel => {
       return (await channel.securityDetails()).value || null;
     });
   }
+
 }
 
 exports.Response = Response;
@@ -597,31 +531,25 @@ class WebSocket extends _channelOwner.ChannelOwner {
     this._isClosed = false;
     this._page = parent;
 
-    this._channel.on('frameSent', (event) => {
-      if (event.opcode === 1)
-        this.emit(_events.Events.WebSocket.FrameSent, {
-          payload: event.data,
-        });
-      else if (event.opcode === 2)
-        this.emit(_events.Events.WebSocket.FrameSent, {
-          payload: Buffer.from(event.data, 'base64'),
-        });
+    this._channel.on('frameSent', event => {
+      if (event.opcode === 1) this.emit(_events.Events.WebSocket.FrameSent, {
+        payload: event.data
+      });else if (event.opcode === 2) this.emit(_events.Events.WebSocket.FrameSent, {
+        payload: Buffer.from(event.data, 'base64')
+      });
     });
 
-    this._channel.on('frameReceived', (event) => {
-      if (event.opcode === 1)
-        this.emit(_events.Events.WebSocket.FrameReceived, {
-          payload: event.data,
-        });
-      else if (event.opcode === 2)
-        this.emit(_events.Events.WebSocket.FrameReceived, {
-          payload: Buffer.from(event.data, 'base64'),
-        });
+    this._channel.on('frameReceived', event => {
+      if (event.opcode === 1) this.emit(_events.Events.WebSocket.FrameReceived, {
+        payload: event.data
+      });else if (event.opcode === 2) this.emit(_events.Events.WebSocket.FrameReceived, {
+        payload: Buffer.from(event.data, 'base64')
+      });
     });
 
-    this._channel.on('socketError', ({error}) =>
-      this.emit(_events.Events.WebSocket.Error, error),
-    );
+    this._channel.on('socketError', ({
+      error
+    }) => this.emit(_events.Events.WebSocket.Error, error));
 
     this._channel.on('close', () => {
       this._isClosed = true;
@@ -638,44 +566,23 @@ class WebSocket extends _channelOwner.ChannelOwner {
   }
 
   async waitForEvent(event, optionsOrPredicate = {}) {
-    return this._wrapApiCall(async (channel) => {
-      const timeout = this._page._timeoutSettings.timeout(
-        typeof optionsOrPredicate === 'function' ? {} : optionsOrPredicate,
-      );
+    return this._wrapApiCall(async channel => {
+      const timeout = this._page._timeoutSettings.timeout(typeof optionsOrPredicate === 'function' ? {} : optionsOrPredicate);
 
-      const predicate =
-        typeof optionsOrPredicate === 'function'
-          ? optionsOrPredicate
-          : optionsOrPredicate.predicate;
+      const predicate = typeof optionsOrPredicate === 'function' ? optionsOrPredicate : optionsOrPredicate.predicate;
 
       const waiter = _waiter.Waiter.createForEvent(this, event);
 
-      waiter.rejectOnTimeout(
-        timeout,
-        `Timeout while waiting for event "${event}"`,
-      );
-      if (event !== _events.Events.WebSocket.Error)
-        waiter.rejectOnEvent(
-          this,
-          _events.Events.WebSocket.Error,
-          new Error('Socket error'),
-        );
-      if (event !== _events.Events.WebSocket.Close)
-        waiter.rejectOnEvent(
-          this,
-          _events.Events.WebSocket.Close,
-          new Error('Socket closed'),
-        );
-      waiter.rejectOnEvent(
-        this._page,
-        _events.Events.Page.Close,
-        new Error('Page closed'),
-      );
+      waiter.rejectOnTimeout(timeout, `Timeout while waiting for event "${event}"`);
+      if (event !== _events.Events.WebSocket.Error) waiter.rejectOnEvent(this, _events.Events.WebSocket.Error, new Error('Socket error'));
+      if (event !== _events.Events.WebSocket.Close) waiter.rejectOnEvent(this, _events.Events.WebSocket.Close, new Error('Socket closed'));
+      waiter.rejectOnEvent(this._page, _events.Events.Page.Close, new Error('Page closed'));
       const result = await waiter.waitForEvent(this, event, predicate);
       waiter.dispose();
       return result;
     });
   }
+
 }
 
 exports.WebSocket = WebSocket;
@@ -683,10 +590,7 @@ exports.WebSocket = WebSocket;
 function validateHeaders(headers) {
   for (const key of Object.keys(headers)) {
     const value = headers[key];
-    if (!Object.is(value, undefined) && !(0, _utils.isString)(value))
-      throw new Error(
-        `Expected value of header "${key}" to be String, but "${typeof value}" is found.`,
-      );
+    if (!Object.is(value, undefined) && !(0, _utils.isString)(value)) throw new Error(`Expected value of header "${key}" to be String, but "${typeof value}" is found.`);
   }
 }
 
@@ -715,6 +619,7 @@ class RouteHandler {
     this.handler(route, request);
     if (this._times) this.handledCount++;
   }
+
 }
 
 exports.RouteHandler = RouteHandler;
@@ -725,8 +630,7 @@ class RawHeaders {
     this._headersMap = new _multimap.MultiMap();
     this._headersArray = headers;
 
-    for (const header of headers)
-      this._headersMap.set(header.name.toLowerCase(), header.value);
+    for (const header of headers) this._headersMap.set(header.name.toLowerCase(), header.value);
   }
 
   get(name) {
@@ -750,6 +654,7 @@ class RawHeaders {
   headersArray() {
     return this._headersArray;
   }
+
 }
 
 exports.RawHeaders = RawHeaders;

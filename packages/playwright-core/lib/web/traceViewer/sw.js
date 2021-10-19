@@ -1,8 +1,8 @@
-'use strict';
+"use strict";
 
-var _snapshotServer = require('./snapshotServer');
+var _snapshotServer = require("./snapshotServer");
 
-var _traceModel = require('./traceModel');
+var _traceModel = require("./traceModel");
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -32,30 +32,25 @@ async function loadTrace(trace, clientId) {
   const entry = loadedTraces.get(trace);
   if (entry) return entry.traceModel;
   const traceModel = new _traceModel.TraceModel();
-  const url =
-    trace.startsWith('http') || trace.startsWith('blob')
-      ? trace
-      : `/file?path=${trace}`;
+  const url = trace.startsWith('http') || trace.startsWith('blob') ? trace : `/file?path=${trace}`;
   await traceModel.load(url);
-  const snapshotServer = new _snapshotServer.SnapshotServer(
-    traceModel.storage(),
-  );
+  const snapshotServer = new _snapshotServer.SnapshotServer(traceModel.storage());
   loadedTraces.set(trace, {
     traceModel,
     snapshotServer,
-    clientId,
+    clientId
   });
   return traceModel;
 } // @ts-ignore
 
+
 async function doFetch(event) {
   const request = event.request;
-  const snapshotUrl =
-    request.mode === 'navigate'
-      ? request.url
-      : (await self.clients.get(event.clientId)).url;
+  const snapshotUrl = request.mode === 'navigate' ? request.url : (await self.clients.get(event.clientId)).url;
   const traceUrl = new URL(snapshotUrl).searchParams.get('trace');
-  const {snapshotServer} = loadedTraces.get(traceUrl) || {};
+  const {
+    snapshotServer
+  } = loadedTraces.get(traceUrl) || {};
 
   if (request.url.startsWith(self.registration.scope)) {
     const url = new URL(request.url);
@@ -67,55 +62,48 @@ async function doFetch(event) {
       return new Response(JSON.stringify(traceModel.contextEntry), {
         status: 200,
         headers: {
-          'Content-Type': 'application/json',
-        },
+          'Content-Type': 'application/json'
+        }
       });
     }
 
     if (relativePath.startsWith('/snapshotSize/')) {
-      if (!snapshotServer)
-        return new Response(null, {
-          status: 404,
-        });
+      if (!snapshotServer) return new Response(null, {
+        status: 404
+      });
       return snapshotServer.serveSnapshotSize(relativePath, url.searchParams);
     }
 
     if (relativePath.startsWith('/snapshot/')) {
-      if (!snapshotServer)
-        return new Response(null, {
-          status: 404,
-        });
-      return snapshotServer.serveSnapshot(
-        relativePath,
-        url.searchParams,
-        snapshotUrl,
-      );
+      if (!snapshotServer) return new Response(null, {
+        status: 404
+      });
+      return snapshotServer.serveSnapshot(relativePath, url.searchParams, snapshotUrl);
     }
 
     if (relativePath.startsWith('/sha1/')) {
       // Sha1 is unique, load it from either of the models for simplicity.
-      for (const {traceModel} of loadedTraces.values()) {
-        const blob = await traceModel.resourceForSha1(
-          relativePath.slice('/sha1/'.length),
-        );
-        if (blob)
-          return new Response(blob, {
-            status: 200,
-          });
+      for (const {
+        traceModel
+      } of loadedTraces.values()) {
+        const blob = await traceModel.resourceForSha1(relativePath.slice('/sha1/'.length));
+        if (blob) return new Response(blob, {
+          status: 200
+        });
       }
 
       return new Response(null, {
-        status: 404,
+        status: 404
       });
     } // Fallback to network.
+
 
     return fetch(event.request);
   }
 
-  if (!snapshotServer)
-    return new Response(null, {
-      status: 404,
-    });
+  if (!snapshotServer) return new Response(null, {
+    status: 404
+  });
   return snapshotServer.serveResource(request.url, snapshotUrl);
 }
 
@@ -131,6 +119,7 @@ async function gc() {
     if (!usedTraces.has(traceUrl)) loadedTraces.delete(traceUrl);
   }
 } // @ts-ignore
+
 
 self.addEventListener('fetch', function (event) {
   event.respondWith(doFetch(event));

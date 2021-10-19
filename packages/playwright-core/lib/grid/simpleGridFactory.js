@@ -1,18 +1,16 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.launch = launch;
 exports.timeout = exports.capacity = exports.name = void 0;
 
-var _child_process = _interopRequireDefault(require('child_process'));
+var _child_process = _interopRequireDefault(require("child_process"));
 
-var _path = _interopRequireDefault(require('path'));
+var _path = _interopRequireDefault(require("path"));
 
-function _interopRequireDefault(obj) {
-  return obj && obj.__esModule ? obj : {default: obj};
-}
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -36,21 +34,13 @@ exports.capacity = capacity;
 const timeout = 10000;
 exports.timeout = timeout;
 
-function launch({agentId, gridURL}) {
-  _child_process.default.spawn(
-    process.argv[0],
-    [
-      _path.default.join(__dirname, '..', 'cli', 'cli.js'),
-      'experimental-grid-agent',
-      '--grid-url',
-      gridURL,
-      '--agent-id',
-      agentId,
-    ],
-    {
-      cwd: __dirname,
-      shell: true,
-      stdio: 'inherit',
-    },
-  );
+function launch({
+  agentId,
+  gridURL
+}) {
+  _child_process.default.spawn(process.argv[0], [_path.default.join(__dirname, '..', 'cli', 'cli.js'), 'experimental-grid-agent', '--grid-url', gridURL, '--agent-id', agentId], {
+    cwd: __dirname,
+    shell: true,
+    stdio: 'inherit'
+  });
 }

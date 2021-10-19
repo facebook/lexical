@@ -1,19 +1,19 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.Browser = void 0;
 
-var _browserContext = require('./browserContext');
+var _browserContext = require("./browserContext");
 
-var _channelOwner = require('./channelOwner');
+var _channelOwner = require("./channelOwner");
 
-var _events = require('./events');
+var _events = require("./events");
 
-var _errors = require('../utils/errors');
+var _errors = require("../utils/errors");
 
-var _cdpSession = require('./cdpSession');
+var _cdpSession = require("./cdpSession");
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -51,9 +51,7 @@ class Browser extends _channelOwner.ChannelOwner {
 
     this._channel.on('close', () => this._didClose());
 
-    this._closedPromise = new Promise((f) =>
-      this.once(_events.Events.Browser.Disconnected, f),
-    );
+    this._closedPromise = new Promise(f => this.once(_events.Events.Browser.Disconnected, f));
   }
 
   _setBrowserType(browserType) {
@@ -63,16 +61,15 @@ class Browser extends _channelOwner.ChannelOwner {
   }
 
   async newContext(options = {}) {
-    return this._wrapApiCall(async (channel) => {
+    return this._wrapApiCall(async channel => {
       var _this$_browserType$_o, _this$_browserType;
 
-      options = {...this._browserType._defaultContextOptions, ...options};
-      const contextOptions = await (0,
-      _browserContext.prepareBrowserContextParams)(options);
+      options = { ...this._browserType._defaultContextOptions,
+        ...options
+      };
+      const contextOptions = await (0, _browserContext.prepareBrowserContextParams)(options);
 
-      const context = _browserContext.BrowserContext.from(
-        (await channel.newContext(contextOptions)).context,
-      );
+      const context = _browserContext.BrowserContext.from((await channel.newContext(contextOptions)).context);
 
       context._options = contextOptions;
 
@@ -82,10 +79,7 @@ class Browser extends _channelOwner.ChannelOwner {
 
       context._setBrowserType(this._browserType);
 
-      await ((_this$_browserType$_o = (_this$_browserType = this._browserType)
-        ._onDidCreateContext) === null || _this$_browserType$_o === void 0
-        ? void 0
-        : _this$_browserType$_o.call(_this$_browserType, context));
+      await ((_this$_browserType$_o = (_this$_browserType = this._browserType)._onDidCreateContext) === null || _this$_browserType$_o === void 0 ? void 0 : _this$_browserType$_o.call(_this$_browserType, context));
       return context;
     });
   }
@@ -111,34 +105,29 @@ class Browser extends _channelOwner.ChannelOwner {
   }
 
   async newBrowserCDPSession() {
-    return this._wrapApiCall(async (channel) => {
-      return _cdpSession.CDPSession.from(
-        (await channel.newBrowserCDPSession()).session,
-      );
+    return this._wrapApiCall(async channel => {
+      return _cdpSession.CDPSession.from((await channel.newBrowserCDPSession()).session);
     });
   }
 
   async startTracing(page, options = {}) {
-    return this._wrapApiCall(async (channel) => {
-      await channel.startTracing({
-        ...options,
-        page: page ? page._channel : undefined,
+    return this._wrapApiCall(async channel => {
+      await channel.startTracing({ ...options,
+        page: page ? page._channel : undefined
       });
     });
   }
 
   async stopTracing() {
-    return this._wrapApiCall(async (channel) => {
+    return this._wrapApiCall(async channel => {
       return Buffer.from((await channel.stopTracing()).binary, 'base64');
     });
   }
 
   async close() {
     try {
-      await this._wrapApiCall(async (channel) => {
-        if (this._shouldCloseConnectionOnClose)
-          this._connection.close(_errors.kBrowserClosedError);
-        else await channel.close();
+      await this._wrapApiCall(async channel => {
+        if (this._shouldCloseConnectionOnClose) this._connection.close(_errors.kBrowserClosedError);else await channel.close();
         await this._closedPromise;
       });
     } catch (e) {
@@ -151,6 +140,7 @@ class Browser extends _channelOwner.ChannelOwner {
     this._isConnected = false;
     this.emit(_events.Events.Browser.Disconnected, this);
   }
+
 }
 
 exports.Browser = Browser;

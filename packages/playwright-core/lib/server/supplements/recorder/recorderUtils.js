@@ -1,7 +1,7 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.metadataToCallLog = metadataToCallLog;
 
@@ -24,31 +24,16 @@ function metadataToCallLog(metadata, status) {
   var _metadata$params, _metadata$params2;
 
   let title = metadata.apiName || metadata.method;
-  if (metadata.method === 'waitForEventInfo')
-    title += `(${metadata.params.info.event})`;
+  if (metadata.method === 'waitForEventInfo') title += `(${metadata.params.info.event})`;
   title = title.replace('object.expect', 'expect');
   if (metadata.error) status = 'error';
   const params = {
-    url:
-      (_metadata$params = metadata.params) === null ||
-      _metadata$params === void 0
-        ? void 0
-        : _metadata$params.url,
-    selector:
-      (_metadata$params2 = metadata.params) === null ||
-      _metadata$params2 === void 0
-        ? void 0
-        : _metadata$params2.selector,
+    url: (_metadata$params = metadata.params) === null || _metadata$params === void 0 ? void 0 : _metadata$params.url,
+    selector: (_metadata$params2 = metadata.params) === null || _metadata$params2 === void 0 ? void 0 : _metadata$params2.selector
   };
-  let duration = metadata.endTime
-    ? metadata.endTime - metadata.startTime
-    : undefined;
+  let duration = metadata.endTime ? metadata.endTime - metadata.startTime : undefined;
 
-  if (
-    typeof duration === 'number' &&
-    metadata.pauseStartTime &&
-    metadata.pauseEndTime
-  ) {
+  if (typeof duration === 'number' && metadata.pauseStartTime && metadata.pauseEndTime) {
     duration -= metadata.pauseEndTime - metadata.pauseStartTime;
     duration = Math.max(duration, 0);
   }
@@ -60,7 +45,7 @@ function metadataToCallLog(metadata, status) {
     status,
     error: metadata.error,
     params,
-    duration,
+    duration
   };
   return callLog;
 }

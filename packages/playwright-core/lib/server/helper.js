@@ -1,13 +1,13 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.helper = void 0;
 
-var _debugLogger = require('../utils/debugLogger');
+var _debugLogger = require("../utils/debugLogger");
 
-var _eventsHelper = require('../utils/eventsHelper');
+var _eventsHelper = require("../utils/eventsHelper");
 
 /**
  * Copyright 2017 Google Inc. All rights reserved.
@@ -27,8 +27,7 @@ var _eventsHelper = require('../utils/eventsHelper');
  */
 class Helper {
   static completeUserURL(urlString) {
-    if (urlString.startsWith('localhost') || urlString.startsWith('127.0.0.1'))
-      urlString = 'http://' + urlString;
+    if (urlString.startsWith('localhost') || urlString.startsWith('127.0.0.1')) urlString = 'http://' + urlString;
     return urlString;
   }
 
@@ -41,95 +40,76 @@ class Helper {
       x,
       y,
       width: x2 - x,
-      height: y2 - y,
+      height: y2 - y
     };
   }
 
   static enclosingIntSize(size) {
     return {
       width: Math.floor(size.width + 1e-3),
-      height: Math.floor(size.height + 1e-3),
+      height: Math.floor(size.height + 1e-3)
     };
   }
 
   static getViewportSizeFromWindowFeatures(features) {
-    const widthString = features.find((f) => f.startsWith('width='));
-    const heightString = features.find((f) => f.startsWith('height='));
+    const widthString = features.find(f => f.startsWith('width='));
+    const heightString = features.find(f => f.startsWith('height='));
     const width = widthString ? parseInt(widthString.substring(6), 10) : NaN;
     const height = heightString ? parseInt(heightString.substring(7), 10) : NaN;
-    if (!Number.isNaN(width) && !Number.isNaN(height))
-      return {
-        width,
-        height,
-      };
+    if (!Number.isNaN(width) && !Number.isNaN(height)) return {
+      width,
+      height
+    };
     return null;
   }
 
   static waitForEvent(progress, emitter, event, predicate) {
     const listeners = [];
     const promise = new Promise((resolve, reject) => {
-      listeners.push(
-        _eventsHelper.eventsHelper.addEventListener(
-          emitter,
-          event,
-          (eventArg) => {
-            try {
-              if (predicate && !predicate(eventArg)) return;
+      listeners.push(_eventsHelper.eventsHelper.addEventListener(emitter, event, eventArg => {
+        try {
+          if (predicate && !predicate(eventArg)) return;
 
-              _eventsHelper.eventsHelper.removeEventListeners(listeners);
+          _eventsHelper.eventsHelper.removeEventListeners(listeners);
 
-              resolve(eventArg);
-            } catch (e) {
-              _eventsHelper.eventsHelper.removeEventListeners(listeners);
+          resolve(eventArg);
+        } catch (e) {
+          _eventsHelper.eventsHelper.removeEventListeners(listeners);
 
-              reject(e);
-            }
-          },
-        ),
-      );
+          reject(e);
+        }
+      }));
     });
 
-    const dispose = () =>
-      _eventsHelper.eventsHelper.removeEventListeners(listeners);
+    const dispose = () => _eventsHelper.eventsHelper.removeEventListeners(listeners);
 
     if (progress) progress.cleanupWhenAborted(dispose);
     return {
       promise,
-      dispose,
+      dispose
     };
   }
 
   static secondsToRoundishMillis(value) {
-    return ((value * 1000000) | 0) / 1000;
+    return (value * 1000000 | 0) / 1000;
   }
 
   static millisToRoundishMillis(value) {
-    return ((value * 1000) | 0) / 1000;
+    return (value * 1000 | 0) / 1000;
   }
 
   static debugProtocolLogger(protocolLogger) {
     return (direction, message) => {
       if (protocolLogger) protocolLogger(direction, message);
-      if (_debugLogger.debugLogger.isEnabled('protocol'))
-        _debugLogger.debugLogger.log(
-          'protocol',
-          (direction === 'send' ? 'SEND ► ' : '◀ RECV ') +
-            JSON.stringify(message),
-        );
+      if (_debugLogger.debugLogger.isEnabled('protocol')) _debugLogger.debugLogger.log('protocol', (direction === 'send' ? 'SEND ► ' : '◀ RECV ') + JSON.stringify(message));
     };
   }
 
   static formatBrowserLogs(logs) {
     if (!logs.length) return '';
-    return (
-      '\n' +
-      '='.repeat(20) +
-      ' Browser output: ' +
-      '='.repeat(20) +
-      '\n' +
-      logs.join('\n')
-    );
+    return '\n' + '='.repeat(20) + ' Browser output: ' + '='.repeat(20) + '\n' + logs.join('\n');
   }
+
 }
 
 const helper = Helper;

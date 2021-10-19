@@ -1,14 +1,14 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.serializeError = serializeError;
 exports.parseError = parseError;
 exports.parseSerializedValue = parseSerializedValue;
 exports.serializeValue = serializeValue;
 
-var _errors = require('../utils/errors');
+var _errors = require("../utils/errors");
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -26,29 +26,23 @@ var _errors = require('../utils/errors');
  * limitations under the License.
  */
 function serializeError(e) {
-  if (isError(e))
-    return {
-      error: {
-        message: e.message,
-        stack: e.stack,
-        name: e.name,
-      },
-    };
+  if (isError(e)) return {
+    error: {
+      message: e.message,
+      stack: e.stack,
+      name: e.name
+    }
+  };
   return {
-    value: serializeValue(
-      e,
-      (value) => ({
-        fallThrough: value,
-      }),
-      new Set(),
-    ),
+    value: serializeValue(e, value => ({
+      fallThrough: value
+    }), new Set())
   };
 }
 
 function parseError(error) {
   if (!error.error) {
-    if (error.value === undefined)
-      throw new Error('Serialized error must have either an error or a value');
+    if (error.value === undefined) throw new Error('Serialized error must have either an error or a value');
     return parseSerializedValue(error.value, undefined);
   }
 
@@ -80,13 +74,15 @@ function parseSerializedValue(value, handles) {
 
   if (value.d !== undefined) return new Date(value.d);
   if (value.r !== undefined) return new RegExp(value.r.p, value.r.f);
-  if (value.a !== undefined)
-    return value.a.map((a) => parseSerializedValue(a, handles));
+  if (value.a !== undefined) return value.a.map(a => parseSerializedValue(a, handles));
 
   if (value.o !== undefined) {
     const result = {};
 
-    for (const {k, v} of value.o) result[k] = parseSerializedValue(v, handles);
+    for (const {
+      k,
+      v
+    } of value.o) result[k] = parseSerializedValue(v, handles);
 
     return result;
   }
@@ -101,49 +97,38 @@ function parseSerializedValue(value, handles) {
 
 function serializeValue(value, handleSerializer, visited) {
   const handle = handleSerializer(value);
-  if ('fallThrough' in handle) value = handle.fallThrough;
-  else return handle;
+  if ('fallThrough' in handle) value = handle.fallThrough;else return handle;
   if (visited.has(value)) throw new Error('Argument is a circular structure');
-  if (typeof value === 'symbol')
-    return {
-      v: 'undefined',
-    };
-  if (Object.is(value, undefined))
-    return {
-      v: 'undefined',
-    };
-  if (Object.is(value, null))
-    return {
-      v: 'null',
-    };
-  if (Object.is(value, NaN))
-    return {
-      v: 'NaN',
-    };
-  if (Object.is(value, Infinity))
-    return {
-      v: 'Infinity',
-    };
-  if (Object.is(value, -Infinity))
-    return {
-      v: '-Infinity',
-    };
-  if (Object.is(value, -0))
-    return {
-      v: '-0',
-    };
-  if (typeof value === 'boolean')
-    return {
-      b: value,
-    };
-  if (typeof value === 'number')
-    return {
-      n: value,
-    };
-  if (typeof value === 'string')
-    return {
-      s: value,
-    };
+  if (typeof value === 'symbol') return {
+    v: 'undefined'
+  };
+  if (Object.is(value, undefined)) return {
+    v: 'undefined'
+  };
+  if (Object.is(value, null)) return {
+    v: 'null'
+  };
+  if (Object.is(value, NaN)) return {
+    v: 'NaN'
+  };
+  if (Object.is(value, Infinity)) return {
+    v: 'Infinity'
+  };
+  if (Object.is(value, -Infinity)) return {
+    v: '-Infinity'
+  };
+  if (Object.is(value, -0)) return {
+    v: '-0'
+  };
+  if (typeof value === 'boolean') return {
+    b: value
+  };
+  if (typeof value === 'number') return {
+    n: value
+  };
+  if (typeof value === 'string') return {
+    s: value
+  };
 
   if (isError(value)) {
     const error = value;
@@ -151,37 +136,34 @@ function serializeValue(value, handleSerializer, visited) {
     if ('captureStackTrace' in global.Error) {
       // v8
       return {
-        s: error.stack || '',
+        s: error.stack || ''
       };
     }
 
     return {
-      s: `${error.name}: ${error.message}\n${error.stack}`,
+      s: `${error.name}: ${error.message}\n${error.stack}`
     };
   }
 
-  if (isDate(value))
-    return {
-      d: value.toJSON(),
-    };
-  if (isRegExp(value))
-    return {
-      r: {
-        p: value.source,
-        f: value.flags,
-      },
-    };
+  if (isDate(value)) return {
+    d: value.toJSON()
+  };
+  if (isRegExp(value)) return {
+    r: {
+      p: value.source,
+      f: value.flags
+    }
+  };
 
   if (Array.isArray(value)) {
     const a = [];
     visited.add(value);
 
-    for (let i = 0; i < value.length; ++i)
-      a.push(serializeValue(value[i], handleSerializer, visited));
+    for (let i = 0; i < value.length; ++i) a.push(serializeValue(value[i], handleSerializer, visited));
 
     visited.delete(value);
     return {
-      a,
+      a
     };
   }
 
@@ -189,15 +171,14 @@ function serializeValue(value, handleSerializer, visited) {
     const o = [];
     visited.add(value);
 
-    for (const name of Object.keys(value))
-      o.push({
-        k: name,
-        v: serializeValue(value[name], handleSerializer, visited),
-      });
+    for (const name of Object.keys(value)) o.push({
+      k: name,
+      v: serializeValue(value[name], handleSerializer, visited)
+    });
 
     visited.delete(value);
     return {
-      o,
+      o
     };
   }
 
@@ -205,30 +186,15 @@ function serializeValue(value, handleSerializer, visited) {
 }
 
 function isRegExp(obj) {
-  return (
-    obj instanceof RegExp ||
-    Object.prototype.toString.call(obj) === '[object RegExp]'
-  );
+  return obj instanceof RegExp || Object.prototype.toString.call(obj) === '[object RegExp]';
 }
 
 function isDate(obj) {
-  return (
-    obj instanceof Date ||
-    Object.prototype.toString.call(obj) === '[object Date]'
-  );
+  return obj instanceof Date || Object.prototype.toString.call(obj) === '[object Date]';
 }
 
 function isError(obj) {
   var _obj$__proto__;
 
-  return (
-    obj instanceof Error ||
-    (obj === null || obj === void 0
-      ? void 0
-      : (_obj$__proto__ = obj.__proto__) === null || _obj$__proto__ === void 0
-      ? void 0
-      : _obj$__proto__.name) === 'Error' ||
-    ((obj === null || obj === void 0 ? void 0 : obj.__proto__) &&
-      isError(obj.__proto__))
-  );
+  return obj instanceof Error || (obj === null || obj === void 0 ? void 0 : (_obj$__proto__ = obj.__proto__) === null || _obj$__proto__ === void 0 ? void 0 : _obj$__proto__.name) === 'Error' || (obj === null || obj === void 0 ? void 0 : obj.__proto__) && isError(obj.__proto__);
 }

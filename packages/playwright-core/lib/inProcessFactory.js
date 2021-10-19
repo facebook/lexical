@@ -1,19 +1,19 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.createInProcessPlaywright = createInProcessPlaywright;
 
-var _dispatcher = require('./dispatchers/dispatcher');
+var _dispatcher = require("./dispatchers/dispatcher");
 
-var _playwright = require('./server/playwright');
+var _playwright = require("./server/playwright");
 
-var _playwrightDispatcher = require('./dispatchers/playwrightDispatcher');
+var _playwrightDispatcher = require("./dispatchers/playwrightDispatcher");
 
-var _connection = require('./client/connection');
+var _connection = require("./client/connection");
 
-var _browserServerImpl = require('./browserServerImpl');
+var _browserServerImpl = require("./browserServerImpl");
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -35,31 +35,23 @@ function createInProcessPlaywright() {
   const clientConnection = new _connection.Connection();
   const dispatcherConnection = new _dispatcher.DispatcherConnection(); // Dispatch synchronously at first.
 
-  dispatcherConnection.onmessage = (message) =>
-    clientConnection.dispatch(message);
+  dispatcherConnection.onmessage = message => clientConnection.dispatch(message);
 
-  clientConnection.onmessage = (message) =>
-    dispatcherConnection.dispatch(message);
+  clientConnection.onmessage = message => dispatcherConnection.dispatch(message);
 
   const rootScope = new _dispatcher.Root(dispatcherConnection); // Initialize Playwright channel.
 
   new _playwrightDispatcher.PlaywrightDispatcher(rootScope, playwright);
   const playwrightAPI = clientConnection.getObjectWithKnownName('Playwright');
-  playwrightAPI.chromium._serverLauncher =
-    new _browserServerImpl.BrowserServerLauncherImpl('chromium');
-  playwrightAPI.firefox._serverLauncher =
-    new _browserServerImpl.BrowserServerLauncherImpl('firefox');
-  playwrightAPI.webkit._serverLauncher =
-    new _browserServerImpl.BrowserServerLauncherImpl('webkit'); // Switch to async dispatch after we got Playwright object.
+  playwrightAPI.chromium._serverLauncher = new _browserServerImpl.BrowserServerLauncherImpl('chromium');
+  playwrightAPI.firefox._serverLauncher = new _browserServerImpl.BrowserServerLauncherImpl('firefox');
+  playwrightAPI.webkit._serverLauncher = new _browserServerImpl.BrowserServerLauncherImpl('webkit'); // Switch to async dispatch after we got Playwright object.
 
-  dispatcherConnection.onmessage = (message) =>
-    setImmediate(() => clientConnection.dispatch(message));
+  dispatcherConnection.onmessage = message => setImmediate(() => clientConnection.dispatch(message));
 
-  clientConnection.onmessage = (message) =>
-    setImmediate(() => dispatcherConnection.dispatch(message));
+  clientConnection.onmessage = message => setImmediate(() => dispatcherConnection.dispatch(message));
 
-  playwrightAPI._toImpl = (x) =>
-    dispatcherConnection._dispatchers.get(x._guid)._object;
+  playwrightAPI._toImpl = x => dispatcherConnection._dispatchers.get(x._guid)._object;
 
   return playwrightAPI;
 }

@@ -1,90 +1,50 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.prepareBrowserContextParams = prepareBrowserContextParams;
 exports.BrowserContext = void 0;
 
-var _page = require('./page');
+var _page = require("./page");
 
-var _frame = require('./frame');
+var _frame = require("./frame");
 
-var network = _interopRequireWildcard(require('./network'));
+var network = _interopRequireWildcard(require("./network"));
 
-var _fs = _interopRequireDefault(require('fs'));
+var _fs = _interopRequireDefault(require("fs"));
 
-var _channelOwner = require('./channelOwner');
+var _channelOwner = require("./channelOwner");
 
-var _clientHelper = require('./clientHelper');
+var _clientHelper = require("./clientHelper");
 
-var _browser = require('./browser');
+var _browser = require("./browser");
 
-var _worker = require('./worker');
+var _worker = require("./worker");
 
-var _events = require('./events');
+var _events = require("./events");
 
-var _timeoutSettings = require('../utils/timeoutSettings');
+var _timeoutSettings = require("../utils/timeoutSettings");
 
-var _waiter = require('./waiter');
+var _waiter = require("./waiter");
 
-var _utils = require('../utils/utils');
+var _utils = require("../utils/utils");
 
-var _errors = require('../utils/errors');
+var _errors = require("../utils/errors");
 
-var _cdpSession = require('./cdpSession');
+var _cdpSession = require("./cdpSession");
 
-var _tracing = require('./tracing');
+var _tracing = require("./tracing");
 
-var _artifact = require('./artifact');
+var _artifact = require("./artifact");
 
-var _fetch = require('./fetch');
+var _fetch = require("./fetch");
 
-function _interopRequireDefault(obj) {
-  return obj && obj.__esModule ? obj : {default: obj};
-}
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function _getRequireWildcardCache(nodeInterop) {
-  if (typeof WeakMap !== 'function') return null;
-  var cacheBabelInterop = new WeakMap();
-  var cacheNodeInterop = new WeakMap();
-  return (_getRequireWildcardCache = function (nodeInterop) {
-    return nodeInterop ? cacheNodeInterop : cacheBabelInterop;
-  })(nodeInterop);
-}
+function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 
-function _interopRequireWildcard(obj, nodeInterop) {
-  if (!nodeInterop && obj && obj.__esModule) {
-    return obj;
-  }
-  if (obj === null || (typeof obj !== 'object' && typeof obj !== 'function')) {
-    return {default: obj};
-  }
-  var cache = _getRequireWildcardCache(nodeInterop);
-  if (cache && cache.has(obj)) {
-    return cache.get(obj);
-  }
-  var newObj = {};
-  var hasPropertyDescriptor =
-    Object.defineProperty && Object.getOwnPropertyDescriptor;
-  for (var key in obj) {
-    if (key !== 'default' && Object.prototype.hasOwnProperty.call(obj, key)) {
-      var desc = hasPropertyDescriptor
-        ? Object.getOwnPropertyDescriptor(obj, key)
-        : null;
-      if (desc && (desc.get || desc.set)) {
-        Object.defineProperty(newObj, key, desc);
-      } else {
-        newObj[key] = obj[key];
-      }
-    }
-  }
-  newObj.default = obj;
-  if (cache) {
-    cache.set(obj, newObj);
-  }
-  return newObj;
-}
+function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 
 /**
  * Copyright 2017 Google Inc. All rights reserved.
@@ -130,26 +90,28 @@ class BrowserContext extends _channelOwner.ChannelOwner {
     this._serviceWorkers = new Set();
     this._isChromium = void 0;
     if (parent instanceof _browser.Browser) this._browser = parent;
-    this._isChromium =
-      ((_this$_browser = this._browser) === null || _this$_browser === void 0
-        ? void 0
-        : _this$_browser._name) === 'chromium';
+    this._isChromium = ((_this$_browser = this._browser) === null || _this$_browser === void 0 ? void 0 : _this$_browser._name) === 'chromium';
     this.tracing = new _tracing.Tracing(this);
     this.request = _fetch.FetchRequest.from(initializer.fetchRequest);
 
-    this._channel.on('bindingCall', ({binding}) =>
-      this._onBinding(_page.BindingCall.from(binding)),
-    );
+    this._channel.on('bindingCall', ({
+      binding
+    }) => this._onBinding(_page.BindingCall.from(binding)));
 
     this._channel.on('close', () => this._onClose());
 
-    this._channel.on('page', ({page}) => this._onPage(_page.Page.from(page)));
+    this._channel.on('page', ({
+      page
+    }) => this._onPage(_page.Page.from(page)));
 
-    this._channel.on('route', ({route, request}) =>
-      this._onRoute(network.Route.from(route), network.Request.from(request)),
-    );
+    this._channel.on('route', ({
+      route,
+      request
+    }) => this._onRoute(network.Route.from(route), network.Request.from(request)));
 
-    this._channel.on('backgroundPage', ({page}) => {
+    this._channel.on('backgroundPage', ({
+      page
+    }) => {
       const backgroundPage = _page.Page.from(page);
 
       this._backgroundPages.add(backgroundPage);
@@ -157,7 +119,9 @@ class BrowserContext extends _channelOwner.ChannelOwner {
       this.emit(_events.Events.BrowserContext.BackgroundPage, backgroundPage);
     });
 
-    this._channel.on('serviceWorker', ({worker}) => {
+    this._channel.on('serviceWorker', ({
+      worker
+    }) => {
       const serviceWorker = _worker.Worker.from(worker);
 
       serviceWorker._context = this;
@@ -167,38 +131,26 @@ class BrowserContext extends _channelOwner.ChannelOwner {
       this.emit(_events.Events.BrowserContext.ServiceWorker, serviceWorker);
     });
 
-    this._channel.on('request', ({request, page}) =>
-      this._onRequest(
-        network.Request.from(request),
-        _page.Page.fromNullable(page),
-      ),
-    );
+    this._channel.on('request', ({
+      request,
+      page
+    }) => this._onRequest(network.Request.from(request), _page.Page.fromNullable(page)));
 
-    this._channel.on(
-      'requestFailed',
-      ({request, failureText, responseEndTiming, page}) =>
-        this._onRequestFailed(
-          network.Request.from(request),
-          responseEndTiming,
-          failureText,
-          _page.Page.fromNullable(page),
-        ),
-    );
+    this._channel.on('requestFailed', ({
+      request,
+      failureText,
+      responseEndTiming,
+      page
+    }) => this._onRequestFailed(network.Request.from(request), responseEndTiming, failureText, _page.Page.fromNullable(page)));
 
-    this._channel.on('requestFinished', (params) =>
-      this._onRequestFinished(params),
-    );
+    this._channel.on('requestFinished', params => this._onRequestFinished(params));
 
-    this._channel.on('response', ({response, page}) =>
-      this._onResponse(
-        network.Response.from(response),
-        _page.Page.fromNullable(page),
-      ),
-    );
+    this._channel.on('response', ({
+      response,
+      page
+    }) => this._onResponse(network.Response.from(response), _page.Page.fromNullable(page)));
 
-    this._closedPromise = new Promise((f) =>
-      this.once(_events.Events.BrowserContext.Close, f),
-    );
+    this._closedPromise = new Promise(f => this.once(_events.Events.BrowserContext.Close, f));
   }
 
   _setBrowserType(browserType) {
@@ -211,8 +163,7 @@ class BrowserContext extends _channelOwner.ChannelOwner {
     this._pages.add(page);
 
     this.emit(_events.Events.BrowserContext.Page, page);
-    if (page._opener && !page._opener.isClosed())
-      page._opener.emit(_events.Events.Page.Popup, page);
+    if (page._opener && !page._opener.isClosed()) page._opener.emit(_events.Events.Page.Popup, page);
   }
 
   _onRequest(request, page) {
@@ -233,7 +184,9 @@ class BrowserContext extends _channelOwner.ChannelOwner {
   }
 
   _onRequestFinished(params) {
-    const {responseEndTiming} = params;
+    const {
+      responseEndTiming
+    } = params;
     const request = network.Request.from(params.request);
     const response = network.Response.fromNullable(params.response);
 
@@ -260,7 +213,7 @@ class BrowserContext extends _channelOwner.ChannelOwner {
       // it can race with BrowserContext.close() which then throws since its closed
       route.continue().catch(() => {});
     } else {
-      this._routes = this._routes.filter((route) => !route.expired());
+      this._routes = this._routes.filter(route => !route.expired());
     }
   }
 
@@ -275,7 +228,7 @@ class BrowserContext extends _channelOwner.ChannelOwner {
     this._timeoutSettings.setDefaultNavigationTimeout(timeout);
 
     this._channel.setDefaultNavigationTimeoutNoReply({
-      timeout,
+      timeout
     });
   }
 
@@ -283,7 +236,7 @@ class BrowserContext extends _channelOwner.ChannelOwner {
     this._timeoutSettings.setDefaultTimeout(timeout);
 
     this._channel.setDefaultTimeoutNoReply({
-      timeout,
+      timeout
     });
   }
 
@@ -296,7 +249,7 @@ class BrowserContext extends _channelOwner.ChannelOwner {
   }
 
   async newPage() {
-    return this._wrapApiCall(async (channel) => {
+    return this._wrapApiCall(async channel => {
       if (this._ownerPage) throw new Error('Please use browser.newContext()');
       return _page.Page.from((await channel.newPage()).page);
     });
@@ -305,96 +258,90 @@ class BrowserContext extends _channelOwner.ChannelOwner {
   async cookies(urls) {
     if (!urls) urls = [];
     if (urls && typeof urls === 'string') urls = [urls];
-    return this._wrapApiCall(async (channel) => {
-      return (
-        await channel.cookies({
-          urls: urls,
-        })
-      ).cookies;
+    return this._wrapApiCall(async channel => {
+      return (await channel.cookies({
+        urls: urls
+      })).cookies;
     });
   }
 
   async addCookies(cookies) {
-    return this._wrapApiCall(async (channel) => {
+    return this._wrapApiCall(async channel => {
       await channel.addCookies({
-        cookies,
+        cookies
       });
     });
   }
 
   async clearCookies() {
-    return this._wrapApiCall(async (channel) => {
+    return this._wrapApiCall(async channel => {
       await channel.clearCookies();
     });
   }
 
   async grantPermissions(permissions, options) {
-    return this._wrapApiCall(async (channel) => {
+    return this._wrapApiCall(async channel => {
       await channel.grantPermissions({
         permissions,
-        ...options,
+        ...options
       });
     });
   }
 
   async clearPermissions() {
-    return this._wrapApiCall(async (channel) => {
+    return this._wrapApiCall(async channel => {
       await channel.clearPermissions();
     });
   }
 
   async setGeolocation(geolocation) {
-    return this._wrapApiCall(async (channel) => {
+    return this._wrapApiCall(async channel => {
       await channel.setGeolocation({
-        geolocation: geolocation || undefined,
+        geolocation: geolocation || undefined
       });
     });
   }
 
   async setExtraHTTPHeaders(headers) {
-    return this._wrapApiCall(async (channel) => {
+    return this._wrapApiCall(async channel => {
       network.validateHeaders(headers);
       await channel.setExtraHTTPHeaders({
-        headers: (0, _utils.headersObjectToArray)(headers),
+        headers: (0, _utils.headersObjectToArray)(headers)
       });
     });
   }
 
   async setOffline(offline) {
-    return this._wrapApiCall(async (channel) => {
+    return this._wrapApiCall(async channel => {
       await channel.setOffline({
-        offline,
+        offline
       });
     });
   }
 
   async setHTTPCredentials(httpCredentials) {
-    if (!(0, _utils.isUnderTest)())
-      (0, _clientHelper.deprecate)(
-        `context.setHTTPCredentials`,
-        `warning: method |context.setHTTPCredentials()| is deprecated. Instead of changing credentials, create another browser context with new credentials.`,
-      );
-    return this._wrapApiCall(async (channel) => {
+    if (!(0, _utils.isUnderTest)()) (0, _clientHelper.deprecate)(`context.setHTTPCredentials`, `warning: method |context.setHTTPCredentials()| is deprecated. Instead of changing credentials, create another browser context with new credentials.`);
+    return this._wrapApiCall(async channel => {
       await channel.setHTTPCredentials({
-        httpCredentials: httpCredentials || undefined,
+        httpCredentials: httpCredentials || undefined
       });
     });
   }
 
   async addInitScript(script, arg) {
-    return this._wrapApiCall(async (channel) => {
+    return this._wrapApiCall(async channel => {
       const source = await (0, _clientHelper.evaluationScript)(script, arg);
       await channel.addInitScript({
-        source,
+        source
       });
     });
   }
 
   async exposeBinding(name, callback, options = {}) {
-    return this._wrapApiCall(async (channel) => {
+    return this._wrapApiCall(async channel => {
       await channel.exposeBinding({
         name,
-        needsHandle: options.handle,
+        needsHandle: options.handle
       });
 
       this._bindings.set(name, callback);
@@ -402,9 +349,9 @@ class BrowserContext extends _channelOwner.ChannelOwner {
   }
 
   async exposeFunction(name, callback) {
-    return this._wrapApiCall(async (channel) => {
+    return this._wrapApiCall(async channel => {
       await channel.exposeBinding({
-        name,
+        name
       });
 
       const binding = (source, ...args) => callback(...args);
@@ -414,58 +361,34 @@ class BrowserContext extends _channelOwner.ChannelOwner {
   }
 
   async route(url, handler, options = {}) {
-    return this._wrapApiCall(async (channel) => {
-      this._routes.unshift(
-        new network.RouteHandler(
-          this._options.baseURL,
-          url,
-          handler,
-          options.times,
-        ),
-      );
+    return this._wrapApiCall(async channel => {
+      this._routes.unshift(new network.RouteHandler(this._options.baseURL, url, handler, options.times));
 
-      if (this._routes.length === 1)
-        await channel.setNetworkInterceptionEnabled({
-          enabled: true,
-        });
+      if (this._routes.length === 1) await channel.setNetworkInterceptionEnabled({
+        enabled: true
+      });
     });
   }
 
   async unroute(url, handler) {
-    return this._wrapApiCall(async (channel) => {
-      this._routes = this._routes.filter(
-        (route) => route.url !== url || (handler && route.handler !== handler),
-      );
-      if (this._routes.length === 0)
-        await channel.setNetworkInterceptionEnabled({
-          enabled: false,
-        });
+    return this._wrapApiCall(async channel => {
+      this._routes = this._routes.filter(route => route.url !== url || handler && route.handler !== handler);
+      if (this._routes.length === 0) await channel.setNetworkInterceptionEnabled({
+        enabled: false
+      });
     });
   }
 
   async waitForEvent(event, optionsOrPredicate = {}) {
-    return this._wrapApiCall(async (channel) => {
-      const timeout = this._timeoutSettings.timeout(
-        typeof optionsOrPredicate === 'function' ? {} : optionsOrPredicate,
-      );
+    return this._wrapApiCall(async channel => {
+      const timeout = this._timeoutSettings.timeout(typeof optionsOrPredicate === 'function' ? {} : optionsOrPredicate);
 
-      const predicate =
-        typeof optionsOrPredicate === 'function'
-          ? optionsOrPredicate
-          : optionsOrPredicate.predicate;
+      const predicate = typeof optionsOrPredicate === 'function' ? optionsOrPredicate : optionsOrPredicate.predicate;
 
       const waiter = _waiter.Waiter.createForEvent(this, event);
 
-      waiter.rejectOnTimeout(
-        timeout,
-        `Timeout while waiting for event "${event}"`,
-      );
-      if (event !== _events.Events.BrowserContext.Close)
-        waiter.rejectOnEvent(
-          this,
-          _events.Events.BrowserContext.Close,
-          new Error('Context closed'),
-        );
+      waiter.rejectOnTimeout(timeout, `Timeout while waiting for event "${event}"`);
+      if (event !== _events.Events.BrowserContext.Close) waiter.rejectOnEvent(this, _events.Events.BrowserContext.Close, new Error('Context closed'));
       const result = await waiter.waitForEvent(this, event, predicate);
       waiter.dispose();
       return result;
@@ -473,16 +396,12 @@ class BrowserContext extends _channelOwner.ChannelOwner {
   }
 
   async storageState(options = {}) {
-    return await this._wrapApiCall(async (channel) => {
+    return await this._wrapApiCall(async channel => {
       const state = await channel.storageState();
 
       if (options.path) {
         await (0, _utils.mkdirIfNeeded)(options.path);
-        await _fs.default.promises.writeFile(
-          options.path,
-          JSON.stringify(state, undefined, 2),
-          'utf8',
-        );
+        await _fs.default.promises.writeFile(options.path, JSON.stringify(state, undefined, 2), 'utf8');
       }
 
       return state;
@@ -499,18 +418,13 @@ class BrowserContext extends _channelOwner.ChannelOwner {
 
   async newCDPSession(page) {
     // channelOwner.ts's validation messages don't handle the pseudo-union type, so we're explicit here
-    if (!(page instanceof _page.Page) && !(page instanceof _frame.Frame))
-      throw new Error('page: expected Page or Frame');
-    return this._wrapApiCall(async (channel) => {
-      const result = await channel.newCDPSession(
-        page instanceof _page.Page
-          ? {
-              page: page._channel,
-            }
-          : {
-              frame: page._channel,
-            },
-      );
+    if (!(page instanceof _page.Page) && !(page instanceof _frame.Frame)) throw new Error('page: expected Page or Frame');
+    return this._wrapApiCall(async channel => {
+      const result = await channel.newCDPSession(page instanceof _page.Page ? {
+        page: page._channel
+      } : {
+        frame: page._channel
+      });
       return _cdpSession.CDPSession.from(result.session);
     });
   }
@@ -519,29 +433,16 @@ class BrowserContext extends _channelOwner.ChannelOwner {
     var _this$_browserType, _this$_browserType$_c;
 
     if (this._browser) this._browser._contexts.delete(this);
-    (_this$_browserType = this._browserType) === null ||
-    _this$_browserType === void 0
-      ? void 0
-      : (_this$_browserType$_c = _this$_browserType._contexts) === null ||
-        _this$_browserType$_c === void 0
-      ? void 0
-      : _this$_browserType$_c.delete(this);
+    (_this$_browserType = this._browserType) === null || _this$_browserType === void 0 ? void 0 : (_this$_browserType$_c = _this$_browserType._contexts) === null || _this$_browserType$_c === void 0 ? void 0 : _this$_browserType$_c.delete(this);
     this.emit(_events.Events.BrowserContext.Close, this);
   }
 
   async close() {
     try {
-      await this._wrapApiCall(async (channel) => {
+      await this._wrapApiCall(async channel => {
         var _this$_browserType2, _this$_browserType2$_;
 
-        await ((_this$_browserType2 = this._browserType) === null ||
-        _this$_browserType2 === void 0
-          ? void 0
-          : (_this$_browserType2$_ =
-              _this$_browserType2._onWillCloseContext) === null ||
-            _this$_browserType2$_ === void 0
-          ? void 0
-          : _this$_browserType2$_.call(_this$_browserType2, this));
+        await ((_this$_browserType2 = this._browserType) === null || _this$_browserType2 === void 0 ? void 0 : (_this$_browserType2$_ = _this$_browserType2._onWillCloseContext) === null || _this$_browserType2$_ === void 0 ? void 0 : _this$_browserType2$_.call(_this$_browserType2, this));
 
         if (this._options.recordHar) {
           const har = await this._channel.harExport();
@@ -564,34 +465,25 @@ class BrowserContext extends _channelOwner.ChannelOwner {
   async _enableRecorder(params) {
     await this._channel.recorderSupplementEnable(params);
   }
+
 }
 
 exports.BrowserContext = BrowserContext;
 
 async function prepareBrowserContextParams(options) {
-  if (options.videoSize && !options.videosPath)
-    throw new Error(`"videoSize" option requires "videosPath" to be specified`);
-  if (options.extraHTTPHeaders)
-    network.validateHeaders(options.extraHTTPHeaders);
-  const contextParams = {
-    ...options,
+  if (options.videoSize && !options.videosPath) throw new Error(`"videoSize" option requires "videosPath" to be specified`);
+  if (options.extraHTTPHeaders) network.validateHeaders(options.extraHTTPHeaders);
+  const contextParams = { ...options,
     viewport: options.viewport === null ? undefined : options.viewport,
     noDefaultViewport: options.viewport === null,
-    extraHTTPHeaders: options.extraHTTPHeaders
-      ? (0, _utils.headersObjectToArray)(options.extraHTTPHeaders)
-      : undefined,
-    storageState:
-      typeof options.storageState === 'string'
-        ? JSON.parse(
-            await _fs.default.promises.readFile(options.storageState, 'utf8'),
-          )
-        : options.storageState,
+    extraHTTPHeaders: options.extraHTTPHeaders ? (0, _utils.headersObjectToArray)(options.extraHTTPHeaders) : undefined,
+    storageState: typeof options.storageState === 'string' ? JSON.parse(await _fs.default.promises.readFile(options.storageState, 'utf8')) : options.storageState
   };
 
   if (!contextParams.recordVideo && options.videosPath) {
     contextParams.recordVideo = {
       dir: options.videosPath,
-      size: options.videoSize,
+      size: options.videoSize
     };
   }
 

@@ -1,59 +1,21 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.FFExecutionContext = void 0;
 
-var js = _interopRequireWildcard(require('../javascript'));
+var js = _interopRequireWildcard(require("../javascript"));
 
-var _stackTrace = require('../../utils/stackTrace');
+var _stackTrace = require("../../utils/stackTrace");
 
-var _utilityScriptSerializers = require('../common/utilityScriptSerializers');
+var _utilityScriptSerializers = require("../common/utilityScriptSerializers");
 
-var _protocolError = require('../common/protocolError');
+var _protocolError = require("../common/protocolError");
 
-function _getRequireWildcardCache(nodeInterop) {
-  if (typeof WeakMap !== 'function') return null;
-  var cacheBabelInterop = new WeakMap();
-  var cacheNodeInterop = new WeakMap();
-  return (_getRequireWildcardCache = function (nodeInterop) {
-    return nodeInterop ? cacheNodeInterop : cacheBabelInterop;
-  })(nodeInterop);
-}
+function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 
-function _interopRequireWildcard(obj, nodeInterop) {
-  if (!nodeInterop && obj && obj.__esModule) {
-    return obj;
-  }
-  if (obj === null || (typeof obj !== 'object' && typeof obj !== 'function')) {
-    return {default: obj};
-  }
-  var cache = _getRequireWildcardCache(nodeInterop);
-  if (cache && cache.has(obj)) {
-    return cache.get(obj);
-  }
-  var newObj = {};
-  var hasPropertyDescriptor =
-    Object.defineProperty && Object.getOwnPropertyDescriptor;
-  for (var key in obj) {
-    if (key !== 'default' && Object.prototype.hasOwnProperty.call(obj, key)) {
-      var desc = hasPropertyDescriptor
-        ? Object.getOwnPropertyDescriptor(obj, key)
-        : null;
-      if (desc && (desc.get || desc.set)) {
-        Object.defineProperty(newObj, key, desc);
-      } else {
-        newObj[key] = obj[key];
-      }
-    }
-  }
-  newObj.default = obj;
-  if (cache) {
-    cache.set(obj, newObj);
-  }
-  return newObj;
-}
+function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 
 /**
  * Copyright 2019 Google Inc. All rights reserved.
@@ -80,164 +42,106 @@ class FFExecutionContext {
   }
 
   async rawEvaluateJSON(expression) {
-    const payload = await this._session
-      .send('Runtime.evaluate', {
-        expression,
-        returnByValue: true,
-        executionContextId: this._executionContextId,
-      })
-      .catch(rewriteError);
+    const payload = await this._session.send('Runtime.evaluate', {
+      expression,
+      returnByValue: true,
+      executionContextId: this._executionContextId
+    }).catch(rewriteError);
     checkException(payload.exceptionDetails);
     return payload.result.value;
   }
 
   async rawEvaluateHandle(expression) {
-    const payload = await this._session
-      .send('Runtime.evaluate', {
-        expression,
-        returnByValue: false,
-        executionContextId: this._executionContextId,
-      })
-      .catch(rewriteError);
+    const payload = await this._session.send('Runtime.evaluate', {
+      expression,
+      returnByValue: false,
+      executionContextId: this._executionContextId
+    }).catch(rewriteError);
     checkException(payload.exceptionDetails);
     return payload.result.objectId;
   }
 
   rawCallFunctionNoReply(func, ...args) {
-    this._session
-      .send('Runtime.callFunction', {
-        functionDeclaration: func.toString(),
-        args: args.map((a) =>
-          a instanceof js.JSHandle
-            ? {
-                objectId: a._objectId,
-              }
-            : {
-                value: a,
-              },
-        ),
-        returnByValue: true,
-        executionContextId: this._executionContextId,
-      })
-      .catch(() => {});
+    this._session.send('Runtime.callFunction', {
+      functionDeclaration: func.toString(),
+      args: args.map(a => a instanceof js.JSHandle ? {
+        objectId: a._objectId
+      } : {
+        value: a
+      }),
+      returnByValue: true,
+      executionContextId: this._executionContextId
+    }).catch(() => {});
   }
 
-  async evaluateWithArguments(
-    expression,
-    returnByValue,
-    utilityScript,
-    values,
-    objectIds,
-  ) {
-    const payload = await this._session
-      .send('Runtime.callFunction', {
-        functionDeclaration: expression,
-        args: [
-          {
-            objectId: utilityScript._objectId,
-            value: undefined,
-          },
-          ...values.map((value) => ({
-            value,
-          })),
-          ...objectIds.map((objectId) => ({
-            objectId,
-            value: undefined,
-          })),
-        ],
-        returnByValue,
-        executionContextId: this._executionContextId,
-      })
-      .catch(rewriteError);
+  async evaluateWithArguments(expression, returnByValue, utilityScript, values, objectIds) {
+    const payload = await this._session.send('Runtime.callFunction', {
+      functionDeclaration: expression,
+      args: [{
+        objectId: utilityScript._objectId,
+        value: undefined
+      }, ...values.map(value => ({
+        value
+      })), ...objectIds.map(objectId => ({
+        objectId,
+        value: undefined
+      }))],
+      returnByValue,
+      executionContextId: this._executionContextId
+    }).catch(rewriteError);
     checkException(payload.exceptionDetails);
-    if (returnByValue)
-      return (0, _utilityScriptSerializers.parseEvaluationResultValue)(
-        payload.result.value,
-      );
+    if (returnByValue) return (0, _utilityScriptSerializers.parseEvaluationResultValue)(payload.result.value);
     return utilityScript._context.createHandle(payload.result);
   }
 
   async getProperties(context, objectId) {
     const response = await this._session.send('Runtime.getObjectProperties', {
       executionContextId: this._executionContextId,
-      objectId,
+      objectId
     });
     const result = new Map();
 
-    for (const property of response.properties)
-      result.set(property.name, context.createHandle(property.value));
+    for (const property of response.properties) result.set(property.name, context.createHandle(property.value));
 
     return result;
   }
 
   createHandle(context, remoteObject) {
-    return new js.JSHandle(
-      context,
-      remoteObject.subtype || remoteObject.type || '',
-      renderPreview(remoteObject),
-      remoteObject.objectId,
-      potentiallyUnserializableValue(remoteObject),
-    );
+    return new js.JSHandle(context, remoteObject.subtype || remoteObject.type || '', renderPreview(remoteObject), remoteObject.objectId, potentiallyUnserializableValue(remoteObject));
   }
 
   async releaseHandle(objectId) {
     await this._session.send('Runtime.disposeObject', {
       executionContextId: this._executionContextId,
-      objectId,
+      objectId
     });
   }
+
 }
 
 exports.FFExecutionContext = FFExecutionContext;
 
 function checkException(exceptionDetails) {
   if (!exceptionDetails) return;
-  if (exceptionDetails.value)
-    throw new js.JavaScriptErrorInEvaluate(
-      JSON.stringify(exceptionDetails.value),
-    );
-  else
-    throw new js.JavaScriptErrorInEvaluate(
-      exceptionDetails.text +
-        (exceptionDetails.stack ? '\n' + exceptionDetails.stack : ''),
-    );
+  if (exceptionDetails.value) throw new js.JavaScriptErrorInEvaluate(JSON.stringify(exceptionDetails.value));else throw new js.JavaScriptErrorInEvaluate(exceptionDetails.text + (exceptionDetails.stack ? '\n' + exceptionDetails.stack : ''));
 }
 
 function rewriteError(error) {
-  if (
-    error.message.includes('cyclic object value') ||
-    error.message.includes('Object is not serializable')
-  )
-    return {
-      result: {
-        type: 'undefined',
-        value: undefined,
-      },
-    };
-  if (
-    error instanceof TypeError &&
-    error.message.startsWith('Converting circular structure to JSON')
-  )
-    (0, _stackTrace.rewriteErrorMessage)(
-      error,
-      error.message + ' Are you passing a nested JSHandle?',
-    );
-  if (
-    !js.isJavaScriptErrorInEvaluate(error) &&
-    !(0, _protocolError.isSessionClosedError)(error)
-  )
-    throw new Error(
-      'Execution context was destroyed, most likely because of a navigation.',
-    );
+  if (error.message.includes('cyclic object value') || error.message.includes('Object is not serializable')) return {
+    result: {
+      type: 'undefined',
+      value: undefined
+    }
+  };
+  if (error instanceof TypeError && error.message.startsWith('Converting circular structure to JSON')) (0, _stackTrace.rewriteErrorMessage)(error, error.message + ' Are you passing a nested JSHandle?');
+  if (!js.isJavaScriptErrorInEvaluate(error) && !(0, _protocolError.isSessionClosedError)(error)) throw new Error('Execution context was destroyed, most likely because of a navigation.');
   throw error;
 }
 
 function potentiallyUnserializableValue(remoteObject) {
   const value = remoteObject.value;
   const unserializableValue = remoteObject.unserializableValue;
-  return unserializableValue
-    ? js.parseUnserializableValue(unserializableValue)
-    : value;
+  return unserializableValue ? js.parseUnserializableValue(unserializableValue) : value;
 }
 
 function renderPreview(object) {
@@ -247,7 +151,6 @@ function renderPreview(object) {
   if (object.subtype === 'regexp') return 'RegExp';
   if (object.subtype === 'weakmap') return 'WeakMap';
   if (object.subtype === 'weakset') return 'WeakSet';
-  if (object.subtype)
-    return object.subtype[0].toUpperCase() + object.subtype.slice(1);
+  if (object.subtype) return object.subtype[0].toUpperCase() + object.subtype.slice(1);
   if ('value' in object) return String(object.value);
 }

@@ -1,15 +1,13 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.CRDevTools = void 0;
 
-var _fs = _interopRequireDefault(require('fs'));
+var _fs = _interopRequireDefault(require("fs"));
 
-function _interopRequireDefault(obj) {
-  return obj && obj.__esModule ? obj : {default: obj};
-}
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -40,7 +38,7 @@ class CRDevTools {
   }
 
   install(session) {
-    session.on('Runtime.bindingCalled', async (event) => {
+    session.on('Runtime.bindingCalled', async event => {
       if (event.name !== kBindingName) return;
       const parsed = JSON.parse(event.payload);
       let result = undefined;
@@ -49,10 +47,7 @@ class CRDevTools {
       if (parsed.method === 'getPreferences') {
         if (this._prefs === undefined) {
           try {
-            const json = await _fs.default.promises.readFile(
-              this._preferencesPath,
-              'utf8',
-            );
+            const json = await _fs.default.promises.readFile(this._preferencesPath, 'utf8');
             this._prefs = JSON.parse(json);
           } catch (e) {
             this._prefs = {};
@@ -74,23 +69,15 @@ class CRDevTools {
         this._save();
       }
 
-      session
-        .send('Runtime.evaluate', {
-          expression: `window.DevToolsAPI.embedderMessageAck(${
-            parsed.id
-          }, ${JSON.stringify(result)})`,
-          contextId: event.executionContextId,
-        })
-        .catch((e) => null);
+      session.send('Runtime.evaluate', {
+        expression: `window.DevToolsAPI.embedderMessageAck(${parsed.id}, ${JSON.stringify(result)})`,
+        contextId: event.executionContextId
+      }).catch(e => null);
     });
-    Promise.all([
-      session.send('Runtime.enable'),
-      session.send('Runtime.addBinding', {
-        name: kBindingName,
-      }),
-      session.send('Page.enable'),
-      session.send('Page.addScriptToEvaluateOnNewDocument', {
-        source: `
+    Promise.all([session.send('Runtime.enable'), session.send('Runtime.addBinding', {
+      name: kBindingName
+    }), session.send('Page.enable'), session.send('Page.addScriptToEvaluateOnNewDocument', {
+      source: `
         (() => {
           const init = () => {
             // Lazy init happens when InspectorFrontendHost is initialized.
@@ -112,20 +99,17 @@ class CRDevTools {
             set(v) { value = v; init(); },
           });
         })()
-      `,
-      }),
-      session.send('Runtime.runIfWaitingForDebugger'),
-    ]).catch((e) => null);
+      `
+    }), session.send('Runtime.runIfWaitingForDebugger')]).catch(e => null);
   }
 
   _save() {
     // Serialize saves to avoid corruption.
     this._savePromise = this._savePromise.then(async () => {
-      await _fs.default.promises
-        .writeFile(this._preferencesPath, JSON.stringify(this._prefs))
-        .catch((e) => null);
+      await _fs.default.promises.writeFile(this._preferencesPath, JSON.stringify(this._prefs)).catch(e => null);
     });
   }
+
 }
 
 exports.CRDevTools = CRDevTools;

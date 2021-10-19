@@ -1,17 +1,17 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.Debugger = void 0;
 
-var _events = require('events');
+var _events = require("events");
 
-var _utils = require('../../utils/utils');
+var _utils = require("../../utils/utils");
 
-var _debugLogger = require('../../utils/debugLogger');
+var _debugLogger = require("../../utils/debugLogger");
 
-var _channels = require('../../protocol/channels');
+var _channels = require("../../protocol/channels");
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -55,17 +55,12 @@ class Debugger extends _events.EventEmitter {
 
   async onBeforeCall(sdkObject, metadata) {
     if (this._muted) return;
-    if (
-      shouldPauseOnCall(sdkObject, metadata) ||
-      (this._pauseOnNextStatement && shouldPauseBeforeStep(metadata))
-    )
-      await this.pause(sdkObject, metadata);
+    if (shouldPauseOnCall(sdkObject, metadata) || this._pauseOnNextStatement && shouldPauseBeforeStep(metadata)) await this.pause(sdkObject, metadata);
   }
 
   async onBeforeInputAction(sdkObject, metadata) {
     if (this._muted) return;
-    if (this._enabled && this._pauseOnNextStatement)
-      await this.pause(sdkObject, metadata);
+    if (this._enabled && this._pauseOnNextStatement) await this.pause(sdkObject, metadata);
   }
 
   async onCallLog(logName, message, sdkObject, metadata) {
@@ -76,10 +71,10 @@ class Debugger extends _events.EventEmitter {
     if (this._muted) return;
     this._enabled = true;
     metadata.pauseStartTime = (0, _utils.monotonicTime)();
-    const result = new Promise((resolve) => {
+    const result = new Promise(resolve => {
       this._pausedCallsMetadata.set(metadata, {
         resolve,
-        sdkObject,
+        sdkObject
       });
     });
     this.emit(Debugger.Events.PausedStateChanged);
@@ -90,7 +85,9 @@ class Debugger extends _events.EventEmitter {
     this._pauseOnNextStatement = step;
     const endTime = (0, _utils.monotonicTime)();
 
-    for (const [metadata, {resolve}] of this._pausedCallsMetadata) {
+    for (const [metadata, {
+      resolve
+    }] of this._pausedCallsMetadata) {
       metadata.pauseEndTime = endTime;
       resolve();
     }
@@ -112,52 +109,37 @@ class Debugger extends _events.EventEmitter {
   pausedDetails() {
     const result = [];
 
-    for (const [metadata, {sdkObject}] of this._pausedCallsMetadata)
-      result.push({
-        metadata,
-        sdkObject,
-      });
+    for (const [metadata, {
+      sdkObject
+    }] of this._pausedCallsMetadata) result.push({
+      metadata,
+      sdkObject
+    });
 
     return result;
   }
+
 }
 
 exports.Debugger = Debugger;
 Debugger.Events = {
-  PausedStateChanged: 'pausedstatechanged',
+  PausedStateChanged: 'pausedstatechanged'
 };
 
 function shouldPauseOnCall(sdkObject, metadata) {
   var _sdkObject$attributio;
 
-  if (
-    !(
-      (_sdkObject$attributio = sdkObject.attribution.browser) !== null &&
-      _sdkObject$attributio !== void 0 &&
-      _sdkObject$attributio.options.headful
-    ) &&
-    !(0, _utils.isUnderTest)()
-  )
-    return false;
+  if (!((_sdkObject$attributio = sdkObject.attribution.browser) !== null && _sdkObject$attributio !== void 0 && _sdkObject$attributio.options.headful) && !(0, _utils.isUnderTest)()) return false;
   return metadata.method === 'pause';
 }
 
 function shouldPauseBeforeStep(metadata) {
   // Always stop on 'close'
   if (metadata.method === 'close') return true;
-  if (
-    metadata.method === 'waitForSelector' ||
-    metadata.method === 'waitForEventInfo'
-  )
-    return false; // Never stop on those, primarily for the test harness.
+  if (metadata.method === 'waitForSelector' || metadata.method === 'waitForEventInfo') return false; // Never stop on those, primarily for the test harness.
 
   const step = metadata.type + '.' + metadata.method; // Stop before everything that generates snapshot. But don't stop before those marked as pausesBeforeInputActions
   // since we stop in them on a separate instrumentation signal.
 
-  return (
-    _channels.commandsWithTracingSnapshots.has(step) &&
-    !_channels.pausesBeforeInputActions.has(
-      metadata.type + '.' + metadata.method,
-    )
-  );
+  return _channels.commandsWithTracingSnapshots.has(step) && !_channels.pausesBeforeInputActions.has(metadata.type + '.' + metadata.method);
 }

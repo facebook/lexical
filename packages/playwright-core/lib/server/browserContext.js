@@ -1,7 +1,7 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.assertBrowserContextIsNotOwned = assertBrowserContextIsNotOwned;
 exports.validateBrowserContextOptions = validateBrowserContextOptions;
@@ -9,81 +9,39 @@ exports.verifyGeolocation = verifyGeolocation;
 exports.normalizeProxySettings = normalizeProxySettings;
 exports.BrowserContext = void 0;
 
-var os = _interopRequireWildcard(require('os'));
+var os = _interopRequireWildcard(require("os"));
 
-var _timeoutSettings = require('../utils/timeoutSettings');
+var _timeoutSettings = require("../utils/timeoutSettings");
 
-var _utils = require('../utils/utils');
+var _utils = require("../utils/utils");
 
-var _helper = require('./helper');
+var _helper = require("./helper");
 
-var network = _interopRequireWildcard(require('./network'));
+var network = _interopRequireWildcard(require("./network"));
 
-var _page = require('./page');
+var _page = require("./page");
 
-var _path = _interopRequireDefault(require('path'));
+var _path = _interopRequireDefault(require("path"));
 
-var _instrumentation = require('./instrumentation');
+var _instrumentation = require("./instrumentation");
 
-var _debugger = require('./supplements/debugger');
+var _debugger = require("./supplements/debugger");
 
-var _tracing = require('./trace/recorder/tracing');
+var _tracing = require("./trace/recorder/tracing");
 
-var _harRecorder = require('./supplements/har/harRecorder');
+var _harRecorder = require("./supplements/har/harRecorder");
 
-var _recorderSupplement = require('./supplements/recorderSupplement');
+var _recorderSupplement = require("./supplements/recorderSupplement");
 
-var consoleApiSource = _interopRequireWildcard(
-  require('../generated/consoleApiSource'),
-);
+var consoleApiSource = _interopRequireWildcard(require("../generated/consoleApiSource"));
 
-var _fetch = require('./fetch');
+var _fetch = require("./fetch");
 
-function _interopRequireDefault(obj) {
-  return obj && obj.__esModule ? obj : {default: obj};
-}
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function _getRequireWildcardCache(nodeInterop) {
-  if (typeof WeakMap !== 'function') return null;
-  var cacheBabelInterop = new WeakMap();
-  var cacheNodeInterop = new WeakMap();
-  return (_getRequireWildcardCache = function (nodeInterop) {
-    return nodeInterop ? cacheNodeInterop : cacheBabelInterop;
-  })(nodeInterop);
-}
+function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 
-function _interopRequireWildcard(obj, nodeInterop) {
-  if (!nodeInterop && obj && obj.__esModule) {
-    return obj;
-  }
-  if (obj === null || (typeof obj !== 'object' && typeof obj !== 'function')) {
-    return {default: obj};
-  }
-  var cache = _getRequireWildcardCache(nodeInterop);
-  if (cache && cache.has(obj)) {
-    return cache.get(obj);
-  }
-  var newObj = {};
-  var hasPropertyDescriptor =
-    Object.defineProperty && Object.getOwnPropertyDescriptor;
-  for (var key in obj) {
-    if (key !== 'default' && Object.prototype.hasOwnProperty.call(obj, key)) {
-      var desc = hasPropertyDescriptor
-        ? Object.getOwnPropertyDescriptor(obj, key)
-        : null;
-      if (desc && (desc.get || desc.set)) {
-        Object.defineProperty(newObj, key, desc);
-      } else {
-        newObj[key] = obj[key];
-      }
-    }
-  }
-  newObj.default = obj;
-  if (cache) {
-    cache.set(obj, newObj);
-  }
-  return newObj;
-}
+function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 
 /**
  * Copyright 2017 Google Inc. All rights reserved.
@@ -126,17 +84,10 @@ class BrowserContext extends _instrumentation.SdkObject {
     this._options = options;
     this._browserContextId = browserContextId;
     this._isPersistentContext = !browserContextId;
-    this._closePromise = new Promise(
-      (fulfill) => (this._closePromiseFulfill = fulfill),
-    );
-    if (this._options.recordHar)
-      this._harRecorder = new _harRecorder.HarRecorder(this, {
-        ...this._options.recordHar,
-        path: _path.default.join(
-          this._browser.options.artifactsDir,
-          `${(0, _utils.createGuid)()}.har`,
-        ),
-      });
+    this._closePromise = new Promise(fulfill => this._closePromiseFulfill = fulfill);
+    if (this._options.recordHar) this._harRecorder = new _harRecorder.HarRecorder(this, { ...this._options.recordHar,
+      path: _path.default.join(this._browser.options.artifactsDir, `${(0, _utils.createGuid)()}.har`)
+    });
     this.tracing = new _tracing.Tracing(this);
     this.fetchRequest = new _fetch.BrowserContextFetchRequest(this);
   }
@@ -157,25 +108,19 @@ class BrowserContext extends _instrumentation.SdkObject {
     const contextDebugger = new _debugger.Debugger(this);
     this.instrumentation.addListener(contextDebugger); // When PWDEBUG=1, show inspector for each context.
 
-    if ((0, _utils.debugMode)() === 'inspector')
-      await _recorderSupplement.RecorderSupplement.show(this, {
-        pauseOnNextStatement: true,
-      }); // When paused, show inspector.
+    if ((0, _utils.debugMode)() === 'inspector') await _recorderSupplement.RecorderSupplement.show(this, {
+      pauseOnNextStatement: true
+    }); // When paused, show inspector.
 
-    if (contextDebugger.isPaused())
-      _recorderSupplement.RecorderSupplement.showInspector(this);
+    if (contextDebugger.isPaused()) _recorderSupplement.RecorderSupplement.showInspector(this);
     contextDebugger.on(_debugger.Debugger.Events.PausedStateChanged, () => {
       _recorderSupplement.RecorderSupplement.showInspector(this);
     });
-    if ((0, _utils.debugMode)() === 'console')
-      await this.extendInjectedScript(consoleApiSource.source);
+    if ((0, _utils.debugMode)() === 'console') await this.extendInjectedScript(consoleApiSource.source);
   }
 
   async _ensureVideosPath() {
-    if (this._options.recordVideo)
-      await (0, _utils.mkdirIfNeeded)(
-        _path.default.join(this._options.recordVideo.dir, 'dummy'),
-      );
+    if (this._options.recordVideo) await (0, _utils.mkdirIfNeeded)(_path.default.join(this._options.recordVideo.dir, 'dummy'));
   }
 
   _browserClosed() {
@@ -204,6 +149,7 @@ class BrowserContext extends _instrumentation.SdkObject {
     this.emit(BrowserContext.Events.Close);
   } // BrowserContext methods.
 
+
   async cookies(urls = []) {
     if (urls && !Array.isArray(urls)) urls = [urls];
     return await this._doCookies(urls);
@@ -214,14 +160,10 @@ class BrowserContext extends _instrumentation.SdkObject {
   }
 
   async exposeBinding(name, needsHandle, playwrightBinding) {
-    if (this._pageBindings.has(name))
-      throw new Error(`Function "${name}" has been already registered`);
+    if (this._pageBindings.has(name)) throw new Error(`Function "${name}" has been already registered`);
 
     for (const page of this.pages()) {
-      if (page.getBinding(name))
-        throw new Error(
-          `Function "${name}" has been already registered in one of the pages`,
-        );
+      if (page.getBinding(name)) throw new Error(`Function "${name}" has been already registered in one of the pages`);
     }
 
     const binding = new _page.PageBinding(name, playwrightBinding, needsHandle);
@@ -240,7 +182,7 @@ class BrowserContext extends _instrumentation.SdkObject {
     }
 
     const existing = new Set(this._permissions.get(resolvedOrigin) || []);
-    permissions.forEach((p) => existing.add(p));
+    permissions.forEach(p => existing.add(p));
     const list = [...existing.values()];
 
     this._permissions.set(resolvedOrigin, list);
@@ -264,11 +206,7 @@ class BrowserContext extends _instrumentation.SdkObject {
 
   async _loadDefaultContextAsIs(progress) {
     if (!this.pages().length) {
-      const waitForEvent = _helper.helper.waitForEvent(
-        progress,
-        this,
-        BrowserContext.Events.Page,
-      );
+      const waitForEvent = _helper.helper.waitForEvent(progress, this, BrowserContext.Events.Page);
 
       progress.cleanupWhenAborted(() => waitForEvent.dispose);
       const page = await waitForEvent.promise;
@@ -295,35 +233,36 @@ class BrowserContext extends _instrumentation.SdkObject {
   }
 
   _authenticateProxyViaHeader() {
-    const proxy = this._options.proxy ||
-      this._browser.options.proxy || {
-        username: undefined,
-        password: undefined,
-      };
-    const {username, password} = proxy;
+    const proxy = this._options.proxy || this._browser.options.proxy || {
+      username: undefined,
+      password: undefined
+    };
+    const {
+      username,
+      password
+    } = proxy;
 
     if (username) {
       this._options.httpCredentials = {
         username,
-        password: password,
+        password: password
       };
       const token = Buffer.from(`${username}:${password}`).toString('base64');
-      this._options.extraHTTPHeaders = network.mergeHeaders([
-        this._options.extraHTTPHeaders,
-        network.singleHeader('Proxy-Authorization', `Basic ${token}`),
-      ]);
+      this._options.extraHTTPHeaders = network.mergeHeaders([this._options.extraHTTPHeaders, network.singleHeader('Proxy-Authorization', `Basic ${token}`)]);
     }
   }
 
   _authenticateProxyViaCredentials() {
     const proxy = this._options.proxy || this._browser.options.proxy;
     if (!proxy) return;
-    const {username, password} = proxy;
-    if (username)
-      this._options.httpCredentials = {
-        username,
-        password: password || '',
-      };
+    const {
+      username,
+      password
+    } = proxy;
+    if (username) this._options.httpCredentials = {
+      username,
+      password: password || ''
+    };
   }
 
   async _setRequestInterceptor(handler) {
@@ -336,11 +275,7 @@ class BrowserContext extends _instrumentation.SdkObject {
   }
 
   async _deleteAllDownloads() {
-    await Promise.all(
-      Array.from(this._downloads).map((download) =>
-        download.artifact.deleteOnContextClose(),
-      ),
-    );
+    await Promise.all(Array.from(this._downloads).map(download => download.artifact.deleteOnContextClose()));
   }
 
   async close(metadata) {
@@ -349,15 +284,15 @@ class BrowserContext extends _instrumentation.SdkObject {
 
       this.emit(BrowserContext.Events.BeforeClose);
       this._closedStatus = 'closing';
-      await ((_this$_harRecorder = this._harRecorder) === null ||
-      _this$_harRecorder === void 0
-        ? void 0
-        : _this$_harRecorder.flush());
+      await ((_this$_harRecorder = this._harRecorder) === null || _this$_harRecorder === void 0 ? void 0 : _this$_harRecorder.flush());
       await this.tracing.dispose(); // Cleanup.
 
       const promises = [];
 
-      for (const {context, artifact} of this._browser._idToVideo.values()) {
+      for (const {
+        context,
+        artifact
+      } of this._browser._idToVideo.values()) {
         // Wait for the videos to finish.
         if (context === this) promises.push(artifact.finishedPromise());
       }
@@ -365,12 +300,13 @@ class BrowserContext extends _instrumentation.SdkObject {
       if (this._isPersistentContext) {
         // Close all the pages instead of the context,
         // because we cannot close the default context.
-        await Promise.all(this.pages().map((page) => page.close(metadata)));
+        await Promise.all(this.pages().map(page => page.close(metadata)));
       } else {
         // Close the context.
         await this._doClose();
       } // We delete downloads after context closure
       // so that browser does not write to the download file anymore.
+
 
       promises.push(this._deleteAllDownloads());
       await Promise.all(promises); // Persistent context should also close the browser.
@@ -402,35 +338,28 @@ class BrowserContext extends _instrumentation.SdkObject {
   async storageState() {
     const result = {
       cookies: await this.cookies(),
-      origins: [],
+      origins: []
     };
 
     if (this._origins.size) {
       const internalMetadata = (0, _instrumentation.internalCallMetadata)();
       const page = await this.newPage(internalMetadata);
-      await page._setServerRequestInterceptor((handler) => {
-        handler
-          .fulfill({
-            body: '<html></html>',
-          })
-          .catch(() => {});
+      await page._setServerRequestInterceptor(handler => {
+        handler.fulfill({
+          body: '<html></html>'
+        }).catch(() => {});
       });
 
       for (const origin of this._origins) {
         const originStorage = {
           origin,
-          localStorage: [],
+          localStorage: []
         };
         const frame = page.mainFrame();
         await frame.goto(internalMetadata, origin);
-        const storage = await frame.evaluateExpression(
-          `({
+        const storage = await frame.evaluateExpression(`({
           localStorage: Object.keys(localStorage).map(name => ({ name, value: localStorage.getItem(name) })),
-        })`,
-          false,
-          undefined,
-          'utility',
-        );
+        })`, false, undefined, 'utility');
         originStorage.localStorage = storage.localStorage;
         if (storage.localStorage.length) result.origins.push(originStorage);
       }
@@ -447,27 +376,20 @@ class BrowserContext extends _instrumentation.SdkObject {
     if (state.origins && state.origins.length) {
       const internalMetadata = (0, _instrumentation.internalCallMetadata)();
       const page = await this.newPage(internalMetadata);
-      await page._setServerRequestInterceptor((handler) => {
-        handler
-          .fulfill({
-            body: '<html></html>',
-          })
-          .catch(() => {});
+      await page._setServerRequestInterceptor(handler => {
+        handler.fulfill({
+          body: '<html></html>'
+        }).catch(() => {});
       });
 
       for (const originState of state.origins) {
         const frame = page.mainFrame();
         await frame.goto(metadata, originState.origin);
-        await frame.evaluateExpression(
-          `
+        await frame.evaluateExpression(`
           originState => {
             for (const { name, value } of (originState.localStorage || []))
               localStorage.setItem(name, value);
-          }`,
-          true,
-          originState,
-          'utility',
-        );
+          }`, true, originState, 'utility');
       }
 
       await page.close(internalMetadata);
@@ -475,20 +397,17 @@ class BrowserContext extends _instrumentation.SdkObject {
   }
 
   async extendInjectedScript(source, arg) {
-    const installInFrame = (frame) =>
-      frame.extendInjectedScript(source, arg).catch(() => {});
+    const installInFrame = frame => frame.extendInjectedScript(source, arg).catch(() => {});
 
-    const installInPage = (page) => {
-      page.on(
-        _page.Page.Events.InternalFrameNavigatedToNewDocument,
-        installInFrame,
-      );
+    const installInPage = page => {
+      page.on(_page.Page.Events.InternalFrameNavigatedToNewDocument, installInFrame);
       return Promise.all(page.frames().map(installInFrame));
     };
 
     this.on(BrowserContext.Events.Page, installInPage);
     return Promise.all(this.pages().map(installInPage));
   }
+
 }
 
 exports.BrowserContext = BrowserContext;
@@ -500,61 +419,47 @@ BrowserContext.Events = {
   RequestFailed: 'requestfailed',
   RequestFinished: 'requestfinished',
   BeforeClose: 'beforeclose',
-  VideoStarted: 'videostarted',
+  VideoStarted: 'videostarted'
 };
 
 function assertBrowserContextIsNotOwned(context) {
   for (const page of context.pages()) {
-    if (page._ownedContext)
-      throw new Error(
-        'Please use browser.newContext() for multi-page scripts that share the context.',
-      );
+    if (page._ownedContext) throw new Error('Please use browser.newContext() for multi-page scripts that share the context.');
   }
 }
 
 function validateBrowserContextOptions(options, browserOptions) {
-  if (options.noDefaultViewport && options.deviceScaleFactor !== undefined)
-    throw new Error(
-      `"deviceScaleFactor" option is not supported with null "viewport"`,
-    );
-  if (options.noDefaultViewport && options.isMobile !== undefined)
-    throw new Error(`"isMobile" option is not supported with null "viewport"`);
-  if (!options.viewport && !options.noDefaultViewport)
-    options.viewport = {
-      width: 1280,
-      height: 720,
-    };
+  if (options.noDefaultViewport && options.deviceScaleFactor !== undefined) throw new Error(`"deviceScaleFactor" option is not supported with null "viewport"`);
+  if (options.noDefaultViewport && options.isMobile !== undefined) throw new Error(`"isMobile" option is not supported with null "viewport"`);
+  if (!options.viewport && !options.noDefaultViewport) options.viewport = {
+    width: 1280,
+    height: 720
+  };
 
   if (options.recordVideo) {
     if (!options.recordVideo.size) {
       if (options.noDefaultViewport) {
         options.recordVideo.size = {
           width: 800,
-          height: 600,
+          height: 600
         };
       } else {
         const size = options.viewport;
         const scale = Math.min(1, 800 / Math.max(size.width, size.height));
         options.recordVideo.size = {
           width: Math.floor(size.width * scale),
-          height: Math.floor(size.height * scale),
+          height: Math.floor(size.height * scale)
         };
       }
     } // Make sure both dimensions are odd, this is required for vp8
+
 
     options.recordVideo.size.width &= ~1;
     options.recordVideo.size.height &= ~1;
   }
 
   if (options.proxy) {
-    if (
-      !browserOptions.proxy &&
-      browserOptions.isChromium &&
-      os.platform() === 'win32'
-    )
-      throw new Error(
-        `Browser needs to be launched with the global proxy. If all contexts override the proxy, global proxy will be never used and can be any string, for example "launch({ proxy: { server: 'http://per-context' } })"`,
-      );
+    if (!browserOptions.proxy && browserOptions.isChromium && os.platform() === 'win32') throw new Error(`Browser needs to be launched with the global proxy. If all contexts override the proxy, global proxy will be never used and can be any string, for example "launch({ proxy: { server: 'http://per-context' } })"`);
     options.proxy = normalizeProxySettings(options.proxy);
   }
 
@@ -566,21 +471,21 @@ function validateBrowserContextOptions(options, browserOptions) {
 function verifyGeolocation(geolocation) {
   if (!geolocation) return;
   geolocation.accuracy = geolocation.accuracy || 0;
-  const {longitude, latitude, accuracy} = geolocation;
-  if (longitude < -180 || longitude > 180)
-    throw new Error(
-      `geolocation.longitude: precondition -180 <= LONGITUDE <= 180 failed.`,
-    );
-  if (latitude < -90 || latitude > 90)
-    throw new Error(
-      `geolocation.latitude: precondition -90 <= LATITUDE <= 90 failed.`,
-    );
-  if (accuracy < 0)
-    throw new Error(`geolocation.accuracy: precondition 0 <= ACCURACY failed.`);
+  const {
+    longitude,
+    latitude,
+    accuracy
+  } = geolocation;
+  if (longitude < -180 || longitude > 180) throw new Error(`geolocation.longitude: precondition -180 <= LONGITUDE <= 180 failed.`);
+  if (latitude < -90 || latitude > 90) throw new Error(`geolocation.latitude: precondition -90 <= LATITUDE <= 90 failed.`);
+  if (accuracy < 0) throw new Error(`geolocation.accuracy: precondition 0 <= ACCURACY failed.`);
 }
 
 function normalizeProxySettings(proxy) {
-  let {server, bypass} = proxy;
+  let {
+    server,
+    bypass
+  } = proxy;
   let url;
 
   try {
@@ -593,15 +498,12 @@ function normalizeProxySettings(proxy) {
     url = new URL('http://' + server);
   }
 
-  if (url.protocol === 'socks4:' && (proxy.username || proxy.password))
-    throw new Error(`Socks4 proxy protocol does not support authentication`);
-  if (url.protocol === 'socks5:' && (proxy.username || proxy.password))
-    throw new Error(`Browser does not support socks5 proxy authentication`);
+  if (url.protocol === 'socks4:' && (proxy.username || proxy.password)) throw new Error(`Socks4 proxy protocol does not support authentication`);
+  if (url.protocol === 'socks5:' && (proxy.username || proxy.password)) throw new Error(`Browser does not support socks5 proxy authentication`);
   server = url.protocol + '//' + url.host;
-  if (bypass)
-    bypass = bypass
-      .split(',')
-      .map((t) => t.trim())
-      .join(',');
-  return {...proxy, server, bypass};
+  if (bypass) bypass = bypass.split(',').map(t => t.trim()).join(',');
+  return { ...proxy,
+    server,
+    bypass
+  };
 }

@@ -1,12 +1,12 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.raceAgainstDeadline = raceAgainstDeadline;
 exports.ManualPromise = exports.DeadlineRunner = void 0;
 
-var _utils = require('./utils');
+var _utils = require("./utils");
 
 let _Symbol$species, _Symbol$toStringTag;
 
@@ -14,23 +14,20 @@ class DeadlineRunner {
   constructor(promise, deadline) {
     this._timer = void 0;
     this.result = new ManualPromise();
-    promise
-      .then((result) => {
-        this._finish({
-          result,
-        });
-      })
-      .catch((e) => {
-        this._finish(undefined, e);
+    promise.then(result => {
+      this._finish({
+        result
       });
+    }).catch(e => {
+      this._finish(undefined, e);
+    });
     this.updateDeadline(deadline);
   }
 
   _finish(success, error) {
     if (this.result.isDone()) return;
     this.updateDeadline(0);
-    if (success) this.result.resolve(success);
-    else this.result.reject(error);
+    if (success) this.result.resolve(success);else this.result.reject(error);
   }
 
   interrupt() {
@@ -45,19 +42,13 @@ class DeadlineRunner {
 
     if (deadline === 0) return;
     const timeout = deadline - (0, _utils.monotonicTime)();
-    if (timeout <= 0)
-      this._finish({
-        timedOut: true,
-      });
-    else
-      this._timer = setTimeout(
-        () =>
-          this._finish({
-            timedOut: true,
-          }),
-        timeout,
-      );
+    if (timeout <= 0) this._finish({
+      timedOut: true
+    });else this._timer = setTimeout(() => this._finish({
+      timedOut: true
+    }), timeout);
   }
+
 }
 
 exports.DeadlineRunner = DeadlineRunner;
@@ -108,6 +99,7 @@ class ManualPromise extends Promise {
   get [_Symbol$toStringTag]() {
     return 'ManualPromise';
   }
+
 }
 
 exports.ManualPromise = ManualPromise;

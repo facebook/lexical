@@ -1,18 +1,18 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.parseArgument = parseArgument;
 exports.parseValue = parseValue;
 exports.serializeResult = serializeResult;
 exports.JSHandleDispatcher = void 0;
 
-var _dispatcher = require('./dispatcher');
+var _dispatcher = require("./dispatcher");
 
-var _elementHandlerDispatcher = require('./elementHandlerDispatcher');
+var _elementHandlerDispatcher = require("./elementHandlerDispatcher");
 
-var _serializers = require('../protocol/serializers');
+var _serializers = require("../protocol/serializers");
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -32,59 +32,36 @@ var _serializers = require('../protocol/serializers');
 class JSHandleDispatcher extends _dispatcher.Dispatcher {
   constructor(scope, jsHandle) {
     // Do not call this directly, use createHandle() instead.
-    super(
-      scope,
-      jsHandle,
-      jsHandle.asElement() ? 'ElementHandle' : 'JSHandle',
-      {
-        preview: jsHandle.toString(),
-      },
-    );
+    super(scope, jsHandle, jsHandle.asElement() ? 'ElementHandle' : 'JSHandle', {
+      preview: jsHandle.toString()
+    });
 
-    jsHandle._setPreviewCallback((preview) =>
-      this._dispatchEvent('previewUpdated', {
-        preview,
-      }),
-    );
+    jsHandle._setPreviewCallback(preview => this._dispatchEvent('previewUpdated', {
+      preview
+    }));
   }
 
   async evaluateExpression(params) {
     return {
-      value: serializeResult(
-        await this._object.evaluateExpressionAndWaitForSignals(
-          params.expression,
-          params.isFunction,
-          true,
-          /* returnByValue */
-          parseArgument(params.arg),
-        ),
-      ),
+      value: serializeResult(await this._object.evaluateExpressionAndWaitForSignals(params.expression, params.isFunction, true
+      /* returnByValue */
+      , parseArgument(params.arg)))
     };
   }
 
   async evaluateExpressionHandle(params) {
-    const jsHandle = await this._object.evaluateExpressionAndWaitForSignals(
-      params.expression,
-      params.isFunction,
-      false,
-      /* returnByValue */
-      parseArgument(params.arg),
-    );
+    const jsHandle = await this._object.evaluateExpressionAndWaitForSignals(params.expression, params.isFunction, false
+    /* returnByValue */
+    , parseArgument(params.arg));
     return {
-      handle: _elementHandlerDispatcher.ElementHandleDispatcher.fromJSHandle(
-        this._scope,
-        jsHandle,
-      ),
+      handle: _elementHandlerDispatcher.ElementHandleDispatcher.fromJSHandle(this._scope, jsHandle)
     };
   }
 
   async getProperty(params) {
     const jsHandle = await this._object.getProperty(params.name);
     return {
-      handle: _elementHandlerDispatcher.ElementHandleDispatcher.fromJSHandle(
-        this._scope,
-        jsHandle,
-      ),
+      handle: _elementHandlerDispatcher.ElementHandleDispatcher.fromJSHandle(this._scope, jsHandle)
     };
   }
 
@@ -92,39 +69,34 @@ class JSHandleDispatcher extends _dispatcher.Dispatcher {
     const map = await this._object.getProperties();
     const properties = [];
 
-    for (const [name, value] of map)
-      properties.push({
-        name,
-        value: _elementHandlerDispatcher.ElementHandleDispatcher.fromJSHandle(
-          this._scope,
-          value,
-        ),
-      });
+    for (const [name, value] of map) properties.push({
+      name,
+      value: _elementHandlerDispatcher.ElementHandleDispatcher.fromJSHandle(this._scope, value)
+    });
 
     return {
-      properties,
+      properties
     };
   }
 
   async jsonValue() {
     return {
-      value: serializeResult(await this._object.jsonValue()),
+      value: serializeResult(await this._object.jsonValue())
     };
   }
 
   async dispose() {
     await this._object.dispose();
   }
+
 } // Generic channel parser converts guids to JSHandleDispatchers,
 // and this function takes care of coverting them into underlying JSHandles.
+
 
 exports.JSHandleDispatcher = JSHandleDispatcher;
 
 function parseArgument(arg) {
-  return (0, _serializers.parseSerializedValue)(
-    arg.value,
-    arg.handles.map((a) => a._object),
-  );
+  return (0, _serializers.parseSerializedValue)(arg.value, arg.handles.map(a => a._object));
 }
 
 function parseValue(v) {
@@ -132,11 +104,7 @@ function parseValue(v) {
 }
 
 function serializeResult(arg) {
-  return (0, _serializers.serializeValue)(
-    arg,
-    (value) => ({
-      fallThrough: value,
-    }),
-    new Set(),
-  );
+  return (0, _serializers.serializeValue)(arg, value => ({
+    fallThrough: value
+  }), new Set());
 }

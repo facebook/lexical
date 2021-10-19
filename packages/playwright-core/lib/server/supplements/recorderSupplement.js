@@ -1,89 +1,47 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.RecorderSupplement = void 0;
 
-var fs = _interopRequireWildcard(require('fs'));
+var fs = _interopRequireWildcard(require("fs"));
 
-var _codeGenerator = require('./recorder/codeGenerator');
+var _codeGenerator = require("./recorder/codeGenerator");
 
-var _utils = require('./recorder/utils');
+var _utils = require("./recorder/utils");
 
-var _page = require('../page');
+var _page = require("../page");
 
-var _frames = require('../frames');
+var _frames = require("../frames");
 
-var _browserContext = require('../browserContext');
+var _browserContext = require("../browserContext");
 
-var _java = require('./recorder/java');
+var _java = require("./recorder/java");
 
-var _javascript = require('./recorder/javascript');
+var _javascript = require("./recorder/javascript");
 
-var _csharp = require('./recorder/csharp');
+var _csharp = require("./recorder/csharp");
 
-var _python = require('./recorder/python');
+var _python = require("./recorder/python");
 
-var recorderSource = _interopRequireWildcard(
-  require('../../generated/recorderSource'),
-);
+var recorderSource = _interopRequireWildcard(require("../../generated/recorderSource"));
 
-var consoleApiSource = _interopRequireWildcard(
-  require('../../generated/consoleApiSource'),
-);
+var consoleApiSource = _interopRequireWildcard(require("../../generated/consoleApiSource"));
 
-var _recorderApp = require('./recorder/recorderApp');
+var _recorderApp = require("./recorder/recorderApp");
 
-var _utils2 = require('../../utils/utils');
+var _utils2 = require("../../utils/utils");
 
-var _recorderUtils = require('./recorder/recorderUtils');
+var _recorderUtils = require("./recorder/recorderUtils");
 
-var _debugger = require('./debugger');
+var _debugger = require("./debugger");
 
-var _events = require('events');
+var _events = require("events");
 
-function _getRequireWildcardCache(nodeInterop) {
-  if (typeof WeakMap !== 'function') return null;
-  var cacheBabelInterop = new WeakMap();
-  var cacheNodeInterop = new WeakMap();
-  return (_getRequireWildcardCache = function (nodeInterop) {
-    return nodeInterop ? cacheNodeInterop : cacheBabelInterop;
-  })(nodeInterop);
-}
+function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 
-function _interopRequireWildcard(obj, nodeInterop) {
-  if (!nodeInterop && obj && obj.__esModule) {
-    return obj;
-  }
-  if (obj === null || (typeof obj !== 'object' && typeof obj !== 'function')) {
-    return {default: obj};
-  }
-  var cache = _getRequireWildcardCache(nodeInterop);
-  if (cache && cache.has(obj)) {
-    return cache.get(obj);
-  }
-  var newObj = {};
-  var hasPropertyDescriptor =
-    Object.defineProperty && Object.getOwnPropertyDescriptor;
-  for (var key in obj) {
-    if (key !== 'default' && Object.prototype.hasOwnProperty.call(obj, key)) {
-      var desc = hasPropertyDescriptor
-        ? Object.getOwnPropertyDescriptor(obj, key)
-        : null;
-      if (desc && (desc.get || desc.set)) {
-        Object.defineProperty(newObj, key, desc);
-      } else {
-        newObj[key] = obj[key];
-      }
-    }
-  }
-  newObj.default = obj;
-  if (cache) {
-    cache.set(obj, newObj);
-  }
-  return newObj;
-}
+function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -138,16 +96,14 @@ class RecorderSupplement {
   }
 
   async install() {
-    const recorderApp = await _recorderApp.RecorderApp.open(
-      this._context._browser.options.sdkLanguage,
-    );
+    const recorderApp = await _recorderApp.RecorderApp.open(this._context._browser.options.sdkLanguage);
     this._recorderApp = recorderApp;
     recorderApp.once('close', () => {
       this._debugger.resume(false);
 
       this._recorderApp = null;
     });
-    recorderApp.on('event', (data) => {
+    recorderApp.on('event', data => {
       if (data.event === 'setMode') {
         this._setMode(data.params.mode);
 
@@ -188,11 +144,7 @@ class RecorderSupplement {
         return;
       }
     });
-    await Promise.all([
-      recorderApp.setMode(this._mode),
-      recorderApp.setPaused(this._debugger.isPaused()),
-      this._pushAllSources(),
-    ]);
+    await Promise.all([recorderApp.setMode(this._mode), recorderApp.setPaused(this._debugger.isPaused()), this._pushAllSources()]);
 
     this._context.once(_browserContext.BrowserContext.Events.Close, () => {
       this._contextRecorder.dispose();
@@ -200,59 +152,42 @@ class RecorderSupplement {
       recorderApp.close().catch(() => {});
     });
 
-    this._contextRecorder.on(ContextRecorder.Events.Change, (data) => {
+    this._contextRecorder.on(ContextRecorder.Events.Change, data => {
       var _this$_recorderApp;
 
       this._recorderSources = data.sources;
 
       this._pushAllSources();
 
-      (_this$_recorderApp = this._recorderApp) === null ||
-      _this$_recorderApp === void 0
-        ? void 0
-        : _this$_recorderApp.setFile(data.primaryFileName);
+      (_this$_recorderApp = this._recorderApp) === null || _this$_recorderApp === void 0 ? void 0 : _this$_recorderApp.setFile(data.primaryFileName);
     });
 
-    await this._context.exposeBinding(
-      '_playwrightRecorderState',
-      false,
-      (source) => {
-        let actionSelector = this._highlightedSelector;
-        let actionPoint;
+    await this._context.exposeBinding('_playwrightRecorderState', false, source => {
+      let actionSelector = this._highlightedSelector;
+      let actionPoint;
 
-        for (const [metadata, sdkObject] of this._currentCallsMetadata) {
-          if (source.page === sdkObject.attribution.page) {
-            actionPoint = metadata.point || actionPoint;
-            actionSelector = actionSelector || metadata.params.selector;
-          }
+      for (const [metadata, sdkObject] of this._currentCallsMetadata) {
+        if (source.page === sdkObject.attribution.page) {
+          actionPoint = metadata.point || actionPoint;
+          actionSelector = actionSelector || metadata.params.selector;
         }
+      }
 
-        const uiState = {
-          mode: this._mode,
-          actionPoint,
-          actionSelector,
-        };
-        return uiState;
-      },
-    );
-    await this._context.exposeBinding(
-      '_playwrightRecorderSetSelector',
-      false,
-      async (_, selector) => {
-        var _this$_recorderApp2, _this$_recorderApp3;
+      const uiState = {
+        mode: this._mode,
+        actionPoint,
+        actionSelector
+      };
+      return uiState;
+    });
+    await this._context.exposeBinding('_playwrightRecorderSetSelector', false, async (_, selector) => {
+      var _this$_recorderApp2, _this$_recorderApp3;
 
-        this._setMode('none');
+      this._setMode('none');
 
-        await ((_this$_recorderApp2 = this._recorderApp) === null ||
-        _this$_recorderApp2 === void 0
-          ? void 0
-          : _this$_recorderApp2.setSelector(selector, true));
-        await ((_this$_recorderApp3 = this._recorderApp) === null ||
-        _this$_recorderApp3 === void 0
-          ? void 0
-          : _this$_recorderApp3.bringToFront());
-      },
-    );
+      await ((_this$_recorderApp2 = this._recorderApp) === null || _this$_recorderApp2 === void 0 ? void 0 : _this$_recorderApp2.setSelector(selector, true));
+      await ((_this$_recorderApp3 = this._recorderApp) === null || _this$_recorderApp3 === void 0 ? void 0 : _this$_recorderApp3.bringToFront());
+    });
     await this._context.exposeBinding('_playwrightResume', false, () => {
       this._debugger.resume(false);
     });
@@ -260,9 +195,7 @@ class RecorderSupplement {
     await this._contextRecorder.install();
     if (this._debugger.isPaused()) this._pausedStateChanged();
 
-    this._debugger.on(_debugger.Debugger.Events.PausedStateChanged, () =>
-      this._pausedStateChanged(),
-    );
+    this._debugger.on(_debugger.Debugger.Events.PausedStateChanged, () => this._pausedStateChanged());
 
     this._context.recorderAppForTest = recorderApp;
   }
@@ -271,15 +204,14 @@ class RecorderSupplement {
     var _this$_recorderApp4;
 
     // If we are called upon page.pause, we don't have metadatas, populate them.
-    for (const {metadata, sdkObject} of this._debugger.pausedDetails()) {
-      if (!this._currentCallsMetadata.has(metadata))
-        this.onBeforeCall(sdkObject, metadata);
+    for (const {
+      metadata,
+      sdkObject
+    } of this._debugger.pausedDetails()) {
+      if (!this._currentCallsMetadata.has(metadata)) this.onBeforeCall(sdkObject, metadata);
     }
 
-    (_this$_recorderApp4 = this._recorderApp) === null ||
-    _this$_recorderApp4 === void 0
-      ? void 0
-      : _this$_recorderApp4.setPaused(this._debugger.isPaused());
+    (_this$_recorderApp4 = this._recorderApp) === null || _this$_recorderApp4 === void 0 ? void 0 : _this$_recorderApp4.setPaused(this._debugger.isPaused());
 
     this._updateUserSources();
 
@@ -290,33 +222,17 @@ class RecorderSupplement {
     var _this$_recorderApp5;
 
     this._mode = mode;
-    (_this$_recorderApp5 = this._recorderApp) === null ||
-    _this$_recorderApp5 === void 0
-      ? void 0
-      : _this$_recorderApp5.setMode(this._mode);
+    (_this$_recorderApp5 = this._recorderApp) === null || _this$_recorderApp5 === void 0 ? void 0 : _this$_recorderApp5.setMode(this._mode);
 
     this._contextRecorder.setEnabled(this._mode === 'recording');
 
     this._debugger.setMuted(this._mode === 'recording');
 
-    if (this._mode !== 'none')
-      this._context
-        .pages()[0]
-        .bringToFront()
-        .catch(() => {});
+    if (this._mode !== 'none') this._context.pages()[0].bringToFront().catch(() => {});
   }
 
   _refreshOverlay() {
-    for (const page of this._context.pages())
-      page
-        .mainFrame()
-        .evaluateExpression(
-          'window._playwrightRefreshOverlay()',
-          false,
-          undefined,
-          'main',
-        )
-        .catch(() => {});
+    for (const page of this._context.pages()) page.mainFrame().evaluateExpression('window._playwrightRefreshOverlay()', false, undefined, 'main').catch(() => {});
   }
 
   async onBeforeCall(sdkObject, metadata) {
@@ -334,12 +250,7 @@ class RecorderSupplement {
       var _this$_recorderApp6;
 
       this._highlightedSelector = metadata.params.selector;
-      (_this$_recorderApp6 = this._recorderApp) === null ||
-      _this$_recorderApp6 === void 0
-        ? void 0
-        : _this$_recorderApp6
-            .setSelector(this._highlightedSelector)
-            .catch(() => {});
+      (_this$_recorderApp6 = this._recorderApp) === null || _this$_recorderApp6 === void 0 ? void 0 : _this$_recorderApp6.setSelector(this._highlightedSelector).catch(() => {});
     }
   }
 
@@ -361,11 +272,15 @@ class RecorderSupplement {
       source.revealLine = undefined;
     } // Apply new decorations.
 
+
     let fileToSelect = undefined;
 
     for (const metadata of this._currentCallsMetadata.keys()) {
       if (!metadata.stack || !metadata.stack[0]) continue;
-      const {file, line} = metadata.stack[0];
+      const {
+        file,
+        line
+      } = metadata.stack[0];
 
       let source = this._userSources.get(file);
 
@@ -374,7 +289,7 @@ class RecorderSupplement {
           file,
           text: this._readSource(file),
           highlight: [],
-          language: languageForFile(file),
+          language: languageForFile(file)
         };
 
         this._userSources.set(file, source);
@@ -385,7 +300,7 @@ class RecorderSupplement {
 
         source.highlight.push({
           line,
-          type: metadata.error ? 'error' : paused ? 'paused' : 'running',
+          type: metadata.error ? 'error' : paused ? 'paused' : 'running'
         });
         source.revealLine = line;
         fileToSelect = source.file;
@@ -394,23 +309,13 @@ class RecorderSupplement {
 
     this._pushAllSources();
 
-    if (fileToSelect)
-      (_this$_recorderApp7 = this._recorderApp) === null ||
-      _this$_recorderApp7 === void 0
-        ? void 0
-        : _this$_recorderApp7.setFile(fileToSelect);
+    if (fileToSelect) (_this$_recorderApp7 = this._recorderApp) === null || _this$_recorderApp7 === void 0 ? void 0 : _this$_recorderApp7.setFile(fileToSelect);
   }
 
   _pushAllSources() {
     var _this$_recorderApp8;
 
-    (_this$_recorderApp8 = this._recorderApp) === null ||
-    _this$_recorderApp8 === void 0
-      ? void 0
-      : _this$_recorderApp8.setSources([
-          ...this._recorderSources,
-          ...this._userSources.values(),
-        ]);
+    (_this$_recorderApp8 = this._recorderApp) === null || _this$_recorderApp8 === void 0 ? void 0 : _this$_recorderApp8.setSources([...this._recorderSources, ...this._userSources.values()]);
   }
 
   async onBeforeInputAction(sdkObject, metadata) {}
@@ -433,10 +338,7 @@ class RecorderSupplement {
       logs.push((0, _recorderUtils.metadataToCallLog)(metadata, status));
     }
 
-    (_this$_recorderApp9 = this._recorderApp) === null ||
-    _this$_recorderApp9 === void 0
-      ? void 0
-      : _this$_recorderApp9.updateCallLogs(logs);
+    (_this$_recorderApp9 = this._recorderApp) === null || _this$_recorderApp9 === void 0 ? void 0 : _this$_recorderApp9.updateCallLogs(logs);
   }
 
   _readSource(fileName) {
@@ -446,6 +348,7 @@ class RecorderSupplement {
       return '// No source available';
     }
   }
+
 }
 
 exports.RecorderSupplement = RecorderSupplement;
@@ -465,30 +368,13 @@ class ContextRecorder extends _events.EventEmitter {
     this._context = context;
     this._params = params;
     const language = params.language || context._browser.options.sdkLanguage;
-    const languages = new Set([
-      new _java.JavaLanguageGenerator(),
-      new _javascript.JavaScriptLanguageGenerator(false),
-      new _javascript.JavaScriptLanguageGenerator(true),
-      new _python.PythonLanguageGenerator(false),
-      new _python.PythonLanguageGenerator(true),
-      new _csharp.CSharpLanguageGenerator(),
-    ]);
-    const primaryLanguage = [...languages].find((l) => l.id === language);
-    if (!primaryLanguage)
-      throw new Error(
-        `\n===============================\nUnsupported language: '${language}'\n===============================\n`,
-      );
+    const languages = new Set([new _java.JavaLanguageGenerator(), new _javascript.JavaScriptLanguageGenerator(false), new _javascript.JavaScriptLanguageGenerator(true), new _python.PythonLanguageGenerator(false), new _python.PythonLanguageGenerator(true), new _csharp.CSharpLanguageGenerator()]);
+    const primaryLanguage = [...languages].find(l => l.id === language);
+    if (!primaryLanguage) throw new Error(`\n===============================\nUnsupported language: '${language}'\n===============================\n`);
     languages.delete(primaryLanguage);
     const orderedLanguages = [primaryLanguage, ...languages];
     this._recorderSources = [];
-    const generator = new _codeGenerator.CodeGenerator(
-      context._browser.options.name,
-      !!params.startRecording,
-      params.launchOptions || {},
-      params.contextOptions || {},
-      params.device,
-      params.saveStorage,
-    );
+    const generator = new _codeGenerator.CodeGenerator(context._browser.options.name, !!params.startRecording, params.launchOptions || {}, params.contextOptions || {}, params.device, params.saveStorage);
     let text = '';
     generator.on('change', () => {
       this._recorderSources = [];
@@ -498,7 +384,7 @@ class ContextRecorder extends _events.EventEmitter {
           file: languageGenerator.fileName,
           text: generator.generateText(languageGenerator),
           language: languageGenerator.highlighter,
-          highlight: [],
+          highlight: []
         };
         source.revealLine = source.text.split('\n').length - 1;
 
@@ -509,7 +395,7 @@ class ContextRecorder extends _events.EventEmitter {
 
       this.emit(ContextRecorder.Events.Change, {
         sources: this._recorderSources,
-        primaryFileName: primaryLanguage.fileName,
+        primaryFileName: primaryLanguage.fileName
       });
     });
 
@@ -527,26 +413,17 @@ class ContextRecorder extends _events.EventEmitter {
   }
 
   async install() {
-    this._context.on(_browserContext.BrowserContext.Events.Page, (page) =>
-      this._onPage(page),
-    );
+    this._context.on(_browserContext.BrowserContext.Events.Page, page => this._onPage(page));
 
     for (const page of this._context.pages()) this._onPage(page); // Input actions that potentially lead to navigation are intercepted on the page and are
     // performed by the Playwright.
 
-    await this._context.exposeBinding(
-      '_playwrightRecorderPerformAction',
-      false,
-      (source, action) => this._performAction(source.frame, action),
-    ); // Other non-essential actions are simply being recorded.
 
-    await this._context.exposeBinding(
-      '_playwrightRecorderRecordAction',
-      false,
-      (source, action) => this._recordAction(source.frame, action),
-    );
+    await this._context.exposeBinding('_playwrightRecorderPerformAction', false, (source, action) => this._performAction(source.frame, action)); // Other non-essential actions are simply being recorded.
+
+    await this._context.exposeBinding('_playwrightRecorderRecordAction', false, (source, action) => this._recordAction(source.frame, action));
     await this._context.extendInjectedScript(recorderSource.source, {
-      isUnderTest: (0, _utils2.isUnderTest)(),
+      isUnderTest: (0, _utils2.isUnderTest)()
     });
   }
 
@@ -572,18 +449,14 @@ class ContextRecorder extends _events.EventEmitter {
         committed: true,
         action: {
           name: 'closePage',
-          signals: [],
-        },
+          signals: []
+        }
       });
     });
-    frame.on(_frames.Frame.Events.Navigation, () =>
-      this._onFrameNavigated(frame, page),
-    );
+    frame.on(_frames.Frame.Events.Navigation, () => this._onFrameNavigated(frame, page));
     page.on(_page.Page.Events.Download, () => this._onDownload(page));
     page.on(_page.Page.Events.Dialog, () => this._onDialog(page));
-    const suffix = this._pageAliases.size
-      ? String(++this._lastPopupOrdinal)
-      : '';
+    const suffix = this._pageAliases.size ? String(++this._lastPopupOrdinal) : '';
     const pageAlias = 'page' + suffix;
 
     this._pageAliases.set(page, pageAlias);
@@ -598,8 +471,8 @@ class ContextRecorder extends _events.EventEmitter {
         action: {
           name: 'openPage',
           url: page.mainFrame().url(),
-          signals: [],
-        },
+          signals: []
+        }
       });
     }
   }
@@ -608,8 +481,7 @@ class ContextRecorder extends _events.EventEmitter {
     this._generator.restart();
 
     if (!!this._params.startRecording) {
-      for (const page of this._context.pages())
-        this._onFrameNavigated(page.mainFrame(), page);
+      for (const page of this._context.pages()) this._onFrameNavigated(page.mainFrame(), page);
     }
   }
 
@@ -621,7 +493,7 @@ class ContextRecorder extends _events.EventEmitter {
     const actionInContext = {
       pageAlias: this._pageAliases.get(page),
       ...(0, _utils.describeFrame)(frame),
-      action,
+      action
     };
 
     const perform = async (action, params, cb) => {
@@ -637,7 +509,7 @@ class ContextRecorder extends _events.EventEmitter {
         method: action,
         params,
         log: [],
-        snapshots: [],
+        snapshots: []
       };
 
       this._generator.willPerformAction(actionInContext);
@@ -671,74 +543,48 @@ class ContextRecorder extends _events.EventEmitter {
     const kActionTimeout = 5000;
 
     if (action.name === 'click') {
-      const {options} = (0, _utils.toClickOptions)(action);
-      await perform(
-        'click',
-        {
-          selector: action.selector,
-        },
-        (callMetadata) =>
-          frame.click(callMetadata, action.selector, {
-            ...options,
-            timeout: kActionTimeout,
-          }),
-      );
+      const {
+        options
+      } = (0, _utils.toClickOptions)(action);
+      await perform('click', {
+        selector: action.selector
+      }, callMetadata => frame.click(callMetadata, action.selector, { ...options,
+        timeout: kActionTimeout
+      }));
     }
 
     if (action.name === 'press') {
       const modifiers = (0, _utils.toModifiers)(action.modifiers);
       const shortcut = [...modifiers, action.key].join('+');
-      await perform(
-        'press',
-        {
-          selector: action.selector,
-          key: shortcut,
-        },
-        (callMetadata) =>
-          frame.press(callMetadata, action.selector, shortcut, {
-            timeout: kActionTimeout,
-          }),
-      );
+      await perform('press', {
+        selector: action.selector,
+        key: shortcut
+      }, callMetadata => frame.press(callMetadata, action.selector, shortcut, {
+        timeout: kActionTimeout
+      }));
     }
 
-    if (action.name === 'check')
-      await perform(
-        'check',
-        {
-          selector: action.selector,
-        },
-        (callMetadata) =>
-          frame.check(callMetadata, action.selector, {
-            timeout: kActionTimeout,
-          }),
-      );
-    if (action.name === 'uncheck')
-      await perform(
-        'uncheck',
-        {
-          selector: action.selector,
-        },
-        (callMetadata) =>
-          frame.uncheck(callMetadata, action.selector, {
-            timeout: kActionTimeout,
-          }),
-      );
+    if (action.name === 'check') await perform('check', {
+      selector: action.selector
+    }, callMetadata => frame.check(callMetadata, action.selector, {
+      timeout: kActionTimeout
+    }));
+    if (action.name === 'uncheck') await perform('uncheck', {
+      selector: action.selector
+    }, callMetadata => frame.uncheck(callMetadata, action.selector, {
+      timeout: kActionTimeout
+    }));
 
     if (action.name === 'select') {
-      const values = action.options.map((value) => ({
-        value,
+      const values = action.options.map(value => ({
+        value
       }));
-      await perform(
-        'selectOption',
-        {
-          selector: action.selector,
-          values,
-        },
-        (callMetadata) =>
-          frame.selectOption(callMetadata, action.selector, [], values, {
-            timeout: kActionTimeout,
-          }),
-      );
+      await perform('selectOption', {
+        selector: action.selector,
+        values
+      }, callMetadata => frame.selectOption(callMetadata, action.selector, [], values, {
+        timeout: kActionTimeout
+      }));
     }
   }
 
@@ -749,7 +595,7 @@ class ContextRecorder extends _events.EventEmitter {
     this._generator.addAction({
       pageAlias: this._pageAliases.get(frame._page),
       ...(0, _utils.describeFrame)(frame),
-      action,
+      action
     });
   }
 
@@ -758,7 +604,7 @@ class ContextRecorder extends _events.EventEmitter {
 
     this._generator.signal(pageAlias, frame, {
       name: 'navigation',
-      url: frame.url(),
+      url: frame.url()
     });
   }
 
@@ -769,7 +615,7 @@ class ContextRecorder extends _events.EventEmitter {
 
     this._generator.signal(pageAlias, page.mainFrame(), {
       name: 'popup',
-      popupAlias,
+      popupAlias
     });
   }
 
@@ -778,7 +624,7 @@ class ContextRecorder extends _events.EventEmitter {
 
     this._generator.signal(pageAlias, page.mainFrame(), {
       name: 'download',
-      downloadAlias: String(++this._lastDownloadOrdinal),
+      downloadAlias: String(++this._lastDownloadOrdinal)
     });
   }
 
@@ -787,13 +633,14 @@ class ContextRecorder extends _events.EventEmitter {
 
     this._generator.signal(pageAlias, page.mainFrame(), {
       name: 'dialog',
-      dialogAlias: String(++this._lastDialogOrdinal),
+      dialogAlias: String(++this._lastDialogOrdinal)
     });
   }
+
 }
 
 ContextRecorder.Events = {
-  Change: 'change',
+  Change: 'change'
 };
 
 function languageForFile(file) {

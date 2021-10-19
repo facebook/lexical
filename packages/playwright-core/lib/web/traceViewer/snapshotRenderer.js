@@ -1,7 +1,7 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.SnapshotRenderer = void 0;
 
@@ -55,21 +55,18 @@ class SnapshotRenderer {
           if (referenceIndex >= 0 && referenceIndex <= snapshotIndex) {
             const nodes = snapshotNodes(this._snapshots[referenceIndex]);
             const nodeIndex = n[0][1];
-            if (nodeIndex >= 0 && nodeIndex < nodes.length)
-              n._string = visit(nodes[nodeIndex], referenceIndex);
+            if (nodeIndex >= 0 && nodeIndex < nodes.length) n._string = visit(nodes[nodeIndex], referenceIndex);
           }
         } else if (typeof n[0] === 'string') {
           // Element node.
           const builder = [];
           builder.push('<', n[0]);
 
-          for (const [attr, value] of Object.entries(n[1] || {}))
-            builder.push(' ', attr, '="', escapeAttribute(value), '"');
+          for (const [attr, value] of Object.entries(n[1] || {})) builder.push(' ', attr, '="', escapeAttribute(value), '"');
 
           builder.push('>');
 
-          for (let i = 2; i < n.length; i++)
-            builder.push(visit(n[i], snapshotIndex));
+          for (let i = 2; i < n.length; i++) builder.push(visit(n[i], snapshotIndex));
 
           if (!autoClosing.has(n[0])) builder.push('</', n[0], '>');
           n._string = builder.join('');
@@ -84,25 +81,22 @@ class SnapshotRenderer {
 
     const snapshot = this._snapshot;
     let html = visit(snapshot.html, this._index);
-    if (!html)
-      return {
-        html: '',
-        pageId: snapshot.pageId,
-        frameId: snapshot.frameId,
-        index: this._index,
-      };
+    if (!html) return {
+      html: '',
+      pageId: snapshot.pageId,
+      frameId: snapshot.frameId,
+      index: this._index
+    };
     if (snapshot.doctype) html = `<!DOCTYPE ${snapshot.doctype}>` + html;
     html += `
-      <style>*[__playwright_target__="${
-        this.snapshotName
-      }"] { background-color: #6fa8dc7f; }</style>
+      <style>*[__playwright_target__="${this.snapshotName}"] { background-color: #6fa8dc7f; }</style>
       <script>${snapshotScript()}</script>
     `;
     return {
       html,
       pageId: snapshot.pageId,
       frameId: snapshot.frameId,
-      index: this._index,
+      index: this._index
     };
   }
 
@@ -132,12 +126,12 @@ class SnapshotRenderer {
       // Patch override if necessary.
       for (const o of snapshot.resourceOverrides) {
         if (url === o.url && o.sha1) {
-          result = {
-            ...result,
-            response: {
-              ...result.response,
-              content: {...result.response.content, _sha1: o.sha1},
-            },
+          result = { ...result,
+            response: { ...result.response,
+              content: { ...result.response.content,
+                _sha1: o.sha1
+              }
+            }
           };
           break;
         }
@@ -146,49 +140,32 @@ class SnapshotRenderer {
 
     return result;
   }
+
 }
 
 exports.SnapshotRenderer = SnapshotRenderer;
-const autoClosing = new Set([
-  'AREA',
-  'BASE',
-  'BR',
-  'COL',
-  'COMMAND',
-  'EMBED',
-  'HR',
-  'IMG',
-  'INPUT',
-  'KEYGEN',
-  'LINK',
-  'MENUITEM',
-  'META',
-  'PARAM',
-  'SOURCE',
-  'TRACK',
-  'WBR',
-]);
+const autoClosing = new Set(['AREA', 'BASE', 'BR', 'COL', 'COMMAND', 'EMBED', 'HR', 'IMG', 'INPUT', 'KEYGEN', 'LINK', 'MENUITEM', 'META', 'PARAM', 'SOURCE', 'TRACK', 'WBR']);
 const escaped = {
   '&': '&amp;',
   '<': '&lt;',
   '>': '&gt;',
   '"': '&quot;',
-  "'": '&#39;',
+  '\'': '&#39;'
 };
 
 function escapeAttribute(s) {
-  return s.replace(/[&<>"']/gu, (char) => escaped[char]);
+  return s.replace(/[&<>"']/ug, char => escaped[char]);
 }
 
 function escapeText(s) {
-  return s.replace(/[&<]/gu, (char) => escaped[char]);
+  return s.replace(/[&<]/ug, char => escaped[char]);
 }
 
 function snapshotNodes(snapshot) {
   if (!snapshot._nodes) {
     const nodes = [];
 
-    const visit = (n) => {
+    const visit = n => {
       if (typeof n === 'string') {
         nodes.push(n);
       } else if (typeof n[0] === 'string') {
@@ -206,49 +183,31 @@ function snapshotNodes(snapshot) {
 }
 
 function snapshotScript() {
-  function applyPlaywrightAttributes(
-    shadowAttribute,
-    scrollTopAttribute,
-    scrollLeftAttribute,
-    styleSheetAttribute,
-  ) {
+  function applyPlaywrightAttributes(shadowAttribute, scrollTopAttribute, scrollLeftAttribute, styleSheetAttribute) {
     const scrollTops = [];
     const scrollLefts = [];
 
-    const visit = (root) => {
+    const visit = root => {
       // Collect all scrolled elements for later use.
-      for (const e of root.querySelectorAll(`[${scrollTopAttribute}]`))
-        scrollTops.push(e);
+      for (const e of root.querySelectorAll(`[${scrollTopAttribute}]`)) scrollTops.push(e);
 
-      for (const e of root.querySelectorAll(`[${scrollLeftAttribute}]`))
-        scrollLefts.push(e);
+      for (const e of root.querySelectorAll(`[${scrollLeftAttribute}]`)) scrollLefts.push(e);
 
       for (const iframe of root.querySelectorAll('iframe')) {
         const src = iframe.getAttribute('src');
 
         if (!src) {
-          iframe.setAttribute(
-            'src',
-            'data:text/html,<body style="background: #ddd"></body>',
-          );
+          iframe.setAttribute('src', 'data:text/html,<body style="background: #ddd"></body>');
         } else {
           // Append query parameters to inherit ?name= or ?time= values from parent.
-          iframe.setAttribute(
-            'src',
-            new URL(
-              src + window.location.search,
-              window.location.href,
-            ).toString(),
-          );
+          iframe.setAttribute('src', new URL(src + window.location.search, window.location.href).toString());
         }
       }
 
-      for (const element of root.querySelectorAll(
-        `template[${shadowAttribute}]`,
-      )) {
+      for (const element of root.querySelectorAll(`template[${shadowAttribute}]`)) {
         const template = element;
         const shadowRoot = template.parentElement.attachShadow({
-          mode: 'open',
+          mode: 'open'
         });
         shadowRoot.appendChild(template.content);
         template.remove();
@@ -258,9 +217,7 @@ function snapshotScript() {
       if ('adoptedStyleSheets' in root) {
         const adoptedSheets = [...root.adoptedStyleSheets];
 
-        for (const element of root.querySelectorAll(
-          `template[${styleSheetAttribute}]`,
-        )) {
+        for (const element of root.querySelectorAll(`template[${styleSheetAttribute}]`)) {
           const template = element;
           const sheet = new CSSStyleSheet();
           sheet.replaceSync(template.getAttribute(styleSheetAttribute));

@@ -1,65 +1,27 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.Snapshotter = void 0;
 
-var _browserContext = require('../../browserContext');
+var _browserContext = require("../../browserContext");
 
-var _page = require('../../page');
+var _page = require("../../page");
 
-var _eventsHelper = require('../../../utils/eventsHelper');
+var _eventsHelper = require("../../../utils/eventsHelper");
 
-var _debugLogger = require('../../../utils/debugLogger');
+var _debugLogger = require("../../../utils/debugLogger");
 
-var _snapshotterInjected = require('./snapshotterInjected');
+var _snapshotterInjected = require("./snapshotterInjected");
 
-var _utils = require('../../../utils/utils');
+var _utils = require("../../../utils/utils");
 
-var mime = _interopRequireWildcard(require('mime'));
+var mime = _interopRequireWildcard(require("mime"));
 
-function _getRequireWildcardCache(nodeInterop) {
-  if (typeof WeakMap !== 'function') return null;
-  var cacheBabelInterop = new WeakMap();
-  var cacheNodeInterop = new WeakMap();
-  return (_getRequireWildcardCache = function (nodeInterop) {
-    return nodeInterop ? cacheNodeInterop : cacheBabelInterop;
-  })(nodeInterop);
-}
+function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 
-function _interopRequireWildcard(obj, nodeInterop) {
-  if (!nodeInterop && obj && obj.__esModule) {
-    return obj;
-  }
-  if (obj === null || (typeof obj !== 'object' && typeof obj !== 'function')) {
-    return {default: obj};
-  }
-  var cache = _getRequireWildcardCache(nodeInterop);
-  if (cache && cache.has(obj)) {
-    return cache.get(obj);
-  }
-  var newObj = {};
-  var hasPropertyDescriptor =
-    Object.defineProperty && Object.getOwnPropertyDescriptor;
-  for (var key in obj) {
-    if (key !== 'default' && Object.prototype.hasOwnProperty.call(obj, key)) {
-      var desc = hasPropertyDescriptor
-        ? Object.getOwnPropertyDescriptor(obj, key)
-        : null;
-      if (desc && (desc.get || desc.set)) {
-        Object.defineProperty(newObj, key, desc);
-      } else {
-        newObj[key] = obj[key];
-      }
-    }
-  }
-  newObj.default = obj;
-  if (cache) {
-    cache.set(obj, newObj);
-  }
-  return newObj;
-}
+function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -106,8 +68,7 @@ class Snapshotter {
   }
 
   async reset() {
-    if (this._started)
-      await this._runInAllFrames(`window["${this._snapshotStreamer}"].reset()`);
+    if (this._started) await this._runInAllFrames(`window["${this._snapshotStreamer}"].reset()`);
   }
 
   async stop() {
@@ -117,13 +78,7 @@ class Snapshotter {
   async _initialize() {
     for (const page of this._context.pages()) this._onPage(page);
 
-    this._eventListeners = [
-      _eventsHelper.eventsHelper.addEventListener(
-        this._context,
-        _browserContext.BrowserContext.Events.Page,
-        this._onPage.bind(this),
-      ),
-    ];
+    this._eventListeners = [_eventsHelper.eventsHelper.addEventListener(this._context, _browserContext.BrowserContext.Events.Page, this._onPage.bind(this))];
     const initScript = `(${_snapshotterInjected.frameSnapshotStreamer})("${this._snapshotStreamer}")`;
     await this._context._doAddInitScript(initScript);
     await this._runInAllFrames(initScript);
@@ -134,13 +89,9 @@ class Snapshotter {
 
     for (const page of this._context.pages()) frames.push(...page.frames());
 
-    await Promise.all(
-      frames.map((frame) => {
-        return frame
-          .nonStallingRawEvaluateInExistingMainContext(expression)
-          .catch((e) => _debugLogger.debugLogger.log('error', e));
-      }),
-    );
+    await Promise.all(frames.map(frame => {
+      return frame.nonStallingRawEvaluateInExistingMainContext(expression).catch(e => _debugLogger.debugLogger.log('error', e));
+    }));
   }
 
   dispose() {
@@ -149,20 +100,14 @@ class Snapshotter {
 
   async captureSnapshot(page, snapshotName, element) {
     // Prepare expression synchronously.
-    const expression = `window["${
-      this._snapshotStreamer
-    }"].captureSnapshot(${JSON.stringify(snapshotName)})`; // In a best-effort manner, without waiting for it, mark target element.
+    const expression = `window["${this._snapshotStreamer}"].captureSnapshot(${JSON.stringify(snapshotName)})`; // In a best-effort manner, without waiting for it, mark target element.
 
-    element === null || element === void 0
-      ? void 0
-      : element.callFunctionNoReply((element, snapshotName) => {
-          element.setAttribute('__playwright_target__', snapshotName);
-        }, snapshotName); // In each frame, in a non-stalling manner, capture the snapshots.
+    element === null || element === void 0 ? void 0 : element.callFunctionNoReply((element, snapshotName) => {
+      element.setAttribute('__playwright_target__', snapshotName);
+    }, snapshotName); // In each frame, in a non-stalling manner, capture the snapshots.
 
-    const snapshots = page.frames().map(async (frame) => {
-      const data = await frame
-        .nonStallingRawEvaluateInExistingMainContext(expression)
-        .catch((e) => _debugLogger.debugLogger.log('error', e)); // Something went wrong -> bail out, our snapshots are best-efforty.
+    const snapshots = page.frames().map(async frame => {
+      const data = await frame.nonStallingRawEvaluateInExistingMainContext(expression).catch(e => _debugLogger.debugLogger.log('error', e)); // Something went wrong -> bail out, our snapshots are best-efforty.
 
       if (!data || !this._started) return;
       const snapshot = {
@@ -176,30 +121,31 @@ class Snapshotter {
         timestamp: (0, _utils.monotonicTime)(),
         collectionTime: data.collectionTime,
         resourceOverrides: [],
-        isMainFrame: page.mainFrame() === frame,
+        isMainFrame: page.mainFrame() === frame
       };
 
-      for (const {url, content, contentType} of data.resourceOverrides) {
+      for (const {
+        url,
+        content,
+        contentType
+      } of data.resourceOverrides) {
         if (typeof content === 'string') {
           const buffer = Buffer.from(content);
-          const sha1 =
-            (0, _utils.calculateSha1)(buffer) +
-            '.' +
-            (mime.getExtension(contentType) || 'dat');
+          const sha1 = (0, _utils.calculateSha1)(buffer) + '.' + (mime.getExtension(contentType) || 'dat');
 
           this._delegate.onSnapshotterBlob({
             sha1,
-            buffer,
+            buffer
           });
 
           snapshot.resourceOverrides.push({
             url,
-            sha1,
+            sha1
           });
         } else {
           snapshot.resourceOverrides.push({
             url,
-            ref: content,
+            ref: content
           });
         }
       }
@@ -213,13 +159,7 @@ class Snapshotter {
     // Annotate frame hierarchy so that snapshots could include frame ids.
     for (const frame of page.frames()) this._annotateFrameHierarchy(frame);
 
-    this._eventListeners.push(
-      _eventsHelper.eventsHelper.addEventListener(
-        page,
-        _page.Page.Events.FrameAttached,
-        (frame) => this._annotateFrameHierarchy(frame),
-      ),
-    );
+    this._eventListeners.push(_eventsHelper.eventsHelper.addEventListener(page, _page.Page.Events.FrameAttached, frame => this._annotateFrameHierarchy(frame)));
   }
 
   async _annotateFrameHierarchy(frame) {
@@ -228,21 +168,21 @@ class Snapshotter {
       const parent = frame.parentFrame();
       if (!parent) return;
       const context = await parent._mainContext();
-      await (context === null || context === void 0
-        ? void 0
-        : context.evaluate(
-            ({snapshotStreamer, frameElement, frameId}) => {
-              window[snapshotStreamer].markIframe(frameElement, frameId);
-            },
-            {
-              snapshotStreamer: this._snapshotStreamer,
-              frameElement,
-              frameId: frame.guid,
-            },
-          ));
+      await (context === null || context === void 0 ? void 0 : context.evaluate(({
+        snapshotStreamer,
+        frameElement,
+        frameId
+      }) => {
+        window[snapshotStreamer].markIframe(frameElement, frameId);
+      }, {
+        snapshotStreamer: this._snapshotStreamer,
+        frameElement,
+        frameId: frame.guid
+      }));
       frameElement.dispose();
     } catch (e) {}
   }
+
 }
 
 exports.Snapshotter = Snapshotter;

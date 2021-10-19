@@ -1,26 +1,21 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
-exports.FFSession =
-  exports.FFSessionEvents =
-  exports.FFConnection =
-  exports.kBrowserCloseMessageId =
-  exports.ConnectionEvents =
-    void 0;
+exports.FFSession = exports.FFSessionEvents = exports.FFConnection = exports.kBrowserCloseMessageId = exports.ConnectionEvents = void 0;
 
-var _events = require('events');
+var _events = require("events");
 
-var _utils = require('../../utils/utils');
+var _utils = require("../../utils/utils");
 
-var _stackTrace = require('../../utils/stackTrace');
+var _stackTrace = require("../../utils/stackTrace");
 
-var _debugLogger = require('../../utils/debugLogger');
+var _debugLogger = require("../../utils/debugLogger");
 
-var _helper = require('../helper');
+var _helper = require("../helper");
 
-var _protocolError = require('../common/protocolError');
+var _protocolError = require("../common/protocolError");
 
 /**
  * Copyright 2017 Google Inc. All rights reserved.
@@ -39,7 +34,7 @@ var _protocolError = require('../common/protocolError');
  * limitations under the License.
  */
 const ConnectionEvents = {
-  Disconnected: Symbol('Disconnected'),
+  Disconnected: Symbol('Disconnected')
 }; // FFPlaywright uses this special id to issue Browser.close command which we
 // should ignore.
 
@@ -87,7 +82,7 @@ class FFConnection extends _events.EventEmitter {
     this._rawSend({
       id,
       method,
-      params,
+      params
     });
 
     return new Promise((resolve, reject) => {
@@ -95,7 +90,7 @@ class FFConnection extends _events.EventEmitter {
         resolve,
         reject,
         error: new _protocolError.ProtocolError(false),
-        method,
+        method
       });
     });
   }
@@ -105,14 +100,7 @@ class FFConnection extends _events.EventEmitter {
   }
 
   _checkClosed(method) {
-    if (this._closed)
-      throw new _protocolError.ProtocolError(
-        true,
-        `${method}): Browser closed.` +
-          _helper.helper.formatBrowserLogs(
-            this._browserLogsCollector.recentLogs(),
-          ),
-      );
+    if (this._closed) throw new _protocolError.ProtocolError(true, `${method}): Browser closed.` + _helper.helper.formatBrowserLogs(this._browserLogsCollector.recentLogs()));
   }
 
   _rawSend(message) {
@@ -133,14 +121,11 @@ class FFConnection extends _events.EventEmitter {
     } else if (message.id) {
       const callback = this._callbacks.get(message.id); // Callbacks could be all rejected if someone has called `.dispose()`.
 
+
       if (callback) {
         this._callbacks.delete(message.id);
 
-        if (message.error)
-          callback.reject(
-            createProtocolError(callback.error, callback.method, message.error),
-          );
-        else callback.resolve(message.result);
+        if (message.error) callback.reject(createProtocolError(callback.error, callback.method, message.error));else callback.resolve(message.result);
       }
     } else {
       Promise.resolve().then(() => this.emit(message.method, message.params));
@@ -152,20 +137,14 @@ class FFConnection extends _events.EventEmitter {
     this._transport.onmessage = undefined;
     this._transport.onclose = undefined;
 
-    const formattedBrowserLogs = _helper.helper.formatBrowserLogs(
-      this._browserLogsCollector.recentLogs(),
-    );
+    const formattedBrowserLogs = _helper.helper.formatBrowserLogs(this._browserLogsCollector.recentLogs());
 
     for (const session of this._sessions.values()) session.dispose();
 
     this._sessions.clear();
 
     for (const callback of this._callbacks.values()) {
-      const error = (0, _stackTrace.rewriteErrorMessage)(
-        callback.error,
-        `Protocol error (${callback.method}): Browser closed.` +
-          formattedBrowserLogs,
-      );
+      const error = (0, _stackTrace.rewriteErrorMessage)(callback.error, `Protocol error (${callback.method}): Browser closed.` + formattedBrowserLogs);
       error.sessionClosed = true;
       callback.reject(error);
     }
@@ -180,19 +159,20 @@ class FFConnection extends _events.EventEmitter {
   }
 
   createSession(sessionId) {
-    const session = new FFSession(this, sessionId, (message) =>
-      this._rawSend({...message, sessionId}),
-    );
+    const session = new FFSession(this, sessionId, message => this._rawSend({ ...message,
+      sessionId
+    }));
 
     this._sessions.set(sessionId, session);
 
     return session;
   }
+
 }
 
 exports.FFConnection = FFConnection;
 const FFSessionEvents = {
-  Disconnected: Symbol('Disconnected'),
+  Disconnected: Symbol('Disconnected')
 };
 exports.FFSessionEvents = FFSessionEvents;
 
@@ -227,20 +207,18 @@ class FFSession extends _events.EventEmitter {
   }
 
   async send(method, params) {
-    if (this._crashed)
-      throw new _protocolError.ProtocolError(true, 'Target crashed');
+    if (this._crashed) throw new _protocolError.ProtocolError(true, 'Target crashed');
 
     this._connection._checkClosed(method);
 
-    if (this._disposed)
-      throw new _protocolError.ProtocolError(true, 'Target closed');
+    if (this._disposed) throw new _protocolError.ProtocolError(true, 'Target closed');
 
     const id = this._connection.nextMessageId();
 
     this._rawSend({
       method,
       params,
-      id,
+      id
     });
 
     return new Promise((resolve, reject) => {
@@ -248,15 +226,13 @@ class FFSession extends _events.EventEmitter {
         resolve,
         reject,
         error: new _protocolError.ProtocolError(false),
-        method,
+        method
       });
     });
   }
 
   sendMayFail(method, params) {
-    return this.send(method, params).catch((error) =>
-      _debugLogger.debugLogger.log('error', error),
-    );
+    return this.send(method, params).catch(error => _debugLogger.debugLogger.log('error', error));
   }
 
   dispatchMessage(object) {
@@ -265,11 +241,7 @@ class FFSession extends _events.EventEmitter {
 
       this._callbacks.delete(object.id);
 
-      if (object.error)
-        callback.reject(
-          createProtocolError(callback.error, callback.method, object.error),
-        );
-      else callback.resolve(object.result);
+      if (object.error) callback.reject(createProtocolError(callback.error, callback.method, object.error));else callback.resolve(object.result);
     } else {
       (0, _utils.assert)(!object.id);
       Promise.resolve().then(() => this.emit(object.method, object.params));
@@ -279,9 +251,7 @@ class FFSession extends _events.EventEmitter {
   dispose() {
     for (const callback of this._callbacks.values()) {
       callback.error.sessionClosed = true;
-      callback.reject(
-        (0, _stackTrace.rewriteErrorMessage)(callback.error, 'Target closed'),
-      );
+      callback.reject((0, _stackTrace.rewriteErrorMessage)(callback.error, 'Target closed'));
     }
 
     this._callbacks.clear();
@@ -292,6 +262,7 @@ class FFSession extends _events.EventEmitter {
 
     Promise.resolve().then(() => this.emit(FFSessionEvents.Disconnected));
   }
+
 }
 
 exports.FFSession = FFSession;

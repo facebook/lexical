@@ -1,13 +1,13 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.CRCoverage = void 0;
 
-var _eventsHelper = require('../../utils/eventsHelper');
+var _eventsHelper = require("../../utils/eventsHelper");
 
-var _utils = require('../../utils/utils');
+var _utils = require("../../utils/utils");
 
 /**
  * Copyright 2017 Google Inc. All rights reserved.
@@ -48,6 +48,7 @@ class CRCoverage {
   async stopCSSCoverage() {
     return await this._cssCoverage.stop();
   }
+
 }
 
 exports.CRCoverage = CRCoverage;
@@ -71,7 +72,10 @@ class JSCoverage {
 
   async start(options = {}) {
     (0, _utils.assert)(!this._enabled, 'JSCoverage is already enabled');
-    const {resetOnNavigation = true, reportAnonymousScripts = false} = options;
+    const {
+      resetOnNavigation = true,
+      reportAnonymousScripts = false
+    } = options;
     this._resetOnNavigation = resetOnNavigation;
     this._reportAnonymousScripts = reportAnonymousScripts;
     this._enabled = true;
@@ -80,34 +84,13 @@ class JSCoverage {
 
     this._scriptSources.clear();
 
-    this._eventListeners = [
-      _eventsHelper.eventsHelper.addEventListener(
-        this._client,
-        'Debugger.scriptParsed',
-        this._onScriptParsed.bind(this),
-      ),
-      _eventsHelper.eventsHelper.addEventListener(
-        this._client,
-        'Runtime.executionContextsCleared',
-        this._onExecutionContextsCleared.bind(this),
-      ),
-      _eventsHelper.eventsHelper.addEventListener(
-        this._client,
-        'Debugger.paused',
-        this._onDebuggerPaused.bind(this),
-      ),
-    ];
-    await Promise.all([
-      this._client.send('Profiler.enable'),
-      this._client.send('Profiler.startPreciseCoverage', {
-        callCount: true,
-        detailed: true,
-      }),
-      this._client.send('Debugger.enable'),
-      this._client.send('Debugger.setSkipAllPauses', {
-        skip: true,
-      }),
-    ]);
+    this._eventListeners = [_eventsHelper.eventsHelper.addEventListener(this._client, 'Debugger.scriptParsed', this._onScriptParsed.bind(this)), _eventsHelper.eventsHelper.addEventListener(this._client, 'Runtime.executionContextsCleared', this._onExecutionContextsCleared.bind(this)), _eventsHelper.eventsHelper.addEventListener(this._client, 'Debugger.paused', this._onDebuggerPaused.bind(this))];
+    await Promise.all([this._client.send('Profiler.enable'), this._client.send('Profiler.startPreciseCoverage', {
+      callCount: true,
+      detailed: true
+    }), this._client.send('Debugger.enable'), this._client.send('Debugger.setSkipAllPauses', {
+      skip: true
+    })]);
   }
 
   _onDebuggerPaused() {
@@ -125,27 +108,19 @@ class JSCoverage {
   async _onScriptParsed(event) {
     this._scriptIds.add(event.scriptId); // Ignore other anonymous scripts unless the reportAnonymousScripts option is true.
 
+
     if (!event.url && !this._reportAnonymousScripts) return; // This might fail if the page has already navigated away.
 
-    const response = await this._client._sendMayFail(
-      'Debugger.getScriptSource',
-      {
-        scriptId: event.scriptId,
-      },
-    );
-    if (response)
-      this._scriptSources.set(event.scriptId, response.scriptSource);
+    const response = await this._client._sendMayFail('Debugger.getScriptSource', {
+      scriptId: event.scriptId
+    });
+    if (response) this._scriptSources.set(event.scriptId, response.scriptSource);
   }
 
   async stop() {
     (0, _utils.assert)(this._enabled, 'JSCoverage is not enabled');
     this._enabled = false;
-    const [profileResponse] = await Promise.all([
-      this._client.send('Profiler.takePreciseCoverage'),
-      this._client.send('Profiler.stopPreciseCoverage'),
-      this._client.send('Profiler.disable'),
-      this._client.send('Debugger.disable'),
-    ]);
+    const [profileResponse] = await Promise.all([this._client.send('Profiler.takePreciseCoverage'), this._client.send('Profiler.stopPreciseCoverage'), this._client.send('Profiler.disable'), this._client.send('Debugger.disable')]);
 
     _eventsHelper.eventsHelper.removeEventListeners(this._eventListeners);
 
@@ -157,12 +132,14 @@ class JSCoverage {
 
       const source = this._scriptSources.get(entry.scriptId);
 
-      if (source) coverage.push({...entry, source});
-      else coverage.push(entry);
+      if (source) coverage.push({ ...entry,
+        source
+      });else coverage.push(entry);
     }
 
     return coverage;
   }
+
 }
 
 class CSSCoverage {
@@ -183,7 +160,9 @@ class CSSCoverage {
 
   async start(options = {}) {
     (0, _utils.assert)(!this._enabled, 'CSSCoverage is already enabled');
-    const {resetOnNavigation = true} = options;
+    const {
+      resetOnNavigation = true
+    } = options;
     this._resetOnNavigation = resetOnNavigation;
     this._enabled = true;
 
@@ -191,23 +170,8 @@ class CSSCoverage {
 
     this._stylesheetSources.clear();
 
-    this._eventListeners = [
-      _eventsHelper.eventsHelper.addEventListener(
-        this._client,
-        'CSS.styleSheetAdded',
-        this._onStyleSheet.bind(this),
-      ),
-      _eventsHelper.eventsHelper.addEventListener(
-        this._client,
-        'Runtime.executionContextsCleared',
-        this._onExecutionContextsCleared.bind(this),
-      ),
-    ];
-    await Promise.all([
-      this._client.send('DOM.enable'),
-      this._client.send('CSS.enable'),
-      this._client.send('CSS.startRuleUsageTracking'),
-    ]);
+    this._eventListeners = [_eventsHelper.eventsHelper.addEventListener(this._client, 'CSS.styleSheetAdded', this._onStyleSheet.bind(this)), _eventsHelper.eventsHelper.addEventListener(this._client, 'Runtime.executionContextsCleared', this._onExecutionContextsCleared.bind(this))];
+    await Promise.all([this._client.send('DOM.enable'), this._client.send('CSS.enable'), this._client.send('CSS.startRuleUsageTracking')]);
   }
 
   _onExecutionContextsCleared() {
@@ -224,7 +188,7 @@ class CSSCoverage {
     if (!header.sourceURL) return; // This might fail if the page has already navigated away.
 
     const response = await this._client._sendMayFail('CSS.getStyleSheetText', {
-      styleSheetId: header.styleSheetId,
+      styleSheetId: header.styleSheetId
     });
 
     if (response) {
@@ -237,15 +201,11 @@ class CSSCoverage {
   async stop() {
     (0, _utils.assert)(this._enabled, 'CSSCoverage is not enabled');
     this._enabled = false;
-    const ruleTrackingResponse = await this._client.send(
-      'CSS.stopRuleUsageTracking',
-    );
-    await Promise.all([
-      this._client.send('CSS.disable'),
-      this._client.send('DOM.disable'),
-    ]);
+    const ruleTrackingResponse = await this._client.send('CSS.stopRuleUsageTracking');
+    await Promise.all([this._client.send('CSS.disable'), this._client.send('DOM.disable')]);
 
     _eventsHelper.eventsHelper.removeEventListeners(this._eventListeners); // aggregate by styleSheetId
+
 
     const styleSheetIdToCoverage = new Map();
 
@@ -260,7 +220,7 @@ class CSSCoverage {
       ranges.push({
         startOffset: entry.startOffset,
         endOffset: entry.endOffset,
-        count: entry.used ? 1 : 0,
+        count: entry.used ? 1 : 0
       });
     }
 
@@ -271,18 +231,17 @@ class CSSCoverage {
 
       const text = this._stylesheetSources.get(styleSheetId);
 
-      const ranges = convertToDisjointRanges(
-        styleSheetIdToCoverage.get(styleSheetId) || [],
-      );
+      const ranges = convertToDisjointRanges(styleSheetIdToCoverage.get(styleSheetId) || []);
       coverage.push({
         url,
         ranges,
-        text,
+        text
       });
     }
 
     return coverage;
   }
+
 }
 
 function convertToDisjointRanges(nestedRanges) {
@@ -292,14 +251,15 @@ function convertToDisjointRanges(nestedRanges) {
     points.push({
       offset: range.startOffset,
       type: 0,
-      range,
+      range
     });
     points.push({
       offset: range.endOffset,
       type: 1,
-      range,
+      range
     });
   } // Sort points to form a valid parenthesis sequence.
+
 
   points.sort((a, b) => {
     // Sort with increasing offsets.
@@ -318,25 +278,18 @@ function convertToDisjointRanges(nestedRanges) {
   let lastOffset = 0; // Run scanning line to intersect all ranges.
 
   for (const point of points) {
-    if (
-      hitCountStack.length &&
-      lastOffset < point.offset &&
-      hitCountStack[hitCountStack.length - 1] > 0
-    ) {
+    if (hitCountStack.length && lastOffset < point.offset && hitCountStack[hitCountStack.length - 1] > 0) {
       const lastResult = results.length ? results[results.length - 1] : null;
-      if (lastResult && lastResult.end === lastOffset)
-        lastResult.end = point.offset;
-      else
-        results.push({
-          start: lastOffset,
-          end: point.offset,
-        });
+      if (lastResult && lastResult.end === lastOffset) lastResult.end = point.offset;else results.push({
+        start: lastOffset,
+        end: point.offset
+      });
     }
 
     lastOffset = point.offset;
-    if (point.type === 0) hitCountStack.push(point.range.count);
-    else hitCountStack.pop();
+    if (point.type === 0) hitCountStack.push(point.range.count);else hitCountStack.pop();
   } // Filter out empty ranges.
 
-  return results.filter((range) => range.end - range.start > 1);
+
+  return results.filter(range => range.end - range.start > 1);
 }

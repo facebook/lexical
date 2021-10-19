@@ -1,13 +1,13 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.Dialog = void 0;
 
-var _utils = require('../utils/utils');
+var _utils = require("../utils/utils");
 
-var _instrumentation = require('./instrumentation');
+var _instrumentation = require("./instrumentation");
 
 /**
  * Copyright 2017 Google Inc. All rights reserved.
@@ -56,10 +56,7 @@ class Dialog extends _instrumentation.SdkObject {
   }
 
   async accept(promptText) {
-    (0, _utils.assert)(
-      !this._handled,
-      'Cannot accept dialog which is already handled!',
-    );
+    (0, _utils.assert)(!this._handled, 'Cannot accept dialog which is already handled!');
     this._handled = true;
 
     this._page._frameManager.dialogWillClose();
@@ -68,16 +65,14 @@ class Dialog extends _instrumentation.SdkObject {
   }
 
   async dismiss() {
-    (0, _utils.assert)(
-      !this._handled,
-      'Cannot dismiss dialog which is already handled!',
-    );
+    (0, _utils.assert)(!this._handled, 'Cannot dismiss dialog which is already handled!');
     this._handled = true;
 
     this._page._frameManager.dialogWillClose();
 
     await this._onHandle(false);
   }
+
 }
 
 exports.Dialog = Dialog;

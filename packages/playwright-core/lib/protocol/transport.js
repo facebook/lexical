@@ -1,11 +1,11 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.Transport = void 0;
 
-var _utils = require('../utils/utils');
+var _utils = require("../utils/utils");
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -36,7 +36,7 @@ class Transport {
     this._pipeWrite = pipeWrite;
     this._endian = endian;
     this._closeableStream = closeable;
-    pipeRead.on('data', (buffer) => this._dispatch(buffer));
+    pipeRead.on('data', buffer => this._dispatch(buffer));
     pipeRead.on('close', () => {
       this._closed = true;
       if (this.onclose) this.onclose();
@@ -49,8 +49,7 @@ class Transport {
     if (this._closed) throw new Error('Pipe has been closed');
     const data = Buffer.from(message, 'utf-8');
     const dataLength = Buffer.alloc(4);
-    if (this._endian === 'be') dataLength.writeUInt32BE(data.length, 0);
-    else dataLength.writeUInt32LE(data.length, 0);
+    if (this._endian === 'be') dataLength.writeUInt32BE(data.length, 0);else dataLength.writeUInt32LE(data.length, 0);
 
     this._pipeWrite.write(dataLength);
 
@@ -72,10 +71,7 @@ class Transport {
       }
 
       if (!this._bytesLeft) {
-        this._bytesLeft =
-          this._endian === 'be'
-            ? this._data.readUInt32BE(0)
-            : this._data.readUInt32LE(0);
+        this._bytesLeft = this._endian === 'be' ? this._data.readUInt32BE(0) : this._data.readUInt32LE(0);
         this._data = this._data.slice(4);
       }
 
@@ -94,6 +90,7 @@ class Transport {
       });
     }
   }
+
 }
 
 exports.Transport = Transport;

@@ -1,7 +1,7 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.toClickOptions = toClickOptions;
 exports.toModifiers = toModifiers;
@@ -34,7 +34,7 @@ function toClickOptions(action) {
   if (action.position) options.position = action.position;
   return {
     method,
-    options,
+    options
   };
 }
 
@@ -49,30 +49,26 @@ function toModifiers(modifiers) {
 
 function describeFrame(frame) {
   const page = frame._page;
-  if (page.mainFrame() === frame)
-    return {
-      isMainFrame: true,
-      frameUrl: frame.url(),
-    };
-  const frames = page.frames().filter((f) => f.name() === frame.name());
-  if (frames.length === 1 && frames[0] === frame)
-    return {
-      isMainFrame: false,
-      frameUrl: frame.url(),
-      frameName: frame.name(),
-    };
-  return {
+  if (page.mainFrame() === frame) return {
+    isMainFrame: true,
+    frameUrl: frame.url()
+  };
+  const frames = page.frames().filter(f => f.name() === frame.name());
+  if (frames.length === 1 && frames[0] === frame) return {
     isMainFrame: false,
     frameUrl: frame.url(),
+    frameName: frame.name()
+  };
+  return {
+    isMainFrame: false,
+    frameUrl: frame.url()
   };
 }
 
-function escapeWithQuotes(text, char = "'") {
+function escapeWithQuotes(text, char = '\'') {
   const stringified = JSON.stringify(text);
-  const escapedText = stringified
-    .substring(1, stringified.length - 1)
-    .replace(/\\"/g, '"');
-  if (char === "'") return char + escapedText.replace(/[']/g, "\\'") + char;
+  const escapedText = stringified.substring(1, stringified.length - 1).replace(/\\"/g, '"');
+  if (char === '\'') return char + escapedText.replace(/[']/g, '\\\'') + char;
   if (char === '"') return char + escapedText.replace(/["]/g, '\\"') + char;
   if (char === '`') return char + escapedText.replace(/[`]/g, '`') + char;
   throw new Error('Invalid escape char');

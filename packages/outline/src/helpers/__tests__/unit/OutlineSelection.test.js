@@ -1212,7 +1212,7 @@ describe('OutlineSelection tests', () => {
       );
   });
 
-  test('isBackwards', async () => {
+  test('isBackward', async () => {
     await editor.update((view) => {
       const root = view.getRoot();
       const paragraph = root.getFirstChild();
@@ -1229,19 +1229,19 @@ describe('OutlineSelection tests', () => {
 
       anchor.set(textNodeKey, 0, 'text');
       focus.set(textNodeKey, 0, 'text');
-      expect(selection.isBackwards()).toBe(false);
+      expect(selection.isBackward()).toBe(false);
 
       anchor.set(paragraphKey, 1, 'block');
       focus.set(paragraphKey, 1, 'block');
-      expect(selection.isBackwards()).toBe(false);
+      expect(selection.isBackward()).toBe(false);
 
       anchor.set(paragraphKey, 0, 'block');
       focus.set(paragraphKey, 1, 'block');
-      expect(selection.isBackwards()).toBe(false);
+      expect(selection.isBackward()).toBe(false);
 
       anchor.set(paragraphKey, 1, 'block');
       focus.set(paragraphKey, 0, 'block');
-      expect(selection.isBackwards()).toBe(true);
+      expect(selection.isBackward()).toBe(true);
     });
   });
 });

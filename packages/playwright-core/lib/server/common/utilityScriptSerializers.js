@@ -1,7 +1,7 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.parseEvaluationResultValue = parseEvaluationResultValue;
 exports.serializeAsCallArgument = serializeAsCallArgument;
@@ -22,24 +22,15 @@ exports.serializeAsCallArgument = serializeAsCallArgument;
  * limitations under the License.
  */
 function isRegExp(obj) {
-  return (
-    obj instanceof RegExp ||
-    Object.prototype.toString.call(obj) === '[object RegExp]'
-  );
+  return obj instanceof RegExp || Object.prototype.toString.call(obj) === '[object RegExp]';
 }
 
 function isDate(obj) {
-  return (
-    obj instanceof Date ||
-    Object.prototype.toString.call(obj) === '[object Date]'
-  );
+  return obj instanceof Date || Object.prototype.toString.call(obj) === '[object Date]';
 }
 
 function isError(obj) {
-  return (
-    obj instanceof Error ||
-    (obj && obj.__proto__ && obj.__proto__.name === 'Error')
-  );
+  return obj instanceof Error || obj && obj.__proto__ && obj.__proto__.name === 'Error';
 }
 
 function parseEvaluationResultValue(value, handles = []) {
@@ -58,14 +49,15 @@ function parseEvaluationResultValue(value, handles = []) {
 
     if ('d' in value) return new Date(value.d);
     if ('r' in value) return new RegExp(value.r.p, value.r.f);
-    if ('a' in value)
-      return value.a.map((a) => parseEvaluationResultValue(a, handles));
+    if ('a' in value) return value.a.map(a => parseEvaluationResultValue(a, handles));
 
     if ('o' in value) {
       const result = {};
 
-      for (const {k, v} of value.o)
-        result[k] = parseEvaluationResultValue(v, handles);
+      for (const {
+        k,
+        v
+      } of value.o) result[k] = parseEvaluationResultValue(v, handles);
 
       return result;
     }
@@ -82,37 +74,29 @@ function serializeAsCallArgument(value, handleSerializer) {
 
 function serialize(value, handleSerializer, visited) {
   const result = handleSerializer(value);
-  if ('fallThrough' in result) value = result.fallThrough;
-  else return result;
+  if ('fallThrough' in result) value = result.fallThrough;else return result;
   if (visited.has(value)) throw new Error('Argument is a circular structure');
-  if (typeof value === 'symbol')
-    return {
-      v: 'undefined',
-    };
-  if (Object.is(value, undefined))
-    return {
-      v: 'undefined',
-    };
-  if (Object.is(value, null))
-    return {
-      v: 'null',
-    };
-  if (Object.is(value, NaN))
-    return {
-      v: 'NaN',
-    };
-  if (Object.is(value, Infinity))
-    return {
-      v: 'Infinity',
-    };
-  if (Object.is(value, -Infinity))
-    return {
-      v: '-Infinity',
-    };
-  if (Object.is(value, -0))
-    return {
-      v: '-0',
-    };
+  if (typeof value === 'symbol') return {
+    v: 'undefined'
+  };
+  if (Object.is(value, undefined)) return {
+    v: 'undefined'
+  };
+  if (Object.is(value, null)) return {
+    v: 'null'
+  };
+  if (Object.is(value, NaN)) return {
+    v: 'NaN'
+  };
+  if (Object.is(value, Infinity)) return {
+    v: 'Infinity'
+  };
+  if (Object.is(value, -Infinity)) return {
+    v: '-Infinity'
+  };
+  if (Object.is(value, -0)) return {
+    v: '-0'
+  };
   if (typeof value === 'boolean') return value;
   if (typeof value === 'number') return value;
   if (typeof value === 'string') return value;
@@ -128,28 +112,25 @@ function serialize(value, handleSerializer, visited) {
     return `${error.name}: ${error.message}\n${error.stack}`;
   }
 
-  if (isDate(value))
-    return {
-      d: value.toJSON(),
-    };
-  if (isRegExp(value))
-    return {
-      r: {
-        p: value.source,
-        f: value.flags,
-      },
-    };
+  if (isDate(value)) return {
+    d: value.toJSON()
+  };
+  if (isRegExp(value)) return {
+    r: {
+      p: value.source,
+      f: value.flags
+    }
+  };
 
   if (Array.isArray(value)) {
     const a = [];
     visited.add(value);
 
-    for (let i = 0; i < value.length; ++i)
-      a.push(serialize(value[i], handleSerializer, visited));
+    for (let i = 0; i < value.length; ++i) a.push(serialize(value[i], handleSerializer, visited));
 
     visited.delete(value);
     return {
-      a,
+      a
     };
   }
 
@@ -166,23 +147,20 @@ function serialize(value, handleSerializer, visited) {
         continue; // native bindings will throw sometimes
       }
 
-      if (name === 'toJSON' && typeof item === 'function')
-        o.push({
-          k: name,
-          v: {
-            o: [],
-          },
-        });
-      else
-        o.push({
-          k: name,
-          v: serialize(item, handleSerializer, visited),
-        });
+      if (name === 'toJSON' && typeof item === 'function') o.push({
+        k: name,
+        v: {
+          o: []
+        }
+      });else o.push({
+        k: name,
+        v: serialize(item, handleSerializer, visited)
+      });
     }
 
     visited.delete(value);
     return {
-      o,
+      o
     };
   }
 }

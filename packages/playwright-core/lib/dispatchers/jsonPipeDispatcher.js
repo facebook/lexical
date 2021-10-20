@@ -1,15 +1,15 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.JsonPipeDispatcher = void 0;
 
-var _dispatcher = require('./dispatcher');
+var _dispatcher = require("./dispatcher");
 
-var _utils = require('../utils/utils');
+var _utils = require("../utils/utils");
 
-var _serializers = require('../protocol/serializers');
+var _serializers = require("../protocol/serializers");
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -28,14 +28,9 @@ var _serializers = require('../protocol/serializers');
  */
 class JsonPipeDispatcher extends _dispatcher.Dispatcher {
   constructor(scope) {
-    super(
-      scope,
-      {
-        guid: 'jsonPipe@' + (0, _utils.createGuid)(),
-      },
-      'JsonPipe',
-      {},
-    );
+    super(scope, {
+      guid: 'jsonPipe@' + (0, _utils.createGuid)()
+    }, 'JsonPipe', {});
   }
 
   async send(params) {
@@ -53,19 +48,16 @@ class JsonPipeDispatcher extends _dispatcher.Dispatcher {
   }
 
   dispatch(message) {
-    if (!this._disposed)
-      this._dispatchEvent('message', {
-        message,
-      });
+    if (!this._disposed) this._dispatchEvent('message', {
+      message
+    });
   }
 
   wasClosed(error) {
     if (!this._disposed) {
-      const params = error
-        ? {
-            error: (0, _serializers.serializeError)(error),
-          }
-        : {};
+      const params = error ? {
+        error: (0, _serializers.serializeError)(error)
+      } : {};
 
       this._dispatchEvent('closed', params);
 
@@ -76,6 +68,7 @@ class JsonPipeDispatcher extends _dispatcher.Dispatcher {
   dispose() {
     this._dispose();
   }
+
 }
 
 exports.JsonPipeDispatcher = JsonPipeDispatcher;

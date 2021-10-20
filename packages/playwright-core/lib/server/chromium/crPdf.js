@@ -1,13 +1,13 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.CRPDF = void 0;
 
-var _utils = require('../../utils/utils');
+var _utils = require("../../utils/utils");
 
-var _crProtocolHelper = require('./crProtocolHelper');
+var _crProtocolHelper = require("./crProtocolHelper");
 
 /**
  * Copyright 2017 Google Inc. All rights reserved.
@@ -28,54 +28,54 @@ var _crProtocolHelper = require('./crProtocolHelper');
 const PagePaperFormats = {
   letter: {
     width: 8.5,
-    height: 11,
+    height: 11
   },
   legal: {
     width: 8.5,
-    height: 14,
+    height: 14
   },
   tabloid: {
     width: 11,
-    height: 17,
+    height: 17
   },
   ledger: {
     width: 17,
-    height: 11,
+    height: 11
   },
   a0: {
     width: 33.1,
-    height: 46.8,
+    height: 46.8
   },
   a1: {
     width: 23.4,
-    height: 33.1,
+    height: 33.1
   },
   a2: {
     width: 16.54,
-    height: 23.4,
+    height: 23.4
   },
   a3: {
     width: 11.7,
-    height: 16.54,
+    height: 16.54
   },
   a4: {
     width: 8.27,
-    height: 11.7,
+    height: 11.7
   },
   a5: {
     width: 5.83,
-    height: 8.27,
+    height: 8.27
   },
   a6: {
     width: 4.13,
-    height: 5.83,
-  },
+    height: 5.83
+  }
 };
 const unitToPixels = {
-  px: 1,
-  in: 96,
-  cm: 37.8,
-  mm: 3.78,
+  'px': 1,
+  'in': 96,
+  'cm': 37.8,
+  'mm': 3.78
 };
 
 function convertPrintParameterToInches(text) {
@@ -114,7 +114,7 @@ class CRPDF {
       landscape = false,
       pageRanges = '',
       preferCSSPageSize = false,
-      margin = {},
+      margin = {}
     } = options;
     let paperWidth = 8.5;
     let paperHeight = 11;
@@ -126,8 +126,7 @@ class CRPDF {
       paperHeight = format.height;
     } else {
       paperWidth = convertPrintParameterToInches(options.width) || paperWidth;
-      paperHeight =
-        convertPrintParameterToInches(options.height) || paperHeight;
+      paperHeight = convertPrintParameterToInches(options.height) || paperHeight;
     }
 
     const marginTop = convertPrintParameterToInches(margin.top) || 0;
@@ -149,14 +148,11 @@ class CRPDF {
       marginLeft,
       marginRight,
       pageRanges,
-      preferCSSPageSize,
+      preferCSSPageSize
     });
-    return await (0, _crProtocolHelper.readProtocolStream)(
-      this._client,
-      result.stream,
-      null,
-    );
+    return await (0, _crProtocolHelper.readProtocolStream)(this._client, result.stream, null);
   }
+
 }
 
 exports.CRPDF = CRPDF;

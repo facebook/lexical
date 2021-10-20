@@ -1,27 +1,27 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.BrowserType = void 0;
 
-var _browser3 = require('./browser');
+var _browser3 = require("./browser");
 
-var _browserContext = require('./browserContext');
+var _browserContext = require("./browserContext");
 
-var _channelOwner = require('./channelOwner');
+var _channelOwner = require("./channelOwner");
 
-var _connection = require('./connection');
+var _connection = require("./connection");
 
-var _events = require('./events');
+var _events = require("./events");
 
-var _clientHelper = require('./clientHelper');
+var _clientHelper = require("./clientHelper");
 
-var _utils = require('../utils/utils');
+var _utils = require("../utils/utils");
 
-var _errors = require('../utils/errors');
+var _errors = require("../utils/errors");
 
-var _async = require('../utils/async');
+var _async = require("../utils/async");
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -55,8 +55,7 @@ class BrowserType extends _channelOwner.ChannelOwner {
   }
 
   executablePath() {
-    if (!this._initializer.executablePath)
-      throw new Error('Browser is not supported on current platform');
+    if (!this._initializer.executablePath) throw new Error('Browser is not supported on current platform');
     return this._initializer.executablePath;
   }
 
@@ -66,32 +65,19 @@ class BrowserType extends _channelOwner.ChannelOwner {
 
   async launch(options = {}) {
     const logger = options.logger || this._defaultLaunchOptions.logger;
-    return this._wrapApiCall(async (channel) => {
-      (0, _utils.assert)(
-        !options.userDataDir,
-        'userDataDir option is not supported in `browserType.launch`. Use `browserType.launchPersistentContext` instead',
-      );
-      (0, _utils.assert)(
-        !options.port,
-        'Cannot specify a port without launching as a server.',
-      );
-      options = {...this._defaultLaunchOptions, ...options};
-      const launchOptions = {
-        ...options,
-        ignoreDefaultArgs: Array.isArray(options.ignoreDefaultArgs)
-          ? options.ignoreDefaultArgs
-          : undefined,
-        ignoreAllDefaultArgs:
-          !!options.ignoreDefaultArgs &&
-          !Array.isArray(options.ignoreDefaultArgs),
-        env: options.env
-          ? (0, _clientHelper.envObjectToArray)(options.env)
-          : undefined,
+    return this._wrapApiCall(async channel => {
+      (0, _utils.assert)(!options.userDataDir, 'userDataDir option is not supported in `browserType.launch`. Use `browserType.launchPersistentContext` instead');
+      (0, _utils.assert)(!options.port, 'Cannot specify a port without launching as a server.');
+      options = { ...this._defaultLaunchOptions,
+        ...options
+      };
+      const launchOptions = { ...options,
+        ignoreDefaultArgs: Array.isArray(options.ignoreDefaultArgs) ? options.ignoreDefaultArgs : undefined,
+        ignoreAllDefaultArgs: !!options.ignoreDefaultArgs && !Array.isArray(options.ignoreDefaultArgs),
+        env: options.env ? (0, _clientHelper.envObjectToArray)(options.env) : undefined
       };
 
-      const browser = _browser3.Browser.from(
-        (await channel.launch(launchOptions)).browser,
-      );
+      const browser = _browser3.Browser.from((await channel.launch(launchOptions)).browser);
 
       browser._logger = logger;
 
@@ -102,40 +88,27 @@ class BrowserType extends _channelOwner.ChannelOwner {
   }
 
   async launchServer(options = {}) {
-    if (!this._serverLauncher)
-      throw new Error('Launching server is not supported');
+    if (!this._serverLauncher) throw new Error('Launching server is not supported');
     return this._serverLauncher.launchServer(options);
   }
 
   async launchPersistentContext(userDataDir, options = {}) {
     const logger = options.logger || this._defaultLaunchOptions.logger;
-    return this._wrapApiCall(async (channel) => {
+    return this._wrapApiCall(async channel => {
       var _this$_onDidCreateCon;
 
-      (0, _utils.assert)(
-        !options.port,
-        'Cannot specify a port without launching as a server.',
-      );
-      options = {
-        ...this._defaultLaunchOptions,
+      (0, _utils.assert)(!options.port, 'Cannot specify a port without launching as a server.');
+      options = { ...this._defaultLaunchOptions,
         ...this._defaultContextOptions,
-        ...options,
+        ...options
       };
-      const contextParams = await (0,
-      _browserContext.prepareBrowserContextParams)(options);
-      const persistentParams = {
-        ...contextParams,
-        ignoreDefaultArgs: Array.isArray(options.ignoreDefaultArgs)
-          ? options.ignoreDefaultArgs
-          : undefined,
-        ignoreAllDefaultArgs:
-          !!options.ignoreDefaultArgs &&
-          !Array.isArray(options.ignoreDefaultArgs),
-        env: options.env
-          ? (0, _clientHelper.envObjectToArray)(options.env)
-          : undefined,
+      const contextParams = await (0, _browserContext.prepareBrowserContextParams)(options);
+      const persistentParams = { ...contextParams,
+        ignoreDefaultArgs: Array.isArray(options.ignoreDefaultArgs) ? options.ignoreDefaultArgs : undefined,
+        ignoreAllDefaultArgs: !!options.ignoreDefaultArgs && !Array.isArray(options.ignoreDefaultArgs),
+        env: options.env ? (0, _clientHelper.envObjectToArray)(options.env) : undefined,
         channel: options.channel,
-        userDataDir,
+        userDataDir
       };
       const result = await channel.launchPersistentContext(persistentParams);
 
@@ -146,36 +119,29 @@ class BrowserType extends _channelOwner.ChannelOwner {
 
       context._setBrowserType(this);
 
-      await ((_this$_onDidCreateCon = this._onDidCreateContext) === null ||
-      _this$_onDidCreateCon === void 0
-        ? void 0
-        : _this$_onDidCreateCon.call(this, context));
+      await ((_this$_onDidCreateCon = this._onDidCreateContext) === null || _this$_onDidCreateCon === void 0 ? void 0 : _this$_onDidCreateCon.call(this, context));
       return context;
     }, logger);
   }
 
   async connect(optionsOrWsEndpoint, options) {
-    if (typeof optionsOrWsEndpoint === 'string')
-      return this._connect(optionsOrWsEndpoint, options);
-    (0, _utils.assert)(
-      optionsOrWsEndpoint.wsEndpoint,
-      'options.wsEndpoint is required',
-    );
+    if (typeof optionsOrWsEndpoint === 'string') return this._connect(optionsOrWsEndpoint, options);
+    (0, _utils.assert)(optionsOrWsEndpoint.wsEndpoint, 'options.wsEndpoint is required');
     return this._connect(optionsOrWsEndpoint.wsEndpoint, optionsOrWsEndpoint);
   }
 
   async _connect(wsEndpoint, params = {}) {
     const logger = params.logger;
-    return await this._wrapApiCall(async (channel) => {
-      const deadline = params.timeout
-        ? (0, _utils.monotonicTime)() + params.timeout
-        : 0;
+    return await this._wrapApiCall(async channel => {
+      const deadline = params.timeout ? (0, _utils.monotonicTime)() + params.timeout : 0;
       let browser;
-      const {pipe} = await channel.connect({
+      const {
+        pipe
+      } = await channel.connect({
         wsEndpoint,
         headers: params.headers,
         slowMo: params.slowMo,
-        timeout: params.timeout,
+        timeout: params.timeout
       });
 
       const closePipe = () => pipe.close().catch(() => {});
@@ -188,10 +154,7 @@ class BrowserType extends _channelOwner.ChannelOwner {
         var _browser2;
 
         // Emulate all pages, contexts and the browser closing upon disconnect.
-        for (const context of ((_browser = browser) === null ||
-        _browser === void 0
-          ? void 0
-          : _browser.contexts()) || []) {
+        for (const context of ((_browser = browser) === null || _browser === void 0 ? void 0 : _browser.contexts()) || []) {
           var _browser;
 
           for (const page of context.pages()) page._onClose();
@@ -199,22 +162,19 @@ class BrowserType extends _channelOwner.ChannelOwner {
           context._onClose();
         }
 
-        (_browser2 = browser) === null || _browser2 === void 0
-          ? void 0
-          : _browser2._didClose();
+        (_browser2 = browser) === null || _browser2 === void 0 ? void 0 : _browser2._didClose();
         connection.close(_errors.kBrowserClosedError);
       };
 
       pipe.on('closed', onPipeClosed);
 
-      connection.onmessage = (message) =>
-        pipe
-          .send({
-            message,
-          })
-          .catch(onPipeClosed);
+      connection.onmessage = message => pipe.send({
+        message
+      }).catch(onPipeClosed);
 
-      pipe.on('message', ({message}) => {
+      pipe.on('message', ({
+        message
+      }) => {
         try {
           connection.dispatch(message);
         } catch (e) {
@@ -226,21 +186,16 @@ class BrowserType extends _channelOwner.ChannelOwner {
       const createBrowserPromise = new Promise(async (fulfill, reject) => {
         try {
           // For tests.
-          if (params.__testHookBeforeCreateBrowser)
-            await params.__testHookBeforeCreateBrowser();
+          if (params.__testHookBeforeCreateBrowser) await params.__testHookBeforeCreateBrowser();
           const playwright = await connection.initializePlaywright();
 
           if (!playwright._initializer.preLaunchedBrowser) {
-            reject(
-              new Error('Malformed endpoint. Did you use launchServer method?'),
-            );
+            reject(new Error('Malformed endpoint. Did you use launchServer method?'));
             closePipe();
             return;
           }
 
-          browser = _browser3.Browser.from(
-            playwright._initializer.preLaunchedBrowser,
-          );
+          browser = _browser3.Browser.from(playwright._initializer.preLaunchedBrowser);
           browser._logger = logger;
           browser._shouldCloseConnectionOnClose = true;
 
@@ -252,10 +207,7 @@ class BrowserType extends _channelOwner.ChannelOwner {
           reject(e);
         }
       });
-      const result = await (0, _async.raceAgainstDeadline)(
-        createBrowserPromise,
-        deadline,
-      );
+      const result = await (0, _async.raceAgainstDeadline)(createBrowserPromise, deadline);
 
       if (result.result) {
         return result.result;
@@ -267,46 +219,30 @@ class BrowserType extends _channelOwner.ChannelOwner {
   }
 
   connectOverCDP(endpointURLOrOptions, options) {
-    if (typeof endpointURLOrOptions === 'string')
-      return this._connectOverCDP(endpointURLOrOptions, options);
-    const endpointURL =
-      'endpointURL' in endpointURLOrOptions
-        ? endpointURLOrOptions.endpointURL
-        : endpointURLOrOptions.wsEndpoint;
-    (0, _utils.assert)(
-      endpointURL,
-      'Cannot connect over CDP without wsEndpoint.',
-    );
+    if (typeof endpointURLOrOptions === 'string') return this._connectOverCDP(endpointURLOrOptions, options);
+    const endpointURL = 'endpointURL' in endpointURLOrOptions ? endpointURLOrOptions.endpointURL : endpointURLOrOptions.wsEndpoint;
+    (0, _utils.assert)(endpointURL, 'Cannot connect over CDP without wsEndpoint.');
     return this.connectOverCDP(endpointURL, endpointURLOrOptions);
   }
 
   async _connectOverCDP(endpointURL, params = {}) {
-    if (this.name() !== 'chromium')
-      throw new Error('Connecting over CDP is only supported in Chromium.');
+    if (this.name() !== 'chromium') throw new Error('Connecting over CDP is only supported in Chromium.');
     const logger = params.logger;
-    return this._wrapApiCall(async (channel) => {
-      const paramsHeaders = Object.assign(
-        {
-          'User-Agent': (0, _utils.getUserAgent)(),
-        },
-        params.headers,
-      );
-      const headers = paramsHeaders
-        ? (0, _utils.headersObjectToArray)(paramsHeaders)
-        : undefined;
+    return this._wrapApiCall(async channel => {
+      const paramsHeaders = Object.assign({
+        'User-Agent': (0, _utils.getUserAgent)()
+      }, params.headers);
+      const headers = paramsHeaders ? (0, _utils.headersObjectToArray)(paramsHeaders) : undefined;
       const result = await channel.connectOverCDP({
         endpointURL,
         headers,
         slowMo: params.slowMo,
-        timeout: params.timeout,
+        timeout: params.timeout
       });
 
       const browser = _browser3.Browser.from(result.browser);
 
-      if (result.defaultContext)
-        browser._contexts.add(
-          _browserContext.BrowserContext.from(result.defaultContext),
-        );
+      if (result.defaultContext) browser._contexts.add(_browserContext.BrowserContext.from(result.defaultContext));
       browser._logger = logger;
 
       browser._setBrowserType(this);
@@ -314,6 +250,7 @@ class BrowserType extends _channelOwner.ChannelOwner {
       return browser;
     }, logger);
   }
+
 }
 
 exports.BrowserType = BrowserType;

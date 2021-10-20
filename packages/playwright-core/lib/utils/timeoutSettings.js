@@ -1,11 +1,11 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.TimeoutSettings = exports.DEFAULT_TIMEOUT = void 0;
 
-var _utils = require('./utils');
+var _utils = require("./utils");
 
 /**
  * Copyright 2019 Google Inc. All rights reserved.
@@ -45,8 +45,7 @@ class TimeoutSettings {
 
   navigationTimeout(options) {
     if (typeof options.timeout === 'number') return options.timeout;
-    if (this._defaultNavigationTimeout !== null)
-      return this._defaultNavigationTimeout;
+    if (this._defaultNavigationTimeout !== null) return this._defaultNavigationTimeout;
     if (this._defaultTimeout !== null) return this._defaultTimeout;
     if (this._parent) return this._parent.navigationTimeout(options);
     return TIMEOUT;
@@ -63,6 +62,7 @@ class TimeoutSettings {
     if (typeof options.timeout === 'number') return options.timeout;
     return TIMEOUT;
   }
+
 }
 
 exports.TimeoutSettings = TimeoutSettings;

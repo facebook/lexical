@@ -1,11 +1,11 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.ConsoleMessage = void 0;
 
-var _instrumentation = require('./instrumentation');
+var _instrumentation = require("./instrumentation");
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -35,7 +35,7 @@ class ConsoleMessage extends _instrumentation.SdkObject {
     this._location = location || {
       url: '',
       lineNumber: 0,
-      columnNumber: 0,
+      columnNumber: 0
     };
   }
 
@@ -44,8 +44,7 @@ class ConsoleMessage extends _instrumentation.SdkObject {
   }
 
   text() {
-    if (this._text === undefined)
-      this._text = this._args.map((arg) => arg.preview()).join(' ');
+    if (this._text === undefined) this._text = this._args.map(arg => arg.preview()).join(' ');
     return this._text;
   }
 
@@ -56,6 +55,7 @@ class ConsoleMessage extends _instrumentation.SdkObject {
   location() {
     return this._location;
   }
+
 }
 
 exports.ConsoleMessage = ConsoleMessage;

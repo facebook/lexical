@@ -1,15 +1,15 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.Worker = void 0;
 
-var _events = require('./events');
+var _events = require("./events");
 
-var _channelOwner = require('./channelOwner');
+var _channelOwner = require("./channelOwner");
 
-var _jsHandle = require('./jsHandle');
+var _jsHandle = require("./jsHandle");
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -51,11 +51,11 @@ class Worker extends _channelOwner.ChannelOwner {
 
   async evaluate(pageFunction, arg) {
     (0, _jsHandle.assertMaxArguments)(arguments.length, 2);
-    return this._wrapApiCall(async (channel) => {
+    return this._wrapApiCall(async channel => {
       const result = await channel.evaluateExpression({
         expression: String(pageFunction),
         isFunction: typeof pageFunction === 'function',
-        arg: (0, _jsHandle.serializeArgument)(arg),
+        arg: (0, _jsHandle.serializeArgument)(arg)
       });
       return (0, _jsHandle.parseResult)(result.value);
     });
@@ -63,15 +63,16 @@ class Worker extends _channelOwner.ChannelOwner {
 
   async evaluateHandle(pageFunction, arg) {
     (0, _jsHandle.assertMaxArguments)(arguments.length, 2);
-    return this._wrapApiCall(async (channel) => {
+    return this._wrapApiCall(async channel => {
       const result = await channel.evaluateExpressionHandle({
         expression: String(pageFunction),
         isFunction: typeof pageFunction === 'function',
-        arg: (0, _jsHandle.serializeArgument)(arg),
+        arg: (0, _jsHandle.serializeArgument)(arg)
       });
       return _jsHandle.JSHandle.from(result.handle);
     });
   }
+
 }
 
 exports.Worker = Worker;

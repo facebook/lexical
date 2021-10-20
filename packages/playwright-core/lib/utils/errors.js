@@ -1,13 +1,10 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.isSafeCloseError = isSafeCloseError;
-exports.kBrowserOrContextClosedError =
-  exports.kBrowserClosedError =
-  exports.TimeoutError =
-    void 0;
+exports.kBrowserOrContextClosedError = exports.kBrowserClosedError = exports.TimeoutError = void 0;
 
 /**
  * Copyright 2018 Google Inc. All rights reserved.
@@ -31,6 +28,7 @@ class CustomError extends Error {
     this.name = this.constructor.name;
     Error.captureStackTrace(this, this.constructor);
   }
+
 }
 
 class TimeoutError extends CustomError {}
@@ -38,13 +36,9 @@ class TimeoutError extends CustomError {}
 exports.TimeoutError = TimeoutError;
 const kBrowserClosedError = 'Browser has been closed';
 exports.kBrowserClosedError = kBrowserClosedError;
-const kBrowserOrContextClosedError =
-  'Target page, context or browser has been closed';
+const kBrowserOrContextClosedError = 'Target page, context or browser has been closed';
 exports.kBrowserOrContextClosedError = kBrowserOrContextClosedError;
 
 function isSafeCloseError(error) {
-  return (
-    error.message.endsWith(kBrowserClosedError) ||
-    error.message.endsWith(kBrowserOrContextClosedError)
-  );
+  return error.message.endsWith(kBrowserClosedError) || error.message.endsWith(kBrowserOrContextClosedError);
 }

@@ -1,7 +1,7 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.isSessionClosedError = isSessionClosedError;
 exports.ProtocolError = void 0;
@@ -27,6 +27,7 @@ class ProtocolError extends Error {
     this.sessionClosed = void 0;
     this.sessionClosed = sessionClosed || false;
   }
+
 }
 
 exports.ProtocolError = ProtocolError;

@@ -1,13 +1,13 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.Stream = void 0;
 
-var _stream = require('stream');
+var _stream = require("stream");
 
-var _channelOwner = require('./channelOwner');
+var _channelOwner = require("./channelOwner");
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -36,6 +36,7 @@ class Stream extends _channelOwner.ChannelOwner {
   stream() {
     return new StreamImpl(this._channel);
   }
+
 }
 
 exports.Stream = Stream;
@@ -49,16 +50,16 @@ class StreamImpl extends _stream.Readable {
 
   async _read(size) {
     const result = await this._channel.read({
-      size,
+      size
     });
-    if (result.binary) this.push(Buffer.from(result.binary, 'base64'));
-    else this.push(null);
+    if (result.binary) this.push(Buffer.from(result.binary, 'base64'));else this.push(null);
   }
 
   _destroy(error, callback) {
     // Stream might be destroyed after the connection was closed.
-    this._channel.close().catch((e) => null);
+    this._channel.close().catch(e => null);
 
     super._destroy(error, callback);
   }
+
 }

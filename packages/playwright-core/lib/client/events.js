@@ -1,7 +1,7 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.Events = void 0;
 
@@ -24,17 +24,17 @@ exports.Events = void 0;
 const Events = {
   AndroidDevice: {
     WebView: 'webview',
-    Close: 'close',
+    Close: 'close'
   },
   AndroidSocket: {
     Data: 'data',
-    Close: 'close',
+    Close: 'close'
   },
   AndroidWebView: {
-    Close: 'close',
+    Close: 'close'
   },
   Browser: {
-    Disconnected: 'disconnected',
+    Disconnected: 'disconnected'
   },
   BrowserContext: {
     Close: 'close',
@@ -44,10 +44,10 @@ const Events = {
     Request: 'request',
     Response: 'response',
     RequestFailed: 'requestfailed',
-    RequestFinished: 'requestfinished',
+    RequestFinished: 'requestfinished'
   },
   BrowserServer: {
-    Close: 'close',
+    Close: 'close'
   },
   Page: {
     Close: 'close',
@@ -70,20 +70,20 @@ const Events = {
     Load: 'load',
     Popup: 'popup',
     WebSocket: 'websocket',
-    Worker: 'worker',
+    Worker: 'worker'
   },
   WebSocket: {
     Close: 'close',
     Error: 'socketerror',
     FrameReceived: 'framereceived',
-    FrameSent: 'framesent',
+    FrameSent: 'framesent'
   },
   Worker: {
-    Close: 'close',
+    Close: 'close'
   },
   ElectronApplication: {
     Close: 'close',
-    Window: 'window',
-  },
+    Window: 'window'
+  }
 };
 exports.Events = Events;

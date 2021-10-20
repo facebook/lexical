@@ -1,81 +1,41 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.AndroidDevice = exports.Android = void 0;
 
-var _debug = _interopRequireDefault(require('debug'));
+var _debug = _interopRequireDefault(require("debug"));
 
-var _events = require('events');
+var _events = require("events");
 
-var _fs = _interopRequireDefault(require('fs'));
+var _fs = _interopRequireDefault(require("fs"));
 
-var ws = _interopRequireWildcard(require('ws'));
+var ws = _interopRequireWildcard(require("ws"));
 
-var _utils = require('../../utils/utils');
+var _utils = require("../../utils/utils");
 
-var _browserContext = require('../browserContext');
+var _browserContext = require("../browserContext");
 
-var _progress = require('../progress');
+var _progress = require("../progress");
 
-var _crBrowser = require('../chromium/crBrowser');
+var _crBrowser = require("../chromium/crBrowser");
 
-var _helper = require('../helper');
+var _helper = require("../helper");
 
-var _transport = require('../../protocol/transport');
+var _transport = require("../../protocol/transport");
 
-var _debugLogger = require('../../utils/debugLogger');
+var _debugLogger = require("../../utils/debugLogger");
 
-var _timeoutSettings = require('../../utils/timeoutSettings');
+var _timeoutSettings = require("../../utils/timeoutSettings");
 
-var _instrumentation = require('../instrumentation');
+var _instrumentation = require("../instrumentation");
 
-function _getRequireWildcardCache(nodeInterop) {
-  if (typeof WeakMap !== 'function') return null;
-  var cacheBabelInterop = new WeakMap();
-  var cacheNodeInterop = new WeakMap();
-  return (_getRequireWildcardCache = function (nodeInterop) {
-    return nodeInterop ? cacheNodeInterop : cacheBabelInterop;
-  })(nodeInterop);
-}
+function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 
-function _interopRequireWildcard(obj, nodeInterop) {
-  if (!nodeInterop && obj && obj.__esModule) {
-    return obj;
-  }
-  if (obj === null || (typeof obj !== 'object' && typeof obj !== 'function')) {
-    return {default: obj};
-  }
-  var cache = _getRequireWildcardCache(nodeInterop);
-  if (cache && cache.has(obj)) {
-    return cache.get(obj);
-  }
-  var newObj = {};
-  var hasPropertyDescriptor =
-    Object.defineProperty && Object.getOwnPropertyDescriptor;
-  for (var key in obj) {
-    if (key !== 'default' && Object.prototype.hasOwnProperty.call(obj, key)) {
-      var desc = hasPropertyDescriptor
-        ? Object.getOwnPropertyDescriptor(obj, key)
-        : null;
-      if (desc && (desc.get || desc.set)) {
-        Object.defineProperty(newObj, key, desc);
-      } else {
-        newObj[key] = obj[key];
-      }
-    }
-  }
-  newObj.default = obj;
-  if (cache) {
-    cache.set(obj, newObj);
-  }
-  return newObj;
-}
+function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 
-function _interopRequireDefault(obj) {
-  return obj && obj.__esModule ? obj : {default: obj};
-}
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
  * Copyright Microsoft Corporation. All rights reserved.
@@ -109,9 +69,7 @@ class Android extends _instrumentation.SdkObject {
   }
 
   async devices() {
-    const devices = (await this._backend.devices()).filter(
-      (d) => d.status === 'device',
-    );
+    const devices = (await this._backend.devices()).filter(d => d.status === 'device');
     const newSerials = new Set();
 
     for (const d of devices) {
@@ -132,6 +90,7 @@ class Android extends _instrumentation.SdkObject {
   _deviceClosed(device) {
     this._devices.delete(device.serial);
   }
+
 }
 
 exports.Android = Android;
@@ -155,9 +114,7 @@ class AndroidDevice extends _instrumentation.SdkObject {
     this._backend = backend;
     this.model = model;
     this.serial = backend.serial;
-    this._timeoutSettings = new _timeoutSettings.TimeoutSettings(
-      android._timeoutSettings,
-    );
+    this._timeoutSettings = new _timeoutSettings.TimeoutSettings(android._timeoutSettings);
   }
 
   static async create(android, backend) {
@@ -172,13 +129,7 @@ class AndroidDevice extends _instrumentation.SdkObject {
     await this._refreshWebViews();
 
     const poll = () => {
-      this._pollingWebViews = setTimeout(
-        () =>
-          this._refreshWebViews()
-            .then(poll)
-            .catch(() => {}),
-        500,
-      );
+      this._pollingWebViews = setTimeout(() => this._refreshWebViews().then(poll).catch(() => {}), 500);
     };
 
     poll();
@@ -211,39 +162,29 @@ class AndroidDevice extends _instrumentation.SdkObject {
     (0, _debug.default)('pw:android')('Stopping the old driver');
     await this.shell(`am force-stop com.microsoft.playwright.androiddriver`);
     (0, _debug.default)('pw:android')('Uninstalling the old driver');
-    await this.shell(
-      `cmd package uninstall com.microsoft.playwright.androiddriver`,
-    );
-    await this.shell(
-      `cmd package uninstall com.microsoft.playwright.androiddriver.test`,
-    );
+    await this.shell(`cmd package uninstall com.microsoft.playwright.androiddriver`);
+    await this.shell(`cmd package uninstall com.microsoft.playwright.androiddriver.test`);
     (0, _debug.default)('pw:android')('Installing the new driver');
 
-    for (const file of ['android-driver.apk', 'android-driver-target.apk'])
-      await this.installApk(
-        await _fs.default.promises.readFile(
-          require.resolve(`../../../bin/${file}`),
-        ),
-      );
+    for (const file of ['android-driver.apk', 'android-driver-target.apk']) await this.installApk(await _fs.default.promises.readFile(require.resolve(`../../../bin/${file}`)));
 
     (0, _debug.default)('pw:android')('Starting the new driver');
-    this.shell(
-      'am instrument -w com.microsoft.playwright.androiddriver.test/androidx.test.runner.AndroidJUnitRunner',
-    ).catch((e) => (0, _debug.default)('pw:android')(e));
-    const socket = await this._waitForLocalAbstract(
-      'playwright_android_driver_socket',
-    );
+    this.shell('am instrument -w com.microsoft.playwright.androiddriver.test/androidx.test.runner.AndroidJUnitRunner').catch(e => (0, _debug.default)('pw:android')(e));
+    const socket = await this._waitForLocalAbstract('playwright_android_driver_socket');
     const transport = new _transport.Transport(socket, socket, socket, 'be');
 
-    transport.onmessage = (message) => {
+    transport.onmessage = message => {
       const response = JSON.parse(message);
-      const {id, result, error} = response;
+      const {
+        id,
+        result,
+        error
+      } = response;
 
       const callback = this._callbacks.get(id);
 
       if (!callback) return;
-      if (error) callback.reject(new Error(error));
-      else callback.fulfill(result);
+      if (error) callback.reject(new Error(error));else callback.fulfill(result);
 
       this._callbacks.delete(id);
     };
@@ -253,21 +194,17 @@ class AndroidDevice extends _instrumentation.SdkObject {
 
   async _waitForLocalAbstract(socketName) {
     let socket;
-    (0, _debug.default)('pw:android')(
-      `Polling the socket localabstract:${socketName}`,
-    );
+    (0, _debug.default)('pw:android')(`Polling the socket localabstract:${socketName}`);
 
     while (!socket) {
       try {
         socket = await this._backend.open(`localabstract:${socketName}`);
       } catch (e) {
-        await new Promise((f) => setTimeout(f, 250));
+        await new Promise(f => setTimeout(f, 250));
       }
     }
 
-    (0, _debug.default)('pw:android')(
-      `Connected to localabstract:${socketName}`,
-    );
+    (0, _debug.default)('pw:android')(`Connected to localabstract:${socketName}`);
     return socket;
   }
 
@@ -276,19 +213,15 @@ class AndroidDevice extends _instrumentation.SdkObject {
     params.timeout = this._timeoutSettings.timeout(params);
     const driver = await this._driver();
     const id = ++this._lastId;
-    const result = new Promise((fulfill, reject) =>
-      this._callbacks.set(id, {
-        fulfill,
-        reject,
-      }),
-    );
-    driver.send(
-      JSON.stringify({
-        id,
-        method,
-        params,
-      }),
-    );
+    const result = new Promise((fulfill, reject) => this._callbacks.set(id, {
+      fulfill,
+      reject
+    }));
+    driver.send(JSON.stringify({
+      id,
+      method,
+      params
+    }));
     return result;
   }
 
@@ -316,12 +249,8 @@ class AndroidDevice extends _instrumentation.SdkObject {
     const socketName = 'playwright-' + (0, _utils.createGuid)();
     const commandLine = `_ --disable-fre --no-default-browser-check --no-first-run --remote-debugging-socket-name=${socketName}`;
     (0, _debug.default)('pw:android')('Starting', pkg, commandLine);
-    await this._backend.runCommand(
-      `shell:echo "${commandLine}" > /data/local/tmp/chrome-command-line`,
-    );
-    await this._backend.runCommand(
-      `shell:am start -n ${pkg}/com.google.android.apps.chrome.Main about:blank`,
-    );
+    await this._backend.runCommand(`shell:echo "${commandLine}" > /data/local/tmp/chrome-command-line`);
+    await this._backend.runCommand(`shell:am start -n ${pkg}/com.google.android.apps.chrome.Main about:blank`);
     return await this._connectToBrowser(socketName, options);
   }
 
@@ -339,31 +268,26 @@ class AndroidDevice extends _instrumentation.SdkObject {
 
     this._browserConnections.add(androidBrowser);
 
-    const browserOptions = {
-      ...this._android._playwrightOptions,
+    const browserOptions = { ...this._android._playwrightOptions,
       name: 'clank',
       isChromium: true,
       slowMo: 0,
-      persistent: {...options, noDefaultViewport: true},
+      persistent: { ...options,
+        noDefaultViewport: true
+      },
       artifactsDir: '',
       downloadsPath: '',
       tracesDir: '',
       browserProcess: new ClankBrowserProcess(androidBrowser),
       proxy: options.proxy,
       protocolLogger: _helper.helper.debugProtocolLogger(),
-      browserLogsCollector: new _debugLogger.RecentLogsCollector(),
+      browserLogsCollector: new _debugLogger.RecentLogsCollector()
     };
     (0, _browserContext.validateBrowserContextOptions)(options, browserOptions);
-    const browser = await _crBrowser.CRBrowser.connect(
-      androidBrowser,
-      browserOptions,
-    );
-    const controller = new _progress.ProgressController(
-      (0, _instrumentation.internalCallMetadata)(),
-      this,
-    );
+    const browser = await _crBrowser.CRBrowser.connect(androidBrowser, browserOptions);
+    const controller = new _progress.ProgressController((0, _instrumentation.internalCallMetadata)(), this);
     const defaultContext = browser._defaultContext;
-    await controller.run(async (progress) => {
+    await controller.run(async progress => {
       await defaultContext._loadDefaultContextAsIs(progress);
     });
     {
@@ -371,19 +295,13 @@ class AndroidDevice extends _instrumentation.SdkObject {
       // Force page scale factor update.
       const page = defaultContext.pages()[0];
       const crPage = page._delegate;
-      await crPage._mainFrameSession._client.send(
-        'Emulation.setDeviceMetricsOverride',
-        {
-          mobile: false,
-          width: 0,
-          height: 0,
-          deviceScaleFactor: 0,
-        },
-      );
-      await crPage._mainFrameSession._client.send(
-        'Emulation.clearDeviceMetricsOverride',
-        {},
-      );
+      await crPage._mainFrameSession._client.send('Emulation.setDeviceMetricsOverride', {
+        mobile: false,
+        width: 0,
+        height: 0,
+        deviceScaleFactor: 0
+      });
+      await crPage._mainFrameSession._client.send('Emulation.clearDeviceMetricsOverride', {});
     }
     return defaultContext;
   }
@@ -395,14 +313,10 @@ class AndroidDevice extends _instrumentation.SdkObject {
   async installApk(content, options) {
     const args = options && options.args ? options.args : ['-r', '-t', '-S'];
     (0, _debug.default)('pw:android')('Opening install socket');
-    const installSocket = await this._backend.open(
-      `shell:cmd package install ${args.join(' ')} ${content.length}`,
-    );
-    (0, _debug.default)('pw:android')(
-      'Writing driver bytes: ' + content.length,
-    );
+    const installSocket = await this._backend.open(`shell:cmd package install ${args.join(' ')} ${content.length}`);
+    (0, _debug.default)('pw:android')('Writing driver bytes: ' + content.length);
     await installSocket.write(content);
-    const success = await new Promise((f) => installSocket.on('data', f));
+    const success = await new Promise(f => installSocket.on('data', f));
     (0, _debug.default)('pw:android')('Written driver bytes: ' + success);
     installSocket.close();
   }
@@ -425,24 +339,17 @@ class AndroidDevice extends _instrumentation.SdkObject {
     await send('SEND', Buffer.from(`${path},${mode}`));
     const maxChunk = 65535;
 
-    for (let i = 0; i < content.length; i += maxChunk)
-      await send('DATA', content.slice(i, i + maxChunk));
+    for (let i = 0; i < content.length; i += maxChunk) await send('DATA', content.slice(i, i + maxChunk));
 
-    await sendHeader('DONE', (Date.now() / 1000) | 0);
-    const result = await new Promise((f) => socket.once('data', f));
+    await sendHeader('DONE', Date.now() / 1000 | 0);
+    const result = await new Promise(f => socket.once('data', f));
     const code = result.slice(0, 4).toString();
     if (code !== 'OKAY') throw new Error('Could not push: ' + code);
     socket.close();
   }
 
   async _refreshWebViews() {
-    const sockets = (
-      await this._backend.runCommand(
-        `shell:cat /proc/net/unix | grep webview_devtools_remote`,
-      )
-    )
-      .toString()
-      .split('\n');
+    const sockets = (await this._backend.runCommand(`shell:cat /proc/net/unix | grep webview_devtools_remote`)).toString().split('\n');
     if (this._isClosed) return;
     const newPids = new Set();
 
@@ -455,11 +362,7 @@ class AndroidDevice extends _instrumentation.SdkObject {
 
     for (const pid of newPids) {
       if (this._webViews.has(pid)) continue;
-      const procs = (
-        await this._backend.runCommand(`shell:ps -A | grep ${pid}`)
-      )
-        .toString()
-        .split('\n');
+      const procs = (await this._backend.runCommand(`shell:ps -A | grep ${pid}`)).toString().split('\n');
       if (this._isClosed) return;
       let pkg = '';
 
@@ -473,7 +376,7 @@ class AndroidDevice extends _instrumentation.SdkObject {
 
       const webView = {
         pid,
-        pkg,
+        pkg
       };
 
       this._webViews.set(pid, webView);
@@ -489,13 +392,14 @@ class AndroidDevice extends _instrumentation.SdkObject {
       }
     }
   }
+
 }
 
 exports.AndroidDevice = AndroidDevice;
 AndroidDevice.Events = {
   WebViewAdded: 'webViewAdded',
   WebViewRemoved: 'webViewRemoved',
-  Closed: 'closed',
+  Closed: 'closed'
 };
 
 class AndroidBrowser extends _events.EventEmitter {
@@ -519,7 +423,7 @@ class AndroidBrowser extends _events.EventEmitter {
 
     this._receiver = new ws.Receiver();
 
-    this._receiver.on('message', (message) => {
+    this._receiver.on('message', message => {
       this._waitForNextTask(() => {
         if (this.onmessage) this.onmessage(JSON.parse(message));
       });
@@ -527,21 +431,17 @@ class AndroidBrowser extends _events.EventEmitter {
   }
 
   async _init() {
-    await this._socket.write(
-      Buffer.from(`GET /devtools/browser HTTP/1.1\r
+    await this._socket.write(Buffer.from(`GET /devtools/browser HTTP/1.1\r
 Upgrade: WebSocket\r
 Connection: Upgrade\r
 Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r
 Sec-WebSocket-Version: 13\r
 \r
-`),
-    ); // HTTP Upgrade response.
+`)); // HTTP Upgrade response.
 
-    await new Promise((f) => this._socket.once('data', f)); // Start sending web frame to receiver.
+    await new Promise(f => this._socket.once('data', f)); // Start sending web frame to receiver.
 
-    this._socket.on('data', (data) =>
-      this._receiver._write(data, 'binary', () => {}),
-    );
+    this._socket.on('data', data => this._receiver._write(data, 'binary', () => {}));
   }
 
   async send(s) {
@@ -551,6 +451,7 @@ Sec-WebSocket-Version: 13\r
   async close() {
     this._socket.close();
   }
+
 }
 
 function encodeWebFrame(data) {
@@ -558,7 +459,7 @@ function encodeWebFrame(data) {
     opcode: 1,
     mask: true,
     fin: true,
-    readOnly: true,
+    readOnly: true
   })[0];
 }
 
@@ -574,4 +475,5 @@ class ClankBrowserProcess {
   async close() {
     await this._browser.close();
   }
+
 }

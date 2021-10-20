@@ -1,32 +1,28 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.lookupDispatcher = lookupDispatcher;
 exports.existingDispatcher = existingDispatcher;
 exports.lookupNullableDispatcher = lookupNullableDispatcher;
-exports.DispatcherConnection =
-  exports.Root =
-  exports.Dispatcher =
-  exports.dispatcherSymbol =
-    void 0;
+exports.DispatcherConnection = exports.Root = exports.Dispatcher = exports.dispatcherSymbol = void 0;
 
-var _events = require('events');
+var _events = require("events");
 
-var _serializers = require('../protocol/serializers');
+var _serializers = require("../protocol/serializers");
 
-var _validator = require('../protocol/validator');
+var _validator = require("../protocol/validator");
 
-var _utils = require('../utils/utils');
+var _utils = require("../utils/utils");
 
-var _validatorPrimitives = require('../protocol/validatorPrimitives');
+var _validatorPrimitives = require("../protocol/validatorPrimitives");
 
-var _errors = require('../utils/errors');
+var _errors = require("../utils/errors");
 
-var _instrumentation = require('../server/instrumentation');
+var _instrumentation = require("../server/instrumentation");
 
-var _stackTrace = require('../utils/stackTrace');
+var _stackTrace = require("../utils/stackTrace");
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -74,8 +70,7 @@ class Dispatcher extends _events.EventEmitter {
     this._type = void 0;
     this._scope = void 0;
     this._object = void 0;
-    this._connection =
-      parent instanceof DispatcherConnection ? parent : parent._connection;
+    this._connection = parent instanceof DispatcherConnection ? parent : parent._connection;
     this._isScope = !!isScope;
     this._parent = parent instanceof DispatcherConnection ? undefined : parent;
     this._scope = isScope ? this : this._parent;
@@ -94,42 +89,23 @@ class Dispatcher extends _events.EventEmitter {
     this._guid = guid;
     this._object = object;
     object[dispatcherSymbol] = this;
-    if (this._parent)
-      this._connection.sendMessageToClient(
-        this._parent._guid,
-        type,
-        '__create__',
-        {
-          type,
-          initializer,
-          guid,
-        },
-        this._parent._object,
-      );
+    if (this._parent) this._connection.sendMessageToClient(this._parent._guid, type, '__create__', {
+      type,
+      initializer,
+      guid
+    }, this._parent._object);
   }
 
   _dispatchEvent(method, params) {
     if (this._disposed) {
-      if ((0, _utils.isUnderTest)())
-        throw new Error(
-          `${this._guid} is sending "${method}" event after being disposed`,
-        ); // Just ignore this event outside of tests.
+      if ((0, _utils.isUnderTest)()) throw new Error(`${this._guid} is sending "${method}" event after being disposed`); // Just ignore this event outside of tests.
 
       return;
     }
 
-    const sdkObject =
-      this._object instanceof _instrumentation.SdkObject
-        ? this._object
-        : undefined;
+    const sdkObject = this._object instanceof _instrumentation.SdkObject ? this._object : undefined;
 
-    this._connection.sendMessageToClient(
-      this._guid,
-      this._type,
-      method,
-      params,
-      sdkObject,
-    );
+    this._connection.sendMessageToClient(this._guid, this._type, method, params, sdkObject);
   }
 
   _dispose() {
@@ -140,47 +116,33 @@ class Dispatcher extends _events.EventEmitter {
 
     this._connection._dispatchers.delete(this._guid); // Dispose all children.
 
-    for (const dispatcher of [...this._dispatchers.values()])
-      dispatcher._dispose();
+
+    for (const dispatcher of [...this._dispatchers.values()]) dispatcher._dispose();
 
     this._dispatchers.clear();
 
-    if (this._isScope)
-      this._connection.sendMessageToClient(
-        this._guid,
-        this._type,
-        '__dispose__',
-        {},
-      );
+    if (this._isScope) this._connection.sendMessageToClient(this._guid, this._type, '__dispose__', {});
   }
 
   _debugScopeState() {
     return {
       _guid: this._guid,
-      objects: Array.from(this._dispatchers.values()).map((o) =>
-        o._debugScopeState(),
-      ),
+      objects: Array.from(this._dispatchers.values()).map(o => o._debugScopeState())
     };
   }
 
-  async waitForEventInfo() {
-    // Instrumentation takes care of this.
+  async waitForEventInfo() {// Instrumentation takes care of this.
   }
+
 }
 
 exports.Dispatcher = Dispatcher;
 
 class Root extends Dispatcher {
   constructor(connection, createPlaywright) {
-    super(
-      connection,
-      {
-        guid: '',
-      },
-      'Root',
-      {},
-      true,
-    );
+    super(connection, {
+      guid: ''
+    }, 'Root', {}, true);
     this._initialized = false;
     this.createPlaywright = createPlaywright;
   }
@@ -190,9 +152,10 @@ class Root extends Dispatcher {
     (0, _utils.assert)(!this._initialized);
     this._initialized = true;
     return {
-      playwright: await this.createPlaywright(this, params),
+      playwright: await this.createPlaywright(this, params)
     };
   }
+
 }
 
 exports.Root = Root;
@@ -202,81 +165,49 @@ class DispatcherConnection {
     params = this._replaceDispatchersWithGuids(params);
 
     if (sdkObject) {
-      var _sdkObject$attributio,
-        _sdkObject$attributio2,
-        _sdkObject$attributio3,
-        _sdkObject$attributio4,
-        _sdkObject$instrument;
+      var _sdkObject$attributio, _sdkObject$attributio2, _sdkObject$attributio3, _sdkObject$attributio4, _sdkObject$instrument;
 
       const eventMetadata = {
         id: `event@${++lastEventId}`,
-        objectId:
-          sdkObject === null || sdkObject === void 0 ? void 0 : sdkObject.guid,
-        pageId:
-          sdkObject === null || sdkObject === void 0
-            ? void 0
-            : (_sdkObject$attributio = sdkObject.attribution) === null ||
-              _sdkObject$attributio === void 0
-            ? void 0
-            : (_sdkObject$attributio2 = _sdkObject$attributio.page) === null ||
-              _sdkObject$attributio2 === void 0
-            ? void 0
-            : _sdkObject$attributio2.guid,
-        frameId:
-          sdkObject === null || sdkObject === void 0
-            ? void 0
-            : (_sdkObject$attributio3 = sdkObject.attribution) === null ||
-              _sdkObject$attributio3 === void 0
-            ? void 0
-            : (_sdkObject$attributio4 = _sdkObject$attributio3.frame) ===
-                null || _sdkObject$attributio4 === void 0
-            ? void 0
-            : _sdkObject$attributio4.guid,
+        objectId: sdkObject === null || sdkObject === void 0 ? void 0 : sdkObject.guid,
+        pageId: sdkObject === null || sdkObject === void 0 ? void 0 : (_sdkObject$attributio = sdkObject.attribution) === null || _sdkObject$attributio === void 0 ? void 0 : (_sdkObject$attributio2 = _sdkObject$attributio.page) === null || _sdkObject$attributio2 === void 0 ? void 0 : _sdkObject$attributio2.guid,
+        frameId: sdkObject === null || sdkObject === void 0 ? void 0 : (_sdkObject$attributio3 = sdkObject.attribution) === null || _sdkObject$attributio3 === void 0 ? void 0 : (_sdkObject$attributio4 = _sdkObject$attributio3.frame) === null || _sdkObject$attributio4 === void 0 ? void 0 : _sdkObject$attributio4.guid,
         startTime: (0, _utils.monotonicTime)(),
         endTime: 0,
         type,
         method,
         params: params || {},
         log: [],
-        snapshots: [],
+        snapshots: []
       };
-      (_sdkObject$instrument = sdkObject.instrumentation) === null ||
-      _sdkObject$instrument === void 0
-        ? void 0
-        : _sdkObject$instrument.onEvent(sdkObject, eventMetadata);
+      (_sdkObject$instrument = sdkObject.instrumentation) === null || _sdkObject$instrument === void 0 ? void 0 : _sdkObject$instrument.onEvent(sdkObject, eventMetadata);
     }
 
     this.onmessage({
       guid,
       method,
-      params,
+      params
     });
   }
 
   constructor() {
     this._dispatchers = new Map();
 
-    this.onmessage = (message) => {};
+    this.onmessage = message => {};
 
     this._validateParams = void 0;
     this._validateMetadata = void 0;
     this._waitOperations = new Map();
 
-    const tChannel = (name) => {
+    const tChannel = name => {
       return (arg, path) => {
         if (arg && typeof arg === 'object' && typeof arg.guid === 'string') {
           const guid = arg.guid;
 
           const dispatcher = this._dispatchers.get(guid);
 
-          if (!dispatcher)
-            throw new _validator.ValidationError(
-              `${path}: no object with guid ${guid}`,
-            );
-          if (name !== '*' && dispatcher._type !== name)
-            throw new _validator.ValidationError(
-              `${path}: object with guid ${guid} has type ${dispatcher._type}, expected ${name}`,
-            );
+          if (!dispatcher) throw new _validator.ValidationError(`${path}: no object with guid ${guid}`);
+          if (name !== '*' && dispatcher._type !== name) throw new _validator.ValidationError(`${path}: object with guid ${guid} has type ${dispatcher._type}, expected ${name}`);
           return dispatcher;
         }
 
@@ -287,40 +218,33 @@ class DispatcherConnection {
     const scheme = (0, _validator.createScheme)(tChannel);
 
     this._validateParams = (type, method, params) => {
-      const name =
-        type + method[0].toUpperCase() + method.substring(1) + 'Params';
-      if (!scheme[name])
-        throw new _validator.ValidationError(
-          `Unknown scheme for ${type}.${method}`,
-        );
+      const name = type + method[0].toUpperCase() + method.substring(1) + 'Params';
+      if (!scheme[name]) throw new _validator.ValidationError(`Unknown scheme for ${type}.${method}`);
       return scheme[name](params, '');
     };
 
-    this._validateMetadata = (metadata) => {
-      return (0, _validatorPrimitives.tOptional)(scheme['Metadata'])(
-        metadata,
-        '',
-      );
+    this._validateMetadata = metadata => {
+      return (0, _validatorPrimitives.tOptional)(scheme['Metadata'])(metadata, '');
     };
   }
 
   async dispatch(message) {
-    var _sdkObject$attributio5,
-      _sdkObject$attributio6,
-      _sdkObject$attributio7,
-      _sdkObject$attributio8,
-      _params$info;
+    var _sdkObject$attributio5, _sdkObject$attributio6, _sdkObject$attributio7, _sdkObject$attributio8, _params$info;
 
-    const {id, guid, method, params, metadata} = message;
+    const {
+      id,
+      guid,
+      method,
+      params,
+      metadata
+    } = message;
 
     const dispatcher = this._dispatchers.get(guid);
 
     if (!dispatcher) {
       this.onmessage({
         id,
-        error: (0, _serializers.serializeError)(
-          new Error(_errors.kBrowserOrContextClosedError),
-        ),
+        error: (0, _serializers.serializeError)(new Error(_errors.kBrowserOrContextClosedError))
       });
       return;
     }
@@ -330,7 +254,7 @@ class DispatcherConnection {
 
       this.onmessage({
         id,
-        result: rootDispatcher._debugScopeState(),
+        result: rootDispatcher._debugScopeState()
       });
       return;
     }
@@ -341,126 +265,85 @@ class DispatcherConnection {
     try {
       validParams = this._validateParams(dispatcher._type, method, params);
       validMetadata = this._validateMetadata(metadata);
-      if (typeof dispatcher[method] !== 'function')
-        throw new Error(
-          `Mismatching dispatcher: "${dispatcher._type}" does not implement "${method}"`,
-        );
+      if (typeof dispatcher[method] !== 'function') throw new Error(`Mismatching dispatcher: "${dispatcher._type}" does not implement "${method}"`);
     } catch (e) {
       this.onmessage({
         id,
-        error: (0, _serializers.serializeError)(e),
+        error: (0, _serializers.serializeError)(e)
       });
       return;
     }
 
-    const sdkObject =
-      dispatcher._object instanceof _instrumentation.SdkObject
-        ? dispatcher._object
-        : undefined;
+    const sdkObject = dispatcher._object instanceof _instrumentation.SdkObject ? dispatcher._object : undefined;
     const callMetadata = {
       id: `call@${id}`,
       stack: validMetadata.stack,
       apiName: validMetadata.apiName,
-      objectId:
-        sdkObject === null || sdkObject === void 0 ? void 0 : sdkObject.guid,
-      pageId:
-        sdkObject === null || sdkObject === void 0
-          ? void 0
-          : (_sdkObject$attributio5 = sdkObject.attribution) === null ||
-            _sdkObject$attributio5 === void 0
-          ? void 0
-          : (_sdkObject$attributio6 = _sdkObject$attributio5.page) === null ||
-            _sdkObject$attributio6 === void 0
-          ? void 0
-          : _sdkObject$attributio6.guid,
-      frameId:
-        sdkObject === null || sdkObject === void 0
-          ? void 0
-          : (_sdkObject$attributio7 = sdkObject.attribution) === null ||
-            _sdkObject$attributio7 === void 0
-          ? void 0
-          : (_sdkObject$attributio8 = _sdkObject$attributio7.frame) === null ||
-            _sdkObject$attributio8 === void 0
-          ? void 0
-          : _sdkObject$attributio8.guid,
+      objectId: sdkObject === null || sdkObject === void 0 ? void 0 : sdkObject.guid,
+      pageId: sdkObject === null || sdkObject === void 0 ? void 0 : (_sdkObject$attributio5 = sdkObject.attribution) === null || _sdkObject$attributio5 === void 0 ? void 0 : (_sdkObject$attributio6 = _sdkObject$attributio5.page) === null || _sdkObject$attributio6 === void 0 ? void 0 : _sdkObject$attributio6.guid,
+      frameId: sdkObject === null || sdkObject === void 0 ? void 0 : (_sdkObject$attributio7 = sdkObject.attribution) === null || _sdkObject$attributio7 === void 0 ? void 0 : (_sdkObject$attributio8 = _sdkObject$attributio7.frame) === null || _sdkObject$attributio8 === void 0 ? void 0 : _sdkObject$attributio8.guid,
       startTime: (0, _utils.monotonicTime)(),
       endTime: 0,
       type: dispatcher._type,
       method,
       params: params || {},
       log: [],
-      snapshots: [],
+      snapshots: []
     };
 
-    if (
-      sdkObject &&
-      params !== null &&
-      params !== void 0 &&
-      (_params$info = params.info) !== null &&
-      _params$info !== void 0 &&
-      _params$info.waitId
-    ) {
+    if (sdkObject && params !== null && params !== void 0 && (_params$info = params.info) !== null && _params$info !== void 0 && _params$info.waitId) {
       // Process logs for waitForNavigation/waitForLoadState/etc.
       const info = params.info;
 
       switch (info.phase) {
-        case 'before': {
-          this._waitOperations.set(info.waitId, callMetadata);
+        case 'before':
+          {
+            this._waitOperations.set(info.waitId, callMetadata);
 
-          await sdkObject.instrumentation.onBeforeCall(sdkObject, callMetadata);
-          this.onmessage({
-            id,
-          });
-          return;
-        }
+            await sdkObject.instrumentation.onBeforeCall(sdkObject, callMetadata);
+            this.onmessage({
+              id
+            });
+            return;
+          }
 
-        case 'log': {
-          const originalMetadata = this._waitOperations.get(info.waitId);
+        case 'log':
+          {
+            const originalMetadata = this._waitOperations.get(info.waitId);
 
-          originalMetadata.log.push(info.message);
-          sdkObject.instrumentation.onCallLog(
-            'api',
-            info.message,
-            sdkObject,
-            originalMetadata,
-          );
-          this.onmessage({
-            id,
-          });
-          return;
-        }
+            originalMetadata.log.push(info.message);
+            sdkObject.instrumentation.onCallLog('api', info.message, sdkObject, originalMetadata);
+            this.onmessage({
+              id
+            });
+            return;
+          }
 
-        case 'after': {
-          const originalMetadata = this._waitOperations.get(info.waitId);
+        case 'after':
+          {
+            const originalMetadata = this._waitOperations.get(info.waitId);
 
-          originalMetadata.endTime = (0, _utils.monotonicTime)();
-          originalMetadata.error = info.error
-            ? {
-                error: {
-                  name: 'Error',
-                  message: info.error,
-                },
+            originalMetadata.endTime = (0, _utils.monotonicTime)();
+            originalMetadata.error = info.error ? {
+              error: {
+                name: 'Error',
+                message: info.error
               }
-            : undefined;
+            } : undefined;
 
-          this._waitOperations.delete(info.waitId);
+            this._waitOperations.delete(info.waitId);
 
-          await sdkObject.instrumentation.onAfterCall(
-            sdkObject,
-            originalMetadata,
-          );
-          this.onmessage({
-            id,
-          });
-          return;
-        }
+            await sdkObject.instrumentation.onAfterCall(sdkObject, originalMetadata);
+            this.onmessage({
+              id
+            });
+            return;
+          }
       }
     }
 
     let error;
-    await (sdkObject === null || sdkObject === void 0
-      ? void 0
-      : sdkObject.instrumentation.onBeforeCall(sdkObject, callMetadata));
+    await (sdkObject === null || sdkObject === void 0 ? void 0 : sdkObject.instrumentation.onBeforeCall(sdkObject, callMetadata));
 
     try {
       const result = await dispatcher[method](validParams, callMetadata);
@@ -469,21 +352,15 @@ class DispatcherConnection {
       // Dispatching error
       // We want original, unmodified error in metadata.
       callMetadata.error = (0, _serializers.serializeError)(e);
-      if (callMetadata.log.length)
-        (0, _stackTrace.rewriteErrorMessage)(
-          e,
-          e.message + formatLogRecording(callMetadata.log),
-        );
+      if (callMetadata.log.length) (0, _stackTrace.rewriteErrorMessage)(e, e.message + formatLogRecording(callMetadata.log));
       error = (0, _serializers.serializeError)(e);
     } finally {
       callMetadata.endTime = (0, _utils.monotonicTime)();
-      await (sdkObject === null || sdkObject === void 0
-        ? void 0
-        : sdkObject.instrumentation.onAfterCall(sdkObject, callMetadata));
+      await (sdkObject === null || sdkObject === void 0 ? void 0 : sdkObject.instrumentation.onAfterCall(sdkObject, callMetadata));
     }
 
     const response = {
-      id,
+      id
     };
     if (callMetadata.result) response.result = callMetadata.result;
     if (error) response.error = error;
@@ -492,24 +369,22 @@ class DispatcherConnection {
 
   _replaceDispatchersWithGuids(payload) {
     if (!payload) return payload;
-    if (payload instanceof Dispatcher)
-      return {
-        guid: payload._guid,
-      };
-    if (Array.isArray(payload))
-      return payload.map((p) => this._replaceDispatchersWithGuids(p));
+    if (payload instanceof Dispatcher) return {
+      guid: payload._guid
+    };
+    if (Array.isArray(payload)) return payload.map(p => this._replaceDispatchersWithGuids(p));
 
     if (typeof payload === 'object') {
       const result = {};
 
-      for (const key of Object.keys(payload))
-        result[key] = this._replaceDispatchersWithGuids(payload[key]);
+      for (const key of Object.keys(payload)) result[key] = this._replaceDispatchersWithGuids(payload[key]);
 
       return result;
     }
 
     return payload;
   }
+
 }
 
 exports.DispatcherConnection = DispatcherConnection;
@@ -520,9 +395,7 @@ function formatLogRecording(log) {
   const headerLength = 60;
   const leftLength = (headerLength - header.length) / 2;
   const rightLength = headerLength - header.length - leftLength;
-  return `\n${'='.repeat(leftLength)}${header}${'='.repeat(
-    rightLength,
-  )}\n${log.join('\n')}\n${'='.repeat(headerLength)}`;
+  return `\n${'='.repeat(leftLength)}${header}${'='.repeat(rightLength)}\n${log.join('\n')}\n${'='.repeat(headerLength)}`;
 }
 
 let lastEventId = 0;

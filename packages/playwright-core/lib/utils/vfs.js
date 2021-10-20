@@ -1,19 +1,17 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.ZipFileSystem = exports.RealFileSystem = void 0;
 
-var _path = _interopRequireDefault(require('path'));
+var _path = _interopRequireDefault(require("path"));
 
-var _fs = _interopRequireDefault(require('fs'));
+var _fs = _interopRequireDefault(require("fs"));
 
-var _yauzl = _interopRequireDefault(require('yauzl'));
+var _yauzl = _interopRequireDefault(require("yauzl"));
 
-function _interopRequireDefault(obj) {
-  return obj && obj.__esModule ? obj : {default: obj};
-}
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -34,13 +32,14 @@ class BaseFileSystem {
   async read(entryPath) {
     const readStream = await this.readStream(entryPath);
     const buffers = [];
-    return new Promise((f) => {
-      readStream.on('data', (d) => buffers.push(d));
+    return new Promise(f => {
+      readStream.on('data', d => buffers.push(d));
       readStream.on('end', () => f(Buffer.concat(buffers)));
     });
   }
 
   close() {}
+
 }
 
 class RealFileSystem extends BaseFileSystem {
@@ -53,7 +52,7 @@ class RealFileSystem extends BaseFileSystem {
   async entries() {
     const result = [];
 
-    const visit = (dir) => {
+    const visit = dir => {
       for (const name of _fs.default.readdirSync(dir)) {
         const fqn = _path.default.join(dir, name);
 
@@ -67,10 +66,9 @@ class RealFileSystem extends BaseFileSystem {
   }
 
   async readStream(entry) {
-    return _fs.default.createReadStream(
-      _path.default.join(this._folder, ...entry.split('/')),
-    );
+    return _fs.default.createReadStream(_path.default.join(this._folder, ...entry.split('/')));
   }
+
 }
 
 exports.RealFileSystem = RealFileSystem;
@@ -88,26 +86,22 @@ class ZipFileSystem extends BaseFileSystem {
 
   async open() {
     await new Promise((fulfill, reject) => {
-      _yauzl.default.open(
-        this._fileName,
-        {
-          autoClose: false,
-        },
-        (e, z) => {
-          if (e) {
-            reject(e);
-            return;
-          }
+      _yauzl.default.open(this._fileName, {
+        autoClose: false
+      }, (e, z) => {
+        if (e) {
+          reject(e);
+          return;
+        }
 
-          this._zipFile = z;
+        this._zipFile = z;
 
-          this._zipFile.on('entry', (entry) => {
-            this._entries.set(entry.fileName, entry);
-          });
+        this._zipFile.on('entry', entry => {
+          this._entries.set(entry.fileName, entry);
+        });
 
-          this._zipFile.on('end', fulfill);
-        },
-      );
+        this._zipFile.on('end', fulfill);
+      });
     });
   }
 
@@ -136,10 +130,9 @@ class ZipFileSystem extends BaseFileSystem {
   close() {
     var _this$_zipFile;
 
-    (_this$_zipFile = this._zipFile) === null || _this$_zipFile === void 0
-      ? void 0
-      : _this$_zipFile.close();
+    (_this$_zipFile = this._zipFile) === null || _this$_zipFile === void 0 ? void 0 : _this$_zipFile.close();
   }
+
 }
 
 exports.ZipFileSystem = ZipFileSystem;

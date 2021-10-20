@@ -1,17 +1,17 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.BrowserDispatcher = void 0;
 
-var _browser = require('../server/browser');
+var _browser = require("../server/browser");
 
-var _browserContextDispatcher = require('./browserContextDispatcher');
+var _browserContextDispatcher = require("./browserContextDispatcher");
 
-var _cdpSessionDispatcher = require('./cdpSessionDispatcher');
+var _cdpSessionDispatcher = require("./cdpSessionDispatcher");
 
-var _dispatcher = require('./dispatcher');
+var _dispatcher = require("./dispatcher");
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -30,16 +30,10 @@ var _dispatcher = require('./dispatcher');
  */
 class BrowserDispatcher extends _dispatcher.Dispatcher {
   constructor(scope, browser) {
-    super(
-      scope,
-      browser,
-      'Browser',
-      {
-        version: browser.version(),
-        name: browser.options.name,
-      },
-      true,
-    );
+    super(scope, browser, 'Browser', {
+      version: browser.version(),
+      name: browser.options.name
+    }, true);
     browser.on(_browser.Browser.Events.Disconnected, () => this._didClose());
   }
 
@@ -51,13 +45,9 @@ class BrowserDispatcher extends _dispatcher.Dispatcher {
 
   async newContext(params, metadata) {
     const context = await this._object.newContext(params);
-    if (params.storageState)
-      await context.setStorageState(metadata, params.storageState);
+    if (params.storageState) await context.setStorageState(metadata, params.storageState);
     return {
-      context: new _browserContextDispatcher.BrowserContextDispatcher(
-        this._scope,
-        context,
-      ),
+      context: new _browserContextDispatcher.BrowserContextDispatcher(this._scope, context)
     };
   }
 
@@ -70,36 +60,28 @@ class BrowserDispatcher extends _dispatcher.Dispatcher {
   }
 
   async newBrowserCDPSession() {
-    if (!this._object.options.isChromium)
-      throw new Error(`CDP session is only available in Chromium`);
+    if (!this._object.options.isChromium) throw new Error(`CDP session is only available in Chromium`);
     const crBrowser = this._object;
     return {
-      session: new _cdpSessionDispatcher.CDPSessionDispatcher(
-        this._scope,
-        await crBrowser.newBrowserCDPSession(),
-      ),
+      session: new _cdpSessionDispatcher.CDPSessionDispatcher(this._scope, await crBrowser.newBrowserCDPSession())
     };
   }
 
   async startTracing(params) {
-    if (!this._object.options.isChromium)
-      throw new Error(`Tracing is only available in Chromium`);
+    if (!this._object.options.isChromium) throw new Error(`Tracing is only available in Chromium`);
     const crBrowser = this._object;
-    await crBrowser.startTracing(
-      params.page ? params.page._object : undefined,
-      params,
-    );
+    await crBrowser.startTracing(params.page ? params.page._object : undefined, params);
   }
 
   async stopTracing() {
-    if (!this._object.options.isChromium)
-      throw new Error(`Tracing is only available in Chromium`);
+    if (!this._object.options.isChromium) throw new Error(`Tracing is only available in Chromium`);
     const crBrowser = this._object;
     const buffer = await crBrowser.stopTracing();
     return {
-      binary: buffer.toString('base64'),
+      binary: buffer.toString('base64')
     };
   }
+
 }
 
 exports.BrowserDispatcher = BrowserDispatcher;

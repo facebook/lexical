@@ -1,55 +1,17 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.FFNetworkManager = void 0;
 
-var _eventsHelper = require('../../utils/eventsHelper');
+var _eventsHelper = require("../../utils/eventsHelper");
 
-var network = _interopRequireWildcard(require('../network'));
+var network = _interopRequireWildcard(require("../network"));
 
-function _getRequireWildcardCache(nodeInterop) {
-  if (typeof WeakMap !== 'function') return null;
-  var cacheBabelInterop = new WeakMap();
-  var cacheNodeInterop = new WeakMap();
-  return (_getRequireWildcardCache = function (nodeInterop) {
-    return nodeInterop ? cacheNodeInterop : cacheBabelInterop;
-  })(nodeInterop);
-}
+function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 
-function _interopRequireWildcard(obj, nodeInterop) {
-  if (!nodeInterop && obj && obj.__esModule) {
-    return obj;
-  }
-  if (obj === null || (typeof obj !== 'object' && typeof obj !== 'function')) {
-    return {default: obj};
-  }
-  var cache = _getRequireWildcardCache(nodeInterop);
-  if (cache && cache.has(obj)) {
-    return cache.get(obj);
-  }
-  var newObj = {};
-  var hasPropertyDescriptor =
-    Object.defineProperty && Object.getOwnPropertyDescriptor;
-  for (var key in obj) {
-    if (key !== 'default' && Object.prototype.hasOwnProperty.call(obj, key)) {
-      var desc = hasPropertyDescriptor
-        ? Object.getOwnPropertyDescriptor(obj, key)
-        : null;
-      if (desc && (desc.get || desc.set)) {
-        Object.defineProperty(newObj, key, desc);
-      } else {
-        newObj[key] = obj[key];
-      }
-    }
-  }
-  newObj.default = obj;
-  if (cache) {
-    cache.set(obj, newObj);
-  }
-  return newObj;
-}
+function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 
 /**
  * Copyright 2019 Google Inc. All rights reserved.
@@ -76,28 +38,7 @@ class FFNetworkManager {
     this._session = session;
     this._requests = new Map();
     this._page = page;
-    this._eventListeners = [
-      _eventsHelper.eventsHelper.addEventListener(
-        session,
-        'Network.requestWillBeSent',
-        this._onRequestWillBeSent.bind(this),
-      ),
-      _eventsHelper.eventsHelper.addEventListener(
-        session,
-        'Network.responseReceived',
-        this._onResponseReceived.bind(this),
-      ),
-      _eventsHelper.eventsHelper.addEventListener(
-        session,
-        'Network.requestFinished',
-        this._onRequestFinished.bind(this),
-      ),
-      _eventsHelper.eventsHelper.addEventListener(
-        session,
-        'Network.requestFailed',
-        this._onRequestFailed.bind(this),
-      ),
-    ];
+    this._eventListeners = [_eventsHelper.eventsHelper.addEventListener(session, 'Network.requestWillBeSent', this._onRequestWillBeSent.bind(this)), _eventsHelper.eventsHelper.addEventListener(session, 'Network.responseReceived', this._onResponseReceived.bind(this)), _eventsHelper.eventsHelper.addEventListener(session, 'Network.requestFinished', this._onRequestFinished.bind(this)), _eventsHelper.eventsHelper.addEventListener(session, 'Network.requestFailed', this._onRequestFailed.bind(this))];
   }
 
   dispose() {
@@ -106,19 +47,13 @@ class FFNetworkManager {
 
   async setRequestInterception(enabled) {
     await this._session.send('Network.setRequestInterception', {
-      enabled,
+      enabled
     });
   }
 
   _onRequestWillBeSent(event) {
-    const redirectedFrom = event.redirectedFrom
-      ? this._requests.get(event.redirectedFrom) || null
-      : null;
-    const frame = redirectedFrom
-      ? redirectedFrom.request.frame()
-      : event.frameId
-      ? this._page._frameManager.frame(event.frameId)
-      : null;
+    const redirectedFrom = event.redirectedFrom ? this._requests.get(event.redirectedFrom) || null : null;
+    const frame = redirectedFrom ? redirectedFrom.request.frame() : event.frameId ? this._page._frameManager.frame(event.frameId) : null;
     if (!frame) return;
     if (redirectedFrom) this._requests.delete(redirectedFrom._id);
     const request = new InterceptableRequest(frame, redirectedFrom, event);
@@ -131,11 +66,7 @@ class FFNetworkManager {
   }
 
   _onResponseReceived(event) {
-    var _event$securityDetail,
-      _event$securityDetail2,
-      _event$securityDetail3,
-      _event$securityDetail4,
-      _event$securityDetail5;
+    var _event$securityDetail, _event$securityDetail2, _event$securityDetail3, _event$securityDetail4, _event$securityDetail5;
 
     const request = this._requests.get(event.requestId);
 
@@ -143,12 +74,9 @@ class FFNetworkManager {
 
     const getResponseBody = async () => {
       const response = await this._session.send('Network.getResponseBody', {
-        requestId: request._id,
+        requestId: request._id
       });
-      if (response.evicted)
-        throw new Error(
-          `Response body for ${request.request.method()} ${request.request.url()} was evicted!`,
-        );
+      if (response.evicted) throw new Error(`Response body for ${request.request.method()} ${request.request.url()} was evicted!`);
       return Buffer.from(response.base64body, 'base64');
     };
 
@@ -164,74 +92,28 @@ class FFNetworkManager {
       domainLookupStart: relativeToStart(event.timing.domainLookupStart),
       domainLookupEnd: relativeToStart(event.timing.domainLookupEnd),
       connectStart: relativeToStart(event.timing.connectStart),
-      secureConnectionStart: relativeToStart(
-        event.timing.secureConnectionStart,
-      ),
+      secureConnectionStart: relativeToStart(event.timing.secureConnectionStart),
       connectEnd: relativeToStart(event.timing.connectEnd),
       requestStart: relativeToStart(event.timing.requestStart),
-      responseStart: relativeToStart(event.timing.responseStart),
+      responseStart: relativeToStart(event.timing.responseStart)
     };
-    const response = new network.Response(
-      request.request,
-      event.status,
-      event.statusText,
-      parseMultivalueHeaders(event.headers),
-      timing,
-      getResponseBody,
-    );
+    const response = new network.Response(request.request, event.status, event.statusText, parseMultivalueHeaders(event.headers), timing, getResponseBody);
 
-    if (
-      event !== null &&
-      event !== void 0 &&
-      event.remoteIPAddress &&
-      typeof (event === null || event === void 0
-        ? void 0
-        : event.remotePort) === 'number'
-    ) {
+    if (event !== null && event !== void 0 && event.remoteIPAddress && typeof (event === null || event === void 0 ? void 0 : event.remotePort) === 'number') {
       response._serverAddrFinished({
         ipAddress: event.remoteIPAddress,
-        port: event.remotePort,
+        port: event.remotePort
       });
     } else {
       response._serverAddrFinished();
     }
 
     response._securityDetailsFinished({
-      protocol:
-        event === null || event === void 0
-          ? void 0
-          : (_event$securityDetail = event.securityDetails) === null ||
-            _event$securityDetail === void 0
-          ? void 0
-          : _event$securityDetail.protocol,
-      subjectName:
-        event === null || event === void 0
-          ? void 0
-          : (_event$securityDetail2 = event.securityDetails) === null ||
-            _event$securityDetail2 === void 0
-          ? void 0
-          : _event$securityDetail2.subjectName,
-      issuer:
-        event === null || event === void 0
-          ? void 0
-          : (_event$securityDetail3 = event.securityDetails) === null ||
-            _event$securityDetail3 === void 0
-          ? void 0
-          : _event$securityDetail3.issuer,
-      validFrom:
-        event === null || event === void 0
-          ? void 0
-          : (_event$securityDetail4 = event.securityDetails) === null ||
-            _event$securityDetail4 === void 0
-          ? void 0
-          : _event$securityDetail4.validFrom,
-      validTo:
-        event === null || event === void 0
-          ? void 0
-          : (_event$securityDetail5 = event.securityDetails) === null ||
-            _event$securityDetail5 === void 0
-          ? void 0
-          : _event$securityDetail5.validTo,
+      protocol: event === null || event === void 0 ? void 0 : (_event$securityDetail = event.securityDetails) === null || _event$securityDetail === void 0 ? void 0 : _event$securityDetail.protocol,
+      subjectName: event === null || event === void 0 ? void 0 : (_event$securityDetail2 = event.securityDetails) === null || _event$securityDetail2 === void 0 ? void 0 : _event$securityDetail2.subjectName,
+      issuer: event === null || event === void 0 ? void 0 : (_event$securityDetail3 = event.securityDetails) === null || _event$securityDetail3 === void 0 ? void 0 : _event$securityDetail3.issuer,
+      validFrom: event === null || event === void 0 ? void 0 : (_event$securityDetail4 = event.securityDetails) === null || _event$securityDetail4 === void 0 ? void 0 : _event$securityDetail4.validFrom,
+      validTo: event === null || event === void 0 ? void 0 : (_event$securityDetail5 = event.securityDetails) === null || _event$securityDetail5 === void 0 ? void 0 : _event$securityDetail5.validTo
     });
 
     this._page._frameManager.requestReceivedResponse(response);
@@ -247,9 +129,7 @@ class FFNetworkManager {
     request.request.responseSize.transferSize = event.transferSize; // Keep redirected requests in the map for future reference as redirectedFrom.
 
     const isRedirected = response.status() >= 300 && response.status() <= 399;
-    const responseEndTime = event.responseEndTime
-      ? event.responseEndTime / 1000 - response.timing().startTime
-      : -1;
+    const responseEndTime = event.responseEndTime ? event.responseEndTime / 1000 - response.timing().startTime : -1;
 
     if (isRedirected) {
       response._requestFinished(responseEndTime);
@@ -277,11 +157,9 @@ class FFNetworkManager {
 
     request.request._setFailureText(event.errorCode);
 
-    this._page._frameManager.requestFailed(
-      request.request,
-      event.errorCode === 'NS_BINDING_ABORTED',
-    );
+    this._page._frameManager.requestFailed(request.request, event.errorCode === 'NS_BINDING_ABORTED');
   }
+
 }
 
 exports.FFNetworkManager = FFNetworkManager;
@@ -308,10 +186,10 @@ const causeToResourceType = {
   TYPE_BEACON: 'other',
   TYPE_FETCH: 'fetch',
   TYPE_IMAGESET: 'images',
-  TYPE_WEB_MANIFEST: 'manifest',
+  TYPE_WEB_MANIFEST: 'manifest'
 };
 const internalCauseToResourceType = {
-  TYPE_INTERNAL_EVENTSOURCE: 'eventsource',
+  TYPE_INTERNAL_EVENTSOURCE: 'eventsource'
 };
 
 class InterceptableRequest {
@@ -322,20 +200,8 @@ class InterceptableRequest {
     this._id = payload.requestId;
     if (redirectedFrom) redirectedFrom._redirectedTo = this;
     let postDataBuffer = null;
-    if (payload.postData)
-      postDataBuffer = Buffer.from(payload.postData, 'base64');
-    this.request = new network.Request(
-      frame,
-      redirectedFrom ? redirectedFrom.request : null,
-      payload.navigationId,
-      payload.url,
-      internalCauseToResourceType[payload.internalCause] ||
-        causeToResourceType[payload.cause] ||
-        'other',
-      payload.method,
-      postDataBuffer,
-      payload.headers,
-    );
+    if (payload.postData) postDataBuffer = Buffer.from(payload.postData, 'base64');
+    this.request = new network.Request(frame, redirectedFrom ? redirectedFrom.request : null, payload.navigationId, payload.url, internalCauseToResourceType[payload.internalCause] || causeToResourceType[payload.cause] || 'other', payload.method, postDataBuffer, payload.headers);
   }
 
   _finalRequest() {
@@ -345,6 +211,7 @@ class InterceptableRequest {
 
     return request;
   }
+
 }
 
 class FFRouteImpl {
@@ -357,54 +224,43 @@ class FFRouteImpl {
 
   async responseBody() {
     const response = await this._session.send('Network.getResponseBody', {
-      requestId: this._request._finalRequest()._id,
+      requestId: this._request._finalRequest()._id
     });
     return Buffer.from(response.base64body, 'base64');
   }
 
   async continue(request, overrides) {
-    const result = await this._session.sendMayFail(
-      'Network.resumeInterceptedRequest',
-      {
-        requestId: this._request._id,
-        url: overrides.url,
-        method: overrides.method,
-        headers: overrides.headers,
-        postData: overrides.postData
-          ? Buffer.from(overrides.postData).toString('base64')
-          : undefined,
-        interceptResponse: overrides.interceptResponse,
-      },
-    );
+    const result = await this._session.sendMayFail('Network.resumeInterceptedRequest', {
+      requestId: this._request._id,
+      url: overrides.url,
+      method: overrides.method,
+      headers: overrides.headers,
+      postData: overrides.postData ? Buffer.from(overrides.postData).toString('base64') : undefined,
+      interceptResponse: overrides.interceptResponse
+    });
     if (!overrides.interceptResponse) return null;
     if (result.error) throw new Error(`Request failed: ${result.error}`);
-    return new network.InterceptedResponse(
-      request,
-      result.response.status,
-      result.response.statusText,
-      result.response.headers,
-    );
+    return new network.InterceptedResponse(request, result.response.status, result.response.statusText, result.response.headers);
   }
 
   async fulfill(response) {
-    const base64body = response.isBase64
-      ? response.body
-      : Buffer.from(response.body).toString('base64');
+    const base64body = response.isBase64 ? response.body : Buffer.from(response.body).toString('base64');
     await this._session.sendMayFail('Network.fulfillInterceptedRequest', {
       requestId: this._request._id,
       status: response.status,
       statusText: network.STATUS_TEXTS[String(response.status)] || '',
       headers: response.headers,
-      base64body,
+      base64body
     });
   }
 
   async abort(errorCode) {
     await this._session.sendMayFail('Network.abortInterceptedRequest', {
       requestId: this._request._id,
-      errorCode,
+      errorCode
     });
   }
+
 }
 
 function parseMultivalueHeaders(headers) {
@@ -412,13 +268,12 @@ function parseMultivalueHeaders(headers) {
 
   for (const header of headers) {
     const separator = header.name.toLowerCase() === 'set-cookie' ? '\n' : ',';
-    const tokens = header.value.split(separator).map((s) => s.trim());
+    const tokens = header.value.split(separator).map(s => s.trim());
 
-    for (const token of tokens)
-      result.push({
-        name: header.name,
-        value: token,
-      });
+    for (const token of tokens) result.push({
+      name: header.name,
+      value: token
+    });
   }
 
   return result;

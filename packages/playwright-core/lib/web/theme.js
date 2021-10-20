@@ -1,7 +1,7 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.applyTheme = applyTheme;
 
@@ -23,19 +23,10 @@ exports.applyTheme = applyTheme;
 function applyTheme() {
   if (document.playwrightThemeInitialized) return;
   document.playwrightThemeInitialized = true;
-  document.defaultView.addEventListener(
-    'focus',
-    (event) => {
-      if (event.target.document.nodeType === Node.DOCUMENT_NODE)
-        document.body.classList.remove('inactive');
-    },
-    false,
-  );
-  document.defaultView.addEventListener(
-    'blur',
-    (event) => {
-      document.body.classList.add('inactive');
-    },
-    false,
-  );
+  document.defaultView.addEventListener('focus', event => {
+    if (event.target.document.nodeType === Node.DOCUMENT_NODE) document.body.classList.remove('inactive');
+  }, false);
+  document.defaultView.addEventListener('blur', event => {
+    document.body.classList.add('inactive');
+  }, false);
 }

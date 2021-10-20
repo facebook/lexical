@@ -1,17 +1,17 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.InMemorySnapshotter = void 0;
 
-var _eventsHelper = require('../../utils/eventsHelper');
+var _eventsHelper = require("../../utils/eventsHelper");
 
-var _snapshotStorage = require('./snapshotStorage');
+var _snapshotStorage = require("./snapshotStorage");
 
-var _snapshotter = require('../../server/trace/recorder/snapshotter');
+var _snapshotter = require("../../server/trace/recorder/snapshotter");
 
-var _harTracer = require('../../server/supplements/har/harTracer');
+var _harTracer = require("../../server/supplements/har/harTracer");
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -38,7 +38,7 @@ class InMemorySnapshotter extends _snapshotStorage.BaseSnapshotStorage {
     this._harTracer = new _harTracer.HarTracer(context, this, {
       content: 'sha1',
       waitForContentOnStop: false,
-      skipScripts: true,
+      skipScripts: true
     });
   }
 
@@ -68,25 +68,18 @@ class InMemorySnapshotter extends _snapshotStorage.BaseSnapshotStorage {
   }
 
   async captureSnapshot(page, snapshotName, element) {
-    if (this._frameSnapshots.has(snapshotName))
-      throw new Error('Duplicate snapshot name: ' + snapshotName);
+    if (this._frameSnapshots.has(snapshotName)) throw new Error('Duplicate snapshot name: ' + snapshotName);
 
-    this._snapshotter
-      .captureSnapshot(page, snapshotName, element)
-      .catch(() => {});
+    this._snapshotter.captureSnapshot(page, snapshotName, element).catch(() => {});
 
-    return new Promise((fulfill) => {
-      const listener = _eventsHelper.eventsHelper.addEventListener(
-        this,
-        'snapshot',
-        (renderer) => {
-          if (renderer.snapshotName === snapshotName) {
-            _eventsHelper.eventsHelper.removeEventListeners([listener]);
+    return new Promise(fulfill => {
+      const listener = _eventsHelper.eventsHelper.addEventListener(this, 'snapshot', renderer => {
+        if (renderer.snapshotName === snapshotName) {
+          _eventsHelper.eventsHelper.removeEventListeners([listener]);
 
-            fulfill(renderer);
-          }
-        },
-      );
+          fulfill(renderer);
+        }
+      });
     });
   }
 
@@ -115,6 +108,7 @@ class InMemorySnapshotter extends _snapshotStorage.BaseSnapshotStorage {
   async resourceContentForTest(sha1) {
     return this._blobs.get(sha1);
   }
+
 }
 
 exports.InMemorySnapshotter = InMemorySnapshotter;

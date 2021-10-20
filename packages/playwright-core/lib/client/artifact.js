@@ -1,59 +1,21 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.Artifact = void 0;
 
-var fs = _interopRequireWildcard(require('fs'));
+var fs = _interopRequireWildcard(require("fs"));
 
-var _stream = require('./stream');
+var _stream = require("./stream");
 
-var _utils = require('../utils/utils');
+var _utils = require("../utils/utils");
 
-var _channelOwner = require('./channelOwner');
+var _channelOwner = require("./channelOwner");
 
-function _getRequireWildcardCache(nodeInterop) {
-  if (typeof WeakMap !== 'function') return null;
-  var cacheBabelInterop = new WeakMap();
-  var cacheNodeInterop = new WeakMap();
-  return (_getRequireWildcardCache = function (nodeInterop) {
-    return nodeInterop ? cacheNodeInterop : cacheBabelInterop;
-  })(nodeInterop);
-}
+function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 
-function _interopRequireWildcard(obj, nodeInterop) {
-  if (!nodeInterop && obj && obj.__esModule) {
-    return obj;
-  }
-  if (obj === null || (typeof obj !== 'object' && typeof obj !== 'function')) {
-    return {default: obj};
-  }
-  var cache = _getRequireWildcardCache(nodeInterop);
-  if (cache && cache.has(obj)) {
-    return cache.get(obj);
-  }
-  var newObj = {};
-  var hasPropertyDescriptor =
-    Object.defineProperty && Object.getOwnPropertyDescriptor;
-  for (var key in obj) {
-    if (key !== 'default' && Object.prototype.hasOwnProperty.call(obj, key)) {
-      var desc = hasPropertyDescriptor
-        ? Object.getOwnPropertyDescriptor(obj, key)
-        : null;
-      if (desc && (desc.get || desc.set)) {
-        Object.defineProperty(newObj, key, desc);
-      } else {
-        newObj[key] = obj[key];
-      }
-    }
-  }
-  newObj.default = obj;
-  if (cache) {
-    cache.set(obj, newObj);
-  }
-  return newObj;
-}
+function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -76,20 +38,17 @@ class Artifact extends _channelOwner.ChannelOwner {
   }
 
   async pathAfterFinished() {
-    if (this._connection.isRemote())
-      throw new Error(
-        `Path is not available when connecting remotely. Use saveAs() to save a local copy.`,
-      );
-    return this._wrapApiCall(async (channel) => {
+    if (this._connection.isRemote()) throw new Error(`Path is not available when connecting remotely. Use saveAs() to save a local copy.`);
+    return this._wrapApiCall(async channel => {
       return (await channel.pathAfterFinished()).value || null;
     });
   }
 
   async saveAs(path) {
-    return this._wrapApiCall(async (channel) => {
+    return this._wrapApiCall(async channel => {
       if (!this._connection.isRemote()) {
         await channel.saveAs({
-          path,
+          path
         });
         return;
       }
@@ -100,23 +59,19 @@ class Artifact extends _channelOwner.ChannelOwner {
 
       await (0, _utils.mkdirIfNeeded)(path);
       await new Promise((resolve, reject) => {
-        stream
-          .stream()
-          .pipe(fs.createWriteStream(path))
-          .on('finish', resolve)
-          .on('error', reject);
+        stream.stream().pipe(fs.createWriteStream(path)).on('finish', resolve).on('error', reject);
       });
     });
   }
 
   async failure() {
-    return this._wrapApiCall(async (channel) => {
+    return this._wrapApiCall(async channel => {
       return (await channel.failure()).error || null;
     });
   }
 
   async createReadStream() {
-    return this._wrapApiCall(async (channel) => {
+    return this._wrapApiCall(async channel => {
       const result = await channel.stream();
       if (!result.stream) return null;
 
@@ -127,16 +82,17 @@ class Artifact extends _channelOwner.ChannelOwner {
   }
 
   async cancel() {
-    return this._wrapApiCall(async (channel) => {
+    return this._wrapApiCall(async channel => {
       return channel.cancel();
     });
   }
 
   async delete() {
-    return this._wrapApiCall(async (channel) => {
+    return this._wrapApiCall(async channel => {
       return channel.delete();
     });
   }
+
 }
 
 exports.Artifact = Artifact;

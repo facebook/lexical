@@ -1,13 +1,13 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.StreamDispatcher = void 0;
 
-var _dispatcher = require('./dispatcher');
+var _dispatcher = require("./dispatcher");
 
-var _utils = require('../utils/utils');
+var _utils = require("../utils/utils");
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -26,27 +26,21 @@ var _utils = require('../utils/utils');
  */
 class StreamDispatcher extends _dispatcher.Dispatcher {
   constructor(scope, stream) {
-    super(
-      scope,
-      {
-        guid: 'stream@' + (0, _utils.createGuid)(),
-        stream,
-      },
-      'Stream',
-      {},
-    ); // In Node v12.9.0+ we can use readableEnded.
+    super(scope, {
+      guid: 'stream@' + (0, _utils.createGuid)(),
+      stream
+    }, 'Stream', {}); // In Node v12.9.0+ we can use readableEnded.
 
     this._ended = false;
-    stream.once('end', () => (this._ended = true));
-    stream.once('error', () => (this._ended = true));
+    stream.once('end', () => this._ended = true);
+    stream.once('error', () => this._ended = true);
   }
 
   async read(params) {
     const stream = this._object.stream;
-    if (this._ended)
-      return {
-        binary: '',
-      };
+    if (this._ended) return {
+      binary: ''
+    };
 
     if (!stream.readableLength) {
       await new Promise((fulfill, reject) => {
@@ -56,17 +50,16 @@ class StreamDispatcher extends _dispatcher.Dispatcher {
       });
     }
 
-    const buffer = stream.read(
-      Math.min(stream.readableLength, params.size || stream.readableLength),
-    );
+    const buffer = stream.read(Math.min(stream.readableLength, params.size || stream.readableLength));
     return {
-      binary: buffer ? buffer.toString('base64') : '',
+      binary: buffer ? buffer.toString('base64') : ''
     };
   }
 
   async close() {
     this._object.stream.destroy();
   }
+
 }
 
 exports.StreamDispatcher = StreamDispatcher;

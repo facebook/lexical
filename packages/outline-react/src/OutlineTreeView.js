@@ -180,9 +180,13 @@ export default function TreeView({
               const rootElement = editor.getRootElement();
               if (rootElement !== null) {
                 rootElement.contentEditable = 'true';
-                const timeStampedViewModel =
-                  timeStampedViewModels[timeStampedViewModels.length - 1];
+                const index = timeStampedViewModels.length - 1;
+                const timeStampedViewModel = timeStampedViewModels[index];
                 editor.setViewModel(timeStampedViewModel[1]);
+                const input = inputRef.current;
+                if (input !== null) {
+                  input.value = String(index);
+                }
                 setTimeTravelEnabled(false);
                 setIsPlaying(false);
               }

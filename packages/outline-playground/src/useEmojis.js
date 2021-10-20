@@ -18,12 +18,16 @@ import type {
 import {useEffect} from 'react';
 import {TextNode} from 'outline';
 
-const emojis: {[string]: [string, string]} = {
-  ':)': ['emoji happysmile', '🙂'],
-  ':D': ['emoji veryhappysmile', '😀'],
-  ':(': ['emoji unhappysmile', '🙁'],
-  '<3': ['emoji heart', '❤'],
-};
+const emojis: Map<string, [string, string]> = new Map([
+  [':)', ['emoji happysmile', '🙂']],
+  [':D', ['emoji veryhappysmile', '😀']],
+  [':(', ['emoji unhappysmile', '🙁']],
+  ['<3', ['emoji heart', '❤']],
+  ['🙂', ['emoji happysmile', '🙂']],
+  ['😀', ['emoji veryhappysmile', '😀']],
+  ['🙁', ['emoji unhappysmile', '🙁']],
+  ['❤', ['emoji heart', '❤']],
+]);
 
 function findAndTransformEmoji(
   selection: null | Selection,
@@ -31,8 +35,7 @@ function findAndTransformEmoji(
 ): null | TextNode {
   const text = node.getTextContent();
   for (let i = 0; i < text.length; i++) {
-    const possibleEmoji = text.slice(i, i + 2);
-    const emojiData = emojis[possibleEmoji];
+    const emojiData = emojis.get(text[i]) || emojis.get(text.slice(i, i + 2));
 
     if (emojiData !== undefined) {
       const [emojiStyle, emojiText] = emojiData;
@@ -44,13 +47,6 @@ function findAndTransformEmoji(
       }
       const emojiNode = createEmojiNode(emojiStyle, emojiText);
       targetNode.replace(emojiNode);
-      if (
-        selection !== null &&
-        (!selection.anchor.getNode().isAttached() ||
-          !selection.focus.getNode().isAttached())
-      ) {
-        emojiNode.select();
-      }
       return emojiNode;
     }
   }
@@ -58,15 +54,13 @@ function findAndTransformEmoji(
 }
 
 function textNodeTransform(node: TextNode, view: View): void {
-  if (!node.isSimpleText()) {
-    return;
-  }
-
   const selection = view.getSelection();
-
   let targetNode = node;
 
   while (targetNode !== null) {
+    if (!targetNode.isSimpleText()) {
+      return;
+    }
     targetNode = findAndTransformEmoji(selection, targetNode);
   }
 }

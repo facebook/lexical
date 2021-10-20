@@ -108,24 +108,22 @@ export default function TreeView({
   }, [timeStampedViewModels, isPlaying, editor, totalViewModels]);
 
   return (
-    <>
-      <pre className={viewClassName}>
-        {!timeTravelEnabled && totalViewModels > 2 && (
-          <button
-            onClick={() => {
-              const rootElement = editor.getRootElement();
-              if (rootElement !== null) {
-                rootElement.contentEditable = 'false';
-                playingIndexRef.current = totalViewModels - 1;
-                setTimeTravelEnabled(true);
-              }
-            }}
-            className={timeTravelButtonClassName}>
-            Time Travel
-          </button>
-        )}
-        {content}
-      </pre>
+    <div className={viewClassName}>
+      {!timeTravelEnabled && totalViewModels > 2 && (
+        <button
+          onClick={() => {
+            const rootElement = editor.getRootElement();
+            if (rootElement !== null) {
+              rootElement.contentEditable = 'false';
+              playingIndexRef.current = totalViewModels - 1;
+              setTimeTravelEnabled(true);
+            }
+          }}
+          className={timeTravelButtonClassName}>
+          Time Travel
+        </button>
+      )}
+      <pre>{content}</pre>
       {timeTravelEnabled && (
         <div className={timeTravelPanelClassName}>
           <button
@@ -172,7 +170,7 @@ export default function TreeView({
           </button>
         </div>
       )}
-    </>
+    </div>
   );
 }
 

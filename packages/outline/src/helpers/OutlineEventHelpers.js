@@ -57,6 +57,7 @@ import {
   moveCharacter,
 } from 'outline/SelectionHelpers';
 import {createTextNode, isTextNode, isDecoratorNode} from 'outline';
+import {IS_FIREFOX} from 'shared/environment';
 import getPossibleDecoratorNode from 'shared/getPossibleDecoratorNode';
 
 const NO_BREAK_SPACE_CHAR = '\u00A0';
@@ -433,10 +434,14 @@ export function onCompositionEnd(
 ): void {
   editor.update((view) => {
     view.setCompositionKey(null);
-    updateSelectedTextFromDOM(editor, view, true);
+    // The order of onInput and onCompositionEnd is different
+    // in FF. Given that onInput will fire after onCompositionEnd
+    // in FF, attempting to update the selected text here will
+    // result in possible duplicated outputs.
+    if (!IS_FIREFOX) {
+      updateSelectedTextFromDOM(editor, view, true);
+    }
   }, 'onCompositionEnd');
-  // Flush any pending text mutations
-  editor.flushTextMutations();
 }
 
 function getLastSelection(editor: OutlineEditor): null | Selection {

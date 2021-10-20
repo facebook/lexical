@@ -23,16 +23,24 @@ const editorStyle = {
   whiteSpace: 'pre-wrap',
 };
 
-export type OutlineComposerPluginProps = $ReadOnly<{|editor: OutlineEditor|}>;
-export type OutlineComposerPluginComponent =
-  (OutlineComposerPluginProps) => React$Node;
-export type OutlineComposerPlugin = $ReadOnly<{|
+export type OutlineComposerPluginProps = $ReadOnly<{|
+  clearEditor: () => void,
+  editor: OutlineEditor,
+|}>;
+
+export type OutlineComposerPluginComponent<TProps> = ({
+  ...OutlineComposerPluginProps,
+  ...$Exact<TProps>,
+}) => React$Node;
+
+export type OutlineComposerPlugin<TProps> = $ReadOnly<{|
   name: string,
-  component: OutlineComposerPluginComponent,
+  component: OutlineComposerPluginComponent<$Exact<TProps>>,
+  props: TProps,
 |}>;
 
 export type OutlineComposerProps = $ReadOnly<{|
-  plugins: $ReadOnlyArray<OutlineComposerPlugin>,
+  plugins: $ReadOnlyArray<OutlineComposerPlugin<{...}>>,
 |}>;
 
 const editorConfig = {
@@ -101,10 +109,17 @@ export default function OutlineComposer({
   const [editor, rootElementRef, showPlaceholder] =
     useOutlineEditor(editorConfig);
   const [isReadOnly, setIsReadyOnly] = useState(false);
-  const clear = usePlainText(editor);
+  const clearEditor = usePlainText(editor);
   const decorators = useOutlineDecorators(editor);
   const pluginComponents: $ReadOnlyArray<React$Node> = plugins.map(
-    ({component: Component}) => <Component editor={editor} />,
+    ({name, component: Component, props}) => (
+      <Component
+        {...(props ?? {})}
+        clearEditor={clearEditor}
+        editor={editor}
+        key={name}
+      />
+    ),
   );
   const pluginNames = plugins.map((plugin) => plugin.name);
 
@@ -121,7 +136,7 @@ export default function OutlineComposer({
         Current plugins:
         <ul>
           {pluginNames.map((name) => (
-            <li>{name}</li>
+            <li key={name}>{name}</li>
           ))}
         </ul>
       </div>
@@ -129,7 +144,7 @@ export default function OutlineComposer({
         <button
           className="action-button clear"
           onClick={() => {
-            clear();
+            clearEditor();
             editor.focus();
           }}>
           Clear

@@ -1211,4 +1211,37 @@ describe('OutlineSelection tests', () => {
         },
       );
   });
+
+  test('isBackwards', async () => {
+    await editor.update((view) => {
+      const root = view.getRoot();
+      const paragraph = root.getFirstChild();
+      const paragraphKey = paragraph.getKey();
+      const textNode = createTextNode('foo');
+      const textNodeKey = textNode.getKey();
+      // Note: line break can't be selected by the DOM
+      const linebreak = createLineBreakNode();
+      const selection: Selection = view.getSelection();
+      const anchor = selection.anchor;
+      const focus = selection.focus;
+
+      paragraph.append(textNode, linebreak);
+
+      anchor.set(textNodeKey, 0, 'text');
+      focus.set(textNodeKey, 0, 'text');
+      expect(selection.isBackwards()).toBe(false);
+
+      anchor.set(paragraphKey, 1, 'block');
+      focus.set(paragraphKey, 1, 'block');
+      expect(selection.isBackwards()).toBe(false);
+
+      anchor.set(paragraphKey, 0, 'block');
+      focus.set(paragraphKey, 1, 'block');
+      expect(selection.isBackwards()).toBe(false);
+
+      anchor.set(paragraphKey, 1, 'block');
+      focus.set(paragraphKey, 0, 'block');
+      expect(selection.isBackwards()).toBe(true);
+    });
+  });
 });

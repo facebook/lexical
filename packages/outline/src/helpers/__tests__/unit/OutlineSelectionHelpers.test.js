@@ -294,12 +294,12 @@ describe('OutlineSelectionHelpers tests', () => {
         setAnchorPoint(view, {
           type: 'block',
           key: block.getKey(),
-          offset: 1,
+          offset: 2,
         });
         setFocusPoint(view, {
           type: 'block',
           key: block.getKey(),
-          offset: 1,
+          offset: 2,
         });
       });
 
@@ -308,14 +308,14 @@ describe('OutlineSelectionHelpers tests', () => {
       editor.getViewModel().read((view) => {
         const selection = view.getSelection();
         expect(selection.anchor).toEqual({
-          type: 'text',
-          key: 'b',
-          offset: 0,
+          type: 'block',
+          key: block.getKey(),
+          offset: 1,
         });
         expect(selection.focus).toEqual({
-          type: 'text',
-          key: 'b',
-          offset: 0,
+          type: 'block',
+          key: block.getKey(),
+          offset: 1,
         });
       });
     });
@@ -348,12 +348,12 @@ describe('OutlineSelectionHelpers tests', () => {
         setAnchorPoint(view, {
           type: 'block',
           key: block.getKey(),
-          offset: 3,
+          offset: 4,
         });
         setFocusPoint(view, {
           type: 'block',
           key: block.getKey(),
-          offset: 3,
+          offset: 4,
         });
       });
 
@@ -362,14 +362,14 @@ describe('OutlineSelectionHelpers tests', () => {
       editor.getViewModel().read((view) => {
         const selection = view.getSelection();
         expect(selection.anchor).toEqual({
-          type: 'text',
-          key: 'c',
-          offset: 1,
+          type: 'block',
+          key: block.getKey(),
+          offset: 2,
         });
         expect(selection.focus).toEqual({
-          type: 'text',
-          key: 'c',
-          offset: 1,
+          type: 'block',
+          key: block.getKey(),
+          offset: 2,
         });
       });
     });

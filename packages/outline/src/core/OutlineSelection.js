@@ -192,15 +192,11 @@ export class Selection {
     }
     return this.anchor.is(selection.anchor) && this.focus.is(selection.focus);
   }
+  isBackwards(): boolean {
+    return this.focus.isBefore(this.anchor);
+  }
   isCollapsed(): boolean {
     return this.anchor.is(this.focus);
-  }
-  isForward(): boolean {
-    const anchor = this.anchor;
-    const anchorKey = anchor.getNode().getKey();
-    const focus = this.focus;
-    const focusKey = focus.getNode().getKey();
-    return anchorKey === focusKey || focus.isBefore(anchor);
   }
   getNodes(): Array<OutlineNode> {
     const anchor = this.anchor;
@@ -712,10 +708,10 @@ export function updateBlockSelectionOnCreateDeleteNode(
     return;
   }
   // Multiple nodes selected. We shift or redimension selection
-  const isForward = selection.isForward();
-  const firstPoint = isForward ? anchor : focus;
+  const isBackwards = selection.isBackwards();
+  const firstPoint = isBackwards ? focus : anchor;
   const firstPointNode = firstPoint.getNode();
-  const lastPoint = isForward ? focus : anchor;
+  const lastPoint = isBackwards ? anchor : focus;
   const lastPointNode = lastPoint.getNode();
   if (parentNode.is(firstPointNode)) {
     const firstPointOffset = firstPoint.offset;

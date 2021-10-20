@@ -112,7 +112,7 @@ function internallyMarkNodeAsDirty(node: OutlineNode): void {
   dirtyNodes.add(latest.__key);
 }
 
-function removeNode(
+export function removeNode(
   nodeToRemove: OutlineNode,
   restoreSelection: boolean,
 ): void {
@@ -124,18 +124,16 @@ function removeNode(
   }
   const selection = getSelection();
   let selectionRestored = false;
-  if (selection !== null) {
-    if (restoreSelection) {
-      const anchor = selection.anchor;
-      const focus = selection.focus;
-      if (anchor !== null && anchor.key === key) {
-        moveSelectionPointToSibling(anchor, nodeToRemove, parent);
-        selectionRestored = true;
-      }
-      if (focus !== null && focus.key === key) {
-        moveSelectionPointToSibling(focus, nodeToRemove, parent);
-        selectionRestored = true;
-      }
+  if (selection !== null && restoreSelection) {
+    const anchor = selection.anchor;
+    const focus = selection.focus;
+    if (anchor !== null && anchor.key === key) {
+      moveSelectionPointToSibling(anchor, nodeToRemove, parent);
+      selectionRestored = true;
+    }
+    if (focus !== null && focus.key === key) {
+      moveSelectionPointToSibling(focus, nodeToRemove, parent);
+      selectionRestored = true;
     }
   }
 

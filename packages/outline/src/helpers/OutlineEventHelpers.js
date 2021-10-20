@@ -428,20 +428,30 @@ export function onCompositionStart(
   }, 'onCompositionStart');
 }
 
+function onCompositionEndInternal(editor: OutlineEditor) {
+  editor.update((view) => {
+    view.setCompositionKey(null);
+    updateSelectedTextFromDOM(editor, view, true);
+  }, 'onCompositionEnd');
+  // Flush any pending text mutations
+  editor.flushTextMutations();
+}
+
 export function onCompositionEnd(
   event: CompositionEvent,
   editor: OutlineEditor,
 ): void {
-  editor.update((view) => {
-    view.setCompositionKey(null);
+  if (IS_FIREFOX) {
     // The order of onInput and onCompositionEnd is different
     // in FF. Given that onInput will fire after onCompositionEnd
-    // in FF, attempting to update the selected text here will
-    // result in possible duplicated outputs.
-    if (!IS_FIREFOX) {
-      updateSelectedTextFromDOM(editor, view, true);
-    }
-  }, 'onCompositionEnd');
+    // in FF, we need to defer the logic for onCompositionEnd to
+    // ensure that any possible onInput events fire before.
+    setTimeout(() => {
+      onCompositionEndInternal(editor);
+    }, 0);
+  } else {
+    onCompositionEndInternal(editor);
+  }
 }
 
 function getLastSelection(editor: OutlineEditor): null | Selection {
@@ -545,10 +555,7 @@ function updateTextNodeFromDOMContent(
     let normalizedTextContent = textContent;
 
     if (
-      // Unfortunately, given onCompositionEnd fires before onInput in
-      // Firefox, we have to assume that this might be due to composition
-      // ending.
-      (IS_FIREFOX || node.isComposing() || compositionEnd) &&
+      (node.isComposing() || compositionEnd) &&
       textContent[textContent.length - 1] === NO_BREAK_SPACE_CHAR
     ) {
       normalizedTextContent = textContent.slice(0, -1);

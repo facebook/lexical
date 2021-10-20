@@ -57,6 +57,7 @@ import {
   moveCharacter,
 } from 'outline/SelectionHelpers';
 import {createTextNode, isTextNode, isDecoratorNode} from 'outline';
+import {IS_FIREFOX} from 'shared/environment';
 import getPossibleDecoratorNode from 'shared/getPossibleDecoratorNode';
 
 const NO_BREAK_SPACE_CHAR = '\u00A0';
@@ -427,16 +428,30 @@ export function onCompositionStart(
   }, 'onCompositionStart');
 }
 
-export function onCompositionEnd(
-  event: CompositionEvent,
-  editor: OutlineEditor,
-): void {
+function onCompositionEndInternal(editor: OutlineEditor) {
   editor.update((view) => {
     view.setCompositionKey(null);
     updateSelectedTextFromDOM(editor, view, true);
   }, 'onCompositionEnd');
   // Flush any pending text mutations
   editor.flushTextMutations();
+}
+
+export function onCompositionEnd(
+  event: CompositionEvent,
+  editor: OutlineEditor,
+): void {
+  if (IS_FIREFOX) {
+    // The order of onInput and onCompositionEnd is different
+    // in FF. Given that onInput will fire after onCompositionEnd
+    // in FF, we need to defer the logic for onCompositionEnd to
+    // ensure that any possible onInput events fire before.
+    setTimeout(() => {
+      onCompositionEndInternal(editor);
+    }, 0);
+  } else {
+    onCompositionEndInternal(editor);
+  }
 }
 
 function getLastSelection(editor: OutlineEditor): null | Selection {

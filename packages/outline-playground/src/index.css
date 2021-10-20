@@ -901,6 +901,23 @@ pre :not(.tree-view-output, .debug-timetravel-button) {
   display: flex;
 }
 
+.debug-timetravel-panel-slider {
+  padding: 0;
+  flex: 8;
+}
+
+.debug-timetravel-panel-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #444;
+  flex: 1;
+}
+
+.debug-timetravel-panel-button:hover {
+  text-decoration: underline;
+}
+
 .debug-timetravel-button {
   border: 0;
   padding: 0;

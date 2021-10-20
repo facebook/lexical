@@ -41,11 +41,15 @@ const SYMBOLS = Object.freeze({
 
 export default function TreeView({
   timeTravelButtonClassName,
+  timeTravelPanelSliderClassName,
+  timeTravelPanelButtonClassName,
   viewClassName,
   timeTravelPanelClassName,
   editor,
 }: {
   timeTravelPanelClassName: string,
+  timeTravelPanelSliderClassName: string,
+  timeTravelPanelButtonClassName: string,
   timeTravelButtonClassName: string,
   viewClassName: string,
   editor: OutlineEditor,
@@ -125,13 +129,14 @@ export default function TreeView({
       {timeTravelEnabled && (
         <div className={timeTravelPanelClassName}>
           <button
-            style={{border: 0, flex: 1}}
+            className={timeTravelPanelButtonClassName}
             onClick={() => {
               setIsPlaying(!isPlaying);
             }}>
             {isPlaying ? 'Pause' : 'Play'}
           </button>
           <input
+            className={timeTravelPanelSliderClassName}
             ref={inputRef}
             onChange={(event) => {
               const viewModelIndex = Number(event.target.value);
@@ -145,10 +150,9 @@ export default function TreeView({
             type="range"
             min="1"
             max={totalViewModels - 1}
-            style={{padding: 0, flex: 8}}
           />
           <button
-            style={{border: 0, flex: 1}}
+            className={timeTravelPanelButtonClassName}
             onClick={() => {
               const rootElement = editor.getRootElement();
               if (rootElement !== null) {

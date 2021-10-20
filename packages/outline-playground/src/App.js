@@ -46,6 +46,8 @@ function RichTextEditor({settings, onSettingsChange}): React$Node {
           viewClassName="tree-view-output"
           timeTravelPanelClassName="debug-timetravel-panel"
           timeTravelButtonClassName="debug-timetravel-button"
+          timeTravelPanelSliderClassName="debug-timetravel-panel-slider"
+          timeTravelPanelButtonClassName="debug-timetravel-panel-button"
           editor={editor}
         />
       )}
@@ -90,6 +92,8 @@ function PlainTextEditor({settings, onSettingsChange}): React$Node {
           viewClassName="tree-view-output"
           timeTravelPanelClassName="debug-timetravel-panel"
           timeTravelButtonClassName="debug-timetravel-button"
+          timeTravelPanelSliderClassName="debug-timetravel-panel-slider"
+          timeTravelPanelButtonClassName="debug-timetravel-panel-button"
           editor={editor}
         />
       )}

@@ -184,7 +184,7 @@ export default function TreeView({
                   timeStampedViewModels[timeStampedViewModels.length - 1];
                 editor.setViewModel(timeStampedViewModel[1]);
                 setTimeTravelEnabled(false);
-                setTimeTravelEnabled(false);
+                setIsPlaying(false);
               }
             }}>
             Exit

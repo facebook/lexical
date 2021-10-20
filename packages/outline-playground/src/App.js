@@ -42,7 +42,12 @@ function RichTextEditor({settings, onSettingsChange}): React$Node {
     <>
       <div className="editor-shell">{editorComponent}</div>
       {showTreeView && (
-        <OutlineTreeView className="tree-view-output" editor={editor} />
+        <OutlineTreeView
+          viewClassName="tree-view-output"
+          timeTravelPanelClassName="debug-timetravel-panel"
+          timeTravelButtonClassName="debug-timetravel-button"
+          editor={editor}
+        />
       )}
       {testRecorderOutput}
       <div className="editor-dev-toolbar">
@@ -81,7 +86,12 @@ function PlainTextEditor({settings, onSettingsChange}): React$Node {
     <>
       <div className="editor-shell">{editorComponent}</div>
       {showTreeView && (
-        <OutlineTreeView className="tree-view-output" editor={editor} />
+        <OutlineTreeView
+          viewClassName="tree-view-output"
+          timeTravelPanelClassName="debug-timetravel-panel"
+          timeTravelButtonClassName="debug-timetravel-button"
+          editor={editor}
+        />
       )}
       <div className="editor-dev-toolbar">
         {settingsSwitches}

@@ -40,10 +40,14 @@ const SYMBOLS = Object.freeze({
 });
 
 export default function TreeView({
-  className = '',
+  timeTravelButtonClassName,
+  viewClassName,
+  timeTravelPanelClassName,
   editor,
 }: {
-  className?: string,
+  timeTravelPanelClassName: string,
+  timeTravelButtonClassName: string,
+  viewClassName: string,
   editor: OutlineEditor,
 }): React$Node {
   const [timeStampedViewModels, setTimeStampedViewModels] = useState([]);
@@ -99,27 +103,9 @@ export default function TreeView({
     }
   }, [timeStampedViewModels, isPlaying, editor, totalViewModels]);
 
-  const styles =
-    className != null
-      ? {
-          className,
-        }
-      : {
-          styles: {
-            borderRadius: '2px',
-            background: '#222',
-            color: '#fff',
-            padding: '10px',
-            fontSize: '12px',
-            overflow: 'auto',
-            whiteSpace: 'pre-wrap',
-            margin: '20px auto 20px auto',
-          },
-        };
-
   return (
     <>
-      <pre {...styles}>
+      <pre className={viewClassName}>
         {!timeTravelEnabled && totalViewModels > 2 && (
           <button
             onClick={() => {
@@ -130,27 +116,14 @@ export default function TreeView({
                 setTimeTravelEnabled(true);
               }
             }}
-            style={{
-              border: 0,
-              padding: 0,
-              top: 10,
-              right: 15,
-              position: 'absolute',
-            }}>
+            className={timeTravelButtonClassName}>
             Time Travel
           </button>
         )}
         {content}
       </pre>
       {timeTravelEnabled && (
-        <div
-          style={{
-            overflow: 'hidden',
-            padding: 0,
-            margin: 'auto',
-            width: 580,
-            display: 'flex',
-          }}>
+        <div className={timeTravelPanelClassName}>
           <button
             style={{border: 0, flex: 1}}
             onClick={() => {

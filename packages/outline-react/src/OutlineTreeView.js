@@ -18,7 +18,7 @@ import type {
 import {isBlockNode, isTextNode} from 'outline';
 
 import * as React from 'react';
-import {useState, useEffect} from 'react';
+import {useState, useEffect, useRef} from 'react';
 
 const NON_SINGLE_WIDTH_CHARS_REPLACEMENT: $ReadOnly<{
   [string]: string,
@@ -46,13 +46,58 @@ export default function TreeView({
   className?: string,
   editor: OutlineEditor,
 }): React$Node {
+  const [timeStampedViewModels, setTimeStampedViewModels] = useState([]);
   const [content, setContent] = useState<string>('');
+  const [timeTravelEnabled, setTimeTravelEnabled] = useState(false);
+  const playingIndexRef = useRef(0);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
   useEffect(() => {
     setContent(generateContent(editor.getViewModel()));
-    return editor.addListener('update', () => {
+    return editor.addListener('update', (viewModel) => {
       setContent(generateContent(editor.getViewModel()));
+      if (!timeTravelEnabled) {
+        setTimeStampedViewModels((currentViewModels) => [
+          ...currentViewModels,
+          [Date.now(), viewModel],
+        ]);
+      }
     });
-  }, [editor]);
+  }, [timeTravelEnabled, editor]);
+  const totalViewModels = timeStampedViewModels.length;
+
+  useEffect(() => {
+    if (isPlaying) {
+      let timeoutId;
+
+      const play = () => {
+        const currentIndex = playingIndexRef.current;
+        if (currentIndex === totalViewModels - 1) {
+          setIsPlaying(false);
+          return;
+        }
+        const currentTime = timeStampedViewModels[currentIndex][0];
+        const nextTime = timeStampedViewModels[currentIndex + 1][0];
+        const timeDiff = nextTime - currentTime;
+        timeoutId = setTimeout(() => {
+          playingIndexRef.current++;
+          const index = playingIndexRef.current;
+          const input = inputRef.current;
+          if (input !== null) {
+            input.value = String(index);
+          }
+          editor.setViewModel(timeStampedViewModels[index][1]);
+          play();
+        }, timeDiff);
+      };
+
+      play();
+
+      return () => {
+        window.clearTimeout(timeoutId);
+      };
+    }
+  }, [timeStampedViewModels, isPlaying, editor, totalViewModels]);
 
   const styles =
     className != null
@@ -72,7 +117,82 @@ export default function TreeView({
           },
         };
 
-  return <pre {...styles}>{content}</pre>;
+  return (
+    <>
+      <pre {...styles}>
+        {!timeTravelEnabled && totalViewModels > 2 && (
+          <button
+            onClick={() => {
+              const rootElement = editor.getRootElement();
+              if (rootElement !== null) {
+                rootElement.contentEditable = 'false';
+                playingIndexRef.current = totalViewModels - 1;
+                setTimeTravelEnabled(true);
+              }
+            }}
+            style={{
+              border: 0,
+              padding: 0,
+              top: 10,
+              right: 15,
+              position: 'absolute',
+            }}>
+            Time Travel
+          </button>
+        )}
+        {content}
+      </pre>
+      {timeTravelEnabled && (
+        <div
+          style={{
+            overflow: 'hidden',
+            padding: 0,
+            margin: 'auto',
+            width: 580,
+            display: 'flex',
+          }}>
+          <button
+            style={{border: 0, flex: 1}}
+            onClick={() => {
+              setIsPlaying(!isPlaying);
+            }}>
+            {isPlaying ? 'Pause' : 'Play'}
+          </button>
+          <input
+            ref={inputRef}
+            onChange={(event) => {
+              const viewModelIndex = Number(event.target.value);
+              const timeStampedViewModel =
+                timeStampedViewModels[viewModelIndex];
+              if (timeStampedViewModel) {
+                playingIndexRef.current = viewModelIndex;
+                editor.setViewModel(timeStampedViewModel[1]);
+              }
+            }}
+            type="range"
+            min="1"
+            max={totalViewModels - 1}
+            style={{padding: 0, flex: 8}}
+          />
+          <button
+            style={{border: 0, flex: 1}}
+            onClick={() => {
+              const rootElement = editor.getRootElement();
+              if (rootElement !== null) {
+                rootElement.contentEditable = 'true';
+                const timeStampedViewModel =
+                  timeStampedViewModels[timeStampedViewModels.length - 1];
+                editor.setViewModel(timeStampedViewModel[1]);
+                setTimeTravelEnabled(false);
+                setIsPlaying(false);
+              }
+            }}>
+            Exit
+          </button>
+        </div>
+      )}
+    </>
+  );
 }
 
 function printSelection(selection: Selection): string {

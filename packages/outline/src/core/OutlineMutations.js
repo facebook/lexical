@@ -217,4 +217,3 @@ export function initMutationObserver(editor: OutlineEditor): void {
     },
   );
 }
-

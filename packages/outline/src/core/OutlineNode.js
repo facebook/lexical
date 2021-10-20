@@ -32,7 +32,11 @@ import {
   IS_SEGMENTED,
   HAS_DIRTY_NODES,
 } from './OutlineConstants';
-import {getSelection, moveSelectionPointToEnd} from './OutlineSelection';
+import {
+  getSelection,
+  moveSelectionPointToEnd,
+  updateBlockSelectionOnCreateDeleteNode,
+} from './OutlineSelection';
 
 type NodeParserState = {
   originalSelection: null | ParsedSelection,
@@ -108,7 +112,7 @@ function internallyMarkNodeAsDirty(node: OutlineNode): void {
   dirtyNodes.add(latest.__key);
 }
 
-function removeNode(
+export function removeNode(
   nodeToRemove: OutlineNode,
   restoreSelection: boolean,
 ): void {
@@ -118,17 +122,21 @@ function removeNode(
   if (parent === null) {
     return;
   }
-  if (restoreSelection) {
-    const selection = getSelection();
-    const anchor = selection && selection.anchor;
-    const focus = selection && selection.focus;
+  const selection = getSelection();
+  let selectionRestored = false;
+  if (selection !== null && restoreSelection) {
+    const anchor = selection.anchor;
+    const focus = selection.focus;
     if (anchor !== null && anchor.key === key) {
       moveSelectionPointToSibling(anchor, nodeToRemove, parent);
+      selectionRestored = true;
     }
     if (focus !== null && focus.key === key) {
       moveSelectionPointToSibling(focus, nodeToRemove, parent);
+      selectionRestored = true;
     }
   }
+
   const writableParent = parent.getWritable();
   const parentChildren = writableParent.__children;
   const index = parentChildren.indexOf(key);
@@ -137,6 +145,10 @@ function removeNode(
   }
   const writableNodeToRemove = nodeToRemove.getWritable();
   writableNodeToRemove.__parent = null;
+
+  if (selection !== null && !selectionRestored) {
+    updateBlockSelectionOnCreateDeleteNode(selection, parent, index, -1);
+  }
 }
 
 function moveSelectionPointToSibling(
@@ -708,6 +720,14 @@ export class OutlineNode {
     if (flags & IS_DIRECTIONLESS) {
       updateDirectionIfNeeded(writableNodeToInsert);
     }
+    const selection = getSelection();
+    if (selection !== null) {
+      updateBlockSelectionOnCreateDeleteNode(
+        selection,
+        writableParent,
+        index + 1,
+      );
+    }
     return nodeToInsert;
   }
   insertBefore(nodeToInsert: OutlineNode): OutlineNode {
@@ -737,6 +757,10 @@ export class OutlineNode {
     // Handle direction if node is directionless
     if (flags & IS_DIRECTIONLESS) {
       updateDirectionIfNeeded(writableNodeToInsert);
+    }
+    const selection = getSelection();
+    if (selection !== null) {
+      updateBlockSelectionOnCreateDeleteNode(selection, writableParent, index);
     }
     return nodeToInsert;
   }

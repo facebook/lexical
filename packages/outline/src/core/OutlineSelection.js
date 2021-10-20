@@ -193,6 +193,9 @@ export class Selection {
     }
     return this.anchor.is(selection.anchor) && this.focus.is(selection.focus);
   }
+  isBackwards(): boolean {
+    return this.focus.isBefore(this.anchor);
+  }
   isCollapsed(): boolean {
     return this.anchor.is(this.focus);
   }
@@ -670,4 +673,60 @@ export function createSelectionFromParse(
         ),
         0,
       );
+}
+
+export function updateBlockSelectionOnCreateDeleteNode(
+  selection: Selection,
+  parentNode: OutlineNode,
+  nodeOffset: number,
+  times: number = 1,
+) {
+  const anchor = selection.anchor;
+  const focus = selection.focus;
+  const anchorNode = anchor.getNode();
+  const focusNode = focus.getNode();
+  if (!parentNode.is(anchorNode) && !parentNode.is(focusNode)) {
+    return;
+  }
+  // Flow
+  if (!isBlockNode(anchorNode)) {
+    return;
+  }
+  const parentKey = parentNode.getKey();
+  // Single node. We shift selection but never redimension it
+  if (selection.isCollapsed()) {
+    const selectionOffset = anchor.offset;
+    if (nodeOffset <= selectionOffset) {
+      const newSelectionOffset = Math.max(0, selectionOffset + times);
+      const child = anchorNode.getChildAtIndex(newSelectionOffset);
+      if (isTextNode(child) && child.isAttached()) {
+        // Move selection to text
+        anchor.set(child.getKey(), 0, 'text');
+        focus.set(child.getKey(), 0, 'text');
+      } else {
+        anchor.set(parentKey, newSelectionOffset, 'block');
+        focus.set(parentKey, newSelectionOffset, 'block');
+      }
+    }
+    return;
+  }
+  // Multiple nodes selected. We shift or redimension selection
+  const isBackwards = selection.isBackwards();
+  const firstPoint = isBackwards ? focus : anchor;
+  const firstPointNode = firstPoint.getNode();
+  const lastPoint = isBackwards ? anchor : focus;
+  const lastPointNode = lastPoint.getNode();
+  if (parentNode.is(firstPointNode)) {
+    const firstPointOffset = firstPoint.offset;
+    if (nodeOffset <= firstPointOffset) {
+      firstPoint.set(parentKey, Math.max(0, firstPointOffset + times), 'block');
+    }
+  }
+
+  if (parentNode.is(lastPointNode)) {
+    const lastPointOffset = lastPoint.offset;
+    if (nodeOffset <= lastPointOffset) {
+      lastPoint.set(parentKey, Math.max(0, lastPointOffset + times), 'block');
+    }
+  }
 }

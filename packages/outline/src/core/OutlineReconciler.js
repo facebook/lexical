@@ -715,17 +715,6 @@ function adjustPointForMerge(
     point.offset = textLength + anchorOffset;
     point.key = startingKey;
     return true;
-  } else if (blockKey === anchorKey) {
-    if (anchorOffset > index) {
-      point.offset--;
-      return true;
-    } else if (index === anchorOffset) {
-      point.offset = textLength;
-      point.key = startingKey;
-      // $FlowFixMe: internally accessed
-      point.type = 'text';
-      return true;
-    }
   }
   return false;
 }
@@ -803,18 +792,12 @@ function adjustPointForDeletion(
   index: number,
 ): boolean {
   const anchorKey = point.key;
-  const anchorOffset = point.offset;
   if (key === anchorKey) {
     point.offset = index;
     point.key = blockKey;
     // $FlowFixMe: internal
     point.type = 'block';
     return true;
-  } else if (blockKey === anchorKey) {
-    if (anchorOffset > index) {
-      point.offset--;
-      return true;
-    }
   }
   return false;
 }

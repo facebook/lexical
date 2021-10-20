@@ -545,7 +545,10 @@ function updateTextNodeFromDOMContent(
     let normalizedTextContent = textContent;
 
     if (
-      (node.isComposing() || compositionEnd) &&
+      // Unfortunately, given onCompositionEnd fires before onInput in
+      // Firefox, we have to assume that this might be due to composition
+      // ending.
+      (IS_FIREFOX || node.isComposing() || compositionEnd) &&
       textContent[textContent.length - 1] === NO_BREAK_SPACE_CHAR
     ) {
       normalizedTextContent = textContent.slice(0, -1);

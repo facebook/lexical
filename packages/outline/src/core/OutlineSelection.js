@@ -193,7 +193,7 @@ export class Selection {
     }
     return this.anchor.is(selection.anchor) && this.focus.is(selection.focus);
   }
-  isBackwards(): boolean {
+  isBackward(): boolean {
     return this.focus.isBefore(this.anchor);
   }
   isCollapsed(): boolean {
@@ -711,10 +711,10 @@ export function updateBlockSelectionOnCreateDeleteNode(
     return;
   }
   // Multiple nodes selected. We shift or redimension selection
-  const isBackwards = selection.isBackwards();
-  const firstPoint = isBackwards ? focus : anchor;
+  const isBackward = selection.isBackward();
+  const firstPoint = isBackward ? focus : anchor;
   const firstPointNode = firstPoint.getNode();
-  const lastPoint = isBackwards ? anchor : focus;
+  const lastPoint = isBackward ? anchor : focus;
   const lastPointNode = lastPoint.getNode();
   if (parentNode.is(firstPointNode)) {
     const firstPointOffset = firstPoint.offset;

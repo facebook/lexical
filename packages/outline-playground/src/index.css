@@ -144,7 +144,7 @@ header h1 {
   max-width: 600px;
 }
 
-pre :not(.tree-view-output) {
+pre :not(.tree-view-output, .debug-timetravel-button) {
   background: #222;
   color: #fff;
   padding: 10px;
@@ -891,4 +891,43 @@ pre :not(.tree-view-output) {
 .action-button:hover {
   background-color: #ddd;
   color: #000;
+}
+
+.debug-timetravel-panel {
+  overflow: hidden;
+  padding: 0;
+  margin: auto;
+  width: 580px;
+  display: flex;
+}
+
+.debug-timetravel-panel-slider {
+  padding: 0;
+  flex: 8;
+}
+
+.debug-timetravel-panel-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #444;
+  flex: 1;
+}
+
+.debug-timetravel-panel-button:hover {
+  text-decoration: underline;
+}
+
+.debug-timetravel-button {
+  border: 0;
+  padding: 0;
+  top: 10px;
+  right: 15px;
+  position: absolute;
+  background: none;
+  color: #fff;
+}
+
+.debug-timetravel-button:hover {
+  text-decoration: underline;
 }

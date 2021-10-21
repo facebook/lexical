@@ -33,6 +33,7 @@ import {isBlockNode, isTextNode, isLineBreakNode} from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './OutlineConstants';
 import {resetEditor} from './OutlineEditor';
 import {initMutationObserver, flushMutations} from './OutlineMutations';
+import {createRootNode} from './OutlineRootNode';
 import invariant from 'shared/invariant';
 
 export type View = {
@@ -112,9 +113,9 @@ export function getActiveEditor(): OutlineEditor {
     invariant(
       false,
       'Unable to find an active editor. ' +
-        'View methods or node methods can only be used ' +
+        'This method can only be used ' +
         'synchronously during the callback of ' +
-        'editor.update() or viewModel.read().',
+        'editor.update().',
     );
   }
   return activeEditor;
@@ -501,6 +502,10 @@ export function triggerListeners(
 export function cloneViewModel(current: ViewModel): ViewModel {
   const draft = new ViewModel(new Map(current._nodeMap));
   return draft;
+}
+
+export function createEmptyViewModel(): ViewModel {
+  return new ViewModel(new Map([['root', createRootNode()]]));
 }
 
 export class ViewModel {

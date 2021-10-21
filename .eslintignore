@@ -3,3 +3,4 @@ packages/**/config/*.js
 packages/playwright
 packages/playwright-core
 **/node_modules
+scripts/**

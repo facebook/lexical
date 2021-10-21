@@ -56,13 +56,19 @@ import {
   insertRichText,
   moveCharacter,
 } from 'outline/SelectionHelpers';
-import {createTextNode, isTextNode, isDecoratorNode} from 'outline';
+import {
+  createTextNode,
+  isTextNode,
+  isDecoratorNode,
+  getEditorFromElement,
+} from 'outline';
 import {IS_FIREFOX} from 'shared/environment';
 import getPossibleDecoratorNode from 'shared/getPossibleDecoratorNode';
 
 const NO_BREAK_SPACE_CHAR = '\u00A0';
 
 let lastKeyWasMaybeAndroidSoftKey = false;
+let pendingOnInputTextMutations = null;
 
 // TODO the Flow types here needs fixing
 export type EventHandler = (
@@ -428,13 +434,14 @@ export function onCompositionStart(
   }, 'onCompositionStart');
 }
 
-function onCompositionEndInternal(editor: OutlineEditor) {
+function onCompositionEndInternal(
+  event: CompositionEvent,
+  editor: OutlineEditor,
+) {
   editor.update((view) => {
     view.setCompositionKey(null);
     updateSelectedTextFromDOM(editor, view, true);
   }, 'onCompositionEnd');
-  // Flush any pending text mutations
-  editor.flushTextMutations();
 }
 
 export function onCompositionEnd(
@@ -447,10 +454,10 @@ export function onCompositionEnd(
     // in FF, we need to defer the logic for onCompositionEnd to
     // ensure that any possible onInput events fire before.
     setTimeout(() => {
-      onCompositionEndInternal(editor);
+      onCompositionEndInternal(event, editor);
     }, 0);
   } else {
-    onCompositionEndInternal(editor);
+    onCompositionEndInternal(event, editor);
   }
 }
 
@@ -552,10 +559,11 @@ function updateTextNodeFromDOMContent(
 ): void {
   let node = textNode;
   if (node.isAttached() && (compositionEnd || !node.isDirty())) {
+    const isComposing = node.isComposing();
     let normalizedTextContent = textContent;
 
     if (
-      (node.isComposing() || compositionEnd) &&
+      (isComposing || compositionEnd) &&
       textContent[textContent.length - 1] === NO_BREAK_SPACE_CHAR
     ) {
       normalizedTextContent = textContent.slice(0, -1);
@@ -564,7 +572,7 @@ function updateTextNodeFromDOMContent(
     if (compositionEnd || normalizedTextContent !== node.getTextContent()) {
       if (
         isImmutableOrInert(node) ||
-        (editor.isComposing() && !node.isComposing())
+        (editor.isComposing() && !isComposing)
       ) {
         view.markNodeAsDirty(node);
         return;
@@ -574,8 +582,7 @@ function updateTextNodeFromDOMContent(
       if (
         selection === null ||
         anchorOffset === null ||
-        focusOffset === null ||
-        selection.anchor.getNode() !== node
+        focusOffset === null
       ) {
         node.setTextContent(normalizedTextContent);
         return;
@@ -957,7 +964,17 @@ function updateSelectedTextFromDOM(
   }
 }
 
-export function onInput(event: InputEvent, editor: OutlineEditor) {
+function takeMutationRecords(editor: OutlineEditor): Array<MutationRecord> {
+  const observer = editor.getObserver();
+  if (observer === null) {
+    return [];
+  }
+  return observer.takeRecords();
+}
+
+export function onInput(event: InputEvent, editor: OutlineEditor): void {
+  // We don't want the onInput to bubble, in the case of nested editors.
+  event.stopPropagation();
   editor.update((view: View) => {
     const selection = view.getSelection();
     const data = event.data;
@@ -967,37 +984,90 @@ export function onInput(event: InputEvent, editor: OutlineEditor) {
       shouldPreventDefaultAndInsertText(selection, data, false)
     ) {
       insertText(selection, data);
-      return;
+    } else {
+      updateSelectedTextFromDOM(editor, view, false);
     }
-    updateSelectedTextFromDOM(editor, view, false);
+    if (pendingOnInputTextMutations !== null) {
+      view.flushMutations(pendingOnInputTextMutations);
+      pendingOnInputTextMutations = null;
+    }
+    // Also flush any other mutations that might have occured
+    // since the change.
+    const mutations = takeMutationRecords(editor);
+    if (mutations.length > 0) {
+      view.flushMutations(mutations);
+    }
   }, 'onInput');
-  // Flush any pending text mutations
-  editor.flushTextMutations();
+}
+
+export function applyMutationInputWebkitWorkaround(): void {
+  // In Chrome and Safari, having an input capture listener
+  // on an element other than the contenteditable causes a
+  // bug where MutationObserver listeners are triggered before
+  // onInput is triggered. In order to avoid this bug, we
+  // add our own capture input listener to the window and
+  // capture any mutations at this point. This stops the
+  // MutationObserver listener from firing before.
+  //
+  // If we have any records, we flush all non-text mutations
+  // now (early) and then pass along any text mutations to
+  // be processed later,.
+
+  window.addEventListener(
+    'input',
+    (event: InputEvent) => {
+      pendingOnInputTextMutations = null;
+      // $FlowFixMe: event.target is always an element for input events
+      const editor = getEditorFromElement(event.target);
+      if (editor === null) {
+        return;
+      }
+      const mutations = takeMutationRecords(editor);
+      if (mutations.length > 0) {
+        const textMutations = [];
+        const otherMutations = [];
+        // Filter out text mutations from the other mutations
+        for (let i = 0; i < mutations.length; i++) {
+          const mutation = mutations[i];
+          if (mutation.type === 'characterData') {
+            textMutations.push(mutation);
+          } else {
+            otherMutations.push(mutation);
+          }
+        }
+        if (otherMutations.length > 0) {
+          editor.update(
+            (view) => view.flushMutations(otherMutations),
+            'applyMutationInputWebkitWorkaround',
+          );
+        }
+        if (textMutations.length > 0) {
+          pendingOnInputTextMutations = textMutations;
+        }
+      }
+    },
+    true,
+  );
 }
 
 export function onTextMutation(
   editor: OutlineEditor,
-  mutations: Array<TextMutation>,
+  view: View,
+  mutation: TextMutation,
 ): void {
   // We attempt to merge any text mutations that have occured outside of Outline
-  // back into Outline's view model, where possible. This can occur due to
-  // third-party extensions or other tooling that mutates text nodes directly.
-  editor.update((view: View) => {
-    for (let i = 0; i < mutations.length; i++) {
-      const mutation: TextMutation = mutations[i];
-      const node = mutation.node;
-      const anchorOffset = mutation.anchorOffset;
-      const focusOffset = mutation.focusOffset;
-      const text = mutation.text;
-      updateTextNodeFromDOMContent(
-        node,
-        text,
-        anchorOffset,
-        focusOffset,
-        view,
-        editor,
-        false,
-      );
-    }
-  }, 'onMutation');
+  // back into Outline's view model.
+  const node = mutation.node;
+  const anchorOffset = mutation.anchorOffset;
+  const focusOffset = mutation.focusOffset;
+  const text = mutation.text;
+  updateTextNodeFromDOMContent(
+    node,
+    text,
+    anchorOffset,
+    focusOffset,
+    view,
+    editor,
+    false,
+  );
 }

@@ -429,6 +429,27 @@ describe('Composition', () => {
           focusPath: [0],
           focusOffset: 0,
         });
+
+        await page.keyboard.type(' ');
+        await page.keyboard.press('ArrowLeft');
+
+        await page.keyboard.imeSetComposition('ｓ', 1, 1);
+        await page.keyboard.imeSetComposition('す', 1, 1);
+        await page.keyboard.imeSetComposition('すｓ', 2, 2);
+        await page.keyboard.imeSetComposition('すｓｈ', 3, 3);
+        await page.keyboard.imeSetComposition('すし', 2, 2);
+        await page.keyboard.imeSetComposition('す', 1, 1);
+        await page.keyboard.imeSetComposition('', 0, 0);
+        // Escape would fire here
+        await page.keyboard.insertText('');
+
+        await assertHTML(page, '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true"> </span></p>');
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 0,
+          focusPath: [0, 0, 0],
+          focusOffset: 0,
+        });
       });
     });
   });

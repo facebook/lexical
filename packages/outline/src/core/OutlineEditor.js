@@ -27,10 +27,7 @@ import {createRootNode as createRoot} from './OutlineRootNode';
 import {LineBreakNode} from './OutlineLineBreakNode';
 import {RootNode} from './OutlineRootNode';
 import {NO_DIRTY_NODES, FULL_RECONCILE} from './OutlineConstants';
-import {
-  initMutationObserver,
-  flushPendingTextMutations,
-} from './OutlineMutations';
+import {initMutationObserver} from './OutlineMutations';
 import invariant from 'shared/invariant';
 
 export type EditorThemeClassName = string;
@@ -93,7 +90,8 @@ export type RootListener = (
 ) => void;
 export type TextMutationListener = (
   editor: OutlineEditor,
-  mutations: Array<TextMutation>,
+  view: View,
+  mutation: TextMutation,
 ) => void;
 
 export type TextMutation = {
@@ -149,8 +147,6 @@ export function resetEditor(
   editor._dirtyNodes = new Set();
   editor._dirtySubTrees = new Set();
   editor._textContent = '';
-  editor._textMutations = [];
-  editor._mutationRAF = null;
   const observer = editor._observer;
   if (observer !== null) {
     observer.disconnect();
@@ -274,8 +270,6 @@ class BaseOutlineEditor {
   _dirtyNodes: Set<NodeKey>;
   _dirtySubTrees: Set<NodeKey>;
   _observer: null | MutationObserver;
-  _textMutations: Array<TextMutation>;
-  _mutationRAF: null | number;
 
   constructor(viewModel: ViewModel, config: EditorConfig<{...}>) {
     // The root element associated with this editor
@@ -316,19 +310,11 @@ class BaseOutlineEditor {
     this._dirtyType = NO_DIRTY_NODES;
     this._dirtyNodes = new Set();
     this._dirtySubTrees = new Set();
-    // Handling of text mutations
-    this._textMutations = [];
-    this._mutationRAF = null;
+    // Handling of DOM mutations
     this._observer = null;
   }
-  flushTextMutations(): void {
-    const rAF = this._mutationRAF;
-
-    if (rAF !== null) {
-      this._mutationRAF = null;
-      window.cancelAnimationFrame(rAF);
-    }
-    flushPendingTextMutations(getSelf(this));
+  getObserver(): null | MutationObserver {
+    return this._observer;
   }
   isComposing(): boolean {
     return this._compositionKey != null;
@@ -401,11 +387,17 @@ class BaseOutlineEditor {
         nextRootElement,
         pendingViewModel,
       );
+      if (prevRootElement !== null) {
+        // $FlowFixMe: internal field
+        prevRootElement.__outlineEditor = null;
+      }
       if (nextRootElement !== null) {
         nextRootElement.setAttribute('data-outline-editor', 'true');
         this._dirtyType = FULL_RECONCILE;
         initMutationObserver(getSelf(this));
         commitPendingUpdates(getSelf(this), 'setRootElement');
+        // $FlowFixMe: internal field
+        nextRootElement.__outlineEditor = this;
       }
       triggerListeners('root', getSelf(this), nextRootElement, prevRootElement);
     }
@@ -520,10 +512,8 @@ declare export class OutlineEditor {
   _dirtyNodes: Set<NodeKey>;
   _dirtySubTrees: Set<NodeKey>;
   _observer: null | MutationObserver;
-  _textMutations: Array<TextMutation>;
-  _mutationRAF: null | number;
 
-  flushTextMutations(): void;
+  getObserver(): null | MutationObserver;
   isComposing(): boolean;
   registerNodeType(nodeType: string, klass: Class<OutlineNode>): void;
   addListener(type: 'error', listener: ErrorListener): () => void;
@@ -548,4 +538,10 @@ declare export class OutlineEditor {
   ): boolean;
   focus(callbackFn?: () => void): void;
   canShowPlaceholder(): boolean;
+}
+
+export function getEditorFromElement(element: Element): null | OutlineEditor {
+  // $FlowFixMe: internal field
+  const possibleEditor: void | OutlineEditor = element.__outlineEditor;
+  return possibleEditor != null ? possibleEditor : null;
 }

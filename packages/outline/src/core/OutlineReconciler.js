@@ -814,8 +814,11 @@ function removeStrandedEmptyTextNode(
   const blockKey = node.__parent;
   let selectionIsDirty = false;
 
+  // We should never try and remove a node during composition.
+  // Composed nodes are also technically not really empty, they
+  // have a no break space at the end.
   if (getCompositionKey() === key) {
-    setCompositionKey(null);
+    return;
   }
 
   if (anchor !== null && blockKey !== null) {

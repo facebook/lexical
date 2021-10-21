@@ -30,7 +30,7 @@ export type {
 export type {TextFormatType} from './OutlineTextNode';
 export type {LineBreakNode} from './OutlineLineBreakNode';
 
-import {createEditor} from './OutlineEditor';
+import {createEditor, getEditorFromElement} from './OutlineEditor';
 import {createTextNode, isTextNode, TextNode} from './OutlineTextNode';
 import {isBlockNode, BlockNode} from './OutlineBlockNode';
 import {createRootNode, isRootNode, RootNode} from './OutlineRootNode';
@@ -51,6 +51,8 @@ export {
   isLineBreakNode,
   isRootNode,
   isTextNode,
+  // Helper
+  getEditorFromElement,
   // Extensible nodes
   BlockNode,
   DecoratorNode,

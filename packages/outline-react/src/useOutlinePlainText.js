@@ -18,7 +18,7 @@ import {
   ParagraphNode,
   isParagraphNode,
 } from 'outline/ParagraphNode';
-import {CAN_USE_BEFORE_INPUT} from 'shared/environment';
+import {CAN_USE_BEFORE_INPUT, IS_SAFARI, IS_CHROME} from 'shared/environment';
 import invariant from 'shared/invariant';
 import {
   onSelectionChange,
@@ -33,6 +33,7 @@ import {
   onDragStartPolyfill,
   onTextMutation,
   onInput,
+  applyMutationInputWebkitWorkaround,
   onClick,
 } from 'outline/EventHelpers';
 import useOutlineDragonSupport from './shared/useOutlineDragonSupport';
@@ -100,6 +101,10 @@ if (CAN_USE_BEFORE_INPUT) {
   events.push(['beforeinput', onBeforeInputForPlainText]);
 } else {
   events.push(['drop', onDropPolyfill]);
+}
+
+if (IS_SAFARI || IS_CHROME) {
+  applyMutationInputWebkitWorkaround();
 }
 
 export default function useOutlinePlainText(editor: OutlineEditor): () => void {

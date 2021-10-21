@@ -32,7 +32,7 @@ import {
 import {isBlockNode, isTextNode, isLineBreakNode} from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './OutlineConstants';
 import {resetEditor} from './OutlineEditor';
-import {initMutationObserver} from './OutlineMutations';
+import {initMutationObserver, flushMutations} from './OutlineMutations';
 import invariant from 'shared/invariant';
 
 export type View = {
@@ -50,6 +50,7 @@ export type View = {
   setCompositionKey: (compositionKey: NodeKey | null) => void,
   getCompositionKey: () => null | NodeKey,
   getNearestNodeFromDOMNode: (dom: Node) => null | OutlineNode,
+  flushMutations: (mutations: Array<MutationRecord>) => void,
 };
 
 export type ParsedViewModel = {
@@ -119,7 +120,7 @@ export function getActiveEditor(): OutlineEditor {
   return activeEditor;
 }
 
-const view: View = {
+export const view: View = {
   getRoot() {
     // $FlowFixMe: root is always in our Map
     return ((getActiveViewModel()._nodeMap.get('root'): any): RootNode);
@@ -147,11 +148,23 @@ const view: View = {
     return createNodeFromParse(parsedNode, parsedNodeMap, editor, null);
   },
   markNodeAsDirty(node: OutlineNode): void {
+    errorOnReadOnly();
     node.getWritable();
   },
-  setCompositionKey,
+  setCompositionKey(compositionKey: null | NodeKey): void {
+    errorOnReadOnly();
+    setCompositionKey(compositionKey);
+  },
   getCompositionKey,
   getNearestNodeFromDOMNode,
+  flushMutations(mutations: Array<MutationRecord>): void {
+    errorOnReadOnly();
+    const editor = getActiveEditor();
+    const observer = editor._observer;
+    if (observer !== null) {
+      flushMutations(editor, mutations, observer);
+    }
+  },
 };
 export function viewModelHasDirtySelection(
   viewModel: ViewModel,

@@ -209,11 +209,8 @@ export function flushPendingTextMutations(editor: OutlineEditor): void {
 
 export function initMutationObserver(editor: OutlineEditor): void {
   editor._observer = new MutationObserver(
-    (mutations: Array<MutationRecord>) => {
-      const observer = editor._observer;
-      if (observer !== null) {
-        handleRootMutations(editor, mutations, observer);
-      }
+    (mutations: Array<MutationRecord>, observer: MutationObserver) => {
+      handleRootMutations(editor, mutations, observer);
     },
   );
 }

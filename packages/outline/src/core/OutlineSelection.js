@@ -729,30 +729,56 @@ export function updateBlockSelectionOnCreateDeleteNode(
 
 function updateSelectionResolveTextNodes(selection: Selection) {
   const anchor = selection.anchor;
+  const anchorOffset = anchor.offset;
   const focus = selection.focus;
+  const focusOffset = focus.offset;
   const anchorNode = anchor.getNode();
   const focusNode = focus.getNode();
   if (selection.isCollapsed()) {
     if (!isBlockNode(anchorNode)) {
       return;
     }
-    const child = anchorNode.getChildAtIndex(anchor.offset);
+    const childSize = anchorNode.getChildrenSize();
+    const anchorOffsetAtEnd = anchorOffset >= childSize;
+    const child = anchorOffsetAtEnd
+      ? anchorNode.getChildAtIndex(childSize - 1)
+      : anchorNode.getChildAtIndex(anchorOffset);
     if (isTextNode(child)) {
-      anchor.set(child.getKey(), 0, 'text');
-      focus.set(child.getKey(), 0, 'text');
+      let newOffset = 0;
+      if (anchorOffsetAtEnd) {
+        newOffset = child.getTextContentSize();
+      }
+      anchor.set(child.getKey(), newOffset, 'text');
+      focus.set(child.getKey(), newOffset, 'text');
     }
     return;
   }
   if (isBlockNode(anchorNode)) {
-    const child = anchorNode.getChildAtIndex(anchor.offset);
+    const childSize = anchorNode.getChildrenSize();
+    const anchorOffsetAtEnd = anchorOffset >= childSize;
+    const child = anchorOffsetAtEnd
+      ? anchorNode.getChildAtIndex(childSize - 1)
+      : anchorNode.getChildAtIndex(anchorOffset);
     if (isTextNode(child)) {
-      anchor.set(child.getKey(), 0, 'text');
+      let newOffset = 0;
+      if (anchorOffsetAtEnd) {
+        newOffset = child.getTextContentSize();
+      }
+      anchor.set(child.getKey(), newOffset, 'text');
     }
   }
   if (isBlockNode(focusNode)) {
-    const child = focusNode.getChildAtIndex(focus.offset);
+    const childSize = focusNode.getChildrenSize();
+    const focusOffsetAtEnd = focusOffset >= childSize;
+    const child = focusOffsetAtEnd
+      ? focusNode.getChildAtIndex(childSize - 1)
+      : focusNode.getChildAtIndex(focusOffset);
     if (isTextNode(child)) {
-      focus.set(child.getKey(), 0, 'text');
+      let newOffset = 0;
+      if (focusOffsetAtEnd) {
+        newOffset = child.getTextContentSize();
+      }
+      focus.set(child.getKey(), newOffset, 'text');
     }
   }
 }

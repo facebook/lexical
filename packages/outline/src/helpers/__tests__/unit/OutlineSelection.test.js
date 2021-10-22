@@ -1348,6 +1348,49 @@ describe('OutlineSelection tests', () => {
           };
         },
       },
+      // Edge cases
+      {
+        name: "Selection resolves to the end of text node when it's at the end (1)",
+        anchorOffset: 3,
+        focusOffset: 3,
+        fnBefore: (paragraph, originalText1) => {
+          const originalText2 = createTextNode('bar');
+          paragraph.append(originalText2);
+        },
+        fn: (paragraph, originalText1) => {
+          const originalText2 = paragraph.getLastChild();
+          const newText = createTextNode('new');
+          originalText1.insertBefore(newText);
+
+          return {
+            expectedAnchor: originalText2,
+            expectedAnchorOffset: 'bar'.length,
+            expectedFocus: originalText2,
+            expectedFocusOffset: 'bar'.length,
+          };
+        },
+      },
+      {
+        name: "Selection resolves to the end of text node when it's at the end (2)",
+        anchorOffset: 0,
+        focusOffset: 3,
+        fnBefore: (paragraph, originalText1) => {
+          const originalText2 = createTextNode('bar');
+          paragraph.append(originalText2);
+        },
+        fn: (paragraph, originalText1) => {
+          const originalText2 = paragraph.getLastChild();
+          const newText = createTextNode('new');
+          originalText1.insertBefore(newText);
+
+          return {
+            expectedAnchor: originalText1,
+            expectedAnchorOffset: 0,
+            expectedFocus: originalText2,
+            expectedFocusOffset: 'bar'.length,
+          };
+        },
+      },
     ]
       .reduce((testSuite, testCase) => {
         // Test inverse selection

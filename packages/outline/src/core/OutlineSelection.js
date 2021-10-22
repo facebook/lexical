@@ -723,7 +723,7 @@ export function updateBlockSelectionOnCreateDeleteNode(
       lastPoint.set(parentKey, Math.max(0, lastPointOffset + times), 'block');
     }
   }
-  // updateSelectionResolveTextNodes(selection);
+  updateSelectionResolveTextNodes(selection);
 }
 
 function updateSelectionResolveTextNodes(selection: Selection) {

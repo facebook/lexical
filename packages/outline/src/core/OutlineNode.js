@@ -123,17 +123,17 @@ export function removeNode(
     return;
   }
   const selection = getSelection();
-  let selectionRestored = false;
+  let selectionMoved = false;
   if (selection !== null && restoreSelection) {
     const anchor = selection.anchor;
     const focus = selection.focus;
     if (anchor !== null && anchor.key === key) {
       moveSelectionPointToSibling(anchor, nodeToRemove, parent);
-      selectionRestored = true;
+      selectionMoved = true;
     }
     if (focus !== null && focus.key === key) {
       moveSelectionPointToSibling(focus, nodeToRemove, parent);
-      selectionRestored = true;
+      selectionMoved = true;
     }
   }
 
@@ -146,7 +146,7 @@ export function removeNode(
   const writableNodeToRemove = nodeToRemove.getWritable();
   writableNodeToRemove.__parent = null;
 
-  if (selection !== null && !selectionRestored) {
+  if (selection !== null && restoreSelection && !selectionMoved) {
     updateBlockSelectionOnCreateDeleteNode(selection, parent, index, -1);
   }
 }

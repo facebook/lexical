@@ -914,7 +914,7 @@ describe('OutlineSelection tests', () => {
 
   describe('Block selection moves when new nodes are inserted', () => {
     [
-      // Collapsed selection on end; add/remove beginning
+      // Collapsed selection on end; add/remove/replace beginning
       {
         name: 'insertBefore - Collapsed selection on end; add beginning',
         fn: (paragraph, text) => {
@@ -957,7 +957,18 @@ describe('OutlineSelection tests', () => {
         expectedAnchorOffset: 0,
         expectedFocusOffset: 0,
       },
-      // All selected; add/remove on beginning
+      {
+        name: 'replace - Collapsed selection on end; replace beginning',
+        fn: (paragraph, text) => {
+          const newText = createTextNode('replacement');
+          text.replace(newText);
+        },
+        anchorOffset: 1,
+        focusOffset: 1,
+        expectedAnchorOffset: 1,
+        expectedFocusOffset: 1,
+      },
+      // All selected; add/remove/replace on beginning
       {
         name: 'insertBefore - All selected; add on beginning',
         fn: (paragraph, text) => {
@@ -989,7 +1000,18 @@ describe('OutlineSelection tests', () => {
         expectedAnchorOffset: 0,
         expectedFocusOffset: 1,
       },
-      // Selection beginning; add on end
+      {
+        name: 'replace - All selected; replace on beginning',
+        fn: (paragraph, text) => {
+          const newText = createTextNode('replacement');
+          text.replace(newText);
+        },
+        anchorOffset: 0,
+        focusOffset: 2,
+        expectedAnchorOffset: 0,
+        expectedFocusOffset: 2,
+      },
+      // Selection beginning; add/remove/replace on end
       {
         name: 'insertBefore - Selection beginning; add on end',
         fnBefore: (paragraph, originalText1) => {
@@ -1044,7 +1066,19 @@ describe('OutlineSelection tests', () => {
         expectedAnchorOffset: 0,
         expectedFocusOffset: 0,
       },
-      // All selected; add in end offset [1, 2] -> [1, N, 2]
+      {
+        name: 'replace - Selection beginning; replace on end',
+        fn: (paragraph, text) => {
+          const newText = createTextNode('replacement');
+          const lastChild = paragraph.getLastChild();
+          lastChild.replace(newText);
+        },
+        anchorOffset: 0,
+        focusOffset: 1,
+        expectedAnchorOffset: 0,
+        expectedFocusOffset: 1,
+      },
+      // All selected; add/remove/replace in end offset [1, 2] -> [1, N, 2]
       {
         name: 'insertBefore - All selected; add in end offset',
         fn: (paragraph, text) => {
@@ -1097,7 +1131,23 @@ describe('OutlineSelection tests', () => {
         expectedAnchorOffset: 1,
         expectedFocusOffset: 1,
       },
-      // All selected; add/remove in middle [1, 2, 3] -> [1, 2, N, 3]
+      {
+        name: 'replace - All selected; replace in end offset',
+        fnBefore: (paragraph, originalText1) => {
+          const originalText2 = createTextNode('bar');
+          originalText1.insertBefore(originalText2);
+        },
+        fn: (paragraph, text) => {
+          const newText = createTextNode('replacement');
+          const lastChild = paragraph.getLastChild();
+          lastChild.replace(newText);
+        },
+        anchorOffset: 1,
+        focusOffset: 2,
+        expectedAnchorOffset: 1,
+        expectedFocusOffset: 2,
+      },
+      // All selected; add/remove/replace in middle [1, 2, 3] -> [1, 2, N, 3]
       {
         name: 'insertBefore - All selected; add in middle',
         fnBefore: (paragraph, originalText1) => {
@@ -1156,6 +1206,21 @@ describe('OutlineSelection tests', () => {
         focusOffset: 2,
         expectedAnchorOffset: 0,
         expectedFocusOffset: 1,
+      },
+      {
+        name: 'replace - All selected; replace in middle',
+        fnBefore: (paragraph, originalText1) => {
+          const originalText2 = createTextNode('bar');
+          originalText1.insertBefore(originalText2);
+        },
+        fn: (paragraph, text) => {
+          const newText = createTextNode('replacement');
+          text.replace(newText);
+        },
+        anchorOffset: 0,
+        focusOffset: 2,
+        expectedAnchorOffset: 0,
+        expectedFocusOffset: 2,
       },
     ]
       .reduce((testSuite, testCase) => {

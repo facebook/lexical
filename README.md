@@ -25,17 +25,19 @@ import {useCallback} from 'react';
 import useOutlineEditor from 'outline-react/useOutlineEditor';
 import useOutlinePlainText from 'outline-react/useOutlinePlainText';
 
-function Editor() {
+const editorConfig = {
   // When Outline encounters an error, this is where
   // we can report/handle it.
-  const onError = useCallback((error) => {
+  onError(error) {
     throw error;
-  }, [])
+  }
+};
 
+function Editor() {
   // Create an Outline editor instance and also a ref
   // that we need to pass to our content editable.
   const [editor, contentEditableRef, showPlaceholder] = useOutlineEditor(
-    onError,
+    editorConfig,
   );
 
   // Setup plain text entry event handlers.

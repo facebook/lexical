@@ -925,7 +925,9 @@ describe('OutlineSelectionHelpers tests', () => {
 
         blockNode.remove();
 
-        expect(anchor.key).toBe(textNode1Key);
+        // expect(anchor.key).toBe(textNode1Key);
+        // expect(anchor.offset).toBe(0);
+        expect(anchor.key).toBe(paragraph.getKey());
         expect(anchor.offset).toBe(0);
         expect(focus.key).toBe(textNode1Key);
         expect(focus.offset).toBe(0);

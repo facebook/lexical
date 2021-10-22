@@ -76,6 +76,41 @@ describe('OutlineEditor tests', () => {
     return Promise.resolve().then();
   }
 
+  it('Should be create and editor with an initial view model', async () => {
+    const rootElement = document.createElement('div');
+    container.appendChild(rootElement);
+
+    const initialEditor = createEditor();
+
+    initialEditor.update((view) => {
+      const root = view.getRoot();
+      const paragraph = createParagraphNode();
+      const text = createTextNode('This works!');
+      root.append(paragraph);
+      paragraph.append(text);
+    });
+
+    initialEditor.setRootElement(rootElement);
+
+    // Wait for update to complete
+    await Promise.resolve().then();
+
+    expect(container.innerHTML).toBe('<div data-outline-editor=\"true\"><p><span data-outline-text=\"true\">This works!</span></p></div>');
+
+    const initialViewModel = initialEditor.getViewModel();
+
+    initialEditor.setRootElement(null);
+    expect(container.innerHTML).toBe('<div data-outline-editor=\"true\"></div>');
+
+    editor = createEditor({
+      initialViewModel: initialViewModel,
+    });
+    editor.setRootElement(rootElement);
+
+    expect(editor.getViewModel()).toEqual(initialViewModel);
+    expect(container.innerHTML).toBe('<div data-outline-editor=\"true\"><p><span data-outline-text=\"true\">This works!</span></p></div>');
+  });
+
   it('Should be able to update a view model without an root element', () => {
     const ref = React.createRef();
 

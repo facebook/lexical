@@ -35,6 +35,9 @@ module.exports = {
         'outline-react/dist/useOutlineNestedList',
       'outline-react/useOutlineCharacterLimit':
         'outline-react/dist/useOutlineCharacterLimit',
+      //Shared
+      'shared/environment':
+        'shared/dist/environment',
     },
   },
 };

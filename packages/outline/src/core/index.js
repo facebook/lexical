@@ -40,6 +40,7 @@ import {isLeafNode} from './OutlineNode';
 
 export {
   createEditor,
+  getEditorFromElement,
   // Node factories
   createLineBreakNode,
   createRootNode,
@@ -51,8 +52,6 @@ export {
   isLineBreakNode,
   isRootNode,
   isTextNode,
-  // Helper
-  getEditorFromElement,
   // Extensible nodes
   BlockNode,
   DecoratorNode,

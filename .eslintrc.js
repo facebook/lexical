@@ -16,6 +16,7 @@ module.exports = {
     'no-for-of-loops',
     'no-function-declare-after-return',
     'react',
+    'no-only-tests',
   ],
 
   parser: 'babel-eslint',
@@ -98,6 +99,8 @@ module.exports = {
 
     // Prevent function declarations after return statements
     'no-function-declare-after-return/no-function-declare-after-return': ERROR,
+
+    'no-only-tests/no-only-tests': ERROR,
   },
 
   overrides: [

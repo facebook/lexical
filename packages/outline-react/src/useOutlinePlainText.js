@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {OutlineEditor} from 'outline';
+import type {OutlineEditor, View, RootNode} from 'outline';
 import type {InputEvents} from 'outline-react/useOutlineEditorEvents';
 
 import {useCallback} from 'react';
@@ -16,10 +16,8 @@ import useOutlineEditorEvents from './useOutlineEditorEvents';
 import {
   createParagraphNode,
   ParagraphNode,
-  isParagraphNode,
 } from 'outline/ParagraphNode';
 import {CAN_USE_BEFORE_INPUT, IS_SAFARI, IS_CHROME} from 'shared/environment';
-import invariant from 'shared/invariant';
 import {
   onSelectionChange,
   onKeyDownForPlainText,
@@ -39,23 +37,20 @@ import {
 import useOutlineDragonSupport from './shared/useOutlineDragonSupport';
 import useOutlineHistory from './shared/useOutlineHistory';
 
+function initParagraph(view: View, root: RootNode): void {
+  const paragraph = createParagraphNode();
+  root.append(paragraph);
+  if (view.getSelection() !== null) {
+    paragraph.select();
+  }
+}
+
 function initEditor(editor: OutlineEditor): void {
   editor.update((view) => {
     const root = view.getRoot();
     const firstChild = root.getFirstChild();
-    if (firstChild !== null) {
-      if (!isParagraphNode(firstChild)) {
-        invariant(
-          'false',
-          'Expected plain text root first child to be a ParagraphNode',
-        );
-      }
-    } else {
-      const paragraph = createParagraphNode();
-      root.append(paragraph);
-      if (view.getSelection() !== null) {
-        paragraph.select();
-      }
+    if (firstChild === null) {
+      initParagraph(view, root);
     }
   }, 'initEditor');
 }
@@ -66,18 +61,9 @@ function clearEditor(
 ): void {
   editor.update(
     (view) => {
-      const firstChild = view.getRoot().getFirstChild();
-      if (!isParagraphNode(firstChild)) {
-        invariant(
-          'false',
-          'clearEditor expected plain text root first child to be a ParagraphNode',
-        );
-        return;
-      }
-      firstChild.clear();
-      if (view.getSelection() !== null) {
-        firstChild.select();
-      }
+      const root = view.getRoot();
+      root.clear();
+      initParagraph(view, root);
     },
     'clearEditor',
     callbackFn,

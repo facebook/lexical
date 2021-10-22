@@ -165,17 +165,25 @@ export function flushMutations(
   }
 }
 
+export function flushRootMutations(
+  editor: OutlineEditor,
+  mutations: Array<MutationRecord>,
+  observer: MutationObserver,
+): void {
+  isProcessingMutations = true;
+  try {
+    editor.update(() => {
+      flushMutations(editor, mutations, observer);
+    }, 'onMutation');
+  } finally {
+    isProcessingMutations = false;
+  }
+}
+
 export function initMutationObserver(editor: OutlineEditor): void {
   editor._observer = new MutationObserver(
     (mutations: Array<MutationRecord>, observer: MutationObserver) => {
-      isProcessingMutations = true;
-      try {
-        editor.update(() => {
-          flushMutations(editor, mutations, observer);
-        }, 'onMutation');
-      } finally {
-        isProcessingMutations = false;
-      }
+      flushRootMutations(editor, mutations, observer)
     },
   );
 }

@@ -11,8 +11,6 @@ import type {OutlineEditor, View, ViewModel, NodeKey} from 'outline';
 
 import {createTextNode} from 'outline';
 import {createParagraphNode} from 'outline/ParagraphNode';
-import useEvent from './useEvent';
-
 import React, {
   useCallback,
   useEffect,
@@ -20,21 +18,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-
-const MODIFIER_KEYS = [
-  'Alt',
-  'AltLeft',
-  'AltRight',
-  'Control',
-  'ControlLeft',
-  'ControlRight',
-  'Shift',
-  'ShiftLeft',
-  'ShiftRight',
-  'Meta',
-  'MetaLeft',
-  'MetaRight',
-];
+import {IS_APPLE} from 'shared/environment';
 
 const copy = (text: string | null) => {
   const textArea = document.createElement('textarea');
@@ -66,23 +50,6 @@ const download = (filename: string, text: string | null) => {
   document.body && document.body.removeChild(a);
 };
 
-const getModifiers = (event: KeyboardEvent) => {
-  const modifiers = [];
-  if (event.altKey) {
-    modifiers.push('Alt');
-  }
-  if (event.ctrlKey) {
-    modifiers.push('Control');
-  }
-  if (event.shiftKey) {
-    modifiers.push('Shift');
-  }
-  if (event.metaKey) {
-    modifiers.push('Meta');
-  }
-  return modifiers;
-};
-
 const formatStep = (step) => {
   const formatOneStep = (name, value) => {
     switch (name) {
@@ -92,8 +59,17 @@ const formatStep = (step) => {
       case 'press': {
         return `      await page.keyboard.press('${value}');`;
       }
+      case 'keydown': {
+        return `      await page.keyboard.keydown('${value}');`;
+      }
+      case 'keyup': {
+        return `      await page.keyboard.keyup('${value}');`;
+      }
       case 'type': {
         return `      await page.keyboard.type('${value}');`;
+      }
+      case 'selectAll': {
+        return `      await selectAll(page);`;
       }
       case 'snapshot': {
         return `      await assertHTMLSnapshot(page);
@@ -122,6 +98,10 @@ const formatStep = (step) => {
   }
 };
 
+export function isSelectAll(event: KeyboardEvent): boolean {
+  return event.keyCode === 65 && (IS_APPLE ? event.metaKey : event.ctrlKey);
+}
+
 // stolen from OutlineSelection-test
 function sanitizeSelection(selection) {
   let {anchorNode, anchorOffset, focusNode, focusOffset} = selection;
@@ -148,10 +128,21 @@ function getPathFromNodeToEditor(node: Node, rootElement) {
   return path;
 }
 
+const keyPresses = new Set([
+  'Enter',
+  'Backspace',
+  'Delete',
+  'Escape',
+  'ArrowLeft',
+  'ArrowRight',
+  'ArrowUp',
+  'ArrowDown',
+])
+
 // $FlowFixMe TODO
 type Steps = Array<any>;
 
-export default function useStepRecorder(
+export default function useTestRecorder(
   editor: OutlineEditor,
 ): [React$Node, React$Node] {
   const [steps, setSteps] = useState<Steps>([]);
@@ -190,11 +181,17 @@ export default function useStepRecorder(
  *
  */
 
-import {initializeE2E, assertHTMLSnapshot, assertSelection} from '../utils';
+import {
+  initializeE2E,
+  assertHTMLSnapshot,
+  assertSelection,
+  repeat,
+} from '../utils';
+import {selectAll} from '../keyboardShortcuts';
 
-describe('Regression test', () => {
+describe('Test case', () => {
   initializeE2E((e2e) => {
-    it('passes the test', async () => {
+    it('Should pass this test', async () => {
       const {page} = e2e;
 
       await page.focus('div.editor');
@@ -210,17 +207,24 @@ ${steps.map(formatStep).join(`\n`)}
     (name, value) => {
       setSteps((currentSteps) => {
         // trying to group steps
-        const lastStep = steps[steps.length - 1];
-        if (lastStep && lastStep.name === name) {
-          if (name === 'type') {
-            // for typing events we just append the text
-            lastStep.value += value;
-            return [...currentSteps];
-          } else {
-            // for other events we bump the counter if their values are the same
-            if (lastStep.value === value) {
-              lastStep.count += 1;
-              return [...currentSteps];
+        const currentIndex = steps.length - 1;
+        const lastStep = steps[currentIndex];
+        if (lastStep) {
+          if (lastStep.name === name) {
+            if (name === 'type') {
+              // for typing events we just append the text
+              return [
+                ...steps.slice(0, currentIndex),
+                {...lastStep, value: lastStep.value + value},
+              ];
+            } else {
+              // for other events we bump the counter if their values are the same
+              if (lastStep.value === value) {
+                return [
+                  ...steps.slice(0, currentIndex),
+                  {...lastStep, count: lastStep.count + 1},
+                ];
+              }
             }
           }
         }
@@ -231,42 +235,50 @@ ${steps.map(formatStep).join(`\n`)}
     [steps, setSteps],
   );
 
-  const onKeyDown = useCallback(
-    (event: KeyboardEvent) => {
+  useLayoutEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
       if (!isRecording) {
         return;
       }
-      const modifiers = getModifiers(event);
-      if (modifiers.length > 0) {
-        if (!MODIFIER_KEYS.includes(event.code) && event.key !== 'Dead') {
-          pushStep('press', `${modifiers.join('+')}+${event.code}`);
-        }
+      const key = event.key;
+      if (isSelectAll(event)) {
+        pushStep('selectAll', '');
+      } else if (keyPresses.has(key)) {
+        pushStep('press', event.key);
+      } else if ([...key].length > 1) {
+        pushStep('keydown', event.key);
       } else {
-        if ([...event.key].length > 1) {
-          pushStep('press', event.key);
-        } else {
-          pushStep('type', event.key);
-        }
+        pushStep('type', event.key);
       }
-    },
-    [pushStep, isRecording],
-  );
+    };
 
-  const onClick = useCallback(
-    (event: MouseEvent) => {
+    const onKeyUp = (event: KeyboardEvent) => {
       if (!isRecording) {
         return;
       }
-      pushStep('click', {
-        x: event.x,
-        y: event.y,
-      });
-    },
-    [pushStep, isRecording],
-  );
+      const key = event.key;
+      if (!keyPresses.has(key) && [...key].length > 1) {
+        pushStep('keyup', event.key);
+      }
+    };
 
-  useEvent(editor, 'keydown', onKeyDown);
-  useEvent(editor, 'click', onClick);
+    return editor.addListener(
+      'root',
+      (
+        rootElement: null | HTMLElement,
+        prevRootElement: null | HTMLElement,
+      ) => {
+        if (prevRootElement !== null) {
+          prevRootElement.removeEventListener('keydown', onKeyDown);
+          prevRootElement.removeEventListener('keyup', onKeyUp);
+        }
+        if (rootElement !== null) {
+          rootElement.addEventListener('keydown', onKeyDown);
+          rootElement.addEventListener('keyup', onKeyUp);
+        }
+      },
+    );
+  }, [editor, isRecording, pushStep]);
 
   useLayoutEffect(() => {
     if (preRef.current) {
@@ -343,19 +355,6 @@ ${steps.map(formatStep).join(`\n`)}
     },
     [isRecording],
   );
-
-  // hotkey
-  // useEffect(() => {
-  //   const cb = (event: KeyboardEvent) => {
-  //     if (event.key === 'k' && (event.metaKey || event.ctrlKey)) {
-  //       toggleEditorSelection(getCurrentEditor());
-  //     }
-  //   };
-  //   document.addEventListener('keydown', cb);
-  //   return () => {
-  //     document.removeEventListener('keydown', cb);
-  //   };
-  // }, [getCurrentEditor, toggleEditorSelection]);
 
   const onSnapshotClick = useCallback(() => {
     if (!isRecording) {

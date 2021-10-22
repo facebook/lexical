@@ -21,13 +21,13 @@ import {
   errorOnProcessingTextNodeTransforms,
   triggerListeners,
   preparePendingViewUpdate,
+  createEmptyViewModel,
 } from './OutlineView';
 import {emptyFunction, scheduleMicroTask} from './OutlineUtils';
-import {createRootNode as createRoot} from './OutlineRootNode';
 import {LineBreakNode} from './OutlineLineBreakNode';
 import {RootNode} from './OutlineRootNode';
 import {NO_DIRTY_NODES, FULL_RECONCILE} from './OutlineConstants';
-import {initMutationObserver} from './OutlineMutations';
+import {flushRootMutations, initMutationObserver} from './OutlineMutations';
 import invariant from 'shared/invariant';
 
 export type EditorThemeClassName = string;
@@ -170,13 +170,19 @@ export function createEditor<EditorContext>(editorConfig?: {
   const config = editorConfig || {};
   const theme = config.theme || {};
   const context = config.context || {};
-  const viewModel = config.initialViewModel || createEmptyViewModel();
+  const viewModel = createEmptyViewModel();
+  const initialViewModel = config.initialViewModel;
   // $FlowFixMe: use our declared type instead
-  return new BaseOutlineEditor(viewModel, {
+  const editor: editor = new BaseOutlineEditor(viewModel, {
     // $FlowFixMe: we use our internal type to simpify the generics
     context,
     theme,
   });
+  if (initialViewModel !== undefined) {
+    editor._pendingViewModel = initialViewModel;
+    editor._dirtyType = FULL_RECONCILE;
+  }
+  return editor;
 }
 
 function updateEditor(
@@ -241,10 +247,6 @@ function updateEditor(
     });
   }
   return true;
-}
-
-function createEmptyViewModel(): ViewModel {
-  return new ViewModel(new Map([['root', createRoot()]]));
 }
 
 function getSelf(self: BaseOutlineEditor): OutlineEditor {
@@ -415,11 +417,17 @@ class BaseOutlineEditor {
         "setViewModel: the view model is empty. Ensure the view model's root node never becomes empty.",
       );
     }
+    const observer = this._observer;
+    if (observer !== null) {
+      const mutations = observer.takeRecords();
+      flushRootMutations(getSelf(this), mutations, observer);
+    }
     if (this._pendingViewModel !== null) {
       commitPendingUpdates(getSelf(this), 'setViewModel #1');
     }
     this._pendingViewModel = viewModel;
     this._dirtyType = FULL_RECONCILE;
+    this._compositionKey = null;
     commitPendingUpdates(getSelf(this), 'setViewModel #2');
   }
   parseViewModel(stringifiedViewModel: string): ViewModel {

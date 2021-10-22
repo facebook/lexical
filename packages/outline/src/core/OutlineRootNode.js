@@ -66,6 +66,10 @@ export class RootNode extends BlockNode {
     }
     return super.append(...nodesToAppend);
   }
+
+  canBeEmpty(): false {
+    return false;
+  }
 }
 
 export function createRootNode(): RootNode {

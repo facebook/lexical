@@ -7,6 +7,7 @@
  * @flow strict-local
  */
 
+import './setupEnv';
 import React from 'react';
 // $FlowFixMe: Flow doesn't understand react-dom
 import {createRoot} from 'react-dom';

@@ -440,6 +440,9 @@ export class OutlineNode {
   }
   isParentOf(targetNode: OutlineNode): boolean {
     const key = this.__key;
+    if (key === targetNode.__key) {
+      return false;
+    }
     let node = targetNode;
     while (node !== null) {
       if (node.__key === key) {

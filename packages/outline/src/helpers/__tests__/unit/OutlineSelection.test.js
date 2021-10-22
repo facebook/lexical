@@ -917,310 +917,479 @@ describe('OutlineSelection tests', () => {
       // Collapsed selection on end; add/remove/replace beginning
       {
         name: 'insertBefore - Collapsed selection on end; add beginning',
+        anchorOffset: 2,
+        focusOffset: 2,
         fn: (paragraph, text) => {
           const newText = createTextNode('2');
           text.insertBefore(newText);
+
+          return {
+            expectedAnchor: paragraph,
+            expectedAnchorOffset: 3,
+            expectedFocus: paragraph,
+            expectedFocusOffset: 3,
+          };
         },
-        anchorOffset: 2,
-        focusOffset: 2,
-        expectedAnchorOffset: 3,
-        expectedFocusOffset: 3,
       },
       {
         name: 'insertAfter - Collapsed selection on end; add beginning',
+        anchorOffset: 2,
+        focusOffset: 2,
         fn: (paragraph, text) => {
           const newText = createTextNode('2');
           text.insertAfter(newText);
+
+          return {
+            expectedAnchor: paragraph,
+            expectedAnchorOffset: 3,
+            expectedFocus: paragraph,
+            expectedFocusOffset: 3,
+          };
         },
-        anchorOffset: 2,
-        focusOffset: 2,
-        expectedAnchorOffset: 3,
-        expectedFocusOffset: 3,
       },
       {
         name: 'splitText - Collapsed selection on end; add beginning',
-        fn: (paragraph, text) => {
-          text.splitText(1);
-        },
         anchorOffset: 2,
         focusOffset: 2,
-        expectedAnchorOffset: 3,
-        expectedFocusOffset: 3,
+        fn: (paragraph, text) => {
+          text.splitText(1);
+
+          return {
+            expectedAnchor: paragraph,
+            expectedAnchorOffset: 3,
+            expectedFocus: paragraph,
+            expectedFocusOffset: 3,
+          };
+        },
       },
       {
         name: 'remove - Collapsed selection on end; add beginning',
-        fn: (paragraph, text) => {
-          text.remove();
-        },
         anchorOffset: 1,
         focusOffset: 1,
-        expectedAnchorOffset: 0,
-        expectedFocusOffset: 0,
+        fn: (paragraph, text) => {
+          text.remove();
+
+          return {
+            expectedAnchor: paragraph,
+            expectedAnchorOffset: 0,
+            expectedFocus: paragraph,
+            expectedFocusOffset: 0,
+          };
+        },
       },
       {
         name: 'replace - Collapsed selection on end; replace beginning',
+        anchorOffset: 1,
+        focusOffset: 1,
         fn: (paragraph, text) => {
           const newText = createTextNode('replacement');
           text.replace(newText);
+
+          return {
+            expectedAnchor: paragraph,
+            expectedAnchorOffset: 1,
+            expectedFocus: paragraph,
+            expectedFocusOffset: 1,
+          };
         },
-        anchorOffset: 1,
-        focusOffset: 1,
-        expectedAnchorOffset: 1,
-        expectedFocusOffset: 1,
       },
       // All selected; add/remove/replace on beginning
       {
         name: 'insertBefore - All selected; add on beginning',
+        anchorOffset: 0,
+        focusOffset: 2,
         fn: (paragraph, text) => {
           const newText = createTextNode('2');
           text.insertBefore(newText);
+
+          return {
+            expectedAnchor: text,
+            expectedAnchorOffset: 0,
+            expectedFocus: paragraph,
+            expectedFocusOffset: 3,
+          };
         },
-        anchorOffset: 0,
-        focusOffset: 2,
-        expectedAnchorOffset: 1,
-        expectedFocusOffset: 3,
       },
       {
         name: 'splitNodes - All selected; add on beginning',
-        fn: (paragraph, text) => {
-          text.splitText(1);
-        },
         anchorOffset: 0,
         focusOffset: 2,
-        expectedAnchorOffset: 1,
-        expectedFocusOffset: 3,
+        fn: (paragraph, originalText) => {
+          const [, text] = originalText.splitText(1);
+
+          return {
+            expectedAnchor: text,
+            expectedAnchorOffset: 0,
+            expectedFocus: paragraph,
+            expectedFocusOffset: 3,
+          };
+        },
       },
       {
         name: 'remove - All selected; remove on beginning',
+        anchorOffset: 0,
+        focusOffset: 1,
         fn: (paragraph, text) => {
           text.remove();
+
+          return {
+            expectedAnchor: paragraph,
+            expectedAnchorOffset: 0,
+            expectedFocus: paragraph,
+            expectedFocusOffset: 0,
+          };
         },
-        anchorOffset: 0,
-        focusOffset: 2,
-        expectedAnchorOffset: 0,
-        expectedFocusOffset: 1,
       },
       {
         name: 'replace - All selected; replace on beginning',
+        anchorOffset: 0,
+        focusOffset: 1,
         fn: (paragraph, text) => {
           const newText = createTextNode('replacement');
           text.replace(newText);
+
+          return {
+            expectedAnchor: paragraph,
+            expectedAnchorOffset: 0,
+            expectedFocus: paragraph,
+            expectedFocusOffset: 1,
+          };
         },
-        anchorOffset: 0,
-        focusOffset: 2,
-        expectedAnchorOffset: 0,
-        expectedFocusOffset: 2,
       },
       // Selection beginning; add/remove/replace on end
       {
         name: 'insertBefore - Selection beginning; add on end',
+        anchorOffset: 0,
+        focusOffset: 1,
         fnBefore: (paragraph, originalText1) => {
           const originalText2 = createTextNode('bar');
           originalText1.insertBefore(originalText2);
         },
-        fn: (paragraph, text) => {
+        fn: (paragraph, originalText1) => {
+          const originalText2 = originalText1.getPreviousSibling();
           const lastChild = paragraph.getLastChild();
           const newText = createTextNode('2');
           lastChild.insertBefore(newText);
+
+          return {
+            expectedAnchor: originalText2,
+            expectedAnchorOffset: 0,
+            expectedFocus: originalText1,
+            expectedFocusOffset: 0,
+          };
         },
-        anchorOffset: 0,
-        focusOffset: 1,
-        expectedAnchorOffset: 0,
-        expectedFocusOffset: 1,
       },
       {
         name: 'insertAfter - Selection beginning; add on end',
+        anchorOffset: 0,
+        focusOffset: 1,
         fn: (paragraph, text) => {
           const lastChild = paragraph.getLastChild();
           const newText = createTextNode('2');
           lastChild.insertAfter(newText);
+
+          return {
+            expectedAnchor: text,
+            expectedAnchorOffset: 0,
+            expectedFocus: paragraph,
+            expectedFocusOffset: 1,
+          };
         },
-        anchorOffset: 0,
-        focusOffset: 1,
-        expectedAnchorOffset: 0,
-        expectedFocusOffset: 1,
       },
       {
         name: 'splitText - Selection beginning; add on end',
-        fnBefore: (paragraph, originalText1) => {
-          const newText = createTextNode('2');
-          paragraph.append(newText);
-        },
-        fn: (paragraph, text) => {
-          const lastChild = paragraph.getLastChild();
-          lastChild.splitText(1);
-        },
         anchorOffset: 0,
         focusOffset: 1,
-        expectedAnchorOffset: 0,
-        expectedFocusOffset: 1,
+        fnBefore: (paragraph, originalText1) => {
+          const originalText2 = createTextNode('bar');
+          originalText1.insertBefore(originalText2);
+        },
+        fn: (paragraph, originalText1) => {
+          const originalText2 = originalText1.getPreviousSibling();
+          const [, text] = originalText1.splitText(1);
+
+          return {
+            expectedAnchor: originalText2,
+            expectedAnchorOffset: 0,
+            expectedFocus: text,
+            expectedFocusOffset: 0,
+          };
+        },
       },
       {
         name: 'remove - Selection beginning; remove on end',
+        anchorOffset: 0,
+        focusOffset: 1,
         fn: (paragraph, text) => {
           const lastChild = paragraph.getLastChild();
           lastChild.remove();
+
+          return {
+            expectedAnchor: text,
+            expectedAnchorOffset: 0,
+            expectedFocus: text,
+            expectedFocusOffset: 0,
+          };
         },
-        anchorOffset: 0,
-        focusOffset: 1,
-        expectedAnchorOffset: 0,
-        expectedFocusOffset: 0,
       },
       {
         name: 'replace - Selection beginning; replace on end',
+        anchorOffset: 0,
+        focusOffset: 1,
         fn: (paragraph, text) => {
           const newText = createTextNode('replacement');
           const lastChild = paragraph.getLastChild();
           lastChild.replace(newText);
+
+          return {
+            expectedAnchor: paragraph,
+            expectedAnchorOffset: 0,
+            expectedFocus: paragraph,
+            expectedFocusOffset: 1,
+          };
         },
-        anchorOffset: 0,
-        focusOffset: 1,
-        expectedAnchorOffset: 0,
-        expectedFocusOffset: 1,
       },
       // All selected; add/remove/replace in end offset [1, 2] -> [1, N, 2]
       {
         name: 'insertBefore - All selected; add in end offset',
+        anchorOffset: 0,
+        focusOffset: 1,
         fn: (paragraph, text) => {
           const lastChild = paragraph.getLastChild();
           const newText = createTextNode('2');
           lastChild.insertBefore(newText);
+
+          return {
+            expectedAnchor: text,
+            expectedAnchorOffset: 0,
+            expectedFocus: paragraph,
+            expectedFocusOffset: 2,
+          };
         },
-        anchorOffset: 0,
-        focusOffset: 1,
-        expectedAnchorOffset: 0,
-        expectedFocusOffset: 2,
       },
       {
         name: 'insertAfter - All selected; add in end offset',
+        anchorOffset: 0,
+        focusOffset: 1,
         fn: (paragraph, text) => {
           const newText = createTextNode('2');
           text.insertAfter(newText);
+
+          return {
+            expectedAnchor: text,
+            expectedAnchorOffset: 0,
+            expectedFocus: paragraph,
+            expectedFocusOffset: 2,
+          };
         },
-        anchorOffset: 0,
-        focusOffset: 1,
-        expectedAnchorOffset: 0,
-        expectedFocusOffset: 2,
       },
       {
         name: 'splitText - All selected; add in end offset',
+        anchorOffset: 0,
+        focusOffset: 1,
         fnBefore: (paragraph, originalText1) => {
           const originalText2 = createTextNode('bar');
           originalText1.insertBefore(originalText2);
         },
-        fn: (paragraph, text) => {
-          text.splitText(1);
+        fn: (paragraph, originalText1) => {
+          const originalText2 = originalText1.getPreviousSibling();
+          const [, text] = originalText1.splitText(1);
+
+          return {
+            expectedAnchor: originalText2,
+            expectedAnchorOffset: 0,
+            expectedFocus: text,
+            expectedFocusOffset: 0,
+          };
         },
-        anchorOffset: 0,
-        focusOffset: 1,
-        expectedAnchorOffset: 0,
-        expectedFocusOffset: 2,
       },
       {
         name: 'remove - All selected; remove in end offset',
+        anchorOffset: 1,
+        focusOffset: 2,
         fnBefore: (paragraph, originalText1) => {
           const originalText2 = createTextNode('bar');
           originalText1.insertBefore(originalText2);
         },
-        fn: (paragraph, text) => {
+        fn: (paragraph, originalText1) => {
           const lastChild = paragraph.getLastChild();
           lastChild.remove();
+
+          return {
+            expectedAnchor: originalText1,
+            expectedAnchorOffset: 0,
+            expectedFocus: originalText1,
+            expectedFocusOffset: 0,
+          };
         },
-        anchorOffset: 1,
-        focusOffset: 2,
-        expectedAnchorOffset: 1,
-        expectedFocusOffset: 1,
       },
       {
         name: 'replace - All selected; replace in end offset',
+        anchorOffset: 1,
+        focusOffset: 2,
         fnBefore: (paragraph, originalText1) => {
           const originalText2 = createTextNode('bar');
           originalText1.insertBefore(originalText2);
         },
-        fn: (paragraph, text) => {
+        fn: (paragraph, originalText1) => {
           const newText = createTextNode('replacement');
           const lastChild = paragraph.getLastChild();
           lastChild.replace(newText);
+
+          return {
+            expectedAnchor: paragraph,
+            expectedAnchorOffset: 1,
+            expectedFocus: paragraph,
+            expectedFocusOffset: 2,
+          };
         },
-        anchorOffset: 1,
-        focusOffset: 2,
-        expectedAnchorOffset: 1,
-        expectedFocusOffset: 2,
       },
       // All selected; add/remove/replace in middle [1, 2, 3] -> [1, 2, N, 3]
       {
         name: 'insertBefore - All selected; add in middle',
+        anchorOffset: 0,
+        focusOffset: 2,
         fnBefore: (paragraph, originalText1) => {
           const originalText2 = createTextNode('bar');
           originalText1.insertBefore(originalText2);
         },
-        fn: (paragraph, text) => {
+        fn: (paragraph, originalText1) => {
+          const originalText2 = originalText1.getPreviousSibling();
           const lastChild = paragraph.getLastChild();
           const newText = createTextNode('2');
           lastChild.insertBefore(newText);
+
+          return {
+            expectedAnchor: originalText2,
+            expectedAnchorOffset: 0,
+            expectedFocus: paragraph,
+            expectedFocusOffset: 3,
+          };
         },
-        anchorOffset: 0,
-        focusOffset: 2,
-        expectedAnchorOffset: 0,
-        expectedFocusOffset: 3,
       },
       {
         name: 'insertAfter - All selected; add in middle',
+        anchorOffset: 0,
+        focusOffset: 2,
         fnBefore: (paragraph, originalText1) => {
           const originalText2 = createTextNode('bar');
           originalText1.insertBefore(originalText2);
         },
-        fn: (paragraph, text) => {
+        fn: (paragraph, originalText1) => {
+          const originalText2 = originalText1.getPreviousSibling();
           const newText = createTextNode('2');
-          text.insertAfter(newText);
+          originalText1.insertAfter(newText);
+
+          return {
+            expectedAnchor: originalText2,
+            expectedAnchorOffset: 0,
+            expectedFocus: paragraph,
+            expectedFocusOffset: 3,
+          };
         },
-        anchorOffset: 0,
-        focusOffset: 2,
-        expectedAnchorOffset: 0,
-        expectedFocusOffset: 3,
       },
       {
         name: 'splitText - All selected; add in middle',
+        anchorOffset: 0,
+        focusOffset: 2,
         fnBefore: (paragraph, originalText1) => {
           const originalText2 = createTextNode('bar');
           originalText1.insertBefore(originalText2);
         },
-        fn: (paragraph, text) => {
-          text.splitText(1);
+        fn: (paragraph, originalText1) => {
+          const originalText2 = originalText1.getPreviousSibling();
+          originalText1.splitText(1);
+
+          return {
+            expectedAnchor: originalText2,
+            expectedAnchorOffset: 0,
+            expectedFocus: paragraph,
+            expectedFocusOffset: 3,
+          };
         },
-        anchorOffset: 0,
-        focusOffset: 2,
-        expectedAnchorOffset: 0,
-        expectedFocusOffset: 3,
       },
       {
         name: 'remove - All selected; remove in middle',
+        anchorOffset: 0,
+        focusOffset: 2,
         fnBefore: (paragraph, originalText1) => {
           const originalText2 = createTextNode('bar');
           originalText1.insertBefore(originalText2);
         },
-        fn: (paragraph, text) => {
-          text.remove();
+        fn: (paragraph, originalText1) => {
+          const originalText2 = originalText1.getPreviousSibling();
+          originalText1.remove();
+
+          return {
+            expectedAnchor: originalText2,
+            expectedAnchorOffset: 0,
+            expectedFocus: paragraph,
+            expectedFocusOffset: 1,
+          };
         },
-        anchorOffset: 0,
-        focusOffset: 2,
-        expectedAnchorOffset: 0,
-        expectedFocusOffset: 1,
       },
       {
         name: 'replace - All selected; replace in middle',
+        anchorOffset: 0,
+        focusOffset: 2,
         fnBefore: (paragraph, originalText1) => {
           const originalText2 = createTextNode('bar');
           originalText1.insertBefore(originalText2);
         },
-        fn: (paragraph, text) => {
+        fn: (paragraph, originalText1) => {
           const newText = createTextNode('replacement');
-          text.replace(newText);
+          originalText1.replace(newText);
+
+          return {
+            expectedAnchor: paragraph,
+            expectedAnchorOffset: 0,
+            expectedFocus: paragraph,
+            expectedFocusOffset: 2,
+          };
         },
+      },
+      // Edge cases
+      {
+        name: "Selection resolves to the end of text node when it's at the end (1)",
+        anchorOffset: 3,
+        focusOffset: 3,
+        fnBefore: (paragraph, originalText1) => {
+          const originalText2 = createTextNode('bar');
+          paragraph.append(originalText2);
+        },
+        fn: (paragraph, originalText1) => {
+          const originalText2 = paragraph.getLastChild();
+          const newText = createTextNode('new');
+          originalText1.insertBefore(newText);
+
+          return {
+            expectedAnchor: originalText2,
+            expectedAnchorOffset: 'bar'.length,
+            expectedFocus: originalText2,
+            expectedFocusOffset: 'bar'.length,
+          };
+        },
+      },
+      {
+        name: "Selection resolves to the end of text node when it's at the end (2)",
         anchorOffset: 0,
-        focusOffset: 2,
-        expectedAnchorOffset: 0,
-        expectedFocusOffset: 2,
+        focusOffset: 3,
+        fnBefore: (paragraph, originalText1) => {
+          const originalText2 = createTextNode('bar');
+          paragraph.append(originalText2);
+        },
+        fn: (paragraph, originalText1) => {
+          const originalText2 = paragraph.getLastChild();
+          const newText = createTextNode('new');
+          originalText1.insertBefore(newText);
+
+          return {
+            expectedAnchor: originalText1,
+            expectedAnchorOffset: 0,
+            expectedFocus: originalText2,
+            expectedFocusOffset: 'bar'.length,
+          };
+        },
       },
     ]
       .reduce((testSuite, testCase) => {
@@ -1230,8 +1399,7 @@ describe('OutlineSelection tests', () => {
           name: testCase.name + ' (inverse selection)',
           anchorOffset: testCase.focusOffset,
           focusOffset: testCase.anchorOffset,
-          expectedAnchorOffset: testCase.expectedFocusOffset,
-          expectedFocusOffset: testCase.expectedAnchorOffset,
+          invertSelection: true,
         };
         return testSuite.concat(testCase, inverse);
       }, [])
@@ -1242,8 +1410,7 @@ describe('OutlineSelection tests', () => {
           fnBefore = () => {},
           anchorOffset,
           focusOffset,
-          expectedAnchorOffset,
-          expectedFocusOffset,
+          invertSelection,
           only,
         }) => {
           // eslint-disable-next-line no-only-tests/no-only-tests
@@ -1266,12 +1433,24 @@ describe('OutlineSelection tests', () => {
               anchor.set(paragraph.getKey(), anchorOffset, 'block');
               focus.set(paragraph.getKey(), focusOffset, 'block');
 
-              fn(paragraph, textNode);
+              const {
+                expectedAnchor,
+                expectedAnchorOffset,
+                expectedFocus,
+                expectedFocusOffset,
+              } = fn(paragraph, textNode);
 
-              expect(selection.anchor.is(paragraph));
-              expect(selection.anchor.offset).toBe(expectedAnchorOffset);
-              expect(selection.focus.is(paragraph));
-              expect(selection.focus.offset).toBe(expectedFocusOffset);
+              if (invertSelection !== true) {
+                expect(selection.anchor.key).toBe(expectedAnchor.__key);
+                expect(selection.anchor.offset).toBe(expectedAnchorOffset);
+                expect(selection.focus.key).toBe(expectedFocus.__key);
+                expect(selection.focus.offset).toBe(expectedFocusOffset);
+              } else {
+                expect(selection.anchor.key).toBe(expectedFocus.__key);
+                expect(selection.anchor.offset).toBe(expectedFocusOffset);
+                expect(selection.focus.key).toBe(expectedAnchor.__key);
+                expect(selection.focus.offset).toBe(expectedAnchorOffset);
+              }
             });
           });
         },

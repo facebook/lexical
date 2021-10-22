@@ -308,13 +308,13 @@ describe('OutlineSelectionHelpers tests', () => {
       editor.getViewModel().read((view) => {
         const selection = view.getSelection();
         expect(selection.anchor).toEqual({
-          type: 'block',
-          key: block.getKey(),
+          type: 'text',
+          key: 'b',
           offset: 1,
         });
         expect(selection.focus).toEqual({
-          type: 'block',
-          key: block.getKey(),
+          type: 'text',
+          key: 'b',
           offset: 1,
         });
       });
@@ -362,13 +362,13 @@ describe('OutlineSelectionHelpers tests', () => {
       editor.getViewModel().read((view) => {
         const selection = view.getSelection();
         expect(selection.anchor).toEqual({
-          type: 'block',
-          key: block.getKey(),
+          type: 'text',
+          key: 'c',
           offset: 2,
         });
         expect(selection.focus).toEqual({
-          type: 'block',
-          key: block.getKey(),
+          type: 'text',
+          key: 'c',
           offset: 2,
         });
       });
@@ -883,14 +883,14 @@ describe('OutlineSelectionHelpers tests', () => {
       editor.getViewModel().read((view) => {
         const selection = view.getSelection();
         expect(selection.anchor).toEqual({
-          type: 'block',
-          key: block.getKey(),
-          offset: 1,
+          type: 'text',
+          key: 'a',
+          offset: 3,
         });
         expect(selection.focus).toEqual({
-          type: 'block',
-          key: block.getKey(),
-          offset: 1,
+          type: 'text',
+          key: 'a',
+          offset: 3,
         });
       });
     });

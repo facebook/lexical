@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {OutlineEditor} from 'outline';
+import type {OutlineEditor, View, RootNode} from 'outline';
 import type {InputEvents} from 'outline-react/useOutlineEditorEvents';
 
 import {useCallback} from 'react';
@@ -17,11 +17,10 @@ import {HeadingNode} from 'outline/HeadingNode';
 import {ListNode} from 'outline/ListNode';
 import {QuoteNode} from 'outline/QuoteNode';
 import {CodeNode} from 'outline/CodeNode';
-import {ParagraphNode, isParagraphNode} from 'outline/ParagraphNode';
+import {ParagraphNode} from 'outline/ParagraphNode';
 import {ListItemNode} from 'outline/ListItemNode';
 import {createParagraphNode} from 'outline/ParagraphNode';
 import {CAN_USE_BEFORE_INPUT, IS_SAFARI, IS_CHROME} from 'shared/environment';
-import invariant from 'shared/invariant';
 import {
   onSelectionChange,
   onKeyDownForRichText,
@@ -41,23 +40,20 @@ import {
 import useOutlineDragonSupport from './shared/useOutlineDragonSupport';
 import useOutlineHistory from './shared/useOutlineHistory';
 
+function initParagraph(view: View, root: RootNode): void {
+  const paragraph = createParagraphNode();
+  root.append(paragraph);
+  if (view.getSelection() !== null) {
+    paragraph.select();
+  }
+}
+
 function initEditor(editor: OutlineEditor): void {
-  editor.update((view) => {
+  editor.update((view: View) => {
     const root = view.getRoot();
     const firstChild = root.getFirstChild();
-    if (firstChild !== null) {
-      if (!isParagraphNode(firstChild)) {
-        invariant(
-          'false',
-          'Expected rich text root first child to be a ParagraphNode',
-        );
-      }
-    } else {
-      const paragraph = createParagraphNode();
-      root.append(paragraph);
-      if (view.getSelection() !== null) {
-        paragraph.select();
-      }
+    if (firstChild === null) {
+      initParagraph(view, root);
     }
   }, 'initEditor');
 }
@@ -70,7 +66,7 @@ function clearEditor(
     (view) => {
       const root = view.getRoot();
       root.clear();
-      initEditor(editor);
+      initParagraph(view, root);
     },
     'clearEditor',
     callbackFn,

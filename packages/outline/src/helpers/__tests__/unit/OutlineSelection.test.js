@@ -1181,6 +1181,7 @@ describe('OutlineSelection tests', () => {
           expectedFocusOffset,
           only,
         }) => {
+          // eslint-disable-next-line no-only-tests/no-only-tests
           const test_ = only === true ? test.only : test;
           test_(name, async () => {
             await editor.update((view) => {

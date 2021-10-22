@@ -32,7 +32,7 @@ export function initializeE2E(runTests, config: Config = {}) {
     appSettings.isRichText = process.env.E2E_EDITOR_MODE !== 'plain-text';
   }
   if (appSettings.disableBeforeInput === undefined) {
-    appSettings.disableBeforeInput = process.env.E2E_LEGACY_EVENTS === 'true';
+    appSettings.disableBeforeInput = process.env.E2E_EVENTS_MODE === 'legacy-events';
   }
   const urlParams = appSettingsToURLParams(appSettings);
   const e2e = {

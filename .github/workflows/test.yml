@@ -55,12 +55,12 @@ jobs:
         node-version: [16.8]
         browser: ['chromium', 'firefox', 'webkit']
         editor-mode: ['rich-text', 'plain-text']
-        legacy-events: ['true', 'false']
+        events-mode: ['legacy-events', 'modern-events']
     env:
       CI: true
       PLAYWRIGHT_BROWSERS_PATH: 0
       E2E_EDITOR_MODE: ${{ matrix.editor-mode }}
-      E2E_LEGACY_EVENTS: ${{ matrix.legacy-events }}
+      E2E_EVENTS_MODE: ${{ matrix.events-mode }}
     steps:
       - uses: actions/checkout@v2
       - name: Use Node.js ${{ matrix.node-version }}
@@ -82,12 +82,12 @@ jobs:
         node-version: [16.8]
         browser: ['chromium', 'firefox']
         editor-mode: ['rich-text', 'plain-text']
-        legacy-events: ['true', 'false']
+        events-mode: ['legacy-events', 'modern-events']
     env:
       CI: true
       PLAYWRIGHT_BROWSERS_PATH: 0
       E2E_EDITOR_MODE: ${{ matrix.editor-mode }}
-      E2E_LEGACY_EVENTS: ${{ matrix.legacy-events }}
+      E2E_EVENTS_MODE: ${{ matrix.events-mode }}
     steps:
     - uses: actions/checkout@v2
     - name: Use Node.js ${{ matrix.node-version }}
@@ -113,12 +113,12 @@ jobs:
         node-version: [16.8]
         browser: ['chromium', 'firefox']
         editor-mode: ['rich-text', 'plain-text']
-        legacy-events: ['true', 'false']
+        events-mode: ['legacy-events', 'modern-events']
     env:
       CI: true
       PLAYWRIGHT_BROWSERS_PATH: 0
       E2E_EDITOR_MODE: ${{ matrix.editor-mode }}
-      E2E_LEGACY_EVENTS: ${{ matrix.legacy-events }}
+      E2E_EVENTS_MODE: ${{ matrix.events-mode }}
     steps:
     - uses: actions/checkout@v2
     - name: Use Node.js ${{ matrix.node-version }}

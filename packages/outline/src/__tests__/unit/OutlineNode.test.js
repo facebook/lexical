@@ -337,7 +337,7 @@ describe('OutlineNode tests', () => {
         '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span><span data-outline-text="true">bar</span><span data-outline-text="true">baz</span></p></div>',
       );
       await editor.getViewModel().read(() => {
-        expect(textNode.isBefore(textNode)).toBe(true);
+        expect(textNode.isBefore(textNode)).toBe(false);
         expect(textNode.isBefore(barTextNode)).toBe(true);
         expect(textNode.isBefore(bazTextNode)).toBe(true);
         expect(barTextNode.isBefore(bazTextNode)).toBe(true);

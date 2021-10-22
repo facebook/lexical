@@ -122,12 +122,30 @@ export function removeNode(
   if (parent === null) {
     return;
   }
+  const parentKey = parent.getKey();
+  const writableParent = parent.getWritable();
+  const parentChildren = writableParent.__children;
+  const index = parentChildren.indexOf(key);
+
   const selection = getSelection();
   let selectionMoved = false;
   if (selection !== null && restoreSelection) {
     const anchor = selection.anchor;
+    const anchorNode = anchor.getNode();
+    // $FlowFixMe
+    const anchorNode_: OutlineNode = anchorNode;
     const focus = selection.focus;
-    if (anchor !== null && anchor.key === key) {
+    const focusNode = focus.getNode();
+    // $FlowFixMe
+    const focusNode_: OutlineNode = focusNode;
+    const parentKey = parent.getKey();
+    if (index > -1 && nodeToRemove.isParentOf(anchorNode_)) {
+      anchor.set(parentKey, index, 'block');
+    }
+    if (index > -1 && nodeToRemove.isParentOf(focusNode_)) {
+      focus.set(parentKey, index, 'block');
+    }
+    if (anchor.key === key) {
       moveSelectionPointToSibling(anchor, nodeToRemove, parent);
       selectionMoved = true;
     }
@@ -137,9 +155,6 @@ export function removeNode(
     }
   }
 
-  const writableParent = parent.getWritable();
-  const parentChildren = writableParent.__children;
-  const index = parentChildren.indexOf(key);
   if (index > -1) {
     parentChildren.splice(index, 1);
   }

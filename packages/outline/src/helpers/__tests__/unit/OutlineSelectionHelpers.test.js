@@ -894,6 +894,43 @@ describe('OutlineSelectionHelpers tests', () => {
         });
       });
     });
+
+    test('Has correct block point after children are deleted', async () => {
+      const editor = createEditor({});
+      editor.addListener('error', (error) => {
+        throw error;
+      });
+      const element = document.createElement('div');
+      editor.setRootElement(element);
+
+      await editor.update((view) => {
+        const root = view.getRoot();
+        const paragraph = createParagraphNode();
+        const blockNode = createTestBlockNode();
+        const textNode1 = createTextNode('foo');
+        const textNode1Key = textNode1.getKey();
+        const textNode2 = createTextNode('bar');
+        const textNode2Key = textNode2.getKey();
+
+        root.append(paragraph);
+        paragraph.append(blockNode, textNode1);
+        blockNode.append(textNode2);
+        paragraph.select();
+
+        const selection: Selection = view.getSelection();
+        const anchor = selection.anchor;
+        const focus = selection.focus;
+        anchor.set(textNode2Key, 0, 'text');
+        focus.set(textNode1Key, 0, 'text');
+
+        blockNode.remove();
+
+        expect(anchor.key).toBe(textNode1Key);
+        expect(anchor.offset).toBe(0);
+        expect(focus.key).toBe(textNode1Key);
+        expect(focus.offset).toBe(0);
+      });
+    });
   });
 
   describe('Simple range', () => {

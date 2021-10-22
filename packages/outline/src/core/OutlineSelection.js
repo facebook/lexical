@@ -698,15 +698,10 @@ export function updateBlockSelectionOnCreateDeleteNode(
     const selectionOffset = anchor.offset;
     if (nodeOffset <= selectionOffset) {
       const newSelectionOffset = Math.max(0, selectionOffset + times);
-      const child = anchorNode.getChildAtIndex(newSelectionOffset);
-      if (isTextNode(child) && child.isAttached()) {
-        // Move selection to text
-        anchor.set(child.getKey(), 0, 'text');
-        focus.set(child.getKey(), 0, 'text');
-      } else {
-        anchor.set(parentKey, newSelectionOffset, 'block');
-        focus.set(parentKey, newSelectionOffset, 'block');
-      }
+      anchor.set(parentKey, newSelectionOffset, 'block');
+      focus.set(parentKey, newSelectionOffset, 'block');
+      // The new selection might point to text nodes, try to resolve them
+      updateSelectionResolveTextNodes(selection);
     }
     return;
   }
@@ -722,11 +717,42 @@ export function updateBlockSelectionOnCreateDeleteNode(
       firstPoint.set(parentKey, Math.max(0, firstPointOffset + times), 'block');
     }
   }
-
   if (parentNode.is(lastPointNode)) {
     const lastPointOffset = lastPoint.offset;
     if (nodeOffset <= lastPointOffset) {
       lastPoint.set(parentKey, Math.max(0, lastPointOffset + times), 'block');
+    }
+  }
+  // The new selection might point to text nodes, try to resolve them
+  updateSelectionResolveTextNodes(selection);
+}
+
+function updateSelectionResolveTextNodes(selection: Selection) {
+  const anchor = selection.anchor;
+  const focus = selection.focus;
+  const anchorNode = anchor.getNode();
+  const focusNode = focus.getNode();
+  if (selection.isCollapsed()) {
+    if (!isBlockNode(anchorNode)) {
+      return;
+    }
+    const child = anchorNode.getChildAtIndex(anchor.offset);
+    if (isTextNode(child)) {
+      anchor.set(child.getKey(), 0, 'text');
+      focus.set(child.getKey(), 0, 'text');
+    }
+    return;
+  }
+  if (isBlockNode(anchorNode)) {
+    const child = anchorNode.getChildAtIndex(anchor.offset);
+    if (isTextNode(child)) {
+      anchor.set(child.getKey(), 0, 'text');
+    }
+  }
+  if (isBlockNode(focusNode)) {
+    const child = focusNode.getChildAtIndex(focus.offset);
+    if (isTextNode(child)) {
+      focus.set(child.getKey(), 0, 'text');
     }
   }
 }

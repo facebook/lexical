@@ -923,9 +923,7 @@ describe('OutlineSelection tests', () => {
         },
         anchorOffset: 2,
         focusOffset: 2,
-        expectedAnchor: paragraph,
         expectedAnchorOffset: 3,
-        expectOffset: paragraph,
         expectedFocusOffset: 3,
       },
       {
@@ -936,7 +934,6 @@ describe('OutlineSelection tests', () => {
         },
         anchorOffset: 2,
         focusOffset: 2,
-        expectedAnchor: paragraph,
         expectedAnchorOffset: 3,
         expectedFocusOffset: 3,
       },
@@ -947,9 +944,7 @@ describe('OutlineSelection tests', () => {
         },
         anchorOffset: 2,
         focusOffset: 2,
-        expectedAnchor: paragraph,
         expectedAnchorOffset: 3,
-        expectedOffset: paragraph,
         expectedFocusOffset: 3,
       },
       {
@@ -959,9 +954,7 @@ describe('OutlineSelection tests', () => {
         },
         anchorOffset: 1,
         focusOffset: 1,
-        expectedAnchor: paragraph,
         expectedAnchorOffset: 0,
-        expectedOffset: paragraph,
         expectedFocusOffset: 0,
       },
       {
@@ -972,9 +965,7 @@ describe('OutlineSelection tests', () => {
         },
         anchorOffset: 1,
         focusOffset: 1,
-        expectedAnchor: paragraph,
         expectedAnchorOffset: 1,
-        expectedOffset: paragraph,
         expectedFocusOffset: 1,
       },
       // All selected; add/remove/replace on beginning
@@ -986,9 +977,7 @@ describe('OutlineSelection tests', () => {
         },
         anchorOffset: 0,
         focusOffset: 2,
-        expectedAnchor: paragraph,
         expectedAnchorOffset: 1,
-        expectedOffset: paragraph,
         expectedFocusOffset: 3,
       },
       {
@@ -998,9 +987,7 @@ describe('OutlineSelection tests', () => {
         },
         anchorOffset: 0,
         focusOffset: 2,
-        expectedAnchor: paragraph,
         expectedAnchorOffset: 1,
-        expectedOffset: paragraph,
         expectedFocusOffset: 3,
       },
       {
@@ -1010,9 +997,7 @@ describe('OutlineSelection tests', () => {
         },
         anchorOffset: 0,
         focusOffset: 2,
-        expectedAnchor: paragraph,
         expectedAnchorOffset: 0,
-        expectedOffset: paragraph,
         expectedFocusOffset: 1,
       },
       {
@@ -1023,9 +1008,7 @@ describe('OutlineSelection tests', () => {
         },
         anchorOffset: 0,
         focusOffset: 2,
-        expectedAnchor: paragraph,
         expectedAnchorOffset: 0,
-        expectedOffset: paragraph,
         expectedFocusOffset: 2,
       },
       // Selection beginning; add/remove/replace on end
@@ -1042,9 +1025,7 @@ describe('OutlineSelection tests', () => {
         },
         anchorOffset: 0,
         focusOffset: 1,
-        expectedAnchor: paragraph,
         expectedAnchorOffset: 0,
-        expectedOffset: paragraph,
         expectedFocusOffset: 1,
       },
       {
@@ -1056,9 +1037,7 @@ describe('OutlineSelection tests', () => {
         },
         anchorOffset: 0,
         focusOffset: 1,
-        expectedAnchor: paragraph,
         expectedAnchorOffset: 0,
-        expectedOffset: paragraph,
         expectedFocusOffset: 1,
       },
       {
@@ -1073,9 +1052,7 @@ describe('OutlineSelection tests', () => {
         },
         anchorOffset: 0,
         focusOffset: 1,
-        expectedAnchor: paragraph,
         expectedAnchorOffset: 0,
-        expectedOffset: paragraph,
         expectedFocusOffset: 1,
       },
       {
@@ -1086,9 +1063,7 @@ describe('OutlineSelection tests', () => {
         },
         anchorOffset: 0,
         focusOffset: 1,
-        expectedAnchor: paragraph,
         expectedAnchorOffset: 0,
-        expectedOffset: paragraph,
         expectedFocusOffset: 0,
       },
       {
@@ -1100,9 +1075,7 @@ describe('OutlineSelection tests', () => {
         },
         anchorOffset: 0,
         focusOffset: 1,
-        expectedAnchor: paragraph,
         expectedAnchorOffset: 0,
-        expectedOffset: paragraph,
         expectedFocusOffset: 1,
       },
       // All selected; add/remove/replace in end offset [1, 2] -> [1, N, 2]
@@ -1115,9 +1088,7 @@ describe('OutlineSelection tests', () => {
         },
         anchorOffset: 0,
         focusOffset: 1,
-        expectedAnchor: paragraph,
         expectedAnchorOffset: 0,
-        expectedOffset: paragraph,
         expectedFocusOffset: 2,
       },
       {
@@ -1128,9 +1099,7 @@ describe('OutlineSelection tests', () => {
         },
         anchorOffset: 0,
         focusOffset: 1,
-        expectedAnchor: paragraph,
         expectedAnchorOffset: 0,
-        expectedOffset: paragraph,
         expectedFocusOffset: 2,
       },
       {
@@ -1144,9 +1113,7 @@ describe('OutlineSelection tests', () => {
         },
         anchorOffset: 0,
         focusOffset: 1,
-        expectedAnchor: paragraph,
         expectedAnchorOffset: 0,
-        expectedOffset: paragraph,
         expectedFocusOffset: 2,
       },
       {
@@ -1161,9 +1128,7 @@ describe('OutlineSelection tests', () => {
         },
         anchorOffset: 1,
         focusOffset: 2,
-        expectedAnchor: paragraph,
         expectedAnchorOffset: 1,
-        expectedOffset: paragraph,
         expectedFocusOffset: 1,
       },
       {
@@ -1179,9 +1144,7 @@ describe('OutlineSelection tests', () => {
         },
         anchorOffset: 1,
         focusOffset: 2,
-        expectedAnchor: paragraph,
         expectedAnchorOffset: 1,
-        expectedOffset: paragraph,
         expectedFocusOffset: 2,
       },
       // All selected; add/remove/replace in middle [1, 2, 3] -> [1, 2, N, 3]
@@ -1198,9 +1161,7 @@ describe('OutlineSelection tests', () => {
         },
         anchorOffset: 0,
         focusOffset: 2,
-        expectedAnchor: paragraph,
         expectedAnchorOffset: 0,
-        expectedOffset: paragraph,
         expectedFocusOffset: 3,
       },
       {
@@ -1215,9 +1176,7 @@ describe('OutlineSelection tests', () => {
         },
         anchorOffset: 0,
         focusOffset: 2,
-        expectedAnchor: paragraph,
         expectedAnchorOffset: 0,
-        expectedOffset: paragraph,
         expectedFocusOffset: 3,
       },
       {
@@ -1231,9 +1190,7 @@ describe('OutlineSelection tests', () => {
         },
         anchorOffset: 0,
         focusOffset: 2,
-        expectedAnchor: paragraph,
         expectedAnchorOffset: 0,
-        expectedOffset: paragraph,
         expectedFocusOffset: 3,
       },
       {
@@ -1247,9 +1204,7 @@ describe('OutlineSelection tests', () => {
         },
         anchorOffset: 0,
         focusOffset: 2,
-        expectedAnchor: paragraph,
         expectedAnchorOffset: 0,
-        expectedOffset: paragraph,
         expectedFocusOffset: 1,
       },
       {
@@ -1287,15 +1242,13 @@ describe('OutlineSelection tests', () => {
           fnBefore = () => {},
           anchorOffset,
           focusOffset,
-          expectedAnchor,
           expectedAnchorOffset,
-          expectedFocus,
           expectedFocusOffset,
           only,
         }) => {
           // eslint-disable-next-line no-only-tests/no-only-tests
           const test_ = only === true ? test.only : test;
-          test.only(name, async () => {
+          test_(name, async () => {
             await editor.update((view) => {
               const root = view.getRoot();
               const paragraph = root.getFirstChild();
@@ -1315,9 +1268,9 @@ describe('OutlineSelection tests', () => {
 
               fn(paragraph, textNode);
 
-              expect(selection.anchor.is(expectedAnchor)).toBe(true);
+              expect(selection.anchor.is(paragraph));
               expect(selection.anchor.offset).toBe(expectedAnchorOffset);
-              expect(selection.focus.is(expectedFocus)).toBe(true);
+              expect(selection.focus.is(paragraph));
               expect(selection.focus.offset).toBe(expectedFocusOffset);
             });
           });

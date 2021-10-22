@@ -138,7 +138,6 @@ export function removeNode(
     const focusNode = focus.getNode();
     // $FlowFixMe
     const focusNode_: OutlineNode = focusNode;
-    const parentKey = parent.getKey();
     if (index > -1 && nodeToRemove.isParentOf(anchorNode_)) {
       anchor.set(parentKey, index, 'block');
     }

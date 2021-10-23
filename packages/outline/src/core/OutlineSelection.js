@@ -32,6 +32,13 @@ import {
 } from '.';
 import {isSelectionWithinEditor, toggleTextFormatType} from './OutlineUtils';
 import invariant from 'shared/invariant';
+import {
+  IS_BOLD,
+  IS_CODE,
+  IS_ITALIC,
+  IS_STRIKETHROUGH,
+  IS_UNDERLINE,
+} from './OutlineConstants';
 
 export type TextPointType = {
   key: NodeKey,
@@ -178,13 +185,13 @@ export class Selection {
   anchor: PointType;
   focus: PointType;
   dirty: boolean;
-  textFormat: number;
+  format: number;
 
-  constructor(anchor: PointType, focus: PointType, textFormat: number) {
+  constructor(anchor: PointType, focus: PointType, format: number) {
     this.anchor = anchor;
     this.focus = focus;
     this.dirty = false;
-    this.textFormat = textFormat;
+    this.format = format;
   }
 
   is(selection: null | Selection): boolean {
@@ -317,7 +324,7 @@ export class Selection {
     return new Selection(
       createPoint(anchor.key, anchor.offset, anchor.type),
       createPoint(focus.key, focus.offset, focus.type),
-      this.textFormat,
+      this.format,
     );
   }
   swapPoints(): void {
@@ -330,9 +337,24 @@ export class Selection {
     setPointValues(anchor, focus.key, focus.offset, focus.type);
     setPointValues(focus, anchorKey, anchorOffset, anchorType);
   }
-  toggleTextFormatType(formatType: TextFormatType): void {
-    this.textFormat = toggleTextFormatType(this.textFormat, formatType, null);
+  toggleFormatType(format: TextFormatType): void {
+    this.format = toggleTextFormatType(this.format, format, null);
     this.dirty = true;
+  }
+  isBold(): boolean {
+    return (this.format & IS_BOLD) !== 0;
+  }
+  isItalic(): boolean {
+    return (this.format & IS_ITALIC) !== 0;
+  }
+  isStrikethrough(): boolean {
+    return (this.format & IS_STRIKETHROUGH) !== 0;
+  }
+  isUnderline(): boolean {
+    return (this.format & IS_UNDERLINE) !== 0;
+  }
+  isCode(): boolean {
+    return (this.format & IS_CODE) !== 0;
   }
 }
 
@@ -598,6 +620,7 @@ export function createSelection(
       eventType === 'beforeinput' ||
       eventType === 'compositionstart' ||
       eventType === 'compositionend' ||
+      (eventType === 'click' && window.event.detail === 3) ||
       eventType === undefined);
   let anchorDOM, focusDOM, anchorOffset, focusOffset;
 
@@ -616,7 +639,7 @@ export function createSelection(
     return new Selection(
       createPoint(lastAnchor.key, lastAnchor.offset, lastAnchor.type),
       createPoint(lastFocus.key, lastFocus.offset, lastFocus.type),
-      lastSelection.textFormat,
+      lastSelection.format,
     );
   }
   // Let's resolve the text nodes from the offsets and DOM nodes we have from
@@ -635,7 +658,7 @@ export function createSelection(
   return new Selection(
     resolvedAnchorPoint,
     resolvedFocusPoint,
-    lastSelection === null ? 0 : lastSelection.textFormat,
+    lastSelection === null ? 0 : lastSelection.format,
   );
 }
 

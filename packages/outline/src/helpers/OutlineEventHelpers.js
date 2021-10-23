@@ -506,12 +506,12 @@ export function onSelectionChange(event: Event, editor: OutlineEditor): void {
   // to a good selection.
   editor.update((view) => {
     const selection = view.getSelection();
-    // Update the selection textFormat
+    // Update the selection format
     if (selection !== null && selection.isCollapsed()) {
       const anchor = selection.anchor;
       if (anchor.type === 'text') {
         const anchorNode = anchor.getNode();
-        selection.textFormat = anchorNode.getFormat();
+        selection.format = anchorNode.getFormat();
       }
     }
   }, 'onSelectionChange');
@@ -641,7 +641,7 @@ function shouldPreventDefaultAndInsertText(
     // If we're working with a non-text node.
     !isTextNode(anchorNode) ||
     // Check if we're changing from bold to italics, or some other format.
-    anchorNode.getFormat() !== selection.textFormat ||
+    anchorNode.getFormat() !== selection.format ||
     // One last set of heuristics to check against.
     shouldInsertTextAfterOrBeforeTextNode(selection, anchorNode, true)
   );

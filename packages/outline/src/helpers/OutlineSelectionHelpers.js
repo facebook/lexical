@@ -402,7 +402,7 @@ export function formatText(
   let lastNode = selectedNodes[lastIndex];
 
   if (selection.isCollapsed()) {
-    selection.toggleTextFormatType(formatType);
+    selection.toggleFormatType(formatType);
     return;
   }
   const anchor = selection.anchor;
@@ -1133,7 +1133,7 @@ export function insertText(selection: Selection, text: string): void {
   }
   const selectedNodes = selection.getNodes();
   const selectedNodesLength = selectedNodes.length;
-  const textFormat = selection.textFormat;
+  const format = selection.format;
   const firstPoint = isBefore ? anchor : focus;
   const endPoint = isBefore ? focus : anchor;
   const startOffset = firstPoint.offset;
@@ -1197,13 +1197,13 @@ export function insertText(selection: Selection, text: string): void {
     }
     const firstNodeFormat = firstNode.getFormat();
 
-    if (startOffset === endOffset && firstNodeFormat !== textFormat) {
+    if (startOffset === endOffset && firstNodeFormat !== format) {
       if (firstNode.getTextContent() === '') {
-        firstNode.setFormat(textFormat);
+        firstNode.setFormat(format);
       } else {
         const [targetNode] = firstNode.splitText(startOffset);
         const textNode = createTextNode(text);
-        textNode.setFormat(textFormat);
+        textNode.setFormat(format);
         targetNode.insertAfter(textNode);
         textNode.select();
         return;

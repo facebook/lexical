@@ -8,7 +8,7 @@ body {
 }
 
 header {
-  width: 580px;
+  max-width: 580px;
   margin: auto;
   position: relative;
   display: flex;

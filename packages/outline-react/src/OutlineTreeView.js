@@ -60,6 +60,7 @@ export default function TreeView({
   const playingIndexRef = useRef(0);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [tab, setTab] = useState<'default' | 'events'>('default');
   useEffect(() => {
     setContent(generateContent(editor.getViewModel()));
     return editor.addListener('update', (viewModel) => {
@@ -107,22 +108,8 @@ export default function TreeView({
     }
   }, [timeStampedViewModels, isPlaying, editor, totalViewModels]);
 
-  return (
-    <div className={viewClassName}>
-      {!timeTravelEnabled && totalViewModels > 2 && (
-        <button
-          onClick={() => {
-            const rootElement = editor.getRootElement();
-            if (rootElement !== null) {
-              rootElement.contentEditable = 'false';
-              playingIndexRef.current = totalViewModels - 1;
-              setTimeTravelEnabled(true);
-            }
-          }}
-          className={timeTravelButtonClassName}>
-          Time Travel
-        </button>
-      )}
+  const defaultTab = (
+    <>
       <pre>{content}</pre>
       {timeTravelEnabled && (
         <div className={timeTravelPanelClassName}>
@@ -170,6 +157,35 @@ export default function TreeView({
           </button>
         </div>
       )}
+    </>
+  );
+
+  return (
+    <div className={viewClassName}>
+      <button
+        onClick={() => {
+          setTab((currentTab) =>
+            currentTab === 'events' ? 'default' : 'events',
+          );
+        }}
+        className="debug-events-button">
+        Events
+      </button>
+      {!timeTravelEnabled && totalViewModels > 2 && (
+        <button
+          onClick={() => {
+            const rootElement = editor.getRootElement();
+            if (rootElement !== null) {
+              rootElement.contentEditable = 'false';
+              playingIndexRef.current = totalViewModels - 1;
+              setTimeTravelEnabled(true);
+            }
+          }}
+          className={timeTravelButtonClassName}>
+          Time Travel
+        </button>
+      )}
+      {tab === 'events' ? <BrowserEvents editor={editor} /> : defaultTab}
     </div>
   );
 }
@@ -406,4 +422,108 @@ function getSelectionStartEnd(node, selection): [number, number] {
       numNonSingleWidthCharBeforeSelection +
       numNonSingleWidthCharInSelection,
   ];
+}
+
+function BrowserEvents({editor}: {editor: OutlineEditor}): React.MixedElement {
+  const [events, setEvents] = useState({values: []});
+
+  useEffect(() => {
+    const element: HTMLElement | null = editor.getRootElement();
+    if (element == null) {
+      return;
+    }
+    const ownerDocument = element.ownerDocument;
+
+    function pushEvent(...data: string[]) {
+      const eventValues = events.values;
+      if (eventValues.length === 20) {
+        eventValues.pop();
+      }
+      const newEntry = '▶ ' + data.join(' ');
+      eventValues.splice(0, 0, newEntry);
+      setEvents({values: eventValues});
+    }
+
+    const handleSelectionChange = (e: Event) => {
+      const selection = window.getSelection();
+      pushEvent(
+        'selectionchange:',
+        selection.anchorNode.toString(),
+        selection.anchorOffset,
+        selection.focusNode.toString(),
+        selection.focusOffset,
+      );
+    };
+    const handleKeydown = (e: KeyboardEvent) => {
+      pushEvent('keydown:', e.key);
+    };
+    const handleComposition = (e: CompositionEvent) => {
+      pushEvent(e.type);
+    };
+    const handleClipboard = (e: ClipboardEvent) => {
+      const items = (e.clipboardData && e.clipboardData.items) || [];
+      for (let i = 0; i < items.length; i++) {
+        items[i].getAsString((text) => {
+          pushEvent('#' + i, text);
+        });
+      }
+      pushEvent(e.type + ':', '(' + items.length + ')');
+    };
+    const handleDragStart = (e: MouseEvent) => {};
+    const handleClick = (e: MouseEvent) => {
+      pushEvent('click:', e.target.toString());
+    };
+    const handleInput = (e: InputEvent) => {
+      pushEvent('input:', e.data || '');
+    };
+    const handleBeforeInput = (e: InputEvent) => {
+      pushEvent('beforeinput:', e.data || '');
+    };
+    const handleDrop = (e: DragEvent) => {
+      pushEvent('drop');
+    };
+    ownerDocument.addEventListener('selectionchange', handleSelectionChange);
+    element.addEventListener('keydown', handleKeydown);
+    // $FlowFixMe
+    element.addEventListener('compositionstart', handleComposition);
+    // $FlowFixMe
+    element.addEventListener('compositionend', handleComposition);
+    element.addEventListener('cut', handleClipboard);
+    element.addEventListener('copy', handleClipboard);
+    element.addEventListener('paste', handleClipboard);
+    element.addEventListener('dragstart', handleDragStart);
+    element.addEventListener('click', handleClick);
+    element.addEventListener('input', handleInput);
+    element.addEventListener('beforeinput', handleBeforeInput);
+    element.addEventListener('drop', handleDrop);
+    return () => {
+      ownerDocument.removeEventListener(
+        'selectionchange',
+        handleSelectionChange,
+      );
+      element.removeEventListener('keydown', handleKeydown);
+      // $FlowFixMe
+      element.removeEventListener('compositionstart', handleComposition);
+      // $FlowFixMe
+      element.removeEventListener('compositionend', handleComposition);
+      element.removeEventListener('cut', handleClipboard);
+      element.removeEventListener('copy', handleClipboard);
+      element.removeEventListener('paste', handleClipboard);
+      element.removeEventListener('dragstart', handleDragStart);
+      element.removeEventListener('click', handleClick);
+      element.removeEventListener('input', handleInput);
+      element.removeEventListener('beforeinput', handleBeforeInput);
+      element.removeEventListener('drop', handleDrop);
+    };
+  }, [editor, events.values]);
+
+  return (
+    <div className="debug-events-panel">
+      {events.values.map((value, i) => (
+        <span key={i} className="debug-events-line">
+          {value}
+        </span>
+      ))}
+    </div>
+  );
 }

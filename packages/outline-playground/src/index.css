@@ -924,7 +924,7 @@ pre {
   padding: 0;
   font-size: 12px;
   top: 10px;
-  right: 15px;
+  right: 60px;
   position: absolute;
   background: none;
   color: #fff;
@@ -932,4 +932,32 @@ pre {
 
 .debug-timetravel-button:hover {
   text-decoration: underline;
+}
+
+.debug-events-button {
+  border: 0;
+  padding: 0;
+  font-size: 12px;
+  top: 10px;
+  right: 15px;
+  position: absolute;
+  background: none;
+  color: #fff;
+}
+
+.debug-events-button:hover {
+  text-decoration: underline;
+}
+
+.debug-events-panel {
+  font-family: Menlo, Consolas, Monaco, monospace;
+  font-size: 8px;
+  height: 200px;
+  line-break: 'break-word';
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.debug-events-line {
+  display: block;
 }

@@ -149,8 +149,12 @@ describe('TextFormatting', () => {
       });
     });
 
-    it('Should not bold the text in the subsequent paragraph after a triple click selection event.', async () => {
-      const {page} = e2e;
+    it('Should not format the text in the subsequent paragraph after a triple click selection event.', async () => {
+      const {isRichText, page} = e2e;
+
+      if (!isRichText) {
+        return;
+      }
 
       await page.focus('div.editor');
       await page.keyboard.type('hello world');

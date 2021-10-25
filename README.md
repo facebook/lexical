@@ -147,6 +147,17 @@ TODO
 - [How Outline was designed](/docs/design.md)
 - [Testing](/docs/testing.md)
 
+## Browser Support
+
+- Firefox 52+
+- Chrome 49+
+- Edge 79+ (when Edge switched to Chromium)
+- Safari 11+
+- iPads on iOS 11+
+- Android Chrome 72+
+
+Note: Outline does not support Internet Explorer or legacy versions of Edge.
+
 ## Contributing
 
 1. Create a new branch

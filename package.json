@@ -56,7 +56,8 @@
     "prettier-all": "node ./scripts/prettier.js write",
     "prepare-ci": "npm run build --prefix packages/outline-playground && serve packages/outline-playground/build -l 4000",
     "prepare-release": "npm run build-prod && node ./scripts/prepare-release.js",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "prepare-size-compare": "npm run build-prod && node ./scripts/prepare-size-compare.js"
   },
   "devDependencies": {
     "@babel/plugin-transform-flow-strip-types": "^7.14.5",
@@ -72,6 +73,7 @@
     "concurrently": "^6.2.0",
     "confusing-browser-globals": "^1.0.10",
     "cross-env": "^7.0.3",
+    "danger": "^10.7.0",
     "eslint": "^7.31.0",
     "eslint-config-fbjs": "^3.1.1",
     "eslint-config-prettier": "^8.3.0",
@@ -86,7 +88,9 @@
     "eslint-plugin-react-hooks": "^4.2.0",
     "flow-bin": "^0.156.0",
     "fs-extra": "^10.0.0",
+    "glob": "^7.2.0",
     "google-closure-compiler": "^20210601.0.0",
+    "gzip-size": "^6.0.0",
     "husky": "^7.0.1",
     "jest": "26.6.0",
     "lint-staged": "^11.1.0",

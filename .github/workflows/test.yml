@@ -11,6 +11,7 @@ jobs:
     env:
       CI: true
       PLAYWRIGHT_BROWSERS_PATH: 0
+      GITHUB_TOKEN: ${{ secrets.DANGER_GITHUB_API_TOKEN }}
     steps:
     - uses: actions/checkout@v2
     - name: Use Node.js ${{ matrix.node-version }}
@@ -22,9 +23,11 @@ jobs:
         path: '**/node_modules'
         key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
     - run: npm install
-    - run: npm run build
     - run: npm run lint
     - run: npm run flow
+    - run: npm run build
+    - run: npm run prepare-size-compare
+    - run: yarn danger ci
     - run: npm run build-www
 
   unit:

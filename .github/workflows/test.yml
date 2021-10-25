@@ -26,8 +26,8 @@ jobs:
     - run: npm run lint
     - run: npm run flow
     - run: npm run build
-    - run: npm run prepare-size-compare
-    - run: yarn danger ci
+    # - run: npm run prepare-size-compare
+    # - run: yarn danger ci
     - run: npm run build-www
 
   unit:

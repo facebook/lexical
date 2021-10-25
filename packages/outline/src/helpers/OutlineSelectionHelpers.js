@@ -331,7 +331,9 @@ export function patchStyleText(
       if (endOffset !== lastNodeTextLength) {
         [lastNode] = lastNode.splitText(endOffset);
       }
-      patchNodeStyle(lastNode, patch);
+      if (endOffset !== 0) {
+        patchNodeStyle(lastNode, patch);
+      }
     }
 
     // style all the text nodes in between
@@ -357,8 +359,19 @@ export function getSelectionStyleValueForProperty(
 ): string {
   let styleValue = null;
   const nodes = selection.getNodes();
+  const anchor = selection.anchor;
+  const focus = selection.focus;
+  const isBackward = selection.isBackward();
+  const endOffset = isBackward ? focus.offset : anchor.offset;
+  const endNode = isBackward ? focus.getNode() : anchor.getNode();
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
+    // if no actual characters in the end node are selected, we don't
+    // include it in the selection for purposes of determining style
+    // value
+    if (endOffset === 0 && node.is(endNode)) {
+      continue;
+    }
     if (isTextNode(node)) {
       const nodeStyleValue = getNodeStyleValueForProperty(
         node,
@@ -479,11 +492,15 @@ export function formatText(
       lastNextFormat = lastNode.getTextNodeFormat(formatType, firstNextFormat);
       const lastNodeText = lastNode.getTextContent();
       const lastNodeTextLength = lastNodeText.length;
-      // if the entire last node isn't selected, so split it
-      if (endOffset !== lastNodeTextLength) {
-        [lastNode] = lastNode.splitText(endOffset);
+      // if the offset is 0, it means no actual characters are selected,
+      // so we skip formatting the last node altogether.
+      if (endOffset !== 0) {
+        // if the entire last node isn't selected, split it
+        if (endOffset !== lastNodeTextLength) {
+          [lastNode] = lastNode.splitText(endOffset);
+        }
+        lastNode.setFormat(lastNextFormat);
       }
-      lastNode.setFormat(lastNextFormat);
     }
 
     // deal with all the nodes in between

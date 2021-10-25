@@ -20,6 +20,7 @@ import {
   cloneContents,
 } from 'outline/SelectionHelpers';
 import {createTestBlockNode} from '../../../__tests__/utils';
+import {createHeadingNode} from '../../../extensions/OutlineHeadingNode';
 
 export class ExcludeFromCopyBlockNode extends BlockNode {
   static clone(node: BlockNode) {
@@ -1447,6 +1448,306 @@ describe('OutlineSelectionHelpers tests', () => {
       expect(selectedNodes7.nodeMap[2][0]).toEqual(text1.getKey());
       expect(selectedNodes7.nodeMap[3][0]).toEqual(text3.getKey());
       expect(selectedNodes7.nodeMap[4][0]).toEqual(text2.getKey());
+    });
+  });
+
+  describe('can insert non-block nodes correctly', () => {
+    describe('with an empty paragraph node selected', () => {
+      test('a single text node', async () => {
+        const editor = createEditor({});
+        editor.addListener('error', (error) => {
+          throw error;
+        });
+        const element = document.createElement('div');
+        editor.setRootElement(element);
+
+        await editor.update((view: View) => {
+          const root = view.getRoot();
+          const paragraph = createParagraphNode();
+          root.append(paragraph);
+
+          setAnchorPoint(view, {
+            type: 'block',
+            offset: 0,
+            key: paragraph.getKey(),
+          });
+          setFocusPoint(view, {
+            type: 'block',
+            offset: 0,
+            key: paragraph.getKey(),
+          });
+          const selection = view.getSelection();
+
+          insertNodes(selection, [createTextNode('foo')]);
+        });
+
+        expect(element.innerHTML).toBe(
+          '<p><span data-outline-text="true">foo</span></p>',
+        );
+      });
+
+      test('two text nodes', async () => {
+        const editor = createEditor({});
+        editor.addListener('error', (error) => {
+          throw error;
+        });
+        const element = document.createElement('div');
+        editor.setRootElement(element);
+
+        await editor.update((view: View) => {
+          const root = view.getRoot();
+          const paragraph = createParagraphNode();
+          root.append(paragraph);
+
+          setAnchorPoint(view, {
+            type: 'block',
+            offset: 0,
+            key: paragraph.getKey(),
+          });
+          setFocusPoint(view, {
+            type: 'block',
+            offset: 0,
+            key: paragraph.getKey(),
+          });
+          const selection = view.getSelection();
+
+          insertNodes(selection, [
+            createTextNode('foo'),
+            createTextNode('bar'),
+          ]);
+        });
+
+        expect(element.innerHTML).toBe(
+          '<p dir="ltr"><span data-outline-text="true">foobar</span></p>',
+        );
+      });
+
+      test('a single heading node with a child text node', async () => {
+        const editor = createEditor({});
+        editor.addListener('error', (error) => {
+          throw error;
+        });
+        const element = document.createElement('div');
+        editor.setRootElement(element);
+
+        await editor.update((view: View) => {
+          const root = view.getRoot();
+          const paragraph = createParagraphNode();
+          root.append(paragraph);
+
+          setAnchorPoint(view, {
+            type: 'block',
+            offset: 0,
+            key: paragraph.getKey(),
+          });
+          setFocusPoint(view, {
+            type: 'block',
+            offset: 0,
+            key: paragraph.getKey(),
+          });
+          const selection = view.getSelection();
+          const heading = createHeadingNode('h1');
+          const child = createTextNode('foo');
+          heading.append(child);
+
+          insertNodes(selection, [heading]);
+        });
+
+        expect(element.innerHTML).toBe(
+          '<h1><span data-outline-text="true">foo</span></h1>',
+        );
+      });
+
+      test('a heading node with a child text node and a disjoint sibling text node should throw', async () => {
+        const editor = createEditor({});
+        editor.addListener('error', (error) => {
+          throw error;
+        });
+        const element = document.createElement('div');
+        editor.setRootElement(element);
+
+        await editor.update((view: View) => {
+          const root = view.getRoot();
+          const paragraph = createParagraphNode();
+          root.append(paragraph);
+
+          setAnchorPoint(view, {
+            type: 'block',
+            offset: 0,
+            key: paragraph.getKey(),
+          });
+          setFocusPoint(view, {
+            type: 'block',
+            offset: 0,
+            key: paragraph.getKey(),
+          });
+          const selection = view.getSelection();
+          const heading = createHeadingNode('h1');
+          const child = createTextNode('foo');
+          heading.append(child);
+
+          expect(() => {
+            insertNodes(selection, [heading, createTextNode('bar')]);
+          }).toThrow();
+        });
+
+        expect(element.innerHTML).toBe(
+          '<h1><span data-outline-text="true">foo</span></h1>',
+        );
+      });
+    });
+
+    describe('with a paragraph node selected on some existing text', () => {
+      test('a single text node', async () => {
+        const editor = createEditor({});
+        editor.addListener('error', (error) => {
+          throw error;
+        });
+        const element = document.createElement('div');
+        editor.setRootElement(element);
+
+        await editor.update((view: View) => {
+          const root = view.getRoot();
+          const paragraph = createParagraphNode();
+          const text = createTextNode('Existing text...');
+          paragraph.append(text);
+          root.append(paragraph);
+
+          setAnchorPoint(view, {
+            type: 'text',
+            offset: 16,
+            key: text.getKey(),
+          });
+          setFocusPoint(view, {
+            type: 'text',
+            offset: 16,
+            key: text.getKey(),
+          });
+          const selection = view.getSelection();
+
+          insertNodes(selection, [createTextNode('foo')]);
+        });
+
+        expect(element.innerHTML).toBe(
+          '<p dir="ltr"><span data-outline-text="true">Existing text...foo</span></p>',
+        );
+      });
+
+      test('two text nodes', async () => {
+        const editor = createEditor({});
+        editor.addListener('error', (error) => {
+          throw error;
+        });
+        const element = document.createElement('div');
+        editor.setRootElement(element);
+
+        await editor.update((view: View) => {
+          const root = view.getRoot();
+          const paragraph = createParagraphNode();
+          const text = createTextNode('Existing text...');
+          paragraph.append(text);
+          root.append(paragraph);
+
+          setAnchorPoint(view, {
+            type: 'text',
+            offset: 16,
+            key: text.getKey(),
+          });
+          setFocusPoint(view, {
+            type: 'text',
+            offset: 16,
+            key: text.getKey(),
+          });
+          const selection = view.getSelection();
+
+          insertNodes(selection, [
+            createTextNode('foo'),
+            createTextNode('bar'),
+          ]);
+        });
+
+        expect(element.innerHTML).toBe(
+          '<p dir="ltr"><span data-outline-text="true">Existing text...foobar</span></p>',
+        );
+      });
+
+      test('a single heading node with a child text node', async () => {
+        const editor = createEditor({});
+        editor.addListener('error', (error) => {
+          throw error;
+        });
+        const element = document.createElement('div');
+        editor.setRootElement(element);
+
+        await editor.update((view: View) => {
+          const root = view.getRoot();
+          const paragraph = createParagraphNode();
+          const text = createTextNode('Existing text...');
+          paragraph.append(text);
+          root.append(paragraph);
+
+          setAnchorPoint(view, {
+            type: 'text',
+            offset: 16,
+            key: text.getKey(),
+          });
+          setFocusPoint(view, {
+            type: 'text',
+            offset: 16,
+            key: text.getKey(),
+          });
+          const selection = view.getSelection();
+          const heading = createHeadingNode('h1');
+          const child = createTextNode('foo');
+          heading.append(child);
+
+          insertNodes(selection, [heading]);
+        });
+
+        expect(element.innerHTML).toBe(
+          '<p dir="ltr"><span data-outline-text="true">Existing text...foo</span></p>',
+        );
+      });
+
+      test('a heading node with a child text node and a disjoint sibling text node should throw', async () => {
+        const editor = createEditor({});
+        editor.addListener('error', (error) => {
+          throw error;
+        });
+        const element = document.createElement('div');
+        editor.setRootElement(element);
+
+        await editor.update((view: View) => {
+          const root = view.getRoot();
+          const paragraph = createParagraphNode();
+          const text = createTextNode('Existing text...');
+          paragraph.append(text);
+          root.append(paragraph);
+
+          setAnchorPoint(view, {
+            type: 'text',
+            offset: 16,
+            key: text.getKey(),
+          });
+          setFocusPoint(view, {
+            type: 'text',
+            offset: 16,
+            key: text.getKey(),
+          });
+          const selection = view.getSelection();
+          const heading = createHeadingNode('h1');
+          const child = createTextNode('foo');
+          heading.append(child);
+
+          expect(() => {
+            insertNodes(selection, [heading, createTextNode('bar')]);
+          }).toThrow();
+        });
+
+        expect(element.innerHTML).toBe(
+          '<p dir="ltr"><span data-outline-text="true">Existing text...foo</span></p>',
+        );
+      });
     });
   });
 });

@@ -361,9 +361,9 @@ export function getSelectionStyleValueForProperty(
   const nodes = selection.getNodes();
   const anchor = selection.anchor;
   const focus = selection.focus;
-  const isBefore = anchor.isBefore(focus);
-  const endOffset = isBefore ? focus.offset : anchor.offset;
-  const endNode = isBefore ? focus.getNode() : anchor.getNode();
+  const isBackward = selection.isBackward();
+  const endOffset = isBackward ? focus.offset : anchor.offset;
+  const endNode = isBackward ? focus.getNode() : anchor.getNode();
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
     // if no actual characters in the end node are selected, we don't
@@ -492,13 +492,13 @@ export function formatText(
       lastNextFormat = lastNode.getTextNodeFormat(formatType, firstNextFormat);
       const lastNodeText = lastNode.getTextContent();
       const lastNodeTextLength = lastNodeText.length;
-      // if the entire last node isn't selected, split it
-      if (endOffset !== lastNodeTextLength) {
-        [lastNode] = lastNode.splitText(endOffset);
-      }
       // if the offset is 0, it means no actual characters are selected,
       // so we skip formatting the last node altogether.
       if (endOffset !== 0) {
+        // if the entire last node isn't selected, split it
+        if (endOffset !== lastNodeTextLength) {
+          [lastNode] = lastNode.splitText(endOffset);
+        }
         lastNode.setFormat(lastNextFormat);
       }
     }

@@ -452,6 +452,23 @@ export function commitPendingUpdates(
     isReadOnlyMode = previousReadOnlyMode;
     activeEditor = previousActiveEditor;
   }
+  if (__DEV__) {
+    // Given we can't Object.freeze the nodeMap as it's a Map,
+    // we instead replace its set, clear and delete methods.
+    const nodeMap = pendingViewModel._nodeMap;
+    // $FlowFixMe: this is allowed
+    nodeMap.set = () => {
+      throw new Error('Cannot call set() on a frozen Outline node map');
+    }
+    // $FlowFixMe: this is allowed
+    nodeMap.clear = () => {
+      throw new Error('Cannot call clear() on a frozen Outline node map');
+    }
+    // $FlowFixMe: this is allowed
+    nodeMap.delete = () => {
+      throw new Error('Cannot call delete() on a frozen Outline node map');
+    }
+  }
   const dirtyNodes = editor._dirtyNodes;
 
   if (needsUpdate) {

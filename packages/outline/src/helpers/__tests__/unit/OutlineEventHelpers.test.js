@@ -180,6 +180,16 @@ describe('OutlineEventHelpers', () => {
         expectedHTML:
           '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span class="editor-text-underline" data-outline-text="true">Underline</span></p></div>',
       },
+      {
+        name: 'onPasteForRichText should produce the correct editor state from pasted heading node followed by a DOM Text Node',
+        inputs: [
+          pasteHTML(
+            `<meta charset='utf-8'><h1>Lyrics to Hello by Adele</h1>A thousand times`,
+          ),
+        ],
+        expectedHTML:
+          '<div contenteditable="true" data-outline-editor="true"><h1 class="editor-heading-h1"><span data-outline-text="true">Lyrics to Hello by Adele</span></h1><p class="editor-paragraph"><span data-outline-text="true">A thousand times</span></p></div>',
+      },
     ];
     suite.forEach((testUnit, i) => {
       const name = testUnit.name || 'Test case';

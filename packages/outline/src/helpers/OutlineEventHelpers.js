@@ -164,8 +164,9 @@ function generateNodesFromDOM(
   },
 ): Array<OutlineNode> {
   const outlineNodes = [];
-  const elements: Array<Node> = dom.body ? [...dom.body.childNodes] : [];
-  for (let i = 0; i < elements.length; i++) {
+  const elements: Array<Node> = dom.body ? Array.from(dom.body.childNodes) : [];
+  const elementsLength = elements.length;
+  for (let i = 0; i < elementsLength; i++) {
     const outlineNode = view.createOutlineNodeFromDOMNode(
       elements[i],
       conversionMap,

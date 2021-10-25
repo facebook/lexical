@@ -62,8 +62,12 @@ export default function TreeView({
   const [isPlaying, setIsPlaying] = useState(false);
   useEffect(() => {
     setContent(generateContent(editor.getViewModel()));
-    return editor.addListener('update', (viewModel) => {
-      setContent(generateContent(editor.getViewModel()));
+    return editor.addListener('update', (viewModel: ViewModel) => {
+      const compositionKey = editor._compositionKey;
+      const treeText = generateContent(editor.getViewModel());
+      const compositionText =
+        compositionKey !== null && `Composition key: ${compositionKey}`;
+      setContent([treeText, compositionText].filter(Boolean).join('\n\n'));
       if (!timeTravelEnabled) {
         setTimeStampedViewModels((currentViewModels) => [
           ...currentViewModels,

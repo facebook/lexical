@@ -149,6 +149,31 @@ describe('TextFormatting', () => {
       });
     });
 
+    it('Should not format the text in the subsequent paragraph after a triple click selection event.', async () => {
+      const {isRichText, page} = e2e;
+
+      if (!isRichText) {
+        return;
+      }
+
+      await page.focus('div.editor');
+      await page.keyboard.type('hello world');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('hello world');
+
+      await page.click('div.editor > p', {clickCount: 1, delay: 100});
+      await page.click('div.editor > p', {clickCount: 2, delay: 100});
+      await page.click('div.editor > p', {clickCount: 3, delay: 100});
+
+      await keyDownCtrlOrMeta(page);
+      await page.keyboard.type('b');
+      await keyUpCtrlOrMeta(page);
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><strong class="editor-text-bold" data-outline-text="true">hello world</strong></p><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">hello world</span></p>',
+      );
+    });
+
     it(`Can select text and italicify it with the shortcut`, async () => {
       const {isRichText, page} = e2e;
 

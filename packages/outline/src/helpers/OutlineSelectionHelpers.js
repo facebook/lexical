@@ -930,18 +930,29 @@ export function insertNodes(
   siblings.push(...nextSiblings);
 
   const firstNode = nodes[0];
+  let didReplaceOrMerge = false;
 
   // Time to insert the nodes!
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
 
     if (isBlockNode(node)) {
+      // -----
+      // Heuristics for the replacment of merging of blocks
+      // -----
+
       // If we have an incoming block node as the first node, then we'll need
       // see if we can merge any descendant leafe nodes into our existing target.
       // We can do this by finding the first descendant in our node and then we can
       // pluck it and its parent (siblings included) out and insert them directly
       // into our target. We only do this for the first node, as we are only
       // interested in merging with the anchor, which is our target.
+      //
+      // If we apply either the replacement or merging heuristics, we need to be
+      // careful that we're not trying to insert a non-block node into a root node,
+      // so we check if the target's parent after this logic is the root node and if
+      // so we trigger an invariant to ensure this problem is caught in development
+      // and fixed accordingly.
 
       if (node.is(firstNode)) {
         if (
@@ -951,6 +962,7 @@ export function insertNodes(
         ) {
           target.replace(node);
           target = node;
+          didReplaceOrMerge = true;
           continue;
         }
         // We may have a node tree where there are many levels, for example with
@@ -990,6 +1002,7 @@ export function insertNodes(
             target = target.getParentOrThrow();
           }
           block.remove();
+          didReplaceOrMerge = true;
           if (block.is(node)) {
             continue;
           }
@@ -998,7 +1011,13 @@ export function insertNodes(
       if (isTextNode(target)) {
         target = topLevelBlock;
       }
+    } else if (didReplaceOrMerge && isRootNode(target.getParent())) {
+      invariant(
+        false,
+        'insertNodes: cannot insert a non-block into a root node',
+      );
     }
+    didReplaceOrMerge = false;
     if (isBlockNode(target)) {
       if (!isBlockNode(node)) {
         const firstChild = target.getFirstChild();

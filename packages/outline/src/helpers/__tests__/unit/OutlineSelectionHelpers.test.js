@@ -1546,11 +1546,11 @@ describe('OutlineSelectionHelpers tests', () => {
             key: paragraph.getKey(),
           });
           const selection = view.getSelection();
+          const heading = createHeadingNode('h1');
+          const child = createTextNode('foo');
+          heading.append(child);
 
-          insertNodes(selection, [
-            createHeadingNode('h1'),
-            createTextNode('foo'),
-          ]);
+          insertNodes(selection, [heading]);
         });
 
         expect(element.innerHTML).toBe(
@@ -1558,7 +1558,7 @@ describe('OutlineSelectionHelpers tests', () => {
         );
       });
 
-      test('a heading node with a child text node and a sibling text node', async () => {
+      test('a heading node with a child text node and a disjoint sibling text node should throw', async () => {
         const editor = createEditor({});
         editor.addListener('error', (error) => {
           throw error;
@@ -1582,16 +1582,17 @@ describe('OutlineSelectionHelpers tests', () => {
             key: paragraph.getKey(),
           });
           const selection = view.getSelection();
+          const heading = createHeadingNode('h1');
+          const child = createTextNode('foo');
+          heading.append(child);
 
-          insertNodes(selection, [
-            createHeadingNode('h1'),
-            createTextNode('foo'),
-            createTextNode('bar'),
-          ]);
+          expect(() => {
+            insertNodes(selection, [heading, createTextNode('bar')]);
+          }).toThrow();
         });
 
         expect(element.innerHTML).toBe(
-          '<h1 dir="ltr"><span data-outline-text="true">foobar</span></h1>',
+          '<h1><span data-outline-text="true">foo</span></h1>',
         );
       });
     });
@@ -1696,19 +1697,19 @@ describe('OutlineSelectionHelpers tests', () => {
             key: text.getKey(),
           });
           const selection = view.getSelection();
+          const heading = createHeadingNode('h1');
+          const child = createTextNode('foo');
+          heading.append(child);
 
-          insertNodes(selection, [
-            createHeadingNode('h1'),
-            createTextNode('foo'),
-          ]);
+          insertNodes(selection, [heading]);
         });
 
         expect(element.innerHTML).toBe(
-          '<p><span data-outline-text="true">Existing text...</span></p><h1><span data-outline-text="true">foo</span></h1>',
+          '<p dir="ltr"><span data-outline-text="true">Existing text...foo</span></p>',
         );
       });
 
-      test('a heading node with a child text node and a sibling text node', async () => {
+      test('a heading node with a child text node and a disjoint sibling text node should throw', async () => {
         const editor = createEditor({});
         editor.addListener('error', (error) => {
           throw error;
@@ -1734,16 +1735,17 @@ describe('OutlineSelectionHelpers tests', () => {
             key: text.getKey(),
           });
           const selection = view.getSelection();
+          const heading = createHeadingNode('h1');
+          const child = createTextNode('foo');
+          heading.append(child);
 
-          insertNodes(selection, [
-            createHeadingNode('h1'),
-            createTextNode('foo'),
-            createTextNode('bar'),
-          ]);
+          expect(() => {
+            insertNodes(selection, [heading, createTextNode('bar')]);
+          }).toThrow();
         });
 
         expect(element.innerHTML).toBe(
-          '<p><span data-outline-text="true">Existing text...</span></p><h1 dir="ltr"><span data-outline-text="true">foobar</span></h1>',
+          '<p dir="ltr"><span data-outline-text="true">Existing text...foo</span></p>',
         );
       });
     });

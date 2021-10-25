@@ -36,14 +36,14 @@ export class RootNode extends BlockNode {
     // You can't select root nodes.
     invariant(false, 'remove: cannot be called on root nodes');
   }
-  replace<N: OutlineNode>(): N {
+  replace<N: OutlineNode>(node: N): N {
     // You can't select root nodes.
     invariant(false, 'replace: cannot be called on root nodes');
   }
   insertBefore() {
     invariant(false, 'insertBefore: cannot be called on root nodes');
   }
-  insertAfter() {
+  insertAfter(node: OutlineNode): OutlineNode {
     invariant(false, 'insertAfter: cannot be called on root nodes');
   }
 

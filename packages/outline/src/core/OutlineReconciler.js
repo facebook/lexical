@@ -589,6 +589,12 @@ function reconcileSelection(
   }
   const anchor = selection.anchor;
   const focus = selection.focus;
+  if (__DEV__) {
+    // Freeze the selection in DEV to prevent accidental mutations
+    Object.freeze(anchor);
+    Object.freeze(focus);
+    Object.freeze(selection);
+  }
   const anchorKey = anchor.key;
   const focusKey = focus.key;
   const anchorDOM = getElementByKeyOrThrow(editor, anchorKey);

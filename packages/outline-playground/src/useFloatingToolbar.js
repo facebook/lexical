@@ -298,6 +298,7 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
   const updateSelectedLinks = useCallback(
     (url: null | string, selection: null | Selection) => {
       editor.update((view) => {
+        view.log('useToolbar')
         if (selection !== null) {
           view.setSelection(selection);
         }
@@ -334,7 +335,7 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
             }
           });
         }
-      }, 'useToolbar');
+      });
     },
     [editor],
   );
@@ -342,11 +343,12 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
   const applyFormatText = useCallback(
     (formatType: TextFormatType) => {
       editor.update((view) => {
+        view.log('applyFormatText')
         const selection = view.getSelection();
         if (selection !== null) {
           formatText(selection, formatType);
         }
-      }, 'applyFormatText');
+      });
     },
     [editor],
   );
@@ -354,11 +356,12 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
   const applyStyleText = useCallback(
     (styles: {[string]: string}) => {
       editor.update((view) => {
+        view.log('applyStyleText')
         const selection = view.getSelection();
         if (selection !== null) {
           patchStyleText(selection, styles);
         }
-      }, 'applyStyleText');
+      });
     },
     [editor],
   );

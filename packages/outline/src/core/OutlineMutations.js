@@ -173,8 +173,9 @@ export function flushRootMutations(
   isProcessingMutations = true;
   try {
     editor.update(() => {
+      view.log('onMutation');
       flushMutations(editor, mutations, observer);
-    }, 'onMutation');
+    });
   } finally {
     isProcessingMutations = false;
   }
@@ -183,7 +184,7 @@ export function flushRootMutations(
 export function initMutationObserver(editor: OutlineEditor): void {
   editor._observer = new MutationObserver(
     (mutations: Array<MutationRecord>, observer: MutationObserver) => {
-      flushRootMutations(editor, mutations, observer)
+      flushRootMutations(editor, mutations, observer);
     },
   );
 }

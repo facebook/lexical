@@ -141,6 +141,7 @@ function DropdownList({
   const formatParagraph = () => {
     if (blockType !== 'paragraph') {
       editor.update((view) => {
+        view.log('formatParagraph');
         const selection = view.getSelection();
 
         if (selection !== null) {
@@ -154,7 +155,7 @@ function DropdownList({
           children.forEach((child) => paragraph.append(child));
           block.replace(paragraph);
         }
-      }, 'formatParagraph');
+      });
     }
     setShowDropDown(false);
   };
@@ -162,6 +163,7 @@ function DropdownList({
   const formatLargeHeading = () => {
     if (blockType !== 'h1') {
       editor.update((view) => {
+        view.log('formatLargeHeading');
         const selection = view.getSelection();
 
         if (selection !== null) {
@@ -175,7 +177,7 @@ function DropdownList({
           children.forEach((child) => paragraph.append(child));
           block.replace(paragraph);
         }
-      }, 'formatLargeHeading');
+      });
     }
     setShowDropDown(false);
   };
@@ -183,6 +185,7 @@ function DropdownList({
   const formatSmallHeading = () => {
     if (blockType !== 'h2') {
       editor.update((view) => {
+        view.log('formatSmallHeading');
         const selection = view.getSelection();
 
         if (selection !== null) {
@@ -196,7 +199,7 @@ function DropdownList({
           paragraph.append(...children);
           block.replace(paragraph);
         }
-      }, 'formatSmallHeading');
+      });
     }
     setShowDropDown(false);
   };
@@ -204,6 +207,7 @@ function DropdownList({
   const formatBulletList = () => {
     if (blockType !== 'ul') {
       editor.update((view) => {
+        view.log('formatBulletList');
         const selection = view.getSelection();
 
         if (selection !== null) {
@@ -219,7 +223,7 @@ function DropdownList({
           children.forEach((child) => listItem.append(child));
           block.replace(list);
         }
-      }, 'formatBulletList');
+      });
     }
     setShowDropDown(false);
   };
@@ -227,6 +231,7 @@ function DropdownList({
   const formatNumberedList = () => {
     if (blockType !== 'ol') {
       editor.update((view) => {
+        view.log('formatNumberedList');
         const selection = view.getSelection();
 
         if (selection !== null) {
@@ -242,7 +247,7 @@ function DropdownList({
           children.forEach((child) => listItem.append(child));
           block.replace(list);
         }
-      }, 'formatNumberedList');
+      });
     }
     setShowDropDown(false);
   };
@@ -250,6 +255,7 @@ function DropdownList({
   const formatQuote = () => {
     if (blockType !== 'quote') {
       editor.update((view) => {
+        view.log('formatQuote');
         const selection = view.getSelection();
 
         if (selection !== null) {
@@ -263,7 +269,7 @@ function DropdownList({
           children.forEach((child) => quoteNode.append(child));
           block.replace(quoteNode);
         }
-      }, 'formatQuote');
+      });
     }
     setShowDropDown(false);
   };
@@ -271,6 +277,7 @@ function DropdownList({
   const formatCode = () => {
     if (blockType !== 'code') {
       editor.update((view) => {
+        view.log('formatCode')
         const selection = view.getSelection();
 
         if (selection !== null) {
@@ -284,7 +291,7 @@ function DropdownList({
           children.forEach((child) => codeNode.append(child));
           block.replace(codeNode);
         }
-      }, 'formatCode');
+      });
     }
     setShowDropDown(false);
   };

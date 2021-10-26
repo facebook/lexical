@@ -19,7 +19,7 @@ function defaultOnErrorHandler(e: Error): void {
 }
 
 export default function useOutlineEditor<EditorContext>(editorConfig?: {
-  onError?: (error: Error, updateName: string) => void,
+  onError?: (error: Error, log: Array<string>) => void,
   initialViewModel?: ViewModel,
   theme?: EditorThemeClasses,
   context?: EditorContext,

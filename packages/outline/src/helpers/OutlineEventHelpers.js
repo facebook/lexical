@@ -149,6 +149,7 @@ export function onKeyDownForPlainText(
     return;
   }
   editor.update((view) => {
+    view.log('onKeyDownForPlainText');
     const selection = view.getSelection();
     if (selection === null) {
       return;
@@ -190,7 +191,7 @@ export function onKeyDownForPlainText(
       event.preventDefault();
       deleteLineForward(selection);
     }
-  }, 'onKeyDownForPlainText');
+  });
 }
 
 export function onKeyDownForRichText(
@@ -202,6 +203,7 @@ export function onKeyDownForRichText(
     return;
   }
   editor.update((view) => {
+    view.log('onKeyDownForRichText');
     const selection = view.getSelection();
     if (selection === null) {
       return;
@@ -274,7 +276,7 @@ export function onKeyDownForRichText(
         }
       }
     }
-  }, 'onKeyDownForRichText');
+  });
 }
 
 export function onPasteForPlainText(
@@ -283,12 +285,13 @@ export function onPasteForPlainText(
 ): void {
   event.preventDefault();
   editor.update((view) => {
+    view.log('onPasteForPlainText');
     const selection = view.getSelection();
     const clipboardData = event.clipboardData;
     if (clipboardData != null && selection !== null) {
       insertDataTransferForPlainText(clipboardData, selection, view);
     }
-  }, 'onPasteForPlainText');
+  });
 }
 
 export function onPasteForRichText(
@@ -297,12 +300,13 @@ export function onPasteForRichText(
 ): void {
   event.preventDefault();
   editor.update((view) => {
+    view.log('onPasteForRichText');
     const selection = view.getSelection();
     const clipboardData = event.clipboardData;
     if (clipboardData != null && selection !== null) {
       insertDataTransferForRichText(clipboardData, selection, view);
     }
-  }, 'onPasteForRichText');
+  });
 }
 
 export function onDropPolyfill(
@@ -328,11 +332,12 @@ export function onCutForPlainText(
 ): void {
   onCopyForPlainText(event, editor);
   editor.update((view) => {
+    view.log('onCutForPlainText');
     const selection = view.getSelection();
     if (selection !== null) {
       removeText(selection);
     }
-  }, 'onCutForPlainText');
+  });
 }
 
 export function onCutForRichText(
@@ -341,11 +346,12 @@ export function onCutForRichText(
 ): void {
   onCopyForRichText(event, editor);
   editor.update((view) => {
+    view.log('onCutForRichText');
     const selection = view.getSelection();
     if (selection !== null) {
       removeText(selection);
     }
-  }, 'onCutForRichText');
+  });
 }
 
 export function onCopyForPlainText(
@@ -354,6 +360,7 @@ export function onCopyForPlainText(
 ): void {
   event.preventDefault();
   editor.update((view) => {
+    view.log('onCopyForPlainText');
     const clipboardData = event.clipboardData;
     const selection = view.getSelection();
     if (selection !== null) {
@@ -373,7 +380,7 @@ export function onCopyForPlainText(
         clipboardData.setData('text/plain', selection.getTextContent());
       }
     }
-  }, 'onCopyForPlainText');
+  });
 }
 
 export function onCopyForRichText(
@@ -382,6 +389,7 @@ export function onCopyForRichText(
 ): void {
   event.preventDefault();
   editor.update((view) => {
+    view.log('onCopyForRichText');
     const clipboardData = event.clipboardData;
     const selection = view.getSelection();
     if (selection !== null) {
@@ -405,7 +413,7 @@ export function onCopyForRichText(
         );
       }
     }
-  }, 'onCopyForRichText');
+  });
 }
 
 export function onCompositionStart(
@@ -413,6 +421,7 @@ export function onCompositionStart(
   editor: OutlineEditor,
 ): void {
   editor.update((view) => {
+    view.log('onCompositionStart');
     const selection = view.getSelection();
     if (selection !== null && !editor.isComposing()) {
       const anchor = selection.anchor;
@@ -431,7 +440,7 @@ export function onCompositionStart(
         insertText(selection, ' ');
       }
     }
-  }, 'onCompositionStart');
+  });
 }
 
 function onCompositionEndInternal(
@@ -439,9 +448,10 @@ function onCompositionEndInternal(
   editor: OutlineEditor,
 ) {
   editor.update((view) => {
+    view.log('onCompositionEnd');
     view.setCompositionKey(null);
     updateSelectedTextFromDOM(editor, view, true);
-  }, 'onCompositionEnd');
+  });
 }
 
 export function onCompositionEnd(
@@ -472,6 +482,7 @@ function getLastSelection(editor: OutlineEditor): null | Selection {
 // really isn't.
 export function onClick(event: MouseEvent, editor: OutlineEditor): void {
   editor.update((view) => {
+    view.log('onClick');
     const selection = view.getSelection();
     if (selection === null) {
       return;
@@ -490,7 +501,7 @@ export function onClick(event: MouseEvent, editor: OutlineEditor): void {
         selection.dirty = true;
       }
     }
-  }, 'onClick');
+  });
 }
 
 export function onSelectionChange(event: Event, editor: OutlineEditor): void {
@@ -505,6 +516,7 @@ export function onSelectionChange(event: Event, editor: OutlineEditor): void {
   // This update functions as a way of reconciling a bad selection
   // to a good selection.
   editor.update((view) => {
+    view.log('onSelectionChange');
     const selection = view.getSelection();
     // Update the selection format
     if (selection !== null && selection.isCollapsed()) {
@@ -514,7 +526,7 @@ export function onSelectionChange(event: Event, editor: OutlineEditor): void {
         selection.format = anchorNode.getFormat();
       }
     }
-  }, 'onSelectionChange');
+  });
 }
 
 export function checkForBadInsertion(
@@ -570,20 +582,13 @@ function updateTextNodeFromDOMContent(
     }
 
     if (compositionEnd || normalizedTextContent !== node.getTextContent()) {
-      if (
-        isImmutableOrInert(node) ||
-        (editor.isComposing() && !isComposing)
-      ) {
+      if (isImmutableOrInert(node) || (editor.isComposing() && !isComposing)) {
         view.markNodeAsDirty(node);
         return;
       }
       const selection = view.getSelection();
 
-      if (
-        selection === null ||
-        anchorOffset === null ||
-        focusOffset === null
-      ) {
+      if (selection === null || anchorOffset === null || focusOffset === null) {
         node.setTextContent(normalizedTextContent);
         return;
       }
@@ -662,6 +667,7 @@ export function onBeforeInputForPlainText(
   }
 
   editor.update((view) => {
+    view.log('onBeforeInputForPlainText');
     const selection = view.getSelection();
 
     if (selection === null) {
@@ -779,7 +785,7 @@ export function onBeforeInputForPlainText(
       default:
       // NO-OP
     }
-  }, 'onBeforeInputForPlainText');
+  });
 }
 
 export function onBeforeInputForRichText(
@@ -797,6 +803,7 @@ export function onBeforeInputForRichText(
   }
 
   editor.update((view) => {
+    view.log('onBeforeInputForRichText');
     const selection = view.getSelection();
 
     if (selection === null) {
@@ -934,7 +941,7 @@ export function onBeforeInputForRichText(
       default:
       // NO-OP
     }
-  }, 'onBeforeInputForRichText');
+  });
 }
 
 function updateSelectedTextFromDOM(
@@ -976,6 +983,7 @@ export function onInput(event: InputEvent, editor: OutlineEditor): void {
   // We don't want the onInput to bubble, in the case of nested editors.
   event.stopPropagation();
   editor.update((view: View) => {
+    view.log('onInput');
     const selection = view.getSelection();
     const data = event.data;
     if (
@@ -997,7 +1005,7 @@ export function onInput(event: InputEvent, editor: OutlineEditor): void {
     if (mutations.length > 0) {
       view.flushMutations(mutations);
     }
-  }, 'onInput');
+  });
 }
 
 export function applyMutationInputWebkitWorkaround(): void {
@@ -1036,10 +1044,10 @@ export function applyMutationInputWebkitWorkaround(): void {
           }
         }
         if (otherMutations.length > 0) {
-          editor.update(
-            (view) => view.flushMutations(otherMutations),
-            'applyMutationInputWebkitWorkaround',
-          );
+          editor.update((view) => {
+            view.log('applyMutationWorkaround');
+            view.flushMutations(otherMutations);
+          });
         }
         if (textMutations.length > 0) {
           pendingOnInputTextMutations = textMutations;

@@ -52,6 +52,7 @@ export type View = {
   getCompositionKey: () => null | NodeKey,
   getNearestNodeFromDOMNode: (dom: Node) => null | OutlineNode,
   flushMutations: (mutations: Array<MutationRecord>) => void,
+  log: (entry: string) => void,
 };
 
 export type ParsedViewModel = {
@@ -166,6 +167,11 @@ export const view: View = {
       flushMutations(editor, mutations, observer);
     }
   },
+  log(entry: string): void {
+    errorOnReadOnly();
+    const editor = getActiveEditor();
+    editor._log.push(entry);
+  }
 };
 export function viewModelHasDirtySelection(
   viewModel: ViewModel,
@@ -403,7 +409,6 @@ export function garbageCollectDetachedNodes(
 
 export function commitPendingUpdates(
   editor: OutlineEditor,
-  updateName: string,
 ): void {
   const pendingViewModel = editor._pendingViewModel;
   const rootElement = editor._rootElement;
@@ -436,14 +441,15 @@ export function commitPendingUpdates(
     );
   } catch (error) {
     // Report errors
-    triggerListeners('error', editor, error, updateName);
+    triggerListeners('error', editor, error, error._log);
     // Reset editor and restore incoming view model to the DOM
     if (!isAttemptingToRecoverFromReconcilerError) {
       resetEditor(editor, null, rootElement, pendingViewModel);
       initMutationObserver(editor);
       editor._dirtyType = FULL_RECONCILE;
       isAttemptingToRecoverFromReconcilerError = true;
-      commitPendingUpdates(editor, 'ReconcileRecover');
+      editor._log.push('ReconcileRecover')
+      commitPendingUpdates(editor);
       isAttemptingToRecoverFromReconcilerError = false;
     }
     return;
@@ -470,7 +476,9 @@ export function commitPendingUpdates(
     };
   }
   const dirtyNodes = editor._dirtyNodes;
+  const log = editor._log;
 
+  editor._log = [];
   if (needsUpdate) {
     editor._dirtyType = NO_DIRTY_NODES;
     editor._dirtyNodes = new Set();
@@ -492,6 +500,7 @@ export function commitPendingUpdates(
     viewModel: pendingViewModel,
     dirty: isViewModelDirty,
     dirtyNodes,
+    log,
   });
   const deferred = editor._deferred;
   editor._deferred = [];

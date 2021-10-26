@@ -95,12 +95,14 @@ describe('OutlineEditor tests', () => {
     // Wait for update to complete
     await Promise.resolve().then();
 
-    expect(container.innerHTML).toBe('<div data-outline-editor=\"true\"><p><span data-outline-text=\"true\">This works!</span></p></div>');
+    expect(container.innerHTML).toBe(
+      '<div data-outline-editor="true"><p><span data-outline-text="true">This works!</span></p></div>',
+    );
 
     const initialViewModel = initialEditor.getViewModel();
 
     initialEditor.setRootElement(null);
-    expect(container.innerHTML).toBe('<div data-outline-editor=\"true\"></div>');
+    expect(container.innerHTML).toBe('<div data-outline-editor="true"></div>');
 
     editor = createEditor({
       initialViewModel: initialViewModel,
@@ -108,7 +110,9 @@ describe('OutlineEditor tests', () => {
     editor.setRootElement(rootElement);
 
     expect(editor.getViewModel()).toEqual(initialViewModel);
-    expect(container.innerHTML).toBe('<div data-outline-editor=\"true\"><p><span data-outline-text=\"true\">This works!</span></p></div>');
+    expect(container.innerHTML).toBe(
+      '<div data-outline-editor="true"><p><span data-outline-text="true">This works!</span></p></div>',
+    );
   });
 
   it('Should be able to update a view model without an root element', () => {
@@ -822,6 +826,15 @@ describe('OutlineEditor tests', () => {
       expect(container.innerHTML).toBe(
         '<div contenteditable="true" data-outline-editor="true"><p><div><span data-outline-text="true">A</span><div><span data-outline-text="true">C</span></div></div><div><span data-outline-text="true">B</span></div></p></div>',
       );
+    });
+
+    it('isEmpty', async () => {
+      expect(editor.isEmpty()).toBe(true);
+      await update((view: View) => {
+        const paragraph = view.getRoot().getFirstChild();
+        paragraph.append(createTextNode('foo'));
+      });
+      expect(editor.isEmpty()).toBe(false);
     });
   });
 });

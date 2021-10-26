@@ -33,11 +33,11 @@ module.exports = {
         'outline-react/dist/useOutlineDecorators',
       'outline-react/useOutlineNestedList':
         'outline-react/dist/useOutlineNestedList',
+      'outline-react/useOutlineIsEmpty': 'outline-react/dist/useOutlineIsEmpty',
       'outline-react/useOutlineCharacterLimit':
         'outline-react/dist/useOutlineCharacterLimit',
       //Shared
-      'shared/environment':
-        'shared/dist/environment',
+      'shared/environment': 'shared/dist/environment',
     },
   },
 };

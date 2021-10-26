@@ -478,7 +478,7 @@ class BaseOutlineEditor {
     }
   }
   canShowPlaceholder(): boolean {
-    if (this.isComposing() || this._textContent !== '') {
+    if (!this.isEmpty(false)) {
       return false;
     }
     const nodeMap = this._viewModel._nodeMap;

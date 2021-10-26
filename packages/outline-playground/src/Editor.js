@@ -12,7 +12,7 @@ import type {OutlineEditor} from 'outline';
 import * as React from 'react';
 import {useEffect, useMemo, useState} from 'react';
 import useOutlineRichText from 'outline-react/useOutlineRichText';
-import useEmojis from './useEmojis';
+import {useEmojis} from './useEmojis';
 import useMentions from './useMentions';
 import useOutlineEditor from 'outline-react/useOutlineEditor';
 import usePlainText from 'outline-react/useOutlinePlainText';

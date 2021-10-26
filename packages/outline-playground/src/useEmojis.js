@@ -9,6 +9,7 @@
 
 import type {
   OutlineEditor,
+  OutlineNode,
   View,
   NodeKey,
   EditorConfig,
@@ -65,7 +66,7 @@ function textNodeTransform(node: TextNode, view: View): void {
   }
 }
 
-export default function useEmojis(editor: OutlineEditor): void {
+export function useEmojis(editor: OutlineEditor): void {
   useEffect(() => {
     editor.registerNodeType('emoji', EmojiNode);
     const removeTransform = editor.addTextNodeTransform(textNodeTransform);
@@ -88,11 +89,15 @@ class EmojiNode extends TextNode {
     this.__type = 'emoji';
   }
 
-  createDOM<EditorContext>(config: EditorConfig<EditorContext>) {
+  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
     const dom = super.createDOM(config);
     dom.className = this.__className;
     return dom;
   }
+}
+
+export function isEmojiNode(node: OutlineNode): boolean %checks {
+  return node instanceof EmojiNode;
 }
 
 function createEmojiNode(className: string, emojiText: string): EmojiNode {

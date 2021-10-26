@@ -7,13 +7,7 @@
  * @flow strict-local
  */
 
-import type {
-  OutlineEditor,
-  View,
-  NodeKey,
-  EditorConfig,
-  ViewModel,
-} from 'outline';
+import type {OutlineEditor, View, NodeKey, EditorConfig} from 'outline';
 
 import {isTextNode, isBlockNode, TextNode} from 'outline';
 import {useEffect, useRef, useState, useCallback, useMemo} from 'react';
@@ -139,23 +133,20 @@ export default function useTypeahead(editor: OutlineEditor): void {
 
   // Rerender on editor updates
   useEffect(() => {
-    return editor.addListener(
-      'update',
-      (viewModel: ViewModel, dirty: boolean) => {
-        if (dirty) {
-          viewModel.read((view) => {
-            const typeaheadNode = view
-              .getRoot()
-              .getAllTextNodes(true)
-              .find((textNode) => textNode instanceof TypeaheadNode);
-            if (typeaheadNode instanceof TypeaheadNode) {
-              typeaheadNodeKey.current = typeaheadNode.getKey();
-            }
-          });
-        }
-        renderTypeahead();
-      },
-    );
+    return editor.addListener('update', ({viewModel, dirty}) => {
+      if (dirty) {
+        viewModel.read((view) => {
+          const typeaheadNode = view
+            .getRoot()
+            .getAllTextNodes(true)
+            .find((textNode) => textNode instanceof TypeaheadNode);
+          if (typeaheadNode instanceof TypeaheadNode) {
+            typeaheadNodeKey.current = typeaheadNode.getKey();
+          }
+        });
+      }
+      renderTypeahead();
+    });
   }, [editor, renderTypeahead]);
 
   // Handle Keyboard TAB or RIGHT ARROW to complete suggestion

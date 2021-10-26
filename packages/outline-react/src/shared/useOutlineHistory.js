@@ -127,11 +127,7 @@ export default function useOutlineHistory(editor: OutlineEditor): () => void {
       return;
     }
 
-    const applyChange = (
-      viewModel: ViewModel,
-      dirty: boolean,
-      dirtyNodes: Set<NodeKey>,
-    ) => {
+    const applyChange = ({viewModel, dirty, dirtyNodes}) => {
       const current = historyState.current;
       const redoStack = historyState.redoStack;
       const undoStack = historyState.undoStack;

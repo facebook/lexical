@@ -7,7 +7,7 @@
  * @flow strict-local
  */
 
-import type {OutlineEditor, View, ViewModel, NodeKey} from 'outline';
+import type {OutlineEditor, View} from 'outline';
 
 import {createTextNode} from 'outline';
 import {createParagraphNode} from 'outline/ParagraphNode';
@@ -137,7 +137,7 @@ const keyPresses = new Set([
   'ArrowRight',
   'ArrowUp',
   'ArrowDown',
-])
+]);
 
 // $FlowFixMe TODO
 type Steps = Array<any>;
@@ -298,7 +298,7 @@ ${steps.map(formatStep).join(`\n`)}
   useEffect(() => {
     const removeUpdateListener = editor.addListener(
       'update',
-      (viewModel: ViewModel, _, dirtyNodes: Set<NodeKey>) => {
+      ({viewModel, dirtyNodes}) => {
         if (!isRecording) {
           return;
         }

@@ -10,7 +10,6 @@
 import type {
   OutlineEditor,
   View,
-  ViewModel,
   EditorConfig,
   NodeKey,
   OutlineNode,
@@ -86,32 +85,29 @@ export function useCharacterLimit(
     })();
     let lastUtf16TextLength = null;
     let lastTextLength = null;
-    return editor.addListener(
-      'update',
-      (viewModel: ViewModel, dirty: boolean, dirtyNodes: Set<NodeKey>) => {
-        const isComposing = editor.isComposing();
-        const text = editor.getCurrentTextContent();
-        const utf16TextLength = text.length;
-        const hasDirtyNodes = dirty && dirtyNodes.size > 0;
-        if (
-          isComposing ||
-          (utf16TextLength === lastUtf16TextLength && !hasDirtyNodes)
-        ) {
-          return;
-        }
-        const textLength = strlen(editor.getCurrentTextContent());
-        const textLengthAboveThreshold =
-          textLength > maxCharacters ||
-          (lastTextLength !== null && lastTextLength > maxCharacters);
-        const diff = maxCharacters - textLength;
-        remainingCharacters(diff);
-        if (lastTextLength === null || textLengthAboveThreshold || dirtyNodes) {
-          execute();
-        }
-        lastUtf16TextLength = utf16TextLength;
-        lastTextLength = textLength;
-      },
-    );
+    return editor.addListener('update', ({viewModel, dirty, dirtyNodes}) => {
+      const isComposing = editor.isComposing();
+      const text = editor.getCurrentTextContent();
+      const utf16TextLength = text.length;
+      const hasDirtyNodes = dirty && dirtyNodes.size > 0;
+      if (
+        isComposing ||
+        (utf16TextLength === lastUtf16TextLength && !hasDirtyNodes)
+      ) {
+        return;
+      }
+      const textLength = strlen(editor.getCurrentTextContent());
+      const textLengthAboveThreshold =
+        textLength > maxCharacters ||
+        (lastTextLength !== null && lastTextLength > maxCharacters);
+      const diff = maxCharacters - textLength;
+      remainingCharacters(diff);
+      if (lastTextLength === null || textLengthAboveThreshold || dirtyNodes) {
+        execute();
+      }
+      lastUtf16TextLength = utf16TextLength;
+      lastTextLength = textLength;
+    });
   }, [editor, execute, maxCharacters, remainingCharacters, strlen]);
 }
 

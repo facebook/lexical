@@ -26,6 +26,23 @@ type Config = $ReadOnly<{
   appSettings?: AppSettings,
 }>;
 
+async function attemptToLaunchBrowser(attempt = 0) {
+  try {
+    return await {chromium, webkit, firefox}[E2E_BROWSER].launch({
+      headless: !E2E_DEBUG,
+    });
+  } catch (e) {
+    if (attempt > retryCount) {
+      throw e;
+    }
+    return await new Promise(resolve => {
+      setTimeout(async () => {
+        resolve(await attemptToLaunchBrowser(attempt + 1))
+      }, 1000)
+    })
+  }
+}
+
 export function initializeE2E(runTests, config: Config = {}) {
   const {appSettings = {}} = config;
   if (appSettings.isRichText === undefined) {
@@ -56,10 +73,7 @@ export function initializeE2E(runTests, config: Config = {}) {
   };
 
   beforeAll(async () => {
-    const browser = await {chromium, webkit, firefox}[E2E_BROWSER].launch({
-      headless: !E2E_DEBUG,
-    });
-    e2e.browser = browser;
+    e2e.browser = await attemptToLaunchBrowser();
   });
   beforeEach(async () => {
     const url = `http://localhost:${E2E_PORT}/?${urlParams.toString()}`;

@@ -23,7 +23,7 @@ import {
   errorOnReadOnly,
   getActiveEditor,
   getActiveViewModel,
-} from './OutlineProcess';
+} from './OutlineUpdates';
 
 export const emptyFunction = () => {};
 

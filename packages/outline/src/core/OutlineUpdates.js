@@ -150,6 +150,20 @@ export function errorOnReadOnly(): void {
   }
 }
 
+export function errorOnPreparingPendingViewUpdate(
+  fnName: 'Editor.getLatestTextContent()',
+): void {
+  if (
+    isPreparingPendingViewUpdate &&
+    fnName === 'Editor.getLatestTextContent()'
+  ) {
+    invariant(
+      false,
+      'Editor.getLatestTextContent() can be asynchronous and cannot be used within Editor.update()',
+    );
+  }
+}
+
 export function getActiveViewModel(): ViewModel {
   if (activeViewModel === null) {
     invariant(
@@ -234,20 +248,9 @@ export function parseViewModel(
   return viewModel;
 }
 
-export function asyncErrorOnPreparingPendingViewUpdate(
-  fnName: 'Editor.getLatestTextContent()',
-): void {
-  if (
-    isPreparingPendingViewUpdate &&
-    fnName === 'Editor.getLatestTextContent()'
-  ) {
-    invariant(
-      false,
-      'Editor.getLatestTextContent() can be asynchronous and cannot be used within Editor.update()',
-    );
-  }
-}
-
+// This technically isn't an update but given we need
+// exposure to the module's active bindings, we have this
+// function here
 export function readViewModel<V>(
   viewModel: ViewModel,
   callbackFn: (view: View) => V,
@@ -369,7 +372,7 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
   }
 }
 
-export function processUpdate(
+export function beginUpdate(
   editor: OutlineEditor,
   updateFn: (view: View) => void,
   markAllTextNodesAsDirty: boolean,

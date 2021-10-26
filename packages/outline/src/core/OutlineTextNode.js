@@ -24,7 +24,7 @@ import {
   toggleTextFormatType,
 } from './OutlineUtils';
 import invariant from 'shared/invariant';
-import {errorOnReadOnly} from './OutlineProcess';
+import {errorOnReadOnly} from './OutlineUpdates';
 import {
   IS_CODE,
   IS_BOLD,

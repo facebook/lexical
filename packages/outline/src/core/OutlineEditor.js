@@ -9,14 +9,14 @@
 
 import type {OutlineNode, NodeKey} from './OutlineNode';
 import type {Node as ReactNode} from 'react';
-import type {View} from './OutlineProcess';
+import type {View} from './OutlineUpdates';
 
 import {
-  asyncErrorOnPreparingPendingViewUpdate,
+  errorOnPreparingPendingViewUpdate,
   commitPendingUpdates,
   parseViewModel,
   errorOnProcessingTextNodeTransforms,
-} from './OutlineProcess';
+} from './OutlineUpdates';
 import {isBlockNode, isTextNode, TextNode} from '.';
 import {ViewModel, createEmptyViewModel} from './OutlineViewModel';
 import {emptyFunction} from './OutlineUtils';
@@ -25,7 +25,7 @@ import {RootNode} from './OutlineRootNode';
 import {NO_DIRTY_NODES, FULL_RECONCILE} from './OutlineConstants';
 import {flushRootMutations, initMutationObserver} from './OutlineMutations';
 import {triggerListeners} from './OutlineListeners';
-import {processUpdate} from './OutlineProcess';
+import {beginUpdate} from './OutlineUpdates';
 import invariant from 'shared/invariant';
 
 export type EditorThemeClassName = string;
@@ -288,7 +288,7 @@ class BaseOutlineEditor {
   }
   addTextNodeTransform(listener: TextNodeTransform): () => void {
     this._textNodeTransforms.add(listener);
-    processUpdate(getSelf(this), emptyFunction, true);
+    beginUpdate(getSelf(this), emptyFunction, true);
     return () => {
       this._textNodeTransforms.delete(listener);
     };
@@ -303,7 +303,7 @@ class BaseOutlineEditor {
     return this._textContent;
   }
   getLatestTextContent(callback: (text: string) => void): void {
-    asyncErrorOnPreparingPendingViewUpdate('Editor.getLatestTextContent()');
+    errorOnPreparingPendingViewUpdate('Editor.getLatestTextContent()');
     if (this._pendingViewModel === null) {
       callback(this._textContent);
       return;
@@ -368,7 +368,7 @@ class BaseOutlineEditor {
   }
   update(updateFn: (view: View) => void, callbackFn?: () => void): boolean {
     errorOnProcessingTextNodeTransforms();
-    return processUpdate(getSelf(this), updateFn, false, callbackFn);
+    return beginUpdate(getSelf(this), updateFn, false, callbackFn);
   }
   focus(callbackFn?: () => void): void {
     const rootElement = this._rootElement;

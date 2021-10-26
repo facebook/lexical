@@ -21,7 +21,7 @@ import ReactTestUtils from 'react-dom/test-utils';
 import {createEditor, createTextNode, TextNode} from 'outline';
 
 import {createParagraphNode} from 'outline/ParagraphNode';
-import {getCompositionKey, setCompositionKey} from '../../core/OutlineProcess';
+import {getCompositionKey, setCompositionKey} from '../../core/OutlineUtils';
 
 const editorConfig = Object.freeze({
   theme: {

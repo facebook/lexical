@@ -20,7 +20,9 @@ import {
 } from '../../core/OutlineUtils';
 
 import {initializeUnitTest} from '../utils';
-import {createParagraphNode} from 'outline/ParagraphNode';
+import {getNodeByKey} from '../../core/OutlineUtils';
+import {createParagraphNode, ParagraphNode} from 'outline/ParagraphNode';
+import {TextNode} from 'outline';
 
 describe('OutlineUtils tests', () => {
   initializeUnitTest((testEnv) => {
@@ -171,6 +173,26 @@ describe('OutlineUtils tests', () => {
         const segmentedNode = createTextNode('foo').makeSegmented();
         expect(isImmutableOrInertOrSegmented(segmentedNode)).toBe(true);
       });
+    });
+
+    test('getNodeByKey', async () => {
+      const {editor} = testEnv;
+      let paragraphNode;
+      let textNode;
+
+      await editor.update((view) => {
+        const rootNode = view.getRoot();
+        paragraphNode = new ParagraphNode();
+        textNode = new TextNode('foo');
+        paragraphNode.append(textNode);
+        rootNode.append(paragraphNode);
+      });
+      await editor.getViewModel().read(() => {
+        expect(getNodeByKey('0')).toBe(paragraphNode);
+        expect(getNodeByKey('1')).toBe(textNode);
+        expect(getNodeByKey('2')).toBe(null);
+      });
+      expect(() => getNodeByKey()).toThrow();
     });
   });
 });

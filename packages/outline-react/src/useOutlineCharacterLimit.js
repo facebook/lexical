@@ -66,13 +66,10 @@ export function useCharacterLimit(
         offsetUtf16 += codepoint.length;
       }
     }
-    updateWithoutHistory(
-      editor,
-      (view: View) => {
-        wrapOverflowedNodes(view, offsetUtf16);
-      },
-      'CharacterLimit',
-    );
+    updateWithoutHistory(editor, (view: View) => {
+      view.log('CharacterLimit');
+      wrapOverflowedNodes(view, offsetUtf16);
+    });
   }, [editor, maxCharacters, strlen]);
 
   useEffect(() => {

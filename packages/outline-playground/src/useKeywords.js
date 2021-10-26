@@ -143,9 +143,10 @@ export default function useKeywords(editor: OutlineEditor): void {
 
     const updateListener = () => {
       editor.update((view) => {
+        view.log('useKeywords')
         const root = view.getRoot();
         traverseNodes(root);
-      }, 'useKeywords');
+      });
     };
 
     const removeTextTransform =

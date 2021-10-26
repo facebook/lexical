@@ -77,11 +77,12 @@ export type EditorConfig<EditorContext> = {
 
 export type TextNodeTransform = (node: TextNode, view: View) => void;
 
-export type ErrorListener = (error: Error, updateName: string) => void;
+export type ErrorListener = (error: Error, log: Array<string>) => void;
 export type UpdateListener = ({
   viewModel: ViewModel,
   dirty: boolean,
   dirtyNodes: Set<NodeKey>,
+  log: Array<string>,
 }) => void;
 export type DecoratorListener = (decorator: {[NodeKey]: ReactNode}) => void;
 export type RootListener = (
@@ -147,6 +148,7 @@ export function resetEditor(
   editor._dirtyNodes = new Set();
   editor._dirtySubTrees = new Set();
   editor._textContent = '';
+  editor._log = [];
   const observer = editor._observer;
   if (observer !== null) {
     observer.disconnect();
@@ -189,7 +191,6 @@ function updateEditor(
   editor: OutlineEditor,
   updateFn: (view: View) => void,
   markAllTextNodesAsDirty: boolean,
-  updateName: string,
   callbackFn?: () => void,
 ): boolean {
   if (callbackFn) {
@@ -217,14 +218,15 @@ function updateEditor(
 
   if (error !== null) {
     // Report errors
-    triggerListeners('error', editor, error, updateName);
+    triggerListeners('error', editor, error, editor._log);
     // Restore existing view model to the DOM
     const currentViewModel = editor._viewModel;
     editor._pendingViewModel = currentViewModel;
     editor._dirtyType = FULL_RECONCILE;
     editor._dirtyNodes = new Set();
     editor._dirtySubTrees = new Set();
-    commitPendingUpdates(editor, 'UpdateRecover');
+    editor._log.push('UpdateRecover');
+    commitPendingUpdates(editor);
     return false;
   }
 
@@ -240,10 +242,10 @@ function updateEditor(
   }
   if (pendingViewModel._flushSync) {
     pendingViewModel._flushSync = false;
-    commitPendingUpdates(editor, updateName);
+    commitPendingUpdates(editor);
   } else if (viewModelWasCloned) {
     scheduleMicroTask(() => {
-      commitPendingUpdates(editor, updateName);
+      commitPendingUpdates(editor);
     });
   }
   return true;
@@ -272,6 +274,7 @@ class BaseOutlineEditor {
   _dirtyNodes: Set<NodeKey>;
   _dirtySubTrees: Set<NodeKey>;
   _observer: null | MutationObserver;
+  _log: Array<string>;
 
   constructor(viewModel: ViewModel, config: EditorConfig<{...}>) {
     // The root element associated with this editor
@@ -314,6 +317,8 @@ class BaseOutlineEditor {
     this._dirtySubTrees = new Set();
     // Handling of DOM mutations
     this._observer = null;
+    // Logging for updates
+    this._log = [];
   }
   getObserver(): null | MutationObserver {
     return this._observer;
@@ -355,7 +360,7 @@ class BaseOutlineEditor {
   }
   addTextNodeTransform(listener: TextNodeTransform): () => void {
     this._textNodeTransforms.add(listener);
-    updateEditor(getSelf(this), emptyFunction, true, 'addTextNodeTransform');
+    updateEditor(getSelf(this), emptyFunction, true);
     return () => {
       this._textNodeTransforms.delete(listener);
     };
@@ -397,7 +402,7 @@ class BaseOutlineEditor {
         nextRootElement.setAttribute('data-outline-editor', 'true');
         this._dirtyType = FULL_RECONCILE;
         initMutationObserver(getSelf(this));
-        commitPendingUpdates(getSelf(this), 'setRootElement');
+        commitPendingUpdates(getSelf(this));
         // $FlowFixMe: internal field
         nextRootElement.__outlineEditor = this;
       }
@@ -423,23 +428,19 @@ class BaseOutlineEditor {
       flushRootMutations(getSelf(this), mutations, observer);
     }
     if (this._pendingViewModel !== null) {
-      commitPendingUpdates(getSelf(this), 'setViewModel #1');
+      commitPendingUpdates(getSelf(this));
     }
     this._pendingViewModel = viewModel;
     this._dirtyType = FULL_RECONCILE;
     this._compositionKey = null;
-    commitPendingUpdates(getSelf(this), 'setViewModel #2');
+    commitPendingUpdates(getSelf(this));
   }
   parseViewModel(stringifiedViewModel: string): ViewModel {
     return parseViewModel(stringifiedViewModel, getSelf(this));
   }
-  update(
-    updateFn: (view: View) => void,
-    updateName: string,
-    callbackFn?: () => void,
-  ): boolean {
+  update(updateFn: (view: View) => void, callbackFn?: () => void): boolean {
     errorOnProcessingTextNodeTransforms();
-    return updateEditor(getSelf(this), updateFn, false, updateName, callbackFn);
+    return updateEditor(getSelf(this), updateFn, false, callbackFn);
   }
   focus(callbackFn?: () => void): void {
     const rootElement = this._rootElement;
@@ -457,7 +458,6 @@ class BaseOutlineEditor {
             root.selectEnd();
           }
         },
-        'focus',
         () => {
           rootElement.removeAttribute('autocapitalize');
           if (callbackFn) {
@@ -520,6 +520,7 @@ declare export class OutlineEditor {
   _dirtyNodes: Set<NodeKey>;
   _dirtySubTrees: Set<NodeKey>;
   _observer: null | MutationObserver;
+  _log: Array<string>;
 
   getObserver(): null | MutationObserver;
   isComposing(): boolean;
@@ -539,11 +540,7 @@ declare export class OutlineEditor {
   getViewModel(): ViewModel;
   setViewModel(viewModel: ViewModel): void;
   parseViewModel(stringifiedViewModel: string): ViewModel;
-  update(
-    updateFn: (view: View) => void,
-    updateName: string,
-    callbackFn?: () => void,
-  ): boolean;
+  update(updateFn: (view: View) => void, callbackFn?: () => void): boolean;
   focus(callbackFn?: () => void): void;
   canShowPlaceholder(): boolean;
 }

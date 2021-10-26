@@ -284,6 +284,7 @@ export default function useHashtags(editor: OutlineEditor): void {
       editor.addTextNodeTransform(textNodeTransform);
     const removeUpdateListener = editor.addListener('update', () => {
       editor.update((view) => {
+        view.log('useHashtags')
         const selection = view.getSelection();
         if (selection !== null && !editor.isComposing()) {
           const anchorNode = selection.anchor.getNode();
@@ -291,7 +292,7 @@ export default function useHashtags(editor: OutlineEditor): void {
             textNodeTransform(anchorNode, view);
           }
         }
-      }, 'useHashtags');
+      });
     });
 
     return () => {

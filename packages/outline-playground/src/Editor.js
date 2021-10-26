@@ -123,6 +123,7 @@ export const useRichTextEditor = ({
   const element = useMemo(() => {
     const handleAddImage = () => {
       editor.update((view) => {
+        view.log('handleAddImage')
         const selection = view.getSelection();
         if (selection !== null) {
           const imageNode = createImageNode(
@@ -131,7 +132,7 @@ export const useRichTextEditor = ({
           );
           insertNodes(selection, [imageNode]);
         }
-      }, 'handleAddImage');
+      });
     };
 
     return (

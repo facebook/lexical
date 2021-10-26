@@ -19,6 +19,7 @@ function maybeIndentOrOutdent(
 ): boolean {
   let hasHandledIndention = false;
   editor.update((view: View) => {
+    view.log('useNestedList.maybeIndent')
     const selection = view.getSelection();
     if (selection === null) {
       return;
@@ -43,7 +44,7 @@ function maybeIndentOrOutdent(
       }
       hasHandledIndention = true;
     }
-  }, 'useNestedList.maybeIndent');
+  });
   return hasHandledIndention;
 }
 

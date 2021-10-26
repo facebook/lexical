@@ -343,12 +343,13 @@ ${steps.map(formatStep).join(`\n`)}
     (currentEditor) => {
       if (!isRecording) {
         currentEditor.update((view: View) => {
+          view.log('useStepRecorder')
           const root = view.getRoot();
           root.clear();
           const text = createTextNode();
           root.append(createParagraphNode().append(text));
           text.select();
-        }, 'useStepRecorder');
+        });
         setSteps([]);
       }
       setIsRecording((currentIsRecording) => !currentIsRecording);

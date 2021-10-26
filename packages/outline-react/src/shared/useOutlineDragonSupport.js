@@ -50,6 +50,7 @@ export default function useOutlineDragonSupport(editor: OutlineEditor) {
               // eslint-disable-next-line no-unused-expressions
               formatCommand;
               editor.update((view) => {
+                view.log('useOutlineDragonSupport')
                 const selection = view.getSelection();
                 if (selection !== null) {
                   const anchor = selection.anchor;
@@ -99,7 +100,7 @@ export default function useOutlineDragonSupport(editor: OutlineEditor) {
                   // block the chrome extension from handling this event
                   event.stopImmediatePropagation();
                 }
-              }, 'useOutlineDragonSupport');
+              });
             }
           }
         }

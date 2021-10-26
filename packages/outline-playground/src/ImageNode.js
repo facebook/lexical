@@ -257,13 +257,14 @@ function ImageComponent({
   const handleKeyDown = (event) => {
     if ((hasFocus && event.key === 'Backspace') || event.key === 'Delete') {
       editor.update((view) => {
+        view.log('Image.keyDown')
         const node = view.getNodeByKey(nodeKey);
         if (node !== null) {
           node.remove();
           event.stopPropagation();
           event.preventDefault();
         }
-      }, 'Image.keyDown');
+      });
     }
   };
 
@@ -303,11 +304,12 @@ function ImageComponent({
               }
               setIsResizing(false);
               editor.update((view) => {
+                view.log('ImageNode.resize')
                 const node = view.getNodeByKey(nodeKey);
                 if (isImageNode(node)) {
                   node.setWidthAndHeight(nextWidth, nextHeight);
                 }
-              }, 'ImageNode.resize');
+              });
             }}
           />
         )}

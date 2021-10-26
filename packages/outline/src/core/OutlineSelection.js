@@ -13,15 +13,14 @@ import type {BlockNode} from './OutlineBlockNode';
 import type {TextFormatType} from './OutlineTextNode';
 import type {RootNode} from './OutlineRootNode';
 
-import {getActiveEditor, ViewModel, isViewReadOnlyMode} from './OutlineView';
-import {getActiveViewModel} from './OutlineView';
+import {ViewModel} from './OutlineViewModel';
+import {
+  getActiveEditor,
+  getActiveViewModel,
+  isViewReadOnlyMode,
+} from './OutlineProcess';
 import {getNodeKeyFromDOM} from './OutlineReconciler';
 import {getIsProcesssingMutations} from './OutlineMutations';
-import {
-  getNodeByKey,
-  getCompositionKey,
-  setCompositionKey,
-} from './OutlineNode';
 import {
   isTextNode,
   isBlockNode,
@@ -30,7 +29,7 @@ import {
   isRootNode,
   TextNode,
 } from '.';
-import {isSelectionWithinEditor, toggleTextFormatType} from './OutlineUtils';
+import {getCompositionKey, getNodeByKey, isSelectionWithinEditor, setCompositionKey, toggleTextFormatType} from './OutlineUtils';
 import invariant from 'shared/invariant';
 import {
   IS_BOLD,
@@ -802,6 +801,31 @@ function updateSelectionResolveTextNodes(selection: Selection) {
         newOffset = child.getTextContentSize();
       }
       focus.set(child.getKey(), newOffset, 'text');
+    }
+  }
+}
+
+export function applySelectionTransforms(
+  nextViewModel: ViewModel,
+  editor: OutlineEditor,
+): void {
+  const prevViewModel = editor.getViewModel();
+  const prevSelection = prevViewModel._selection;
+  const nextSelection = nextViewModel._selection;
+  if (nextSelection !== null) {
+    const anchor = nextSelection.anchor;
+    const focus = nextSelection.focus;
+    let anchorNode;
+
+    if (anchor.type === 'text') {
+      anchorNode = anchor.getNode();
+      anchorNode.selectionTransform(prevSelection, nextSelection);
+    }
+    if (focus.type === 'text') {
+      const focusNode = focus.getNode();
+      if (anchorNode !== focusNode) {
+        focusNode.selectionTransform(prevSelection, nextSelection);
+      }
     }
   }
 }

@@ -12,8 +12,9 @@ import type {Selection} from './OutlineSelection';
 import type {TextNode} from './OutlineTextNode';
 
 import {isTextNode, isDecoratorNode} from '.';
-import {triggerListeners, view} from './OutlineView';
-import {getNearestNodeFromDOMNode, getNodeFromDOMNode} from './OutlineNode';
+import {view} from './OutlineProcess';
+import {triggerListeners} from './OutlineListeners';
+import {getNearestNodeFromDOMNode, getNodeFromDOMNode} from './OutlineUtils';
 
 let isProcessingMutations: boolean = false;
 

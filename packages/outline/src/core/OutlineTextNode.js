@@ -8,18 +8,23 @@
  */
 
 import type {Selection} from './OutlineSelection';
-import type {NodeKey, ParsedNode} from './OutlineNode';
+import type {NodeKey} from './OutlineNode';
 import type {EditorConfig, TextNodeThemeClasses} from './OutlineEditor';
 
-import {OutlineNode, setCompositionKey, getCompositionKey} from './OutlineNode';
+import {OutlineNode} from './OutlineNode';
 import {
   getSelection,
   makeSelection,
   updateBlockSelectionOnCreateDeleteNode,
 } from './OutlineSelection';
-import {getTextDirection, toggleTextFormatType} from './OutlineUtils';
+import {
+  getCompositionKey,
+  getTextDirection,
+  setCompositionKey,
+  toggleTextFormatType,
+} from './OutlineUtils';
 import invariant from 'shared/invariant';
-import {errorOnReadOnly} from './OutlineView';
+import {errorOnReadOnly} from './OutlineProcess';
 import {
   IS_CODE,
   IS_BOLD,
@@ -30,11 +35,6 @@ import {
   NO_BREAK_SPACE_CHAR,
   TEXT_TYPE_TO_FORMAT,
 } from './OutlineConstants';
-
-export type ParsedTextNode = {
-  ...ParsedNode,
-  __text: string,
-};
 
 export type TextFormatType =
   | 'bold'

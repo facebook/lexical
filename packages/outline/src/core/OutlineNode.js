@@ -7,30 +7,30 @@
  * @flow strict
  */
 
-import type {OutlineEditor, EditorConfig} from './OutlineEditor';
+import type {EditorConfig} from './OutlineEditor';
 import type {Selection, PointType} from './OutlineSelection';
 
-import {
-  isBlockNode,
-  isTextNode,
-  isRootNode,
-  BlockNode,
-  isLineBreakNode,
-  isDecoratorNode,
-} from '.';
+import {isBlockNode, isTextNode, isRootNode, BlockNode} from '.';
 import {
   getActiveViewModel,
   errorOnReadOnly,
   getActiveEditor,
-} from './OutlineView';
-import {generateRandomKey, getTextDirection} from './OutlineUtils';
+} from './OutlineProcess';
+import {
+  generateKey,
+  getCompositionKey,
+  getNodeByKey,
+  getTextDirection,
+  internallyMarkNodeAsDirty,
+  markParentsAsDirty,
+  setCompositionKey,
+} from './OutlineUtils';
 import invariant from 'shared/invariant';
 import {
   IS_DIRECTIONLESS,
   IS_IMMUTABLE,
   IS_INERT,
   IS_SEGMENTED,
-  HAS_DIRTY_NODES,
 } from './OutlineConstants';
 import {
   getSelection,
@@ -38,79 +38,7 @@ import {
   updateBlockSelectionOnCreateDeleteNode,
 } from './OutlineSelection';
 
-type NodeParserState = {
-  originalSelection: null | ParsedSelection,
-  remappedSelection?: ParsedSelection,
-};
-export type ParsedNode = {
-  __key: NodeKey,
-  __type: string,
-  __flags: number,
-  __parent: null | NodeKey,
-  ...
-};
-export type ParsedNodeMap = Map<NodeKey, ParsedNode>;
-type ParsedSelection = {
-  anchor: {
-    key: NodeKey,
-    offset: number,
-    type: 'text' | 'block',
-  },
-  focus: {
-    key: NodeKey,
-    offset: number,
-    type: 'text' | 'block',
-  },
-};
-
 export type NodeMap = Map<NodeKey, OutlineNode>;
-
-function generateKey(node: OutlineNode): NodeKey {
-  errorOnReadOnly();
-  const editor = getActiveEditor();
-  const viewModel = getActiveViewModel();
-  const key = generateRandomKey();
-  viewModel._nodeMap.set(key, node);
-  editor._dirtyNodes.add(key);
-  editor._dirtyType = HAS_DIRTY_NODES;
-  return key;
-}
-
-function markParentsAsDirty(
-  parentKey: NodeKey,
-  nodeMap: NodeMap,
-  dirtySubTrees: Set<NodeKey>,
-): void {
-  let nextParentKey = parentKey;
-  while (nextParentKey !== null) {
-    if (dirtySubTrees.has(nextParentKey)) {
-      return;
-    }
-    dirtySubTrees.add(nextParentKey);
-    const node = nodeMap.get(nextParentKey);
-    if (node === undefined) {
-      break;
-    }
-    nextParentKey = node.__parent;
-  }
-}
-
-// Never use this function directly! It will break
-// the cloning heuristic. Instead use node.getWritable().
-function internallyMarkNodeAsDirty(node: OutlineNode): void {
-  const latest = node.getLatest();
-  const parent = latest.__parent;
-  const viewModel = getActiveViewModel();
-  const editor = getActiveEditor();
-  const nodeMap = viewModel._nodeMap;
-  if (parent !== null) {
-    const dirtySubTrees = editor._dirtySubTrees;
-    markParentsAsDirty(parent, nodeMap, dirtySubTrees);
-  }
-  const dirtyNodes = editor._dirtyNodes;
-  editor._dirtyType = HAS_DIRTY_NODES;
-  dirtyNodes.add(latest.__key);
-}
 
 export function removeNode(
   nodeToRemove: OutlineNode,
@@ -174,10 +102,6 @@ function moveSelectionPointToSibling(
     offset = node.getIndexWithinParent();
     point.set(parent.__key, offset, 'block');
   }
-}
-
-export function isLeafNode(node: ?OutlineNode): boolean %checks {
-  return isTextNode(node) || isLineBreakNode(node) || isDecoratorNode(node);
 }
 
 export function updateDirectionIfNeeded(node: OutlineNode): void {
@@ -795,15 +719,6 @@ export class OutlineNode {
   }
 }
 
-export function getNodeByKey<N: OutlineNode>(key: NodeKey): N | null {
-  const viewModel = getActiveViewModel();
-  const node = viewModel._nodeMap.get(key);
-  if (node === undefined) {
-    return null;
-  }
-  return (node: $FlowFixMe);
-}
-
 function getNodeByKeyOrThrow<N: OutlineNode>(key: NodeKey): N {
   const node = getNodeByKey<N>(key);
   if (node === null) {
@@ -812,130 +727,6 @@ function getNodeByKeyOrThrow<N: OutlineNode>(key: NodeKey): N {
       "Expected node with key %s to exist but it's not in the nodeMap.",
       key,
     );
-  }
-  return node;
-}
-
-export function setCompositionKey(compositionKey: null | NodeKey): void {
-  const editor = getActiveEditor();
-  const previousCompositionKey = editor._compositionKey;
-  editor._compositionKey = compositionKey;
-  if (previousCompositionKey !== null) {
-    const node = getNodeByKey(previousCompositionKey);
-    if (node !== null) {
-      node.getWritable();
-    }
-  }
-  if (compositionKey !== null) {
-    const node = getNodeByKey(compositionKey);
-    if (node !== null) {
-      node.getWritable();
-    }
-  }
-}
-
-export function getNodeFromDOMNode(dom: Node): OutlineNode | null {
-  // $FlowFixMe: internal field
-  const key: NodeKey | undefined = dom.__outlineInternalRef;
-  if (key !== undefined) {
-    return getNodeByKey(key);
-  }
-  return null;
-}
-
-export function getNearestNodeFromDOMNode(
-  startingDOM: Node,
-): OutlineNode | null {
-  let dom = startingDOM;
-  while (dom != null) {
-    const node = getNodeFromDOMNode(dom);
-    if (node !== null) {
-      return node;
-    }
-    dom = dom.parentNode;
-  }
-  return null;
-}
-
-export function getCompositionKey(): null | NodeKey {
-  const editor = getActiveEditor();
-  return editor._compositionKey;
-}
-
-export function createNodeFromParse(
-  parsedNode: $FlowFixMe,
-  parsedNodeMap: ParsedNodeMap,
-  editor: OutlineEditor,
-  parentKey: null | NodeKey,
-  state: NodeParserState = {},
-): OutlineNode {
-  const nodeType = parsedNode.__type;
-  const NodeType = editor._nodeTypes.get(nodeType);
-  if (NodeType === undefined) {
-    invariant(false, 'createNodeFromParse: type "%s" + not found', nodeType);
-  }
-  const parsedKey = parsedNode.__key;
-  // We set the parsedKey to undefined before calling clone() so that
-  // we get a new random key assigned.
-  parsedNode.__key = undefined;
-  const node = NodeType.clone(parsedNode);
-  parsedNode.__key = parsedKey;
-  const key = node.__key;
-  if (isRootNode(node)) {
-    const viewModel = getActiveViewModel();
-    viewModel._nodeMap.set('root', node);
-  }
-  node.__flags = parsedNode.__flags;
-  node.__parent = parentKey;
-  // We will need to recursively handle the children in the case
-  // of a BlockNode.
-  if (isBlockNode(node)) {
-    const children = parsedNode.__children;
-    for (let i = 0; i < children.length; i++) {
-      const childKey = children[i];
-      const parsedChild = parsedNodeMap.get(childKey);
-      if (parsedChild !== undefined) {
-        const child = createNodeFromParse(
-          parsedChild,
-          parsedNodeMap,
-          editor,
-          key,
-          state,
-        );
-        const newChildKey = child.getKey();
-        node.__children.push(newChildKey);
-      }
-    }
-  } else if (isTextNode(node)) {
-    node.__format = parsedNode.__format;
-    node.__style = parsedNode.__style;
-  }
-  // The selection might refer to an old node whose key has changed. Produce a
-  // new selection record with the old keys mapped to the new ones.
-  const originalSelection = state != null ? state.originalSelection : undefined;
-  if (originalSelection != null) {
-    if (parsedNode.__key === originalSelection.anchor.key) {
-      state.remappedSelection = state.remappedSelection || {
-        anchor: {
-          ...originalSelection.anchor,
-        },
-        focus: {
-          ...originalSelection.focus,
-        },
-      };
-      state.remappedSelection.anchor.key = node.__key;
-    }
-    if (parsedNode.__key === originalSelection.focus.key) {
-      state.remappedSelection = state.remappedSelection || {
-        anchor: {
-          ...originalSelection.anchor,
-        },
-        focus: {
-          ...originalSelection.focus,
-        },
-      };
-      state.remappedSelection.focus.key = node.__key;
-    }
   }
   return node;
 }

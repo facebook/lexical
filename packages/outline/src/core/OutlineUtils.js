@@ -8,10 +8,22 @@
  */
 
 import type {OutlineEditor} from './OutlineEditor';
-import type {OutlineNode} from './OutlineNode';
+import type {OutlineNode, NodeKey, NodeMap} from './OutlineNode';
 import type {TextFormatType} from './OutlineTextNode';
+import type {Node as ReactNode} from 'react';
 
-import {RTL_REGEX, LTR_REGEX, TEXT_TYPE_TO_FORMAT} from './OutlineConstants';
+import {
+  RTL_REGEX,
+  LTR_REGEX,
+  TEXT_TYPE_TO_FORMAT,
+  HAS_DIRTY_NODES,
+} from './OutlineConstants';
+import {isTextNode, isLineBreakNode, isDecoratorNode} from '.';
+import {
+  errorOnReadOnly,
+  getActiveEditor,
+  getActiveViewModel,
+} from './OutlineProcess';
 
 export const emptyFunction = () => {};
 
@@ -112,4 +124,117 @@ export function toggleTextFormatType(
     return format | activeFormat;
   }
   return format;
+}
+
+export function isLeafNode(node: ?OutlineNode): boolean %checks {
+  return isTextNode(node) || isLineBreakNode(node) || isDecoratorNode(node);
+}
+
+export function generateKey(node: OutlineNode): NodeKey {
+  errorOnReadOnly();
+  const editor = getActiveEditor();
+  const viewModel = getActiveViewModel();
+  const key = generateRandomKey();
+  viewModel._nodeMap.set(key, node);
+  editor._dirtyNodes.add(key);
+  editor._dirtyType = HAS_DIRTY_NODES;
+  return key;
+}
+
+export function markParentsAsDirty(
+  parentKey: NodeKey,
+  nodeMap: NodeMap,
+  dirtySubTrees: Set<NodeKey>,
+): void {
+  let nextParentKey = parentKey;
+  while (nextParentKey !== null) {
+    if (dirtySubTrees.has(nextParentKey)) {
+      return;
+    }
+    dirtySubTrees.add(nextParentKey);
+    const node = nodeMap.get(nextParentKey);
+    if (node === undefined) {
+      break;
+    }
+    nextParentKey = node.__parent;
+  }
+}
+
+// Never use this function directly! It will break
+// the cloning heuristic. Instead use node.getWritable().
+export function internallyMarkNodeAsDirty(node: OutlineNode): void {
+  const latest = node.getLatest();
+  const parent = latest.__parent;
+  const viewModel = getActiveViewModel();
+  const editor = getActiveEditor();
+  const nodeMap = viewModel._nodeMap;
+  if (parent !== null) {
+    const dirtySubTrees = editor._dirtySubTrees;
+    markParentsAsDirty(parent, nodeMap, dirtySubTrees);
+  }
+  const dirtyNodes = editor._dirtyNodes;
+  editor._dirtyType = HAS_DIRTY_NODES;
+  dirtyNodes.add(latest.__key);
+}
+
+export function setCompositionKey(compositionKey: null | NodeKey): void {
+  const editor = getActiveEditor();
+  const previousCompositionKey = editor._compositionKey;
+  editor._compositionKey = compositionKey;
+  if (previousCompositionKey !== null) {
+    const node = getNodeByKey(previousCompositionKey);
+    if (node !== null) {
+      node.getWritable();
+    }
+  }
+  if (compositionKey !== null) {
+    const node = getNodeByKey(compositionKey);
+    if (node !== null) {
+      node.getWritable();
+    }
+  }
+}
+
+export function getCompositionKey(): null | NodeKey {
+  const editor = getActiveEditor();
+  return editor._compositionKey;
+}
+
+export function getNodeByKey<N: OutlineNode>(key: NodeKey): N | null {
+  const viewModel = getActiveViewModel();
+  const node = viewModel._nodeMap.get(key);
+  if (node === undefined) {
+    return null;
+  }
+  return (node: $FlowFixMe);
+}
+
+export function getNodeFromDOMNode(dom: Node): OutlineNode | null {
+  // $FlowFixMe: internal field
+  const key: NodeKey | undefined = dom.__outlineInternalRef;
+  if (key !== undefined) {
+    return getNodeByKey(key);
+  }
+  return null;
+}
+
+export function getNearestNodeFromDOMNode(
+  startingDOM: Node,
+): OutlineNode | null {
+  let dom = startingDOM;
+  while (dom != null) {
+    const node = getNodeFromDOMNode(dom);
+    if (node !== null) {
+      return node;
+    }
+    dom = dom.parentNode;
+  }
+  return null;
+}
+
+export function cloneDecorators(editor: OutlineEditor): {[NodeKey]: ReactNode} {
+  const currentDecorators = editor._decorators;
+  const pendingDecorators = Object.assign({}, currentDecorators);
+  editor._pendingDecorators = pendingDecorators;
+  return pendingDecorators;
 }

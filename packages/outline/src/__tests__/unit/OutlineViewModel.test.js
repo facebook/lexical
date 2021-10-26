@@ -8,10 +8,10 @@
 
 import {createRootNode, createTextNode} from 'outline';
 import {createParagraphNode} from 'outline/ParagraphNode';
-import {ViewModel} from '../../core/OutlineView';
+import {ViewModel} from '../../core/OutlineViewModel';
 import {initializeUnitTest} from '../utils';
 
-describe('OutlineView tests', () => {
+describe('OutlineViewModel tests', () => {
   initializeUnitTest((testEnv) => {
     test('constructor', async () => {
       const root = createRootNode();

@@ -326,6 +326,16 @@ class BaseOutlineEditor {
   isComposing(): boolean {
     return this._compositionKey != null;
   }
+  isEmpty(trim: boolean = true): boolean {
+    if (this.isComposing()) {
+      return false;
+    }
+    let text = this.getCurrentTextContent();
+    if (trim) {
+      text = text.trim();
+    }
+    return text === '';
+  }
   registerNodeType(nodeType: string, klass: Class<OutlineNode>): void {
     this._nodeTypes.set(nodeType, klass);
   }
@@ -468,7 +478,7 @@ class BaseOutlineEditor {
     }
   }
   canShowPlaceholder(): boolean {
-    if (this.isComposing() || this._textContent !== '') {
+    if (!this.isEmpty(false)) {
       return false;
     }
     const nodeMap = this._viewModel._nodeMap;
@@ -524,6 +534,7 @@ declare export class OutlineEditor {
 
   getObserver(): null | MutationObserver;
   isComposing(): boolean;
+  isEmpty(trim?: boolean): boolean;
   registerNodeType(nodeType: string, klass: Class<OutlineNode>): void;
   addListener(type: 'error', listener: ErrorListener): () => void;
   addListener(type: 'update', listener: UpdateListener): () => void;

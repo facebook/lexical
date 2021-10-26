@@ -35,7 +35,7 @@ async function attemptToLaunchBrowser(attempt = 0) {
     if (attempt > retryCount) {
       throw e;
     }
-    await new Promise(resolve => {
+    return await new Promise(resolve => {
       setTimeout(async () => {
         resolve(await attemptToLaunchBrowser(attempt + 1))
       }, 1000)
@@ -73,7 +73,7 @@ export function initializeE2E(runTests, config: Config = {}) {
   };
 
   beforeAll(async () => {
-    e2e.browser = attemptToLaunchBrowser();
+    e2e.browser = await attemptToLaunchBrowser();
   });
   beforeEach(async () => {
     const url = `http://localhost:${E2E_PORT}/?${urlParams.toString()}`;

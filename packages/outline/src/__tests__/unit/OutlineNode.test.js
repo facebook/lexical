@@ -7,7 +7,7 @@
  */
 import {TextNode} from 'outline';
 import {ParagraphNode} from 'outline/ParagraphNode';
-import {getNodeByKey, OutlineNode} from '../../core/OutlineNode';
+import {OutlineNode} from '../../core/OutlineNode';
 
 import {
   IS_DIRECTIONLESS,
@@ -1013,16 +1013,6 @@ describe('OutlineNode tests', () => {
         expect(selection.anchor.getNode()).toBe(textNode.getParent());
         expect(selection.anchor.offset).toBe(1);
       });
-    });
-
-    test('getNodeByKey', async () => {
-      const {editor} = testEnv;
-      await editor.getViewModel().read(() => {
-        expect(getNodeByKey('0')).toBe(paragraphNode);
-        expect(getNodeByKey('1')).toBe(textNode);
-        expect(getNodeByKey('2')).toBe(null);
-      });
-      expect(() => getNodeByKey()).toThrow();
     });
   });
 });

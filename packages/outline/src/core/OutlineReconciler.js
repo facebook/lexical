@@ -16,12 +16,17 @@ import type {
 import type {TextNode} from './OutlineTextNode';
 import type {Node as ReactNode} from 'react';
 
-import {ViewModel} from './OutlineView';
-import {isSelectionWithinEditor, getDOMTextNode} from './OutlineUtils';
+import {ViewModel} from './OutlineViewModel';
+import {
+  isSelectionWithinEditor,
+  getDOMTextNode,
+  cloneDecorators,
+  getCompositionKey,
+  setCompositionKey,
+} from './OutlineUtils';
 import {IS_INERT, IS_RTL, IS_LTR, FULL_RECONCILE} from './OutlineConstants';
 import invariant from 'shared/invariant';
 import {isDecoratorNode} from './OutlineDecoratorNode';
-import {getCompositionKey, setCompositionKey} from './OutlineNode';
 import {BlockNode, isBlockNode} from './OutlineBlockNode';
 import {isTextNode} from './OutlineTextNode';
 import {isLineBreakNode} from './OutlineLineBreakNode';
@@ -355,13 +360,6 @@ function reconcileNode(
     Object.freeze(nextNode);
   }
   return dom;
-}
-
-export function cloneDecorators(editor: OutlineEditor): {[NodeKey]: ReactNode} {
-  const currentDecorators = editor._decorators;
-  const pendingDecorators = Object.assign({}, currentDecorators);
-  editor._pendingDecorators = pendingDecorators;
-  return pendingDecorators;
 }
 
 function reconcileDecorator(key: NodeKey, decorator: ReactNode): void {

@@ -13,14 +13,17 @@ export type {
   EditorThemeClasses,
   TextMutation,
 } from './OutlineEditor';
-export type {ViewModel, View, ParsedViewModel} from './OutlineView';
+export type {ViewModel, ParsedViewModel} from './OutlineViewModel';
+export type {View} from './OutlineProcess';
 export type {
   NodeKey,
-  ParsedNode,
-  ParsedNodeMap,
   OutlineNode,
   NodeMap,
 } from './OutlineNode';
+export type {
+  ParsedNode,
+  ParsedNodeMap,
+} from './OutlineParsing';
 export type {
   Selection,
   PointType as Point,
@@ -36,7 +39,7 @@ import {isBlockNode, BlockNode} from './OutlineBlockNode';
 import {createRootNode, isRootNode, RootNode} from './OutlineRootNode';
 import {createLineBreakNode, isLineBreakNode} from './OutlineLineBreakNode';
 import {DecoratorNode, isDecoratorNode} from './OutlineDecoratorNode';
-import {isLeafNode} from './OutlineNode';
+import {isLeafNode} from './OutlineUtils';
 
 export {
   createEditor,

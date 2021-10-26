@@ -12,7 +12,6 @@ import type {
   NodeKey,
   OutlineNode,
   OutlineEditor,
-  ParsedNode,
 } from 'outline';
 
 import {DecoratorNode} from 'outline';
@@ -317,12 +316,6 @@ function ImageComponent({
     </Suspense>
   );
 }
-
-export type ParsedImageNode = {
-  ...ParsedNode,
-  __src: string,
-  __altText: string,
-};
 
 export class ImageNode extends DecoratorNode {
   __src: string;

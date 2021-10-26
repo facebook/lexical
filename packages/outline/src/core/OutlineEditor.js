@@ -9,14 +9,14 @@
 
 import type {OutlineNode, NodeKey} from './OutlineNode';
 import type {Node as ReactNode} from 'react';
-import type {View} from './OutlineProcess';
+import type {View} from './OutlineScope';
 
 import {
-  asyncErrorOnPreparingPendingViewUpdate,
-  commitPendingUpdates,
-  parseViewModel,
+  asyncErrorOnPreparingPendingViewUpdateWithScope,
+  commitPendingUpdatesWithScope,
+  parseViewModelWithScope,
   errorOnProcessingTextNodeTransforms,
-} from './OutlineProcess';
+} from './OutlineScope';
 import {isBlockNode, isTextNode, TextNode} from '.';
 import {ViewModel, createEmptyViewModel} from './OutlineViewModel';
 import {emptyFunction} from './OutlineUtils';
@@ -25,7 +25,7 @@ import {RootNode} from './OutlineRootNode';
 import {NO_DIRTY_NODES, FULL_RECONCILE} from './OutlineConstants';
 import {flushRootMutations, initMutationObserver} from './OutlineMutations';
 import {triggerListeners} from './OutlineListeners';
-import {processUpdate} from './OutlineProcess';
+import {processUpdateWithScope} from './OutlineScope';
 import invariant from 'shared/invariant';
 
 export type EditorThemeClassName = string;
@@ -288,7 +288,7 @@ class BaseOutlineEditor {
   }
   addTextNodeTransform(listener: TextNodeTransform): () => void {
     this._textNodeTransforms.add(listener);
-    processUpdate(getSelf(this), emptyFunction, true);
+    processUpdateWithScope(getSelf(this), emptyFunction, true);
     return () => {
       this._textNodeTransforms.delete(listener);
     };
@@ -303,7 +303,9 @@ class BaseOutlineEditor {
     return this._textContent;
   }
   getLatestTextContent(callback: (text: string) => void): void {
-    asyncErrorOnPreparingPendingViewUpdate('Editor.getLatestTextContent()');
+    asyncErrorOnPreparingPendingViewUpdateWithScope(
+      'Editor.getLatestTextContent()',
+    );
     if (this._pendingViewModel === null) {
       callback(this._textContent);
       return;
@@ -330,7 +332,7 @@ class BaseOutlineEditor {
         nextRootElement.setAttribute('data-outline-editor', 'true');
         this._dirtyType = FULL_RECONCILE;
         initMutationObserver(getSelf(this));
-        commitPendingUpdates(getSelf(this));
+        commitPendingUpdatesWithScope(getSelf(this));
         // $FlowFixMe: internal field
         nextRootElement.__outlineEditor = this;
       }
@@ -356,19 +358,19 @@ class BaseOutlineEditor {
       flushRootMutations(getSelf(this), mutations, observer);
     }
     if (this._pendingViewModel !== null) {
-      commitPendingUpdates(getSelf(this));
+      commitPendingUpdatesWithScope(getSelf(this));
     }
     this._pendingViewModel = viewModel;
     this._dirtyType = FULL_RECONCILE;
     this._compositionKey = null;
-    commitPendingUpdates(getSelf(this));
+    commitPendingUpdatesWithScope(getSelf(this));
   }
   parseViewModel(stringifiedViewModel: string): ViewModel {
-    return parseViewModel(stringifiedViewModel, getSelf(this));
+    return parseViewModelWithScope(stringifiedViewModel, getSelf(this));
   }
   update(updateFn: (view: View) => void, callbackFn?: () => void): boolean {
     errorOnProcessingTextNodeTransforms();
-    return processUpdate(getSelf(this), updateFn, false, callbackFn);
+    return processUpdateWithScope(getSelf(this), updateFn, false, callbackFn);
   }
   focus(callbackFn?: () => void): void {
     const rootElement = this._rootElement;

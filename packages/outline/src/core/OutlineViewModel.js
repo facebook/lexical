@@ -10,11 +10,11 @@
 import type {OutlineEditor} from './OutlineEditor';
 import type {NodeKey, NodeMap} from './OutlineNode';
 import type {Selection} from './OutlineSelection';
-import type {View} from './OutlineProcess';
+import type {View} from './OutlineScope';
 import type {ParsedNode} from './OutlineParsing';
 
 import {createRootNode} from './OutlineRootNode';
-import {readViewModel} from './OutlineProcess';
+import {readViewModelWithScope} from './OutlineScope';
 
 export type ParsedViewModel = {
   _selection: null | {
@@ -72,7 +72,7 @@ export class ViewModel {
     return this._nodeMap.size === 1 && this._selection === null;
   }
   read<V>(callbackFn: (view: View) => V): V {
-    return readViewModel(this, callbackFn);
+    return readViewModelWithScope(this, callbackFn);
   }
   stringify(space?: string | number): string {
     const selection = this._selection;

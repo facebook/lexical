@@ -15,10 +15,10 @@ import type {RootNode} from './OutlineRootNode';
 
 import {ViewModel} from './OutlineViewModel';
 import {
-  getActiveEditor,
-  getActiveViewModel,
+  getActiveEditorWithScope,
+  getActiveViewModelWithScope,
   isViewReadOnlyMode,
-} from './OutlineProcess';
+} from './OutlineScope';
 import {getNodeKeyFromDOM} from './OutlineReconciler';
 import {getIsProcesssingMutations} from './OutlineMutations';
 import {
@@ -29,7 +29,13 @@ import {
   isRootNode,
   TextNode,
 } from '.';
-import {getCompositionKey, getNodeByKey, isSelectionWithinEditor, setCompositionKey, toggleTextFormatType} from './OutlineUtils';
+import {
+  getCompositionKey,
+  getNodeByKey,
+  isSelectionWithinEditor,
+  setCompositionKey,
+  toggleTextFormatType,
+} from './OutlineUtils';
 import invariant from 'shared/invariant';
 import {
   IS_BOLD,
@@ -292,7 +298,7 @@ export class Selection {
     return textContent;
   }
   applyDOMRange(range: StaticRange): void {
-    const editor = getActiveEditor();
+    const editor = getActiveEditorWithScope();
     const resolvedSelectionPoints = resolveSelectionPoints(
       range.startContainer,
       range.startOffset,
@@ -360,7 +366,7 @@ export class Selection {
 function getNodeFromDOM(dom: Node): null | OutlineNode {
   const nodeKey = getNodeKeyFromDOM(dom);
   if (nodeKey === null) {
-    const editor = getActiveEditor();
+    const editor = getActiveEditorWithScope();
     const rootElement = editor.getRootElement();
     if (dom === rootElement) {
       return getNodeByKey('root');
@@ -564,7 +570,7 @@ export function makeSelection(
   anchorType: 'text' | 'block',
   focusType: 'text' | 'block',
 ): Selection {
-  const viewModel = getActiveViewModel();
+  const viewModel = getActiveViewModelWithScope();
   const selection = new Selection(
     createPoint(anchorKey, anchorOffset, anchorType),
     createPoint(focusKey, focusOffset, focusType),
@@ -662,7 +668,7 @@ export function createSelection(
 }
 
 export function getSelection(): null | Selection {
-  const viewModel = getActiveViewModel();
+  const viewModel = getActiveViewModelWithScope();
   return viewModel._selection;
 }
 

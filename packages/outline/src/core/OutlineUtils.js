@@ -21,9 +21,9 @@ import {
 import {isTextNode, isLineBreakNode, isDecoratorNode} from '.';
 import {
   errorOnReadOnly,
-  getActiveEditor,
-  getActiveViewModel,
-} from './OutlineProcess';
+  getActiveEditorWithScope,
+  getActiveViewModelWithScope,
+} from './OutlineScope';
 
 export const emptyFunction = () => {};
 
@@ -132,8 +132,8 @@ export function isLeafNode(node: ?OutlineNode): boolean %checks {
 
 export function generateKey(node: OutlineNode): NodeKey {
   errorOnReadOnly();
-  const editor = getActiveEditor();
-  const viewModel = getActiveViewModel();
+  const editor = getActiveEditorWithScope();
+  const viewModel = getActiveViewModelWithScope();
   const key = generateRandomKey();
   viewModel._nodeMap.set(key, node);
   editor._dirtyNodes.add(key);
@@ -165,8 +165,8 @@ export function markParentsAsDirty(
 export function internallyMarkNodeAsDirty(node: OutlineNode): void {
   const latest = node.getLatest();
   const parent = latest.__parent;
-  const viewModel = getActiveViewModel();
-  const editor = getActiveEditor();
+  const viewModel = getActiveViewModelWithScope();
+  const editor = getActiveEditorWithScope();
   const nodeMap = viewModel._nodeMap;
   if (parent !== null) {
     const dirtySubTrees = editor._dirtySubTrees;
@@ -178,7 +178,7 @@ export function internallyMarkNodeAsDirty(node: OutlineNode): void {
 }
 
 export function setCompositionKey(compositionKey: null | NodeKey): void {
-  const editor = getActiveEditor();
+  const editor = getActiveEditorWithScope();
   const previousCompositionKey = editor._compositionKey;
   editor._compositionKey = compositionKey;
   if (previousCompositionKey !== null) {
@@ -196,12 +196,12 @@ export function setCompositionKey(compositionKey: null | NodeKey): void {
 }
 
 export function getCompositionKey(): null | NodeKey {
-  const editor = getActiveEditor();
+  const editor = getActiveEditorWithScope();
   return editor._compositionKey;
 }
 
 export function getNodeByKey<N: OutlineNode>(key: NodeKey): N | null {
-  const viewModel = getActiveViewModel();
+  const viewModel = getActiveViewModelWithScope();
   const node = viewModel._nodeMap.get(key);
   if (node === undefined) {
     return null;

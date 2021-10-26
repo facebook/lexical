@@ -14,16 +14,9 @@ export type {
   TextMutation,
 } from './OutlineEditor';
 export type {ViewModel, ParsedViewModel} from './OutlineViewModel';
-export type {View} from './OutlineProcess';
-export type {
-  NodeKey,
-  OutlineNode,
-  NodeMap,
-} from './OutlineNode';
-export type {
-  ParsedNode,
-  ParsedNodeMap,
-} from './OutlineParsing';
+export type {View} from './OutlineScope';
+export type {NodeKey, OutlineNode, NodeMap} from './OutlineNode';
+export type {ParsedNode, ParsedNodeMap} from './OutlineParsing';
 export type {
   Selection,
   PointType as Point,

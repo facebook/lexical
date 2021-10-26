@@ -81,8 +81,10 @@ export type View = {
 
 export const view: View = {
   getRoot() {
-    // $FlowFixMe: root is always in our Map
-    return ((getActiveViewModel()._nodeMap.get('root'): any): RootNode);
+    return ((getActiveViewModelWithScope()._nodeMap.get(
+      'root',
+      // $FlowFixMe: root is always in our Map
+    ): any): RootNode);
   },
   getNodeByKey,
   getSelection,
@@ -91,11 +93,11 @@ export const view: View = {
     return createSelectionAtEnd(root);
   },
   clearSelection(): void {
-    const viewModel = getActiveViewModel();
+    const viewModel = getActiveViewModelWithScope();
     viewModel._selection = null;
   },
   setSelection(selection: Selection): void {
-    const viewModel = getActiveViewModel();
+    const viewModel = getActiveViewModelWithScope();
     viewModel._selection = selection;
   },
   createNodeFromParse(
@@ -103,7 +105,7 @@ export const view: View = {
     parsedNodeMap: ParsedNodeMap,
   ): OutlineNode {
     errorOnReadOnly();
-    const editor = getActiveEditor();
+    const editor = getActiveEditorWithScope();
     return createNodeFromParse(parsedNode, parsedNodeMap, editor, null);
   },
   markNodeAsDirty(node: OutlineNode): void {
@@ -118,7 +120,7 @@ export const view: View = {
   getNearestNodeFromDOMNode,
   flushMutations(mutations: Array<MutationRecord>): void {
     errorOnReadOnly();
-    const editor = getActiveEditor();
+    const editor = getActiveEditorWithScope();
     const observer = editor._observer;
     if (observer !== null) {
       flushMutations(editor, mutations, observer);
@@ -126,7 +128,7 @@ export const view: View = {
   },
   log(entry: string): void {
     errorOnReadOnly();
-    const editor = getActiveEditor();
+    const editor = getActiveEditorWithScope();
     editor._log.push(entry);
   },
 };
@@ -150,7 +152,7 @@ export function errorOnReadOnly(): void {
   }
 }
 
-export function getActiveViewModel(): ViewModel {
+export function getActiveViewModelWithScope(): ViewModel {
   if (activeViewModel === null) {
     invariant(
       false,
@@ -163,7 +165,7 @@ export function getActiveViewModel(): ViewModel {
   return activeViewModel;
 }
 
-export function getActiveEditor(): OutlineEditor {
+export function getActiveEditorWithScope(): OutlineEditor {
   if (activeEditor === null) {
     invariant(
       false,
@@ -176,7 +178,7 @@ export function getActiveEditor(): OutlineEditor {
   return activeEditor;
 }
 
-function applyTextTransforms(
+function applyTextTransformsWithScope(
   viewModel: ViewModel,
   dirtyNodes: Set<NodeKey>,
   editor: OutlineEditor,
@@ -196,7 +198,7 @@ function applyTextTransforms(
   }
 }
 
-export function parseViewModel(
+export function parseViewModelWithScope(
   stringifiedViewModel: string,
   editor: OutlineEditor,
 ): ViewModel {
@@ -234,7 +236,7 @@ export function parseViewModel(
   return viewModel;
 }
 
-export function asyncErrorOnPreparingPendingViewUpdate(
+export function asyncErrorOnPreparingPendingViewUpdateWithScope(
   fnName: 'Editor.getLatestTextContent()',
 ): void {
   if (
@@ -248,7 +250,7 @@ export function asyncErrorOnPreparingPendingViewUpdate(
   }
 }
 
-export function readViewModel<V>(
+export function readViewModelWithScope<V>(
   viewModel: ViewModel,
   callbackFn: (view: View) => V,
 ): V {
@@ -267,7 +269,7 @@ export function readViewModel<V>(
   }
 }
 
-export function commitPendingUpdates(editor: OutlineEditor): void {
+export function commitPendingUpdatesWithScope(editor: OutlineEditor): void {
   const pendingViewModel = editor._pendingViewModel;
   const rootElement = editor._rootElement;
   if (rootElement === null || pendingViewModel === null) {
@@ -307,7 +309,7 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
       editor._dirtyType = FULL_RECONCILE;
       isAttemptingToRecoverFromReconcilerError = true;
       editor._log.push('ReconcileRecover');
-      commitPendingUpdates(editor);
+      commitPendingUpdatesWithScope(editor);
       isAttemptingToRecoverFromReconcilerError = false;
     }
     return;
@@ -369,7 +371,7 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
   }
 }
 
-export function processUpdate(
+export function processUpdateWithScope(
   editor: OutlineEditor,
   updateFn: (view: View) => void,
   markAllTextNodesAsDirty: boolean,
@@ -425,7 +427,7 @@ export function processUpdate(
           'updateEditor: the pending view model is empty. Ensure the root not never becomes empty from an update.',
         );
       }
-      applyTextTransforms(pendingViewModel, dirtyNodes, editor);
+      applyTextTransformsWithScope(pendingViewModel, dirtyNodes, editor);
       garbageCollectDetachedNodes(pendingViewModel, dirtyNodes, editor);
     }
     const endingCompositionKey = editor._compositionKey;
@@ -458,7 +460,7 @@ export function processUpdate(
     editor._dirtyNodes = new Set();
     editor._dirtySubTrees = new Set();
     editor._log.push('UpdateRecover');
-    commitPendingUpdates(editor);
+    commitPendingUpdatesWithScope(editor);
     return false;
   } finally {
     activeViewModel = previousActiveViewModel;
@@ -479,10 +481,10 @@ export function processUpdate(
   }
   if (pendingViewModel._flushSync) {
     pendingViewModel._flushSync = false;
-    commitPendingUpdates(editor);
+    commitPendingUpdatesWithScope(editor);
   } else if (viewModelWasCloned) {
     scheduleMicroTask(() => {
-      commitPendingUpdates(editor);
+      commitPendingUpdatesWithScope(editor);
     });
   }
   return true;

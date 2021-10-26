@@ -12,10 +12,10 @@ import type {Selection, PointType} from './OutlineSelection';
 
 import {isBlockNode, isTextNode, isRootNode, BlockNode} from '.';
 import {
-  getActiveViewModel,
+  getActiveViewModelWithScope,
   errorOnReadOnly,
-  getActiveEditor,
-} from './OutlineProcess';
+  getActiveEditorWithScope,
+} from './OutlineScope';
 import {
   generateKey,
   getCompositionKey,
@@ -167,7 +167,7 @@ export class OutlineNode {
     return parent !== null && parent.isAttached();
   }
   isSelected(): boolean {
-    const viewModel = getActiveViewModel();
+    const viewModel = getActiveViewModelWithScope();
     const selection = viewModel._selection;
     const key = this.__key;
     return (
@@ -459,7 +459,7 @@ export class OutlineNode {
     return (this.getLatest().__flags & IS_DIRECTIONLESS) !== 0;
   }
   isDirty(): boolean {
-    const editor = getActiveEditor();
+    const editor = getActiveEditorWithScope();
     const dirtyNodes = editor._dirtyNodes;
     return dirtyNodes !== null && dirtyNodes.has(this.__key);
   }
@@ -475,8 +475,8 @@ export class OutlineNode {
   }
   getWritable<N>(): N {
     errorOnReadOnly();
-    const viewModel = getActiveViewModel();
-    const editor = getActiveEditor();
+    const viewModel = getActiveViewModelWithScope();
+    const editor = getActiveEditorWithScope();
     const nodeMap = viewModel._nodeMap;
     const key = this.__key;
     // Ensure we get the latest node from pending state

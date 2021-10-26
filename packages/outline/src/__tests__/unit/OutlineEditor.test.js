@@ -21,7 +21,7 @@ import {
 } from 'outline';
 import {createParagraphNode, ParagraphNode} from 'outline/ParagraphNode';
 import useOutlineRichText from 'outline-react/useOutlineRichText';
-import {getNodeByKey} from '../../core/OutlineNode';
+import {getNodeByKey} from '../../core/OutlineUtils';
 import {createTestBlockNode} from '../utils';
 
 describe('OutlineEditor tests', () => {

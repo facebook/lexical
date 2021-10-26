@@ -7,23 +7,15 @@
  * @flow strict
  */
 
-import type {NodeKey, ParsedNode} from './OutlineNode';
+import type {NodeKey} from './OutlineNode';
 import type {Selection} from './OutlineSelection';
 
 import {isTextNode, TextNode} from '.';
-import {
-  OutlineNode,
-  getNodeByKey,
-  updateDirectionIfNeeded,
-} from './OutlineNode';
+import {OutlineNode, updateDirectionIfNeeded} from './OutlineNode';
 import {makeSelection, getSelection, setPointValues} from './OutlineSelection';
-import {errorOnReadOnly} from './OutlineView';
+import {errorOnReadOnly} from './OutlineProcess';
 import {IS_DIRECTIONLESS, IS_LTR, IS_RTL} from './OutlineConstants';
-
-export type ParsedBlockNode = {
-  ...ParsedNode,
-  __children: Array<NodeKey>,
-};
+import {getNodeByKey} from './OutlineUtils';
 
 export class BlockNode extends OutlineNode {
   __children: Array<NodeKey>;

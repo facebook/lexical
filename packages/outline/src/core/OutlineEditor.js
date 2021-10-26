@@ -7,27 +7,25 @@
  * @flow strict
  */
 
-import type {View} from './OutlineView';
 import type {OutlineNode, NodeKey} from './OutlineNode';
 import type {Node as ReactNode} from 'react';
+import type {View} from './OutlineProcess';
 
-import {isBlockNode, isTextNode, TextNode} from '.';
 import {
-  cloneViewModel,
-  viewModelHasDirtySelection,
-  ViewModel,
+  asyncErrorOnPreparingPendingViewUpdate,
   commitPendingUpdates,
   parseViewModel,
   errorOnProcessingTextNodeTransforms,
-  triggerListeners,
-  preparePendingViewUpdate,
-  createEmptyViewModel,
-} from './OutlineView';
-import {emptyFunction, scheduleMicroTask} from './OutlineUtils';
+} from './OutlineProcess';
+import {isBlockNode, isTextNode, TextNode} from '.';
+import {ViewModel, createEmptyViewModel} from './OutlineViewModel';
+import {emptyFunction} from './OutlineUtils';
 import {LineBreakNode} from './OutlineLineBreakNode';
 import {RootNode} from './OutlineRootNode';
 import {NO_DIRTY_NODES, FULL_RECONCILE} from './OutlineConstants';
 import {flushRootMutations, initMutationObserver} from './OutlineMutations';
+import {triggerListeners} from './OutlineListeners';
+import {processUpdate} from './OutlineProcess';
 import invariant from 'shared/invariant';
 
 export type EditorThemeClassName = string;
@@ -117,22 +115,6 @@ export type ListenerType =
   | 'root'
   | 'decorator';
 
-let isPreparingPendingViewUpdate = false;
-
-export function asyncErrorOnPreparingPendingViewUpdate(
-  fnName: 'Editor.getLatestTextContent()',
-): void {
-  if (
-    isPreparingPendingViewUpdate &&
-    fnName === 'Editor.getLatestTextContent()'
-  ) {
-    invariant(
-      false,
-      'Editor.getLatestTextContent() can be asynchronous and cannot be used within Editor.update()',
-    );
-  }
-}
-
 export function resetEditor(
   editor: OutlineEditor,
   prevRootElement: null | HTMLElement,
@@ -185,70 +167,6 @@ export function createEditor<EditorContext>(editorConfig?: {
     editor._dirtyType = FULL_RECONCILE;
   }
   return editor;
-}
-
-function updateEditor(
-  editor: OutlineEditor,
-  updateFn: (view: View) => void,
-  markAllTextNodesAsDirty: boolean,
-  callbackFn?: () => void,
-): boolean {
-  if (callbackFn) {
-    editor._deferred.push(callbackFn);
-  }
-  let pendingViewModel = editor._pendingViewModel;
-  let viewModelWasCloned = false;
-
-  if (pendingViewModel === null) {
-    const currentViewModel = editor._viewModel;
-    pendingViewModel = editor._pendingViewModel =
-      cloneViewModel(currentViewModel);
-    viewModelWasCloned = true;
-  }
-
-  isPreparingPendingViewUpdate = true;
-  const error = preparePendingViewUpdate(
-    pendingViewModel,
-    updateFn,
-    viewModelWasCloned,
-    markAllTextNodesAsDirty,
-    editor,
-  );
-  isPreparingPendingViewUpdate = false;
-
-  if (error !== null) {
-    // Report errors
-    triggerListeners('error', editor, error, editor._log);
-    // Restore existing view model to the DOM
-    const currentViewModel = editor._viewModel;
-    editor._pendingViewModel = currentViewModel;
-    editor._dirtyType = FULL_RECONCILE;
-    editor._dirtyNodes = new Set();
-    editor._dirtySubTrees = new Set();
-    editor._log.push('UpdateRecover');
-    commitPendingUpdates(editor);
-    return false;
-  }
-
-  const shouldUpdate =
-    editor._dirtyType !== NO_DIRTY_NODES ||
-    viewModelHasDirtySelection(pendingViewModel, editor);
-
-  if (!shouldUpdate) {
-    if (viewModelWasCloned) {
-      editor._pendingViewModel = null;
-    }
-    return false;
-  }
-  if (pendingViewModel._flushSync) {
-    pendingViewModel._flushSync = false;
-    commitPendingUpdates(editor);
-  } else if (viewModelWasCloned) {
-    scheduleMicroTask(() => {
-      commitPendingUpdates(editor);
-    });
-  }
-  return true;
 }
 
 function getSelf(self: BaseOutlineEditor): OutlineEditor {
@@ -370,7 +288,7 @@ class BaseOutlineEditor {
   }
   addTextNodeTransform(listener: TextNodeTransform): () => void {
     this._textNodeTransforms.add(listener);
-    updateEditor(getSelf(this), emptyFunction, true);
+    processUpdate(getSelf(this), emptyFunction, true);
     return () => {
       this._textNodeTransforms.delete(listener);
     };
@@ -450,7 +368,7 @@ class BaseOutlineEditor {
   }
   update(updateFn: (view: View) => void, callbackFn?: () => void): boolean {
     errorOnProcessingTextNodeTransforms();
-    return updateEditor(getSelf(this), updateFn, false, callbackFn);
+    return processUpdate(getSelf(this), updateFn, false, callbackFn);
   }
   focus(callbackFn?: () => void): void {
     const rootElement = this._rootElement;

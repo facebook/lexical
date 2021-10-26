@@ -47,12 +47,13 @@ function initParagraph(view: View, root: RootNode): void {
 
 function initEditor(editor: OutlineEditor): void {
   editor.update((view) => {
+    view.log('initEditor')
     const root = view.getRoot();
     const firstChild = root.getFirstChild();
     if (firstChild === null) {
       initParagraph(view, root);
     }
-  }, 'initEditor');
+  });
 }
 
 function clearEditor(
@@ -61,11 +62,11 @@ function clearEditor(
 ): void {
   editor.update(
     (view) => {
+      view.log('clearEditor')
       const root = view.getRoot();
       root.clear();
       initParagraph(view, root);
     },
-    'clearEditor',
     callbackFn,
   );
 }

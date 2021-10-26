@@ -469,6 +469,7 @@ function createMentionNodeFromSearchResult(
   match: MentionMatch,
 ): void {
   editor.update((view: View) => {
+    view.log('createMentionNodeFromSearchResult')
     const selection = view.getSelection();
     if (selection == null || !selection.isCollapsed()) {
       return;
@@ -510,7 +511,7 @@ function createMentionNodeFromSearchResult(
     const mentionNode = createMentionNode(entryText);
     nodeToReplace.replace(mentionNode);
     mentionNode.select();
-  }, 'createMentionNodeFromSearchResult');
+  });
 }
 
 export default function useMentions(editor: OutlineEditor): React$Node {

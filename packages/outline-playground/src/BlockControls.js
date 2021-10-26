@@ -7,7 +7,7 @@
  * @flow strict-local
  */
 
-import type {OutlineEditor, ViewModel} from 'outline';
+import type {OutlineEditor} from 'outline';
 import {isHeadingNode} from 'outline/HeadingNode';
 import {isListNode} from 'outline/ListNode';
 import {createParagraphNode} from 'outline/ParagraphNode';
@@ -36,7 +36,7 @@ export default function BlockControls({
   const blockControlsRef = useRef(null);
 
   useEffect(() => {
-    return editor.addListener('update', (viewModel: ViewModel) => {
+    return editor.addListener('update', ({viewModel}) => {
       viewModel.read((view) => {
         const selection = view.getSelection();
         if (selection !== null) {

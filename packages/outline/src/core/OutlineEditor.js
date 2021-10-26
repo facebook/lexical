@@ -78,11 +78,11 @@ export type EditorConfig<EditorContext> = {
 export type TextNodeTransform = (node: TextNode, view: View) => void;
 
 export type ErrorListener = (error: Error, updateName: string) => void;
-export type UpdateListener = (
+export type UpdateListener = ({
   viewModel: ViewModel,
   dirty: boolean,
   dirtyNodes: Set<NodeKey>,
-) => void;
+}) => void;
 export type DecoratorListener = (decorator: {[NodeKey]: ReactNode}) => void;
 export type RootListener = (
   element: null | HTMLElement,

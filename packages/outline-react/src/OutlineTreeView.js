@@ -62,7 +62,7 @@ export default function TreeView({
   const [isPlaying, setIsPlaying] = useState(false);
   useEffect(() => {
     setContent(generateContent(editor.getViewModel()));
-    return editor.addListener('update', (viewModel: ViewModel) => {
+    return editor.addListener('update', ({viewModel}) => {
       const compositionKey = editor._compositionKey;
       const treeText = generateContent(editor.getViewModel());
       const compositionText =

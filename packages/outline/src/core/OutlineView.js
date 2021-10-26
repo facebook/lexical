@@ -459,15 +459,15 @@ export function commitPendingUpdates(
     // $FlowFixMe: this is allowed
     nodeMap.set = () => {
       throw new Error('Cannot call set() on a frozen Outline node map');
-    }
+    };
     // $FlowFixMe: this is allowed
     nodeMap.clear = () => {
       throw new Error('Cannot call clear() on a frozen Outline node map');
-    }
+    };
     // $FlowFixMe: this is allowed
     nodeMap.delete = () => {
       throw new Error('Cannot call delete() on a frozen Outline node map');
-    }
+    };
   }
   const dirtyNodes = editor._dirtyNodes;
 
@@ -488,13 +488,11 @@ export function commitPendingUpdates(
     pendingSelection === null ||
     pendingSelection.dirty ||
     !pendingSelection.is(currentSelection);
-  triggerListeners(
-    'update',
-    editor,
-    pendingViewModel,
-    isViewModelDirty,
+  triggerListeners('update', editor, {
+    viewModel: pendingViewModel,
+    dirty: isViewModelDirty,
     dirtyNodes,
-  );
+  });
   const deferred = editor._deferred;
   editor._deferred = [];
   if (deferred.length !== 0) {

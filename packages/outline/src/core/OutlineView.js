@@ -489,8 +489,8 @@ export function commitPendingUpdates(
     pendingSelection.dirty ||
     !pendingSelection.is(currentSelection);
   triggerListeners('update', editor, {
-    pendingViewModel,
-    isViewModelDirty,
+    viewModel: pendingViewModel,
+    dirty: isViewModelDirty,
     dirtyNodes,
   });
   const deferred = editor._deferred;

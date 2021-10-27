@@ -10,7 +10,7 @@
 import type {OutlineEditor} from './OutlineEditor';
 import type {NodeKey, OutlineNode} from './OutlineNode';
 
-import {getActiveViewModel} from './OutlineProcess';
+import {getActiveViewModel} from './OutlineUpdates';
 import {isRootNode, isBlockNode, isTextNode} from '.';
 import invariant from 'shared/invariant';
 

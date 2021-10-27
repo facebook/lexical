@@ -14,7 +14,7 @@ import type {
 } from './OutlineEditor';
 import type {NodeKey, NodeMap} from './OutlineNode';
 import {getCompositionKey} from './OutlineUtils';
-import {view} from './OutlineProcess';
+import {view} from './OutlineUpdates';
 import {isTextNode, isLineBreakNode} from '.';
 
 export function triggerTextMutationListeners(

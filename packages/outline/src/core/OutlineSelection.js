@@ -18,7 +18,7 @@ import {
   getActiveEditor,
   getActiveViewModel,
   isViewReadOnlyMode,
-} from './OutlineProcess';
+} from './OutlineUpdates';
 import {getNodeKeyFromDOM} from './OutlineReconciler';
 import {getIsProcesssingMutations} from './OutlineMutations';
 import {

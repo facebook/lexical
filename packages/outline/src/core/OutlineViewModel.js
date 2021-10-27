@@ -10,11 +10,11 @@
 import type {OutlineEditor} from './OutlineEditor';
 import type {NodeKey, NodeMap} from './OutlineNode';
 import type {Selection} from './OutlineSelection';
-import type {View} from './OutlineProcess';
+import type {View} from './OutlineUpdates';
 import type {ParsedNode} from './OutlineParsing';
 
 import {createRootNode} from './OutlineRootNode';
-import {readViewModel} from './OutlineProcess';
+import {readViewModel} from './OutlineUpdates';
 
 export type ParsedViewModel = {
   _selection: null | {

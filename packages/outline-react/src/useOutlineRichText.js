@@ -36,7 +36,7 @@ import {
   onInput,
   applyMutationInputWebkitWorkaround,
   onClick,
-} from 'outline/EventHelpers';
+} from 'outline/events';
 import useOutlineDragonSupport from './shared/useOutlineDragonSupport';
 import useOutlineHistory from './shared/useOutlineHistory';
 

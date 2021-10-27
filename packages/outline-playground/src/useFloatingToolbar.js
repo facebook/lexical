@@ -26,7 +26,7 @@ import {
   extractSelection,
   getSelectionStyleValueForProperty,
   patchStyleText,
-} from 'outline/SelectionHelpers';
+} from 'outline/selection';
 import {createLinkNode, isLinkNode, LinkNode} from 'outline/LinkNode';
 
 function positionToolbar(toolbar, rect) {

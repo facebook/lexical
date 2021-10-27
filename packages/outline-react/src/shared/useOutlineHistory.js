@@ -10,9 +10,9 @@
 import type {OutlineEditor, EditorState, OutlineNode, NodeKey} from 'outline';
 
 import {isTextNode} from 'outline';
-import {isRedo, isUndo} from 'outline/KeyHelpers';
+import {isRedo, isUndo} from 'outline/keys';
 import {useCallback, useEffect, useMemo} from 'react';
-import {editorStatesWithoutHistory} from 'outline/HistoryHelpers';
+import {editorStatesWithoutHistory} from 'outline/history';
 
 const MERGE = 0;
 const NO_MERGE = 1;

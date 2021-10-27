@@ -20,7 +20,7 @@ import useOutlineAutoFormatter from 'outline-react/useOutlineAutoFormatter';
 import useOutlineDecorators from 'outline-react/useOutlineDecorators';
 import useOutlineNestedList from 'outline-react/useOutlineNestedList';
 import {ImageNode, createImageNode} from './ImageNode';
-import {insertNodes} from 'outline/SelectionHelpers';
+import {insertNodes} from 'outline/selection';
 import useFloatingToolbar from './useFloatingToolbar';
 import useHashtags from './useHashtags';
 import useKeywords from './useKeywords';

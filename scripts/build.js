@@ -86,8 +86,8 @@ const externals = [
   'Outline',
   'outline-react',
   // These need to be here so we never inline HistoryHelpers
-  'outline/HistoryHelpers',
-  'Outline/HistoryHelpers',
+  'outline/history',
+  'Outline/history',
   'react-dom',
   'ReactDOMComet',
   'react',
@@ -131,45 +131,43 @@ async function build(name, inputFile, outputFile) {
           {find: 'shared', replacement: path.resolve('packages/shared/src')},
           // We inline both these helpers to improve the bundle size of the outline-react modules
           {
-            find: isWWW
-              ? 'Outline/SelectionHelpers'
-              : 'outline/SelectionHelpers',
+            find: isWWW ? 'Outline/selection' : 'outline/selection',
             replacement: path.resolve(
               'packages/outline/src/helpers/OutlineSelectionHelpers',
             ),
           },
           {
-            find: isWWW ? 'Outline/KeyHelpers' : 'outline/KeyHelpers',
+            find: isWWW ? 'Outline/keys' : 'outline/keys',
             replacement: path.resolve(
               'packages/outline/src/helpers/OutlineKeyHelpers',
             ),
           },
           {
-            find: isWWW ? 'Outline/NodeHelpers' : 'outline/NodeHelpers',
+            find: isWWW ? 'Outline/nodes' : 'outline/nodes',
             replacement: path.resolve(
               'packages/outline/src/helpers/OutlineNodeHelpers',
             ),
           },
           {
-            find: isWWW ? 'Outline/TextHelpers' : 'outline/TextHelpers',
+            find: isWWW ? 'Outline/text' : 'outline/text',
             replacement: path.resolve(
               'packages/outline/src/helpers/OutlineTextHelpers',
             ),
           },
           {
-            find: isWWW ? 'Outline/HistoryHelpers' : 'outline/HistoryHelpers',
+            find: isWWW ? 'Outline/history' : 'outline/history',
             replacement: path.resolve(
               'packages/outline/src/helpers/OutlineHistoryHelpers',
             ),
           },
           {
-            find: isWWW ? 'Outline/EventHelpers' : 'outline/EventHelpers',
+            find: isWWW ? 'Outline/events' : 'outline/events',
             replacement: path.resolve(
               'packages/outline/src/helpers/OutlineEventHelpers',
             ),
           },
           {
-            find: isWWW ? 'Outline/OffsetHelpers' : 'outline/OffsetHelpers',
+            find: isWWW ? 'Outline/offsets' : 'outline/offsets',
             replacement: path.resolve(
               'packages/outline/src/helpers/OutlineOffsetHelpers',
             ),

@@ -18,7 +18,7 @@ import {
   formatText,
   extractSelection,
   cloneContents,
-} from 'outline/SelectionHelpers';
+} from 'outline/selection';
 import {createTestBlockNode} from '../../../__tests__/utils';
 import {createHeadingNode} from '../../../extensions/OutlineHeadingNode';
 

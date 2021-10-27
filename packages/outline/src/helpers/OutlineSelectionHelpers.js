@@ -31,7 +31,7 @@ import {isHashtagNode} from 'outline/HashtagNode';
 
 import isImmutableOrInert from 'shared/isImmutableOrInert';
 import invariant from 'shared/invariant';
-import {doesContainGrapheme} from 'outline/TextHelpers';
+import {doesContainGrapheme} from 'outline/text';
 import getPossibleDecoratorNode from 'shared/getPossibleDecoratorNode';
 
 const cssToStyles: Map<string, {[string]: string}> = new Map();

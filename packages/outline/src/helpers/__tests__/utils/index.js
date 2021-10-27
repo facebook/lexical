@@ -6,7 +6,7 @@
  *
  */
 
-import * as SelectionHelpers from 'outline/SelectionHelpers';
+import * as SelectionHelpers from 'outline/selection';
 import {createTextNode, isTextNode} from 'outline';
 
 Object.defineProperty(HTMLElement.prototype, 'contentEditable', {

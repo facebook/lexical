@@ -13,17 +13,10 @@ export type {
   EditorThemeClasses,
   TextMutation,
 } from './OutlineEditor';
-export type {ViewModel, ParsedViewModel} from './OutlineViewModel';
+export type {EditorState, ParsedEditorState} from './OutlineEditorState';
 export type {View} from './OutlineUpdates';
-export type {
-  NodeKey,
-  OutlineNode,
-  NodeMap,
-} from './OutlineNode';
-export type {
-  ParsedNode,
-  ParsedNodeMap,
-} from './OutlineParsing';
+export type {NodeKey, OutlineNode, NodeMap} from './OutlineNode';
+export type {ParsedNode, ParsedNodeMap} from './OutlineParsing';
 export type {
   Selection,
   PointType as Point,

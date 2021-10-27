@@ -36,7 +36,7 @@ export default function useTypeahead(editor: OutlineEditor): void {
 
   // Monitor entered text
   useEffect(() => {
-    return editor.addListener('update', (viewModel) => {
+    return editor.addListener('update', () => {
       const text = editor.getCurrentTextContent();
       setText(text);
     });
@@ -126,9 +126,9 @@ export default function useTypeahead(editor: OutlineEditor): void {
 
   // Rerender on editor updates
   useEffect(() => {
-    return editor.addListener('update', ({viewModel, dirty}) => {
+    return editor.addListener('update', ({editorState, dirty}) => {
       if (dirty) {
-        viewModel.read((view) => {
+        editorState.read((view) => {
           const typeaheadNode = view
             .getRoot()
             .getAllTextNodes(true)

@@ -12,7 +12,7 @@ import type {Selection, PointType} from './OutlineSelection';
 
 import {isBlockNode, isTextNode, isRootNode, BlockNode} from '.';
 import {
-  getActiveViewModel,
+  getActiveEditorState,
   errorOnReadOnly,
   getActiveEditor,
 } from './OutlineUpdates';
@@ -167,8 +167,8 @@ export class OutlineNode {
     return parent !== null && parent.isAttached();
   }
   isSelected(): boolean {
-    const viewModel = getActiveViewModel();
-    const selection = viewModel._selection;
+    const editorState = getActiveEditorState();
+    const selection = editorState._selection;
     const key = this.__key;
     return (
       selection !== null &&
@@ -475,9 +475,9 @@ export class OutlineNode {
   }
   getWritable<N>(): N {
     errorOnReadOnly();
-    const viewModel = getActiveViewModel();
+    const editorState = getActiveEditorState();
     const editor = getActiveEditor();
-    const nodeMap = viewModel._nodeMap;
+    const nodeMap = editorState._nodeMap;
     const key = this.__key;
     // Ensure we get the latest node from pending state
     const latestNode = this.getLatest();

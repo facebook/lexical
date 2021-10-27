@@ -8,17 +8,17 @@
 
 import {createRootNode, createTextNode} from 'outline';
 import {createParagraphNode} from 'outline/ParagraphNode';
-import {ViewModel} from '../../core/OutlineViewModel';
+import {EditorState} from '../../core/OutlineEditorState';
 import {initializeUnitTest} from '../utils';
 
-describe('OutlineViewModel tests', () => {
+describe('OutlineEditorState tests', () => {
   initializeUnitTest((testEnv) => {
     test('constructor', async () => {
       const root = createRootNode();
       const nodeMap = {root};
-      const viewModel = new ViewModel(nodeMap);
-      expect(viewModel._nodeMap).toBe(nodeMap);
-      expect(viewModel._selection).toBe(null);
+      const editorState = new EditorState(nodeMap);
+      expect(editorState._nodeMap).toBe(nodeMap);
+      expect(editorState._selection).toBe(null);
     });
 
     test('read()', async () => {
@@ -34,7 +34,7 @@ describe('OutlineViewModel tests', () => {
       let root = null;
       let paragraph = null;
       let text = null;
-      editor.getViewModel().read((view) => {
+      editor.getEditorState().read((view) => {
         root = view.getRoot();
         paragraph = root.getFirstChild();
         text = paragraph.getFirstChild();
@@ -74,10 +74,10 @@ describe('OutlineViewModel tests', () => {
         paragraph.append(text);
         view.getRoot().append(paragraph);
       });
-      expect(editor.getViewModel().stringify()).toEqual(
+      expect(editor.getEditorState().stringify()).toEqual(
         `{\"_nodeMap\":[[\"root\",{\"__type\":\"root\",\"__flags\":0,\"__key\":\"root\",\"__parent\":null,\"__children\":[\"0\"]}],[\"0\",{\"__type\":\"paragraph\",\"__flags\":0,\"__key\":\"0\",\"__parent\":\"root\",\"__children\":[\"1\"]}],[\"1\",{\"__type\":\"text\",\"__flags\":0,\"__key\":\"1\",\"__parent\":\"0\",\"__text\":\"Hello world\",\"__format\":0,"__style":""}]],\"_selection\":{\"anchor\":{\"key\":\"1\",\"offset\":6,"type":"text"},\"focus\":{\"key\":\"1\",\"offset\":11,"type":"text"}}}`,
       );
-      expect(editor.getViewModel().stringify(2)).toEqual(
+      expect(editor.getEditorState().stringify(2)).toEqual(
         `{
   "_nodeMap": [
     [
@@ -147,7 +147,7 @@ describe('OutlineViewModel tests', () => {
         view.getRoot().getFirstChild().remove();
       });
 
-      expect(editor.getViewModel()._nodeMap).toEqual(
+      expect(editor.getEditorState()._nodeMap).toEqual(
         new Map([
           [
             'root',

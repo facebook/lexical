@@ -10,7 +10,7 @@
 import type {OutlineEditor} from './OutlineEditor';
 import type {NodeKey, OutlineNode} from './OutlineNode';
 
-import {getActiveViewModel} from './OutlineUpdates';
+import {getActiveEditorState} from './OutlineUpdates';
 import {isRootNode, isBlockNode, isTextNode} from '.';
 import invariant from 'shared/invariant';
 
@@ -72,8 +72,8 @@ export function createNodeFromParse(
   parsedNode.__key = parsedKey;
   const key = node.__key;
   if (isRootNode(node)) {
-    const viewModel = getActiveViewModel();
-    viewModel._nodeMap.set('root', node);
+    const editorState = getActiveEditorState();
+    editorState._nodeMap.set('root', node);
   }
   node.__flags = parsedNode.__flags;
   node.__parent = parentKey;

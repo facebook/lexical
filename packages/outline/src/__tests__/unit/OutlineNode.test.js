@@ -43,7 +43,7 @@ describe('OutlineNode tests', () => {
         expect(node.__key).toBe('__custom_key__');
         expect(node.__parent).toBe(null);
       });
-      await editor.getViewModel().read(() => {
+      await editor.getEditorState().read(() => {
         expect(() => new OutlineNode()).toThrow();
         expect(() => new OutlineNode('__custom_key__')).not.toThrow();
       });
@@ -67,7 +67,7 @@ describe('OutlineNode tests', () => {
 
     test('OutlineNode.isAttached()', async () => {
       const {editor} = testEnv;
-      await editor.getViewModel().read(() => {
+      await editor.getEditorState().read(() => {
         const node = new OutlineNode('__custom_key__');
         expect(node.isAttached()).toBe(false);
         expect(textNode.isAttached()).toBe(true);
@@ -78,7 +78,7 @@ describe('OutlineNode tests', () => {
 
     test('OutlineNode.isSelected()', async () => {
       const {editor} = testEnv;
-      await editor.getViewModel().read(() => {
+      await editor.getEditorState().read(() => {
         const node = new OutlineNode('__custom_key__');
         expect(node.isSelected()).toBe(false);
         expect(textNode.isSelected()).toBe(false);
@@ -87,7 +87,7 @@ describe('OutlineNode tests', () => {
       await editor.update(() => {
         textNode.select(0, 0);
       });
-      await editor.getViewModel().read(() => {
+      await editor.getEditorState().read(() => {
         expect(textNode.isSelected()).toBe(true);
       });
       expect(() => textNode.isSelected()).toThrow();
@@ -95,7 +95,7 @@ describe('OutlineNode tests', () => {
 
     test('OutlineNode.getFlags()', async () => {
       const {editor} = testEnv;
-      await editor.getViewModel().read(() => {
+      await editor.getEditorState().read(() => {
         expect(textNode.getFlags()).toEqual(textNode.getLatest().__flags);
       });
       expect(() => textNode.getFlags()).toThrow();
@@ -111,7 +111,7 @@ describe('OutlineNode tests', () => {
         const node = new OutlineNode();
         expect(node.getParent()).toBe(null);
       });
-      await editor.getViewModel().read((view) => {
+      await editor.getEditorState().read((view) => {
         const rootNode = view.getRoot();
         expect(textNode.getParent()).toBe(paragraphNode);
         expect(paragraphNode.getParent()).toBe(rootNode);
@@ -125,7 +125,7 @@ describe('OutlineNode tests', () => {
         const node = new OutlineNode();
         expect(() => node.getParentOrThrow()).toThrow();
       });
-      await editor.getViewModel().read((view) => {
+      await editor.getEditorState().read((view) => {
         const rootNode = view.getRoot();
         expect(textNode.getParent()).toBe(paragraphNode);
         expect(paragraphNode.getParent()).toBe(rootNode);
@@ -139,7 +139,7 @@ describe('OutlineNode tests', () => {
         const node = new OutlineNode();
         expect(() => node.getParentBlockOrThrow()).toThrow();
       });
-      await editor.getViewModel().read(() => {
+      await editor.getEditorState().read(() => {
         expect(textNode.getParentBlockOrThrow()).toBe(paragraphNode);
       });
       expect(() => textNode.getParentBlockOrThrow()).toThrow();
@@ -147,7 +147,7 @@ describe('OutlineNode tests', () => {
 
     test('OutlineNode.getParentBlockOrThrow()', async () => {
       const {editor} = testEnv;
-      await editor.getViewModel().read((view) => {
+      await editor.getEditorState().read((view) => {
         const rootNode = view.getRoot();
         expect(paragraphNode.getParentBlockOrThrow()).not.toBe(paragraphNode);
         expect(paragraphNode.getParentBlockOrThrow()).toBe(rootNode);
@@ -160,7 +160,7 @@ describe('OutlineNode tests', () => {
         const node = new OutlineNode();
         expect(node.getTopParentBlock()).toBe(null);
       });
-      await editor.getViewModel().read(() => {
+      await editor.getEditorState().read(() => {
         expect(textNode.getTopParentBlock()).toBe(paragraphNode);
         expect(paragraphNode.getTopParentBlock()).toBe(paragraphNode);
       });
@@ -173,7 +173,7 @@ describe('OutlineNode tests', () => {
         const node = new OutlineNode();
         expect(() => node.getTopParentBlockOrThrow()).toThrow();
       });
-      await editor.getViewModel().read(() => {
+      await editor.getEditorState().read(() => {
         expect(textNode.getTopParentBlockOrThrow()).toBe(paragraphNode);
         expect(paragraphNode.getTopParentBlockOrThrow()).toBe(paragraphNode);
       });
@@ -189,7 +189,7 @@ describe('OutlineNode tests', () => {
       expect(testEnv.outerHTML).toBe(
         '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span></p></div>',
       );
-      await editor.getViewModel().read((view) => {
+      await editor.getEditorState().read((view) => {
         const rootNode = view.getRoot();
         expect(textNode.getParents()).toEqual([paragraphNode, rootNode]);
         expect(paragraphNode.getParents()).toEqual([rootNode]);
@@ -208,7 +208,7 @@ describe('OutlineNode tests', () => {
       expect(testEnv.outerHTML).toBe(
         '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span><span data-outline-text="true">bar</span></p></div>',
       );
-      await editor.getViewModel().read(() => {
+      await editor.getEditorState().read(() => {
         expect(barTextNode.getPreviousSibling()).toEqual(textNode);
         expect(textNode.getPreviousSibling()).toEqual(null);
       });
@@ -229,7 +229,7 @@ describe('OutlineNode tests', () => {
       expect(testEnv.outerHTML).toBe(
         '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span><span data-outline-text="true">bar</span><span data-outline-text="true">baz</span></p></div>',
       );
-      await editor.getViewModel().read(() => {
+      await editor.getEditorState().read(() => {
         expect(bazTextNode.getPreviousSiblings()).toEqual([
           textNode,
           barTextNode,
@@ -251,7 +251,7 @@ describe('OutlineNode tests', () => {
       expect(testEnv.outerHTML).toBe(
         '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span><span data-outline-text="true">bar</span></p></div>',
       );
-      await editor.getViewModel().read(() => {
+      await editor.getEditorState().read(() => {
         expect(barTextNode.getNextSibling()).toEqual(null);
         expect(textNode.getNextSibling()).toEqual(barTextNode);
       });
@@ -272,7 +272,7 @@ describe('OutlineNode tests', () => {
       expect(testEnv.outerHTML).toBe(
         '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span><span data-outline-text="true">bar</span><span data-outline-text="true">baz</span></p></div>',
       );
-      await editor.getViewModel().read(() => {
+      await editor.getEditorState().read(() => {
         expect(bazTextNode.getNextSiblings()).toEqual([]);
         expect(barTextNode.getNextSiblings()).toEqual([bazTextNode]);
         expect(textNode.getNextSiblings()).toEqual([barTextNode, bazTextNode]);
@@ -307,7 +307,7 @@ describe('OutlineNode tests', () => {
       expect(testEnv.outerHTML).toBe(
         '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span><span data-outline-text="true">qux</span></p><p><span data-outline-text="true">bar</span></p><p><span data-outline-text="true">baz</span></p></div>',
       );
-      await editor.getViewModel().read((view) => {
+      await editor.getEditorState().read((view) => {
         const rootNode = view.getRoot();
         expect(textNode.getCommonAncestor(rootNode)).toBe(rootNode);
         expect(quxTextNode.getCommonAncestor(rootNode)).toBe(rootNode);
@@ -336,7 +336,7 @@ describe('OutlineNode tests', () => {
       expect(testEnv.outerHTML).toBe(
         '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span><span data-outline-text="true">bar</span><span data-outline-text="true">baz</span></p></div>',
       );
-      await editor.getViewModel().read(() => {
+      await editor.getEditorState().read(() => {
         expect(textNode.isBefore(textNode)).toBe(false);
         expect(textNode.isBefore(barTextNode)).toBe(true);
         expect(textNode.isBefore(bazTextNode)).toBe(true);
@@ -349,7 +349,7 @@ describe('OutlineNode tests', () => {
 
     test('OutlineNode.isParentOf()', async () => {
       const {editor} = testEnv;
-      await editor.getViewModel().read((view) => {
+      await editor.getEditorState().read((view) => {
         const rootNode = view.getRoot();
         expect(rootNode.isParentOf(textNode)).toBe(true);
         expect(rootNode.isParentOf(paragraphNode)).toBe(true);
@@ -383,7 +383,7 @@ describe('OutlineNode tests', () => {
       expect(testEnv.outerHTML).toBe(
         '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span><span data-outline-text="true">bar</span><span data-outline-text="true">baz</span></p><p><span data-outline-text="true">qux</span></p></div>',
       );
-      await editor.getViewModel().read(() => {
+      await editor.getEditorState().read(() => {
         expect(textNode.getNodesBetween(textNode)).toEqual([textNode]);
         expect(textNode.getNodesBetween(barTextNode)).toEqual([
           textNode,
@@ -416,7 +416,7 @@ describe('OutlineNode tests', () => {
       expect(testEnv.outerHTML).toBe(
         '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span><span data-outline-text="true">immutable</span></p></div>',
       );
-      await editor.getViewModel().read(() => {
+      await editor.getEditorState().read(() => {
         expect(textNode.isImmutable(textNode)).toBe(false);
         expect(textNode.getFlags() & IS_IMMUTABLE).toBe(0);
         expect(immutableTextNode.isImmutable()).toBe(true);
@@ -435,7 +435,7 @@ describe('OutlineNode tests', () => {
       expect(testEnv.outerHTML).toBe(
         '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span><span data-outline-text="true">segmented</span></p></div>',
       );
-      await editor.getViewModel().read(() => {
+      await editor.getEditorState().read(() => {
         expect(textNode.isSegmented(textNode)).toBe(false);
         expect(textNode.getFlags() & IS_SEGMENTED).toBe(0);
         expect(segmentedTextNode.isSegmented()).toBe(true);
@@ -451,7 +451,7 @@ describe('OutlineNode tests', () => {
         inertTextNode = new TextNode('inert').makeInert();
         paragraphNode.append(inertTextNode);
       });
-      await editor.getViewModel().read(() => {
+      await editor.getEditorState().read(() => {
         expect(textNode.isInert(textNode)).toBe(false);
         expect(textNode.getFlags() & IS_INERT).toBe(0);
         expect(inertTextNode.isInert()).toBe(true);
@@ -472,7 +472,7 @@ describe('OutlineNode tests', () => {
       expect(testEnv.outerHTML).toBe(
         '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span><span data-outline-text="true">directionless</span></p></div>',
       );
-      await editor.getViewModel().read(() => {
+      await editor.getEditorState().read(() => {
         expect(textNode.isDirectionless(textNode)).toBe(false);
         expect(textNode.getFlags() & IS_DIRECTIONLESS).toBe(0);
         expect(directionlessTextNode.isDirectionless()).toBe(true);
@@ -485,7 +485,7 @@ describe('OutlineNode tests', () => {
 
     test('OutlineNode.getLatest()', async () => {
       const {editor} = testEnv;
-      await editor.getViewModel().read(() => {
+      await editor.getEditorState().read(() => {
         expect(textNode.getLatest()).toBe(textNode);
       });
       expect(() => textNode.getLatest()).toThrow();
@@ -509,7 +509,7 @@ describe('OutlineNode tests', () => {
         const node = new OutlineNode();
         expect(node.getTextContent()).toBe('');
       });
-      await editor.getViewModel().read(() => {
+      await editor.getEditorState().read(() => {
         expect(textNode.getTextContent()).toBe('foo');
       });
       expect(() => textNode.getTextContent()).toThrow();
@@ -517,7 +517,7 @@ describe('OutlineNode tests', () => {
 
     test('OutlineNode.getTextContentSize()', async () => {
       const {editor} = testEnv;
-      await editor.getViewModel().read(() => {
+      await editor.getEditorState().read(() => {
         expect(textNode.getTextContentSize()).toBe('foo'.length);
         // TODO: more tests with inert and directionless children
       });
@@ -542,7 +542,7 @@ describe('OutlineNode tests', () => {
 
     test('OutlineNode.setFlags()', async () => {
       const {editor} = testEnv;
-      await editor.getViewModel().read(() => {
+      await editor.getEditorState().read(() => {
         expect(() => textNode.setFlags(IS_SEGMENTED)).toThrow();
       });
       await editor.update(() => {
@@ -563,7 +563,7 @@ describe('OutlineNode tests', () => {
 
     test('OutlineNode.makeImmutable()', async () => {
       const {editor} = testEnv;
-      await editor.getViewModel().read(() => {
+      await editor.getEditorState().read(() => {
         expect(() => textNode.makeImmutable()).toThrow();
       });
       await editor.update(() => {
@@ -575,7 +575,7 @@ describe('OutlineNode tests', () => {
 
     test('OutlineNode.makeSegmented()', async () => {
       const {editor} = testEnv;
-      await editor.getViewModel().read(() => {
+      await editor.getEditorState().read(() => {
         expect(() => textNode.makeSegmented()).toThrow();
       });
       await editor.update(() => {
@@ -587,7 +587,7 @@ describe('OutlineNode tests', () => {
 
     test('OutlineNode.makeInert()', async () => {
       const {editor} = testEnv;
-      await editor.getViewModel().read(() => {
+      await editor.getEditorState().read(() => {
         expect(() => textNode.makeInert()).toThrow();
       });
       await editor.update(() => {
@@ -599,7 +599,7 @@ describe('OutlineNode tests', () => {
 
     test('OutlineNode.makeDirectionless()', async () => {
       const {editor} = testEnv;
-      await editor.getViewModel().read(() => {
+      await editor.getEditorState().read(() => {
         expect(() => textNode.makeDirectionless()).toThrow();
       });
       await editor.update(() => {
@@ -611,7 +611,7 @@ describe('OutlineNode tests', () => {
 
     test('OutlineNode.remove()', async () => {
       const {editor} = testEnv;
-      await editor.getViewModel().read(() => {
+      await editor.getEditorState().read(() => {
         expect(() => textNode.remove()).toThrow();
       });
       expect(testEnv.outerHTML).toBe(
@@ -633,7 +633,7 @@ describe('OutlineNode tests', () => {
 
     test('OutlineNode.replace()', async () => {
       const {editor} = testEnv;
-      await editor.getViewModel().read(() => {
+      await editor.getEditorState().read(() => {
         expect(() => textNode.replace()).toThrow();
       });
       expect(() => textNode.remove()).toThrow();
@@ -736,7 +736,7 @@ describe('OutlineNode tests', () => {
 
     test('OutlineNode.insertAfter()', async () => {
       const {editor} = testEnv;
-      await editor.getViewModel().read(() => {
+      await editor.getEditorState().read(() => {
         expect(() => textNode.insertAfter()).toThrow();
       });
       expect(() => textNode.insertAfter()).toThrow();
@@ -877,7 +877,7 @@ describe('OutlineNode tests', () => {
 
     test('OutlineNode.insertBefore()', async () => {
       const {editor} = testEnv;
-      await editor.getViewModel().read(() => {
+      await editor.getEditorState().read(() => {
         expect(() => textNode.insertBefore()).toThrow();
       });
       expect(() => textNode.insertBefore()).toThrow();

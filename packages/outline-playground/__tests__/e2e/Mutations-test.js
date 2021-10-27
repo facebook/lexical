@@ -23,7 +23,7 @@ async function validateContent(page) {
 
 describe('Mutations', () => {
   initializeE2E((e2e) => {
-    it(`Can restore the DOM to the view model state`, async () => {
+    it(`Can restore the DOM to the editor state state`, async () => {
       const {page} = e2e;
 
       await page.focus('div.editor');

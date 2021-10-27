@@ -298,11 +298,11 @@ ${steps.map(formatStep).join(`\n`)}
   useEffect(() => {
     const removeUpdateListener = editor.addListener(
       'update',
-      ({viewModel, dirtyNodes}) => {
+      ({editorState, dirtyNodes}) => {
         if (!isRecording) {
           return;
         }
-        const currentSelection = viewModel._selection;
+        const currentSelection = editorState._selection;
         const previousSelection = previousSelectionRef.current;
         const skipNextSelectionChange = skipNextSelectionChangeRef.current;
         if (previousSelection !== currentSelection) {
@@ -329,7 +329,7 @@ ${steps.map(formatStep).join(`\n`)}
     if (!isRecording) {
       return;
     }
-    const removeUpdateListener = editor.addListener('update', (viewModel) => {
+    const removeUpdateListener = editor.addListener('update', () => {
       const rootElement = editor.getRootElement();
       if (rootElement !== null) {
         setCurrentInnerHTML(rootElement?.innerHTML);
@@ -343,7 +343,7 @@ ${steps.map(formatStep).join(`\n`)}
     (currentEditor) => {
       if (!isRecording) {
         currentEditor.update((view: View) => {
-          view.log('useStepRecorder')
+          view.log('useStepRecorder');
           const root = view.getRoot();
           root.clear();
           const text = createTextNode();

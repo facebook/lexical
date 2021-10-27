@@ -5,8 +5,8 @@ Outline is a fast, light-weight, extensible library for building rich text edito
 The core of Outline is a dependency-free text editor engine that allows for powerful, simple and complex,
 editor implementations to be built on top. Outline's engine provides three main parts:
 - editor instances that each attach to a single content editable element.
-- a set of view models that represent the current and pending states of the editor at any given time.
-- a DOM reconciler that takes a set of view models, diffs the changes, and updates the DOM according to their state.
+- a set of editor states that represent the current and pending states of the editor at any given time.
+- a DOM reconciler that takes a set of editor states, diffs the changes, and updates the DOM according to their state.
 
 By design, the core of Outline doesn't do anything else, such as listen for keyboard input or other events. Instead
 this logic can be wired up manually, or via a preshipped package. This ensures tight extensibilty and keeps code-sizes
@@ -107,13 +107,13 @@ editor.setRootElement(contentEditableElement);
 If you want to clear the editor instance from the element, you can pass `null`. Alternatively, you can switch to another element if need be,
 just pass an alternative element reference to `setRootElement`.
 
-### Understanding the View Model
+### Understanding Editor State
 
 TODO
 
 ### Updating an editor instance
 
-There are two ways to update an editor instance, either with `editor.update()` or `editor.setViewModel()`. 
+There are two ways to update an editor instance, either with `editor.update()` or `editor.setEditorState()`. 
 
 TODO
 

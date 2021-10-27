@@ -426,7 +426,7 @@ function tryToPositionRange(match: MentionMatch, range: Range): boolean {
 
 function getMentionsTextToSearch(editor: OutlineEditor): string | null {
   let text = null;
-  editor.getViewModel().read((view: View) => {
+  editor.getEditorState().read((view: View) => {
     const selection = view.getSelection();
     if (selection == null) {
       return;
@@ -469,7 +469,7 @@ function createMentionNodeFromSearchResult(
   match: MentionMatch,
 ): void {
   editor.update((view: View) => {
-    view.log('createMentionNodeFromSearchResult')
+    view.log('createMentionNodeFromSearchResult');
     const selection = view.getSelection();
     if (selection == null || !selection.isCollapsed()) {
       return;

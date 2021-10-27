@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {OutlineEditor, EditorThemeClasses, ViewModel} from 'outline';
+import type {OutlineEditor, EditorThemeClasses, EditorState} from 'outline';
 
 import {createEditor} from 'outline';
 
@@ -20,7 +20,7 @@ function defaultOnErrorHandler(e: Error): void {
 
 export default function useOutlineEditor<EditorContext>(editorConfig?: {
   onError?: (error: Error, log: Array<string>) => void,
-  initialViewModel?: ViewModel,
+  initialEditorState?: EditorState,
   theme?: EditorThemeClasses,
   context?: EditorContext,
 }): [OutlineEditor, (null | HTMLElement) => void, boolean] {

@@ -43,7 +43,7 @@ export function createExcludeFromCopyBlockNode(): ExcludeFromCopyBlockNode {
 
 function createParagraphWithNodes(editor, nodes) {
   const paragraph = createParagraphNode();
-  const nodeMap = editor._pendingViewModel._nodeMap;
+  const nodeMap = editor._pendingEditorState._nodeMap;
   for (let i = 0; i < nodes.length; i++) {
     const {text, key, mergeable} = nodes[i];
     const textNode = new TextNode(text, key);
@@ -254,7 +254,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       await Promise.resolve().then();
 
-      editor.getViewModel().read((view) => {
+      editor.getEditorState().read((view) => {
         const selection = view.getSelection();
         expect(selection.anchor).toEqual({
           type: 'block',
@@ -306,7 +306,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       await Promise.resolve().then();
 
-      editor.getViewModel().read((view) => {
+      editor.getEditorState().read((view) => {
         const selection = view.getSelection();
         expect(selection.anchor).toEqual({
           type: 'text',
@@ -360,7 +360,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       await Promise.resolve().then();
 
-      editor.getViewModel().read((view) => {
+      editor.getEditorState().read((view) => {
         const selection = view.getSelection();
         expect(selection.anchor).toEqual({
           type: 'text',
@@ -414,7 +414,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       await Promise.resolve().then();
 
-      editor.getViewModel().read((view) => {
+      editor.getEditorState().read((view) => {
         const selection = view.getSelection();
         expect(selection.anchor).toEqual({
           type: 'text',
@@ -832,7 +832,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       await Promise.resolve().then();
 
-      editor.getViewModel().read((view) => {
+      editor.getEditorState().read((view) => {
         const selection = view.getSelection();
         expect(selection.anchor).toEqual({
           type: 'text',
@@ -881,7 +881,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       await Promise.resolve().then();
 
-      editor.getViewModel().read((view) => {
+      editor.getEditorState().read((view) => {
         const selection = view.getSelection();
         expect(selection.anchor).toEqual({
           type: 'text',

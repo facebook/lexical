@@ -14,9 +14,9 @@ import type {View} from './OutlineUpdates';
 import type {ParsedNode} from './OutlineParsing';
 
 import {createRootNode} from './OutlineRootNode';
-import {readViewModel} from './OutlineUpdates';
+import {readEditorState} from './OutlineUpdates';
 
-export type ParsedViewModel = {
+export type ParsedEditorState = {
   _selection: null | {
     anchor: {
       key: string,
@@ -32,12 +32,12 @@ export type ParsedViewModel = {
   _nodeMap: Array<[NodeKey, ParsedNode]>,
 };
 
-export function viewModelHasDirtySelection(
-  viewModel: ViewModel,
+export function editorStateHasDirtySelection(
+  editorState: EditorState,
   editor: OutlineEditor,
 ): boolean {
-  const currentSelection = editor.getViewModel()._selection;
-  const pendingSelection = viewModel._selection;
+  const currentSelection = editor.getEditorState()._selection;
+  const pendingSelection = editorState._selection;
   // Check if we need to update because of changes in selection
   if (pendingSelection !== null) {
     if (pendingSelection.dirty || !pendingSelection.is(currentSelection)) {
@@ -49,16 +49,16 @@ export function viewModelHasDirtySelection(
   return false;
 }
 
-export function cloneViewModel(current: ViewModel): ViewModel {
-  const draft = new ViewModel(new Map(current._nodeMap));
+export function cloneEditorState(current: EditorState): EditorState {
+  const draft = new EditorState(new Map(current._nodeMap));
   return draft;
 }
 
-export function createEmptyViewModel(): ViewModel {
-  return new ViewModel(new Map([['root', createRootNode()]]));
+export function createEmptyEditorState(): EditorState {
+  return new EditorState(new Map([['root', createRootNode()]]));
 }
 
-export class ViewModel {
+export class EditorState {
   _nodeMap: NodeMap;
   _selection: null | Selection;
   _flushSync: boolean;
@@ -72,7 +72,7 @@ export class ViewModel {
     return this._nodeMap.size === 1 && this._selection === null;
   }
   read<V>(callbackFn: (view: View) => V): V {
-    return readViewModel(this, callbackFn);
+    return readEditorState(this, callbackFn);
   }
   stringify(space?: string | number): string {
     const selection = this._selection;

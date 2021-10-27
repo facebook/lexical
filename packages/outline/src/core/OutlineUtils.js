@@ -22,7 +22,7 @@ import {isTextNode, isLineBreakNode, isDecoratorNode} from '.';
 import {
   errorOnReadOnly,
   getActiveEditor,
-  getActiveViewModel,
+  getActiveEditorState,
 } from './OutlineUpdates';
 
 export const emptyFunction = () => {};
@@ -133,9 +133,9 @@ export function isLeafNode(node: ?OutlineNode): boolean %checks {
 export function generateKey(node: OutlineNode): NodeKey {
   errorOnReadOnly();
   const editor = getActiveEditor();
-  const viewModel = getActiveViewModel();
+  const editorState = getActiveEditorState();
   const key = generateRandomKey();
-  viewModel._nodeMap.set(key, node);
+  editorState._nodeMap.set(key, node);
   editor._dirtyNodes.add(key);
   editor._dirtyType = HAS_DIRTY_NODES;
   return key;
@@ -165,9 +165,9 @@ export function markParentsAsDirty(
 export function internallyMarkNodeAsDirty(node: OutlineNode): void {
   const latest = node.getLatest();
   const parent = latest.__parent;
-  const viewModel = getActiveViewModel();
+  const editorState = getActiveEditorState();
   const editor = getActiveEditor();
-  const nodeMap = viewModel._nodeMap;
+  const nodeMap = editorState._nodeMap;
   if (parent !== null) {
     const dirtySubTrees = editor._dirtySubTrees;
     markParentsAsDirty(parent, nodeMap, dirtySubTrees);
@@ -201,8 +201,8 @@ export function getCompositionKey(): null | NodeKey {
 }
 
 export function getNodeByKey<N: OutlineNode>(key: NodeKey): N | null {
-  const viewModel = getActiveViewModel();
-  const node = viewModel._nodeMap.get(key);
+  const editorState = getActiveEditorState();
+  const node = editorState._nodeMap.get(key);
   if (node === undefined) {
     return null;
   }

@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {ParsedViewModel} from './OutlineViewModel';
+import type {ParsedEditorState} from './OutlineEditorState';
 import type {RootNode} from './OutlineRootNode';
 import type {OutlineEditor} from './OutlineEditor';
 import type {OutlineNode, NodeKey} from './OutlineNode';
@@ -18,7 +18,7 @@ import type {
   NodeParserState,
 } from './OutlineParsing';
 
-import {updateViewModel} from './OutlineReconciler';
+import {updateEditorState} from './OutlineReconciler';
 import {
   createSelection,
   getSelection,
@@ -30,10 +30,10 @@ import {FULL_RECONCILE, NO_DIRTY_NODES} from './OutlineConstants';
 import {resetEditor} from './OutlineEditor';
 import {initMutationObserver, flushMutations} from './OutlineMutations';
 import {
-  ViewModel,
-  viewModelHasDirtySelection,
-  cloneViewModel,
-} from './OutlineViewModel';
+  EditorState,
+  editorStateHasDirtySelection,
+  cloneEditorState,
+} from './OutlineEditorState';
 import {
   scheduleMicroTask,
   getNodeByKey,
@@ -53,7 +53,7 @@ import {createNodeFromParse} from './OutlineParsing';
 import {applySelectionTransforms} from './OutlineSelection';
 import invariant from 'shared/invariant';
 
-let activeViewModel = null;
+let activeEditorState = null;
 let activeEditor = null;
 let isReadOnlyMode = false;
 let isProcessingTextNodeTransforms = false;
@@ -82,7 +82,7 @@ export type View = {
 export const view: View = {
   getRoot() {
     // $FlowFixMe: root is always in our Map
-    return ((getActiveViewModel()._nodeMap.get('root'): any): RootNode);
+    return ((getActiveEditorState()._nodeMap.get('root'): any): RootNode);
   },
   getNodeByKey,
   getSelection,
@@ -91,12 +91,12 @@ export const view: View = {
     return createSelectionAtEnd(root);
   },
   clearSelection(): void {
-    const viewModel = getActiveViewModel();
-    viewModel._selection = null;
+    const editorState = getActiveEditorState();
+    editorState._selection = null;
   },
   setSelection(selection: Selection): void {
-    const viewModel = getActiveViewModel();
-    viewModel._selection = selection;
+    const editorState = getActiveEditorState();
+    editorState._selection = selection;
   },
   createNodeFromParse(
     parsedNode: ParsedNode,
@@ -131,7 +131,7 @@ export const view: View = {
   },
 };
 
-export function isViewReadOnlyMode(): boolean {
+export function isCurrentlyReadOnlyMode(): boolean {
   return isReadOnlyMode;
 }
 
@@ -164,17 +164,17 @@ export function errorOnPreparingPendingViewUpdate(
   }
 }
 
-export function getActiveViewModel(): ViewModel {
-  if (activeViewModel === null) {
+export function getActiveEditorState(): EditorState {
+  if (activeEditorState === null) {
     invariant(
       false,
-      'Unable to find an active view model. ' +
-        'View methods or node methods can only be used ' +
+      'Unable to find an active editor state. ' +
+        'State helpers or node methods can only be used ' +
         'synchronously during the callback of ' +
-        'editor.update() or viewModel.read().',
+        'editor.update() or editorState.read().',
     );
   }
-  return activeViewModel;
+  return activeEditorState;
 }
 
 export function getActiveEditor(): OutlineEditor {
@@ -191,13 +191,13 @@ export function getActiveEditor(): OutlineEditor {
 }
 
 function applyTextTransforms(
-  viewModel: ViewModel,
+  editorState: EditorState,
   dirtyNodes: Set<NodeKey>,
   editor: OutlineEditor,
 ): void {
   const textNodeTransforms = editor._textNodeTransforms;
   if (textNodeTransforms.size > 0) {
-    const nodeMap = viewModel._nodeMap;
+    const nodeMap = editorState._nodeMap;
     const dirtyNodesArr = Array.from(dirtyNodes);
     const transforms = Array.from(textNodeTransforms);
 
@@ -210,24 +210,26 @@ function applyTextTransforms(
   }
 }
 
-export function parseViewModel(
-  stringifiedViewModel: string,
+export function parseEditorState(
+  stringifiedEditorState: string,
   editor: OutlineEditor,
-): ViewModel {
-  const parsedViewModel: ParsedViewModel = JSON.parse(stringifiedViewModel);
+): EditorState {
+  const parsedEditorState: ParsedEditorState = JSON.parse(
+    stringifiedEditorState,
+  );
   const nodeMap = new Map();
-  const viewModel = new ViewModel(nodeMap);
+  const editorState = new EditorState(nodeMap);
   const state: NodeParserState = {
-    originalSelection: parsedViewModel._selection,
+    originalSelection: parsedEditorState._selection,
   };
-  const previousActiveViewModel = viewModel;
+  const previousActiveEditorState = editorState;
   const previousReadOnlyMode = isReadOnlyMode;
   const previousActiveEditor = activeEditor;
-  activeViewModel = viewModel;
+  activeEditorState = editorState;
   isReadOnlyMode = false;
   activeEditor = editor;
   try {
-    const parsedNodeMap = new Map(parsedViewModel._nodeMap);
+    const parsedNodeMap = new Map(parsedEditorState._nodeMap);
     // $FlowFixMe: root always exists in Map
     const parsedRoot = ((parsedNodeMap.get('root'): any): ParsedNode);
     createNodeFromParse(
@@ -238,63 +240,63 @@ export function parseViewModel(
       state,
     );
   } finally {
-    activeViewModel = previousActiveViewModel;
+    activeEditorState = previousActiveEditorState;
     isReadOnlyMode = previousReadOnlyMode;
     activeEditor = previousActiveEditor;
   }
-  viewModel._selection = createSelectionFromParse(
+  editorState._selection = createSelectionFromParse(
     state.remappedSelection || state.originalSelection,
   );
-  return viewModel;
+  return editorState;
 }
 
 // This technically isn't an update but given we need
 // exposure to the module's active bindings, we have this
 // function here
-export function readViewModel<V>(
-  viewModel: ViewModel,
+export function readEditorState<V>(
+  editorState: EditorState,
   callbackFn: (view: View) => V,
 ): V {
-  const previousActiveViewModel = activeViewModel;
+  const previousActiveEditorState = activeEditorState;
   const previousReadOnlyMode = isReadOnlyMode;
   const previousActiveEditor = activeEditor;
-  activeViewModel = viewModel;
+  activeEditorState = editorState;
   isReadOnlyMode = true;
   activeEditor = null;
   try {
     return callbackFn(view);
   } finally {
-    activeViewModel = previousActiveViewModel;
+    activeEditorState = previousActiveEditorState;
     isReadOnlyMode = previousReadOnlyMode;
     activeEditor = previousActiveEditor;
   }
 }
 
 export function commitPendingUpdates(editor: OutlineEditor): void {
-  const pendingViewModel = editor._pendingViewModel;
+  const pendingEditorState = editor._pendingEditorState;
   const rootElement = editor._rootElement;
-  if (rootElement === null || pendingViewModel === null) {
+  if (rootElement === null || pendingEditorState === null) {
     return;
   }
-  const currentViewModel = editor._viewModel;
-  const currentSelection = currentViewModel._selection;
-  const pendingSelection = pendingViewModel._selection;
+  const currentEditorState = editor._editorState;
+  const currentSelection = currentEditorState._selection;
+  const pendingSelection = pendingEditorState._selection;
   const needsUpdate = editor._dirtyType !== NO_DIRTY_NODES;
-  editor._pendingViewModel = null;
-  editor._viewModel = pendingViewModel;
+  editor._pendingEditorState = null;
+  editor._editorState = pendingEditorState;
 
-  const previousActiveViewModel = activeViewModel;
+  const previousActiveEditorState = activeEditorState;
   const previousReadOnlyMode = isReadOnlyMode;
   const previousActiveEditor = activeEditor;
   activeEditor = editor;
-  activeViewModel = pendingViewModel;
+  activeEditorState = pendingEditorState;
   isReadOnlyMode = false;
 
   try {
-    updateViewModel(
+    updateEditorState(
       rootElement,
-      currentViewModel,
-      pendingViewModel,
+      currentEditorState,
+      pendingEditorState,
       currentSelection,
       pendingSelection,
       needsUpdate,
@@ -303,9 +305,9 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
   } catch (error) {
     // Report errors
     triggerListeners('error', editor, error, error._log);
-    // Reset editor and restore incoming view model to the DOM
+    // Reset editor and restore incoming editor state to the DOM
     if (!isAttemptingToRecoverFromReconcilerError) {
-      resetEditor(editor, null, rootElement, pendingViewModel);
+      resetEditor(editor, null, rootElement, pendingEditorState);
       initMutationObserver(editor);
       editor._dirtyType = FULL_RECONCILE;
       isAttemptingToRecoverFromReconcilerError = true;
@@ -315,14 +317,14 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
     }
     return;
   } finally {
-    activeViewModel = previousActiveViewModel;
+    activeEditorState = previousActiveEditorState;
     isReadOnlyMode = previousReadOnlyMode;
     activeEditor = previousActiveEditor;
   }
   if (__DEV__) {
     // Given we can't Object.freeze the nodeMap as it's a Map,
     // we instead replace its set, clear and delete methods.
-    const nodeMap = pendingViewModel._nodeMap;
+    const nodeMap = pendingEditorState._nodeMap;
     // $FlowFixMe: this is allowed
     nodeMap.set = () => {
       throw new Error('Cannot call set() on a frozen Outline node map');
@@ -345,21 +347,21 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
     editor._dirtyNodes = new Set();
     editor._dirtySubTrees = new Set();
   }
-  garbageCollectDetachedDecorators(editor, pendingViewModel);
+  garbageCollectDetachedDecorators(editor, pendingEditorState);
   const pendingDecorators = editor._pendingDecorators;
   if (pendingDecorators !== null) {
     editor._decorators = pendingDecorators;
     editor._pendingDecorators = null;
     triggerListeners('decorator', editor, pendingDecorators);
   }
-  const isViewModelDirty =
+  const isEditorStateDirty =
     needsUpdate ||
     pendingSelection === null ||
     pendingSelection.dirty ||
     !pendingSelection.is(currentSelection);
   triggerListeners('update', editor, {
-    viewModel: pendingViewModel,
-    dirty: isViewModelDirty,
+    editorState: pendingEditorState,
+    dirty: isEditorStateDirty,
     dirtyNodes,
     log,
   });
@@ -381,34 +383,34 @@ export function beginUpdate(
   if (callbackFn) {
     editor._deferred.push(callbackFn);
   }
-  let pendingViewModel = editor._pendingViewModel;
-  let viewModelWasCloned = false;
+  let pendingEditorState = editor._pendingEditorState;
+  let editorStateWasCloned = false;
 
-  if (pendingViewModel === null) {
-    const currentViewModel = editor._viewModel;
-    pendingViewModel = editor._pendingViewModel =
-      cloneViewModel(currentViewModel);
-    viewModelWasCloned = true;
+  if (pendingEditorState === null) {
+    const currentEditorState = editor._editorState;
+    pendingEditorState = editor._pendingEditorState =
+      cloneEditorState(currentEditorState);
+    editorStateWasCloned = true;
   }
 
-  const previousActiveViewModel = activeViewModel;
+  const previousActiveEditorState = activeEditorState;
   const previousReadOnlyMode = isReadOnlyMode;
   const previousActiveEditor = activeEditor;
   isPreparingPendingViewUpdate = true;
-  activeViewModel = pendingViewModel;
+  activeEditorState = pendingEditorState;
   isReadOnlyMode = false;
   activeEditor = editor;
 
   try {
-    if (viewModelWasCloned) {
-      pendingViewModel._selection = createSelection(pendingViewModel, editor);
+    if (editorStateWasCloned) {
+      pendingEditorState._selection = createSelection(editor);
     }
     const startingCompositionKey = editor._compositionKey;
     updateFn(view);
     if (markAllTextNodesAsDirty) {
-      const currentViewModel = editor._viewModel;
-      const nodeMap = currentViewModel._nodeMap;
-      const pendingNodeMap = pendingViewModel._nodeMap;
+      const currentEditorState = editor._editorState;
+      const nodeMap = currentEditorState._nodeMap;
+      const pendingNodeMap = pendingEditorState._nodeMap;
       const nodeMapEntries = Array.from(nodeMap);
       // For...of would be faster here, but this will get
       // compiled away to a slow-path with Babel.
@@ -419,25 +421,25 @@ export function beginUpdate(
         }
       }
     }
-    applySelectionTransforms(pendingViewModel, editor);
+    applySelectionTransforms(pendingEditorState, editor);
     if (editor._dirtyType !== NO_DIRTY_NODES) {
       const dirtyNodes = editor._dirtyNodes;
-      if (pendingViewModel.isEmpty()) {
+      if (pendingEditorState.isEmpty()) {
         invariant(
           false,
-          'updateEditor: the pending view model is empty. Ensure the root not never becomes empty from an update.',
+          'updateEditor: the pending editor state is empty. Ensure the root not never becomes empty from an update.',
         );
       }
-      applyTextTransforms(pendingViewModel, dirtyNodes, editor);
-      garbageCollectDetachedNodes(pendingViewModel, dirtyNodes, editor);
+      applyTextTransforms(pendingEditorState, dirtyNodes, editor);
+      garbageCollectDetachedNodes(pendingEditorState, dirtyNodes, editor);
     }
     const endingCompositionKey = editor._compositionKey;
     if (startingCompositionKey !== endingCompositionKey) {
-      pendingViewModel._flushSync = true;
+      pendingEditorState._flushSync = true;
     }
-    const pendingSelection = pendingViewModel._selection;
+    const pendingSelection = pendingEditorState._selection;
     if (pendingSelection !== null) {
-      const pendingNodeMap = pendingViewModel._nodeMap;
+      const pendingNodeMap = pendingEditorState._nodeMap;
       const anchorKey = pendingSelection.anchor.key;
       const focusKey = pendingSelection.focus.key;
       if (
@@ -454,9 +456,9 @@ export function beginUpdate(
   } catch (error) {
     // Report errors
     triggerListeners('error', editor, error, editor._log);
-    // Restore existing view model to the DOM
-    const currentViewModel = editor._viewModel;
-    editor._pendingViewModel = currentViewModel;
+    // Restore existing editor state to the DOM
+    const currentEditorState = editor._editorState;
+    editor._pendingEditorState = currentEditorState;
     editor._dirtyType = FULL_RECONCILE;
     editor._dirtyNodes = new Set();
     editor._dirtySubTrees = new Set();
@@ -464,7 +466,7 @@ export function beginUpdate(
     commitPendingUpdates(editor);
     return false;
   } finally {
-    activeViewModel = previousActiveViewModel;
+    activeEditorState = previousActiveEditorState;
     isReadOnlyMode = previousReadOnlyMode;
     activeEditor = previousActiveEditor;
     isPreparingPendingViewUpdate = false;
@@ -472,18 +474,18 @@ export function beginUpdate(
 
   const shouldUpdate =
     editor._dirtyType !== NO_DIRTY_NODES ||
-    viewModelHasDirtySelection(pendingViewModel, editor);
+    editorStateHasDirtySelection(pendingEditorState, editor);
 
   if (!shouldUpdate) {
-    if (viewModelWasCloned) {
-      editor._pendingViewModel = null;
+    if (editorStateWasCloned) {
+      editor._pendingEditorState = null;
     }
     return false;
   }
-  if (pendingViewModel._flushSync) {
-    pendingViewModel._flushSync = false;
+  if (pendingEditorState._flushSync) {
+    pendingEditorState._flushSync = false;
     commitPendingUpdates(editor);
-  } else if (viewModelWasCloned) {
+  } else if (editorStateWasCloned) {
     scheduleMicroTask(() => {
       commitPendingUpdates(editor);
     });

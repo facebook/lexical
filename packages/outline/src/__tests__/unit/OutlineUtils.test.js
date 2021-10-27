@@ -187,7 +187,7 @@ describe('OutlineUtils tests', () => {
         paragraphNode.append(textNode);
         rootNode.append(paragraphNode);
       });
-      await editor.getViewModel().read(() => {
+      await editor.getEditorState().read(() => {
         expect(getNodeByKey('0')).toBe(paragraphNode);
         expect(getNodeByKey('1')).toBe(textNode);
         expect(getNodeByKey('2')).toBe(null);

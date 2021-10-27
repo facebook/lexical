@@ -76,7 +76,7 @@ describe('OutlineEditor tests', () => {
     return Promise.resolve().then();
   }
 
-  it('Should be create and editor with an initial view model', async () => {
+  it('Should be create and editor with an initial editor state', async () => {
     const rootElement = document.createElement('div');
     container.appendChild(rootElement);
 
@@ -99,23 +99,23 @@ describe('OutlineEditor tests', () => {
       '<div data-outline-editor="true"><p><span data-outline-text="true">This works!</span></p></div>',
     );
 
-    const initialViewModel = initialEditor.getViewModel();
+    const initialEditorState = initialEditor.getEditorState();
 
     initialEditor.setRootElement(null);
     expect(container.innerHTML).toBe('<div data-outline-editor="true"></div>');
 
     editor = createEditor({
-      initialViewModel: initialViewModel,
+      initialEditorState: initialEditorState,
     });
     editor.setRootElement(rootElement);
 
-    expect(editor.getViewModel()).toEqual(initialViewModel);
+    expect(editor.getEditorState()).toEqual(initialEditorState);
     expect(container.innerHTML).toBe(
       '<div data-outline-editor="true"><p><span data-outline-text="true">This works!</span></p></div>',
     );
   });
 
-  it('Should be able to update a view model without an root element', () => {
+  it('Should be able to update an editor state without an root element', () => {
     const ref = React.createRef();
 
     function TestBase({element}) {
@@ -249,7 +249,7 @@ describe('OutlineEditor tests', () => {
     expect(listener).toHaveBeenCalledTimes(0);
 
     // This is an intentional bug, to trigger the recovery
-    editor._viewModel._nodeMap = null;
+    editor._editorState._nodeMap = null;
 
     // Wait for update to complete
     await Promise.resolve().then();
@@ -452,7 +452,7 @@ describe('OutlineEditor tests', () => {
       // Wait for update to complete
       await Promise.resolve().then();
 
-      editor.getViewModel().read((view) => {
+      editor.getEditorState().read((view) => {
         const root = view.getRoot();
         const paragraph = root.getFirstChild();
 
@@ -479,7 +479,7 @@ describe('OutlineEditor tests', () => {
       init();
     });
 
-    describe('parseViewModel()', () => {
+    describe('parseEditorState()', () => {
       let originalText;
       let parsedParagraph;
       let parsedRoot;
@@ -497,9 +497,9 @@ describe('OutlineEditor tests', () => {
           view.getRoot().append(paragraph);
         });
         editor.registerNodeType('paragraph', ParagraphNode);
-        const stringifiedViewModel = editor.getViewModel().stringify();
-        const viewModel = editor.parseViewModel(stringifiedViewModel);
-        viewModel.read((view) => {
+        const stringifiedEditorState = editor.getEditorState().stringify();
+        const editorState = editor.parseEditorState(stringifiedEditorState);
+        editorState.read((view) => {
           parsedRoot = view.getRoot();
           parsedParagraph = parsedRoot.getFirstChild();
           paragraphKey = parsedParagraph.getKey();
@@ -509,7 +509,7 @@ describe('OutlineEditor tests', () => {
         });
       });
 
-      it('Parses the nodes of a stringified view model', async () => {
+      it('Parses the nodes of a stringified editor state', async () => {
         expect(parsedRoot).toEqual({
           __children: [paragraphKey],
           __flags: 0,
@@ -535,12 +535,12 @@ describe('OutlineEditor tests', () => {
         });
       });
 
-      it('Parses the selection offsets of a stringified view model', async () => {
+      it('Parses the selection offsets of a stringified editor state', async () => {
         expect(parsedSelection.anchor.offset).toEqual(6);
         expect(parsedSelection.focus.offset).toEqual(11);
       });
 
-      it('Remaps the selection keys of a stringified view model', async () => {
+      it('Remaps the selection keys of a stringified editor state', async () => {
         expect(parsedSelection.anchor.key).not.toEqual(originalText.__key);
         expect(parsedSelection.focus.key).not.toEqual(originalText.__key);
         expect(parsedSelection.anchor.key).toEqual(parsedText.__key);
@@ -687,8 +687,8 @@ describe('OutlineEditor tests', () => {
               : `<br>`
           }</p></div>`,
         );
-        // Expect viewModel to have the correct latest nodes
-        editor.getViewModel().read((view: View) => {
+        // Expect editorState to have the correct latest nodes
+        editor.getEditorState().read((view: View) => {
           for (let i = 0; i < next.length; i++) {
             const nextText = next[i];
             const nextKey = textToKey.get(nextText);
@@ -750,10 +750,10 @@ describe('OutlineEditor tests', () => {
         textNode2Key,
       ];
       for (let i = 0; i < keys.length; i++) {
-        expect(editor._viewModel._nodeMap.has(keys[i])).toBe(true);
+        expect(editor._editorState._nodeMap.has(keys[i])).toBe(true);
         expect(editor._keyToDOMMap.has(keys[i])).toBe(true);
       }
-      expect(editor._viewModel._nodeMap.size).toBe(keys.length + 1); // + root
+      expect(editor._editorState._nodeMap.size).toBe(keys.length + 1); // + root
       expect(editor._keyToDOMMap.size).toBe(keys.length + 1); // + root
       expect(container.innerHTML).toBe(
         '<div contenteditable="true" data-outline-editor="true"><p><div><span data-outline-text="true">A</span><div><span data-outline-text="true">B</span></div></div></p></div>',

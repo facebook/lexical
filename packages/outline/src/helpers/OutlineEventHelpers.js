@@ -472,7 +472,7 @@ export function onCompositionEnd(
 }
 
 function getLastSelection(editor: OutlineEditor): null | Selection {
-  return editor.getViewModel().read((lastView) => lastView.getSelection());
+  return editor.getEditorState().read((lastView) => lastView.getSelection());
 }
 
 // This is a work-around is mainly Chrome specific bug where if you select
@@ -1064,7 +1064,7 @@ export function onTextMutation(
   mutation: TextMutation,
 ): void {
   // We attempt to merge any text mutations that have occured outside of Outline
-  // back into Outline's view model.
+  // back into Outline's editor state.
   const node = mutation.node;
   const anchorOffset = mutation.anchorOffset;
   const focusOffset = mutation.focusOffset;

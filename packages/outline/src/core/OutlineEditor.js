@@ -14,11 +14,11 @@ import type {View} from './OutlineUpdates';
 import {
   errorOnPreparingPendingViewUpdate,
   commitPendingUpdates,
-  parseViewModel,
+  parseEditorState,
   errorOnProcessingTextNodeTransforms,
 } from './OutlineUpdates';
 import {isBlockNode, isTextNode, TextNode} from '.';
-import {ViewModel, createEmptyViewModel} from './OutlineViewModel';
+import {EditorState, createEmptyEditorState} from './OutlineEditorState';
 import {emptyFunction} from './OutlineUtils';
 import {LineBreakNode} from './OutlineLineBreakNode';
 import {RootNode} from './OutlineRootNode';
@@ -77,7 +77,7 @@ export type TextNodeTransform = (node: TextNode, view: View) => void;
 
 export type ErrorListener = (error: Error, log: Array<string>) => void;
 export type UpdateListener = ({
-  viewModel: ViewModel,
+  editorState: EditorState,
   dirty: boolean,
   dirtyNodes: Set<NodeKey>,
   log: Array<string>,
@@ -119,12 +119,12 @@ export function resetEditor(
   editor: OutlineEditor,
   prevRootElement: null | HTMLElement,
   nextRootElement: null | HTMLElement,
-  pendingViewModel: ViewModel,
+  pendingEditorState: EditorState,
 ): void {
   const keyNodeMap = editor._keyToDOMMap;
   keyNodeMap.clear();
-  editor._viewModel = createEmptyViewModel();
-  editor._pendingViewModel = pendingViewModel;
+  editor._editorState = createEmptyEditorState();
+  editor._pendingEditorState = pendingEditorState;
   editor._compositionKey = null;
   editor._dirtyType = NO_DIRTY_NODES;
   editor._dirtyNodes = new Set();
@@ -147,23 +147,23 @@ export function resetEditor(
 }
 
 export function createEditor<EditorContext>(editorConfig?: {
-  initialViewModel?: ViewModel,
+  initialEditorState?: EditorState,
   theme?: EditorThemeClasses,
   context?: EditorContext,
 }): OutlineEditor {
   const config = editorConfig || {};
   const theme = config.theme || {};
   const context = config.context || {};
-  const viewModel = createEmptyViewModel();
-  const initialViewModel = config.initialViewModel;
+  const editorState = createEmptyEditorState();
+  const initialEditorState = config.initialEditorState;
   // $FlowFixMe: use our declared type instead
-  const editor: editor = new BaseOutlineEditor(viewModel, {
+  const editor: editor = new BaseOutlineEditor(editorState, {
     // $FlowFixMe: we use our internal type to simpify the generics
     context,
     theme,
   });
-  if (initialViewModel !== undefined) {
-    editor._pendingViewModel = initialViewModel;
+  if (initialEditorState !== undefined) {
+    editor._pendingEditorState = initialEditorState;
     editor._dirtyType = FULL_RECONCILE;
   }
   return editor;
@@ -176,8 +176,8 @@ function getSelf(self: BaseOutlineEditor): OutlineEditor {
 
 class BaseOutlineEditor {
   _rootElement: null | HTMLElement;
-  _viewModel: ViewModel;
-  _pendingViewModel: null | ViewModel;
+  _editorState: EditorState;
+  _pendingEditorState: null | EditorState;
   _compositionKey: null | NodeKey;
   _deferred: Array<() => void>;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
@@ -194,13 +194,13 @@ class BaseOutlineEditor {
   _observer: null | MutationObserver;
   _log: Array<string>;
 
-  constructor(viewModel: ViewModel, config: EditorConfig<{...}>) {
+  constructor(editorState: EditorState, config: EditorConfig<{...}>) {
     // The root element associated with this editor
     this._rootElement = null;
-    // The current view model
-    this._viewModel = viewModel;
+    // The current editor state
+    this._editorState = editorState;
     // Handling of drafts and updates
-    this._pendingViewModel = null;
+    this._pendingEditorState = null;
     // Used to help co-ordinate selection and events
     this._compositionKey = null;
     this._deferred = [];
@@ -304,7 +304,7 @@ class BaseOutlineEditor {
   }
   getLatestTextContent(callback: (text: string) => void): void {
     errorOnPreparingPendingViewUpdate('Editor.getLatestTextContent()');
-    if (this._pendingViewModel === null) {
+    if (this._pendingEditorState === null) {
       callback(this._textContent);
       return;
     }
@@ -313,14 +313,14 @@ class BaseOutlineEditor {
   setRootElement(nextRootElement: null | HTMLElement): void {
     const prevRootElement = this._rootElement;
     if (nextRootElement !== prevRootElement) {
-      const pendingViewModel = this._pendingViewModel || this._viewModel;
+      const pendingEditorState = this._pendingEditorState || this._editorState;
       this._rootElement = nextRootElement;
 
       resetEditor(
         getSelf(this),
         prevRootElement,
         nextRootElement,
-        pendingViewModel,
+        pendingEditorState,
       );
       if (prevRootElement !== null) {
         // $FlowFixMe: internal field
@@ -340,14 +340,14 @@ class BaseOutlineEditor {
   getElementByKey(key: NodeKey): HTMLElement | null {
     return this._keyToDOMMap.get(key) || null;
   }
-  getViewModel(): ViewModel {
-    return this._viewModel;
+  getEditorState(): EditorState {
+    return this._editorState;
   }
-  setViewModel(viewModel: ViewModel): void {
-    if (viewModel.isEmpty()) {
+  setEditorState(editorState: EditorState): void {
+    if (editorState.isEmpty()) {
       invariant(
         false,
-        "setViewModel: the view model is empty. Ensure the view model's root node never becomes empty.",
+        "setEditorState: the editor state is empty. Ensure the editor state's root node never becomes empty.",
       );
     }
     const observer = this._observer;
@@ -355,16 +355,16 @@ class BaseOutlineEditor {
       const mutations = observer.takeRecords();
       flushRootMutations(getSelf(this), mutations, observer);
     }
-    if (this._pendingViewModel !== null) {
+    if (this._pendingEditorState !== null) {
       commitPendingUpdates(getSelf(this));
     }
-    this._pendingViewModel = viewModel;
+    this._pendingEditorState = editorState;
     this._dirtyType = FULL_RECONCILE;
     this._compositionKey = null;
     commitPendingUpdates(getSelf(this));
   }
-  parseViewModel(stringifiedViewModel: string): ViewModel {
-    return parseViewModel(stringifiedViewModel, getSelf(this));
+  parseEditorState(stringifiedEditorState: string): EditorState {
+    return parseEditorState(stringifiedEditorState, getSelf(this));
   }
   update(updateFn: (view: View) => void, callbackFn?: () => void): boolean {
     errorOnProcessingTextNodeTransforms();
@@ -399,7 +399,7 @@ class BaseOutlineEditor {
     if (!this.isEmpty(false)) {
       return false;
     }
-    const nodeMap = this._viewModel._nodeMap;
+    const nodeMap = this._editorState._nodeMap;
     // $FlowFixMe: root is always in the Map
     const root = ((nodeMap.get('root'): any): RootNode);
     const topBlockIDs = root.__children;
@@ -432,8 +432,8 @@ class BaseOutlineEditor {
 // Flow messing up the types. It's hacky, but it improves DX.
 declare export class OutlineEditor {
   _rootElement: null | HTMLElement;
-  _viewModel: ViewModel;
-  _pendingViewModel: null | ViewModel;
+  _editorState: EditorState;
+  _pendingEditorState: null | EditorState;
   _compositionKey: null | NodeKey;
   _deferred: Array<() => void>;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
@@ -466,9 +466,9 @@ declare export class OutlineEditor {
   getCurrentTextContent(): string;
   getLatestTextContent((text: string) => void): () => void;
   getElementByKey(key: NodeKey): null | HTMLElement;
-  getViewModel(): ViewModel;
-  setViewModel(viewModel: ViewModel): void;
-  parseViewModel(stringifiedViewModel: string): ViewModel;
+  getEditorState(): EditorState;
+  setEditorState(editorState: EditorState): void;
+  parseEditorState(stringifiedEditorState: string): EditorState;
   update(updateFn: (view: View) => void, callbackFn?: () => void): boolean;
   focus(callbackFn?: () => void): void;
   canShowPlaceholder(): boolean;

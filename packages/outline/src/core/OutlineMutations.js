@@ -30,7 +30,7 @@ function isManagedLineBreak(dom: Node, target: Node): boolean {
 }
 
 function getLastSelection(editor: OutlineEditor): null | Selection {
-  return editor.getViewModel().read((lastView) => {
+  return editor.getEditorState().read((lastView) => {
     const selection = lastView.getSelection();
     return selection !== null ? selection.clone() : null;
   });
@@ -83,7 +83,7 @@ export function flushMutations(
     } else if (type === 'childList') {
       shouldRevertSelection = true;
       // We attempt to "undo" any changes that have occured outside
-      // of Outline. We want Outline's view model to be source of truth.
+      // of Outline. We want Outline's editor state to be source of truth.
       // To the user, these will look like no-ops.
       const addedDOMs = mutation.addedNodes;
       const removedDOMs = mutation.removedNodes;

@@ -9,7 +9,7 @@
 
 import type {
   BlockNode,
-  ViewModel,
+  EditorState,
   View,
   OutlineEditor,
   Selection,
@@ -54,29 +54,29 @@ export default function TreeView({
   viewClassName: string,
   editor: OutlineEditor,
 }): React$Node {
-  const [timeStampedViewModels, setTimeStampedViewModels] = useState([]);
+  const [timeStampedEditorStates, setTimeStampedEditorStates] = useState([]);
   const [content, setContent] = useState<string>('');
   const [timeTravelEnabled, setTimeTravelEnabled] = useState(false);
   const playingIndexRef = useRef(0);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   useEffect(() => {
-    setContent(generateContent(editor.getViewModel()));
-    return editor.addListener('update', ({viewModel}) => {
+    setContent(generateContent(editor.getEditorState()));
+    return editor.addListener('update', ({editorState}) => {
       const compositionKey = editor._compositionKey;
-      const treeText = generateContent(editor.getViewModel());
+      const treeText = generateContent(editor.getEditorState());
       const compositionText =
         compositionKey !== null && `Composition key: ${compositionKey}`;
       setContent([treeText, compositionText].filter(Boolean).join('\n\n'));
       if (!timeTravelEnabled) {
-        setTimeStampedViewModels((currentViewModels) => [
-          ...currentViewModels,
-          [Date.now(), viewModel],
+        setTimeStampedEditorStates((currentEditorStates) => [
+          ...currentEditorStates,
+          [Date.now(), editorState],
         ]);
       }
     });
   }, [timeTravelEnabled, editor]);
-  const totalViewModels = timeStampedViewModels.length;
+  const totalEditorStates = timeStampedEditorStates.length;
 
   useEffect(() => {
     if (isPlaying) {
@@ -84,12 +84,12 @@ export default function TreeView({
 
       const play = () => {
         const currentIndex = playingIndexRef.current;
-        if (currentIndex === totalViewModels - 1) {
+        if (currentIndex === totalEditorStates - 1) {
           setIsPlaying(false);
           return;
         }
-        const currentTime = timeStampedViewModels[currentIndex][0];
-        const nextTime = timeStampedViewModels[currentIndex + 1][0];
+        const currentTime = timeStampedEditorStates[currentIndex][0];
+        const nextTime = timeStampedEditorStates[currentIndex + 1][0];
         const timeDiff = nextTime - currentTime;
         timeoutId = setTimeout(() => {
           playingIndexRef.current++;
@@ -98,7 +98,7 @@ export default function TreeView({
           if (input !== null) {
             input.value = String(index);
           }
-          editor.setViewModel(timeStampedViewModels[index][1]);
+          editor.setEditorState(timeStampedEditorStates[index][1]);
           play();
         }, timeDiff);
       };
@@ -109,17 +109,17 @@ export default function TreeView({
         window.clearTimeout(timeoutId);
       };
     }
-  }, [timeStampedViewModels, isPlaying, editor, totalViewModels]);
+  }, [timeStampedEditorStates, isPlaying, editor, totalEditorStates]);
 
   return (
     <div className={viewClassName}>
-      {!timeTravelEnabled && totalViewModels > 2 && (
+      {!timeTravelEnabled && totalEditorStates > 2 && (
         <button
           onClick={() => {
             const rootElement = editor.getRootElement();
             if (rootElement !== null) {
               rootElement.contentEditable = 'false';
-              playingIndexRef.current = totalViewModels - 1;
+              playingIndexRef.current = totalEditorStates - 1;
               setTimeTravelEnabled(true);
             }
           }}
@@ -141,17 +141,17 @@ export default function TreeView({
             className={timeTravelPanelSliderClassName}
             ref={inputRef}
             onChange={(event) => {
-              const viewModelIndex = Number(event.target.value);
-              const timeStampedViewModel =
-                timeStampedViewModels[viewModelIndex];
-              if (timeStampedViewModel) {
-                playingIndexRef.current = viewModelIndex;
-                editor.setViewModel(timeStampedViewModel[1]);
+              const editorStateIndex = Number(event.target.value);
+              const timeStampedEditorState =
+                timeStampedEditorStates[editorStateIndex];
+              if (timeStampedEditorState) {
+                playingIndexRef.current = editorStateIndex;
+                editor.setEditorState(timeStampedEditorState[1]);
               }
             }}
             type="range"
             min="1"
-            max={totalViewModels - 1}
+            max={totalEditorStates - 1}
           />
           <button
             className={timeTravelPanelButtonClassName}
@@ -159,9 +159,9 @@ export default function TreeView({
               const rootElement = editor.getRootElement();
               if (rootElement !== null) {
                 rootElement.contentEditable = 'true';
-                const index = timeStampedViewModels.length - 1;
-                const timeStampedViewModel = timeStampedViewModels[index];
-                editor.setViewModel(timeStampedViewModel[1]);
+                const index = timeStampedEditorStates.length - 1;
+                const timeStampedEditorState = timeStampedEditorStates[index];
+                editor.setEditorState(timeStampedEditorState[1]);
                 const input = inputRef.current;
                 if (input !== null) {
                   input.value = String(index);
@@ -194,10 +194,10 @@ function printSelection(selection: Selection): string {
   return res;
 }
 
-function generateContent(viewModel: ViewModel): string {
+function generateContent(editorState: EditorState): string {
   let res = ' root\n';
 
-  const selectionString = viewModel.read((view: View) => {
+  const selectionString = editorState.read((view: View) => {
     const selection = view.getSelection();
     let selectedNodes = null;
     if (selection !== null) {

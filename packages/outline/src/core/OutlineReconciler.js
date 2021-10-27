@@ -551,7 +551,12 @@ export function updateEditorState(
     domSelection !== null &&
     (needsUpdate || pendingSelection === null || pendingSelection.dirty)
   ) {
-    reconcileSelection(pendingSelection, editor, domSelection);
+    reconcileSelection(
+      currentSelection,
+      pendingSelection,
+      editor,
+      domSelection,
+    );
   }
 }
 
@@ -570,7 +575,8 @@ function scrollIntoViewIfNeeded(node: Node): void {
 }
 
 function reconcileSelection(
-  selection: OutlineSelection | null,
+  prevSelection: OutlineSelection | null,
+  nextSelection: OutlineSelection | null,
   editor: OutlineEditor,
   domSelection: Selection,
 ): void {
@@ -579,19 +585,26 @@ function reconcileSelection(
   const anchorOffset = domSelection.anchorOffset;
   const focusOffset = domSelection.focusOffset;
 
-  if (selection === null) {
-    if (isSelectionWithinEditor(editor, anchorDOMNode, focusDOMNode)) {
+  if (nextSelection === null) {
+    // We don't remove selection if the prevSelection is null because
+    // of editor.setRootElement(). If this occurs on init when the
+    // editor is already focused, then this can cause the editor to
+    // lose focus.
+    if (
+      prevSelection !== null &&
+      isSelectionWithinEditor(editor, anchorDOMNode, focusDOMNode)
+    ) {
       domSelection.removeAllRanges();
     }
     return;
   }
-  const anchor = selection.anchor;
-  const focus = selection.focus;
+  const anchor = nextSelection.anchor;
+  const focus = nextSelection.focus;
   if (__DEV__) {
     // Freeze the selection in DEV to prevent accidental mutations
     Object.freeze(anchor);
     Object.freeze(focus);
-    Object.freeze(selection);
+    Object.freeze(nextSelection);
   }
   const anchorKey = anchor.key;
   const focusKey = focus.key;
@@ -643,7 +656,7 @@ function reconcileSelection(
       nextFocusNode,
       nextFocusOffset,
     );
-    if (selection.isCollapsed() && rootElement === activeElement) {
+    if (nextSelection.isCollapsed() && rootElement === activeElement) {
       scrollIntoViewIfNeeded(nextAnchorNode);
     }
   } catch (error) {

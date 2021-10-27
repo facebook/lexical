@@ -33,8 +33,10 @@ import {createRootNode, isRootNode, RootNode} from './OutlineRootNode';
 import {createLineBreakNode, isLineBreakNode} from './OutlineLineBreakNode';
 import {DecoratorNode, isDecoratorNode} from './OutlineDecoratorNode';
 import {isLeafNode} from './OutlineUtils';
+import {createEmptySelection as createSelection} from './OutlineSelection';
 
 export {
+  createSelection,
   createEditor,
   getEditorFromElement,
   // Node factories

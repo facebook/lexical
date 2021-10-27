@@ -122,7 +122,7 @@ describe('OutlineTextNode tests', () => {
 
       // Make sure that the editor content is still set after further reconciliations
       await update((view) => {
-        view.markNodeAsDirty(view.getNodeByKey(nodeKey));
+        view.getNodeByKey(nodeKey).markDirty();
       });
       expect(editor.getCurrentTextContent()).toBe('Text');
     });
@@ -144,7 +144,7 @@ describe('OutlineTextNode tests', () => {
 
       // Make sure that the editor content is still empty after further reconciliations
       await update((view) => {
-        view.markNodeAsDirty(view.getNodeByKey(nodeKey));
+        view.getNodeByKey(nodeKey).markDirty();
       });
       expect(editor.getCurrentTextContent()).toBe('');
     });

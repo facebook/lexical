@@ -9,7 +9,7 @@
 
 import type {NodeKey, View, Selection, OutlineEditor, NodeMap} from 'outline';
 
-import {isBlockNode, isTextNode} from 'outline';
+import {createSelection, isBlockNode, isTextNode} from 'outline';
 import invariant from 'shared/invariant';
 
 type OffsetBlockNode = {
@@ -108,7 +108,7 @@ class OffsetView {
       endOffset =
         end > endOffsetNode.start ? endOffsetNode.end : endOffsetNode.start;
     }
-    const selection = view.createSelection();
+    const selection = createSelection();
     if (selection === null) {
       return null;
     }

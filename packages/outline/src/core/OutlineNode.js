@@ -717,6 +717,10 @@ export class OutlineNode {
     }
     return nextSibling.select(anchorOffset, focusOffset);
   }
+  // Proxy to mark something as dirty
+  markDirty(): void {
+    this.getWritable();
+  }
 }
 
 function getNodeByKeyOrThrow<N: OutlineNode>(key: NodeKey): N {

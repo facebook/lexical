@@ -7,14 +7,9 @@
  * @flow strict
  */
 
-import type {
-  EditorConfig,
-  NodeKey,
-  OutlineNode,
-  OutlineEditor,
-} from 'outline';
+import type {EditorConfig, NodeKey, OutlineNode, OutlineEditor} from 'outline';
 
-import {DecoratorNode} from 'outline';
+import {DecoratorNode, log} from 'outline';
 
 import * as React from 'react';
 
@@ -256,7 +251,7 @@ function ImageComponent({
   const handleKeyDown = (event) => {
     if ((hasFocus && event.key === 'Backspace') || event.key === 'Delete') {
       editor.update((view) => {
-        view.log('Image.keyDown')
+        log('Image.keyDown');
         const node = view.getNodeByKey(nodeKey);
         if (node !== null) {
           node.remove();
@@ -303,7 +298,7 @@ function ImageComponent({
               }
               setIsResizing(false);
               editor.update((view) => {
-                view.log('ImageNode.resize')
+                log('ImageNode.resize');
                 const node = view.getNodeByKey(nodeKey);
                 if (isImageNode(node)) {
                   node.setWidthAndHeight(nextWidth, nextHeight);

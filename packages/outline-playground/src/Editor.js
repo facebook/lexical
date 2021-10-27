@@ -28,6 +28,7 @@ import BlockControls from './BlockControls';
 import CharacterLimit from './CharacterLimit';
 import {Typeahead} from './Typeahead';
 import yellowFlowerImage from './images/image/yellow-flower.jpg';
+import {log} from 'outline';
 
 const editorStyle = {
   outline: 0,
@@ -123,7 +124,7 @@ export const useRichTextEditor = ({
   const element = useMemo(() => {
     const handleAddImage = () => {
       editor.update((view) => {
-        view.log('handleAddImage')
+        log('handleAddImage');
         const selection = view.getSelection();
         if (selection !== null) {
           const imageNode = createImageNode(

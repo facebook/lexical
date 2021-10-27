@@ -21,6 +21,7 @@ import * as React from 'react';
 import {useEffect, useRef, useState} from 'react';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
+import {log} from 'outline';
 
 // TODO: create a functional dropdown and selection input
 export default function BlockControls({
@@ -141,7 +142,7 @@ function DropdownList({
   const formatParagraph = () => {
     if (blockType !== 'paragraph') {
       editor.update((view) => {
-        view.log('formatParagraph');
+        log('formatParagraph');
         const selection = view.getSelection();
 
         if (selection !== null) {
@@ -163,7 +164,7 @@ function DropdownList({
   const formatLargeHeading = () => {
     if (blockType !== 'h1') {
       editor.update((view) => {
-        view.log('formatLargeHeading');
+        log('formatLargeHeading');
         const selection = view.getSelection();
 
         if (selection !== null) {
@@ -185,7 +186,7 @@ function DropdownList({
   const formatSmallHeading = () => {
     if (blockType !== 'h2') {
       editor.update((view) => {
-        view.log('formatSmallHeading');
+        log('formatSmallHeading');
         const selection = view.getSelection();
 
         if (selection !== null) {
@@ -207,7 +208,7 @@ function DropdownList({
   const formatBulletList = () => {
     if (blockType !== 'ul') {
       editor.update((view) => {
-        view.log('formatBulletList');
+        log('formatBulletList');
         const selection = view.getSelection();
 
         if (selection !== null) {
@@ -231,7 +232,7 @@ function DropdownList({
   const formatNumberedList = () => {
     if (blockType !== 'ol') {
       editor.update((view) => {
-        view.log('formatNumberedList');
+        log('formatNumberedList');
         const selection = view.getSelection();
 
         if (selection !== null) {
@@ -255,7 +256,7 @@ function DropdownList({
   const formatQuote = () => {
     if (blockType !== 'quote') {
       editor.update((view) => {
-        view.log('formatQuote');
+        log('formatQuote');
         const selection = view.getSelection();
 
         if (selection !== null) {
@@ -277,7 +278,7 @@ function DropdownList({
   const formatCode = () => {
     if (blockType !== 'code') {
       editor.update((view) => {
-        view.log('formatCode');
+        log('formatCode');
         const selection = view.getSelection();
 
         if (selection !== null) {

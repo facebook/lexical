@@ -58,9 +58,11 @@ import {
 } from 'outline/selection';
 import {
   createTextNode,
+  createNodeFromParse,
   isTextNode,
   isDecoratorNode,
   getEditorFromElement,
+  log,
 } from 'outline';
 import {IS_FIREFOX} from 'shared/environment';
 import getPossibleDecoratorNode from 'shared/getPossibleDecoratorNode';
@@ -93,7 +95,7 @@ function generateNodes(
     const key = range[i];
     const parsedNode = parsedNodeMap.get(key);
     if (parsedNode !== undefined) {
-      const node = view.createNodeFromParse(parsedNode, parsedNodeMap);
+      const node = createNodeFromParse(parsedNode, parsedNodeMap);
       nodes.push(node);
     }
   }
@@ -149,7 +151,7 @@ export function onKeyDownForPlainText(
     return;
   }
   editor.update((view) => {
-    view.log('onKeyDownForPlainText');
+    log('onKeyDownForPlainText');
     const selection = view.getSelection();
     if (selection === null) {
       return;
@@ -203,7 +205,7 @@ export function onKeyDownForRichText(
     return;
   }
   editor.update((view) => {
-    view.log('onKeyDownForRichText');
+    log('onKeyDownForRichText');
     const selection = view.getSelection();
     if (selection === null) {
       return;
@@ -285,7 +287,7 @@ export function onPasteForPlainText(
 ): void {
   event.preventDefault();
   editor.update((view) => {
-    view.log('onPasteForPlainText');
+    log('onPasteForPlainText');
     const selection = view.getSelection();
     const clipboardData = event.clipboardData;
     if (clipboardData != null && selection !== null) {
@@ -300,7 +302,7 @@ export function onPasteForRichText(
 ): void {
   event.preventDefault();
   editor.update((view) => {
-    view.log('onPasteForRichText');
+    log('onPasteForRichText');
     const selection = view.getSelection();
     const clipboardData = event.clipboardData;
     if (clipboardData != null && selection !== null) {
@@ -332,7 +334,7 @@ export function onCutForPlainText(
 ): void {
   onCopyForPlainText(event, editor);
   editor.update((view) => {
-    view.log('onCutForPlainText');
+    log('onCutForPlainText');
     const selection = view.getSelection();
     if (selection !== null) {
       removeText(selection);
@@ -346,7 +348,7 @@ export function onCutForRichText(
 ): void {
   onCopyForRichText(event, editor);
   editor.update((view) => {
-    view.log('onCutForRichText');
+    log('onCutForRichText');
     const selection = view.getSelection();
     if (selection !== null) {
       removeText(selection);
@@ -360,7 +362,7 @@ export function onCopyForPlainText(
 ): void {
   event.preventDefault();
   editor.update((view) => {
-    view.log('onCopyForPlainText');
+    log('onCopyForPlainText');
     const clipboardData = event.clipboardData;
     const selection = view.getSelection();
     if (selection !== null) {
@@ -389,7 +391,7 @@ export function onCopyForRichText(
 ): void {
   event.preventDefault();
   editor.update((view) => {
-    view.log('onCopyForRichText');
+    log('onCopyForRichText');
     const clipboardData = event.clipboardData;
     const selection = view.getSelection();
     if (selection !== null) {
@@ -421,7 +423,7 @@ export function onCompositionStart(
   editor: OutlineEditor,
 ): void {
   editor.update((view) => {
-    view.log('onCompositionStart');
+    log('onCompositionStart');
     const selection = view.getSelection();
     if (selection !== null && !editor.isComposing()) {
       const anchor = selection.anchor;
@@ -448,7 +450,7 @@ function onCompositionEndInternal(
   editor: OutlineEditor,
 ) {
   editor.update((view) => {
-    view.log('onCompositionEnd');
+    log('onCompositionEnd');
     view.setCompositionKey(null);
     updateSelectedTextFromDOM(editor, view, true);
   });
@@ -482,7 +484,7 @@ function getLastSelection(editor: OutlineEditor): null | Selection {
 // really isn't.
 export function onClick(event: MouseEvent, editor: OutlineEditor): void {
   editor.update((view) => {
-    view.log('onClick');
+    log('onClick');
     const selection = view.getSelection();
     if (selection === null) {
       return;
@@ -516,7 +518,7 @@ export function onSelectionChange(event: Event, editor: OutlineEditor): void {
   // This update functions as a way of reconciling a bad selection
   // to a good selection.
   editor.update((view) => {
-    view.log('onSelectionChange');
+    log('onSelectionChange');
     const selection = view.getSelection();
     // Update the selection format
     if (selection !== null && selection.isCollapsed()) {
@@ -667,7 +669,7 @@ export function onBeforeInputForPlainText(
   }
 
   editor.update((view) => {
-    view.log('onBeforeInputForPlainText');
+    log('onBeforeInputForPlainText');
     const selection = view.getSelection();
 
     if (selection === null) {
@@ -803,7 +805,7 @@ export function onBeforeInputForRichText(
   }
 
   editor.update((view) => {
-    view.log('onBeforeInputForRichText');
+    log('onBeforeInputForRichText');
     const selection = view.getSelection();
 
     if (selection === null) {
@@ -983,7 +985,7 @@ export function onInput(event: InputEvent, editor: OutlineEditor): void {
   // We don't want the onInput to bubble, in the case of nested editors.
   event.stopPropagation();
   editor.update((view: View) => {
-    view.log('onInput');
+    log('onInput');
     const selection = view.getSelection();
     const data = event.data;
     if (
@@ -1045,7 +1047,7 @@ export function applyMutationInputWebkitWorkaround(): void {
         }
         if (otherMutations.length > 0) {
           editor.update((view) => {
-            view.log('applyMutationWorkaround');
+            log('applyMutationWorkaround');
             view.flushMutations(otherMutations);
           });
         }

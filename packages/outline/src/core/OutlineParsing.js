@@ -10,7 +10,11 @@
 import type {OutlineEditor} from './OutlineEditor';
 import type {NodeKey, OutlineNode} from './OutlineNode';
 
-import {getActiveEditorState} from './OutlineUpdates';
+import {
+  getActiveEditorState,
+  getActiveEditor,
+  errorOnReadOnly,
+} from './OutlineUpdates';
 import {isRootNode, isBlockNode, isTextNode} from '.';
 import invariant from 'shared/invariant';
 
@@ -53,6 +57,15 @@ type ParsedSelection = {
 };
 
 export function createNodeFromParse(
+  parsedNode: ParsedNode,
+  parsedNodeMap: ParsedNodeMap,
+): OutlineNode {
+  errorOnReadOnly();
+  const editor = getActiveEditor();
+  return internalCreateNodeFromParse(parsedNode, parsedNodeMap, editor, null);
+}
+
+export function internalCreateNodeFromParse(
   parsedNode: $FlowFixMe,
   parsedNodeMap: ParsedNodeMap,
   editor: OutlineEditor,
@@ -85,7 +98,7 @@ export function createNodeFromParse(
       const childKey = children[i];
       const parsedChild = parsedNodeMap.get(childKey);
       if (parsedChild !== undefined) {
-        const child = createNodeFromParse(
+        const child = internalCreateNodeFromParse(
           parsedChild,
           parsedNodeMap,
           editor,

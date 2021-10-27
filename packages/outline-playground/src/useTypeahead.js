@@ -9,7 +9,7 @@
 
 import type {OutlineEditor, View, NodeKey, EditorConfig} from 'outline';
 
-import {isTextNode, isBlockNode, TextNode} from 'outline';
+import {isTextNode, isBlockNode, TextNode, log} from 'outline';
 import {useEffect, useRef, useState, useCallback, useMemo} from 'react';
 import {updateWithoutHistory} from 'outline/history';
 
@@ -44,7 +44,7 @@ export default function useTypeahead(editor: OutlineEditor): void {
 
   const renderTypeahead = useCallback(() => {
     updateWithoutHistory(editor, (view: View) => {
-      view.log('useTypeahead');
+      log('useTypeahead');
       const currentTypeaheadNode = getTypeaheadTextNode(view);
 
       function maybeRemoveTypeahead() {
@@ -149,7 +149,7 @@ export default function useTypeahead(editor: OutlineEditor): void {
       const handleEvent = (event: KeyboardEvent) => {
         if (event.key === 'Tab' || event.key === 'ArrowRight') {
           editor.update((view: View) => {
-            view.log('useTypeahead');
+            log('useTypeahead');
             const typeaheadTextNode = getTypeaheadTextNode(view);
             const prevTextNode = typeaheadTextNode?.getPreviousSibling();
             // Make sure that the Typeahead is visible and previous child writable

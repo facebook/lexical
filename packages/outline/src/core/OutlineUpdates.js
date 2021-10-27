@@ -12,11 +12,7 @@ import type {RootNode} from './OutlineRootNode';
 import type {OutlineEditor} from './OutlineEditor';
 import type {OutlineNode, NodeKey} from './OutlineNode';
 import type {Selection} from './OutlineSelection';
-import type {
-  ParsedNode,
-  ParsedNodeMap,
-  NodeParserState,
-} from './OutlineParsing';
+import type {ParsedNode, NodeParserState} from './OutlineParsing';
 
 import {updateEditorState} from './OutlineReconciler';
 import {
@@ -48,7 +44,7 @@ import {
   garbageCollectDetachedDecorators,
   garbageCollectDetachedNodes,
 } from './OutlineGC';
-import {createNodeFromParse} from './OutlineParsing';
+import {internalCreateNodeFromParse} from './OutlineParsing';
 import {applySelectionTransforms} from './OutlineSelection';
 import invariant from 'shared/invariant';
 
@@ -65,15 +61,10 @@ export type View = {
   getNodeByKey: (key: NodeKey) => null | OutlineNode,
   getSelection: () => null | Selection,
   setSelection: (selection: Selection) => void,
-  createNodeFromParse: (
-    parsedNode: ParsedNode,
-    parsedNodeMap: ParsedNodeMap,
-  ) => OutlineNode,
   setCompositionKey: (compositionKey: NodeKey | null) => void,
   getCompositionKey: () => null | NodeKey,
   getNearestNodeFromDOMNode: (dom: Node) => null | OutlineNode,
   flushMutations: (mutations: Array<MutationRecord>) => void,
-  log: (entry: string) => void,
 };
 
 export const view: View = {
@@ -91,14 +82,6 @@ export const view: View = {
     const editorState = getActiveEditorState();
     editorState._selection = selection;
   },
-  createNodeFromParse(
-    parsedNode: ParsedNode,
-    parsedNodeMap: ParsedNodeMap,
-  ): OutlineNode {
-    errorOnReadOnly();
-    const editor = getActiveEditor();
-    return createNodeFromParse(parsedNode, parsedNodeMap, editor, null);
-  },
   setCompositionKey(compositionKey: null | NodeKey): void {
     errorOnReadOnly();
     setCompositionKey(compositionKey);
@@ -112,11 +95,6 @@ export const view: View = {
     if (observer !== null) {
       flushMutations(editor, mutations, observer);
     }
-  },
-  log(entry: string): void {
-    errorOnReadOnly();
-    const editor = getActiveEditor();
-    editor._log.push(entry);
   },
 };
 
@@ -221,7 +199,7 @@ export function parseEditorState(
     const parsedNodeMap = new Map(parsedEditorState._nodeMap);
     // $FlowFixMe: root always exists in Map
     const parsedRoot = ((parsedNodeMap.get('root'): any): ParsedNode);
-    createNodeFromParse(
+    internalCreateNodeFromParse(
       parsedRoot,
       parsedNodeMap,
       editor,

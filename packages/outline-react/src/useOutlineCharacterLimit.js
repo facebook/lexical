@@ -16,7 +16,7 @@ import type {
   Selection,
 } from 'outline';
 
-import {BlockNode, isLeafNode, isTextNode} from 'outline';
+import {BlockNode, isLeafNode, isTextNode, log} from 'outline';
 import {updateWithoutHistory} from 'outline/history';
 import {dfs} from 'outline/nodes';
 import {useEffect, useCallback} from 'react';
@@ -67,7 +67,7 @@ export function useCharacterLimit(
       }
     }
     updateWithoutHistory(editor, (view: View) => {
-      view.log('CharacterLimit');
+      log('CharacterLimit');
       wrapOverflowedNodes(view, offsetUtf16);
     });
   }, [editor, maxCharacters, strlen]);

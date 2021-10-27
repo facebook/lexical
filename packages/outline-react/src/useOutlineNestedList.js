@@ -9,7 +9,9 @@
 
 import type {OutlineEditor, OutlineNode, View} from 'outline';
 import type {ListItemNode} from 'outline/ListItemNode';
+
 import {useCallback, useMemo} from 'react';
+import {log} from 'outline';
 import {createListItemNode, isListItemNode} from 'outline/ListItemNode';
 import {createListNode, isListNode} from 'outline/ListNode';
 
@@ -19,7 +21,7 @@ function maybeIndentOrOutdent(
 ): boolean {
   let hasHandledIndention = false;
   editor.update((view: View) => {
-    view.log('useNestedList.maybeIndent')
+    log('useNestedList.maybeIndent');
     const selection = view.getSelection();
     if (selection === null) {
       return;

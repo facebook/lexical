@@ -10,6 +10,7 @@
 import type {OutlineEditor, View} from 'outline';
 
 import {useCallback, useLayoutEffect} from 'react';
+import {log} from 'outline';
 
 function useWrapper<E: Event>(
   handler: (event: E, view: View, editor: OutlineEditor) => void,
@@ -26,7 +27,7 @@ function useWrapper<E: Event>(
         }
       }
       editor.update((view) => {
-        view.log(event.type);
+        log(event.type);
         handler(event, view, editor);
       });
     },

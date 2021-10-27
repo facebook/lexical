@@ -11,12 +11,10 @@ import type {OutlineEditor, View, RootNode} from 'outline';
 import type {InputEvents} from 'outline-react/useOutlineEditorEvents';
 
 import {useCallback} from 'react';
+import {log} from 'outline';
 import useLayoutEffect from './shared/useLayoutEffect';
 import useOutlineEditorEvents from './useOutlineEditorEvents';
-import {
-  createParagraphNode,
-  ParagraphNode,
-} from 'outline/ParagraphNode';
+import {createParagraphNode, ParagraphNode} from 'outline/ParagraphNode';
 import {CAN_USE_BEFORE_INPUT, IS_SAFARI, IS_CHROME} from 'shared/environment';
 import {
   onSelectionChange,
@@ -47,7 +45,7 @@ function initParagraph(view: View, root: RootNode): void {
 
 function initEditor(editor: OutlineEditor): void {
   editor.update((view) => {
-    view.log('initEditor')
+    log('initEditor');
     const root = view.getRoot();
     const firstChild = root.getFirstChild();
     if (firstChild === null) {
@@ -60,15 +58,12 @@ function clearEditor(
   editor: OutlineEditor,
   callbackFn?: (callbackFn?: () => void) => void,
 ): void {
-  editor.update(
-    (view) => {
-      view.log('clearEditor')
-      const root = view.getRoot();
-      root.clear();
-      initParagraph(view, root);
-    },
-    callbackFn,
-  );
+  editor.update((view) => {
+    log('clearEditor');
+    const root = view.getRoot();
+    root.clear();
+    initParagraph(view, root);
+  }, callbackFn);
 }
 
 const events: InputEvents = [

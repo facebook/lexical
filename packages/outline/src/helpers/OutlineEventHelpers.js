@@ -74,11 +74,9 @@ import getPossibleDecoratorNode from 'shared/getPossibleDecoratorNode';
 import {createListNode} from '../extensions/OutlineListNode';
 import {createListItemNode} from '../extensions/OutlineListItemNode';
 import {createParagraphNode} from '../extensions/OutlineParagraphNode';
-import type {
-  DOMNodeToOutlineConversion,
-  DOMNodeToOutlineConversionMap,
-} from '../core/OutlineNode';
+import type {DOMNodeToOutlineConversionMap} from './OutlineNodeHelpers';
 import {createHeadingNode} from '../extensions/OutlineHeadingNode';
+import {createOutlineNodeFromDOMNode} from './OutlineNodeHelpers';
 
 const NO_BREAK_SPACE_CHAR = '\u00A0';
 
@@ -159,15 +157,13 @@ const DOM_NODE_NAME_TO_OUTLINE_NODE: DOMNodeToOutlineConversionMap = {
 function generateNodesFromDOM(
   dom: Document,
   view: View,
-  conversionMap: {
-    [string]: DOMNodeToOutlineConversion,
-  },
+  conversionMap: DOMNodeToOutlineConversionMap,
 ): Array<OutlineNode> {
   const outlineNodes = [];
   const elements: Array<Node> = dom.body ? Array.from(dom.body.childNodes) : [];
   const elementsLength = elements.length;
   for (let i = 0; i < elementsLength; i++) {
-    const outlineNode = view.createOutlineNodeFromDOMNode(
+    const outlineNode = createOutlineNodeFromDOMNode(
       elements[i],
       conversionMap,
     );

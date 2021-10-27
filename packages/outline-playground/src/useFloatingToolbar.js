@@ -212,7 +212,7 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
   );
 
   useEffect(() => {
-    editor.getViewModel().read((view) => {
+    editor.getEditorState().read((view) => {
       const selection = view.getSelection();
       moveToolbar(selection);
     });
@@ -255,14 +255,14 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
       };
 
       const selectionChangeHandler = () => {
-        editor.getViewModel().read((view) => {
+        editor.getEditorState().read((view) => {
           const selection = view.getSelection();
           updateButtonStates(selection);
           moveToolbar(selection);
         });
       };
       const checkForChanges = () => {
-        editor.getViewModel().read((view) => {
+        editor.getEditorState().read((view) => {
           const selection = view.getSelection();
           updateButtonStates(selection);
           moveToolbar(selection);
@@ -273,7 +273,7 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
       };
       const mouseUpHandler = () => {
         mouseDownRef.current = false;
-        editor.getViewModel().read((view) => {
+        editor.getEditorState().read((view) => {
           const selection = view.getSelection();
           moveToolbar(selection);
         });
@@ -298,7 +298,7 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
   const updateSelectedLinks = useCallback(
     (url: null | string, selection: null | Selection) => {
       editor.update((view) => {
-        view.log('useToolbar')
+        view.log('useToolbar');
         if (selection !== null) {
           view.setSelection(selection);
         }
@@ -343,7 +343,7 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
   const applyFormatText = useCallback(
     (formatType: TextFormatType) => {
       editor.update((view) => {
-        view.log('applyFormatText')
+        view.log('applyFormatText');
         const selection = view.getSelection();
         if (selection !== null) {
           formatText(selection, formatType);
@@ -356,7 +356,7 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
   const applyStyleText = useCallback(
     (styles: {[string]: string}) => {
       editor.update((view) => {
-        view.log('applyStyleText')
+        view.log('applyStyleText');
         const selection = view.getSelection();
         if (selection !== null) {
           patchStyleText(selection, styles);

@@ -10,19 +10,19 @@
 import type {NodeKey, NodeMap} from './OutlineNode';
 import type {BlockNode} from './OutlineBlockNode';
 import type {OutlineEditor} from './OutlineEditor';
-import type {ViewModel} from './OutlineViewModel';
+import type {EditorState} from './OutlineEditorState';
 
 import {isBlockNode} from '.';
 import {cloneDecorators} from './OutlineUtils';
 
 export function garbageCollectDetachedDecorators(
   editor: OutlineEditor,
-  pendingViewModel: ViewModel,
+  pendingEditorState: EditorState,
 ): void {
   const currentDecorators = editor._decorators;
   const pendingDecorators = editor._pendingDecorators;
   let decorators = pendingDecorators || currentDecorators;
-  const nodeMap = pendingViewModel._nodeMap;
+  const nodeMap = pendingEditorState._nodeMap;
   let key;
   for (key in decorators) {
     if (!nodeMap.has(key)) {
@@ -54,12 +54,12 @@ function garbageCollectDetachedDeepChildNodes(
 }
 
 export function garbageCollectDetachedNodes(
-  viewModel: ViewModel,
+  editorState: EditorState,
   dirtyNodes: Set<NodeKey>,
   editor: OutlineEditor,
 ): void {
   const dirtyNodesArr = Array.from(dirtyNodes);
-  const nodeMap = viewModel._nodeMap;
+  const nodeMap = editorState._nodeMap;
 
   for (let s = 0; s < dirtyNodesArr.length; s++) {
     const nodeKey = dirtyNodesArr[s];

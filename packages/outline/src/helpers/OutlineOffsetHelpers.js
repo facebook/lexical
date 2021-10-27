@@ -275,8 +275,8 @@ function createOffsetChild(
 }
 
 export function createOffsetView(editor: OutlineEditor): OffsetView {
-  const viewModel = editor._pendingViewModel || editor._viewModel;
-  const nodeMap = viewModel._nodeMap;
+  const editorState = editor._pendingEditorState || editor._editorState;
+  const nodeMap = editorState._nodeMap;
   // $FlowFixMe: root is always in the Map
   const root = ((nodeMap.get('root'): any): RootNode);
   const offsetMap = new Map();

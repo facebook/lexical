@@ -12,12 +12,12 @@ import type {OutlineEditor} from './OutlineEditor';
 import type {BlockNode} from './OutlineBlockNode';
 import type {TextFormatType} from './OutlineTextNode';
 import type {RootNode} from './OutlineRootNode';
+import type {EditorState} from './OutlineEditorState';
 
-import {ViewModel} from './OutlineViewModel';
 import {
   getActiveEditor,
-  getActiveViewModel,
-  isViewReadOnlyMode,
+  getActiveEditorState,
+  isCurrentlyReadOnlyMode,
 } from './OutlineUpdates';
 import {getNodeKeyFromDOM} from './OutlineReconciler';
 import {getIsProcesssingMutations} from './OutlineMutations';
@@ -29,7 +29,13 @@ import {
   isRootNode,
   TextNode,
 } from '.';
-import {getCompositionKey, getNodeByKey, isSelectionWithinEditor, setCompositionKey, toggleTextFormatType} from './OutlineUtils';
+import {
+  getCompositionKey,
+  getNodeByKey,
+  isSelectionWithinEditor,
+  setCompositionKey,
+  toggleTextFormatType,
+} from './OutlineUtils';
 import invariant from 'shared/invariant';
 import {
   IS_BOLD,
@@ -114,7 +120,7 @@ class Point {
     this.key = key;
     this.offset = offset;
     this.type = type;
-    if (!isViewReadOnlyMode()) {
+    if (!isCurrentlyReadOnlyMode()) {
       if (getCompositionKey() === oldKey) {
         setCompositionKey(key);
       }
@@ -526,8 +532,8 @@ function resolveSelectionPoints(
       }
     }
 
-    const currentViewModel = editor.getViewModel();
-    const lastSelection = currentViewModel._selection;
+    const currentEditorState = editor.getEditorState();
+    const lastSelection = currentEditorState._selection;
     if (
       editor.isComposing() &&
       editor._compositionKey !== resolvedAnchorPoint.key &&
@@ -564,14 +570,14 @@ export function makeSelection(
   anchorType: 'text' | 'block',
   focusType: 'text' | 'block',
 ): Selection {
-  const viewModel = getActiveViewModel();
+  const editorState = getActiveEditorState();
   const selection = new Selection(
     createPoint(anchorKey, anchorOffset, anchorType),
     createPoint(focusKey, focusOffset, focusType),
     0,
   );
   selection.dirty = true;
-  viewModel._selection = selection;
+  editorState._selection = selection;
   return selection;
 }
 
@@ -591,16 +597,13 @@ function getActiveEventType(): string | void {
   return event && event.type;
 }
 
-export function createSelection(
-  viewModel: ViewModel,
-  editor: OutlineEditor,
-): null | Selection {
+export function createSelection(editor: OutlineEditor): null | Selection {
   // When we create a selection, we try to use the previous
   // selection where possible, unless an actual user selection
   // change has occurred. When we do need to create a new selection
   // we validate we can have text nodes for both anchor and focus
   // nodes. If that holds true, we then return that selection
-  // as a mutable object that we use for the view model for this
+  // as a mutable object that we use for the editor state for this
   // update cycle. If a selection gets changed, and requires a
   // update to native DOM selection, it gets marked as "dirty".
   // If the selection changes, but matches with the existing
@@ -609,8 +612,8 @@ export function createSelection(
   // reconciliation unless there are dirty nodes that need
   // reconciling.
 
-  const currentViewModel = editor.getViewModel();
-  const lastSelection = currentViewModel._selection;
+  const currentEditorState = editor.getEditorState();
+  const lastSelection = currentEditorState._selection;
   const eventType = getActiveEventType();
   const isSelectionChange = eventType === 'selectionchange';
   const useDOMSelection =
@@ -662,8 +665,8 @@ export function createSelection(
 }
 
 export function getSelection(): null | Selection {
-  const viewModel = getActiveViewModel();
-  return viewModel._selection;
+  const editorState = getActiveEditorState();
+  return editorState._selection;
 }
 
 export function createSelectionFromParse(
@@ -806,12 +809,12 @@ function updateSelectionResolveTextNodes(selection: Selection) {
 }
 
 export function applySelectionTransforms(
-  nextViewModel: ViewModel,
+  nextEditorState: EditorState,
   editor: OutlineEditor,
 ): void {
-  const prevViewModel = editor.getViewModel();
-  const prevSelection = prevViewModel._selection;
-  const nextSelection = nextViewModel._selection;
+  const prevEditorState = editor.getEditorState();
+  const prevSelection = prevEditorState._selection;
+  const nextSelection = nextEditorState._selection;
   if (nextSelection !== null) {
     const anchor = nextSelection.anchor;
     const focus = nextSelection.focus;

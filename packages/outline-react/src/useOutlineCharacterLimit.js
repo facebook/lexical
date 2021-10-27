@@ -82,7 +82,7 @@ export function useCharacterLimit(
     })();
     let lastUtf16TextLength = null;
     let lastTextLength = null;
-    return editor.addListener('update', ({viewModel, dirty, dirtyNodes}) => {
+    return editor.addListener('update', ({dirty, dirtyNodes}) => {
       const isComposing = editor.isComposing();
       const text = editor.getCurrentTextContent();
       const utf16TextLength = text.length;

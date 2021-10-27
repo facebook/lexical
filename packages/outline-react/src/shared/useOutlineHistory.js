@@ -7,23 +7,23 @@
  * @flow strict
  */
 
-import type {OutlineEditor, ViewModel, OutlineNode, NodeKey} from 'outline';
+import type {OutlineEditor, EditorState, OutlineNode, NodeKey} from 'outline';
 
 import {isTextNode} from 'outline';
 import {isRedo, isUndo} from 'outline/KeyHelpers';
 import {useCallback, useEffect, useMemo} from 'react';
-import {viewModelsWithoutHistory} from 'outline/HistoryHelpers';
+import {editorStatesWithoutHistory} from 'outline/HistoryHelpers';
 
 const MERGE = 0;
 const NO_MERGE = 1;
 const DISCARD = 2;
 
 function getDirtyNodes(
-  viewModel: ViewModel,
+  editorState: EditorState,
   dirtyNodesSet: Set<NodeKey>,
 ): Array<OutlineNode> {
   const dirtyNodes = Array.from(dirtyNodesSet);
-  const nodeMap = viewModel._nodeMap;
+  const nodeMap = editorState._nodeMap;
   const nodes = [];
 
   for (let i = 0; i < dirtyNodes.length; i++) {
@@ -38,21 +38,21 @@ function getDirtyNodes(
 }
 
 function getMergeAction(
-  prevViewModel: null | ViewModel,
-  nextViewModel: ViewModel,
+  prevEditorState: null | EditorState,
+  nextEditorState: EditorState,
   dirtyNodesSet: Set<NodeKey>,
 ): 0 | 1 | 2 {
-  // If we have a view model that doesn't want its history
+  // If we have an editor state that doesn't want its history
   // recorded then we always merge the changes.
-  if (viewModelsWithoutHistory.has(nextViewModel)) {
-    viewModelsWithoutHistory.delete(nextViewModel);
+  if (editorStatesWithoutHistory.has(nextEditorState)) {
+    editorStatesWithoutHistory.delete(nextEditorState);
     return MERGE;
   }
-  if (prevViewModel === null) {
+  if (prevEditorState === null) {
     return NO_MERGE;
   }
-  const selection = nextViewModel._selection;
-  const prevSelection = prevViewModel._selection;
+  const selection = nextEditorState._selection;
+  const prevSelection = prevEditorState._selection;
   const hasDirtyNodes = dirtyNodesSet.size > 0;
   if (!hasDirtyNodes) {
     if (prevSelection === null && selection !== null) {
@@ -60,9 +60,9 @@ function getMergeAction(
     }
     return DISCARD;
   }
-  const dirtyNodes = getDirtyNodes(nextViewModel, dirtyNodesSet);
+  const dirtyNodes = getDirtyNodes(nextEditorState, dirtyNodesSet);
   if (dirtyNodes.length === 1) {
-    const prevNodeMap = prevViewModel._nodeMap;
+    const prevNodeMap = prevEditorState._nodeMap;
     const nextDirtyNode = dirtyNodes[0];
     const prevDirtyNodeKey = nextDirtyNode.__key;
     const prevDirtyNode = prevNodeMap.get(prevDirtyNodeKey);
@@ -109,9 +109,9 @@ function getMergeAction(
 
 export default function useOutlineHistory(editor: OutlineEditor): () => void {
   const historyState: {
-    current: null | ViewModel,
-    redoStack: Array<ViewModel>,
-    undoStack: Array<ViewModel>,
+    current: null | EditorState,
+    redoStack: Array<EditorState>,
+    undoStack: Array<EditorState>,
   } = useMemo(
     () => ({
       current: null,
@@ -127,16 +127,16 @@ export default function useOutlineHistory(editor: OutlineEditor): () => void {
       return;
     }
 
-    const applyChange = ({viewModel, dirty, dirtyNodes}) => {
+    const applyChange = ({editorState, dirty, dirtyNodes}) => {
       const current = historyState.current;
       const redoStack = historyState.redoStack;
       const undoStack = historyState.undoStack;
 
-      if (viewModel === current) {
+      if (editorState === current) {
         return;
       }
       if (dirty) {
-        const mergeAction = getMergeAction(current, viewModel, dirtyNodes);
+        const mergeAction = getMergeAction(current, editorState, dirtyNodes);
         if (mergeAction === NO_MERGE) {
           if (redoStack.length !== 0) {
             historyState.redoStack = [];
@@ -149,7 +149,7 @@ export default function useOutlineHistory(editor: OutlineEditor): () => void {
         }
         // Else we merge
       }
-      historyState.current = viewModel;
+      historyState.current = editorState;
     };
 
     const undo = () => {
@@ -162,9 +162,9 @@ export default function useOutlineHistory(editor: OutlineEditor): () => void {
         if (current !== null) {
           redoStack.push(current);
         }
-        const viewModel = undoStack.pop();
-        historyState.current = viewModel;
-        editor.setViewModel(viewModel);
+        const editorState = undoStack.pop();
+        historyState.current = editorState;
+        editor.setEditorState(editorState);
       }
     };
 
@@ -177,9 +177,9 @@ export default function useOutlineHistory(editor: OutlineEditor): () => void {
         if (current !== null) {
           undoStack.push(current);
         }
-        const viewModel = redoStack.pop();
-        historyState.current = viewModel;
-        editor.setViewModel(viewModel);
+        const editorState = redoStack.pop();
+        historyState.current = editorState;
+        editor.setEditorState(editorState);
       }
     };
 

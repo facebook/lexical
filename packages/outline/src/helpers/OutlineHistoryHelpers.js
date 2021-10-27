@@ -7,18 +7,18 @@
  * @flow strict
  */
 
-import type {ViewModel, OutlineEditor, View} from 'outline';
+import type {EditorState, OutlineEditor, View} from 'outline';
 
-export const viewModelsWithoutHistory: Set<ViewModel> = new Set();
+export const editorStatesWithoutHistory: Set<EditorState> = new Set();
 
 export function updateWithoutHistory(
   editor: OutlineEditor,
   updateFn: (view: View) => void,
 ): boolean {
   const res = editor.update(updateFn);
-  const pendingViewModel = editor._pendingViewModel;
-  if (pendingViewModel !== null) {
-    viewModelsWithoutHistory.add(pendingViewModel);
+  const pendingEditorState = editor._pendingEditorState;
+  if (pendingEditorState !== null) {
+    editorStatesWithoutHistory.add(pendingEditorState);
   }
   return res;
 }

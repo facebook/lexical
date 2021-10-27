@@ -9,7 +9,7 @@ build the things you need on top, rather than have them included by default.
 
 Outline's core concerns itself with four main concerns:
 
-- State (the editor view model)
+- State (the editor state)
 - Updates (handling updates from A -> B)
 - Reconcilation (creating and updating the DOM)
 - Subscribing (you can add various listeners that subscribe to internal changes)

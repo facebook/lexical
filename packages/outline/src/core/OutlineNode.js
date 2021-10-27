@@ -15,7 +15,7 @@ import {
   getActiveViewModel,
   errorOnReadOnly,
   getActiveEditor,
-} from './OutlineProcess';
+} from './OutlineUpdates';
 import {
   generateKey,
   getCompositionKey,

@@ -13,7 +13,7 @@ import type {Selection} from './OutlineSelection';
 import {isTextNode, TextNode} from '.';
 import {OutlineNode, updateDirectionIfNeeded} from './OutlineNode';
 import {makeSelection, getSelection, setPointValues} from './OutlineSelection';
-import {errorOnReadOnly} from './OutlineProcess';
+import {errorOnReadOnly} from './OutlineUpdates';
 import {IS_DIRECTIONLESS, IS_LTR, IS_RTL} from './OutlineConstants';
 import {getNodeByKey} from './OutlineUtils';
 

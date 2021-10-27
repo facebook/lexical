@@ -12,7 +12,7 @@ import type {Selection} from './OutlineSelection';
 import type {TextNode} from './OutlineTextNode';
 
 import {isTextNode, isDecoratorNode} from '.';
-import {view} from './OutlineProcess';
+import {view} from './OutlineUpdates';
 import {triggerListeners} from './OutlineListeners';
 import {getNearestNodeFromDOMNode, getNodeFromDOMNode} from './OutlineUtils';
 

@@ -44,7 +44,7 @@ if (isClean) {
 const wwwMappings = {
   outline: 'Outline',
   'react-dom': 'ReactDOMComet',
-  'outline/HistoryHelpers': 'OutlineHistoryHelpers',
+  'outline/history': 'OutlineHistoryHelpers',
 };
 
 const outlineExtensions = fs

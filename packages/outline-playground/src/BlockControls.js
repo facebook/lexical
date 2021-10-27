@@ -36,8 +36,8 @@ export default function BlockControls({
   const blockControlsRef = useRef(null);
 
   useEffect(() => {
-    return editor.addListener('update', ({viewModel}) => {
-      viewModel.read((view) => {
+    return editor.addListener('update', ({editorState}) => {
+      editorState.read((view) => {
         const selection = view.getSelection();
         if (selection !== null) {
           const anchorNode = selection.anchor.getNode();

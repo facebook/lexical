@@ -426,7 +426,7 @@ function tryToPositionRange(match: MentionMatch, range: Range): boolean {
 
 function getMentionsTextToSearch(editor: OutlineEditor): string | null {
   let text = null;
-  editor.getViewModel().read((view: View) => {
+  editor.getEditorState().read((view: View) => {
     const selection = view.getSelection();
     if (selection == null) {
       return;

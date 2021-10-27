@@ -13,7 +13,7 @@ export type {
   EditorThemeClasses,
   TextMutation,
 } from './OutlineEditor';
-export type {ViewModel, ParsedViewModel} from './OutlineViewModel';
+export type {EditorState, ParsedEditorState} from './OutlineEditorState';
 export type {View} from './OutlineUpdates';
 export type {
   NodeKey,

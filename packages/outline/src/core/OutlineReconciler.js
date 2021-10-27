@@ -16,7 +16,7 @@ import type {
 import type {TextNode} from './OutlineTextNode';
 import type {Node as ReactNode} from 'react';
 
-import {ViewModel} from './OutlineViewModel';
+import {EditorState} from './OutlineEditorState';
 import {
   isSelectionWithinEditor,
   getDOMTextNode,
@@ -52,7 +52,7 @@ function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
     parentDOM.removeChild(dom);
   }
   // This logic is really important, otherwise we will leak DOM nodes
-  // when their corresponding OutlineNodes are removed from the view model.
+  // when their corresponding OutlineNodes are removed from the editor state.
   if (!activeNextNodeMap.has(key)) {
     activeEditor._keyToDOMMap.delete(key);
   }
@@ -464,8 +464,8 @@ function reconcileNodeChildren(
 }
 
 function reconcileRoot(
-  prevViewModel: ViewModel,
-  nextViewModel: ViewModel,
+  prevEditorState: EditorState,
+  nextEditorState: EditorState,
   editor: OutlineEditor,
   selection: null | OutlineSelection,
   dirtyType: 0 | 1 | 2,
@@ -481,8 +481,8 @@ function reconcileRoot(
   activeEditorConfig = editor._config;
   activeDirtySubTrees = dirtySubTrees;
   activeDirtyNodes = dirtyNodes;
-  activePrevNodeMap = prevViewModel._nodeMap;
-  activeNextNodeMap = nextViewModel._nodeMap;
+  activePrevNodeMap = prevEditorState._nodeMap;
+  activeNextNodeMap = nextEditorState._nodeMap;
   activeSelection = selection;
   activePrevKeyToDOMMap = new Map(editor._keyToDOMMap);
   reconcileNode('root', null);
@@ -510,10 +510,10 @@ function reconcileRoot(
   activePrevKeyToDOMMap = undefined;
 }
 
-export function updateViewModel(
+export function updateEditorState(
   rootElement: HTMLElement,
-  currentViewModel: ViewModel,
-  pendingViewModel: ViewModel,
+  currentEditorState: EditorState,
+  pendingEditorState: EditorState,
   currentSelection: OutlineSelection | null,
   pendingSelection: OutlineSelection | null,
   needsUpdate: boolean,
@@ -529,8 +529,8 @@ export function updateViewModel(
     observer.disconnect();
     try {
       reconcileRoot(
-        currentViewModel,
-        pendingViewModel,
+        currentEditorState,
+        pendingEditorState,
         editor,
         pendingSelection,
         dirtyType,

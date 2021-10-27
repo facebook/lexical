@@ -11,6 +11,7 @@ import type {OutlineEditor} from './OutlineEditor';
 import type {Selection} from './OutlineSelection';
 import type {TextNode} from './OutlineTextNode';
 
+import {log} from 'outline';
 import {isTextNode, isDecoratorNode} from '.';
 import {view} from './OutlineUpdates';
 import {triggerListeners} from './OutlineListeners';
@@ -174,7 +175,7 @@ export function flushRootMutations(
   isProcessingMutations = true;
   try {
     editor.update(() => {
-      view.log('onMutation');
+      log('onMutation');
       flushMutations(editor, mutations, observer);
     });
   } finally {

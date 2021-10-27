@@ -32,8 +32,9 @@ import {isBlockNode, BlockNode} from './OutlineBlockNode';
 import {createRootNode, isRootNode, RootNode} from './OutlineRootNode';
 import {createLineBreakNode, isLineBreakNode} from './OutlineLineBreakNode';
 import {DecoratorNode, isDecoratorNode} from './OutlineDecoratorNode';
-import {isLeafNode} from './OutlineUtils';
+import {isLeafNode, pushLogEntry as log} from './OutlineUtils';
 import {createEmptySelection as createSelection} from './OutlineSelection';
+import {createNodeFromParse} from './OutlineParsing';
 
 export {
   createSelection,
@@ -43,6 +44,7 @@ export {
   createLineBreakNode,
   createRootNode,
   createTextNode,
+  createNodeFromParse,
   // Node validation
   isLeafNode,
   isBlockNode,
@@ -55,4 +57,6 @@ export {
   DecoratorNode,
   RootNode,
   TextNode,
+  // Logging
+  log,
 };

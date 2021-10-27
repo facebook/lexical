@@ -19,7 +19,7 @@ import React, {useCallback, useLayoutEffect, useMemo, useRef} from 'react';
 import {startTransition, useEffect, useState} from 'react';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
-import {TextNode} from 'outline';
+import {TextNode, log} from 'outline';
 import useEvent from './useEvent';
 
 type MentionMatch = {
@@ -469,7 +469,7 @@ function createMentionNodeFromSearchResult(
   match: MentionMatch,
 ): void {
   editor.update((view: View) => {
-    view.log('createMentionNodeFromSearchResult');
+    log('createMentionNodeFromSearchResult');
     const selection = view.getSelection();
     if (selection == null || !selection.isCollapsed()) {
       return;

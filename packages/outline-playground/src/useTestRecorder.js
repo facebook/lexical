@@ -9,7 +9,7 @@
 
 import type {OutlineEditor, View} from 'outline';
 
-import {createTextNode} from 'outline';
+import {createTextNode, log} from 'outline';
 import {createParagraphNode} from 'outline/ParagraphNode';
 import React, {
   useCallback,
@@ -343,7 +343,7 @@ ${steps.map(formatStep).join(`\n`)}
     (currentEditor) => {
       if (!isRecording) {
         currentEditor.update((view: View) => {
-          view.log('useStepRecorder');
+          log('useStepRecorder');
           const root = view.getRoot();
           root.clear();
           const text = createTextNode();

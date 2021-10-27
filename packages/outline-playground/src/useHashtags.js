@@ -11,7 +11,7 @@ import type {OutlineEditor, TextNode, View} from 'outline';
 import {HashtagNode, toggleHashtag} from 'outline/HashtagNode';
 
 import {useEffect} from 'react';
-import {isTextNode} from 'outline';
+import {isTextNode, log} from 'outline';
 
 function getHashtagRegexStringChars(): $ReadOnly<{
   alpha: string,
@@ -284,7 +284,7 @@ export default function useHashtags(editor: OutlineEditor): void {
       editor.addTextNodeTransform(textNodeTransform);
     const removeUpdateListener = editor.addListener('update', () => {
       editor.update((view) => {
-        view.log('useHashtags')
+        log('useHashtags');
         const selection = view.getSelection();
         if (selection !== null && !editor.isComposing()) {
           const anchorNode = selection.anchor.getNode();

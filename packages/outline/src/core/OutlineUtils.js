@@ -238,3 +238,8 @@ export function cloneDecorators(editor: OutlineEditor): {[NodeKey]: ReactNode} {
   editor._pendingDecorators = pendingDecorators;
   return pendingDecorators;
 }
+
+export function pushLogEntry(entry: string): void {
+  const editor = getActiveEditor();
+  editor._log.push(entry);
+}

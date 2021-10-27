@@ -11,6 +11,7 @@ import type {OutlineEditor, View, RootNode} from 'outline';
 import type {InputEvents} from 'outline-react/useOutlineEditorEvents';
 
 import {useCallback} from 'react';
+import {log} from 'outline';
 import useLayoutEffect from './shared/useLayoutEffect';
 import useOutlineEditorEvents from './useOutlineEditorEvents';
 import {HeadingNode} from 'outline/HeadingNode';
@@ -50,7 +51,7 @@ function initParagraph(view: View, root: RootNode): void {
 
 function initEditor(editor: OutlineEditor): void {
   editor.update((view: View) => {
-    view.log('initEditor');
+    log('initEditor');
     const root = view.getRoot();
     const firstChild = root.getFirstChild();
     if (firstChild === null) {
@@ -64,7 +65,7 @@ function clearEditor(
   callbackFn?: (callbackFn?: () => void) => void,
 ): void {
   editor.update((view) => {
-    view.log('clearEditor');
+    log('clearEditor');
     const root = view.getRoot();
     root.clear();
     initParagraph(view, root);

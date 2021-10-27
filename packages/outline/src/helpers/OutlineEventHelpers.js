@@ -37,7 +37,7 @@ import {
   isTab,
   isMoveBackward,
   isMoveForward,
-} from 'outline/KeyHelpers';
+} from 'outline/keys';
 import isImmutableOrInert from 'shared/isImmutableOrInert';
 import {
   deleteBackward,
@@ -55,7 +55,7 @@ import {
   insertLineBreak,
   insertRichText,
   moveCharacter,
-} from 'outline/SelectionHelpers';
+} from 'outline/selection';
 import {
   createTextNode,
   isTextNode,

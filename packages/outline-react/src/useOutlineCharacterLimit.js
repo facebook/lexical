@@ -17,8 +17,8 @@ import type {
 } from 'outline';
 
 import {BlockNode, isLeafNode, isTextNode} from 'outline';
-import {updateWithoutHistory} from 'outline/HistoryHelpers';
-import {dfs} from 'outline/NodeHelpers';
+import {updateWithoutHistory} from 'outline/history';
+import {dfs} from 'outline/nodes';
 import {useEffect, useCallback} from 'react';
 
 type OptionalProps = {

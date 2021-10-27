@@ -387,10 +387,10 @@ class BaseOutlineEditor {
           }
         },
         () => {
-          rootElement.removeAttribute('autocapitalize');
           if (document.activeElement !== rootElement) {
             rootElement.focus({preventScroll: true});
           }
+          rootElement.removeAttribute('autocapitalize');
           if (callbackFn) {
             callbackFn();
           }

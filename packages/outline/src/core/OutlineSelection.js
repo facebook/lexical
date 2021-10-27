@@ -11,7 +11,6 @@ import type {OutlineNode, NodeKey} from './OutlineNode';
 import type {OutlineEditor} from './OutlineEditor';
 import type {BlockNode} from './OutlineBlockNode';
 import type {TextFormatType} from './OutlineTextNode';
-import type {RootNode} from './OutlineRootNode';
 import type {EditorState} from './OutlineEditorState';
 
 import {
@@ -581,14 +580,9 @@ export function makeSelection(
   return selection;
 }
 
-export function createSelectionAtEnd(root: RootNode): Selection | null {
-  // This is a temp point, we will move to end after
+export function createEmptySelection(): Selection {
   const anchor = createPoint('root', 0, 'block');
-  moveSelectionPointToEnd(anchor, root);
-  if (anchor.key === 'root') {
-    return null;
-  }
-  const focus = createPoint(anchor.key, anchor.offset, anchor.type);
+  const focus = createPoint('root', 0, 'block');
   return new Selection(anchor, focus, 0);
 }
 

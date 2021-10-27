@@ -23,7 +23,6 @@ import {
   createSelection,
   getSelection,
   createSelectionFromParse,
-  createSelectionAtEnd,
 } from './OutlineSelection';
 import {isTextNode} from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './OutlineConstants';
@@ -64,14 +63,12 @@ export type View = {
   clearSelection(): void,
   getRoot: () => RootNode,
   getNodeByKey: (key: NodeKey) => null | OutlineNode,
-  createSelection: () => Selection | null,
   getSelection: () => null | Selection,
   setSelection: (selection: Selection) => void,
   createNodeFromParse: (
     parsedNode: ParsedNode,
     parsedNodeMap: ParsedNodeMap,
   ) => OutlineNode,
-  markNodeAsDirty: (node: OutlineNode) => void,
   setCompositionKey: (compositionKey: NodeKey | null) => void,
   getCompositionKey: () => null | NodeKey,
   getNearestNodeFromDOMNode: (dom: Node) => null | OutlineNode,
@@ -86,10 +83,6 @@ export const view: View = {
   },
   getNodeByKey,
   getSelection,
-  createSelection(): Selection | null {
-    const root = view.getRoot();
-    return createSelectionAtEnd(root);
-  },
   clearSelection(): void {
     const editorState = getActiveEditorState();
     editorState._selection = null;
@@ -105,10 +98,6 @@ export const view: View = {
     errorOnReadOnly();
     const editor = getActiveEditor();
     return createNodeFromParse(parsedNode, parsedNodeMap, editor, null);
-  },
-  markNodeAsDirty(node: OutlineNode): void {
-    errorOnReadOnly();
-    node.getWritable();
   },
   setCompositionKey(compositionKey: null | NodeKey): void {
     errorOnReadOnly();
@@ -417,7 +406,7 @@ export function beginUpdate(
       for (let i = 0; i < nodeMapEntries.length; i++) {
         const [nodeKey, node] = nodeMapEntries[i];
         if (isTextNode(node) && pendingNodeMap.has(nodeKey)) {
-          node.getWritable();
+          node.markDirty();
         }
       }
     }

@@ -583,7 +583,7 @@ function updateTextNodeFromDOMContent(
 
     if (compositionEnd || normalizedTextContent !== node.getTextContent()) {
       if (isImmutableOrInert(node) || (editor.isComposing() && !isComposing)) {
-        view.markNodeAsDirty(node);
+        node.markDirty();
         return;
       }
       const selection = view.getSelection();

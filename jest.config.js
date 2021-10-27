@@ -37,17 +37,17 @@ module.exports = {
           '<rootDir>/packages/outline/src/extensions/OutlineHashtagNode.js',
         '^outline-react/useOutlineRichText$':
           '<rootDir>/packages/outline-react/src/useOutlineRichText.js',
-        '^outline/HistoryHelpers$':
+        '^outline/history$':
           '<rootDir>/packages/outline/src/helpers/OutlineHistoryHelpers.js',
-        '^outline/SelectionHelpers$':
+        '^outline/selection$':
           '<rootDir>/packages/outline/src/helpers/OutlineSelectionHelpers.js',
-        '^outline/TextHelpers$':
+        '^outline/text$':
           '<rootDir>/packages/outline/src/helpers/OutlineTextHelpers.js',
-        '^outline/KeyHelpers$':
+        '^outline/keys$':
           '<rootDir>/packages/outline/src/helpers/OutlineKeyHelpers.js',
-        '^outline/NodeHelpers$':
+        '^outline/nodes$':
           '<rootDir>/packages/outline/src/helpers/OutlineNodeHelpers.js',
-        '^outline/EventHelpers$':
+        '^outline/events$':
           '<rootDir>/packages/outline/src/helpers/OutlineEventHelpers.js',
         '^shared/getDOMTextNodeFromElement$':
           '<rootDir>/packages/shared/src/getDOMTextNodeFromElement.js',

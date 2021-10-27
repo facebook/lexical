@@ -8,7 +8,7 @@
  */
 
 import type {OutlineEditor} from 'outline';
-import type {EventHandler} from 'outline/EventHelpers';
+import type {EventHandler} from 'outline/events';
 
 import useLayoutEffect from './shared/useLayoutEffect';
 

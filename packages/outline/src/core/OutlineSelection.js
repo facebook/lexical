@@ -29,7 +29,13 @@ import {
   isRootNode,
   TextNode,
 } from '.';
-import {getCompositionKey, getNodeByKey, isSelectionWithinEditor, setCompositionKey, toggleTextFormatType} from './OutlineUtils';
+import {
+  getCompositionKey,
+  getNodeByKey,
+  isSelectionWithinEditor,
+  setCompositionKey,
+  toggleTextFormatType,
+} from './OutlineUtils';
 import invariant from 'shared/invariant';
 import {
   IS_BOLD,
@@ -591,9 +597,7 @@ function getActiveEventType(): string | void {
   return event && event.type;
 }
 
-export function createSelection(
-  editor: OutlineEditor,
-): null | Selection {
+export function createSelection(editor: OutlineEditor): null | Selection {
   // When we create a selection, we try to use the previous
   // selection where possible, unless an actual user selection
   // change has occurred. When we do need to create a new selection

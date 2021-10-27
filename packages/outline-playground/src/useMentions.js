@@ -469,7 +469,7 @@ function createMentionNodeFromSearchResult(
   match: MentionMatch,
 ): void {
   editor.update((view: View) => {
-    view.log('createMentionNodeFromSearchResult')
+    view.log('createMentionNodeFromSearchResult');
     const selection = view.getSelection();
     if (selection == null || !selection.isCollapsed()) {
       return;

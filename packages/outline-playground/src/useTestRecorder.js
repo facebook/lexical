@@ -343,7 +343,7 @@ ${steps.map(formatStep).join(`\n`)}
     (currentEditor) => {
       if (!isRecording) {
         currentEditor.update((view: View) => {
-          view.log('useStepRecorder')
+          view.log('useStepRecorder');
           const root = view.getRoot();
           root.clear();
           const text = createTextNode();

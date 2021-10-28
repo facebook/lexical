@@ -369,7 +369,7 @@ export function getSelectionStyleValueForProperty(
     // if no actual characters in the end node are selected, we don't
     // include it in the selection for purposes of determining style
     // value
-    if (endOffset === 0 && node.is(endNode)) {
+    if (i !== 0 && endOffset === 0 && node.is(endNode)) {
       continue;
     }
     if (isTextNode(node)) {

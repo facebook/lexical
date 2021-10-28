@@ -60,6 +60,7 @@ import {
   createTextNode,
   createNodeFromParse,
   isTextNode,
+  isBlockNode,
   isDecoratorNode,
   log,
   getSelection,
@@ -74,9 +75,8 @@ import getPossibleDecoratorNode from 'shared/getPossibleDecoratorNode';
 import {createListNode} from '../extensions/OutlineListNode';
 import {createListItemNode} from '../extensions/OutlineListItemNode';
 import {createParagraphNode} from '../extensions/OutlineParagraphNode';
-import type {DOMNodeToOutlineConversionMap} from './OutlineNodeHelpers';
 import {createHeadingNode} from '../extensions/OutlineHeadingNode';
-import {createOutlineNodeFromDOMNode} from './OutlineNodeHelpers';
+import {createLinkNode} from '../extensions/OutlineLinkNode';
 
 const NO_BREAK_SPACE_CHAR = '\u00A0';
 
@@ -88,6 +88,11 @@ export type EventHandler = (
   event: Object,
   editor: OutlineEditor,
 ) => void;
+
+export type DOMTransformer = (element: Node) => OutlineNode;
+export type DOMTransformerMap = {
+  [string]: DOMTransformer,
+};
 
 function updateAndroidSoftKeyFlagIfAny(event: KeyboardEvent): void {
   lastKeyWasMaybeAndroidSoftKey =
@@ -112,7 +117,7 @@ function generateNodes(nodeRange: {
   return nodes;
 }
 
-const DOM_NODE_NAME_TO_OUTLINE_NODE: DOMNodeToOutlineConversionMap = {
+const DOM_NODE_NAME_TO_OUTLINE_NODE: DOMTransformerMap = {
   ul: () => createListNode('ul'),
   ol: () => createListNode('ol'),
   li: () => createListItemNode(),
@@ -122,6 +127,12 @@ const DOM_NODE_NAME_TO_OUTLINE_NODE: DOMNodeToOutlineConversionMap = {
   h4: () => createHeadingNode('h4'),
   h5: () => createHeadingNode('h5'),
   p: () => createParagraphNode(),
+  a: (domNode: Node) => {
+    if (domNode instanceof HTMLAnchorElement) {
+      return createLinkNode(domNode.textContent, domNode.href);
+    }
+    return createTextNode(domNode.textContent);
+  },
   span: (domNode: Node) => {
     const textNode = createTextNode(domNode.textContent);
     return textNode;
@@ -154,10 +165,31 @@ const DOM_NODE_NAME_TO_OUTLINE_NODE: DOMNodeToOutlineConversionMap = {
   '#text': (domNode: Node) => createTextNode(domNode.textContent),
 };
 
+export function createOutlineNodeFromDOMNode(
+  node: Node,
+  conversionMap: DOMTransformerMap,
+): OutlineNode | null {
+  let outlineNode: OutlineNode | null = null;
+  const createFunction = conversionMap[node.nodeName.toLowerCase()];
+  if (createFunction) {
+    outlineNode = createFunction(node);
+    if (isBlockNode(outlineNode)) {
+      const children = node.childNodes;
+      for (let i = 0; i < children.length; i++) {
+        const child = createOutlineNodeFromDOMNode(children[i], conversionMap);
+        if (child !== null) {
+          outlineNode.append(child);
+        }
+      }
+    }
+  }
+  return outlineNode;
+}
+
 function generateNodesFromDOM(
   dom: Document,
   view: View,
-  conversionMap: DOMNodeToOutlineConversionMap,
+  conversionMap: DOMTransformerMap,
 ): Array<OutlineNode> {
   const outlineNodes = [];
   const elements: Array<Node> = dom.body ? Array.from(dom.body.childNodes) : [];

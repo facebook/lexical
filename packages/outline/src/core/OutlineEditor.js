@@ -30,6 +30,7 @@ import {
   markAllNodesAsDirty,
 } from './OutlineUtils';
 import invariant from 'shared/invariant';
+import type {DOMTransformerMap} from '../helpers/OutlineEventHelpers';
 
 export type EditorThemeClassName = string;
 
@@ -75,6 +76,7 @@ export type EditorThemeClasses = {
 export type EditorConfig<EditorContext> = {
   theme: EditorThemeClasses,
   context: EditorContext,
+  htmlTransforms?: DOMTransformerMap,
 };
 
 export type RegisteredNodes = Map<string, RegisteredNode>;

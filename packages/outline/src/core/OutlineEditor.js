@@ -166,10 +166,12 @@ export function createEditor<EditorContext>(editorConfig?: {
   initialEditorState?: EditorState,
   theme?: EditorThemeClasses,
   context?: EditorContext,
+  htmlTransforms?: DOMTransformerMap,
 }): OutlineEditor {
   const config = editorConfig || {};
   const theme = config.theme || {};
   const context = config.context || {};
+  const htmlTransforms = config.htmlTransforms || {};
   const editorState = createEmptyEditorState();
   const initialEditorState = config.initialEditorState;
   // $FlowFixMe: use our declared type instead
@@ -177,6 +179,7 @@ export function createEditor<EditorContext>(editorConfig?: {
     // $FlowFixMe: we use our internal type to simpify the generics
     context,
     theme,
+    htmlTransforms,
   });
   if (initialEditorState !== undefined) {
     editor._pendingEditorState = initialEditorState;

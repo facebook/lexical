@@ -168,15 +168,24 @@ const DOM_NODE_NAME_TO_OUTLINE_NODE: DOMTransformerMap = {
 export function createOutlineNodeFromDOMNode(
   node: Node,
   conversionMap: DOMTransformerMap,
+  editor: OutlineEditor,
 ): OutlineNode | null {
   let outlineNode: OutlineNode | null = null;
-  const createFunction = conversionMap[node.nodeName.toLowerCase()];
+  const nodeName = node.nodeName.toLowerCase();
+  const customHtmlTransforms = editor._config.htmlTransforms || {};
+  const createFunction =
+    customHtmlTransforms[nodeName] || conversionMap[nodeName];
+
   if (createFunction) {
     outlineNode = createFunction(node);
     if (isBlockNode(outlineNode)) {
       const children = node.childNodes;
       for (let i = 0; i < children.length; i++) {
-        const child = createOutlineNodeFromDOMNode(children[i], conversionMap);
+        const child = createOutlineNodeFromDOMNode(
+          children[i],
+          conversionMap,
+          editor,
+        );
         if (child !== null) {
           outlineNode.append(child);
         }
@@ -190,6 +199,7 @@ function generateNodesFromDOM(
   dom: Document,
   view: View,
   conversionMap: DOMTransformerMap,
+  editor: OutlineEditor,
 ): Array<OutlineNode> {
   const outlineNodes = [];
   const elements: Array<Node> = dom.body ? Array.from(dom.body.childNodes) : [];
@@ -198,6 +208,7 @@ function generateNodesFromDOM(
     const outlineNode = createOutlineNodeFromDOMNode(
       elements[i],
       conversionMap,
+      editor,
     );
     if (outlineNode !== null) {
       outlineNodes.push(outlineNode);
@@ -235,6 +246,7 @@ function insertDataTransferForRichText(
       dom,
       view,
       DOM_NODE_NAME_TO_OUTLINE_NODE,
+      editor,
     );
     // Wrap text nodes in paragraph nodes so we have all blocks at the top-level
     const mapped = nodes.map((node) => {

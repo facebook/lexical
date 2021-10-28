@@ -35,10 +35,22 @@ import {
 import useOutlineDragonSupport from './shared/useOutlineDragonSupport';
 import useOutlineHistory from './shared/useOutlineHistory';
 
-function initParagraph(view: View, root: RootNode): void {
+function shouldSelectParagraph(view: View, editor: OutlineEditor): boolean {
+  const activeElement = document.activeElement;
+  return (
+    view.getSelection() !== null ||
+    (activeElement !== null && activeElement === editor.getRootElement())
+  );
+}
+
+function initParagraph(
+  view: View,
+  root: RootNode,
+  editor: OutlineEditor,
+): void {
   const paragraph = createParagraphNode();
   root.append(paragraph);
-  if (view.getSelection() !== null) {
+  if (shouldSelectParagraph(view, editor)) {
     paragraph.select();
   }
 }
@@ -49,7 +61,7 @@ function initEditor(editor: OutlineEditor): void {
     const root = view.getRoot();
     const firstChild = root.getFirstChild();
     if (firstChild === null) {
-      initParagraph(view, root);
+      initParagraph(view, root, editor);
     }
   });
 }
@@ -62,7 +74,7 @@ function clearEditor(
     log('clearEditor');
     const root = view.getRoot();
     root.clear();
-    initParagraph(view, root);
+    initParagraph(view, root, editor);
   }, callbackFn);
 }
 

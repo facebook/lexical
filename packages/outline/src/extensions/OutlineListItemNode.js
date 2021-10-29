@@ -20,6 +20,7 @@ import {isBlockNode, BlockNode} from 'outline';
 import {createParagraphNode} from 'outline/ParagraphNode';
 import {createListNode, isListNode} from 'outline/ListNode';
 import invariant from 'shared/invariant';
+import {getTopListNode, isLastItemInList} from 'outline/nodes';
 
 export class ListItemNode extends BlockNode {
   static clone(node: ListItemNode): ListItemNode {
@@ -118,13 +119,16 @@ export class ListItemNode extends BlockNode {
   insertNewAfter(): ListItemNode | ParagraphNode {
     const nextSibling = this.getNextSibling();
     const prevSibling = this.getPreviousSibling();
-    const list = this.getParent();
+    const list = getTopListNode(this);
+    const isLast = isLastItemInList(this);
+
     let newBlock;
 
     if (
       isBlockNode(list) &&
       this.getTextContent() === '' &&
-      (prevSibling === null || nextSibling === null)
+      (prevSibling === null || nextSibling === null) &&
+      isLast
     ) {
       if (nextSibling === null) {
         newBlock = createParagraphNode();

@@ -7,8 +7,13 @@
  * @flow strict
  */
 
+import type {ListItemNode} from 'outline/ListItemNode';
 import type {OutlineNode, BlockNode} from 'outline';
+import type {ListNode} from 'outline/ListNode';
 
+import {isListNode} from 'outline/ListNode';
+import {isListItemNode} from 'outline/ListItemNode';
+import invariant from 'shared/invariant';
 import {isBlockNode} from 'outline';
 
 export function dfs(
@@ -52,4 +57,37 @@ export function getCommonAncestor(nodes: OutlineNode[]): null | BlockNode {
     }
   }
   return commonAncestor;
+}
+
+export function getTopListNode(listItem: ListItemNode): ListNode {
+  let list = listItem.getParent();
+  if (!isListNode(list)) {
+    invariant(false, 'A ListItemNode must have a ListNode for a parent.');
+  }
+  let parent = list;
+  while (parent !== null) {
+    parent = parent.getParent();
+    if (isListNode(parent)) {
+      list = parent;
+    }
+  }
+  return list;
+}
+
+export function isLastItemInList(listItem: ListItemNode): boolean {
+  let isLast = true;
+  const firstChild = listItem.getFirstChild();
+  if (isListNode(firstChild)) {
+    return false;
+  }
+  let parent = listItem;
+  while (parent !== null) {
+    if (isListItemNode(parent)) {
+      if (parent.getNextSiblings().length > 0) {
+        isLast = false;
+      }
+    }
+    parent = parent.getParent();
+  }
+  return isLast;
 }

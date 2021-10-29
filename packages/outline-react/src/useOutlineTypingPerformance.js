@@ -4,12 +4,14 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict-local
+ * @flow strict
  */
 
 import {useEffect} from 'react';
 
-export default function useTypingPerfTracker(measureTypingPerf: boolean): void {
+export default function useOutlineTypingPerfTracker(
+  measureTypingPerf: boolean,
+): void {
   useEffect(() => {
     if (measureTypingPerf) {
       let start = 0;
@@ -19,6 +21,7 @@ export default function useTypingPerfTracker(measureTypingPerf: boolean): void {
         const total = log.reduce((a, b) => a + b, 0);
         const reportedText =
           'Typing Perf: ' + Math.round((total / log.length) * 100) / 100 + 'ms';
+        // eslint-disable-next-line no-console
         console.log(reportedText);
         // Show an element on the screen too :)
         const element = document.createElement('div');

@@ -191,19 +191,20 @@ describe('OutlineSelectionHelpers tests', () => {
       setupTestCase((selection, view, block) => {
         formatText(selection, 'bold');
         insertText(selection, 'Test');
-        expect(block.getFirstChild().getNextSibling().getTextContent()).toBe(
-          'Test',
-        );
+        expect(block.getFirstChild().getTextContent()).toBe('Test');
         expect(selection.anchor).toEqual({
           type: 'text',
           offset: 4,
-          key: block.getFirstChild().getNextSibling().getKey(),
+          key: block.getFirstChild().getKey(),
         });
         expect(selection.focus).toEqual({
           type: 'text',
           offset: 4,
-          key: block.getFirstChild().getNextSibling().getKey(),
+          key: block.getFirstChild().getKey(),
         });
+        expect(block.getFirstChild().getNextSibling().getTextContent()).toBe(
+          'a',
+        );
       });
 
       // Extract selection

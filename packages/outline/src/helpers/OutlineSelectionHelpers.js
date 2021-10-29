@@ -1237,11 +1237,15 @@ export function insertText(selection: Selection, text: string): void {
       if (firstNode.getTextContent() === '') {
         firstNode.setFormat(format);
       } else {
-        const [targetNode] = firstNode.splitText(startOffset);
         const textNode = createTextNode(text);
         textNode.setFormat(format);
-        targetNode.insertAfter(textNode);
         textNode.select();
+        if (startOffset === 0) {
+          firstNode.insertBefore(textNode);
+        } else {
+          const [targetNode] = firstNode.splitText(startOffset);
+          targetNode.insertAfter(textNode);
+        }
         return;
       }
     }

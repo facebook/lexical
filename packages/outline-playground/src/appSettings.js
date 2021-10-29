@@ -9,7 +9,6 @@
 
 export type SettingName =
   | 'disableBeforeInput'
-  | 'measureTypingPerf'
   | 'isRichText'
   | 'isCharLimit'
   | 'isCharLimitUtf8'
@@ -20,7 +19,6 @@ export type Settings = {[SettingName]: boolean};
 
 export const DEFAULT_SETTINGS: Settings = {
   disableBeforeInput: false,
-  measureTypingPerf: false,
   isRichText: true,
   isCharLimit: false,
   isCharLimitUtf8: false,

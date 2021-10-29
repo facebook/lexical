@@ -15,7 +15,6 @@ import {useRichTextEditor, usePlainTextEditor} from './Editor';
 import OutlineTreeView from 'outline-react/OutlineTreeView';
 import useSettings from './useSettings';
 import useTestRecorder from './useTestRecorder';
-import useTypingPerfTracker from './useTypingPerfTracker';
 import {DEFAULT_SETTINGS} from './appSettings';
 
 function RichTextEditor({settings, onSettingsChange}): React$Node {
@@ -23,20 +22,13 @@ function RichTextEditor({settings, onSettingsChange}): React$Node {
     settings,
     onSettingsChange,
   );
-  const {
-    measureTypingPerf,
-    isCharLimit,
-    isCharLimitUtf8,
-    isAutocomplete,
-    showTreeView,
-  } = settings;
+  const {isCharLimit, isCharLimitUtf8, isAutocomplete, showTreeView} = settings;
   const [editor, editorComponent] = useRichTextEditor({
     isCharLimit,
     isCharLimitUtf8,
     isAutocomplete,
   });
   const [testRecorderButton, testRecorderOutput] = useTestRecorder(editor);
-  useTypingPerfTracker(measureTypingPerf);
 
   return (
     <>
@@ -48,6 +40,8 @@ function RichTextEditor({settings, onSettingsChange}): React$Node {
           timeTravelButtonClassName="debug-timetravel-button"
           timeTravelPanelSliderClassName="debug-timetravel-panel-slider"
           timeTravelPanelButtonClassName="debug-timetravel-panel-button"
+          typingPerfButtonClassName="debug-typing-perf-button"
+          typingPerfButtonActiveClassName="debug-typing-perf-button-active"
           editor={editor}
         />
       )}
@@ -66,13 +60,7 @@ function PlainTextEditor({settings, onSettingsChange}): React$Node {
     settings,
     onSettingsChange,
   );
-  const {
-    measureTypingPerf,
-    isCharLimit,
-    isCharLimitUtf8,
-    isAutocomplete,
-    showTreeView,
-  } = settings;
+  const {isCharLimit, isCharLimitUtf8, isAutocomplete, showTreeView} = settings;
   const onError = useCallback((e: Error) => {
     throw e;
   }, []);
@@ -82,7 +70,6 @@ function PlainTextEditor({settings, onSettingsChange}): React$Node {
     isCharLimitUtf8,
     isAutocomplete,
   });
-  useTypingPerfTracker(measureTypingPerf);
 
   return (
     <>
@@ -94,6 +81,8 @@ function PlainTextEditor({settings, onSettingsChange}): React$Node {
           timeTravelButtonClassName="debug-timetravel-button"
           timeTravelPanelSliderClassName="debug-timetravel-panel-slider"
           timeTravelPanelButtonClassName="debug-timetravel-panel-button"
+          typingPerfButtonClassName="debug-typing-perf-button"
+          typingPerfButtonActiveClassName="debug-typing-perf-button-active"
           editor={editor}
         />
       )}

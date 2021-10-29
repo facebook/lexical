@@ -19,7 +19,7 @@ import {isBlockNode, isTextNode} from 'outline';
 
 import * as React from 'react';
 import {useState, useEffect, useRef} from 'react';
-import useTypingPerfTracker from './shared/useOutlineTypingPerformance';
+import useTypingPerfTracker from './useOutlineTypingPerformance';
 
 const NON_SINGLE_WIDTH_CHARS_REPLACEMENT: $ReadOnly<{
   [string]: string,

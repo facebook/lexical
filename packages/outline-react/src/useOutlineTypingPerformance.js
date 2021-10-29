@@ -9,7 +9,9 @@
 
 import {useEffect} from 'react';
 
-export default function useTypingPerfTracker(measureTypingPerf: boolean): void {
+export default function useOutlineTypingPerfTracker(
+  measureTypingPerf: boolean,
+): void {
   useEffect(() => {
     if (measureTypingPerf) {
       let start = 0;

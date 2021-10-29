@@ -19,6 +19,7 @@ import {isBlockNode, isTextNode} from 'outline';
 
 import * as React from 'react';
 import {useState, useEffect, useRef} from 'react';
+import useTypingPerfTracker from './useOutlineTypingPerformance';
 
 const NON_SINGLE_WIDTH_CHARS_REPLACEMENT: $ReadOnly<{
   [string]: string,
@@ -43,14 +44,18 @@ export default function TreeView({
   timeTravelButtonClassName,
   timeTravelPanelSliderClassName,
   timeTravelPanelButtonClassName,
-  viewClassName,
   timeTravelPanelClassName,
+  typingPerfButtonClassName,
+  typingPerfButtonActiveClassName,
+  viewClassName,
   editor,
 }: {
   timeTravelPanelClassName: string,
   timeTravelPanelSliderClassName: string,
   timeTravelPanelButtonClassName: string,
   timeTravelButtonClassName: string,
+  typingPerfButtonClassName: string,
+  typingPerfButtonActiveClassName: string,
   viewClassName: string,
   editor: OutlineEditor,
 }): React$Node {
@@ -60,6 +65,9 @@ export default function TreeView({
   const playingIndexRef = useRef(0);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [typingPerformanceEnabled, setTypingPerformanceEnabled] =
+    useState(false);
+  useTypingPerfTracker(typingPerformanceEnabled);
   useEffect(() => {
     setContent(generateContent(editor.getEditorState()));
     return editor.addListener('update', ({editorState}) => {
@@ -127,6 +135,15 @@ export default function TreeView({
           Time Travel
         </button>
       )}
+      <button
+        onClick={() => {
+          setTypingPerformanceEnabled((state) => !state);
+        }}
+        className={`${typingPerfButtonClassName} ${
+          typingPerformanceEnabled ? typingPerfButtonActiveClassName : ''
+        }`}>
+        Performance
+      </button>
       <pre>{content}</pre>
       {timeTravelEnabled && (
         <div className={timeTravelPanelClassName}>

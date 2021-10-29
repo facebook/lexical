@@ -919,17 +919,30 @@ pre {
   text-decoration: underline;
 }
 
-.debug-timetravel-button {
+.debug-timetravel-button, .debug-typing-perf-button {
+  cursor: pointer;
   border: 0;
   padding: 0;
   font-size: 12px;
   top: 10px;
-  right: 15px;
   position: absolute;
   background: none;
   color: #fff;
 }
 
-.debug-timetravel-button:hover {
+.debug-timetravel-button:hover, .debug-typing-perf-button:hover {
   text-decoration: underline;
+}
+
+.debug-timetravel-button {
+  right: 100px;
+}
+
+.debug-typing-perf-button {
+  right: 15px;
+}
+
+.debug-typing-perf-button-active {
+  background-color: #fff;
+  color: #000;
 }

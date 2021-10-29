@@ -13,9 +13,11 @@ import {
   initializeUnitTest,
   createTestBlockNode,
 } from '../../../__tests__/utils';
-import {dfs} from '../../OutlineNodeHelpers';
+import {dfs, getTopListNode, isLastItemInList} from 'outline/nodes';
 import {createParagraphNode, isParagraphNode} from 'outline/ParagraphNode';
 import {createTextNode} from 'outline';
+import {createListNode} from 'outline/ListNode';
+import {createListItemNode} from 'outline/ListItemNode';
 
 describe('OutlineNodeHelpers tests', () => {
   initializeUnitTest((testEnv) => {
@@ -109,6 +111,187 @@ describe('OutlineNodeHelpers tests', () => {
         });
       });
       expect(dfsKeys).toEqual(expectedKeys);
+    });
+
+    test('getTopListNode should return the top list node when the list is a direct child of the RootNode', async () => {
+      const editor: OutlineEditor = testEnv.editor;
+      await editor.update((view: View) => {
+        // Root
+        //   |- ListNode
+        //         |- ListItemNode
+        //         |- ListItemNode
+        //         |- ListNode
+        //               |- ListItemNode
+        const root = view.getRoot();
+        const topListNode = createListNode('ul');
+        const secondLevelListNode = createListNode('ul');
+        const listItem1 = createListItemNode();
+        const listItem2 = createListItemNode();
+        const listItem3 = createListItemNode();
+        root.append(topListNode);
+        topListNode.append(listItem1);
+        topListNode.append(listItem2);
+        topListNode.append(secondLevelListNode);
+        secondLevelListNode.append(listItem3);
+        const result = getTopListNode(listItem3);
+        expect(result.getKey()).toEqual(topListNode.getKey());
+      });
+    });
+
+    test('getTopListNode should return the top list node when the list is not a direct child of the RootNode', async () => {
+      const editor: OutlineEditor = testEnv.editor;
+      await editor.update((view: View) => {
+        // Root
+        // |- ParagaphNode
+        //     |- ListNode
+        //        |- ListItemNode
+        //        |- ListItemNode
+        //           |- ListNode
+        //              |- ListItemNode
+        const root = view.getRoot();
+        const paragraphNode = createParagraphNode();
+        const topListNode = createListNode('ul');
+        const secondLevelListNode = createListNode('ul');
+        const listItem1 = createListItemNode();
+        const listItem2 = createListItemNode();
+        const listItem3 = createListItemNode();
+        root.append(paragraphNode);
+        paragraphNode.append(topListNode);
+        topListNode.append(listItem1);
+        topListNode.append(listItem2);
+        topListNode.append(secondLevelListNode);
+        secondLevelListNode.append(listItem3);
+        const result = getTopListNode(listItem3);
+        expect(result.getKey()).toEqual(topListNode.getKey());
+      });
+    });
+
+    test('getTopListNode should return the top list node when the list item is deeply nested.', async () => {
+      const editor: OutlineEditor = testEnv.editor;
+      await editor.update((view: View) => {
+        // Root
+        // |- ParagaphNode
+        //     |- ListNode
+        //        |- ListItemNode
+        //           |- ListNode
+        //              |- ListItemNode
+        //                  |- ListNode
+        //                      |- ListItemNode
+        //        |- ListItemNode
+        const root = view.getRoot();
+        const paragraphNode = createParagraphNode();
+        const topListNode = createListNode('ul');
+        const secondLevelListNode = createListNode('ul');
+        const thirdLevelListNode = createListNode('ul');
+        const listItem1 = createListItemNode();
+        const listItem2 = createListItemNode();
+        const listItem3 = createListItemNode();
+        const listItem4 = createListItemNode();
+        root.append(paragraphNode);
+        paragraphNode.append(topListNode);
+        topListNode.append(listItem1);
+        listItem1.append(secondLevelListNode);
+        secondLevelListNode.append(listItem2);
+        listItem2.append(thirdLevelListNode);
+        thirdLevelListNode.append(listItem3);
+        topListNode.append(listItem4);
+        const result = getTopListNode(listItem4);
+        expect(result.getKey()).toEqual(topListNode.getKey());
+      });
+    });
+
+    test('isLastItemInList should return true if the listItem is the last in a nested list.', async () => {
+      const editor: OutlineEditor = testEnv.editor;
+      await editor.update((view: View) => {
+        // Root
+        //   |- ListNode
+        //      |- ListItemNode
+        //         |- ListNode
+        //            |- ListItemNode
+        //                |- ListNode
+        //                    |- ListItemNode
+        const root = view.getRoot();
+        const topListNode = createListNode('ul');
+        const secondLevelListNode = createListNode('ul');
+        const thirdLevelListNode = createListNode('ul');
+        const listItem1 = createListItemNode();
+        const listItem2 = createListItemNode();
+        const listItem3 = createListItemNode();
+        root.append(topListNode);
+        topListNode.append(listItem1);
+        listItem1.append(secondLevelListNode);
+        secondLevelListNode.append(listItem2);
+        listItem2.append(thirdLevelListNode);
+        thirdLevelListNode.append(listItem3);
+        const result = isLastItemInList(listItem3);
+        expect(result).toEqual(true);
+      });
+    });
+
+    test('isLastItemInList should return true if the listItem is the last in a non-nested list.', async () => {
+      const editor: OutlineEditor = testEnv.editor;
+      await editor.update((view: View) => {
+        // Root
+        //   |- ListNode
+        //      |- ListItemNode
+        //      |- ListItemNode
+        const root = view.getRoot();
+        const topListNode = createListNode('ul');
+        const listItem1 = createListItemNode();
+        const listItem2 = createListItemNode();
+        root.append(topListNode);
+        topListNode.append(listItem1);
+        topListNode.append(listItem2);
+        const result = isLastItemInList(listItem2);
+        expect(result).toEqual(true);
+      });
+    });
+
+    test('isLastItemInList should return false if the listItem is not the last in a nested list.', async () => {
+      const editor: OutlineEditor = testEnv.editor;
+      await editor.update((view: View) => {
+        // Root
+        //   |- ListNode
+        //      |- ListItemNode
+        //         |- ListNode
+        //            |- ListItemNode
+        //                |- ListNode
+        //                    |- ListItemNode
+        const root = view.getRoot();
+        const topListNode = createListNode('ul');
+        const secondLevelListNode = createListNode('ul');
+        const thirdLevelListNode = createListNode('ul');
+        const listItem1 = createListItemNode();
+        const listItem2 = createListItemNode();
+        const listItem3 = createListItemNode();
+        root.append(topListNode);
+        topListNode.append(listItem1);
+        listItem1.append(secondLevelListNode);
+        secondLevelListNode.append(listItem2);
+        listItem2.append(thirdLevelListNode);
+        thirdLevelListNode.append(listItem3);
+        const result = isLastItemInList(listItem2);
+        expect(result).toEqual(false);
+      });
+    });
+
+    test('isLastItemInList should return true if the listItem is not the last in a non-nested list.', async () => {
+      const editor: OutlineEditor = testEnv.editor;
+      await editor.update((view: View) => {
+        // Root
+        //   |- ListNode
+        //      |- ListItemNode
+        //      |- ListItemNode
+        const root = view.getRoot();
+        const topListNode = createListNode('ul');
+        const listItem1 = createListItemNode();
+        const listItem2 = createListItemNode();
+        root.append(topListNode);
+        topListNode.append(listItem1);
+        topListNode.append(listItem2);
+        const result = isLastItemInList(listItem1);
+        expect(result).toEqual(false);
+      });
     });
   });
 });

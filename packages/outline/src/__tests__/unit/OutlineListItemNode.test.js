@@ -316,7 +316,7 @@ describe('OutlineListItemNode tests', () => {
           listItemNode1.insertNewAfter();
         });
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" data-outline-editor="true"><p><br></p><ul><li><br></li><li><br></li></ul></div>',
+          '<div contenteditable="true" data-outline-editor="true"><ul><li><br></li><li><br></li><li><br></li><li><br></li></ul></div>',
         );
       });
 

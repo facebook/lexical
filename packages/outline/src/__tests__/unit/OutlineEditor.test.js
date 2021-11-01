@@ -115,6 +115,139 @@ describe('OutlineEditor tests', () => {
     );
   });
 
+  it('Should handle nested updates in the correct sequence', async () => {
+    const rootElement = document.createElement('div');
+    let log = [];
+    container.appendChild(rootElement);
+
+    editor = createEditor();
+    editor.addListener('error', (e) => {
+      throw e;
+    });
+
+    editor.setRootElement(rootElement);
+
+    editor.update((view) => {
+      const root = view.getRoot();
+      const paragraph = createParagraphNode();
+      const text = createTextNode('This works!');
+      root.append(paragraph);
+      paragraph.append(text);
+    });
+
+    editor.update(
+      (view) => {
+        log.push('A1');
+        // To enforce the update
+        view.getRoot().markDirty();
+        editor.update(
+          () => {
+            log.push('B1');
+            editor.update(
+              () => {
+                log.push('C1');
+              },
+              () => {
+                log.push('F1');
+              },
+            );
+          },
+          () => {
+            log.push('E1');
+          },
+        );
+      },
+      () => {
+        log.push('D1');
+      },
+    );
+
+    // Wait for update to complete
+    await Promise.resolve().then();
+
+    expect(log).toEqual(['A1', 'B1', 'C1', 'D1', 'E1', 'F1']);
+    log = [];
+
+    editor.update(
+      (view) => {
+        log.push('A2');
+        // To enforce the update
+        view.getRoot().markDirty();
+      },
+      () => {
+        log.push('B2');
+        editor.update(
+          (view) => {
+            // force flush sync
+            view.setCompositionKey('root');
+            log.push('D2');
+          },
+          () => {
+            log.push('F2');
+          },
+        );
+        log.push('C2');
+        editor.update(
+          () => {
+            log.push('E2');
+          },
+          () => {
+            log.push('G2');
+          },
+        );
+      },
+    );
+
+    // Wait for update to complete
+    await Promise.resolve().then();
+
+    expect(log).toEqual(['A2', 'B2', 'C2', 'D2', 'E2', 'F2', 'G2']);
+    log = [];
+
+    editor.addTextNodeTransform(() => {
+      log.push('TextTransform A3');
+      editor.update(
+        () => {
+          log.push('TextTransform B3');
+        },
+        () => {
+          log.push('TextTransform C3');
+        },
+      );
+    });
+
+    // Wait for update to complete
+    await Promise.resolve().then();
+
+    expect(log).toEqual([
+      'TextTransform A3',
+      'TextTransform B3',
+      'TextTransform C3',
+    ]);
+    log = [];
+
+    editor.update(
+      (view) => {
+        log.push('A3');
+        view.getRoot().getLastDescendant().markDirty();
+      },
+      () => {
+        log.push('B3');
+      },
+    );
+
+    // Wait for update to complete
+    await Promise.resolve().then();
+
+    expect(log).toEqual([
+      'A3',
+      'TextTransform A3',
+      'TextTransform B3',
+      'B3',
+      'TextTransform C3',
+    ]);
+  });
+
   it('Should be able to update an editor state without an root element', () => {
     const ref = React.createRef();
 

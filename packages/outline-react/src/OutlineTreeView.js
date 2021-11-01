@@ -75,7 +75,13 @@ export default function TreeView({
       const treeText = generateContent(editor.getEditorState());
       const compositionText =
         compositionKey !== null && `Composition key: ${compositionKey}`;
-      setContent([treeText, compositionText].filter(Boolean).join('\n\n'));
+      const cachedTextContent = editorState.__getCachedTextContent();
+      const text = `Text: ${
+        cachedTextContent !== null ? `"${cachedTextContent}"` : 'null'
+      }`;
+      setContent(
+        [compositionText, treeText, text].filter(Boolean).join('\n\n'),
+      );
       if (!timeTravelEnabled) {
         setTimeStampedEditorStates((currentEditorStates) => [
           ...currentEditorStates,

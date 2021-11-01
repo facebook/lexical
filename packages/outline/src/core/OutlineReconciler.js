@@ -487,6 +487,7 @@ function reconcileRoot(
   activePrevKeyToDOMMap = new Map(editor._keyToDOMMap);
   reconcileNode('root', null);
   editor._textContent = editorTextContent;
+  nextEditorState._textContent = editorTextContent;
 
   // We don't want a bunch of void checks throughout the scope
   // so instead we make it seem that these values are always set.
@@ -544,6 +545,9 @@ export function updateEditorState(
         characterData: true,
       });
     }
+  } else {
+    // Text remains the same when no node reconcilation
+    pendingEditorState._textContent = currentEditorState._textContent;
   }
 
   const domSelection: null | Selection = window.getSelection();

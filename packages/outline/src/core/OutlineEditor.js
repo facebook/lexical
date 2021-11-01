@@ -299,17 +299,17 @@ class BaseOutlineEditor {
   getRootElement(): null | HTMLElement {
     return this._rootElement;
   }
-  getCurrentTextContent(): string {
-    return this._textContent;
-  }
-  getLatestTextContent(callback: (text: string) => void): void {
-    errorOnPreparingPendingViewUpdate('Editor.getLatestTextContent()');
-    if (this._pendingEditorState === null) {
-      callback(this._textContent);
-      return;
-    }
-    this._deferred.push(() => callback(this._textContent));
-  }
+  // getCurrentTextContent(): string {
+  //   return this._textContent;
+  // }
+  // getLatestTextContent(callback: (text: string) => void): void {
+  //   errorOnPreparingPendingViewUpdate('Editor.getLatestTextContent()');
+  //   if (this._pendingEditorState === null) {
+  //     callback(this._textContent);
+  //     return;
+  //   }
+  //   this._deferred.push(() => callback(this._textContent));
+  // }
   setRootElement(nextRootElement: null | HTMLElement): void {
     const prevRootElement = this._rootElement;
     if (nextRootElement !== prevRootElement) {

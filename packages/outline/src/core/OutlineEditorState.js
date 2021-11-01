@@ -62,17 +62,32 @@ export class EditorState {
   _nodeMap: NodeMap;
   _selection: null | Selection;
   _flushSync: boolean;
+  _textContent: null | string;
 
   constructor(nodeMap: NodeMap) {
     this._nodeMap = nodeMap;
     this._selection = null;
     this._flushSync = false;
+    this._textContent = null;
   }
   isEmpty(): boolean {
     return this._nodeMap.size === 1 && this._selection === null;
   }
   read<V>(callbackFn: (view: View) => V): V {
     return readEditorState(this, callbackFn);
+  }
+  __getCachedTextContent(): null | string {
+    return this._textContent;
+  }
+  getTextContent(): string {
+    const cachedTextContent = this.__getCachedTextContent();
+    if (cachedTextContent) {
+      return cachedTextContent;
+    }
+    return this.read((view) => {
+      const root = view.getRoot();
+      return root.getTextContent();
+    });
   }
   stringify(space?: string | number): string {
     const selection = this._selection;

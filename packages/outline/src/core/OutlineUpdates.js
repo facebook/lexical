@@ -20,7 +20,6 @@ import {
   getSelection,
   createSelectionFromParse,
 } from './OutlineSelection';
-import {isTextNode} from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './OutlineConstants';
 import {resetEditor} from './OutlineEditor';
 import {initMutationObserver, flushMutations} from './OutlineMutations';
@@ -48,12 +47,12 @@ import {internalCreateNodeFromParse} from './OutlineParsing';
 import {applySelectionTransforms} from './OutlineSelection';
 import invariant from 'shared/invariant';
 
-let activeEditorState = null;
-let activeEditor = null;
-let isReadOnlyMode = false;
-let isProcessingTextNodeTransforms = false;
-let isAttemptingToRecoverFromReconcilerError = false;
-let isPreparingPendingViewUpdate = false;
+let activeEditorState: null | EditorState = null;
+let activeEditor: null | OutlineEditor = null;
+let isEnqueuingUpdates: boolean = false;
+let isReadOnlyMode: boolean = false;
+let isAttemptingToRecoverFromReconcilerError: boolean = false;
+let isPreparingPendingViewUpdate: boolean = false;
 
 export type View = {
   clearSelection(): void,
@@ -102,13 +101,8 @@ export function isCurrentlyReadOnlyMode(): boolean {
   return isReadOnlyMode;
 }
 
-export function errorOnProcessingTextNodeTransforms(): void {
-  if (isProcessingTextNodeTransforms) {
-    invariant(
-      false,
-      'Editor.update() cannot be used within a text node transform.',
-    );
-  }
+export function shouldEnqueueUpdates(): boolean {
+  return isEnqueuingUpdates;
 }
 
 export function errorOnReadOnly(): void {
@@ -167,13 +161,7 @@ function applyTextTransforms(
     const nodeMap = editorState._nodeMap;
     const dirtyNodesArr = Array.from(dirtyNodes);
     const transforms = Array.from(textNodeTransforms);
-
-    try {
-      isProcessingTextNodeTransforms = true;
-      triggerTextMutationListeners(nodeMap, dirtyNodesArr, transforms);
-    } finally {
-      isProcessingTextNodeTransforms = false;
-    }
+    triggerTextMutationListeners(nodeMap, dirtyNodesArr, transforms);
   }
 }
 
@@ -335,20 +323,48 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
   const deferred = editor._deferred;
   editor._deferred = [];
   if (deferred.length !== 0) {
-    for (let i = 0; i < deferred.length; i++) {
-      deferred[i]();
+    const previousShouldEnqueueUpdates = isEnqueuingUpdates;
+    isEnqueuingUpdates = true;
+    try {
+      for (let i = 0; i < deferred.length; i++) {
+        deferred[i]();
+      }
+    } finally {
+      isEnqueuingUpdates = previousShouldEnqueueUpdates;
     }
+    const queuedUpdates = editor._updates;
+    if (queuedUpdates.length !== 0) {
+      const [updateFn, callbackFn] = queuedUpdates.shift();
+      beginUpdate(editor, updateFn, callbackFn);
+    }
+  }
+}
+
+function processNestedUpdates(
+  editor: OutlineEditor,
+  deferred: Array<() => void>,
+): void {
+  const queuedUpdates = editor._updates;
+  // Updates might grow as we process them, we so we'll need
+  // to handle each update as we go until the updates array is
+  // empty.
+  while (queuedUpdates.length !== 0) {
+    const [nextUpdateFn, nextCallbackFn] = queuedUpdates.shift();
+    if (nextCallbackFn) {
+      deferred.push(nextCallbackFn);
+    }
+    nextUpdateFn(view);
   }
 }
 
 export function beginUpdate(
   editor: OutlineEditor,
   updateFn: (view: View) => void,
-  markAllTextNodesAsDirty: boolean,
   callbackFn?: () => void,
-): boolean {
+): void {
+  const deferred = editor._deferred;
   if (callbackFn) {
-    editor._deferred.push(callbackFn);
+    deferred.push(callbackFn);
   }
   let pendingEditorState = editor._pendingEditorState;
   let editorStateWasCloned = false;
@@ -363,9 +379,12 @@ export function beginUpdate(
   const previousActiveEditorState = activeEditorState;
   const previousReadOnlyMode = isReadOnlyMode;
   const previousActiveEditor = activeEditor;
+  const previousShouldEnqueueUpdates = isEnqueuingUpdates;
+  const previouslyPendingViewUpdate = isPreparingPendingViewUpdate;
   isPreparingPendingViewUpdate = true;
   activeEditorState = pendingEditorState;
   isReadOnlyMode = false;
+  isEnqueuingUpdates = true;
   activeEditor = editor;
 
   try {
@@ -374,20 +393,7 @@ export function beginUpdate(
     }
     const startingCompositionKey = editor._compositionKey;
     updateFn(view);
-    if (markAllTextNodesAsDirty) {
-      const currentEditorState = editor._editorState;
-      const nodeMap = currentEditorState._nodeMap;
-      const pendingNodeMap = pendingEditorState._nodeMap;
-      const nodeMapEntries = Array.from(nodeMap);
-      // For...of would be faster here, but this will get
-      // compiled away to a slow-path with Babel.
-      for (let i = 0; i < nodeMapEntries.length; i++) {
-        const [nodeKey, node] = nodeMapEntries[i];
-        if (isTextNode(node) && pendingNodeMap.has(nodeKey)) {
-          node.markDirty();
-        }
-      }
-    }
+    processNestedUpdates(editor, deferred);
     applySelectionTransforms(pendingEditorState, editor);
     if (editor._dirtyType !== NO_DIRTY_NODES) {
       const dirtyNodes = editor._dirtyNodes;
@@ -398,6 +404,7 @@ export function beginUpdate(
         );
       }
       applyTextTransforms(pendingEditorState, dirtyNodes, editor);
+      processNestedUpdates(editor, deferred);
       garbageCollectDetachedNodes(pendingEditorState, dirtyNodes, editor);
     }
     const endingCompositionKey = editor._compositionKey;
@@ -431,31 +438,31 @@ export function beginUpdate(
     editor._dirtySubTrees = new Set();
     editor._log.push('UpdateRecover');
     commitPendingUpdates(editor);
-    return false;
+    return;
   } finally {
     activeEditorState = previousActiveEditorState;
     isReadOnlyMode = previousReadOnlyMode;
     activeEditor = previousActiveEditor;
-    isPreparingPendingViewUpdate = false;
+    isPreparingPendingViewUpdate = previouslyPendingViewUpdate;
+    isEnqueuingUpdates = previousShouldEnqueueUpdates;
   }
 
   const shouldUpdate =
     editor._dirtyType !== NO_DIRTY_NODES ||
     editorStateHasDirtySelection(pendingEditorState, editor);
 
-  if (!shouldUpdate) {
+  if (shouldUpdate) {
+    if (pendingEditorState._flushSync) {
+      pendingEditorState._flushSync = false;
+      commitPendingUpdates(editor);
+    } else if (editorStateWasCloned) {
+      scheduleMicroTask(() => {
+        commitPendingUpdates(editor);
+      });
+    }
+  } else {
     if (editorStateWasCloned) {
       editor._pendingEditorState = null;
     }
-    return false;
   }
-  if (pendingEditorState._flushSync) {
-    pendingEditorState._flushSync = false;
-    commitPendingUpdates(editor);
-  } else if (editorStateWasCloned) {
-    scheduleMicroTask(() => {
-      commitPendingUpdates(editor);
-    });
-  }
-  return true;
 }

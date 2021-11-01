@@ -11,6 +11,7 @@ import type {
   OutlineEditor,
   View,
   EditorConfig,
+  EditorState,
   NodeKey,
   OutlineNode,
   Selection,
@@ -36,55 +37,60 @@ export function useCharacterLimit(
     remainingCharacters = (characters) => {},
   } = optional;
 
-  const execute = useCallback(() => {
-    const Segmenter = Intl.Segmenter;
-    let offsetUtf16 = 0;
-    let offset = 0;
-    const text = editor.getCurrentTextContent();
-    if (typeof Segmenter === 'function') {
-      const segmenter = new Segmenter();
-      const graphemes = segmenter.segment(text);
-      // eslint-disable-next-line no-for-of-loops/no-for-of-loops
-      for (const {segment: grapheme} of graphemes) {
-        const nextOffset = offset + strlen(grapheme);
-        if (nextOffset > maxCharacters) {
-          break;
+  const execute = useCallback(
+    (editorState: EditorState) => {
+      const Segmenter = Intl.Segmenter;
+      let offsetUtf16 = 0;
+      let offset = 0;
+      const text = editorState.getTextContent();
+      if (typeof Segmenter === 'function') {
+        const segmenter = new Segmenter();
+        const graphemes = segmenter.segment(text);
+        // eslint-disable-next-line no-for-of-loops/no-for-of-loops
+        for (const {segment: grapheme} of graphemes) {
+          const nextOffset = offset + strlen(grapheme);
+          if (nextOffset > maxCharacters) {
+            break;
+          }
+          offset = nextOffset;
+          offsetUtf16 += grapheme.length;
         }
-        offset = nextOffset;
-        offsetUtf16 += grapheme.length;
-      }
-    } else {
-      const codepoints = Array.from(text);
-      const codepointsLength = codepoints.length;
-      for (let i = 0; i < codepointsLength; i++) {
-        const codepoint = codepoints[i];
-        const nextOffset = offset + strlen(codepoint);
-        if (nextOffset > maxCharacters) {
-          break;
+      } else {
+        const codepoints = Array.from(text);
+        const codepointsLength = codepoints.length;
+        for (let i = 0; i < codepointsLength; i++) {
+          const codepoint = codepoints[i];
+          const nextOffset = offset + strlen(codepoint);
+          if (nextOffset > maxCharacters) {
+            break;
+          }
+          offset = nextOffset;
+          offsetUtf16 += codepoint.length;
         }
-        offset = nextOffset;
-        offsetUtf16 += codepoint.length;
       }
-    }
-    updateWithoutHistory(editor, (view: View) => {
-      log('CharacterLimit');
-      wrapOverflowedNodes(view, offsetUtf16);
-    });
-  }, [editor, maxCharacters, strlen]);
+      updateWithoutHistory(editor, (view: View) => {
+        log('CharacterLimit');
+        wrapOverflowedNodes(view, offsetUtf16);
+      });
+    },
+    [editor, maxCharacters, strlen],
+  );
 
   useEffect(() => {
     editor.registerNodeType('overflow', OverflowNode);
     (() => {
-      const textLength = strlen(editor.getCurrentTextContent());
+      const editorState = editor.getEditorState();
+      const text = editorState.getTextContent();
+      const textLength = strlen(text);
       const diff = maxCharacters - textLength;
       remainingCharacters(diff);
-      execute();
+      execute(editorState);
     })();
     let lastUtf16TextLength = null;
     let lastTextLength = null;
-    return editor.addListener('update', ({dirty, dirtyNodes}) => {
+    return editor.addListener('update', ({editorState, dirty, dirtyNodes}) => {
       const isComposing = editor.isComposing();
-      const text = editor.getCurrentTextContent();
+      const text = editorState.getTextContent();
       const utf16TextLength = text.length;
       const hasDirtyNodes = dirty && dirtyNodes.size > 0;
       if (
@@ -93,14 +99,14 @@ export function useCharacterLimit(
       ) {
         return;
       }
-      const textLength = strlen(editor.getCurrentTextContent());
+      const textLength = strlen(text);
       const textLengthAboveThreshold =
         textLength > maxCharacters ||
         (lastTextLength !== null && lastTextLength > maxCharacters);
       const diff = maxCharacters - textLength;
       remainingCharacters(diff);
       if (lastTextLength === null || textLengthAboveThreshold || dirtyNodes) {
-        execute();
+        execute(editorState);
       }
       lastUtf16TextLength = utf16TextLength;
       lastTextLength = textLength;

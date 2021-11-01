@@ -64,6 +64,7 @@ export type View = {
   setCompositionKey: (compositionKey: NodeKey | null) => void,
   getCompositionKey: () => null | NodeKey,
   getNearestNodeFromDOMNode: (dom: Node) => null | OutlineNode,
+  getTextContent: () => string,
   flushMutations: (mutations: Array<MutationRecord>) => void,
 };
 
@@ -88,6 +89,10 @@ export const view: View = {
   },
   getCompositionKey,
   getNearestNodeFromDOMNode,
+  getTextContent(): string {
+    const editorState = getActiveEditorState();
+    return editorState.getTextContent();
+  },
   flushMutations(mutations: Array<MutationRecord>): void {
     errorOnReadOnly();
     const editor = getActiveEditor();

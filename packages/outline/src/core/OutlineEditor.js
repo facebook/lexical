@@ -244,16 +244,16 @@ class BaseOutlineEditor {
   isComposing(): boolean {
     return this._compositionKey != null;
   }
-  isEmpty(trim: boolean = true): boolean {
-    if (this.isComposing()) {
-      return false;
-    }
-    let text = this.getCurrentTextContent();
-    if (trim) {
-      text = text.trim();
-    }
-    return text === '';
-  }
+  // isEmpty(trim: boolean = true): boolean {
+  //   if (this.isComposing()) {
+  //     return false;
+  //   }
+  //   let text = this.getCurrentTextContent();
+  //   if (trim) {
+  //     text = text.trim();
+  //   }
+  //   return text === '';
+  // }
   registerNodeType(nodeType: string, klass: Class<OutlineNode>): void {
     this._nodeTypes.set(nodeType, klass);
   }
@@ -395,36 +395,36 @@ class BaseOutlineEditor {
       );
     }
   }
-  canShowPlaceholder(): boolean {
-    if (!this.isEmpty(false)) {
-      return false;
-    }
-    const nodeMap = this._editorState._nodeMap;
-    // $FlowFixMe: root is always in the Map
-    const root = ((nodeMap.get('root'): any): RootNode);
-    const topBlockIDs = root.__children;
-    const topBlockIDsLength = topBlockIDs.length;
-    if (topBlockIDsLength > 1) {
-      return false;
-    }
-    for (let i = 0; i < topBlockIDsLength; i++) {
-      const topBlock = nodeMap.get(topBlockIDs[i]);
+  // canShowPlaceholder(): boolean {
+  //   if (!this.isEmpty(false)) {
+  //     return false;
+  //   }
+  //   const nodeMap = this._editorState._nodeMap;
+  //   // $FlowFixMe: root is always in the Map
+  //   const root = ((nodeMap.get('root'): any): RootNode);
+  //   const topBlockIDs = root.__children;
+  //   const topBlockIDsLength = topBlockIDs.length;
+  //   if (topBlockIDsLength > 1) {
+  //     return false;
+  //   }
+  //   for (let i = 0; i < topBlockIDsLength; i++) {
+  //     const topBlock = nodeMap.get(topBlockIDs[i]);
 
-      if (isBlockNode(topBlock)) {
-        if (topBlock.__type !== 'paragraph') {
-          return false;
-        }
-        const children = topBlock.__children;
-        for (let s = 0; s < children.length; s++) {
-          const child = nodeMap.get(children[s]);
-          if (!isTextNode(child)) {
-            return false;
-          }
-        }
-      }
-    }
-    return true;
-  }
+  //     if (isBlockNode(topBlock)) {
+  //       if (topBlock.__type !== 'paragraph') {
+  //         return false;
+  //       }
+  //       const children = topBlock.__children;
+  //       for (let s = 0; s < children.length; s++) {
+  //         const child = nodeMap.get(children[s]);
+  //         if (!isTextNode(child)) {
+  //           return false;
+  //         }
+  //       }
+  //     }
+  //   }
+  //   return true;
+  // }
 }
 
 // We export this to make the addListener types work properly.
@@ -452,7 +452,6 @@ declare export class OutlineEditor {
 
   getObserver(): null | MutationObserver;
   isComposing(): boolean;
-  isEmpty(trim?: boolean): boolean;
   registerNodeType(nodeType: string, klass: Class<OutlineNode>): void;
   addListener(type: 'error', listener: ErrorListener): () => void;
   addListener(type: 'update', listener: UpdateListener): () => void;
@@ -463,15 +462,12 @@ declare export class OutlineEditor {
   getDecorators(): {[NodeKey]: ReactNode};
   getRootElement(): null | HTMLElement;
   setRootElement(rootElement: null | HTMLElement): void;
-  getCurrentTextContent(): string;
-  getLatestTextContent((text: string) => void): () => void;
   getElementByKey(key: NodeKey): null | HTMLElement;
   getEditorState(): EditorState;
   setEditorState(editorState: EditorState): void;
   parseEditorState(stringifiedEditorState: string): EditorState;
   update(updateFn: (view: View) => void, callbackFn?: () => void): boolean;
   focus(callbackFn?: () => void): void;
-  canShowPlaceholder(): boolean;
 }
 
 export function getEditorFromElement(element: Element): null | OutlineEditor {

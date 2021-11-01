@@ -547,32 +547,6 @@ describe('OutlineEditor tests', () => {
         expect(parsedSelection.focus.key).toEqual(parsedText.__key);
       });
     });
-
-    it('getCurrentTextContent() / getLatestTextContent()', async () => {
-      editor.update((view: View) => {
-        const root = view.getRoot();
-        const paragraph = createParagraphNode();
-        const text1 = createTextNode('1');
-        root.append(paragraph);
-        paragraph.append(text1);
-      });
-      editor.update((view: View) => {
-        const root = view.getRoot();
-        const paragraph = root.getFirstChild();
-        const text2 = createTextNode('2');
-        paragraph.append(text2);
-      });
-
-      expect(editor.getCurrentTextContent()).toBe('');
-      expect(
-        editor.getLatestTextContent((text) => {
-          expect(text).toBe('12');
-        }),
-      );
-
-      await Promise.resolve();
-      expect(editor.getCurrentTextContent()).toBe('12');
-    });
   });
 
   describe('Node children', () => {
@@ -640,8 +614,8 @@ describe('OutlineEditor tests', () => {
             writableParagraph.__children.push(textNode.__key);
             textToKey.set(previousText, textNode.__key);
           }
+          expect(view.getTextContent()).toBe(previous.join(''));
         });
-        expect(editor.getCurrentTextContent()).toBe(previous.join(''));
 
         // Next editor state
         const previousSet = new Set(previous);
@@ -826,15 +800,6 @@ describe('OutlineEditor tests', () => {
       expect(container.innerHTML).toBe(
         '<div contenteditable="true" data-outline-editor="true"><p><div><span data-outline-text="true">A</span><div><span data-outline-text="true">C</span></div></div><div><span data-outline-text="true">B</span></div></p></div>',
       );
-    });
-
-    it('isEmpty', async () => {
-      expect(editor.isEmpty()).toBe(true);
-      await update((view: View) => {
-        const paragraph = view.getRoot().getFirstChild();
-        paragraph.append(createTextNode('foo'));
-      });
-      expect(editor.isEmpty()).toBe(false);
     });
   });
 });

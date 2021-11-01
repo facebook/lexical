@@ -73,6 +73,16 @@ export class EditorState {
   isEmpty(): boolean {
     return this._nodeMap.size === 1 && this._selection === null;
   }
+  isBlank(isComposing: boolean, trim?: boolean = true): boolean {
+    if (isComposing) {
+      return false;
+    }
+    let text = this.getTextContent();
+    if (trim) {
+      text = text.trim();
+    }
+    return text === '';
+  }
   read<V>(callbackFn: (view: View) => V): V {
     return readEditorState(this, callbackFn);
   }

@@ -16,7 +16,7 @@ import type {EditorState} from './OutlineEditorState';
 import {
   getActiveEditor,
   getActiveEditorState,
-  isCurrentlyReadOnlyMode,
+  isReadOnlyMode,
 } from './OutlineUpdates';
 import {getNodeKeyFromDOM} from './OutlineReconciler';
 import {getIsProcesssingMutations} from './OutlineMutations';
@@ -119,7 +119,7 @@ class Point {
     this.key = key;
     this.offset = offset;
     this.type = type;
-    if (!isCurrentlyReadOnlyMode()) {
+    if (!isReadOnlyMode()) {
       if (getCompositionKey() === oldKey) {
         setCompositionKey(key);
       }

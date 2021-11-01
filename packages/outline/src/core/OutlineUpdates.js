@@ -48,12 +48,12 @@ import {internalCreateNodeFromParse} from './OutlineParsing';
 import {applySelectionTransforms} from './OutlineSelection';
 import invariant from 'shared/invariant';
 
-let activeEditorState = null;
-let activeEditor = null;
-let isReadOnlyMode = false;
-let isProcessingTextNodeTransforms = false;
-let isAttemptingToRecoverFromReconcilerError = false;
-let isPreparingPendingViewUpdate = false;
+let activeEditorState: null | EditorState = null;
+let activeEditor: null | OutlineEditor = null;
+let isCurrentlyUpdatingOrReading: boolean = false;
+let isCurrentlyReadOnlyMode: boolean = false;
+let isAttemptingToRecoverFromReconcilerError: boolean = false;
+let isPreparingPendingViewUpdate: boolean = false;
 
 export type View = {
   clearSelection(): void,
@@ -98,22 +98,23 @@ export const view: View = {
   },
 };
 
-export function isCurrentlyReadOnlyMode(): boolean {
-  return isReadOnlyMode;
-}
-
-export function errorOnProcessingTextNodeTransforms(): void {
-  if (isProcessingTextNodeTransforms) {
-    invariant(
-      false,
-      'Editor.update() cannot be used within a text node transform.',
-    );
-  }
+export function isReadOnlyMode(): boolean {
+  return isCurrentlyReadOnlyMode;
 }
 
 export function errorOnReadOnly(): void {
-  if (isReadOnlyMode) {
+  if (isCurrentlyReadOnlyMode) {
     invariant(false, 'Cannot use method in read-only mode.');
+  }
+}
+
+function errorOnCurrentlyUpdatingOrReading(): void {
+  if (isCurrentlyUpdatingOrReading) {
+    debugger
+    invariant(
+      false,
+      'Editor.update() cannot be used within another update, an editorState.read() or text transforms.',
+    );
   }
 }
 
@@ -168,12 +169,7 @@ function applyTextTransforms(
     const dirtyNodesArr = Array.from(dirtyNodes);
     const transforms = Array.from(textNodeTransforms);
 
-    try {
-      isProcessingTextNodeTransforms = true;
-      triggerTextMutationListeners(nodeMap, dirtyNodesArr, transforms);
-    } finally {
-      isProcessingTextNodeTransforms = false;
-    }
+    triggerTextMutationListeners(nodeMap, dirtyNodesArr, transforms);
   }
 }
 
@@ -190,10 +186,10 @@ export function parseEditorState(
     originalSelection: parsedEditorState._selection,
   };
   const previousActiveEditorState = editorState;
-  const previousReadOnlyMode = isReadOnlyMode;
+  const previousReadOnlyMode = isCurrentlyReadOnlyMode;
   const previousActiveEditor = activeEditor;
   activeEditorState = editorState;
-  isReadOnlyMode = false;
+  isCurrentlyReadOnlyMode = false;
   activeEditor = editor;
   try {
     const parsedNodeMap = new Map(parsedEditorState._nodeMap);
@@ -208,7 +204,7 @@ export function parseEditorState(
     );
   } finally {
     activeEditorState = previousActiveEditorState;
-    isReadOnlyMode = previousReadOnlyMode;
+    isCurrentlyReadOnlyMode = previousReadOnlyMode;
     activeEditor = previousActiveEditor;
   }
   editorState._selection = createSelectionFromParse(
@@ -225,17 +221,20 @@ export function readEditorState<V>(
   callbackFn: (view: View) => V,
 ): V {
   const previousActiveEditorState = activeEditorState;
-  const previousReadOnlyMode = isReadOnlyMode;
+  const previousReadOnlyMode = isCurrentlyReadOnlyMode;
   const previousActiveEditor = activeEditor;
+  const previousIsUpdatingOrReading = isCurrentlyUpdatingOrReading;
   activeEditorState = editorState;
-  isReadOnlyMode = true;
+  isCurrentlyReadOnlyMode = true;
   activeEditor = null;
+  isCurrentlyUpdatingOrReading = true;
   try {
     return callbackFn(view);
   } finally {
     activeEditorState = previousActiveEditorState;
-    isReadOnlyMode = previousReadOnlyMode;
+    isCurrentlyReadOnlyMode = previousReadOnlyMode;
     activeEditor = previousActiveEditor;
+    isCurrentlyUpdatingOrReading = previousIsUpdatingOrReading;
   }
 }
 
@@ -253,11 +252,11 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
   editor._editorState = pendingEditorState;
 
   const previousActiveEditorState = activeEditorState;
-  const previousReadOnlyMode = isReadOnlyMode;
+  const previousReadOnlyMode = isCurrentlyReadOnlyMode;
   const previousActiveEditor = activeEditor;
   activeEditor = editor;
   activeEditorState = pendingEditorState;
-  isReadOnlyMode = false;
+  isCurrentlyReadOnlyMode = false;
 
   try {
     updateEditorState(
@@ -285,7 +284,7 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
     return;
   } finally {
     activeEditorState = previousActiveEditorState;
-    isReadOnlyMode = previousReadOnlyMode;
+    isCurrentlyReadOnlyMode = previousReadOnlyMode;
     activeEditor = previousActiveEditor;
   }
   if (__DEV__) {
@@ -347,6 +346,7 @@ export function beginUpdate(
   markAllTextNodesAsDirty: boolean,
   callbackFn?: () => void,
 ): boolean {
+  errorOnCurrentlyUpdatingOrReading();
   if (callbackFn) {
     editor._deferred.push(callbackFn);
   }
@@ -359,13 +359,14 @@ export function beginUpdate(
       cloneEditorState(currentEditorState);
     editorStateWasCloned = true;
   }
-
+  const previousIsUpdatingOrReading = isCurrentlyUpdatingOrReading;
   const previousActiveEditorState = activeEditorState;
-  const previousReadOnlyMode = isReadOnlyMode;
+  const previousReadOnlyMode = isCurrentlyReadOnlyMode;
   const previousActiveEditor = activeEditor;
+  isCurrentlyUpdatingOrReading = true;
   isPreparingPendingViewUpdate = true;
   activeEditorState = pendingEditorState;
-  isReadOnlyMode = false;
+  isCurrentlyReadOnlyMode = false;
   activeEditor = editor;
 
   try {
@@ -434,9 +435,10 @@ export function beginUpdate(
     return false;
   } finally {
     activeEditorState = previousActiveEditorState;
-    isReadOnlyMode = previousReadOnlyMode;
+    isCurrentlyReadOnlyMode = previousReadOnlyMode;
     activeEditor = previousActiveEditor;
     isPreparingPendingViewUpdate = false;
+    isCurrentlyUpdatingOrReading = previousIsUpdatingOrReading;
   }
 
   const shouldUpdate =

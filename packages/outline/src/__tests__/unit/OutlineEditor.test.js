@@ -115,6 +115,42 @@ describe('OutlineEditor tests', () => {
     );
   });
 
+  it('nested updates should fail', () => {
+    const rootElement = document.createElement('div');
+    container.appendChild(rootElement);
+
+    editor = createEditor();
+    editor.addListener('error', e => {
+      throw e;
+    });
+
+    editor.update((view) => {
+      expect(() => {
+        editor.update(() => {});
+      }).toThrow()
+    });
+
+    editor.getEditorState().read((view) => {
+      expect(() => {
+        editor.update(() => {});
+      }).toThrow()
+    });
+
+    editor.addTextNodeTransform(() => {
+      expect(() => {
+        editor.update(() => {});
+      }).toThrow()
+    });
+
+    editor.update((view) => {
+      const root = view.getRoot();
+      const paragraph = createParagraphNode();
+      const text = createTextNode('This works!');
+      root.append(paragraph);
+      paragraph.append(text);
+    });
+  });
+
   it('Should be able to update an editor state without an root element', () => {
     const ref = React.createRef();
 

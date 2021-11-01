@@ -15,7 +15,6 @@ import {
   errorOnPreparingPendingViewUpdate,
   commitPendingUpdates,
   parseEditorState,
-  errorOnProcessingTextNodeTransforms,
 } from './OutlineUpdates';
 import {isBlockNode, isTextNode, TextNode} from '.';
 import {EditorState, createEmptyEditorState} from './OutlineEditorState';
@@ -367,7 +366,6 @@ class BaseOutlineEditor {
     return parseEditorState(stringifiedEditorState, getSelf(this));
   }
   update(updateFn: (view: View) => void, callbackFn?: () => void): boolean {
-    errorOnProcessingTextNodeTransforms();
     return beginUpdate(getSelf(this), updateFn, false, callbackFn);
   }
   focus(callbackFn?: () => void): void {

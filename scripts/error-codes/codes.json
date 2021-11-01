@@ -43,5 +43,7 @@
   "41": "reconcileNode: prevNode or nextNode does not exist in nodeMap",
   "42": "reconcileNode: parentDOM is null",
   "43": "Reconciliation: could not find DOM element for node key \"${key}\"",
-  "44": "A ListItemNode must have a ListNode for a parent."
+  "44": "A ListItemNode must have a ListNode for a parent.",
+  "45": "Editor.update() cannot be used within another update or an editorState.read().",
+  "46": "Editor.update() cannot be used within another update, an editorState.read() or text transforms."
 }

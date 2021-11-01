@@ -486,7 +486,7 @@ function reconcileRoot(
   activeSelection = selection;
   activePrevKeyToDOMMap = new Map(editor._keyToDOMMap);
   reconcileNode('root', null);
-  editor._textContent = editorTextContent;
+  nextEditorState._text = editorTextContent;
 
   // We don't want a bunch of void checks throughout the scope
   // so instead we make it seem that these values are always set.

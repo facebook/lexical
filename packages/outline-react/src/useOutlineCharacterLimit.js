@@ -74,12 +74,10 @@ export function useCharacterLimit(
 
   useEffect(() => {
     editor.registerNodeType('overflow', OverflowNode);
-    (() => {
-      const textLength = strlen(editor.getCurrentTextContent());
-      const diff = maxCharacters - textLength;
-      remainingCharacters(diff);
-      execute();
-    })();
+    let textLength = strlen(editor.getCurrentTextContent());
+    let diff = maxCharacters - textLength;
+    remainingCharacters(diff);
+    execute();
     let lastUtf16TextLength = null;
     let lastTextLength = null;
     return editor.addListener('update', ({dirty, dirtyNodes}) => {
@@ -93,11 +91,11 @@ export function useCharacterLimit(
       ) {
         return;
       }
-      const textLength = strlen(editor.getCurrentTextContent());
+      textLength = strlen(editor.getCurrentTextContent());
       const textLengthAboveThreshold =
         textLength > maxCharacters ||
         (lastTextLength !== null && lastTextLength > maxCharacters);
-      const diff = maxCharacters - textLength;
+      diff = maxCharacters - textLength;
       remainingCharacters(diff);
       if (lastTextLength === null || textLengthAboveThreshold || dirtyNodes) {
         execute();

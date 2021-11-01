@@ -620,6 +620,7 @@ describe('OutlineEditor tests', () => {
       let parsedText;
       let paragraphKey;
       let textKey;
+      let parsedEditorState;
 
       beforeEach(async () => {
         await update((view) => {
@@ -631,8 +632,8 @@ describe('OutlineEditor tests', () => {
         });
         editor.registerNodeType('paragraph', ParagraphNode);
         const stringifiedEditorState = editor.getEditorState().stringify();
-        const editorState = editor.parseEditorState(stringifiedEditorState);
-        editorState.read((view) => {
+        parsedEditorState = editor.parseEditorState(stringifiedEditorState);
+        parsedEditorState.read((view) => {
           parsedRoot = view.getRoot();
           parsedParagraph = parsedRoot.getFirstChild();
           paragraphKey = parsedParagraph.getKey();
@@ -668,6 +669,10 @@ describe('OutlineEditor tests', () => {
         });
       });
 
+      it('Parses the text content of the editor state', async () => {
+        expect(parsedEditorState.getTextContent()).toBe('Hello world');
+      });
+
       it('Parses the selection offsets of a stringified editor state', async () => {
         expect(parsedSelection.anchor.offset).toEqual(6);
         expect(parsedSelection.focus.offset).toEqual(11);
@@ -681,7 +686,7 @@ describe('OutlineEditor tests', () => {
       });
     });
 
-    it('getCurrentTextContent() / getLatestTextContent()', async () => {
+    it('getCurrentTextContent()', async () => {
       editor.update((view: View) => {
         const root = view.getRoot();
         const paragraph = createParagraphNode();
@@ -697,11 +702,6 @@ describe('OutlineEditor tests', () => {
       });
 
       expect(editor.getCurrentTextContent()).toBe('');
-      expect(
-        editor.getLatestTextContent((text) => {
-          expect(text).toBe('12');
-        }),
-      );
 
       await Promise.resolve();
       expect(editor.getCurrentTextContent()).toBe('12');

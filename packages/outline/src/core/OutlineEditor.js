@@ -15,11 +15,11 @@ import {
   errorOnPreparingPendingViewUpdate,
   commitPendingUpdates,
   parseEditorState,
-  errorOnProcessingTextNodeTransforms,
+  shouldEnqueueUpdates,
+  getActiveEditorState,
 } from './OutlineUpdates';
 import {isBlockNode, isTextNode, TextNode} from '.';
 import {EditorState, createEmptyEditorState} from './OutlineEditorState';
-import {emptyFunction} from './OutlineUtils';
 import {LineBreakNode} from './OutlineLineBreakNode';
 import {RootNode} from './OutlineRootNode';
 import {NO_DIRTY_NODES, FULL_RECONCILE} from './OutlineConstants';
@@ -131,6 +131,7 @@ export function resetEditor(
   editor._dirtySubTrees = new Set();
   editor._textContent = '';
   editor._log = [];
+  editor._updates = [];
   const observer = editor._observer;
   if (observer !== null) {
     observer.disconnect();
@@ -181,6 +182,7 @@ class BaseOutlineEditor {
   _compositionKey: null | NodeKey;
   _deferred: Array<() => void>;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
+  _updates: Array<[(view: View) => void, void | (() => void)]>;
   _listeners: Listeners;
   _textNodeTransforms: Set<TextNodeTransform>;
   _nodeTypes: Map<string, Class<OutlineNode>>;
@@ -206,6 +208,7 @@ class BaseOutlineEditor {
     this._deferred = [];
     // Used during reconciliation
     this._keyToDOMMap = new Map();
+    this._updates = [];
     // Listeners
     this._listeners = {
       decorator: new Set(),
@@ -288,7 +291,20 @@ class BaseOutlineEditor {
   }
   addTextNodeTransform(listener: TextNodeTransform): () => void {
     this._textNodeTransforms.add(listener);
-    beginUpdate(getSelf(this), emptyFunction, true);
+    // Mark all existing text nodes as dirty
+    this.update(() => {
+      const editorState = getActiveEditorState();
+      const nodeMap = editorState._nodeMap;
+      const nodeMapEntries = Array.from(nodeMap);
+      // For...of would be faster here, but this will get
+      // compiled away to a slow-path with Babel.
+      for (let i = 0; i < nodeMapEntries.length; i++) {
+        const node = nodeMapEntries[i][1];
+        if (isTextNode(node)) {
+          node.markDirty();
+        }
+      }
+    });
     return () => {
       this._textNodeTransforms.delete(listener);
     };
@@ -366,9 +382,12 @@ class BaseOutlineEditor {
   parseEditorState(stringifiedEditorState: string): EditorState {
     return parseEditorState(stringifiedEditorState, getSelf(this));
   }
-  update(updateFn: (view: View) => void, callbackFn?: () => void): boolean {
-    errorOnProcessingTextNodeTransforms();
-    return beginUpdate(getSelf(this), updateFn, false, callbackFn);
+  update(updateFn: (view: View) => void, callbackFn?: () => void): void {
+    if (shouldEnqueueUpdates()) {
+      getSelf(this)._updates.push([updateFn, callbackFn]);
+    } else {
+      beginUpdate(getSelf(this), updateFn, callbackFn);
+    }
   }
   focus(callbackFn?: () => void): void {
     const rootElement = this._rootElement;
@@ -436,6 +455,7 @@ declare export class OutlineEditor {
   _pendingEditorState: null | EditorState;
   _compositionKey: null | NodeKey;
   _deferred: Array<() => void>;
+  _updates: Array<[(view: View) => void, void | (() => void)]>;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _listeners: Listeners;
   _textNodeTransforms: Set<TextNodeTransform>;

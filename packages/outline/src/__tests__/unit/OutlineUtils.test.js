@@ -98,8 +98,8 @@ describe('OutlineUtils tests', () => {
     test('isSelectionWithinEditor()', async () => {
       const {editor} = testEnv;
       let textNode;
-      await editor.update((view) => {
-        const root = view.getRoot();
+      await editor.update((state) => {
+        const root = state.getRoot();
         const paragraph = createParagraphNode();
         textNode = createTextNode('foo');
         paragraph.append(textNode);
@@ -113,7 +113,7 @@ describe('OutlineUtils tests', () => {
           domSelection.focusNode,
         ),
       ).toBe(false);
-      await editor.update((view) => {
+      await editor.update((state) => {
         textNode.select(0, 0);
       });
       expect(
@@ -180,8 +180,8 @@ describe('OutlineUtils tests', () => {
       let paragraphNode;
       let textNode;
 
-      await editor.update((view) => {
-        const rootNode = view.getRoot();
+      await editor.update((state) => {
+        const rootNode = state.getRoot();
         paragraphNode = new ParagraphNode();
         textNode = new TextNode('foo');
         paragraphNode.append(textNode);

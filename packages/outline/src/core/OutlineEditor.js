@@ -10,22 +10,22 @@
 import type {OutlineNode, NodeKey} from './OutlineNode';
 import type {Node as ReactNode} from 'react';
 import type {State} from './OutlineUpdates';
+import type {EditorState} from './OutlineEditorState';
 
 import {
-  errorOnPreparingPendingEditorStateUpdate,
   commitPendingUpdates,
   parseEditorState,
   shouldEnqueueUpdates,
   getActiveEditorState,
 } from './OutlineUpdates';
 import {isBlockNode, isTextNode, TextNode} from '.';
-import {EditorState, createEmptyEditorState} from './OutlineEditorState';
+import {createEmptyEditorState} from './OutlineEditorState';
 import {LineBreakNode} from './OutlineLineBreakNode';
 import {RootNode} from './OutlineRootNode';
 import {NO_DIRTY_NODES, FULL_RECONCILE} from './OutlineConstants';
 import {flushRootMutations, initMutationObserver} from './OutlineMutations';
-import {triggerListeners} from './OutlineListeners';
-import {beginUpdate} from './OutlineUpdates';
+import {beginUpdate, triggerListeners} from './OutlineUpdates';
+import {getEditorStateTextContent} from './OutlineUtils';
 import invariant from 'shared/invariant';
 
 export type EditorThemeClassName = string;
@@ -88,10 +88,10 @@ export type RootListener = (
   element: null | HTMLElement,
 ) => void;
 export type TextMutationListener = (
-  editor: OutlineEditor,
   state: State,
   mutation: TextMutation,
 ) => void;
+export type TextContentListener = (text: string) => void;
 
 export type TextMutation = {
   node: TextNode,
@@ -103,6 +103,7 @@ export type TextMutation = {
 type Listeners = {
   decorator: Set<DecoratorListener>,
   error: Set<ErrorListener>,
+  textcontent: Set<TextContentListener>,
   textmutation: Set<TextMutationListener>,
   root: Set<RootListener>,
   update: Set<UpdateListener>,
@@ -113,7 +114,8 @@ export type ListenerType =
   | 'error'
   | 'textmutation'
   | 'root'
-  | 'decorator';
+  | 'decorator'
+  | 'textcontent';
 
 export function resetEditor(
   editor: OutlineEditor,
@@ -129,7 +131,6 @@ export function resetEditor(
   editor._dirtyType = NO_DIRTY_NODES;
   editor._dirtyNodes = new Set();
   editor._dirtySubTrees = new Set();
-  editor._textContent = '';
   editor._log = [];
   editor._updates = [];
   const observer = editor._observer;
@@ -213,6 +214,7 @@ class BaseOutlineEditor {
     this._listeners = {
       decorator: new Set(),
       error: new Set(),
+      textcontent: new Set(),
       textmutation: new Set(),
       root: new Set(),
       update: new Set(),
@@ -230,8 +232,6 @@ class BaseOutlineEditor {
     // React node decorators for portals
     this._decorators = {};
     this._pendingDecorators = null;
-    // Editor fast-path for text content
-    this._textContent = '';
     // Used to optimize reconcilation
     this._dirtyType = NO_DIRTY_NODES;
     this._dirtyNodes = new Set();
@@ -267,7 +267,8 @@ class BaseOutlineEditor {
       | UpdateListener
       | DecoratorListener
       | RootListener
-      | TextMutationListener,
+      | TextMutationListener
+      | TextContentListener,
   ): () => void {
     const listenerSet = this._listeners[type];
     // $FlowFixMe: TODO refine this from the above types
@@ -316,15 +317,7 @@ class BaseOutlineEditor {
     return this._rootElement;
   }
   getCurrentTextContent(): string {
-    return this._textContent;
-  }
-  getLatestTextContent(callback: (text: string) => void): void {
-    errorOnPreparingPendingEditorStateUpdate('Editor.getLatestTextContent()');
-    if (this._pendingEditorState === null) {
-      callback(this._textContent);
-      return;
-    }
-    this._deferred.push(() => callback(this._textContent));
+    return getEditorStateTextContent(this._editorState);
   }
   setRootElement(nextRootElement: null | HTMLElement): void {
     const prevRootElement = this._rootElement;
@@ -350,7 +343,13 @@ class BaseOutlineEditor {
         // $FlowFixMe: internal field
         nextRootElement.__outlineEditor = this;
       }
-      triggerListeners('root', getSelf(this), nextRootElement, prevRootElement);
+      triggerListeners(
+        'root',
+        getSelf(this),
+        false,
+        nextRootElement,
+        prevRootElement,
+      );
     }
   }
   getElementByKey(key: NodeKey): HTMLElement | null {
@@ -462,7 +461,6 @@ declare export class OutlineEditor {
   _nodeTypes: Map<string, Class<OutlineNode>>;
   _decorators: {[NodeKey]: ReactNode};
   _pendingDecorators: null | {[NodeKey]: ReactNode};
-  _textContent: string;
   _config: EditorConfig<{...}>;
   _dirtyType: 0 | 1 | 2;
   _dirtyNodes: Set<NodeKey>;
@@ -479,12 +477,12 @@ declare export class OutlineEditor {
   addListener(type: 'root', listener: RootListener): () => void;
   addListener(type: 'decorator', listener: DecoratorListener): () => void;
   addListener(type: 'textmutation', listener: TextMutationListener): () => void;
+  addListener(type: 'textcontent', listener: TextContentListener): () => void;
   addTextNodeTransform(listener: TextNodeTransform): () => void;
   getDecorators(): {[NodeKey]: ReactNode};
   getRootElement(): null | HTMLElement;
   setRootElement(rootElement: null | HTMLElement): void;
   getCurrentTextContent(): string;
-  getLatestTextContent((text: string) => void): () => void;
   getElementByKey(key: NodeKey): null | HTMLElement;
   getEditorState(): EditorState;
   setEditorState(editorState: EditorState): void;

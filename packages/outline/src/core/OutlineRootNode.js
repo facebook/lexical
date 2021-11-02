@@ -11,10 +11,12 @@ import type {OutlineNode} from './OutlineNode';
 import type {Selection} from './OutlineSelection';
 
 import {BlockNode, isBlockNode} from './OutlineBlockNode';
+import {NO_DIRTY_NODES} from './OutlineConstants';
+import {getActiveEditor, isCurrentlyReadOnlyMode} from './OutlineUpdates';
 import invariant from 'shared/invariant';
 
 export class RootNode extends BlockNode {
-  type: 'root';
+  __cachedText: null | string;
 
   static clone(): RootNode {
     return new RootNode();
@@ -23,10 +25,26 @@ export class RootNode extends BlockNode {
   constructor() {
     super('root');
     this.__type = 'root';
+    this.__cachedText = null;
   }
 
   isAttached(): true {
     return true;
+  }
+  getTextContent(includeInert?: boolean, includeDirectionless?: false): string {
+    const cachedText = this.__cachedText;
+    if (
+      isCurrentlyReadOnlyMode() ||
+      getActiveEditor()._dirtyType === NO_DIRTY_NODES
+    ) {
+      if (
+        cachedText !== null &&
+        (!includeInert || includeDirectionless !== false)
+      ) {
+        return cachedText;
+      }
+    }
+    return super.getTextContent(includeInert, includeDirectionless);
   }
   select(): Selection {
     // You can't select root nodes.

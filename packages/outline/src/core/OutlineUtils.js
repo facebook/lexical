@@ -11,6 +11,7 @@ import type {OutlineEditor} from './OutlineEditor';
 import type {OutlineNode, NodeKey, NodeMap} from './OutlineNode';
 import type {TextFormatType} from './OutlineTextNode';
 import type {Node as ReactNode} from 'react';
+import type {EditorState} from './OutlineEditorState';
 
 import {
   RTL_REGEX,
@@ -242,4 +243,8 @@ export function cloneDecorators(editor: OutlineEditor): {[NodeKey]: ReactNode} {
 export function pushLogEntry(entry: string): void {
   const editor = getActiveEditor();
   editor._log.push(entry);
+}
+
+export function getEditorStateTextContent(editorState: EditorState): string {
+  return editorState.read((view) => view.getRoot().getTextContent());
 }

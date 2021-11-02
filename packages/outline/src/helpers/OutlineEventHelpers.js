@@ -568,7 +568,6 @@ function updateTextNodeFromDOMContent(
   anchorOffset: null | number,
   focusOffset: null | number,
   state: State,
-  editor: OutlineEditor,
   compositionEnd: boolean,
 ): void {
   let node = textNode;
@@ -584,7 +583,10 @@ function updateTextNodeFromDOMContent(
     }
 
     if (compositionEnd || normalizedTextContent !== node.getTextContent()) {
-      if (isImmutableOrInert(node) || (editor.isComposing() && !isComposing)) {
+      if (
+        isImmutableOrInert(node) ||
+        (state.getCompositionKey() !== null && !isComposing)
+      ) {
         node.markDirty();
         return;
       }
@@ -966,7 +968,6 @@ function updateSelectedTextFromDOM(
         anchorOffset,
         focusOffset,
         state,
-        editor,
         compositionEnd,
       );
     }
@@ -1060,11 +1061,7 @@ export function applyMutationInputWebkitWorkaround(): void {
   );
 }
 
-export function onTextMutation(
-  editor: OutlineEditor,
-  state: State,
-  mutation: TextMutation,
-): void {
+export function onTextMutation(state: State, mutation: TextMutation): void {
   // We attempt to merge any text mutations that have occured outside of Outline
   // back into Outline's editor state.
   const node = mutation.node;
@@ -1077,7 +1074,6 @@ export function onTextMutation(
     anchorOffset,
     focusOffset,
     state,
-    editor,
     false,
   );
 }

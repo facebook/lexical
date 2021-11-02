@@ -9,7 +9,7 @@
 
 import type {OutlineEditor, EditorState, OutlineNode, NodeKey} from 'outline';
 
-import {isTextNode} from 'outline';
+import {isTextNode, isRootNode} from 'outline';
 import {isRedo, isUndo} from 'outline/keys';
 import {useCallback, useEffect, useMemo} from 'react';
 import {editorStatesWithoutHistory} from 'outline/history';
@@ -30,7 +30,7 @@ function getDirtyNodes(
     const dirtyNodeKey = dirtyNodes[i];
     const dirtyNode = nodeMap.get(dirtyNodeKey);
 
-    if (dirtyNode !== undefined) {
+    if (dirtyNode !== undefined && !isRootNode(dirtyNode)) {
       nodes.push(dirtyNode);
     }
   }

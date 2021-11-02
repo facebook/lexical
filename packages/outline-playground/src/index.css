@@ -151,7 +151,7 @@ pre {
   font-size: 12px;
   overflow: auto;
   white-space: pre-wrap;
-  max-height: 250px;
+  max-height: 180px;
 }
 
 .tree-view-output {
@@ -161,12 +161,20 @@ pre {
   color: #fff;
   padding: 0;
   font-size: 12px;
-  overflow: auto;
   white-space: pre-wrap;
   margin: 20px auto 10px auto;
   max-height: 250px;
   max-width: 600px;
   position: relative;
+}
+
+pre::-webkit-scrollbar {
+  background: transparent;
+  width: 10px;
+}
+
+pre::-webkit-scrollbar-thumb {
+  background: #999;
 }
 
 .editor-dev-toolbar {

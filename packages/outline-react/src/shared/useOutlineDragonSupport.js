@@ -49,9 +49,9 @@ export default function useOutlineDragonSupport(editor: OutlineEditor) {
               // TODO: we should probably handle formatCommand somehow?
               // eslint-disable-next-line no-unused-expressions
               formatCommand;
-              editor.update((view) => {
+              editor.update((state) => {
                 log('useOutlineDragonSupport');
-                const selection = view.getSelection();
+                const selection = state.getSelection();
                 if (selection !== null) {
                   const anchor = selection.anchor;
                   let anchorNode = anchor.getNode();

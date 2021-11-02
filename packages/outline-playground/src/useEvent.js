@@ -7,13 +7,13 @@
  * @flow strict-local
  */
 
-import type {OutlineEditor, View} from 'outline';
+import type {OutlineEditor, State} from 'outline';
 
 import {useCallback, useLayoutEffect} from 'react';
 import {log} from 'outline';
 
 function useWrapper<E: Event>(
-  handler: (event: E, view: View, editor: OutlineEditor) => void,
+  handler: (event: E, state: State, editor: OutlineEditor) => void,
   editor: OutlineEditor,
 ): (event: E) => void {
   return useCallback(
@@ -26,9 +26,9 @@ function useWrapper<E: Event>(
           return;
         }
       }
-      editor.update((view) => {
+      editor.update((state) => {
         log(event.type);
-        handler(event, view, editor);
+        handler(event, state, editor);
       });
     },
     [editor, handler],
@@ -38,7 +38,7 @@ function useWrapper<E: Event>(
 export default function useEvent<E>(
   editor: OutlineEditor,
   eventName: string,
-  handler: (event: E, view: View) => void,
+  handler: (event: E, state: State) => void,
 ): void {
   const wrapper = useWrapper(handler, editor);
   useLayoutEffect(() => {

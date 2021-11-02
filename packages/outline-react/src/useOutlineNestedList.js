@@ -7,7 +7,7 @@
  * @flow
  */
 
-import type {OutlineEditor, OutlineNode, View} from 'outline';
+import type {OutlineEditor, OutlineNode, State} from 'outline';
 import type {ListItemNode} from 'outline/ListItemNode';
 
 import {useCallback, useMemo} from 'react';
@@ -20,9 +20,9 @@ function maybeIndentOrOutdent(
   direction: 'indent' | 'outdent',
 ): boolean {
   let hasHandledIndention = false;
-  editor.update((view: View) => {
+  editor.update((state: State) => {
     log('useNestedList.maybeIndent');
-    const selection = view.getSelection();
+    const selection = state.getSelection();
     if (selection === null) {
       return;
     }

@@ -14,7 +14,7 @@ export type {
   TextMutation,
 } from './OutlineEditor';
 export type {EditorState, ParsedEditorState} from './OutlineEditorState';
-export type {View} from './OutlineUpdates';
+export type {State} from './OutlineUpdates';
 export type {NodeKey, OutlineNode, NodeMap} from './OutlineNode';
 export type {ParsedNode, ParsedNodeMap} from './OutlineParsing';
 export type {

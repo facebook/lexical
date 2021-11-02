@@ -7,7 +7,7 @@
  * @flow strict-local
  */
 
-import type {OutlineEditor, View} from 'outline';
+import type {OutlineEditor, State} from 'outline';
 
 import {createTextNode, log} from 'outline';
 import {createParagraphNode} from 'outline/ParagraphNode';
@@ -342,9 +342,9 @@ ${steps.map(formatStep).join(`\n`)}
   const toggleEditorSelection = useCallback(
     (currentEditor) => {
       if (!isRecording) {
-        currentEditor.update((view: View) => {
+        currentEditor.update((state: State) => {
           log('useStepRecorder');
-          const root = view.getRoot();
+          const root = state.getRoot();
           root.clear();
           const text = createTextNode();
           root.append(createParagraphNode().append(text));

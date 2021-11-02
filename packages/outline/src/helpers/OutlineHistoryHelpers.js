@@ -7,13 +7,13 @@
  * @flow strict
  */
 
-import type {EditorState, OutlineEditor, View} from 'outline';
+import type {EditorState, OutlineEditor, State} from 'outline';
 
 export const editorStatesWithoutHistory: Set<EditorState> = new Set();
 
 export function updateWithoutHistory(
   editor: OutlineEditor,
-  updateFn: (view: View) => void,
+  updateFn: (state: State) => void,
 ): boolean {
   const res = editor.update(updateFn);
   const pendingEditorState = editor._pendingEditorState;

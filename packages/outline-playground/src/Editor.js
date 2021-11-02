@@ -123,9 +123,9 @@ export const useRichTextEditor = ({
 
   const element = useMemo(() => {
     const handleAddImage = () => {
-      editor.update((view) => {
+      editor.update((state) => {
         log('handleAddImage');
-        const selection = view.getSelection();
+        const selection = state.getSelection();
         if (selection !== null) {
           const imageNode = createImageNode(
             yellowFlowerImage,

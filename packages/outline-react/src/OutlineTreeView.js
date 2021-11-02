@@ -10,7 +10,7 @@
 import type {
   BlockNode,
   EditorState,
-  View,
+  State,
   OutlineEditor,
   Selection,
 } from 'outline';
@@ -214,8 +214,8 @@ function printSelection(selection: Selection): string {
 function generateContent(editorState: EditorState): string {
   let res = ' root\n';
 
-  const selectionString = editorState.read((view: View) => {
-    const selection = view.getSelection();
+  const selectionString = editorState.read((state: State) => {
+    const selection = state.getSelection();
     let selectedNodes = null;
     if (selection !== null) {
       selectedNodes = new Set(
@@ -223,7 +223,7 @@ function generateContent(editorState: EditorState): string {
       );
     }
 
-    visitTree(view, view.getRoot(), (node, indent) => {
+    visitTree(state, state.getRoot(), (node, indent) => {
       const nodeKey = node.getKey();
       const nodeKeyDisplay = `(${nodeKey})`;
       const typeDisplay = node.getType() || '';
@@ -249,7 +249,7 @@ function generateContent(editorState: EditorState): string {
   return res + '\n selection' + selectionString;
 }
 
-function visitTree(view: View, currentNode: BlockNode, visitor, indent = []) {
+function visitTree(state: State, currentNode: BlockNode, visitor, indent = []) {
   const childNodes = currentNode.getChildren();
   const childNodesLength = childNodes.length;
 
@@ -265,7 +265,7 @@ function visitTree(view: View, currentNode: BlockNode, visitor, indent = []) {
 
     if (isBlockNode(childNode)) {
       visitTree(
-        view,
+        state,
         childNode,
         visitor,
         indent.concat(

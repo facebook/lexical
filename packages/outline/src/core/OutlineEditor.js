@@ -9,10 +9,10 @@
 
 import type {OutlineNode, NodeKey} from './OutlineNode';
 import type {Node as ReactNode} from 'react';
-import type {View} from './OutlineUpdates';
+import type {State} from './OutlineUpdates';
 
 import {
-  errorOnPreparingPendingViewUpdate,
+  errorOnPreparingPendingEditorStateUpdate,
   commitPendingUpdates,
   parseEditorState,
   shouldEnqueueUpdates,
@@ -73,7 +73,7 @@ export type EditorConfig<EditorContext> = {
   context: EditorContext,
 };
 
-export type TextNodeTransform = (node: TextNode, view: View) => void;
+export type TextNodeTransform = (node: TextNode, state: State) => void;
 
 export type ErrorListener = (error: Error, log: Array<string>) => void;
 export type UpdateListener = ({
@@ -89,7 +89,7 @@ export type RootListener = (
 ) => void;
 export type TextMutationListener = (
   editor: OutlineEditor,
-  view: View,
+  state: State,
   mutation: TextMutation,
 ) => void;
 
@@ -182,7 +182,7 @@ class BaseOutlineEditor {
   _compositionKey: null | NodeKey;
   _deferred: Array<() => void>;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
-  _updates: Array<[(view: View) => void, void | (() => void)]>;
+  _updates: Array<[(state: State) => void, void | (() => void)]>;
   _listeners: Listeners;
   _textNodeTransforms: Set<TextNodeTransform>;
   _nodeTypes: Map<string, Class<OutlineNode>>;
@@ -319,7 +319,7 @@ class BaseOutlineEditor {
     return this._textContent;
   }
   getLatestTextContent(callback: (text: string) => void): void {
-    errorOnPreparingPendingViewUpdate('Editor.getLatestTextContent()');
+    errorOnPreparingPendingEditorStateUpdate('Editor.getLatestTextContent()');
     if (this._pendingEditorState === null) {
       callback(this._textContent);
       return;
@@ -382,7 +382,7 @@ class BaseOutlineEditor {
   parseEditorState(stringifiedEditorState: string): EditorState {
     return parseEditorState(stringifiedEditorState, getSelf(this));
   }
-  update(updateFn: (view: View) => void, callbackFn?: () => void): void {
+  update(updateFn: (state: State) => void, callbackFn?: () => void): void {
     if (shouldEnqueueUpdates()) {
       getSelf(this)._updates.push([updateFn, callbackFn]);
     } else {
@@ -395,9 +395,9 @@ class BaseOutlineEditor {
       // This ensures that iOS does not trigger caps lock upon focus
       rootElement.setAttribute('autocapitalize', 'off');
       this.update(
-        (view: View) => {
-          const selection = view.getSelection();
-          const root = view.getRoot();
+        (state: State) => {
+          const selection = state.getSelection();
+          const root = state.getRoot();
           if (selection !== null) {
             // Marking the selection dirty will force the selection back to it
             selection.dirty = true;
@@ -455,7 +455,7 @@ declare export class OutlineEditor {
   _pendingEditorState: null | EditorState;
   _compositionKey: null | NodeKey;
   _deferred: Array<() => void>;
-  _updates: Array<[(view: View) => void, void | (() => void)]>;
+  _updates: Array<[(state: State) => void, void | (() => void)]>;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _listeners: Listeners;
   _textNodeTransforms: Set<TextNodeTransform>;
@@ -489,7 +489,7 @@ declare export class OutlineEditor {
   getEditorState(): EditorState;
   setEditorState(editorState: EditorState): void;
   parseEditorState(stringifiedEditorState: string): EditorState;
-  update(updateFn: (view: View) => void, callbackFn?: () => void): boolean;
+  update(updateFn: (state: State) => void, callbackFn?: () => void): boolean;
   focus(callbackFn?: () => void): void;
   canShowPlaceholder(): boolean;
 }

@@ -14,7 +14,7 @@ import type {
 } from './OutlineEditor';
 import type {NodeKey, NodeMap} from './OutlineNode';
 import {getCompositionKey} from './OutlineUtils';
-import {view} from './OutlineUpdates';
+import {state} from './OutlineUpdates';
 import {isTextNode, isLineBreakNode} from '.';
 
 export function triggerTextMutationListeners(
@@ -42,7 +42,7 @@ export function triggerTextMutationListeners(
     ) {
       // Apply text transforms
       for (let i = 0; i < transforms.length; i++) {
-        transforms[i](node, view);
+        transforms[i](node, state);
         if (!node.isAttached()) {
           break;
         }

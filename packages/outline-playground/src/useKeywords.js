@@ -12,7 +12,7 @@ import type {
   NodeKey,
   EditorConfig,
   OutlineNode,
-  View,
+  State,
   BlockNode,
 } from 'outline';
 
@@ -30,7 +30,7 @@ export default function useKeywords(editor: OutlineEditor): void {
   useEffect(() => {
     editor.registerNodeType('keyword', KeywordNode);
 
-    const handleTextTransform = (node: TextNode, view: View) => {
+    const handleTextTransform = (node: TextNode, state: State) => {
       const text = node.getTextContent();
       const nextSibling = node.getNextSibling();
 
@@ -44,7 +44,7 @@ export default function useKeywords(editor: OutlineEditor): void {
         }
         adjacentTextNode = adjacentTextNode.getNextSibling();
       }
-      const selection = view.getSelection();
+      const selection = state.getSelection();
 
       if (!isCharacterBetweenValid(text[0])) {
         // Handle when a text node occurs after a keyword, but doesn't include a space.
@@ -142,9 +142,9 @@ export default function useKeywords(editor: OutlineEditor): void {
     };
 
     const updateListener = () => {
-      editor.update((view) => {
+      editor.update((state) => {
         log('useKeywords');
-        const root = view.getRoot();
+        const root = state.getRoot();
         traverseNodes(root);
       });
     };

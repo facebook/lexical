@@ -39,7 +39,7 @@ of how you might listen to text input and update Outline. You can see that we're
 helper selection functions provided by the Outline pacakge:
 
 ```js
-import type {View, OutlineEditor, Selection} from 'outline';
+import type {State, OutlineEditor, Selection} from 'outline';
 
 import {insertText} from 'outline/SelectionHlpers'
 
@@ -47,12 +47,12 @@ function listenToTextInsertion(editor: OutlineEditor) {
 
   // The "input" event fires when a user types in some text
   const onInput = (event: InputEvent) => {
-    editor.update((view: View) => {
+    editor.update((state: State) => {
       // Note: this is not a browser selection, but rather an Outline
       // selection. Outline always tries to ensure selection matches up
       // with an Outline TextNode, to simplify its usage and avoid common
       // edge-cases.
-      const selection: Selection = view.getSelection();
+      const selection: Selection = state.getSelection();
       // Get the text from this input event.
       const text = event.data;
 

@@ -9,7 +9,7 @@
 
 import type {
   OutlineEditor,
-  View,
+  State,
   EditorConfig,
   NodeKey,
   OutlineNode,
@@ -66,9 +66,9 @@ export function useCharacterLimit(
         offsetUtf16 += codepoint.length;
       }
     }
-    updateWithoutHistory(editor, (view: View) => {
+    updateWithoutHistory(editor, (state: State) => {
       log('CharacterLimit');
-      wrapOverflowedNodes(view, offsetUtf16);
+      wrapOverflowedNodes(state, offsetUtf16);
     });
   }, [editor, maxCharacters, strlen]);
 
@@ -108,8 +108,8 @@ export function useCharacterLimit(
   }, [editor, execute, maxCharacters, remainingCharacters, strlen]);
 }
 
-function wrapOverflowedNodes(view: View, offset: number) {
-  const root = view.getRoot();
+function wrapOverflowedNodes(state: State, offset: number) {
+  const root = state.getRoot();
   let accumulatedLength = 0;
 
   let previousNode = root;
@@ -122,7 +122,7 @@ function wrapOverflowedNodes(view: View, offset: number) {
         const previousSibling = node.getPreviousSibling();
         const nextSibling = node.getNextSibling();
         unwrapNode(node);
-        const selection = view.getSelection();
+        const selection = state.getSelection();
         // Restore selection when the overflow children are removed
         if (
           selection !== null &&
@@ -158,7 +158,7 @@ function wrapOverflowedNodes(view: View, offset: number) {
       const previousAccumulatedLength = accumulatedLength;
       accumulatedLength += node.getTextContentSize();
       if (accumulatedLength > offset && !isOverflowNode(node.getParent())) {
-        const previousSelection = view.getSelection();
+        const previousSelection = state.getSelection();
         let overflowNode;
         // For simple text we can improve the limit accuracy by splitting the TextNode
         // on the split point
@@ -175,9 +175,9 @@ function wrapOverflowedNodes(view: View, offset: number) {
           overflowNode = wrapNode(node);
         }
         if (previousSelection !== null) {
-          view.setSelection(previousSelection);
+          state.setSelection(previousSelection);
         }
-        mergePrevious(overflowNode, view);
+        mergePrevious(overflowNode, state);
       }
     }
     previousNode = node;
@@ -243,7 +243,7 @@ function unwrapNode(node: OverflowNode): OutlineNode | null {
   return childrenLength > 0 ? children[childrenLength - 1] : null;
 }
 
-export function mergePrevious(overflowNode: OverflowNode, view: View) {
+export function mergePrevious(overflowNode: OverflowNode, state: State) {
   const previousNode = overflowNode.getPreviousSibling();
   if (!isOverflowNode(previousNode)) {
     return;
@@ -260,7 +260,7 @@ export function mergePrevious(overflowNode: OverflowNode, view: View) {
     }
   }
 
-  const selection = view.getSelection();
+  const selection = state.getSelection();
   if (selection !== null) {
     const anchor = selection.anchor;
     const anchorNode = anchor.getNode();

@@ -250,9 +250,9 @@ function ImageComponent({
 
   const handleKeyDown = (event) => {
     if ((hasFocus && event.key === 'Backspace') || event.key === 'Delete') {
-      editor.update((view) => {
+      editor.update((state) => {
         log('Image.keyDown');
-        const node = view.getNodeByKey(nodeKey);
+        const node = state.getNodeByKey(nodeKey);
         if (node !== null) {
           node.remove();
           event.stopPropagation();
@@ -297,9 +297,9 @@ function ImageComponent({
                 rootElement.style.setProperty('cursor', 'default');
               }
               setIsResizing(false);
-              editor.update((view) => {
+              editor.update((state) => {
                 log('ImageNode.resize');
-                const node = view.getNodeByKey(nodeKey);
+                const node = state.getNodeByKey(nodeKey);
                 if (isImageNode(node)) {
                   node.setWidthAndHeight(nextWidth, nextHeight);
                 }

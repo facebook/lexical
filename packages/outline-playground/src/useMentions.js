@@ -11,7 +11,7 @@ import type {
   OutlineEditor,
   NodeKey,
   EditorConfig,
-  View,
+  State,
   Selection,
 } from 'outline';
 
@@ -250,7 +250,7 @@ function MentionsTypeahead({
 
   useEffect(() => {
     return registerKeys({
-      ArrowDown(event, view) {
+      ArrowDown(event, state) {
         if (results !== null && selectedIndex !== null) {
           if (
             selectedIndex < SUGGESTION_LIST_LENGTH_LIMIT - 1 &&
@@ -262,7 +262,7 @@ function MentionsTypeahead({
           event.stopImmediatePropagation();
         }
       },
-      ArrowUp(event, view) {
+      ArrowUp(event, state) {
         if (results !== null && selectedIndex !== null) {
           if (selectedIndex !== 0) {
             updateSelectedIndex(selectedIndex - 1);
@@ -271,7 +271,7 @@ function MentionsTypeahead({
           event.stopImmediatePropagation();
         }
       },
-      Escape(event, view) {
+      Escape(event, state) {
         if (results === null || selectedIndex === null) {
           return;
         }
@@ -279,7 +279,7 @@ function MentionsTypeahead({
         event.stopImmediatePropagation();
         close();
       },
-      Tab(event, view) {
+      Tab(event, state) {
         if (results === null || selectedIndex === null) {
           return;
         }
@@ -287,7 +287,7 @@ function MentionsTypeahead({
         event.stopImmediatePropagation();
         applyCurrentSelected();
       },
-      Enter(event, view) {
+      Enter(event, state) {
         if (results === null || selectedIndex === null) {
           return;
         }
@@ -426,8 +426,8 @@ function tryToPositionRange(match: MentionMatch, range: Range): boolean {
 
 function getMentionsTextToSearch(editor: OutlineEditor): string | null {
   let text = null;
-  editor.getEditorState().read((view: View) => {
-    const selection = view.getSelection();
+  editor.getEditorState().read((state: State) => {
+    const selection = state.getSelection();
     if (selection == null) {
       return;
     }
@@ -468,9 +468,9 @@ function createMentionNodeFromSearchResult(
   entryText: string,
   match: MentionMatch,
 ): void {
-  editor.update((view: View) => {
+  editor.update((state: State) => {
     log('createMentionNodeFromSearchResult');
-    const selection = view.getSelection();
+    const selection = state.getSelection();
     if (selection == null || !selection.isCollapsed()) {
       return;
     }
@@ -572,7 +572,7 @@ export default function useMentions(editor: OutlineEditor): React$Node {
   }, [editor]);
 
   const onKeyDown = useCallback(
-    (event, view) => {
+    (event, state) => {
       if (editor.isComposing()) {
         return;
       }
@@ -583,7 +583,7 @@ export default function useMentions(editor: OutlineEditor): React$Node {
           return;
         }
         if (typeof controlFunction === 'function') {
-          controlFunction(event, view);
+          controlFunction(event, state);
         }
       });
     },

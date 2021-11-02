@@ -7,7 +7,7 @@
  * @flow strict-local
  */
 
-import type {OutlineEditor, TextNode, View} from 'outline';
+import type {OutlineEditor, TextNode, State} from 'outline';
 import {HashtagNode, toggleHashtag} from 'outline/HashtagNode';
 
 import {useEffect} from 'react';
@@ -246,7 +246,7 @@ function getHashtagRegexString(): string {
 
 const REGEX = new RegExp(getHashtagRegexString(), 'ig');
 
-function textNodeTransform(node: TextNode, view: View): void {
+function textNodeTransform(node: TextNode, state: State): void {
   if (!node.isSimpleText()) {
     return;
   }
@@ -283,13 +283,13 @@ export default function useHashtags(editor: OutlineEditor): void {
     const removeTextNodeTransform =
       editor.addTextNodeTransform(textNodeTransform);
     const removeUpdateListener = editor.addListener('update', () => {
-      editor.update((view) => {
+      editor.update((state) => {
         log('useHashtags');
-        const selection = view.getSelection();
+        const selection = state.getSelection();
         if (selection !== null && !editor.isComposing()) {
           const anchorNode = selection.anchor.getNode();
           if (isTextNode(anchorNode)) {
-            textNodeTransform(anchorNode, view);
+            textNodeTransform(anchorNode, state);
           }
         }
       });

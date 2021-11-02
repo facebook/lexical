@@ -15,6 +15,7 @@ import type {ParsedNode} from './OutlineParsing';
 
 import {createRootNode} from './OutlineRootNode';
 import {readEditorState} from './OutlineUpdates';
+import {nodeDeepEquals} from './OutlineNode';
 
 export type ParsedEditorState = {
   _selection: null | {
@@ -58,6 +59,48 @@ export function createEmptyEditorState(): EditorState {
   return new EditorState(new Map([['root', createRootNode()]]));
 }
 
+function compareEditorStates(
+  editorState: EditorState,
+  otherEditorState: ?EditorState,
+  equality: boolean,
+): boolean {
+  // In order to optimize the performance of this,
+  // we order the operations by their overhead:
+  // - equality check
+  // - nodeMap size check
+  // - selection check
+  // - node check
+  if (editorState === otherEditorState) {
+    return true;
+  }
+  if (otherEditorState == null) {
+    return false;
+  }
+  const nodeMap = editorState._nodeMap;
+  const otherNodeMap = otherEditorState._nodeMap;
+  if (nodeMap.size !== otherNodeMap.size) {
+    return false;
+  }
+  const selection = editorState._selection;
+  const otherSelection = otherEditorState._selection;
+  if (selection === null) {
+    if (otherSelection !== null) {
+      return false;
+    }
+  } else if (selection.is(otherSelection)) {
+    return true;
+  } else if (equality) {
+    // Selection equality failed.
+    return false;
+  }
+  // $FlowFixMe: root is always available
+  const root: RootNode = nodeMap.get('root');
+  const otherRoot = otherNodeMap.get('root');
+  return equality
+    ? root.is(otherRoot)
+    : nodeDeepEquals(root, otherRoot, nodeMap, otherNodeMap);
+}
+
 export class EditorState {
   _nodeMap: NodeMap;
   _selection: null | Selection;
@@ -67,6 +110,12 @@ export class EditorState {
     this._nodeMap = nodeMap;
     this._selection = null;
     this._flushSync = false;
+  }
+  is(editorState: ?EditorState): boolean {
+    return compareEditorStates(this, editorState, true);
+  }
+  equals(editorState: ?EditorState): boolean {
+    return compareEditorStates(this, editorState, false);
   }
   isEmpty(): boolean {
     return this._nodeMap.size === 1 && this._selection === null;

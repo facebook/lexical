@@ -80,9 +80,10 @@ class Point {
   }
   is(point: PointType): boolean {
     return (
-      this.key === point.key &&
-      this.offset === point.offset &&
-      this.type === point.type
+      this === point ||
+      (this.key === point.key &&
+        this.offset === point.offset &&
+        this.type === point.type)
     );
   }
   isBefore(b: PointType): boolean {
@@ -202,7 +203,10 @@ export class Selection {
     if (selection === null) {
       return false;
     }
-    return this.anchor.is(selection.anchor) && this.focus.is(selection.focus);
+    return (
+      this === selection ||
+      (this.anchor.is(selection.anchor) && this.focus.is(selection.focus))
+    );
   }
   isBackward(): boolean {
     return this.focus.isBefore(this.anchor);

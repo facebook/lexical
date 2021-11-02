@@ -613,7 +613,11 @@ describe('OutlineEditor tests', () => {
     });
 
     describe('parseEditorState()', () => {
+      let originalRoot;
       let originalText;
+      let originalParagraph;
+      let originalEditorState;
+      let parsedEditorState;
       let parsedParagraph;
       let parsedRoot;
       let parsedSelection;
@@ -623,16 +627,18 @@ describe('OutlineEditor tests', () => {
 
       beforeEach(async () => {
         await update((view) => {
-          const paragraph = createParagraphNode();
+          originalRoot = view.getRoot();
+          originalParagraph = createParagraphNode();
           originalText = createTextNode('Hello world');
           originalText.select(6, 11);
-          paragraph.append(originalText);
-          view.getRoot().append(paragraph);
+          originalParagraph.append(originalText);
+          originalRoot.append(originalParagraph);
         });
         editor.registerNodeType('paragraph', ParagraphNode);
-        const stringifiedEditorState = editor.getEditorState().stringify();
-        const editorState = editor.parseEditorState(stringifiedEditorState);
-        editorState.read((view) => {
+        originalEditorState = editor.getEditorState();
+        const stringifiedEditorState = originalEditorState.stringify();
+        parsedEditorState = editor.parseEditorState(stringifiedEditorState);
+        parsedEditorState.read((view) => {
           parsedRoot = view.getRoot();
           parsedParagraph = parsedRoot.getFirstChild();
           paragraphKey = parsedParagraph.getKey();
@@ -642,7 +648,7 @@ describe('OutlineEditor tests', () => {
         });
       });
 
-      it('Parses the nodes of a stringified editor state', async () => {
+      it('Parses the nodes of a stringified editor state', () => {
         expect(parsedRoot).toEqual({
           __children: [paragraphKey],
           __flags: 0,
@@ -668,16 +674,20 @@ describe('OutlineEditor tests', () => {
         });
       });
 
-      it('Parses the selection offsets of a stringified editor state', async () => {
+      it('Parses the selection offsets of a stringified editor state', () => {
         expect(parsedSelection.anchor.offset).toEqual(6);
         expect(parsedSelection.focus.offset).toEqual(11);
       });
 
-      it('Remaps the selection keys of a stringified editor state', async () => {
+      it('Remaps the selection keys of a stringified editor state', () => {
         expect(parsedSelection.anchor.key).not.toEqual(originalText.__key);
         expect(parsedSelection.focus.key).not.toEqual(originalText.__key);
         expect(parsedSelection.anchor.key).toEqual(parsedText.__key);
         expect(parsedSelection.focus.key).toEqual(parsedText.__key);
+      });
+
+      it('EditorState object matches the original', () => {
+        expect(parsedEditorState.equals(originalEditorState)).toBe(true);
       });
     });
 

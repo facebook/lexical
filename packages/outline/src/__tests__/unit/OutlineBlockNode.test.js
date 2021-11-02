@@ -64,7 +64,7 @@ describe('OutlineBlockNode tests', () => {
     });
 
     // Insert initial block
-    await update((view) => {
+    await update((state) => {
       const block = createTestBlockNode();
       const text = createTextNode('Foo');
       const text2 = createTextNode('Bar');
@@ -76,7 +76,7 @@ describe('OutlineBlockNode tests', () => {
       // we make a selection in the setup code.
       text.select(0, 0);
       block.append(text, text2, text3);
-      view.getRoot().append(block);
+      state.getRoot().append(block);
     });
   }
 
@@ -91,8 +91,8 @@ describe('OutlineBlockNode tests', () => {
     });
 
     test('some children', async () => {
-      await update((view) => {
-        const children = view.getRoot().getFirstChild().getChildren();
+      await update((state) => {
+        const children = state.getRoot().getFirstChild().getChildren();
         expect(children).toHaveLength(3);
       });
     });
@@ -100,14 +100,14 @@ describe('OutlineBlockNode tests', () => {
 
   describe('getAllTextNodes()', () => {
     test('basic', async () => {
-      await update((view) => {
-        const textNodes = view.getRoot().getFirstChild().getAllTextNodes();
+      await update((state) => {
+        const textNodes = state.getRoot().getFirstChild().getAllTextNodes();
         expect(textNodes).toHaveLength(3);
       });
     });
 
     test('nested', async () => {
-      await update((view) => {
+      await update((state) => {
         const block = createTestBlockNode();
         const innerBlock = createTestBlockNode();
         const text = createTextNode('Foo');
@@ -132,7 +132,7 @@ describe('OutlineBlockNode tests', () => {
         const children2 = block.getAllTextNodes();
         expect(children2).toHaveLength(6);
         expect(children2).toEqual([text, text2, text3, text5, text6, text4]);
-        view.getRoot().append(block);
+        state.getRoot().append(block);
       });
     });
 
@@ -141,9 +141,9 @@ describe('OutlineBlockNode tests', () => {
 
   describe('getFirstChild()', () => {
     test('basic', async () => {
-      await update((view) => {
+      await update((state) => {
         expect(
-          view.getRoot().getFirstChild().getFirstChild().getTextContent(),
+          state.getRoot().getFirstChild().getFirstChild().getTextContent(),
         ).toBe('Foo');
       });
     });
@@ -158,9 +158,9 @@ describe('OutlineBlockNode tests', () => {
 
   describe('getLastChild()', () => {
     test('basic', async () => {
-      await update((view) => {
+      await update((state) => {
         expect(
-          view.getRoot().getFirstChild().getLastChild().getTextContent(),
+          state.getRoot().getFirstChild().getLastChild().getTextContent(),
         ).toBe('Baz');
       });
     });
@@ -175,8 +175,8 @@ describe('OutlineBlockNode tests', () => {
 
   describe('getTextContent()', () => {
     test('basic', async () => {
-      await update((view) => {
-        expect(view.getRoot().getFirstChild().getTextContent()).toBe(
+      await update((state) => {
+        expect(state.getRoot().getFirstChild().getTextContent()).toBe(
           'FooBarBaz',
         );
       });
@@ -190,7 +190,7 @@ describe('OutlineBlockNode tests', () => {
     });
 
     test('nested', async () => {
-      await update((view) => {
+      await update((state) => {
         const block = createTestBlockNode();
         const innerBlock = createTestBlockNode();
         const text = createTextNode('Foo');
@@ -215,7 +215,7 @@ describe('OutlineBlockNode tests', () => {
 
         expect(block.getTextContent()).toEqual('FooBarStuff\n\nQux');
         expect(block.getTextContent(true)).toEqual('FooBarBazMoreStuff\n\nQux');
-        view.getRoot().append(block);
+        state.getRoot().append(block);
       });
     });
   });

@@ -6,7 +6,7 @@
  *
  */
 
-import type {OutlineEditor, View} from 'outline';
+import type {OutlineEditor, State} from 'outline';
 
 import React from 'react';
 import ReactDOM from 'react-dom';
@@ -82,8 +82,8 @@ describe('OutlineEditor tests', () => {
 
     const initialEditor = createEditor();
 
-    initialEditor.update((view) => {
-      const root = view.getRoot();
+    initialEditor.update((state) => {
+      const root = state.getRoot();
       const paragraph = createParagraphNode();
       const text = createTextNode('This works!');
       root.append(paragraph);
@@ -127,8 +127,8 @@ describe('OutlineEditor tests', () => {
 
     editor.setRootElement(rootElement);
 
-    editor.update((view) => {
-      const root = view.getRoot();
+    editor.update((state) => {
+      const root = state.getRoot();
       const paragraph = createParagraphNode();
       const text = createTextNode('This works!');
       root.append(paragraph);
@@ -136,10 +136,10 @@ describe('OutlineEditor tests', () => {
     });
 
     editor.update(
-      (view) => {
+      (state) => {
         log.push('A1');
         // To enforce the update
-        view.getRoot().markDirty();
+        state.getRoot().markDirty();
         editor.update(
           () => {
             log.push('B1');
@@ -169,17 +169,17 @@ describe('OutlineEditor tests', () => {
     log = [];
 
     editor.update(
-      (view) => {
+      (state) => {
         log.push('A2');
         // To enforce the update
-        view.getRoot().markDirty();
+        state.getRoot().markDirty();
       },
       () => {
         log.push('B2');
         editor.update(
-          (view) => {
+          (state) => {
             // force flush sync
-            view.setCompositionKey('root');
+            state.setCompositionKey('root');
             log.push('D2');
           },
           () => {
@@ -227,9 +227,9 @@ describe('OutlineEditor tests', () => {
     log = [];
 
     editor.update(
-      (view) => {
+      (state) => {
         log.push('A3');
-        view.getRoot().getLastDescendant().markDirty();
+        state.getRoot().getLastDescendant().markDirty();
       },
       () => {
         log.push('B3');
@@ -265,8 +265,8 @@ describe('OutlineEditor tests', () => {
       reactRoot.render(<TestBase element={null} />);
     });
 
-    editor.update((view) => {
-      const root = view.getRoot();
+    editor.update((state) => {
+      const root = state.getRoot();
       const paragraph = createParagraphNode();
       const text = createTextNode('This works!');
       root.append(paragraph);
@@ -299,8 +299,8 @@ describe('OutlineEditor tests', () => {
       reactRoot.render(<TestBase element={null} />);
     });
 
-    editor.update((view) => {
-      const root = view.getRoot();
+    editor.update((state) => {
+      const root = state.getRoot();
       if (root.getFirstChild() === null) {
         const paragraph = createParagraphNode();
         const text = createTextNode('This works!');
@@ -321,8 +321,8 @@ describe('OutlineEditor tests', () => {
 
     expect(listener).toHaveBeenCalledTimes(0);
 
-    editor.update((view) => {
-      const root = view.getRoot();
+    editor.update((state) => {
+      const root = state.getRoot();
       root
         .getFirstChild()
         .getFirstChild()
@@ -352,8 +352,8 @@ describe('OutlineEditor tests', () => {
       reactRoot.render(<TestBase element={null} />);
     });
 
-    editor.update((view) => {
-      const root = view.getRoot();
+    editor.update((state) => {
+      const root = state.getRoot();
       if (root.getFirstChild() === null) {
         const paragraph = createParagraphNode();
         const text = createTextNode('This works!');
@@ -374,8 +374,8 @@ describe('OutlineEditor tests', () => {
 
     expect(listener).toHaveBeenCalledTimes(0);
 
-    editor.update((view) => {
-      const root = view.getRoot();
+    editor.update((state) => {
+      const root = state.getRoot();
       root.getFirstChild().getFirstChild().setTextContent('Foo');
     });
 
@@ -402,8 +402,8 @@ describe('OutlineEditor tests', () => {
       editor = React.useMemo(() => createEditor(), []);
 
       React.useEffect(() => {
-        editor.update((view) => {
-          const root = view.getRoot();
+        editor.update((state) => {
+          const root = state.getRoot();
           const firstChild = root.getFirstChild();
           const text = changeElement ? 'Change successful' : 'Not changed';
           if (firstChild === null) {
@@ -527,11 +527,11 @@ describe('OutlineEditor tests', () => {
             return <Decorator text={'Hello world'} />;
           }
         }
-        await editor.update((view) => {
+        await editor.update((state) => {
           const paragraph = createParagraphNode();
           const test = new TestNode();
           paragraph.append(test);
-          view.getRoot().append(paragraph);
+          state.getRoot().append(paragraph);
         });
       });
 
@@ -585,8 +585,8 @@ describe('OutlineEditor tests', () => {
       // Wait for update to complete
       await Promise.resolve().then();
 
-      editor.getEditorState().read((view) => {
-        const root = view.getRoot();
+      editor.getEditorState().read((state) => {
+        const root = state.getRoot();
         const paragraph = root.getFirstChild();
 
         expect(root).toEqual({
@@ -624,23 +624,23 @@ describe('OutlineEditor tests', () => {
       let parsedEditorState;
 
       beforeEach(async () => {
-        await update((view) => {
+        await update((state) => {
           const paragraph = createParagraphNode();
           originalText = createTextNode('Hello world');
           originalText.select(6, 11);
           paragraph.append(originalText);
-          view.getRoot().append(paragraph);
+          state.getRoot().append(paragraph);
         });
         editor.registerNodeType('paragraph', ParagraphNode);
         const stringifiedEditorState = editor.getEditorState().stringify();
         parsedEditorState = editor.parseEditorState(stringifiedEditorState);
-        parsedEditorState.read((view) => {
-          parsedRoot = view.getRoot();
+        parsedEditorState.read((state) => {
+          parsedRoot = state.getRoot();
           parsedParagraph = parsedRoot.getFirstChild();
           paragraphKey = parsedParagraph.getKey();
           parsedText = parsedParagraph.getFirstChild();
           textKey = parsedText.getKey();
-          parsedSelection = view.getSelection();
+          parsedSelection = state.getSelection();
         });
       });
 
@@ -673,10 +673,10 @@ describe('OutlineEditor tests', () => {
 
       it('Parses the text content of the editor state', async () => {
         expect(
-          parsedEditorState.read((view) => view.getRoot().__cachedText),
+          parsedEditorState.read((state) => state.getRoot().__cachedText),
         ).toBe(null);
         expect(
-          parsedEditorState.read((view) => view.getRoot().getTextContent()),
+          parsedEditorState.read((state) => state.getRoot().getTextContent()),
         ).toBe('Hello world');
       });
 
@@ -694,15 +694,15 @@ describe('OutlineEditor tests', () => {
     });
 
     it('getCurrentTextContent()', async () => {
-      editor.update((view: View) => {
-        const root = view.getRoot();
+      editor.update((state: State) => {
+        const root = state.getRoot();
         const paragraph = createParagraphNode();
         const text1 = createTextNode('1');
         root.append(paragraph);
         paragraph.append(text1);
       });
-      editor.update((view: View) => {
-        const root = view.getRoot();
+      editor.update((state: State) => {
+        const root = state.getRoot();
         const paragraph = root.getFirstChild();
         const text2 = createTextNode('2');
         paragraph.append(text2);
@@ -723,8 +723,8 @@ describe('OutlineEditor tests', () => {
 
     async function reset() {
       init();
-      await update((view) => {
-        const root = view.getRoot();
+      await update((state) => {
+        const root = state.getRoot();
         const paragraph = createParagraphNode();
         root.append(paragraph);
       });
@@ -767,8 +767,8 @@ describe('OutlineEditor tests', () => {
         const textToKey: Map<string, NodeKey> = new Map();
 
         // Previous editor state
-        await update((view: View) => {
-          const writableParagraph: ParagraphNode = view
+        await update((state: State) => {
+          const writableParagraph: ParagraphNode = state
             .getRoot()
             .getFirstChild()
             .getWritable();
@@ -785,8 +785,8 @@ describe('OutlineEditor tests', () => {
 
         // Next editor state
         const previousSet = new Set(previous);
-        await update((view: View) => {
-          const writableParagraph: ParagraphNode = view
+        await update((state: State) => {
+          const writableParagraph: ParagraphNode = state
             .getRoot()
             .getFirstChild()
             .getWritable();
@@ -798,10 +798,10 @@ describe('OutlineEditor tests', () => {
             if (nextKey === undefined) {
               textNode = new TextNode(nextText).toggleUnmergeable();
               textNode.__parent = writableParagraph.__key;
-              expect(view.getNodeByKey(nextKey)).toBe(null);
+              expect(state.getNodeByKey(nextKey)).toBe(null);
               textToKey.set(nextText, textNode.__key);
             } else {
-              textNode = view.getNodeByKey(nextKey);
+              textNode = state.getNodeByKey(nextKey);
               expect(textNode.__text).toBe(nextText);
             }
             writableParagraph.__children.push(textNode.__key);
@@ -809,7 +809,7 @@ describe('OutlineEditor tests', () => {
           }
           previousSet.forEach((previousText) => {
             const previousKey = textToKey.get(previousText);
-            const textNode = view.getNodeByKey(previousKey);
+            const textNode = state.getNodeByKey(previousKey);
             expect(textNode.__text).toBe(previousText);
             textNode.remove();
           });
@@ -828,15 +828,15 @@ describe('OutlineEditor tests', () => {
           }</p></div>`,
         );
         // Expect editorState to have the correct latest nodes
-        editor.getEditorState().read((view: View) => {
+        editor.getEditorState().read((state: State) => {
           for (let i = 0; i < next.length; i++) {
             const nextText = next[i];
             const nextKey = textToKey.get(nextText);
-            expect(view.getNodeByKey(nextKey)).not.toBe(null);
+            expect(state.getNodeByKey(nextKey)).not.toBe(null);
           }
           previousSet.forEach((previousText) => {
             const previousKey = textToKey.get(previousText);
-            expect(view.getNodeByKey(previousKey)).toBe(null);
+            expect(state.getNodeByKey(previousKey)).toBe(null);
           });
         });
       }
@@ -863,8 +863,8 @@ describe('OutlineEditor tests', () => {
       let textNode1Key;
       let blockNode2Key;
       let textNode2Key;
-      await update((view: View) => {
-        const paragraph: ParagraphNode = view.getRoot().getFirstChild();
+      await update((state: State) => {
+        const paragraph: ParagraphNode = state.getRoot().getFirstChild();
         paragraphNodeKey = paragraph.getKey();
 
         const [blockNode1, textNode1] = createBlockNodeWithText('A');
@@ -877,7 +877,7 @@ describe('OutlineEditor tests', () => {
 
         paragraph.append(blockNode1, blockNode2);
       });
-      await update((view: View) => {
+      await update((state: State) => {
         const blockNode1: BlockNode = getNodeByKey(blockNode1Key);
         const blockNode2: TextNode = getNodeByKey(blockNode2Key);
         blockNode1.append(blockNode2);
@@ -910,8 +910,8 @@ describe('OutlineEditor tests', () => {
 
       let blockNode1Key;
       let blockNode2Key;
-      await update((view: View) => {
-        const paragraph: ParagraphNode = view.getRoot().getFirstChild();
+      await update((state: State) => {
+        const paragraph: ParagraphNode = state.getRoot().getFirstChild();
 
         const blockNode1 = createBlockNodeWithText('A');
         blockNode1Key = blockNode1.getKey();
@@ -921,7 +921,7 @@ describe('OutlineEditor tests', () => {
 
         paragraph.append(blockNode1, blockNode2);
       });
-      await update((view: View) => {
+      await update((state: State) => {
         const blockNode1: BlockNode = getNodeByKey(blockNode1Key);
         const blockNode2: TextNode = getNodeByKey(blockNode2Key);
         blockNode2.append(blockNode1);
@@ -942,8 +942,8 @@ describe('OutlineEditor tests', () => {
       let blockNode1Key;
       let blockNode2Key;
       let blockNode3Key;
-      await update((view: View) => {
-        const paragraph: ParagraphNode = view.getRoot().getFirstChild();
+      await update((state: State) => {
+        const paragraph: ParagraphNode = state.getRoot().getFirstChild();
 
         const blockNode1 = createBlockNodeWithText('A');
         blockNode1Key = blockNode1.getKey();
@@ -956,7 +956,7 @@ describe('OutlineEditor tests', () => {
 
         paragraph.append(blockNode1, blockNode2, blockNode3);
       });
-      await update((view: View) => {
+      await update((state: State) => {
         const blockNode1: BlockNode = getNodeByKey(blockNode1Key);
         const blockNode2: TextNode = getNodeByKey(blockNode2Key);
         const blockNode3: TextNode = getNodeByKey(blockNode3Key);
@@ -970,8 +970,8 @@ describe('OutlineEditor tests', () => {
 
     it('isEmpty', async () => {
       expect(editor.isEmpty()).toBe(true);
-      await update((view: View) => {
-        const paragraph = view.getRoot().getFirstChild();
+      await update((state: State) => {
+        const paragraph = state.getRoot().getFirstChild();
         paragraph.append(createTextNode('foo'));
       });
       expect(editor.isEmpty()).toBe(false);

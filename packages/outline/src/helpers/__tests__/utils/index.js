@@ -582,8 +582,8 @@ export async function applySelectionInputs(inputs, update, editor) {
     const times = input?.times ?? 1;
 
     for (let j = 0; j < times; j++) {
-      await update((view) => {
-        const selection = view.getSelection();
+      await update((state) => {
+        const selection = state.getSelection();
 
         switch (input.type) {
           case 'insert_text': {

@@ -24,18 +24,18 @@ describe('OutlineEditorState tests', () => {
     test('read()', async () => {
       const {editor} = testEnv;
 
-      await editor.update((view) => {
+      await editor.update((state) => {
         const paragraph = createParagraphNode();
         const text = createTextNode('foo');
         paragraph.append(text);
-        view.getRoot().append(paragraph);
+        state.getRoot().append(paragraph);
       });
 
       let root = null;
       let paragraph = null;
       let text = null;
-      editor.getEditorState().read((view) => {
-        root = view.getRoot();
+      editor.getEditorState().read((state) => {
+        root = state.getRoot();
         paragraph = root.getFirstChild();
         text = paragraph.getFirstChild();
       });
@@ -68,12 +68,12 @@ describe('OutlineEditorState tests', () => {
 
     test('stringify()', async () => {
       const {editor} = testEnv;
-      await editor.update((view) => {
+      await editor.update((state) => {
         const paragraph = createParagraphNode();
         const text = createTextNode('Hello world');
         text.select(6, 11);
         paragraph.append(text);
-        view.getRoot().append(paragraph);
+        state.getRoot().append(paragraph);
       });
       expect(editor.getEditorState().stringify()).toEqual(
         `{\"_nodeMap\":[[\"root\",{\"__type\":\"root\",\"__flags\":0,\"__key\":\"root\",\"__parent\":null,\"__children\":[\"0\"],\"__cachedText\":\"Hello world\"}],[\"0\",{\"__type\":\"paragraph\",\"__flags\":0,\"__key\":\"0\",\"__parent\":\"root\",\"__children\":[\"1\"]}],[\"1\",{\"__type\":\"text\",\"__flags\":0,\"__key\":\"1\",\"__parent\":\"0\",\"__text\":\"Hello world\",\"__format\":0,\"__style\":\"\"}]],\"_selection\":{\"anchor\":{\"key\":\"1\",\"offset\":6,\"type\":\"text\"},\"focus\":{\"key\":\"1\",\"offset\":11,\"type\":\"text\"}}}`,
@@ -137,16 +137,16 @@ describe('OutlineEditorState tests', () => {
 
     test('ensure garbage collection works as expected', async () => {
       const {editor} = testEnv;
-      await editor.update((view) => {
+      await editor.update((state) => {
         const paragraph = createParagraphNode();
         const text = createTextNode('foo');
         paragraph.append(text);
-        view.getRoot().append(paragraph);
+        state.getRoot().append(paragraph);
       });
 
       // Remove the first node, which should cause a GC for everything
-      await editor.update((view) => {
-        view.getRoot().getFirstChild().remove();
+      await editor.update((state) => {
+        state.getRoot().getFirstChild().remove();
       });
 
       expect(editor.getEditorState()._nodeMap).toEqual(

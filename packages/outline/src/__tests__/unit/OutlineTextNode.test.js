@@ -95,12 +95,12 @@ describe('OutlineTextNode tests', () => {
     });
 
     // Insert initial block
-    await update((view) => {
+    await update((state) => {
       const paragraph = createParagraphNode();
       const text = createTextNode();
       text.toggleUnmergeable();
       paragraph.append(text);
-      view.getRoot().append(paragraph);
+      state.getRoot().append(paragraph);
     });
   }
 
@@ -108,21 +108,21 @@ describe('OutlineTextNode tests', () => {
     test('writable nodes', async () => {
       let nodeKey;
 
-      await update((view) => {
+      await update((state) => {
         const textNode = createTextNode('Text');
         nodeKey = textNode.getKey();
         expect(textNode.getTextContent()).toBe('Text');
         expect(textNode.getTextContent(true)).toBe('Text');
         expect(textNode.__text).toBe('Text');
 
-        view.getRoot().getFirstChild().append(textNode);
+        state.getRoot().getFirstChild().append(textNode);
       });
 
       expect(editor.getCurrentTextContent()).toBe('Text');
 
       // Make sure that the editor content is still set after further reconciliations
-      await update((view) => {
-        view.getNodeByKey(nodeKey).markDirty();
+      await update((state) => {
+        state.getNodeByKey(nodeKey).markDirty();
       });
       expect(editor.getCurrentTextContent()).toBe('Text');
     });
@@ -130,34 +130,37 @@ describe('OutlineTextNode tests', () => {
     test('inert nodes', async () => {
       let nodeKey;
 
-      await update((view) => {
+      await update((state) => {
         const textNode = createTextNode('Inert text').makeInert();
         nodeKey = textNode.getKey();
         expect(textNode.getTextContent()).toBe('');
         expect(textNode.getTextContent(true)).toBe('Inert text');
         expect(textNode.__text).toBe('Inert text');
 
-        view.getRoot().getFirstChild().append(textNode);
+        state.getRoot().getFirstChild().append(textNode);
       });
 
       expect(editor.getCurrentTextContent()).toBe('');
 
       // Make sure that the editor content is still empty after further reconciliations
-      await update((view) => {
-        view.getNodeByKey(nodeKey).markDirty();
+      await update((state) => {
+        state.getNodeByKey(nodeKey).markDirty();
       });
       expect(editor.getCurrentTextContent()).toBe('');
     });
 
     test('prepend node', async () => {
-      await update((view) => {
+      await update((state) => {
         const textNode = createTextNode('World').toggleUnmergeable();
-        view.getRoot().getFirstChild().append(textNode);
+        state.getRoot().getFirstChild().append(textNode);
       });
 
-      await update((view) => {
+      await update((state) => {
         const textNode = createTextNode('Hello ').toggleUnmergeable();
-        const previousTextNode = view.getRoot().getFirstChild().getFirstChild();
+        const previousTextNode = state
+          .getRoot()
+          .getFirstChild()
+          .getFirstChild();
         previousTextNode.insertBefore(textNode);
       });
 
@@ -221,8 +224,8 @@ describe('OutlineTextNode tests', () => {
     ['code', IS_CODE, (node) => node.isCode(), (node) => node.toggleCode()],
   ])('%s flag', (formatFlag, stateFormat, flagPredicate, flagToggle) => {
     test(`getTextNodeFormatFlags(${formatFlag})`, async () => {
-      await update((view) => {
-        const root = view.getRoot();
+      await update((state) => {
+        const root = state.getRoot();
         const paragraphNode = root.getFirstChild();
         const textNode = paragraphNode.getFirstChild();
 
@@ -236,8 +239,8 @@ describe('OutlineTextNode tests', () => {
     });
 
     test(`predicate for ${formatFlag}`, async () => {
-      await update((view) => {
-        const root = view.getRoot();
+      await update((state) => {
+        const root = state.getRoot();
         const paragraphNode = root.getFirstChild();
         const textNode = paragraphNode.getFirstChild();
 
@@ -252,8 +255,8 @@ describe('OutlineTextNode tests', () => {
         return;
       }
 
-      await update((view) => {
-        const root = view.getRoot();
+      await update((state) => {
+        const root = state.getRoot();
         const paragraphNode = root.getFirstChild();
         const textNode = paragraphNode.getFirstChild();
 
@@ -267,13 +270,13 @@ describe('OutlineTextNode tests', () => {
   });
 
   test('selectPrevious()', async () => {
-    await update((view) => {
+    await update((state) => {
       const paragraphNode = createParagraphNode();
       const textNode = createTextNode('Hello World');
       const textNode2 = createTextNode('Goodbye Earth');
 
       paragraphNode.append(textNode, textNode2);
-      view.getRoot().append(paragraphNode);
+      state.getRoot().append(paragraphNode);
 
       let selection = textNode2.selectPrevious();
 
@@ -289,13 +292,13 @@ describe('OutlineTextNode tests', () => {
   });
 
   test('selectNext()', async () => {
-    await update((view) => {
+    await update((state) => {
       const paragraphNode = createParagraphNode();
       const textNode = createTextNode('Hello World');
       const textNode2 = createTextNode('Goodbye Earth');
 
       paragraphNode.append(textNode, textNode2);
-      view.getRoot().append(paragraphNode);
+      state.getRoot().append(paragraphNode);
 
       let selection = textNode.selectNext(1, 3);
 
@@ -338,11 +341,11 @@ describe('OutlineTextNode tests', () => {
         [anchorOffset, focusOffset],
         [expectedAnchorOffset, expectedFocusOffset],
       ) => {
-        await update((view) => {
+        await update((state) => {
           const paragraphNode = createParagraphNode();
           const textNode = createTextNode('Hello World');
           paragraphNode.append(textNode);
-          view.getRoot().append(paragraphNode);
+          state.getRoot().append(paragraphNode);
 
           const selection = textNode.select(anchorOffset, focusOffset);
 
@@ -368,7 +371,7 @@ describe('OutlineTextNode tests', () => {
     });
 
     test('convert segmented node into plain text', async () => {
-      await update((view) => {
+      await update((state) => {
         const segmentedNode = createCustomSegmentedNode('Hello World');
         const paragraphNode = createParagraphNode();
         paragraphNode.append(segmentedNode);
@@ -397,7 +400,7 @@ describe('OutlineTextNode tests', () => {
     ])(
       '"%s" splitText(...%p)',
       async (initialString, splitOffsets, splitStrings) => {
-        await update((view) => {
+        await update((state) => {
           const paragraphNode = createParagraphNode();
           const textNode = createTextNode(initialString);
           paragraphNode.append(textNode);
@@ -413,7 +416,7 @@ describe('OutlineTextNode tests', () => {
     );
 
     test('splitText moves composition key to last node', async () => {
-      await update((view) => {
+      await update((state) => {
         const paragraphNode = createParagraphNode();
         const textNode = createTextNode('12345');
         paragraphNode.append(textNode);
@@ -521,11 +524,11 @@ describe('OutlineTextNode tests', () => {
         selectionOffsets,
         {anchorNodeIndex, anchorOffset, focusNodeIndex, focusOffset},
       ) => {
-        await update((view) => {
+        await update((state) => {
           const paragraphNode = createParagraphNode();
           const textNode = createTextNode(initialString);
           paragraphNode.append(textNode);
-          view.getRoot().append(paragraphNode);
+          state.getRoot().append(paragraphNode);
 
           const selection = textNode.select(...selectionOffsets);
           const childrenNodes = textNode.splitText(...splitOffsets);

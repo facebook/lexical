@@ -58,14 +58,14 @@ describe('OutlineCodeNode tests', () => {
 
     test.skip('CodeNode.insertNewAfter()', async () => {
       const {editor} = testEnv;
-      await editor.update((view) => {
-        const root = view.getRoot();
+      await editor.update((state) => {
+        const root = state.getRoot();
         const paragraphNode = createParagraphNode();
         const textNode = createTextNode('foo');
         paragraphNode.append(textNode);
         root.append(paragraphNode);
         textNode.select(0, 0);
-        const selection = view.getSelection();
+        const selection = state.getSelection();
         expect(selection).toEqual({
           anchorKey: '_2',
           anchorOffset: 0,
@@ -78,9 +78,9 @@ describe('OutlineCodeNode tests', () => {
       expect(testEnv.outerHTML).toBe(
         '<div contenteditable="true" data-outline-editor="true"><p><span>foo</span></p></div>',
       );
-      await editor.update((view) => {
+      await editor.update((state) => {
         const codeNode = new CodeNode();
-        const selection = view.getSelection();
+        const selection = state.getSelection();
         codeNode.insertNewAfter(selection);
       });
     });

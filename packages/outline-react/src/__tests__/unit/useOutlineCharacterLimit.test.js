@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {OutlineEditor, View, NodeKey} from 'outline';
+import type {OutlineEditor, State, NodeKey} from 'outline';
 
 import {initializeUnitTest} from '../../../../outline/src/__tests__/utils';
 import {createTextNode} from 'outline';
@@ -29,8 +29,8 @@ describe('OutlineNodeHelpers tests', () => {
         const editor: OutlineEditor = testEnv.editor;
         let overflowLeftKey;
         let overflowRightKey;
-        await editor.update((view: View) => {
-          const root = view.getRoot();
+        await editor.update((state: State) => {
+          const root = state.getRoot();
           const paragraph = createParagraphNode();
           const overflowLeft = createOverflowNode();
           const overflowRight = createOverflowNode();
@@ -48,9 +48,9 @@ describe('OutlineNodeHelpers tests', () => {
         const editor: OutlineEditor = testEnv.editor;
         const [overflowLeftKey, overflowRightKey] =
           await initializeEditorWithLeftRightOverflowNodes();
-        await editor.update((view: View) => {
-          const overflowLeft = view.getNodeByKey(overflowLeftKey);
-          const overflowRight = view.getNodeByKey(overflowRightKey);
+        await editor.update((state: State) => {
+          const overflowLeft = state.getNodeByKey(overflowLeftKey);
+          const overflowRight = state.getNodeByKey(overflowRightKey);
           const text1 = createTextNode('1');
           const text2 = createTextNode('2');
           overflowRight.append(text1, text2);
@@ -58,13 +58,13 @@ describe('OutlineNodeHelpers tests', () => {
 
           overflowLeft.select();
         });
-        await editor.update((view: View) => {
-          const paragraph: ParagraphNode = view.getRoot().getFirstChild();
-          const overflowRight = view.getNodeByKey(overflowRightKey);
-          mergePrevious(overflowRight, view);
+        await editor.update((state: State) => {
+          const paragraph: ParagraphNode = state.getRoot().getFirstChild();
+          const overflowRight = state.getNodeByKey(overflowRightKey);
+          mergePrevious(overflowRight, state);
           expect(paragraph.getChildrenSize()).toBe(1);
           expect(isOverflowNode(paragraph.getFirstChild())).toBe(true);
-          const selection = view.getSelection();
+          const selection = state.getSelection();
           if (selection === null) {
             throw new Error('Lost selection');
           }
@@ -80,9 +80,9 @@ describe('OutlineNodeHelpers tests', () => {
         const [overflowLeftKey, overflowRightKey] =
           await initializeEditorWithLeftRightOverflowNodes();
         let text2Key: NodeKey;
-        await editor.update((view: View) => {
-          const overflowLeft = view.getNodeByKey(overflowLeftKey);
-          const overflowRight = view.getNodeByKey(overflowRightKey);
+        await editor.update((state: State) => {
+          const overflowLeft = state.getNodeByKey(overflowLeftKey);
+          const overflowRight = state.getNodeByKey(overflowRightKey);
           const text1 = createTextNode('1');
           const text2 = createTextNode('2');
           const text3 = createTextNode('3');
@@ -95,13 +95,13 @@ describe('OutlineNodeHelpers tests', () => {
 
           overflowLeft.select(1, 1);
         });
-        await editor.update((view: View) => {
-          const paragraph: ParagraphNode = view.getRoot().getFirstChild();
-          const overflowRight = view.getNodeByKey(overflowRightKey);
-          mergePrevious(overflowRight, view);
+        await editor.update((state: State) => {
+          const paragraph: ParagraphNode = state.getRoot().getFirstChild();
+          const overflowRight = state.getNodeByKey(overflowRightKey);
+          mergePrevious(overflowRight, state);
           expect(paragraph.getChildrenSize()).toBe(1);
           expect(isOverflowNode(paragraph.getFirstChild())).toBe(true);
-          const selection = view.getSelection();
+          const selection = state.getSelection();
           if (selection === null) {
             throw new Error('Lost selection');
           }
@@ -118,9 +118,9 @@ describe('OutlineNodeHelpers tests', () => {
           await initializeEditorWithLeftRightOverflowNodes();
         let text2Key: NodeKey;
         let text4Key: NodeKey;
-        await editor.update((view: View) => {
-          const overflowLeft = view.getNodeByKey(overflowLeftKey);
-          const overflowRight = view.getNodeByKey(overflowRightKey);
+        await editor.update((state: State) => {
+          const overflowLeft = state.getNodeByKey(overflowLeftKey);
+          const overflowRight = state.getNodeByKey(overflowRightKey);
           const text1 = createTextNode('1');
           const text2 = createTextNode('2');
           const text3 = createTextNode('3');
@@ -135,16 +135,16 @@ describe('OutlineNodeHelpers tests', () => {
           text4.toggleBold(); // Prevent merging with text3
 
           overflowLeft.select(1, 1);
-          const selection = view.getSelection();
+          const selection = state.getSelection();
           selection.focus.set(overflowRightKey, 1, 'block');
         });
-        await editor.update((view: View) => {
-          const paragraph: ParagraphNode = view.getRoot().getFirstChild();
-          const overflowRight = view.getNodeByKey(overflowRightKey);
-          mergePrevious(overflowRight, view);
+        await editor.update((state: State) => {
+          const paragraph: ParagraphNode = state.getRoot().getFirstChild();
+          const overflowRight = state.getNodeByKey(overflowRightKey);
+          mergePrevious(overflowRight, state);
           expect(paragraph.getChildrenSize()).toBe(1);
           expect(isOverflowNode(paragraph.getFirstChild())).toBe(true);
-          const selection = view.getSelection();
+          const selection = state.getSelection();
           if (selection === null) {
             throw new Error('Lost selection');
           }

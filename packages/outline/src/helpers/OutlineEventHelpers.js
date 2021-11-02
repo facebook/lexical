@@ -18,7 +18,6 @@ import type {
   LineBreakNode,
   DecoratorNode,
   TextMutation,
-  BlockNode,
 } from 'outline';
 
 import {
@@ -197,7 +196,7 @@ export function createOutlineNodeFromDOMNode(
 
 function generateNodesFromDOM(
   dom: Document,
-  view: View,
+  state: State,
   conversionMap: DOMTransformerMap,
   editor: OutlineEditor,
 ): Array<OutlineNode> {
@@ -244,7 +243,7 @@ function insertDataTransferForRichText(
     const dom = parser.parseFromString(htmlString, textHtmlMimeType);
     const nodes = generateNodesFromDOM(
       dom,
-      view,
+      state,
       DOM_NODE_NAME_TO_OUTLINE_NODE,
       editor,
     );

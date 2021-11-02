@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {NodeKey, View, Selection, OutlineEditor, NodeMap} from 'outline';
+import type {NodeKey, State, Selection, OutlineEditor, NodeMap} from 'outline';
 
 import {createSelection, isBlockNode, isTextNode} from 'outline';
 import invariant from 'shared/invariant';
@@ -53,7 +53,7 @@ class OffsetView {
   }
 
   createSelectionFromOffsets(
-    view: View,
+    state: State,
     start: number,
     end: number,
   ): null | Selection {
@@ -68,8 +68,8 @@ class OffsetView {
     }
     let startKey = startOffsetNode.key;
     let endKey = endOffsetNode.key;
-    const startNode = view.getNodeByKey(startKey);
-    const endNode = view.getNodeByKey(endKey);
+    const startNode = state.getNodeByKey(startKey);
+    const endNode = state.getNodeByKey(endKey);
     if (startNode === null || endNode === null) {
       return null;
     }

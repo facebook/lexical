@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {OutlineEditor, View, RootNode} from 'outline';
+import type {OutlineEditor, State, RootNode} from 'outline';
 import type {InputEvents} from 'outline-react/useOutlineEditorEvents';
 
 import {useCallback} from 'react';
@@ -35,33 +35,33 @@ import {
 import useOutlineDragonSupport from './shared/useOutlineDragonSupport';
 import useOutlineHistory from './shared/useOutlineHistory';
 
-function shouldSelectParagraph(view: View, editor: OutlineEditor): boolean {
+function shouldSelectParagraph(state: State, editor: OutlineEditor): boolean {
   const activeElement = document.activeElement;
   return (
-    view.getSelection() !== null ||
+    state.getSelection() !== null ||
     (activeElement !== null && activeElement === editor.getRootElement())
   );
 }
 
 function initParagraph(
-  view: View,
+  state: State,
   root: RootNode,
   editor: OutlineEditor,
 ): void {
   const paragraph = createParagraphNode();
   root.append(paragraph);
-  if (shouldSelectParagraph(view, editor)) {
+  if (shouldSelectParagraph(state, editor)) {
     paragraph.select();
   }
 }
 
 function initEditor(editor: OutlineEditor): void {
-  editor.update((view) => {
+  editor.update((state) => {
     log('initEditor');
-    const root = view.getRoot();
+    const root = state.getRoot();
     const firstChild = root.getFirstChild();
     if (firstChild === null) {
-      initParagraph(view, root, editor);
+      initParagraph(state, root, editor);
     }
   });
 }
@@ -70,11 +70,11 @@ function clearEditor(
   editor: OutlineEditor,
   callbackFn?: (callbackFn?: () => void) => void,
 ): void {
-  editor.update((view) => {
+  editor.update((state) => {
     log('clearEditor');
-    const root = view.getRoot();
+    const root = state.getRoot();
     root.clear();
-    initParagraph(view, root, editor);
+    initParagraph(state, root, editor);
   }, callbackFn);
 }
 

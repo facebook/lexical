@@ -275,10 +275,16 @@ class BaseOutlineEditor {
     listenerSet.add(listener);
 
     const isRootType = type === 'root';
+    const isTextContentType = type === 'textcontent';
     if (isRootType) {
       // $FlowFixMe: TODO refine
-      const rootListener: RootListener = (listener: any);
+      const rootListener: RootListener = listener;
       rootListener(this._rootElement, null);
+    } else if (isTextContentType) {
+      const textContent = getEditorStateTextContent(this._editorState);
+      // $FlowFixMe: TODO refine
+      const textContentListener: TextContentListener = listener;
+      textContentListener(textContent);
     }
     return () => {
       // $FlowFixMe: TODO refine this from the above types

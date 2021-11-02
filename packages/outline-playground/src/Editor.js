@@ -107,7 +107,7 @@ export const useRichTextEditor = ({
   const [editor, rootElementRef, showPlaceholder] =
     useOutlineEditor(editorConfig);
   const mentionsTypeahead = useMentions(editor);
-  const [isReadOnly, setIsReadyOnly] = useState(false);
+  const [isReadOnly, setIsReadOnly] = useState(false);
   const clear = useOutlineRichText(editor);
   const floatingToolbar = useFloatingToolbar(editor);
   const decorators = useOutlineDecorators(editor);
@@ -174,7 +174,7 @@ export const useRichTextEditor = ({
           </button>
           <button
             className="action-button lock"
-            onClick={() => setIsReadyOnly(!isReadOnly)}>
+            onClick={() => setIsReadOnly(!isReadOnly)}>
             <i className={isReadOnly ? 'unlock' : 'lock'} />
           </button>
         </div>
@@ -211,7 +211,7 @@ export const usePlainTextEditor = ({
   const [editor, rootElementRef, showPlaceholder] =
     useOutlineEditor(editorConfig);
   const mentionsTypeahead = useMentions(editor);
-  const [isReadOnly, setIsReadyOnly] = useState(false);
+  const [isReadOnly, setIsReadOnly] = useState(false);
   const clear = usePlainText(editor);
   const decorators = useOutlineDecorators(editor);
   useEmojis(editor);
@@ -246,7 +246,7 @@ export const usePlainTextEditor = ({
           </button>
           <button
             className="action-button lock"
-            onClick={() => setIsReadyOnly(!isReadOnly)}>
+            onClick={() => setIsReadOnly(!isReadOnly)}>
             <i className={isReadOnly ? 'unlock' : 'lock'} />
           </button>
         </div>

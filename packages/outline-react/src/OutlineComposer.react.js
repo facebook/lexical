@@ -10,11 +10,12 @@
 import type {OutlineEditor} from 'outline';
 
 import * as React from 'react';
-import {useState, useMemo} from 'react';
+import {useState, useMemo, useRef, useEffect} from 'react';
 import useOutlineEditor from './useOutlineEditor';
 import usePlainText from './useOutlinePlainText';
 import useOutlineDecorators from './useOutlineDecorators';
 
+// TODO: Make this configurable
 const editorStyle = {
   outline: 0,
   overflowWrap: 'break-word',
@@ -26,6 +27,7 @@ const editorStyle = {
 export type OutlineComposerPluginProps = $ReadOnly<{|
   clearEditor: () => void,
   editor: OutlineEditor,
+  containerElement: HTMLDivElement | null,
 |}>;
 
 export type OutlineComposerPluginComponent<TProps> = ({
@@ -41,9 +43,11 @@ export type OutlineComposerPlugin<TProps: {...} | null> = $ReadOnly<{|
 
 export type OutlineComposerProps = $ReadOnly<{|
   // $FlowFixMe[unclear-type] Remove/fix this any type. It complains when I pass <{...} | null> and I'm not sure why
-  plugins: $ReadOnlyArray<OutlineComposerPlugin<any>>,
+  plugins: $ReadOnlyArray<OutlineComposerPlugin<any> | null>,
+  isReadOnly?: boolean,
 |}>;
 
+// TODO: make this configurable
 const editorConfig = {
   theme: {
     paragraph: 'editor-paragraph',
@@ -106,55 +110,52 @@ function Placeholder({children}: {children: string}): React.Node {
 
 export default function OutlineComposer({
   plugins,
+  isReadOnly = false,
 }: OutlineComposerProps): React$Node {
   const [editor, rootElementRef, showPlaceholder] =
     useOutlineEditor(editorConfig);
-  const [isReadOnly, setIsReadyOnly] = useState(false);
   const clearEditor = usePlainText(editor);
   const decorators = useOutlineDecorators(editor);
-  const outlinePluginProps = useMemo(() => ({editor, clearEditor}), []);
-  const pluginComponents: $ReadOnlyArray<React$Node> = plugins.map(
-    ({name, component: Component, props: pluginProps}) => (
+  const composerContainerRef = useRef(null);
+  const [composerContainerNode, setComposerContainerNode] =
+    useState<HTMLDivElement | null>(null);
+  const outlinePluginProps = useMemo(
+    () => ({editor, clearEditor, containerElement: composerContainerNode}),
+    [editor, clearEditor, composerContainerNode],
+  );
+  // Does this need to be memoized? I don't think so.
+  const pluginComponents: $ReadOnlyArray<React$Node> = plugins
+    .filter(Boolean)
+    .map(({name, component: Component, props: pluginProps}) => (
       <Component
         pluginProps={pluginProps}
         outlineProps={outlinePluginProps}
         key={name}
       />
-    ),
+    ));
+  const pluginNames = useMemo(
+    () => plugins.filter(Boolean).map((plugin) => plugin.name),
+    [plugins],
   );
-  const pluginNames = plugins.map((plugin) => plugin.name);
+
+  // TODO: Remove this, or create a more permanent way to debug current plugins if needed
+  useEffect(() => {
+    console.log('Current plugins:');
+    pluginNames.forEach((name) => console.log(' * ' + name));
+  });
 
   return (
     <>
-      <ContentEditable
-        isReadOnly={isReadOnly}
-        rootElementRef={rootElementRef}
-      />
-      {showPlaceholder && <Placeholder>Enter some plain text...</Placeholder>}
-      {decorators}
-      {pluginComponents}
-      <div>
-        Current plugins:
-        <ul>
-          {pluginNames.map((name) => (
-            <li key={name}>{name}</li>
-          ))}
-        </ul>
-      </div>
-      <div className="actions">
-        <button
-          className="action-button clear"
-          onClick={() => {
-            clearEditor();
-            editor.focus();
-          }}>
-          Clear
-        </button>
-        <button
-          className="action-button lock"
-          onClick={() => setIsReadyOnly(!isReadOnly)}>
-          <i className={isReadOnly ? 'unlock' : 'lock'} />
-        </button>
+      <div
+        className="editor-shell"
+        ref={(node) => setComposerContainerNode(node)}>
+        <ContentEditable
+          isReadOnly={isReadOnly}
+          rootElementRef={rootElementRef}
+        />
+        {showPlaceholder && <Placeholder>Enter some plain text...</Placeholder>}
+        {decorators}
+        {pluginComponents}
       </div>
     </>
   );

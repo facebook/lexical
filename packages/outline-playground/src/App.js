@@ -55,7 +55,44 @@ function RichTextEditor({settings, onSettingsChange}): React$Node {
   );
 }
 
-function PlainTextEditor({settings, onSettingsChange}): React$Node {
+// function PlainTextEditor({settings, onSettingsChange}): React$Node {
+//   const [settingsButton, settingsSwitches] = useSettings(
+//     settings,
+//     onSettingsChange,
+//   );
+//   const {
+//     measureTypingPerf,
+//     isCharLimit,
+//     isCharLimitUtf8,
+//     isAutocomplete,
+//     showTreeView,
+//   } = settings;
+//   const onError = useCallback((e: Error) => {
+//     throw e;
+//   }, []);
+//   const [editor, editorComponent] = usePlainTextEditor({
+//     onError,
+//     isCharLimit,
+//     isCharLimitUtf8,
+//     isAutocomplete,
+//   });
+//   useTypingPerfTracker(measureTypingPerf);
+
+//   return (
+//     <>
+//       <div className="editor-shell">{editorComponent}</div>
+//       {showTreeView && (
+//         <OutlineTreeView className="tree-view-output" editor={editor} />
+//       )}
+//       <div className="editor-dev-toolbar">
+//         {settingsSwitches}
+//         {settingsButton}
+//       </div>
+//     </>
+//   );
+// }
+
+function OutlineComposerWrapper({settings, onSettingsChange}): React$Node {
   const [settingsButton, settingsSwitches] = useSettings(
     settings,
     onSettingsChange,
@@ -67,36 +104,15 @@ function PlainTextEditor({settings, onSettingsChange}): React$Node {
     isAutocomplete,
     showTreeView,
   } = settings;
-  const onError = useCallback((e: Error) => {
-    throw e;
-  }, []);
-  const [editor, editorComponent] = usePlainTextEditor({
-    onError,
-    isCharLimit,
-    isCharLimitUtf8,
-    isAutocomplete,
-  });
-  useTypingPerfTracker(measureTypingPerf);
 
   return (
     <>
-      <div className="editor-shell">{editorComponent}</div>
-      {showTreeView && (
-        <OutlineTreeView className="tree-view-output" editor={editor} />
-      )}
+      <OutlineComposerWithPlugins showTreeView={showTreeView} />{' '}
       <div className="editor-dev-toolbar">
         {settingsSwitches}
         {settingsButton}
       </div>
     </>
-  );
-}
-
-function OutlineComposerWrapper(): React$Node {
-  return (
-    <div className="editor-shell">
-      <OutlineComposerWithPlugins />
-    </div>
   );
 }
 
@@ -156,9 +172,11 @@ function App(): React$Node {
       {settings.isRichText ? (
         <RichTextEditor settings={settings} onSettingsChange={setOption} />
       ) : (
-        <PlainTextEditor settings={settings} onSettingsChange={setOption} />
+        <OutlineComposerWrapper
+          settings={settings}
+          onSettingsChange={setOption}
+        />
       )}
-      <OutlineComposerWrapper />
     </>
   );
 }

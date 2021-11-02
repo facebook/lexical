@@ -7,10 +7,7 @@
  * @flow strict-local
  */
 
-import type {
-  OutlineComposerPlugin,
-  OutlineComposerPluginProps,
-} from 'outline-react/OutlineComposer.react';
+import type {OutlineComposerPlugin} from 'outline-react/OutlineComposer.react';
 
 import * as React from 'react';
 import {useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
@@ -38,34 +35,59 @@ import {createPortal} from 'react-dom';
  */
 
 function ActionButtonsComponent({
-  outlineProps: {editor, clearEditor},
-  pluginProps: {targetNode},
+  outlineProps: {editor, clearEditor, containerElement},
+  pluginProps: {isReadOnly, setIsReadOnly},
 }): React$Node {
-  console.log('TargetNode', targetNode);
-  return targetNode != null
+  const domTargetNodeRef = useRef(document.createElement('div'));
+
+  useLayoutEffect(() => {
+    const domTargetNode = domTargetNodeRef.current;
+    if (domTargetNode != null && containerElement != null) {
+      containerElement.appendChild(domTargetNode);
+      return () => {
+        containerElement.removeChild(domTargetNode);
+      };
+    }
+  });
+
+  return domTargetNodeRef.current != null
     ? createPortal(
-        <button
-          className="action-button clear"
-          onClick={() => {
-            clearEditor();
-            editor.focus();
-          }}>
-          Clear
-        </button>,
-        targetNode,
+        <div className="actions">
+          <button
+            className="action-button clear"
+            onClick={() => {
+              clearEditor();
+              editor.focus();
+            }}>
+            Clear
+          </button>
+          <button
+            className="action-button lock"
+            onClick={() => setIsReadOnly(!isReadOnly)}>
+            <i className={isReadOnly ? 'unlock' : 'lock'} />
+          </button>
+        </div>,
+        domTargetNodeRef.current,
       )
     : null;
 }
 
-// const ActionButtonsPlugin: OutlineComposerPlugin<null> = {
-//   name: 'action-buttons',
-//   component: ActionButtonsComponent,
-//   props: null,
-// };
+function createActionButtonPlugin(
+  isReadOnly: boolean,
+  setIsReadOnly: (boolean) => void,
+): OutlineComposerPlugin<{
+  isReadOnly: boolean,
+  setIsReadOnly: (boolean) => void,
+}> {
+  return {
+    name: 'action-buttons',
+    component: ActionButtonsComponent,
+    props: {isReadOnly, setIsReadOnly},
+  };
+}
 
-function EmojiPluginComponent({
-  outlineProps: {editor: OutlineComposerPluginProps},
-}): React$Node {
+function EmojiPluginComponent({outlineProps: {editor}}): React$Node {
+  useEmojis(editor);
   return null;
 }
 
@@ -75,50 +97,94 @@ const EmojiPlugin: OutlineComposerPlugin<null> = {
   props: null,
 };
 
-function TreeViewComponent({outlineProps: {editor}}): React$Node {
-  return <OutlineTreeView className="tree-view-output" editor={editor} />;
-}
-
-const TreeViewPlugin: OutlineComposerPlugin<null> = {
-  name: 'tree-view',
-  component: TreeViewComponent,
-  props: null,
-};
-
-function OutlineComposerWithPlugins(): React$Node {
-  // TODO: Should this be useStable instead?
-  const actionsRenderRef = useRef(document.createElement('div'));
-  const actionsRootRef = useRef();
+function TreeViewComponent({
+  outlineProps: {editor, containerElement},
+  pluginProps: {targetNode},
+}): React$Node {
+  // instead of passing a target node we can also do this:
+  const domTargetNodeRef = useRef(document.createElement('div'));
+  // We could probably even create some helper functions to make this easier to portal in/around the container element
 
   useLayoutEffect(() => {
-    const actionsRootNode = actionsRootRef.current;
-    const actionsRenderNode = actionsRenderRef.current;
-    if (actionsRenderNode != null && actionsRootNode != null) {
-      actionsRootNode.appendChild(actionsRenderNode);
+    const domTargetNode = domTargetNodeRef.current;
+    if (
+      domTargetNode != null &&
+      containerElement != null &&
+      containerElement.parentNode != null
+    ) {
+      containerElement.parentNode.insertBefore(
+        domTargetNode,
+        containerElement.nextSibling,
+      );
       return () => {
-        actionsRootNode.removeChild(actionsRenderNode);
+        containerElement.parentNode?.removeChild(domTargetNode);
+      };
+    }
+  });
+
+  // // This is another option for determining the portal target
+  // return targetNode != null
+  //   ? createPortal(
+  //       <OutlineTreeView className="tree-view-output" editor={editor} />,
+  //       targetNode,
+  //     )
+  //   : null;
+
+  return domTargetNodeRef.current != null
+    ? createPortal(
+        <OutlineTreeView className="tree-view-output" editor={editor} />,
+        domTargetNodeRef.current,
+      )
+    : null;
+}
+
+function createTreeViewPlugin(
+  targetNode: HTMLElement | null,
+): OutlineComposerPlugin<{targetNode: HTMLElement | null}> {
+  return {
+    name: 'tree-view',
+    component: TreeViewComponent,
+    props: {targetNode},
+  };
+}
+
+function OutlineComposerWithPlugins({
+  showTreeView,
+}: {
+  showTreeView: boolean,
+}): React$Node {
+  // TODO: Should this be useStable for the render ref instead?
+  const treeViewRenderRef = useRef(document.createElement('div'));
+  const treeViewRootRef = useRef();
+
+  const [isReadOnly, setIsReadOnly] = useState(false);
+
+  useLayoutEffect(() => {
+    const treeViewRootNode = treeViewRootRef.current;
+    const treeViewRenderNode = treeViewRenderRef.current;
+    if (treeViewRenderNode != null && treeViewRootNode != null) {
+      treeViewRootNode.appendChild(treeViewRenderNode);
+      return () => {
+        treeViewRootNode.removeChild(treeViewRenderNode);
       };
     }
   }, []);
 
-  const actionsRenderNode = actionsRenderRef.current;
+  const treeViewRenderNode = treeViewRenderRef.current;
 
   const plugins = useMemo(
     () => [
       EmojiPlugin,
-      TreeViewPlugin,
-      {
-        name: 'action-buttons',
-        component: ActionButtonsComponent,
-        props: {targetNode: actionsRenderNode},
-      },
+      showTreeView ? createTreeViewPlugin(treeViewRenderNode) : null,
+      createActionButtonPlugin(isReadOnly, setIsReadOnly),
     ],
-    [actionsRenderNode],
+    [isReadOnly, showTreeView, treeViewRenderNode],
   );
+
   return (
     <>
-      <OutlineComposer plugins={plugins} />
-      <div ref={actionsRootRef} />
+      <OutlineComposer plugins={plugins} isReadOnly={isReadOnly} />
+      <div ref={treeViewRootRef} />
     </>
   );
 }

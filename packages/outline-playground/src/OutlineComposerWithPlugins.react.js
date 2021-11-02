@@ -13,7 +13,7 @@ import type {
 } from 'outline-react/OutlineComposer.react';
 
 import * as React from 'react';
-import {useEffect, useMemo, useRef} from 'react';
+import {useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import OutlineComposer from 'outline-react/OutlineComposer.react';
 import useEmojis from './useEmojis';
 import OutlineTreeView from 'outline-react/OutlineTreeView';
@@ -39,17 +39,11 @@ import {createPortal} from 'react-dom';
 
 function ActionButtonsComponent({
   outlineProps: {editor, clearEditor},
+  pluginProps: {targetNode},
 }): React$Node {
-  const elementRef = useRef();
-  console.log(elementRef);
-
-  useEffect(() => {
-    elementRef.current = document.getElementById('composer-actions-root');
-  });
-
-  return elementRef.current == null
-    ? null
-    : createPortal(
+  console.log('TargetNode', targetNode);
+  return targetNode != null
+    ? createPortal(
         <button
           className="action-button clear"
           onClick={() => {
@@ -58,15 +52,16 @@ function ActionButtonsComponent({
           }}>
           Clear
         </button>,
-        document.getElementById('composer-actions-root'),
-      );
+        targetNode,
+      )
+    : null;
 }
 
-const ActionButtonsPlugin: OutlineComposerPlugin<null> = {
-  name: 'action-buttons',
-  component: ActionButtonsComponent,
-  props: null,
-};
+// const ActionButtonsPlugin: OutlineComposerPlugin<null> = {
+//   name: 'action-buttons',
+//   component: ActionButtonsComponent,
+//   props: null,
+// };
 
 function EmojiPluginComponent({
   outlineProps: {editor: OutlineComposerPluginProps},
@@ -91,7 +86,22 @@ const TreeViewPlugin: OutlineComposerPlugin<null> = {
 };
 
 function OutlineComposerWithPlugins(): React$Node {
-  const actionsRootRef = useRef(React.createRef());
+  // TODO: Should this be useStable instead?
+  const actionsRenderRef = useRef(document.createElement('div'));
+  const actionsRootRef = useRef();
+
+  useLayoutEffect(() => {
+    const actionsRootNode = actionsRootRef.current;
+    const actionsRenderNode = actionsRenderRef.current;
+    if (actionsRenderNode != null && actionsRootNode != null) {
+      actionsRootNode.appendChild(actionsRenderNode);
+      return () => {
+        actionsRootNode.removeChild(actionsRenderNode);
+      };
+    }
+  }, []);
+
+  const actionsRenderNode = actionsRenderRef.current;
 
   const plugins = useMemo(
     () => [
@@ -100,15 +110,15 @@ function OutlineComposerWithPlugins(): React$Node {
       {
         name: 'action-buttons',
         component: ActionButtonsComponent,
-        props: null,
+        props: {targetNode: actionsRenderNode},
       },
     ],
-    [],
+    [actionsRenderNode],
   );
   return (
     <>
       <OutlineComposer plugins={plugins} />
-      <div id="composer-actions-root" />
+      <div ref={actionsRootRef} />
     </>
   );
 }

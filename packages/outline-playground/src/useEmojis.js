@@ -10,7 +10,7 @@
 import type {
   OutlineEditor,
   OutlineNode,
-  View,
+  State,
   NodeKey,
   EditorConfig,
   Selection,
@@ -54,8 +54,8 @@ function findAndTransformEmoji(
   return null;
 }
 
-function textNodeTransform(node: TextNode, view: View): void {
-  const selection = view.getSelection();
+function textNodeTransform(node: TextNode, state: State): void {
+  const selection = state.getSelection();
   let targetNode = node;
 
   while (targetNode !== null) {

@@ -10,9 +10,10 @@
 import type {OutlineEditor} from './OutlineEditor';
 import type {Selection} from './OutlineSelection';
 import type {TextNode} from './OutlineTextNode';
+import type {State} from './OutlineUpdates';
 
 import {isTextNode, isDecoratorNode} from '.';
-import {view} from './OutlineUpdates';
+import {state} from './OutlineUpdates';
 import {triggerListeners} from './OutlineListeners';
 import {
   getNearestNodeFromDOMNode,
@@ -34,8 +35,8 @@ function isManagedLineBreak(dom: Node, target: Node): boolean {
 }
 
 function getLastSelection(editor: OutlineEditor): null | Selection {
-  return editor.getEditorState().read((lastView) => {
-    const selection = lastView.getSelection();
+  return editor.getEditorState().read((lastState: State) => {
+    const selection = lastState.getSelection();
     return selection !== null ? selection.clone() : null;
   });
 }
@@ -55,7 +56,7 @@ function flushTextMutation(
 
   const text = target.nodeValue;
   const textMutation = {node, anchorOffset, focusOffset, text};
-  triggerListeners('textmutation', editor, editor, view, textMutation);
+  triggerListeners('textmutation', editor, editor, state, textMutation);
 }
 
 export function flushMutations(
@@ -162,10 +163,10 @@ export function flushMutations(
     observer.takeRecords();
   }
   if (shouldRevertSelection) {
-    const selection = view.getSelection() || getLastSelection(editor);
+    const selection = state.getSelection() || getLastSelection(editor);
     if (selection !== null) {
       selection.dirty = true;
-      view.setSelection(selection);
+      state.setSelection(selection);
     }
   }
 }

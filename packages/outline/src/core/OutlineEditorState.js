@@ -10,7 +10,7 @@
 import type {OutlineEditor} from './OutlineEditor';
 import type {NodeKey, NodeMap} from './OutlineNode';
 import type {Selection} from './OutlineSelection';
-import type {View} from './OutlineUpdates';
+import type {State} from './OutlineUpdates';
 import type {ParsedNode} from './OutlineParsing';
 
 import {createRootNode} from './OutlineRootNode';
@@ -71,7 +71,7 @@ export class EditorState {
   isEmpty(): boolean {
     return this._nodeMap.size === 1 && this._selection === null;
   }
-  read<V>(callbackFn: (view: View) => V): V {
+  read<V>(callbackFn: (state: State) => V): V {
     return readEditorState(this, callbackFn);
   }
   stringify(space?: string | number): string {

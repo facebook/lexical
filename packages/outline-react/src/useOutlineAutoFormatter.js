@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {OutlineEditor, View} from 'outline';
+import type {OutlineEditor, State} from 'outline';
 import type {TextNode} from 'outline';
 
 import {useEffect} from 'react';
@@ -25,7 +25,7 @@ function updateTextNode(node: TextNode, count: number): void {
   }
 }
 
-function textNodeTransform(node: TextNode, view: View): void {
+function textNodeTransform(node: TextNode, state: State): void {
   const block = node.getParentBlockOrThrow();
 
   if (

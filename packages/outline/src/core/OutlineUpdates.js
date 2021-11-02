@@ -52,9 +52,9 @@ let activeEditor: null | OutlineEditor = null;
 let isEnqueuingUpdates: boolean = false;
 let isReadOnlyMode: boolean = false;
 let isAttemptingToRecoverFromReconcilerError: boolean = false;
-let isPreparingPendingViewUpdate: boolean = false;
+let isPreparingPendingEditorStateUpdate: boolean = false;
 
-export type View = {
+export type State = {
   clearSelection(): void,
   getRoot: () => RootNode,
   getNodeByKey: (key: NodeKey) => null | OutlineNode,
@@ -66,7 +66,7 @@ export type View = {
   flushMutations: (mutations: Array<MutationRecord>) => void,
 };
 
-export const view: View = {
+export const state: State = {
   getRoot() {
     // $FlowFixMe: root is always in our Map
     return ((getActiveEditorState()._nodeMap.get('root'): any): RootNode);
@@ -111,11 +111,11 @@ export function errorOnReadOnly(): void {
   }
 }
 
-export function errorOnPreparingPendingViewUpdate(
+export function errorOnPreparingPendingEditorStateUpdate(
   fnName: 'Editor.getLatestTextContent()',
 ): void {
   if (
-    isPreparingPendingViewUpdate &&
+    isPreparingPendingEditorStateUpdate &&
     fnName === 'Editor.getLatestTextContent()'
   ) {
     invariant(
@@ -174,7 +174,7 @@ export function parseEditorState(
   );
   const nodeMap = new Map();
   const editorState = new EditorState(nodeMap);
-  const state: NodeParserState = {
+  const nodeParserState: NodeParserState = {
     originalSelection: parsedEditorState._selection,
   };
   const previousActiveEditorState = editorState;
@@ -192,7 +192,7 @@ export function parseEditorState(
       parsedNodeMap,
       editor,
       null /* parentKey */,
-      state,
+      nodeParserState,
     );
   } finally {
     activeEditorState = previousActiveEditorState;
@@ -200,7 +200,7 @@ export function parseEditorState(
     activeEditor = previousActiveEditor;
   }
   editorState._selection = createSelectionFromParse(
-    state.remappedSelection || state.originalSelection,
+    nodeParserState.remappedSelection || nodeParserState.originalSelection,
   );
   return editorState;
 }
@@ -210,7 +210,7 @@ export function parseEditorState(
 // function here
 export function readEditorState<V>(
   editorState: EditorState,
-  callbackFn: (view: View) => V,
+  callbackFn: (state: State) => V,
 ): V {
   const previousActiveEditorState = activeEditorState;
   const previousReadOnlyMode = isReadOnlyMode;
@@ -219,7 +219,7 @@ export function readEditorState<V>(
   isReadOnlyMode = true;
   activeEditor = null;
   try {
-    return callbackFn(view);
+    return callbackFn(state);
   } finally {
     activeEditorState = previousActiveEditorState;
     isReadOnlyMode = previousReadOnlyMode;
@@ -353,13 +353,13 @@ function processNestedUpdates(
     if (nextCallbackFn) {
       deferred.push(nextCallbackFn);
     }
-    nextUpdateFn(view);
+    nextUpdateFn(state);
   }
 }
 
 export function beginUpdate(
   editor: OutlineEditor,
-  updateFn: (view: View) => void,
+  updateFn: (state: State) => void,
   callbackFn?: () => void,
 ): void {
   const deferred = editor._deferred;
@@ -380,8 +380,9 @@ export function beginUpdate(
   const previousReadOnlyMode = isReadOnlyMode;
   const previousActiveEditor = activeEditor;
   const previousShouldEnqueueUpdates = isEnqueuingUpdates;
-  const previouslyPendingViewUpdate = isPreparingPendingViewUpdate;
-  isPreparingPendingViewUpdate = true;
+  const previouslyPendingEditorStateUpdate =
+    isPreparingPendingEditorStateUpdate;
+  isPreparingPendingEditorStateUpdate = true;
   activeEditorState = pendingEditorState;
   isReadOnlyMode = false;
   isEnqueuingUpdates = true;
@@ -392,7 +393,7 @@ export function beginUpdate(
       pendingEditorState._selection = createSelection(editor);
     }
     const startingCompositionKey = editor._compositionKey;
-    updateFn(view);
+    updateFn(state);
     processNestedUpdates(editor, deferred);
     applySelectionTransforms(pendingEditorState, editor);
     if (editor._dirtyType !== NO_DIRTY_NODES) {
@@ -443,7 +444,7 @@ export function beginUpdate(
     activeEditorState = previousActiveEditorState;
     isReadOnlyMode = previousReadOnlyMode;
     activeEditor = previousActiveEditor;
-    isPreparingPendingViewUpdate = previouslyPendingViewUpdate;
+    isPreparingPendingEditorStateUpdate = previouslyPendingEditorStateUpdate;
     isEnqueuingUpdates = previousShouldEnqueueUpdates;
   }
 

@@ -38,8 +38,8 @@ export default function BlockControls({
 
   useEffect(() => {
     return editor.addListener('update', ({editorState}) => {
-      editorState.read((view) => {
-        const selection = view.getSelection();
+      editorState.read((state) => {
+        const selection = state.getSelection();
         if (selection !== null) {
           const anchorNode = selection.anchor.getNode();
           const block = anchorNode.getTopParentBlockOrThrow();
@@ -141,9 +141,9 @@ function DropdownList({
 
   const formatParagraph = () => {
     if (blockType !== 'paragraph') {
-      editor.update((view) => {
+      editor.update((state) => {
         log('formatParagraph');
-        const selection = view.getSelection();
+        const selection = state.getSelection();
 
         if (selection !== null) {
           const anchor = selection.anchor;
@@ -163,9 +163,9 @@ function DropdownList({
 
   const formatLargeHeading = () => {
     if (blockType !== 'h1') {
-      editor.update((view) => {
+      editor.update((state) => {
         log('formatLargeHeading');
-        const selection = view.getSelection();
+        const selection = state.getSelection();
 
         if (selection !== null) {
           const anchor = selection.anchor;
@@ -185,9 +185,9 @@ function DropdownList({
 
   const formatSmallHeading = () => {
     if (blockType !== 'h2') {
-      editor.update((view) => {
+      editor.update((state) => {
         log('formatSmallHeading');
-        const selection = view.getSelection();
+        const selection = state.getSelection();
 
         if (selection !== null) {
           const anchor = selection.anchor;
@@ -207,9 +207,9 @@ function DropdownList({
 
   const formatBulletList = () => {
     if (blockType !== 'ul') {
-      editor.update((view) => {
+      editor.update((state) => {
         log('formatBulletList');
-        const selection = view.getSelection();
+        const selection = state.getSelection();
 
         if (selection !== null) {
           const anchor = selection.anchor;
@@ -231,9 +231,9 @@ function DropdownList({
 
   const formatNumberedList = () => {
     if (blockType !== 'ol') {
-      editor.update((view) => {
+      editor.update((state) => {
         log('formatNumberedList');
-        const selection = view.getSelection();
+        const selection = state.getSelection();
 
         if (selection !== null) {
           const anchor = selection.anchor;
@@ -255,9 +255,9 @@ function DropdownList({
 
   const formatQuote = () => {
     if (blockType !== 'quote') {
-      editor.update((view) => {
+      editor.update((state) => {
         log('formatQuote');
-        const selection = view.getSelection();
+        const selection = state.getSelection();
 
         if (selection !== null) {
           const anchor = selection.anchor;
@@ -277,9 +277,9 @@ function DropdownList({
 
   const formatCode = () => {
     if (blockType !== 'code') {
-      editor.update((view) => {
+      editor.update((state) => {
         log('formatCode');
-        const selection = view.getSelection();
+        const selection = state.getSelection();
 
         if (selection !== null) {
           const anchor = selection.anchor;

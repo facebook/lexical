@@ -590,6 +590,7 @@ describe('OutlineEditor tests', () => {
         const paragraph = root.getFirstChild();
 
         expect(root).toEqual({
+          __cachedText: '',
           __children: [paragraph.getKey()],
           __flags: 0,
           __key: 'root',
@@ -645,6 +646,7 @@ describe('OutlineEditor tests', () => {
 
       it('Parses the nodes of a stringified editor state', async () => {
         expect(parsedRoot).toEqual({
+          __cachedText: null,
           __children: [paragraphKey],
           __flags: 0,
           __key: 'root',
@@ -670,7 +672,12 @@ describe('OutlineEditor tests', () => {
       });
 
       it('Parses the text content of the editor state', async () => {
-        expect(parsedEditorState.getTextContent()).toBe('Hello world');
+        expect(
+          parsedEditorState.read((view) => view.getRoot().__cachedText),
+        ).toBe(null);
+        expect(
+          parsedEditorState.read((view) => view.getRoot().getTextContent()),
+        ).toBe('Hello world');
       });
 
       it('Parses the selection offsets of a stringified editor state', async () => {

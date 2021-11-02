@@ -25,6 +25,7 @@ import {RootNode} from './OutlineRootNode';
 import {NO_DIRTY_NODES, FULL_RECONCILE} from './OutlineConstants';
 import {flushRootMutations, initMutationObserver} from './OutlineMutations';
 import {beginUpdate, triggerListeners} from './OutlineUpdates';
+import {getEditorStateTextContent} from './OutlineUtils';
 import invariant from 'shared/invariant';
 
 export type EditorThemeClassName = string;
@@ -86,7 +87,10 @@ export type RootListener = (
   element: null | HTMLElement,
   element: null | HTMLElement,
 ) => void;
-export type TextMutationListener = (state: State, mutation: TextMutation) => void;
+export type TextMutationListener = (
+  state: State,
+  mutation: TextMutation,
+) => void;
 export type TextContentListener = (text: string) => void;
 
 export type TextMutation = {
@@ -313,7 +317,7 @@ class BaseOutlineEditor {
     return this._rootElement;
   }
   getCurrentTextContent(): string {
-    return this._editorState.getTextContent();
+    return getEditorStateTextContent(this._editorState);
   }
   setRootElement(nextRootElement: null | HTMLElement): void {
     const prevRootElement = this._rootElement;

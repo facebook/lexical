@@ -34,6 +34,7 @@ import {
   getCompositionKey,
   setCompositionKey,
   getNearestNodeFromDOMNode,
+  getEditorStateTextContent,
 } from './OutlineUtils';
 import {
   garbageCollectDetachedDecorators,
@@ -181,8 +182,7 @@ export function parseEditorState(
     stringifiedEditorState,
   );
   const nodeMap = new Map();
-  // Temporarily set text content to be empty string
-  const editorState = new EditorState(nodeMap, '');
+  const editorState = new EditorState(nodeMap);
   const nodeParserState: NodeParserState = {
     originalSelection: parsedEditorState._selection,
   };
@@ -203,10 +203,6 @@ export function parseEditorState(
       null /* parentKey */,
       nodeParserState,
     );
-    // $FlowFixMe: root node always exists
-    const root: RootNode = nodeMap.get('root');
-    // Assign the correct text content to the parsed editor state
-    editorState._text = root.getTextContent();
   } finally {
     activeEditorState = previousActiveEditorState;
     isReadOnlyMode = previousReadOnlyMode;
@@ -349,12 +345,12 @@ function triggerTextContentListeners(
   currentEditorState: EditorState,
   pendingEditorState: EditorState,
 ): void {
-  const currentTextContent = currentEditorState._text;
+  const currentTextContent = getEditorStateTextContent(currentEditorState);
   const latestPendingState = editor._pendingEditorState;
   const latestTextContent =
     latestPendingState !== null
-      ? latestPendingState._text
-      : pendingEditorState._text;
+      ? getEditorStateTextContent(latestPendingState)
+      : getEditorStateTextContent(pendingEditorState);
   if (currentTextContent !== latestTextContent) {
     triggerListeners('textcontent', editor, true, latestTextContent);
   }

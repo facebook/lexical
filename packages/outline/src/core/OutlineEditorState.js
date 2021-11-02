@@ -50,24 +50,22 @@ export function editorStateHasDirtySelection(
 }
 
 export function cloneEditorState(current: EditorState): EditorState {
-  return new EditorState(new Map(current._nodeMap), current._text);
+  return new EditorState(new Map(current._nodeMap));
 }
 
 export function createEmptyEditorState(): EditorState {
-  return new EditorState(new Map([['root', createRootNode()]]), '');
+  return new EditorState(new Map([['root', createRootNode()]]));
 }
 
 export class EditorState {
   _nodeMap: NodeMap;
   _selection: null | Selection;
   _flushSync: boolean;
-  _text: string;
 
-  constructor(nodeMap: NodeMap, textContent: string) {
+  constructor(nodeMap: NodeMap) {
     this._nodeMap = nodeMap;
     this._selection = null;
     this._flushSync = false;
-    this._text = textContent;
   }
   isEmpty(): boolean {
     return this._nodeMap.size === 1 && this._selection === null;

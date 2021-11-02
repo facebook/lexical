@@ -9,7 +9,7 @@
 
 import type {ParsedEditorState} from './OutlineEditorState';
 import type {RootNode} from './OutlineRootNode';
-import type {OutlineEditor} from './OutlineEditor';
+import type {OutlineEditor, ListenerType} from './OutlineEditor';
 import type {OutlineNode, NodeKey} from './OutlineNode';
 import type {Selection} from './OutlineSelection';
 import type {ParsedNode, NodeParserState} from './OutlineParsing';
@@ -34,17 +34,15 @@ import {
   getCompositionKey,
   setCompositionKey,
   getNearestNodeFromDOMNode,
+  getEditorStateTextContent,
 } from './OutlineUtils';
-import {
-  triggerListeners,
-  triggerTextMutationListeners,
-} from './OutlineListeners';
 import {
   garbageCollectDetachedDecorators,
   garbageCollectDetachedNodes,
 } from './OutlineGC';
 import {internalCreateNodeFromParse} from './OutlineParsing';
 import {applySelectionTransforms} from './OutlineSelection';
+import {isTextNode, isLineBreakNode} from '.';
 import invariant from 'shared/invariant';
 
 let activeEditorState: null | EditorState = null;
@@ -52,7 +50,6 @@ let activeEditor: null | OutlineEditor = null;
 let isEnqueuingUpdates: boolean = false;
 let isReadOnlyMode: boolean = false;
 let isAttemptingToRecoverFromReconcilerError: boolean = false;
-let isPreparingPendingEditorStateUpdate: boolean = false;
 
 export type State = {
   clearSelection(): void,
@@ -111,20 +108,6 @@ export function errorOnReadOnly(): void {
   }
 }
 
-export function errorOnPreparingPendingEditorStateUpdate(
-  fnName: 'Editor.getLatestTextContent()',
-): void {
-  if (
-    isPreparingPendingEditorStateUpdate &&
-    fnName === 'Editor.getLatestTextContent()'
-  ) {
-    invariant(
-      false,
-      'Editor.getLatestTextContent() can be asynchronous and cannot be used within Editor.update()',
-    );
-  }
-}
-
 export function getActiveEditorState(): EditorState {
   if (activeEditorState === null) {
     invariant(
@@ -161,7 +144,33 @@ function applyTextTransforms(
     const nodeMap = editorState._nodeMap;
     const dirtyNodesArr = Array.from(dirtyNodes);
     const transforms = Array.from(textNodeTransforms);
-    triggerTextMutationListeners(nodeMap, dirtyNodesArr, transforms);
+    const compositionKey = getCompositionKey();
+    for (let s = 0; s < dirtyNodesArr.length; s++) {
+      const nodeKey = dirtyNodesArr[s];
+
+      const node = nodeMap.get(nodeKey);
+
+      if (
+        node !== undefined &&
+        isTextNode(node) &&
+        // We don't want to transform nodes being composed
+        node.__key !== compositionKey &&
+        !isLineBreakNode(node) &&
+        node.isAttached() &&
+        // You shouldn't be able to transform these types of
+        // nodes.
+        !node.isImmutable() &&
+        !node.isSegmented()
+      ) {
+        // Apply text transforms
+        for (let i = 0; i < transforms.length; i++) {
+          transforms[i](node, state);
+          if (!node.isAttached()) {
+            break;
+          }
+        }
+      }
+    }
   }
 }
 
@@ -227,6 +236,26 @@ export function readEditorState<V>(
   }
 }
 
+function handleDEVOnlyPendingUpdateGuarantees(
+  pendingEditorState: EditorState,
+): void {
+  // Given we can't Object.freeze the nodeMap as it's a Map,
+  // we instead replace its set, clear and delete methods.
+  const nodeMap = pendingEditorState._nodeMap;
+  // $FlowFixMe: this is allowed
+  nodeMap.set = () => {
+    throw new Error('Cannot call set() on a frozen Outline node map');
+  };
+  // $FlowFixMe: this is allowed
+  nodeMap.clear = () => {
+    throw new Error('Cannot call clear() on a frozen Outline node map');
+  };
+  // $FlowFixMe: this is allowed
+  nodeMap.delete = () => {
+    throw new Error('Cannot call delete() on a frozen Outline node map');
+  };
+}
+
 export function commitPendingUpdates(editor: OutlineEditor): void {
   const pendingEditorState = editor._pendingEditorState;
   const rootElement = editor._rootElement;
@@ -259,7 +288,7 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
     );
   } catch (error) {
     // Report errors
-    triggerListeners('error', editor, error, error._log);
+    triggerListeners('error', editor, false, error, error._log);
     // Reset editor and restore incoming editor state to the DOM
     if (!isAttemptingToRecoverFromReconcilerError) {
       resetEditor(editor, null, rootElement, pendingEditorState);
@@ -277,22 +306,13 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
     activeEditor = previousActiveEditor;
   }
   if (__DEV__) {
-    // Given we can't Object.freeze the nodeMap as it's a Map,
-    // we instead replace its set, clear and delete methods.
-    const nodeMap = pendingEditorState._nodeMap;
-    // $FlowFixMe: this is allowed
-    nodeMap.set = () => {
-      throw new Error('Cannot call set() on a frozen Outline node map');
-    };
-    // $FlowFixMe: this is allowed
-    nodeMap.clear = () => {
-      throw new Error('Cannot call clear() on a frozen Outline node map');
-    };
-    // $FlowFixMe: this is allowed
-    nodeMap.delete = () => {
-      throw new Error('Cannot call delete() on a frozen Outline node map');
-    };
+    handleDEVOnlyPendingUpdateGuarantees(pendingEditorState);
   }
+  const isEditorStateDirty =
+    needsUpdate ||
+    pendingSelection === null ||
+    pendingSelection.dirty ||
+    !pendingSelection.is(currentSelection);
   const dirtyNodes = editor._dirtyNodes;
   const log = editor._log;
 
@@ -307,19 +327,63 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
   if (pendingDecorators !== null) {
     editor._decorators = pendingDecorators;
     editor._pendingDecorators = null;
-    triggerListeners('decorator', editor, pendingDecorators);
+    triggerListeners('decorator', editor, true, pendingDecorators);
   }
-  const isEditorStateDirty =
-    needsUpdate ||
-    pendingSelection === null ||
-    pendingSelection.dirty ||
-    !pendingSelection.is(currentSelection);
-  triggerListeners('update', editor, {
+  triggerListeners('update', editor, true, {
     editorState: pendingEditorState,
     dirty: isEditorStateDirty,
     dirtyNodes,
     log,
   });
+  triggerDeferredUpdateCallbacks(editor);
+  triggerTextContentListeners(editor, currentEditorState, pendingEditorState);
+  triggerEnqueuedUpdates(editor);
+}
+
+function triggerTextContentListeners(
+  editor: OutlineEditor,
+  currentEditorState: EditorState,
+  pendingEditorState: EditorState,
+): void {
+  const currentTextContent = getEditorStateTextContent(currentEditorState);
+  const latestPendingState = editor._pendingEditorState;
+  const latestTextContent =
+    latestPendingState !== null
+      ? getEditorStateTextContent(latestPendingState)
+      : getEditorStateTextContent(pendingEditorState);
+  if (currentTextContent !== latestTextContent) {
+    triggerListeners('textcontent', editor, true, latestTextContent);
+  }
+}
+
+export function triggerListeners(
+  type: ListenerType,
+  editor: OutlineEditor,
+  isCurrentlyEnqueuingUpdates: boolean,
+  // $FlowFixMe: needs refining
+  ...payload: Array<any>
+): void {
+  const previousShouldEnqueueUpdates = isEnqueuingUpdates;
+  isEnqueuingUpdates = isCurrentlyEnqueuingUpdates;
+  try {
+    const listeners = Array.from(editor._listeners[type]);
+    for (let i = 0; i < listeners.length; i++) {
+      listeners[i](...payload);
+    }
+  } finally {
+    isEnqueuingUpdates = previousShouldEnqueueUpdates;
+  }
+}
+
+function triggerEnqueuedUpdates(editor: OutlineEditor): void {
+  const queuedUpdates = editor._updates;
+  if (queuedUpdates.length !== 0) {
+    const [updateFn, callbackFn] = queuedUpdates.shift();
+    beginUpdate(editor, updateFn, callbackFn);
+  }
+}
+
+function triggerDeferredUpdateCallbacks(editor: OutlineEditor): void {
   const deferred = editor._deferred;
   editor._deferred = [];
   if (deferred.length !== 0) {
@@ -331,11 +395,6 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
       }
     } finally {
       isEnqueuingUpdates = previousShouldEnqueueUpdates;
-    }
-    const queuedUpdates = editor._updates;
-    if (queuedUpdates.length !== 0) {
-      const [updateFn, callbackFn] = queuedUpdates.shift();
-      beginUpdate(editor, updateFn, callbackFn);
     }
   }
 }
@@ -380,9 +439,6 @@ export function beginUpdate(
   const previousReadOnlyMode = isReadOnlyMode;
   const previousActiveEditor = activeEditor;
   const previousShouldEnqueueUpdates = isEnqueuingUpdates;
-  const previouslyPendingEditorStateUpdate =
-    isPreparingPendingEditorStateUpdate;
-  isPreparingPendingEditorStateUpdate = true;
   activeEditorState = pendingEditorState;
   isReadOnlyMode = false;
   isEnqueuingUpdates = true;
@@ -430,7 +486,7 @@ export function beginUpdate(
     }
   } catch (error) {
     // Report errors
-    triggerListeners('error', editor, error, editor._log);
+    triggerListeners('error', editor, false, error, editor._log);
     // Restore existing editor state to the DOM
     const currentEditorState = editor._editorState;
     editor._pendingEditorState = currentEditorState;
@@ -444,7 +500,6 @@ export function beginUpdate(
     activeEditorState = previousActiveEditorState;
     isReadOnlyMode = previousReadOnlyMode;
     activeEditor = previousActiveEditor;
-    isPreparingPendingEditorStateUpdate = previouslyPendingEditorStateUpdate;
     isEnqueuingUpdates = previousShouldEnqueueUpdates;
   }
 

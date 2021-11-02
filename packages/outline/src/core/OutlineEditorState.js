@@ -50,8 +50,7 @@ export function editorStateHasDirtySelection(
 }
 
 export function cloneEditorState(current: EditorState): EditorState {
-  const draft = new EditorState(new Map(current._nodeMap));
-  return draft;
+  return new EditorState(new Map(current._nodeMap));
 }
 
 export function createEmptyEditorState(): EditorState {

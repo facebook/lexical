@@ -13,8 +13,7 @@ import type {TextNode} from './OutlineTextNode';
 import type {State} from './OutlineUpdates';
 
 import {isTextNode, isDecoratorNode} from '.';
-import {state} from './OutlineUpdates';
-import {triggerListeners} from './OutlineListeners';
+import {state, triggerListeners} from './OutlineUpdates';
 import {
   getNearestNodeFromDOMNode,
   getNodeFromDOMNode,
@@ -56,7 +55,7 @@ function flushTextMutation(
 
   const text = target.nodeValue;
   const textMutation = {node, anchorOffset, focusOffset, text};
-  triggerListeners('textmutation', editor, editor, state, textMutation);
+  triggerListeners('textmutation', editor, false, state, textMutation);
 }
 
 export function flushMutations(

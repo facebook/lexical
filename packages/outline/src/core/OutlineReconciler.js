@@ -355,6 +355,11 @@ function reconcileNode(
     subTreeTextContent += text;
     editorTextContent += text;
   }
+  if (isRootNode(nextNode) && nextNode.__cachedText !== editorTextContent) {
+    // Cache the latest text content.
+    nextNode = nextNode.getWritable();
+    nextNode.__cachedText = editorTextContent;
+  }
   if (__DEV__) {
     // Freeze the node in DEV to prevent accidental mutations
     Object.freeze(nextNode);
@@ -486,7 +491,6 @@ function reconcileRoot(
   activeSelection = selection;
   activePrevKeyToDOMMap = new Map(editor._keyToDOMMap);
   reconcileNode('root', null);
-  editor._textContent = editorTextContent;
 
   // We don't want a bunch of void checks throughout the scope
   // so instead we make it seem that these values are always set.

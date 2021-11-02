@@ -10,7 +10,7 @@
 import type {OutlineEditor} from 'outline';
 
 import * as React from 'react';
-import {useState} from 'react';
+import {useState, useMemo} from 'react';
 import useOutlineEditor from './useOutlineEditor';
 import usePlainText from './useOutlinePlainText';
 import useOutlineDecorators from './useOutlineDecorators';
@@ -29,18 +29,19 @@ export type OutlineComposerPluginProps = $ReadOnly<{|
 |}>;
 
 export type OutlineComposerPluginComponent<TProps> = ({
-  ...OutlineComposerPluginProps,
-  ...$Exact<TProps>,
+  outlineProps: OutlineComposerPluginProps,
+  pluginProps: TProps,
 }) => React$Node;
 
-export type OutlineComposerPlugin<TProps> = $ReadOnly<{|
+export type OutlineComposerPlugin<TProps: {...} | null> = $ReadOnly<{|
   name: string,
-  component: OutlineComposerPluginComponent<$Exact<TProps>>,
+  component: OutlineComposerPluginComponent<TProps>,
   props: TProps,
 |}>;
 
 export type OutlineComposerProps = $ReadOnly<{|
-  plugins: $ReadOnlyArray<OutlineComposerPlugin<{...}>>,
+  // $FlowFixMe[unclear-type] Remove/fix this any type. It complains when I pass <{...} | null> and I'm not sure why
+  plugins: $ReadOnlyArray<OutlineComposerPlugin<any>>,
 |}>;
 
 const editorConfig = {
@@ -111,12 +112,12 @@ export default function OutlineComposer({
   const [isReadOnly, setIsReadyOnly] = useState(false);
   const clearEditor = usePlainText(editor);
   const decorators = useOutlineDecorators(editor);
+  const outlinePluginProps = useMemo(() => ({editor, clearEditor}), []);
   const pluginComponents: $ReadOnlyArray<React$Node> = plugins.map(
-    ({name, component: Component, props}) => (
+    ({name, component: Component, props: pluginProps}) => (
       <Component
-        {...(props ?? {})}
-        clearEditor={clearEditor}
-        editor={editor}
+        pluginProps={pluginProps}
+        outlineProps={outlinePluginProps}
         key={name}
       />
     ),

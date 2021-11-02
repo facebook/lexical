@@ -17,6 +17,7 @@ import {useEffect, useMemo, useRef} from 'react';
 import OutlineComposer from 'outline-react/OutlineComposer.react';
 import useEmojis from './useEmojis';
 import OutlineTreeView from 'outline-react/OutlineTreeView';
+// $FlowFixMe[cannot-resolve-module] This should be available
 import {createPortal} from 'react-dom';
 
 /**
@@ -37,9 +38,8 @@ import {createPortal} from 'react-dom';
  */
 
 function ActionButtonsComponent({
-  editor,
-  clearEditor,
-}: OutlineComposerPluginProps): React$Node {
+  outlineProps: {editor, clearEditor},
+}): React$Node {
   const elementRef = useRef();
   console.log(elementRef);
 
@@ -62,29 +62,29 @@ function ActionButtonsComponent({
       );
 }
 
-const ActionButtonsPlugin: OutlineComposerPlugin = {
+const ActionButtonsPlugin: OutlineComposerPlugin<null> = {
   name: 'action-buttons',
   component: ActionButtonsComponent,
+  props: null,
 };
 
 function EmojiPluginComponent({
-  editor,
-}: OutlineComposerPluginProps): React$Node {
-  useEmojis(editor);
+  outlineProps: {editor: OutlineComposerPluginProps},
+}): React$Node {
   return null;
 }
 
-const EmojiPlugin: OutlineComposerPlugin = {
+const EmojiPlugin: OutlineComposerPlugin<null> = {
   name: 'emoji',
   component: EmojiPluginComponent,
   props: null,
 };
 
-function TreeViewComponent({editor}: OutlineComposerPluginProps): React$Node {
+function TreeViewComponent({outlineProps: {editor}}): React$Node {
   return <OutlineTreeView className="tree-view-output" editor={editor} />;
 }
 
-const TreeViewPlugin: OutlineComposerPlugin = {
+const TreeViewPlugin: OutlineComposerPlugin<null> = {
   name: 'tree-view',
   component: TreeViewComponent,
   props: null,

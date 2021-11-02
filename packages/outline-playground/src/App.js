@@ -17,7 +17,7 @@ import useSettings from './useSettings';
 import useTestRecorder from './useTestRecorder';
 import useTypingPerfTracker from './useTypingPerfTracker';
 import {DEFAULT_SETTINGS} from './appSettings';
-import OutlineComposerWithPlugins from './OutlineComposerWithPlugins.react';
+import OutlineComposerWithPlainTextPlugins from './OutlineComposerWithPlainTextPlugins.react';
 
 function RichTextEditor({settings, onSettingsChange}): React$Node {
   const [settingsButton, settingsSwitches] = useSettings(
@@ -107,7 +107,7 @@ function OutlineComposerWrapper({settings, onSettingsChange}): React$Node {
 
   return (
     <>
-      <OutlineComposerWithPlugins showTreeView={showTreeView} />{' '}
+      <OutlineComposerWithPlainTextPlugins showTreeView={showTreeView} />{' '}
       <div className="editor-dev-toolbar">
         {settingsSwitches}
         {settingsButton}

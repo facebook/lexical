@@ -119,6 +119,8 @@ export default function OutlineComposer({
   const composerContainerRef = useRef(null);
   const [composerContainerNode, setComposerContainerNode] =
     useState<HTMLDivElement | null>(null);
+
+  // Configure plugins
   const outlinePluginProps = useMemo(
     () => ({editor, clearEditor, containerElement: composerContainerNode}),
     [editor, clearEditor, composerContainerNode],
@@ -142,7 +144,7 @@ export default function OutlineComposer({
   useEffect(() => {
     console.log('Current plugins:');
     pluginNames.forEach((name) => console.log(' * ' + name));
-  });
+  }, [pluginNames]);
 
   return (
     <>

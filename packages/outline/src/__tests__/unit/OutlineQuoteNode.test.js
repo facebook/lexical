@@ -62,15 +62,15 @@ describe('OutlineQuoteNode tests', () => {
     test('QuoteNode.insertNewAfter()', async () => {
       const {editor} = testEnv;
       let quoteNode;
-      await editor.update((view) => {
-        const root = view.getRoot();
+      await editor.update((state) => {
+        const root = state.getRoot();
         quoteNode = new QuoteNode();
         root.append(quoteNode);
       });
       expect(testEnv.outerHTML).toBe(
         '<div contenteditable="true" data-outline-editor="true"><blockquote><br></blockquote></div>',
       );
-      await editor.update((view) => {
+      await editor.update((state) => {
         const result = quoteNode.insertNewAfter();
         expect(result).toBeInstanceOf(ParagraphNode);
         expect(result.getDirection()).toEqual(quoteNode.getDirection());

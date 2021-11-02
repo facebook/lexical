@@ -59,15 +59,15 @@ describe('OutlineParagraphNode tests', () => {
     test('ParagraphNode.insertNewAfter()', async () => {
       const {editor} = testEnv;
       let paragraphNode;
-      await editor.update((view) => {
-        const root = view.getRoot();
+      await editor.update((state) => {
+        const root = state.getRoot();
         paragraphNode = new ParagraphNode();
         root.append(paragraphNode);
       });
       expect(testEnv.outerHTML).toBe(
         '<div contenteditable="true" data-outline-editor="true"><p><br></p></div>',
       );
-      await editor.update((view) => {
+      await editor.update((state) => {
         const result = paragraphNode.insertNewAfter();
         expect(result).toBeInstanceOf(ParagraphNode);
         expect(result.getDirection()).toEqual(paragraphNode.getDirection());

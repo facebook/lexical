@@ -70,15 +70,15 @@ describe('OutlineHeadingNode tests', () => {
     test('HeadingNode.insertNewAfter()', async () => {
       const {editor} = testEnv;
       let headingNode;
-      await editor.update((view) => {
-        const root = view.getRoot();
+      await editor.update((state) => {
+        const root = state.getRoot();
         headingNode = new HeadingNode('h1');
         root.append(headingNode);
       });
       expect(testEnv.outerHTML).toBe(
         '<div contenteditable="true" data-outline-editor="true"><h1><br></h1></div>',
       );
-      await editor.update((view) => {
+      await editor.update((state) => {
         const result = headingNode.insertNewAfter();
         expect(result).toBeInstanceOf(ParagraphNode);
         expect(result.getDirection()).toEqual(headingNode.getDirection());

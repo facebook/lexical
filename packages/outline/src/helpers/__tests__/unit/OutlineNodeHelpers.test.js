@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {OutlineEditor, View, NodeKey, OutlineNode} from 'outline';
+import type {OutlineEditor, State, NodeKey, OutlineNode} from 'outline';
 
 import {
   initializeUnitTest,
@@ -32,8 +32,8 @@ describe('OutlineNodeHelpers tests', () => {
     test('DFS node order', async () => {
       const editor: OutlineEditor = testEnv.editor;
       let expectedKeys: Array<NodeKey> = [];
-      await editor.update((view: View) => {
-        const root = view.getRoot();
+      await editor.update((state: State) => {
+        const root = state.getRoot();
         const paragraph1 = createParagraphNode();
         const paragraph2 = createParagraphNode();
         const block1 = createTestBlockNode();
@@ -72,8 +72,8 @@ describe('OutlineNodeHelpers tests', () => {
       });
 
       const dfsKeys = [];
-      await editor.update((view: View) => {
-        const root = view.getRoot();
+      await editor.update((state: State) => {
+        const root = state.getRoot();
         dfs(root, (node: OutlineNode) => {
           dfsKeys.push(node.getKey());
           return node;
@@ -85,8 +85,8 @@ describe('OutlineNodeHelpers tests', () => {
     test('Skip some DFS nodes', async () => {
       const editor: OutlineEditor = testEnv.editor;
       let expectedKeys: Array<NodeKey> = [];
-      await editor.update((view: View) => {
-        const root = view.getRoot();
+      await editor.update((state: State) => {
+        const root = state.getRoot();
         const paragraph1 = createParagraphNode();
         const block1 = createTestBlockNode();
         const block2 = createTestBlockNode();
@@ -98,8 +98,8 @@ describe('OutlineNodeHelpers tests', () => {
       });
 
       const dfsKeys = [];
-      await editor.update((view: View) => {
-        const root = view.getRoot();
+      await editor.update((state: State) => {
+        const root = state.getRoot();
         dfs(root, (node: OutlineNode) => {
           dfsKeys.push(node.getKey());
           if (isParagraphNode(node)) {
@@ -115,14 +115,14 @@ describe('OutlineNodeHelpers tests', () => {
 
     test('getTopListNode should return the top list node when the list is a direct child of the RootNode', async () => {
       const editor: OutlineEditor = testEnv.editor;
-      await editor.update((view: View) => {
+      await editor.update((state: State) => {
         // Root
         //   |- ListNode
         //         |- ListItemNode
         //         |- ListItemNode
         //         |- ListNode
         //               |- ListItemNode
-        const root = view.getRoot();
+        const root = state.getRoot();
         const topListNode = createListNode('ul');
         const secondLevelListNode = createListNode('ul');
         const listItem1 = createListItemNode();
@@ -140,7 +140,7 @@ describe('OutlineNodeHelpers tests', () => {
 
     test('getTopListNode should return the top list node when the list is not a direct child of the RootNode', async () => {
       const editor: OutlineEditor = testEnv.editor;
-      await editor.update((view: View) => {
+      await editor.update((state: State) => {
         // Root
         // |- ParagaphNode
         //     |- ListNode
@@ -148,7 +148,7 @@ describe('OutlineNodeHelpers tests', () => {
         //        |- ListItemNode
         //           |- ListNode
         //              |- ListItemNode
-        const root = view.getRoot();
+        const root = state.getRoot();
         const paragraphNode = createParagraphNode();
         const topListNode = createListNode('ul');
         const secondLevelListNode = createListNode('ul');
@@ -168,7 +168,7 @@ describe('OutlineNodeHelpers tests', () => {
 
     test('getTopListNode should return the top list node when the list item is deeply nested.', async () => {
       const editor: OutlineEditor = testEnv.editor;
-      await editor.update((view: View) => {
+      await editor.update((state: State) => {
         // Root
         // |- ParagaphNode
         //     |- ListNode
@@ -178,7 +178,7 @@ describe('OutlineNodeHelpers tests', () => {
         //                  |- ListNode
         //                      |- ListItemNode
         //        |- ListItemNode
-        const root = view.getRoot();
+        const root = state.getRoot();
         const paragraphNode = createParagraphNode();
         const topListNode = createListNode('ul');
         const secondLevelListNode = createListNode('ul');
@@ -202,7 +202,7 @@ describe('OutlineNodeHelpers tests', () => {
 
     test('isLastItemInList should return true if the listItem is the last in a nested list.', async () => {
       const editor: OutlineEditor = testEnv.editor;
-      await editor.update((view: View) => {
+      await editor.update((state: State) => {
         // Root
         //   |- ListNode
         //      |- ListItemNode
@@ -210,7 +210,7 @@ describe('OutlineNodeHelpers tests', () => {
         //            |- ListItemNode
         //                |- ListNode
         //                    |- ListItemNode
-        const root = view.getRoot();
+        const root = state.getRoot();
         const topListNode = createListNode('ul');
         const secondLevelListNode = createListNode('ul');
         const thirdLevelListNode = createListNode('ul');
@@ -230,12 +230,12 @@ describe('OutlineNodeHelpers tests', () => {
 
     test('isLastItemInList should return true if the listItem is the last in a non-nested list.', async () => {
       const editor: OutlineEditor = testEnv.editor;
-      await editor.update((view: View) => {
+      await editor.update((state: State) => {
         // Root
         //   |- ListNode
         //      |- ListItemNode
         //      |- ListItemNode
-        const root = view.getRoot();
+        const root = state.getRoot();
         const topListNode = createListNode('ul');
         const listItem1 = createListItemNode();
         const listItem2 = createListItemNode();
@@ -249,7 +249,7 @@ describe('OutlineNodeHelpers tests', () => {
 
     test('isLastItemInList should return false if the listItem is not the last in a nested list.', async () => {
       const editor: OutlineEditor = testEnv.editor;
-      await editor.update((view: View) => {
+      await editor.update((state: State) => {
         // Root
         //   |- ListNode
         //      |- ListItemNode
@@ -257,7 +257,7 @@ describe('OutlineNodeHelpers tests', () => {
         //            |- ListItemNode
         //                |- ListNode
         //                    |- ListItemNode
-        const root = view.getRoot();
+        const root = state.getRoot();
         const topListNode = createListNode('ul');
         const secondLevelListNode = createListNode('ul');
         const thirdLevelListNode = createListNode('ul');
@@ -277,12 +277,12 @@ describe('OutlineNodeHelpers tests', () => {
 
     test('isLastItemInList should return true if the listItem is not the last in a non-nested list.', async () => {
       const editor: OutlineEditor = testEnv.editor;
-      await editor.update((view: View) => {
+      await editor.update((state: State) => {
         // Root
         //   |- ListNode
         //      |- ListItemNode
         //      |- ListItemNode
-        const root = view.getRoot();
+        const root = state.getRoot();
         const topListNode = createListNode('ul');
         const listItem1 = createListItemNode();
         const listItem2 = createListItemNode();

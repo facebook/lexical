@@ -104,8 +104,8 @@ describe('OutlineListItemNode tests', () => {
 
       beforeEach(async () => {
         const {editor} = testEnv;
-        await editor.update((view) => {
-          const root = view.getRoot();
+        await editor.update((state) => {
+          const root = state.getRoot();
           listNode = new ListNode('ul');
           listItemNode1 = new ListItemNode();
           listItemNode1.append(new TextNode('one'));
@@ -130,8 +130,8 @@ describe('OutlineListItemNode tests', () => {
         expect(testEnv.outerHTML).toBe(
           '<div contenteditable="true" data-outline-editor="true"></div>',
         );
-        await editor.update((view) => {
-          const root = view.getRoot();
+        await editor.update((state) => {
+          const root = state.getRoot();
           listItemNode = new ListItemNode();
           root.append(listItemNode);
         });
@@ -223,8 +223,8 @@ describe('OutlineListItemNode tests', () => {
 
       beforeEach(async () => {
         const {editor} = testEnv;
-        await editor.update((view) => {
-          const root = view.getRoot();
+        await editor.update((state) => {
+          const root = state.getRoot();
           listNode = new ListNode('ul');
           listItemNode1 = new ListItemNode();
           listItemNode2 = new ListItemNode();
@@ -296,8 +296,8 @@ describe('OutlineListItemNode tests', () => {
 
       beforeEach(async () => {
         const {editor} = testEnv;
-        await editor.update((view) => {
-          const root = view.getRoot();
+        await editor.update((state) => {
+          const root = state.getRoot();
           listNode = new ListNode('ul');
           listItemNode1 = new ListItemNode();
           listItemNode2 = new ListItemNode();

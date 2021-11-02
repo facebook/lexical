@@ -116,58 +116,6 @@ export function updateDirectionIfNeeded(node: OutlineNode): void {
   }
 }
 
-export function nodeIs(
-  node: OutlineNode,
-  other: ?OutlineNode,
-): boolean %checks {
-  return other != null && (node === other || node.__key === other.__key);
-}
-
-export function nodeDeepEquals(
-  node: OutlineNode,
-  other: ?OutlineNode,
-  nodeMap: NodeMap,
-  otherNodeMap: NodeMap,
-): boolean {
-  // $FlowFixMe: flow doesn't seem to understand constructor checking
-  if (other == null || node.constructor !== other.constructor) {
-    return false;
-  }
-  if (node.is(other)) {
-    return true;
-  }
-  const keys = Object.keys(node);
-  const keysLength = keys.length;
-  for (let i = 0; i < keysLength; i++) {
-    const key = keys[i];
-    // $FlowFixMe: this checks keys dynamically
-    const nodeValue = node[key];
-    // $FlowFixMe: this checks keys dynamically
-    const otherValue = other[key];
-    if (key === '__children') {
-      const childrenLength = nodeValue.length;
-      const otherChildrenLength = otherValue.length;
-      if (childrenLength !== otherChildrenLength) {
-        return false;
-      }
-      for (let s = 0; s < childrenLength; s++) {
-        const childKey = nodeValue[s];
-        const childOtherKey = otherValue[s];
-        // $FlowFixMe: this will always be a node
-        const child: OutlineNode = nodeMap.get(childKey);
-        const otherChild = otherNodeMap.get(childOtherKey);
-        if (!nodeDeepEquals(child, otherChild, nodeMap, otherNodeMap)) {
-          return false;
-        }
-      }
-    } else if (key !== '__key' && nodeValue !== otherValue) {
-      // We don't compare keys, as they are not an important part of equality.
-      return false;
-    }
-  }
-  return true;
-}
-
 export type NodeKey = string;
 
 export class OutlineNode {
@@ -379,7 +327,7 @@ export class OutlineNode {
     return null;
   }
   is(node: ?OutlineNode): boolean {
-    return nodeIs(this, node);
+    return node != null && (this === node || this.__key === node.__key);
   }
   isBefore(targetNode: OutlineNode): boolean {
     if (targetNode.isParentOf(this)) {

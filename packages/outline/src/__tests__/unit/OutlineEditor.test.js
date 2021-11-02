@@ -685,10 +685,6 @@ describe('OutlineEditor tests', () => {
         expect(parsedSelection.anchor.key).toEqual(parsedText.__key);
         expect(parsedSelection.focus.key).toEqual(parsedText.__key);
       });
-
-      it('EditorState object matches the original', () => {
-        expect(parsedEditorState.equals(originalEditorState)).toBe(true);
-      });
     });
 
     it('getCurrentTextContent() / getLatestTextContent()', async () => {

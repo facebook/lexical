@@ -15,7 +15,6 @@ import type {ParsedNode} from './OutlineParsing';
 
 import {createRootNode} from './OutlineRootNode';
 import {readEditorState} from './OutlineUpdates';
-import {nodeDeepEquals} from './OutlineNode';
 
 export type ParsedEditorState = {
   _selection: null | {
@@ -59,48 +58,6 @@ export function createEmptyEditorState(): EditorState {
   return new EditorState(new Map([['root', createRootNode()]]));
 }
 
-function compareEditorStates(
-  editorState: EditorState,
-  otherEditorState: ?EditorState,
-  equality: boolean,
-): boolean {
-  // In order to optimize the performance of this,
-  // we order the operations by their overhead:
-  // - equality check
-  // - nodeMap size check
-  // - selection check
-  // - node check
-  if (editorState === otherEditorState) {
-    return true;
-  }
-  if (otherEditorState == null) {
-    return false;
-  }
-  const nodeMap = editorState._nodeMap;
-  const otherNodeMap = otherEditorState._nodeMap;
-  if (nodeMap.size !== otherNodeMap.size) {
-    return false;
-  }
-  const selection = editorState._selection;
-  const otherSelection = otherEditorState._selection;
-  if (selection === null) {
-    if (otherSelection !== null) {
-      return false;
-    }
-  } else if (selection.is(otherSelection)) {
-    return true;
-  } else if (equality) {
-    // Selection equality failed.
-    return false;
-  }
-  // $FlowFixMe: root is always available
-  const root: RootNode = nodeMap.get('root');
-  const otherRoot = otherNodeMap.get('root');
-  return equality
-    ? root.is(otherRoot)
-    : nodeDeepEquals(root, otherRoot, nodeMap, otherNodeMap);
-}
-
 export class EditorState {
   _nodeMap: NodeMap;
   _selection: null | Selection;
@@ -112,10 +69,43 @@ export class EditorState {
     this._flushSync = false;
   }
   is(editorState: ?EditorState): boolean {
-    return compareEditorStates(this, editorState, true);
-  }
-  equals(editorState: ?EditorState): boolean {
-    return compareEditorStates(this, editorState, false);
+    // In order to optimize the performance of this,
+    // we order the operations by their overhead:
+    // - equality check
+    // - nodeMap size check
+    // - selection check
+    // - node check
+    if (this === editorState) {
+      return true;
+    }
+    if (editorState == null) {
+      return false;
+    }
+    const nodeMap = this._nodeMap;
+    const otherNodeMap = editorState._nodeMap;
+    const nodeMapSize = nodeMap.size ;
+    if (nodeMapSize !== otherNodeMap.size) {
+      return false;
+    }
+    const selection = this._selection;
+    const otherSelection = editorState._selection;
+    if (selection === null) {
+      if (otherSelection !== null) {
+        return false;
+      }
+    } else if (!selection.is(otherSelection)) {
+      return false;
+    }
+    // $FlowFixMe: root is always available
+    const nodeMapEntries = Array.from(nodeMap);
+    for (let i = 0; i < nodeMapSize; i++) {
+      const [key, node] = nodeMapEntries[i];
+      const otherNode = otherNodeMap.get(key)
+      if (!node.is(otherNode)) {
+        return false;
+      }
+    }
+    return true;
   }
   isEmpty(): boolean {
     return this._nodeMap.size === 1 && this._selection === null;

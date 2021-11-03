@@ -422,7 +422,7 @@ describe('Composition', () => {
         // Escape would fire here
         await page.keyboard.insertText('');
 
-        await assertHTML(page, '<p class="editor-paragraph"><br></p>');
+        await assertHTML(page, '<p class="editor-paragraph" dir="ltr"><br></p>');
         await assertSelection(page, {
           anchorPath: [0],
           anchorOffset: 0,

@@ -586,7 +586,9 @@ function updateTextNodeFromDOMContent(
           state.setCompositionKey(null);
         }
         node.remove();
-      } else if (
+        return;
+      }
+      if (
         isImmutableOrInert(node) ||
         (state.getCompositionKey() !== null && !isComposing)
       ) {

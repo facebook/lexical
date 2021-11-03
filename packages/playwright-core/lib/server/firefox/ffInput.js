@@ -87,11 +87,11 @@ class RawKeyboardImpl {
   }
 
   async imeSetComposition(text, selectionStart, selectionEnd, replacementStart, replacementEnd) {
-    if (replacementStart === -1 && replacementEnd === -1) await this._client.send('Page.imeSetComposition', {
+    if (replacementStart === -1 && replacementEnd === -1) await this._client.send('Page.setComposition', {
       text,
       selectionStart,
       selectionEnd
-    });else await this._client.send('Page.imeSetComposition', {
+    });else await this._client.send('Page.setComposition', {
       text,
       selectionStart,
       selectionEnd,

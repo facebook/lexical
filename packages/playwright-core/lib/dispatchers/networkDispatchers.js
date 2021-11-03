@@ -137,32 +137,13 @@ class RouteDispatcher extends _dispatcher.Dispatcher {
     });
   }
 
-  async responseBody(params) {
-    return {
-      binary: (await this._object.responseBody()).toString('base64')
-    };
-  }
-
   async continue(params, metadata) {
-    const response = await this._object.continue({
+    await this._object.continue({
       url: params.url,
       method: params.method,
       headers: params.headers,
-      postData: params.postData ? Buffer.from(params.postData, 'base64') : undefined,
-      interceptResponse: params.interceptResponse
+      postData: params.postData ? Buffer.from(params.postData, 'base64') : undefined
     });
-    const result = {};
-
-    if (response) {
-      result.response = {
-        request: RequestDispatcher.from(this._scope, response.request()),
-        status: response.status(),
-        statusText: response.statusText(),
-        headers: response.headers()
-      };
-    }
-
-    return result;
   }
 
   async fulfill(params) {

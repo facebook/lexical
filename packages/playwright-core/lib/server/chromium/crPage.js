@@ -837,6 +837,7 @@ class FrameSession {
 
     const context = this._contextIdToContext.get(event.executionContextId);
 
+    if (!context) return;
     const values = event.args.map(arg => context.createHandle(arg));
 
     this._page._addConsoleMessage(event.type, values, (0, _crProtocolHelper.toConsoleMessageLocation)(event.stackTrace));
@@ -851,10 +852,13 @@ class FrameSession {
   }
 
   async _onBindingCalled(event) {
-    const context = this._contextIdToContext.get(event.executionContextId);
-
     const pageOrError = await this._crPage.pageOrError();
-    if (!(pageOrError instanceof Error)) await this._page._onBindingCalled(event.payload, context);
+
+    if (!(pageOrError instanceof Error)) {
+      const context = this._contextIdToContext.get(event.executionContextId);
+
+      if (context) await this._page._onBindingCalled(event.payload, context);
+    }
   }
 
   _onDialog(event) {
@@ -928,9 +932,11 @@ class FrameSession {
   }
 
   _onScreencastFrame(payload) {
-    this._client.send('Page.screencastFrameAck', {
-      sessionId: payload.sessionId
-    }).catch(() => {});
+    this._page.throttleScreencastFrameAck(() => {
+      this._client.send('Page.screencastFrameAck', {
+        sessionId: payload.sessionId
+      }).catch(() => {});
+    });
 
     const buffer = Buffer.from(payload.data, 'base64');
 
@@ -1068,6 +1074,13 @@ class FrameSession {
           width: 2,
           height: 80
         };
+
+        if (this._crPage._browserContext.isPersistentContext()) {
+          // FIXME: Chrome bug: OOPIF router is confused when hit target is
+          // outside browser window.
+          // Account for the infobar here to work around the bug.
+          insets.height += 46;
+        }
       }
 
       promises.push(this.setWindowBounds({

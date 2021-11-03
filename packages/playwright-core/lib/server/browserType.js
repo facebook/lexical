@@ -67,7 +67,7 @@ class BrowserType extends _instrumentation.SdkObject {
   }
 
   executablePath() {
-    return _registry.registry.findExecutable(this._name).executablePath() || '';
+    return _registry.registry.findExecutable(this._name).executablePath(this._playwrightOptions.sdkLanguage) || '';
   }
 
   name() {
@@ -197,7 +197,7 @@ class BrowserType extends _instrumentation.SdkObject {
 
       if (!registryExecutable || registryExecutable.browserName !== this._name) throw new Error(`Unsupported ${this._name} channel "${options.channel}"`);
       executable = registryExecutable.executablePathOrDie(this._playwrightOptions.sdkLanguage);
-      await registryExecutable.validateHostRequirements();
+      await registryExecutable.validateHostRequirements(this._playwrightOptions.sdkLanguage);
     }
 
     let wsEndpointCallback;

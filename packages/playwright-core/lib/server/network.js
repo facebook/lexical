@@ -9,7 +9,7 @@ exports.parsedURL = parsedURL;
 exports.stripFragmentFromUrl = stripFragmentFromUrl;
 exports.singleHeader = singleHeader;
 exports.mergeHeaders = mergeHeaders;
-exports.STATUS_TEXTS = exports.WebSocket = exports.InterceptedResponse = exports.Response = exports.Route = exports.Request = void 0;
+exports.STATUS_TEXTS = exports.WebSocket = exports.Response = exports.Route = exports.Request = void 0;
 
 var _utils = require("../utils/utils");
 
@@ -247,7 +247,6 @@ class Route extends _instrumentation.SdkObject {
     this._request = void 0;
     this._delegate = void 0;
     this._handled = false;
-    this._response = null;
     this._request = request;
     this._delegate = delegate;
   }
@@ -277,9 +276,6 @@ class Route extends _instrumentation.SdkObject {
         (0, _utils.assert)(buffer, 'Fetch response has been disposed');
         body = buffer.toString('base64');
         isBase64 = true;
-      } else if (this._response && overrides.useInterceptedResponseBody) {
-        body = (await this._delegate.responseBody()).toString('base64');
-        isBase64 = true;
       } else {
         body = '';
         isBase64 = false;
@@ -296,7 +292,6 @@ class Route extends _instrumentation.SdkObject {
 
   async continue(overrides = {}) {
     (0, _utils.assert)(!this._handled, 'Route is already handled!');
-    (0, _utils.assert)(!this._response, 'Cannot call continue after response interception!');
 
     if (overrides.url) {
       const newUrl = new URL(overrides.url);
@@ -304,13 +299,7 @@ class Route extends _instrumentation.SdkObject {
       if (oldUrl.protocol !== newUrl.protocol) throw new Error('New URL must have same protocol as overridden URL');
     }
 
-    this._response = await this._delegate.continue(this._request, overrides);
-    return this._response;
-  }
-
-  async responseBody() {
-    (0, _utils.assert)(!this._handled, 'Route is already handled!');
-    return this._delegate.responseBody();
+    await this._delegate.continue(this._request, overrides);
   }
 
 }
@@ -494,39 +483,6 @@ class Response extends _instrumentation.SdkObject {
 }
 
 exports.Response = Response;
-
-class InterceptedResponse extends _instrumentation.SdkObject {
-  constructor(request, status, statusText, headers) {
-    super(request.frame(), 'interceptedResponse');
-    this._request = void 0;
-    this._status = void 0;
-    this._statusText = void 0;
-    this._headers = void 0;
-    this._request = request._finalRequest();
-    this._status = status;
-    this._statusText = statusText;
-    this._headers = headers;
-  }
-
-  status() {
-    return this._status;
-  }
-
-  statusText() {
-    return this._statusText;
-  }
-
-  headers() {
-    return this._headers;
-  }
-
-  request() {
-    return this._request;
-  }
-
-}
-
-exports.InterceptedResponse = InterceptedResponse;
 
 class WebSocket extends _instrumentation.SdkObject {
   constructor(parent, url) {

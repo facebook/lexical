@@ -30,6 +30,7 @@
     "./history": "./OutlineHistoryHelpers.js",
     "./offsets": "./OutlineOffsetHelpers.js",
     "./nodes": "./OutlineNodeHelpers.js",
+    "./validation": "./OutlineValidationHelpers.js",
     "./CodeNode": "./OutlineCodeNode.js",
     "./ParagraphNode": "./OutlineParagraphNode.js",
     "./QuoteNode": "./OutlineQuoteNode.js",

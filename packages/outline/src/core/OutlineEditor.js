@@ -247,6 +247,9 @@ class BaseOutlineEditor {
   isComposing(): boolean {
     return this._compositionKey != null;
   }
+  /**
+   * Deprecated. To be removed within a week.
+   */
   isEmpty(trim: boolean = true): boolean {
     if (this.isComposing()) {
       return false;
@@ -422,6 +425,9 @@ class BaseOutlineEditor {
       );
     }
   }
+  /**
+   * Deprecated. To be removed within a week.
+   */
   canShowPlaceholder(): boolean {
     if (!this.isEmpty(false)) {
       return false;
@@ -479,7 +485,7 @@ declare export class OutlineEditor {
 
   getObserver(): null | MutationObserver;
   isComposing(): boolean;
-  isEmpty(trim?: boolean): boolean;
+  // isEmpty(trim?: boolean): boolean;
   registerNodeType(nodeType: string, klass: Class<OutlineNode>): void;
   addListener(type: 'error', listener: ErrorListener): () => void;
   addListener(type: 'update', listener: UpdateListener): () => void;
@@ -498,7 +504,7 @@ declare export class OutlineEditor {
   parseEditorState(stringifiedEditorState: string): EditorState;
   update(updateFn: (state: State) => void, callbackFn?: () => void): boolean;
   focus(callbackFn?: () => void): void;
-  canShowPlaceholder(): boolean;
+  // canShowPlaceholder(): boolean;
 }
 
 export function getEditorFromElement(element: Element): null | OutlineEditor {

@@ -171,19 +171,19 @@ Object.defineProperty(exports, "WebSocket", {
     return _network.WebSocket;
   }
 });
-Object.defineProperty(exports, "ApiRequest", {
+Object.defineProperty(exports, "APIRequest", {
   enumerable: true,
   get: function () {
     return _fetch.Fetch;
   }
 });
-Object.defineProperty(exports, "ApiRequestContext", {
+Object.defineProperty(exports, "APIRequestContext", {
   enumerable: true,
   get: function () {
     return _fetch.FetchRequest;
   }
 });
-Object.defineProperty(exports, "ApiResponse", {
+Object.defineProperty(exports, "APIResponse", {
   enumerable: true,
   get: function () {
     return _fetch.FetchResponse;

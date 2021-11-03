@@ -32,7 +32,9 @@ var _utils = require("../utils/utils");
  * limitations under the License.
  */
 class ChannelOwner extends _events.EventEmitter {
-  constructor(parent, type, guid, initializer) {
+  constructor(parent, type, guid, initializer, instrumentation) {
+    var _this$_parent;
+
     super();
     this._connection = void 0;
     this._parent = void 0;
@@ -42,12 +44,13 @@ class ChannelOwner extends _events.EventEmitter {
     this._channel = void 0;
     this._initializer = void 0;
     this._logger = void 0;
-    this._csi = void 0;
+    this._instrumentation = void 0;
     this.setMaxListeners(0);
     this._connection = parent instanceof ChannelOwner ? parent._connection : parent;
     this._type = type;
     this._guid = guid;
     this._parent = parent instanceof ChannelOwner ? parent : undefined;
+    this._instrumentation = instrumentation || ((_this$_parent = this._parent) === null || _this$_parent === void 0 ? void 0 : _this$_parent._instrumentation);
 
     this._connection._objects.set(guid, this);
 
@@ -91,7 +94,7 @@ class ChannelOwner extends _events.EventEmitter {
           if (validator) {
             return params => {
               if (callCookie && csi) {
-                callCookie.userObject = csi.onApiCallBegin(renderCallWithParams(stackTrace.apiName, params)).userObject;
+                csi.onApiCallBegin(renderCallWithParams(stackTrace.apiName, params), stackTrace, callCookie);
                 csi = undefined;
               }
 
@@ -107,43 +110,38 @@ class ChannelOwner extends _events.EventEmitter {
     return channel;
   }
 
-  async _wrapApiCall(func, logger) {
+  async _wrapApiCall(func, logger, isInternal) {
     logger = logger || this._logger;
     const stackTrace = (0, _stackTrace.captureStackTrace)();
     const {
       apiName,
       frameTexts
-    } = stackTrace;
-    let ancestorWithCSI = this;
+    } = stackTrace; // Do not report nested async calls to _wrapApiCall.
 
-    while (!ancestorWithCSI._csi && ancestorWithCSI._parent) ancestorWithCSI = ancestorWithCSI._parent; // Do not report nested async calls to _wrapApiCall.
-
-
-    const isNested = stackTrace.allFrames.filter(f => {
+    isInternal = isInternal || stackTrace.allFrames.filter(f => {
       var _f$function;
 
       return (_f$function = f.function) === null || _f$function === void 0 ? void 0 : _f$function.includes('_wrapApiCall');
     }).length > 1;
-    const csi = isNested ? undefined : ancestorWithCSI._csi;
-    const callCookie = {
-      userObject: null
-    };
+    if (isInternal) delete stackTrace.apiName;
+    const csi = isInternal ? undefined : this._instrumentation;
+    const callCookie = {};
 
     try {
-      logApiCall(logger, `=> ${apiName} started`, isNested);
+      logApiCall(logger, `=> ${apiName} started`, isInternal);
 
       const channel = this._createChannel({}, stackTrace, csi, callCookie);
 
       const result = await func(channel, stackTrace);
       csi === null || csi === void 0 ? void 0 : csi.onApiCallEnd(callCookie);
-      logApiCall(logger, `<= ${apiName} succeeded`, isNested);
+      logApiCall(logger, `<= ${apiName} succeeded`, isInternal);
       return result;
     } catch (e) {
       const innerError = (process.env.PWDEBUGIMPL || (0, _utils.isUnderTest)()) && e.stack ? '\n<inner error>\n' + e.stack : '';
       e.message = apiName + ': ' + e.message;
       e.stack = e.message + '\n' + frameTexts.join('\n') + innerError;
       csi === null || csi === void 0 ? void 0 : csi.onApiCallEnd(callCookie, e);
-      logApiCall(logger, `<= ${apiName} failed`, isNested);
+      logApiCall(logger, `<= ${apiName} failed`, isInternal);
       throw e;
     }
   }

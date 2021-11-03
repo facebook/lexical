@@ -35,11 +35,11 @@ function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && 
 async function start(env = {}) {
   const client = new PlaywrightClient(env);
   const playwright = await client._playwright;
-
-  playwright.stop = () => client.stop();
-
   playwright.driverProcess = client._driverProcess;
-  return playwright;
+  return {
+    playwright,
+    stop: () => client.stop()
+  };
 }
 
 class PlaywrightClient {

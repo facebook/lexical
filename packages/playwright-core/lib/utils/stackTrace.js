@@ -48,6 +48,12 @@ const CLIENT_LIB = _path.default.join(CORE_DIR, 'lib', 'client');
 
 const CLIENT_SRC = _path.default.join(CORE_DIR, 'src', 'client');
 
+const TEST_DIR_SRC = _path.default.resolve(CORE_DIR, '..', 'playwright-test');
+
+const TEST_DIR_LIB = _path.default.resolve(CORE_DIR, '..', '@playwright', 'test');
+
+const WS_LIB = _path.default.relative(process.cwd(), _path.default.dirname(require.resolve('ws')));
+
 function captureStackTrace() {
   const stackTraceLimit = Error.stackTraceLimit;
   Error.stackTraceLimit = 30;
@@ -56,9 +62,17 @@ function captureStackTrace() {
   Error.stackTraceLimit = stackTraceLimit;
   const isTesting = (0, _utils.isUnderTest)();
   let parsedFrames = stack.split('\n').map(line => {
+    var _frame$function;
+
     const frame = stackUtils.parseLine(line);
-    if (!frame || !frame.file) return null;
-    if (frame.file.startsWith('internal')) return null;
+    if (!frame || !frame.file) return null; // Node 16+ has node:internal.
+
+    if (frame.file.startsWith('internal') || frame.file.startsWith('node:')) return null; // EventEmitter.emit has 'events.js' file.
+
+    if (frame.file === 'events.js' && (_frame$function = frame.function) !== null && _frame$function !== void 0 && _frame$function.endsWith('.emit')) return null; // Node 12
+
+    if (frame.file === '_stream_readable.js' || frame.file === '_stream_writable.js') return null;
+    if (frame.file.startsWith(WS_LIB)) return null;
 
     const fileName = _path.default.resolve(process.cwd(), frame.file);
 
@@ -101,8 +115,14 @@ function captureStackTrace() {
         break;
       }
     }
-  }
+  } // Hide all test runner and library frames in the user stack (event handlers produce them).
 
+
+  parsedFrames = parsedFrames.filter((f, i) => {
+    if (f.frame.file.startsWith(TEST_DIR_SRC) || f.frame.file.startsWith(TEST_DIR_LIB)) return false;
+    if (i && f.frame.file.startsWith(CORE_DIR)) return false;
+    return true;
+  });
   return {
     allFrames: allFrames.map(p => p.frame),
     frames: parsedFrames.map(p => p.frame),

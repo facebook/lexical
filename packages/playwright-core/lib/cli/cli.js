@@ -37,6 +37,8 @@ var _child_process = require("child_process");
 
 var _registry = require("../utils/registry");
 
+var _utils = require("../utils/utils");
+
 var _gridAgent = require("../grid/gridAgent");
 
 var _gridServer = require("../grid/gridServer");
@@ -111,6 +113,23 @@ _commander.program.command('install [browser...]').description('ensure browsers 
       if (options.withDeps) await _registry.registry.installDeps(executables);
       await _registry.registry.install(executables);
     } else {
+      const installDockerImage = args.some(arg => arg === 'docker-image');
+      args = args.filter(arg => arg !== 'docker-image');
+
+      if (installDockerImage) {
+        const imageName = `mcr.microsoft.com/playwright:v${(0, _utils.getPlaywrightVersion)()}-focal`;
+        const {
+          code
+        } = await (0, _utils.spawnAsync)('docker', ['pull', imageName], {
+          stdio: 'inherit'
+        });
+
+        if (code !== 0) {
+          console.log('Failed to pull docker image');
+          process.exit(1);
+        }
+      }
+
       const executables = checkBrowsersToInstall(args);
       if (options.withDeps) await _registry.registry.installDeps(executables);
       await _registry.registry.install(executables);
@@ -188,7 +207,7 @@ Examples:
 _commander.program.command('experimental-grid-server', {
   hidden: true
 }).option('--port <port>', 'grid port; defaults to 3333').option('--agent-factory <factory>', 'path to grid agent factory or npm package').option('--auth-token <authToken>', 'optional authentication token').action(function (options) {
-  (0, _gridServer.launchGridServer)(options.agentFactory, options.port || 3333, options.authToken);
+  launchGridServer(options.agentFactory, options.port || 3333, options.authToken);
 });
 
 _commander.program.command('experimental-grid-agent', {
@@ -221,14 +240,26 @@ if (!process.env.PW_CLI_TARGET_LANG) {
 
     require(playwrightTestPackagePath).addShowReportCommand(_commander.program);
   } else {
-    const command = _commander.program.command('test').allowUnknownOption(true);
+    {
+      const command = _commander.program.command('test').allowUnknownOption(true);
 
-    command.description('Run tests with Playwright Test. Available in @playwright/test package.');
-    command.action(async () => {
-      console.error('Please install @playwright/test package to use Playwright Test.');
-      console.error('  npm install -D @playwright/test');
-      process.exit(1);
-    });
+      command.description('Run tests with Playwright Test. Available in @playwright/test package.');
+      command.action(async () => {
+        console.error('Please install @playwright/test package to use Playwright Test.');
+        console.error('  npm install -D @playwright/test');
+        process.exit(1);
+      });
+    }
+    {
+      const command = _commander.program.command('show-report').allowUnknownOption(true);
+
+      command.description('Show Playwright Test HTML report. Available in @playwright/test package.');
+      command.action(async () => {
+        console.error('Please install @playwright/test package to use Playwright Test.');
+        console.error('  npm install -D @playwright/test');
+        process.exit(1);
+      });
+    }
   }
 }
 
@@ -526,4 +557,22 @@ function commandWithOpenOptions(command, description, options) {
   for (const option of options) result = result.option(option[0], ...option.slice(1));
 
   return result.option('-b, --browser <browserType>', 'browser to use, one of cr, chromium, ff, firefox, wk, webkit', 'chromium').option('--channel <channel>', 'Chromium distribution channel, "chrome", "chrome-beta", "msedge-dev", etc').option('--color-scheme <scheme>', 'emulate preferred color scheme, "light" or "dark"').option('--device <deviceName>', 'emulate device, for example  "iPhone 11"').option('--geolocation <coordinates>', 'specify geolocation coordinates, for example "37.819722,-122.478611"').option('--ignore-https-errors', 'ignore https errors').option('--load-storage <filename>', 'load context storage state from the file, previously saved with --save-storage').option('--lang <language>', 'specify language / locale, for example "en-GB"').option('--proxy-server <proxy>', 'specify proxy server, for example "http://myproxy:3128" or "socks5://myproxy:8080"').option('--save-storage <filename>', 'save context storage state at the end, for later use with --load-storage').option('--save-trace <filename>', 'record a trace for the session and save it to a file').option('--timezone <time zone>', 'time zone to emulate, for example "Europe/Rome"').option('--timeout <timeout>', 'timeout for Playwright actions in milliseconds', '10000').option('--user-agent <ua string>', 'specify user agent string').option('--viewport-size <size>', 'specify browser viewport size in pixels, for example "1280, 720"');
+}
+
+async function launchGridServer(factoryPathOrPackageName, port, authToken) {
+  if (!factoryPathOrPackageName) factoryPathOrPackageName = _path.default.join('..', 'grid', 'simpleGridFactory');
+  let factory;
+
+  try {
+    factory = require(_path.default.resolve(factoryPathOrPackageName));
+  } catch (e) {
+    factory = require(factoryPathOrPackageName);
+  }
+
+  if (factory && typeof factory === 'object' && 'default' in factory) factory = factory['default'];
+  if (!factory || !factory.launch || typeof factory.launch !== 'function') throw new Error('factory does not export `launch` method');
+  factory.name = factory.name || factoryPathOrPackageName;
+  const gridServer = new _gridServer.GridServer(factory, authToken);
+  await gridServer.start(port);
+  console.log('Grid server is running at ' + gridServer.urlPrefix());
 }

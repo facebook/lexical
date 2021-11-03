@@ -28,7 +28,7 @@ var _utils = require("../utils/utils");
  */
 class Waiter {
   // TODO: can/should we move these logs into wrapApiCall?
-  constructor(channelOwner, event) {
+  constructor(channel, event) {
     this._dispose = void 0;
     this._failures = [];
     this._immediateError = void 0;
@@ -37,17 +37,15 @@ class Waiter {
     this._waitId = void 0;
     this._error = void 0;
     this._waitId = (0, _utils.createGuid)();
-    this._channel = channelOwner._channel;
+    this._channel = channel;
 
-    channelOwner._wrapApiCall(async channel => {
-      channel.waitForEventInfo({
-        info: {
-          waitId: this._waitId,
-          phase: 'before',
-          event
-        }
-      }).catch(() => {});
-    });
+    this._channel.waitForEventInfo({
+      info: {
+        waitId: this._waitId,
+        phase: 'before',
+        event
+      }
+    }).catch(() => {});
 
     this._dispose = [() => this._channel.waitForEventInfo({
       info: {
@@ -58,8 +56,8 @@ class Waiter {
     }).catch(() => {})];
   }
 
-  static createForEvent(channelOwner, event) {
-    return new Waiter(channelOwner, event);
+  static createForEvent(channel, event) {
+    return new Waiter(channel, event);
   }
 
   async waitForEvent(emitter, event, predicate) {

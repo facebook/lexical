@@ -488,6 +488,10 @@ class Frame extends _instrumentation.SdkObject {
     this._setContext('utility', null);
 
     if (this._parentFrame) this._parentFrame._childFrames.add(this);
+
+    this._firedLifecycleEvents.add('commit');
+
+    this._subtreeLifecycleEvents.add('commit');
   }
 
   _onLifecycleEvent(event) {
@@ -511,6 +515,8 @@ class Frame extends _instrumentation.SdkObject {
     this._stopNetworkIdleTimer();
 
     if (this._inflightRequests.size === 0) this._startNetworkIdleTimer();
+
+    this._onLifecycleEvent('commit');
   }
 
   setPendingDocument(documentInfo) {
@@ -1018,12 +1024,6 @@ class Frame extends _instrumentation.SdkObject {
     return undefined;
   }
 
-  async _retryWithSelectorIfNotConnected(controller, selector, options, action) {
-    return controller.run(async progress => {
-      return this._retryWithProgressIfNotConnected(progress, selector, options.strict, handle => action(progress, handle));
-    }, this._page._timeoutSettings.timeout(options));
-  }
-
   async click(metadata, selector, options) {
     const controller = new _progress.ProgressController(metadata, this);
     return controller.run(async progress => {
@@ -1041,7 +1041,7 @@ class Frame extends _instrumentation.SdkObject {
   async dragAndDrop(metadata, source, target, options = {}) {
     const controller = new _progress.ProgressController(metadata, this);
     await controller.run(async progress => {
-      await dom.assertDone(await this._retryWithProgressIfNotConnected(progress, source, options.strict, async handle => {
+      dom.assertDone(await this._retryWithProgressIfNotConnected(progress, source, options.strict, async handle => {
         return handle._retryPointerAction(progress, 'move and down', false, async point => {
           await this._page.mouse.move(point.x, point.y);
           await this._page.mouse.down();
@@ -1050,7 +1050,7 @@ class Frame extends _instrumentation.SdkObject {
           timeout: progress.timeUntilDeadline()
         });
       }));
-      await dom.assertDone(await this._retryWithProgressIfNotConnected(progress, target, options.strict, async handle => {
+      dom.assertDone(await this._retryWithProgressIfNotConnected(progress, target, options.strict, async handle => {
         return handle._retryPointerAction(progress, 'move and up', false, async point => {
           await this._page.mouse.move(point.x, point.y);
           await this._page.mouse.up();
@@ -1078,8 +1078,10 @@ class Frame extends _instrumentation.SdkObject {
 
   async focus(metadata, selector, options = {}) {
     const controller = new _progress.ProgressController(metadata, this);
-    await this._retryWithSelectorIfNotConnected(controller, selector, options, (progress, handle) => handle._focus(progress));
-    await this._page._doSlowMo();
+    await controller.run(async progress => {
+      dom.assertDone(await this._retryWithProgressIfNotConnected(progress, selector, undefined, handle => handle._focus(progress)));
+      await this._page._doSlowMo();
+    }, this._page._timeoutSettings.timeout(options));
   }
 
   async textContent(metadata, selector, options = {}) {
@@ -1207,58 +1209,54 @@ class Frame extends _instrumentation.SdkObject {
 
   async expect(metadata, selector, options) {
     const controller = new _progress.ProgressController(metadata, this);
-    const querySelectorAll = options.expression === 'to.have.count' || options.expression.endsWith('.array');
+    const isArray = options.expression === 'to.have.count' || options.expression.endsWith('.array');
     const mainWorld = options.expression === 'to.have.property';
-    return await this._scheduleRerunnableTaskWithController(controller, selector, (progress, element, options, elements, continuePolling) => {
-      if (!element) {
-        var _options$expectedText;
+    return await this._scheduleRerunnableTaskWithController(controller, selector, (progress, element, options, elements) => {
+      let result;
 
-        // expect(locator).toBeHidden() passes when there is no element.
-        if (!options.isNot && options.expression === 'to.be.hidden') return {
-          matches: true
-        }; // expect(locator).not.toBeVisible() passes when there is no element.
+      if (options.isArray) {
+        result = progress.injectedScript.expectArray(elements, options);
+      } else {
+        if (!element) {
+          // expect(locator).toBeHidden() passes when there is no element.
+          if (!options.isNot && options.expression === 'to.be.hidden') return {
+            matches: true
+          }; // expect(locator).not.toBeVisible() passes when there is no element.
 
-        if (options.isNot && options.expression === 'to.be.visible') return {
-          matches: false
-        }; // expect(listLocator).toHaveText([]) passes when there are no elements matching.
-        // expect(listLocator).not.toHaveText(['foo']) passes when there are no elements matching.
+          if (options.isNot && options.expression === 'to.be.visible') return {
+            matches: false
+          }; // When none of the above applies, keep waiting for the element.
 
-        const expectsEmptyList = ((_options$expectedText = options.expectedText) === null || _options$expectedText === void 0 ? void 0 : _options$expectedText.length) === 0;
-        if (options.expression.endsWith('.array') && expectsEmptyList !== options.isNot) return {
-          matches: expectsEmptyList
-        }; // When none of the above applies, keep waiting for the element.
+          return progress.continuePolling;
+        }
 
-        return continuePolling;
+        result = progress.injectedScript.expectSingleElement(progress, element, options);
       }
 
-      const {
-        matches,
-        received
-      } = progress.injectedScript.expect(progress, element, options, elements);
-
-      if (matches === options.isNot) {
+      if (result.matches === options.isNot) {
         // Keep waiting in these cases:
         // expect(locator).conditionThatDoesNotMatch
         // expect(locator).not.conditionThatDoesMatch
-        progress.setIntermediateResult(received);
-        if (!Array.isArray(received)) progress.log(`  unexpected value "${received}"`);
-        return continuePolling;
+        progress.setIntermediateResult(result.received);
+        if (!Array.isArray(result.received)) progress.log(`  unexpected value "${result.received}"`);
+        return progress.continuePolling;
       } // Reached the expected state!
 
 
-      return {
-        matches,
-        received
-      };
-    }, options, {
+      return result;
+    }, { ...options,
+      isArray
+    }, {
       strict: true,
-      querySelectorAll,
+      querySelectorAll: isArray,
       mainWorld,
       omitAttached: true,
       logScale: true,
       ...options
     }).catch(e => {
-      if (js.isJavaScriptErrorInEvaluate(e)) throw e;
+      if (js.isJavaScriptErrorInEvaluate(e)) throw e; // Q: Why not throw upon isSessionClosedError(e) as in other places?
+      // A: We want user to receive a friendly message containing the last intermediate result.
+
       return {
         received: controller.lastIntermediateResult(),
         matches: options.isNot,
@@ -1293,8 +1291,8 @@ class Frame extends _instrumentation.SdkObject {
         return result;
       };
 
-      if (typeof polling !== 'number') return injectedScript.pollRaf((progress, continuePolling) => predicate(arg) || continuePolling);
-      return injectedScript.pollInterval(polling, (progress, continuePolling) => predicate(arg) || continuePolling);
+      if (typeof polling !== 'number') return injectedScript.pollRaf(progress => predicate(arg) || progress.continuePolling);
+      return injectedScript.pollInterval(polling, progress => predicate(arg) || progress.continuePolling);
     }, {
       expression,
       isFunction,
@@ -1359,11 +1357,13 @@ class Frame extends _instrumentation.SdkObject {
           callbackText,
           querySelectorAll,
           logScale,
-          omitAttached
+          omitAttached,
+          snapshotName
         }) => {
           const callback = injected.eval(callbackText);
           const poller = logScale ? injected.pollLogScale.bind(injected) : injected.pollRaf.bind(injected);
-          return poller((progress, continuePolling) => {
+          let markedElements = new Set();
+          return poller(progress => {
             let element;
             let elements = [];
 
@@ -1373,12 +1373,26 @@ class Frame extends _instrumentation.SdkObject {
               progress.logRepeating(`  selector resolved to ${elements.length} element${elements.length === 1 ? '' : 's'}`);
             } else {
               element = injected.querySelector(info.parsed, document, info.strict);
-              elements = [];
+              elements = element ? [element] : [];
               if (element) progress.logRepeating(`  selector resolved to ${injected.previewNode(element)}`);
             }
 
-            if (!element && !omitAttached) return continuePolling;
-            return callback(progress, element, taskData, elements, continuePolling);
+            if (!element && !omitAttached) return progress.continuePolling;
+
+            if (snapshotName) {
+              const previouslyMarkedElements = markedElements;
+              markedElements = new Set(elements);
+
+              for (const e of previouslyMarkedElements) {
+                if (!markedElements.has(e)) e.removeAttribute('__playwright_target__');
+              }
+
+              for (const e of markedElements) {
+                if (!previouslyMarkedElements.has(e)) e.setAttribute('__playwright_target__', snapshotName);
+              }
+            }
+
+            return callback(progress, element, taskData, elements);
           });
         }, {
           info,
@@ -1386,7 +1400,8 @@ class Frame extends _instrumentation.SdkObject {
           callbackText,
           querySelectorAll: options.querySelectorAll,
           logScale: options.logScale,
-          omitAttached: options.omitAttached
+          omitAttached: options.omitAttached,
+          snapshotName: progress.metadata.afterSnapshot
         });
       }, true);
       if (this._detached) rerunnableTask.terminate(new Error('Frame got detached.'));
@@ -1403,7 +1418,7 @@ class Frame extends _instrumentation.SdkObject {
     );
     if (this._detached) rerunnableTask.terminate(new Error('waitForFunction failed: frame got detached.'));
     if (data.context) rerunnableTask.rerun(data.context);
-    return rerunnableTask.promise;
+    return rerunnableTask.handlePromise;
   }
 
   _setContext(world, context) {
@@ -1479,31 +1494,32 @@ Frame.Events = {
 class RerunnableTask {
   constructor(data, progress, task, returnByValue) {
     this.promise = void 0;
+    this.handlePromise = void 0;
     this._task = void 0;
-
-    this._resolve = () => {};
-
-    this._reject = () => {};
-
     this._progress = void 0;
     this._returnByValue = void 0;
     this._contextData = void 0;
     this._task = task;
     this._progress = progress;
     this._returnByValue = returnByValue;
+    if (returnByValue) this.promise = new _async.ManualPromise();else this.handlePromise = new _async.ManualPromise();
     this._contextData = data;
 
     this._contextData.rerunnableTasks.add(this);
-
-    this.promise = new Promise((resolve, reject) => {
-      // The task is either resolved with a value, or rejected with a meaningful evaluation error.
-      this._resolve = resolve;
-      this._reject = reject;
-    });
   }
 
   terminate(error) {
     this._reject(error);
+  }
+
+  _resolve(value) {
+    if (this.promise) this.promise.resolve(value);
+    if (this.handlePromise) this.handlePromise.resolve(value);
+  }
+
+  _reject(error) {
+    if (this.promise) this.promise.reject(error);
+    if (this.handlePromise) this.handlePromise.reject(error);
   }
 
   async rerun(context) {
@@ -1569,6 +1585,6 @@ class SignalBarrier {
 
 function verifyLifecycle(name, waitUntil) {
   if (waitUntil === 'networkidle0') waitUntil = 'networkidle';
-  if (!types.kLifecycleEvents.has(waitUntil)) throw new Error(`${name}: expected one of (load|domcontentloaded|networkidle)`);
+  if (!types.kLifecycleEvents.has(waitUntil)) throw new Error(`${name}: expected one of (load|domcontentloaded|networkidle|commit)`);
   return waitUntil;
 }

@@ -65,5 +65,5 @@ var _types = require("../common/types");
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-const kLifecycleEvents = new Set(['load', 'domcontentloaded', 'networkidle']);
+const kLifecycleEvents = new Set(['load', 'domcontentloaded', 'networkidle', 'commit']);
 exports.kLifecycleEvents = kLifecycleEvents;

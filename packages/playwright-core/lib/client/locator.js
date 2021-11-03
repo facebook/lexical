@@ -9,6 +9,8 @@ var util = _interopRequireWildcard(require("util"));
 
 var _utils = require("../utils/utils");
 
+var _elementHandle = require("./elementHandle");
+
 var _jsHandle = require("./jsHandle");
 
 let _custom;
@@ -32,16 +34,24 @@ class Locator {
       timeout
     });
     const deadline = timeout ? (0, _utils.monotonicTime)() + timeout : 0;
-    const handle = await this.elementHandle({
-      timeout
-    });
-    if (!handle) throw new Error(`Could not resolve ${this._selector} to DOM Element`);
+    return this._frame._wrapApiCall(async channel => {
+      const result = await channel.waitForSelector({
+        selector: this._selector,
+        strict: true,
+        state: 'attached',
+        timeout
+      });
 
-    try {
-      return await task(handle, deadline ? deadline - (0, _utils.monotonicTime)() : 0);
-    } finally {
-      await handle.dispose();
-    }
+      const handle = _elementHandle.ElementHandle.fromNullable(result.element);
+
+      if (!handle) throw new Error(`Could not resolve ${this._selector} to DOM Element`);
+
+      try {
+        return await task(handle, deadline ? deadline - (0, _utils.monotonicTime)() : 0);
+      } finally {
+        await handle.dispose();
+      }
+    });
   }
 
   async boundingBox(options) {

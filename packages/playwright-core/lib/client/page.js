@@ -215,17 +215,19 @@ class Page extends _channelOwner.ChannelOwner {
   }
 
   _onRoute(route, request) {
-    let handled = false;
-
     for (const routeHandler of this._routes) {
       if (routeHandler.matches(request.url())) {
-        routeHandler.handle(route, request);
-        handled = true;
-        break;
+        if (routeHandler.handle(route, request)) {
+          this._routes.splice(this._routes.indexOf(routeHandler), 1);
+
+          if (!this._routes.length) this._wrapApiCall(channel => this._disableInterception(channel), undefined, true).catch(() => {});
+        }
+
+        return;
       }
     }
 
-    if (!handled) this._browserContext._onRoute(route, request);else this._routes = this._routes.filter(route => !route.expired());
+    this._browserContext._onRoute(route, request);
   }
 
   async _onBinding(bindingCall) {
@@ -433,7 +435,7 @@ class Page extends _channelOwner.ChannelOwner {
 
       const trimmedUrl = trimUrl(urlOrPredicate);
       const logLine = trimmedUrl ? `waiting for request ${trimmedUrl}` : undefined;
-      return this._waitForEvent(_events.Events.Page.Request, {
+      return this._waitForEvent(channel, _events.Events.Page.Request, {
         predicate,
         timeout: options.timeout
       }, logLine);
@@ -449,7 +451,7 @@ class Page extends _channelOwner.ChannelOwner {
 
       const trimmedUrl = trimUrl(urlOrPredicate);
       const logLine = trimmedUrl ? `waiting for response ${trimmedUrl}` : undefined;
-      return this._waitForEvent(_events.Events.Page.Response, {
+      return this._waitForEvent(channel, _events.Events.Page.Response, {
         predicate,
         timeout: options.timeout
       }, logLine);
@@ -457,15 +459,17 @@ class Page extends _channelOwner.ChannelOwner {
   }
 
   async waitForEvent(event, optionsOrPredicate = {}) {
-    return this._waitForEvent(event, optionsOrPredicate, `waiting for event "${event}"`);
+    return this._wrapApiCall(async channel => {
+      return this._waitForEvent(channel, event, optionsOrPredicate, `waiting for event "${event}"`);
+    });
   }
 
-  async _waitForEvent(event, optionsOrPredicate, logLine) {
+  async _waitForEvent(channel, event, optionsOrPredicate, logLine) {
     const timeout = this._timeoutSettings.timeout(typeof optionsOrPredicate === 'function' ? {} : optionsOrPredicate);
 
     const predicate = typeof optionsOrPredicate === 'function' ? optionsOrPredicate : optionsOrPredicate.predicate;
 
-    const waiter = _waiter.Waiter.createForEvent(this, event);
+    const waiter = _waiter.Waiter.createForEvent(channel, event);
 
     if (logLine) waiter.log(logLine);
     waiter.rejectOnTimeout(timeout, `Timeout while waiting for event "${event}"`);
@@ -545,9 +549,13 @@ class Page extends _channelOwner.ChannelOwner {
   async unroute(url, handler) {
     return this._wrapApiCall(async channel => {
       this._routes = this._routes.filter(route => route.url !== url || handler && route.handler !== handler);
-      if (this._routes.length === 0) await channel.setNetworkInterceptionEnabled({
-        enabled: false
-      });
+      if (!this._routes.length) await this._disableInterception(channel);
+    });
+  }
+
+  async _disableInterception(channel) {
+    await channel.setNetworkInterceptionEnabled({
+      enabled: false
     });
   }
 

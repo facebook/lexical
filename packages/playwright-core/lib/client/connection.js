@@ -142,7 +142,8 @@ class Connection extends _events.EventEmitter {
 
     const metadata = {
       stack: frames,
-      apiName
+      apiName,
+      internal: !apiName
     };
     this.onmessage({ ...converted,
       metadata

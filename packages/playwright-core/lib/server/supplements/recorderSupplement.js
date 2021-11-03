@@ -503,6 +503,7 @@ class ContextRecorder extends _events.EventEmitter {
         objectId: frame.guid,
         pageId: frame._page.guid,
         frameId: frame.guid,
+        wallTime: Date.now(),
         startTime: (0, _utils2.monotonicTime)(),
         endTime: 0,
         type: 'Frame',

@@ -231,13 +231,17 @@ class BrowserContextDispatcher extends _dispatcher.Dispatcher {
   }
 
   async tracingStartChunk(params) {
-    await this._context.tracing.startChunk();
+    await this._context.tracing.startChunk(params);
   }
 
   async tracingStopChunk(params) {
-    const artifact = await this._context.tracing.stopChunk(params.save);
+    const {
+      artifact,
+      entries
+    } = await this._context.tracing.stopChunk(params.save, params.skipCompress);
     return {
-      artifact: artifact ? new _artifactDispatcher.ArtifactDispatcher(this._scope, artifact) : undefined
+      artifact: artifact ? new _artifactDispatcher.ArtifactDispatcher(this._scope, artifact) : undefined,
+      entries
     };
   }
 

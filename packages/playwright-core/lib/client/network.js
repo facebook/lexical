@@ -4,7 +4,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.validateHeaders = validateHeaders;
-exports.RawHeaders = exports.RouteHandler = exports.WebSocket = exports.Response = exports.Route = exports.InterceptedResponse = exports.Request = void 0;
+exports.RawHeaders = exports.RouteHandler = exports.WebSocket = exports.Response = exports.Route = exports.Request = void 0;
 
 var _url = require("url");
 
@@ -163,6 +163,12 @@ class Request extends _channelOwner.ChannelOwner {
     });
   }
 
+  async _internalResponse() {
+    return this._wrapApiCall(async channel => {
+      return Response.fromNullable((await channel.response()).response);
+    }, undefined, true);
+  }
+
   frame() {
     return _frame.Frame.from(this._initializer.frame);
   }
@@ -206,94 +212,6 @@ class Request extends _channelOwner.ChannelOwner {
 
 exports.Request = Request;
 
-class InterceptedResponse {
-  constructor(route, initializer) {
-    this._route = void 0;
-    this._initializer = void 0;
-    this._request = void 0;
-    this._headers = void 0;
-    this._route = route;
-    this._initializer = initializer;
-    this._headers = new RawHeaders(initializer.headers);
-    this._request = Request.from(initializer.request);
-  }
-
-  async securityDetails() {
-    return null;
-  }
-
-  async serverAddr() {
-    return null;
-  }
-
-  async finished() {
-    const response = await this._request.response();
-    if (!response) return null;
-    return await response.finished();
-  }
-
-  frame() {
-    return this._request.frame();
-  }
-
-  ok() {
-    return this._initializer.status === 0 || this._initializer.status >= 200 && this._initializer.status <= 299;
-  }
-
-  url() {
-    return this._request.url();
-  }
-
-  status() {
-    return this._initializer.status;
-  }
-
-  statusText() {
-    return this._initializer.statusText;
-  }
-
-  headers() {
-    return this._headers.headers();
-  }
-
-  async allHeaders() {
-    return this.headers();
-  }
-
-  async headersArray() {
-    return this._headers.headersArray();
-  }
-
-  async headerValue(name) {
-    return this._headers.get(name);
-  }
-
-  async headerValues(name) {
-    return this._headers.getAll(name);
-  }
-
-  async body() {
-    return this._route._responseBody();
-  }
-
-  async text() {
-    const content = await this.body();
-    return content.toString('utf8');
-  }
-
-  async json() {
-    const content = await this.text();
-    return JSON.parse(content);
-  }
-
-  request() {
-    return this._request;
-  }
-
-}
-
-exports.InterceptedResponse = InterceptedResponse;
-
 class Route extends _channelOwner.ChannelOwner {
   static from(route) {
     return route._object;
@@ -301,7 +219,6 @@ class Route extends _channelOwner.ChannelOwner {
 
   constructor(parent, type, guid, initializer) {
     super(parent, type, guid, initializer);
-    this._interceptedResponse = void 0;
   }
 
   request() {
@@ -318,24 +235,19 @@ class Route extends _channelOwner.ChannelOwner {
 
   async fulfill(options = {}) {
     return this._wrapApiCall(async channel => {
-      let useInterceptedResponseBody;
       let fetchResponseUid;
       let {
         status: statusOption,
         headers: headersOption,
-        body: bodyOption
+        body
       } = options;
 
       if (options.response) {
         statusOption || (statusOption = options.response.status());
         headersOption || (headersOption = options.response.headers());
-
-        if (options.body === undefined && options.path === undefined) {
-          if (options.response instanceof _fetch.FetchResponse) fetchResponseUid = options.response._fetchUid();else if (options.response === this._interceptedResponse) useInterceptedResponseBody = true;else bodyOption = await options.response.body();
-        }
+        if (options.body === undefined && options.path === undefined && options.response instanceof _fetch.FetchResponse) fetchResponseUid = options.response._fetchUid();
       }
 
-      let body = undefined;
       let isBase64 = false;
       let length = 0;
 
@@ -344,14 +256,13 @@ class Route extends _channelOwner.ChannelOwner {
         body = buffer.toString('base64');
         isBase64 = true;
         length = buffer.length;
-      } else if ((0, _utils.isString)(bodyOption)) {
-        body = bodyOption;
+      } else if ((0, _utils.isString)(body)) {
         isBase64 = false;
         length = Buffer.byteLength(body);
-      } else if (bodyOption) {
-        body = bodyOption.toString('base64');
+      } else if (body) {
+        length = body.length;
+        body = body.toString('base64');
         isBase64 = true;
-        length = bodyOption.length;
       }
 
       const headers = {};
@@ -365,40 +276,29 @@ class Route extends _channelOwner.ChannelOwner {
         headers: (0, _utils.headersObjectToArray)(headers),
         body,
         isBase64,
-        useInterceptedResponseBody,
         fetchResponseUid
       });
     });
   }
 
-  async _continueToResponse(options = {}) {
-    this._interceptedResponse = await this._continue(options, true);
-    return this._interceptedResponse;
-  }
-
   async continue(options = {}) {
-    await this._continue(options, false);
+    await this._continue(options);
   }
 
-  async _continue(options, interceptResponse) {
+  async _internalContinue(options = {}) {
+    await this._continue(options, true).catch(() => {});
+  }
+
+  async _continue(options, isInternal) {
     return await this._wrapApiCall(async channel => {
       const postDataBuffer = (0, _utils.isString)(options.postData) ? Buffer.from(options.postData, 'utf8') : options.postData;
-      const result = await channel.continue({
+      await channel.continue({
         url: options.url,
         method: options.method,
         headers: options.headers ? (0, _utils.headersObjectToArray)(options.headers) : undefined,
-        postData: postDataBuffer ? postDataBuffer.toString('base64') : undefined,
-        interceptResponse
+        postData: postDataBuffer ? postDataBuffer.toString('base64') : undefined
       });
-      if (result.response) return new InterceptedResponse(this, result.response);
-      return null;
-    });
-  }
-
-  async _responseBody() {
-    return this._wrapApiCall(async channel => {
-      return Buffer.from((await channel.responseBody()).binary, 'base64');
-    });
+    }, undefined, isInternal);
   }
 
 }
@@ -571,7 +471,7 @@ class WebSocket extends _channelOwner.ChannelOwner {
 
       const predicate = typeof optionsOrPredicate === 'function' ? optionsOrPredicate : optionsOrPredicate.predicate;
 
-      const waiter = _waiter.Waiter.createForEvent(this, event);
+      const waiter = _waiter.Waiter.createForEvent(channel, event);
 
       waiter.rejectOnTimeout(timeout, `Timeout while waiting for event "${event}"`);
       if (event !== _events.Events.WebSocket.Error) waiter.rejectOnEvent(this, _events.Events.WebSocket.Error, new Error('Socket error'));
@@ -595,7 +495,7 @@ function validateHeaders(headers) {
 }
 
 class RouteHandler {
-  constructor(baseURL, url, handler, times) {
+  constructor(baseURL, url, handler, times = Number.MAX_SAFE_INTEGER) {
     this.handledCount = 0;
     this._baseURL = void 0;
     this._times = void 0;
@@ -607,17 +507,16 @@ class RouteHandler {
     this.handler = handler;
   }
 
-  expired() {
-    return !!this._times && this.handledCount >= this._times;
-  }
-
   matches(requestURL) {
     return (0, _clientHelper.urlMatches)(this._baseURL, requestURL, this.url);
   }
 
   handle(route, request) {
-    this.handler(route, request);
-    if (this._times) this.handledCount++;
+    try {
+      this.handler(route, request);
+    } finally {
+      return ++this.handledCount >= this._times;
+    }
   }
 
 }

@@ -322,6 +322,9 @@ class BaseOutlineEditor {
   getRootElement(): null | HTMLElement {
     return this._rootElement;
   }
+  /**
+   * Deprecated. To be removed within a week.
+   */
   getCurrentTextContent(): string {
     return getEditorStateTextContent(this._editorState);
   }
@@ -488,7 +491,7 @@ declare export class OutlineEditor {
   getDecorators(): {[NodeKey]: ReactNode};
   getRootElement(): null | HTMLElement;
   setRootElement(rootElement: null | HTMLElement): void;
-  getCurrentTextContent(): string;
+  // getCurrentTextContent(): string;
   getElementByKey(key: NodeKey): null | HTMLElement;
   getEditorState(): EditorState;
   setEditorState(editorState: EditorState): void;

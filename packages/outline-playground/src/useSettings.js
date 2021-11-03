@@ -18,6 +18,7 @@ function useSettings(
   onChange: (setting: SettingName, value: boolean) => void = () => {},
 ): [React$Node, React$Node] {
   const {
+    measureTypingPerf,
     isRichText,
     isCharLimit,
     isCharLimitUtf8,
@@ -36,6 +37,11 @@ function useSettings(
 
   const switches = showSettings ? (
     <div className="switches">
+      <Switch
+        onClick={() => onChange('measureTypingPerf', !measureTypingPerf)}
+        checked={measureTypingPerf}
+        text="Measure Perf"
+      />
       <Switch
         onClick={() => onChange('showTreeView', !showTreeView)}
         checked={showTreeView}

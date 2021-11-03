@@ -36,8 +36,6 @@ module.exports = {
       'outline-react/useOutlineIsEmpty': 'outline-react/dist/useOutlineIsEmpty',
       'outline-react/useOutlineCharacterLimit':
         'outline-react/dist/useOutlineCharacterLimit',
-      'outline-react/useOutlineTypingPerformance':
-        'outline-react/dist/useOutlineTypingPerformance',
       //Shared
       'shared/environment': 'shared/dist/environment',
     },

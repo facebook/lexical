@@ -21,7 +21,7 @@ import {
 } from 'outline';
 import {createParagraphNode, ParagraphNode} from 'outline/ParagraphNode';
 import useOutlineRichText from 'outline-react/useOutlineRichText';
-import {getNodeByKey} from '../../core/OutlineUtils';
+import {getEditorStateTextContent, getNodeByKey} from '../../core/OutlineUtils';
 import {createTestBlockNode} from '../utils';
 
 describe('OutlineEditor tests', () => {
@@ -692,27 +692,6 @@ describe('OutlineEditor tests', () => {
         expect(parsedSelection.focus.key).toEqual(parsedText.__key);
       });
     });
-
-    it('getCurrentTextContent()', async () => {
-      editor.update((state: State) => {
-        const root = state.getRoot();
-        const paragraph = createParagraphNode();
-        const text1 = createTextNode('1');
-        root.append(paragraph);
-        paragraph.append(text1);
-      });
-      editor.update((state: State) => {
-        const root = state.getRoot();
-        const paragraph = root.getFirstChild();
-        const text2 = createTextNode('2');
-        paragraph.append(text2);
-      });
-
-      expect(editor.getCurrentTextContent()).toBe('');
-
-      await Promise.resolve();
-      expect(editor.getCurrentTextContent()).toBe('12');
-    });
   });
 
   describe('Node children', () => {
@@ -781,7 +760,9 @@ describe('OutlineEditor tests', () => {
             textToKey.set(previousText, textNode.__key);
           }
         });
-        expect(editor.getCurrentTextContent()).toBe(previous.join(''));
+        expect(getEditorStateTextContent(editor.getEditorState())).toBe(
+          previous.join(''),
+        );
 
         // Next editor state
         const previousSet = new Set(previous);
@@ -815,7 +796,9 @@ describe('OutlineEditor tests', () => {
           });
         });
         // Expect text content + HTML to be correct
-        expect(editor.getCurrentTextContent()).toBe(next.join(''));
+        expect(getEditorStateTextContent(editor.getEditorState())).toBe(
+          next.join(''),
+        );
         expect(container.innerHTML).toBe(
           `<div contenteditable="true" data-outline-editor="true"><p>${
             next.length > 0

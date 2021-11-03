@@ -19,7 +19,7 @@ import type {
 import {BlockNode, isLeafNode, isTextNode, log} from 'outline';
 import {updateWithoutHistory} from 'outline/history';
 import {dfs} from 'outline/nodes';
-import {useEffect, useCallback} from 'react';
+import {useEffect} from 'react';
 
 type OptionalProps = {
   strlen?: (input: string) => number,
@@ -36,74 +36,85 @@ export function useCharacterLimit(
     remainingCharacters = (characters) => {},
   } = optional;
 
-  const execute = useCallback(() => {
-    const Segmenter = Intl.Segmenter;
-    let offsetUtf16 = 0;
-    let offset = 0;
-    const text = editor.getCurrentTextContent();
-    if (typeof Segmenter === 'function') {
-      const segmenter = new Segmenter();
-      const graphemes = segmenter.segment(text);
-      // eslint-disable-next-line no-for-of-loops/no-for-of-loops
-      for (const {segment: grapheme} of graphemes) {
-        const nextOffset = offset + strlen(grapheme);
-        if (nextOffset > maxCharacters) {
-          break;
-        }
-        offset = nextOffset;
-        offsetUtf16 += grapheme.length;
-      }
-    } else {
-      const codepoints = Array.from(text);
-      const codepointsLength = codepoints.length;
-      for (let i = 0; i < codepointsLength; i++) {
-        const codepoint = codepoints[i];
-        const nextOffset = offset + strlen(codepoint);
-        if (nextOffset > maxCharacters) {
-          break;
-        }
-        offset = nextOffset;
-        offsetUtf16 += codepoint.length;
-      }
-    }
-    updateWithoutHistory(editor, (state: State) => {
-      log('CharacterLimit');
-      wrapOverflowedNodes(state, offsetUtf16);
-    });
-  }, [editor, maxCharacters, strlen]);
-
   useEffect(() => {
     editor.registerNodeType('overflow', OverflowNode);
-    let textLength = strlen(editor.getCurrentTextContent());
-    let diff = maxCharacters - textLength;
-    remainingCharacters(diff);
-    execute();
-    let lastUtf16TextLength = null;
-    let lastTextLength = null;
-    return editor.addListener('update', ({dirty, dirtyNodes}) => {
-      const isComposing = editor.isComposing();
-      const text = editor.getCurrentTextContent();
-      const utf16TextLength = text.length;
-      const hasDirtyNodes = dirty && dirtyNodes.size > 0;
-      if (
-        isComposing ||
-        (utf16TextLength === lastUtf16TextLength && !hasDirtyNodes)
-      ) {
-        return;
+  }, [editor]);
+
+  useEffect(() => {
+    let text = '';
+    let lastComputedTextLength = 0;
+    const textContentListener = editor.addListener(
+      'textcontent',
+      (currentText: string) => {
+        text = currentText;
+      },
+    );
+    const updateListener = editor.addListener(
+      'update',
+      ({dirty, dirtyNodes}) => {
+        const isComposing = editor.isComposing();
+        const hasDirtyNodes = dirty && dirtyNodes.size > 0;
+        if (isComposing || !hasDirtyNodes) {
+          return;
+        }
+        const textLength = strlen(text);
+        const textLengthAboveThreshold =
+          textLength > maxCharacters ||
+          (lastComputedTextLength !== null &&
+            lastComputedTextLength > maxCharacters);
+        const diff = maxCharacters - textLength;
+        remainingCharacters(diff);
+        if (lastComputedTextLength === null || textLengthAboveThreshold) {
+          const offset = findOffset(text, maxCharacters, strlen);
+          updateWithoutHistory(editor, (state: State) => {
+            log('CharacterLimit');
+            wrapOverflowedNodes(state, offset);
+          });
+        }
+        lastComputedTextLength = textLength;
+      },
+    );
+    return () => {
+      textContentListener();
+      updateListener();
+    };
+  }, [editor, maxCharacters, remainingCharacters, strlen]);
+}
+
+function findOffset(
+  text: string,
+  maxCharacters: number,
+  strlen: (input: string) => number,
+): number {
+  const Segmenter = Intl.Segmenter;
+  let offsetUtf16 = 0;
+  let offset = 0;
+  if (typeof Segmenter === 'function') {
+    const segmenter = new Segmenter();
+    const graphemes = segmenter.segment(text);
+    // eslint-disable-next-line no-for-of-loops/no-for-of-loops
+    for (const {segment: grapheme} of graphemes) {
+      const nextOffset = offset + strlen(grapheme);
+      if (nextOffset > maxCharacters) {
+        break;
       }
-      textLength = strlen(editor.getCurrentTextContent());
-      const textLengthAboveThreshold =
-        textLength > maxCharacters ||
-        (lastTextLength !== null && lastTextLength > maxCharacters);
-      diff = maxCharacters - textLength;
-      remainingCharacters(diff);
-      if (lastTextLength === null || textLengthAboveThreshold || dirtyNodes) {
-        execute();
+      offset = nextOffset;
+      offsetUtf16 += grapheme.length;
+    }
+  } else {
+    const codepoints = Array.from(text);
+    const codepointsLength = codepoints.length;
+    for (let i = 0; i < codepointsLength; i++) {
+      const codepoint = codepoints[i];
+      const nextOffset = offset + strlen(codepoint);
+      if (nextOffset > maxCharacters) {
+        break;
       }
-      lastUtf16TextLength = utf16TextLength;
-      lastTextLength = textLength;
-    });
-  }, [editor, execute, maxCharacters, remainingCharacters, strlen]);
+      offset = nextOffset;
+      offsetUtf16 += codepoint.length;
+    }
+  }
+  return offsetUtf16;
 }
 
 function wrapOverflowedNodes(state: State, offset: number) {

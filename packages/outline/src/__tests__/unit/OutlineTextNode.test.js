@@ -6,6 +6,8 @@
  *
  */
 
+import type {State} from 'outline';
+
 import {
   IS_BOLD,
   IS_ITALIC,
@@ -21,7 +23,11 @@ import ReactTestUtils from 'react-dom/test-utils';
 import {createEditor, createTextNode, TextNode} from 'outline';
 
 import {createParagraphNode} from 'outline/ParagraphNode';
-import {getCompositionKey, setCompositionKey} from '../../core/OutlineUtils';
+import {
+  getCompositionKey,
+  getEditorStateTextContent,
+  setCompositionKey,
+} from '../../core/OutlineUtils';
 
 const editorConfig = Object.freeze({
   theme: {
@@ -104,7 +110,7 @@ describe('OutlineTextNode tests', () => {
     });
   }
 
-  describe('getTextContent()', () => {
+  describe('root.getTextContent()', () => {
     test('writable nodes', async () => {
       let nodeKey;
 
@@ -117,14 +123,19 @@ describe('OutlineTextNode tests', () => {
 
         state.getRoot().getFirstChild().append(textNode);
       });
-
-      expect(editor.getCurrentTextContent()).toBe('Text');
+      expect(
+        editor.getEditorState().read((state: State) => {
+          const root = state.getRoot();
+          return root.__cachedText;
+        }),
+      );
+      expect(getEditorStateTextContent(editor.getEditorState())).toBe('Text');
 
       // Make sure that the editor content is still set after further reconciliations
       await update((state) => {
         state.getNodeByKey(nodeKey).markDirty();
       });
-      expect(editor.getCurrentTextContent()).toBe('Text');
+      expect(getEditorStateTextContent(editor.getEditorState())).toBe('Text');
     });
 
     test('inert nodes', async () => {
@@ -140,13 +151,13 @@ describe('OutlineTextNode tests', () => {
         state.getRoot().getFirstChild().append(textNode);
       });
 
-      expect(editor.getCurrentTextContent()).toBe('');
+      expect(getEditorStateTextContent(editor.getEditorState())).toBe('');
 
       // Make sure that the editor content is still empty after further reconciliations
       await update((state) => {
         state.getNodeByKey(nodeKey).markDirty();
       });
-      expect(editor.getCurrentTextContent()).toBe('');
+      expect(getEditorStateTextContent(editor.getEditorState())).toBe('');
     });
 
     test('prepend node', async () => {
@@ -164,7 +175,9 @@ describe('OutlineTextNode tests', () => {
         previousTextNode.insertBefore(textNode);
       });
 
-      expect(editor.getCurrentTextContent()).toBe('Hello World');
+      expect(getEditorStateTextContent(editor.getEditorState())).toBe(
+        'Hello World',
+      );
     });
   });
 

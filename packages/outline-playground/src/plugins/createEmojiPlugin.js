@@ -11,7 +11,7 @@ import type {OutlineComposerPlugin} from 'outline-react/OutlineComposer.react';
 
 import useEmojis from './../useEmojis';
 
-function EmojiPluginComponent({outlineProps: {editor}}): React$Node {
+function EmojiPluginComponent({outlineProps: {editor}}): null {
   useEmojis(editor);
   return null;
 }

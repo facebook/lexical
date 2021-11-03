@@ -14,6 +14,7 @@ import {useState, useMemo, useRef, useEffect} from 'react';
 import useOutlineEditor from './useOutlineEditor';
 import usePlainText from './useOutlinePlainText';
 import useOutlineDecorators from './useOutlineDecorators';
+import invariant from 'shared/invariant';
 
 // TODO: Make this configurable
 const editorStyle = {
@@ -28,6 +29,8 @@ export type OutlineComposerPluginProps = $ReadOnly<{|
   clearEditor: () => void,
   editor: OutlineEditor,
   containerElement: HTMLDivElement | null,
+  // Registers a clearEditor function in OutlineComposer, to be provided to plugins
+  registerClearEditorFn: (fn: () => void) => void,
 |}>;
 
 export type OutlineComposerPluginComponent<TProps> = ({
@@ -114,17 +117,42 @@ export default function OutlineComposer({
 }: OutlineComposerProps): React$Node {
   const [editor, rootElementRef, showPlaceholder] =
     useOutlineEditor(editorConfig);
-  const clearEditor = usePlainText(editor);
+
+  // TODO: There's probably a better way to do all this.
+  const [clearEditorObject, setClearEditorObject] = useState<{|
+    clearEditor: (() => void) | null,
+  |}>({
+    clearEditor: null,
+  });
+
+  const currentClearEditorFn =
+    clearEditorObject.clearEditor != null
+      ? clearEditorObject.clearEditor
+      : () => {
+          throw new Error('No clearEditor function registered');
+        };
+
   const decorators = useOutlineDecorators(editor);
   const composerContainerRef = useRef(null);
   const [composerContainerNode, setComposerContainerNode] =
     useState<HTMLDivElement | null>(null);
 
   // Configure plugins
-  const outlinePluginProps = useMemo(
-    () => ({editor, clearEditor, containerElement: composerContainerNode}),
-    [editor, clearEditor, composerContainerNode],
+  const outlinePluginProps: OutlineComposerPluginProps = useMemo(
+    () => ({
+      editor,
+      clearEditor: currentClearEditorFn,
+      containerElement: composerContainerNode,
+      registerClearEditorFn: (fn) => {
+        // Manually check to prevent infinite state update cycles, since this state is set by a child component
+        if (clearEditorObject.clearEditor !== fn) {
+          setClearEditorObject({clearEditor: fn});
+        }
+      },
+    }),
+    [editor, clearEditorObject, composerContainerNode],
   );
+
   // Does this need to be memoized? I don't think so.
   const pluginComponents: $ReadOnlyArray<React$Node> = plugins
     .filter(Boolean)

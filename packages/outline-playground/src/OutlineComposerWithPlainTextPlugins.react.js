@@ -7,8 +7,6 @@
  * @flow strict-local
  */
 
-import type {OutlineComposerPlugin} from 'outline-react/OutlineComposer.react';
-
 import * as React from 'react';
 import {useLayoutEffect, useMemo, useRef, useState} from 'react';
 import OutlineComposer from 'outline-react/OutlineComposer.react';
@@ -17,11 +15,13 @@ import createPlainTextActionButtonsPlugin from './plugins/createPlainTextActionB
 import createMentionsPlugin from './plugins/createMentionsPlugin';
 import createEmojiPlugin from './plugins/createEmojiPlugin';
 import createTreeViewPlugin from './plugins/createTreeViewPlugin';
+import createPlainTextPlugin from './plugins/createPlainTextPlugin';
 
 /**
  * TODO:
  * - Finish adding plugins for plain text: hashtags, keywords
  * - Add support for rich vs plain text as a plugin
+ * - Add tooling to prevent obvious mistakes like simultaneously providing rich and plain text plugins
  */
 
 function OutlineComposerWithPlainTextPlugins({
@@ -51,6 +51,7 @@ function OutlineComposerWithPlainTextPlugins({
 
   const plugins = useMemo(
     () => [
+      createPlainTextPlugin(),
       createEmojiPlugin(),
       createMentionsPlugin(),
       showTreeView ? createTreeViewPlugin(treeViewRenderNode) : null,

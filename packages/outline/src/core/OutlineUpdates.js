@@ -22,7 +22,7 @@ import {
 } from './OutlineSelection';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './OutlineConstants';
 import {resetEditor} from './OutlineEditor';
-import {initMutationObserver, flushMutations} from './OutlineMutations';
+import {initMutationObserver, flushRootMutations} from './OutlineMutations';
 import {
   EditorState,
   editorStateHasDirtySelection,
@@ -60,7 +60,7 @@ export type State = {
   setCompositionKey: (compositionKey: NodeKey | null) => void,
   getCompositionKey: () => null | NodeKey,
   getNearestNodeFromDOMNode: (dom: Node) => null | OutlineNode,
-  flushMutations: (mutations: Array<MutationRecord>) => void,
+  flushMutations: () => void,
 };
 
 export const state: State = {
@@ -84,13 +84,10 @@ export const state: State = {
   },
   getCompositionKey,
   getNearestNodeFromDOMNode,
-  flushMutations(mutations: Array<MutationRecord>): void {
+  flushMutations(): void {
     errorOnReadOnly();
     const editor = getActiveEditor();
-    const observer = editor._observer;
-    if (observer !== null) {
-      flushMutations(editor, mutations, observer);
-    }
+    flushRootMutations(editor);
   },
 };
 

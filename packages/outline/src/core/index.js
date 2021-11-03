@@ -26,7 +26,7 @@ export type {
 export type {TextFormatType} from './OutlineTextNode';
 export type {LineBreakNode} from './OutlineLineBreakNode';
 
-import {createEditor, getEditorFromElement} from './OutlineEditor';
+import {createEditor} from './OutlineEditor';
 import {createTextNode, isTextNode, TextNode} from './OutlineTextNode';
 import {isBlockNode, BlockNode} from './OutlineBlockNode';
 import {createRootNode, isRootNode, RootNode} from './OutlineRootNode';
@@ -39,7 +39,6 @@ import {createNodeFromParse} from './OutlineParsing';
 export {
   createSelection,
   createEditor,
-  getEditorFromElement,
   // Node factories
   createLineBreakNode,
   createRootNode,

@@ -16,14 +16,14 @@ import {isBlank} from 'outline/validation';
 /**
  * DEPRECATED. Use useOutlineIsBlank
  */
-export default function useCometOutlineIsEmpty(editor: OutlineEditor): boolean {
-  const [isCurrentlyEmpty, setIsEmpty] = useState(true);
+export default function useCometOutlineIsBlank(editor: OutlineEditor): boolean {
+  const [isCurrentlyBlank, setIsBlank] = useState(true);
 
   useLayoutEffect(() => {
     return editor.addListener('update', ({editorState}) => {
       const isComposing = editor.isComposing();
-      setIsEmpty(isBlank(editorState, isComposing));
+      setIsBlank(isBlank(editorState, isComposing));
     });
   }, [editor]);
-  return isCurrentlyEmpty;
+  return isCurrentlyBlank;
 }

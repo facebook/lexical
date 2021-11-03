@@ -33,6 +33,7 @@ module.name_mapper='^outline/keys' -> '<PROJECT_ROOT>/packages/outline/src/helpe
 module.name_mapper='^outline/nodes' -> '<PROJECT_ROOT>/packages/outline/src/helpers/OutlineNodeHelpers.js'
 module.name_mapper='^outline/events' -> '<PROJECT_ROOT>/packages/outline/src/helpers/OutlineEventHelpers.js'
 module.name_mapper='^outline/offsets' -> '<PROJECT_ROOT>/packages/outline/src/helpers/OutlineOffsetHelpers.js'
+module.name_mapper='^outline/validation' -> '<PROJECT_ROOT>/packages/outline/src/helpers/OutlineValidationHelpers.js'
 
 module.name_mapper='^outline-react/OutlineTreeView' -> '<PROJECT_ROOT>/packages/outline-react/src/OutlineTreeView.js'
 module.name_mapper='^outline-react/useOutlineEditor' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlineEditor.js'

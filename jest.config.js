@@ -49,6 +49,8 @@ module.exports = {
           '<rootDir>/packages/outline/src/helpers/OutlineNodeHelpers.js',
         '^outline/events$':
           '<rootDir>/packages/outline/src/helpers/OutlineEventHelpers.js',
+        '^outline/validation$':
+          '<rootDir>/packages/outline/src/helpers/OutlineValidationHelpers.js',
         '^shared/getDOMTextNodeFromElement$':
           '<rootDir>/packages/shared/src/getDOMTextNodeFromElement.js',
         '^shared/isImmutableOrInert$':

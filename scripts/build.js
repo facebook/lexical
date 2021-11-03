@@ -172,6 +172,12 @@ async function build(name, inputFile, outputFile) {
               'packages/outline/src/helpers/OutlineOffsetHelpers',
             ),
           },
+          {
+            find: isWWW ? 'Outline/validation' : 'outline/validation',
+            replacement: path.resolve(
+              'packages/outline/src/helpers/OutlineValidationHelpers',
+            ),
+          },
         ],
       }),
       // Extract error codes from invariant() messages into a file.

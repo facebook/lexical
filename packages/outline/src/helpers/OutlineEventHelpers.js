@@ -110,10 +110,14 @@ function insertDataTransferForRichText(
   );
 
   if (outlineNodesString) {
-    const nodeRange = JSON.parse(outlineNodesString);
-    const nodes = generateNodes(nodeRange, state);
-    insertNodes(selection, nodes);
-    return;
+    try {
+      const nodeRange = JSON.parse(outlineNodesString);
+      const nodes = generateNodes(nodeRange, state);
+      insertNodes(selection, nodes);
+      return;
+    } catch (e) {
+      // Malformed, missing nodes..
+    }
   }
   insertDataTransferForPlainText(dataTransfer, selection, state);
 }

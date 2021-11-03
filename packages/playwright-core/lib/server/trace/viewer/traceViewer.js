@@ -46,16 +46,17 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  */
 async function showTraceViewer(traceUrl, browserName, headless = false, port) {
   const server = new _httpServer.HttpServer();
-  server.routePath('/file', (request, response) => {
-    try {
-      const path = new URL('http://localhost' + request.url).searchParams.get('path');
-      return server.serveFile(response, path);
-    } catch (e) {
-      return false;
+  server.routePrefix('/trace', (request, response) => {
+    const url = new URL('http://localhost' + request.url);
+    const relativePath = url.pathname.slice('/trace'.length);
+
+    if (relativePath.startsWith('/file')) {
+      try {
+        return server.serveFile(response, url.searchParams.get('path'));
+      } catch (e) {
+        return false;
+      }
     }
-  });
-  server.routePrefix('/', (request, response) => {
-    const relativePath = new URL('http://localhost' + request.url).pathname;
 
     const absolutePath = _path.default.join(__dirname, '..', '..', '..', 'webpack', 'traceViewer', ...relativePath.split('/'));
 
@@ -82,6 +83,6 @@ async function showTraceViewer(traceUrl, browserName, headless = false, port) {
   const [page] = context.pages();
   if (traceViewerBrowser === 'chromium') await (0, _crApp.installAppIcon)(page);
   if ((0, _utils.isUnderTest)()) page.on('close', () => context.close((0, _instrumentation.internalCallMetadata)()).catch(() => {}));else page.on('close', () => process.exit());
-  await page.mainFrame().goto((0, _instrumentation.internalCallMetadata)(), urlPrefix + `/index.html?trace=${traceUrl}`);
+  await page.mainFrame().goto((0, _instrumentation.internalCallMetadata)(), urlPrefix + `/trace/index.html${traceUrl ? '?trace=' + traceUrl : ''}`);
   return context;
 }

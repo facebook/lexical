@@ -254,6 +254,8 @@ class FFPage {
 
     const context = this._contextIdToContext.get(executionContextId);
 
+    if (!context) return;
+
     this._page._addConsoleMessage(type, args.map(arg => context.createHandle(arg)), location);
   }
 
@@ -268,10 +270,13 @@ class FFPage {
   }
 
   async _onBindingCalled(event) {
-    const context = this._contextIdToContext.get(event.executionContextId);
-
     const pageOrError = await this.pageOrError();
-    if (!(pageOrError instanceof Error)) await this._page._onBindingCalled(event.payload, context);
+
+    if (!(pageOrError instanceof Error)) {
+      const context = this._contextIdToContext.get(event.executionContextId);
+
+      if (context) await this._page._onBindingCalled(event.payload, context);
+    }
   }
 
   async _onFileChooserOpened(payload) {
@@ -282,6 +287,7 @@ class FFPage {
 
     const context = this._contextIdToContext.get(executionContextId);
 
+    if (!context) return;
     const handle = context.createHandle(element).asElement();
     await this._page._onFileChooserOpened(handle);
   }
@@ -579,10 +585,13 @@ class FFPage {
 
   _onScreencastFrame(event) {
     if (!this._screencastId) return;
+    const screencastId = this._screencastId;
 
-    this._session.send('Page.screencastFrameAck', {
-      screencastId: this._screencastId
-    }).catch(e => _debugLogger.debugLogger.log('error', e));
+    this._page.throttleScreencastFrameAck(() => {
+      this._session.send('Page.screencastFrameAck', {
+        screencastId
+      }).catch(e => _debugLogger.debugLogger.log('error', e));
+    });
 
     const buffer = Buffer.from(event.data, 'base64');
 

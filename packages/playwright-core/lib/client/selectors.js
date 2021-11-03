@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.sharedSelectors = exports.SelectorsOwner = exports.Selectors = void 0;
+exports.SelectorsOwner = exports.Selectors = void 0;
 
 var _clientHelper = require("./clientHelper");
 
@@ -67,5 +67,3 @@ class SelectorsOwner extends _channelOwner.ChannelOwner {
 }
 
 exports.SelectorsOwner = SelectorsOwner;
-const sharedSelectors = new Selectors();
-exports.sharedSelectors = sharedSelectors;

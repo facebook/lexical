@@ -3,11 +3,13 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.commandsWithTracingSnapshots = exports.PersistentSnapshotStorage = exports.TraceModel = void 0;
+exports.PersistentSnapshotStorage = exports.TraceModel = void 0;
 
 var trace = _interopRequireWildcard(require("../../server/trace/common/traceEvents"));
 
 var _snapshotStorage = require("./snapshotStorage");
+
+var _entries = require("./entries");
 
 function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 
@@ -39,28 +41,21 @@ class TraceModel {
     this._snapshotStorage = void 0;
     this._entries = new Map();
     this._version = void 0;
-    this.contextEntry = {
-      startTime: Number.MAX_VALUE,
-      endTime: Number.MIN_VALUE,
-      browserName: '',
-      options: {},
-      pages: [],
-      resources: []
-    };
+    this.contextEntry = (0, _entries.createEmptyContext)();
   }
 
-  async load(traceURL) {
-    const response = await fetch(traceURL, {
+  async load(traceURL, progress) {
+    const zipReader = new zipjs.ZipReader(new zipjs.HttpReader(traceURL, {
       mode: 'cors'
-    });
-    const blob = await response.blob();
-    const zipReader = new zipjs.ZipReader(new zipjs.BlobReader(blob), {
+    }), {
       useWebWorkers: false
     });
     let traceEntry;
     let networkEntry;
 
-    for (const entry of await zipReader.getEntries()) {
+    for (const entry of await zipReader.getEntries({
+      onprogress: progress
+    })) {
       if (entry.filename.endsWith('.trace')) traceEntry = entry;
       if (entry.filename.endsWith('.network')) networkEntry = entry;
 
@@ -97,8 +92,7 @@ class TraceModel {
   }
 
   _build() {
-    for (const page of this.contextEntry.pages) page.actions.sort((a1, a2) => a1.metadata.startTime - a2.metadata.startTime);
-
+    this.contextEntry.actions.sort((a1, a2) => a1.metadata.startTime - a2.metadata.startTime);
     this.contextEntry.resources = this._snapshotStorage.resources();
   }
 
@@ -107,9 +101,6 @@ class TraceModel {
 
     if (!pageEntry) {
       pageEntry = {
-        actions: [],
-        events: [],
-        objects: {},
         screencastFrames: []
       };
       this.pageEntries.set(pageId, pageEntry);
@@ -128,6 +119,7 @@ class TraceModel {
       case 'context-options':
         {
           this.contextEntry.browserName = event.browserName;
+          this.contextEntry.title = event.title;
           this.contextEntry.options = event.options;
           break;
         }
@@ -141,9 +133,13 @@ class TraceModel {
 
       case 'action':
         {
-          const metadata = event.metadata;
-          const include = event.hasSnapshot;
-          if (include && metadata.pageId) this._pageEntry(metadata.pageId).actions.push(event);
+          const include = !isTracing(event.metadata) && (!event.metadata.internal || event.metadata.apiName);
+
+          if (include) {
+            if (!event.metadata.apiName) event.metadata.apiName = event.metadata.type + '.' + event.metadata.method;
+            this.contextEntry.actions.push(event);
+          }
+
           break;
         }
 
@@ -152,7 +148,7 @@ class TraceModel {
           const metadata = event.metadata;
 
           if (metadata.pageId) {
-            if (metadata.method === '__create__') this._pageEntry(metadata.pageId).objects[metadata.params.guid] = metadata.params.initializer;else this._pageEntry(metadata.pageId).events.push(event);
+            if (metadata.method === '__create__') this.contextEntry.objects[metadata.params.guid] = metadata.params.initializer;else this.contextEntry.events.push(event);
           }
 
           break;
@@ -191,7 +187,6 @@ class TraceModel {
           message: event.metadata.error
         }
       };
-      if (event.metadata && typeof event.hasSnapshot !== 'boolean') event.hasSnapshot = commandsWithTracingSnapshots.has(event.metadata);
     }
 
     return event;
@@ -257,9 +252,10 @@ class PersistentSnapshotStorage extends _snapshotStorage.BaseSnapshotStorage {
     return writer.getData();
   }
 
-} // Prior to version 2 we did not have a hasSnapshot bit on.
-
+}
 
 exports.PersistentSnapshotStorage = PersistentSnapshotStorage;
-const commandsWithTracingSnapshots = new Set(['EventTarget.waitForEventInfo', 'BrowserContext.waitForEventInfo', 'Page.waitForEventInfo', 'WebSocket.waitForEventInfo', 'ElectronApplication.waitForEventInfo', 'AndroidDevice.waitForEventInfo', 'Page.goBack', 'Page.goForward', 'Page.reload', 'Page.setViewportSize', 'Page.keyboardDown', 'Page.keyboardUp', 'Page.keyboardInsertText', 'Page.keyboardType', 'Page.keyboardPress', 'Page.mouseMove', 'Page.mouseDown', 'Page.mouseUp', 'Page.mouseClick', 'Page.mouseWheel', 'Page.touchscreenTap', 'Frame.evalOnSelector', 'Frame.evalOnSelectorAll', 'Frame.addScriptTag', 'Frame.addStyleTag', 'Frame.check', 'Frame.click', 'Frame.dragAndDrop', 'Frame.dblclick', 'Frame.dispatchEvent', 'Frame.evaluateExpression', 'Frame.evaluateExpressionHandle', 'Frame.fill', 'Frame.focus', 'Frame.getAttribute', 'Frame.goto', 'Frame.hover', 'Frame.innerHTML', 'Frame.innerText', 'Frame.inputValue', 'Frame.isChecked', 'Frame.isDisabled', 'Frame.isEnabled', 'Frame.isHidden', 'Frame.isVisible', 'Frame.isEditable', 'Frame.press', 'Frame.selectOption', 'Frame.setContent', 'Frame.setInputFiles', 'Frame.tap', 'Frame.textContent', 'Frame.type', 'Frame.uncheck', 'Frame.waitForTimeout', 'Frame.waitForFunction', 'Frame.waitForSelector', 'Frame.expect', 'JSHandle.evaluateExpression', 'ElementHandle.evaluateExpression', 'JSHandle.evaluateExpressionHandle', 'ElementHandle.evaluateExpressionHandle', 'ElementHandle.evalOnSelector', 'ElementHandle.evalOnSelectorAll', 'ElementHandle.check', 'ElementHandle.click', 'ElementHandle.dblclick', 'ElementHandle.dispatchEvent', 'ElementHandle.fill', 'ElementHandle.hover', 'ElementHandle.innerHTML', 'ElementHandle.innerText', 'ElementHandle.inputValue', 'ElementHandle.isChecked', 'ElementHandle.isDisabled', 'ElementHandle.isEditable', 'ElementHandle.isEnabled', 'ElementHandle.isHidden', 'ElementHandle.isVisible', 'ElementHandle.press', 'ElementHandle.scrollIntoViewIfNeeded', 'ElementHandle.selectOption', 'ElementHandle.selectText', 'ElementHandle.setInputFiles', 'ElementHandle.tap', 'ElementHandle.textContent', 'ElementHandle.type', 'ElementHandle.uncheck', 'ElementHandle.waitForElementState', 'ElementHandle.waitForSelector']);
-exports.commandsWithTracingSnapshots = commandsWithTracingSnapshots;
+
+function isTracing(metadata) {
+  return metadata.method.startsWith('tracing');
+}

@@ -74,14 +74,6 @@ class FrameExecutionContext extends js.ExecutionContext {
     , expression, isFunction, arg);
   }
 
-  async evaluateAndWaitForSignals(pageFunction, arg) {
-    return await this.frame._page._frameManager.waitForSignalsCreatedBy(null, false
-    /* noWaitFor */
-    , async () => {
-      return this.evaluate(pageFunction, arg);
-    });
-  }
-
   async evaluateExpressionAndWaitForSignals(expression, isFunction, arg) {
     return await this.frame._page._frameManager.waitForSignalsCreatedBy(null, false
     /* noWaitFor */
@@ -118,7 +110,6 @@ class FrameExecutionContext extends js.ExecutionContext {
         ${injectedScriptSource.source}
         return new pwExport(
           ${this.frame._page._delegate.rafCountForStablePosition()},
-          ${!!process.env.PWTEST_USE_TIMEOUT_FOR_RAF},
           "${this.frame._page._browserContext._browser.options.name}",
           [${custom.join(',\n')}]
         );
@@ -157,11 +148,6 @@ class ElementHandle extends js.JSHandle {
     return this;
   }
 
-  async _evaluateInMainAndWaitForSignals(pageFunction, arg) {
-    const main = await this._context.frame._mainContext();
-    return main.evaluateAndWaitForSignals(pageFunction, [await main.injectedScript(), this, arg]);
-  }
-
   async evaluateInUtility(pageFunction, arg) {
     try {
       const utility = await this._context.frame._utilityContext();
@@ -176,6 +162,18 @@ class ElementHandle extends js.JSHandle {
     try {
       const utility = await this._context.frame._utilityContext();
       return await utility.evaluateHandle(pageFunction, [await utility.injectedScript(), this, arg]);
+    } catch (e) {
+      if (js.isJavaScriptErrorInEvaluate(e) || (0, _protocolError.isSessionClosedError)(e)) throw e;
+      return 'error:notconnected';
+    }
+  }
+
+  async evaluatePoll(progress, pageFunction, arg) {
+    try {
+      const utility = await this._context.frame._utilityContext();
+      const poll = await utility.evaluateHandle(pageFunction, [await utility.injectedScript(), this, arg]);
+      const pollHandler = new InjectedScriptPollHandler(progress, poll);
+      return await pollHandler.finish();
     } catch (e) {
       if (js.isJavaScriptErrorInEvaluate(e) || (0, _protocolError.isSessionClosedError)(e)) throw e;
       return 'error:notconnected';
@@ -255,12 +253,17 @@ class ElementHandle extends js.JSHandle {
   }
 
   async dispatchEvent(type, eventInit = {}) {
-    await this._evaluateInMainAndWaitForSignals(([injected, node, {
-      type,
-      eventInit
-    }]) => injected.dispatchEvent(node, type, eventInit), {
-      type,
-      eventInit
+    const main = await this._context.frame._mainContext();
+    await this._page._frameManager.waitForSignalsCreatedBy(null, false
+    /* noWaitFor */
+    , async () => {
+      return main.evaluate(([injected, node, {
+        type,
+        eventInit
+      }]) => injected.dispatchEvent(node, type, eventInit), [await main.injectedScript(), this, {
+        type,
+        eventInit
+      }]);
     });
     await this._page._doSlowMo();
   }
@@ -545,7 +548,7 @@ class ElementHandle extends js.JSHandle {
       progress.throwIfAborted(); // Avoid action that has side-effects.
 
       progress.log('  selecting specified option(s)');
-      const poll = await this.evaluateHandleInUtility(([injected, node, {
+      const result = await this.evaluatePoll(progress, ([injected, node, {
         optionsToSelect,
         force
       }]) => {
@@ -554,9 +557,6 @@ class ElementHandle extends js.JSHandle {
         optionsToSelect,
         force: options.force
       });
-      if (poll === 'error:notconnected') return poll;
-      const pollHandler = new InjectedScriptPollHandler(progress, poll);
-      const result = await pollHandler.finish();
       await this._page._doSlowMo();
       return result;
     });
@@ -575,7 +575,7 @@ class ElementHandle extends js.JSHandle {
     await progress.beforeInputAction(this);
     return this._page._frameManager.waitForSignalsCreatedBy(progress, options.noWaitAfter, async () => {
       progress.log('  waiting for element to be visible, enabled and editable');
-      const poll = await this.evaluateHandleInUtility(([injected, node, {
+      const filled = await this.evaluatePoll(progress, ([injected, node, {
         value,
         force
       }]) => {
@@ -584,9 +584,6 @@ class ElementHandle extends js.JSHandle {
         value,
         force: options.force
       });
-      if (poll === 'error:notconnected') return poll;
-      const pollHandler = new InjectedScriptPollHandler(progress, poll);
-      const filled = await pollHandler.finish();
       progress.throwIfAborted(); // Avoid action that has side-effects.
 
       if (filled === 'error:notconnected') return filled;
@@ -609,11 +606,9 @@ class ElementHandle extends js.JSHandle {
     return controller.run(async progress => {
       progress.throwIfAborted(); // Avoid action that has side-effects.
 
-      const poll = await this.evaluateHandleInUtility(([injected, node, force]) => {
+      const result = await this.evaluatePoll(progress, ([injected, node, force]) => {
         return injected.waitForElementStatesAndPerformAction(node, ['visible'], force, injected.selectText.bind(injected));
       }, options.force);
-      const pollHandler = new InjectedScriptPollHandler(progress, throwRetargetableDOMError(poll));
-      const result = await pollHandler.finish();
       assertDone(throwRetargetableDOMError(result));
     }, this._page._timeoutSettings.timeout(options));
   }
@@ -631,15 +626,15 @@ class ElementHandle extends js.JSHandle {
       if (!payload.mimeType) payload.mimeType = mime.getType(payload.name) || 'application/octet-stream';
     }
 
-    const retargeted = await this.evaluateHandleInUtility(([injected, node, multiple]) => {
+    const result = await this.evaluateHandleInUtility(([injected, node, multiple]) => {
       const element = injected.retarget(node, 'follow-label');
-      if (!element) return 'error:notconnected';
+      if (!element) return;
       if (element.tagName !== 'INPUT') throw injected.createStacklessError('Node is not an HTMLInputElement');
       if (multiple && !element.multiple) throw injected.createStacklessError('Non-multiple file input can only accept single file');
       return element;
     }, files.length > 1);
-    if (retargeted === 'error:notconnected') return retargeted;
-    if (!retargeted._objectId) return retargeted.rawValue();
+    if (result === 'error:notconnected' || !result.asElement()) return 'error:notconnected';
+    const retargeted = result.asElement();
     await progress.beforeInputAction(this);
     await this._page._frameManager.waitForSignalsCreatedBy(progress, options.noWaitAfter, async () => {
       progress.throwIfAborted(); // Avoid action that has side-effects.
@@ -812,11 +807,10 @@ class ElementHandle extends js.JSHandle {
     const controller = new _progress.ProgressController(metadata, this);
     return controller.run(async progress => {
       progress.log(`  waiting for element to be ${state}`);
-      const poll = await this.evaluateHandleInUtility(([injected, node, state]) => {
+      const result = await this.evaluatePoll(progress, ([injected, node, state]) => {
         return injected.waitForElementStatesAndPerformAction(node, [state], false, () => 'done');
       }, state);
-      const pollHandler = new InjectedScriptPollHandler(progress, throwRetargetableDOMError(poll));
-      assertDone(throwRetargetableDOMError(await pollHandler.finish()));
+      assertDone(throwRetargetableDOMError(result));
     }, this._page._timeoutSettings.timeout(options));
   }
 
@@ -859,7 +853,7 @@ class ElementHandle extends js.JSHandle {
 
   async _waitForDisplayedAtStablePosition(progress, force, waitForEnabled) {
     if (waitForEnabled) progress.log(`  waiting for element to be visible, enabled and stable`);else progress.log(`  waiting for element to be visible and stable`);
-    const poll = await this.evaluateHandleInUtility(([injected, node, {
+    const result = await this.evaluatePoll(progress, ([injected, node, {
       waitForEnabled,
       force
     }]) => {
@@ -868,9 +862,7 @@ class ElementHandle extends js.JSHandle {
       waitForEnabled,
       force
     });
-    if (poll === 'error:notconnected') return poll;
-    const pollHandler = new InjectedScriptPollHandler(progress, poll);
-    const result = await pollHandler.finish();
+    if (result === 'error:notconnected') return result;
     if (waitForEnabled) progress.log('  element is visible, enabled and stable');else progress.log('  element is visible and stable');
     return result;
   }
@@ -937,9 +929,6 @@ class InjectedScriptPollHandler {
       const result = await this._poll.evaluate(poll => poll.run());
       await this._finishInternal();
       return result;
-    } catch (e) {
-      if (js.isJavaScriptErrorInEvaluate(e) || (0, _protocolError.isSessionClosedError)(e)) throw e;
-      return 'error:notconnected';
     } finally {
       await this.cancel();
     }
@@ -1007,7 +996,7 @@ function waitForSelectorTask(selector, state, omitReturnValue, root) {
     root
   }) => {
     let lastElement;
-    return injected.pollRaf((progress, continuePolling) => {
+    return injected.pollRaf(progress => {
       const elements = injected.querySelectorAll(parsed, root || document);
       let element = elements[0];
       const visible = element ? injected.isVisible(element) : false;
@@ -1032,16 +1021,16 @@ function waitForSelectorTask(selector, state, omitReturnValue, root) {
 
       switch (state) {
         case 'attached':
-          return hasElement ? element : continuePolling;
+          return hasElement ? element : progress.continuePolling;
 
         case 'detached':
-          return !hasElement ? undefined : continuePolling;
+          return !hasElement ? undefined : progress.continuePolling;
 
         case 'visible':
-          return visible ? element : continuePolling;
+          return visible ? element : progress.continuePolling;
 
         case 'hidden':
-          return !visible ? undefined : continuePolling;
+          return !visible ? undefined : progress.continuePolling;
       }
     });
   }, {

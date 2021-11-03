@@ -86,6 +86,7 @@ class Page extends _instrumentation.SdkObject {
     this._pageIsError = void 0;
     this._video = null;
     this._opener = void 0;
+    this._frameThrottler = new FrameThrottler(10, 200);
     this.attribution.page = this;
     this._delegate = delegate;
     this._browserContext = browserContext;
@@ -150,6 +151,8 @@ class Page extends _instrumentation.SdkObject {
   _didClose() {
     this._frameManager.dispose();
 
+    this._frameThrottler.setEnabled(false);
+
     (0, _utils.assert)(this._closedState !== 'closed', 'Page closed twice');
     this._closedState = 'closed';
     this.emit(Page.Events.Close);
@@ -160,6 +163,8 @@ class Page extends _instrumentation.SdkObject {
   _didCrash() {
     this._frameManager.dispose();
 
+    this._frameThrottler.setEnabled(false);
+
     this.emit(Page.Events.Crash);
 
     this._crashedPromise.resolve(new Error('Page crashed'));
@@ -167,6 +172,8 @@ class Page extends _instrumentation.SdkObject {
 
   _didDisconnect() {
     this._frameManager.dispose();
+
+    this._frameThrottler.setEnabled(false);
 
     (0, _utils.assert)(!this._disconnected, 'Page disconnected twice');
     this._disconnected = true;
@@ -447,6 +454,17 @@ class Page extends _instrumentation.SdkObject {
 
   setScreencastOptions(options) {
     this._delegate.setScreencastOptions(options).catch(e => _debugLogger.debugLogger.log('error', e));
+
+    this._frameThrottler.setEnabled(!!options);
+  }
+
+  throttleScreencastFrameAck(ack) {
+    // Don't ack immediately, tracing has smart throttling logic that is implemented here.
+    this._frameThrottler.ack(ack);
+  }
+
+  temporarlyDisableTracingScreencastThrottling() {
+    this._frameThrottler.recharge();
   }
 
   firePageError(error) {
@@ -659,4 +677,59 @@ function addPageBinding(bindingName, needsHandle) {
   };
 
   globalThis[bindingName].__installed = true;
+}
+
+class FrameThrottler {
+  constructor(nonThrottledFrames, interval) {
+    this._acks = [];
+    this._interval = void 0;
+    this._nonThrottledFrames = void 0;
+    this._budget = void 0;
+    this._intervalId = void 0;
+    this._nonThrottledFrames = nonThrottledFrames;
+    this._budget = nonThrottledFrames;
+    this._interval = interval;
+  }
+
+  setEnabled(enabled) {
+    if (enabled) {
+      if (this._intervalId) clearInterval(this._intervalId);
+      this._intervalId = setInterval(() => this._tick(), this._interval);
+    } else if (this._intervalId) {
+      clearInterval(this._intervalId);
+      this._intervalId = undefined;
+    }
+  }
+
+  recharge() {
+    // Send all acks, reset budget.
+    for (const ack of this._acks) ack();
+
+    this._acks = [];
+    this._budget = this._nonThrottledFrames;
+  }
+
+  ack(ack) {
+    // Either not engaged or video is also recording, don't throttle.
+    if (!this._intervalId) {
+      ack();
+      return;
+    } // Do we have enough budget to respond w/o throttling?
+
+
+    if (--this._budget > 0) {
+      ack();
+      return;
+    } // Schedule.
+
+
+    this._acks.push(ack);
+  }
+
+  _tick() {
+    var _this$_acks$shift;
+
+    (_this$_acks$shift = this._acks.shift()) === null || _this$_acks$shift === void 0 ? void 0 : _this$_acks$shift();
+  }
+
 }

@@ -84,12 +84,18 @@ class BrowserContext extends _instrumentation.SdkObject {
     this._options = options;
     this._browserContextId = browserContextId;
     this._isPersistentContext = !browserContextId;
-    this._closePromise = new Promise(fulfill => this._closePromiseFulfill = fulfill);
+    this._closePromise = new Promise(fulfill => this._closePromiseFulfill = fulfill); // Create instrumentation per context.
+
+    this.instrumentation = (0, _instrumentation.createInstrumentation)();
     if (this._options.recordHar) this._harRecorder = new _harRecorder.HarRecorder(this, { ...this._options.recordHar,
       path: _path.default.join(this._browser.options.artifactsDir, `${(0, _utils.createGuid)()}.har`)
     });
     this.tracing = new _tracing.Tracing(this);
     this.fetchRequest = new _fetch.BrowserContextFetchRequest(this);
+  }
+
+  isPersistentContext() {
+    return this._isPersistentContext;
   }
 
   _setSelectors(selectors) {
@@ -101,9 +107,7 @@ class BrowserContext extends _instrumentation.SdkObject {
   }
 
   async _initialize() {
-    if (this.attribution.isInternal) return; // Create instrumentation per context.
-
-    this.instrumentation = (0, _instrumentation.createInstrumentation)(); // Debugger will pause execution upon page.pause in headed mode.
+    if (this.attribution.isInternal) return; // Debugger will pause execution upon page.pause in headed mode.
 
     const contextDebugger = new _debugger.Debugger(this);
     this.instrumentation.addListener(contextDebugger); // When PWDEBUG=1, show inspector for each context.
@@ -465,7 +469,6 @@ function validateBrowserContextOptions(options, browserOptions) {
 
   if ((0, _utils.debugMode)() === 'inspector') options.bypassCSP = true;
   verifyGeolocation(options.geolocation);
-  if (!options._debugName) options._debugName = (0, _utils.createGuid)();
 }
 
 function verifyGeolocation(geolocation) {

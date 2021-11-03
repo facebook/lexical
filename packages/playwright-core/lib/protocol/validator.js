@@ -54,7 +54,8 @@ function createScheme(tChannel) {
   });
   scheme.Metadata = (0, _validatorPrimitives.tObject)({
     stack: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tArray)(tType('StackFrame'))),
-    apiName: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tString)
+    apiName: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tString),
+    internal: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBoolean)
   });
   scheme.Point = (0, _validatorPrimitives.tObject)({
     x: _validatorPrimitives.tNumber,
@@ -169,12 +170,6 @@ function createScheme(tChannel) {
       buffer: _validatorPrimitives.tBinary
     }))
   });
-  scheme.InterceptedResponse = (0, _validatorPrimitives.tObject)({
-    request: tChannel('Request'),
-    status: _validatorPrimitives.tNumber,
-    statusText: _validatorPrimitives.tString,
-    headers: (0, _validatorPrimitives.tArray)(tType('NameValue'))
-  });
   scheme.FetchRequestFetchParams = (0, _validatorPrimitives.tObject)({
     url: _validatorPrimitives.tString,
     params: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tArray)(tType('NameValue'))),
@@ -203,6 +198,7 @@ function createScheme(tChannel) {
     statusText: _validatorPrimitives.tString,
     headers: (0, _validatorPrimitives.tArray)(tType('NameValue'))
   });
+  scheme.LifecycleEvent = (0, _validatorPrimitives.tEnum)(['load', 'domcontentloaded', 'networkidle', 'commit']);
   scheme.RootInitializeParams = (0, _validatorPrimitives.tObject)({
     sdkLanguage: _validatorPrimitives.tString
   });
@@ -340,7 +336,6 @@ function createScheme(tChannel) {
     forcedColors: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tEnum)(['active', 'none'])),
     acceptDownloads: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBoolean),
     baseURL: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tString),
-    _debugName: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tString),
     recordVideo: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({
       dir: _validatorPrimitives.tString,
       size: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({
@@ -400,7 +395,6 @@ function createScheme(tChannel) {
     forcedColors: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tEnum)(['active', 'none'])),
     acceptDownloads: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBoolean),
     baseURL: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tString),
-    _debugName: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tString),
     recordVideo: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({
       dir: _validatorPrimitives.tString,
       size: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({
@@ -468,10 +462,10 @@ function createScheme(tChannel) {
   });
   scheme.BrowserContextNewPageParams = (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({}));
   scheme.BrowserContextSetDefaultNavigationTimeoutNoReplyParams = (0, _validatorPrimitives.tObject)({
-    timeout: _validatorPrimitives.tNumber
+    timeout: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber)
   });
   scheme.BrowserContextSetDefaultTimeoutNoReplyParams = (0, _validatorPrimitives.tObject)({
-    timeout: _validatorPrimitives.tNumber
+    timeout: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber)
   });
   scheme.BrowserContextSetExtraHTTPHeadersParams = (0, _validatorPrimitives.tObject)({
     headers: (0, _validatorPrimitives.tArray)(tType('NameValue'))
@@ -516,17 +510,20 @@ function createScheme(tChannel) {
     snapshots: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBoolean),
     screenshots: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBoolean)
   });
-  scheme.BrowserContextTracingStartChunkParams = (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({}));
+  scheme.BrowserContextTracingStartChunkParams = (0, _validatorPrimitives.tObject)({
+    title: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tString)
+  });
   scheme.BrowserContextTracingStopChunkParams = (0, _validatorPrimitives.tObject)({
-    save: _validatorPrimitives.tBoolean
+    save: _validatorPrimitives.tBoolean,
+    skipCompress: _validatorPrimitives.tBoolean
   });
   scheme.BrowserContextTracingStopParams = (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({}));
   scheme.BrowserContextHarExportParams = (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({}));
   scheme.PageSetDefaultNavigationTimeoutNoReplyParams = (0, _validatorPrimitives.tObject)({
-    timeout: _validatorPrimitives.tNumber
+    timeout: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber)
   });
   scheme.PageSetDefaultTimeoutNoReplyParams = (0, _validatorPrimitives.tObject)({
-    timeout: _validatorPrimitives.tNumber
+    timeout: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber)
   });
   scheme.PageSetFileChooserInterceptedNoReplyParams = (0, _validatorPrimitives.tObject)({
     intercepted: _validatorPrimitives.tBoolean
@@ -549,15 +546,15 @@ function createScheme(tChannel) {
   });
   scheme.PageGoBackParams = (0, _validatorPrimitives.tObject)({
     timeout: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber),
-    waitUntil: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tEnum)(['load', 'domcontentloaded', 'networkidle']))
+    waitUntil: (0, _validatorPrimitives.tOptional)(tType('LifecycleEvent'))
   });
   scheme.PageGoForwardParams = (0, _validatorPrimitives.tObject)({
     timeout: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber),
-    waitUntil: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tEnum)(['load', 'domcontentloaded', 'networkidle']))
+    waitUntil: (0, _validatorPrimitives.tOptional)(tType('LifecycleEvent'))
   });
   scheme.PageReloadParams = (0, _validatorPrimitives.tObject)({
     timeout: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber),
-    waitUntil: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tEnum)(['load', 'domcontentloaded', 'networkidle']))
+    waitUntil: (0, _validatorPrimitives.tOptional)(tType('LifecycleEvent'))
   });
   scheme.PageScreenshotParams = (0, _validatorPrimitives.tObject)({
     timeout: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber),
@@ -771,7 +768,7 @@ function createScheme(tChannel) {
   scheme.FrameGotoParams = (0, _validatorPrimitives.tObject)({
     url: _validatorPrimitives.tString,
     timeout: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber),
-    waitUntil: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tEnum)(['load', 'domcontentloaded', 'networkidle'])),
+    waitUntil: (0, _validatorPrimitives.tOptional)(tType('LifecycleEvent')),
     referer: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tString)
   });
   scheme.FrameHoverParams = (0, _validatorPrimitives.tObject)({
@@ -857,7 +854,7 @@ function createScheme(tChannel) {
   scheme.FrameSetContentParams = (0, _validatorPrimitives.tObject)({
     html: _validatorPrimitives.tString,
     timeout: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber),
-    waitUntil: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tEnum)(['load', 'domcontentloaded', 'networkidle']))
+    waitUntil: (0, _validatorPrimitives.tOptional)(tType('LifecycleEvent'))
   });
   scheme.FrameSetInputFilesParams = (0, _validatorPrimitives.tObject)({
     selector: _validatorPrimitives.tString,
@@ -1124,18 +1121,15 @@ function createScheme(tChannel) {
     url: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tString),
     method: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tString),
     headers: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tArray)(tType('NameValue'))),
-    postData: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBinary),
-    interceptResponse: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBoolean)
+    postData: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBinary)
   });
   scheme.RouteFulfillParams = (0, _validatorPrimitives.tObject)({
     status: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber),
     headers: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tArray)(tType('NameValue'))),
     body: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tString),
     isBase64: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBoolean),
-    useInterceptedResponseBody: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBoolean),
     fetchResponseUid: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tString)
   });
-  scheme.RouteResponseBodyParams = (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({}));
   scheme.ResourceTiming = (0, _validatorPrimitives.tObject)({
     startTime: _validatorPrimitives.tNumber,
     domainLookupStart: _validatorPrimitives.tNumber,
@@ -1360,7 +1354,6 @@ function createScheme(tChannel) {
     reducedMotion: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tEnum)(['reduce', 'no-preference'])),
     forcedColors: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tEnum)(['active', 'none'])),
     acceptDownloads: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBoolean),
-    _debugName: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tString),
     recordVideo: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({
       dir: _validatorPrimitives.tString,
       size: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({

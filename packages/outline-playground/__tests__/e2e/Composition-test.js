@@ -129,9 +129,8 @@ describe('Composition', () => {
       it('Can type Hiragana via IME', async () => {
         const {page} = e2e;
 
-        // This only runs on Chrome for now due to imeSetComposition not being implemented
-        // in other browsers.
-        if (E2E_BROWSER !== 'chromium') {
+        // We don't yet support FF.
+        if (E2E_BROWSER === 'firefox') {
           return;
         }
 
@@ -166,9 +165,8 @@ describe('Composition', () => {
       it('Can type Hiragana via IME between line breaks', async () => {
         const {page} = e2e;
 
-        // This only runs on Chrome for now due to imeSetComposition not being implemented
-        // in other browsers.
-        if (E2E_BROWSER !== 'chromium') {
+        // We don't yet support FF.
+        if (E2E_BROWSER === 'firefox') {
           return;
         }
 
@@ -213,9 +211,8 @@ describe('Composition', () => {
       it('Can type Hiragana via IME between emojis', async () => {
         const {page} = e2e;
 
-        // This only runs on Chrome for now due to imeSetComposition not being implemented
-        // in other browsers.
-        if (E2E_BROWSER !== 'chromium') {
+        // We don't yet support FF.
+        if (E2E_BROWSER === 'firefox') {
           return;
         }
 
@@ -254,9 +251,8 @@ describe('Composition', () => {
       it('Can type Hiragana via IME at the end of a mention', async () => {
         const {page} = e2e;
 
-        // This only runs on Chrome for now due to imeSetComposition not being implemented
-        // in other browsers.
-        if (E2E_BROWSER !== 'chromium') {
+        // We don't yet support FF.
+        if (E2E_BROWSER === 'firefox') {
           return;
         }
 
@@ -297,9 +293,8 @@ describe('Composition', () => {
       it('Can type Hiragana via IME part way through a mention', async () => {
         const {page} = e2e;
 
-        // This only runs on Chrome for now due to imeSetComposition not being implemented
-        // in other browsers.
-        if (E2E_BROWSER !== 'chromium') {
+        // We don't yet support FF.
+        if (E2E_BROWSER === 'firefox') {
           return;
         }
 
@@ -344,9 +339,8 @@ describe('Composition', () => {
       it('Can type Hiragana via IME with hashtags', async () => {
         const {page} = e2e;
 
-        // This only runs on Chrome for now due to imeSetComposition not being implemented
-        // in other browsers.
-        if (E2E_BROWSER !== 'chromium') {
+        // We don't yet support FF.
+        if (E2E_BROWSER === 'firefox') {
           return;
         }
 
@@ -404,9 +398,8 @@ describe('Composition', () => {
       it('Can type, delete and cancel Hiragana via IME', async () => {
         const {page} = e2e;
 
-        // This only runs on Chrome for now due to imeSetComposition not being implemented
-        // in other browsers.
-        if (E2E_BROWSER !== 'chromium') {
+        // We don't yet support FF.
+        if (E2E_BROWSER === 'firefox') {
           return;
         }
 

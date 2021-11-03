@@ -40,6 +40,8 @@ var _artifact = require("./artifact");
 
 var _fetch = require("./fetch");
 
+var _clientInstrumentation = require("./clientInstrumentation");
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
@@ -74,7 +76,7 @@ class BrowserContext extends _channelOwner.ChannelOwner {
   constructor(parent, type, guid, initializer) {
     var _this$_browser;
 
-    super(parent, type, guid, initializer);
+    super(parent, type, guid, initializer, (0, _clientInstrumentation.createInstrumentation)());
     this._pages = new Set();
     this._routes = [];
     this._browser = null;
@@ -199,22 +201,20 @@ class BrowserContext extends _channelOwner.ChannelOwner {
   }
 
   _onRoute(route, request) {
-    let handled = false;
-
     for (const routeHandler of this._routes) {
       if (routeHandler.matches(request.url())) {
-        routeHandler.handle(route, request);
-        handled = true;
-        break;
-      }
-    }
+        if (routeHandler.handle(route, request)) {
+          this._routes.splice(this._routes.indexOf(routeHandler), 1);
 
-    if (!handled) {
-      // it can race with BrowserContext.close() which then throws since its closed
-      route.continue().catch(() => {});
-    } else {
-      this._routes = this._routes.filter(route => !route.expired());
-    }
+          if (!this._routes.length) this._wrapApiCall(channel => this._disableInterception(channel), undefined, true).catch(() => {});
+        }
+
+        return;
+      }
+    } // it can race with BrowserContext.close() which then throws since its closed
+
+
+    route._internalContinue();
   }
 
   async _onBinding(bindingCall) {
@@ -373,9 +373,13 @@ class BrowserContext extends _channelOwner.ChannelOwner {
   async unroute(url, handler) {
     return this._wrapApiCall(async channel => {
       this._routes = this._routes.filter(route => route.url !== url || handler && route.handler !== handler);
-      if (this._routes.length === 0) await channel.setNetworkInterceptionEnabled({
-        enabled: false
-      });
+      if (!this._routes.length) await this._disableInterception(channel);
+    });
+  }
+
+  async _disableInterception(channel) {
+    await channel.setNetworkInterceptionEnabled({
+      enabled: false
     });
   }
 
@@ -385,7 +389,7 @@ class BrowserContext extends _channelOwner.ChannelOwner {
 
       const predicate = typeof optionsOrPredicate === 'function' ? optionsOrPredicate : optionsOrPredicate.predicate;
 
-      const waiter = _waiter.Waiter.createForEvent(this, event);
+      const waiter = _waiter.Waiter.createForEvent(channel, event);
 
       waiter.rejectOnTimeout(timeout, `Timeout while waiting for event "${event}"`);
       if (event !== _events.Events.BrowserContext.Close) waiter.rejectOnEvent(this, _events.Events.BrowserContext.Close, new Error('Context closed'));

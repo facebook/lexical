@@ -103,7 +103,24 @@ class RawKeyboardImpl {
   }
 
   async imeSetComposition(text, selectionStart, selectionEnd, replacementStart, replacementEnd) {
-    throw new Error('unimplemented');
+    const selectionLength = selectionEnd - selectionStart;
+
+    if (replacementStart === -1 && replacementEnd === -1) {
+      await this._session.send('Page.setComposition', {
+        text,
+        selectionStart,
+        selectionLength
+      });
+    } else {
+      const replacementLength = replacementEnd - replacementStart;
+      await this._session.send('Page.setComposition', {
+        text,
+        selectionStart,
+        selectionLength,
+        replacementStart,
+        replacementLength
+      });
+    }
   }
 
 }

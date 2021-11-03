@@ -113,7 +113,7 @@ class ElectronApplication extends _channelOwner.ChannelOwner {
 
       const predicate = typeof optionsOrPredicate === 'function' ? optionsOrPredicate : optionsOrPredicate.predicate;
 
-      const waiter = _waiter.Waiter.createForEvent(this, event);
+      const waiter = _waiter.Waiter.createForEvent(channel, event);
 
       waiter.rejectOnTimeout(timeout, `Timeout while waiting for event "${event}"`);
       if (event !== _events.Events.ElectronApplication.Close) waiter.rejectOnEvent(this, _events.Events.ElectronApplication.Close, new Error('Electron application closed'));

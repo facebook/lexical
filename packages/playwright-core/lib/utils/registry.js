@@ -3,6 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.buildPlaywrightCLICommand = buildPlaywrightCLICommand;
 exports.installDefaultBrowsersForNpmInstall = installDefaultBrowsersForNpmInstall;
 exports.installBrowsersForNpmInstall = installBrowsersForNpmInstall;
 exports.findChromiumChannel = findChromiumChannel;
@@ -56,45 +57,49 @@ const EXECUTABLE_PATHS = {
   'chromium': {
     'ubuntu18.04': ['chrome-linux', 'chrome'],
     'ubuntu20.04': ['chrome-linux', 'chrome'],
+    'ubuntu18.04-arm64': ['chrome-linux', 'chrome'],
+    'ubuntu20.04-arm64': ['chrome-linux', 'chrome'],
     'mac10.13': ['chrome-mac', 'Chromium.app', 'Contents', 'MacOS', 'Chromium'],
     'mac10.14': ['chrome-mac', 'Chromium.app', 'Contents', 'MacOS', 'Chromium'],
     'mac10.15': ['chrome-mac', 'Chromium.app', 'Contents', 'MacOS', 'Chromium'],
     'mac11': ['chrome-mac', 'Chromium.app', 'Contents', 'MacOS', 'Chromium'],
     'mac11-arm64': ['chrome-mac', 'Chromium.app', 'Contents', 'MacOS', 'Chromium'],
-    'win32': ['chrome-win', 'chrome.exe'],
     'win64': ['chrome-win', 'chrome.exe']
   },
   'firefox': {
     'ubuntu18.04': ['firefox', 'firefox'],
     'ubuntu20.04': ['firefox', 'firefox'],
+    'ubuntu18.04-arm64': undefined,
+    'ubuntu20.04-arm64': undefined,
     'mac10.13': ['firefox', 'Nightly.app', 'Contents', 'MacOS', 'firefox'],
     'mac10.14': ['firefox', 'Nightly.app', 'Contents', 'MacOS', 'firefox'],
     'mac10.15': ['firefox', 'Nightly.app', 'Contents', 'MacOS', 'firefox'],
     'mac11': ['firefox', 'Nightly.app', 'Contents', 'MacOS', 'firefox'],
     'mac11-arm64': ['firefox', 'Nightly.app', 'Contents', 'MacOS', 'firefox'],
-    'win32': ['firefox', 'firefox.exe'],
     'win64': ['firefox', 'firefox.exe']
   },
   'webkit': {
     'ubuntu18.04': ['pw_run.sh'],
     'ubuntu20.04': ['pw_run.sh'],
+    'ubuntu18.04-arm64': undefined,
+    'ubuntu20.04-arm64': undefined,
     'mac10.13': undefined,
     'mac10.14': ['pw_run.sh'],
     'mac10.15': ['pw_run.sh'],
     'mac11': ['pw_run.sh'],
     'mac11-arm64': ['pw_run.sh'],
-    'win32': ['Playwright.exe'],
     'win64': ['Playwright.exe']
   },
   'ffmpeg': {
     'ubuntu18.04': ['ffmpeg-linux'],
     'ubuntu20.04': ['ffmpeg-linux'],
+    'ubuntu18.04-arm64': ['ffmpeg-linux-arm64'],
+    'ubuntu20.04-arm64': ['ffmpeg-linux-arm64'],
     'mac10.13': ['ffmpeg-mac'],
     'mac10.14': ['ffmpeg-mac'],
     'mac10.15': ['ffmpeg-mac'],
     'mac11': ['ffmpeg-mac'],
     'mac11-arm64': ['ffmpeg-mac'],
-    'win32': ['ffmpeg-win32.exe'],
     'win64': ['ffmpeg-win64.exe']
   }
 };
@@ -102,67 +107,73 @@ const DOWNLOAD_URLS = {
   'chromium': {
     'ubuntu18.04': '%s/builds/chromium/%s/chromium-linux.zip',
     'ubuntu20.04': '%s/builds/chromium/%s/chromium-linux.zip',
+    'ubuntu18.04-arm64': '%s/builds/chromium/%s/chromium-linux-arm64.zip',
+    'ubuntu20.04-arm64': '%s/builds/chromium/%s/chromium-linux-arm64.zip',
     'mac10.13': '%s/builds/chromium/%s/chromium-mac.zip',
     'mac10.14': '%s/builds/chromium/%s/chromium-mac.zip',
     'mac10.15': '%s/builds/chromium/%s/chromium-mac.zip',
     'mac11': '%s/builds/chromium/%s/chromium-mac.zip',
     'mac11-arm64': '%s/builds/chromium/%s/chromium-mac-arm64.zip',
-    'win32': '%s/builds/chromium/%s/chromium-win32.zip',
     'win64': '%s/builds/chromium/%s/chromium-win64.zip'
   },
   'chromium-with-symbols': {
     'ubuntu18.04': '%s/builds/chromium/%s/chromium-with-symbols-linux.zip',
     'ubuntu20.04': '%s/builds/chromium/%s/chromium-with-symbols-linux.zip',
+    'ubuntu18.04-arm64': '%s/builds/chromium/%s/chromium-with-symbols-linux-arm64.zip',
+    'ubuntu20.04-arm64': '%s/builds/chromium/%s/chromium-with-symbols-linux-arm64.zip',
     'mac10.13': '%s/builds/chromium/%s/chromium-with-symbols-mac.zip',
     'mac10.14': '%s/builds/chromium/%s/chromium-with-symbols-mac.zip',
     'mac10.15': '%s/builds/chromium/%s/chromium-with-symbols-mac.zip',
     'mac11': '%s/builds/chromium/%s/chromium-with-symbols-mac.zip',
     'mac11-arm64': '%s/builds/chromium/%s/chromium-with-symbols-mac-arm64.zip',
-    'win32': '%s/builds/chromium/%s/chromium-with-symbols-win32.zip',
     'win64': '%s/builds/chromium/%s/chromium-with-symbols-win64.zip'
   },
   'firefox': {
     'ubuntu18.04': '%s/builds/firefox/%s/firefox-ubuntu-18.04.zip',
     'ubuntu20.04': '%s/builds/firefox/%s/firefox-ubuntu-20.04.zip',
+    'ubuntu18.04-arm64': undefined,
+    'ubuntu20.04-arm64': undefined,
     'mac10.13': '%s/builds/firefox/%s/firefox-mac-11.zip',
     'mac10.14': '%s/builds/firefox/%s/firefox-mac-11.zip',
     'mac10.15': '%s/builds/firefox/%s/firefox-mac-11.zip',
     'mac11': '%s/builds/firefox/%s/firefox-mac-11.zip',
     'mac11-arm64': '%s/builds/firefox/%s/firefox-mac-11-arm64.zip',
-    'win32': '%s/builds/firefox/%s/firefox-win32.zip',
     'win64': '%s/builds/firefox/%s/firefox-win64.zip'
   },
   'firefox-beta': {
     'ubuntu18.04': '%s/builds/firefox-beta/%s/firefox-beta-ubuntu-18.04.zip',
     'ubuntu20.04': '%s/builds/firefox-beta/%s/firefox-beta-ubuntu-20.04.zip',
+    'ubuntu18.04-arm64': undefined,
+    'ubuntu20.04-arm64': undefined,
     'mac10.13': '%s/builds/firefox-beta/%s/firefox-beta-mac-11.zip',
     'mac10.14': '%s/builds/firefox-beta/%s/firefox-beta-mac-11.zip',
     'mac10.15': '%s/builds/firefox-beta/%s/firefox-beta-mac-11.zip',
     'mac11': '%s/builds/firefox-beta/%s/firefox-beta-mac-11.zip',
     'mac11-arm64': '%s/builds/firefox-beta/%s/firefox-beta-mac-11-arm64.zip',
-    'win32': '%s/builds/firefox-beta/%s/firefox-beta-win32.zip',
     'win64': '%s/builds/firefox-beta/%s/firefox-beta-win64.zip'
   },
   'webkit': {
     'ubuntu18.04': '%s/builds/webkit/%s/webkit-ubuntu-18.04.zip',
     'ubuntu20.04': '%s/builds/webkit/%s/webkit-ubuntu-20.04.zip',
+    'ubuntu18.04-arm64': undefined,
+    'ubuntu20.04-arm64': undefined,
     'mac10.13': undefined,
     'mac10.14': '%s/builds/deprecated-webkit-mac-10.14/%s/deprecated-webkit-mac-10.14.zip',
     'mac10.15': '%s/builds/webkit/%s/webkit-mac-10.15.zip',
     'mac11': '%s/builds/webkit/%s/webkit-mac-10.15.zip',
     'mac11-arm64': '%s/builds/webkit/%s/webkit-mac-11-arm64.zip',
-    'win32': '%s/builds/webkit/%s/webkit-win64.zip',
     'win64': '%s/builds/webkit/%s/webkit-win64.zip'
   },
   'ffmpeg': {
     'ubuntu18.04': '%s/builds/ffmpeg/%s/ffmpeg-linux.zip',
     'ubuntu20.04': '%s/builds/ffmpeg/%s/ffmpeg-linux.zip',
+    'ubuntu18.04-arm64': '%s/builds/ffmpeg/%s/ffmpeg-linux-arm64.zip',
+    'ubuntu20.04-arm64': '%s/builds/ffmpeg/%s/ffmpeg-linux-arm64.zip',
     'mac10.13': '%s/builds/ffmpeg/%s/ffmpeg-mac.zip',
     'mac10.14': '%s/builds/ffmpeg/%s/ffmpeg-mac.zip',
     'mac10.15': '%s/builds/ffmpeg/%s/ffmpeg-mac.zip',
     'mac11': '%s/builds/ffmpeg/%s/ffmpeg-mac.zip',
     'mac11-arm64': '%s/builds/ffmpeg/%s/ffmpeg-mac.zip',
-    'win32': '%s/builds/ffmpeg/%s/ffmpeg-win32.zip',
     'win64': '%s/builds/ffmpeg/%s/ffmpeg-win64.zip'
   }
 };
@@ -262,7 +273,7 @@ class Registry {
       executablePath: () => chromiumExecutable,
       executablePathOrDie: sdkLanguage => executablePathOrDie('chromium', chromiumExecutable, chromium.installByDefault, sdkLanguage),
       installType: chromium.installByDefault ? 'download-by-default' : 'download-on-demand',
-      validateHostRequirements: () => this._validateHostRequirements('chromium', chromium.dir, ['chrome-linux'], [], ['chrome-win']),
+      validateHostRequirements: sdkLanguage => this._validateHostRequirements(sdkLanguage, 'chromium', chromium.dir, ['chrome-linux'], [], ['chrome-win']),
       _install: () => this._downloadExecutable(chromium, chromiumExecutable, DOWNLOAD_URLS['chromium'][_utils.hostPlatform], 'PLAYWRIGHT_CHROMIUM_DOWNLOAD_HOST'),
       _dependencyGroup: 'chromium'
     });
@@ -278,7 +289,7 @@ class Registry {
       executablePath: () => chromiumWithSymbolsExecutable,
       executablePathOrDie: sdkLanguage => executablePathOrDie('chromium-with-symbols', chromiumWithSymbolsExecutable, chromiumWithSymbols.installByDefault, sdkLanguage),
       installType: chromiumWithSymbols.installByDefault ? 'download-by-default' : 'download-on-demand',
-      validateHostRequirements: () => this._validateHostRequirements('chromium', chromiumWithSymbols.dir, ['chrome-linux'], [], ['chrome-win']),
+      validateHostRequirements: sdkLanguage => this._validateHostRequirements(sdkLanguage, 'chromium', chromiumWithSymbols.dir, ['chrome-linux'], [], ['chrome-win']),
       _install: () => this._downloadExecutable(chromiumWithSymbols, chromiumWithSymbolsExecutable, DOWNLOAD_URLS['chromium-with-symbols'][_utils.hostPlatform], 'PLAYWRIGHT_CHROMIUM_DOWNLOAD_HOST'),
       _dependencyGroup: 'chromium'
     });
@@ -316,11 +327,11 @@ class Registry {
     }));
 
     this._executables.push(this._createChromiumChannel('msedge', {
-      'linux': '',
+      'linux': '/opt/microsoft/msedge/msedge',
       'darwin': '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
       'win32': `\\Microsoft\\Edge\\Application\\msedge.exe`
     }, () => this._installMSEdgeChannel('msedge', {
-      'linux': '',
+      'linux': 'reinstall_msedge_stable_linux.sh',
       'darwin': 'reinstall_msedge_stable_mac.sh',
       'win32': 'reinstall_msedge_stable_win.ps1'
     })));
@@ -362,7 +373,7 @@ class Registry {
       executablePath: () => firefoxExecutable,
       executablePathOrDie: sdkLanguage => executablePathOrDie('firefox', firefoxExecutable, firefox.installByDefault, sdkLanguage),
       installType: firefox.installByDefault ? 'download-by-default' : 'download-on-demand',
-      validateHostRequirements: () => this._validateHostRequirements('firefox', firefox.dir, ['firefox'], [], ['firefox']),
+      validateHostRequirements: sdkLanguage => this._validateHostRequirements(sdkLanguage, 'firefox', firefox.dir, ['firefox'], [], ['firefox']),
       _install: () => this._downloadExecutable(firefox, firefoxExecutable, DOWNLOAD_URLS['firefox'][_utils.hostPlatform], 'PLAYWRIGHT_FIREFOX_DOWNLOAD_HOST'),
       _dependencyGroup: 'firefox'
     });
@@ -378,7 +389,7 @@ class Registry {
       executablePath: () => firefoxBetaExecutable,
       executablePathOrDie: sdkLanguage => executablePathOrDie('firefox-beta', firefoxBetaExecutable, firefoxBeta.installByDefault, sdkLanguage),
       installType: firefoxBeta.installByDefault ? 'download-by-default' : 'download-on-demand',
-      validateHostRequirements: () => this._validateHostRequirements('firefox', firefoxBeta.dir, ['firefox'], [], ['firefox']),
+      validateHostRequirements: sdkLanguage => this._validateHostRequirements(sdkLanguage, 'firefox', firefoxBeta.dir, ['firefox'], [], ['firefox']),
       _install: () => this._downloadExecutable(firefoxBeta, firefoxBetaExecutable, DOWNLOAD_URLS['firefox-beta'][_utils.hostPlatform], 'PLAYWRIGHT_FIREFOX_DOWNLOAD_HOST'),
       _dependencyGroup: 'firefox'
     });
@@ -395,7 +406,7 @@ class Registry {
       executablePath: () => webkitExecutable,
       executablePathOrDie: sdkLanguage => executablePathOrDie('webkit', webkitExecutable, webkit.installByDefault, sdkLanguage),
       installType: webkit.installByDefault ? 'download-by-default' : 'download-on-demand',
-      validateHostRequirements: () => this._validateHostRequirements('webkit', webkit.dir, webkitLinuxLddDirectories, ['libGLESv2.so.2', 'libx264.so'], ['']),
+      validateHostRequirements: sdkLanguage => this._validateHostRequirements(sdkLanguage, 'webkit', webkit.dir, webkitLinuxLddDirectories, ['libGLESv2.so.2', 'libx264.so'], ['']),
       _install: () => this._downloadExecutable(webkit, webkitExecutable, DOWNLOAD_URLS['webkit'][_utils.hostPlatform], 'PLAYWRIGHT_WEBKIT_DOWNLOAD_HOST'),
       _dependencyGroup: 'webkit'
     });
@@ -418,7 +429,7 @@ class Registry {
   }
 
   _createChromiumChannel(name, lookAt, install) {
-    const executablePath = shouldThrow => {
+    const executablePath = (sdkLanguage, shouldThrow) => {
       const suffix = lookAt[process.platform];
 
       if (!suffix) {
@@ -437,7 +448,7 @@ class Registry {
       if (!shouldThrow) return undefined;
       const location = prefixes.length ? ` at ${_path.default.join(prefixes[0], suffix)}` : ``; // TODO: language-specific error message
 
-      const installation = install ? `\nRun "npx playwright install ${name}"` : '';
+      const installation = install ? `\nRun "${buildPlaywrightCLICommand(sdkLanguage, 'install ' + name)}"` : '';
       throw new Error(`Chromium distribution '${name}' is not found${location}${installation}`);
     };
 
@@ -446,8 +457,8 @@ class Registry {
       name,
       browserName: 'chromium',
       directory: undefined,
-      executablePath: () => executablePath(false),
-      executablePathOrDie: sdkLanguage => executablePath(true),
+      executablePath: sdkLanguage => executablePath(sdkLanguage, false),
+      executablePathOrDie: sdkLanguage => executablePath(sdkLanguage, true),
       installType: install ? 'install-script' : 'none',
       validateHostRequirements: () => Promise.resolve(),
       _install: install
@@ -477,7 +488,7 @@ class Registry {
     return Array.from(set);
   }
 
-  async _validateHostRequirements(browserName, browserDirectory, linuxLddDirectories, dlOpenLibraries, windowsExeAndDllDirectories) {
+  async _validateHostRequirements(sdkLanguage, browserName, browserDirectory, linuxLddDirectories, dlOpenLibraries, windowsExeAndDllDirectories) {
     if ((0, _utils.getAsBooleanFromENV)('PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS')) {
       process.stdout.write('Skipping host requirements validation logic because `PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS` env variable is set.\n');
       return;
@@ -485,7 +496,7 @@ class Registry {
 
     const ubuntuVersion = await (0, _ubuntuVersion.getUbuntuVersion)();
     if (browserName === 'firefox' && ubuntuVersion === '16.04') throw new Error(`Cannot launch Firefox on Ubuntu 16.04! Minimum required Ubuntu version for Firefox browser is 18.04`);
-    if (os.platform() === 'linux') return await (0, _dependencies.validateDependenciesLinux)(linuxLddDirectories.map(d => _path.default.join(browserDirectory, d)), dlOpenLibraries);
+    if (os.platform() === 'linux') return await (0, _dependencies.validateDependenciesLinux)(sdkLanguage, linuxLddDirectories.map(d => _path.default.join(browserDirectory, d)), dlOpenLibraries);
     if (os.platform() === 'win32' && os.arch() === 'x64') return await (0, _dependencies.validateDependenciesWindows)(windowsExeAndDllDirectories.map(d => _path.default.join(browserDirectory, d)));
   }
 
@@ -512,24 +523,25 @@ class Registry {
 
     const lockfilePath = _path.default.join(registryDirectory, '__dirlock');
 
-    const releaseLock = await _properLockfile.default.lock(registryDirectory, {
-      retries: {
-        retries: 10,
-        // Retry 20 times during 10 minutes with
-        // exponential back-off.
-        // See documentation at: https://www.npmjs.com/package/retry#retrytimeoutsoptions
-        factor: 1.27579
-      },
-      onCompromised: err => {
-        throw new Error(`${err.message} Path: ${lockfilePath}`);
-      },
-      lockfilePath
-    });
-
     const linksDir = _path.default.join(registryDirectory, '.links');
 
+    let releaseLock;
+
     try {
-      // Create a link first, so that cache validation does not remove our own browsers.
+      releaseLock = await _properLockfile.default.lock(registryDirectory, {
+        retries: {
+          retries: 10,
+          // Retry 20 times during 10 minutes with
+          // exponential back-off.
+          // See documentation at: https://www.npmjs.com/package/retry#retrytimeoutsoptions
+          factor: 1.27579
+        },
+        onCompromised: err => {
+          throw new Error(`${err.message} Path: ${lockfilePath}`);
+        },
+        lockfilePath
+      }); // Create a link first, so that cache validation does not remove our own browsers.
+
       await fs.promises.mkdir(linksDir, {
         recursive: true
       });
@@ -548,7 +560,7 @@ class Registry {
         throw e;
       }
     } finally {
-      await releaseLock();
+      if (releaseLock) await releaseLock();
     }
   }
 
@@ -585,7 +597,7 @@ class Registry {
         },
         win32: {
           platform: 'Windows',
-          arch: os.arch() === 'x64' ? 'x64' : 'x86',
+          arch: 'x64',
           artifact: 'msi'
         }
       }[process.platform];
@@ -604,7 +616,7 @@ class Registry {
     if (!scriptName) throw new Error(`Cannot install ${channel} on ${process.platform}`);
     const isPowerShell = scriptName.endsWith('.ps1');
     const shell = isPowerShell ? 'powershell.exe' : 'bash';
-    const args = [...(isPowerShell ? ['-File'] : []), _path.default.join(BIN_PATH, scriptName), ...scriptArgs];
+    const args = [...(isPowerShell ? ['-ExecutionPolicy', 'Bypass', '-File'] : []), _path.default.join(BIN_PATH, scriptName), ...scriptArgs];
     const {
       code
     } = await (0, _utils.spawnAsync)(shell, args, {

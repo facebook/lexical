@@ -132,15 +132,17 @@ function frameSnapshotStreamer(snapshotStreamer) {
       this._staleStyleSheets.add(sheet);
     }
 
-    _updateStyleElementStyleSheetTextIfNeeded(sheet) {
+    _updateStyleElementStyleSheetTextIfNeeded(sheet, forceText) {
       const data = ensureCachedData(sheet);
 
-      if (this._staleStyleSheets.has(sheet)) {
+      if (this._staleStyleSheets.has(sheet) || forceText && data.cssText === undefined) {
         this._staleStyleSheets.delete(sheet);
 
         try {
           data.cssText = this._getSheetText(sheet);
-        } catch (e) {// Sometimes we cannot access cross-origin stylesheets.
+        } catch (e) {
+          // Sometimes we cannot access cross-origin stylesheets.
+          data.cssText = '';
         }
       }
 
@@ -420,7 +422,11 @@ function frameSnapshotStreamer(snapshotStreamer) {
       const visitStyleSheet = sheet => {
         const data = ensureCachedData(sheet);
         const oldCSSText = data.cssText;
-        const cssText = this._updateStyleElementStyleSheetTextIfNeeded(sheet) || '';
+
+        const cssText = this._updateStyleElementStyleSheetTextIfNeeded(sheet, true
+        /* forceText */
+        );
+
         if (cssText === oldCSSText) return {
           equals: true,
           n: [[snapshotNumber - data.ref[0], data.ref[1]]]

@@ -5,7 +5,6 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.indexModel = indexModel;
 exports.context = context;
-exports.page = page;
 exports.next = next;
 exports.stats = stats;
 exports.eventsForAction = eventsForAction;
@@ -27,35 +26,24 @@ exports.resourcesForAction = resourcesForAction;
  * limitations under the License.
  */
 const contextSymbol = Symbol('context');
-const pageSymbol = Symbol('context');
 const nextSymbol = Symbol('next');
 const eventsSymbol = Symbol('events');
 const resourcesSymbol = Symbol('resources');
 
 function indexModel(context) {
-  for (const page of context.pages) {
-    page[contextSymbol] = context;
+  for (const page of context.pages) page[contextSymbol] = context;
 
-    for (let i = 0; i < page.actions.length; ++i) {
-      const action = page.actions[i];
-      action[contextSymbol] = context;
-      action[pageSymbol] = page;
-      action[nextSymbol] = page.actions[i + 1];
-    }
-
-    for (const event of page.events) {
-      event[contextSymbol] = context;
-      event[pageSymbol] = page;
-    }
+  for (let i = 0; i < context.actions.length; ++i) {
+    const action = context.actions[i];
+    action[contextSymbol] = context;
+    action[nextSymbol] = context.actions[i + 1];
   }
+
+  for (const event of context.events) event[contextSymbol] = context;
 }
 
 function context(action) {
   return action[contextSymbol];
-}
-
-function page(action) {
-  return action[pageSymbol];
 }
 
 function next(action) {
@@ -65,16 +53,16 @@ function next(action) {
 function stats(action) {
   let errors = 0;
   let warnings = 0;
-  const p = page(action);
+  const c = context(action);
 
   for (const event of eventsForAction(action)) {
     if (event.metadata.method === 'console') {
-      var _p$objects$guid;
+      var _c$objects$guid;
 
       const {
         guid
       } = event.metadata.params.message;
-      const type = (_p$objects$guid = p.objects[guid]) === null || _p$objects$guid === void 0 ? void 0 : _p$objects$guid.type;
+      const type = (_c$objects$guid = c.objects[guid]) === null || _c$objects$guid === void 0 ? void 0 : _c$objects$guid.type;
       if (type === 'warning') ++warnings;else if (type === 'error') ++errors;
     }
 
@@ -91,7 +79,7 @@ function eventsForAction(action) {
   let result = action[eventsSymbol];
   if (result) return result;
   const nextAction = next(action);
-  result = page(action).events.filter(event => {
+  result = context(action).events.filter(event => {
     return event.metadata.startTime >= action.metadata.startTime && (!nextAction || event.metadata.startTime < nextAction.metadata.startTime);
   });
   action[eventsSymbol] = result;

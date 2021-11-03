@@ -18,6 +18,8 @@ var _artifact = require("../../artifact");
 
 var _browserContext = require("../../browserContext");
 
+var _dom = require("../../dom");
+
 var _eventsHelper = require("../../../utils/eventsHelper");
 
 var _page = require("../../page");
@@ -29,6 +31,8 @@ var _snapshotter = require("./snapshotter");
 var _harTracer = require("../../supplements/har/harTracer");
 
 var _traceEvents = require("../common/traceEvents");
+
+var _async = require("../../../utils/async");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -116,8 +120,8 @@ class Tracing {
     if (options.snapshots) this._harTracer.start();
   }
 
-  async startChunk() {
-    if (this._state && this._state.recording) await this.stopChunk(false);
+  async startChunk(options = {}) {
+    if (this._state && this._state.recording) await this.stopChunk(false, false);
     if (!this._state) throw new Error('Must start tracing before starting a new chunk');
     if (this._isStopping) throw new Error('Cannot start a trace chunk while stopping');
     const state = this._state;
@@ -128,7 +132,9 @@ class Tracing {
 
     this._appendTraceOperation(async () => {
       await (0, _utils.mkdirIfNeeded)(state.traceFile);
-      await _fs.default.promises.appendFile(state.traceFile, JSON.stringify(this._contextCreatedEvent) + '\n');
+      await _fs.default.promises.appendFile(state.traceFile, JSON.stringify({ ...this._contextCreatedEvent,
+        title: options.title
+      }) + '\n');
     });
 
     this._context.instrumentation.addListener(this);
@@ -166,7 +172,7 @@ class Tracing {
     await this._writeChain;
   }
 
-  async stopChunk(save) {
+  async stopChunk(save, skipCompress) {
     if (this._isStopping) throw new Error(`Tracing is already stopping`);
     this._isStopping = true;
 
@@ -198,7 +204,10 @@ class Tracing {
     if (!this._state || !this._state.recording) {
       this._isStopping = false;
       if (save) throw new Error(`Must start tracing before stopping`);
-      return null;
+      return {
+        artifact: null,
+        entries: []
+      };
     }
 
     const state = this._state;
@@ -209,33 +218,58 @@ class Tracing {
     if (state.options.snapshots) await this._snapshotter.stop(); // Chain the export operation against write operations,
     // so that neither trace files nor sha1s change during the export.
 
-    return await this._appendTraceOperation(async () => {
-      const result = save ? this._export(state) : Promise.resolve(null);
-      return result.finally(async () => {
-        this._isStopping = false;
-        state.recording = false;
+    return (await this._appendTraceOperation(async () => {
+      this._isStopping = false;
+      state.recording = false;
+      if (!save) return {
+        artifact: null,
+        entries: []
+      }; // Har files a live, make a snapshot before returning the resulting entries.
+
+      const networkFile = _path.default.join(state.networkFile, '..', (0, _utils.createGuid)());
+
+      await _fs.default.promises.copyFile(state.networkFile, networkFile);
+      const entries = [];
+      entries.push({
+        name: 'trace.trace',
+        value: state.traceFile
       });
-    });
+      entries.push({
+        name: 'trace.network',
+        value: networkFile
+      });
+
+      for (const sha1 of state.sha1s) entries.push({
+        name: _path.default.join('resources', sha1),
+        value: _path.default.join(this._resourcesDir, sha1)
+      });
+
+      const zipArtifact = skipCompress ? null : await this._exportZip(entries, state).catch(() => null);
+      return {
+        artifact: zipArtifact,
+        entries
+      };
+    })) || {
+      artifact: null,
+      entries: []
+    };
   }
 
-  async _export(state) {
+  async _exportZip(entries, state) {
     const zipFile = new _yazl.default.ZipFile();
-    const failedPromise = new Promise((_, reject) => zipFile.on('error', reject));
-    const succeededPromise = new Promise(fulfill => {
-      zipFile.addFile(state.traceFile, 'trace.trace');
-      zipFile.addFile(state.networkFile, 'trace.network');
-      const zipFileName = state.traceFile + '.zip';
+    const result = new _async.ManualPromise();
+    zipFile.on('error', error => result.reject(error));
 
-      for (const sha1 of state.sha1s) zipFile.addFile(_path.default.join(this._resourcesDir, sha1), _path.default.join('resources', sha1));
+    for (const entry of entries) zipFile.addFile(entry.value, entry.name);
 
-      zipFile.end();
-      zipFile.outputStream.pipe(_fs.default.createWriteStream(zipFileName)).on('close', () => {
-        const artifact = new _artifact.Artifact(this._context, zipFileName);
-        artifact.reportFinished();
-        fulfill(artifact);
-      });
+    zipFile.end();
+    const zipFileName = state.traceFile + '.zip';
+    zipFile.outputStream.pipe(_fs.default.createWriteStream(zipFileName)).on('close', () => {
+      const artifact = new _artifact.Artifact(this._context, zipFileName);
+      artifact.reportFinished();
+      result.resolve(artifact);
     });
-    return Promise.race([failedPromise, succeededPromise]);
+    return result;
   }
 
   async _captureSnapshot(name, sdkObject, metadata, element) {
@@ -246,11 +280,21 @@ class Tracing {
     metadata.snapshots.push({
       title: name,
       snapshotName
-    });
+    }); // We have |element| for input actions (page.click and handle.click)
+    // and |sdkObject| element for accessors like handle.textContent.
+
+    if (!element && sdkObject instanceof _dom.ElementHandle) element = sdkObject;
     await this._snapshotter.captureSnapshot(sdkObject.attribution.page, snapshotName, element).catch(() => {});
   }
 
   async onBeforeCall(sdkObject, metadata) {
+    var _sdkObject$attributio;
+
+    (_sdkObject$attributio = sdkObject.attribution.page) === null || _sdkObject$attributio === void 0 ? void 0 : _sdkObject$attributio.temporarlyDisableTracingScreencastThrottling(); // Set afterSnapshot name for all the actions that operate selectors.
+    // Elements resolved from selectors will be marked on the snapshot.
+
+    metadata.afterSnapshot = `after@${metadata.id}`;
+
     const beforeSnapshot = this._captureSnapshot('before', sdkObject, metadata);
 
     this._pendingCalls.set(metadata.id, {
@@ -263,6 +307,10 @@ class Tracing {
   }
 
   async onBeforeInputAction(sdkObject, metadata, element) {
+    var _sdkObject$attributio2;
+
+    (_sdkObject$attributio2 = sdkObject.attribution.page) === null || _sdkObject$attributio2 === void 0 ? void 0 : _sdkObject$attributio2.temporarlyDisableTracingScreencastThrottling();
+
     const actionSnapshot = this._captureSnapshot('action', sdkObject, metadata, element);
 
     this._pendingCalls.get(metadata.id).actionSnapshot = actionSnapshot;
@@ -270,11 +318,15 @@ class Tracing {
   }
 
   async onAfterCall(sdkObject, metadata) {
+    var _sdkObject$attributio3;
+
+    (_sdkObject$attributio3 = sdkObject.attribution.page) === null || _sdkObject$attributio3 === void 0 ? void 0 : _sdkObject$attributio3.temporarlyDisableTracingScreencastThrottling();
+
     const pendingCall = this._pendingCalls.get(metadata.id);
 
     if (!pendingCall || pendingCall.afterSnapshot) return;
 
-    if (!sdkObject.attribution.page) {
+    if (!sdkObject.attribution.context) {
       this._pendingCalls.delete(metadata.id);
 
       return;
@@ -284,8 +336,7 @@ class Tracing {
     await pendingCall.afterSnapshot;
     const event = {
       type: 'action',
-      metadata,
-      hasSnapshot: shouldCaptureSnapshot(metadata)
+      metadata
     };
 
     this._appendTraceEvent(event);
@@ -294,11 +345,10 @@ class Tracing {
   }
 
   onEvent(sdkObject, metadata) {
-    if (!sdkObject.attribution.page) return;
+    if (!sdkObject.attribution.context) return;
     const event = {
       type: 'event',
-      metadata,
-      hasSnapshot: false
+      metadata
     };
 
     this._appendTraceEvent(event);
@@ -387,6 +437,8 @@ class Tracing {
     let error;
     let result;
     this._writeChain = this._writeChain.then(async () => {
+      if (!this._context._browser.isConnected()) return;
+
       try {
         result = await cb();
       } catch (e) {

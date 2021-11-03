@@ -116,8 +116,8 @@ class Frame extends _channelOwner.ChannelOwner {
     });
   }
 
-  _setupNavigationWaiter(options) {
-    const waiter = new _waiter.Waiter(this._page, '');
+  _setupNavigationWaiter(channel, options) {
+    const waiter = new _waiter.Waiter(channel, '');
     if (this._page.isClosed()) waiter.rejectImmediately(new Error('Navigation failed because page was closed!'));
     waiter.rejectOnEvent(this._page, _events2.Events.Page.Close, new Error('Navigation failed because page was closed!'));
     waiter.rejectOnEvent(this._page, _events2.Events.Page.Crash, new Error('Navigation failed because page crashed!'));
@@ -130,10 +130,10 @@ class Frame extends _channelOwner.ChannelOwner {
   }
 
   async waitForNavigation(options = {}) {
-    return this._wrapApiCall(async channel => {
+    return this._page._wrapApiCall(async channel => {
       const waitUntil = verifyLoadState('waitUntil', options.waitUntil === undefined ? 'load' : options.waitUntil);
 
-      const waiter = this._setupNavigationWaiter(options);
+      const waiter = this._setupNavigationWaiter(channel, options);
 
       const toUrl = typeof options.url === 'string' ? ` to "${options.url}"` : '';
       waiter.log(`waiting for navigation${toUrl} until "${waitUntil}"`);
@@ -160,7 +160,7 @@ class Frame extends _channelOwner.ChannelOwner {
       }
 
       const request = navigatedEvent.newDocument ? network.Request.fromNullable(navigatedEvent.newDocument.request) : null;
-      const response = request ? await waiter.waitForPromise(request._finalRequest().response()) : null;
+      const response = request ? await waiter.waitForPromise(request._finalRequest()._internalResponse()) : null;
       waiter.dispose();
       return response;
     });
@@ -169,8 +169,8 @@ class Frame extends _channelOwner.ChannelOwner {
   async waitForLoadState(state = 'load', options = {}) {
     state = verifyLoadState('state', state);
     if (this._loadStates.has(state)) return;
-    return this._wrapApiCall(async channel => {
-      const waiter = this._setupNavigationWaiter(options);
+    return this._page._wrapApiCall(async channel => {
+      const waiter = this._setupNavigationWaiter(channel, options);
 
       await waiter.waitForEvent(this._eventEmitter, 'loadstate', s => {
         waiter.log(`  "${s}" event fired`);
@@ -183,7 +183,7 @@ class Frame extends _channelOwner.ChannelOwner {
   async waitForURL(url, options = {}) {
     var _this$_page2;
 
-    if ((0, _clientHelper.urlMatches)((_this$_page2 = this._page) === null || _this$_page2 === void 0 ? void 0 : _this$_page2.context()._options.baseURL, this.url(), url)) return await this.waitForLoadState(options === null || options === void 0 ? void 0 : options.waitUntil, options);
+    if ((0, _clientHelper.urlMatches)((_this$_page2 = this._page) === null || _this$_page2 === void 0 ? void 0 : _this$_page2.context()._options.baseURL, this.url(), url)) return await this.waitForLoadState(options.waitUntil, options);
     await this.waitForNavigation({
       url,
       ...options
@@ -621,6 +621,6 @@ exports.Frame = Frame;
 
 function verifyLoadState(name, waitUntil) {
   if (waitUntil === 'networkidle0') waitUntil = 'networkidle';
-  if (!_types.kLifecycleEvents.has(waitUntil)) throw new Error(`${name}: expected one of (load|domcontentloaded|networkidle)`);
+  if (!_types.kLifecycleEvents.has(waitUntil)) throw new Error(`${name}: expected one of (load|domcontentloaded|networkidle|commit)`);
   return waitUntil;
 }

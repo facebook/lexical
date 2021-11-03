@@ -47,10 +47,13 @@ class SnapshotServer {
     });
   }
 
-  serveSnapshotSize(pathname, searchParams) {
-    const snapshot = this._snapshot(pathname.substring('/snapshotSize'.length), searchParams);
+  serveSnapshotInfo(pathname, searchParams) {
+    const snapshot = this._snapshot(pathname.substring('/snapshotInfo'.length), searchParams);
 
-    return this._respondWithJson(snapshot ? snapshot.viewport() : {});
+    return this._respondWithJson(snapshot ? {
+      viewport: snapshot.viewport(),
+      url: snapshot.snapshot().frameUrl
+    } : {});
   }
 
   _snapshot(pathname, params) {

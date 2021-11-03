@@ -99,7 +99,6 @@ class WKPage {
 
     this._lastConsoleMessage = null;
     this._requestIdToResponseReceivedPayloadEvent = new Map();
-    this._needsResponseInterception = false;
     this._nextWindowOpenPopupFeatures = void 0;
     this._recordingVideoFile = null;
     this._screencastGeneration = 0;
@@ -205,11 +204,6 @@ class WKPage {
       promises.push(session.send('Network.addInterception', {
         url: '.*',
         stage: 'request',
-        isRegex: true
-      }));
-      if (this._needsResponseInterception) promises.push(session.send('Network.addInterception', {
-        url: '.*',
-        stage: 'response',
         isRegex: true
       }));
     }
@@ -469,7 +463,7 @@ class WKPage {
 
   _addSessionListeners() {
     // TODO: remove Page.willRequestOpenWindow and Page.didRequestOpenWindow from the protocol.
-    this._sessionListeners = [_eventsHelper.eventsHelper.addEventListener(this._session, 'Page.frameNavigated', event => this._onFrameNavigated(event.frame, false)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Page.navigatedWithinDocument', event => this._onFrameNavigatedWithinDocument(event.frameId, event.url)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Page.frameAttached', event => this._onFrameAttached(event.frameId, event.parentFrameId)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Page.frameDetached', event => this._onFrameDetached(event.frameId)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Page.frameScheduledNavigation', event => this._onFrameScheduledNavigation(event.frameId)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Page.frameStoppedLoading', event => this._onFrameStoppedLoading(event.frameId)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Page.loadEventFired', event => this._onLifecycleEvent(event.frameId, 'load')), _eventsHelper.eventsHelper.addEventListener(this._session, 'Page.domContentEventFired', event => this._onLifecycleEvent(event.frameId, 'domcontentloaded')), _eventsHelper.eventsHelper.addEventListener(this._session, 'Runtime.executionContextCreated', event => this._onExecutionContextCreated(event.context)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Console.messageAdded', event => this._onConsoleMessage(event)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Console.messageRepeatCountUpdated', event => this._onConsoleRepeatCountUpdated(event)), _eventsHelper.eventsHelper.addEventListener(this._pageProxySession, 'Dialog.javascriptDialogOpening', event => this._onDialog(event)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Page.fileChooserOpened', event => this._onFileChooserOpened(event)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.requestWillBeSent', e => this._onRequestWillBeSent(this._session, e)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.requestIntercepted', e => this._onRequestIntercepted(this._session, e)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.responseIntercepted', e => this._onResponseIntercepted(this._session, e)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.responseReceived', e => this._onResponseReceived(e)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.loadingFinished', e => this._onLoadingFinished(e)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.loadingFailed', e => this._onLoadingFailed(e)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.webSocketCreated', e => this._page._frameManager.onWebSocketCreated(e.requestId, e.url)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.webSocketWillSendHandshakeRequest', e => this._page._frameManager.onWebSocketRequest(e.requestId)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.webSocketHandshakeResponseReceived', e => this._page._frameManager.onWebSocketResponse(e.requestId, e.response.status, e.response.statusText)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.webSocketFrameSent', e => e.response.payloadData && this._page._frameManager.onWebSocketFrameSent(e.requestId, e.response.opcode, e.response.payloadData)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.webSocketFrameReceived', e => e.response.payloadData && this._page._frameManager.webSocketFrameReceived(e.requestId, e.response.opcode, e.response.payloadData)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.webSocketClosed', e => this._page._frameManager.webSocketClosed(e.requestId)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.webSocketFrameError', e => this._page._frameManager.webSocketError(e.requestId, e.errorMessage))];
+    this._sessionListeners = [_eventsHelper.eventsHelper.addEventListener(this._session, 'Page.frameNavigated', event => this._onFrameNavigated(event.frame, false)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Page.navigatedWithinDocument', event => this._onFrameNavigatedWithinDocument(event.frameId, event.url)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Page.frameAttached', event => this._onFrameAttached(event.frameId, event.parentFrameId)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Page.frameDetached', event => this._onFrameDetached(event.frameId)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Page.frameScheduledNavigation', event => this._onFrameScheduledNavigation(event.frameId)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Page.frameStoppedLoading', event => this._onFrameStoppedLoading(event.frameId)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Page.loadEventFired', event => this._onLifecycleEvent(event.frameId, 'load')), _eventsHelper.eventsHelper.addEventListener(this._session, 'Page.domContentEventFired', event => this._onLifecycleEvent(event.frameId, 'domcontentloaded')), _eventsHelper.eventsHelper.addEventListener(this._session, 'Runtime.executionContextCreated', event => this._onExecutionContextCreated(event.context)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Console.messageAdded', event => this._onConsoleMessage(event)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Console.messageRepeatCountUpdated', event => this._onConsoleRepeatCountUpdated(event)), _eventsHelper.eventsHelper.addEventListener(this._pageProxySession, 'Dialog.javascriptDialogOpening', event => this._onDialog(event)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Page.fileChooserOpened', event => this._onFileChooserOpened(event)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.requestWillBeSent', e => this._onRequestWillBeSent(this._session, e)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.requestIntercepted', e => this._onRequestIntercepted(this._session, e)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.responseReceived', e => this._onResponseReceived(e)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.loadingFinished', e => this._onLoadingFinished(e)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.loadingFailed', e => this._onLoadingFailed(e)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.webSocketCreated', e => this._page._frameManager.onWebSocketCreated(e.requestId, e.url)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.webSocketWillSendHandshakeRequest', e => this._page._frameManager.onWebSocketRequest(e.requestId)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.webSocketHandshakeResponseReceived', e => this._page._frameManager.onWebSocketResponse(e.requestId, e.response.status, e.response.statusText)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.webSocketFrameSent', e => e.response.payloadData && this._page._frameManager.onWebSocketFrameSent(e.requestId, e.response.opcode, e.response.payloadData)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.webSocketFrameReceived', e => e.response.payloadData && this._page._frameManager.webSocketFrameReceived(e.requestId, e.response.opcode, e.response.payloadData)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.webSocketClosed', e => this._page._frameManager.webSocketClosed(e.requestId)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.webSocketFrameError', e => this._page._frameManager.webSocketError(e.requestId, e.errorMessage))];
   }
 
   async _updateState(method, params) {
@@ -594,11 +588,10 @@ class WKPage {
 
     if (level === 'debug' && parameters && parameters[0].value === BINDING_CALL_MESSAGE) {
       const parsedObjectId = JSON.parse(parameters[1].objectId);
-
-      const context = this._contextIdToContext.get(parsedObjectId.injectedScriptId);
-
       this.pageOrError().then(pageOrError => {
-        if (!(pageOrError instanceof Error)) this._page._onBindingCalled(parameters[2].value, context);
+        const context = this._contextIdToContext.get(parsedObjectId.injectedScriptId);
+
+        if (!(pageOrError instanceof Error) && context) this._page._onBindingCalled(parameters[2].value, context);
       });
       return;
     }
@@ -629,8 +622,10 @@ class WKPage {
 
     let derivedType = type || '';
     if (type === 'log') derivedType = level;else if (type === 'timing') derivedType = 'timeEnd';
-    const handles = (parameters || []).map(p => {
-      let context = null;
+    const handles = [];
+
+    for (const p of parameters || []) {
+      let context;
 
       if (p.objectId) {
         const objectId = JSON.parse(p.objectId);
@@ -639,8 +634,10 @@ class WKPage {
         context = this._contextIdToContext.get(this._mainFrameContextId);
       }
 
-      return context.createHandle(p);
-    });
+      if (!context) return;
+      handles.push(context.createHandle(p));
+    }
+
     this._lastConsoleMessage = {
       derivedType,
       text,
@@ -792,28 +789,16 @@ class WKPage {
     await Promise.all(promises);
   }
 
-  async _ensureResponseInterceptionEnabled() {
-    if (this._needsResponseInterception) return;
-    this._needsResponseInterception = true;
-    await this.updateRequestInterception();
-  }
-
   async updateRequestInterception() {
     const enabled = this._page._needsRequestInterception();
 
-    const promises = [this._updateState('Network.setInterceptionEnabled', {
+    await Promise.all([this._updateState('Network.setInterceptionEnabled', {
       enabled
     }), this._updateState('Network.addInterception', {
       url: '.*',
       stage: 'request',
       isRegex: true
-    })];
-    if (this._needsResponseInterception) this._updateState('Network.addInterception', {
-      url: '.*',
-      stage: 'response',
-      isRegex: true
-    });
-    await Promise.all(promises);
+    })]);
   }
 
   async updateOffline() {
@@ -1024,9 +1009,13 @@ class WKPage {
   }
 
   _onScreencastFrame(event) {
-    this._pageProxySession.send('Screencast.screencastFrameAck', {
-      generation: this._screencastGeneration
-    }).catch(e => _debugLogger.debugLogger.log('error', e));
+    const generation = this._screencastGeneration;
+
+    this._page.throttleScreencastFrameAck(() => {
+      this._pageProxySession.send('Screencast.screencastFrameAck', {
+        generation
+      }).catch(e => _debugLogger.debugLogger.log('error', e));
+    });
 
     const buffer = Buffer.from(event.data, 'base64');
 
@@ -1130,7 +1119,7 @@ class WKPage {
     const documentId = isNavigationRequest ? event.loaderId : undefined;
     let route = null; // We do not support intercepting redirects.
 
-    if (this._page._needsRequestInterception() && !redirectedFrom) route = new _wkInterceptableRequest.WKRouteImpl(session, this, event.requestId);
+    if (this._page._needsRequestInterception() && !redirectedFrom) route = new _wkInterceptableRequest.WKRouteImpl(session, event.requestId);
     const request = new _wkInterceptableRequest.WKInterceptableRequest(session, route, frame, event, redirectedFrom, documentId);
 
     this._requestIdToRequest.set(event.requestId, request);
@@ -1174,24 +1163,6 @@ class WKPage {
     } else {
       request._route._requestInterceptedPromise.resolve();
     }
-  }
-
-  _onResponseIntercepted(session, event) {
-    const request = this._requestIdToRequest.get(event.requestId);
-
-    const route = request === null || request === void 0 ? void 0 : request._routeForRedirectChain();
-
-    if (!(route !== null && route !== void 0 && route._responseInterceptedPromise)) {
-      session.sendMayFail('Network.interceptContinue', {
-        requestId: event.requestId,
-        stage: 'response'
-      });
-      return;
-    }
-
-    route._responseInterceptedPromise.resolve({
-      response: event.response
-    });
   }
 
   _onResponseReceived(event) {
@@ -1266,12 +1237,6 @@ class WKPage {
 
 
     if (!request) return;
-
-    const route = request._routeForRedirectChain();
-
-    if (route !== null && route !== void 0 && route._responseInterceptedPromise) route._responseInterceptedPromise.resolve({
-      error: event
-    });
 
     const response = request.request._existingResponse();
 

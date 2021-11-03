@@ -25,6 +25,8 @@ var _transport = require("../transport");
 
 var _crDevTools = require("./crDevTools");
 
+var _browser = require("../browser");
+
 var _utils = require("../../utils/utils");
 
 var _debugLogger = require("../../utils/debugLogger");
@@ -40,6 +42,8 @@ var _http = _interopRequireDefault(require("http"));
 var _https = _interopRequireDefault(require("https"));
 
 var _registry = require("../../utils/registry");
+
+var _async = require("playwright-core/lib/utils/async");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -85,11 +89,17 @@ class Chromium extends _browserType.BrowserType {
     const wsEndpoint = await urlToWSEndpoint(endpointURL);
     progress.throwIfAborted();
     const chromeTransport = await _transport.WebSocketTransport.connect(progress, wsEndpoint, headersMap);
+    const cleanedUp = new _async.ManualPromise();
+
+    const doCleanup = async () => {
+      await (0, _utils.removeFolders)([artifactsDir]);
+      await (onClose === null || onClose === void 0 ? void 0 : onClose());
+      cleanedUp.resolve();
+    };
 
     const doClose = async () => {
-      await (0, _utils.removeFolders)([artifactsDir]);
       await chromeTransport.closeAndWait();
-      await (onClose === null || onClose === void 0 ? void 0 : onClose());
+      await cleanedUp;
     };
 
     const browserProcess = {
@@ -111,7 +121,9 @@ class Chromium extends _browserType.BrowserType {
       tracesDir: artifactsDir
     };
     progress.throwIfAborted();
-    return await _crBrowser.CRBrowser.connect(chromeTransport, browserOptions);
+    const browser = await _crBrowser.CRBrowser.connect(chromeTransport, browserOptions);
+    browser.on(_browser.Browser.Events.Disconnected, doCleanup);
+    return browser;
   }
 
   _createDevTools() {

@@ -60,8 +60,11 @@ class Playwright extends _channelOwner.ChannelOwner {
     this._redirectPortForTest = void 0;
     this.request = new _fetch.Fetch(this);
     this.chromium = _browserType.BrowserType.from(initializer.chromium);
+    this.chromium._playwright = this;
     this.firefox = _browserType.BrowserType.from(initializer.firefox);
+    this.firefox._playwright = this;
     this.webkit = _browserType.BrowserType.from(initializer.webkit);
+    this.webkit._playwright = this;
     this._android = _android.Android.from(initializer.android);
     this._electron = _electron.Electron.from(initializer.electron);
     this.devices = {};
@@ -71,7 +74,7 @@ class Playwright extends _channelOwner.ChannelOwner {
       descriptor
     } of initializer.deviceDescriptors) this.devices[name] = descriptor;
 
-    this.selectors = _selectors.sharedSelectors;
+    this.selectors = new _selectors.Selectors();
     this.errors = {
       TimeoutError: _errors.TimeoutError
     };
@@ -85,6 +88,16 @@ class Playwright extends _channelOwner.ChannelOwner {
 
       for (const uid of this._sockets.keys()) this._onSocksClosed(uid);
     });
+  }
+
+  _setSelectors(selectors) {
+    const selectorsOwner = _selectors.SelectorsOwner.from(this._initializer.selectors);
+
+    this.selectors._removeChannel(selectorsOwner);
+
+    this.selectors = selectors;
+
+    this.selectors._addChannel(selectorsOwner);
   }
 
   _enablePortForwarding(redirectPortForTest) {

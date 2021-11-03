@@ -116,14 +116,7 @@ class Recorder {
 
     this._refreshListenersIfNeeded();
 
-    setInterval(() => {
-      this._refreshListenersIfNeeded();
-
-      if (params.isUnderTest && !this._reportedReadyForTest) {
-        this._reportedReadyForTest = true;
-        console.error('Recorder script ready for test');
-      }
-    }, 500);
+    injectedScript.onGlobalListenersRemoved.add(() => this._refreshListenersIfNeeded());
 
     globalThis._playwrightRefreshOverlay = () => {
       this._pollRecorderMode().catch(e => console.log(e)); // eslint-disable-line no-console
@@ -131,6 +124,8 @@ class Recorder {
     };
 
     globalThis._playwrightRefreshOverlay();
+
+    if (params.isUnderTest) console.error('Recorder script ready for test');
   }
 
   _refreshListenersIfNeeded() {
@@ -585,10 +580,9 @@ function buttonForEvent(event) {
 function positionForEvent(event) {
   const targetElement = event.target;
   if (targetElement.nodeName !== 'CANVAS') return;
-  const rect = targetElement.getBoundingClientRect();
   return {
-    x: event.clientX - rect.left,
-    y: event.clientY - rect.top
+    x: event.offsetX,
+    y: event.offsetY
   };
 }
 

@@ -105,32 +105,21 @@ class WKInterceptableRequest {
 exports.WKInterceptableRequest = WKInterceptableRequest;
 
 class WKRouteImpl {
-  constructor(session, page, requestId) {
+  constructor(session, requestId) {
     this._session = void 0;
     this._requestId = void 0;
     this._requestInterceptedPromise = new _async.ManualPromise();
-    this._responseInterceptedPromise = void 0;
-    this._page = void 0;
     this._session = session;
-    this._page = page;
     this._requestId = requestId;
-  }
-
-  async responseBody() {
-    const response = await this._session.send('Network.getInterceptedResponseBody', {
-      requestId: this._requestId
-    });
-    return Buffer.from(response.body, 'base64');
   }
 
   async abort(errorCode) {
     const errorType = errorReasons[errorCode];
     (0, _utils.assert)(errorType, 'Unknown error code: ' + errorCode);
-    await this._requestInterceptedPromise;
-    const isResponseIntercepted = await this._responseInterceptedPromise; // In certain cases, protocol will return error if the request was already canceled
+    await this._requestInterceptedPromise; // In certain cases, protocol will return error if the request was already canceled
     // or the page was closed. We should tolerate these errors.
 
-    await this._session.sendMayFail(isResponseIntercepted ? 'Network.interceptResponseWithError' : 'Network.interceptRequestWithError', {
+    await this._session.sendMayFail('Network.interceptRequestWithError', {
       requestId: this._requestId,
       errorType
     });
@@ -147,8 +136,7 @@ class WKRouteImpl {
     );
     const contentType = headers['content-type'];
     if (contentType) mimeType = contentType.split(';')[0].trim();
-    const isResponseIntercepted = await this._responseInterceptedPromise;
-    await this._session.sendMayFail(isResponseIntercepted ? 'Network.interceptWithResponse' : 'Network.interceptRequestWithResponse', {
+    await this._session.sendMayFail('Network.interceptRequestWithResponse', {
       requestId: this._requestId,
       status: response.status,
       statusText: network.STATUS_TEXTS[String(response.status)],
@@ -160,11 +148,6 @@ class WKRouteImpl {
   }
 
   async continue(request, overrides) {
-    if (overrides.interceptResponse) {
-      await this._page._ensureResponseInterceptionEnabled();
-      this._responseInterceptedPromise = new _async.ManualPromise();
-    }
-
     await this._requestInterceptedPromise; // In certain cases, protocol will return error if the request was already canceled
     // or the page was closed. We should tolerate these errors.
 
@@ -177,13 +160,6 @@ class WKRouteImpl {
       ) : undefined,
       postData: overrides.postData ? Buffer.from(overrides.postData).toString('base64') : undefined
     });
-    if (!this._responseInterceptedPromise) return null;
-    const {
-      response,
-      error
-    } = await this._responseInterceptedPromise;
-    if (error) throw new Error(`Request failed: ${error.errorText}`);
-    return new network.InterceptedResponse(request, response.status, response.statusText, (0, _utils.headersObjectToArray)(response.headers));
   }
 
 }

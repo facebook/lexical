@@ -39,19 +39,19 @@ var _async = require("../utils/async");
  * limitations under the License.
  */
 class BrowserType extends _channelOwner.ChannelOwner {
-  // Instrumentation.
-  static from(browserType) {
-    return browserType._object;
-  }
-
-  constructor(parent, type, guid, initializer) {
-    super(parent, type, guid, initializer);
+  constructor(...args) {
+    super(...args);
     this._serverLauncher = void 0;
     this._contexts = new Set();
+    this._playwright = void 0;
     this._defaultContextOptions = {};
     this._defaultLaunchOptions = {};
     this._onDidCreateContext = void 0;
     this._onWillCloseContext = void 0;
+  }
+
+  static from(browserType) {
+    return browserType._object;
   }
 
   executablePath() {
@@ -89,6 +89,9 @@ class BrowserType extends _channelOwner.ChannelOwner {
 
   async launchServer(options = {}) {
     if (!this._serverLauncher) throw new Error('Launching server is not supported');
+    options = { ...this._defaultLaunchOptions,
+      ...options
+    };
     return this._serverLauncher.launchServer(options);
   }
 
@@ -194,6 +197,8 @@ class BrowserType extends _channelOwner.ChannelOwner {
             closePipe();
             return;
           }
+
+          playwright._setSelectors(this._playwright.selectors);
 
           browser = _browser3.Browser.from(playwright._initializer.preLaunchedBrowser);
           browser._logger = logger;

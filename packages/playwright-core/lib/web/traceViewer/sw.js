@@ -28,12 +28,14 @@ self.addEventListener('activate', function (event) {
 const scopePath = new URL(self.registration.scope).pathname;
 const loadedTraces = new Map();
 
-async function loadTrace(trace, clientId) {
+async function loadTrace(trace, clientId, progress) {
   const entry = loadedTraces.get(trace);
   if (entry) return entry.traceModel;
   const traceModel = new _traceModel.TraceModel();
-  const url = trace.startsWith('http') || trace.startsWith('blob') ? trace : `/file?path=${trace}`;
-  await traceModel.load(url);
+  let url = trace.startsWith('http') || trace.startsWith('blob') ? trace : `file?path=${trace}`; // Dropbox does not support cors.
+
+  if (url.startsWith('https://www.dropbox.com/')) url = 'https://dl.dropboxusercontent.com/' + url.substring('https://www.dropbox.com/'.length);
+  await traceModel.load(url, progress);
   const snapshotServer = new _snapshotServer.SnapshotServer(traceModel.storage());
   loadedTraces.set(trace, {
     traceModel,
@@ -46,7 +48,8 @@ async function loadTrace(trace, clientId) {
 
 async function doFetch(event) {
   const request = event.request;
-  const snapshotUrl = request.mode === 'navigate' ? request.url : (await self.clients.get(event.clientId)).url;
+  const client = await self.clients.get(event.clientId);
+  const snapshotUrl = request.mode === 'navigate' ? request.url : client.url;
   const traceUrl = new URL(snapshotUrl).searchParams.get('trace');
   const {
     snapshotServer
@@ -56,9 +59,23 @@ async function doFetch(event) {
     const url = new URL(request.url);
     const relativePath = url.pathname.substring(scopePath.length - 1);
 
-    if (relativePath === '/context') {
+    if (relativePath === '/ping') {
       await gc();
-      const traceModel = await loadTrace(traceUrl, event.clientId);
+      return new Response(null, {
+        status: 200
+      });
+    }
+
+    if (relativePath === '/context') {
+      const traceModel = await loadTrace(traceUrl, event.clientId, (done, total) => {
+        client.postMessage({
+          method: 'progress',
+          params: {
+            done,
+            total
+          }
+        });
+      });
       return new Response(JSON.stringify(traceModel.contextEntry), {
         status: 200,
         headers: {
@@ -67,11 +84,11 @@ async function doFetch(event) {
       });
     }
 
-    if (relativePath.startsWith('/snapshotSize/')) {
+    if (relativePath.startsWith('/snapshotInfo/')) {
       if (!snapshotServer) return new Response(null, {
         status: 404
       });
-      return snapshotServer.serveSnapshotSize(relativePath, url.searchParams);
+      return snapshotServer.serveSnapshotInfo(relativePath, url.searchParams);
     }
 
     if (relativePath.startsWith('/snapshot/')) {

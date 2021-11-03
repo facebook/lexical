@@ -580,8 +580,9 @@ const hostPlatform = (() => {
 
   if (platform === 'linux') {
     const ubuntuVersion = (0, _ubuntuVersion.getUbuntuVersionSync)();
-    if (parseInt(ubuntuVersion, 10) <= 19) return 'ubuntu18.04';
-    return 'ubuntu20.04';
+    const archSuffix = _os.default.arch() === 'arm64' ? '-arm64' : '';
+    if (parseInt(ubuntuVersion, 10) <= 19) return 'ubuntu18.04' + archSuffix;
+    return 'ubuntu20.04' + archSuffix;
   }
 
   if (platform === 'win32') return 'win64';

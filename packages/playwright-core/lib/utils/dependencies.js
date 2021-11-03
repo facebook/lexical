@@ -20,6 +20,8 @@ var _ubuntuVersion = require("./ubuntuVersion");
 
 var utils = _interopRequireWildcard(require("./utils"));
 
+var _registry = require("./registry");
+
 function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 
 function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
@@ -58,7 +60,7 @@ async function installDependenciesWindows(targets) {
   if (targets.has('chromium')) {
     const {
       code
-    } = await utils.spawnAsync('powershell.exe', ['-File', _path.default.join(BIN_DIRECTORY, 'install_media_pack.ps1')], {
+    } = await utils.spawnAsync('powershell.exe', ['-ExecutionPolicy', 'Bypass', '-File', _path.default.join(BIN_DIRECTORY, 'install_media_pack.ps1')], {
       cwd: BIN_DIRECTORY,
       stdio: 'inherit'
     });
@@ -153,7 +155,7 @@ async function validateDependenciesWindows(windowsExeAndDllDirectories) {
   }
 }
 
-async function validateDependenciesLinux(linuxLddDirectories, dlOpenLibraries) {
+async function validateDependenciesLinux(sdkLanguage, linuxLddDirectories, dlOpenLibraries) {
   const directoryPaths = linuxLddDirectories;
   const lddPaths = [];
 
@@ -192,7 +194,7 @@ async function validateDependenciesLinux(linuxLddDirectories, dlOpenLibraries) {
   // Suggest installation with a Playwright CLI.
 
   if (missingPackages.size && !missingDeps.size) {
-    throw new Error('\n' + utils.wrapInASCIIBox([`Host system is missing a few dependencies to run browsers.`, `Please install them with the following command:`, ``, `    ${maybeSudo}npx playwright install-deps`, ``, `<3 Playwright Team`].join('\n'), 1));
+    throw new Error('\n' + utils.wrapInASCIIBox([`Host system is missing a few dependencies to run browsers.`, `Please install them with the following command:`, ``, `    ${maybeSudo}${(0, _registry.buildPlaywrightCLICommand)(sdkLanguage, 'install-deps')}`, ``, `<3 Playwright Team`].join('\n'), 1));
   } // Unhappy path - unusual distribution configuration.
 
 

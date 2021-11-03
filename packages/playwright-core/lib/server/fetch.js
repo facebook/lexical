@@ -11,6 +11,8 @@ var https = _interopRequireWildcard(require("https"));
 
 var _httpsProxyAgent = require("https-proxy-agent");
 
+var _socksProxyAgent = require("socks-proxy-agent");
+
 var _stream = require("stream");
 
 var _url = _interopRequireDefault(require("url"));
@@ -111,11 +113,20 @@ class FetchRequest extends _instrumentation.SdkObject {
       let agent;
 
       if (proxy) {
+        var _proxyOpts$protocol;
+
         // TODO: support bypass proxy
         const proxyOpts = _url.default.parse(proxy.server);
 
-        if (proxy.username) proxyOpts.auth = `${proxy.username}:${proxy.password || ''}`;
-        agent = new _httpsProxyAgent.HttpsProxyAgent(proxyOpts);
+        if ((_proxyOpts$protocol = proxyOpts.protocol) !== null && _proxyOpts$protocol !== void 0 && _proxyOpts$protocol.startsWith('socks')) {
+          agent = new _socksProxyAgent.SocksProxyAgent({
+            host: proxyOpts.hostname,
+            port: proxyOpts.port || undefined
+          });
+        } else {
+          if (proxy.username) proxyOpts.auth = `${proxy.username}:${proxy.password || ''}`;
+          agent = new _httpsProxyAgent.HttpsProxyAgent(proxyOpts);
+        }
       }
 
       const timeout = defaults.timeoutSettings.timeout(params);
@@ -208,7 +219,7 @@ class FetchRequest extends _instrumentation.SdkObject {
         if (redirectStatus.includes(response.statusCode)) {
           if (!options.maxRedirects) {
             reject(new Error('Max redirect count exceeded'));
-            request.abort();
+            request.destroy();
             return;
           }
 
@@ -224,6 +235,7 @@ class FetchRequest extends _instrumentation.SdkObject {
             postData = undefined;
             delete headers[`content-encoding`];
             delete headers[`content-language`];
+            delete headers[`content-length`];
             delete headers[`content-location`];
             delete headers[`content-type`];
           }
@@ -235,12 +247,14 @@ class FetchRequest extends _instrumentation.SdkObject {
             maxRedirects: options.maxRedirects - 1,
             timeout: options.timeout,
             deadline: options.deadline
-          }; // HTTP-redirect fetch step 4: If locationURL is null, then return response.
+          }; // rejectUnauthorized = undefined is treated as true in node 12.
+
+          if (options.rejectUnauthorized === false) redirectOptions.rejectUnauthorized = false; // HTTP-redirect fetch step 4: If locationURL is null, then return response.
 
           if (response.headers.location) {
             const locationURL = new URL(response.headers.location, url);
             fulfill(this._sendRequest(locationURL, redirectOptions, postData));
-            request.abort();
+            request.destroy();
             return;
           }
         }
@@ -258,7 +272,7 @@ class FetchRequest extends _instrumentation.SdkObject {
             const encoded = Buffer.from(`${username || ''}:${password || ''}`).toString('base64');
             options.headers['authorization'] = `Basic ${encoded}`;
             fulfill(this._sendRequest(url, options, postData));
-            request.abort();
+            request.destroy();
             return;
           }
         }
@@ -301,6 +315,14 @@ class FetchRequest extends _instrumentation.SdkObject {
       });
       request.on('error', reject);
 
+      const disposeListener = () => {
+        reject(new Error('Request context disposed.'));
+        request.destroy();
+      };
+
+      this.on(FetchRequest.Events.Dispose, disposeListener);
+      request.on('close', () => this.off(FetchRequest.Events.Dispose, disposeListener));
+
       if (_debugLogger.debugLogger.isEnabled('api')) {
         _debugLogger.debugLogger.log('api', `→ ${options.method} ${url.toString()}`);
 
@@ -312,7 +334,7 @@ class FetchRequest extends _instrumentation.SdkObject {
       if (options.deadline) {
         const rejectOnTimeout = () => {
           reject(new Error(`Request timed out after ${options.timeout}ms`));
-          request.abort();
+          request.destroy();
         };
 
         const remaining = options.deadline - (0, _utils.monotonicTime)();

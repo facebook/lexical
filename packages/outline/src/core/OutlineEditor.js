@@ -241,9 +241,6 @@ class BaseOutlineEditor {
     // Logging for updates
     this._log = [];
   }
-  getObserver(): null | MutationObserver {
-    return this._observer;
-  }
   isComposing(): boolean {
     return this._compositionKey != null;
   }
@@ -377,11 +374,7 @@ class BaseOutlineEditor {
         "setEditorState: the editor state is empty. Ensure the editor state's root node never becomes empty.",
       );
     }
-    const observer = this._observer;
-    if (observer !== null) {
-      const mutations = observer.takeRecords();
-      flushRootMutations(getSelf(this), mutations, observer);
-    }
+    flushRootMutations(getSelf(this));
     if (this._pendingEditorState !== null) {
       commitPendingUpdates(getSelf(this));
     }
@@ -483,7 +476,6 @@ declare export class OutlineEditor {
   _observer: null | MutationObserver;
   _log: Array<string>;
 
-  getObserver(): null | MutationObserver;
   isComposing(): boolean;
   // isEmpty(trim?: boolean): boolean;
   registerNodeType(nodeType: string, klass: Class<OutlineNode>): void;
@@ -505,10 +497,4 @@ declare export class OutlineEditor {
   update(updateFn: (state: State) => void, callbackFn?: () => void): boolean;
   focus(callbackFn?: () => void): void;
   // canShowPlaceholder(): boolean;
-}
-
-export function getEditorFromElement(element: Element): null | OutlineEditor {
-  // $FlowFixMe: internal field
-  const possibleEditor: void | OutlineEditor = element.__outlineEditor;
-  return possibleEditor != null ? possibleEditor : null;
 }

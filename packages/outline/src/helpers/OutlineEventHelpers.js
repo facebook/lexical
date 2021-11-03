@@ -61,7 +61,6 @@ import {
   createNodeFromParse,
   isTextNode,
   isDecoratorNode,
-  getEditorFromElement,
   log,
 } from 'outline';
 import {IS_FIREFOX} from 'shared/environment';
@@ -70,7 +69,6 @@ import getPossibleDecoratorNode from 'shared/getPossibleDecoratorNode';
 const NO_BREAK_SPACE_CHAR = '\u00A0';
 
 let lastKeyWasMaybeAndroidSoftKey = false;
-let pendingOnInputTextMutations = null;
 
 // TODO the Flow types here needs fixing
 export type EventHandler = (
@@ -974,14 +972,6 @@ function updateSelectedTextFromDOM(
   }
 }
 
-function takeMutationRecords(editor: OutlineEditor): Array<MutationRecord> {
-  const observer = editor.getObserver();
-  if (observer === null) {
-    return [];
-  }
-  return observer.takeRecords();
-}
-
 export function onInput(event: InputEvent, editor: OutlineEditor): void {
   // We don't want the onInput to bubble, in the case of nested editors.
   event.stopPropagation();
@@ -998,67 +988,10 @@ export function onInput(event: InputEvent, editor: OutlineEditor): void {
     } else {
       updateSelectedTextFromDOM(editor, state, false);
     }
-    if (pendingOnInputTextMutations !== null) {
-      state.flushMutations(pendingOnInputTextMutations);
-      pendingOnInputTextMutations = null;
-    }
     // Also flush any other mutations that might have occured
     // since the change.
-    const mutations = takeMutationRecords(editor);
-    if (mutations.length > 0) {
-      state.flushMutations(mutations);
-    }
+    state.flushMutations();
   });
-}
-
-export function applyMutationInputWebkitWorkaround(): void {
-  // In Chrome and Safari, having an input capture listener
-  // on an element other than the contenteditable causes a
-  // bug where MutationObserver listeners are triggered before
-  // onInput is triggered. In order to avoid this bug, we
-  // add our own capture input listener to the window and
-  // capture any mutations at this point. This stops the
-  // MutationObserver listener from firing before.
-  //
-  // If we have any records, we flush all non-text mutations
-  // now (early) and then pass along any text mutations to
-  // be processed later,.
-
-  window.addEventListener(
-    'input',
-    (event: InputEvent) => {
-      pendingOnInputTextMutations = null;
-      // $FlowFixMe: event.target is always an element for input events
-      const editor = getEditorFromElement(event.target);
-      if (editor === null) {
-        return;
-      }
-      const mutations = takeMutationRecords(editor);
-      if (mutations.length > 0) {
-        const textMutations = [];
-        const otherMutations = [];
-        // Filter out text mutations from the other mutations
-        for (let i = 0; i < mutations.length; i++) {
-          const mutation = mutations[i];
-          if (mutation.type === 'characterData') {
-            textMutations.push(mutation);
-          } else {
-            otherMutations.push(mutation);
-          }
-        }
-        if (otherMutations.length > 0) {
-          editor.update((state) => {
-            log('applyMutationWorkaround');
-            state.flushMutations(otherMutations);
-          });
-        }
-        if (textMutations.length > 0) {
-          pendingOnInputTextMutations = textMutations;
-        }
-      }
-    },
-    true,
-  );
 }
 
 export function onTextMutation(state: State, mutation: TextMutation): void {

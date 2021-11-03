@@ -44,7 +44,6 @@ module.name_mapper='^outline-react/useOutlineDecorators' -> '<PROJECT_ROOT>/pack
 module.name_mapper='^outline-react/useOutlineNestedList' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlineNestedList.js'
 module.name_mapper='^outline-react/useOutlineIsEmpty' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlineIsEmpty.js'
 module.name_mapper='^outline-react/useOutlineCharacterLimit' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlineCharacterLimit.js'
-module.name_mapper='^outline-react/useOutlineTypingPerformance' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlineTypingPerformance.js'
 
 module.name_mapper='^shared/isImmutableOrInert' -> '<PROJECT_ROOT>/packages/shared/src/isImmutableOrInert.js'
 module.name_mapper='^shared/invariant' -> '<PROJECT_ROOT>/packages/shared/src/invariant.js'

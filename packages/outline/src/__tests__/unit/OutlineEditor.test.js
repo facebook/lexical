@@ -950,14 +950,5 @@ describe('OutlineEditor tests', () => {
         '<div contenteditable="true" data-outline-editor="true"><p><div><span data-outline-text="true">A</span><div><span data-outline-text="true">C</span></div></div><div><span data-outline-text="true">B</span></div></p></div>',
       );
     });
-
-    it('isEmpty', async () => {
-      expect(editor.isEmpty()).toBe(true);
-      await update((state: State) => {
-        const paragraph = state.getRoot().getFirstChild();
-        paragraph.append(createTextNode('foo'));
-      });
-      expect(editor.isEmpty()).toBe(false);
-    });
   });
 });

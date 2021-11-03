@@ -582,7 +582,9 @@ function updateTextNodeFromDOMContent(
 
     if (compositionEnd || normalizedTextContent !== node.getTextContent()) {
       if (normalizedTextContent === '') {
-        state.setCompositionKey(null);
+        if (isComposing) {
+          state.setCompositionKey(null);
+        }
         node.remove();
       } else if (
         isImmutableOrInert(node) ||

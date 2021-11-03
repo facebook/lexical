@@ -591,6 +591,11 @@ function updateTextNodeFromDOMContent(
       const selection = state.getSelection();
 
       if (selection === null || anchorOffset === null || focusOffset === null) {
+        // This fixes a Safari composition bug where the text gets appended after
+        // the NO_BREAK_SPACE_CHAR.
+        if (selection !== null && isComposing && normalizedTextContent === '') {
+          selection.setTextNodeRange(node, 0, node, 1);
+        }
         node.setTextContent(normalizedTextContent);
         return;
       }

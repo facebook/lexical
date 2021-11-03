@@ -329,6 +329,7 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
     editor._pendingDecorators = null;
     triggerListeners('decorator', editor, true, pendingDecorators);
   }
+  triggerTextContentListeners(editor, currentEditorState, pendingEditorState);
   triggerListeners('update', editor, true, {
     editorState: pendingEditorState,
     dirty: isEditorStateDirty,
@@ -336,7 +337,6 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
     log,
   });
   triggerDeferredUpdateCallbacks(editor);
-  triggerTextContentListeners(editor, currentEditorState, pendingEditorState);
   triggerEnqueuedUpdates(editor);
 }
 

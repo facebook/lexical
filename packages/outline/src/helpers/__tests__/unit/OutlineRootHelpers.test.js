@@ -11,28 +11,24 @@ import type {State} from 'outline';
 
 import {createTextNode} from 'outline';
 import {createParagraphNode} from 'outline/ParagraphNode';
-import {isBlank, isBlankFromEditorState} from 'outline/root';
+import {isBlank} from 'outline/root';
 import {initializeUnitTest} from '../../../__tests__/utils';
 
-describe('OutlineNodeHelpers tests', () => {
+describe('OutlineRootHelpers tests', () => {
   initializeUnitTest((testEnv) => {
     it('isBlank', async () => {
       const editor = testEnv.editor;
-      expect(
-        isBlankFromEditorState(editor.getEditorState(), editor.isComposing()),
-      ).toBe(true);
+      expect(isBlank(editor.getEditorState(), editor.isComposing())).toBe(true);
       await editor.update((state: State) => {
-        expect(isBlank(state, editor.isComposing())).toBe(true);
         const root = state.getRoot();
         const paragraph = createParagraphNode();
         const text = createTextNode('foo');
         root.append(paragraph);
         paragraph.append(text);
-        expect(isBlank(state, editor.isComposing())).toBe(false);
       });
-      expect(
-        isBlankFromEditorState(editor.getEditorState(), editor.isComposing()),
-      ).toBe(false);
+      expect(isBlank(editor.getEditorState(), editor.isComposing())).toBe(
+        false,
+      );
     });
   });
 });

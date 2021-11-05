@@ -11,7 +11,7 @@ import type {OutlineEditor} from 'outline';
 
 import useLayoutEffect from './shared/useLayoutEffect';
 import {useState} from 'react';
-import {isBlank} from 'outline/validation';
+import {isBlankFromEditorState} from 'outline/root';
 
 /**
  * DEPRECATED. Use useOutlineIsBlank
@@ -22,7 +22,7 @@ export default function useCometOutlineIsEmpty(editor: OutlineEditor): boolean {
   useLayoutEffect(() => {
     return editor.addListener('update', ({editorState}) => {
       const isComposing = editor.isComposing();
-      setIsEmpty(isBlank(editorState, isComposing));
+      setIsEmpty(isBlankFromEditorState(editorState, isComposing));
     });
   }, [editor]);
   return isCurrentlyEmpty;

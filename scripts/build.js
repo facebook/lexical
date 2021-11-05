@@ -173,9 +173,9 @@ async function build(name, inputFile, outputFile) {
             ),
           },
           {
-            find: isWWW ? 'Outline/validation' : 'outline/validation',
+            find: isWWW ? 'Outline/root' : 'outline/root',
             replacement: path.resolve(
-              'packages/outline/src/helpers/OutlineValidationHelpers',
+              'packages/outline/src/helpers/OutlineRootHelpers',
             ),
           },
         ],

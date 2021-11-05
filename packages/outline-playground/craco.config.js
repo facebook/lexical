@@ -18,7 +18,7 @@ module.exports = {
       'outline/nodes': 'outline/dist/OutlineNodeHelpers',
       'outline/events': 'outline/dist/OutlineEventHelpers',
       'outline/offsets': 'outline/dist/OutlineOffsetHelpers',
-      'outline/validation': 'outline/dist/OutlineValidationHelpers',
+      'outline/root': 'outline/dist/OutlineRootHelpers',
       // Outline React
       'outline-react/OutlineTreeView': 'outline-react/dist/OutlineTreeView',
       'outline-react/useOutlineEditor': 'outline-react/dist/useOutlineEditor',

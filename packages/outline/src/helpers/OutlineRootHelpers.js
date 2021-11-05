@@ -7,12 +7,31 @@
  * @flow strict
  */
 
-import type {EditorState} from 'outline';
+import type {State, EditorState} from 'outline';
 
 import {getEditorStateTextContent} from '../core/OutlineUtils';
+import {getActiveEditorState} from '../core/OutlineUpdates';
 import {isBlockNode, isTextNode} from 'outline';
 
+export function textContent(state: State): string {
+  const editorState = getActiveEditorState();
+  return textContentFromEditorState(editorState);
+}
+
+export function textContentFromEditorState(editorState: EditorState): string {
+  return getEditorStateTextContent(editorState);
+}
+
 export function isBlank(
+  state: State,
+  isEditorComposing: boolean,
+  trim?: boolean = true,
+): boolean {
+  const editorState = getActiveEditorState();
+  return isBlankFromEditorState(editorState, isEditorComposing, trim);
+}
+
+export function isBlankFromEditorState(
   editorState: EditorState,
   isEditorComposing: boolean,
   trim?: boolean = true,
@@ -28,10 +47,18 @@ export function isBlank(
 }
 
 export function canShowPlaceholder(
+  state: State,
+  isComposing: boolean,
+): boolean {
+  const editorState = getActiveEditorState();
+  return isBlankFromEditorState(editorState, isComposing);
+}
+
+export function canShowPlaceholderFromEditorState(
   editorState: EditorState,
   isComposing: boolean,
 ): boolean {
-  if (!isBlank(editorState, isComposing, false)) {
+  if (!isBlankFromEditorState(editorState, isComposing, false)) {
     return false;
   }
   const nodeMap = editorState._nodeMap;

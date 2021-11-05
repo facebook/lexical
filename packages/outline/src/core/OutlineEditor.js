@@ -386,11 +386,15 @@ class BaseOutlineEditor {
   parseEditorState(stringifiedEditorState: string): EditorState {
     return parseEditorState(stringifiedEditorState, getSelf(this));
   }
-  update(updateFn: (state: State) => void, callbackFn?: () => void): void {
+  update(
+    updateFn: (state: State) => void,
+    callbackFn?: () => void,
+    flushSync = false,
+  ): void {
     if (shouldEnqueueUpdates()) {
-      getSelf(this)._updates.push([updateFn, callbackFn]);
+      getSelf(this)._updates.push([updateFn, callbackFn, flushSync]);
     } else {
-      beginUpdate(getSelf(this), updateFn, callbackFn);
+      beginUpdate(getSelf(this), updateFn, callbackFn, flushSync);
     }
   }
   focus(callbackFn?: () => void): void {
@@ -462,7 +466,7 @@ declare export class OutlineEditor {
   _pendingEditorState: null | EditorState;
   _compositionKey: null | NodeKey;
   _deferred: Array<() => void>;
-  _updates: Array<[(state: State) => void, void | (() => void)]>;
+  _updates: Array<[(state: State) => void, void | (() => void), boolean]>;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _listeners: Listeners;
   _textNodeTransforms: Set<TextNodeTransform>;
@@ -494,7 +498,11 @@ declare export class OutlineEditor {
   getEditorState(): EditorState;
   setEditorState(editorState: EditorState): void;
   parseEditorState(stringifiedEditorState: string): EditorState;
-  update(updateFn: (state: State) => void, callbackFn?: () => void): boolean;
+  update(
+    updateFn: (state: State) => void,
+    callbackFn?: () => void,
+    flushSync?: boolean,
+  ): boolean;
   focus(callbackFn?: () => void): void;
   // canShowPlaceholder(): boolean;
 }

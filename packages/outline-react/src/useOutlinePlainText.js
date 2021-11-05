@@ -55,26 +55,34 @@ function initParagraph(
 }
 
 function initEditor(editor: OutlineEditor): void {
-  editor.update((state) => {
-    log('initEditor');
-    const root = state.getRoot();
-    const firstChild = root.getFirstChild();
-    if (firstChild === null) {
-      initParagraph(state, root, editor);
-    }
-  });
+  editor.update(
+    (state: State) => {
+      log('initEditor');
+      const root = state.getRoot();
+      const firstChild = root.getFirstChild();
+      if (firstChild === null) {
+        initParagraph(state, root, editor);
+      }
+    },
+    undefined,
+    true,
+  );
 }
 
 function clearEditor(
   editor: OutlineEditor,
   callbackFn?: (callbackFn?: () => void) => void,
 ): void {
-  editor.update((state) => {
-    log('clearEditor');
-    const root = state.getRoot();
-    root.clear();
-    initParagraph(state, root, editor);
-  }, callbackFn);
+  editor.update(
+    (state) => {
+      log('clearEditor');
+      const root = state.getRoot();
+      root.clear();
+      initParagraph(state, root, editor);
+    },
+    callbackFn,
+    true,
+  );
 }
 
 const events: InputEvents = [

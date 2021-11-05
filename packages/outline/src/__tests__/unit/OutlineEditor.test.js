@@ -337,6 +337,46 @@ describe('OutlineEditor tests', () => {
     );
   });
 
+  it('Should be able to recover from an update error with flushSync', async () => {
+    function TestBase() {
+      editor = React.useMemo(() => createEditor(), []);
+
+      const ref = React.useCallback((node) => {
+        editor.setRootElement(node);
+      }, []);
+
+      return <div ref={ref} contentEditable={true} />;
+    }
+
+    ReactTestUtils.act(() => {
+      reactRoot.render(<TestBase element={null} />);
+    });
+
+    editor.update(
+      (state) => {
+        const root = state.getRoot();
+        if (root.getFirstChild() === null) {
+          const paragraph = createParagraphNode();
+          const text = createTextNode('This works!');
+          root.append(paragraph);
+          paragraph.append(text);
+        }
+      },
+      undefined,
+      true,
+    );
+    editor.update((state) => {
+      throw new Error('foo');
+    });
+
+    // Wait for update to complete
+    await Promise.resolve().then();
+
+    expect(container.innerHTML).toBe(
+      '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">This works!</span></p></div>',
+    );
+  });
+
   it('Should be able to recover from a reconciliation error', async () => {
     function TestBase() {
       editor = React.useMemo(() => createEditor(), []);

@@ -375,8 +375,8 @@ export function triggerListeners(
 function triggerEnqueuedUpdates(editor: OutlineEditor): void {
   const queuedUpdates = editor._updates;
   if (queuedUpdates.length !== 0) {
-    const [updateFn, callbackFn] = queuedUpdates.shift();
-    beginUpdate(editor, updateFn, callbackFn);
+    const [updateFn, callbackFn, flushSync] = queuedUpdates.shift();
+    beginUpdate(editor, updateFn, callbackFn, flushSync);
   }
 }
 
@@ -417,6 +417,7 @@ export function beginUpdate(
   editor: OutlineEditor,
   updateFn: (state: State) => void,
   callbackFn?: () => void,
+  flushSync: boolean,
 ): void {
   const deferred = editor._deferred;
   if (callbackFn) {
@@ -430,6 +431,9 @@ export function beginUpdate(
     pendingEditorState = editor._pendingEditorState =
       cloneEditorState(currentEditorState);
     editorStateWasCloned = true;
+  }
+  if (flushSync) {
+    pendingEditorState._flushSync = true;
   }
 
   const previousActiveEditorState = activeEditorState;

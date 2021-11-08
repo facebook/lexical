@@ -71,11 +71,11 @@ import {
 } from 'outline';
 import {IS_FIREFOX} from 'shared/environment';
 import getPossibleDecoratorNode from 'shared/getPossibleDecoratorNode';
-import {createListNode} from '../extensions/OutlineListNode';
-import {createListItemNode} from '../extensions/OutlineListItemNode';
-import {createParagraphNode} from '../extensions/OutlineParagraphNode';
-import {createHeadingNode} from '../extensions/OutlineHeadingNode';
-import {createLinkNode} from '../extensions/OutlineLinkNode';
+import {createListNode} from 'outline/ListNode';
+import {createListItemNode} from 'outline/ListItemNode';
+import {createParagraphNode} from 'outline/ParagraphNode';
+import {createHeadingNode} from 'outline/HeadingNode';
+import {createLinkNode} from 'outline/LinkNode';
 
 const NO_BREAK_SPACE_CHAR = '\u00A0';
 

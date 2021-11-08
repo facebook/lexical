@@ -18,7 +18,7 @@ import {
   shouldEnqueueUpdates,
   getActiveEditorState,
 } from './OutlineUpdates';
-import {isBlockNode, isTextNode, TextNode} from '.';
+import {isTextNode, TextNode} from '.';
 import {createEmptyEditorState} from './OutlineEditorState';
 import {LineBreakNode} from './OutlineLineBreakNode';
 import {RootNode} from './OutlineRootNode';
@@ -244,19 +244,6 @@ class BaseOutlineEditor {
   isComposing(): boolean {
     return this._compositionKey != null;
   }
-  /**
-   * Deprecated. To be removed within a week.
-   */
-  isEmpty(trim: boolean = true): boolean {
-    if (this.isComposing()) {
-      return false;
-    }
-    let text = this.getCurrentTextContent();
-    if (trim) {
-      text = text.trim();
-    }
-    return text === '';
-  }
   registerNodeType(nodeType: string, klass: Class<OutlineNode>): void {
     this._nodeTypes.set(nodeType, klass);
   }
@@ -321,12 +308,6 @@ class BaseOutlineEditor {
   }
   getRootElement(): null | HTMLElement {
     return this._rootElement;
-  }
-  /**
-   * Deprecated. To be removed within a week.
-   */
-  getCurrentTextContent(): string {
-    return getEditorStateTextContent(this._editorState);
   }
   setRootElement(nextRootElement: null | HTMLElement): void {
     const prevRootElement = this._rootElement;
@@ -418,39 +399,6 @@ class BaseOutlineEditor {
       );
     }
   }
-  /**
-   * Deprecated. To be removed within a week.
-   */
-  canShowPlaceholder(): boolean {
-    if (!this.isEmpty(false)) {
-      return false;
-    }
-    const nodeMap = this._editorState._nodeMap;
-    // $FlowFixMe: root is always in the Map
-    const root = ((nodeMap.get('root'): any): RootNode);
-    const topBlockIDs = root.__children;
-    const topBlockIDsLength = topBlockIDs.length;
-    if (topBlockIDsLength > 1) {
-      return false;
-    }
-    for (let i = 0; i < topBlockIDsLength; i++) {
-      const topBlock = nodeMap.get(topBlockIDs[i]);
-
-      if (isBlockNode(topBlock)) {
-        if (topBlock.__type !== 'paragraph') {
-          return false;
-        }
-        const children = topBlock.__children;
-        for (let s = 0; s < children.length; s++) {
-          const child = nodeMap.get(children[s]);
-          if (!isTextNode(child)) {
-            return false;
-          }
-        }
-      }
-    }
-    return true;
-  }
 }
 
 // We export this to make the addListener types work properly.
@@ -477,7 +425,6 @@ declare export class OutlineEditor {
   _log: Array<string>;
 
   isComposing(): boolean;
-  // isEmpty(trim?: boolean): boolean;
   registerNodeType(nodeType: string, klass: Class<OutlineNode>): void;
   addListener(type: 'error', listener: ErrorListener): () => void;
   addListener(type: 'update', listener: UpdateListener): () => void;
@@ -489,12 +436,10 @@ declare export class OutlineEditor {
   getDecorators(): {[NodeKey]: ReactNode};
   getRootElement(): null | HTMLElement;
   setRootElement(rootElement: null | HTMLElement): void;
-  // getCurrentTextContent(): string;
   getElementByKey(key: NodeKey): null | HTMLElement;
   getEditorState(): EditorState;
   setEditorState(editorState: EditorState): void;
   parseEditorState(stringifiedEditorState: string): EditorState;
   update(updateFn: (state: State) => void, callbackFn?: () => void): boolean;
   focus(callbackFn?: () => void): void;
-  // canShowPlaceholder(): boolean;
 }

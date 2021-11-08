@@ -36,8 +36,8 @@ export default function useTypeahead(editor: OutlineEditor): void {
 
   // Monitor entered text
   useEffect(() => {
-    return editor.addListener('textcontent', (text) => {
-      setText(text);
+    return editor.addListener('textcontent', ({textContent}) => {
+      setText(textContent);
     });
   }, [editor]);
 

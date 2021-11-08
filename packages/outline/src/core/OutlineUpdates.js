@@ -326,7 +326,13 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
     editor._pendingDecorators = null;
     triggerListeners('decorator', editor, true, pendingDecorators);
   }
-  triggerTextContentListeners(editor, currentEditorState, pendingEditorState);
+  triggerTextContentListeners(editor, {
+    currentEditorState,
+    pendingEditorState,
+    dirty: isEditorStateDirty,
+    dirtyNodes,
+    log,
+  });
   triggerListeners('update', editor, true, {
     editorState: pendingEditorState,
     dirty: isEditorStateDirty,
@@ -339,13 +345,30 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
 
 function triggerTextContentListeners(
   editor: OutlineEditor,
-  currentEditorState: EditorState,
-  pendingEditorState: EditorState,
+  {
+    currentEditorState,
+    pendingEditorState,
+    dirty,
+    dirtyNodes,
+    log,
+  }: {
+    currentEditorState: EditorState,
+    pendingEditorState: EditorState,
+    dirty: boolean,
+    dirtyNodes: Set<NodeKey>,
+    log: Array<string>,
+  },
 ): void {
   const currentTextContent = getEditorStateTextContent(currentEditorState);
   const latestTextContent = getEditorStateTextContent(pendingEditorState);
   if (currentTextContent !== latestTextContent) {
-    triggerListeners('textcontent', editor, true, latestTextContent);
+    triggerListeners('textcontent', editor, true, {
+      textContent: latestTextContent,
+      editorState: pendingEditorState,
+      dirty,
+      dirtyNodes,
+      log,
+    });
   }
 }
 

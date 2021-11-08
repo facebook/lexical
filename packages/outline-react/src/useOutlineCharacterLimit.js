@@ -19,6 +19,7 @@ import type {
 import {BlockNode, isLeafNode, isTextNode, log} from 'outline';
 import {updateWithoutHistory} from 'outline/history';
 import {dfs} from 'outline/nodes';
+import {textContent2} from 'outline/root';
 import {useEffect} from 'react';
 
 type OptionalProps = {
@@ -41,43 +42,30 @@ export function useCharacterLimit(
   }, [editor]);
 
   useEffect(() => {
-    let text = '';
     let lastComputedTextLength = 0;
-    const textContentListener = editor.addListener(
-      'textcontent',
-      (currentText: string) => {
-        text = currentText;
-      },
-    );
-    const updateListener = editor.addListener(
-      'update',
-      ({dirty, dirtyNodes}) => {
-        const isComposing = editor.isComposing();
-        const hasDirtyNodes = dirty && dirtyNodes.size > 0;
-        if (isComposing || !hasDirtyNodes) {
-          return;
-        }
-        const textLength = strlen(text);
-        const textLengthAboveThreshold =
-          textLength > maxCharacters ||
-          (lastComputedTextLength !== null &&
-            lastComputedTextLength > maxCharacters);
-        const diff = maxCharacters - textLength;
-        remainingCharacters(diff);
-        if (lastComputedTextLength === null || textLengthAboveThreshold) {
-          const offset = findOffset(text, maxCharacters, strlen);
-          updateWithoutHistory(editor, (state: State) => {
-            log('CharacterLimit');
-            wrapOverflowedNodes(state, offset);
-          });
-        }
-        lastComputedTextLength = textLength;
-      },
-    );
-    return () => {
-      textContentListener();
-      updateListener();
-    };
+    return editor.addListener('update', ({editorState, dirty, dirtyNodes}) => {
+      const text = editorState.read(textContent2);
+      const isComposing = editor.isComposing();
+      const hasDirtyNodes = dirty && dirtyNodes.size > 0;
+      if (isComposing || !hasDirtyNodes) {
+        return;
+      }
+      const textLength = strlen(text);
+      const textLengthAboveThreshold =
+        textLength > maxCharacters ||
+        (lastComputedTextLength !== null &&
+          lastComputedTextLength > maxCharacters);
+      const diff = maxCharacters - textLength;
+      remainingCharacters(diff);
+      if (lastComputedTextLength === null || textLengthAboveThreshold) {
+        const offset = findOffset(text, maxCharacters, strlen);
+        updateWithoutHistory(editor, (state: State) => {
+          log('CharacterLimit');
+          wrapOverflowedNodes(state, offset);
+        });
+      }
+      lastComputedTextLength = textLength;
+    });
   }, [editor, maxCharacters, remainingCharacters, strlen]);
 }
 

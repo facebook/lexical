@@ -25,7 +25,6 @@ import {RootNode} from './OutlineRootNode';
 import {NO_DIRTY_NODES, FULL_RECONCILE} from './OutlineConstants';
 import {flushRootMutations, initMutationObserver} from './OutlineMutations';
 import {beginUpdate, triggerListeners} from './OutlineUpdates';
-import {getEditorStateTextContent} from './OutlineUtils';
 import invariant from 'shared/invariant';
 
 export type EditorThemeClassName = string;
@@ -91,7 +90,13 @@ export type TextMutationListener = (
   state: State,
   mutation: TextMutation,
 ) => void;
-export type TextContentListener = (text: string) => void;
+export type TextContentListener = ({
+  textContent: string,
+  editorState: EditorState,
+  dirty: boolean,
+  dirtyNodes: Set<NodeKey>,
+  log: Array<string>,
+}) => void;
 
 export type TextMutation = {
   node: TextNode,
@@ -262,16 +267,10 @@ class BaseOutlineEditor {
     listenerSet.add(listener);
 
     const isRootType = type === 'root';
-    const isTextContentType = type === 'textcontent';
     if (isRootType) {
       // $FlowFixMe: TODO refine
       const rootListener: RootListener = listener;
       rootListener(this._rootElement, null);
-    } else if (isTextContentType) {
-      const textContent = getEditorStateTextContent(this._editorState);
-      // $FlowFixMe: TODO refine
-      const textContentListener: TextContentListener = listener;
-      textContentListener(textContent);
     }
     return () => {
       // $FlowFixMe: TODO refine this from the above types

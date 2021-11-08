@@ -168,30 +168,40 @@ export function createOutlineNodeFromDOMNode(
   node: Node,
   conversionMap: DOMTransformerMap,
   editor: OutlineEditor,
-): OutlineNode | null {
-  let outlineNode: OutlineNode | null = null;
+): Array<OutlineNode> {
+  const outlineNodes: Array<OutlineNode> = [];
+  let currentOutlineNode = null;
   const nodeName = node.nodeName.toLowerCase();
   const customHtmlTransforms = editor._config.htmlTransforms || {};
   const createFunction =
     customHtmlTransforms[nodeName] || conversionMap[nodeName];
 
-  if (createFunction) {
-    outlineNode = createFunction(node);
-    if (isBlockNode(outlineNode)) {
-      const children = node.childNodes;
-      for (let i = 0; i < children.length; i++) {
-        const child = createOutlineNodeFromDOMNode(
-          children[i],
-          conversionMap,
-          editor,
-        );
-        if (child !== null) {
-          outlineNode.append(child);
-        }
-      }
+  currentOutlineNode = createFunction ? createFunction(node) : null;
+
+  if (currentOutlineNode !== null) {
+    outlineNodes.push(currentOutlineNode);
+  }
+  // If the DOM node doesn't have a transformer, we don't know what
+  // to do with it but we still need to process any childNodes.
+  const children = node.childNodes;
+  for (let i = 0; i < children.length; i++) {
+    const childOutlineNodes = createOutlineNodeFromDOMNode(
+      children[i],
+      conversionMap,
+      editor,
+    );
+
+    if (isBlockNode(currentOutlineNode)) {
+      // If the current node is a BlockNode after transformation,
+      // we can append all the children to it.
+      currentOutlineNode.append(...childOutlineNodes);
+    } else if (currentOutlineNode === null) {
+      // If it doesn't have a transformer, we hoist its children
+      // up to the same level as it.
+      outlineNodes.push(...childOutlineNodes);
     }
   }
-  return outlineNode;
+  return outlineNodes;
 }
 
 function generateNodesFromDOM(
@@ -200,7 +210,7 @@ function generateNodesFromDOM(
   conversionMap: DOMTransformerMap,
   editor: OutlineEditor,
 ): Array<OutlineNode> {
-  const outlineNodes = [];
+  let outlineNodes = [];
   const elements: Array<Node> = dom.body ? Array.from(dom.body.childNodes) : [];
   const elementsLength = elements.length;
   for (let i = 0; i < elementsLength; i++) {
@@ -210,7 +220,7 @@ function generateNodesFromDOM(
       editor,
     );
     if (outlineNode !== null) {
-      outlineNodes.push(outlineNode);
+      outlineNodes = outlineNodes.concat(outlineNode);
     }
   }
   return outlineNodes;

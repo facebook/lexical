@@ -190,6 +190,26 @@ describe('OutlineEventHelpers', () => {
         expectedHTML:
           '<div contenteditable="true" data-outline-editor="true"><h1 class="editor-heading-h1"><span data-outline-text="true">Lyrics to Hello by Adele</span></h1><p class="editor-paragraph"><span data-outline-text="true">A thousand times</span></p></div>',
       },
+      {
+        name: 'onPasteForRichText should ignore DOM node types that do not have transformers, but still process their children.',
+        inputs: [
+          pasteHTML(
+            `<meta charset='utf-8'><doesnotexist><ul><li>Hello</li><li>from the other</li><li>side</li></ul></doesnotexist>`,
+          ),
+        ],
+        expectedHTML:
+          '<div contenteditable="true" data-outline-editor="true"><ul class="editor-list-ul"><li class="editor-listitem"><span data-outline-text="true">Hello</span></li><li class="editor-listitem"><span data-outline-text="true">from the other</span></li><li class="editor-listitem"><span data-outline-text="true">side</span></li></ul></div>',
+      },
+      {
+        name: 'onPasteForRichText should ignore multiple levels of DOM node types that do not have transformers, but still process their children.',
+        inputs: [
+          pasteHTML(
+            `<meta charset='utf-8'><doesnotexist><doesnotexist><ul><li>Hello</li><li>from the other</li><li>side</li></ul></doesnotexist></doesnotexist>`,
+          ),
+        ],
+        expectedHTML:
+          '<div contenteditable="true" data-outline-editor="true"><ul class="editor-list-ul"><li class="editor-listitem"><span data-outline-text="true">Hello</span></li><li class="editor-listitem"><span data-outline-text="true">from the other</span></li><li class="editor-listitem"><span data-outline-text="true">side</span></li></ul></div>',
+      },
     ];
     suite.forEach((testUnit, i) => {
       const name = testUnit.name || 'Test case';

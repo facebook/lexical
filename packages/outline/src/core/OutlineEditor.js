@@ -16,16 +16,15 @@ import {
   commitPendingUpdates,
   parseEditorState,
   shouldEnqueueUpdates,
-  getActiveEditorState,
 } from './OutlineUpdates';
-import {isTextNode, TextNode} from '.';
+import {isTextNode, TextNode, isBlockNode, BlockNode} from '.';
 import {createEmptyEditorState} from './OutlineEditorState';
 import {LineBreakNode} from './OutlineLineBreakNode';
 import {RootNode} from './OutlineRootNode';
 import {NO_DIRTY_NODES, FULL_RECONCILE} from './OutlineConstants';
 import {flushRootMutations, initMutationObserver} from './OutlineMutations';
 import {beginUpdate, triggerListeners} from './OutlineUpdates';
-import {getEditorStateTextContent} from './OutlineUtils';
+import {getEditorStateTextContent, markNodesAsDirty} from './OutlineUtils';
 import invariant from 'shared/invariant';
 
 export type EditorThemeClassName = string;
@@ -73,7 +72,12 @@ export type EditorConfig<EditorContext> = {
   context: EditorContext,
 };
 
-export type TextNodeTransform = (node: TextNode, state: State) => void;
+export type GenericNodeTransform<TNode> = (node: TNode, state: State) => void;
+export type BlockNodeTransform = GenericNodeTransform<BlockNode>;
+export type TextNodeTransform = GenericNodeTransform<TextNode>;
+export type NodeTransform = GenericNodeTransform<OutlineNode>;
+
+export type TransformType = 'block' | 'text' | '*';
 
 export type ErrorListener = (error: Error, log: Array<string>) => void;
 export type UpdateListener = ({
@@ -185,6 +189,11 @@ class BaseOutlineEditor {
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _updates: Array<[(state: State) => void, void | (() => void)]>;
   _listeners: Listeners;
+  _transforms: {
+    text: Set<TextNodeTransform>,
+    block: Set<BlockNodeTransform>,
+    node: Set<NodeTransform>,
+  };
   _textNodeTransforms: Set<TextNodeTransform>;
   _nodeTypes: Map<string, Class<OutlineNode>>;
   _decorators: {[NodeKey]: ReactNode};
@@ -223,6 +232,11 @@ class BaseOutlineEditor {
     this._config = config;
     // Handling of text node transforms
     this._textNodeTransforms = new Set();
+    this._transforms = {
+      text: new Set(),
+      block: new Set(),
+      node: new Set(),
+    };
     // Mapping of types to their nodes
     this._nodeTypes = new Map([
       ['text', TextNode],
@@ -283,25 +297,41 @@ class BaseOutlineEditor {
       }
     };
   }
+  addTransform(
+    type: TransformType,
+    listener: BlockNodeTransform | TextNodeTransform | NodeTransform,
+  ): () => void {
+    if (type === 'text') {
+      // $FlowFixMe
+      const textListener = (listener: TextNodeTransform);
+      this._transforms.text.add(textListener);
+      this.update((state) => markNodesAsDirty(state, isTextNode));
+      return () => {
+        this._transforms.text.delete(textListener);
+      };
+    } else if (type === 'block') {
+      // $FlowFixMe
+      const blockListener = (listener: BlockNodeTransform);
+      this._transforms.block.add(blockListener);
+      this.update((state) => markNodesAsDirty(state, isBlockNode));
+      return () => {
+        this._transforms.block.delete(blockListener);
+      };
+    } else if (type === '*') {
+      // $FlowFixMe
+      const nodeListener = (listener: NodeTransform);
+      this._transforms.node.add(nodeListener);
+      this.update((state) => markNodesAsDirty(state));
+      return () => {
+        this._transforms.node.delete(nodeListener);
+      };
+    } else {
+      (type: void);
+      invariant(false, 'Unsupported transform type');
+    }
+  }
   addTextNodeTransform(listener: TextNodeTransform): () => void {
-    this._textNodeTransforms.add(listener);
-    // Mark all existing text nodes as dirty
-    this.update(() => {
-      const editorState = getActiveEditorState();
-      const nodeMap = editorState._nodeMap;
-      const nodeMapEntries = Array.from(nodeMap);
-      // For...of would be faster here, but this will get
-      // compiled away to a slow-path with Babel.
-      for (let i = 0; i < nodeMapEntries.length; i++) {
-        const node = nodeMapEntries[i][1];
-        if (isTextNode(node)) {
-          node.markDirty();
-        }
-      }
-    });
-    return () => {
-      this._textNodeTransforms.delete(listener);
-    };
+    return this.addTransform('text', listener);
   }
   getDecorators(): {[NodeKey]: ReactNode} {
     return this._decorators;
@@ -413,6 +443,11 @@ declare export class OutlineEditor {
   _updates: Array<[(state: State) => void, void | (() => void)]>;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _listeners: Listeners;
+  _transforms: {
+    text: Set<TextNodeTransform>,
+    block: Set<BlockNodeTransform>,
+    node: Set<NodeTransform>,
+  };
   _textNodeTransforms: Set<TextNodeTransform>;
   _nodeTypes: Map<string, Class<OutlineNode>>;
   _decorators: {[NodeKey]: ReactNode};
@@ -432,6 +467,9 @@ declare export class OutlineEditor {
   addListener(type: 'decorator', listener: DecoratorListener): () => void;
   addListener(type: 'textmutation', listener: TextMutationListener): () => void;
   addListener(type: 'textcontent', listener: TextContentListener): () => void;
+  addTransform(type: 'block', listener: BlockNodeTransform): () => void;
+  addTransform(type: 'text', listener: TextNodeTransform): () => void;
+  addTransform(type: '*', listener: NodeTransform): () => void;
   addTextNodeTransform(listener: TextNodeTransform): () => void;
   getDecorators(): {[NodeKey]: ReactNode};
   getRootElement(): null | HTMLElement;

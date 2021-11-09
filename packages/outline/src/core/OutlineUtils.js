@@ -25,6 +25,7 @@ import {
   getActiveEditor,
   getActiveEditorState,
 } from './OutlineUpdates';
+import type {State} from './OutlineUpdates';
 
 export const emptyFunction = () => {};
 
@@ -140,6 +141,23 @@ export function generateKey(node: OutlineNode): NodeKey {
   editor._dirtyNodes.add(key);
   editor._dirtyType = HAS_DIRTY_NODES;
   return key;
+}
+
+export function markNodesAsDirty(
+  state: State,
+  predicateFn: (node: OutlineNode) => boolean = () => true,
+): void {
+  const editorState = getActiveEditorState();
+  const nodeMap = editorState._nodeMap;
+  const nodeMapEntries = Array.from(nodeMap);
+  // For...of would be faster here, but this will get
+  // compiled away to a slow-path with Babel.
+  for (let i = 0; i < nodeMapEntries.length; i++) {
+    const node = nodeMapEntries[i][1];
+    if (predicateFn(node)) {
+      node.markDirty();
+    }
+  }
 }
 
 export function markParentsAsDirty(

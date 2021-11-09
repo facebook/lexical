@@ -9,8 +9,12 @@
 
 import type {ParsedEditorState} from './OutlineEditorState';
 import type {RootNode} from './OutlineRootNode';
-import type {OutlineEditor, ListenerType} from './OutlineEditor';
-import type {OutlineNode, NodeKey} from './OutlineNode';
+import type {
+  OutlineEditor,
+  ListenerType,
+  GenericNodeTransform,
+} from './OutlineEditor';
+import type {OutlineNode, NodeKey, NodeMap} from './OutlineNode';
 import type {Selection} from './OutlineSelection';
 import type {ParsedNode, NodeParserState} from './OutlineParsing';
 
@@ -42,7 +46,7 @@ import {
 } from './OutlineGC';
 import {internalCreateNodeFromParse} from './OutlineParsing';
 import {applySelectionTransforms} from './OutlineSelection';
-import {isTextNode, isLineBreakNode} from '.';
+import {isTextNode, isLineBreakNode, isBlockNode} from '.';
 import invariant from 'shared/invariant';
 
 let activeEditorState: null | EditorState = null;
@@ -131,38 +135,72 @@ export function getActiveEditor(): OutlineEditor {
   return activeEditor;
 }
 
-function applyTextTransforms(
+function applyTransforms(
   editorState: EditorState,
   dirtyNodes: Set<NodeKey>,
   editor: OutlineEditor,
 ): void {
-  const textNodeTransforms = editor._textNodeTransforms;
-  if (textNodeTransforms.size > 0) {
-    const nodeMap = editorState._nodeMap;
-    const dirtyNodesArr = Array.from(dirtyNodes);
-    const transforms = Array.from(textNodeTransforms);
+  const transforms = editor._transforms;
+  const textTransforms = transforms.text;
+  const blockTransforms = transforms.block;
+  const nodeTransforms = transforms.node;
+  const nodeMap = editorState._nodeMap;
+  const dirtyNodesArr = Array.from(dirtyNodes);
+  // Text
+  applyTransformsImpl(nodeMap, dirtyNodesArr, textTransforms, (node) => {
     const compositionKey = getCompositionKey();
-    for (let s = 0; s < dirtyNodesArr.length; s++) {
-      const nodeKey = dirtyNodesArr[s];
+    if (
+      node !== undefined &&
+      isTextNode(node) &&
+      // We don't want to transform nodes being composed
+      node.__key !== compositionKey &&
+      !isLineBreakNode(node) &&
+      node.isAttached() &&
+      // You shouldn't be able to transform these types of
+      // nodes.
+      !node.isImmutable() &&
+      !node.isSegmented()
+    ) {
+      return node;
+    } else {
+      return null;
+    }
+  });
+  // Block
+  applyTransformsImpl(nodeMap, dirtyNodesArr, blockTransforms, (node) => {
+    if (node !== undefined && isBlockNode(node) && node.isAttached()) {
+      return node;
+    } else {
+      return null;
+    }
+  });
+  // Node
+  applyTransformsImpl(nodeMap, dirtyNodesArr, nodeTransforms, (node) => {
+    if (node !== undefined && node.isAttached()) {
+      return node;
+    } else {
+      return null;
+    }
+  });
+}
 
+function applyTransformsImpl<TNode: OutlineNode>(
+  nodeMap: NodeMap,
+  dirtyNodes: NodeKey[],
+  transforms: Set<GenericNodeTransform<TNode>>,
+  predicateFn: (OutlineNode | void) => null | TNode,
+) {
+  if (transforms.size > 0) {
+    const transformsArr = Array.from(transforms);
+    for (let s = 0; s < dirtyNodes.length; s++) {
+      const nodeKey = dirtyNodes[s];
       const node = nodeMap.get(nodeKey);
-
-      if (
-        node !== undefined &&
-        isTextNode(node) &&
-        // We don't want to transform nodes being composed
-        node.__key !== compositionKey &&
-        !isLineBreakNode(node) &&
-        node.isAttached() &&
-        // You shouldn't be able to transform these types of
-        // nodes.
-        !node.isImmutable() &&
-        !node.isSegmented()
-      ) {
+      const nodeToTransform = predicateFn(node);
+      if (nodeToTransform) {
         // Apply text transforms
-        for (let i = 0; i < transforms.length; i++) {
-          transforms[i](node, state);
-          if (!node.isAttached()) {
+        for (let i = 0; i < transformsArr.length; i++) {
+          transformsArr[i](nodeToTransform, state);
+          if (!nodeToTransform.isAttached()) {
             break;
           }
         }
@@ -457,7 +495,7 @@ export function beginUpdate(
           'updateEditor: the pending editor state is empty. Ensure the root not never becomes empty from an update.',
         );
       }
-      applyTextTransforms(pendingEditorState, dirtyNodes, editor);
+      applyTransforms(pendingEditorState, dirtyNodes, editor);
       processNestedUpdates(editor, deferred);
       garbageCollectDetachedNodes(pendingEditorState, dirtyNodes, editor);
     }

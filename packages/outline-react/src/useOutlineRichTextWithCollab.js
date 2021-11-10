@@ -12,21 +12,20 @@ import type {OutlineEditor} from 'outline';
 import {useCallback} from 'react';
 
 import useRichTextSetup from './shared/useRichTextSetup';
-import useOutlineHistory from './shared/useOutlineHistory';
 
-export default function useOutlineRichText(editor: OutlineEditor): () => void {
-  const clearEditor = useRichTextSetup(editor, true);
-  const clearHistory = useOutlineHistory(editor);
+export default function useOutlineRichTextWithCollab(
+  editor: OutlineEditor,
+): () => void {
+  const clearEditor = useRichTextSetup(editor, false);
 
   return useCallback(
     (callbackFn?: () => void) => {
       clearEditor(editor, () => {
-        clearHistory();
         if (callbackFn) {
           callbackFn();
         }
       });
     },
-    [clearEditor, clearHistory, editor],
+    [clearEditor, editor],
   );
 }

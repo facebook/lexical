@@ -77,6 +77,7 @@ export type TextNodeTransform = (node: TextNode, state: State) => void;
 
 export type ErrorListener = (error: Error, log: Array<string>) => void;
 export type UpdateListener = ({
+  prevEditorState: EditorState,
   editorState: EditorState,
   dirty: boolean,
   dirtyNodes: Set<NodeKey>,

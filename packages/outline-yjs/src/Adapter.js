@@ -16,7 +16,7 @@ import {Doc, XmlElement} from 'yjs';
 export type YjsNodeMap = Map<NodeKey, Object>;
 
 // $FlowFixMe: needs proper typings
-export type ReverseYjsNodeMap = Map<Object, NodeKey>
+export type ReverseYjsNodeMap = Map<Object, NodeKey>;
 
 export type Adapter = {
   // $FlowFixMe: needs proper typings

@@ -258,7 +258,7 @@ function syncYjsNodeToOutline(
       } else {
         if (childYjsNode === null) {
           // Remove child
-          throw new Error('TODO')
+          throw new Error('TODO');
         } else {
           // Update child
           syncYjsNodeToOutline(

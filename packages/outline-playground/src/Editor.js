@@ -30,6 +30,7 @@ import CharacterLimit from './CharacterLimit';
 import {Typeahead} from './Typeahead';
 import yellowFlowerImage from './images/image/yellow-flower.jpg';
 import {log} from 'outline';
+import useLinksInPlayground from './useLinksInPlayground';
 
 const editorStyle = {
   outline: 0,
@@ -119,6 +120,7 @@ function useRichTextEditorImpl({
   useHashtags(editor);
   useOutlineAutoFormatter(editor);
   useKeywords(editor);
+  useLinksInPlayground(editor);
   useEffect(() => {
     editor.registerNodeType('image', ImageNode);
   }, [editor]);
@@ -255,6 +257,7 @@ export const usePlainTextEditor = ({
   useEmojis(editor);
   useHashtags(editor);
   useKeywords(editor);
+  useLinksInPlayground(editor);
 
   const element = useMemo(
     () => (

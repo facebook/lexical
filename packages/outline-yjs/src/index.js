@@ -10,4 +10,4 @@
 export type {Adapter} from './Adapter';
 
 export {createWebsocketAdapter} from './Adapter';
-export {syncOutlineUpdateToYjs} from './Syncing';
+export {syncOutlineUpdateToYjs, syncYjsChangesToOutline} from './Syncing';

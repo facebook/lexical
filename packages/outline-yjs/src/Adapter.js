@@ -12,6 +12,12 @@ import {WebsocketProvider} from 'y-websocket';
 // $FlowFixMe: need Flow typings for yjs
 import {Doc, XmlElement} from 'yjs';
 
+// $FlowFixMe: needs proper typings
+export type YjsNodeMap = Map<NodeKey, Object>;
+
+// $FlowFixMe: needs proper typings
+export type ReverseYjsNodeMap = Map<Object, NodeKey>;
+
 export type Adapter = {
   // $FlowFixMe: needs proper typings
   doc: Object,
@@ -19,6 +25,8 @@ export type Adapter = {
   root: Object,
   // $FlowFixMe: needs proper typings
   provider: Object,
+  nodeMap: YjsNodeMap,
+  reverseNodeMap: ReverseYjsNodeMap,
 };
 
 export function createWebsocketAdapter(
@@ -27,6 +35,7 @@ export function createWebsocketAdapter(
 ): Adapter {
   const doc = new Doc();
   const root = doc.get('root', XmlElement);
+  root.nodeName = 'root';
   const provider = new WebsocketProvider(websocketEndpoint, slug, doc, {
     connect: false,
   });
@@ -34,6 +43,8 @@ export function createWebsocketAdapter(
     doc,
     root,
     provider,
+    nodeMap: new Map([['root', root]]),
+    reverseNodeMap: new Map([[root, 'root']]),
   };
   return adapter;
 }

@@ -29,6 +29,7 @@ import {getEditorStateTextContent} from './OutlineUtils';
 import invariant from 'shared/invariant';
 
 export type EditorThemeClassName = string;
+export type NodeTypes = Map<string, Class<OutlineNode>>;
 
 export type TextNodeThemeClasses = {
   base?: EditorThemeClassName,
@@ -187,7 +188,7 @@ class BaseOutlineEditor {
   _updates: Array<[(state: State) => void, void | (() => void)]>;
   _listeners: Listeners;
   _textNodeTransforms: Set<TextNodeTransform>;
-  _nodeTypes: Map<string, Class<OutlineNode>>;
+  _nodeTypes: NodeTypes;
   _decorators: {[NodeKey]: ReactNode};
   _pendingDecorators: null | {[NodeKey]: ReactNode};
   _textContent: string;

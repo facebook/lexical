@@ -9,7 +9,7 @@
 
 import type {ParsedEditorState} from './OutlineEditorState';
 import type {RootNode} from './OutlineRootNode';
-import type {OutlineEditor, ListenerType} from './OutlineEditor';
+import type {OutlineEditor, ListenerType, DirtyChange} from './OutlineEditor';
 import type {OutlineNode, NodeKey} from './OutlineNode';
 import type {Selection} from './OutlineSelection';
 import type {ParsedNode, NodeParserState} from './OutlineParsing';
@@ -133,13 +133,13 @@ export function getActiveEditor(): OutlineEditor {
 
 function applyTextTransforms(
   editorState: EditorState,
-  dirtyNodes: Set<NodeKey>,
+  dirtyNodes: Map<NodeKey, DirtyChange>,
   editor: OutlineEditor,
 ): void {
   const textNodeTransforms = editor._textNodeTransforms;
   if (textNodeTransforms.size > 0) {
     const nodeMap = editorState._nodeMap;
-    const dirtyNodesArr = Array.from(dirtyNodes);
+    const dirtyNodesArr = Array.from(dirtyNodes.keys());
     const transforms = Array.from(textNodeTransforms);
     const compositionKey = getCompositionKey();
     for (let s = 0; s < dirtyNodesArr.length; s++) {
@@ -316,7 +316,7 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
   editor._log = [];
   if (needsUpdate) {
     editor._dirtyType = NO_DIRTY_NODES;
-    editor._dirtyNodes = new Set();
+    editor._dirtyNodes = new Map();
     editor._dirtySubTrees = new Set();
   }
   garbageCollectDetachedDecorators(editor, pendingEditorState);
@@ -489,7 +489,7 @@ export function beginUpdate(
     const currentEditorState = editor._editorState;
     editor._pendingEditorState = currentEditorState;
     editor._dirtyType = FULL_RECONCILE;
-    editor._dirtyNodes = new Set();
+    editor._dirtyNodes = new Map();
     editor._dirtySubTrees = new Set();
     editor._log.push('UpdateRecover');
     commitPendingUpdates(editor);

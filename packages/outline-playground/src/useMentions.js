@@ -20,7 +20,6 @@ import {startTransition, useEffect, useState} from 'react';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
 import {TextNode, log} from 'outline';
-import useEvent from './useEvent';
 
 type MentionMatch = {
   leadOffset: number,
@@ -594,7 +593,27 @@ export default function useMentions(editor: OutlineEditor): React$Node {
     setResolution(null);
   }, []);
 
-  useEvent(editor, 'keydown', onKeyDown);
+  useLayoutEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      editor.update((state) => {
+        onKeyDown(event, state);
+      });
+    };
+    return editor.addListener(
+      'root',
+      (
+        rootElement: null | HTMLElement,
+        prevRootElement: null | HTMLElement,
+      ) => {
+        if (prevRootElement !== null) {
+          prevRootElement.removeEventListener('keydown', handleKeyDown);
+        }
+        if (rootElement !== null) {
+          rootElement.addEventListener('keydown', handleKeyDown);
+        }
+      },
+    );
+  }, [editor, onKeyDown]);
 
   return resolution === null || editor === null
     ? null

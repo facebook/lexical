@@ -12,6 +12,7 @@ import type {OutlineEditor} from 'outline';
 import * as React from 'react';
 import {useEffect, useMemo, useState} from 'react';
 import useOutlineRichText from 'outline-react/useOutlineRichText';
+import useOutlineRichTextWithCollab from 'outline-react/useOutlineRichTextWithCollab';
 import {useEmojis} from './useEmojis';
 import useMentions from './useMentions';
 import useOutlineEditor from 'outline-react/useOutlineEditor';
@@ -100,16 +101,17 @@ function ContentEditable({
   );
 }
 
-export const useRichTextEditor = ({
+function useRichTextEditorImpl({
+  editor,
   isCharLimit,
   isCharLimitUtf8,
   isAutocomplete,
-}: Props): [OutlineEditor, React.MixedElement] => {
-  const [editor, rootElementRef, showPlaceholder] =
-    useOutlineEditor(editorConfig);
-  const mentionsTypeahead = useMentions(editor);
+  clear,
+  rootElementRef,
+  showPlaceholder,
+  mentionsTypeahead,
+}): [OutlineEditor, React.MixedElement] {
   const [isReadOnly, setIsReadyOnly] = useState(false);
-  const clear = useOutlineRichText(editor);
   const floatingToolbar = useFloatingToolbar(editor);
   const decorators = useOutlineDecorators(editor);
   const [indent, outdent] = useOutlineNestedList(editor);
@@ -199,7 +201,41 @@ export const useRichTextEditor = ({
   ]);
 
   return [editor, element];
-};
+}
+
+export function useRichTextEditor(
+  props: Props,
+): [OutlineEditor, React.MixedElement] {
+  const [editor, rootElementRef, showPlaceholder] =
+    useOutlineEditor(editorConfig);
+  const mentionsTypeahead = useMentions(editor);
+  const clear = useOutlineRichText(editor);
+  return useRichTextEditorImpl({
+    ...props,
+    editor,
+    clear,
+    rootElementRef,
+    showPlaceholder,
+    mentionsTypeahead,
+  });
+}
+
+export function useRichTextEditorWithCollab(
+  props: Props,
+): [OutlineEditor, React.MixedElement] {
+  const [editor, rootElementRef, showPlaceholder] =
+    useOutlineEditor(editorConfig);
+  const mentionsTypeahead = useMentions(editor);
+  const clear = useOutlineRichTextWithCollab(editor);
+  return useRichTextEditorImpl({
+    ...props,
+    editor,
+    clear,
+    rootElementRef,
+    showPlaceholder,
+    mentionsTypeahead,
+  });
+}
 
 function Placeholder({children}: {children: string}): React.Node {
   return <div className="editor-placeholder">{children}</div>;

@@ -19,6 +19,7 @@ function useSettings(
 ): [React$Node, React$Node] {
   const {
     measureTypingPerf,
+    isCollab,
     isRichText,
     isCharLimit,
     isCharLimitUtf8,
@@ -48,10 +49,20 @@ function useSettings(
         text="Tree View"
       />
       <Switch
-        onClick={() => onChange('isRichText', !isRichText)}
+        onClick={() => {
+          onChange('isRichText', !isRichText);
+          onChange('isCollab', false);
+        }}
         checked={isRichText}
         text="Rich Text"
       />
+      {isRichText && (
+        <Switch
+          onClick={() => onChange('isCollab', !isCollab)}
+          checked={isCollab}
+          text="Collaboration"
+        />
+      )}
       <Switch
         onClick={() => onChange('isCharLimit', !isCharLimit)}
         checked={isCharLimit}

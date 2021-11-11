@@ -328,6 +328,7 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
   }
   triggerTextContentListeners(editor, currentEditorState, pendingEditorState);
   triggerListeners('update', editor, true, {
+    prevEditorState: currentEditorState,
     editorState: pendingEditorState,
     dirty: isEditorStateDirty,
     dirtyNodes,

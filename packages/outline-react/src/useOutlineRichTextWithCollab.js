@@ -11,22 +11,23 @@ import type {OutlineEditor} from 'outline';
 
 import {useCallback} from 'react';
 
-import usePlainTextSetup from './shared/usePlainTextSetup';
-import useOutlineHistory from './shared/useOutlineHistory';
+import {useRichTextSetup} from './shared/useRichTextSetup';
+import useYjsCollaboration from './shared/useYjsCollaboration';
 
-export default function useOutlinePlainText(editor: OutlineEditor): () => void {
-  const clearEditor = usePlainTextSetup(editor, true);
-  const clearHistory = useOutlineHistory(editor);
+export default function useOutlineRichTextWithCollab(
+  editor: OutlineEditor,
+): () => void {
+  const clearEditor = useRichTextSetup(editor, false);
+  useYjsCollaboration(editor);
 
   return useCallback(
     (callbackFn?: () => void) => {
       clearEditor(editor, () => {
-        clearHistory();
         if (callbackFn) {
           callbackFn();
         }
       });
     },
-    [clearEditor, clearHistory, editor],
+    [clearEditor, editor],
   );
 }

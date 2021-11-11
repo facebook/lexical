@@ -1,0 +1,30 @@
+{
+  "name": "outline-yjs",
+  "author": {
+    "name": "Dominic Gannaway",
+    "email": "dg@domgan.com"
+  },
+  "description": "The library provides Yjs editor bindings for Outline.",
+  "keywords": [
+    "react",
+    "outline",
+    "editor",
+    "rich-text",
+    "colllaboration",
+    "yjs",
+    "crdt"
+  ],
+  "license": "MIT",
+  "version": "0.0.43",
+  "main": "OutlineYjs.js",
+  "dependencies": {
+    "outline": "0.0.43",
+    "yjs": ">=13.5.x",
+    "y-websocket": ">=1.3.x"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/facebookexternal/outline",
+    "directory": "packages/outline-yjs"
+  }
+}

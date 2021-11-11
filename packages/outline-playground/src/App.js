@@ -11,30 +11,25 @@ import type {SettingName} from './appSettings';
 
 import * as React from 'react';
 import {useCallback, useState} from 'react';
-import {useRichTextEditor, usePlainTextEditor} from './Editor';
+import {
+  useRichTextEditor,
+  usePlainTextEditor,
+  useRichTextEditorWithCollab,
+} from './Editor';
 import OutlineTreeView from 'outline-react/OutlineTreeView';
 import useSettings from './useSettings';
 import useTestRecorder from './useTestRecorder';
 import useTypingPerfTracker from './useTypingPerfTracker';
 import {DEFAULT_SETTINGS} from './appSettings';
 
-function RichTextEditor({settings, onSettingsChange}): React$Node {
-  const [settingsButton, settingsSwitches] = useSettings(
-    settings,
-    onSettingsChange,
-  );
-  const {
-    measureTypingPerf,
-    isCharLimit,
-    isCharLimitUtf8,
-    isAutocomplete,
-    showTreeView,
-  } = settings;
-  const [editor, editorComponent] = useRichTextEditor({
-    isCharLimit,
-    isCharLimitUtf8,
-    isAutocomplete,
-  });
+function RichTextEditorImpl({
+  editor,
+  measureTypingPerf,
+  editorComponent,
+  showTreeView,
+  settingsSwitches,
+  settingsButton,
+}): React$Node {
   const [testRecorderButton, testRecorderOutput] = useTestRecorder(editor);
   useTypingPerfTracker(measureTypingPerf);
 
@@ -58,6 +53,69 @@ function RichTextEditor({settings, onSettingsChange}): React$Node {
         {testRecorderButton}
       </div>
     </>
+  );
+}
+
+function RichTextEditor({settings, onSettingsChange}): React$Node {
+  const [settingsButton, settingsSwitches] = useSettings(
+    settings,
+    onSettingsChange,
+  );
+  const {
+    measureTypingPerf,
+    isCharLimit,
+    isCharLimitUtf8,
+    isAutocomplete,
+    showTreeView,
+  } = settings;
+  const [editor, editorComponent] = useRichTextEditor({
+    isCharLimit,
+    isCharLimitUtf8,
+    isAutocomplete,
+  });
+
+  return (
+    <RichTextEditorImpl
+      editor={editor}
+      measureTypingPerf={measureTypingPerf}
+      editorComponent={editorComponent}
+      showTreeView={showTreeView}
+      settingsSwitches={settingsSwitches}
+      settingsButton={settingsButton}
+    />
+  );
+}
+
+function RichTextEditorWithCollaboration({
+  settings,
+  onSettingsChange,
+}): React$Node {
+  const [settingsButton, settingsSwitches] = useSettings(
+    settings,
+    onSettingsChange,
+  );
+  const {
+    measureTypingPerf,
+    isCharLimit,
+    isCharLimitUtf8,
+    isAutocomplete,
+    showTreeView,
+  } = settings;
+  const [editor, editorComponent] = useRichTextEditorWithCollab({
+    isCharLimit,
+    isCharLimitUtf8,
+    isAutocomplete,
+  });
+
+  return (
+    <RichTextEditorImpl
+      editor={editor}
+      measureTypingPerf={measureTypingPerf}
+      editorComponent={editorComponent}
+      showTreeView={showTreeView}
+      settingsSwitches={settingsSwitches}
+      settingsButton={settingsButton}
+    />
   );
 }
 
@@ -125,20 +183,17 @@ function setURLParam(param: SettingName, value: null | boolean) {
 
 function App(): React$Node {
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
-  const setOption = useCallback(
-    (setting: SettingName, value: boolean) => {
-      setSettings((options) => ({
-        ...settings,
-        [(setting: string)]: value,
-      }));
-      if (DEFAULT_SETTINGS[setting] === value) {
-        setURLParam(setting, null);
-      } else {
-        setURLParam(setting, value);
-      }
-    },
-    [settings],
-  );
+  const setOption = useCallback((setting: SettingName, value: boolean) => {
+    setSettings((options) => ({
+      ...options,
+      [(setting: string)]: value,
+    }));
+    if (DEFAULT_SETTINGS[setting] === value) {
+      setURLParam(setting, null);
+    } else {
+      setURLParam(setting, value);
+    }
+  }, []);
 
   return (
     <>
@@ -146,7 +201,14 @@ function App(): React$Node {
         <img src="logo.svg" alt="Outline Logo" />
       </header>
       {settings.isRichText ? (
-        <RichTextEditor settings={settings} onSettingsChange={setOption} />
+        settings.isCollab ? (
+          <RichTextEditorWithCollaboration
+            settings={settings}
+            onSettingsChange={setOption}
+          />
+        ) : (
+          <RichTextEditor settings={settings} onSettingsChange={setOption} />
+        )
       ) : (
         <PlainTextEditor settings={settings} onSettingsChange={setOption} />
       )}

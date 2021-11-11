@@ -45,6 +45,7 @@ const wwwMappings = {
   outline: 'Outline',
   'react-dom': 'ReactDOMComet',
   'outline/history': 'OutlineHistoryHelpers',
+  'outline-yjs': 'OutlineYjs',
 };
 
 const outlineExtensions = fs
@@ -84,6 +85,7 @@ const outlineReactModuleExternals = outlineReactModules.map((module) => {
 const externals = [
   'outline',
   'Outline',
+  'outline-yjs',
   'outline-react',
   // These need to be here so we never inline HistoryHelpers
   'outline/history',
@@ -91,6 +93,8 @@ const externals = [
   'react-dom',
   'ReactDOMComet',
   'react',
+  'yjs',
+  'y-websocket',
   ...outlineExtensionsExternals,
   ...outlineReactModuleExternals,
   ...Object.values(wwwMappings),
@@ -328,3 +332,9 @@ outlineReactModules.forEach((outlineReactModule) => {
     ),
   );
 });
+
+build(
+  'Outline Yjs',
+  path.resolve('./packages/outline-yjs/src/index.js'),
+  path.resolve(`./packages/outline-yjs/dist/${getFileName('OutlineYjs')}`),
+);

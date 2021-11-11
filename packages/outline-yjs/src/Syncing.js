@@ -14,6 +14,7 @@ import type {
   OutlineNode,
   OutlineEditor,
   NodeTypes,
+  DirtyChange,
 } from 'outline';
 import type {Adapter, YjsNodeMap, ReverseYjsNodeMap} from './Adapter';
 // $FlowFixMe: need Flow typings for yjs
@@ -186,7 +187,7 @@ export function syncOutlineUpdateToYjs(
   adapter: Adapter,
   prevEditorState: EditorState,
   currEditorState: EditorState,
-  dirtyNodes: Set<NodeKey>,
+  dirtyNodes: Map<NodeKey, DirtyChange>,
 ): void {
   adapter.doc.transact(() => {
     currEditorState.read((state) => {
@@ -195,7 +196,7 @@ export function syncOutlineUpdateToYjs(
         const nodeMap = currEditorState._nodeMap;
         const yjsNodeMap = adapter.nodeMap;
         const reverseYjsNodeMap = adapter.reverseNodeMap;
-        const dirtyNodesArr = Array.from(dirtyNodes);
+        const dirtyNodesArr = Array.from(dirtyNodes.keys());
         for (let i = 0; i < dirtyNodesArr.length; i++) {
           const dirtyKey = dirtyNodesArr[i];
           syncOutlineNodeToYjs(

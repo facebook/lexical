@@ -24,6 +24,7 @@ export default function useOutlineEditor<EditorContext>(editorConfig?: {
   initialEditorState?: EditorState,
   theme?: EditorThemeClasses,
   context?: EditorContext,
+  recordDirty?: boolean,
 }): [OutlineEditor, (null | HTMLElement) => void, boolean] {
   const [showPlaceholder, setShowPlaceholder] = useState(true);
   const showPlaceholderRef = useRef(true);

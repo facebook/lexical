@@ -11,12 +11,14 @@ import type {OutlineEditor} from 'outline';
 
 import {useCallback} from 'react';
 
-import useRichTextSetup from './shared/useRichTextSetup';
+import {useRichTextSetup} from './shared/useRichTextSetup';
+import useYjsCollaboration from './shared/useYjsCollaboration';
 
 export default function useOutlineRichTextWithCollab(
   editor: OutlineEditor,
 ): () => void {
   const clearEditor = useRichTextSetup(editor, false);
+  useYjsCollaboration(editor);
 
   return useCallback(
     (callbackFn?: () => void) => {

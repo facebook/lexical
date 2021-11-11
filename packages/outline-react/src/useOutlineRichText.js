@@ -11,7 +11,7 @@ import type {OutlineEditor} from 'outline';
 
 import {useCallback} from 'react';
 
-import useRichTextSetup from './shared/useRichTextSetup';
+import {useRichTextSetup} from './shared/useRichTextSetup';
 import useOutlineHistory from './shared/useOutlineHistory';
 
 export default function useOutlineRichText(editor: OutlineEditor): () => void {

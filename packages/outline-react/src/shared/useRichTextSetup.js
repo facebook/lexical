@@ -77,7 +77,7 @@ function initParagraph(
   }
 }
 
-function initEditor(editor: OutlineEditor): void {
+export function initEditor(editor: OutlineEditor): void {
   editor.update((state: State) => {
     log('initEditor');
     const root = state.getRoot();
@@ -100,7 +100,7 @@ function clearEditor(
   }, callbackFn);
 }
 
-export default function usePlainTextSetup(
+export function useRichTextSetup(
   editor: OutlineEditor,
   init: boolean,
 ): (

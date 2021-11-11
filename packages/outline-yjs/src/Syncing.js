@@ -135,26 +135,9 @@ function createYjsNodeFromOutlineNode(
       );
     }
     // TODO
-    debugger;
+    throw new Error('TODO');
   } else {
     parentYjsElement.insert(0, [yjsNode]);
-  }
-}
-
-function applyDiffToYjsValue(yjsNode: YjsNode, yjsValue: string, outlineValue: string): void {
-  const length = Math.min(yjsValue.length, outlineValue.length);
-  let a = 0;
-  let b = 0;
-  let aChar = yjsValue[a];
-  let bChar = outlineValue[b];
-  let text = '';
-  let dele
-
-  while (a < length && b < length) {
-    if (aChar === bChar) {
-      aChar = yjsValue[a++];
-      bChar = outlineValue[b++];
-    }
   }
 }
 
@@ -166,7 +149,6 @@ function syncOutlineNodeToYjs(
 ): void {
   const node = nodeMap.get(key);
   if (node === undefined) {
-    debugger;
     throw new Error('Should never happen');
   }
   const yjsNode = yjsNodeMap.get(key);
@@ -194,7 +176,8 @@ function syncOutlineNodeToYjs(
     const yjsValue = yjsNode.toJSON();
     const outlineValue = node.__text;
     if (yjsValue !== outlineValue) {
-      applyDiffToYjsValue(yjsNode, yjsValue, outlineValue);
+      // TODO
+      throw new Error('TODO');
     }
   }
 }
@@ -243,14 +226,12 @@ function syncYjsNodeToOutline(
 ): void {
   const key = reverseYjsNodeMap.get(yjsNode);
   if (key === undefined) {
-    debugger;
     throw new Error('Should never happen');
   }
   const node = nodeMap.get(key);
 
   if (node === undefined) {
     // TODO
-    debugger;
     throw new Error('TODO');
   }
   if (childListChanged && isBlockNode(node)) {
@@ -277,7 +258,7 @@ function syncYjsNodeToOutline(
       } else {
         if (childYjsNode === null) {
           // Remove child
-          debugger;
+          throw new Error('TODO')
         } else {
           // Update child
           syncYjsNodeToOutline(

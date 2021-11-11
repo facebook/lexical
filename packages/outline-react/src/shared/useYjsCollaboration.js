@@ -55,6 +55,7 @@ export default function useYjsCollaboration(editor: OutlineEditor): [boolean] {
     );
 
     root.observeDeep((events) => {
+      // eslint-disable-next-line no-console
       console.log(root.toJSON());
       syncYjsChangesToOutline(adapter, editor, events);
     });

@@ -8,7 +8,7 @@
  */
 
 import type {NodeKey, NodeMap} from './OutlineNode';
-import type {OutlineEditor, EditorConfig} from './OutlineEditor';
+import type {OutlineEditor, EditorConfig, DirtyChange} from './OutlineEditor';
 import type {
   Selection as OutlineSelection,
   PointType,
@@ -38,7 +38,7 @@ let activeEditorConfig: EditorConfig<{...}>;
 let activeEditor: OutlineEditor;
 let treatAllNodesAsDirty: boolean = false;
 let activeDirtySubTrees: Set<NodeKey>;
-let activeDirtyNodes: Set<NodeKey>;
+let activeDirtyNodes: Map<NodeKey, DirtyChange>;
 let activePrevNodeMap: NodeMap;
 let activeNextNodeMap: NodeMap;
 let activeSelection: null | OutlineSelection;
@@ -475,7 +475,7 @@ function reconcileRoot(
   selection: null | OutlineSelection,
   dirtyType: 0 | 1 | 2,
   dirtySubTrees: Set<NodeKey>,
-  dirtyNodes: Set<NodeKey>,
+  dirtyNodes: Map<NodeKey, DirtyChange>,
 ): void {
   subTreeTextContent = '';
   editorTextContent = '';

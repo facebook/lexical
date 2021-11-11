@@ -137,7 +137,7 @@ export function generateKey(node: OutlineNode): NodeKey {
   const editorState = getActiveEditorState();
   const key = generateRandomKey();
   editorState._nodeMap.set(key, node);
-  editor._dirtyNodes.add(key);
+  editor._dirtyNodes.set(key, []);
   editor._dirtyType = HAS_DIRTY_NODES;
   return key;
 }
@@ -175,7 +175,7 @@ export function internallyMarkNodeAsDirty(node: OutlineNode): void {
   }
   const dirtyNodes = editor._dirtyNodes;
   editor._dirtyType = HAS_DIRTY_NODES;
-  dirtyNodes.add(latest.__key);
+  dirtyNodes.set(latest.__key, []);
 }
 
 export function setCompositionKey(compositionKey: null | NodeKey): void {

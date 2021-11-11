@@ -76,12 +76,23 @@ export type EditorConfig<EditorContext> = {
 
 export type TextNodeTransform = (node: TextNode, state: State) => void;
 
+export type DirtyChange = Array<
+  | {
+      type: 'property',
+      key: string,
+      value: string | number | boolean | null | void,
+    }
+  | {type: 'text_splice', index: number, text: string, delCount: number}
+  | {type: 'text_replace', text: string}
+  | {type: 'text_split', offsets: {[offset: number]: NodeKey}},
+>;
+
 export type ErrorListener = (error: Error, log: Array<string>) => void;
 export type UpdateListener = ({
   prevEditorState: EditorState,
   editorState: EditorState,
   dirty: boolean,
-  dirtyNodes: Set<NodeKey>,
+  dirtyNodes: Map<NodeKey, DirtyChange>,
   log: Array<string>,
 }) => void;
 export type DecoratorListener = (decorator: {[NodeKey]: ReactNode}) => void;
@@ -131,7 +142,7 @@ export function resetEditor(
   editor._pendingEditorState = pendingEditorState;
   editor._compositionKey = null;
   editor._dirtyType = NO_DIRTY_NODES;
-  editor._dirtyNodes = new Set();
+  editor._dirtyNodes = new Map();
   editor._dirtySubTrees = new Set();
   editor._log = [];
   editor._updates = [];
@@ -154,14 +165,16 @@ export function createEditor<EditorContext>(editorConfig?: {
   initialEditorState?: EditorState,
   theme?: EditorThemeClasses,
   context?: EditorContext,
+  recordDirty?: boolean,
 }): OutlineEditor {
   const config = editorConfig || {};
   const theme = config.theme || {};
   const context = config.context || {};
+  const recordDirty = config.recordDirty || false;
   const editorState = createEmptyEditorState();
   const initialEditorState = config.initialEditorState;
   // $FlowFixMe: use our declared type instead
-  const editor: editor = new BaseOutlineEditor(editorState, {
+  const editor: editor = new BaseOutlineEditor(editorState, recordDirty, {
     // $FlowFixMe: we use our internal type to simpify the generics
     context,
     theme,
@@ -194,12 +207,17 @@ class BaseOutlineEditor {
   _textContent: string;
   _config: EditorConfig<{...}>;
   _dirtyType: 0 | 1 | 2;
-  _dirtyNodes: Set<NodeKey>;
+  _dirtyNodes: Map<NodeKey, Array<DirtyChange>>;
   _dirtySubTrees: Set<NodeKey>;
   _observer: null | MutationObserver;
+  _recordDirty: boolean;
   _log: Array<string>;
 
-  constructor(editorState: EditorState, config: EditorConfig<{...}>) {
+  constructor(
+    editorState: EditorState,
+    recordDirty: boolean,
+    config: EditorConfig<{...}>,
+  ) {
     // The root element associated with this editor
     this._rootElement = null;
     // The current editor state
@@ -221,6 +239,8 @@ class BaseOutlineEditor {
       root: new Set(),
       update: new Set(),
     };
+    // Enable the atomic recording of dirty nodes. This is useful for collab.
+    this._recordDirty = recordDirty;
     // Editor configuration for theme/context.
     this._config = config;
     // Handling of text node transforms
@@ -236,7 +256,7 @@ class BaseOutlineEditor {
     this._pendingDecorators = null;
     // Used to optimize reconcilation
     this._dirtyType = NO_DIRTY_NODES;
-    this._dirtyNodes = new Set();
+    this._dirtyNodes = new Map();
     this._dirtySubTrees = new Set();
     // Handling of DOM mutations
     this._observer = null;
@@ -421,9 +441,10 @@ declare export class OutlineEditor {
   _pendingDecorators: null | {[NodeKey]: ReactNode};
   _config: EditorConfig<{...}>;
   _dirtyType: 0 | 1 | 2;
-  _dirtyNodes: Set<NodeKey>;
+  _dirtyNodes: Map<NodeKey, DirtyChange>;
   _dirtySubTrees: Set<NodeKey>;
   _observer: null | MutationObserver;
+  _recordDirty: boolean;
   _log: Array<string>;
 
   isComposing(): boolean;

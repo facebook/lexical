@@ -12,6 +12,7 @@ export type {
   EditorConfig,
   EditorThemeClasses,
   TextMutation,
+  NodeTypes,
 } from './OutlineEditor';
 export type {EditorState, ParsedEditorState} from './OutlineEditorState';
 export type {State} from './OutlineUpdates';

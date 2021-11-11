@@ -10,11 +10,15 @@
 import type {OutlineEditor} from 'outline';
 
 import {useEffect, useMemo, useState} from 'react';
-import {createWebsocketAdapter, syncOutlineUpdateToYjs} from 'outline-yjs';
+import {
+  createWebsocketAdapter,
+  syncOutlineUpdateToYjs,
+  syncYjsChangesToOutline,
+} from 'outline-yjs';
 import {initEditor} from './useRichTextSetup';
 
 const WEBSOCKET_ENDPOINT = 'ws://localhost:1234';
-const WEBSOCKET_SLUG = 'playground';
+const WEBSOCKET_SLUG = 'playground8';
 
 export default function useYjsCollaboration(editor: OutlineEditor): [boolean] {
   const [connected, setConnected] = useState(false);
@@ -51,7 +55,9 @@ export default function useYjsCollaboration(editor: OutlineEditor): [boolean] {
     );
 
     root.observeDeep((events) => {
-      // TODO handle syncing to Outline
+      // eslint-disable-next-line no-console
+      console.log(root.toJSON());
+      syncYjsChangesToOutline(adapter, editor, events);
     });
 
     provider.connect();

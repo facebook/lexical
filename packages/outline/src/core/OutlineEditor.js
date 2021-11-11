@@ -92,7 +92,7 @@ export type UpdateListener = ({
   prevEditorState: EditorState,
   editorState: EditorState,
   dirty: boolean,
-  dirtyNodes: Set<NodeKey>,
+  dirtyNodes: Map<NodeKey, DirtyChange>,
   log: Array<string>,
 }) => void;
 export type DecoratorListener = (decorator: {[NodeKey]: ReactNode}) => void;

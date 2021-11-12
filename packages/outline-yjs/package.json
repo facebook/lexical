@@ -15,10 +15,10 @@
     "crdt"
   ],
   "license": "MIT",
-  "version": "0.0.43",
+  "version": "0.0.44",
   "main": "OutlineYjs.js",
   "dependencies": {
-    "outline": "0.0.43",
+    "outline": "0.0.44",
     "yjs": ">=13.5.x"
   },
   "repository": {

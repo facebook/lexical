@@ -427,7 +427,7 @@ export function formatText(
   for (let i = 0; i < selectedNodes.length; i++) {
     const selectedNode = selectedNodes[i];
     if (isTextNode(selectedNode)) {
-      firstNextFormat = selectedNode.getTextNodeFormat(formatType, null);
+      firstNextFormat = selectedNode.getFormatFlags(formatType, null);
       break;
     }
   }
@@ -449,7 +449,7 @@ export function formatText(
       anchorOffset = 0;
       startOffset = 0;
       firstNode = nextSibling;
-      firstNextFormat = firstNode.getTextNodeFormat(formatType, null);
+      firstNextFormat = firstNode.getFormatFlags(formatType, null);
     }
   }
 
@@ -489,7 +489,7 @@ export function formatText(
     let lastNextFormat = firstNextFormat;
 
     if (isTextNode(lastNode)) {
-      lastNextFormat = lastNode.getTextNodeFormat(formatType, firstNextFormat);
+      lastNextFormat = lastNode.getFormatFlags(formatType, firstNextFormat);
       const lastNodeText = lastNode.getTextContent();
       const lastNodeTextLength = lastNodeText.length;
       // if the offset is 0, it means no actual characters are selected,
@@ -513,7 +513,7 @@ export function formatText(
         selectedNodeKey !== lastNode.getKey() &&
         !selectedNode.isImmutable()
       ) {
-        const selectedNextFormat = selectedNode.getTextNodeFormat(
+        const selectedNextFormat = selectedNode.getFormatFlags(
           formatType,
           lastNextFormat,
         );

@@ -208,20 +208,9 @@ export class TextNode extends OutlineNode {
     const self = this.getLatest();
     return self.__style;
   }
-  isBold(): boolean {
-    return (this.getFormat() & IS_BOLD) !== 0;
-  }
-  isItalic(): boolean {
-    return (this.getFormat() & IS_ITALIC) !== 0;
-  }
-  isStrikethrough(): boolean {
-    return (this.getFormat() & IS_STRIKETHROUGH) !== 0;
-  }
-  isUnderline(): boolean {
-    return (this.getFormat() & IS_UNDERLINE) !== 0;
-  }
-  isCode(): boolean {
-    return (this.getFormat() & IS_CODE) !== 0;
+  hasFormat(type: TextFormatType): boolean {
+    const formatFlag = TEXT_TYPE_TO_FORMAT[type];
+    return (this.getFormat() & formatFlag) !== 0;
   }
   isUnmergeable(): boolean {
     return (this.getFlags() & IS_UNMERGEABLE) !== 0;
@@ -244,10 +233,7 @@ export class TextNode extends OutlineNode {
     const self = this.getLatest();
     return self.__text;
   }
-  getTextNodeFormat(
-    type: TextFormatType,
-    alignWithFormat: null | number,
-  ): number {
+  getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number {
     const self = this.getLatest<TextNode>();
     const format = self.__format;
     return toggleTextFormatType(format, type, alignWithFormat);
@@ -369,20 +355,9 @@ export class TextNode extends OutlineNode {
     this.getWritable().__style = style;
     return self;
   }
-  toggleBold(): TextNode {
-    return this.setFormat(this.getFormat() ^ IS_BOLD);
-  }
-  toggleItalics(): TextNode {
-    return this.setFormat(this.getFormat() ^ IS_ITALIC);
-  }
-  toggleStrikethrough(): TextNode {
-    return this.setFormat(this.getFormat() ^ IS_STRIKETHROUGH);
-  }
-  toggleUnderline(): TextNode {
-    return this.setFormat(this.getFormat() ^ IS_UNDERLINE);
-  }
-  toggleCode(): TextNode {
-    return this.setFormat(this.getFormat() ^ IS_CODE);
+  toggleFormat(type: TextFormatType): TextNode {
+    const formatFlag = TEXT_TYPE_TO_FORMAT[type];
+    return this.setFormat(this.getFormat() ^ formatFlag);
   }
   toggleUnmergeable(): TextNode {
     return this.setFlags(this.getFlags() ^ IS_UNMERGEABLE);

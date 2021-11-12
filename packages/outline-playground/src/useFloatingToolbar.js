@@ -240,10 +240,12 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
                 'Arial',
               ),
             );
-            setIsBold(isTextNode(node) && node.isBold());
-            setIsItalic(isTextNode(node) && node.isItalic());
-            setIsStrikethrough(isTextNode(node) && node.isStrikethrough());
-            setIsCode(isTextNode(node) && node.isCode());
+            setIsBold(isTextNode(node) && node.hasFormat('bold'));
+            setIsItalic(isTextNode(node) && node.hasFormat('italic'));
+            setIsStrikethrough(
+              isTextNode(node) && node.hasFormat('strikethrough'),
+            );
+            setIsCode(isTextNode(node) && node.hasFormat('code'));
             if (isTextNode(node) && isLinkNode(node)) {
               setIsLink(true);
               setLinkUrl(node.getURL());

@@ -109,6 +109,8 @@ export function internalCreateNodeFromParse(
         node.__children.push(newChildKey);
       }
     }
+    node.__indent = parsedNode.__indent;
+    node.__format = parsedNode.__format;
   } else if (isTextNode(node)) {
     node.__format = parsedNode.__format;
     node.__style = parsedNode.__style;

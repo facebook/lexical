@@ -376,11 +376,13 @@ export class TextNode extends OutlineNode {
     const topBlock = this.getTopParentBlock();
     if (topBlock !== null) {
       const topBlockWasEmpty =
-        text === '' && topBlock.getTextContent(false, false) === '';
+        text === '' || topBlock.getTextContent(false, false) === '';
 
       writableSelf.__text = text;
       const prevDirection = topBlock.getDirection();
-      if (prevDirection === null || topBlockWasEmpty) {
+      // If the text content is only a single character, we may have just
+      // replaced all the text with a RTL/LTR character, so check that too.
+      if (prevDirection === null || text.length === 1 || topBlockWasEmpty) {
         const direction = getTextDirection(text);
         if (direction !== null) {
           topBlock.setDirection(direction);

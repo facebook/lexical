@@ -42,6 +42,8 @@ describe('OutlineEditorState tests', () => {
 
       expect(root).toEqual({
         __cachedText: 'foo',
+        __format: 0,
+        __indent: 0,
         __children: ['0'],
         __flags: 0,
         __key: 'root',
@@ -50,6 +52,8 @@ describe('OutlineEditorState tests', () => {
       });
       expect(paragraph).toEqual({
         __children: ['1'],
+        __format: 0,
+        __indent: 0,
         __flags: 0,
         __key: '0',
         __parent: 'root',
@@ -76,59 +80,63 @@ describe('OutlineEditorState tests', () => {
         state.getRoot().append(paragraph);
       });
       expect(editor.getEditorState().stringify()).toEqual(
-        `{\"_nodeMap\":[[\"root\",{\"__type\":\"root\",\"__flags\":0,\"__key\":\"root\",\"__parent\":null,\"__children\":[\"0\"],\"__cachedText\":\"Hello world\"}],[\"0\",{\"__type\":\"paragraph\",\"__flags\":0,\"__key\":\"0\",\"__parent\":\"root\",\"__children\":[\"1\"]}],[\"1\",{\"__type\":\"text\",\"__flags\":0,\"__key\":\"1\",\"__parent\":\"0\",\"__text\":\"Hello world\",\"__format\":0,\"__style\":\"\"}]],\"_selection\":{\"anchor\":{\"key\":\"1\",\"offset\":6,\"type\":\"text\"},\"focus\":{\"key\":\"1\",\"offset\":11,\"type\":\"text\"}}}`,
+        `{\"_nodeMap\":[[\"root\",{\"__type\":\"root\",\"__flags\":0,\"__key\":\"root\",\"__parent\":null,\"__children\":[\"0\"],\"__format\":0,\"__indent\":0,\"__cachedText\":\"Hello world\"}],[\"0\",{\"__type\":\"paragraph\",\"__flags\":0,\"__key\":\"0\",\"__parent\":\"root\",\"__children\":[\"1\"],\"__format\":0,\"__indent\":0}],[\"1\",{\"__type\":\"text\",\"__flags\":0,\"__key\":\"1\",\"__parent\":\"0\",\"__text\":\"Hello world\",\"__format\":0,\"__style\":\"\"}]],\"_selection\":{\"anchor\":{\"key\":\"1\",\"offset\":6,\"type\":\"text\"},\"focus\":{\"key\":\"1\",\"offset\":11,\"type\":\"text\"}}}`,
       );
       expect(editor.getEditorState().stringify(2)).toEqual(
         `{
-  "_nodeMap": [
+  \"_nodeMap\": [
     [
-      "root",
+      \"root\",
       {
-        "__type": "root",
-        "__flags": 0,
-        "__key": "root",
-        "__parent": null,
-        "__children": [
-          "0"
+        \"__type\": \"root\",
+        \"__flags\": 0,
+        \"__key\": \"root\",
+        \"__parent\": null,
+        \"__children\": [
+          \"0\"
         ],
-        "__cachedText": "Hello world"
+        \"__format\": 0,
+        \"__indent\": 0,
+        \"__cachedText\": \"Hello world\"
       }
     ],
     [
-      "0",
+      \"0\",
       {
-        "__type": "paragraph",
-        "__flags": 0,
-        "__key": "0",
-        "__parent": "root",
-        "__children": [
-          "1"
-        ]
+        \"__type\": \"paragraph\",
+        \"__flags\": 0,
+        \"__key\": \"0\",
+        \"__parent\": \"root\",
+        \"__children\": [
+          \"1\"
+        ],
+        \"__format\": 0,
+        \"__indent\": 0
       }
     ],
     [
-      "1",
+      \"1\",
       {
-        "__type": "text",
-        "__flags": 0,
-        "__key": "1",
-        "__parent": "0",
-        "__text": "Hello world",
-        "__format": 0,
-        "__style": ""
+        \"__type\": \"text\",
+        \"__flags\": 0,
+        \"__key\": \"1\",
+        \"__parent\": \"0\",
+        \"__text\": \"Hello world\",
+        \"__format\": 0,
+        \"__style\": \"\"
       }
     ]
   ],
-  "_selection": {
-    "anchor": {
-      "key": "1",
-      "offset": 6,
-      "type": "text"
+  \"_selection\": {
+    \"anchor\": {
+      \"key\": \"1\",
+      \"offset\": 6,
+      \"type\": \"text\"
     },
-    "focus": {
-      "key": "1",
-      "offset": 11,
-      "type": "text"
+    \"focus\": {
+      \"key\": \"1\",
+      \"offset\": 11,
+      \"type\": \"text\"
     }
   }
 }`,
@@ -157,6 +165,8 @@ describe('OutlineEditorState tests', () => {
               __cachedText: '',
               __children: [],
               __flags: 0,
+              __format: 0,
+              __indent: 0,
               __key: 'root',
               __parent: null,
               __type: 'root',

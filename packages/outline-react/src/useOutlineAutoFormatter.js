@@ -60,21 +60,25 @@ function textNodeTransform(node: TextNode, state: State): void {
         list.append(listItem);
         block.replace(list);
       }
-    } else if (textContent.length > 2 && thirdChar === ' ') {
-      if (firstChar === '#' && secondChar === '#') {
+    } else if (textContent.length > 2) {
+      if (firstChar === '#' && secondChar === '#' && thirdChar === ' ') {
         updateTextNode(node, 3);
         const heading = createHeadingNode('h2');
         const children = block.getChildren();
         heading.append(...children);
         block.replace(heading);
-      } else if (firstChar === '1' && secondChar === '.') {
-        updateTextNode(node, 3);
-        const list = createListNode('ol');
-        const listItem = createListItemNode();
-        const children = block.getChildren();
-        listItem.append(...children);
-        list.append(listItem);
-        block.replace(list);
+      } else if (parseInt(firstChar, 10)) {
+        const match = textContent.match(/^(\d+)\.\s/);
+        if (match !== null && match.index === 0 && match.length === 2) {
+          const start = parseInt(match[1], 10);
+          updateTextNode(node, match[0].length);
+          const list = createListNode('ol', start);
+          const listItem = createListItemNode();
+          const children = block.getChildren();
+          listItem.append(...children);
+          list.append(listItem);
+          block.replace(list);
+        }
       }
     }
   }

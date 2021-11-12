@@ -52,6 +52,9 @@ export function canShowPlaceholder2(
       if (topBlock.__type !== 'paragraph') {
         return false;
       }
+      if (topBlock.__indent !== 0) {
+        return false;
+      }
       const topBlockChildren = topBlock.getChildren();
       const topBlockChildrenLength = topBlockChildren.length;
       for (let s = 0; s < topBlockChildrenLength; s++) {

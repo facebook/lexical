@@ -880,8 +880,32 @@ pre::-webkit-scrollbar-thumb {
   background-image: url(images/icons/lock-fill.svg);
 }
 
+.actions i.image {
+  background-image: url(images/icons/file-image.svg);
+}
+
+.actions i.clear {
+  background-image: url(images/icons/trash.svg);
+}
+
 .actions i.unlock {
   background-image: url(images/icons/lock.svg);
+}
+
+.actions i.left-align {
+  background-image: url(images/icons/text-left.svg);
+}
+
+.actions i.center-align {
+  background-image: url(images/icons/text-center.svg);
+}
+
+.actions i.right-align {
+  background-image: url(images/icons/text-right.svg);
+}
+
+.actions i.justify-align {
+  background-image: url(images/icons/justify.svg);
 }
 
 .action-button {

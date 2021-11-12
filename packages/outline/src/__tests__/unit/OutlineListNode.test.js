@@ -23,7 +23,7 @@ describe('OutlineListNode tests', () => {
     test('ListNode.constructor', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const listNode = new ListNode('ul');
+        const listNode = new ListNode('ul', 1);
         expect(listNode.getFlags()).toBe(0);
         expect(listNode.getType()).toBe('list');
         expect(listNode.getTag()).toBe('ul');
@@ -35,9 +35,9 @@ describe('OutlineListNode tests', () => {
     test('ListNode.getTag()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const ulListNode = new ListNode('ul');
+        const ulListNode = new ListNode('ul', 1);
         expect(ulListNode.getTag()).toBe('ul');
-        const olListNode = new ListNode('ol');
+        const olListNode = new ListNode('ol', 1);
         expect(olListNode.getTag()).toBe('ol');
       });
     });
@@ -45,7 +45,7 @@ describe('OutlineListNode tests', () => {
     test('ListNode.createDOM()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const listNode = new ListNode('ul');
+        const listNode = new ListNode('ul', 1);
         expect(listNode.createDOM(editorConfig).outerHTML).toBe(
           '<ul class="my-ul-list-class"></ul>',
         );
@@ -59,7 +59,7 @@ describe('OutlineListNode tests', () => {
     test('ListNode.updateDOM()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const listNode = new ListNode('ul');
+        const listNode = new ListNode('ul', 1);
         const domElement = listNode.createDOM(editorConfig);
         expect(domElement.outerHTML).toBe('<ul class="my-ul-list-class"></ul>');
         const newListNode = new ListNode();
@@ -80,7 +80,7 @@ describe('OutlineListNode tests', () => {
     test('createListNode()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const listNode = new ListNode('ul');
+        const listNode = new ListNode('ul', 1);
         const createdListNode = createListNode('ul');
         expect(listNode.__type).toEqual(createdListNode.__type);
         expect(listNode.__flags).toEqual(createdListNode.__flags);

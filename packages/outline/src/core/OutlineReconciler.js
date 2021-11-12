@@ -24,7 +24,16 @@ import {
   getCompositionKey,
   setCompositionKey,
 } from './OutlineUtils';
-import {IS_INERT, IS_RTL, IS_LTR, FULL_RECONCILE} from './OutlineConstants';
+import {
+  IS_INERT,
+  IS_RTL,
+  IS_LTR,
+  FULL_RECONCILE,
+  IS_ALIGN_LEFT,
+  IS_ALIGN_CENTER,
+  IS_ALIGN_RIGHT,
+  IS_ALIGN_JUSTIFY,
+} from './OutlineConstants';
 import invariant from 'shared/invariant';
 import {isDecoratorNode} from './OutlineDecoratorNode';
 import {BlockNode, isBlockNode} from './OutlineBlockNode';
@@ -77,6 +86,32 @@ function destroyChildren(
   }
 }
 
+function setTextAlign(domStyle: CSSStyleDeclaration, value: string): void {
+  domStyle.setProperty('text-align', value);
+}
+
+function setBlockIndent(dom: HTMLElement, indent: number): void {
+  dom.style.setProperty(
+    'padding-inline-start',
+    indent === 0 ? '' : indent * 40 + 'px',
+  );
+}
+
+function setBlockFormat(dom: HTMLElement, format: number): void {
+  const domStyle = dom.style;
+  if (format === 0) {
+    setTextAlign(domStyle, '');
+  } else if (format === IS_ALIGN_LEFT) {
+    setTextAlign(domStyle, 'left');
+  } else if (format === IS_ALIGN_CENTER) {
+    setTextAlign(domStyle, 'center');
+  } else if (format === IS_ALIGN_RIGHT) {
+    setTextAlign(domStyle, 'right');
+  } else if (format === IS_ALIGN_JUSTIFY) {
+    setTextAlign(domStyle, 'justify');
+  }
+}
+
 function createNode(
   key: NodeKey,
   parentDOM: null | HTMLElement,
@@ -117,6 +152,14 @@ function createNode(
       dom.dir = 'ltr';
     } else if (flags & IS_RTL) {
       dom.dir = 'rtl';
+    }
+    const indent = node.__indent;
+    if (indent !== 0) {
+      setBlockIndent(dom, indent);
+    }
+    const format = node.__format;
+    if (format !== 0) {
+      setBlockFormat(dom, format);
     }
     const children = node.__children;
     const childrenLength = children.length;
@@ -331,6 +374,14 @@ function reconcileNode(
       }
     } else if (prevFlags & IS_LTR || prevFlags & IS_RTL) {
       dom.removeAttribute('dir');
+    }
+    const nextIndent = nextNode.__indent;
+    if (nextIndent !== prevNode.__indent) {
+      setBlockIndent(dom, nextIndent);
+    }
+    const nextFormat = nextNode.__format;
+    if (nextFormat !== prevNode.__format) {
+      setBlockFormat(dom, nextFormat);
     }
     const prevChildren = prevNode.__children;
     const nextChildren = nextNode.__children;

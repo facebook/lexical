@@ -181,7 +181,7 @@ describe('Hashtags', () => {
       await repeat(20, async () => {
         await deleteNextWord(page);
       });
-      await assertHTML(page, '<p class="editor-paragraph"><br></p>');
+      await assertHTML(page, '<p class="editor-paragraph" dir="ltr"><br></p>');
       await assertSelection(page, {
         anchorPath: [0],
         anchorOffset: 0,

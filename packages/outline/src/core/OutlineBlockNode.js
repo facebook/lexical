@@ -14,15 +14,35 @@ import {isTextNode, TextNode} from '.';
 import {OutlineNode, updateDirectionIfNeeded} from './OutlineNode';
 import {makeSelection, getSelection, setPointValues} from './OutlineSelection';
 import {errorOnReadOnly} from './OutlineUpdates';
-import {IS_DIRECTIONLESS, IS_LTR, IS_RTL} from './OutlineConstants';
+import {
+  IS_DIRECTIONLESS,
+  IS_LTR,
+  IS_RTL,
+  BLOCK_TYPE_TO_FORMAT,
+} from './OutlineConstants';
 import {getNodeByKey} from './OutlineUtils';
+
+export type BlockFormatType = 'left' | 'center' | 'right' | 'justify';
 
 export class BlockNode extends OutlineNode {
   __children: Array<NodeKey>;
+  __format: number;
+  __indent: number;
 
   constructor(key?: NodeKey) {
     super(key);
     this.__children = [];
+    this.__format = 0;
+    this.__indent = 0;
+  }
+
+  getFormat(): number {
+    const self = this.getLatest();
+    return self.__format;
+  }
+  getIndent(): number {
+    const self = this.getLatest();
+    return self.__indent;
   }
   getChildren(): Array<OutlineNode> {
     const self = this.getLatest();
@@ -157,6 +177,10 @@ export class BlockNode extends OutlineNode {
     const flags = this.__flags;
     return flags & IS_LTR ? 'ltr' : flags & IS_RTL ? 'rtl' : null;
   }
+  hasFormat(type: BlockFormatType): boolean {
+    const formatFlag = BLOCK_TYPE_TO_FORMAT[type];
+    return (this.getFormat() & formatFlag) !== 0;
+  }
 
   // Mutators
 
@@ -251,12 +275,6 @@ export class BlockNode extends OutlineNode {
     }
     return writableSelf;
   }
-  insertNewAfter(selection: Selection): null | BlockNode {
-    return null;
-  }
-  canInsertTab(): boolean {
-    return false;
-  }
   setDirection(direction: 'ltr' | 'rtl' | null): this {
     errorOnReadOnly();
     const self = this.getWritable();
@@ -273,6 +291,26 @@ export class BlockNode extends OutlineNode {
       self.__flags |= IS_RTL;
     }
     return self;
+  }
+  setFormat(type: BlockFormatType): this {
+    errorOnReadOnly();
+    const self = this.getWritable();
+    self.__format = BLOCK_TYPE_TO_FORMAT[type];
+    return this;
+  }
+  setIndent(indentLevel: number): this {
+    errorOnReadOnly();
+    const self = this.getWritable();
+    self.__indent = indentLevel;
+    return this;
+  }
+
+  // These are intended to be extends for specific block heuristics.
+  insertNewAfter(selection: Selection): null | BlockNode {
+    return null;
+  }
+  canInsertTab(): boolean {
+    return false;
   }
   collapseAtStart(selection: Selection): boolean {
     return false;

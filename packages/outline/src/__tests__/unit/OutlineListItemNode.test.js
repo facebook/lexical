@@ -73,14 +73,14 @@ describe('OutlineListItemNode tests', () => {
       test('nested list', async () => {
         const {editor} = testEnv;
         await editor.update(() => {
-          const parentListNode = new ListNode('ul');
+          const parentListNode = new ListNode('ul', 1);
           const parentlistItemNode = new ListItemNode();
           parentListNode.append(parentlistItemNode);
           const domElement = parentlistItemNode.createDOM(editorConfig);
           expect(domElement.outerHTML).toBe(
             '<li class="my-listItem-item-class"></li>',
           );
-          const nestedListNode = new ListNode('ul');
+          const nestedListNode = new ListNode('ul', 1);
           nestedListNode.append(new ListItemNode());
           parentlistItemNode.append(nestedListNode);
           const result = parentlistItemNode.updateDOM(
@@ -106,7 +106,7 @@ describe('OutlineListItemNode tests', () => {
         const {editor} = testEnv;
         await editor.update((state) => {
           const root = state.getRoot();
-          listNode = new ListNode('ul');
+          listNode = new ListNode('ul', 1);
           listItemNode1 = new ListItemNode();
           listItemNode1.append(new TextNode('one'));
           listItemNode2 = new ListItemNode();
@@ -225,7 +225,7 @@ describe('OutlineListItemNode tests', () => {
         const {editor} = testEnv;
         await editor.update((state) => {
           const root = state.getRoot();
-          listNode = new ListNode('ul');
+          listNode = new ListNode('ul', 1);
           listItemNode1 = new ListItemNode();
           listItemNode2 = new ListItemNode();
           listItemNode3 = new ListItemNode();
@@ -298,7 +298,7 @@ describe('OutlineListItemNode tests', () => {
         const {editor} = testEnv;
         await editor.update((state) => {
           const root = state.getRoot();
-          listNode = new ListNode('ul');
+          listNode = new ListNode('ul', 1);
           listItemNode1 = new ListItemNode();
           listItemNode2 = new ListItemNode();
           listItemNode3 = new ListItemNode();

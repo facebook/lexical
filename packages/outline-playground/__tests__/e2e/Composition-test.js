@@ -37,7 +37,7 @@ describe('Composition', () => {
 
       await page.keyboard.press('Backspace');
 
-      await assertHTML(page, '<p class="editor-paragraph"><br></p>');
+      await assertHTML(page, '<p class="editor-paragraph" dir="ltr"><br></p>');
       await assertSelection(page, {
         anchorPath: [0],
         anchorOffset: 0,
@@ -90,7 +90,7 @@ describe('Composition', () => {
 
       await page.keyboard.press('Backspace');
 
-      await assertHTML(page, '<p class="editor-paragraph"><br></p>');
+      await assertHTML(page, '<p class="editor-paragraph" dir="rtl"><br></p>');
 
       await page.keyboard.type('هَ');
       await assertHTML(

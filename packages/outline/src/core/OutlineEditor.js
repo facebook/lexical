@@ -76,23 +76,12 @@ export type EditorConfig<EditorContext> = {
 
 export type TextNodeTransform = (node: TextNode, state: State) => void;
 
-export type DirtyChange = Array<
-  | {
-      type: 'property',
-      key: string,
-      value: string | number | boolean | null | void,
-    }
-  | {type: 'text_splice', index: number, text: string, delCount: number}
-  | {type: 'text_replace', text: string}
-  | {type: 'text_split', offsets: {[offset: number]: NodeKey}},
->;
-
 export type ErrorListener = (error: Error, log: Array<string>) => void;
 export type UpdateListener = ({
   prevEditorState: EditorState,
   editorState: EditorState,
   dirty: boolean,
-  dirtyNodes: Map<NodeKey, DirtyChange>,
+  dirtyNodes: Set<NodeKey>,
   log: Array<string>,
 }) => void;
 export type DecoratorListener = (decorator: {[NodeKey]: ReactNode}) => void;
@@ -142,7 +131,7 @@ export function resetEditor(
   editor._pendingEditorState = pendingEditorState;
   editor._compositionKey = null;
   editor._dirtyType = NO_DIRTY_NODES;
-  editor._dirtyNodes = new Map();
+  editor._dirtyNodes = new Set();
   editor._dirtySubTrees = new Set();
   editor._log = [];
   editor._updates = [];
@@ -207,7 +196,7 @@ class BaseOutlineEditor {
   _textContent: string;
   _config: EditorConfig<{...}>;
   _dirtyType: 0 | 1 | 2;
-  _dirtyNodes: Map<NodeKey, Array<DirtyChange>>;
+  _dirtyNodes: Set<NodeKey>;
   _dirtySubTrees: Set<NodeKey>;
   _observer: null | MutationObserver;
   _recordDirty: boolean;
@@ -256,7 +245,7 @@ class BaseOutlineEditor {
     this._pendingDecorators = null;
     // Used to optimize reconcilation
     this._dirtyType = NO_DIRTY_NODES;
-    this._dirtyNodes = new Map();
+    this._dirtyNodes = new Set();
     this._dirtySubTrees = new Set();
     // Handling of DOM mutations
     this._observer = null;
@@ -441,7 +430,7 @@ declare export class OutlineEditor {
   _pendingDecorators: null | {[NodeKey]: ReactNode};
   _config: EditorConfig<{...}>;
   _dirtyType: 0 | 1 | 2;
-  _dirtyNodes: Map<NodeKey, DirtyChange>;
+  _dirtyNodes: Set<NodeKey>;
   _dirtySubTrees: Set<NodeKey>;
   _observer: null | MutationObserver;
   _recordDirty: boolean;

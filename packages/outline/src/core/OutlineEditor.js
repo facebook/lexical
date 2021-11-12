@@ -154,16 +154,14 @@ export function createEditor<EditorContext>(editorConfig?: {
   initialEditorState?: EditorState,
   theme?: EditorThemeClasses,
   context?: EditorContext,
-  recordDirty?: boolean,
 }): OutlineEditor {
   const config = editorConfig || {};
   const theme = config.theme || {};
   const context = config.context || {};
-  const recordDirty = config.recordDirty || false;
   const editorState = createEmptyEditorState();
   const initialEditorState = config.initialEditorState;
   // $FlowFixMe: use our declared type instead
-  const editor: editor = new BaseOutlineEditor(editorState, recordDirty, {
+  const editor: editor = new BaseOutlineEditor(editorState, {
     // $FlowFixMe: we use our internal type to simpify the generics
     context,
     theme,
@@ -199,12 +197,10 @@ class BaseOutlineEditor {
   _dirtyNodes: Set<NodeKey>;
   _dirtySubTrees: Set<NodeKey>;
   _observer: null | MutationObserver;
-  _recordDirty: boolean;
   _log: Array<string>;
 
   constructor(
     editorState: EditorState,
-    recordDirty: boolean,
     config: EditorConfig<{...}>,
   ) {
     // The root element associated with this editor
@@ -228,8 +224,6 @@ class BaseOutlineEditor {
       root: new Set(),
       update: new Set(),
     };
-    // Enable the atomic recording of dirty nodes. This is useful for collab.
-    this._recordDirty = recordDirty;
     // Editor configuration for theme/context.
     this._config = config;
     // Handling of text node transforms
@@ -433,7 +427,6 @@ declare export class OutlineEditor {
   _dirtyNodes: Set<NodeKey>;
   _dirtySubTrees: Set<NodeKey>;
   _observer: null | MutationObserver;
-  _recordDirty: boolean;
   _log: Array<string>;
 
   isComposing(): boolean;

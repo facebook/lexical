@@ -236,7 +236,7 @@ describe('CopyAndPaste', () => {
       } else {
         await assertHTML(
           page,
-          '<p class="editor-paragraph"><span data-outline-text="true">Hello world </span><span class="editor-text-hashtag" data-outline-text="true">#foobar</span><span data-outline-text="true"> test </span><span class="editor-text-hashtag" data-outline-text="true">#foobar2</span><span data-outline-text="true"> when </span><span class="editor-text-hashtag" data-outline-text="true">#not</span><br><span data-outline-text="true">Next </span><span class="editor-text-hashtag" data-outline-text="true">#line</span><span data-outline-text="true"> of </span><span class="editor-text-hashtag" data-outline-text="true">#text</span><span data-outline-text="true"> test </span><span class="editor-text-hashtag" data-outline-text="true">#foo</span></p>',
+          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello world </span><span class="editor-text-hashtag" data-outline-text="true">#foobar</span><span data-outline-text="true"> test </span><span class="editor-text-hashtag" data-outline-text="true">#foobar2</span><span data-outline-text="true"> when </span><span class="editor-text-hashtag" data-outline-text="true">#not</span><br><span data-outline-text="true">Next </span><span class="editor-text-hashtag" data-outline-text="true">#line</span><span data-outline-text="true"> of </span><span class="editor-text-hashtag" data-outline-text="true">#text</span><span data-outline-text="true"> test </span><span class="editor-text-hashtag" data-outline-text="true">#foo</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 12, 0],
@@ -340,14 +340,7 @@ describe('CopyAndPaste', () => {
       }
 
       await page.keyboard.press('Delete');
-      if (isRichText) {
-        await assertHTML(
-          page,
-          '<p class="editor-paragraph" dir="ltr"><br></p>',
-        );
-      } else {
-        await assertHTML(page, '<p class="editor-paragraph"><br></p>');
-      }
+      await assertHTML(page, '<p class="editor-paragraph" dir="ltr"><br></p>');
       await assertSelection(page, {
         anchorPath: [0],
         anchorOffset: 0,

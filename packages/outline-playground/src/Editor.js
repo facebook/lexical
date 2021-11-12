@@ -29,7 +29,8 @@ import BlockControls from './BlockControls';
 import CharacterLimit from './CharacterLimit';
 import {Typeahead} from './Typeahead';
 import yellowFlowerImage from './images/image/yellow-flower.jpg';
-import {log} from 'outline';
+import {log, isBlockNode} from 'outline';
+import {isListItemNode} from 'outline/ListItemNode';
 // $FlowFixMe: need Flow typings for y-websocket
 import {WebsocketProvider} from 'y-websocket';
 // $FlowFixMe: need Flow typings for yjs
@@ -145,6 +146,69 @@ function useRichTextEditorImpl({
       });
     };
 
+    const setAlignment = (
+      alignment: 'left' | 'right' | 'center' | 'justify',
+    ) => {
+      editor.update((state) => {
+        const selection = state.getSelection();
+        if (selection !== null) {
+          const node = selection.anchor.getNode();
+          const block = isBlockNode(node) ? node : node.getParentOrThrow();
+          block.setFormat(alignment);
+        }
+      });
+    };
+
+    const leftAlign = () => {
+      setAlignment('left');
+    };
+
+    const centerAlign = () => {
+      setAlignment('center');
+    };
+
+    const rightAlign = () => {
+      setAlignment('right');
+    };
+
+    const justifyAlign = () => {
+      setAlignment('justify');
+    };
+
+    const applyOutdent = () => {
+      editor.update((state) => {
+        const selection = state.getSelection();
+        if (selection !== null) {
+          const node = selection.anchor.getNode();
+          const block = isBlockNode(node) ? node : node.getParentOrThrow();
+          if (!isListItemNode(block)) {
+            if (block.getIndent() !== 0) {
+              block.setIndent(block.getIndent() - 1);
+            }
+          } else {
+            outdent();
+          }
+        }
+      });
+    };
+
+    const applyIndent = () => {
+      editor.update((state) => {
+        const selection = state.getSelection();
+        if (selection !== null) {
+          const node = selection.anchor.getNode();
+          const block = isBlockNode(node) ? node : node.getParentOrThrow();
+          if (!isListItemNode(block)) {
+            if (block.getIndent() !== 10) {
+              block.setIndent(block.getIndent() + 1);
+            }
+          } else {
+            indent();
+          }
+        }
+      });
+    };
+
     return (
       <>
         <ContentEditable
@@ -164,16 +228,30 @@ function useRichTextEditorImpl({
         )}
         {isAutocomplete && <Typeahead editor={editor} />}
         <div className="actions">
-          <button className="action-button outdent" onClick={outdent}>
+          <button className="action-button outdent" onClick={applyOutdent}>
             <i className="outdent" />
           </button>
-          <button className="action-button indent" onClick={indent}>
+          <button className="action-button indent" onClick={applyIndent}>
             <i className="indent" />
+          </button>
+          <button className="action-button left-align" onClick={leftAlign}>
+            <i className="left-align" />
+          </button>
+          <button className="action-button center-align" onClick={centerAlign}>
+            <i className="center-align" />
+          </button>
+          <button className="action-button right-align" onClick={rightAlign}>
+            <i className="right-align" />
+          </button>
+          <button
+            className="action-button justify-align"
+            onClick={justifyAlign}>
+            <i className="justify-align" />
           </button>
           <button
             className="action-button insert-image"
             onClick={handleAddImage}>
-            Insert Image
+            <i className="image" />
           </button>
           <button
             className="action-button clear"
@@ -181,7 +259,7 @@ function useRichTextEditorImpl({
               clear();
               editor.focus();
             }}>
-            Clear
+            <i className="clear" />
           </button>
           <button
             className="action-button lock"

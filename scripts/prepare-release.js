@@ -30,5 +30,21 @@ async function prepareOutlineReactPackage() {
   );
 }
 
+async function prepareOutlineYjsPackage() {
+  await exec(`rm -rf ./packages/outline-yjs/npm`);
+  await exec(`mkdir ./packages/outline-yjs/npm`);
+  await exec(
+    `cp -R ./packages/outline-yjs/dist/OutlineYjs.js ./packages/outline-yjs/npm/index.js`,
+  );
+  await exec(
+    `cp -R ./packages/outline-yjs/package.json ./packages/outline-yjs/npm`,
+  );
+  await exec(`cp -R LICENSE ./packages/outline-yjs/npm`);
+  await exec(
+    `cp -R ./packages/outline-yjs/README.md ./packages/outline-yjs/npm`,
+  );
+}
+
 prepareOutlinePackage();
 prepareOutlineReactPackage();
+prepareOutlineYjsPackage();

@@ -15,15 +15,17 @@ type ListNodeTagType = 'ul' | 'ol';
 
 export class ListNode extends BlockNode {
   __tag: ListNodeTagType;
+  __start: number;
 
   static clone(node: ListNode): ListNode {
-    return new ListNode(node.__tag, node.__key);
+    return new ListNode(node.__tag, node.__start, node.__key);
   }
 
-  constructor(tag: ListNodeTagType, key?: NodeKey) {
+  constructor(tag: ListNodeTagType, start: number, key?: NodeKey) {
     super(key);
     this.__tag = tag;
     this.__type = 'list';
+    this.__start = start;
   }
 
   getTag(): ListNodeTagType {
@@ -37,6 +39,9 @@ export class ListNode extends BlockNode {
     const element = document.createElement(tag);
     const theme = config.theme;
     const classNames = theme.list;
+    if (this.__start !== 1) {
+      element.setAttribute('start', String(this.__start));
+    }
     if (classNames !== undefined) {
       // $FlowFixMe: intentional cast
       const className = classNames[tag];
@@ -56,8 +61,11 @@ export class ListNode extends BlockNode {
   }
 }
 
-export function createListNode(tag: ListNodeTagType): ListNode {
-  return new ListNode(tag);
+export function createListNode(
+  tag: ListNodeTagType,
+  start?: number = 1,
+): ListNode {
+  return new ListNode(tag, start);
 }
 
 export function isListNode(node: ?OutlineNode): boolean %checks {

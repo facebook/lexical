@@ -8,6 +8,7 @@
  */
 
 import type {TextFormatType} from './OutlineTextNode';
+import type {BlockFormatType} from './OutlineBlockNode';
 
 // Reconciling
 export const NO_DIRTY_NODES = 0;
@@ -36,8 +37,13 @@ export const IS_CODE = 1 << 4;
 export const IS_SUBSCRIPT = 1 << 5;
 export const IS_SUPERSCRIPT = 1 << 6;
 
-// Reconciliation
+// Block node formatting
+export const IS_ALIGN_LEFT = 1;
+export const IS_ALIGN_CENTER = 2;
+export const IS_ALIGN_RIGHT = 3;
+export const IS_ALIGN_JUSTIFY = 4;
 
+// Reconciliation
 export const NO_BREAK_SPACE_CHAR = '\u00A0';
 
 const RTL = '\u0591-\u07FF\uFB1D-\uFDFD\uFE70-\uFEFC';
@@ -55,4 +61,11 @@ export const TEXT_TYPE_TO_FORMAT: {[TextFormatType]: number} = {
   strikethrough: IS_STRIKETHROUGH,
   italic: IS_ITALIC,
   code: IS_CODE,
+};
+
+export const BLOCK_TYPE_TO_FORMAT: {[BlockFormatType]: number} = {
+  left: IS_ALIGN_LEFT,
+  right: IS_ALIGN_RIGHT,
+  center: IS_ALIGN_CENTER,
+  justify: IS_ALIGN_JUSTIFY,
 };

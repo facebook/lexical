@@ -7,15 +7,70 @@
  * @flow strict
  */
 
-import type {EditorState} from 'outline';
+import type {EditorState, State} from 'outline';
 
 import {getEditorStateTextContent} from '../core/OutlineUtils';
 import {isBlockNode, isTextNode} from 'outline';
 
+export function textContent2(state: State): string {
+  const root = state.getRoot();
+  return root.getTextContent();
+}
+
+export function isBlank2(
+  state: State,
+  isEditorComposing: boolean,
+  trim?: boolean = true,
+): boolean {
+  if (isEditorComposing) {
+    return false;
+  }
+  let text = textContent2(state);
+  if (trim) {
+    text = text.trim();
+  }
+  return text === '';
+}
+
+export function canShowPlaceholder2(
+  state: State,
+  isComposing: boolean,
+): boolean {
+  if (!isBlank2(state, isComposing, false)) {
+    return false;
+  }
+  const root = state.getRoot();
+  const children = root.getChildren();
+  const childrenLength = children.length;
+  if (childrenLength > 1) {
+    return false;
+  }
+  for (let i = 0; i < childrenLength; i++) {
+    const topBlock = children[i];
+
+    if (isBlockNode(topBlock)) {
+      if (topBlock.__type !== 'paragraph') {
+        return false;
+      }
+      const topBlockChildren = topBlock.getChildren();
+      const topBlockChildrenLength = topBlockChildren.length;
+      for (let s = 0; s < topBlockChildrenLength; s++) {
+        const child = topBlockChildren[i];
+        if (!isTextNode(child)) {
+          return false;
+        }
+      }
+    }
+  }
+  return true;
+}
+
+// Deprecated
 export function textContent(editorState: EditorState): string {
   return getEditorStateTextContent(editorState);
 }
 
+// Deprecated
 export function isBlank(
   editorState: EditorState,
   isEditorComposing: boolean,
@@ -31,6 +86,7 @@ export function isBlank(
   return text === '';
 }
 
+// Deprecated
 export function canShowPlaceholder(
   editorState: EditorState,
   isComposing: boolean,

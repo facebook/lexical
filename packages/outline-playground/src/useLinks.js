@@ -26,6 +26,7 @@ export default function useLinks(
       }
 
       let updatedNode = node;
+      let text = updatedNode.getTextContent();
       const selection = state.getSelection();
       // Ensure we are taking into account the user's current selection
       // if the node being transformed is the anchor node.
@@ -35,10 +36,8 @@ export default function useLinks(
         selection.anchor.type === 'text' &&
         selection.anchor.key === node.getKey()
       ) {
-        [updatedNode] = updatedNode.splitText(0, selection.anchor.offset);
+        text = text.slice(0, selection.anchor.offset);
       }
-
-      let text = updatedNode.getTextContent();
 
       let match = findMatch(text);
 

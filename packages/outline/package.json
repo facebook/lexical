@@ -13,32 +13,11 @@
     "rich-text"
   ],
   "license": "MIT",
-  "version": "0.0.44",
+  "version": "0.0.46",
   "main": "Outline.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/facebookexternal/Outline",
     "directory": "packages/outline"
-  },
-  "exports": {
-    ".": "./Outline.js",
-    "./index.js": "./Outline.js",
-    "./selection": "./OutlineSelectionHelpers.js",
-    "./text": "./OutlineTextHelpers.js",
-    "./keys": "./OutlineKeyHelpers.js",
-    "./events": "./OutlineEventHelpers.js",
-    "./history": "./OutlineHistoryHelpers.js",
-    "./offsets": "./OutlineOffsetHelpers.js",
-    "./nodes": "./OutlineNodeHelpers.js",
-    "./validation": "./OutlineRootHelpers.js",
-    "./CodeNode": "./OutlineCodeNode.js",
-    "./ParagraphNode": "./OutlineParagraphNode.js",
-    "./QuoteNode": "./OutlineQuoteNode.js",
-    "./HashtagNode": "./OutlineHashtagNode.js",
-    "./ListNode": "./OutlineListNode.js",
-    "./ListItemNode": "./OutlineListItemNode.js",
-    "./LinkNode": "./OutlineLinkNode.js",
-    "./HeadingNode": "./OutlineHeadingNode.js",
-    "./package.json": "./package.json"
   }
 }

@@ -10,7 +10,7 @@
 import type {OutlineEditor, EditorThemeClasses, EditorState} from 'outline';
 
 import {createEditor} from 'outline';
-import {canShowPlaceholder} from 'outline/root';
+import {canShowPlaceholder2} from 'outline/root';
 
 import {useCallback, useMemo, useRef, useState} from 'react';
 import useLayoutEffect from './shared/useLayoutEffect';
@@ -42,9 +42,8 @@ export default function useOutlineEditor<EditorContext>(editorConfig?: {
   }, [editor, onError]);
   useLayoutEffect(() => {
     return editor.addListener('update', ({editorState}) => {
-      const currentCanShowPlaceholder = canShowPlaceholder(
-        editorState,
-        editor.isComposing(),
+      const currentCanShowPlaceholder = editorState.read((state) =>
+        canShowPlaceholder2(state, editor.isComposing()),
       );
       if (showPlaceholderRef.current !== currentCanShowPlaceholder) {
         showPlaceholderRef.current = currentCanShowPlaceholder;

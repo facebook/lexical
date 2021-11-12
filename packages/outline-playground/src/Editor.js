@@ -30,6 +30,13 @@ import CharacterLimit from './CharacterLimit';
 import {Typeahead} from './Typeahead';
 import yellowFlowerImage from './images/image/yellow-flower.jpg';
 import {log} from 'outline';
+// $FlowFixMe: need Flow typings for y-websocket
+import {WebsocketProvider} from 'y-websocket';
+// $FlowFixMe: need Flow typings for yjs
+import {Doc} from 'yjs';
+
+const WEBSOCKET_ENDPOINT = 'ws://localhost:1234';
+const WEBSOCKET_SLUG = 'playground';
 
 const editorStyle = {
   outline: 0,
@@ -226,7 +233,19 @@ export function useRichTextEditorWithCollab(
   const [editor, rootElementRef, showPlaceholder] =
     useOutlineEditor(editorConfig);
   const mentionsTypeahead = useMentions(editor);
-  const clear = useOutlineRichTextWithCollab(editor);
+  const [doc, provider] = useMemo(() => {
+    const doc = new Doc();
+    const provider = new WebsocketProvider(
+      WEBSOCKET_ENDPOINT,
+      WEBSOCKET_SLUG,
+      doc,
+      {
+        connect: false,
+      },
+    );
+    return [doc, provider];
+  }, []);
+  const clear = useOutlineRichTextWithCollab(editor, doc, provider);
   return useRichTextEditorImpl({
     ...props,
     editor,

@@ -8,6 +8,7 @@
  */
 
 import type {OutlineEditor} from 'outline';
+import type {Provider, YjsDoc} from 'outline-yjs';
 
 import {useCallback} from 'react';
 
@@ -16,9 +17,11 @@ import useYjsCollaboration from './shared/useYjsCollaboration';
 
 export default function useOutlineRichTextWithCollab(
   editor: OutlineEditor,
+  doc: YjsDoc,
+  provider: Provider,
 ): () => void {
   const clearEditor = useRichTextSetup(editor, false);
-  useYjsCollaboration(editor);
+  useYjsCollaboration(editor, doc, provider);
 
   return useCallback(
     (callbackFn?: () => void) => {

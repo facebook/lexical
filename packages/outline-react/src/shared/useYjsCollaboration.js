@@ -8,28 +8,26 @@
  */
 
 import type {OutlineEditor} from 'outline';
+import type {Provider, YjsDoc} from 'outline-yjs';
 
 import {useEffect, useMemo, useState} from 'react';
 import {
-  createWebsocketAdapter,
+  createBinding,
   syncOutlineUpdateToYjs,
   syncYjsChangesToOutline,
 } from 'outline-yjs';
 import {initEditor} from './useRichTextSetup';
 
-const WEBSOCKET_ENDPOINT = 'ws://localhost:1234';
-const WEBSOCKET_SLUG = 'playground8';
-
-export default function useYjsCollaboration(editor: OutlineEditor): [boolean] {
+export default function useYjsCollaboration(
+  editor: OutlineEditor,
+  doc: YjsDoc,
+  provider: Provider,
+): [boolean] {
   const [connected, setConnected] = useState(false);
-
-  const adapter = useMemo(
-    () => createWebsocketAdapter(WEBSOCKET_ENDPOINT, WEBSOCKET_SLUG),
-    [],
-  );
+  const binding = useMemo(() => createBinding(provider, doc), [doc, provider]);
 
   useEffect(() => {
-    const {provider, root} = adapter;
+    const {root} = binding;
     provider.on('status', ({status}: {status: string}) => {
       setConnected(status === 'connected');
     });
@@ -45,7 +43,7 @@ export default function useYjsCollaboration(editor: OutlineEditor): [boolean] {
       ({prevEditorState, editorState, dirty, dirtyNodes}) => {
         if (dirty) {
           syncOutlineUpdateToYjs(
-            adapter,
+            binding,
             prevEditorState,
             editorState,
             dirtyNodes,
@@ -57,7 +55,7 @@ export default function useYjsCollaboration(editor: OutlineEditor): [boolean] {
     root.observeDeep((events) => {
       // eslint-disable-next-line no-console
       console.log(root.toJSON());
-      syncYjsChangesToOutline(adapter, editor, events);
+      syncYjsChangesToOutline(binding, editor, events);
     });
 
     provider.connect();
@@ -66,7 +64,7 @@ export default function useYjsCollaboration(editor: OutlineEditor): [boolean] {
       provider.disconnect();
       removeListener();
     };
-  }, [adapter, editor]);
+  }, [binding, editor, provider]);
 
   return [connected];
 }

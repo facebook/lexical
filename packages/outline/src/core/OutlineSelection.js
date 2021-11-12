@@ -36,13 +36,7 @@ import {
   toggleTextFormatType,
 } from './OutlineUtils';
 import invariant from 'shared/invariant';
-import {
-  IS_BOLD,
-  IS_CODE,
-  IS_ITALIC,
-  IS_STRIKETHROUGH,
-  IS_UNDERLINE,
-} from './OutlineConstants';
+import {TEXT_TYPE_TO_FORMAT} from './OutlineConstants';
 
 export type TextPointType = {
   key: NodeKey,
@@ -345,20 +339,9 @@ export class Selection {
     this.format = toggleTextFormatType(this.format, format, null);
     this.dirty = true;
   }
-  isBold(): boolean {
-    return (this.format & IS_BOLD) !== 0;
-  }
-  isItalic(): boolean {
-    return (this.format & IS_ITALIC) !== 0;
-  }
-  isStrikethrough(): boolean {
-    return (this.format & IS_STRIKETHROUGH) !== 0;
-  }
-  isUnderline(): boolean {
-    return (this.format & IS_UNDERLINE) !== 0;
-  }
-  isCode(): boolean {
-    return (this.format & IS_CODE) !== 0;
+  hasFormat(type: TextFormatType): boolean {
+    const formatFlag = TEXT_TYPE_TO_FORMAT[type];
+    return (this.format & formatFlag) !== 0;
   }
 }
 

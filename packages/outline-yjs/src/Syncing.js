@@ -16,7 +16,7 @@ import type {
   NodeTypes,
   DirtyChange,
 } from 'outline';
-import type {Adapter, YjsNodeMap, ReverseYjsNodeMap} from './Adapter';
+import type {Binding, YjsNodeMap, ReverseYjsNodeMap} from '.';
 // $FlowFixMe: need Flow typings for yjs
 import {XmlElement, XmlText} from 'yjs';
 import {isTextNode, isBlockNode} from 'outline';
@@ -184,18 +184,18 @@ function syncOutlineNodeToYjs(
 }
 
 export function syncOutlineUpdateToYjs(
-  adapter: Adapter,
+  binding: Binding,
   prevEditorState: EditorState,
   currEditorState: EditorState,
   dirtyNodes: Map<NodeKey, DirtyChange>,
 ): void {
-  adapter.doc.transact(() => {
+  binding.doc.transact(() => {
     currEditorState.read((state) => {
       // Update nodes
       if (dirtyNodes.size > 0) {
         const nodeMap = currEditorState._nodeMap;
-        const yjsNodeMap = adapter.nodeMap;
-        const reverseYjsNodeMap = adapter.reverseNodeMap;
+        const yjsNodeMap = binding.nodeMap;
+        const reverseYjsNodeMap = binding.reverseNodeMap;
         const dirtyNodesArr = Array.from(dirtyNodes.keys());
         for (let i = 0; i < dirtyNodesArr.length; i++) {
           const dirtyKey = dirtyNodesArr[i];
@@ -281,7 +281,7 @@ function syncYjsNodeToOutline(
 }
 
 export function syncYjsChangesToOutline(
-  adapter: Adapter,
+  binding: Binding,
   editor: OutlineEditor,
   events: Array<YjsEvent>,
 ): void {
@@ -291,9 +291,9 @@ export function syncYjsChangesToOutline(
       throw new Error('Not possible');
     }
     const currNodeMap = pendingEditorState._nodeMap;
-    const yjsNodeMap = adapter.nodeMap;
+    const yjsNodeMap = binding.nodeMap;
     const nodeTypes = editor._nodeTypes;
-    const reverseYjsNodeMap = adapter.reverseNodeMap;
+    const reverseYjsNodeMap = binding.reverseNodeMap;
     for (let i = 0; i < events.length; i++) {
       const event = events[i];
       const {target: yjsNode, childListChanged, attributesChanged} = event;

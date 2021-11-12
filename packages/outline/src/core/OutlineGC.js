@@ -9,7 +9,7 @@
 
 import type {NodeKey, NodeMap} from './OutlineNode';
 import type {BlockNode} from './OutlineBlockNode';
-import type {OutlineEditor, DirtyChange} from './OutlineEditor';
+import type {OutlineEditor} from './OutlineEditor';
 import type {EditorState} from './OutlineEditorState';
 
 import {isBlockNode} from '.';
@@ -55,10 +55,10 @@ function garbageCollectDetachedDeepChildNodes(
 
 export function garbageCollectDetachedNodes(
   editorState: EditorState,
-  dirtyNodes: Map<NodeKey, DirtyChange>,
+  dirtyNodes: Set<NodeKey>,
   editor: OutlineEditor,
 ): void {
-  const dirtyNodesArr = Array.from(dirtyNodes.keys());
+  const dirtyNodesArr = Array.from(dirtyNodes);
   const nodeMap = editorState._nodeMap;
 
   for (let s = 0; s < dirtyNodesArr.length; s++) {

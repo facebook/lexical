@@ -215,38 +215,48 @@ describe('OutlineTextNode tests', () => {
   });
 
   describe.each([
-    ['bold', IS_BOLD, (node) => node.isBold(), (node) => node.toggleBold()],
+    [
+      'bold',
+      IS_BOLD,
+      (node) => node.hasFormat('bold'),
+      (node) => node.toggleFormat('bold'),
+    ],
     [
       'italic',
       IS_ITALIC,
-      (node) => node.isItalic(),
-      (node) => node.toggleItalics(),
+      (node) => node.hasFormat('italic'),
+      (node) => node.toggleFormat('italic'),
     ],
     [
       'strikethrough',
       IS_STRIKETHROUGH,
-      (node) => node.isStrikethrough(),
-      (node) => node.toggleStrikethrough(),
+      (node) => node.hasFormat('strikethrough'),
+      (node) => node.toggleFormat('strikethrough'),
     ],
     [
       'underline',
       IS_UNDERLINE,
-      (node) => node.isUnderline(),
-      (node) => node.toggleUnderline(),
+      (node) => node.hasFormat('underline'),
+      (node) => node.toggleFormat('underline'),
     ],
-    ['code', IS_CODE, (node) => node.isCode(), (node) => node.toggleCode()],
+    [
+      'code',
+      IS_CODE,
+      (node) => node.hasFormat('code'),
+      (node) => node.toggleFormat('code'),
+    ],
   ])('%s flag', (formatFlag, stateFormat, flagPredicate, flagToggle) => {
-    test(`getTextNodeFormatFlags(${formatFlag})`, async () => {
+    test(`getFormatFlags(${formatFlag})`, async () => {
       await update((state) => {
         const root = state.getRoot();
         const paragraphNode = root.getFirstChild();
         const textNode = paragraphNode.getFirstChild();
 
-        const newFormat = textNode.getTextNodeFormat(formatFlag, null);
+        const newFormat = textNode.getFormatFlags(formatFlag, null);
         expect(newFormat).toBe(stateFormat);
 
         textNode.setFormat(newFormat);
-        const newFormat2 = textNode.getTextNodeFormat(formatFlag, null);
+        const newFormat2 = textNode.getFormatFlags(formatFlag, null);
         expect(newFormat2).toBe(0);
       });
     });

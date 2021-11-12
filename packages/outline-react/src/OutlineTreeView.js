@@ -283,13 +283,13 @@ function printNode(node) {
 }
 
 const LABEL_PREDICATES = [
-  (node) => node.isBold() && 'Bold',
-  (node) => node.isCode() && 'Code',
+  (node) => node.hasFormat('bold') && 'Bold',
+  (node) => node.hasFormat('code') && 'Code',
   (node) => node.isImmutable() && 'Immutable',
-  (node) => node.isItalic() && 'Italic',
+  (node) => node.hasFormat('italic') && 'Italic',
   (node) => node.isSegmented() && 'Segmented',
-  (node) => node.isStrikethrough() && 'Strikethrough',
-  (node) => node.isUnderline() && 'Underline',
+  (node) => node.hasFormat('strikethrough') && 'Strikethrough',
+  (node) => node.hasFormat('underline') && 'Underline',
   (node) => node.isInert() && 'Inert',
   (node) => node.isDirectionless() && 'Directionless',
   (node) => node.isUnmergeable() && 'Unmergeable',

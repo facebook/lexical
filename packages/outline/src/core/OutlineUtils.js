@@ -93,7 +93,7 @@ export function isImmutableOrInertOrSegmented(node: OutlineNode): boolean {
   return node.isImmutable() || node.isInert() || node.isSegmented();
 }
 
-export function getDOMTextNode(element: Node): Text | null {
+export function getDOMTextNode(element: Node | null): Text | null {
   let node = element;
   while (node != null) {
     if (node.nodeType === 3) {

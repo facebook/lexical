@@ -10,11 +10,14 @@
 import type {OutlineEditor} from 'outline';
 import type {Provider, YjsDoc} from 'outline-yjs';
 
+import * as React from 'react';
+
 import {useEffect, useMemo, useState} from 'react';
 import {
   createBinding,
   syncOutlineUpdateToYjs,
   syncYjsChangesToOutline,
+  syncCursorPositions,
 } from 'outline-yjs';
 import {initEditor} from './useRichTextSetup';
 
@@ -22,7 +25,7 @@ export default function useYjsCollaboration(
   editor: OutlineEditor,
   doc: YjsDoc,
   provider: Provider,
-): [boolean] {
+): [React$Node, boolean] {
   const [connected, setConnected] = useState(false);
   const binding = useMemo(() => createBinding(provider, doc), [doc, provider]);
 
@@ -38,12 +41,17 @@ export default function useYjsCollaboration(
       }
     });
 
+    provider.awareness.on('update', ({removed}) => {
+      syncCursorPositions(editor, binding, provider);
+    });
+
     const removeListener = editor.addListener(
       'update',
       ({prevEditorState, editorState, dirty, dirtyNodes}) => {
         if (dirty) {
           syncOutlineUpdateToYjs(
             binding,
+            provider,
             prevEditorState,
             editorState,
             dirtyNodes,
@@ -53,9 +61,8 @@ export default function useYjsCollaboration(
     );
 
     root.observeDeep((events) => {
-      // eslint-disable-next-line no-console
-      console.log(root.toJSON());
-      syncYjsChangesToOutline(binding, editor, events);
+      // console.log(root.toJSON());
+      syncYjsChangesToOutline(binding, editor, provider, events);
     });
 
     provider.connect();
@@ -66,5 +73,13 @@ export default function useYjsCollaboration(
     };
   }, [binding, editor, provider]);
 
-  return [connected];
+  const cursorsContainer = useMemo(() => {
+    const ref = (element) => {
+      binding.cursorsContainer = element;
+    };
+
+    return <div ref={ref} />;
+  }, [binding]);
+
+  return [cursorsContainer, connected];
 }

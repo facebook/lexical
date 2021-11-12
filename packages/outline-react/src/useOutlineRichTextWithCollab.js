@@ -19,11 +19,11 @@ export default function useOutlineRichTextWithCollab(
   editor: OutlineEditor,
   doc: YjsDoc,
   provider: Provider,
-): () => void {
+): [React$Node, () => void, boolean] {
   const clearEditor = useRichTextSetup(editor, false);
-  useYjsCollaboration(editor, doc, provider);
+  const [cursors, connected] = useYjsCollaboration(editor, doc, provider);
 
-  return useCallback(
+  return [cursors, useCallback(
     (callbackFn?: () => void) => {
       clearEditor(editor, () => {
         if (callbackFn) {
@@ -32,5 +32,5 @@ export default function useOutlineRichTextWithCollab(
       });
     },
     [clearEditor, editor],
-  );
+  ), connected];
 }

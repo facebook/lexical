@@ -7,13 +7,7 @@
  * @flow strict
  */
 
-import type {
-  OutlineEditor,
-  EditorState,
-  OutlineNode,
-  NodeKey,
-  DirtyChange,
-} from 'outline';
+import type {OutlineEditor, EditorState, OutlineNode, NodeKey} from 'outline';
 
 import {isTextNode, isRootNode} from 'outline';
 import {isRedo, isUndo} from 'outline/keys';
@@ -26,9 +20,9 @@ const DISCARD = 2;
 
 function getDirtyNodes(
   editorState: EditorState,
-  dirtyNodesSet: Map<NodeKey, DirtyChange>,
+  dirtyNodesSet: Set<NodeKey>,
 ): Array<OutlineNode> {
-  const dirtyNodes = Array.from(dirtyNodesSet.keys());
+  const dirtyNodes = Array.from(dirtyNodesSet);
   const nodeMap = editorState._nodeMap;
   const nodes = [];
 
@@ -46,7 +40,7 @@ function getDirtyNodes(
 function getMergeAction(
   prevEditorState: null | EditorState,
   nextEditorState: EditorState,
-  dirtyNodesSet: Map<NodeKey, DirtyChange>,
+  dirtyNodesSet: Set<NodeKey>,
 ): 0 | 1 | 2 {
   // If we have an editor state that doesn't want its history
   // recorded then we always merge the changes.

@@ -423,11 +423,11 @@ export function beginUpdate(
   if (callbackFn) {
     deferred.push(callbackFn);
   }
+  const currentEditorState = editor._editorState;
   let pendingEditorState = editor._pendingEditorState;
   let editorStateWasCloned = false;
 
   if (pendingEditorState === null) {
-    const currentEditorState = editor._editorState;
     pendingEditorState = editor._pendingEditorState =
       cloneEditorState(currentEditorState);
     editorStateWasCloned = true;
@@ -460,7 +460,12 @@ export function beginUpdate(
       }
       applyTextTransforms(pendingEditorState, dirtyNodes, editor);
       processNestedUpdates(editor, deferred);
-      garbageCollectDetachedNodes(pendingEditorState, dirtyNodes, editor);
+      garbageCollectDetachedNodes(
+        currentEditorState,
+        pendingEditorState,
+        dirtyNodes,
+        editor,
+      );
     }
     const endingCompositionKey = editor._compositionKey;
     if (startingCompositionKey !== endingCompositionKey) {
@@ -486,7 +491,6 @@ export function beginUpdate(
     // Report errors
     triggerListeners('error', editor, false, error, editor._log);
     // Restore existing editor state to the DOM
-    const currentEditorState = editor._editorState;
     editor._pendingEditorState = currentEditorState;
     editor._dirtyType = FULL_RECONCILE;
     editor._dirtyNodes = new Set();

@@ -37,7 +37,9 @@ export function garbageCollectDetachedDecorators(
 function garbageCollectDetachedDeepChildNodes(
   node: BlockNode,
   parentKey: NodeKey,
+  prevNodeMap: NodeMap,
   nodeMap: NodeMap,
+  dirtyNodes: Set<NodeKey>,
 ): void {
   const children = node.__children;
   const childrenLength = children.length;
@@ -46,7 +48,18 @@ function garbageCollectDetachedDeepChildNodes(
     const child = nodeMap.get(childKey);
     if (child !== undefined && child.__parent === parentKey) {
       if (isBlockNode(child)) {
-        garbageCollectDetachedDeepChildNodes(child, childKey, nodeMap);
+        garbageCollectDetachedDeepChildNodes(
+          child,
+          childKey,
+          prevNodeMap,
+          nodeMap,
+          dirtyNodes,
+        );
+      }
+      // If we have created a node and it was dereferenced, then also
+      // remove it from out dirty nodes Set.
+      if (!prevNodeMap.has(childKey)) {
+        dirtyNodes.delete(childKey);
       }
       nodeMap.delete(childKey);
     }
@@ -54,11 +67,13 @@ function garbageCollectDetachedDeepChildNodes(
 }
 
 export function garbageCollectDetachedNodes(
+  prevEditorState: EditorState,
   editorState: EditorState,
   dirtyNodes: Set<NodeKey>,
   editor: OutlineEditor,
 ): void {
   const dirtyNodesArr = Array.from(dirtyNodes);
+  const prevNodeMap = prevEditorState._nodeMap;
   const nodeMap = editorState._nodeMap;
 
   for (let s = 0; s < dirtyNodesArr.length; s++) {
@@ -69,7 +84,18 @@ export function garbageCollectDetachedNodes(
       // Garbage collect node and its children if they exist
       if (!node.isAttached()) {
         if (isBlockNode(node)) {
-          garbageCollectDetachedDeepChildNodes(node, nodeKey, nodeMap);
+          garbageCollectDetachedDeepChildNodes(
+            node,
+            nodeKey,
+            prevNodeMap,
+            nodeMap,
+            dirtyNodes,
+          );
+        }
+        // If we have created a node and it was dereferenced, then also
+        // remove it from out dirty nodes Set.
+        if (!prevNodeMap.has(nodeKey)) {
+          dirtyNodes.delete(nodeKey);
         }
         nodeMap.delete(nodeKey);
       }

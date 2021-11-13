@@ -155,18 +155,27 @@ export class ListItemNode extends BlockNode {
     const children = this.getChildren();
     children.forEach((child) => paragraph.append(child));
     const listNode = this.getParentOrThrow();
+    const listNodeParent = listNode.getParentOrThrow();
+    const isNested = isListItemNode(listNodeParent);
     if (listNode.getChildrenSize() === 1) {
-      listNode.replace(paragraph);
-      // If we have selection on the list item, we'll need to move it
-      // to the paragraph
-      const anchor = selection.anchor;
-      const focus = selection.focus;
-      const key = paragraph.getKey();
-      if (anchor.type === 'block' && anchor.getNode().is(this)) {
-        anchor.set(key, anchor.offset, 'block');
-      }
-      if (focus.type === 'block' && focus.getNode().is(this)) {
-        focus.set(key, focus.offset, 'block');
+      if (isNested) {
+        // if the list node is nested, we just want to remove it,
+        // effectively unindenting it.
+        listNode.remove();
+        listNodeParent.select();
+      } else {
+        listNode.replace(paragraph);
+        // If we have selection on the list item, we'll need to move it
+        // to the paragraph
+        const anchor = selection.anchor;
+        const focus = selection.focus;
+        const key = paragraph.getKey();
+        if (anchor.type === 'block' && anchor.getNode().is(this)) {
+          anchor.set(key, anchor.offset, 'block');
+        }
+        if (focus.type === 'block' && focus.getNode().is(this)) {
+          focus.set(key, focus.offset, 'block');
+        }
       }
     } else {
       listNode.insertBefore(paragraph);

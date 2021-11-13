@@ -164,12 +164,12 @@ const DOM_NODE_NAME_TO_OUTLINE_NODE: DOMTransformerMap = {
   '#text': (domNode: Node) => createTextNode(domNode.textContent),
 };
 
-export function createOutlineNodeFromDOMNode(
+export function createNodesFromDOM(
   node: Node,
   conversionMap: DOMTransformerMap,
   editor: OutlineEditor,
 ): Array<OutlineNode> {
-  const outlineNodes: Array<OutlineNode> = [];
+  let outlineNodes: Array<OutlineNode> = [];
   let currentOutlineNode = null;
   const nodeName = node.nodeName.toLowerCase();
   const customHtmlTransforms = editor._config.htmlTransforms || {};
@@ -185,7 +185,7 @@ export function createOutlineNodeFromDOMNode(
   // to do with it but we still need to process any childNodes.
   const children = node.childNodes;
   for (let i = 0; i < children.length; i++) {
-    const childOutlineNodes = createOutlineNodeFromDOMNode(
+    const childOutlineNodes = createNodesFromDOM(
       children[i],
       conversionMap,
       editor,
@@ -198,7 +198,7 @@ export function createOutlineNodeFromDOMNode(
     } else if (currentOutlineNode === null) {
       // If it doesn't have a transformer, we hoist its children
       // up to the same level as it.
-      outlineNodes.push(...childOutlineNodes);
+      outlineNodes = outlineNodes.concat(childOutlineNodes);
     }
   }
   return outlineNodes;
@@ -214,11 +214,7 @@ function generateNodesFromDOM(
   const elements: Array<Node> = dom.body ? Array.from(dom.body.childNodes) : [];
   const elementsLength = elements.length;
   for (let i = 0; i < elementsLength; i++) {
-    const outlineNode = createOutlineNodeFromDOMNode(
-      elements[i],
-      conversionMap,
-      editor,
-    );
+    const outlineNode = createNodesFromDOM(elements[i], conversionMap, editor);
     if (outlineNode !== null) {
       outlineNodes = outlineNodes.concat(outlineNode);
     }

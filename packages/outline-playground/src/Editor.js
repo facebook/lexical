@@ -210,7 +210,7 @@ function useRichTextEditorImpl({
     };
 
     return (
-      <>
+      <div className="editor-container">
         <ContentEditable
           isReadOnly={isReadOnly}
           rootElementRef={rootElementRef}
@@ -267,7 +267,7 @@ function useRichTextEditorImpl({
             <i className={isReadOnly ? 'unlock' : 'lock'} />
           </button>
         </div>
-      </>
+      </div>
     );
   }, [
     isReadOnly,

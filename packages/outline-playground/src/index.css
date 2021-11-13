@@ -41,7 +41,7 @@ header h1 {
   font-weight: 400;
 }
 
-.editor-shell .editor-wrapper {
+.editor-shell .editor-conainer {
   position: relative;
   cursor: text;
   display: block;

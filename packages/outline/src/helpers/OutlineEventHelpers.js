@@ -138,27 +138,27 @@ const DOM_NODE_NAME_TO_OUTLINE_NODE: DOMTransformerMap = {
   },
   u: (domNode: Node) => {
     const textNode = createTextNode(domNode.textContent);
-    textNode.toggleUnderline();
+    textNode.toggleFormat('underline');
     return textNode;
   },
   b: (domNode: Node) => {
     const textNode = createTextNode(domNode.textContent);
-    textNode.toggleBold();
+    textNode.toggleFormat('bold');
     return textNode;
   },
   strong: (domNode: Node) => {
     const textNode = createTextNode(domNode.textContent);
-    textNode.toggleBold();
+    textNode.toggleFormat('bold');
     return textNode;
   },
   i: (domNode: Node) => {
     const textNode = createTextNode(domNode.textContent);
-    textNode.toggleItalics();
+    textNode.toggleFormat('italic');
     return textNode;
   },
   em: (domNode: Node) => {
     const textNode = createTextNode(domNode.textContent);
-    textNode.toggleItalics();
+    textNode.toggleFormat('italic');
     return textNode;
   },
   '#text': (domNode: Node) => createTextNode(domNode.textContent),

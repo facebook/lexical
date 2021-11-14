@@ -255,12 +255,13 @@ export function diffTextContentAndApplyDelta(
       didUseSelection = false;
       a = prevTextBound;
       b = textBound;
+      continue;
     }
     a = nextA - 1;
     b = nextB - 1;
   }
   // Replace entire string
-  throw new Error('TODO');
+  throw new Error('TODO: diffTextContentAndApplyDelta');
 }
 
 function getIndexOfYjsNode(yjsParentNode: YjsNode, yjsNode: YjsNode): number {
@@ -268,9 +269,8 @@ function getIndexOfYjsNode(yjsParentNode: YjsNode, yjsNode: YjsNode): number {
   let i = -1;
 
   if (node === null) {
-    throw new Error('Should never happen');
+    return -1;
   }
-
   do {
     i++;
     if (node === yjsNode) {
@@ -278,10 +278,35 @@ function getIndexOfYjsNode(yjsParentNode: YjsNode, yjsNode: YjsNode): number {
     }
     node = node.nextSibling;
     if (node === null) {
-      throw new Error('Should never happen');
+      return -1;
     }
   } while (node !== null);
   return i;
+}
+
+function removeYjsNode(
+  key: NodeKey,
+  yjsNode: YjsNode,
+  node: OutlineNode,
+  nodeMap: NodeMap,
+  yjsNodeMap: YjsNodeMap,
+  reverseYjsNodeMap: ReverseYjsNodeMap,
+): void {
+  yjsNodeMap.delete(key);
+  reverseYjsNodeMap.delete(yjsNode);
+  // Node has been deleted
+  const parentKey = node.__parent || '';
+  const parentNode = nodeMap.get(parentKey);
+  if (parentNode === undefined) {
+    // If we don't have a parent, this node is already
+    // deleted
+    return;
+  }
+  const yjsParentNode = yjsNode.parent;
+  const index = getIndexOfYjsNode(yjsParentNode, yjsNode);
+  if (index !== -1) {
+    yjsParentNode.delete(index, 1);
+  }
 }
 
 function syncOutlineNodeToYjs(
@@ -300,19 +325,7 @@ function syncOutlineNodeToYjs(
     if (yjsNode === undefined || prevNode === undefined) {
       throw new Error('Should never happen');
     }
-    yjsNodeMap.delete(key);
-    reverseYjsNodeMap.delete(yjsNode);
-    // Node has been deleted
-    const parentKey = prevNode.__parent || '';
-    const parentNode = nodeMap.get(parentKey);
-    if (parentNode === undefined) {
-      // If we don't have a parent, this node is already
-      // deleted
-      return;
-    }
-    const yjsParentNode = yjsNode.parent;
-    const index = getIndexOfYjsNode(yjsParentNode, yjsNode);
-    yjsParentNode.delete(index, 1);
+    removeYjsNode(key, yjsNode, prevNode, nodeMap, yjsNodeMap, reverseYjsNodeMap);
     return;
   }
   if (yjsNode === undefined) {
@@ -344,6 +357,39 @@ function syncOutlineNodeToYjs(
     const text = node.__text;
     if (prevText !== text) {
       diffTextContentAndApplyDelta(yjsNode, key, prevText, text, selection);
+    }
+  } else if (isBlockNode(node) && isBlockNode(prevNode)) {
+    const prevChildren = prevNode.__children;
+    const nextChildren = node.__children;
+    const nextChildrenLength = nextChildren.length;
+    let yjsChildNode = yjsNode.firstChild;
+
+    for (let i = 0; i < nextChildrenLength; i++) {
+      const prevKey = prevChildren[i];
+      const nextKey = nextChildren[i];
+
+      if (prevKey !== nextKey) {
+        yjsChildNode = yjsNodeMap.get(nextKey);
+        if (yjsChildNode === undefined || yjsChildNode.parent !== yjsNode) {
+          const childNode = nodeMap.get(nextKey);
+          if (childNode === undefined) {
+            throw new Error('Should never happen');
+          }
+          if (yjsChildNode !== undefined) {
+            removeYjsNode(nextKey, yjsChildNode, childNode, nodeMap, yjsNodeMap, reverseYjsNodeMap);
+          }
+          yjsChildNode = createYjsNodeFromOutlineNode(
+            nextKey,
+            childNode,
+            yjsNodeMap,
+            reverseYjsNodeMap,
+          );
+        }
+      }
+      if (yjsChildNode == null) {
+        throw new Error('Should never happen');
+      }
+      yjsChildNode = yjsChildNode.nextSibling;
     }
   }
 }
@@ -437,8 +483,8 @@ function syncYjsNodeToOutline(
   const node = nodeMap.get(key);
 
   if (node === undefined) {
-    // TODO
-    throw new Error('TODO');
+    debugger;
+    throw new Error('TODO: syncYjsNodeToOutline');
   }
   if (attributesChanged === null || attributesChanged.size > 0) {
     const attributes = yjsNode.getAttributes();
@@ -470,47 +516,48 @@ function syncYjsNodeToOutline(
       }
     } else if (isBlockNode(node)) {
       const writableNode = node.getWritable();
-      const childKeys = writableNode.__children;
+      const prevChildren = writableNode.__children;
+      const keysToRemove = new Set(prevChildren);
+      const nextChildren = (writableNode.__children = []);
       let index = 0;
-      let childKey = childKeys[index];
-      let childNode = nodeMap.get(childKey) || null;
       let childYjsNode = yjsNode.firstChild;
 
-      while (childNode !== null || childYjsNode !== null) {
-        if (childNode === null) {
-          if (childYjsNode !== null) {
-            // Create child
-            childKey = createOutlineNodeFromYjsNode(
-              childYjsNode,
-              key,
-              yjsNodeMap,
-              reverseYjsNodeMap,
-              nodeTypes,
-            );
-            childKeys[index] = childKey;
-          }
+      while (childYjsNode !== null) {
+        let childKey = reverseYjsNodeMap.get(childYjsNode);
+        if (childKey === undefined) {
+          childKey = createOutlineNodeFromYjsNode(
+            childYjsNode,
+            key,
+            yjsNodeMap,
+            reverseYjsNodeMap,
+            nodeTypes,
+          );
         } else {
-          if (childYjsNode === null) {
-            // Remove child
-            childNode.remove();
-          } else {
-            // Update child
-            syncYjsNodeToOutline(
-              childYjsNode,
-              nodeMap,
-              yjsNodeMap,
-              reverseYjsNodeMap,
-              false,
-              null,
-              nodeTypes,
-            );
-          }
+          // Update child
+          syncYjsNodeToOutline(
+            childYjsNode,
+            nodeMap,
+            yjsNodeMap,
+            reverseYjsNodeMap,
+            false,
+            null,
+            nodeTypes,
+          );
         }
+        keysToRemove.delete(childKey);
+        nextChildren[index++] = childKey;
         if (childYjsNode !== null) {
           childYjsNode = childYjsNode.nextSibling;
         }
-        childKey = childKeys[++index];
-        childNode = nodeMap.get(childKey) || null;
+      }
+      if (keysToRemove.size > 0) {
+        const childrenToRemove = Array.from(keysToRemove);
+        for (let i = 0; i < childrenToRemove.length; i++) {
+          const nodeToRemoe = nodeMap.get(childrenToRemove[i]);
+          if (nodeToRemoe !== undefined) {
+            nodeToRemoe.remove();
+          }
+        }
       }
     }
   }
@@ -608,7 +655,7 @@ function syncLocalCursorPosition(
       if (anchorKey !== undefined && focusKey !== undefined) {
         const selection = state.getSelection();
         if (selection === null) {
-          throw new Error('TODO selection');
+          throw new Error('TODO: syncLocalCursorPosition');
         }
         const anchor = selection.anchor;
         const focus = selection.focus;

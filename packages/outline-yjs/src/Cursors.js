@@ -99,6 +99,10 @@ export function createRelativePosition(
 ): RelaltivePosition {
   const yjsNodeMap = binding.nodeMap;
   const yjsNode = yjsNodeMap.get(point.key);
+  if (yjsNode === undefined) {
+    debugger
+    throw new Error('Should never happen');
+  }
   return createRelativePositionFromTypeIndex(yjsNode, point.offset);
 }
 
@@ -175,7 +179,7 @@ export function updateCursor(
     anchorDOM === null ||
     focusDOM === null
   ) {
-    throw new Error('Should not happen, but might happen');
+    throw new Error('Should never happen');
   }
   range.setStart(anchorDOM, anchorOffset);
   range.setEnd(focusDOM, focusOffset);

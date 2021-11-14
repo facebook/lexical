@@ -26,8 +26,11 @@ function maybeIndentOrOutdent(
     if (selection === null) {
       return;
     }
-    const selectedNodes = selection.getNodes() || [];
+    const selectedNodes = selection.getNodes();
     let listItemNodes = [];
+    if (selectedNodes.length === 0) {
+      selectedNodes.push(selection.anchor.getNode());
+    }
     if (selectedNodes.length === 1) {
       // Only 1 node selected. Selection may not contain the ListNodeItem so we traverse the tree to
       // find whether this is part of a ListItemNode

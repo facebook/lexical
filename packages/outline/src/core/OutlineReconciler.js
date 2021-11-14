@@ -856,6 +856,7 @@ function mergeAdjacentTextNodes(
     if (!activePrevNodeMap.has(textNodeKey)) {
       activeDirtyNodes.delete(textNodeKey);
     }
+    activeNextNodeMap.delete(textNodeKey);
   }
   if (selectionIsDirty && activeSelection !== null) {
     activeSelection.dirty = true;
@@ -917,6 +918,7 @@ function removeStrandedEmptyTextNode(
   if (!activePrevNodeMap.has(key)) {
     activeDirtyNodes.delete(key);
   }
+  activeNextNodeMap.delete(key);
 }
 
 function normalizeTextNodes(block: BlockNode): BlockNode {

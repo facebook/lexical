@@ -6,12 +6,7 @@
  *
  */
 
-import {
-  initializeE2E,
-  assertHTML,
-  assertSelection,
-  E2E_BROWSER,
-} from '../utils';
+import {initializeE2E, assertHTML, assertSelection} from '../utils';
 
 describe('Images', () => {
   initializeE2E((e2e) => {

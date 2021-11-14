@@ -51,21 +51,12 @@ describe('Images', () => {
       });
 
       await page.keyboard.press('ArrowRight');
-      if (E2E_BROWSER === 'firefox') {
-        await assertSelection(page, {
-          anchorPath: [0, 0],
-          anchorOffset: 1,
-          focusPath: [0, 0],
-          focusOffset: 1,
-        });
-      } else {
-        await assertSelection(page, {
-          anchorPath: [0],
-          anchorOffset: 1,
-          focusPath: [0],
-          focusOffset: 1,
-        });
-      }
+      await assertSelection(page, {
+        anchorPath: [0],
+        anchorOffset: 1,
+        focusPath: [0],
+        focusOffset: 1,
+      });
 
       await page.keyboard.press('ArrowRight');
       await page.keyboard.press('Backspace');

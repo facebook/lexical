@@ -76,6 +76,6 @@ export function createLinkNode(text: string, url: string): LinkNode {
   return new LinkNode(text, url);
 }
 
-export function isLinkNode(node: TextNode): boolean %checks {
+export function isLinkNode(node: null | TextNode): boolean %checks {
   return node instanceof LinkNode;
 }

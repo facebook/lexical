@@ -821,7 +821,10 @@ export function updateCaretSelectionForRange(
       : possibleDecoratorNode.getNextSibling();
     if (!isTextNode(sibling)) {
       const blockKey = possibleDecoratorNode.getParentOrThrow().getKey();
-      const offset = possibleDecoratorNode.getIndexWithinParent();
+      let offset = possibleDecoratorNode.getIndexWithinParent();
+      if (!isBackward) {
+        offset++;
+      }
       focus.set(blockKey, offset, 'block');
       if (collapse) {
         anchor.set(blockKey, offset, 'block');
@@ -1143,17 +1146,6 @@ function transferStartingBlockPointToTextPoint(start: BlockPoint, end: Point) {
     block.append(textNode);
   } else {
     placementNode.insertBefore(textNode);
-  }
-  // If we are inserting a node to the start point, then we'll need to
-  // adjust the offset of the end point accordingly. Either by making it
-  // the same text node, or by increasing the offset to account for the
-  //
-  if (end.type === 'block' && block.is(end.getNode())) {
-    if (end.offset === start.offset) {
-      end.set(textNode.getKey(), 0, 'text');
-    } else {
-      end.offset++;
-    }
   }
   // Transfer the block point to a text point.
   start.set(textNode.getKey(), 0, 'text');

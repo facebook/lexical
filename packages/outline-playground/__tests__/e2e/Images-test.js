@@ -123,7 +123,7 @@ describe('Images', () => {
       });
     });
 
-    it.only('Can add images and delete them correctly', async () => {
+    it('Can add images and delete them correctly', async () => {
       const {isRichText, page} = e2e;
 
       if (!isRichText) {

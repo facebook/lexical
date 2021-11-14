@@ -111,6 +111,7 @@ function ContentEditable({
 
 function useRichTextEditorImpl({
   editor,
+  cursors,
   isCharLimit,
   isCharLimitUtf8,
   isAutocomplete,
@@ -118,6 +119,16 @@ function useRichTextEditorImpl({
   rootElementRef,
   showPlaceholder,
   mentionsTypeahead,
+}: {
+  editor: OutlineEditor,
+  cursors?: React$Node,
+  isCharLimit?: boolean,
+  isCharLimitUtf8?: boolean,
+  isAutocomplete?: boolean,
+  clear: () => void,
+  rootElementRef: (null | HTMLElement) => void,
+  showPlaceholder: boolean,
+  mentionsTypeahead: React$Node,
 }): [OutlineEditor, React.MixedElement] {
   const [isReadOnly, setIsReadyOnly] = useState(false);
   const floatingToolbar = useFloatingToolbar(editor);
@@ -216,6 +227,7 @@ function useRichTextEditorImpl({
           rootElementRef={rootElementRef}
         />
         {showPlaceholder && <Placeholder>Enter some rich text...</Placeholder>}
+        {cursors}
         {decorators}
         {mentionsTypeahead}
         {floatingToolbar}
@@ -273,6 +285,7 @@ function useRichTextEditorImpl({
     isReadOnly,
     rootElementRef,
     showPlaceholder,
+    cursors,
     decorators,
     mentionsTypeahead,
     floatingToolbar,
@@ -323,9 +336,10 @@ export function useRichTextEditorWithCollab(
     );
     return [doc, provider];
   }, []);
-  const clear = useOutlineRichTextWithCollab(editor, doc, provider);
+  const [cursors, clear] = useOutlineRichTextWithCollab(editor, doc, provider);
   return useRichTextEditorImpl({
     ...props,
+    cursors,
     editor,
     clear,
     rootElementRef,

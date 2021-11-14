@@ -11,20 +11,22 @@ import type {OutlineEditor} from 'outline';
 
 import useLayoutEffect from './shared/useLayoutEffect';
 import {useState} from 'react';
-import {isBlank2} from 'outline/root';
+import {isBlank} from 'outline/root';
 
 export default function useOutlineIsBlank(editor: OutlineEditor): boolean {
   const [isCurrentlyBlank, setIsBlank] = useState(
     editor
       .getEditorState()
-      .read((state) => isBlank2(state, editor.isComposing())),
+      .read((state) => isBlank(state, editor.isComposing())),
   );
 
   useLayoutEffect(() => {
     return editor.addListener('update', ({editorState}) => {
       const isComposing = editor.isComposing();
-      const isBlank = editorState.read((state) => isBlank2(state, isComposing));
-      setIsBlank(isBlank);
+      const currentIsBlank = editorState.read((state) =>
+        isBlank(state, isComposing),
+      );
+      setIsBlank(currentIsBlank);
     });
   }, [editor]);
   return isCurrentlyBlank;

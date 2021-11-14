@@ -8,6 +8,9 @@
 
 import {createListNode, isListNode} from 'outline/ListNode';
 import {initializeUnitTest} from '../utils';
+import {isListItemNode, ListItemNode} from 'outline/ListItemNode';
+import {TextNode} from 'outline';
+import {ParagraphNode} from '../../extensions/OutlineParagraphNode';
 
 const editorConfig = Object.freeze({
   theme: {
@@ -78,6 +81,50 @@ describe('OutlineListNode tests', () => {
       await editor.update(() => {
         const listNode = createListNode();
         expect(listNode.canInsertTab()).toBe(false);
+      });
+    });
+
+    test('ListNode.transformNodes() should properly transform a ListItemNode', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const listNode = new ListNode();
+        const listItemNode = new ListItemNode();
+        const textNode = new TextNode('Hello');
+        listItemNode.append(textNode);
+        const nodesToTransform = [listItemNode];
+        expect(listNode.transformNodes(...nodesToTransform)).toBe(listNode);
+        expect(listNode.getFirstChild()).toBe(listItemNode);
+        expect(listNode.getFirstChild()?.getTextContent()).toBe('Hello');
+      });
+    });
+
+    test('ListNode.transformNodes() should properly transform a ListNode', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const listNode = new ListNode();
+        const nestedListNode = new ListNode();
+        const listItemNode = new ListItemNode();
+        const textNode = new TextNode('Hello');
+        listItemNode.append(textNode);
+        nestedListNode.append(listItemNode);
+        const nodesToTransform = [nestedListNode];
+        expect(listNode.transformNodes(...nodesToTransform)).toBe(listNode);
+        expect(isListItemNode(listNode.getFirstChild())).toBe(true);
+        expect(listNode.getFirstChild().getFirstChild()).toBe(nestedListNode);
+      });
+    });
+
+    test('ListNode.transformNodes() should properly transform a ParagraphNode', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const listNode = new ListNode();
+        const paragraph = new ParagraphNode();
+        const textNode = new TextNode('Hello');
+        paragraph.append(textNode);
+        const nodesToTransform = [paragraph];
+        expect(listNode.transformNodes(...nodesToTransform)).toBe(listNode);
+        expect(isListItemNode(listNode.getFirstChild())).toBe(true);
+        expect(listNode.getFirstChild()?.getTextContent()).toBe('Hello');
       });
     });
 

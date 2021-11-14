@@ -190,11 +190,10 @@ export function createNodesFromDOM(
       conversionMap,
       editor,
     );
-
     if (isBlockNode(currentOutlineNode)) {
       // If the current node is a BlockNode after transformation,
       // we can append all the children to it.
-      currentOutlineNode.append(...childOutlineNodes);
+      currentOutlineNode.transformNodes(...childOutlineNodes);
     } else if (currentOutlineNode === null) {
       // If it doesn't have a transformer, we hoist its children
       // up to the same level as it.

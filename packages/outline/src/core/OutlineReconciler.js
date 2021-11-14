@@ -851,6 +851,11 @@ function mergeAdjacentTextNodes(
     );
     textLength += siblingText.length;
     textNode.remove();
+    // If we have created a node and it was dereferenced, then also
+    // remove it from out dirty nodes Set.
+    if (!activePrevNodeMap.has(textNodeKey)) {
+      activeDirtyNodes.delete(textNodeKey);
+    }
   }
   if (selectionIsDirty && activeSelection !== null) {
     activeSelection.dirty = true;
@@ -907,6 +912,11 @@ function removeStrandedEmptyTextNode(
     activeSelection.dirty = true;
   }
   node.remove();
+  // If we have created a node and it was dereferenced, then also
+  // remove it from out dirty nodes Set.
+  if (!activePrevNodeMap.has(key)) {
+    activeDirtyNodes.delete(key);
+  }
 }
 
 function normalizeTextNodes(block: BlockNode): BlockNode {

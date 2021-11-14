@@ -33,6 +33,25 @@ describe('Nested List', () => {
         '<ul class="editor-list-ul"><li class="editor-listitem"><br></li></ul>',
       );
 
+      // Should allow indenting an empty list item
+      await page.waitForSelector('button.action-button.indent');
+      await page.click('button.action-button.indent');
+      await page.click('button.action-button.indent');
+
+      await assertHTML(
+        page,
+        '<ul class="editor-list-ul"><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul"><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul"><li class="editor-listitem"><br></li></ul></li></ul></li></ul>',
+      );
+
+      // Backspace should "unindent" the first list item.
+      await page.keyboard.press('Backspace');
+      await page.keyboard.press('Backspace');
+
+      await assertHTML(
+        page,
+        '<ul class="editor-list-ul"><li class="editor-listitem"><br></li></ul>',
+      );
+
       await page.keyboard.type('Hello');
       await page.keyboard.press('Enter');
       await page.keyboard.type('from');

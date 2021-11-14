@@ -45,10 +45,10 @@ export type RelaltivePosition = Object;
 // $FlowFixMe: needs proper typings
 export type AbsolutePosition = Object;
 
-export function createCursor(name?: string, color?: string): Cursor {
+export function createCursor(name: string, color: string): Cursor {
   return {
-    color: color || '255,165,0', // TODO make this generate random colors
-    name: name || 'TestUser', // TODO make some cool random name generator
+    color: color,
+    name: name,
     selection: null,
   };
 }
@@ -60,11 +60,16 @@ export function createCursorSelection(
   focusKey: NodeKey,
   focusOffset: number,
 ): CursorSelection {
-  const caret = document.createElement('span');
   const color = cursor.color;
-  caret.style.cssText = `position:absolute;top:0;bottom:0;right:-2px;width:2px;background-color:rgb(${color})`;
+  const caret = document.createElement('span');
+  caret.style.cssText = `position:absolute;top:0;bottom:0;right:-1px;width:1px;background-color:rgb(${color})`;
+  const name = document.createElement('span');
+  name.textContent = cursor.name;
+  name.style.cssText = `position:absolute;left:-2px;top:-16px;background-color:rgb(${color});color:#fff;line-height:12px;height:12px;font-size:12px;padding:2px;font-family:Arial;font-weight:bold;`;
+  caret.appendChild(name);
   return {
     caret,
+    name,
     color,
     range: document.createRange(),
     selections: [],
@@ -100,7 +105,6 @@ export function createRelativePosition(
   const yjsNodeMap = binding.nodeMap;
   const yjsNode = yjsNodeMap.get(point.key);
   if (yjsNode === undefined) {
-    debugger
     throw new Error('Should never happen');
   }
   return createRelativePositionFromTypeIndex(yjsNode, point.offset);

@@ -325,7 +325,14 @@ function syncOutlineNodeToYjs(
     if (yjsNode === undefined || prevNode === undefined) {
       throw new Error('Should never happen');
     }
-    removeYjsNode(key, yjsNode, prevNode, nodeMap, yjsNodeMap, reverseYjsNodeMap);
+    removeYjsNode(
+      key,
+      yjsNode,
+      prevNode,
+      nodeMap,
+      yjsNodeMap,
+      reverseYjsNodeMap,
+    );
     return;
   }
   if (yjsNode === undefined) {
@@ -376,7 +383,14 @@ function syncOutlineNodeToYjs(
             throw new Error('Should never happen');
           }
           if (yjsChildNode !== undefined) {
-            removeYjsNode(nextKey, yjsChildNode, childNode, nodeMap, yjsNodeMap, reverseYjsNodeMap);
+            removeYjsNode(
+              nextKey,
+              yjsChildNode,
+              childNode,
+              nodeMap,
+              yjsNodeMap,
+              reverseYjsNodeMap,
+            );
           }
           yjsChildNode = createYjsNodeFromOutlineNode(
             nextKey,
@@ -449,8 +463,12 @@ function syncOutlineSelectionToYjs(
   selection: null | Selection,
 ): void {
   const awareness = provider.awareness;
-  const {anchorPos: currentAnchorPos, focusPos: currentFocusPos} =
-    awareness.getLocalState();
+  const {
+    anchorPos: currentAnchorPos,
+    focusPos: currentFocusPos,
+    name,
+    color,
+  } = awareness.getLocalState();
   let anchorPos = undefined;
   let focusPos = undefined;
 
@@ -463,7 +481,7 @@ function syncOutlineSelectionToYjs(
     shouldUpdatePosition(currentAnchorPos, anchorPos) ||
     shouldUpdatePosition(currentFocusPos, focusPos)
   ) {
-    awareness.setLocalState({anchorPos, focusPos});
+    awareness.setLocalState({name, color, anchorPos, focusPos});
   }
 }
 
@@ -483,7 +501,6 @@ function syncYjsNodeToOutline(
   const node = nodeMap.get(key);
 
   if (node === undefined) {
-    debugger;
     throw new Error('TODO: syncYjsNodeToOutline');
   }
   if (attributesChanged === null || attributesChanged.size > 0) {
@@ -699,14 +716,14 @@ export function syncCursorPositions(
 
     if (clientID !== localClientID) {
       visitedClientIDs.add(clientID);
-      let cursor = cursors.get(clientID);
-      if (cursor === undefined) {
-        cursor = createCursor();
-        cursors.set(clientID, cursor);
-      }
-      const {anchorPos, focusPos} = awareness;
+      const {anchorPos, focusPos, name, color} = awareness;
       let selection = null;
 
+      let cursor = cursors.get(clientID);
+      if (cursor === undefined) {
+        cursor = createCursor(name, color);
+        cursors.set(clientID, cursor);
+      }
       if (anchorPos !== undefined && focusPos !== undefined) {
         const anchorAbsPos = createAbsolutePosition(anchorPos, binding);
         const focusAbsPos = createAbsolutePosition(focusPos, binding);

@@ -159,12 +159,19 @@ export class OutlineNode {
     return this.__type;
   }
   isAttached(): boolean {
-    const parentKey = this.__parent;
-    if (parentKey === null || getNodeByKey(this.__key) === null) {
-      return false;
+    let nodeKey = this.__key;
+    while (nodeKey !== null) {
+      if (nodeKey === 'root') {
+        return true;
+      }
+      const node = getNodeByKey(nodeKey);
+
+      if (node === null) {
+        break;
+      }
+      nodeKey = node.__parent;
     }
-    const parent = getNodeByKey<BlockNode>(parentKey);
-    return parent !== null && parent.isAttached();
+    return false;
   }
   isSelected(): boolean {
     const editorState = getActiveEditorState();

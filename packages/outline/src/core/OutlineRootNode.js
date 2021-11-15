@@ -28,9 +28,6 @@ export class RootNode extends BlockNode {
     this.__cachedText = null;
   }
 
-  isAttached(): true {
-    return true;
-  }
   getTextContent(includeInert?: boolean, includeDirectionless?: false): string {
     const cachedText = this.__cachedText;
     if (

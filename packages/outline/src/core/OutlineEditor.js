@@ -16,16 +16,15 @@ import {
   commitPendingUpdates,
   parseEditorState,
   shouldEnqueueUpdates,
-  getActiveEditorState,
 } from './OutlineUpdates';
-import {isTextNode, TextNode} from '.';
+import {TextNode} from '.';
 import {createEmptyEditorState} from './OutlineEditorState';
 import {LineBreakNode} from './OutlineLineBreakNode';
 import {RootNode} from './OutlineRootNode';
 import {NO_DIRTY_NODES, FULL_RECONCILE} from './OutlineConstants';
 import {flushRootMutations, initMutationObserver} from './OutlineMutations';
 import {beginUpdate, triggerListeners} from './OutlineUpdates';
-import {getEditorStateTextContent} from './OutlineUtils';
+import {getEditorStateTextContent, markAllNodesAsDirty} from './OutlineUtils';
 import invariant from 'shared/invariant';
 
 export type EditorThemeClassName = string;
@@ -74,8 +73,6 @@ export type EditorConfig<EditorContext> = {
   context: EditorContext,
 };
 
-export type TextNodeTransform = (node: TextNode, state: State) => void;
-
 export type ErrorListener = (error: Error, log: Array<string>) => void;
 export type UpdateListener = ({
   prevEditorState: EditorState,
@@ -95,6 +92,8 @@ export type TextMutationListener = (
 ) => void;
 export type TextContentListener = (text: string) => void;
 
+export type TextTransform = (node: TextNode, state: State) => void;
+
 export type TextMutation = {
   node: TextNode,
   anchorOffset: null | number,
@@ -111,6 +110,10 @@ type Listeners = {
   update: Set<UpdateListener>,
 };
 
+type Transforms = {
+  text: Set<TextTransform>,
+};
+
 export type ListenerType =
   | 'update'
   | 'error'
@@ -118,6 +121,8 @@ export type ListenerType =
   | 'root'
   | 'decorator'
   | 'textcontent';
+
+export type TransformerType = 'text';
 
 export function resetEditor(
   editor: OutlineEditor,
@@ -187,7 +192,7 @@ class BaseOutlineEditor {
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _updates: Array<[(state: State) => void, void | (() => void)]>;
   _listeners: Listeners;
-  _textNodeTransforms: Set<TextNodeTransform>;
+  _transforms: Transforms;
   _nodeTypes: NodeTypes;
   _decorators: {[NodeKey]: ReactNode};
   _pendingDecorators: null | {[NodeKey]: ReactNode};
@@ -221,10 +226,12 @@ class BaseOutlineEditor {
       root: new Set(),
       update: new Set(),
     };
+    // Transforms
+    this._transforms = {
+      text: new Set(),
+    };
     // Editor configuration for theme/context.
     this._config = config;
-    // Handling of text node transforms
-    this._textNodeTransforms = new Set();
     // Mapping of types to their nodes
     this._nodeTypes = new Map([
       ['text', TextNode],
@@ -285,24 +292,19 @@ class BaseOutlineEditor {
       }
     };
   }
-  addTextNodeTransform(listener: TextNodeTransform): () => void {
-    this._textNodeTransforms.add(listener);
-    // Mark all existing text nodes as dirty
-    this.update(() => {
-      const editorState = getActiveEditorState();
-      const nodeMap = editorState._nodeMap;
-      const nodeMapEntries = Array.from(nodeMap);
-      // For...of would be faster here, but this will get
-      // compiled away to a slow-path with Babel.
-      for (let i = 0; i < nodeMapEntries.length; i++) {
-        const node = nodeMapEntries[i][1];
-        if (isTextNode(node)) {
-          node.markDirty();
-        }
-      }
-    });
+  // Deprecated
+  addTextNodeTransform(transform: TextTransform): () => void {
+    return this.addTransform('text', transform);
+  }
+  addTransform(type: TransformerType, transform: TextTransform): () => void {
+    const transformsSet = this._transforms[type];
+    // $FlowFixMe: TODO refine this from the above types
+    transformsSet.add(transform);
+    markAllNodesAsDirty(getSelf(this), type);
+
     return () => {
-      this._textNodeTransforms.delete(listener);
+      // $FlowFixMe: TODO refine this from the above types
+      transformsSet.delete(transform);
     };
   }
   getDecorators(): {[NodeKey]: ReactNode} {
@@ -415,7 +417,7 @@ declare export class OutlineEditor {
   _updates: Array<[(state: State) => void, void | (() => void)]>;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _listeners: Listeners;
-  _textNodeTransforms: Set<TextNodeTransform>;
+  _transforms: Transforms;
   _nodeTypes: Map<string, Class<OutlineNode>>;
   _decorators: {[NodeKey]: ReactNode};
   _pendingDecorators: null | {[NodeKey]: ReactNode};
@@ -434,7 +436,9 @@ declare export class OutlineEditor {
   addListener(type: 'decorator', listener: DecoratorListener): () => void;
   addListener(type: 'textmutation', listener: TextMutationListener): () => void;
   addListener(type: 'textcontent', listener: TextContentListener): () => void;
-  addTextNodeTransform(listener: TextNodeTransform): () => void;
+  addTransform(type: 'text', listener: TextTransform): () => void;
+  // Deprecated
+  addTextNodeTransform(listener: TextTransform): () => void;
   getDecorators(): {[NodeKey]: ReactNode};
   getRootElement(): null | HTMLElement;
   setRootElement(rootElement: null | HTMLElement): void;

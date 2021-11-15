@@ -13,7 +13,7 @@ import type {Provider, YjsDoc} from 'outline-yjs';
 import {useCallback} from 'react';
 
 import {useRichTextSetup} from './shared/useRichTextSetup';
-import useYjsCollaboration from './shared/useYjsCollaboration';
+import {useYjsCollaboration, useYjsHistory} from './shared/useYjsCollaboration';
 
 export default function useOutlineRichTextWithCollab(
   editor: OutlineEditor,
@@ -21,16 +21,26 @@ export default function useOutlineRichTextWithCollab(
   provider: Provider,
 ): [React$Node, () => void, boolean] {
   const clearEditor = useRichTextSetup(editor, false);
-  const [cursors, connected] = useYjsCollaboration(editor, doc, provider);
+  const [cursors, binding, connected] = useYjsCollaboration(
+    editor,
+    doc,
+    provider,
+  );
+  const clearHistory = useYjsHistory(editor, binding);
 
-  return [cursors, useCallback(
-    (callbackFn?: () => void) => {
-      clearEditor(editor, () => {
-        if (callbackFn) {
-          callbackFn();
-        }
-      });
-    },
-    [clearEditor, editor],
-  ), connected];
+  return [
+    cursors,
+    useCallback(
+      (callbackFn?: () => void) => {
+        clearEditor(editor, () => {
+          clearHistory();
+          if (callbackFn) {
+            callbackFn();
+          }
+        });
+      },
+      [clearEditor, clearHistory, editor],
+    ),
+    connected,
+  ];
 }

@@ -167,7 +167,7 @@ export class OutlineNode {
       const node = getNodeByKey(nodeKey);
 
       if (node === null) {
-        return false;
+        break;
       }
       nodeKey = node.__parent;
     }

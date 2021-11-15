@@ -108,9 +108,9 @@ function createYjsNodeFromOutlineNode(
   // We first validate that the parent exists
   const parent = node.getParentOrThrow();
   const parentKey = parent.getKey();
-  const parentYjsElement = yjsNodeMap.get(parentKey);
+  let parentYjsElement = yjsNodeMap.get(parentKey);
   if (parentYjsElement === undefined) {
-    return createYjsNodeFromOutlineNode(
+    parentYjsElement = createYjsNodeFromOutlineNode(
       parentKey,
       parent,
       yjsNodeMap,
@@ -408,83 +408,6 @@ function syncOutlineNodeToYjs(
   }
 }
 
-export function syncOutlineUpdateToYjs(
-  binding: Binding,
-  provider: Provider,
-  prevEditorState: EditorState,
-  currEditorState: EditorState,
-  dirtyNodes: Set<NodeKey>,
-): void {
-  // This is to prevent us re-diffing and possible re-applying
-  // the same change editor state again. For example, if a user
-  // types a character and we get it, we don't want to then insert
-  // the same character again.
-  const processedStates = binding.processedStates;
-  if (processedStates.has(currEditorState)) {
-    processedStates.delete(currEditorState);
-    return;
-  }
-  binding.doc.transact(() => {
-    currEditorState.read((state) => {
-      const selection = state.getSelection();
-      // Update nodes
-      if (dirtyNodes.size > 0) {
-        const prevNodeMap = prevEditorState._nodeMap;
-        const nodeMap = currEditorState._nodeMap;
-        const yjsNodeMap = binding.nodeMap;
-        const reverseYjsNodeMap = binding.reverseNodeMap;
-        const dirtyNodesArr = Array.from(dirtyNodes);
-        for (let i = 0; i < dirtyNodesArr.length; i++) {
-          const dirtyKey = dirtyNodesArr[i];
-          syncOutlineNodeToYjs(
-            dirtyKey,
-            prevNodeMap,
-            nodeMap,
-            yjsNodeMap,
-            reverseYjsNodeMap,
-            selection,
-          );
-        }
-      }
-      const prevSelection = prevEditorState._selection;
-      if (selection === null || !selection.is(prevSelection)) {
-        if (prevSelection === null) {
-          return;
-        }
-        syncOutlineSelectionToYjs(binding, provider, selection);
-      }
-    });
-  });
-}
-
-function syncOutlineSelectionToYjs(
-  binding: Binding,
-  provider: Provider,
-  selection: null | Selection,
-): void {
-  const awareness = provider.awareness;
-  const {
-    anchorPos: currentAnchorPos,
-    focusPos: currentFocusPos,
-    name,
-    color,
-  } = awareness.getLocalState();
-  let anchorPos = undefined;
-  let focusPos = undefined;
-
-  if (selection !== null) {
-    anchorPos = createRelativePosition(selection.anchor, binding);
-    focusPos = createRelativePosition(selection.focus, binding);
-  }
-
-  if (
-    shouldUpdatePosition(currentAnchorPos, anchorPos) ||
-    shouldUpdatePosition(currentFocusPos, focusPos)
-  ) {
-    awareness.setLocalState({name, color, anchorPos, focusPos});
-  }
-}
-
 function syncYjsNodeToOutline(
   yjsNode: YjsNode,
   nodeMap: NodeMap,
@@ -580,6 +503,83 @@ function syncYjsNodeToOutline(
   }
 }
 
+export function syncOutlineUpdateToYjs(
+  binding: Binding,
+  provider: Provider,
+  prevEditorState: EditorState,
+  currEditorState: EditorState,
+  dirtyNodes: Set<NodeKey>,
+): void {
+  // This is to prevent us re-diffing and possible re-applying
+  // the same change editor state again. For example, if a user
+  // types a character and we get it, we don't want to then insert
+  // the same character again.
+  const processedStates = binding.processedStates;
+  if (processedStates.has(currEditorState)) {
+    processedStates.delete(currEditorState);
+    return;
+  }
+  binding.doc.transact(() => {
+    currEditorState.read((state) => {
+      const selection = state.getSelection();
+      // Update nodes
+      if (dirtyNodes.size > 0) {
+        const prevNodeMap = prevEditorState._nodeMap;
+        const nodeMap = currEditorState._nodeMap;
+        const yjsNodeMap = binding.nodeMap;
+        const reverseYjsNodeMap = binding.reverseNodeMap;
+        const dirtyNodesArr = Array.from(dirtyNodes);
+        for (let i = 0; i < dirtyNodesArr.length; i++) {
+          const dirtyKey = dirtyNodesArr[i];
+          syncOutlineNodeToYjs(
+            dirtyKey,
+            prevNodeMap,
+            nodeMap,
+            yjsNodeMap,
+            reverseYjsNodeMap,
+            selection,
+          );
+        }
+      }
+      const prevSelection = prevEditorState._selection;
+      if (selection === null || !selection.is(prevSelection)) {
+        if (prevSelection === null) {
+          return;
+        }
+        syncOutlineSelectionToYjs(binding, provider, selection);
+      }
+    });
+  });
+}
+
+function syncOutlineSelectionToYjs(
+  binding: Binding,
+  provider: Provider,
+  selection: null | Selection,
+): void {
+  const awareness = provider.awareness;
+  const {
+    anchorPos: currentAnchorPos,
+    focusPos: currentFocusPos,
+    name,
+    color,
+  } = awareness.getLocalState();
+  let anchorPos = null;
+  let focusPos = null;
+
+  if (selection !== null) {
+    anchorPos = createRelativePosition(selection.anchor, binding);
+    focusPos = createRelativePosition(selection.focus, binding);
+  }
+
+  if (
+    shouldUpdatePosition(currentAnchorPos, anchorPos) ||
+    shouldUpdatePosition(currentFocusPos, focusPos)
+  ) {
+    awareness.setLocalState({name, color, anchorPos, focusPos});
+  }
+}
+
 export function syncYjsChangesToOutline(
   binding: Binding,
   editor: OutlineEditor,
@@ -659,7 +659,7 @@ function syncLocalCursorPosition(
   const anchorPos = localState.anchorPos;
   const focusPos = localState.focusPos;
 
-  if (anchorPos !== undefined && focusPos !== undefined) {
+  if (anchorPos !== null && focusPos !== null) {
     const anchorAbsPos = createAbsolutePosition(anchorPos, binding);
     const focusAbsPos = createAbsolutePosition(focusPos, binding);
 
@@ -724,7 +724,7 @@ export function syncCursorPositions(
         cursor = createCursor(name, color);
         cursors.set(clientID, cursor);
       }
-      if (anchorPos !== undefined && focusPos !== undefined) {
+      if (anchorPos !== null && focusPos !== null) {
         const anchorAbsPos = createAbsolutePosition(anchorPos, binding);
         const focusAbsPos = createAbsolutePosition(focusPos, binding);
 

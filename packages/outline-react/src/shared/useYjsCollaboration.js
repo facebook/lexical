@@ -54,6 +54,8 @@ export function useYjsCollaboration(
         color ||
         colors[Math.floor(Math.random() * (colors.length - 1 - 0 + 1) + 0)],
       name: name || 'Guest' + Math.floor(Math.random() * 100),
+      anchorPos: null,
+      focusPos: null,
     });
 
     awareness.on('update', ({removed}) => {

@@ -101,11 +101,11 @@ export function shouldUpdatePosition(
 export function createRelativePosition(
   point: Point,
   binding: Binding,
-): RelaltivePosition {
+): null | RelaltivePosition {
   const yjsNodeMap = binding.nodeMap;
   const yjsNode = yjsNodeMap.get(point.key);
   if (yjsNode === undefined) {
-    throw new Error('Should never happen');
+    return null;
   }
   return createRelativePositionFromTypeIndex(yjsNode, point.offset);
 }

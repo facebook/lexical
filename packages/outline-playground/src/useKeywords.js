@@ -149,8 +149,10 @@ export default function useKeywords(editor: OutlineEditor): void {
       });
     };
 
-    const removeTextTransform =
-      editor.addTextNodeTransform(handleTextTransform);
+    const removeTextTransform = editor.addTransform(
+      'text',
+      handleTextTransform,
+    );
     const removeUpdateListener = editor.addListener('update', updateListener);
 
     return () => {

@@ -204,7 +204,7 @@ describe('OutlineEditor tests', () => {
     expect(log).toEqual(['A2', 'B2', 'C2', 'D2', 'E2', 'F2', 'G2']);
     log = [];
 
-    editor.addTextNodeTransform(() => {
+    editor.addTransform('text', () => {
       log.push('TextTransform A3');
       editor.update(
         () => {

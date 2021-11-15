@@ -262,3 +262,20 @@ export function getBlockDepth(startingNode: OutlineNode): number {
   }
   return depth;
 }
+
+export function markAllNodesAsDirty(editor: OutlineEditor, type: 'text'): void {
+  // Mark all existing text nodes as dirty
+  editor.update(() => {
+    const editorState = getActiveEditorState();
+    const nodeMap = editorState._nodeMap;
+    const nodeMapEntries = Array.from(nodeMap);
+    // For...of would be faster here, but this will get
+    // compiled away to a slow-path with Babel.
+    for (let i = 0; i < nodeMapEntries.length; i++) {
+      const node = nodeMapEntries[i][1];
+      if (type === 'text' && isTextNode(node)) {
+        node.markDirty();
+      }
+    }
+  });
+}

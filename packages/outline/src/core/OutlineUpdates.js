@@ -131,16 +131,18 @@ export function getActiveEditor(): OutlineEditor {
   return activeEditor;
 }
 
-function applyTextTransforms(
+function applyTransforms(
   editorState: EditorState,
   dirtyNodes: Set<NodeKey>,
   editor: OutlineEditor,
 ): void {
-  const textNodeTransforms = editor._textNodeTransforms;
-  if (textNodeTransforms.size > 0) {
+  const transforms = editor._transforms;
+  const textTransforms = transforms.text;
+  if (textTransforms.size > 0) {
     const nodeMap = editorState._nodeMap;
     const dirtyNodesArr = Array.from(dirtyNodes);
-    const transforms = Array.from(textNodeTransforms);
+    const textTransformsArr = Array.from(textTransforms);
+    const textTransformsArrLength = textTransformsArr.length;
     const compositionKey = getCompositionKey();
     for (let s = 0; s < dirtyNodesArr.length; s++) {
       const nodeKey = dirtyNodesArr[s];
@@ -160,8 +162,8 @@ function applyTextTransforms(
         !node.isSegmented()
       ) {
         // Apply text transforms
-        for (let i = 0; i < transforms.length; i++) {
-          transforms[i](node, state);
+        for (let i = 0; i < textTransformsArrLength; i++) {
+          textTransformsArr[i](node, state);
           if (!node.isAttached()) {
             break;
           }
@@ -458,7 +460,7 @@ export function beginUpdate(
           'updateEditor: the pending editor state is empty. Ensure the root not never becomes empty from an update.',
         );
       }
-      applyTextTransforms(pendingEditorState, dirtyNodes, editor);
+      applyTransforms(pendingEditorState, dirtyNodes, editor);
       processNestedUpdates(editor, deferred);
       garbageCollectDetachedNodes(
         currentEditorState,

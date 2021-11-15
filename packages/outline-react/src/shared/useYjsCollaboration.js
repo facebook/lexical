@@ -19,6 +19,7 @@ import {
   syncOutlineUpdateToYjs,
   syncYjsChangesToOutline,
   syncCursorPositions,
+  initLocalState,
 } from 'outline-yjs';
 import {initEditor} from './useRichTextSetup';
 import {isRedo, isUndo} from 'outline/keys';
@@ -49,14 +50,12 @@ export function useYjsCollaboration(
 
     const {awareness} = provider;
 
-    awareness.setLocalState({
-      color:
-        color ||
+    initLocalState(
+      provider,
+      name || 'Guest' + Math.floor(Math.random() * 100),
+      color ||
         colors[Math.floor(Math.random() * (colors.length - 1 - 0 + 1) + 0)],
-      name: name || 'Guest' + Math.floor(Math.random() * 100),
-      anchorPos: null,
-      focusPos: null,
-    });
+    );
 
     awareness.on('update', ({removed}) => {
       syncCursorPositions(editor, binding, provider);

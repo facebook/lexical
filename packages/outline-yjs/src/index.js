@@ -34,6 +34,19 @@ export function createUndoManager(root: YjsNode): UndoManager {
   return new YjsUndoManager(root);
 }
 
+export function initLocalState(
+  provider: Provider,
+  name: string,
+  color: string,
+): void {
+  provider.awareness.setLocalState({
+    color,
+    name,
+    anchorPos: null,
+    focusPos: null,
+  });
+}
+
 export {
   syncOutlineUpdateToYjs,
   syncYjsChangesToOutline,

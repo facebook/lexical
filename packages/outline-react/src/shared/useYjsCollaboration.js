@@ -8,28 +8,30 @@
  */
 
 import type {OutlineEditor} from 'outline';
-import type {Provider, YjsDoc} from 'outline-yjs';
+import type {Provider, YjsDoc, Binding} from 'outline-yjs';
 
 import * as React from 'react';
 
-import {useEffect, useMemo, useState} from 'react';
+import {useCallback, useEffect, useMemo, useState} from 'react';
 import {
   createBinding,
+  createUndoManager,
   syncOutlineUpdateToYjs,
   syncYjsChangesToOutline,
   syncCursorPositions,
 } from 'outline-yjs';
 import {initEditor} from './useRichTextSetup';
+import {isRedo, isUndo} from 'outline/keys';
 
 const colors = ['255,165,0', '0,200,55', '160,0,200', '0,172,200'];
 
-export default function useYjsCollaboration(
+export function useYjsCollaboration(
   editor: OutlineEditor,
   doc: YjsDoc,
   provider: Provider,
   name?: string,
   color?: string,
-): [React$Node, boolean] {
+): [React$Node, Binding, boolean] {
   const [connected, setConnected] = useState(false);
   const binding = useMemo(() => createBinding(provider, doc), [doc, provider]);
 
@@ -94,5 +96,69 @@ export default function useYjsCollaboration(
     return <div ref={ref} />;
   }, [binding]);
 
-  return [cursorsContainer, connected];
+  return [cursorsContainer, binding, connected];
+}
+
+export function useYjsHistory(
+  editor: OutlineEditor,
+  binding: Binding,
+): () => void {
+  const undoManager = useMemo(() => createUndoManager(binding.root), [binding]);
+
+  useEffect(() => {
+    const undo = () => {
+      undoManager.undo();
+    };
+
+    const redo = () => {
+      undoManager.redo();
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (editor.isComposing()) {
+        return;
+      }
+      if (isUndo(event)) {
+        event.preventDefault();
+        undo();
+      } else if (isRedo(event)) {
+        event.preventDefault();
+        redo();
+      }
+    };
+
+    const handleBeforeInput = (event: InputEvent) => {
+      const inputType = event.inputType;
+      if (inputType === 'historyUndo') {
+        event.preventDefault();
+        undo();
+      } else if (inputType === 'historyRedo') {
+        event.preventDefault();
+        redo();
+      }
+    };
+
+    return editor.addListener(
+      'root',
+      (
+        rootElement: null | HTMLElement,
+        prevRootElement: null | HTMLElement,
+      ) => {
+        if (prevRootElement !== null) {
+          prevRootElement.removeEventListener('keydown', handleKeyDown);
+          prevRootElement.removeEventListener('beforeinput', handleBeforeInput);
+        }
+        if (rootElement !== null) {
+          rootElement.addEventListener('keydown', handleKeyDown);
+          rootElement.addEventListener('beforeinput', handleBeforeInput);
+        }
+      },
+    );
+  });
+
+  const clearHistory = useCallback(() => {
+    undoManager.clear();
+  }, [undoManager]);
+
+  return clearHistory;
 }

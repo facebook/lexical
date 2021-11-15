@@ -122,11 +122,6 @@ export default function useOutlineHistory(editor: OutlineEditor): () => void {
   );
 
   useEffect(() => {
-    const rootElement = editor.getRootElement();
-    if (rootElement === null) {
-      return;
-    }
-
     const applyChange = ({editorState, dirty, dirtyNodes}) => {
       const current = historyState.current;
       const redoStack = historyState.redoStack;
@@ -207,13 +202,28 @@ export default function useOutlineHistory(editor: OutlineEditor): () => void {
       }
     };
 
+    const removeRootListener = editor.addListener(
+      'root',
+      (
+        rootElement: null | HTMLElement,
+        prevRootElement: null | HTMLElement,
+      ) => {
+        if (prevRootElement !== null) {
+          prevRootElement.removeEventListener('keydown', handleKeyDown);
+          prevRootElement.removeEventListener('beforeinput', handleBeforeInput);
+        }
+        if (rootElement !== null) {
+          rootElement.addEventListener('keydown', handleKeyDown);
+          rootElement.addEventListener('beforeinput', handleBeforeInput);
+        }
+      },
+    );
+
     const removeUpdateListener = editor.addListener('update', applyChange);
-    rootElement.addEventListener('keydown', handleKeyDown);
-    rootElement.addEventListener('beforeinput', handleBeforeInput);
+
     return () => {
       removeUpdateListener();
-      rootElement.removeEventListener('keydown', handleKeyDown);
-      rootElement.removeEventListener('beforeinput', handleBeforeInput);
+      removeRootListener();
     };
   }, [historyState, editor]);
 

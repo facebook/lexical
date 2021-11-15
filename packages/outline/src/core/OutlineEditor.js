@@ -132,7 +132,7 @@ export function resetEditor(
   editor._compositionKey = null;
   editor._dirtyType = NO_DIRTY_NODES;
   editor._dirtyNodes = new Set();
-  editor._dirtySubTrees = new Set();
+  editor._dirtyBlocks = new Map();
   editor._log = [];
   editor._updates = [];
   const observer = editor._observer;
@@ -195,14 +195,11 @@ class BaseOutlineEditor {
   _config: EditorConfig<{...}>;
   _dirtyType: 0 | 1 | 2;
   _dirtyNodes: Set<NodeKey>;
-  _dirtySubTrees: Set<NodeKey>;
+  _dirtyBlocks: Map<NodeKey, Number>;
   _observer: null | MutationObserver;
   _log: Array<string>;
 
-  constructor(
-    editorState: EditorState,
-    config: EditorConfig<{...}>,
-  ) {
+  constructor(editorState: EditorState, config: EditorConfig<{...}>) {
     // The root element associated with this editor
     this._rootElement = null;
     // The current editor state
@@ -240,7 +237,7 @@ class BaseOutlineEditor {
     // Used to optimize reconcilation
     this._dirtyType = NO_DIRTY_NODES;
     this._dirtyNodes = new Set();
-    this._dirtySubTrees = new Set();
+    this._dirtyBlocks = new Map();
     // Handling of DOM mutations
     this._observer = null;
     // Logging for updates
@@ -425,7 +422,7 @@ declare export class OutlineEditor {
   _config: EditorConfig<{...}>;
   _dirtyType: 0 | 1 | 2;
   _dirtyNodes: Set<NodeKey>;
-  _dirtySubTrees: Set<NodeKey>;
+  _dirtyBlocks: Map<NodeKey, number>;
   _observer: null | MutationObserver;
   _log: Array<string>;
 

@@ -22,8 +22,9 @@ import {
   getNodeByKey,
   getTextDirection,
   internallyMarkNodeAsDirty,
-  markParentsAsDirty,
+  markParentBlocksAsDirty,
   setCompositionKey,
+  getBlockDepth,
 } from './OutlineUtils';
 import invariant from 'shared/invariant';
 import {
@@ -489,12 +490,15 @@ export class OutlineNode {
     // Ensure we get the latest node from pending state
     const latestNode = this.getLatest();
     const parent = latestNode.__parent;
+    const dirtyBlocks = editor._dirtyBlocks;
     if (parent !== null) {
-      const dirtySubTrees = editor._dirtySubTrees;
-      markParentsAsDirty(parent, nodeMap, dirtySubTrees);
+      markParentBlocksAsDirty(parent, nodeMap, dirtyBlocks);
     }
     const dirtyNodes = editor._dirtyNodes;
     if (dirtyNodes.has(key)) {
+      if (isBlockNode(this)) {
+        dirtyBlocks.set(key, getBlockDepth(this));
+      }
       return latestNode;
     }
     const constructor = latestNode.constructor;

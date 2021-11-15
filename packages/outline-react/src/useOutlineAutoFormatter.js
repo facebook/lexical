@@ -86,6 +86,6 @@ function textNodeTransform(node: TextNode, state: State): void {
 
 export default function useOutlineAutoFormatter(editor: OutlineEditor): void {
   useEffect(() => {
-    return editor.addTextNodeTransform(textNodeTransform);
+    return editor.addTransform('text', textNodeTransform);
   }, [editor]);
 }

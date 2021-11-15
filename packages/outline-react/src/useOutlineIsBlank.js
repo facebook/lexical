@@ -13,11 +13,12 @@ import useLayoutEffect from './shared/useLayoutEffect';
 import {useState} from 'react';
 import {isBlank2} from 'outline/root';
 
-/**
- * DEPRECATED. Use useOutlineIsBlank
- */
-export default function useCometOutlineIsBlank(editor: OutlineEditor): boolean {
-  const [isCurrentlyBlank, setIsBlank] = useState(true);
+export default function useOutlineIsBlank(editor: OutlineEditor): boolean {
+  const [isCurrentlyBlank, setIsBlank] = useState(
+    editor
+      .getEditorState()
+      .read((state) => isBlank2(state, editor.isComposing())),
+  );
 
   useLayoutEffect(() => {
     return editor.addListener('update', ({editorState}) => {

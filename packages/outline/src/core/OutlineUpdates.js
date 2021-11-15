@@ -163,7 +163,7 @@ function applyTransforms(
       ) {
         // Apply text transforms
         for (let i = 0; i < textTransformsArrLength; i++) {
-          transforms[i](node, state);
+          textTransformsArr[i](node, state);
           if (!node.isAttached()) {
             break;
           }

@@ -19,7 +19,7 @@ import {
   TEXT_TYPE_TO_FORMAT,
   HAS_DIRTY_NODES,
 } from './OutlineConstants';
-import {isTextNode, isLineBreakNode, isDecoratorNode} from '.';
+import {isTextNode, isBlockNode, isLineBreakNode, isDecoratorNode} from '.';
 import {
   errorOnReadOnly,
   getActiveEditor,
@@ -142,21 +142,21 @@ export function generateKey(node: OutlineNode): NodeKey {
   return key;
 }
 
-export function markParentsAsDirty(
+export function markParentBlocksAsDirty(
   parentKey: NodeKey,
   nodeMap: NodeMap,
-  dirtySubTrees: Set<NodeKey>,
+  dirtyBlocks: Map<NodeKey, number>,
 ): void {
   let nextParentKey = parentKey;
   while (nextParentKey !== null) {
-    if (dirtySubTrees.has(nextParentKey)) {
+    if (dirtyBlocks.has(nextParentKey)) {
       return;
     }
-    dirtySubTrees.add(nextParentKey);
     const node = nodeMap.get(nextParentKey);
     if (node === undefined) {
       break;
     }
+    dirtyBlocks.set(nextParentKey, getBlockDepth(node));
     nextParentKey = node.__parent;
   }
 }
@@ -169,13 +169,17 @@ export function internallyMarkNodeAsDirty(node: OutlineNode): void {
   const editorState = getActiveEditorState();
   const editor = getActiveEditor();
   const nodeMap = editorState._nodeMap;
+  const dirtyBlocks = editor._dirtyBlocks;
   if (parent !== null) {
-    const dirtySubTrees = editor._dirtySubTrees;
-    markParentsAsDirty(parent, nodeMap, dirtySubTrees);
+    markParentBlocksAsDirty(parent, nodeMap, dirtyBlocks);
   }
   const dirtyNodes = editor._dirtyNodes;
+  const key = latest.__key;
   editor._dirtyType = HAS_DIRTY_NODES;
   dirtyNodes.add(latest.__key);
+  if (isBlockNode(node)) {
+    dirtyBlocks.set(key, getBlockDepth(node));
+  }
 }
 
 export function setCompositionKey(compositionKey: null | NodeKey): void {
@@ -247,4 +251,14 @@ export function pushLogEntry(entry: string): void {
 
 export function getEditorStateTextContent(editorState: EditorState): string {
   return editorState.read((view) => view.getRoot().getTextContent());
+}
+
+export function getBlockDepth(startingNode: OutlineNode): number {
+  let node = startingNode.getParent();
+  let depth = 0;
+  while (node !== null) {
+    depth++;
+    node = node.getParent();
+  }
+  return depth;
 }

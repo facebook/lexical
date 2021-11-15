@@ -317,7 +317,7 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
   if (needsUpdate) {
     editor._dirtyType = NO_DIRTY_NODES;
     editor._dirtyNodes = new Set();
-    editor._dirtySubTrees = new Set();
+    editor._dirtyBlocks = new Map();
   }
   garbageCollectDetachedDecorators(editor, pendingEditorState);
   const pendingDecorators = editor._pendingDecorators;
@@ -494,7 +494,7 @@ export function beginUpdate(
     editor._pendingEditorState = currentEditorState;
     editor._dirtyType = FULL_RECONCILE;
     editor._dirtyNodes = new Set();
-    editor._dirtySubTrees = new Set();
+    editor._dirtyBlocks = new Map();
     editor._log.push('UpdateRecover');
     commitPendingUpdates(editor);
     return;

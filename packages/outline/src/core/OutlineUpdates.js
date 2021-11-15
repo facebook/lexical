@@ -346,11 +346,7 @@ function triggerTextContentListeners(
   pendingEditorState: EditorState,
 ): void {
   const currentTextContent = getEditorStateTextContent(currentEditorState);
-  const latestPendingState = editor._pendingEditorState;
-  const latestTextContent =
-    latestPendingState !== null
-      ? getEditorStateTextContent(latestPendingState)
-      : getEditorStateTextContent(pendingEditorState);
+  const latestTextContent = getEditorStateTextContent(pendingEditorState);
   if (currentTextContent !== latestTextContent) {
     triggerListeners('textcontent', editor, true, latestTextContent);
   }

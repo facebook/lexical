@@ -123,7 +123,8 @@ export default function TreeView({
               setTimeTravelEnabled(true);
             }
           }}
-          className={timeTravelButtonClassName}>
+          className={timeTravelButtonClassName}
+        >
           Time Travel
         </button>
       )}
@@ -134,7 +135,8 @@ export default function TreeView({
             className={timeTravelPanelButtonClassName}
             onClick={() => {
               setIsPlaying(!isPlaying);
-            }}>
+            }}
+          >
             {isPlaying ? 'Pause' : 'Play'}
           </button>
           <input
@@ -169,7 +171,8 @@ export default function TreeView({
                 setTimeTravelEnabled(false);
                 setIsPlaying(false);
               }
-            }}>
+            }}
+          >
             Exit
           </button>
         </div>
@@ -199,18 +202,12 @@ function generateContent(editorState: EditorState): string {
 
   const selectionString = editorState.read((state: State) => {
     const selection = state.getSelection();
-    let selectedNodes = null;
-    if (selection !== null) {
-      selectedNodes = new Set(
-        selection.getNodes().map((node) => node.getKey()),
-      );
-    }
 
     visitTree(state, state.getRoot(), (node, indent) => {
       const nodeKey = node.getKey();
       const nodeKeyDisplay = `(${nodeKey})`;
       const typeDisplay = node.getType() || '';
-      const isSelected = selectedNodes !== null && selectedNodes.has(nodeKey);
+      const isSelected = node.isSelected();
 
       res += `${isSelected ? SYMBOLS.selectedLine : ' '} ${indent.join(
         ' ',

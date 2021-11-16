@@ -175,14 +175,34 @@ export class OutlineNode {
     return false;
   }
   isSelected(): boolean {
-    const editorState = getActiveEditorState();
-    const selection = editorState._selection;
-    const key = this.__key;
-    return (
-      selection !== null &&
-      selection.anchor.key === key &&
-      selection.focus.key === key
+    const selection = getSelection();
+
+    if (selection == null) {
+      return false;
+    }
+
+    const selectedNodeKeys = new Set(
+      selection.getNodes().map((n) => n.getKey()),
     );
+
+    const isSelected = selectedNodeKeys.has(this.getKey());
+
+    if (isTextNode(this)) {
+      return isSelected;
+    }
+
+    // For inline images inside of block nodes.
+    // Without this change the image will be selected if the cursor is before or after it.
+    if (
+      selection.anchor.type === 'block' &&
+      selection.focus.type === 'block' &&
+      selection.anchor.key === selection.focus.key &&
+      selection.anchor.offset === selection.focus.offset
+    ) {
+      return false;
+    }
+
+    return isSelected;
   }
   getFlags(): number {
     const self = this.getLatest();

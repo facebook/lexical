@@ -16,6 +16,7 @@ import {createListNode} from 'outline/ListNode';
 import {createListItemNode} from 'outline/ListItemNode';
 import {createQuoteNode} from 'outline/QuoteNode';
 import {createCodeNode} from 'outline/CodeNode';
+import {wrapLeafNodesInBlocks} from 'outline/selection';
 
 import * as React from 'react';
 import {useEffect, useRef, useState} from 'react';
@@ -146,15 +147,7 @@ function DropdownList({
         const selection = state.getSelection();
 
         if (selection !== null) {
-          const anchor = selection.anchor;
-          const block =
-            anchor.type === 'text'
-              ? anchor.getNode().getParentBlockOrThrow()
-              : anchor.getNode();
-          const children = block.getChildren();
-          const paragraph = createParagraphNode();
-          children.forEach((child) => paragraph.append(child));
-          block.replace(paragraph);
+          wrapLeafNodesInBlocks(selection, () => createParagraphNode());
         }
       });
     }
@@ -168,15 +161,7 @@ function DropdownList({
         const selection = state.getSelection();
 
         if (selection !== null) {
-          const anchor = selection.anchor;
-          const block =
-            anchor.type === 'text'
-              ? anchor.getNode().getParentBlockOrThrow()
-              : anchor.getNode();
-          const children = block.getChildren();
-          const paragraph = createHeadingNode('h1');
-          children.forEach((child) => paragraph.append(child));
-          block.replace(paragraph);
+          wrapLeafNodesInBlocks(selection, () => createHeadingNode('h1'));
         }
       });
     }
@@ -190,15 +175,7 @@ function DropdownList({
         const selection = state.getSelection();
 
         if (selection !== null) {
-          const anchor = selection.anchor;
-          const block =
-            anchor.type === 'text'
-              ? anchor.getNode().getParentBlockOrThrow()
-              : anchor.getNode();
-          const children = block.getChildren();
-          const paragraph = createHeadingNode('h2');
-          paragraph.append(...children);
-          block.replace(paragraph);
+          wrapLeafNodesInBlocks(selection, () => createHeadingNode('h2'));
         }
       });
     }
@@ -212,17 +189,11 @@ function DropdownList({
         const selection = state.getSelection();
 
         if (selection !== null) {
-          const anchor = selection.anchor;
-          const block =
-            anchor.type === 'text'
-              ? anchor.getNode().getParentBlockOrThrow()
-              : anchor.getNode();
-          const children = block.getChildren();
-          const list = createListNode('ul');
-          const listItem = createListItemNode();
-          list.append(listItem);
-          children.forEach((child) => listItem.append(child));
-          block.replace(list);
+          wrapLeafNodesInBlocks(
+            selection,
+            () => createListItemNode(),
+            createListNode('ul'),
+          );
         }
       });
     }
@@ -236,17 +207,11 @@ function DropdownList({
         const selection = state.getSelection();
 
         if (selection !== null) {
-          const anchor = selection.anchor;
-          const block =
-            anchor.type === 'text'
-              ? anchor.getNode().getParentBlockOrThrow()
-              : anchor.getNode();
-          const children = block.getChildren();
-          const list = createListNode('ol');
-          const listItem = createListItemNode();
-          list.append(listItem);
-          children.forEach((child) => listItem.append(child));
-          block.replace(list);
+          wrapLeafNodesInBlocks(
+            selection,
+            () => createListItemNode(),
+            createListNode('ol'),
+          );
         }
       });
     }
@@ -260,15 +225,7 @@ function DropdownList({
         const selection = state.getSelection();
 
         if (selection !== null) {
-          const anchor = selection.anchor;
-          const block =
-            anchor.type === 'text'
-              ? anchor.getNode().getParentBlockOrThrow()
-              : anchor.getNode();
-          const children = block.getChildren();
-          const quoteNode = createQuoteNode();
-          children.forEach((child) => quoteNode.append(child));
-          block.replace(quoteNode);
+          wrapLeafNodesInBlocks(selection, () => createQuoteNode());
         }
       });
     }
@@ -282,15 +239,7 @@ function DropdownList({
         const selection = state.getSelection();
 
         if (selection !== null) {
-          const anchor = selection.anchor;
-          const block =
-            anchor.type === 'text'
-              ? anchor.getNode().getParentBlockOrThrow()
-              : anchor.getNode();
-          const children = block.getChildren();
-          const codeNode = createCodeNode();
-          children.forEach((child) => codeNode.append(child));
-          block.replace(codeNode);
+          wrapLeafNodesInBlocks(selection, () => createCodeNode());
         }
       });
     }

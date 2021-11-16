@@ -9,15 +9,12 @@
 
 import type {OutlineEditor, State} from 'outline';
 
+import * as React from 'react';
+import PlaygroundController from '../controllers/PlaygroundController';
+import {useController} from 'outline-react/OutlineController';
 import {createTextNode, log} from 'outline';
 import {createParagraphNode} from 'outline/ParagraphNode';
-import React, {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from 'react';
+import {useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {IS_APPLE} from 'shared/environment';
 
 const copy = (text: string | null) => {
@@ -142,9 +139,7 @@ const keyPresses = new Set([
 // $FlowFixMe TODO
 type Steps = Array<any>;
 
-export default function useTestRecorder(
-  editor: OutlineEditor,
-): [React$Node, React$Node] {
+function useTestRecorder(editor: OutlineEditor): [React$Node, React$Node] {
   const [steps, setSteps] = useState<Steps>([]);
   const [isRecording, setIsRecording] = useState(false);
   const [, setCurrentInnerHTML] = useState('');
@@ -433,4 +428,16 @@ ${steps.map(formatStep).join(`\n`)}
   ) : null;
 
   return [button, output];
+}
+
+export default function TreeViewPlugin(): React$Node {
+  const [editor] = useController(PlaygroundController);
+  const [testRecorderButton, testRecorderOutput] = useTestRecorder(editor);
+
+  return (
+    <>
+      {testRecorderButton}
+      {testRecorderOutput}
+    </>
+  );
 }

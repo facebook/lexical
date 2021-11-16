@@ -9,11 +9,14 @@
 
 import type {OutlineEditor, State, NodeKey, EditorConfig} from 'outline';
 
+import PlaygroundController from '../controllers/PlaygroundController';
+import {useController} from 'outline-react/OutlineController';
+
 import {isTextNode, isBlockNode, TextNode, log} from 'outline';
 import {useEffect, useRef, useState, useCallback, useMemo} from 'react';
 import {updateWithoutHistory} from 'outline/history';
 
-export default function useTypeahead(editor: OutlineEditor): void {
+function useTypeahead(editor: OutlineEditor): void {
   const typeaheadNodeKey = useRef<NodeKey | null>(null);
   const [text, setText] = useState<string>('');
   const [selectionCollapsed, setSelectionCollapsed] = useState<boolean>(false);
@@ -288,4 +291,11 @@ class TypeaheadServer {
       cancel,
     };
   };
+}
+
+export default function AutocompletePlugin(): React$Node {
+  const [editor] = useController(PlaygroundController);
+  useTypeahead(editor);
+
+  return null;
 }

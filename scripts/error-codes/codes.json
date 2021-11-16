@@ -41,5 +41,6 @@
   "39": "createNode: node does not exist in nodeMap",
   "40": "reconcileNode: prevNode or nextNode does not exist in nodeMap",
   "41": "reconcileNode: parentDOM is null",
-  "42": "Reconciliation: could not find DOM element for node key \"${key}\""
+  "42": "Reconciliation: could not find DOM element for node key \"${key}\"",
+  "43": "OutlineController.useController: cannot find matching OutlineController"
 }

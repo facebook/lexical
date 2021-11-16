@@ -7,38 +7,26 @@
  * @flow strict
  */
 
-import type {OutlineEditor, EditorThemeClasses, EditorState} from 'outline';
+import type {OutlineEditor} from 'outline';
 
-import {createEditor} from 'outline';
+import {useCallback} from 'react';
+import useLayoutEffect from './shared/useLayoutEffect';
 import useOutlineCanShowPlaceholder from 'outline-react/useOutlineCanShowPlaceholder';
 
-import {useCallback, useMemo} from 'react';
-import useLayoutEffect from './shared/useLayoutEffect';
-
-function defaultOnErrorHandler(e: Error): void {
-  throw e;
-}
-
-export default function useOutlineEditor<EditorContext>(editorConfig?: {
-  onError?: (error: Error, log: Array<string>) => void,
-  initialEditorState?: EditorState,
-  theme?: EditorThemeClasses,
-  context?: EditorContext,
-}): [OutlineEditor, (null | HTMLElement) => void, boolean] {
-  const editor = useMemo(() => createEditor(editorConfig), [editorConfig]);
+export default function useOutlineEditor(
+  editor: OutlineEditor,
+  onError: (error: Error, log: Array<string>) => void,
+): [(null | HTMLElement) => void, boolean] {
+  const showPlaceholder = useOutlineCanShowPlaceholder(editor);
   const rootElementRef = useCallback(
     (rootElement: null | HTMLElement) => {
       editor.setRootElement(rootElement);
     },
     [editor],
   );
-  const showPlaceholder = useOutlineCanShowPlaceholder(editor);
-  const onError =
-    (editorConfig !== undefined && editorConfig.onError) ||
-    defaultOnErrorHandler;
   useLayoutEffect(() => {
     return editor.addListener('error', onError);
   }, [editor, onError]);
 
-  return [editor, rootElementRef, showPlaceholder];
+  return [rootElementRef, showPlaceholder];
 }

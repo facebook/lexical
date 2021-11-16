@@ -38,6 +38,13 @@ function useSettings(
 
   const switches = showSettings ? (
     <div className="switches">
+      {isRichText && (
+        <Switch
+          onClick={() => onChange('isCollab', !isCollab)}
+          checked={isCollab}
+          text="Collaboration"
+        />
+      )}
       <Switch
         onClick={() => onChange('measureTypingPerf', !measureTypingPerf)}
         checked={measureTypingPerf}
@@ -56,13 +63,6 @@ function useSettings(
         checked={isRichText}
         text="Rich Text"
       />
-      {isRichText && (
-        <Switch
-          onClick={() => onChange('isCollab', !isCollab)}
-          checked={isCollab}
-          text="Collaboration"
-        />
-      )}
       <Switch
         onClick={() => onChange('isCharLimit', !isCharLimit)}
         checked={isCharLimit}

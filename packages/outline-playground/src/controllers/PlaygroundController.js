@@ -64,7 +64,7 @@ function createPlaygroundContract(): PlaygroundContract {
   return {
     addListener(
       type: 'readonly' | 'clear',
-      callback: (mixed) => void,
+      callback: (ListenerValue) => void,
     ): () => void {
       let set = listeners.get(type);
       if (set === undefined) {
@@ -77,7 +77,7 @@ function createPlaygroundContract(): PlaygroundContract {
         currentSet.delete(callback);
       };
     },
-    triggerListeners(type: 'readonly' | 'clear', value: mixed): void {
+    triggerListeners(type: 'readonly' | 'clear', value: ListenerValue): void {
       const set = listeners.get(type);
       if (set !== undefined) {
         const callbacks = Array.from(set);

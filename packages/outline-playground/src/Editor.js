@@ -7,413 +7,59 @@
  * @flow strict-local
  */
 
-import type {OutlineEditor} from 'outline';
+// import type {OutlineEditor} from 'outline';
 
 import * as React from 'react';
-import {useEffect, useMemo, useState} from 'react';
-import useOutlineRichText from 'outline-react/useOutlineRichText';
-import useOutlineRichTextWithCollab from 'outline-react/useOutlineRichTextWithCollab';
-import {useEmojis} from './useEmojis';
-import useMentions from './useMentions';
-import useOutlineEditor from 'outline-react/useOutlineEditor';
-import usePlainText from 'outline-react/useOutlinePlainText';
-import useOutlineAutoFormatter from 'outline-react/useOutlineAutoFormatter';
-import useOutlineDecorators from 'outline-react/useOutlineDecorators';
-import useOutlineNestedList from 'outline-react/useOutlineNestedList';
-import {ImageNode, createImageNode} from './ImageNode';
-import {insertNodes} from 'outline/selection';
-import useFloatingToolbar from './useFloatingToolbar';
-import useHashtags from './useHashtags';
-import useKeywords from './useKeywords';
-import BlockControls from './BlockControls';
-import CharacterLimit from './CharacterLimit';
-import {Typeahead} from './Typeahead';
-import yellowFlowerImage from './images/image/yellow-flower.jpg';
-import {log, isBlockNode} from 'outline';
-import {isListItemNode} from 'outline/ListItemNode';
-// $FlowFixMe: need Flow typings for y-websocket
-import {WebsocketProvider} from 'y-websocket';
-// $FlowFixMe: need Flow typings for yjs
-import {Doc} from 'yjs';
-
-const WEBSOCKET_ENDPOINT = 'ws://localhost:1234';
-const WEBSOCKET_SLUG = 'playground';
-
-const editorStyle = {
-  outline: 0,
-  overflowWrap: 'break-word',
-  padding: '10px',
-  userSelect: 'text',
-  whiteSpace: 'pre-wrap',
-};
+import PlainTextPlugin from './plugins/PlainTextPlugin';
+import RichTextPlugin from './plugins/RichTextPlugin';
+import RichTextCollabPlugin from './plugins/RichTextCollabPlugin';
+import MentionsPlugin from './plugins/MentionsPlugin';
+import EmojisPlugin from './plugins/EmojisPlugin';
+import CharacterLimitPlugin from './plugins/CharacterLimitPlugin';
+import AutocompletePlugin from './plugins/AutocompletePlugin';
+import HashtagsPlugin from './plugins/HashtagsPlugin';
+import KeywordsPlugin from './plugins/KeywordsPlugin';
+import ActionsPlugin from './plugins/ActionsPlugin';
+import AutoFormatterPlugin from './plugins/AutoFormatterPlugin';
+import BlockControlsPlugin from './plugins/BlockControlsPlugin';
+import FloatingToolbarPlugin from './plugins/FloatingToolbarPlugin';
 
 type Props = {
-  isCharLimit?: boolean,
-  isCharLimitUtf8?: boolean,
-  isAutocomplete?: boolean,
+  isCollab: boolean,
+  isCharLimit: boolean,
+  isCharLimitUtf8: boolean,
+  isAutocomplete: boolean,
+  isRichText: boolean,
 };
 
-const editorConfig = {
-  theme: {
-    paragraph: 'editor-paragraph',
-    quote: 'editor-quote',
-    heading: {
-      h1: 'editor-heading-h1',
-      h2: 'editor-heading-h2',
-      h3: 'editor-heading-h3',
-      h4: 'editor-heading-h4',
-      h5: 'editor-heading-h5',
-    },
-    list: {
-      ol: 'editor-list-ol',
-      ul: 'editor-list-ul',
-    },
-    nestedList: {
-      listitem: 'editor-nested-list-listitem',
-    },
-    listitem: 'editor-listitem',
-    image: 'editor-image',
-    text: {
-      bold: 'editor-text-bold',
-      link: 'editor-text-link',
-      italic: 'editor-text-italic',
-      underline: 'editor-text-underline',
-      strikethrough: 'editor-text-strikethrough',
-      underlineStrikethrough: 'editor-text-underlineStrikethrough',
-      code: 'editor-text-code',
-    },
-    hashtag: 'editor-text-hashtag',
-    code: 'editor-code',
-    link: 'editor-text-link',
-    characterLimit: 'editor-character-limit',
-  },
-};
-
-function ContentEditable({
-  isReadOnly,
-  rootElementRef,
-}: {
-  isReadOnly?: boolean,
-  rootElementRef: (null | HTMLElement) => void,
-}): React$Node {
+export default function Editor({
+  isCollab,
+  isAutocomplete,
+  isCharLimit,
+  isCharLimitUtf8,
+  isRichText,
+}: Props): React$Node {
   return (
-    <div
-      className="editor"
-      contentEditable={isReadOnly !== true}
-      role="textbox"
-      ref={rootElementRef}
-      spellCheck={true}
-      style={editorStyle}
-      tabIndex={0}
-    />
+    <div className="editor-container">
+      <MentionsPlugin />
+      <EmojisPlugin />
+      <HashtagsPlugin />
+      <KeywordsPlugin />
+      {isRichText ? (
+        <>
+          {isCollab ? <RichTextCollabPlugin /> : <RichTextPlugin />}
+          <AutoFormatterPlugin />
+          <BlockControlsPlugin />
+          <FloatingToolbarPlugin />
+        </>
+      ) : (
+        <PlainTextPlugin />
+      )}
+      {(isCharLimit || isCharLimitUtf8) && (
+        <CharacterLimitPlugin charset={isCharLimit ? 'UTF-16' : 'UTF-8'} />
+      )}
+      {isAutocomplete && <AutocompletePlugin />}
+      <ActionsPlugin isRichText={isRichText} />
+    </div>
   );
 }
-
-function useRichTextEditorImpl({
-  editor,
-  cursors,
-  isCharLimit,
-  isCharLimitUtf8,
-  isAutocomplete,
-  clear,
-  rootElementRef,
-  showPlaceholder,
-  mentionsTypeahead,
-}: {
-  editor: OutlineEditor,
-  cursors?: React$Node,
-  isCharLimit?: boolean,
-  isCharLimitUtf8?: boolean,
-  isAutocomplete?: boolean,
-  clear: () => void,
-  rootElementRef: (null | HTMLElement) => void,
-  showPlaceholder: boolean,
-  mentionsTypeahead: React$Node,
-}): [OutlineEditor, React.MixedElement] {
-  const [isReadOnly, setIsReadyOnly] = useState(false);
-  const floatingToolbar = useFloatingToolbar(editor);
-  const decorators = useOutlineDecorators(editor);
-  const [indent, outdent] = useOutlineNestedList(editor);
-  useEmojis(editor);
-  useHashtags(editor);
-  useOutlineAutoFormatter(editor);
-  useKeywords(editor);
-  useEffect(() => {
-    editor.registerNodeType('image', ImageNode);
-  }, [editor]);
-
-  const element = useMemo(() => {
-    const handleAddImage = () => {
-      editor.update((state) => {
-        log('handleAddImage');
-        const selection = state.getSelection();
-        if (selection !== null) {
-          const imageNode = createImageNode(
-            yellowFlowerImage,
-            'Yellow flower in tilt shift lens',
-          );
-          insertNodes(selection, [imageNode]);
-        }
-      });
-    };
-
-    const setAlignment = (
-      alignment: 'left' | 'right' | 'center' | 'justify',
-    ) => {
-      editor.update((state) => {
-        const selection = state.getSelection();
-        if (selection !== null) {
-          const node = selection.anchor.getNode();
-          const block = isBlockNode(node) ? node : node.getParentOrThrow();
-          block.setFormat(alignment);
-        }
-      });
-    };
-
-    const leftAlign = () => {
-      setAlignment('left');
-    };
-
-    const centerAlign = () => {
-      setAlignment('center');
-    };
-
-    const rightAlign = () => {
-      setAlignment('right');
-    };
-
-    const justifyAlign = () => {
-      setAlignment('justify');
-    };
-
-    const applyOutdent = () => {
-      editor.update((state) => {
-        const selection = state.getSelection();
-        if (selection !== null) {
-          const node = selection.anchor.getNode();
-          const block = isBlockNode(node) ? node : node.getParentOrThrow();
-          if (!isListItemNode(block)) {
-            if (block.getIndent() !== 0) {
-              block.setIndent(block.getIndent() - 1);
-            }
-          } else {
-            outdent();
-          }
-        }
-      });
-    };
-
-    const applyIndent = () => {
-      editor.update((state) => {
-        const selection = state.getSelection();
-        if (selection !== null) {
-          const node = selection.anchor.getNode();
-          const block = isBlockNode(node) ? node : node.getParentOrThrow();
-          if (!isListItemNode(block)) {
-            if (block.getIndent() !== 10) {
-              block.setIndent(block.getIndent() + 1);
-            }
-          } else {
-            indent();
-          }
-        }
-      });
-    };
-
-    return (
-      <div className="editor-container">
-        <ContentEditable
-          isReadOnly={isReadOnly}
-          rootElementRef={rootElementRef}
-        />
-        {showPlaceholder && <Placeholder>Enter some rich text...</Placeholder>}
-        {cursors}
-        {decorators}
-        {mentionsTypeahead}
-        {floatingToolbar}
-        <BlockControls editor={editor} />
-        {(isCharLimit || isCharLimitUtf8) && (
-          <CharacterLimit
-            editor={editor}
-            charset={isCharLimit ? 'UTF-16' : 'UTF-8'}
-          />
-        )}
-        {isAutocomplete && <Typeahead editor={editor} />}
-        <div className="actions">
-          <button className="action-button outdent" onClick={applyOutdent}>
-            <i className="outdent" />
-          </button>
-          <button className="action-button indent" onClick={applyIndent}>
-            <i className="indent" />
-          </button>
-          <button className="action-button left-align" onClick={leftAlign}>
-            <i className="left-align" />
-          </button>
-          <button className="action-button center-align" onClick={centerAlign}>
-            <i className="center-align" />
-          </button>
-          <button className="action-button right-align" onClick={rightAlign}>
-            <i className="right-align" />
-          </button>
-          <button
-            className="action-button justify-align"
-            onClick={justifyAlign}>
-            <i className="justify-align" />
-          </button>
-          <button
-            className="action-button insert-image"
-            onClick={handleAddImage}>
-            <i className="image" />
-          </button>
-          <button
-            className="action-button clear"
-            onClick={() => {
-              clear();
-              editor.focus();
-            }}>
-            <i className="clear" />
-          </button>
-          <button
-            className="action-button lock"
-            onClick={() => setIsReadyOnly(!isReadOnly)}>
-            <i className={isReadOnly ? 'unlock' : 'lock'} />
-          </button>
-        </div>
-      </div>
-    );
-  }, [
-    isReadOnly,
-    rootElementRef,
-    showPlaceholder,
-    cursors,
-    decorators,
-    mentionsTypeahead,
-    floatingToolbar,
-    editor,
-    isCharLimit,
-    isCharLimitUtf8,
-    isAutocomplete,
-    outdent,
-    indent,
-    clear,
-  ]);
-
-  return [editor, element];
-}
-
-export function useRichTextEditor(
-  props: Props,
-): [OutlineEditor, React.MixedElement] {
-  const [editor, rootElementRef, showPlaceholder] =
-    useOutlineEditor(editorConfig);
-  const mentionsTypeahead = useMentions(editor);
-  const clear = useOutlineRichText(editor);
-  return useRichTextEditorImpl({
-    ...props,
-    editor,
-    clear,
-    rootElementRef,
-    showPlaceholder,
-    mentionsTypeahead,
-  });
-}
-
-export function useRichTextEditorWithCollab(
-  props: Props,
-): [OutlineEditor, React.MixedElement] {
-  const [editor, rootElementRef, showPlaceholder] =
-    useOutlineEditor(editorConfig);
-  const mentionsTypeahead = useMentions(editor);
-  const [doc, provider] = useMemo(() => {
-    const doc = new Doc();
-    const provider = new WebsocketProvider(
-      WEBSOCKET_ENDPOINT,
-      WEBSOCKET_SLUG,
-      doc,
-      {
-        connect: false,
-      },
-    );
-    return [doc, provider];
-  }, []);
-  const [cursors, clear] = useOutlineRichTextWithCollab(editor, doc, provider);
-  return useRichTextEditorImpl({
-    ...props,
-    cursors,
-    editor,
-    clear,
-    rootElementRef,
-    showPlaceholder,
-    mentionsTypeahead,
-  });
-}
-
-function Placeholder({children}: {children: string}): React.Node {
-  return <div className="editor-placeholder">{children}</div>;
-}
-
-export const usePlainTextEditor = ({
-  isCharLimit,
-  isCharLimitUtf8,
-  isAutocomplete,
-}: Props): [OutlineEditor, React.MixedElement] => {
-  const [editor, rootElementRef, showPlaceholder] =
-    useOutlineEditor(editorConfig);
-  const mentionsTypeahead = useMentions(editor);
-  const [isReadOnly, setIsReadyOnly] = useState(false);
-  const clear = usePlainText(editor);
-  const decorators = useOutlineDecorators(editor);
-  useEmojis(editor);
-  useHashtags(editor);
-  useKeywords(editor);
-
-  const element = useMemo(
-    () => (
-      <>
-        <ContentEditable
-          isReadOnly={isReadOnly}
-          rootElementRef={rootElementRef}
-        />
-        {showPlaceholder && <Placeholder>Enter some plain text...</Placeholder>}
-        {decorators}
-        {mentionsTypeahead}
-        {(isCharLimit || isCharLimitUtf8) && (
-          <CharacterLimit
-            editor={editor}
-            charset={isCharLimit ? 'UTF-16' : 'UTF-8'}
-          />
-        )}
-        {isAutocomplete && <Typeahead editor={editor} />}
-        <div className="actions">
-          <button
-            className="action-button clear"
-            onClick={() => {
-              clear();
-              editor.focus();
-            }}>
-            Clear
-          </button>
-          <button
-            className="action-button lock"
-            onClick={() => setIsReadyOnly(!isReadOnly)}>
-            <i className={isReadOnly ? 'unlock' : 'lock'} />
-          </button>
-        </div>
-      </>
-    ),
-    [
-      isReadOnly,
-      rootElementRef,
-      showPlaceholder,
-      decorators,
-      mentionsTypeahead,
-      isCharLimit,
-      isCharLimitUtf8,
-      editor,
-      isAutocomplete,
-      clear,
-    ],
-  );
-
-  return [editor, element];
-};

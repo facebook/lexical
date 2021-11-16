@@ -7,11 +7,11 @@
  * @flow strict-local
  */
 
-import type {Settings, SettingName} from './appSettings';
+import type {Settings, SettingName} from '../appSettings';
 
 import * as React from 'react';
 import {useState} from 'react';
-import Switch from './Switch';
+import Switch from '../ui/Switch';
 
 function useSettings(
   settings: Settings,

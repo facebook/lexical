@@ -1417,13 +1417,28 @@ export function wrapLeafNodesInBlocks(
 ): void {
   const nodes = selection.getNodes();
   const nodesLength = nodes.length;
+  if (nodesLength === 0) {
+    const anchor = selection.anchor;
+    const target =
+      anchor.type === 'text'
+        ? anchor.getNode().getParentBlockOrThrow()
+        : anchor.getNode();
+    const children = target.getChildren();
+    let block = createBlock();
+    children.forEach((child) => block.append(child));
+    if (wrappingBlock) {
+      block = wrappingBlock.append(block);
+    }
+    target.replace(block);
+    return;
+  }
+  const firstNode = nodes[0];
   const blockMapping: Map<NodeKey, BlockNode> = new Map();
   const blocks = [];
   // The below logic is to find the right target for us to
   // either insertAfter/insertBefore/append the corresponding
   // blocks to. This is made more complicated due to nested
   // structures.
-  const firstNode = nodes[0];
   let target = firstNode;
   while (target !== null) {
     const prevSibling = target.getPreviousSibling();

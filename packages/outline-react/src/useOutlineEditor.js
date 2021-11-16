@@ -10,9 +10,9 @@
 import type {OutlineEditor, EditorThemeClasses, EditorState} from 'outline';
 
 import {createEditor} from 'outline';
-import {canShowPlaceholder} from 'outline/root';
+import useOutlineCanShowPlaceholder from 'outline-react/useOutlineCanShowPlaceholder';
 
-import {useCallback, useMemo, useRef, useState} from 'react';
+import {useCallback, useMemo} from 'react';
 import useLayoutEffect from './shared/useLayoutEffect';
 
 function defaultOnErrorHandler(e: Error): void {
@@ -25,8 +25,6 @@ export default function useOutlineEditor<EditorContext>(editorConfig?: {
   theme?: EditorThemeClasses,
   context?: EditorContext,
 }): [OutlineEditor, (null | HTMLElement) => void, boolean] {
-  const [showPlaceholder, setShowPlaceholder] = useState(true);
-  const showPlaceholderRef = useRef(true);
   const editor = useMemo(() => createEditor(editorConfig), [editorConfig]);
   const rootElementRef = useCallback(
     (rootElement: null | HTMLElement) => {
@@ -34,23 +32,13 @@ export default function useOutlineEditor<EditorContext>(editorConfig?: {
     },
     [editor],
   );
+  const showPlaceholder = useOutlineCanShowPlaceholder(editor);
   const onError =
     (editorConfig !== undefined && editorConfig.onError) ||
     defaultOnErrorHandler;
   useLayoutEffect(() => {
     return editor.addListener('error', onError);
   }, [editor, onError]);
-  useLayoutEffect(() => {
-    return editor.addListener('update', ({editorState}) => {
-      const currentCanShowPlaceholder = editorState.read((state) =>
-        canShowPlaceholder(state, editor.isComposing()),
-      );
-      if (showPlaceholderRef.current !== currentCanShowPlaceholder) {
-        showPlaceholderRef.current = currentCanShowPlaceholder;
-        setShowPlaceholder(currentCanShowPlaceholder);
-      }
-    });
-  }, [editor]);
 
   return [editor, rootElementRef, showPlaceholder];
 }

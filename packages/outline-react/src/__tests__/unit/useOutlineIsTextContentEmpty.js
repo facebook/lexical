@@ -13,9 +13,9 @@ import ReactTestUtils from 'react-dom/test-utils';
 
 import {createEditor, createTextNode} from 'outline';
 import {createParagraphNode} from 'outline/ParagraphNode';
-import useOutlineIsBlank from '../../useOutlineIsBlank';
+import useOutlineIsTextContentEmpty from '../../useOutlineIsTextContentEmpty';
 
-describe('UseOutlineIsBlank', () => {
+describe('useOutlineIsTextContentEmpty', () => {
   let container = null;
   let reactRoot;
 
@@ -54,7 +54,7 @@ describe('UseOutlineIsBlank', () => {
       editor.addListener('error', (error) => {
         throw error;
       });
-      const isBlank = useOutlineIsBlank(editor);
+      const isBlank = useOutlineIsTextContentEmpty(editor);
       expect(isBlank).toBe(!hasText);
       return <div ref={ref} contentEditable={true} />;
     }

@@ -93,6 +93,70 @@ describe('OutlineNode tests', () => {
       expect(() => textNode.isSelected()).toThrow();
     });
 
+    test('OutlineNode.isSelected(): selected text node', async () => {
+      const {editor} = testEnv;
+      await editor.getEditorState().read(() => {
+        expect(paragraphNode.isSelected()).toBe(false);
+        expect(textNode.isSelected()).toBe(false);
+      });
+
+      await editor.update(() => {
+        textNode.select(0, 0);
+      });
+
+      await editor.getEditorState().read(() => {
+        expect(textNode.isSelected()).toBe(true);
+        expect(paragraphNode.isSelected()).toBe(false);
+      });
+    });
+
+    test('OutlineNode.isSelected(): selected block node range', async () => {
+      const {editor} = testEnv;
+      let newParagraphNode;
+      let newTextNode;
+
+      await editor.update(() => {
+        expect(paragraphNode.isSelected()).toBe(false);
+        expect(textNode.isSelected()).toBe(false);
+
+        newParagraphNode = new ParagraphNode();
+        newTextNode = new TextNode('bar');
+        newParagraphNode.append(newTextNode);
+        paragraphNode.insertAfter(newParagraphNode);
+
+        expect(newParagraphNode.isSelected()).toBe(false);
+        expect(newTextNode.isSelected()).toBe(false);
+      });
+
+      await editor.update((state) => {
+        textNode.select(0, 0);
+
+        const selection = state.getSelection();
+        expect(selection).not.toBe(null);
+
+        selection.anchor.type = 'text';
+        selection.anchor.offset = 1;
+        selection.anchor.key = textNode.getKey();
+
+        selection.focus.type = 'text';
+        selection.focus.offset = 1;
+        selection.focus.key = newTextNode.getKey();
+      });
+
+      await Promise.resolve().then();
+
+      await editor.update((state) => {
+        const selection = state.getSelection();
+
+        expect(selection.anchor.key).toBe(textNode.getKey());
+        expect(selection.focus.key).toBe(newTextNode.getKey());
+        expect(paragraphNode.isSelected()).toBe(true);
+        expect(textNode.isSelected()).toBe(true);
+        expect(newParagraphNode.isSelected()).toBe(true);
+        expect(newTextNode.isSelected()).toBe(true);
+      });
+    });
+
     test('OutlineNode.getFlags()', async () => {
       const {editor} = testEnv;
       await editor.getEditorState().read(() => {

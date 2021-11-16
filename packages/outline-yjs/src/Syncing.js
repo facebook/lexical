@@ -182,7 +182,7 @@ function diff(
   startingB: number,
   currentText: string,
   text: string,
-) {
+): [number, number, null | string, null | string] {
   let a = startingA;
   let b = startingB;
   let charA = currentText[a];

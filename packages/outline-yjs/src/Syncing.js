@@ -323,7 +323,8 @@ function syncOutlineNodeToYjs(
 
   if (node === undefined) {
     if (yjsNode === undefined || prevNode === undefined) {
-      throw new Error('Should never happen');
+      // We've already deleted this node in a previous cycle
+      return;
     }
     removeYjsNode(
       key,
@@ -368,20 +369,26 @@ function syncOutlineNodeToYjs(
   } else if (isBlockNode(node) && isBlockNode(prevNode)) {
     const prevChildren = prevNode.__children;
     const nextChildren = node.__children;
+    const prevChildrenLength = prevChildren.length;
     const nextChildrenLength = nextChildren.length;
+    const visited = new Set();
     let yjsChildNode = yjsNode.firstChild;
 
     for (let i = 0; i < nextChildrenLength; i++) {
       const prevKey = prevChildren[i];
       const nextKey = nextChildren[i];
+      visited.add(nextKey);
 
       if (prevKey !== nextKey) {
         yjsChildNode = yjsNodeMap.get(nextKey);
         if (yjsChildNode === undefined || yjsChildNode.parent !== yjsNode) {
-          const childNode = nodeMap.get(nextKey);
+          const childNode = prevNodeMap.get(nextKey);
           if (childNode === undefined) {
             throw new Error('Should never happen');
           }
+          // We can't do moves in Yjs, so we instead essentially delete the old
+          // and insert the same new node. This also means that the old node
+          // nicely gets garbage collected by Yjs.
           if (yjsChildNode !== undefined) {
             removeYjsNode(
               nextKey,
@@ -405,6 +412,24 @@ function syncOutlineNodeToYjs(
       }
       yjsChildNode = yjsChildNode.nextSibling;
     }
+    // Remove any nodes that were not visited
+    for (let i = 0; i < prevChildrenLength; i++) {
+      const prevKey = prevChildren[i];
+      if (!visited.has(prevKey)) {
+        const prevChildNode = prevNodeMap.get(prevKey);
+        yjsChildNode = yjsNodeMap.get(prevKey);
+        if (yjsChildNode !== undefined && prevChildNode !== undefined) {
+          removeYjsNode(
+            prevKey,
+            yjsChildNode,
+            prevChildNode,
+            nodeMap,
+            yjsNodeMap,
+            reverseYjsNodeMap,
+          );
+        }
+      }
+    }
   }
 }
 
@@ -424,7 +449,19 @@ function syncYjsNodeToOutline(
   const node = nodeMap.get(key);
 
   if (node === undefined) {
-    throw new Error('TODO: syncYjsNodeToOutline');
+    const parent = yjsNode.parent;
+    const parentKey = reverseYjsNodeMap.get(parent);
+    if (parentKey === undefined) {
+      throw new Error('Should never happen');
+    }
+    createOutlineNodeFromYjsNode(
+      yjsNode,
+      parentKey,
+      yjsNodeMap,
+      reverseYjsNodeMap,
+      nodeTypes,
+    );
+    return;
   }
   if (attributesChanged === null || attributesChanged.size > 0) {
     const attributes = yjsNode.getAttributes();

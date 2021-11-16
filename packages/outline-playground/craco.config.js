@@ -37,6 +37,10 @@ module.exports = {
       'outline-react/useOutlineNestedList':
         'outline-react/dist/useOutlineNestedList',
       'outline-react/useOutlineIsBlank': 'outline-react/dist/useOutlineIsBlank',
+      'outline-react/useOutlineIsTextContentEmpty':
+        'outline-react/dist/useOutlineIsTextContentEmpty',
+      'outline-react/useOutlineCanShowPlaceholder':
+        'outline-react/dist/useOutlineCanShowPlaceholder',
       'outline-react/useOutlineCharacterLimit':
         'outline-react/dist/useOutlineCharacterLimit',
       //Shared

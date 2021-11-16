@@ -17,8 +17,9 @@ export function textContent(state: State): string {
 }
 
 export const textContent2 = textContent;
+export const textContentCurry = textContent;
 
-export function isBlank(
+export function isTextContentEmpty(
   state: State,
   isEditorComposing: boolean,
   trim?: boolean = true,
@@ -33,13 +34,21 @@ export function isBlank(
   return text === '';
 }
 
-export const isBlank2 = isBlank;
+export const isBlank = isTextContentEmpty;
+export const isBlank2 = isTextContentEmpty;
+
+export function isTextContentEmptyCurry(
+  isEditorComposing: boolean,
+  trim?: boolean,
+): (state: State) => boolean {
+  return (state: State) => isTextContentEmpty(state, isEditorComposing, trim);
+}
 
 export function canShowPlaceholder(
   state: State,
   isComposing: boolean,
 ): boolean {
-  if (!isBlank(state, isComposing, false)) {
+  if (!isTextContentEmpty(state, isComposing, false)) {
     return false;
   }
   const root = state.getRoot();
@@ -72,3 +81,9 @@ export function canShowPlaceholder(
 }
 
 export const canShowPlaceholder2 = canShowPlaceholder;
+
+export function canShowPlaceholderCurry(
+  isEditorComposing: boolean,
+): (state: State) => boolean {
+  return (state: State) => canShowPlaceholder(state, isEditorComposing);
+}

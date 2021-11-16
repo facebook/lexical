@@ -11,23 +11,23 @@ import type {State} from 'outline';
 
 import {createTextNode} from 'outline';
 import {createParagraphNode} from 'outline/ParagraphNode';
-import {isBlank2, textContent2} from 'outline/root';
+import {isTextContentEmpty, textContent} from 'outline/root';
 import {initializeUnitTest} from '../../../__tests__/utils';
 
 describe('OutlineRootHelpers tests', () => {
   initializeUnitTest((testEnv) => {
     it('textContent', async () => {
       const editor = testEnv.editor;
-      expect(editor.getEditorState().read(textContent2)).toBe('');
+      expect(editor.getEditorState().read(textContent)).toBe('');
       await editor.update((state: State) => {
         const root = state.getRoot();
         const paragraph = createParagraphNode();
         const text = createTextNode('foo');
         root.append(paragraph);
         paragraph.append(text);
-        expect(textContent2(state)).toBe('foo');
+        expect(textContent(state)).toBe('foo');
       });
-      expect(editor.getEditorState().read(textContent2)).toBe('foo');
+      expect(editor.getEditorState().read(textContent)).toBe('foo');
     });
 
     it('isBlank', async () => {
@@ -35,7 +35,7 @@ describe('OutlineRootHelpers tests', () => {
       expect(
         editor
           .getEditorState()
-          .read((state) => isBlank2(state, editor.isComposing())),
+          .read((state) => isTextContentEmpty(state, editor.isComposing())),
       ).toBe(true);
       await editor.update((state: State) => {
         const root = state.getRoot();
@@ -43,12 +43,12 @@ describe('OutlineRootHelpers tests', () => {
         const text = createTextNode('foo');
         root.append(paragraph);
         paragraph.append(text);
-        expect(isBlank2(state, editor.isComposing())).toBe(false);
+        expect(isTextContentEmpty(state, editor.isComposing())).toBe(false);
       });
       expect(
         editor
           .getEditorState()
-          .read((state) => isBlank2(state, editor.isComposing())),
+          .read((state) => isTextContentEmpty(state, editor.isComposing())),
       ).toBe(false);
     });
   });

@@ -21,6 +21,7 @@ module.exports = {
       'outline/root': 'outline/dist/OutlineRootHelpers',
       // Outline React
       'outline-react/OutlineTreeView': 'outline-react/dist/OutlineTreeView',
+      'outline-react/OutlineController': 'outline-react/dist/OutlineController',
       'outline-react/useOutlineEditor': 'outline-react/dist/useOutlineEditor',
       'outline-react/useOutlineRichText':
         'outline-react/dist/useOutlineRichText',

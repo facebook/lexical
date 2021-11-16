@@ -7,6 +7,9 @@
  * @flow strict-local
  */
 
+import * as React from 'react';
+import PlaygroundController from '../controllers/PlaygroundController';
+import {useController} from 'outline-react/OutlineController';
 import type {OutlineEditor} from 'outline';
 import {isHeadingNode} from 'outline/HeadingNode';
 import {isListNode} from 'outline/ListNode';
@@ -17,82 +20,10 @@ import {createListItemNode} from 'outline/ListItemNode';
 import {createQuoteNode} from 'outline/QuoteNode';
 import {createCodeNode} from 'outline/CodeNode';
 import {wrapLeafNodesInBlocks} from 'outline/selection';
-
-import * as React from 'react';
 import {useEffect, useRef, useState} from 'react';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
 import {log} from 'outline';
-
-// TODO: create a functional dropdown and selection input
-export default function BlockControls({
-  editor,
-}: {
-  editor: OutlineEditor,
-}): React.MixedElement | null {
-  const [selectedBlockKey, setSelectedBlockKey] = useState(null);
-  const [position, setPosition] = useState(0);
-  const [editorPosition, setEditorPosition] = useState(0);
-  const [blockType, setBlockType] = useState('paragraph');
-  const [showDropDown, setShowDropDown] = useState(false);
-  const blockControlsRef = useRef(null);
-
-  useEffect(() => {
-    return editor.addListener('update', ({editorState}) => {
-      editorState.read((state) => {
-        const selection = state.getSelection();
-        if (selection !== null) {
-          const anchorNode = selection.anchor.getNode();
-          const block = anchorNode.getTopParentBlockOrThrow();
-          const blockKey = block.getKey();
-          if (blockKey !== selectedBlockKey) {
-            const blockDOM = editor.getElementByKey(blockKey);
-            if (blockDOM !== null) {
-              const root = editor.getRootElement();
-              let editorTop = editorPosition;
-
-              if (root !== null && editorPosition === 0) {
-                const {top} = root.getBoundingClientRect();
-                editorTop = top;
-                setEditorPosition(editorPosition);
-              }
-              const {top} = blockDOM.getBoundingClientRect();
-              setPosition(top - editorTop);
-              setSelectedBlockKey(blockKey);
-              const type =
-                isHeadingNode(block) || isListNode(block)
-                  ? block.getTag()
-                  : block.getType();
-              setBlockType(type);
-            }
-          }
-        }
-      });
-    });
-  }, [editor, editorPosition, selectedBlockKey]);
-
-  return selectedBlockKey !== null ? (
-    <>
-      <div id="block-controls" style={{top: position}} ref={blockControlsRef}>
-        <button
-          onClick={() => setShowDropDown(!showDropDown)}
-          aria-label="Formatting Options">
-          <span className={'block-type ' + blockType} />
-        </button>
-      </div>
-      {showDropDown &&
-        createPortal(
-          <DropdownList
-            editor={editor}
-            blockType={blockType}
-            blockControlsRef={blockControlsRef}
-            setShowDropDown={setShowDropDown}
-          />,
-          document.body,
-        )}
-    </>
-  ) : null;
-}
 
 function DropdownList({
   editor,
@@ -285,4 +216,70 @@ function DropdownList({
       </button>
     </div>
   );
+}
+
+export default function BlockControlsPlugin(): React$Node {
+  const [editor] = useController(PlaygroundController);
+  const [selectedBlockKey, setSelectedBlockKey] = useState(null);
+  const [position, setPosition] = useState(0);
+  const [editorPosition, setEditorPosition] = useState(0);
+  const [blockType, setBlockType] = useState('paragraph');
+  const [showDropDown, setShowDropDown] = useState(false);
+  const blockControlsRef = useRef(null);
+
+  useEffect(() => {
+    return editor.addListener('update', ({editorState}) => {
+      editorState.read((state) => {
+        const selection = state.getSelection();
+        if (selection !== null) {
+          const anchorNode = selection.anchor.getNode();
+          const block = anchorNode.getTopParentBlockOrThrow();
+          const blockKey = block.getKey();
+          if (blockKey !== selectedBlockKey) {
+            const blockDOM = editor.getElementByKey(blockKey);
+            if (blockDOM !== null) {
+              const root = editor.getRootElement();
+              let editorTop = editorPosition;
+
+              if (root !== null && editorPosition === 0) {
+                const {top} = root.getBoundingClientRect();
+                editorTop = top;
+                setEditorPosition(editorPosition);
+              }
+              const {top} = blockDOM.getBoundingClientRect();
+              setPosition(top - editorTop);
+              setSelectedBlockKey(blockKey);
+              const type =
+                isHeadingNode(block) || isListNode(block)
+                  ? block.getTag()
+                  : block.getType();
+              setBlockType(type);
+            }
+          }
+        }
+      });
+    });
+  }, [editor, editorPosition, selectedBlockKey]);
+
+  return selectedBlockKey !== null ? (
+    <>
+      <div id="block-controls" style={{top: position}} ref={blockControlsRef}>
+        <button
+          onClick={() => setShowDropDown(!showDropDown)}
+          aria-label="Formatting Options">
+          <span className={'block-type ' + blockType} />
+        </button>
+      </div>
+      {showDropDown &&
+        createPortal(
+          <DropdownList
+            editor={editor}
+            blockType={blockType}
+            blockControlsRef={blockControlsRef}
+            setShowDropDown={setShowDropDown}
+          />,
+          document.body,
+        )}
+    </>
+  ) : null;
 }

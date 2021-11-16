@@ -177,13 +177,6 @@ pre::-webkit-scrollbar-thumb {
   background: #999;
 }
 
-.editor-dev-toolbar {
-  position: fixed;
-  right: 20px;
-  bottom: 20px;
-  display: flex;
-}
-
 .editor-dev-button {
   position: relative;
   display: block;
@@ -260,6 +253,18 @@ pre::-webkit-scrollbar-thumb {
   display: block;
   background-size: contain;
   filter: invert(1);
+}
+
+#options-button {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+}
+
+#test-recorder-button {
+  position: fixed;
+  right: 70px;
+  bottom: 20px;
 }
 
 #options-button::after {

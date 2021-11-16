@@ -7,11 +7,12 @@
  * @flow strict-local
  */
 
-import type {OutlineEditor} from 'outline';
-
+import PlaygroundController from '../controllers/PlaygroundController';
+import {useController} from 'outline-react/OutlineController';
 import {useCharacterLimit} from 'outline-react/useOutlineCharacterLimit';
+
 import * as React from 'react';
-import {useState, useMemo} from 'react';
+import {useMemo, useState} from 'react';
 
 const CHARACTER_LIMIT = 5;
 
@@ -36,13 +37,12 @@ function utf8Length(text: string) {
   return currentTextEncoder.encode(text).length;
 }
 
-export default function CharacterLimit({
-  editor,
+export default function CharacterLimitPlugin({
   charset = 'UTF-16',
 }: {
-  editor: OutlineEditor,
   charset: 'UTF-8' | 'UTF-16',
 }): React$Node {
+  const [editor] = useController(PlaygroundController);
   const [remainingCharacters, setRemainingCharacters] = useState(0);
   const characterLimitProps = useMemo(
     () => ({

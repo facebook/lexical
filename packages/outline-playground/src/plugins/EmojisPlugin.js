@@ -7,17 +7,12 @@
  * @flow strict-local
  */
 
-import type {
-  OutlineEditor,
-  OutlineNode,
-  State,
-  NodeKey,
-  EditorConfig,
-  Selection,
-} from 'outline';
+import type {TextNode, State, OutlineEditor, Selection} from 'outline';
 
+import PlaygroundController from '../controllers/PlaygroundController';
+import {useController} from 'outline-react/OutlineController';
+import {createEmojiNode, EmojiNode} from '../nodes/EmojiNode';
 import {useEffect} from 'react';
-import {TextNode} from 'outline';
 
 const emojis: Map<string, [string, string]> = new Map([
   [':)', ['emoji happysmile', '🙂']],
@@ -76,30 +71,8 @@ export function useEmojis(editor: OutlineEditor): void {
   }, [editor]);
 }
 
-class EmojiNode extends TextNode {
-  __className: string;
-
-  static clone(node: EmojiNode): EmojiNode {
-    return new EmojiNode(node.__className, node.__text, node.__key);
-  }
-
-  constructor(className: string, text: string, key: void | NodeKey) {
-    super(text, key);
-    this.__className = className;
-    this.__type = 'emoji';
-  }
-
-  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
-    const dom = super.createDOM(config);
-    dom.className = this.__className;
-    return dom;
-  }
-}
-
-export function isEmojiNode(node: OutlineNode): boolean %checks {
-  return node instanceof EmojiNode;
-}
-
-function createEmojiNode(className: string, emojiText: string): EmojiNode {
-  return new EmojiNode(className, emojiText).makeImmutable();
+export default function EmojisPlugin(): React$Node {
+  const [editor] = useController(PlaygroundController);
+  useEmojis(editor);
+  return null;
 }

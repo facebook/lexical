@@ -10,7 +10,7 @@
 import type {OutlineEditor, OutlineNode, State} from 'outline';
 import type {ListItemNode} from 'outline/ListItemNode';
 
-import {useCallback, useMemo} from 'react';
+import {useCallback, useEffect, useMemo} from 'react';
 import {log} from 'outline';
 import {createListItemNode, isListItemNode} from 'outline/ListItemNode';
 import {createListNode, isListNode} from 'outline/ListNode';
@@ -198,16 +198,22 @@ export default function useOutlineNestedList(
     [editor],
   );
 
-  editor.addListener(
-    'root',
-    (rootElement: null | HTMLElement, prevRootElement: null | HTMLElement) => {
-      if (prevRootElement !== null) {
-        prevRootElement.removeEventListener('keydown', handleKeydown);
-      }
-      if (rootElement !== null) {
-        rootElement.addEventListener('keydown', handleKeydown);
-      }
-    },
-  );
+  useEffect(() => {
+    return editor.addListener(
+      'root',
+      (
+        rootElement: null | HTMLElement,
+        prevRootElement: null | HTMLElement,
+      ) => {
+        if (prevRootElement !== null) {
+          prevRootElement.removeEventListener('keydown', handleKeydown);
+        }
+        if (rootElement !== null) {
+          rootElement.addEventListener('keydown', handleKeydown);
+        }
+      },
+    );
+  }, [editor, handleKeydown]);
+
   return useMemo(() => [() => indent(editor), () => outdent(editor)], [editor]);
 }

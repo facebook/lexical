@@ -63,7 +63,7 @@ describe('OutlineListNode tests', () => {
         const domElement = listNode.createDOM(editorConfig);
         expect(domElement.outerHTML).toBe('<ul class="my-ul-list-class"></ul>');
         const newListNode = new ListNode();
-        const result = newListNode.updateDOM(listNode, domElement);
+        const result = newListNode.updateDOM(listNode, domElement, editorConfig);
         expect(result).toBe(false);
         expect(domElement.outerHTML).toBe('<ul class="my-ul-list-class"></ul>');
       });

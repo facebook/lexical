@@ -45,7 +45,7 @@ export class ListItemNode extends BlockNode {
     dom: HTMLElement,
     config: EditorConfig<EditorContext>,
   ): boolean {
-    setListItemThemeClassNames(dom, config.theme, prevNode);
+    setListItemThemeClassNames(dom, config.theme, this);
     return false;
   }
 
@@ -201,9 +201,9 @@ function setListItemThemeClassNames(
   const classesToAdd = [];
   const classesToRemove = [];
   const listItemClassName = editorThemeClasses.listitem;
-  let nestedListClassName;
+  let nestedListItemClassName;
   if (editorThemeClasses.nestedList) {
-    nestedListClassName = editorThemeClasses.nestedList.listitem;
+    nestedListItemClassName = editorThemeClasses.nestedList.listitem;
   }
 
   if (listItemClassName !== undefined) {
@@ -211,12 +211,12 @@ function setListItemThemeClassNames(
     classesToAdd.push(...listItemClasses);
   }
 
-  if (nestedListClassName !== undefined) {
-    const nestedListClasses = nestedListClassName.split(' ');
+  if (nestedListItemClassName !== undefined) {
+    const nestedListItemClasses = nestedListItemClassName.split(' ');
     if (node.getChildren().some((child) => isListNode(child))) {
-      classesToAdd.push(...nestedListClasses);
+      classesToAdd.push(...nestedListItemClasses);
     } else {
-      classesToRemove.push(...nestedListClasses);
+      classesToRemove.push(...nestedListItemClasses);
     }
   }
 

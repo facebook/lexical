@@ -50,7 +50,8 @@ export type EditorThemeClasses = {
     ol?: EditorThemeClassName,
   },
   nestedList?: {
-    listitem: EditorThemeClassName,
+    list?: EditorThemeClassName,
+    listitem?: EditorThemeClassName,
   },
   link?: EditorThemeClassName,
   listitem?: EditorThemeClassName,

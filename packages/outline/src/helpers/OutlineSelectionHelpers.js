@@ -1397,3 +1397,133 @@ export function selectAll(selection: Selection): void {
     focus.set(lastNode.getKey(), lastOffset, lastType);
   }
 }
+
+function removeParentEmptyBlocks(startingNode: BlockNode): void {
+  let node = startingNode;
+  while (node !== null && !isRootNode(node)) {
+    const latest = node.getLatest();
+    const parentNode = node.getParent();
+    if (latest.__children.length === 0) {
+      node.remove();
+    }
+    node = parentNode;
+  }
+}
+
+export function wrapLeafNodesInBlocks(
+  selection: Selection,
+  createBlock: () => BlockNode,
+  wrappingBlock?: BlockNode,
+): void {
+  const nodes = selection.getNodes();
+  const nodesLength = nodes.length;
+  if (nodesLength === 0) {
+    const anchor = selection.anchor;
+    const target =
+      anchor.type === 'text'
+        ? anchor.getNode().getParentBlockOrThrow()
+        : anchor.getNode();
+    const children = target.getChildren();
+    let block = createBlock();
+    children.forEach((child) => block.append(child));
+    if (wrappingBlock) {
+      block = wrappingBlock.append(block);
+    }
+    target.replace(block);
+    return;
+  }
+  const firstNode = nodes[0];
+  const blockMapping: Map<NodeKey, BlockNode> = new Map();
+  const blocks = [];
+  // The below logic is to find the right target for us to
+  // either insertAfter/insertBefore/append the corresponding
+  // blocks to. This is made more complicated due to nested
+  // structures.
+  let target = firstNode;
+  while (target !== null) {
+    const prevSibling = target.getPreviousSibling();
+    if (prevSibling !== null) {
+      target = prevSibling;
+      break;
+    }
+    target = target.getParentOrThrow();
+    if (isRootNode(target)) {
+      break;
+    }
+  }
+  const emptyBlocks = new Set();
+
+  // Find any top level empty blocks
+  for (let i = 0; i < nodesLength; i++) {
+    const node = nodes[i];
+    if (isBlockNode(node) && node.getChildrenSize() === 0) {
+      emptyBlocks.add(node.getKey());
+    }
+  }
+
+  // Move out all leaf nodes into our blocks array.
+  // If we find a top level empty block, also move make
+  // a block for that.
+  for (let i = 0; i < nodesLength; i++) {
+    const node = nodes[i];
+    const parent = node.getParent();
+    if (parent !== null && isLeafNode(node)) {
+      const parentKey = parent.getKey();
+      let targetBlock = blockMapping.get(parentKey);
+      if (targetBlock === undefined) {
+        targetBlock = createBlock();
+        blocks.push(targetBlock);
+        blockMapping.set(parentKey, targetBlock);
+      }
+      targetBlock.append(node);
+      removeParentEmptyBlocks(parent);
+    } else if (emptyBlocks.has(node.getKey())) {
+      blocks.push(createBlock());
+      node.remove();
+    }
+  }
+  if (wrappingBlock) {
+    for (let i = 0; i < blocks.length; i++) {
+      const block = blocks[i];
+      wrappingBlock.append(block);
+    }
+  }
+  // If our target is the root, let's see if we can re-adjust
+  // so that the target is the first child instead.
+  if (isRootNode(target)) {
+    const firstChild = target.getFirstChild();
+    if (isBlockNode(firstChild)) {
+      target = firstChild;
+    }
+
+    if (firstChild === null) {
+      if (wrappingBlock) {
+        target.append(wrappingBlock);
+      } else {
+        for (let i = 0; i < blocks.length; i++) {
+          const block = blocks[i];
+          target.append(block);
+        }
+      }
+    } else {
+      if (wrappingBlock) {
+        firstChild.insertBefore(wrappingBlock);
+      } else {
+        for (let i = 0; i < blocks.length; i++) {
+          const block = blocks[i];
+          firstChild.insertBefore(block);
+        }
+      }
+    }
+  } else {
+    if (wrappingBlock) {
+      target.insertAfter(wrappingBlock);
+    } else {
+      for (let i = blocks.length - 1; i >= 0; i--) {
+        const block = blocks[i];
+        target.insertAfter(block);
+      }
+    }
+  }
+  selection.dirty = true;
+}

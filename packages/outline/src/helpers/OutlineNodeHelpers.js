@@ -8,7 +8,7 @@
  */
 
 import type {ListItemNode} from 'outline/ListItemNode';
-import type {OutlineNode, BlockNode} from 'outline';
+import type {OutlineNode} from 'outline';
 import type {ListNode} from 'outline/ListNode';
 
 import {isListNode} from 'outline/ListNode';
@@ -41,22 +41,6 @@ export function dfs(
       node = nextNode(node);
     }
   }
-}
-
-export function getCommonAncestor(nodes: OutlineNode[]): null | BlockNode {
-  let commonAncestor = nodes[0].getParent();
-  const nodesLength = nodes.length;
-  for (let i = 1; i < nodesLength; i++) {
-    if (commonAncestor === null) {
-      return null;
-    }
-    // Flow -- an ancestor always has a child
-    const ancestorFirstChild = commonAncestor.getFirstChild();
-    if (ancestorFirstChild !== null) {
-      commonAncestor = ancestorFirstChild.getCommonAncestor(nodes[i]);
-    }
-  }
-  return commonAncestor;
 }
 
 export function getTopListNode(listItem: ListItemNode): ListNode {

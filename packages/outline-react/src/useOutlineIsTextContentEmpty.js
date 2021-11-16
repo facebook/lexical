@@ -11,26 +11,26 @@ import type {OutlineEditor} from 'outline';
 
 import useLayoutEffect from './shared/useLayoutEffect';
 import {useState} from 'react';
-import {isBlank} from 'outline/root';
+import {isTextContentEmptyCurry} from 'outline/root';
 
-/**
- * Deprecated
- */
-export default function useOutlineIsBlank(editor: OutlineEditor): boolean {
-  const [isCurrentlyBlank, setIsBlank] = useState(
+export default function useOutlineIsTextContentEmpty(
+  editor: OutlineEditor,
+  trim?: boolean,
+): boolean {
+  const [isEmpty, setIsEmpty] = useState(
     editor
       .getEditorState()
-      .read((state) => isBlank(state, editor.isComposing())),
+      .read(isTextContentEmptyCurry(editor.isComposing(), trim)),
   );
 
   useLayoutEffect(() => {
     return editor.addListener('update', ({editorState}) => {
       const isComposing = editor.isComposing();
-      const currentIsBlank = editorState.read((state) =>
-        isBlank(state, isComposing),
+      const currentIsEmpty = editorState.read(
+        isTextContentEmptyCurry(isComposing, trim),
       );
-      setIsBlank(currentIsBlank);
+      setIsEmpty(currentIsEmpty);
     });
-  }, [editor]);
-  return isCurrentlyBlank;
+  }, [editor, trim]);
+  return isEmpty;
 }

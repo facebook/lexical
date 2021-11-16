@@ -7,9 +7,15 @@
  * @flow strict
  */
 
-import type {OutlineNode, NodeKey, EditorConfig} from 'outline';
+import type {
+  OutlineNode,
+  NodeKey,
+  EditorConfig,
+  EditorThemeClasses,
+} from 'outline';
 
 import {BlockNode} from 'outline';
+import {isListItemNode} from 'outline/ListItemNode';
 
 type ListNodeTagType = 'ul' | 'ol';
 
@@ -36,28 +42,61 @@ export class ListNode extends BlockNode {
 
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
     const tag = this.__tag;
-    const element = document.createElement(tag);
-    const theme = config.theme;
-    const classNames = theme.list;
-    if (this.__start !== 1) {
-      element.setAttribute('start', String(this.__start));
-    }
-    if (classNames !== undefined) {
-      // $FlowFixMe: intentional cast
-      const className = classNames[tag];
-      if (className !== undefined) {
-        element.className = className;
-      }
-    }
-    return element;
+    const dom = document.createElement(tag);
+    setListThemeClassNames(dom, config.theme, this);
+    return dom;
   }
 
-  updateDOM(prevNode: ListNode, dom: HTMLElement): boolean {
+  updateDOM<EditorContext>(
+    prevNode: ListNode,
+    dom: HTMLElement,
+    config: EditorConfig<EditorContext>,
+  ): boolean {
+    setListThemeClassNames(dom, config.theme, this);
     return false;
   }
 
   canBeEmpty(): false {
     return false;
+  }
+}
+
+function setListThemeClassNames(
+  dom: HTMLElement,
+  editorThemeClasses: EditorThemeClasses,
+  node: ListNode,
+): void {
+  const classesToAdd = [];
+  const classesToRemove = [];
+  const listTheme = editorThemeClasses.list;
+
+  if (listTheme !== undefined) {
+    const listClassName = listTheme[node.__tag];
+    let nestedListClassName;
+    if (editorThemeClasses.nestedList) {
+      nestedListClassName = editorThemeClasses.nestedList.list;
+    }
+
+    if (listClassName !== undefined) {
+      const listItemClasses = listClassName.split(' ');
+      classesToAdd.push(...listItemClasses);
+    }
+
+    if (nestedListClassName !== undefined) {
+      const nestedListItemClasses = nestedListClassName.split(' ');
+      if (isListItemNode(node.getParent())) {
+        classesToAdd.push(...nestedListItemClasses);
+      } else {
+        classesToRemove.push(...nestedListItemClasses);
+      }
+    }
+  }
+
+  if (classesToAdd.length > 0) {
+    dom.classList.add(...classesToAdd);
+  }
+  if (classesToRemove.length > 0) {
+    dom.classList.remove(...classesToRemove);
   }
 }
 

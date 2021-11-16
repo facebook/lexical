@@ -40,7 +40,7 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul"><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul"><li class="editor-listitem"><br></li></ul></li></ul></li></ul>',
+        '<ul class="editor-list-ul"><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem"><br></li></ul></li></ul></li></ul>',
       );
 
       // Backspace should "unindent" the first list item.
@@ -76,7 +76,7 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul" dir="ltr"><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul"><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul"><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul"><li class="editor-listitem"><span data-outline-text="true">Hello</span></li><li class="editor-listitem"><span data-outline-text="true">from</span></li><li class="editor-listitem"><span data-outline-text="true">the</span></li><li class="editor-listitem"><span data-outline-text="true">other</span></li><li class="editor-listitem"><span data-outline-text="true">side</span></li></ul></li></ul></li></ul></li></ul>',
+        '<ul class="editor-list-ul" dir="ltr"><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem"><span data-outline-text="true">Hello</span></li><li class="editor-listitem"><span data-outline-text="true">from</span></li><li class="editor-listitem"><span data-outline-text="true">the</span></li><li class="editor-listitem"><span data-outline-text="true">other</span></li><li class="editor-listitem"><span data-outline-text="true">side</span></li></ul></li></ul></li></ul></li></ul>',
       );
 
       await page.waitForSelector('button.action-button.outdent');

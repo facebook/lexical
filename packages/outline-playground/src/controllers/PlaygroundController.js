@@ -38,6 +38,7 @@ const config = {
       ul: 'editor-list-ul',
     },
     nestedList: {
+      list: 'editor-nested-list-list',
       listitem: 'editor-nested-list-listitem',
     },
     listitem: 'editor-listitem',

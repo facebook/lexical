@@ -559,9 +559,7 @@ export function insertParagraph(selection: Selection): void {
     const nodesToMoveLength = nodesToMove.length;
     let firstChild = null;
 
-    if (nodesToMoveLength === 0) {
-      newBlock.select(0, 0);
-    } else {
+    if (nodesToMoveLength !== 0) {
       for (let i = 0; i < nodesToMoveLength; i++) {
         const nodeToMove = nodesToMove[i];
         if (firstChild === null) {
@@ -572,7 +570,12 @@ export function insertParagraph(selection: Selection): void {
         firstChild = nodeToMove;
       }
     }
-    newBlock.selectStart();
+    if (!newBlock.canBeEmpty() && newBlock.getChildrenSize() === 0) {
+      newBlock.selectPrevious();
+      newBlock.remove();
+    } else {
+      newBlock.selectStart();
+    }
   }
 }
 

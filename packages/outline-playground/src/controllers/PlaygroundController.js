@@ -14,7 +14,7 @@ import {createController} from 'outline-react/OutlineController';
 // $FlowFixMe: should fix this;
 type ListenerValue = any;
 
-export type PlaygroundContract = {
+export type PlaygroundContext = {
   addListener(
     type: 'readonly' | 'clear',
     callback: (ListenerValue) => void,
@@ -59,7 +59,7 @@ const config = {
   },
 };
 
-function createPlaygroundContract(): PlaygroundContract {
+function createPlaygroundContext(): PlaygroundContext {
   const listeners = new Map();
 
   return {
@@ -90,7 +90,7 @@ function createPlaygroundContract(): PlaygroundContract {
   };
 }
 
-const PlaygroundController: Controller<PlaygroundContract> =
-  createController<PlaygroundContract>(createPlaygroundContract, config);
+const PlaygroundController: Controller<PlaygroundContext> =
+  createController<PlaygroundContext>(createPlaygroundContext, config);
 
 export default PlaygroundController;

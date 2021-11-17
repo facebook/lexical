@@ -7,12 +7,12 @@
  * @flow strict-local
  */
 
-import type {PlaygroundContract} from '../controllers/PlaygroundController';
+import type {PlaygroundContext} from '../controllers/PlaygroundController';
 
 import {useEffect, useState} from 'react';
 
 export default function useEditorListeners(
-  contract: PlaygroundContract,
+  contract: PlaygroundContext,
   clear: () => void,
 ): boolean {
   const [isReadOnly, setIsReadyOnly] = useState(false);

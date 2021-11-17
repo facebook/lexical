@@ -14,27 +14,27 @@ import {createContext, useContext} from 'react';
 import {createEditor} from 'outline';
 import invariant from 'shared/invariant';
 
-type ControllerContext<Contract> = null | [OutlineEditor, Contract];
+type ControllerContext<Context> = null | [OutlineEditor, Context];
 
-export type Controller<Contract> = {
+export type Controller<Context> = {
   ({children: React$Node}): React$Node,
-  __context: React$Context<ControllerContext<Contract>>,
+  __context: React$Context<ControllerContext<Context>>,
 };
 
-export function createController<Contract>(
-  createContract: () => Contract,
+export function createController<Context>(
+  createContract: () => Context,
   editorConfig?: {
     initialEditorState?: EditorState,
     theme?: EditorThemeClasses,
   },
-): Controller<Contract> {
-  const contract: Contract = createContract();
-  const editor = createEditor<Contract>({
+): Controller<Context> {
+  const context: Context = createContract();
+  const editor = createEditor<Context>({
     ...editorConfig,
-    contract,
+    context,
   });
-  const controllerContext = [editor, contract];
-  const ControlledContext = createContext<ControllerContext<Contract>>(null);
+  const controllerContext = [editor, context];
+  const ControlledContext = createContext<ControllerContext<Context>>(null);
 
   function ControllerComponent({children}) {
     return (
@@ -48,9 +48,9 @@ export function createController<Contract>(
   return ControllerComponent;
 }
 
-export function useController<Contract>(
-  controller: Controller<Contract>,
-): [OutlineEditor, Contract] {
+export function useController<Context>(
+  controller: Controller<Context>,
+): [OutlineEditor, Context] {
   const context = useContext(controller.__context);
   if (context === null) {
     invariant(

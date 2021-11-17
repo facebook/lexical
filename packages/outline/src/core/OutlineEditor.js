@@ -303,10 +303,6 @@ class BaseOutlineEditor {
       }
     };
   }
-  // Deprecated
-  addTextNodeTransform(transform: TextTransform): () => void {
-    return this.addTransform('text', transform);
-  }
   addTransform(type: TransformerType, transform: TextTransform): () => void {
     const transformsSet = this._transforms[type];
     // $FlowFixMe: TODO refine this from the above types
@@ -451,8 +447,6 @@ declare export class OutlineEditor {
   addTransform(type: 'decorator', listener: DecoratorTransform): () => void;
   addTransform(type: 'block', listener: BlockTransform): () => void;
   addTransform(type: 'root', listener: RootTransform): () => void;
-  // Deprecated
-  addTextNodeTransform(listener: TextTransform): () => void;
   getDecorators(): {[NodeKey]: ReactNode};
   getRootElement(): null | HTMLElement;
   setRootElement(rootElement: null | HTMLElement): void;

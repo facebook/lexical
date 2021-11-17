@@ -213,7 +213,7 @@ function applyAllTransforms(
     const blockTransformsArrLength = blockTransformsArr.length;
     const rootTransformsArrLength = rootTransformsArr.length;
     for (let s = 0; s < dirtyNodesArr.length; s++) {
-      const nodeKey = dirtyNodesArr[s][0];
+      const nodeKey = dirtyNodesArr[s];
       const node = nodeMap.get(nodeKey);
 
       if (isNodeValidForTransform(node, compositionKey)) {

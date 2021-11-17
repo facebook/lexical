@@ -329,6 +329,13 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
             // Add or merge LinkNodes
             let prevParent = null;
             let linkNode = null;
+            if (nodes.length === 1) {
+              const firstNode = nodes[0];
+              if (isLinkNode(firstNode)) {
+                firstNode.setURL(url);
+                return;
+              }
+            }
             nodes.forEach((node) => {
               const parent = node.getParent();
               if (parent === linkNode || parent === null) {

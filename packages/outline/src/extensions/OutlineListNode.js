@@ -63,11 +63,11 @@ export class ListNode extends BlockNode {
     return false;
   }
 
-  transformNodes(...nodesToTransform: OutlineNode[]): ListNode {
+  append(...nodesToTransform: OutlineNode[]): ListNode {
     for (let i = 0; i < nodesToTransform.length; i++) {
       const currentNode = nodesToTransform[i];
       if (isListItemNode(currentNode)) {
-        this.append(currentNode);
+        super.append(currentNode);
       } else {
         const listItemNode = createListItemNode();
         if (isListNode(currentNode)) {
@@ -76,7 +76,7 @@ export class ListNode extends BlockNode {
           const textNode = createTextNode(currentNode.getTextContent());
           listItemNode.append(textNode);
         }
-        this.append(listItemNode);
+        super.append(listItemNode);
       }
     }
     return this;

@@ -25,126 +25,117 @@ function isCharacterBetweenValid(char: string): boolean {
   return /[\s\d.,\\/!$%^&*;:{}=\-`~()]/.test(char);
 }
 
+function textTransform(node: TextNode, state: State): void {
+  const text = node.getTextContent();
+  const nextSibling = node.getNextSibling();
+
+  // If the next sibling is a text node that starts with an invalid character
+  // do not continue.
+  let adjacentTextNode = nextSibling;
+  while (isTextNode(adjacentTextNode)) {
+    const textContent = adjacentTextNode.getTextContent();
+    if (!textContent !== '' && !isCharacterBetweenValid(textContent[0])) {
+      return;
+    }
+    adjacentTextNode = adjacentTextNode.getNextSibling();
+  }
+  const selection = state.getSelection();
+
+  if (!isCharacterBetweenValid(text[0])) {
+    // Handle when a text node occurs after a keyword, but doesn't include a space.
+    const prevSibling = node.getPreviousSibling();
+    if (isKeywordNode(prevSibling)) {
+      convertKeywordNodeToPlainTextNode(prevSibling);
+    }
+  }
+
+  let currentNode = node;
+  let targetNode = undefined;
+  let prefixLength = 0;
+  let matchArr;
+
+  while ((matchArr = keywordsRegex.exec(text.substr(prefixLength))) !== null) {
+    if (matchArr === null) {
+      break;
+    }
+    const prefix = matchArr[1];
+    const startOffset = matchArr.index + prefix.length;
+    const endOffset = startOffset + matchArr[2].length;
+    const lastTargetNode = targetNode;
+    prefixLength += endOffset;
+    // Ensure there is no prefix or that one ends in a valid character and
+    if (prefix !== '' && !isCharacterBetweenValid(prefix[prefix.length - 1])) {
+      continue;
+    }
+    if (startOffset === 0) {
+      const prevSibling = currentNode.getPreviousSibling();
+      // If the prev sibling is a text node and the start offset is 0, then
+      // that means we shouldn't be trying to make a delight at the start.
+      // Otherwise, we will not have a space.
+      if (isTextNode(prevSibling)) {
+        continue;
+      }
+      [targetNode, currentNode] = currentNode.splitText(endOffset);
+    } else {
+      [, targetNode, currentNode] = currentNode.splitText(
+        startOffset,
+        endOffset,
+      );
+    }
+    if (currentNode) {
+      const nextText = currentNode.getTextContent();
+      if (nextText.length > 0 && !isCharacterBetweenValid(nextText[0])) {
+        targetNode = lastTargetNode;
+        continue;
+      }
+    }
+    const keywordText = targetNode.getTextContent();
+
+    const keywordNode = createKeywordNode(keywordText);
+    targetNode.replace(keywordNode);
+    targetNode = keywordNode;
+  }
+
+  // Restore selection if we no longer have it
+  if (
+    selection !== null &&
+    (!selection.anchor.getNode().isAttached() ||
+      !selection.focus.getNode().isAttached())
+  ) {
+    if (targetNode !== undefined) {
+      targetNode.selectNext(0, 0);
+    } else if (currentNode !== undefined) {
+      currentNode.select(0, 0);
+    }
+  }
+}
+
+function traverseNodes(node: BlockNode): void {
+  let child = node.getFirstChild();
+
+  while (child !== null) {
+    const nextSibling = child.getNextSibling();
+
+    if (isBlockNode(child)) {
+      traverseNodes(child);
+    } else if (isTextNode(child) && !child.isSimpleText()) {
+      if (isKeywordNode(nextSibling)) {
+        if (isKeywordNode(child)) {
+          convertKeywordNodeToPlainTextNode(child);
+        }
+        convertKeywordNodeToPlainTextNode(nextSibling);
+      }
+    }
+    child = child.getNextSibling();
+  }
+}
+
 function useKeywords(editor: OutlineEditor): void {
   useEffect(() => {
     editor.registerNodeType('keyword', KeywordNode);
 
-    const textTransform = (node: TextNode, state: State) => {
-      const text = node.getTextContent();
-      const nextSibling = node.getNextSibling();
-
-      // If the next sibling is a text node that starts with an invalid character
-      // do not continue.
-      let adjacentTextNode = nextSibling;
-      while (isTextNode(adjacentTextNode)) {
-        const textContent = adjacentTextNode.getTextContent();
-        if (!textContent !== '' && !isCharacterBetweenValid(textContent[0])) {
-          return;
-        }
-        adjacentTextNode = adjacentTextNode.getNextSibling();
-      }
-      const selection = state.getSelection();
-
-      if (!isCharacterBetweenValid(text[0])) {
-        // Handle when a text node occurs after a keyword, but doesn't include a space.
-        const prevSibling = node.getPreviousSibling();
-        if (isKeywordNode(prevSibling)) {
-          convertKeywordNodeToPlainTextNode(prevSibling);
-        }
-      }
-
-      let currentNode = node;
-      let targetNode = undefined;
-      let prefixLength = 0;
-      let matchArr;
-
-      while (
-        (matchArr = keywordsRegex.exec(text.substr(prefixLength))) !== null
-      ) {
-        if (matchArr === null) {
-          break;
-        }
-        const prefix = matchArr[1];
-        const startOffset = matchArr.index + prefix.length;
-        const endOffset = startOffset + matchArr[2].length;
-        const lastTargetNode = targetNode;
-        prefixLength += endOffset;
-        // Ensure there is no prefix or that one ends in a valid character and
-        if (
-          prefix !== '' &&
-          !isCharacterBetweenValid(prefix[prefix.length - 1])
-        ) {
-          continue;
-        }
-        if (startOffset === 0) {
-          const prevSibling = currentNode.getPreviousSibling();
-          // If the prev sibling is a text node and the start offset is 0, then
-          // that means we shouldn't be trying to make a delight at the start.
-          // Otherwise, we will not have a space.
-          if (isTextNode(prevSibling)) {
-            continue;
-          }
-          [targetNode, currentNode] = currentNode.splitText(endOffset);
-        } else {
-          [, targetNode, currentNode] = currentNode.splitText(
-            startOffset,
-            endOffset,
-          );
-        }
-        if (currentNode) {
-          const nextText = currentNode.getTextContent();
-          if (nextText.length > 0 && !isCharacterBetweenValid(nextText[0])) {
-            targetNode = lastTargetNode;
-            continue;
-          }
-        }
-        const keywordText = targetNode.getTextContent();
-
-        const keywordNode = createKeywordNode(keywordText);
-        targetNode.replace(keywordNode);
-        targetNode = keywordNode;
-      }
-
-      // Restore selection if we no longer have it
-      if (
-        selection !== null &&
-        (!selection.anchor.getNode().isAttached() ||
-          !selection.focus.getNode().isAttached())
-      ) {
-        if (targetNode !== undefined) {
-          targetNode.selectNext(0, 0);
-        } else if (currentNode !== undefined) {
-          currentNode.select(0, 0);
-        }
-      }
-    };
-
-    const traverseNodes = (node: BlockNode): void => {
-      let child = node.getFirstChild();
-
-      while (child !== null) {
-        const nextSibling = child.getNextSibling();
-
-        if (isBlockNode(child)) {
-          traverseNodes(child);
-        } else if (isTextNode(child) && !child.isSimpleText()) {
-          if (isKeywordNode(nextSibling)) {
-            if (isKeywordNode(child)) {
-              convertKeywordNodeToPlainTextNode(child);
-            }
-            convertKeywordNodeToPlainTextNode(nextSibling);
-          }
-        }
-        child = child.getNextSibling();
-      }
-    };
-
-    const rootTransform = (root) => {
-      traverseNodes(root);
-    };
-
     const removeTextTransform = editor.addTransform('text', textTransform);
-    const removeRootTransform = editor.addTransform('root', rootTransform);
+    const removeRootTransform = editor.addTransform('root', traverseNodes);
 
     return () => {
       removeTextTransform();

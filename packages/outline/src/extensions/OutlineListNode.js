@@ -63,9 +63,9 @@ export class ListNode extends BlockNode {
     return false;
   }
 
-  append(...nodesToTransform: OutlineNode[]): ListNode {
-    for (let i = 0; i < nodesToTransform.length; i++) {
-      const currentNode = nodesToTransform[i];
+  append(...nodesToAppend: OutlineNode[]): ListNode {
+    for (let i = 0; i < nodesToAppend.length; i++) {
+      const currentNode = nodesToAppend[i];
       if (isListItemNode(currentNode)) {
         super.append(currentNode);
       } else {

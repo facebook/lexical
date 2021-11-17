@@ -127,10 +127,13 @@ const DOM_NODE_NAME_TO_OUTLINE_NODE: DOMTransformerMap = {
   h5: () => createHeadingNode('h5'),
   p: () => createParagraphNode(),
   a: (domNode: Node) => {
+    const textNode = createTextNode(domNode.textContent);
     if (domNode instanceof HTMLAnchorElement) {
-      return createLinkNode(domNode.textContent, domNode.href);
+      const linkNode = createLinkNode(domNode.href);
+      linkNode.append(textNode);
+      return linkNode;
     }
-    return createTextNode(domNode.textContent);
+    return textNode;
   },
   span: (domNode: Node) => {
     const textNode = createTextNode(domNode.textContent);
@@ -193,7 +196,7 @@ export function createNodesFromDOM(
     if (isBlockNode(currentOutlineNode)) {
       // If the current node is a BlockNode after transformation,
       // we can append all the children to it.
-      currentOutlineNode.transformNodes(...childOutlineNodes);
+      currentOutlineNode.append(...childOutlineNodes);
     } else if (currentOutlineNode === null) {
       // If it doesn't have a transformer, we hoist its children
       // up to the same level as it.
@@ -205,7 +208,6 @@ export function createNodesFromDOM(
 
 function generateNodesFromDOM(
   dom: Document,
-  state: State,
   conversionMap: DOMTransformerMap,
   editor: OutlineEditor,
 ): Array<OutlineNode> {
@@ -224,6 +226,7 @@ function generateNodesFromDOM(
 function insertDataTransferForRichText(
   dataTransfer: DataTransfer,
   selection: Selection,
+  editor: OutlineEditor,
 ): void {
   const textHtmlMimeType = 'text/html';
   const outlineNodesString = dataTransfer.getData(
@@ -248,7 +251,6 @@ function insertDataTransferForRichText(
     const dom = parser.parseFromString(htmlString, textHtmlMimeType);
     const nodes = generateNodesFromDOM(
       dom,
-      state,
       DOM_NODE_NAME_TO_OUTLINE_NODE,
       editor,
     );
@@ -452,7 +454,7 @@ export function onPasteForRichText(
     const selection = getSelection();
     const clipboardData = event.clipboardData;
     if (clipboardData != null && selection !== null) {
-      insertDataTransferForRichText(clipboardData, selection);
+      insertDataTransferForRichText(clipboardData, selection, editor);
     }
   });
 }
@@ -1050,7 +1052,7 @@ export function onBeforeInputForRichText(
       case 'insertFromPaste': {
         const dataTransfer = event.dataTransfer;
         if (dataTransfer != null) {
-          insertDataTransferForRichText(dataTransfer, selection);
+          insertDataTransferForRichText(dataTransfer, selection, editor);
         } else {
           if (data) {
             insertText(selection, data);

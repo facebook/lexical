@@ -11,6 +11,8 @@ import type {OutlineNode, NodeKey} from './OutlineNode';
 import type {Node as ReactNode} from 'react';
 import type {State} from './OutlineUpdates';
 import type {EditorState} from './OutlineEditorState';
+import type {DecoratorNode} from './OutlineDecoratorNode';
+import type {BlockNode} from './OutlineBlockNode';
 
 import {
   commitPendingUpdates,
@@ -78,7 +80,6 @@ export type ErrorListener = (error: Error, log: Array<string>) => void;
 export type UpdateListener = ({
   prevEditorState: EditorState,
   editorState: EditorState,
-  dirty: boolean,
   dirtyNodes: Set<NodeKey>,
   log: Array<string>,
 }) => void;
@@ -94,6 +95,9 @@ export type TextMutationListener = (
 export type TextContentListener = (text: string) => void;
 
 export type TextTransform = (node: TextNode, state: State) => void;
+export type DecoratorTransform = (node: DecoratorNode, state: State) => void;
+export type BlockTransform = (node: BlockNode, state: State) => void;
+export type RootTransform = (node: RootNode, state: State) => void;
 
 export type TextMutation = {
   node: TextNode,
@@ -113,6 +117,9 @@ type Listeners = {
 
 type Transforms = {
   text: Set<TextTransform>,
+  decorator: Set<DecoratorTransform>,
+  block: Set<BlockTransform>,
+  root: Set<RootTransform>,
 };
 
 export type ListenerType =
@@ -123,7 +130,7 @@ export type ListenerType =
   | 'decorator'
   | 'textcontent';
 
-export type TransformerType = 'text';
+export type TransformerType = 'text' | 'decorator' | 'block' | 'root';
 
 export function resetEditor(
   editor: OutlineEditor,
@@ -230,6 +237,9 @@ class BaseOutlineEditor {
     // Transforms
     this._transforms = {
       text: new Set(),
+      decorator: new Set(),
+      block: new Set(),
+      root: new Set(),
     };
     // Editor configuration for theme/context.
     this._config = config;
@@ -438,6 +448,9 @@ declare export class OutlineEditor {
   addListener(type: 'textmutation', listener: TextMutationListener): () => void;
   addListener(type: 'textcontent', listener: TextContentListener): () => void;
   addTransform(type: 'text', listener: TextTransform): () => void;
+  addTransform(type: 'decorator', listener: DecoratorTransform): () => void;
+  addTransform(type: 'block', listener: BlockTransform): () => void;
+  addTransform(type: 'root', listener: RootTransform): () => void;
   // Deprecated
   addTextNodeTransform(listener: TextTransform): () => void;
   getDecorators(): {[NodeKey]: ReactNode};

@@ -138,9 +138,8 @@ function useTypeahead(editor: OutlineEditor): void {
           typeaheadNodeKey.current = typeaheadNode.getKey();
         }
       });
-      renderTypeahead();
     });
-  }, [editor, renderTypeahead]);
+  }, [editor]);
 
   // Handle Keyboard TAB or RIGHT ARROW to complete suggestion
   useEffect(() => {

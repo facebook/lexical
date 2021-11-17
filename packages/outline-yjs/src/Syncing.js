@@ -15,7 +15,6 @@ import type {
   OutlineEditor,
   NodeTypes,
   Selection,
-  State,
 } from 'outline';
 import type {Binding, YjsNodeMap, ReverseYjsNodeMap, Provider} from '.';
 // $FlowFixMe: need Flow typings for yjs
@@ -29,7 +28,13 @@ import {
   updateCursor,
   destroyCursor,
 } from './Cursors';
-import {isTextNode, isBlockNode} from 'outline';
+import {
+  isTextNode,
+  isBlockNode,
+  getSelection,
+  getRoot,
+  getNodeByKey,
+} from 'outline';
 
 const excludedProperties = new Set([
   '__key',
@@ -557,8 +562,8 @@ export function syncOutlineUpdateToYjs(
     return;
   }
   binding.doc.transact(() => {
-    currEditorState.read((state) => {
-      const selection = state.getSelection();
+    currEditorState.read(() => {
+      const selection = getSelection();
       // Update nodes
       if (dirtyNodes.size > 0) {
         const prevNodeMap = prevEditorState._nodeMap;
@@ -652,16 +657,10 @@ export function syncYjsChangesToOutline(
           nodeTypes,
         );
       }
-      syncLocalCursorPosition(
-        editor,
-        binding,
-        provider,
-        reverseYjsNodeMap,
-        state,
-      );
+      syncLocalCursorPosition(editor, binding, provider, reverseYjsNodeMap);
       // If we our selection is broken, we should move selection to end.
       // TODO: we need to properly restore selection in remove() on a deep node.
-      const selection = state.getSelection();
+      const selection = getSelection();
       if (selection !== null) {
         const anchor = selection.anchor;
         const focus = selection.focus;
@@ -674,7 +673,7 @@ export function syncYjsChangesToOutline(
           recoveryNeeded = true;
         }
         if (recoveryNeeded) {
-          state.getRoot().selectEnd();
+          getRoot().selectEnd();
         }
       }
     },
@@ -689,7 +688,6 @@ function syncLocalCursorPosition(
   binding: Binding,
   provider: Provider,
   reverseNodeMap: ReverseYjsNodeMap,
-  state: State,
 ): void {
   const awareness = provider.awareness;
   const localState = awareness.getLocalState();
@@ -707,7 +705,7 @@ function syncLocalCursorPosition(
       const focusOffset = focusAbsPos.index;
 
       if (anchorKey !== undefined && focusKey !== undefined) {
-        const selection = state.getSelection();
+        const selection = getSelection();
         if (selection === null) {
           throw new Error('TODO: syncLocalCursorPosition');
         }
@@ -715,7 +713,7 @@ function syncLocalCursorPosition(
         const focus = selection.focus;
 
         if (anchor.key !== anchorKey || anchor.offset !== anchorOffset) {
-          const anchorNode = state.getNodeByKey(anchorKey);
+          const anchorNode = getNodeByKey(anchorKey);
           selection.anchor.set(
             anchorKey,
             anchorOffset,
@@ -723,7 +721,7 @@ function syncLocalCursorPosition(
           );
         }
         if (focus.key !== focusKey || focus.offset !== focusOffset) {
-          const focusNode = state.getNodeByKey(focusKey);
+          const focusNode = getNodeByKey(focusKey);
           selection.focus.set(
             focusKey,
             focusOffset,

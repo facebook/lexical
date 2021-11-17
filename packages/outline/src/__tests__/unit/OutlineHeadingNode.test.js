@@ -13,6 +13,7 @@ import {
 } from 'outline/HeadingNode';
 import {ParagraphNode} from 'outline/ParagraphNode';
 import {initializeUnitTest} from '../utils';
+import {getRoot} from 'outline';
 
 const editorConfig = Object.freeze({
   theme: {
@@ -70,8 +71,8 @@ describe('OutlineHeadingNode tests', () => {
     test('HeadingNode.insertNewAfter()', async () => {
       const {editor} = testEnv;
       let headingNode;
-      await editor.update((state) => {
-        const root = state.getRoot();
+      await editor.update(() => {
+        const root = getRoot();
         headingNode = new HeadingNode('h1');
         root.append(headingNode);
       });

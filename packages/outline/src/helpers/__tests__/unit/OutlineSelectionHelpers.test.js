@@ -8,7 +8,13 @@
 
 import type {State} from 'outline';
 
-import {createEditor, createTextNode, TextNode, BlockNode} from 'outline';
+import {
+  createEditor,
+  createTextNode,
+  TextNode,
+  BlockNode,
+  getSelection,
+} from 'outline';
 import {createParagraphNode} from 'outline/ParagraphNode';
 import {
   insertText,
@@ -57,11 +63,11 @@ function createParagraphWithNodes(editor, nodes) {
 }
 
 function setAnchorPoint(state, point) {
-  let selection = state.getSelection();
+  let selection = getSelection();
   if (selection === null) {
     const dummyTextNode = createTextNode();
     dummyTextNode.select();
-    selection = state.getSelection();
+    selection = getSelection();
   }
   const anchor = selection.anchor;
   anchor.type = point.type;
@@ -70,11 +76,11 @@ function setAnchorPoint(state, point) {
 }
 
 function setFocusPoint(state, point) {
-  let selection = state.getSelection();
+  let selection = getSelection();
   if (selection === null) {
     const dummyTextNode = createTextNode();
     dummyTextNode.select();
-    selection = state.getSelection();
+    selection = getSelection();
   }
   const focus = selection.focus;
   focus.type = point.type;
@@ -111,7 +117,7 @@ describe('OutlineSelectionHelpers tests', () => {
             key: 'a',
           });
 
-          const selection = state.getSelection();
+          const selection = getSelection();
           cb(selection, state, block);
         });
       };
@@ -256,7 +262,7 @@ describe('OutlineSelectionHelpers tests', () => {
       await Promise.resolve().then();
 
       editor.getEditorState().read((state) => {
-        const selection = state.getSelection();
+        const selection = getSelection();
         expect(selection.anchor).toEqual({
           type: 'block',
           key: block.getKey(),
@@ -308,7 +314,7 @@ describe('OutlineSelectionHelpers tests', () => {
       await Promise.resolve().then();
 
       editor.getEditorState().read((state) => {
-        const selection = state.getSelection();
+        const selection = getSelection();
         expect(selection.anchor).toEqual({
           type: 'text',
           key: 'b',
@@ -362,7 +368,7 @@ describe('OutlineSelectionHelpers tests', () => {
       await Promise.resolve().then();
 
       editor.getEditorState().read((state) => {
-        const selection = state.getSelection();
+        const selection = getSelection();
         expect(selection.anchor).toEqual({
           type: 'text',
           key: 'c',
@@ -416,7 +422,7 @@ describe('OutlineSelectionHelpers tests', () => {
       await Promise.resolve().then();
 
       editor.getEditorState().read((state) => {
-        const selection = state.getSelection();
+        const selection = getSelection();
         expect(selection.anchor).toEqual({
           type: 'text',
           key: 'c',
@@ -453,7 +459,7 @@ describe('OutlineSelectionHelpers tests', () => {
             key: block.getKey(),
           });
 
-          const selection = state.getSelection();
+          const selection = getSelection();
           cb(selection, state, block);
         });
       };
@@ -575,7 +581,7 @@ describe('OutlineSelectionHelpers tests', () => {
             key: block.getKey(),
           });
 
-          const selection = state.getSelection();
+          const selection = getSelection();
           cb(selection, state, block);
         });
       };
@@ -700,7 +706,7 @@ describe('OutlineSelectionHelpers tests', () => {
             key: block.getKey(),
           });
 
-          const selection = state.getSelection();
+          const selection = getSelection();
           cb(selection, state, block);
         });
       };
@@ -834,7 +840,7 @@ describe('OutlineSelectionHelpers tests', () => {
       await Promise.resolve().then();
 
       editor.getEditorState().read((state) => {
-        const selection = state.getSelection();
+        const selection = getSelection();
         expect(selection.anchor).toEqual({
           type: 'text',
           key: 'a',
@@ -883,7 +889,7 @@ describe('OutlineSelectionHelpers tests', () => {
       await Promise.resolve().then();
 
       editor.getEditorState().read((state) => {
-        const selection = state.getSelection();
+        const selection = getSelection();
         expect(selection.anchor).toEqual({
           type: 'text',
           key: 'a',
@@ -926,7 +932,7 @@ describe('OutlineSelectionHelpers tests', () => {
             key: 'b',
           });
 
-          const selection = state.getSelection();
+          const selection = getSelection();
           cb(selection, state, block);
         });
       };
@@ -1070,7 +1076,7 @@ describe('OutlineSelectionHelpers tests', () => {
             key: block.getKey(),
           });
 
-          const selection = state.getSelection();
+          const selection = getSelection();
           cb(selection, state, block);
         });
       };
@@ -1203,7 +1209,7 @@ describe('OutlineSelectionHelpers tests', () => {
             key: 'c',
           });
 
-          const selection = state.getSelection();
+          const selection = getSelection();
           cb(selection, state, block);
         });
       };
@@ -1339,9 +1345,9 @@ describe('OutlineSelectionHelpers tests', () => {
       paragraph3.append(text3);
 
       text1.select(0, 0);
-      const selection1 = state.getSelection();
+      const selection1 = getSelection();
       selection1.focus.set(text3.getKey(), 1, 'text');
-      const selectedNodes1 = cloneContents(state.getSelection());
+      const selectedNodes1 = cloneContents(getSelection());
       expect(selectedNodes1.range).toEqual([
         paragraph1.getKey(),
         paragraph2.getKey(),
@@ -1357,9 +1363,9 @@ describe('OutlineSelectionHelpers tests', () => {
       expect(selectedNodes1.nodeMap[5][1].getTextContent()).toBe('Third');
 
       text1.select(1, 1);
-      const selection2 = state.getSelection();
+      const selection2 = getSelection();
       selection2.focus.set(text3.getKey(), 4, 'text');
-      const selectedNodes2 = cloneContents(state.getSelection());
+      const selectedNodes2 = cloneContents(getSelection());
       expect(selectedNodes2.range).toEqual([
         paragraph1.getKey(),
         paragraph2.getKey(),
@@ -1392,23 +1398,23 @@ describe('OutlineSelectionHelpers tests', () => {
       const excludeBlockNode1 = createExcludeFromCopyBlockNode();
       paragraph.append(excludeBlockNode1);
       paragraph.select(0, 0);
-      const selectedNodes1 = cloneContents(state.getSelection());
+      const selectedNodes1 = cloneContents(getSelection());
       expect(selectedNodes1.range).toEqual([]);
 
       const text1 = createTextNode('1');
       excludeBlockNode1.append(text1);
       excludeBlockNode1.select(0, 0);
-      const selectedNodes2 = cloneContents(state.getSelection());
+      const selectedNodes2 = cloneContents(getSelection());
       expect(selectedNodes2.range).toEqual([paragraph.getKey()]);
 
       paragraph.select(0, 0);
-      const selectedNodes3 = cloneContents(state.getSelection());
+      const selectedNodes3 = cloneContents(getSelection());
       expect(selectedNodes3.range).toEqual([paragraph.getKey()]);
 
       const text2 = createTextNode('2');
       excludeBlockNode1.insertAfter(text2);
       paragraph.select(0, 2);
-      const selectedNodes4 = cloneContents(state.getSelection());
+      const selectedNodes4 = cloneContents(getSelection());
       expect(selectedNodes4.range).toEqual([paragraph.getKey()]);
       expect(selectedNodes4.nodeMap[0][0]).toEqual(text1.getKey());
       expect(selectedNodes4.nodeMap[1][0]).toEqual(paragraph.getKey());
@@ -1417,7 +1423,7 @@ describe('OutlineSelectionHelpers tests', () => {
       const text3 = createTextNode('3');
       excludeBlockNode1.append(text3);
       paragraph.select(0, 2);
-      const selectedNodes5 = cloneContents(state.getSelection());
+      const selectedNodes5 = cloneContents(getSelection());
       expect(selectedNodes5.range).toEqual([paragraph.getKey()]);
       expect(selectedNodes5.nodeMap[0][0]).toEqual(text1.getKey());
       expect(selectedNodes5.nodeMap[1][0]).toEqual(paragraph.getKey());
@@ -1431,7 +1437,7 @@ describe('OutlineSelectionHelpers tests', () => {
       testBlockNode.append(excludeBlockNode2);
       excludeBlockNode2.append(text4);
       paragraph.select(0, 3);
-      const selectedNodes6 = cloneContents(state.getSelection());
+      const selectedNodes6 = cloneContents(getSelection());
       expect(selectedNodes6.range).toEqual([paragraph.getKey()]);
       expect(selectedNodes6.nodeMap[0][0]).toEqual(text4.getKey());
       expect(selectedNodes6.nodeMap[1][0]).toEqual(testBlockNode.getKey());
@@ -1442,7 +1448,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       text4.remove();
       paragraph.select(0, 3);
-      const selectedNodes7 = cloneContents(state.getSelection());
+      const selectedNodes7 = cloneContents(getSelection());
       expect(selectedNodes7.range).toEqual([paragraph.getKey()]);
       expect(selectedNodes7.nodeMap[0][0]).toEqual(testBlockNode.getKey());
       expect(selectedNodes7.nodeMap[1][0]).toEqual(paragraph.getKey());
@@ -1477,7 +1483,7 @@ describe('OutlineSelectionHelpers tests', () => {
             offset: 0,
             key: paragraph.getKey(),
           });
-          const selection = state.getSelection();
+          const selection = getSelection();
 
           insertNodes(selection, [createTextNode('foo')]);
         });
@@ -1510,7 +1516,7 @@ describe('OutlineSelectionHelpers tests', () => {
             offset: 0,
             key: paragraph.getKey(),
           });
-          const selection = state.getSelection();
+          const selection = getSelection();
 
           insertNodes(selection, [
             createTextNode('foo'),
@@ -1546,7 +1552,7 @@ describe('OutlineSelectionHelpers tests', () => {
             offset: 0,
             key: paragraph.getKey(),
           });
-          const selection = state.getSelection();
+          const selection = getSelection();
           const heading = createHeadingNode('h1');
           const child = createTextNode('foo');
           heading.append(child);
@@ -1582,7 +1588,7 @@ describe('OutlineSelectionHelpers tests', () => {
             offset: 0,
             key: paragraph.getKey(),
           });
-          const selection = state.getSelection();
+          const selection = getSelection();
           const heading = createHeadingNode('h1');
           const child = createTextNode('foo');
           heading.append(child);
@@ -1624,7 +1630,7 @@ describe('OutlineSelectionHelpers tests', () => {
             offset: 16,
             key: text.getKey(),
           });
-          const selection = state.getSelection();
+          const selection = getSelection();
 
           insertNodes(selection, [createTextNode('foo')]);
         });
@@ -1659,7 +1665,7 @@ describe('OutlineSelectionHelpers tests', () => {
             offset: 16,
             key: text.getKey(),
           });
-          const selection = state.getSelection();
+          const selection = getSelection();
 
           insertNodes(selection, [
             createTextNode('foo'),
@@ -1697,7 +1703,7 @@ describe('OutlineSelectionHelpers tests', () => {
             offset: 16,
             key: text.getKey(),
           });
-          const selection = state.getSelection();
+          const selection = getSelection();
           const heading = createHeadingNode('h1');
           const child = createTextNode('foo');
           heading.append(child);
@@ -1735,7 +1741,7 @@ describe('OutlineSelectionHelpers tests', () => {
             offset: 16,
             key: text.getKey(),
           });
-          const selection = state.getSelection();
+          const selection = getSelection();
           const heading = createHeadingNode('h1');
           const child = createTextNode('foo');
           heading.append(child);

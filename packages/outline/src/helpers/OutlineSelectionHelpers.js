@@ -808,13 +808,11 @@ export function updateCaretSelectionForRange(
   granularity: 'character' | 'word' | 'lineboundary',
   collapse: boolean,
 ): void {
-  const domSelection = window.getSelection();
   const focus = selection.focus;
   const anchor = selection.anchor;
 
   // Handle the selection movement around decorators.
   const possibleDecoratorNode = getPossibleDecoratorNode(focus, isBackward);
-
   if (isDecoratorNode(possibleDecoratorNode)) {
     const sibling = isBackward
       ? possibleDecoratorNode.getPreviousSibling()
@@ -832,6 +830,8 @@ export function updateCaretSelectionForRange(
       return;
     }
   }
+
+  const domSelection = window.getSelection();
   // We use the DOM selection.modify API here to "tell" us what the selection
   // will be. We then use it to update the Outline selection accordingly. This
   // is much more reliable than waiting for a beforeinput and using the ranges

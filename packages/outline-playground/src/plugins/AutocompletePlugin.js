@@ -7,12 +7,20 @@
  * @flow strict-local
  */
 
-import type {OutlineEditor, State, NodeKey, EditorConfig} from 'outline';
+import type {OutlineEditor, NodeKey, EditorConfig} from 'outline';
 
 import PlaygroundController from '../controllers/PlaygroundController';
 import {useController} from 'outline-react/OutlineController';
 
-import {isTextNode, isBlockNode, TextNode, log} from 'outline';
+import {
+  isTextNode,
+  isBlockNode,
+  TextNode,
+  log,
+  getNodeByKey,
+  getSelection,
+  getRoot,
+} from 'outline';
 import {useEffect, useRef, useState, useCallback, useMemo} from 'react';
 import {updateWithoutHistory} from 'outline/history';
 
@@ -23,19 +31,16 @@ function useTypeahead(editor: OutlineEditor): void {
   const server = useMemo(() => new TypeaheadServer(), []);
   const suggestion = useTypeaheadSuggestion(text, server.query);
 
-  const getTypeaheadTextNode: (state: State) => TextNode | null = useCallback(
-    (state: State) => {
-      if (typeaheadNodeKey.current === null) {
-        return null;
-      }
-      const node = state.getNodeByKey(typeaheadNodeKey.current);
-      if (!isTextNode(node)) {
-        return null;
-      }
-      return node;
-    },
-    [],
-  );
+  const getTypeaheadTextNode: () => TextNode | null = useCallback(() => {
+    if (typeaheadNodeKey.current === null) {
+      return null;
+    }
+    const node = getNodeByKey(typeaheadNodeKey.current);
+    if (!isTextNode(node)) {
+      return null;
+    }
+    return node;
+  }, []);
 
   // Monitor entered text
   useEffect(() => {
@@ -45,13 +50,13 @@ function useTypeahead(editor: OutlineEditor): void {
   }, [editor]);
 
   const renderTypeahead = useCallback(() => {
-    updateWithoutHistory(editor, (state: State) => {
+    updateWithoutHistory(editor, () => {
       log('useTypeahead');
-      const currentTypeaheadNode = getTypeaheadTextNode(state);
+      const currentTypeaheadNode = getTypeaheadTextNode();
 
       function maybeRemoveTypeahead() {
         if (currentTypeaheadNode !== null) {
-          const selection = state.getSelection();
+          const selection = getSelection();
           if (selection !== null) {
             const anchor = selection.anchor;
             const focus = selection.focus;
@@ -96,7 +101,7 @@ function useTypeahead(editor: OutlineEditor): void {
           return;
         }
         // Add
-        const lastParagraph = state.getRoot().getLastChild();
+        const lastParagraph = getRoot().getLastChild();
         if (isBlockNode(lastParagraph)) {
           const lastTextNode = lastParagraph.getLastChild();
           if (isTextNode(lastTextNode)) {
@@ -107,7 +112,7 @@ function useTypeahead(editor: OutlineEditor): void {
         }
       }
 
-      const selection = state.getSelection();
+      const selection = getSelection();
       const anchorNode = selection?.anchor.getNode();
       const anchorOffset = selection?.anchor.offset;
       const anchorLength = anchorNode?.getTextContentSize();
@@ -147,9 +152,9 @@ function useTypeahead(editor: OutlineEditor): void {
     if (root != null) {
       const handleEvent = (event: KeyboardEvent) => {
         if (event.key === 'Tab' || event.key === 'ArrowRight') {
-          editor.update((state: State) => {
+          editor.update(() => {
             log('useTypeahead');
-            const typeaheadTextNode = getTypeaheadTextNode(state);
+            const typeaheadTextNode = getTypeaheadTextNode();
             const prevTextNode = typeaheadTextNode?.getPreviousSibling();
             // Make sure that the Typeahead is visible and previous child writable
             // before calling it a successfully handled event.

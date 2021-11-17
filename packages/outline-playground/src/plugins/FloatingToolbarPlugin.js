@@ -30,7 +30,7 @@ import {
   getSelectionStyleValueForProperty,
   patchStyleText,
 } from 'outline/selection';
-import {log} from 'outline';
+import {log, getSelection, setSelection} from 'outline';
 import {createLinkNode, isLinkNode, LinkNode} from 'outline/LinkNode';
 
 function positionToolbar(toolbar, rect) {
@@ -216,8 +216,8 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
   );
 
   useEffect(() => {
-    editor.getEditorState().read((state) => {
-      const selection = state.getSelection();
+    editor.getEditorState().read(() => {
+      const selection = getSelection();
       moveToolbar(selection);
     });
   });
@@ -261,15 +261,15 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
       };
 
       const selectionChangeHandler = () => {
-        editor.getEditorState().read((state) => {
-          const selection = state.getSelection();
+        editor.getEditorState().read(() => {
+          const selection = getSelection();
           updateButtonStates(selection);
           moveToolbar(selection);
         });
       };
       const checkForChanges = () => {
-        editor.getEditorState().read((state) => {
-          const selection = state.getSelection();
+        editor.getEditorState().read(() => {
+          const selection = getSelection();
           updateButtonStates(selection);
           moveToolbar(selection);
         });
@@ -279,8 +279,8 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
       };
       const mouseUpHandler = () => {
         mouseDownRef.current = false;
-        editor.getEditorState().read((state) => {
-          const selection = state.getSelection();
+        editor.getEditorState().read(() => {
+          const selection = getSelection();
           moveToolbar(selection);
         });
       };
@@ -303,12 +303,12 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
 
   const updateSelectedLinks = useCallback(
     (url: null | string, selection: null | Selection) => {
-      editor.update((state) => {
+      editor.update(() => {
         log('useToolbar');
         if (selection !== null) {
-          state.setSelection(selection);
+          setSelection(selection);
         }
-        const sel = state.getSelection();
+        const sel = getSelection();
         if (sel !== null) {
           const nodes = extractSelection(sel);
           nodes.forEach((node) => {
@@ -348,9 +348,9 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
 
   const applyFormatText = useCallback(
     (formatType: TextFormatType) => {
-      editor.update((state) => {
+      editor.update(() => {
         log('applyFormatText');
-        const selection = state.getSelection();
+        const selection = getSelection();
         if (selection !== null) {
           formatText(selection, formatType);
         }
@@ -361,9 +361,9 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
 
   const applyStyleText = useCallback(
     (styles: {[string]: string}) => {
-      editor.update((state) => {
+      editor.update(() => {
         log('applyStyleText');
-        const selection = state.getSelection();
+        const selection = getSelection();
         if (selection !== null) {
           patchStyleText(selection, styles);
         }

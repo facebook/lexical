@@ -9,14 +9,21 @@
 
 import type {
   OutlineEditor,
-  State,
   EditorConfig,
   NodeKey,
   OutlineNode,
   Selection,
 } from 'outline';
 
-import {BlockNode, isLeafNode, isTextNode, log} from 'outline';
+import {
+  BlockNode,
+  isLeafNode,
+  isTextNode,
+  log,
+  getSelection,
+  getRoot,
+  setSelection,
+} from 'outline';
 import {updateWithoutHistory} from 'outline/history';
 import {dfs} from 'outline/nodes';
 import {useEffect} from 'react';
@@ -64,9 +71,9 @@ export function useCharacterLimit(
       remainingCharacters(diff);
       if (lastComputedTextLength === null || textLengthAboveThreshold) {
         const offset = findOffset(text, maxCharacters, strlen);
-        updateWithoutHistory(editor, (state: State) => {
+        updateWithoutHistory(editor, () => {
           log('CharacterLimit');
-          wrapOverflowedNodes(state, offset);
+          wrapOverflowedNodes(offset);
         });
       }
       lastComputedTextLength = textLength;
@@ -114,8 +121,8 @@ function findOffset(
   return offsetUtf16;
 }
 
-function wrapOverflowedNodes(state: State, offset: number) {
-  const root = state.getRoot();
+function wrapOverflowedNodes(offset: number) {
+  const root = getRoot();
   let accumulatedLength = 0;
 
   let previousNode = root;
@@ -128,7 +135,7 @@ function wrapOverflowedNodes(state: State, offset: number) {
         const previousSibling = node.getPreviousSibling();
         const nextSibling = node.getNextSibling();
         unwrapNode(node);
-        const selection = state.getSelection();
+        const selection = getSelection();
         // Restore selection when the overflow children are removed
         if (
           selection !== null &&
@@ -164,7 +171,7 @@ function wrapOverflowedNodes(state: State, offset: number) {
       const previousAccumulatedLength = accumulatedLength;
       accumulatedLength += node.getTextContentSize();
       if (accumulatedLength > offset && !isOverflowNode(node.getParent())) {
-        const previousSelection = state.getSelection();
+        const previousSelection = getSelection();
         let overflowNode;
         // For simple text we can improve the limit accuracy by splitting the TextNode
         // on the split point
@@ -181,9 +188,9 @@ function wrapOverflowedNodes(state: State, offset: number) {
           overflowNode = wrapNode(node);
         }
         if (previousSelection !== null) {
-          state.setSelection(previousSelection);
+          setSelection(previousSelection);
         }
-        mergePrevious(overflowNode, state);
+        mergePrevious(overflowNode);
       }
     }
     previousNode = node;
@@ -249,7 +256,7 @@ function unwrapNode(node: OverflowNode): OutlineNode | null {
   return childrenLength > 0 ? children[childrenLength - 1] : null;
 }
 
-export function mergePrevious(overflowNode: OverflowNode, state: State) {
+export function mergePrevious(overflowNode: OverflowNode) {
   const previousNode = overflowNode.getPreviousSibling();
   if (!isOverflowNode(previousNode)) {
     return;
@@ -266,7 +273,7 @@ export function mergePrevious(overflowNode: OverflowNode, state: State) {
     }
   }
 
-  const selection = state.getSelection();
+  const selection = getSelection();
   if (selection !== null) {
     const anchor = selection.anchor;
     const anchorNode = anchor.getNode();

@@ -12,6 +12,8 @@ import type {OutlineNode, NodeKey, NodeMap} from './OutlineNode';
 import type {TextFormatType} from './OutlineTextNode';
 import type {Node as ReactNode} from 'react';
 import type {EditorState} from './OutlineEditorState';
+import type {Selection} from './OutlineSelection';
+import type {RootNode} from './OutlineRootNode';
 
 import {
   RTL_REGEX,
@@ -25,6 +27,7 @@ import {
   getActiveEditor,
   getActiveEditorState,
 } from './OutlineUpdates';
+import {flushRootMutations} from './OutlineMutations';
 
 export const emptyFunction = () => {};
 
@@ -181,6 +184,7 @@ export function internallyMarkNodeAsDirty(node: OutlineNode): void {
 }
 
 export function setCompositionKey(compositionKey: null | NodeKey): void {
+  errorOnReadOnly();
   const editor = getActiveEditor();
   const previousCompositionKey = editor._compositionKey;
   editor._compositionKey = compositionKey;
@@ -256,9 +260,9 @@ export function markAllNodesAsDirty(
   type: 'text' | 'decorator' | 'block' | 'root',
 ): void {
   // Mark all existing text nodes as dirty
-  editor.update((state) => {
+  editor.update(() => {
     if (type === 'root') {
-      state.getRoot().markDirty();
+      getRoot().markDirty();
       return;
     }
     const editorState = getActiveEditorState();
@@ -277,4 +281,25 @@ export function markAllNodesAsDirty(
       }
     }
   });
+}
+
+export function getRoot(): RootNode {
+  // $FlowFixMe: root is always in our Map
+  return ((getActiveEditorState()._nodeMap.get('root'): any): RootNode);
+}
+
+export function clearSelection(): void {
+  const editorState = getActiveEditorState();
+  editorState._selection = null;
+}
+
+export function setSelection(selection: Selection): void {
+  const editorState = getActiveEditorState();
+  editorState._selection = selection;
+}
+
+export function flushMutations(): void {
+  errorOnReadOnly();
+  const editor = getActiveEditor();
+  flushRootMutations(editor);
 }

@@ -7,11 +7,11 @@
  * @flow
  */
 
-import type {OutlineEditor, OutlineNode, State} from 'outline';
+import type {OutlineEditor, OutlineNode} from 'outline';
 import type {ListItemNode} from 'outline/ListItemNode';
 
 import {useCallback, useEffect, useMemo} from 'react';
-import {log} from 'outline';
+import {log, getSelection} from 'outline';
 import {createListItemNode, isListItemNode} from 'outline/ListItemNode';
 import {createListNode, isListNode} from 'outline/ListNode';
 
@@ -20,9 +20,9 @@ function maybeIndentOrOutdent(
   direction: 'indent' | 'outdent',
 ): boolean {
   let hasHandledIndention = false;
-  editor.update((state: State) => {
+  editor.update(() => {
     log('useNestedList.maybeIndent');
-    const selection = state.getSelection();
+    const selection = getSelection();
     if (selection === null) {
       return;
     }

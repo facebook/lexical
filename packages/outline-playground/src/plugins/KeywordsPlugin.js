@@ -11,7 +11,13 @@ import PlaygroundController from '../controllers/PlaygroundController';
 import {useController} from 'outline-react/OutlineController';
 import type {OutlineEditor, State, BlockNode} from 'outline';
 import {useEffect} from 'react';
-import {createTextNode, isTextNode, TextNode, isBlockNode} from 'outline';
+import {
+  createTextNode,
+  isTextNode,
+  TextNode,
+  isBlockNode,
+  getSelection,
+} from 'outline';
 import {
   KeywordNode,
   isKeywordNode,
@@ -39,7 +45,7 @@ function textTransform(node: TextNode, state: State): void {
     }
     adjacentTextNode = adjacentTextNode.getNextSibling();
   }
-  const selection = state.getSelection();
+  const selection = getSelection();
 
   if (!isCharacterBetweenValid(text[0])) {
     // Handle when a text node occurs after a keyword, but doesn't include a space.

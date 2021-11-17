@@ -19,7 +19,7 @@ import {
   parseEditorState,
   shouldEnqueueUpdates,
 } from './OutlineUpdates';
-import {TextNode} from '.';
+import {TextNode, getSelection, getRoot} from '.';
 import {createEmptyEditorState} from './OutlineEditorState';
 import {LineBreakNode} from './OutlineLineBreakNode';
 import {RootNode} from './OutlineRootNode';
@@ -88,10 +88,7 @@ export type RootListener = (
   element: null | HTMLElement,
   element: null | HTMLElement,
 ) => void;
-export type TextMutationListener = (
-  state: State,
-  mutation: TextMutation,
-) => void;
+export type TextMutationListener = (mutation: TextMutation) => void;
 export type TextContentListener = (text: string) => void;
 
 export type TextTransform = (node: TextNode, state: State) => void;
@@ -394,9 +391,9 @@ class BaseOutlineEditor {
       // This ensures that iOS does not trigger caps lock upon focus
       rootElement.setAttribute('autocapitalize', 'off');
       this.update(
-        (state: State) => {
-          const selection = state.getSelection();
-          const root = state.getRoot();
+        () => {
+          const selection = getSelection();
+          const root = getRoot();
           if (selection !== null) {
             // Marking the selection dirty will force the selection back to it
             selection.dirty = true;

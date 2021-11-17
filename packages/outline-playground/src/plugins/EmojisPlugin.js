@@ -7,12 +7,13 @@
  * @flow strict-local
  */
 
-import type {TextNode, State, OutlineEditor, Selection} from 'outline';
+import type {TextNode, OutlineEditor, Selection} from 'outline';
 
 import PlaygroundController from '../controllers/PlaygroundController';
 import {useController} from 'outline-react/OutlineController';
 import {createEmojiNode, EmojiNode} from '../nodes/EmojiNode';
 import {useEffect} from 'react';
+import {getSelection} from 'outline';
 
 const emojis: Map<string, [string, string]> = new Map([
   [':)', ['emoji happysmile', '🙂']],
@@ -49,8 +50,8 @@ function findAndTransformEmoji(
   return null;
 }
 
-function textNodeTransform(node: TextNode, state: State): void {
-  const selection = state.getSelection();
+function textNodeTransform(node: TextNode): void {
+  const selection = getSelection();
   let targetNode = node;
 
   while (targetNode !== null) {

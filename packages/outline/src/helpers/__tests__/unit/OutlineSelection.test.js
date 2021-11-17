@@ -11,6 +11,8 @@ import {
   createLineBreakNode,
   createTextNode,
   Selection,
+  getSelection,
+  getRoot,
 } from 'outline';
 
 import React from 'react';
@@ -898,15 +900,15 @@ describe('OutlineSelection tests', () => {
   });
 
   test('getNodes resolves nested block nodes', async () => {
-    await editor.update((state) => {
-      const root = state.getRoot();
+    await editor.update(() => {
+      const root = getRoot();
       const paragraph = root.getFirstChild();
       const blockNode = createTestBlockNode();
       const text = createTextNode();
       paragraph.append(blockNode);
       blockNode.append(text);
 
-      const selectedNodes = state.getSelection().getNodes();
+      const selectedNodes = getSelection().getNodes();
       expect(selectedNodes.length).toBe(1);
       expect(selectedNodes[0].getKey()).toBe(text.getKey());
     });
@@ -1416,13 +1418,13 @@ describe('OutlineSelection tests', () => {
           // eslint-disable-next-line no-only-tests/no-only-tests
           const test_ = only === true ? test.only : test;
           test_(name, async () => {
-            await editor.update((state) => {
-              const root = state.getRoot();
+            await editor.update(() => {
+              const root = getRoot();
               const paragraph = root.getFirstChild();
               const textNode = createTextNode('foo');
               // Note: line break can't be selected by the DOM
               const linebreak = createLineBreakNode();
-              const selection: Selection = state.getSelection();
+              const selection: Selection = getSelection();
               const anchor = selection.anchor;
               const focus = selection.focus;
 
@@ -1458,15 +1460,15 @@ describe('OutlineSelection tests', () => {
   });
 
   test('isBackward', async () => {
-    await editor.update((state) => {
-      const root = state.getRoot();
+    await editor.update(() => {
+      const root = getRoot();
       const paragraph = root.getFirstChild();
       const paragraphKey = paragraph.getKey();
       const textNode = createTextNode('foo');
       const textNodeKey = textNode.getKey();
       // Note: line break can't be selected by the DOM
       const linebreak = createLineBreakNode();
-      const selection: Selection = state.getSelection();
+      const selection: Selection = getSelection();
       const anchor = selection.anchor;
       const focus = selection.focus;
 

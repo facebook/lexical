@@ -51,17 +51,18 @@ helper selection functions provided by the Outline pacakge:
 import type {State, OutlineEditor, Selection} from 'outline';
 
 import {insertText} from 'outline/SelectionHlpers'
+import {getSelection} from 'outline';
 
 function listenToTextInsertion(editor: OutlineEditor) {
 
   // The "input" event fires when a user types in some text
   const onInput = (event: InputEvent) => {
-    editor.update((state: State) => {
+    editor.update(() => {
       // Note: this is not a browser selection, but rather an Outline
       // selection. Outline always tries to ensure selection matches up
       // with an Outline TextNode, to simplify its usage and avoid common
       // edge-cases.
-      const selection: Selection = state.getSelection();
+      const selection: Selection = getSelection();
       // Get the text from this input event.
       const text = event.data;
 

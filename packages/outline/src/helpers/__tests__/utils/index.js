@@ -7,7 +7,7 @@
  */
 
 import * as SelectionHelpers from 'outline/selection';
-import {createTextNode, isTextNode} from 'outline';
+import {createTextNode, isTextNode, getSelection} from 'outline';
 
 Object.defineProperty(HTMLElement.prototype, 'contentEditable', {
   get() {
@@ -582,8 +582,8 @@ export async function applySelectionInputs(inputs, update, editor) {
     const times = input?.times ?? 1;
 
     for (let j = 0; j < times; j++) {
-      await update((state) => {
-        const selection = state.getSelection();
+      await update(() => {
+        const selection = getSelection();
 
         switch (input.type) {
           case 'insert_text': {

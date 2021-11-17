@@ -33,18 +33,30 @@ import {isBlockNode, BlockNode} from './OutlineBlockNode';
 import {createRootNode, isRootNode, RootNode} from './OutlineRootNode';
 import {createLineBreakNode, isLineBreakNode} from './OutlineLineBreakNode';
 import {DecoratorNode, isDecoratorNode} from './OutlineDecoratorNode';
-import {isLeafNode, pushLogEntry as log} from './OutlineUtils';
-import {createEmptySelection as createSelection} from './OutlineSelection';
+import {
+  isLeafNode,
+  pushLogEntry as log,
+  getRoot,
+  getNodeByKey,
+  clearSelection,
+  getNearestNodeFromDOMNode,
+  flushMutations,
+  setSelection,
+  setCompositionKey,
+  getCompositionKey,
+} from './OutlineUtils';
+import {
+  createEmptySelection as createSelection,
+  getSelection,
+} from './OutlineSelection';
 import {createNodeFromParse} from './OutlineParsing';
 
 export {
-  createSelection,
   createEditor,
-  // Node factories
-  createLineBreakNode,
-  createRootNode,
-  createTextNode,
-  createNodeFromParse,
+  BlockNode,
+  DecoratorNode,
+  RootNode,
+  TextNode,
   // Node validation
   isLeafNode,
   isBlockNode,
@@ -52,11 +64,20 @@ export {
   isLineBreakNode,
   isRootNode,
   isTextNode,
-  // Extensible nodes
-  BlockNode,
-  DecoratorNode,
-  RootNode,
-  TextNode,
-  // Logging
+  // Used during read/update/transform
+  createLineBreakNode,
+  createRootNode,
+  createTextNode,
+  createNodeFromParse,
+  createSelection,
+  getRoot,
+  getNodeByKey,
+  getSelection,
+  clearSelection,
+  setSelection,
+  setCompositionKey,
+  getCompositionKey,
+  getNearestNodeFromDOMNode,
+  flushMutations,
   log,
 };

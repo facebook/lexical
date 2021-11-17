@@ -25,7 +25,7 @@ import {
 } from './OutlineSelection';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './OutlineConstants';
 import {resetEditor} from './OutlineEditor';
-import {initMutationObserver, flushRootMutations} from './OutlineMutations';
+import {initMutationObserver} from './OutlineMutations';
 import {
   EditorState,
   editorStateHasDirtySelection,
@@ -38,6 +38,10 @@ import {
   setCompositionKey,
   getNearestNodeFromDOMNode,
   getEditorStateTextContent,
+  flushMutations,
+  setSelection,
+  clearSelection,
+  getRoot,
 } from './OutlineUtils';
 import {
   garbageCollectDetachedDecorators,
@@ -67,31 +71,15 @@ export type State = {
 };
 
 export const state: State = {
-  getRoot() {
-    // $FlowFixMe: root is always in our Map
-    return ((getActiveEditorState()._nodeMap.get('root'): any): RootNode);
-  },
+  getRoot,
   getNodeByKey,
   getSelection,
-  clearSelection(): void {
-    const editorState = getActiveEditorState();
-    editorState._selection = null;
-  },
-  setSelection(selection: Selection): void {
-    const editorState = getActiveEditorState();
-    editorState._selection = selection;
-  },
-  setCompositionKey(compositionKey: null | NodeKey): void {
-    errorOnReadOnly();
-    setCompositionKey(compositionKey);
-  },
+  clearSelection,
+  setSelection,
+  setCompositionKey,
   getCompositionKey,
   getNearestNodeFromDOMNode,
-  flushMutations(): void {
-    errorOnReadOnly();
-    const editor = getActiveEditor();
-    flushRootMutations(editor);
-  },
+  flushMutations,
 };
 
 export function isCurrentlyReadOnlyMode(): boolean {

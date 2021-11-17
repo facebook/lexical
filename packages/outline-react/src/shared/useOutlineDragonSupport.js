@@ -12,7 +12,7 @@ import type {OutlineEditor} from 'outline';
 import {insertRichText} from 'outline/selection';
 
 import {useEffect} from 'react';
-import {isTextNode, log} from 'outline';
+import {isTextNode, log, getSelection} from 'outline';
 
 export default function useOutlineDragonSupport(editor: OutlineEditor) {
   useEffect(() => {
@@ -49,9 +49,9 @@ export default function useOutlineDragonSupport(editor: OutlineEditor) {
               // TODO: we should probably handle formatCommand somehow?
               // eslint-disable-next-line no-unused-expressions
               formatCommand;
-              editor.update((state) => {
+              editor.update(() => {
                 log('useOutlineDragonSupport');
-                const selection = state.getSelection();
+                const selection = getSelection();
                 if (selection !== null) {
                   const anchor = selection.anchor;
                   let anchorNode = anchor.getNode();

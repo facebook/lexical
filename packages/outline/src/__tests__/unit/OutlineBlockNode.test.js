@@ -12,7 +12,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import {createEditor, createTextNode} from 'outline';
+import {createEditor, createTextNode, getRoot} from 'outline';
 import {createTestBlockNode} from '../utils';
 
 describe('OutlineBlockNode tests', () => {
@@ -64,7 +64,7 @@ describe('OutlineBlockNode tests', () => {
     });
 
     // Insert initial block
-    await update((state) => {
+    await update(() => {
       const block = createTestBlockNode();
       const text = createTextNode('Foo');
       const text2 = createTextNode('Bar');
@@ -76,7 +76,7 @@ describe('OutlineBlockNode tests', () => {
       // we make a selection in the setup code.
       text.select(0, 0);
       block.append(text, text2, text3);
-      state.getRoot().append(block);
+      getRoot().append(block);
     });
   }
 
@@ -91,8 +91,8 @@ describe('OutlineBlockNode tests', () => {
     });
 
     test('some children', async () => {
-      await update((state) => {
-        const children = state.getRoot().getFirstChild().getChildren();
+      await update(() => {
+        const children = getRoot().getFirstChild().getChildren();
         expect(children).toHaveLength(3);
       });
     });
@@ -100,14 +100,14 @@ describe('OutlineBlockNode tests', () => {
 
   describe('getAllTextNodes()', () => {
     test('basic', async () => {
-      await update((state) => {
-        const textNodes = state.getRoot().getFirstChild().getAllTextNodes();
+      await update(() => {
+        const textNodes = getRoot().getFirstChild().getAllTextNodes();
         expect(textNodes).toHaveLength(3);
       });
     });
 
     test('nested', async () => {
-      await update((state) => {
+      await update(() => {
         const block = createTestBlockNode();
         const innerBlock = createTestBlockNode();
         const text = createTextNode('Foo');
@@ -132,7 +132,7 @@ describe('OutlineBlockNode tests', () => {
         const children2 = block.getAllTextNodes();
         expect(children2).toHaveLength(6);
         expect(children2).toEqual([text, text2, text3, text5, text6, text4]);
-        state.getRoot().append(block);
+        getRoot().append(block);
       });
     });
 
@@ -141,10 +141,10 @@ describe('OutlineBlockNode tests', () => {
 
   describe('getFirstChild()', () => {
     test('basic', async () => {
-      await update((state) => {
-        expect(
-          state.getRoot().getFirstChild().getFirstChild().getTextContent(),
-        ).toBe('Foo');
+      await update(() => {
+        expect(getRoot().getFirstChild().getFirstChild().getTextContent()).toBe(
+          'Foo',
+        );
       });
     });
 
@@ -158,10 +158,10 @@ describe('OutlineBlockNode tests', () => {
 
   describe('getLastChild()', () => {
     test('basic', async () => {
-      await update((state) => {
-        expect(
-          state.getRoot().getFirstChild().getLastChild().getTextContent(),
-        ).toBe('Baz');
+      await update(() => {
+        expect(getRoot().getFirstChild().getLastChild().getTextContent()).toBe(
+          'Baz',
+        );
       });
     });
 
@@ -175,10 +175,8 @@ describe('OutlineBlockNode tests', () => {
 
   describe('getTextContent()', () => {
     test('basic', async () => {
-      await update((state) => {
-        expect(state.getRoot().getFirstChild().getTextContent()).toBe(
-          'FooBarBaz',
-        );
+      await update(() => {
+        expect(getRoot().getFirstChild().getTextContent()).toBe('FooBarBaz');
       });
     });
 
@@ -190,7 +188,7 @@ describe('OutlineBlockNode tests', () => {
     });
 
     test('nested', async () => {
-      await update((state) => {
+      await update(() => {
         const block = createTestBlockNode();
         const innerBlock = createTestBlockNode();
         const text = createTextNode('Foo');
@@ -215,7 +213,7 @@ describe('OutlineBlockNode tests', () => {
 
         expect(block.getTextContent()).toEqual('FooBarStuff\n\nQux');
         expect(block.getTextContent(true)).toEqual('FooBarBazMoreStuff\n\nQux');
-        state.getRoot().append(block);
+        getRoot().append(block);
       });
     });
   });

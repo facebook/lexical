@@ -473,7 +473,7 @@ export class TextNode extends OutlineNode {
       text.slice(0, index) + newText + text.slice(index + delCount);
     return writableSelf.setTextContent(updatedText);
   }
-  canInsertTextAtEnd(): boolean {
+  canInsertTextAtBoundary(): boolean {
     return true;
   }
   splitText(...splitOffsets: Array<number>): Array<TextNode> {

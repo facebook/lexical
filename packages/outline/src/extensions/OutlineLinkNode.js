@@ -7,33 +7,31 @@
  * @flow strict
  */
 
-import type {NodeKey, EditorConfig} from 'outline';
+import type {NodeKey, EditorConfig, OutlineNode, Selection} from 'outline';
 
-import {TextNode} from 'outline';
+import {BlockNode} from 'outline';
 
-export class LinkNode extends TextNode {
+export class LinkNode extends BlockNode {
   __url: string;
 
   static clone(node: LinkNode): LinkNode {
-    return new LinkNode(node.__text, node.__url, node.__key);
+    return new LinkNode(node.__url, node.__key);
   }
 
-  constructor(text: string, url: string, key?: NodeKey) {
-    super(text, key);
+  constructor(url: string, key?: NodeKey) {
+    super(key);
     this.__url = url;
     this.__type = 'link';
   }
 
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
     const element = document.createElement('a');
-    const text = super.createDOM(config);
     const theme = config.theme;
     const className = theme.link;
     element.href = this.__url;
     if (className !== undefined) {
       element.className = className;
     }
-    element.appendChild(text);
     return element;
   }
 
@@ -44,13 +42,6 @@ export class LinkNode extends TextNode {
     dom: HTMLAnchorElement,
     config: EditorConfig<EditorContext>,
   ): boolean {
-    // $FlowFixMe: this should always be right
-    const text: HTMLElement = dom.firstChild;
-    const needsReplace = super.updateDOM(prevNode, text, config);
-    if (needsReplace) {
-      const replacementText = super.createDOM(config);
-      dom.replaceChild(replacementText, text);
-    }
     const url = this.__url;
     if (url !== prevNode.__url) {
       dom.href = url;
@@ -67,15 +58,29 @@ export class LinkNode extends TextNode {
     writable.__url = url;
   }
 
-  canInsertTextAtEnd(): false {
+  insertNewAfter(selection: Selection): null | BlockNode {
+    const block = this.getParentOrThrow().insertNewAfter(selection);
+    if (block !== null) {
+      const linkNode = createLinkNode(this.__url);
+      block.append(linkNode);
+      return linkNode;
+    }
+    return null;
+  }
+
+  canInsertTextAtBoundary(): false {
+    return false;
+  }
+
+  canBeEmpty(): false {
     return false;
   }
 }
 
-export function createLinkNode(text: string, url: string): LinkNode {
-  return new LinkNode(text, url);
+export function createLinkNode(url: string): LinkNode {
+  return new LinkNode(url);
 }
 
-export function isLinkNode(node: null | TextNode): boolean %checks {
+export function isLinkNode(node: ?OutlineNode): boolean %checks {
   return node instanceof LinkNode;
 }

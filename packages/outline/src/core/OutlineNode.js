@@ -77,6 +77,14 @@ export function removeNode(
   if (selection !== null && restoreSelection && !selectionMoved) {
     updateBlockSelectionOnCreateDeleteNode(selection, parent, index, -1);
   }
+  if (
+    parent !== null &&
+    !isRootNode(parent) &&
+    !parent.canBeEmpty() &&
+    parent.getChildrenSize() === 0
+  ) {
+    removeNode(parent, restoreSelection);
+  }
 }
 
 function moveSelectionPointToSibling(

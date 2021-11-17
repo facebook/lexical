@@ -22,13 +22,13 @@ export type Controller<Context> = {
 };
 
 export function createController<Context>(
-  createContract: () => Context,
+  createControllerContext: () => Context,
   editorConfig?: {
     initialEditorState?: EditorState,
     theme?: EditorThemeClasses,
   },
 ): Controller<Context> {
-  const context: Context = createContract();
+  const context: Context = createControllerContext();
   const editor = createEditor<Context>({
     ...editorConfig,
     context,

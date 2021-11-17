@@ -5,6 +5,7 @@ import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
 import useOutlineRichText from 'outline-react/useOutlineRichText';
+import {createTextNode} from 'outline';
 
 jest.mock('shared/environment', () => {
   const originalModule = jest.requireActual('shared/environment');
@@ -67,6 +68,9 @@ describe('OutlineEventHelpers', () => {
               code: 'editor-text-code',
             },
             code: 'editor-code',
+          },
+          htmlTransforms: {
+            testhtmltagname: () => createTextNode('Hello world!'),
           },
         }),
       [],
@@ -209,6 +213,16 @@ describe('OutlineEventHelpers', () => {
         ],
         expectedHTML:
           '<div contenteditable="true" data-outline-editor="true"><ul class="editor-list-ul"><li class="editor-listitem"><span data-outline-text="true">Hello</span></li><li class="editor-listitem"><span data-outline-text="true">from the other</span></li><li class="editor-listitem"><span data-outline-text="true">side</span></li></ul></div>',
+      },
+      {
+        name: 'onPasteForRichText should respect htmlTransforms passed in via the editor config.',
+        inputs: [
+          pasteHTML(
+            `<meta charset='utf-8'><testhtmltagname>World, hello!</testhtmltagname>`,
+          ),
+        ],
+        expectedHTML:
+          '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span data-outline-text="true">Hello world!</span></p></div>',
       },
     ];
     suite.forEach((testUnit, i) => {

@@ -134,7 +134,7 @@ export function getActiveEditor(): OutlineEditor {
   return activeEditor;
 }
 
-function applyTransforms<N: OutlineNode>(
+export function applyTransforms<N: OutlineNode>(
   node: N,
   transformsArr: Array<(N, State) => void>,
   transformsArrLength: number,
@@ -337,9 +337,12 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
   const previousActiveEditorState = activeEditorState;
   const previousReadOnlyMode = isReadOnlyMode;
   const previousActiveEditor = activeEditor;
+  const previousShouldEnqueueUpdates = isEnqueuingUpdates;
   activeEditor = editor;
   activeEditorState = pendingEditorState;
   isReadOnlyMode = false;
+  // We don't want updates to sync block the reconcilation.
+  isEnqueuingUpdates = true;
 
   try {
     updateEditorState(
@@ -366,6 +369,7 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
     }
     return;
   } finally {
+    isEnqueuingUpdates = previousShouldEnqueueUpdates;
     activeEditorState = previousActiveEditorState;
     isReadOnlyMode = previousReadOnlyMode;
     activeEditor = previousActiveEditor;

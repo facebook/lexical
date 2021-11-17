@@ -11,7 +11,7 @@ import PlaygroundController from '../controllers/PlaygroundController';
 import {useController} from 'outline-react/OutlineController';
 import type {OutlineEditor, State, BlockNode} from 'outline';
 import {useEffect} from 'react';
-import {createTextNode, isTextNode, TextNode, isBlockNode, log} from 'outline';
+import {createTextNode, isTextNode, TextNode, isBlockNode} from 'outline';
 import {
   KeywordNode,
   isKeywordNode,
@@ -29,7 +29,7 @@ function useKeywords(editor: OutlineEditor): void {
   useEffect(() => {
     editor.registerNodeType('keyword', KeywordNode);
 
-    const handleTextTransform = (node: TextNode, state: State) => {
+    const textTransform = (node: TextNode, state: State) => {
       const text = node.getTextContent();
       const nextSibling = node.getNextSibling();
 
@@ -123,16 +123,15 @@ function useKeywords(editor: OutlineEditor): void {
       let child = node.getFirstChild();
 
       while (child !== null) {
-        const prevSibling = child.getPreviousSibling();
         const nextSibling = child.getNextSibling();
 
         if (isBlockNode(child)) {
           traverseNodes(child);
         } else if (isTextNode(child) && !child.isSimpleText()) {
-          if (isKeywordNode(prevSibling)) {
-            convertKeywordNodeToPlainTextNode(prevSibling);
-          }
           if (isKeywordNode(nextSibling)) {
+            if (isKeywordNode(child)) {
+              convertKeywordNodeToPlainTextNode(child);
+            }
             convertKeywordNodeToPlainTextNode(nextSibling);
           }
         }
@@ -140,23 +139,16 @@ function useKeywords(editor: OutlineEditor): void {
       }
     };
 
-    const updateListener = () => {
-      editor.update((state) => {
-        log('useKeywords');
-        const root = state.getRoot();
-        traverseNodes(root);
-      });
+    const rootTransform = (root) => {
+      traverseNodes(root);
     };
 
-    const removeTextTransform = editor.addTransform(
-      'text',
-      handleTextTransform,
-    );
-    const removeUpdateListener = editor.addListener('update', updateListener);
+    const removeTextTransform = editor.addTransform('text', textTransform);
+    const removeRootTransform = editor.addTransform('root', rootTransform);
 
     return () => {
       removeTextTransform();
-      removeUpdateListener();
+      removeRootTransform();
     };
   }, [editor]);
 }

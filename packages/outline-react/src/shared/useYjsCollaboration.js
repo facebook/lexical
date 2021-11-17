@@ -63,16 +63,14 @@ export function useYjsCollaboration(
 
     const removeListener = editor.addListener(
       'update',
-      ({prevEditorState, editorState, dirty, dirtyNodes}) => {
-        if (dirty) {
-          syncOutlineUpdateToYjs(
-            binding,
-            provider,
-            prevEditorState,
-            editorState,
-            dirtyNodes,
-          );
-        }
+      ({prevEditorState, editorState, dirtyNodes}) => {
+        syncOutlineUpdateToYjs(
+          binding,
+          provider,
+          prevEditorState,
+          editorState,
+          dirtyNodes,
+        );
       },
     );
 

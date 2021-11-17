@@ -263,9 +263,16 @@ export function getBlockDepth(startingNode: OutlineNode): number {
   return depth;
 }
 
-export function markAllNodesAsDirty(editor: OutlineEditor, type: 'text'): void {
+export function markAllNodesAsDirty(
+  editor: OutlineEditor,
+  type: 'text' | 'decorator' | 'block' | 'root',
+): void {
   // Mark all existing text nodes as dirty
-  editor.update(() => {
+  editor.update((state) => {
+    if (type === 'root') {
+      state.getRoot().markDirty();
+      return;
+    }
     const editorState = getActiveEditorState();
     const nodeMap = editorState._nodeMap;
     const nodeMapEntries = Array.from(nodeMap);
@@ -273,7 +280,11 @@ export function markAllNodesAsDirty(editor: OutlineEditor, type: 'text'): void {
     // compiled away to a slow-path with Babel.
     for (let i = 0; i < nodeMapEntries.length; i++) {
       const node = nodeMapEntries[i][1];
-      if (type === 'text' && isTextNode(node)) {
+      if (
+        (type === 'text' && isTextNode(node)) ||
+        (type === 'decorator' && isDecoratorNode(node)) ||
+        (type === 'block' && isBlockNode(node))
+      ) {
         node.markDirty();
       }
     }

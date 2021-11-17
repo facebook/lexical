@@ -122,7 +122,7 @@ export default function useOutlineHistory(editor: OutlineEditor): () => void {
   );
 
   useEffect(() => {
-    const applyChange = ({editorState, dirty, dirtyNodes}) => {
+    const applyChange = ({editorState, dirtyNodes}) => {
       const current = historyState.current;
       const redoStack = historyState.redoStack;
       const undoStack = historyState.undoStack;
@@ -130,20 +130,18 @@ export default function useOutlineHistory(editor: OutlineEditor): () => void {
       if (editorState === current) {
         return;
       }
-      if (dirty) {
-        const mergeAction = getMergeAction(current, editorState, dirtyNodes);
-        if (mergeAction === NO_MERGE) {
-          if (redoStack.length !== 0) {
-            historyState.redoStack = [];
-          }
-          if (current !== null) {
-            undoStack.push(current);
-          }
-        } else if (mergeAction === DISCARD) {
-          return;
+      const mergeAction = getMergeAction(current, editorState, dirtyNodes);
+      if (mergeAction === NO_MERGE) {
+        if (redoStack.length !== 0) {
+          historyState.redoStack = [];
         }
-        // Else we merge
+        if (current !== null) {
+          undoStack.push(current);
+        }
+      } else if (mergeAction === DISCARD) {
+        return;
       }
+      // Else we merge
       historyState.current = editorState;
     };
 

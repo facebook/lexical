@@ -49,31 +49,28 @@ export function useCharacterLimit(
         text = currentText;
       },
     );
-    const updateListener = editor.addListener(
-      'update',
-      ({dirty, dirtyNodes}) => {
-        const isComposing = editor.isComposing();
-        const hasDirtyNodes = dirty && dirtyNodes.size > 0;
-        if (isComposing || !hasDirtyNodes) {
-          return;
-        }
-        const textLength = strlen(text);
-        const textLengthAboveThreshold =
-          textLength > maxCharacters ||
-          (lastComputedTextLength !== null &&
-            lastComputedTextLength > maxCharacters);
-        const diff = maxCharacters - textLength;
-        remainingCharacters(diff);
-        if (lastComputedTextLength === null || textLengthAboveThreshold) {
-          const offset = findOffset(text, maxCharacters, strlen);
-          updateWithoutHistory(editor, (state: State) => {
-            log('CharacterLimit');
-            wrapOverflowedNodes(state, offset);
-          });
-        }
-        lastComputedTextLength = textLength;
-      },
-    );
+    const updateListener = editor.addListener('update', ({dirtyNodes}) => {
+      const isComposing = editor.isComposing();
+      const hasDirtyNodes = dirtyNodes.size > 0;
+      if (isComposing || !hasDirtyNodes) {
+        return;
+      }
+      const textLength = strlen(text);
+      const textLengthAboveThreshold =
+        textLength > maxCharacters ||
+        (lastComputedTextLength !== null &&
+          lastComputedTextLength > maxCharacters);
+      const diff = maxCharacters - textLength;
+      remainingCharacters(diff);
+      if (lastComputedTextLength === null || textLengthAboveThreshold) {
+        const offset = findOffset(text, maxCharacters, strlen);
+        updateWithoutHistory(editor, (state: State) => {
+          log('CharacterLimit');
+          wrapOverflowedNodes(state, offset);
+        });
+      }
+      lastComputedTextLength = textLength;
+    });
     return () => {
       textContentListener();
       updateListener();

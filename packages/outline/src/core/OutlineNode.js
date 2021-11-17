@@ -523,6 +523,8 @@ export class OutlineNode {
     }
     const cloneNotNeeded = editor._cloneNotNeeded;
     if (cloneNotNeeded.has(key)) {
+      // Transforms clear the dirty node set on each iteration to keep track on newly dirty nodes
+      internallyMarkNodeAsDirty(latestNode);
       return latestNode;
     }
     const constructor = latestNode.constructor;

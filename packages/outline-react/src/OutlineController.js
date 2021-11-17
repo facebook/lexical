@@ -10,7 +10,7 @@
 import type {OutlineEditor, EditorState, EditorThemeClasses} from 'outline';
 
 import * as React from 'react';
-import {createContext, useContext} from 'react';
+import {createContext, useContext, useMemo} from 'react';
 import {createEditor} from 'outline';
 import invariant from 'shared/invariant';
 
@@ -28,15 +28,24 @@ export function createController<Context>(
     theme?: EditorThemeClasses,
   },
 ): Controller<Context> {
-  const context: Context = createControllerContext();
-  const editor = createEditor<Context>({
-    ...editorConfig,
-    context,
-  });
-  const controllerContext = [editor, context];
   const ControlledContext = createContext<ControllerContext<Context>>(null);
 
   function ControllerComponent({children}) {
+    const existingContext = useContext(ControlledContext);
+    if (existingContext !== null) {
+      invariant(
+        false,
+        'OutlineController\'s of the same type cannot be nested',
+      );
+    }
+    const controllerContext = useMemo(() => {
+      const context: Context = createControllerContext();
+      const editor = createEditor<Context>({
+        ...editorConfig,
+        context,
+      });
+      return [editor, context];
+    }, []);
     return (
       <ControlledContext.Provider value={controllerContext}>
         {children}

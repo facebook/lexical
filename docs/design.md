@@ -7,17 +7,26 @@ editor that provides everything out-of-the-box. It might help to think of Outlin
 a framework like React – where React provides some hooks and a reconciler, and then you
 build the things you need on top, rather than have them included by default.
 
+The main concept of Outline is the editor state. Outline uses a double-buffering technique
+to ensure consistency and reliability. There are never more than two editor states in play.
+The "current" editor state represents what you can visibly see on screen and the "pending"
+editor state is what is currently being constructed to be shown in the future. Once the
+"pending" editor state is ready, it swaps and becomes the new "current" editor state.
+
 Outline's core concerns itself with four main concerns:
 
-- State (the editor state)
-- Updates (handling updates from A -> B)
-- Reconcilation (creating and updating the DOM)
-- Subscribing (you can add various listeners that subscribe to internal changes)
+- Updates: the act of making changes to editor state
+- Transforms: the process of acting on ongoing updates
+- Reconcilation: the process of patching the DOM with the latest editor state
+- Listening: the process of reacting to changes that occur internally
+
+Additionally, Outline uses DOM mutation observers to ensure that any outside changes to
+the editor DOM element are either reverted back to Outline's current editor state, or are
+communicated as intents that cause further updates to the editor state (text changes).
 
 Outline doesn't handle:
 
-- Event listeners
-- Reacting to DOM mutations
+- Browser event handling
 - Undo/redo
 
 This separation was done to ensure developers have a way of applying custom logic with the

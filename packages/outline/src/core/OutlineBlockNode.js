@@ -327,6 +327,9 @@ export class BlockNode extends OutlineNode {
   canBeEmpty(): boolean {
     return true;
   }
+  canInsertTextAtBoundary(): boolean {
+    return true;
+  }
 }
 
 export function isBlockNode(node: ?OutlineNode): boolean %checks {

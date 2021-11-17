@@ -20,7 +20,7 @@ import type {
   LineBreakNode,
 } from 'outline';
 
-import {createTextNode, isTextNode} from 'outline';
+import {isTextNode} from 'outline';
 import {useCallback, useEffect, useRef, useState, useMemo} from 'react';
 // $FlowFixMe
 import {unstable_batchedUpdates, createPortal} from 'react-dom';
@@ -249,9 +249,10 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
               isTextNode(node) && node.hasFormat('strikethrough'),
             );
             setIsCode(isTextNode(node) && node.hasFormat('code'));
-            if (isTextNode(node) && isLinkNode(node)) {
+            const parent = node.getParent();
+            if (isLinkNode(parent)) {
               setIsLink(true);
-              setLinkUrl(node.getURL());
+              setLinkUrl(parent.getURL());
             } else {
               setIsLink(false);
               setLinkUrl('');
@@ -311,35 +312,48 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
         const sel = getSelection();
         if (sel !== null) {
           const nodes = extractSelection(sel);
-          nodes.forEach((node) => {
-            if (isTextNode(node) && !node.isImmutable()) {
-              if (isLinkNode(node)) {
-                if (url === null) {
-                  const textNode = createTextNode(node.getTextContent());
-                  let shouldSelect = false;
-                  if (node === sel.anchor.getNode()) {
-                    shouldSelect = true;
-                  }
-                  node.replace(textNode);
-                  if (shouldSelect) {
-                    textNode.select();
-                  }
-                } else {
-                  node.setURL(url);
+          if (url === null) {
+            // Remove LinkNodes
+            nodes.forEach((node) => {
+              const parent = node.getParent();
+
+              if (isLinkNode(parent)) {
+                const children = parent.getChildren();
+                for (let i = 0; i < children.length; i++) {
+                  parent.insertBefore(children[i]);
                 }
-              } else if (url !== null) {
-                const linkNode = createLinkNode(node.getTextContent(), url);
-                let shouldSelect = false;
-                if (node === sel.anchor.getNode()) {
-                  shouldSelect = true;
-                }
-                node.replace(linkNode);
-                if (shouldSelect) {
-                  linkNode.select();
-                }
+                parent.remove();
               }
-            }
-          });
+            });
+          } else {
+            // Add or merge LinkNodes
+            let prevParent = null;
+            let linkNode = null;
+            nodes.forEach((node) => {
+              const parent = node.getParent();
+              if (parent === linkNode || parent === null) {
+                return;
+              }
+              if (!parent.is(prevParent)) {
+                prevParent = parent;
+                linkNode = createLinkNode(url);
+                node.insertBefore(linkNode);
+              }
+              if (isLinkNode(node)) {
+                if (linkNode !== null) {
+                  const children = node.getChildren();
+                  for (let i = 0; i < children.length; i++) {
+                    linkNode.append(children[i]);
+                  }
+                }
+                node.remove();
+                return;
+              }
+              if (linkNode !== null) {
+                linkNode.append(node);
+              }
+            });
+          }
         }
       });
     },

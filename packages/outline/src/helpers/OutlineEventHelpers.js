@@ -563,7 +563,9 @@ function shouldInsertTextAfterOrBeforeTextNode(
       (!validateOffset ||
         node.getTextContentSize() === offset ||
         offset === 0) &&
-      (!node.canInsertTextAtEnd() || node.isImmutable()))
+      (!node.canInsertTextAtBoundary() ||
+        !node.getParentOrThrow().canInsertTextAtBoundary() ||
+        node.isImmutable()))
   );
 }
 

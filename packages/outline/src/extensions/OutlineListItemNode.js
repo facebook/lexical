@@ -132,12 +132,12 @@ export class ListItemNode extends BlockNode {
     ) {
       if (nextSibling === null) {
         newBlock = createParagraphNode();
-        this.remove();
         list.insertAfter(newBlock);
+        this.remove();
       } else {
         newBlock = createParagraphNode();
-        this.remove();
         list.insertBefore(newBlock);
+        this.remove();
       }
       if (list.isEmpty()) {
         list.remove();

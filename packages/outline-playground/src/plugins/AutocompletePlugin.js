@@ -128,21 +128,18 @@ function useTypeahead(editor: OutlineEditor): void {
 
   // Rerender on editor updates
   useEffect(() => {
-    return editor.addListener('update', ({editorState, dirty}) => {
-      if (dirty) {
-        editorState.read((state) => {
-          const typeaheadNode = state
-            .getRoot()
-            .getAllTextNodes(true)
-            .find((textNode) => textNode instanceof TypeaheadNode);
-          if (typeaheadNode instanceof TypeaheadNode) {
-            typeaheadNodeKey.current = typeaheadNode.getKey();
-          }
-        });
-      }
-      renderTypeahead();
+    return editor.addListener('update', ({editorState}) => {
+      editorState.read((state) => {
+        const typeaheadNode = state
+          .getRoot()
+          .getAllTextNodes(true)
+          .find((textNode) => textNode instanceof TypeaheadNode);
+        if (typeaheadNode instanceof TypeaheadNode) {
+          typeaheadNodeKey.current = typeaheadNode.getKey();
+        }
+      });
     });
-  }, [editor, renderTypeahead]);
+  }, [editor]);
 
   // Handle Keyboard TAB or RIGHT ARROW to complete suggestion
   useEffect(() => {

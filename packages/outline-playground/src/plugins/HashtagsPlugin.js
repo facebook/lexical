@@ -12,7 +12,6 @@ import type {OutlineEditor, TextNode, State} from 'outline';
 import PlaygroundController from '../controllers/PlaygroundController';
 import {useController} from 'outline-react/OutlineController';
 import {useEffect} from 'react';
-import {isTextNode, log} from 'outline';
 import {HashtagNode, toggleHashtag} from 'outline/HashtagNode';
 
 function getHashtagRegexStringChars(): $ReadOnly<{
@@ -282,27 +281,7 @@ function textNodeTransform(node: TextNode, state: State): void {
 function useHashtags(editor: OutlineEditor): void {
   useEffect(() => {
     editor.registerNodeType('hashtag', HashtagNode);
-    const removeTextNodeTransform = editor.addTransform(
-      'text',
-      textNodeTransform,
-    );
-    const removeUpdateListener = editor.addListener('update', () => {
-      editor.update((state) => {
-        log('useHashtags');
-        const selection = state.getSelection();
-        if (selection !== null && !editor.isComposing()) {
-          const anchorNode = selection.anchor.getNode();
-          if (isTextNode(anchorNode)) {
-            textNodeTransform(anchorNode, state);
-          }
-        }
-      });
-    });
-
-    return () => {
-      removeTextNodeTransform();
-      removeUpdateListener();
-    };
+    return editor.addTransform('text', textNodeTransform);
   }, [editor]);
 }
 

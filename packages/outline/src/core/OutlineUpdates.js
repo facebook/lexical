@@ -9,10 +9,13 @@
 
 import type {ParsedEditorState} from './OutlineEditorState';
 import type {RootNode} from './OutlineRootNode';
+import type {BlockNode} from './OutlineBlockNode';
 import type {OutlineEditor, ListenerType} from './OutlineEditor';
 import type {OutlineNode, NodeKey} from './OutlineNode';
 import type {Selection} from './OutlineSelection';
 import type {ParsedNode, NodeParserState} from './OutlineParsing';
+import type {TextNode} from './OutlineTextNode';
+import type {DecoratorNode} from './OutlineDecoratorNode';
 
 import {updateEditorState} from './OutlineReconciler';
 import {
@@ -42,7 +45,7 @@ import {
 } from './OutlineGC';
 import {internalCreateNodeFromParse} from './OutlineParsing';
 import {applySelectionTransforms} from './OutlineSelection';
-import {isTextNode, isLineBreakNode} from '.';
+import {isTextNode, isRootNode, isBlockNode, isDecoratorNode} from '.';
 import invariant from 'shared/invariant';
 
 let activeEditorState: null | EditorState = null;
@@ -131,42 +134,105 @@ export function getActiveEditor(): OutlineEditor {
   return activeEditor;
 }
 
-function applyTransforms(
+export function applyTransforms<N: OutlineNode>(
+  node: N,
+  transformsArr: Array<(N, State) => void>,
+  transformsArrLength: number,
+): void {
+  for (let i = 0; i < transformsArrLength; i++) {
+    transformsArr[i](node, state);
+    if (!node.isAttached()) {
+      break;
+    }
+  }
+}
+
+function isNodeValidForTransform(
+  node: void | OutlineNode,
+  compositionKey: null | string,
+): boolean {
+  return (
+    node !== undefined &&
+    // We don't want to transform nodes being composed
+    node.__key !== compositionKey &&
+    node.isAttached() &&
+    // You shouldn't be able to transform these types of
+    // nodes.
+    !node.isImmutable() &&
+    !node.isSegmented()
+  );
+}
+
+function applyAllTransforms(
   editorState: EditorState,
   dirtyNodes: Set<NodeKey>,
+  dirtyBlocks: Map<NodeKey, number>,
   editor: OutlineEditor,
 ): void {
   const transforms = editor._transforms;
   const textTransforms = transforms.text;
-  if (textTransforms.size > 0) {
-    const nodeMap = editorState._nodeMap;
+  const decoratorTransforms = transforms.decorator;
+  const blockTransforms = transforms.block;
+  const rootTransforms = transforms.root;
+  const nodeMap = editorState._nodeMap;
+  const compositionKey = getCompositionKey();
+
+  if (textTransforms.size > 0 || decoratorTransforms.size > 0) {
     const dirtyNodesArr = Array.from(dirtyNodes);
     const textTransformsArr = Array.from(textTransforms);
+    const decoratorTransformsArr = Array.from(decoratorTransforms);
     const textTransformsArrLength = textTransformsArr.length;
-    const compositionKey = getCompositionKey();
+    const decoratorTransformsArrLength = decoratorTransformsArr.length;
     for (let s = 0; s < dirtyNodesArr.length; s++) {
       const nodeKey = dirtyNodesArr[s];
-
       const node = nodeMap.get(nodeKey);
 
-      if (
-        node !== undefined &&
-        isTextNode(node) &&
-        // We don't want to transform nodes being composed
-        node.__key !== compositionKey &&
-        !isLineBreakNode(node) &&
-        node.isAttached() &&
-        // You shouldn't be able to transform these types of
-        // nodes.
-        !node.isImmutable() &&
-        !node.isSegmented()
-      ) {
-        // Apply text transforms
-        for (let i = 0; i < textTransformsArrLength; i++) {
-          textTransformsArr[i](node, state);
-          if (!node.isAttached()) {
-            break;
-          }
+      if (isNodeValidForTransform(node, compositionKey)) {
+        if (isTextNode(node)) {
+          // Apply text transforms
+          applyTransforms<TextNode>(
+            node,
+            textTransformsArr,
+            textTransformsArrLength,
+          );
+        } else if (isDecoratorNode(node)) {
+          // Apply decorator transforms
+          applyTransforms<DecoratorNode>(
+            node,
+            decoratorTransformsArr,
+            decoratorTransformsArrLength,
+          );
+        }
+      }
+    }
+  }
+  if (blockTransforms.size > 0 || rootTransforms.size > 0) {
+    const dirtyNodesArr = Array.from(dirtyBlocks);
+    const blockTransformsArr = Array.from(blockTransforms);
+    const rootTransformsArr = Array.from(rootTransforms);
+    const blockTransformsArrLength = blockTransformsArr.length;
+    const rootTransformsArrLength = rootTransformsArr.length;
+    // Sort the blocks by their depth, so we deal with deepest first
+    dirtyNodesArr.sort((a, b) => b[1] - a[1]);
+    for (let s = 0; s < dirtyNodesArr.length; s++) {
+      const nodeKey = dirtyNodesArr[s][0];
+      const node = nodeMap.get(nodeKey);
+
+      if (isNodeValidForTransform(node, compositionKey)) {
+        if (isRootNode(node)) {
+          // Apply root transforms
+          applyTransforms<RootNode>(
+            node,
+            rootTransformsArr,
+            rootTransformsArrLength,
+          );
+        } else if (isBlockNode(node)) {
+          // Apply block transforms
+          applyTransforms<BlockNode>(
+            node,
+            blockTransformsArr,
+            blockTransformsArrLength,
+          );
         }
       }
     }
@@ -271,9 +337,12 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
   const previousActiveEditorState = activeEditorState;
   const previousReadOnlyMode = isReadOnlyMode;
   const previousActiveEditor = activeEditor;
+  const previousShouldEnqueueUpdates = isEnqueuingUpdates;
   activeEditor = editor;
   activeEditorState = pendingEditorState;
   isReadOnlyMode = false;
+  // We don't want updates to sync block the reconcilation.
+  isEnqueuingUpdates = true;
 
   try {
     updateEditorState(
@@ -300,6 +369,7 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
     }
     return;
   } finally {
+    isEnqueuingUpdates = previousShouldEnqueueUpdates;
     activeEditorState = previousActiveEditorState;
     isReadOnlyMode = previousReadOnlyMode;
     activeEditor = previousActiveEditor;
@@ -307,11 +377,6 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
   if (__DEV__) {
     handleDEVOnlyPendingUpdateGuarantees(pendingEditorState);
   }
-  const isEditorStateDirty =
-    needsUpdate ||
-    pendingSelection === null ||
-    pendingSelection.dirty ||
-    !pendingSelection.is(currentSelection);
   const dirtyNodes = editor._dirtyNodes;
   const log = editor._log;
 
@@ -332,7 +397,6 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
   triggerListeners('update', editor, true, {
     prevEditorState: currentEditorState,
     editorState: pendingEditorState,
-    dirty: isEditorStateDirty,
     dirtyNodes,
     log,
   });
@@ -450,13 +514,14 @@ export function beginUpdate(
     applySelectionTransforms(pendingEditorState, editor);
     if (editor._dirtyType !== NO_DIRTY_NODES) {
       const dirtyNodes = editor._dirtyNodes;
+      const dirtyBlocks = editor._dirtyBlocks;
       if (pendingEditorState.isEmpty()) {
         invariant(
           false,
           'updateEditor: the pending editor state is empty. Ensure the root not never becomes empty from an update.',
         );
       }
-      applyTransforms(pendingEditorState, dirtyNodes, editor);
+      applyAllTransforms(pendingEditorState, dirtyNodes, dirtyBlocks, editor);
       processNestedUpdates(editor, deferred);
       garbageCollectDetachedNodes(
         currentEditorState,

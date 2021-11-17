@@ -36,6 +36,7 @@ import {DecoratorNode, isDecoratorNode} from './OutlineDecoratorNode';
 import {isLeafNode, pushLogEntry as log} from './OutlineUtils';
 import {createEmptySelection as createSelection} from './OutlineSelection';
 import {createNodeFromParse} from './OutlineParsing';
+import {noSideEffectsFlushSync} from './OutlineUpdates';
 
 export {
   createSelection,
@@ -59,4 +60,6 @@ export {
   TextNode,
   // Logging
   log,
+  // Updates
+  noSideEffectsFlushSync,
 };

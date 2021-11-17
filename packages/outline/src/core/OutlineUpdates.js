@@ -53,6 +53,7 @@ let activeEditor: null | OutlineEditor = null;
 let isEnqueuingUpdates: boolean = false;
 let isReadOnlyMode: boolean = false;
 let isAttemptingToRecoverFromReconcilerError: boolean = false;
+let isNoSideEffectsFlushSync: boolean = false;
 
 export type State = {
   clearSelection(): void,
@@ -105,6 +106,15 @@ export function shouldEnqueueUpdates(): boolean {
 export function errorOnReadOnly(): void {
   if (isReadOnlyMode) {
     invariant(false, 'Cannot use method in read-only mode.');
+  }
+}
+
+export function errorIsNoSideEffectsFlushSync(): void {
+  if (isNoSideEffectsFlushSync) {
+    invariant(
+      false,
+      "Updates inside isNoSideEffectsFlushSync can't trigger other (nested) updates",
+    );
   }
 }
 
@@ -586,4 +596,28 @@ export function beginUpdate(
       editor._pendingEditorState = null;
     }
   }
+}
+
+export function noSideEffectsFlushSync(editor: OutlineEditor, fn: () => void) {
+  const previousTransforms = editor._transforms;
+  editor._transforms = {
+    text: new Set(),
+    decorator: new Set(),
+    block: new Set(),
+    root: new Set(),
+  };
+  isNoSideEffectsFlushSync = true;
+
+  fn();
+  const pendingEditorState = editor._pendingEditorState;
+  if (
+    pendingEditorState &&
+    (editor._dirtyType !== NO_DIRTY_NODES ||
+      editorStateHasDirtySelection(pendingEditorState, editor))
+  ) {
+    commitPendingUpdates(editor);
+  }
+
+  editor._transforms = previousTransforms;
+  isNoSideEffectsFlushSync = false;
 }

@@ -18,6 +18,7 @@ import {
   TextNode,
   DecoratorNode,
   BlockNode,
+  noSideEffectsFlushSync,
 } from 'outline';
 import {createParagraphNode, ParagraphNode} from 'outline/ParagraphNode';
 import useOutlineRichText from 'outline-react/useOutlineRichText';
@@ -331,6 +332,83 @@ describe('OutlineEditor tests', () => {
     });
 
     expect(listener).toHaveBeenCalledTimes(1);
+
+    expect(container.innerHTML).toBe(
+      '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">This works!</span></p></div>',
+    );
+  });
+
+  it('Should be able to recover from an update error with noSideEffectsFlushSync', async () => {
+    function TestBase() {
+      editor = React.useMemo(() => createEditor(), []);
+
+      const ref = React.useCallback((node) => {
+        editor.setRootElement(node);
+      }, []);
+
+      return <div ref={ref} contentEditable={true} />;
+    }
+
+    ReactTestUtils.act(() => {
+      reactRoot.render(<TestBase element={null} />);
+    });
+
+    noSideEffectsFlushSync(editor, () => {
+      editor.update((state) => {
+        const root = state.getRoot();
+        if (root.getFirstChild() === null) {
+          const paragraph = createParagraphNode();
+          const text = createTextNode('This works!');
+          root.append(paragraph);
+          paragraph.append(text);
+        }
+      });
+    });
+    editor.update((state) => {
+      throw new Error('foo');
+    });
+
+    // Wait for update to complete
+    await Promise.resolve().then();
+
+    expect(container.innerHTML).toBe(
+      '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">This works!</span></p></div>',
+    );
+  });
+
+  it('Should be able to recover from a transform error with noSideEffectsFlushSync', async () => {
+    function TestBase() {
+      editor = React.useMemo(() => createEditor(), []);
+
+      const ref = React.useCallback((node) => {
+        editor.setRootElement(node);
+      }, []);
+
+      return <div ref={ref} contentEditable={true} />;
+    }
+
+    ReactTestUtils.act(() => {
+      reactRoot.render(<TestBase element={null} />);
+    });
+
+    const removeTransform = editor.addTransform('text', (state) => {
+      throw new Error('foo');
+    });
+    noSideEffectsFlushSync(editor, () => {
+      editor.update((state) => {
+        const root = state.getRoot();
+        if (root.getFirstChild() === null) {
+          const paragraph = createParagraphNode();
+          const text = createTextNode('This works!');
+          root.append(paragraph);
+          paragraph.append(text);
+        }
+      });
+    });
+    removeTransform();
+
+    // Wait for update to complete
+    await Promise.resolve().then();
 
     expect(container.innerHTML).toBe(
       '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">This works!</span></p></div>',

@@ -16,6 +16,7 @@ import type {BlockNode} from './OutlineBlockNode';
 
 import {
   commitPendingUpdates,
+  errorIsNoSideEffectsFlushSync,
   parseEditorState,
   shouldEnqueueUpdates,
 } from './OutlineUpdates';
@@ -380,6 +381,7 @@ class BaseOutlineEditor {
   }
   update(updateFn: (state: State) => void, callbackFn?: () => void): void {
     if (shouldEnqueueUpdates()) {
+      errorIsNoSideEffectsFlushSync();
       getSelf(this)._updates.push([updateFn, callbackFn]);
     } else {
       beginUpdate(getSelf(this), updateFn, callbackFn);

@@ -1175,10 +1175,13 @@ export function insertText(selection: Selection, text: string): void {
   }
   const firstNodeText = firstNode.getTextContent();
   const firstNodeTextLength = firstNodeText.length;
+  const firstNodeParent = firstNode.getParentOrThrow();
+
   if (
     firstNode.isSegmented() ||
     firstNode.isImmutable() ||
-    !firstNode.canInsertTextAtEnd()
+    !firstNode.canInsertTextAtBoundary() ||
+    !firstNodeParent.canInsertTextAtBoundary()
   ) {
     const offset = firstPoint.offset;
     if (selection.isCollapsed() && offset === firstNodeTextLength) {
@@ -1189,7 +1192,11 @@ export function insertText(selection: Selection, text: string): void {
         nextSibling.isSegmented()
       ) {
         nextSibling = createTextNode();
-        firstNode.insertAfter(nextSibling);
+        if (!firstNodeParent.canInsertTextAtBoundary()) {
+          firstNodeParent.insertAfter(nextSibling);
+        } else {
+          firstNode.insertAfter(nextSibling);
+        }
       }
       nextSibling.select(0, 0);
       firstNode = nextSibling;
@@ -1205,7 +1212,11 @@ export function insertText(selection: Selection, text: string): void {
         prevSibling.isSegmented()
       ) {
         prevSibling = createTextNode();
-        firstNode.insertBefore(prevSibling);
+        if (!firstNodeParent.canInsertTextAtBoundary()) {
+          firstNodeParent.insertBefore(prevSibling);
+        } else {
+          firstNode.insertBefore(prevSibling);
+        }
       }
       prevSibling.select();
       firstNode = prevSibling;

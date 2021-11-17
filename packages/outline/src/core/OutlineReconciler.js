@@ -47,7 +47,7 @@ let editorTextContent = '';
 let activeEditorConfig: EditorConfig<{...}>;
 let activeEditor: OutlineEditor;
 let treatAllNodesAsDirty: boolean = false;
-let activeDirtyBlocks: Map<NodeKey, number>;
+let activeDirtySubTrees: Set<NodeKey>;
 let activeDirtyNodes: Set<NodeKey>;
 let activePrevNodeMap: NodeMap;
 let activeNextNodeMap: NodeMap;
@@ -331,7 +331,7 @@ function reconcileNode(
   const isDirty =
     treatAllNodesAsDirty ||
     activeDirtyNodes.has(key) ||
-    activeDirtyBlocks.has(key);
+    activeDirtySubTrees.has(key);
   const dom = getElementByKeyOrThrow(activeEditor, key);
 
   if (prevNode === nextNode && !isDirty) {
@@ -526,7 +526,7 @@ function reconcileRoot(
   editor: OutlineEditor,
   selection: null | OutlineSelection,
   dirtyType: 0 | 1 | 2,
-  dirtyBlocks: Map<NodeKey, number>,
+  dirtySubTrees: Set<NodeKey>,
   dirtyNodes: Set<NodeKey>,
 ): void {
   subTreeTextContent = '';
@@ -536,7 +536,7 @@ function reconcileRoot(
   treatAllNodesAsDirty = dirtyType === FULL_RECONCILE;
   activeEditor = editor;
   activeEditorConfig = editor._config;
-  activeDirtyBlocks = dirtyBlocks;
+  activeDirtySubTrees = dirtySubTrees;
   activeDirtyNodes = dirtyNodes;
   activePrevNodeMap = prevEditorState._nodeMap;
   activeNextNodeMap = nextEditorState._nodeMap;
@@ -551,7 +551,7 @@ function reconcileRoot(
   // $FlowFixMe
   activeEditor = undefined;
   // $FlowFixMe
-  activeDirtyBlocks = undefined;
+  activeDirtySubTrees = undefined;
   // $FlowFixMe
   activeDirtyNodes = undefined;
   // $FlowFixMe
@@ -579,7 +579,7 @@ export function updateEditorState(
 
   if (needsUpdate && observer !== null) {
     const dirtyType = editor._dirtyType;
-    const dirtyBlocks = editor._dirtyBlocks;
+    const dirtySubTrees = editor._dirtySubTrees;
     const dirtyNodes = editor._dirtyNodes;
 
     observer.disconnect();
@@ -590,7 +590,7 @@ export function updateEditorState(
         editor,
         pendingSelection,
         dirtyType,
-        dirtyBlocks,
+        dirtySubTrees,
         dirtyNodes,
       );
     } finally {

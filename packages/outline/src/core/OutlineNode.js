@@ -24,7 +24,6 @@ import {
   internallyMarkNodeAsDirty,
   markParentBlocksAsDirty,
   setCompositionKey,
-  getBlockDepth,
 } from './OutlineUtils';
 import invariant from 'shared/invariant';
 import {
@@ -510,15 +509,12 @@ export class OutlineNode {
     // Ensure we get the latest node from pending state
     const latestNode = this.getLatest();
     const parent = latestNode.__parent;
-    const dirtyBlocks = editor._dirtyBlocks;
+    const dirtySubTrees = editor._dirtySubTrees;
     if (parent !== null) {
-      markParentBlocksAsDirty(parent, nodeMap, dirtyBlocks);
+      markParentBlocksAsDirty(parent, nodeMap, dirtySubTrees);
     }
-    const dirtyNodes = editor._dirtyNodes;
-    if (dirtyNodes.has(key)) {
-      if (isBlockNode(this)) {
-        dirtyBlocks.set(key, getBlockDepth(this));
-      }
+    const cloneNotNeeded = editor._cloneNotNeeded;
+    if (cloneNotNeeded.has(key)) {
       return latestNode;
     }
     const constructor = latestNode.constructor;
@@ -533,6 +529,7 @@ export class OutlineNode {
       mutableNode.__format = latestNode.__format;
       mutableNode.__style = latestNode.__style;
     }
+    cloneNotNeeded.add(key);
     mutableNode.__key = key;
     internallyMarkNodeAsDirty(mutableNode);
     // Update reference in node map

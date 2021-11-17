@@ -138,6 +138,7 @@ export function generateKey(node: OutlineNode): NodeKey {
   const key = generateRandomKey();
   editorState._nodeMap.set(key, node);
   editor._dirtyNodes.add(key);
+  editor._cloneNotNeeded.add(key);
   editor._dirtyType = HAS_DIRTY_NODES;
   return key;
 }
@@ -145,18 +146,18 @@ export function generateKey(node: OutlineNode): NodeKey {
 export function markParentBlocksAsDirty(
   parentKey: NodeKey,
   nodeMap: NodeMap,
-  dirtyBlocks: Map<NodeKey, number>,
+  dirtySubTress: Set<NodeKey>,
 ): void {
   let nextParentKey = parentKey;
   while (nextParentKey !== null) {
-    if (dirtyBlocks.has(nextParentKey)) {
+    if (dirtySubTress.has(nextParentKey)) {
       return;
     }
     const node = nodeMap.get(nextParentKey);
     if (node === undefined) {
       break;
     }
-    dirtyBlocks.set(nextParentKey, getBlockDepth(node));
+    dirtySubTress.add(nextParentKey);
     nextParentKey = node.__parent;
   }
 }
@@ -169,17 +170,14 @@ export function internallyMarkNodeAsDirty(node: OutlineNode): void {
   const editorState = getActiveEditorState();
   const editor = getActiveEditor();
   const nodeMap = editorState._nodeMap;
-  const dirtyBlocks = editor._dirtyBlocks;
+  const dirtySubTrees = editor._dirtySubTrees;
   if (parent !== null) {
-    markParentBlocksAsDirty(parent, nodeMap, dirtyBlocks);
+    markParentBlocksAsDirty(parent, nodeMap, dirtySubTrees);
   }
   const dirtyNodes = editor._dirtyNodes;
   const key = latest.__key;
   editor._dirtyType = HAS_DIRTY_NODES;
-  dirtyNodes.add(latest.__key);
-  if (isBlockNode(node)) {
-    dirtyBlocks.set(key, getBlockDepth(node));
-  }
+  dirtyNodes.add(key);
 }
 
 export function setCompositionKey(compositionKey: null | NodeKey): void {
@@ -251,16 +249,6 @@ export function pushLogEntry(entry: string): void {
 
 export function getEditorStateTextContent(editorState: EditorState): string {
   return editorState.read((view) => view.getRoot().getTextContent());
-}
-
-export function getBlockDepth(startingNode: OutlineNode): number {
-  let node = startingNode.getParent();
-  let depth = 0;
-  while (node !== null) {
-    depth++;
-    node = node.getParent();
-  }
-  return depth;
 }
 
 export function markAllNodesAsDirty(

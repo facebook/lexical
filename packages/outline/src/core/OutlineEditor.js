@@ -144,8 +144,9 @@ export function resetEditor(
   editor._pendingEditorState = pendingEditorState;
   editor._compositionKey = null;
   editor._dirtyType = NO_DIRTY_NODES;
+  editor._cloneNotNeeded.clear();
   editor._dirtyNodes = new Set();
-  editor._dirtyBlocks = new Map();
+  editor._dirtySubTrees.clear();
   editor._log = [];
   editor._updates = [];
   const observer = editor._observer;
@@ -207,8 +208,9 @@ class BaseOutlineEditor {
   _textContent: string;
   _config: EditorConfig<{...}>;
   _dirtyType: 0 | 1 | 2;
+  _cloneNotNeeded: Set<NodeKey>;
   _dirtyNodes: Set<NodeKey>;
-  _dirtyBlocks: Map<NodeKey, Number>;
+  _dirtySubTrees: Set<NodeKey>;
   _observer: null | MutationObserver;
   _log: Array<string>;
 
@@ -254,8 +256,9 @@ class BaseOutlineEditor {
     this._pendingDecorators = null;
     // Used to optimize reconcilation
     this._dirtyType = NO_DIRTY_NODES;
+    this._cloneNotNeeded = new Set();
     this._dirtyNodes = new Set();
-    this._dirtyBlocks = new Map();
+    this._dirtySubTrees = new Set();
     // Handling of DOM mutations
     this._observer = null;
     // Logging for updates
@@ -430,8 +433,9 @@ declare export class OutlineEditor {
   _pendingDecorators: null | {[NodeKey]: ReactNode};
   _config: EditorConfig<{...}>;
   _dirtyType: 0 | 1 | 2;
+  _cloneNotNeeded: Set<NodeKey>;
   _dirtyNodes: Set<NodeKey>;
-  _dirtyBlocks: Map<NodeKey, number>;
+  _dirtySubTrees: Set<NodeKey>;
   _observer: null | MutationObserver;
   _log: Array<string>;
 

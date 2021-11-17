@@ -166,7 +166,7 @@ function isNodeValidForTransform(
 function applyAllTransforms(
   editorState: EditorState,
   dirtyNodes: Set<NodeKey>,
-  dirtyBlocks: Map<NodeKey, number>,
+  dirtySubTrees: Set<NodeKey>,
   editor: OutlineEditor,
 ): void {
   const transforms = editor._transforms;
@@ -207,15 +207,13 @@ function applyAllTransforms(
     }
   }
   if (blockTransforms.size > 0 || rootTransforms.size > 0) {
-    const dirtyNodesArr = Array.from(dirtyBlocks);
+    const dirtyNodesArr = Array.from(dirtySubTrees);
     const blockTransformsArr = Array.from(blockTransforms);
     const rootTransformsArr = Array.from(rootTransforms);
     const blockTransformsArrLength = blockTransformsArr.length;
     const rootTransformsArrLength = rootTransformsArr.length;
-    // Sort the blocks by their depth, so we deal with deepest first
-    dirtyNodesArr.sort((a, b) => b[1] - a[1]);
     for (let s = 0; s < dirtyNodesArr.length; s++) {
-      const nodeKey = dirtyNodesArr[s][0];
+      const nodeKey = dirtyNodesArr[s];
       const node = nodeMap.get(nodeKey);
 
       if (isNodeValidForTransform(node, compositionKey)) {
@@ -383,8 +381,9 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
   editor._log = [];
   if (needsUpdate) {
     editor._dirtyType = NO_DIRTY_NODES;
+    editor._cloneNotNeeded.clear();
     editor._dirtyNodes = new Set();
-    editor._dirtyBlocks = new Map();
+    editor._dirtySubTrees.clear();
   }
   garbageCollectDetachedDecorators(editor, pendingEditorState);
   const pendingDecorators = editor._pendingDecorators;
@@ -514,14 +513,14 @@ export function beginUpdate(
     applySelectionTransforms(pendingEditorState, editor);
     if (editor._dirtyType !== NO_DIRTY_NODES) {
       const dirtyNodes = editor._dirtyNodes;
-      const dirtyBlocks = editor._dirtyBlocks;
+      const dirtySubTrees = editor._dirtySubTrees;
       if (pendingEditorState.isEmpty()) {
         invariant(
           false,
           'updateEditor: the pending editor state is empty. Ensure the root not never becomes empty from an update.',
         );
       }
-      applyAllTransforms(pendingEditorState, dirtyNodes, dirtyBlocks, editor);
+      applyAllTransforms(pendingEditorState, dirtyNodes, dirtySubTrees, editor);
       processNestedUpdates(editor, deferred);
       garbageCollectDetachedNodes(
         currentEditorState,
@@ -556,8 +555,9 @@ export function beginUpdate(
     // Restore existing editor state to the DOM
     editor._pendingEditorState = currentEditorState;
     editor._dirtyType = FULL_RECONCILE;
+    editor._cloneNotNeeded.clear();
     editor._dirtyNodes = new Set();
-    editor._dirtyBlocks = new Map();
+    editor._dirtySubTrees.clear();
     editor._log.push('UpdateRecover');
     commitPendingUpdates(editor);
     return;

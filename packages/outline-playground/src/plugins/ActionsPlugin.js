@@ -11,7 +11,7 @@ import * as React from 'react';
 import PlaygroundController from '../controllers/PlaygroundController';
 import {useController} from 'outline-react/OutlineController';
 import {useEffect, useState} from 'react';
-import {log, isBlockNode} from 'outline';
+import {log, isBlockNode, getSelection} from 'outline';
 import {isListItemNode} from 'outline/ListItemNode';
 import {ImageNode, createImageNode} from '../nodes/ImageNode';
 import {insertNodes} from 'outline/selection';
@@ -36,9 +36,9 @@ export default function ActionsPlugins({
   }, [addListener, editor]);
 
   const handleAddImage = () => {
-    editor.update((state) => {
+    editor.update(() => {
       log('handleAddImage');
-      const selection = state.getSelection();
+      const selection = getSelection();
       if (selection !== null) {
         const imageNode = createImageNode(
           yellowFlowerImage,
@@ -50,8 +50,8 @@ export default function ActionsPlugins({
   };
 
   const setAlignment = (alignment: 'left' | 'right' | 'center' | 'justify') => {
-    editor.update((state) => {
-      const selection = state.getSelection();
+    editor.update(() => {
+      const selection = getSelection();
       if (selection !== null) {
         const node = selection.anchor.getNode();
         const block = isBlockNode(node) ? node : node.getParentOrThrow();
@@ -77,8 +77,8 @@ export default function ActionsPlugins({
   };
 
   const applyOutdent = () => {
-    editor.update((state) => {
-      const selection = state.getSelection();
+    editor.update(() => {
+      const selection = getSelection();
       if (selection !== null) {
         const node = selection.anchor.getNode();
         const block = isBlockNode(node) ? node : node.getParentOrThrow();
@@ -94,8 +94,8 @@ export default function ActionsPlugins({
   };
 
   const applyIndent = () => {
-    editor.update((state) => {
-      const selection = state.getSelection();
+    editor.update(() => {
+      const selection = getSelection();
       if (selection !== null) {
         const node = selection.anchor.getNode();
         const block = isBlockNode(node) ? node : node.getParentOrThrow();

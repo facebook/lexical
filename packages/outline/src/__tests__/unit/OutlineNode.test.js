@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {TextNode} from 'outline';
+import {TextNode, getRoot, getSelection} from 'outline';
 import {ParagraphNode} from 'outline/ParagraphNode';
 import {OutlineNode} from '../../core/OutlineNode';
 
@@ -25,8 +25,8 @@ describe('OutlineNode tests', () => {
 
     beforeEach(async () => {
       const {editor} = testEnv;
-      await editor.update((state) => {
-        const rootNode = state.getRoot();
+      await editor.update(() => {
+        const rootNode = getRoot();
         paragraphNode = new ParagraphNode();
         textNode = new TextNode('foo');
         paragraphNode.append(textNode);
@@ -128,10 +128,10 @@ describe('OutlineNode tests', () => {
         expect(newTextNode.isSelected()).toBe(false);
       });
 
-      await editor.update((state) => {
+      await editor.update(() => {
         textNode.select(0, 0);
 
-        const selection = state.getSelection();
+        const selection = getSelection();
         expect(selection).not.toBe(null);
 
         selection.anchor.type = 'text';
@@ -145,8 +145,8 @@ describe('OutlineNode tests', () => {
 
       await Promise.resolve().then();
 
-      await editor.update((state) => {
-        const selection = state.getSelection();
+      await editor.update(() => {
+        const selection = getSelection();
 
         expect(selection.anchor.key).toBe(textNode.getKey());
         expect(selection.focus.key).toBe(newTextNode.getKey());
@@ -175,8 +175,8 @@ describe('OutlineNode tests', () => {
         const node = new OutlineNode();
         expect(node.getParent()).toBe(null);
       });
-      await editor.getEditorState().read((state) => {
-        const rootNode = state.getRoot();
+      await editor.getEditorState().read(() => {
+        const rootNode = getRoot();
         expect(textNode.getParent()).toBe(paragraphNode);
         expect(paragraphNode.getParent()).toBe(rootNode);
       });
@@ -189,8 +189,8 @@ describe('OutlineNode tests', () => {
         const node = new OutlineNode();
         expect(() => node.getParentOrThrow()).toThrow();
       });
-      await editor.getEditorState().read((state) => {
-        const rootNode = state.getRoot();
+      await editor.getEditorState().read(() => {
+        const rootNode = getRoot();
         expect(textNode.getParent()).toBe(paragraphNode);
         expect(paragraphNode.getParent()).toBe(rootNode);
       });
@@ -211,8 +211,8 @@ describe('OutlineNode tests', () => {
 
     test('OutlineNode.getParentBlockOrThrow()', async () => {
       const {editor} = testEnv;
-      await editor.getEditorState().read((state) => {
-        const rootNode = state.getRoot();
+      await editor.getEditorState().read(() => {
+        const rootNode = getRoot();
         expect(paragraphNode.getParentBlockOrThrow()).not.toBe(paragraphNode);
         expect(paragraphNode.getParentBlockOrThrow()).toBe(rootNode);
       });
@@ -253,8 +253,8 @@ describe('OutlineNode tests', () => {
       expect(testEnv.outerHTML).toBe(
         '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span></p></div>',
       );
-      await editor.getEditorState().read((state) => {
-        const rootNode = state.getRoot();
+      await editor.getEditorState().read(() => {
+        const rootNode = getRoot();
         expect(textNode.getParents()).toEqual([paragraphNode, rootNode]);
         expect(paragraphNode.getParents()).toEqual([rootNode]);
       });
@@ -351,8 +351,8 @@ describe('OutlineNode tests', () => {
       let barTextNode;
       let bazParagraphNode;
       let bazTextNode;
-      await editor.update((state) => {
-        const rootNode = state.getRoot();
+      await editor.update(() => {
+        const rootNode = getRoot();
         barParagraphNode = new ParagraphNode();
         barTextNode = new TextNode('bar');
         barTextNode.toggleUnmergeable();
@@ -371,8 +371,8 @@ describe('OutlineNode tests', () => {
       expect(testEnv.outerHTML).toBe(
         '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span><span data-outline-text="true">qux</span></p><p><span data-outline-text="true">bar</span></p><p><span data-outline-text="true">baz</span></p></div>',
       );
-      await editor.getEditorState().read((state) => {
-        const rootNode = state.getRoot();
+      await editor.getEditorState().read(() => {
+        const rootNode = getRoot();
         expect(textNode.getCommonAncestor(rootNode)).toBe(rootNode);
         expect(quxTextNode.getCommonAncestor(rootNode)).toBe(rootNode);
         expect(barTextNode.getCommonAncestor(rootNode)).toBe(rootNode);
@@ -413,8 +413,8 @@ describe('OutlineNode tests', () => {
 
     test('OutlineNode.isParentOf()', async () => {
       const {editor} = testEnv;
-      await editor.getEditorState().read((state) => {
-        const rootNode = state.getRoot();
+      await editor.getEditorState().read(() => {
+        const rootNode = getRoot();
         expect(rootNode.isParentOf(textNode)).toBe(true);
         expect(rootNode.isParentOf(paragraphNode)).toBe(true);
         expect(paragraphNode.isParentOf(textNode)).toBe(true);
@@ -431,8 +431,8 @@ describe('OutlineNode tests', () => {
       let bazTextNode;
       let newParagraphNode;
       let quxTextNode;
-      await editor.update((state) => {
-        const rootNode = state.getRoot();
+      await editor.update(() => {
+        const rootNode = getRoot();
         barTextNode = new TextNode('bar');
         barTextNode.toggleUnmergeable();
         bazTextNode = new TextNode('baz');
@@ -709,8 +709,8 @@ describe('OutlineNode tests', () => {
         '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span></p></div>',
       );
       let barTextNode;
-      await editor.update((state) => {
-        const rootNode = state.getRoot();
+      await editor.update(() => {
+        const rootNode = getRoot();
         const barParagraphNode = new ParagraphNode();
         barTextNode = new TextNode('bar');
         barParagraphNode.append(barTextNode);
@@ -880,8 +880,8 @@ describe('OutlineNode tests', () => {
     test('OutlineNode.insertAfter() move blocks around', async () => {
       const {editor} = testEnv;
       let block1, block2, block3, text1, text2, text3;
-      await editor.update((state) => {
-        const root = state.getRoot();
+      await editor.update(() => {
+        const root = getRoot();
         root.clear();
         block1 = new ParagraphNode();
         block2 = new ParagraphNode();
@@ -908,8 +908,8 @@ describe('OutlineNode tests', () => {
     test('OutlineNode.insertAfter() move blocks around #2', async () => {
       const {editor} = testEnv;
       let block1, block2, block3, text1, text2, text3;
-      await editor.update((state) => {
-        const root = state.getRoot();
+      await editor.update(() => {
+        const root = getRoot();
         root.clear();
         block1 = new ParagraphNode();
         block2 = new ParagraphNode();
@@ -930,7 +930,7 @@ describe('OutlineNode tests', () => {
       expect(testEnv.outerHTML).toBe(
         '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">A</span></p><p><span data-outline-text="true">B</span></p><p><span data-outline-text="true">C</span></p></div>',
       );
-      await editor.update((state) => {
+      await editor.update(() => {
         text3.insertAfter(text1);
         text3.insertAfter(text2);
       });
@@ -955,8 +955,8 @@ describe('OutlineNode tests', () => {
       );
 
       let barTextNode;
-      await editor.update((state) => {
-        const rootNode = state.getRoot();
+      await editor.update(() => {
+        const rootNode = getRoot();
         const barParagraphNode = new ParagraphNode();
         barTextNode = new TextNode('bar');
         barParagraphNode.append(barTextNode);

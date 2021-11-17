@@ -7,10 +7,10 @@
  * @flow strict
  */
 
-import type {OutlineEditor, State, RootNode} from 'outline';
+import type {OutlineEditor, RootNode} from 'outline';
 import type {InputEvents} from 'outline-react/useOutlineEditorEvents';
 
-import {log} from 'outline';
+import {log, getSelection, getRoot} from 'outline';
 import useLayoutEffect from './useLayoutEffect';
 import useOutlineEditorEvents from '../useOutlineEditorEvents';
 import {HeadingNode} from 'outline/HeadingNode';
@@ -57,33 +57,29 @@ if (CAN_USE_BEFORE_INPUT) {
   events.push(['drop', onDropPolyfill]);
 }
 
-function shouldSelectParagraph(state: State, editor: OutlineEditor): boolean {
+function shouldSelectParagraph(editor: OutlineEditor): boolean {
   const activeElement = document.activeElement;
   return (
-    state.getSelection() !== null ||
+    getSelection() !== null ||
     (activeElement !== null && activeElement === editor.getRootElement())
   );
 }
 
-function initParagraph(
-  state: State,
-  root: RootNode,
-  editor: OutlineEditor,
-): void {
+function initParagraph(root: RootNode, editor: OutlineEditor): void {
   const paragraph = createParagraphNode();
   root.append(paragraph);
-  if (shouldSelectParagraph(state, editor)) {
+  if (shouldSelectParagraph(editor)) {
     paragraph.select();
   }
 }
 
 export function initEditor(editor: OutlineEditor): void {
-  editor.update((state: State) => {
+  editor.update(() => {
     log('initEditor');
-    const root = state.getRoot();
+    const root = getRoot();
     const firstChild = root.getFirstChild();
     if (firstChild === null) {
-      initParagraph(state, root, editor);
+      initParagraph(root, editor);
     }
   });
 }
@@ -92,11 +88,11 @@ function clearEditor(
   editor: OutlineEditor,
   callbackFn?: (callbackFn?: () => void) => void,
 ): void {
-  editor.update((state) => {
+  editor.update(() => {
     log('clearEditor');
-    const root = state.getRoot();
+    const root = getRoot();
     root.clear();
-    initParagraph(state, root, editor);
+    initParagraph(root, editor);
   }, callbackFn);
 }
 

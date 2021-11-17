@@ -7,15 +7,9 @@
  * @flow strict
  */
 
-import type {
-  BlockNode,
-  EditorState,
-  State,
-  OutlineEditor,
-  Selection,
-} from 'outline';
+import type {BlockNode, EditorState, OutlineEditor, Selection} from 'outline';
 
-import {isBlockNode, isTextNode} from 'outline';
+import {isBlockNode, isTextNode, getRoot, getSelection} from 'outline';
 
 import * as React from 'react';
 import {useState, useEffect, useRef} from 'react';
@@ -123,8 +117,7 @@ export default function TreeView({
               setTimeTravelEnabled(true);
             }
           }}
-          className={timeTravelButtonClassName}
-        >
+          className={timeTravelButtonClassName}>
           Time Travel
         </button>
       )}
@@ -135,8 +128,7 @@ export default function TreeView({
             className={timeTravelPanelButtonClassName}
             onClick={() => {
               setIsPlaying(!isPlaying);
-            }}
-          >
+            }}>
             {isPlaying ? 'Pause' : 'Play'}
           </button>
           <input
@@ -171,8 +163,7 @@ export default function TreeView({
                 setTimeTravelEnabled(false);
                 setIsPlaying(false);
               }
-            }}
-          >
+            }}>
             Exit
           </button>
         </div>
@@ -200,10 +191,10 @@ function printSelection(selection: Selection): string {
 function generateContent(editorState: EditorState): string {
   let res = ' root\n';
 
-  const selectionString = editorState.read((state: State) => {
-    const selection = state.getSelection();
+  const selectionString = editorState.read(() => {
+    const selection = getSelection();
 
-    visitTree(state, state.getRoot(), (node, indent) => {
+    visitTree(getRoot(), (node, indent) => {
       const nodeKey = node.getKey();
       const nodeKeyDisplay = `(${nodeKey})`;
       const typeDisplay = node.getType() || '';
@@ -229,7 +220,7 @@ function generateContent(editorState: EditorState): string {
   return res + '\n selection' + selectionString;
 }
 
-function visitTree(state: State, currentNode: BlockNode, visitor, indent = []) {
+function visitTree(currentNode: BlockNode, visitor, indent = []) {
   const childNodes = currentNode.getChildren();
   const childNodesLength = childNodes.length;
 
@@ -245,7 +236,6 @@ function visitTree(state: State, currentNode: BlockNode, visitor, indent = []) {
 
     if (isBlockNode(childNode)) {
       visitTree(
-        state,
         childNode,
         visitor,
         indent.concat(

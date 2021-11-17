@@ -7,12 +7,12 @@
  * @flow strict-local
  */
 
-import type {OutlineEditor, State} from 'outline';
+import type {OutlineEditor} from 'outline';
 
 import * as React from 'react';
 import PlaygroundController from '../controllers/PlaygroundController';
 import {useController} from 'outline-react/OutlineController';
-import {createTextNode, log} from 'outline';
+import {createTextNode, log, getRoot} from 'outline';
 import {createParagraphNode} from 'outline/ParagraphNode';
 import {useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {IS_APPLE} from 'shared/environment';
@@ -337,9 +337,9 @@ ${steps.map(formatStep).join(`\n`)}
   const toggleEditorSelection = useCallback(
     (currentEditor) => {
       if (!isRecording) {
-        currentEditor.update((state: State) => {
+        currentEditor.update(() => {
           log('useStepRecorder');
-          const root = state.getRoot();
+          const root = getRoot();
           root.clear();
           const text = createTextNode();
           root.append(createParagraphNode().append(text));

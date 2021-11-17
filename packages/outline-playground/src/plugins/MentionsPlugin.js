@@ -7,13 +7,13 @@
  * @flow strict-local
  */
 
-import type {OutlineEditor, State, Selection} from 'outline';
+import type {OutlineEditor, Selection} from 'outline';
 
 import PlaygroundController from '../controllers/PlaygroundController';
 import {useController} from 'outline-react/OutlineController';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
-import {log} from 'outline';
+import {log, getSelection} from 'outline';
 import React, {useCallback, useLayoutEffect, useMemo, useRef} from 'react';
 import {startTransition, useEffect, useState} from 'react';
 import {MentionNode, createMentionNode} from '../nodes/MentionNode';
@@ -844,8 +844,8 @@ function tryToPositionRange(match: MentionMatch, range: Range): boolean {
 
 function getMentionsTextToSearch(editor: OutlineEditor): string | null {
   let text = null;
-  editor.getEditorState().read((state: State) => {
-    const selection = state.getSelection();
+  editor.getEditorState().read(() => {
+    const selection = getSelection();
     if (selection == null) {
       return;
     }
@@ -886,9 +886,9 @@ function createMentionNodeFromSearchResult(
   entryText: string,
   match: MentionMatch,
 ): void {
-  editor.update((state: State) => {
+  editor.update(() => {
     log('createMentionNodeFromSearchResult');
-    const selection = state.getSelection();
+    const selection = getSelection();
     if (selection == null || !selection.isCollapsed()) {
       return;
     }

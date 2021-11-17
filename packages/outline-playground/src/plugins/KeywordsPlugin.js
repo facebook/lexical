@@ -111,7 +111,6 @@ function textTransform(node: TextNode, state: State): void {
 }
 
 function traverseNodes(node: BlockNode): void {
-  debugger
   let child = node.getFirstChild();
 
   while (child !== null) {

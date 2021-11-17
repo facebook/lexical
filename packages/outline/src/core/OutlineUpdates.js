@@ -611,7 +611,7 @@ export function noSideEffectsFlushSync(editor: OutlineEditor, fn: () => void) {
   fn();
   const pendingEditorState = editor._pendingEditorState;
   if (
-    pendingEditorState &&
+    pendingEditorState !== null &&
     (editor._dirtyType !== NO_DIRTY_NODES ||
       editorStateHasDirtySelection(pendingEditorState, editor))
   ) {

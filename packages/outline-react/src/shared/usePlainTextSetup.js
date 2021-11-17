@@ -10,7 +10,7 @@
 import type {InputEvents} from 'outline-react/useOutlineEditorEvents';
 import type {OutlineEditor, State, RootNode} from 'outline';
 
-import {log} from 'outline';
+import {log, noSideEffectsFlushSync} from 'outline';
 import useLayoutEffect from './useLayoutEffect';
 import useOutlineEditorEvents from '../useOutlineEditorEvents';
 import {createParagraphNode, ParagraphNode} from 'outline/ParagraphNode';
@@ -72,13 +72,15 @@ function initParagraph(
 }
 
 function initEditor(editor: OutlineEditor): void {
-  editor.update((state) => {
-    log('initEditor');
-    const root = state.getRoot();
-    const firstChild = root.getFirstChild();
-    if (firstChild === null) {
-      initParagraph(state, root, editor);
-    }
+  noSideEffectsFlushSync(editor, () => {
+    editor.update((state) => {
+      log('initEditor');
+      const root = state.getRoot();
+      const firstChild = root.getFirstChild();
+      if (firstChild === null) {
+        initParagraph(state, root, editor);
+      }
+    });
   });
 }
 
@@ -86,12 +88,14 @@ function clearEditor(
   editor: OutlineEditor,
   callbackFn?: (callbackFn?: () => void) => void,
 ): void {
-  editor.update((state) => {
-    log('clearEditor');
-    const root = state.getRoot();
-    root.clear();
-    initParagraph(state, root, editor);
-  }, callbackFn);
+  noSideEffectsFlushSync(editor, () => {
+    editor.update((state) => {
+      log('clearEditor');
+      const root = state.getRoot();
+      root.clear();
+      initParagraph(state, root, editor);
+    }, callbackFn);
+  });
 }
 
 export default function usePlainTextSetup(

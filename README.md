@@ -22,7 +22,7 @@ Below is an example of a basic plain text editor using `outline` and `outline-re
 
 ```jsx
 import {useCallback} from 'react';
-import useOutlineEditor from 'outline-react/useOutlineEditor';
+import useOutline from 'outline-react/useOutline';
 import useOutlinePlainText from 'outline-react/useOutlinePlainText';
 
 const editorConfig = {
@@ -36,7 +36,7 @@ const editorConfig = {
 function Editor() {
   // Create an Outline editor instance and also a ref
   // that we need to pass to our content editable.
-  const [editor, contentEditableRef, showPlaceholder] = useOutlineEditor(
+  const [editor, contentEditableRef, showPlaceholder] = useOutline(
     editorConfig,
   );
 

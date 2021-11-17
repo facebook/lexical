@@ -65,7 +65,7 @@ export class LinkNode extends BlockNode {
       block.append(linkNode);
       return linkNode;
     }
-    return null;
+    return block;
   }
 
   canInsertTextAtBoundary(): false {

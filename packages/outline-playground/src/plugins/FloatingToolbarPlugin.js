@@ -344,7 +344,15 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
               if (!parent.is(prevParent)) {
                 prevParent = parent;
                 linkNode = createLinkNode(url);
-                node.insertBefore(linkNode);
+                if (isLinkNode(parent)) {
+                  if (node.getPreviousSibling() === null) {
+                    parent.insertBefore(linkNode);
+                  } else {
+                    parent.insertAfter(linkNode);
+                  }
+                } else {
+                  node.insertBefore(linkNode);
+                }
               }
               if (isLinkNode(node)) {
                 if (linkNode !== null) {

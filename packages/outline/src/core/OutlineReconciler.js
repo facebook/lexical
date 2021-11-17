@@ -277,7 +277,7 @@ function reconcileChildren(
     if (prevChildKey === nextChildKey) {
       reconcileNode(prevChildKey, dom);
     } else {
-      const lastDOM = getElementByKeyOrThrow(activeEditor, prevChildKey);
+      const lastDOM = getPrevElementByKeyOrThrow(prevChildKey);
       const replacementDOM = createNode(nextChildKey, null, null);
       dom.replaceChild(replacementDOM, lastDOM);
       destroyNode(prevChildKey, null);

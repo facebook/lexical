@@ -1032,7 +1032,6 @@ describe('OutlineSelectionHelpers tests', () => {
       setupTestCase((selection, state) => {
         expect(extractSelection(selection)).toEqual([
           {...state.getNodeByKey('a')},
-          {...state.getNodeByKey('b')},
         ]);
       });
 
@@ -1163,10 +1162,7 @@ describe('OutlineSelectionHelpers tests', () => {
       // Extract selection
       setupTestCase((selection, state, block) => {
         const firstChild = block.getFirstChild();
-        expect(extractSelection(selection)).toEqual([
-          firstChild,
-          firstChild.getNextSibling(),
-        ]);
+        expect(extractSelection(selection)).toEqual([firstChild]);
       });
 
       // cloneContents

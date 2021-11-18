@@ -7,7 +7,13 @@
  * @flow strict
  */
 
-import type {EditorConfig, NodeKey, OutlineNode, OutlineEditor} from 'outline';
+import type {
+  EditorConfig,
+  NodeKey,
+  OutlineNode,
+  OutlineEditor,
+  OutlineRef,
+} from 'outline';
 
 import {DecoratorNode, log, getNodeByKey} from 'outline';
 
@@ -322,6 +328,7 @@ export class ImageNode extends DecoratorNode {
     return new ImageNode(
       node.__src,
       node.__altText,
+      node.__ref,
       node.__width,
       node.__height,
       node.__key,
@@ -331,11 +338,12 @@ export class ImageNode extends DecoratorNode {
   constructor(
     src: string,
     altText: string,
+    ref?: null | OutlineRef,
     width?: 'inherit' | number,
     height?: 'inherit' | number,
     key?: NodeKey,
   ) {
-    super(key);
+    super(ref, key);
     this.__type = 'image';
     this.__src = src;
     this.__altText = altText;
@@ -383,8 +391,12 @@ export class ImageNode extends DecoratorNode {
   }
 }
 
-export function createImageNode(src: string, altText: string): ImageNode {
-  return new ImageNode(src, altText);
+export function createImageNode(
+  src: string,
+  altText: string,
+  ref?: OutlineRef,
+): ImageNode {
+  return new ImageNode(src, altText, ref);
 }
 
 export function isImageNode(node: ?OutlineNode): boolean %checks {

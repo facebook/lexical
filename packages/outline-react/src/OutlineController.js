@@ -10,56 +10,60 @@
 import type {OutlineEditor, EditorState, EditorThemeClasses} from 'outline';
 
 import * as React from 'react';
-import {createContext, useContext, useMemo} from 'react';
+import {createContext as createReactContext, useContext, useMemo} from 'react';
 import {createEditor} from 'outline';
 import invariant from 'shared/invariant';
 
-type ControllerContext<Context> = null | [OutlineEditor, Context];
+type ControllerContext<Context, SharedContext> =
+  | null
+  | [OutlineEditor, Context, null | SharedContext];
 
-export type Controller<Context> = {
+export type Controller<Context, SharedContext> = {
   ({children: React$Node}): React$Node,
-  __context: React$Context<ControllerContext<Context>>,
+  __context: React$Context<ControllerContext<Context, SharedContext>>,
 };
 
-export function createController<Context>(
-  createControllerContext: () => Context,
+export function createController<Context, SharedContext>(
+  createContext: () => Context,
+  createSharedContext: () => SharedContext,
   editorConfig?: {
     initialEditorState?: EditorState,
     theme?: EditorThemeClasses,
   },
-): Controller<Context> {
-  const ControlledContext = createContext<ControllerContext<Context>>(null);
+): Controller<Context, SharedContext> {
+  const ControllerContextInternal =
+    createReactContext<ControllerContext<Context, SharedContext>>(null);
 
   function ControllerComponent({children}) {
-    const existingContext = useContext(ControlledContext);
-    if (existingContext !== null) {
-      invariant(
-        false,
-        'OutlineController\'s of the same type cannot be nested',
-      );
-    }
+    const existingController = useContext(ControllerContextInternal);
     const controllerContext = useMemo(() => {
-      const context: Context = createControllerContext();
+      const context: Context = createContext();
       const editor = createEditor<Context>({
         ...editorConfig,
         context,
       });
-      return [editor, context];
-    }, []);
+      let sharedContextValue: SharedContext | null = null;
+      // Create shared context
+      if (existingController === null) {
+        sharedContextValue = createSharedContext();
+      }
+      return [editor, context, sharedContextValue];
+    }, [existingController]);
+
     return (
-      <ControlledContext.Provider value={controllerContext}>
+      <ControllerContextInternal.Provider value={controllerContext}>
         {children}
-      </ControlledContext.Provider>
+      </ControllerContextInternal.Provider>
     );
   }
-  ControllerComponent.__context = ControlledContext;
+  ControllerComponent.__context = ControllerContextInternal;
 
   return ControllerComponent;
 }
 
-export function useController<Context>(
-  controller: Controller<Context>,
-): [OutlineEditor, Context] {
+export function useController<Context, SharedContext>(
+  controller: Controller<Context, SharedContext>,
+): [OutlineEditor, Context, null | SharedContext] {
   const context = useContext(controller.__context);
   if (context === null) {
     invariant(

@@ -13,6 +13,8 @@ import type {EditorState} from './OutlineEditorState';
 export type OutlineRef = EditorStateRef;
 
 export interface Ref<Data> {
+  id: string;
+
   get(editor: OutlineEditor): null | Data;
   set(data: Data): void;
   stringify(editor: OutlineEditor): null | string;
@@ -25,10 +27,12 @@ function isStringified(
 }
 
 export class EditorStateRef implements Ref<EditorState> {
+  id: string;
   _type: 'editorstate';
   _editorState: null | EditorState | string;
 
-  constructor(editorState: EditorState | string) {
+  constructor(id: string, editorState: EditorState | string) {
+    this.id = id;
     this._type = 'editorstate';
     this._editorState = editorState;
   }
@@ -55,9 +59,10 @@ export class EditorStateRef implements Ref<EditorState> {
 }
 
 export function createEditorStateRef(
+  id: string,
   editorState: EditorState | string,
 ): EditorStateRef {
-  return new EditorStateRef(editorState);
+  return new EditorStateRef(id, editorState);
 }
 
 export function isEditorStateRef(obj: ?EditorState): boolean %checks {

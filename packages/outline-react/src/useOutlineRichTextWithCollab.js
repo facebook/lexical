@@ -13,7 +13,11 @@ import type {Provider, YjsDoc} from 'outline-yjs';
 import {useCallback} from 'react';
 
 import {useRichTextSetup} from './shared/useRichTextSetup';
-import {useYjsCollaboration, useYjsHistory} from './shared/useYjsCollaboration';
+import {
+  useYjsCollaboration,
+  useYjsHistory,
+  useYjsFocusTracking,
+} from './shared/useYjsCollaboration';
 
 export default function useOutlineRichTextWithCollab(
   editor: OutlineEditor,
@@ -33,6 +37,7 @@ export default function useOutlineRichTextWithCollab(
     color,
   );
   const clearHistory = useYjsHistory(editor, binding);
+  useYjsFocusTracking(editor, provider);
 
   return [
     cursors,

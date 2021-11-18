@@ -182,9 +182,11 @@ export default function useOutlineHistory(editor: OutlineEditor): () => void {
       }
       if (isUndo(event)) {
         event.preventDefault();
+        event.stopPropagation();
         undo();
       } else if (isRedo(event)) {
         event.preventDefault();
+        event.stopPropagation();
         redo();
       }
     };
@@ -193,9 +195,11 @@ export default function useOutlineHistory(editor: OutlineEditor): () => void {
       const inputType = event.inputType;
       if (inputType === 'historyUndo') {
         event.preventDefault();
+        event.stopPropagation();
         undo();
       } else if (inputType === 'historyRedo') {
         event.preventDefault();
+        event.stopPropagation();
         redo();
       }
     };

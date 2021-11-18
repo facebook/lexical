@@ -105,24 +105,27 @@ describe('OutlineUtils tests', () => {
         paragraph.append(textNode);
         root.append(paragraph);
       });
-      const domSelection = window.getSelection();
-      expect(
-        isSelectionWithinEditor(
-          editor,
-          domSelection.anchorNode,
-          domSelection.focusNode,
-        ),
-      ).toBe(false);
       await editor.update((state) => {
+        const domSelection = window.getSelection();
+        expect(
+          isSelectionWithinEditor(
+            editor,
+            domSelection.anchorNode,
+            domSelection.focusNode,
+          ),
+        ).toBe(false);
         textNode.select(0, 0);
       });
-      expect(
-        isSelectionWithinEditor(
-          editor,
-          domSelection.anchorNode,
-          domSelection.focusNode,
-        ),
-      ).toBe(true);
+      await editor.update((state) => {
+        const domSelection = window.getSelection();
+        expect(
+          isSelectionWithinEditor(
+            editor,
+            domSelection.anchorNode,
+            domSelection.focusNode,
+          ),
+        ).toBe(true);
+      });
     });
 
     test('getTextDirection()', () => {

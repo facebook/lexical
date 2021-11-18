@@ -8,7 +8,8 @@
  */
 
 import type {OutlineEditor} from 'outline';
-import type {Provider, YjsDoc} from 'outline-yjs';
+import type {Provider} from 'outline-yjs';
+import type {Doc} from 'yjs';
 
 import {useCallback} from 'react';
 
@@ -19,7 +20,7 @@ export default function useOutlineRichTextWithCollab(
   editor: OutlineEditor,
   id: string,
   provider: Provider,
-  yjsDocMap: Map<string, YjsDoc>,
+  yjsDocMap: Map<string, Doc>,
   name: string,
   color: string,
 ): [React$Node, () => void, boolean] {

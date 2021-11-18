@@ -8,7 +8,7 @@
  */
 
 import type {Controller} from 'outline-react/OutlineController';
-import type {YjsDoc} from 'outline-yjs';
+import type {Doc} from 'yjs';
 
 import {createController} from 'outline-react/OutlineController';
 
@@ -24,7 +24,7 @@ export type PlaygroundState = {
 };
 
 export type PlaygroundSharedState = {
-  yjsDocMap: Map<string, YjsDoc>,
+  yjsDocMap: Map<string, Doc>,
   name: string,
   color: string,
 };

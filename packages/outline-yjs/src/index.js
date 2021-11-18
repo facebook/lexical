@@ -8,18 +8,13 @@
  */
 
 import type {YjsNode} from './Syncing';
+import type {UndoManager} from 'yjs';
 
 // $FlowFixMe: need Flow typings for yjs
 import {UndoManager as YjsUndoManager} from 'yjs';
 
 // $FlowFixMe: needs proper typings
 export type Provider = Object;
-
-// $FlowFixMe: needs proper typings
-export type YjsDoc = Object;
-
-// $FlowFixMe: needs proper typings
-export type UndoManager = Object;
 
 export type {
   YjsNodeMap,

@@ -1453,7 +1453,9 @@ export function wrapLeafNodesInBlocks(
   // either insertAfter/insertBefore/append the corresponding
   // blocks to. This is made more complicated due to nested
   // structures.
-  let target = firstNode;
+  let target = isBlockNode(firstNode)
+    ? firstNode
+    : firstNode.getParentBlockOrThrow();
   while (target !== null) {
     const prevSibling = target.getPreviousSibling();
     if (prevSibling !== null) {
@@ -1475,22 +1477,33 @@ export function wrapLeafNodesInBlocks(
     }
   }
 
+  const movedLeafNodes: Set<NodeKey> = new Set();
+
   // Move out all leaf nodes into our blocks array.
   // If we find a top level empty block, also move make
   // a block for that.
   for (let i = 0; i < nodesLength; i++) {
     const node = nodes[i];
     const parent = node.getParent();
-    if (parent !== null && isLeafNode(node)) {
+    if (
+      parent !== null &&
+      isLeafNode(node) &&
+      !movedLeafNodes.has(node.getKey())
+    ) {
       const parentKey = parent.getKey();
-      let targetBlock = blockMapping.get(parentKey);
-      if (targetBlock === undefined) {
-        targetBlock = createBlock();
+      if (blockMapping.get(parentKey) === undefined) {
+        const targetBlock = createBlock();
         blocks.push(targetBlock);
         blockMapping.set(parentKey, targetBlock);
+
+        // Move node and its siblings to the new
+        // block.
+        parent.getChildren().forEach((child) => {
+          targetBlock.append(child);
+          movedLeafNodes.add(child.getKey());
+        });
+        removeParentEmptyBlocks(parent);
       }
-      targetBlock.append(node);
-      removeParentEmptyBlocks(parent);
     } else if (emptyBlocks.has(node.getKey())) {
       blocks.push(createBlock());
       node.remove();

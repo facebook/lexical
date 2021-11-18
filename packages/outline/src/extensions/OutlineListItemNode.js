@@ -87,8 +87,17 @@ export class ListItemNode extends BlockNode {
     if (isListItemNode(node)) {
       return super.insertAfter(node);
     }
-    if (isListNode(node)) {
-      // Attempt to merge tables
+
+    const listNode = this.getParentOrThrow();
+    if (!isListNode(listNode)) {
+      invariant(
+        false,
+        'insertAfter: list node is not parent of list item node',
+      );
+    }
+
+    // Attempt to merge tables if the list is of the same type.
+    if (isListNode(node) && node.getTag() === listNode.getTag()) {
       let child = node;
       const children = node.getChildren();
       for (let i = children.length - 1; i >= 0; i--) {
@@ -97,14 +106,8 @@ export class ListItemNode extends BlockNode {
       }
       return child;
     }
+
     // Otherwise, split the list
-    const listNode = this.getParentOrThrow();
-    if (!isListNode(listNode)) {
-      invariant(
-        false,
-        'insertAfter: list node is not parent of list item node',
-      );
-    }
     // Split the lists and insert the node in between them
     const siblings = this.getNextSiblings();
     listNode.insertAfter(node);

@@ -10,16 +10,20 @@
 import type {OutlineEditor} from './OutlineEditor';
 import type {NodeKey} from './OutlineNode';
 import type {Node as ReactNode} from 'react';
+import type {OutlineRef} from './OutlineReference';
 
 import {OutlineNode} from './OutlineNode';
 import invariant from 'shared/invariant';
 import {IS_IMMUTABLE} from './OutlineConstants';
 
 export class DecoratorNode extends OutlineNode {
-  constructor(key?: NodeKey) {
+  __ref: null | OutlineRef;
+
+  constructor(ref?: null | OutlineRef, key?: NodeKey) {
     super(key);
     this.__type = 'decorator';
     this.__flags = IS_IMMUTABLE;
+    this.__ref = ref || null;
 
     // ensure custom nodes implement required methods
     if (__DEV__) {

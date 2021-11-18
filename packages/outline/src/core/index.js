@@ -24,6 +24,7 @@ export type {
   BlockPointType as BlockPoint,
   TextPointType as TextPoint,
 } from './OutlineSelection';
+export type {OutlineRef} from './OutlineReference';
 export type {TextFormatType} from './OutlineTextNode';
 export type {LineBreakNode} from './OutlineLineBreakNode';
 
@@ -50,6 +51,7 @@ import {
   getSelection,
 } from './OutlineSelection';
 import {createNodeFromParse} from './OutlineParsing';
+import {createEditorStateRef, isEditorStateRef} from './OutlineReference';
 
 export {
   createEditor,
@@ -57,6 +59,9 @@ export {
   DecoratorNode,
   RootNode,
   TextNode,
+  // Ref
+  createEditorStateRef,
+  isEditorStateRef,
   // Node validation
   isLeafNode,
   isBlockNode,

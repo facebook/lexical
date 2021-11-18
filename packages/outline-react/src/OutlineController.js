@@ -14,56 +14,60 @@ import {createContext as createReactContext, useContext, useMemo} from 'react';
 import {createEditor} from 'outline';
 import invariant from 'shared/invariant';
 
-type ControllerContext<Context, SharedContext> =
+type ControllerContextType<Context, SharedContext> =
   | null
-  | [OutlineEditor, Context, null | SharedContext];
+  | [OutlineEditor, Context, SharedContext];
 
-export type Controller<Context, SharedContext> = {
+export type Controller<InstanceState, SharedState> = {
   ({children: React$Node}): React$Node,
-  __context: React$Context<ControllerContext<Context, SharedContext>>,
+  __context: React$Context<ControllerContextType<InstanceState, SharedState>>,
 };
 
-export function createController<Context, SharedContext>(
-  createContext: () => Context,
-  createSharedContext: () => SharedContext,
+export function createController<InstanceState, SharedState>(
+  createState: () => InstanceState,
+  createSharedContext: () => SharedState,
   editorConfig?: {
     initialEditorState?: EditorState,
     theme?: EditorThemeClasses,
   },
-): Controller<Context, SharedContext> {
-  const ControllerContextInternal =
-    createReactContext<ControllerContext<Context, SharedContext>>(null);
+): Controller<InstanceState, SharedState> {
+  const ControllerContext =
+    createReactContext<ControllerContextType<InstanceState, SharedState>>(null);
 
-  function ControllerComponent({children}) {
-    const existingController = useContext(ControllerContextInternal);
+  function ControllerScope({children}: {children: React$Node}) {
+    const existingController = useContext(ControllerContext);
     const controllerContext = useMemo(() => {
-      const context: Context = createContext();
-      const editor = createEditor<Context>({
+      const context: InstanceState = createState();
+      const editor = createEditor<InstanceState>({
         ...editorConfig,
         context,
       });
-      let sharedContextValue: SharedContext | null = null;
-      // Create shared context
-      if (existingController === null) {
-        sharedContextValue = createSharedContext();
-      }
-      return [editor, context, sharedContextValue];
+      // Create shared context if needed, or re-use the existing one
+      const sharedState: SharedState =
+        existingController === null
+          ? createSharedContext()
+          : existingController[2];
+
+      return [editor, context, sharedState];
+      // We intentionally do not want to update when initialProps changes, as
+      // these are meant to be a one-time thing.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [existingController]);
 
     return (
-      <ControllerContextInternal.Provider value={controllerContext}>
+      <ControllerContext.Provider value={controllerContext}>
         {children}
-      </ControllerContextInternal.Provider>
+      </ControllerContext.Provider>
     );
   }
-  ControllerComponent.__context = ControllerContextInternal;
+  ControllerScope.__context = ControllerContext;
 
-  return ControllerComponent;
+  return ControllerScope;
 }
 
-export function useController<Context, SharedContext>(
-  controller: Controller<Context, SharedContext>,
-): [OutlineEditor, Context, null | SharedContext] {
+export function useController<InstanceState, SharedState>(
+  controller: Controller<InstanceState, SharedState>,
+): [OutlineEditor, InstanceState, SharedState] {
   const context = useContext(controller.__context);
   if (context === null) {
     invariant(

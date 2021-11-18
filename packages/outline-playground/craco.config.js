@@ -46,6 +46,7 @@ module.exports = {
         'outline-react/dist/useOutlineCharacterLimit',
       //Shared
       'shared/environment': 'shared/dist/environment',
+      'shared/useLayoutEffect': 'shared/dist/useLayoutEffect',
     },
   },
 };

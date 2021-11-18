@@ -23,6 +23,7 @@ export type ReverseYjsNodeMap = Map<Object, NodeKey>;
 export type ClientID = string;
 
 export type Binding = {
+  id: string,
   cursors: Map<ClientID, Cursor>,
   cursorsContainer: null | HTMLElement,
   // $FlowFixMe: needs proper typings
@@ -32,12 +33,22 @@ export type Binding = {
   nodeMap: YjsNodeMap,
   reverseNodeMap: ReverseYjsNodeMap,
   processedStates: Set<EditorState>,
+  docMap: Map<string, YjsDoc>,
 };
 
-export function createBinding(provider: Provider, doc: YjsDoc): Binding {
+export function createBinding(
+  provider: Provider,
+  id: string,
+  docMap: Map<string, YjsDoc>,
+): Binding {
+  const doc = docMap.get(id);
+  if (doc === undefined) {
+    throw new Error('Should never happen');
+  }
   const root = doc.get('root', XmlElement);
   root.nodeName = 'root';
   const binding = {
+    id,
     cursors: new Map(),
     cursorsContainer: null,
     doc,
@@ -45,6 +56,7 @@ export function createBinding(provider: Provider, doc: YjsDoc): Binding {
     nodeMap: new Map([['root', root]]),
     reverseNodeMap: new Map([[root, 'root']]),
     processedStates: new Set(),
+    docMap,
   };
   return binding;
 }

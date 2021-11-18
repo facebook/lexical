@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict-local
+ * @flow strict
  */
 
 import * as React from 'react';
@@ -30,24 +30,45 @@ function onError(e: Error): void {
   throw e;
 }
 
-export default function RichTextCollabPlugin(): React$Node {
-  const [editor, contract] = useController(PlaygroundController);
+export default function RichTextCollabPlugin({
+  id,
+  placeholder = 'Enter some collaborative rich text...',
+}: {
+  id: string,
+  placeholder?: string,
+}): React$Node {
+  const [editor, state, {yjsDocMap, name, color}] =
+    useController(PlaygroundController);
   const [rootElementRef, showPlaceholder] = useOutlineEditor(editor, onError);
-  const [doc, provider] = useMemo(() => {
-    const doc = new Doc();
+  const provider = useMemo(() => {
+    let doc = yjsDocMap.get(id);
+    if (doc === undefined) {
+      doc = new Doc();
+      yjsDocMap.set(id, doc);
+    } else {
+      doc.load();
+    }
     const provider = new WebsocketProvider(
       WEBSOCKET_ENDPOINT,
-      WEBSOCKET_SLUG,
+      WEBSOCKET_SLUG + '/' + id,
       doc,
       {
         connect: false,
       },
     );
-    return [doc, provider];
-  }, []);
-  const [cursors, clear] = useOutlineRichTextWithCollab(editor, doc, provider);
+    return provider;
+  }, [id, yjsDocMap]);
+
+  const [cursors, clear] = useOutlineRichTextWithCollab(
+    editor,
+    id,
+    provider,
+    yjsDocMap,
+    name,
+    color,
+  );
   const decorators = useOutlineDecorators(editor);
-  const isReadOnly = useEditorListeners(contract, clear);
+  const isReadOnly = useEditorListeners(state, clear);
 
   return (
     <>
@@ -55,9 +76,7 @@ export default function RichTextCollabPlugin(): React$Node {
         isReadOnly={isReadOnly}
         rootElementRef={rootElementRef}
       />
-      {showPlaceholder && (
-        <Placeholder>Enter some collaborative rich text...</Placeholder>
-      )}
+      {showPlaceholder && <Placeholder>{placeholder}</Placeholder>}
       {cursors}
       {decorators}
     </>

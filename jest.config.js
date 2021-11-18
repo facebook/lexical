@@ -59,6 +59,8 @@ module.exports = {
         '^shared/environment$': '<rootDir>/packages/shared/src/environment.js',
         '^shared/getPossibleDecoratorNode$':
           '<rootDir>/packages/shared/src/getPossibleDecoratorNode.js',
+        '^shared/useLayoutEffect$':
+          '<rootDir>/packages/shared/src/useLayoutEffect.js',
         '^./dist/(.+)': './src/$1',
       },
       globals: {

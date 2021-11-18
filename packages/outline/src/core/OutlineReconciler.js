@@ -954,13 +954,7 @@ function normalizeTextNodes(block: BlockNode): BlockNode {
     const child = children[i];
     const index = i - removedNodes;
 
-    if (
-      isTextNode(child) &&
-      child.__type === 'text' &&
-      !child.isImmutable() &&
-      !child.isSegmented() &&
-      !child.isUnmergeable()
-    ) {
+    if (isTextNode(child) && child.isSimpleText() && !child.isUnmergeable()) {
       const flags = child.__flags;
       const format = child.__format;
       const style = child.__style;

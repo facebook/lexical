@@ -24,20 +24,24 @@ import {
 import {initEditor} from './useRichTextSetup';
 import {isRedo, isUndo} from 'outline/keys';
 
-const colors = ['255,165,0', '0,200,55', '160,0,200', '0,172,200'];
-
 export function useYjsCollaboration(
   editor: OutlineEditor,
-  doc: YjsDoc,
+  id: string,
   provider: Provider,
-  name?: string,
-  color?: string,
+  docMap: Map<string, YjsDoc>,
+  name: string,
+  color: string,
 ): [React$Node, Binding, boolean] {
   const [connected, setConnected] = useState(false);
-  const binding = useMemo(() => createBinding(provider, doc), [doc, provider]);
+  const binding = useMemo(
+    () => createBinding(provider, id, docMap),
+    [id, provider, docMap],
+  );
 
   useEffect(() => {
     const {root} = binding;
+    const {awareness} = provider;
+
     provider.on('status', ({status}: {status: string}) => {
       setConnected(status === 'connected');
     });
@@ -48,14 +52,7 @@ export function useYjsCollaboration(
       }
     });
 
-    const {awareness} = provider;
-
-    initLocalState(
-      provider,
-      name || 'Guest' + Math.floor(Math.random() * 100),
-      color ||
-        colors[Math.floor(Math.random() * (colors.length - 1 - 0 + 1) + 0)],
-    );
+    initLocalState(provider, name, color);
 
     awareness.on('update', ({removed}) => {
       syncCursorPositions(editor, binding, provider);
@@ -75,7 +72,6 @@ export function useYjsCollaboration(
     );
 
     root.observeDeep((events) => {
-      // console.log(root.toJSON());
       syncYjsChangesToOutline(binding, editor, provider, events);
     });
 

@@ -17,7 +17,8 @@ export interface Ref<Data> {
 
   get(editor: OutlineEditor): null | Data;
   set(data: Data): void;
-  stringify(editor: OutlineEditor): null | string;
+  toJSON(): {type: string, editorState: null | string};
+  isEmpty(): boolean;
 }
 
 function isStringified(
@@ -31,7 +32,7 @@ export class EditorStateRef implements Ref<EditorState> {
   _type: 'editorstate';
   _editorState: null | EditorState | string;
 
-  constructor(id: string, editorState: EditorState | string) {
+  constructor(id: string, editorState: null | EditorState | string) {
     this.id = id;
     this._type = 'editorstate';
     this._editorState = editorState;
@@ -50,17 +51,26 @@ export class EditorStateRef implements Ref<EditorState> {
     this._editorState = editorState;
   }
 
-  stringify(editor: OutlineEditor): null | string {
-    const editorState = this.get(editor);
-    return editorState === null || isStringified(editorState)
-      ? editorState
-      : editorState.stringify();
+  toJSON(): {id: string, type: string, editorState: null | string} {
+    const editorState = this._editorState;
+    return {
+      id: this.id,
+      type: this._type,
+      editorState:
+        editorState === null || isStringified(editorState)
+          ? editorState
+          : JSON.stringify(editorState.toJSON()),
+    };
+  }
+
+  isEmpty(): boolean {
+    return this._editorState === null;
   }
 }
 
 export function createEditorStateRef(
   id: string,
-  editorState: EditorState | string,
+  editorState: null | EditorState | string,
 ): EditorStateRef {
   return new EditorStateRef(id, editorState);
 }

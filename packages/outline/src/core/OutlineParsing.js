@@ -15,7 +15,13 @@ import {
   getActiveEditor,
   errorOnReadOnly,
 } from './OutlineUpdates';
-import {isRootNode, isBlockNode, isTextNode} from '.';
+import {
+  isRootNode,
+  isBlockNode,
+  isTextNode,
+  isDecoratorNode,
+  createEditorStateRef,
+} from '.';
 import invariant from 'shared/invariant';
 
 export type NodeParserState = {
@@ -43,7 +49,7 @@ export type ParsedTextNode = {
 
 export type ParsedNodeMap = Map<NodeKey, ParsedNode>;
 
-type ParsedSelection = {
+export type ParsedSelection = {
   anchor: {
     key: NodeKey,
     offset: number,
@@ -114,6 +120,14 @@ export function internalCreateNodeFromParse(
   } else if (isTextNode(node)) {
     node.__format = parsedNode.__format;
     node.__style = parsedNode.__style;
+  } else if (isDecoratorNode(node)) {
+    const parsedRef = parsedNode.__ref;
+    const refType = parsedRef.type;
+    let ref = null;
+    if (refType === 'editorstate') {
+      ref = createEditorStateRef(parsedRef.id, parsedRef.editorState);
+    }
+    node.__ref = ref;
   }
   // The selection might refer to an old node whose key has changed. Produce a
   // new selection record with the old keys mapped to the new ones.

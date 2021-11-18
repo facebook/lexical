@@ -11,7 +11,7 @@ import type {InputEvents} from 'outline-react/useOutlineEditorEvents';
 import type {OutlineEditor, RootNode} from 'outline';
 
 import {log, getRoot, getSelection} from 'outline';
-import useLayoutEffect from './useLayoutEffect';
+import useLayoutEffect from '../../../shared/src/useLayoutEffect';
 import useOutlineEditorEvents from '../useOutlineEditorEvents';
 import {createParagraphNode, ParagraphNode} from 'outline/ParagraphNode';
 import {CAN_USE_BEFORE_INPUT} from 'shared/environment';

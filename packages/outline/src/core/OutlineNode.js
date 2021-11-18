@@ -10,7 +10,13 @@
 import type {EditorConfig} from './OutlineEditor';
 import type {Selection, PointType} from './OutlineSelection';
 
-import {isBlockNode, isTextNode, isRootNode, BlockNode} from '.';
+import {
+  isBlockNode,
+  isTextNode,
+  isRootNode,
+  BlockNode,
+  isDecoratorNode,
+} from '.';
 import {
   getActiveEditorState,
   errorOnReadOnly,
@@ -536,6 +542,8 @@ export class OutlineNode {
     } else if (isTextNode(mutableNode)) {
       mutableNode.__format = latestNode.__format;
       mutableNode.__style = latestNode.__style;
+    } else if (isDecoratorNode(mutableNode)) {
+      mutableNode.__ref = latestNode.__ref;
     }
     cloneNotNeeded.add(key);
     mutableNode.__key = key;

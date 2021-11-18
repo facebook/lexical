@@ -10,7 +10,7 @@
 import type {OutlineEditor} from 'outline';
 import type {EventHandler} from 'outline/events';
 
-import useLayoutEffect from './shared/useLayoutEffect';
+import useLayoutEffect from 'shared/useLayoutEffect';
 
 export type InputEvents = Array<[string, EventHandler]>;
 

@@ -10,7 +10,7 @@
 import type {OutlineEditor} from 'outline';
 
 import {useCallback} from 'react';
-import useLayoutEffect from './shared/useLayoutEffect';
+import useLayoutEffect from 'shared/useLayoutEffect';
 import useOutlineCanShowPlaceholder from 'outline-react/useOutlineCanShowPlaceholder';
 
 export default function useOutlineEditor(

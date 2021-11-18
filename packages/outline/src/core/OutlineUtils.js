@@ -265,11 +265,14 @@ export function markAllNodesAsDirty(
 ): void {
   // Mark all existing text nodes as dirty
   editor.update(() => {
+    const editorState = getActiveEditorState();
+    if (editorState.isEmpty()) {
+      return;
+    }
     if (type === 'root') {
       getRoot().markDirty();
       return;
     }
-    const editorState = getActiveEditorState();
     const nodeMap = editorState._nodeMap;
     const nodeMapEntries = Array.from(nodeMap);
     // For...of would be faster here, but this will get

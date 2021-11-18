@@ -18,7 +18,8 @@ import type {
   DecoratorNode,
   EditorStateRef,
 } from 'outline';
-import type {Binding, YjsNodeMap, ReverseYjsNodeMap, Provider, YjsDoc} from '.';
+import type {Binding, YjsNodeMap, ReverseYjsNodeMap, Provider} from '.';
+
 // $FlowFixMe: need Flow typings for yjs
 import {XmlElement, XmlText, Doc} from 'yjs';
 import {
@@ -60,7 +61,7 @@ function createOutlineNodeFromYjsNode(
   yjsNodeMap: YjsNodeMap,
   reverseYjsNodeMap: ReverseYjsNodeMap,
   nodeTypes: NodeTypes,
-  yjsDocMap: Map<string, YjsDoc>,
+  yjsDocMap: Map<string, Doc>,
 ): NodeKey {
   const attributes = yjsNode.getAttributes();
   const nodeType = attributes.__type;
@@ -123,7 +124,7 @@ function createYjsNodeFromOutlineNode(
   node: OutlineNode,
   yjsNodeMap: YjsNodeMap,
   reverseYjsNodeMap: ReverseYjsNodeMap,
-  yjsDocMap: Map<string, YjsDoc>,
+  yjsDocMap: Map<string, Doc>,
 ): YjsNode {
   // We first validate that the parent exists
   const parent = node.getParentOrThrow();
@@ -348,7 +349,7 @@ function syncOutlineNodeToYjs(
   nodeMap: NodeMap,
   yjsNodeMap: YjsNodeMap,
   reverseYjsNodeMap: ReverseYjsNodeMap,
-  yjsDocMap: Map<string, YjsDoc>,
+  yjsDocMap: Map<string, Doc>,
   selection: null | Selection,
 ): void {
   const node = nodeMap.get(key);
@@ -479,7 +480,7 @@ function setDecoratorRef(
   node: DecoratorNode,
   outlineValue: null | string | EditorStateRef,
   yjsValue: null | string,
-  yjsDocMap: Map<string, YjsDoc>,
+  yjsDocMap: Map<string, Doc>,
 ): void {
   let ref = outlineValue;
   if (yjsValue === null) {
@@ -509,7 +510,7 @@ function syncYjsNodeToOutline(
   childListChanged: boolean,
   attributesChanged: null | Set<string>,
   nodeTypes: NodeTypes,
-  yjsDocMap: Map<string, YjsDoc>,
+  yjsDocMap: Map<string, Doc>,
 ): void {
   const key = reverseYjsNodeMap.get(yjsNode);
   if (key === undefined) {

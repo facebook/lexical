@@ -9,7 +9,8 @@
 
 import type {Cursor} from './Cursors';
 import type {NodeKey, EditorState} from 'outline';
-import type {Provider, YjsDoc} from '.';
+import type {Provider} from '.';
+import type {Doc} from 'yjs';
 
 // $FlowFixMe: need Flow typings for yjs
 import {XmlElement} from 'yjs';
@@ -33,19 +34,20 @@ export type Binding = {
   nodeMap: YjsNodeMap,
   reverseNodeMap: ReverseYjsNodeMap,
   processedStates: Set<EditorState>,
-  docMap: Map<string, YjsDoc>,
+  docMap: Map<string, Doc>,
 };
 
 export function createBinding(
   provider: Provider,
   id: string,
-  docMap: Map<string, YjsDoc>,
+  docMap: Map<string, Doc>,
 ): Binding {
   const doc = docMap.get(id);
   if (doc === undefined) {
     throw new Error('Should never happen');
   }
   const root = doc.get('root', XmlElement);
+  // $FlowFixMe: our Flow bindings need fixing
   root.nodeName = 'root';
   const binding = {
     id,

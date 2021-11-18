@@ -8,7 +8,8 @@
  */
 
 import type {OutlineEditor} from 'outline';
-import type {Provider, YjsDoc, Binding} from 'outline-yjs';
+import type {Provider, Binding} from 'outline-yjs';
+import type {Doc} from 'yjs';
 
 import * as React from 'react';
 
@@ -28,7 +29,7 @@ export function useYjsCollaboration(
   editor: OutlineEditor,
   id: string,
   provider: Provider,
-  docMap: Map<string, YjsDoc>,
+  docMap: Map<string, Doc>,
   name: string,
   color: string,
 ): [React$Node, Binding, boolean] {

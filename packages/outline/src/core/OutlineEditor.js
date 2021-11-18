@@ -14,11 +14,7 @@ import type {EditorState} from './OutlineEditorState';
 import type {DecoratorNode} from './OutlineDecoratorNode';
 import type {BlockNode} from './OutlineBlockNode';
 
-import {
-  commitPendingUpdates,
-  parseEditorState,
-  shouldEnqueueUpdates,
-} from './OutlineUpdates';
+import {commitPendingUpdates, parseEditorState} from './OutlineUpdates';
 import {TextNode, getSelection, getRoot} from '.';
 import {createEmptyEditorState} from './OutlineEditorState';
 import {LineBreakNode} from './OutlineLineBreakNode';
@@ -197,6 +193,7 @@ class BaseOutlineEditor {
   _deferred: Array<() => void>;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _updates: Array<[(state: State) => void, void | (() => void)]>;
+  _updating: boolean;
   _listeners: Listeners;
   _transforms: Transforms;
   _nodeTypes: NodeTypes;
@@ -224,6 +221,7 @@ class BaseOutlineEditor {
     // Used during reconciliation
     this._keyToDOMMap = new Map();
     this._updates = [];
+    this._updating = false;
     // Listeners
     this._listeners = {
       decorator: new Set(),
@@ -379,7 +377,7 @@ class BaseOutlineEditor {
     return parseEditorState(stringifiedEditorState, getSelf(this));
   }
   update(updateFn: (state: State) => void, callbackFn?: () => void): void {
-    if (shouldEnqueueUpdates()) {
+    if (getSelf(this)._updating) {
       getSelf(this)._updates.push([updateFn, callbackFn]);
     } else {
       beginUpdate(getSelf(this), updateFn, callbackFn);
@@ -422,6 +420,7 @@ declare export class OutlineEditor {
   _compositionKey: null | NodeKey;
   _deferred: Array<() => void>;
   _updates: Array<[(state: State) => void, void | (() => void)]>;
+  _updating: boolean;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _listeners: Listeners;
   _transforms: Transforms;

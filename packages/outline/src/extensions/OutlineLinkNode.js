@@ -75,6 +75,10 @@ export class LinkNode extends BlockNode {
   canBeEmpty(): false {
     return false;
   }
+
+  isInline(): true {
+    return true;
+  }
 }
 
 export function createLinkNode(url: string): LinkNode {

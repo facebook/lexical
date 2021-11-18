@@ -23,7 +23,11 @@ import {
   getSelection,
   getNodeByKey,
 } from 'outline';
-import {createParagraphNode, ParagraphNode} from 'outline/ParagraphNode';
+import {
+  createParagraphNode,
+  ParagraphNode,
+  isParagraphNode,
+} from 'outline/ParagraphNode';
 import useOutlineRichText from 'outline-react/useOutlineRichText';
 import {getEditorStateTextContent} from '../../core/OutlineUtils';
 import {createTestBlockNode} from '../utils';
@@ -260,7 +264,7 @@ describe('OutlineEditor tests', () => {
     ]);
   });
 
-  it('Synchronously runs two transforms, one of them depends on the other', async () => {
+  it('Synchronously runs three transforms, two of them depend on the other', async () => {
     init();
     // 2. Add italics
     const italicsListener = editor.addTransform('text', (node) => {
@@ -300,6 +304,56 @@ describe('OutlineEditor tests', () => {
 
     expect(container.innerHTML).toBe(
       '<div contenteditable="true" data-outline-editor="true"><p><strong class="editor-text-bold editor-text-underline editor-text-italic" data-outline-text="true">foo</strong></p></div>',
+    );
+  });
+
+  it('Synchronously runs three transforms, two of them depend on the other (2)', async () => {
+    await init();
+    // Add transform makes everything dirty the first time (let's not leverage this here)
+    const skipFirst = [true, true, true];
+
+    const testBlockListener = editor.addTransform('block', (block) => {
+      if (skipFirst[0]) {
+        skipFirst[0] = false;
+        return;
+      }
+      if (isParagraphNode(block) && block.isEmpty()) {
+        block.append(createTextNode('foo'));
+      }
+    });
+    // 2. (Block transform) Add bold to text
+    const boldListener = editor.addTransform('text', (node) => {
+      if (node.getTextContent() === 'foo' && !node.hasFormat('bold')) {
+        node.toggleFormat('bold');
+      }
+    });
+    // 3. (Block transform) Add italics to bold text
+    const italicsListener = editor.addTransform('block', (node) => {
+      const child = node.getLastDescendant();
+      if (
+        child !== null &&
+        child.hasFormat('bold') &&
+        !child.hasFormat('italic')
+      ) {
+        child.toggleFormat('italic');
+      }
+    });
+    await editor.update(() => {
+      const root = getRoot();
+      const paragraph = createParagraphNode();
+      root.append(paragraph);
+    });
+    await editor.update(() => {
+      const root = getRoot();
+      const paragraph = root.getFirstChild();
+      paragraph.markDirty();
+    });
+    testBlockListener();
+    boldListener();
+    italicsListener();
+
+    expect(container.innerHTML).toBe(
+      '<div contenteditable="true" data-outline-editor="true"><p><strong class="editor-text-bold editor-text-italic" data-outline-text="true">foo</strong></p></div>',
     );
   });
 

@@ -216,6 +216,8 @@ function applyAllTransforms(
               decoratorTransformsArr,
               decoratorTransformsArrLength,
             );
+          } else {
+            untransformedDirtySubtrees.add(nodeKey);
           }
         }
         dirtyLeaves.add(nodeKey);
@@ -550,12 +552,12 @@ function beginUpdate(
     processNestedUpdates(editor, deferred);
     applySelectionTransforms(pendingEditorState, editor);
     if (editor._dirtyType !== NO_DIRTY_NODES) {
-      if (pendingEditorState.isEmpty()) {
-        invariant(
-          false,
-          'updateEditor: the pending editor state is empty. Ensure the root not never becomes empty from an update.',
-        );
-      }
+      // if (pendingEditorState.isEmpty()) {
+      //   invariant(
+      //     false,
+      //     'updateEditor: the pending editor state is empty. Ensure the root not never becomes empty from an update.',
+      //   );
+      // }
       applyAllTransforms(pendingEditorState, editor);
       processNestedUpdates(editor, deferred);
       garbageCollectDetachedNodes(

@@ -262,7 +262,6 @@ function applyAllTransforms(
     infiniteLoopCount--;
   }
   if (infiniteLoopCount === 0) {
-    console.error('Went over the limit');
     invariant(
       false,
       'Some transforms are endlessly triggering additional transforms. May have encountered a recursivity issue where two transforms have their preconditions too lose and collide with each other.',

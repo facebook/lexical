@@ -46,7 +46,19 @@ describe('OutlineEditor tests', () => {
   });
 
   function useOutlineEditor(rootElementRef) {
-    const editor = React.useMemo(() => createEditor(), []);
+    const editor = React.useMemo(
+      () =>
+        createEditor({
+          theme: {
+            text: {
+              bold: 'editor-text-bold',
+              italic: 'editor-text-italic',
+              underline: 'editor-text-underline',
+            },
+          },
+        }),
+      [],
+    );
 
     React.useEffect(() => {
       const rootElement = rootElementRef.current;
@@ -246,6 +258,69 @@ describe('OutlineEditor tests', () => {
       'B3',
       'TextTransform C3',
     ]);
+  });
+
+  it('Synchronously runs two transforms, one of them depends on the other', async () => {
+    init();
+    // 2. Add italics
+    const italicsListener = editor.addTransform('text', (node) => {
+      if (
+        node.getTextContent() === 'foo' &&
+        node.hasFormat('bold') &&
+        !node.hasFormat('italic')
+      ) {
+        node.toggleFormat('italic');
+      }
+    });
+    // 1. Add bold
+    const boldListener = editor.addTransform('text', (node) => {
+      if (node.getTextContent() === 'foo' && !node.hasFormat('bold')) {
+        node.toggleFormat('bold');
+      }
+    });
+    // 2. Add underline
+    const underlineListener = editor.addTransform('text', (node) => {
+      if (
+        node.getTextContent() === 'foo' &&
+        node.hasFormat('bold') &&
+        !node.hasFormat('underline')
+      ) {
+        node.toggleFormat('underline');
+      }
+    });
+    await editor.update(() => {
+      const root = getRoot();
+      const paragraph = createParagraphNode();
+      root.append(paragraph);
+      paragraph.append(createTextNode('foo'));
+    });
+    italicsListener();
+    boldListener();
+    underlineListener();
+
+    expect(container.innerHTML).toBe(
+      '<div contenteditable="true" data-outline-editor="true"><p><strong class="editor-text-bold editor-text-underline editor-text-italic" data-outline-text="true">foo</strong></p></div>',
+    );
+  });
+
+  it('Detects infinite recursivity on transforms', async () => {
+    const errorListener = jest.fn();
+    init(errorListener);
+
+    const boldListener = editor.addTransform('text', (node) => {
+      node.toggleFormat('bold');
+    });
+
+    expect(errorListener).toHaveBeenCalledTimes(0);
+    await editor.update(() => {
+      const root = getRoot();
+      const paragraph = createParagraphNode();
+      root.append(paragraph);
+      paragraph.append(createTextNode('foo'));
+    });
+    expect(errorListener).toHaveBeenCalledTimes(1);
+
+    boldListener();
   });
 
   it('Should be able to update an editor state without a root element', () => {

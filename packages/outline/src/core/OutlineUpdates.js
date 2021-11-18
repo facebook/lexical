@@ -54,7 +54,6 @@ import invariant from 'shared/invariant';
 
 let activeEditorState: null | EditorState = null;
 let activeEditor: null | OutlineEditor = null;
-let isEnqueuingUpdates: boolean = false;
 let isReadOnlyMode: boolean = false;
 let isAttemptingToRecoverFromReconcilerError: boolean = false;
 
@@ -84,10 +83,6 @@ export const state: State = {
 
 export function isCurrentlyReadOnlyMode(): boolean {
   return isReadOnlyMode;
-}
-
-export function shouldEnqueueUpdates(): boolean {
-  return isEnqueuingUpdates;
 }
 
 export function errorOnReadOnly(): void {
@@ -323,12 +318,12 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
   const previousActiveEditorState = activeEditorState;
   const previousReadOnlyMode = isReadOnlyMode;
   const previousActiveEditor = activeEditor;
-  const previousShouldEnqueueUpdates = isEnqueuingUpdates;
+  const previouslyUpdating = editor._updating;
   activeEditor = editor;
   activeEditorState = pendingEditorState;
   isReadOnlyMode = false;
   // We don't want updates to sync block the reconcilation.
-  isEnqueuingUpdates = true;
+  editor._updating = true;
 
   try {
     updateEditorState(
@@ -355,7 +350,7 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
     }
     return;
   } finally {
-    isEnqueuingUpdates = previousShouldEnqueueUpdates;
+    editor._updating = previouslyUpdating;
     activeEditorState = previousActiveEditorState;
     isReadOnlyMode = previousReadOnlyMode;
     activeEditor = previousActiveEditor;
@@ -410,15 +405,15 @@ export function triggerListeners(
   // $FlowFixMe: needs refining
   ...payload: Array<any>
 ): void {
-  const previousShouldEnqueueUpdates = isEnqueuingUpdates;
-  isEnqueuingUpdates = isCurrentlyEnqueuingUpdates;
+  const previouslyUpdating = editor._updating;
+  editor._updating = isCurrentlyEnqueuingUpdates;
   try {
     const listeners = Array.from(editor._listeners[type]);
     for (let i = 0; i < listeners.length; i++) {
       listeners[i](...payload);
     }
   } finally {
-    isEnqueuingUpdates = previousShouldEnqueueUpdates;
+    editor._updating = previouslyUpdating;
   }
 }
 
@@ -434,14 +429,14 @@ function triggerDeferredUpdateCallbacks(editor: OutlineEditor): void {
   const deferred = editor._deferred;
   editor._deferred = [];
   if (deferred.length !== 0) {
-    const previousShouldEnqueueUpdates = isEnqueuingUpdates;
-    isEnqueuingUpdates = true;
+    const previouslyUpdating = editor._updating;
+    editor._updating = true;
     try {
       for (let i = 0; i < deferred.length; i++) {
         deferred[i]();
       }
     } finally {
-      isEnqueuingUpdates = previousShouldEnqueueUpdates;
+      editor._updating = previouslyUpdating;
     }
   }
 }
@@ -485,10 +480,10 @@ export function beginUpdate(
   const previousActiveEditorState = activeEditorState;
   const previousReadOnlyMode = isReadOnlyMode;
   const previousActiveEditor = activeEditor;
-  const previousShouldEnqueueUpdates = isEnqueuingUpdates;
+  const previouslyUpdating = editor._updating;
   activeEditorState = pendingEditorState;
   isReadOnlyMode = false;
-  isEnqueuingUpdates = true;
+  editor._updating = true;
   activeEditor = editor;
 
   try {
@@ -553,7 +548,7 @@ export function beginUpdate(
     activeEditorState = previousActiveEditorState;
     isReadOnlyMode = previousReadOnlyMode;
     activeEditor = previousActiveEditor;
-    isEnqueuingUpdates = previousShouldEnqueueUpdates;
+    editor._updating = previouslyUpdating;
   }
 
   const shouldUpdate =

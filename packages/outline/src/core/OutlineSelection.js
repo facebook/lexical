@@ -369,11 +369,7 @@ function getTextNodeOffset(
   return moveSelectionToEnd ? node.getTextContentSize() : 0;
 }
 
-function resolveSelectionPoint(
-  dom: Node,
-  offset: number,
-  editor: OutlineEditor,
-): null | PointType {
+function resolveSelectionPoint(dom: Node, offset: number): null | PointType {
   let resolvedOffset = offset;
   let resolvedNode: OutlineNode | null;
   // If we have selection on an element, we will
@@ -462,19 +458,11 @@ function resolveSelectionPoints(
   ) {
     return null;
   }
-  const resolvedAnchorPoint = resolveSelectionPoint(
-    anchorDOM,
-    anchorOffset,
-    editor,
-  );
+  const resolvedAnchorPoint = resolveSelectionPoint(anchorDOM, anchorOffset);
   if (resolvedAnchorPoint === null) {
     return null;
   }
-  const resolvedFocusPoint = resolveSelectionPoint(
-    focusDOM,
-    focusOffset,
-    editor,
-  );
+  const resolvedFocusPoint = resolveSelectionPoint(focusDOM, focusOffset);
   if (resolvedFocusPoint === null) {
     return null;
   }

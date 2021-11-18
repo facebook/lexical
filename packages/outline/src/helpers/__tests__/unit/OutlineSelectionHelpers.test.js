@@ -790,7 +790,6 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // Extract selection
       setupTestCase((selection, state, block) => {
-        debugger;
         expect(extractSelection(selection)).toEqual([state.getNodeByKey('c')]);
       });
 

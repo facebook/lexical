@@ -59,13 +59,17 @@ describe('OutlineEditor tests', () => {
 
   let editor: OutlineEditor = null;
 
-  function init() {
+  function init(onError: (error) => void) {
     const ref = React.createRef();
 
     function TestBase() {
       editor = useOutlineEditor(ref);
       editor.addListener('error', (error) => {
-        throw error;
+        if (onError) {
+          onError(error);
+        } else {
+          throw error;
+        }
       });
       return <div ref={ref} contentEditable={true} />;
     }
@@ -120,16 +124,8 @@ describe('OutlineEditor tests', () => {
   });
 
   it('Should handle nested updates in the correct sequence', async () => {
-    const rootElement = document.createElement('div');
+    init();
     let log = [];
-    container.appendChild(rootElement);
-
-    editor = createEditor();
-    editor.addListener('error', (e) => {
-      throw e;
-    });
-
-    editor.setRootElement(rootElement);
 
     editor.update(() => {
       const root = getRoot();
@@ -252,7 +248,7 @@ describe('OutlineEditor tests', () => {
     ]);
   });
 
-  it('Should be able to update an editor state without an root element', () => {
+  it('Should be able to update an editor state without a root element', () => {
     const ref = React.createRef();
 
     function TestBase({element}) {
@@ -289,19 +285,8 @@ describe('OutlineEditor tests', () => {
   });
 
   it('Should be able to recover from an update error', async () => {
-    function TestBase() {
-      editor = React.useMemo(() => createEditor(), []);
-
-      const ref = React.useCallback((node) => {
-        editor.setRootElement(node);
-      }, []);
-
-      return <div ref={ref} contentEditable={true} />;
-    }
-
-    ReactTestUtils.act(() => {
-      reactRoot.render(<TestBase element={null} />);
-    });
+    const errorListener = jest.fn();
+    init(errorListener);
 
     editor.update(() => {
       const root = getRoot();
@@ -320,10 +305,7 @@ describe('OutlineEditor tests', () => {
       '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">This works!</span></p></div>',
     );
 
-    const listener = jest.fn();
-    editor.addListener('error', listener);
-
-    expect(listener).toHaveBeenCalledTimes(0);
+    expect(errorListener).toHaveBeenCalledTimes(0);
 
     editor.update(() => {
       const root = getRoot();
@@ -334,7 +316,7 @@ describe('OutlineEditor tests', () => {
         .setTextContent('Foo');
     });
 
-    expect(listener).toHaveBeenCalledTimes(1);
+    expect(errorListener).toHaveBeenCalledTimes(1);
 
     expect(container.innerHTML).toBe(
       '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">This works!</span></p></div>',
@@ -342,19 +324,8 @@ describe('OutlineEditor tests', () => {
   });
 
   it('Should be able to recover from a reconciliation error', async () => {
-    function TestBase() {
-      editor = React.useMemo(() => createEditor(), []);
-
-      const ref = React.useCallback((node) => {
-        editor.setRootElement(node);
-      }, []);
-
-      return <div ref={ref} contentEditable={true} />;
-    }
-
-    ReactTestUtils.act(() => {
-      reactRoot.render(<TestBase element={null} />);
-    });
+    const errorListener = jest.fn();
+    init(errorListener);
 
     editor.update(() => {
       const root = getRoot();
@@ -373,17 +344,14 @@ describe('OutlineEditor tests', () => {
       '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">This works!</span></p></div>',
     );
 
-    const listener = jest.fn();
-    editor.addListener('error', listener);
-
-    expect(listener).toHaveBeenCalledTimes(0);
+    expect(errorListener).toHaveBeenCalledTimes(0);
 
     editor.update(() => {
       const root = getRoot();
       root.getFirstChild().getFirstChild().setTextContent('Foo');
     });
 
-    expect(listener).toHaveBeenCalledTimes(0);
+    expect(errorListener).toHaveBeenCalledTimes(0);
 
     // This is an intentional bug, to trigger the recovery
     editor._editorState._nodeMap = null;
@@ -391,7 +359,7 @@ describe('OutlineEditor tests', () => {
     // Wait for update to complete
     await Promise.resolve().then();
 
-    expect(listener).toHaveBeenCalledTimes(1);
+    expect(errorListener).toHaveBeenCalledTimes(1);
 
     expect(container.innerHTML).toBe(
       '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">Foo</span></p></div>',
@@ -616,91 +584,86 @@ describe('OutlineEditor tests', () => {
     });
   });
 
-  describe('With root element', () => {
-    beforeEach(() => {
+  describe('parseEditorState()', () => {
+    let originalText;
+    let parsedParagraph;
+    let parsedRoot;
+    let parsedSelection;
+    let parsedText;
+    let paragraphKey;
+    let textKey;
+    let parsedEditorState;
+
+    beforeEach(async () => {
       init();
+      await update((state) => {
+        const paragraph = createParagraphNode();
+        originalText = createTextNode('Hello world');
+        originalText.select(6, 11);
+        paragraph.append(originalText);
+        getRoot().append(paragraph);
+      });
+      editor.registerNodeType('paragraph', ParagraphNode);
+      const stringifiedEditorState = editor.getEditorState().stringify();
+      parsedEditorState = editor.parseEditorState(stringifiedEditorState);
+      parsedEditorState.read(() => {
+        parsedRoot = getRoot();
+        parsedParagraph = parsedRoot.getFirstChild();
+        paragraphKey = parsedParagraph.getKey();
+        parsedText = parsedParagraph.getFirstChild();
+        textKey = parsedText.getKey();
+        parsedSelection = getSelection();
+      });
     });
 
-    describe('parseEditorState()', () => {
-      let originalText;
-      let parsedParagraph;
-      let parsedRoot;
-      let parsedSelection;
-      let parsedText;
-      let paragraphKey;
-      let textKey;
-      let parsedEditorState;
-
-      beforeEach(async () => {
-        await update((state) => {
-          const paragraph = createParagraphNode();
-          originalText = createTextNode('Hello world');
-          originalText.select(6, 11);
-          paragraph.append(originalText);
-          getRoot().append(paragraph);
-        });
-        editor.registerNodeType('paragraph', ParagraphNode);
-        const stringifiedEditorState = editor.getEditorState().stringify();
-        parsedEditorState = editor.parseEditorState(stringifiedEditorState);
-        parsedEditorState.read(() => {
-          parsedRoot = getRoot();
-          parsedParagraph = parsedRoot.getFirstChild();
-          paragraphKey = parsedParagraph.getKey();
-          parsedText = parsedParagraph.getFirstChild();
-          textKey = parsedText.getKey();
-          parsedSelection = getSelection();
-        });
+    it('Parses the nodes of a stringified editor state', async () => {
+      expect(parsedRoot).toEqual({
+        __cachedText: null,
+        __children: [paragraphKey],
+        __flags: 0,
+        __format: 0,
+        __indent: 0,
+        __key: 'root',
+        __parent: null,
+        __type: 'root',
       });
-
-      it('Parses the nodes of a stringified editor state', async () => {
-        expect(parsedRoot).toEqual({
-          __cachedText: null,
-          __children: [paragraphKey],
-          __flags: 0,
-          __format: 0,
-          __indent: 0,
-          __key: 'root',
-          __parent: null,
-          __type: 'root',
-        });
-        expect(parsedParagraph).toEqual({
-          __children: [textKey],
-          __flags: 0,
-          __format: 0,
-          __indent: 0,
-          __key: paragraphKey,
-          __parent: 'root',
-          __type: 'paragraph',
-        });
-        expect(parsedText).toEqual({
-          __text: 'Hello world',
-          __flags: 0,
-          __format: 0,
-          __key: textKey,
-          __parent: paragraphKey,
-          __style: '',
-          __type: 'text',
-        });
+      expect(parsedParagraph).toEqual({
+        __children: [textKey],
+        __flags: 0,
+        __format: 0,
+        __indent: 0,
+        __key: paragraphKey,
+        __parent: 'root',
+        __type: 'paragraph',
       });
-
-      it('Parses the text content of the editor state', async () => {
-        expect(parsedEditorState.read(() => getRoot().__cachedText)).toBe(null);
-        expect(parsedEditorState.read(() => getRoot().getTextContent())).toBe(
-          'Hello world',
-        );
+      expect(parsedText).toEqual({
+        __text: 'Hello world',
+        __flags: 0,
+        __format: 0,
+        __key: textKey,
+        __parent: paragraphKey,
+        __style: '',
+        __type: 'text',
       });
+    });
 
-      it('Parses the selection offsets of a stringified editor state', async () => {
-        expect(parsedSelection.anchor.offset).toEqual(6);
-        expect(parsedSelection.focus.offset).toEqual(11);
-      });
+    it('Parses the text content of the editor state', async () => {
+      expect(parsedEditorState.read(() => getRoot().__cachedText)).toBe(null);
+      expect(parsedEditorState.read(() => getRoot().getTextContent())).toBe(
+        'Hello world',
+      );
+    });
 
-      it('Remaps the selection keys of a stringified editor state', async () => {
-        expect(parsedSelection.anchor.key).not.toEqual(originalText.__key);
-        expect(parsedSelection.focus.key).not.toEqual(originalText.__key);
-        expect(parsedSelection.anchor.key).toEqual(parsedText.__key);
-        expect(parsedSelection.focus.key).toEqual(parsedText.__key);
-      });
+    it('Parses the selection offsets of a stringified editor state', async () => {
+      expect(parsedSelection.anchor.offset).toEqual(6);
+      expect(parsedSelection.focus.offset).toEqual(11);
+    });
+
+    it('Remaps the selection keys of a stringified editor state', async () => {
+      expect(parsedSelection.anchor.key).not.toEqual(originalText.__key);
+      expect(parsedSelection.focus.key).not.toEqual(originalText.__key);
+      expect(parsedSelection.anchor.key).toEqual(parsedText.__key);
+      expect(parsedSelection.focus.key).toEqual(parsedText.__key);
     });
   });
 

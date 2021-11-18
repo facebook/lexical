@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict-local
+ * @flow strict
  */
 
 import type {Settings as AppSettings} from '../../src/appSettings';
@@ -35,11 +35,11 @@ async function attemptToLaunchBrowser(attempt = 0) {
     if (attempt > retryCount) {
       throw e;
     }
-    return await new Promise(resolve => {
+    return await new Promise((resolve) => {
       setTimeout(async () => {
-        resolve(await attemptToLaunchBrowser(attempt + 1))
-      }, 1000)
-    })
+        resolve(await attemptToLaunchBrowser(attempt + 1));
+      }, 1000);
+    });
   }
 }
 
@@ -49,7 +49,8 @@ export function initializeE2E(runTests, config: Config = {}) {
     appSettings.isRichText = process.env.E2E_EDITOR_MODE !== 'plain-text';
   }
   if (appSettings.disableBeforeInput === undefined) {
-    appSettings.disableBeforeInput = process.env.E2E_EVENTS_MODE === 'legacy-events';
+    appSettings.disableBeforeInput =
+      process.env.E2E_EVENTS_MODE === 'legacy-events';
   }
   const urlParams = appSettingsToURLParams(appSettings);
   const e2e = {

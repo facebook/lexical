@@ -49,6 +49,8 @@ function cloneWithProperties<T: OutlineNode>(node: T): T {
   } else if (isTextNode(latest)) {
     clone.__format = latest.__format;
     clone.__style = latest.__style;
+  } else if (isDecoratorNode(latest)) {
+    clone.__ref = latest.__ref;
   }
   return clone;
 }

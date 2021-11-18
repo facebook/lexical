@@ -8,10 +8,10 @@
  */
 
 import type {OutlineEditor} from './OutlineEditor';
-import type {NodeKey, NodeMap} from './OutlineNode';
+import type {NodeKey, NodeMap, OutlineNode} from './OutlineNode';
 import type {Selection} from './OutlineSelection';
 import type {State} from './OutlineUpdates';
-import type {ParsedNode} from './OutlineParsing';
+import type {ParsedNode, ParsedSelection} from './OutlineParsing';
 
 import {createRootNode} from './OutlineRootNode';
 import {readEditorState} from './OutlineUpdates';
@@ -30,6 +30,11 @@ export type ParsedEditorState = {
     },
   },
   _nodeMap: Array<[NodeKey, ParsedNode]>,
+};
+
+export type JSONEditorState = {
+  _nodeMap: Array<[NodeKey, OutlineNode]>,
+  _selection: null | ParsedSelection,
 };
 
 export function editorStateHasDirtySelection(
@@ -73,29 +78,26 @@ export class EditorState {
   read<V>(callbackFn: (state: State) => V): V {
     return readEditorState(this, callbackFn);
   }
-  stringify(space?: string | number): string {
+  toJSON(space?: string | number): JSONEditorState {
     const selection = this._selection;
-    return JSON.stringify(
-      {
-        _nodeMap: Array.from(this._nodeMap.entries()),
-        _selection:
-          selection === null
-            ? null
-            : {
-                anchor: {
-                  key: selection.anchor.key,
-                  offset: selection.anchor.offset,
-                  type: selection.anchor.type,
-                },
-                focus: {
-                  key: selection.focus.key,
-                  offset: selection.focus.offset,
-                  type: selection.focus.type,
-                },
+
+    return {
+      _nodeMap: Array.from(this._nodeMap.entries()),
+      _selection:
+        selection === null
+          ? null
+          : {
+              anchor: {
+                key: selection.anchor.key,
+                offset: selection.anchor.offset,
+                type: selection.anchor.type,
               },
-      },
-      null,
-      space,
-    );
+              focus: {
+                key: selection.focus.key,
+                offset: selection.focus.offset,
+                type: selection.focus.type,
+              },
+            },
+    };
   }
 }

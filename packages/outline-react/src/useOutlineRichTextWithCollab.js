@@ -17,14 +17,20 @@ import {useYjsCollaboration, useYjsHistory} from './shared/useYjsCollaboration';
 
 export default function useOutlineRichTextWithCollab(
   editor: OutlineEditor,
-  doc: YjsDoc,
+  id: string,
   provider: Provider,
+  yjsDocMap: Map<string, YjsDoc>,
+  name: string,
+  color: string,
 ): [React$Node, () => void, boolean] {
   const clearEditor = useRichTextSetup(editor, false);
   const [cursors, binding, connected] = useYjsCollaboration(
     editor,
-    doc,
+    id,
     provider,
+    yjsDocMap,
+    name,
+    color,
   );
   const clearHistory = useYjsHistory(editor, binding);
 

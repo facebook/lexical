@@ -15,10 +15,12 @@ import type {
   OutlineEditor,
   NodeTypes,
   Selection,
+  DecoratorNode,
+  EditorStateRef,
 } from 'outline';
-import type {Binding, YjsNodeMap, ReverseYjsNodeMap, Provider} from '.';
+import type {Binding, YjsNodeMap, ReverseYjsNodeMap, Provider, YjsDoc} from '.';
 // $FlowFixMe: need Flow typings for yjs
-import {XmlElement, XmlText} from 'yjs';
+import {XmlElement, XmlText, Doc} from 'yjs';
 import {
   createCursor,
   createCursorSelection,
@@ -31,9 +33,11 @@ import {
 import {
   isTextNode,
   isBlockNode,
+  isDecoratorNode,
   getSelection,
   getRoot,
   getNodeByKey,
+  createEditorStateRef,
 } from 'outline';
 
 const excludedProperties = new Set([
@@ -42,6 +46,7 @@ const excludedProperties = new Set([
   '__parent',
   '__cachedText',
   '__text',
+  '__ref',
 ]);
 
 // $FlowFixMe: todo
@@ -55,15 +60,20 @@ function createOutlineNodeFromYjsNode(
   yjsNodeMap: YjsNodeMap,
   reverseYjsNodeMap: ReverseYjsNodeMap,
   nodeTypes: NodeTypes,
+  yjsDocMap: Map<string, YjsDoc>,
 ): NodeKey {
   const attributes = yjsNode.getAttributes();
   const nodeType = attributes.__type;
   const NodeType = nodeTypes.get(nodeType);
+  let yjsRefValue = null;
   if (NodeType === undefined) {
     throw new Error('createOutlineNodeFromYjsNode failed');
   }
   if (yjsNode instanceof XmlText) {
     attributes.__text = yjsNode.toJSON();
+  } else if ('__ref' in attributes) {
+    yjsRefValue = attributes.__ref;
+    attributes.__ref = null;
   }
   const node = NodeType.clone(attributes);
   const key = node.__key;
@@ -76,6 +86,9 @@ function createOutlineNodeFromYjsNode(
   for (let i = 0; i < properties.length; i++) {
     const property = properties[i];
     if (property === '__type') {
+      continue;
+    } else if (property === '__ref' && isDecoratorNode(node)) {
+      setDecoratorRef(yjsNode, node, node.__ref, yjsRefValue, yjsDocMap);
       continue;
     }
     const yjsValue = attributes[property];
@@ -95,6 +108,7 @@ function createOutlineNodeFromYjsNode(
           yjsNodeMap,
           reverseYjsNodeMap,
           nodeTypes,
+          yjsDocMap,
         ),
       );
       childYjsNode = childYjsNode.nextSibling;
@@ -109,6 +123,7 @@ function createYjsNodeFromOutlineNode(
   node: OutlineNode,
   yjsNodeMap: YjsNodeMap,
   reverseYjsNodeMap: ReverseYjsNodeMap,
+  yjsDocMap: Map<string, YjsDoc>,
 ): YjsNode {
   // We first validate that the parent exists
   const parent = node.getParentOrThrow();
@@ -120,6 +135,7 @@ function createYjsNodeFromOutlineNode(
       parent,
       yjsNodeMap,
       reverseYjsNodeMap,
+      yjsDocMap,
     );
   }
   let yjsNode;
@@ -130,6 +146,17 @@ function createYjsNodeFromOutlineNode(
     yjsNode.insert(0, textContent);
   } else {
     yjsNode = new XmlElement(node.getType());
+  }
+
+  if (isDecoratorNode(node)) {
+    const ref = node.__ref;
+    if (ref !== null) {
+      const id = ref.id;
+      yjsNode.setAttribute('__ref', ref === null ? null : `${id}|${ref._type}`);
+      const doc = new Doc();
+      yjsNode.insert(0, [doc]);
+      yjsDocMap.set(id, doc);
+    }
   }
 
   // Apply properties, except "key", ""
@@ -158,6 +185,7 @@ function createYjsNodeFromOutlineNode(
         prevSibling,
         yjsNodeMap,
         reverseYjsNodeMap,
+        yjsDocMap,
       );
     }
   }
@@ -320,6 +348,7 @@ function syncOutlineNodeToYjs(
   nodeMap: NodeMap,
   yjsNodeMap: YjsNodeMap,
   reverseYjsNodeMap: ReverseYjsNodeMap,
+  yjsDocMap: Map<string, YjsDoc>,
   selection: null | Selection,
 ): void {
   const node = nodeMap.get(key);
@@ -342,7 +371,13 @@ function syncOutlineNodeToYjs(
     return;
   }
   if (yjsNode === undefined) {
-    createYjsNodeFromOutlineNode(key, node, yjsNodeMap, reverseYjsNodeMap);
+    createYjsNodeFromOutlineNode(
+      key,
+      node,
+      yjsNodeMap,
+      reverseYjsNodeMap,
+      yjsDocMap,
+    );
     return;
   }
   // If we don't have it, we just created this node, so we don't need to diff
@@ -409,6 +444,7 @@ function syncOutlineNodeToYjs(
             childNode,
             yjsNodeMap,
             reverseYjsNodeMap,
+            yjsDocMap,
           );
         }
       }
@@ -438,6 +474,33 @@ function syncOutlineNodeToYjs(
   }
 }
 
+function setDecoratorRef(
+  yjsNode: YjsNode,
+  node: DecoratorNode,
+  outlineValue: null | string | EditorStateRef,
+  yjsValue: null | string,
+  yjsDocMap: Map<string, YjsDoc>,
+): void {
+  let ref = outlineValue;
+  if (yjsValue === null) {
+    if (ref !== null) {
+      const writableNode = node.getWritable();
+      writableNode.__ref = null;
+    }
+  } else if (ref === null) {
+    const writableNode = node.getWritable();
+    const [id, type] = yjsValue.split('|');
+    if (type === 'editorstate') {
+      ref = createEditorStateRef(id, null);
+      const doc = yjsNode.firstChild;
+      if (doc !== null) {
+        yjsDocMap.set(id, doc);
+      }
+    }
+    writableNode.__ref = ref;
+  }
+}
+
 function syncYjsNodeToOutline(
   yjsNode: YjsNode,
   nodeMap: NodeMap,
@@ -446,6 +509,7 @@ function syncYjsNodeToOutline(
   childListChanged: boolean,
   attributesChanged: null | Set<string>,
   nodeTypes: NodeTypes,
+  yjsDocMap: Map<string, YjsDoc>,
 ): void {
   const key = reverseYjsNodeMap.get(yjsNode);
   if (key === undefined) {
@@ -465,6 +529,7 @@ function syncYjsNodeToOutline(
       yjsNodeMap,
       reverseYjsNodeMap,
       nodeTypes,
+      yjsDocMap,
     );
     return;
   }
@@ -481,6 +546,10 @@ function syncYjsNodeToOutline(
         const yjsValue = attributes[changedProperty];
         // $FlowFixMe: intentional
         const outlineValue = node[changedProperty];
+        if (changedProperty === '__ref' && isDecoratorNode(node)) {
+          setDecoratorRef(yjsNode, node, outlineValue, yjsValue, yjsDocMap);
+          continue;
+        }
         if (outlineValue !== yjsValue) {
           const writableNode = node.getWritable();
           writableNode[changedProperty] = yjsValue;
@@ -513,6 +582,7 @@ function syncYjsNodeToOutline(
             yjsNodeMap,
             reverseYjsNodeMap,
             nodeTypes,
+            yjsDocMap,
           );
         } else {
           // Update child
@@ -524,6 +594,7 @@ function syncYjsNodeToOutline(
             false,
             null,
             nodeTypes,
+            yjsDocMap,
           );
         }
         keysToRemove.delete(childKey);
@@ -570,6 +641,7 @@ export function syncOutlineUpdateToYjs(
         const nodeMap = currEditorState._nodeMap;
         const yjsNodeMap = binding.nodeMap;
         const reverseYjsNodeMap = binding.reverseNodeMap;
+        const yjsDocMap = binding.docMap;
         const dirtyNodesArr = Array.from(dirtyNodes);
         for (let i = 0; i < dirtyNodesArr.length; i++) {
           const dirtyKey = dirtyNodesArr[i];
@@ -579,6 +651,7 @@ export function syncOutlineUpdateToYjs(
             nodeMap,
             yjsNodeMap,
             reverseYjsNodeMap,
+            yjsDocMap,
             selection,
           );
         }
@@ -637,6 +710,7 @@ export function syncYjsChangesToOutline(
       binding.processedStates.add(pendingEditorState);
       const currNodeMap = pendingEditorState._nodeMap;
       const yjsNodeMap = binding.nodeMap;
+      const yjsDocMap = binding.docMap;
       const nodeTypes = editor._nodeTypes;
       const reverseYjsNodeMap = binding.reverseNodeMap;
       for (let i = 0; i < events.length; i++) {
@@ -655,6 +729,7 @@ export function syncYjsChangesToOutline(
           childListChanged,
           attributesChanged || keysChanged,
           nodeTypes,
+          yjsDocMap,
         );
       }
       syncLocalCursorPosition(editor, binding, provider, reverseYjsNodeMap);

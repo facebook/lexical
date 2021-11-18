@@ -778,6 +778,53 @@ pre::-webkit-scrollbar-thumb {
   user-select: none;
 }
 
+.editor-shell div.editor .editor-image .image-caption-container {
+  display: block;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 0;
+  height: 80px;
+  margin: 0 auto;
+  border-top: 1px solid #fff;
+  background-color: rgba(0,0,0,0.8);
+  min-width: 100px;
+  color: #fff;
+  overflow: hidden;
+}
+
+.editor-shell div.editor .editor-image .image-caption-container .editor {
+  caret-color: #fff;
+  font-size: 12px;
+  width: calc(100% - 20px)
+}
+
+.editor-shell div.editor .editor-image .image-caption-container div.editor-placeholder {
+  font-size: 12px;
+}
+
+.editor-shell div.editor .editor-image .image-caption-button {
+  display: block;
+  position: absolute;
+  bottom: 20px;
+  left: 0;
+  right: 0;
+  width: 30%;
+  padding: 10px;
+  margin: 0 auto;
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 5px;
+  background-color: rgba(0,0,0,0.5);
+  min-width: 100px;
+  color: #fff;
+  cursor: pointer;
+}
+
+.editor-shell div.editor .editor-image .image-caption-button:hover {
+  background-color: rgba(60,132,244, 0.5);
+}
+
 .editor-shell div.editor .editor-image .image-resizer-sw {
   display: block;
   width: 7px;

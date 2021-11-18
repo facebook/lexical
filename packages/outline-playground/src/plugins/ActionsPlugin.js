@@ -4,19 +4,26 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict-local
+ * @flow strict
  */
 
 import * as React from 'react';
 import PlaygroundController from '../controllers/PlaygroundController';
 import {useController} from 'outline-react/OutlineController';
 import {useEffect, useState} from 'react';
-import {log, isBlockNode, getSelection} from 'outline';
+import {log, isBlockNode, getSelection, createEditorStateRef} from 'outline';
 import {isListItemNode} from 'outline/ListItemNode';
 import {ImageNode, createImageNode} from '../nodes/ImageNode';
 import {insertNodes} from 'outline/selection';
 import yellowFlowerImage from '../images/image/yellow-flower.jpg';
 import useOutlineNestedList from 'outline-react/useOutlineNestedList';
+
+function createUID(): string {
+  return Math.random()
+    .toString(36)
+    .replace(/[^a-z]+/g, '')
+    .substr(0, 5);
+}
 
 export default function ActionsPlugins({
   isRichText,
@@ -40,9 +47,11 @@ export default function ActionsPlugins({
       log('handleAddImage');
       const selection = getSelection();
       if (selection !== null) {
+        const ref = createEditorStateRef(createUID(), null);
         const imageNode = createImageNode(
           yellowFlowerImage,
           'Yellow flower in tilt shift lens',
+          ref,
         );
         insertNodes(selection, [imageNode]);
       }

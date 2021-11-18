@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict-local
+ * @flow strict
  */
 
 import * as React from 'react';
@@ -21,12 +21,16 @@ function onError(e: Error): void {
   throw e;
 }
 
-export default function PlainTextPlugin(): React$Node {
-  const [editor, contract] = useController(PlaygroundController);
+export default function PlainTextPlugin({
+  placeholder = 'Enter some plain text...',
+}: {
+  placeholder?: string,
+}): React$Node {
+  const [editor, state] = useController(PlaygroundController);
   const [rootElementRef, showPlaceholder] = useOutlineEditor(editor, onError);
   const clear = useOutlinePlainText(editor);
   const decorators = useOutlineDecorators(editor);
-  const isReadOnly = useEditorListeners(contract, clear);
+  const isReadOnly = useEditorListeners(state, clear);
 
   return (
     <>
@@ -34,7 +38,7 @@ export default function PlainTextPlugin(): React$Node {
         isReadOnly={isReadOnly}
         rootElementRef={rootElementRef}
       />
-      {showPlaceholder && <Placeholder>Enter some plain text...</Placeholder>}
+      {showPlaceholder && <Placeholder>{placeholder}</Placeholder>}
       {decorators}
     </>
   );

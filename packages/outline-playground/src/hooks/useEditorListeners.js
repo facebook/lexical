@@ -4,19 +4,19 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict-local
+ * @flow strict
  */
 
-import type {PlaygroundContext} from '../controllers/PlaygroundController';
+import type {PlaygroundState} from '../controllers/PlaygroundController';
 
 import {useEffect, useState} from 'react';
 
 export default function useEditorListeners(
-  contract: PlaygroundContext,
+  state: PlaygroundState,
   clear: () => void,
 ): boolean {
   const [isReadOnly, setIsReadyOnly] = useState(false);
-  const {addListener} = contract;
+  const {addListener} = state;
 
   useEffect(() => {
     const removeReadOnlyListener = addListener('readonly', (value: boolean) => {

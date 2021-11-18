@@ -14,7 +14,7 @@ import {createPortal, flushSync} from 'react-dom';
 
 import * as React from 'react';
 import {useMemo, useState} from 'react';
-import useLayoutEffect from './shared/useLayoutEffect';
+import useLayoutEffect from 'shared/useLayoutEffect';
 
 export default function useOutlineDecorators(
   editor: OutlineEditor,

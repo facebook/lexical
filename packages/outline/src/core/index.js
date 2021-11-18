@@ -24,7 +24,7 @@ export type {
   BlockPointType as BlockPoint,
   TextPointType as TextPoint,
 } from './OutlineSelection';
-export type {OutlineRef} from './OutlineReference';
+export type {OutlineRef, EditorStateRef} from './OutlineReference';
 export type {TextFormatType} from './OutlineTextNode';
 export type {LineBreakNode} from './OutlineLineBreakNode';
 

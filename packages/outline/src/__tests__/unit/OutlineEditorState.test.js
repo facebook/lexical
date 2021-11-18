@@ -70,7 +70,7 @@ describe('OutlineEditorState tests', () => {
       });
     });
 
-    test('stringify()', async () => {
+    test('toJSON()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const paragraph = createParagraphNode();
@@ -79,10 +79,10 @@ describe('OutlineEditorState tests', () => {
         paragraph.append(text);
         getRoot().append(paragraph);
       });
-      expect(editor.getEditorState().stringify()).toEqual(
+      expect(JSON.stringify(editor.getEditorState().toJSON())).toEqual(
         `{\"_nodeMap\":[[\"root\",{\"__type\":\"root\",\"__flags\":0,\"__key\":\"root\",\"__parent\":null,\"__children\":[\"0\"],\"__format\":0,\"__indent\":0,\"__cachedText\":\"Hello world\"}],[\"0\",{\"__type\":\"paragraph\",\"__flags\":0,\"__key\":\"0\",\"__parent\":\"root\",\"__children\":[\"1\"],\"__format\":0,\"__indent\":0}],[\"1\",{\"__type\":\"text\",\"__flags\":0,\"__key\":\"1\",\"__parent\":\"0\",\"__text\":\"Hello world\",\"__format\":0,\"__style\":\"\"}]],\"_selection\":{\"anchor\":{\"key\":\"1\",\"offset\":6,\"type\":\"text\"},\"focus\":{\"key\":\"1\",\"offset\":11,\"type\":\"text\"}}}`,
       );
-      expect(editor.getEditorState().stringify(2)).toEqual(
+      expect(JSON.stringify(editor.getEditorState().toJSON(), null, 2)).toEqual(
         `{
   \"_nodeMap\": [
     [

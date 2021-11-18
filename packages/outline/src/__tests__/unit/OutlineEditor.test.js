@@ -604,7 +604,7 @@ describe('OutlineEditor tests', () => {
         getRoot().append(paragraph);
       });
       editor.registerNodeType('paragraph', ParagraphNode);
-      const stringifiedEditorState = editor.getEditorState().stringify();
+      const stringifiedEditorState = JSON.stringify(editor.getEditorState().toJSON());
       parsedEditorState = editor.parseEditorState(stringifiedEditorState);
       parsedEditorState.read(() => {
         parsedRoot = getRoot();

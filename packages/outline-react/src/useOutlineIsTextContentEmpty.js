@@ -9,7 +9,7 @@
 
 import type {OutlineEditor} from 'outline';
 
-import useLayoutEffect from './shared/useLayoutEffect';
+import useLayoutEffect from 'shared/useLayoutEffect';
 import {useState} from 'react';
 import {isTextContentEmptyCurry} from 'outline/root';
 

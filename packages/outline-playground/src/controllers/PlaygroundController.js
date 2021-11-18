@@ -4,17 +4,18 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict-local
+ * @flow strict
  */
 
 import type {Controller} from 'outline-react/OutlineController';
+import type {YjsDoc} from 'outline-yjs';
 
 import {createController} from 'outline-react/OutlineController';
 
 // $FlowFixMe: should fix this;
 type ListenerValue = any;
 
-export type PlaygroundContext = {
+export type PlaygroundState = {
   addListener(
     type: 'readonly' | 'clear',
     callback: (ListenerValue) => void,
@@ -22,7 +23,11 @@ export type PlaygroundContext = {
   triggerListeners(type: 'readonly' | 'clear', value: ListenerValue): void,
 };
 
-export type PlaygroundSharedContext = {};
+export type PlaygroundSharedState = {
+  yjsDocMap: Map<string, YjsDoc>,
+  name: string,
+  color: string,
+};
 
 const config = {
   theme: {
@@ -61,7 +66,9 @@ const config = {
   },
 };
 
-function createPlaygroundContext(): PlaygroundContext {
+const colors = ['255,165,0', '0,200,55', '160,0,200', '0,172,200'];
+
+function createPlaygroundState(): PlaygroundState {
   const listeners = new Map();
 
   return {
@@ -92,17 +99,19 @@ function createPlaygroundContext(): PlaygroundContext {
   };
 }
 
-function createPlaygroundSharedContext(): PlaygroundSharedContext {
-  return {};
+function createPlaygroundSharedState(): PlaygroundSharedState {
+  return {
+    yjsDocMap: new Map(),
+    name: 'Guest' + Math.floor(Math.random() * 100),
+    color: colors[Math.floor(Math.random() * (colors.length - 1 - 0 + 1) + 0)],
+  };
 }
 
-const PlaygroundController: Controller<
-  PlaygroundContext,
-  PlaygroundSharedContext,
-> = createController<PlaygroundContext, PlaygroundSharedContext>(
-  createPlaygroundContext,
-  createPlaygroundSharedContext,
-  config,
-);
+const PlaygroundController: Controller<PlaygroundState, PlaygroundSharedState> =
+  createController<PlaygroundState, PlaygroundSharedState>(
+    createPlaygroundState,
+    createPlaygroundSharedState,
+    config,
+  );
 
 export default PlaygroundController;

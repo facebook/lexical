@@ -12,14 +12,17 @@ import type {
   NodeKey,
   OutlineNode,
   OutlineEditor,
-  OutlineRef,
+  EditorStateRef,
 } from 'outline';
 
-import {DecoratorNode, log, getNodeByKey} from 'outline';
-
 import * as React from 'react';
-
-import {Suspense, useRef, useState} from 'react';
+import {DecoratorNode, log, getNodeByKey} from 'outline';
+import PlaygroundController from '../controllers/PlaygroundController';
+import {useController} from 'outline-react/OutlineController';
+import {Suspense, useCallback, useEffect, useRef, useState} from 'react';
+import InlineEditor from '../ui/InlineEditor';
+import RichTextCollabPlugin from '../plugins/RichTextCollabPlugin';
+import RichTextPlugin from '../plugins/RichTextPlugin';
 
 const imageCache = new Set();
 
@@ -84,12 +87,17 @@ function ImageResizer({
   onResizeEnd,
   imageRef,
   editor,
+  showCaption,
+  setShowCaption,
 }: {
   onResizeStart: () => void,
   onResizeEnd: ('inherit' | number, 'inherit' | number) => void,
   imageRef: {current: null | HTMLElement},
   editor: OutlineEditor,
+  showCaption: boolean,
+  setShowCaption: (boolean) => void,
 }): React.Node {
+  const buttonRef = useRef(null);
   const positioningRef = useRef<{
     currentWidth: 'inherit' | number,
     currentHeight: 'inherit' | number,
@@ -144,7 +152,7 @@ function ImageResizer({
     if (image !== null && positioning.isResizing) {
       if (positioning.direction === 3) {
         const diff = Math.floor(positioning.startY - event.clientY) * 2;
-        const minHeight = 20 * positioning.ratio;
+        const minHeight = 150 * positioning.ratio;
         const maxHeight = maxWidthContainer / positioning.ratio;
         let height = positioning.startHeight + diff;
         if (height < minHeight) {
@@ -157,7 +165,7 @@ function ImageResizer({
         positioning.currentHeight = height;
       } else if (positioning.direction === 2) {
         const diff = Math.floor(event.clientY - positioning.startY);
-        const minHeight = 20 * positioning.ratio;
+        const minHeight = 150 * positioning.ratio;
         const maxHeight = maxWidthContainer / positioning.ratio;
         let height = positioning.startHeight + diff;
         if (height < minHeight) {
@@ -170,7 +178,7 @@ function ImageResizer({
         positioning.currentHeight = height;
       } else {
         const diff = Math.floor(event.clientX - positioning.startX);
-        const minWidth = 20 * positioning.ratio;
+        const minWidth = 150 * positioning.ratio;
         const maxWidth = maxWidthContainer;
         let width = positioning.startWidth + diff;
         if (width < minWidth) {
@@ -205,6 +213,16 @@ function ImageResizer({
   };
   return (
     <>
+      {!showCaption && (
+        <button
+          className="image-caption-button"
+          ref={buttonRef}
+          onClick={() => {
+            setShowCaption(!showCaption);
+          }}>
+          Add Caption
+        </button>
+      )}
       <div
         className="image-resizer-ne"
         onPointerDown={(event) => {
@@ -234,32 +252,46 @@ function ImageResizer({
 }
 
 function ImageComponent({
-  editor,
   src,
   altText,
   nodeKey,
   width,
   height,
   resizable,
+  showCaption,
+  editorStateRef,
 }: {
-  editor: OutlineEditor,
   src: string,
   altText: string,
   nodeKey: NodeKey,
   width: 'inherit' | number,
   height: 'inherit' | number,
   resizable: boolean,
+  showCaption: boolean,
+  editorStateRef: EditorStateRef,
 }): React.Node {
   const ref = useRef(null);
-  const [hasFocus, setHasFocus] = useState(false);
-  const [isResizing, setIsResizing] = useState(false);
+  const [hasFocus, setHasFocus] = useState<boolean>(false);
+  const [isResizing, setIsResizing] = useState<boolean>(false);
+  const [inlineEditor, setInlineEditor] = useState<null | OutlineEditor>(null);
+  const [editor, , {yjsDocMap}] = useController(PlaygroundController);
+  const isCollab = yjsDocMap.get('main') !== undefined;
+
+  useEffect(() => {
+    if (showCaption && !editorStateRef.isEmpty() && inlineEditor !== null) {
+      const editorState = editorStateRef.get(inlineEditor);
+      if (editorState !== null) {
+        inlineEditor.setEditorState(editorState);
+      }
+    }
+  }, [editorStateRef, inlineEditor, showCaption]);
 
   const handleKeyDown = (event) => {
     if ((hasFocus && event.key === 'Backspace') || event.key === 'Delete') {
       editor.update(() => {
         log('Image.keyDown');
         const node = getNodeByKey(nodeKey);
-        if (node !== null) {
+        if (isImageNode(node)) {
           node.remove();
           event.stopPropagation();
           event.preventDefault();
@@ -267,6 +299,51 @@ function ImageComponent({
       });
     }
   };
+
+  const onChange = useCallback(
+    (editorState, inlineEditor) => {
+      setInlineEditor(inlineEditor);
+      if (!editorState.isEmpty()) {
+        editorStateRef.set(editorState);
+      }
+    },
+    [editorStateRef],
+  );
+
+  const setShowCaption = useCallback(() => {
+    editor.update(() => {
+      const node = getNodeByKey(nodeKey);
+      if (isImageNode(node)) {
+        node.setCaption(true);
+      }
+    });
+  }, [editor, nodeKey]);
+
+  const onResizeEnd = useCallback(
+    (nextWidth, nextHeight) => {
+      const rootElement = editor.getRootElement();
+      if (rootElement !== null) {
+        rootElement.style.setProperty('cursor', 'default');
+      }
+      setIsResizing(false);
+      editor.update(() => {
+        log('ImageNode.resize');
+        const node = getNodeByKey(nodeKey);
+        if (isImageNode(node)) {
+          node.setWidthAndHeight(nextWidth, nextHeight);
+        }
+      });
+    },
+    [editor, nodeKey],
+  );
+
+  const onResizeStart = useCallback(() => {
+    const rootElement = editor.getRootElement();
+    if (rootElement !== null) {
+      rootElement.style.setProperty('cursor', 'nwse-resize', 'important');
+    }
+    setIsResizing(true);
+  }, [editor]);
 
   return (
     <Suspense fallback={null}>
@@ -277,40 +354,36 @@ function ImageComponent({
           altText={altText}
           imageRef={ref}
           onFocus={() => setHasFocus(true)}
-          onBlur={() => setHasFocus(false)}
+          onBlur={() => {
+            // Delay for 100ms so we can click the caption
+            setTimeout(() => setHasFocus(false), 100);
+          }}
           onKeyDown={handleKeyDown}
           width={width}
           height={height}
         />
+        {showCaption && (
+          <div className="image-caption-container">
+            <InlineEditor controlled={true} onChange={onChange}>
+              {isCollab ? (
+                <RichTextCollabPlugin
+                  id={editorStateRef.id}
+                  placeholder="Enter a caption..."
+                />
+              ) : (
+                <RichTextPlugin placeholder="Enter a caption..." />
+              )}
+            </InlineEditor>
+          </div>
+        )}
         {resizable && (hasFocus || isResizing) && (
           <ImageResizer
+            showCaption={showCaption}
+            setShowCaption={setShowCaption}
             editor={editor}
             imageRef={ref}
-            onResizeStart={() => {
-              const rootElement = editor.getRootElement();
-              if (rootElement !== null) {
-                rootElement.style.setProperty(
-                  'cursor',
-                  'nwse-resize',
-                  'important',
-                );
-              }
-              setIsResizing(true);
-            }}
-            onResizeEnd={(nextWidth, nextHeight) => {
-              const rootElement = editor.getRootElement();
-              if (rootElement !== null) {
-                rootElement.style.setProperty('cursor', 'default');
-              }
-              setIsResizing(false);
-              editor.update(() => {
-                log('ImageNode.resize');
-                const node = getNodeByKey(nodeKey);
-                if (isImageNode(node)) {
-                  node.setWidthAndHeight(nextWidth, nextHeight);
-                }
-              });
-            }}
+            onResizeStart={onResizeStart}
+            onResizeEnd={onResizeEnd}
           />
         )}
       </>
@@ -323,6 +396,9 @@ export class ImageNode extends DecoratorNode {
   __altText: string;
   __width: 'inherit' | number;
   __height: 'inherit' | number;
+  // $FlowFixMe: __ref is never null
+  __ref: EditorStateRef;
+  __caption: boolean;
 
   static clone(node: ImageNode): ImageNode {
     return new ImageNode(
@@ -331,6 +407,7 @@ export class ImageNode extends DecoratorNode {
       node.__ref,
       node.__width,
       node.__height,
+      node.__caption,
       node.__key,
     );
   }
@@ -338,9 +415,10 @@ export class ImageNode extends DecoratorNode {
   constructor(
     src: string,
     altText: string,
-    ref?: null | OutlineRef,
+    ref: EditorStateRef,
     width?: 'inherit' | number,
     height?: 'inherit' | number,
+    caption?: boolean,
     key?: NodeKey,
   ) {
     super(ref, key);
@@ -349,6 +427,7 @@ export class ImageNode extends DecoratorNode {
     this.__altText = altText;
     this.__width = width || 'inherit';
     this.__height = height || 'inherit';
+    this.__caption = caption || false;
   }
   getTextContent(): string {
     return this.__altText;
@@ -360,6 +439,10 @@ export class ImageNode extends DecoratorNode {
     const writable = this.getWritable();
     writable.__width = width;
     writable.__height = height;
+  }
+  setCaption(caption: boolean): void {
+    const writable = this.getWritable();
+    writable.__caption = caption;
   }
 
   // View
@@ -385,6 +468,8 @@ export class ImageNode extends DecoratorNode {
         width={this.__width}
         height={this.__height}
         nodeKey={this.getKey()}
+        editorStateRef={this.__ref}
+        showCaption={this.__caption}
         resizable={true}
       />
     );
@@ -394,7 +479,7 @@ export class ImageNode extends DecoratorNode {
 export function createImageNode(
   src: string,
   altText: string,
-  ref?: OutlineRef,
+  ref: EditorStateRef,
 ): ImageNode {
   return new ImageNode(src, altText, ref);
 }

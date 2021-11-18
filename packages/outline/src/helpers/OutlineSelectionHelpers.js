@@ -126,28 +126,36 @@ export function cloneContents(selection: Selection): {
 } {
   const anchor = selection.anchor;
   const focus = selection.focus;
-  const anchorNode = anchor.getNode();
-  const focusNode = focus.getNode();
   const anchorOffset = anchor.getCharacterOffset();
   const focusOffset = focus.getCharacterOffset();
-  let startOffset;
-  let endOffset;
-
-  if (anchorNode === focusNode && isTextNode(anchorNode)) {
-    const firstNode = cloneWithProperties<TextNode>(anchorNode);
-    const isBefore = focusOffset > anchorOffset;
-    startOffset = isBefore ? anchorOffset : focusOffset;
-    endOffset = isBefore ? focusOffset : anchorOffset;
-    firstNode.__text = firstNode.__text.slice(startOffset, endOffset);
-    const key = firstNode.getKey();
-    return {range: [key], nodeMap: [[key, firstNode]]};
-  }
   const nodes = selection.getNodes();
   if (nodes.length === 0) {
     return {range: [], nodeMap: []};
   }
-  const nodesLength = nodes.length;
+  // Check if we can use the parent of the nodes, if the
+  // parent can't be empty, then it's important that we
+  // also copy that block node along with its children.
+  let nodesLength = nodes.length;
   const firstNode = nodes[0];
+  const firstNodeParent = firstNode.getParent();
+  if (firstNodeParent !== null && !firstNodeParent.canBeEmpty()) {
+    const parentChildren = firstNodeParent.__children;
+    const parentChildrenLength = parentChildren.length;
+    if (parentChildrenLength === nodesLength) {
+      let areTheSame = true;
+      for (let i = 0; i < parentChildren.length; i++) {
+        if (parentChildren[i] !== nodes[i].__key) {
+          areTheSame = false;
+          break;
+        }
+      }
+      if (areTheSame) {
+        nodesLength++;
+        nodes.push(firstNodeParent);
+      }
+    }
+  }
+
   const lastNode = nodes[nodesLength - 1];
   const isBefore = anchor.isBefore(focus);
   const nodeMap = new Map();
@@ -214,10 +222,12 @@ export function extractSelection(selection: Selection): Array<OutlineNode> {
 
   if (isTextNode(firstNode)) {
     startOffset = isBefore ? anchorOffset : focusOffset;
-    if (startOffset !== 0) {
+    if (startOffset !== 0 && startOffset !== firstNode.getTextContentSize()) {
       [, firstNode] = firstNode.splitText(startOffset);
+      selectedNodes[0] = firstNode;
+    } else {
+      selectedNodes.shift();
     }
-    selectedNodes[0] = firstNode;
   }
   if (isTextNode(lastNode)) {
     const lastNodeText = lastNode.getTextContent();
@@ -225,8 +235,10 @@ export function extractSelection(selection: Selection): Array<OutlineNode> {
     endOffset = isBefore ? focusOffset : anchorOffset;
     if (endOffset !== lastNodeTextLength) {
       [lastNode] = lastNode.splitText(endOffset);
+      selectedNodes[lastIndex] = lastNode;
+    } else {
+      selectedNodes.pop();
     }
-    selectedNodes[lastIndex] = lastNode;
   }
   return selectedNodes;
 }

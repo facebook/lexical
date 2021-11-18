@@ -423,7 +423,8 @@ function syncOutlineNodeToYjs(
       if (prevKey !== nextKey) {
         yjsChildNode = yjsNodeMap.get(nextKey);
         if (yjsChildNode === undefined || yjsChildNode.parent !== yjsNode) {
-          const childNode = prevNodeMap.get(nextKey);
+          const childNode = nodeMap.get(nextKey);
+
           if (childNode === undefined) {
             throw new Error('Should never happen');
           }

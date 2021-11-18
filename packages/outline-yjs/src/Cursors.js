@@ -65,7 +65,7 @@ export function createCursorSelection(
   caret.style.cssText = `position:absolute;top:0;bottom:0;right:-1px;width:1px;background-color:rgb(${color})`;
   const name = document.createElement('span');
   name.textContent = cursor.name;
-  name.style.cssText = `position:absolute;left:-2px;top:-16px;background-color:rgb(${color});color:#fff;line-height:12px;height:12px;font-size:12px;padding:2px;font-family:Arial;font-weight:bold;word-break: normal`;
+  name.style.cssText = `position:absolute;left:-2px;top:-16px;background-color:rgb(${color});color:#fff;line-height:12px;height:12px;font-size:12px;padding:2px;font-family:Arial;font-weight:bold`;
   caret.appendChild(name);
   return {
     caret,
@@ -219,13 +219,7 @@ export function updateCursor(
       selections[i] = selection;
       cursorsContainer.appendChild(selection);
     }
-    const style = `position:absolute;top:${
-      selectionRect.top - rootRect.top
-    }px;left:${selectionRect.left - rootRect.left}px;height:${
-      selectionRect.height
-    }px;width:${
-      selectionRect.width
-    }px;background-color:rgba(${color}, 0.3);pointer-events:none`;
+    const style = `position:absolute;top:${selectionRect.top}px;left:${selectionRect.left}px;height:${selectionRect.height}px;width:${selectionRect.width}px;background-color:rgba(${color}, 0.3);pointer-events:none`;
     selection.style.cssText = style;
     if (i === selectionRectsLength - 1) {
       if (caret.parentNode !== selection) {

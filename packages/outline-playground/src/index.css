@@ -781,27 +781,27 @@ pre::-webkit-scrollbar-thumb {
 .editor-shell div.editor .editor-image .image-caption-container {
   display: block;
   position: absolute;
-  bottom: 0;
+  bottom: 4px;
   left: 0;
   right: 0;
   padding: 0;
-  height: 80px;
-  margin: 0 auto;
+  height: 40px;
+  margin: 0;
   border-top: 1px solid #fff;
-  background-color: rgba(0,0,0,0.8);
+  background-color: rgba(255,255,255,0.9);
   min-width: 100px;
-  color: #fff;
+  color: #000;
   overflow: hidden;
 }
 
 .editor-shell div.editor .editor-image .image-caption-container .editor {
-  caret-color: #fff;
   font-size: 12px;
   width: calc(100% - 20px)
 }
 
 .editor-shell div.editor .editor-image .image-caption-container div.editor-placeholder {
   font-size: 12px;
+  color: #888;
 }
 
 .editor-shell div.editor .editor-image .image-caption-button {
@@ -819,6 +819,7 @@ pre::-webkit-scrollbar-thumb {
   min-width: 100px;
   color: #fff;
   cursor: pointer;
+  user-select: none;
 }
 
 .editor-shell div.editor .editor-image .image-caption-button:hover {

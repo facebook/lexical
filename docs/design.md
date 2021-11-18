@@ -77,8 +77,8 @@ function listenToTextInsertion(editor: OutlineEditor) {
 
   // We want to listen for when Outline gets a root element
   editor.addListener('root', (
-    rootElement: null | HTMLElement
-    prevRootElement, null | HTMLElement,
+    rootElement: null | HTMLElement,
+    prevRootElement: null | HTMLElement,
   ) => {
     // Clear our old listener if the root element changes
     if (prevRootElement !== null) {

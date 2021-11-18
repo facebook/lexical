@@ -18,31 +18,26 @@ export interface Ref<Data> {
   stringify(editor: OutlineEditor): null | string;
 }
 
-function isStringified(editorState: EditorState | string): boolean %checks {
+function isStringified(
+  editorState: null | EditorState | string,
+): boolean %checks {
   return typeof editorState === 'string';
 }
 
 export class EditorStateRef implements Ref<EditorState> {
   _type: 'editorstate';
-  _editorState: null | EditorState;
-  _stringifiedEditorState: null | string;
+  _editorState: null | EditorState | string;
 
   constructor(editorState: EditorState | string) {
     this._type = 'editorstate';
-    this._editorState = isStringified(editorState) ? null : editorState;
-    this._stringifiedEditorState = isStringified(editorState)
-      ? editorState
-      : null;
+    this._editorState = editorState;
   }
 
   get(editor: OutlineEditor): null | EditorState {
     let editorState = this._editorState;
-    if (editorState === null) {
-      const stringifiedEditorState = this._stringifiedEditorState;
-      if (stringifiedEditorState !== null) {
-        editorState = editor.parseEditorState(stringifiedEditorState);
-        this._editorState = editorState;
-      }
+    if (isStringified(editorState)) {
+      editorState = editor.parseEditorState(editorState);
+      this._editorState = editorState;
     }
     return editorState;
   }
@@ -53,8 +48,8 @@ export class EditorStateRef implements Ref<EditorState> {
 
   stringify(editor: OutlineEditor): null | string {
     const editorState = this.get(editor);
-    return editorState === null
-      ? this._stringifiedEditorState
+    return editorState === null || isStringified(editorState)
+      ? editorState
       : editorState.stringify();
   }
 }

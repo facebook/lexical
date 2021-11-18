@@ -22,6 +22,8 @@ export type PlaygroundContext = {
   triggerListeners(type: 'readonly' | 'clear', value: ListenerValue): void,
 };
 
+export type PlaygroundSharedContext = {};
+
 const config = {
   theme: {
     paragraph: 'editor-paragraph',
@@ -90,7 +92,17 @@ function createPlaygroundContext(): PlaygroundContext {
   };
 }
 
-const PlaygroundController: Controller<PlaygroundContext> =
-  createController<PlaygroundContext>(createPlaygroundContext, config);
+function createPlaygroundSharedContext(): PlaygroundSharedContext {
+  return {};
+}
+
+const PlaygroundController: Controller<
+  PlaygroundContext,
+  PlaygroundSharedContext,
+> = createController<PlaygroundContext, PlaygroundSharedContext>(
+  createPlaygroundContext,
+  createPlaygroundSharedContext,
+  config,
+);
 
 export default PlaygroundController;

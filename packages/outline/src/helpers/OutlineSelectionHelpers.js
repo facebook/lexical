@@ -1344,7 +1344,7 @@ export function insertText(selection: Selection, text: string): void {
 
     // If the last block is an "inline" block, don't move it's text nodes to the first node.
     // Instead, preserve the "inline" block's children and append to the first block.
-    if (lastBlock.isInlineBlock()) {
+    if (!lastBlock.canBeEmpty()) {
       firstBlock.append(lastBlock);
     } else {
       for (let i = lastNodeChildren.length - 1; i >= 0; i--) {

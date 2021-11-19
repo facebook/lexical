@@ -26,6 +26,7 @@ import {
   errorOnReadOnly,
   getActiveEditor,
   getActiveEditorState,
+  updateEditor,
 } from './OutlineUpdates';
 import {flushRootMutations} from './OutlineMutations';
 
@@ -221,8 +222,9 @@ export function getNodeByKey<N: OutlineNode>(key: NodeKey): N | null {
 }
 
 export function getNodeFromDOMNode(dom: Node): OutlineNode | null {
+  const editor = getActiveEditor();
   // $FlowFixMe: internal field
-  const key: NodeKey | undefined = dom.__outlineInternalRef;
+  const key: NodeKey | undefined = dom['__outlineKey_' + editor._key];
   if (key !== undefined) {
     return getNodeByKey(key);
   }
@@ -264,7 +266,7 @@ export function markAllNodesAsDirty(
   type: 'text' | 'decorator' | 'block' | 'root',
 ): void {
   // Mark all existing text nodes as dirty
-  editor.update(() => {
+  updateEditor(editor, () => {
     const editorState = getActiveEditorState();
     if (editorState.isEmpty()) {
       return;
@@ -287,7 +289,7 @@ export function markAllNodesAsDirty(
         node.markDirty();
       }
     }
-  });
+  }, true);
 }
 
 export function getRoot(): RootNode {

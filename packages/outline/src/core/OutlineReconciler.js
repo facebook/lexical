@@ -729,18 +729,20 @@ export function storeDOMWithKey(
 ): void {
   const keyToDOMMap = editor._keyToDOMMap;
   // $FlowFixMe: internal field
-  dom.__outlineInternalRef = key;
+  dom['__outlineKey_' + editor._key] = key;
   keyToDOMMap.set(key, dom);
 }
 
 export function getNodeKeyFromDOM(
   // Note that node here refers to a DOM Node, not an Outline Node
   dom: Node,
+  editor: OutlineEditor,
 ): NodeKey | null {
   let node = dom;
   while (node != null) {
-    // $FlowFixMe: internal field
-    const key: NodeKey | undefined = node.__outlineInternalRef;
+    const key: NodeKey | void =
+      // $FlowFixMe: internal field
+      node['__outlineKey_' + editor._key];
     if (key !== undefined) {
       return key;
     }

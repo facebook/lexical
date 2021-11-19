@@ -421,7 +421,7 @@ function triggerEnqueuedUpdates(editor: OutlineEditor): void {
   const queuedUpdates = editor._updates;
   if (queuedUpdates.length !== 0) {
     const [updateFn, callbackFn] = queuedUpdates.shift();
-    beginUpdate(editor, updateFn, callbackFn);
+    beginUpdate(editor, updateFn, false, callbackFn);
   }
 }
 
@@ -458,9 +458,10 @@ function processNestedUpdates(
   }
 }
 
-export function beginUpdate(
+function beginUpdate(
   editor: OutlineEditor,
   updateFn: (state: State) => void,
+  skipEmptyCheck: boolean,
   callbackFn?: () => void,
 ): void {
   const deferred = editor._deferred;
@@ -497,7 +498,7 @@ export function beginUpdate(
     if (editor._dirtyType !== NO_DIRTY_NODES) {
       const dirtyNodes = editor._dirtyNodes;
       const dirtySubTrees = editor._dirtySubTrees;
-      if (pendingEditorState.isEmpty()) {
+      if (!skipEmptyCheck && pendingEditorState.isEmpty()) {
         invariant(
           false,
           'updateEditor: the pending editor state is empty. Ensure the root not never becomes empty from an update.',
@@ -568,5 +569,18 @@ export function beginUpdate(
     if (editorStateWasCloned) {
       editor._pendingEditorState = null;
     }
+  }
+}
+
+export function updateEditor(
+  editor: OutlineEditor,
+  updateFn: (state: State) => void,
+  skipEmptyCheck: boolean,
+  callbackFn?: () => void,
+): void {
+  if (editor._updating) {
+    editor._updates.push([updateFn, callbackFn]);
+  } else {
+    beginUpdate(editor, updateFn, skipEmptyCheck, callbackFn);
   }
 }

@@ -76,7 +76,7 @@ export class LinkNode extends BlockNode {
     return false;
   }
 
-  isInline(): true {
+  isInlineBlock(): boolean {
     return true;
   }
 }

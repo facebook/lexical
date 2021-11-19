@@ -1342,44 +1342,51 @@ export function insertText(selection: Selection, text: string): void {
     const selectedNodesSet = new Set(selectedNodes);
     const firstAndLastBlocksAreEqual = firstBlock.is(lastBlock);
 
-    for (let i = lastNodeChildren.length - 1; i >= 0; i--) {
-      const lastNodeChild = lastNodeChildren[i];
+    // If the last block is an "inline" block, don't move it's text nodes to the first node.
+    // Instead, preserve the "inline" block's children and append to the first block.
+    if (!lastBlock.canBeEmpty()) {
+      firstBlock.append(lastBlock);
+    } else {
+      for (let i = lastNodeChildren.length - 1; i >= 0; i--) {
+        const lastNodeChild = lastNodeChildren[i];
 
-      if (lastNodeChild.is(firstNode)) {
-        break;
-      }
+        if (lastNodeChild.is(firstNode)) {
+          break;
+        }
 
-      if (lastNodeChild.isAttached()) {
-        if (
-          !selectedNodesSet.has(lastNodeChild) ||
-          lastNodeChild.is(lastNode)
-        ) {
-          if (!firstAndLastBlocksAreEqual) {
-            firstNode.insertAfter(lastNodeChild);
+        if (lastNodeChild.isAttached()) {
+          if (
+            !selectedNodesSet.has(lastNodeChild) ||
+            lastNodeChild.is(lastNode)
+          ) {
+            if (!firstAndLastBlocksAreEqual) {
+              firstNode.insertAfter(lastNodeChild);
+            }
+          } else {
+            lastNodeChild.remove();
           }
-        } else {
-          lastNodeChild.remove();
         }
       }
-    }
 
-    if (!firstAndLastBlocksAreEqual) {
-      // Check if we have already moved out all the nodes of the
-      // last parent, and if so, traverse the parent tree and mark
-      // them all as being able to deleted too.
-      let parent = lastBlock;
-      let lastRemovedParent = null;
-      while (parent !== null) {
-        const children = parent.getChildren();
-        const childrenLength = children.length;
-        if (
-          childrenLength === 0 ||
-          children[childrenLength - 1].is(lastRemovedParent)
-        ) {
-          markedNodeKeysForKeep.delete(parent.getKey());
-          lastRemovedParent = parent;
+      if (!firstAndLastBlocksAreEqual) {
+        // Check if we have already moved out all the nodes of the
+        // last parent, and if so, traverse the parent tree and mark
+        // them all as being able to deleted too.
+        let parent = lastBlock;
+        let lastRemovedParent = null;
+
+        while (parent !== null) {
+          const children = parent.getChildren();
+          const childrenLength = children.length;
+          if (
+            childrenLength === 0 ||
+            children[childrenLength - 1].is(lastRemovedParent)
+          ) {
+            markedNodeKeysForKeep.delete(parent.getKey());
+            lastRemovedParent = parent;
+          }
+          parent = parent.getParent();
         }
-        parent = parent.getParent();
       }
     }
 

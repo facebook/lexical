@@ -19,7 +19,7 @@
   "main": "OutlineYjs.js",
   "dependencies": {
     "outline": "0.0.46",
-    "yjs": ">=13.5.x"
+    "yjs": ">=13.5.22"
   },
   "repository": {
     "type": "git",

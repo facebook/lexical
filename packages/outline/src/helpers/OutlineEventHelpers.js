@@ -127,13 +127,10 @@ const DOM_NODE_NAME_TO_OUTLINE_NODE: DOMTransformerMap = {
   h5: () => createHeadingNode('h5'),
   p: () => createParagraphNode(),
   a: (domNode: Node) => {
-    const textNode = createTextNode(domNode.textContent);
     if (domNode instanceof HTMLAnchorElement) {
-      const linkNode = createLinkNode(domNode.href);
-      linkNode.append(textNode);
-      return linkNode;
+      return createLinkNode(domNode.href);
     }
-    return textNode;
+    return createTextNode(domNode.textContent);
   },
   span: (domNode: Node) => {
     const textNode = createTextNode(domNode.textContent);

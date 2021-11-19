@@ -195,6 +195,36 @@ describe('OutlineEventHelpers', () => {
           '<div contenteditable="true" data-outline-editor="true"><h1 class="editor-heading-h1"><span data-outline-text="true">Lyrics to Hello by Adele</span></h1><p class="editor-paragraph"><span data-outline-text="true">A thousand times</span></p></div>',
       },
       {
+        name: 'onPasteForRichText should produce the correct editor state from a pasted HTML anchor element',
+        inputs: [
+          pasteHTML(
+            `<meta charset='utf-8'><a href="https://facebook.com">Facebook</a>`,
+          ),
+        ],
+        expectedHTML:
+          '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><a href="https://facebook.com/"><span data-outline-text="true">Facebook</span></a></p></div>',
+      },
+      {
+        name: 'onPasteForRichText should produce the correct editor state from a pasted combination of an HTML text node followed by an anchor node',
+        inputs: [
+          pasteHTML(
+            `<meta charset='utf-8'>Welcome to<a href="https://facebook.com">Facebook!</a>`,
+          ),
+        ],
+        expectedHTML:
+          '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span data-outline-text="true">Welcome to</span><a href="https://facebook.com/"><span data-outline-text="true">Facebook!</span></a></p></div>',
+      },
+      {
+        name: 'onPasteForRichText should produce the correct editor state from a pasted combination of HTML anchor elements and text nodes',
+        inputs: [
+          pasteHTML(
+            `<meta charset='utf-8'>Welcome to<a href="https://facebook.com">Facebook!</a>We hope you like it here.`,
+          ),
+        ],
+        expectedHTML:
+          '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span data-outline-text="true">Welcome to</span><a href="https://facebook.com/"><span data-outline-text="true">Facebook!</span></a><span data-outline-text="true">We hope you like it here.</span></p></div>',
+      },
+      {
         name: 'onPasteForRichText should ignore DOM node types that do not have transformers, but still process their children.',
         inputs: [
           pasteHTML(

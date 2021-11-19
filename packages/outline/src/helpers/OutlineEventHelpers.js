@@ -68,6 +68,7 @@ import {
   getCompositionKey,
   getNearestNodeFromDOMNode,
   flushMutations,
+  createLineBreakNode,
 } from 'outline';
 import {IS_FIREFOX} from 'shared/environment';
 import getPossibleDecoratorNode from 'shared/getPossibleDecoratorNode';
@@ -126,6 +127,7 @@ const DOM_NODE_NAME_TO_OUTLINE_NODE: DOMTransformerMap = {
   h4: () => createHeadingNode('h4'),
   h5: () => createHeadingNode('h5'),
   p: () => createParagraphNode(),
+  br: () => createLineBreakNode(),
   a: (domNode: Node) => {
     if (domNode instanceof HTMLAnchorElement) {
       return createLinkNode(domNode.href);
@@ -251,16 +253,25 @@ function insertDataTransferForRichText(
       DOM_NODE_NAME_TO_OUTLINE_NODE,
       editor,
     );
-    // Wrap text nodes in paragraph nodes so we have all blocks at the top-level
-    const mapped = nodes.map((node) => {
-      if (isTextNode(node)) {
-        const p = createParagraphNode();
-        p.append(node);
-        return p;
+    // Wrap text and inline nodes in paragraph nodes so we have all blocks at the top-level
+    const topLevelBlocks = [];
+    let currentBlock = null;
+    for (let i = 0; i < nodes.length; i++) {
+      const node = nodes[i];
+      if (!isBlockNode(node) || node.isInline()) {
+        if (currentBlock === null) {
+          currentBlock = createParagraphNode();
+          topLevelBlocks.push(currentBlock);
+        }
+        if (currentBlock !== null) {
+          currentBlock.append(node);
+        }
+      } else {
+        topLevelBlocks.push(node);
+        currentBlock = null;
       }
-      return node;
-    });
-    insertNodes(selection, mapped);
+    }
+    insertNodes(selection, topLevelBlocks);
     return;
   }
   insertDataTransferForPlainText(dataTransfer, selection);

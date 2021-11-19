@@ -464,7 +464,6 @@ export class ImageNode extends DecoratorNode {
       <ImageComponent
         src={this.__src}
         altText={this.__altText}
-        editor={editor}
         width={this.__width}
         height={this.__height}
         nodeKey={this.getKey()}

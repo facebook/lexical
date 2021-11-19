@@ -611,9 +611,11 @@ function syncYjsNodeToOutline(
       if (keysToRemove.size > 0) {
         const childrenToRemove = Array.from(keysToRemove);
         for (let i = 0; i < childrenToRemove.length; i++) {
-          const nodeToRemoe = nodeMap.get(childrenToRemove[i]);
-          if (nodeToRemoe !== undefined) {
-            nodeToRemoe.remove();
+          const nodeToRemove = nodeMap.get(childrenToRemove[i]);
+          if (nodeToRemove !== undefined) {
+            const writable = nodeToRemove.getWritable();
+            writable.__parent = null;
+            nodeToRemove.remove();
           }
         }
       }

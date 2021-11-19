@@ -74,6 +74,7 @@ export function removeNode(
   const writableParent = parent.getWritable();
   const parentChildren = writableParent.__children;
   const index = parentChildren.indexOf(key);
+  // TODO: we probably need an invariant here
   if (index > -1) {
     parentChildren.splice(index, 1);
   }
@@ -189,21 +190,15 @@ export class OutlineNode {
   }
   isSelected(): boolean {
     const selection = getSelection();
-
     if (selection == null) {
       return false;
     }
-
-    const selectedNodeKeys = new Set(
-      selection.getNodes().map((n) => n.getKey()),
-    );
-
-    const isSelected = selectedNodeKeys.has(this.getKey());
+    const selectedNodeKeys = new Set(selection.getNodes().map((n) => n.__key));
+    const isSelected = selectedNodeKeys.has(this.__key);
 
     if (isTextNode(this)) {
       return isSelected;
     }
-
     // For inline images inside of block nodes.
     // Without this change the image will be selected if the cursor is before or after it.
     if (
@@ -214,7 +209,6 @@ export class OutlineNode {
     ) {
       return false;
     }
-
     return isSelected;
   }
   getFlags(): number {

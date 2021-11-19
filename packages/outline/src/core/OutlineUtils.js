@@ -145,7 +145,12 @@ export function generateKey(node: OutlineNode): NodeKey {
   const editorState = getActiveEditorState();
   const key = generateRandomKey();
   editorState._nodeMap.set(key, node);
-  editor._dirtyNodes.add(key);
+  // TODO Split this function into leaf/block
+  if (isBlockNode(node)) {
+    editor._dirtyBlocks.add(key);
+  } else {
+    editor._dirtyLeaves.add(key);
+  }
   editor._cloneNotNeeded.add(key);
   editor._dirtyType = HAS_DIRTY_NODES;
   return key;
@@ -178,14 +183,18 @@ export function internallyMarkNodeAsDirty(node: OutlineNode): void {
   const editorState = getActiveEditorState();
   const editor = getActiveEditor();
   const nodeMap = editorState._nodeMap;
-  const dirtySubTrees = editor._dirtySubTrees;
+  const dirtyBlocks = editor._dirtyBlocks;
   if (parent !== null) {
-    markParentBlocksAsDirty(parent, nodeMap, dirtySubTrees);
+    markParentBlocksAsDirty(parent, nodeMap, dirtyBlocks);
   }
-  const dirtyNodes = editor._dirtyNodes;
   const key = latest.__key;
   editor._dirtyType = HAS_DIRTY_NODES;
-  dirtyNodes.add(key);
+  if (isBlockNode(node)) {
+    dirtyBlocks.add(key);
+  } else {
+    // TODO split internally MarkNodeAsDirty into two dedicated Block/leave functions
+    editor._dirtyLeaves.add(key);
+  }
 }
 
 export function setCompositionKey(compositionKey: null | NodeKey): void {

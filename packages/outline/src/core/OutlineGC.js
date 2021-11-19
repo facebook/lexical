@@ -69,15 +69,31 @@ function garbageCollectDetachedDeepChildNodes(
 export function garbageCollectDetachedNodes(
   prevEditorState: EditorState,
   editorState: EditorState,
-  dirtyNodes: Set<NodeKey>,
+  dirtyLeaves: Set<NodeKey>,
+  dirtyBlocks: Set<NodeKey>,
   editor: OutlineEditor,
 ): void {
-  const dirtyNodesArr = Array.from(dirtyNodes);
+  const dirtyLeavesArr = Array.from(dirtyLeaves);
+  const dirtyLeavesLength = dirtyLeavesArr.length;
+  const dirtyBlocksArr = Array.from(dirtyBlocks);
+  const dirtyBlocksLength = dirtyBlocksArr.length;
   const prevNodeMap = prevEditorState._nodeMap;
   const nodeMap = editorState._nodeMap;
 
-  for (let s = 0; s < dirtyNodesArr.length; s++) {
-    const nodeKey = dirtyNodesArr[s];
+  for (let i = 0; i < dirtyLeavesLength; i++) {
+    const nodeKey = dirtyLeavesArr[i];
+    const node = nodeMap.get(nodeKey);
+
+    if (node !== undefined && !node.isAttached()) {
+      if (!prevNodeMap.has(nodeKey)) {
+        dirtyLeaves.delete(nodeKey);
+      }
+      nodeMap.delete(nodeKey);
+    }
+  }
+
+  for (let i = 0; i < dirtyBlocksLength; i++) {
+    const nodeKey = dirtyBlocksArr[i];
     const node = nodeMap.get(nodeKey);
 
     if (node !== undefined) {
@@ -89,13 +105,13 @@ export function garbageCollectDetachedNodes(
             nodeKey,
             prevNodeMap,
             nodeMap,
-            dirtyNodes,
+            dirtyBlocks,
           );
         }
         // If we have created a node and it was dereferenced, then also
         // remove it from out dirty nodes Set.
         if (!prevNodeMap.has(nodeKey)) {
-          dirtyNodes.delete(nodeKey);
+          dirtyBlocks.delete(nodeKey);
         }
         nodeMap.delete(nodeKey);
       }

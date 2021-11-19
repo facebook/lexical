@@ -47,8 +47,8 @@ let editorTextContent = '';
 let activeEditorConfig: EditorConfig<{...}>;
 let activeEditor: OutlineEditor;
 let treatAllNodesAsDirty: boolean = false;
-let activeDirtySubTrees: Set<NodeKey>;
-let activeDirtyNodes: Set<NodeKey>;
+let activeDirtyBlocks: Set<NodeKey>;
+let activeDirtyLeaves: Set<NodeKey>;
 let activePrevNodeMap: NodeMap;
 let activeNextNodeMap: NodeMap;
 let activeSelection: null | OutlineSelection;
@@ -330,8 +330,8 @@ function reconcileNode(
   }
   const isDirty =
     treatAllNodesAsDirty ||
-    activeDirtyNodes.has(key) ||
-    activeDirtySubTrees.has(key);
+    activeDirtyLeaves.has(key) ||
+    activeDirtyBlocks.has(key);
   const dom = getElementByKeyOrThrow(activeEditor, key);
 
   if (prevNode === nextNode && !isDirty) {
@@ -526,8 +526,8 @@ function reconcileRoot(
   editor: OutlineEditor,
   selection: null | OutlineSelection,
   dirtyType: 0 | 1 | 2,
-  dirtySubTrees: Set<NodeKey>,
-  dirtyNodes: Set<NodeKey>,
+  dirtyBlocks: Set<NodeKey>,
+  dirtyLeaves: Set<NodeKey>,
 ): void {
   subTreeTextContent = '';
   editorTextContent = '';
@@ -536,8 +536,8 @@ function reconcileRoot(
   treatAllNodesAsDirty = dirtyType === FULL_RECONCILE;
   activeEditor = editor;
   activeEditorConfig = editor._config;
-  activeDirtySubTrees = dirtySubTrees;
-  activeDirtyNodes = dirtyNodes;
+  activeDirtyBlocks = dirtyBlocks;
+  activeDirtyLeaves = dirtyLeaves;
   activePrevNodeMap = prevEditorState._nodeMap;
   activeNextNodeMap = nextEditorState._nodeMap;
   activeSelection = selection;
@@ -551,9 +551,9 @@ function reconcileRoot(
   // $FlowFixMe
   activeEditor = undefined;
   // $FlowFixMe
-  activeDirtySubTrees = undefined;
+  activeDirtyBlocks = undefined;
   // $FlowFixMe
-  activeDirtyNodes = undefined;
+  activeDirtyLeaves = undefined;
   // $FlowFixMe
   activePrevNodeMap = undefined;
   // $FlowFixMe
@@ -579,8 +579,8 @@ export function updateEditorState(
 
   if (needsUpdate && observer !== null) {
     const dirtyType = editor._dirtyType;
-    const dirtySubTrees = editor._dirtySubTrees;
-    const dirtyNodes = editor._dirtyNodes;
+    const dirtyBlocks = editor._dirtyBlocks;
+    const dirtyLeaves = editor._dirtyLeaves;
 
     observer.disconnect();
     try {
@@ -590,8 +590,8 @@ export function updateEditorState(
         editor,
         pendingSelection,
         dirtyType,
-        dirtySubTrees,
-        dirtyNodes,
+        dirtyBlocks,
+        dirtyLeaves,
       );
     } finally {
       observer.observe(rootElement, {
@@ -857,7 +857,7 @@ function mergeAdjacentTextNodes(
     // If we have created a node and it was dereferenced, then also
     // remove it from out dirty nodes Set.
     if (!activePrevNodeMap.has(textNodeKey)) {
-      activeDirtyNodes.delete(textNodeKey);
+      activeDirtyLeaves.delete(textNodeKey);
     }
     activeNextNodeMap.delete(textNodeKey);
   }
@@ -931,7 +931,7 @@ function removeStrandedEmptyTextNode(
   // If we have created a node and it was dereferenced, then also
   // remove it from out dirty nodes Set.
   if (!activePrevNodeMap.has(key)) {
-    activeDirtyNodes.delete(key);
+    activeDirtyLeaves.delete(key);
   }
   activeNextNodeMap.delete(key);
 }

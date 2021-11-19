@@ -20,18 +20,28 @@ const DISCARD = 2;
 
 function getDirtyNodes(
   editorState: EditorState,
-  dirtyNodesSet: Set<NodeKey>,
+  dirtyBlocksSet: Set<NodeKey>,
+  dirtyLeavesSet: Set<NodeKey>,
 ): Array<OutlineNode> {
-  const dirtyNodes = Array.from(dirtyNodesSet);
+  const dirtyBlocks = Array.from(dirtyBlocksSet);
+  const dirtyLeaves = Array.from(dirtyLeavesSet);
   const nodeMap = editorState._nodeMap;
   const nodes = [];
 
-  for (let i = 0; i < dirtyNodes.length; i++) {
-    const dirtyNodeKey = dirtyNodes[i];
-    const dirtyNode = nodeMap.get(dirtyNodeKey);
+  for (let i = 0; i < dirtyLeaves.length; i++) {
+    const dirtyLeafKey = dirtyLeaves[i];
+    const dirtyLeaf = nodeMap.get(dirtyLeafKey);
+    if (dirtyLeaf !== undefined) {
+      nodes.push(dirtyLeaf);
+    }
+  }
 
-    if (dirtyNode !== undefined && !isRootNode(dirtyNode)) {
-      nodes.push(dirtyNode);
+  for (let i = 0; i < dirtyBlocks.length; i++) {
+    const dirtyBlockKey = dirtyBlocks[i];
+    const dirtyBlock = nodeMap.get(dirtyBlockKey);
+
+    if (dirtyBlock !== undefined && !isRootNode(dirtyBlock)) {
+      nodes.push(dirtyBlock);
     }
   }
   return nodes;
@@ -40,7 +50,8 @@ function getDirtyNodes(
 function getMergeAction(
   prevEditorState: null | EditorState,
   nextEditorState: EditorState,
-  dirtyNodesSet: Set<NodeKey>,
+  dirtyLeavesSet: Set<NodeKey>,
+  dirtyBlocksSet: Set<NodeKey>,
 ): 0 | 1 | 2 {
   // If we have an editor state that doesn't want its history
   // recorded then we always merge the changes.
@@ -53,14 +64,18 @@ function getMergeAction(
   }
   const selection = nextEditorState._selection;
   const prevSelection = prevEditorState._selection;
-  const hasDirtyNodes = dirtyNodesSet.size > 0;
+  const hasDirtyNodes = dirtyLeavesSet.size > 0 && dirtyBlocksSet.size > 0;
   if (!hasDirtyNodes) {
     if (prevSelection === null && selection !== null) {
       return MERGE;
     }
     return DISCARD;
   }
-  const dirtyNodes = getDirtyNodes(nextEditorState, dirtyNodesSet);
+  const dirtyNodes = getDirtyNodes(
+    nextEditorState,
+    dirtyBlocksSet,
+    dirtyLeavesSet,
+  );
   if (dirtyNodes.length === 1) {
     const prevNodeMap = prevEditorState._nodeMap;
     const nextDirtyNode = dirtyNodes[0];
@@ -122,7 +137,7 @@ export default function useOutlineHistory(editor: OutlineEditor): () => void {
   );
 
   useEffect(() => {
-    const applyChange = ({editorState, dirtyNodes}) => {
+    const applyChange = ({editorState, dirtyLeaves, dirtyBlocks}) => {
       const current = historyState.current;
       const redoStack = historyState.redoStack;
       const undoStack = historyState.undoStack;
@@ -130,7 +145,12 @@ export default function useOutlineHistory(editor: OutlineEditor): () => void {
       if (editorState === current) {
         return;
       }
-      const mergeAction = getMergeAction(current, editorState, dirtyNodes);
+      const mergeAction = getMergeAction(
+        current,
+        editorState,
+        dirtyLeaves,
+        dirtyBlocks,
+      );
       if (mergeAction === NO_MERGE) {
         if (redoStack.length !== 0) {
           historyState.redoStack = [];

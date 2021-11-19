@@ -222,8 +222,7 @@ export class Selection {
       }
       return [firstNode];
     }
-    const nodes = firstNode.getNodesBetween(lastNode);
-    return nodes;
+    return firstNode.getNodesBetween(lastNode);
   }
   setTextNodeRange(
     anchorNode: TextNode,

@@ -12,7 +12,7 @@ import type {Selection} from './OutlineSelection';
 import type {TextNode} from './OutlineTextNode';
 
 import {isTextNode, isDecoratorNode, getSelection, setSelection} from '.';
-import {triggerListeners} from './OutlineUpdates';
+import {triggerListeners, updateEditor} from './OutlineUpdates';
 import {
   getNearestNodeFromDOMNode,
   getNodeFromDOMNode,
@@ -80,123 +80,127 @@ export function flushMutations(
   const shouldFlushTextMutations =
     performance.now() - lastTextEntryTimeStamp > TEXT_MUTATION_VARIANCE;
   try {
-    editor.update(() => {
-      pushLogEntry('onMutation');
-      let shouldRevertSelection = false;
+    updateEditor(
+      editor,
+      () => {
+        pushLogEntry('onMutation');
+        let shouldRevertSelection = false;
 
-      for (let i = 0; i < mutations.length; i++) {
-        const mutation = mutations[i];
-        const type = mutation.type;
-        const target = mutation.target;
-        const targetNode = getNearestNodeFromDOMNode(target);
+        for (let i = 0; i < mutations.length; i++) {
+          const mutation = mutations[i];
+          const type = mutation.type;
+          const target = mutation.target;
+          const targetNode = getNearestNodeFromDOMNode(target);
 
-        if (isDecoratorNode(targetNode)) {
-          continue;
-        }
-        if (type === 'characterData') {
-          // Text mutations are deferred and passed to mutation listeners to be
-          // processed outside of the Outline engine.
-          if (
-            shouldFlushTextMutations &&
-            target.nodeType === 3 &&
-            isTextNode(targetNode) &&
-            targetNode.isAttached()
-          ) {
-            handleTextMutation(
-              // $FlowFixMe: nodeType === 3 is a Text DOM node
-              ((target: any): Text),
-              targetNode,
-              editor,
-            );
+          if (isDecoratorNode(targetNode)) {
+            continue;
           }
-        } else if (type === 'childList') {
-          shouldRevertSelection = true;
-          // We attempt to "undo" any changes that have occured outside
-          // of Outline. We want Outline's editor state to be source of truth.
-          // To the user, these will look like no-ops.
-          const addedDOMs = mutation.addedNodes;
-          const removedDOMs = mutation.removedNodes;
-          const siblingDOM = mutation.nextSibling;
-
-          for (let s = 0; s < removedDOMs.length; s++) {
-            const removedDOM = removedDOMs[s];
-            const node = getNodeFromDOMNode(removedDOM);
-            let placementDOM = siblingDOM;
-
-            if (node !== null && node.isAttached()) {
-              const nextSibling = node.getNextSibling();
-              if (nextSibling !== null) {
-                const key = nextSibling.getKey();
-                const nextSiblingDOM = editor.getElementByKey(key);
-                if (
-                  nextSiblingDOM !== null &&
-                  nextSiblingDOM.parentNode !== null
-                ) {
-                  placementDOM = nextSiblingDOM;
-                }
-              }
-            }
-            if (placementDOM != null) {
-              while (placementDOM != null) {
-                const parentDOM = placementDOM.parentNode;
-                if (parentDOM === target) {
-                  target.insertBefore(removedDOM, placementDOM);
-                  break;
-                }
-                placementDOM = parentDOM;
-              }
-            } else {
-              target.appendChild(removedDOM);
-            }
-          }
-          for (let s = 0; s < addedDOMs.length; s++) {
-            const addedDOM = addedDOMs[s];
-            const node = getNodeFromDOMNode(addedDOM);
-            const parentDOM = addedDOM.parentNode;
-            if (parentDOM != null && node === null) {
-              parentDOM.removeChild(addedDOM);
-            }
-          }
-        }
-      }
-
-      // Capture all the mutations made during this function. This
-      // also prevents us having to process them on the next cycle
-      // of onMutation, as these mutations were made by us.
-      const records = observer.takeRecords();
-
-      // Check for any random auto-added <br> elements, and remove them.
-      // These get added by the browser when we undo the above mutations
-      // and this can lead to a broken UI.
-      if (records.length > 0) {
-        for (let i = 0; i < records.length; i++) {
-          const record = records[i];
-          const addedNodes = record.addedNodes;
-          const target = record.target;
-
-          for (let s = 0; s < addedNodes.length; s++) {
-            const addedDOM = addedNodes[s];
-            const parentDOM = addedDOM.parentNode;
+          if (type === 'characterData') {
+            // Text mutations are deferred and passed to mutation listeners to be
+            // processed outside of the Outline engine.
             if (
-              parentDOM != null &&
-              addedDOM.nodeName === 'BR' &&
-              !isManagedLineBreak(addedDOM, target)
+              shouldFlushTextMutations &&
+              target.nodeType === 3 &&
+              isTextNode(targetNode) &&
+              targetNode.isAttached()
             ) {
-              parentDOM.removeChild(addedDOM);
+              handleTextMutation(
+                // $FlowFixMe: nodeType === 3 is a Text DOM node
+                ((target: any): Text),
+                targetNode,
+                editor,
+              );
+            }
+          } else if (type === 'childList') {
+            shouldRevertSelection = true;
+            // We attempt to "undo" any changes that have occured outside
+            // of Outline. We want Outline's editor state to be source of truth.
+            // To the user, these will look like no-ops.
+            const addedDOMs = mutation.addedNodes;
+            const removedDOMs = mutation.removedNodes;
+            const siblingDOM = mutation.nextSibling;
+
+            for (let s = 0; s < removedDOMs.length; s++) {
+              const removedDOM = removedDOMs[s];
+              const node = getNodeFromDOMNode(removedDOM);
+              let placementDOM = siblingDOM;
+
+              if (node !== null && node.isAttached()) {
+                const nextSibling = node.getNextSibling();
+                if (nextSibling !== null) {
+                  const key = nextSibling.getKey();
+                  const nextSiblingDOM = editor.getElementByKey(key);
+                  if (
+                    nextSiblingDOM !== null &&
+                    nextSiblingDOM.parentNode !== null
+                  ) {
+                    placementDOM = nextSiblingDOM;
+                  }
+                }
+              }
+              if (placementDOM != null) {
+                while (placementDOM != null) {
+                  const parentDOM = placementDOM.parentNode;
+                  if (parentDOM === target) {
+                    target.insertBefore(removedDOM, placementDOM);
+                    break;
+                  }
+                  placementDOM = parentDOM;
+                }
+              } else {
+                target.appendChild(removedDOM);
+              }
+            }
+            for (let s = 0; s < addedDOMs.length; s++) {
+              const addedDOM = addedDOMs[s];
+              const node = getNodeFromDOMNode(addedDOM);
+              const parentDOM = addedDOM.parentNode;
+              if (parentDOM != null && node === null) {
+                parentDOM.removeChild(addedDOM);
+              }
             }
           }
         }
-        // Clear any of those removal mutations
-        observer.takeRecords();
-      }
-      if (shouldRevertSelection) {
-        const selection = getSelection() || getLastSelection(editor);
-        if (selection !== null) {
-          selection.dirty = true;
-          setSelection(selection);
+
+        // Capture all the mutations made during this function. This
+        // also prevents us having to process them on the next cycle
+        // of onMutation, as these mutations were made by us.
+        const records = observer.takeRecords();
+
+        // Check for any random auto-added <br> elements, and remove them.
+        // These get added by the browser when we undo the above mutations
+        // and this can lead to a broken UI.
+        if (records.length > 0) {
+          for (let i = 0; i < records.length; i++) {
+            const record = records[i];
+            const addedNodes = record.addedNodes;
+            const target = record.target;
+
+            for (let s = 0; s < addedNodes.length; s++) {
+              const addedDOM = addedNodes[s];
+              const parentDOM = addedDOM.parentNode;
+              if (
+                parentDOM != null &&
+                addedDOM.nodeName === 'BR' &&
+                !isManagedLineBreak(addedDOM, target)
+              ) {
+                parentDOM.removeChild(addedDOM);
+              }
+            }
+          }
+          // Clear any of those removal mutations
+          observer.takeRecords();
         }
-      }
-    });
+        if (shouldRevertSelection) {
+          const selection = getSelection() || getLastSelection(editor);
+          if (selection !== null) {
+            selection.dirty = true;
+            setSelection(selection);
+          }
+        }
+      },
+      true,
+    );
   } finally {
     isProcessingMutations = false;
   }

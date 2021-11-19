@@ -44,18 +44,18 @@ describe('OutlineEditorState tests', () => {
         __cachedText: 'foo',
         __format: 0,
         __indent: 0,
-        __children: ['0'],
+        __children: ['1'],
         __flags: 0,
         __key: 'root',
         __parent: null,
         __type: 'root',
       });
       expect(paragraph).toEqual({
-        __children: ['1'],
+        __children: ['2'],
         __format: 0,
         __indent: 0,
         __flags: 0,
-        __key: '0',
+        __key: '1',
         __parent: 'root',
         __type: 'paragraph',
       });
@@ -63,8 +63,8 @@ describe('OutlineEditorState tests', () => {
         __text: 'foo',
         __format: 0,
         __flags: 0,
-        __key: '1',
-        __parent: '0',
+        __key: '2',
+        __parent: '1',
         __style: '',
         __type: 'text',
       });
@@ -80,7 +80,7 @@ describe('OutlineEditorState tests', () => {
         getRoot().append(paragraph);
       });
       expect(JSON.stringify(editor.getEditorState().toJSON())).toEqual(
-        `{\"_nodeMap\":[[\"root\",{\"__type\":\"root\",\"__flags\":0,\"__key\":\"root\",\"__parent\":null,\"__children\":[\"0\"],\"__format\":0,\"__indent\":0,\"__cachedText\":\"Hello world\"}],[\"0\",{\"__type\":\"paragraph\",\"__flags\":0,\"__key\":\"0\",\"__parent\":\"root\",\"__children\":[\"1\"],\"__format\":0,\"__indent\":0}],[\"1\",{\"__type\":\"text\",\"__flags\":0,\"__key\":\"1\",\"__parent\":\"0\",\"__text\":\"Hello world\",\"__format\":0,\"__style\":\"\"}]],\"_selection\":{\"anchor\":{\"key\":\"1\",\"offset\":6,\"type\":\"text\"},\"focus\":{\"key\":\"1\",\"offset\":11,\"type\":\"text\"}}}`,
+        `{\"_nodeMap\":[[\"root\",{\"__type\":\"root\",\"__flags\":0,\"__key\":\"root\",\"__parent\":null,\"__children\":[\"1\"],\"__format\":0,\"__indent\":0,\"__cachedText\":\"Hello world\"}],[\"1\",{\"__type\":\"paragraph\",\"__flags\":0,\"__key\":\"1\",\"__parent\":\"root\",\"__children\":[\"2\"],\"__format\":0,\"__indent\":0}],[\"2\",{\"__type\":\"text\",\"__flags\":0,\"__key\":\"2\",\"__parent\":\"1\",\"__text\":\"Hello world\",\"__format\":0,\"__style\":\"\"}]],\"_selection\":{\"anchor\":{\"key\":\"2\",\"offset\":6,\"type\":\"text\"},\"focus\":{\"key\":\"2\",\"offset\":11,\"type\":\"text\"}}}`,
       );
       expect(JSON.stringify(editor.getEditorState().toJSON(), null, 2)).toEqual(
         `{
@@ -93,7 +93,7 @@ describe('OutlineEditorState tests', () => {
         \"__key\": \"root\",
         \"__parent\": null,
         \"__children\": [
-          \"0\"
+          \"1\"
         ],
         \"__format\": 0,
         \"__indent\": 0,
@@ -101,26 +101,26 @@ describe('OutlineEditorState tests', () => {
       }
     ],
     [
-      \"0\",
+      \"1\",
       {
         \"__type\": \"paragraph\",
         \"__flags\": 0,
-        \"__key\": \"0\",
+        \"__key\": \"1\",
         \"__parent\": \"root\",
         \"__children\": [
-          \"1\"
+          \"2\"
         ],
         \"__format\": 0,
         \"__indent\": 0
       }
     ],
     [
-      \"1\",
+      \"2\",
       {
         \"__type\": \"text\",
         \"__flags\": 0,
-        \"__key\": \"1\",
-        \"__parent\": \"0\",
+        \"__key\": \"2\",
+        \"__parent\": \"1\",
         \"__text\": \"Hello world\",
         \"__format\": 0,
         \"__style\": \"\"
@@ -129,12 +129,12 @@ describe('OutlineEditorState tests', () => {
   ],
   \"_selection\": {
     \"anchor\": {
-      \"key\": \"1\",
+      \"key\": \"2\",
       \"offset\": 6,
       \"type\": \"text\"
     },
     \"focus\": {
-      \"key\": \"1\",
+      \"key\": \"2\",
       \"offset\": 11,
       \"type\": \"text\"
     }

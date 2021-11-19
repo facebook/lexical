@@ -346,9 +346,9 @@ export class Selection {
 }
 
 function getNodeFromDOM(dom: Node): null | OutlineNode {
-  const nodeKey = getNodeKeyFromDOM(dom);
+  const editor = getActiveEditor();
+  const nodeKey = getNodeKeyFromDOM(dom, editor);
   if (nodeKey === null) {
-    const editor = getActiveEditor();
     const rootElement = editor.getRootElement();
     if (dom === rootElement) {
       return getNodeByKey('root');

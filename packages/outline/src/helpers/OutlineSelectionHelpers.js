@@ -33,6 +33,7 @@ import isImmutableOrInert from 'shared/isImmutableOrInert';
 import invariant from 'shared/invariant';
 import {doesContainGrapheme} from 'outline/text';
 import getPossibleDecoratorNode from 'shared/getPossibleDecoratorNode';
+import {CustomTextNode} from '../../../outline-react/src/shared/useRichTextSetup';
 
 const cssToStyles: Map<string, {[string]: string}> = new Map();
 
@@ -1173,7 +1174,8 @@ export function insertRichText(selection: Selection, text: string): void {
 function transferStartingBlockPointToTextPoint(start: BlockPoint, end: Point) {
   const block = start.getNode();
   const placementNode = block.getChildAtIndex(start.offset);
-  const textNode = createTextNode();
+  //
+  const textNode = CustomTextNode.clone({__text: ''});
   if (placementNode === null) {
     block.append(textNode);
   } else {

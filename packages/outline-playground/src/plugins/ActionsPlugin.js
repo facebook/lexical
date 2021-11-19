@@ -29,6 +29,15 @@ export default function ActionsPlugins({
   const [indent, outdent] = useOutlineNestedList(editor);
 
   useEffect(() => {
+    return editor.addTransform('text', (node) => {
+      if (node.__text === 'foo') {
+        const [before] = node.splitText(1);
+        before.toggleFormat('bold');
+      }
+    });
+  });
+
+  useEffect(() => {
     editor.registerNodeType('image', ImageNode);
     return addListener('readonly', (value: boolean) => {
       setIsReadyOnly(value);

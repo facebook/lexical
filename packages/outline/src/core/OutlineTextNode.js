@@ -24,7 +24,7 @@ import {
   toggleTextFormatType,
 } from './OutlineUtils';
 import invariant from 'shared/invariant';
-import {errorOnReadOnly} from './OutlineUpdates';
+import {errorOnReadOnly, getActiveEditor} from './OutlineUpdates';
 import {
   IS_CODE,
   IS_BOLD,
@@ -183,7 +183,11 @@ function createTextInnerDOM<EditorContext>(
   }
 }
 
-export class TextNode extends OutlineNode {
+export interface ITextNode {
+  getTextContent(): string;
+}
+
+export class TextNode extends OutlineNode implements ITextNode {
   __text: string;
   __format: number;
   __style: string;
@@ -537,9 +541,12 @@ export class TextNode extends OutlineNode {
     for (let i = 1; i < partsLength; i++) {
       const part = parts[i];
       const partSize = part.length;
-      const sibling = createTextNode(part).getWritable();
-      sibling.__format = format;
-      sibling.__style = style;
+      // const sibling = createTextNode(part).getWritable();
+      const sibling = getActiveEditor()._textNodeType.createKlass({
+        __text: part,
+      });
+      sibling.__format = format; // sibling.setFormat
+      sibling.__style = style; // sibling.setStyle
       const siblingKey = sibling.__key;
       const nextTextSize = textSize + partSize;
 

@@ -24,6 +24,7 @@ import {flushRootMutations, initMutationObserver} from './OutlineMutations';
 import {beginUpdate, triggerListeners} from './OutlineUpdates';
 import {getEditorStateTextContent, markAllNodesAsDirty} from './OutlineUtils';
 import invariant from 'shared/invariant';
+import type {ITextNode} from './OutlineTextNode';
 
 export type EditorThemeClassName = string;
 export type NodeTypes = Map<string, Class<OutlineNode>>;
@@ -115,6 +116,12 @@ type Transforms = {
   root: Set<RootTransform>,
 };
 
+// ['text', TextNode],
+type NodeDefinition<T> = $ReadOnly<{
+  klass: Class<T>,
+  createKlass: ($FlowFixMe) => T,
+}>;
+
 export type ListenerType =
   | 'update'
   | 'error'
@@ -197,6 +204,7 @@ class BaseOutlineEditor {
   _listeners: Listeners;
   _transforms: Transforms;
   _nodeTypes: NodeTypes;
+  _textNodeType: NodeDefinition<ITextNode>;
   _decorators: {[NodeKey]: ReactNode};
   _pendingDecorators: null | {[NodeKey]: ReactNode};
   _textContent: string;
@@ -246,6 +254,10 @@ class BaseOutlineEditor {
       ['linebreak', LineBreakNode],
       ['root', RootNode],
     ]);
+    this._textNodeType = {
+      klass: TextNode,
+      createKlass: (node) => new TextNode(node.__text, node.__key),
+    };
     // React node decorators for portals
     this._decorators = {};
     this._pendingDecorators = null;
@@ -262,7 +274,11 @@ class BaseOutlineEditor {
   isComposing(): boolean {
     return this._compositionKey != null;
   }
-  registerNodeType(nodeType: string, klass: Class<OutlineNode>): void {
+  registerNodeType(
+    nodeType: string,
+    klass: Class<OutlineNode>,
+    createKlass?: ($FlowFixMe) => OutlineNode, // Like Node.clone really
+  ): void {
     this._nodeTypes.set(nodeType, klass);
   }
   addListener(
@@ -425,6 +441,7 @@ declare export class OutlineEditor {
   _listeners: Listeners;
   _transforms: Transforms;
   _nodeTypes: Map<string, Class<OutlineNode>>;
+  _textNodeType: NodeDefinition<ITextNode>;
   _decorators: {[NodeKey]: ReactNode};
   _pendingDecorators: null | {[NodeKey]: ReactNode};
   _config: EditorConfig<{...}>;
@@ -436,6 +453,7 @@ declare export class OutlineEditor {
   _log: Array<string>;
 
   isComposing(): boolean;
+  // overrideNodeType(nodeType: 'text', klass: ITextNode): void;
   registerNodeType(nodeType: string, klass: Class<OutlineNode>): void;
   addListener(type: 'error', listener: ErrorListener): () => void;
   addListener(type: 'update', listener: UpdateListener): () => void;

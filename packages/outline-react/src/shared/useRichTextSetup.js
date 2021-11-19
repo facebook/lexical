@@ -10,7 +10,7 @@
 import type {OutlineEditor, RootNode} from 'outline';
 import type {InputEvents} from 'outline-react/useOutlineEditorEvents';
 
-import {log, getSelection, getRoot} from 'outline';
+import {log, getSelection, getRoot, TextNode} from 'outline';
 import useLayoutEffect from './useLayoutEffect';
 import useOutlineEditorEvents from '../useOutlineEditorEvents';
 import {HeadingNode} from 'outline/HeadingNode';
@@ -37,6 +37,9 @@ import {
   onInput,
   onClick,
 } from 'outline/events';
+import type {ITextNode} from '../../../outline/src/core/OutlineTextNode';
+import type {NodeKey} from '../../../outline/src/core/OutlineNode';
+import {useEffect} from 'react';
 
 const events: InputEvents = [
   ['selectionchange', onSelectionChange],
@@ -96,6 +99,24 @@ function clearEditor(
   }, callbackFn);
 }
 
+export class CustomTextNode extends TextNode implements ITextNode {
+  _custom: string;
+  constructor(text: string, key?: NodeKey) {
+    super(text, key);
+    this.__text = text;
+    this.__type = 'text';
+    this.__format = 0;
+    this.__style = '';
+    this._custom = 'custom';
+  }
+  static clone(node: $FlowFixMe): CustomTextNode {
+    return new CustomTextNode(node.__text, node.__key);
+  }
+  getTextContent(): string {
+    return super.getTextContent() + 'custom';
+  }
+}
+
 export function useRichTextSetup(
   editor: OutlineEditor,
   init: boolean,
@@ -104,6 +125,7 @@ export function useRichTextSetup(
   callbackFn?: (callbackFn?: () => void) => void,
 ) => void {
   useLayoutEffect(() => {
+    // editor.registerNodeType('text', CustomTextNode);
     editor.registerNodeType('heading', HeadingNode);
     editor.registerNodeType('list', ListNode);
     editor.registerNodeType('quote', QuoteNode);

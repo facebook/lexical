@@ -122,10 +122,12 @@ export function internalCreateNodeFromParse(
     node.__style = parsedNode.__style;
   } else if (isDecoratorNode(node)) {
     const parsedRef = parsedNode.__ref;
-    const refType = parsedRef.type;
     let ref = null;
-    if (refType === 'editorstate') {
-      ref = createEditorStateRef(parsedRef.id, parsedRef.editorState);
+    if (parsedRef !== null) {
+      const refType = parsedRef.type;
+      if (refType === 'editorstate') {
+        ref = createEditorStateRef(parsedRef.id, parsedRef.editorState);
+      }
     }
     node.__ref = ref;
   }

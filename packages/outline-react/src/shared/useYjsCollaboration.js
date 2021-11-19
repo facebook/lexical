@@ -12,6 +12,8 @@ import type {Provider, Binding} from 'outline-yjs';
 import type {Doc} from 'yjs';
 
 import * as React from 'react';
+// $FlowFixMe
+import {createPortal} from 'react-dom';
 
 import {useCallback, useEffect, useMemo, useState} from 'react';
 import {
@@ -89,10 +91,40 @@ export function useYjsCollaboration(
       binding.cursorsContainer = element;
     };
 
-    return <div ref={ref} />;
+    return createPortal(<div ref={ref} />, document.body);
   }, [binding]);
 
   return [cursorsContainer, binding, connected];
+}
+
+export function useYjsFocusTracking(editor: OutlineEditor, provider: Provider) {
+  useEffect(() => {
+    const onBlur = () => {
+      const {awareness} = provider;
+      awareness.setLocalState({
+        ...awareness.getLocalState(),
+        anchorPos: null,
+        focusPos: null,
+      });
+    };
+
+    return editor.addListener(
+      'root',
+      (
+        rootElement: null | HTMLElement,
+        prevRootElement: null | HTMLElement,
+      ) => {
+        // Clear our old listener if the root element changes
+        if (prevRootElement !== null) {
+          prevRootElement.removeEventListener('blur', onBlur);
+        }
+        // If we have an root element, listen to the "input" event
+        if (rootElement !== null) {
+          rootElement.addEventListener('blur', onBlur);
+        }
+      },
+    );
+  }, [editor, provider, provider.awareness]);
 }
 
 export function useYjsHistory(
@@ -116,9 +148,11 @@ export function useYjsHistory(
       }
       if (isUndo(event)) {
         event.preventDefault();
+        event.stopPropagation();
         undo();
       } else if (isRedo(event)) {
         event.preventDefault();
+        event.stopPropagation();
         redo();
       }
     };
@@ -127,9 +161,11 @@ export function useYjsHistory(
       const inputType = event.inputType;
       if (inputType === 'historyUndo') {
         event.preventDefault();
+        event.stopPropagation();
         undo();
       } else if (inputType === 'historyRedo') {
         event.preventDefault();
+        event.stopPropagation();
         redo();
       }
     };

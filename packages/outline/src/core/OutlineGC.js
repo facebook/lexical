@@ -9,7 +9,10 @@
 
 import type {NodeKey, NodeMap} from './OutlineNode';
 import type {BlockNode} from './OutlineBlockNode';
-import type {OutlineEditor} from './OutlineEditor';
+import type {
+  IntentionallyMarkedAsDirtyBlock,
+  OutlineEditor,
+} from './OutlineEditor';
 import type {EditorState} from './OutlineEditorState';
 
 import {isBlockNode} from '.';
@@ -39,7 +42,7 @@ function garbageCollectDetachedDeepChildNodes(
   parentKey: NodeKey,
   prevNodeMap: NodeMap,
   nodeMap: NodeMap,
-  dirtyNodes: Set<NodeKey>,
+  dirtyNodes: Map<NodeKey, IntentionallyMarkedAsDirtyBlock>,
 ): void {
   const children = node.__children;
   const childrenLength = children.length;
@@ -70,7 +73,7 @@ export function garbageCollectDetachedNodes(
   prevEditorState: EditorState,
   editorState: EditorState,
   dirtyLeaves: Set<NodeKey>,
-  dirtyBlocks: Set<NodeKey>,
+  dirtyBlocks: Map<NodeKey, IntentionallyMarkedAsDirtyBlock>,
   editor: OutlineEditor,
 ): void {
   const dirtyLeavesArr = Array.from(dirtyLeaves);
@@ -93,7 +96,7 @@ export function garbageCollectDetachedNodes(
   }
 
   for (let i = 0; i < dirtyBlocksLength; i++) {
-    const nodeKey = dirtyBlocksArr[i];
+    const nodeKey = dirtyBlocksArr[i][0];
     const node = nodeMap.get(nodeKey);
 
     if (node !== undefined) {

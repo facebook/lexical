@@ -7,7 +7,13 @@
  * @flow strict
  */
 
-import type {OutlineEditor, EditorState, OutlineNode, NodeKey} from 'outline';
+import type {
+  OutlineEditor,
+  EditorState,
+  OutlineNode,
+  NodeKey,
+  IntentionallyMarkedAsDirtyBlock,
+} from 'outline';
 
 import {isTextNode, isRootNode} from 'outline';
 import {isRedo, isUndo} from 'outline/keys';
@@ -20,11 +26,11 @@ const DISCARD = 2;
 
 function getDirtyNodes(
   editorState: EditorState,
-  dirtyBlocksSet: Set<NodeKey>,
   dirtyLeavesSet: Set<NodeKey>,
+  dirtyBlocksSet: Map<NodeKey, IntentionallyMarkedAsDirtyBlock>,
 ): Array<OutlineNode> {
-  const dirtyBlocks = Array.from(dirtyBlocksSet);
   const dirtyLeaves = Array.from(dirtyLeavesSet);
+  const dirtyBlocks = Array.from(dirtyBlocksSet);
   const nodeMap = editorState._nodeMap;
   const nodes = [];
 
@@ -37,9 +43,12 @@ function getDirtyNodes(
   }
 
   for (let i = 0; i < dirtyBlocks.length; i++) {
-    const dirtyBlockKey = dirtyBlocks[i];
+    const intentionallyMarkedAsDirty = dirtyBlocks[i][1];
+    if (!intentionallyMarkedAsDirty) {
+      continue;
+    }
+    const dirtyBlockKey = dirtyBlocks[i][0];
     const dirtyBlock = nodeMap.get(dirtyBlockKey);
-
     if (dirtyBlock !== undefined && !isRootNode(dirtyBlock)) {
       nodes.push(dirtyBlock);
     }
@@ -51,7 +60,7 @@ function getMergeAction(
   prevEditorState: null | EditorState,
   nextEditorState: EditorState,
   dirtyLeavesSet: Set<NodeKey>,
-  dirtyBlocksSet: Set<NodeKey>,
+  dirtyBlocksSet: Map<NodeKey, IntentionallyMarkedAsDirtyBlock>,
 ): 0 | 1 | 2 {
   // If we have an editor state that doesn't want its history
   // recorded then we always merge the changes.
@@ -64,7 +73,7 @@ function getMergeAction(
   }
   const selection = nextEditorState._selection;
   const prevSelection = prevEditorState._selection;
-  const hasDirtyNodes = dirtyLeavesSet.size > 0 && dirtyBlocksSet.size > 0;
+  const hasDirtyNodes = dirtyLeavesSet.size > 0 || dirtyBlocksSet.size > 0;
   if (!hasDirtyNodes) {
     if (prevSelection === null && selection !== null) {
       return MERGE;
@@ -73,8 +82,8 @@ function getMergeAction(
   }
   const dirtyNodes = getDirtyNodes(
     nextEditorState,
-    dirtyBlocksSet,
     dirtyLeavesSet,
+    dirtyBlocksSet,
   );
   if (dirtyNodes.length === 1) {
     const prevNodeMap = prevEditorState._nodeMap;

@@ -85,7 +85,7 @@ export type UpdateListener = ({
   prevEditorState: EditorState,
   editorState: EditorState,
   dirtyLeaves: Set<NodeKey>,
-  dirtyBlocks: Set<NodeKey>,
+  dirtyBlocks: Map<NodeKey, IntentionallyMarkedAsDirtyBlock>,
   log: Array<string>,
 }) => void;
 export type DecoratorListener = (decorator: {[NodeKey]: ReactNode}) => void;
@@ -133,6 +133,8 @@ export type ListenerType =
   | 'textcontent';
 
 export type TransformerType = 'text' | 'decorator' | 'block' | 'root';
+
+export type IntentionallyMarkedAsDirtyBlock = boolean;
 
 export function resetEditor(
   editor: OutlineEditor,
@@ -213,7 +215,7 @@ class BaseOutlineEditor {
   _dirtyType: 0 | 1 | 2;
   _cloneNotNeeded: Set<NodeKey>;
   _dirtyLeaves: Set<NodeKey>;
-  _dirtyBlocks: Set<NodeKey>;
+  _dirtyBlocks: Map<NodeKey, IntentionallyMarkedAsDirtyBlock>;
   _observer: null | MutationObserver;
   _log: Array<string>;
   _key: string;
@@ -263,7 +265,7 @@ class BaseOutlineEditor {
     this._dirtyType = NO_DIRTY_NODES;
     this._cloneNotNeeded = new Set();
     this._dirtyLeaves = new Set();
-    this._dirtyBlocks = new Set();
+    this._dirtyBlocks = new Map();
     // Handling of DOM mutations
     this._observer = null;
     // Logging for updates
@@ -442,7 +444,7 @@ declare export class OutlineEditor {
   _dirtyType: 0 | 1 | 2;
   _cloneNotNeeded: Set<NodeKey>;
   _dirtyLeaves: Set<NodeKey>;
-  _dirtyBlocks: Set<NodeKey>;
+  _dirtyBlocks: Map<NodeKey, IntentionallyMarkedAsDirtyBlock>;
   _observer: null | MutationObserver;
   _log: Array<string>;
   _key: string;

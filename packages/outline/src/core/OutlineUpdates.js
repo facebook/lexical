@@ -10,7 +10,11 @@
 import type {ParsedEditorState} from './OutlineEditorState';
 import type {RootNode} from './OutlineRootNode';
 import type {BlockNode} from './OutlineBlockNode';
-import type {OutlineEditor, ListenerType} from './OutlineEditor';
+import type {
+  OutlineEditor,
+  ListenerType,
+  IntentionallyMarkedAsDirtyBlock,
+} from './OutlineEditor';
 import type {OutlineNode, NodeKey} from './OutlineNode';
 import type {Selection} from './OutlineSelection';
 import type {ParsedNode, NodeParserState} from './OutlineParsing';
@@ -149,7 +153,7 @@ function isNodeValidForTransform(
 function applyAllTransforms(
   editorState: EditorState,
   dirtyLeaves: Set<NodeKey>,
-  dirtyBlocks: Set<NodeKey>,
+  dirtyBlocks: Map<NodeKey, IntentionallyMarkedAsDirtyBlock>,
   editor: OutlineEditor,
 ): void {
   const transforms = editor._transforms;
@@ -196,7 +200,7 @@ function applyAllTransforms(
     const blockTransformsArrLength = blockTransformsArr.length;
     const rootTransformsArrLength = rootTransformsArr.length;
     for (let s = 0; s < dirtyBlocksArr.length; s++) {
-      const nodeKey = dirtyBlocksArr[s];
+      const nodeKey = dirtyBlocksArr[s][0];
       const node = nodeMap.get(nodeKey);
 
       if (isNodeValidForTransform(node, compositionKey)) {
@@ -367,7 +371,7 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
     editor._dirtyType = NO_DIRTY_NODES;
     editor._cloneNotNeeded.clear();
     editor._dirtyLeaves = new Set();
-    editor._dirtyBlocks = new Set();
+    editor._dirtyBlocks = new Map();
   }
   garbageCollectDetachedDecorators(editor, pendingEditorState);
   const pendingDecorators = editor._pendingDecorators;

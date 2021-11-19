@@ -72,7 +72,7 @@ export function useYjsCollaboration(
       ({prevEditorState, editorState, dirtyLeaves, dirtyBlocks}) => {
         const dirtyNodes = new Set();
         dirtyLeaves.forEach((node) => dirtyNodes.add(node));
-        dirtyBlocks.forEach((node) => dirtyBlocks.add(node));
+        dirtyBlocks.forEach((_, node) => dirtyNodes.add(node));
         syncOutlineUpdateToYjs(
           binding,
           provider,

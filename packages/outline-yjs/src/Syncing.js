@@ -295,7 +295,10 @@ export function diffTextContentAndApplyDelta(
     b = nextB - 1;
   }
   // Replace entire string
-  throw new Error('TODO: diffTextContentAndApplyDelta');
+  yjsNode.delete(0, currentText.length);
+  yjsNode.insert(0, text);
+  // eslint-disable-next-line no-console
+  console.log('TODO: improve diffTextContentAndApplyDelta');
 }
 
 function getIndexOfYjsNode(yjsParentNode: YjsNode, yjsNode: YjsNode): number {
@@ -743,8 +746,13 @@ export function syncYjsChangesToOutline(
         const focus = selection.focus;
         let recoveryNeeded = false;
         try {
-          if (!anchor.getNode().isAttached() || !focus.getNode().isAttached()) {
+          const anchorNode = anchor.getNode();
+          const focusNode = focus.getNode();
+          if (!anchorNode.isAttached() || !focusNode.isAttached()) {
             recoveryNeeded = true;
+          } else {
+            // Do check if offset > text size for both points, as node
+            // might have been split.
           }
         } catch {
           recoveryNeeded = true;

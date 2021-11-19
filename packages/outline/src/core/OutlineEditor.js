@@ -396,7 +396,8 @@ class BaseOutlineEditor {
     if (rootElement !== null) {
       // This ensures that iOS does not trigger caps lock upon focus
       rootElement.setAttribute('autocapitalize', 'off');
-      this.update(
+      updateEditor(
+        getSelf(this),
         () => {
           const selection = getSelection();
           const root = getRoot();
@@ -407,6 +408,7 @@ class BaseOutlineEditor {
             root.selectEnd();
           }
         },
+        true,
         () => {
           rootElement.removeAttribute('autocapitalize');
           if (callbackFn) {

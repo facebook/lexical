@@ -577,7 +577,7 @@ export function updateEditor(
   updateFn: (state: State) => void,
   skipEmptyCheck: boolean,
   callbackFn?: () => void,
-) {
+): void {
   if (editor._updating) {
     editor._updates.push([updateFn, callbackFn]);
   } else {

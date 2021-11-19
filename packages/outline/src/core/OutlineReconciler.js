@@ -729,7 +729,7 @@ export function storeDOMWithKey(
 ): void {
   const keyToDOMMap = editor._keyToDOMMap;
   // $FlowFixMe: internal field
-  dom['__outlineInternalRef_' + editor._key] = key;
+  dom['__outlineKey_' + editor._key] = key;
   keyToDOMMap.set(key, dom);
 }
 

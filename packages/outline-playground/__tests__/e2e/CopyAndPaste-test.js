@@ -18,7 +18,6 @@ import {
   assertHTML,
   copyToClipboard,
   pasteFromClipboard,
-  insertToClipboard,
   E2E_BROWSER,
   IS_LINUX,
   IS_WINDOWS,

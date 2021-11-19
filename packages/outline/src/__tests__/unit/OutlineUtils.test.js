@@ -191,9 +191,9 @@ describe('OutlineUtils tests', () => {
         rootNode.append(paragraphNode);
       });
       await editor.getEditorState().read(() => {
-        expect(getNodeByKey('0')).toBe(paragraphNode);
-        expect(getNodeByKey('1')).toBe(textNode);
-        expect(getNodeByKey('2')).toBe(null);
+        expect(getNodeByKey('1')).toBe(paragraphNode);
+        expect(getNodeByKey('2')).toBe(textNode);
+        expect(getNodeByKey('3')).toBe(null);
       });
       expect(() => getNodeByKey()).toThrow();
     });

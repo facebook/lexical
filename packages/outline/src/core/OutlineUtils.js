@@ -221,8 +221,9 @@ export function getNodeByKey<N: OutlineNode>(key: NodeKey): N | null {
 }
 
 export function getNodeFromDOMNode(dom: Node): OutlineNode | null {
+  const editor = getActiveEditor();
   // $FlowFixMe: internal field
-  const key: NodeKey | undefined = dom.__outlineInternalRef;
+  const key: NodeKey | undefined = dom['__outlineKey_' + editor._key];
   if (key !== undefined) {
     return getNodeByKey(key);
   }

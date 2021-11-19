@@ -14,15 +14,23 @@ import type {EditorState} from './OutlineEditorState';
 import type {DecoratorNode} from './OutlineDecoratorNode';
 import type {BlockNode} from './OutlineBlockNode';
 
-import {commitPendingUpdates, parseEditorState} from './OutlineUpdates';
+import {
+  commitPendingUpdates,
+  parseEditorState,
+  triggerListeners,
+  updateEditor,
+} from './OutlineUpdates';
 import {TextNode, getSelection, getRoot} from '.';
 import {createEmptyEditorState} from './OutlineEditorState';
 import {LineBreakNode} from './OutlineLineBreakNode';
 import {RootNode} from './OutlineRootNode';
 import {NO_DIRTY_NODES, FULL_RECONCILE} from './OutlineConstants';
 import {flushRootMutations, initMutationObserver} from './OutlineMutations';
-import {beginUpdate, triggerListeners} from './OutlineUpdates';
-import {getEditorStateTextContent, markAllNodesAsDirty} from './OutlineUtils';
+import {
+  generateRandomKey,
+  getEditorStateTextContent,
+  markAllNodesAsDirty,
+} from './OutlineUtils';
 import invariant from 'shared/invariant';
 
 export type EditorThemeClassName = string;
@@ -207,6 +215,7 @@ class BaseOutlineEditor {
   _dirtySubTrees: Set<NodeKey>;
   _observer: null | MutationObserver;
   _log: Array<string>;
+  _key: string;
 
   constructor(editorState: EditorState, config: EditorConfig<{...}>) {
     // The root element associated with this editor
@@ -258,6 +267,8 @@ class BaseOutlineEditor {
     this._observer = null;
     // Logging for updates
     this._log = [];
+    // Used for identifying owning editors
+    this._key = generateRandomKey();
   }
   isComposing(): boolean {
     return this._compositionKey != null;
@@ -365,7 +376,8 @@ class BaseOutlineEditor {
       );
     }
     flushRootMutations(getSelf(this));
-    if (this._pendingEditorState !== null) {
+    const pendingEditorState = this._pendingEditorState;
+    if (pendingEditorState !== null && !pendingEditorState.isEmpty()) {
       commitPendingUpdates(getSelf(this));
     }
     this._pendingEditorState = editorState;
@@ -377,11 +389,7 @@ class BaseOutlineEditor {
     return parseEditorState(stringifiedEditorState, getSelf(this));
   }
   update(updateFn: (state: State) => void, callbackFn?: () => void): void {
-    if (getSelf(this)._updating) {
-      getSelf(this)._updates.push([updateFn, callbackFn]);
-    } else {
-      beginUpdate(getSelf(this), updateFn, callbackFn);
-    }
+    updateEditor(getSelf(this), updateFn, false, callbackFn);
   }
   focus(callbackFn?: () => void): void {
     const rootElement = this._rootElement;
@@ -434,6 +442,7 @@ declare export class OutlineEditor {
   _dirtySubTrees: Set<NodeKey>;
   _observer: null | MutationObserver;
   _log: Array<string>;
+  _key: string;
 
   isComposing(): boolean;
   registerNodeType(nodeType: string, klass: Class<OutlineNode>): void;

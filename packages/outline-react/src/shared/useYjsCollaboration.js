@@ -23,6 +23,7 @@ import {
   syncYjsChangesToOutline,
   syncCursorPositions,
   initLocalState,
+  setLocalStateFocus,
 } from 'outline-yjs';
 import {initEditor} from './useRichTextSetup';
 import {isRedo, isUndo} from 'outline/keys';
@@ -55,7 +56,12 @@ export function useYjsCollaboration(
       }
     });
 
-    initLocalState(provider, name, color);
+    initLocalState(
+      provider,
+      name,
+      color,
+      document.activeElement === editor.getRootElement(),
+    );
 
     awareness.on('update', ({removed}) => {
       syncCursorPositions(binding, provider);
@@ -104,12 +110,10 @@ export function useYjsCollaboration(
 export function useYjsFocusTracking(editor: OutlineEditor, provider: Provider) {
   useEffect(() => {
     const onBlur = () => {
-      const {awareness} = provider;
-      awareness.setLocalState({
-        ...awareness.getLocalState(),
-        anchorPos: null,
-        focusPos: null,
-      });
+      setLocalStateFocus(provider, false);
+    };
+    const onFocus = () => {
+      setLocalStateFocus(provider, true);
     };
 
     return editor.addListener(
@@ -121,10 +125,14 @@ export function useYjsFocusTracking(editor: OutlineEditor, provider: Provider) {
         // Clear our old listener if the root element changes
         if (prevRootElement !== null) {
           prevRootElement.removeEventListener('blur', onBlur);
+          prevRootElement.removeEventListener('focus', onFocus);
         }
-        // If we have an root element, listen to the "input" event
         if (rootElement !== null) {
+          if (document.activeElement === rootElement) {
+            onFocus();
+          }
           rootElement.addEventListener('blur', onBlur);
+          rootElement.addEventListener('focus', onFocus);
         }
       },
     );

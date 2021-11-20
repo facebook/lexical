@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {NodeKey, Point, NodeMap} from 'outline';
+import type {NodeKey, Point, NodeMap, Selection} from 'outline';
 import type {Binding} from './Bindings';
 import type {Provider} from '.';
 import type {AbsolutePosition, RelativePosition} from 'yjs';
@@ -41,7 +41,7 @@ export type Cursor = {
   selection: null | CursorSelection,
 };
 
-export function createRelativePosition(
+function createRelativePosition(
   point: Point,
   binding: Binding,
 ): null | RelativePosition {
@@ -53,7 +53,7 @@ export function createRelativePosition(
   return createRelativePositionFromTypeIndex(yjsNode, point.offset);
 }
 
-export function createAbsolutePosition(
+function createAbsolutePosition(
   relativePosition: RelativePosition,
   binding: Binding,
 ): AbsolutePosition {
@@ -63,7 +63,7 @@ export function createAbsolutePosition(
   );
 }
 
-export function shouldUpdatePosition(
+function shouldUpdatePosition(
   currentPos: RelativePosition,
   pos: null | RelativePosition,
 ): boolean {
@@ -197,7 +197,7 @@ function updateCursor(
     anchorDOM === null ||
     focusDOM === null
   ) {
-    throw new Error('Should never happen');
+    return;
   }
   range.setStart(anchorDOM, anchorOffset);
   range.setEnd(focusDOM, focusOffset);
@@ -315,7 +315,7 @@ export function syncCursorPositions(
 
     if (clientID !== localClientID) {
       visitedClientIDs.add(clientID);
-      const {anchorPos, focusPos, name, color} = awareness;
+      const {anchorPos, focusPos, name, color, focusing} = awareness;
       let selection = null;
 
       let cursor = cursors.get(clientID);
@@ -323,7 +323,7 @@ export function syncCursorPositions(
         cursor = createCursor(name, color);
         cursors.set(clientID, cursor);
       }
-      if (anchorPos !== null && focusPos !== null) {
+      if (anchorPos !== null && focusPos !== null && focusing) {
         const anchorAbsPos = createAbsolutePosition(anchorPos, binding);
         const focusAbsPos = createAbsolutePosition(focusPos, binding);
 
@@ -367,5 +367,34 @@ export function syncCursorPositions(
         cursors.delete(clientID);
       }
     }
+  }
+}
+
+export function syncOutlineSelectionToYjs(
+  binding: Binding,
+  provider: Provider,
+  selection: null | Selection,
+): void {
+  const awareness = provider.awareness;
+  const {
+    anchorPos: currentAnchorPos,
+    focusPos: currentFocusPos,
+    name,
+    color,
+    focusing,
+  } = awareness.getLocalState();
+  let anchorPos = null;
+  let focusPos = null;
+
+  if (selection !== null) {
+    anchorPos = createRelativePosition(selection.anchor, binding);
+    focusPos = createRelativePosition(selection.focus, binding);
+  }
+
+  if (
+    shouldUpdatePosition(currentAnchorPos, anchorPos) ||
+    shouldUpdatePosition(currentFocusPos, focusPos)
+  ) {
+    awareness.setLocalState({name, color, anchorPos, focusPos, focusing});
   }
 }

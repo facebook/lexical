@@ -10,15 +10,23 @@
 import type {UndoManager} from 'yjs';
 
 // $FlowFixMe: need Flow typings for yjs
-import {UndoManager as YjsUndoManager} from 'yjs';
+import {UndoManager as YjsUndoManager, RelativePosition} from 'yjs';
+
+export type UserState = {
+  anchorPos: null | RelativePosition,
+  focusPos: null | RelativePosition,
+  name: string,
+  color: string,
+  focusing: boolean,
+};
 
 declare class Provider {
   connect(): void;
   disconnect(): void;
   awareness: {
-    getLocalState<State>(): State,
-    setLocalState<State>(State): void,
-    getStates<State>(): Array<State>,
+    getLocalState(): UserState,
+    setLocalState(UserState): void,
+    getStates(): Array<UserState>,
     on(type: 'update', cb: () => void): void,
   };
   on(type: 'sync', cb: (isSynced: boolean) => void): void;

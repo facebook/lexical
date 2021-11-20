@@ -7,26 +7,19 @@
  * @flow strict
  */
 
-import type {Controller} from 'outline-react/OutlineController';
-import type {Doc} from 'yjs';
+import type {EditorContext} from 'outline-react/OutlineEditorContext';
 
-import {createController} from 'outline-react/OutlineController';
+import {createEditorContext} from 'outline-react/OutlineEditorContext';
 
 // $FlowFixMe: should fix this;
 type ListenerValue = any;
 
-export type PlaygroundState = {
+export type PlaygroundContext = {
   addListener(
     type: 'readonly' | 'clear',
     callback: (ListenerValue) => void,
   ): () => void,
   triggerListeners(type: 'readonly' | 'clear', value: ListenerValue): void,
-};
-
-export type PlaygroundSharedState = {
-  yjsDocMap: Map<string, Doc>,
-  name: string,
-  color: string,
 };
 
 const config = {
@@ -66,9 +59,7 @@ const config = {
   },
 };
 
-const colors = ['255,165,0', '0,200,55', '160,0,200', '0,172,200'];
-
-function createPlaygroundState(): PlaygroundState {
+function getInitialState(): PlaygroundContext {
   const listeners = new Map();
 
   return {
@@ -99,19 +90,7 @@ function createPlaygroundState(): PlaygroundState {
   };
 }
 
-function createPlaygroundSharedState(): PlaygroundSharedState {
-  return {
-    yjsDocMap: new Map(),
-    name: 'Guest' + Math.floor(Math.random() * 100),
-    color: colors[Math.floor(Math.random() * (colors.length - 1 - 0 + 1) + 0)],
-  };
-}
+const PlaygroundEditorContext: EditorContext<PlaygroundContext> =
+  createEditorContext<PlaygroundContext>(getInitialState, config);
 
-const PlaygroundController: Controller<PlaygroundState, PlaygroundSharedState> =
-  createController<PlaygroundState, PlaygroundSharedState>(
-    createPlaygroundState,
-    createPlaygroundSharedState,
-    config,
-  );
-
-export default PlaygroundController;
+export default PlaygroundEditorContext;

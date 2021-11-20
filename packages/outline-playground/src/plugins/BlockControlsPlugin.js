@@ -8,8 +8,8 @@
  */
 
 import * as React from 'react';
-import PlaygroundController from '../controllers/PlaygroundController';
-import {useController} from 'outline-react/OutlineController';
+import PlaygroundEditorContext from '../context/PlaygroundEditorContext';
+import {useEditorContext} from 'outline-react/OutlineEditorContext';
 import type {OutlineEditor} from 'outline';
 import {isHeadingNode} from 'outline/HeadingNode';
 import {isListNode} from 'outline/ListNode';
@@ -219,7 +219,7 @@ function DropdownList({
 }
 
 export default function BlockControlsPlugin(): React$Node {
-  const [editor] = useController(PlaygroundController);
+  const [editor] = useEditorContext(PlaygroundEditorContext);
   const [selectedBlockKey, setSelectedBlockKey] = useState(null);
   const [position, setPosition] = useState(0);
   const [editorPosition, setEditorPosition] = useState(0);

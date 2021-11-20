@@ -36,7 +36,7 @@ module.name_mapper='^outline/offsets' -> '<PROJECT_ROOT>/packages/outline/src/he
 module.name_mapper='^outline/root' -> '<PROJECT_ROOT>/packages/outline/src/helpers/OutlineRootHelpers.js'
 
 module.name_mapper='^outline-react/OutlineTreeView' -> '<PROJECT_ROOT>/packages/outline-react/src/OutlineTreeView.js'
-module.name_mapper='^outline-react/OutlineController' -> '<PROJECT_ROOT>/packages/outline-react/src/OutlineController.js'
+module.name_mapper='^outline-react/OutlineEditorContext' -> '<PROJECT_ROOT>/packages/outline-react/src/OutlineEditorContext.js'
 module.name_mapper='^outline-react/useOutlineEditor' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlineEditor.js'
 module.name_mapper='^outline-react/useOutlineRichText' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlineRichText.js'
 module.name_mapper='^outline-react/useOutlinePlainText' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlinePlainText.js'

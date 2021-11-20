@@ -9,11 +9,11 @@
 
 import OutlineTreeView from 'outline-react/OutlineTreeView';
 import * as React from 'react';
-import PlaygroundController from '../controllers/PlaygroundController';
-import {useController} from 'outline-react/OutlineController';
+import PlaygroundEditorContext from '../context/PlaygroundEditorContext';
+import {useEditorContext} from 'outline-react/OutlineEditorContext';
 
 export default function TreeViewPlugin(): React$Node {
-  const [editor] = useController(PlaygroundController);
+  const [editor] = useEditorContext(PlaygroundEditorContext);
   return (
     <OutlineTreeView
       viewClassName="tree-view-output"

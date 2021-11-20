@@ -7,8 +7,8 @@
  * @flow strict
  */
 
-import type {Cursor} from './Cursors';
-import type {NodeKey, EditorState} from 'outline';
+import type {Cursor} from './SyncCursors';
+import type {NodeKey, EditorState, OutlineEditor} from 'outline';
 import type {Provider} from '.';
 import type {Doc} from 'yjs';
 
@@ -24,6 +24,7 @@ export type ReverseYjsNodeMap = Map<Object, NodeKey>;
 export type ClientID = string;
 
 export type Binding = {
+  editor: OutlineEditor,
   id: string,
   cursors: Map<ClientID, Cursor>,
   cursorsContainer: null | HTMLElement,
@@ -38,6 +39,7 @@ export type Binding = {
 };
 
 export function createBinding(
+  editor: OutlineEditor,
   provider: Provider,
   id: string,
   docMap: Map<string, Doc>,
@@ -50,6 +52,7 @@ export function createBinding(
   // $FlowFixMe: our Flow bindings need fixing
   root.nodeName = 'root';
   const binding = {
+    editor,
     id,
     cursors: new Map(),
     cursorsContainer: null,

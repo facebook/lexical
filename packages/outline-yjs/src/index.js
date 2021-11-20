@@ -7,7 +7,6 @@
  * @flow strict
  */
 
-import type {YjsNode} from './Syncing';
 import type {UndoManager} from 'yjs';
 
 // $FlowFixMe: need Flow typings for yjs
@@ -15,6 +14,10 @@ import {UndoManager as YjsUndoManager} from 'yjs';
 
 // $FlowFixMe: needs proper typings
 export type Provider = Object;
+// $FlowFixMe: todo
+export type YjsNode = Object;
+// $FlowFixMe: todo
+export type YjsEvent = Object;
 
 export type {
   YjsNodeMap,
@@ -42,8 +45,6 @@ export function initLocalState(
   });
 }
 
-export {
-  syncOutlineUpdateToYjs,
-  syncYjsChangesToOutline,
-  syncCursorPositions,
-} from './Syncing';
+export {syncOutlineUpdateToYjs} from './SyncOutlineToYjs';
+export {syncYjsChangesToOutline} from './SyncYjsToOutline';
+export {syncCursorPositions} from './SyncCursors';

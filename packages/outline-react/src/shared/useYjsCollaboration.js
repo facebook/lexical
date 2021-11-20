@@ -37,8 +37,8 @@ export function useYjsCollaboration(
 ): [React$Node, Binding, boolean] {
   const [connected, setConnected] = useState(false);
   const binding = useMemo(
-    () => createBinding(provider, id, docMap),
-    [id, provider, docMap],
+    () => createBinding(editor, provider, id, docMap),
+    [editor, provider, id, docMap],
   );
 
   useEffect(() => {
@@ -58,7 +58,7 @@ export function useYjsCollaboration(
     initLocalState(provider, name, color);
 
     awareness.on('update', ({removed}) => {
-      syncCursorPositions(editor, binding, provider);
+      syncCursorPositions(binding, provider);
     });
 
     const removeListener = editor.addListener(
@@ -75,13 +75,17 @@ export function useYjsCollaboration(
     );
 
     root.observeDeep((events) => {
-      syncYjsChangesToOutline(binding, editor, provider, events);
+      syncYjsChangesToOutline(binding, provider, events);
     });
 
     provider.connect();
 
     return () => {
-      provider.disconnect();
+      try {
+        provider.disconnect();
+      } catch (e) {
+        // Do nothing
+      }
       removeListener();
     };
   }, [binding, color, editor, name, provider]);

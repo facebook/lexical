@@ -14,27 +14,27 @@ import {createContext as createReactContext, useContext, useMemo} from 'react';
 import {createEditor} from 'outline';
 import invariant from 'shared/invariant';
 
-type EditorContextType<InitialContext> = null | [OutlineEditor, InitialContext];
+type EditorContextType<Context> = null | [OutlineEditor, Context];
 
-export type EditorContext<InitialContext> = {
+export type EditorContext<Context> = {
   ({children: React$Node}): React$Node,
-  __context: React$Context<EditorContextType<InitialContext>>,
+  __context: React$Context<EditorContextType<Context>>,
 };
 
-export function createEditorContext<InitialContext>(
-  getInitialContext: () => InitialContext,
+export function createEditorContext<Context>(
+  getInitialContext: () => Context,
   editorConfig: {
     initialEditorState?: EditorState,
     theme?: EditorThemeClasses,
   },
-): EditorContext<InitialContext> {
+): EditorContext<Context> {
   const OutlineEditorContext =
-    createReactContext<EditorContextType<InitialContext>>(null);
+    createReactContext<EditorContextType<Context>>(null);
 
   function OutlineEditorScope({children}: {children: React$Node}) {
     const editorContext = useMemo(() => {
-      const context: InitialContext = getInitialContext();
-      const editor = createEditor<InitialContext>({
+      const context: Context = getInitialContext();
+      const editor = createEditor<Context>({
         ...editorConfig,
         context,
       });
@@ -53,9 +53,9 @@ export function createEditorContext<InitialContext>(
   return OutlineEditorScope;
 }
 
-export function useEditorContext<InitialContext>(
-  editorContext: EditorContext<InitialContext>,
-): [OutlineEditor, InitialContext] {
+export function useEditorContext<Context>(
+  editorContext: EditorContext<Context>,
+): [OutlineEditor, Context] {
   const context = useContext(editorContext.__context);
   if (context === null) {
     invariant(

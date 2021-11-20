@@ -7,15 +7,7 @@
  */
 
 import {selectAll} from '../keyboardShortcuts';
-import {
-  initializeE2E,
-  assertHTML,
-  assertSelection,
-  keyDownCtrlOrMeta,
-  keyUpCtrlOrMeta,
-  repeat,
-  E2E_BROWSER,
-} from '../utils';
+import {initializeE2E, assertHTML, assertSelection} from '../utils';
 
 describe('Links', () => {
   initializeE2E((e2e) => {

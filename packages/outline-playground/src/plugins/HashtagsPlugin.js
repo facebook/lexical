@@ -9,8 +9,8 @@
 
 import type {OutlineEditor, TextNode, State} from 'outline';
 
-import PlaygroundController from '../controllers/PlaygroundController';
-import {useController} from 'outline-react/OutlineController';
+import PlaygroundEditorContext from '../context/PlaygroundEditorContext';
+import {useEditorContext} from 'outline-react/OutlineEditorContext';
 import {useEffect} from 'react';
 import {HashtagNode, toggleHashtag} from 'outline/HashtagNode';
 
@@ -286,7 +286,7 @@ function useHashtags(editor: OutlineEditor): void {
 }
 
 export default function HashtagsPlugin(): React$Node {
-  const [editor] = useController(PlaygroundController);
+  const [editor] = useEditorContext(PlaygroundEditorContext);
   useHashtags(editor);
 
   return null;

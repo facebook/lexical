@@ -8,8 +8,8 @@
  */
 
 import * as React from 'react';
-import PlaygroundController from '../controllers/PlaygroundController';
-import {useController} from 'outline-react/OutlineController';
+import PlaygroundEditorContext from '../context/PlaygroundEditorContext';
+import {useEditorContext} from 'outline-react/OutlineEditorContext';
 import {useEffect, useState} from 'react';
 import {log, isBlockNode, getSelection, createEditorStateRef} from 'outline';
 import {isListItemNode} from 'outline/ListItemNode';
@@ -31,8 +31,9 @@ export default function ActionsPlugins({
   isRichText: boolean,
 }): React$Node {
   const [isReadOnly, setIsReadyOnly] = useState(false);
-  const [editor, {triggerListeners, addListener}] =
-    useController(PlaygroundController);
+  const [editor, {triggerListeners, addListener}] = useEditorContext(
+    PlaygroundEditorContext,
+  );
   const [indent, outdent] = useOutlineNestedList(editor);
 
   useEffect(() => {

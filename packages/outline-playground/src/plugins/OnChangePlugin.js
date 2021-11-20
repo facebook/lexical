@@ -9,8 +9,8 @@
 
 import type {OutlineEditor, EditorState} from 'outline';
 
-import PlaygroundController from '../controllers/PlaygroundController';
-import {useController} from 'outline-react/OutlineController';
+import PlaygroundEditorContext from '../context/PlaygroundEditorContext';
+import {useEditorContext} from 'outline-react/OutlineEditorContext';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
 export default function OnChangePlugin({
@@ -18,7 +18,7 @@ export default function OnChangePlugin({
 }: {
   onChange: (editorState: EditorState, editor: OutlineEditor) => void,
 }): null {
-  const [editor] = useController(PlaygroundController);
+  const [editor] = useEditorContext(PlaygroundEditorContext);
   useLayoutEffect(() => {
     if (onChange) {
       return editor.addListener('update', ({editorState}) => {

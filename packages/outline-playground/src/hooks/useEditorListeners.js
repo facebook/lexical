@@ -7,16 +7,16 @@
  * @flow strict
  */
 
-import type {PlaygroundState} from '../controllers/PlaygroundController';
+import type {PlaygroundContext} from '../context/PlaygroundEditorContext';
 
 import {useEffect, useState} from 'react';
 
 export default function useEditorListeners(
-  state: PlaygroundState,
+  context: PlaygroundContext,
   clear: () => void,
 ): boolean {
   const [isReadOnly, setIsReadyOnly] = useState(false);
-  const {addListener} = state;
+  const {addListener} = context;
 
   useEffect(() => {
     const removeReadOnlyListener = addListener('readonly', (value: boolean) => {

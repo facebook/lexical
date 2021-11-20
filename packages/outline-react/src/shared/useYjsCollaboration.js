@@ -63,7 +63,7 @@ export function useYjsCollaboration(
       document.activeElement === editor.getRootElement(),
     );
 
-    awareness.on('update', ({removed}) => {
+    awareness.on('update', () => {
       syncCursorPositions(binding, provider);
     });
 

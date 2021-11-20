@@ -12,12 +12,24 @@ import type {UndoManager} from 'yjs';
 // $FlowFixMe: need Flow typings for yjs
 import {UndoManager as YjsUndoManager} from 'yjs';
 
-// $FlowFixMe: needs proper typings
-export type Provider = Object;
+declare class Provider {
+  connect(): void;
+  disconnect(): void;
+  awareness: {
+    getLocalState<State>(): State,
+    setLocalState<State>(State): void,
+    getStates<State>(): Array<State>,
+    on(type: 'update', cb: () => void): void,
+  };
+  on(type: 'sync', cb: (isSynced: boolean) => void): void;
+  on(type: 'status', cb: ({status: string}) => void): void;
+}
 // $FlowFixMe: todo
 export type YjsNode = Object;
 // $FlowFixMe: todo
 export type YjsEvent = Object;
+
+export type {Provider};
 
 export type {
   YjsNodeMap,

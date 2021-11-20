@@ -7,9 +7,15 @@
  * @flow strict
  */
 
-import type {NodeKey, State, Selection, OutlineEditor, NodeMap} from 'outline';
+import type {
+  NodeKey,
+  Selection,
+  OutlineEditor,
+  NodeMap,
+  EditorState,
+} from 'outline';
 
-import {createSelection, isBlockNode, isTextNode} from 'outline';
+import {createSelection, isBlockNode, isTextNode, getNodeByKey} from 'outline';
 import invariant from 'shared/invariant';
 
 type OffsetBlockNode = {
@@ -52,11 +58,7 @@ class OffsetView {
     this._firstNode = firstNode;
   }
 
-  createSelectionFromOffsets(
-    state: State,
-    start: number,
-    end: number,
-  ): null | Selection {
+  createSelectionFromOffsets(start: number, end: number): null | Selection {
     const firstNode = this._firstNode;
     if (firstNode === null) {
       return null;
@@ -68,8 +70,8 @@ class OffsetView {
     }
     let startKey = startOffsetNode.key;
     let endKey = endOffsetNode.key;
-    const startNode = state.getNodeByKey(startKey);
-    const endNode = state.getNodeByKey(endKey);
+    const startNode = getNodeByKey(startKey);
+    const endNode = getNodeByKey(endKey);
     if (startNode === null || endNode === null) {
       return null;
     }
@@ -203,6 +205,7 @@ function createOffsetNode(
   key: NodeKey,
   nodeMap: NodeMap,
   offsetMap: OffsetMap,
+  blockOffsetSize: number,
 ): OffsetNode {
   const node = nodeMap.get(key);
   if (node === undefined) {
@@ -215,12 +218,18 @@ function createOffsetNode(
     const blockIsEmpty = childKeys.length === 0;
     const child = blockIsEmpty
       ? null
-      : createOffsetChild(state, childKeys, nodeMap, offsetMap);
+      : createOffsetChild(
+          state,
+          childKeys,
+          nodeMap,
+          offsetMap,
+          blockOffsetSize,
+        );
     // If the prev node was not a block or the block is empty, we should
     // account for the user being able to selection the block (due to the \n).
     if (!state.prevIsBlock || blockIsEmpty) {
       state.prevIsBlock = true;
-      state.offset++;
+      state.offset += blockOffsetSize;
     }
     const end = state.offset;
     const offsetNode = createInternalOffsetNode(
@@ -257,13 +266,20 @@ function createOffsetChild(
   children: Array<NodeKey>,
   nodeMap: NodeMap,
   offsetMap: OffsetMap,
+  blockOffsetSize: number,
 ): OffsetNode | null {
   let firstNode = null;
   let currentNode = null;
   const childrenLength = children.length;
   for (let i = 0; i < childrenLength; i++) {
     const childKey = children[i];
-    const offsetNode = createOffsetNode(state, childKey, nodeMap, offsetMap);
+    const offsetNode = createOffsetNode(
+      state,
+      childKey,
+      nodeMap,
+      offsetMap,
+      blockOffsetSize,
+    );
     if (currentNode === null) {
       firstNode = offsetNode;
     } else {
@@ -274,13 +290,24 @@ function createOffsetChild(
   return firstNode;
 }
 
-export function createOffsetView(editor: OutlineEditor): OffsetView {
-  const editorState = editor._pendingEditorState || editor._editorState;
-  const nodeMap = editorState._nodeMap;
+export function createOffsetView(
+  editor: OutlineEditor,
+  blockOffsetSize?: number = 1,
+  editorState?: EditorState,
+): OffsetView {
+  const targetEditorState =
+    editorState || editor._pendingEditorState || editor._editorState;
+  const nodeMap = targetEditorState._nodeMap;
   // $FlowFixMe: root is always in the Map
   const root = ((nodeMap.get('root'): any): RootNode);
   const offsetMap = new Map();
   const state = {offset: 0, prevIsBlock: false};
-  const node = createOffsetChild(state, root.__children, nodeMap, offsetMap);
+  const node = createOffsetChild(
+    state,
+    root.__children,
+    nodeMap,
+    offsetMap,
+    blockOffsetSize,
+  );
   return new OffsetView(offsetMap, node);
 }

@@ -331,9 +331,21 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
             let linkNode = null;
             if (nodes.length === 1) {
               const firstNode = nodes[0];
+              // if the first node is a LinkNode or if its
+              // parent is a LinkNode, we update the URL.
               if (isLinkNode(firstNode)) {
                 firstNode.setURL(url);
                 return;
+              } else {
+                const parent = firstNode.getParent();
+                if (isLinkNode(parent)) {
+                  // set parent to be the current linkNode
+                  // so that other nodes in the same parent
+                  // aren't handled separately below.
+                  linkNode = parent;
+                  parent.setURL(url);
+                  return;
+                }
               }
             }
             nodes.forEach((node) => {

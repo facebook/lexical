@@ -7,10 +7,10 @@
  * @flow strict
  */
 
-import type {UndoManager} from 'yjs';
+import type {UndoManager, RelativePosition} from 'yjs';
 
 // $FlowFixMe: need Flow typings for yjs
-import {UndoManager as YjsUndoManager, RelativePosition} from 'yjs';
+import {UndoManager as YjsUndoManager} from 'yjs';
 
 export type UserState = {
   anchorPos: null | RelativePosition,

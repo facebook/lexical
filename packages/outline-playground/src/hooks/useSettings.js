@@ -10,13 +10,15 @@
 import type {Settings, SettingName} from '../appSettings';
 
 import * as React from 'react';
-import {useState} from 'react';
+import {useMemo, useState} from 'react';
 import Switch from '../ui/Switch';
 
 function useSettings(
   settings: Settings,
   onChange: (setting: SettingName, value: boolean) => void = () => {},
 ): [React$Node, React$Node] {
+  const windowLocation = window.location;
+
   const {
     measureTypingPerf,
     isCollab,
@@ -36,6 +38,15 @@ function useSettings(
     />
   );
 
+  const [port, isSplitScreen, search] = useMemo(() => {
+    const port = windowLocation.port;
+    const parentWindow = window.parent;
+    const search = windowLocation.search;
+    const isSplitScreen =
+      parentWindow && parentWindow.location.pathname === '/split.html';
+    return [port, isSplitScreen, search];
+  }, [windowLocation]);
+
   const switches = showSettings ? (
     <div className="switches">
       {isRichText && (
@@ -48,6 +59,17 @@ function useSettings(
           text="Collaboration"
         />
       )}
+      <Switch
+        onClick={() => {
+          if (isSplitScreen) {
+            window.parent.location.href = `http://localhost:${port}/${search}`;
+          } else {
+            window.location.href = `http://localhost:${port}/split.html${search}`;
+          }
+        }}
+        checked={isSplitScreen}
+        text="Split Screen"
+      />
       <Switch
         onClick={() => onChange('measureTypingPerf', !measureTypingPerf)}
         checked={measureTypingPerf}

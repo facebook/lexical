@@ -7,8 +7,8 @@
  * @flow strict
  */
 
-import PlaygroundController from '../controllers/PlaygroundController';
-import {useController} from 'outline-react/OutlineController';
+import PlaygroundEditorContext from '../context/PlaygroundEditorContext';
+import {useEditorContext} from 'outline-react/OutlineEditorContext';
 import type {OutlineEditor, State, BlockNode} from 'outline';
 import {useEffect} from 'react';
 import {
@@ -156,7 +156,7 @@ function convertKeywordNodeToPlainTextNode(node: KeywordNode): void {
 }
 
 export default function KeywordsPlugin(): React$Node {
-  const [editor] = useController(PlaygroundController);
+  const [editor] = useEditorContext(PlaygroundEditorContext);
   useKeywords(editor);
   return null;
 }

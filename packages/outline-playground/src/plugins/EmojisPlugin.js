@@ -9,8 +9,8 @@
 
 import type {TextNode, OutlineEditor, Selection} from 'outline';
 
-import PlaygroundController from '../controllers/PlaygroundController';
-import {useController} from 'outline-react/OutlineController';
+import PlaygroundEditorContext from '../context/PlaygroundEditorContext';
+import {useEditorContext} from 'outline-react/OutlineEditorContext';
 import {createEmojiNode, EmojiNode} from '../nodes/EmojiNode';
 import {useEffect} from 'react';
 import {getSelection} from 'outline';
@@ -70,7 +70,7 @@ export function useEmojis(editor: OutlineEditor): void {
 }
 
 export default function EmojisPlugin(): React$Node {
-  const [editor] = useController(PlaygroundController);
+  const [editor] = useEditorContext(PlaygroundEditorContext);
   useEmojis(editor);
   return null;
 }

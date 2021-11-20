@@ -9,8 +9,9 @@
 
 import * as React from 'react';
 import {useMemo} from 'react';
-import PlaygroundController from '../controllers/PlaygroundController';
-import {useController} from 'outline-react/OutlineController';
+import PlaygroundEditorContext from '../context/PlaygroundEditorContext';
+import {useEditorContext} from 'outline-react/OutlineEditorContext';
+import {useCollaborationContext} from '../context/CollaborationContext';
 import useOutlineEditor from 'outline-react/useOutlineEditor';
 import useOutlineRichTextWithCollab from 'outline-react/useOutlineRichTextWithCollab';
 import useOutlineDecorators from 'outline-react/useOutlineDecorators';
@@ -37,8 +38,8 @@ export default function RichTextCollabPlugin({
   id: string,
   placeholder?: string,
 }): React$Node {
-  const [editor, state, {yjsDocMap, name, color}] =
-    useController(PlaygroundController);
+  const {yjsDocMap, name, color} = useCollaborationContext();
+  const [editor, state] = useEditorContext(PlaygroundEditorContext);
   const [rootElementRef, showPlaceholder] = useOutlineEditor(editor, onError);
   const provider = useMemo(() => {
     let doc = yjsDocMap.get(id);

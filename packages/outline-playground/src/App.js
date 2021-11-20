@@ -14,7 +14,7 @@ import {useCallback, useState} from 'react';
 import useSettings from './hooks/useSettings';
 import {DEFAULT_SETTINGS} from './appSettings';
 import Editor from './Editor';
-import PlaygroundController from './controllers/PlaygroundController';
+import PlaygroundEditorContext from './context/PlaygroundEditorContext';
 import TreeViewPlugin from './plugins/TreeViewPlugin';
 import TestRecorderPlugin from './plugins/TestRecorderPlugin';
 import TypingPerfPlugin from './plugins/TypingPerfPlugin';
@@ -62,7 +62,7 @@ function App(): React$Node {
   } = settings;
 
   return (
-    <PlaygroundController>
+    <PlaygroundEditorContext>
       <header>
         <img src="logo.svg" alt="Outline Logo" />
       </header>
@@ -80,7 +80,7 @@ function App(): React$Node {
       {settingsButton}
       <TestRecorderPlugin />
       {measureTypingPerf && <TypingPerfPlugin />}
-    </PlaygroundController>
+    </PlaygroundEditorContext>
   );
 }
 

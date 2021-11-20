@@ -9,8 +9,8 @@
 
 import type {OutlineEditor, Selection} from 'outline';
 
-import PlaygroundController from '../controllers/PlaygroundController';
-import {useController} from 'outline-react/OutlineController';
+import PlaygroundEditorContext from '../context/PlaygroundEditorContext';
+import {useEditorContext} from 'outline-react/OutlineEditorContext';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
 import {log, getSelection} from 'outline';
@@ -1048,6 +1048,6 @@ function useMentions(editor: OutlineEditor): React$Node {
 }
 
 export default function MentionsPlugin(): React$Node {
-  const [editor] = useController(PlaygroundController);
+  const [editor] = useEditorContext(PlaygroundEditorContext);
   return useMentions(editor);
 }

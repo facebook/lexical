@@ -8,8 +8,8 @@
  */
 
 import * as React from 'react';
-import PlaygroundController from '../controllers/PlaygroundController';
-import {useController} from 'outline-react/OutlineController';
+import PlaygroundEditorContext from '../context/PlaygroundEditorContext';
+import {useEditorContext} from 'outline-react/OutlineEditorContext';
 import type {
   OutlineEditor,
   Selection,
@@ -518,6 +518,6 @@ function useFloatingToolbar(editor: OutlineEditor): React$Node {
 }
 
 export default function FloatingToolbarPlugin(): React$Node {
-  const [editor] = useController(PlaygroundController);
+  const [editor] = useEditorContext(PlaygroundEditorContext);
   return useFloatingToolbar(editor);
 }

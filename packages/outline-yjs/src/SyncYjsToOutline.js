@@ -28,7 +28,11 @@ import {
   setSelection,
   createEditorStateRef,
 } from 'outline';
-import {syncCursorPositions, syncLocalCursorPosition} from './SyncCursors';
+import {
+  syncCursorPositions,
+  syncLocalCursorPosition,
+  syncOutlineSelectionToYjs,
+} from './SyncCursors';
 import {registerYjsNode} from './Utils';
 import {createOffsetView} from 'outline/offsets';
 
@@ -263,7 +267,6 @@ export function syncYjsChangesToOutline(
           attributesChanged || keysChanged,
         );
       }
-      syncLocalCursorPosition(binding, provider);
       // If we our selection is broken, we should move selection to end.
       // TODO: we need to properly restore selection in remove() on a deep node.
       const selection = getSelection();
@@ -317,6 +320,9 @@ export function syncYjsChangesToOutline(
               getRoot().selectEnd();
             }
           }
+          syncOutlineSelectionToYjs(binding, provider, getSelection());
+        } else {
+          syncLocalCursorPosition(binding, provider);
         }
       }
     },

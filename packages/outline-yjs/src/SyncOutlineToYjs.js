@@ -20,13 +20,13 @@ import type {Binding, Provider, YjsNode} from '.';
 // $FlowFixMe: need Flow typings for yjs
 import {XmlText, XmlElement, Doc} from 'yjs';
 import {isTextNode, isBlockNode, isDecoratorNode, getSelection} from 'outline';
-import {createRelativePosition, shouldUpdatePosition} from './SyncCursors';
 import {
   diffText,
   getIndexOfYjsNode,
   spliceYjsText,
   registerYjsNode,
 } from './Utils';
+import {syncOutlineSelectionToYjs} from './SyncCursors';
 
 const excludedProperties = new Set([
   '__key',
@@ -139,34 +139,6 @@ function createYjsNodeFromOutlineNode(
   // Find the node we should insert this into
   appendYjsNode(binding, yjsNode, node, parentYjsNode);
   return yjsNode;
-}
-
-function syncOutlineSelectionToYjs(
-  binding: Binding,
-  provider: Provider,
-  selection: null | Selection,
-): void {
-  const awareness = provider.awareness;
-  const {
-    anchorPos: currentAnchorPos,
-    focusPos: currentFocusPos,
-    name,
-    color,
-  } = awareness.getLocalState();
-  let anchorPos = null;
-  let focusPos = null;
-
-  if (selection !== null) {
-    anchorPos = createRelativePosition(selection.anchor, binding);
-    focusPos = createRelativePosition(selection.focus, binding);
-  }
-
-  if (
-    shouldUpdatePosition(currentAnchorPos, anchorPos) ||
-    shouldUpdatePosition(currentFocusPos, focusPos)
-  ) {
-    awareness.setLocalState({name, color, anchorPos, focusPos});
-  }
 }
 
 function syncOutlineChildrenChangesToYjs(

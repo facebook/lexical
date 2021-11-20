@@ -36,12 +36,22 @@ export function initLocalState(
   provider: Provider,
   name: string,
   color: string,
+  focusing: boolean,
 ): void {
   provider.awareness.setLocalState({
     color,
     name,
     anchorPos: null,
     focusPos: null,
+    focusing: focusing,
+  });
+}
+
+export function setLocalStateFocus(provider: Provider, focusing: boolean) {
+  const {awareness} = provider;
+  awareness.setLocalState({
+    ...awareness.getLocalState(),
+    focusing,
   });
 }
 

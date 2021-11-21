@@ -64,11 +64,11 @@ function createAbsolutePosition(
 }
 
 function shouldUpdatePosition(
-  currentPos: RelativePosition,
+  currentPos: null | RelativePosition,
   pos: null | RelativePosition,
 ): boolean {
-  if (currentPos === undefined) {
-    if (pos !== undefined) {
+  if (currentPos === null) {
+    if (pos !== null) {
       return true;
     }
   } else if (pos === null || !compareRelativePositions(currentPos, pos)) {

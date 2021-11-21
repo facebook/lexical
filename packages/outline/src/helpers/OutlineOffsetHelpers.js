@@ -205,7 +205,7 @@ function createOffsetNode(
   key: NodeKey,
   nodeMap: NodeMap,
   offsetMap: OffsetMap,
-  blockOffsetSize: number,
+  blockAndInlineOffsetSize: number,
 ): OffsetNode {
   const node = nodeMap.get(key);
   if (node === undefined) {
@@ -223,13 +223,13 @@ function createOffsetNode(
           childKeys,
           nodeMap,
           offsetMap,
-          blockOffsetSize,
+          blockAndInlineOffsetSize,
         );
     // If the prev node was not a block or the block is empty, we should
     // account for the user being able to selection the block (due to the \n).
     if (!state.prevIsBlock || blockIsEmpty) {
       state.prevIsBlock = true;
-      state.offset += blockOffsetSize;
+      state.offset += blockAndInlineOffsetSize;
     }
     const end = state.offset;
     const offsetNode = createInternalOffsetNode(
@@ -244,9 +244,8 @@ function createOffsetNode(
   }
   state.prevIsBlock = false;
   const isText = isTextNode(node);
-  // Inlines are always a single character
   // $FlowFixMe: isText means __text is available
-  const length = isText ? node.__text.length : 1;
+  const length = isText ? node.__text.length : blockAndInlineOffsetSize;
   const end = (state.offset += length);
 
   const offsetNode: OffsetTextNode | OffsetInlineNode =

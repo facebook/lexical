@@ -7,17 +7,37 @@
  * @flow strict
  */
 
-import type {UndoManager} from 'yjs';
+import type {UndoManager, RelativePosition} from 'yjs';
 
 // $FlowFixMe: need Flow typings for yjs
 import {UndoManager as YjsUndoManager} from 'yjs';
 
-// $FlowFixMe: needs proper typings
-export type Provider = Object;
+export type UserState = {
+  anchorPos: null | RelativePosition,
+  focusPos: null | RelativePosition,
+  name: string,
+  color: string,
+  focusing: boolean,
+};
+
+declare class Provider {
+  connect(): void;
+  disconnect(): void;
+  awareness: {
+    getLocalState(): UserState,
+    setLocalState(UserState): void,
+    getStates(): Array<UserState>,
+    on(type: 'update', cb: () => void): void,
+  };
+  on(type: 'sync', cb: (isSynced: boolean) => void): void;
+  on(type: 'status', cb: ({status: string}) => void): void;
+}
 // $FlowFixMe: todo
 export type YjsNode = Object;
 // $FlowFixMe: todo
 export type YjsEvent = Object;
+
+export type {Provider};
 
 export type {
   YjsNodeMap,

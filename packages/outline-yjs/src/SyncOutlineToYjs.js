@@ -15,7 +15,7 @@ import type {
   OutlineNode,
   BlockNode,
 } from 'outline';
-import type {Binding, Provider, YjsNode} from '.';
+import type {Provider, Binding, YjsNode} from '.';
 
 // $FlowFixMe: need Flow typings for yjs
 import {XmlText, XmlElement, Doc} from 'yjs';

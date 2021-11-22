@@ -302,17 +302,19 @@ export function syncYjsChangesToOutline(
               0,
               currentEditorState,
             );
-            const [start, end] =
-              prevOffsetView.getOffsetsFromSelection(prevSelection);
             const nextOffsetView = createOffsetView(
               editor,
               0,
               pendingEditorState,
             );
+            const [start, end] =
+              prevOffsetView.getOffsetsFromSelection(prevSelection);
             const nextSelection = nextOffsetView.createSelectionFromOffsets(
               start,
               end,
+              prevOffsetView,
             );
+
             if (nextSelection !== null) {
               setSelection(nextSelection);
             } else {

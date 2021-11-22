@@ -122,7 +122,7 @@ function moveSelectionPointToSibling(
 export function updateDirectionIfNeeded(node: OutlineNode): void {
   const topBlock = node.getTopParentBlockOrThrow();
   const prevDirection = topBlock.getDirection();
-  if (prevDirection !== null) {
+  if (prevDirection === null) {
     const textContent = topBlock.getTextContent(false, false);
     const direction = getTextDirection(textContent);
     if (direction === null) {

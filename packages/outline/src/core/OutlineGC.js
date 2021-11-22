@@ -74,7 +74,6 @@ export function garbageCollectDetachedNodes(
   editorState: EditorState,
   dirtyLeaves: Set<NodeKey>,
   dirtyBlocks: Map<NodeKey, IntentionallyMarkedAsDirtyBlock>,
-  editor: OutlineEditor,
 ): void {
   const dirtyLeavesArr = Array.from(dirtyLeaves);
   const dirtyLeavesLength = dirtyLeavesArr.length;

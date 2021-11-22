@@ -60,7 +60,7 @@ export function useYjsCollaboration(
       syncCursorPositions(binding, provider);
     }
 
-    const observeYjsForChanges = (events) => {
+    const onYjsTreeChanges = (events) => {
       syncYjsChangesToOutline(binding, provider, events);
     }
 
@@ -74,7 +74,7 @@ export function useYjsCollaboration(
     provider.on('status', onStatus);
     provider.on('sync', onSync);
     awareness.on('update', onAwarenessUpdate);
-    root.observeDeep(observeYjsForChanges);
+    root.observeDeep(onYjsTreeChanges);
 
     const removeListener = editor.addListener(
       'update',

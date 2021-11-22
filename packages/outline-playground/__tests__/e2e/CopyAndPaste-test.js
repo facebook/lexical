@@ -863,8 +863,6 @@ describe('CopyAndPaste', () => {
       await page.keyboard.type('facebook.com');
       await page.keyboard.press('Enter');
 
-      // Linking a text node and then immediately entering the address currently adds a second empty link node below.
-      // It shouldn't - we should fix that and then update this test.
       await assertHTML(
         page,
         '<p class="editor-paragraph"><a class="editor-text-link" href="http://facebook.com"><span data-outline-text="true">Facebook!</span></a></p>',

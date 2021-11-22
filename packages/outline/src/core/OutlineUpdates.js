@@ -192,7 +192,6 @@ function applyAllTransforms(
       // We leverage editor._dirtyLeaves to track the new dirty leaves after the transforms
       editor._dirtyLeaves = new Set();
       const untransformedDirtyLeavesArr = Array.from(untransformedDirtyLeaves);
-      // Loop through dirty nodes until the queue is empty
       for (let i = 0; i < untransformedDirtyLeavesLength; i++) {
         const nodeKey = untransformedDirtyLeavesArr[i];
         const node = nodeMap.get(nodeKey);
@@ -216,8 +215,6 @@ function applyAllTransforms(
               decoratorTransformsArr,
               decoratorTransformsArrLength,
             );
-          } else {
-            untransformedDirtySubtrees.add(nodeKey);
           }
         }
         dirtyLeaves.add(nodeKey);
@@ -230,9 +227,9 @@ function applyAllTransforms(
         continue;
       }
     }
-    // All dirty leaves have been processed. Let's do blocks
-    // We have previously processed dirty leaves, so let's restart the editor Set to track new ones
-    // caused by block transforms
+    // All dirty leaves have been processed. Let's do blocks!
+    // We have previously processed dirty leaves, so let's restart the editor leaves Set to track
+    // new ones caused by block transforms
     editor._dirtyLeaves = new Set();
     editor._dirtyBlocks = new Map();
     const untransformedDirtyBlocksArr = Array.from(untransformedDirtyBlocks);

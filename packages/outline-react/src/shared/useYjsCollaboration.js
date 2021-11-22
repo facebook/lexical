@@ -46,15 +46,23 @@ export function useYjsCollaboration(
     const {root} = binding;
     const {awareness} = provider;
 
-    provider.on('status', ({status}: {status: string}) => {
+    const onStatus = ({status}: {status: string}) => {
       setConnected(status === 'connected');
-    });
+    }
 
-    provider.on('sync', (isSynced: boolean) => {
+    const onSync = (isSynced: boolean) => {
       if (root.firstChild === null) {
         initEditor(editor);
       }
-    });
+    }
+
+    const onAwarenessUpdate = () => {
+      syncCursorPositions(binding, provider);
+    }
+
+    const onYjsTreeChanges = (events) => {
+      syncYjsChangesToOutline(binding, provider, events);
+    }
 
     initLocalState(
       provider,
@@ -63,9 +71,10 @@ export function useYjsCollaboration(
       document.activeElement === editor.getRootElement(),
     );
 
-    awareness.on('update', () => {
-      syncCursorPositions(binding, provider);
-    });
+    provider.on('status', onStatus);
+    provider.on('sync', onSync);
+    awareness.on('update', onAwarenessUpdate);
+    root.observeDeep(onYjsTreeChanges);
 
     const removeListener = editor.addListener(
       'update',
@@ -83,10 +92,6 @@ export function useYjsCollaboration(
       },
     );
 
-    root.observeDeep((events) => {
-      syncYjsChangesToOutline(binding, provider, events);
-    });
-
     provider.connect();
 
     return () => {
@@ -95,6 +100,10 @@ export function useYjsCollaboration(
       } catch (e) {
         // Do nothing
       }
+      provider.off('sync', onSync);
+      provider.off('status', onStatus);
+      awareness.off('update', onAwarenessUpdate);
+      root.unobserveDeep(onYjsTreeChanges);
       removeListener();
     };
   }, [binding, color, editor, name, provider]);

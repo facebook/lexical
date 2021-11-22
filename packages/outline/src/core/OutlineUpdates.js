@@ -17,7 +17,7 @@ import type {ParsedNode, NodeParserState} from './OutlineParsing';
 import type {TextNode} from './OutlineTextNode';
 import type {DecoratorNode} from './OutlineDecoratorNode';
 
-import {updateEditorState} from './OutlineReconciler';
+import {normalizeTextNode, updateEditorState} from './OutlineReconciler';
 import {
   createSelection,
   getSelection,
@@ -160,7 +160,7 @@ function applyAllTransforms(
   editorState: EditorState,
   editor: OutlineEditor,
 ): void {
-  // const selection = editorState._selection;
+  const selection = editorState._selection;
   const dirtyLeaves = editor._dirtyLeaves;
   const dirtyBlocks = editor._dirtyBlocks;
   const transforms = editor._transforms;
@@ -198,8 +198,7 @@ function applyAllTransforms(
         if (isTextNode(node)) {
           const parent = node.getParent();
           if (parent !== null) {
-            // TODO
-            // normalizeTextNodes(parent, selection);
+            normalizeTextNode(node, selection);
           }
         }
         if (isNodeValidForTransform(node, compositionKey)) {

@@ -278,30 +278,34 @@ export function markAllNodesAsDirty(
   type: 'text' | 'decorator' | 'block' | 'root',
 ): void {
   // Mark all existing text nodes as dirty
-  updateEditor(editor, () => {
-    const editorState = getActiveEditorState();
-    if (editorState.isEmpty()) {
-      return;
-    }
-    if (type === 'root') {
-      getRoot().markDirty();
-      return;
-    }
-    const nodeMap = editorState._nodeMap;
-    const nodeMapEntries = Array.from(nodeMap);
-    // For...of would be faster here, but this will get
-    // compiled away to a slow-path with Babel.
-    for (let i = 0; i < nodeMapEntries.length; i++) {
-      const node = nodeMapEntries[i][1];
-      if (
-        (type === 'text' && isTextNode(node)) ||
-        (type === 'decorator' && isDecoratorNode(node)) ||
-        (type === 'block' && isBlockNode(node))
-      ) {
-        node.markDirty();
+  updateEditor(
+    editor,
+    () => {
+      const editorState = getActiveEditorState();
+      if (editorState.isEmpty()) {
+        return;
       }
-    }
-  }, true);
+      if (type === 'root') {
+        getRoot().markDirty();
+        return;
+      }
+      const nodeMap = editorState._nodeMap;
+      const nodeMapEntries = Array.from(nodeMap);
+      // For...of would be faster here, but this will get
+      // compiled away to a slow-path with Babel.
+      for (let i = 0; i < nodeMapEntries.length; i++) {
+        const node = nodeMapEntries[i][1];
+        if (
+          (type === 'text' && isTextNode(node)) ||
+          (type === 'decorator' && isDecoratorNode(node)) ||
+          (type === 'block' && isBlockNode(node))
+        ) {
+          node.markDirty();
+        }
+      }
+    },
+    true,
+  );
 }
 
 export function getRoot(): RootNode {

@@ -108,7 +108,18 @@ function getSelectedNode(
   if (anchorNode === focusNode) {
     return anchorNode;
   }
-  return anchorNode.isBefore(focusNode) ? anchorNode : focusNode;
+  const isBackward = selection.isBackward();
+  if (isBackward) {
+    if (selection.focus.offset === focusNode.getTextContentSize()) {
+      return anchorNode;
+    }
+    return focusNode;
+  } else {
+    if (selection.anchor.offset === anchorNode.getTextContentSize()) {
+      return focusNode;
+    }
+    return anchorNode;
+  }
 }
 
 function LinkBar({

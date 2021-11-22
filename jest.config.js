@@ -37,6 +37,8 @@ module.exports = {
           '<rootDir>/packages/outline/src/extensions/OutlineHashtagNode.js',
         '^outline-react/useOutlineRichText$':
           '<rootDir>/packages/outline-react/src/useOutlineRichText.js',
+        '^outline-react/useOutlineCanShowPlaceholder$':
+          '<rootDir>/packages/outline-react/src/useOutlineCanShowPlaceholder.js',
         '^outline/history$':
           '<rootDir>/packages/outline/src/helpers/OutlineHistoryHelpers.js',
         '^outline/selection$':
@@ -49,6 +51,8 @@ module.exports = {
           '<rootDir>/packages/outline/src/helpers/OutlineNodeHelpers.js',
         '^outline/events$':
           '<rootDir>/packages/outline/src/helpers/OutlineEventHelpers.js',
+        '^outline/offsets$':
+          '<rootDir>/packages/outline/src/helpers/OutlineOffsetHelpers.js',
         '^outline/root$':
           '<rootDir>/packages/outline/src/helpers/OutlineRootHelpers.js',
         '^shared/getDOMTextNodeFromElement$':
@@ -61,6 +65,7 @@ module.exports = {
           '<rootDir>/packages/shared/src/getPossibleDecoratorNode.js',
         '^shared/useLayoutEffect$':
           '<rootDir>/packages/shared/src/useLayoutEffect.js',
+        '^outline-yjs$': '<rootDir>/packages/outline-yjs/src/index.js',
         '^./dist/(.+)': './src/$1',
       },
       globals: {

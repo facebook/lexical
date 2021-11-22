@@ -21,28 +21,34 @@ import invariant from 'shared/invariant';
 type OffsetBlockNode = {
   type: 'block',
   child: null | OffsetNode,
-  sibling: null | OffsetNode,
+  prev: null | OffsetNode,
+  next: null | OffsetNode,
   start: number,
   end: number,
   key: NodeKey,
+  parent: null | OffsetBlockNode,
 };
 
 type OffsetTextNode = {
   type: 'text',
   child: null,
-  sibling: null | OffsetNode,
+  prev: null | OffsetNode,
+  next: null | OffsetNode,
   start: number,
   end: number,
   key: NodeKey,
+  parent: null | OffsetBlockNode,
 };
 
 type OffsetInlineNode = {
   type: 'inline',
   child: null,
-  sibling: null | OffsetNode,
+  prev: null | OffsetNode,
+  next: null | OffsetNode,
   start: number,
   end: number,
   key: NodeKey,
+  parent: null | OffsetBlockNode,
 };
 
 type OffsetNode = OffsetBlockNode | OffsetTextNode | OffsetInlineNode;
@@ -52,22 +58,69 @@ type OffsetMap = Map<NodeKey, OffsetNode>;
 class OffsetView {
   _offsetMap: OffsetMap;
   _firstNode: null | OffsetNode;
+  _blockOffsetSize: number;
 
-  constructor(offsetMap: OffsetMap, firstNode: null | OffsetNode) {
+  constructor(
+    offsetMap: OffsetMap,
+    firstNode: null | OffsetNode,
+    blockOffsetSize: number = 1,
+  ) {
     this._offsetMap = offsetMap;
     this._firstNode = firstNode;
+    this._blockOffsetSize = blockOffsetSize;
   }
 
-  createSelectionFromOffsets(start: number, end: number): null | Selection {
+  createSelectionFromOffsets(
+    originalStart: number,
+    originalEnd: number,
+    diffOffsetView?: OffsetView,
+  ): null | Selection {
     const firstNode = this._firstNode;
     if (firstNode === null) {
       return null;
     }
-    const startOffsetNode = searchForNodeWithOffset(firstNode, start);
-    const endOffsetNode = searchForNodeWithOffset(firstNode, end);
+    let start = originalStart;
+    let end = originalEnd;
+    let startOffsetNode = searchForNodeWithOffset(
+      firstNode,
+      start,
+      this._blockOffsetSize,
+    );
+    let endOffsetNode = searchForNodeWithOffset(
+      firstNode,
+      end,
+      this._blockOffsetSize,
+    );
+    if (diffOffsetView !== undefined) {
+      start = getAdjustedOffsetFromDiff(
+        start,
+        startOffsetNode,
+        diffOffsetView,
+        this,
+        this._blockOffsetSize,
+      );
+      startOffsetNode = searchForNodeWithOffset(
+        firstNode,
+        start,
+        this._blockOffsetSize,
+      );
+      end = getAdjustedOffsetFromDiff(
+        end,
+        endOffsetNode,
+        diffOffsetView,
+        this,
+        this._blockOffsetSize,
+      );
+      endOffsetNode = searchForNodeWithOffset(
+        firstNode,
+        end,
+        this._blockOffsetSize,
+      );
+    }
     if (startOffsetNode === null || endOffsetNode === null) {
       return null;
     }
+
     let startKey = startOffsetNode.key;
     let endKey = endOffsetNode.key;
     const startNode = getNodeByKey(startKey);
@@ -158,13 +211,114 @@ class OffsetView {
   }
 }
 
+function getAdjustedOffsetFromDiff(
+  offset: number,
+  offsetNode: null | OffsetNode,
+  prevOffsetView: OffsetView,
+  offsetView: OffsetView,
+  blockOffsetSize: number,
+): number {
+  const prevOffsetMap = prevOffsetView._offsetMap;
+  const offsetMap = offsetView._offsetMap;
+  const visited = new Set();
+  let adjustedOffset = offset;
+  let currentNode = offsetNode;
+
+  while (currentNode !== null) {
+    const key = currentNode.key;
+    const prevNode = prevOffsetMap.get(key);
+    const diff = currentNode.end - currentNode.start;
+
+    visited.add(key);
+    if (prevNode === undefined) {
+      adjustedOffset += diff;
+    } else {
+      const prevDiff = prevNode.end - prevNode.start;
+
+      if (prevDiff !== diff) {
+        adjustedOffset += diff - prevDiff;
+      }
+    }
+    const sibling = currentNode.prev;
+    if (sibling !== null) {
+      currentNode = sibling;
+      continue;
+    }
+    let parent = currentNode.parent;
+    while (parent !== null) {
+      let parentSibling = parent.prev;
+      if (parentSibling !== null) {
+        const parentSiblingKey = parentSibling.key;
+        const prevParentSibling = prevOffsetMap.get(parentSiblingKey);
+        const parentDiff = parentSibling.end - parentSibling.start;
+
+        visited.add(parentSiblingKey);
+        if (prevParentSibling === undefined) {
+          adjustedOffset += parentDiff;
+        } else {
+          const prevParentDiff =
+            prevParentSibling.end - prevParentSibling.start;
+          if (prevParentDiff !== parentDiff) {
+            adjustedOffset += parentDiff - prevParentDiff;
+          }
+        }
+        parentSibling = parentSibling.prev;
+      }
+      parent = parent.parent;
+    }
+    break;
+  }
+  // Now traverse through the old offsets nodes and find any nodes we missed
+  // above, because they were not in the latest offset node view (they have been
+  // deleted).
+  const prevFirstNode = prevOffsetView._firstNode;
+  if (prevFirstNode !== null) {
+    currentNode = searchForNodeWithOffset(
+      prevFirstNode,
+      offset,
+      blockOffsetSize,
+    );
+    let alreadyVisistedParentOfCurrentNode = false;
+    while (currentNode !== null) {
+      if (!visited.has(currentNode.key)) {
+        alreadyVisistedParentOfCurrentNode = true;
+        break;
+      }
+      currentNode = currentNode.parent;
+    }
+    if (!alreadyVisistedParentOfCurrentNode) {
+      while (currentNode !== null) {
+        const key = currentNode.key;
+        if (!visited.has(key)) {
+          const node = offsetMap.get(key);
+          const prevDiff = currentNode.end - currentNode.start;
+
+          if (node === undefined) {
+            adjustedOffset -= prevDiff;
+          } else {
+            const diff = node.end - node.start;
+            if (prevDiff !== diff) {
+              adjustedOffset += diff - prevDiff;
+            }
+          }
+        }
+        currentNode = currentNode.prev;
+      }
+    }
+  }
+  return adjustedOffset;
+}
+
 function searchForNodeWithOffset(
   firstNode: OffsetNode,
   offset: number,
+  blockOffsetSize: number,
 ): OffsetNode | null {
   let currentNode = firstNode;
   while (currentNode !== null) {
-    const end = currentNode.end + (currentNode.type !== 'block' ? 1 : 0);
+    const end =
+      currentNode.end +
+      (currentNode.type !== 'block' || blockOffsetSize === 0 ? 1 : 0);
     if (offset < end) {
       const child = currentNode.child;
       if (child !== null) {
@@ -173,7 +327,7 @@ function searchForNodeWithOffset(
       }
       return currentNode;
     }
-    const sibling = currentNode.sibling;
+    const sibling = currentNode.next;
     if (sibling === null) {
       break;
     }
@@ -188,24 +342,28 @@ function createInternalOffsetNode<N>(
   start: number,
   end: number,
   key: NodeKey,
+  parent: null | OffsetBlockNode,
 ): N {
   // $FlowFixMe: not sure why Flow doesn't like this?
   return {
     child,
-    sibling: null,
+    prev: null,
+    next: null,
     type,
     start,
     end,
     key,
+    parent,
   };
 }
 
 function createOffsetNode(
   state: {offset: number, prevIsBlock: boolean},
   key: NodeKey,
+  parent: null | OffsetBlockNode,
   nodeMap: NodeMap,
   offsetMap: OffsetMap,
-  blockAndInlineOffsetSize: number,
+  blockOffsetSize: number,
 ): OffsetNode {
   const node = nodeMap.get(key);
   if (node === undefined) {
@@ -216,36 +374,43 @@ function createOffsetNode(
   if (isBlockNode(node)) {
     const childKeys = node.__children;
     const blockIsEmpty = childKeys.length === 0;
+
+    // If the prev node was not a block or the block is empty, we should
+    // account for the user being able to selection the block (due to the \n).
+    if (!state.prevIsBlock || blockIsEmpty) {
+      state.prevIsBlock = true;
+      state.offset += blockOffsetSize;
+    }
+    const offsetNode = createInternalOffsetNode<OffsetBlockNode>(
+      null,
+      'block',
+      start,
+      start,
+      key,
+      parent,
+    );
     const child = blockIsEmpty
       ? null
       : createOffsetChild(
           state,
           childKeys,
+          offsetNode,
           nodeMap,
           offsetMap,
-          blockAndInlineOffsetSize,
+          blockOffsetSize,
         );
-    // If the prev node was not a block or the block is empty, we should
-    // account for the user being able to selection the block (due to the \n).
-    if (!state.prevIsBlock || blockIsEmpty) {
-      state.prevIsBlock = true;
-      state.offset += blockAndInlineOffsetSize;
+    if (child !== null) {
+      offsetNode.child = child;
     }
     const end = state.offset;
-    const offsetNode = createInternalOffsetNode(
-      child,
-      'block',
-      start,
-      end,
-      key,
-    );
+    offsetNode.end = end;
     offsetMap.set(key, offsetNode);
     return offsetNode;
   }
   state.prevIsBlock = false;
   const isText = isTextNode(node);
   // $FlowFixMe: isText means __text is available
-  const length = isText ? node.__text.length : blockAndInlineOffsetSize;
+  const length = isText ? node.__text.length : 1;
   const end = (state.offset += length);
 
   const offsetNode: OffsetTextNode | OffsetInlineNode =
@@ -255,6 +420,7 @@ function createOffsetNode(
       start,
       end,
       key,
+      parent,
     );
   offsetMap.set(key, offsetNode);
   return offsetNode;
@@ -263,6 +429,7 @@ function createOffsetNode(
 function createOffsetChild(
   state: {offset: number, prevIsBlock: boolean},
   children: Array<NodeKey>,
+  parent: null | OffsetBlockNode,
   nodeMap: NodeMap,
   offsetMap: OffsetMap,
   blockOffsetSize: number,
@@ -275,6 +442,7 @@ function createOffsetChild(
     const offsetNode = createOffsetNode(
       state,
       childKey,
+      parent,
       nodeMap,
       offsetMap,
       blockOffsetSize,
@@ -282,7 +450,8 @@ function createOffsetChild(
     if (currentNode === null) {
       firstNode = offsetNode;
     } else {
-      currentNode.sibling = offsetNode;
+      offsetNode.prev = currentNode;
+      currentNode.next = offsetNode;
     }
     currentNode = offsetNode;
   }
@@ -304,9 +473,10 @@ export function createOffsetView(
   const node = createOffsetChild(
     state,
     root.__children,
+    null,
     nodeMap,
     offsetMap,
     blockOffsetSize,
   );
-  return new OffsetView(offsetMap, node);
+  return new OffsetView(offsetMap, node, blockOffsetSize);
 }

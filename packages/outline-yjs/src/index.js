@@ -28,9 +28,12 @@ declare class Provider {
     setLocalState(UserState): void,
     getStates(): Array<UserState>,
     on(type: 'update', cb: () => void): void,
+    off(type: 'update', cb: () => void): void,
   };
   on(type: 'sync', cb: (isSynced: boolean) => void): void;
   on(type: 'status', cb: ({status: string}) => void): void;
+  off(type: 'sync', cb: (isSynced: boolean) => void): void;
+  off(type: 'status', cb: ({status: string}) => void): void;
 }
 // $FlowFixMe: todo
 export type YjsNode = Object;

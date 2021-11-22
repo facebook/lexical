@@ -867,7 +867,7 @@ describe('CopyAndPaste', () => {
       // It shouldn't - we should fix that and then update this test.
       await assertHTML(
         page,
-        '<p class="editor-paragraph"><a class="editor-text-link" href="http://facebook.com"><span data-outline-text="true">Facebook!</span></a><a class="editor-text-link" href="http://"><br/></a></p>',
+        '<p class="editor-paragraph"><a class="editor-text-link" href="http://facebook.com"><span data-outline-text="true">Facebook!</span></a></p>',
       );
     });
 

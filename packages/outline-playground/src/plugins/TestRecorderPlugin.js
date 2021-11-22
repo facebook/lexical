@@ -293,7 +293,7 @@ ${steps.map(formatStep).join(`\n`)}
   useEffect(() => {
     const removeUpdateListener = editor.addListener(
       'update',
-      ({editorState, dirtyNodes}) => {
+      ({editorState, dirtyLeaves, dirtyBlocks}) => {
         if (!isRecording) {
           return;
         }
@@ -301,7 +301,11 @@ ${steps.map(formatStep).join(`\n`)}
         const previousSelection = previousSelectionRef.current;
         const skipNextSelectionChange = skipNextSelectionChangeRef.current;
         if (previousSelection !== currentSelection) {
-          if (dirtyNodes.size === 0 && !skipNextSelectionChange) {
+          if (
+            dirtyLeaves.size === 0 &&
+            dirtyBlocks.size === 0 &&
+            !skipNextSelectionChange
+          ) {
             const browserSelection = window.getSelection();
             if (
               browserSelection.anchorNode == null ||

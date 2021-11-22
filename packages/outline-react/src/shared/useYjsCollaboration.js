@@ -103,7 +103,7 @@ export function useYjsCollaboration(
       provider.off('sync', onSync);
       provider.off('status', onStatus);
       awareness.off('update', onAwarenessUpdate);
-      root.unobserveDeep(observeYjsForChanges);
+      root.unobserveDeep(onYjsTreeChanges);
       removeListener();
     };
   }, [binding, color, editor, name, provider]);

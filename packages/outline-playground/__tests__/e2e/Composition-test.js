@@ -336,7 +336,7 @@ describe('Composition', () => {
         });
       });
 
-      it('Can type Hiragana via IME with hashtags', async () => {
+      it.only('Can type Hiragana via IME with hashtags', async () => {
         const {page} = e2e;
 
         // We don't yet support FF.
@@ -354,12 +354,17 @@ describe('Composition', () => {
         await page.keyboard.imeSetComposition('すｓｈ', 3, 3);
         await page.keyboard.imeSetComposition('すし', 2, 2);
         await page.keyboard.insertText('すし');
+        await page.pause();
 
         await page.keyboard.type(' ');
+        await page.pause();
         await page.keyboard.imeSetComposition('m', 1, 1);
+        await page.pause();
         await page.keyboard.imeSetComposition('も', 1, 1);
         await page.keyboard.imeSetComposition('もj', 2, 2);
+        await page.pause();
         await page.keyboard.imeSetComposition('もじ', 2, 2);
+        await page.pause();
         await page.keyboard.imeSetComposition('もじあ', 3, 3);
         await page.keyboard.insertText('もじあ');
 

@@ -495,8 +495,8 @@ export class OutlineNode {
   }
   isDirty(): boolean {
     const editor = getActiveEditor();
-    const dirtyNodes = editor._dirtyNodes;
-    return dirtyNodes !== null && dirtyNodes.has(this.__key);
+    const dirtyLeaves = editor._dirtyLeaves;
+    return dirtyLeaves !== null && dirtyLeaves.has(this.__key);
   }
   isComposing(): boolean {
     return this.__key === getCompositionKey();
@@ -517,9 +517,9 @@ export class OutlineNode {
     // Ensure we get the latest node from pending state
     const latestNode = this.getLatest();
     const parent = latestNode.__parent;
-    const dirtySubTrees = editor._dirtySubTrees;
+    const dirtyBlocks = editor._dirtyBlocks;
     if (parent !== null) {
-      markParentBlocksAsDirty(parent, nodeMap, dirtySubTrees);
+      markParentBlocksAsDirty(parent, nodeMap, dirtyBlocks);
     }
     const cloneNotNeeded = editor._cloneNotNeeded;
     if (cloneNotNeeded.has(key)) {

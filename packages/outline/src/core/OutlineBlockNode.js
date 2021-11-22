@@ -13,7 +13,7 @@ import type {Selection} from './OutlineSelection';
 import {isTextNode, TextNode} from '.';
 import {OutlineNode, updateDirectionIfNeeded} from './OutlineNode';
 import {makeSelection, getSelection, setPointValues} from './OutlineSelection';
-import {errorOnReadOnly} from './OutlineUpdates';
+import {errorOnReadOnly, getActiveEditor} from './OutlineUpdates';
 import {
   IS_DIRECTIONLESS,
   IS_LTR,
@@ -62,6 +62,11 @@ export class BlockNode extends OutlineNode {
   }
   isEmpty(): boolean {
     return this.getChildrenSize() === 0;
+  }
+  isDirty(): boolean {
+    const editor = getActiveEditor();
+    const dirtyBlocks = editor._dirtyBlocks;
+    return dirtyBlocks !== null && dirtyBlocks.has(this.__key);
   }
   getAllTextNodes(includeInert?: boolean): Array<TextNode> {
     const textNodes = [];

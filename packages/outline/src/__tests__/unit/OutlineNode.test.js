@@ -16,7 +16,7 @@ import {
   IS_SEGMENTED,
 } from '../../core/OutlineConstants';
 
-import {initializeUnitTest} from '../utils';
+import {initializeUnitTest, TestBlockNode} from '../utils';
 
 describe('OutlineNode tests', () => {
   initializeUnitTest((testEnv) => {
@@ -558,12 +558,20 @@ describe('OutlineNode tests', () => {
     test('OutlineNode.getLatest(): garbage collected node', async () => {
       const {editor} = testEnv;
       let node;
+      let text;
+      let block;
       await editor.update(() => {
         node = new OutlineNode();
         node.getLatest();
+        text = new TextNode();
+        text.getLatest();
+        block = new TestBlockNode();
+        block.getLatest();
       });
       await editor.update(() => {
         expect(() => node.getLatest()).toThrow();
+        expect(() => text.getLatest()).toThrow();
+        expect(() => block.getLatest()).toThrow();
       });
     });
 
@@ -687,7 +695,7 @@ describe('OutlineNode tests', () => {
         expect(node.getParent()).toBe(null);
         textNode.remove();
         expect(textNode.getParent()).toBe(null);
-        expect(editor._dirtyNodes.has(textNode.getKey()));
+        expect(editor._dirtyLeaves.has(textNode.getKey()));
       });
       expect(testEnv.outerHTML).toBe(
         '<div contenteditable="true" data-outline-editor="true"><p><br></p></div>',

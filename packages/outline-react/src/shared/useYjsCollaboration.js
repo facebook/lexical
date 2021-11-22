@@ -69,7 +69,10 @@ export function useYjsCollaboration(
 
     const removeListener = editor.addListener(
       'update',
-      ({prevEditorState, editorState, dirtyNodes}) => {
+      ({prevEditorState, editorState, dirtyLeaves, dirtyBlocks}) => {
+        const dirtyNodes = new Set();
+        dirtyLeaves.forEach((node) => dirtyNodes.add(node));
+        dirtyBlocks.forEach((_, node) => dirtyNodes.add(node));
         syncOutlineUpdateToYjs(
           binding,
           provider,

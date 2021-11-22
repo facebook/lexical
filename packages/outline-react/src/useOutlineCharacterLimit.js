@@ -56,10 +56,10 @@ export function useCharacterLimit(
         text = currentText;
       },
     );
-    const updateListener = editor.addListener('update', ({dirtyNodes}) => {
+    const updateListener = editor.addListener('update', ({dirtyLeaves}) => {
       const isComposing = editor.isComposing();
-      const hasDirtyNodes = dirtyNodes.size > 0;
-      if (isComposing || !hasDirtyNodes) {
+      const hasDirtyLeaves = dirtyLeaves.size > 0;
+      if (isComposing || !hasDirtyLeaves) {
         return;
       }
       const textLength = strlen(text);

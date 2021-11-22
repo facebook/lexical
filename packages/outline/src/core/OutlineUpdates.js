@@ -10,7 +10,11 @@
 import type {ParsedEditorState} from './OutlineEditorState';
 import type {RootNode} from './OutlineRootNode';
 import type {BlockNode} from './OutlineBlockNode';
-import type {OutlineEditor, ListenerType} from './OutlineEditor';
+import type {
+  OutlineEditor,
+  ListenerType,
+  IntentionallyMarkedAsDirtyBlock,
+} from './OutlineEditor';
 import type {OutlineNode, NodeKey} from './OutlineNode';
 import type {Selection} from './OutlineSelection';
 import type {ParsedNode, NodeParserState} from './OutlineParsing';
@@ -148,8 +152,8 @@ function isNodeValidForTransform(
 
 function applyAllTransforms(
   editorState: EditorState,
-  dirtyNodes: Set<NodeKey>,
-  dirtySubTrees: Set<NodeKey>,
+  dirtyLeaves: Set<NodeKey>,
+  dirtyBlocks: Map<NodeKey, IntentionallyMarkedAsDirtyBlock>,
   editor: OutlineEditor,
 ): void {
   const transforms = editor._transforms;
@@ -161,13 +165,13 @@ function applyAllTransforms(
   const compositionKey = getCompositionKey();
 
   if (textTransforms.size > 0 || decoratorTransforms.size > 0) {
-    const dirtyNodesArr = Array.from(dirtyNodes);
+    const dirtyLeavesArr = Array.from(dirtyLeaves);
     const textTransformsArr = Array.from(textTransforms);
     const decoratorTransformsArr = Array.from(decoratorTransforms);
     const textTransformsArrLength = textTransformsArr.length;
     const decoratorTransformsArrLength = decoratorTransformsArr.length;
-    for (let s = 0; s < dirtyNodesArr.length; s++) {
-      const nodeKey = dirtyNodesArr[s];
+    for (let s = 0; s < dirtyLeavesArr.length; s++) {
+      const nodeKey = dirtyLeavesArr[s];
       const node = nodeMap.get(nodeKey);
 
       if (isNodeValidForTransform(node, compositionKey)) {
@@ -190,13 +194,13 @@ function applyAllTransforms(
     }
   }
   if (blockTransforms.size > 0 || rootTransforms.size > 0) {
-    const dirtyNodesArr = Array.from(dirtySubTrees);
+    const dirtyBlocksArr = Array.from(dirtyBlocks);
     const blockTransformsArr = Array.from(blockTransforms);
     const rootTransformsArr = Array.from(rootTransforms);
     const blockTransformsArrLength = blockTransformsArr.length;
     const rootTransformsArrLength = rootTransformsArr.length;
-    for (let s = 0; s < dirtyNodesArr.length; s++) {
-      const nodeKey = dirtyNodesArr[s];
+    for (let s = 0; s < dirtyBlocksArr.length; s++) {
+      const nodeKey = dirtyBlocksArr[s][0];
       const node = nodeMap.get(nodeKey);
 
       if (isNodeValidForTransform(node, compositionKey)) {
@@ -358,15 +362,16 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
   if (__DEV__) {
     handleDEVOnlyPendingUpdateGuarantees(pendingEditorState);
   }
-  const dirtyNodes = editor._dirtyNodes;
+  const dirtyLeaves = editor._dirtyLeaves;
+  const dirtyBlocks = editor._dirtyBlocks;
   const log = editor._log;
 
   editor._log = [];
   if (needsUpdate) {
     editor._dirtyType = NO_DIRTY_NODES;
     editor._cloneNotNeeded.clear();
-    editor._dirtyNodes = new Set();
-    editor._dirtySubTrees.clear();
+    editor._dirtyLeaves = new Set();
+    editor._dirtyBlocks = new Map();
   }
   garbageCollectDetachedDecorators(editor, pendingEditorState);
   const pendingDecorators = editor._pendingDecorators;
@@ -379,7 +384,8 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
   triggerListeners('update', editor, true, {
     prevEditorState: currentEditorState,
     editorState: pendingEditorState,
-    dirtyNodes,
+    dirtyLeaves,
+    dirtyBlocks,
     log,
   });
   triggerDeferredUpdateCallbacks(editor);
@@ -496,20 +502,21 @@ function beginUpdate(
     processNestedUpdates(editor, deferred);
     applySelectionTransforms(pendingEditorState, editor);
     if (editor._dirtyType !== NO_DIRTY_NODES) {
-      const dirtyNodes = editor._dirtyNodes;
-      const dirtySubTrees = editor._dirtySubTrees;
+      const dirtyLeaves = editor._dirtyLeaves;
+      const dirtyBlocks = editor._dirtyBlocks;
       if (!skipEmptyCheck && pendingEditorState.isEmpty()) {
         invariant(
           false,
           'updateEditor: the pending editor state is empty. Ensure the root not never becomes empty from an update.',
         );
       }
-      applyAllTransforms(pendingEditorState, dirtyNodes, dirtySubTrees, editor);
+      applyAllTransforms(pendingEditorState, dirtyLeaves, dirtyBlocks, editor);
       processNestedUpdates(editor, deferred);
       garbageCollectDetachedNodes(
         currentEditorState,
         pendingEditorState,
-        dirtyNodes,
+        dirtyLeaves,
+        dirtyBlocks,
         editor,
       );
     }
@@ -540,8 +547,8 @@ function beginUpdate(
     editor._pendingEditorState = currentEditorState;
     editor._dirtyType = FULL_RECONCILE;
     editor._cloneNotNeeded.clear();
-    editor._dirtyNodes = new Set();
-    editor._dirtySubTrees.clear();
+    editor._dirtyLeaves = new Set();
+    editor._dirtyBlocks.clear();
     editor._log.push('UpdateRecover');
     commitPendingUpdates(editor);
     return;

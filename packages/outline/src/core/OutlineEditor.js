@@ -84,7 +84,8 @@ export type ErrorListener = (error: Error, log: Array<string>) => void;
 export type UpdateListener = ({
   prevEditorState: EditorState,
   editorState: EditorState,
-  dirtyNodes: Set<NodeKey>,
+  dirtyLeaves: Set<NodeKey>,
+  dirtyBlocks: Map<NodeKey, IntentionallyMarkedAsDirtyBlock>,
   log: Array<string>,
 }) => void;
 export type DecoratorListener = (decorator: {[NodeKey]: ReactNode}) => void;
@@ -133,6 +134,8 @@ export type ListenerType =
 
 export type TransformerType = 'text' | 'decorator' | 'block' | 'root';
 
+export type IntentionallyMarkedAsDirtyBlock = boolean;
+
 export function resetEditor(
   editor: OutlineEditor,
   prevRootElement: null | HTMLElement,
@@ -146,8 +149,8 @@ export function resetEditor(
   editor._compositionKey = null;
   editor._dirtyType = NO_DIRTY_NODES;
   editor._cloneNotNeeded.clear();
-  editor._dirtyNodes = new Set();
-  editor._dirtySubTrees.clear();
+  editor._dirtyLeaves = new Set();
+  editor._dirtyBlocks.clear();
   editor._log = [];
   editor._updates = [];
   const observer = editor._observer;
@@ -211,8 +214,8 @@ class BaseOutlineEditor {
   _config: EditorConfig<{...}>;
   _dirtyType: 0 | 1 | 2;
   _cloneNotNeeded: Set<NodeKey>;
-  _dirtyNodes: Set<NodeKey>;
-  _dirtySubTrees: Set<NodeKey>;
+  _dirtyLeaves: Set<NodeKey>;
+  _dirtyBlocks: Map<NodeKey, IntentionallyMarkedAsDirtyBlock>;
   _observer: null | MutationObserver;
   _log: Array<string>;
   _key: string;
@@ -261,8 +264,8 @@ class BaseOutlineEditor {
     // Used to optimize reconcilation
     this._dirtyType = NO_DIRTY_NODES;
     this._cloneNotNeeded = new Set();
-    this._dirtyNodes = new Set();
-    this._dirtySubTrees = new Set();
+    this._dirtyLeaves = new Set();
+    this._dirtyBlocks = new Map();
     // Handling of DOM mutations
     this._observer = null;
     // Logging for updates
@@ -440,8 +443,8 @@ declare export class OutlineEditor {
   _config: EditorConfig<{...}>;
   _dirtyType: 0 | 1 | 2;
   _cloneNotNeeded: Set<NodeKey>;
-  _dirtyNodes: Set<NodeKey>;
-  _dirtySubTrees: Set<NodeKey>;
+  _dirtyLeaves: Set<NodeKey>;
+  _dirtyBlocks: Map<NodeKey, IntentionallyMarkedAsDirtyBlock>;
   _observer: null | MutationObserver;
   _log: Array<string>;
   _key: string;

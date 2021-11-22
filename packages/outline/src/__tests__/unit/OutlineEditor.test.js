@@ -733,7 +733,9 @@ describe('OutlineEditor tests', () => {
         getRoot().append(paragraph);
       });
       editor.registerNodeType('paragraph', ParagraphNode);
-      const stringifiedEditorState = JSON.stringify(editor.getEditorState().toJSON());
+      const stringifiedEditorState = JSON.stringify(
+        editor.getEditorState().toJSON(),
+      );
       parsedEditorState = editor.parseEditorState(stringifiedEditorState);
       parsedEditorState.read(() => {
         parsedRoot = getRoot();
@@ -1051,5 +1053,26 @@ describe('OutlineEditor tests', () => {
         '<div contenteditable="true" data-outline-editor="true"><p><div><span data-outline-text="true">A</span><div><span data-outline-text="true">C</span></div></div><div><span data-outline-text="true">B</span></div></p></div>',
       );
     });
+  });
+
+  it('can register transforms before updates', async () => {
+    init();
+    const emptyTransform = () => {};
+    const removeTextTransform = editor.addTransform('text', emptyTransform);
+    const removeDecoratorTransform = editor.addTransform(
+      'decorator',
+      emptyTransform,
+    );
+    const removeBlockTransform = editor.addTransform('block', emptyTransform);
+    const removeRootTransform = editor.addTransform('root', emptyTransform);
+    await editor.update(() => {
+      const root = getRoot();
+      const paragraph = createParagraphNode();
+      root.append(paragraph);
+    });
+    removeTextTransform();
+    removeDecoratorTransform();
+    removeBlockTransform();
+    removeRootTransform();
   });
 });

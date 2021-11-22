@@ -42,5 +42,6 @@
   "40": "createDOM: base method not extended",
   "41": "updateDOM: base method not extended",
   "42": "setFlags: can only be used on non-immutable nodes",
-  "43": "Expected node with key %s to exist but it's not in the nodeMap."
+  "43": "Expected node with key %s to exist but it's not in the nodeMap.",
+  "44": "Some transforms are endlessly triggering additional transforms. May have encountered a recursivity issue where two transforms have their preconditions too lose and collide with each other."
 }

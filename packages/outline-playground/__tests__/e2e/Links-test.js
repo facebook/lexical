@@ -6,14 +6,13 @@
  *
  */
 
-import {selectAll} from '../keyboardShortcuts';
+import {selectAll, moveToLineEnd} from '../keyboardShortcuts';
 import {initializeE2E, assertHTML, assertSelection} from '../utils';
 
 describe('Links', () => {
   initializeE2E((e2e) => {
     it(`Can convert a text node into a link`, async () => {
       const {isRichText, page} = e2e;
-
       if (!isRichText) {
         return;
       }
@@ -76,6 +75,38 @@ describe('Links', () => {
         focusPath: [0, 0, 0],
         focusOffset: 5,
       });
+    });
+
+    it(`Can type text before and after`, async () => {
+      const {isRichText, page} = e2e;
+      if (!isRichText) {
+        return;
+      }
+
+      await page.focus('div.editor');
+      await page.keyboard.type('An Awesome Website');
+      await selectAll(page);
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">An Awesome Website</span></p>',
+      );
+
+      await page.waitForSelector('.link');
+      await page.click('.link');
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><a href="http://" class="editor-text-link"><span data-outline-text="true">An Awesome Website</span></a></p>',
+      );
+
+      await page.keyboard.press('ArrowLeft');
+      await page.keyboard.type('Hey, check this out: ');
+      await moveToLineEnd(page);
+      await page.keyboard.type('!');
+
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hey, check this out: </span><a href="http://" class="editor-text-link"><span data-outline-text="true">An Awesome Website</span></a><span data-outline-text="true">!</span></p>',
+      );
     });
   });
 });

@@ -268,9 +268,7 @@ describe('Emoticons', () => {
         focusOffset: 0,
       });
 
-      await page.pause();
       await page.keyboard.type('Hey');
-      await page.pause();
       await assertHTML(
         page,
         '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hey</span><span class="emoji happysmile" data-outline-text="true">🙂</span><span class="emoji happysmile" data-outline-text="true">🙂</span><span class="emoji happysmile" data-outline-text="true">🙂</span><span class="emoji happysmile" data-outline-text="true">🙂</span><span class="emoji happysmile" data-outline-text="true">🙂</span></p>',

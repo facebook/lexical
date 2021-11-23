@@ -415,7 +415,10 @@ describe('Composition', () => {
         // Escape would fire here
         await page.keyboard.insertText('');
 
-        await assertHTML(page, '<p class="editor-paragraph" dir="ltr"><br></p>');
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph" dir="ltr"><br></p>',
+        );
         await assertSelection(page, {
           anchorPath: [0],
           anchorOffset: 0,
@@ -436,7 +439,10 @@ describe('Composition', () => {
         // Escape would fire here
         await page.keyboard.insertText('');
 
-        await assertHTML(page, '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true"> </span></p>');
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true"> </span></p>',
+        );
         await assertSelection(page, {
           anchorPath: [0, 0, 0],
           anchorOffset: 0,

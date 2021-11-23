@@ -85,7 +85,7 @@ describe('Emoticons', () => {
       });
     });
 
-    it(`Can enter mutliple emoticons`, async () => {
+    it(`Can enter multiple emoticons`, async () => {
       const {isRichText, page} = e2e;
 
       await page.focus('div.editor');
@@ -268,7 +268,9 @@ describe('Emoticons', () => {
         focusOffset: 0,
       });
 
+      await page.pause();
       await page.keyboard.type('Hey');
+      await page.pause();
       await assertHTML(
         page,
         '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hey</span><span class="emoji happysmile" data-outline-text="true">🙂</span><span class="emoji happysmile" data-outline-text="true">🙂</span><span class="emoji happysmile" data-outline-text="true">🙂</span><span class="emoji happysmile" data-outline-text="true">🙂</span><span class="emoji happysmile" data-outline-text="true">🙂</span></p>',

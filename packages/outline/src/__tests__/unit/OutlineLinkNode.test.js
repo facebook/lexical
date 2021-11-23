@@ -99,11 +99,19 @@ describe('OutlineLinkNode tests', () => {
       });
     });
 
-    test('LinkNode.canInsertTextAtBoundary()', async () => {
+    test('LinkNode.canInsertTextBefore()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const linkNode = new LinkNode('https://example.com/foo');
-        expect(linkNode.canInsertTextAtBoundary()).toBe(false);
+        expect(linkNode.canInsertTextBefore()).toBe(false);
+      });
+    });
+
+    test('LinkNode.canInsertTextAfter()', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const linkNode = new LinkNode('https://example.com/foo');
+        expect(linkNode.canInsertTextAfter()).toBe(false);
       });
     });
 

@@ -47,6 +47,7 @@ export type TextPointType = {
   getNode: () => TextNode,
   set: (key: NodeKey, offset: number, type: 'text' | 'block') => void,
   getCharacterOffset: () => number,
+  isAtNodeEnd: () => boolean,
 };
 
 export type BlockPointType = {
@@ -58,6 +59,7 @@ export type BlockPointType = {
   getNode: () => BlockNode,
   set: (key: NodeKey, offset: number, type: 'text' | 'block') => void,
   getCharacterOffset: () => number,
+  isAtNodeEnd: () => boolean,
 };
 
 export type PointType = TextPointType | BlockPointType;
@@ -124,6 +126,12 @@ class Point {
         selection.dirty = true;
       }
     }
+  }
+  isAtNodeEnd(): boolean {
+    if (this.type === 'text') {
+      return this.offset === this.getNode().getTextContentSize();
+    }
+    return this.offset === 1;
   }
 }
 

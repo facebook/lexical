@@ -103,6 +103,8 @@ function Select({
 function getSelectedNode(
   selection: Selection,
 ): TextNode | BlockNode | DecoratorNode | LineBreakNode {
+  const anchor = selection.anchor;
+  const focus = selection.focus;
   const anchorNode = selection.anchor.getNode();
   const focusNode = selection.focus.getNode();
   if (anchorNode === focusNode) {
@@ -110,15 +112,9 @@ function getSelectedNode(
   }
   const isBackward = selection.isBackward();
   if (isBackward) {
-    if (selection.focus.offset === focusNode.getTextContentSize()) {
-      return anchorNode;
-    }
-    return focusNode;
+    return focus.isAtNodeEnd() ? anchorNode : focusNode;
   } else {
-    if (selection.anchor.offset === anchorNode.getTextContentSize()) {
-      return focusNode;
-    }
-    return anchorNode;
+    return anchor.isAtNodeEnd() ? focusNode : anchorNode;
   }
 }
 

@@ -16,7 +16,45 @@ declare module 'yjs' {
     origin: mixed;
   }
 
-  declare interface YEvent {}
+  declare interface YEvent {
+    target: any;
+  }
+
+  declare export class XmlText implements YAbstractType {
+    parent: null | XmlText;
+    getAttributes(): {...};
+    getAttribute(string): string | object | void;
+    setAttribute(string: string, value: string | number): void;
+    insert(offset: number, string: string, attributes?: {...}): void;
+    insertEmbed(offset: number, Object): void;
+    delete(offset: number, delCount: number): void;
+    observeDeep(fn: Function): void;
+    unobserveDeep(fn: Function): void;
+    on(type: string, () => void): void;
+    toDelta(): Array<TextOperation>;
+    _length: number;
+  }
+
+  declare export class Map implements YAbstractType {
+    +doc: ?YDoc;
+    parent: null | XmlText;
+    get(key: string): any;
+    set(key: string, value: any): void;
+    keys(): [string];
+    _length: number;
+  }
+
+  declare export class XmlElement implements YAbstractType {
+    +doc: ?YDoc;
+    parent: null | XmlText;
+    getAttributes(): {...};
+    getAttribute(string): string | void;
+    setAttribute(string: string, value: string | number | object): void;
+    removeAttribute(string: string): void;
+    insert(offset: number, entry: any): void;
+    delete(offset: number, delCount: number): void;
+    firstChild: null | Doc;
+  }
 
   // $FlowFixMe: needs fixing
   declare type YMapEventKeyChanges = any;
@@ -28,15 +66,24 @@ declare module 'yjs' {
 
   declare type Delta = Array<Operation>;
 
-  declare interface YMapEvent extends YEvent {
+  declare export interface YMapEvent extends YEvent {
     keysChanged: Set<string>;
     changes: {
       keys: YMapEventKeyChanges,
     };
   }
 
-  declare interface YTextEvent extends YEvent {
-    delta: Array<Operation>;
+  declare export type TextOperation = {
+    retain?: number,
+    delete?: number,
+    insert?: string | AbstractType<any>,
+  };
+
+  declare export interface YTextEvent extends YEvent {
+    keysChanged: Set<string>;
+    childListChanged: boolean;
+    target: AbstractType<any>;
+    delta: Array<TextOperation>;
   }
 
   declare export class ID {
@@ -69,7 +116,7 @@ declare module 'yjs' {
     /**
      * @type {AbstractType<any>}
      */
-    type: YAbstractType;
+    type: Map | XmlText;
 
     /**
      * @type {number}
@@ -683,7 +730,6 @@ declare module 'yjs' {
   declare export {
     YDoc as Doc,
     YArray as Array,
-    YMap as Map,
     YText as Text,
     YUndoManager as UndoManager,
   };

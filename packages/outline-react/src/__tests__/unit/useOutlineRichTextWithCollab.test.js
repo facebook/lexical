@@ -21,8 +21,6 @@ describe('useOutlineRichTextWithCollab', () => {
   afterEach(() => {
     document.body.removeChild(container);
     container = null;
-
-    jest.restoreAllMocks();
   });
 
   async function exepctCorrectInitialContent(client1, client2) {
@@ -83,9 +81,12 @@ describe('useOutlineRichTextWithCollab', () => {
     );
     expect(client1.getHTML()).toEqual(client2.getHTML());
     expect(client1.getDocJSON()).toEqual(client2.getDocJSON());
+
+    client1.stop();
+    client2.stop();
   });
 
-  it.skip('Should collaborate basic text insertion conflicts between two clients', async () => {
+  it('Should collaborate basic text insertion conflicts between two clients', async () => {
     const connector = createTestConnection();
     const client1 = connector.createClient('1');
     const client2 = connector.createClient('2');
@@ -137,13 +138,12 @@ describe('useOutlineRichTextWithCollab', () => {
     expect(client1.getHTML()).toEqual(
       '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">Hello worldHello world</span></p></div>',
     );
-    // TODO seems like a LTR missing bug
     expect(client2.getHTML()).toEqual(
       '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">Hello worldHello world</span></p></div>',
     );
     expect(client1.getDocJSON()).toEqual(client2.getDocJSON());
 
-    // client2.disconnect();
+    client2.disconnect();
 
     await waitForReact(() => {
       client1.update(() => {
@@ -157,9 +157,8 @@ describe('useOutlineRichTextWithCollab', () => {
     expect(client1.getHTML()).toEqual(
       '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">Hello world</span></p></div>',
     );
-    // TODO seems like a LTR missing bug
     expect(client2.getHTML()).toEqual(
-      '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">Hello world</span></p></div>',
+      '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">Hello worldHello world</span></p></div>',
     );
 
     await waitForReact(() => {
@@ -171,9 +170,9 @@ describe('useOutlineRichTextWithCollab', () => {
       });
     });
 
-    // await waitForReact(() => {
-    //   client2.connect();
-    // });
+    await waitForReact(() => {
+      client2.connect();
+    });
 
     expect(client1.getHTML()).toEqual(
       '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">Hello world!</span></p></div>',
@@ -182,5 +181,8 @@ describe('useOutlineRichTextWithCollab', () => {
       '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">Hello world!</span></p></div>',
     );
     expect(client1.getDocJSON()).toEqual(client2.getDocJSON());
+
+    client1.stop();
+    client2.stop();
   });
 });

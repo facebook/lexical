@@ -7,18 +7,27 @@
  * @flow strict
  */
 
-import type {NodeKey, Point, NodeMap, Selection} from 'outline';
+import type {NodeKey, Point, Selection, NodeMap} from 'outline';
 import type {Binding} from './Bindings';
 import type {Provider} from '.';
-import type {AbsolutePosition, RelativePosition} from 'yjs';
+import type {
+  AbsolutePosition,
+  RelativePosition,
+  XmlText,
+  Map as YMap,
+} from 'yjs';
 
 import {
   compareRelativePositions,
   createRelativePositionFromTypeIndex,
   createAbsolutePositionFromRelativePosition,
-  // $FlowFixMe: need Flow typings for yjs
 } from 'yjs';
 import {isTextNode, isBlockNode, getNodeByKey, getSelection} from 'outline';
+import {CollabTextNode} from './CollabTextNode';
+import {CollabBlockNode} from './CollabBlockNode';
+import {CollabDecoratorNode} from './CollabDecoratorNode';
+import {CollabLineBreakNode} from './CollabLineBreakNode';
+import {getPositionFromBlockAndOffset} from './Utils';
 
 export type CursorSelection = {
   caret: HTMLElement,
@@ -45,12 +54,19 @@ function createRelativePosition(
   point: Point,
   binding: Binding,
 ): null | RelativePosition {
-  const yjsNodeMap = binding.nodeMap;
-  const yjsNode = yjsNodeMap.get(point.key);
-  if (yjsNode === undefined) {
+  const collabNodeMap = binding.collabNodeMap;
+  const collabNode = collabNodeMap.get(point.key);
+  if (collabNode === undefined) {
     return null;
   }
-  return createRelativePositionFromTypeIndex(yjsNode, point.offset);
+  let offset = point.offset;
+  let sharedType = collabNode.getSharedType();
+
+  if (collabNode instanceof CollabTextNode) {
+    sharedType = collabNode._parent._xmlText;
+    offset = collabNode.getOffset() + 1 + offset;
+  }
+  return createRelativePositionFromTypeIndex(sharedType, offset);
 }
 
 function createAbsolutePosition(
@@ -146,6 +162,14 @@ function createCursorSelection(
   };
 }
 
+function getDOMIndexWithinParent(node: Node): [Node, number] {
+  const parent = node.parentNode;
+  if (parent == null) {
+    throw new Error('Should never happen');
+  }
+  return [parent, Array.from(parent.childNodes).indexOf(node)];
+}
+
 function updateCursor(
   binding: Binding,
   cursor: Cursor,
@@ -178,12 +202,12 @@ function updateCursor(
   const focus = nextSelection.focus;
   const anchorKey = anchor.key;
   const focusKey = focus.key;
-  const anchorOffset = anchor.offset;
-  const focusOffset = focus.offset;
   const anchorNode = nodeMap.get(anchorKey);
   const focusNode = nodeMap.get(focusKey);
   let anchorDOM = editor.getElementByKey(anchorKey);
   let focusDOM = editor.getElementByKey(focusKey);
+  let anchorOffset = anchor.offset;
+  let focusOffset = focus.offset;
 
   if (isTextNode(anchorNode)) {
     anchorDOM = getDOMTextNode(anchorDOM);
@@ -199,8 +223,25 @@ function updateCursor(
   ) {
     return;
   }
+  if (anchorDOM.nodeName === 'BR') {
+    [anchorDOM, anchorOffset] = getDOMIndexWithinParent(anchorDOM);
+  }
+  if (focusDOM.nodeName === 'BR') {
+    [focusDOM, focusOffset] = getDOMIndexWithinParent(focusDOM);
+  }
+  const firstChild = anchorDOM.firstChild;
+  if (
+    anchorDOM === focusDOM &&
+    firstChild != null &&
+    firstChild.nodeName === 'BR' &&
+    anchorOffset === 0 &&
+    focusOffset === 0
+  ) {
+    focusOffset = 1;
+  }
   range.setStart(anchorDOM, anchorOffset);
   range.setEnd(focusDOM, focusOffset);
+
   if (
     range.collapsed &&
     (anchorOffset !== focusOffset || anchorKey !== focusKey)
@@ -262,13 +303,18 @@ export function syncLocalCursorPosition(
     const focusAbsPos = createAbsolutePosition(focusPos, binding);
 
     if (anchorAbsPos !== null && focusAbsPos !== null) {
-      const reverseNodeMap = binding.reverseNodeMap;
-      const anchorKey = reverseNodeMap.get(anchorAbsPos.type);
-      const focusKey = reverseNodeMap.get(focusAbsPos.type);
-      const anchorOffset = anchorAbsPos.index;
-      const focusOffset = focusAbsPos.index;
+      const [anchorCollabNode, anchorOffset] = getCollabNodeAndOffset(
+        anchorAbsPos.type,
+        anchorAbsPos.index,
+      );
+      const [focusCollabNode, focusOffset] = getCollabNodeAndOffset(
+        focusAbsPos.type,
+        focusAbsPos.index,
+      );
+      if (anchorCollabNode !== null && focusCollabNode !== null) {
+        const anchorKey = anchorCollabNode.getKey();
+        const focusKey = focusCollabNode.getKey();
 
-      if (anchorKey !== undefined && focusKey !== undefined) {
         const selection = getSelection();
         if (selection === null) {
           throw new Error('TODO: syncLocalCursorPosition');
@@ -297,13 +343,45 @@ export function syncLocalCursorPosition(
   }
 }
 
+function getCollabNodeAndOffset(
+  sharedType: XmlText | YMap,
+  offset: number,
+): [
+  (
+    | null
+    | CollabDecoratorNode
+    | CollabBlockNode
+    | CollabTextNode
+    | CollabLineBreakNode
+  ),
+  number,
+] {
+  // $FlowFixMe: internal field
+  const collabNode = sharedType._collabNode;
+  if (collabNode === undefined) {
+    return [null, 0];
+  }
+  if (collabNode instanceof CollabBlockNode) {
+    const {node, offset: collabNodeOffset} = getPositionFromBlockAndOffset(
+      collabNode,
+      offset,
+      true,
+    );
+    if (node === null) {
+      return [collabNode, 0];
+    } else {
+      return [node, collabNodeOffset];
+    }
+  }
+  return [null, 0];
+}
+
 export function syncCursorPositions(
   binding: Binding,
   provider: Provider,
 ): void {
   const awarenessStates = Array.from(provider.awareness.getStates());
   const localClientID = binding.doc.clientID;
-  const reverseNodeMap = binding.reverseNodeMap;
   const cursors = binding.cursors;
   const editor = binding.editor;
   const nodeMap = editor._editorState._nodeMap;
@@ -328,11 +406,17 @@ export function syncCursorPositions(
         const focusAbsPos = createAbsolutePosition(focusPos, binding);
 
         if (anchorAbsPos !== null && focusAbsPos !== null) {
-          const anchorKey = reverseNodeMap.get(anchorAbsPos.type);
-          const focusKey = reverseNodeMap.get(focusAbsPos.type);
-          if (anchorKey !== undefined && focusKey !== undefined) {
-            const anchorOffset = anchorAbsPos.index;
-            const focusOffset = focusAbsPos.index;
+          const [anchorCollabNode, anchorOffset] = getCollabNodeAndOffset(
+            anchorAbsPos.type,
+            anchorAbsPos.index,
+          );
+          const [focusCollabNode, focusOffset] = getCollabNodeAndOffset(
+            focusAbsPos.type,
+            focusAbsPos.index,
+          );
+          if (anchorCollabNode !== null && focusCollabNode !== null) {
+            const anchorKey = anchorCollabNode.getKey();
+            const focusKey = focusCollabNode.getKey();
             selection = cursor.selection;
 
             if (selection === null) {
@@ -373,7 +457,8 @@ export function syncCursorPositions(
 export function syncOutlineSelectionToYjs(
   binding: Binding,
   provider: Provider,
-  selection: null | Selection,
+  prevSelection: null | Selection,
+  nextSelection: null | Selection,
 ): void {
   const awareness = provider.awareness;
   const {
@@ -386,9 +471,18 @@ export function syncOutlineSelectionToYjs(
   let anchorPos = null;
   let focusPos = null;
 
-  if (selection !== null) {
-    anchorPos = createRelativePosition(selection.anchor, binding);
-    focusPos = createRelativePosition(selection.focus, binding);
+  if (
+    nextSelection === null ||
+    (currentAnchorPos !== null && !nextSelection.is(prevSelection))
+  ) {
+    if (prevSelection === null) {
+      return;
+    }
+  }
+
+  if (nextSelection !== null) {
+    anchorPos = createRelativePosition(nextSelection.anchor, binding);
+    focusPos = createRelativePosition(nextSelection.focus, binding);
   }
 
   if (

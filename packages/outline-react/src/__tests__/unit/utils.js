@@ -38,9 +38,8 @@ class Client {
     this._awarenessState = {};
     this._onUpdate = this._onUpdate.bind(this);
     this._doc.on('update', this._onUpdate);
-    this._localUpdates = [];
-    this._remoteUpdates = [];
     this._listeners = new Map();
+    this._updates = [];
     this._editor = null;
 
     this.awareness = {
@@ -62,43 +61,37 @@ class Client {
     };
   }
 
-  _onUpdate(update, origin) {
-    if (origin !== this._connection) {
-      this._remoteUpdates.push(update);
-      if (this._connected) {
-        this._flushRemoteUpdates();
-      }
+  _onUpdate(update, origin, transaction) {
+    if (origin !== this._connection && this._connected) {
+      this._broadcastUpdate(update);
     }
   }
 
-  _flushRemoteUpdates() {
-    if (this._remoteUpdates.length > 0) {
-      const updates = this._remoteUpdates.slice();
-      this._remoteUpdates = [];
-      this._connection._clients.forEach((client) => {
-        if (client !== this) {
-          client._localUpdates.push(...updates);
-          if (client._connected) {
-            client._flushLocalUpdates();
-          }
+  _broadcastUpdate(update) {
+    this._connection._clients.forEach((client) => {
+      if (client !== this) {
+        if (client._connected) {
+          Y.applyUpdate(client._doc, update, this._connection);
+        } else {
+          client._updates.push(update);
         }
-      });
-    }
-  }
-
-  _flushLocalUpdates() {
-    if (this._localUpdates.length > 0) {
-      const updates = this._localUpdates.slice();
-      this._localUpdates = [];
-      Y.applyUpdate(this._doc, Y.mergeUpdates(updates), this._connection);
-    }
+      }
+    });
   }
 
   connect() {
     if (!this._connected) {
       this._connected = true;
-      this._flushLocalUpdates();
-      this._flushRemoteUpdates();
+      const update = Y.encodeStateAsUpdate(this._doc);
+      if (this._updates.length > 0) {
+        Y.applyUpdate(
+          this._doc,
+          Y.mergeUpdates(this._updates),
+          this._connection,
+        );
+        this._updates = [];
+      }
+      this._broadcastUpdate(update);
       this._dispatch('sync', true);
     }
   }
@@ -171,6 +164,10 @@ class Client {
 
   getDocJSON() {
     return this._doc.toJSON();
+  }
+
+  getEditorState() {
+    return this._editor.getEditorState();
   }
 
   update(cb) {

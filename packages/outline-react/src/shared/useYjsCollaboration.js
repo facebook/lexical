@@ -51,10 +51,12 @@ export function useYjsCollaboration(
     };
 
     const onSync = (isSynced: boolean) => {
-      if (root.firstChild === null) {
+      if (root.isEmpty()) {
         initEditor(editor);
       }
     };
+
+    window.provider = provider;
 
     const onAwarenessUpdate = () => {
       syncCursorPositions(binding, provider);
@@ -76,11 +78,17 @@ export function useYjsCollaboration(
     provider.on('status', onStatus);
     provider.on('sync', onSync);
     awareness.on('update', onAwarenessUpdate);
-    root.observeDeep(onYjsTreeChanges);
+    root.getSharedType().observeDeep(onYjsTreeChanges);
 
     const removeListener = editor.addListener(
       'update',
-      ({prevEditorState, editorState, dirtyLeaves, dirtyBlocks}) => {
+      ({
+        prevEditorState,
+        editorState,
+        dirtyLeaves,
+        dirtyBlocks,
+        normalizedNodes,
+      }) => {
         syncOutlineUpdateToYjs(
           binding,
           provider,
@@ -88,11 +96,11 @@ export function useYjsCollaboration(
           editorState,
           dirtyBlocks,
           dirtyLeaves,
+          normalizedNodes,
         );
       },
     );
 
-    // window.provider = provider;
     provider.connect();
 
     return () => {
@@ -104,7 +112,7 @@ export function useYjsCollaboration(
       provider.off('sync', onSync);
       provider.off('status', onStatus);
       awareness.off('update', onAwarenessUpdate);
-      root.unobserveDeep(onYjsTreeChanges);
+      root.getSharedType().unobserveDeep(onYjsTreeChanges);
       removeListener();
     };
   }, [binding, color, editor, name, provider]);
@@ -156,7 +164,10 @@ export function useYjsHistory(
   editor: OutlineEditor,
   binding: Binding,
 ): () => void {
-  const undoManager = useMemo(() => createUndoManager(binding.root), [binding]);
+  const undoManager = useMemo(
+    () => createUndoManager(binding, binding.root.getSharedType()),
+    [binding],
+  );
 
   useEffect(() => {
     const undo = () => {

@@ -14,6 +14,7 @@ import type {
   NodeMap,
   OutlineNode,
   BlockNode,
+  IntentionallyMarkedAsDirtyBlock,
 } from 'outline';
 import type {Provider, Binding, YjsNode} from '.';
 
@@ -332,40 +333,52 @@ function syncOutlineNodeToYjs(
   }
 }
 
+function processNodeKeys(
+  binding: Binding,
+  collection,
+  prevNodeMap: NodeMap,
+  nodeMap: NodeMap,
+  selection: null | Selection,
+): void {
+  const dirtyBlocksArr = Array.from(collection);
+  for (let i = 0; i < dirtyBlocksArr.length; i++) {
+    const dirtyKey = dirtyBlocksArr[i];
+    syncOutlineNodeToYjs(binding, dirtyKey, prevNodeMap, nodeMap, selection);
+  }
+}
+
 export function syncOutlineUpdateToYjs(
   binding: Binding,
   provider: Provider,
   prevEditorState: EditorState,
   currEditorState: EditorState,
-  dirtyNodes: Set<NodeKey>,
+  dirtyBlocks: Map<NodeKey, IntentionallyMarkedAsDirtyBlock>,
+  dirtyLeaves: Set<NodeKey>,
 ): void {
-  // This is to prevent us re-diffing and possible re-applying
-  // the same change editor state again. For example, if a user
-  // types a character and we get it, we don't want to then insert
-  // the same character again.
-  const processedStates = binding.processedStates;
-  if (processedStates.has(currEditorState)) {
-    processedStates.delete(currEditorState);
-    return;
-  }
   binding.doc.transact(() => {
     currEditorState.read(() => {
       const selection = getSelection();
+      const prevNodeMap = prevEditorState._nodeMap;
+      const nodeMap = currEditorState._nodeMap;
+      // This is to prevent us re-diffing and possible re-applying
+      // the same change editor state again. For example, if a user
+      // types a character and we get it, we don't want to then insert
+      // the same character again.
+      const processedStates = binding.processedStates;
+      if (processedStates.has(currEditorState)) {
+        processedStates.delete(currEditorState);
+        return;
+      }
       // Update nodes
-      if (dirtyNodes.size > 0) {
-        const prevNodeMap = prevEditorState._nodeMap;
-        const nodeMap = currEditorState._nodeMap;
-        const dirtyNodesArr = Array.from(dirtyNodes);
-        for (let i = 0; i < dirtyNodesArr.length; i++) {
-          const dirtyKey = dirtyNodesArr[i];
-          syncOutlineNodeToYjs(
-            binding,
-            dirtyKey,
-            prevNodeMap,
-            nodeMap,
-            selection,
-          );
-        }
+      if (dirtyBlocks.size > 0) {
+        processNodeKeys(
+          binding,
+          dirtyBlocks.keys(),
+          prevNodeMap,
+          nodeMap,
+          selection,
+        );
+        processNodeKeys(binding, dirtyLeaves, prevNodeMap, nodeMap, selection);
       }
       const prevSelection = prevEditorState._selection;
       if (selection === null || !selection.is(prevSelection)) {
@@ -375,5 +388,5 @@ export function syncOutlineUpdateToYjs(
         syncOutlineSelectionToYjs(binding, provider, selection);
       }
     });
-  });
+  }, binding);
 }

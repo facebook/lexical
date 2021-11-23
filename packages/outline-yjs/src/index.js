@@ -35,6 +35,13 @@ declare class Provider {
   off(type: 'sync', cb: (isSynced: boolean) => void): void;
   off(type: 'status', cb: ({status: string}) => void): void;
 }
+
+export type Operation = {
+  insert: string | {...},
+  attributes: {__type: string, __flags: number, ...},
+};
+
+export type Delta = Array<Operation>;
 // $FlowFixMe: todo
 export type YjsNode = Object;
 // $FlowFixMe: todo

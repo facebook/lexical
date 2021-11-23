@@ -12,7 +12,7 @@
 declare module 'yjs' {
   declare interface Snapshot {}
 
-  declare interface Transaction {
+  declare export interface Transaction {
     origin: mixed;
   }
 
@@ -20,10 +20,13 @@ declare module 'yjs' {
 
   // $FlowFixMe: needs fixing
   declare type YMapEventKeyChanges = any;
-  // $FlowFixMe: needs fixing
-  declare type Operation = any;
-  // $FlowFixMe: needs fixing
-  declare type Delta = any;
+
+  declare type Operation = {
+    insert: string | {...},
+    attributes: {__type: string, __flags: number, ...},
+  };
+
+  declare type Delta = Array<Operation>;
 
   declare interface YMapEvent extends YEvent {
     keysChanged: Set<string>;

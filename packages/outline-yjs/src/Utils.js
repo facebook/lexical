@@ -7,8 +7,19 @@
  * @flow strict
  */
 
-import type {NodeKey} from 'outline';
-import type {YjsNode, Binding} from '.';
+import type {NodeKey, BlockNode, OutlineNode} from 'outline';
+import type {YjsNode, Binding, Delta} from '.';
+
+import {isTextNode} from 'outline';
+
+const excludedProperties = new Set([
+  '__key',
+  '__children',
+  '__parent',
+  '__cachedText',
+  '__text',
+  '__ref',
+]);
 
 export function diffText(
   startingA: number,

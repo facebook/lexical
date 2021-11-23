@@ -48,21 +48,23 @@ export function useYjsCollaboration(
 
     const onStatus = ({status}: {status: string}) => {
       setConnected(status === 'connected');
-    }
+    };
 
     const onSync = (isSynced: boolean) => {
       if (root.firstChild === null) {
         initEditor(editor);
       }
-    }
+    };
 
     const onAwarenessUpdate = () => {
       syncCursorPositions(binding, provider);
-    }
+    };
 
-    const onYjsTreeChanges = (events) => {
-      syncYjsChangesToOutline(binding, provider, events);
-    }
+    const onYjsTreeChanges = (events, transaction) => {
+      if (transaction.origin !== binding) {
+        syncYjsChangesToOutline(binding, provider, events);
+      }
+    };
 
     initLocalState(
       provider,
@@ -79,19 +81,18 @@ export function useYjsCollaboration(
     const removeListener = editor.addListener(
       'update',
       ({prevEditorState, editorState, dirtyLeaves, dirtyBlocks}) => {
-        const dirtyNodes = new Set();
-        dirtyLeaves.forEach((node) => dirtyNodes.add(node));
-        dirtyBlocks.forEach((_, node) => dirtyNodes.add(node));
         syncOutlineUpdateToYjs(
           binding,
           provider,
           prevEditorState,
           editorState,
-          dirtyNodes,
+          dirtyBlocks,
+          dirtyLeaves,
         );
       },
     );
 
+    // window.provider = provider;
     provider.connect();
 
     return () => {

@@ -33,17 +33,13 @@ class Client {
     this._reactRoot = null;
     this._container = null;
     this._connection = connection;
-    this._suspended = false;
     this._connected = false;
     this._doc = new Y.Doc();
     this._awarenessState = {};
-    this._doc.on('update', (update) => {
-      this._updates.push(update);
-      if (this._connected && !this._suspended) {
-        this._flushUpdates();
-      }
-    });
-    this._updates = [];
+    this._onUpdate = this._onUpdate.bind(this);
+    this._doc.on('update', this._onUpdate);
+    this._localUpdates = [];
+    this._remoteUpdates = [];
     this._listeners = new Map();
     this._editor = null;
 
@@ -66,16 +62,49 @@ class Client {
     };
   }
 
-  _flushUpdates() {
-    this._updates.forEach((update) =>
+  _onUpdate(update, origin) {
+    if (origin !== this._connection) {
+      this._remoteUpdates.push(update);
+      if (this._connected) {
+        this._flushRemoteUpdates();
+      }
+    }
+  }
+
+  _flushRemoteUpdates() {
+    if (this._remoteUpdates.length > 0) {
+      const updates = this._remoteUpdates.slice();
+      this._remoteUpdates = [];
       this._connection._clients.forEach((client) => {
-        if (client === this) {
-          return;
+        if (client !== this) {
+          client._localUpdates.push(...updates);
+          if (client._connected) {
+            client._flushLocalUpdates();
+          }
         }
-        Y.applyUpdate(client._doc, update);
-      }),
-    );
-    this._updates = [];
+      });
+    }
+  }
+
+  _flushLocalUpdates() {
+    if (this._localUpdates.length > 0) {
+      const updates = this._localUpdates.slice();
+      this._localUpdates = [];
+      Y.applyUpdate(this._doc, Y.mergeUpdates(updates), this._connection);
+    }
+  }
+
+  connect() {
+    if (!this._connected) {
+      this._connected = true;
+      this._flushLocalUpdates();
+      this._flushRemoteUpdates();
+      this._dispatch('sync', true);
+    }
+  }
+
+  disconnect() {
+    this._connected = false;
   }
 
   start(rootContainer) {
@@ -108,18 +137,6 @@ class Client {
     });
     this._container.parentNode.removeChild(this._container);
     this._contianer = null;
-  }
-
-  connect() {
-    if (!this._connected) {
-      this._connected = true;
-      this._flushUpdates();
-      this._dispatch('sync', true);
-    }
-  }
-
-  disconnect() {
-    this._connected = false;
   }
 
   on(type, callback) {
@@ -156,11 +173,8 @@ class Client {
     return this._doc.toJSON();
   }
 
-  async update(cb) {
-    await ReactTestUtils.act(async () => {
-      this._editor.update(cb);
-      await Promise.resolve().then();
-    });
+  update(cb) {
+    this._editor.update(cb);
   }
 }
 
@@ -178,4 +192,11 @@ class TestConnection {
 
 export function createTestConnection() {
   return new TestConnection();
+}
+
+export async function waitForReact(cb) {
+  await ReactTestUtils.act(async () => {
+    cb();
+    await Promise.resolve().then();
+  });
 }

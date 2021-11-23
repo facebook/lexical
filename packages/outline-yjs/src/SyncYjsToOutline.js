@@ -110,7 +110,7 @@ function syncYjsAttributesToOutlineProperties(
   yjsNode: YjsNode,
   node: OutlineNode,
   attributesChanged: null | Set<string>,
-) {
+): void {
   const attributes = yjsNode.getAttributes();
   const changedProperties =
     attributesChanged === null
@@ -161,7 +161,7 @@ function syncYjsChildrenChangesToOutline(
   node: BlockNode,
   nodeMap: NodeMap,
   key: NodeKey,
-) {
+): void {
   const writableNode = node.getWritable();
   const prevChildren = writableNode.__children;
   const keysToRemove = new Set(prevChildren);
@@ -251,7 +251,7 @@ export function syncYjsChangesToOutline(
         throw new Error('Not possible');
       }
       binding.processedStates.add(pendingEditorState);
-      const currNodeMap = pendingEditorState._nodeMap;
+      const nodeMap = pendingEditorState._nodeMap;
       for (let i = 0; i < events.length; i++) {
         const event = events[i];
         const {
@@ -263,7 +263,7 @@ export function syncYjsChangesToOutline(
         syncYjsNodeToOutline(
           binding,
           yjsNode,
-          currNodeMap,
+          nodeMap,
           childListChanged,
           attributesChanged || keysChanged,
         );

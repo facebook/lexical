@@ -142,13 +142,21 @@ describe('Links', () => {
         page,
         '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello </span><a href="http://" class="editor-text-link"><span data-outline-text="true">world</span></a></p>',
       );
-
-      await assertSelection(page, {
-        anchorPath: [0, 0, 0],
-        anchorOffset: 6,
-        focusPath: [0, 1, 0, 0],
-        focusOffset: 5,
-      });
+      if (E2E_BROWSER === 'webkit') {
+        await assertSelection(page, {
+          anchorPath: [0, 1, 0, 0],
+          anchorOffset: 0,
+          focusPath: [0, 1, 0, 0],
+          focusOffset: 5,
+        });
+      } else {
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 6,
+          focusPath: [0, 1, 0, 0],
+          focusOffset: 5,
+        });
+      }
 
       // set url
       await page.waitForSelector('.link-input');
@@ -161,12 +169,21 @@ describe('Links', () => {
         '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello </span><a href="http://facebook.com" class="editor-text-link"><span data-outline-text="true">world</span></a></p>',
       );
 
-      await assertSelection(page, {
-        anchorPath: [0, 0, 0],
-        anchorOffset: 6,
-        focusPath: [0, 1, 0, 0],
-        focusOffset: 5,
-      });
+      if (E2E_BROWSER === 'webkit') {
+        await assertSelection(page, {
+          anchorPath: [0, 1, 0, 0],
+          anchorOffset: 0,
+          focusPath: [0, 1, 0, 0],
+          focusOffset: 5,
+        });
+      } else {
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 6,
+          focusPath: [0, 1, 0, 0],
+          focusOffset: 5,
+        });
+      }
 
       // unlink
       await page.waitForSelector('.link');
@@ -211,12 +228,21 @@ describe('Links', () => {
         '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello </span><a href="http://" class="editor-text-link"><span data-outline-text="true">world</span></a></p>',
       );
 
-      await assertSelection(page, {
-        anchorPath: [0, 1, 0, 0],
-        anchorOffset: 5,
-        focusPath: [0, 0, 0],
-        focusOffset: 6,
-      });
+      if (E2E_BROWSER === 'webkit') {
+        await assertSelection(page, {
+          anchorPath: [0, 1, 0, 0],
+          anchorOffset: 5,
+          focusPath: [0, 1, 0, 0],
+          focusOffset: 0,
+        });
+      } else {
+        await assertSelection(page, {
+          anchorPath: [0, 1, 0, 0],
+          anchorOffset: 5,
+          focusPath: [0, 0, 0],
+          focusOffset: 6,
+        });
+      }
 
       // set url
       await page.waitForSelector('.link-input');
@@ -229,12 +255,21 @@ describe('Links', () => {
         '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello </span><a href="http://facebook.com" class="editor-text-link"><span data-outline-text="true">world</span></a></p>',
       );
 
-      await assertSelection(page, {
-        anchorPath: [0, 1, 0, 0],
-        anchorOffset: 5,
-        focusPath: [0, 0, 0],
-        focusOffset: 6,
-      });
+      if (E2E_BROWSER === 'webkit') {
+        await assertSelection(page, {
+          anchorPath: [0, 1, 0, 0],
+          anchorOffset: 5,
+          focusPath: [0, 1, 0, 0],
+          focusOffset: 0,
+        });
+      } else {
+        await assertSelection(page, {
+          anchorPath: [0, 1, 0, 0],
+          anchorOffset: 5,
+          focusPath: [0, 0, 0],
+          focusOffset: 6,
+        });
+      }
 
       // unlink
       await page.waitForSelector('.link');

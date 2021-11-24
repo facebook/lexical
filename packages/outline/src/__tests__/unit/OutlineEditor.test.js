@@ -22,6 +22,7 @@ import {
   setCompositionKey,
   getSelection,
   getNodeByKey,
+  isTextNode,
 } from 'outline';
 import {
   createParagraphNode,
@@ -354,6 +355,61 @@ describe('OutlineEditor tests', () => {
 
     expect(container.innerHTML).toBe(
       '<div contenteditable="true" data-outline-editor="true"><p><strong class="editor-text-bold editor-text-italic" data-outline-text="true">foo</strong></p></div>',
+    );
+  });
+
+  it('Synchronously runs three transforms, two of them depend on previously merged text content', async () => {
+    const hasRun = [false, false, false];
+    init();
+    // 1. [Foo] into [<empty>,Fo,o,<empty>,!,<empty>]
+    const fooListener = editor.addTransform('text', (node) => {
+      if (node.getTextContent() === 'Foo' && !hasRun[0]) {
+        const [before, after] = node.splitText(2);
+        before.insertBefore(createTextNode(''));
+        after.insertAfter(createTextNode(''));
+        after.insertAfter(createTextNode('!'));
+        after.insertAfter(createTextNode(''));
+        hasRun[0] = true;
+      }
+    });
+    // 2. [Foo!] into [<empty>,Fo,o!,<empty>,!,<empty>]
+    const megaFooListener = editor.addTransform('block', (block) => {
+      const child = block.getFirstChild();
+      if (
+        isTextNode(child) &&
+        child.getTextContent() === 'Foo!' &&
+        !hasRun[1]
+      ) {
+        const [before, after] = child.splitText(2);
+        before.insertBefore(createTextNode(''));
+        after.insertAfter(createTextNode(''));
+        after.insertAfter(createTextNode('!'));
+        after.insertAfter(createTextNode(''));
+        hasRun[1] = true;
+      }
+    });
+    // 3. [Foo!!] into formatted bold [<empty>,Fo,o!!,<empty>]
+    const boldFooListener = editor.addTransform('text', (node) => {
+      if (node.getTextContent() === 'Foo!!' && !hasRun[2]) {
+        node.toggleFormat('bold');
+        const [before, after] = node.splitText(2);
+        before.insertBefore(createTextNode(''));
+        after.insertAfter(createTextNode(''));
+        hasRun[2] = true;
+      }
+    });
+    await editor.update(() => {
+      const root = getRoot();
+      const paragraph = createParagraphNode();
+      root.append(paragraph);
+      paragraph.append(createTextNode('Foo'));
+    });
+    fooListener();
+    megaFooListener();
+    boldFooListener();
+
+    expect(container.innerHTML).toBe(
+      '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><strong class="editor-text-bold" data-outline-text="true">Foo!!</strong></p></div>',
     );
   });
 

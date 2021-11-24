@@ -1005,3 +1005,102 @@ function normalizeTextNodes(block: BlockNode): BlockNode {
   }
   return block.getLatest();
 }
+
+function canSimpleTextNodesBeMerged(node1: TextNode, node2: TextNode): boolean {
+  const node1Flags = node1.__flags;
+  const node1Format = node1.__format;
+  const node1Style = node1.__style;
+  const node2Flags = node2.__flags;
+  const node2Format = node2.__format;
+  const node2Style = node2.__style;
+  return (
+    (node1Flags === null || node1Flags === node2Flags) &&
+    (node1Format === null || node1Format === node2Format) &&
+    (node1Style === null || node1Style === node2Style)
+  );
+}
+
+function mergeTextNodes(
+  node1: TextNode,
+  node2: TextNode,
+  selection: null | OutlineSelection,
+) {
+  const node1Key = node1.__key;
+  const node2Key = node2.__key;
+  const node1Text = node1.__text;
+  const node1TextLength = node1Text.length;
+  const writableNode1 = node1.getWritable();
+  const compositionKey = getCompositionKey();
+  if (selection !== null) {
+    const anchor = selection.anchor;
+    const focus = selection.focus;
+    const parent = node1.getParent();
+    const parentKey = parent !== null ? parent.__key : null;
+    adjustPointForMerge(
+      anchor,
+      node2Key,
+      node1Key,
+      parentKey,
+      node1TextLength,
+      0,
+    );
+    adjustPointForMerge(
+      focus,
+      node2Key,
+      node1Key,
+      parentKey,
+      node1TextLength,
+      0,
+    );
+  }
+  if (compositionKey === node2Key) {
+    setCompositionKey(node1Key);
+  }
+  writableNode1.setTextContent(node1Text + node2.__text);
+  node2.remove();
+  return writableNode1;
+}
+
+export function normalizeTextNode(
+  textNode: TextNode,
+  selection: null | OutlineSelection,
+) {
+  if (!textNode.isSimpleText() || textNode.isUnmergeable()) {
+    return;
+  }
+  let node = textNode;
+  // Backward
+  let previousNode;
+  while (
+    (previousNode = node.getPreviousSibling()) !== null &&
+    isTextNode(previousNode) &&
+    previousNode.isSimpleText() &&
+    !previousNode.isUnmergeable()
+  ) {
+    if (previousNode.__text === '') {
+      previousNode.remove();
+    } else if (canSimpleTextNodesBeMerged(node, previousNode)) {
+      node = mergeTextNodes(previousNode, node, selection);
+      break;
+    } else {
+      break;
+    }
+  }
+  // Forward
+  let nextNode;
+  while (
+    (nextNode = node.getNextSibling()) !== null &&
+    isTextNode(nextNode) &&
+    nextNode.isSimpleText() &&
+    !nextNode.isUnmergeable()
+  ) {
+    if (nextNode.__text === '') {
+      nextNode.remove();
+    } else if (canSimpleTextNodesBeMerged(node, nextNode)) {
+      node = mergeTextNodes(node, nextNode, selection);
+      break;
+    } else {
+      break;
+    }
+  }
+}

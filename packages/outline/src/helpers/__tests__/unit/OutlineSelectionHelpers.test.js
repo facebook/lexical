@@ -227,6 +227,115 @@ describe('OutlineSelectionHelpers tests', () => {
       });
     });
 
+    test('Has correct text point after removal after merge', async () => {
+      const editor = createEditor({});
+
+      editor.addListener('error', (error) => {
+        throw error;
+      });
+
+      const element = document.createElement('div');
+      let block;
+
+      editor.setRootElement(element);
+
+      editor.update((state) => {
+        const root = state.getRoot();
+        block = createParagraphWithNodes(
+          editor,
+          [
+            {text: 'a', key: 'a', mergeable: true},
+            {text: 'bb', key: 'bb', mergeable: true},
+            {text: '', key: 'empty', mergeable: true},
+            {text: 'cc', key: 'cc', mergeable: true},
+            {text: 'd', key: 'd', mergeable: true},
+          ],
+          true,
+        );
+        root.append(block);
+        setAnchorPoint(state, {
+          type: 'text',
+          key: 'bb',
+          offset: 1,
+        });
+        setFocusPoint(state, {
+          type: 'text',
+          key: 'cc',
+          offset: 1,
+        });
+      });
+
+      await Promise.resolve().then();
+
+      editor.getEditorState().read((state) => {
+        const selection = getSelection();
+        expect(selection.anchor).toEqual({
+          type: 'text',
+          key: 'a',
+          offset: 2,
+        });
+        expect(selection.focus).toEqual({
+          type: 'text',
+          key: 'a',
+          offset: 4,
+        });
+      });
+    });
+
+    test('Has correct text point after removal after merge (2)', async () => {
+      const editor = createEditor({});
+
+      editor.addListener('error', (error) => {
+        throw error;
+      });
+
+      const element = document.createElement('div');
+      let block;
+
+      editor.setRootElement(element);
+
+      editor.update((state) => {
+        const root = state.getRoot();
+        block = createParagraphWithNodes(
+          editor,
+          [
+            {text: 'a', key: 'a', mergeable: true},
+            {text: '', key: 'empty', mergeable: true},
+            {text: 'b', key: 'b', mergeable: true},
+            {text: 'c', key: 'c', mergeable: true},
+          ],
+          true,
+        );
+        root.append(block);
+        setAnchorPoint(state, {
+          type: 'text',
+          key: 'a',
+          offset: 0,
+        });
+        setFocusPoint(state, {
+          type: 'text',
+          key: 'c',
+          offset: 1,
+        });
+      });
+
+      await Promise.resolve().then();
+
+      editor.getEditorState().read((state) => {
+        const selection = getSelection();
+        expect(selection.anchor).toEqual({
+          type: 'text',
+          key: 'a',
+          offset: 0,
+        });
+        expect(selection.focus).toEqual({
+          type: 'text',
+          key: 'a',
+          offset: 3,
+        });
+      });
+    });
+
     test('Has correct text point adjust to block point after removal of a single empty text node', async () => {
       const editor = createEditor({});
 

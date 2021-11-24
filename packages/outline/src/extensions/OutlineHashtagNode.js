@@ -58,6 +58,14 @@ export class HashtagNode extends TextNode {
     }
     return this;
   }
+
+  canInsertTextBefore(): boolean {
+    return false;
+  }
+
+  canInsertTextAfter(): boolean {
+    return true;
+  }
 }
 
 export function toggleHashtag(node: TextNode): TextNode {

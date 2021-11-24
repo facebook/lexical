@@ -332,7 +332,10 @@ export class BlockNode extends OutlineNode {
   canBeEmpty(): boolean {
     return true;
   }
-  canInsertTextAtBoundary(): boolean {
+  canInsertTextBefore(): boolean {
+    return true;
+  }
+  canInsertTextAfter(): boolean {
     return true;
   }
   isInline(): boolean {

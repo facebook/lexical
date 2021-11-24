@@ -554,19 +554,27 @@ export function checkForBadInsertion(
 function shouldInsertTextAfterOrBeforeTextNode(
   selection: Selection,
   node: TextNode,
-  validateOffset: boolean,
 ): boolean {
+  if (node.isSegmented()) {
+    return true;
+  }
+  if (!selection.isCollapsed()) {
+    return false;
+  }
   const offset = selection.anchor.offset;
-  return (
-    node.isSegmented() ||
-    (selection.isCollapsed() &&
-      (!validateOffset ||
-        node.getTextContentSize() === offset ||
-        offset === 0) &&
-      (!node.canInsertTextAtBoundary() ||
-        !node.getParentOrThrow().canInsertTextAtBoundary() ||
-        node.isImmutable()))
-  );
+  const parent = node.getParentOrThrow();
+  const isImmutable = node.isImmutable();
+  const shouldInsertTextBefore =
+    offset === 0 &&
+    (!node.canInsertTextBefore() ||
+      !parent.canInsertTextBefore() ||
+      isImmutable);
+  const shouldInsertTextAfter =
+    node.getTextContentSize() === offset &&
+    (!node.canInsertTextBefore() ||
+      !parent.canInsertTextBefore() ||
+      isImmutable);
+  return shouldInsertTextBefore || shouldInsertTextAfter;
 }
 
 function updateTextNodeFromDOMContent(
@@ -665,7 +673,7 @@ function shouldPreventDefaultAndInsertText(
     // Check if we're changing from bold to italics, or some other format.
     anchorNode.getFormat() !== selection.format ||
     // One last set of heuristics to check against.
-    shouldInsertTextAfterOrBeforeTextNode(selection, anchorNode, true)
+    shouldInsertTextAfterOrBeforeTextNode(selection, anchorNode)
   );
 }
 

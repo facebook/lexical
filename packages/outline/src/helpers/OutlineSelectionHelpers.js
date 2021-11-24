@@ -1212,57 +1212,63 @@ export function insertText(selection: Selection, text: string): void {
   const firstNodeParent = firstNode.getParentOrThrow();
 
   if (
-    firstNode.isSegmented() ||
-    firstNode.isImmutable() ||
-    !firstNode.canInsertTextAtBoundary() ||
-    !firstNodeParent.canInsertTextAtBoundary()
+    selection.isCollapsed() &&
+    startOffset === firstNodeTextLength &&
+    (firstNode.isSegmented() ||
+      firstNode.isImmutable() ||
+      !firstNode.canInsertTextAfter() ||
+      !firstNodeParent.canInsertTextAfter())
   ) {
-    const offset = firstPoint.offset;
-    if (selection.isCollapsed() && offset === firstNodeTextLength) {
-      let nextSibling = firstNode.getNextSibling();
-      if (
-        !isTextNode(nextSibling) ||
-        isImmutableOrInert(nextSibling) ||
-        nextSibling.isSegmented()
-      ) {
-        nextSibling = createTextNode();
-        if (!firstNodeParent.canInsertTextAtBoundary()) {
-          firstNodeParent.insertAfter(nextSibling);
-        } else {
-          firstNode.insertAfter(nextSibling);
-        }
+    let nextSibling = firstNode.getNextSibling();
+    if (
+      !isTextNode(nextSibling) ||
+      isImmutableOrInert(nextSibling) ||
+      nextSibling.isSegmented()
+    ) {
+      nextSibling = createTextNode();
+      if (!firstNodeParent.canInsertTextAfter()) {
+        firstNodeParent.insertAfter(nextSibling);
+      } else {
+        firstNode.insertAfter(nextSibling);
       }
-      nextSibling.select(0, 0);
-      firstNode = nextSibling;
-      if (text !== '') {
-        insertText(selection, text);
-        return;
-      }
-    } else if (selection.isCollapsed() && offset === 0) {
-      let prevSibling = firstNode.getPreviousSibling();
-      if (
-        !isTextNode(prevSibling) ||
-        isImmutableOrInert(prevSibling) ||
-        prevSibling.isSegmented()
-      ) {
-        prevSibling = createTextNode();
-        if (!firstNodeParent.canInsertTextAtBoundary()) {
-          firstNodeParent.insertBefore(prevSibling);
-        } else {
-          firstNode.insertBefore(prevSibling);
-        }
-      }
-      prevSibling.select();
-      firstNode = prevSibling;
-      if (text !== '') {
-        insertText(selection, text);
-        return;
-      }
-    } else if (firstNode.isSegmented() && offset !== firstNodeTextLength) {
-      const textNode = createTextNode(firstNode.getTextContent());
-      firstNode.replace(textNode);
-      firstNode = textNode;
     }
+    nextSibling.select(0, 0);
+    firstNode = nextSibling;
+    if (text !== '') {
+      insertText(selection, text);
+      return;
+    }
+  } else if (
+    selection.isCollapsed() &&
+    startOffset === 0 &&
+    (firstNode.isSegmented() ||
+      firstNode.isImmutable() ||
+      !firstNode.canInsertTextBefore() ||
+      !firstNodeParent.canInsertTextBefore())
+  ) {
+    let prevSibling = firstNode.getPreviousSibling();
+    if (
+      !isTextNode(prevSibling) ||
+      isImmutableOrInert(prevSibling) ||
+      prevSibling.isSegmented()
+    ) {
+      prevSibling = createTextNode();
+      if (!firstNodeParent.canInsertTextBefore()) {
+        firstNodeParent.insertBefore(prevSibling);
+      } else {
+        firstNode.insertBefore(prevSibling);
+      }
+    }
+    prevSibling.select();
+    firstNode = prevSibling;
+    if (text !== '') {
+      insertText(selection, text);
+      return;
+    }
+  } else if (firstNode.isSegmented() && startOffset !== firstNodeTextLength) {
+    const textNode = createTextNode(firstNode.getTextContent());
+    firstNode.replace(textNode);
+    firstNode = textNode;
   }
 
   if (selectedNodesLength === 1) {

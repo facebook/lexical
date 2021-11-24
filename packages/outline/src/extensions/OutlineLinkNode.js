@@ -68,7 +68,11 @@ export class LinkNode extends BlockNode {
     return null;
   }
 
-  canInsertTextAtBoundary(): false {
+  canInsertTextBefore(): false {
+    return false;
+  }
+
+  canInsertTextAfter(): false {
     return false;
   }
 

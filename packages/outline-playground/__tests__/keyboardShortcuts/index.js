@@ -149,3 +149,26 @@ export async function redo(page) {
     await page.keyboard.up('Control');
   }
 }
+
+export async function moveLeft(page, numCharacters = 1): Promise<void> {
+  for (let i = 0; i < numCharacters; i++) {
+    await page.keyboard.press('ArrowLeft');
+  }
+}
+
+export async function moveRight(page, numCharacters = 1): Promise<void> {
+  for (let i = 0; i < numCharacters; i++) {
+    await page.keyboard.press('ArrowRight');
+  }
+}
+
+export async function selectCharacters(
+  page,
+  direction: 'left' | 'right',
+  numCharacters = 1,
+): Promise<void> {
+  const moveFunction = direction === 'left' ? moveLeft : moveRight;
+  await page.keyboard.down('Shift');
+  await moveFunction(page, numCharacters);
+  await page.keyboard.up('Shift');
+}

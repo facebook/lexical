@@ -1598,3 +1598,10 @@ export function wrapLeafNodesInBlocks(
   }
   selection.dirty = true;
 }
+
+export function isAtNodeEnd(point: Point): boolean {
+  if (point.type === 'text') {
+    return point.offset === point.getNode().getTextContentSize();
+  }
+  return point.offset === point.getNode().getChildrenSize();
+}

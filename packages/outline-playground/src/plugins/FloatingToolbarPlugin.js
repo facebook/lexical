@@ -260,6 +260,9 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
             if (isLinkNode(parent)) {
               setIsLink(true);
               setLinkUrl(parent.getURL());
+            } else if (isLinkNode(node)) {
+              setIsLink(true);
+              setLinkUrl(node.getURL());
             } else {
               setIsLink(false);
               setLinkUrl('');

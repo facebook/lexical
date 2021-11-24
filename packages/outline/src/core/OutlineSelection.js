@@ -131,7 +131,7 @@ class Point {
     if (this.type === 'text') {
       return this.offset === this.getNode().getTextContentSize();
     }
-    return this.offset === 1;
+    return this.offset === this.getNode().getChildrenSize();
   }
 }
 

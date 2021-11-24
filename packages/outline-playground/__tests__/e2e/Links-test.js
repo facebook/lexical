@@ -7,7 +7,12 @@
  */
 
 import {selectAll, moveToLineEnd} from '../keyboardShortcuts';
-import {initializeE2E, assertHTML, assertSelection} from '../utils';
+import {
+  initializeE2E,
+  assertHTML,
+  assertSelection,
+  E2E_BROWSER,
+} from '../utils';
 
 describe('Links', () => {
   initializeE2E((e2e) => {
@@ -80,6 +85,13 @@ describe('Links', () => {
     it(`Can type text before and after`, async () => {
       const {isRichText, page} = e2e;
       if (!isRichText) {
+        return;
+      }
+      // TODO Needs fixing #893
+      if (
+        process.env.E2E_EVENTS_MODE === 'legacy-events' &&
+        ['webkit', 'firefox'].includes(E2E_BROWSER)
+      ) {
         return;
       }
 

@@ -29,6 +29,7 @@ import {
   extractSelection,
   getSelectionStyleValueForProperty,
   patchStyleText,
+  isAtNodeEnd,
 } from 'outline/selection';
 import {log, getSelection, setSelection} from 'outline';
 import {createLinkNode, isLinkNode, LinkNode} from 'outline/LinkNode';
@@ -112,9 +113,9 @@ function getSelectedNode(
   }
   const isBackward = selection.isBackward();
   if (isBackward) {
-    return focus.isAtNodeEnd() ? anchorNode : focusNode;
+    return isAtNodeEnd(focus) ? anchorNode : focusNode;
   } else {
-    return anchor.isAtNodeEnd() ? focusNode : anchorNode;
+    return isAtNodeEnd(anchor) ? focusNode : anchorNode;
   }
 }
 

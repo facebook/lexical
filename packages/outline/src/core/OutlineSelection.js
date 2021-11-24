@@ -127,12 +127,6 @@ class Point {
       }
     }
   }
-  isAtNodeEnd(): boolean {
-    if (this.type === 'text') {
-      return this.offset === this.getNode().getTextContentSize();
-    }
-    return this.offset === this.getNode().getChildrenSize();
-  }
 }
 
 function createPoint(

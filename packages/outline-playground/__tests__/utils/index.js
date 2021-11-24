@@ -59,7 +59,8 @@ export function initializeE2E(runTests, config: Config = {}) {
     page: null,
     async saveScreenshot() {
       const currentTest = expect.getState().currentTestName;
-      const path = currentTest.replace(/\s/g, '_') + '.png';
+      const path =
+        'e2e-screenshots/' + currentTest.replace(/\s/g, '_') + '.png';
       await e2e.page.screenshot({path});
     },
     async logScreenshot() {
@@ -119,7 +120,7 @@ export function initializeE2E(runTests, config: Config = {}) {
             } else {
               // fail for real + log screenshot
               console.log(`Flaky Test: ${description}:`);
-              await e2e.logScreenshot();
+              await e2e.saveScreenshot();
               throw err;
             }
           }

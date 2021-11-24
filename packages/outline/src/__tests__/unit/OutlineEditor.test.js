@@ -18,6 +18,7 @@ import {
   TextNode,
   DecoratorNode,
   BlockNode,
+  RootNode,
   getRoot,
   setCompositionKey,
   getSelection,
@@ -32,6 +33,7 @@ import {
 import useOutlineRichText from 'outline-react/useOutlineRichText';
 import {getEditorStateTextContent} from '../../core/OutlineUtils';
 import {createTestBlockNode} from '../utils';
+import {LineBreakNode} from '../../core/OutlineLineBreakNode';
 
 describe('OutlineEditor tests', () => {
   let container = null;
@@ -1130,5 +1132,34 @@ describe('OutlineEditor tests', () => {
     removeDecoratorTransform();
     removeBlockTransform();
     removeRootTransform();
+  });
+
+  it('Register node type', () => {
+    init();
+
+    const pairs = [
+      ['text', TextNode],
+      ['linebreak', LineBreakNode],
+      ['root', RootNode],
+    ];
+    for (let i = 0; i < pairs.length; i++) {
+      const currentPair = pairs[i];
+      expect(editor._typeToKlass.get(currentPair[0])).toBe(currentPair[1]);
+      expect(
+        editor._typeToKlass.get(editor._klassToType.get(currentPair[1])),
+      ).toBe(currentPair[1]);
+    }
+    class CustomTextNode extends TextNode {
+      static clone(key) {
+        return new CustomTextNode(key);
+      }
+    }
+
+    expect(editor._typeToKlass.get('custom_text_node')).toBe(undefined);
+    expect(editor._klassToType.get(CustomTextNode)).toBe(undefined);
+
+    editor.registerNodeType('custom_text_node', CustomTextNode);
+    expect(editor._typeToKlass.get('custom_text_node')).toBe(CustomTextNode);
+    expect(editor._klassToType.get(CustomTextNode)).toBe('custom_text_node');
   });
 });

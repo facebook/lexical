@@ -29,6 +29,7 @@ import {
   extractSelection,
   getSelectionStyleValueForProperty,
   patchStyleText,
+  isAtNodeEnd,
 } from 'outline/selection';
 import {log, getSelection, setSelection} from 'outline';
 import {createLinkNode, isLinkNode, LinkNode} from 'outline/LinkNode';
@@ -103,12 +104,19 @@ function Select({
 function getSelectedNode(
   selection: Selection,
 ): TextNode | BlockNode | DecoratorNode | LineBreakNode {
+  const anchor = selection.anchor;
+  const focus = selection.focus;
   const anchorNode = selection.anchor.getNode();
   const focusNode = selection.focus.getNode();
   if (anchorNode === focusNode) {
     return anchorNode;
   }
-  return anchorNode.isBefore(focusNode) ? anchorNode : focusNode;
+  const isBackward = selection.isBackward();
+  if (isBackward) {
+    return isAtNodeEnd(focus) ? anchorNode : focusNode;
+  } else {
+    return isAtNodeEnd(anchor) ? focusNode : anchorNode;
+  }
 }
 
 function LinkBar({
@@ -253,6 +261,9 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
             if (isLinkNode(parent)) {
               setIsLink(true);
               setLinkUrl(parent.getURL());
+            } else if (isLinkNode(node)) {
+              setIsLink(true);
+              setLinkUrl(node.getURL());
             } else {
               setIsLink(false);
               setLinkUrl('');

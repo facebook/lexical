@@ -24,7 +24,6 @@ export class RootNode extends BlockNode {
 
   constructor() {
     super('root');
-    this.__type = 'root';
     this.__cachedText = null;
   }
 

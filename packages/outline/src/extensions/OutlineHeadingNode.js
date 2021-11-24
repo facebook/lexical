@@ -25,7 +25,6 @@ export class HeadingNode extends BlockNode {
   constructor(tag: HeadingTagType, key?: NodeKey) {
     super(key);
     this.__tag = tag;
-    this.__type = 'heading';
   }
 
   getTag(): HeadingTagType {

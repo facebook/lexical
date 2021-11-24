@@ -20,10 +20,11 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import {createEditor, createTextNode, TextNode} from 'outline';
+import {createTextNode, TextNode} from 'outline';
 
-import {createParagraphNode} from 'outline/ParagraphNode';
+import {createParagraphNode, ParagraphNode} from 'outline/ParagraphNode';
 import {
+  createTestEditor,
   getCompositionKey,
   getEditorStateTextContent,
   setCompositionKey,
@@ -72,7 +73,10 @@ describe('OutlineTextNode tests', () => {
   }
 
   function useOutlineEditor(rootElementRef) {
-    const editor = React.useMemo(() => createEditor(), []);
+    // TODO Move to utils file maybe
+    const editor = React.useMemo(() => createTestEditor(), []);
+    editor.registerNodeType('paragraph', ParagraphNode);
+    editor.registerNodeType('custom_segmented_node', CustomSegmentedNode);
 
     React.useEffect(() => {
       const rootElement = rootElementRef.current;

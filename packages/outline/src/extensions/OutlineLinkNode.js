@@ -21,7 +21,6 @@ export class LinkNode extends BlockNode {
   constructor(url: string, key?: NodeKey) {
     super(key);
     this.__url = url;
-    this.__type = 'link';
   }
 
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {

@@ -58,7 +58,7 @@ function createOutlineNodeFromYjsNode(
 ): NodeKey {
   const attributes = yjsNode.getAttributes();
   const nodeType = attributes.__type;
-  const nodeTypes = binding.editor._nodeTypes;
+  const nodeTypes = binding.editor._typeToKlass;
   const NodeType = nodeTypes.get(nodeType);
   if (NodeType === undefined) {
     throw new Error('createOutlineNodeFromYjsNode failed');

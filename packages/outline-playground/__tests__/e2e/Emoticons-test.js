@@ -85,7 +85,7 @@ describe('Emoticons', () => {
       });
     });
 
-    it(`Can enter mutliple emoticons`, async () => {
+    it(`Can enter multiple emoticons`, async () => {
       const {isRichText, page} = e2e;
 
       await page.focus('div.editor');

@@ -14,6 +14,10 @@ import {BlockNode} from 'outline';
 export class LinkNode extends BlockNode {
   __url: string;
 
+  static getType(): string {
+    return 'link';
+  }
+
   static clone(node: LinkNode): LinkNode {
     return new LinkNode(node.__url, node.__key);
   }

@@ -284,9 +284,32 @@ class BaseOutlineEditor {
   isComposing(): boolean {
     return this._compositionKey != null;
   }
-  registerNodeType(nodeType: string, klass: Class<OutlineNode>): void {
-    this._typeToKlass.set(nodeType, klass);
-    this._klassToType.set(klass, nodeType);
+  registerNodeType(klass: Class<OutlineNode>): void {
+    const type = klass.getType();
+    if (__DEV__) {
+      const editorKlass = this._typeToKlass.get(type);
+      const editorType = this._klassToType.get(klass);
+      if (editorKlass !== undefined) {
+        invariant(
+          editorKlass === klass,
+          'Register node type: Type %s in node %s was already registered by another node %s',
+          type,
+          klass.name,
+          editorKlass.name,
+        );
+      }
+      if (editorType !== undefined) {
+        invariant(
+          editorType === type,
+          'Register node type: Node %s of type %s was already registered to a different type, %s. Make sure editor.getType() returns a static value',
+          klass,
+          type,
+          editorType,
+        );
+      }
+    }
+    this._typeToKlass.set(type, klass);
+    this._klassToType.set(klass, type);
   }
   addListener(
     type: ListenerType,
@@ -460,7 +483,7 @@ declare export class OutlineEditor {
   _key: string;
 
   isComposing(): boolean;
-  registerNodeType(nodeType: string, klass: Class<OutlineNode>): void;
+  registerNodeType(klass: Class<OutlineNode>): void;
   addListener(type: 'error', listener: ErrorListener): () => void;
   addListener(type: 'update', listener: UpdateListener): () => void;
   addListener(type: 'root', listener: RootListener): () => void;

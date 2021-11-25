@@ -23,6 +23,10 @@ export class ListNode extends BlockNode {
   __tag: ListNodeTagType;
   __start: number;
 
+  static getType(): string {
+    return 'list';
+  }
+
   static clone(node: ListNode): ListNode {
     return new ListNode(node.__tag, node.__start, node.__key);
   }

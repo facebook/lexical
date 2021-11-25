@@ -104,12 +104,12 @@ export function useRichTextSetup(
   callbackFn?: (callbackFn?: () => void) => void,
 ) => void {
   useLayoutEffect(() => {
-    editor.registerNodeType('heading', HeadingNode);
-    editor.registerNodeType('list', ListNode);
-    editor.registerNodeType('quote', QuoteNode);
-    editor.registerNodeType('code', CodeNode);
-    editor.registerNodeType('paragraph', ParagraphNode);
-    editor.registerNodeType('listitem', ListItemNode);
+    editor.registerNodeType(HeadingNode);
+    editor.registerNodeType(ListNode);
+    editor.registerNodeType(QuoteNode);
+    editor.registerNodeType(CodeNode);
+    editor.registerNodeType(ParagraphNode);
+    editor.registerNodeType(ListItemNode);
     if (init) {
       initEditor(editor);
     }

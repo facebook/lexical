@@ -42,6 +42,7 @@ import {
   setSelection,
   clearSelection,
   getRoot,
+  getNodeInfoOrThrow,
 } from './OutlineUtils';
 import {
   garbageCollectDetachedDecorators,
@@ -201,7 +202,10 @@ function applyAllTransforms(
             normalizeTextNode(node, selection);
           }
         }
-        if (isNodeValidForTransform(node, compositionKey)) {
+        if (
+          node !== undefined &&
+          isNodeValidForTransform(node, compositionKey)
+        ) {
           if (isTextNode(node)) {
             applyTransforms<TextNode>(
               node,
@@ -215,6 +219,15 @@ function applyAllTransforms(
               decoratorTransformsArrLength,
             );
           }
+          const nodeInfo = getNodeInfoOrThrow(editor, node.__type);
+          const transformsX = nodeInfo.transforms;
+          // TODO Store in a cache
+          const transformsArr = Array.from(transformsX);
+          applyTransforms<OutlineNode>(
+            node,
+            transformsArr,
+            transformsArr.length,
+          );
         }
         dirtyLeaves.add(nodeKey);
       }
@@ -236,7 +249,7 @@ function applyAllTransforms(
       const nodeKey = untransformedDirtyBlocksArr[i][0];
       const nodeIntentionallyMarkedAsDirty = untransformedDirtyBlocksArr[i][1];
       const node = nodeMap.get(nodeKey);
-      if (isNodeValidForTransform(node, compositionKey)) {
+      if (node !== undefined && isNodeValidForTransform(node, compositionKey)) {
         if (isRootNode(node)) {
           applyTransforms<RootNode>(
             node,
@@ -250,6 +263,11 @@ function applyAllTransforms(
             blockTransformsArrLength,
           );
         }
+        const nodeInfo = getNodeInfoOrThrow(editor, node.__type);
+        const transformsX = nodeInfo.transforms;
+        // TODO Store in a cache
+        const transformsArr = Array.from(transformsX);
+        applyTransforms<OutlineNode>(node, transformsArr, transformsArr.length);
       }
       dirtyBlocks.set(nodeKey, nodeIntentionallyMarkedAsDirty);
     }

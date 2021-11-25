@@ -10,6 +10,7 @@
 import type {
   OutlineEditor,
   IntentionallyMarkedAsDirtyBlock,
+  NodeInfo,
 } from './OutlineEditor';
 import type {OutlineNode, NodeKey, NodeMap} from './OutlineNode';
 import type {TextFormatType} from './OutlineTextNode';
@@ -37,6 +38,7 @@ import {
   updateEditor,
 } from './OutlineUpdates';
 import {flushRootMutations} from './OutlineMutations';
+import invariant from 'shared/invariant';
 
 export const emptyFunction = () => {};
 
@@ -48,6 +50,17 @@ export function resetRandomKey(): void {
 
 export function generateRandomKey(): string {
   return '' + keyCounter++;
+}
+
+export function getNodeInfoOrThrow(
+  editor: OutlineEditor,
+  nodeType: string,
+): NodeInfo {
+  const nodeInfo = editor._nodesInfo.get(nodeType);
+  if (nodeInfo === undefined) {
+    invariant(false, 'NodeInfo: Type %s not found', nodeType);
+  }
+  return nodeInfo;
 }
 
 // When we are dealing with setting selection on an empty text node, we

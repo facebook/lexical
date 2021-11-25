@@ -79,13 +79,11 @@ export type EditorConfig<EditorContext> = {
   context: EditorContext,
 };
 
-type Nodes = Map<
-  string,
-  $ReadOnly<{
-    klass: Class<OutlineNode>,
-    transforms: Set<Transform<OutlineNode>>,
-  }>,
->;
+export type NodesInfo = Map<string, NodeInfo>;
+export type NodeInfo = $ReadOnly<{
+  klass: Class<OutlineNode>,
+  transforms: Set<Transform<OutlineNode>>,
+}>;
 
 export type ErrorListener = (error: Error, log: Array<string>) => void;
 export type UpdateListener = ({
@@ -215,7 +213,7 @@ class BaseOutlineEditor {
   _updating: boolean;
   _listeners: Listeners;
   _transforms: Transforms;
-  _nodesInfo: Nodes;
+  _nodesInfo: NodesInfo;
   _decorators: {[NodeKey]: ReactNode};
   _pendingDecorators: null | {[NodeKey]: ReactNode};
   _textContent: string;
@@ -353,6 +351,27 @@ class BaseOutlineEditor {
       transformsSet.delete(transform);
     };
   }
+  addTransformX<T: OutlineNode>(
+    klass: Class<T>,
+    listener: Transform<T>,
+  ): () => void {
+    const nodeInfo = this._nodesInfo.get(klass.getType());
+    if (nodeInfo === undefined) {
+      invariant(
+        false,
+        'Node %s has not been registered. Run editor.registerNode to register your own nodes.',
+        klass.name,
+      );
+    }
+    const transforms = nodeInfo.transforms;
+    // There's no good workaround to preserve the T in Transform<T>
+    // $FlowFixMe
+    transforms.add(listener);
+    return () => {
+      // $FlowFixMe
+      transforms.delete(listener);
+    };
+  }
   getDecorators(): {[NodeKey]: ReactNode} {
     return this._decorators;
   }
@@ -464,7 +483,7 @@ declare export class OutlineEditor {
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _listeners: Listeners;
   _transforms: Transforms;
-  _nodesInfo: Nodes;
+  _nodesInfo: NodesInfo;
   _decorators: {[NodeKey]: ReactNode};
   _pendingDecorators: null | {[NodeKey]: ReactNode};
   _config: EditorConfig<{...}>;
@@ -488,6 +507,10 @@ declare export class OutlineEditor {
   addTransform(type: 'decorator', listener: DecoratorTransform): () => void;
   addTransform(type: 'block', listener: BlockTransform): () => void;
   addTransform(type: 'root', listener: RootTransform): () => void;
+  addTransformX<T: OutlineNode>(
+    klass: Class<T>,
+    listener: Transform<T>,
+  ): () => void;
   getDecorators(): {[NodeKey]: ReactNode};
   getRootElement(): null | HTMLElement;
   setRootElement(rootElement: null | HTMLElement): void;

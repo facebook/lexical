@@ -11,7 +11,14 @@ import * as React from 'react';
 import PlaygroundEditorContext from '../context/PlaygroundEditorContext';
 import {useEditorContext} from 'outline-react/OutlineEditorContext';
 import {useEffect, useState} from 'react';
-import {log, isBlockNode, getSelection, createEditorStateRef} from 'outline';
+import {
+  log,
+  isBlockNode,
+  getSelection,
+  createEditorStateRef,
+  TextNode,
+} from 'outline';
+import {ListNode} from 'outline/ListNode';
 import {isListItemNode} from 'outline/ListItemNode';
 import {ImageNode, createImageNode} from '../nodes/ImageNode';
 import {insertNodes} from 'outline/selection';
@@ -35,6 +42,18 @@ export default function ActionsPlugins({
     PlaygroundEditorContext,
   );
   const [indent, outdent] = useOutlineNestedList(editor);
+
+  useEffect(() => {
+    return editor.addTransformX(ListNode, (listNode) => {
+      console.info('list tag', listNode.getTag());
+    });
+  }, [editor]);
+
+  useEffect(() => {
+    return editor.addTransformX(TextNode, (textNode) => {
+      console.info('text', textNode.getTextContent());
+    });
+  }, [editor]);
 
   useEffect(() => {
     editor.registerNode(ImageNode);

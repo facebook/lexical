@@ -1140,7 +1140,7 @@ describe('OutlineEditor tests', () => {
 
     expect(editor._typeToKlass.get('custom_text_node')).toBe(undefined);
 
-    editor.registerNodeType(CustomTextNode);
+    editor.registerNode(CustomTextNode);
     expect(editor._typeToKlass.get('custom_text_node')).toBe(CustomTextNode);
   });
 
@@ -1156,7 +1156,7 @@ describe('OutlineEditor tests', () => {
       }
     }
 
-    expect(() => editor.registerNodeType(BadTextNode)).toThrow();
+    expect(() => editor.registerNode(BadTextNode)).toThrow();
 
     editor.update(() => {
       expect(() => new BadTextNode()).toThrow();

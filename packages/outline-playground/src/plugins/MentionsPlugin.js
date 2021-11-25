@@ -946,7 +946,7 @@ function useMentions(editor: OutlineEditor): React$Node {
   );
 
   useEffect(() => {
-    editor.registerNodeType(MentionNode);
+    editor.registerNode(MentionNode);
   }, [editor]);
 
   useEffect(() => {

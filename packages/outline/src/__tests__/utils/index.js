@@ -30,17 +30,17 @@ type TestEnv = {
 
 export function createTestEditor(config): OutlineEditor {
   const editor = createEditor(config);
-  editor.registerNodeType(ParagraphNode);
-  editor.registerNodeType(HeadingNode);
-  editor.registerNodeType(ListNode);
-  editor.registerNodeType(ListItemNode);
-  editor.registerNodeType(LinkNode);
-  editor.registerNodeType(QuoteNode);
-  editor.registerNodeType(CodeNode);
-  editor.registerNodeType(TestBlockNode);
-  editor.registerNodeType(TestSegmentedNode);
-  editor.registerNodeType(TestExcludeFromCopyBlockNode);
-  editor.registerNodeType(TestDecoratorNode);
+  editor.registerNode(ParagraphNode);
+  editor.registerNode(HeadingNode);
+  editor.registerNode(ListNode);
+  editor.registerNode(ListItemNode);
+  editor.registerNode(LinkNode);
+  editor.registerNode(QuoteNode);
+  editor.registerNode(CodeNode);
+  editor.registerNode(TestBlockNode);
+  editor.registerNode(TestSegmentedNode);
+  editor.registerNode(TestExcludeFromCopyBlockNode);
+  editor.registerNode(TestDecoratorNode);
   return editor;
 }
 

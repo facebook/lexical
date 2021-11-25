@@ -44,7 +44,7 @@ export function useCharacterLimit(
   } = optional;
 
   useEffect(() => {
-    editor.registerNodeType(OverflowNode);
+    editor.registerNode(OverflowNode);
   }, [editor]);
 
   useEffect(() => {

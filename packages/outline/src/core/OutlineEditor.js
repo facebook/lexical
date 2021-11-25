@@ -276,7 +276,7 @@ class BaseOutlineEditor {
   isComposing(): boolean {
     return this._compositionKey != null;
   }
-  registerNodeType(klass: Class<OutlineNode>): void {
+  registerNode(klass: Class<OutlineNode>): void {
     const type = klass.getType();
     if (__DEV__) {
       const editorKlass = this._typeToKlass.get(type);
@@ -463,7 +463,7 @@ declare export class OutlineEditor {
   _key: string;
 
   isComposing(): boolean;
-  registerNodeType(klass: Class<OutlineNode>): void;
+  registerNode(klass: Class<OutlineNode>): void;
   addListener(type: 'error', listener: ErrorListener): () => void;
   addListener(type: 'update', listener: UpdateListener): () => void;
   addListener(type: 'root', listener: RootListener): () => void;

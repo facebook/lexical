@@ -37,7 +37,6 @@ import {
   updateEditor,
 } from './OutlineUpdates';
 import {flushRootMutations} from './OutlineMutations';
-import invariant from 'shared/invariant';
 
 export const emptyFunction = () => {};
 
@@ -163,22 +162,6 @@ export function generateKey(node: OutlineNode): NodeKey {
   editor._cloneNotNeeded.add(key);
   editor._dirtyType = HAS_DIRTY_NODES;
   return key;
-}
-
-export function inferTypeFromNode(node: OutlineNode): string {
-  const constructor = node.constructor;
-  // RootNode is created during the editor creation
-  if (constructor === RootNode) {
-    return 'root';
-  }
-  const type = getActiveEditor()._klassToType.get(node.constructor);
-  if (type === undefined) {
-    invariant(
-      false,
-      'Attempted to create a node that was not previously registered on the editor. You can use editor.registerNodeType to register your custom nodes.',
-    );
-  }
-  return type;
 }
 
 export function markParentBlocksAsDirty(

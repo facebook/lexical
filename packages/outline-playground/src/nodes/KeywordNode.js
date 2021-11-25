@@ -12,6 +12,10 @@ import type {EditorConfig, OutlineNode} from 'outline';
 import {TextNode} from 'outline';
 
 export class KeywordNode extends TextNode {
+  static getType(): string {
+    return 'keyword';
+  }
+
   static clone(node: KeywordNode): KeywordNode {
     return new KeywordNode(node.__text, node.__key);
   }

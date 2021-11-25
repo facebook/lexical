@@ -30,20 +30,17 @@ type TestEnv = {
 
 export function createTestEditor(config): OutlineEditor {
   const editor = createEditor(config);
-  editor.registerNodeType('paragraph', ParagraphNode);
-  editor.registerNodeType('heading', HeadingNode);
-  editor.registerNodeType('list', ListNode);
-  editor.registerNodeType('listitem', ListItemNode);
-  editor.registerNodeType('link', LinkNode);
-  editor.registerNodeType('quote', QuoteNode);
-  editor.registerNodeType('code', CodeNode);
-  editor.registerNodeType('test_block', TestBlockNode);
-  editor.registerNodeType('test_segmented', TestSegmentedNode);
-  editor.registerNodeType(
-    'test_exclude_from_copy_block',
-    TestExcludeFromCopyBlockNode,
-  );
-  editor.registerNodeType('test_decorator', TestDecoratorNode);
+  editor.registerNode(ParagraphNode);
+  editor.registerNode(HeadingNode);
+  editor.registerNode(ListNode);
+  editor.registerNode(ListItemNode);
+  editor.registerNode(LinkNode);
+  editor.registerNode(QuoteNode);
+  editor.registerNode(CodeNode);
+  editor.registerNode(TestBlockNode);
+  editor.registerNode(TestSegmentedNode);
+  editor.registerNode(TestExcludeFromCopyBlockNode);
+  editor.registerNode(TestDecoratorNode);
   return editor;
 }
 
@@ -101,6 +98,9 @@ export function initializeUnitTest(runTests: (testEnv: TestEnv) => void) {
 }
 
 export class TestBlockNode extends BlockNode {
+  static getType(): string {
+    return 'test_block';
+  }
   static clone(node: BlockNode) {
     return new TestBlockNode(node.__key);
   }
@@ -117,6 +117,9 @@ export function createTestBlockNode(): TestBlockNode {
 }
 
 export class TestSegmentedNode extends TextNode {
+  static getType(): string {
+    return 'test_segmented';
+  }
   static clone(node: $FlowFixMe): TestSegmentedNode {
     return new TestSegmentedNode(node.__text, node.__key);
   }
@@ -127,6 +130,9 @@ export function createTestSegmentedNode(text): TestSegmentedNode {
 }
 
 export class TestExcludeFromCopyBlockNode extends BlockNode {
+  static getType(): string {
+    return 'test_exclude_from_copy_block';
+  }
   static clone(node: TestExcludeFromCopyBlockNode) {
     return new TestExcludeFromCopyBlockNode(node.__key);
   }
@@ -146,6 +152,9 @@ export function createTestExcludeFromCopyBlockNode(): TestExcludeFromCopyBlockNo
 }
 
 export class TestDecoratorNode extends DecoratorNode {
+  static getType(): string {
+    return 'test_decorator';
+  }
   static clone(node: TestNode) {
     return new TestNode(node.__key);
   }

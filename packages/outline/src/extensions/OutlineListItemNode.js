@@ -23,6 +23,10 @@ import invariant from 'shared/invariant';
 import {getTopListNode, isLastItemInList} from 'outline/nodes';
 
 export class ListItemNode extends BlockNode {
+  static getType(): string {
+    return 'listitem';
+  }
+
   static clone(node: ListItemNode): ListItemNode {
     return new ListItemNode(node.__key);
   }

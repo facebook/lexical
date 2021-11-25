@@ -14,6 +14,10 @@ import {TextNode} from 'outline';
 export class EmojiNode extends TextNode {
   __className: string;
 
+  static getType(): string {
+    return 'emoji';
+  }
+
   static clone(node: EmojiNode): EmojiNode {
     return new EmojiNode(node.__className, node.__text, node.__key);
   }

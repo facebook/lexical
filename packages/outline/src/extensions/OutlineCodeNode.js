@@ -14,6 +14,10 @@ import {BlockNode} from 'outline';
 import {createParagraphNode} from 'outline/ParagraphNode';
 
 export class CodeNode extends BlockNode {
+  static getType(): string {
+    return 'code';
+  }
+
   static clone(node: CodeNode): CodeNode {
     return new CodeNode(node.__key);
   }

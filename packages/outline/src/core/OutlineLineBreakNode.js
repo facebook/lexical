@@ -12,6 +12,10 @@ import type {NodeKey} from './OutlineNode';
 import {OutlineNode} from './OutlineNode';
 
 export class LineBreakNode extends OutlineNode {
+  static getType(): string {
+    return 'linebreak';
+  }
+
   static clone(node: LineBreakNode): LineBreakNode {
     return new LineBreakNode(node.__key);
   }

@@ -37,7 +37,7 @@ export default function ActionsPlugins({
   const [indent, outdent] = useOutlineNestedList(editor);
 
   useEffect(() => {
-    editor.registerNodeType('image', ImageNode);
+    editor.registerNode(ImageNode);
     return addListener('readonly', (value: boolean) => {
       setIsReadyOnly(value);
     });

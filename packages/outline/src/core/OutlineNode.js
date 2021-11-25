@@ -27,7 +27,6 @@ import {
   getCompositionKey,
   getNodeByKey,
   getTextDirection,
-  inferTypeFromNode,
   internallyMarkNodeAsDirty,
   markParentBlocksAsDirty,
   setCompositionKey,
@@ -140,21 +139,28 @@ export class OutlineNode {
   __key: NodeKey;
   __parent: null | NodeKey;
 
-  static clone(data: $FlowFixMe): OutlineNode {
-    // Flow doesn't support abstract classes unfortunately, so we can't _force_
-    // subclasses of Node to implement clone. All subclasses of Node should have
-    // a static clone method though. We define clone here so we can call it on any
-    // Node, and we throw this error by default since the subclass should provide
-    // their own implementation.
+  // Flow doesn't support abstract classes unfortunately, so we can't _force_
+  // subclasses of Node to implement statics. All subclasses of Node should have
+  // a static getType and clone method though. We define getType and clone here so we can call it
+  // on any  Node, and we throw this error by default since the subclass should provide
+  // their own implementation.
+  static getType(): string {
     invariant(
       false,
-      'OutlineNode: Node type %s does not implement .clone().',
-      this.constructor.name,
+      'OutlineNode: Node %s does not implement .getType().',
+      this.name,
+    );
+  }
+  static clone(data: $FlowFixMe): OutlineNode {
+    invariant(
+      false,
+      'OutlineNode: Node %s does not implement .clone().',
+      this.name,
     );
   }
 
   constructor(key?: NodeKey) {
-    this.__type = inferTypeFromNode(this);
+    this.__type = this.constructor.getType();
     this.__flags = 0;
     this.__key = key || generateKey(this);
     this.__parent = null;
@@ -162,10 +168,19 @@ export class OutlineNode {
     // Ensure custom nodes implement required methods.
     if (__DEV__) {
       const proto = Object.getPrototypeOf(this);
+      if (!proto.constructor.hasOwnProperty('getType')) {
+        console.warn(
+          `${this.constructor.name} must implement static "getType" method`,
+        );
+      }
       if (!proto.constructor.hasOwnProperty('clone')) {
         console.warn(
           `${this.constructor.name} must implement static "clone" method`,
         );
+      }
+      if (this.__type !== 'root') {
+        errorOnReadOnly();
+        errorOnTypeKlassMismatch(this.__type, this.constructor);
       }
     }
   }
@@ -776,4 +791,28 @@ function getNodeByKeyOrThrow<N: OutlineNode>(key: NodeKey): N {
     );
   }
   return node;
+}
+
+function errorOnTypeKlassMismatch(
+  type: string,
+  klass: Class<OutlineNode>,
+): void {
+  const editorKlass = getActiveEditor()._typeToKlass.get(type);
+  // Common error - split in its own invariant
+  if (editorKlass === undefined) {
+    invariant(
+      false,
+      'Create node: Attempted to create node %s that was not previously registered on the editor. You can use editor.registerNode to register your custom nodes.',
+      klass.name,
+    );
+  }
+  if (editorKlass !== klass) {
+    invariant(
+      false,
+      'Create node: Type %s in node %s does not match registered node %s with the same type',
+      type,
+      klass.name,
+      editorKlass.name,
+    );
+  }
 }

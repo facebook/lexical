@@ -12,6 +12,10 @@ import type {OutlineNode, NodeKey, EditorConfig} from 'outline';
 import {isBlockNode, isTextNode, BlockNode} from 'outline';
 
 export class ParagraphNode extends BlockNode {
+  static getType(): string {
+    return 'paragraph';
+  }
+
   static clone(node: ParagraphNode): ParagraphNode {
     return new ParagraphNode(node.__key);
   }

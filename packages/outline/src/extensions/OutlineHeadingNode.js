@@ -18,6 +18,10 @@ type HeadingTagType = 'h1' | 'h2' | 'h3' | 'h4' | 'h5';
 export class HeadingNode extends BlockNode {
   __tag: HeadingTagType;
 
+  static getType(): string {
+    return 'heading';
+  }
+
   static clone(node: HeadingNode): HeadingNode {
     return new HeadingNode(node.__tag, node.__key);
   }

@@ -34,7 +34,9 @@ import {
 import invariant from 'shared/invariant';
 
 export type EditorThemeClassName = string;
-export type NodeTypes = Map<string, Class<OutlineNode>>;
+
+export type TypeToKlass = Map<string, Class<OutlineNode>>;
+export type KlassToType = Map<Class<OutlineNode>, string>;
 
 export type TextNodeThemeClasses = {
   base?: EditorThemeClassName,
@@ -207,7 +209,8 @@ class BaseOutlineEditor {
   _updating: boolean;
   _listeners: Listeners;
   _transforms: Transforms;
-  _nodeTypes: NodeTypes;
+  _typeToKlass: TypeToKlass;
+  _klassToType: KlassToType;
   _decorators: {[NodeKey]: ReactNode};
   _pendingDecorators: null | {[NodeKey]: ReactNode};
   _textContent: string;
@@ -253,10 +256,15 @@ class BaseOutlineEditor {
     // Editor configuration for theme/context.
     this._config = config;
     // Mapping of types to their nodes
-    this._nodeTypes = new Map([
+    this._typeToKlass = new Map([
       ['text', TextNode],
       ['linebreak', LineBreakNode],
       ['root', RootNode],
+    ]);
+    this._klassToType = new Map([
+      [TextNode, 'text'],
+      [LineBreakNode, 'linebreak'],
+      [RootNode, 'root'],
     ]);
     // React node decorators for portals
     this._decorators = {};
@@ -277,7 +285,8 @@ class BaseOutlineEditor {
     return this._compositionKey != null;
   }
   registerNodeType(nodeType: string, klass: Class<OutlineNode>): void {
-    this._nodeTypes.set(nodeType, klass);
+    this._typeToKlass.set(nodeType, klass);
+    this._klassToType.set(klass, nodeType);
   }
   addListener(
     type: ListenerType,
@@ -437,7 +446,8 @@ declare export class OutlineEditor {
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _listeners: Listeners;
   _transforms: Transforms;
-  _nodeTypes: Map<string, Class<OutlineNode>>;
+  _typeToKlass: TypeToKlass;
+  _klassToType: KlassToType;
   _decorators: {[NodeKey]: ReactNode};
   _pendingDecorators: null | {[NodeKey]: ReactNode};
   _config: EditorConfig<{...}>;

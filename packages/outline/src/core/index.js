@@ -12,7 +12,7 @@ export type {
   EditorConfig,
   EditorThemeClasses,
   TextMutation,
-  NodeTypes,
+  TypeToKlass,
   IntentionallyMarkedAsDirtyBlock,
 } from './OutlineEditor';
 export type {EditorState, ParsedEditorState} from './OutlineEditorState';

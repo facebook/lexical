@@ -79,7 +79,7 @@ export function internalCreateNodeFromParse(
   state: NodeParserState = {},
 ): OutlineNode {
   const nodeType = parsedNode.__type;
-  const NodeType = editor._nodeTypes.get(nodeType);
+  const NodeType = editor._typeToKlass.get(nodeType);
   if (NodeType === undefined) {
     invariant(false, 'createNodeFromParse: type "%s" + not found', nodeType);
   }

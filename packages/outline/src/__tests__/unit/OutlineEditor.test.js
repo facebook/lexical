@@ -1128,9 +1128,6 @@ describe('OutlineEditor tests', () => {
     for (let i = 0; i < pairs.length; i++) {
       const currentPair = pairs[i];
       expect(editor._typeToKlass.get(currentPair[0])).toBe(currentPair[1]);
-      expect(
-        editor._typeToKlass.get(editor._klassToType.get(currentPair[1])),
-      ).toBe(currentPair[1]);
     }
     class CustomTextNode extends TextNode {
       static getType(): string {
@@ -1142,10 +1139,27 @@ describe('OutlineEditor tests', () => {
     }
 
     expect(editor._typeToKlass.get('custom_text_node')).toBe(undefined);
-    expect(editor._klassToType.get(CustomTextNode)).toBe(undefined);
 
     editor.registerNodeType(CustomTextNode);
     expect(editor._typeToKlass.get('custom_text_node')).toBe(CustomTextNode);
-    expect(editor._klassToType.get(CustomTextNode)).toBe('custom_text_node');
+  });
+
+  it('Override existing node type', () => {
+    init();
+
+    class BadTextNode extends TextNode {
+      static getType(): string {
+        return 'text';
+      }
+      static clone(key): CustomTextNode {
+        return new CustomTextNode(key);
+      }
+    }
+
+    expect(() => editor.registerNodeType(BadTextNode)).toThrow();
+
+    editor.update(() => {
+      expect(() => new BadTextNode()).toThrow();
+    });
   });
 });

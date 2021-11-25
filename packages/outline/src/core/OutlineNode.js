@@ -798,7 +798,6 @@ function errorOnTypeKlassMismatch(
   klass: Class<OutlineNode>,
 ): void {
   const editorKlass = getActiveEditor()._typeToKlass.get(type);
-  // const editorType = getActiveEditor()._klassToType.get(klass);
   // Common error - split in its own invariant
   if (editorKlass === undefined) {
     invariant(
@@ -810,7 +809,7 @@ function errorOnTypeKlassMismatch(
   if (editorKlass !== klass) {
     invariant(
       false,
-      'Create node: Type %s in node %s was already registered by another node %s',
+      'Create node: Type %s in node %s does not match registered node %s with the same type',
       type,
       klass.name,
       editorKlass.name,

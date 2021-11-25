@@ -34,9 +34,7 @@ import {
 import invariant from 'shared/invariant';
 
 export type EditorThemeClassName = string;
-
 export type TypeToKlass = Map<string, Class<OutlineNode>>;
-export type KlassToType = Map<Class<OutlineNode>, string>;
 
 export type TextNodeThemeClasses = {
   base?: EditorThemeClassName,
@@ -210,7 +208,6 @@ class BaseOutlineEditor {
   _listeners: Listeners;
   _transforms: Transforms;
   _typeToKlass: TypeToKlass;
-  _klassToType: KlassToType;
   _decorators: {[NodeKey]: ReactNode};
   _pendingDecorators: null | {[NodeKey]: ReactNode};
   _textContent: string;
@@ -261,11 +258,6 @@ class BaseOutlineEditor {
       ['linebreak', LineBreakNode],
       ['root', RootNode],
     ]);
-    this._klassToType = new Map([
-      [TextNode, 'text'],
-      [LineBreakNode, 'linebreak'],
-      [RootNode, 'root'],
-    ]);
     // React node decorators for portals
     this._decorators = {};
     this._pendingDecorators = null;
@@ -288,7 +280,6 @@ class BaseOutlineEditor {
     const type = klass.getType();
     if (__DEV__) {
       const editorKlass = this._typeToKlass.get(type);
-      const editorType = this._klassToType.get(klass);
       if (editorKlass !== undefined && editorKlass !== klass) {
         invariant(
           false,
@@ -298,18 +289,8 @@ class BaseOutlineEditor {
           editorKlass.name,
         );
       }
-      if (editorType !== undefined && editorType !== type) {
-        invariant(
-          false,
-          'Register node type: Node %s of type %s was already registered to a different type, %s. Make sure editor.getType() returns a static value',
-          klass,
-          type,
-          editorType,
-        );
-      }
     }
     this._typeToKlass.set(type, klass);
-    this._klassToType.set(klass, type);
   }
   addListener(
     type: ListenerType,
@@ -470,7 +451,6 @@ declare export class OutlineEditor {
   _listeners: Listeners;
   _transforms: Transforms;
   _typeToKlass: TypeToKlass;
-  _klassToType: KlassToType;
   _decorators: {[NodeKey]: ReactNode};
   _pendingDecorators: null | {[NodeKey]: ReactNode};
   _config: EditorConfig<{...}>;

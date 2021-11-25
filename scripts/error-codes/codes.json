@@ -43,5 +43,6 @@
   "41": "updateDOM: base method not extended",
   "42": "setFlags: can only be used on non-immutable nodes",
   "43": "Expected node with key %s to exist but it's not in the nodeMap.",
-  "44": "Some transforms are endlessly triggering additional transforms. May have encountered a recursivity issue where two transforms have their preconditions too lose and collide with each other."
+  "44": "Some transforms are endlessly triggering additional transforms. May have encountered a recursivity issue where two transforms have their preconditions too lose and collide with each other.",
+  "45": "Attempted to create a node that was not previously registered on the editor. You can use editor.registerNodeType to register your custom nodes."
 }

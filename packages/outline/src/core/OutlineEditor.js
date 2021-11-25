@@ -34,7 +34,6 @@ import {
 import invariant from 'shared/invariant';
 
 export type EditorThemeClassName = string;
-export type TypeToKlass = Map<string, Class<OutlineNode>>;
 
 export type TextNodeThemeClasses = {
   base?: EditorThemeClassName,
@@ -80,6 +79,14 @@ export type EditorConfig<EditorContext> = {
   context: EditorContext,
 };
 
+type Nodes = Map<
+  string,
+  $ReadOnly<{
+    klass: Class<OutlineNode>,
+    transforms: Set<Transform<OutlineNode>>,
+  }>,
+>;
+
 export type ErrorListener = (error: Error, log: Array<string>) => void;
 export type UpdateListener = ({
   prevEditorState: EditorState,
@@ -96,6 +103,7 @@ export type RootListener = (
 export type TextMutationListener = (mutation: TextMutation) => void;
 export type TextContentListener = (text: string) => void;
 
+export type Transform<T> = (node: T, state: State) => void;
 export type TextTransform = (node: TextNode, state: State) => void;
 export type DecoratorTransform = (node: DecoratorNode, state: State) => void;
 export type BlockTransform = (node: BlockNode, state: State) => void;
@@ -207,7 +215,7 @@ class BaseOutlineEditor {
   _updating: boolean;
   _listeners: Listeners;
   _transforms: Transforms;
-  _typeToKlass: TypeToKlass;
+  _nodes: Nodes;
   _decorators: {[NodeKey]: ReactNode};
   _pendingDecorators: null | {[NodeKey]: ReactNode};
   _textContent: string;
@@ -253,10 +261,10 @@ class BaseOutlineEditor {
     // Editor configuration for theme/context.
     this._config = config;
     // Mapping of types to their nodes
-    this._typeToKlass = new Map([
-      ['text', TextNode],
-      ['linebreak', LineBreakNode],
-      ['root', RootNode],
+    this._nodes = new Map([
+      ['text', {klass: TextNode, transforms: new Set()}],
+      ['linebreak', {klass: LineBreakNode, transforms: new Set()}],
+      ['root', {klass: RootNode, transforms: new Set()}],
     ]);
     // React node decorators for portals
     this._decorators = {};
@@ -279,18 +287,24 @@ class BaseOutlineEditor {
   registerNode(klass: Class<OutlineNode>): void {
     const type = klass.getType();
     if (__DEV__) {
-      const editorKlass = this._typeToKlass.get(type);
-      if (editorKlass !== undefined && editorKlass !== klass) {
-        invariant(
-          false,
-          'Register node type: Type %s in node %s was already registered by another node %s',
-          type,
-          klass.name,
-          editorKlass.name,
-        );
+      const editorNode = this._nodes.get(type);
+      if (editorNode !== undefined) {
+        const editorKlass = editorNode.klass;
+        if (editorKlass !== klass) {
+          invariant(
+            false,
+            'Register node type: Type %s in node %s was already registered by another node %s',
+            type,
+            klass.name,
+            editorKlass.name,
+          );
+        }
       }
     }
-    this._typeToKlass.set(type, klass);
+    this._nodes.set(type, {
+      klass,
+      transforms: new Set(),
+    });
   }
   addListener(
     type: ListenerType,
@@ -450,7 +464,7 @@ declare export class OutlineEditor {
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _listeners: Listeners;
   _transforms: Transforms;
-  _typeToKlass: TypeToKlass;
+  _nodes: Nodes;
   _decorators: {[NodeKey]: ReactNode};
   _pendingDecorators: null | {[NodeKey]: ReactNode};
   _config: EditorConfig<{...}>;

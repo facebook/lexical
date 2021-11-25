@@ -1127,7 +1127,7 @@ describe('OutlineEditor tests', () => {
     ];
     for (let i = 0; i < pairs.length; i++) {
       const currentPair = pairs[i];
-      expect(editor._nodes.get(currentPair[0]).klass).toBe(currentPair[1]);
+      expect(editor._nodesInfo.get(currentPair[0]).klass).toBe(currentPair[1]);
     }
     class CustomTextNode extends TextNode {
       static getType(): string {
@@ -1138,10 +1138,12 @@ describe('OutlineEditor tests', () => {
       }
     }
 
-    expect(editor._nodes.get('custom_text_node')).toBe(undefined);
+    expect(editor._nodesInfo.get('custom_text_node')).toBe(undefined);
 
     editor.registerNode(CustomTextNode);
-    expect(editor._nodes.get('custom_text_node').klass).toBe(CustomTextNode);
+    expect(editor._nodesInfo.get('custom_text_node').klass).toBe(
+      CustomTextNode,
+    );
   });
 
   it('Override existing node type', () => {

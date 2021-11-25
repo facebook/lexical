@@ -797,16 +797,16 @@ function errorOnTypeKlassMismatch(
   type: string,
   klass: Class<OutlineNode>,
 ): void {
-  const editorNode = getActiveEditor()._nodes.get(type);
+  const nodeInfo = getActiveEditor()._nodesInfo.get(type);
   // Common error - split in its own invariant
-  if (editorNode === undefined) {
+  if (nodeInfo === undefined) {
     invariant(
       false,
       'Create node: Attempted to create node %s that was not previously registered on the editor. You can use editor.registerNode to register your custom nodes.',
       klass.name,
     );
   }
-  const editorKlass = editorNode.klass;
+  const editorKlass = nodeInfo.klass;
   if (editorKlass !== klass) {
     invariant(
       false,

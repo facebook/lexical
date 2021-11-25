@@ -215,7 +215,7 @@ class BaseOutlineEditor {
   _updating: boolean;
   _listeners: Listeners;
   _transforms: Transforms;
-  _nodes: Nodes;
+  _nodesInfo: Nodes;
   _decorators: {[NodeKey]: ReactNode};
   _pendingDecorators: null | {[NodeKey]: ReactNode};
   _textContent: string;
@@ -261,7 +261,7 @@ class BaseOutlineEditor {
     // Editor configuration for theme/context.
     this._config = config;
     // Mapping of types to their nodes
-    this._nodes = new Map([
+    this._nodesInfo = new Map([
       ['text', {klass: TextNode, transforms: new Set()}],
       ['linebreak', {klass: LineBreakNode, transforms: new Set()}],
       ['root', {klass: RootNode, transforms: new Set()}],
@@ -287,7 +287,7 @@ class BaseOutlineEditor {
   registerNode(klass: Class<OutlineNode>): void {
     const type = klass.getType();
     if (__DEV__) {
-      const editorNode = this._nodes.get(type);
+      const editorNode = this._nodesInfo.get(type);
       if (editorNode !== undefined) {
         const editorKlass = editorNode.klass;
         if (editorKlass !== klass) {
@@ -301,7 +301,7 @@ class BaseOutlineEditor {
         }
       }
     }
-    this._nodes.set(type, {
+    this._nodesInfo.set(type, {
       klass,
       transforms: new Set(),
     });
@@ -464,7 +464,7 @@ declare export class OutlineEditor {
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _listeners: Listeners;
   _transforms: Transforms;
-  _nodes: Nodes;
+  _nodesInfo: Nodes;
   _decorators: {[NodeKey]: ReactNode};
   _pendingDecorators: null | {[NodeKey]: ReactNode};
   _config: EditorConfig<{...}>;

@@ -58,12 +58,12 @@ function createOutlineNodeFromYjsNode(
 ): NodeKey {
   const attributes = yjsNode.getAttributes();
   const nodeType = attributes.__type;
-  const nodes = binding.editor._nodes;
-  const nodeData = nodes.get(nodeType);
-  if (nodeData === undefined) {
+  const nodes = binding.editor._nodesInfo;
+  const nodeInfo = nodes.get(nodeType);
+  if (nodeInfo === undefined) {
     throw new Error('createOutlineNodeFromYjsNode failed');
   }
-  const NodeKlass = nodeData.klass;
+  const NodeKlass = nodeInfo.klass;
   if (yjsNode instanceof XmlText) {
     attributes.__text = yjsNode.toJSON();
   } else if ('__ref' in attributes) {

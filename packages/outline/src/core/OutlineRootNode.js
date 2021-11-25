@@ -18,6 +18,10 @@ import invariant from 'shared/invariant';
 export class RootNode extends BlockNode {
   __cachedText: null | string;
 
+  static getType(): string {
+    return 'root';
+  }
+
   static clone(): RootNode {
     return new RootNode();
   }

@@ -280,7 +280,7 @@ function textNodeTransform(node: TextNode, state: State): void {
 
 function useHashtags(editor: OutlineEditor): void {
   useEffect(() => {
-    editor.registerNodeType('hashtag', HashtagNode);
+    editor.registerNode(HashtagNode);
     return editor.addTransform('text', textNodeTransform);
   }, [editor]);
 }

@@ -188,6 +188,10 @@ export class TextNode extends OutlineNode {
   __format: number;
   __style: string;
 
+  static getType(): string {
+    return 'text';
+  }
+
   static clone(node: $FlowFixMe): TextNode {
     return new TextNode(node.__text, node.__key);
   }

@@ -19,6 +19,9 @@ import {
 import {initializeUnitTest, TestBlockNode} from '../utils';
 
 class TestNode extends OutlineNode {
+  static getType(): string {
+    return 'test';
+  }
   static clone(node: TestNode) {
     return new TestNode(node.__key);
   }
@@ -34,10 +37,15 @@ describe('OutlineNode tests', () => {
 
     beforeEach(async () => {
       const {editor} = testEnv;
+
       // This is a hack to bypass the node type validation on OutlineNode. We never want to create
       // an OutlineNode directly but we're testing the base functionality in this module.
-      editor.registerNodeType('node', OutlineNode);
-      editor.registerNodeType('test', TestNode);
+      OutlineNode.getType = function () {
+        return 'node';
+      };
+      editor.registerNode(OutlineNode);
+      editor.registerNode(TestNode);
+
       await editor.update(() => {
         const rootNode = getRoot();
         paragraphNode = new ParagraphNode();
@@ -45,6 +53,10 @@ describe('OutlineNode tests', () => {
         paragraphNode.append(textNode);
         rootNode.append(paragraphNode);
       });
+    });
+
+    afterEach(() => {
+      OutlineNode.getType = undefined;
     });
 
     test('OutlineNode.constructor', async () => {
@@ -58,7 +70,7 @@ describe('OutlineNode tests', () => {
       });
       await editor.getEditorState().read(() => {
         expect(() => new OutlineNode()).toThrow();
-        // expect(() => new OutlineNode('__custom_key__')).toThrow();
+        expect(() => new OutlineNode('__custom_key__')).toThrow();
       });
     });
 

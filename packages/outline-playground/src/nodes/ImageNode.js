@@ -402,6 +402,9 @@ export class ImageNode extends DecoratorNode {
   __ref: EditorStateRef;
   __caption: boolean;
 
+  static getType(): string {
+    return 'image';
+  }
   static clone(node: ImageNode): ImageNode {
     return new ImageNode(
       node.__src,

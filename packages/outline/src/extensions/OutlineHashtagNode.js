@@ -12,6 +12,10 @@ import type {NodeKey, OutlineNode, EditorConfig} from 'outline';
 import {TextNode, isTextNode, createTextNode} from 'outline';
 
 export class HashtagNode extends TextNode {
+  static getType(): string {
+    return 'hashtag';
+  }
+
   static clone(node: HashtagNode): HashtagNode {
     return new HashtagNode(node.__text, node.__key);
   }

@@ -44,7 +44,7 @@ export function useCharacterLimit(
   } = optional;
 
   useEffect(() => {
-    editor.registerNodeType('overflow', OverflowNode);
+    editor.registerNode(OverflowNode);
   }, [editor]);
 
   useEffect(() => {
@@ -199,6 +199,10 @@ function wrapOverflowedNodes(offset: number) {
 }
 
 export class OverflowNode extends BlockNode {
+  static getType(): string {
+    return 'overflow';
+  }
+
   static clone(node: OverflowNode): OverflowNode {
     return new OverflowNode(node.__key);
   }

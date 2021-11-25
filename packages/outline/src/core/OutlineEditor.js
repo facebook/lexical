@@ -34,9 +34,7 @@ import {
 import invariant from 'shared/invariant';
 
 export type EditorThemeClassName = string;
-
 export type TypeToKlass = Map<string, Class<OutlineNode>>;
-export type KlassToType = Map<Class<OutlineNode>, string>;
 
 export type TextNodeThemeClasses = {
   base?: EditorThemeClassName,
@@ -210,7 +208,6 @@ class BaseOutlineEditor {
   _listeners: Listeners;
   _transforms: Transforms;
   _typeToKlass: TypeToKlass;
-  _klassToType: KlassToType;
   _decorators: {[NodeKey]: ReactNode};
   _pendingDecorators: null | {[NodeKey]: ReactNode};
   _textContent: string;
@@ -261,11 +258,6 @@ class BaseOutlineEditor {
       ['linebreak', LineBreakNode],
       ['root', RootNode],
     ]);
-    this._klassToType = new Map([
-      [TextNode, 'text'],
-      [LineBreakNode, 'linebreak'],
-      [RootNode, 'root'],
-    ]);
     // React node decorators for portals
     this._decorators = {};
     this._pendingDecorators = null;
@@ -284,9 +276,21 @@ class BaseOutlineEditor {
   isComposing(): boolean {
     return this._compositionKey != null;
   }
-  registerNodeType(nodeType: string, klass: Class<OutlineNode>): void {
-    this._typeToKlass.set(nodeType, klass);
-    this._klassToType.set(klass, nodeType);
+  registerNode(klass: Class<OutlineNode>): void {
+    const type = klass.getType();
+    if (__DEV__) {
+      const editorKlass = this._typeToKlass.get(type);
+      if (editorKlass !== undefined && editorKlass !== klass) {
+        invariant(
+          false,
+          'Register node type: Type %s in node %s was already registered by another node %s',
+          type,
+          klass.name,
+          editorKlass.name,
+        );
+      }
+    }
+    this._typeToKlass.set(type, klass);
   }
   addListener(
     type: ListenerType,
@@ -447,7 +451,6 @@ declare export class OutlineEditor {
   _listeners: Listeners;
   _transforms: Transforms;
   _typeToKlass: TypeToKlass;
-  _klassToType: KlassToType;
   _decorators: {[NodeKey]: ReactNode};
   _pendingDecorators: null | {[NodeKey]: ReactNode};
   _config: EditorConfig<{...}>;
@@ -460,7 +463,7 @@ declare export class OutlineEditor {
   _key: string;
 
   isComposing(): boolean;
-  registerNodeType(nodeType: string, klass: Class<OutlineNode>): void;
+  registerNode(klass: Class<OutlineNode>): void;
   addListener(type: 'error', listener: ErrorListener): () => void;
   addListener(type: 'update', listener: UpdateListener): () => void;
   addListener(type: 'root', listener: RootListener): () => void;

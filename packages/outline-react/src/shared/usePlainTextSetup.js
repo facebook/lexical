@@ -98,7 +98,7 @@ export default function usePlainTextSetup(
   callbackFn?: (callbackFn?: () => void) => void,
 ) => void {
   useLayoutEffect(() => {
-    editor.registerNodeType('paragraph', ParagraphNode);
+    editor.registerNode(ParagraphNode);
     if (init) {
       initEditor(editor);
     }

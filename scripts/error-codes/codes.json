@@ -44,5 +44,17 @@
   "42": "setFlags: can only be used on non-immutable nodes",
   "43": "Expected node with key %s to exist but it's not in the nodeMap.",
   "44": "Some transforms are endlessly triggering additional transforms. May have encountered a recursivity issue where two transforms have their preconditions too lose and collide with each other.",
-  "45": "Attempted to create a node that was not previously registered on the editor. You can use editor.registerNodeType to register your custom nodes."
+  "45": "Attempted to create a node that was not previously registered on the editor. You can use editor.registerNodeType to register your custom nodes.",
+  "46": "OutlineNode: Node type %s does not implement .getType().",
+  "47": "Attempted to create node %s that was not previously registered on the editor. You can use editor.registerNodeType to register your custom nodes.",
+  "48": "Node class %s with type %s was already registered by another Node class %s",
+  "49": "Node class %s with type %s was already registered under a different type %s. Make sure editor.getType() returns a static value",
+  "50": "OutlineNode: Node %s does not implement .getType().",
+  "51": "OutlineNode: Node %s does not implement .clone().",
+  "52": "Register node type: Type %s in node %s was already registered by another node %s",
+  "53": "Register node type: Node %s of type %s was already registered to a different type, %s. Make sure editor.getType() returns a static value",
+  "54": "Create node: Attempted to create node %s that was not previously registered on the editor. You can use editor.registerNodeType to register your custom nodes.",
+  "55": "Create node: Type %s in node %s was already registered by another node %s",
+  "56": "Create node: Type %s in node %s does not match registered node %s with the same type",
+  "57": "Create node: Attempted to create node %s that was not previously registered on the editor. You can use editor.registerNode to register your custom nodes."
 }

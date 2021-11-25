@@ -16,11 +16,17 @@ import {
   createOverflowNode,
   mergePrevious,
   isOverflowNode,
+  OverflowNode,
 } from '../../useOutlineCharacterLimit';
 import type {ParagraphNode} from '../../../../outline/src/extensions/OutlineParagraphNode';
 
 describe('OutlineNodeHelpers tests', () => {
   initializeUnitTest((testEnv) => {
+    beforeEach(() => {
+      const {editor} = testEnv;
+      editor.registerNodeType('overflow', OverflowNode);
+    });
+
     describe('merge', () => {
       async function initializeEditorWithLeftRightOverflowNodes(): [
         NodeKey,

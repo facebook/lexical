@@ -20,7 +20,6 @@ export class CodeNode extends BlockNode {
 
   constructor(key?: NodeKey) {
     super(key);
-    this.__type = 'code';
   }
 
   // View

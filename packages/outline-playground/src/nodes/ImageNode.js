@@ -424,7 +424,6 @@ export class ImageNode extends DecoratorNode {
     key?: NodeKey,
   ) {
     super(ref, key);
-    this.__type = 'image';
     this.__src = src;
     this.__altText = altText;
     this.__width = width || 'inherit';

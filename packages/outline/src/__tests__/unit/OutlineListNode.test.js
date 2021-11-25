@@ -6,7 +6,7 @@
  *
  */
 
-import {ListNode, createListNode, isListNode} from 'outline/ListNode';
+import {createListNode, isListNode} from 'outline/ListNode';
 import {initializeUnitTest} from '../utils';
 
 const editorConfig = Object.freeze({
@@ -23,21 +23,21 @@ describe('OutlineListNode tests', () => {
     test('ListNode.constructor', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const listNode = new ListNode('ul', 1);
+        const listNode = createListNode('ul', 1);
         expect(listNode.getFlags()).toBe(0);
         expect(listNode.getType()).toBe('list');
         expect(listNode.getTag()).toBe('ul');
         expect(listNode.getTextContent()).toBe('');
       });
-      expect(() => new ListNode()).toThrow();
+      expect(() => createListNode()).toThrow();
     });
 
     test('ListNode.getTag()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const ulListNode = new ListNode('ul', 1);
+        const ulListNode = createListNode('ul', 1);
         expect(ulListNode.getTag()).toBe('ul');
-        const olListNode = new ListNode('ol', 1);
+        const olListNode = createListNode('ol', 1);
         expect(olListNode.getTag()).toBe('ol');
       });
     });
@@ -45,7 +45,7 @@ describe('OutlineListNode tests', () => {
     test('ListNode.createDOM()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const listNode = new ListNode('ul', 1);
+        const listNode = createListNode('ul', 1);
         expect(listNode.createDOM(editorConfig).outerHTML).toBe(
           '<ul class="my-ul-list-class"></ul>',
         );
@@ -59,11 +59,15 @@ describe('OutlineListNode tests', () => {
     test('ListNode.updateDOM()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const listNode = new ListNode('ul', 1);
+        const listNode = createListNode('ul', 1);
         const domElement = listNode.createDOM(editorConfig);
         expect(domElement.outerHTML).toBe('<ul class="my-ul-list-class"></ul>');
-        const newListNode = new ListNode();
-        const result = newListNode.updateDOM(listNode, domElement, editorConfig);
+        const newListNode = createListNode();
+        const result = newListNode.updateDOM(
+          listNode,
+          domElement,
+          editorConfig,
+        );
         expect(result).toBe(false);
         expect(domElement.outerHTML).toBe('<ul class="my-ul-list-class"></ul>');
       });
@@ -72,7 +76,7 @@ describe('OutlineListNode tests', () => {
     test('ListNode.canInsertTab()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const listNode = new ListNode();
+        const listNode = createListNode();
         expect(listNode.canInsertTab()).toBe(false);
       });
     });
@@ -80,7 +84,7 @@ describe('OutlineListNode tests', () => {
     test('createListNode()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const listNode = new ListNode('ul', 1);
+        const listNode = createListNode('ul', 1);
         const createdListNode = createListNode('ul');
         expect(listNode.__type).toEqual(createdListNode.__type);
         expect(listNode.__flags).toEqual(createdListNode.__flags);
@@ -93,7 +97,7 @@ describe('OutlineListNode tests', () => {
     test('isListNode()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const listNode = new ListNode();
+        const listNode = createListNode();
         expect(isListNode(listNode)).toBe(true);
       });
     });

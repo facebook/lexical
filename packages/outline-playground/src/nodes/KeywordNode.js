@@ -7,21 +7,15 @@
  * @flow strict
  */
 
-import type {NodeKey, EditorConfig, OutlineNode} from 'outline';
+import type {EditorConfig, OutlineNode} from 'outline';
 
 import {TextNode} from 'outline';
 
 export class KeywordNode extends TextNode {
-  __keyword: string;
-
   static clone(node: KeywordNode): KeywordNode {
     return new KeywordNode(node.__text, node.__key);
   }
 
-  constructor(keyword: string, key?: NodeKey) {
-    super(keyword, key);
-    this.__type = 'keyword';
-  }
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
     const dom = super.createDOM(config);
     dom.style.cursor = 'default';

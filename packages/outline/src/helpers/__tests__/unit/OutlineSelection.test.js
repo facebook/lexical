@@ -7,7 +7,6 @@
  */
 
 import {
-  createEditor,
   createLineBreakNode,
   createTextNode,
   Selection,
@@ -20,7 +19,7 @@ import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
 import useOutlineRichText from 'outline-react/useOutlineRichText';
-import {createTestBlockNode} from '../../../__tests__/utils';
+import {createTestBlockNode, createTestEditor} from '../../../__tests__/utils';
 
 jest.mock('shared/environment', () => {
   const originalModule = jest.requireActual('shared/environment');
@@ -73,7 +72,7 @@ describe('OutlineSelection tests', () => {
   function useOutlineEditor(rootElementRef) {
     const editor = React.useMemo(
       () =>
-        createEditor({
+        createTestEditor({
           theme: {
             placeholder: 'editor-placeholder',
             paragraph: 'editor-paragraph',
@@ -152,15 +151,15 @@ describe('OutlineSelection tests', () => {
   });
 
   function assertSelection(rootElement, expectedSelection) {
-    const acutalSelection = window.getSelection();
-    expect(acutalSelection.anchorNode).toBe(
+    const actualSelection = window.getSelection();
+    expect(actualSelection.anchorNode).toBe(
       getNodeFromPath(expectedSelection.anchorPath, rootElement),
     );
-    expect(acutalSelection.anchorOffset).toBe(expectedSelection.anchorOffset);
-    expect(acutalSelection.focusNode).toBe(
+    expect(actualSelection.anchorOffset).toBe(expectedSelection.anchorOffset);
+    expect(actualSelection.focusNode).toBe(
       getNodeFromPath(expectedSelection.focusPath, rootElement),
     );
-    expect(acutalSelection.focusOffset).toBe(expectedSelection.focusOffset);
+    expect(actualSelection.focusOffset).toBe(expectedSelection.focusOffset);
   }
 
   // eslint-disable-next-line no-unused-vars

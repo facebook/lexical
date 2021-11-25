@@ -195,7 +195,6 @@ export class TextNode extends OutlineNode {
   constructor(text: string, key?: NodeKey) {
     super(key);
     this.__text = text;
-    this.__type = 'text';
     this.__format = 0;
     this.__style = '';
   }

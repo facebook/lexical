@@ -774,7 +774,6 @@ describe('OutlineEditor tests', () => {
         paragraph.append(originalText);
         getRoot().append(paragraph);
       });
-      editor.registerNodeType('paragraph', ParagraphNode);
       const stringifiedEditorState = JSON.stringify(
         editor.getEditorState().toJSON(),
       );
@@ -1134,7 +1133,10 @@ describe('OutlineEditor tests', () => {
       ).toBe(currentPair[1]);
     }
     class CustomTextNode extends TextNode {
-      static clone(key) {
+      static getType(): string {
+        return 'custom_text_node';
+      }
+      static clone(key): CustomTextNode {
         return new CustomTextNode(key);
       }
     }
@@ -1142,7 +1144,7 @@ describe('OutlineEditor tests', () => {
     expect(editor._typeToKlass.get('custom_text_node')).toBe(undefined);
     expect(editor._klassToType.get(CustomTextNode)).toBe(undefined);
 
-    editor.registerNodeType('custom_text_node', CustomTextNode);
+    editor.registerNodeType(CustomTextNode);
     expect(editor._typeToKlass.get('custom_text_node')).toBe(CustomTextNode);
     expect(editor._klassToType.get(CustomTextNode)).toBe('custom_text_node');
   });

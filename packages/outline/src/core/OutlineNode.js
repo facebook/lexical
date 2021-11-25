@@ -807,11 +807,13 @@ function errorOnTypeKlassMismatch(
       klass.name,
     );
   }
-  invariant(
-    editorKlass === klass,
-    'Create node: Type %s in node %s was already registered by another node %s',
-    type,
-    klass.name,
-    editorKlass.name,
-  );
+  if (editorKlass !== klass) {
+    invariant(
+      false,
+      'Create node: Type %s in node %s was already registered by another node %s',
+      type,
+      klass.name,
+      editorKlass.name,
+    );
+  }
 }

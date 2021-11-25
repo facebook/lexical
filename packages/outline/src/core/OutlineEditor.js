@@ -289,18 +289,18 @@ class BaseOutlineEditor {
     if (__DEV__) {
       const editorKlass = this._typeToKlass.get(type);
       const editorType = this._klassToType.get(klass);
-      if (editorKlass !== undefined) {
+      if (editorKlass !== undefined && editorKlass !== klass) {
         invariant(
-          editorKlass === klass,
+          false,
           'Register node type: Type %s in node %s was already registered by another node %s',
           type,
           klass.name,
           editorKlass.name,
         );
       }
-      if (editorType !== undefined) {
+      if (editorType !== undefined && editorType !== type) {
         invariant(
-          editorType === type,
+          false,
           'Register node type: Node %s of type %s was already registered to a different type, %s. Make sure editor.getType() returns a static value',
           klass,
           type,

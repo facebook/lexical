@@ -13,10 +13,8 @@ import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
 import {
-  createEditor,
   createTextNode,
   TextNode,
-  DecoratorNode,
   BlockNode,
   RootNode,
   getRoot,
@@ -32,7 +30,11 @@ import {
 } from 'outline/ParagraphNode';
 import useOutlineRichText from 'outline-react/useOutlineRichText';
 import {getEditorStateTextContent} from '../../core/OutlineUtils';
-import {createTestBlockNode} from '../utils';
+import {
+  createTestBlockNode,
+  createTestDecoratorNode,
+  createTestEditor,
+} from '../utils';
 import {LineBreakNode} from '../../core/OutlineLineBreakNode';
 
 describe('OutlineEditor tests', () => {
@@ -55,7 +57,7 @@ describe('OutlineEditor tests', () => {
   function useOutlineEditor(rootElementRef) {
     const editor = React.useMemo(
       () =>
-        createEditor({
+        createTestEditor({
           theme: {
             text: {
               bold: 'editor-text-bold',
@@ -107,7 +109,7 @@ describe('OutlineEditor tests', () => {
     const rootElement = document.createElement('div');
     container.appendChild(rootElement);
 
-    const initialEditor = createEditor();
+    const initialEditor = createTestEditor();
 
     initialEditor.update(() => {
       const root = getRoot();
@@ -131,7 +133,7 @@ describe('OutlineEditor tests', () => {
     initialEditor.setRootElement(null);
     expect(container.innerHTML).toBe('<div data-outline-editor="true"></div>');
 
-    editor = createEditor({
+    editor = createTestEditor({
       initialEditorState: initialEditorState,
     });
     editor.setRootElement(rootElement);
@@ -439,7 +441,7 @@ describe('OutlineEditor tests', () => {
     const ref = React.createRef();
 
     function TestBase({element}) {
-      editor = React.useMemo(() => createEditor(), []);
+      editor = React.useMemo(() => createTestEditor(), []);
 
       React.useEffect(() => {
         editor.setRootElement(element);
@@ -558,7 +560,7 @@ describe('OutlineEditor tests', () => {
     const updateListener = jest.fn();
 
     function TestBase({changeElement}) {
-      editor = React.useMemo(() => createEditor(), []);
+      editor = React.useMemo(() => createTestEditor(), []);
 
       React.useEffect(() => {
         editor.update(() => {
@@ -641,12 +643,8 @@ describe('OutlineEditor tests', () => {
     it('Should correctly render React component into Outline node #1', async () => {
       const listener = jest.fn();
 
-      function Decorator({text}) {
-        return <span>{text}</span>;
-      }
-
       function Test() {
-        editor = React.useMemo(() => createEditor(), []);
+        editor = React.useMemo(() => createTestEditor(), []);
 
         React.useEffect(() => {
           editor.addListener('root', listener);
@@ -672,23 +670,9 @@ describe('OutlineEditor tests', () => {
 
       // Update the editor with the decorator
       await ReactTestUtils.act(async () => {
-        class TestNode extends DecoratorNode {
-          static clone(node: TestNode) {
-            return new TestNode(node.__key);
-          }
-          getTextContent() {
-            return 'Hello world';
-          }
-          createDOM() {
-            return document.createElement('span');
-          }
-          decorate() {
-            return <Decorator text={'Hello world'} />;
-          }
-        }
         await editor.update(() => {
           const paragraph = createParagraphNode();
-          const test = new TestNode();
+          const test = createTestDecoratorNode();
           paragraph.append(test);
           getRoot().append(paragraph);
         });
@@ -705,7 +689,7 @@ describe('OutlineEditor tests', () => {
       const listener = jest.fn();
 
       function Test({divKey}) {
-        editor = React.useMemo(() => createEditor(), []);
+        editor = React.useMemo(() => createTestEditor(), []);
         useOutlineRichText(editor, false);
 
         React.useEffect(() => {

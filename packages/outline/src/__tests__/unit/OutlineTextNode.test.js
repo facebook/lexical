@@ -20,15 +20,15 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import {createTextNode, TextNode} from 'outline';
+import {createTextNode} from 'outline';
 
-import {createParagraphNode, ParagraphNode} from 'outline/ParagraphNode';
+import {createParagraphNode} from 'outline/ParagraphNode';
 import {
-  createTestEditor,
   getCompositionKey,
   getEditorStateTextContent,
   setCompositionKey,
 } from '../../core/OutlineUtils';
+import {createTestEditor, createTestSegmentedNode} from '../utils';
 
 const editorConfig = Object.freeze({
   theme: {
@@ -42,16 +42,6 @@ const editorConfig = Object.freeze({
     },
   },
 });
-
-class CustomSegmentedNode extends TextNode {
-  static clone(node: $FlowFixMe): CustomSegmentedNode {
-    return new CustomSegmentedNode(node.__text, node.__key);
-  }
-}
-
-function createCustomSegmentedNode(text): CustomSegmentedNode {
-  return new CustomSegmentedNode(text).makeSegmented();
-}
 
 describe('OutlineTextNode tests', () => {
   let container = null;
@@ -73,10 +63,7 @@ describe('OutlineTextNode tests', () => {
   }
 
   function useOutlineEditor(rootElementRef) {
-    // TODO Move to utils file maybe
     const editor = React.useMemo(() => createTestEditor(), []);
-    editor.registerNodeType('paragraph', ParagraphNode);
-    editor.registerNodeType('custom_segmented_node', CustomSegmentedNode);
 
     React.useEffect(() => {
       const rootElement = rootElementRef.current;
@@ -399,7 +386,7 @@ describe('OutlineTextNode tests', () => {
 
     test('convert segmented node into plain text', async () => {
       await update((state) => {
-        const segmentedNode = createCustomSegmentedNode('Hello World');
+        const segmentedNode = createTestSegmentedNode('Hello World');
         const paragraphNode = createParagraphNode();
         paragraphNode.append(segmentedNode);
 

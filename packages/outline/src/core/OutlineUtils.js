@@ -171,7 +171,6 @@ export function inferTypeFromNode(node: OutlineNode): string {
   if (constructor === RootNode) {
     return 'root';
   }
-  errorOnReadOnly();
   const type = getActiveEditor()._klassToType.get(node.constructor);
   if (type === undefined) {
     invariant(

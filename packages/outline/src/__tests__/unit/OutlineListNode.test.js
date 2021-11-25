@@ -11,6 +11,7 @@ import {initializeUnitTest} from '../utils';
 import {isListItemNode, ListItemNode} from 'outline/ListItemNode';
 import {TextNode} from 'outline';
 import {ParagraphNode} from '../../extensions/OutlineParagraphNode';
+import {ListNode} from '../../extensions/OutlineListNode';
 
 const editorConfig = Object.freeze({
   theme: {

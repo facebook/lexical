@@ -6,6 +6,7 @@ import ReactTestUtils from 'react-dom/test-utils';
 
 import useOutlineRichText from 'outline-react/useOutlineRichText';
 import {createTextNode} from 'outline';
+import {LinkNode} from 'outline/LinkNode';
 
 jest.mock('shared/environment', () => {
   const originalModule = jest.requireActual('shared/environment');
@@ -84,6 +85,7 @@ describe('OutlineEventHelpers', () => {
       });
 
       editor.setRootElement(rootElement);
+      editor.registerNode(LinkNode);
     }, [rootElementRef, editor]);
 
     return editor;

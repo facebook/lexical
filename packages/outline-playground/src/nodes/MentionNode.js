@@ -23,7 +23,6 @@ export class MentionNode extends TextNode {
   constructor(mentionName: string, text?: string, key?: NodeKey) {
     super(text ?? mentionName, key);
     this.__mention = mentionName;
-    this.__type = 'mention';
   }
 
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {

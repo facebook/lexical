@@ -21,7 +21,6 @@ export class DecoratorNode extends OutlineNode {
 
   constructor(ref?: null | OutlineRef, key?: NodeKey) {
     super(key);
-    this.__type = 'decorator';
     this.__flags = IS_IMMUTABLE;
     this.__ref = ref || null;
 

@@ -21,7 +21,6 @@ export class EmojiNode extends TextNode {
   constructor(className: string, text: string, key: void | NodeKey) {
     super(text, key);
     this.__className = className;
-    this.__type = 'emoji';
   }
 
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {

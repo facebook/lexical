@@ -30,7 +30,6 @@ export class ListNode extends BlockNode {
   constructor(tag: ListNodeTagType, start: number, key?: NodeKey) {
     super(key);
     this.__tag = tag;
-    this.__type = 'list';
     this.__start = start;
   }
 

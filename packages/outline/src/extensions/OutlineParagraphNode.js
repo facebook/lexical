@@ -18,7 +18,6 @@ export class ParagraphNode extends BlockNode {
 
   constructor(key?: NodeKey) {
     super(key);
-    this.__type = 'paragraph';
   }
 
   // View

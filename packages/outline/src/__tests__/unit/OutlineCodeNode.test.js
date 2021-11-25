@@ -6,7 +6,7 @@
  *
  */
 
-import {createCodeNode, CodeNode} from 'outline/CodeNode';
+import {createCodeNode} from 'outline/CodeNode';
 import {createParagraphNode} from 'outline/ParagraphNode';
 import {createTextNode, getRoot, getSelection} from 'outline';
 import {initializeUnitTest} from '../utils';
@@ -22,18 +22,18 @@ describe('OutlineCodeNode tests', () => {
     test('CodeNode.constructor', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const codeNode = new CodeNode();
+        const codeNode = createCodeNode();
         expect(codeNode.getFlags()).toBe(0);
         expect(codeNode.getType()).toBe('code');
         expect(codeNode.getTextContent()).toBe('');
       });
-      expect(() => new CodeNode()).toThrow();
+      expect(() => createCodeNode()).toThrow();
     });
 
     test('CodeNode.createDOM()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const codeNode = new CodeNode();
+        const codeNode = createCodeNode();
         expect(codeNode.createDOM(editorConfig).outerHTML).toBe(
           '<code class="my-code-class" spellcheck="false"></code>',
         );
@@ -46,8 +46,8 @@ describe('OutlineCodeNode tests', () => {
     test('CodeNode.updateDOM()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const newCodeNode = new CodeNode();
-        const codeNode = new CodeNode();
+        const newCodeNode = createCodeNode();
+        const codeNode = createCodeNode();
         const domElement = codeNode.createDOM({theme: {}});
         expect(domElement.outerHTML).toBe('<code spellcheck="false"></code>');
         const result = newCodeNode.updateDOM(codeNode, domElement);
@@ -79,7 +79,7 @@ describe('OutlineCodeNode tests', () => {
         '<div contenteditable="true" data-outline-editor="true"><p><span>foo</span></p></div>',
       );
       await editor.update(() => {
-        const codeNode = new CodeNode();
+        const codeNode = createCodeNode();
         const selection = getSelection();
         codeNode.insertNewAfter(selection);
       });
@@ -88,7 +88,7 @@ describe('OutlineCodeNode tests', () => {
     test('CodeNode.canInsertTab()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const codeNode = new CodeNode();
+        const codeNode = createCodeNode();
         expect(codeNode.canInsertTab()).toBe(true);
       });
     });
@@ -96,7 +96,7 @@ describe('OutlineCodeNode tests', () => {
     test('createCodeNode()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const codeNode = new CodeNode();
+        const codeNode = createCodeNode();
         const createdCodeNode = createCodeNode();
         expect(codeNode.__type).toEqual(createdCodeNode.__type);
         expect(codeNode.__flags).toEqual(createdCodeNode.__flags);

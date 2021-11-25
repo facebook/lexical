@@ -20,7 +20,6 @@ export class QuoteNode extends BlockNode {
 
   constructor(key?: NodeKey) {
     super(key);
-    this.__type = 'quote';
   }
 
   // View

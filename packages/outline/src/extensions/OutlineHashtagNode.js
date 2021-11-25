@@ -18,7 +18,6 @@ export class HashtagNode extends TextNode {
 
   constructor(text: string, key?: NodeKey) {
     super(text, key);
-    this.__type = 'hashtag';
   }
 
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {

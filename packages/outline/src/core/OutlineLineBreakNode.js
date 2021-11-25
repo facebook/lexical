@@ -18,7 +18,6 @@ export class LineBreakNode extends OutlineNode {
 
   constructor(key?: NodeKey) {
     super(key);
-    this.__type = 'linebreak';
   }
 
   getTextContent(): '\n' {

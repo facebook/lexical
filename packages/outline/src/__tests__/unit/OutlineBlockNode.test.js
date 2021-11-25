@@ -12,8 +12,8 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import {createEditor, createTextNode, getRoot} from 'outline';
-import {createTestBlockNode} from '../utils';
+import {createTextNode, getRoot} from 'outline';
+import {createTestBlockNode, createTestEditor} from '../utils';
 
 describe('OutlineBlockNode tests', () => {
   let container = null;
@@ -35,7 +35,7 @@ describe('OutlineBlockNode tests', () => {
   }
 
   function useOutlineEditor(rootElementRef) {
-    const editor = React.useMemo(() => createEditor(), []);
+    const editor = React.useMemo(() => createTestEditor(), []);
 
     React.useEffect(() => {
       const rootElement = rootElementRef.current;

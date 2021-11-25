@@ -18,6 +18,15 @@ import {
 
 import {initializeUnitTest, TestBlockNode} from '../utils';
 
+class TestNode extends OutlineNode {
+  static clone(node: TestNode) {
+    return new TestNode(node.__key);
+  }
+  createDOM() {
+    return document.createElement('div');
+  }
+}
+
 describe('OutlineNode tests', () => {
   initializeUnitTest((testEnv) => {
     let paragraphNode;
@@ -25,6 +34,10 @@ describe('OutlineNode tests', () => {
 
     beforeEach(async () => {
       const {editor} = testEnv;
+      // This is a hack to bypass the node type validation on OutlineNode. We never want to create
+      // an OutlineNode directly but we're testing the base functionality in this module.
+      editor.registerNodeType('node', OutlineNode);
+      editor.registerNodeType('test', TestNode);
       await editor.update(() => {
         const rootNode = getRoot();
         paragraphNode = new ParagraphNode();
@@ -1077,14 +1090,6 @@ describe('OutlineNode tests', () => {
     test('OutlineNode.selectNext(): non-text node', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        class TestNode extends OutlineNode {
-          static clone(node: TestNode) {
-            return new TestNode(node.__key);
-          }
-          createDOM() {
-            return document.createElement('div');
-          }
-        }
         const barNode = new TestNode();
         textNode.insertAfter(barNode);
         const selection = textNode.selectNext();

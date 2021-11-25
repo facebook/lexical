@@ -27,6 +27,7 @@ import {
   getCompositionKey,
   getNodeByKey,
   getTextDirection,
+  inferTypeFromNode,
   internallyMarkNodeAsDirty,
   markParentBlocksAsDirty,
   setCompositionKey,
@@ -153,7 +154,7 @@ export class OutlineNode {
   }
 
   constructor(key?: NodeKey) {
-    this.__type = 'node';
+    this.__type = inferTypeFromNode(this);
     this.__flags = 0;
     this.__key = key || generateKey(this);
     this.__parent = null;

@@ -16,7 +16,6 @@ import type {TextFormatType} from './OutlineTextNode';
 import type {Node as ReactNode} from 'react';
 import type {EditorState} from './OutlineEditorState';
 import type {Selection} from './OutlineSelection';
-import type {RootNode} from './OutlineRootNode';
 
 import {
   RTL_REGEX,
@@ -24,7 +23,13 @@ import {
   TEXT_TYPE_TO_FORMAT,
   HAS_DIRTY_NODES,
 } from './OutlineConstants';
-import {isTextNode, isBlockNode, isLineBreakNode, isDecoratorNode} from '.';
+import {
+  isTextNode,
+  isBlockNode,
+  isLineBreakNode,
+  isDecoratorNode,
+  RootNode,
+} from '.';
 import {
   errorOnReadOnly,
   getActiveEditor,
@@ -32,6 +37,7 @@ import {
   updateEditor,
 } from './OutlineUpdates';
 import {flushRootMutations} from './OutlineMutations';
+import invariant from 'shared/invariant';
 
 export const emptyFunction = () => {};
 
@@ -157,6 +163,22 @@ export function generateKey(node: OutlineNode): NodeKey {
   editor._cloneNotNeeded.add(key);
   editor._dirtyType = HAS_DIRTY_NODES;
   return key;
+}
+
+export function inferTypeFromNode(node: OutlineNode): string {
+  const constructor = node.constructor;
+  // RootNode is created during the editor creation
+  if (constructor === RootNode) {
+    return 'root';
+  }
+  const type = getActiveEditor()._klassToType.get(node.constructor);
+  if (type === undefined) {
+    invariant(
+      false,
+      'Attempted to create a node that was not previously registered on the editor. You can use editor.registerNodeType to register your custom nodes.',
+    );
+  }
+  return type;
 }
 
 export function markParentBlocksAsDirty(

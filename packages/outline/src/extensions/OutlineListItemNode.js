@@ -29,7 +29,6 @@ export class ListItemNode extends BlockNode {
 
   constructor(key?: NodeKey) {
     super(key);
-    this.__type = 'listitem';
   }
 
   // View

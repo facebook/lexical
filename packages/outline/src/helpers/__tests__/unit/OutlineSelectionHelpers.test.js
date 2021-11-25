@@ -8,13 +8,7 @@
 
 import type {State} from 'outline';
 
-import {
-  createEditor,
-  createTextNode,
-  TextNode,
-  BlockNode,
-  getSelection,
-} from 'outline';
+import {createTextNode, TextNode, getSelection} from 'outline';
 import {createParagraphNode} from 'outline/ParagraphNode';
 import {
   insertText,
@@ -25,27 +19,12 @@ import {
   extractSelection,
   cloneContents,
 } from 'outline/selection';
-import {createTestBlockNode} from '../../../__tests__/utils';
+import {
+  createTestEditor,
+  createTestBlockNode,
+  createTestExcludeFromCopyBlockNode,
+} from '../../../__tests__/utils';
 import {createHeadingNode} from '../../../extensions/OutlineHeadingNode';
-
-export class ExcludeFromCopyBlockNode extends BlockNode {
-  static clone(node: BlockNode) {
-    return new ExcludeFromCopyBlockNode(node.__key);
-  }
-  createDOM() {
-    return document.createElement('div');
-  }
-  updateDOM() {
-    return false;
-  }
-  excludeFromCopy() {
-    return true;
-  }
-}
-
-export function createExcludeFromCopyBlockNode(): ExcludeFromCopyBlockNode {
-  return new ExcludeFromCopyBlockNode();
-}
 
 function createParagraphWithNodes(editor, nodes) {
   const paragraph = createParagraphNode();
@@ -92,7 +71,7 @@ describe('OutlineSelectionHelpers tests', () => {
   describe('Collapsed', () => {
     test('Can handle a text point', () => {
       const setupTestCase = (cb) => {
-        const editor = createEditor({});
+        const editor = createTestEditor();
 
         editor.addListener('error', (error) => {
           throw error;
@@ -228,7 +207,7 @@ describe('OutlineSelectionHelpers tests', () => {
     });
 
     test('Has correct text point after removal after merge', async () => {
-      const editor = createEditor({});
+      const editor = createTestEditor();
 
       editor.addListener('error', (error) => {
         throw error;
@@ -283,7 +262,7 @@ describe('OutlineSelectionHelpers tests', () => {
     });
 
     test('Has correct text point after removal after merge (2)', async () => {
-      const editor = createEditor({});
+      const editor = createTestEditor();
 
       editor.addListener('error', (error) => {
         throw error;
@@ -337,7 +316,7 @@ describe('OutlineSelectionHelpers tests', () => {
     });
 
     test('Has correct text point adjust to block point after removal of a single empty text node', async () => {
-      const editor = createEditor({});
+      const editor = createTestEditor();
 
       editor.addListener('error', (error) => {
         throw error;
@@ -386,7 +365,7 @@ describe('OutlineSelectionHelpers tests', () => {
     });
 
     test('Has correct block point after removal of an empty text node in a group #1', async () => {
-      const editor = createEditor({});
+      const editor = createTestEditor();
 
       editor.addListener('error', (error) => {
         throw error;
@@ -438,7 +417,7 @@ describe('OutlineSelectionHelpers tests', () => {
     });
 
     test('Has correct block point after removal of an empty text node in a group #2', async () => {
-      const editor = createEditor({});
+      const editor = createTestEditor();
 
       editor.addListener('error', (error) => {
         throw error;
@@ -492,7 +471,7 @@ describe('OutlineSelectionHelpers tests', () => {
     });
 
     test('Has correct text point after removal of an empty text node in a group #3', async () => {
-      const editor = createEditor({});
+      const editor = createTestEditor();
 
       editor.addListener('error', (error) => {
         throw error;
@@ -547,7 +526,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
     test('Can handle a block point on empty block', () => {
       const setupTestCase = (cb) => {
-        const editor = createEditor({});
+        const editor = createTestEditor();
 
         editor.addListener('error', (error) => {
           throw error;
@@ -665,7 +644,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
     test('Can handle a start block point', () => {
       const setupTestCase = (cb) => {
-        const editor = createEditor({});
+        const editor = createTestEditor();
 
         editor.addListener('error', (error) => {
           throw error;
@@ -790,7 +769,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
     test('Can handle an end block point', () => {
       const setupTestCase = (cb) => {
-        const editor = createEditor({});
+        const editor = createTestEditor();
 
         editor.addListener('error', (error) => {
           throw error;
@@ -915,7 +894,7 @@ describe('OutlineSelectionHelpers tests', () => {
     });
 
     test('Has correct block point after merge from middle', async () => {
-      const editor = createEditor({});
+      const editor = createTestEditor();
 
       editor.addListener('error', (error) => {
         throw error;
@@ -964,7 +943,7 @@ describe('OutlineSelectionHelpers tests', () => {
     });
 
     test('Has correct block point after merge from end', async () => {
-      const editor = createEditor({});
+      const editor = createTestEditor();
 
       editor.addListener('error', (error) => {
         throw error;
@@ -1016,7 +995,7 @@ describe('OutlineSelectionHelpers tests', () => {
   describe('Simple range', () => {
     test('Can handle multiple text points', () => {
       const setupTestCase = (cb) => {
-        const editor = createEditor({});
+        const editor = createTestEditor();
 
         editor.addListener('error', (error) => {
           throw error;
@@ -1159,7 +1138,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
     test('Can handle multiple block points', () => {
       const setupTestCase = (cb) => {
-        const editor = createEditor({});
+        const editor = createTestEditor();
 
         editor.addListener('error', (error) => {
           throw error;
@@ -1289,7 +1268,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
     test('Can handle a mix of text and block points', () => {
       const setupTestCase = (cb) => {
-        const editor = createEditor({});
+        const editor = createTestEditor();
 
         editor.addListener('error', (error) => {
           throw error;
@@ -1429,7 +1408,7 @@ describe('OutlineSelectionHelpers tests', () => {
   });
 
   test('range with multiple paragraphs', async () => {
-    const editor = createEditor({});
+    const editor = createTestEditor();
     editor.addListener('error', (error) => {
       throw error;
     });
@@ -1488,7 +1467,7 @@ describe('OutlineSelectionHelpers tests', () => {
   });
 
   test('range with excludeFromCopy nodes', async () => {
-    const editor = createEditor({});
+    const editor = createTestEditor();
     editor.addListener('error', (error) => {
       throw error;
     });
@@ -1500,7 +1479,7 @@ describe('OutlineSelectionHelpers tests', () => {
       const paragraph = createParagraphNode();
       root.append(paragraph);
 
-      const excludeBlockNode1 = createExcludeFromCopyBlockNode();
+      const excludeBlockNode1 = createTestExcludeFromCopyBlockNode();
       paragraph.append(excludeBlockNode1);
       paragraph.select(0, 0);
       const selectedNodes1 = cloneContents(getSelection());
@@ -1536,7 +1515,7 @@ describe('OutlineSelectionHelpers tests', () => {
       expect(selectedNodes5.nodeMap[3][0]).toEqual(text2.getKey());
 
       const testBlockNode = createTestBlockNode();
-      const excludeBlockNode2 = createExcludeFromCopyBlockNode();
+      const excludeBlockNode2 = createTestExcludeFromCopyBlockNode();
       const text4 = createTextNode('4');
       text1.insertBefore(testBlockNode);
       testBlockNode.append(excludeBlockNode2);
@@ -1566,7 +1545,7 @@ describe('OutlineSelectionHelpers tests', () => {
   describe('can insert non-block nodes correctly', () => {
     describe('with an empty paragraph node selected', () => {
       test('a single text node', async () => {
-        const editor = createEditor({});
+        const editor = createTestEditor();
         editor.addListener('error', (error) => {
           throw error;
         });
@@ -1599,7 +1578,7 @@ describe('OutlineSelectionHelpers tests', () => {
       });
 
       test('two text nodes', async () => {
-        const editor = createEditor({});
+        const editor = createTestEditor();
         editor.addListener('error', (error) => {
           throw error;
         });
@@ -1635,7 +1614,7 @@ describe('OutlineSelectionHelpers tests', () => {
       });
 
       test('a single heading node with a child text node', async () => {
-        const editor = createEditor({});
+        const editor = createTestEditor();
         editor.addListener('error', (error) => {
           throw error;
         });
@@ -1671,7 +1650,7 @@ describe('OutlineSelectionHelpers tests', () => {
       });
 
       test('a heading node with a child text node and a disjoint sibling text node should throw', async () => {
-        const editor = createEditor({});
+        const editor = createTestEditor();
         editor.addListener('error', (error) => {
           throw error;
         });
@@ -1711,7 +1690,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
     describe('with a paragraph node selected on some existing text', () => {
       test('a single text node', async () => {
-        const editor = createEditor({});
+        const editor = createTestEditor();
         editor.addListener('error', (error) => {
           throw error;
         });
@@ -1746,7 +1725,7 @@ describe('OutlineSelectionHelpers tests', () => {
       });
 
       test('two text nodes', async () => {
-        const editor = createEditor({});
+        const editor = createTestEditor();
         editor.addListener('error', (error) => {
           throw error;
         });
@@ -1784,7 +1763,7 @@ describe('OutlineSelectionHelpers tests', () => {
       });
 
       test('a single heading node with a child text node', async () => {
-        const editor = createEditor({});
+        const editor = createTestEditor();
         editor.addListener('error', (error) => {
           throw error;
         });
@@ -1822,7 +1801,7 @@ describe('OutlineSelectionHelpers tests', () => {
       });
 
       test('a heading node with a child text node and a disjoint sibling text node should throw', async () => {
-        const editor = createEditor({});
+        const editor = createTestEditor();
         editor.addListener('error', (error) => {
           throw error;
         });

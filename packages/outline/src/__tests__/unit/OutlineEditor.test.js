@@ -1162,4 +1162,20 @@ describe('OutlineEditor tests', () => {
       expect(() => new BadTextNode()).toThrow();
     });
   });
+
+  it('Register the same node twice', () => {
+    init();
+
+    class CustomTextNode extends TextNode {
+      static getType(): string {
+        return 'custom_text_node';
+      }
+      static clone(key): CustomTextNode {
+        return new CustomTextNode(key);
+      }
+    }
+
+    editor.registerNode(CustomTextNode);
+    expect(() => editor.registerNode(CustomTextNode)).not.toThrow();
+  });
 });

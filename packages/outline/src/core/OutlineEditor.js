@@ -123,13 +123,6 @@ type Listeners = {
   update: Set<UpdateListener>,
 };
 
-type Transforms = {
-  text: Set<TextTransform>,
-  decorator: Set<DecoratorTransform>,
-  block: Set<BlockTransform>,
-  root: Set<RootTransform>,
-};
-
 export type ListenerType =
   | 'update'
   | 'error'
@@ -212,7 +205,6 @@ class BaseOutlineEditor {
   _updates: Array<[(state: State) => void, void | (() => void)]>;
   _updating: boolean;
   _listeners: Listeners;
-  _transforms: Transforms;
   _registeredNodes: RegisteredNodes;
   _decorators: {[NodeKey]: ReactNode};
   _pendingDecorators: null | {[NodeKey]: ReactNode};
@@ -248,13 +240,6 @@ class BaseOutlineEditor {
       textmutation: new Set(),
       root: new Set(),
       update: new Set(),
-    };
-    // Transforms
-    this._transforms = {
-      text: new Set(),
-      decorator: new Set(),
-      block: new Set(),
-      root: new Set(),
     };
     // Editor configuration for theme/context.
     this._config = config;
@@ -338,17 +323,6 @@ class BaseOutlineEditor {
         const rootListener: RootListener = (listener: any);
         rootListener(null, this._rootElement);
       }
-    };
-  }
-  addTransform(type: TransformerType, transform: TextTransform): () => void {
-    const transformsSet = this._transforms[type];
-    // $FlowFixMe: TODO refine this from the above types
-    transformsSet.add(transform);
-    markAllNodesAsDirty(getSelf(this), type);
-
-    return () => {
-      // $FlowFixMe: TODO refine this from the above types
-      transformsSet.delete(transform);
     };
   }
   addTransformX(
@@ -483,7 +457,6 @@ declare export class OutlineEditor {
   _updating: boolean;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _listeners: Listeners;
-  _transforms: Transforms;
   _registeredNodes: RegisteredNodes;
   _decorators: {[NodeKey]: ReactNode};
   _pendingDecorators: null | {[NodeKey]: ReactNode};
@@ -504,10 +477,6 @@ declare export class OutlineEditor {
   addListener(type: 'decorator', listener: DecoratorListener): () => void;
   addListener(type: 'textmutation', listener: TextMutationListener): () => void;
   addListener(type: 'textcontent', listener: TextContentListener): () => void;
-  addTransform(type: 'text', listener: TextTransform): () => void;
-  addTransform(type: 'decorator', listener: DecoratorTransform): () => void;
-  addTransform(type: 'block', listener: BlockTransform): () => void;
-  addTransform(type: 'root', listener: RootTransform): () => void;
   addTransformX<T: OutlineNode>(
     klass: Class<T>,
     listener: Transform<T>,

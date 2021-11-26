@@ -9,13 +9,10 @@
 
 import type {ParsedEditorState} from './OutlineEditorState';
 import type {RootNode} from './OutlineRootNode';
-import type {BlockNode} from './OutlineBlockNode';
 import type {OutlineEditor, ListenerType} from './OutlineEditor';
 import type {OutlineNode, NodeKey} from './OutlineNode';
 import type {Selection} from './OutlineSelection';
 import type {ParsedNode, NodeParserState} from './OutlineParsing';
-import type {TextNode} from './OutlineTextNode';
-import type {DecoratorNode} from './OutlineDecoratorNode';
 
 import {normalizeTextNode, updateEditorState} from './OutlineReconciler';
 import {
@@ -50,7 +47,7 @@ import {
 } from './OutlineGC';
 import {internalCreateNodeFromParse} from './OutlineParsing';
 import {applySelectionTransforms} from './OutlineSelection';
-import {isTextNode, isRootNode, isBlockNode, isDecoratorNode} from '.';
+import {isTextNode} from '.';
 import invariant from 'shared/invariant';
 
 let activeEditorState: null | EditorState = null;
@@ -164,19 +161,6 @@ function applyAllTransforms(
   const selection = editorState._selection;
   const dirtyLeaves = editor._dirtyLeaves;
   const dirtyBlocks = editor._dirtyBlocks;
-  const transforms = editor._transforms;
-  const textTransforms = transforms.text;
-  const textTransformsArr = Array.from(textTransforms);
-  const textTransformsArrLength = textTransformsArr.length;
-  const decoratorTransforms = transforms.decorator;
-  const decoratorTransformsArr = Array.from(decoratorTransforms);
-  const decoratorTransformsArrLength = decoratorTransformsArr.length;
-  const blockTransforms = transforms.block;
-  const blockTransformsArr = Array.from(blockTransforms);
-  const blockTransformsArrLength = blockTransformsArr.length;
-  const rootTransforms = transforms.root;
-  const rootTransformsArr = Array.from(rootTransforms);
-  const rootTransformsArrLength = rootTransformsArr.length;
   const nodeMap = editorState._nodeMap;
   const compositionKey = getCompositionKey();
 
@@ -206,19 +190,6 @@ function applyAllTransforms(
           node !== undefined &&
           isNodeValidForTransform(node, compositionKey)
         ) {
-          if (isTextNode(node)) {
-            applyTransforms<TextNode>(
-              node,
-              textTransformsArr,
-              textTransformsArrLength,
-            );
-          } else if (isDecoratorNode(node)) {
-            applyTransforms<DecoratorNode>(
-              node,
-              decoratorTransformsArr,
-              decoratorTransformsArrLength,
-            );
-          }
           const nodeInfo = getRegisteredNodeOrThrow(editor, node.__type);
           const transformsX = nodeInfo.transforms;
           // TODO Store in a cache
@@ -250,19 +221,6 @@ function applyAllTransforms(
       const nodeIntentionallyMarkedAsDirty = untransformedDirtyBlocksArr[i][1];
       const node = nodeMap.get(nodeKey);
       if (node !== undefined && isNodeValidForTransform(node, compositionKey)) {
-        if (isRootNode(node)) {
-          applyTransforms<RootNode>(
-            node,
-            rootTransformsArr,
-            rootTransformsArrLength,
-          );
-        } else if (isBlockNode(node)) {
-          applyTransforms<BlockNode>(
-            node,
-            blockTransformsArr,
-            blockTransformsArrLength,
-          );
-        }
         const nodeInfo = getRegisteredNodeOrThrow(editor, node.__type);
         const transformsX = nodeInfo.transforms;
         // TODO Store in a cache

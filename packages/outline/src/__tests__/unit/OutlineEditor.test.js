@@ -23,11 +23,7 @@ import {
   getNodeByKey,
   isTextNode,
 } from 'outline';
-import {
-  createParagraphNode,
-  ParagraphNode,
-  isParagraphNode,
-} from 'outline/ParagraphNode';
+import {createParagraphNode, ParagraphNode} from 'outline/ParagraphNode';
 import useOutlineRichText from 'outline-react/useOutlineRichText';
 import {getEditorStateTextContent} from '../../core/OutlineUtils';
 import {

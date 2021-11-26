@@ -52,15 +52,15 @@ export function generateRandomKey(): string {
   return '' + keyCounter++;
 }
 
-export function getNodeInfoOrThrow(
+export function getRegisteredNodeOrThrow(
   editor: OutlineEditor,
   nodeType: string,
 ): NodeInfo {
-  const nodeInfo = editor._nodesInfo.get(nodeType);
-  if (nodeInfo === undefined) {
-    invariant(false, 'NodeInfo: Type %s not found', nodeType);
+  const registeredNode = editor._registeredNodes.get(nodeType);
+  if (registeredNode === undefined) {
+    invariant(false, 'registeredNode: Type %s not found', nodeType);
   }
-  return nodeInfo;
+  return registeredNode;
 }
 
 // When we are dealing with setting selection on an empty text node, we

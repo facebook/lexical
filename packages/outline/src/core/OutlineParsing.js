@@ -79,11 +79,11 @@ export function internalCreateNodeFromParse(
   state: NodeParserState = {},
 ): OutlineNode {
   const nodeType = parsedNode.__type;
-  const nodeInfo = editor._nodesInfo.get(nodeType);
-  if (nodeInfo === undefined) {
+  const registeredNode = editor._registeredNodes.get(nodeType);
+  if (registeredNode === undefined) {
     invariant(false, 'createNodeFromParse: type "%s" + not found', nodeType);
   }
-  const NodeKlass = nodeInfo.klass;
+  const NodeKlass = registeredNode.klass;
   const parsedKey = parsedNode.__key;
   // We set the parsedKey to undefined before calling clone() so that
   // we get a new random key assigned.

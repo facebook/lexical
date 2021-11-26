@@ -79,7 +79,7 @@ export type EditorConfig<EditorContext> = {
   context: EditorContext,
 };
 
-export type NodesInfo = Map<string, NodeInfo>;
+export type RegisteredNodes = Map<string, NodeInfo>;
 export type NodeInfo = $ReadOnly<{
   klass: Class<OutlineNode>,
   transforms: Set<Transform<OutlineNode>>,
@@ -213,7 +213,7 @@ class BaseOutlineEditor {
   _updating: boolean;
   _listeners: Listeners;
   _transforms: Transforms;
-  _nodesInfo: NodesInfo;
+  _registeredNodes: RegisteredNodes;
   _decorators: {[NodeKey]: ReactNode};
   _pendingDecorators: null | {[NodeKey]: ReactNode};
   _textContent: string;
@@ -259,7 +259,7 @@ class BaseOutlineEditor {
     // Editor configuration for theme/context.
     this._config = config;
     // Mapping of types to their nodes
-    this._nodesInfo = new Map([
+    this._registeredNodes = new Map([
       ['text', {klass: TextNode, transforms: new Set()}],
       ['linebreak', {klass: LineBreakNode, transforms: new Set()}],
       ['root', {klass: RootNode, transforms: new Set()}],
@@ -285,7 +285,7 @@ class BaseOutlineEditor {
   registerNode(klass: Class<OutlineNode>): void {
     const type = klass.getType();
     if (__DEV__) {
-      const editorNode = this._nodesInfo.get(type);
+      const editorNode = this._registeredNodes.get(type);
       if (editorNode !== undefined) {
         const editorKlass = editorNode.klass;
         if (editorKlass !== klass) {
@@ -299,7 +299,7 @@ class BaseOutlineEditor {
         }
       }
     }
-    this._nodesInfo.set(type, {
+    this._registeredNodes.set(type, {
       klass,
       transforms: new Set(),
     });
@@ -355,7 +355,7 @@ class BaseOutlineEditor {
     klass: Class<T>,
     listener: Transform<T>,
   ): () => void {
-    const nodeInfo = this._nodesInfo.get(klass.getType());
+    const nodeInfo = this._registeredNodes.get(klass.getType());
     if (nodeInfo === undefined) {
       invariant(
         false,
@@ -483,7 +483,7 @@ declare export class OutlineEditor {
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _listeners: Listeners;
   _transforms: Transforms;
-  _nodesInfo: NodesInfo;
+  _registeredNodes: RegisteredNodes;
   _decorators: {[NodeKey]: ReactNode};
   _pendingDecorators: null | {[NodeKey]: ReactNode};
   _config: EditorConfig<{...}>;

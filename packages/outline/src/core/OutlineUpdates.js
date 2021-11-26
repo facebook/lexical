@@ -42,7 +42,7 @@ import {
   setSelection,
   clearSelection,
   getRoot,
-  getNodeInfoOrThrow,
+  getRegisteredNodeOrThrow,
 } from './OutlineUtils';
 import {
   garbageCollectDetachedDecorators,
@@ -219,7 +219,7 @@ function applyAllTransforms(
               decoratorTransformsArrLength,
             );
           }
-          const nodeInfo = getNodeInfoOrThrow(editor, node.__type);
+          const nodeInfo = getRegisteredNodeOrThrow(editor, node.__type);
           const transformsX = nodeInfo.transforms;
           // TODO Store in a cache
           const transformsArr = Array.from(transformsX);
@@ -263,7 +263,7 @@ function applyAllTransforms(
             blockTransformsArrLength,
           );
         }
-        const nodeInfo = getNodeInfoOrThrow(editor, node.__type);
+        const nodeInfo = getRegisteredNodeOrThrow(editor, node.__type);
         const transformsX = nodeInfo.transforms;
         // TODO Store in a cache
         const transformsArr = Array.from(transformsX);

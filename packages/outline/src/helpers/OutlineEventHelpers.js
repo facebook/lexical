@@ -77,6 +77,8 @@ import {createListItemNode} from 'outline/ListItemNode';
 import {createParagraphNode} from 'outline/ParagraphNode';
 import {createHeadingNode} from 'outline/HeadingNode';
 import {createLinkNode} from 'outline/LinkNode';
+import type {TextFormatType} from 'outline';
+import {TEXT_TYPE_TO_FORMAT} from '../core/OutlineConstants';
 
 const NO_BREAK_SPACE_CHAR = '\u00A0';
 
@@ -89,9 +91,13 @@ export type EventHandler = (
   editor: OutlineEditor,
 ) => void;
 
-export type DOMTransformer = (element: Node) => OutlineNode;
+export type DOMTransformer = (element: Node) => DOMTransformOutput;
 export type DOMTransformerMap = {
   [string]: DOMTransformer,
+};
+type DOMTransformOutput = {
+  node: OutlineNode | null,
+  format?: TextFormatType,
 };
 
 function updateAndroidSoftKeyFlagIfAny(event: KeyboardEvent): void {
@@ -118,71 +124,77 @@ function generateNodes(nodeRange: {
 }
 
 const DOM_NODE_NAME_TO_OUTLINE_NODE: DOMTransformerMap = {
-  ul: () => createListNode('ul'),
-  ol: () => createListNode('ol'),
-  li: () => createListItemNode(),
-  h1: () => createHeadingNode('h1'),
-  h2: () => createHeadingNode('h2'),
-  h3: () => createHeadingNode('h3'),
-  h4: () => createHeadingNode('h4'),
-  h5: () => createHeadingNode('h5'),
-  p: () => createParagraphNode(),
-  br: () => createLineBreakNode(),
+  ul: () => ({node: createListNode('ul')}),
+  ol: () => ({node: createListNode('ol')}),
+  li: () => ({node: createListItemNode()}),
+  h1: () => ({node: createHeadingNode('h1')}),
+  h2: () => ({node: createHeadingNode('h2')}),
+  h3: () => ({node: createHeadingNode('h3')}),
+  h4: () => ({node: createHeadingNode('h4')}),
+  h5: () => ({node: createHeadingNode('h5')}),
+  p: () => ({node: createParagraphNode()}),
+  br: () => ({node: createLineBreakNode()}),
   a: (domNode: Node) => {
+    let node;
     if (domNode instanceof HTMLAnchorElement) {
-      return createLinkNode(domNode.href);
+      node = createLinkNode(domNode.href);
+    } else {
+      node = createTextNode(domNode.textContent);
     }
-    return createTextNode(domNode.textContent);
-  },
-  span: (domNode: Node) => {
-    const textNode = createTextNode(domNode.textContent);
-    return textNode;
+    return {node};
   },
   u: (domNode: Node) => {
-    const textNode = createTextNode(domNode.textContent);
-    textNode.toggleFormat('underline');
-    return textNode;
+    return {node: null, format: 'underline'};
   },
   b: (domNode: Node) => {
-    const textNode = createTextNode(domNode.textContent);
-    textNode.toggleFormat('bold');
-    return textNode;
+    return {node: null, format: 'bold'};
   },
   strong: (domNode: Node) => {
-    const textNode = createTextNode(domNode.textContent);
-    textNode.toggleFormat('bold');
-    return textNode;
+    return {node: null, format: 'bold'};
   },
   i: (domNode: Node) => {
-    const textNode = createTextNode(domNode.textContent);
-    textNode.toggleFormat('italic');
-    return textNode;
+    return {node: null, format: 'italic'};
   },
   em: (domNode: Node) => {
-    const textNode = createTextNode(domNode.textContent);
-    textNode.toggleFormat('italic');
-    return textNode;
+    return {node: null, format: 'italic'};
   },
-  '#text': (domNode: Node) => createTextNode(domNode.textContent),
+  '#text': (domNode: Node) => ({node: createTextNode(domNode.textContent)}),
 };
 
 export function createNodesFromDOM(
   node: Node,
   conversionMap: DOMTransformerMap,
   editor: OutlineEditor,
+  textFormat?: number,
 ): Array<OutlineNode> {
   let outlineNodes: Array<OutlineNode> = [];
   let currentOutlineNode = null;
+  let currentTextFormat = textFormat;
   const nodeName = node.nodeName.toLowerCase();
   const customHtmlTransforms = editor._config.htmlTransforms || {};
-  const createFunction =
+  const transformFunction =
     customHtmlTransforms[nodeName] || conversionMap[nodeName];
 
-  currentOutlineNode = createFunction ? createFunction(node) : null;
+  const transformOutput = transformFunction ? transformFunction(node) : null;
 
-  if (currentOutlineNode !== null) {
-    outlineNodes.push(currentOutlineNode);
+  if (transformOutput !== null) {
+    currentOutlineNode = transformOutput.node;
+    if (transformOutput.format) {
+      const nextTextFormat = TEXT_TYPE_TO_FORMAT[transformOutput.format];
+      currentTextFormat = currentTextFormat
+        ? currentTextFormat ^ nextTextFormat
+        : nextTextFormat;
+    }
+
+    if (currentOutlineNode !== null) {
+      // If the transformed node is a a TextNode, apply text formatting
+      if (isTextNode(currentOutlineNode) && currentTextFormat !== undefined) {
+        currentOutlineNode.setFormat(currentTextFormat);
+      }
+      outlineNodes.push(currentOutlineNode);
+    }
   }
+
   // If the DOM node doesn't have a transformer, we don't know what
   // to do with it but we still need to process any childNodes.
   const children = node.childNodes;
@@ -191,6 +203,7 @@ export function createNodesFromDOM(
       children[i],
       conversionMap,
       editor,
+      currentTextFormat,
     );
     if (isBlockNode(currentOutlineNode)) {
       // If the current node is a BlockNode after transformation,
@@ -227,12 +240,9 @@ function insertDataTransferForRichText(
   selection: Selection,
   editor: OutlineEditor,
 ): void {
-  const textHtmlMimeType = 'text/html';
   const outlineNodesString = dataTransfer.getData(
     'application/x-outline-nodes',
   );
-
-  const htmlString = dataTransfer.getData(textHtmlMimeType);
 
   if (outlineNodesString) {
     try {
@@ -244,6 +254,9 @@ function insertDataTransferForRichText(
       // Malformed, missing nodes..
     }
   }
+
+  const textHtmlMimeType = 'text/html';
+  const htmlString = dataTransfer.getData(textHtmlMimeType);
 
   if (htmlString) {
     const parser = new DOMParser();

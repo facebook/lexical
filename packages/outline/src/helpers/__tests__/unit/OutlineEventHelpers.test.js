@@ -71,7 +71,7 @@ describe('OutlineEventHelpers', () => {
             code: 'editor-code',
           },
           htmlTransforms: {
-            testhtmltagname: () => createTextNode('Hello world!'),
+            testhtmltagname: () => ({node: createTextNode('Hello world!')}),
           },
         }),
       [],
@@ -255,6 +255,36 @@ describe('OutlineEventHelpers', () => {
         ],
         expectedHTML:
           '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span data-outline-text="true">Hello world!</span></p></div>',
+      },
+      {
+        name: 'onPasteForRichText should preserve formatting from HTML tags on deeply nested text nodes.',
+        inputs: [
+          pasteHTML(
+            `<meta charset='utf-8'>Welcome to<b><a href="https://facebook.com">Facebook!</a></b>We hope you like it here.`,
+          ),
+        ],
+        expectedHTML:
+          '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span data-outline-text="true">Welcome to</span><a href="https://facebook.com/"><strong class="editor-text-bold" data-outline-text="true">Facebook!</strong></a><span data-outline-text="true">We hope you like it here.</span></p></div>',
+      },
+      {
+        name: 'onPasteForRichText should preserve formatting from HTML tags on deeply nested and top level text nodes.',
+        inputs: [
+          pasteHTML(
+            `<meta charset='utf-8'>Welcome to<b><a href="https://facebook.com">Facebook!</a>We hope you like it here.</b>`,
+          ),
+        ],
+        expectedHTML:
+          '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span data-outline-text="true">Welcome to</span><a href="https://facebook.com/"><strong class="editor-text-bold" data-outline-text="true">Facebook!</strong></a><strong class="editor-text-bold" data-outline-text="true">We hope you like it here.</strong></p></div>',
+      },
+      {
+        name: 'onPasteForRichText should preserve multiple types of formatting on deeply nested text nodes and top level text nodes',
+        inputs: [
+          pasteHTML(
+            `<meta charset='utf-8'>Welcome to<b><i><a href="https://facebook.com">Facebook!</a>We hope you like it here.</i></b>`,
+          ),
+        ],
+        expectedHTML:
+          '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span data-outline-text="true">Welcome to</span><a href="https://facebook.com/"><strong class="editor-text-bold editor-text-italic" data-outline-text="true">Facebook!</strong></a><strong class="editor-text-bold editor-text-italic" data-outline-text="true">We hope you like it here.</strong></p></div>',
       },
     ];
     suite.forEach((testUnit, i) => {

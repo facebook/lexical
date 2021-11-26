@@ -555,6 +555,18 @@ describe('OutlineEditor tests', () => {
     );
   });
 
+  it('Throws on forbidden addListener + update pattern', async () => {
+    init();
+
+    const removeListener = editor.addListener('update', () => {
+      expect(() => editor.update(() => {})).toThrow();
+    });
+    await editor.update(() => {
+      getRoot().append(createParagraphNode());
+    });
+    removeListener();
+  });
+
   it('Should be able to handle a change in root element', async () => {
     const rootListener = jest.fn();
     const updateListener = jest.fn();

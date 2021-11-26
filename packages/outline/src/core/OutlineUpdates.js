@@ -54,6 +54,7 @@ let activeEditorState: null | EditorState = null;
 let activeEditor: null | OutlineEditor = null;
 let isReadOnlyMode: boolean = false;
 let isAttemptingToRecoverFromReconcilerError: boolean = false;
+let isTriggeringListeners: boolean = false;
 
 export type State = {
   clearSelection(): void,
@@ -86,6 +87,15 @@ export function isCurrentlyReadOnlyMode(): boolean {
 export function errorOnReadOnly(): void {
   if (isReadOnlyMode) {
     invariant(false, 'Cannot use method in read-only mode.');
+  }
+}
+
+function errorOnTriggeringListeners(): void {
+  if (isTriggeringListeners) {
+    invariant(
+      false,
+      'Attempted to run an update inside addListener (a forbidden pattern). You probably want to use a transform (addTransform) instead.',
+    );
   }
 }
 
@@ -357,7 +367,7 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
     );
   } catch (error) {
     // Report errors
-    triggerListeners('error', editor, false, error, error._log);
+    triggerListeners('error', editor, error, error._log);
     // Reset editor and restore incoming editor state to the DOM
     if (!isAttemptingToRecoverFromReconcilerError) {
       resetEditor(editor, null, rootElement, pendingEditorState);
@@ -394,10 +404,10 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
   if (pendingDecorators !== null) {
     editor._decorators = pendingDecorators;
     editor._pendingDecorators = null;
-    triggerListeners('decorator', editor, true, pendingDecorators);
+    triggerListeners('decorator', editor, pendingDecorators);
   }
   triggerTextContentListeners(editor, currentEditorState, pendingEditorState);
-  triggerListeners('update', editor, true, {
+  triggerListeners('update', editor, {
     prevEditorState: currentEditorState,
     editorState: pendingEditorState,
     dirtyLeaves,
@@ -416,19 +426,19 @@ function triggerTextContentListeners(
   const currentTextContent = getEditorStateTextContent(currentEditorState);
   const latestTextContent = getEditorStateTextContent(pendingEditorState);
   if (currentTextContent !== latestTextContent) {
-    triggerListeners('textcontent', editor, true, latestTextContent);
+    triggerListeners('textcontent', editor, latestTextContent);
   }
 }
 
 export function triggerListeners(
   type: ListenerType,
   editor: OutlineEditor,
-  isCurrentlyEnqueuingUpdates: boolean,
   // $FlowFixMe: needs refining
   ...payload: Array<any>
 ): void {
   const previouslyUpdating = editor._updating;
-  editor._updating = isCurrentlyEnqueuingUpdates;
+  editor._updating = false;
+  isTriggeringListeners = true;
   try {
     const listeners = Array.from(editor._listeners[type]);
     for (let i = 0; i < listeners.length; i++) {
@@ -436,6 +446,7 @@ export function triggerListeners(
     }
   } finally {
     editor._updating = previouslyUpdating;
+    isTriggeringListeners = false;
   }
 }
 
@@ -486,6 +497,7 @@ function beginUpdate(
   skipEmptyCheck: boolean,
   callbackFn?: () => void,
 ): void {
+  errorOnTriggeringListeners();
   const deferred = editor._deferred;
   if (callbackFn) {
     deferred.push(callbackFn);
@@ -555,7 +567,7 @@ function beginUpdate(
     }
   } catch (error) {
     // Report errors
-    triggerListeners('error', editor, false, error, editor._log);
+    triggerListeners('error', editor, error, editor._log);
     // Restore existing editor state to the DOM
     editor._pendingEditorState = currentEditorState;
     editor._dirtyType = FULL_RECONCILE;

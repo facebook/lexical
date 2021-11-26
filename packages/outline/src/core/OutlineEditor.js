@@ -370,13 +370,7 @@ class BaseOutlineEditor {
         // $FlowFixMe: internal field
         nextRootElement.__outlineEditor = this;
       }
-      triggerListeners(
-        'root',
-        getSelf(this),
-        false,
-        nextRootElement,
-        prevRootElement,
-      );
+      triggerListeners('root', getSelf(this), nextRootElement, prevRootElement);
     }
   }
   getElementByKey(key: NodeKey): HTMLElement | null {

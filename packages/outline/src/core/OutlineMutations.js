@@ -68,7 +68,7 @@ function handleTextMutation(
 
   const text = target.nodeValue;
   const textMutation = {node, anchorOffset, focusOffset, text};
-  triggerListeners('textmutation', editor, false, textMutation);
+  triggerListeners('textmutation', editor, textMutation);
 }
 
 export function flushMutations(

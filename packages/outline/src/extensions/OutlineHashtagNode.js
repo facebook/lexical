@@ -9,7 +9,7 @@
 
 import type {NodeKey, OutlineNode, EditorConfig} from 'outline';
 
-import {TextNode, isTextNode, createTextNode} from 'outline';
+import {TextNode, createTextNode} from 'outline';
 
 export class HashtagNode extends TextNode {
   static getType(): string {
@@ -45,7 +45,7 @@ export class HashtagNode extends TextNode {
         targetNode = toggleHashtag(targetNode);
       }
       // Check for invalid characters
-      if (isTextNode(targetNode) && targetNode.isAttached()) {
+      if (isHashtagNode(targetNode) && targetNode.isAttached()) {
         const targetTextContent = targetNode.getTextContent().slice(1);
         const indexOfInvalidChar = targetTextContent.search(
           /[\s.,\\\/#!$%\^&\*;:{}=\-`~()@]/,

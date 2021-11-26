@@ -21,7 +21,7 @@ import {
 import {getNodeKeyFromDOM} from './OutlineReconciler';
 import {getIsProcesssingMutations} from './OutlineMutations';
 import {
-  isTextNode,
+  ofTextNode,
   isBlockNode,
   isLineBreakNode,
   isDecoratorNode,
@@ -142,7 +142,7 @@ function selectPointOnNode(point: PointType, node: OutlineNode): void {
   const key = node.getKey();
   let offset = point.offset;
   let type = 'block';
-  if (isTextNode(node)) {
+  if (ofTextNode(node)) {
     type = 'text';
     const textContentLength = node.getTextContentSize();
     if (offset > textContentLength) {
@@ -158,12 +158,12 @@ export function moveSelectionPointToEnd(
 ): void {
   if (isBlockNode(node)) {
     const lastNode = node.getLastDescendant();
-    if (isBlockNode(lastNode) || isTextNode(lastNode)) {
+    if (isBlockNode(lastNode) || ofTextNode(lastNode)) {
       selectPointOnNode(point, lastNode);
     } else {
       selectPointOnNode(point, node);
     }
-  } else if (isTextNode(node)) {
+  } else if (ofTextNode(node)) {
     selectPointOnNode(point, node);
   }
 }
@@ -263,7 +263,7 @@ export class Selection {
         }
       } else {
         prevWasBlock = false;
-        if (isTextNode(node)) {
+        if (ofTextNode(node)) {
           let text = node.getTextContent();
           if (node === firstNode) {
             if (node === lastNode) {
@@ -394,7 +394,7 @@ function resolveSelectionPoint(dom: Node, offset: number): null | PointType {
     const childDOM = childNodes[resolvedOffset];
     resolvedNode = getNodeFromDOM(childDOM);
 
-    if (isTextNode(resolvedNode)) {
+    if (ofTextNode(resolvedNode)) {
       resolvedOffset = getTextNodeOffset(resolvedNode, moveSelectionToEnd);
     } else {
       let resolvedBlock = getNodeFromDOM(dom);
@@ -416,7 +416,7 @@ function resolveSelectionPoint(dom: Node, offset: number): null | PointType {
             resolvedBlock = child.getParentOrThrow();
           }
         }
-        if (isTextNode(child)) {
+        if (ofTextNode(child)) {
           resolvedNode = child;
           resolvedBlock = null;
           resolvedOffset = getTextNodeOffset(resolvedNode, moveSelectionToEnd);
@@ -439,7 +439,7 @@ function resolveSelectionPoint(dom: Node, offset: number): null | PointType {
     // TextNode or null
     resolvedNode = getNodeFromDOM(dom);
   }
-  if (!isTextNode(resolvedNode)) {
+  if (!ofTextNode(resolvedNode)) {
     return null;
   }
   return createPoint(resolvedNode.__key, resolvedOffset, 'text');
@@ -484,7 +484,7 @@ function resolveSelectionPoints(
     ) {
       if (anchorOffset === 0) {
         const prevSibling = resolvedAnchorNode.getPreviousSibling();
-        if (isTextNode(prevSibling) && !prevSibling.isInert()) {
+        if (ofTextNode(prevSibling) && !prevSibling.isInert()) {
           const offset = prevSibling.getTextContentSize();
           const key = prevSibling.__key;
           resolvedAnchorPoint.key = key;
@@ -496,7 +496,7 @@ function resolveSelectionPoints(
     } else {
       if (resolvedAnchorOffset === textContentSize) {
         const nextSibling = resolvedAnchorNode.getNextSibling();
-        if (isTextNode(nextSibling) && !nextSibling.isInert()) {
+        if (ofTextNode(nextSibling) && !nextSibling.isInert()) {
           resolvedAnchorPoint.key = nextSibling.__key;
           resolvedAnchorPoint.offset = 0;
         }
@@ -734,7 +734,7 @@ function updateSelectionResolveTextNodes(selection: Selection) {
     const child = anchorOffsetAtEnd
       ? anchorNode.getChildAtIndex(childSize - 1)
       : anchorNode.getChildAtIndex(anchorOffset);
-    if (isTextNode(child)) {
+    if (ofTextNode(child)) {
       let newOffset = 0;
       if (anchorOffsetAtEnd) {
         newOffset = child.getTextContentSize();
@@ -750,7 +750,7 @@ function updateSelectionResolveTextNodes(selection: Selection) {
     const child = anchorOffsetAtEnd
       ? anchorNode.getChildAtIndex(childSize - 1)
       : anchorNode.getChildAtIndex(anchorOffset);
-    if (isTextNode(child)) {
+    if (ofTextNode(child)) {
       let newOffset = 0;
       if (anchorOffsetAtEnd) {
         newOffset = child.getTextContentSize();
@@ -764,7 +764,7 @@ function updateSelectionResolveTextNodes(selection: Selection) {
     const child = focusOffsetAtEnd
       ? focusNode.getChildAtIndex(childSize - 1)
       : focusNode.getChildAtIndex(focusOffset);
-    if (isTextNode(child)) {
+    if (ofTextNode(child)) {
       let newOffset = 0;
       if (focusOffsetAtEnd) {
         newOffset = child.getTextContentSize();

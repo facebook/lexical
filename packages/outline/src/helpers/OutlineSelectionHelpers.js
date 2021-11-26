@@ -23,6 +23,7 @@ import {
   isDecoratorNode,
   isLeafNode,
   isTextNode,
+  ofTextNode,
   isBlockNode,
   createTextNode,
   isRootNode,
@@ -46,7 +47,7 @@ function cloneWithProperties<T: OutlineNode>(node: T): T {
     clone.__children = Array.from(latest.__children);
     clone.__format = latest.__format;
     clone.__indent = latest.__indent;
-  } else if (isTextNode(latest)) {
+  } else if (ofTextNode(latest)) {
     clone.__format = latest.__format;
     clone.__style = latest.__style;
   } else if (isDecoratorNode(latest)) {
@@ -97,7 +98,7 @@ function copyLeafNodeBranchToRoot(
         clone = cloneWithProperties<OutlineNode>(node);
         nodeMap.set(key, clone);
       }
-      if (isTextNode(clone) && !clone.isSegmented() && !clone.isImmutable()) {
+      if (ofTextNode(clone) && !clone.isSegmented() && !clone.isImmutable()) {
         clone.__text = clone.__text.slice(
           isLeftSide ? offset : 0,
           isLeftSide ? undefined : offset,
@@ -136,7 +137,7 @@ export function cloneContents(selection: Selection): {
   // Handle a single text node extraction
   if (
     anchorNode === focusNode &&
-    isTextNode(anchorNode) &&
+    ofTextNode(anchorNode) &&
     (anchorNodeParent.canBeEmpty() || anchorNodeParent.getChildrenSize() > 1)
   ) {
     const clonedFirstNode = cloneWithProperties<TextNode>(anchorNode);
@@ -227,7 +228,7 @@ export function extractSelection(selection: Selection): Array<OutlineNode> {
   if (selectedNodesLength === 0) {
     return [];
   } else if (selectedNodesLength === 1) {
-    if (isTextNode(firstNode)) {
+    if (ofTextNode(firstNode)) {
       const startOffset =
         anchorOffset > focusOffset ? focusOffset : anchorOffset;
       const endOffset = anchorOffset > focusOffset ? anchorOffset : focusOffset;
@@ -239,7 +240,7 @@ export function extractSelection(selection: Selection): Array<OutlineNode> {
   }
   const isBefore = anchor.isBefore(focus);
 
-  if (isTextNode(firstNode)) {
+  if (ofTextNode(firstNode)) {
     const startOffset = isBefore ? anchorOffset : focusOffset;
     if (startOffset === firstNode.getTextContentSize()) {
       selectedNodes.shift();
@@ -248,7 +249,7 @@ export function extractSelection(selection: Selection): Array<OutlineNode> {
       selectedNodes[0] = firstNode;
     }
   }
-  if (isTextNode(lastNode)) {
+  if (ofTextNode(lastNode)) {
     const lastNodeText = lastNode.getTextContent();
     const lastNodeTextLength = lastNodeText.length;
     const endOffset = isBefore ? focusOffset : anchorOffset;
@@ -315,7 +316,7 @@ export function patchStyleText(
   if (startOffset === firstNode.getTextContentSize()) {
     const nextSibling = firstNode.getNextSibling();
 
-    if (isTextNode(nextSibling)) {
+    if (ofTextNode(nextSibling)) {
       // we basically make the second node the firstNode, changing offsets accordingly
       anchorOffset = 0;
       startOffset = 0;
@@ -325,7 +326,7 @@ export function patchStyleText(
 
   // This is the case where we only selected a single node
   if (firstNode === lastNode) {
-    if (isTextNode(firstNode)) {
+    if (ofTextNode(firstNode)) {
       startOffset = anchorOffset > focusOffset ? focusOffset : anchorOffset;
       endOffset = anchorOffset > focusOffset ? anchorOffset : focusOffset;
 
@@ -348,7 +349,7 @@ export function patchStyleText(
     }
     // multiple nodes selected.
   } else {
-    if (isTextNode(firstNode)) {
+    if (ofTextNode(firstNode)) {
       if (startOffset !== 0) {
         // the entire first node isn't selected, so split it
         [, firstNode] = firstNode.splitText(startOffset);
@@ -357,7 +358,7 @@ export function patchStyleText(
       patchNodeStyle(firstNode, patch);
     }
 
-    if (isTextNode(lastNode)) {
+    if (ofTextNode(lastNode)) {
       const lastNodeText = lastNode.getTextContent();
       const lastNodeTextLength = lastNodeText.length;
       // if the entire last node isn't selected, split it
@@ -374,7 +375,7 @@ export function patchStyleText(
       const selectedNode = selectedNodes[i];
       const selectedNodeKey = selectedNode.getKey();
       if (
-        isTextNode(selectedNode) &&
+        ofTextNode(selectedNode) &&
         selectedNodeKey !== firstNode.getKey() &&
         selectedNodeKey !== lastNode.getKey() &&
         !selectedNode.isImmutable()
@@ -405,7 +406,7 @@ export function getSelectionStyleValueForProperty(
     if (i !== 0 && endOffset === 0 && node.is(endNode)) {
       continue;
     }
-    if (isTextNode(node)) {
+    if (ofTextNode(node)) {
       const nodeStyleValue = getNodeStyleValueForProperty(
         node,
         styleProperty,
@@ -459,7 +460,7 @@ export function formatText(
   let firstNextFormat = 0;
   for (let i = 0; i < selectedNodes.length; i++) {
     const selectedNode = selectedNodes[i];
-    if (isTextNode(selectedNode)) {
+    if (ofTextNode(selectedNode)) {
       firstNextFormat = selectedNode.getFormatFlags(formatType, null);
       break;
     }
@@ -477,7 +478,7 @@ export function formatText(
   if (startOffset === firstNode.getTextContentSize()) {
     const nextSibling = firstNode.getNextSibling();
 
-    if (isTextNode(nextSibling)) {
+    if (ofTextNode(nextSibling)) {
       // we basically make the second node the firstNode, changing offsets accordingly
       anchorOffset = 0;
       startOffset = 0;
@@ -488,7 +489,7 @@ export function formatText(
 
   // This is the case where we only selected a single node
   if (firstNode === lastNode) {
-    if (isTextNode(firstNode)) {
+    if (ofTextNode(firstNode)) {
       startOffset = anchorOffset > focusOffset ? focusOffset : anchorOffset;
       endOffset = anchorOffset > focusOffset ? anchorOffset : focusOffset;
 
@@ -511,7 +512,7 @@ export function formatText(
     }
     // multiple nodes selected.
   } else {
-    if (isTextNode(firstNode)) {
+    if (ofTextNode(firstNode)) {
       if (startOffset !== 0) {
         // the entire first node isn't selected, so split it
         [, firstNode] = firstNode.splitText(startOffset);
@@ -521,7 +522,7 @@ export function formatText(
     }
     let lastNextFormat = firstNextFormat;
 
-    if (isTextNode(lastNode)) {
+    if (ofTextNode(lastNode)) {
       lastNextFormat = lastNode.getFormatFlags(formatType, firstNextFormat);
       const lastNodeText = lastNode.getTextContent();
       const lastNodeTextLength = lastNodeText.length;
@@ -541,7 +542,7 @@ export function formatText(
       const selectedNode = selectedNodes[i];
       const selectedNodeKey = selectedNode.getKey();
       if (
-        isTextNode(selectedNode) &&
+        ofTextNode(selectedNode) &&
         selectedNodeKey !== firstNode.getKey() &&
         selectedNodeKey !== lastNode.getKey() &&
         !selectedNode.isImmutable()
@@ -723,7 +724,7 @@ export function updateCaretSelectionForAdjacentHashtags(
 
   if (anchorOffset === 0 && anchorNode.isSimpleText()) {
     let sibling = anchorNode.getPreviousSibling();
-    if (isTextNode(sibling) && isHashtagNode(sibling)) {
+    if (isHashtagNode(sibling)) {
       sibling.select();
       const siblingTextContent = sibling.getTextContent();
       sibling = sibling.setTextContent(siblingTextContent + textContent);
@@ -851,7 +852,7 @@ export function updateCaretSelectionForRange(
     const sibling = isBackward
       ? possibleDecoratorNode.getPreviousSibling()
       : possibleDecoratorNode.getNextSibling();
-    if (!isTextNode(sibling)) {
+    if (!ofTextNode(sibling)) {
       const blockKey = possibleDecoratorNode.getParentOrThrow().getKey();
       let offset = possibleDecoratorNode.getIndexWithinParent();
       if (!isBackward) {
@@ -939,7 +940,7 @@ export function insertNodes(
   const nextSiblings = anchorNode.getNextSiblings();
   const topLevelBlock = anchorNode.getTopParentBlockOrThrow();
 
-  if (isTextNode(anchorNode)) {
+  if (ofTextNode(anchorNode)) {
     const textContent = anchorNode.getTextContent();
     const textContentLength = textContent.length;
     if (anchorOffset === 0 && textContentLength !== 0) {
@@ -1047,7 +1048,7 @@ export function insertNodes(
           }
         }
       }
-      if (isTextNode(target)) {
+      if (ofTextNode(target)) {
         target = topLevelBlock;
       }
     } else if (didReplaceOrMerge && isRootNode(target.getParent())) {
@@ -1084,11 +1085,11 @@ export function insertNodes(
 
   if (selectStart) {
     // Handle moving selection to start for all nodes
-    if (isTextNode(startingNode)) {
+    if (ofTextNode(startingNode)) {
       startingNode.select();
     } else {
       const prevSibling = target.getPreviousSibling();
-      if (isTextNode(prevSibling)) {
+      if (ofTextNode(prevSibling)) {
         prevSibling.select();
       } else {
         const index = target.getIndexWithinParent();
@@ -1103,7 +1104,7 @@ export function insertNodes(
       // Handle moving selection to end for blocks
       if (lastChild === null) {
         target.select();
-      } else if (isTextNode(lastChild)) {
+      } else if (ofTextNode(lastChild)) {
         lastChild.select();
       } else {
         lastChild.selectNext();
@@ -1141,7 +1142,7 @@ export function insertNodes(
     }
   } else if (!selectStart) {
     // Handle moving selection to end for other nodes
-    if (isTextNode(target)) {
+    if (ofTextNode(target)) {
       target.select();
     } else {
       const block = target.getParentOrThrow();
@@ -1204,7 +1205,7 @@ export function insertText(selection: Selection, text: string): void {
   const endOffset = endPoint.offset;
   let firstNode: OutlineNode = selectedNodes[0];
 
-  if (!isTextNode(firstNode)) {
+  if (!ofTextNode(firstNode)) {
     invariant(false, 'insertText: first node is not a text node');
   }
   const firstNodeText = firstNode.getTextContent();
@@ -1221,7 +1222,7 @@ export function insertText(selection: Selection, text: string): void {
   ) {
     let nextSibling = firstNode.getNextSibling();
     if (
-      !isTextNode(nextSibling) ||
+      !ofTextNode(nextSibling) ||
       isImmutableOrInert(nextSibling) ||
       nextSibling.isSegmented()
     ) {
@@ -1248,7 +1249,7 @@ export function insertText(selection: Selection, text: string): void {
   ) {
     let prevSibling = firstNode.getPreviousSibling();
     if (
-      !isTextNode(prevSibling) ||
+      !ofTextNode(prevSibling) ||
       isImmutableOrInert(prevSibling) ||
       prevSibling.isSegmented()
     ) {
@@ -1323,7 +1324,7 @@ export function insertText(selection: Selection, text: string): void {
       (endPoint.type === 'block' && lastNode.getIndexWithinParent() < endOffset)
     ) {
       if (
-        isTextNode(lastNode) &&
+        ofTextNode(lastNode) &&
         !isImmutableOrInert(lastNode) &&
         endOffset !== lastNode.getTextContentSize()
       ) {
@@ -1438,12 +1439,12 @@ export function selectAll(selection: Selection): void {
   let lastType = 'block';
   let lastOffset = 0;
 
-  if (isTextNode(firstNode)) {
+  if (ofTextNode(firstNode)) {
     firstType = 'text';
   } else if (!isBlockNode(firstNode) && firstNode !== null) {
     firstNode = firstNode.getParentOrThrow();
   }
-  if (isTextNode(lastNode)) {
+  if (ofTextNode(lastNode)) {
     lastType = 'text';
     lastOffset = lastNode.getTextContentSize();
   } else if (!isBlockNode(lastNode) && lastNode !== null) {

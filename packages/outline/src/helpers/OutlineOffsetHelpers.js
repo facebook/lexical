@@ -15,7 +15,7 @@ import type {
   EditorState,
 } from 'outline';
 
-import {createSelection, isBlockNode, isTextNode, getNodeByKey} from 'outline';
+import {createSelection, isBlockNode, ofTextNode, getNodeByKey} from 'outline';
 import invariant from 'shared/invariant';
 
 type OffsetBlockNode = {
@@ -143,7 +143,7 @@ class OffsetView {
       if (
         start !== end &&
         startOffset === startNode.getTextContentSize() &&
-        isTextNode(sibling)
+        ofTextNode(sibling)
       ) {
         startOffset = 0;
         startKey = sibling.__key;
@@ -408,7 +408,7 @@ function createOffsetNode(
     return offsetNode;
   }
   state.prevIsBlock = false;
-  const isText = isTextNode(node);
+  const isText = ofTextNode(node);
   // $FlowFixMe: isText means __text is available
   const length = isText ? node.__text.length : 1;
   const end = (state.offset += length);

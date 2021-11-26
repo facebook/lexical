@@ -20,7 +20,7 @@ import type {
   LineBreakNode,
 } from 'outline';
 
-import {isTextNode} from 'outline';
+import {ofTextNode} from 'outline';
 import {useCallback, useEffect, useRef, useState, useMemo} from 'react';
 // $FlowFixMe
 import {unstable_batchedUpdates, createPortal} from 'react-dom';
@@ -251,12 +251,12 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
                 'Arial',
               ),
             );
-            setIsBold(isTextNode(node) && node.hasFormat('bold'));
-            setIsItalic(isTextNode(node) && node.hasFormat('italic'));
+            setIsBold(ofTextNode(node) && node.hasFormat('bold'));
+            setIsItalic(ofTextNode(node) && node.hasFormat('italic'));
             setIsStrikethrough(
-              isTextNode(node) && node.hasFormat('strikethrough'),
+              ofTextNode(node) && node.hasFormat('strikethrough'),
             );
-            setIsCode(isTextNode(node) && node.hasFormat('code'));
+            setIsCode(ofTextNode(node) && node.hasFormat('code'));
             const parent = node.getParent();
             if (isLinkNode(parent)) {
               setIsLink(true);

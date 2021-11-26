@@ -610,6 +610,12 @@ export function createTextNode(text?: string = ''): TextNode {
   return new TextNode(text);
 }
 
-export function isTextNode(node: ?OutlineNode): boolean %checks {
+export function ofTextNode(node: ?OutlineNode): boolean %checks {
   return node instanceof TextNode;
+}
+
+export function isTextNode(node: ?OutlineNode): boolean %checks {
+  return (
+    node instanceof TextNode && (TextNode.getType(): string) === node.__type
+  );
 }

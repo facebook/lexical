@@ -58,7 +58,7 @@ import {
 import {
   createTextNode,
   createNodeFromParse,
-  isTextNode,
+  ofTextNode,
   isDecoratorNode,
   log,
   getSelection,
@@ -669,7 +669,7 @@ function shouldPreventDefaultAndInsertText(
     // been changed (thus is dirty).
     ((isBeforeInput || anchorNode.isDirty()) && text.length > 1) ||
     // If we're working with a non-text node.
-    !isTextNode(anchorNode) ||
+    !ofTextNode(anchorNode) ||
     // Check if we're changing from bold to italics, or some other format.
     anchorNode.getFormat() !== selection.format ||
     // One last set of heuristics to check against.
@@ -981,7 +981,7 @@ function updateSelectedTextFromDOM(
   const {anchorNode, anchorOffset, focusOffset} = domSelection;
   if (anchorNode !== null && anchorNode.nodeType === 3) {
     const node = getNearestNodeFromDOMNode(anchorNode);
-    if (isTextNode(node)) {
+    if (ofTextNode(node)) {
       updateTextNodeFromDOMContent(
         node,
         anchorNode.nodeValue,

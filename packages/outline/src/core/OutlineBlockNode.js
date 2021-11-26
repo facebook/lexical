@@ -10,7 +10,7 @@
 import type {NodeKey} from './OutlineNode';
 import type {Selection} from './OutlineSelection';
 
-import {isTextNode, TextNode} from '.';
+import {ofTextNode, TextNode} from '.';
 import {OutlineNode, updateDirectionIfNeeded} from './OutlineNode';
 import {makeSelection, getSelection, setPointValues} from './OutlineSelection';
 import {errorOnReadOnly, getActiveEditor} from './OutlineUpdates';
@@ -74,7 +74,7 @@ export class BlockNode extends OutlineNode {
     const children = self.__children;
     for (let i = 0; i < children.length; i++) {
       const childNode = getNodeByKey<OutlineNode>(children[i]);
-      if (isTextNode(childNode) && (includeInert || !childNode.isInert())) {
+      if (ofTextNode(childNode) && (includeInert || !childNode.isInert())) {
         textNodes.push(childNode);
       } else if (isBlockNode(childNode)) {
         const subChildrenNodes = childNode.getAllTextNodes(includeInert);
@@ -220,7 +220,7 @@ export class BlockNode extends OutlineNode {
   }
   selectStart(): Selection {
     const firstNode = this.getFirstDescendant();
-    if (isBlockNode(firstNode) || isTextNode(firstNode)) {
+    if (isBlockNode(firstNode) || ofTextNode(firstNode)) {
       return firstNode.select(0, 0);
     }
     // Decorator or LineBreak
@@ -231,7 +231,7 @@ export class BlockNode extends OutlineNode {
   }
   selectEnd(): Selection {
     const lastNode = this.getLastDescendant();
-    if (isBlockNode(lastNode) || isTextNode(lastNode)) {
+    if (isBlockNode(lastNode) || ofTextNode(lastNode)) {
       return lastNode.select();
     }
     // Decorator or LineBreak

@@ -18,7 +18,7 @@ import {
   createAbsolutePositionFromRelativePosition,
   // $FlowFixMe: need Flow typings for yjs
 } from 'yjs';
-import {isTextNode, isBlockNode, getNodeByKey, getSelection} from 'outline';
+import {ofTextNode, isBlockNode, getNodeByKey, getSelection} from 'outline';
 
 export type CursorSelection = {
   caret: HTMLElement,
@@ -185,10 +185,10 @@ function updateCursor(
   let anchorDOM = editor.getElementByKey(anchorKey);
   let focusDOM = editor.getElementByKey(focusKey);
 
-  if (isTextNode(anchorNode)) {
+  if (ofTextNode(anchorNode)) {
     anchorDOM = getDOMTextNode(anchorDOM);
   }
-  if (isTextNode(focusNode)) {
+  if (ofTextNode(focusNode)) {
     focusDOM = getDOMTextNode(focusDOM);
   }
   if (

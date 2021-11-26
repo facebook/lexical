@@ -18,7 +18,7 @@ import {
 import {
   isRootNode,
   isBlockNode,
-  isTextNode,
+  ofTextNode,
   isDecoratorNode,
   createEditorStateRef,
 } from '.';
@@ -118,7 +118,7 @@ export function internalCreateNodeFromParse(
     }
     node.__indent = parsedNode.__indent;
     node.__format = parsedNode.__format;
-  } else if (isTextNode(node)) {
+  } else if (ofTextNode(node)) {
     node.__format = parsedNode.__format;
     node.__style = parsedNode.__style;
   } else if (isDecoratorNode(node)) {

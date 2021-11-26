@@ -7,7 +7,7 @@
  */
 
 import * as SelectionHelpers from 'outline/selection';
-import {createTextNode, isTextNode, getSelection} from 'outline';
+import {createTextNode, ofTextNode, getSelection} from 'outline';
 
 Object.defineProperty(HTMLElement.prototype, 'contentEditable', {
   get() {
@@ -604,7 +604,7 @@ export async function applySelectionInputs(inputs, update, editor) {
           }
           case 'move_end': {
             const anchorNode = selection.anchor.getNode();
-            if (isTextNode(anchorNode)) {
+            if (ofTextNode(anchorNode)) {
               anchorNode.select();
             }
             break;

@@ -14,6 +14,7 @@ import {useEffect} from 'react';
 import {
   createTextNode,
   isTextNode,
+  ofTextNode,
   TextNode,
   RootNode,
   isBlockNode,
@@ -39,7 +40,7 @@ function textTransform(node: TextNode, state: State): void {
   // If the next sibling is a text node that starts with an invalid character
   // do not continue.
   let adjacentTextNode = nextSibling;
-  while (isTextNode(adjacentTextNode)) {
+  while (ofTextNode(adjacentTextNode)) {
     const textContent = adjacentTextNode.getTextContent();
     if (!textContent !== '' && !isCharacterBetweenValid(textContent[0])) {
       return;
@@ -79,7 +80,7 @@ function textTransform(node: TextNode, state: State): void {
       // If the prev sibling is a text node and the start offset is 0, then
       // that means we shouldn't be trying to make a delight at the start.
       // Otherwise, we will not have a space.
-      if (isTextNode(prevSibling)) {
+      if (ofTextNode(prevSibling)) {
         continue;
       }
       [targetNode, currentNode] = currentNode.splitText(endOffset);

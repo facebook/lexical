@@ -20,7 +20,7 @@ import type {Binding, Provider, YjsEvent, YjsNode} from '.';
 // $FlowFixMe: need Flow typings for yjs
 import {XmlText} from 'yjs';
 import {
-  isTextNode,
+  ofTextNode,
   isBlockNode,
   isDecoratorNode,
   getSelection,
@@ -229,7 +229,7 @@ function syncYjsNodeToOutline(
     );
   }
   if (childListChanged) {
-    if (isTextNode(node)) {
+    if (ofTextNode(node)) {
       syncYjsTextChangesToOutline(yjsNode, node);
     } else if (isBlockNode(node)) {
       syncYjsChildrenChangesToOutline(binding, yjsNode, node, nodeMap, key);
@@ -283,9 +283,9 @@ export function syncYjsChangesToOutline(
             !anchorNode.isAttached() ||
             !focusNode.isAttached() ||
             // If we've split a node, then the offset might not be right
-            (isTextNode(anchorNode) &&
+            (ofTextNode(anchorNode) &&
               anchor.offset > anchorNode.getTextContentSize()) ||
-            (isTextNode(focusNode) &&
+            (ofTextNode(focusNode) &&
               focus.offset > focusNode.getTextContentSize())
           ) {
             recoveryNeeded = true;

@@ -19,6 +19,7 @@ import {
   BlockNode,
   isLeafNode,
   isTextNode,
+  ofTextNode,
   log,
   getSelection,
   getRoot,
@@ -142,9 +143,9 @@ function wrapOverflowedNodes(offset: number) {
           (!selection.anchor.getNode().isAttached() ||
             !selection.focus.getNode().isAttached())
         ) {
-          if (isTextNode(previousSibling)) {
+          if (ofTextNode(previousSibling)) {
             previousSibling.select();
-          } else if (isTextNode(nextSibling)) {
+          } else if (ofTextNode(nextSibling)) {
             nextSibling.select();
           } else if (parent !== null) {
             parent.select();

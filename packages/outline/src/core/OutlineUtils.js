@@ -25,7 +25,7 @@ import {
   HAS_DIRTY_NODES,
 } from './OutlineConstants';
 import {
-  isTextNode,
+  ofTextNode,
   isBlockNode,
   isLineBreakNode,
   isDecoratorNode,
@@ -157,7 +157,7 @@ export function toggleTextFormatType(
 }
 
 export function isLeafNode(node: ?OutlineNode): boolean %checks {
-  return isTextNode(node) || isLineBreakNode(node) || isDecoratorNode(node);
+  return ofTextNode(node) || isLineBreakNode(node) || isDecoratorNode(node);
 }
 
 export function generateKey(node: OutlineNode): NodeKey {

@@ -40,7 +40,7 @@ import {
 } from './OutlineConstants';
 import {isDecoratorNode} from './OutlineDecoratorNode';
 import {BlockNode, isBlockNode} from './OutlineBlockNode';
-import {isTextNode} from './OutlineTextNode';
+import {isTextNode, ofTextNode} from './OutlineTextNode';
 import {isLineBreakNode} from './OutlineLineBreakNode';
 import {isRootNode} from './OutlineRootNode';
 import invariant from 'shared/invariant';
@@ -133,7 +133,7 @@ function createNode(
   // This helps preserve the text, and stops spell check tools from
   // merging or break the spans (which happens if they are missing
   // this attribute).
-  if (isTextNode(node)) {
+  if (ofTextNode(node)) {
     dom.setAttribute('data-outline-text', 'true');
   } else if (isDecoratorNode(node)) {
     dom.setAttribute('data-outline-decorator', 'true');

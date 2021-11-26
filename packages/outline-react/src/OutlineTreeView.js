@@ -9,7 +9,7 @@
 
 import type {BlockNode, EditorState, OutlineEditor, Selection} from 'outline';
 
-import {isBlockNode, isTextNode, getRoot, getSelection} from 'outline';
+import {isBlockNode, ofTextNode, getRoot, getSelection} from 'outline';
 
 import * as React from 'react';
 import {useState, useEffect, useRef} from 'react';
@@ -256,7 +256,7 @@ function normalize(text) {
 }
 
 function printNode(node) {
-  if (isTextNode(node)) {
+  if (ofTextNode(node)) {
     const text = node.getTextContent(true);
     const title = text.length === 0 ? '(empty)' : `"${normalize(text)}"`;
     const flagLabels = printTextNodeFlags(node);
@@ -298,7 +298,7 @@ function printSelectedCharsLine({
 }) {
   // No selection or node is not selected.
   if (
-    !isTextNode(node) ||
+    !ofTextNode(node) ||
     selection === null ||
     !isSelected ||
     isBlockNode(node)

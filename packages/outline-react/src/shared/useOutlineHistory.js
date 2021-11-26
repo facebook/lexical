@@ -15,7 +15,7 @@ import type {
   IntentionallyMarkedAsDirtyBlock,
 } from 'outline';
 
-import {isTextNode, isRootNode} from 'outline';
+import {ofTextNode, isRootNode} from 'outline';
 import {isRedo, isUndo} from 'outline/keys';
 import {useCallback, useEffect, useMemo} from 'react';
 import {editorStatesWithoutHistory} from 'outline/history';
@@ -92,8 +92,8 @@ function getMergeAction(
     const prevDirtyNode = prevNodeMap.get(prevDirtyNodeKey);
     if (
       prevDirtyNode !== undefined &&
-      isTextNode(prevDirtyNode) &&
-      isTextNode(nextDirtyNode) &&
+      ofTextNode(prevDirtyNode) &&
+      ofTextNode(nextDirtyNode) &&
       prevDirtyNode.__flags === nextDirtyNode.__flags
     ) {
       const prevText = prevDirtyNode.__text;

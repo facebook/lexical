@@ -19,7 +19,7 @@ import type {Provider, Binding, YjsNode} from '.';
 
 // $FlowFixMe: need Flow typings for yjs
 import {XmlText, XmlElement, Doc} from 'yjs';
-import {isTextNode, isBlockNode, isDecoratorNode, getSelection} from 'outline';
+import {ofTextNode, isBlockNode, isDecoratorNode, getSelection} from 'outline';
 import {
   diffText,
   getIndexOfYjsNode,
@@ -102,7 +102,7 @@ function createYjsNodeFromOutlineNode(
   }
   let yjsNode;
 
-  if (isTextNode(node)) {
+  if (ofTextNode(node)) {
     const textContent = node.getTextContent();
     yjsNode = new XmlText();
     yjsNode.insert(0, textContent);
@@ -314,7 +314,7 @@ function syncOutlineNodeToYjs(
   // Diff
   syncOutlineAttributeChangesToYjs(yjsNode, prevNode, node);
 
-  if (isTextNode(node) && isTextNode(prevNode)) {
+  if (ofTextNode(node) && ofTextNode(prevNode)) {
     const prevText = prevNode.__text;
     const text = node.__text;
     if (prevText !== text) {

@@ -12,7 +12,7 @@ import type {Selection, PointType} from './OutlineSelection';
 
 import {
   isBlockNode,
-  isTextNode,
+  ofTextNode,
   isRootNode,
   BlockNode,
   isDecoratorNode,
@@ -102,12 +102,12 @@ function moveSelectionPointToSibling(
   let siblingKey = null;
   let offset = 0;
   const prevSibling = node.getPreviousSibling();
-  if (isTextNode(prevSibling)) {
+  if (ofTextNode(prevSibling)) {
     siblingKey = prevSibling.__key;
     offset = prevSibling.getTextContentSize();
   } else {
     const nextSibling = node.getNextSibling();
-    if (isTextNode(nextSibling)) {
+    if (ofTextNode(nextSibling)) {
       siblingKey = nextSibling.__key;
     }
   }
@@ -212,7 +212,7 @@ export class OutlineNode {
     const selectedNodeKeys = new Set(selection.getNodes().map((n) => n.__key));
     const isSelected = selectedNodeKeys.has(this.__key);
 
-    if (isTextNode(this)) {
+    if (ofTextNode(this)) {
       return isSelected;
     }
     // For inline images inside of block nodes.
@@ -551,7 +551,7 @@ export class OutlineNode {
       mutableNode.__children = Array.from(latestNode.__children);
       mutableNode.__indent = latestNode.__indent;
       mutableNode.__format = latestNode.__format;
-    } else if (isTextNode(mutableNode)) {
+    } else if (ofTextNode(mutableNode)) {
       mutableNode.__format = latestNode.__format;
       mutableNode.__style = latestNode.__style;
     } else if (isDecoratorNode(mutableNode)) {
@@ -756,7 +756,7 @@ export class OutlineNode {
     if (prevSibling === null) {
       return parent.select(0, 0);
     }
-    if (!isTextNode(prevSibling)) {
+    if (!ofTextNode(prevSibling)) {
       const index = prevSibling.getIndexWithinParent() + 1;
       return parent.select(index, index);
     }
@@ -769,7 +769,7 @@ export class OutlineNode {
     if (nextSibling === null) {
       return parent.select();
     }
-    if (!isTextNode(nextSibling)) {
+    if (!ofTextNode(nextSibling)) {
       const index = nextSibling.getIndexWithinParent();
       return parent.select(index, index);
     }

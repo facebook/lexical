@@ -9,7 +9,7 @@
 
 import type {OutlineNode, NodeKey, EditorConfig} from 'outline';
 
-import {isBlockNode, isTextNode, BlockNode} from 'outline';
+import {isBlockNode, ofTextNode, BlockNode} from 'outline';
 
 export class ParagraphNode extends BlockNode {
   static getType(): string {
@@ -58,10 +58,10 @@ export class ParagraphNode extends BlockNode {
       isBlockNode(sibling) &&
       this.getIndexWithinParent() === 0 &&
       (children.length === 0 ||
-        (isTextNode(children[0]) && children[0].getTextContent().trim() === ''))
+        (ofTextNode(children[0]) && children[0].getTextContent().trim() === ''))
     ) {
       const firstChild = sibling.getFirstChild();
-      if (isTextNode(firstChild)) {
+      if (ofTextNode(firstChild)) {
         firstChild.select(0, 0);
       } else {
         sibling.select(0, 0);

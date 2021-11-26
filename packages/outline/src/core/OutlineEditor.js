@@ -351,9 +351,11 @@ class BaseOutlineEditor {
       transformsSet.delete(transform);
     };
   }
-  addTransformX<T: OutlineNode>(
-    klass: Class<T>,
-    listener: Transform<T>,
+  addTransformX(
+    // There's no Flow-safe way to preserve the T in Transform<T>, but <T: OutlineNode> in the
+    // declaration below guarantees these are OutlineNodes.
+    klass: Class<OutlineNode>,
+    listener: Transform<OutlineNode>,
   ): () => void {
     const nodeInfo = this._registeredNodes.get(klass.getType());
     if (nodeInfo === undefined) {
@@ -364,11 +366,8 @@ class BaseOutlineEditor {
       );
     }
     const transforms = nodeInfo.transforms;
-    // There's no good workaround to preserve the T in Transform<T>
-    // $FlowFixMe
     transforms.add(listener);
     return () => {
-      // $FlowFixMe
       transforms.delete(listener);
     };
   }

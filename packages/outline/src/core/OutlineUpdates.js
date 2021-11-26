@@ -9,7 +9,7 @@
 
 import type {ParsedEditorState} from './OutlineEditorState';
 import type {RootNode} from './OutlineRootNode';
-import type {OutlineEditor, ListenerType} from './OutlineEditor';
+import type {OutlineEditor, ListenerType, Transform} from './OutlineEditor';
 import type {OutlineNode, NodeKey} from './OutlineNode';
 import type {Selection} from './OutlineSelection';
 import type {ParsedNode, NodeParserState} from './OutlineParsing';
@@ -115,11 +115,19 @@ export function getActiveEditor(): OutlineEditor {
   return activeEditor;
 }
 
-export function applyTransforms<N: OutlineNode>(
-  node: N,
-  transformsArr: Array<(N, State) => void>,
-  transformsArrLength: number,
-): void {
+export function applyTransforms(
+  editor: OutlineEditor,
+  node: OutlineNode,
+  transformsCache: Map<string, Array<Transform<OutlineNode>>>,
+) {
+  const type = node.__type;
+  const registeredNode = getRegisteredNodeOrThrow(editor, type);
+  let transformsArr = transformsCache.get(type);
+  if (transformsArr === undefined) {
+    transformsArr = Array.from(registeredNode.transforms);
+    transformsCache.set(type, transformsArr);
+  }
+  const transformsArrLength = transformsArr.length;
   for (let i = 0; i < transformsArrLength; i++) {
     transformsArr[i](node, state);
     if (!node.isAttached()) {
@@ -163,6 +171,7 @@ function applyAllTransforms(
   const dirtyBlocks = editor._dirtyBlocks;
   const nodeMap = editorState._nodeMap;
   const compositionKey = getCompositionKey();
+  const transformsCache = new Map();
 
   let untransformedDirtyLeaves = dirtyLeaves;
   let untransformedDirtyLeavesLength = untransformedDirtyLeaves.size;
@@ -181,24 +190,13 @@ function applyAllTransforms(
         const nodeKey = untransformedDirtyLeavesArr[i];
         const node = nodeMap.get(nodeKey);
         if (isTextNode(node)) {
-          const parent = node.getParent();
-          if (parent !== null) {
-            normalizeTextNode(node, selection);
-          }
+          normalizeTextNode(node, selection);
         }
         if (
           node !== undefined &&
           isNodeValidForTransform(node, compositionKey)
         ) {
-          const nodeInfo = getRegisteredNodeOrThrow(editor, node.__type);
-          const transformsX = nodeInfo.transforms;
-          // TODO Store in a cache
-          const transformsArr = Array.from(transformsX);
-          applyTransforms<OutlineNode>(
-            node,
-            transformsArr,
-            transformsArr.length,
-          );
+          applyTransforms(editor, node, transformsCache);
         }
         dirtyLeaves.add(nodeKey);
       }
@@ -221,11 +219,7 @@ function applyAllTransforms(
       const nodeIntentionallyMarkedAsDirty = untransformedDirtyBlocksArr[i][1];
       const node = nodeMap.get(nodeKey);
       if (node !== undefined && isNodeValidForTransform(node, compositionKey)) {
-        const nodeInfo = getRegisteredNodeOrThrow(editor, node.__type);
-        const transformsX = nodeInfo.transforms;
-        // TODO Store in a cache
-        const transformsArr = Array.from(transformsX);
-        applyTransforms<OutlineNode>(node, transformsArr, transformsArr.length);
+        applyTransforms(editor, node, transformsCache);
       }
       dirtyBlocks.set(nodeKey, nodeIntentionallyMarkedAsDirty);
     }

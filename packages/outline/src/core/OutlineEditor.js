@@ -11,8 +11,6 @@ import type {OutlineNode, NodeKey} from './OutlineNode';
 import type {Node as ReactNode} from 'react';
 import type {State} from './OutlineUpdates';
 import type {EditorState} from './OutlineEditorState';
-import type {DecoratorNode} from './OutlineDecoratorNode';
-import type {BlockNode} from './OutlineBlockNode';
 
 import {
   commitPendingUpdates,
@@ -79,11 +77,12 @@ export type EditorConfig<EditorContext> = {
   context: EditorContext,
 };
 
-export type RegisteredNodes = Map<string, NodeInfo>;
-export type NodeInfo = $ReadOnly<{
+export type RegisteredNodes = Map<string, RegisteredNode>;
+export type RegisteredNode = $ReadOnly<{
   klass: Class<OutlineNode>,
   transforms: Set<Transform<OutlineNode>>,
 }>;
+export type Transform<T> = (node: T, state: State) => void;
 
 export type ErrorListener = (error: Error, log: Array<string>) => void;
 export type UpdateListener = ({
@@ -100,12 +99,6 @@ export type RootListener = (
 ) => void;
 export type TextMutationListener = (mutation: TextMutation) => void;
 export type TextContentListener = (text: string) => void;
-
-export type Transform<T> = (node: T, state: State) => void;
-export type TextTransform = (node: TextNode, state: State) => void;
-export type DecoratorTransform = (node: DecoratorNode, state: State) => void;
-export type BlockTransform = (node: BlockNode, state: State) => void;
-export type RootTransform = (node: RootNode, state: State) => void;
 
 export type TextMutation = {
   node: TextNode,

@@ -10,7 +10,7 @@
 import type {
   OutlineEditor,
   IntentionallyMarkedAsDirtyBlock,
-  NodeInfo,
+  RegisteredNode,
 } from './OutlineEditor';
 import type {OutlineNode, NodeKey, NodeMap} from './OutlineNode';
 import type {TextFormatType} from './OutlineTextNode';
@@ -55,7 +55,7 @@ export function generateRandomKey(): string {
 export function getRegisteredNodeOrThrow(
   editor: OutlineEditor,
   nodeType: string,
-): NodeInfo {
+): RegisteredNode {
   const registeredNode = editor._registeredNodes.get(nodeType);
   if (registeredNode === undefined) {
     invariant(false, 'registeredNode: Type %s not found', nodeType);

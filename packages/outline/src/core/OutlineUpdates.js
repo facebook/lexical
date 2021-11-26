@@ -122,13 +122,9 @@ export function applyTransforms(
 ) {
   const type = node.__type;
   const registeredNode = getRegisteredNodeOrThrow(editor, type);
-  const transforms = registeredNode.transforms;
-  if (transforms === null) {
-    return;
-  }
   let transformsArr = transformsCache.get(type);
   if (transformsArr === undefined) {
-    transformsArr = Array.from(transforms);
+    transformsArr = Array.from(registeredNode.transforms);
     transformsCache.set(type, transformsArr);
   }
   const transformsArrLength = transformsArr.length;

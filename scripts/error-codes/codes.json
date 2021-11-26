@@ -43,7 +43,6 @@
   "41": "updateDOM: base method not extended",
   "42": "setFlags: can only be used on non-immutable nodes",
   "43": "Expected node with key %s to exist but it's not in the nodeMap.",
-  "44": "Some transforms are endlessly triggering additional transforms. May have encountered a recursivity issue where two transforms have their preconditions too lose and collide with each other.",
   "45": "Attempted to create a node that was not previously registered on the editor. You can use editor.registerNodeType to register your custom nodes.",
   "46": "OutlineNode: Node type %s does not implement .getType().",
   "47": "Attempted to create node %s that was not previously registered on the editor. You can use editor.registerNodeType to register your custom nodes.",
@@ -58,5 +57,6 @@
   "56": "Create node: Type %s in node %s does not match registered node %s with the same type",
   "57": "Create node: Attempted to create node %s that was not previously registered on the editor. You can use editor.registerNode to register your custom nodes.",
   "58": "Node %s has not been registered. Run editor.registerNode to register your own nodes.",
-  "59": "registeredNode: Type %s not found"
+  "59": "registeredNode: Type %s not found",
+  "60": "One or more transforms are endlessly triggering additional transforms. May have encountered infinite recursion caused by transforms that have their preconditions too lose and/or conflict with each other."
 }

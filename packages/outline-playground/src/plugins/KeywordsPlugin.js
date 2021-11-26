@@ -15,6 +15,7 @@ import {
   createTextNode,
   isTextNode,
   TextNode,
+  RootNode,
   isBlockNode,
   getSelection,
 } from 'outline';
@@ -140,8 +141,8 @@ function useKeywords(editor: OutlineEditor): void {
   useEffect(() => {
     editor.registerNode(KeywordNode);
 
-    const removeTextTransform = editor.addTransform('text', textTransform);
-    const removeRootTransform = editor.addTransform('root', traverseNodes);
+    const removeTextTransform = editor.addTransform(TextNode, textTransform);
+    const removeRootTransform = editor.addTransform(RootNode, traverseNodes);
 
     return () => {
       removeTextTransform();

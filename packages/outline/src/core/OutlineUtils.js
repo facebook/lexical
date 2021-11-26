@@ -10,6 +10,7 @@
 import type {
   OutlineEditor,
   IntentionallyMarkedAsDirtyBlock,
+  RegisteredNode,
 } from './OutlineEditor';
 import type {OutlineNode, NodeKey, NodeMap} from './OutlineNode';
 import type {TextFormatType} from './OutlineTextNode';
@@ -37,6 +38,7 @@ import {
   updateEditor,
 } from './OutlineUpdates';
 import {flushRootMutations} from './OutlineMutations';
+import invariant from 'shared/invariant';
 
 export const emptyFunction = () => {};
 
@@ -48,6 +50,17 @@ export function resetRandomKey(): void {
 
 export function generateRandomKey(): string {
   return '' + keyCounter++;
+}
+
+export function getRegisteredNodeOrThrow(
+  editor: OutlineEditor,
+  nodeType: string,
+): RegisteredNode {
+  const registeredNode = editor._registeredNodes.get(nodeType);
+  if (registeredNode === undefined) {
+    invariant(false, 'registeredNode: Type %s not found', nodeType);
+  }
+  return registeredNode;
 }
 
 // When we are dealing with setting selection on an empty text node, we
@@ -278,10 +291,7 @@ export function getEditorStateTextContent(editorState: EditorState): string {
   return editorState.read((view) => view.getRoot().getTextContent());
 }
 
-export function markAllNodesAsDirty(
-  editor: OutlineEditor,
-  type: 'text' | 'decorator' | 'block' | 'root',
-): void {
+export function markAllNodesAsDirty(editor: OutlineEditor, type: string): void {
   // Mark all existing text nodes as dirty
   updateEditor(
     editor,
@@ -300,13 +310,7 @@ export function markAllNodesAsDirty(
       // compiled away to a slow-path with Babel.
       for (let i = 0; i < nodeMapEntries.length; i++) {
         const node = nodeMapEntries[i][1];
-        if (
-          (type === 'text' && isTextNode(node)) ||
-          (type === 'decorator' && isDecoratorNode(node)) ||
-          (type === 'block' && isBlockNode(node))
-        ) {
-          node.markDirty();
-        }
+        node.markDirty();
       }
     },
     true,

@@ -7,8 +7,9 @@
  * @flow strict
  */
 
-import type {OutlineEditor, TextNode, State} from 'outline';
+import type {OutlineEditor, State} from 'outline';
 
+import {TextNode} from 'outline';
 import PlaygroundEditorContext from '../context/PlaygroundEditorContext';
 import {useEditorContext} from 'outline-react/OutlineEditorContext';
 import {useEffect} from 'react';
@@ -281,7 +282,7 @@ function textNodeTransform(node: TextNode, state: State): void {
 function useHashtags(editor: OutlineEditor): void {
   useEffect(() => {
     editor.registerNode(HashtagNode);
-    return editor.addTransform('text', textNodeTransform);
+    return editor.addTransform(TextNode, textNodeTransform);
   }, [editor]);
 }
 

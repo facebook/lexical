@@ -9,13 +9,10 @@
 
 import type {ParsedEditorState} from './OutlineEditorState';
 import type {RootNode} from './OutlineRootNode';
-import type {BlockNode} from './OutlineBlockNode';
-import type {OutlineEditor, ListenerType} from './OutlineEditor';
+import type {OutlineEditor, ListenerType, Transform} from './OutlineEditor';
 import type {OutlineNode, NodeKey} from './OutlineNode';
 import type {Selection} from './OutlineSelection';
 import type {ParsedNode, NodeParserState} from './OutlineParsing';
-import type {TextNode} from './OutlineTextNode';
-import type {DecoratorNode} from './OutlineDecoratorNode';
 
 import {normalizeTextNode, updateEditorState} from './OutlineReconciler';
 import {
@@ -42,6 +39,7 @@ import {
   setSelection,
   clearSelection,
   getRoot,
+  getRegisteredNodeOrThrow,
 } from './OutlineUtils';
 import {
   garbageCollectDetachedDecorators,
@@ -49,7 +47,7 @@ import {
 } from './OutlineGC';
 import {internalCreateNodeFromParse} from './OutlineParsing';
 import {applySelectionTransforms} from './OutlineSelection';
-import {isTextNode, isRootNode, isBlockNode, isDecoratorNode} from '.';
+import {isTextNode} from '.';
 import invariant from 'shared/invariant';
 
 let activeEditorState: null | EditorState = null;
@@ -117,11 +115,19 @@ export function getActiveEditor(): OutlineEditor {
   return activeEditor;
 }
 
-export function applyTransforms<N: OutlineNode>(
-  node: N,
-  transformsArr: Array<(N, State) => void>,
-  transformsArrLength: number,
-): void {
+export function applyTransforms(
+  editor: OutlineEditor,
+  node: OutlineNode,
+  transformsCache: Map<string, Array<Transform<OutlineNode>>>,
+) {
+  const type = node.__type;
+  const registeredNode = getRegisteredNodeOrThrow(editor, type);
+  let transformsArr = transformsCache.get(type);
+  if (transformsArr === undefined) {
+    transformsArr = Array.from(registeredNode.transforms);
+    transformsCache.set(type, transformsArr);
+  }
+  const transformsArrLength = transformsArr.length;
   for (let i = 0; i < transformsArrLength; i++) {
     transformsArr[i](node, state);
     if (!node.isAttached()) {
@@ -163,21 +169,9 @@ function applyAllTransforms(
   const selection = editorState._selection;
   const dirtyLeaves = editor._dirtyLeaves;
   const dirtyBlocks = editor._dirtyBlocks;
-  const transforms = editor._transforms;
-  const textTransforms = transforms.text;
-  const textTransformsArr = Array.from(textTransforms);
-  const textTransformsArrLength = textTransformsArr.length;
-  const decoratorTransforms = transforms.decorator;
-  const decoratorTransformsArr = Array.from(decoratorTransforms);
-  const decoratorTransformsArrLength = decoratorTransformsArr.length;
-  const blockTransforms = transforms.block;
-  const blockTransformsArr = Array.from(blockTransforms);
-  const blockTransformsArrLength = blockTransformsArr.length;
-  const rootTransforms = transforms.root;
-  const rootTransformsArr = Array.from(rootTransforms);
-  const rootTransformsArrLength = rootTransformsArr.length;
   const nodeMap = editorState._nodeMap;
   const compositionKey = getCompositionKey();
+  const transformsCache = new Map();
 
   let untransformedDirtyLeaves = dirtyLeaves;
   let untransformedDirtyLeavesLength = untransformedDirtyLeaves.size;
@@ -196,25 +190,13 @@ function applyAllTransforms(
         const nodeKey = untransformedDirtyLeavesArr[i];
         const node = nodeMap.get(nodeKey);
         if (isTextNode(node)) {
-          const parent = node.getParent();
-          if (parent !== null) {
-            normalizeTextNode(node, selection);
-          }
+          normalizeTextNode(node, selection);
         }
-        if (isNodeValidForTransform(node, compositionKey)) {
-          if (isTextNode(node)) {
-            applyTransforms<TextNode>(
-              node,
-              textTransformsArr,
-              textTransformsArrLength,
-            );
-          } else if (isDecoratorNode(node)) {
-            applyTransforms<DecoratorNode>(
-              node,
-              decoratorTransformsArr,
-              decoratorTransformsArrLength,
-            );
-          }
+        if (
+          node !== undefined &&
+          isNodeValidForTransform(node, compositionKey)
+        ) {
+          applyTransforms(editor, node, transformsCache);
         }
         dirtyLeaves.add(nodeKey);
       }
@@ -236,20 +218,8 @@ function applyAllTransforms(
       const nodeKey = untransformedDirtyBlocksArr[i][0];
       const nodeIntentionallyMarkedAsDirty = untransformedDirtyBlocksArr[i][1];
       const node = nodeMap.get(nodeKey);
-      if (isNodeValidForTransform(node, compositionKey)) {
-        if (isRootNode(node)) {
-          applyTransforms<RootNode>(
-            node,
-            rootTransformsArr,
-            rootTransformsArrLength,
-          );
-        } else if (isBlockNode(node)) {
-          applyTransforms<BlockNode>(
-            node,
-            blockTransformsArr,
-            blockTransformsArrLength,
-          );
-        }
+      if (node !== undefined && isNodeValidForTransform(node, compositionKey)) {
+        applyTransforms(editor, node, transformsCache);
       }
       dirtyBlocks.set(nodeKey, nodeIntentionallyMarkedAsDirty);
     }

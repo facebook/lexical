@@ -11,8 +11,6 @@ import type {OutlineNode, NodeKey} from './OutlineNode';
 import type {Node as ReactNode} from 'react';
 import type {State} from './OutlineUpdates';
 import type {EditorState} from './OutlineEditorState';
-import type {DecoratorNode} from './OutlineDecoratorNode';
-import type {BlockNode} from './OutlineBlockNode';
 
 import {
   commitPendingUpdates,
@@ -34,7 +32,6 @@ import {
 import invariant from 'shared/invariant';
 
 export type EditorThemeClassName = string;
-export type TypeToKlass = Map<string, Class<OutlineNode>>;
 
 export type TextNodeThemeClasses = {
   base?: EditorThemeClassName,
@@ -80,6 +77,13 @@ export type EditorConfig<EditorContext> = {
   context: EditorContext,
 };
 
+export type RegisteredNodes = Map<string, RegisteredNode>;
+export type RegisteredNode = $ReadOnly<{
+  klass: Class<OutlineNode>,
+  transforms: Set<Transform<OutlineNode>>,
+}>;
+export type Transform<T> = (node: T, state: State) => void;
+
 export type ErrorListener = (error: Error, log: Array<string>) => void;
 export type UpdateListener = ({
   prevEditorState: EditorState,
@@ -96,11 +100,6 @@ export type RootListener = (
 export type TextMutationListener = (mutation: TextMutation) => void;
 export type TextContentListener = (text: string) => void;
 
-export type TextTransform = (node: TextNode, state: State) => void;
-export type DecoratorTransform = (node: DecoratorNode, state: State) => void;
-export type BlockTransform = (node: BlockNode, state: State) => void;
-export type RootTransform = (node: RootNode, state: State) => void;
-
 export type TextMutation = {
   node: TextNode,
   anchorOffset: null | number,
@@ -115,13 +114,6 @@ type Listeners = {
   textmutation: Set<TextMutationListener>,
   root: Set<RootListener>,
   update: Set<UpdateListener>,
-};
-
-type Transforms = {
-  text: Set<TextTransform>,
-  decorator: Set<DecoratorTransform>,
-  block: Set<BlockTransform>,
-  root: Set<RootTransform>,
 };
 
 export type ListenerType =
@@ -206,8 +198,7 @@ class BaseOutlineEditor {
   _updates: Array<[(state: State) => void, void | (() => void)]>;
   _updating: boolean;
   _listeners: Listeners;
-  _transforms: Transforms;
-  _typeToKlass: TypeToKlass;
+  _registeredNodes: RegisteredNodes;
   _decorators: {[NodeKey]: ReactNode};
   _pendingDecorators: null | {[NodeKey]: ReactNode};
   _textContent: string;
@@ -243,20 +234,13 @@ class BaseOutlineEditor {
       root: new Set(),
       update: new Set(),
     };
-    // Transforms
-    this._transforms = {
-      text: new Set(),
-      decorator: new Set(),
-      block: new Set(),
-      root: new Set(),
-    };
     // Editor configuration for theme/context.
     this._config = config;
     // Mapping of types to their nodes
-    this._typeToKlass = new Map([
-      ['text', TextNode],
-      ['linebreak', LineBreakNode],
-      ['root', RootNode],
+    this._registeredNodes = new Map([
+      ['text', {klass: TextNode, transforms: new Set()}],
+      ['linebreak', {klass: LineBreakNode, transforms: new Set()}],
+      ['root', {klass: RootNode, transforms: new Set()}],
     ]);
     // React node decorators for portals
     this._decorators = {};
@@ -279,18 +263,24 @@ class BaseOutlineEditor {
   registerNode(klass: Class<OutlineNode>): void {
     const type = klass.getType();
     if (__DEV__) {
-      const editorKlass = this._typeToKlass.get(type);
-      if (editorKlass !== undefined && editorKlass !== klass) {
-        invariant(
-          false,
-          'Register node type: Type %s in node %s was already registered by another node %s',
-          type,
-          klass.name,
-          editorKlass.name,
-        );
+      const editorNode = this._registeredNodes.get(type);
+      if (editorNode !== undefined) {
+        const editorKlass = editorNode.klass;
+        if (editorKlass !== klass) {
+          invariant(
+            false,
+            'Register node type: Type %s in node %s was already registered by another node %s',
+            type,
+            klass.name,
+            editorKlass.name,
+          );
+        }
       }
     }
-    this._typeToKlass.set(type, klass);
+    this._registeredNodes.set(type, {
+      klass,
+      transforms: new Set(),
+    });
   }
   addListener(
     type: ListenerType,
@@ -328,15 +318,26 @@ class BaseOutlineEditor {
       }
     };
   }
-  addTransform(type: TransformerType, transform: TextTransform): () => void {
-    const transformsSet = this._transforms[type];
-    // $FlowFixMe: TODO refine this from the above types
-    transformsSet.add(transform);
+  addTransform(
+    // There's no Flow-safe way to preserve the T in Transform<T>, but <T: OutlineNode> in the
+    // declaration below guarantees these are OutlineNodes.
+    klass: Class<OutlineNode>,
+    listener: Transform<OutlineNode>,
+  ): () => void {
+    const type = klass.getType();
+    const registeredNode = this._registeredNodes.get(type);
+    if (registeredNode === undefined) {
+      invariant(
+        false,
+        'Node %s has not been registered. Run editor.registerNode to register your own nodes.',
+        klass.name,
+      );
+    }
+    const transforms = registeredNode.transforms;
+    transforms.add(listener);
     markAllNodesAsDirty(getSelf(this), type);
-
     return () => {
-      // $FlowFixMe: TODO refine this from the above types
-      transformsSet.delete(transform);
+      transforms.delete(listener);
     };
   }
   getDecorators(): {[NodeKey]: ReactNode} {
@@ -449,8 +450,7 @@ declare export class OutlineEditor {
   _updating: boolean;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _listeners: Listeners;
-  _transforms: Transforms;
-  _typeToKlass: TypeToKlass;
+  _registeredNodes: RegisteredNodes;
   _decorators: {[NodeKey]: ReactNode};
   _pendingDecorators: null | {[NodeKey]: ReactNode};
   _config: EditorConfig<{...}>;
@@ -470,10 +470,10 @@ declare export class OutlineEditor {
   addListener(type: 'decorator', listener: DecoratorListener): () => void;
   addListener(type: 'textmutation', listener: TextMutationListener): () => void;
   addListener(type: 'textcontent', listener: TextContentListener): () => void;
-  addTransform(type: 'text', listener: TextTransform): () => void;
-  addTransform(type: 'decorator', listener: DecoratorTransform): () => void;
-  addTransform(type: 'block', listener: BlockTransform): () => void;
-  addTransform(type: 'root', listener: RootTransform): () => void;
+  addTransform<T: OutlineNode>(
+    klass: Class<T>,
+    listener: Transform<T>,
+  ): () => void;
   getDecorators(): {[NodeKey]: ReactNode};
   getRootElement(): null | HTMLElement;
   setRootElement(rootElement: null | HTMLElement): void;

@@ -8,9 +8,9 @@
  */
 
 import type {OutlineEditor, State} from 'outline';
-import type {TextNode} from 'outline';
 
 import {useEffect} from 'react';
+import {TextNode} from 'outline';
 import {isParagraphNode} from 'outline/ParagraphNode';
 import {createListItemNode} from 'outline/ListItemNode';
 import {createHeadingNode} from 'outline/HeadingNode';
@@ -86,6 +86,6 @@ function textNodeTransform(node: TextNode, state: State): void {
 
 export default function useOutlineAutoFormatter(editor: OutlineEditor): void {
   useEffect(() => {
-    return editor.addTransform('text', textNodeTransform);
+    return editor.addTransform(TextNode, textNodeTransform);
   }, [editor]);
 }

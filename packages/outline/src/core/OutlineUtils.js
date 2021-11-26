@@ -291,10 +291,7 @@ export function getEditorStateTextContent(editorState: EditorState): string {
   return editorState.read((view) => view.getRoot().getTextContent());
 }
 
-export function markAllNodesAsDirty(
-  editor: OutlineEditor,
-  type: 'text' | 'decorator' | 'block' | 'root',
-): void {
+export function markAllNodesAsDirty(editor: OutlineEditor, type: string): void {
   // Mark all existing text nodes as dirty
   updateEditor(
     editor,
@@ -313,13 +310,7 @@ export function markAllNodesAsDirty(
       // compiled away to a slow-path with Babel.
       for (let i = 0; i < nodeMapEntries.length; i++) {
         const node = nodeMapEntries[i][1];
-        if (
-          (type === 'text' && isTextNode(node)) ||
-          (type === 'decorator' && isDecoratorNode(node)) ||
-          (type === 'block' && isBlockNode(node))
-        ) {
-          node.markDirty();
-        }
+        node.markDirty();
       }
     },
     true,

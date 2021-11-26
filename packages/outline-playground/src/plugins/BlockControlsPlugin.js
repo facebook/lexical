@@ -233,7 +233,10 @@ export default function BlockControlsPlugin(): React$Node {
         const selection = getSelection();
         if (selection !== null) {
           const anchorNode = selection.anchor.getNode();
-          const block = anchorNode.getTopParentBlockOrThrow();
+          const block =
+            anchorNode.getKey() === 'root'
+              ? anchorNode
+              : anchorNode.getTopParentBlockOrThrow();
           const blockKey = block.getKey();
           if (blockKey !== selectedBlockKey) {
             const blockDOM = editor.getElementByKey(blockKey);

@@ -126,7 +126,7 @@ function traverseNodes(node: BlockNode): void {
 
     if (isBlockNode(child)) {
       traverseNodes(child);
-    } else if (isTextNode(child) && !child.isSimpleText()) {
+    } else if (ofTextNode(child) && !isTextNode(child)) {
       if (isKeywordNode(nextSibling)) {
         if (isKeywordNode(child)) {
           convertKeywordNodeToPlainTextNode(child);

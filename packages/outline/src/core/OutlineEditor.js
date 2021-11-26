@@ -78,10 +78,10 @@ export type EditorConfig<EditorContext> = {
 };
 
 export type RegisteredNodes = Map<string, RegisteredNode>;
-export type RegisteredNode = $ReadOnly<{
+export type RegisteredNode = {
   klass: Class<OutlineNode>,
-  transforms: Set<Transform<OutlineNode>>,
-}>;
+  transforms: null | Set<Transform<OutlineNode>>,
+};
 export type Transform<T> = (node: T, state: State) => void;
 
 export type ErrorListener = (error: Error, log: Array<string>) => void;
@@ -238,9 +238,9 @@ class BaseOutlineEditor {
     this._config = config;
     // Mapping of types to their nodes
     this._registeredNodes = new Map([
-      ['text', {klass: TextNode, transforms: new Set()}],
-      ['linebreak', {klass: LineBreakNode, transforms: new Set()}],
-      ['root', {klass: RootNode, transforms: new Set()}],
+      ['text', {klass: TextNode, transforms: null}],
+      ['linebreak', {klass: LineBreakNode, transforms: null}],
+      ['root', {klass: RootNode, transforms: null}],
     ]);
     // React node decorators for portals
     this._decorators = {};
@@ -279,7 +279,7 @@ class BaseOutlineEditor {
     }
     this._registeredNodes.set(type, {
       klass,
-      transforms: new Set(),
+      transforms: null,
     });
   }
   addListener(
@@ -333,11 +333,17 @@ class BaseOutlineEditor {
         klass.name,
       );
     }
-    const transforms = registeredNode.transforms;
-    transforms.add(listener);
+    let transforms = registeredNode.transforms;
+    if (transforms === null) {
+      transforms = new Set();
+      registeredNode.transforms = transforms;
+    }
+    // Flow workaround
+    const transforms_ = transforms;
+    transforms_.add(listener);
     markAllNodesAsDirty(getSelf(this), type);
     return () => {
-      transforms.delete(listener);
+      transforms_.delete(listener);
     };
   }
   getDecorators(): {[NodeKey]: ReactNode} {

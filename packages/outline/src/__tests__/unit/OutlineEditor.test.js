@@ -23,11 +23,7 @@ import {
   getNodeByKey,
   isTextNode,
 } from 'outline';
-import {
-  createParagraphNode,
-  ParagraphNode,
-  isParagraphNode,
-} from 'outline/ParagraphNode';
+import {createParagraphNode, ParagraphNode} from 'outline/ParagraphNode';
 import useOutlineRichText from 'outline-react/useOutlineRichText';
 import {getEditorStateTextContent} from '../../core/OutlineUtils';
 import {
@@ -225,7 +221,7 @@ describe('OutlineEditor tests', () => {
     expect(log).toEqual(['A2', 'B2', 'C2', 'D2', 'E2', 'F2', 'G2']);
     log = [];
 
-    editor.addTransform('text', () => {
+    editor.addTransform(TextNode, () => {
       log.push('TextTransform A3');
       editor.update(
         () => {
@@ -272,7 +268,7 @@ describe('OutlineEditor tests', () => {
   it('Synchronously runs three transforms, two of them depend on the other', async () => {
     init();
     // 2. Add italics
-    const italicsListener = editor.addTransform('text', (node) => {
+    const italicsListener = editor.addTransform(TextNode, (node) => {
       if (
         node.getTextContent() === 'foo' &&
         node.hasFormat('bold') &&
@@ -282,13 +278,13 @@ describe('OutlineEditor tests', () => {
       }
     });
     // 1. Add bold
-    const boldListener = editor.addTransform('text', (node) => {
+    const boldListener = editor.addTransform(TextNode, (node) => {
       if (node.getTextContent() === 'foo' && !node.hasFormat('bold')) {
         node.toggleFormat('bold');
       }
     });
     // 2. Add underline
-    const underlineListener = editor.addTransform('text', (node) => {
+    const underlineListener = editor.addTransform(TextNode, (node) => {
       if (
         node.getTextContent() === 'foo' &&
         node.hasFormat('bold') &&
@@ -317,24 +313,28 @@ describe('OutlineEditor tests', () => {
     // Add transform makes everything dirty the first time (let's not leverage this here)
     const skipFirst = [true, true, true];
 
-    const testBlockListener = editor.addTransform('block', (block) => {
-      if (skipFirst[0]) {
-        skipFirst[0] = false;
-        return;
-      }
-      if (isParagraphNode(block) && block.isEmpty()) {
-        block.append(createTextNode('foo'));
-      }
-    });
-    // 2. (Block transform) Add bold to text
-    const boldListener = editor.addTransform('text', (node) => {
+    // 2. (Block transform) Add text
+    const testParagraphListener = editor.addTransform(
+      ParagraphNode,
+      (paragraph) => {
+        if (skipFirst[0]) {
+          skipFirst[0] = false;
+          return;
+        }
+        if (paragraph.isEmpty()) {
+          paragraph.append(createTextNode('foo'));
+        }
+      },
+    );
+    // 2. (Text transform) Add bold to text
+    const boldListener = editor.addTransform(TextNode, (node) => {
       if (node.getTextContent() === 'foo' && !node.hasFormat('bold')) {
         node.toggleFormat('bold');
       }
     });
     // 3. (Block transform) Add italics to bold text
-    const italicsListener = editor.addTransform('block', (node) => {
-      const child = node.getLastDescendant();
+    const italicsListener = editor.addTransform(ParagraphNode, (paragraph) => {
+      const child = paragraph.getLastDescendant();
       if (
         child !== null &&
         child.hasFormat('bold') &&
@@ -353,7 +353,7 @@ describe('OutlineEditor tests', () => {
       const paragraph = root.getFirstChild();
       paragraph.markDirty();
     });
-    testBlockListener();
+    testParagraphListener();
     boldListener();
     italicsListener();
 
@@ -366,7 +366,7 @@ describe('OutlineEditor tests', () => {
     const hasRun = [false, false, false];
     init();
     // 1. [Foo] into [<empty>,Fo,o,<empty>,!,<empty>]
-    const fooListener = editor.addTransform('text', (node) => {
+    const fooListener = editor.addTransform(TextNode, (node) => {
       if (node.getTextContent() === 'Foo' && !hasRun[0]) {
         const [before, after] = node.splitText(2);
         before.insertBefore(createTextNode(''));
@@ -377,8 +377,8 @@ describe('OutlineEditor tests', () => {
       }
     });
     // 2. [Foo!] into [<empty>,Fo,o!,<empty>,!,<empty>]
-    const megaFooListener = editor.addTransform('block', (block) => {
-      const child = block.getFirstChild();
+    const megaFooListener = editor.addTransform(ParagraphNode, (paragraph) => {
+      const child = paragraph.getFirstChild();
       if (
         isTextNode(child) &&
         child.getTextContent() === 'Foo!' &&
@@ -393,7 +393,7 @@ describe('OutlineEditor tests', () => {
       }
     });
     // 3. [Foo!!] into formatted bold [<empty>,Fo,o!!,<empty>]
-    const boldFooListener = editor.addTransform('text', (node) => {
+    const boldFooListener = editor.addTransform(TextNode, (node) => {
       if (node.getTextContent() === 'Foo!!' && !hasRun[2]) {
         node.toggleFormat('bold');
         const [before, after] = node.splitText(2);
@@ -421,7 +421,7 @@ describe('OutlineEditor tests', () => {
     const errorListener = jest.fn();
     init(errorListener);
 
-    const boldListener = editor.addTransform('text', (node) => {
+    const boldListener = editor.addTransform(TextNode, (node) => {
       node.toggleFormat('bold');
     });
 
@@ -1099,21 +1099,19 @@ describe('OutlineEditor tests', () => {
   it('can register transforms before updates', async () => {
     init();
     const emptyTransform = () => {};
-    const removeTextTransform = editor.addTransform('text', emptyTransform);
-    const removeDecoratorTransform = editor.addTransform(
-      'decorator',
+    const removeTextTransform = editor.addTransform(TextNode, emptyTransform);
+    const removeParagraphTransform = editor.addTransform(
+      ParagraphNode,
       emptyTransform,
     );
-    const removeBlockTransform = editor.addTransform('block', emptyTransform);
-    const removeRootTransform = editor.addTransform('root', emptyTransform);
+    const removeRootTransform = editor.addTransform(RootNode, emptyTransform);
     await editor.update(() => {
       const root = getRoot();
       const paragraph = createParagraphNode();
       root.append(paragraph);
     });
     removeTextTransform();
-    removeDecoratorTransform();
-    removeBlockTransform();
+    removeParagraphTransform();
     removeRootTransform();
   });
 
@@ -1127,7 +1125,9 @@ describe('OutlineEditor tests', () => {
     ];
     for (let i = 0; i < pairs.length; i++) {
       const currentPair = pairs[i];
-      expect(editor._typeToKlass.get(currentPair[0])).toBe(currentPair[1]);
+      expect(editor._registeredNodes.get(currentPair[0]).klass).toBe(
+        currentPair[1],
+      );
     }
     class CustomTextNode extends TextNode {
       static getType(): string {
@@ -1138,10 +1138,12 @@ describe('OutlineEditor tests', () => {
       }
     }
 
-    expect(editor._typeToKlass.get('custom_text_node')).toBe(undefined);
+    expect(editor._registeredNodes.get('custom_text_node')).toBe(undefined);
 
     editor.registerNode(CustomTextNode);
-    expect(editor._typeToKlass.get('custom_text_node')).toBe(CustomTextNode);
+    expect(editor._registeredNodes.get('custom_text_node').klass).toBe(
+      CustomTextNode,
+    );
   });
 
   it('Override existing node type', () => {

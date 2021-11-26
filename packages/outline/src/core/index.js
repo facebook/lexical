@@ -12,7 +12,6 @@ export type {
   EditorConfig,
   EditorThemeClasses,
   TextMutation,
-  TypeToKlass,
   IntentionallyMarkedAsDirtyBlock,
 } from './OutlineEditor';
 export type {EditorState, ParsedEditorState} from './OutlineEditorState';

@@ -56,5 +56,7 @@
   "54": "Create node: Attempted to create node %s that was not previously registered on the editor. You can use editor.registerNodeType to register your custom nodes.",
   "55": "Create node: Type %s in node %s was already registered by another node %s",
   "56": "Create node: Type %s in node %s does not match registered node %s with the same type",
-  "57": "Create node: Attempted to create node %s that was not previously registered on the editor. You can use editor.registerNode to register your custom nodes."
+  "57": "Create node: Attempted to create node %s that was not previously registered on the editor. You can use editor.registerNode to register your custom nodes.",
+  "58": "Node %s has not been registered. Run editor.registerNode to register your own nodes.",
+  "59": "registeredNode: Type %s not found"
 }

@@ -38,7 +38,6 @@ import {
   IS_ALIGN_RIGHT,
   IS_ALIGN_JUSTIFY,
 } from './OutlineConstants';
-import {applyTransforms} from './OutlineUpdates';
 import {isDecoratorNode} from './OutlineDecoratorNode';
 import {BlockNode, isBlockNode} from './OutlineBlockNode';
 import {isTextNode} from './OutlineTextNode';
@@ -868,18 +867,6 @@ function mergeAdjacentTextNodes(
   if (selectionIsDirty && activeSelection !== null) {
     activeSelection.dirty = true;
   }
-  // Trigger any text transforms for this node
-  applyTextTransformOnNode(writableMergeToNode);
-}
-
-function applyTextTransformOnNode(node: TextNode) {
-  const editor = activeEditor;
-  const transforms = editor._transforms;
-  const textTransforms = transforms.text;
-  const textTransformsArr = Array.from(textTransforms);
-  const textTransformsArrLength = textTransformsArr.length;
-  // Apply text transforms
-  applyTransforms<TextNode>(node, textTransformsArr, textTransformsArrLength);
 }
 
 function adjustPointForDeletion(

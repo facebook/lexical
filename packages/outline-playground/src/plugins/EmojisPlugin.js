@@ -7,13 +7,13 @@
  * @flow strict
  */
 
-import type {TextNode, OutlineEditor, Selection} from 'outline';
+import type {OutlineEditor, Selection} from 'outline';
 
 import PlaygroundEditorContext from '../context/PlaygroundEditorContext';
 import {useEditorContext} from 'outline-react/OutlineEditorContext';
 import {createEmojiNode, EmojiNode} from '../nodes/EmojiNode';
 import {useEffect} from 'react';
-import {getSelection} from 'outline';
+import {getSelection, TextNode} from 'outline';
 
 const emojis: Map<string, [string, string]> = new Map([
   [':)', ['emoji happysmile', '🙂']],
@@ -65,7 +65,7 @@ function textNodeTransform(node: TextNode): void {
 export function useEmojis(editor: OutlineEditor): void {
   useEffect(() => {
     editor.registerNode(EmojiNode);
-    return editor.addTransform('text', textNodeTransform);
+    return editor.addTransform(TextNode, textNodeTransform);
   }, [editor]);
 }
 

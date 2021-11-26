@@ -357,16 +357,18 @@ class BaseOutlineEditor {
     klass: Class<OutlineNode>,
     listener: Transform<OutlineNode>,
   ): () => void {
-    const nodeInfo = this._registeredNodes.get(klass.getType());
-    if (nodeInfo === undefined) {
+    const type = klass.getType();
+    const registeredNode = this._registeredNodes.get(type);
+    if (registeredNode === undefined) {
       invariant(
         false,
         'Node %s has not been registered. Run editor.registerNode to register your own nodes.',
         klass.name,
       );
     }
-    const transforms = nodeInfo.transforms;
+    const transforms = registeredNode.transforms;
     transforms.add(listener);
+    markAllNodesAsDirty(getSelf(this), type);
     return () => {
       transforms.delete(listener);
     };

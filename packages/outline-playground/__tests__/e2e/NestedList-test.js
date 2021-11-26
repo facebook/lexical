@@ -89,5 +89,46 @@ describe('Nested List', () => {
         '<ul class="editor-list-ul" dir="ltr"><li class="editor-listitem"><span data-outline-text="true">Hello</span></li><li class="editor-listitem"><span data-outline-text="true">from</span></li><li class="editor-listitem"><span data-outline-text="true">the</span></li><li class="editor-listitem"><span data-outline-text="true">other</span></li><li class="editor-listitem"><span data-outline-text="true">side</span></li></ul>',
       );
     });
+
+    it(`Can create an unordered list and convert it to an ordered list `, async () => {
+      const {isRichText, page} = e2e;
+
+      if (!isRichText) {
+        return;
+      }
+
+      await page.focus('div.editor');
+
+      await page.waitForSelector('#block-controls button');
+
+      await page.click('#block-controls button');
+      await page.waitForSelector('.dropdown .icon.bullet-list');
+      await page.click('.dropdown .icon.bullet-list');
+
+      await assertHTML(
+        page,
+        '<ul class="editor-list-ul"><li class="editor-listitem"><br></li></ul>',
+      );
+
+      await page.click('#block-controls button');
+      await page.waitForSelector('.dropdown .icon.numbered-list');
+      await page.click('.dropdown .icon.numbered-list');
+
+      await assertHTML(
+        page,
+        '<ol class="editor-list-ol"><li class="editor-listitem"><br></li></ol>',
+      );
+
+      // Issue #904 Converting back to a ul from ol doesn't work properly.
+
+      // await page.click('#block-controls button');
+      // await page.waitForSelector('.dropdown .icon.bullet-list');
+      // await page.click('.dropdown .icon.bullet-list');
+
+      // await assertHTML(
+      //   page,
+      //   '<ul class="editor-list-ul"><li class="editor-listitem"><br></li></ul>',
+      // );
+    });
   });
 });

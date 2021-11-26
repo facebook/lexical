@@ -325,7 +325,7 @@ class BaseOutlineEditor {
       }
     };
   }
-  addTransformX(
+  addTransform(
     // There's no Flow-safe way to preserve the T in Transform<T>, but <T: OutlineNode> in the
     // declaration below guarantees these are OutlineNodes.
     klass: Class<OutlineNode>,
@@ -477,7 +477,7 @@ declare export class OutlineEditor {
   addListener(type: 'decorator', listener: DecoratorListener): () => void;
   addListener(type: 'textmutation', listener: TextMutationListener): () => void;
   addListener(type: 'textcontent', listener: TextContentListener): () => void;
-  addTransformX<T: OutlineNode>(
+  addTransform<T: OutlineNode>(
     klass: Class<T>,
     listener: Transform<T>,
   ): () => void;

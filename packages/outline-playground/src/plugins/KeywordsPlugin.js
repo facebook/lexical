@@ -141,8 +141,8 @@ function useKeywords(editor: OutlineEditor): void {
   useEffect(() => {
     editor.registerNode(KeywordNode);
 
-    const removeTextTransform = editor.addTransformX(TextNode, textTransform);
-    const removeRootTransform = editor.addTransformX(RootNode, traverseNodes);
+    const removeTextTransform = editor.addTransform(TextNode, textTransform);
+    const removeRootTransform = editor.addTransform(RootNode, traverseNodes);
 
     return () => {
       removeTextTransform();

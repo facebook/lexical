@@ -44,13 +44,13 @@ export default function ActionsPlugins({
   const [indent, outdent] = useOutlineNestedList(editor);
 
   useEffect(() => {
-    return editor.addTransformX(ListNode, (listNode) => {
+    return editor.addTransform(ListNode, (listNode) => {
       console.info('list tag', listNode.getTag());
     });
   }, [editor]);
 
   useEffect(() => {
-    return editor.addTransformX(TextNode, (textNode) => {
+    return editor.addTransform(TextNode, (textNode) => {
       console.info('text', textNode.getTextContent());
     });
   }, [editor]);

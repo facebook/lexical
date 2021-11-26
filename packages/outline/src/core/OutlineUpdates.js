@@ -232,7 +232,7 @@ function applyAllTransforms(
   if (infiniteLoopCount === 0) {
     invariant(
       false,
-      'Some transforms are endlessly triggering additional transforms. May have encountered a recursivity issue where two transforms have their preconditions too lose and collide with each other.',
+      'One or more transforms are endlessly triggering additional transforms. May have encountered infinite recursion caused by transforms that have their preconditions too lose and/or conflict with each other.',
     );
   }
 

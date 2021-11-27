@@ -16,10 +16,10 @@ type ListenerValue = any;
 
 export type PlaygroundContext = {
   addListener(
-    type: 'readonly' | 'clear',
+    type: 'readonly' | 'clear' | 'connected' | 'connect',
     callback: (ListenerValue) => void,
   ): () => void,
-  triggerListeners(type: 'readonly' | 'clear', value: ListenerValue): void,
+  triggerListeners(type: 'readonly' | 'clear' | 'connect' | 'connected', value: ListenerValue): void,
 };
 
 const config = {
@@ -64,7 +64,7 @@ function getInitialState(): PlaygroundContext {
 
   return {
     addListener(
-      type: 'readonly' | 'clear',
+      type: 'readonly' | 'clear' | 'connect' | 'connected',
       callback: (ListenerValue) => void,
     ): () => void {
       let set = listeners.get(type);
@@ -78,7 +78,10 @@ function getInitialState(): PlaygroundContext {
         currentSet.delete(callback);
       };
     },
-    triggerListeners(type: 'readonly' | 'clear', value: ListenerValue): void {
+    triggerListeners(
+      type: 'readonly' | 'clear' | 'connect' | 'connected',
+      value: ListenerValue,
+    ): void {
       const set = listeners.get(type);
       if (set !== undefined) {
         const callbacks = Array.from(set);

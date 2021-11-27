@@ -35,12 +35,24 @@ export function useYjsCollaboration(
   docMap: Map<string, Doc>,
   name: string,
   color: string,
-): [React$Node, Binding, boolean] {
+): [React$Node, Binding, boolean, () => void, () => void] {
   const [connected, setConnected] = useState(false);
   const binding = useMemo(
     () => createBinding(editor, provider, id, docMap),
     [editor, provider, id, docMap],
   );
+
+  const connect = useCallback(() => {
+    provider.connect();
+  }, [provider]);
+
+  const disconnect = useCallback(() => {
+    try {
+      provider.disconnect();
+    } catch (e) {
+      // Do nothing
+    }
+  }, [provider]);
 
   useEffect(() => {
     const {root} = binding;
@@ -55,8 +67,6 @@ export function useYjsCollaboration(
         initEditor(editor);
       }
     };
-
-    window.provider = provider;
 
     const onAwarenessUpdate = () => {
       syncCursorPositions(binding, provider);
@@ -101,21 +111,17 @@ export function useYjsCollaboration(
       },
     );
 
-    provider.connect();
+    connect();
 
     return () => {
-      try {
-        provider.disconnect();
-      } catch (e) {
-        // Do nothing
-      }
+      disconnect();
       provider.off('sync', onSync);
       provider.off('status', onStatus);
       awareness.off('update', onAwarenessUpdate);
       root.getSharedType().unobserveDeep(onYjsTreeChanges);
       removeListener();
     };
-  }, [binding, color, editor, name, provider]);
+  }, [binding, color, connect, disconnect, editor, name, provider]);
 
   const cursorsContainer = useMemo(() => {
     const ref = (element) => {
@@ -125,7 +131,7 @@ export function useYjsCollaboration(
     return createPortal(<div ref={ref} />, document.body);
   }, [binding]);
 
-  return [cursorsContainer, binding, connected];
+  return [cursorsContainer, binding, connected, connect, disconnect];
 }
 
 export function useYjsFocusTracking(editor: OutlineEditor, provider: Provider) {

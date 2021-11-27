@@ -961,6 +961,14 @@ pre::-webkit-scrollbar-thumb {
   background-image: url(images/icons/justify.svg);
 }
 
+.actions i.disconnect {
+  background-image: url(images/icons/plug.svg);
+}
+
+.actions i.connect {
+  background-image: url(images/icons/plug-fill.svg);
+}
+
 .action-button {
   background-color: #eee;
   border: 0;

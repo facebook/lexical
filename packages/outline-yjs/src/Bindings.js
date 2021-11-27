@@ -11,9 +11,13 @@ import type {Cursor} from './SyncCursors';
 import type {NodeKey, EditorState, OutlineEditor} from 'outline';
 import type {Provider} from '.';
 import type {Doc} from 'yjs';
+import type {CollabBlockNode} from './CollabBlockNode';
+import type {CollabTextNode} from './CollabTextNode';
+import type {CollabDecoratorNode} from './CollabDecoratorNode';
+import type {CollabLineBreakNode} from './CollabLineBreakNode';
 
-// $FlowFixMe: need Flow typings for yjs
-import {XmlElement} from 'yjs';
+import {createCollabBlockNode} from './CollabBlockNode';
+import {XmlText} from 'yjs';
 
 // $FlowFixMe: needs proper typings
 export type YjsNodeMap = Map<NodeKey, Object>;
@@ -24,16 +28,20 @@ export type ReverseYjsNodeMap = Map<Object, NodeKey>;
 export type ClientID = string;
 
 export type Binding = {
+  collabNodeMap: Map<
+    NodeKey,
+    | CollabBlockNode
+    | CollabTextNode
+    | CollabDecoratorNode
+    | CollabLineBreakNode,
+  >,
+  nodeProperties: Map<string, Array<string>>,
   editor: OutlineEditor,
   id: string,
   cursors: Map<ClientID, Cursor>,
   cursorsContainer: null | HTMLElement,
-  // $FlowFixMe: needs proper typings
-  doc: Object,
-  // $FlowFixMe: needs proper typings
-  root: Object,
-  nodeMap: YjsNodeMap,
-  reverseNodeMap: ReverseYjsNodeMap,
+  doc: Doc,
+  root: CollabBlockNode,
   processedStates: Set<EditorState>,
   docMap: Map<string, Doc>,
 };
@@ -48,20 +56,28 @@ export function createBinding(
   if (doc === undefined) {
     throw new Error('Should never happen');
   }
-  const root = doc.get('root', XmlElement);
   // $FlowFixMe: our Flow bindings need fixing
-  root.nodeName = 'root';
-  const binding = {
+  const binding: Binding = {
+    collabNodeMap: new Map(),
+    nodeProperties: new Map(),
     editor,
     id,
     cursors: new Map(),
     cursorsContainer: null,
     doc,
-    root,
-    nodeMap: new Map([['root', root]]),
-    reverseNodeMap: new Map([[root, 'root']]),
+    // $FlowFixMe: we set the root after
+    root: null,
     processedStates: new Set(),
     docMap,
   };
+  // $FlowFixMe: this will work
+  const rootXmlText: XmlText = doc.get('root', XmlText);
+  const root: CollabBlockNode = createCollabBlockNode(
+    rootXmlText,
+    null,
+    'root',
+  );
+  binding.root = root;
+  root._key = 'root';
   return binding;
 }

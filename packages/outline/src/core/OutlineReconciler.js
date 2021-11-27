@@ -44,6 +44,7 @@ import {isTextNode} from './OutlineTextNode';
 import {isLineBreakNode} from './OutlineLineBreakNode';
 import {isRootNode} from './OutlineRootNode';
 import invariant from 'shared/invariant';
+import {getActiveEditor} from './OutlineUpdates';
 
 let subTreeTextContent = '';
 let editorTextContent = '';
@@ -1043,6 +1044,9 @@ function mergeTextNodes(
   if (compositionKey === node2Key) {
     setCompositionKey(node1Key);
   }
+  const normalizedNodes = getActiveEditor()._normalizedNodes;
+  normalizedNodes.add(node1Key);
+  normalizedNodes.add(node2Key);
   writableNode1.setTextContent(node1Text + node2.__text);
   node2.remove();
   return writableNode1;

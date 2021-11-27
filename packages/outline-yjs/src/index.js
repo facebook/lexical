@@ -7,7 +7,8 @@
  * @flow strict
  */
 
-import type {UndoManager, RelativePosition} from 'yjs';
+import type {UndoManager, RelativePosition, XmlText} from 'yjs';
+import type {Binding} from './Bindings';
 
 // $FlowFixMe: need Flow typings for yjs
 import {UndoManager as YjsUndoManager} from 'yjs';
@@ -32,9 +33,20 @@ declare class Provider {
   };
   on(type: 'sync', cb: (isSynced: boolean) => void): void;
   on(type: 'status', cb: ({status: string}) => void): void;
+  // $FlowFixMe: temp
+  on(type: 'update', cb: (any) => void): void;
   off(type: 'sync', cb: (isSynced: boolean) => void): void;
+  // $FlowFixMe: temp
+  off(type: 'update', cb: (any) => void): void;
   off(type: 'status', cb: ({status: string}) => void): void;
 }
+
+export type Operation = {
+  insert: string | {...},
+  attributes: {__type: string, __flags: number, ...},
+};
+
+export type Delta = Array<Operation>;
 // $FlowFixMe: todo
 export type YjsNode = Object;
 // $FlowFixMe: todo
@@ -51,8 +63,10 @@ export type {
 
 export {createBinding} from './Bindings';
 
-export function createUndoManager(root: YjsNode): UndoManager {
-  return new YjsUndoManager(root);
+export function createUndoManager(binding: Binding, root: XmlText): UndoManager {
+  return new YjsUndoManager(root, {
+    trackedOrigins: new Set([binding, null]),
+  });
 }
 
 export function initLocalState(
@@ -78,6 +92,8 @@ export function setLocalStateFocus(provider: Provider, focusing: boolean) {
   });
 }
 
-export {syncOutlineUpdateToYjs} from './SyncOutlineToYjs';
-export {syncYjsChangesToOutline} from './SyncYjsToOutline';
+export {
+  syncYjsChangesToOutline,
+  syncOutlineUpdateToYjs,
+} from './SyncEditorStates';
 export {syncCursorPositions} from './SyncCursors';

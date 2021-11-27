@@ -33,18 +33,13 @@ class Client {
     this._reactRoot = null;
     this._container = null;
     this._connection = connection;
-    this._suspended = false;
     this._connected = false;
     this._doc = new Y.Doc();
     this._awarenessState = {};
-    this._doc.on('update', (update) => {
-      this._updates.push(update);
-      if (this._connected && !this._suspended) {
-        this._flushUpdates();
-      }
-    });
-    this._updates = [];
+    this._onUpdate = this._onUpdate.bind(this);
+    this._doc.on('update', this._onUpdate);
     this._listeners = new Map();
+    this._updates = [];
     this._editor = null;
 
     this.awareness = {
@@ -66,16 +61,43 @@ class Client {
     };
   }
 
-  _flushUpdates() {
-    this._updates.forEach((update) =>
-      this._connection._clients.forEach((client) => {
-        if (client === this) {
-          return;
+  _onUpdate(update, origin, transaction) {
+    if (origin !== this._connection && this._connected) {
+      this._broadcastUpdate(update);
+    }
+  }
+
+  _broadcastUpdate(update) {
+    this._connection._clients.forEach((client) => {
+      if (client !== this) {
+        if (client._connected) {
+          Y.applyUpdate(client._doc, update, this._connection);
+        } else {
+          client._updates.push(update);
         }
-        Y.applyUpdate(client._doc, update);
-      }),
-    );
-    this._updates = [];
+      }
+    });
+  }
+
+  connect() {
+    if (!this._connected) {
+      this._connected = true;
+      const update = Y.encodeStateAsUpdate(this._doc);
+      if (this._updates.length > 0) {
+        Y.applyUpdate(
+          this._doc,
+          Y.mergeUpdates(this._updates),
+          this._connection,
+        );
+        this._updates = [];
+      }
+      this._broadcastUpdate(update);
+      this._dispatch('sync', true);
+    }
+  }
+
+  disconnect() {
+    this._connected = false;
   }
 
   start(rootContainer) {
@@ -108,18 +130,6 @@ class Client {
     });
     this._container.parentNode.removeChild(this._container);
     this._contianer = null;
-  }
-
-  connect() {
-    if (!this._connected) {
-      this._connected = true;
-      this._flushUpdates();
-      this._dispatch('sync', true);
-    }
-  }
-
-  disconnect() {
-    this._connected = false;
   }
 
   on(type, callback) {
@@ -156,11 +166,12 @@ class Client {
     return this._doc.toJSON();
   }
 
-  async update(cb) {
-    await ReactTestUtils.act(async () => {
-      this._editor.update(cb);
-      await Promise.resolve().then();
-    });
+  getEditorState() {
+    return this._editor.getEditorState();
+  }
+
+  update(cb) {
+    this._editor.update(cb);
   }
 }
 
@@ -178,4 +189,11 @@ class TestConnection {
 
 export function createTestConnection() {
   return new TestConnection();
+}
+
+export async function waitForReact(cb) {
+  await ReactTestUtils.act(async () => {
+    cb();
+    await Promise.resolve().then();
+  });
 }

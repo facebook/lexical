@@ -14,6 +14,7 @@ export type OutlineRef = EditorStateRef;
 
 export interface Ref<Data> {
   id: string;
+  _type: string;
 
   get(editor: OutlineEditor): null | Data;
   set(data: Data): void;
@@ -29,7 +30,7 @@ function isStringified(
 
 export class EditorStateRef implements Ref<EditorState> {
   id: string;
-  _type: 'editorstate';
+  _type: string;
   _editorState: null | EditorState | string;
 
   constructor(id: string, editorState: null | EditorState | string) {

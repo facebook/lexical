@@ -17,7 +17,7 @@
   "engineStrict": true,
   "scripts": {
     "start": "concurrently \"npm:build\" \"npm:collab\" \"npm run start --prefix packages/outline-playground\"",
-    "dev": "concurrently \"npm:watch\" \"npm:collab\" \"npm run start --prefix packages/outline-playground\"",
+    "dev": "concurrently \"npm:watch\" \"npm run start --prefix packages/outline-playground\"",
     "build": "node scripts/build.js --clean",
     "build-prod": "node scripts/build.js --prod --clean",
     "build-www": "node scripts/build.js --clean --www && node scripts/build.js --www --prod",

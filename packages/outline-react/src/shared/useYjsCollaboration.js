@@ -35,12 +35,24 @@ export function useYjsCollaboration(
   docMap: Map<string, Doc>,
   name: string,
   color: string,
-): [React$Node, Binding, boolean] {
+): [React$Node, Binding, boolean, () => void, () => void] {
   const [connected, setConnected] = useState(false);
   const binding = useMemo(
     () => createBinding(editor, provider, id, docMap),
     [editor, provider, id, docMap],
   );
+
+  const connect = useCallback(() => {
+    provider.connect();
+  }, [provider]);
+
+  const disconnect = useCallback(() => {
+    try {
+      provider.disconnect();
+    } catch (e) {
+      // Do nothing
+    }
+  }, [provider]);
 
   useEffect(() => {
     const {root} = binding;
@@ -48,21 +60,23 @@ export function useYjsCollaboration(
 
     const onStatus = ({status}: {status: string}) => {
       setConnected(status === 'connected');
-    }
+    };
 
     const onSync = (isSynced: boolean) => {
-      if (root.firstChild === null) {
+      if (root.isEmpty()) {
         initEditor(editor);
       }
-    }
+    };
 
     const onAwarenessUpdate = () => {
       syncCursorPositions(binding, provider);
-    }
+    };
 
-    const onYjsTreeChanges = (events) => {
-      syncYjsChangesToOutline(binding, provider, events);
-    }
+    const onYjsTreeChanges = (events, transaction) => {
+      if (transaction.origin !== binding) {
+        syncYjsChangesToOutline(binding, provider, events);
+      }
+    };
 
     initLocalState(
       provider,
@@ -74,39 +88,40 @@ export function useYjsCollaboration(
     provider.on('status', onStatus);
     provider.on('sync', onSync);
     awareness.on('update', onAwarenessUpdate);
-    root.observeDeep(onYjsTreeChanges);
+    root.getSharedType().observeDeep(onYjsTreeChanges);
 
     const removeListener = editor.addListener(
       'update',
-      ({prevEditorState, editorState, dirtyLeaves, dirtyBlocks}) => {
-        const dirtyNodes = new Set();
-        dirtyLeaves.forEach((node) => dirtyNodes.add(node));
-        dirtyBlocks.forEach((_, node) => dirtyNodes.add(node));
+      ({
+        prevEditorState,
+        editorState,
+        dirtyLeaves,
+        dirtyBlocks,
+        normalizedNodes,
+      }) => {
         syncOutlineUpdateToYjs(
           binding,
           provider,
           prevEditorState,
           editorState,
-          dirtyNodes,
+          dirtyBlocks,
+          dirtyLeaves,
+          normalizedNodes,
         );
       },
     );
 
-    provider.connect();
+    connect();
 
     return () => {
-      try {
-        provider.disconnect();
-      } catch (e) {
-        // Do nothing
-      }
+      disconnect();
       provider.off('sync', onSync);
       provider.off('status', onStatus);
       awareness.off('update', onAwarenessUpdate);
-      root.unobserveDeep(onYjsTreeChanges);
+      root.getSharedType().unobserveDeep(onYjsTreeChanges);
       removeListener();
     };
-  }, [binding, color, editor, name, provider]);
+  }, [binding, color, connect, disconnect, editor, name, provider]);
 
   const cursorsContainer = useMemo(() => {
     const ref = (element) => {
@@ -116,7 +131,7 @@ export function useYjsCollaboration(
     return createPortal(<div ref={ref} />, document.body);
   }, [binding]);
 
-  return [cursorsContainer, binding, connected];
+  return [cursorsContainer, binding, connected, connect, disconnect];
 }
 
 export function useYjsFocusTracking(editor: OutlineEditor, provider: Provider) {
@@ -155,7 +170,10 @@ export function useYjsHistory(
   editor: OutlineEditor,
   binding: Binding,
 ): () => void {
-  const undoManager = useMemo(() => createUndoManager(binding.root), [binding]);
+  const undoManager = useMemo(
+    () => createUndoManager(binding, binding.root.getSharedType()),
+    [binding],
+  );
 
   useEffect(() => {
     const undo = () => {

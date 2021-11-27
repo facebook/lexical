@@ -60,7 +60,7 @@ export default function RichTextCollabPlugin({
     return provider;
   }, [id, yjsDocMap]);
 
-  const [cursors, clear] = useOutlineRichTextWithCollab(
+  const [cursors, clear, connected, connect, disconnect] = useOutlineRichTextWithCollab(
     editor,
     id,
     provider,
@@ -69,7 +69,7 @@ export default function RichTextCollabPlugin({
     color,
   );
   const decorators = useOutlineDecorators(editor);
-  const isReadOnly = useEditorListeners(state, clear);
+  const isReadOnly = useEditorListeners(state, clear, connected, connect, disconnect);
 
   return (
     <>

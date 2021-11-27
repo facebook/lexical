@@ -10,6 +10,7 @@
 import * as React from 'react';
 import PlaygroundEditorContext from '../context/PlaygroundEditorContext';
 import {useEditorContext} from 'outline-react/OutlineEditorContext';
+import {useCollaborationContext} from '../context/CollaborationContext';
 import {useEffect, useState} from 'react';
 import {log, isBlockNode, getSelection, createEditorStateRef} from 'outline';
 import {isListItemNode} from 'outline/ListItemNode';
@@ -31,17 +32,29 @@ export default function ActionsPlugins({
   isRichText: boolean,
 }): React$Node {
   const [isReadOnly, setIsReadyOnly] = useState(false);
+  const [connected, setConnected] = useState(false);
   const [editor, {triggerListeners, addListener}] = useEditorContext(
     PlaygroundEditorContext,
   );
   const [indent, outdent] = useOutlineNestedList(editor);
+  const {yjsDocMap} = useCollaborationContext();
+  const isCollab = yjsDocMap.get('main') !== undefined;
 
   useEffect(() => {
     editor.registerNode(ImageNode);
-    return addListener('readonly', (value: boolean) => {
+    const removeReadOnlyListener = addListener('readonly', (value: boolean) => {
       setIsReadyOnly(value);
     });
+    const removeConnectedListener = addListener('connected', (value: boolean) => {
+      setConnected(value);
+    });
+
+    return () => {
+      removeReadOnlyListener();
+      removeConnectedListener();
+    }
   }, [addListener, editor]);
+
 
   const handleAddImage = () => {
     editor.update(() => {
@@ -164,6 +177,11 @@ export default function ActionsPlugins({
         onClick={() => triggerListeners('readonly', !isReadOnly)}>
         <i className={isReadOnly ? 'unlock' : 'lock'} />
       </button>
+      {isCollab && <button
+        className="action-button connect"
+        onClick={() => triggerListeners('connect', !connected)}>
+        <i className={connected ? 'disconnect' : 'connect'} />
+      </button>}
     </div>
   );
 }

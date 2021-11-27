@@ -380,6 +380,7 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
   }
   const dirtyLeaves = editor._dirtyLeaves;
   const dirtyBlocks = editor._dirtyBlocks;
+  const normalizedNodes = editor._normalizedNodes;
   const log = editor._log;
 
   editor._log = [];
@@ -388,6 +389,7 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
     editor._cloneNotNeeded.clear();
     editor._dirtyLeaves = new Set();
     editor._dirtyBlocks = new Map();
+    editor._normalizedNodes = new Set();
   }
   garbageCollectDetachedDecorators(editor, pendingEditorState);
   const pendingDecorators = editor._pendingDecorators;
@@ -398,6 +400,7 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
   }
   triggerTextContentListeners(editor, currentEditorState, pendingEditorState);
   triggerListeners('update', editor, true, {
+    normalizedNodes,
     prevEditorState: currentEditorState,
     editorState: pendingEditorState,
     dirtyLeaves,
@@ -562,6 +565,7 @@ function beginUpdate(
     editor._cloneNotNeeded.clear();
     editor._dirtyLeaves = new Set();
     editor._dirtyBlocks.clear();
+    editor._normalizedNodes = new Set();
     editor._log.push('UpdateRecover');
     commitPendingUpdates(editor);
     return;

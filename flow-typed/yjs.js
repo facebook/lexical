@@ -12,28 +12,88 @@
 declare module 'yjs' {
   declare interface Snapshot {}
 
-  declare interface Transaction {
+  declare export interface Transaction {
     origin: mixed;
   }
 
-  declare interface YEvent {}
+  declare interface YEvent {
+    target: any;
+  }
+
+  declare export class XmlText {
+    doc: null | YDoc,
+    parent: null | XmlText | XmlElement;
+    getAttributes(): {...};
+    getAttribute(string): string | Object | void;
+    setAttribute(string: string, value: string | number): void;
+    insert(offset: number, string: string, attributes?: {...}): void;
+    insertEmbed(offset: number, Object): void;
+    delete(offset: number, delCount: number): void;
+    observeDeep(fn: Function): void;
+    unobserveDeep(fn: Function): void;
+    observe(fn: Function): void;
+    unobserve(fn: Function): void;
+    on(type: string, () => void): void;
+    toDelta(): Array<TextOperation>;
+    toJSON(): Object;
+    _length: number;
+  }
+
+  declare export class Map {
+    +doc: ?YDoc;
+    parent: null | XmlText;
+    get(key: string): any;
+    set(key: string, value: any): void;
+    keys(): [string];
+    _length: number;
+  }
+
+  declare export class XmlElement {
+    +doc: ?YDoc;
+    parent: null | XmlText | XmlElement;
+    getAttributes(): {...};
+    getAttribute(string): string | void;
+    setAttribute(string: string, value: string | number | Object): void;
+    removeAttribute(string: string): void;
+    insert(offset: number, entry: any): void;
+    delete(offset: number, delCount: number): void;
+    observeDeep(fn: Function): void;
+    unobserveDeep(fn: Function): void;
+    observe(fn: Function): void;
+    unobserve(fn: Function): void;
+    on(type: string, () => void): void;
+    toJSON(): Object;
+    firstChild: null | YDoc;
+  }
 
   // $FlowFixMe: needs fixing
   declare type YMapEventKeyChanges = any;
-  // $FlowFixMe: needs fixing
-  declare type Operation = any;
-  // $FlowFixMe: needs fixing
-  declare type Delta = any;
 
-  declare interface YMapEvent extends YEvent {
+  declare type Operation = {
+    insert: string | {...},
+    attributes: {__type: string, __flags: number, ...},
+  };
+
+  declare type Delta = Array<Operation>;
+
+  declare export interface YMapEvent extends YEvent {
     keysChanged: Set<string>;
     changes: {
       keys: YMapEventKeyChanges,
     };
   }
 
-  declare interface YTextEvent extends YEvent {
-    delta: Array<Operation>;
+  declare export type TextOperation = {
+    retain?: number,
+    delete?: number,
+    insert?: string | XmlText | Map | XmlElement,
+  };
+
+  declare export interface YTextEvent extends YEvent {
+    keysChanged: Set<string>;
+    childListChanged: boolean;
+    target: XmlText;
+    delta: Array<TextOperation>;
   }
 
   declare export class ID {
@@ -66,7 +126,7 @@ declare module 'yjs' {
     /**
      * @type {AbstractType<any>}
      */
-    type: YAbstractType;
+    type: Map | XmlText;
 
     /**
      * @type {number}
@@ -100,7 +160,7 @@ declare module 'yjs' {
 
   declare export interface YAbstractType {
     +doc: ?YDoc;
-    parent: ?YAbstractType;
+    parent: null | XmlText | XmlElement;
     observe((event: YEvent, transaction?: Transaction) => void): void;
     unobserve((event: YEvent, transaction?: Transaction) => void): void;
     toJSON<T>(): T;
@@ -223,7 +283,7 @@ declare module 'yjs' {
      * The parent that holds this type. Is null if this yarray is a top-level
      * type.
      */
-    parent: ?YAbstractType;
+    parent: null | XmlText | XmlElement;
 
     /**
      * The number of elements that this Y.Array holds.
@@ -349,7 +409,7 @@ declare module 'yjs' {
     /**
      * The parent that holds this type. Is null if this ymap is a top-level type.
      */
-    parent: ?YAbstractType;
+    parent: null | XmlText | XmlElement;
 
     /**
      * Number of   elements in the map.
@@ -473,7 +533,7 @@ declare module 'yjs' {
     /**
      * The parent that holds this type. Is null if this ytext is a top-level type.
      */
-    parent: ?YAbstractType;
+    parent: null | XmlElement | XmlText;
 
     /**
      * The length of the string in UTF-16 code units. Since JavaScripts' String
@@ -613,7 +673,7 @@ declare module 'yjs' {
      * individually.
      */
     constructor(
-      scope: YAbstractType | Array<YAbstractType>,
+      scope: XmlText,
       options?: YUndoManagerOptions,
     ): this;
 
@@ -659,7 +719,7 @@ declare module 'yjs' {
   declare export function encodeStateVector(doc: YDoc): Uint8Array;
 
   declare export function createRelativePositionFromTypeIndex(
-    type: YAbstractType,
+    type: XmlText | Map | XmlElement,
     index: number,
   ): RelativePosition;
 
@@ -680,7 +740,6 @@ declare module 'yjs' {
   declare export {
     YDoc as Doc,
     YArray as Array,
-    YMap as Map,
     YText as Text,
     YUndoManager as UndoManager,
   };

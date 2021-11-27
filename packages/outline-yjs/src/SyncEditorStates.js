@@ -197,7 +197,8 @@ export function syncOutlineUpdateToYjs(
       // This is to prevent us re-diffing and possible re-applying
       // the same change editor state again. For example, if a user
       // types a character and we get it, we don't want to then insert
-      // the same character again.
+      // the same character again. The exception to this heuristic is
+      // when we need to handle normalization merge conflicts.
       const processedStates = binding.processedStates;
       if (processedStates.has(currEditorState)) {
         if (normalizedNodes.size > 0) {

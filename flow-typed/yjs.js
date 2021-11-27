@@ -20,22 +20,26 @@ declare module 'yjs' {
     target: any;
   }
 
-  declare export class XmlText implements YAbstractType {
-    parent: null | XmlText;
+  declare export class XmlText {
+    doc: null | YDoc,
+    parent: null | XmlText | XmlElement;
     getAttributes(): {...};
-    getAttribute(string): string | object | void;
+    getAttribute(string): string | Object | void;
     setAttribute(string: string, value: string | number): void;
     insert(offset: number, string: string, attributes?: {...}): void;
     insertEmbed(offset: number, Object): void;
     delete(offset: number, delCount: number): void;
     observeDeep(fn: Function): void;
     unobserveDeep(fn: Function): void;
+    observe(fn: Function): void;
+    unobserve(fn: Function): void;
     on(type: string, () => void): void;
     toDelta(): Array<TextOperation>;
+    toJSON(): Object;
     _length: number;
   }
 
-  declare export class Map implements YAbstractType {
+  declare export class Map {
     +doc: ?YDoc;
     parent: null | XmlText;
     get(key: string): any;
@@ -44,16 +48,22 @@ declare module 'yjs' {
     _length: number;
   }
 
-  declare export class XmlElement implements YAbstractType {
+  declare export class XmlElement {
     +doc: ?YDoc;
-    parent: null | XmlText;
+    parent: null | XmlText | XmlElement;
     getAttributes(): {...};
     getAttribute(string): string | void;
-    setAttribute(string: string, value: string | number | object): void;
+    setAttribute(string: string, value: string | number | Object): void;
     removeAttribute(string: string): void;
     insert(offset: number, entry: any): void;
     delete(offset: number, delCount: number): void;
-    firstChild: null | Doc;
+    observeDeep(fn: Function): void;
+    unobserveDeep(fn: Function): void;
+    observe(fn: Function): void;
+    unobserve(fn: Function): void;
+    on(type: string, () => void): void;
+    toJSON(): Object;
+    firstChild: null | YDoc;
   }
 
   // $FlowFixMe: needs fixing
@@ -76,13 +86,13 @@ declare module 'yjs' {
   declare export type TextOperation = {
     retain?: number,
     delete?: number,
-    insert?: string | AbstractType<any>,
+    insert?: string | XmlText | Map | XmlElement,
   };
 
   declare export interface YTextEvent extends YEvent {
     keysChanged: Set<string>;
     childListChanged: boolean;
-    target: AbstractType<any>;
+    target: XmlText;
     delta: Array<TextOperation>;
   }
 
@@ -150,7 +160,7 @@ declare module 'yjs' {
 
   declare export interface YAbstractType {
     +doc: ?YDoc;
-    parent: ?YAbstractType;
+    parent: null | XmlText | XmlElement;
     observe((event: YEvent, transaction?: Transaction) => void): void;
     unobserve((event: YEvent, transaction?: Transaction) => void): void;
     toJSON<T>(): T;
@@ -273,7 +283,7 @@ declare module 'yjs' {
      * The parent that holds this type. Is null if this yarray is a top-level
      * type.
      */
-    parent: ?YAbstractType;
+    parent: null | XmlText | XmlElement;
 
     /**
      * The number of elements that this Y.Array holds.
@@ -399,7 +409,7 @@ declare module 'yjs' {
     /**
      * The parent that holds this type. Is null if this ymap is a top-level type.
      */
-    parent: ?YAbstractType;
+    parent: null | XmlText | XmlElement;
 
     /**
      * Number of   elements in the map.
@@ -523,7 +533,7 @@ declare module 'yjs' {
     /**
      * The parent that holds this type. Is null if this ytext is a top-level type.
      */
-    parent: ?YAbstractType;
+    parent: null | XmlElement | XmlText;
 
     /**
      * The length of the string in UTF-16 code units. Since JavaScripts' String
@@ -663,7 +673,7 @@ declare module 'yjs' {
      * individually.
      */
     constructor(
-      scope: YAbstractType | Array<YAbstractType>,
+      scope: XmlText,
       options?: YUndoManagerOptions,
     ): this;
 
@@ -709,7 +719,7 @@ declare module 'yjs' {
   declare export function encodeStateVector(doc: YDoc): Uint8Array;
 
   declare export function createRelativePositionFromTypeIndex(
-    type: YAbstractType,
+    type: XmlText | Map | XmlElement,
     index: number,
   ): RelativePosition;
 

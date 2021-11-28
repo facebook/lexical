@@ -59,6 +59,7 @@ import {
   createTextNode,
   createNodeFromParse,
   isTextNode,
+  isBlockNode,
   isDecoratorNode,
   log,
   getSelection,
@@ -67,9 +68,17 @@ import {
   getCompositionKey,
   getNearestNodeFromDOMNode,
   flushMutations,
+  createLineBreakNode,
 } from 'outline';
 import {IS_FIREFOX} from 'shared/environment';
 import getPossibleDecoratorNode from 'shared/getPossibleDecoratorNode';
+import {createListNode} from 'outline/ListNode';
+import {createListItemNode} from 'outline/ListItemNode';
+import {createParagraphNode} from 'outline/ParagraphNode';
+import {createHeadingNode} from 'outline/HeadingNode';
+import {createLinkNode} from 'outline/LinkNode';
+import type {TextFormatType} from 'outline';
+import {TEXT_TYPE_TO_FORMAT} from '../core/OutlineConstants';
 
 const NO_BREAK_SPACE_CHAR = '\u00A0';
 
@@ -81,6 +90,15 @@ export type EventHandler = (
   event: Object,
   editor: OutlineEditor,
 ) => void;
+
+export type DOMTransformer = (element: Node) => DOMTransformOutput;
+export type DOMTransformerMap = {
+  [string]: DOMTransformer,
+};
+type DOMTransformOutput = {
+  node: OutlineNode | null,
+  format?: TextFormatType,
+};
 
 function updateAndroidSoftKeyFlagIfAny(event: KeyboardEvent): void {
   lastKeyWasMaybeAndroidSoftKey =
@@ -105,9 +123,122 @@ function generateNodes(nodeRange: {
   return nodes;
 }
 
+const DOM_NODE_NAME_TO_OUTLINE_NODE: DOMTransformerMap = {
+  ul: () => ({node: createListNode('ul')}),
+  ol: () => ({node: createListNode('ol')}),
+  li: () => ({node: createListItemNode()}),
+  h1: () => ({node: createHeadingNode('h1')}),
+  h2: () => ({node: createHeadingNode('h2')}),
+  h3: () => ({node: createHeadingNode('h3')}),
+  h4: () => ({node: createHeadingNode('h4')}),
+  h5: () => ({node: createHeadingNode('h5')}),
+  p: () => ({node: createParagraphNode()}),
+  br: () => ({node: createLineBreakNode()}),
+  a: (domNode: Node) => {
+    let node;
+    if (domNode instanceof HTMLAnchorElement) {
+      node = createLinkNode(domNode.href);
+    } else {
+      node = createTextNode(domNode.textContent);
+    }
+    return {node};
+  },
+  u: (domNode: Node) => {
+    return {node: null, format: 'underline'};
+  },
+  b: (domNode: Node) => {
+    return {node: null, format: 'bold'};
+  },
+  strong: (domNode: Node) => {
+    return {node: null, format: 'bold'};
+  },
+  i: (domNode: Node) => {
+    return {node: null, format: 'italic'};
+  },
+  em: (domNode: Node) => {
+    return {node: null, format: 'italic'};
+  },
+  '#text': (domNode: Node) => ({node: createTextNode(domNode.textContent)}),
+};
+
+export function createNodesFromDOM(
+  node: Node,
+  conversionMap: DOMTransformerMap,
+  editor: OutlineEditor,
+  textFormat?: number,
+): Array<OutlineNode> {
+  let outlineNodes: Array<OutlineNode> = [];
+  let currentOutlineNode = null;
+  let currentTextFormat = textFormat;
+  const nodeName = node.nodeName.toLowerCase();
+  const customHtmlTransforms = editor._config.htmlTransforms || {};
+  const transformFunction =
+    customHtmlTransforms[nodeName] || conversionMap[nodeName];
+
+  const transformOutput = transformFunction ? transformFunction(node) : null;
+
+  if (transformOutput !== null) {
+    currentOutlineNode = transformOutput.node;
+    if (transformOutput.format) {
+      const nextTextFormat = TEXT_TYPE_TO_FORMAT[transformOutput.format];
+      currentTextFormat = currentTextFormat
+        ? currentTextFormat ^ nextTextFormat
+        : nextTextFormat;
+    }
+
+    if (currentOutlineNode !== null) {
+      // If the transformed node is a a TextNode, apply text formatting
+      if (isTextNode(currentOutlineNode) && currentTextFormat !== undefined) {
+        currentOutlineNode.setFormat(currentTextFormat);
+      }
+      outlineNodes.push(currentOutlineNode);
+    }
+  }
+
+  // If the DOM node doesn't have a transformer, we don't know what
+  // to do with it but we still need to process any childNodes.
+  const children = node.childNodes;
+  for (let i = 0; i < children.length; i++) {
+    const childOutlineNodes = createNodesFromDOM(
+      children[i],
+      conversionMap,
+      editor,
+      currentTextFormat,
+    );
+    if (isBlockNode(currentOutlineNode)) {
+      // If the current node is a BlockNode after transformation,
+      // we can append all the children to it.
+      currentOutlineNode.append(...childOutlineNodes);
+    } else if (currentOutlineNode === null) {
+      // If it doesn't have a transformer, we hoist its children
+      // up to the same level as it.
+      outlineNodes = outlineNodes.concat(childOutlineNodes);
+    }
+  }
+  return outlineNodes;
+}
+
+function generateNodesFromDOM(
+  dom: Document,
+  conversionMap: DOMTransformerMap,
+  editor: OutlineEditor,
+): Array<OutlineNode> {
+  let outlineNodes = [];
+  const elements: Array<Node> = dom.body ? Array.from(dom.body.childNodes) : [];
+  const elementsLength = elements.length;
+  for (let i = 0; i < elementsLength; i++) {
+    const outlineNode = createNodesFromDOM(elements[i], conversionMap, editor);
+    if (outlineNode !== null) {
+      outlineNodes = outlineNodes.concat(outlineNode);
+    }
+  }
+  return outlineNodes;
+}
+
 function insertDataTransferForRichText(
   dataTransfer: DataTransfer,
   selection: Selection,
+  editor: OutlineEditor,
 ): void {
   const outlineNodesString = dataTransfer.getData(
     'application/x-outline-nodes',
@@ -122,6 +253,39 @@ function insertDataTransferForRichText(
     } catch (e) {
       // Malformed, missing nodes..
     }
+  }
+
+  const textHtmlMimeType = 'text/html';
+  const htmlString = dataTransfer.getData(textHtmlMimeType);
+
+  if (htmlString) {
+    const parser = new DOMParser();
+    const dom = parser.parseFromString(htmlString, textHtmlMimeType);
+    const nodes = generateNodesFromDOM(
+      dom,
+      DOM_NODE_NAME_TO_OUTLINE_NODE,
+      editor,
+    );
+    // Wrap text and inline nodes in paragraph nodes so we have all blocks at the top-level
+    const topLevelBlocks = [];
+    let currentBlock = null;
+    for (let i = 0; i < nodes.length; i++) {
+      const node = nodes[i];
+      if (!isBlockNode(node) || node.isInline()) {
+        if (currentBlock === null) {
+          currentBlock = createParagraphNode();
+          topLevelBlocks.push(currentBlock);
+        }
+        if (currentBlock !== null) {
+          currentBlock.append(node);
+        }
+      } else {
+        topLevelBlocks.push(node);
+        currentBlock = null;
+      }
+    }
+    insertNodes(selection, topLevelBlocks);
+    return;
   }
   insertDataTransferForPlainText(dataTransfer, selection);
 }
@@ -311,7 +475,7 @@ export function onPasteForRichText(
     const selection = getSelection();
     const clipboardData = event.clipboardData;
     if (clipboardData != null && selection !== null) {
-      insertDataTransferForRichText(clipboardData, selection);
+      insertDataTransferForRichText(clipboardData, selection, editor);
     }
   });
 }
@@ -909,7 +1073,7 @@ export function onBeforeInputForRichText(
       case 'insertFromPaste': {
         const dataTransfer = event.dataTransfer;
         if (dataTransfer != null) {
-          insertDataTransferForRichText(dataTransfer, selection);
+          insertDataTransferForRichText(dataTransfer, selection, editor);
         } else {
           if (data) {
             insertText(selection, data);

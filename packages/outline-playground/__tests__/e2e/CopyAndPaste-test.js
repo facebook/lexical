@@ -768,5 +768,147 @@ describe('CopyAndPaste', () => {
         focusOffset: 5,
       });
     });
+
+    it('HTML Copy + paste a plain DOM text node', async () => {
+      const {isRichText, page} = e2e;
+
+      if (!isRichText) {
+        return;
+      }
+
+      await page.focus('div.editor');
+
+      const clipboard = {'text/html': 'Hello!'};
+
+      await pasteFromClipboard(page, clipboard);
+
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph"><span data-outline-text="true">Hello!</span></p>',
+      );
+      await assertSelection(page, {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 6,
+        focusPath: [0, 0, 0],
+        focusOffset: 6,
+      });
+    });
+
+    it('HTML Copy + paste a paragraph element', async () => {
+      const {isRichText, page} = e2e;
+
+      if (!isRichText) {
+        return;
+      }
+
+      await page.focus('div.editor');
+
+      const clipboard = {'text/html': '<p>Hello!<p>'};
+
+      await pasteFromClipboard(page, clipboard);
+
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph"><span data-outline-text="true">Hello!</span></p><p class="editor-paragraph"></br></p>',
+      );
+
+      await assertSelection(page, {
+        anchorPath: [1],
+        anchorOffset: 0,
+        focusPath: [1],
+        focusOffset: 0,
+      });
+    });
+
+    it('HTML Copy + paste an anchor element', async () => {
+      const {isRichText, page} = e2e;
+
+      if (!isRichText) {
+        return;
+      }
+
+      await page.focus('div.editor');
+
+      const clipboard = {
+        'text/html': '<a href="https://facebook.com">Facebook!</a>',
+      };
+
+      await pasteFromClipboard(page, clipboard);
+
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph"><a class="editor-text-link" href="https://facebook.com/"><span data-outline-text="true">Facebook!</span></a></p>',
+      );
+
+      await assertSelection(page, {
+        anchorPath: [0, 0, 0, 0],
+        anchorOffset: 9,
+        focusPath: [0, 0, 0, 0],
+        focusOffset: 9,
+      });
+
+      await selectAll(page);
+
+      await page.waitForSelector('.link');
+      await page.click('.link');
+
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph"><span data-outline-text="true">Facebook!</span></p>',
+      );
+
+      await page.click('.link');
+      await page.waitForSelector('.link-input');
+      await page.focus('.link-input');
+      await page.keyboard.type('facebook.com');
+      await page.keyboard.press('Enter');
+
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph"><a class="editor-text-link" href="http://facebook.com"><span data-outline-text="true">Facebook!</span></a></p>',
+      );
+    });
+
+    it('HTML Copy + paste a list element', async () => {
+      const {isRichText, page} = e2e;
+
+      if (!isRichText) {
+        return;
+      }
+
+      await page.focus('div.editor');
+
+      const clipboard = {'text/html': '<ul><li>Hello</li><li>world!</li></ul>'};
+
+      await pasteFromClipboard(page, clipboard);
+
+      await assertHTML(
+        page,
+        '<ul class="editor-list-ul"><li class="editor-listitem"><span data-outline-text="true">Hello</span></li><li class="editor-listitem"><span data-outline-text="true">world!</span></li></ul>',
+      );
+
+      await assertSelection(page, {
+        anchorPath: [0, 1, 0, 0],
+        anchorOffset: 6,
+        focusPath: [0, 1, 0, 0],
+        focusOffset: 6,
+      });
+
+      await page.waitForSelector('.indent');
+      await page.click('.indent');
+
+      await assertHTML(
+        page,
+        '<ul class="editor-list-ul"><li class="editor-listitem"><span data-outline-text="true">Hello</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem"><span data-outline-text="true">world!</span></li></ul></li></ul>',
+      );
+
+      await page.waitForSelector('.outdent');
+      await page.click('.outdent');
+
+      await assertHTML(
+        page,
+        '<ul class="editor-list-ul"><li class="editor-listitem"><span data-outline-text="true">Hello</span></li><li class="editor-listitem"><span data-outline-text="true">world!</span></li></ul>',
+      );
+    });
   });
 });

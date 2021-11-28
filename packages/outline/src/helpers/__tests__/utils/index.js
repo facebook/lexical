@@ -348,6 +348,13 @@ export function pasteOutline(text: string) {
   };
 }
 
+export function pasteHTML(text: string) {
+  return {
+    type: 'paste_html',
+    text: text,
+  };
+}
+
 export function moveNativeSelection(
   anchorPath,
   anchorOffset,
@@ -723,6 +730,27 @@ export async function applySelectionInputs(inputs, update, editor) {
                   clipboardData: {
                     getData: (type) => {
                       if (type === 'application/x-outline-nodes') {
+                        return input.text;
+                      }
+                      return '';
+                    },
+                  },
+                },
+              ),
+            );
+            break;
+          }
+          case 'paste_html': {
+            rootElement.dispatchEvent(
+              Object.assign(
+                new Event('paste', {
+                  bubbles: true,
+                  cancelable: true,
+                }),
+                {
+                  clipboardData: {
+                    getData: (type) => {
+                      if (type === 'text/html') {
                         return input.text;
                       }
                       return '';

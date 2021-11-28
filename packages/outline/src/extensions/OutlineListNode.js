@@ -14,8 +14,8 @@ import type {
   EditorThemeClasses,
 } from 'outline';
 
-import {BlockNode} from 'outline';
-import {isListItemNode} from 'outline/ListItemNode';
+import {createTextNode, BlockNode} from 'outline';
+import {createListItemNode, isListItemNode} from 'outline/ListItemNode';
 
 type ListNodeTagType = 'ul' | 'ol';
 
@@ -61,6 +61,25 @@ export class ListNode extends BlockNode {
 
   canBeEmpty(): false {
     return false;
+  }
+
+  append(...nodesToAppend: OutlineNode[]): ListNode {
+    for (let i = 0; i < nodesToAppend.length; i++) {
+      const currentNode = nodesToAppend[i];
+      if (isListItemNode(currentNode)) {
+        super.append(currentNode);
+      } else {
+        const listItemNode = createListItemNode();
+        if (isListNode(currentNode)) {
+          listItemNode.append(currentNode);
+        } else {
+          const textNode = createTextNode(currentNode.getTextContent());
+          listItemNode.append(textNode);
+        }
+        super.append(listItemNode);
+      }
+    }
+    return this;
   }
 }
 

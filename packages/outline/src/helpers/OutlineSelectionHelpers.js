@@ -977,11 +977,11 @@ export function insertNodes(
 
     if (isBlockNode(node)) {
       // -----
-      // Heuristics for the replacment of merging of blocks
+      // Heuristics for the replacment or merging of blocks
       // -----
 
       // If we have an incoming block node as the first node, then we'll need
-      // see if we can merge any descendant leafe nodes into our existing target.
+      // see if we can merge any descendant leaf nodes into our existing target.
       // We can do this by finding the first descendant in our node and then we can
       // pluck it and its parent (siblings included) out and insert them directly
       // into our target. We only do this for the first node, as we are only

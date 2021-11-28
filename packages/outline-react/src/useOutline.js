@@ -8,6 +8,7 @@
  */
 
 import type {OutlineEditor, EditorThemeClasses, EditorState} from 'outline';
+import type {DOMTransformerMap} from 'outline/events';
 
 import {createEditor} from 'outline';
 import {useMemo} from 'react';
@@ -22,6 +23,7 @@ export default function useOutline<EditorContext>(editorConfig?: {
   initialEditorState?: EditorState,
   theme?: EditorThemeClasses,
   context?: EditorContext,
+  htmlTransforms?: DOMTransformerMap,
 }): [OutlineEditor, (null | HTMLElement) => void, boolean] {
   const onError =
     (editorConfig !== undefined && editorConfig.onError) ||

@@ -75,3 +75,29 @@ export function isLastItemInList(listItem: ListItemNode): boolean {
   }
   return isLast;
 }
+
+export type DOMNodeToOutlineConversion = (element: Node) => OutlineNode;
+export type DOMNodeToOutlineConversionMap = {
+  [string]: DOMNodeToOutlineConversion,
+};
+
+export function createOutlineNodeFromDOMNode(
+  node: Node,
+  conversionMap: DOMNodeToOutlineConversionMap,
+): OutlineNode | null {
+  let outlineNode: OutlineNode | null = null;
+  const createFunction = conversionMap[node.nodeName.toLowerCase()];
+  if (createFunction) {
+    outlineNode = createFunction(node);
+    if (isBlockNode(outlineNode)) {
+      const children = node.childNodes;
+      for (let i = 0; i < children.length; i++) {
+        const child = createOutlineNodeFromDOMNode(children[i], conversionMap);
+        if (child !== null) {
+          outlineNode.append(child);
+        }
+      }
+    }
+  }
+  return outlineNode;
+}

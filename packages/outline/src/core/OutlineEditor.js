@@ -32,9 +32,6 @@ import {
 import invariant from 'shared/invariant';
 import type {DOMTransformerMap} from '../helpers/OutlineEventHelpers';
 
-// $FlowFixMe: intentionally object
-export type Origin = Object;
-
 export type EditorThemeClassName = string;
 
 export type TextNodeThemeClasses = {
@@ -49,7 +46,7 @@ export type TextNodeThemeClasses = {
 
 export type EditorUpdateOptions = {
   onUpdate?: () => void,
-  origin?: Origin,
+  tag?: string,
   skipTransforms?: true,
 };
 
@@ -97,7 +94,7 @@ export type Transform<T> = (node: T, state: State) => void;
 
 export type ErrorListener = (error: Error, log: Array<string>) => void;
 export type UpdateListener = ({
-  origins: Set<Origin>,
+  tags: Set<string>,
   prevEditorState: EditorState,
   editorState: EditorState,
   dirtyLeaves: Set<NodeKey>,
@@ -157,7 +154,7 @@ export function resetEditor(
   editor._dirtyLeaves = new Set();
   editor._dirtyBlocks.clear();
   editor._normalizedNodes = new Set();
-  editor._updateOrigins = new Set();
+  editor._updateTags = new Set();
   editor._log = [];
   editor._updates = [];
   const observer = editor._observer;
@@ -226,7 +223,7 @@ class BaseOutlineEditor {
   _dirtyLeaves: Set<NodeKey>;
   _dirtyBlocks: Map<NodeKey, IntentionallyMarkedAsDirtyBlock>;
   _normalizedNodes: Set<NodeKey>;
-  _updateOrigins: Set<Origin>;
+  _updateTags: Set<string>;
   _observer: null | MutationObserver;
   _log: Array<string>;
   _key: string;
@@ -271,7 +268,7 @@ class BaseOutlineEditor {
     this._dirtyLeaves = new Set();
     this._dirtyBlocks = new Map();
     this._normalizedNodes = new Set();
-    this._updateOrigins = new Set();
+    this._updateTags = new Set();
     // Handling of DOM mutations
     this._observer = null;
     // Logging for updates
@@ -484,7 +481,7 @@ declare export class OutlineEditor {
   _dirtyLeaves: Set<NodeKey>;
   _dirtyBlocks: Map<NodeKey, IntentionallyMarkedAsDirtyBlock>;
   _normalizedNodes: Set<NodeKey>;
-  _updateOrigins: Set<Origin>;
+  _updateTags: Set<string>;
   _observer: null | MutationObserver;
   _log: Array<string>;
   _key: string;

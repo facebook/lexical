@@ -11,7 +11,6 @@ import type {
   NodeKey,
   EditorState,
   IntentionallyMarkedAsDirtyBlock,
-  Origin,
 } from 'outline';
 import type {Binding, Provider, YjsEvent} from '.';
 
@@ -143,7 +142,7 @@ export function syncYjsChangesToOutline(
         syncCursorPositions(binding, provider);
       },
       skipTransforms: true,
-      origin: binding,
+      tag: 'collab',
     },
   );
 }
@@ -198,7 +197,7 @@ export function syncOutlineUpdateToYjs(
   dirtyBlocks: Map<NodeKey, IntentionallyMarkedAsDirtyBlock>,
   dirtyLeaves: Set<NodeKey>,
   normalizedNodes: Set<NodeKey>,
-  origins: Set<Origin>,
+  tags: Set<string>,
 ): void {
   binding.doc.transact(() => {
     currEditorState.read(() => {
@@ -209,7 +208,7 @@ export function syncOutlineUpdateToYjs(
       // types a character and we get it, we don't want to then insert
       // the same character again. The exception to this heuristic is
       // when we need to handle normalization merge conflicts.
-      if (origins.has(binding)) {
+      if (tags.has('collab')) {
         if (normalizedNodes.size > 0) {
           handleNormalizationMergeConflicts(binding, normalizedNodes);
         }

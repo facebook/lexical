@@ -22,7 +22,6 @@ import {
   getRoot,
 } from 'outline';
 import {useEffect, useRef, useState, useCallback, useMemo} from 'react';
-import {updateWithoutHistory} from 'outline/history';
 
 function useTypeahead(editor: OutlineEditor): void {
   const typeaheadNodeKey = useRef<NodeKey | null>(null);
@@ -50,7 +49,7 @@ function useTypeahead(editor: OutlineEditor): void {
   }, [editor]);
 
   const renderTypeahead = useCallback(() => {
-    updateWithoutHistory(editor, () => {
+    editor.update(() => {
       log('useTypeahead');
       const currentTypeaheadNode = getTypeaheadTextNode();
 
@@ -123,6 +122,8 @@ function useTypeahead(editor: OutlineEditor): void {
       } else {
         maybeAddOrEditTypeahead();
       }
+    }, {
+      origin: 'without-history'
     });
   }, [editor, getTypeaheadTextNode, selectionCollapsed, suggestion]);
 

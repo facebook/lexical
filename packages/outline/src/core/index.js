@@ -13,7 +13,6 @@ export type {
   EditorThemeClasses,
   TextMutation,
   IntentionallyMarkedAsDirtyBlock,
-  Origin,
 } from './OutlineEditor';
 export type {EditorState, ParsedEditorState} from './OutlineEditorState';
 export type {State} from './OutlineUpdates';

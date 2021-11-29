@@ -404,7 +404,7 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
   const dirtyLeaves = editor._dirtyLeaves;
   const dirtyBlocks = editor._dirtyBlocks;
   const normalizedNodes = editor._normalizedNodes;
-  const origins = editor._updateOrigins;
+  const tags = editor._updateTags;
   const log = editor._log;
 
   editor._log = [];
@@ -414,7 +414,7 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
     editor._dirtyLeaves = new Set();
     editor._dirtyBlocks = new Map();
     editor._normalizedNodes = new Set();
-    editor._updateOrigins = new Set();
+    editor._updateTags = new Set();
   }
   garbageCollectDetachedDecorators(editor, pendingEditorState);
   const pendingDecorators = editor._pendingDecorators;
@@ -425,7 +425,7 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
   }
   triggerTextContentListeners(editor, currentEditorState, pendingEditorState);
   triggerListeners('update', editor, true, {
-    origins,
+    tags,
     normalizedNodes,
     prevEditorState: currentEditorState,
     editorState: pendingEditorState,
@@ -518,12 +518,12 @@ function beginUpdate(
 ): void {
   const deferred = editor._deferred;
   let onUpdate;
-  let origin;
+  let tag;
   let skipTransforms = false;
 
   if (options !== undefined) {
     onUpdate = options.onUpdate;
-    origin = options.origin;
+    tag = options.tag;
     skipTransforms = options.skipTransforms;
   }
   if (onUpdate) {
@@ -533,8 +533,8 @@ function beginUpdate(
   let pendingEditorState = editor._pendingEditorState;
   let editorStateWasCloned = false;
 
-  if (origin != null) {
-    editor._updateOrigins.add(origin);
+  if (tag != null) {
+    editor._updateTags.add(tag);
   }
 
   if (pendingEditorState === null) {

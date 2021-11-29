@@ -13,7 +13,6 @@ module.exports = {
       // Outline Helpers
       'outline/selection': 'outline/dist/OutlineSelectionHelpers',
       'outline/text': 'outline/dist/OutlineTextHelpers',
-      'outline/history': 'outline/dist/OutlineHistoryHelpers',
       'outline/keys': 'outline/dist/OutlineKeyHelpers',
       'outline/nodes': 'outline/dist/OutlineNodeHelpers',
       'outline/events': 'outline/dist/OutlineEventHelpers',

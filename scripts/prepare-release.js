@@ -15,7 +15,6 @@ async function prepareOutlinePackage() {
   await exec(`mv ./packages/outline/npm/OutlineTextHelpers.js ./packages/outline/npm/text.js`);
   await exec(`mv ./packages/outline/npm/OutlineKeyHelpers.js ./packages/outline/npm/keys.js`);
   await exec(`mv ./packages/outline/npm/OutlineEventHelpers.js ./packages/outline/npm/events.js`);
-  await exec(`mv ./packages/outline/npm/OutlineHistoryHelpers.js ./packages/outline/npm/history.js`);
   await exec(`mv ./packages/outline/npm/OutlineOffsetHelpers.js ./packages/outline/npm/offsets.js`);
   await exec(`mv ./packages/outline/npm/OutlineNodeHelpers.js ./packages/outline/npm/nodes.js`);
   await exec(`mv ./packages/outline/npm/OutlineRootHelpers.js ./packages/outline/npm/validation.js`);

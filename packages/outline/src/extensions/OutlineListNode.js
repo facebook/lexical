@@ -46,6 +46,9 @@ export class ListNode extends BlockNode {
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
     const tag = this.__tag;
     const dom = document.createElement(tag);
+    if (this.__start !== 1) {
+      dom.setAttribute('start', String(this.__start));
+    }
     setListThemeClassNames(dom, config.theme, this);
     return dom;
   }
@@ -55,6 +58,9 @@ export class ListNode extends BlockNode {
     dom: HTMLElement,
     config: EditorConfig<EditorContext>,
   ): boolean {
+    if (prevNode.__tag !== this.__tag) {
+      return true;
+    }
     setListThemeClassNames(dom, config.theme, this);
     return false;
   }

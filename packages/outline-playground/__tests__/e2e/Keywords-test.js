@@ -12,6 +12,8 @@ import {
   assertSelection,
   repeat,
   E2E_BROWSER,
+  focusEditor,
+  waitForSelector,
 } from '../utils';
 
 describe('Keywords', () => {
@@ -19,10 +21,10 @@ describe('Keywords', () => {
     it(`Can create a decorator and move selection around it`, async () => {
       const {page} = e2e;
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type('congrats');
 
-      await page.waitForSelector('.keyword');
+      await waitForSelector(page, '.keyword');
 
       await assertHTML(
         page,

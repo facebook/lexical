@@ -13,6 +13,7 @@ import {
   assertSelection,
   E2E_BROWSER,
   IS_WINDOWS,
+  focusEditor,
 } from '../utils';
 import {
   moveToEditorBeginning,
@@ -28,7 +29,7 @@ import {
 describe('Keyboard Navigation', () => {
   initializeE2E((e2e) => {
     async function typeParagraphs(page) {
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type(
         'Lorem Ipsum is simply dummy text of the printing and typesetting industry.',
       );
@@ -255,7 +256,7 @@ describe('Keyboard Navigation', () => {
 
     it('can navigate through the plain text word by word', async () => {
       const {page} = e2e;
-      await page.focus('div.editor');
+      await focusEditor(page);
       // type sample text
       await page.keyboard.type('  123 abc 456  def  ');
       await assertSelection(page, {
@@ -467,7 +468,7 @@ describe('Keyboard Navigation', () => {
 
     it('can navigate through the formatted text word by word', async () => {
       const {isRichText, page} = e2e;
-      await page.focus('div.editor');
+      await focusEditor(page);
       // type sample text
       await page.keyboard.type('  123 abc 456  def  ');
       await assertSelection(page, {
@@ -795,7 +796,7 @@ describe('Keyboard Navigation', () => {
 
     it('can navigate through the text with emoji word by word', async () => {
       const {page} = e2e;
-      await page.focus('div.editor');
+      await focusEditor(page);
       // type sample text
       await page.keyboard.type('123:)456 abc:):)de fg');
       await assertSelection(page, {

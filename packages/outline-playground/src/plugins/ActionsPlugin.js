@@ -45,16 +45,18 @@ export default function ActionsPlugins({
     const removeReadOnlyListener = addListener('readonly', (value: boolean) => {
       setIsReadyOnly(value);
     });
-    const removeConnectedListener = addListener('connected', (value: boolean) => {
-      setConnected(value);
-    });
+    const removeConnectedListener = addListener(
+      'connected',
+      (value: boolean) => {
+        setConnected(value);
+      },
+    );
 
     return () => {
       removeReadOnlyListener();
       removeConnectedListener();
-    }
+    };
   }, [addListener, editor]);
-
 
   const handleAddImage = () => {
     editor.update(() => {
@@ -177,11 +179,13 @@ export default function ActionsPlugins({
         onClick={() => triggerListeners('readonly', !isReadOnly)}>
         <i className={isReadOnly ? 'unlock' : 'lock'} />
       </button>
-      {isCollab && <button
-        className="action-button connect"
-        onClick={() => triggerListeners('connect', !connected)}>
-        <i className={connected ? 'disconnect' : 'connect'} />
-      </button>}
+      {isCollab && (
+        <button
+          className="action-button connect"
+          onClick={() => triggerListeners('connect', !connected)}>
+          <i className={connected ? 'disconnect' : 'connect'} />
+        </button>
+      )}
     </div>
   );
 }

@@ -12,6 +12,7 @@ import {
   assertSelection,
   repeat,
   IS_MAC,
+  focusEditor,
 } from '../utils';
 
 describe('Regression test #399', () => {
@@ -24,7 +25,7 @@ describe('Regression test #399', () => {
         return;
       }
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type('foo');
       await page.keyboard.press('Enter');
       await page.keyboard.type('bar');

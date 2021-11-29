@@ -27,10 +27,11 @@ export default function useOutlineRichTextWithCollab(
   yjsDocMap: Map<string, Doc>,
   name: string,
   color: string,
+  skipInit?: boolean,
 ): [React$Node, () => void, boolean, () => void, () => void] {
   const clearEditor = useRichTextSetup(editor, false);
   const [cursors, binding, connected, connect, disconnect] =
-    useYjsCollaboration(editor, id, provider, yjsDocMap, name, color);
+    useYjsCollaboration(editor, id, provider, yjsDocMap, name, color, skipInit);
   const clearHistory = useYjsHistory(editor, binding);
   useYjsFocusTracking(editor, provider);
 

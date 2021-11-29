@@ -99,6 +99,7 @@ export class CollabBlockNode {
   ): void {
     const outlineNode = this.getNode();
     if (outlineNode === null) {
+      this.getNode();
       throw new Error('Should never happen');
     }
     syncPropertiesFromYjs(binding, this._xmlText, outlineNode, keysChanged);
@@ -180,6 +181,7 @@ export class CollabBlockNode {
     // Now diff the children of the collab node with that of our existing Outline node.
     const outlineNode = this.getNode();
     if (outlineNode === null) {
+      this.getNode();
       throw new Error('Should never happen');
     }
     const key = outlineNode.__key;

@@ -23,13 +23,20 @@ import useEditorListeners from '../hooks/useEditorListeners';
 import {WebsocketProvider} from 'y-websocket';
 // $FlowFixMe: need Flow typings for yjs
 import {Doc} from 'yjs';
+import {useRef} from 'react';
 
+const url = new URL(window.location.href);
+const params = new URLSearchParams(url.search);
 const WEBSOCKET_ENDPOINT = 'ws://localhost:1234';
 const WEBSOCKET_SLUG = 'playground';
+const WEBSOCKET_ID = params.get('collabId') || '0';
 
 function onError(e: Error): void {
   throw e;
 }
+
+const isRightFrame =
+  window.parent != null && window.parent.frames.right === window;
 
 export default function RichTextCollabPlugin({
   id,
@@ -41,6 +48,7 @@ export default function RichTextCollabPlugin({
   const {yjsDocMap, name, color} = useCollaborationContext();
   const [editor, state] = useEditorContext(PlaygroundEditorContext);
   const [rootElementRef, showPlaceholder] = useOutlineEditor(editor, onError);
+  const hasInitRef = useRef(false);
   const provider = useMemo(() => {
     let doc = yjsDocMap.get(id);
     if (doc === undefined) {
@@ -51,7 +59,7 @@ export default function RichTextCollabPlugin({
     }
     const provider = new WebsocketProvider(
       WEBSOCKET_ENDPOINT,
-      WEBSOCKET_SLUG + '/' + id,
+      WEBSOCKET_SLUG + '/' + WEBSOCKET_ID + '/' + id,
       doc,
       {
         connect: false,
@@ -60,24 +68,39 @@ export default function RichTextCollabPlugin({
     return provider;
   }, [id, yjsDocMap]);
 
-  const [cursors, clear, connected, connect, disconnect] = useOutlineRichTextWithCollab(
-    editor,
-    id,
-    provider,
-    yjsDocMap,
-    name,
-    color,
-  );
+  const [cursors, clear, connected, connect, disconnect] =
+    useOutlineRichTextWithCollab(
+      editor,
+      id,
+      provider,
+      yjsDocMap,
+      name,
+      color,
+      isRightFrame,
+    );
   const decorators = useOutlineDecorators(editor);
-  const isReadOnly = useEditorListeners(state, clear, connected, connect, disconnect);
+  const isReadOnly = useEditorListeners(
+    state,
+    clear,
+    connected,
+    connect,
+    disconnect,
+  );
+
+  if (connected && !hasInitRef.current) {
+    hasInitRef.current = true;
+  }
 
   return (
     <>
       <ContentEditable
-        isReadOnly={isReadOnly}
+        isReadOnly={!hasInitRef.current || isReadOnly}
         rootElementRef={rootElementRef}
       />
-      {showPlaceholder && <Placeholder>{placeholder}</Placeholder>}
+      {!hasInitRef.current && <div className="connecting">Connecting...</div>}
+      {showPlaceholder && hasInitRef.current && (
+        <Placeholder>{placeholder}</Placeholder>
+      )}
       {cursors}
       {decorators}
     </>

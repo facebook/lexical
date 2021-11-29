@@ -6,16 +6,22 @@
  *
  */
 
-import {initializeE2E, assertHTML, assertSelection} from '../utils';
+import {
+  initializeE2E,
+  assertHTML,
+  assertSelection,
+  focusEditor,
+  waitForSelector,
+} from '../utils';
 
 describe('Regression test #221', () => {
   initializeE2E((e2e) => {
     it(`Can handle space in hashtag`, async () => {
       const {page} = e2e;
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type('#yolo');
-      await page.waitForSelector('.editor-text-hashtag');
+      await waitForSelector(page, '.editor-text-hashtag');
       await assertHTML(
         page,
         '<p class="editor-paragraph" dir="ltr"><span class="editor-text-hashtag" data-outline-text="true">#yolo</span></p>',
@@ -45,9 +51,9 @@ describe('Regression test #221', () => {
     it(`Can handle delete in hashtag`, async () => {
       const {page} = e2e;
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type('#yolo ');
-      await page.waitForSelector('.editor-text-hashtag');
+      await waitForSelector(page, '.editor-text-hashtag');
       await assertHTML(
         page,
         '<p class="editor-paragraph" dir="ltr"><span class="editor-text-hashtag" data-outline-text="true">#yolo</span><span data-outline-text="true"> </span></p>',
@@ -76,9 +82,9 @@ describe('Regression test #221', () => {
     it(`Can handle backspace into hashtag`, async () => {
       const {page} = e2e;
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type('#yolo ');
-      await page.waitForSelector('.editor-text-hashtag');
+      await waitForSelector(page, '.editor-text-hashtag');
       await assertHTML(
         page,
         '<p class="editor-paragraph" dir="ltr"><span class="editor-text-hashtag" data-outline-text="true">#yolo</span><span data-outline-text="true"> </span></p>',

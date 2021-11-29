@@ -43,7 +43,7 @@ function useSettings(
     const parentWindow = window.parent;
     const search = windowLocation.search;
     const isSplitScreen =
-      parentWindow && parentWindow.location.pathname === '/split.html';
+      parentWindow && parentWindow.location.pathname === '/split/';
     return [port, isSplitScreen, search];
   }, [windowLocation]);
 
@@ -64,7 +64,7 @@ function useSettings(
           if (isSplitScreen) {
             window.parent.location.href = `http://localhost:${port}/${search}`;
           } else {
-            window.location.href = `http://localhost:${port}/split.html${search}`;
+            window.location.href = `http://localhost:${port}/split/${search}`;
           }
         }}
         checked={isSplitScreen}

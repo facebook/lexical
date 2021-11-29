@@ -35,6 +35,7 @@ export function useYjsCollaboration(
   docMap: Map<string, Doc>,
   name: string,
   color: string,
+  skipInit?: boolean,
 ): [React$Node, Binding, boolean, () => void, () => void] {
   const [connected, setConnected] = useState(false);
   const binding = useMemo(
@@ -63,7 +64,12 @@ export function useYjsCollaboration(
     };
 
     const onSync = (isSynced: boolean) => {
-      if (root.isEmpty()) {
+      if (
+        !skipInit &&
+        isSynced &&
+        root.isEmpty() &&
+        root._xmlText._length === 0
+      ) {
         initEditor(editor);
       }
     };
@@ -123,7 +129,7 @@ export function useYjsCollaboration(
       root.getSharedType().unobserveDeep(onYjsTreeChanges);
       removeListener();
     };
-  }, [binding, color, connect, disconnect, editor, name, provider]);
+  }, [binding, color, connect, disconnect, editor, name, provider, skipInit]);
 
   const cursorsContainer = useMemo(() => {
     const ref = (element) => {

@@ -6,14 +6,20 @@
  *
  */
 
-import {initializeE2E, assertHTML, assertSelection, repeat} from '../utils';
+import {
+  initializeE2E,
+  assertHTML,
+  assertSelection,
+  repeat,
+  focusEditor,
+} from '../utils';
 
 describe('Regression test #429', () => {
   initializeE2E((e2e) => {
     it(`Can add new lines before the line with emoji`, async () => {
       const {isRichText, page} = e2e;
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type(':) or :(');
       await assertHTML(
         page,

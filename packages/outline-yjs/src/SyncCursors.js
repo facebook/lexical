@@ -64,7 +64,11 @@ function createRelativePosition(
 
   if (collabNode instanceof CollabTextNode) {
     sharedType = collabNode._parent._xmlText;
-    offset = collabNode.getOffset() + 1 + offset;
+    const currentOffset = collabNode.getOffset();
+    if (currentOffset === -1) {
+      return null;
+    }
+    offset = currentOffset + 1 + offset;
   }
   return createRelativePositionFromTypeIndex(sharedType, offset);
 }

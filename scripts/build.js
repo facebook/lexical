@@ -21,6 +21,7 @@ const isWatchMode = argv.watch;
 const isProduction = argv.prod;
 const isWWW = argv.www;
 const isClean = argv.clean;
+const extractCodes = argv.codes;
 
 const closureOptions = {
   assume_function_wrapper: true,
@@ -188,7 +189,7 @@ async function build(name, inputFile, outputFile) {
       // Extract error codes from invariant() messages into a file.
       {
         transform(source) {
-          findAndRecordErrorCodes(source);
+          extractCodes && findAndRecordErrorCodes(source);
           return source;
         },
       },

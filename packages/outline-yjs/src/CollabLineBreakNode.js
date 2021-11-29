@@ -10,6 +10,7 @@
 import type {LineBreakNode, NodeKey} from 'outline';
 import type {CollabBlockNode} from './CollabBlockNode';
 import type {Map as YMap} from 'yjs';
+import type {Binding} from '.';
 
 import {isLineBreakNode, getNodeByKey} from 'outline';
 
@@ -50,6 +51,11 @@ export class CollabLineBreakNode {
   getOffset(): number {
     const collabBlockNode = this._parent;
     return collabBlockNode.getChildOffset(this);
+  }
+
+  destroy(binding: Binding): void {
+    const collabNodeMap = binding.collabNodeMap;
+    collabNodeMap.delete(this._key);
   }
 }
 

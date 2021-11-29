@@ -32,7 +32,7 @@ import {
   isAtNodeEnd,
 } from 'outline/selection';
 import {log, getSelection, setSelection} from 'outline';
-import {createLinkNode, isLinkNode, LinkNode} from 'outline/LinkNode';
+import {createLinkNode, isLinkNode} from 'outline/LinkNode';
 
 function positionToolbar(toolbar, rect) {
   if (rect === null) {
@@ -519,9 +519,6 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
 }
 
 function useFloatingToolbar(editor: OutlineEditor): React$Node {
-  useEffect(() => {
-    editor.registerNode(LinkNode);
-  }, [editor]);
   return useMemo(
     () => createPortal(<Toolbar editor={editor} />, document.body),
     [editor],

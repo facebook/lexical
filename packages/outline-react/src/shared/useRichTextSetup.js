@@ -19,6 +19,7 @@ import {QuoteNode} from 'outline/QuoteNode';
 import {CodeNode} from 'outline/CodeNode';
 import {ParagraphNode} from 'outline/ParagraphNode';
 import {ListItemNode} from 'outline/ListItemNode';
+import {LinkNode} from 'outline/LinkNode';
 import {createParagraphNode} from 'outline/ParagraphNode';
 import {CAN_USE_BEFORE_INPUT} from 'shared/environment';
 import useOutlineDragonSupport from './useOutlineDragonSupport';
@@ -110,6 +111,7 @@ export function useRichTextSetup(
     editor.registerNode(CodeNode);
     editor.registerNode(ParagraphNode);
     editor.registerNode(ListItemNode);
+    editor.registerNode(LinkNode);
     if (init) {
       initEditor(editor);
     }

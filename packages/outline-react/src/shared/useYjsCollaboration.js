@@ -98,6 +98,7 @@ export function useYjsCollaboration(
         dirtyLeaves,
         dirtyBlocks,
         normalizedNodes,
+        origins,
       }) => {
         syncOutlineUpdateToYjs(
           binding,
@@ -107,6 +108,7 @@ export function useYjsCollaboration(
           dirtyBlocks,
           dirtyLeaves,
           normalizedNodes,
+          origins,
         );
       },
     );

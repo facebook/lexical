@@ -32,6 +32,9 @@ import {
 import invariant from 'shared/invariant';
 import type {DOMTransformerMap} from '../helpers/OutlineEventHelpers';
 
+// $FlowFixMe: intentionally object
+export type Origin = Object;
+
 export type EditorThemeClassName = string;
 
 export type TextNodeThemeClasses = {
@@ -42,6 +45,12 @@ export type TextNodeThemeClasses = {
   underlineStrikethrough?: EditorThemeClassName,
   italic?: EditorThemeClassName,
   code?: EditorThemeClassName,
+};
+
+export type EditorUpdateOptions = {
+  onUpdate?: () => void,
+  origin?: Origin,
+  skipTransforms?: true,
 };
 
 export type EditorThemeClasses = {
@@ -88,6 +97,7 @@ export type Transform<T> = (node: T, state: State) => void;
 
 export type ErrorListener = (error: Error, log: Array<string>) => void;
 export type UpdateListener = ({
+  origins: Set<Origin>,
   prevEditorState: EditorState,
   editorState: EditorState,
   dirtyLeaves: Set<NodeKey>,
@@ -147,6 +157,7 @@ export function resetEditor(
   editor._dirtyLeaves = new Set();
   editor._dirtyBlocks.clear();
   editor._normalizedNodes = new Set();
+  editor._updateOrigins = new Set();
   editor._log = [];
   editor._updates = [];
   const observer = editor._observer;
@@ -202,7 +213,7 @@ class BaseOutlineEditor {
   _compositionKey: null | NodeKey;
   _deferred: Array<() => void>;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
-  _updates: Array<[(state: State) => void, void | (() => void)]>;
+  _updates: Array<[(state: State) => void, void | EditorUpdateOptions]>;
   _updating: boolean;
   _listeners: Listeners;
   _registeredNodes: RegisteredNodes;
@@ -215,6 +226,7 @@ class BaseOutlineEditor {
   _dirtyLeaves: Set<NodeKey>;
   _dirtyBlocks: Map<NodeKey, IntentionallyMarkedAsDirtyBlock>;
   _normalizedNodes: Set<NodeKey>;
+  _updateOrigins: Set<Origin>;
   _observer: null | MutationObserver;
   _log: Array<string>;
   _key: string;
@@ -259,6 +271,7 @@ class BaseOutlineEditor {
     this._dirtyLeaves = new Set();
     this._dirtyBlocks = new Map();
     this._normalizedNodes = new Set();
+    this._updateOrigins = new Set();
     // Handling of DOM mutations
     this._observer = null;
     // Logging for updates
@@ -414,8 +427,11 @@ class BaseOutlineEditor {
   parseEditorState(stringifiedEditorState: string): EditorState {
     return parseEditorState(stringifiedEditorState, getSelf(this));
   }
-  update(updateFn: (state: State) => void, callbackFn?: () => void): void {
-    updateEditor(getSelf(this), updateFn, false, callbackFn);
+  update(
+    updateFn: (state: State) => void,
+    options?: EditorUpdateOptions,
+  ): void {
+    updateEditor(getSelf(this), updateFn, false, options);
   }
   focus(callbackFn?: () => void): void {
     const rootElement = this._rootElement;
@@ -455,7 +471,7 @@ declare export class OutlineEditor {
   _pendingEditorState: null | EditorState;
   _compositionKey: null | NodeKey;
   _deferred: Array<() => void>;
-  _updates: Array<[(state: State) => void, void | (() => void)]>;
+  _updates: Array<[(state: State) => void, void | EditorUpdateOptions]>;
   _updating: boolean;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _listeners: Listeners;
@@ -468,6 +484,7 @@ declare export class OutlineEditor {
   _dirtyLeaves: Set<NodeKey>;
   _dirtyBlocks: Map<NodeKey, IntentionallyMarkedAsDirtyBlock>;
   _normalizedNodes: Set<NodeKey>;
+  _updateOrigins: Set<Origin>;
   _observer: null | MutationObserver;
   _log: Array<string>;
   _key: string;
@@ -491,6 +508,9 @@ declare export class OutlineEditor {
   getEditorState(): EditorState;
   setEditorState(editorState: EditorState): void;
   parseEditorState(stringifiedEditorState: string): EditorState;
-  update(updateFn: (state: State) => void, callbackFn?: () => void): boolean;
+  update(
+    updateFn: (state: State) => void,
+    options?: EditorUpdateOptions,
+  ): boolean;
   focus(callbackFn?: () => void): void;
 }

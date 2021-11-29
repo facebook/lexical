@@ -11,6 +11,7 @@ import type {
   NodeKey,
   EditorState,
   IntentionallyMarkedAsDirtyBlock,
+  Origin,
 } from 'outline';
 import type {Binding, Provider, YjsEvent} from '.';
 
@@ -85,7 +86,6 @@ export function syncYjsChangesToOutline(
     () => {
       // $FlowFixMe: this is always true
       const pendingEditorState: EditorState = editor._pendingEditorState;
-      binding.processedStates.add(pendingEditorState);
       for (let i = 0; i < events.length; i++) {
         const event = events[i];
         syncEvent(binding, event);
@@ -138,8 +138,12 @@ export function syncYjsChangesToOutline(
         }
       }
     },
-    () => {
-      syncCursorPositions(binding, provider);
+    {
+      onUpdate: () => {
+        syncCursorPositions(binding, provider);
+      },
+      skipTransforms: true,
+      origin: binding,
     },
   );
 }
@@ -194,20 +198,21 @@ export function syncOutlineUpdateToYjs(
   dirtyBlocks: Map<NodeKey, IntentionallyMarkedAsDirtyBlock>,
   dirtyLeaves: Set<NodeKey>,
   normalizedNodes: Set<NodeKey>,
+  origins: Set<Origin>,
 ): void {
   binding.doc.transact(() => {
     currEditorState.read(() => {
-      // This is to prevent us re-diffing and possible re-applying
+      // We check if the update has come from a origin where the origin
+      // was the collaboration binding previously. This can help us
+      // prevent unecessarily re-diffing and possible re-applying
       // the same change editor state again. For example, if a user
       // types a character and we get it, we don't want to then insert
       // the same character again. The exception to this heuristic is
       // when we need to handle normalization merge conflicts.
-      const processedStates = binding.processedStates;
-      if (processedStates.has(currEditorState)) {
+      if (origins.has(binding)) {
         if (normalizedNodes.size > 0) {
           handleNormalizationMergeConflicts(binding, normalizedNodes);
         }
-        processedStates.delete(currEditorState);
         return;
       }
       if (dirtyBlocks.has('root')) {

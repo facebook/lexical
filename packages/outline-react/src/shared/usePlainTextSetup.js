@@ -82,12 +82,17 @@ function clearEditor(
   editor: OutlineEditor,
   callbackFn?: (callbackFn?: () => void) => void,
 ): void {
-  editor.update(() => {
-    log('clearEditor');
-    const root = getRoot();
-    root.clear();
-    initParagraph(root, editor);
-  }, callbackFn);
+  editor.update(
+    () => {
+      log('clearEditor');
+      const root = getRoot();
+      root.clear();
+      initParagraph(root, editor);
+    },
+    {
+      onUpdate: callbackFn,
+    },
+  );
 }
 
 export default function usePlainTextSetup(

@@ -9,7 +9,12 @@
 
 import type {ParsedEditorState} from './OutlineEditorState';
 import type {RootNode} from './OutlineRootNode';
-import type {OutlineEditor, ListenerType, Transform} from './OutlineEditor';
+import type {
+  OutlineEditor,
+  ListenerType,
+  Transform,
+  EditorUpdateOptions,
+} from './OutlineEditor';
 import type {OutlineNode, NodeKey} from './OutlineNode';
 import type {Selection} from './OutlineSelection';
 import type {ParsedNode, NodeParserState} from './OutlineParsing';
@@ -152,6 +157,24 @@ function isNodeValidForTransform(
   );
 }
 
+function normalizeAllDirtyTextNodes(
+  editorState: EditorState,
+  editor: OutlineEditor,
+): void {
+  const selection = editorState._selection;
+  const dirtyLeaves = editor._dirtyLeaves;
+  const nodeMap = editorState._nodeMap;
+  const dirtyLeavesLength = dirtyLeaves.size;
+  const dDirtyLeavesArr = Array.from(dirtyLeaves);
+  for (let i = 0; i < dirtyLeavesLength; i++) {
+    const nodeKey = dDirtyLeavesArr[i];
+    const node = nodeMap.get(nodeKey);
+    if (isTextNode(node) && node.isSimpleText() && !node.isUnmergeable()) {
+      normalizeTextNode(node, selection);
+    }
+  }
+}
+
 /**
  * Transform heuristic:
  * 1. We transform leaves first. If transforms generate additional dirty nodes we repeat step 1.
@@ -189,7 +212,7 @@ function applyAllTransforms(
       for (let i = 0; i < untransformedDirtyLeavesLength; i++) {
         const nodeKey = untransformedDirtyLeavesArr[i];
         const node = nodeMap.get(nodeKey);
-        if (isTextNode(node)) {
+        if (isTextNode(node) && node.isSimpleText() && !node.isUnmergeable()) {
           normalizeTextNode(node, selection);
         }
         if (
@@ -381,6 +404,7 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
   const dirtyLeaves = editor._dirtyLeaves;
   const dirtyBlocks = editor._dirtyBlocks;
   const normalizedNodes = editor._normalizedNodes;
+  const tags = editor._updateTags;
   const log = editor._log;
 
   editor._log = [];
@@ -390,6 +414,7 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
     editor._dirtyLeaves = new Set();
     editor._dirtyBlocks = new Map();
     editor._normalizedNodes = new Set();
+    editor._updateTags = new Set();
   }
   garbageCollectDetachedDecorators(editor, pendingEditorState);
   const pendingDecorators = editor._pendingDecorators;
@@ -400,6 +425,7 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
   }
   triggerTextContentListeners(editor, currentEditorState, pendingEditorState);
   triggerListeners('update', editor, true, {
+    tags,
     normalizedNodes,
     prevEditorState: currentEditorState,
     editorState: pendingEditorState,
@@ -445,8 +471,8 @@ export function triggerListeners(
 function triggerEnqueuedUpdates(editor: OutlineEditor): void {
   const queuedUpdates = editor._updates;
   if (queuedUpdates.length !== 0) {
-    const [updateFn, callbackFn] = queuedUpdates.shift();
-    beginUpdate(editor, updateFn, false, callbackFn);
+    const [updateFn, options] = queuedUpdates.shift();
+    beginUpdate(editor, updateFn, false, options);
   }
 }
 
@@ -475,9 +501,10 @@ function processNestedUpdates(
   // to handle each update as we go until the updates array is
   // empty.
   while (queuedUpdates.length !== 0) {
-    const [nextUpdateFn, nextCallbackFn] = queuedUpdates.shift();
-    if (nextCallbackFn) {
-      deferred.push(nextCallbackFn);
+    const [nextUpdateFn, options] = queuedUpdates.shift();
+    const onUpdate = options !== undefined && options.onUpdate;
+    if (onUpdate) {
+      deferred.push(onUpdate);
     }
     nextUpdateFn(state);
   }
@@ -487,15 +514,28 @@ function beginUpdate(
   editor: OutlineEditor,
   updateFn: (state: State) => void,
   skipEmptyCheck: boolean,
-  callbackFn?: () => void,
+  options?: EditorUpdateOptions = {},
 ): void {
   const deferred = editor._deferred;
-  if (callbackFn) {
-    deferred.push(callbackFn);
+  let onUpdate;
+  let tag;
+  let skipTransforms = false;
+
+  if (options !== undefined) {
+    onUpdate = options.onUpdate;
+    tag = options.tag;
+    skipTransforms = options.skipTransforms;
+  }
+  if (onUpdate) {
+    deferred.push(onUpdate);
   }
   const currentEditorState = editor._editorState;
   let pendingEditorState = editor._pendingEditorState;
   let editorStateWasCloned = false;
+
+  if (tag != null) {
+    editor._updateTags.add(tag);
+  }
 
   if (pendingEditorState === null) {
     pendingEditorState = editor._pendingEditorState =
@@ -527,7 +567,11 @@ function beginUpdate(
           'updateEditor: the pending editor state is empty. Ensure the root not never becomes empty from an update.',
         );
       }
-      applyAllTransforms(pendingEditorState, editor);
+      if (skipTransforms) {
+        normalizeAllDirtyTextNodes(pendingEditorState, editor);
+      } else {
+        applyAllTransforms(pendingEditorState, editor);
+      }
       processNestedUpdates(editor, deferred);
       garbageCollectDetachedNodes(
         currentEditorState,
@@ -565,7 +609,6 @@ function beginUpdate(
     editor._cloneNotNeeded.clear();
     editor._dirtyLeaves = new Set();
     editor._dirtyBlocks.clear();
-    editor._normalizedNodes = new Set();
     editor._log.push('UpdateRecover');
     commitPendingUpdates(editor);
     return;
@@ -600,11 +643,11 @@ export function updateEditor(
   editor: OutlineEditor,
   updateFn: (state: State) => void,
   skipEmptyCheck: boolean,
-  callbackFn?: () => void,
+  options?: EditorUpdateOptions,
 ): void {
   if (editor._updating) {
-    editor._updates.push([updateFn, callbackFn]);
+    editor._updates.push([updateFn, options]);
   } else {
-    beginUpdate(editor, updateFn, skipEmptyCheck, callbackFn);
+    beginUpdate(editor, updateFn, skipEmptyCheck, options);
   }
 }

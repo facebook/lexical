@@ -18,7 +18,6 @@ import type {
 import {isTextNode, isRootNode} from 'outline';
 import {isRedo, isUndo} from 'outline/keys';
 import {useCallback, useEffect, useMemo} from 'react';
-import {editorStatesWithoutHistory} from 'outline/history';
 
 const MERGE = 0;
 const NO_MERGE = 1;
@@ -61,11 +60,11 @@ function getMergeAction(
   nextEditorState: EditorState,
   dirtyLeavesSet: Set<NodeKey>,
   dirtyBlocksSet: Map<NodeKey, IntentionallyMarkedAsDirtyBlock>,
+  tags: Set<string>,
 ): 0 | 1 | 2 {
   // If we have an editor state that doesn't want its history
   // recorded then we always merge the changes.
-  if (editorStatesWithoutHistory.has(nextEditorState)) {
-    editorStatesWithoutHistory.delete(nextEditorState);
+  if (tags.has('without-history')) {
     return MERGE;
   }
   if (prevEditorState === null) {
@@ -146,7 +145,7 @@ export default function useOutlineHistory(editor: OutlineEditor): () => void {
   );
 
   useEffect(() => {
-    const applyChange = ({editorState, dirtyLeaves, dirtyBlocks}) => {
+    const applyChange = ({editorState, dirtyLeaves, dirtyBlocks, tags}) => {
       const current = historyState.current;
       const redoStack = historyState.redoStack;
       const undoStack = historyState.undoStack;
@@ -159,6 +158,7 @@ export default function useOutlineHistory(editor: OutlineEditor): () => void {
         editorState,
         dirtyLeaves,
         dirtyBlocks,
+        tags,
       );
       if (mergeAction === NO_MERGE) {
         if (redoStack.length !== 0) {

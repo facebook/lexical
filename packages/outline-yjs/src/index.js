@@ -54,16 +54,14 @@ export type YjsEvent = Object;
 
 export type {Provider};
 
-export type {
-  YjsNodeMap,
-  ReverseYjsNodeMap,
-  ClientID,
-  Binding,
-} from './Bindings';
+export type {ClientID, Binding} from './Bindings';
 
 export {createBinding} from './Bindings';
 
-export function createUndoManager(binding: Binding, root: XmlText): UndoManager {
+export function createUndoManager(
+  binding: Binding,
+  root: XmlText,
+): UndoManager {
   return new YjsUndoManager(root, {
     trackedOrigins: new Set([binding, null]),
   });

@@ -24,7 +24,6 @@ import {
   getRoot,
   setSelection,
 } from 'outline';
-import {updateWithoutHistory} from 'outline/history';
 import {dfs} from 'outline/nodes';
 import {useEffect} from 'react';
 
@@ -71,9 +70,11 @@ export function useCharacterLimit(
       remainingCharacters(diff);
       if (lastComputedTextLength === null || textLengthAboveThreshold) {
         const offset = findOffset(text, maxCharacters, strlen);
-        updateWithoutHistory(editor, () => {
+        editor.update(() => {
           log('CharacterLimit');
           wrapOverflowedNodes(offset);
+        }, {
+          tag: 'without-history',
         });
       }
       lastComputedTextLength = textLength;

@@ -39,8 +39,6 @@ module.exports = {
           '<rootDir>/packages/outline-react/src/useOutlineRichText.js',
         '^outline-react/useOutlineCanShowPlaceholder$':
           '<rootDir>/packages/outline-react/src/useOutlineCanShowPlaceholder.js',
-        '^outline/history$':
-          '<rootDir>/packages/outline/src/helpers/OutlineHistoryHelpers.js',
         '^outline/selection$':
           '<rootDir>/packages/outline/src/helpers/OutlineSelectionHelpers.js',
         '^outline/text$':

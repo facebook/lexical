@@ -148,6 +148,11 @@ export class CollabDecoratorNode {
       }
     }
   }
+
+  destroy(binding: Binding): void {
+    const collabNodeMap = binding.collabNodeMap;
+    collabNodeMap.delete(this._key);
+  }
 }
 
 export function createCollabDecoratorNode(

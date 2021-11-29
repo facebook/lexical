@@ -191,8 +191,15 @@ export class CollabBlockNode {
     const collabChildrenLength = collabChildren.length;
     const collabNodeMap = binding.collabNodeMap;
     // Assign the new children key array that we're about to mutate
-    const writableOutlineNode = outlineNode.getWritable();
-    writableOutlineNode.__children = nextOutlineChildrenKeys;
+    let writableOutlineNode;
+
+    if (collabChildrenLength !== outlineChildrenKeysLength) {
+      writableOutlineNode = lazilyCloneBlockNode(
+        outlineNode,
+        writableOutlineNode,
+        nextOutlineChildrenKeys,
+      );
+    }
 
     for (let i = 0; i < collabChildrenLength; i++) {
       const outlineChildKey = prevOutlineChildrenKeys[i];
@@ -231,6 +238,11 @@ export class CollabBlockNode {
         }
         nextOutlineChildrenKeys[i] = outlineChildKey;
       } else {
+        writableOutlineNode = lazilyCloneBlockNode(
+          outlineNode,
+          writableOutlineNode,
+          nextOutlineChildrenKeys,
+        );
         // Create/Replace
         outlineChildNode = createOutlineNodeFromCollabNode(
           binding,
@@ -248,6 +260,10 @@ export class CollabBlockNode {
         // Remove
         const outlineChildNode =
           getNodeByKeyOrThrow(outlineChildKey).getWritable();
+        const collabNode = binding.collabNodeMap.get(outlineChildKey);
+        if (collabNode !== undefined) {
+          collabNode.destroy(binding);
+        }
         outlineChildNode.__parent = null;
       }
     }
@@ -420,6 +436,9 @@ export class CollabBlockNode {
       return;
     }
     const offset = child.getOffset();
+    if (offset === -1) {
+      throw new Error('Should never happen');
+    }
     const xmlText = this._xmlText;
     if (delCount !== 0) {
       xmlText.delete(offset, child.getSize());
@@ -439,10 +458,8 @@ export class CollabBlockNode {
     }
     if (delCount !== 0) {
       const childrenToDelete = children.slice(index, index + delCount);
-      const collabNodeMap = binding.collabNodeMap;
       for (let i = 0; i < childrenToDelete.length; i++) {
-        const key = childrenToDelete[i]._key;
-        collabNodeMap.delete(key);
+        childrenToDelete[i].destroy(binding);
       }
     }
     if (collabNode !== undefined) {
@@ -468,8 +485,30 @@ export class CollabBlockNode {
       }
       offset += child.getSize();
     }
-    throw new Error('Should never happen');
+    return -1;
   }
+
+  destroy(binding: Binding): void {
+    const collabNodeMap = binding.collabNodeMap;
+    const children = this._children;
+    for (let i = 0; i < children.length; i++) {
+      children[i].destroy(binding);
+    }
+    collabNodeMap.delete(this._key);
+  }
+}
+
+function lazilyCloneBlockNode(
+  outlineNode: BlockNode,
+  writableOutlineNode: void | BlockNode,
+  nextOutlineChildrenKeys: Array<NodeKey>,
+): BlockNode {
+  if (writableOutlineNode === undefined) {
+    const clone = outlineNode.getWritable();
+    clone.__children = nextOutlineChildrenKeys;
+    return clone;
+  }
+  return writableOutlineNode;
 }
 
 export function createCollabBlockNode(

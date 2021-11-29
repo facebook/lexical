@@ -163,6 +163,9 @@ function handleNormalizationMergeConflicts(
         mergedNodes.push([collabNode, outlineNode.__text]);
       } else {
         const offset = collabNode.getOffset();
+        if (offset === -1) {
+          continue;
+        }
         const parent = collabNode._parent;
         collabNode._normalized = true;
         // Only try and delete the collab node if its backing

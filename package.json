@@ -22,6 +22,7 @@
     "build-prod": "node scripts/build.js --prod --clean",
     "build-www": "node scripts/build.js --clean --www && node scripts/build.js --www --prod",
     "clean": "node scripts/build.js --clean",
+    "extract-codes": "node scripts/build.js --codes",
     "watch": "node scripts/build.js --watch",
     "flow": "node ./scripts/tasks/flow.js",
     "collab": "HOST=localhost PORT=1234 npx y-websocket-server",

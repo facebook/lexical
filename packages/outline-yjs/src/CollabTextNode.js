@@ -180,6 +180,11 @@ export class CollabTextNode {
       writable.__text = collabText;
     }
   }
+
+  destroy(binding: Binding): void {
+    const collabNodeMap = binding.collabNodeMap;
+    collabNodeMap.delete(this._key);
+  }
 }
 
 export function createCollabTextNode(

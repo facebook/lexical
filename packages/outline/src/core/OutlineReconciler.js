@@ -1056,9 +1056,6 @@ export function normalizeTextNode(
   textNode: TextNode,
   selection: null | OutlineSelection,
 ) {
-  if (!textNode.isSimpleText() || textNode.isUnmergeable()) {
-    return;
-  }
   let node = textNode;
   // Backward
   let previousNode;

@@ -164,18 +164,24 @@ describe('OutlineEditor tests', () => {
               () => {
                 log.push('C1');
               },
-              () => {
-                log.push('F1');
+              {
+                onUpdate: () => {
+                  log.push('F1');
+                },
               },
             );
           },
-          () => {
-            log.push('E1');
+          {
+            onUpdate: () => {
+              log.push('E1');
+            },
           },
         );
       },
-      () => {
-        log.push('D1');
+      {
+        onUpdate: () => {
+          log.push('D1');
+        },
       },
     );
 
@@ -191,27 +197,33 @@ describe('OutlineEditor tests', () => {
         // To enforce the update
         getRoot().markDirty();
       },
-      () => {
-        log.push('B2');
-        editor.update(
-          () => {
-            // force flush sync
-            setCompositionKey('root');
-            log.push('D2');
-          },
-          () => {
-            log.push('F2');
-          },
-        );
-        log.push('C2');
-        editor.update(
-          () => {
-            log.push('E2');
-          },
-          () => {
-            log.push('G2');
-          },
-        );
+      {
+        onUpdate: () => {
+          log.push('B2');
+          editor.update(
+            () => {
+              // force flush sync
+              setCompositionKey('root');
+              log.push('D2');
+            },
+            {
+              onUpdate: () => {
+                log.push('F2');
+              },
+            },
+          );
+          log.push('C2');
+          editor.update(
+            () => {
+              log.push('E2');
+            },
+            {
+              onUpdate: () => {
+                log.push('G2');
+              },
+            },
+          );
+        },
       },
     );
 
@@ -227,8 +239,10 @@ describe('OutlineEditor tests', () => {
         () => {
           log.push('TextTransform B3');
         },
-        () => {
-          log.push('TextTransform C3');
+        {
+          onUpdate: () => {
+            log.push('TextTransform C3');
+          },
         },
       );
     });
@@ -248,8 +262,10 @@ describe('OutlineEditor tests', () => {
         log.push('A3');
         getRoot().getLastDescendant().markDirty();
       },
-      () => {
-        log.push('B3');
+      {
+        onUpdate: () => {
+          log.push('B3');
+        },
       },
     );
 

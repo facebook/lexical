@@ -46,7 +46,6 @@ if (isClean) {
 const wwwMappings = {
   outline: 'Outline',
   'react-dom': 'ReactDOMComet',
-  'outline/history': 'OutlineHistoryHelpers',
   'outline-yjs': 'OutlineYjs',
 };
 
@@ -89,9 +88,6 @@ const externals = [
   'Outline',
   'outline-yjs',
   'outline-react',
-  // These need to be here so we never inline HistoryHelpers
-  'outline/history',
-  'Outline/history',
   'react-dom',
   'ReactDOMComet',
   'react',
@@ -158,12 +154,6 @@ async function build(name, inputFile, outputFile) {
             find: isWWW ? 'Outline/text' : 'outline/text',
             replacement: path.resolve(
               'packages/outline/src/helpers/OutlineTextHelpers',
-            ),
-          },
-          {
-            find: isWWW ? 'Outline/history' : 'outline/history',
-            replacement: path.resolve(
-              'packages/outline/src/helpers/OutlineHistoryHelpers',
             ),
           },
           {

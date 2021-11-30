@@ -22,7 +22,7 @@ import {
 import {initializeUnitTest} from '../utils';
 import {getNodeByKey} from '../../core/OutlineUtils';
 import {createParagraphNode, ParagraphNode} from 'outline/ParagraphNode';
-import {TextNode} from 'outline';
+import {TextNode, getRoot} from 'outline';
 
 describe('OutlineUtils tests', () => {
   initializeUnitTest((testEnv) => {
@@ -98,14 +98,14 @@ describe('OutlineUtils tests', () => {
     test('isSelectionWithinEditor()', async () => {
       const {editor} = testEnv;
       let textNode;
-      await editor.update((state) => {
-        const root = state.getRoot();
+      await editor.update(() => {
+        const root = getRoot();
         const paragraph = createParagraphNode();
         textNode = createTextNode('foo');
         paragraph.append(textNode);
         root.append(paragraph);
       });
-      await editor.update((state) => {
+      await editor.update(() => {
         const domSelection = window.getSelection();
         expect(
           isSelectionWithinEditor(
@@ -116,7 +116,7 @@ describe('OutlineUtils tests', () => {
         ).toBe(false);
         textNode.select(0, 0);
       });
-      await editor.update((state) => {
+      await editor.update(() => {
         const domSelection = window.getSelection();
         expect(
           isSelectionWithinEditor(
@@ -183,8 +183,8 @@ describe('OutlineUtils tests', () => {
       let paragraphNode;
       let textNode;
 
-      await editor.update((state) => {
-        const rootNode = state.getRoot();
+      await editor.update(() => {
+        const rootNode = getRoot();
         paragraphNode = new ParagraphNode();
         textNode = new TextNode('foo');
         paragraphNode.append(textNode);

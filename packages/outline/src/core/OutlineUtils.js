@@ -291,7 +291,7 @@ export function pushLogEntry(entry: string): void {
 }
 
 export function getEditorStateTextContent(editorState: EditorState): string {
-  return editorState.read(() => getRoot().getTextContent());
+  return editorState.read((view) => getRoot().getTextContent());
 }
 
 export function markAllNodesAsDirty(editor: OutlineEditor, type: string): void {

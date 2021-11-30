@@ -809,7 +809,7 @@ describe('OutlineEditor tests', () => {
 
     beforeEach(async () => {
       init();
-      await update((state) => {
+      await update(() => {
         const paragraph = createParagraphNode();
         originalText = createTextNode('Hello world');
         originalText.select(6, 11);
@@ -933,9 +933,8 @@ describe('OutlineEditor tests', () => {
         const textToKey: Map<string, NodeKey> = new Map();
 
         // Previous editor state
-        await update((state: State) => {
-          const writableParagraph: ParagraphNode = state
-            .getRoot()
+        await update(() => {
+          const writableParagraph: ParagraphNode = getRoot()
             .getFirstChild()
             .getWritable();
           writableParagraph.__children = [];

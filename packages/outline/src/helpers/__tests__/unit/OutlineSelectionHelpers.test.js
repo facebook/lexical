@@ -8,7 +8,13 @@
 
 import type {State} from 'outline';
 
-import {createTextNode, TextNode, getSelection} from 'outline';
+import {
+  createTextNode,
+  TextNode,
+  getSelection,
+  getRoot,
+  getNodeByKey,
+} from 'outline';
 import {createParagraphNode} from 'outline/ParagraphNode';
 import {
   insertText,
@@ -41,7 +47,7 @@ function createParagraphWithNodes(editor, nodes) {
   return paragraph;
 }
 
-function setAnchorPoint(state, point) {
+function setAnchorPoint(point) {
   let selection = getSelection();
   if (selection === null) {
     const dummyTextNode = createTextNode();
@@ -54,7 +60,7 @@ function setAnchorPoint(state, point) {
   anchor.key = point.key;
 }
 
-function setFocusPoint(state, point) {
+function setFocusPoint(point) {
   let selection = getSelection();
   if (selection === null) {
     const dummyTextNode = createTextNode();
@@ -77,33 +83,33 @@ describe('OutlineSelectionHelpers tests', () => {
           throw error;
         });
 
-        editor.update((state) => {
-          const root = state.getRoot();
+        editor.update(() => {
+          const root = getRoot();
           const block = createParagraphWithNodes(editor, [
             {text: 'a', key: 'a', mergeable: false},
             {text: 'b', key: 'b', mergeable: false},
             {text: 'c', key: 'c', mergeable: false},
           ]);
           root.append(block);
-          setAnchorPoint(state, {
+          setAnchorPoint({
             type: 'text',
             offset: 0,
             key: 'a',
           });
-          setFocusPoint(state, {
+          setFocusPoint({
             type: 'text',
             offset: 0,
             key: 'a',
           });
 
           const selection = getSelection();
-          cb(selection, state, block);
+          cb(selection, block);
         });
       };
 
       // getNodes
-      setupTestCase((selection, state) => {
-        expect(selection.getNodes()).toEqual([state.getNodeByKey('a')]);
+      setupTestCase((selection) => {
+        expect(selection.getNodes()).toEqual([getNodeByKey('a')]);
       });
 
       // getTextContent
@@ -112,9 +118,9 @@ describe('OutlineSelectionHelpers tests', () => {
       });
 
       // insertText
-      setupTestCase((selection, state) => {
+      setupTestCase((selection) => {
         insertText(selection, 'Test');
-        expect(state.getNodeByKey('a').getTextContent()).toBe('Testa');
+        expect(getNodeByKey('a').getTextContent()).toBe('Testa');
         expect(selection.anchor).toEqual({
           type: 'text',
           offset: 4,
@@ -128,7 +134,7 @@ describe('OutlineSelectionHelpers tests', () => {
       });
 
       // insertNodes
-      setupTestCase((selection, state, block) => {
+      setupTestCase((selection, block) => {
         insertNodes(selection, [createTextNode('foo')]);
         expect(selection.anchor).toEqual({
           type: 'text',
@@ -158,7 +164,7 @@ describe('OutlineSelectionHelpers tests', () => {
       });
 
       // insertLineBreak
-      setupTestCase((selection, state, block) => {
+      setupTestCase((selection, block) => {
         insertLineBreak(selection, true);
         expect(selection.anchor).toEqual({
           type: 'block',
@@ -173,7 +179,7 @@ describe('OutlineSelectionHelpers tests', () => {
       });
 
       // Format text
-      setupTestCase((selection, state, block) => {
+      setupTestCase((selection, block) => {
         formatText(selection, 'bold');
         insertText(selection, 'Test');
         expect(block.getFirstChild().getTextContent()).toBe('Test');
@@ -193,15 +199,15 @@ describe('OutlineSelectionHelpers tests', () => {
       });
 
       // Extract selection
-      setupTestCase((selection, state) => {
-        expect(extractSelection(selection)).toEqual([state.getNodeByKey('a')]);
+      setupTestCase((selection) => {
+        expect(extractSelection(selection)).toEqual([getNodeByKey('a')]);
       });
 
       // cloneContents
-      setupTestCase((selection, state, block) => {
+      setupTestCase((selection, block) => {
         expect(cloneContents(selection)).toEqual({
           range: ['a'],
-          nodeMap: [['a', {...state.getNodeByKey('a'), __text: ''}]],
+          nodeMap: [['a', {...getNodeByKey('a'), __text: ''}]],
         });
       });
     });
@@ -218,8 +224,8 @@ describe('OutlineSelectionHelpers tests', () => {
 
       editor.setRootElement(element);
 
-      editor.update((state) => {
-        const root = state.getRoot();
+      editor.update(() => {
+        const root = getRoot();
         block = createParagraphWithNodes(
           editor,
           [
@@ -232,12 +238,12 @@ describe('OutlineSelectionHelpers tests', () => {
           true,
         );
         root.append(block);
-        setAnchorPoint(state, {
+        setAnchorPoint({
           type: 'text',
           key: 'bb',
           offset: 1,
         });
-        setFocusPoint(state, {
+        setFocusPoint({
           type: 'text',
           key: 'cc',
           offset: 1,
@@ -246,7 +252,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       await Promise.resolve().then();
 
-      editor.getEditorState().read((state) => {
+      editor.getEditorState().read(() => {
         const selection = getSelection();
         expect(selection.anchor).toEqual({
           type: 'text',
@@ -273,8 +279,8 @@ describe('OutlineSelectionHelpers tests', () => {
 
       editor.setRootElement(element);
 
-      editor.update((state) => {
-        const root = state.getRoot();
+      editor.update(() => {
+        const root = getRoot();
         block = createParagraphWithNodes(
           editor,
           [
@@ -286,12 +292,12 @@ describe('OutlineSelectionHelpers tests', () => {
           true,
         );
         root.append(block);
-        setAnchorPoint(state, {
+        setAnchorPoint({
           type: 'text',
           key: 'a',
           offset: 0,
         });
-        setFocusPoint(state, {
+        setFocusPoint({
           type: 'text',
           key: 'c',
           offset: 1,
@@ -300,7 +306,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       await Promise.resolve().then();
 
-      editor.getEditorState().read((state) => {
+      editor.getEditorState().read(() => {
         const selection = getSelection();
         expect(selection.anchor).toEqual({
           type: 'text',
@@ -327,20 +333,20 @@ describe('OutlineSelectionHelpers tests', () => {
 
       editor.setRootElement(element);
 
-      editor.update((state) => {
-        const root = state.getRoot();
+      editor.update(() => {
+        const root = getRoot();
         block = createParagraphWithNodes(
           editor,
           [{text: '', key: 'a', mergeable: true}],
           true,
         );
         root.append(block);
-        setAnchorPoint(state, {
+        setAnchorPoint({
           type: 'text',
           key: 'a',
           offset: 0,
         });
-        setFocusPoint(state, {
+        setFocusPoint({
           type: 'text',
           key: 'a',
           offset: 0,
@@ -349,7 +355,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       await Promise.resolve().then();
 
-      editor.getEditorState().read((state) => {
+      editor.getEditorState().read(() => {
         const selection = getSelection();
         expect(selection.anchor).toEqual({
           type: 'block',
@@ -376,8 +382,8 @@ describe('OutlineSelectionHelpers tests', () => {
 
       editor.setRootElement(element);
 
-      editor.update((state) => {
-        const root = state.getRoot();
+      editor.update(() => {
+        const root = getRoot();
         block = createParagraphWithNodes(
           editor,
           [
@@ -387,12 +393,12 @@ describe('OutlineSelectionHelpers tests', () => {
           true,
         );
         root.append(block);
-        setAnchorPoint(state, {
+        setAnchorPoint({
           type: 'block',
           key: block.getKey(),
           offset: 2,
         });
-        setFocusPoint(state, {
+        setFocusPoint({
           type: 'block',
           key: block.getKey(),
           offset: 2,
@@ -401,7 +407,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       await Promise.resolve().then();
 
-      editor.getEditorState().read((state) => {
+      editor.getEditorState().read(() => {
         const selection = getSelection();
         expect(selection.anchor).toEqual({
           type: 'text',
@@ -428,8 +434,8 @@ describe('OutlineSelectionHelpers tests', () => {
 
       editor.setRootElement(element);
 
-      editor.update((state) => {
-        const root = state.getRoot();
+      editor.update(() => {
+        const root = getRoot();
         block = createParagraphWithNodes(
           editor,
           [
@@ -441,12 +447,12 @@ describe('OutlineSelectionHelpers tests', () => {
           true,
         );
         root.append(block);
-        setAnchorPoint(state, {
+        setAnchorPoint({
           type: 'block',
           key: block.getKey(),
           offset: 4,
         });
-        setFocusPoint(state, {
+        setFocusPoint({
           type: 'block',
           key: block.getKey(),
           offset: 4,
@@ -455,7 +461,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       await Promise.resolve().then();
 
-      editor.getEditorState().read((state) => {
+      editor.getEditorState().read(() => {
         const selection = getSelection();
         expect(selection.anchor).toEqual({
           type: 'text',
@@ -482,8 +488,8 @@ describe('OutlineSelectionHelpers tests', () => {
 
       editor.setRootElement(element);
 
-      editor.update((state) => {
-        const root = state.getRoot();
+      editor.update(() => {
+        const root = getRoot();
         block = createParagraphWithNodes(
           editor,
           [
@@ -495,12 +501,12 @@ describe('OutlineSelectionHelpers tests', () => {
           true,
         );
         root.append(block);
-        setAnchorPoint(state, {
+        setAnchorPoint({
           type: 'text',
           key: 'd',
           offset: 1,
         });
-        setFocusPoint(state, {
+        setFocusPoint({
           type: 'text',
           key: 'd',
           offset: 1,
@@ -509,7 +515,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       await Promise.resolve().then();
 
-      editor.getEditorState().read((state) => {
+      editor.getEditorState().read(() => {
         const selection = getSelection();
         expect(selection.anchor).toEqual({
           type: 'text',
@@ -532,28 +538,28 @@ describe('OutlineSelectionHelpers tests', () => {
           throw error;
         });
 
-        editor.update((state) => {
-          const root = state.getRoot();
+        editor.update(() => {
+          const root = getRoot();
           const block = createParagraphWithNodes(editor, []);
           root.append(block);
-          setAnchorPoint(state, {
+          setAnchorPoint({
             type: 'block',
             offset: 0,
             key: block.getKey(),
           });
-          setFocusPoint(state, {
+          setFocusPoint({
             type: 'block',
             offset: 0,
             key: block.getKey(),
           });
 
           const selection = getSelection();
-          cb(selection, state, block);
+          cb(selection, block);
         });
       };
 
       // getNodes
-      setupTestCase((selection, state) => {
+      setupTestCase((selection) => {
         expect(selection.getNodes()).toEqual([]);
       });
 
@@ -563,7 +569,7 @@ describe('OutlineSelectionHelpers tests', () => {
       });
 
       // insertText
-      setupTestCase((selection, state, block) => {
+      setupTestCase((selection, block) => {
         insertText(selection, 'Test');
         const firstChild = block.getFirstChild();
         expect(firstChild.getTextContent()).toBe('Test');
@@ -580,7 +586,7 @@ describe('OutlineSelectionHelpers tests', () => {
       });
 
       // insertParagraph
-      setupTestCase((selection, state, block) => {
+      setupTestCase((selection, block) => {
         insertParagraph(selection);
         const nextBlock = block.getNextSibling();
         expect(selection.anchor).toEqual({
@@ -596,7 +602,7 @@ describe('OutlineSelectionHelpers tests', () => {
       });
 
       // insertLineBreak
-      setupTestCase((selection, state, block) => {
+      setupTestCase((selection, block) => {
         insertLineBreak(selection, true);
         expect(selection.anchor).toEqual({
           type: 'block',
@@ -611,7 +617,7 @@ describe('OutlineSelectionHelpers tests', () => {
       });
 
       // Format text
-      setupTestCase((selection, state, block) => {
+      setupTestCase((selection, block) => {
         formatText(selection, 'bold');
         insertText(selection, 'Test');
         const firstChild = block.getFirstChild();
@@ -629,12 +635,12 @@ describe('OutlineSelectionHelpers tests', () => {
       });
 
       // Extract selection
-      setupTestCase((selection, state, block) => {
+      setupTestCase((selection, block) => {
         expect(extractSelection(selection)).toEqual([]);
       });
 
       // cloneContents
-      setupTestCase((selection, state, block) => {
+      setupTestCase((selection, block) => {
         expect(cloneContents(selection)).toEqual({
           range: [],
           nodeMap: [],
@@ -650,33 +656,33 @@ describe('OutlineSelectionHelpers tests', () => {
           throw error;
         });
 
-        editor.update((state) => {
-          const root = state.getRoot();
+        editor.update(() => {
+          const root = getRoot();
           const block = createParagraphWithNodes(editor, [
             {text: 'a', key: 'a', mergeable: false},
             {text: 'b', key: 'b', mergeable: false},
             {text: 'c', key: 'c', mergeable: false},
           ]);
           root.append(block);
-          setAnchorPoint(state, {
+          setAnchorPoint({
             type: 'block',
             offset: 0,
             key: block.getKey(),
           });
-          setFocusPoint(state, {
+          setFocusPoint({
             type: 'block',
             offset: 0,
             key: block.getKey(),
           });
 
           const selection = getSelection();
-          cb(selection, state, block);
+          cb(selection, block);
         });
       };
 
       // getNodes
-      setupTestCase((selection, state) => {
-        expect(selection.getNodes()).toEqual([state.getNodeByKey('a')]);
+      setupTestCase((selection) => {
+        expect(selection.getNodes()).toEqual([getNodeByKey('a')]);
       });
 
       // getTextContent
@@ -685,7 +691,7 @@ describe('OutlineSelectionHelpers tests', () => {
       });
 
       // insertText
-      setupTestCase((selection, state, block) => {
+      setupTestCase((selection, block) => {
         insertText(selection, 'Test');
         const firstChild = block.getFirstChild();
         expect(firstChild.getTextContent()).toBe('Test');
@@ -702,7 +708,7 @@ describe('OutlineSelectionHelpers tests', () => {
       });
 
       // insertParagraph
-      setupTestCase((selection, state, block) => {
+      setupTestCase((selection, block) => {
         insertParagraph(selection);
         const firstChild = block.getNextSibling().getFirstChild();
         expect(selection.anchor).toEqual({
@@ -718,7 +724,7 @@ describe('OutlineSelectionHelpers tests', () => {
       });
 
       // insertLineBreak
-      setupTestCase((selection, state, block) => {
+      setupTestCase((selection, block) => {
         insertLineBreak(selection, true);
         expect(selection.anchor).toEqual({
           type: 'block',
@@ -733,7 +739,7 @@ describe('OutlineSelectionHelpers tests', () => {
       });
 
       // Format text
-      setupTestCase((selection, state, block) => {
+      setupTestCase((selection, block) => {
         formatText(selection, 'bold');
         insertText(selection, 'Test');
         const firstChild = block.getFirstChild();
@@ -751,16 +757,16 @@ describe('OutlineSelectionHelpers tests', () => {
       });
 
       // Extract selection
-      setupTestCase((selection, state, block) => {
-        expect(extractSelection(selection)).toEqual([state.getNodeByKey('a')]);
+      setupTestCase((selection, block) => {
+        expect(extractSelection(selection)).toEqual([getNodeByKey('a')]);
       });
 
       // cloneContents
-      setupTestCase((selection, state, block) => {
+      setupTestCase((selection, block) => {
         expect(cloneContents(selection)).toEqual({
           range: [block.getKey()],
           nodeMap: [
-            ['a', {...state.getNodeByKey('a'), __text: ''}],
+            ['a', {...getNodeByKey('a'), __text: ''}],
             [block.getKey(), {...block, __children: ['a']}],
           ],
         });
@@ -775,33 +781,33 @@ describe('OutlineSelectionHelpers tests', () => {
           throw error;
         });
 
-        editor.update((state) => {
-          const root = state.getRoot();
+        editor.update(() => {
+          const root = getRoot();
           const block = createParagraphWithNodes(editor, [
             {text: 'a', key: 'a', mergeable: false},
             {text: 'b', key: 'b', mergeable: false},
             {text: 'c', key: 'c', mergeable: false},
           ]);
           root.append(block);
-          setAnchorPoint(state, {
+          setAnchorPoint({
             type: 'block',
             offset: 3,
             key: block.getKey(),
           });
-          setFocusPoint(state, {
+          setFocusPoint({
             type: 'block',
             offset: 3,
             key: block.getKey(),
           });
 
           const selection = getSelection();
-          cb(selection, state, block);
+          cb(selection, block);
         });
       };
 
       // getNodes
-      setupTestCase((selection, state) => {
-        expect(selection.getNodes()).toEqual([state.getNodeByKey('c')]);
+      setupTestCase((selection) => {
+        expect(selection.getNodes()).toEqual([getNodeByKey('c')]);
       });
 
       // getTextContent
@@ -810,7 +816,7 @@ describe('OutlineSelectionHelpers tests', () => {
       });
 
       // insertText
-      setupTestCase((selection, state, block) => {
+      setupTestCase((selection, block) => {
         insertText(selection, 'Test');
         const lastChild = block.getLastChild();
         expect(lastChild.getTextContent()).toBe('Test');
@@ -827,7 +833,7 @@ describe('OutlineSelectionHelpers tests', () => {
       });
 
       // insertParagraph
-      setupTestCase((selection, state, block) => {
+      setupTestCase((selection, block) => {
         insertParagraph(selection);
         const nextSibling = block.getNextSibling();
         expect(selection.anchor).toEqual({
@@ -843,9 +849,9 @@ describe('OutlineSelectionHelpers tests', () => {
       });
 
       // insertLineBreak
-      setupTestCase((selection, state, block) => {
+      setupTestCase((selection, block) => {
         insertLineBreak(selection, true);
-        const thirdChild = state.getNodeByKey('c');
+        const thirdChild = getNodeByKey('c');
         expect(selection.anchor).toEqual({
           type: 'text',
           offset: 1,
@@ -859,7 +865,7 @@ describe('OutlineSelectionHelpers tests', () => {
       });
 
       // Format text
-      setupTestCase((selection, state, block) => {
+      setupTestCase((selection, block) => {
         formatText(selection, 'bold');
         insertText(selection, 'Test');
         const lastChild = block.getLastChild();
@@ -877,16 +883,16 @@ describe('OutlineSelectionHelpers tests', () => {
       });
 
       // Extract selection
-      setupTestCase((selection, state, block) => {
-        expect(extractSelection(selection)).toEqual([state.getNodeByKey('c')]);
+      setupTestCase((selection, block) => {
+        expect(extractSelection(selection)).toEqual([getNodeByKey('c')]);
       });
 
       // cloneContents
-      setupTestCase((selection, state, block) => {
+      setupTestCase((selection, block) => {
         expect(cloneContents(selection)).toEqual({
           range: [block.getKey()],
           nodeMap: [
-            ['c', {...state.getNodeByKey('c'), __text: ''}],
+            ['c', {...getNodeByKey('c'), __text: ''}],
             [block.getKey(), {...block, __children: ['c']}],
           ],
         });
@@ -905,20 +911,20 @@ describe('OutlineSelectionHelpers tests', () => {
 
       editor.setRootElement(element);
 
-      editor.update((state) => {
-        const root = state.getRoot();
+      editor.update(() => {
+        const root = getRoot();
         block = createParagraphWithNodes(editor, [
           {text: 'a', key: 'a', mergeable: true},
           {text: 'b', key: 'b', mergeable: true},
           {text: 'c', key: 'c', mergeable: true},
         ]);
         root.append(block);
-        setAnchorPoint(state, {
+        setAnchorPoint({
           type: 'block',
           key: block.getKey(),
           offset: 2,
         });
-        setFocusPoint(state, {
+        setFocusPoint({
           type: 'block',
           key: block.getKey(),
           offset: 2,
@@ -927,7 +933,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       await Promise.resolve().then();
 
-      editor.getEditorState().read((state) => {
+      editor.getEditorState().read(() => {
         const selection = getSelection();
         expect(selection.anchor).toEqual({
           type: 'text',
@@ -954,20 +960,20 @@ describe('OutlineSelectionHelpers tests', () => {
 
       editor.setRootElement(element);
 
-      editor.update((state) => {
-        const root = state.getRoot();
+      editor.update(() => {
+        const root = getRoot();
         block = createParagraphWithNodes(editor, [
           {text: 'a', key: 'a', mergeable: true},
           {text: 'b', key: 'b', mergeable: true},
           {text: 'c', key: 'c', mergeable: true},
         ]);
         root.append(block);
-        setAnchorPoint(state, {
+        setAnchorPoint({
           type: 'block',
           key: block.getKey(),
           offset: 3,
         });
-        setFocusPoint(state, {
+        setFocusPoint({
           type: 'block',
           key: block.getKey(),
           offset: 3,
@@ -976,7 +982,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       await Promise.resolve().then();
 
-      editor.getEditorState().read((state) => {
+      editor.getEditorState().read(() => {
         const selection = getSelection();
         expect(selection.anchor).toEqual({
           type: 'text',
@@ -1001,35 +1007,35 @@ describe('OutlineSelectionHelpers tests', () => {
           throw error;
         });
 
-        editor.update((state) => {
-          const root = state.getRoot();
+        editor.update(() => {
+          const root = getRoot();
           const block = createParagraphWithNodes(editor, [
             {text: 'a', key: 'a', mergeable: false},
             {text: 'b', key: 'b', mergeable: false},
             {text: 'c', key: 'c', mergeable: false},
           ]);
           root.append(block);
-          setAnchorPoint(state, {
+          setAnchorPoint({
             type: 'text',
             offset: 0,
             key: 'a',
           });
-          setFocusPoint(state, {
+          setFocusPoint({
             type: 'text',
             offset: 0,
             key: 'b',
           });
 
           const selection = getSelection();
-          cb(selection, state, block);
+          cb(selection, block);
         });
       };
 
       // getNodes
-      setupTestCase((selection, state) => {
+      setupTestCase((selection) => {
         expect(selection.getNodes()).toEqual([
-          state.getNodeByKey('a'),
-          state.getNodeByKey('b'),
+          getNodeByKey('a'),
+          getNodeByKey('b'),
         ]);
       });
 
@@ -1039,9 +1045,9 @@ describe('OutlineSelectionHelpers tests', () => {
       });
 
       // insertText
-      setupTestCase((selection, state) => {
+      setupTestCase((selection) => {
         insertText(selection, 'Test');
-        expect(state.getNodeByKey('a').getTextContent()).toBe('Test');
+        expect(getNodeByKey('a').getTextContent()).toBe('Test');
         expect(selection.anchor).toEqual({
           type: 'text',
           offset: 4,
@@ -1055,7 +1061,7 @@ describe('OutlineSelectionHelpers tests', () => {
       });
 
       // insertNodes
-      setupTestCase((selection, state, block) => {
+      setupTestCase((selection, block) => {
         insertNodes(selection, [createTextNode('foo')]);
         expect(selection.anchor).toEqual({
           type: 'text',
@@ -1085,7 +1091,7 @@ describe('OutlineSelectionHelpers tests', () => {
       });
 
       // insertLineBreak
-      setupTestCase((selection, state, block) => {
+      setupTestCase((selection, block) => {
         insertLineBreak(selection, true);
         expect(selection.anchor).toEqual({
           type: 'block',
@@ -1100,7 +1106,7 @@ describe('OutlineSelectionHelpers tests', () => {
       });
 
       // Format text
-      setupTestCase((selection, state, block) => {
+      setupTestCase((selection, block) => {
         formatText(selection, 'bold');
         insertText(selection, 'Test');
         expect(block.getFirstChild().getTextContent()).toBe('Test');
@@ -1117,20 +1123,20 @@ describe('OutlineSelectionHelpers tests', () => {
       });
 
       // Extract selection
-      setupTestCase((selection, state) => {
+      setupTestCase((selection) => {
         expect(extractSelection(selection)).toEqual([
-          {...state.getNodeByKey('a')},
+          {...getNodeByKey('a')},
         ]);
       });
 
       // cloneContents
-      setupTestCase((selection, state, block) => {
+      setupTestCase((selection, block) => {
         expect(cloneContents(selection)).toEqual({
           range: [block.getKey()],
           nodeMap: [
-            ['a', state.getNodeByKey('a')],
+            ['a', getNodeByKey('a')],
             [block.getKey(), {...block, __children: ['a', 'b']}],
-            ['b', {...state.getNodeByKey('b'), __text: ''}],
+            ['b', {...getNodeByKey('b'), __text: ''}],
           ],
         });
       });
@@ -1144,35 +1150,35 @@ describe('OutlineSelectionHelpers tests', () => {
           throw error;
         });
 
-        editor.update((state) => {
-          const root = state.getRoot();
+        editor.update(() => {
+          const root = getRoot();
           const block = createParagraphWithNodes(editor, [
             {text: 'a', key: 'a', mergeable: false},
             {text: 'b', key: 'b', mergeable: false},
             {text: 'c', key: 'c', mergeable: false},
           ]);
           root.append(block);
-          setAnchorPoint(state, {
+          setAnchorPoint({
             type: 'block',
             offset: 0,
             key: block.getKey(),
           });
-          setFocusPoint(state, {
+          setFocusPoint({
             type: 'block',
             offset: 1,
             key: block.getKey(),
           });
 
           const selection = getSelection();
-          cb(selection, state, block);
+          cb(selection, block);
         });
       };
 
       // getNodes
-      setupTestCase((selection, state) => {
+      setupTestCase((selection) => {
         expect(selection.getNodes()).toEqual([
-          state.getNodeByKey('a'),
-          state.getNodeByKey('b'),
+          getNodeByKey('a'),
+          getNodeByKey('b'),
         ]);
       });
 
@@ -1182,7 +1188,7 @@ describe('OutlineSelectionHelpers tests', () => {
       });
 
       // insertText
-      setupTestCase((selection, state, block) => {
+      setupTestCase((selection, block) => {
         insertText(selection, 'Test');
         const firstChild = block.getFirstChild();
         expect(firstChild.getTextContent()).toBe('Test');
@@ -1199,7 +1205,7 @@ describe('OutlineSelectionHelpers tests', () => {
       });
 
       // insertParagraph
-      setupTestCase((selection, state, block) => {
+      setupTestCase((selection, block) => {
         insertParagraph(selection);
         const firstChild = block.getNextSibling().getFirstChild();
         expect(selection.anchor).toEqual({
@@ -1215,7 +1221,7 @@ describe('OutlineSelectionHelpers tests', () => {
       });
 
       // insertLineBreak
-      setupTestCase((selection, state, block) => {
+      setupTestCase((selection, block) => {
         insertLineBreak(selection, true);
         expect(selection.anchor).toEqual({
           type: 'block',
@@ -1230,7 +1236,7 @@ describe('OutlineSelectionHelpers tests', () => {
       });
 
       // Format text
-      setupTestCase((selection, state, block) => {
+      setupTestCase((selection, block) => {
         formatText(selection, 'bold');
         insertText(selection, 'Test');
         const firstChild = block.getFirstChild();
@@ -1248,19 +1254,19 @@ describe('OutlineSelectionHelpers tests', () => {
       });
 
       // Extract selection
-      setupTestCase((selection, state, block) => {
+      setupTestCase((selection, block) => {
         const firstChild = block.getFirstChild();
         expect(extractSelection(selection)).toEqual([firstChild]);
       });
 
       // cloneContents
-      setupTestCase((selection, state, block) => {
+      setupTestCase((selection, block) => {
         expect(cloneContents(selection)).toEqual({
           range: [block.getKey()],
           nodeMap: [
-            ['a', state.getNodeByKey('a')],
+            ['a', getNodeByKey('a')],
             [block.getKey(), {...block, __children: ['a', 'b']}],
-            ['b', {...state.getNodeByKey('b'), __text: ''}],
+            ['b', {...getNodeByKey('b'), __text: ''}],
           ],
         });
       });
@@ -1274,41 +1280,41 @@ describe('OutlineSelectionHelpers tests', () => {
           throw error;
         });
 
-        editor.update((state) => {
-          const root = state.getRoot();
+        editor.update(() => {
+          const root = getRoot();
           const block = createParagraphWithNodes(editor, [
             {text: 'a', key: 'a', mergeable: false},
             {text: 'b', key: 'b', mergeable: false},
             {text: 'c', key: 'c', mergeable: false},
           ]);
           root.append(block);
-          setAnchorPoint(state, {
+          setAnchorPoint({
             type: 'block',
             offset: 0,
             key: block.getKey(),
           });
-          setFocusPoint(state, {
+          setFocusPoint({
             type: 'text',
             offset: 1,
             key: 'c',
           });
 
           const selection = getSelection();
-          cb(selection, state, block);
+          cb(selection, block);
         });
       };
 
       // isBefore
-      setupTestCase((selection, state) => {
+      setupTestCase((selection) => {
         expect(selection.anchor.isBefore(selection.focus)).toEqual(true);
       });
 
       // getNodes
-      setupTestCase((selection, state) => {
+      setupTestCase((selection) => {
         expect(selection.getNodes()).toEqual([
-          state.getNodeByKey('a'),
-          state.getNodeByKey('b'),
-          state.getNodeByKey('c'),
+          getNodeByKey('a'),
+          getNodeByKey('b'),
+          getNodeByKey('c'),
         ]);
       });
 
@@ -1318,7 +1324,7 @@ describe('OutlineSelectionHelpers tests', () => {
       });
 
       // insertText
-      setupTestCase((selection, state, block) => {
+      setupTestCase((selection, block) => {
         insertText(selection, 'Test');
         const firstChild = block.getFirstChild();
         expect(firstChild.getTextContent()).toBe('Test');
@@ -1335,7 +1341,7 @@ describe('OutlineSelectionHelpers tests', () => {
       });
 
       // insertParagraph
-      setupTestCase((selection, state, block) => {
+      setupTestCase((selection, block) => {
         insertParagraph(selection);
         const nextBlock = block.getNextSibling();
         expect(selection.anchor).toEqual({
@@ -1351,7 +1357,7 @@ describe('OutlineSelectionHelpers tests', () => {
       });
 
       // insertLineBreak
-      setupTestCase((selection, state, block) => {
+      setupTestCase((selection, block) => {
         insertLineBreak(selection, true);
         expect(selection.anchor).toEqual({
           type: 'block',
@@ -1366,7 +1372,7 @@ describe('OutlineSelectionHelpers tests', () => {
       });
 
       // Format text
-      setupTestCase((selection, state, block) => {
+      setupTestCase((selection, block) => {
         formatText(selection, 'bold');
         insertText(selection, 'Test');
         const firstChild = block.getFirstChild();
@@ -1384,23 +1390,23 @@ describe('OutlineSelectionHelpers tests', () => {
       });
 
       // Extract selection
-      setupTestCase((selection, state, block) => {
+      setupTestCase((selection, block) => {
         expect(extractSelection(selection)).toEqual([
-          state.getNodeByKey('a'),
-          state.getNodeByKey('b'),
-          state.getNodeByKey('c'),
+          getNodeByKey('a'),
+          getNodeByKey('b'),
+          getNodeByKey('c'),
         ]);
       });
 
       // cloneContents
-      setupTestCase((selection, state, block) => {
+      setupTestCase((selection, block) => {
         expect(cloneContents(selection)).toEqual({
           range: [block.getKey()],
           nodeMap: [
-            ['a', state.getNodeByKey('a')],
+            ['a', getNodeByKey('a')],
             [block.getKey(), block],
-            ['b', state.getNodeByKey('b')],
-            ['c', state.getNodeByKey('c')],
+            ['b', getNodeByKey('b')],
+            ['c', getNodeByKey('c')],
           ],
         });
       });
@@ -1416,7 +1422,7 @@ describe('OutlineSelectionHelpers tests', () => {
     editor.setRootElement(element);
 
     await editor.update((state: State) => {
-      const root = state.getRoot();
+      const root = getRoot();
       const paragraph1 = createParagraphNode();
       const paragraph2 = createParagraphNode();
       const paragraph3 = createParagraphNode();
@@ -1475,7 +1481,7 @@ describe('OutlineSelectionHelpers tests', () => {
     editor.setRootElement(element);
 
     await editor.update((state: State) => {
-      const root = state.getRoot();
+      const root = getRoot();
       const paragraph = createParagraphNode();
       root.append(paragraph);
 
@@ -1553,16 +1559,16 @@ describe('OutlineSelectionHelpers tests', () => {
         editor.setRootElement(element);
 
         await editor.update((state: State) => {
-          const root = state.getRoot();
+          const root = getRoot();
           const paragraph = createParagraphNode();
           root.append(paragraph);
 
-          setAnchorPoint(state, {
+          setAnchorPoint({
             type: 'block',
             offset: 0,
             key: paragraph.getKey(),
           });
-          setFocusPoint(state, {
+          setFocusPoint({
             type: 'block',
             offset: 0,
             key: paragraph.getKey(),
@@ -1586,16 +1592,16 @@ describe('OutlineSelectionHelpers tests', () => {
         editor.setRootElement(element);
 
         await editor.update((state: State) => {
-          const root = state.getRoot();
+          const root = getRoot();
           const paragraph = createParagraphNode();
           root.append(paragraph);
 
-          setAnchorPoint(state, {
+          setAnchorPoint({
             type: 'block',
             offset: 0,
             key: paragraph.getKey(),
           });
-          setFocusPoint(state, {
+          setFocusPoint({
             type: 'block',
             offset: 0,
             key: paragraph.getKey(),
@@ -1622,16 +1628,16 @@ describe('OutlineSelectionHelpers tests', () => {
         editor.setRootElement(element);
 
         await editor.update((state: State) => {
-          const root = state.getRoot();
+          const root = getRoot();
           const paragraph = createParagraphNode();
           root.append(paragraph);
 
-          setAnchorPoint(state, {
+          setAnchorPoint({
             type: 'block',
             offset: 0,
             key: paragraph.getKey(),
           });
-          setFocusPoint(state, {
+          setFocusPoint({
             type: 'block',
             offset: 0,
             key: paragraph.getKey(),
@@ -1658,16 +1664,16 @@ describe('OutlineSelectionHelpers tests', () => {
         editor.setRootElement(element);
 
         await editor.update((state: State) => {
-          const root = state.getRoot();
+          const root = getRoot();
           const paragraph = createParagraphNode();
           root.append(paragraph);
 
-          setAnchorPoint(state, {
+          setAnchorPoint({
             type: 'block',
             offset: 0,
             key: paragraph.getKey(),
           });
-          setFocusPoint(state, {
+          setFocusPoint({
             type: 'block',
             offset: 0,
             key: paragraph.getKey(),
@@ -1698,18 +1704,18 @@ describe('OutlineSelectionHelpers tests', () => {
         editor.setRootElement(element);
 
         await editor.update((state: State) => {
-          const root = state.getRoot();
+          const root = getRoot();
           const paragraph = createParagraphNode();
           const text = createTextNode('Existing text...');
           paragraph.append(text);
           root.append(paragraph);
 
-          setAnchorPoint(state, {
+          setAnchorPoint({
             type: 'text',
             offset: 16,
             key: text.getKey(),
           });
-          setFocusPoint(state, {
+          setFocusPoint({
             type: 'text',
             offset: 16,
             key: text.getKey(),
@@ -1733,18 +1739,18 @@ describe('OutlineSelectionHelpers tests', () => {
         editor.setRootElement(element);
 
         await editor.update((state: State) => {
-          const root = state.getRoot();
+          const root = getRoot();
           const paragraph = createParagraphNode();
           const text = createTextNode('Existing text...');
           paragraph.append(text);
           root.append(paragraph);
 
-          setAnchorPoint(state, {
+          setAnchorPoint({
             type: 'text',
             offset: 16,
             key: text.getKey(),
           });
-          setFocusPoint(state, {
+          setFocusPoint({
             type: 'text',
             offset: 16,
             key: text.getKey(),
@@ -1771,18 +1777,18 @@ describe('OutlineSelectionHelpers tests', () => {
         editor.setRootElement(element);
 
         await editor.update((state: State) => {
-          const root = state.getRoot();
+          const root = getRoot();
           const paragraph = createParagraphNode();
           const text = createTextNode('Existing text...');
           paragraph.append(text);
           root.append(paragraph);
 
-          setAnchorPoint(state, {
+          setAnchorPoint({
             type: 'text',
             offset: 16,
             key: text.getKey(),
           });
-          setFocusPoint(state, {
+          setFocusPoint({
             type: 'text',
             offset: 16,
             key: text.getKey(),
@@ -1809,18 +1815,18 @@ describe('OutlineSelectionHelpers tests', () => {
         editor.setRootElement(element);
 
         await editor.update((state: State) => {
-          const root = state.getRoot();
+          const root = getRoot();
           const paragraph = createParagraphNode();
           const text = createTextNode('Existing text...');
           paragraph.append(text);
           root.append(paragraph);
 
-          setAnchorPoint(state, {
+          setAnchorPoint({
             type: 'text',
             offset: 16,
             key: text.getKey(),
           });
-          setFocusPoint(state, {
+          setFocusPoint({
             type: 'text',
             offset: 16,
             key: text.getKey(),

@@ -990,7 +990,7 @@ function useMentions(editor: OutlineEditor): React$Node {
   }, [editor]);
 
   const onKeyDown = useCallback(
-    (event, state) => {
+    (event) => {
       if (editor.isComposing()) {
         return;
       }
@@ -1001,7 +1001,7 @@ function useMentions(editor: OutlineEditor): React$Node {
           return;
         }
         if (typeof controlFunction === 'function') {
-          controlFunction(event, state);
+          controlFunction(event);
         }
       });
     },
@@ -1014,8 +1014,8 @@ function useMentions(editor: OutlineEditor): React$Node {
 
   useLayoutEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      editor.update((state) => {
-        onKeyDown(event, state);
+      editor.update(() => {
+        onKeyDown(event);
       });
     };
     return editor.addListener(

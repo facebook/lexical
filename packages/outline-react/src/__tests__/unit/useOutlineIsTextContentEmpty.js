@@ -64,8 +64,8 @@ describe('useOutlineIsTextContentEmpty', () => {
     });
 
     await ReactTestUtils.act(async () => {
-      await editor.update((state) => {
-        const root = state.getRoot();
+      await editor.update(() => {
+        const root = getRoot();
         const paragraph = createParagraphNode();
         const text = createTextNode('foo');
         root.append(paragraph);

@@ -101,7 +101,7 @@ function DropdownList({
 
   const formatSmallHeading = () => {
     if (blockType !== 'h2') {
-      editor.update((state) => {
+      editor.update(() => {
         log('formatSmallHeading');
         const selection = getSelection();
 
@@ -115,7 +115,7 @@ function DropdownList({
 
   const formatBulletList = () => {
     if (blockType !== 'ul') {
-      editor.update((state) => {
+      editor.update(() => {
         log('formatBulletList');
         const selection = getSelection();
 
@@ -133,7 +133,7 @@ function DropdownList({
 
   const formatNumberedList = () => {
     if (blockType !== 'ol') {
-      editor.update((state) => {
+      editor.update(() => {
         log('formatNumberedList');
         const selection = getSelection();
 
@@ -151,7 +151,7 @@ function DropdownList({
 
   const formatQuote = () => {
     if (blockType !== 'quote') {
-      editor.update((state) => {
+      editor.update(() => {
         log('formatQuote');
         const selection = getSelection();
 
@@ -165,7 +165,7 @@ function DropdownList({
 
   const formatCode = () => {
     if (blockType !== 'code') {
-      editor.update((state) => {
+      editor.update(() => {
         log('formatCode');
         const selection = getSelection();
 

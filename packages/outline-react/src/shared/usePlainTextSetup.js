@@ -103,11 +103,15 @@ export default function usePlainTextSetup(
   callbackFn?: (callbackFn?: () => void) => void,
 ) => void {
   useLayoutEffect(() => {
-    editor.registerNode(ParagraphNode);
+    const unregisterNodes = editor.registerNodes([ParagraphNode]);
     if (init) {
       initEditor(editor);
     }
-    return editor.addListener('textmutation', onTextMutation);
+    const removeListener = editor.addListener('textmutation', onTextMutation);
+    return () => {
+      unregisterNodes();
+      removeListener();
+    };
   }, [editor, init]);
 
   useOutlineEditorEvents(events, editor);

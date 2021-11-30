@@ -281,8 +281,12 @@ function textNodeTransform(node: TextNode, state: State): void {
 
 function useHashtags(editor: OutlineEditor): void {
   useEffect(() => {
-    editor.registerNode(HashtagNode);
-    return editor.addTransform(TextNode, textNodeTransform);
+    const unregisterNodes = editor.registerNodes([HashtagNode]);
+    const removeTransform = editor.addTransform(TextNode, textNodeTransform);
+    return () => {
+      unregisterNodes();
+      removeTransform();
+    };
   }, [editor]);
 }
 

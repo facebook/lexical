@@ -13,4 +13,10 @@ module.exports = {
     '@babel/preset-react',
     '@babel/preset-flow',
   ],
+  plugins: [
+    [
+      require('./scripts/error-codes/transform-error-messages'),
+      {noMinify: true},
+    ],
+  ],
 };

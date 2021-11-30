@@ -48,6 +48,7 @@ module.name_mapper='^outline-react/useOutlineIsBlank' -> '<PROJECT_ROOT>/package
 module.name_mapper='^outline-react/useOutlineIsTextContentEmpty' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlineIsTextContentEmpty.js'
 module.name_mapper='^outline-react/useOutlineCanShowPlaceholder' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlineCanShowPlaceholder.js'
 module.name_mapper='^outline-react/useOutlineCharacterLimit' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlineCharacterLimit.js'
+module.name_mapper='^outline-react/useOutlineHistory' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlineHistory.js'
 
 module.name_mapper='^outline-yjs$' -> '<PROJECT_ROOT>/packages/outline-yjs/src/index.js'
 

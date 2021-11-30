@@ -23,6 +23,17 @@ const MERGE = 0;
 const NO_MERGE = 1;
 const DISCARD = 2;
 
+export type HistoryStateEntry = {
+  editor: OutlineEditor,
+  editorState: EditorState,
+};
+
+export type HistoryState = {
+  current: null | HistoryStateEntry,
+  redoStack: Array<HistoryStateEntry>,
+  undoStack: Array<HistoryStateEntry>,
+};
+
 function getDirtyNodes(
   editorState: EditorState,
   dirtyLeavesSet: Set<NodeKey>,
@@ -130,18 +141,13 @@ function getMergeAction(
   return NO_MERGE;
 }
 
-export default function useOutlineHistory(editor: OutlineEditor): () => void {
-  const historyState: {
-    current: null | EditorState,
-    redoStack: Array<EditorState>,
-    undoStack: Array<EditorState>,
-  } = useMemo(
-    () => ({
-      current: null,
-      redoStack: [],
-      undoStack: [],
-    }),
-    [],
+export function useOutlineHistory(
+  editor: OutlineEditor,
+  externalHistoryState?: HistoryState,
+): () => void {
+  const historyState: HistoryState = useMemo(
+    () => externalHistoryState || createEmptyHistoryState(),
+    [externalHistoryState],
   );
 
   useEffect(() => {
@@ -149,12 +155,13 @@ export default function useOutlineHistory(editor: OutlineEditor): () => void {
       const current = historyState.current;
       const redoStack = historyState.redoStack;
       const undoStack = historyState.undoStack;
+      const currentEditorState = current === null ? null : current.editorState;
 
-      if (editorState === current) {
+      if (current !== null && editorState === currentEditorState) {
         return;
       }
       const mergeAction = getMergeAction(
-        current,
+        currentEditorState,
         editorState,
         dirtyLeaves,
         dirtyBlocks,
@@ -171,7 +178,10 @@ export default function useOutlineHistory(editor: OutlineEditor): () => void {
         return;
       }
       // Else we merge
-      historyState.current = editorState;
+      historyState.current = {
+        editor,
+        editorState,
+      };
     };
 
     const undo = () => {
@@ -184,9 +194,9 @@ export default function useOutlineHistory(editor: OutlineEditor): () => void {
         if (current !== null) {
           redoStack.push(current);
         }
-        const editorState = undoStack.pop();
-        historyState.current = editorState;
-        editor.setEditorState(editorState);
+        const historyStateEntry = undoStack.pop();
+        historyState.current = historyStateEntry;
+        historyStateEntry.editor.setEditorState(historyStateEntry.editorState);
       }
     };
 
@@ -199,9 +209,9 @@ export default function useOutlineHistory(editor: OutlineEditor): () => void {
         if (current !== null) {
           undoStack.push(current);
         }
-        const editorState = redoStack.pop();
-        historyState.current = editorState;
-        editor.setEditorState(editorState);
+        const historyStateEntry = redoStack.pop();
+        historyState.current = historyStateEntry;
+        historyStateEntry.editor.setEditorState(historyStateEntry.editorState);
       }
     };
 
@@ -209,6 +219,7 @@ export default function useOutlineHistory(editor: OutlineEditor): () => void {
       if (editor.isComposing()) {
         return;
       }
+
       if (isUndo(event)) {
         event.preventDefault();
         event.stopPropagation();
@@ -265,4 +276,12 @@ export default function useOutlineHistory(editor: OutlineEditor): () => void {
   }, [historyState]);
 
   return clearHistory;
+}
+
+export function createEmptyHistoryState(): HistoryState {
+  return {
+    current: null,
+    redoStack: [],
+    undoStack: [],
+  };
 }

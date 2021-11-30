@@ -295,6 +295,14 @@ describe('OutlineEditor tests', () => {
     expect(fn).toHaveBeenCalledTimes(1);
   });
 
+  it('editor.focus() callback is called', async () => {
+    init();
+
+    const fn = jest.fn();
+    await editor.focus(fn);
+    expect(fn).toHaveBeenCalledTimes(1);
+  });
+
   it('Synchronously runs three transforms, two of them depend on the other', async () => {
     init();
     // 2. Add italics

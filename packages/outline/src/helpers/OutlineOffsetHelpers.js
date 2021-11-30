@@ -375,6 +375,16 @@ function createOffsetNode(
     const childKeys = node.__children;
     const blockIsEmpty = childKeys.length === 0;
 
+    const child = blockIsEmpty
+      ? null
+      : createOffsetChild(
+          state,
+          childKeys,
+          null,
+          nodeMap,
+          offsetMap,
+          blockOffsetSize,
+        );
     // If the prev node was not a block or the block is empty, we should
     // account for the user being able to selection the block (due to the \n).
     if (!state.prevIsBlock || blockIsEmpty) {
@@ -382,25 +392,15 @@ function createOffsetNode(
       state.offset += blockOffsetSize;
     }
     const offsetNode = createInternalOffsetNode<OffsetBlockNode>(
-      null,
+      child,
       'block',
       start,
       start,
       key,
       parent,
     );
-    const child = blockIsEmpty
-      ? null
-      : createOffsetChild(
-          state,
-          childKeys,
-          offsetNode,
-          nodeMap,
-          offsetMap,
-          blockOffsetSize,
-        );
     if (child !== null) {
-      offsetNode.child = child;
+      child.parent = offsetNode;
     }
     const end = state.offset;
     offsetNode.end = end;

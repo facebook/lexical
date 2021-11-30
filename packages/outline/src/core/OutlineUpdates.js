@@ -23,6 +23,7 @@ import {normalizeTextNode, updateEditorState} from './OutlineReconciler';
 import {
   createSelection,
   getSelection,
+  getPreviousSelection,
   createSelectionFromParse,
 } from './OutlineSelection';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './OutlineConstants';
@@ -66,6 +67,7 @@ export type State = {
   getRoot: () => RootNode,
   getNodeByKey: (key: NodeKey) => null | OutlineNode,
   getSelection: () => null | Selection,
+  getPreviousSelection: () => null | Selection,
   setSelection: (selection: Selection) => void,
   setCompositionKey: (compositionKey: NodeKey | null) => void,
   getCompositionKey: () => null | NodeKey,
@@ -79,6 +81,7 @@ export const state: State = {
   getSelection,
   clearSelection,
   setSelection,
+  getPreviousSelection,
   setCompositionKey,
   getCompositionKey,
   getNearestNodeFromDOMNode,

@@ -635,6 +635,11 @@ export function getSelection(): null | Selection {
   return editorState._selection;
 }
 
+export function getPreviousSelection(): null | Selection {
+  const editor = getActiveEditor();
+  return editor._editorState._selection;
+}
+
 export function createSelectionFromParse(
   parsedSelection: null | {
     anchor: {

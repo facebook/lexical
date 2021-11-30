@@ -32,7 +32,6 @@ import {
   RootNode,
 } from '.';
 import {
-  errorOnInfiniteTransforms,
   errorOnReadOnly,
   getActiveEditor,
   getActiveEditorState,
@@ -163,7 +162,6 @@ export function isLeafNode(node: ?OutlineNode): boolean %checks {
 
 export function generateKey(node: OutlineNode): NodeKey {
   errorOnReadOnly();
-  errorOnInfiniteTransforms();
   const editor = getActiveEditor();
   const editorState = getActiveEditorState();
   const key = generateRandomKey();
@@ -201,7 +199,6 @@ export function markParentBlocksAsDirty(
 // Never use this function directly! It will break
 // the cloning heuristic. Instead use node.getWritable().
 export function internallyMarkNodeAsDirty(node: OutlineNode): void {
-  errorOnInfiniteTransforms();
   const latest = node.getLatest();
   const parent = latest.__parent;
   const editorState = getActiveEditorState();

@@ -59,7 +59,6 @@ let activeEditorState: null | EditorState = null;
 let activeEditor: null | OutlineEditor = null;
 let isReadOnlyMode: boolean = false;
 let isAttemptingToRecoverFromReconcilerError: boolean = false;
-let infiniteTransformCount: number = 0;
 
 export type State = {
   clearSelection(): void,
@@ -92,15 +91,6 @@ export function isCurrentlyReadOnlyMode(): boolean {
 export function errorOnReadOnly(): void {
   if (isReadOnlyMode) {
     invariant(false, 'Cannot use method in read-only mode.');
-  }
-}
-
-export function errorOnInfiniteTransforms(): void {
-  if (infiniteTransformCount > 99) {
-    invariant(
-      false,
-      'One or more transforms are endlessly triggering additional transforms. May have encountered infinite recursion caused by transforms that have their preconditions too lose and/or conflict with each other.',
-    );
   }
 }
 
@@ -210,9 +200,10 @@ function applyAllTransforms(
   let untransformedDirtyLeavesLength = untransformedDirtyLeaves.size;
   let untransformedDirtyBlocks = dirtyBlocks;
   let untransformedDirtyBlocksLength = untransformedDirtyBlocks.size;
+  let infiniteLoopCount = 100;
   while (
-    untransformedDirtyLeavesLength > 0 ||
-    untransformedDirtyBlocksLength > 0
+    infiniteLoopCount > 0 &&
+    (untransformedDirtyLeavesLength > 0 || untransformedDirtyBlocksLength > 0)
   ) {
     if (untransformedDirtyLeavesLength > 0) {
       // We leverage editor._dirtyLeaves to track the new dirty leaves after the transforms
@@ -236,7 +227,7 @@ function applyAllTransforms(
       untransformedDirtyLeavesLength = untransformedDirtyLeaves.size;
       // We want to prioritize node transforms over block transforms
       if (untransformedDirtyLeavesLength > 0) {
-        infiniteTransformCount++;
+        infiniteLoopCount--;
         continue;
       }
     }
@@ -259,7 +250,13 @@ function applyAllTransforms(
     untransformedDirtyLeavesLength = untransformedDirtyLeaves.size;
     untransformedDirtyBlocks = editor._dirtyBlocks;
     untransformedDirtyBlocksLength = untransformedDirtyBlocks.size;
-    infiniteTransformCount++;
+    infiniteLoopCount--;
+  }
+  if (infiniteLoopCount === 0) {
+    invariant(
+      false,
+      'One or more transforms are endlessly triggering additional transforms. May have encountered infinite recursion caused by transforms that have their preconditions too lose and/or conflict with each other.',
+    );
   }
 
   editor._dirtyLeaves = dirtyLeaves;
@@ -620,7 +617,6 @@ function beginUpdate(
     isReadOnlyMode = previousReadOnlyMode;
     activeEditor = previousActiveEditor;
     editor._updating = previouslyUpdating;
-    infiniteTransformCount = 0;
   }
 
   const shouldUpdate =

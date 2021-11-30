@@ -1131,7 +1131,7 @@ describe('OutlineEditor tests', () => {
     removeRootTransform();
   });
 
-  it('Register node type', () => {
+  it('registers node type', () => {
     init();
 
     const pairs = [
@@ -1156,35 +1156,17 @@ describe('OutlineEditor tests', () => {
 
     expect(editor._registeredNodes.get('custom_text_node')).toBe(undefined);
 
-    editor.registerNode(CustomTextNode);
+    const unregisterNodes = editor.registerNodes([CustomTextNode]);
     expect(editor._registeredNodes.get('custom_text_node').klass).toBe(
       CustomTextNode,
     );
+    unregisterNodes();
   });
 
-  it('Override existing node type', () => {
+  it('throws when overriding existing node type', () => {
     init();
 
-    class BadTextNode extends TextNode {
-      static getType(): string {
-        return 'text';
-      }
-      static clone(key): CustomTextNode {
-        return new CustomTextNode(key);
-      }
-    }
-
-    expect(() => editor.registerNode(BadTextNode)).toThrow();
-
-    editor.update(() => {
-      expect(() => new BadTextNode()).toThrow();
-    });
-  });
-
-  it('Register the same node twice', () => {
-    init();
-
-    class CustomTextNode extends TextNode {
+    class CustomFirstTextNode extends TextNode {
       static getType(): string {
         return 'custom_text_node';
       }
@@ -1193,7 +1175,62 @@ describe('OutlineEditor tests', () => {
       }
     }
 
-    editor.registerNode(CustomTextNode);
-    expect(() => editor.registerNode(CustomTextNode)).not.toThrow();
+    class CustomSecondTextNode extends TextNode {
+      static getType(): string {
+        return 'custom_text_node';
+      }
+      static clone(key): CustomTextNode {
+        return new CustomTextNode(key);
+      }
+    }
+
+    editor.registerNodes([CustomFirstTextNode]);
+    expect(() => editor.registerNodes([CustomSecondTextNode])).toThrow();
+    editor.update(() => {
+      // eslint-disable-next-line no-new
+      new CustomFirstTextNode();
+      expect(() => new CustomSecondTextNode()).toThrow();
+    });
+  });
+
+  it('registers the same node three times, unregisters it, and registers a different node with the same type', () => {
+    init();
+
+    class CustomFirstTextNode extends TextNode {
+      static getType(): string {
+        return 'custom_text_node';
+      }
+      static clone(key): CustomTextNode {
+        return new CustomTextNode(key);
+      }
+    }
+
+    class CustomSecondTextNode extends TextNode {
+      static getType(): string {
+        return 'custom_text_node';
+      }
+      static clone(key): CustomTextNode {
+        return new CustomTextNode(key);
+      }
+    }
+
+    const unregisterFn1 = editor.registerNodes([CustomFirstTextNode]);
+    expect(editor._registeredNodes.get('custom_text_node').count).toBe(1);
+    const unregisterFn2 = editor.registerNodes([
+      CustomFirstTextNode,
+      CustomFirstTextNode,
+    ]);
+    expect(editor._registeredNodes.get('custom_text_node').count).toBe(3);
+    unregisterFn1();
+    expect(editor._registeredNodes.get('custom_text_node').count).toBe(2);
+    unregisterFn2();
+    expect(editor._registeredNodes.get('custom_text_node')).toBe(undefined);
+
+    editor.registerNodes([CustomSecondTextNode]);
+    expect(editor._registeredNodes.get('custom_text_node').count).toBe(1);
+    editor.update(() => {
+      // eslint-disable-next-line no-new
+      new CustomSecondTextNode();
+    });
   });
 });

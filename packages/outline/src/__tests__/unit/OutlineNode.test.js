@@ -43,8 +43,7 @@ describe('OutlineNode tests', () => {
       OutlineNode.getType = function () {
         return 'node';
       };
-      editor.registerNode(OutlineNode);
-      editor.registerNode(TestNode);
+      editor.registerNodes([OutlineNode, TestNode]);
 
       await editor.update(() => {
         const rootNode = getRoot();

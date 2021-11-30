@@ -85,7 +85,11 @@ describe('OutlineEventHelpers', () => {
       });
 
       editor.setRootElement(rootElement);
-      editor.registerNode(LinkNode);
+      const unregisterNodes = editor.registerNodes([LinkNode]);
+
+      return () => {
+        unregisterNodes();
+      };
     }, [rootElementRef, editor]);
 
     return editor;

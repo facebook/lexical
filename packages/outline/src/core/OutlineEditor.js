@@ -86,10 +86,11 @@ export type EditorConfig<EditorContext> = {
 };
 
 export type RegisteredNodes = Map<string, RegisteredNode>;
-export type RegisteredNode = $ReadOnly<{
+export type RegisteredNode = {
+  count: number,
   klass: Class<OutlineNode>,
   transforms: Set<Transform<OutlineNode>>,
-}>;
+};
 export type Transform<T> = (node: T, state: State) => void;
 
 export type ErrorListener = (error: Error, log: Array<string>) => void;
@@ -203,6 +204,44 @@ function getSelf(self: BaseOutlineEditor): OutlineEditor {
   return ((self: any): OutlineEditor);
 }
 
+function registerNode<T: OutlineNode>(
+  registeredNodes: RegisteredNodes,
+  klass: Class<T>,
+): () => void {
+  const type = klass.getType();
+  let registeredNode: void | RegisteredNode = registeredNodes.get(type);
+  if (registeredNode === undefined) {
+    registeredNode = {
+      count: 0,
+      klass,
+      transforms: new Set(),
+    };
+    registeredNodes.set(type, registeredNode);
+  }
+  const registeredNode_ = registeredNode;
+  if (__DEV__) {
+    const registeredKlass = registeredNode_.klass;
+    if (registeredKlass !== klass) {
+      invariant(
+        false,
+        'Register node type: Type %s in node %s was already registered by another node %s',
+        type,
+        klass.name,
+        registeredKlass.name,
+      );
+    }
+  }
+  registeredNode_.count++;
+
+  return () => {
+    if (registeredNode_.count === 1) {
+      registeredNodes.delete(type);
+    } else {
+      registeredNode_.count--;
+    }
+  };
+}
+
 class BaseOutlineEditor {
   _rootElement: null | HTMLElement;
   _editorState: EditorState;
@@ -254,11 +293,8 @@ class BaseOutlineEditor {
     // Editor configuration for theme/context.
     this._config = config;
     // Mapping of types to their nodes
-    this._registeredNodes = new Map([
-      ['text', {klass: TextNode, transforms: new Set()}],
-      ['linebreak', {klass: LineBreakNode, transforms: new Set()}],
-      ['root', {klass: RootNode, transforms: new Set()}],
-    ]);
+    this._registeredNodes = new Map();
+    this.registerNodes([RootNode, TextNode, LineBreakNode]);
     // React node decorators for portals
     this._decorators = {};
     this._pendingDecorators = null;
@@ -279,27 +315,18 @@ class BaseOutlineEditor {
   isComposing(): boolean {
     return this._compositionKey != null;
   }
-  registerNode(klass: Class<OutlineNode>): void {
-    const type = klass.getType();
-    if (__DEV__) {
-      const editorNode = this._registeredNodes.get(type);
-      if (editorNode !== undefined) {
-        const editorKlass = editorNode.klass;
-        if (editorKlass !== klass) {
-          invariant(
-            false,
-            'Register node type: Type %s in node %s was already registered by another node %s',
-            type,
-            klass.name,
-            editorKlass.name,
-          );
-        }
-      }
+  registerNodes<T: OutlineNode>(klasses: Array<Class<T>>): () => void {
+    const klassesLength = klasses.length;
+    const registeredNodes = this._registeredNodes;
+    const unregisterFns = [];
+    for (let i = 0; i < klassesLength; i++) {
+      unregisterFns.push(registerNode(registeredNodes, klasses[i]));
     }
-    this._registeredNodes.set(type, {
-      klass,
-      transforms: new Set(),
-    });
+    return () => {
+      for (let i = 0; i < klassesLength; i++) {
+        unregisterFns[i]();
+      }
+    };
   }
   addListener(
     type: ListenerType,
@@ -487,7 +514,7 @@ declare export class OutlineEditor {
   _key: string;
 
   isComposing(): boolean;
-  registerNode(klass: Class<OutlineNode>): void;
+  registerNodes<T: OutlineNode>(klass: Array<Class<T>>): () => void;
   addListener(type: 'error', listener: ErrorListener): () => void;
   addListener(type: 'update', listener: UpdateListener): () => void;
   addListener(type: 'root', listener: RootListener): () => void;

@@ -520,7 +520,7 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
 
 function useFloatingToolbar(editor: OutlineEditor): React$Node {
   useEffect(() => {
-    editor.registerNode(LinkNode);
+    return editor.registerNodes([LinkNode]);
   }, [editor]);
   return useMemo(
     () => createPortal(<Toolbar editor={editor} />, document.body),

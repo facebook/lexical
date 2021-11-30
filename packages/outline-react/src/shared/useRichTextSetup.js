@@ -109,17 +109,22 @@ export function useRichTextSetup(
   callbackFn?: (callbackFn?: () => void) => void,
 ) => void {
   useLayoutEffect(() => {
-    editor.registerNode(HeadingNode);
-    editor.registerNode(ListNode);
-    editor.registerNode(QuoteNode);
-    editor.registerNode(CodeNode);
-    editor.registerNode(ParagraphNode);
-    editor.registerNode(ListItemNode);
+    const unregisterNodes = editor.registerNodes([
+      HeadingNode,
+      ListNode,
+      QuoteNode,
+      CodeNode,
+      ParagraphNode,
+      ListItemNode,
+    ]);
     if (init) {
       initEditor(editor);
     }
-
-    return editor.addListener('textmutation', onTextMutation);
+    const removeListener = editor.addListener('textmutation', onTextMutation);
+    return () => {
+      unregisterNodes();
+      removeListener();
+    };
   }, [editor, init]);
 
   useOutlineEditorEvents(events, editor);

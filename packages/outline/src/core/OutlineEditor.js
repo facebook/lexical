@@ -475,11 +475,13 @@ class BaseOutlineEditor {
           }
         },
         true,
-        () => {
-          rootElement.removeAttribute('autocapitalize');
-          if (callbackFn) {
-            callbackFn();
-          }
+        {
+          onUpdate: () => {
+            rootElement.removeAttribute('autocapitalize');
+            if (callbackFn) {
+              callbackFn();
+            }
+          },
         },
       );
     }

@@ -223,7 +223,7 @@ describe('Links', () => {
         return;
       }
 
-      await focus(page, 'div.editor');
+      await focusEditor(page);
       await page.keyboard.type('Hello world');
 
       await assertHTML(

@@ -44,6 +44,7 @@ module.exports = {
         'outline-react/dist/useOutlineCanShowPlaceholder',
       'outline-react/useOutlineCharacterLimit':
         'outline-react/dist/useOutlineCharacterLimit',
+      'outline-react/useOutlineHistory': 'outline-react/dist/useOutlineHistory',
       //Shared
       'shared/environment': 'shared/dist/environment',
       'shared/useLayoutEffect': 'shared/dist/useLayoutEffect',

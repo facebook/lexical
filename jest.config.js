@@ -65,6 +65,8 @@ module.exports = {
           '<rootDir>/packages/shared/src/useLayoutEffect.js',
         '^outline-yjs$': '<rootDir>/packages/outline-yjs/src/index.js',
         '^./dist/(.+)': './src/$1',
+        formatProdErrorMessage:
+          '<rootDir>/scripts/error-codes/formatProdErrorMessage.js',
       },
       globals: {
         __DEV__: true,

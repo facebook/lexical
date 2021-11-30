@@ -310,8 +310,10 @@ outlineReactModules.forEach((outlineReactModule) => {
   // modules already.
   if (
     outlineReactModule === 'OutlineEnv' ||
-    outlineReactModule === 'useOutlineHistory' ||
     outlineReactModule === 'useOutlineDragonSupport' ||
+    outlineReactModule === 'usePlainTextSetup' ||
+    outlineReactModule === 'useRichTextSetup' ||
+    outlineReactModule === 'useYjsCollaboration' ||
     outlineReactModule === 'OutlineReactUtils'
   ) {
     return;

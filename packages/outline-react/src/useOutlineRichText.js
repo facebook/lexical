@@ -8,15 +8,19 @@
  */
 
 import type {OutlineEditor} from 'outline';
+import type {HistoryState} from './useOutlineHistory';
 
 import {useCallback} from 'react';
 
 import {useRichTextSetup} from './shared/useRichTextSetup';
-import useOutlineHistory from './shared/useOutlineHistory';
+import {useOutlineHistory} from './useOutlineHistory';
 
-export default function useOutlineRichText(editor: OutlineEditor): () => void {
+export default function useOutlineRichText(
+  editor: OutlineEditor,
+  externalHistoryState?: HistoryState,
+): () => void {
   const clearEditor = useRichTextSetup(editor, true);
-  const clearHistory = useOutlineHistory(editor);
+  const clearHistory = useOutlineHistory(editor, externalHistoryState);
 
   return useCallback(
     (callbackFn?: () => void) => {

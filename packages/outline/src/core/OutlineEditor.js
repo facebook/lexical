@@ -48,7 +48,6 @@ export type EditorUpdateOptions = {
   onUpdate?: () => void,
   tag?: string,
   skipTransforms?: true,
-  origin?: string,
 };
 
 export type EditorThemeClasses = {

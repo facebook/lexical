@@ -139,12 +139,13 @@ function traverseNodes(node: BlockNode): void {
 
 function useKeywords(editor: OutlineEditor): void {
   useEffect(() => {
-    editor.registerNode(KeywordNode);
+    const unregisterNodes = editor.registerNodes([KeywordNode]);
 
     const removeTextTransform = editor.addTransform(TextNode, textTransform);
     const removeRootTransform = editor.addTransform(RootNode, traverseNodes);
 
     return () => {
+      unregisterNodes();
       removeTextTransform();
       removeRootTransform();
     };

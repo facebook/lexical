@@ -24,7 +24,7 @@ describe('OutlineNodeHelpers tests', () => {
   initializeUnitTest((testEnv) => {
     beforeEach(() => {
       const {editor} = testEnv;
-      editor.registerNode(OverflowNode);
+      editor.registerNodes([OverflowNode]);
     });
 
     describe('merge', () => {

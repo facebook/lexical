@@ -43,7 +43,7 @@ export function useCharacterLimit(
   } = optional;
 
   useEffect(() => {
-    editor.registerNode(OverflowNode);
+    return editor.registerNodes([OverflowNode]);
   }, [editor]);
 
   useEffect(() => {
@@ -70,12 +70,15 @@ export function useCharacterLimit(
       remainingCharacters(diff);
       if (lastComputedTextLength === null || textLengthAboveThreshold) {
         const offset = findOffset(text, maxCharacters, strlen);
-        editor.update(() => {
-          log('CharacterLimit');
-          wrapOverflowedNodes(offset);
-        }, {
-          tag: 'without-history',
-        });
+        editor.update(
+          () => {
+            log('CharacterLimit');
+            wrapOverflowedNodes(offset);
+          },
+          {
+            tag: 'without-history',
+          },
+        );
       }
       lastComputedTextLength = textLength;
     });

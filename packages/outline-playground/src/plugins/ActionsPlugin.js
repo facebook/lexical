@@ -41,7 +41,7 @@ export default function ActionsPlugins({
   const isCollab = yjsDocMap.get('main') !== undefined;
 
   useEffect(() => {
-    editor.registerNode(ImageNode);
+    const unregisterNodes = editor.registerNodes([ImageNode]);
     const removeReadOnlyListener = addListener('readonly', (value: boolean) => {
       setIsReadyOnly(value);
     });
@@ -53,6 +53,7 @@ export default function ActionsPlugins({
     );
 
     return () => {
+      unregisterNodes();
       removeReadOnlyListener();
       removeConnectedListener();
     };

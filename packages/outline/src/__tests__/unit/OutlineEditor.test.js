@@ -281,7 +281,7 @@ describe('OutlineEditor tests', () => {
     ]);
   });
 
-  it('update calls callback even when no dirty nodes', () => {
+  it('update does not call onUpdate callback when no dirty nodes', () => {
     init();
     const fn = jest.fn();
     editor.update(
@@ -292,7 +292,7 @@ describe('OutlineEditor tests', () => {
         onUpdate: fn,
       },
     );
-    expect(fn).toHaveBeenCalledTimes(1);
+    expect(fn).toHaveBeenCalledTimes(0);
   });
 
   it('editor.focus() callback is called', async () => {

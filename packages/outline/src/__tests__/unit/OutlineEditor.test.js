@@ -281,6 +281,20 @@ describe('OutlineEditor tests', () => {
     ]);
   });
 
+  it('update calls callback even when no dirty nodes', () => {
+    init();
+    const fn = jest.fn();
+    editor.update(
+      () => {
+        //
+      },
+      {
+        onUpdate: fn,
+      },
+    );
+    expect(fn).toHaveBeenCalledTimes(1);
+  });
+
   it('Synchronously runs three transforms, two of them depend on the other', async () => {
     init();
     // 2. Add italics

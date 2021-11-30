@@ -14,6 +14,10 @@ import {
   keyUpCtrlOrMeta,
   repeat,
   E2E_BROWSER,
+  focusEditor,
+  waitForSelector,
+  selectOption,
+  click,
 } from '../utils';
 
 describe('TextFormatting', () => {
@@ -25,7 +29,7 @@ describe('TextFormatting', () => {
         return;
       }
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type('Hello');
       await keyDownCtrlOrMeta(page);
       await page.keyboard.press('b');
@@ -65,7 +69,7 @@ describe('TextFormatting', () => {
         return;
       }
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type('Hello');
       await keyDownCtrlOrMeta(page);
       await page.keyboard.press('i');
@@ -105,7 +109,7 @@ describe('TextFormatting', () => {
         return;
       }
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type('Hello world!');
       await page.keyboard.press('ArrowLeft');
       await page.keyboard.down('Shift');
@@ -156,14 +160,14 @@ describe('TextFormatting', () => {
         return;
       }
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type('hello world');
       await page.keyboard.press('Enter');
       await page.keyboard.type('hello world');
 
-      await page.click('div.editor > p', {clickCount: 1, delay: 100});
-      await page.click('div.editor > p', {clickCount: 2, delay: 100});
-      await page.click('div.editor > p', {clickCount: 3, delay: 100});
+      await click(page, 'div.editor > p', {clickCount: 1, delay: 100});
+      await click(page, 'div.editor > p', {clickCount: 2, delay: 100});
+      await click(page, 'div.editor > p', {clickCount: 3, delay: 100});
 
       await keyDownCtrlOrMeta(page);
       await page.keyboard.type('b');
@@ -181,7 +185,7 @@ describe('TextFormatting', () => {
         return;
       }
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type('Hello world!');
       await page.keyboard.press('ArrowLeft');
       await page.keyboard.down('Shift');
@@ -232,7 +236,7 @@ describe('TextFormatting', () => {
         return;
       }
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type('Hello world!');
       await page.keyboard.press('ArrowLeft');
       await page.keyboard.down('Shift');
@@ -279,8 +283,8 @@ describe('TextFormatting', () => {
       await page.keyboard.press('u');
       await keyUpCtrlOrMeta(page);
 
-      await page.waitForSelector('.strikethrough');
-      await page.click('.strikethrough');
+      await waitForSelector(page, '.strikethrough');
+      await click(page, '.strikethrough');
 
       await assertHTML(
         page,
@@ -293,8 +297,8 @@ describe('TextFormatting', () => {
         focusOffset: 5,
       });
 
-      await page.waitForSelector('.strikethrough');
-      await page.click('.strikethrough');
+      await waitForSelector(page, '.strikethrough');
+      await click(page, '.strikethrough');
 
       await assertHTML(
         page,
@@ -315,7 +319,7 @@ describe('TextFormatting', () => {
         return;
       }
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type('Hello world!');
       await page.keyboard.press('ArrowLeft');
       await page.keyboard.down('Shift');
@@ -331,8 +335,8 @@ describe('TextFormatting', () => {
         focusOffset: 6,
       });
 
-      await page.waitForSelector('.font-size');
-      await page.selectOption('.font-size', {value: '10px'});
+      await waitForSelector(page, '.font-size');
+      await selectOption(page, '.font-size', {value: '10px'});
 
       await assertHTML(
         page,
@@ -354,7 +358,7 @@ describe('TextFormatting', () => {
         return;
       }
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type('Hello world!');
       await page.keyboard.press('ArrowLeft');
       await page.keyboard.down('Shift');
@@ -370,8 +374,8 @@ describe('TextFormatting', () => {
         focusOffset: 6,
       });
 
-      await page.waitForSelector('.font-size');
-      await page.selectOption('.font-size', {value: '10px'});
+      await waitForSelector(page, '.font-size');
+      await selectOption(page, '.font-size', {value: '10px'});
 
       await assertHTML(
         page,
@@ -385,8 +389,8 @@ describe('TextFormatting', () => {
         focusOffset: 5,
       });
 
-      await page.waitForSelector('.font-family');
-      await page.selectOption('.font-family', {value: 'Georgia'});
+      await waitForSelector(page, '.font-family');
+      await selectOption(page, '.font-family', {value: 'Georgia'});
 
       await assertHTML(
         page,
@@ -400,8 +404,8 @@ describe('TextFormatting', () => {
         focusOffset: 5,
       });
 
-      await page.waitForSelector('.font-size');
-      await page.selectOption('.font-size', {value: '20px'});
+      await waitForSelector(page, '.font-size');
+      await selectOption(page, '.font-size', {value: '20px'});
 
       await assertHTML(
         page,
@@ -423,7 +427,7 @@ describe('TextFormatting', () => {
         return;
       }
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type('Hello world!');
       await page.keyboard.press('ArrowLeft');
       await page.keyboard.down('Shift');

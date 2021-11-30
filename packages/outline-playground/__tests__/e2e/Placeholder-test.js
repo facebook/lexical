@@ -6,19 +6,28 @@
  *
  */
 
-import {initializeE2E, assertHTML, assertSelection} from '../utils';
+import {
+  initializeE2E,
+  assertHTML,
+  assertSelection,
+  focusEditor,
+  textContent,
+  IS_COLLAB,
+} from '../utils';
 
 describe('Placeholder', () => {
   initializeE2E((e2e) => {
     it(`Displays a placeholder when no content is present`, async () => {
       const {page, isRichText} = e2e;
 
-      await page.focus('div.editor');
-      const textContent = await page.textContent('.editor-placeholder');
-      if (isRichText) {
-        expect(textContent).toBe('Enter some rich text...');
+      await focusEditor(page);
+      const content = await textContent(page, '.editor-placeholder');
+      if (IS_COLLAB) {
+        expect(content).toBe('Enter some collaborative rich text...');
+      } else if (isRichText) {
+        expect(content).toBe('Enter some rich text...');
       } else {
-        expect(textContent).toBe('Enter some plain text...');
+        expect(content).toBe('Enter some plain text...');
       }
 
       await assertHTML(page, '<p class="editor-paragraph"><br></p>');

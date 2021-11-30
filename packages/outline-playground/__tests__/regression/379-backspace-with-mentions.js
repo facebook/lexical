@@ -7,15 +7,21 @@
  */
 
 import {moveToEditorBeginning} from '../keyboardShortcuts';
-import {initializeE2E, assertHTML, assertSelection} from '../utils';
+import {
+  initializeE2E,
+  assertHTML,
+  assertSelection,
+  focusEditor,
+  waitForSelector,
+} from '../utils';
 
 describe('Regression test #379', () => {
   initializeE2E((e2e) => {
     it(`Is able to correctly handle backspace press at the line boundary`, async () => {
       const {page} = e2e;
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type('Luke');
-      await page.waitForSelector('#mentions-typeahead ul li');
+      await waitForSelector(page, '#mentions-typeahead ul li');
       await page.keyboard.press('Enter');
       await assertHTML(
         page,

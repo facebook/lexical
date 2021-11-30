@@ -142,7 +142,7 @@ export function syncYjsChangesToOutline(
         syncCursorPositions(binding, provider);
       },
       skipTransforms: true,
-      tag: 'collab',
+      tag: 'collaboration',
     },
   );
 }
@@ -208,7 +208,7 @@ export function syncOutlineUpdateToYjs(
       // types a character and we get it, we don't want to then insert
       // the same character again. The exception to this heuristic is
       // when we need to handle normalization merge conflicts.
-      if (tags.has('collab')) {
+      if (tags.has('collaboration')) {
         if (normalizedNodes.size > 0) {
           handleNormalizationMergeConflicts(binding, normalizedNodes);
         }

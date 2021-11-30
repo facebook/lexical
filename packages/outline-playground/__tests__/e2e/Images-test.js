@@ -6,7 +6,14 @@
  *
  */
 
-import {initializeE2E, assertHTML, assertSelection} from '../utils';
+import {
+  initializeE2E,
+  assertHTML,
+  assertSelection,
+  focusEditor,
+  waitForSelector,
+  click,
+} from '../utils';
 
 describe('Images', () => {
   initializeE2E((e2e) => {
@@ -17,13 +24,13 @@ describe('Images', () => {
         return;
       }
 
-      await page.focus('div.editor');
+      await focusEditor(page);
 
-      await page.waitForSelector('.action-button.insert-image');
+      await waitForSelector(page, '.action-button.insert-image');
 
-      await page.click('.action-button.insert-image');
+      await click(page, '.action-button.insert-image');
 
-      await page.waitForSelector('.editor-image img');
+      await waitForSelector(page, '.editor-image img');
 
       await assertHTML(
         page,
@@ -36,7 +43,7 @@ describe('Images', () => {
         focusOffset: 1,
       });
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.press('ArrowLeft');
       await assertSelection(page, {
         anchorPath: [0],
@@ -64,26 +71,27 @@ describe('Images', () => {
         focusOffset: 0,
       });
 
-      await page.click('.action-button.insert-image');
+      await click(page, '.action-button.insert-image');
 
-      await page.waitForSelector('.editor-image img');
+      await waitForSelector(page, '.editor-image img');
 
-      await page.click('.editor-image img');
+      await click(page, '.editor-image img');
 
       await assertHTML(
         page,
         '<p class="editor-paragraph"><span class="editor-image" data-outline-decorator="true" contenteditable="false"><img src="/static/media/yellow-flower.95d22651.jpg" alt="Yellow flower in tilt shift lens" tabindex="0" style="width: inherit; height: inherit;" class="focused"><button class="image-caption-button">Add Caption</button><div class="image-resizer-ne"></div><div class="image-resizer-se"></div><div class="image-resizer-sw"></div><div class="image-resizer-nw"></div></span><br></p>',
+        true,
       );
 
       await page.keyboard.press('Backspace');
 
       await assertHTML(page, '<p class="editor-paragraph"><br></p>');
 
-      await page.click('.action-button.insert-image');
+      await click(page, '.action-button.insert-image');
 
-      await page.waitForSelector('.editor-image img');
+      await waitForSelector(page, '.editor-image img');
 
-      await page.focus('div.editor');
+      await focusEditor(page);
 
       await assertHTML(
         page,
@@ -116,17 +124,17 @@ describe('Images', () => {
         return;
       }
 
-      await page.focus('div.editor');
+      await focusEditor(page);
 
-      await page.waitForSelector('.action-button.insert-image');
+      await waitForSelector(page, '.action-button.insert-image');
 
-      await page.click('.action-button.insert-image');
+      await click(page, '.action-button.insert-image');
 
-      await page.waitForSelector('.editor-image img');
+      await waitForSelector(page, '.editor-image img');
 
-      await page.click('.action-button.insert-image');
+      await click(page, '.action-button.insert-image');
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.press('ArrowLeft');
       await page.keyboard.press('ArrowLeft');
 
@@ -163,10 +171,10 @@ describe('Images', () => {
       });
 
       await page.keyboard.type('Test');
-      await page.click('.action-button.insert-image');
-      await page.click('.action-button.insert-image');
+      await click(page, '.action-button.insert-image');
+      await click(page, '.action-button.insert-image');
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.press('ArrowLeft');
       await page.keyboard.press('ArrowLeft');
 

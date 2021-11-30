@@ -11,17 +11,23 @@ import {
   assertSelection,
   assertHTML,
   E2E_BROWSER,
+  focusEditor,
+  evaluate,
 } from '../utils';
 
 describe('Extensions', () => {
   initializeE2E((e2e) => {
     it(`document.execCommand("insertText")`, async () => {
       const {page} = e2e;
-      await page.focus('div.editor');
+      await focusEditor(page);
 
-      await page.evaluate(() => {
-        document.execCommand('insertText', false, 'foo');
-      }, []);
+      await evaluate(
+        page,
+        () => {
+          document.execCommand('insertText', false, 'foo');
+        },
+        [],
+      );
       await assertHTML(
         page,
         '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">foo</span></p>',
@@ -42,29 +48,33 @@ describe('Extensions', () => {
       }
 
       const {page} = e2e;
-      await page.focus('div.editor');
+      await focusEditor(page);
 
-      await page.evaluate(() => {
-        function paste() {
-          const dataTransfer = new DataTransfer();
-          function dispatchPaste(target, text) {
-            dataTransfer.setData('text/plain', text);
-            target.dispatchEvent(
-              new ClipboardEvent('paste', {
-                clipboardData: dataTransfer,
-                bubbles: true,
-                cancelable: true,
-              }),
-            );
-            dataTransfer.clearData();
+      await evaluate(
+        page,
+        () => {
+          function paste() {
+            const dataTransfer = new DataTransfer();
+            function dispatchPaste(target, text) {
+              dataTransfer.setData('text/plain', text);
+              target.dispatchEvent(
+                new ClipboardEvent('paste', {
+                  clipboardData: dataTransfer,
+                  bubbles: true,
+                  cancelable: true,
+                }),
+              );
+              dataTransfer.clearData();
+            }
+            return dispatchPaste;
           }
-          return dispatchPaste;
-        }
 
-        const editor = document.querySelector('div.editor');
-        const dispatchPaste = paste();
-        dispatchPaste(editor, 'foo');
-      }, []);
+          const editor = document.querySelector('div.editor');
+          const dispatchPaste = paste();
+          dispatchPaste(editor, 'foo');
+        },
+        [],
+      );
       await assertHTML(
         page,
         '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">foo</span></p>',
@@ -76,7 +86,7 @@ describe('Extensions', () => {
         focusOffset: 3,
       });
 
-      await page.evaluate(() => {
+      await evaluate(page, () => {
         function paste() {
           const dataTransfer = new DataTransfer();
           function dispatchPaste(target, text) {
@@ -111,9 +121,9 @@ describe('Extensions', () => {
 
     it(`ClipboardEvent("paste") + document.execCommand("insertText")`, async () => {
       const {page} = e2e;
-      await page.focus('div.editor');
+      await focusEditor(page);
 
-      await page.evaluate(() => {
+      await evaluate(page, () => {
         const editor = document.querySelector('.editor');
         const dataTransfer = new DataTransfer();
         dataTransfer.setData('text/plain', 'foo');

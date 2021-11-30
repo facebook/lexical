@@ -6,8 +6,22 @@
  *
  */
 
-import {selectAll, selectCharacters, moveLeft, moveToLineEnd} from '../keyboardShortcuts';
-import {initializeE2E, assertHTML, assertSelection, E2E_BROWSER} from '../utils';
+import {
+  selectAll,
+  selectCharacters,
+  moveLeft,
+  moveToLineEnd,
+} from '../keyboardShortcuts';
+import {
+  initializeE2E,
+  assertHTML,
+  assertSelection,
+  E2E_BROWSER,
+  focusEditor,
+  waitForSelector,
+  click,
+  focus,
+} from '../utils';
 
 describe('Links', () => {
   initializeE2E((e2e) => {
@@ -17,7 +31,7 @@ describe('Links', () => {
         return;
       }
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type('Hello');
       await selectAll(page);
 
@@ -27,8 +41,8 @@ describe('Links', () => {
       );
 
       // link
-      await page.waitForSelector('.link');
-      await page.click('.link');
+      await waitForSelector(page, '.link');
+      await click(page, '.link');
 
       await assertHTML(
         page,
@@ -43,8 +57,8 @@ describe('Links', () => {
       });
 
       // set url
-      await page.waitForSelector('.link-input');
-      await page.focus('.link-input');
+      await waitForSelector(page, '.link-input');
+      await focus(page, '.link-input');
       await page.keyboard.type('facebook.com');
       await page.keyboard.press('Enter');
 
@@ -61,8 +75,8 @@ describe('Links', () => {
       });
 
       // unlink
-      await page.waitForSelector('.link');
-      await page.click('.link');
+      await waitForSelector(page, '.link');
+      await click(page, '.link');
 
       await assertHTML(
         page,
@@ -90,7 +104,7 @@ describe('Links', () => {
         return;
       }
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type('An Awesome Website');
       await selectAll(page);
       await assertHTML(
@@ -98,8 +112,8 @@ describe('Links', () => {
         '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">An Awesome Website</span></p>',
       );
 
-      await page.waitForSelector('.link');
-      await page.click('.link');
+      await waitForSelector(page, '.link');
+      await click(page, '.link');
       await assertHTML(
         page,
         '<p class="editor-paragraph" dir="ltr"><a href="http://" class="editor-text-link"><span data-outline-text="true">An Awesome Website</span></a></p>',
@@ -123,7 +137,7 @@ describe('Links', () => {
         return;
       }
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type('Hello world');
 
       await assertHTML(
@@ -135,8 +149,8 @@ describe('Links', () => {
       await selectCharacters(page, 'right', 5);
 
       // link
-      await page.waitForSelector('.link');
-      await page.click('.link');
+      await waitForSelector(page, '.link');
+      await click(page, '.link');
 
       await assertHTML(
         page,
@@ -159,8 +173,8 @@ describe('Links', () => {
       }
 
       // set url
-      await page.waitForSelector('.link-input');
-      await page.focus('.link-input');
+      await waitForSelector(page, '.link-input');
+      await focus(page, '.link-input');
       await page.keyboard.type('facebook.com');
       await page.keyboard.press('Enter');
 
@@ -186,8 +200,8 @@ describe('Links', () => {
       }
 
       // unlink
-      await page.waitForSelector('.link');
-      await page.click('.link');
+      await waitForSelector(page, '.link');
+      await click(page, '.link');
 
       await assertHTML(
         page,
@@ -209,7 +223,7 @@ describe('Links', () => {
         return;
       }
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type('Hello world');
 
       await assertHTML(
@@ -220,8 +234,8 @@ describe('Links', () => {
       await selectCharacters(page, 'left', 5);
 
       // link
-      await page.waitForSelector('.link');
-      await page.click('.link');
+      await waitForSelector(page, '.link');
+      await click(page, '.link');
 
       await assertHTML(
         page,
@@ -245,8 +259,8 @@ describe('Links', () => {
       }
 
       // set url
-      await page.waitForSelector('.link-input');
-      await page.focus('.link-input');
+      await waitForSelector(page, '.link-input');
+      await focus(page, '.link-input');
       await page.keyboard.type('facebook.com');
       await page.keyboard.press('Enter');
 
@@ -272,8 +286,8 @@ describe('Links', () => {
       }
 
       // unlink
-      await page.waitForSelector('.link');
-      await page.click('.link');
+      await waitForSelector(page, '.link');
+      await click(page, '.link');
 
       await assertHTML(
         page,

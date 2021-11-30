@@ -12,6 +12,8 @@ import {
   assertSelection,
   repeat,
   E2E_BROWSER,
+  focusEditor,
+  waitForSelector,
 } from '../utils';
 import {deleteNextWord, moveToEditorBeginning} from '../keyboardShortcuts';
 
@@ -20,10 +22,10 @@ describe('Hashtags', () => {
     it(`Can handle a single hashtag`, async () => {
       const {page} = e2e;
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type('#yolo');
 
-      await page.waitForSelector('.editor-text-hashtag');
+      await waitForSelector(page, '.editor-text-hashtag');
 
       await assertHTML(
         page,
@@ -68,10 +70,10 @@ describe('Hashtags', () => {
     it(`Can handle adjacent hashtags`, async () => {
       const {page} = e2e;
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type('#hello world');
 
-      await page.waitForSelector('.editor-text-hashtag');
+      await waitForSelector(page, '.editor-text-hashtag');
 
       await assertHTML(
         page,
@@ -151,12 +153,12 @@ describe('Hashtags', () => {
     it(`Can insert many hashtags mixed with text and delete them all correctly`, async () => {
       const {page} = e2e;
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type(
         '#hello world foo #lol #lol asdasd #lol test this #asdas #asdas lasdasd asdasd',
       );
 
-      await page.waitForSelector('.editor-text-hashtag');
+      await waitForSelector(page, '.editor-text-hashtag');
 
       await assertHTML(
         page,

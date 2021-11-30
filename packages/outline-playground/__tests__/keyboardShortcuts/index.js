@@ -14,6 +14,7 @@ import {
   keyUpCtrlOrAlt,
   keyUpCtrlOrMeta,
   E2E_BROWSER,
+  evaluate,
 } from '../utils';
 
 export async function moveToLineBeginning(page) {
@@ -113,7 +114,7 @@ export async function moveToParagraphEnd(page) {
 
 export async function selectAll(page) {
   if (E2E_BROWSER === 'firefox' && IS_LINUX) {
-    await page.evaluate(() => {
+    await evaluate(page, () => {
       const rootElement = document.querySelector('div.editor');
       const selection = window.getSelection();
       selection.setBaseAndExtent(

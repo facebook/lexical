@@ -14,6 +14,7 @@ import {
   assertHTML,
   keyDownCtrlOrAlt,
   keyUpCtrlOrAlt,
+  focusEditor,
   E2E_BROWSER,
 } from '../utils';
 
@@ -23,7 +24,7 @@ describe('TextEntry', () => {
       const {page} = e2e;
 
       const targetText = 'Hello Outline';
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type(targetText);
       await assertHTML(
         page,
@@ -41,7 +42,7 @@ describe('TextEntry', () => {
       const {page} = e2e;
 
       const targetText = 'Hello Outline';
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type(targetText);
 
       // Select all the text
@@ -65,7 +66,7 @@ describe('TextEntry', () => {
       const {page} = e2e;
 
       const targetText = 'Hello Outline';
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type(targetText);
 
       // Select all the text
@@ -88,7 +89,7 @@ describe('TextEntry', () => {
     it('Paragraphed text entry and selection', async () => {
       const {isRichText, page} = e2e;
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type('Hello World.');
       await page.keyboard.press('Enter');
       await page.keyboard.type('This is another block.');
@@ -142,7 +143,7 @@ describe('TextEntry', () => {
     it(`Can delete characters after they're typed`, async () => {
       const {page} = e2e;
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       const text = 'Delete some of these characters.';
       const backspacedText = 'Delete some of these characte';
       await page.keyboard.type(text);
@@ -165,7 +166,7 @@ describe('TextEntry', () => {
     it(`Can type characters, and select and replace a part`, async () => {
       const {page} = e2e;
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       const text = 'Hello foobar.';
       await page.keyboard.type(text);
       await repeat(7, async () => await page.keyboard.down('ArrowLeft'));
@@ -189,7 +190,7 @@ describe('TextEntry', () => {
     it(`Can select and delete a word`, async () => {
       const {page} = e2e;
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       const text = 'Delete some of these characters.';
       const backspacedText = 'Delete some of these ';
       await page.keyboard.type(text);
@@ -228,7 +229,7 @@ describe('TextEntry', () => {
     it('First paragraph backspace handling', async () => {
       const {isRichText, page} = e2e;
 
-      await page.focus('div.editor');
+      await focusEditor(page);
 
       // Add some trimmable text
       await page.keyboard.type('  ');
@@ -289,7 +290,7 @@ describe('TextEntry', () => {
     it('Mix of paragraphs and break points', async () => {
       const {isRichText, page} = e2e;
 
-      await page.focus('div.editor');
+      await focusEditor(page);
 
       // Add some line breaks
       await page.keyboard.down('Shift');
@@ -373,7 +374,7 @@ describe('TextEntry', () => {
     it('Empty paragraph and new line node selection', async () => {
       const {isRichText, page} = e2e;
 
-      await page.focus('div.editor');
+      await focusEditor(page);
 
       // Add paragraph
       await page.keyboard.press('Enter');

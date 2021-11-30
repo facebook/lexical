@@ -13,11 +13,15 @@ import {
   assertSelection,
   repeat,
   E2E_BROWSER,
+  IS_COLLAB,
 } from '../utils';
 import {moveToEditorBeginning, moveToLineBeginning} from '../keyboardShortcuts';
 
 function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
   it('displays overflow on text', async () => {
+    if (IS_COLLAB) {
+      return;
+    }
     const {page} = e2e;
     await page.focus('div.editor');
 
@@ -55,6 +59,9 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
   });
 
   it('displays overflow on immutable nodes', async () => {
+    if (IS_COLLAB) {
+      return;
+    }
     // The smile emoji (S) is length 2, so for 1234S56:
     // - 1234 is non-overflow text
     // - S takes characters 5 and 6, since it's immutable and can't be split we count the whole
@@ -77,6 +84,9 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
   });
 
   it('can type new lines inside overflow', async () => {
+    if (IS_COLLAB) {
+      return;
+    }
     const {page, isRichText} = e2e;
     await page.focus('div.editor');
 
@@ -103,6 +113,9 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
   });
 
   it('can delete text in front and overflow is recomputed', async () => {
+    if (IS_COLLAB) {
+      return;
+    }
     const {page, isRichText} = e2e;
     await page.focus('div.editor');
 
@@ -139,6 +152,9 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
   });
 
   it('can delete text in front and overflow is recomputed (immutable nodes)', async () => {
+    if (IS_COLLAB) {
+      return;
+    }
     // See 'displays overflow on immutable nodes'
     const {page} = e2e;
     await page.focus('div.editor');
@@ -161,6 +177,9 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
   });
 
   it('can overflow in lists', async () => {
+    if (IS_COLLAB) {
+      return;
+    }
     const {page, isRichText} = e2e;
     if (!isRichText) {
       return;
@@ -185,6 +204,9 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
   });
 
   it('can delete an overflowed paragraph', async () => {
+    if (IS_COLLAB) {
+      return;
+    }
     const {page, isRichText} = e2e;
     if (!isRichText) {
       return;
@@ -208,6 +230,9 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
   });
 
   it('handles accented characters', async () => {
+    if (IS_COLLAB) {
+      return;
+    }
     const {page} = e2e;
     await page.focus('div.editor');
 
@@ -227,6 +252,9 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
   });
 
   it('handles graphemes', async () => {
+    if (IS_COLLAB) {
+      return;
+    }
     const {page} = e2e;
     await page.focus('div.editor');
 

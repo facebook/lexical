@@ -6,13 +6,13 @@
  *
  */
 
-import {initializeE2E, assertHTML} from '../utils';
+import {initializeE2E, assertHTML, focusEditor, click} from '../utils';
 
 describe('Clear', () => {
   initializeE2E((e2e) => {
     it(`can clear the editor`, async () => {
       const {page} = e2e;
-      await page.focus('div.editor');
+      await focusEditor(page);
 
       await page.keyboard.type('foo');
       await assertHTML(
@@ -20,7 +20,7 @@ describe('Clear', () => {
         '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">foo</span></p>',
       );
 
-      await page.click('.action-button.clear');
+      await click(page, '.action-button.clear');
       await page.keyboard.type('bar');
       await assertHTML(
         page,

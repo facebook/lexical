@@ -633,9 +633,7 @@ function beginUpdate(
       });
     }
   } else {
-    if (pendingEditorState._flushSync) {
-      pendingEditorState._flushSync = false;
-    }
+    pendingEditorState._flushSync = false;
     if (editorStateWasCloned) {
       editor._pendingEditorState = null;
     }

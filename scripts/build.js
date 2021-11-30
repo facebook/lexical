@@ -107,6 +107,7 @@ const findAndRecordErrorCodes = extractErrorCodes(errorCodeOpts);
 async function build(name, inputFile, outputFile) {
   const inputOptions = {
     input: inputFile,
+    treeshake: 'smallest',
     external(modulePath, src) {
       return externals.includes(modulePath);
     },
@@ -250,7 +251,6 @@ ${source}`;
     const watcher = rollup.watch({
       ...inputOptions,
       output: outputOptions,
-      treeshake: 'smallest',
     });
     watcher.on('event', async (event) => {
       switch (event.code) {

@@ -8,22 +8,13 @@
 
 'use strict';
 
+import type {OutlineNode} from '../core/OutlineNode';
 import type {EditorConfig, NodeKey} from 'outline';
 
+import {createTextNode} from '../core/OutlineTextNode';
+import {createOutlineTableCellNode} from './OutlineTableCellNode';
+import {createOutlineTableRowNode} from './OutlineTableRowNode';
 import {BlockNode} from 'outline';
-
-// import stylex from 'stylex';
-
-// const styles = stylex.create({
-//   table: {
-//     borderCollapse: 'collapse',
-//     borderSpacing: 0,
-//     maxWidth: '100%',
-//     overflowY: 'scroll',
-//     tableLayout: 'fixed',
-//     width: '100%',
-//   },
-// });
 
 export class OutlineTableNode extends BlockNode {
   static getType(): string {
@@ -38,10 +29,12 @@ export class OutlineTableNode extends BlockNode {
     super(key);
   }
 
-  createDOM<EditorContext>(_config: EditorConfig<EditorContext>): HTMLElement {
+  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
     const element = document.createElement('table');
 
-    // element.classList.add(...stylex(styles.table).split(' '));
+    if (config.theme.table != null) {
+      element.classList.add(config.theme.table);
+    }
 
     return element;
   }
@@ -55,6 +48,28 @@ export function createOutlineTableNode(): OutlineTableNode {
   return new OutlineTableNode();
 }
 
-export function isOutlineTableNode(node: BlockNode): boolean {
+export function isOutlineTableNode(node: OutlineNode): boolean {
   return node instanceof OutlineTableNode;
+}
+
+export function createTableNodeWithDimensions(
+  rowCount: number,
+  columnCount: number,
+  includeHeader?: boolean = true,
+): OutlineTableNode {
+  const tableNode = createOutlineTableNode();
+
+  for (let iRow = 0; iRow < rowCount; iRow++) {
+    const tableRow = createOutlineTableRowNode();
+
+    for (let iColumn = 0; iColumn < columnCount; iColumn++) {
+      const tableCell = createOutlineTableCellNode(iRow === 0 && includeHeader);
+      tableCell.append(createTextNode());
+      tableRow.append(tableCell);
+    }
+
+    tableNode.append(tableRow);
+  }
+
+  return tableNode;
 }

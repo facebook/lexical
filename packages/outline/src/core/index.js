@@ -49,6 +49,7 @@ import {
 import {
   createEmptySelection as createSelection,
   getSelection,
+  getPreviousSelection,
 } from './OutlineSelection';
 import {createNodeFromParse} from './OutlineParsing';
 import {createEditorStateRef, isEditorStateRef} from './OutlineReference';
@@ -78,6 +79,7 @@ export {
   getRoot,
   getNodeByKey,
   getSelection,
+  getPreviousSelection,
   clearSelection,
   setSelection,
   setCompositionKey,

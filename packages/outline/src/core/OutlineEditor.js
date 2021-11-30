@@ -293,11 +293,8 @@ class BaseOutlineEditor {
     // Editor configuration for theme/context.
     this._config = config;
     // Mapping of types to their nodes
-    this._registeredNodes = new Map([
-      ['text', {count: 1, klass: TextNode, transforms: new Set()}],
-      ['linebreak', {count: 1, klass: LineBreakNode, transforms: new Set()}],
-      ['root', {count: 1, klass: RootNode, transforms: new Set()}],
-    ]);
+    this._registeredNodes = new Map();
+    this.registerNodes([RootNode, TextNode, LineBreakNode]);
     // React node decorators for portals
     this._decorators = {};
     this._pendingDecorators = null;

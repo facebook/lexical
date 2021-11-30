@@ -18,17 +18,13 @@ import {isBlank} from 'outline/root';
  */
 export default function useOutlineIsBlank(editor: OutlineEditor): boolean {
   const [isCurrentlyBlank, setIsBlank] = useState(
-    editor
-      .getEditorState()
-      .read((state) => isBlank(state, editor.isComposing())),
+    editor.getEditorState().read(() => isBlank(editor.isComposing())),
   );
 
   useLayoutEffect(() => {
     return editor.addListener('update', ({editorState}) => {
       const isComposing = editor.isComposing();
-      const currentIsBlank = editorState.read((state) =>
-        isBlank(state, isComposing),
-      );
+      const currentIsBlank = editorState.read(() => isBlank(isComposing));
       setIsBlank(currentIsBlank);
     });
   }, [editor]);

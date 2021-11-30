@@ -7,12 +7,10 @@
  * @flow strict
  */
 
-import type {State} from 'outline';
+import {isBlockNode, isTextNode, getRoot} from 'outline';
 
-import {isBlockNode, isTextNode} from 'outline';
-
-export function textContent(state: State): string {
-  const root = state.getRoot();
+export function textContent(): string {
+  const root = getRoot();
   return root.getTextContent();
 }
 
@@ -20,14 +18,13 @@ export const textContent2 = textContent;
 export const textContentCurry = textContent;
 
 export function isTextContentEmpty(
-  state: State,
   isEditorComposing: boolean,
   trim?: boolean = true,
 ): boolean {
   if (isEditorComposing) {
     return false;
   }
-  let text = textContent(state);
+  let text = textContent();
   if (trim) {
     text = text.trim();
   }
@@ -40,18 +37,15 @@ export const isBlank2 = isTextContentEmpty;
 export function isTextContentEmptyCurry(
   isEditorComposing: boolean,
   trim?: boolean,
-): (state: State) => boolean {
-  return (state: State) => isTextContentEmpty(state, isEditorComposing, trim);
+): () => boolean {
+  return () => isTextContentEmpty(isEditorComposing, trim);
 }
 
-export function canShowPlaceholder(
-  state: State,
-  isComposing: boolean,
-): boolean {
-  if (!isTextContentEmpty(state, isComposing, false)) {
+export function canShowPlaceholder(isComposing: boolean): boolean {
+  if (!isTextContentEmpty(isComposing, false)) {
     return false;
   }
-  const root = state.getRoot();
+  const root = getRoot();
   const children = root.getChildren();
   const childrenLength = children.length;
   if (childrenLength > 1) {
@@ -84,6 +78,6 @@ export const canShowPlaceholder2 = canShowPlaceholder;
 
 export function canShowPlaceholderCurry(
   isEditorComposing: boolean,
-): (state: State) => boolean {
-  return (state: State) => canShowPlaceholder(state, isEditorComposing);
+): () => boolean {
+  return () => canShowPlaceholder(isEditorComposing);
 }

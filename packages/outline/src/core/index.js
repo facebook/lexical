@@ -15,7 +15,6 @@ export type {
   IntentionallyMarkedAsDirtyBlock,
 } from './OutlineEditor';
 export type {EditorState, ParsedEditorState} from './OutlineEditorState';
-export type {State} from './OutlineUpdates';
 export type {NodeKey, OutlineNode, NodeMap} from './OutlineNode';
 export type {ParsedNode, ParsedNodeMap} from './OutlineParsing';
 export type {
@@ -48,6 +47,7 @@ import {
 } from './OutlineUtils';
 import {
   createEmptySelection as createSelection,
+  getPreviousSelection,
   getSelection,
 } from './OutlineSelection';
 import {createNodeFromParse} from './OutlineParsing';
@@ -77,6 +77,7 @@ export {
   createSelection,
   getRoot,
   getNodeByKey,
+  getPreviousSelection,
   getSelection,
   clearSelection,
   setSelection,

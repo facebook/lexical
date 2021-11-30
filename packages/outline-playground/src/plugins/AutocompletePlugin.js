@@ -143,8 +143,7 @@ function useTypeahead(editor: OutlineEditor): void {
   useEffect(() => {
     return editor.addListener('update', ({editorState}) => {
       editorState.read((state) => {
-        const typeaheadNode = state
-          .getRoot()
+        const typeaheadNode = getRoot()
           .getAllTextNodes(true)
           .find((textNode) => textNode instanceof TypeaheadNode);
         if (typeaheadNode instanceof TypeaheadNode) {

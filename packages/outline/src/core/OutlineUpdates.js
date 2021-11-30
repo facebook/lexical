@@ -8,23 +8,17 @@
  */
 
 import type {ParsedEditorState} from './OutlineEditorState';
-import type {RootNode} from './OutlineRootNode';
 import type {
   OutlineEditor,
   ListenerType,
   Transform,
   EditorUpdateOptions,
 } from './OutlineEditor';
-import type {OutlineNode, NodeKey} from './OutlineNode';
-import type {Selection} from './OutlineSelection';
+import type {OutlineNode} from './OutlineNode';
 import type {ParsedNode, NodeParserState} from './OutlineParsing';
 
 import {normalizeTextNode, updateEditorState} from './OutlineReconciler';
-import {
-  createSelection,
-  getSelection,
-  createSelectionFromParse,
-} from './OutlineSelection';
+import {createSelection, createSelectionFromParse} from './OutlineSelection';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './OutlineConstants';
 import {resetEditor} from './OutlineEditor';
 import {initMutationObserver} from './OutlineMutations';
@@ -35,15 +29,8 @@ import {
 } from './OutlineEditorState';
 import {
   scheduleMicroTask,
-  getNodeByKey,
   getCompositionKey,
-  setCompositionKey,
-  getNearestNodeFromDOMNode,
   getEditorStateTextContent,
-  flushMutations,
-  setSelection,
-  clearSelection,
-  getRoot,
   getRegisteredNodeOrThrow,
 } from './OutlineUtils';
 import {
@@ -60,30 +47,6 @@ let activeEditor: null | OutlineEditor = null;
 let isReadOnlyMode: boolean = false;
 let isAttemptingToRecoverFromReconcilerError: boolean = false;
 let infiniteTransformCount: number = 0;
-
-export type State = {
-  clearSelection(): void,
-  getRoot: () => RootNode,
-  getNodeByKey: (key: NodeKey) => null | OutlineNode,
-  getSelection: () => null | Selection,
-  setSelection: (selection: Selection) => void,
-  setCompositionKey: (compositionKey: NodeKey | null) => void,
-  getCompositionKey: () => null | NodeKey,
-  getNearestNodeFromDOMNode: (dom: Node) => null | OutlineNode,
-  flushMutations: () => void,
-};
-
-export const state: State = {
-  getRoot,
-  getNodeByKey,
-  getSelection,
-  clearSelection,
-  setSelection,
-  setCompositionKey,
-  getCompositionKey,
-  getNearestNodeFromDOMNode,
-  flushMutations,
-};
 
 export function isCurrentlyReadOnlyMode(): boolean {
   return isReadOnlyMode;
@@ -144,7 +107,7 @@ export function applyTransforms(
   }
   const transformsArrLength = transformsArr.length;
   for (let i = 0; i < transformsArrLength; i++) {
-    transformsArr[i](node, state);
+    transformsArr[i](node);
     if (!node.isAttached()) {
       break;
     }
@@ -311,7 +274,7 @@ export function parseEditorState(
 // function here
 export function readEditorState<V>(
   editorState: EditorState,
-  callbackFn: (state: State) => V,
+  callbackFn: () => V,
 ): V {
   const previousActiveEditorState = activeEditorState;
   const previousReadOnlyMode = isReadOnlyMode;
@@ -320,7 +283,7 @@ export function readEditorState<V>(
   isReadOnlyMode = true;
   activeEditor = null;
   try {
-    return callbackFn(state);
+    return callbackFn();
   } finally {
     activeEditorState = previousActiveEditorState;
     isReadOnlyMode = previousReadOnlyMode;
@@ -509,13 +472,13 @@ function processNestedUpdates(
     if (onUpdate) {
       deferred.push(onUpdate);
     }
-    nextUpdateFn(state);
+    nextUpdateFn();
   }
 }
 
 function beginUpdate(
   editor: OutlineEditor,
-  updateFn: (state: State) => void,
+  updateFn: () => void,
   skipEmptyCheck: boolean,
   options?: EditorUpdateOptions = {},
 ): void {
@@ -560,7 +523,7 @@ function beginUpdate(
       pendingEditorState._selection = createSelection(editor);
     }
     const startingCompositionKey = editor._compositionKey;
-    updateFn(state);
+    updateFn();
     processNestedUpdates(editor, deferred);
     applySelectionTransforms(pendingEditorState, editor);
     if (editor._dirtyType !== NO_DIRTY_NODES) {
@@ -646,7 +609,7 @@ function beginUpdate(
 
 export function updateEditor(
   editor: OutlineEditor,
-  updateFn: (state: State) => void,
+  updateFn: () => void,
   skipEmptyCheck: boolean,
   options?: EditorUpdateOptions,
 ): void {

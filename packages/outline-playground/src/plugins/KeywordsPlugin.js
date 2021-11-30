@@ -9,7 +9,7 @@
 
 import PlaygroundEditorContext from '../context/PlaygroundEditorContext';
 import {useEditorContext} from 'outline-react/OutlineEditorContext';
-import type {OutlineEditor, State, BlockNode} from 'outline';
+import type {OutlineEditor, BlockNode} from 'outline';
 import {useEffect} from 'react';
 import {
   createTextNode,
@@ -32,7 +32,7 @@ function isCharacterBetweenValid(char: string): boolean {
   return /[\s\d.,\\/!$%^&*;:{}=\-`~()]/.test(char);
 }
 
-function textTransform(node: TextNode, state: State): void {
+function textTransform(node: TextNode): void {
   const text = node.getTextContent();
   const nextSibling = node.getNextSibling();
 

@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {OutlineEditor, State} from 'outline';
+import type {OutlineEditor} from 'outline';
 
 import {TextNode} from 'outline';
 import PlaygroundEditorContext from '../context/PlaygroundEditorContext';
@@ -248,7 +248,7 @@ function getHashtagRegexString(): string {
 
 const REGEX = new RegExp(getHashtagRegexString(), 'ig');
 
-function textNodeTransform(node: TextNode, state: State): void {
+function textNodeTransform(node: TextNode): void {
   if (!node.isSimpleText()) {
     return;
   }

@@ -630,6 +630,11 @@ export function createSelection(editor: OutlineEditor): null | Selection {
   );
 }
 
+export function getPreviousSelection(): null | Selection {
+  const editor = getActiveEditor();
+  return editor._editorState._selection;
+}
+
 export function getSelection(): null | Selection {
   const editorState = getActiveEditorState();
   return editorState._selection;

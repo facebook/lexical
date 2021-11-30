@@ -78,6 +78,7 @@ import {createParagraphNode} from 'outline/ParagraphNode';
 import {createHeadingNode} from 'outline/HeadingNode';
 import {createLinkNode} from 'outline/LinkNode';
 import type {TextFormatType} from 'outline';
+// TODO we shouldn't really be importing from core here.
 import {TEXT_TYPE_TO_FORMAT} from '../core/OutlineConstants';
 
 const NO_BREAK_SPACE_CHAR = '\u00A0';
@@ -99,29 +100,6 @@ type DOMTransformOutput = {
   node: OutlineNode | null,
   format?: TextFormatType,
 };
-
-function updateAndroidSoftKeyFlagIfAny(event: KeyboardEvent): void {
-  lastKeyWasMaybeAndroidSoftKey =
-    event.key === 'Unidentified' && event.keyCode === 229;
-}
-
-function generateNodes(nodeRange: {
-  range: Array<NodeKey>,
-  nodeMap: ParsedNodeMap,
-}): Array<OutlineNode> {
-  const {range, nodeMap} = nodeRange;
-  const parsedNodeMap: ParsedNodeMap = new Map(nodeMap);
-  const nodes = [];
-  for (let i = 0; i < range.length; i++) {
-    const key = range[i];
-    const parsedNode = parsedNodeMap.get(key);
-    if (parsedNode !== undefined) {
-      const node = createNodeFromParse(parsedNode, parsedNodeMap);
-      nodes.push(node);
-    }
-  }
-  return nodes;
-}
 
 const DOM_NODE_NAME_TO_OUTLINE_NODE: DOMTransformerMap = {
   ul: () => ({node: createListNode('ul')}),
@@ -160,6 +138,29 @@ const DOM_NODE_NAME_TO_OUTLINE_NODE: DOMTransformerMap = {
   },
   '#text': (domNode: Node) => ({node: createTextNode(domNode.textContent)}),
 };
+
+function updateAndroidSoftKeyFlagIfAny(event: KeyboardEvent): void {
+  lastKeyWasMaybeAndroidSoftKey =
+    event.key === 'Unidentified' && event.keyCode === 229;
+}
+
+function generateNodes(nodeRange: {
+  range: Array<NodeKey>,
+  nodeMap: ParsedNodeMap,
+}): Array<OutlineNode> {
+  const {range, nodeMap} = nodeRange;
+  const parsedNodeMap: ParsedNodeMap = new Map(nodeMap);
+  const nodes = [];
+  for (let i = 0; i < range.length; i++) {
+    const key = range[i];
+    const parsedNode = parsedNodeMap.get(key);
+    if (parsedNode !== undefined) {
+      const node = createNodeFromParse(parsedNode, parsedNodeMap);
+      nodes.push(node);
+    }
+  }
+  return nodes;
+}
 
 export function createNodesFromDOM(
   node: Node,

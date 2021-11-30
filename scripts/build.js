@@ -107,6 +107,7 @@ const findAndRecordErrorCodes = extractErrorCodes(errorCodeOpts);
 async function build(name, inputFile, outputFile) {
   const inputOptions = {
     input: inputFile,
+    treeshake: 'smallest',
     external(modulePath, src) {
       return externals.includes(modulePath);
     },
@@ -247,7 +248,10 @@ ${source}`;
     exports: 'auto',
   };
   if (isWatchMode) {
-    const watcher = rollup.watch({...inputOptions, output: outputOptions});
+    const watcher = rollup.watch({
+      ...inputOptions,
+      output: outputOptions,
+    });
     watcher.on('event', async (event) => {
       switch (event.code) {
         case 'BUNDLE_START':

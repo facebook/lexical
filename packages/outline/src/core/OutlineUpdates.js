@@ -637,7 +637,6 @@ function beginUpdate(
     if (editorStateWasCloned) {
       editor._pendingEditorState = null;
     }
-    triggerDeferredUpdateCallbacks(editor);
   }
 }
 

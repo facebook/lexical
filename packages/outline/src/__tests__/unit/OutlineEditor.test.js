@@ -297,6 +297,10 @@ describe('OutlineEditor tests', () => {
 
   it('editor.focus() callback is called', async () => {
     init();
+    await editor.update(() => {
+      const root = getRoot();
+      root.append(createParagraphNode());
+    });
 
     const fn = jest.fn();
     await editor.focus(fn);

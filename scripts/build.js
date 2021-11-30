@@ -247,7 +247,11 @@ ${source}`;
     exports: 'auto',
   };
   if (isWatchMode) {
-    const watcher = rollup.watch({...inputOptions, output: outputOptions, treeshake: 'smallest'});
+    const watcher = rollup.watch({
+      ...inputOptions,
+      output: outputOptions,
+      treeshake: 'smallest',
+    });
     watcher.on('event', async (event) => {
       switch (event.code) {
         case 'BUNDLE_START':

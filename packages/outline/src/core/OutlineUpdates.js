@@ -633,9 +633,11 @@ function beginUpdate(
       });
     }
   } else {
+    pendingEditorState._flushSync = false;
     if (editorStateWasCloned) {
       editor._pendingEditorState = null;
     }
+    triggerDeferredUpdateCallbacks(editor);
   }
 }
 

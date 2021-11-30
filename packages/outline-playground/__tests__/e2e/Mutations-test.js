@@ -6,7 +6,13 @@
  *
  */
 
-import {initializeE2E, assertHTML, assertSelection} from '../utils';
+import {
+  initializeE2E,
+  assertHTML,
+  assertSelection,
+  evaluate,
+  focusEditor,
+} from '../utils';
 
 async function validateContent(page) {
   await assertHTML(
@@ -26,7 +32,7 @@ describe('Mutations', () => {
     it(`Can restore the DOM to the editor state state`, async () => {
       const {page} = e2e;
 
-      await page.focus('div.editor');
+      await focusEditor(page, 'div.editor');
       await page.keyboard.type(
         'Hello #world. This content #should remain #intact.',
       );
@@ -34,7 +40,7 @@ describe('Mutations', () => {
       await validateContent(page);
 
       // Remove the paragraph
-      await await page.evaluate(() => {
+      await await evaluate(page, () => {
         const rootElement = document.querySelector('div.editor');
         const paragraph = rootElement.firstChild;
 
@@ -43,7 +49,7 @@ describe('Mutations', () => {
       await validateContent(page);
 
       // Remove the paragraph content
-      await await page.evaluate(() => {
+      await await evaluate(page, () => {
         const rootElement = document.querySelector('div.editor');
         const paragraph = rootElement.firstChild;
 
@@ -52,7 +58,7 @@ describe('Mutations', () => {
       await validateContent(page);
 
       // Remove the first text
-      await await page.evaluate(() => {
+      await await evaluate(page, () => {
         const rootElement = document.querySelector('div.editor');
         const firstTextNode = rootElement.firstChild.firstChild;
 
@@ -61,7 +67,7 @@ describe('Mutations', () => {
       await validateContent(page);
 
       // Remove the first text contents
-      await await page.evaluate(() => {
+      await await evaluate(page, () => {
         const rootElement = document.querySelector('div.editor');
         const firstTextNode = rootElement.firstChild.firstChild;
 
@@ -70,7 +76,7 @@ describe('Mutations', () => {
       await validateContent(page);
 
       // Remove the second text
-      await await page.evaluate(() => {
+      await await evaluate(page, () => {
         const rootElement = document.querySelector('div.editor');
         const secondTextNode = rootElement.firstChild.firstChild.nextSibling;
 
@@ -79,7 +85,7 @@ describe('Mutations', () => {
       await validateContent(page);
 
       // Remove the third text
-      await await page.evaluate(() => {
+      await await evaluate(page, () => {
         const rootElement = document.querySelector('div.editor');
         const thirdTextNode =
           rootElement.firstChild.firstChild.nextSibling.nextSibling;
@@ -89,7 +95,7 @@ describe('Mutations', () => {
       await validateContent(page);
 
       // Remove the forth text
-      await await page.evaluate(() => {
+      await await evaluate(page, () => {
         const rootElement = document.querySelector('div.editor');
         const forthTextNode =
           rootElement.firstChild.firstChild.nextSibling.nextSibling.nextSibling;
@@ -99,7 +105,7 @@ describe('Mutations', () => {
       await validateContent(page);
 
       // Move last to first
-      await await page.evaluate(() => {
+      await await evaluate(page, () => {
         const rootElement = document.querySelector('div.editor');
         const paragraph = rootElement.firstChild;
         const firstTextNode = paragraph.firstChild;
@@ -111,7 +117,7 @@ describe('Mutations', () => {
       await validateContent(page);
 
       // Reverse sort all the children
-      await await page.evaluate(() => {
+      await await evaluate(page, () => {
         const rootElement = document.querySelector('div.editor');
         const paragraph = rootElement.firstChild;
         const firstTextNode = paragraph.firstChild;
@@ -127,7 +133,7 @@ describe('Mutations', () => {
       await validateContent(page);
 
       // Adding additional nodes to root
-      await await page.evaluate(() => {
+      await await evaluate(page, () => {
         const rootElement = document.querySelector('div.editor');
         const span = document.createElement('span');
         const span2 = document.createElement('span');
@@ -139,7 +145,7 @@ describe('Mutations', () => {
       await validateContent(page);
 
       // Adding additional nodes to paragraph
-      await await page.evaluate(() => {
+      await await evaluate(page, () => {
         const rootElement = document.querySelector('div.editor');
         const paragraph = rootElement.firstChild;
         const firstTextNode = paragraph.firstChild;
@@ -153,7 +159,7 @@ describe('Mutations', () => {
       await validateContent(page);
 
       // Adding additional nodes to text nodes
-      await await page.evaluate(() => {
+      await await evaluate(page, () => {
         const rootElement = document.querySelector('div.editor');
         const paragraph = rootElement.firstChild;
         const firstTextNode = paragraph.firstChild;
@@ -165,7 +171,7 @@ describe('Mutations', () => {
       await validateContent(page);
 
       // Replace text nodes on text nodes #1
-      await await page.evaluate(() => {
+      await await evaluate(page, () => {
         const rootElement = document.querySelector('div.editor');
         const paragraph = rootElement.firstChild;
         const firstTextNode = paragraph.firstChild;
@@ -175,7 +181,7 @@ describe('Mutations', () => {
       await validateContent(page);
 
       // Replace text nodes on line break #2
-      await await page.evaluate(() => {
+      await await evaluate(page, () => {
         const rootElement = document.querySelector('div.editor');
         const paragraph = rootElement.firstChild;
         const firstTextNode = paragraph.firstChild;
@@ -185,7 +191,7 @@ describe('Mutations', () => {
       await validateContent(page);
 
       // Update text content, this should work :)
-      await await page.evaluate(() => {
+      await await evaluate(page, () => {
         const rootElement = document.querySelector('div.editor');
         const paragraph = rootElement.firstChild;
         const firstTextNode = paragraph.firstChild;

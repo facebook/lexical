@@ -12,6 +12,7 @@ import {
   assertSelection,
   repeat,
   E2E_BROWSER,
+  focusEditor,
 } from '../utils';
 import {moveToLineBeginning, moveToLineEnd} from '../keyboardShortcuts';
 
@@ -20,7 +21,7 @@ describe('Emoticons', () => {
     it(`Can handle a single emoticon`, async () => {
       const {page} = e2e;
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type('This is an emoji :)');
       await assertHTML(
         page,
@@ -88,7 +89,7 @@ describe('Emoticons', () => {
     it(`Can enter multiple emoticons`, async () => {
       const {isRichText, page} = e2e;
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type(':) :) <3 :(');
       await assertHTML(
         page,

@@ -10,6 +10,7 @@
 import type {Settings as AppSettings} from '../../src/appSettings';
 import {chromium, firefox, webkit} from 'playwright';
 import {URLSearchParams} from 'url';
+import {v4 as uuidv4} from 'uuid';
 
 export const E2E_DEBUG = process.env.E2E_DEBUG;
 export const E2E_PORT = process.env.E2E_PORT || 3000;
@@ -17,6 +18,8 @@ export const E2E_BROWSER = process.env.E2E_BROWSER;
 export const IS_MAC = process.platform === 'darwin';
 export const IS_WINDOWS = process.platform === 'win32';
 export const IS_LINUX = !IS_MAC && !IS_WINDOWS;
+export const IS_COLLAB =
+  process.env.E2E_EDITOR_MODE === 'rich-text-with-collab';
 
 jest.setTimeout(60000);
 
@@ -52,7 +55,10 @@ export function initializeE2E(runTests, config: Config = {}) {
     appSettings.disableBeforeInput =
       process.env.E2E_EVENTS_MODE === 'legacy-events';
   }
-  const urlParams = appSettingsToURLParams(appSettings);
+  if (IS_COLLAB) {
+    appSettings.isCollab =
+      process.env.E2E_EDITOR_MODE === 'rich-text-with-collab';
+  }
   const e2e = {
     isRichText: appSettings.isRichText,
     browser: null,
@@ -78,7 +84,13 @@ export function initializeE2E(runTests, config: Config = {}) {
     e2e.browser = await attemptToLaunchBrowser();
   });
   beforeEach(async () => {
-    const url = `http://localhost:${E2E_PORT}/?${urlParams.toString()}`;
+    if (IS_COLLAB) {
+      appSettings.collabId = uuidv4();
+    }
+    const urlParams = appSettingsToURLParams(appSettings);
+    const url = `http://localhost:${E2E_PORT}/${
+      IS_COLLAB ? 'split/' : ''
+    }?${urlParams.toString()}`;
     const page = await e2e.browser.newPage();
     await page.goto(url);
     e2e.page = page;
@@ -111,7 +123,13 @@ export function initializeE2E(runTests, config: Config = {}) {
               count++;
               // Close and re-open page
               await e2e.page.close();
-              const url = `http://localhost:${E2E_PORT}/?${urlParams.toString()}`;
+              if (IS_COLLAB) {
+                appSettings.collabId = uuidv4();
+              }
+              const urlParams = appSettingsToURLParams(appSettings);
+              const url = `http://localhost:${E2E_PORT}/${
+                IS_COLLAB ? 'split/' : ''
+              }?${urlParams.toString()}`;
               const page = await e2e.browser.newPage();
               await page.goto(url);
               e2e.page = page;
@@ -148,9 +166,9 @@ export async function repeat(times, cb) {
   }
 }
 
-export async function assertHTML(page, expectedHtml) {
+async function assertHTMLOnPageOrFrame(pageOrFrame, expectedHtml) {
   // Assert HTML of the editor matches the given html
-  const actualHtml = await page.innerHTML('div.editor');
+  const actualHtml = await pageOrFrame.innerHTML('div.editor');
   if (expectedHtml === '') {
     console.log('Output HTML:\n\n' + actualHtml);
     throw new Error('Empty HTML assertion!');
@@ -165,7 +183,36 @@ export async function assertHTML(page, expectedHtml) {
   expect(actual).toEqual(expected);
 }
 
-export async function assertSelection(page, expected) {
+export async function assertHTML(page, expectedHtml, ignoreSecondFrame) {
+  if (IS_COLLAB) {
+    const leftFrame = await page.frame('left');
+    await assertHTMLOnPageOrFrame(leftFrame, expectedHtml);
+    if (!ignoreSecondFrame) {
+      let attempts = 0;
+      while (attempts < 4) {
+        const rightFrame = await page.frame('right');
+        let failed = false;
+        try {
+          await assertHTMLOnPageOrFrame(rightFrame, expectedHtml);
+        } catch (e) {
+          if (attempts === 5) {
+            throw e;
+          }
+          failed = true;
+        }
+        if (!failed) {
+          break;
+        }
+        attempts++;
+        await sleep(500);
+      }
+    }
+  } else {
+    await assertHTMLOnPageOrFrame(page, expectedHtml);
+  }
+}
+
+async function assertSelectionOnPageOrFrame(page, expected) {
   // Assert the selection of the editor matches the snapshot
   const selection = await page.evaluate(() => {
     const rootElement = document.querySelector('div.editor');
@@ -211,6 +258,15 @@ export async function assertSelection(page, expected) {
     expect(selection.focusOffset).toBeLessThanOrEqual(end);
   } else {
     expect(selection.focusOffset).toEqual(expected.focusOffset);
+  }
+}
+
+export async function assertSelection(page, expected) {
+  if (IS_COLLAB) {
+    const frame = await page.frame('left');
+    await assertSelectionOnPageOrFrame(frame, expected);
+  } else {
+    await assertSelectionOnPageOrFrame(page, expected);
   }
 }
 
@@ -263,8 +319,8 @@ export async function keyUpCtrlOrAlt(page) {
   }
 }
 
-export async function copyToClipboard(page) {
-  return await page.evaluate(() => {
+async function copyToClipboardPageOrFrame(pageOrFrame) {
+  return await pageOrFrame.evaluate(() => {
     const clipboardData = {};
     const editor = document.querySelector('div.editor');
     const copyEvent = new ClipboardEvent('copy');
@@ -280,9 +336,18 @@ export async function copyToClipboard(page) {
   });
 }
 
-export async function pasteFromClipboard(page, clipboardData) {
-  const canUseBeforeInput = supportsBeforeInput(page);
-  await page.evaluate(
+export async function copyToClipboard(page) {
+  if (IS_COLLAB) {
+    const leftFrame = await page.frame('left');
+    return await copyToClipboardPageOrFrame(leftFrame);
+  } else {
+    return await copyToClipboardPageOrFrame(page);
+  }
+}
+
+async function pasteFromClipboardPageOrFrame(pageOrFrame, clipboardData) {
+  const canUseBeforeInput = supportsBeforeInput(pageOrFrame);
+  await pageOrFrame.evaluate(
     async ({clipboardData, canUseBeforeInput}) => {
       const editor = document.querySelector('div.editor');
       const pasteEvent = new ClipboardEvent('paste', {
@@ -321,6 +386,84 @@ export async function pasteFromClipboard(page, clipboardData) {
   );
 }
 
+export async function pasteFromClipboard(page, clipboardData) {
+  if (IS_COLLAB) {
+    const leftFrame = await page.frame('left');
+    await pasteFromClipboardPageOrFrame(leftFrame, clipboardData);
+  } else {
+    await pasteFromClipboardPageOrFrame(page, clipboardData);
+  }
+}
+
 export async function sleep(delay) {
   await new Promise((resolve) => setTimeout(resolve, delay));
+}
+
+export async function focusEditor(page) {
+  if (IS_COLLAB) {
+    const leftFrame = await page.frame('left');
+    if ((await leftFrame.$$('.loading').length) !== 0) {
+      await leftFrame.waitForSelector('.loading', {
+        state: 'detached',
+      });
+      await sleep(500);
+    }
+    await leftFrame.focus('div.editor');
+  } else {
+    await page.focus('div.editor');
+  }
+}
+
+export async function waitForSelector(page, selector, options) {
+  if (IS_COLLAB) {
+    const leftFrame = await page.frame('left');
+    await leftFrame.waitForSelector(selector, options);
+  } else {
+    await page.waitForSelector(selector, options);
+  }
+}
+
+export async function click(page, selector, options) {
+  if (IS_COLLAB) {
+    const leftFrame = await page.frame('left');
+    await leftFrame.click(selector, options);
+  } else {
+    await page.click(selector, options);
+  }
+}
+
+export async function focus(page, selector, options) {
+  if (IS_COLLAB) {
+    const leftFrame = await page.frame('left');
+    await leftFrame.focus(selector, options);
+  } else {
+    await page.focus(selector, options);
+  }
+}
+
+export async function selectOption(page, selector, options) {
+  if (IS_COLLAB) {
+    const leftFrame = await page.frame('left');
+    await leftFrame.selectOption(selector, options);
+  } else {
+    await page.selectOption(selector, options);
+  }
+}
+
+export async function textContent(page, selector, options) {
+  if (IS_COLLAB) {
+    const leftFrame = await page.frame('left');
+    return await leftFrame.textContent(selector, options);
+  } else {
+    return await page.textContent(selector, options);
+  }
+}
+
+export async function evaluate(page, fn, args) {
+  if (IS_COLLAB) {
+    const leftFrame = await page.frame('left');
+    return await leftFrame.evaluate(fn, args);
+  } else {
+    return await page.evaluate(fn, args);
+  }
 }

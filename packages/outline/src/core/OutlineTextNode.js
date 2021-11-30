@@ -458,11 +458,8 @@ export class TextNode extends OutlineNode {
         index = 0;
       }
     }
-    if (moveSelection) {
-      const selection = getSelection();
-      if (selection === null) {
-        invariant(false, 'spliceText: selection not found');
-      }
+    const selection = getSelection();
+    if (moveSelection && selection !== null) {
       const newOffset = offset + handledTextLength;
       selection.setTextNodeRange(
         writableSelf,

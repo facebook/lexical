@@ -644,6 +644,16 @@ function reconcileSelection(
   const focusDOMNode = domSelection.focusNode;
   const anchorOffset = domSelection.anchorOffset;
   const focusOffset = domSelection.focusOffset;
+  const activeElement = document.activeElement;
+  const rootElement = editor._rootElement;
+  // TODO: make this not hard-coded, and add another config option
+  // that makes this configurable.
+  if (
+    editor._updateTags.has('collaboration') &&
+    activeElement !== rootElement
+  ) {
+    return;
+  }
 
   if (nextSelection === null) {
     // We don't remove selection if the prevSelection is null because
@@ -687,8 +697,6 @@ function reconcileSelection(
     return;
   }
 
-  const activeElement = document.activeElement;
-  const rootElement = editor._rootElement;
   // Diff against the native DOM selection to ensure we don't do
   // an unnecessary selection update.
   if (
@@ -1056,6 +1064,9 @@ export function normalizeTextNode(
   textNode: TextNode,
   selection: null | OutlineSelection,
 ) {
+  if (!textNode.isSimpleText() || textNode.isUnmergeable()) {
+    return;
+  }
   let node = textNode;
   // Backward
   let previousNode;

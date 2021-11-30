@@ -21,6 +21,10 @@ import {
   E2E_BROWSER,
   IS_LINUX,
   IS_WINDOWS,
+  focusEditor,
+  waitForSelector,
+  click,
+  focus,
 } from '../utils';
 
 describe('CopyAndPaste', () => {
@@ -28,7 +32,7 @@ describe('CopyAndPaste', () => {
     it('Basic copy + paste', async () => {
       const {isRichText, page} = e2e;
 
-      await page.focus('div.editor');
+      await focusEditor(page);
 
       // Add paragraph
       await page.keyboard.type('Copy + pasting?');
@@ -148,7 +152,7 @@ describe('CopyAndPaste', () => {
     it(`Copy and paste between sections`, async () => {
       const {isRichText, page} = e2e;
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type('Hello world #foobar test #foobar2 when #not');
 
       await page.keyboard.press('Enter');
@@ -356,7 +360,7 @@ describe('CopyAndPaste', () => {
         return;
       }
 
-      await page.focus('div.editor');
+      await focusEditor(page);
 
       // Add three list items
       await page.keyboard.type('- one');
@@ -435,7 +439,7 @@ describe('CopyAndPaste', () => {
         return;
       }
 
-      await page.focus('div.editor');
+      await focusEditor(page);
 
       // Add three list items
       await page.keyboard.type('- one');
@@ -520,7 +524,7 @@ describe('CopyAndPaste', () => {
         return;
       }
 
-      await page.focus('div.editor');
+      await focusEditor(page);
 
       await page.keyboard.type('- one');
       await page.keyboard.press('Enter');
@@ -588,7 +592,7 @@ describe('CopyAndPaste', () => {
         return;
       }
 
-      await page.focus('div.editor');
+      await focusEditor(page);
 
       await page.keyboard.type('- one');
       await page.keyboard.press('Enter');
@@ -656,7 +660,7 @@ describe('CopyAndPaste', () => {
         return;
       }
 
-      await page.focus('div.editor');
+      await focusEditor(page);
 
       await page.keyboard.type('Hello');
       await page.keyboard.press('Enter');
@@ -719,7 +723,7 @@ describe('CopyAndPaste', () => {
         return;
       }
 
-      await page.focus('div.editor');
+      await focusEditor(page);
 
       await page.keyboard.type('Hello');
       await page.keyboard.press('Enter');
@@ -776,7 +780,7 @@ describe('CopyAndPaste', () => {
         return;
       }
 
-      await page.focus('div.editor');
+      await focusEditor(page);
 
       const clipboard = {'text/html': 'Hello!'};
 
@@ -801,7 +805,7 @@ describe('CopyAndPaste', () => {
         return;
       }
 
-      await page.focus('div.editor');
+      await focusEditor(page);
 
       const clipboard = {'text/html': '<p>Hello!<p>'};
 
@@ -827,7 +831,7 @@ describe('CopyAndPaste', () => {
         return;
       }
 
-      await page.focus('div.editor');
+      await focusEditor(page);
 
       const clipboard = {
         'text/html': '<a href="https://facebook.com">Facebook!</a>',
@@ -849,17 +853,17 @@ describe('CopyAndPaste', () => {
 
       await selectAll(page);
 
-      await page.waitForSelector('.link');
-      await page.click('.link');
+      await waitForSelector(page, '.link');
+      await click(page, '.link');
 
       await assertHTML(
         page,
         '<p class="editor-paragraph"><span data-outline-text="true">Facebook!</span></p>',
       );
 
-      await page.click('.link');
-      await page.waitForSelector('.link-input');
-      await page.focus('.link-input');
+      await click(page, '.link');
+      await waitForSelector(page, '.link-input');
+      await focus(page, '.link-input');
       await page.keyboard.type('facebook.com');
       await page.keyboard.press('Enter');
 
@@ -876,7 +880,7 @@ describe('CopyAndPaste', () => {
         return;
       }
 
-      await page.focus('div.editor');
+      await focusEditor(page);
 
       const clipboard = {'text/html': '<ul><li>Hello</li><li>world!</li></ul>'};
 
@@ -894,16 +898,16 @@ describe('CopyAndPaste', () => {
         focusOffset: 6,
       });
 
-      await page.waitForSelector('.indent');
-      await page.click('.indent');
+      await waitForSelector(page, '.indent');
+      await click(page, '.indent');
 
       await assertHTML(
         page,
         '<ul class="editor-list-ul"><li class="editor-listitem"><span data-outline-text="true">Hello</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem"><span data-outline-text="true">world!</span></li></ul></li></ul>',
       );
 
-      await page.waitForSelector('.outdent');
-      await page.click('.outdent');
+      await waitForSelector(page, '.outdent');
+      await click(page, '.outdent');
 
       await assertHTML(
         page,

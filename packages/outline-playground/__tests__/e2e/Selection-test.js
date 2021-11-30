@@ -6,13 +6,13 @@
  *
  */
 
-import {initializeE2E, sleep} from '../utils';
+import {initializeE2E, sleep, evaluate} from '../utils';
 
 describe('Selection', () => {
   initializeE2E((e2e) => {
     it('does not focus the editor on load', async () => {
       const editorHasFocus = async () =>
-        await page.evaluate(() => {
+        await evaluate(page, () => {
           const editorElement = document.querySelector('div.editor');
           return document.activeElement === editorElement;
         });

@@ -72,7 +72,7 @@ describe('OutlineListNode tests', () => {
           domElement,
           editorConfig,
         );
-        expect(result).toBe(false);
+        expect(result).toBe(true);
         expect(domElement.outerHTML).toBe('<ul class="my-ul-list-class"></ul>');
       });
     });

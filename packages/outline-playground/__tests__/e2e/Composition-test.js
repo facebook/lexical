@@ -13,6 +13,8 @@ import {
   assertHTML,
   E2E_BROWSER,
   repeat,
+  focusEditor,
+  waitForSelector,
 } from '../utils';
 
 describe('Composition', () => {
@@ -20,7 +22,7 @@ describe('Composition', () => {
     it('Handles Hiragana characters', async () => {
       const {page} = e2e;
 
-      await page.focus('div.editor');
+      await focusEditor(page);
 
       await page.keyboard.type('も');
 
@@ -62,7 +64,7 @@ describe('Composition', () => {
     it('Handles Arabic characters with diacritics', async () => {
       const {page} = e2e;
 
-      await page.focus('div.editor');
+      await focusEditor(page);
 
       await page.keyboard.type('هَ');
       await assertHTML(
@@ -134,7 +136,7 @@ describe('Composition', () => {
           return;
         }
 
-        await page.focus('div.editor');
+        await focusEditor(page);
 
         await page.keyboard.imeSetComposition('ｓ', 1, 1);
         await page.keyboard.imeSetComposition('す', 1, 1);
@@ -170,7 +172,7 @@ describe('Composition', () => {
           return;
         }
 
-        await page.focus('div.editor');
+        await focusEditor(page);
 
         await page.keyboard.down('Shift');
         await page.keyboard.press('Enter');
@@ -216,7 +218,7 @@ describe('Composition', () => {
           return;
         }
 
-        await page.focus('div.editor');
+        await focusEditor(page);
 
         await page.keyboard.type(':):)');
 
@@ -256,13 +258,13 @@ describe('Composition', () => {
           return;
         }
 
-        await page.focus('div.editor');
+        await focusEditor(page);
 
         await page.keyboard.type('Luke');
-        await page.waitForSelector('#mentions-typeahead ul li');
+        await waitForSelector(page, '#mentions-typeahead ul li');
         await page.keyboard.press('Enter');
 
-        await page.waitForSelector('.mention');
+        await waitForSelector(page, '.mention');
 
         await page.keyboard.imeSetComposition('ｓ', 1, 1);
         await page.keyboard.imeSetComposition('す', 1, 1);
@@ -298,13 +300,13 @@ describe('Composition', () => {
           return;
         }
 
-        await page.focus('div.editor');
+        await focusEditor(page);
 
         await page.keyboard.type('Luke');
-        await page.waitForSelector('#mentions-typeahead ul li');
+        await waitForSelector(page, '#mentions-typeahead ul li');
         await page.keyboard.press('Enter');
 
-        await page.waitForSelector('.mention');
+        await waitForSelector(page, '.mention');
 
         await repeat(9, async () => {
           await page.keyboard.press('ArrowLeft');
@@ -344,7 +346,7 @@ describe('Composition', () => {
           return;
         }
 
-        await page.focus('div.editor');
+        await focusEditor(page);
 
         await page.keyboard.type('#');
 
@@ -403,7 +405,7 @@ describe('Composition', () => {
           return;
         }
 
-        await page.focus('div.editor');
+        await focusEditor(page);
 
         await page.keyboard.imeSetComposition('ｓ', 1, 1);
         await page.keyboard.imeSetComposition('す', 1, 1);

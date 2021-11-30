@@ -7,11 +7,20 @@
  */
 
 import {redo, undo} from '../keyboardShortcuts';
-import {initializeE2E, assertHTML, assertSelection, repeat} from '../utils';
+import {
+  initializeE2E,
+  assertHTML,
+  assertSelection,
+  repeat,
+  IS_COLLAB,
+} from '../utils';
 
 describe('History', () => {
   initializeE2E((e2e) => {
     it(`Can type two paragraphs of text and correctly undo and redo`, async () => {
+      if (IS_COLLAB) {
+        return;
+      }
       const {isRichText, page} = e2e;
 
       await page.focus('div.editor');

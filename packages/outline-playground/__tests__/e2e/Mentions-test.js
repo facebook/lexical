@@ -13,6 +13,8 @@ import {
   IS_WINDOWS,
   E2E_BROWSER,
   repeat,
+  waitForSelector,
+  focusEditor,
 } from '../utils';
 import {deleteNextWord, moveToEditorBeginning} from '../keyboardShortcuts';
 
@@ -21,7 +23,7 @@ describe('Mentions', () => {
     it(`Can enter the Luke Skywalker mention`, async () => {
       const {page} = e2e;
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type('Luke');
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -30,7 +32,7 @@ describe('Mentions', () => {
         focusOffset: 4,
       });
 
-      await page.waitForSelector('#mentions-typeahead ul li');
+      await waitForSelector(page, '#mentions-typeahead ul li');
       await assertHTML(
         page,
         '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Luke</span></p>',
@@ -48,7 +50,7 @@ describe('Mentions', () => {
         focusOffset: 14,
       });
 
-      await page.waitForSelector('.mention');
+      await waitForSelector(page, '.mention');
 
       await page.keyboard.press('ArrowLeft');
       await assertSelection(page, {
@@ -78,7 +80,7 @@ describe('Mentions', () => {
     it(`Can enter and delete part of the Luke Skywalker mention`, async () => {
       const {page} = e2e;
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type('Luke');
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -87,7 +89,7 @@ describe('Mentions', () => {
         focusOffset: 4,
       });
 
-      await page.waitForSelector('#mentions-typeahead ul li');
+      await waitForSelector(page, '#mentions-typeahead ul li');
       await assertHTML(
         page,
         '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Luke</span></p',
@@ -105,7 +107,7 @@ describe('Mentions', () => {
         focusOffset: 14,
       });
 
-      await page.waitForSelector('.mention');
+      await waitForSelector(page, '.mention');
 
       await page.keyboard.press('ArrowLeft');
       await assertSelection(page, {
@@ -140,7 +142,7 @@ describe('Mentions', () => {
     it(`Can enter and backspace part of the Luke Skywalker mention`, async () => {
       const {page} = e2e;
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type('Luke');
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -149,7 +151,7 @@ describe('Mentions', () => {
         focusOffset: 4,
       });
 
-      await page.waitForSelector('#mentions-typeahead ul li');
+      await waitForSelector(page, '#mentions-typeahead ul li');
       await assertHTML(
         page,
         '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Luke</span></p>',
@@ -167,7 +169,7 @@ describe('Mentions', () => {
         focusOffset: 14,
       });
 
-      await page.waitForSelector('.mention');
+      await waitForSelector(page, '.mention');
 
       await page.keyboard.press('Backspace');
       await assertHTML(
@@ -209,7 +211,7 @@ describe('Mentions', () => {
 
       await page.keyboard.type('Luke');
 
-      await page.waitForSelector('#mentions-typeahead ul li');
+      await waitForSelector(page, '#mentions-typeahead ul li');
       await assertHTML(
         page,
         '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">abc Luke def</span></p>',
@@ -243,7 +245,7 @@ describe('Mentions', () => {
     it(`Can enter multiple Luke Skywalker mentions and then delete them from start`, async () => {
       const {page} = e2e;
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type('Luke');
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -252,37 +254,37 @@ describe('Mentions', () => {
         focusOffset: 4,
       });
 
-      await page.waitForSelector('#mentions-typeahead ul li');
+      await waitForSelector(page, '#mentions-typeahead ul li');
       await page.keyboard.press('Enter');
 
-      await page.waitForSelector('.mention');
+      await waitForSelector(page, '.mention');
 
       await page.keyboard.type(' ');
 
       await page.keyboard.type('Luke');
 
-      await page.waitForSelector('#mentions-typeahead ul li');
+      await waitForSelector(page, '#mentions-typeahead ul li');
       await page.keyboard.press('Enter');
 
-      await page.waitForSelector('.mention:nth-child(1)');
+      await waitForSelector(page, '.mention:nth-child(1)');
 
       await page.keyboard.type(' ');
 
       await page.keyboard.type('Luke');
 
-      await page.waitForSelector('#mentions-typeahead ul li');
+      await waitForSelector(page, '#mentions-typeahead ul li');
       await page.keyboard.press('Enter');
 
-      await page.waitForSelector('.mention:nth-child(3)');
+      await waitForSelector(page, '.mention:nth-child(3)');
 
       await page.keyboard.type(' ');
 
       await page.keyboard.type('Luke');
 
-      await page.waitForSelector('#mentions-typeahead ul li');
+      await waitForSelector(page, '#mentions-typeahead ul li');
       await page.keyboard.press('Enter');
 
-      await page.waitForSelector('.mention:nth-child(5)');
+      await waitForSelector(page, '.mention:nth-child(5)');
 
       await assertHTML(
         page,
@@ -380,7 +382,7 @@ describe('Mentions', () => {
     it(`Can enter a mention then delete it and partially remove text after`, async () => {
       const {page} = e2e;
 
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type('Luke');
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -389,10 +391,10 @@ describe('Mentions', () => {
         focusOffset: 4,
       });
 
-      await page.waitForSelector('#mentions-typeahead ul li');
+      await waitForSelector(page, '#mentions-typeahead ul li');
       await page.keyboard.press('Enter');
 
-      await page.waitForSelector('.mention');
+      await waitForSelector(page, '.mention');
 
       await page.keyboard.type(' foo bar');
 

@@ -6,15 +6,22 @@
  *
  */
 
-import {initializeE2E, assertHTML, assertSelection, repeat} from '../utils';
+import {
+  initializeE2E,
+  assertHTML,
+  assertSelection,
+  repeat,
+  focusEditor,
+  waitForSelector,
+} from '../utils';
 
 describe('Regression test #231', () => {
   initializeE2E((e2e) => {
     it(`Does not generate segment error when editing empty text nodes`, async () => {
       const {page} = e2e;
-      await page.focus('div.editor');
+      await focusEditor(page);
       await page.keyboard.type('#foo');
-      await page.waitForSelector('.editor-text-hashtag');
+      await waitForSelector(page, '.editor-text-hashtag');
       await repeat(4, async () => {
         await page.keyboard.press('ArrowLeft');
       });

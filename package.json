@@ -25,7 +25,7 @@
     "extract-codes": "node scripts/build.js --codes",
     "watch": "node scripts/build.js --watch",
     "flow": "node ./scripts/tasks/flow.js",
-    "collab": "HOST=localhost PORT=1234 npx y-websocket-server",
+    "collab": "cross-env HOST=localhost PORT=1234 npx y-websocket-server",
     "test-unit": "jest --selectProjects unit --testPathPattern",
     "test-unit-watch": "npm run test-unit -- --watch --coverage=''",
     "test-e2e:chromium": "cross-env E2E_BROWSER=chromium jest --selectProjects e2e --collectCoverage=false --testPathPattern",

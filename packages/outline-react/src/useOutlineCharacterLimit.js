@@ -16,7 +16,7 @@ import type {
 } from 'outline';
 
 import {
-  BlockNode,
+  ElementNode,
   isLeafNode,
   isTextNode,
   log,
@@ -202,7 +202,7 @@ function wrapOverflowedNodes(offset: number) {
   });
 }
 
-export class OverflowNode extends BlockNode {
+export class OverflowNode extends ElementNode {
   static getType(): string {
     return 'overflow';
   }
@@ -229,7 +229,7 @@ export class OverflowNode extends BlockNode {
     return false;
   }
 
-  insertNewAfter(selection: Selection): null | BlockNode {
+  insertNewAfter(selection: Selection): null | ElementNode {
     const parent = this.getParentOrThrow();
     return parent.insertNewAfter(selection);
   }
@@ -288,21 +288,21 @@ export function mergePrevious(overflowNode: OverflowNode) {
     const focus = selection.focus;
     const focusNode = anchor.getNode();
     if (anchorNode.is(previousNode)) {
-      anchor.set(overflowNode.getKey(), anchor.offset, 'block');
+      anchor.set(overflowNode.getKey(), anchor.offset, 'element');
     } else if (anchorNode.is(overflowNode)) {
       anchor.set(
         overflowNode.getKey(),
         previousNodeChildrenLength + anchor.offset,
-        'block',
+        'element',
       );
     }
     if (focusNode.is(previousNode)) {
-      focus.set(overflowNode.getKey(), focus.offset, 'block');
+      focus.set(overflowNode.getKey(), focus.offset, 'element');
     } else if (focusNode.is(overflowNode)) {
       focus.set(
         overflowNode.getKey(),
         previousNodeChildrenLength + focus.offset,
-        'block',
+        'element',
       );
     }
   }

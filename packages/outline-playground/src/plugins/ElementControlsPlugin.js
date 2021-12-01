@@ -19,7 +19,7 @@ import {createListNode} from 'outline/ListNode';
 import {createListItemNode} from 'outline/ListItemNode';
 import {createQuoteNode} from 'outline/QuoteNode';
 import {createCodeNode} from 'outline/CodeNode';
-import {wrapLeafNodesInBlocks} from 'outline/selection';
+import {wrapLeafNodesInElements} from 'outline/selection';
 import {useEffect, useRef, useState} from 'react';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
@@ -27,39 +27,39 @@ import {log, getSelection} from 'outline';
 
 function DropdownList({
   editor,
-  blockType,
-  blockControlsRef,
+  elementType,
+  elementControlsRef,
   setShowDropDown,
 }: {
   editor: OutlineEditor,
-  blockType: string,
-  blockControlsRef: {current: null | HTMLElement},
+  elementType: string,
+  elementControlsRef: {current: null | HTMLElement},
   setShowDropDown: (boolean) => void,
 }): React$Node {
   const dropDownRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
-    const blockControls = blockControlsRef.current;
+    const elementControls = elementControlsRef.current;
     const dropDown = dropDownRef.current;
 
-    if (blockControls !== null && dropDown !== null) {
-      const {top, right} = blockControls.getBoundingClientRect();
+    if (elementControls !== null && dropDown !== null) {
+      const {top, right} = elementControls.getBoundingClientRect();
       const {width} = dropDown.getBoundingClientRect();
       dropDown.style.top = `${top + 40}px`;
       dropDown.style.left = `${right - width}px`;
     }
-  }, [blockControlsRef]);
+  }, [elementControlsRef]);
 
   useEffect(() => {
     const dropDown = dropDownRef.current;
-    const blockControls = blockControlsRef.current;
+    const elementControls = elementControlsRef.current;
 
-    if (dropDown !== null && blockControls !== null) {
+    if (dropDown !== null && elementControls !== null) {
       const handle = (event: MouseEvent) => {
         // $FlowFixMe: no idea why flow is complaining
         const target: HTMLElement = event.target;
 
-        if (!dropDown.contains(target) && !blockControls.contains(target)) {
+        if (!dropDown.contains(target) && !elementControls.contains(target)) {
           setShowDropDown(false);
         }
       };
@@ -69,16 +69,16 @@ function DropdownList({
         document.removeEventListener('click', handle);
       };
     }
-  }, [blockControlsRef, setShowDropDown]);
+  }, [elementControlsRef, setShowDropDown]);
 
   const formatParagraph = () => {
-    if (blockType !== 'paragraph') {
+    if (elementType !== 'paragraph') {
       editor.update(() => {
         log('formatParagraph');
         const selection = getSelection();
 
         if (selection !== null) {
-          wrapLeafNodesInBlocks(selection, () => createParagraphNode());
+          wrapLeafNodesInElements(selection, () => createParagraphNode());
         }
       });
     }
@@ -86,13 +86,13 @@ function DropdownList({
   };
 
   const formatLargeHeading = () => {
-    if (blockType !== 'h1') {
+    if (elementType !== 'h1') {
       editor.update(() => {
         log('formatLargeHeading');
         const selection = getSelection();
 
         if (selection !== null) {
-          wrapLeafNodesInBlocks(selection, () => createHeadingNode('h1'));
+          wrapLeafNodesInElements(selection, () => createHeadingNode('h1'));
         }
       });
     }
@@ -100,13 +100,13 @@ function DropdownList({
   };
 
   const formatSmallHeading = () => {
-    if (blockType !== 'h2') {
+    if (elementType !== 'h2') {
       editor.update((state) => {
         log('formatSmallHeading');
         const selection = getSelection();
 
         if (selection !== null) {
-          wrapLeafNodesInBlocks(selection, () => createHeadingNode('h2'));
+          wrapLeafNodesInElements(selection, () => createHeadingNode('h2'));
         }
       });
     }
@@ -114,13 +114,13 @@ function DropdownList({
   };
 
   const formatBulletList = () => {
-    if (blockType !== 'ul') {
+    if (elementType !== 'ul') {
       editor.update((state) => {
         log('formatBulletList');
         const selection = getSelection();
 
         if (selection !== null) {
-          wrapLeafNodesInBlocks(
+          wrapLeafNodesInElements(
             selection,
             () => createListItemNode(),
             createListNode('ul'),
@@ -132,13 +132,13 @@ function DropdownList({
   };
 
   const formatNumberedList = () => {
-    if (blockType !== 'ol') {
+    if (elementType !== 'ol') {
       editor.update((state) => {
         log('formatNumberedList');
         const selection = getSelection();
 
         if (selection !== null) {
-          wrapLeafNodesInBlocks(
+          wrapLeafNodesInElements(
             selection,
             () => createListItemNode(),
             createListNode('ol'),
@@ -150,13 +150,13 @@ function DropdownList({
   };
 
   const formatQuote = () => {
-    if (blockType !== 'quote') {
+    if (elementType !== 'quote') {
       editor.update((state) => {
         log('formatQuote');
         const selection = getSelection();
 
         if (selection !== null) {
-          wrapLeafNodesInBlocks(selection, () => createQuoteNode());
+          wrapLeafNodesInElements(selection, () => createQuoteNode());
         }
       });
     }
@@ -164,13 +164,13 @@ function DropdownList({
   };
 
   const formatCode = () => {
-    if (blockType !== 'code') {
+    if (elementType !== 'code') {
       editor.update((state) => {
         log('formatCode');
         const selection = getSelection();
 
         if (selection !== null) {
-          wrapLeafNodesInBlocks(selection, () => createCodeNode());
+          wrapLeafNodesInElements(selection, () => createCodeNode());
         }
       });
     }
@@ -182,50 +182,50 @@ function DropdownList({
       <button className="item" onClick={formatParagraph}>
         <span className="icon paragraph" />
         <span className="text">Normal</span>
-        {blockType === 'paragraph' && <span className="active" />}
+        {elementType === 'paragraph' && <span className="active" />}
       </button>
       <button className="item" onClick={formatLargeHeading}>
         <span className="icon large-heading" />
         <span className="text">Large Heading</span>
-        {blockType === 'h1' && <span className="active" />}
+        {elementType === 'h1' && <span className="active" />}
       </button>
       <button className="item" onClick={formatSmallHeading}>
         <span className="icon small-heading" />
         <span className="text">Small Heading</span>
-        {blockType === 'h2' && <span className="active" />}
+        {elementType === 'h2' && <span className="active" />}
       </button>
       <button className="item" onClick={formatBulletList}>
         <span className="icon bullet-list" />
         <span className="text">Bullet List</span>
-        {blockType === 'ul' && <span className="active" />}
+        {elementType === 'ul' && <span className="active" />}
       </button>
       <button className="item" onClick={formatNumberedList}>
         <span className="icon numbered-list" />
         <span className="text">Numbered List</span>
-        {blockType === 'ol' && <span className="active" />}
+        {elementType === 'ol' && <span className="active" />}
       </button>
       <button className="item" onClick={formatQuote}>
         <span className="icon quote" />
         <span className="text">Quote</span>
-        {blockType === 'quote' && <span className="active" />}
+        {elementType === 'quote' && <span className="active" />}
       </button>
       <button className="item" onClick={formatCode}>
         <span className="icon code" />
         <span className="text">Code Block</span>
-        {blockType === 'code' && <span className="active" />}
+        {elementType === 'code' && <span className="active" />}
       </button>
     </div>
   );
 }
 
-export default function BlockControlsPlugin(): React$Node {
+export default function ElementControlsPlugin(): React$Node {
   const [editor] = useEditorContext(PlaygroundEditorContext);
-  const [selectedBlockKey, setSelectedBlockKey] = useState(null);
+  const [selectedElementKey, setSelectedElementKey] = useState(null);
   const [position, setPosition] = useState(0);
   const [editorPosition, setEditorPosition] = useState(0);
-  const [blockType, setBlockType] = useState('paragraph');
+  const [elementType, setElementType] = useState('paragraph');
   const [showDropDown, setShowDropDown] = useState(false);
-  const blockControlsRef = useRef(null);
+  const elementControlsRef = useRef(null);
 
   useEffect(() => {
     return editor.addListener('update', ({editorState}) => {
@@ -233,14 +233,14 @@ export default function BlockControlsPlugin(): React$Node {
         const selection = getSelection();
         if (selection !== null) {
           const anchorNode = selection.anchor.getNode();
-          const block =
+          const element =
             anchorNode.getKey() === 'root'
               ? anchorNode
-              : anchorNode.getTopParentBlockOrThrow();
-          const blockKey = block.getKey();
-          if (blockKey !== selectedBlockKey) {
-            const blockDOM = editor.getElementByKey(blockKey);
-            if (blockDOM !== null) {
+              : anchorNode.getTopParentElementOrThrow();
+          const elementKey = element.getKey();
+          if (elementKey !== selectedElementKey) {
+            const elementDOM = editor.getElementByKey(elementKey);
+            if (elementDOM !== null) {
               const root = editor.getRootElement();
               let editorTop = editorPosition;
 
@@ -249,36 +249,39 @@ export default function BlockControlsPlugin(): React$Node {
                 editorTop = top;
                 setEditorPosition(editorPosition);
               }
-              const {top} = blockDOM.getBoundingClientRect();
+              const {top} = elementDOM.getBoundingClientRect();
               setPosition(top - editorTop);
-              setSelectedBlockKey(blockKey);
+              setSelectedElementKey(elementKey);
               const type =
-                isHeadingNode(block) || isListNode(block)
-                  ? block.getTag()
-                  : block.getType();
-              setBlockType(type);
+                isHeadingNode(element) || isListNode(element)
+                  ? element.getTag()
+                  : element.getType();
+              setElementType(type);
             }
           }
         }
       });
     });
-  }, [editor, editorPosition, selectedBlockKey]);
+  }, [editor, editorPosition, selectedElementKey]);
 
-  return selectedBlockKey !== null ? (
+  return selectedElementKey !== null ? (
     <>
-      <div id="block-controls" style={{top: position}} ref={blockControlsRef}>
+      <div
+        id="element-controls"
+        style={{top: position}}
+        ref={elementControlsRef}>
         <button
           onClick={() => setShowDropDown(!showDropDown)}
           aria-label="Formatting Options">
-          <span className={'block-type ' + blockType} />
+          <span className={'element-type ' + elementType} />
         </button>
       </div>
       {showDropDown &&
         createPortal(
           <DropdownList
             editor={editor}
-            blockType={blockType}
-            blockControlsRef={blockControlsRef}
+            elementType={elementType}
+            elementControlsRef={elementControlsRef}
             setShowDropDown={setShowDropDown}
           />,
           document.body,

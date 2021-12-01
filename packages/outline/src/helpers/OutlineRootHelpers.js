@@ -9,7 +9,7 @@
 
 import type {State} from 'outline';
 
-import {isBlockNode, isTextNode} from 'outline';
+import {isElementNode, isTextNode} from 'outline';
 
 export function textContent(state: State): string {
   const root = state.getRoot();
@@ -60,7 +60,7 @@ export function canShowPlaceholder(
   for (let i = 0; i < childrenLength; i++) {
     const topBlock = children[i];
 
-    if (isBlockNode(topBlock)) {
+    if (isElementNode(topBlock)) {
       if (topBlock.__type !== 'paragraph') {
         return false;
       }

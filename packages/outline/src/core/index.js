@@ -12,7 +12,7 @@ export type {
   EditorConfig,
   EditorThemeClasses,
   TextMutation,
-  IntentionallyMarkedAsDirtyBlock,
+  IntentionallyMarkedAsDirtyElement,
 } from './OutlineEditor';
 export type {EditorState, ParsedEditorState} from './OutlineEditorState';
 export type {State} from './OutlineUpdates';
@@ -21,7 +21,7 @@ export type {ParsedNode, ParsedNodeMap} from './OutlineParsing';
 export type {
   Selection,
   PointType as Point,
-  BlockPointType as BlockPoint,
+  ElementPointType as ElementPoint,
   TextPointType as TextPoint,
 } from './OutlineSelection';
 export type {OutlineRef, EditorStateRef} from './OutlineReference';
@@ -30,7 +30,7 @@ export type {LineBreakNode} from './OutlineLineBreakNode';
 
 import {createEditor} from './OutlineEditor';
 import {createTextNode, isTextNode, TextNode} from './OutlineTextNode';
-import {isBlockNode, BlockNode} from './OutlineBlockNode';
+import {isElementNode, ElementNode} from './OutlineElementNode';
 import {createRootNode, isRootNode, RootNode} from './OutlineRootNode';
 import {createLineBreakNode, isLineBreakNode} from './OutlineLineBreakNode';
 import {DecoratorNode, isDecoratorNode} from './OutlineDecoratorNode';
@@ -56,7 +56,7 @@ import {createEditorStateRef, isEditorStateRef} from './OutlineReference';
 
 export {
   createEditor,
-  BlockNode,
+  ElementNode,
   DecoratorNode,
   RootNode,
   TextNode,
@@ -65,7 +65,7 @@ export {
   isEditorStateRef,
   // Node validation
   isLeafNode,
-  isBlockNode,
+  isElementNode,
   isDecoratorNode,
   isLineBreakNode,
   isRootNode,

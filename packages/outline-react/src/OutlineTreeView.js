@@ -7,9 +7,9 @@
  * @flow strict
  */
 
-import type {BlockNode, EditorState, OutlineEditor, Selection} from 'outline';
+import type {ElementNode, EditorState, OutlineEditor, Selection} from 'outline';
 
-import {isBlockNode, isTextNode, getRoot, getSelection} from 'outline';
+import {isElementNode, isTextNode, getRoot, getSelection} from 'outline';
 
 import * as React from 'react';
 import {useState, useEffect, useRef} from 'react';
@@ -220,7 +220,7 @@ function generateContent(editorState: EditorState): string {
   return res + '\n selection' + selectionString;
 }
 
-function visitTree(currentNode: BlockNode, visitor, indent = []) {
+function visitTree(currentNode: ElementNode, visitor, indent = []) {
   const childNodes = currentNode.getChildren();
   const childNodesLength = childNodes.length;
 
@@ -234,7 +234,7 @@ function visitTree(currentNode: BlockNode, visitor, indent = []) {
       ),
     );
 
-    if (isBlockNode(childNode)) {
+    if (isElementNode(childNode)) {
       visitTree(
         childNode,
         visitor,
@@ -301,7 +301,7 @@ function printSelectedCharsLine({
     !isTextNode(node) ||
     selection === null ||
     !isSelected ||
-    isBlockNode(node)
+    isElementNode(node)
   ) {
     return '';
   }

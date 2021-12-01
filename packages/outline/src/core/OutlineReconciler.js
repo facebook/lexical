@@ -11,7 +11,7 @@ import type {NodeKey, NodeMap} from './OutlineNode';
 import type {
   OutlineEditor,
   EditorConfig,
-  IntentionallyMarkedAsDirtyBlock,
+  IntentionallyMarkedAsDirtyElement,
 } from './OutlineEditor';
 import type {
   Selection as OutlineSelection,
@@ -39,7 +39,7 @@ import {
   IS_ALIGN_JUSTIFY,
 } from './OutlineConstants';
 import {isDecoratorNode} from './OutlineDecoratorNode';
-import {BlockNode, isBlockNode} from './OutlineBlockNode';
+import {ElementNode, isElementNode} from './OutlineElementNode';
 import {isTextNode} from './OutlineTextNode';
 import {isLineBreakNode} from './OutlineLineBreakNode';
 import {isRootNode} from './OutlineRootNode';
@@ -51,7 +51,7 @@ let editorTextContent = '';
 let activeEditorConfig: EditorConfig<{...}>;
 let activeEditor: OutlineEditor;
 let treatAllNodesAsDirty: boolean = false;
-let activeDirtyBlocks: Map<NodeKey, IntentionallyMarkedAsDirtyBlock>;
+let activeDirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>;
 let activeDirtyLeaves: Set<NodeKey>;
 let activePrevNodeMap: NodeMap;
 let activeNextNodeMap: NodeMap;
@@ -70,7 +70,7 @@ function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
   if (!activeNextNodeMap.has(key)) {
     activeEditor._keyToDOMMap.delete(key);
   }
-  if (isBlockNode(node)) {
+  if (isElementNode(node)) {
     const children = node.__children;
     destroyChildren(children, 0, children.length - 1, null);
   }
@@ -95,14 +95,14 @@ function setTextAlign(domStyle: CSSStyleDeclaration, value: string): void {
   domStyle.setProperty('text-align', value);
 }
 
-function setBlockIndent(dom: HTMLElement, indent: number): void {
+function setElementIndent(dom: HTMLElement, indent: number): void {
   dom.style.setProperty(
     'padding-inline-start',
     indent === 0 ? '' : indent * 40 + 'px',
   );
 }
 
-function setBlockFormat(dom: HTMLElement, format: number): void {
+function setElementFormat(dom: HTMLElement, format: number): void {
   const domStyle = dom.style;
   if (format === 0) {
     setTextAlign(domStyle, '');
@@ -149,8 +149,8 @@ function createNode(
     domStyle.setProperty('-webkit-user-select', 'none');
   }
 
-  if (isBlockNode(node)) {
-    // Handle block children
+  if (isElementNode(node)) {
+    // Handle element children
     node = normalizeTextNodes(node);
     flags = node.__flags;
     if (flags & IS_LTR) {
@@ -160,11 +160,11 @@ function createNode(
     }
     const indent = node.__indent;
     if (indent !== 0) {
-      setBlockIndent(dom, indent);
+      setElementIndent(dom, indent);
     }
     const format = node.__format;
     if (format !== 0) {
-      setBlockFormat(dom, format);
+      setElementFormat(dom, format);
     }
     const children = node.__children;
     const childrenLength = children.length;
@@ -172,7 +172,7 @@ function createNode(
       const endIndex = childrenLength - 1;
       createChildren(children, 0, endIndex, dom, null);
     }
-    reconcileBlockTerminatingLineBreak(null, children, dom);
+    reconcileElementTerminatingLineBreak(null, children, dom);
   } else {
     if (isDecoratorNode(node)) {
       const decorator = node.decorate(activeEditor);
@@ -233,8 +233,8 @@ function isLastChildLineBreakOrDecorator(
   return isLineBreakNode(node) || isDecoratorNode(node);
 }
 
-// If we end a block with a LinkBreakNode, then we need to add an additonal <br>
-function reconcileBlockTerminatingLineBreak(
+// If we end an element with a LinkBreakNode, then we need to add an additonal <br>
+function reconcileElementTerminatingLineBreak(
   prevChildren: null | Array<NodeKey>,
   nextChildren: Array<NodeKey>,
   dom: HTMLElement,
@@ -335,11 +335,11 @@ function reconcileNode(
   const isDirty =
     treatAllNodesAsDirty ||
     activeDirtyLeaves.has(key) ||
-    activeDirtyBlocks.has(key);
+    activeDirtyElements.has(key);
   const dom = getElementByKeyOrThrow(activeEditor, key);
 
   if (prevNode === nextNode && !isDirty) {
-    if (isBlockNode(prevNode)) {
+    if (isElementNode(prevNode)) {
       // $FlowFixMe: internal field
       const prevSubTreeTextContent = dom.__outlineTextContent;
       if (prevSubTreeTextContent !== undefined) {
@@ -364,8 +364,8 @@ function reconcileNode(
     return replacementDOM;
   }
 
-  if (isBlockNode(prevNode) && isBlockNode(nextNode)) {
-    // Reconcile block children
+  if (isElementNode(prevNode) && isElementNode(nextNode)) {
+    // Reconcile element children
     nextNode = normalizeTextNodes(nextNode);
     const prevFlags = prevNode.__flags;
     const nextFlags = nextNode.__flags;
@@ -382,11 +382,11 @@ function reconcileNode(
     }
     const nextIndent = nextNode.__indent;
     if (nextIndent !== prevNode.__indent) {
-      setBlockIndent(dom, nextIndent);
+      setElementIndent(dom, nextIndent);
     }
     const nextFormat = nextNode.__format;
     if (nextFormat !== prevNode.__format) {
-      setBlockFormat(dom, nextFormat);
+      setElementFormat(dom, nextFormat);
     }
     const prevChildren = prevNode.__children;
     const nextChildren = nextNode.__children;
@@ -396,7 +396,7 @@ function reconcileNode(
       // We get the children again, in case they change.
       reconcileChildren(prevChildren, nextChildren, dom);
       if (!isRootNode(nextNode)) {
-        reconcileBlockTerminatingLineBreak(prevChildren, nextChildren, dom);
+        reconcileElementTerminatingLineBreak(prevChildren, nextChildren, dom);
       }
     }
   } else {
@@ -530,7 +530,7 @@ function reconcileRoot(
   editor: OutlineEditor,
   selection: null | OutlineSelection,
   dirtyType: 0 | 1 | 2,
-  dirtyBlocks: Map<NodeKey, IntentionallyMarkedAsDirtyBlock>,
+  dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
   dirtyLeaves: Set<NodeKey>,
 ): void {
   subTreeTextContent = '';
@@ -540,7 +540,7 @@ function reconcileRoot(
   treatAllNodesAsDirty = dirtyType === FULL_RECONCILE;
   activeEditor = editor;
   activeEditorConfig = editor._config;
-  activeDirtyBlocks = dirtyBlocks;
+  activeDirtyElements = dirtyElements;
   activeDirtyLeaves = dirtyLeaves;
   activePrevNodeMap = prevEditorState._nodeMap;
   activeNextNodeMap = nextEditorState._nodeMap;
@@ -555,7 +555,7 @@ function reconcileRoot(
   // $FlowFixMe
   activeEditor = undefined;
   // $FlowFixMe
-  activeDirtyBlocks = undefined;
+  activeDirtyElements = undefined;
   // $FlowFixMe
   activeDirtyLeaves = undefined;
   // $FlowFixMe
@@ -583,7 +583,7 @@ export function updateEditorState(
 
   if (needsUpdate && observer !== null) {
     const dirtyType = editor._dirtyType;
-    const dirtyBlocks = editor._dirtyBlocks;
+    const dirtyElements = editor._dirtyElements;
     const dirtyLeaves = editor._dirtyLeaves;
 
     observer.disconnect();
@@ -594,7 +594,7 @@ export function updateEditorState(
         editor,
         pendingSelection,
         dirtyType,
-        dirtyBlocks,
+        dirtyElements,
         dirtyLeaves,
       );
     } finally {
@@ -792,7 +792,7 @@ function adjustPointForMerge(
   point: PointType,
   currentKey: NodeKey,
   startingKey: NodeKey,
-  blockKey: null | NodeKey,
+  elementKey: null | NodeKey,
   textLength: number,
   index: number,
 ): boolean {
@@ -815,7 +815,7 @@ function mergeAdjacentTextNodes(
   let writableMergeToNode: TextNode = placements[0][0].getWritable();
   const key = writableMergeToNode.__key;
   const compositionKey = getCompositionKey();
-  const blockKey = writableMergeToNode.__parent;
+  const elementKey = writableMergeToNode.__parent;
   let textLength = writableMergeToNode.getTextContentSize();
   let selectionIsDirty = false;
 
@@ -823,7 +823,7 @@ function mergeAdjacentTextNodes(
     const placement = placements[i];
     const textNode = placement[0];
     // Adjust the index by the current index of the placement + 1.
-    // This is because we mutate the point offsets for block offsets
+    // This is because we mutate the point offsets for element offsets
     // as we go, so we need to account for this.
     const index = placement[1] - i + 1;
     const siblingText = textNode.getTextContent();
@@ -837,7 +837,7 @@ function mergeAdjacentTextNodes(
           anchor,
           textNodeKey,
           key,
-          blockKey,
+          elementKey,
           textLength,
           index,
         )
@@ -851,7 +851,7 @@ function mergeAdjacentTextNodes(
           focus,
           textNodeKey,
           key,
-          blockKey,
+          elementKey,
           textLength,
           index,
         )
@@ -881,15 +881,15 @@ function mergeAdjacentTextNodes(
 function adjustPointForDeletion(
   point: PointType,
   key: NodeKey,
-  blockKey: NodeKey,
+  elementKey: NodeKey,
   index: number,
 ): boolean {
   const anchorKey = point.key;
   if (key === anchorKey) {
     point.offset = index;
-    point.key = blockKey;
+    point.key = elementKey;
     // $FlowFixMe: internal
-    point.type = 'block';
+    point.type = 'element';
     return true;
   }
   return false;
@@ -904,7 +904,7 @@ function removeStrandedEmptyTextNode(
   const node: TextNode = placement[0];
   const index = placement[1];
   const key = node.__key;
-  const blockKey = node.__parent;
+  const elementKey = node.__parent;
   let selectionIsDirty = false;
 
   // We should never try and remove a node during composition.
@@ -914,13 +914,13 @@ function removeStrandedEmptyTextNode(
     return;
   }
 
-  if (anchor !== null && blockKey !== null) {
-    if (adjustPointForDeletion(anchor, key, blockKey, index)) {
+  if (anchor !== null && elementKey !== null) {
+    if (adjustPointForDeletion(anchor, key, elementKey, index)) {
       selectionIsDirty = true;
     }
   }
-  if (focus !== null && blockKey !== null) {
-    if (adjustPointForDeletion(focus, key, blockKey, index)) {
+  if (focus !== null && elementKey !== null) {
+    if (adjustPointForDeletion(focus, key, elementKey, index)) {
       selectionIsDirty = true;
     }
   }
@@ -936,8 +936,8 @@ function removeStrandedEmptyTextNode(
   activeNextNodeMap.delete(key);
 }
 
-function normalizeTextNodes(block: BlockNode): BlockNode {
-  const children = block.getChildren();
+function normalizeTextNodes(element: ElementNode): ElementNode {
+  const children = element.getChildren();
   let placements: Array<[TextNode, number]> = [];
   let lastTextNodeFlags: number | null = null;
   let lastTextNodeFormat: number | null = null;
@@ -999,7 +999,7 @@ function normalizeTextNodes(block: BlockNode): BlockNode {
   } else if (lastTextNodeWasEmpty) {
     removeStrandedEmptyTextNode(placements, anchor, focus);
   }
-  return block.getLatest();
+  return element.getLatest();
 }
 
 function canSimpleTextNodesBeMerged(node1: TextNode, node2: TextNode): boolean {

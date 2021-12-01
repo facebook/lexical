@@ -14,7 +14,7 @@ import type {
   ParsedNodeMap,
   NodeKey,
   TextNode,
-  BlockNode,
+  ElementNode,
   LineBreakNode,
   DecoratorNode,
   TextMutation,
@@ -59,7 +59,7 @@ import {
   createTextNode,
   createNodeFromParse,
   isTextNode,
-  isBlockNode,
+  isElementNode,
   isDecoratorNode,
   log,
   getSelection,
@@ -206,8 +206,8 @@ export function createNodesFromDOM(
       editor,
       currentTextFormat,
     );
-    if (isBlockNode(currentOutlineNode)) {
-      // If the current node is a BlockNode after transformation,
+    if (isElementNode(currentOutlineNode)) {
+      // If the current node is a ElementNode after transformation,
       // we can append all the children to it.
       currentOutlineNode.append(...childOutlineNodes);
     } else if (currentOutlineNode === null) {
@@ -272,7 +272,7 @@ function insertDataTransferForRichText(
     let currentBlock = null;
     for (let i = 0; i < nodes.length; i++) {
       const node = nodes[i];
-      if (!isBlockNode(node) || node.isInline()) {
+      if (!isElementNode(node) || node.isInline()) {
         if (currentBlock === null) {
           currentBlock = createParagraphNode();
           topLevelBlocks.push(currentBlock);
@@ -433,7 +433,7 @@ export function onKeyDownForRichText(
       const anchor = selection.anchor;
       if (anchor.type === 'text') {
         const anchorNode = anchor.getNode();
-        const parentBlock = anchorNode.getParentBlockOrThrow();
+        const parentBlock = anchorNode.getParentElementOrThrow();
         if (parentBlock.canInsertTab()) {
           if (event.shiftKey) {
             const textContent = anchorNode.getTextContent();
@@ -602,7 +602,7 @@ export function onCompositionStart(
       if (
         data != null &&
         (!lastKeyWasMaybeAndroidSoftKey ||
-          anchor.type === 'block' ||
+          anchor.type === 'element' ||
           !selection.isCollapsed())
       ) {
         // We insert an empty space, ready for the composition
@@ -661,11 +661,11 @@ export function onClick(event: MouseEvent, editor: OutlineEditor): void {
     }
     const anchor = selection.anchor;
     if (
-      anchor.type === 'block' &&
+      anchor.type === 'element' &&
       anchor.offset === 0 &&
       selection.isCollapsed() &&
       getRoot().getChildrenSize() === 1 &&
-      anchor.getNode().getTopParentBlockOrThrow().isEmpty()
+      anchor.getNode().getTopParentElementOrThrow().isEmpty()
     ) {
       const lastSelection = getLastSelection(editor);
       if (lastSelection !== null && selection.is(lastSelection)) {
@@ -806,8 +806,8 @@ function applyTargetRange(selection: Selection, event: InputEvent): void {
 }
 
 function canRemoveText(
-  anchorNode: TextNode | BlockNode | LineBreakNode | DecoratorNode,
-  focusNode: TextNode | BlockNode | LineBreakNode | DecoratorNode,
+  anchorNode: TextNode | ElementNode | LineBreakNode | DecoratorNode,
+  focusNode: TextNode | ElementNode | LineBreakNode | DecoratorNode,
 ): boolean {
   return (
     anchorNode !== focusNode ||

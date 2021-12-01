@@ -191,9 +191,9 @@ function normalizeAllDirtyTextNodes(
 /**
  * Transform heuristic:
  * 1. We transform leaves first. If transforms generate additional dirty nodes we repeat step 1.
- * The reasoning behind this is that marking a leaf as dirty marks all its parent blocks as dirty too.
- * 2. We transform blocks. If block transforms generate additional dirty nodes we repeat step 1.
- * If blocks transforms only generate additional dirty blocks we only repeat step 2.
+ * The reasoning behind this is that marking a leaf as dirty marks all its parent elements as dirty too.
+ * 2. We transform elements. If element transforms generate additional dirty nodes we repeat step 1.
+ * If element transforms only generate additional dirty elements we only repeat step 2.
  *
  * Note that to keep track of newly dirty nodes and subtress we leverage the editor._dirtyNodes and
  * editor._subtrees which we reset in every loop.
@@ -204,18 +204,18 @@ function applyAllTransforms(
 ): void {
   const selection = editorState._selection;
   const dirtyLeaves = editor._dirtyLeaves;
-  const dirtyBlocks = editor._dirtyBlocks;
+  const dirtyElements = editor._dirtyElements;
   const nodeMap = editorState._nodeMap;
   const compositionKey = getCompositionKey();
   const transformsCache = new Map();
 
   let untransformedDirtyLeaves = dirtyLeaves;
   let untransformedDirtyLeavesLength = untransformedDirtyLeaves.size;
-  let untransformedDirtyBlocks = dirtyBlocks;
-  let untransformedDirtyBlocksLength = untransformedDirtyBlocks.size;
+  let untransformedDirtyElements = dirtyElements;
+  let untransformedDirtyElementsLength = untransformedDirtyElements.size;
   while (
     untransformedDirtyLeavesLength > 0 ||
-    untransformedDirtyBlocksLength > 0
+    untransformedDirtyElementsLength > 0
   ) {
     if (untransformedDirtyLeavesLength > 0) {
       // We leverage editor._dirtyLeaves to track the new dirty leaves after the transforms
@@ -237,36 +237,39 @@ function applyAllTransforms(
       }
       untransformedDirtyLeaves = editor._dirtyLeaves;
       untransformedDirtyLeavesLength = untransformedDirtyLeaves.size;
-      // We want to prioritize node transforms over block transforms
+      // We want to prioritize node transforms over element transforms
       if (untransformedDirtyLeavesLength > 0) {
         infiniteTransformCount++;
         continue;
       }
     }
-    // All dirty leaves have been processed. Let's do blocks!
+    // All dirty leaves have been processed. Let's do elements!
     // We have previously processed dirty leaves, so let's restart the editor leaves Set to track
-    // new ones caused by block transforms
+    // new ones caused by element transforms
     editor._dirtyLeaves = new Set();
-    editor._dirtyBlocks = new Map();
-    const untransformedDirtyBlocksArr = Array.from(untransformedDirtyBlocks);
-    for (let i = 0; i < untransformedDirtyBlocksLength; i++) {
-      const nodeKey = untransformedDirtyBlocksArr[i][0];
-      const nodeIntentionallyMarkedAsDirty = untransformedDirtyBlocksArr[i][1];
+    editor._dirtyElements = new Map();
+    const untransformedDirtyElementsArr = Array.from(
+      untransformedDirtyElements,
+    );
+    for (let i = 0; i < untransformedDirtyElementsLength; i++) {
+      const nodeKey = untransformedDirtyElementsArr[i][0];
+      const nodeIntentionallyMarkedAsDirty =
+        untransformedDirtyElementsArr[i][1];
       const node = nodeMap.get(nodeKey);
       if (node !== undefined && isNodeValidForTransform(node, compositionKey)) {
         applyTransforms(editor, node, transformsCache);
       }
-      dirtyBlocks.set(nodeKey, nodeIntentionallyMarkedAsDirty);
+      dirtyElements.set(nodeKey, nodeIntentionallyMarkedAsDirty);
     }
     untransformedDirtyLeaves = editor._dirtyLeaves;
     untransformedDirtyLeavesLength = untransformedDirtyLeaves.size;
-    untransformedDirtyBlocks = editor._dirtyBlocks;
-    untransformedDirtyBlocksLength = untransformedDirtyBlocks.size;
+    untransformedDirtyElements = editor._dirtyElements;
+    untransformedDirtyElementsLength = untransformedDirtyElements.size;
     infiniteTransformCount++;
   }
 
   editor._dirtyLeaves = dirtyLeaves;
-  editor._dirtyBlocks = dirtyBlocks;
+  editor._dirtyElements = dirtyElements;
 }
 
 export function parseEditorState(
@@ -408,7 +411,7 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
     handleDEVOnlyPendingUpdateGuarantees(pendingEditorState);
   }
   const dirtyLeaves = editor._dirtyLeaves;
-  const dirtyBlocks = editor._dirtyBlocks;
+  const dirtyElements = editor._dirtyElements;
   const normalizedNodes = editor._normalizedNodes;
   const tags = editor._updateTags;
   const log = editor._log;
@@ -418,7 +421,7 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
     editor._dirtyType = NO_DIRTY_NODES;
     editor._cloneNotNeeded.clear();
     editor._dirtyLeaves = new Set();
-    editor._dirtyBlocks = new Map();
+    editor._dirtyElements = new Map();
     editor._normalizedNodes = new Set();
     editor._updateTags = new Set();
   }
@@ -436,7 +439,7 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
     prevEditorState: currentEditorState,
     editorState: pendingEditorState,
     dirtyLeaves,
-    dirtyBlocks,
+    dirtyElements,
     log,
   });
   triggerDeferredUpdateCallbacks(editor);
@@ -583,7 +586,7 @@ function beginUpdate(
         currentEditorState,
         pendingEditorState,
         editor._dirtyLeaves,
-        editor._dirtyBlocks,
+        editor._dirtyElements,
       );
     }
     const endingCompositionKey = editor._compositionKey;
@@ -614,7 +617,7 @@ function beginUpdate(
     editor._dirtyType = FULL_RECONCILE;
     editor._cloneNotNeeded.clear();
     editor._dirtyLeaves = new Set();
-    editor._dirtyBlocks.clear();
+    editor._dirtyElements.clear();
     editor._log.push('UpdateRecover');
     commitPendingUpdates(editor);
     return;

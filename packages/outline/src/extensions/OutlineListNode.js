@@ -14,12 +14,12 @@ import type {
   EditorThemeClasses,
 } from 'outline';
 
-import {createTextNode, BlockNode} from 'outline';
+import {createTextNode, ElementNode} from 'outline';
 import {createListItemNode, isListItemNode} from 'outline/ListItemNode';
 
 type ListNodeTagType = 'ul' | 'ol';
 
-export class ListNode extends BlockNode {
+export class ListNode extends ElementNode {
   __tag: ListNodeTagType;
   __start: number;
 

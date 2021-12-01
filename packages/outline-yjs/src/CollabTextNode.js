@@ -9,7 +9,7 @@
 
 import type {TextNode, NodeKey, NodeMap} from 'outline';
 import type {Binding} from '.';
-import type {CollabBlockNode} from './CollabBlockNode';
+import type {CollabElementNode} from './CollabElementNode';
 import type {Map as YMap} from 'yjs';
 
 import {getSelection, isTextNode, getNodeByKey} from 'outline';
@@ -78,12 +78,17 @@ function diffTextContentAndApplyDelta(
 export class CollabTextNode {
   _map: YMap;
   _key: NodeKey;
-  _parent: CollabBlockNode;
+  _parent: CollabElementNode;
   _text: string;
   _type: string;
   _normalized: boolean;
 
-  constructor(map: YMap, text: string, parent: CollabBlockNode, type: string) {
+  constructor(
+    map: YMap,
+    text: string,
+    parent: CollabElementNode,
+    type: string,
+  ) {
     this._key = '';
     this._map = map;
     this._parent = parent;
@@ -122,13 +127,13 @@ export class CollabTextNode {
   }
 
   getOffset(): number {
-    const collabBlockNode = this._parent;
-    return collabBlockNode.getChildOffset(this);
+    const collabElementNode = this._parent;
+    return collabElementNode.getChildOffset(this);
   }
 
   spliceText(index: number, delCount: number, newText: string) {
-    const collabBlockNode = this._parent;
-    const xmlText = collabBlockNode._xmlText;
+    const collabElementNode = this._parent;
+    const xmlText = collabElementNode._xmlText;
     const offset = this.getOffset() + 1 + index;
     if (delCount !== 0) {
       xmlText.delete(offset, delCount);
@@ -190,7 +195,7 @@ export class CollabTextNode {
 export function createCollabTextNode(
   map: YMap,
   text: string,
-  parent: CollabBlockNode,
+  parent: CollabElementNode,
   type: string,
 ): CollabTextNode {
   const collabNode = new CollabTextNode(map, text, parent, type);

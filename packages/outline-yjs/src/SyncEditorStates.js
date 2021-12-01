@@ -10,7 +10,7 @@
 import type {
   NodeKey,
   EditorState,
-  IntentionallyMarkedAsDirtyBlock,
+  IntentionallyMarkedAsDirtyElement,
 } from 'outline';
 import type {Binding, Provider, YjsEvent} from '.';
 
@@ -23,7 +23,7 @@ import {
   setSelection,
   getNodeByKey,
 } from 'outline';
-import {CollabBlockNode} from './CollabBlockNode';
+import {CollabElementNode} from './CollabElementNode';
 import {CollabTextNode} from './CollabTextNode';
 import {
   getOrInitCollabNodeFromSharedType,
@@ -41,7 +41,7 @@ function syncEvent(binding: Binding, event: YTextEvent | YMapEvent): void {
   const {target} = event;
   const collabNode = getOrInitCollabNodeFromSharedType(binding, target);
 
-  if (collabNode instanceof CollabBlockNode && event instanceof YTextEvent) {
+  if (collabNode instanceof CollabElementNode && event instanceof YTextEvent) {
     const {keysChanged, childListChanged, delta} = event;
     // Update
     if (keysChanged.size > 0) {
@@ -93,7 +93,7 @@ export function syncYjsChangesToOutline(
       const selection = getSelection();
       if (selection !== null) {
         // We can't use Yjs's cursor position here, as it doesn't always
-        // handle selection recovery correctly – especially on blocks that
+        // handle selection recovery correctly – especially on elements that
         // get moved around or split. So instead, we roll our own solution.
         if (doesSelectionNeedRecovering(selection)) {
           const prevSelection = currentEditorState._selection;
@@ -194,7 +194,7 @@ export function syncOutlineUpdateToYjs(
   provider: Provider,
   prevEditorState: EditorState,
   currEditorState: EditorState,
-  dirtyBlocks: Map<NodeKey, IntentionallyMarkedAsDirtyBlock>,
+  dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
   dirtyLeaves: Set<NodeKey>,
   normalizedNodes: Set<NodeKey>,
   tags: Set<string>,
@@ -214,7 +214,7 @@ export function syncOutlineUpdateToYjs(
         }
         return;
       }
-      if (dirtyBlocks.has('root')) {
+      if (dirtyElements.has('root')) {
         const prevNodeMap = prevEditorState._nodeMap;
         const nextOutlineRoot = getRoot();
         const collabRoot = binding.root;
@@ -227,7 +227,7 @@ export function syncOutlineUpdateToYjs(
           binding,
           nextOutlineRoot,
           prevNodeMap,
-          dirtyBlocks,
+          dirtyElements,
           dirtyLeaves,
         );
       }

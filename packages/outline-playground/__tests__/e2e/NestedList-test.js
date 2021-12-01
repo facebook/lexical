@@ -26,9 +26,9 @@ describe('Nested List', () => {
 
       await focusEditor(page);
 
-      await waitForSelector(page, '#block-controls button');
+      await waitForSelector(page, '#element-controls button');
 
-      await click(page, '#block-controls button');
+      await click(page, '#element-controls button');
 
       await waitForSelector(page, '.dropdown .icon.bullet-list');
 
@@ -105,9 +105,9 @@ describe('Nested List', () => {
 
       await focusEditor(page);
 
-      await waitForSelector(page, '#block-controls button');
+      await waitForSelector(page, '#element-controls button');
 
-      await click(page, '#block-controls button');
+      await click(page, '#element-controls button');
       await waitForSelector(page, '.dropdown .icon.bullet-list');
       await click(page, '.dropdown .icon.bullet-list');
 
@@ -116,7 +116,7 @@ describe('Nested List', () => {
         '<ul class="editor-list-ul"><li class="editor-listitem"><br></li></ul>',
       );
 
-      await click(page, '#block-controls button');
+      await click(page, '#element-controls button');
       await waitForSelector(page, '.dropdown .icon.numbered-list');
       await click(page, '.dropdown .icon.numbered-list');
 
@@ -127,7 +127,7 @@ describe('Nested List', () => {
 
       // Issue #904 Converting back to a ul from ol doesn't work properly.
 
-      // await click(page, '#block-controls button');
+      // await click(page, '#element-controls button');
       // await waitForSelector(page, '.dropdown .icon.bullet-list');
       // await click(page, '.dropdown .icon.bullet-list');
 

@@ -9,9 +9,9 @@
 
 import type {OutlineNode, NodeKey, EditorConfig} from 'outline';
 
-import {isBlockNode, isTextNode, BlockNode} from 'outline';
+import {isElementNode, isTextNode, ElementNode} from 'outline';
 
-export class ParagraphNode extends BlockNode {
+export class ParagraphNode extends ElementNode {
   static getType(): string {
     return 'paragraph';
   }
@@ -42,11 +42,11 @@ export class ParagraphNode extends BlockNode {
   // Mutation
 
   insertNewAfter(): ParagraphNode {
-    const newBlock = createParagraphNode();
+    const newElement = createParagraphNode();
     const direction = this.getDirection();
-    newBlock.setDirection(direction);
-    this.insertAfter(newBlock);
-    return newBlock;
+    newElement.setDirection(direction);
+    this.insertAfter(newElement);
+    return newElement;
   }
 
   collapseAtStart(): boolean {
@@ -55,7 +55,7 @@ export class ParagraphNode extends BlockNode {
     // If we have an empty (trimmed) first paragraph and try and remove it,
     // delete the paragraph as long as we have another sibling to go to
     if (
-      isBlockNode(sibling) &&
+      isElementNode(sibling) &&
       this.getIndexWithinParent() === 0 &&
       (children.length === 0 ||
         (isTextNode(children[0]) && children[0].getTextContent().trim() === ''))

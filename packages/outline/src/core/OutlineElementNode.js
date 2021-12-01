@@ -18,13 +18,13 @@ import {
   IS_DIRECTIONLESS,
   IS_LTR,
   IS_RTL,
-  BLOCK_TYPE_TO_FORMAT,
+  ELEMENT_TYPE_TO_FORMAT,
 } from './OutlineConstants';
 import {getNodeByKey} from './OutlineUtils';
 
-export type BlockFormatType = 'left' | 'center' | 'right' | 'justify';
+export type ElementFormatType = 'left' | 'center' | 'right' | 'justify';
 
-export class BlockNode extends OutlineNode {
+export class ElementNode extends OutlineNode {
   __children: Array<NodeKey>;
   __format: number;
   __indent: number;
@@ -65,8 +65,8 @@ export class BlockNode extends OutlineNode {
   }
   isDirty(): boolean {
     const editor = getActiveEditor();
-    const dirtyBlocks = editor._dirtyBlocks;
-    return dirtyBlocks !== null && dirtyBlocks.has(this.__key);
+    const dirtyElements = editor._dirtyElements;
+    return dirtyElements !== null && dirtyElements.has(this.__key);
   }
   getAllTextNodes(includeInert?: boolean): Array<TextNode> {
     const textNodes = [];
@@ -76,7 +76,7 @@ export class BlockNode extends OutlineNode {
       const childNode = getNodeByKey<OutlineNode>(children[i]);
       if (isTextNode(childNode) && (includeInert || !childNode.isInert())) {
         textNodes.push(childNode);
-      } else if (isBlockNode(childNode)) {
+      } else if (isElementNode(childNode)) {
         const subChildrenNodes = childNode.getAllTextNodes(includeInert);
         textNodes.push(...subChildrenNodes);
       }
@@ -86,7 +86,7 @@ export class BlockNode extends OutlineNode {
   getFirstDescendant(): null | OutlineNode {
     let node = this.getFirstChild();
     while (node !== null) {
-      if (isBlockNode(node)) {
+      if (isElementNode(node)) {
         const child = node.getFirstChild();
         if (child !== null) {
           node = child;
@@ -100,7 +100,7 @@ export class BlockNode extends OutlineNode {
   getLastDescendant(): null | OutlineNode {
     let node = this.getLastChild();
     while (node !== null) {
-      if (isBlockNode(node)) {
+      if (isElementNode(node)) {
         const child = node.getLastChild();
         if (child !== null) {
           node = child;
@@ -117,18 +117,18 @@ export class BlockNode extends OutlineNode {
     if (childrenLength === 0) {
       return this;
     }
-    // For non-empty block nodes, we resolve its descendant
-    // (either a leaf node or the bottom-most block)
+    // For non-empty element nodes, we resolve its descendant
+    // (either a leaf node or the bottom-most element)
     if (index >= childrenLength) {
       const resolvedNode = children[childrenLength - 1];
       return (
-        (isBlockNode(resolvedNode) && resolvedNode.getLastDescendant()) ||
+        (isElementNode(resolvedNode) && resolvedNode.getLastDescendant()) ||
         resolvedNode
       );
     }
     const resolvedNode = children[index];
     return (
-      (isBlockNode(resolvedNode) && resolvedNode.getFirstDescendant()) ||
+      (isElementNode(resolvedNode) && resolvedNode.getFirstDescendant()) ||
       resolvedNode
     );
   }
@@ -172,7 +172,7 @@ export class BlockNode extends OutlineNode {
     for (let i = 0; i < childrenLength; i++) {
       const child = children[i];
       textContent += child.getTextContent(includeInert, includeDirectionless);
-      if (isBlockNode(child) && i !== childrenLength - 1) {
+      if (isElementNode(child) && i !== childrenLength - 1) {
         textContent += '\n\n';
       }
     }
@@ -182,8 +182,8 @@ export class BlockNode extends OutlineNode {
     const flags = this.__flags;
     return flags & IS_LTR ? 'ltr' : flags & IS_RTL ? 'rtl' : null;
   }
-  hasFormat(type: BlockFormatType): boolean {
-    const formatFlag = BLOCK_TYPE_TO_FORMAT[type];
+  hasFormat(type: ElementFormatType): boolean {
+    const formatFlag = ELEMENT_TYPE_TO_FORMAT[type];
     return (this.getFormat() & formatFlag) !== 0;
   }
 
@@ -208,19 +208,19 @@ export class BlockNode extends OutlineNode {
         anchorOffset,
         key,
         focusOffset,
-        'block',
-        'block',
+        'element',
+        'element',
       );
     } else {
-      setPointValues(selection.anchor, key, anchorOffset, 'block');
-      setPointValues(selection.focus, key, focusOffset, 'block');
+      setPointValues(selection.anchor, key, anchorOffset, 'element');
+      setPointValues(selection.focus, key, focusOffset, 'element');
       selection.dirty = true;
     }
     return selection;
   }
   selectStart(): Selection {
     const firstNode = this.getFirstDescendant();
-    if (isBlockNode(firstNode) || isTextNode(firstNode)) {
+    if (isElementNode(firstNode) || isTextNode(firstNode)) {
       return firstNode.select(0, 0);
     }
     // Decorator or LineBreak
@@ -231,7 +231,7 @@ export class BlockNode extends OutlineNode {
   }
   selectEnd(): Selection {
     const lastNode = this.getLastDescendant();
-    if (isBlockNode(lastNode) || isTextNode(lastNode)) {
+    if (isElementNode(lastNode) || isTextNode(lastNode)) {
       return lastNode.select();
     }
     // Decorator or LineBreak
@@ -240,14 +240,14 @@ export class BlockNode extends OutlineNode {
     }
     return this.select();
   }
-  clear(): BlockNode {
+  clear(): ElementNode {
     errorOnReadOnly();
     const writableSelf = this.getWritable();
     const children = this.getChildren();
     children.forEach((child) => child.remove());
     return writableSelf;
   }
-  append(...nodesToAppend: OutlineNode[]): BlockNode {
+  append(...nodesToAppend: OutlineNode[]): ElementNode {
     errorOnReadOnly();
     const writableSelf = this.getWritable();
     const writableSelfKey = writableSelf.__key;
@@ -297,10 +297,10 @@ export class BlockNode extends OutlineNode {
     }
     return self;
   }
-  setFormat(type: BlockFormatType): this {
+  setFormat(type: ElementFormatType): this {
     errorOnReadOnly();
     const self = this.getWritable();
-    self.__format = BLOCK_TYPE_TO_FORMAT[type];
+    self.__format = ELEMENT_TYPE_TO_FORMAT[type];
     return this;
   }
   setIndent(indentLevel: number): this {
@@ -310,8 +310,8 @@ export class BlockNode extends OutlineNode {
     return this;
   }
 
-  // These are intended to be extends for specific block heuristics.
-  insertNewAfter(selection: Selection): null | BlockNode {
+  // These are intended to be extends for specific element heuristics.
+  insertNewAfter(selection: Selection): null | ElementNode {
     return null;
   }
   canInsertTab(): boolean {
@@ -343,6 +343,6 @@ export class BlockNode extends OutlineNode {
   }
 }
 
-export function isBlockNode(node: ?OutlineNode): boolean %checks {
-  return node instanceof BlockNode;
+export function isElementNode(node: ?OutlineNode): boolean %checks {
+  return node instanceof ElementNode;
 }

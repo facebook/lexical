@@ -10,10 +10,10 @@
 import type {NodeKey, EditorConfig, Selection} from 'outline';
 import type {ParagraphNode} from 'outline/ParagraphNode';
 
-import {BlockNode} from 'outline';
+import {ElementNode} from 'outline';
 import {createParagraphNode} from 'outline/ParagraphNode';
 
-export class CodeNode extends BlockNode {
+export class CodeNode extends ElementNode {
   static getType(): string {
     return 'code';
   }
@@ -71,9 +71,9 @@ export class CodeNode extends BlockNode {
       firstLinkBreak.remove();
       secondLinkBreak.remove();
     }
-    const newBlock = createParagraphNode();
-    this.insertAfter(newBlock);
-    return newBlock;
+    const newElement = createParagraphNode();
+    this.insertAfter(newElement);
+    return newElement;
   }
 
   canInsertTab(): true {

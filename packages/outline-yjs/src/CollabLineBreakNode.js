@@ -8,7 +8,7 @@
  */
 
 import type {LineBreakNode, NodeKey} from 'outline';
-import type {CollabBlockNode} from './CollabBlockNode';
+import type {CollabElementNode} from './CollabElementNode';
 import type {Map as YMap} from 'yjs';
 import type {Binding} from '.';
 
@@ -17,10 +17,10 @@ import {isLineBreakNode, getNodeByKey} from 'outline';
 export class CollabLineBreakNode {
   _map: YMap;
   _key: NodeKey;
-  _parent: CollabBlockNode;
+  _parent: CollabElementNode;
   _type: 'linebreak';
 
-  constructor(map: YMap, parent: CollabBlockNode) {
+  constructor(map: YMap, parent: CollabElementNode) {
     this._key = '';
     this._map = map;
     this._parent = parent;
@@ -49,8 +49,8 @@ export class CollabLineBreakNode {
   }
 
   getOffset(): number {
-    const collabBlockNode = this._parent;
-    return collabBlockNode.getChildOffset(this);
+    const collabElementNode = this._parent;
+    return collabElementNode.getChildOffset(this);
   }
 
   destroy(binding: Binding): void {
@@ -61,7 +61,7 @@ export class CollabLineBreakNode {
 
 export function createCollabLineBreakNode(
   map: YMap,
-  parent: CollabBlockNode,
+  parent: CollabElementNode,
 ): CollabLineBreakNode {
   const collabNode = new CollabLineBreakNode(map, parent);
   // $FlowFixMe: internal field

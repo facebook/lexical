@@ -21,7 +21,6 @@ import {
 import {TextNode, getSelection, getRoot} from '.';
 import {createEmptyEditorState} from './OutlineEditorState';
 import {LineBreakNode} from './OutlineLineBreakNode';
-import {RootNode} from './OutlineRootNode';
 import {NO_DIRTY_NODES, FULL_RECONCILE} from './OutlineConstants';
 import {flushRootMutations, initMutationObserver} from './OutlineMutations';
 import {
@@ -294,7 +293,7 @@ class BaseOutlineEditor {
     this._config = config;
     // Mapping of types to their nodes
     this._registeredNodes = new Map();
-    this.registerNodes([RootNode, TextNode, LineBreakNode]);
+    this.registerNodes([TextNode, LineBreakNode]);
     // React node decorators for portals
     this._decorators = {};
     this._pendingDecorators = null;

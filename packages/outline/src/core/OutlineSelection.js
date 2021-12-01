@@ -807,3 +807,45 @@ export function applySelectionTransforms(
     }
   }
 }
+
+export function moveSelectionPointToSibling(
+  point: PointType,
+  node: OutlineNode,
+  parent: ElementNode,
+): void {
+  let siblingKey = null;
+  let offset = 0;
+  const prevSibling = node.getPreviousSibling();
+  if (isTextNode(prevSibling)) {
+    siblingKey = prevSibling.__key;
+    offset = prevSibling.getTextContentSize();
+  } else {
+    const nextSibling = node.getNextSibling();
+    if (isTextNode(nextSibling)) {
+      siblingKey = nextSibling.__key;
+    }
+  }
+  if (siblingKey !== null) {
+    point.set(siblingKey, offset, 'text');
+  } else {
+    offset = node.getIndexWithinParent();
+    point.set(parent.__key, offset, 'element');
+  }
+}
+
+export function adjustPointOffsetForMergedSibling(
+  point: PointType,
+  isBefore: boolean,
+  key: NodeKey,
+  target: TextNode,
+  textLength: number,
+): void {
+  if (point.type === 'text') {
+    point.key = key;
+    if (!isBefore) {
+      point.offset += textLength;
+    }
+  } else if (point.offset > target.getIndexWithinParent()) {
+    point.offset -= 1;
+  }
+}

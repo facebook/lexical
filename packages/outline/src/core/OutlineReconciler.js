@@ -13,11 +13,7 @@ import type {
   EditorConfig,
   IntentionallyMarkedAsDirtyElement,
 } from './OutlineEditor';
-import type {
-  Selection as OutlineSelection,
-  PointType,
-} from './OutlineSelection';
-import type {TextNode} from './OutlineTextNode';
+import type {Selection as OutlineSelection} from './OutlineSelection';
 import type {Node as ReactNode} from 'react';
 
 import {EditorState} from './OutlineEditorState';
@@ -25,8 +21,6 @@ import {
   isSelectionWithinEditor,
   getDOMTextNode,
   cloneDecorators,
-  getCompositionKey,
-  setCompositionKey,
 } from './OutlineUtils';
 import {
   IS_INERT,
@@ -39,12 +33,11 @@ import {
   IS_ALIGN_JUSTIFY,
 } from './OutlineConstants';
 import {isDecoratorNode} from './OutlineDecoratorNode';
-import {ElementNode, isElementNode} from './OutlineElementNode';
+import {isElementNode} from './OutlineElementNode';
 import {isTextNode} from './OutlineTextNode';
 import {isLineBreakNode} from './OutlineLineBreakNode';
 import {isRootNode} from './OutlineRootNode';
 import invariant from 'shared/invariant';
-import {getActiveEditor} from './OutlineUpdates';
 
 let subTreeTextContent = '';
 let editorTextContent = '';
@@ -55,7 +48,6 @@ let activeDirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>;
 let activeDirtyLeaves: Set<NodeKey>;
 let activePrevNodeMap: NodeMap;
 let activeNextNodeMap: NodeMap;
-let activeSelection: null | OutlineSelection;
 let activePrevKeyToDOMMap: Map<NodeKey, HTMLElement>;
 
 function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
@@ -122,7 +114,7 @@ function createNode(
   parentDOM: null | HTMLElement,
   insertDOM: null | Node,
 ): HTMLElement {
-  let node = activeNextNodeMap.get(key);
+  const node = activeNextNodeMap.get(key);
   if (node === undefined) {
     invariant(false, 'createNode: node does not exist in nodeMap');
   }
@@ -151,7 +143,6 @@ function createNode(
 
   if (isElementNode(node)) {
     // Handle element children
-    node = normalizeTextNodes(node);
     flags = node.__flags;
     if (flags & IS_LTR) {
       dom.dir = 'ltr';
@@ -366,7 +357,6 @@ function reconcileNode(
 
   if (isElementNode(prevNode) && isElementNode(nextNode)) {
     // Reconcile element children
-    nextNode = normalizeTextNodes(nextNode);
     const prevFlags = prevNode.__flags;
     const nextFlags = nextNode.__flags;
     if (nextFlags & IS_LTR) {
@@ -544,7 +534,6 @@ function reconcileRoot(
   activeDirtyLeaves = dirtyLeaves;
   activePrevNodeMap = prevEditorState._nodeMap;
   activeNextNodeMap = nextEditorState._nodeMap;
-  activeSelection = selection;
   activePrevKeyToDOMMap = new Map(editor._keyToDOMMap);
   reconcileNode('root', null);
 
@@ -562,8 +551,6 @@ function reconcileRoot(
   activePrevNodeMap = undefined;
   // $FlowFixMe
   activeNextNodeMap = undefined;
-  // $FlowFixMe
-  activeSelection = undefined;
   // $FlowFixMe
   activeEditorConfig = undefined;
   // $FlowFixMe
@@ -786,320 +773,4 @@ export function getElementByKeyOrThrow(
     );
   }
   return element;
-}
-
-function adjustPointForMerge(
-  point: PointType,
-  currentKey: NodeKey,
-  startingKey: NodeKey,
-  elementKey: null | NodeKey,
-  textLength: number,
-  index: number,
-): boolean {
-  const anchorKey = point.key;
-  const anchorOffset = point.offset;
-  if (currentKey === anchorKey) {
-    point.offset = textLength + anchorOffset;
-    point.key = startingKey;
-    return true;
-  }
-  return false;
-}
-
-function mergeAdjacentTextNodes(
-  placements: Array<[TextNode, number]>,
-  anchor: null | PointType,
-  focus: null | PointType,
-): void {
-  // Merge all text nodes into the first node
-  let writableMergeToNode: TextNode = placements[0][0].getWritable();
-  const key = writableMergeToNode.__key;
-  const compositionKey = getCompositionKey();
-  const elementKey = writableMergeToNode.__parent;
-  let textLength = writableMergeToNode.getTextContentSize();
-  let selectionIsDirty = false;
-
-  for (let i = 1; i < placements.length; i++) {
-    const placement = placements[i];
-    const textNode = placement[0];
-    // Adjust the index by the current index of the placement + 1.
-    // This is because we mutate the point offsets for element offsets
-    // as we go, so we need to account for this.
-    const index = placement[1] - i + 1;
-    const siblingText = textNode.getTextContent();
-    const textNodeKey = textNode.__key;
-    if (compositionKey === textNodeKey) {
-      setCompositionKey(key);
-    }
-    if (anchor !== null) {
-      if (
-        adjustPointForMerge(
-          anchor,
-          textNodeKey,
-          key,
-          elementKey,
-          textLength,
-          index,
-        )
-      ) {
-        selectionIsDirty = true;
-      }
-    }
-    if (focus !== null) {
-      if (
-        adjustPointForMerge(
-          focus,
-          textNodeKey,
-          key,
-          elementKey,
-          textLength,
-          index,
-        )
-      ) {
-        selectionIsDirty = true;
-      }
-    }
-    writableMergeToNode = writableMergeToNode.spliceText(
-      textLength,
-      0,
-      siblingText,
-    );
-    textLength += siblingText.length;
-    textNode.remove();
-    // If we have created a node and it was dereferenced, then also
-    // remove it from out dirty nodes Set.
-    if (!activePrevNodeMap.has(textNodeKey)) {
-      activeDirtyLeaves.delete(textNodeKey);
-    }
-    activeNextNodeMap.delete(textNodeKey);
-  }
-  if (selectionIsDirty && activeSelection !== null) {
-    activeSelection.dirty = true;
-  }
-}
-
-function adjustPointForDeletion(
-  point: PointType,
-  key: NodeKey,
-  elementKey: NodeKey,
-  index: number,
-): boolean {
-  const anchorKey = point.key;
-  if (key === anchorKey) {
-    point.offset = index;
-    point.key = elementKey;
-    // $FlowFixMe: internal
-    point.type = 'element';
-    return true;
-  }
-  return false;
-}
-
-function removeStrandedEmptyTextNode(
-  placements: Array<[TextNode, number]>,
-  anchor: null | PointType,
-  focus: null | PointType,
-): void {
-  const placement = placements[0];
-  const node: TextNode = placement[0];
-  const index = placement[1];
-  const key = node.__key;
-  const elementKey = node.__parent;
-  let selectionIsDirty = false;
-
-  // We should never try and remove a node during composition.
-  // Composed nodes are also technically not really empty, they
-  // have a no break space at the end.
-  if (getCompositionKey() === key) {
-    return;
-  }
-
-  if (anchor !== null && elementKey !== null) {
-    if (adjustPointForDeletion(anchor, key, elementKey, index)) {
-      selectionIsDirty = true;
-    }
-  }
-  if (focus !== null && elementKey !== null) {
-    if (adjustPointForDeletion(focus, key, elementKey, index)) {
-      selectionIsDirty = true;
-    }
-  }
-  if (selectionIsDirty && activeSelection !== null) {
-    activeSelection.dirty = true;
-  }
-  node.remove();
-  // If we have created a node and it was dereferenced, then also
-  // remove it from out dirty nodes Set.
-  if (!activePrevNodeMap.has(key)) {
-    activeDirtyLeaves.delete(key);
-  }
-  activeNextNodeMap.delete(key);
-}
-
-function normalizeTextNodes(element: ElementNode): ElementNode {
-  const children = element.getChildren();
-  let placements: Array<[TextNode, number]> = [];
-  let lastTextNodeFlags: number | null = null;
-  let lastTextNodeFormat: number | null = null;
-  let lastTextNodeStyle: string | null = null;
-  let anchor = null;
-  let focus = null;
-  let lastTextNodeWasEmpty = false;
-
-  if (activeSelection !== null) {
-    anchor = activeSelection.anchor;
-    focus = activeSelection.focus;
-  }
-
-  let removedNodes = 0;
-  for (let i = 0; i < children.length; i++) {
-    const child = children[i];
-    const index = i - removedNodes;
-
-    if (isTextNode(child) && child.isSimpleText() && !child.isUnmergeable()) {
-      const flags = child.__flags;
-      const format = child.__format;
-      const style = child.__style;
-
-      if (
-        (lastTextNodeFlags === null || flags === lastTextNodeFlags) &&
-        (lastTextNodeFormat === null || format === lastTextNodeFormat) &&
-        (lastTextNodeStyle === null || style === lastTextNodeStyle)
-      ) {
-        placements.push([child, index]);
-      } else {
-        if (placements.length > 1) {
-          mergeAdjacentTextNodes(placements, anchor, focus);
-        } else if (lastTextNodeWasEmpty) {
-          removeStrandedEmptyTextNode(placements, anchor, focus);
-          removedNodes++;
-        }
-        placements = [[child, index]];
-      }
-      lastTextNodeWasEmpty = child.__text === '';
-      lastTextNodeFlags = flags;
-      lastTextNodeFormat = format;
-      lastTextNodeStyle = style;
-    } else {
-      if (placements.length > 1) {
-        mergeAdjacentTextNodes(placements, anchor, focus);
-      } else if (lastTextNodeWasEmpty) {
-        removeStrandedEmptyTextNode(placements, anchor, focus);
-        removedNodes++;
-      }
-      lastTextNodeWasEmpty = false;
-      placements = [];
-      lastTextNodeFlags = null;
-      lastTextNodeFormat = null;
-      lastTextNodeStyle = null;
-    }
-  }
-  if (placements.length > 1) {
-    mergeAdjacentTextNodes(placements, anchor, focus);
-  } else if (lastTextNodeWasEmpty) {
-    removeStrandedEmptyTextNode(placements, anchor, focus);
-  }
-  return element.getLatest();
-}
-
-function canSimpleTextNodesBeMerged(node1: TextNode, node2: TextNode): boolean {
-  const node1Flags = node1.__flags;
-  const node1Format = node1.__format;
-  const node1Style = node1.__style;
-  const node2Flags = node2.__flags;
-  const node2Format = node2.__format;
-  const node2Style = node2.__style;
-  return (
-    (node1Flags === null || node1Flags === node2Flags) &&
-    (node1Format === null || node1Format === node2Format) &&
-    (node1Style === null || node1Style === node2Style)
-  );
-}
-
-function mergeTextNodes(
-  node1: TextNode,
-  node2: TextNode,
-  selection: null | OutlineSelection,
-) {
-  const node1Key = node1.__key;
-  const node2Key = node2.__key;
-  const node1Text = node1.__text;
-  const node1TextLength = node1Text.length;
-  const writableNode1 = node1.getWritable();
-  const compositionKey = getCompositionKey();
-  if (selection !== null) {
-    const anchor = selection.anchor;
-    const focus = selection.focus;
-    const parent = node1.getParent();
-    const parentKey = parent !== null ? parent.__key : null;
-    adjustPointForMerge(
-      anchor,
-      node2Key,
-      node1Key,
-      parentKey,
-      node1TextLength,
-      0,
-    );
-    adjustPointForMerge(
-      focus,
-      node2Key,
-      node1Key,
-      parentKey,
-      node1TextLength,
-      0,
-    );
-  }
-  if (compositionKey === node2Key) {
-    setCompositionKey(node1Key);
-  }
-  const normalizedNodes = getActiveEditor()._normalizedNodes;
-  normalizedNodes.add(node1Key);
-  normalizedNodes.add(node2Key);
-  writableNode1.setTextContent(node1Text + node2.__text);
-  node2.remove();
-  return writableNode1;
-}
-
-export function normalizeTextNode(
-  textNode: TextNode,
-  selection: null | OutlineSelection,
-) {
-  if (!textNode.isSimpleText() || textNode.isUnmergeable()) {
-    return;
-  }
-  let node = textNode;
-  // Backward
-  let previousNode;
-  while (
-    (previousNode = node.getPreviousSibling()) !== null &&
-    isTextNode(previousNode) &&
-    previousNode.isSimpleText() &&
-    !previousNode.isUnmergeable()
-  ) {
-    if (previousNode.__text === '') {
-      previousNode.remove();
-    } else if (canSimpleTextNodesBeMerged(node, previousNode)) {
-      node = mergeTextNodes(previousNode, node, selection);
-      break;
-    } else {
-      break;
-    }
-  }
-  // Forward
-  let nextNode;
-  while (
-    (nextNode = node.getNextSibling()) !== null &&
-    isTextNode(nextNode) &&
-    nextNode.isSimpleText() &&
-    !nextNode.isUnmergeable()
-  ) {
-    if (nextNode.__text === '') {
-      nextNode.remove();
-    } else if (canSimpleTextNodesBeMerged(node, nextNode)) {
-      node = mergeTextNodes(node, nextNode, selection);
-      break;
-    } else {
-      break;
-    }
-  }
 }

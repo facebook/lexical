@@ -8,7 +8,7 @@
  */
 
 import type {EditorConfig} from './OutlineEditor';
-import type {Selection, PointType} from './OutlineSelection';
+import type {Selection} from './OutlineSelection';
 
 import {
   isElementNode,
@@ -42,6 +42,7 @@ import {
   getSelection,
   moveSelectionPointToEnd,
   updateElementSelectionOnCreateDeleteNode,
+  moveSelectionPointToSibling,
 } from './OutlineSelection';
 
 export type NodeMap = Map<NodeKey, OutlineNode>;
@@ -61,11 +62,11 @@ export function removeNode(
   if (selection !== null && restoreSelection) {
     const anchor = selection.anchor;
     const focus = selection.focus;
-    if (anchor !== null && anchor.key === key) {
+    if (anchor.key === key) {
       moveSelectionPointToSibling(anchor, nodeToRemove, parent);
       selectionMoved = true;
     }
-    if (focus !== null && focus.key === key) {
+    if (focus.key === key) {
       moveSelectionPointToSibling(focus, nodeToRemove, parent);
       selectionMoved = true;
     }
@@ -91,31 +92,6 @@ export function removeNode(
     parent.getChildrenSize() === 0
   ) {
     removeNode(parent, restoreSelection);
-  }
-}
-
-function moveSelectionPointToSibling(
-  point: PointType,
-  node: OutlineNode,
-  parent: ElementNode,
-): void {
-  let siblingKey = null;
-  let offset = 0;
-  const prevSibling = node.getPreviousSibling();
-  if (isTextNode(prevSibling)) {
-    siblingKey = prevSibling.__key;
-    offset = prevSibling.getTextContentSize();
-  } else {
-    const nextSibling = node.getNextSibling();
-    if (isTextNode(nextSibling)) {
-      siblingKey = nextSibling.__key;
-    }
-  }
-  if (siblingKey !== null) {
-    point.set(siblingKey, offset, 'text');
-  } else {
-    offset = node.getIndexWithinParent();
-    point.set(parent.__key, offset, 'element');
   }
 }
 
@@ -660,13 +636,15 @@ export class OutlineNode {
       updateDirectionIfNeeded(writableReplaceWith);
     }
     const selection = getSelection();
-    const anchor = selection && selection.anchor;
-    const focus = selection && selection.focus;
-    if (anchor !== null && anchor.key === toReplaceKey) {
-      moveSelectionPointToEnd(anchor, writableReplaceWith);
-    }
-    if (focus !== null && focus.key === toReplaceKey) {
-      moveSelectionPointToEnd(focus, writableReplaceWith);
+    if (selection !== null) {
+      const anchor = selection.anchor;
+      const focus = selection.focus;
+      if (anchor.key === toReplaceKey) {
+        moveSelectionPointToEnd(anchor, writableReplaceWith);
+      }
+      if (focus.key === toReplaceKey) {
+        moveSelectionPointToEnd(focus, writableReplaceWith);
+      }
     }
     if (getCompositionKey() === toReplaceKey) {
       setCompositionKey(newKey);

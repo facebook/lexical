@@ -16,6 +16,7 @@ import {
   getSelection,
   makeSelection,
   updateElementSelectionOnCreateDeleteNode,
+  adjustPointOffsetForMergedSibling,
 } from './OutlineSelection';
 import {
   getCompositionKey,
@@ -600,6 +601,52 @@ export class TextNode extends OutlineNode {
     }
 
     return splitNodes;
+  }
+  mergeWithSibling(target: TextNode): void {
+    const isBefore = target === this.getPreviousSibling();
+    if (!isBefore && target !== this.getNextSibling()) {
+      invariant(
+        false,
+        'mergeWithSibling: sibling must be a previous or next sibling',
+      );
+    }
+    const key = this.__key;
+    const targetKey = target.__key;
+    const text = this.__text;
+    const textLength = text.length;
+    const compositionKey = getCompositionKey();
+
+    if (compositionKey === targetKey) {
+      setCompositionKey(key);
+    }
+    const selection = getSelection();
+
+    if (selection !== null) {
+      const anchor = selection.anchor;
+      const focus = selection.focus;
+      if (anchor !== null && anchor.key === targetKey) {
+        adjustPointOffsetForMergedSibling(
+          anchor,
+          isBefore,
+          key,
+          target,
+          textLength,
+        );
+        selection.dirty = true;
+      }
+      if (focus !== null && focus.key === targetKey) {
+        adjustPointOffsetForMergedSibling(
+          focus,
+          isBefore,
+          key,
+          target,
+          textLength,
+        );
+        selection.dirty = true;
+      }
+    }
+    this.setTextContent(text + target.__text);
+    target.remove();
   }
 }
 

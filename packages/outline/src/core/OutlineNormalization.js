@@ -1,0 +1,78 @@
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow strict
+ */
+
+import type {TextNode} from './OutlineTextNode';
+
+import {isTextNode} from './OutlineTextNode';
+import {getActiveEditor} from './OutlineUpdates';
+
+function canSimpleTextNodesBeMerged(node1: TextNode, node2: TextNode): boolean {
+  const node1Flags = node1.__flags;
+  const node1Format = node1.__format;
+  const node1Style = node1.__style;
+  const node2Flags = node2.__flags;
+  const node2Format = node2.__format;
+  const node2Style = node2.__style;
+  return (
+    (node1Flags === null || node1Flags === node2Flags) &&
+    (node1Format === null || node1Format === node2Format) &&
+    (node1Style === null || node1Style === node2Style)
+  );
+}
+
+function mergeTextNodes(node1: TextNode, node2: TextNode) {
+  node1.mergeWithSibling(node2);
+  const normalizedNodes = getActiveEditor()._normalizedNodes;
+  normalizedNodes.add(node1.__key);
+  normalizedNodes.add(node2.__key);
+  return node1.getLatest();
+}
+
+export function normalizeTextNode(textNode: TextNode) {
+  let node = textNode;
+  if (node.__text === '' && node.isSimpleText() && !node.isUnmergeable()) {
+    node.remove();
+    return;
+  }
+  // Backward
+  let previousNode;
+
+  while (
+    (previousNode = node.getPreviousSibling()) !== null &&
+    isTextNode(previousNode) &&
+    previousNode.isSimpleText() &&
+    !previousNode.isUnmergeable()
+  ) {
+    if (previousNode.__text === '') {
+      previousNode.remove();
+    } else if (canSimpleTextNodesBeMerged(previousNode, node)) {
+      node = mergeTextNodes(previousNode, node);
+      break;
+    } else {
+      break;
+    }
+  }
+  // Forward
+  let nextNode;
+  while (
+    (nextNode = node.getNextSibling()) !== null &&
+    isTextNode(nextNode) &&
+    nextNode.isSimpleText() &&
+    !nextNode.isUnmergeable()
+  ) {
+    if (nextNode.__text === '') {
+      nextNode.remove();
+    } else if (canSimpleTextNodesBeMerged(node, nextNode)) {
+      node = mergeTextNodes(node, nextNode);
+      break;
+    } else {
+      break;
+    }
+  }
+}

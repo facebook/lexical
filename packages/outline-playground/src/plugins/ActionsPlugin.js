@@ -12,12 +12,13 @@ import PlaygroundEditorContext from '../context/PlaygroundEditorContext';
 import {useEditorContext} from 'outline-react/OutlineEditorContext';
 import {useCollaborationContext} from '../context/CollaborationContext';
 import {useEffect, useState} from 'react';
-import {log, isElementNode, getSelection, createEditorStateRef} from 'outline';
+import {log, isElementNode, getSelection, createEditorStateRef, getRoot, createTextNode} from 'outline';
 import {isListItemNode} from 'outline/ListItemNode';
 import {ImageNode, createImageNode} from '../nodes/ImageNode';
 import {insertNodes} from 'outline/selection';
 import yellowFlowerImage from '../images/image/yellow-flower.jpg';
 import useOutlineNestedList from 'outline-react/useOutlineNestedList';
+import { createParagraphNode } from "outline/ParagraphNode";
 
 function createUID(): string {
   return Math.random()
@@ -140,6 +141,22 @@ export default function ActionsPlugins({
     <div className="actions">
       {isRichText && (
         <>
+                  <button className="action-button outdent" onClick={() => {
+                    editor.focus(() => {
+                      editor.update(() => {
+                        const root = getRoot();
+                        for (let i = 0; i < 10000; i ++) {
+                          const paragraph = createParagraphNode();
+                          const text = createTextNode(i + 1 + '');
+                          text.select();
+                          paragraph.append(text);
+                          root.append(paragraph)
+                        }
+                      })
+                    })
+                  }}>
+            <i className="outdent" />
+          </button>
           <button className="action-button outdent" onClick={applyOutdent}>
             <i className="outdent" />
           </button>

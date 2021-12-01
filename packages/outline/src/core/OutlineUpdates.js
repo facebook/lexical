@@ -19,7 +19,7 @@ import type {OutlineNode, NodeKey} from './OutlineNode';
 import type {Selection} from './OutlineSelection';
 import type {ParsedNode, NodeParserState} from './OutlineParsing';
 
-import {normalizeTextNode, updateEditorState} from './OutlineReconciler';
+import {updateEditorState} from './OutlineReconciler';
 import {
   createSelection,
   getSelection,
@@ -54,6 +54,7 @@ import {
 import {internalCreateNodeFromParse} from './OutlineParsing';
 import {applySelectionTransforms} from './OutlineSelection';
 import {isTextNode} from '.';
+import {normalizeTextNode} from './OutlineNormalization';
 import invariant from 'shared/invariant';
 
 let activeEditorState: null | EditorState = null;
@@ -174,7 +175,6 @@ function normalizeAllDirtyTextNodes(
   editorState: EditorState,
   editor: OutlineEditor,
 ): void {
-  const selection = editorState._selection;
   const dirtyLeaves = editor._dirtyLeaves;
   const nodeMap = editorState._nodeMap;
   const dirtyLeavesLength = dirtyLeaves.size;
@@ -183,7 +183,7 @@ function normalizeAllDirtyTextNodes(
     const nodeKey = dDirtyLeavesArr[i];
     const node = nodeMap.get(nodeKey);
     if (isTextNode(node) && node.isSimpleText() && !node.isUnmergeable()) {
-      normalizeTextNode(node, selection);
+      normalizeTextNode(node);
     }
   }
 }
@@ -202,7 +202,6 @@ function applyAllTransforms(
   editorState: EditorState,
   editor: OutlineEditor,
 ): void {
-  const selection = editorState._selection;
   const dirtyLeaves = editor._dirtyLeaves;
   const dirtyElements = editor._dirtyElements;
   const nodeMap = editorState._nodeMap;
@@ -225,7 +224,7 @@ function applyAllTransforms(
         const nodeKey = untransformedDirtyLeavesArr[i];
         const node = nodeMap.get(nodeKey);
         if (isTextNode(node) && node.isSimpleText() && !node.isUnmergeable()) {
-          normalizeTextNode(node, selection);
+          normalizeTextNode(node);
         }
         if (
           node !== undefined &&

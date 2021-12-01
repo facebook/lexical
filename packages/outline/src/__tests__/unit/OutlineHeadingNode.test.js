@@ -13,7 +13,7 @@ import {
 } from 'outline/HeadingNode';
 import {ParagraphNode} from 'outline/ParagraphNode';
 import {initializeUnitTest} from '../utils';
-import {getRoot} from 'outline';
+import {createTextNode, getRoot} from 'outline';
 
 const editorConfig = Object.freeze({
   theme: {
@@ -115,6 +115,30 @@ describe('OutlineHeadingNode tests', () => {
         const headingNode = new HeadingNode();
         expect(isHeadingNode(headingNode)).toBe(true);
       });
+    });
+
+    test('creates a h2 with text and can insert a new paragraph after', async () => {
+      const {editor} = testEnv;
+      let headingNode;
+      const text = 'hello world';
+      await editor.update(() => {
+        const root = getRoot();
+        headingNode = new HeadingNode('h2');
+        root.append(headingNode);
+        const textNode = createTextNode(text);
+        headingNode.append(textNode);
+      });
+      expect(testEnv.outerHTML).toBe(
+        `<div contenteditable=\"true\" data-outline-editor=\"true\"><h2><span data-outline-text=\"true\">${text}</span></h2></div>`,
+      );
+      await editor.update((state) => {
+        const result = headingNode.insertNewAfter();
+        expect(result).toBeInstanceOf(ParagraphNode);
+        expect(result.getDirection()).toEqual(headingNode.getDirection());
+      });
+      expect(testEnv.outerHTML).toBe(
+        `<div contenteditable=\"true\" data-outline-editor=\"true\"><h2><span data-outline-text=\"true\">${text}</span></h2><p><br></p></div>`,
+      );
     });
   });
 });

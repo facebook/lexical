@@ -27,12 +27,12 @@ import {log, getSelection} from 'outline';
 
 function DropdownList({
   editor,
-  elementType,
+  blockType,
   elementControlsRef,
   setShowDropDown,
 }: {
   editor: OutlineEditor,
-  elementType: string,
+  blockType: string,
   elementControlsRef: {current: null | HTMLElement},
   setShowDropDown: (boolean) => void,
 }): React$Node {
@@ -72,7 +72,7 @@ function DropdownList({
   }, [elementControlsRef, setShowDropDown]);
 
   const formatParagraph = () => {
-    if (elementType !== 'paragraph') {
+    if (blockType !== 'paragraph') {
       editor.update(() => {
         log('formatParagraph');
         const selection = getSelection();
@@ -86,7 +86,7 @@ function DropdownList({
   };
 
   const formatLargeHeading = () => {
-    if (elementType !== 'h1') {
+    if (blockType !== 'h1') {
       editor.update(() => {
         log('formatLargeHeading');
         const selection = getSelection();
@@ -100,7 +100,7 @@ function DropdownList({
   };
 
   const formatSmallHeading = () => {
-    if (elementType !== 'h2') {
+    if (blockType !== 'h2') {
       editor.update((state) => {
         log('formatSmallHeading');
         const selection = getSelection();
@@ -114,7 +114,7 @@ function DropdownList({
   };
 
   const formatBulletList = () => {
-    if (elementType !== 'ul') {
+    if (blockType !== 'ul') {
       editor.update((state) => {
         log('formatBulletList');
         const selection = getSelection();
@@ -132,7 +132,7 @@ function DropdownList({
   };
 
   const formatNumberedList = () => {
-    if (elementType !== 'ol') {
+    if (blockType !== 'ol') {
       editor.update((state) => {
         log('formatNumberedList');
         const selection = getSelection();
@@ -150,7 +150,7 @@ function DropdownList({
   };
 
   const formatQuote = () => {
-    if (elementType !== 'quote') {
+    if (blockType !== 'quote') {
       editor.update((state) => {
         log('formatQuote');
         const selection = getSelection();
@@ -164,7 +164,7 @@ function DropdownList({
   };
 
   const formatCode = () => {
-    if (elementType !== 'code') {
+    if (blockType !== 'code') {
       editor.update((state) => {
         log('formatCode');
         const selection = getSelection();
@@ -182,48 +182,48 @@ function DropdownList({
       <button className="item" onClick={formatParagraph}>
         <span className="icon paragraph" />
         <span className="text">Normal</span>
-        {elementType === 'paragraph' && <span className="active" />}
+        {blockType === 'paragraph' && <span className="active" />}
       </button>
       <button className="item" onClick={formatLargeHeading}>
         <span className="icon large-heading" />
         <span className="text">Large Heading</span>
-        {elementType === 'h1' && <span className="active" />}
+        {blockType === 'h1' && <span className="active" />}
       </button>
       <button className="item" onClick={formatSmallHeading}>
         <span className="icon small-heading" />
         <span className="text">Small Heading</span>
-        {elementType === 'h2' && <span className="active" />}
+        {blockType === 'h2' && <span className="active" />}
       </button>
       <button className="item" onClick={formatBulletList}>
         <span className="icon bullet-list" />
         <span className="text">Bullet List</span>
-        {elementType === 'ul' && <span className="active" />}
+        {blockType === 'ul' && <span className="active" />}
       </button>
       <button className="item" onClick={formatNumberedList}>
         <span className="icon numbered-list" />
         <span className="text">Numbered List</span>
-        {elementType === 'ol' && <span className="active" />}
+        {blockType === 'ol' && <span className="active" />}
       </button>
       <button className="item" onClick={formatQuote}>
         <span className="icon quote" />
         <span className="text">Quote</span>
-        {elementType === 'quote' && <span className="active" />}
+        {blockType === 'quote' && <span className="active" />}
       </button>
       <button className="item" onClick={formatCode}>
         <span className="icon code" />
         <span className="text">Code Block</span>
-        {elementType === 'code' && <span className="active" />}
+        {blockType === 'code' && <span className="active" />}
       </button>
     </div>
   );
 }
 
-export default function ElementControlsPlugin(): React$Node {
+export default function BlockControlsPlugin(): React$Node {
   const [editor] = useEditorContext(PlaygroundEditorContext);
   const [selectedElementKey, setSelectedElementKey] = useState(null);
   const [position, setPosition] = useState(0);
   const [editorPosition, setEditorPosition] = useState(0);
-  const [elementType, setElementType] = useState('paragraph');
+  const [blockType, setBlockType] = useState('paragraph');
   const [showDropDown, setShowDropDown] = useState(false);
   const elementControlsRef = useRef(null);
 
@@ -256,7 +256,7 @@ export default function ElementControlsPlugin(): React$Node {
                 isHeadingNode(element) || isListNode(element)
                   ? element.getTag()
                   : element.getType();
-              setElementType(type);
+              setBlockType(type);
             }
           }
         }
@@ -266,21 +266,18 @@ export default function ElementControlsPlugin(): React$Node {
 
   return selectedElementKey !== null ? (
     <>
-      <div
-        id="element-controls"
-        style={{top: position}}
-        ref={elementControlsRef}>
+      <div id="block-controls" style={{top: position}} ref={elementControlsRef}>
         <button
           onClick={() => setShowDropDown(!showDropDown)}
           aria-label="Formatting Options">
-          <span className={'element-type ' + elementType} />
+          <span className={'block-type ' + blockType} />
         </button>
       </div>
       {showDropDown &&
         createPortal(
           <DropdownList
             editor={editor}
-            elementType={elementType}
+            blockType={blockType}
             elementControlsRef={elementControlsRef}
             setShowDropDown={setShowDropDown}
           />,

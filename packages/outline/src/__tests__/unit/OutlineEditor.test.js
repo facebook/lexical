@@ -1146,7 +1146,6 @@ describe('OutlineEditor tests', () => {
       ParagraphNode,
       emptyTransform,
     );
-    const removeRootTransform = editor.addTransform(RootNode, emptyTransform);
     await editor.update(() => {
       const root = getRoot();
       const paragraph = createParagraphNode();
@@ -1154,7 +1153,6 @@ describe('OutlineEditor tests', () => {
     });
     removeTextTransform();
     removeParagraphTransform();
-    removeRootTransform();
   });
 
   it('registers node type', () => {

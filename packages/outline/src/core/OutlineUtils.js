@@ -25,12 +25,7 @@ import {
   TEXT_TYPE_TO_FORMAT,
   HAS_DIRTY_NODES,
 } from './OutlineConstants';
-import {
-  isTextNode,
-  isElementNode,
-  isLineBreakNode,
-  isDecoratorNode,
-} from '.';
+import {isTextNode, isElementNode, isLineBreakNode, isDecoratorNode} from '.';
 import {
   errorOnInfiniteTransforms,
   errorOnReadOnly,

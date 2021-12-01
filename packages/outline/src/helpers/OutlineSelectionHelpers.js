@@ -1164,16 +1164,36 @@ export function insertRichText(selection: Selection, text: string): void {
   } else {
     const nodes = [];
     const length = parts.length;
+    const anchor = selection.anchor;
+    // $FlowFixMe: we can assert this from the logic below
+    const fastPathElement: ElementNode = anchor.getNode();
+    const canUseFastPath =
+      selection.isCollapsed() &&
+      anchor.type === 'element' &&
+      fastPathElement.getChildrenSize() === 0;
+
     for (let i = 0; i < length; i++) {
       const part = parts[i];
       if (part !== '') {
-        nodes.push(createTextNode(part));
+        const textNode = createTextNode(part);
+        if (canUseFastPath) {
+          fastPathElement.append(textNode);
+        } else {
+          nodes.push(textNode);
+        }
       }
       if (i !== length - 1) {
-        nodes.push(createLineBreakNode());
+        const lineBreakNode = createLineBreakNode();
+        if (canUseFastPath) {
+          fastPathElement.append(lineBreakNode);
+        } else {
+          nodes.push(lineBreakNode);
+        }
       }
     }
-    insertNodes(selection, nodes);
+    if (!canUseFastPath) {
+      insertNodes(selection, nodes);
+    }
   }
 }
 

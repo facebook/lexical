@@ -19,7 +19,7 @@ import HashtagsPlugin from './plugins/HashtagsPlugin';
 import KeywordsPlugin from './plugins/KeywordsPlugin';
 import ActionsPlugin from './plugins/ActionsPlugin';
 import AutoFormatterPlugin from './plugins/AutoFormatterPlugin';
-import ElementControlsPlugin from './plugins/ElementControlsPlugin';
+import BlockControlsPlugin from './plugins/BlockControlsPlugin';
 import FloatingToolbarPlugin from './plugins/FloatingToolbarPlugin';
 
 type Props = {
@@ -47,7 +47,7 @@ export default function Editor({
         <>
           {isCollab ? <RichTextCollabPlugin id="main" /> : <RichTextPlugin />}
           <AutoFormatterPlugin />
-          <ElementControlsPlugin />
+          <BlockControlsPlugin />
           <FloatingToolbarPlugin />
         </>
       ) : (

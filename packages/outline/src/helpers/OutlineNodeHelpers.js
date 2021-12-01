@@ -15,7 +15,7 @@ import type {State} from 'outline';
 import {isListNode} from 'outline/ListNode';
 import {isListItemNode} from 'outline/ListItemNode';
 import invariant from 'shared/invariant';
-import {isElementNode, createTextNode, BlockNode} from 'outline';
+import {isElementNode, createTextNode, ElementNode} from 'outline';
 import type {TableNode} from 'outline/TableNode';
 import {createTableNode} from 'outline/TableNode';
 import {createTableRowNode} from 'outline/TableRowNode';
@@ -89,14 +89,14 @@ export type DOMNodeToOutlineConversionMap = {
 export function getTopLevelBlockNode(
   node: OutlineNode,
   state: State,
-): BlockNode {
+): ElementNode {
   let curr = node;
 
   while (curr != null && curr.getParent() !== state.getRoot()) {
     curr = curr.getParent();
   }
 
-  if (curr instanceof BlockNode) {
+  if (curr instanceof ElementNode) {
     return curr;
   }
 

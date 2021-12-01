@@ -9,9 +9,9 @@
 
 import type {OutlineNode, NodeKey, EditorConfig} from 'outline';
 
-import {BlockNode} from 'outline';
+import {ElementNode} from 'outline';
 
-export class TableCellNode extends BlockNode {
+export class TableCellNode extends ElementNode {
   __isHeader: boolean;
 
   static getType(): string {

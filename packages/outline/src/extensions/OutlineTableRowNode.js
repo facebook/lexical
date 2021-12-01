@@ -9,9 +9,9 @@
 
 import type {EditorConfig, OutlineNode, NodeKey} from 'outline';
 
-import {BlockNode} from 'outline';
+import {ElementNode} from 'outline';
 
-export class TableRowNode extends BlockNode {
+export class TableRowNode extends ElementNode {
   static getType(): string {
     return 'table-row';
   }

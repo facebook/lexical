@@ -72,6 +72,7 @@ function getMergeAction(
   dirtyLeavesSet: Set<NodeKey>,
   dirtyBlocksSet: Map<NodeKey, IntentionallyMarkedAsDirtyBlock>,
   tags: Set<string>,
+  canMergeWithinDelay: boolean,
 ): 0 | 1 | 2 {
   // If we have an editor state that doesn't want its history
   // recorded then we always merge the changes.
@@ -95,7 +96,7 @@ function getMergeAction(
     dirtyLeavesSet,
     dirtyBlocksSet,
   );
-  if (dirtyNodes.length === 1) {
+  if (dirtyNodes.length === 1 && canMergeWithinDelay) {
     const prevNodeMap = prevEditorState._nodeMap;
     const nextDirtyNode = dirtyNodes[0];
     const prevDirtyNodeKey = nextDirtyNode.__key;
@@ -144,6 +145,7 @@ function getMergeAction(
 export function useOutlineHistory(
   editor: OutlineEditor,
   externalHistoryState?: HistoryState,
+  delay?: number = 1000,
 ): () => void {
   const historyState: HistoryState = useMemo(
     () => externalHistoryState || createEmptyHistoryState(),
@@ -151,6 +153,14 @@ export function useOutlineHistory(
   );
 
   useEffect(() => {
+    let lastChangeTime = Date.now();
+    const canMergeWithinDelay = (): boolean => {
+      const changeTime = Date.now();
+      const canMerge = changeTime < lastChangeTime + delay;
+      lastChangeTime = changeTime;
+      return canMerge;
+    };
+
     const applyChange = ({editorState, dirtyLeaves, dirtyBlocks, tags}) => {
       const current = historyState.current;
       const redoStack = historyState.redoStack;
@@ -166,6 +176,7 @@ export function useOutlineHistory(
         dirtyLeaves,
         dirtyBlocks,
         tags,
+        canMergeWithinDelay(),
       );
       if (mergeAction === NO_MERGE) {
         if (redoStack.length !== 0) {
@@ -267,7 +278,7 @@ export function useOutlineHistory(
       removeUpdateListener();
       removeRootListener();
     };
-  }, [historyState, editor]);
+  }, [delay, editor, historyState]);
 
   const clearHistory = useCallback(() => {
     historyState.undoStack = [];

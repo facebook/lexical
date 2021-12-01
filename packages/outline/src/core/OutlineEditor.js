@@ -21,9 +21,9 @@ import {
 import {TextNode, getSelection, getRoot} from '.';
 import {createEmptyEditorState} from './OutlineEditorState';
 import {LineBreakNode} from './OutlineLineBreakNode';
-import {RootNode} from './OutlineRootNode';
 import {NO_DIRTY_NODES, FULL_RECONCILE} from './OutlineConstants';
 import {flushRootMutations, initMutationObserver} from './OutlineMutations';
+import {RootNode} from './OutlineRootNode';
 import {
   generateRandomKey,
   getEditorStateTextContent,

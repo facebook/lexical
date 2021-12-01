@@ -16,7 +16,6 @@ import {
   createTextNode,
   TextNode,
   ElementNode,
-  RootNode,
   getRoot,
   setCompositionKey,
   getSelection,
@@ -32,6 +31,7 @@ import {
   createTestEditor,
 } from '../utils';
 import {LineBreakNode} from '../../core/OutlineLineBreakNode';
+import {RootNode} from '../../core/OutlineRootNode'; 
 
 describe('OutlineEditor tests', () => {
   let container = null;

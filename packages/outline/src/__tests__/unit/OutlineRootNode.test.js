@@ -5,7 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {createRootNode, isRootNode, RootNode} from 'outline';
+import {isRootNode} from 'outline';
+import {createRootNode, RootNode} from '../../core/OutlineRootNode';
 
 import {initializeUnitTest} from '../utils';
 

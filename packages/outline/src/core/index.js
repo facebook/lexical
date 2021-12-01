@@ -27,11 +27,12 @@ export type {
 export type {OutlineRef, EditorStateRef} from './OutlineReference';
 export type {TextFormatType} from './OutlineTextNode';
 export type {LineBreakNode} from './OutlineLineBreakNode';
+export type {RootNode} from './OutlineRootNode';
 
 import {createEditor} from './OutlineEditor';
 import {createTextNode, isTextNode, TextNode} from './OutlineTextNode';
 import {isElementNode, ElementNode} from './OutlineElementNode';
-import {createRootNode, isRootNode, RootNode} from './OutlineRootNode';
+import {isRootNode} from './OutlineRootNode';
 import {createLineBreakNode, isLineBreakNode} from './OutlineLineBreakNode';
 import {DecoratorNode, isDecoratorNode} from './OutlineDecoratorNode';
 import {
@@ -58,7 +59,6 @@ export {
   createEditor,
   ElementNode,
   DecoratorNode,
-  RootNode,
   TextNode,
   // Ref
   createEditorStateRef,
@@ -72,7 +72,6 @@ export {
   isTextNode,
   // Used during read/update/transform
   createLineBreakNode,
-  createRootNode,
   createTextNode,
   createNodeFromParse,
   createSelection,

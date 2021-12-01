@@ -252,6 +252,9 @@ function applyAllTransforms(
     );
     for (let i = 0; i < untransformedDirtyElementsLength; i++) {
       const nodeKey = untransformedDirtyElementsArr[i][0];
+      if (nodeKey === 'root') {
+        continue;
+      }
       const nodeIntentionallyMarkedAsDirty =
         untransformedDirtyElementsArr[i][1];
       const node = nodeMap.get(nodeKey);

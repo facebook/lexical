@@ -16,7 +16,6 @@ import {
   createTextNode,
   TextNode,
   ElementNode,
-  RootNode,
   getRoot,
   setCompositionKey,
   getSelection,
@@ -32,6 +31,7 @@ import {
   createTestEditor,
 } from '../utils';
 import {LineBreakNode} from '../../core/OutlineLineBreakNode';
+import {RootNode} from '../../core/OutlineRootNode'; 
 
 describe('OutlineEditor tests', () => {
   let container = null;
@@ -1146,7 +1146,6 @@ describe('OutlineEditor tests', () => {
       ParagraphNode,
       emptyTransform,
     );
-    const removeRootTransform = editor.addTransform(RootNode, emptyTransform);
     await editor.update(() => {
       const root = getRoot();
       const paragraph = createParagraphNode();
@@ -1154,7 +1153,6 @@ describe('OutlineEditor tests', () => {
     });
     removeTextTransform();
     removeParagraphTransform();
-    removeRootTransform();
   });
 
   it('registers node type', () => {

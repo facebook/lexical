@@ -12,6 +12,7 @@ import type {
   IntentionallyMarkedAsDirtyElement,
   RegisteredNode,
 } from './OutlineEditor';
+import type {RootNode} from './OutlineRootNode';
 import type {OutlineNode, NodeKey, NodeMap} from './OutlineNode';
 import type {TextFormatType} from './OutlineTextNode';
 import type {Node as ReactNode} from 'react';
@@ -24,13 +25,7 @@ import {
   TEXT_TYPE_TO_FORMAT,
   HAS_DIRTY_NODES,
 } from './OutlineConstants';
-import {
-  isTextNode,
-  isElementNode,
-  isLineBreakNode,
-  isDecoratorNode,
-  RootNode,
-} from '.';
+import {isTextNode, isElementNode, isLineBreakNode, isDecoratorNode} from '.';
 import {
   errorOnInfiniteTransforms,
   errorOnReadOnly,

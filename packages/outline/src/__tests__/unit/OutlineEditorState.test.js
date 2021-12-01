@@ -6,10 +6,11 @@
  *
  */
 
-import {createRootNode, createTextNode, getRoot} from 'outline';
+import {createTextNode, getRoot} from 'outline';
 import {createParagraphNode} from 'outline/ParagraphNode';
 import {EditorState} from '../../core/OutlineEditorState';
 import {initializeUnitTest} from '../utils';
+import {createRootNode} from '../../core/OutlineRootNode';
 
 describe('OutlineEditorState tests', () => {
   initializeUnitTest((testEnv) => {

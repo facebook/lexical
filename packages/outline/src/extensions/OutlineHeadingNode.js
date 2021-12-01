@@ -10,12 +10,12 @@
 import type {OutlineNode, NodeKey, EditorConfig} from 'outline';
 import type {ParagraphNode} from 'outline/ParagraphNode';
 
-import {BlockNode} from 'outline';
+import {ElementNode} from 'outline';
 import {createParagraphNode} from 'outline/ParagraphNode';
 
 type HeadingTagType = 'h1' | 'h2' | 'h3' | 'h4' | 'h5';
 
-export class HeadingNode extends BlockNode {
+export class HeadingNode extends ElementNode {
   __tag: HeadingTagType;
 
   static getType(): string {
@@ -59,11 +59,11 @@ export class HeadingNode extends BlockNode {
   // Mutation
 
   insertNewAfter(): ParagraphNode {
-    const newBlock = createParagraphNode();
+    const newElement = createParagraphNode();
     const direction = this.getDirection();
-    newBlock.setDirection(direction);
-    this.insertAfter(newBlock);
-    return newBlock;
+    newElement.setDirection(direction);
+    this.insertAfter(newElement);
+    return newElement;
   }
 
   collapseAtStart(): true {

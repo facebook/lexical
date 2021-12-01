@@ -11,7 +11,7 @@ import type {OutlineEditor, State, NodeKey, OutlineNode} from 'outline';
 
 import {
   initializeUnitTest,
-  createTestBlockNode,
+  createTestElementNode,
 } from '../../../__tests__/utils';
 import {dfs, getTopListNode, isLastItemInList} from 'outline/nodes';
 import {createParagraphNode, isParagraphNode} from 'outline/ParagraphNode';
@@ -36,9 +36,9 @@ describe('OutlineNodeHelpers tests', () => {
         const root = state.getRoot();
         const paragraph1 = createParagraphNode();
         const paragraph2 = createParagraphNode();
-        const block1 = createTestBlockNode();
-        const block2 = createTestBlockNode();
-        const block3 = createTestBlockNode();
+        const block1 = createTestElementNode();
+        const block2 = createTestElementNode();
+        const block3 = createTestElementNode();
         const text1 = createTextNode('text1');
         const text2 = createTextNode('text2');
         const text3 = createTextNode('text3');
@@ -88,9 +88,9 @@ describe('OutlineNodeHelpers tests', () => {
       await editor.update((state: State) => {
         const root = state.getRoot();
         const paragraph1 = createParagraphNode();
-        const block1 = createTestBlockNode();
-        const block2 = createTestBlockNode();
-        const block3 = createTestBlockNode();
+        const block1 = createTestElementNode();
+        const block2 = createTestElementNode();
+        const block3 = createTestElementNode();
         root.append(paragraph1);
         paragraph1.append(block1, block2, block3);
 

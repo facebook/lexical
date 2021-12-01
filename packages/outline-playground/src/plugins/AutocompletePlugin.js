@@ -14,7 +14,7 @@ import {useEditorContext} from 'outline-react/OutlineEditorContext';
 
 import {
   isTextNode,
-  isBlockNode,
+  isElementNode,
   TextNode,
   log,
   getNodeByKey,
@@ -102,7 +102,7 @@ function useTypeahead(editor: OutlineEditor): void {
           }
           // Add
           const lastParagraph = getRoot().getLastChild();
-          if (isBlockNode(lastParagraph)) {
+          if (isElementNode(lastParagraph)) {
             const lastTextNode = lastParagraph.getLastChild();
             if (isTextNode(lastTextNode)) {
               const newTypeaheadNode = createTypeaheadNode(suggestion ?? '');

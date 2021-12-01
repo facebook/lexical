@@ -9,9 +9,9 @@
 
 import type {TextOperation, Map as YMap, XmlText, XmlElement} from 'yjs';
 import type {
-  BlockNode,
+  ElementNode,
   NodeKey,
-  IntentionallyMarkedAsDirtyBlock,
+  IntentionallyMarkedAsDirtyElement,
   OutlineNode,
   NodeMap,
 } from 'outline';
@@ -23,28 +23,37 @@ import {
   createCollabNodeFromOutlineNode,
   getOrInitCollabNodeFromSharedType,
   createOutlineNodeFromCollabNode,
-  getPositionFromBlockAndOffset,
+  getPositionFromElementAndOffset,
   syncPropertiesFromYjs,
   spliceString,
 } from './Utils';
 import {CollabTextNode} from './CollabTextNode';
 import {CollabLineBreakNode} from './CollabLineBreakNode';
-import {isBlockNode, isTextNode, getNodeByKey, isDecoratorNode} from 'outline';
+import {
+  isElementNode,
+  isTextNode,
+  getNodeByKey,
+  isDecoratorNode,
+} from 'outline';
 import {CollabDecoratorNode} from './CollabDecoratorNode';
 
-export class CollabBlockNode {
+export class CollabElementNode {
   _key: NodeKey;
   _children: Array<
-    | CollabBlockNode
+    | CollabElementNode
     | CollabTextNode
     | CollabDecoratorNode
     | CollabLineBreakNode,
   >;
   _xmlText: XmlText;
   _type: string;
-  _parent: null | CollabBlockNode;
+  _parent: null | CollabElementNode;
 
-  constructor(xmlText: XmlText, parent: null | CollabBlockNode, type: string) {
+  constructor(
+    xmlText: XmlText,
+    parent: null | CollabElementNode,
+    type: string,
+  ) {
     this._key = '';
     this._children = [];
     this._xmlText = xmlText;
@@ -52,17 +61,17 @@ export class CollabBlockNode {
     this._parent = parent;
   }
 
-  getPrevNode(nodeMap: null | NodeMap): null | BlockNode {
+  getPrevNode(nodeMap: null | NodeMap): null | ElementNode {
     if (nodeMap === null) {
       return null;
     }
     const node = nodeMap.get(this._key);
-    return isBlockNode(node) ? node : null;
+    return isElementNode(node) ? node : null;
   }
 
-  getNode(): null | BlockNode {
+  getNode(): null | ElementNode {
     const node = getNodeByKey(this._key);
-    return isBlockNode(node) ? node : null;
+    return isElementNode(node) ? node : null;
   }
 
   getSharedType(): XmlText {
@@ -86,11 +95,11 @@ export class CollabBlockNode {
   }
 
   getOffset(): number {
-    const collabBlockNode = this._parent;
-    if (collabBlockNode === null) {
+    const collabElementNode = this._parent;
+    if (collabElementNode === null) {
       throw new Error('Should never happen');
     }
-    return collabBlockNode.getChildOffset(this);
+    return collabElementNode.getChildOffset(this);
   }
 
   syncPropertiesFromYjs(
@@ -120,10 +129,10 @@ export class CollabBlockNode {
 
         while (deletionSize > 0) {
           const {node, nodeIndex, offset, length} =
-            getPositionFromBlockAndOffset(this, currIndex, false);
+            getPositionFromElementAndOffset(this, currIndex, false);
 
           if (
-            node instanceof CollabBlockNode ||
+            node instanceof CollabElementNode ||
             node instanceof CollabLineBreakNode ||
             node instanceof CollabDecoratorNode
           ) {
@@ -144,7 +153,7 @@ export class CollabBlockNode {
         }
       } else if (insertDelta != null) {
         if (typeof insertDelta === 'string') {
-          const {node, offset} = getPositionFromBlockAndOffset(
+          const {node, offset} = getPositionFromElementAndOffset(
             this,
             currIndex,
             true,
@@ -158,7 +167,7 @@ export class CollabBlockNode {
           currIndex += insertDelta.length;
         } else {
           const sharedType: XmlText | YMap | XmlElement = insertDelta;
-          const {nodeIndex} = getPositionFromBlockAndOffset(
+          const {nodeIndex} = getPositionFromElementAndOffset(
             this,
             currIndex,
             false,
@@ -196,7 +205,7 @@ export class CollabBlockNode {
     let writableOutlineNode;
 
     if (collabChildrenLength !== outlineChildrenKeysLength) {
-      writableOutlineNode = lazilyCloneBlockNode(
+      writableOutlineNode = lazilyCloneElementNode(
         outlineNode,
         writableOutlineNode,
         nextOutlineChildrenKeys,
@@ -222,7 +231,7 @@ export class CollabBlockNode {
         visitedKeys.add(outlineChildKey);
         if (childNeedsUpdating) {
           childCollabNode._key = outlineChildKey;
-          if (childCollabNode instanceof CollabBlockNode) {
+          if (childCollabNode instanceof CollabElementNode) {
             const xmlText = childCollabNode._xmlText;
             childCollabNode.syncPropertiesFromYjs(binding, null);
             childCollabNode.applyChildrenYjsDelta(binding, xmlText.toDelta());
@@ -240,7 +249,7 @@ export class CollabBlockNode {
         }
         nextOutlineChildrenKeys[i] = outlineChildKey;
       } else {
-        writableOutlineNode = lazilyCloneBlockNode(
+        writableOutlineNode = lazilyCloneElementNode(
           outlineNode,
           writableOutlineNode,
           nextOutlineChildrenKeys,
@@ -273,7 +282,7 @@ export class CollabBlockNode {
 
   syncPropertiesFromOutline(
     binding: Binding,
-    nextOutlineNode: BlockNode,
+    nextOutlineNode: ElementNode,
     prevNodeMap: null | NodeMap,
   ): void {
     syncPropertiesFromOutline(
@@ -286,9 +295,9 @@ export class CollabBlockNode {
 
   syncChildrenFromOutline(
     binding: Binding,
-    nextOutlineNode: BlockNode,
+    nextOutlineNode: ElementNode,
     prevNodeMap: null | NodeMap,
-    dirtyBlocks: null | Map<NodeKey, IntentionallyMarkedAsDirtyBlock>,
+    dirtyElements: null | Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
     dirtyLeaves: null | Set<NodeKey>,
   ): void {
     const prevOutlineNode = this.getPrevNode(prevNodeMap);
@@ -311,14 +320,14 @@ export class CollabBlockNode {
       if (prevChildKey === nextChildKey && childCollabNode !== undefined) {
         visitedChildKeys.add(nextChildKey);
         if (
-          (dirtyBlocks !== null && dirtyBlocks.has(nextChildKey)) ||
+          (dirtyElements !== null && dirtyElements.has(nextChildKey)) ||
           (dirtyLeaves !== null && dirtyLeaves.has(nextChildKey))
         ) {
           // Update
           const nextChildNode = getNodeByKeyOrThrow(nextChildKey);
           if (
-            childCollabNode instanceof CollabBlockNode &&
-            isBlockNode(nextChildNode)
+            childCollabNode instanceof CollabElementNode &&
+            isElementNode(nextChildNode)
           ) {
             childCollabNode.syncPropertiesFromOutline(
               binding,
@@ -329,7 +338,7 @@ export class CollabBlockNode {
               binding,
               nextChildNode,
               prevNodeMap,
-              dirtyBlocks,
+              dirtyElements,
               dirtyLeaves,
             );
           } else if (
@@ -391,7 +400,7 @@ export class CollabBlockNode {
 
   append(
     collabNode:
-      | CollabBlockNode
+      | CollabElementNode
       | CollabDecoratorNode
       | CollabTextNode
       | CollabLineBreakNode,
@@ -401,7 +410,7 @@ export class CollabBlockNode {
     const lastChild = children[children.length - 1];
     const offset =
       lastChild !== undefined ? lastChild.getOffset() + lastChild.getSize() : 0;
-    if (collabNode instanceof CollabBlockNode) {
+    if (collabNode instanceof CollabElementNode) {
       xmlText.insertEmbed(offset, collabNode._xmlText);
     } else if (collabNode instanceof CollabTextNode) {
       const map = collabNode._map;
@@ -422,7 +431,7 @@ export class CollabBlockNode {
     index: number,
     delCount: number,
     collabNode?:
-      | CollabBlockNode
+      | CollabElementNode
       | CollabDecoratorNode
       | CollabTextNode
       | CollabLineBreakNode,
@@ -445,7 +454,7 @@ export class CollabBlockNode {
     if (delCount !== 0) {
       xmlText.delete(offset, child.getSize());
     }
-    if (collabNode instanceof CollabBlockNode) {
+    if (collabNode instanceof CollabElementNode) {
       xmlText.insertEmbed(offset, collabNode._xmlText);
     } else if (collabNode instanceof CollabTextNode) {
       const map = collabNode._map;
@@ -473,7 +482,7 @@ export class CollabBlockNode {
 
   getChildOffset(
     collabNode:
-      | CollabBlockNode
+      | CollabElementNode
       | CollabTextNode
       | CollabDecoratorNode
       | CollabLineBreakNode,
@@ -500,11 +509,11 @@ export class CollabBlockNode {
   }
 }
 
-function lazilyCloneBlockNode(
-  outlineNode: BlockNode,
-  writableOutlineNode: void | BlockNode,
+function lazilyCloneElementNode(
+  outlineNode: ElementNode,
+  writableOutlineNode: void | ElementNode,
   nextOutlineChildrenKeys: Array<NodeKey>,
-): BlockNode {
+): ElementNode {
   if (writableOutlineNode === undefined) {
     const clone = outlineNode.getWritable();
     clone.__children = nextOutlineChildrenKeys;
@@ -513,12 +522,12 @@ function lazilyCloneBlockNode(
   return writableOutlineNode;
 }
 
-export function createCollabBlockNode(
+export function createCollabElementNode(
   xmlText: XmlText,
-  parent: null | CollabBlockNode,
+  parent: null | CollabElementNode,
   type: string,
-): CollabBlockNode {
-  const collabNode = new CollabBlockNode(xmlText, parent, type);
+): CollabElementNode {
+  const collabNode = new CollabElementNode(xmlText, parent, type);
   // $FlowFixMe: internal field
   xmlText._collabNode = collabNode;
   return collabNode;

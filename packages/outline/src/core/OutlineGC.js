@@ -8,14 +8,14 @@
  */
 
 import type {NodeKey, NodeMap} from './OutlineNode';
-import type {BlockNode} from './OutlineBlockNode';
+import type {ElementNode} from './OutlineElementNode';
 import type {
-  IntentionallyMarkedAsDirtyBlock,
+  IntentionallyMarkedAsDirtyElement,
   OutlineEditor,
 } from './OutlineEditor';
 import type {EditorState} from './OutlineEditorState';
 
-import {isBlockNode} from '.';
+import {isElementNode} from '.';
 import {cloneDecorators} from './OutlineUtils';
 
 export function garbageCollectDetachedDecorators(
@@ -38,11 +38,11 @@ export function garbageCollectDetachedDecorators(
 }
 
 function garbageCollectDetachedDeepChildNodes(
-  node: BlockNode,
+  node: ElementNode,
   parentKey: NodeKey,
   prevNodeMap: NodeMap,
   nodeMap: NodeMap,
-  dirtyNodes: Map<NodeKey, IntentionallyMarkedAsDirtyBlock>,
+  dirtyNodes: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
 ): void {
   const children = node.__children;
   const childrenLength = children.length;
@@ -50,7 +50,7 @@ function garbageCollectDetachedDeepChildNodes(
     const childKey = children[i];
     const child = nodeMap.get(childKey);
     if (child !== undefined && child.__parent === parentKey) {
-      if (isBlockNode(child)) {
+      if (isElementNode(child)) {
         garbageCollectDetachedDeepChildNodes(
           child,
           childKey,
@@ -73,12 +73,12 @@ export function garbageCollectDetachedNodes(
   prevEditorState: EditorState,
   editorState: EditorState,
   dirtyLeaves: Set<NodeKey>,
-  dirtyBlocks: Map<NodeKey, IntentionallyMarkedAsDirtyBlock>,
+  dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
 ): void {
   const dirtyLeavesArr = Array.from(dirtyLeaves);
   const dirtyLeavesLength = dirtyLeavesArr.length;
-  const dirtyBlocksArr = Array.from(dirtyBlocks);
-  const dirtyBlocksLength = dirtyBlocksArr.length;
+  const dirtyElementsArr = Array.from(dirtyElements);
+  const dirtyElementsLength = dirtyElementsArr.length;
   const prevNodeMap = prevEditorState._nodeMap;
   const nodeMap = editorState._nodeMap;
 
@@ -94,26 +94,26 @@ export function garbageCollectDetachedNodes(
     }
   }
 
-  for (let i = 0; i < dirtyBlocksLength; i++) {
-    const nodeKey = dirtyBlocksArr[i][0];
+  for (let i = 0; i < dirtyElementsLength; i++) {
+    const nodeKey = dirtyElementsArr[i][0];
     const node = nodeMap.get(nodeKey);
 
     if (node !== undefined) {
       // Garbage collect node and its children if they exist
       if (!node.isAttached()) {
-        if (isBlockNode(node)) {
+        if (isElementNode(node)) {
           garbageCollectDetachedDeepChildNodes(
             node,
             nodeKey,
             prevNodeMap,
             nodeMap,
-            dirtyBlocks,
+            dirtyElements,
           );
         }
         // If we have created a node and it was dereferenced, then also
         // remove it from out dirty nodes Set.
         if (!prevNodeMap.has(nodeKey)) {
-          dirtyBlocks.delete(nodeKey);
+          dirtyElements.delete(nodeKey);
         }
         nodeMap.delete(nodeKey);
       }

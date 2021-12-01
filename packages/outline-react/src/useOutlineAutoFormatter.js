@@ -26,12 +26,12 @@ function updateTextNode(node: TextNode, count: number): void {
 }
 
 function textNodeTransform(node: TextNode, state: State): void {
-  const block = node.getParentBlockOrThrow();
+  const element = node.getParentElementOrThrow();
 
   if (
-    block !== null &&
+    element !== null &&
     node.getPreviousSibling() === null &&
-    isParagraphNode(block)
+    isParagraphNode(element)
   ) {
     const textContent = node.getTextContent();
     const firstChar = textContent[0];
@@ -42,31 +42,31 @@ function textNodeTransform(node: TextNode, state: State): void {
       if (firstChar === '#') {
         updateTextNode(node, 2);
         const heading = createHeadingNode('h1');
-        const children = block.getChildren();
+        const children = element.getChildren();
         heading.append(...children);
-        block.replace(heading);
+        element.replace(heading);
       } else if (firstChar === '>') {
         updateTextNode(node, 2);
         const quote = createQuoteNode();
-        const children = block.getChildren();
+        const children = element.getChildren();
         quote.append(...children);
-        block.replace(quote);
+        element.replace(quote);
       } else if (firstChar === '-' || firstChar === '*') {
         updateTextNode(node, 2);
         const list = createListNode('ul');
         const listItem = createListItemNode();
-        const children = block.getChildren();
+        const children = element.getChildren();
         listItem.append(...children);
         list.append(listItem);
-        block.replace(list);
+        element.replace(list);
       }
     } else if (textContent.length > 2) {
       if (firstChar === '#' && secondChar === '#' && thirdChar === ' ') {
         updateTextNode(node, 3);
         const heading = createHeadingNode('h2');
-        const children = block.getChildren();
+        const children = element.getChildren();
         heading.append(...children);
-        block.replace(heading);
+        element.replace(heading);
       } else if (parseInt(firstChar, 10)) {
         const match = textContent.match(/^(\d+)\.\s/);
         if (match !== null && match.index === 0 && match.length === 2) {
@@ -74,10 +74,10 @@ function textNodeTransform(node: TextNode, state: State): void {
           updateTextNode(node, match[0].length);
           const list = createListNode('ol', start);
           const listItem = createListItemNode();
-          const children = block.getChildren();
+          const children = element.getChildren();
           listItem.append(...children);
           list.append(listItem);
-          block.replace(list);
+          element.replace(list);
         }
       }
     }

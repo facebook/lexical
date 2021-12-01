@@ -14,7 +14,7 @@ export default function getPossibleDecoratorNode(
   isBackward: boolean,
 ): null | OutlineNode {
   const focusOffset = focus.offset;
-  if (focus.type === 'block') {
+  if (focus.type === 'element') {
     const block = focus.getNode();
     return block.getChildAtIndex(isBackward ? focusOffset - 1 : focusOffset);
   } else {

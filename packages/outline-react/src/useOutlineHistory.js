@@ -12,7 +12,7 @@ import type {
   EditorState,
   OutlineNode,
   NodeKey,
-  IntentionallyMarkedAsDirtyBlock,
+  IntentionallyMarkedAsDirtyElement,
 } from 'outline';
 
 import {isTextNode, isRootNode} from 'outline';
@@ -37,10 +37,10 @@ export type HistoryState = {
 function getDirtyNodes(
   editorState: EditorState,
   dirtyLeavesSet: Set<NodeKey>,
-  dirtyBlocksSet: Map<NodeKey, IntentionallyMarkedAsDirtyBlock>,
+  dirtyElementsSet: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
 ): Array<OutlineNode> {
   const dirtyLeaves = Array.from(dirtyLeavesSet);
-  const dirtyBlocks = Array.from(dirtyBlocksSet);
+  const dirtyElements = Array.from(dirtyElementsSet);
   const nodeMap = editorState._nodeMap;
   const nodes = [];
 
@@ -52,15 +52,15 @@ function getDirtyNodes(
     }
   }
 
-  for (let i = 0; i < dirtyBlocks.length; i++) {
-    const intentionallyMarkedAsDirty = dirtyBlocks[i][1];
+  for (let i = 0; i < dirtyElements.length; i++) {
+    const intentionallyMarkedAsDirty = dirtyElements[i][1];
     if (!intentionallyMarkedAsDirty) {
       continue;
     }
-    const dirtyBlockKey = dirtyBlocks[i][0];
-    const dirtyBlock = nodeMap.get(dirtyBlockKey);
-    if (dirtyBlock !== undefined && !isRootNode(dirtyBlock)) {
-      nodes.push(dirtyBlock);
+    const dirtyElementKey = dirtyElements[i][0];
+    const dirtyElement = nodeMap.get(dirtyElementKey);
+    if (dirtyElement !== undefined && !isRootNode(dirtyElement)) {
+      nodes.push(dirtyElement);
     }
   }
   return nodes;
@@ -70,7 +70,7 @@ function getMergeAction(
   prevEditorState: null | EditorState,
   nextEditorState: EditorState,
   dirtyLeavesSet: Set<NodeKey>,
-  dirtyBlocksSet: Map<NodeKey, IntentionallyMarkedAsDirtyBlock>,
+  dirtyElementsSet: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
   tags: Set<string>,
   canMergeWithinDelay: boolean,
 ): 0 | 1 | 2 {
@@ -84,7 +84,7 @@ function getMergeAction(
   }
   const selection = nextEditorState._selection;
   const prevSelection = prevEditorState._selection;
-  const hasDirtyNodes = dirtyLeavesSet.size > 0 || dirtyBlocksSet.size > 0;
+  const hasDirtyNodes = dirtyLeavesSet.size > 0 || dirtyElementsSet.size > 0;
   if (!hasDirtyNodes) {
     if (prevSelection === null && selection !== null) {
       return MERGE;
@@ -94,7 +94,7 @@ function getMergeAction(
   const dirtyNodes = getDirtyNodes(
     nextEditorState,
     dirtyLeavesSet,
-    dirtyBlocksSet,
+    dirtyElementsSet,
   );
   if (dirtyNodes.length === 1 && canMergeWithinDelay) {
     const prevNodeMap = prevEditorState._nodeMap;
@@ -161,7 +161,7 @@ export function useOutlineHistory(
       return canMerge;
     };
 
-    const applyChange = ({editorState, dirtyLeaves, dirtyBlocks, tags}) => {
+    const applyChange = ({editorState, dirtyLeaves, dirtyElements, tags}) => {
       const current = historyState.current;
       const redoStack = historyState.redoStack;
       const undoStack = historyState.undoStack;
@@ -174,7 +174,7 @@ export function useOutlineHistory(
         currentEditorState,
         editorState,
         dirtyLeaves,
-        dirtyBlocks,
+        dirtyElements,
         tags,
         canMergeWithinDelay(),
       );

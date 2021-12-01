@@ -50,5 +50,10 @@
   "48": "createNode: node does not exist in nodeMap",
   "49": "reconcileNode: prevNode or nextNode does not exist in nodeMap",
   "50": "reconcileNode: parentDOM is null",
-  "51": "Reconciliation: could not find DOM element for node key \"${key}\""
+  "51": "Reconciliation: could not find DOM element for node key \"${key}\"",
+  "52": "insertNodes: cannot insert a non-element into a root node",
+  "53": "insertNodes: cloned parent clone is not an element",
+  "54": "rootNode.append: Only element nodes can be appended to the root node",
+  "55": "Expected node %s to have a parent element.",
+  "56": "Expected node %s to have a top parent element."
 }

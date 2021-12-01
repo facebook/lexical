@@ -16,13 +16,13 @@ import type {
 } from 'outline';
 import type {ParagraphNode} from 'outline/ParagraphNode';
 
-import {isBlockNode, BlockNode} from 'outline';
+import {isElementNode, ElementNode} from 'outline';
 import {createParagraphNode} from 'outline/ParagraphNode';
 import {createListNode, isListNode} from 'outline/ListNode';
 import invariant from 'shared/invariant';
 import {getTopListNode, isLastItemInList} from 'outline/nodes';
 
-export class ListItemNode extends BlockNode {
+export class ListItemNode extends ElementNode {
   static getType(): string {
     return 'listitem';
   }
@@ -128,32 +128,32 @@ export class ListItemNode extends BlockNode {
     const list = getTopListNode(this);
     const isLast = isLastItemInList(this);
 
-    let newBlock;
+    let newElement;
 
     if (
-      isBlockNode(list) &&
+      isElementNode(list) &&
       this.getTextContent() === '' &&
       (prevSibling === null || nextSibling === null) &&
       isLast
     ) {
       if (nextSibling === null) {
-        newBlock = createParagraphNode();
-        list.insertAfter(newBlock);
+        newElement = createParagraphNode();
+        list.insertAfter(newElement);
         this.remove();
       } else {
-        newBlock = createParagraphNode();
-        list.insertBefore(newBlock);
+        newElement = createParagraphNode();
+        list.insertBefore(newElement);
         this.remove();
       }
       if (list.isEmpty()) {
         list.remove();
       }
     } else {
-      newBlock = createListItemNode();
-      this.insertAfter(newBlock);
+      newElement = createListItemNode();
+      this.insertAfter(newElement);
     }
 
-    return newBlock;
+    return newElement;
   }
 
   collapseAtStart(selection: Selection): true {
@@ -176,11 +176,11 @@ export class ListItemNode extends BlockNode {
         const anchor = selection.anchor;
         const focus = selection.focus;
         const key = paragraph.getKey();
-        if (anchor.type === 'block' && anchor.getNode().is(this)) {
-          anchor.set(key, anchor.offset, 'block');
+        if (anchor.type === 'element' && anchor.getNode().is(this)) {
+          anchor.set(key, anchor.offset, 'element');
         }
-        if (focus.type === 'block' && focus.getNode().is(this)) {
-          focus.set(key, focus.offset, 'block');
+        if (focus.type === 'element' && focus.getNode().is(this)) {
+          focus.set(key, focus.offset, 'element');
         }
       }
     } else {

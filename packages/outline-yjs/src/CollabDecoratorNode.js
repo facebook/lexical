@@ -9,7 +9,7 @@
 
 import type {DecoratorNode, NodeKey, OutlineRef, NodeMap} from 'outline';
 import type {Binding} from '.';
-import type {CollabBlockNode} from './CollabBlockNode';
+import type {CollabElementNode} from './CollabElementNode';
 import type {XmlElement} from 'yjs';
 
 import {createEditorStateRef, isDecoratorNode, getNodeByKey} from 'outline';
@@ -19,10 +19,10 @@ import {Doc} from 'yjs';
 export class CollabDecoratorNode {
   _xmlElem: XmlElement;
   _key: NodeKey;
-  _parent: CollabBlockNode;
+  _parent: CollabElementNode;
   _type: string;
 
-  constructor(xmlElem: XmlElement, parent: CollabBlockNode, type: string) {
+  constructor(xmlElem: XmlElement, parent: CollabElementNode, type: string) {
     this._key = '';
     this._xmlElem = xmlElem;
     this._parent = parent;
@@ -59,8 +59,8 @@ export class CollabDecoratorNode {
   }
 
   getOffset(): number {
-    const collabBlockNode = this._parent;
-    return collabBlockNode.getChildOffset(this);
+    const collabElementNode = this._parent;
+    return collabElementNode.getChildOffset(this);
   }
 
   syncPropertiesFromOutline(
@@ -157,7 +157,7 @@ export class CollabDecoratorNode {
 
 export function createCollabDecoratorNode(
   xmlElem: XmlElement,
-  parent: CollabBlockNode,
+  parent: CollabElementNode,
   type: string,
 ): CollabDecoratorNode {
   const collabNode = new CollabDecoratorNode(xmlElem, parent, type);

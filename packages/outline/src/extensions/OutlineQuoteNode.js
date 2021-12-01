@@ -10,10 +10,10 @@
 import type {NodeKey, EditorConfig} from 'outline';
 import type {ParagraphNode} from 'outline/ParagraphNode';
 
-import {BlockNode} from 'outline';
+import {ElementNode} from 'outline';
 import {createParagraphNode} from 'outline/ParagraphNode';
 
-export class QuoteNode extends BlockNode {
+export class QuoteNode extends ElementNode {
   static getType(): string {
     return 'quote';
   }

@@ -15,10 +15,15 @@ import type {
   EditorState,
 } from 'outline';
 
-import {createSelection, isBlockNode, isTextNode, getNodeByKey} from 'outline';
+import {
+  createSelection,
+  isElementNode,
+  isTextNode,
+  getNodeByKey,
+} from 'outline';
 import invariant from 'shared/invariant';
 
-type OffsetBlockNode = {
+type OffsetElementNode = {
   type: 'block',
   child: null | OffsetNode,
   prev: null | OffsetNode,
@@ -26,7 +31,7 @@ type OffsetBlockNode = {
   start: number,
   end: number,
   key: NodeKey,
-  parent: null | OffsetBlockNode,
+  parent: null | OffsetElementNode,
 };
 
 type OffsetTextNode = {
@@ -37,7 +42,7 @@ type OffsetTextNode = {
   start: number,
   end: number,
   key: NodeKey,
-  parent: null | OffsetBlockNode,
+  parent: null | OffsetElementNode,
 };
 
 type OffsetInlineNode = {
@@ -48,10 +53,10 @@ type OffsetInlineNode = {
   start: number,
   end: number,
   key: NodeKey,
-  parent: null | OffsetBlockNode,
+  parent: null | OffsetElementNode,
 };
 
-type OffsetNode = OffsetBlockNode | OffsetTextNode | OffsetInlineNode;
+type OffsetNode = OffsetElementNode | OffsetTextNode | OffsetInlineNode;
 
 type OffsetMap = Map<NodeKey, OffsetNode>;
 
@@ -130,8 +135,8 @@ class OffsetView {
     }
     let startOffset = 0;
     let endOffset = 0;
-    let startType = 'block';
-    let endType = 'block';
+    let startType = 'element';
+    let endType = 'element';
 
     if (startOffsetNode.type === 'text') {
       startOffset = start - startOffsetNode.start;
@@ -342,7 +347,7 @@ function createInternalOffsetNode<N>(
   start: number,
   end: number,
   key: NodeKey,
-  parent: null | OffsetBlockNode,
+  parent: null | OffsetElementNode,
 ): N {
   // $FlowFixMe: not sure why Flow doesn't like this?
   return {
@@ -360,7 +365,7 @@ function createInternalOffsetNode<N>(
 function createOffsetNode(
   state: {offset: number, prevIsBlock: boolean},
   key: NodeKey,
-  parent: null | OffsetBlockNode,
+  parent: null | OffsetElementNode,
   nodeMap: NodeMap,
   offsetMap: OffsetMap,
   blockOffsetSize: number,
@@ -371,7 +376,7 @@ function createOffsetNode(
   }
   const start = state.offset;
 
-  if (isBlockNode(node)) {
+  if (isElementNode(node)) {
     const childKeys = node.__children;
     const blockIsEmpty = childKeys.length === 0;
 
@@ -391,7 +396,7 @@ function createOffsetNode(
       state.prevIsBlock = true;
       state.offset += blockOffsetSize;
     }
-    const offsetNode = createInternalOffsetNode<OffsetBlockNode>(
+    const offsetNode = createInternalOffsetNode<OffsetElementNode>(
       child,
       'block',
       start,
@@ -429,7 +434,7 @@ function createOffsetNode(
 function createOffsetChild(
   state: {offset: number, prevIsBlock: boolean},
   children: Array<NodeKey>,
-  parent: null | OffsetBlockNode,
+  parent: null | OffsetElementNode,
   nodeMap: NodeMap,
   offsetMap: OffsetMap,
   blockOffsetSize: number,

@@ -19,7 +19,10 @@ import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
 import useOutlineRichText from 'outline-react/useOutlineRichText';
-import {createTestBlockNode, createTestEditor} from '../../../__tests__/utils';
+import {
+  createTestElementNode,
+  createTestEditor,
+} from '../../../__tests__/utils';
 
 jest.mock('shared/environment', () => {
   const originalModule = jest.requireActual('shared/environment');
@@ -902,10 +905,10 @@ describe('OutlineSelection tests', () => {
     await editor.update(() => {
       const root = getRoot();
       const paragraph = root.getFirstChild();
-      const blockNode = createTestBlockNode();
+      const elementNode = createTestElementNode();
       const text = createTextNode();
-      paragraph.append(blockNode);
-      blockNode.append(text);
+      paragraph.append(elementNode);
+      elementNode.append(text);
 
       const selectedNodes = getSelection().getNodes();
       expect(selectedNodes.length).toBe(1);

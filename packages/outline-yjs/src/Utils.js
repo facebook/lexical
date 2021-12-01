@@ -12,12 +12,12 @@ import type {YjsNode, Binding} from '.';
 
 import {
   getNodeByKey,
-  isBlockNode,
+  isElementNode,
   isTextNode,
   isLineBreakNode,
   isDecoratorNode,
 } from 'outline';
-import {CollabBlockNode, createCollabBlockNode} from './CollabBlockNode';
+import {CollabElementNode, createCollabElementNode} from './CollabElementNode';
 import {CollabTextNode, createCollabTextNode} from './CollabTextNode';
 import {
   CollabLineBreakNode,
@@ -72,17 +72,17 @@ export function getNodeByKeyOrThrow(key: NodeKey): OutlineNode {
 export function createCollabNodeFromOutlineNode(
   binding: Binding,
   outlineNode: OutlineNode,
-  parent: CollabBlockNode,
+  parent: CollabElementNode,
 ):
-  | CollabBlockNode
+  | CollabElementNode
   | CollabTextNode
   | CollabLineBreakNode
   | CollabDecoratorNode {
   const nodeType = outlineNode.__type;
   let collabNode;
-  if (isBlockNode(outlineNode)) {
+  if (isElementNode(outlineNode)) {
     const xmlText = new XmlText();
-    collabNode = createCollabBlockNode(xmlText, parent, nodeType);
+    collabNode = createCollabElementNode(xmlText, parent, nodeType);
     collabNode.syncPropertiesFromOutline(binding, outlineNode, null);
     collabNode.syncChildrenFromOutline(binding, outlineNode, null, null, null);
   } else if (isTextNode(outlineNode)) {
@@ -126,9 +126,9 @@ function getNodeTypeFromSharedType(
 export function getOrInitCollabNodeFromSharedType(
   binding: Binding,
   sharedType: XmlText | YMap | XmlElement,
-  parent?: CollabBlockNode,
+  parent?: CollabElementNode,
 ):
-  | CollabBlockNode
+  | CollabElementNode
   | CollabTextNode
   | CollabLineBreakNode
   | CollabDecoratorNode {
@@ -146,12 +146,12 @@ export function getOrInitCollabNodeFromSharedType(
       parent === undefined && sharedParent !== null
         ? getOrInitCollabNodeFromSharedType(binding, sharedParent)
         : parent || null;
-    if (!(targetParent instanceof CollabBlockNode)) {
+    if (!(targetParent instanceof CollabElementNode)) {
       throw new Error('Should never happen');
     }
 
     if (sharedType instanceof XmlText) {
-      return createCollabBlockNode(sharedType, targetParent, type);
+      return createCollabElementNode(sharedType, targetParent, type);
     } else if (sharedType instanceof YMap) {
       if (targetParent === null) {
         throw new Error('Should never happen');
@@ -170,7 +170,7 @@ export function getOrInitCollabNodeFromSharedType(
 export function createOutlineNodeFromCollabNode(
   binding: Binding,
   collabNode:
-    | CollabBlockNode
+    | CollabElementNode
     | CollabTextNode
     | CollabDecoratorNode
     | CollabLineBreakNode,
@@ -183,11 +183,11 @@ export function createOutlineNodeFromCollabNode(
     throw new Error('createOutlineNode failed');
   }
   // $FlowFixMe: needs refining
-  const outlineNode: DecoratorNode | TextNode | BlockNode =
+  const outlineNode: DecoratorNode | TextNode | ElementNode =
     new nodeInfo.klass();
   outlineNode.__parent = parentKey;
   collabNode._key = outlineNode.__key;
-  if (collabNode instanceof CollabBlockNode) {
+  if (collabNode instanceof CollabElementNode) {
     const xmlText = collabNode._xmlText;
     collabNode.syncPropertiesFromYjs(binding, null);
     collabNode.applyChildrenYjsDelta(binding, xmlText.toDelta());
@@ -278,13 +278,13 @@ export function spliceString(
   return str.slice(0, index) + newText + str.slice(index + delCount);
 }
 
-export function getPositionFromBlockAndOffset(
-  node: CollabBlockNode,
+export function getPositionFromElementAndOffset(
+  node: CollabElementNode,
   offset: number,
   boundaryIsEdge: boolean,
 ): {
   node:
-    | CollabBlockNode
+    | CollabElementNode
     | CollabTextNode
     | CollabDecoratorNode
     | CollabLineBreakNode

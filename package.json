@@ -104,7 +104,7 @@
     "eslint-plugin-no-only-tests": "^2.6.0",
     "eslint-plugin-react": "^7.24.0",
     "eslint-plugin-react-hooks": "^4.2.0",
-    "flow-bin": "^0.156.0",
+    "flow-bin": "^0.165.1",
     "fs-extra": "^10.0.0",
     "glob": "^7.2.0",
     "google-closure-compiler": "^20210601.0.0",

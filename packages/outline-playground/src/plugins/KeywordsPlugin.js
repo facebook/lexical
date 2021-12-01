@@ -9,14 +9,14 @@
 
 import PlaygroundEditorContext from '../context/PlaygroundEditorContext';
 import {useEditorContext} from 'outline-react/OutlineEditorContext';
-import type {OutlineEditor, State, BlockNode} from 'outline';
+import type {OutlineEditor, State, ElementNode} from 'outline';
 import {useEffect} from 'react';
 import {
   createTextNode,
   isTextNode,
   TextNode,
   RootNode,
-  isBlockNode,
+  isElementNode,
   getSelection,
 } from 'outline';
 import {
@@ -117,13 +117,13 @@ function textTransform(node: TextNode, state: State): void {
   }
 }
 
-function traverseNodes(node: BlockNode): void {
+function traverseNodes(node: ElementNode): void {
   let child = node.getFirstChild();
 
   while (child !== null) {
     const nextSibling = child.getNextSibling();
 
-    if (isBlockNode(child)) {
+    if (isElementNode(child)) {
       traverseNodes(child);
     } else if (isTextNode(child) && !child.isSimpleText()) {
       if (isKeywordNode(nextSibling)) {

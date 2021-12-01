@@ -39,8 +39,8 @@ export default function useOutlineDragonSupport(editor: OutlineEditor) {
             const args = payload.args;
             if (args) {
               const [
-                blockStart,
-                blockLength,
+                elementStart,
+                elementLength,
                 text,
                 selStart,
                 selLength,
@@ -59,9 +59,9 @@ export default function useOutlineDragonSupport(editor: OutlineEditor) {
                   let setSelEnd = 0;
                   if (isTextNode(anchorNode)) {
                     // set initial selection
-                    if (blockStart >= 0 && blockLength >= 0) {
-                      setSelStart = blockStart;
-                      setSelEnd = blockStart + blockLength;
+                    if (elementStart >= 0 && elementLength >= 0) {
+                      setSelStart = elementStart;
+                      setSelEnd = elementStart + elementLength;
                       // If the offset is more than the end, make it the end
                       selection.setTextNodeRange(
                         anchorNode,

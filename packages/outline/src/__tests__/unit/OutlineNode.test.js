@@ -16,7 +16,7 @@ import {
   IS_SEGMENTED,
 } from '../../core/OutlineConstants';
 
-import {initializeUnitTest, TestBlockNode} from '../utils';
+import {initializeUnitTest, TestElementNode} from '../utils';
 
 class TestNode extends OutlineNode {
   static getType(): string {
@@ -227,51 +227,51 @@ describe('OutlineNode tests', () => {
       expect(() => textNode.getParentOrThrow()).toThrow();
     });
 
-    test('OutlineNode.getParentBlockOrThrow()', async () => {
+    test('OutlineNode.getParentElementOrThrow()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const node = new OutlineNode();
-        expect(() => node.getParentBlockOrThrow()).toThrow();
+        expect(() => node.getParentElementOrThrow()).toThrow();
       });
       await editor.getEditorState().read(() => {
-        expect(textNode.getParentBlockOrThrow()).toBe(paragraphNode);
+        expect(textNode.getParentElementOrThrow()).toBe(paragraphNode);
       });
-      expect(() => textNode.getParentBlockOrThrow()).toThrow();
+      expect(() => textNode.getParentElementOrThrow()).toThrow();
     });
 
-    test('OutlineNode.getParentBlockOrThrow()', async () => {
+    test('OutlineNode.getParentElementOrThrow()', async () => {
       const {editor} = testEnv;
       await editor.getEditorState().read(() => {
         const rootNode = getRoot();
-        expect(paragraphNode.getParentBlockOrThrow()).not.toBe(paragraphNode);
-        expect(paragraphNode.getParentBlockOrThrow()).toBe(rootNode);
+        expect(paragraphNode.getParentElementOrThrow()).not.toBe(paragraphNode);
+        expect(paragraphNode.getParentElementOrThrow()).toBe(rootNode);
       });
     });
 
-    test('OutlineNode.getTopParentBlock()', async () => {
+    test('OutlineNode.getTopParentElement()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const node = new OutlineNode();
-        expect(node.getTopParentBlock()).toBe(null);
+        expect(node.getTopParentElement()).toBe(null);
       });
       await editor.getEditorState().read(() => {
-        expect(textNode.getTopParentBlock()).toBe(paragraphNode);
-        expect(paragraphNode.getTopParentBlock()).toBe(paragraphNode);
+        expect(textNode.getTopParentElement()).toBe(paragraphNode);
+        expect(paragraphNode.getTopParentElement()).toBe(paragraphNode);
       });
-      expect(() => textNode.getTopParentBlock()).toThrow();
+      expect(() => textNode.getTopParentElement()).toThrow();
     });
 
-    test('OutlineNode.getTopParentBlockOrThrow()', async () => {
+    test('OutlineNode.getTopParentElementOrThrow()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const node = new OutlineNode();
-        expect(() => node.getTopParentBlockOrThrow()).toThrow();
+        expect(() => node.getTopParentElementOrThrow()).toThrow();
       });
       await editor.getEditorState().read(() => {
-        expect(textNode.getTopParentBlockOrThrow()).toBe(paragraphNode);
-        expect(paragraphNode.getTopParentBlockOrThrow()).toBe(paragraphNode);
+        expect(textNode.getTopParentElementOrThrow()).toBe(paragraphNode);
+        expect(paragraphNode.getTopParentElementOrThrow()).toBe(paragraphNode);
       });
-      expect(() => textNode.getTopParentBlockOrThrow()).toThrow();
+      expect(() => textNode.getTopParentElementOrThrow()).toThrow();
     });
 
     test('OutlineNode.getParents()', async () => {
@@ -595,7 +595,7 @@ describe('OutlineNode tests', () => {
         node.getLatest();
         text = new TextNode();
         text.getLatest();
-        block = new TestBlockNode();
+        block = new TestElementNode();
         block.getLatest();
       });
       await editor.update(() => {

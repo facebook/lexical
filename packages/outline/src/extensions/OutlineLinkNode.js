@@ -9,9 +9,9 @@
 
 import type {NodeKey, EditorConfig, OutlineNode, Selection} from 'outline';
 
-import {BlockNode} from 'outline';
+import {ElementNode} from 'outline';
 
-export class LinkNode extends BlockNode {
+export class LinkNode extends ElementNode {
   __url: string;
 
   static getType(): string {
@@ -61,11 +61,11 @@ export class LinkNode extends BlockNode {
     writable.__url = url;
   }
 
-  insertNewAfter(selection: Selection): null | BlockNode {
-    const block = this.getParentOrThrow().insertNewAfter(selection);
-    if (block !== null) {
+  insertNewAfter(selection: Selection): null | ElementNode {
+    const element = this.getParentOrThrow().insertNewAfter(selection);
+    if (element !== null) {
       const linkNode = createLinkNode(this.__url);
-      block.append(linkNode);
+      element.append(linkNode);
       return linkNode;
     }
     return null;

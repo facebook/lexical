@@ -12,7 +12,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import {createEditor, BlockNode, TextNode, DecoratorNode} from 'outline';
+import {createEditor, ElementNode, TextNode, DecoratorNode} from 'outline';
 import {ParagraphNode} from 'outline/ParagraphNode';
 import {HeadingNode} from 'outline/HeadingNode';
 import {ListNode} from 'outline/ListNode';
@@ -38,9 +38,9 @@ export function createTestEditor(config): OutlineEditor {
     LinkNode,
     QuoteNode,
     CodeNode,
-    TestBlockNode,
+    TestElementNode,
     TestSegmentedNode,
-    TestExcludeFromCopyBlockNode,
+    TestExcludeFromCopyElementNode,
     TestDecoratorNode,
   ]);
   return editor;
@@ -99,12 +99,12 @@ export function initializeUnitTest(runTests: (testEnv: TestEnv) => void) {
   runTests(testEnv);
 }
 
-export class TestBlockNode extends BlockNode {
+export class TestElementNode extends ElementNode {
   static getType(): string {
     return 'test_block';
   }
-  static clone(node: BlockNode) {
-    return new TestBlockNode(node.__key);
+  static clone(node: ElementNode) {
+    return new TestElementNode(node.__key);
   }
   createDOM() {
     return document.createElement('div');
@@ -114,8 +114,8 @@ export class TestBlockNode extends BlockNode {
   }
 }
 
-export function createTestBlockNode(): TestBlockNode {
-  return new TestBlockNode();
+export function createTestElementNode(): TestElementNode {
+  return new TestElementNode();
 }
 
 export class TestSegmentedNode extends TextNode {
@@ -131,12 +131,12 @@ export function createTestSegmentedNode(text): TestSegmentedNode {
   return new TestSegmentedNode(text).makeSegmented();
 }
 
-export class TestExcludeFromCopyBlockNode extends BlockNode {
+export class TestExcludeFromCopyElementNode extends ElementNode {
   static getType(): string {
     return 'test_exclude_from_copy_block';
   }
-  static clone(node: TestExcludeFromCopyBlockNode) {
-    return new TestExcludeFromCopyBlockNode(node.__key);
+  static clone(node: TestExcludeFromCopyElementNode) {
+    return new TestExcludeFromCopyElementNode(node.__key);
   }
   createDOM() {
     return document.createElement('div');
@@ -149,8 +149,8 @@ export class TestExcludeFromCopyBlockNode extends BlockNode {
   }
 }
 
-export function createTestExcludeFromCopyBlockNode(): TestExcludeFromCopyBlockNode {
-  return new TestExcludeFromCopyBlockNode();
+export function createTestExcludeFromCopyElementNode(): TestExcludeFromCopyElementNode {
+  return new TestExcludeFromCopyElementNode();
 }
 
 export class TestDecoratorNode extends DecoratorNode {

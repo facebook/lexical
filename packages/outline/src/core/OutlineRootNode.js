@@ -10,12 +10,12 @@
 import type {OutlineNode} from './OutlineNode';
 import type {Selection} from './OutlineSelection';
 
-import {BlockNode, isBlockNode} from './OutlineBlockNode';
+import {ElementNode, isElementNode} from './OutlineElementNode';
 import {NO_DIRTY_NODES} from './OutlineConstants';
 import {getActiveEditor, isCurrentlyReadOnlyMode} from './OutlineUpdates';
 import invariant from 'shared/invariant';
 
-export class RootNode extends BlockNode {
+export class RootNode extends ElementNode {
   __cachedText: null | string;
 
   static getType(): string {
@@ -73,12 +73,12 @@ export class RootNode extends BlockNode {
 
   // Mutate
 
-  append(...nodesToAppend: OutlineNode[]): BlockNode {
+  append(...nodesToAppend: OutlineNode[]): ElementNode {
     for (let i = 0; i < nodesToAppend.length; i++) {
-      if (!isBlockNode(nodesToAppend[i])) {
+      if (!isElementNode(nodesToAppend[i])) {
         invariant(
           false,
-          'rootNode.append: Only block nodes can be appended to the root node',
+          'rootNode.append: Only element nodes can be appended to the root node',
         );
       }
     }

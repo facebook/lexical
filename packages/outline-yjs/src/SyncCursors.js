@@ -22,12 +22,12 @@ import {
   createRelativePositionFromTypeIndex,
   createAbsolutePositionFromRelativePosition,
 } from 'yjs';
-import {isTextNode, isBlockNode, getNodeByKey, getSelection} from 'outline';
+import {isTextNode, isElementNode, getNodeByKey, getSelection} from 'outline';
 import {CollabTextNode} from './CollabTextNode';
-import {CollabBlockNode} from './CollabBlockNode';
+import {CollabElementNode} from './CollabElementNode';
 import {CollabDecoratorNode} from './CollabDecoratorNode';
 import {CollabLineBreakNode} from './CollabLineBreakNode';
-import {getPositionFromBlockAndOffset} from './Utils';
+import {getPositionFromElementAndOffset} from './Utils';
 
 export type CursorSelection = {
   caret: HTMLElement,
@@ -267,7 +267,7 @@ function updateCursor(
   for (let i = 0; i < selectionRectsLength; i++) {
     const selectionRect = selectionRects[i];
     if (selectionRect.width + rootPadding === rootRect.width) {
-      // Exclude selections that span the entire block
+      // Exclude selections that span the entire element
       selectionRects.splice(i--, 1);
       selectionRectsLength--;
       continue;
@@ -331,7 +331,7 @@ export function syncLocalCursorPosition(
           selection.anchor.set(
             anchorKey,
             anchorOffset,
-            isBlockNode(anchorNode) ? 'block' : 'text',
+            isElementNode(anchorNode) ? 'element' : 'text',
           );
         }
         if (focus.key !== focusKey || focus.offset !== focusOffset) {
@@ -339,7 +339,7 @@ export function syncLocalCursorPosition(
           selection.focus.set(
             focusKey,
             focusOffset,
-            isBlockNode(focusNode) ? 'block' : 'text',
+            isElementNode(focusNode) ? 'element' : 'text',
           );
         }
       }
@@ -354,7 +354,7 @@ function getCollabNodeAndOffset(
   (
     | null
     | CollabDecoratorNode
-    | CollabBlockNode
+    | CollabElementNode
     | CollabTextNode
     | CollabLineBreakNode
   ),
@@ -365,8 +365,8 @@ function getCollabNodeAndOffset(
   if (collabNode === undefined) {
     return [null, 0];
   }
-  if (collabNode instanceof CollabBlockNode) {
-    const {node, offset: collabNodeOffset} = getPositionFromBlockAndOffset(
+  if (collabNode instanceof CollabElementNode) {
+    const {node, offset: collabNodeOffset} = getPositionFromElementAndOffset(
       collabNode,
       offset,
       true,

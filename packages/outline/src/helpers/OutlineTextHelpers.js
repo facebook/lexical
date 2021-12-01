@@ -9,7 +9,7 @@
 
 import type {RootNode, TextNode} from 'outline';
 
-import {isTextNode, isBlockNode} from 'outline';
+import {isTextNode, isElementNode} from 'outline';
 
 export function findTextIntersectionFromCharacters(
   root: RootNode,
@@ -19,7 +19,7 @@ export function findTextIntersectionFromCharacters(
   let currentCharacters = 0;
 
   mainLoop: while (node !== null) {
-    if (isBlockNode(node)) {
+    if (isElementNode(node)) {
       const child = node.getFirstChild();
       if (child !== null) {
         node = child;

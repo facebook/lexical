@@ -9,7 +9,7 @@
 
 import type {
   OutlineEditor,
-  IntentionallyMarkedAsDirtyBlock,
+  IntentionallyMarkedAsDirtyElement,
   RegisteredNode,
 } from './OutlineEditor';
 import type {OutlineNode, NodeKey, NodeMap} from './OutlineNode';
@@ -26,7 +26,7 @@ import {
 } from './OutlineConstants';
 import {
   isTextNode,
-  isBlockNode,
+  isElementNode,
   isLineBreakNode,
   isDecoratorNode,
   RootNode,
@@ -66,12 +66,12 @@ export function getRegisteredNodeOrThrow(
 
 // When we are dealing with setting selection on an empty text node, we
 // need to apply some heuristics that alter the selection anchor. Specifically,
-// if the text node is the start of a block or new line, the anchor should be in
+// if the text node is the start of an element or new line, the anchor should be in
 // position 0. Otherwise, it should be in position 1. This is because we use the
 // BYTE_ORDER_MARK character as a way of giving the empty text node some physical
 // space so that browsers correctly insert text into them. The reason we need to
 // apply heuristics around if we should use 0 or 1 is because of how we insertText.
-// We let the browser natively insert text, but this can cause issues on a new block
+// We let the browser natively insert text, but this can cause issues on a new element
 // with things like autocorrect and the software keyboard suggestions. Conversely,
 // IME input can break if the anchor is not at 1 in other cases.
 export function getAdjustedSelectionOffset(anchorDOM: Node): number {
@@ -168,9 +168,9 @@ export function generateKey(node: OutlineNode): NodeKey {
   const editorState = getActiveEditorState();
   const key = generateRandomKey();
   editorState._nodeMap.set(key, node);
-  // TODO Split this function into leaf/block
-  if (isBlockNode(node)) {
-    editor._dirtyBlocks.set(key, true);
+  // TODO Split this function into leaf/element
+  if (isElementNode(node)) {
+    editor._dirtyElements.set(key, true);
   } else {
     editor._dirtyLeaves.add(key);
   }
@@ -179,21 +179,21 @@ export function generateKey(node: OutlineNode): NodeKey {
   return key;
 }
 
-export function markParentBlocksAsDirty(
+export function markParentElementsAsDirty(
   parentKey: NodeKey,
   nodeMap: NodeMap,
-  dirtyBlocks: Map<NodeKey, IntentionallyMarkedAsDirtyBlock>,
+  dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
 ): void {
   let nextParentKey = parentKey;
   while (nextParentKey !== null) {
-    if (dirtyBlocks.has(nextParentKey)) {
+    if (dirtyElements.has(nextParentKey)) {
       return;
     }
     const node = nodeMap.get(nextParentKey);
     if (node === undefined) {
       break;
     }
-    dirtyBlocks.set(nextParentKey, false);
+    dirtyElements.set(nextParentKey, false);
     nextParentKey = node.__parent;
   }
 }
@@ -207,16 +207,16 @@ export function internallyMarkNodeAsDirty(node: OutlineNode): void {
   const editorState = getActiveEditorState();
   const editor = getActiveEditor();
   const nodeMap = editorState._nodeMap;
-  const dirtyBlocks = editor._dirtyBlocks;
+  const dirtyElements = editor._dirtyElements;
   if (parent !== null) {
-    markParentBlocksAsDirty(parent, nodeMap, dirtyBlocks);
+    markParentElementsAsDirty(parent, nodeMap, dirtyElements);
   }
   const key = latest.__key;
   editor._dirtyType = HAS_DIRTY_NODES;
-  if (isBlockNode(node)) {
-    dirtyBlocks.set(key, true);
+  if (isElementNode(node)) {
+    dirtyElements.set(key, true);
   } else {
-    // TODO split internally MarkNodeAsDirty into two dedicated Block/leave functions
+    // TODO split internally MarkNodeAsDirty into two dedicated Element/leave functions
     editor._dirtyLeaves.add(key);
   }
 }

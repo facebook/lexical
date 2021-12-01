@@ -9,7 +9,7 @@
 
 import type {OutlineNode, NodeKey} from './OutlineNode';
 import type {OutlineEditor} from './OutlineEditor';
-import type {BlockNode} from './OutlineBlockNode';
+import type {ElementNode} from './OutlineElementNode';
 import type {TextFormatType} from './OutlineTextNode';
 import type {EditorState} from './OutlineEditorState';
 
@@ -22,7 +22,7 @@ import {getNodeKeyFromDOM} from './OutlineReconciler';
 import {getIsProcesssingMutations} from './OutlineMutations';
 import {
   isTextNode,
-  isBlockNode,
+  isElementNode,
   isLineBreakNode,
   isDecoratorNode,
   isRootNode,
@@ -45,31 +45,31 @@ export type TextPointType = {
   is: (PointType) => boolean,
   isBefore: (PointType) => boolean,
   getNode: () => TextNode,
-  set: (key: NodeKey, offset: number, type: 'text' | 'block') => void,
+  set: (key: NodeKey, offset: number, type: 'text' | 'element') => void,
   getCharacterOffset: () => number,
   isAtNodeEnd: () => boolean,
 };
 
-export type BlockPointType = {
+export type ElementPointType = {
   key: NodeKey,
   offset: number,
-  type: 'block',
+  type: 'element',
   is: (PointType) => boolean,
   isBefore: (PointType) => boolean,
-  getNode: () => BlockNode,
-  set: (key: NodeKey, offset: number, type: 'text' | 'block') => void,
+  getNode: () => ElementNode,
+  set: (key: NodeKey, offset: number, type: 'text' | 'element') => void,
   getCharacterOffset: () => number,
   isAtNodeEnd: () => boolean,
 };
 
-export type PointType = TextPointType | BlockPointType;
+export type PointType = TextPointType | ElementPointType;
 
 class Point {
   key: NodeKey;
   offset: number;
-  type: 'text' | 'block';
+  type: 'text' | 'element';
 
-  constructor(key: NodeKey, offset: number, type: 'text' | 'block') {
+  constructor(key: NodeKey, offset: number, type: 'text' | 'element') {
     this.key = key;
     this.offset = offset;
     this.type = type;
@@ -87,10 +87,10 @@ class Point {
     const aOffset = this.offset;
     const bOffset = b.offset;
 
-    if (isBlockNode(aNode)) {
+    if (isElementNode(aNode)) {
       aNode = aNode.getDescendantByIndex(aOffset);
     }
-    if (isBlockNode(bNode)) {
+    if (isElementNode(bNode)) {
       bNode = bNode.getDescendantByIndex(bOffset);
     }
     if (aNode === bNode) {
@@ -109,7 +109,7 @@ class Point {
     }
     return node;
   }
-  set(key: NodeKey, offset: number, type: 'text' | 'block'): void {
+  set(key: NodeKey, offset: number, type: 'text' | 'element'): void {
     const selection = getSelection();
     const oldKey = this.key;
     this.key = key;
@@ -132,7 +132,7 @@ class Point {
 function createPoint(
   key: NodeKey,
   offset: number,
-  type: 'text' | 'block',
+  type: 'text' | 'element',
 ): PointType {
   // $FlowFixMe: intentionally cast as we use a class for perf reasons
   return new Point(key, offset, type);
@@ -141,7 +141,7 @@ function createPoint(
 function selectPointOnNode(point: PointType, node: OutlineNode): void {
   const key = node.getKey();
   let offset = point.offset;
-  let type = 'block';
+  let type = 'element';
   if (isTextNode(node)) {
     type = 'text';
     const textContentLength = node.getTextContentSize();
@@ -156,9 +156,9 @@ export function moveSelectionPointToEnd(
   point: PointType,
   node: OutlineNode,
 ): void {
-  if (isBlockNode(node)) {
+  if (isElementNode(node)) {
     const lastNode = node.getLastDescendant();
-    if (isBlockNode(lastNode) || isTextNode(lastNode)) {
+    if (isElementNode(lastNode) || isTextNode(lastNode)) {
       selectPointOnNode(point, lastNode);
     } else {
       selectPointOnNode(point, node);
@@ -172,7 +172,7 @@ export function setPointValues(
   point: PointType,
   key: NodeKey,
   offset: number,
-  type: 'text' | 'block',
+  type: 'text' | 'element',
 ): void {
   point.key = key;
   // $FlowFixMe: internal utility function
@@ -212,14 +212,14 @@ export class Selection {
     let firstNode = anchor.getNode();
     let lastNode = focus.getNode();
 
-    if (isBlockNode(firstNode)) {
+    if (isElementNode(firstNode)) {
       firstNode = firstNode.getDescendantByIndex(anchor.offset);
     }
-    if (isBlockNode(lastNode)) {
+    if (isElementNode(lastNode)) {
       lastNode = lastNode.getDescendantByIndex(focus.offset);
     }
     if (firstNode === lastNode) {
-      if (isBlockNode(firstNode)) {
+      if (isElementNode(firstNode)) {
         return [];
       }
       return [firstNode];
@@ -249,20 +249,20 @@ export class Selection {
     const anchorOffset = anchor.getCharacterOffset();
     const focusOffset = focus.getCharacterOffset();
     let textContent = '';
-    let prevWasBlock = true;
+    let prevWasElement = true;
     for (let i = 0; i < nodes.length; i++) {
       const node = nodes[i];
-      if (isBlockNode(node)) {
-        if (!prevWasBlock) {
+      if (isElementNode(node)) {
+        if (!prevWasElement) {
           textContent += '\n';
         }
         if (node.isEmpty()) {
-          prevWasBlock = false;
+          prevWasElement = false;
         } else {
-          prevWasBlock = true;
+          prevWasElement = true;
         }
       } else {
-        prevWasBlock = false;
+        prevWasElement = false;
         if (isTextNode(node)) {
           let text = node.getTextContent();
           if (node === firstNode) {
@@ -378,7 +378,7 @@ function resolveSelectionPoint(dom: Node, offset: number): null | PointType {
   // node should be selected.
 
   if (domIsElement(dom)) {
-    // Resolve element to a BlockNode, or TextNode, or null
+    // Resolve element to a ElementNode, or TextNode, or null
     let moveSelectionToEnd = false;
     // Given we're moving selection to another node, selection is
     // definitely dirty.
@@ -397,42 +397,42 @@ function resolveSelectionPoint(dom: Node, offset: number): null | PointType {
     if (isTextNode(resolvedNode)) {
       resolvedOffset = getTextNodeOffset(resolvedNode, moveSelectionToEnd);
     } else {
-      let resolvedBlock = getNodeFromDOM(dom);
-      // Ensure resolvedBlock is actually a block.
-      if (resolvedBlock === null) {
+      let resolvedElement = getNodeFromDOM(dom);
+      // Ensure resolvedElement is actually a element.
+      if (resolvedElement === null) {
         return null;
       }
-      if (isBlockNode(resolvedBlock)) {
-        let child = resolvedBlock.getChildAtIndex(resolvedOffset);
-        if (isBlockNode(child)) {
+      if (isElementNode(resolvedElement)) {
+        let child = resolvedElement.getChildAtIndex(resolvedOffset);
+        if (isElementNode(child)) {
           const descendant = moveSelectionToEnd
             ? child.getLastDescendant()
             : child.getFirstDescendant();
           if (descendant === null) {
-            resolvedBlock = child;
+            resolvedElement = child;
             resolvedOffset = 0;
           } else {
             child = descendant;
-            resolvedBlock = child.getParentOrThrow();
+            resolvedElement = child.getParentOrThrow();
           }
         }
         if (isTextNode(child)) {
           resolvedNode = child;
-          resolvedBlock = null;
+          resolvedElement = null;
           resolvedOffset = getTextNodeOffset(resolvedNode, moveSelectionToEnd);
-        } else if (child !== resolvedBlock && moveSelectionToEnd) {
+        } else if (child !== resolvedElement && moveSelectionToEnd) {
           resolvedOffset++;
         }
       } else {
-        resolvedOffset = resolvedBlock.getIndexWithinParent() + 1;
-        resolvedBlock = resolvedBlock.getParentOrThrow();
+        resolvedOffset = resolvedElement.getIndexWithinParent() + 1;
+        resolvedElement = resolvedElement.getParentOrThrow();
       }
       // You can't select root nodes
-      if (isRootNode(resolvedBlock)) {
+      if (isRootNode(resolvedElement)) {
         return null;
       }
-      if (isBlockNode(resolvedBlock)) {
-        return createPoint(resolvedBlock.__key, resolvedOffset, 'block');
+      if (isElementNode(resolvedElement)) {
+        return createPoint(resolvedElement.__key, resolvedOffset, 'element');
       }
     }
   } else {
@@ -538,8 +538,8 @@ export function makeSelection(
   anchorOffset: number,
   focusKey: NodeKey,
   focusOffset: number,
-  anchorType: 'text' | 'block',
-  focusType: 'text' | 'block',
+  anchorType: 'text' | 'element',
+  focusType: 'text' | 'element',
 ): Selection {
   const editorState = getActiveEditorState();
   const selection = new Selection(
@@ -553,8 +553,8 @@ export function makeSelection(
 }
 
 export function createEmptySelection(): Selection {
-  const anchor = createPoint('root', 0, 'block');
-  const focus = createPoint('root', 0, 'block');
+  const anchor = createPoint('root', 0, 'element');
+  const focus = createPoint('root', 0, 'element');
   return new Selection(anchor, focus, 0);
 }
 
@@ -645,12 +645,12 @@ export function createSelectionFromParse(
     anchor: {
       key: string,
       offset: number,
-      type: 'text' | 'block',
+      type: 'text' | 'element',
     },
     focus: {
       key: string,
       offset: number,
-      type: 'text' | 'block',
+      type: 'text' | 'element',
     },
   },
 ): null | Selection {
@@ -671,7 +671,7 @@ export function createSelectionFromParse(
       );
 }
 
-export function updateBlockSelectionOnCreateDeleteNode(
+export function updateElementSelectionOnCreateDeleteNode(
   selection: Selection,
   parentNode: OutlineNode,
   nodeOffset: number,
@@ -685,7 +685,7 @@ export function updateBlockSelectionOnCreateDeleteNode(
     return;
   }
   // Flow
-  if (!isBlockNode(anchorNode)) {
+  if (!isElementNode(anchorNode)) {
     return;
   }
   const parentKey = parentNode.getKey();
@@ -694,8 +694,8 @@ export function updateBlockSelectionOnCreateDeleteNode(
     const selectionOffset = anchor.offset;
     if (nodeOffset <= selectionOffset) {
       const newSelectionOffset = Math.max(0, selectionOffset + times);
-      anchor.set(parentKey, newSelectionOffset, 'block');
-      focus.set(parentKey, newSelectionOffset, 'block');
+      anchor.set(parentKey, newSelectionOffset, 'element');
+      focus.set(parentKey, newSelectionOffset, 'element');
       // The new selection might point to text nodes, try to resolve them
       updateSelectionResolveTextNodes(selection);
     }
@@ -710,13 +710,17 @@ export function updateBlockSelectionOnCreateDeleteNode(
   if (parentNode.is(firstPointNode)) {
     const firstPointOffset = firstPoint.offset;
     if (nodeOffset <= firstPointOffset) {
-      firstPoint.set(parentKey, Math.max(0, firstPointOffset + times), 'block');
+      firstPoint.set(
+        parentKey,
+        Math.max(0, firstPointOffset + times),
+        'element',
+      );
     }
   }
   if (parentNode.is(lastPointNode)) {
     const lastPointOffset = lastPoint.offset;
     if (nodeOffset <= lastPointOffset) {
-      lastPoint.set(parentKey, Math.max(0, lastPointOffset + times), 'block');
+      lastPoint.set(parentKey, Math.max(0, lastPointOffset + times), 'element');
     }
   }
   // The new selection might point to text nodes, try to resolve them
@@ -731,7 +735,7 @@ function updateSelectionResolveTextNodes(selection: Selection) {
   const anchorNode = anchor.getNode();
   const focusNode = focus.getNode();
   if (selection.isCollapsed()) {
-    if (!isBlockNode(anchorNode)) {
+    if (!isElementNode(anchorNode)) {
       return;
     }
     const childSize = anchorNode.getChildrenSize();
@@ -749,7 +753,7 @@ function updateSelectionResolveTextNodes(selection: Selection) {
     }
     return;
   }
-  if (isBlockNode(anchorNode)) {
+  if (isElementNode(anchorNode)) {
     const childSize = anchorNode.getChildrenSize();
     const anchorOffsetAtEnd = anchorOffset >= childSize;
     const child = anchorOffsetAtEnd
@@ -763,7 +767,7 @@ function updateSelectionResolveTextNodes(selection: Selection) {
       anchor.set(child.getKey(), newOffset, 'text');
     }
   }
-  if (isBlockNode(focusNode)) {
+  if (isElementNode(focusNode)) {
     const childSize = focusNode.getChildrenSize();
     const focusOffsetAtEnd = focusOffset >= childSize;
     const child = focusOffsetAtEnd

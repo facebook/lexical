@@ -99,7 +99,7 @@ export type UpdateListener = ({
   prevEditorState: EditorState,
   editorState: EditorState,
   dirtyLeaves: Set<NodeKey>,
-  dirtyBlocks: Map<NodeKey, IntentionallyMarkedAsDirtyBlock>,
+  dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
   normalizedNodes: Set<NodeKey>,
   log: Array<string>,
 }) => void;
@@ -135,9 +135,9 @@ export type ListenerType =
   | 'decorator'
   | 'textcontent';
 
-export type TransformerType = 'text' | 'decorator' | 'block' | 'root';
+export type TransformerType = 'text' | 'decorator' | 'element' | 'root';
 
-export type IntentionallyMarkedAsDirtyBlock = boolean;
+export type IntentionallyMarkedAsDirtyElement = boolean;
 
 export function resetEditor(
   editor: OutlineEditor,
@@ -153,7 +153,7 @@ export function resetEditor(
   editor._dirtyType = NO_DIRTY_NODES;
   editor._cloneNotNeeded.clear();
   editor._dirtyLeaves = new Set();
-  editor._dirtyBlocks.clear();
+  editor._dirtyElements.clear();
   editor._normalizedNodes = new Set();
   editor._updateTags = new Set();
   editor._log = [];
@@ -260,7 +260,7 @@ class BaseOutlineEditor {
   _dirtyType: 0 | 1 | 2;
   _cloneNotNeeded: Set<NodeKey>;
   _dirtyLeaves: Set<NodeKey>;
-  _dirtyBlocks: Map<NodeKey, IntentionallyMarkedAsDirtyBlock>;
+  _dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>;
   _normalizedNodes: Set<NodeKey>;
   _updateTags: Set<string>;
   _observer: null | MutationObserver;
@@ -302,7 +302,7 @@ class BaseOutlineEditor {
     this._dirtyType = NO_DIRTY_NODES;
     this._cloneNotNeeded = new Set();
     this._dirtyLeaves = new Set();
-    this._dirtyBlocks = new Map();
+    this._dirtyElements = new Map();
     this._normalizedNodes = new Set();
     this._updateTags = new Set();
     // Handling of DOM mutations
@@ -508,7 +508,7 @@ declare export class OutlineEditor {
   _dirtyType: 0 | 1 | 2;
   _cloneNotNeeded: Set<NodeKey>;
   _dirtyLeaves: Set<NodeKey>;
-  _dirtyBlocks: Map<NodeKey, IntentionallyMarkedAsDirtyBlock>;
+  _dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>;
   _normalizedNodes: Set<NodeKey>;
   _updateTags: Set<string>;
   _observer: null | MutationObserver;

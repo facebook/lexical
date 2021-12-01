@@ -21,12 +21,12 @@ export type ParsedEditorState = {
     anchor: {
       key: string,
       offset: number,
-      type: 'text' | 'block',
+      type: 'text' | 'element',
     },
     focus: {
       key: string,
       offset: number,
-      type: 'text' | 'block',
+      type: 'text' | 'element',
     },
   },
   _nodeMap: Array<[NodeKey, ParsedNode]>,

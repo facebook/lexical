@@ -15,7 +15,7 @@ import ReactTestUtils from 'react-dom/test-utils';
 import {
   createTextNode,
   TextNode,
-  BlockNode,
+  ElementNode,
   RootNode,
   getRoot,
   setCompositionKey,
@@ -27,7 +27,7 @@ import {createParagraphNode, ParagraphNode} from 'outline/ParagraphNode';
 import useOutlineRichText from 'outline-react/useOutlineRichText';
 import {getEditorStateTextContent} from '../../core/OutlineUtils';
 import {
-  createTestBlockNode,
+  createTestElementNode,
   createTestDecoratorNode,
   createTestEditor,
 } from '../utils';
@@ -1020,42 +1020,42 @@ describe('OutlineEditor tests', () => {
     });
 
     it('moves node to different tree branches', async () => {
-      function createBlockNodeWithText(text: string) {
-        const blockNode = createTestBlockNode();
+      function createElementNodeWithText(text: string) {
+        const elementNode = createTestElementNode();
         const textNode = createTextNode(text);
-        blockNode.append(textNode);
-        return [blockNode, textNode];
+        elementNode.append(textNode);
+        return [elementNode, textNode];
       }
 
       let paragraphNodeKey;
-      let blockNode1Key;
+      let elementNode1Key;
       let textNode1Key;
-      let blockNode2Key;
+      let elementNode2Key;
       let textNode2Key;
       await update(() => {
         const paragraph: ParagraphNode = getRoot().getFirstChild();
         paragraphNodeKey = paragraph.getKey();
 
-        const [blockNode1, textNode1] = createBlockNodeWithText('A');
-        blockNode1Key = blockNode1.getKey();
+        const [elementNode1, textNode1] = createElementNodeWithText('A');
+        elementNode1Key = elementNode1.getKey();
         textNode1Key = textNode1.getKey();
 
-        const [blockNode2, textNode2] = createBlockNodeWithText('B');
-        blockNode2Key = blockNode2.getKey();
+        const [elementNode2, textNode2] = createElementNodeWithText('B');
+        elementNode2Key = elementNode2.getKey();
         textNode2Key = textNode2.getKey();
 
-        paragraph.append(blockNode1, blockNode2);
+        paragraph.append(elementNode1, elementNode2);
       });
       await update(() => {
-        const blockNode1: BlockNode = getNodeByKey(blockNode1Key);
-        const blockNode2: TextNode = getNodeByKey(blockNode2Key);
-        blockNode1.append(blockNode2);
+        const elementNode1: ElementNode = getNodeByKey(elementNode1Key);
+        const elementNode2: TextNode = getNodeByKey(elementNode2Key);
+        elementNode1.append(elementNode2);
       });
       const keys = [
         paragraphNodeKey,
-        blockNode1Key,
+        elementNode1Key,
         textNode1Key,
-        blockNode2Key,
+        elementNode2Key,
         textNode2Key,
       ];
       for (let i = 0; i < keys.length; i++) {
@@ -1070,30 +1070,30 @@ describe('OutlineEditor tests', () => {
     });
 
     it('moves node to different tree branches (inverse)', async () => {
-      function createBlockNodeWithText(text: string) {
-        const blockNode = createTestBlockNode();
+      function createElementNodeWithText(text: string) {
+        const elementNode = createTestElementNode();
         const textNode = createTextNode(text);
-        blockNode.append(textNode);
-        return blockNode;
+        elementNode.append(textNode);
+        return elementNode;
       }
 
-      let blockNode1Key;
-      let blockNode2Key;
+      let elementNode1Key;
+      let elementNode2Key;
       await update(() => {
         const paragraph: ParagraphNode = getRoot().getFirstChild();
 
-        const blockNode1 = createBlockNodeWithText('A');
-        blockNode1Key = blockNode1.getKey();
+        const elementNode1 = createElementNodeWithText('A');
+        elementNode1Key = elementNode1.getKey();
 
-        const blockNode2 = createBlockNodeWithText('B');
-        blockNode2Key = blockNode2.getKey();
+        const elementNode2 = createElementNodeWithText('B');
+        elementNode2Key = elementNode2.getKey();
 
-        paragraph.append(blockNode1, blockNode2);
+        paragraph.append(elementNode1, elementNode2);
       });
       await update((state: State) => {
-        const blockNode1: BlockNode = getNodeByKey(blockNode1Key);
-        const blockNode2: TextNode = getNodeByKey(blockNode2Key);
-        blockNode2.append(blockNode1);
+        const elementNode1: ElementNode = getNodeByKey(elementNode1Key);
+        const elementNode2: TextNode = getNodeByKey(elementNode2Key);
+        elementNode2.append(elementNode1);
       });
       expect(container.innerHTML).toBe(
         '<div contenteditable="true" data-outline-editor="true"><p><div><span data-outline-text="true">B</span><div><span data-outline-text="true">A</span></div></div></p></div>',
@@ -1101,36 +1101,36 @@ describe('OutlineEditor tests', () => {
     });
 
     it('moves node to different tree branches (node appended twice in two different branches)', async () => {
-      function createBlockNodeWithText(text: string) {
-        const blockNode = createTestBlockNode();
+      function createElementNodeWithText(text: string) {
+        const elementNode = createTestElementNode();
         const textNode = createTextNode(text);
-        blockNode.append(textNode);
-        return blockNode;
+        elementNode.append(textNode);
+        return elementNode;
       }
 
-      let blockNode1Key;
-      let blockNode2Key;
-      let blockNode3Key;
+      let elementNode1Key;
+      let elementNode2Key;
+      let elementNode3Key;
       await update(() => {
         const paragraph: ParagraphNode = getRoot().getFirstChild();
 
-        const blockNode1 = createBlockNodeWithText('A');
-        blockNode1Key = blockNode1.getKey();
+        const elementNode1 = createElementNodeWithText('A');
+        elementNode1Key = elementNode1.getKey();
 
-        const blockNode2 = createBlockNodeWithText('B');
-        blockNode2Key = blockNode2.getKey();
+        const elementNode2 = createElementNodeWithText('B');
+        elementNode2Key = elementNode2.getKey();
 
-        const blockNode3 = createBlockNodeWithText('C');
-        blockNode3Key = blockNode3.getKey();
+        const elementNode3 = createElementNodeWithText('C');
+        elementNode3Key = elementNode3.getKey();
 
-        paragraph.append(blockNode1, blockNode2, blockNode3);
+        paragraph.append(elementNode1, elementNode2, elementNode3);
       });
       await update((state: State) => {
-        const blockNode1: BlockNode = getNodeByKey(blockNode1Key);
-        const blockNode2: TextNode = getNodeByKey(blockNode2Key);
-        const blockNode3: TextNode = getNodeByKey(blockNode3Key);
-        blockNode2.append(blockNode3);
-        blockNode1.append(blockNode3);
+        const elementNode1: ElementNode = getNodeByKey(elementNode1Key);
+        const elementNode2: TextNode = getNodeByKey(elementNode2Key);
+        const elementNode3: TextNode = getNodeByKey(elementNode3Key);
+        elementNode2.append(elementNode3);
+        elementNode1.append(elementNode3);
       });
       expect(container.innerHTML).toBe(
         '<div contenteditable="true" data-outline-editor="true"><p><div><span data-outline-text="true">A</span><div><span data-outline-text="true">C</span></div></div><div><span data-outline-text="true">B</span></div></p></div>',

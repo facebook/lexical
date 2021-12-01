@@ -15,7 +15,7 @@ import {OutlineNode} from './OutlineNode';
 import {
   getSelection,
   makeSelection,
-  updateBlockSelectionOnCreateDeleteNode,
+  updateElementSelectionOnCreateDeleteNode,
 } from './OutlineSelection';
 import {
   getCompositionKey,
@@ -376,26 +376,26 @@ export class TextNode extends OutlineNode {
     const writableSelf = this.getWritable();
 
     // Handle text direction and update text content
-    const topBlock = this.getTopParentBlock();
-    if (topBlock !== null) {
-      const topBlockWasEmpty =
-        text === '' || topBlock.getTextContent(false, false) === '';
+    const topElement = this.getTopParentElement();
+    if (topElement !== null) {
+      const topElementWasEmpty =
+        text === '' || topElement.getTextContent(false, false) === '';
 
       writableSelf.__text = text;
-      const prevDirection = topBlock.getDirection();
+      const prevDirection = topElement.getDirection();
       // If the text content is only a single character, we may have just
       // replaced all the text with a RTL/LTR character, so check that too.
-      if (prevDirection === null || text.length === 1 || topBlockWasEmpty) {
+      if (prevDirection === null || text.length === 1 || topElementWasEmpty) {
         const direction = getTextDirection(text);
         if (direction !== null) {
-          topBlock.setDirection(direction);
+          topElement.setDirection(direction);
         }
       } else if (
         prevDirection !== null &&
         text === '' &&
-        topBlock.getTextContent() === ''
+        topElement.getTextContent() === ''
       ) {
-        topBlock.setDirection(null);
+        topElement.setDirection(null);
       }
     } else {
       writableSelf.__text = text;
@@ -591,7 +591,7 @@ export class TextNode extends OutlineNode {
     }
 
     if (selection !== null) {
-      updateBlockSelectionOnCreateDeleteNode(
+      updateElementSelectionOnCreateDeleteNode(
         selection,
         parent,
         insertionIndex,

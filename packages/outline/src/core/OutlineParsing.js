@@ -17,7 +17,7 @@ import {
 } from './OutlineUpdates';
 import {
   isRootNode,
-  isBlockNode,
+  isElementNode,
   isTextNode,
   isDecoratorNode,
   createEditorStateRef,
@@ -37,7 +37,7 @@ export type ParsedNode = {
   ...
 };
 
-export type ParsedBlockNode = {
+export type ParsedElementNode = {
   ...ParsedNode,
   __children: Array<NodeKey>,
 };
@@ -53,12 +53,12 @@ export type ParsedSelection = {
   anchor: {
     key: NodeKey,
     offset: number,
-    type: 'text' | 'block',
+    type: 'text' | 'element',
   },
   focus: {
     key: NodeKey,
     offset: number,
-    type: 'text' | 'block',
+    type: 'text' | 'element',
   },
 };
 
@@ -98,8 +98,8 @@ export function internalCreateNodeFromParse(
   node.__flags = parsedNode.__flags;
   node.__parent = parentKey;
   // We will need to recursively handle the children in the case
-  // of a BlockNode.
-  if (isBlockNode(node)) {
+  // of a ElementNode.
+  if (isElementNode(node)) {
     const children = parsedNode.__children;
     for (let i = 0; i < children.length; i++) {
       const childKey = children[i];

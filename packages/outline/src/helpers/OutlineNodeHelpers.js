@@ -14,7 +14,7 @@ import type {ListNode} from 'outline/ListNode';
 import {isListNode} from 'outline/ListNode';
 import {isListItemNode} from 'outline/ListItemNode';
 import invariant from 'shared/invariant';
-import {isBlockNode} from 'outline';
+import {isElementNode} from 'outline';
 
 export function dfs(
   startingNode: OutlineNode,
@@ -23,7 +23,7 @@ export function dfs(
   let node = startingNode;
   nextNode(node);
   while (node !== null) {
-    if (isBlockNode(node) && node.getChildrenSize() > 0) {
+    if (isElementNode(node) && node.getChildrenSize() > 0) {
       node = node.getFirstChild();
     } else {
       // Find immediate sibling or nearest parent sibling
@@ -89,7 +89,7 @@ export function createOutlineNodeFromDOMNode(
   const createFunction = conversionMap[node.nodeName.toLowerCase()];
   if (createFunction) {
     outlineNode = createFunction(node);
-    if (isBlockNode(outlineNode)) {
+    if (isElementNode(outlineNode)) {
       const children = node.childNodes;
       for (let i = 0; i < children.length; i++) {
         const child = createOutlineNodeFromDOMNode(children[i], conversionMap);

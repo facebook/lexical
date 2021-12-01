@@ -11,10 +11,10 @@ import type {EditorConfig} from './OutlineEditor';
 import type {Selection, PointType} from './OutlineSelection';
 
 import {
-  isBlockNode,
+  isElementNode,
   isTextNode,
   isRootNode,
-  BlockNode,
+  ElementNode,
   isDecoratorNode,
 } from '.';
 import {
@@ -28,7 +28,7 @@ import {
   getNodeByKey,
   getTextDirection,
   internallyMarkNodeAsDirty,
-  markParentBlocksAsDirty,
+  markParentElementsAsDirty,
   setCompositionKey,
 } from './OutlineUtils';
 import invariant from 'shared/invariant';
@@ -41,7 +41,7 @@ import {
 import {
   getSelection,
   moveSelectionPointToEnd,
-  updateBlockSelectionOnCreateDeleteNode,
+  updateElementSelectionOnCreateDeleteNode,
 } from './OutlineSelection';
 
 export type NodeMap = Map<NodeKey, OutlineNode>;
@@ -82,7 +82,7 @@ export function removeNode(
   writableNodeToRemove.__parent = null;
 
   if (selection !== null && restoreSelection && !selectionMoved) {
-    updateBlockSelectionOnCreateDeleteNode(selection, parent, index, -1);
+    updateElementSelectionOnCreateDeleteNode(selection, parent, index, -1);
   }
   if (
     parent !== null &&
@@ -97,7 +97,7 @@ export function removeNode(
 function moveSelectionPointToSibling(
   point: PointType,
   node: OutlineNode,
-  parent: BlockNode,
+  parent: ElementNode,
 ): void {
   let siblingKey = null;
   let offset = 0;
@@ -115,18 +115,18 @@ function moveSelectionPointToSibling(
     point.set(siblingKey, offset, 'text');
   } else {
     offset = node.getIndexWithinParent();
-    point.set(parent.__key, offset, 'block');
+    point.set(parent.__key, offset, 'element');
   }
 }
 
 export function updateDirectionIfNeeded(node: OutlineNode): void {
-  const topBlock = node.getTopParentBlockOrThrow();
-  const prevDirection = topBlock.getDirection();
+  const topElement = node.getTopParentElementOrThrow();
+  const prevDirection = topElement.getDirection();
   if (prevDirection !== null) {
-    const textContent = topBlock.getTextContent(false, false);
+    const textContent = topElement.getTextContent(false, false);
     const direction = getTextDirection(textContent);
     if (direction === null) {
-      topBlock.setDirection(null);
+      topElement.setDirection(null);
     }
   }
 }
@@ -215,11 +215,11 @@ export class OutlineNode {
     if (isTextNode(this)) {
       return isSelected;
     }
-    // For inline images inside of block nodes.
+    // For inline images inside of element nodes.
     // Without this change the image will be selected if the cursor is before or after it.
     if (
-      selection.anchor.type === 'block' &&
-      selection.focus.type === 'block' &&
+      selection.anchor.type === 'element' &&
+      selection.focus.type === 'element' &&
       selection.anchor.key === selection.focus.key &&
       selection.anchor.offset === selection.focus.offset
     ) {
@@ -243,53 +243,53 @@ export class OutlineNode {
     const children = parent.__children;
     return children.indexOf(this.__key);
   }
-  getParent(): BlockNode | null {
+  getParent(): ElementNode | null {
     const parent = this.getLatest().__parent;
     if (parent === null) {
       return null;
     }
-    return getNodeByKey<BlockNode>(parent);
+    return getNodeByKey<ElementNode>(parent);
   }
-  getParentOrThrow(): BlockNode {
+  getParentOrThrow(): ElementNode {
     const parent = this.getParent();
     if (parent === null) {
       invariant(false, 'Expected node %s to have a parent.', this.__key);
     }
     return parent;
   }
-  getParentBlockOrThrow(): BlockNode {
+  getParentElementOrThrow(): ElementNode {
     let node = this;
     while (node !== null) {
       node = node.getParent();
-      if (isBlockNode(node)) {
+      if (isElementNode(node)) {
         return node;
       }
     }
-    invariant(false, 'Expected node %s to have a parent block.', this.__key);
+    invariant(false, 'Expected node %s to have a parent element.', this.__key);
   }
-  getTopParentBlock(): null | BlockNode {
+  getTopParentElement(): null | ElementNode {
     let node = this;
     while (node !== null) {
       const parent = node.getParent();
-      if (isRootNode(parent) && isBlockNode(node)) {
+      if (isRootNode(parent) && isElementNode(node)) {
         return node;
       }
       node = parent;
     }
     return null;
   }
-  getTopParentBlockOrThrow(): BlockNode {
-    const parent = this.getTopParentBlock();
+  getTopParentElementOrThrow(): ElementNode {
+    const parent = this.getTopParentElement();
     if (parent === null) {
       invariant(
         false,
-        'Expected node %s to have a top parent block.',
+        'Expected node %s to have a top parent element.',
         this.__key,
       );
     }
     return parent;
   }
-  getParents(): Array<BlockNode> {
+  getParents(): Array<ElementNode> {
     const parents = [];
     let node = this.getParent();
     while (node !== null) {
@@ -354,13 +354,13 @@ export class OutlineNode {
       .slice(index + 1)
       .map((childKey) => getNodeByKeyOrThrow<OutlineNode>(childKey));
   }
-  getCommonAncestor(node: OutlineNode): BlockNode | null {
+  getCommonAncestor(node: OutlineNode): ElementNode | null {
     const a = this.getParents();
     const b = node.getParents();
-    if (isBlockNode(this)) {
+    if (isElementNode(this)) {
       a.unshift(this);
     }
-    if (isBlockNode(node)) {
+    if (isElementNode(node)) {
       b.unshift(node);
     }
     const aLength = a.length;
@@ -442,7 +442,7 @@ export class OutlineNode {
       if (node === targetNode) {
         break;
       }
-      const child = isBlockNode(node)
+      const child = isElementNode(node)
         ? isBefore
           ? node.getFirstChild()
           : node.getLastChild()
@@ -533,9 +533,9 @@ export class OutlineNode {
     // Ensure we get the latest node from pending state
     const latestNode = this.getLatest();
     const parent = latestNode.__parent;
-    const dirtyBlocks = editor._dirtyBlocks;
+    const dirtyElements = editor._dirtyElements;
     if (parent !== null) {
-      markParentBlocksAsDirty(parent, nodeMap, dirtyBlocks);
+      markParentElementsAsDirty(parent, nodeMap, dirtyElements);
     }
     const cloneNotNeeded = editor._cloneNotNeeded;
     if (cloneNotNeeded.has(key)) {
@@ -547,7 +547,7 @@ export class OutlineNode {
     const mutableNode = constructor.clone(latestNode);
     mutableNode.__parent = parent;
     mutableNode.__flags = latestNode.__flags;
-    if (isBlockNode(mutableNode)) {
+    if (isElementNode(mutableNode)) {
       mutableNode.__children = Array.from(latestNode.__children);
       mutableNode.__indent = latestNode.__indent;
       mutableNode.__format = latestNode.__format;
@@ -707,7 +707,7 @@ export class OutlineNode {
     }
     const selection = getSelection();
     if (selection !== null) {
-      updateBlockSelectionOnCreateDeleteNode(
+      updateElementSelectionOnCreateDeleteNode(
         selection,
         writableParent,
         index + 1,
@@ -745,14 +745,18 @@ export class OutlineNode {
     }
     const selection = getSelection();
     if (selection !== null) {
-      updateBlockSelectionOnCreateDeleteNode(selection, writableParent, index);
+      updateElementSelectionOnCreateDeleteNode(
+        selection,
+        writableParent,
+        index,
+      );
     }
     return nodeToInsert;
   }
   selectPrevious(anchorOffset?: number, focusOffset?: number): Selection {
     errorOnReadOnly();
     const prevSibling = this.getPreviousSibling();
-    const parent = this.getParentBlockOrThrow();
+    const parent = this.getParentElementOrThrow();
     if (prevSibling === null) {
       return parent.select(0, 0);
     }
@@ -765,7 +769,7 @@ export class OutlineNode {
   selectNext(anchorOffset?: number, focusOffset?: number): Selection {
     errorOnReadOnly();
     const nextSibling = this.getNextSibling();
-    const parent = this.getParentBlockOrThrow();
+    const parent = this.getParentElementOrThrow();
     if (nextSibling === null) {
       return parent.select();
     }

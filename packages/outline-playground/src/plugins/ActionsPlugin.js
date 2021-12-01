@@ -12,7 +12,7 @@ import PlaygroundEditorContext from '../context/PlaygroundEditorContext';
 import {useEditorContext} from 'outline-react/OutlineEditorContext';
 import {useCollaborationContext} from '../context/CollaborationContext';
 import {useEffect, useState} from 'react';
-import {log, isBlockNode, getSelection, createEditorStateRef} from 'outline';
+import {log, isElementNode, getSelection, createEditorStateRef} from 'outline';
 import {isListItemNode} from 'outline/ListItemNode';
 import {ImageNode, createImageNode} from '../nodes/ImageNode';
 import {insertNodes} from 'outline/selection';
@@ -80,8 +80,8 @@ export default function ActionsPlugins({
       const selection = getSelection();
       if (selection !== null) {
         const node = selection.anchor.getNode();
-        const block = isBlockNode(node) ? node : node.getParentOrThrow();
-        block.setFormat(alignment);
+        const element = isElementNode(node) ? node : node.getParentOrThrow();
+        element.setFormat(alignment);
       }
     });
   };
@@ -107,10 +107,10 @@ export default function ActionsPlugins({
       const selection = getSelection();
       if (selection !== null) {
         const node = selection.anchor.getNode();
-        const block = isBlockNode(node) ? node : node.getParentOrThrow();
-        if (!isListItemNode(block)) {
-          if (block.getIndent() !== 0) {
-            block.setIndent(block.getIndent() - 1);
+        const element = isElementNode(node) ? node : node.getParentOrThrow();
+        if (!isListItemNode(element)) {
+          if (element.getIndent() !== 0) {
+            element.setIndent(element.getIndent() - 1);
           }
         } else {
           outdent();
@@ -124,10 +124,10 @@ export default function ActionsPlugins({
       const selection = getSelection();
       if (selection !== null) {
         const node = selection.anchor.getNode();
-        const block = isBlockNode(node) ? node : node.getParentOrThrow();
-        if (!isListItemNode(block)) {
-          if (block.getIndent() !== 10) {
-            block.setIndent(block.getIndent() + 1);
+        const element = isElementNode(node) ? node : node.getParentOrThrow();
+        if (!isListItemNode(element)) {
+          if (element.getIndent() !== 10) {
+            element.setIndent(element.getIndent() + 1);
           }
         } else {
           indent();

@@ -13,8 +13,8 @@ import type {
   Selection,
   TextFormatType,
   TextNode,
-  BlockPoint,
-  BlockNode,
+  ElementPoint,
+  ElementNode,
   Point,
 } from 'outline';
 
@@ -23,7 +23,7 @@ import {
   isDecoratorNode,
   isLeafNode,
   isTextNode,
-  isBlockNode,
+  isElementNode,
   createTextNode,
   isRootNode,
 } from 'outline';
@@ -42,7 +42,7 @@ function cloneWithProperties<T: OutlineNode>(node: T): T {
   const clone = constructor.clone(latest);
   clone.__flags = latest.__flags;
   clone.__parent = latest.__parent;
-  if (isBlockNode(latest)) {
+  if (isElementNode(latest)) {
     clone.__children = Array.from(latest.__children);
     clone.__format = latest.__format;
     clone.__indent = latest.__indent;
@@ -57,17 +57,19 @@ function cloneWithProperties<T: OutlineNode>(node: T): T {
 
 function getIndexFromPossibleClone(
   node: OutlineNode,
-  parent: BlockNode,
+  parent: ElementNode,
   nodeMap: Map<NodeKey, OutlineNode>,
 ): number {
   const parentClone = nodeMap.get(parent.getKey());
-  if (isBlockNode(parentClone)) {
+  if (isElementNode(parentClone)) {
     return parentClone.__children.indexOf(node.getKey());
   }
   return node.getIndexWithinParent();
 }
 
-function getParentAvoidingExcludedBlocks(node: OutlineNode): BlockNode | null {
+function getParentAvoidingExcludedElements(
+  node: OutlineNode,
+): ElementNode | null {
   let parent = node.getParent();
   while (parent !== null && parent.excludeFromCopy()) {
     parent = parent.getParent();
@@ -85,11 +87,11 @@ function copyLeafNodeBranchToRoot(
   let node = leaf;
   let offset = startingOffset;
   while (node !== null) {
-    const parent = getParentAvoidingExcludedBlocks(node);
+    const parent = getParentAvoidingExcludedElements(node);
     if (parent === null) {
       break;
     }
-    if (!isBlockNode(node) || !node.excludeFromCopy()) {
+    if (!isElementNode(node) || !node.excludeFromCopy()) {
       const key = node.getKey();
       let clone = nodeMap.get(key);
       const needsClone = clone === undefined;
@@ -102,7 +104,7 @@ function copyLeafNodeBranchToRoot(
           isLeftSide ? offset : 0,
           isLeftSide ? undefined : offset,
         );
-      } else if (isBlockNode(clone)) {
+      } else if (isElementNode(clone)) {
         clone.__children = clone.__children.slice(
           isLeftSide ? offset : 0,
           isLeftSide ? undefined : offset + 1,
@@ -156,7 +158,7 @@ export function cloneContents(selection: Selection): {
   }
   // Check if we can use the parent of the nodes, if the
   // parent can't be empty, then it's important that we
-  // also copy that block node along with its children.
+  // also copy that element node along with its children.
   let nodesLength = nodes.length;
   const firstNode = nodes[0];
   const firstNodeParent = firstNode.getParent();
@@ -194,7 +196,10 @@ export function cloneContents(selection: Selection): {
   for (let i = 0; i < nodesLength; i++) {
     const node = nodes[i];
     const key = node.getKey();
-    if (!nodeMap.has(key) && (!isBlockNode(node) || !node.excludeFromCopy())) {
+    if (
+      !nodeMap.has(key) &&
+      (!isElementNode(node) || !node.excludeFromCopy())
+    ) {
       const clone = cloneWithProperties<OutlineNode>(node);
       if (isRootNode(node.getParent())) {
         range.push(node.getKey());
@@ -562,7 +567,7 @@ export function insertParagraph(selection: Selection): void {
   }
   const anchor = selection.anchor;
   const anchorOffset = anchor.offset;
-  let currentBlock;
+  let currentElement;
   let nodesToMove = [];
 
   if (anchor.type === 'text') {
@@ -570,7 +575,7 @@ export function insertParagraph(selection: Selection): void {
     const textContent = anchorNode.getTextContent();
     const textContentLength = textContent.length;
     nodesToMove = anchorNode.getNextSiblings().reverse();
-    currentBlock = anchorNode.getParentBlockOrThrow();
+    currentElement = anchorNode.getParentElementOrThrow();
 
     if (anchorOffset === 0) {
       nodesToMove.push(anchorNode);
@@ -579,14 +584,14 @@ export function insertParagraph(selection: Selection): void {
       nodesToMove.push(splitNode);
     }
   } else {
-    currentBlock = anchor.getNode();
-    nodesToMove = currentBlock.getChildren().slice(anchorOffset).reverse();
+    currentElement = anchor.getNode();
+    nodesToMove = currentElement.getChildren().slice(anchorOffset).reverse();
   }
-  const newBlock = currentBlock.insertNewAfter(selection);
-  if (newBlock === null) {
+  const newElement = currentElement.insertNewAfter(selection);
+  if (newElement === null) {
     // Handle as a line break insertion
     insertLineBreak(selection);
-  } else if (isBlockNode(newBlock)) {
+  } else if (isElementNode(newElement)) {
     const nodesToMoveLength = nodesToMove.length;
     let firstChild = null;
 
@@ -594,18 +599,18 @@ export function insertParagraph(selection: Selection): void {
       for (let i = 0; i < nodesToMoveLength; i++) {
         const nodeToMove = nodesToMove[i];
         if (firstChild === null) {
-          newBlock.append(nodeToMove);
+          newElement.append(nodeToMove);
         } else {
           firstChild.insertBefore(nodeToMove);
         }
         firstChild = nodeToMove;
       }
     }
-    if (!newBlock.canBeEmpty() && newBlock.getChildrenSize() === 0) {
-      newBlock.selectPrevious();
-      newBlock.remove();
+    if (!newElement.canBeEmpty() && newElement.getChildrenSize() === 0) {
+      newElement.selectPrevious();
+      newElement.remove();
     } else {
-      newBlock.selectStart();
+      newElement.selectStart();
     }
   }
 }
@@ -624,10 +629,10 @@ function moveCaretSelection(
   );
 }
 
-function isTopLevelBlockRTL(selection: Selection): boolean {
+function isTopLevelElementRTL(selection: Selection): boolean {
   const anchorNode = selection.anchor.getNode();
-  const topLevelBlock = anchorNode.getTopParentBlockOrThrow();
-  const direction = topLevelBlock.getDirection();
+  const topLevelElement = anchorNode.getTopParentElementOrThrow();
+  const direction = topLevelElement.getDirection();
   return direction === 'rtl';
 }
 
@@ -636,7 +641,7 @@ export function moveCharacter(
   isHoldingShift: boolean,
   isBackward: boolean,
 ): void {
-  const isRTL = isTopLevelBlockRTL(selection);
+  const isRTL = isTopLevelElementRTL(selection);
   moveCaretSelection(
     selection,
     isHoldingShift,
@@ -778,11 +783,11 @@ function deleteCharacter(selection: Selection, isBackward: boolean): void {
       updateCaretSelectionForUnicodeCharacter(selection, isBackward);
     } else if (isBackward && anchor.offset === 0) {
       // Special handling around rich text nodes
-      const block =
-        anchor.type === 'block'
+      const element =
+        anchor.type === 'element'
           ? anchor.getNode()
           : anchor.getNode().getParentOrThrow();
-      if (block.collapseAtStart(selection)) {
+      if (element.collapseAtStart(selection)) {
         return;
       }
     }
@@ -852,14 +857,14 @@ export function updateCaretSelectionForRange(
       ? possibleDecoratorNode.getPreviousSibling()
       : possibleDecoratorNode.getNextSibling();
     if (!isTextNode(sibling)) {
-      const blockKey = possibleDecoratorNode.getParentOrThrow().getKey();
+      const elementKey = possibleDecoratorNode.getParentOrThrow().getKey();
       let offset = possibleDecoratorNode.getIndexWithinParent();
       if (!isBackward) {
         offset++;
       }
-      focus.set(blockKey, offset, 'block');
+      focus.set(elementKey, offset, 'element');
       if (collapse) {
-        anchor.set(blockKey, offset, 'block');
+        anchor.set(elementKey, offset, 'element');
       }
       return;
     }
@@ -923,21 +928,21 @@ export function insertNodes(
   const anchorNode = anchor.getNode();
   let target = anchorNode;
 
-  if (anchor.type === 'block') {
-    const block = anchor.getNode();
-    const placementNode = block.getChildAtIndex(anchorOffset - 1);
+  if (anchor.type === 'element') {
+    const element = anchor.getNode();
+    const placementNode = element.getChildAtIndex(anchorOffset - 1);
     if (placementNode === null) {
-      target = block;
+      target = element;
     } else {
       target = placementNode;
     }
   }
   const siblings = [];
 
-  // Get all remaining text node siblings in this block so we can
+  // Get all remaining text node siblings in this element so we can
   // append them after the last node we're inserting.
   const nextSiblings = anchorNode.getNextSiblings();
-  const topLevelBlock = anchorNode.getTopParentBlockOrThrow();
+  const topLevelElement = anchorNode.getTopParentElementOrThrow();
 
   if (isTextNode(anchorNode)) {
     const textContent = anchorNode.getTextContent();
@@ -975,12 +980,12 @@ export function insertNodes(
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
 
-    if (isBlockNode(node)) {
+    if (isElementNode(node)) {
       // -----
-      // Heuristics for the replacment or merging of blocks
+      // Heuristics for the replacment or merging of elements
       // -----
 
-      // If we have an incoming block node as the first node, then we'll need
+      // If we have an incoming element node as the first node, then we'll need
       // see if we can merge any descendant leaf nodes into our existing target.
       // We can do this by finding the first descendant in our node and then we can
       // pluck it and its parent (siblings included) out and insert them directly
@@ -988,14 +993,14 @@ export function insertNodes(
       // interested in merging with the anchor, which is our target.
       //
       // If we apply either the replacement or merging heuristics, we need to be
-      // careful that we're not trying to insert a non-block node into a root node,
+      // careful that we're not trying to insert a non-element node into a root node,
       // so we check if the target's parent after this logic is the root node and if
       // so we trigger an invariant to ensure this problem is caught in development
       // and fixed accordingly.
 
       if (node.is(firstNode)) {
         if (
-          isBlockNode(target) &&
+          isElementNode(target) &&
           target.isEmpty() &&
           target.canReplaceWith(node)
         ) {
@@ -1027,10 +1032,10 @@ export function insertNodes(
 
         const firstDescendant = node.getFirstDescendant();
         if (isLeafNode(firstDescendant)) {
-          const block = firstDescendant.getParentOrThrow();
-          const children = block.getChildren();
+          const element = firstDescendant.getParentOrThrow();
+          const children = element.getChildren();
           const childrenLength = children.length;
-          if (isBlockNode(target)) {
+          if (isElementNode(target)) {
             for (let s = 0; s < childrenLength; s++) {
               target.append(children[s]);
             }
@@ -1040,25 +1045,25 @@ export function insertNodes(
             }
             target = target.getParentOrThrow();
           }
-          block.remove();
+          element.remove();
           didReplaceOrMerge = true;
-          if (block.is(node)) {
+          if (element.is(node)) {
             continue;
           }
         }
       }
       if (isTextNode(target)) {
-        target = topLevelBlock;
+        target = topLevelElement;
       }
     } else if (didReplaceOrMerge && isRootNode(target.getParent())) {
       invariant(
         false,
-        'insertNodes: cannot insert a non-block into a root node',
+        'insertNodes: cannot insert a non-element into a root node',
       );
     }
     didReplaceOrMerge = false;
-    if (isBlockNode(target)) {
-      if (!isBlockNode(node)) {
+    if (isElementNode(target)) {
+      if (!isElementNode(node)) {
         const firstChild = target.getFirstChild();
         if (firstChild !== null) {
           firstChild.insertBefore(node);
@@ -1072,7 +1077,7 @@ export function insertNodes(
         }
         target = target.insertAfter(node);
       }
-    } else if (!isBlockNode(node)) {
+    } else if (!isElementNode(node)) {
       target = target.insertAfter(node);
     } else {
       target = node.getParentOrThrow();
@@ -1097,10 +1102,10 @@ export function insertNodes(
     }
   }
 
-  if (isBlockNode(target)) {
+  if (isElementNode(target)) {
     const lastChild = target.getLastDescendant();
     if (!selectStart) {
-      // Handle moving selection to end for blocks
+      // Handle moving selection to end for elements
       if (lastChild === null) {
         target.select();
       } else if (isTextNode(lastChild)) {
@@ -1114,16 +1119,16 @@ export function insertNodes(
         const sibling = siblings[i];
         const prevParent = sibling.getParentOrThrow();
 
-        if (isBlockNode(target) && !isBlockNode(sibling)) {
+        if (isElementNode(target) && !isElementNode(sibling)) {
           target.append(sibling);
           target = sibling;
         } else {
-          if (isBlockNode(sibling) && !sibling.canInsertAfter(target)) {
+          if (isElementNode(sibling) && !sibling.canInsertAfter(target)) {
             const prevParentClone = prevParent.constructor.clone(prevParent);
-            if (!isBlockNode(prevParentClone)) {
+            if (!isElementNode(prevParentClone)) {
               invariant(
                 false,
-                'insertNodes: cloned parent clone is not a block',
+                'insertNodes: cloned parent clone is not an element',
               );
             }
             prevParentClone.append(sibling);
@@ -1144,9 +1149,9 @@ export function insertNodes(
     if (isTextNode(target)) {
       target.select();
     } else {
-      const block = target.getParentOrThrow();
+      const element = target.getParentOrThrow();
       const index = target.getIndexWithinParent() + 1;
-      block.select(index, index);
+      element.select(index, index);
     }
   }
   return true;
@@ -1172,16 +1177,19 @@ export function insertRichText(selection: Selection, text: string): void {
   }
 }
 
-function transferStartingBlockPointToTextPoint(start: BlockPoint, end: Point) {
-  const block = start.getNode();
-  const placementNode = block.getChildAtIndex(start.offset);
+function transferStartingElementPointToTextPoint(
+  start: ElementPoint,
+  end: Point,
+) {
+  const element = start.getNode();
+  const placementNode = element.getChildAtIndex(start.offset);
   const textNode = createTextNode();
   if (placementNode === null) {
-    block.append(textNode);
+    element.append(textNode);
   } else {
     placementNode.insertBefore(textNode);
   }
-  // Transfer the block point to a text point.
+  // Transfer the element point to a text point.
   start.set(textNode.getKey(), 0, 'text');
 }
 
@@ -1190,10 +1198,10 @@ export function insertText(selection: Selection, text: string): void {
   const focus = selection.focus;
   const isBefore = selection.isCollapsed() || anchor.isBefore(focus);
 
-  if (isBefore && anchor.type === 'block') {
-    transferStartingBlockPointToTextPoint(anchor, focus);
-  } else if (!isBefore && focus.type === 'block') {
-    transferStartingBlockPointToTextPoint(focus, anchor);
+  if (isBefore && anchor.type === 'element') {
+    transferStartingElementPointToTextPoint(anchor, focus);
+  } else if (!isBefore && focus.type === 'element') {
+    transferStartingElementPointToTextPoint(focus, anchor);
   }
   const selectedNodes = selection.getNodes();
   const selectedNodesLength = selectedNodes.length;
@@ -1309,10 +1317,10 @@ export function insertText(selection: Selection, text: string): void {
       ...firstNode.getParentKeys(),
       ...lastNode.getParentKeys(),
     ]);
-    const firstBlock = isBlockNode(firstNode)
+    const firstElement = isElementNode(firstNode)
       ? firstNode
       : firstNode.getParentOrThrow();
-    const lastBlock = isBlockNode(lastNode)
+    const lastElement = isElementNode(lastNode)
       ? lastNode
       : lastNode.getParentOrThrow();
 
@@ -1320,7 +1328,8 @@ export function insertText(selection: Selection, text: string): void {
     if (
       (endPoint.type === 'text' &&
         (endOffset !== 0 || lastNode.getTextContent() === '')) ||
-      (endPoint.type === 'block' && lastNode.getIndexWithinParent() < endOffset)
+      (endPoint.type === 'element' &&
+        lastNode.getIndexWithinParent() < endOffset)
     ) {
       if (
         isTextNode(lastNode) &&
@@ -1344,14 +1353,14 @@ export function insertText(selection: Selection, text: string): void {
     // Either move the remaining nodes of the last parent to after
     // the first child, or remove them entirely. If the last parent
     // is the same as the first parent, this logic also works.
-    const lastNodeChildren = lastBlock.getChildren();
+    const lastNodeChildren = lastElement.getChildren();
     const selectedNodesSet = new Set(selectedNodes);
-    const firstAndLastBlocksAreEqual = firstBlock.is(lastBlock);
+    const firstAndLastElementsAreEqual = firstElement.is(lastElement);
 
-    // If the last block is an "inline" block, don't move it's text nodes to the first node.
-    // Instead, preserve the "inline" block's children and append to the first block.
-    if (!lastBlock.canBeEmpty()) {
-      firstBlock.append(lastBlock);
+    // If the last element is an "inline" element, don't move it's text nodes to the first node.
+    // Instead, preserve the "inline" element's children and append to the first element.
+    if (!lastElement.canBeEmpty()) {
+      firstElement.append(lastElement);
     } else {
       for (let i = lastNodeChildren.length - 1; i >= 0; i--) {
         const lastNodeChild = lastNodeChildren[i];
@@ -1365,7 +1374,7 @@ export function insertText(selection: Selection, text: string): void {
             !selectedNodesSet.has(lastNodeChild) ||
             lastNodeChild.is(lastNode)
           ) {
-            if (!firstAndLastBlocksAreEqual) {
+            if (!firstAndLastElementsAreEqual) {
               firstNode.insertAfter(lastNodeChild);
             }
           } else {
@@ -1374,11 +1383,11 @@ export function insertText(selection: Selection, text: string): void {
         }
       }
 
-      if (!firstAndLastBlocksAreEqual) {
+      if (!firstAndLastElementsAreEqual) {
         // Check if we have already moved out all the nodes of the
         // last parent, and if so, traverse the parent tree and mark
         // them all as being able to deleted too.
-        let parent = lastBlock;
+        let parent = lastElement;
         let lastRemovedParent = null;
 
         while (parent !== null) {
@@ -1430,23 +1439,23 @@ export function selectAll(selection: Selection): void {
   const anchor = selection.anchor;
   const focus = selection.focus;
   const anchorNode = anchor.getNode();
-  const topParent = anchorNode.getTopParentBlockOrThrow();
+  const topParent = anchorNode.getTopParentElementOrThrow();
   const root = topParent.getParentOrThrow();
   let firstNode = root.getFirstDescendant();
   let lastNode = root.getLastDescendant();
-  let firstType = 'block';
-  let lastType = 'block';
+  let firstType = 'element';
+  let lastType = 'element';
   let lastOffset = 0;
 
   if (isTextNode(firstNode)) {
     firstType = 'text';
-  } else if (!isBlockNode(firstNode) && firstNode !== null) {
+  } else if (!isElementNode(firstNode) && firstNode !== null) {
     firstNode = firstNode.getParentOrThrow();
   }
   if (isTextNode(lastNode)) {
     lastType = 'text';
     lastOffset = lastNode.getTextContentSize();
-  } else if (!isBlockNode(lastNode) && lastNode !== null) {
+  } else if (!isElementNode(lastNode) && lastNode !== null) {
     lastNode = lastNode.getParentOrThrow();
     lastOffset = lastNode.getChildrenSize();
   }
@@ -1456,7 +1465,7 @@ export function selectAll(selection: Selection): void {
   }
 }
 
-function removeParentEmptyBlocks(startingNode: BlockNode): void {
+function removeParentEmptyElements(startingNode: ElementNode): void {
   let node = startingNode;
   while (node !== null && !isRootNode(node)) {
     const latest = node.getLatest();
@@ -1468,10 +1477,10 @@ function removeParentEmptyBlocks(startingNode: BlockNode): void {
   }
 }
 
-export function wrapLeafNodesInBlocks(
+export function wrapLeafNodesInElements(
   selection: Selection,
-  createBlock: () => BlockNode,
-  wrappingBlock?: BlockNode,
+  createElement: () => ElementNode,
+  wrappingElement?: ElementNode,
 ): void {
   const nodes = selection.getNodes();
   const nodesLength = nodes.length;
@@ -1479,27 +1488,27 @@ export function wrapLeafNodesInBlocks(
     const anchor = selection.anchor;
     const target =
       anchor.type === 'text'
-        ? anchor.getNode().getParentBlockOrThrow()
+        ? anchor.getNode().getParentElementOrThrow()
         : anchor.getNode();
     const children = target.getChildren();
-    let block = createBlock();
-    children.forEach((child) => block.append(child));
-    if (wrappingBlock) {
-      block = wrappingBlock.append(block);
+    let element = createElement();
+    children.forEach((child) => element.append(child));
+    if (wrappingElement) {
+      element = wrappingElement.append(element);
     }
-    target.replace(block);
+    target.replace(element);
     return;
   }
   const firstNode = nodes[0];
-  const blockMapping: Map<NodeKey, BlockNode> = new Map();
-  const blocks = [];
+  const elementMapping: Map<NodeKey, ElementNode> = new Map();
+  const elements = [];
   // The below logic is to find the right target for us to
   // either insertAfter/insertBefore/append the corresponding
-  // blocks to. This is made more complicated due to nested
+  // elements to. This is made more complicated due to nested
   // structures.
-  let target = isBlockNode(firstNode)
+  let target = isElementNode(firstNode)
     ? firstNode
-    : firstNode.getParentBlockOrThrow();
+    : firstNode.getParentElementOrThrow();
   while (target !== null) {
     const prevSibling = target.getPreviousSibling();
     if (prevSibling !== null) {
@@ -1511,21 +1520,21 @@ export function wrapLeafNodesInBlocks(
       break;
     }
   }
-  const emptyBlocks = new Set();
+  const emptyElements = new Set();
 
-  // Find any top level empty blocks
+  // Find any top level empty elements
   for (let i = 0; i < nodesLength; i++) {
     const node = nodes[i];
-    if (isBlockNode(node) && node.getChildrenSize() === 0) {
-      emptyBlocks.add(node.getKey());
+    if (isElementNode(node) && node.getChildrenSize() === 0) {
+      emptyElements.add(node.getKey());
     }
   }
 
   const movedLeafNodes: Set<NodeKey> = new Set();
 
-  // Move out all leaf nodes into our blocks array.
-  // If we find a top level empty block, also move make
-  // a block for that.
+  // Move out all leaf nodes into our elements array.
+  // If we find a top level empty element, also move make
+  // an element for that.
   for (let i = 0; i < nodesLength; i++) {
     const node = nodes[i];
     const parent = node.getParent();
@@ -1535,64 +1544,64 @@ export function wrapLeafNodesInBlocks(
       !movedLeafNodes.has(node.getKey())
     ) {
       const parentKey = parent.getKey();
-      if (blockMapping.get(parentKey) === undefined) {
-        const targetBlock = createBlock();
-        blocks.push(targetBlock);
-        blockMapping.set(parentKey, targetBlock);
+      if (elementMapping.get(parentKey) === undefined) {
+        const targetElement = createElement();
+        elements.push(targetElement);
+        elementMapping.set(parentKey, targetElement);
 
         // Move node and its siblings to the new
-        // block.
+        // element.
         parent.getChildren().forEach((child) => {
-          targetBlock.append(child);
+          targetElement.append(child);
           movedLeafNodes.add(child.getKey());
         });
-        removeParentEmptyBlocks(parent);
+        removeParentEmptyElements(parent);
       }
-    } else if (emptyBlocks.has(node.getKey())) {
-      blocks.push(createBlock());
+    } else if (emptyElements.has(node.getKey())) {
+      elements.push(createElement());
       node.remove();
     }
   }
-  if (wrappingBlock) {
-    for (let i = 0; i < blocks.length; i++) {
-      const block = blocks[i];
-      wrappingBlock.append(block);
+  if (wrappingElement) {
+    for (let i = 0; i < elements.length; i++) {
+      const element = elements[i];
+      wrappingElement.append(element);
     }
   }
   // If our target is the root, let's see if we can re-adjust
   // so that the target is the first child instead.
   if (isRootNode(target)) {
     const firstChild = target.getFirstChild();
-    if (isBlockNode(firstChild)) {
+    if (isElementNode(firstChild)) {
       target = firstChild;
     }
 
     if (firstChild === null) {
-      if (wrappingBlock) {
-        target.append(wrappingBlock);
+      if (wrappingElement) {
+        target.append(wrappingElement);
       } else {
-        for (let i = 0; i < blocks.length; i++) {
-          const block = blocks[i];
-          target.append(block);
+        for (let i = 0; i < elements.length; i++) {
+          const element = elements[i];
+          target.append(element);
         }
       }
     } else {
-      if (wrappingBlock) {
-        firstChild.insertBefore(wrappingBlock);
+      if (wrappingElement) {
+        firstChild.insertBefore(wrappingElement);
       } else {
-        for (let i = 0; i < blocks.length; i++) {
-          const block = blocks[i];
-          firstChild.insertBefore(block);
+        for (let i = 0; i < elements.length; i++) {
+          const element = elements[i];
+          firstChild.insertBefore(element);
         }
       }
     }
   } else {
-    if (wrappingBlock) {
-      target.insertAfter(wrappingBlock);
+    if (wrappingElement) {
+      target.insertAfter(wrappingElement);
     } else {
-      for (let i = blocks.length - 1; i >= 0; i--) {
-        const block = blocks[i];
-        target.insertAfter(block);
+      for (let i = elements.length - 1; i >= 0; i--) {
+        const element = elements[i];
+        target.insertAfter(element);
       }
     }
   }

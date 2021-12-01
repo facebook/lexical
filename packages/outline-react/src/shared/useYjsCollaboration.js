@@ -102,7 +102,7 @@ export function useYjsCollaboration(
         prevEditorState,
         editorState,
         dirtyLeaves,
-        dirtyBlocks,
+        dirtyElements,
         normalizedNodes,
         tags,
       }) => {
@@ -111,7 +111,7 @@ export function useYjsCollaboration(
           provider,
           prevEditorState,
           editorState,
-          dirtyBlocks,
+          dirtyElements,
           dirtyLeaves,
           normalizedNodes,
           tags,

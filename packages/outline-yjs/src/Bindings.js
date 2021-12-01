@@ -11,12 +11,12 @@ import type {Cursor} from './SyncCursors';
 import type {NodeKey, OutlineEditor} from 'outline';
 import type {Provider} from '.';
 import type {Doc} from 'yjs';
-import type {CollabBlockNode} from './CollabBlockNode';
+import type {CollabElementNode} from './CollabElementNode';
 import type {CollabTextNode} from './CollabTextNode';
 import type {CollabDecoratorNode} from './CollabDecoratorNode';
 import type {CollabLineBreakNode} from './CollabLineBreakNode';
 
-import {createCollabBlockNode} from './CollabBlockNode';
+import {createCollabElementNode} from './CollabElementNode';
 import {XmlText} from 'yjs';
 
 export type ClientID = string;
@@ -24,7 +24,7 @@ export type ClientID = string;
 export type Binding = {
   collabNodeMap: Map<
     NodeKey,
-    | CollabBlockNode
+    | CollabElementNode
     | CollabTextNode
     | CollabDecoratorNode
     | CollabLineBreakNode,
@@ -35,7 +35,7 @@ export type Binding = {
   cursors: Map<ClientID, Cursor>,
   cursorsContainer: null | HTMLElement,
   doc: Doc,
-  root: CollabBlockNode,
+  root: CollabElementNode,
   docMap: Map<string, Doc>,
 };
 
@@ -52,7 +52,7 @@ export function createBinding(
 
   // $FlowFixMe: this will work
   const rootXmlText: XmlText = doc.get('root', XmlText);
-  const root: CollabBlockNode = createCollabBlockNode(
+  const root: CollabElementNode = createCollabElementNode(
     rootXmlText,
     null,
     'root',

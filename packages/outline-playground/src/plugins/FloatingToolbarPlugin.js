@@ -15,7 +15,7 @@ import type {
   Selection,
   TextFormatType,
   TextNode,
-  BlockNode,
+  ElementNode,
   DecoratorNode,
   LineBreakNode,
 } from 'outline';
@@ -103,7 +103,7 @@ function Select({
 
 function getSelectedNode(
   selection: Selection,
-): TextNode | BlockNode | DecoratorNode | LineBreakNode {
+): TextNode | ElementNode | DecoratorNode | LineBreakNode {
   const anchor = selection.anchor;
   const focus = selection.focus;
   const anchorNode = selection.anchor.getNode();

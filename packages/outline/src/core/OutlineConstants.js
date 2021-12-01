@@ -8,7 +8,7 @@
  */
 
 import type {TextFormatType} from './OutlineTextNode';
-import type {BlockFormatType} from './OutlineBlockNode';
+import type {ElementFormatType} from './OutlineElementNode';
 
 // Reconciling
 export const NO_DIRTY_NODES = 0;
@@ -24,7 +24,7 @@ export const IS_DIRECTIONLESS = 1 << 3;
 // Text nodes
 export const IS_UNMERGEABLE = 1 << 4;
 
-// Block nodes
+// Element nodes
 export const IS_LTR = 1 << 5;
 export const IS_RTL = 1 << 6;
 
@@ -37,7 +37,7 @@ export const IS_CODE = 1 << 4;
 export const IS_SUBSCRIPT = 1 << 5;
 export const IS_SUPERSCRIPT = 1 << 6;
 
-// Block node formatting
+// Element node formatting
 export const IS_ALIGN_LEFT = 1;
 export const IS_ALIGN_CENTER = 2;
 export const IS_ALIGN_RIGHT = 3;
@@ -63,7 +63,7 @@ export const TEXT_TYPE_TO_FORMAT: {[TextFormatType]: number} = {
   code: IS_CODE,
 };
 
-export const BLOCK_TYPE_TO_FORMAT: {[BlockFormatType]: number} = {
+export const ELEMENT_TYPE_TO_FORMAT: {[ElementFormatType]: number} = {
   left: IS_ALIGN_LEFT,
   right: IS_ALIGN_RIGHT,
   center: IS_ALIGN_CENTER,

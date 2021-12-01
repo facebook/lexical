@@ -1,27 +1,25 @@
 /**
- * (c) Facebook, Inc. and its affiliates. Confidential and proprietary.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- * @emails oncall+unified_editor
- * @flow strict-local
- * @format
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow strict
  */
 
-'use strict';
-
-import type {OutlineNode} from '../core/OutlineNode';
-import type {EditorConfig, NodeKey} from 'outline';
+import type {OutlineNode, NodeKey, EditorConfig} from 'outline';
 
 import {BlockNode} from 'outline';
 
-export class OutlineTableCellNode extends BlockNode {
+export class TableCellNode extends BlockNode {
   __isHeader: boolean;
 
   static getType(): string {
     return 'table-cell';
   }
 
-  static clone(node: OutlineTableCellNode): OutlineTableCellNode {
-    return new OutlineTableCellNode(false, node.__key);
+  static clone(node: TableCellNode): TableCellNode {
+    return new TableCellNode(false, node.__key);
   }
 
   constructor(isHeader?: boolean = false, key?: NodeKey) {
@@ -52,12 +50,10 @@ export class OutlineTableCellNode extends BlockNode {
   }
 }
 
-export function createOutlineTableCellNode(
-  isHeader: boolean,
-): OutlineTableCellNode {
-  return new OutlineTableCellNode(isHeader);
+export function createTableCellNode(isHeader: boolean): TableCellNode {
+  return new TableCellNode(isHeader);
 }
 
-export function isOutlineTableCellNode(node: OutlineNode): boolean {
-  return node instanceof OutlineTableCellNode;
+export function isTableCellNode(node: OutlineNode): boolean {
+  return node instanceof TableCellNode;
 }

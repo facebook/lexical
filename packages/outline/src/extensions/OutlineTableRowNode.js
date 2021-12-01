@@ -1,25 +1,23 @@
 /**
- * (c) Facebook, Inc. and its affiliates. Confidential and proprietary.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- * @emails oncall+unified_editor
- * @flow strict-local
- * @format
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow strict
  */
 
-'use strict';
+import type {EditorConfig, OutlineNode, NodeKey} from 'outline';
 
-import type {OutlineNode} from '../core/OutlineNode';
-import type {EditorConfig, NodeKey} from 'outline';
+import {BlockNode} from 'outline';
 
-import {BlockNode} from 'Outline';
-
-export class OutlineTableRowNode extends BlockNode {
+export class TableRowNode extends BlockNode {
   static getType(): string {
     return 'table-row';
   }
 
-  static clone(node: OutlineTableRowNode): OutlineTableRowNode {
-    return new OutlineTableRowNode(node.__key);
+  static clone(node: TableRowNode): TableRowNode {
+    return new TableRowNode(node.__key);
   }
 
   constructor(key?: NodeKey) {
@@ -41,10 +39,10 @@ export class OutlineTableRowNode extends BlockNode {
   }
 }
 
-export function createOutlineTableRowNode(): OutlineTableRowNode {
-  return new OutlineTableRowNode();
+export function createTableRowNode(): TableRowNode {
+  return new TableRowNode();
 }
 
-export function isOutlineTableRowNode(node: OutlineNode): boolean {
-  return node instanceof OutlineTableRowNode;
+export function isTableRowNode(node: OutlineNode): boolean {
+  return node instanceof TableRowNode;
 }

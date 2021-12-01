@@ -1,28 +1,23 @@
 /**
- * (c) Facebook, Inc. and its affiliates. Confidential and proprietary.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- * @emails oncall+unified_editor
- * @flow strict-local
- * @format
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow strict
  */
 
-'use strict';
+import type {EditorConfig, OutlineNode, NodeKey} from 'outline';
 
-import type {OutlineNode} from '../core/OutlineNode';
-import type {EditorConfig, NodeKey} from 'outline';
-
-import {createTextNode} from '../core/OutlineTextNode';
-import {createOutlineTableCellNode} from './OutlineTableCellNode';
-import {createOutlineTableRowNode} from './OutlineTableRowNode';
 import {BlockNode} from 'outline';
 
-export class OutlineTableNode extends BlockNode {
+export class TableNode extends BlockNode {
   static getType(): string {
     return 'table';
   }
 
-  static clone(node: OutlineTableNode): OutlineTableNode {
-    return new OutlineTableNode(node.__key);
+  static clone(node: TableNode): TableNode {
+    return new TableNode(node.__key);
   }
 
   constructor(key?: NodeKey) {
@@ -44,32 +39,10 @@ export class OutlineTableNode extends BlockNode {
   }
 }
 
-export function createOutlineTableNode(): OutlineTableNode {
-  return new OutlineTableNode();
+export function createTableNode(): TableNode {
+  return new TableNode();
 }
 
-export function isOutlineTableNode(node: OutlineNode): boolean {
-  return node instanceof OutlineTableNode;
-}
-
-export function createTableNodeWithDimensions(
-  rowCount: number,
-  columnCount: number,
-  includeHeader?: boolean = true,
-): OutlineTableNode {
-  const tableNode = createOutlineTableNode();
-
-  for (let iRow = 0; iRow < rowCount; iRow++) {
-    const tableRow = createOutlineTableRowNode();
-
-    for (let iColumn = 0; iColumn < columnCount; iColumn++) {
-      const tableCell = createOutlineTableCellNode(iRow === 0 && includeHeader);
-      tableCell.append(createTextNode());
-      tableRow.append(tableCell);
-    }
-
-    tableNode.append(tableRow);
-  }
-
-  return tableNode;
+export function isTableNode(node: OutlineNode): boolean {
+  return node instanceof TableNode;
 }

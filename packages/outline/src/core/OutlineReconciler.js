@@ -118,7 +118,7 @@ function createNode(
   if (node === undefined) {
     invariant(false, 'createNode: node does not exist in nodeMap');
   }
-  const dom = node.createDOM(activeEditorConfig);
+  const dom = node.createDOM(activeEditorConfig, activeEditor);
   let flags = node.__flags;
   const isInert = flags & IS_INERT;
   storeDOMWithKey(key, dom, activeEditor);

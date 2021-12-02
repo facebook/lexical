@@ -25,6 +25,16 @@ import {useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 import {log, getSelection} from 'outline';
 
+const supportedBlockTypes = new Set([
+  'paragraph',
+  'quote',
+  'code',
+  'h1',
+  'h2',
+  'ul',
+  'ol',
+]);
+
 function DropdownList({
   editor,
   blockType,
@@ -236,7 +246,7 @@ export default function BlockControlsPlugin(): React$Node {
           const element =
             anchorNode.getKey() === 'root'
               ? anchorNode
-              : anchorNode.getTopParentElementOrThrow();
+              : anchorNode.getTopLevelElementOrThrow();
           const elementKey = element.getKey();
           if (elementKey !== selectedElementKey) {
             const elementDOM = editor.getElementByKey(elementKey);
@@ -263,6 +273,10 @@ export default function BlockControlsPlugin(): React$Node {
       });
     });
   }, [editor, editorPosition, selectedElementKey]);
+
+  if (!supportedBlockTypes.has(blockType)) {
+    return null;
+  }
 
   return selectedElementKey !== null ? (
     <>

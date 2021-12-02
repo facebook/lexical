@@ -377,7 +377,7 @@ export class TextNode extends OutlineNode {
     const writableSelf = this.getWritable();
 
     // Handle text direction and update text content
-    const topElement = this.getTopParentElement();
+    const topElement = this.getTopLevelElement();
     if (topElement !== null) {
       const topElementWasEmpty =
         text === '' || topElement.getTextContent(false, false) === '';

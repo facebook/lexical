@@ -26,7 +26,7 @@ function updateTextNode(node: TextNode, count: number): void {
 }
 
 function textNodeTransform(node: TextNode, state: State): void {
-  const element = node.getParentElementOrThrow();
+  const element = node.getParentOrThrow();
 
   if (
     element !== null &&

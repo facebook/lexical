@@ -21,6 +21,7 @@ import {
   ELEMENT_TYPE_TO_FORMAT,
 } from './OutlineConstants';
 import {getNodeByKey} from './OutlineUtils';
+import invariant from 'shared/invariant';
 
 export type ElementFormatType = 'left' | 'center' | 'right' | 'justify';
 
@@ -55,6 +56,9 @@ export class ElementNode extends OutlineNode {
       }
     }
     return childrenNodes;
+  }
+  getChildrenKeys(): Array<NodeKey> {
+    return this.getLatest().__children;
   }
   getChildrenSize(): number {
     const self = this.getLatest();
@@ -132,14 +136,21 @@ export class ElementNode extends OutlineNode {
       resolvedNode
     );
   }
-  getFirstChild(): null | OutlineNode {
+  getFirstChild<T: OutlineNode>(): null | T {
     const self = this.getLatest();
     const children = self.__children;
     const childrenLength = children.length;
     if (childrenLength === 0) {
       return null;
     }
-    return getNodeByKey<OutlineNode>(children[0]);
+    return getNodeByKey<T>(children[0]);
+  }
+  getFirstChildOrThrow<T: OutlineNode>(): T {
+    const firstChild = this.getFirstChild<T>();
+    if (firstChild === null) {
+      invariant(false, 'Expected node %s to have a first child.', this.__key);
+    }
+    return firstChild;
   }
   getLastChild(): null | OutlineNode {
     const self = this.getLatest();
@@ -340,6 +351,9 @@ export class ElementNode extends OutlineNode {
   }
   isInline(): boolean {
     return false;
+  }
+  canSelectionRemove(): boolean {
+    return true;
   }
 }
 

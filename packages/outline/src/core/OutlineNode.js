@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {EditorConfig} from './OutlineEditor';
+import type {EditorConfig, OutlineEditor} from './OutlineEditor';
 import type {Selection} from './OutlineSelection';
 
 import {
@@ -96,7 +96,7 @@ export function removeNode(
 }
 
 export function updateDirectionIfNeeded(node: OutlineNode): void {
-  const topElement = node.getTopParentElementOrThrow();
+  const topElement = node.getTopLevelElementOrThrow();
   const prevDirection = topElement.getDirection();
   if (prevDirection !== null) {
     const textContent = topElement.getTextContent(false, false);
@@ -233,17 +233,7 @@ export class OutlineNode {
     }
     return parent;
   }
-  getParentElementOrThrow(): ElementNode {
-    let node = this;
-    while (node !== null) {
-      node = node.getParent();
-      if (isElementNode(node)) {
-        return node;
-      }
-    }
-    invariant(false, 'Expected node %s to have a parent element.', this.__key);
-  }
-  getTopParentElement(): null | ElementNode {
+  getTopLevelElement(): null | ElementNode {
     let node = this;
     while (node !== null) {
       const parent = node.getParent();
@@ -254,8 +244,8 @@ export class OutlineNode {
     }
     return null;
   }
-  getTopParentElementOrThrow(): ElementNode {
-    const parent = this.getTopParentElement();
+  getTopLevelElementOrThrow(): ElementNode {
+    const parent = this.getTopLevelElement();
     if (parent === null) {
       invariant(
         false,
@@ -555,6 +545,7 @@ export class OutlineNode {
   // $FlowFixMe: Revise typings for EditorContext
   createDOM<EditorContext: Object>(
     config: EditorConfig<EditorContext>,
+    editor: OutlineEditor,
   ): HTMLElement {
     invariant(false, 'createDOM: base method not extended');
   }
@@ -734,11 +725,13 @@ export class OutlineNode {
   selectPrevious(anchorOffset?: number, focusOffset?: number): Selection {
     errorOnReadOnly();
     const prevSibling = this.getPreviousSibling();
-    const parent = this.getParentElementOrThrow();
+    const parent = this.getParentOrThrow();
     if (prevSibling === null) {
       return parent.select(0, 0);
     }
-    if (!isTextNode(prevSibling)) {
+    if (isElementNode(prevSibling)) {
+      return prevSibling.select();
+    } else if (!isTextNode(prevSibling)) {
       const index = prevSibling.getIndexWithinParent() + 1;
       return parent.select(index, index);
     }
@@ -747,11 +740,13 @@ export class OutlineNode {
   selectNext(anchorOffset?: number, focusOffset?: number): Selection {
     errorOnReadOnly();
     const nextSibling = this.getNextSibling();
-    const parent = this.getParentElementOrThrow();
+    const parent = this.getParentOrThrow();
     if (nextSibling === null) {
       return parent.select();
     }
-    if (!isTextNode(nextSibling)) {
+    if (isElementNode(nextSibling)) {
+      return nextSibling.select(0, 0);
+    } else if (!isTextNode(nextSibling)) {
       const index = nextSibling.getIndexWithinParent();
       return parent.select(index, index);
     }

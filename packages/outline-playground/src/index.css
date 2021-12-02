@@ -1053,14 +1053,16 @@ pre::-webkit-scrollbar-thumb {
   overflow-y: scroll;
   table-layout: fixed;
   width: 100%;
+  user-select: all;
 }
 
 .editor-table-cell {
   border: 1px solid black;
   height: 50px;
   min-width: 75px;
-  padding: '10px';
+  padding: 0 10px;
   vertical-align: 'top';
+  user-select: all;
 }
 
 .editor-table-cell-header {

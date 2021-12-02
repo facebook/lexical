@@ -48,6 +48,14 @@ export class TableCellNode extends ElementNode {
   updateDOM(): boolean {
     return false;
   }
+
+  collapseAtStart(): true {
+    return true;
+  }
+
+  canSelectionRemove(): boolean {
+    return false;
+  }
 }
 
 export function createTableCellNode(isHeader: boolean): TableCellNode {

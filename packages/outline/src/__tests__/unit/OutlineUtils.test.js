@@ -12,7 +12,6 @@ import {
   emptyFunction,
   resetRandomKey,
   generateRandomKey,
-  getAdjustedSelectionOffset,
   isArray,
   isSelectionWithinEditor,
   getTextDirection,
@@ -77,17 +76,6 @@ describe('OutlineUtils tests', () => {
       expect(key1).not.toBe('');
       expect(key2).not.toBe('');
       expect(key1).not.toEqual(key2);
-    });
-
-    test('getAdjustedSelectionOffset()', () => {
-      const div = document.createElement('div');
-      div.innerHTML = '<span>foo</span><br><span>bar</span><span>baz</span>';
-      const foo = div.querySelector(':nth-child(1)');
-      const bar = div.querySelector(':nth-child(3)');
-      const baz = div.querySelector(':nth-child(4)');
-      expect(getAdjustedSelectionOffset(foo)).toBe(0);
-      expect(getAdjustedSelectionOffset(bar)).toBe(0);
-      expect(getAdjustedSelectionOffset(baz)).toBe(1);
     });
 
     test('isArray()', () => {

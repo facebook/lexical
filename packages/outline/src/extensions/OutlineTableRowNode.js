@@ -37,6 +37,14 @@ export class TableRowNode extends ElementNode {
   updateDOM(): boolean {
     return false;
   }
+
+  canBeEmpty(): false {
+    return false;
+  }
+
+  canSelectionRemove(): boolean {
+    return false;
+  }
 }
 
 export function createTableRowNode(): TableRowNode {

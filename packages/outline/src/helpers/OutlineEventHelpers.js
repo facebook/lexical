@@ -433,7 +433,7 @@ export function onKeyDownForRichText(
       const anchor = selection.anchor;
       if (anchor.type === 'text') {
         const anchorNode = anchor.getNode();
-        const parentBlock = anchorNode.getParentElementOrThrow();
+        const parentBlock = anchorNode.getParentOrThrow();
         if (parentBlock.canInsertTab()) {
           if (event.shiftKey) {
             const textContent = anchorNode.getTextContent();
@@ -665,7 +665,7 @@ export function onClick(event: MouseEvent, editor: OutlineEditor): void {
       anchor.offset === 0 &&
       selection.isCollapsed() &&
       getRoot().getChildrenSize() === 1 &&
-      anchor.getNode().getTopParentElementOrThrow().isEmpty()
+      anchor.getNode().getTopLevelElementOrThrow().isEmpty()
     ) {
       const lastSelection = getLastSelection(editor);
       if (lastSelection !== null && selection.is(lastSelection)) {

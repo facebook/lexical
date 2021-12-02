@@ -102,6 +102,10 @@ function getInitialState(): PlaygroundContext {
 }
 
 const PlaygroundEditorContext: EditorContext<PlaygroundContext> =
-  createEditorContext<PlaygroundContext>(getInitialState, config);
+  createEditorContext<PlaygroundContext>(
+    getInitialState,
+    null /*parent*/,
+    config,
+  );
 
 export default PlaygroundEditorContext;

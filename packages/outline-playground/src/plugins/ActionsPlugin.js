@@ -7,6 +7,8 @@
  * @flow strict
  */
 
+import type {ElementNode} from 'outline';
+
 import * as React from 'react';
 import PlaygroundEditorContext from '../context/PlaygroundEditorContext';
 import {useEditorContext} from 'outline-react/OutlineEditorContext';
@@ -19,12 +21,8 @@ import {insertNodes} from 'outline/selection';
 import yellowFlowerImage from '../images/image/yellow-flower.jpg';
 import useOutlineNestedList from 'outline-react/useOutlineNestedList';
 import TablesPlugin from './TablesPlugin';
-import {
-  createTableNodeWithDimensions,
-  getTopLevelBlockNode,
-} from 'outline/nodes';
+import {createTableNodeWithDimensions} from 'outline/nodes';
 import {createParagraphNode} from 'outline/ParagraphNode';
-import {createTextNode} from 'outline';
 
 function createUID(): string {
   return Math.random()
@@ -83,20 +81,23 @@ export default function ActionsPlugins({
   };
 
   const handleAddTable = () => {
-    editor.update((state) => {
+    editor.update(() => {
       log('handleAddTable');
-      const selection = state.getSelection();
+      const selection = getSelection();
+      if (selection === null) {
+        return;
+      }
+      const focusNode = selection.focus.getNode();
 
-      const focusNode = selection?.focus.getNode();
-
-      if (focusNode != null) {
-        const topLevelNode = getTopLevelBlockNode(focusNode, state);
+      if (focusNode !== null) {
+        const topLevelNode = focusNode.getTopLevelElementOrThrow();
         const tableNode = createTableNodeWithDimensions(3, 3);
         topLevelNode.insertAfter(tableNode);
-        const paragraphNode = createParagraphNode();
-        paragraphNode.append(createTextNode());
-
-        tableNode.insertAfter(paragraphNode);
+        tableNode.insertAfter(createParagraphNode());
+        const firstCell = tableNode
+          .getFirstChildOrThrow<ElementNode>()
+          .getFirstChildOrThrow<ElementNode>();
+        firstCell.select();
       }
     });
   };
@@ -179,8 +180,7 @@ export default function ActionsPlugins({
             </button>
             <button
               className="action-button center-align"
-              onClick={centerAlign}
-            >
+              onClick={centerAlign}>
               <i className="center-align" />
             </button>
             <button className="action-button right-align" onClick={rightAlign}>
@@ -188,20 +188,17 @@ export default function ActionsPlugins({
             </button>
             <button
               className="action-button justify-align"
-              onClick={justifyAlign}
-            >
+              onClick={justifyAlign}>
               <i className="justify-align" />
             </button>
             <button
               className="action-button insert-image"
-              onClick={handleAddImage}
-            >
+              onClick={handleAddImage}>
               <i className="image" />
             </button>
             <button
               className="action-button insert-table"
-              onClick={handleAddTable}
-            >
+              onClick={handleAddTable}>
               <i className="table" />
             </button>
           </>
@@ -211,21 +208,18 @@ export default function ActionsPlugins({
           onClick={() => {
             triggerListeners('clear');
             editor.focus();
-          }}
-        >
+          }}>
           <i className="clear" />
         </button>
         <button
           className="action-button lock"
-          onClick={() => triggerListeners('readonly', !isReadOnly)}
-        >
+          onClick={() => triggerListeners('readonly', !isReadOnly)}>
           <i className={isReadOnly ? 'unlock' : 'lock'} />
         </button>
         {isCollab && (
           <button
             className="action-button connect"
-            onClick={() => triggerListeners('connect', !connected)}
-          >
+            onClick={() => triggerListeners('connect', !connected)}>
             <i className={connected ? 'disconnect' : 'connect'} />
           </button>
         )}

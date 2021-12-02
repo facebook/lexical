@@ -575,7 +575,7 @@ export function insertParagraph(selection: Selection): void {
     const textContent = anchorNode.getTextContent();
     const textContentLength = textContent.length;
     nodesToMove = anchorNode.getNextSiblings().reverse();
-    currentElement = anchorNode.getParentElementOrThrow();
+    currentElement = anchorNode.getParentOrThrow();
 
     if (anchorOffset === 0) {
       nodesToMove.push(anchorNode);
@@ -631,7 +631,7 @@ function moveCaretSelection(
 
 function isTopLevelElementRTL(selection: Selection): boolean {
   const anchorNode = selection.anchor.getNode();
-  const topLevelElement = anchorNode.getTopParentElementOrThrow();
+  const topLevelElement = anchorNode.getTopLevelElementOrThrow();
   const direction = topLevelElement.getDirection();
   return direction === 'rtl';
 }
@@ -749,13 +749,17 @@ export function updateCaretSelectionForAdjacentHashtags(
 
 function deleteCharacter(selection: Selection, isBackward: boolean): void {
   if (selection.isCollapsed()) {
-    updateCaretSelectionForRange(selection, isBackward, 'character', false);
     const anchor = selection.anchor;
     const focus = selection.focus;
+    let anchorNode = anchor.getNode();
+    if (isElementNode(anchorNode) && !anchorNode.canSelectionRemove()) {
+      return;
+    }
+    updateCaretSelectionForRange(selection, isBackward, 'character', false);
 
     if (!selection.isCollapsed()) {
       const focusNode = focus.type === 'text' ? focus.getNode() : null;
-      const anchorNode = anchor.type === 'text' ? anchor.getNode() : null;
+      anchorNode = anchor.type === 'text' ? anchor.getNode() : null;
 
       if (focusNode !== null && focusNode.isSegmented()) {
         const offset = focus.offset;
@@ -942,7 +946,7 @@ export function insertNodes(
   // Get all remaining text node siblings in this element so we can
   // append them after the last node we're inserting.
   const nextSiblings = anchorNode.getNextSiblings();
-  const topLevelElement = anchorNode.getTopParentElementOrThrow();
+  const topLevelElement = anchorNode.getTopLevelElementOrThrow();
 
   if (isTextNode(anchorNode)) {
     const textContent = anchorNode.getTextContent();
@@ -1389,7 +1393,7 @@ export function insertText(selection: Selection, text: string): void {
         // them all as being able to deleted too.
         let parent = lastElement;
         let lastRemovedParent = null;
-
+      
         while (parent !== null) {
           const children = parent.getChildren();
           const childrenLength = children.length;
@@ -1428,7 +1432,11 @@ export function insertText(selection: Selection, text: string): void {
     // Remove all selected nodes that haven't already been removed.
     for (let i = 1; i < selectedNodesLength; i++) {
       const selectedNode = selectedNodes[i];
-      if (!markedNodeKeysForKeep.has(selectedNode.getKey())) {
+      const key = selectedNode.getKey();
+      if (
+        !markedNodeKeysForKeep.has(key) &&
+        (!isElementNode(selectedNode) || selectedNode.canSelectionRemove())
+      ) {
         selectedNode.remove();
       }
     }
@@ -1439,7 +1447,7 @@ export function selectAll(selection: Selection): void {
   const anchor = selection.anchor;
   const focus = selection.focus;
   const anchorNode = anchor.getNode();
-  const topParent = anchorNode.getTopParentElementOrThrow();
+  const topParent = anchorNode.getTopLevelElementOrThrow();
   const root = topParent.getParentOrThrow();
   let firstNode = root.getFirstDescendant();
   let lastNode = root.getLastDescendant();
@@ -1488,7 +1496,7 @@ export function wrapLeafNodesInElements(
     const anchor = selection.anchor;
     const target =
       anchor.type === 'text'
-        ? anchor.getNode().getParentElementOrThrow()
+        ? anchor.getNode().getParentOrThrow()
         : anchor.getNode();
     const children = target.getChildren();
     let element = createElement();
@@ -1508,7 +1516,7 @@ export function wrapLeafNodesInElements(
   // structures.
   let target = isElementNode(firstNode)
     ? firstNode
-    : firstNode.getParentElementOrThrow();
+    : firstNode.getParentOrThrow();
   while (target !== null) {
     const prevSibling = target.getPreviousSibling();
     if (prevSibling !== null) {

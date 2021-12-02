@@ -10,13 +10,12 @@
 import type {ListItemNode} from 'outline/ListItemNode';
 import type {OutlineNode} from 'outline';
 import type {ListNode} from 'outline/ListNode';
-import type {State} from 'outline';
+import type {TableNode} from 'outline/TableNode';
 
 import {isListNode} from 'outline/ListNode';
 import {isListItemNode} from 'outline/ListItemNode';
 import invariant from 'shared/invariant';
-import {isElementNode, createTextNode, ElementNode} from 'outline';
-import type {TableNode} from 'outline/TableNode';
+import {isElementNode, createTextNode} from 'outline';
 import {createTableNode} from 'outline/TableNode';
 import {createTableRowNode} from 'outline/TableRowNode';
 import {createTableCellNode} from 'outline/TableCellNode';
@@ -86,23 +85,6 @@ export type DOMNodeToOutlineConversionMap = {
   [string]: DOMNodeToOutlineConversion,
 };
 
-export function getTopLevelBlockNode(
-  node: OutlineNode,
-  state: State,
-): ElementNode {
-  let curr = node;
-
-  while (curr != null && curr.getParent() !== state.getRoot()) {
-    curr = curr.getParent();
-  }
-
-  if (curr instanceof ElementNode) {
-    return curr;
-  }
-
-  throw new Error('Expected to find top level block node.');
-}
-
 export function createOutlineNodeFromDOMNode(
   node: Node,
   conversionMap: DOMNodeToOutlineConversionMap,
@@ -139,9 +121,7 @@ export function createTableNodeWithDimensions(
       tableCell.append(createTextNode());
       tableRow.append(tableCell);
     }
-
     tableNode.append(tableRow);
   }
-
   return tableNode;
 }

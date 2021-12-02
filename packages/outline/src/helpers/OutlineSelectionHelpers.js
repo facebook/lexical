@@ -1391,7 +1391,21 @@ export function insertText(selection: Selection, text: string): void {
         // Check if we have already moved out all the nodes of the
         // last parent, and if so, traverse the parent tree and mark
         // them all as being able to deleted too.
-        traverseAndMarkEmptyParentElements(lastElement, markedNodeKeysForKeep);
+        let parent = lastElement;
+        let lastRemovedParent = null;
+      
+        while (parent !== null) {
+          const children = parent.getChildren();
+          const childrenLength = children.length;
+          if (
+            childrenLength === 0 ||
+            children[childrenLength - 1].is(lastRemovedParent)
+          ) {
+            markedNodeKeysForKeep.delete(parent.getKey());
+            lastRemovedParent = parent;
+          }
+          parent = parent.getParent();
+        }
       }
     }
 
@@ -1406,11 +1420,6 @@ export function insertText(selection: Selection, text: string): void {
       );
       if (firstNode.getTextContent() === '') {
         firstNode.remove();
-        // We might also need to flag the parents.
-        traverseAndMarkEmptyParentElements(
-          firstNodeParent,
-          markedNodeKeysForKeep,
-        );
       } else if (firstNode.isComposing() && selection.anchor.type === 'text') {
         selection.anchor.offset -= text.length;
       }
@@ -1431,27 +1440,6 @@ export function insertText(selection: Selection, text: string): void {
         selectedNode.remove();
       }
     }
-  }
-}
-
-function traverseAndMarkEmptyParentElements(
-  element: ElementNode,
-  markedNodeKeysForKeep: Set<NodeKey>,
-): void {
-  let parent = element;
-  let lastRemovedParent = null;
-
-  while (parent !== null) {
-    const children = parent.getChildren();
-    const childrenLength = children.length;
-    if (
-      childrenLength === 0 ||
-      children[childrenLength - 1].is(lastRemovedParent)
-    ) {
-      markedNodeKeysForKeep.delete(parent.getKey());
-      lastRemovedParent = parent;
-    }
-    parent = parent.getParent();
   }
 }
 

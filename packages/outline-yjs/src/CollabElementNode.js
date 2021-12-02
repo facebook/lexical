@@ -148,7 +148,7 @@ export class CollabElementNode {
             }
             deletionSize -= delCount;
           } else {
-            throw new Error('Should never happen');
+            throw new Error('Should never happen for ' + node);
           }
         }
       } else if (insertDelta != null) {

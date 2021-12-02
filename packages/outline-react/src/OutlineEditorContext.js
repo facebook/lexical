@@ -21,19 +21,22 @@ export type EditorContext<Context> = {
   __context: React$Context<EditorContextType<Context>>,
 };
 
+export type EditorContextConfig = {
+  initialEditorState?: EditorState,
+  theme?: EditorThemeClasses,
+};
+
 export function createEditorContext<Context>(
-  getInitialContext: () => Context,
-  editorConfig: {
-    initialEditorState?: EditorState,
-    theme?: EditorThemeClasses,
-  },
+  createContext: (parent: ?Context, theme?: EditorThemeClasses) => Context,
+  parentContext: ?Context,
+  editorConfig: EditorContextConfig,
 ): EditorContext<Context> {
   const OutlineEditorContext =
     createReactContext<EditorContextType<Context>>(null);
 
   function OutlineEditorScope({children}: {children: React$Node}) {
     const editorContext = useMemo(() => {
-      const context: Context = getInitialContext();
+      const context: Context = createContext(parentContext, editorConfig.theme);
       const editor = createEditor<Context>({
         ...editorConfig,
         context,

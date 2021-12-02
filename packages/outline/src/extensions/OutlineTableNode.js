@@ -198,12 +198,22 @@ function applyCellSelection(
                 cellNode.clear();
               }
             });
+            clearHighlight();
           });
         }
       }
     },
     true,
   );
+
+  const clearHighlight = () => {
+    isHighlightingCells = false;
+    isSelected = false;
+    startX = -1;
+    startY = -1;
+    updateCells(-1, -1, -1, -1, grid.cells);
+    highlightedCells = [];
+  };
 
   tableElement.addEventListener('mousedown', (event: MouseEvent) => {
     // $FlowFixMe: event.target is always a Node on the DOM
@@ -216,21 +226,10 @@ function applyCellSelection(
         'mouseup',
         () => {
           isSelected = false;
-          document.addEventListener(
-            'mousedown',
-            () => {
-              isHighlightingCells = false;
-              isSelected = false;
-              startX = -1;
-              startY = -1;
-              updateCells(-1, -1, -1, -1, grid.cells);
-              highlightedCells = [];
-            },
-            {
-              capture: true,
-              once: true,
-            },
-          );
+          document.addEventListener('mousedown', clearHighlight, {
+            capture: true,
+            once: true,
+          });
         },
         {
           capture: true,

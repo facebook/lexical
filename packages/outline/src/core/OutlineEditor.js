@@ -24,11 +24,7 @@ import {LineBreakNode} from './OutlineLineBreakNode';
 import {NO_DIRTY_NODES, FULL_RECONCILE} from './OutlineConstants';
 import {flushRootMutations, initMutationObserver} from './OutlineMutations';
 import {RootNode} from './OutlineRootNode';
-import {
-  generateRandomKey,
-  getEditorStateTextContent,
-  markAllNodesAsDirty,
-} from './OutlineUtils';
+import {generateRandomKey, markAllNodesAsDirty} from './OutlineUtils';
 import invariant from 'shared/invariant';
 import type {DOMTransformerMap} from '../helpers/OutlineEventHelpers';
 
@@ -347,16 +343,10 @@ class BaseOutlineEditor {
     listenerSet.add(listener);
 
     const isRootType = type === 'root';
-    const isTextContentType = type === 'textcontent';
     if (isRootType) {
       // $FlowFixMe: TODO refine
       const rootListener: RootListener = listener;
       rootListener(this._rootElement, null);
-    } else if (isTextContentType) {
-      const textContent = getEditorStateTextContent(this._editorState);
-      // $FlowFixMe: TODO refine
-      const textContentListener: TextContentListener = listener;
-      textContentListener(textContent);
     }
     return () => {
       // $FlowFixMe: TODO refine this from the above types

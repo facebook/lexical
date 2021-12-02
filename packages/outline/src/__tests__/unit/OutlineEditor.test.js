@@ -31,7 +31,7 @@ import {
   createTestEditor,
 } from '../utils';
 import {LineBreakNode} from '../../core/OutlineLineBreakNode';
-import {RootNode} from '../../core/OutlineRootNode'; 
+import {RootNode} from '../../core/OutlineRootNode';
 
 describe('OutlineEditor tests', () => {
   let container = null;
@@ -1256,5 +1256,28 @@ describe('OutlineEditor tests', () => {
       // eslint-disable-next-line no-new
       new CustomSecondTextNode();
     });
+  });
+
+  it('textcontent listener', async () => {
+    init();
+    const fn = jest.fn();
+    editor.update(() => {
+      const root = getRoot();
+      const paragraph = createParagraphNode();
+      const textNode = createTextNode('foo');
+      root.append(paragraph);
+      paragraph.append(textNode);
+    });
+
+    editor.addListener('textcontent', (text) => {
+      fn(text);
+    });
+    await editor.update(() => {
+      const root = getRoot();
+      const child = root.getLastDescendant();
+      child.insertAfter(createTextNode('bar'));
+    });
+    expect(fn).toHaveBeenCalledTimes(1);
+    expect(fn).toHaveBeenCalledWith('foobar');
   });
 });

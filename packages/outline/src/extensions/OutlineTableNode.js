@@ -271,6 +271,10 @@ export class TableNode extends ElementNode {
     return false;
   }
 
+  canExtractContents(): false {
+    return false;
+  }
+
   canBeEmpty(): false {
     return false;
   }

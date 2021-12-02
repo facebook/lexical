@@ -331,6 +331,9 @@ export class ElementNode extends OutlineNode {
   collapseAtStart(selection: Selection): boolean {
     return false;
   }
+  canExtractContents(): boolean {
+    return true;
+  }
   excludeFromCopy(): boolean {
     return false;
   }

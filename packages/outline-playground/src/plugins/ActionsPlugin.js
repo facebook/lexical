@@ -91,7 +91,7 @@ export default function ActionsPlugins({
 
       if (focusNode !== null) {
         const topLevelNode = focusNode.getTopLevelElementOrThrow();
-        const tableNode = createTableNodeWithDimensions(3, 3);
+        const tableNode = createTableNodeWithDimensions(15, 5);
         topLevelNode.insertAfter(tableNode);
         tableNode.insertAfter(createParagraphNode());
         const firstCell = tableNode

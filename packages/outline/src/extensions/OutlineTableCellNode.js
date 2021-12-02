@@ -19,7 +19,7 @@ export class TableCellNode extends ElementNode {
   }
 
   static clone(node: TableCellNode): TableCellNode {
-    return new TableCellNode(false, node.__key);
+    return new TableCellNode(node.__isHeader, node.__key);
   }
 
   constructor(isHeader?: boolean = false, key?: NodeKey) {
@@ -47,10 +47,6 @@ export class TableCellNode extends ElementNode {
 
   updateDOM(): boolean {
     return false;
-  }
-
-  collapseAtStart(): true {
-    return true;
   }
 
   canSelectionRemove(): boolean {

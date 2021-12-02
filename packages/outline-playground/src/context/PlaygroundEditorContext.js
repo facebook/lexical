@@ -19,7 +19,10 @@ export type PlaygroundContext = {
     type: 'readonly' | 'clear' | 'connected' | 'connect',
     callback: (ListenerValue) => void,
   ): () => void,
-  triggerListeners(type: 'readonly' | 'clear' | 'connect' | 'connected', value: ListenerValue): void,
+  triggerListeners(
+    type: 'readonly' | 'clear' | 'connect' | 'connected',
+    value: ListenerValue,
+  ): void,
 };
 
 const config = {
@@ -56,6 +59,11 @@ const config = {
     code: 'editor-code',
     link: 'editor-text-link',
     characterLimit: 'editor-character-limit',
+
+    table: 'editor-table',
+    tableRow: 'editor-table-row',
+    tableCell: 'editor-table-cell',
+    tableCellHeader: 'editor-table-cell-header',
   },
 };
 

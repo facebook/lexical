@@ -937,6 +937,10 @@ pre::-webkit-scrollbar-thumb {
   background-image: url(images/icons/file-image.svg);
 }
 
+.actions i.table {
+  background-image: url(images/icons/table.svg);
+}
+
 .actions i.clear {
   background-image: url(images/icons/trash.svg);
 }
@@ -1040,3 +1044,27 @@ pre::-webkit-scrollbar-thumb {
   display: inline-block;
   pointer-events: none; 
 }
+
+
+.editor-table {
+  border-collapse: collapse;
+  border-spacing: 0;
+  max-width: 100%;
+  overflow-y: scroll;
+  table-layout: fixed;
+  width: 100%;
+}
+
+.editor-table-cell {
+  border: 1px solid black;
+  height: 50px;
+  min-width: 75px;
+  padding: '10px';
+  vertical-align: 'top';
+}
+
+.editor-table-cell-header {
+  background-color: #F2F3F5;
+  text-align: start;
+}
+

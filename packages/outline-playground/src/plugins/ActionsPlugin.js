@@ -18,6 +18,13 @@ import {ImageNode, createImageNode} from '../nodes/ImageNode';
 import {insertNodes} from 'outline/selection';
 import yellowFlowerImage from '../images/image/yellow-flower.jpg';
 import useOutlineNestedList from 'outline-react/useOutlineNestedList';
+import TablesPlugin from './TablesPlugin';
+import {
+  createTableNodeWithDimensions,
+  getTopLevelBlockNode,
+} from 'outline/nodes';
+import {createParagraphNode} from 'outline/ParagraphNode';
+import {createTextNode} from 'outline';
 
 function createUID(): string {
   return Math.random()
@@ -71,6 +78,25 @@ export default function ActionsPlugins({
           ref,
         );
         insertNodes(selection, [imageNode]);
+      }
+    });
+  };
+
+  const handleAddTable = () => {
+    editor.update((state) => {
+      log('handleAddTable');
+      const selection = state.getSelection();
+
+      const focusNode = selection?.focus.getNode();
+
+      if (focusNode != null) {
+        const topLevelNode = getTopLevelBlockNode(focusNode, state);
+        const tableNode = createTableNodeWithDimensions(3, 3);
+        topLevelNode.insertAfter(tableNode);
+        const paragraphNode = createParagraphNode();
+        paragraphNode.append(createTextNode());
+
+        tableNode.insertAfter(paragraphNode);
       }
     });
   };
@@ -137,56 +163,73 @@ export default function ActionsPlugins({
   };
 
   return (
-    <div className="actions">
-      {isRichText && (
-        <>
-          <button className="action-button outdent" onClick={applyOutdent}>
-            <i className="outdent" />
-          </button>
-          <button className="action-button indent" onClick={applyIndent}>
-            <i className="indent" />
-          </button>
-          <button className="action-button left-align" onClick={leftAlign}>
-            <i className="left-align" />
-          </button>
-          <button className="action-button center-align" onClick={centerAlign}>
-            <i className="center-align" />
-          </button>
-          <button className="action-button right-align" onClick={rightAlign}>
-            <i className="right-align" />
-          </button>
-          <button
-            className="action-button justify-align"
-            onClick={justifyAlign}>
-            <i className="justify-align" />
-          </button>
-          <button
-            className="action-button insert-image"
-            onClick={handleAddImage}>
-            <i className="image" />
-          </button>
-        </>
-      )}
-      <button
-        className="action-button clear"
-        onClick={() => {
-          triggerListeners('clear');
-          editor.focus();
-        }}>
-        <i className="clear" />
-      </button>
-      <button
-        className="action-button lock"
-        onClick={() => triggerListeners('readonly', !isReadOnly)}>
-        <i className={isReadOnly ? 'unlock' : 'lock'} />
-      </button>
-      {isCollab && (
+    <>
+      <TablesPlugin />
+      <div className="actions">
+        {isRichText && (
+          <>
+            <button className="action-button outdent" onClick={applyOutdent}>
+              <i className="outdent" />
+            </button>
+            <button className="action-button indent" onClick={applyIndent}>
+              <i className="indent" />
+            </button>
+            <button className="action-button left-align" onClick={leftAlign}>
+              <i className="left-align" />
+            </button>
+            <button
+              className="action-button center-align"
+              onClick={centerAlign}
+            >
+              <i className="center-align" />
+            </button>
+            <button className="action-button right-align" onClick={rightAlign}>
+              <i className="right-align" />
+            </button>
+            <button
+              className="action-button justify-align"
+              onClick={justifyAlign}
+            >
+              <i className="justify-align" />
+            </button>
+            <button
+              className="action-button insert-image"
+              onClick={handleAddImage}
+            >
+              <i className="image" />
+            </button>
+            <button
+              className="action-button insert-table"
+              onClick={handleAddTable}
+            >
+              <i className="table" />
+            </button>
+          </>
+        )}
         <button
-          className="action-button connect"
-          onClick={() => triggerListeners('connect', !connected)}>
-          <i className={connected ? 'disconnect' : 'connect'} />
+          className="action-button clear"
+          onClick={() => {
+            triggerListeners('clear');
+            editor.focus();
+          }}
+        >
+          <i className="clear" />
         </button>
-      )}
-    </div>
+        <button
+          className="action-button lock"
+          onClick={() => triggerListeners('readonly', !isReadOnly)}
+        >
+          <i className={isReadOnly ? 'unlock' : 'lock'} />
+        </button>
+        {isCollab && (
+          <button
+            className="action-button connect"
+            onClick={() => triggerListeners('connect', !connected)}
+          >
+            <i className={connected ? 'disconnect' : 'connect'} />
+          </button>
+        )}
+      </div>
+    </>
   );
 }

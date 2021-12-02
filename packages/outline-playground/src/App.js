@@ -18,6 +18,7 @@ import PlaygroundEditorContext from './context/PlaygroundEditorContext';
 import TreeViewPlugin from './plugins/TreeViewPlugin';
 import TestRecorderPlugin from './plugins/TestRecorderPlugin';
 import TypingPerfPlugin from './plugins/TypingPerfPlugin';
+import {SharedHistoryContext} from './context/SharedHistoryContext';
 
 function setURLParam(param: SettingName, value: null | boolean) {
   const url = new URL(window.location.href);
@@ -63,23 +64,25 @@ function App(): React$Node {
 
   return (
     <PlaygroundEditorContext>
-      <header>
-        <img src="logo.svg" alt="Outline Logo" />
-      </header>
-      <div className="editor-shell">
-        <Editor
-          isCharLimit={isCharLimit}
-          isCharLimitUtf8={isCharLimitUtf8}
-          isAutocomplete={isAutocomplete}
-          isRichText={isRichText}
-          isCollab={isCollab}
-        />
-      </div>
-      {showTreeView && <TreeViewPlugin />}
-      {settingsSwitches}
-      {settingsButton}
-      <TestRecorderPlugin />
-      {measureTypingPerf && <TypingPerfPlugin />}
+      <SharedHistoryContext>
+        <header>
+          <img src="logo.svg" alt="Outline Logo" />
+        </header>
+        <div className="editor-shell">
+          <Editor
+            isCharLimit={isCharLimit}
+            isCharLimitUtf8={isCharLimitUtf8}
+            isAutocomplete={isAutocomplete}
+            isRichText={isRichText}
+            isCollab={isCollab}
+          />
+        </div>
+        {showTreeView && <TreeViewPlugin />}
+        {settingsSwitches}
+        {settingsButton}
+        <TestRecorderPlugin />
+        {measureTypingPerf && <TypingPerfPlugin />}
+      </SharedHistoryContext>
     </PlaygroundEditorContext>
   );
 }

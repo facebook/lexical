@@ -10,11 +10,16 @@
 import type {ListItemNode} from 'outline/ListItemNode';
 import type {OutlineNode} from 'outline';
 import type {ListNode} from 'outline/ListNode';
+import type {State} from 'outline';
 
 import {isListNode} from 'outline/ListNode';
 import {isListItemNode} from 'outline/ListItemNode';
 import invariant from 'shared/invariant';
-import {isElementNode} from 'outline';
+import {isElementNode, createTextNode, ElementNode} from 'outline';
+import type {TableNode} from 'outline/TableNode';
+import {createTableNode} from 'outline/TableNode';
+import {createTableRowNode} from 'outline/TableRowNode';
+import {createTableCellNode} from 'outline/TableCellNode';
 
 export function dfs(
   startingNode: OutlineNode,
@@ -81,6 +86,23 @@ export type DOMNodeToOutlineConversionMap = {
   [string]: DOMNodeToOutlineConversion,
 };
 
+export function getTopLevelBlockNode(
+  node: OutlineNode,
+  state: State,
+): ElementNode {
+  let curr = node;
+
+  while (curr != null && curr.getParent() !== state.getRoot()) {
+    curr = curr.getParent();
+  }
+
+  if (curr instanceof ElementNode) {
+    return curr;
+  }
+
+  throw new Error('Expected to find top level block node.');
+}
+
 export function createOutlineNodeFromDOMNode(
   node: Node,
   conversionMap: DOMNodeToOutlineConversionMap,
@@ -100,4 +122,26 @@ export function createOutlineNodeFromDOMNode(
     }
   }
   return outlineNode;
+}
+
+export function createTableNodeWithDimensions(
+  rowCount: number,
+  columnCount: number,
+  includeHeader?: boolean = true,
+): TableNode {
+  const tableNode = createTableNode();
+
+  for (let iRow = 0; iRow < rowCount; iRow++) {
+    const tableRow = createTableRowNode();
+
+    for (let iColumn = 0; iColumn < columnCount; iColumn++) {
+      const tableCell = createTableCellNode(iRow === 0 && includeHeader);
+      tableCell.append(createTextNode());
+      tableRow.append(tableCell);
+    }
+
+    tableNode.append(tableRow);
+  }
+
+  return tableNode;
 }

@@ -14,7 +14,7 @@ import {ElementNode} from 'outline';
 export class TableCellNode extends ElementNode {
   __isHeader: boolean;
 
-  static getType(): string {
+  static getType(): 'table-cell' {
     return 'table-cell';
   }
 
@@ -62,6 +62,6 @@ export function createTableCellNode(isHeader: boolean): TableCellNode {
   return new TableCellNode(isHeader);
 }
 
-export function isTableCellNode(node: OutlineNode): boolean {
+export function isTableCellNode(node: OutlineNode): boolean %checks {
   return node instanceof TableCellNode;
 }

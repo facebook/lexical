@@ -12,7 +12,7 @@ import type {EditorConfig, OutlineNode, NodeKey} from 'outline';
 import {ElementNode} from 'outline';
 
 export class TableRowNode extends ElementNode {
-  static getType(): string {
+  static getType(): 'table-row' {
     return 'table-row';
   }
 
@@ -51,6 +51,6 @@ export function createTableRowNode(): TableRowNode {
   return new TableRowNode();
 }
 
-export function isTableRowNode(node: OutlineNode): boolean {
+export function isTableRowNode(node: OutlineNode): boolean %checks {
   return node instanceof TableRowNode;
 }

@@ -239,7 +239,6 @@ function applyCellSelection(
 
   const formatCells = (type: TextFormatType) => {
     editor.update(() => {
-      debugger
       let selection = getSelection();
       if (selection === null) {
         selection = createSelection();

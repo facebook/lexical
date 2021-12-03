@@ -314,7 +314,6 @@ export function patchStyleText(
   const isBefore = anchor.isBefore(focus);
   startOffset = isBefore ? anchorOffset : focusOffset;
   endOffset = isBefore ? focusOffset : anchorOffset;
-  debugger;
 
   // This is the case where the user only selected the very end of the
   // first node so we don't want to include it in the formatting change.
@@ -495,6 +494,11 @@ export function formatText(
   // This is the case where we only selected a single node
   if (firstNode.is(lastNode)) {
     if (isTextNode(firstNode)) {
+      if (anchor.type === 'element' && focus.type === 'element') {
+        firstNode.setFormat(firstNextFormat);
+        firstNode.select(startOffset, endOffset);
+        return;
+      }
       startOffset = anchorOffset > focusOffset ? focusOffset : anchorOffset;
       endOffset = anchorOffset > focusOffset ? anchorOffset : focusOffset;
 

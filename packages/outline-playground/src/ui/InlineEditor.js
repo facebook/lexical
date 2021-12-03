@@ -13,11 +13,11 @@ import * as React from 'react';
 
 import RichTextPlugin from '../plugins/RichTextPlugin';
 import MentionsPlugin from '../plugins/MentionsPlugin';
-import EmojisPlugin from 'outline-react/EmojisPlugin';
+import EmojisPlugin from '../plugins/EmojisPlugin';
 import HashtagsPlugin from 'outline-react/HashtagsPlugin';
 import KeywordsPlugin from '../plugins/KeywordsPlugin';
 import OnChangePlugin from '../plugins/OnChangePlugin';
-import FloatingToolbarPlugin from 'outline-react/FloatingToolbarPlugin';
+import FloatingToolbarPlugin from '../plugins/FloatingToolbarPlugin';
 import OutlineComposer from 'outline-react/OutlineComposer';
 
 type Props = {

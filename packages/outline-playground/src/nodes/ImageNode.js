@@ -17,8 +17,7 @@ import type {
 
 import * as React from 'react';
 import {DecoratorNode, log, getNodeByKey} from 'outline';
-import PlaygroundEditorContext from '../context/PlaygroundEditorContext';
-import {useEditorContext} from 'outline-react/OutlineEditorContext';
+import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
 import {useCollaborationContext} from '../context/CollaborationContext';
 import {Suspense, useCallback, useEffect, useRef, useState} from 'react';
 import InlineEditor from '../ui/InlineEditor';
@@ -276,7 +275,7 @@ function ImageComponent({
   const [isResizing, setIsResizing] = useState<boolean>(false);
   const [inlineEditor, setInlineEditor] = useState<null | OutlineEditor>(null);
   const {yjsDocMap} = useCollaborationContext();
-  const [editor] = useEditorContext(PlaygroundEditorContext);
+  const [editor] = useOutlineComposerContext();
   const isCollab = yjsDocMap.get('main') !== undefined;
 
   useEffect(() => {

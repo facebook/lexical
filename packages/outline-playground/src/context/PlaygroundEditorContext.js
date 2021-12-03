@@ -7,9 +7,7 @@
  * @flow strict
  */
 
-import type {EditorContext} from 'outline-react/OutlineEditorContext';
-
-import {createEditorContext} from 'outline-react/OutlineEditorContext';
+import {createContext} from 'react';
 
 // $FlowFixMe: should fix this;
 type ListenerValue = any;
@@ -25,49 +23,7 @@ export type PlaygroundContext = {
   ): void,
 };
 
-const config = {
-  theme: {
-    paragraph: 'editor-paragraph',
-    quote: 'editor-quote',
-    heading: {
-      h1: 'editor-heading-h1',
-      h2: 'editor-heading-h2',
-      h3: 'editor-heading-h3',
-      h4: 'editor-heading-h4',
-      h5: 'editor-heading-h5',
-    },
-    list: {
-      ol: 'editor-list-ol',
-      ul: 'editor-list-ul',
-    },
-    nestedList: {
-      list: 'editor-nested-list-list',
-      listitem: 'editor-nested-list-listitem',
-    },
-    listitem: 'editor-listitem',
-    image: 'editor-image',
-    text: {
-      bold: 'editor-text-bold',
-      link: 'editor-text-link',
-      italic: 'editor-text-italic',
-      underline: 'editor-text-underline',
-      strikethrough: 'editor-text-strikethrough',
-      underlineStrikethrough: 'editor-text-underlineStrikethrough',
-      code: 'editor-text-code',
-    },
-    hashtag: 'editor-text-hashtag',
-    code: 'editor-code',
-    link: 'editor-text-link',
-    characterLimit: 'editor-character-limit',
-
-    table: 'editor-table',
-    tableRow: 'editor-table-row',
-    tableCell: 'editor-table-cell',
-    tableCellHeader: 'editor-table-cell-header',
-  },
-};
-
-function getInitialState(): PlaygroundContext {
+export function createDefaultContext(): PlaygroundContext {
   const listeners = new Map();
 
   return {
@@ -101,7 +57,5 @@ function getInitialState(): PlaygroundContext {
   };
 }
 
-const PlaygroundEditorContext: EditorContext<PlaygroundContext> =
-  createEditorContext<PlaygroundContext>(getInitialState, config);
-
-export default PlaygroundEditorContext;
+export const PlaygroundEditorContext: React$Context<?PlaygroundContext> =
+  createContext(null);

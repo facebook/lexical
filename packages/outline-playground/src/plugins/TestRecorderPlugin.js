@@ -10,8 +10,8 @@
 import type {OutlineEditor} from 'outline';
 
 import * as React from 'react';
-import PlaygroundEditorContext from '../context/PlaygroundEditorContext';
-import {useEditorContext} from 'outline-react/OutlineEditorContext';
+import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
+
 import {createTextNode, log, getRoot} from 'outline';
 import {createParagraphNode} from 'outline/ParagraphNode';
 import {useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
@@ -435,7 +435,7 @@ ${steps.map(formatStep).join(`\n`)}
 }
 
 export default function TreeViewPlugin(): React$Node {
-  const [editor] = useEditorContext(PlaygroundEditorContext);
+  const [editor] = useOutlineComposerContext();
   const [testRecorderButton, testRecorderOutput] = useTestRecorder(editor);
 
   return (

@@ -9,8 +9,8 @@
 
 import * as React from 'react';
 import {useEffect} from 'react';
-import PlaygroundEditorContext from '../context/PlaygroundEditorContext';
-import {useEditorContext} from 'outline-react/OutlineEditorContext';
+import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
+
 import {TableNode} from 'outline/TableNode';
 import {TableCellNode} from 'outline/TableCellNode';
 import {TableRowNode} from 'outline/TableRowNode';
@@ -23,7 +23,7 @@ function useBonsaiTables(editor: OutlineEditor): void {
 }
 
 export default function TablesPlugin(): React.MixedElement | null {
-  const [editor] = useEditorContext(PlaygroundEditorContext);
+  const [editor] = useOutlineComposerContext();
 
   useBonsaiTables(editor);
 

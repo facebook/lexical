@@ -8,8 +8,8 @@
  */
 
 import * as React from 'react';
-import PlaygroundEditorContext from '../context/PlaygroundEditorContext';
-import {useEditorContext} from 'outline-react/OutlineEditorContext';
+import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
+
 import type {
   OutlineEditor,
   Selection,
@@ -91,7 +91,7 @@ function Select({
 }) {
   return (
     <select className={className} onChange={onChange} value={value}>
-      <option hidden value=""></option>
+      <option hidden={true} value="" />
       {options.map((option) => (
         <option key={option} value={option}>
           {option}
@@ -529,6 +529,6 @@ function useFloatingToolbar(editor: OutlineEditor): React$Node {
 }
 
 export default function FloatingToolbarPlugin(): React$Node {
-  const [editor] = useEditorContext(PlaygroundEditorContext);
+  const [editor] = useOutlineComposerContext();
   return useFloatingToolbar(editor);
 }

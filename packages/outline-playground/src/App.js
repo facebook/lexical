@@ -8,17 +8,22 @@
  */
 
 import type {SettingName} from './appSettings';
-
+import PlaygroundEditorTheme from './PlaygroundEditorTheme';
 import * as React from 'react';
-import {useCallback, useState} from 'react';
+import {useCallback, useMemo, useState} from 'react';
 import useSettings from './hooks/useSettings';
 import {DEFAULT_SETTINGS} from './appSettings';
 import Editor from './Editor';
-import PlaygroundEditorContext from './context/PlaygroundEditorContext';
+import {
+  createDefaultContext,
+  PlaygroundEditorContext,
+} from './context/PlaygroundEditorContext';
 import TreeViewPlugin from './plugins/TreeViewPlugin';
 import TestRecorderPlugin from './plugins/TestRecorderPlugin';
 import TypingPerfPlugin from './plugins/TypingPerfPlugin';
 import {SharedHistoryContext} from './context/SharedHistoryContext';
+import type {PlaygroundContext} from './context/PlaygroundEditorContext';
+import OutlineComposer from 'outline-react/OutlineComposer';
 
 function setURLParam(param: SettingName, value: null | boolean) {
   const url = new URL(window.location.href);
@@ -62,28 +67,35 @@ function App(): React$Node {
     showTreeView,
   } = settings;
 
+  const playgroundContextValue = useMemo<PlaygroundContext>(
+    () => createDefaultContext(),
+    [],
+  );
+
   return (
-    <PlaygroundEditorContext>
-      <SharedHistoryContext>
-        <header>
-          <img src="logo.svg" alt="Outline Logo" />
-        </header>
-        <div className="editor-shell">
-          <Editor
-            isCharLimit={isCharLimit}
-            isCharLimitUtf8={isCharLimitUtf8}
-            isAutocomplete={isAutocomplete}
-            isRichText={isRichText}
-            isCollab={isCollab}
-          />
-        </div>
-        {showTreeView && <TreeViewPlugin />}
-        {settingsSwitches}
-        {settingsButton}
-        <TestRecorderPlugin />
-        {measureTypingPerf && <TypingPerfPlugin />}
-      </SharedHistoryContext>
-    </PlaygroundEditorContext>
+    <PlaygroundEditorContext.Provider value={playgroundContextValue}>
+      <OutlineComposer theme={PlaygroundEditorTheme}>
+        <SharedHistoryContext>
+          <header>
+            <img src="logo.svg" alt="Outline Logo" />
+          </header>
+          <div className="editor-shell">
+            <Editor
+              isCharLimit={isCharLimit}
+              isCharLimitUtf8={isCharLimitUtf8}
+              isAutocomplete={isAutocomplete}
+              isRichText={isRichText}
+              isCollab={isCollab}
+            />
+          </div>
+          {showTreeView && <TreeViewPlugin />}
+          {settingsSwitches}
+          {settingsButton}
+          <TestRecorderPlugin />
+          {measureTypingPerf && <TypingPerfPlugin />}
+        </SharedHistoryContext>
+      </OutlineComposer>
+    </PlaygroundEditorContext.Provider>
   );
 }
 

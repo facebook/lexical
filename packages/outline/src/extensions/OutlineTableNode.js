@@ -7,9 +7,30 @@
  * @flow strict
  */
 
-import type {OutlineEditor, EditorConfig, OutlineNode, NodeKey} from 'outline';
+import type {
+  OutlineEditor,
+  EditorConfig,
+  OutlineNode,
+  NodeKey,
+  TextFormatType,
+} from 'outline';
 
-import {ElementNode, getNearestNodeFromDOMNode, isElementNode} from 'outline';
+import {
+  ElementNode,
+  getNearestNodeFromDOMNode,
+  isElementNode,
+  createSelection,
+  getSelection,
+  clearSelection,
+} from 'outline';
+import {formatText} from 'outline/selection';
+import {
+  isDeleteBackward,
+  isDeleteForward,
+  isBold,
+  isItalic,
+  isUnderline,
+} from 'outline/keys';
 
 type Cell = {
   elem: HTMLElement,
@@ -41,34 +62,6 @@ function getCellFromTarget(node: Node): Cell | null {
   return null;
 }
 
-function updateCells(
-  fromX: number,
-  toX: number,
-  fromY: number,
-  toY: number,
-  cells: Cells,
-): Array<Cell> {
-  const highlighted = [];
-  for (let y = 0; y < cells.length; y++) {
-    const row = cells[y];
-    for (let x = 0; x < row.length; x++) {
-      const cell = row[x];
-      const elemStyle = cell.elem.style;
-      if (x >= fromX && x <= toX && y >= fromY && y <= toY) {
-        if (!cell.highlighted) {
-          cell.highlighted = true;
-          elemStyle.setProperty('background-color', 'rgb(163, 187, 255)');
-        }
-        highlighted.push(cell);
-      } else if (cell.highlighted) {
-        cell.highlighted = false;
-        elemStyle.removeProperty('background-color');
-      }
-    }
-  }
-  return highlighted;
-}
-
 function trackTableChanges(tableElement: HTMLElement): Grid {
   const cells: Cells = [];
   const grid = {
@@ -77,10 +70,25 @@ function trackTableChanges(tableElement: HTMLElement): Grid {
     cells,
   };
   const observer = new MutationObserver((records) => {
-    cells.length = 0;
     let currentNode = tableElement.firstChild;
     let x = 0;
     let y = 0;
+
+    let gridNeedsRedraw = false;
+    for (let i = 0; i < records.length; i++) {
+      const record = records[i];
+      const target = record.target;
+      const nodeName = target.nodeName;
+      if (nodeName === 'TABLE' || nodeName === 'TR') {
+        gridNeedsRedraw = true;
+        break;
+      }
+    }
+    if (!gridNeedsRedraw) {
+      return;
+    }
+    cells.length = 0;
+
     while (currentNode != null) {
       const nodeMame = currentNode.nodeName;
       if (nodeMame === 'TD' || nodeMame === 'TH') {
@@ -134,6 +142,36 @@ function trackTableChanges(tableElement: HTMLElement): Grid {
   return grid;
 }
 
+function updateCells(
+  fromX: number,
+  toX: number,
+  fromY: number,
+  toY: number,
+  cells: Cells,
+): Array<Cell> {
+  const highlighted = [];
+  for (let y = 0; y < cells.length; y++) {
+    const row = cells[y];
+    for (let x = 0; x < row.length; x++) {
+      const cell = row[x];
+      const elemStyle = cell.elem.style;
+      if (x >= fromX && x <= toX && y >= fromY && y <= toY) {
+        if (!cell.highlighted) {
+          cell.highlighted = true;
+          elemStyle.setProperty('background-color', 'rgb(163, 187, 255)');
+          elemStyle.setProperty('caret-color', 'rgba(0, 0, 0, 0)');
+        }
+        highlighted.push(cell);
+      } else if (cell.highlighted) {
+        cell.highlighted = false;
+        elemStyle.removeProperty('background-color');
+        elemStyle.removeProperty('caret-color');
+      }
+    }
+  }
+  return highlighted;
+}
+
 function applyCellSelection(
   tableNode: TableNode,
   tableElement: HTMLElement,
@@ -148,6 +186,8 @@ function applyCellSelection(
   let isHighlightingCells = false;
   let startX = -1;
   let startY = -1;
+  let currentX = -1;
+  let currentY = -1;
   let highlightedCells = [];
 
   tableElement.addEventListener('mousemove', (event: MouseEvent) => {
@@ -155,16 +195,18 @@ function applyCellSelection(
       // $FlowFixMe: event.target is always a Node on the DOM
       const cell = getCellFromTarget(event.target);
       if (cell !== null) {
-        const currentX = cell.x;
-        const currentY = cell.y;
-        if (
-          !isHighlightingCells &&
-          (startX !== currentX || startY !== currentY)
-        ) {
+        const cellX = cell.x;
+        const cellY = cell.y;
+        if (!isHighlightingCells && (startX !== cellX || startY !== cellY)) {
           const selection = window.getSelection();
           selection.removeAllRanges();
           isHighlightingCells = true;
+        } else if (cellX === currentX && cellY === currentY) {
+          return;
         }
+        currentX = cellX;
+        currentY = cellY;
+
         if (isHighlightingCells) {
           const fromX = Math.min(startX, currentX);
           const toX = Math.max(startX, currentX);
@@ -176,13 +218,53 @@ function applyCellSelection(
     }
   });
 
+  const clearHighlight = () => {
+    isHighlightingCells = false;
+    isSelected = false;
+    startX = -1;
+    startY = -1;
+    currentX = -1;
+    currentY = -1;
+    updateCells(-1, -1, -1, -1, grid.cells);
+    highlightedCells = [];
+  };
+
+  tableElement.addEventListener('mouseleave', (event: MouseEvent) => {
+    if (isSelected) {
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      return;
+    }
+  });
+
+  const formatCells = (type: TextFormatType) => {
+    editor.update(() => {
+      let selection = getSelection();
+      if (selection === null) {
+        selection = createSelection();
+      }
+      // This is to make Flow play ball.
+      const formatSelection = selection;
+      const anchor = formatSelection.anchor;
+      const focus = formatSelection.focus;
+      highlightedCells.forEach((highlightedCell) => {
+        const cellNode = getNearestNodeFromDOMNode(highlightedCell.elem);
+        if (isElementNode(cellNode)) {
+          anchor.set(cellNode.getKey(), 0, 'element');
+          focus.set(cellNode.getKey(), cellNode.getChildrenSize(), 'element');
+          formatText(formatSelection, type);
+        }
+      });
+      clearSelection();
+    });
+  };
+
   rootElement.addEventListener(
     'keydown',
     (event: KeyboardEvent) => {
       if (isHighlightingCells) {
         // Backspace or delete
-        const keyCode = event.keyCode;
-        if (keyCode === 8 || keyCode === 46) {
+        if (isDeleteBackward(event) || isDeleteForward(event)) {
           event.preventDefault();
           event.stopPropagation();
           editor.update(() => {
@@ -198,38 +280,44 @@ function applyCellSelection(
                 cellNode.clear();
               }
             });
-            clearHighlight();
           });
+        } else if (isBold(event)) {
+          formatCells('bold');
+        } else if (isItalic(event)) {
+          formatCells('italic');
+        } else if (isUnderline(event)) {
+          formatCells('underline');
         }
       }
     },
     true,
   );
 
-  const clearHighlight = () => {
-    isHighlightingCells = false;
-    isSelected = false;
-    startX = -1;
-    startY = -1;
-    updateCells(-1, -1, -1, -1, grid.cells);
-    highlightedCells = [];
-  };
-
   tableElement.addEventListener('mousedown', (event: MouseEvent) => {
+    if (isSelected) {
+      return;
+    }
     // $FlowFixMe: event.target is always a Node on the DOM
     const cell = getCellFromTarget(event.target);
     if (cell !== null) {
       isSelected = true;
       startX = cell.x;
       startY = cell.y;
+
       document.addEventListener(
         'mouseup',
         () => {
           isSelected = false;
-          document.addEventListener('mousedown', clearHighlight, {
-            capture: true,
-            once: true,
-          });
+          document.addEventListener(
+            'mousedown',
+            () => {
+              clearHighlight();
+            },
+            {
+              capture: true,
+              once: true,
+            },
+          );
         },
         {
           capture: true,
@@ -268,6 +356,10 @@ export class TableNode extends ElementNode {
   }
 
   updateDOM(): boolean {
+    return false;
+  }
+
+  canExtractContents(): false {
     return false;
   }
 

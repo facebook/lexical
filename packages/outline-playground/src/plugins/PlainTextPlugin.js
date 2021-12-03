@@ -16,6 +16,7 @@ import useOutlineDecorators from 'outline-react/useOutlineDecorators';
 import ContentEditable from '../ui/ContentEditable';
 import Placeholder from '../ui/Placeholder';
 import useEditorListeners from '../hooks/useEditorListeners';
+import {useSharedHistoryContext} from '../context/SharedHistoryContext';
 
 function onError(e: Error): void {
   throw e;
@@ -28,7 +29,8 @@ export default function PlainTextPlugin({
 }): React$Node {
   const [editor, state] = useEditorContext(PlaygroundEditorContext);
   const [rootElementRef, showPlaceholder] = useOutlineEditor(editor, onError);
-  const clear = useOutlinePlainText(editor);
+  const {historyState} = useSharedHistoryContext();
+  const clear = useOutlinePlainText(editor, historyState);
   const decorators = useOutlineDecorators(editor);
   const isReadOnly = useEditorListeners(state, clear);
 

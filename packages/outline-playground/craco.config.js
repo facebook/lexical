@@ -57,8 +57,6 @@ module.exports = {
         'AutoFormatterPlugin',
         'BlockControlsPlugin',
         'CharacterLimitPlugin',
-        'EmojisPlugin',
-        'FloatingToolbarPlugin',
         'HashtagsPlugin',
       ].reduce(
         (aliases, plugin) => ({

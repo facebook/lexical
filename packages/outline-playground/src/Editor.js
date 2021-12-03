@@ -12,7 +12,7 @@ import PlainTextPlugin from './plugins/PlainTextPlugin';
 import RichTextPlugin from './plugins/RichTextPlugin';
 import RichTextCollabPlugin from './plugins/RichTextCollabPlugin';
 import MentionsPlugin from './plugins/MentionsPlugin';
-import EmojisPlugin from 'outline-react/EmojisPlugin';
+import EmojisPlugin from './plugins/EmojisPlugin';
 import CharacterLimitPlugin from 'outline-react/CharacterLimitPlugin';
 import AutocompletePlugin from './plugins/AutocompletePlugin';
 import HashtagsPlugin from 'outline-react/HashtagsPlugin';
@@ -20,7 +20,7 @@ import KeywordsPlugin from './plugins/KeywordsPlugin';
 import ActionsPlugin from './plugins/ActionsPlugin';
 import AutoFormatterPlugin from 'outline-react/AutoFormatterPlugin';
 import BlockControlsPlugin from 'outline-react/BlockControlsPlugin';
-import FloatingToolbarPlugin from 'outline-react/FloatingToolbarPlugin';
+import FloatingToolbarPlugin from './plugins/FloatingToolbarPlugin';
 
 type Props = {
   isCollab: boolean,

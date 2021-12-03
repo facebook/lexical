@@ -9,9 +9,10 @@
 
 import type {OutlineEditor, Selection} from 'outline';
 
-import {createEmojiNode, EmojiNode} from './composer/nodes/EmojiNode';
+import {createEmojiNode, EmojiNode} from '../nodes/EmojiNode';
 import {useEffect} from 'react';
 import {getSelection, TextNode} from 'outline';
+import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
 
 const emojis: Map<string, [string, string]> = new Map([
   [':)', ['emoji happysmile', '🙂']],
@@ -60,7 +61,7 @@ function textNodeTransform(node: TextNode): void {
   }
 }
 
-export default function useOutlineEmojis(editor: OutlineEditor): void {
+function useEmojis(editor: OutlineEditor): void {
   useEffect(() => {
     const unregisterNodes = editor.registerNodes([EmojiNode]);
     const removeTransform = editor.addTransform(TextNode, textNodeTransform);
@@ -69,4 +70,10 @@ export default function useOutlineEmojis(editor: OutlineEditor): void {
       removeTransform();
     };
   }, [editor]);
+}
+
+export default function EmojisPlugin(): React$Node {
+  const [editor] = useOutlineComposerContext();
+  useEmojis(editor);
+  return null;
 }

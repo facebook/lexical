@@ -7,8 +7,9 @@
  * @flow strict
  */
 
+import type {OutlineComposerContextType} from './OutlineComposerContext';
 import type {EditorState, EditorThemeClasses} from 'outline';
-
+import {createEditor} from 'outline';
 import {
   OutlineComposerContext,
   createOutlineComposerContext,
@@ -27,15 +28,26 @@ export default function OutlineComposer({
   theme,
 }: Props): React$MixedElement {
   const parentContext = useContext(OutlineComposerContext);
-  const ComposerEditorContext = useMemo(
-    () =>
-      createOutlineComposerContext({theme, initialEditorState}, parentContext),
+  const composerContext = useMemo(
+    () => {
+      const config = {theme, initialEditorState};
+      const context: OutlineComposerContextType = createOutlineComposerContext(
+        parentContext,
+        theme,
+      );
+      const editor = createEditor<OutlineComposerContextType>({
+        ...config,
+        context,
+      });
+      return [editor, context];
+    },
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [theme, initialEditorState],
   );
   return (
-    <OutlineComposerContext.Provider value={ComposerEditorContext}>
-      <ComposerEditorContext>{children}</ComposerEditorContext>
+    <OutlineComposerContext.Provider value={composerContext}>
+      {children}
     </OutlineComposerContext.Provider>
   );
 }

@@ -9,24 +9,33 @@
 
 import type {EditorState, EditorThemeClasses} from 'outline';
 
-import {useEditorContext} from '../OutlineEditorContext';
-import {createOutlineComposerContext} from './OutlineComposerEditorContext';
-import * as OutlineComposerEditorContext from './OutlineComposerEditorContext';
-import {useMemo} from 'react';
+import {
+  OutlineComposerContext,
+  createOutlineComposerContext,
+} from './OutlineComposerContext';
+import React, {useContext, useMemo} from 'react';
 
 type Props = {
-  theme: ?EditorThemeClasses,
-  initialEditorState: ?EditorState,
+  children: React$Node,
+  theme?: EditorThemeClasses,
+  initialEditorState?: EditorState,
 };
 
 export default function OutlineComposer({
-  theme,
+  children,
   initialEditorState,
-}: Props): React.MixedElement {
-  const [_editor, parentContext] = useEditorContext(
-    OutlineComposerEditorContext,
+  theme,
+}: Props): React$MixedElement {
+  const parentContext = useContext(OutlineComposerContext);
+  const composerEditorContext = useMemo(
+    () =>
+      createOutlineComposerContext({theme, initialEditorState}, parentContext),
+    [theme, initialEditorState, parentContext],
   );
-  const composerEditorContext = useMemo(() =>
-    createOutlineComposerContext({theme, initialEditorState}, parentContext),
+
+  return (
+    <OutlineComposerContext.Provider value={composerEditorContext}>
+      {children}
+    </OutlineComposerContext.Provider>
   );
 }

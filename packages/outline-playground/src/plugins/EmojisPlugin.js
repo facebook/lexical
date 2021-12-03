@@ -9,7 +9,7 @@
 
 import type {OutlineEditor, Selection} from 'outline';
 
-import PlaygroundEditorContext from '../context/PlaygroundEditorContext';
+import {useOutlineComposerContext} from '../../../outline-react/src/composer/OutlineComposerContext';
 import {useEditorContext} from 'outline-react/OutlineEditorContext';
 import {createEmojiNode, EmojiNode} from '../nodes/EmojiNode';
 import {useEffect} from 'react';
@@ -74,7 +74,7 @@ export function useEmojis(editor: OutlineEditor): void {
 }
 
 export default function EmojisPlugin(): React$Node {
-  const [editor] = useEditorContext(PlaygroundEditorContext);
+  const [editor] = useOutlineComposerContext();
   useEmojis(editor);
   return null;
 }

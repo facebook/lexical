@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import PlaygroundEditorContext from '../context/PlaygroundEditorContext';
+import {useOutlineComposerContext} from '../../../outline-react/src/composer/OutlineComposerContext';
 import {useEditorContext} from 'outline-react/OutlineEditorContext';
 import {useCharacterLimit} from 'outline-react/useOutlineCharacterLimit';
 
@@ -42,7 +42,7 @@ export default function CharacterLimitPlugin({
 }: {
   charset: 'UTF-8' | 'UTF-16',
 }): React$Node {
-  const [editor] = useEditorContext(PlaygroundEditorContext);
+  const [editor] = useOutlineComposerContext();
   const [remainingCharacters, setRemainingCharacters] = useState(0);
   const characterLimitProps = useMemo(
     () => ({

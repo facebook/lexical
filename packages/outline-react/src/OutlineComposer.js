@@ -28,7 +28,7 @@ export default function OutlineComposer({
   theme,
 }: Props): React$MixedElement {
   const parentContext = useContext(OutlineComposerContext);
-  const ComposerEditorContext = useMemo(
+  const composerContext = useMemo(
     () => {
       const config = {theme, initialEditorState};
       const context: OutlineComposerContextType = createOutlineComposerContext(
@@ -46,7 +46,7 @@ export default function OutlineComposer({
     [theme, initialEditorState],
   );
   return (
-    <OutlineComposerContext.Provider value={ComposerEditorContext}>
+    <OutlineComposerContext.Provider value={composerContext}>
       {children}
     </OutlineComposerContext.Provider>
   );

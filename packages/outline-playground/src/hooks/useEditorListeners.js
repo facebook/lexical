@@ -7,20 +7,23 @@
  * @flow strict
  */
 
-import type {PlaygroundContext} from '../context/PlaygroundEditorContext';
-
-import {useEffect, useState} from 'react';
+import {PlaygroundEditorContext} from '../context/PlaygroundEditorContext';
+import {useContext, useEffect, useState} from 'react';
 
 export default function useEditorListeners(
-  context: PlaygroundContext,
   clear: () => void,
   connected?: boolean,
   connect?: () => void,
   disconnect?: () => void,
 ): boolean {
   const [isReadOnly, setIsReadyOnly] = useState(false);
-  const {addListener, triggerListeners} = context;
+  const playgroundContext = useContext(PlaygroundEditorContext);
 
+  if (playgroundContext == null) {
+    throw new Error('useEditorListeners - PlaygroundContext not found');
+  }
+
+  const {addListener, triggerListeners} = playgroundContext;
   useEffect(() => {
     const removeReadOnlyListener = addListener('readonly', (value: boolean) => {
       setIsReadyOnly(value);
@@ -35,21 +38,20 @@ export default function useEditorListeners(
     };
   }, [addListener, clear]);
 
-
   useEffect(() => {
     if (connected !== undefined) {
-      triggerListeners('connected', !connected)
+      triggerListeners('connected', !connected);
     }
-  }, [connected, triggerListeners])
+  }, [connected, triggerListeners]);
 
   useEffect(() => {
     if (connect !== undefined && disconnect !== undefined) {
       return addListener('connect', () => {
         if (connected) {
-          console.log('Collaboration disconnected!')
+          console.log('Collaboration disconnected!');
           disconnect();
         } else {
-          console.log('Collaboration connected!')
+          console.log('Collaboration connected!');
           connect();
         }
       });

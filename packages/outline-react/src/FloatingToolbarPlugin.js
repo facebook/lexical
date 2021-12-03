@@ -91,7 +91,7 @@ function Select({
 }) {
   return (
     <select className={className} onChange={onChange} value={value}>
-      <option hidden value=""></option>
+      <option hidden={true} value="" />
       {options.map((option) => (
         <option key={option} value={option}>
           {option}

@@ -34,8 +34,20 @@ function createContext(
   parent: ?OutlineComposerEditorContext,
   theme?: EditorThemeClasses,
 ): OutlineComposerEditorContextType {
+  let parentContext = null;
+  if (parent != null) {
+    parentContext = parent[1];
+  }
+
+  function getTheme() {
+    if (theme != null) {
+      return theme;
+    }
+    return parentContext?.getTheme();
+  }
+
   return {
-    getTheme: () => null,
+    getTheme,
   };
 }
 

@@ -25,11 +25,11 @@ export default function PlainTextPlugin({
 }: {
   placeholder?: string,
 }): React$Node {
-  const [editor, state] = useOutlineComposerContext();
+  const [editor] = useOutlineComposerContext();
   const [rootElementRef, showPlaceholder] = useOutlineEditor(editor, onError);
   const clear = useOutlinePlainText(editor);
   const decorators = useOutlineDecorators(editor);
-  const isReadOnly = useEditorListeners(state, clear);
+  const isReadOnly = useEditorListeners(clear);
 
   return (
     <>

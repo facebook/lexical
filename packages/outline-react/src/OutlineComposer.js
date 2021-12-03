@@ -12,7 +12,7 @@ import type {EditorState, EditorThemeClasses} from 'outline';
 import {
   OutlineComposerContext,
   createOutlineComposerContext,
-} from './OutlineComposerContext';
+} from 'outline-react/OutlineComposerContext';
 import React, {useContext, useMemo} from 'react';
 
 type Props = {

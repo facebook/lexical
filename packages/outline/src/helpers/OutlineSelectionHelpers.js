@@ -492,7 +492,7 @@ export function formatText(
   }
 
   // This is the case where we only selected a single node
-  if (firstNode === lastNode) {
+  if (firstNode.is(lastNode)) {
     if (isTextNode(firstNode)) {
       startOffset = anchorOffset > focusOffset ? focusOffset : anchorOffset;
       endOffset = anchorOffset > focusOffset ? anchorOffset : focusOffset;
@@ -747,7 +747,10 @@ export function updateCaretSelectionForAdjacentHashtags(
   }
 }
 
-function deleteCharacter(selection: Selection, isBackward: boolean): void {
+export function deleteCharacter(
+  selection: Selection,
+  isBackward: boolean,
+): void {
   if (selection.isCollapsed()) {
     const anchor = selection.anchor;
     const focus = selection.focus;
@@ -814,14 +817,6 @@ function deleteCharacter(selection: Selection, isBackward: boolean): void {
   }
   removeText(selection);
   updateCaretSelectionForAdjacentHashtags(selection);
-}
-
-export function deleteBackward(selection: Selection): void {
-  deleteCharacter(selection, true);
-}
-
-export function deleteForward(selection: Selection): void {
-  deleteCharacter(selection, false);
 }
 
 function removeSegment(node: TextNode, isBackward: boolean): void {
@@ -1177,7 +1172,7 @@ export function insertNodes(
   return true;
 }
 
-export function insertRichText(selection: Selection, text: string): void {
+export function insertUnsafeText(selection: Selection, text: string): void {
   const parts = text.split(/\r?\n/);
   if (parts.length === 1) {
     insertText(selection, text);

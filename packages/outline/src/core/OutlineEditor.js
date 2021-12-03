@@ -11,6 +11,7 @@ import type {OutlineNode, NodeKey} from './OutlineNode';
 import type {Node as ReactNode} from 'react';
 import type {State} from './OutlineUpdates';
 import type {EditorState} from './OutlineEditorState';
+import type {TextFormatType} from './OutlineTextNode';
 
 import {
   commitPendingUpdates,
@@ -93,6 +94,13 @@ export type RegisteredNode = {
 };
 export type Transform<T> = (node: T, state: State) => void;
 
+export type TextMutation = {
+  node: TextNode,
+  anchorOffset: null | number,
+  focusOffset: null | number,
+  text: string,
+};
+
 export type ErrorListener = (error: Error, log: Array<string>) => void;
 export type UpdateListener = ({
   tags: Set<string>,
@@ -110,34 +118,66 @@ export type RootListener = (
 ) => void;
 export type TextMutationListener = (mutation: TextMutation) => void;
 export type TextContentListener = (text: string) => void;
+export type DeleteCharacterListener = (isBackward: boolean) => void | 'handled';
+export type FormatTextListener = (
+  textFormat: TextFormatType,
+) => void | 'handled';
+export type InsertTextListener = (text: string) => void | 'handled';
+export type InsertLineBreakListener = (openLine?: boolean) => void | 'handled';
+export type InsertParagraphListener = () => void | 'handled';
 
-export type TextMutation = {
-  node: TextNode,
-  anchorOffset: null | number,
-  focusOffset: null | number,
-  text: string,
-};
+export type EditorListeners =
+  | ErrorListener
+  | UpdateListener
+  | DecoratorListener
+  | RootListener
+  | TextMutationListener
+  | TextContentListener
+  | DeleteCharacterListener
+  | FormatTextListener
+  | InsertTextListener
+  | InsertLineBreakListener
+  | InsertParagraphListener;
 
 type Listeners = {
-  decorator: Set<DecoratorListener>,
-  error: Set<ErrorListener>,
-  textcontent: Set<TextContentListener>,
-  textmutation: Set<TextMutationListener>,
-  root: Set<RootListener>,
-  update: Set<UpdateListener>,
+  decorator: Array<DecoratorListener>,
+  error: Array<ErrorListener>,
+  textContent: Array<TextContentListener>,
+  textMutation: Array<TextMutationListener>,
+  root: Array<RootListener>,
+  update: Array<UpdateListener>,
+  deleteCharacter: Array<DeleteCharacterListener>,
+  formatText: Array<FormatTextListener>,
+  insertText: Array<InsertTextListener>,
+  insertLineBreak: Array<InsertLineBreakListener>,
+  insertParagraph: Array<InsertParagraphListener>,
 };
 
 export type ListenerType =
   | 'update'
   | 'error'
-  | 'textmutation'
+  | 'textMutation'
   | 'root'
   | 'decorator'
-  | 'textcontent';
+  | 'textContent'
+  | 'deleteCharacter'
+  | 'formatText'
+  | 'insertText'
+  | 'insertLineBreak'
+  | 'insertParagraph';
 
 export type TransformerType = 'text' | 'decorator' | 'element' | 'root';
 
 export type IntentionallyMarkedAsDirtyElement = boolean;
+
+const reservedListeners = new Set([
+  'update',
+  'error',
+  'textMutation',
+  'root',
+  'decorator',
+  'textContent',
+]);
 
 export function resetEditor(
   editor: OutlineEditor,
@@ -283,12 +323,17 @@ class BaseOutlineEditor {
     this._updating = false;
     // Listeners
     this._listeners = {
-      decorator: new Set(),
-      error: new Set(),
-      textcontent: new Set(),
-      textmutation: new Set(),
-      root: new Set(),
-      update: new Set(),
+      decorator: [],
+      error: [],
+      textContent: [],
+      textMutation: [],
+      root: [],
+      update: [],
+      deleteCharacter: [],
+      formatText: [],
+      insertText: [],
+      insertLineBreak: [],
+      insertParagraph: [],
     };
     // Editor configuration for theme/context.
     this._config = config;
@@ -328,19 +373,19 @@ class BaseOutlineEditor {
       }
     };
   }
-  addListener(
-    type: ListenerType,
-    listener:
-      | ErrorListener
-      | UpdateListener
-      | DecoratorListener
-      | RootListener
-      | TextMutationListener
-      | TextContentListener,
-  ): () => void {
-    const listenerSet = this._listeners[type];
+  dispatch(type: ListenerType, value?: boolean | string): void {
+    if (reservedListeners.has(type)) {
+      invariant(
+        false,
+        'editor.dispatch: cannot dispatch an internal reserved type',
+      );
+    }
+    triggerListeners(type, getSelf(this), false, value);
+  }
+  addListener(type: ListenerType, listener: EditorListeners): () => void {
+    const listeners = this._listeners[type];
     // $FlowFixMe: TODO refine this from the above types
-    listenerSet.add(listener);
+    listeners.push(listener);
 
     const isRootType = type === 'root';
     if (isRootType) {
@@ -349,8 +394,9 @@ class BaseOutlineEditor {
       rootListener(this._rootElement, null);
     }
     return () => {
+      const index = listeners.indexOf(listener);
       // $FlowFixMe: TODO refine this from the above types
-      listenerSet.delete(listener);
+      listeners.splice(index, 1);
       if (isRootType) {
         // $FlowFixMe: TODO refine
         const rootListener: RootListener = (listener: any);
@@ -511,16 +557,35 @@ declare export class OutlineEditor {
 
   isComposing(): boolean;
   registerNodes<T: OutlineNode>(klass: Array<Class<T>>): () => void;
-  addListener(type: 'error', listener: ErrorListener): () => void;
-  addListener(type: 'update', listener: UpdateListener): () => void;
-  addListener(type: 'root', listener: RootListener): () => void;
   addListener(type: 'decorator', listener: DecoratorListener): () => void;
-  addListener(type: 'textmutation', listener: TextMutationListener): () => void;
-  addListener(type: 'textcontent', listener: TextContentListener): () => void;
+  addListener(type: 'error', listener: ErrorListener): () => void;
+  addListener(type: 'root', listener: RootListener): () => void;
+  addListener(type: 'textMutation', listener: TextMutationListener): () => void;
+  addListener(type: 'textContent', listener: TextContentListener): () => void;
+  addListener(type: 'update', listener: UpdateListener): () => void;
+  addListener(
+    type: 'deleteCharacter',
+    listener: DeleteCharacterListener,
+  ): () => void;
+  addListener(type: 'formatText', listener: FormatTextListener): () => void;
+  addListener(type: 'insertText', listener: InsertTextListener): () => void;
+  addListener(
+    type: 'insertLineBreak',
+    listener: InsertLineBreakListener,
+  ): () => void;
+  addListener(
+    type: 'insertParagraph',
+    listener: InsertParagraphListener,
+  ): () => void;
   addTransform<T: OutlineNode>(
     klass: Class<T>,
     listener: Transform<T>,
   ): () => void;
+  dispatch(type: 'deleteCharacter', isBackward: boolean): void;
+  dispatch(type: 'formatText', type: TextFormatType): void;
+  dispatch(type: 'insertText', text: string): void;
+  dispatch(type: 'insertLineBreak', openLine?: boolean): void;
+  dispatch(type: 'insertParagraph'): void;
   getDecorators(): {[NodeKey]: ReactNode};
   getRootElement(): null | HTMLElement;
   setRootElement(rootElement: null | HTMLElement): void;

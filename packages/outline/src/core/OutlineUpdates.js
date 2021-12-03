@@ -456,7 +456,7 @@ function triggerTextContentListeners(
   const currentTextContent = getEditorStateTextContent(currentEditorState);
   const latestTextContent = getEditorStateTextContent(pendingEditorState);
   if (currentTextContent !== latestTextContent) {
-    triggerListeners('textcontent', editor, true, latestTextContent);
+    triggerListeners('textContent', editor, true, latestTextContent);
   }
 }
 
@@ -471,8 +471,10 @@ export function triggerListeners(
   editor._updating = isCurrentlyEnqueuingUpdates;
   try {
     const listeners = Array.from(editor._listeners[type]);
-    for (let i = 0; i < listeners.length; i++) {
-      listeners[i](...payload);
+    for (let i = listeners.length - 1; i >= 0; i--) {
+      if (listeners[i](...payload) === 'handled') {
+        break;
+      }
     }
   } finally {
     editor._updating = previouslyUpdating;

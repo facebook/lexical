@@ -7,11 +7,11 @@
  * @flow strict
  */
 
-import type {OutlineEditor, RootNode} from 'outline';
 import type {InputEvents} from 'outline-react/useOutlineEditorEvents';
+import type {OutlineEditor, RootNode} from 'outline';
 
 import {log, getSelection, getRoot} from 'outline';
-import useLayoutEffect from '../../../shared/src/useLayoutEffect';
+import useLayoutEffect from 'shared/useLayoutEffect';
 import useOutlineEditorEvents from '../useOutlineEditorEvents';
 import {HeadingNode} from 'outline/HeadingNode';
 import {ListNode} from 'outline/ListNode';
@@ -24,12 +24,12 @@ import {CAN_USE_BEFORE_INPUT} from 'shared/environment';
 import useOutlineDragonSupport from './useOutlineDragonSupport';
 import {
   onSelectionChange,
-  onKeyDownForRichText,
+  onKeyDown,
   onCompositionStart,
   onCompositionEnd,
   onCutForRichText,
   onCopyForRichText,
-  onBeforeInputForRichText,
+  onBeforeInput,
   onPasteForRichText,
   onDropPolyfill,
   onDragStartPolyfill,
@@ -37,10 +37,17 @@ import {
   onInput,
   onClick,
 } from 'outline/events';
+import {
+  deleteCharacter,
+  formatText,
+  insertText,
+  insertLineBreak,
+  insertParagraph,
+} from 'outline/selection';
 
 const events: InputEvents = [
   ['selectionchange', onSelectionChange],
-  ['keydown', onKeyDownForRichText],
+  ['keydown', onKeyDown],
   ['compositionstart', onCompositionStart],
   ['compositionend', onCompositionEnd],
   ['cut', onCutForRichText],
@@ -52,7 +59,7 @@ const events: InputEvents = [
 ];
 
 if (CAN_USE_BEFORE_INPUT) {
-  events.push(['beforeinput', onBeforeInputForRichText]);
+  events.push(['beforeinput', onBeforeInput]);
 } else {
   events.push(['drop', onDropPolyfill]);
 }
@@ -109,21 +116,52 @@ export function useRichTextSetup(
   callbackFn?: (callbackFn?: () => void) => void,
 ) => void {
   useLayoutEffect(() => {
-    const unregisterNodes = editor.registerNodes([
-      HeadingNode,
-      ListNode,
-      QuoteNode,
-      CodeNode,
-      ParagraphNode,
-      ListItemNode,
-    ]);
+    const destroy = [
+      editor.registerNodes([
+        HeadingNode,
+        ListNode,
+        QuoteNode,
+        CodeNode,
+        ParagraphNode,
+        ListItemNode,
+      ]),
+      editor.addListener('textMutation', onTextMutation),
+      editor.addListener('deleteCharacter', (isBackward: boolean) => {
+        const selection = getSelection();
+        if (selection !== null) {
+          deleteCharacter(selection, isBackward);
+        }
+      }),
+      editor.addListener('formatText', (format) => {
+        const selection = getSelection();
+        if (selection !== null) {
+          formatText(selection, format);
+        }
+      }),
+      editor.addListener('insertText', (text: string) => {
+        const selection = getSelection();
+        if (selection !== null) {
+          insertText(selection, text);
+        }
+      }),
+      editor.addListener('insertLineBreak', (openLine?: boolean) => {
+        const selection = getSelection();
+        if (selection !== null) {
+          insertLineBreak(selection, openLine);
+        }
+      }),
+      editor.addListener('insertParagraph', () => {
+        const selection = getSelection();
+        if (selection !== null) {
+          insertParagraph(selection);
+        }
+      }),
+    ];
     if (init) {
       initEditor(editor);
     }
-    const removeListener = editor.addListener('textmutation', onTextMutation);
     return () => {
-      unregisterNodes();
-      removeListener();
+      destroy.forEach((d) => d());
     };
   }, [editor, init]);
 

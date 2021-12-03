@@ -39,20 +39,14 @@ import {
 } from 'outline/keys';
 import isImmutableOrInert from 'shared/isImmutableOrInert';
 import {
-  deleteBackward,
-  deleteForward,
   deleteLineBackward,
   deleteLineForward,
   deleteWordBackward,
   deleteWordForward,
-  insertParagraph,
-  formatText,
-  insertText,
   removeText,
   cloneContents,
   insertNodes,
-  insertLineBreak,
-  insertRichText,
+  insertUnsafeText,
   moveCharacter,
 } from 'outline/selection';
 import {
@@ -297,7 +291,7 @@ function insertDataTransferForPlainText(
 ): void {
   const text = dataTransfer.getData('text/plain');
   if (text != null) {
-    insertRichText(selection, text);
+    insertUnsafeText(selection, text);
   }
 }
 
@@ -312,123 +306,63 @@ function shouldOverrideDefaultCharacterSelection(
   return isDecoratorNode(possibleDecoratorNode);
 }
 
-export function onKeyDownForPlainText(
-  event: KeyboardEvent,
-  editor: OutlineEditor,
-): void {
-  updateAndroidSoftKeyFlagIfAny(event);
-  if (editor.isComposing()) {
-    return;
-  }
-  editor.update(() => {
-    log('onKeyDownForPlainText');
-    const selection = getSelection();
-    if (selection === null) {
-      return;
-    }
-    const isHoldingShift = event.shiftKey;
-
-    if (isMoveBackward(event)) {
-      if (shouldOverrideDefaultCharacterSelection(selection, true)) {
-        event.preventDefault();
-        moveCharacter(selection, isHoldingShift, true);
-      }
-    } else if (isMoveForward(event)) {
-      if (shouldOverrideDefaultCharacterSelection(selection, false)) {
-        event.preventDefault();
-        moveCharacter(selection, isHoldingShift, false);
-      }
-    } else if (isParagraph(event) || isLineBreak(event)) {
-      event.preventDefault();
-      insertLineBreak(selection);
-    } else if (isOpenLineBreak(event)) {
-      event.preventDefault();
-      insertLineBreak(selection, true);
-    } else if (isDeleteBackward(event)) {
-      event.preventDefault();
-      deleteBackward(selection);
-    } else if (isDeleteForward(event)) {
-      event.preventDefault();
-      deleteForward(selection);
-    } else if (isDeleteWordBackward(event)) {
-      event.preventDefault();
-      deleteWordBackward(selection);
-    } else if (isDeleteWordForward(event)) {
-      event.preventDefault();
-      deleteWordForward(selection);
-    } else if (isDeleteLineBackward(event)) {
-      event.preventDefault();
-      deleteLineBackward(selection);
-    } else if (isDeleteLineForward(event)) {
-      event.preventDefault();
-      deleteLineForward(selection);
-    }
-  });
-}
-
-export function onKeyDownForRichText(
-  event: KeyboardEvent,
-  editor: OutlineEditor,
-): void {
+export function onKeyDown(event: KeyboardEvent, editor: OutlineEditor): void {
   updateAndroidSoftKeyFlagIfAny(event);
   if (editor.isComposing()) {
     return;
   }
   editor.update((state) => {
-    log('onKeyDownForRichText');
+    log('onKeyDown');
     const selection = getSelection();
-    if (selection === null) {
-      return;
-    }
     const isHoldingShift = event.shiftKey;
 
-    if (isMoveBackward(event)) {
+    if (isMoveBackward(event) && selection !== null) {
       if (shouldOverrideDefaultCharacterSelection(selection, true)) {
         event.preventDefault();
         moveCharacter(selection, isHoldingShift, true);
       }
-    } else if (isMoveForward(event)) {
+    } else if (isMoveForward(event) && selection !== null) {
       if (shouldOverrideDefaultCharacterSelection(selection, false)) {
         event.preventDefault();
         moveCharacter(selection, isHoldingShift, false);
       }
     } else if (isLineBreak(event)) {
       event.preventDefault();
-      insertLineBreak(selection);
+      editor.dispatch('insertLineBreak');
     } else if (isOpenLineBreak(event)) {
       event.preventDefault();
-      insertLineBreak(selection, true);
+      editor.dispatch('insertLineBreak', true);
     } else if (isParagraph(event)) {
       event.preventDefault();
-      insertParagraph(selection);
+      editor.dispatch('insertParagraph');
     } else if (isDeleteBackward(event)) {
       event.preventDefault();
-      deleteBackward(selection);
+      editor.dispatch('deleteCharacter', true);
     } else if (isDeleteForward(event)) {
       event.preventDefault();
-      deleteForward(selection);
-    } else if (isDeleteWordBackward(event)) {
+      editor.dispatch('deleteCharacter', false);
+    } else if (isDeleteWordBackward(event) && selection !== null) {
       event.preventDefault();
       deleteWordBackward(selection);
-    } else if (isDeleteWordForward(event)) {
+    } else if (isDeleteWordForward(event) && selection !== null) {
       event.preventDefault();
       deleteWordForward(selection);
-    } else if (isDeleteLineBackward(event)) {
+    } else if (isDeleteLineBackward(event) && selection !== null) {
       event.preventDefault();
       deleteLineBackward(selection);
-    } else if (isDeleteLineForward(event)) {
+    } else if (isDeleteLineForward(event) && selection !== null) {
       event.preventDefault();
       deleteLineForward(selection);
     } else if (isBold(event)) {
       event.preventDefault();
-      formatText(selection, 'bold');
+      editor.dispatch('formatText', 'bold');
     } else if (isUnderline(event)) {
       event.preventDefault();
-      formatText(selection, 'underline');
+      editor.dispatch('formatText', 'underline');
     } else if (isItalic(event)) {
       event.preventDefault();
-      formatText(selection, 'italic');
-    } else if (isTab(event)) {
+      editor.dispatch('formatText', 'italic');
+    } else if (isTab(event) && selection !== null) {
       // Handle code blocks
       const anchor = selection.anchor;
       if (anchor.type === 'text') {
@@ -439,10 +373,10 @@ export function onKeyDownForRichText(
             const textContent = anchorNode.getTextContent();
             const character = textContent[anchor.offset - 1];
             if (character === '\t') {
-              deleteBackward(selection);
+              editor.dispatch('deleteCharacter', true);
             }
           } else {
-            insertText(selection, '\t');
+            editor.dispatch('insertText', '\t');
           }
           event.preventDefault();
         }
@@ -609,7 +543,7 @@ export function onCompositionStart(
         // to get inserted into the new node we create. If
         // we don't do this, Safari will fail on us because
         // there is no text node matching the selection.
-        insertText(selection, ' ');
+        editor.dispatch('insertText', ' ');
       }
     }
   });
@@ -842,10 +776,7 @@ function shouldPreventDefaultAndInsertText(
   );
 }
 
-export function onBeforeInputForPlainText(
-  event: InputEvent,
-  editor: OutlineEditor,
-): void {
+export function onBeforeInput(event: InputEvent, editor: OutlineEditor): void {
   const inputType = event.inputType;
 
   // We let the browser do its own thing for composition.
@@ -857,7 +788,7 @@ export function onBeforeInputForPlainText(
   }
 
   editor.update(() => {
-    log('onBeforeInputForPlainText');
+    log('onBeforeInput');
     const selection = getSelection();
 
     if (selection === null) {
@@ -867,7 +798,7 @@ export function onBeforeInputForPlainText(
       // Used for Android
       setCompositionKey(null);
       event.preventDefault();
-      deleteBackward(selection);
+      editor.dispatch('deleteCharacter', true);
       return;
     }
     const data = event.data;
@@ -883,22 +814,21 @@ export function onBeforeInputForPlainText(
     if (inputType === 'insertText') {
       if (data === '\n') {
         event.preventDefault();
-        insertLineBreak(selection);
+        editor.dispatch('insertLineBreak');
       } else if (data === '\n\n') {
         event.preventDefault();
-        insertLineBreak(selection);
-        insertLineBreak(selection);
+        editor.dispatch('insertParagraph');
       } else if (data == null && event.dataTransfer) {
         // Gets around a Safari text replacement bug.
         const text = event.dataTransfer.getData('text/plain');
         event.preventDefault();
-        insertRichText(selection, text);
+        insertUnsafeText(selection, text);
       } else if (
         data != null &&
         shouldPreventDefaultAndInsertText(selection, data, true)
       ) {
         event.preventDefault();
-        insertText(selection, data);
+        editor.dispatch('insertText', data);
       }
       return;
     }
@@ -913,159 +843,20 @@ export function onBeforeInputForPlainText(
         if (data) {
           // This is the end of composition
           setCompositionKey(null);
-          insertText(selection, data);
-        }
-        break;
-      }
-      case 'insertLineBreak':
-      case 'insertParagraph': {
-        // Used for Android
-        setCompositionKey(null);
-        insertLineBreak(selection);
-        break;
-      }
-      case 'insertFromYank':
-      case 'insertFromDrop':
-      case 'insertReplacementText':
-      case 'insertFromPaste': {
-        const dataTransfer = event.dataTransfer;
-        if (dataTransfer != null) {
-          insertDataTransferForPlainText(dataTransfer, selection);
-        } else {
-          if (data) {
-            insertText(selection, data);
-          }
-        }
-        break;
-      }
-      case 'deleteByComposition': {
-        if (canRemoveText(anchorNode, focusNode)) {
-          removeText(selection);
-        }
-        break;
-      }
-      case 'deleteByDrag':
-      case 'deleteByCut': {
-        removeText(selection);
-        break;
-      }
-      case 'deleteContent': {
-        deleteForward(selection);
-        break;
-      }
-      case 'deleteWordBackward': {
-        deleteWordBackward(selection);
-        break;
-      }
-      case 'deleteWordForward': {
-        deleteWordForward(selection);
-        break;
-      }
-      case 'deleteHardLineBackward':
-      case 'deleteSoftLineBackward': {
-        deleteLineBackward(selection);
-        break;
-      }
-      case 'deleteContentForward':
-      case 'deleteHardLineForward':
-      case 'deleteSoftLineForward': {
-        deleteLineForward(selection);
-        break;
-      }
-      default:
-      // NO-OP
-    }
-  });
-}
-
-export function onBeforeInputForRichText(
-  event: InputEvent,
-  editor: OutlineEditor,
-): void {
-  const inputType = event.inputType;
-
-  // We let the browser do its own thing for composition.
-  if (
-    inputType === 'deleteCompositionText' ||
-    inputType === 'insertCompositionText'
-  ) {
-    return;
-  }
-
-  editor.update(() => {
-    log('onBeforeInputForRichText');
-    const selection = getSelection();
-
-    if (selection === null) {
-      return;
-    }
-    if (inputType === 'deleteContentBackward') {
-      // Used for Android
-      setCompositionKey(null);
-      event.preventDefault();
-      deleteBackward(selection);
-      return;
-    }
-    const data = event.data;
-
-    if (!selection.dirty && selection.isCollapsed()) {
-      applyTargetRange(selection, event);
-    }
-    const anchor = selection.anchor;
-    const focus = selection.focus;
-    const anchorNode = anchor.getNode();
-    const focusNode = focus.getNode();
-
-    if (inputType === 'insertText') {
-      if (data === '\n') {
-        event.preventDefault();
-        insertLineBreak(selection);
-      } else if (data === '\n\n') {
-        event.preventDefault();
-        insertParagraph(selection);
-      } else if (data == null && event.dataTransfer) {
-        // Gets around a Safari text replacement bug.
-        const text = event.dataTransfer.getData('text/plain');
-        event.preventDefault();
-        insertRichText(selection, text);
-      } else if (
-        data != null &&
-        shouldPreventDefaultAndInsertText(selection, data, true)
-      ) {
-        event.preventDefault();
-        insertText(selection, data);
-      }
-      return;
-    }
-
-    // Prevent the browser from carrying out
-    // the input event, so we can control the
-    // output.
-    event.preventDefault();
-
-    switch (inputType) {
-      case 'insertFromComposition': {
-        if (data) {
-          // This is the end of composition
-          setCompositionKey(null);
-          insertText(selection, data);
+          editor.dispatch('insertText', data);
         }
         break;
       }
       case 'insertLineBreak': {
         // Used for Android
         setCompositionKey(null);
-        insertLineBreak(selection);
+        editor.dispatch('insertLineBreak');
         break;
       }
       case 'insertParagraph': {
         // Used for Android
         setCompositionKey(null);
-        insertParagraph(selection);
-        break;
-      }
-      case 'formatStrikeThrough': {
-        formatText(selection, 'strikethrough');
+        editor.dispatch('insertParagraph');
         break;
       }
       case 'insertFromYank':
@@ -1077,7 +868,7 @@ export function onBeforeInputForRichText(
           insertDataTransferForRichText(dataTransfer, selection, editor);
         } else {
           if (data) {
-            insertText(selection, data);
+            editor.dispatch('insertText', data);
           }
         }
         break;
@@ -1094,7 +885,7 @@ export function onBeforeInputForRichText(
         break;
       }
       case 'deleteContent': {
-        deleteForward(selection);
+        editor.dispatch('deleteCharacter', false);
         break;
       }
       case 'deleteWordBackward': {
@@ -1116,16 +907,20 @@ export function onBeforeInputForRichText(
         deleteLineForward(selection);
         break;
       }
+      case 'formatStrikeThrough': {
+        editor.dispatch('formatText', 'strikethrough');
+        break;
+      }
       case 'formatBold': {
-        formatText(selection, 'bold');
+        editor.dispatch('formatText', 'bold');
         break;
       }
       case 'formatItalic': {
-        formatText(selection, 'italic');
+        editor.dispatch('formatText', 'italic');
         break;
       }
       case 'formatUnderline': {
-        formatText(selection, 'underline');
+        editor.dispatch('formatText', 'underline');
         break;
       }
       default:
@@ -1170,7 +965,7 @@ export function onInput(event: InputEvent, editor: OutlineEditor): void {
       selection !== null &&
       shouldPreventDefaultAndInsertText(selection, data, false)
     ) {
-      insertText(selection, data);
+      editor.dispatch('insertText', data);
     } else {
       updateSelectedTextFromDOM(editor, false);
     }

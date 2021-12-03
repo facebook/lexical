@@ -1258,7 +1258,7 @@ describe('OutlineEditor tests', () => {
     });
   });
 
-  it('textcontent listener', async () => {
+  it('textContent listener', async () => {
     init();
     const fn = jest.fn();
     editor.update(() => {
@@ -1269,7 +1269,7 @@ describe('OutlineEditor tests', () => {
       paragraph.append(textNode);
     });
 
-    editor.addListener('textcontent', (text) => {
+    editor.addListener('textContent', (text) => {
       fn(text);
     });
     await editor.update(() => {

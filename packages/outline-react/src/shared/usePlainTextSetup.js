@@ -11,19 +11,19 @@ import type {InputEvents} from 'outline-react/useOutlineEditorEvents';
 import type {OutlineEditor, RootNode} from 'outline';
 
 import {log, getRoot, getSelection} from 'outline';
-import useLayoutEffect from '../../../shared/src/useLayoutEffect';
+import useLayoutEffect from 'shared/useLayoutEffect';
 import useOutlineEditorEvents from '../useOutlineEditorEvents';
 import {createParagraphNode, ParagraphNode} from 'outline/ParagraphNode';
 import {CAN_USE_BEFORE_INPUT} from 'shared/environment';
 import useOutlineDragonSupport from './useOutlineDragonSupport';
 import {
   onSelectionChange,
-  onKeyDownForPlainText,
+  onKeyDown,
   onCompositionStart,
   onCompositionEnd,
   onCutForPlainText,
   onCopyForPlainText,
-  onBeforeInputForPlainText,
+  onBeforeInput,
   onPasteForPlainText,
   onDropPolyfill,
   onDragStartPolyfill,
@@ -31,10 +31,11 @@ import {
   onInput,
   onClick,
 } from 'outline/events';
+import {deleteCharacter, insertLineBreak, insertText} from 'outline/selection';
 
 const events: InputEvents = [
   ['selectionchange', onSelectionChange],
-  ['keydown', onKeyDownForPlainText],
+  ['keydown', onKeyDown],
   ['compositionstart', onCompositionStart],
   ['compositionend', onCompositionEnd],
   ['cut', onCutForPlainText],
@@ -46,7 +47,7 @@ const events: InputEvents = [
 ];
 
 if (CAN_USE_BEFORE_INPUT) {
-  events.push(['beforeinput', onBeforeInputForPlainText]);
+  events.push(['beforeinput', onBeforeInput]);
 } else {
   events.push(['drop', onDropPolyfill]);
 }
@@ -103,14 +104,39 @@ export default function usePlainTextSetup(
   callbackFn?: (callbackFn?: () => void) => void,
 ) => void {
   useLayoutEffect(() => {
-    const unregisterNodes = editor.registerNodes([ParagraphNode]);
+    const destroy = [
+      editor.registerNodes([ParagraphNode]),
+      editor.addListener('textMutation', onTextMutation),
+      editor.addListener('deleteCharacter', (isBackward: boolean) => {
+        const selection = getSelection();
+        if (selection !== null) {
+          deleteCharacter(selection, isBackward);
+        }
+      }),
+      editor.addListener('insertText', (text: string) => {
+        const selection = getSelection();
+        if (selection !== null) {
+          insertText(selection, text);
+        }
+      }),
+      editor.addListener('insertLineBreak', (openLine?: boolean) => {
+        const selection = getSelection();
+        if (selection !== null) {
+          insertLineBreak(selection, openLine);
+        }
+      }),
+      editor.addListener('insertParagraph', () => {
+        const selection = getSelection();
+        if (selection !== null) {
+          insertLineBreak(selection);
+        }
+      }),
+    ];
     if (init) {
       initEditor(editor);
     }
-    const removeListener = editor.addListener('textmutation', onTextMutation);
     return () => {
-      unregisterNodes();
-      removeListener();
+      destroy.forEach((d) => d());
     };
   }, [editor, init]);
 

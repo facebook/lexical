@@ -617,11 +617,11 @@ export async function applySelectionInputs(inputs, update, editor) {
             break;
           }
           case 'delete_backward': {
-            SelectionHelpers.deleteBackward(selection);
+            SelectionHelpers.deleteCharacter(selection, true);
             break;
           }
           case 'delete_forward': {
-            SelectionHelpers.deleteForward(selection);
+            SelectionHelpers.deleteCharacter(selection, false);
             break;
           }
           case 'delete_word_backward': {

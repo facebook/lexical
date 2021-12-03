@@ -46,7 +46,7 @@ function useTypeahead(editor: OutlineEditor): void {
 
   // Monitor entered text
   useEffect(() => {
-    return editor.addListener('textcontent', (text) => {
+    return editor.addListener('textContent', (text) => {
       setText(text);
     });
   }, [editor]);

@@ -51,7 +51,7 @@ export function useCharacterLimit(
     let text = editor.getEditorState().read(textContentCurry);
     let lastComputedTextLength = 0;
     const textContentListener = editor.addListener(
-      'textcontent',
+      'textContent',
       (currentText: string) => {
         text = currentText;
       },

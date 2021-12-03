@@ -334,6 +334,9 @@ export class ElementNode extends OutlineNode {
   excludeFromCopy(): boolean {
     return false;
   }
+  canExtractContents(): boolean {
+    return true;
+  }
   canReplaceWith(replacement: OutlineNode): boolean {
     return true;
   }

@@ -329,7 +329,7 @@ export function patchStyleText(
   }
 
   // This is the case where we only selected a single node
-  if (firstNode === lastNode) {
+  if (firstNode.is(lastNode)) {
     if (isTextNode(firstNode)) {
       startOffset = anchorOffset > focusOffset ? focusOffset : anchorOffset;
       endOffset = anchorOffset > focusOffset ? anchorOffset : focusOffset;
@@ -492,8 +492,13 @@ export function formatText(
   }
 
   // This is the case where we only selected a single node
-  if (firstNode === lastNode) {
+  if (firstNode.is(lastNode)) {
     if (isTextNode(firstNode)) {
+      if (anchor.type === 'element' && focus.type === 'element') {
+        firstNode.setFormat(firstNextFormat);
+        firstNode.select(startOffset, endOffset);
+        return;
+      }
       startOffset = anchorOffset > focusOffset ? focusOffset : anchorOffset;
       endOffset = anchorOffset > focusOffset ? anchorOffset : focusOffset;
 
@@ -754,6 +759,22 @@ function deleteCharacter(selection: Selection, isBackward: boolean): void {
     let anchorNode = anchor.getNode();
     if (isElementNode(anchorNode) && !anchorNode.canSelectionRemove()) {
       return;
+    } else if (
+      !isBackward &&
+      // Delete forward handle case
+      ((anchor.type === 'element' &&
+        // $FlowFixMe: always an element node
+        anchor.offset === (anchorNode: ElementNode).getChildrenSize()) ||
+        (anchor.type === 'text' &&
+          anchor.offset === anchorNode.getTextContentSize()))
+    ) {
+      const nextSibling =
+        anchorNode.getNextSibling() ||
+        anchorNode.getParentOrThrow().getNextSibling();
+
+      if (isElementNode(nextSibling) && !nextSibling.canExtractContents()) {
+        return;
+      }
     }
     updateCaretSelectionForRange(selection, isBackward, 'character', false);
 
@@ -1393,7 +1414,7 @@ export function insertText(selection: Selection, text: string): void {
         // them all as being able to deleted too.
         let parent = lastElement;
         let lastRemovedParent = null;
-      
+
         while (parent !== null) {
           const children = parent.getChildren();
           const childrenLength = children.length;

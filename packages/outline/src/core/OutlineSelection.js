@@ -218,7 +218,7 @@ export class Selection {
     if (isElementNode(lastNode)) {
       lastNode = lastNode.getDescendantByIndex(focus.offset);
     }
-    if (firstNode === lastNode) {
+    if (firstNode.is(lastNode)) {
       if (isElementNode(firstNode)) {
         return [];
       }

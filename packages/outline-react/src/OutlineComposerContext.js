@@ -25,7 +25,7 @@ export const OutlineComposerContext: React$Context<?OutlineComposerContextWithEd
 
 export function createOutlineComposerContext(
   parent: ?OutlineComposerContextWithEditor,
-  theme?: EditorThemeClasses,
+  theme: ?EditorThemeClasses,
 ): OutlineComposerContextType {
   let parentContext = null;
   if (parent != null) {

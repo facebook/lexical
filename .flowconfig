@@ -52,6 +52,14 @@ module.name_mapper='^outline-react/useOutlineIsTextContentEmpty' -> '<PROJECT_RO
 module.name_mapper='^outline-react/useOutlineCanShowPlaceholder' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlineCanShowPlaceholder.js'
 module.name_mapper='^outline-react/useOutlineCharacterLimit' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlineCharacterLimit.js'
 module.name_mapper='^outline-react/useOutlineHistory' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlineHistory.js'
+module.name_mapper='^outline-react/OutlineComposer' -> '<PROJECT_ROOT>/packages/outline-react/src/OutlineComposer.js'
+module.name_mapper='^outline-react/OutlineComposerContext' -> '<PROJECT_ROOT>/packages/outline-react/src/OutlineComposerContext.js'
+
+# Composer Plugins
+module.name_mapper='^outline-react/AutoFormatterPlugin' -> '<PROJECT_ROOT>/packages/outline-react/src/AutoFormatterPlugin.js'
+module.name_mapper='^outline-react/BlockControlsPlugin' -> '<PROJECT_ROOT>/packages/outline-react/src/BlockControlsPlugin.js'
+module.name_mapper='^outline-react/CharacterLimitPlugin' -> '<PROJECT_ROOT>/packages/outline-react/src/CharacterLimitPlugin.js'
+module.name_mapper='^outline-react/HashtagsPlugin' -> '<PROJECT_ROOT>/packages/outline-react/src/HashtagsPlugin.js'
 
 module.name_mapper='^outline-yjs$' -> '<PROJECT_ROOT>/packages/outline-yjs/src/index.js'
 

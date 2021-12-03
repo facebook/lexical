@@ -10,10 +10,9 @@
 import type {ElementNode} from 'outline';
 
 import * as React from 'react';
-import PlaygroundEditorContext from '../context/PlaygroundEditorContext';
-import {useEditorContext} from 'outline-react/OutlineEditorContext';
+import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
 import {useCollaborationContext} from '../context/CollaborationContext';
-import {useEffect, useState} from 'react';
+import {useContext, useEffect, useState} from 'react';
 import {log, isElementNode, getSelection, createEditorStateRef} from 'outline';
 import {isListItemNode} from 'outline/ListItemNode';
 import {ImageNode, createImageNode} from '../nodes/ImageNode';
@@ -23,6 +22,7 @@ import useOutlineNestedList from 'outline-react/useOutlineNestedList';
 import TablesPlugin from './TablesPlugin';
 import {createTableNodeWithDimensions} from 'outline/nodes';
 import {createParagraphNode} from 'outline/ParagraphNode';
+import {PlaygroundEditorContext} from '../context/PlaygroundEditorContext';
 
 function createUID(): string {
   return Math.random()
@@ -38,9 +38,14 @@ export default function ActionsPlugins({
 }): React$Node {
   const [isReadOnly, setIsReadyOnly] = useState(false);
   const [connected, setConnected] = useState(false);
-  const [editor, {triggerListeners, addListener}] = useEditorContext(
-    PlaygroundEditorContext,
-  );
+  const [editor] = useOutlineComposerContext();
+  const playgroundContext = useContext(PlaygroundEditorContext);
+
+  if (playgroundContext == null) {
+    throw new Error('PlaygroundEditorContext not found');
+  }
+
+  const {triggerListeners, addListener} = playgroundContext;
   const [indent, outdent] = useOutlineNestedList(editor);
   const {yjsDocMap} = useCollaborationContext();
   const isCollab = yjsDocMap.get('main') !== undefined;

@@ -8,8 +8,7 @@
  */
 
 import * as React from 'react';
-import PlaygroundEditorContext from '../context/PlaygroundEditorContext';
-import {useEditorContext} from 'outline-react/OutlineEditorContext';
+import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
 import useOutlineEditor from 'outline-react/useOutlineEditor';
 import useOutlinePlainText from 'outline-react/useOutlinePlainText';
 import useOutlineDecorators from 'outline-react/useOutlineDecorators';
@@ -27,12 +26,12 @@ export default function PlainTextPlugin({
 }: {
   placeholder?: string,
 }): React$Node {
-  const [editor, state] = useEditorContext(PlaygroundEditorContext);
+  const [editor] = useOutlineComposerContext();
   const [rootElementRef, showPlaceholder] = useOutlineEditor(editor, onError);
   const {historyState} = useSharedHistoryContext();
   const clear = useOutlinePlainText(editor, historyState);
   const decorators = useOutlineDecorators(editor);
-  const isReadOnly = useEditorListeners(state, clear);
+  const isReadOnly = useEditorListeners(clear);
 
   return (
     <>

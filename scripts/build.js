@@ -75,7 +75,8 @@ const outlineReactModules = fs
     (str) =>
       !str.includes('__tests__') &&
       !str.includes('shared') &&
-      !str.includes('test-utils'),
+      !str.includes('test-utils') &&
+      !str.includes('composer'),
   );
 const outlineReactModuleExternals = outlineReactModules.map((module) => {
   const external = `outline-react/${module}`;

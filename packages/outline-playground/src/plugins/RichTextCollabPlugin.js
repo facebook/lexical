@@ -9,8 +9,8 @@
 
 import * as React from 'react';
 import {useMemo} from 'react';
-import PlaygroundEditorContext from '../context/PlaygroundEditorContext';
-import {useEditorContext} from 'outline-react/OutlineEditorContext';
+import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
+
 import {useCollaborationContext} from '../context/CollaborationContext';
 import useOutlineEditor from 'outline-react/useOutlineEditor';
 import useOutlineRichTextWithCollab from 'outline-react/useOutlineRichTextWithCollab';
@@ -46,7 +46,7 @@ export default function RichTextCollabPlugin({
   placeholder?: string,
 }): React$Node {
   const {yjsDocMap, name, color} = useCollaborationContext();
-  const [editor, state] = useEditorContext(PlaygroundEditorContext);
+  const [editor] = useOutlineComposerContext();
   const [rootElementRef, showPlaceholder] = useOutlineEditor(editor, onError);
   const hasInitRef = useRef(false);
   const provider = useMemo(() => {
@@ -79,13 +79,7 @@ export default function RichTextCollabPlugin({
       isRightFrame,
     );
   const decorators = useOutlineDecorators(editor);
-  const isReadOnly = useEditorListeners(
-    state,
-    clear,
-    connected,
-    connect,
-    disconnect,
-  );
+  const isReadOnly = useEditorListeners(clear, connected, connect, disconnect);
 
   if (connected && !hasInitRef.current) {
     hasInitRef.current = true;

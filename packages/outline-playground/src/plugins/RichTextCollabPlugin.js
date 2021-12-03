@@ -9,7 +9,7 @@
 
 import * as React from 'react';
 import {useMemo} from 'react';
-import {useOutlineComposerContext} from '../../../outline-react/src/composer/OutlineComposerContext';
+import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
 
 import {useCollaborationContext} from '../context/CollaborationContext';
 import useOutlineEditor from 'outline-react/useOutlineEditor';

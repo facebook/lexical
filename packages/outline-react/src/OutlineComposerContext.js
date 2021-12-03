@@ -13,8 +13,11 @@ import type {
   EditorContextConfig,
 } from 'outline-react/OutlineEditorContext';
 import invariant from 'shared/invariant';
-import {useEditorContext} from '../OutlineEditorContext';
-import {createEditorContext} from 'outline-react/OutlineEditorContext';
+
+import {
+  createEditorContext,
+  useEditorContext,
+} from 'outline-react/OutlineEditorContext';
 import {createContext as createReactContext, useContext} from 'react';
 
 export type OutlineComposerEditorContextType = {
@@ -31,10 +34,8 @@ function createContext(
   parent: ?OutlineComposerEditorContext,
   theme?: EditorThemeClasses,
 ): OutlineComposerEditorContextType {
-  // eslint-disable-next-line no-unused-vars
-  const [parentEditor, parentContext] = parent ?? [];
   return {
-    getTheme: () => theme ?? parentContext?.getTheme(),
+    getTheme: () => null,
   };
 }
 

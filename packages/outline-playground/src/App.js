@@ -8,7 +8,7 @@
  */
 
 import type {SettingName} from './appSettings';
-
+import PlaygroundEditorTheme from './PlaygroundEditorTheme';
 import * as React from 'react';
 import {useCallback, useMemo, useState} from 'react';
 import useSettings from './hooks/useSettings';
@@ -22,6 +22,7 @@ import TreeViewPlugin from './plugins/TreeViewPlugin';
 import TestRecorderPlugin from './plugins/TestRecorderPlugin';
 import TypingPerfPlugin from './plugins/TypingPerfPlugin';
 import type {PlaygroundContext} from './context/PlaygroundEditorContext';
+import OutlineComposer from 'outline-react/OutlineComposer';
 
 function setURLParam(param: SettingName, value: null | boolean) {
   const url = new URL(window.location.href);
@@ -72,23 +73,25 @@ function App(): React$Node {
 
   return (
     <PlaygroundEditorContext.Provider value={playgroundContextValue}>
-      <header>
-        <img src="logo.svg" alt="Outline Logo" />
-      </header>
-      <div className="editor-shell">
-        <Editor
-          isCharLimit={isCharLimit}
-          isCharLimitUtf8={isCharLimitUtf8}
-          isAutocomplete={isAutocomplete}
-          isRichText={isRichText}
-          isCollab={isCollab}
-        />
-      </div>
-      {showTreeView && <TreeViewPlugin />}
-      {settingsSwitches}
-      {settingsButton}
-      <TestRecorderPlugin />
-      {measureTypingPerf && <TypingPerfPlugin />}
+      <OutlineComposer theme={PlaygroundEditorTheme}>
+        <header>
+          <img src="logo.svg" alt="Outline Logo" />
+        </header>
+        <div className="editor-shell">
+          <Editor
+            isCharLimit={isCharLimit}
+            isCharLimitUtf8={isCharLimitUtf8}
+            isAutocomplete={isAutocomplete}
+            isRichText={isRichText}
+            isCollab={isCollab}
+          />
+        </div>
+        {showTreeView && <TreeViewPlugin />}
+        {settingsSwitches}
+        {settingsButton}
+        <TestRecorderPlugin />
+        {measureTypingPerf && <TypingPerfPlugin />}
+      </OutlineComposer>
     </PlaygroundEditorContext.Provider>
   );
 }

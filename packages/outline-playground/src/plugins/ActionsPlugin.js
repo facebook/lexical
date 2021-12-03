@@ -10,7 +10,7 @@
 import type {ElementNode} from 'outline';
 
 import * as React from 'react';
-import {useOutlineComposerContext} from '../../../outline-react/src/composer/OutlineComposerContext';
+import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
 import {useCollaborationContext} from '../context/CollaborationContext';
 import {useContext, useEffect, useState} from 'react';
 import {log, isElementNode, getSelection, createEditorStateRef} from 'outline';
@@ -23,7 +23,6 @@ import TablesPlugin from './TablesPlugin';
 import {createTableNodeWithDimensions} from 'outline/nodes';
 import {createParagraphNode} from 'outline/ParagraphNode';
 import {PlaygroundEditorContext} from '../context/PlaygroundEditorContext';
-import invariant from '../../../shared/src/invariant';
 
 function createUID(): string {
   return Math.random()
@@ -43,7 +42,7 @@ export default function ActionsPlugins({
   const playgroundContext = useContext(PlaygroundEditorContext);
 
   if (playgroundContext == null) {
-    invariant(false, 'PlaygroundEditorContext not found');
+    throw new Error('PlaygroundEditorContext not found');
   }
 
   const {triggerListeners, addListener} = playgroundContext;

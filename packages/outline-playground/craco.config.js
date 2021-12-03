@@ -48,6 +48,9 @@ module.exports = {
       'outline-react/useOutlineCharacterLimit':
         'outline-react/dist/useOutlineCharacterLimit',
       'outline-react/useOutlineHistory': 'outline-react/dist/useOutlineHistory',
+      'outline-react/OutlineComposer': 'outline-react/dist/OutlineComposer',
+      'outline-react/OutlineComposerContext':
+        'outline-react/dist/OutlineComposerContext',
       //Shared
       'shared/environment': 'shared/dist/environment',
       'shared/useLayoutEffect': 'shared/dist/useLayoutEffect',

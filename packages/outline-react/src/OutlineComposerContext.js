@@ -8,32 +8,25 @@
  */
 
 import type {OutlineEditor, EditorThemeClasses} from 'outline';
-import type {
-  EditorContext,
-  EditorContextConfig,
-} from 'outline-react/OutlineEditorContext';
 import invariant from 'shared/invariant';
-
-import {
-  createEditorContext,
-  useEditorContext,
-} from 'outline-react/OutlineEditorContext';
 import {createContext as createReactContext, useContext} from 'react';
 
-export type OutlineComposerEditorContextType = {
+export type OutlineComposerContextType = {
   getTheme: () => ?EditorThemeClasses,
 };
 
-export type OutlineComposerEditorContext =
-  EditorContext<OutlineComposerEditorContextType>;
+export type OutlineComposerContextWithEditor = [
+  OutlineEditor,
+  OutlineComposerContextType,
+];
 
-export const OutlineComposerContext: React$Context<?OutlineComposerEditorContext> =
-  createReactContext<?OutlineComposerEditorContext>(null);
+export const OutlineComposerContext: React$Context<?OutlineComposerContextWithEditor> =
+  createReactContext<?OutlineComposerContextWithEditor>(null);
 
-function createContext(
-  parent: ?OutlineComposerEditorContext,
+export function createOutlineComposerContext(
+  parent: ?OutlineComposerContextWithEditor,
   theme?: EditorThemeClasses,
-): OutlineComposerEditorContextType {
+): OutlineComposerContextType {
   let parentContext = null;
   if (parent != null) {
     parentContext = parent[1];
@@ -52,20 +45,7 @@ function createContext(
   };
 }
 
-export function createOutlineComposerContext(
-  editorConfig: EditorContextConfig,
-  parent: ?OutlineComposerEditorContext,
-): OutlineComposerEditorContext {
-  return createEditorContext<OutlineComposerEditorContextType>(
-    () => createContext(parent, editorConfig.theme),
-    editorConfig,
-  );
-}
-
-export function useOutlineComposerContext(): [
-  OutlineEditor,
-  OutlineComposerEditorContextType,
-] {
+export function useOutlineComposerContext(): OutlineComposerContextWithEditor {
   const composerContext = useContext(OutlineComposerContext);
 
   if (composerContext == null) {
@@ -74,5 +54,5 @@ export function useOutlineComposerContext(): [
       'OutlineComposerContext.useOutlineComposerContext: cannot find a OutlineComposerContext',
     );
   }
-  return useEditorContext(composerContext);
+  return composerContext;
 }

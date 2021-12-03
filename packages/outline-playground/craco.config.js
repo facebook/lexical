@@ -21,10 +21,9 @@ module.exports = {
       'outline/events': 'outline/dist/OutlineEventHelpers',
       'outline/offsets': 'outline/dist/OutlineOffsetHelpers',
       'outline/root': 'outline/dist/OutlineRootHelpers',
+
       // Outline React
       'outline-react/OutlineTreeView': 'outline-react/dist/OutlineTreeView',
-      'outline-react/OutlineEditorContext':
-        'outline-react/dist/OutlineEditorContext',
       'outline-react/useOutlineEditor': 'outline-react/dist/useOutlineEditor',
       'outline-react/useOutlineRichText':
         'outline-react/dist/useOutlineRichText',

@@ -43,7 +43,8 @@ function createContext(
     if (theme != null) {
       return theme;
     }
-    return parentContext?.getTheme();
+
+    return parentContext != null ? parentContext.getTheme() : null;
   }
 
   return {

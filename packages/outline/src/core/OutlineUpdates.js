@@ -470,7 +470,7 @@ export function triggerListeners(
   const previouslyUpdating = editor._updating;
   editor._updating = isCurrentlyEnqueuingUpdates;
   try {
-    const listeners = Array.from(editor._listeners[type]);
+    const listeners = editor._listeners[type];
     for (let i = listeners.length - 1; i >= 0; i--) {
       if (listeners[i](...payload) === 'handled') {
         break;

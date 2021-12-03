@@ -27,8 +27,7 @@ export type EditorContextConfig = {
 };
 
 export function createEditorContext<Context>(
-  createContext: (parent: ?Context, theme?: EditorThemeClasses) => Context,
-  parentContext: ?Context,
+  createContext: () => Context,
   editorConfig: EditorContextConfig,
 ): EditorContext<Context> {
   const OutlineEditorContext =
@@ -36,7 +35,7 @@ export function createEditorContext<Context>(
 
   function OutlineEditorScope({children}: {children: React$Node}) {
     const editorContext = useMemo(() => {
-      const context: Context = createContext(parentContext, editorConfig.theme);
+      const context: Context = createContext();
       const editor = createEditor<Context>({
         ...editorConfig,
         context,

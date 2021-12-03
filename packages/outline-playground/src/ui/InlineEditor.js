@@ -10,7 +10,7 @@
 import type {EditorState, OutlineEditor} from 'outline';
 
 import * as React from 'react';
-import PlaygroundEditorContext from '../context/PlaygroundEditorContext';
+
 import RichTextPlugin from '../plugins/RichTextPlugin';
 import MentionsPlugin from '../plugins/MentionsPlugin';
 import EmojisPlugin from '../plugins/EmojisPlugin';
@@ -18,6 +18,7 @@ import HashtagsPlugin from '../plugins/HashtagsPlugin';
 import KeywordsPlugin from '../plugins/KeywordsPlugin';
 import OnChangePlugin from '../plugins/OnChangePlugin';
 import FloatingToolbarPlugin from '../plugins/FloatingToolbarPlugin';
+import OutlineComposer from '../../../outline-react/src/composer/OutlineComposer';
 
 type Props = {
   children?: React$Node,
@@ -34,7 +35,7 @@ export default function InlineEditor({
 }: Props): React$Node {
   return (
     <div className="inline-editor-container">
-      <PlaygroundEditorContext>
+      <OutlineComposer>
         {onChange && <OnChangePlugin onChange={onChange} />}
         <MentionsPlugin />
         <EmojisPlugin />
@@ -42,7 +43,7 @@ export default function InlineEditor({
         <KeywordsPlugin />
         {controlled ? children : <RichTextPlugin placeholder={placeholder} />}
         <FloatingToolbarPlugin />
-      </PlaygroundEditorContext>
+      </OutlineComposer>
     </div>
   );
 }

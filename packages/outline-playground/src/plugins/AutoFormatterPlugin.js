@@ -7,12 +7,12 @@
  * @flow strict
  */
 
-import PlaygroundEditorContext from '../context/PlaygroundEditorContext';
+import {useOutlineComposerContext} from '../../../outline-react/src/composer/OutlineComposerContext';
 import {useEditorContext} from 'outline-react/OutlineEditorContext';
 import useOutlineAutoFormatter from 'outline-react/useOutlineAutoFormatter';
 
 export default function AutoFormatterPlugin(): React$Node {
-  const [editor] = useEditorContext(PlaygroundEditorContext);
+  const [editor] = useOutlineComposerContext();
   useOutlineAutoFormatter(editor);
 
   return null;

@@ -10,7 +10,7 @@
 import type {OutlineEditor, State} from 'outline';
 
 import {TextNode} from 'outline';
-import PlaygroundEditorContext from '../context/PlaygroundEditorContext';
+import {useOutlineComposerContext} from '../../../outline-react/src/composer/OutlineComposerContext';
 import {useEditorContext} from 'outline-react/OutlineEditorContext';
 import {useEffect} from 'react';
 import {HashtagNode, toggleHashtag} from 'outline/HashtagNode';
@@ -291,7 +291,7 @@ function useHashtags(editor: OutlineEditor): void {
 }
 
 export default function HashtagsPlugin(): React$Node {
-  const [editor] = useEditorContext(PlaygroundEditorContext);
+  const [editor] = useOutlineComposerContext();
   useHashtags(editor);
 
   return null;

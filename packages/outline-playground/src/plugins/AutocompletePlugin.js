@@ -9,7 +9,7 @@
 
 import type {OutlineEditor, NodeKey, EditorConfig} from 'outline';
 
-import PlaygroundEditorContext from '../context/PlaygroundEditorContext';
+import {useOutlineComposerContext} from '../../../outline-react/src/composer/OutlineComposerContext';
 import {useEditorContext} from 'outline-react/OutlineEditorContext';
 
 import {
@@ -307,7 +307,7 @@ class TypeaheadServer {
 }
 
 export default function AutocompletePlugin(): React$Node {
-  const [editor] = useEditorContext(PlaygroundEditorContext);
+  const [editor] = useOutlineComposerContext();
   useTypeahead(editor);
 
   return null;

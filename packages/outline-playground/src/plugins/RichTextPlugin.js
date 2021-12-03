@@ -8,8 +8,7 @@
  */
 
 import * as React from 'react';
-import PlaygroundEditorContext from '../context/PlaygroundEditorContext';
-import {useEditorContext} from 'outline-react/OutlineEditorContext';
+import {useOutlineComposerContext} from '../../../outline-react/src/composer/OutlineComposerContext';
 import useOutlineEditor from 'outline-react/useOutlineEditor';
 import useOutlineRichText from 'outline-react/useOutlineRichText';
 import useOutlineDecorators from 'outline-react/useOutlineDecorators';
@@ -27,7 +26,7 @@ export default function RichTextPlugin({
 }: {
   placeholder?: string,
 }): React$Node {
-  const [editor, state] = useEditorContext(PlaygroundEditorContext);
+  const [editor, state] = useOutlineComposerContext();
   const [rootElementRef, showPlaceholder] = useOutlineEditor(editor, onError);
   const {historyState} = useSharedHistoryContext();
   const clear = useOutlineRichText(editor, historyState);

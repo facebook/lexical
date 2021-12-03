@@ -10,8 +10,8 @@
 import type {OutlineEditor} from 'outline';
 
 import * as React from 'react';
-import {useOutlineComposerContext} from '../../../outline-react/src/composer/OutlineComposerContext';
-import {useEditorContext} from 'outline-react/OutlineEditorContext';
+import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
+
 import {createTextNode, log, getRoot} from 'outline';
 import {createParagraphNode} from 'outline/ParagraphNode';
 import {useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';

@@ -9,8 +9,7 @@
 
 import type {OutlineEditor, NodeKey, EditorConfig} from 'outline';
 
-import {useOutlineComposerContext} from '../../../outline-react/src/composer/OutlineComposerContext';
-import {useEditorContext} from 'outline-react/OutlineEditorContext';
+import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
 
 import {
   isTextNode,

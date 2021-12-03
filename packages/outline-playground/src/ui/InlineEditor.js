@@ -18,7 +18,7 @@ import HashtagsPlugin from '../plugins/HashtagsPlugin';
 import KeywordsPlugin from '../plugins/KeywordsPlugin';
 import OnChangePlugin from '../plugins/OnChangePlugin';
 import FloatingToolbarPlugin from '../plugins/FloatingToolbarPlugin';
-import OutlineComposer from '../../../outline-react/src/composer/OutlineComposer';
+import OutlineComposer from 'outline-react/OutlineComposer';
 
 type Props = {
   children?: React$Node,

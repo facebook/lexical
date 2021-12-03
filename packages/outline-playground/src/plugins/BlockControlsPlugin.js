@@ -8,8 +8,7 @@
  */
 
 import * as React from 'react';
-import {useOutlineComposerContext} from '../../../outline-react/src/composer/OutlineComposerContext';
-import {useEditorContext} from 'outline-react/OutlineEditorContext';
+import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
 import type {OutlineEditor} from 'outline';
 import {isHeadingNode} from 'outline/HeadingNode';
 import {isListNode} from 'outline/ListNode';

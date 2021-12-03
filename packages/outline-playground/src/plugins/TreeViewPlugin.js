@@ -9,7 +9,7 @@
 
 import OutlineTreeView from 'outline-react/OutlineTreeView';
 import * as React from 'react';
-import {useOutlineComposerContext} from '../../../outline-react/src/composer/OutlineComposerContext';
+import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
 
 export default function TreeViewPlugin(): React$Node {
   const [editor] = useOutlineComposerContext();

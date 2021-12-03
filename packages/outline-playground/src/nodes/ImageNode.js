@@ -17,7 +17,7 @@ import type {
 
 import * as React from 'react';
 import {DecoratorNode, log, getNodeByKey} from 'outline';
-import {useOutlineComposerContext} from '../../../outline-react/src/composer/OutlineComposerContext';
+import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
 import {useCollaborationContext} from '../context/CollaborationContext';
 import {Suspense, useCallback, useEffect, useRef, useState} from 'react';
 import InlineEditor from '../ui/InlineEditor';

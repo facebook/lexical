@@ -27,15 +27,15 @@ export default function OutlineComposer({
   theme,
 }: Props): React$MixedElement {
   const parentContext = useContext(OutlineComposerContext);
-  const composerEditorContext = useMemo(
+  const ComposerEditorContext = useMemo(
     () =>
       createOutlineComposerContext({theme, initialEditorState}, parentContext),
-    [theme, initialEditorState, parentContext],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [theme, initialEditorState],
   );
-
   return (
-    <OutlineComposerContext.Provider value={composerEditorContext}>
-      {children}
+    <OutlineComposerContext.Provider value={ComposerEditorContext}>
+      <ComposerEditorContext>{children}</ComposerEditorContext>
     </OutlineComposerContext.Provider>
   );
 }

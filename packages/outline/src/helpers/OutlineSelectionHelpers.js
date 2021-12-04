@@ -392,7 +392,7 @@ function moveCaretSelection(
   granularity: 'character' | 'word' | 'lineboundary',
 ): void {
   selection.modify(
-    isHoldingShift ? 'move' : 'extend',
+    isHoldingShift ? 'extend' : 'move',
     isBackward ? 'backward' : 'forward',
     granularity,
   );

@@ -16,7 +16,6 @@ import {useContext, useEffect, useState} from 'react';
 import {log, isElementNode, getSelection, createEditorStateRef} from 'outline';
 import {isListItemNode} from 'outline/ListItemNode';
 import {ImageNode, createImageNode} from '../nodes/ImageNode';
-import {insertNodes} from 'outline/selection';
 import yellowFlowerImage from '../images/image/yellow-flower.jpg';
 import useOutlineNestedList from 'outline-react/useOutlineNestedList';
 import TablesPlugin from './TablesPlugin';
@@ -80,7 +79,7 @@ export default function ActionsPlugins({
           'Yellow flower in tilt shift lens',
           ref,
         );
-        insertNodes(selection, [imageNode]);
+        selection.insertNodes([imageNode]);
       }
     });
   };

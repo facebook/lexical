@@ -23,7 +23,6 @@ import {
   getSelection,
   clearSelection,
 } from 'outline';
-import {formatText} from 'outline/selection';
 import {
   isDeleteBackward,
   isDeleteForward,
@@ -252,7 +251,7 @@ function applyCellSelection(
         if (isElementNode(cellNode)) {
           anchor.set(cellNode.getKey(), 0, 'element');
           focus.set(cellNode.getKey(), cellNode.getChildrenSize(), 'element');
-          formatText(formatSelection, type);
+          formatSelection.formatText(type);
         }
       });
       clearSelection();

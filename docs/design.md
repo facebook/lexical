@@ -67,10 +67,7 @@ function listenToTextInsertion(editor: OutlineEditor) {
       const text = event.data;
 
       if (selection !== null && text != null) {
-        // We use the selection helper from 'outline/SelectionHelpers'.
-        // We pass our current Outline selection, and the text we want
-        // to insert.
-        insertText(selection, text);
+        selection.insertText(text);
       }
     });
   }

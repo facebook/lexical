@@ -25,8 +25,6 @@ import {useCallback, useEffect, useRef, useState, useMemo} from 'react';
 // $FlowFixMe
 import {unstable_batchedUpdates, createPortal} from 'react-dom';
 import {
-  formatText,
-  extractSelection,
   getSelectionStyleValueForProperty,
   patchStyleText,
   isAtNodeEnd,
@@ -322,7 +320,7 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
         }
         const sel = getSelection();
         if (sel !== null) {
-          const nodes = extractSelection(sel);
+          const nodes = sel.extract();
           if (url === null) {
             // Remove LinkNodes
             nodes.forEach((node) => {
@@ -404,7 +402,7 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
         log('applyFormatText');
         const selection = getSelection();
         if (selection !== null) {
-          formatText(selection, formatType);
+          selection.formatText(formatType);
         }
       });
     },

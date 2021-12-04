@@ -6,7 +6,6 @@
  *
  */
 
-import * as SelectionHelpers from 'outline/selection';
 import {createTextNode, isTextNode, getSelection} from 'outline';
 
 Object.defineProperty(HTMLElement.prototype, 'contentEditable', {
@@ -594,11 +593,11 @@ export async function applySelectionInputs(inputs, update, editor) {
 
         switch (input.type) {
           case 'insert_text': {
-            SelectionHelpers.insertText(selection, input.text);
+            selection.insertText(input.text);
             break;
           }
           case 'insert_paragraph': {
-            SelectionHelpers.insertParagraph(selection);
+            selection.insertParagraph();
             break;
           }
           case 'move_backward': {
@@ -617,23 +616,23 @@ export async function applySelectionInputs(inputs, update, editor) {
             break;
           }
           case 'delete_backward': {
-            SelectionHelpers.deleteBackward(selection);
+            selection.deleteCharacter(true);
             break;
           }
           case 'delete_forward': {
-            SelectionHelpers.deleteForward(selection);
+            selection.deleteCharacter(false);
             break;
           }
           case 'delete_word_backward': {
-            SelectionHelpers.deleteWordBackward(selection);
+            selection.deleteWord(true);
             break;
           }
           case 'delete_word_forward': {
-            SelectionHelpers.deleteWordForward(selection);
+            selection.deleteWord(false);
             break;
           }
           case 'format_text': {
-            SelectionHelpers.formatText(selection, input.format);
+            selection.formatText(input.format);
             break;
           }
           case 'move_native_selection': {
@@ -649,27 +648,27 @@ export async function applySelectionInputs(inputs, update, editor) {
           case 'insert_immutable_node': {
             const text = createTextNode(input.text);
             text.makeImmutable();
-            SelectionHelpers.insertNodes(selection, [text]);
+            selection.insertNodes([text]);
             break;
           }
           case 'insert_segmented_node': {
             const text = createTextNode(input.text);
             text.makeSegmented();
-            SelectionHelpers.insertNodes(selection, [text]);
+            selection.insertNodes([text]);
             text.selectNext();
             break;
           }
           case 'covert_to_immutable_node': {
             const text = createTextNode(selection.getTextContent());
             text.makeImmutable();
-            SelectionHelpers.insertNodes(selection, [text]);
+            selection.insertNodes([text]);
             text.selectNext();
             break;
           }
           case 'covert_to_segmented_node': {
             const text = createTextNode(selection.getTextContent());
             text.makeSegmented();
-            SelectionHelpers.insertNodes(selection, [text]);
+            selection.insertNodes([text]);
             text.selectNext();
             break;
           }

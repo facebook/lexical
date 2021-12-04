@@ -10,15 +10,7 @@ import type {State} from 'outline';
 
 import {createTextNode, TextNode, getSelection} from 'outline';
 import {createParagraphNode} from 'outline/ParagraphNode';
-import {
-  insertText,
-  insertNodes,
-  insertParagraph,
-  insertLineBreak,
-  formatText,
-  extractSelection,
-  cloneContents,
-} from 'outline/selection';
+import {cloneContents} from 'outline/selection';
 import {
   createTestEditor,
   createTestElementNode,
@@ -113,7 +105,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // insertText
       setupTestCase((selection, state) => {
-        insertText(selection, 'Test');
+        selection.insertText('Test');
         expect(state.getNodeByKey('a').getTextContent()).toBe('Testa');
         expect(selection.anchor).toEqual({
           type: 'text',
@@ -129,7 +121,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // insertNodes
       setupTestCase((selection, state, element) => {
-        insertNodes(selection, [createTextNode('foo')]);
+        selection.insertNodes([createTextNode('foo')]);
         expect(selection.anchor).toEqual({
           type: 'text',
           offset: 3,
@@ -144,7 +136,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // insertParagraph
       setupTestCase((selection) => {
-        insertParagraph(selection);
+        selection.insertParagraph();
         expect(selection.anchor).toEqual({
           type: 'text',
           offset: 0,
@@ -159,7 +151,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // insertLineBreak
       setupTestCase((selection, state, element) => {
-        insertLineBreak(selection, true);
+        selection.insertLineBreak(true);
         expect(selection.anchor).toEqual({
           type: 'element',
           offset: 0,
@@ -174,8 +166,8 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // Format text
       setupTestCase((selection, state, element) => {
-        formatText(selection, 'bold');
-        insertText(selection, 'Test');
+        selection.formatText('bold');
+        selection.insertText('Test');
         expect(element.getFirstChild().getTextContent()).toBe('Test');
         expect(selection.anchor).toEqual({
           type: 'text',
@@ -194,7 +186,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // Extract selection
       setupTestCase((selection, state) => {
-        expect(extractSelection(selection)).toEqual([state.getNodeByKey('a')]);
+        expect(selection.extract()).toEqual([state.getNodeByKey('a')]);
       });
 
       // cloneContents
@@ -564,7 +556,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // insertText
       setupTestCase((selection, state, element) => {
-        insertText(selection, 'Test');
+        selection.insertText('Test');
         const firstChild = element.getFirstChild();
         expect(firstChild.getTextContent()).toBe('Test');
         expect(selection.anchor).toEqual({
@@ -581,7 +573,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // insertParagraph
       setupTestCase((selection, state, element) => {
-        insertParagraph(selection);
+        selection.insertParagraph();
         const nextElement = element.getNextSibling();
         expect(selection.anchor).toEqual({
           type: 'element',
@@ -597,7 +589,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // insertLineBreak
       setupTestCase((selection, state, element) => {
-        insertLineBreak(selection, true);
+        selection.insertLineBreak(true);
         expect(selection.anchor).toEqual({
           type: 'element',
           offset: 0,
@@ -612,8 +604,8 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // Format text
       setupTestCase((selection, state, element) => {
-        formatText(selection, 'bold');
-        insertText(selection, 'Test');
+        selection.formatText('bold');
+        selection.insertText('Test');
         const firstChild = element.getFirstChild();
         expect(firstChild.getTextContent()).toBe('Test');
         expect(selection.anchor).toEqual({
@@ -630,7 +622,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // Extract selection
       setupTestCase((selection, state, element) => {
-        expect(extractSelection(selection)).toEqual([]);
+        expect(selection.extract()).toEqual([]);
       });
 
       // cloneContents
@@ -686,7 +678,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // insertText
       setupTestCase((selection, state, element) => {
-        insertText(selection, 'Test');
+        selection.insertText('Test');
         const firstChild = element.getFirstChild();
         expect(firstChild.getTextContent()).toBe('Test');
         expect(selection.anchor).toEqual({
@@ -703,7 +695,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // insertParagraph
       setupTestCase((selection, state, element) => {
-        insertParagraph(selection);
+        selection.insertParagraph();
         const firstChild = element.getNextSibling().getFirstChild();
         expect(selection.anchor).toEqual({
           type: 'text',
@@ -719,7 +711,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // insertLineBreak
       setupTestCase((selection, state, element) => {
-        insertLineBreak(selection, true);
+        selection.insertLineBreak(true);
         expect(selection.anchor).toEqual({
           type: 'element',
           offset: 0,
@@ -734,8 +726,8 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // Format text
       setupTestCase((selection, state, element) => {
-        formatText(selection, 'bold');
-        insertText(selection, 'Test');
+        selection.formatText('bold');
+        selection.insertText('Test');
         const firstChild = element.getFirstChild();
         expect(firstChild.getTextContent()).toBe('Test');
         expect(selection.anchor).toEqual({
@@ -752,7 +744,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // Extract selection
       setupTestCase((selection, state, element) => {
-        expect(extractSelection(selection)).toEqual([state.getNodeByKey('a')]);
+        expect(selection.extract()).toEqual([state.getNodeByKey('a')]);
       });
 
       // cloneContents
@@ -811,7 +803,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // insertText
       setupTestCase((selection, state, element) => {
-        insertText(selection, 'Test');
+        selection.insertText('Test');
         const lastChild = element.getLastChild();
         expect(lastChild.getTextContent()).toBe('Test');
         expect(selection.anchor).toEqual({
@@ -828,7 +820,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // insertParagraph
       setupTestCase((selection, state, element) => {
-        insertParagraph(selection);
+        selection.insertParagraph();
         const nextSibling = element.getNextSibling();
         expect(selection.anchor).toEqual({
           type: 'element',
@@ -844,7 +836,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // insertLineBreak
       setupTestCase((selection, state, element) => {
-        insertLineBreak(selection, true);
+        selection.insertLineBreak(true);
         const thirdChild = state.getNodeByKey('c');
         expect(selection.anchor).toEqual({
           type: 'text',
@@ -860,8 +852,8 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // Format text
       setupTestCase((selection, state, element) => {
-        formatText(selection, 'bold');
-        insertText(selection, 'Test');
+        selection.formatText('bold');
+        selection.insertText('Test');
         const lastChild = element.getLastChild();
         expect(lastChild.getTextContent()).toBe('Test');
         expect(selection.anchor).toEqual({
@@ -878,7 +870,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // Extract selection
       setupTestCase((selection, state, element) => {
-        expect(extractSelection(selection)).toEqual([state.getNodeByKey('c')]);
+        expect(selection.extract()).toEqual([state.getNodeByKey('c')]);
       });
 
       // cloneContents
@@ -1040,7 +1032,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // insertText
       setupTestCase((selection, state) => {
-        insertText(selection, 'Test');
+        selection.insertText('Test');
         expect(state.getNodeByKey('a').getTextContent()).toBe('Test');
         expect(selection.anchor).toEqual({
           type: 'text',
@@ -1056,7 +1048,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // insertNodes
       setupTestCase((selection, state, element) => {
-        insertNodes(selection, [createTextNode('foo')]);
+        selection.insertNodes([createTextNode('foo')]);
         expect(selection.anchor).toEqual({
           type: 'text',
           offset: 3,
@@ -1071,7 +1063,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // insertParagraph
       setupTestCase((selection) => {
-        insertParagraph(selection);
+        selection.insertParagraph();
         expect(selection.anchor).toEqual({
           type: 'text',
           offset: 0,
@@ -1086,7 +1078,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // insertLineBreak
       setupTestCase((selection, state, element) => {
-        insertLineBreak(selection, true);
+        selection.insertLineBreak(true);
         expect(selection.anchor).toEqual({
           type: 'element',
           offset: 0,
@@ -1101,8 +1093,8 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // Format text
       setupTestCase((selection, state, element) => {
-        formatText(selection, 'bold');
-        insertText(selection, 'Test');
+        selection.formatText('bold');
+        selection.insertText('Test');
         expect(element.getFirstChild().getTextContent()).toBe('Test');
         expect(selection.anchor).toEqual({
           type: 'text',
@@ -1118,9 +1110,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // Extract selection
       setupTestCase((selection, state) => {
-        expect(extractSelection(selection)).toEqual([
-          {...state.getNodeByKey('a')},
-        ]);
+        expect(selection.extract()).toEqual([{...state.getNodeByKey('a')}]);
       });
 
       // cloneContents
@@ -1183,7 +1173,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // insertText
       setupTestCase((selection, state, element) => {
-        insertText(selection, 'Test');
+        selection.insertText('Test');
         const firstChild = element.getFirstChild();
         expect(firstChild.getTextContent()).toBe('Test');
         expect(selection.anchor).toEqual({
@@ -1200,7 +1190,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // insertParagraph
       setupTestCase((selection, state, element) => {
-        insertParagraph(selection);
+        selection.insertParagraph();
         const firstChild = element.getNextSibling().getFirstChild();
         expect(selection.anchor).toEqual({
           type: 'text',
@@ -1216,7 +1206,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // insertLineBreak
       setupTestCase((selection, state, element) => {
-        insertLineBreak(selection, true);
+        selection.insertLineBreak(true);
         expect(selection.anchor).toEqual({
           type: 'element',
           offset: 0,
@@ -1231,8 +1221,8 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // Format text
       setupTestCase((selection, state, element) => {
-        formatText(selection, 'bold');
-        insertText(selection, 'Test');
+        selection.formatText('bold');
+        selection.insertText('Test');
         const firstChild = element.getFirstChild();
         expect(firstChild.getTextContent()).toBe('Test');
         expect(selection.anchor).toEqual({
@@ -1250,7 +1240,7 @@ describe('OutlineSelectionHelpers tests', () => {
       // Extract selection
       setupTestCase((selection, state, element) => {
         const firstChild = element.getFirstChild();
-        expect(extractSelection(selection)).toEqual([firstChild]);
+        expect(selection.extract()).toEqual([firstChild]);
       });
 
       // cloneContents
@@ -1319,7 +1309,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // insertText
       setupTestCase((selection, state, element) => {
-        insertText(selection, 'Test');
+        selection.insertText('Test');
         const firstChild = element.getFirstChild();
         expect(firstChild.getTextContent()).toBe('Test');
         expect(selection.anchor).toEqual({
@@ -1336,7 +1326,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // insertParagraph
       setupTestCase((selection, state, element) => {
-        insertParagraph(selection);
+        selection.insertParagraph();
         const nextElement = element.getNextSibling();
         expect(selection.anchor).toEqual({
           type: 'element',
@@ -1352,7 +1342,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // insertLineBreak
       setupTestCase((selection, state, element) => {
-        insertLineBreak(selection, true);
+        selection.insertLineBreak(true);
         expect(selection.anchor).toEqual({
           type: 'element',
           offset: 0,
@@ -1367,8 +1357,8 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // Format text
       setupTestCase((selection, state, element) => {
-        formatText(selection, 'bold');
-        insertText(selection, 'Test');
+        selection.formatText('bold');
+        selection.insertText('Test');
         const firstChild = element.getFirstChild();
         expect(firstChild.getTextContent()).toBe('Test');
         expect(selection.anchor).toEqual({
@@ -1385,7 +1375,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // Extract selection
       setupTestCase((selection, state, element) => {
-        expect(extractSelection(selection)).toEqual([
+        expect(selection.extract()).toEqual([
           state.getNodeByKey('a'),
           state.getNodeByKey('b'),
           state.getNodeByKey('c'),
@@ -1569,7 +1559,7 @@ describe('OutlineSelectionHelpers tests', () => {
           });
           const selection = getSelection();
 
-          insertNodes(selection, [createTextNode('foo')]);
+          selection.insertNodes([createTextNode('foo')]);
         });
 
         expect(element.innerHTML).toBe(
@@ -1602,10 +1592,7 @@ describe('OutlineSelectionHelpers tests', () => {
           });
           const selection = getSelection();
 
-          insertNodes(selection, [
-            createTextNode('foo'),
-            createTextNode('bar'),
-          ]);
+          selection.insertNodes([createTextNode('foo'), createTextNode('bar')]);
         });
 
         expect(element.innerHTML).toBe(
@@ -1641,7 +1628,7 @@ describe('OutlineSelectionHelpers tests', () => {
           const child = createTextNode('foo');
           heading.append(child);
 
-          insertNodes(selection, [heading]);
+          selection.insertNodes([heading]);
         });
 
         expect(element.innerHTML).toBe(
@@ -1678,7 +1665,7 @@ describe('OutlineSelectionHelpers tests', () => {
           heading.append(child);
 
           expect(() => {
-            insertNodes(selection, [heading, createTextNode('bar')]);
+            selection.insertNodes([heading, createTextNode('bar')]);
           }).toThrow();
         });
 
@@ -1716,7 +1703,7 @@ describe('OutlineSelectionHelpers tests', () => {
           });
           const selection = getSelection();
 
-          insertNodes(selection, [createTextNode('foo')]);
+          selection.insertNodes([createTextNode('foo')]);
         });
 
         expect(element.innerHTML).toBe(
@@ -1751,10 +1738,7 @@ describe('OutlineSelectionHelpers tests', () => {
           });
           const selection = getSelection();
 
-          insertNodes(selection, [
-            createTextNode('foo'),
-            createTextNode('bar'),
-          ]);
+          selection.insertNodes([createTextNode('foo'), createTextNode('bar')]);
         });
 
         expect(element.innerHTML).toBe(
@@ -1792,7 +1776,7 @@ describe('OutlineSelectionHelpers tests', () => {
           const child = createTextNode('foo');
           heading.append(child);
 
-          insertNodes(selection, [heading]);
+          selection.insertNodes([heading]);
         });
 
         expect(element.innerHTML).toBe(
@@ -1831,7 +1815,7 @@ describe('OutlineSelectionHelpers tests', () => {
           heading.append(child);
 
           expect(() => {
-            insertNodes(selection, [heading, createTextNode('bar')]);
+            selection.insertNodes([heading, createTextNode('bar')]);
           }).toThrow();
         });
 

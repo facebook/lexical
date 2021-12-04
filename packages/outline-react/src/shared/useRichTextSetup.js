@@ -11,7 +11,6 @@ import type {OutlineEditor, RootNode} from 'outline';
 import type {InputEvents} from 'outline-react/useOutlineEditorEvents';
 
 import {log, getSelection, getRoot} from 'outline';
-import useLayoutEffect from '../../../shared/src/useLayoutEffect';
 import useOutlineEditorEvents from '../useOutlineEditorEvents';
 import {HeadingNode} from 'outline/HeadingNode';
 import {ListNode} from 'outline/ListNode';
@@ -37,6 +36,7 @@ import {
   onInput,
   onClick,
 } from 'outline/events';
+import useLayoutEffect from 'shared/useLayoutEffect';
 
 const events: InputEvents = [
   ['selectionchange', onSelectionChange],

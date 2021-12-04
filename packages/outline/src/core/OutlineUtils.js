@@ -14,7 +14,7 @@ import type {
 } from './OutlineEditor';
 import type {RootNode} from './OutlineRootNode';
 import type {OutlineNode, NodeKey, NodeMap} from './OutlineNode';
-import type {TextFormatType} from './OutlineTextNode';
+import type {TextNode, TextFormatType} from './OutlineTextNode';
 import type {Node as ReactNode} from 'react';
 import type {EditorState} from './OutlineEditorState';
 import type {Selection} from './OutlineSelection';
@@ -319,4 +319,50 @@ export function flushMutations(): void {
   errorOnReadOnly();
   const editor = getActiveEditor();
   flushRootMutations(editor);
+}
+
+export function getNodeFromDOM(dom: Node): null | OutlineNode {
+  const editor = getActiveEditor();
+  const nodeKey = getNodeKeyFromDOM(dom, editor);
+  if (nodeKey === null) {
+    const rootElement = editor.getRootElement();
+    if (dom === rootElement) {
+      return getNodeByKey('root');
+    }
+    return null;
+  }
+  return getNodeByKey(nodeKey);
+}
+
+export function domIsElement(dom: Node): boolean {
+  return dom.nodeType === 1;
+}
+
+export function getTextNodeOffset(
+  node: TextNode,
+  moveSelectionToEnd: boolean,
+): number {
+  return moveSelectionToEnd ? node.getTextContentSize() : 0;
+}
+
+function getNodeKeyFromDOM(
+  // Note that node here refers to a DOM Node, not an Outline Node
+  dom: Node,
+  editor: OutlineEditor,
+): NodeKey | null {
+  let node = dom;
+  while (node != null) {
+    const key: NodeKey | void =
+      // $FlowFixMe: internal field
+      node['__outlineKey_' + editor._key];
+    if (key !== undefined) {
+      return key;
+    }
+    node = node.parentNode;
+  }
+  return null;
+}
+
+export function doesContainGrapheme(str: string): boolean {
+  return /[\uD800-\uDBFF][\uDC00-\uDFFF]/g.test(str);
 }

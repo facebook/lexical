@@ -732,24 +732,6 @@ export function storeDOMWithKey(
   keyToDOMMap.set(key, dom);
 }
 
-export function getNodeKeyFromDOM(
-  // Note that node here refers to a DOM Node, not an Outline Node
-  dom: Node,
-  editor: OutlineEditor,
-): NodeKey | null {
-  let node = dom;
-  while (node != null) {
-    const key: NodeKey | void =
-      // $FlowFixMe: internal field
-      node['__outlineKey_' + editor._key];
-    if (key !== undefined) {
-      return key;
-    }
-    node = node.parentNode;
-  }
-  return null;
-}
-
 function getPrevElementByKeyOrThrow(key: NodeKey): HTMLElement {
   const element = activePrevKeyToDOMMap.get(key);
   if (element === undefined) {

@@ -11,8 +11,6 @@ import {createTestConnection, waitForReact} from './utils';
 import {getRoot, createTextNode, getSelection} from 'outline';
 import {createParagraphNode} from 'outline/ParagraphNode';
 
-import {removeText} from 'outline/selection';
-
 function createAndStartClients(
   connector: TestConnection,
   aContainer: any,
@@ -133,7 +131,7 @@ describe('useOutlineRichTextWithCollabLists', () => {
         const selection = getSelection();
         selection.anchor.set(paragraph1.getFirstChild().getKey(), 5, 'text');
         selection.focus.set(paragraph2.getFirstChild().getKey(), 6, 'text');
-        removeText(selection);
+        selection.removeText();
       });
     });
 

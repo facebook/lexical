@@ -11,6 +11,7 @@ import type {OutlineNode, NodeKey} from './OutlineNode';
 import type {Node as ReactNode} from 'react';
 import type {State} from './OutlineUpdates';
 import type {EditorState} from './OutlineEditorState';
+import type {TextFormatType} from './OutlineTextNode';
 
 import {
   commitPendingUpdates,
@@ -110,6 +111,78 @@ export type RootListener = (
 ) => void;
 export type TextMutationListener = (mutation: TextMutation) => void;
 export type TextContentListener = (text: string) => void;
+export type CommandListener = (command: Command) => 'handled' | 'not-handled';
+
+export type CommandListenerEditorPriority = 0;
+export type CommandListenerLowPriority = 1;
+export type CommandListenerNormalPriority = 2;
+export type CommandListenerHighPriority = 3;
+export type CommandListenerCriticalPriority = 4;
+
+export type InsertTextCommand = {
+  type: 'insertText',
+  text: string,
+};
+
+export type RemoveTextCommand = {
+  type: 'removeText',
+};
+
+export type FormatTextCommand = {
+  type: 'formatText',
+  format: TextFormatType,
+};
+
+export type DeleteCharacterCommand = {
+  type: 'deleteCharacter',
+  isBackward: boolean,
+};
+
+export type DeleteWordCommand = {
+  type: 'deleteWord',
+  isBackward: boolean,
+};
+
+export type DeleteLineCommand = {
+  type: 'deleteLine',
+  isBackward: boolean,
+};
+
+export type InsertParagraphCommand = {
+  type: 'insertParagrah',
+};
+
+export type InsertLinebreakCommand = {
+  type: 'insertLinebreak',
+  selectStart?: boolean,
+};
+
+export type ClearCommand = {
+  type: 'clear',
+};
+
+export type ReadOnlyCommand = {
+  type: 'readOnly',
+  readOnly: boolean,
+};
+
+export type CustomCommand = {
+  type: string,
+  ...
+};
+
+export type Command =
+  | InsertTextCommand
+  | FormatTextCommand
+  | RemoveTextCommand
+  | InsertParagraphCommand
+  | InsertLinebreakCommand
+  | DeleteCharacterCommand
+  | DeleteWordCommand
+  | DeleteLineCommand
+  | ClearCommand
+  | ReadOnlyCommand
+  | CustomCommand;
 
 export type TextMutation = {
   node: TextNode,
@@ -517,10 +590,21 @@ declare export class OutlineEditor {
   addListener(type: 'decorator', listener: DecoratorListener): () => void;
   addListener(type: 'textmutation', listener: TextMutationListener): () => void;
   addListener(type: 'textcontent', listener: TextContentListener): () => void;
+  addListener(
+    type: 'command',
+    listener: CommandListener,
+    priority:
+      | CommandListenerEditorPriority
+      | CommandListenerLowPriority
+      | CommandListenerNormalPriority
+      | CommandListenerHighPriority
+      | CommandListenerCriticalPriority,
+  ): () => void;
   addTransform<T: OutlineNode>(
     klass: Class<T>,
     listener: Transform<T>,
   ): () => void;
+  execCommand(command: Command): void;
   getDecorators(): {[NodeKey]: ReactNode};
   getRootElement(): null | HTMLElement;
   setRootElement(rootElement: null | HTMLElement): void;

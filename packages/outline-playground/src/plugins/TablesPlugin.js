@@ -7,25 +7,25 @@
  * @flow strict
  */
 
-import * as React from 'react';
+import type {OutlineEditor} from 'outline';
+
 import {useEffect} from 'react';
 import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
 
 import {TableNode} from 'outline/TableNode';
 import {TableCellNode} from 'outline/TableCellNode';
 import {TableRowNode} from 'outline/TableRowNode';
-import type {OutlineEditor} from 'outline/src/core/OutlineEditor';
 
-function useBonsaiTables(editor: OutlineEditor): void {
+function useTables(editor: OutlineEditor): void {
   useEffect(() => {
     return editor.registerNodes([TableNode, TableCellNode, TableRowNode]);
   }, [editor]);
 }
 
-export default function TablesPlugin(): React.MixedElement | null {
+export default function TablesPlugin(): React$Node {
   const [editor] = useOutlineComposerContext();
 
-  useBonsaiTables(editor);
+  useTables(editor);
 
   return null;
 }

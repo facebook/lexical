@@ -616,19 +616,19 @@ export async function applySelectionInputs(inputs, update, editor) {
             break;
           }
           case 'delete_backward': {
-            selection.deleteBackward();
+            selection.deleteCharacter(true);
             break;
           }
           case 'delete_forward': {
-            selection.deleteForward();
+            selection.deleteCharacter(false);
             break;
           }
           case 'delete_word_backward': {
-            selection.deleteWordBackward();
+            selection.deleteWord(true);
             break;
           }
           case 'delete_word_forward': {
-            selection.deleteWordForward();
+            selection.deleteWord(false);
             break;
           }
           case 'format_text': {

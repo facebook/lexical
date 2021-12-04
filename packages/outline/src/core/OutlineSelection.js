@@ -1096,12 +1096,11 @@ export class Selection {
 
   modify(
     alter: 'move' | 'extend',
-    direction: 'backward' | 'forward' | 'left' | 'right',
+    isBackward: boolean,
     granularity: 'character' | 'word' | 'lineboundary',
   ): void {
     const focus = this.focus;
     const anchor = this.anchor;
-    const isBackward = direction === 'backward';
     const collapse = alter === 'move';
 
     // Handle the selection movement around decorators.
@@ -1131,7 +1130,12 @@ export class Selection {
     // from getTargetRanges(), and is also better than trying to do it ourselves
     // using Intl.Segmenter or other workarounds that struggle with word segments
     // and line segments (especially with word wrapping and non-Roman languages).
-    moveNativeSelection(domSelection, alter, direction, granularity);
+    moveNativeSelection(
+      domSelection,
+      alter,
+      isBackward ? 'backward' : 'forward',
+      granularity,
+    );
     // Guard against no ranges
     if (domSelection.rangeCount > 0) {
       const range = domSelection.getRangeAt(0);
@@ -1150,38 +1154,85 @@ export class Selection {
     }
   }
 
-  deleteBackward(): void {
-    deleteCharacter(this, true);
-  }
-
-  deleteForward(): void {
-    deleteCharacter(this, false);
-  }
-
-  deleteLineBackward(): void {
+  deleteCharacter(isBackward: boolean): void {
     if (this.isCollapsed()) {
-      this.modify('extend', 'backward', 'lineboundary');
+      const anchor = this.anchor;
+      const focus = this.focus;
+      let anchorNode = anchor.getNode();
+      if (isElementNode(anchorNode) && !anchorNode.canSelectionRemove()) {
+        return;
+      } else if (
+        !isBackward &&
+        // Delete forward handle case
+        ((anchor.type === 'element' &&
+          // $FlowFixMe: always an element node
+          anchor.offset === (anchorNode: ElementNode).getChildrenSize()) ||
+          (anchor.type === 'text' &&
+            anchor.offset === anchorNode.getTextContentSize()))
+      ) {
+        const nextSibling =
+          anchorNode.getNextSibling() ||
+          anchorNode.getParentOrThrow().getNextSibling();
+
+        if (isElementNode(nextSibling) && !nextSibling.canExtractContents()) {
+          return;
+        }
+      }
+      this.modify('extend', isBackward, 'character');
+
+      if (!this.isCollapsed()) {
+        const focusNode = focus.type === 'text' ? focus.getNode() : null;
+        anchorNode = anchor.type === 'text' ? anchor.getNode() : null;
+
+        if (focusNode !== null && focusNode.isSegmented()) {
+          const offset = focus.offset;
+          const textContentSize = focusNode.getTextContentSize();
+          if (
+            focusNode.is(anchorNode) ||
+            (isBackward && offset !== textContentSize) ||
+            (!isBackward && offset !== 0)
+          ) {
+            removeSegment(focusNode, isBackward);
+            return;
+          }
+        } else if (anchorNode !== null && anchorNode.isSegmented()) {
+          const offset = anchor.offset;
+          const textContentSize = anchorNode.getTextContentSize();
+          if (
+            anchorNode.is(focusNode) ||
+            (isBackward && offset !== 0) ||
+            (!isBackward && offset !== textContentSize)
+          ) {
+            removeSegment(anchorNode, isBackward);
+            return;
+          }
+        }
+        updateCaretSelectionForUnicodeCharacter(this, isBackward);
+      } else if (isBackward && anchor.offset === 0) {
+        // Special handling around rich text nodes
+        const element =
+          anchor.type === 'element'
+            ? anchor.getNode()
+            : anchor.getNode().getParentOrThrow();
+        if (element.collapseAtStart(this)) {
+          return;
+        }
+      }
+    }
+    this.removeText();
+    updateCaretSelectionForAdjacentHashtags(this);
+  }
+
+  deleteLine(isBackward: boolean): void {
+    if (this.isCollapsed()) {
+      this.modify('extend', isBackward, 'lineboundary');
     }
     this.removeText();
   }
 
-  deleteLineForward(): void {
+  deleteWord(isBackward: boolean): void {
     if (this.isCollapsed()) {
-      this.modify('extend', 'forward', 'lineboundary');
-    }
-    this.removeText();
-  }
-
-  deleteWordBackward(): void {
-    if (this.isCollapsed()) {
-      this.modify('extend', 'backward', 'word');
-    }
-    this.removeText();
-  }
-
-  deleteWordForward(): void {
-    if (this.isCollapsed()) {
-      this.modify('extend', 'forward', 'word');
+      this.modify('extend', isBackward, 'word');
     }
     this.removeText();
   }
@@ -1205,79 +1256,6 @@ function moveNativeSelection(
   granularity: 'character' | 'word' | 'lineboundary',
 ): void {
   domSelection.modify(alter, direction, granularity);
-}
-
-function deleteCharacter(selection: Selection, isBackward: boolean): void {
-  if (selection.isCollapsed()) {
-    const anchor = selection.anchor;
-    const focus = selection.focus;
-    let anchorNode = anchor.getNode();
-    if (isElementNode(anchorNode) && !anchorNode.canSelectionRemove()) {
-      return;
-    } else if (
-      !isBackward &&
-      // Delete forward handle case
-      ((anchor.type === 'element' &&
-        // $FlowFixMe: always an element node
-        anchor.offset === (anchorNode: ElementNode).getChildrenSize()) ||
-        (anchor.type === 'text' &&
-          anchor.offset === anchorNode.getTextContentSize()))
-    ) {
-      const nextSibling =
-        anchorNode.getNextSibling() ||
-        anchorNode.getParentOrThrow().getNextSibling();
-
-      if (isElementNode(nextSibling) && !nextSibling.canExtractContents()) {
-        return;
-      }
-    }
-    selection.modify(
-      'extend',
-      isBackward ? 'backward' : 'forward',
-      'character',
-    );
-
-    if (!selection.isCollapsed()) {
-      const focusNode = focus.type === 'text' ? focus.getNode() : null;
-      anchorNode = anchor.type === 'text' ? anchor.getNode() : null;
-
-      if (focusNode !== null && focusNode.isSegmented()) {
-        const offset = focus.offset;
-        const textContentSize = focusNode.getTextContentSize();
-        if (
-          focusNode.is(anchorNode) ||
-          (isBackward && offset !== textContentSize) ||
-          (!isBackward && offset !== 0)
-        ) {
-          removeSegment(focusNode, isBackward);
-          return;
-        }
-      } else if (anchorNode !== null && anchorNode.isSegmented()) {
-        const offset = anchor.offset;
-        const textContentSize = anchorNode.getTextContentSize();
-        if (
-          anchorNode.is(focusNode) ||
-          (isBackward && offset !== 0) ||
-          (!isBackward && offset !== textContentSize)
-        ) {
-          removeSegment(anchorNode, isBackward);
-          return;
-        }
-      }
-      updateCaretSelectionForUnicodeCharacter(selection, isBackward);
-    } else if (isBackward && anchor.offset === 0) {
-      // Special handling around rich text nodes
-      const element =
-        anchor.type === 'element'
-          ? anchor.getNode()
-          : anchor.getNode().getParentOrThrow();
-      if (element.collapseAtStart(selection)) {
-        return;
-      }
-    }
-  }
-  selection.removeText();
-  updateCaretSelectionForAdjacentHashtags(selection);
 }
 
 function updateCaretSelectionForAdjacentHashtags(selection: Selection): void {

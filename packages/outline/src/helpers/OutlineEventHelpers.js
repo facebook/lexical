@@ -330,22 +330,22 @@ export function onKeyDownForPlainText(
       selection.insertLineBreak(true);
     } else if (isDeleteBackward(event)) {
       event.preventDefault();
-      selection.deleteBackward();
+      selection.deleteCharacter(true);
     } else if (isDeleteForward(event)) {
       event.preventDefault();
-      selection.deleteForward();
+      selection.deleteCharacter(false);
     } else if (isDeleteWordBackward(event)) {
       event.preventDefault();
-      selection.deleteWordBackward();
+      selection.deleteWord(true);
     } else if (isDeleteWordForward(event)) {
       event.preventDefault();
-      selection.deleteWordForward();
+      selection.deleteWord(false);
     } else if (isDeleteLineBackward(event)) {
       event.preventDefault();
-      selection.deleteLineBackward();
+      selection.deleteLine(true);
     } else if (isDeleteLineForward(event)) {
       event.preventDefault();
-      selection.deleteLineForward();
+      selection.deleteLine(false);
     }
   });
 }
@@ -387,22 +387,22 @@ export function onKeyDownForRichText(
       selection.insertParagraph();
     } else if (isDeleteBackward(event)) {
       event.preventDefault();
-      selection.deleteBackward();
+      selection.deleteCharacter(true);
     } else if (isDeleteForward(event)) {
       event.preventDefault();
-      selection.deleteForward();
+      selection.deleteCharacter(false);
     } else if (isDeleteWordBackward(event)) {
       event.preventDefault();
-      selection.deleteWordBackward();
+      selection.deleteWord(true);
     } else if (isDeleteWordForward(event)) {
       event.preventDefault();
-      selection.deleteWordForward();
+      selection.deleteWord(false);
     } else if (isDeleteLineBackward(event)) {
       event.preventDefault();
-      selection.deleteLineBackward();
+      selection.deleteLine(true);
     } else if (isDeleteLineForward(event)) {
       event.preventDefault();
-      selection.deleteLineForward();
+      selection.deleteLine(false);
     } else if (isBold(event)) {
       event.preventDefault();
       selection.formatText('bold');
@@ -423,7 +423,7 @@ export function onKeyDownForRichText(
             const textContent = anchorNode.getTextContent();
             const character = textContent[anchor.offset - 1];
             if (character === '\t') {
-              selection.deleteBackward();
+              selection.deleteCharacter(true);
             }
           } else {
             selection.insertText('\t');
@@ -851,7 +851,7 @@ export function onBeforeInputForPlainText(
       // Used for Android
       setCompositionKey(null);
       event.preventDefault();
-      selection.deleteBackward();
+      selection.deleteCharacter(true);
       return;
     }
     const data = event.data;
@@ -934,26 +934,26 @@ export function onBeforeInputForPlainText(
         break;
       }
       case 'deleteContent': {
-        selection.deleteForward();
+        selection.deleteCharacter(false);
         break;
       }
       case 'deleteWordBackward': {
-        selection.deleteWordBackward();
+        selection.deleteWord(true);
         break;
       }
       case 'deleteWordForward': {
-        selection.deleteWordForward();
+        selection.deleteWord(false);
         break;
       }
       case 'deleteHardLineBackward':
       case 'deleteSoftLineBackward': {
-        selection.deleteLineBackward();
+        selection.deleteLine(true);
         break;
       }
       case 'deleteContentForward':
       case 'deleteHardLineForward':
       case 'deleteSoftLineForward': {
-        selection.deleteLineForward();
+        selection.deleteLine(false);
         break;
       }
       default:
@@ -987,7 +987,7 @@ export function onBeforeInputForRichText(
       // Used for Android
       setCompositionKey(null);
       event.preventDefault();
-      selection.deleteBackward();
+      selection.deleteCharacter(true);
       return;
     }
     const data = event.data;
@@ -1078,26 +1078,26 @@ export function onBeforeInputForRichText(
         break;
       }
       case 'deleteContent': {
-        selection.deleteForward();
+        selection.deleteCharacter(false);
         break;
       }
       case 'deleteWordBackward': {
-        selection.deleteWordBackward();
+        selection.deleteWord(true);
         break;
       }
       case 'deleteWordForward': {
-        selection.deleteWordForward();
+        selection.deleteWord(false);
         break;
       }
       case 'deleteHardLineBackward':
       case 'deleteSoftLineBackward': {
-        selection.deleteLineBackward();
+        selection.deleteLine(true);
         break;
       }
       case 'deleteContentForward':
       case 'deleteHardLineForward':
       case 'deleteSoftLineForward': {
-        selection.deleteLineForward();
+        selection.deleteLine(false);
         break;
       }
       case 'formatBold': {

@@ -393,7 +393,7 @@ function moveCaretSelection(
 ): void {
   selection.modify(
     isHoldingShift ? 'extend' : 'move',
-    isBackward ? 'backward' : 'forward',
+    isBackward,
     granularity,
   );
 }

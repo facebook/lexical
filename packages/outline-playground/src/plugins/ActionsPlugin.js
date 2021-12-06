@@ -21,6 +21,7 @@ import useOutlineNestedList from 'outline-react/useOutlineNestedList';
 import TablesPlugin from './TablesPlugin';
 import {createTableNodeWithDimensions} from 'outline/nodes';
 import {createParagraphNode} from 'outline/ParagraphNode';
+import TableCellActionMenuPlugin from './TableCellActionMenuPlugin';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
 
@@ -168,6 +169,7 @@ export default function ActionsPlugins({
   return (
     <>
       <TablesPlugin />
+      <TableCellActionMenuPlugin />
       <div className="actions">
         {isRichText && (
           <>
@@ -182,7 +184,8 @@ export default function ActionsPlugins({
             </button>
             <button
               className="action-button center-align"
-              onClick={centerAlign}>
+              onClick={centerAlign}
+            >
               <i className="center-align" />
             </button>
             <button className="action-button right-align" onClick={rightAlign}>
@@ -190,17 +193,20 @@ export default function ActionsPlugins({
             </button>
             <button
               className="action-button justify-align"
-              onClick={justifyAlign}>
+              onClick={justifyAlign}
+            >
               <i className="justify-align" />
             </button>
             <button
               className="action-button insert-image"
-              onClick={handleAddImage}>
+              onClick={handleAddImage}
+            >
               <i className="image" />
             </button>
             <button
               className="action-button insert-table"
-              onClick={handleAddTable}>
+              onClick={handleAddTable}
+            >
               <i className="table" />
             </button>
           </>
@@ -210,14 +216,16 @@ export default function ActionsPlugins({
           onClick={() => {
             editor.execCommand('clear');
             editor.focus();
-          }}>
+          }}
+        >
           <i className="clear" />
         </button>
         <button
           className="action-button lock"
           onClick={() => {
             editor.execCommand('readOnly', !isReadOnly);
-          }}>
+          }}
+        >
           <i className={isReadOnly ? 'unlock' : 'lock'} />
         </button>
         {isCollab && (
@@ -225,7 +233,8 @@ export default function ActionsPlugins({
             className="action-button connect"
             onClick={() => {
               editor.execCommand('toggleConnect', !connected);
-            }}>
+            }}
+          >
             <i className={connected ? 'disconnect' : 'connect'} />
           </button>
         )}

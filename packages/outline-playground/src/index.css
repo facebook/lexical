@@ -973,6 +973,32 @@ pre::-webkit-scrollbar-thumb {
   background-image: url(images/icons/plug-fill.svg);
 }
 
+.table-cell-action-button-container {
+  position: absolute;
+}
+
+.table-cell-action-button {
+  background-color: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 0;
+  position: relative;
+  border-radius: 15px;
+  color: #222;
+  display: inline-block;
+  cursor: pointer;
+}
+
+i.chevron-down {
+  background-color: none;
+  background-size: contain;
+  display: inline-block;
+  height: 8px;
+  width: 8px;
+  background-image: url(images/icons/chevron-down.svg);
+}
+
 .action-button {
   background-color: #eee;
   border: 0;

@@ -21,7 +21,7 @@ import {createTableCellNode} from 'outline/TableCellNode';
 import {TableNode} from 'outline/TableNode';
 import {findMatchingParent} from 'outline/nodes';
 
-export function getTableCellNodeOrNullFromOutlineNode(
+export function getTableCellNodeFromOutlineNode(
   state: State,
   startingNode: OutlineNode,
 ): TableCellNode | null {
@@ -38,7 +38,7 @@ export function getTableCellNodeOrNullFromOutlineNode(
   return null;
 }
 
-export function getTableRowNodeFromTableCellNode(
+export function getTableRowNodeFromTableCellNodeOrThrow(
   state: State,
   startingNode: OutlineNode,
 ): TableRowNode {
@@ -55,7 +55,7 @@ export function getTableRowNodeFromTableCellNode(
   throw new Error('Expected table cell to be inside of table row.');
 }
 
-export function getTableNodeFromOutlineNode(
+export function getTableNodeFromOutlineNodeOrThrow(
   state: State,
   startingNode: OutlineNode,
 ): TableNode {
@@ -76,20 +76,26 @@ export function getTableRowIndexFromTableCellNode(
   state: State,
   tableCellNode: TableCellNode,
 ): number {
-  const tableRowNode = getTableRowNodeFromTableCellNode(state, tableCellNode);
+  const tableRowNode = getTableRowNodeFromTableCellNodeOrThrow(
+    state,
+    tableCellNode,
+  );
 
-  const tableNode = getTableNodeFromOutlineNode(state, tableRowNode);
+  const tableNode = getTableNodeFromOutlineNodeOrThrow(state, tableRowNode);
 
-  return tableNode.getChildren().findIndex((n) => n === tableRowNode);
+  return tableNode.getChildren().findIndex((n) => n.is(tableRowNode));
 }
 
 export function getTableColumnIndexFromTableCellNode(
   state: State,
   tableCellNode: TableCellNode,
 ): number {
-  const tableRowNode = getTableRowNodeFromTableCellNode(state, tableCellNode);
+  const tableRowNode = getTableRowNodeFromTableCellNodeOrThrow(
+    state,
+    tableCellNode,
+  );
 
-  return tableRowNode.getChildren().findIndex((n) => n === tableCellNode);
+  return tableRowNode.getChildren().findIndex((n) => n.is(tableCellNode));
 }
 
 export function removeTableRowAtIndex(
@@ -161,7 +167,13 @@ export function insertTableColumn(
 
       newTableCell.append(createTextNode());
 
-      const targetCell = currentTableRow.getChildren()[targetIndex];
+      const tableRowChildren = currentTableRow.getChildren();
+
+      if (targetIndex >= tableRowChildren.length || targetIndex < 0) {
+        throw new Error('Table column target index out of range');
+      }
+
+      const targetCell = tableRowChildren[targetIndex];
 
       if (shouldInsertAfter) {
         targetCell.insertAfter(newTableCell);
@@ -184,7 +196,13 @@ export function deleteTableColumn(
     const currentTableRow = tableRows[i];
 
     if (currentTableRow instanceof TableRowNode) {
-      currentTableRow.getChildren()[targetIndex].remove();
+      const tableRowChildren = currentTableRow.getChildren();
+
+      if (targetIndex >= tableRowChildren.length || targetIndex < 0) {
+        throw new Error('Table column target index out of range');
+      }
+
+      tableRowChildren[targetIndex].remove();
     }
   }
 
@@ -246,7 +264,10 @@ function TableActionMenu({
   const insertTableRowAtSelection = useCallback(
     (shouldInsertAfter) => {
       editor.update((state) => {
-        const tableNode = getTableNodeFromOutlineNode(state, tableCellNode);
+        const tableNode = getTableNodeFromOutlineNodeOrThrow(
+          state,
+          tableCellNode,
+        );
 
         const tableRowIndex = getTableRowIndexFromTableCellNode(
           state,
@@ -266,7 +287,10 @@ function TableActionMenu({
   const insertTableColumnAtSelection = useCallback(
     (shouldInsertAfter) => {
       editor.update((state) => {
-        const tableNode = getTableNodeFromOutlineNode(state, tableCellNode);
+        const tableNode = getTableNodeFromOutlineNodeOrThrow(
+          state,
+          tableCellNode,
+        );
 
         const tableColumnIndex = getTableColumnIndexFromTableCellNode(
           state,
@@ -283,7 +307,10 @@ function TableActionMenu({
 
   const deleteTableRowAtSelection = useCallback(() => {
     editor.update((state) => {
-      const tableNode = getTableNodeFromOutlineNode(state, tableCellNode);
+      const tableNode = getTableNodeFromOutlineNodeOrThrow(
+        state,
+        tableCellNode,
+      );
 
       const tableRowIndex = getTableRowIndexFromTableCellNode(
         state,
@@ -300,7 +327,10 @@ function TableActionMenu({
 
   const deleteTableAtSelection = useCallback(() => {
     editor.update((state) => {
-      const tableNode = getTableNodeFromOutlineNode(state, tableCellNode);
+      const tableNode = getTableNodeFromOutlineNodeOrThrow(
+        state,
+        tableCellNode,
+      );
 
       tableNode.remove();
 
@@ -312,7 +342,10 @@ function TableActionMenu({
 
   const deleteTableColumnAtSelection = useCallback(() => {
     editor.update((state) => {
-      const tableNode = getTableNodeFromOutlineNode(state, tableCellNode);
+      const tableNode = getTableNodeFromOutlineNodeOrThrow(
+        state,
+        tableCellNode,
+      );
 
       const tableColumnIndex = getTableColumnIndexFromTableCellNode(
         state,
@@ -398,11 +431,10 @@ function TableCellActionMenuContainer(): React.MixedElement {
         rootElement !== null &&
         rootElement.contains(nativeSelection.anchorNode)
       ) {
-        const tableCellNodeFromSelection =
-          getTableCellNodeOrNullFromOutlineNode(
-            state,
-            selection.anchor.getNode(),
-          );
+        const tableCellNodeFromSelection = getTableCellNodeFromOutlineNode(
+          state,
+          selection.anchor.getNode(),
+        );
 
         if (tableCellNodeFromSelection == null) {
           setTableMenuCellNode(null);

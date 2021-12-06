@@ -21,6 +21,10 @@ import {createParagraphNode} from 'outline/ParagraphNode';
 import {createListNode, isListNode} from 'outline/ListNode';
 import invariant from 'shared/invariant';
 import {getTopListNode, isLastItemInList} from 'outline/nodes';
+import {
+  addClassNamesToElement,
+  removeClassNamesFromElement,
+} from 'outline/elements';
 
 export class ListItemNode extends ElementNode {
   static getType(): string {
@@ -227,10 +231,11 @@ function setListItemThemeClassNames(
   }
 
   if (classesToAdd.length > 0) {
-    dom.classList.add(...classesToAdd);
+    addClassNamesToElement(dom, ...classesToAdd);
   }
+
   if (classesToRemove.length > 0) {
-    dom.classList.remove(...classesToRemove);
+    removeClassNamesFromElement(dom, ...classesToRemove);
   }
 }
 

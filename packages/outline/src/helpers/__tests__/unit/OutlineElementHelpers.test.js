@@ -7,16 +7,23 @@
  * @flow strict
  */
 
-import {addClassNamesToElement} from 'outline/elements';
+import {
+  addClassNamesToElement,
+  removeClassNamesFromElement,
+} from 'outline/elements';
 
 describe('OutlineElementHelpers tests', () => {
-  describe('addClassNamesToElement()', () => {
+  describe('addClassNamesToElement() and removeClassNamesFromElement()', () => {
     test('basic', async () => {
       const element = document.createElement('div');
 
       addClassNamesToElement(element, 'test-class');
 
       expect(element.className).toEqual('test-class');
+
+      removeClassNamesFromElement(element, 'test-class');
+
+      expect(element.className).toEqual('');
     });
 
     test('empty', async () => {
@@ -33,6 +40,10 @@ describe('OutlineElementHelpers tests', () => {
       addClassNamesToElement(element, 'a', 'b', 'c');
 
       expect(element.className).toEqual('a b c');
+
+      removeClassNamesFromElement(element, 'a', 'b', 'c');
+
+      expect(element.className).toEqual('');
     });
 
     test('space separated (i.e. stylex)', async () => {
@@ -41,6 +52,10 @@ describe('OutlineElementHelpers tests', () => {
       addClassNamesToElement(element, 'a b c');
 
       expect(element.className).toEqual('a b c');
+
+      removeClassNamesFromElement(element, 'a b c');
+
+      expect(element.className).toEqual('');
     });
   });
 });

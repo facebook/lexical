@@ -17,3 +17,12 @@ export function addClassNamesToElement(
     }
   });
 }
+
+export function removeClassNamesFromElement(
+  element: HTMLElement,
+  ...classNames: Array<string>
+) {
+  classNames.forEach((className) => {
+    element.classList.remove(...className.split(' '));
+  });
+}

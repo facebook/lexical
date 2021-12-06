@@ -308,7 +308,6 @@ export function onKeyDown(event: KeyboardEvent, editor: OutlineEditor): void {
       return;
     }
     const isHoldingShift = event.shiftKey;
-
     if (isMoveBackward(event)) {
       if (shouldOverrideDefaultCharacterSelection(selection, true)) {
         event.preventDefault();
@@ -321,40 +320,40 @@ export function onKeyDown(event: KeyboardEvent, editor: OutlineEditor): void {
       }
     } else if (isLineBreak(event)) {
       event.preventDefault();
-      editor.execCommand({type: 'insertLineBreak'});
+      editor.execCommand('insertLineBreak');
     } else if (isOpenLineBreak(event)) {
       event.preventDefault();
-      editor.execCommand({type: 'insertLineBreak', selectStart: true});
+      editor.execCommand('insertLineBreak', true);
     } else if (isParagraph(event)) {
       event.preventDefault();
-      editor.execCommand({type: 'insertParagraph'});
+      editor.execCommand('insertParagraph');
     } else if (isDeleteBackward(event)) {
       event.preventDefault();
-      editor.execCommand({type: 'deleteCharacter', isBackward: true});
+      editor.execCommand('deleteCharacter', true);
     } else if (isDeleteForward(event)) {
       event.preventDefault();
-      editor.execCommand({type: 'deleteCharacter', isBackward: false});
+      editor.execCommand('deleteCharacter', false);
     } else if (isDeleteWordBackward(event)) {
       event.preventDefault();
-      editor.execCommand({type: 'deleteWord', isBackward: true});
+      editor.execCommand('deleteWord', true);
     } else if (isDeleteWordForward(event)) {
       event.preventDefault();
-      editor.execCommand({type: 'deleteWord', isBackward: false});
+      editor.execCommand('deleteWord', false);
     } else if (isDeleteLineBackward(event)) {
       event.preventDefault();
-      editor.execCommand({type: 'deleteLine', isBackward: true});
+      editor.execCommand('deleteLine', true);
     } else if (isDeleteLineForward(event)) {
       event.preventDefault();
-      editor.execCommand({type: 'deleteLine', isBackward: false});
+      editor.execCommand('deleteLine', false);
     } else if (isBold(event)) {
       event.preventDefault();
-      editor.execCommand({type: 'formatText', format: 'bold'});
+      editor.execCommand('formatText', 'bold');
     } else if (isUnderline(event)) {
       event.preventDefault();
-      editor.execCommand({type: 'formatText', format: 'underline'});
+      editor.execCommand('formatText', 'underline');
     } else if (isItalic(event)) {
       event.preventDefault();
-      editor.execCommand({type: 'formatText', format: 'italic'});
+      editor.execCommand('formatText', 'italic');
     } else if (isTab(event)) {
       // Handle code blocks
       const anchor = selection.anchor;
@@ -366,10 +365,10 @@ export function onKeyDown(event: KeyboardEvent, editor: OutlineEditor): void {
             const textContent = anchorNode.getTextContent();
             const character = textContent[anchor.offset - 1];
             if (character === '\t') {
-              editor.execCommand({type: 'deleteCharacter', isBackward: true});
+              editor.execCommand('deleteCharacter', true);
             }
           } else {
-            editor.execCommand({type: 'insertText', text: '\t'});
+            editor.execCommand('insertText', '\t');
           }
           event.preventDefault();
         }
@@ -536,7 +535,7 @@ export function onCompositionStart(
         // to get inserted into the new node we create. If
         // we don't do this, Safari will fail on us because
         // there is no text node matching the selection.
-        editor.execCommand({type: 'insertText', text: ' '});
+        editor.execCommand('insertText', ' ');
       }
     }
   });
@@ -792,7 +791,7 @@ export function onBeforeInput(event: InputEvent, editor: OutlineEditor): void {
       // Used for Android
       setCompositionKey(null);
       event.preventDefault();
-      editor.execCommand({type: 'deleteCharacter', isBackward: true});
+      editor.execCommand('deleteCharacter', true);
       return;
     }
     const data = event.data;
@@ -808,10 +807,10 @@ export function onBeforeInput(event: InputEvent, editor: OutlineEditor): void {
     if (inputType === 'insertText') {
       if (data === '\n') {
         event.preventDefault();
-        editor.execCommand({type: 'insertLineBreak'});
+        editor.execCommand('insertLineBreak');
       } else if (data === '\n\n') {
         event.preventDefault();
-        editor.execCommand({type: 'insertParagraph'});
+        editor.execCommand('insertParagraph');
       } else if (data == null && event.dataTransfer) {
         // Gets around a Safari text replacement bug.
         const text = event.dataTransfer.getData('text/plain');
@@ -822,7 +821,7 @@ export function onBeforeInput(event: InputEvent, editor: OutlineEditor): void {
         shouldPreventDefaultAndInsertText(selection, data, true)
       ) {
         event.preventDefault();
-        editor.execCommand({type: 'insertText', text: data});
+        editor.execCommand('insertText', data);
       }
       return;
     }
@@ -837,20 +836,20 @@ export function onBeforeInput(event: InputEvent, editor: OutlineEditor): void {
         if (data) {
           // This is the end of composition
           setCompositionKey(null);
-          editor.execCommand({type: 'insertText', text: data});
+          editor.execCommand('insertText', data);
         }
         break;
       }
       case 'insertLineBreak': {
         // Used for Android
         setCompositionKey(null);
-        editor.execCommand({type: 'insertLineBreak'});
+        editor.execCommand('insertLineBreak');
         break;
       }
       case 'insertParagraph': {
         // Used for Android
         setCompositionKey(null);
-        editor.execCommand({type: 'insertParagraph'});
+        editor.execCommand('insertParagraph');
         break;
       }
       case 'insertFromYank':
@@ -862,59 +861,59 @@ export function onBeforeInput(event: InputEvent, editor: OutlineEditor): void {
           insertDataTransferForRichText(dataTransfer, selection, editor);
         } else {
           if (data) {
-            editor.execCommand({type: 'insertText', text: data});
+            editor.execCommand('insertText', data);
           }
         }
         break;
       }
       case 'deleteByComposition': {
         if (canRemoveText(anchorNode, focusNode)) {
-          editor.execCommand({type: 'removeText'});
+          editor.execCommand('removeText');
         }
         break;
       }
       case 'deleteByDrag':
       case 'deleteByCut': {
-        editor.execCommand({type: 'removeText'});
+        editor.execCommand('removeText');
         break;
       }
       case 'deleteContent': {
-        editor.execCommand({type: 'deleteCharacter', isBackward: false});
+        editor.execCommand('deleteCharacter', false);
         break;
       }
       case 'deleteWordBackward': {
-        editor.execCommand({type: 'deleteWord', isBackward: true});
+        editor.execCommand('deleteWord', true);
         break;
       }
       case 'deleteWordForward': {
-        editor.execCommand({type: 'deleteWord', isBackward: false});
+        editor.execCommand('deleteWord', false);
         break;
       }
       case 'deleteHardLineBackward':
       case 'deleteSoftLineBackward': {
-        editor.execCommand({type: 'deleteLine', isBackward: true});
+        editor.execCommand('deleteLine', true);
         break;
       }
       case 'deleteContentForward':
       case 'deleteHardLineForward':
       case 'deleteSoftLineForward': {
-        editor.execCommand({type: 'deleteLine', isBackward: false});
+        editor.execCommand('deleteLine', false);
         break;
       }
       case 'formatStrikeThrough': {
-        editor.execCommand({type: 'formatText', format: 'strikethrough'});
+        editor.execCommand('formatText', 'strikethrough');
         break;
       }
       case 'formatBold': {
-        editor.execCommand({type: 'formatText', format: 'bold'});
+        editor.execCommand('formatText', 'bold');
         break;
       }
       case 'formatItalic': {
-        editor.execCommand({type: 'formatText', format: 'italic'});
+        editor.execCommand('formatText', 'italic');
         break;
       }
       case 'formatUnderline': {
-        editor.execCommand({type: 'formatText', format: 'underline'});
+        editor.execCommand('formatText', 'underline');
         break;
       }
       default:
@@ -959,7 +958,7 @@ export function onInput(event: InputEvent, editor: OutlineEditor): void {
       selection !== null &&
       shouldPreventDefaultAndInsertText(selection, data, false)
     ) {
-      editor.execCommand({type: 'insertText', text: data});
+      editor.execCommand('insertText', data);
     } else {
       updateSelectedTextFromDOM(editor, false);
     }

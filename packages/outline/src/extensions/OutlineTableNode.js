@@ -22,7 +22,7 @@ import {
   isElementNode,
   createSelection,
   getSelection,
-  clearSelection,
+  setSelection,
 } from 'outline';
 
 type Cell = {
@@ -39,6 +39,11 @@ type Grid = {
 };
 
 const LowPriority: CommandListenerLowPriority = 1;
+
+const removeHighlightStyle = document.createElement('style');
+removeHighlightStyle.appendChild(
+  document.createTextNode('::selection{background-color: transparent}'),
+);
 
 function getCellFromTarget(node: Node): Cell | null {
   let currentNode = node;
@@ -154,13 +159,11 @@ function updateCells(
         if (!cell.highlighted) {
           cell.highlighted = true;
           elemStyle.setProperty('background-color', 'rgb(163, 187, 255)');
-          elemStyle.setProperty('caret-color', 'rgba(0, 0, 0, 0)');
         }
         highlighted.push(cell);
       } else if (cell.highlighted) {
         cell.highlighted = false;
         elemStyle.removeProperty('background-color');
-        elemStyle.removeProperty('caret-color');
       }
     }
   }
@@ -193,9 +196,10 @@ function applyCellSelection(
         const cellX = cell.x;
         const cellY = cell.y;
         if (!isHighlightingCells && (startX !== cellX || startY !== cellY)) {
-          const selection = window.getSelection();
-          selection.removeAllRanges();
           isHighlightingCells = true;
+          if (document.body) {
+            document.body.appendChild(removeHighlightStyle);
+          }
           deleteCharacterListener = editor.addListener(
             'command',
             (command) => {
@@ -214,7 +218,8 @@ function applyCellSelection(
                 });
                 return true;
               } else if (command.type === 'formatText') {
-                formatCells(command.format);
+                formatCells(command.payload);
+                return true;
               }
               return false;
             },
@@ -250,36 +255,35 @@ function applyCellSelection(
       deleteCharacterListener();
       deleteCharacterListener = null;
     }
+    if (document.body && removeHighlightStyle.parentNode !== null) {
+      document.body.removeChild(removeHighlightStyle);
+    }
   };
 
   tableElement.addEventListener('mouseleave', (event: MouseEvent) => {
     if (isSelected) {
-      const selection = window.getSelection();
-      selection.removeAllRanges();
       return;
     }
   });
 
   const formatCells = (type: TextFormatType) => {
-    editor.update(() => {
-      let selection = getSelection();
-      if (selection === null) {
-        selection = createSelection();
+    let selection = getSelection();
+    if (selection === null) {
+      selection = createSelection();
+    }
+    // This is to make Flow play ball.
+    const formatSelection = selection;
+    const anchor = formatSelection.anchor;
+    const focus = formatSelection.focus;
+    highlightedCells.forEach((highlightedCell) => {
+      const cellNode = getNearestNodeFromDOMNode(highlightedCell.elem);
+      if (isElementNode(cellNode)) {
+        anchor.set(cellNode.getKey(), 0, 'element');
+        focus.set(cellNode.getKey(), cellNode.getChildrenSize(), 'element');
+        formatSelection.formatText(type);
       }
-      // This is to make Flow play ball.
-      const formatSelection = selection;
-      const anchor = formatSelection.anchor;
-      const focus = formatSelection.focus;
-      highlightedCells.forEach((highlightedCell) => {
-        const cellNode = getNearestNodeFromDOMNode(highlightedCell.elem);
-        if (isElementNode(cellNode)) {
-          anchor.set(cellNode.getKey(), 0, 'element');
-          focus.set(cellNode.getKey(), cellNode.getChildrenSize(), 'element');
-          formatSelection.formatText(type);
-        }
-      });
-      clearSelection();
     });
+    setSelection(selection);
   };
 
   let deleteCharacterListener = null;

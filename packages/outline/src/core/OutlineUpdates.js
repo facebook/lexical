@@ -489,20 +489,20 @@ export function triggerCommandListeners(
   editor: OutlineEditor,
   command: Command,
 ): void {
-  const previouslyUpdating = editor._updating;
-  editor._updating = editor._updating;
-  try {
-    const commandListeners = editor._listeners.command;
-    propagation: for (let i = 4; i >= 0; i--) {
-      const listeners = Array.from(commandListeners[i]);
-      for (let s = 0; s < listeners.length; s++) {
-        if (listeners[s](command) === true) {
-          break propagation;
-        }
+  if (editor._updating === false) {
+    editor.update(() => {
+      triggerCommandListeners(editor, command);
+    });
+    return;
+  }
+  const commandListeners = editor._listeners.command;
+  propagation: for (let i = 4; i >= 0; i--) {
+    const listeners = Array.from(commandListeners[i]);
+    for (let s = 0; s < listeners.length; s++) {
+      if (listeners[s](command) === true) {
+        break propagation;
       }
     }
-  } finally {
-    editor._updating = previouslyUpdating;
   }
 }
 

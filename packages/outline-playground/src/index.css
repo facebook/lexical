@@ -1045,7 +1045,6 @@ pre::-webkit-scrollbar-thumb {
   pointer-events: none; 
 }
 
-
 .editor-table {
   border-collapse: collapse;
   border-spacing: 0;
@@ -1053,7 +1052,6 @@ pre::-webkit-scrollbar-thumb {
   overflow-y: scroll;
   table-layout: fixed;
   width: 100%;
-  user-select: all;
 }
 
 .editor-table-cell {
@@ -1061,8 +1059,6 @@ pre::-webkit-scrollbar-thumb {
   height: 40px;
   min-width: 75px;
   padding: 0 10px;
-  vertical-align: 'top';
-  user-select: all;
 }
 
 .editor-table-cell-header {

@@ -12,6 +12,7 @@ import type {
   RootNode,
   Command,
   CommandListenerEditorPriority,
+  TextFormatType,
 } from 'outline';
 import type {InputEvents} from 'outline-react/useOutlineEditorEvents';
 
@@ -134,26 +135,35 @@ export function useRichTextSetup(
             return false;
           }
           switch (command.type) {
-            case 'deleteCharacter':
-              selection.deleteCharacter(command.isBackward);
+            case 'deleteCharacter': {
+              const isBackward: boolean = command.payload;
+              selection.deleteCharacter(isBackward);
               return true;
-            case 'deleteWord':
-              selection.deleteWord(command.isBackward);
+            }
+            case 'deleteWord': {
+              const isBackward: boolean = command.payload;
+              selection.deleteWord(isBackward);
               return true;
-            case 'deleteLine':
-              selection.deleteLine(command.isBackward);
+            }
+            case 'deleteLine': {
+              const isBackward: boolean = command.payload;
+              selection.deleteLine(isBackward);
               return true;
+            }
             case 'insertText':
-              selection.insertText(command.text);
+              const text: string = command.payload;
+              selection.insertText(text);
               return true;
             case 'removeText':
               selection.removeText();
               return true;
             case 'formatText':
-              selection.formatText(command.format);
+              const format: TextFormatType = command.payload;
+              selection.formatText(format);
               return true;
             case 'insertLineBreak':
-              selection.insertLineBreak(command.selectStart);
+              const selectStart: boolean = command.payload;
+              selection.insertLineBreak(selectStart);
               return true;
             case 'insertParagraph':
               selection.insertParagraph();

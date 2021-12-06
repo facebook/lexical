@@ -11,7 +11,6 @@ import type {OutlineNode, NodeKey} from './OutlineNode';
 import type {Node as ReactNode} from 'react';
 import type {State} from './OutlineUpdates';
 import type {EditorState} from './OutlineEditorState';
-import type {TextFormatType} from './OutlineTextNode';
 
 import {
   commitPendingUpdates,
@@ -127,69 +126,13 @@ export type CommandListenerPriority =
   | CommandListenerHighPriority
   | CommandListenerCriticalPriority;
 
-export type InsertTextCommand = {
-  type: 'insertText',
-  text: string,
+// $FlowFixMe: intentional
+export type CommandPayload = any;
+
+export type Command = {
+  type: string,
+  payload: CommandPayload,
 };
-
-export type RemoveTextCommand = {
-  type: 'removeText',
-};
-
-export type FormatTextCommand = {
-  type: 'formatText',
-  format: TextFormatType,
-};
-
-export type DeleteCharacterCommand = {
-  type: 'deleteCharacter',
-  isBackward: boolean,
-};
-
-export type DeleteWordCommand = {
-  type: 'deleteWord',
-  isBackward: boolean,
-};
-
-export type DeleteLineCommand = {
-  type: 'deleteLine',
-  isBackward: boolean,
-};
-
-export type InsertParagraphCommand = {
-  type: 'insertParagraph',
-};
-
-export type InsertLinebreakCommand = {
-  type: 'insertLineBreak',
-  selectStart?: boolean,
-};
-
-export type ClearCommand = {
-  type: 'clear',
-};
-
-export type ReadOnlyCommand = {
-  type: 'readOnly',
-  readOnly: boolean,
-};
-
-// export type CustomCommand = {
-//   type: string,
-//   ...
-// };
-
-export type Command =
-  | InsertTextCommand
-  | FormatTextCommand
-  | RemoveTextCommand
-  | InsertParagraphCommand
-  | InsertLinebreakCommand
-  | DeleteCharacterCommand
-  | DeleteWordCommand
-  | DeleteLineCommand
-  | ClearCommand
-  | ReadOnlyCommand;
 
 export type TextMutation = {
   node: TextNode,
@@ -477,8 +420,11 @@ class BaseOutlineEditor {
       transforms.delete(listener);
     };
   }
-  execCommand(command: Command): void {
-    triggerCommandListeners(getSelf(this), command);
+  execCommand(type: string, payload?: CommandPayload): void {
+    triggerCommandListeners(getSelf(this), {
+      type,
+      payload,
+    });
   }
   getDecorators(): {[NodeKey]: ReactNode} {
     return this._decorators;
@@ -626,7 +572,7 @@ declare export class OutlineEditor {
     klass: Class<T>,
     listener: Transform<T>,
   ): () => void;
-  execCommand(command: Command): void;
+  execCommand(type: string, payload: CommandPayload): void;
   getDecorators(): {[NodeKey]: ReactNode};
   getRootElement(): null | HTMLElement;
   setRootElement(rootElement: null | HTMLElement): void;

@@ -336,10 +336,10 @@ export function onKeyDown(event: KeyboardEvent, editor: OutlineEditor): void {
       editor.execCommand({type: 'deleteCharacter', isBackward: false});
     } else if (isDeleteWordBackward(event)) {
       event.preventDefault();
-      editor.execCommand({type: 'deleteWord', isBackward: false});
+      editor.execCommand({type: 'deleteWord', isBackward: true});
     } else if (isDeleteWordForward(event)) {
       event.preventDefault();
-      editor.execCommand({type: 'deleteWord', isBackward: true});
+      editor.execCommand({type: 'deleteWord', isBackward: false});
     } else if (isDeleteLineBackward(event)) {
       event.preventDefault();
       editor.execCommand({type: 'deleteLine', isBackward: true});

@@ -8,7 +8,7 @@
  */
 
 import type {ListItemNode} from 'outline/ListItemNode';
-import type {OutlineNode} from 'outline';
+import type {State, OutlineNode} from 'outline';
 import type {ListNode} from 'outline/ListNode';
 import type {TableNode} from 'outline/TableNode';
 
@@ -124,4 +124,22 @@ export function createTableNodeWithDimensions(
     tableNode.append(tableRow);
   }
   return tableNode;
+}
+
+export function findNodeInTreeParents(
+  state: State,
+  startingNode: OutlineNode,
+  findFn: (OutlineNode) => boolean,
+): OutlineNode | null {
+  let curr = startingNode;
+
+  while (curr !== state.getRoot() && curr != null) {
+    if (findFn(curr)) {
+      return curr;
+    }
+
+    curr = curr.getParent();
+  }
+
+  return null;
 }

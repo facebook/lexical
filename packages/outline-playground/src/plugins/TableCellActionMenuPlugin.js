@@ -18,27 +18,10 @@ import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
 import {OutlineNode, createTextNode} from 'outline';
 import {TableRowNode, createTableRowNode} from 'outline/TableRowNode';
 import {createTableCellNode} from 'outline/TableCellNode';
-import {TableNode, createTableNode} from 'outline/TableNode';
+import {TableNode} from 'outline/TableNode';
+import {findNodeInTreeParents} from 'outline/nodes';
 
-export function findNodeInTreeParents(
-  state: State,
-  startingNode: OutlineNode,
-  findFn: (OutlineNode) => boolean,
-): OutlineNode | null {
-  let curr = startingNode;
-
-  while (curr !== state.getRoot() && curr != null) {
-    if (findFn(curr)) {
-      return curr;
-    }
-
-    curr = curr?.getParent();
-  }
-
-  return null;
-}
-
-export function getTableCellNodeOrNullFromTextNode(
+export function getTableCellNodeOrNullFromOutlineNode(
   state: State,
   startingNode: OutlineNode,
 ): TableCellNode | null {
@@ -53,23 +36,6 @@ export function getTableCellNodeOrNullFromTextNode(
   }
 
   return null;
-}
-
-export function getTableCellNodeFromTextNode(
-  state: State,
-  startingNode: OutlineNode,
-): TableCellNode {
-  const node = findNodeInTreeParents(
-    state,
-    startingNode,
-    (n) => n instanceof TableCellNode,
-  );
-
-  if (node instanceof TableCellNode) {
-    return node;
-  }
-
-  throw new Error('Expected text node to be inside of table cell.');
 }
 
 export function getTableRowNodeFromTableCellNode(
@@ -89,19 +55,7 @@ export function getTableRowNodeFromTableCellNode(
   throw new Error('Expected table cell to be inside of table row.');
 }
 
-export function getTableCellNodeFromSelection(
-  state: State,
-): TableCellNode | null {
-  const selection = state.getSelection();
-
-  if (selection == null) {
-    return null;
-  }
-
-  return getTableCellNodeOrNullFromTextNode(state, selection.anchor.getNode());
-}
-
-export function getTableNodeFromInnerTableNode(
+export function getTableNodeFromOutlineNode(
   state: State,
   startingNode: OutlineNode,
 ): TableNode {
@@ -124,7 +78,7 @@ export function getTableRowIndexFromTableCellNode(
 ): number {
   const tableRowNode = getTableRowNodeFromTableCellNode(state, tableCellNode);
 
-  const tableNode = getTableNodeFromInnerTableNode(state, tableRowNode);
+  const tableNode = getTableNodeFromOutlineNode(state, tableRowNode);
 
   return tableNode.getChildren().findIndex((n) => n === tableRowNode);
 }
@@ -136,28 +90,6 @@ export function getTableColumnIndexFromTableCellNode(
   const tableRowNode = getTableRowNodeFromTableCellNode(state, tableCellNode);
 
   return tableRowNode.getChildren().findIndex((n) => n === tableCellNode);
-}
-
-export function createTableNodeWithDimensions(
-  rowCount: number,
-  columnCount: number,
-  includeHeader?: boolean = true,
-): TableNode {
-  const tableNode = createTableNode();
-
-  for (let iRow = 0; iRow < rowCount; iRow++) {
-    const tableRow = createTableRowNode();
-
-    for (let iColumn = 0; iColumn < columnCount; iColumn++) {
-      const tableCell = createTableCellNode(iRow === 0 && includeHeader);
-      tableCell.append(createTextNode());
-      tableRow.append(tableCell);
-    }
-
-    tableNode.append(tableRow);
-  }
-
-  return tableNode;
 }
 
 export function removeTableRowAtIndex(
@@ -259,30 +191,6 @@ export function deleteTableColumn(
   return tableNode;
 }
 
-function getTableMenuCellStyles(
-  tableCellNodeDOM: HTMLElement | null,
-  menuButtonDOM: HTMLElement,
-) {
-  if (tableCellNodeDOM != null) {
-    const tableCellRect = tableCellNodeDOM.getBoundingClientRect();
-    const menuRect = menuButtonDOM.getBoundingClientRect();
-
-    menuButtonDOM.style.opacity = '1';
-
-    menuButtonDOM.style.left = `${
-      tableCellRect.left +
-      window.pageXOffset -
-      menuRect.width +
-      tableCellRect.width -
-      10
-    }px`;
-
-    menuButtonDOM.style.top = `${tableCellRect.top + window.pageYOffset + 5}px`;
-  } else {
-    menuButtonDOM.style.opacity = '0';
-  }
-}
-
 type TableCellActionMenuProps = $ReadOnly<{
   onClose: () => void,
   tableCellNode: TableCellNode,
@@ -338,7 +246,7 @@ function TableActionMenu({
   const insertTableRowAtSelection = useCallback(
     (shouldInsertAfter) => {
       editor.update((state) => {
-        const tableNode = getTableNodeFromInnerTableNode(state, tableCellNode);
+        const tableNode = getTableNodeFromOutlineNode(state, tableCellNode);
 
         const tableRowIndex = getTableRowIndexFromTableCellNode(
           state,
@@ -358,7 +266,7 @@ function TableActionMenu({
   const insertTableColumnAtSelection = useCallback(
     (shouldInsertAfter) => {
       editor.update((state) => {
-        const tableNode = getTableNodeFromInnerTableNode(state, tableCellNode);
+        const tableNode = getTableNodeFromOutlineNode(state, tableCellNode);
 
         const tableColumnIndex = getTableColumnIndexFromTableCellNode(
           state,
@@ -375,7 +283,7 @@ function TableActionMenu({
 
   const deleteTableRowAtSelection = useCallback(() => {
     editor.update((state) => {
-      const tableNode = getTableNodeFromInnerTableNode(state, tableCellNode);
+      const tableNode = getTableNodeFromOutlineNode(state, tableCellNode);
 
       const tableRowIndex = getTableRowIndexFromTableCellNode(
         state,
@@ -392,7 +300,7 @@ function TableActionMenu({
 
   const deleteTableAtSelection = useCallback(() => {
     editor.update((state) => {
-      const tableNode = getTableNodeFromInnerTableNode(state, tableCellNode);
+      const tableNode = getTableNodeFromOutlineNode(state, tableCellNode);
 
       tableNode.remove();
 
@@ -404,7 +312,7 @@ function TableActionMenu({
 
   const deleteTableColumnAtSelection = useCallback(() => {
     editor.update((state) => {
-      const tableNode = getTableNodeFromInnerTableNode(state, tableCellNode);
+      const tableNode = getTableNodeFromOutlineNode(state, tableCellNode);
 
       const tableColumnIndex = getTableColumnIndexFromTableCellNode(
         state,
@@ -490,10 +398,11 @@ function TableCellActionMenuContainer(): React.MixedElement {
         rootElement !== null &&
         rootElement.contains(nativeSelection.anchorNode)
       ) {
-        const tableCellNodeFromSelection = getTableCellNodeOrNullFromTextNode(
-          state,
-          selection.anchor.getNode(),
-        );
+        const tableCellNodeFromSelection =
+          getTableCellNodeOrNullFromOutlineNode(
+            state,
+            selection.anchor.getNode(),
+          );
 
         if (tableCellNodeFromSelection == null) {
           setTableMenuCellNode(null);
@@ -530,15 +439,31 @@ function TableCellActionMenuContainer(): React.MixedElement {
   });
 
   useEffect(() => {
-    console.log(menuButtonRef, tableCellNode);
     const menuButtonDOM = menuButtonRef.current;
 
     if (menuButtonDOM != null && tableCellNode != null) {
-      const tableCellParentNodeDOM = editor.getElementByKey(
-        tableCellNode.getKey(),
-      );
+      const tableCellNodeDOM = editor.getElementByKey(tableCellNode.getKey());
 
-      getTableMenuCellStyles(tableCellParentNodeDOM, menuButtonDOM);
+      if (tableCellNodeDOM != null) {
+        const tableCellRect = tableCellNodeDOM.getBoundingClientRect();
+        const menuRect = menuButtonDOM.getBoundingClientRect();
+
+        menuButtonDOM.style.opacity = '1';
+
+        menuButtonDOM.style.left = `${
+          tableCellRect.left +
+          window.pageXOffset -
+          menuRect.width +
+          tableCellRect.width -
+          10
+        }px`;
+
+        menuButtonDOM.style.top = `${
+          tableCellRect.top + window.pageYOffset + 5
+        }px`;
+      } else {
+        menuButtonDOM.style.opacity = '0';
+      }
     }
   }, [menuButtonRef, tableCellNode, editor]);
 

@@ -202,8 +202,8 @@ function applyCellSelection(
           }
           deleteCharacterListener = editor.addListener(
             'command',
-            (command) => {
-              if (command.type === 'deleteCharacter') {
+            (type, payload) => {
+              if (type === 'deleteCharacter') {
                 if (highlightedCells.length === grid.columns * grid.rows) {
                   tableNode.selectPrevious();
                   // Delete entire table
@@ -217,8 +217,9 @@ function applyCellSelection(
                   }
                 });
                 return true;
-              } else if (command.type === 'formatText') {
-                formatCells(command.payload);
+              }
+              if (type === 'formatText') {
+                formatCells(payload);
                 return true;
               }
               return false;

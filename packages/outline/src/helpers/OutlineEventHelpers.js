@@ -36,6 +36,8 @@ import {
   isTab,
   isMoveBackward,
   isMoveForward,
+  isUndo,
+  isRedo,
 } from 'outline/keys';
 import isImmutableOrInert from 'shared/isImmutableOrInert';
 import {cloneContents, insertRichText, moveCharacter} from 'outline/selection';
@@ -373,6 +375,12 @@ export function onKeyDown(event: KeyboardEvent, editor: OutlineEditor): void {
           event.preventDefault();
         }
       }
+    } else if (isUndo(event)) {
+      event.preventDefault();
+      editor.execCommand('undo');
+    } else if (isRedo(event)) {
+      event.preventDefault();
+      editor.execCommand('redo');
     }
   });
 }
@@ -914,6 +922,14 @@ export function onBeforeInput(event: InputEvent, editor: OutlineEditor): void {
       }
       case 'formatUnderline': {
         editor.execCommand('formatText', 'underline');
+        break;
+      }
+      case 'historyUndo': {
+        editor.execCommand('undo');
+        break;
+      }
+      case 'historyRedo': {
+        editor.execCommand('redo');
         break;
       }
       default:

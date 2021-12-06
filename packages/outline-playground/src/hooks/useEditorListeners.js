@@ -26,15 +26,15 @@ export default function useEditorListeners(
   useEffect(() => {
     const removeCommandListener = editor.addListener(
       'command',
-      (command) => {
-        if (command.type === 'readOnly') {
-          const readOnly = command.payload;
+      (type, payload) => {
+        if (type === 'readOnly') {
+          const readOnly = payload;
           setIsReadyOnly(readOnly);
-        } else if (command.type === 'clear') {
+        } else if (type === 'clear') {
           clear();
-        } else if (command.type === 'toggleConnect') {
+        } else if (type === 'toggleConnect') {
           if (connect !== undefined && disconnect !== undefined) {
-            const isConnected = command.payload;
+            const isConnected = payload;
             if (isConnected) {
               console.log('Collaboration disconnected!');
               disconnect();

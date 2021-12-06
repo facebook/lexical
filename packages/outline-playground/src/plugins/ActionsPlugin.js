@@ -47,12 +47,12 @@ export default function ActionsPlugins({
     const unregisterNodes = editor.registerNodes([ImageNode]);
     const removeCommandListener = editor.addListener(
       'command',
-      (command) => {
-        if (command.type === 'readOnly') {
-          const readOnly = command.payload;
+      (type, payload) => {
+        if (type === 'readOnly') {
+          const readOnly = payload;
           setIsReadyOnly(readOnly);
-        } else if (command.type === 'connected') {
-          const isConnected = command.payload;
+        } else if (type === 'connected') {
+          const isConnected = payload;
           setConnected(isConnected);
         }
         return false;

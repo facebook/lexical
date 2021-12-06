@@ -111,7 +111,10 @@ export type RootListener = (
 ) => void;
 export type TextMutationListener = (mutation: TextMutation) => void;
 export type TextContentListener = (text: string) => void;
-export type CommandListener = (command: Command) => boolean;
+export type CommandListener = (
+  type: string,
+  payload: CommandPayload,
+) => boolean;
 
 export type CommandListenerEditorPriority = 0;
 export type CommandListenerLowPriority = 1;
@@ -128,11 +131,6 @@ export type CommandListenerPriority =
 
 // $FlowFixMe: intentional
 export type CommandPayload = any;
-
-export type Command = {
-  type: string,
-  payload: CommandPayload,
-};
 
 export type TextMutation = {
   node: TextNode,
@@ -421,10 +419,7 @@ class BaseOutlineEditor {
     };
   }
   execCommand(type: string, payload?: CommandPayload): void {
-    triggerCommandListeners(getSelf(this), {
-      type,
-      payload,
-    });
+    triggerCommandListeners(getSelf(this), type, payload);
   }
   getDecorators(): {[NodeKey]: ReactNode} {
     return this._decorators;

@@ -11,7 +11,6 @@ import type {InputEvents} from 'outline-react/useOutlineEditorEvents';
 import type {
   OutlineEditor,
   RootNode,
-  Command,
   CommandListenerEditorPriority,
 } from 'outline';
 
@@ -115,36 +114,36 @@ export default function usePlainTextSetup(
       editor.addListener('textmutation', onTextMutation),
       editor.addListener(
         'command',
-        (command: Command): boolean => {
+        (type, payload): boolean => {
           const selection = getSelection();
           if (selection === null) {
             return false;
           }
-          switch (command.type) {
+          switch (type) {
             case 'deleteCharacter': {
-              const isBackward: boolean = command.payload;
+              const isBackward: boolean = payload;
               selection.deleteCharacter(isBackward);
               return true;
             }
             case 'deleteWord': {
-              const isBackward: boolean = command.payload;
+              const isBackward: boolean = payload;
               selection.deleteWord(isBackward);
               return true;
             }
             case 'deleteLine': {
-              const isBackward: boolean = command.payload;
+              const isBackward: boolean = payload;
               selection.deleteLine(isBackward);
               return true;
             }
             case 'insertText':
-              const text: string = command.payload;
+              const text: string = payload;
               selection.insertText(text);
               return true;
             case 'removeText':
               selection.removeText();
               return true;
             case 'insertLineBreak':
-              const selectStart: boolean = command.payload;
+              const selectStart: boolean = payload;
               selection.insertLineBreak(selectStart);
               return true;
             case 'insertParagraph':

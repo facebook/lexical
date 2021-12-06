@@ -9,7 +9,7 @@
 
 import type {NodeKey, EditorConfig, OutlineNode, Selection} from 'outline';
 
-import {addClassNamesToElement} from '../helpers/OutlineElementHelpers';
+import {addClassNamesToElement} from 'outline/elements';
 import {ElementNode} from 'outline';
 
 export class LinkNode extends ElementNode {

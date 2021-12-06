@@ -9,7 +9,7 @@
 
 import type {NodeKey, OutlineNode, EditorConfig} from 'outline';
 
-import {addClassNamesToElement} from '../helpers/OutlineElementHelpers';
+import {addClassNamesToElement} from 'outline/elements';
 import {TextNode, isTextNode, createTextNode} from 'outline';
 
 export class HashtagNode extends TextNode {

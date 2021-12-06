@@ -7,12 +7,12 @@
  * @flow strict
  */
 
-import type {ElementNode} from 'outline';
+import type {ElementNode, CommandListenerEditorPriority} from 'outline';
 
 import * as React from 'react';
 import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
 import {useCollaborationContext} from '../context/CollaborationContext';
-import {useContext, useEffect, useState} from 'react';
+import {useEffect, useState} from 'react';
 import {log, isElementNode, getSelection, createEditorStateRef} from 'outline';
 import {isListItemNode} from 'outline/ListItemNode';
 import {ImageNode, createImageNode} from '../nodes/ImageNode';
@@ -21,7 +21,8 @@ import useOutlineNestedList from 'outline-react/useOutlineNestedList';
 import TablesPlugin from './TablesPlugin';
 import {createTableNodeWithDimensions} from 'outline/nodes';
 import {createParagraphNode} from 'outline/ParagraphNode';
-import {PlaygroundEditorContext} from '../context/PlaygroundEditorContext';
+
+const EditorPriority: CommandListenerEditorPriority = 0;
 
 function createUID(): string {
   return Math.random()
@@ -38,35 +39,32 @@ export default function ActionsPlugins({
   const [isReadOnly, setIsReadyOnly] = useState(false);
   const [connected, setConnected] = useState(false);
   const [editor] = useOutlineComposerContext();
-  const playgroundContext = useContext(PlaygroundEditorContext);
-
-  if (playgroundContext == null) {
-    throw new Error('PlaygroundEditorContext not found');
-  }
-
-  const {triggerListeners, addListener} = playgroundContext;
   const [indent, outdent] = useOutlineNestedList(editor);
   const {yjsDocMap} = useCollaborationContext();
   const isCollab = yjsDocMap.get('main') !== undefined;
 
   useEffect(() => {
     const unregisterNodes = editor.registerNodes([ImageNode]);
-    const removeReadOnlyListener = addListener('readonly', (value: boolean) => {
-      setIsReadyOnly(value);
-    });
-    const removeConnectedListener = addListener(
-      'connected',
-      (value: boolean) => {
-        setConnected(value);
+    const removeCommandListener = editor.addListener(
+      'command',
+      (type, payload) => {
+        if (type === 'readOnly') {
+          const readOnly = payload;
+          setIsReadyOnly(readOnly);
+        } else if (type === 'connected') {
+          const isConnected = payload;
+          setConnected(isConnected);
+        }
+        return false;
       },
+      EditorPriority,
     );
 
     return () => {
       unregisterNodes();
-      removeReadOnlyListener();
-      removeConnectedListener();
+      removeCommandListener();
     };
-  }, [addListener, editor]);
+  }, [editor]);
 
   const handleAddImage = () => {
     editor.update(() => {
@@ -210,20 +208,24 @@ export default function ActionsPlugins({
         <button
           className="action-button clear"
           onClick={() => {
-            triggerListeners('clear');
+            editor.execCommand('clear');
             editor.focus();
           }}>
           <i className="clear" />
         </button>
         <button
           className="action-button lock"
-          onClick={() => triggerListeners('readonly', !isReadOnly)}>
+          onClick={() => {
+            editor.execCommand('readOnly', !isReadOnly);
+          }}>
           <i className={isReadOnly ? 'unlock' : 'lock'} />
         </button>
         {isCollab && (
           <button
             className="action-button connect"
-            onClick={() => triggerListeners('connect', !connected)}>
+            onClick={() => {
+              editor.execCommand('toggleConnect', !connected);
+            }}>
             <i className={connected ? 'disconnect' : 'connect'} />
           </button>
         )}

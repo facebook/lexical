@@ -7,8 +7,12 @@
  * @flow strict
  */
 
-import {PlaygroundEditorContext} from '../context/PlaygroundEditorContext';
-import {useContext, useEffect, useState} from 'react';
+import type {CommandListenerEditorPriority} from 'outline';
+
+import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
+import {useEffect, useState} from 'react';
+
+const EditorPriority: CommandListenerEditorPriority = 0;
 
 export default function useEditorListeners(
   clear: () => void,
@@ -16,47 +20,45 @@ export default function useEditorListeners(
   connect?: () => void,
   disconnect?: () => void,
 ): boolean {
+  const [editor] = useOutlineComposerContext();
   const [isReadOnly, setIsReadyOnly] = useState(false);
-  const playgroundContext = useContext(PlaygroundEditorContext);
 
-  if (playgroundContext == null) {
-    throw new Error('useEditorListeners - PlaygroundContext not found');
-  }
-
-  const {addListener, triggerListeners} = playgroundContext;
   useEffect(() => {
-    const removeReadOnlyListener = addListener('readonly', (value: boolean) => {
-      setIsReadyOnly(value);
-    });
-    const removeClearListener = addListener('clear', () => {
-      clear();
-    });
+    const removeCommandListener = editor.addListener(
+      'command',
+      (type, payload) => {
+        if (type === 'readOnly') {
+          const readOnly = payload;
+          setIsReadyOnly(readOnly);
+        } else if (type === 'clear') {
+          clear();
+        } else if (type === 'toggleConnect') {
+          if (connect !== undefined && disconnect !== undefined) {
+            const isConnected = payload;
+            if (isConnected) {
+              console.log('Collaboration disconnected!');
+              disconnect();
+            } else {
+              console.log('Collaboration connected!');
+              connect();
+            }
+          }
+        }
+        return false;
+      },
+      EditorPriority,
+    );
 
     return () => {
-      removeReadOnlyListener();
-      removeClearListener();
+      removeCommandListener();
     };
-  }, [addListener, clear]);
+  }, [clear, connect, connected, disconnect, editor]);
 
   useEffect(() => {
     if (connected !== undefined) {
-      triggerListeners('connected', !connected);
+      editor.execCommand('connected', !connected);
     }
-  }, [connected, triggerListeners]);
-
-  useEffect(() => {
-    if (connect !== undefined && disconnect !== undefined) {
-      return addListener('connect', () => {
-        if (connected) {
-          console.log('Collaboration disconnected!');
-          disconnect();
-        } else {
-          console.log('Collaboration connected!');
-          connect();
-        }
-      });
-    }
-  }, [addListener, connect, connected, disconnect]);
+  }, [connected, editor]);
 
   return isReadOnly;
 }

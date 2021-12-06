@@ -15,6 +15,7 @@ import type {EditorState} from './OutlineEditorState';
 import {
   commitPendingUpdates,
   parseEditorState,
+  triggerCommandListeners,
   triggerListeners,
   updateEditor,
 } from './OutlineUpdates';
@@ -110,6 +111,26 @@ export type RootListener = (
 ) => void;
 export type TextMutationListener = (mutation: TextMutation) => void;
 export type TextContentListener = (text: string) => void;
+export type CommandListener = (
+  type: string,
+  payload: CommandPayload,
+) => boolean;
+
+export type CommandListenerEditorPriority = 0;
+export type CommandListenerLowPriority = 1;
+export type CommandListenerNormalPriority = 2;
+export type CommandListenerHighPriority = 3;
+export type CommandListenerCriticalPriority = 4;
+
+export type CommandListenerPriority =
+  | CommandListenerEditorPriority
+  | CommandListenerLowPriority
+  | CommandListenerNormalPriority
+  | CommandListenerHighPriority
+  | CommandListenerCriticalPriority;
+
+// $FlowFixMe: intentional
+export type CommandPayload = any;
 
 export type TextMutation = {
   node: TextNode,
@@ -125,6 +146,7 @@ type Listeners = {
   textmutation: Set<TextMutationListener>,
   root: Set<RootListener>,
   update: Set<UpdateListener>,
+  command: Array<Set<CommandListener>>,
 };
 
 export type ListenerType =
@@ -133,7 +155,8 @@ export type ListenerType =
   | 'textmutation'
   | 'root'
   | 'decorator'
-  | 'textcontent';
+  | 'textcontent'
+  | 'command';
 
 export type TransformerType = 'text' | 'decorator' | 'element' | 'root';
 
@@ -289,6 +312,7 @@ class BaseOutlineEditor {
       textmutation: new Set(),
       root: new Set(),
       update: new Set(),
+      command: [new Set(), new Set(), new Set(), new Set(), new Set()],
     };
     // Editor configuration for theme/context.
     this._config = config;
@@ -336,27 +360,41 @@ class BaseOutlineEditor {
       | DecoratorListener
       | RootListener
       | TextMutationListener
-      | TextContentListener,
+      | TextContentListener
+      | CommandListener,
+    priority?: CommandListenerPriority,
   ): () => void {
-    const listenerSet = this._listeners[type];
-    // $FlowFixMe: TODO refine this from the above types
-    listenerSet.add(listener);
-
-    const isRootType = type === 'root';
-    if (isRootType) {
-      // $FlowFixMe: TODO refine
-      const rootListener: RootListener = listener;
-      rootListener(this._rootElement, null);
-    }
-    return () => {
+    const listenerSetOrMap = this._listeners[type];
+    if (type === 'command' && priority !== undefined) {
+      // $FlowFixMe: unsure how to csae this
+      const commands: Array<Set<CommandListener>> = listenerSetOrMap;
+      const commandSet = commands[priority];
+      // $FlowFixMe: cast
+      commandSet.add(listener);
+      return () => {
+        // $FlowFixMe: cast
+        commandSet.delete(listener);
+      };
+    } else {
       // $FlowFixMe: TODO refine this from the above types
-      listenerSet.delete(listener);
+      listenerSetOrMap.add(listener);
+
+      const isRootType = type === 'root';
       if (isRootType) {
         // $FlowFixMe: TODO refine
-        const rootListener: RootListener = (listener: any);
-        rootListener(null, this._rootElement);
+        const rootListener: RootListener = listener;
+        rootListener(this._rootElement, null);
       }
-    };
+      return () => {
+        // $FlowFixMe: TODO refine this from the above types
+        listenerSetOrMap.delete(listener);
+        if (isRootType) {
+          // $FlowFixMe: TODO refine
+          const rootListener: RootListener = (listener: any);
+          rootListener(null, this._rootElement);
+        }
+      };
+    }
   }
   addTransform(
     // There's no Flow-safe way to preserve the T in Transform<T>, but <T: OutlineNode> in the
@@ -379,6 +417,9 @@ class BaseOutlineEditor {
     return () => {
       transforms.delete(listener);
     };
+  }
+  execCommand(type: string, payload?: CommandPayload): void {
+    triggerCommandListeners(getSelf(this), type, payload);
   }
   getDecorators(): {[NodeKey]: ReactNode} {
     return this._decorators;
@@ -517,10 +558,16 @@ declare export class OutlineEditor {
   addListener(type: 'decorator', listener: DecoratorListener): () => void;
   addListener(type: 'textmutation', listener: TextMutationListener): () => void;
   addListener(type: 'textcontent', listener: TextContentListener): () => void;
+  addListener(
+    type: 'command',
+    listener: CommandListener,
+    priority: CommandListenerPriority,
+  ): () => void;
   addTransform<T: OutlineNode>(
     klass: Class<T>,
     listener: Transform<T>,
   ): () => void;
+  execCommand(type: string, payload: CommandPayload): void;
   getDecorators(): {[NodeKey]: ReactNode};
   getRootElement(): null | HTMLElement;
   setRootElement(rootElement: null | HTMLElement): void;

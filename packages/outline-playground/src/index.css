@@ -973,6 +973,10 @@ pre::-webkit-scrollbar-thumb {
   background-image: url(images/icons/plug-fill.svg);
 }
 
+.table-cell-action-button-container {
+  position: absolute;
+}
+
 .table-cell-action-button {
   background-color: none;
   display: flex;

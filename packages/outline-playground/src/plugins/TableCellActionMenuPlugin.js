@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {OutlineEditor, State} from 'outline';
+import type {State} from 'outline';
 
 import {TableCellNode} from 'outline/TableCellNode';
 import * as React from 'react';
@@ -260,19 +260,16 @@ export function deleteTableColumn(
 }
 
 function getTableMenuCellStyles(
-  editor: OutlineEditor,
-  tableCellNode: TableCellNode,
-  menu: HTMLElement,
+  tableCellNodeDOM: HTMLElement | null,
+  menuButtonDOM: HTMLElement,
 ) {
-  const tableCellParentNodeDOM = editor.getElementByKey(tableCellNode.getKey());
+  if (tableCellNodeDOM != null) {
+    const tableCellRect = tableCellNodeDOM.getBoundingClientRect();
+    const menuRect = menuButtonDOM.getBoundingClientRect();
 
-  if (tableCellParentNodeDOM != null) {
-    const tableCellRect = tableCellParentNodeDOM.getBoundingClientRect();
-    const menuRect = menu.getBoundingClientRect();
+    menuButtonDOM.style.opacity = '1';
 
-    menu.style.opacity = '1';
-
-    menu.style.left = `${
+    menuButtonDOM.style.left = `${
       tableCellRect.left +
       window.pageXOffset -
       menuRect.width +
@@ -280,21 +277,23 @@ function getTableMenuCellStyles(
       10
     }px`;
 
-    menu.style.top = `${tableCellRect.top + window.pageYOffset + 5}px`;
+    menuButtonDOM.style.top = `${tableCellRect.top + window.pageYOffset + 5}px`;
   } else {
-    menu.style.opacity = '0';
+    menuButtonDOM.style.opacity = '0';
   }
 }
 
 type TableCellActionMenuProps = $ReadOnly<{
   onClose: () => void,
   tableCellNode: TableCellNode,
+  setIsMenuOpen: (boolean) => void,
   contextRef: {current: null | HTMLElement},
 }>;
 
 function TableActionMenu({
   onClose,
   tableCellNode,
+  setIsMenuOpen,
   contextRef,
 }: TableCellActionMenuProps) {
   const [editor] = useOutlineComposerContext();
@@ -310,14 +309,31 @@ function TableActionMenu({
       dropDownElement.style.opacity = '1';
 
       dropDownElement.style.left = `${
-        menuButtonRect.left + menuButtonRect.width + window.pageXOffset
+        menuButtonRect.left + menuButtonRect.width + window.pageXOffset + 5
       }px`;
 
       dropDownElement.style.top = `${
-        menuButtonRect.top + window.pageYOffset + 5
+        menuButtonRect.top + window.pageYOffset
       }px`;
     }
   }, [contextRef, dropDownRef]);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (
+        dropDownRef.current != null &&
+        contextRef.current != null &&
+        !dropDownRef.current.contains(event.target) &&
+        !contextRef.current.contains(event.target)
+      ) {
+        setIsMenuOpen(false);
+      }
+    }
+
+    window.addEventListener('click', handleClickOutside);
+
+    return () => window.removeEventListener('click', handleClickOutside);
+  }, [setIsMenuOpen, contextRef]);
 
   const insertTableRowAtSelection = useCallback(
     (shouldInsertAfter) => {
@@ -405,9 +421,14 @@ function TableActionMenu({
 
   return createPortal(
     <div className="dropdown" ref={dropDownRef}>
-      <button className="item" onClick={() => insertTableRowAtSelection(false)}>
-        <span className="text">Insert row above</span>
-      </button>
+      {!tableCellNode.__isHeader && (
+        <button
+          className="item"
+          onClick={() => insertTableRowAtSelection(false)}
+        >
+          <span className="text">Insert row above</span>
+        </button>
+      )}
       <button className="item" onClick={() => insertTableRowAtSelection(true)}>
         <span className="text">Insert row below</span>
       </button>
@@ -508,6 +529,19 @@ function TableCellActionMenuContainer(): React.MixedElement {
     };
   });
 
+  useEffect(() => {
+    console.log(menuButtonRef, tableCellNode);
+    const menuButtonDOM = menuButtonRef.current;
+
+    if (menuButtonDOM != null && tableCellNode != null) {
+      const tableCellParentNodeDOM = editor.getElementByKey(
+        tableCellNode.getKey(),
+      );
+
+      getTableMenuCellStyles(tableCellParentNodeDOM, menuButtonDOM);
+    }
+  }, [menuButtonRef, tableCellNode, editor]);
+
   const prevTableCellDOM = useRef(tableCellNode);
 
   useEffect(() => {
@@ -518,27 +552,13 @@ function TableCellActionMenuContainer(): React.MixedElement {
     prevTableCellDOM.current = tableCellNode;
   }, [prevTableCellDOM, tableCellNode]);
 
-  console.log({isMenuOpen});
-
   return (
-    <div
-      ref={(menuDOM) => {
-        menuButtonRef.current = menuDOM;
-
-        if (menuDOM != null && tableCellNode != null) {
-          getTableMenuCellStyles(editor, tableCellNode, menuDOM);
-        }
-      }}
-      style={{
-        position: 'absolute',
-      }}
-    >
+    <div className="table-cell-action-button-container" ref={menuButtonRef}>
       {tableCellNode != null && (
         <>
           <button
             className="table-cell-action-button chevron-down"
             onClick={() => {
-              console.log('clicked chevron');
               setIsMenuOpen(!isMenuOpen);
             }}
             ref={menuRootRef}
@@ -548,6 +568,7 @@ function TableCellActionMenuContainer(): React.MixedElement {
           {isMenuOpen && (
             <TableActionMenu
               contextRef={menuRootRef}
+              setIsMenuOpen={setIsMenuOpen}
               onClose={() => setIsMenuOpen(false)}
               tableCellNode={tableCellNode}
             />

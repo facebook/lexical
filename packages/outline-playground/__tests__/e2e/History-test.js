@@ -12,6 +12,7 @@ import {
   assertHTML,
   assertSelection,
   repeat,
+  sleep,
   IS_COLLAB,
 } from '../utils';
 
@@ -25,7 +26,9 @@ describe('History', () => {
 
       await page.focus('div.editor');
 
-      await page.keyboard.type('hello world');
+      await page.keyboard.type('hello');
+      await sleep(1001); // default merge interval is 1000
+      await page.keyboard.type(' world');
       await page.keyboard.press('Enter');
       await page.keyboard.type('hello world again');
       await repeat(6, async () => {
@@ -66,9 +69,9 @@ describe('History', () => {
         );
         await assertSelection(page, {
           anchorPath: [1, 0, 0],
-          anchorOffset: 17,
+          anchorOffset: 11,
           focusPath: [1, 0, 0],
-          focusOffset: 17,
+          focusOffset: 11,
         });
       } else {
         await assertHTML(
@@ -77,9 +80,9 @@ describe('History', () => {
         );
         await assertSelection(page, {
           anchorPath: [0, 2, 0],
-          anchorOffset: 17,
+          anchorOffset: 11,
           focusPath: [0, 2, 0],
-          focusOffset: 17,
+          focusOffset: 11,
         });
       }
 
@@ -124,12 +127,38 @@ describe('History', () => {
 
       await undo(page);
 
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">hello</span></p>',
+      );
+      await assertSelection(page, {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 5,
+        focusPath: [0, 0, 0],
+        focusOffset: 5,
+      });
+
+      await undo(page);
+
       await assertHTML(page, '<p class="editor-paragraph"><br></p>');
       await assertSelection(page, {
         anchorPath: [0],
         anchorOffset: 0,
         focusPath: [0],
         focusOffset: 0,
+      });
+
+      await redo(page);
+
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">hello</span></p>',
+      );
+      await assertSelection(page, {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 5,
+        focusPath: [0, 0, 0],
+        focusOffset: 5,
       });
 
       await redo(page);
@@ -198,6 +227,60 @@ describe('History', () => {
       }
 
       await redo(page);
+
+      if (isRichText) {
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">hello world</span></p><p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">hello world, again and again</span></p>',
+        );
+        await assertSelection(page, {
+          anchorPath: [1, 0, 0],
+          anchorOffset: 22,
+          focusPath: [1, 0, 0],
+          focusOffset: 22,
+        });
+      } else {
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">hello world</span><br><span data-outline-text="true">hello world, again and again</span></p>',
+        );
+        await assertSelection(page, {
+          anchorPath: [0, 2, 0],
+          anchorOffset: 22,
+          focusPath: [0, 2, 0],
+          focusOffset: 22,
+        });
+      }
+
+      await repeat(4, async () => {
+        await page.keyboard.press('Backspace');
+      });
+
+      if (isRichText) {
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">hello world</span></p><p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">hello world, again again</span></p>',
+        );
+        await assertSelection(page, {
+          anchorPath: [1, 0, 0],
+          anchorOffset: 18,
+          focusPath: [1, 0, 0],
+          focusOffset: 18,
+        });
+      } else {
+        await assertHTML(
+          page,
+          '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">hello world</span><br><span data-outline-text="true">hello world, again again</span></p>',
+        );
+        await assertSelection(page, {
+          anchorPath: [0, 2, 0],
+          anchorOffset: 18,
+          focusPath: [0, 2, 0],
+          focusOffset: 18,
+        });
+      }
+
+      await undo(page);
 
       if (isRichText) {
         await assertHTML(

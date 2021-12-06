@@ -13,6 +13,7 @@ import type {
   OutlineNode,
   NodeKey,
   TextFormatType,
+  CommandListenerLowPriority,
 } from 'outline';
 
 import {
@@ -23,13 +24,6 @@ import {
   getSelection,
   clearSelection,
 } from 'outline';
-import {
-  isDeleteBackward,
-  isDeleteForward,
-  isBold,
-  isItalic,
-  isUnderline,
-} from 'outline/keys';
 
 type Cell = {
   elem: HTMLElement,
@@ -43,6 +37,8 @@ type Grid = {
   columns: number,
   cells: Cells,
 };
+
+const LowPriority: CommandListenerLowPriority = 1;
 
 function getCellFromTarget(node: Node): Cell | null {
   let currentNode = node;
@@ -200,6 +196,30 @@ function applyCellSelection(
           const selection = window.getSelection();
           selection.removeAllRanges();
           isHighlightingCells = true;
+          deleteCharacterListener = editor.addListener(
+            'command',
+            (command) => {
+              if (command.type === 'deleteCharacter') {
+                if (highlightedCells.length === grid.columns * grid.rows) {
+                  tableNode.selectPrevious();
+                  // Delete entire table
+                  tableNode.remove();
+                  return true;
+                }
+                highlightedCells.forEach(({elem}) => {
+                  const cellNode = getNearestNodeFromDOMNode(elem);
+                  if (isElementNode(cellNode)) {
+                    cellNode.clear();
+                  }
+                });
+                return true;
+              } else if (command.type === 'formatText') {
+                formatCells(command.format);
+              }
+              return false;
+            },
+            LowPriority,
+          );
         } else if (cellX === currentX && cellY === currentY) {
           return;
         }
@@ -226,6 +246,10 @@ function applyCellSelection(
     currentY = -1;
     updateCells(-1, -1, -1, -1, grid.cells);
     highlightedCells = [];
+    if (deleteCharacterListener !== null) {
+      deleteCharacterListener();
+      deleteCharacterListener = null;
+    }
   };
 
   tableElement.addEventListener('mouseleave', (event: MouseEvent) => {
@@ -258,39 +282,7 @@ function applyCellSelection(
     });
   };
 
-  rootElement.addEventListener(
-    'keydown',
-    (event: KeyboardEvent) => {
-      if (isHighlightingCells) {
-        // Backspace or delete
-        if (isDeleteBackward(event) || isDeleteForward(event)) {
-          event.preventDefault();
-          event.stopPropagation();
-          editor.update(() => {
-            if (highlightedCells.length === grid.columns * grid.rows) {
-              tableNode.selectPrevious();
-              // Delete entire table
-              tableNode.remove();
-              return;
-            }
-            highlightedCells.forEach((cell) => {
-              const cellNode = getNearestNodeFromDOMNode(cell.elem);
-              if (isElementNode(cellNode)) {
-                cellNode.clear();
-              }
-            });
-          });
-        } else if (isBold(event)) {
-          formatCells('bold');
-        } else if (isItalic(event)) {
-          formatCells('italic');
-        } else if (isUnderline(event)) {
-          formatCells('underline');
-        }
-      }
-    },
-    true,
-  );
+  let deleteCharacterListener = null;
 
   tableElement.addEventListener('mousedown', (event: MouseEvent) => {
     if (isSelected) {

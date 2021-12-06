@@ -8,7 +8,12 @@
  */
 
 import type {InputEvents} from 'outline-react/useOutlineEditorEvents';
-import type {OutlineEditor, RootNode} from 'outline';
+import type {
+  OutlineEditor,
+  RootNode,
+  Command,
+  CommandListenerEditorPriority,
+} from 'outline';
 
 import {log, getRoot, getSelection} from 'outline';
 import useOutlineEditorEvents from '../useOutlineEditorEvents';
@@ -17,12 +22,12 @@ import {CAN_USE_BEFORE_INPUT} from 'shared/environment';
 import useOutlineDragonSupport from './useOutlineDragonSupport';
 import {
   onSelectionChange,
-  onKeyDownForPlainText,
+  onKeyDown,
   onCompositionStart,
   onCompositionEnd,
   onCutForPlainText,
   onCopyForPlainText,
-  onBeforeInputForPlainText,
+  onBeforeInput,
   onPasteForPlainText,
   onDropPolyfill,
   onDragStartPolyfill,
@@ -32,9 +37,11 @@ import {
 } from 'outline/events';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
+const EditorPriority: CommandListenerEditorPriority = 0;
+
 const events: InputEvents = [
   ['selectionchange', onSelectionChange],
-  ['keydown', onKeyDownForPlainText],
+  ['keydown', onKeyDown],
   ['compositionstart', onCompositionStart],
   ['compositionend', onCompositionEnd],
   ['cut', onCutForPlainText],
@@ -46,7 +53,7 @@ const events: InputEvents = [
 ];
 
 if (CAN_USE_BEFORE_INPUT) {
-  events.push(['beforeinput', onBeforeInputForPlainText]);
+  events.push(['beforeinput', onBeforeInput]);
 } else {
   events.push(['drop', onDropPolyfill]);
 }
@@ -103,14 +110,49 @@ export default function usePlainTextSetup(
   callbackFn?: (callbackFn?: () => void) => void,
 ) => void {
   useLayoutEffect(() => {
-    const unregisterNodes = editor.registerNodes([ParagraphNode]);
+    const teardown = [
+      editor.registerNodes([ParagraphNode]),
+      editor.addListener('textmutation', onTextMutation),
+      editor.addListener(
+        'command',
+        (command: Command): boolean => {
+          const selection = getSelection();
+          if (selection === null) {
+            return false;
+          }
+          switch (command.type) {
+            case 'deleteCharacter':
+              selection.deleteCharacter(command.isBackward);
+              return true;
+            case 'deleteWord':
+              selection.deleteWord(command.isBackward);
+              return true;
+            case 'deleteLine':
+              selection.deleteLine(command.isBackward);
+              return true;
+            case 'insertText':
+              selection.insertText(command.text);
+              return true;
+            case 'removeText':
+              selection.removeText();
+              return true;
+            case 'insertLineBreak':
+              selection.insertLineBreak(command.selectStart);
+              return true;
+            case 'insertParagraph':
+              selection.insertLineBreak();
+              return true;
+          }
+          return false;
+        },
+        EditorPriority,
+      ),
+    ];
     if (init) {
       initEditor(editor);
     }
-    const removeListener = editor.addListener('textmutation', onTextMutation);
     return () => {
-      unregisterNodes();
-      removeListener();
+      teardown.forEach((t) => t());
     };
   }, [editor, init]);
 

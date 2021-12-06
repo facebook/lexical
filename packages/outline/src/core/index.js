@@ -13,6 +13,12 @@ export type {
   EditorThemeClasses,
   TextMutation,
   IntentionallyMarkedAsDirtyElement,
+  CommandListenerEditorPriority,
+  CommandListenerLowPriority,
+  CommandListenerNormalPriority,
+  CommandListenerHighPriority,
+  CommandListenerCriticalPriority,
+  Command,
 } from './OutlineEditor';
 export type {EditorState, ParsedEditorState} from './OutlineEditorState';
 export type {State} from './OutlineUpdates';

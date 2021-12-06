@@ -11,9 +11,9 @@ import type {ParsedEditorState} from './OutlineEditorState';
 import type {RootNode} from './OutlineRootNode';
 import type {
   OutlineEditor,
-  ListenerType,
   Transform,
   EditorUpdateOptions,
+  Command,
 } from './OutlineEditor';
 import type {OutlineNode, NodeKey} from './OutlineNode';
 import type {Selection} from './OutlineSelection';
@@ -461,7 +461,13 @@ function triggerTextContentListeners(
 }
 
 export function triggerListeners(
-  type: ListenerType,
+  type:
+    | 'update'
+    | 'error'
+    | 'textmutation'
+    | 'root'
+    | 'decorator'
+    | 'textcontent',
   editor: OutlineEditor,
   isCurrentlyEnqueuingUpdates: boolean,
   // $FlowFixMe: needs refining
@@ -473,6 +479,27 @@ export function triggerListeners(
     const listeners = Array.from(editor._listeners[type]);
     for (let i = 0; i < listeners.length; i++) {
       listeners[i](...payload);
+    }
+  } finally {
+    editor._updating = previouslyUpdating;
+  }
+}
+
+export function triggerCommandListeners(
+  editor: OutlineEditor,
+  command: Command,
+): void {
+  const previouslyUpdating = editor._updating;
+  editor._updating = editor._updating;
+  try {
+    const commandListeners = editor._listeners.command;
+    propagation: for (let i = 4; i >= 0; i--) {
+      const listeners = Array.from(commandListeners[i]);
+      for (let s = 0; s < listeners.length; s++) {
+        if (listeners[s](command) === true) {
+          break propagation;
+        }
+      }
     }
   } finally {
     editor._updating = previouslyUpdating;

@@ -296,70 +296,13 @@ function shouldOverrideDefaultCharacterSelection(
   return isDecoratorNode(possibleDecoratorNode);
 }
 
-export function onKeyDownForPlainText(
-  event: KeyboardEvent,
-  editor: OutlineEditor,
-): void {
-  updateAndroidSoftKeyFlagIfAny(event);
-  if (editor.isComposing()) {
-    return;
-  }
-  editor.update(() => {
-    log('onKeyDownForPlainText');
-    const selection = getSelection();
-    if (selection === null) {
-      return;
-    }
-    const isHoldingShift = event.shiftKey;
-
-    if (isMoveBackward(event)) {
-      if (shouldOverrideDefaultCharacterSelection(selection, true)) {
-        event.preventDefault();
-        moveCharacter(selection, isHoldingShift, true);
-      }
-    } else if (isMoveForward(event)) {
-      if (shouldOverrideDefaultCharacterSelection(selection, false)) {
-        event.preventDefault();
-        moveCharacter(selection, isHoldingShift, false);
-      }
-    } else if (isParagraph(event) || isLineBreak(event)) {
-      event.preventDefault();
-      selection.insertLineBreak();
-    } else if (isOpenLineBreak(event)) {
-      event.preventDefault();
-      selection.insertLineBreak(true);
-    } else if (isDeleteBackward(event)) {
-      event.preventDefault();
-      selection.deleteCharacter(true);
-    } else if (isDeleteForward(event)) {
-      event.preventDefault();
-      selection.deleteCharacter(false);
-    } else if (isDeleteWordBackward(event)) {
-      event.preventDefault();
-      selection.deleteWord(true);
-    } else if (isDeleteWordForward(event)) {
-      event.preventDefault();
-      selection.deleteWord(false);
-    } else if (isDeleteLineBackward(event)) {
-      event.preventDefault();
-      selection.deleteLine(true);
-    } else if (isDeleteLineForward(event)) {
-      event.preventDefault();
-      selection.deleteLine(false);
-    }
-  });
-}
-
-export function onKeyDownForRichText(
-  event: KeyboardEvent,
-  editor: OutlineEditor,
-): void {
+export function onKeyDown(event: KeyboardEvent, editor: OutlineEditor): void {
   updateAndroidSoftKeyFlagIfAny(event);
   if (editor.isComposing()) {
     return;
   }
   editor.update((state) => {
-    log('onKeyDownForRichText');
+    log('onKeyDown');
     const selection = getSelection();
     if (selection === null) {
       return;
@@ -378,40 +321,40 @@ export function onKeyDownForRichText(
       }
     } else if (isLineBreak(event)) {
       event.preventDefault();
-      selection.insertLineBreak();
+      editor.execCommand({type: 'insertLineBreak'});
     } else if (isOpenLineBreak(event)) {
       event.preventDefault();
-      selection.insertLineBreak(true);
+      editor.execCommand({type: 'insertLineBreak', selectStart: true});
     } else if (isParagraph(event)) {
       event.preventDefault();
-      selection.insertParagraph();
+      editor.execCommand({type: 'insertParagraph'});
     } else if (isDeleteBackward(event)) {
       event.preventDefault();
-      selection.deleteCharacter(true);
+      editor.execCommand({type: 'deleteCharacter', isBackward: true});
     } else if (isDeleteForward(event)) {
       event.preventDefault();
-      selection.deleteCharacter(false);
+      editor.execCommand({type: 'deleteCharacter', isBackward: false});
     } else if (isDeleteWordBackward(event)) {
       event.preventDefault();
-      selection.deleteWord(true);
+      editor.execCommand({type: 'deleteWord', isBackward: false});
     } else if (isDeleteWordForward(event)) {
       event.preventDefault();
-      selection.deleteWord(false);
+      editor.execCommand({type: 'deleteWord', isBackward: true});
     } else if (isDeleteLineBackward(event)) {
       event.preventDefault();
-      selection.deleteLine(true);
+      editor.execCommand({type: 'deleteLine', isBackward: true});
     } else if (isDeleteLineForward(event)) {
       event.preventDefault();
-      selection.deleteLine(false);
+      editor.execCommand({type: 'deleteLine', isBackward: false});
     } else if (isBold(event)) {
       event.preventDefault();
-      selection.formatText('bold');
+      editor.execCommand({type: 'formatText', format: 'bold'});
     } else if (isUnderline(event)) {
       event.preventDefault();
-      selection.formatText('underline');
+      editor.execCommand({type: 'formatText', format: 'underline'});
     } else if (isItalic(event)) {
       event.preventDefault();
-      selection.formatText('italic');
+      editor.execCommand({type: 'formatText', format: 'italic'});
     } else if (isTab(event)) {
       // Handle code blocks
       const anchor = selection.anchor;
@@ -423,10 +366,10 @@ export function onKeyDownForRichText(
             const textContent = anchorNode.getTextContent();
             const character = textContent[anchor.offset - 1];
             if (character === '\t') {
-              selection.deleteCharacter(true);
+              editor.execCommand({type: 'deleteCharacter', isBackward: true});
             }
           } else {
-            selection.insertText('\t');
+            editor.execCommand({type: 'insertText', text: '\t'});
           }
           event.preventDefault();
         }
@@ -593,7 +536,7 @@ export function onCompositionStart(
         // to get inserted into the new node we create. If
         // we don't do this, Safari will fail on us because
         // there is no text node matching the selection.
-        selection.insertText(' ');
+        editor.execCommand({type: 'insertText', text: ' '});
       }
     }
   });
@@ -826,146 +769,7 @@ function shouldPreventDefaultAndInsertText(
   );
 }
 
-export function onBeforeInputForPlainText(
-  event: InputEvent,
-  editor: OutlineEditor,
-): void {
-  const inputType = event.inputType;
-
-  // We let the browser do its own thing for composition.
-  if (
-    inputType === 'deleteCompositionText' ||
-    inputType === 'insertCompositionText'
-  ) {
-    return;
-  }
-
-  editor.update(() => {
-    log('onBeforeInputForPlainText');
-    const selection = getSelection();
-
-    if (selection === null) {
-      return;
-    }
-    if (inputType === 'deleteContentBackward') {
-      // Used for Android
-      setCompositionKey(null);
-      event.preventDefault();
-      selection.deleteCharacter(true);
-      return;
-    }
-    const data = event.data;
-
-    if (!selection.dirty && selection.isCollapsed()) {
-      applyTargetRange(selection, event);
-    }
-    const anchor = selection.anchor;
-    const focus = selection.focus;
-    const anchorNode = anchor.getNode();
-    const focusNode = focus.getNode();
-
-    if (inputType === 'insertText') {
-      if (data === '\n') {
-        event.preventDefault();
-        selection.insertLineBreak();
-      } else if (data === '\n\n') {
-        event.preventDefault();
-        selection.insertLineBreak();
-        selection.insertLineBreak();
-      } else if (data == null && event.dataTransfer) {
-        // Gets around a Safari text replacement bug.
-        const text = event.dataTransfer.getData('text/plain');
-        event.preventDefault();
-        insertRichText(selection, text);
-      } else if (
-        data != null &&
-        shouldPreventDefaultAndInsertText(selection, data, true)
-      ) {
-        event.preventDefault();
-        selection.insertText(data);
-      }
-      return;
-    }
-
-    // Prevent the browser from carrying out
-    // the input event, so we can control the
-    // output.
-    event.preventDefault();
-
-    switch (inputType) {
-      case 'insertFromComposition': {
-        if (data) {
-          // This is the end of composition
-          setCompositionKey(null);
-          selection.insertText(data);
-        }
-        break;
-      }
-      case 'insertLineBreak':
-      case 'insertParagraph': {
-        // Used for Android
-        setCompositionKey(null);
-        selection.insertLineBreak();
-        break;
-      }
-      case 'insertFromYank':
-      case 'insertFromDrop':
-      case 'insertReplacementText':
-      case 'insertFromPaste': {
-        const dataTransfer = event.dataTransfer;
-        if (dataTransfer != null) {
-          insertDataTransferForPlainText(dataTransfer, selection);
-        } else {
-          if (data) {
-            selection.insertText(data);
-          }
-        }
-        break;
-      }
-      case 'deleteByComposition': {
-        if (canRemoveText(anchorNode, focusNode)) {
-          selection.removeText();
-        }
-        break;
-      }
-      case 'deleteByDrag':
-      case 'deleteByCut': {
-        selection.removeText();
-        break;
-      }
-      case 'deleteContent': {
-        selection.deleteCharacter(false);
-        break;
-      }
-      case 'deleteWordBackward': {
-        selection.deleteWord(true);
-        break;
-      }
-      case 'deleteWordForward': {
-        selection.deleteWord(false);
-        break;
-      }
-      case 'deleteHardLineBackward':
-      case 'deleteSoftLineBackward': {
-        selection.deleteLine(true);
-        break;
-      }
-      case 'deleteContentForward':
-      case 'deleteHardLineForward':
-      case 'deleteSoftLineForward': {
-        selection.deleteLine(false);
-        break;
-      }
-      default:
-      // NO-OP
-    }
-  });
-}
-
-export function onBeforeInputForRichText(
-  event: InputEvent,
-  editor: OutlineEditor,
-): void {
+export function onBeforeInput(event: InputEvent, editor: OutlineEditor): void {
   const inputType = event.inputType;
 
   // We let the browser do its own thing for composition.
@@ -983,11 +787,12 @@ export function onBeforeInputForRichText(
     if (selection === null) {
       return;
     }
+
     if (inputType === 'deleteContentBackward') {
       // Used for Android
       setCompositionKey(null);
       event.preventDefault();
-      selection.deleteCharacter(true);
+      editor.execCommand({type: 'deleteCharacter', isBackward: true});
       return;
     }
     const data = event.data;
@@ -1003,10 +808,10 @@ export function onBeforeInputForRichText(
     if (inputType === 'insertText') {
       if (data === '\n') {
         event.preventDefault();
-        selection.insertLineBreak();
+        editor.execCommand({type: 'insertLineBreak'});
       } else if (data === '\n\n') {
         event.preventDefault();
-        selection.insertParagraph();
+        editor.execCommand({type: 'insertParagraph'});
       } else if (data == null && event.dataTransfer) {
         // Gets around a Safari text replacement bug.
         const text = event.dataTransfer.getData('text/plain');
@@ -1017,7 +822,7 @@ export function onBeforeInputForRichText(
         shouldPreventDefaultAndInsertText(selection, data, true)
       ) {
         event.preventDefault();
-        selection.insertText(data);
+        editor.execCommand({type: 'insertText', text: data});
       }
       return;
     }
@@ -1032,24 +837,20 @@ export function onBeforeInputForRichText(
         if (data) {
           // This is the end of composition
           setCompositionKey(null);
-          selection.insertText(data);
+          editor.execCommand({type: 'insertText', text: data});
         }
         break;
       }
       case 'insertLineBreak': {
         // Used for Android
         setCompositionKey(null);
-        selection.insertLineBreak();
+        editor.execCommand({type: 'insertLineBreak'});
         break;
       }
       case 'insertParagraph': {
         // Used for Android
         setCompositionKey(null);
-        selection.insertParagraph();
-        break;
-      }
-      case 'formatStrikeThrough': {
-        selection.formatText('strikethrough');
+        editor.execCommand({type: 'insertParagraph'});
         break;
       }
       case 'insertFromYank':
@@ -1061,55 +862,59 @@ export function onBeforeInputForRichText(
           insertDataTransferForRichText(dataTransfer, selection, editor);
         } else {
           if (data) {
-            selection.insertText(data);
+            editor.execCommand({type: 'insertText', text: data});
           }
         }
         break;
       }
       case 'deleteByComposition': {
         if (canRemoveText(anchorNode, focusNode)) {
-          selection.removeText();
+          editor.execCommand({type: 'removeText'});
         }
         break;
       }
       case 'deleteByDrag':
       case 'deleteByCut': {
-        selection.removeText();
+        editor.execCommand({type: 'removeText'});
         break;
       }
       case 'deleteContent': {
-        selection.deleteCharacter(false);
+        editor.execCommand({type: 'deleteCharacter', isBackward: false});
         break;
       }
       case 'deleteWordBackward': {
-        selection.deleteWord(true);
+        editor.execCommand({type: 'deleteWord', isBackward: true});
         break;
       }
       case 'deleteWordForward': {
-        selection.deleteWord(false);
+        editor.execCommand({type: 'deleteWord', isBackward: false});
         break;
       }
       case 'deleteHardLineBackward':
       case 'deleteSoftLineBackward': {
-        selection.deleteLine(true);
+        editor.execCommand({type: 'deleteLine', isBackward: true});
         break;
       }
       case 'deleteContentForward':
       case 'deleteHardLineForward':
       case 'deleteSoftLineForward': {
-        selection.deleteLine(false);
+        editor.execCommand({type: 'deleteLine', isBackward: false});
+        break;
+      }
+      case 'formatStrikeThrough': {
+        editor.execCommand({type: 'formatText', format: 'strikethrough'});
         break;
       }
       case 'formatBold': {
-        selection.formatText('bold');
+        editor.execCommand({type: 'formatText', format: 'bold'});
         break;
       }
       case 'formatItalic': {
-        selection.formatText('italic');
+        editor.execCommand({type: 'formatText', format: 'italic'});
         break;
       }
       case 'formatUnderline': {
-        selection.formatText('underline');
+        editor.execCommand({type: 'formatText', format: 'underline'});
         break;
       }
       default:
@@ -1154,7 +959,7 @@ export function onInput(event: InputEvent, editor: OutlineEditor): void {
       selection !== null &&
       shouldPreventDefaultAndInsertText(selection, data, false)
     ) {
-      selection.insertText(data);
+      editor.execCommand({type: 'insertText', text: data});
     } else {
       updateSelectedTextFromDOM(editor, false);
     }

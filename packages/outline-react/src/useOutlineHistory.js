@@ -13,15 +13,17 @@ import type {
   OutlineNode,
   NodeKey,
   IntentionallyMarkedAsDirtyElement,
+  CommandListenerEditorPriority,
 } from 'outline';
 
 import {isTextNode, isRootNode} from 'outline';
-import {isRedo, isUndo} from 'outline/keys';
 import {useCallback, useEffect, useMemo} from 'react';
 
 const MERGE = 0;
 const NO_MERGE = 1;
 const DISCARD = 2;
+
+const EditorPriority: CommandListenerEditorPriority = 0;
 
 export type HistoryStateEntry = {
   editor: OutlineEditor,
@@ -226,57 +228,28 @@ export function useOutlineHistory(
       }
     };
 
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (editor.isComposing()) {
-        return;
-      }
-
-      if (isUndo(event)) {
-        event.preventDefault();
-        event.stopPropagation();
+    const applyCommand = (type) => {
+      if (type === 'undo') {
         undo();
-      } else if (isRedo(event)) {
-        event.preventDefault();
-        event.stopPropagation();
-        redo();
+        return true;
       }
+      if (type === 'redo') {
+        redo();
+        return true;
+      }
+      return false;
     };
 
-    const handleBeforeInput = (event: InputEvent) => {
-      const inputType = event.inputType;
-      if (inputType === 'historyUndo') {
-        event.preventDefault();
-        event.stopPropagation();
-        undo();
-      } else if (inputType === 'historyRedo') {
-        event.preventDefault();
-        event.stopPropagation();
-        redo();
-      }
-    };
-
-    const removeRootListener = editor.addListener(
-      'root',
-      (
-        rootElement: null | HTMLElement,
-        prevRootElement: null | HTMLElement,
-      ) => {
-        if (prevRootElement !== null) {
-          prevRootElement.removeEventListener('keydown', handleKeyDown);
-          prevRootElement.removeEventListener('beforeinput', handleBeforeInput);
-        }
-        if (rootElement !== null) {
-          rootElement.addEventListener('keydown', handleKeyDown);
-          rootElement.addEventListener('beforeinput', handleBeforeInput);
-        }
-      },
+    const removeCommandListener = editor.addListener(
+      'command',
+      applyCommand,
+      EditorPriority,
     );
-
     const removeUpdateListener = editor.addListener('update', applyChange);
 
     return () => {
+      removeCommandListener();
       removeUpdateListener();
-      removeRootListener();
     };
   }, [delay, editor, historyState]);
 

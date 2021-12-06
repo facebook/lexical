@@ -13,6 +13,7 @@ import type {
   OutlineNode,
   NodeKey,
   TextFormatType,
+  CommandListenerLowPriority,
 } from 'outline';
 
 import {
@@ -21,15 +22,8 @@ import {
   isElementNode,
   createSelection,
   getSelection,
-  clearSelection,
+  setSelection,
 } from 'outline';
-import {
-  isDeleteBackward,
-  isDeleteForward,
-  isBold,
-  isItalic,
-  isUnderline,
-} from 'outline/keys';
 
 type Cell = {
   elem: HTMLElement,
@@ -43,6 +37,13 @@ type Grid = {
   columns: number,
   cells: Cells,
 };
+
+const LowPriority: CommandListenerLowPriority = 1;
+
+const removeHighlightStyle = document.createElement('style');
+removeHighlightStyle.appendChild(
+  document.createTextNode('::selection{background-color: transparent}'),
+);
 
 function getCellFromTarget(node: Node): Cell | null {
   let currentNode = node;
@@ -158,13 +159,11 @@ function updateCells(
         if (!cell.highlighted) {
           cell.highlighted = true;
           elemStyle.setProperty('background-color', 'rgb(163, 187, 255)');
-          elemStyle.setProperty('caret-color', 'rgba(0, 0, 0, 0)');
         }
         highlighted.push(cell);
       } else if (cell.highlighted) {
         cell.highlighted = false;
         elemStyle.removeProperty('background-color');
-        elemStyle.removeProperty('caret-color');
       }
     }
   }
@@ -197,9 +196,36 @@ function applyCellSelection(
         const cellX = cell.x;
         const cellY = cell.y;
         if (!isHighlightingCells && (startX !== cellX || startY !== cellY)) {
-          const selection = window.getSelection();
-          selection.removeAllRanges();
           isHighlightingCells = true;
+          if (document.body) {
+            document.body.appendChild(removeHighlightStyle);
+          }
+          deleteCharacterListener = editor.addListener(
+            'command',
+            (type, payload) => {
+              if (type === 'deleteCharacter') {
+                if (highlightedCells.length === grid.columns * grid.rows) {
+                  tableNode.selectPrevious();
+                  // Delete entire table
+                  tableNode.remove();
+                  return true;
+                }
+                highlightedCells.forEach(({elem}) => {
+                  const cellNode = getNearestNodeFromDOMNode(elem);
+                  if (isElementNode(cellNode)) {
+                    cellNode.clear();
+                  }
+                });
+                return true;
+              }
+              if (type === 'formatText') {
+                formatCells(payload);
+                return true;
+              }
+              return false;
+            },
+            LowPriority,
+          );
         } else if (cellX === currentX && cellY === currentY) {
           return;
         }
@@ -226,71 +252,42 @@ function applyCellSelection(
     currentY = -1;
     updateCells(-1, -1, -1, -1, grid.cells);
     highlightedCells = [];
+    if (deleteCharacterListener !== null) {
+      deleteCharacterListener();
+      deleteCharacterListener = null;
+    }
+    if (document.body && removeHighlightStyle.parentNode !== null) {
+      document.body.removeChild(removeHighlightStyle);
+    }
   };
 
   tableElement.addEventListener('mouseleave', (event: MouseEvent) => {
     if (isSelected) {
-      const selection = window.getSelection();
-      selection.removeAllRanges();
       return;
     }
   });
 
   const formatCells = (type: TextFormatType) => {
-    editor.update(() => {
-      let selection = getSelection();
-      if (selection === null) {
-        selection = createSelection();
+    let selection = getSelection();
+    if (selection === null) {
+      selection = createSelection();
+    }
+    // This is to make Flow play ball.
+    const formatSelection = selection;
+    const anchor = formatSelection.anchor;
+    const focus = formatSelection.focus;
+    highlightedCells.forEach((highlightedCell) => {
+      const cellNode = getNearestNodeFromDOMNode(highlightedCell.elem);
+      if (isElementNode(cellNode)) {
+        anchor.set(cellNode.getKey(), 0, 'element');
+        focus.set(cellNode.getKey(), cellNode.getChildrenSize(), 'element');
+        formatSelection.formatText(type);
       }
-      // This is to make Flow play ball.
-      const formatSelection = selection;
-      const anchor = formatSelection.anchor;
-      const focus = formatSelection.focus;
-      highlightedCells.forEach((highlightedCell) => {
-        const cellNode = getNearestNodeFromDOMNode(highlightedCell.elem);
-        if (isElementNode(cellNode)) {
-          anchor.set(cellNode.getKey(), 0, 'element');
-          focus.set(cellNode.getKey(), cellNode.getChildrenSize(), 'element');
-          formatSelection.formatText(type);
-        }
-      });
-      clearSelection();
     });
+    setSelection(selection);
   };
 
-  rootElement.addEventListener(
-    'keydown',
-    (event: KeyboardEvent) => {
-      if (isHighlightingCells) {
-        // Backspace or delete
-        if (isDeleteBackward(event) || isDeleteForward(event)) {
-          event.preventDefault();
-          event.stopPropagation();
-          editor.update(() => {
-            if (highlightedCells.length === grid.columns * grid.rows) {
-              tableNode.selectPrevious();
-              // Delete entire table
-              tableNode.remove();
-              return;
-            }
-            highlightedCells.forEach((cell) => {
-              const cellNode = getNearestNodeFromDOMNode(cell.elem);
-              if (isElementNode(cellNode)) {
-                cellNode.clear();
-              }
-            });
-          });
-        } else if (isBold(event)) {
-          formatCells('bold');
-        } else if (isItalic(event)) {
-          formatCells('italic');
-        } else if (isUnderline(event)) {
-          formatCells('underline');
-        }
-      }
-    },
-    true,
-  );
+  let deleteCharacterListener = null;
 
   tableElement.addEventListener('mousedown', (event: MouseEvent) => {
     if (isSelected) {

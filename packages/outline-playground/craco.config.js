@@ -18,6 +18,7 @@ module.exports = {
       'outline/text': 'outline/dist/OutlineTextHelpers',
       'outline/keys': 'outline/dist/OutlineKeyHelpers',
       'outline/nodes': 'outline/dist/OutlineNodeHelpers',
+      'outline/elements': 'outline/dist/OutlineElementHelpers',
       'outline/events': 'outline/dist/OutlineEventHelpers',
       'outline/offsets': 'outline/dist/OutlineOffsetHelpers',
       'outline/root': 'outline/dist/OutlineRootHelpers',

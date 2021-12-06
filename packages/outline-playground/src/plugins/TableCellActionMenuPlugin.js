@@ -19,13 +19,13 @@ import {OutlineNode, createTextNode} from 'outline';
 import {TableRowNode, createTableRowNode} from 'outline/TableRowNode';
 import {createTableCellNode} from 'outline/TableCellNode';
 import {TableNode} from 'outline/TableNode';
-import {findNodeInTreeParents} from 'outline/nodes';
+import {findMatchingParent} from 'outline/nodes';
 
 export function getTableCellNodeOrNullFromOutlineNode(
   state: State,
   startingNode: OutlineNode,
 ): TableCellNode | null {
-  const node = findNodeInTreeParents(
+  const node = findMatchingParent(
     state,
     startingNode,
     (n) => n instanceof TableCellNode,
@@ -42,7 +42,7 @@ export function getTableRowNodeFromTableCellNode(
   state: State,
   startingNode: OutlineNode,
 ): TableRowNode {
-  const node = findNodeInTreeParents(
+  const node = findMatchingParent(
     state,
     startingNode,
     (n) => n instanceof TableRowNode,
@@ -59,7 +59,7 @@ export function getTableNodeFromOutlineNode(
   state: State,
   startingNode: OutlineNode,
 ): TableNode {
-  const node = findNodeInTreeParents(
+  const node = findMatchingParent(
     state,
     startingNode,
     (n) => n instanceof TableNode,

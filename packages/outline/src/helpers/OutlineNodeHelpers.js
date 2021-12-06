@@ -121,12 +121,14 @@ export function createTableNodeWithDimensions(
       tableCell.append(createTextNode());
       tableRow.append(tableCell);
     }
+
     tableNode.append(tableRow);
   }
+
   return tableNode;
 }
 
-export function findNodeInTreeParents(
+export function findMatchingParent(
   state: State,
   startingNode: OutlineNode,
   findFn: (OutlineNode) => boolean,

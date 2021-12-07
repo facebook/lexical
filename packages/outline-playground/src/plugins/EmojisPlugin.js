@@ -9,7 +9,7 @@
 
 import type {OutlineEditor, Selection} from 'outline';
 
-import {createEmojiNode, EmojiNode} from '../nodes/EmojiNode';
+import {otlnCreateEmojiNode, EmojiNode} from '../nodes/EmojiNode';
 import {useEffect} from 'react';
 import {getSelection, TextNode} from 'outline';
 import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
@@ -41,7 +41,7 @@ function findAndTransformEmoji(
       } else {
         [, targetNode] = node.splitText(i, i + 2);
       }
-      const emojiNode = createEmojiNode(emojiStyle, emojiText);
+      const emojiNode = otlnCreateEmojiNode(emojiStyle, emojiText);
       targetNode.replace(emojiNode);
       return emojiNode;
     }

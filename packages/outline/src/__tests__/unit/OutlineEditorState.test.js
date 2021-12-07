@@ -6,8 +6,8 @@
  *
  */
 
-import {createTextNode, getRoot} from 'outline';
-import {createParagraphNode} from 'outline/ParagraphNode';
+import {otlnCreateTextNode, getRoot} from 'outline';
+import {otlnCreateParagraphNode} from 'outline/ParagraphNode';
 import {EditorState} from '../../core/OutlineEditorState';
 import {initializeUnitTest} from '../utils';
 import {createRootNode} from '../../core/OutlineRootNode';
@@ -26,8 +26,8 @@ describe('OutlineEditorState tests', () => {
       const {editor} = testEnv;
 
       await editor.update(() => {
-        const paragraph = createParagraphNode();
-        const text = createTextNode('foo');
+        const paragraph = otlnCreateParagraphNode();
+        const text = otlnCreateTextNode('foo');
         paragraph.append(text);
         getRoot().append(paragraph);
       });
@@ -76,8 +76,8 @@ describe('OutlineEditorState tests', () => {
     test('toJSON()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const paragraph = createParagraphNode();
-        const text = createTextNode('Hello world');
+        const paragraph = otlnCreateParagraphNode();
+        const text = otlnCreateTextNode('Hello world');
         text.select(6, 11);
         paragraph.append(text);
         getRoot().append(paragraph);
@@ -90,8 +90,8 @@ describe('OutlineEditorState tests', () => {
     test('ensure garbage collection works as expected', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const paragraph = createParagraphNode();
-        const text = createTextNode('foo');
+        const paragraph = otlnCreateParagraphNode();
+        const text = otlnCreateTextNode('foo');
         paragraph.append(text);
         getRoot().append(paragraph);
       });

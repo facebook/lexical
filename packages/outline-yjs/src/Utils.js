@@ -17,15 +17,18 @@ import {
   isLineBreakNode,
   isDecoratorNode,
 } from 'outline';
-import {CollabElementNode, createCollabElementNode} from './CollabElementNode';
-import {CollabTextNode, createCollabTextNode} from './CollabTextNode';
+import {
+  CollabElementNode,
+  otlnCreateCollabElementNode,
+} from './CollabElementNode';
+import {CollabTextNode, otlnCreateCollabTextNode} from './CollabTextNode';
 import {
   CollabLineBreakNode,
-  createCollabLineBreakNode,
+  otlnCreateCollabLineBreakNode,
 } from './CollabLineBreakNode';
 import {
   CollabDecoratorNode,
-  createCollabDecoratorNode,
+  otlnCreateCollabDecoratorNode,
 } from './CollabDecoratorNode';
 import {XmlText, XmlElement, Map as YMap} from 'yjs';
 
@@ -69,7 +72,7 @@ export function getNodeByKeyOrThrow(key: NodeKey): OutlineNode {
   return node;
 }
 
-export function createCollabNodeFromOutlineNode(
+export function otlnCreateCollabNodeFromOutlineNode(
   binding: Binding,
   outlineNode: OutlineNode,
   parent: CollabElementNode,
@@ -82,13 +85,13 @@ export function createCollabNodeFromOutlineNode(
   let collabNode;
   if (isElementNode(outlineNode)) {
     const xmlText = new XmlText();
-    collabNode = createCollabElementNode(xmlText, parent, nodeType);
+    collabNode = otlnCreateCollabElementNode(xmlText, parent, nodeType);
     collabNode.syncPropertiesFromOutline(binding, outlineNode, null);
     collabNode.syncChildrenFromOutline(binding, outlineNode, null, null, null);
   } else if (isTextNode(outlineNode)) {
     // TODO create a token text node for immutable, segmented or inert nodes.
     const map = new YMap();
-    collabNode = createCollabTextNode(
+    collabNode = otlnCreateCollabTextNode(
       map,
       outlineNode.__text,
       parent,
@@ -98,10 +101,10 @@ export function createCollabNodeFromOutlineNode(
   } else if (isLineBreakNode(outlineNode)) {
     const map = new YMap();
     map.set('__type', 'linebreak');
-    collabNode = createCollabLineBreakNode(map, parent);
+    collabNode = otlnCreateCollabLineBreakNode(map, parent);
   } else if (isDecoratorNode(outlineNode)) {
     const xmlElem = new XmlElement();
-    collabNode = createCollabDecoratorNode(xmlElem, parent, nodeType);
+    collabNode = otlnCreateCollabDecoratorNode(xmlElem, parent, nodeType);
     collabNode.syncPropertiesFromOutline(binding, outlineNode, null);
   } else {
     throw new Error('Should never happen');
@@ -151,17 +154,17 @@ export function getOrInitCollabNodeFromSharedType(
     }
 
     if (sharedType instanceof XmlText) {
-      return createCollabElementNode(sharedType, targetParent, type);
+      return otlnCreateCollabElementNode(sharedType, targetParent, type);
     } else if (sharedType instanceof YMap) {
       if (targetParent === null) {
         throw new Error('Should never happen');
       }
       if (type === 'linebreak') {
-        return createCollabLineBreakNode(sharedType, targetParent);
+        return otlnCreateCollabLineBreakNode(sharedType, targetParent);
       }
-      return createCollabTextNode(sharedType, '', targetParent, type);
+      return otlnCreateCollabTextNode(sharedType, '', targetParent, type);
     } else if (sharedType instanceof XmlElement) {
-      return createCollabDecoratorNode(sharedType, targetParent, type);
+      return otlnCreateCollabDecoratorNode(sharedType, targetParent, type);
     }
   }
   return collabNode;

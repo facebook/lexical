@@ -9,7 +9,7 @@
 import {ListNode} from 'outline/ListNode';
 import {
   ListItemNode,
-  createListItemNode,
+  otlnCreateListItemNode,
   isListItemNode,
 } from 'outline/ListItemNode';
 import {TextNode, getRoot} from 'outline';
@@ -358,11 +358,11 @@ describe('OutlineListItemNode tests', () => {
       });
     });
 
-    test('createListItemNode()', async () => {
+    test('otlnCreateListItemNode()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const listItemNode = new ListItemNode();
-        const createdListItemNode = createListItemNode();
+        const createdListItemNode = otlnCreateListItemNode();
         expect(listItemNode.__type).toEqual(createdListItemNode.__type);
         expect(listItemNode.__flags).toEqual(createdListItemNode.__flags);
         expect(listItemNode.__parent).toEqual(createdListItemNode.__parent);

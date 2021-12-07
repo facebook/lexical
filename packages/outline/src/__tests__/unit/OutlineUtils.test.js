@@ -6,7 +6,7 @@
  *
  */
 
-import {createTextNode} from 'outline';
+import {otlnCreateTextNode} from 'outline';
 
 import {
   emptyFunction,
@@ -20,7 +20,7 @@ import {
 
 import {initializeUnitTest} from '../utils';
 import {getNodeByKey} from '../../core/OutlineUtils';
-import {createParagraphNode, ParagraphNode} from 'outline/ParagraphNode';
+import {otlnCreateParagraphNode, ParagraphNode} from 'outline/ParagraphNode';
 import {TextNode} from 'outline';
 
 describe('OutlineUtils tests', () => {
@@ -88,8 +88,8 @@ describe('OutlineUtils tests', () => {
       let textNode;
       await editor.update((state) => {
         const root = state.getRoot();
-        const paragraph = createParagraphNode();
-        textNode = createTextNode('foo');
+        const paragraph = otlnCreateParagraphNode();
+        textNode = otlnCreateTextNode('foo');
         paragraph.append(textNode);
         root.append(paragraph);
       });
@@ -152,16 +152,16 @@ describe('OutlineUtils tests', () => {
     test('isImmutableOrInertOrSegmented()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const node = createTextNode('foo');
+        const node = otlnCreateTextNode('foo');
         expect(isImmutableOrInertOrSegmented(node)).toBe(false);
 
-        const immutableNode = createTextNode().makeImmutable();
+        const immutableNode = otlnCreateTextNode().makeImmutable();
         expect(isImmutableOrInertOrSegmented(immutableNode)).toBe(true);
 
-        const inertNode = createTextNode('foo').makeInert();
+        const inertNode = otlnCreateTextNode('foo').makeInert();
         expect(isImmutableOrInertOrSegmented(inertNode)).toBe(true);
 
-        const segmentedNode = createTextNode('foo').makeSegmented();
+        const segmentedNode = otlnCreateTextNode('foo').makeSegmented();
         expect(isImmutableOrInertOrSegmented(segmentedNode)).toBe(true);
       });
     });

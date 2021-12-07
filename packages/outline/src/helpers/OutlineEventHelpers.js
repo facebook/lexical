@@ -42,7 +42,7 @@ import {
 import isImmutableOrInert from 'shared/isImmutableOrInert';
 import {cloneContents, insertRichText, moveCharacter} from 'outline/selection';
 import {
-  createTextNode,
+  otlnCreateTextNode,
   createNodeFromParse,
   isTextNode,
   isElementNode,
@@ -54,15 +54,15 @@ import {
   getCompositionKey,
   getNearestNodeFromDOMNode,
   flushMutations,
-  createLineBreakNode,
+  otlnCreateLineBreakNode,
 } from 'outline';
 import {IS_FIREFOX} from 'shared/environment';
 import getPossibleDecoratorNode from 'shared/getPossibleDecoratorNode';
-import {createListNode} from 'outline/ListNode';
-import {createListItemNode} from 'outline/ListItemNode';
-import {createParagraphNode} from 'outline/ParagraphNode';
-import {createHeadingNode} from 'outline/HeadingNode';
-import {createLinkNode} from 'outline/LinkNode';
+import {otlnCreateListNode} from 'outline/ListNode';
+import {otlnCreateListItemNode} from 'outline/ListItemNode';
+import {otlnCreateParagraphNode} from 'outline/ParagraphNode';
+import {otlnCreateHeadingNode} from 'outline/HeadingNode';
+import {otlnCreateLinkNode} from 'outline/LinkNode';
 import type {TextFormatType} from 'outline';
 // TODO we shouldn't really be importing from core here.
 import {TEXT_TYPE_TO_FORMAT} from '../core/OutlineConstants';
@@ -88,22 +88,22 @@ type DOMTransformOutput = {
 };
 
 const DOM_NODE_NAME_TO_OUTLINE_NODE: DOMTransformerMap = {
-  ul: () => ({node: createListNode('ul')}),
-  ol: () => ({node: createListNode('ol')}),
-  li: () => ({node: createListItemNode()}),
-  h1: () => ({node: createHeadingNode('h1')}),
-  h2: () => ({node: createHeadingNode('h2')}),
-  h3: () => ({node: createHeadingNode('h3')}),
-  h4: () => ({node: createHeadingNode('h4')}),
-  h5: () => ({node: createHeadingNode('h5')}),
-  p: () => ({node: createParagraphNode()}),
-  br: () => ({node: createLineBreakNode()}),
+  ul: () => ({node: otlnCreateListNode('ul')}),
+  ol: () => ({node: otlnCreateListNode('ol')}),
+  li: () => ({node: otlnCreateListItemNode()}),
+  h1: () => ({node: otlnCreateHeadingNode('h1')}),
+  h2: () => ({node: otlnCreateHeadingNode('h2')}),
+  h3: () => ({node: otlnCreateHeadingNode('h3')}),
+  h4: () => ({node: otlnCreateHeadingNode('h4')}),
+  h5: () => ({node: otlnCreateHeadingNode('h5')}),
+  p: () => ({node: otlnCreateParagraphNode()}),
+  br: () => ({node: otlnCreateLineBreakNode()}),
   a: (domNode: Node) => {
     let node;
     if (domNode instanceof HTMLAnchorElement) {
-      node = createLinkNode(domNode.href);
+      node = otlnCreateLinkNode(domNode.href);
     } else {
-      node = createTextNode(domNode.textContent);
+      node = otlnCreateTextNode(domNode.textContent);
     }
     return {node};
   },
@@ -122,7 +122,7 @@ const DOM_NODE_NAME_TO_OUTLINE_NODE: DOMTransformerMap = {
   em: (domNode: Node) => {
     return {node: null, format: 'italic'};
   },
-  '#text': (domNode: Node) => ({node: createTextNode(domNode.textContent)}),
+  '#text': (domNode: Node) => ({node: otlnCreateTextNode(domNode.textContent)}),
 };
 
 function updateAndroidSoftKeyFlagIfAny(event: KeyboardEvent): void {
@@ -260,7 +260,7 @@ function insertDataTransferForRichText(
       const node = nodes[i];
       if (!isElementNode(node) || node.isInline()) {
         if (currentBlock === null) {
-          currentBlock = createParagraphNode();
+          currentBlock = otlnCreateParagraphNode();
           topLevelBlocks.push(currentBlock);
         }
         if (currentBlock !== null) {
@@ -720,7 +720,7 @@ function updateTextNodeFromDOMContent(
 
       if (node.isSegmented()) {
         const originalTextContent = node.getTextContent();
-        const replacement = createTextNode(originalTextContent);
+        const replacement = otlnCreateTextNode(originalTextContent);
         node.replace(replacement);
         node = replacement;
       }

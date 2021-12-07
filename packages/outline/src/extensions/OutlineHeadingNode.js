@@ -12,7 +12,7 @@ import type {ParagraphNode} from 'outline/ParagraphNode';
 
 import {addClassNamesToElement} from 'outline/elements';
 import {ElementNode} from 'outline';
-import {createParagraphNode} from 'outline/ParagraphNode';
+import {otlnCreateParagraphNode} from 'outline/ParagraphNode';
 
 type HeadingTagType = 'h1' | 'h2' | 'h3' | 'h4' | 'h5';
 
@@ -58,7 +58,7 @@ export class HeadingNode extends ElementNode {
   // Mutation
 
   insertNewAfter(): ParagraphNode {
-    const newElement = createParagraphNode();
+    const newElement = otlnCreateParagraphNode();
     const direction = this.getDirection();
     newElement.setDirection(direction);
     this.insertAfter(newElement);
@@ -66,7 +66,7 @@ export class HeadingNode extends ElementNode {
   }
 
   collapseAtStart(): true {
-    const paragraph = createParagraphNode();
+    const paragraph = otlnCreateParagraphNode();
     const children = this.getChildren();
     children.forEach((child) => paragraph.append(child));
     this.replace(paragraph);
@@ -74,7 +74,7 @@ export class HeadingNode extends ElementNode {
   }
 }
 
-export function createHeadingNode(headingTag: HeadingTagType): HeadingNode {
+export function otlnCreateHeadingNode(headingTag: HeadingTagType): HeadingNode {
   return new HeadingNode(headingTag);
 }
 

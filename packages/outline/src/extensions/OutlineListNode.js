@@ -14,8 +14,8 @@ import type {
   EditorThemeClasses,
 } from 'outline';
 
-import {createTextNode, ElementNode} from 'outline';
-import {createListItemNode, isListItemNode} from 'outline/ListItemNode';
+import {otlnCreateTextNode, ElementNode} from 'outline';
+import {otlnCreateListItemNode, isListItemNode} from 'outline/ListItemNode';
 import {
   addClassNamesToElement,
   removeClassNamesFromElement,
@@ -79,11 +79,11 @@ export class ListNode extends ElementNode {
       if (isListItemNode(currentNode)) {
         super.append(currentNode);
       } else {
-        const listItemNode = createListItemNode();
+        const listItemNode = otlnCreateListItemNode();
         if (isListNode(currentNode)) {
           listItemNode.append(currentNode);
         } else {
-          const textNode = createTextNode(currentNode.getTextContent());
+          const textNode = otlnCreateTextNode(currentNode.getTextContent());
           listItemNode.append(textNode);
         }
         super.append(listItemNode);
@@ -132,7 +132,7 @@ function setListThemeClassNames(
   }
 }
 
-export function createListNode(
+export function otlnCreateListNode(
   tag: ListNodeTagType,
   start?: number = 1,
 ): ListNode {

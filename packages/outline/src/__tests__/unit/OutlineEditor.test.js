@@ -13,7 +13,7 @@ import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
 import {
-  createTextNode,
+  otlnCreateTextNode,
   TextNode,
   ElementNode,
   getRoot,
@@ -22,12 +22,12 @@ import {
   getNodeByKey,
   isTextNode,
 } from 'outline';
-import {createParagraphNode, ParagraphNode} from 'outline/ParagraphNode';
+import {otlnCreateParagraphNode, ParagraphNode} from 'outline/ParagraphNode';
 import useOutlineRichText from 'outline-react/useOutlineRichText';
 import {getEditorStateTextContent} from '../../core/OutlineUtils';
 import {
-  createTestElementNode,
-  createTestDecoratorNode,
+  otlnCreateTestElementNode,
+  otlnCreateTestDecoratorNode,
   createTestEditor,
 } from '../utils';
 import {LineBreakNode} from '../../core/OutlineLineBreakNode';
@@ -109,8 +109,8 @@ describe('OutlineEditor tests', () => {
 
     initialEditor.update(() => {
       const root = getRoot();
-      const paragraph = createParagraphNode();
-      const text = createTextNode('This works!');
+      const paragraph = otlnCreateParagraphNode();
+      const text = otlnCreateTextNode('This works!');
       root.append(paragraph);
       paragraph.append(text);
     });
@@ -146,8 +146,8 @@ describe('OutlineEditor tests', () => {
 
     editor.update(() => {
       const root = getRoot();
-      const paragraph = createParagraphNode();
-      const text = createTextNode('This works!');
+      const paragraph = otlnCreateParagraphNode();
+      const text = otlnCreateTextNode('This works!');
       root.append(paragraph);
       paragraph.append(text);
     });
@@ -299,7 +299,7 @@ describe('OutlineEditor tests', () => {
     init();
     await editor.update(() => {
       const root = getRoot();
-      root.append(createParagraphNode());
+      root.append(otlnCreateParagraphNode());
     });
 
     const fn = jest.fn();
@@ -337,9 +337,9 @@ describe('OutlineEditor tests', () => {
     });
     await editor.update(() => {
       const root = getRoot();
-      const paragraph = createParagraphNode();
+      const paragraph = otlnCreateParagraphNode();
       root.append(paragraph);
-      paragraph.append(createTextNode('foo'));
+      paragraph.append(otlnCreateTextNode('foo'));
     });
     italicsListener();
     boldListener();
@@ -364,7 +364,7 @@ describe('OutlineEditor tests', () => {
           return;
         }
         if (paragraph.isEmpty()) {
-          paragraph.append(createTextNode('foo'));
+          paragraph.append(otlnCreateTextNode('foo'));
         }
       },
     );
@@ -387,7 +387,7 @@ describe('OutlineEditor tests', () => {
     });
     await editor.update(() => {
       const root = getRoot();
-      const paragraph = createParagraphNode();
+      const paragraph = otlnCreateParagraphNode();
       root.append(paragraph);
     });
     await editor.update(() => {
@@ -411,10 +411,10 @@ describe('OutlineEditor tests', () => {
     const fooListener = editor.addTransform(TextNode, (node) => {
       if (node.getTextContent() === 'Foo' && !hasRun[0]) {
         const [before, after] = node.splitText(2);
-        before.insertBefore(createTextNode(''));
-        after.insertAfter(createTextNode(''));
-        after.insertAfter(createTextNode('!'));
-        after.insertAfter(createTextNode(''));
+        before.insertBefore(otlnCreateTextNode(''));
+        after.insertAfter(otlnCreateTextNode(''));
+        after.insertAfter(otlnCreateTextNode('!'));
+        after.insertAfter(otlnCreateTextNode(''));
         hasRun[0] = true;
       }
     });
@@ -427,10 +427,10 @@ describe('OutlineEditor tests', () => {
         !hasRun[1]
       ) {
         const [before, after] = child.splitText(2);
-        before.insertBefore(createTextNode(''));
-        after.insertAfter(createTextNode(''));
-        after.insertAfter(createTextNode('!'));
-        after.insertAfter(createTextNode(''));
+        before.insertBefore(otlnCreateTextNode(''));
+        after.insertAfter(otlnCreateTextNode(''));
+        after.insertAfter(otlnCreateTextNode('!'));
+        after.insertAfter(otlnCreateTextNode(''));
         hasRun[1] = true;
       }
     });
@@ -439,16 +439,16 @@ describe('OutlineEditor tests', () => {
       if (node.getTextContent() === 'Foo!!' && !hasRun[2]) {
         node.toggleFormat('bold');
         const [before, after] = node.splitText(2);
-        before.insertBefore(createTextNode(''));
-        after.insertAfter(createTextNode(''));
+        before.insertBefore(otlnCreateTextNode(''));
+        after.insertAfter(otlnCreateTextNode(''));
         hasRun[2] = true;
       }
     });
     await editor.update(() => {
       const root = getRoot();
-      const paragraph = createParagraphNode();
+      const paragraph = otlnCreateParagraphNode();
       root.append(paragraph);
-      paragraph.append(createTextNode('Foo'));
+      paragraph.append(otlnCreateTextNode('Foo'));
     });
     fooListener();
     megaFooListener();
@@ -470,9 +470,9 @@ describe('OutlineEditor tests', () => {
     expect(errorListener).toHaveBeenCalledTimes(0);
     await editor.update(() => {
       const root = getRoot();
-      const paragraph = createParagraphNode();
+      const paragraph = otlnCreateParagraphNode();
       root.append(paragraph);
-      paragraph.append(createTextNode('foo'));
+      paragraph.append(otlnCreateTextNode('foo'));
     });
     expect(errorListener).toHaveBeenCalledTimes(1);
 
@@ -498,8 +498,8 @@ describe('OutlineEditor tests', () => {
 
     editor.update(() => {
       const root = getRoot();
-      const paragraph = createParagraphNode();
-      const text = createTextNode('This works!');
+      const paragraph = otlnCreateParagraphNode();
+      const text = otlnCreateTextNode('This works!');
       root.append(paragraph);
       paragraph.append(text);
     });
@@ -522,8 +522,8 @@ describe('OutlineEditor tests', () => {
     editor.update(() => {
       const root = getRoot();
       if (root.getFirstChild() === null) {
-        const paragraph = createParagraphNode();
-        const text = createTextNode('This works!');
+        const paragraph = otlnCreateParagraphNode();
+        const text = otlnCreateTextNode('This works!');
         root.append(paragraph);
         paragraph.append(text);
       }
@@ -561,8 +561,8 @@ describe('OutlineEditor tests', () => {
     editor.update(() => {
       const root = getRoot();
       if (root.getFirstChild() === null) {
-        const paragraph = createParagraphNode();
-        const text = createTextNode('This works!');
+        const paragraph = otlnCreateParagraphNode();
+        const text = otlnCreateTextNode('This works!');
         root.append(paragraph);
         paragraph.append(text);
       }
@@ -610,8 +610,8 @@ describe('OutlineEditor tests', () => {
           const firstChild = root.getFirstChild();
           const text = changeElement ? 'Change successful' : 'Not changed';
           if (firstChild === null) {
-            const paragraph = createParagraphNode();
-            const textNode = createTextNode(text);
+            const paragraph = otlnCreateParagraphNode();
+            const textNode = otlnCreateTextNode(text);
             paragraph.append(textNode);
             root.append(paragraph);
           } else {
@@ -713,8 +713,8 @@ describe('OutlineEditor tests', () => {
       // Update the editor with the decorator
       await ReactTestUtils.act(async () => {
         await editor.update(() => {
-          const paragraph = createParagraphNode();
-          const test = createTestDecoratorNode();
+          const paragraph = otlnCreateParagraphNode();
+          const test = otlnCreateTestDecoratorNode();
           paragraph.append(test);
           getRoot().append(paragraph);
         });
@@ -812,8 +812,8 @@ describe('OutlineEditor tests', () => {
     beforeEach(async () => {
       init();
       await update((state) => {
-        const paragraph = createParagraphNode();
-        originalText = createTextNode('Hello world');
+        const paragraph = otlnCreateParagraphNode();
+        originalText = otlnCreateTextNode('Hello world');
         originalText.select(6, 11);
         paragraph.append(originalText);
         getRoot().append(paragraph);
@@ -895,7 +895,7 @@ describe('OutlineEditor tests', () => {
       init();
       await update(() => {
         const root = getRoot();
-        const paragraph = createParagraphNode();
+        const paragraph = otlnCreateParagraphNode();
         root.append(paragraph);
       });
     }
@@ -1033,8 +1033,8 @@ describe('OutlineEditor tests', () => {
 
     it('moves node to different tree branches', async () => {
       function createElementNodeWithText(text: string) {
-        const elementNode = createTestElementNode();
-        const textNode = createTextNode(text);
+        const elementNode = otlnCreateTestElementNode();
+        const textNode = otlnCreateTextNode(text);
         elementNode.append(textNode);
         return [elementNode, textNode];
       }
@@ -1083,8 +1083,8 @@ describe('OutlineEditor tests', () => {
 
     it('moves node to different tree branches (inverse)', async () => {
       function createElementNodeWithText(text: string) {
-        const elementNode = createTestElementNode();
-        const textNode = createTextNode(text);
+        const elementNode = otlnCreateTestElementNode();
+        const textNode = otlnCreateTextNode(text);
         elementNode.append(textNode);
         return elementNode;
       }
@@ -1114,8 +1114,8 @@ describe('OutlineEditor tests', () => {
 
     it('moves node to different tree branches (node appended twice in two different branches)', async () => {
       function createElementNodeWithText(text: string) {
-        const elementNode = createTestElementNode();
-        const textNode = createTextNode(text);
+        const elementNode = otlnCreateTestElementNode();
+        const textNode = otlnCreateTextNode(text);
         elementNode.append(textNode);
         return elementNode;
       }
@@ -1160,7 +1160,7 @@ describe('OutlineEditor tests', () => {
     );
     await editor.update(() => {
       const root = getRoot();
-      const paragraph = createParagraphNode();
+      const paragraph = otlnCreateParagraphNode();
       root.append(paragraph);
     });
     removeTextTransform();
@@ -1275,8 +1275,8 @@ describe('OutlineEditor tests', () => {
     const fn = jest.fn();
     editor.update(() => {
       const root = getRoot();
-      const paragraph = createParagraphNode();
-      const textNode = createTextNode('foo');
+      const paragraph = otlnCreateParagraphNode();
+      const textNode = otlnCreateTextNode('foo');
       root.append(paragraph);
       paragraph.append(textNode);
     });
@@ -1287,7 +1287,7 @@ describe('OutlineEditor tests', () => {
     await editor.update(() => {
       const root = getRoot();
       const child = root.getLastDescendant();
-      child.insertAfter(createTextNode('bar'));
+      child.insertAfter(otlnCreateTextNode('bar'));
     });
     expect(fn).toHaveBeenCalledTimes(1);
     expect(fn).toHaveBeenCalledWith('foobar');

@@ -12,12 +12,12 @@ import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
 import type {OutlineEditor} from 'outline';
 import {isHeadingNode} from 'outline/HeadingNode';
 import {isListNode} from 'outline/ListNode';
-import {createParagraphNode} from 'outline/ParagraphNode';
-import {createHeadingNode} from 'outline/HeadingNode';
-import {createListNode} from 'outline/ListNode';
-import {createListItemNode} from 'outline/ListItemNode';
-import {createQuoteNode} from 'outline/QuoteNode';
-import {createCodeNode} from 'outline/CodeNode';
+import {otlnCreateParagraphNode} from 'outline/ParagraphNode';
+import {otlnCreateHeadingNode} from 'outline/HeadingNode';
+import {otlnCreateListNode} from 'outline/ListNode';
+import {otlnCreateListItemNode} from 'outline/ListItemNode';
+import {otlnCreateQuoteNode} from 'outline/QuoteNode';
+import {otlnCreateCodeNode} from 'outline/CodeNode';
 import {wrapLeafNodesInElements} from 'outline/selection';
 import {useEffect, useRef, useState} from 'react';
 // $FlowFixMe
@@ -87,7 +87,7 @@ function DropdownList({
         const selection = getSelection();
 
         if (selection !== null) {
-          wrapLeafNodesInElements(selection, () => createParagraphNode());
+          wrapLeafNodesInElements(selection, () => otlnCreateParagraphNode());
         }
       });
     }
@@ -101,7 +101,7 @@ function DropdownList({
         const selection = getSelection();
 
         if (selection !== null) {
-          wrapLeafNodesInElements(selection, () => createHeadingNode('h1'));
+          wrapLeafNodesInElements(selection, () => otlnCreateHeadingNode('h1'));
         }
       });
     }
@@ -115,7 +115,7 @@ function DropdownList({
         const selection = getSelection();
 
         if (selection !== null) {
-          wrapLeafNodesInElements(selection, () => createHeadingNode('h2'));
+          wrapLeafNodesInElements(selection, () => otlnCreateHeadingNode('h2'));
         }
       });
     }
@@ -131,8 +131,8 @@ function DropdownList({
         if (selection !== null) {
           wrapLeafNodesInElements(
             selection,
-            () => createListItemNode(),
-            createListNode('ul'),
+            () => otlnCreateListItemNode(),
+            otlnCreateListNode('ul'),
           );
         }
       });
@@ -149,8 +149,8 @@ function DropdownList({
         if (selection !== null) {
           wrapLeafNodesInElements(
             selection,
-            () => createListItemNode(),
-            createListNode('ol'),
+            () => otlnCreateListItemNode(),
+            otlnCreateListNode('ol'),
           );
         }
       });
@@ -165,7 +165,7 @@ function DropdownList({
         const selection = getSelection();
 
         if (selection !== null) {
-          wrapLeafNodesInElements(selection, () => createQuoteNode());
+          wrapLeafNodesInElements(selection, () => otlnCreateQuoteNode());
         }
       });
     }
@@ -179,7 +179,7 @@ function DropdownList({
         const selection = getSelection();
 
         if (selection !== null) {
-          wrapLeafNodesInElements(selection, () => createCodeNode());
+          wrapLeafNodesInElements(selection, () => otlnCreateCodeNode());
         }
       });
     }

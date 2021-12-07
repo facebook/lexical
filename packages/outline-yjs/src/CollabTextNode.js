@@ -192,7 +192,7 @@ export class CollabTextNode {
   }
 }
 
-export function createCollabTextNode(
+export function otlnCreateCollabTextNode(
   map: YMap,
   text: string,
   parent: CollabElementNode,

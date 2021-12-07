@@ -476,7 +476,7 @@ export class ImageNode extends DecoratorNode {
   }
 }
 
-export function createImageNode(
+export function otlnCreateImageNode(
   src: string,
   altText: string,
   ref: EditorStateRef,

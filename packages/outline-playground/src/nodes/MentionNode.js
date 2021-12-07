@@ -37,6 +37,6 @@ export class MentionNode extends TextNode {
   }
 }
 
-export function createMentionNode(mentionName: string): MentionNode {
+export function otlnCreateMentionNode(mentionName: string): MentionNode {
   return new MentionNode(mentionName).makeSegmented().makeDirectionless();
 }

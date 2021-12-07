@@ -7,8 +7,8 @@
  */
 
 import {
-  createLineBreakNode,
-  createTextNode,
+  otlnCreateLineBreakNode,
+  otlnCreateTextNode,
   Selection,
   getSelection,
   getRoot,
@@ -20,7 +20,7 @@ import ReactTestUtils from 'react-dom/test-utils';
 
 import useOutlineRichText from 'outline-react/useOutlineRichText';
 import {
-  createTestElementNode,
+  otlnCreateTestElementNode,
   createTestEditor,
 } from '../../../__tests__/utils';
 
@@ -905,8 +905,8 @@ describe('OutlineSelection tests', () => {
     await editor.update(() => {
       const root = getRoot();
       const paragraph = root.getFirstChild();
-      const elementNode = createTestElementNode();
-      const text = createTextNode();
+      const elementNode = otlnCreateTestElementNode();
+      const text = otlnCreateTextNode();
       paragraph.append(elementNode);
       elementNode.append(text);
 
@@ -924,7 +924,7 @@ describe('OutlineSelection tests', () => {
         anchorOffset: 2,
         focusOffset: 2,
         fn: (paragraph, text) => {
-          const newText = createTextNode('2');
+          const newText = otlnCreateTextNode('2');
           text.insertBefore(newText);
 
           return {
@@ -940,7 +940,7 @@ describe('OutlineSelection tests', () => {
         anchorOffset: 2,
         focusOffset: 2,
         fn: (paragraph, text) => {
-          const newText = createTextNode('2');
+          const newText = otlnCreateTextNode('2');
           text.insertAfter(newText);
 
           return {
@@ -986,7 +986,7 @@ describe('OutlineSelection tests', () => {
         anchorOffset: 1,
         focusOffset: 1,
         fn: (paragraph, text) => {
-          const newText = createTextNode('replacement');
+          const newText = otlnCreateTextNode('replacement');
           text.replace(newText);
 
           return {
@@ -1003,7 +1003,7 @@ describe('OutlineSelection tests', () => {
         anchorOffset: 0,
         focusOffset: 2,
         fn: (paragraph, text) => {
-          const newText = createTextNode('2');
+          const newText = otlnCreateTextNode('2');
           text.insertBefore(newText);
 
           return {
@@ -1049,7 +1049,7 @@ describe('OutlineSelection tests', () => {
         anchorOffset: 0,
         focusOffset: 1,
         fn: (paragraph, text) => {
-          const newText = createTextNode('replacement');
+          const newText = otlnCreateTextNode('replacement');
           text.replace(newText);
 
           return {
@@ -1066,13 +1066,13 @@ describe('OutlineSelection tests', () => {
         anchorOffset: 0,
         focusOffset: 1,
         fnBefore: (paragraph, originalText1) => {
-          const originalText2 = createTextNode('bar');
+          const originalText2 = otlnCreateTextNode('bar');
           originalText1.insertBefore(originalText2);
         },
         fn: (paragraph, originalText1) => {
           const originalText2 = originalText1.getPreviousSibling();
           const lastChild = paragraph.getLastChild();
-          const newText = createTextNode('2');
+          const newText = otlnCreateTextNode('2');
           lastChild.insertBefore(newText);
 
           return {
@@ -1089,7 +1089,7 @@ describe('OutlineSelection tests', () => {
         focusOffset: 1,
         fn: (paragraph, text) => {
           const lastChild = paragraph.getLastChild();
-          const newText = createTextNode('2');
+          const newText = otlnCreateTextNode('2');
           lastChild.insertAfter(newText);
 
           return {
@@ -1105,7 +1105,7 @@ describe('OutlineSelection tests', () => {
         anchorOffset: 0,
         focusOffset: 1,
         fnBefore: (paragraph, originalText1) => {
-          const originalText2 = createTextNode('bar');
+          const originalText2 = otlnCreateTextNode('bar');
           originalText1.insertBefore(originalText2);
         },
         fn: (paragraph, originalText1) => {
@@ -1141,7 +1141,7 @@ describe('OutlineSelection tests', () => {
         anchorOffset: 0,
         focusOffset: 1,
         fn: (paragraph, text) => {
-          const newText = createTextNode('replacement');
+          const newText = otlnCreateTextNode('replacement');
           const lastChild = paragraph.getLastChild();
           lastChild.replace(newText);
 
@@ -1160,7 +1160,7 @@ describe('OutlineSelection tests', () => {
         focusOffset: 1,
         fn: (paragraph, text) => {
           const lastChild = paragraph.getLastChild();
-          const newText = createTextNode('2');
+          const newText = otlnCreateTextNode('2');
           lastChild.insertBefore(newText);
 
           return {
@@ -1176,7 +1176,7 @@ describe('OutlineSelection tests', () => {
         anchorOffset: 0,
         focusOffset: 1,
         fn: (paragraph, text) => {
-          const newText = createTextNode('2');
+          const newText = otlnCreateTextNode('2');
           text.insertAfter(newText);
 
           return {
@@ -1192,7 +1192,7 @@ describe('OutlineSelection tests', () => {
         anchorOffset: 0,
         focusOffset: 1,
         fnBefore: (paragraph, originalText1) => {
-          const originalText2 = createTextNode('bar');
+          const originalText2 = otlnCreateTextNode('bar');
           originalText1.insertBefore(originalText2);
         },
         fn: (paragraph, originalText1) => {
@@ -1212,7 +1212,7 @@ describe('OutlineSelection tests', () => {
         anchorOffset: 1,
         focusOffset: 2,
         fnBefore: (paragraph, originalText1) => {
-          const originalText2 = createTextNode('bar');
+          const originalText2 = otlnCreateTextNode('bar');
           originalText1.insertBefore(originalText2);
         },
         fn: (paragraph, originalText1) => {
@@ -1232,11 +1232,11 @@ describe('OutlineSelection tests', () => {
         anchorOffset: 1,
         focusOffset: 2,
         fnBefore: (paragraph, originalText1) => {
-          const originalText2 = createTextNode('bar');
+          const originalText2 = otlnCreateTextNode('bar');
           originalText1.insertBefore(originalText2);
         },
         fn: (paragraph, originalText1) => {
-          const newText = createTextNode('replacement');
+          const newText = otlnCreateTextNode('replacement');
           const lastChild = paragraph.getLastChild();
           lastChild.replace(newText);
 
@@ -1254,13 +1254,13 @@ describe('OutlineSelection tests', () => {
         anchorOffset: 0,
         focusOffset: 2,
         fnBefore: (paragraph, originalText1) => {
-          const originalText2 = createTextNode('bar');
+          const originalText2 = otlnCreateTextNode('bar');
           originalText1.insertBefore(originalText2);
         },
         fn: (paragraph, originalText1) => {
           const originalText2 = originalText1.getPreviousSibling();
           const lastChild = paragraph.getLastChild();
-          const newText = createTextNode('2');
+          const newText = otlnCreateTextNode('2');
           lastChild.insertBefore(newText);
 
           return {
@@ -1276,12 +1276,12 @@ describe('OutlineSelection tests', () => {
         anchorOffset: 0,
         focusOffset: 2,
         fnBefore: (paragraph, originalText1) => {
-          const originalText2 = createTextNode('bar');
+          const originalText2 = otlnCreateTextNode('bar');
           originalText1.insertBefore(originalText2);
         },
         fn: (paragraph, originalText1) => {
           const originalText2 = originalText1.getPreviousSibling();
-          const newText = createTextNode('2');
+          const newText = otlnCreateTextNode('2');
           originalText1.insertAfter(newText);
 
           return {
@@ -1297,7 +1297,7 @@ describe('OutlineSelection tests', () => {
         anchorOffset: 0,
         focusOffset: 2,
         fnBefore: (paragraph, originalText1) => {
-          const originalText2 = createTextNode('bar');
+          const originalText2 = otlnCreateTextNode('bar');
           originalText1.insertBefore(originalText2);
         },
         fn: (paragraph, originalText1) => {
@@ -1317,7 +1317,7 @@ describe('OutlineSelection tests', () => {
         anchorOffset: 0,
         focusOffset: 2,
         fnBefore: (paragraph, originalText1) => {
-          const originalText2 = createTextNode('bar');
+          const originalText2 = otlnCreateTextNode('bar');
           originalText1.insertBefore(originalText2);
         },
         fn: (paragraph, originalText1) => {
@@ -1337,11 +1337,11 @@ describe('OutlineSelection tests', () => {
         anchorOffset: 0,
         focusOffset: 2,
         fnBefore: (paragraph, originalText1) => {
-          const originalText2 = createTextNode('bar');
+          const originalText2 = otlnCreateTextNode('bar');
           originalText1.insertBefore(originalText2);
         },
         fn: (paragraph, originalText1) => {
-          const newText = createTextNode('replacement');
+          const newText = otlnCreateTextNode('replacement');
           originalText1.replace(newText);
 
           return {
@@ -1358,12 +1358,12 @@ describe('OutlineSelection tests', () => {
         anchorOffset: 3,
         focusOffset: 3,
         fnBefore: (paragraph, originalText1) => {
-          const originalText2 = createTextNode('bar');
+          const originalText2 = otlnCreateTextNode('bar');
           paragraph.append(originalText2);
         },
         fn: (paragraph, originalText1) => {
           const originalText2 = paragraph.getLastChild();
-          const newText = createTextNode('new');
+          const newText = otlnCreateTextNode('new');
           originalText1.insertBefore(newText);
 
           return {
@@ -1379,12 +1379,12 @@ describe('OutlineSelection tests', () => {
         anchorOffset: 0,
         focusOffset: 3,
         fnBefore: (paragraph, originalText1) => {
-          const originalText2 = createTextNode('bar');
+          const originalText2 = otlnCreateTextNode('bar');
           paragraph.append(originalText2);
         },
         fn: (paragraph, originalText1) => {
           const originalText2 = paragraph.getLastChild();
-          const newText = createTextNode('new');
+          const newText = otlnCreateTextNode('new');
           originalText1.insertBefore(newText);
 
           return {
@@ -1423,9 +1423,9 @@ describe('OutlineSelection tests', () => {
             await editor.update(() => {
               const root = getRoot();
               const paragraph = root.getFirstChild();
-              const textNode = createTextNode('foo');
+              const textNode = otlnCreateTextNode('foo');
               // Note: line break can't be selected by the DOM
-              const linebreak = createLineBreakNode();
+              const linebreak = otlnCreateLineBreakNode();
               const selection: Selection = getSelection();
               const anchor = selection.anchor;
               const focus = selection.focus;
@@ -1466,10 +1466,10 @@ describe('OutlineSelection tests', () => {
       const root = getRoot();
       const paragraph = root.getFirstChild();
       const paragraphKey = paragraph.getKey();
-      const textNode = createTextNode('foo');
+      const textNode = otlnCreateTextNode('foo');
       const textNodeKey = textNode.getKey();
       // Note: line break can't be selected by the DOM
-      const linebreak = createLineBreakNode();
+      const linebreak = otlnCreateLineBreakNode();
       const selection: Selection = getSelection();
       const anchor = selection.anchor;
       const focus = selection.focus;

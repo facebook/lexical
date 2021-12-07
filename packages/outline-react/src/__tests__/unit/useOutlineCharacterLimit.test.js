@@ -10,10 +10,10 @@
 import type {OutlineEditor, NodeKey} from 'outline';
 
 import {initializeUnitTest} from '../../../../outline/src/__tests__/utils';
-import {createTextNode, getSelection, getNodeByKey, getRoot} from 'outline';
-import {createParagraphNode} from 'outline/ParagraphNode';
+import {otlnCreateTextNode, getSelection, getNodeByKey, getRoot} from 'outline';
+import {otlnCreateParagraphNode} from 'outline/ParagraphNode';
 import {
-  createOverflowNode,
+  otlnCreateOverflowNode,
   mergePrevious,
   isOverflowNode,
   OverflowNode,
@@ -37,9 +37,9 @@ describe('OutlineNodeHelpers tests', () => {
         let overflowRightKey;
         await editor.update(() => {
           const root = getRoot();
-          const paragraph = createParagraphNode();
-          const overflowLeft = createOverflowNode();
-          const overflowRight = createOverflowNode();
+          const paragraph = otlnCreateParagraphNode();
+          const overflowLeft = otlnCreateOverflowNode();
+          const overflowRight = otlnCreateOverflowNode();
           overflowLeftKey = overflowLeft.getKey();
           overflowRightKey = overflowRight.getKey();
           root.append(paragraph);
@@ -57,8 +57,8 @@ describe('OutlineNodeHelpers tests', () => {
         await editor.update(() => {
           const overflowLeft = getNodeByKey(overflowLeftKey);
           const overflowRight = getNodeByKey(overflowRightKey);
-          const text1 = createTextNode('1');
-          const text2 = createTextNode('2');
+          const text1 = otlnCreateTextNode('1');
+          const text2 = otlnCreateTextNode('2');
           overflowRight.append(text1, text2);
           text2.toggleFormat('bold'); // Prevent merging with text1
 
@@ -89,10 +89,10 @@ describe('OutlineNodeHelpers tests', () => {
         await editor.update(() => {
           const overflowLeft = getNodeByKey(overflowLeftKey);
           const overflowRight = getNodeByKey(overflowRightKey);
-          const text1 = createTextNode('1');
-          const text2 = createTextNode('2');
-          const text3 = createTextNode('3');
-          const text4 = createTextNode('4');
+          const text1 = otlnCreateTextNode('1');
+          const text2 = otlnCreateTextNode('2');
+          const text3 = otlnCreateTextNode('3');
+          const text4 = otlnCreateTextNode('4');
           text2Key = text2.getKey();
           overflowLeft.append(text1, text2);
           text2.toggleFormat('bold'); // Prevent merging with text1
@@ -127,10 +127,10 @@ describe('OutlineNodeHelpers tests', () => {
         await editor.update(() => {
           const overflowLeft = getNodeByKey(overflowLeftKey);
           const overflowRight = getNodeByKey(overflowRightKey);
-          const text1 = createTextNode('1');
-          const text2 = createTextNode('2');
-          const text3 = createTextNode('3');
-          const text4 = createTextNode('4');
+          const text1 = otlnCreateTextNode('1');
+          const text2 = otlnCreateTextNode('2');
+          const text3 = otlnCreateTextNode('3');
+          const text4 = otlnCreateTextNode('4');
           text2Key = text2.getKey();
           text4Key = text4.getKey();
           overflowLeft.append(text1);

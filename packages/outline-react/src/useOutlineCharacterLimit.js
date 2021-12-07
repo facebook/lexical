@@ -74,7 +74,7 @@ export function useCharacterLimit(
         editor.update(
           () => {
             log('CharacterLimit');
-            wrapOverflowedNodes(offset);
+            otlnWrapOverflowedNodes(offset);
           },
           {
             tag: 'without-history',
@@ -126,7 +126,7 @@ function findOffset(
   return offsetUtf16;
 }
 
-function wrapOverflowedNodes(offset: number) {
+function otlnWrapOverflowedNodes(offset: number) {
   const root = getRoot();
   let accumulatedLength = 0;
 
@@ -139,7 +139,7 @@ function wrapOverflowedNodes(offset: number) {
         const parent = node.getParent();
         const previousSibling = node.getPreviousSibling();
         const nextSibling = node.getNextSibling();
-        unwrapNode(node);
+        otlnUnwrapNode(node);
         const selection = getSelection();
         // Restore selection when the overflow children are removed
         if (
@@ -168,7 +168,7 @@ function wrapOverflowedNodes(offset: number) {
         const firstDescendantDoesNotOverflow =
           previousPlusDescendantLength <= offset;
         if (firstDescendantIsSimpleText || firstDescendantDoesNotOverflow) {
-          unwrapNode(node);
+          otlnUnwrapNode(node);
           return previousNode;
         }
       }
@@ -188,9 +188,9 @@ function wrapOverflowedNodes(offset: number) {
           const [, overflowedText] = node.splitText(
             offset - previousAccumulatedLength,
           );
-          overflowNode = wrapNode(overflowedText);
+          overflowNode = otlnWrapNode(overflowedText);
         } else {
-          overflowNode = wrapNode(node);
+          overflowNode = otlnWrapNode(node);
         }
         if (previousSelection !== null) {
           setSelection(previousSelection);
@@ -240,7 +240,7 @@ export class OverflowNode extends ElementNode {
   }
 }
 
-export function createOverflowNode(): OverflowNode {
+export function otlnCreateOverflowNode(): OverflowNode {
   return new OverflowNode();
 }
 
@@ -248,14 +248,14 @@ export function isOverflowNode(node: ?OutlineNode): boolean %checks {
   return node instanceof OverflowNode;
 }
 
-function wrapNode(node: OutlineNode): OverflowNode {
-  const overflowNode = createOverflowNode();
+function otlnWrapNode(node: OutlineNode): OverflowNode {
+  const overflowNode = otlnCreateOverflowNode();
   node.insertBefore(overflowNode);
   overflowNode.append(node);
   return overflowNode;
 }
 
-function unwrapNode(node: OverflowNode): OutlineNode | null {
+function otlnUnwrapNode(node: OverflowNode): OutlineNode | null {
   const children = node.getChildren();
   const childrenLength = children.length;
   for (let i = 0; i < childrenLength; i++) {

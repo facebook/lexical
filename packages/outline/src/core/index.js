@@ -35,10 +35,10 @@ export type {LineBreakNode} from './OutlineLineBreakNode';
 export type {RootNode} from './OutlineRootNode';
 
 import {createEditor} from './OutlineEditor';
-import {createTextNode, isTextNode, TextNode} from './OutlineTextNode';
+import {otlnCreateTextNode, isTextNode, TextNode} from './OutlineTextNode';
 import {isElementNode, ElementNode} from './OutlineElementNode';
 import {isRootNode} from './OutlineRootNode';
-import {createLineBreakNode, isLineBreakNode} from './OutlineLineBreakNode';
+import {otlnCreateLineBreakNode, isLineBreakNode} from './OutlineLineBreakNode';
 import {DecoratorNode, isDecoratorNode} from './OutlineDecoratorNode';
 import {
   isLeafNode,
@@ -76,8 +76,8 @@ export {
   isRootNode,
   isTextNode,
   // Used during read/update/transform
-  createLineBreakNode,
-  createTextNode,
+  otlnCreateLineBreakNode,
+  otlnCreateTextNode,
   createNodeFromParse,
   createSelection,
   getRoot,

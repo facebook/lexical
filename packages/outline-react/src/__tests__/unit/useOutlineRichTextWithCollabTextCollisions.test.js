@@ -8,8 +8,8 @@
  */
 
 import {createTestConnection, waitForReact} from './utils';
-import {getRoot, createTextNode, getSelection} from 'outline';
-import {createParagraphNode} from 'outline/ParagraphNode';
+import {getRoot, otlnCreateTextNode, getSelection} from 'outline';
+import {otlnCreateParagraphNode} from 'outline/ParagraphNode';
 
 function createAndStartClients(
   connector: TestConnection,
@@ -53,10 +53,10 @@ function removeInitialParagraph() {
 function createSampleParagraphsWithClient(client: Client, count: number) {
   const root = getRoot();
   for (let i = 0; i < count; ++i) {
-    const paragraph = createParagraphNode();
+    const paragraph = otlnCreateParagraphNode();
     const text = `Hello world ${i + 1}.`;
 
-    paragraph.append(createTextNode(text));
+    paragraph.append(otlnCreateTextNode(text));
     root.append(paragraph);
   }
 }

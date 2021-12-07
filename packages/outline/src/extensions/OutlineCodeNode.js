@@ -12,7 +12,7 @@ import type {ParagraphNode} from 'outline/ParagraphNode';
 
 import {addClassNamesToElement} from 'outline/elements';
 import {ElementNode} from 'outline';
-import {createParagraphNode} from 'outline/ParagraphNode';
+import {otlnCreateParagraphNode} from 'outline/ParagraphNode';
 
 export class CodeNode extends ElementNode {
   static getType(): string {
@@ -68,7 +68,7 @@ export class CodeNode extends ElementNode {
       firstLinkBreak.remove();
       secondLinkBreak.remove();
     }
-    const newElement = createParagraphNode();
+    const newElement = otlnCreateParagraphNode();
     this.insertAfter(newElement);
     return newElement;
   }
@@ -78,7 +78,7 @@ export class CodeNode extends ElementNode {
   }
 
   collapseAtStart(): true {
-    const paragraph = createParagraphNode();
+    const paragraph = otlnCreateParagraphNode();
     const children = this.getChildren();
     children.forEach((child) => paragraph.append(child));
     this.replace(paragraph);
@@ -86,6 +86,6 @@ export class CodeNode extends ElementNode {
   }
 }
 
-export function createCodeNode(): CodeNode {
+export function otlnCreateCodeNode(): CodeNode {
   return new CodeNode();
 }

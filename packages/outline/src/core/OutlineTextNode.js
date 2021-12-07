@@ -495,7 +495,7 @@ export class TextNode extends OutlineNode {
 
     if (this.isSegmented()) {
       // Create a new TextNode
-      writableNode = createTextNode(firstPart);
+      writableNode = otlnCreateTextNode(firstPart);
       writableNode.__parent = parentKey;
       writableNode.__format = format;
       writableNode.__style = style;
@@ -515,7 +515,7 @@ export class TextNode extends OutlineNode {
     for (let i = 1; i < partsLength; i++) {
       const part = parts[i];
       const partSize = part.length;
-      const sibling = createTextNode(part).getWritable();
+      const sibling = otlnCreateTextNode(part).getWritable();
       sibling.__format = format;
       sibling.__style = style;
       const siblingKey = sibling.__key;
@@ -625,7 +625,7 @@ export class TextNode extends OutlineNode {
   }
 }
 
-export function createTextNode(text?: string = ''): TextNode {
+export function otlnCreateTextNode(text?: string = ''): TextNode {
   return new TextNode(text);
 }
 

@@ -26,9 +26,9 @@ import {
   isDecoratorNode,
   isRootNode,
   TextNode,
-  createTextNode,
+  otlnCreateTextNode,
   isLeafNode,
-  createLineBreakNode,
+  otlnCreateLineBreakNode,
 } from '.';
 import {
   getCompositionKey,
@@ -183,7 +183,7 @@ function transferStartingElementPointToTextPoint(
 ) {
   const element = start.getNode();
   const placementNode = element.getChildAtIndex(start.offset);
-  const textNode = createTextNode();
+  const textNode = otlnCreateTextNode();
   textNode.setFormat(format);
   if (placementNode === null) {
     element.append(textNode);
@@ -410,7 +410,7 @@ export class Selection {
         isImmutableOrInert(nextSibling) ||
         nextSibling.isSegmented()
       ) {
-        nextSibling = createTextNode();
+        nextSibling = otlnCreateTextNode();
         if (!firstNodeParent.canInsertTextAfter()) {
           firstNodeParent.insertAfter(nextSibling);
         } else {
@@ -437,7 +437,7 @@ export class Selection {
         isImmutableOrInert(prevSibling) ||
         prevSibling.isSegmented()
       ) {
-        prevSibling = createTextNode();
+        prevSibling = otlnCreateTextNode();
         if (!firstNodeParent.canInsertTextBefore()) {
           firstNodeParent.insertBefore(prevSibling);
         } else {
@@ -451,7 +451,7 @@ export class Selection {
         return;
       }
     } else if (firstNode.isSegmented() && startOffset !== firstNodeTextLength) {
-      const textNode = createTextNode(firstNode.getTextContent());
+      const textNode = otlnCreateTextNode(firstNode.getTextContent());
       firstNode.replace(textNode);
       firstNode = textNode;
     }
@@ -467,7 +467,7 @@ export class Selection {
         if (firstNode.getTextContent() === '') {
           firstNode.setFormat(format);
         } else {
-          const textNode = createTextNode(text);
+          const textNode = otlnCreateTextNode(text);
           textNode.setFormat(format);
           textNode.select();
           if (startOffset === 0) {
@@ -514,7 +514,7 @@ export class Selection {
           endOffset !== lastNode.getTextContentSize()
         ) {
           if (lastNode.isSegmented()) {
-            const textNode = createTextNode(lastNode.getTextContent());
+            const textNode = otlnCreateTextNode(lastNode.getTextContent());
             lastNode.replace(textNode);
             lastNode = textNode;
           }
@@ -1036,7 +1036,7 @@ export class Selection {
   }
 
   insertLineBreak(selectStart?: boolean): void {
-    const lineBreakNode = createLineBreakNode();
+    const lineBreakNode = otlnCreateLineBreakNode();
     if (selectStart) {
       this.insertNodes([lineBreakNode], true);
     } else {

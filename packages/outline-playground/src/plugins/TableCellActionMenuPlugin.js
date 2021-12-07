@@ -15,9 +15,9 @@ import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
 import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
-import {OutlineNode, createTextNode} from 'outline';
-import {TableRowNode, createTableRowNode} from 'outline/TableRowNode';
-import {createTableCellNode} from 'outline/TableCellNode';
+import {OutlineNode, otlnCreateTextNode} from 'outline';
+import {TableRowNode, otlnCreateTableRowNode} from 'outline/TableRowNode';
+import {otlnCreateTableCellNode} from 'outline/TableCellNode';
 import {TableNode} from 'outline/TableNode';
 import {findMatchingParent} from 'outline/nodes';
 
@@ -131,12 +131,12 @@ export function insertTableRow(
   if (targetRow instanceof TableRowNode) {
     const tableColumnCount = targetRow.getChildren()?.length;
 
-    const newTableRow = createTableRowNode();
+    const newTableRow = otlnCreateTableRowNode();
 
     for (let i = 0; i < tableColumnCount; i++) {
-      const tableCell = createTableCellNode(false);
+      const tableCell = otlnCreateTableCellNode(false);
 
-      tableCell.append(createTextNode());
+      tableCell.append(otlnCreateTextNode());
       newTableRow.append(tableCell);
     }
 
@@ -163,9 +163,9 @@ export function insertTableColumn(
     const currentTableRow = tableRows[i];
 
     if (currentTableRow instanceof TableRowNode) {
-      const newTableCell = createTableCellNode(i === 0);
+      const newTableCell = otlnCreateTableCellNode(i === 0);
 
-      newTableCell.append(createTextNode());
+      newTableCell.append(otlnCreateTextNode());
 
       const tableRowChildren = currentTableRow.getChildren();
 
@@ -365,8 +365,7 @@ function TableActionMenu({
       {!tableCellNode.__isHeader && (
         <button
           className="item"
-          onClick={() => insertTableRowAtSelection(false)}
-        >
+          onClick={() => insertTableRowAtSelection(false)}>
           <span className="text">Insert row above</span>
         </button>
       )}
@@ -376,14 +375,12 @@ function TableActionMenu({
       <hr />
       <button
         className="item"
-        onClick={() => insertTableColumnAtSelection(false)}
-      >
+        onClick={() => insertTableColumnAtSelection(false)}>
         <span className="text">Insert column left</span>
       </button>
       <button
         className="item"
-        onClick={() => insertTableColumnAtSelection(true)}
-      >
+        onClick={() => insertTableColumnAtSelection(true)}>
         <span className="text">Insert column right</span>
       </button>
       <hr />
@@ -518,8 +515,7 @@ function TableCellActionMenuContainer(): React.MixedElement {
             onClick={() => {
               setIsMenuOpen(!isMenuOpen);
             }}
-            ref={menuRootRef}
-          >
+            ref={menuRootRef}>
             <i className="chevron-down" />
           </button>
           {isMenuOpen && (

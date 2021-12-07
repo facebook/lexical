@@ -20,7 +20,7 @@ import type {Binding} from '.';
 import {
   getNodeByKeyOrThrow,
   syncPropertiesFromOutline,
-  createCollabNodeFromOutlineNode,
+  otlnCreateCollabNodeFromOutlineNode,
   getOrInitCollabNodeFromSharedType,
   createOutlineNodeFromCollabNode,
   getPositionFromElementAndOffset,
@@ -370,7 +370,7 @@ export class CollabElementNode {
           throw new Error('TODO: does this even happen?');
         } else {
           const nextChildNode = getNodeByKeyOrThrow(nextChildKey);
-          const collabNode = createCollabNodeFromOutlineNode(
+          const collabNode = otlnCreateCollabNodeFromOutlineNode(
             binding,
             nextChildNode,
             this,
@@ -522,7 +522,7 @@ function lazilyCloneElementNode(
   return writableOutlineNode;
 }
 
-export function createCollabElementNode(
+export function otlnCreateCollabElementNode(
   xmlText: XmlText,
   parent: null | CollabElementNode,
   type: string,

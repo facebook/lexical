@@ -8,18 +8,18 @@
 
 import type {State} from 'outline';
 
-import {createTextNode, TextNode, getSelection} from 'outline';
-import {createParagraphNode} from 'outline/ParagraphNode';
+import {otlnCreateTextNode, TextNode, getSelection} from 'outline';
+import {otlnCreateParagraphNode} from 'outline/ParagraphNode';
 import {cloneContents} from 'outline/selection';
 import {
   createTestEditor,
-  createTestElementNode,
-  createTestExcludeFromCopyElementNode,
+  otlnCreateTestElementNode,
+  otlnCreateTestExcludeFromCopyElementNode,
 } from '../../../__tests__/utils';
-import {createHeadingNode} from '../../../extensions/OutlineHeadingNode';
+import {otlnCreateHeadingNode} from '../../../extensions/OutlineHeadingNode';
 
 function createParagraphWithNodes(editor, nodes) {
-  const paragraph = createParagraphNode();
+  const paragraph = otlnCreateParagraphNode();
   const nodeMap = editor._pendingEditorState._nodeMap;
   for (let i = 0; i < nodes.length; i++) {
     const {text, key, mergeable} = nodes[i];
@@ -36,7 +36,7 @@ function createParagraphWithNodes(editor, nodes) {
 function setAnchorPoint(state, point) {
   let selection = getSelection();
   if (selection === null) {
-    const dummyTextNode = createTextNode();
+    const dummyTextNode = otlnCreateTextNode();
     dummyTextNode.select();
     selection = getSelection();
   }
@@ -49,7 +49,7 @@ function setAnchorPoint(state, point) {
 function setFocusPoint(state, point) {
   let selection = getSelection();
   if (selection === null) {
-    const dummyTextNode = createTextNode();
+    const dummyTextNode = otlnCreateTextNode();
     dummyTextNode.select();
     selection = getSelection();
   }
@@ -121,7 +121,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // insertNodes
       setupTestCase((selection, state, element) => {
-        selection.insertNodes([createTextNode('foo')]);
+        selection.insertNodes([otlnCreateTextNode('foo')]);
         expect(selection.anchor).toEqual({
           type: 'text',
           offset: 3,
@@ -1048,7 +1048,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // insertNodes
       setupTestCase((selection, state, element) => {
-        selection.insertNodes([createTextNode('foo')]);
+        selection.insertNodes([otlnCreateTextNode('foo')]);
         expect(selection.anchor).toEqual({
           type: 'text',
           offset: 3,
@@ -1407,12 +1407,12 @@ describe('OutlineSelectionHelpers tests', () => {
 
     await editor.update((state: State) => {
       const root = state.getRoot();
-      const paragraph1 = createParagraphNode();
-      const paragraph2 = createParagraphNode();
-      const paragraph3 = createParagraphNode();
-      const text1 = createTextNode('First');
-      const text2 = createTextNode('Second');
-      const text3 = createTextNode('Third');
+      const paragraph1 = otlnCreateParagraphNode();
+      const paragraph2 = otlnCreateParagraphNode();
+      const paragraph3 = otlnCreateParagraphNode();
+      const text1 = otlnCreateTextNode('First');
+      const text2 = otlnCreateTextNode('Second');
+      const text3 = otlnCreateTextNode('Third');
       root.append(paragraph1, paragraph2, paragraph3);
       paragraph1.append(text1);
       paragraph2.append(text2);
@@ -1466,16 +1466,16 @@ describe('OutlineSelectionHelpers tests', () => {
 
     await editor.update((state: State) => {
       const root = state.getRoot();
-      const paragraph = createParagraphNode();
+      const paragraph = otlnCreateParagraphNode();
       root.append(paragraph);
 
-      const excludeElementNode1 = createTestExcludeFromCopyElementNode();
+      const excludeElementNode1 = otlnCreateTestExcludeFromCopyElementNode();
       paragraph.append(excludeElementNode1);
       paragraph.select(0, 0);
       const selectedNodes1 = cloneContents(getSelection());
       expect(selectedNodes1.range).toEqual([]);
 
-      const text1 = createTextNode('1');
+      const text1 = otlnCreateTextNode('1');
       excludeElementNode1.append(text1);
       excludeElementNode1.select(0, 0);
       const selectedNodes2 = cloneContents(getSelection());
@@ -1485,7 +1485,7 @@ describe('OutlineSelectionHelpers tests', () => {
       const selectedNodes3 = cloneContents(getSelection());
       expect(selectedNodes3.range).toEqual([paragraph.getKey()]);
 
-      const text2 = createTextNode('2');
+      const text2 = otlnCreateTextNode('2');
       excludeElementNode1.insertAfter(text2);
       paragraph.select(0, 2);
       const selectedNodes4 = cloneContents(getSelection());
@@ -1494,7 +1494,7 @@ describe('OutlineSelectionHelpers tests', () => {
       expect(selectedNodes4.nodeMap[1][0]).toEqual(paragraph.getKey());
       expect(selectedNodes4.nodeMap[2][0]).toEqual(text2.getKey());
 
-      const text3 = createTextNode('3');
+      const text3 = otlnCreateTextNode('3');
       excludeElementNode1.append(text3);
       paragraph.select(0, 2);
       const selectedNodes5 = cloneContents(getSelection());
@@ -1504,9 +1504,9 @@ describe('OutlineSelectionHelpers tests', () => {
       expect(selectedNodes5.nodeMap[2][0]).toEqual(text3.getKey());
       expect(selectedNodes5.nodeMap[3][0]).toEqual(text2.getKey());
 
-      const testElementNode = createTestElementNode();
-      const excludeElementNode2 = createTestExcludeFromCopyElementNode();
-      const text4 = createTextNode('4');
+      const testElementNode = otlnCreateTestElementNode();
+      const excludeElementNode2 = otlnCreateTestExcludeFromCopyElementNode();
+      const text4 = otlnCreateTextNode('4');
       text1.insertBefore(testElementNode);
       testElementNode.append(excludeElementNode2);
       excludeElementNode2.append(text4);
@@ -1544,7 +1544,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
         await editor.update((state: State) => {
           const root = state.getRoot();
-          const paragraph = createParagraphNode();
+          const paragraph = otlnCreateParagraphNode();
           root.append(paragraph);
 
           setAnchorPoint(state, {
@@ -1559,7 +1559,7 @@ describe('OutlineSelectionHelpers tests', () => {
           });
           const selection = getSelection();
 
-          selection.insertNodes([createTextNode('foo')]);
+          selection.insertNodes([otlnCreateTextNode('foo')]);
         });
 
         expect(element.innerHTML).toBe(
@@ -1577,7 +1577,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
         await editor.update((state: State) => {
           const root = state.getRoot();
-          const paragraph = createParagraphNode();
+          const paragraph = otlnCreateParagraphNode();
           root.append(paragraph);
 
           setAnchorPoint(state, {
@@ -1592,7 +1592,10 @@ describe('OutlineSelectionHelpers tests', () => {
           });
           const selection = getSelection();
 
-          selection.insertNodes([createTextNode('foo'), createTextNode('bar')]);
+          selection.insertNodes([
+            otlnCreateTextNode('foo'),
+            otlnCreateTextNode('bar'),
+          ]);
         });
 
         expect(element.innerHTML).toBe(
@@ -1610,7 +1613,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
         await editor.update((state: State) => {
           const root = state.getRoot();
-          const paragraph = createParagraphNode();
+          const paragraph = otlnCreateParagraphNode();
           root.append(paragraph);
 
           setAnchorPoint(state, {
@@ -1624,8 +1627,8 @@ describe('OutlineSelectionHelpers tests', () => {
             key: paragraph.getKey(),
           });
           const selection = getSelection();
-          const heading = createHeadingNode('h1');
-          const child = createTextNode('foo');
+          const heading = otlnCreateHeadingNode('h1');
+          const child = otlnCreateTextNode('foo');
           heading.append(child);
 
           selection.insertNodes([heading]);
@@ -1646,7 +1649,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
         await editor.update((state: State) => {
           const root = state.getRoot();
-          const paragraph = createParagraphNode();
+          const paragraph = otlnCreateParagraphNode();
           root.append(paragraph);
 
           setAnchorPoint(state, {
@@ -1660,12 +1663,12 @@ describe('OutlineSelectionHelpers tests', () => {
             key: paragraph.getKey(),
           });
           const selection = getSelection();
-          const heading = createHeadingNode('h1');
-          const child = createTextNode('foo');
+          const heading = otlnCreateHeadingNode('h1');
+          const child = otlnCreateTextNode('foo');
           heading.append(child);
 
           expect(() => {
-            selection.insertNodes([heading, createTextNode('bar')]);
+            selection.insertNodes([heading, otlnCreateTextNode('bar')]);
           }).toThrow();
         });
 
@@ -1686,8 +1689,8 @@ describe('OutlineSelectionHelpers tests', () => {
 
         await editor.update((state: State) => {
           const root = state.getRoot();
-          const paragraph = createParagraphNode();
-          const text = createTextNode('Existing text...');
+          const paragraph = otlnCreateParagraphNode();
+          const text = otlnCreateTextNode('Existing text...');
           paragraph.append(text);
           root.append(paragraph);
 
@@ -1703,7 +1706,7 @@ describe('OutlineSelectionHelpers tests', () => {
           });
           const selection = getSelection();
 
-          selection.insertNodes([createTextNode('foo')]);
+          selection.insertNodes([otlnCreateTextNode('foo')]);
         });
 
         expect(element.innerHTML).toBe(
@@ -1721,8 +1724,8 @@ describe('OutlineSelectionHelpers tests', () => {
 
         await editor.update((state: State) => {
           const root = state.getRoot();
-          const paragraph = createParagraphNode();
-          const text = createTextNode('Existing text...');
+          const paragraph = otlnCreateParagraphNode();
+          const text = otlnCreateTextNode('Existing text...');
           paragraph.append(text);
           root.append(paragraph);
 
@@ -1738,7 +1741,10 @@ describe('OutlineSelectionHelpers tests', () => {
           });
           const selection = getSelection();
 
-          selection.insertNodes([createTextNode('foo'), createTextNode('bar')]);
+          selection.insertNodes([
+            otlnCreateTextNode('foo'),
+            otlnCreateTextNode('bar'),
+          ]);
         });
 
         expect(element.innerHTML).toBe(
@@ -1756,8 +1762,8 @@ describe('OutlineSelectionHelpers tests', () => {
 
         await editor.update((state: State) => {
           const root = state.getRoot();
-          const paragraph = createParagraphNode();
-          const text = createTextNode('Existing text...');
+          const paragraph = otlnCreateParagraphNode();
+          const text = otlnCreateTextNode('Existing text...');
           paragraph.append(text);
           root.append(paragraph);
 
@@ -1772,8 +1778,8 @@ describe('OutlineSelectionHelpers tests', () => {
             key: text.getKey(),
           });
           const selection = getSelection();
-          const heading = createHeadingNode('h1');
-          const child = createTextNode('foo');
+          const heading = otlnCreateHeadingNode('h1');
+          const child = otlnCreateTextNode('foo');
           heading.append(child);
 
           selection.insertNodes([heading]);
@@ -1794,8 +1800,8 @@ describe('OutlineSelectionHelpers tests', () => {
 
         await editor.update((state: State) => {
           const root = state.getRoot();
-          const paragraph = createParagraphNode();
-          const text = createTextNode('Existing text...');
+          const paragraph = otlnCreateParagraphNode();
+          const text = otlnCreateTextNode('Existing text...');
           paragraph.append(text);
           root.append(paragraph);
 
@@ -1810,12 +1816,12 @@ describe('OutlineSelectionHelpers tests', () => {
             key: text.getKey(),
           });
           const selection = getSelection();
-          const heading = createHeadingNode('h1');
-          const child = createTextNode('foo');
+          const heading = otlnCreateHeadingNode('h1');
+          const child = otlnCreateTextNode('foo');
           heading.append(child);
 
           expect(() => {
-            selection.insertNodes([heading, createTextNode('bar')]);
+            selection.insertNodes([heading, otlnCreateTextNode('bar')]);
           }).toThrow();
         });
 

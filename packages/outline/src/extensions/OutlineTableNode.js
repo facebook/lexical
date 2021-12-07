@@ -364,7 +364,7 @@ export class TableNode extends ElementNode {
   }
 }
 
-export function createTableNode(): TableNode {
+export function otlnCreateTableNode(): TableNode {
   return new TableNode();
 }
 

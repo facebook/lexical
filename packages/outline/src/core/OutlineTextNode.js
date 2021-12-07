@@ -585,10 +585,11 @@ export class TextNode extends OutlineNode {
     const writableParentChildren = writableParent.__children;
     const insertionIndex = writableParentChildren.indexOf(key);
     const splitNodesKeys = splitNodes.map((splitNode) => splitNode.__key);
-    writableParentChildren.splice(insertionIndex, 1, ...splitNodesKeys);
-
     if (hasReplacedSelf) {
+      writableParentChildren.splice(insertionIndex, 0, ...splitNodesKeys);
       this.remove();
+    } else {
+      writableParentChildren.splice(insertionIndex, 1, ...splitNodesKeys);
     }
 
     if (selection !== null) {

@@ -55,5 +55,9 @@
   "53": "insertNodes: cloned parent clone is not an element",
   "54": "rootNode.append: Only element nodes can be appended to the root node",
   "55": "Expected node %s to have a parent element.",
-  "56": "Expected node %s to have a top parent element."
+  "56": "Expected node %s to have a top parent element.",
+  "57": "OutlineComposerContext.useOutlineComposerContext: cannot find a OutlineComposerContext",
+  "58": "mergeWithSibling: sibling must be a previous or next sibling",
+  "59": "Expected node %s to have a first child.",
+  "60": "Node is not a child of its parent"
 }

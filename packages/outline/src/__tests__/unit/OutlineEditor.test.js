@@ -957,7 +957,7 @@ describe('OutlineEditor tests', () => {
           const writableParagraph: ParagraphNode = getRoot()
             .getFirstChild()
             .getWritable();
-          // Remove prev that are not in next
+          // Remove previous that are not in next
           for (let i = 0; i < previous.length; i++) {
             const previousText = previous[i];
             if (!nextSet.has(previousText)) {
@@ -972,14 +972,14 @@ describe('OutlineEditor tests', () => {
             const nextKey = textToKey.get(nextText);
             let textNode;
             if (nextKey === undefined) {
-              // New node; append at the end
+              // New node; append to the end
               textNode = new TextNode(nextText).toggleUnmergeable();
               textNode.__parent = writableParagraph.__key;
               expect(getNodeByKey(nextKey)).toBe(null);
               textToKey.set(nextText, textNode.__key);
               writableParagraph.__children.push(textNode.__key);
             } else {
-              // Node exists in prev; reorder it
+              // Node exists in previous; reorder it
               textNode = getNodeByKey(nextKey);
               expect(textNode.__text).toBe(nextText);
               writableParagraph.__children.splice(

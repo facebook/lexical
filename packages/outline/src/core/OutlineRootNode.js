@@ -46,21 +46,26 @@ export class RootNode extends ElementNode {
     }
     return super.getTextContent(includeInert, includeDirectionless);
   }
+
   select(): Selection {
     // You can't select root nodes.
     invariant(false, 'select: cannot be called on root nodes');
   }
+
   remove(): void {
     // You can't select root nodes.
     invariant(false, 'remove: cannot be called on root nodes');
   }
+
   replace<N: OutlineNode>(node: N): N {
     // You can't select root nodes.
     invariant(false, 'replace: cannot be called on root nodes');
   }
+
   insertBefore() {
     invariant(false, 'insertBefore: cannot be called on root nodes');
   }
+
   insertAfter(node: OutlineNode): OutlineNode {
     invariant(false, 'insertAfter: cannot be called on root nodes');
   }

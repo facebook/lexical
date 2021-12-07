@@ -28,7 +28,7 @@ describe('Keywords', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span class="keyword" data-outline-text="true" style="cursor: default;">congrats</span></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><span class="keyword" data-outline-text="true" style="cursor: default;">congrats</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -41,7 +41,7 @@ describe('Keywords', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">congratsc</span></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">congratsc</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -55,7 +55,7 @@ describe('Keywords', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span class="keyword" data-outline-text="true" style="cursor: default;">congrats</span><span data-outline-text="true"> c</span></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><span class="keyword" data-outline-text="true" style="cursor: default;">congrats</span><span data-outline-text="true"> c</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
@@ -69,7 +69,7 @@ describe('Keywords', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span class="keyword" data-outline-text="true" style="cursor: default;">congrats</span><span data-outline-text="true"> </span><span class="keyword" data-outline-text="true" style="cursor: default;">congrats</span></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><span class="keyword" data-outline-text="true" style="cursor: default;">congrats</span><span data-outline-text="true"> </span><span class="keyword" data-outline-text="true" style="cursor: default;">congrats</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 2, 0],
@@ -101,7 +101,7 @@ describe('Keywords', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">congratscongrats</span></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">congratscongrats</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -114,7 +114,7 @@ describe('Keywords', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span class="keyword" data-outline-text="true" style="cursor: default;">congrats</span><span data-outline-text="true"> </span><span class="keyword" data-outline-text="true" style="cursor: default;">congrats</span></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><span class="keyword" data-outline-text="true" style="cursor: default;">congrats</span><span data-outline-text="true"> </span><span class="keyword" data-outline-text="true" style="cursor: default;">congrats</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 1, 0],

@@ -48,6 +48,8 @@ export type EditorUpdateOptions = {
 };
 
 export type EditorThemeClasses = {
+  ltr?: EditorThemeClassName,
+  rtl?: EditorThemeClassName,
   root?: EditorThemeClassName,
   text?: TextNodeThemeClasses,
   paragraph?: EditorThemeClassName,

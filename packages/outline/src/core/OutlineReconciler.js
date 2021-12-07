@@ -15,17 +15,17 @@ import type {
 } from './OutlineEditor';
 import type {Selection as OutlineSelection} from './OutlineSelection';
 import type {Node as ReactNode} from 'react';
+import type {ElementNode} from './OutlineElementNode';
 
 import {EditorState} from './OutlineEditorState';
 import {
   isSelectionWithinEditor,
   getDOMTextNode,
   cloneDecorators,
+  getTextDirection,
 } from './OutlineUtils';
 import {
   IS_INERT,
-  IS_RTL,
-  IS_LTR,
   FULL_RECONCILE,
   IS_ALIGN_LEFT,
   IS_ALIGN_CENTER,
@@ -40,10 +40,13 @@ import {isRootNode} from './OutlineRootNode';
 import invariant from 'shared/invariant';
 
 let subTreeTextContent = '';
+let subTreeDirectionedTextContent = '';
 let editorTextContent = '';
 let activeEditorConfig: EditorConfig<{...}>;
 let activeEditor: OutlineEditor;
 let treatAllNodesAsDirty: boolean = false;
+let activeEditorStateReadOnly: boolean = false;
+let activeTextDirection = null;
 let activeDirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>;
 let activeDirtyLeaves: Set<NodeKey>;
 let activePrevNodeMap: NodeMap;
@@ -119,7 +122,7 @@ function createNode(
     invariant(false, 'createNode: node does not exist in nodeMap');
   }
   const dom = node.createDOM(activeEditorConfig, activeEditor);
-  let flags = node.__flags;
+  const flags = node.__flags;
   const isInert = flags & IS_INERT;
   storeDOMWithKey(key, dom, activeEditor);
 
@@ -142,26 +145,19 @@ function createNode(
   }
 
   if (isElementNode(node)) {
-    // Handle element children
-    flags = node.__flags;
-    if (flags & IS_LTR) {
-      dom.dir = 'ltr';
-    } else if (flags & IS_RTL) {
-      dom.dir = 'rtl';
-    }
     const indent = node.__indent;
     if (indent !== 0) {
       setElementIndent(dom, indent);
-    }
-    const format = node.__format;
-    if (format !== 0) {
-      setElementFormat(dom, format);
     }
     const children = node.__children;
     const childrenLength = children.length;
     if (childrenLength !== 0) {
       const endIndex = childrenLength - 1;
-      createChildren(children, 0, endIndex, dom, null);
+      createChildrenWithDirection(children, endIndex, node, dom);
+    }
+    const format = node.__format;
+    if (format !== 0) {
+      setElementFormat(dom, format);
     }
     reconcileElementTerminatingLineBreak(null, children, dom);
   } else {
@@ -172,10 +168,14 @@ function createNode(
       }
       // Decorators are always non editable
       dom.contentEditable = 'false';
+    } else {
+      const text = node.getTextContent();
+      if (!node.isDirectionless()) {
+        subTreeDirectionedTextContent += text;
+      }
+      subTreeTextContent += text;
+      editorTextContent += text;
     }
-    const text = node.getTextContent();
-    subTreeTextContent += text;
-    editorTextContent += text;
   }
   if (parentDOM !== null) {
     if (insertDOM != null) {
@@ -195,6 +195,19 @@ function createNode(
     Object.freeze(node);
   }
   return dom;
+}
+
+function createChildrenWithDirection(
+  children: Array<NodeKey>,
+  endIndex: number,
+  element: ElementNode,
+  dom: HTMLElement,
+): void {
+  const previousSubTreeDirectionedTextContent = subTreeDirectionedTextContent;
+  subTreeDirectionedTextContent = '';
+  createChildren(children, 0, endIndex, dom, null);
+  reconcileBlockDirection(element, dom);
+  subTreeDirectionedTextContent = previousSubTreeDirectionedTextContent;
 }
 
 function createChildren(
@@ -255,6 +268,69 @@ function reconcileElementTerminatingLineBreak(
     dom.__outlineLineBreak = element;
     dom.appendChild(element);
   }
+}
+
+function reconcileBlockDirection(element: ElementNode, dom: HTMLElement): void {
+  const previousSubTreeDirectionTextContent: string =
+    // $FlowFixMe: internal field
+    dom.__outlineDirTextContent;
+  // $FlowFixMe: internal field
+  const previousDirection: string = dom.__outlineDir;
+
+  if (
+    previousSubTreeDirectionTextContent !== subTreeDirectionedTextContent ||
+    previousDirection !== activeTextDirection
+  ) {
+    const hasEmptyDirectionedTextContent = subTreeDirectionedTextContent === '';
+    const direction = hasEmptyDirectionedTextContent
+      ? activeTextDirection
+      : getTextDirection(subTreeDirectionedTextContent);
+
+    if (direction !== previousDirection) {
+      const classList = dom.classList;
+      const theme = activeEditorConfig.theme;
+
+      if (
+        direction === null ||
+        (hasEmptyDirectionedTextContent && direction === 'ltr')
+      ) {
+        dom.removeAttribute('dir');
+        const previousDirectionTheme = theme[previousDirection];
+        if (previousDirectionTheme !== undefined) {
+          // $FlowFixMe: intentional
+          classList.remove(previousDirectionTheme);
+        }
+      } else if (direction !== null) {
+        const directionTheme = theme[direction];
+        if (directionTheme !== undefined) {
+          classList.add(directionTheme);
+        }
+        dom.dir = direction;
+      }
+      if (!activeEditorStateReadOnly) {
+        const writableNode = element.getWritable();
+        writableNode.__dir = direction;
+      }
+    }
+    activeTextDirection = direction;
+    // $FlowFixMe: internal field
+    dom.__outlineDirTextContent = subTreeDirectionedTextContent;
+    // $FlowFixMe: internal field
+    dom.__outlineDir = direction;
+  }
+}
+
+function reconcileChildrenWithDirection(
+  prevChildren: Array<NodeKey>,
+  nextChildren: Array<NodeKey>,
+  element: ElementNode,
+  dom: HTMLElement,
+): void {
+  const previousSubTreeDirectionTextContent = subTreeDirectionedTextContent;
+  subTreeDirectionedTextContent = '';
+  reconcileChildren(prevChildren, nextChildren, dom);
+  reconcileBlockDirection(element, dom);
+  subTreeDirectionedTextContent = previousSubTreeDirectionTextContent;
 }
 
 function reconcileChildren(
@@ -332,13 +408,21 @@ function reconcileNode(
   if (prevNode === nextNode && !isDirty) {
     if (isElementNode(prevNode)) {
       // $FlowFixMe: internal field
-      const prevSubTreeTextContent = dom.__outlineTextContent;
-      if (prevSubTreeTextContent !== undefined) {
-        subTreeTextContent += prevSubTreeTextContent;
-        editorTextContent += prevSubTreeTextContent;
+      const previousSubTreeTextContent = dom.__outlineTextContent;
+      if (previousSubTreeTextContent !== undefined) {
+        subTreeTextContent += previousSubTreeTextContent;
+        editorTextContent += previousSubTreeTextContent;
       }
-    } else {
+      // $FlowFixMe: internal field
+      const previousSubTreeDirectionTextContent = dom.__outlineDirTextContent;
+      if (previousSubTreeDirectionTextContent !== undefined) {
+        subTreeDirectionedTextContent += previousSubTreeDirectionTextContent;
+      }
+    } else if (!isDecoratorNode(prevNode)) {
       const text = prevNode.getTextContent();
+      if (!nextNode.isDirectionless()) {
+        subTreeDirectionedTextContent += text;
+      }
       editorTextContent += text;
       subTreeTextContent += text;
     }
@@ -357,19 +441,6 @@ function reconcileNode(
 
   if (isElementNode(prevNode) && isElementNode(nextNode)) {
     // Reconcile element children
-    const prevFlags = prevNode.__flags;
-    const nextFlags = nextNode.__flags;
-    if (nextFlags & IS_LTR) {
-      if ((prevFlags & IS_LTR) === 0) {
-        dom.dir = 'ltr';
-      }
-    } else if (nextFlags & IS_RTL) {
-      if ((prevFlags & IS_RTL) === 0) {
-        dom.dir = 'rtl';
-      }
-    } else if (prevFlags & IS_LTR || prevFlags & IS_RTL) {
-      dom.removeAttribute('dir');
-    }
     const nextIndent = nextNode.__indent;
     if (nextIndent !== prevNode.__indent) {
       setElementIndent(dom, nextIndent);
@@ -383,8 +454,7 @@ function reconcileNode(
     const childrenAreDifferent = prevChildren !== nextChildren;
 
     if (childrenAreDifferent || isDirty) {
-      // We get the children again, in case they change.
-      reconcileChildren(prevChildren, nextChildren, dom);
+      reconcileChildrenWithDirection(prevChildren, nextChildren, nextNode, dom);
       if (!isRootNode(nextNode)) {
         reconcileElementTerminatingLineBreak(prevChildren, nextChildren, dom);
       }
@@ -395,11 +465,15 @@ function reconcileNode(
       if (decorator !== null) {
         reconcileDecorator(key, decorator);
       }
+    } else {
+      // Handle text content, for LTR, LTR cases.
+      const text = nextNode.getTextContent();
+      if (!nextNode.isDirectionless()) {
+        subTreeDirectionedTextContent += text;
+      }
+      subTreeTextContent += text;
+      editorTextContent += text;
     }
-    // Handle text content, for LTR, LTR cases.
-    const text = nextNode.getTextContent();
-    subTreeTextContent += text;
-    editorTextContent += text;
   }
   if (isRootNode(nextNode) && nextNode.__cachedText !== editorTextContent) {
     // Cache the latest text content.
@@ -525,15 +599,18 @@ function reconcileRoot(
 ): void {
   subTreeTextContent = '';
   editorTextContent = '';
+  subTreeDirectionedTextContent = '';
   // Rather than pass around a load of arguments through the stack recursively
   // we instead set them as bindings within the scope of the module.
   treatAllNodesAsDirty = dirtyType === FULL_RECONCILE;
+  activeTextDirection = null;
   activeEditor = editor;
   activeEditorConfig = editor._config;
   activeDirtyElements = dirtyElements;
   activeDirtyLeaves = dirtyLeaves;
   activePrevNodeMap = prevEditorState._nodeMap;
   activeNextNodeMap = nextEditorState._nodeMap;
+  activeEditorStateReadOnly = nextEditorState._readOnly;
   activePrevKeyToDOMMap = new Map(editor._keyToDOMMap);
   reconcileNode('root', null);
 

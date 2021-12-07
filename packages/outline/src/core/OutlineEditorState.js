@@ -66,11 +66,13 @@ export class EditorState {
   _nodeMap: NodeMap;
   _selection: null | Selection;
   _flushSync: boolean;
+  _readOnly: boolean;
 
   constructor(nodeMap: NodeMap) {
     this._nodeMap = nodeMap;
     this._selection = null;
     this._flushSync = false;
+    this._readOnly = false;
   }
   isEmpty(): boolean {
     return this._nodeMap.size === 1 && this._selection === null;

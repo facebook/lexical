@@ -121,7 +121,7 @@ describe('OutlineEditor tests', () => {
     await Promise.resolve().then();
 
     expect(container.innerHTML).toBe(
-      '<div data-outline-editor="true"><p><span data-outline-text="true">This works!</span></p></div>',
+      '<div data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">This works!</span></p></div>',
     );
 
     const initialEditorState = initialEditor.getEditorState();
@@ -136,7 +136,7 @@ describe('OutlineEditor tests', () => {
 
     expect(editor.getEditorState()).toEqual(initialEditorState);
     expect(container.innerHTML).toBe(
-      '<div data-outline-editor="true"><p><span data-outline-text="true">This works!</span></p></div>',
+      '<div data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">This works!</span></p></div>',
     );
   });
 
@@ -346,7 +346,7 @@ describe('OutlineEditor tests', () => {
     underlineListener();
 
     expect(container.innerHTML).toBe(
-      '<div contenteditable="true" data-outline-editor="true"><p><strong class="editor-text-bold editor-text-underline editor-text-italic" data-outline-text="true">foo</strong></p></div>',
+      '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><strong class="editor-text-bold editor-text-underline editor-text-italic" data-outline-text="true">foo</strong></p></div>',
     );
   });
 
@@ -400,7 +400,7 @@ describe('OutlineEditor tests', () => {
     italicsListener();
 
     expect(container.innerHTML).toBe(
-      '<div contenteditable="true" data-outline-editor="true"><p><strong class="editor-text-bold editor-text-italic" data-outline-text="true">foo</strong></p></div>',
+      '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><strong class="editor-text-bold editor-text-italic" data-outline-text="true">foo</strong></p></div>',
     );
   });
 
@@ -511,7 +511,7 @@ describe('OutlineEditor tests', () => {
     });
 
     expect(container.innerHTML).toBe(
-      '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">This works!</span></p></div>',
+      '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">This works!</span></p></div>',
     );
   });
 
@@ -533,7 +533,7 @@ describe('OutlineEditor tests', () => {
     await Promise.resolve().then();
 
     expect(container.innerHTML).toBe(
-      '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">This works!</span></p></div>',
+      '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">This works!</span></p></div>',
     );
 
     expect(errorListener).toHaveBeenCalledTimes(0);
@@ -550,7 +550,7 @@ describe('OutlineEditor tests', () => {
     expect(errorListener).toHaveBeenCalledTimes(1);
 
     expect(container.innerHTML).toBe(
-      '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">This works!</span></p></div>',
+      '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">This works!</span></p></div>',
     );
   });
 
@@ -572,7 +572,7 @@ describe('OutlineEditor tests', () => {
     await Promise.resolve().then();
 
     expect(container.innerHTML).toBe(
-      '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">This works!</span></p></div>',
+      '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">This works!</span></p></div>',
     );
 
     expect(errorListener).toHaveBeenCalledTimes(0);
@@ -645,7 +645,7 @@ describe('OutlineEditor tests', () => {
     });
 
     expect(container.innerHTML).toBe(
-      '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">Not changed</span></p></div>',
+      '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">Not changed</span></p></div>',
     );
 
     await ReactTestUtils.act(() => {
@@ -777,6 +777,7 @@ describe('OutlineEditor tests', () => {
         expect(root).toEqual({
           __cachedText: '',
           __children: [paragraph.getKey()],
+          __dir: null,
           __flags: 0,
           __format: 0,
           __indent: 0,
@@ -786,6 +787,7 @@ describe('OutlineEditor tests', () => {
         });
         expect(paragraph).toEqual({
           __children: [],
+          __dir: null,
           __flags: 0,
           __format: 0,
           __indent: 0,
@@ -834,6 +836,7 @@ describe('OutlineEditor tests', () => {
       expect(parsedRoot).toEqual({
         __cachedText: null,
         __children: [paragraphKey],
+        __dir: null,
         __flags: 0,
         __format: 0,
         __indent: 0,
@@ -843,6 +846,7 @@ describe('OutlineEditor tests', () => {
       });
       expect(parsedParagraph).toEqual({
         __children: [textKey],
+        __dir: null,
         __flags: 0,
         __format: 0,
         __indent: 0,
@@ -994,8 +998,10 @@ describe('OutlineEditor tests', () => {
         expect(getEditorStateTextContent(editor.getEditorState())).toBe(
           next.join(''),
         );
-        expect(container.innerHTML).toBe(
-          `<div contenteditable="true" data-outline-editor="true"><p>${
+        expect(container.innerHTML.replace(/\sclass="*."/g, '')).toBe(
+          `<div contenteditable="true" data-outline-editor="true"><p${
+            next.length > 0 ? ' dir="ltr"' : ''
+          }>${
             next.length > 0
               ? next
                   .map(
@@ -1071,7 +1077,7 @@ describe('OutlineEditor tests', () => {
       expect(editor._editorState._nodeMap.size).toBe(keys.length + 1); // + root
       expect(editor._keyToDOMMap.size).toBe(keys.length + 1); // + root
       expect(container.innerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><div><span data-outline-text="true">A</span><div><span data-outline-text="true">B</span></div></div></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p><div dir="ltr"><span data-outline-text="true">A</span><div dir="ltr"><span data-outline-text="true">B</span></div></div></p></div>',
       );
     });
 
@@ -1102,7 +1108,7 @@ describe('OutlineEditor tests', () => {
         elementNode2.append(elementNode1);
       });
       expect(container.innerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><div><span data-outline-text="true">B</span><div><span data-outline-text="true">A</span></div></div></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p><div dir="ltr"><span data-outline-text="true">B</span><div dir="ltr"><span data-outline-text="true">A</span></div></div></p></div>',
       );
     });
 
@@ -1139,7 +1145,7 @@ describe('OutlineEditor tests', () => {
         elementNode1.append(elementNode3);
       });
       expect(container.innerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><div><span data-outline-text="true">A</span><div><span data-outline-text="true">C</span></div></div><div><span data-outline-text="true">B</span></div></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p><div dir="ltr"><span data-outline-text="true">A</span><div dir="ltr"><span data-outline-text="true">C</span></div></div><div dir="ltr"><span data-outline-text="true">B</span></div></p></div>',
       );
     });
   });

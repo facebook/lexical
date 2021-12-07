@@ -24,7 +24,7 @@ import {otlnCreateTextNode, $getRoot, $getNodeByKey} from 'outline';
 
 import {otlnCreateParagraphNode} from 'outline/ParagraphNode';
 import {
-  getCompositionKey,
+  $getCompositionKey,
   getEditorStateTextContent,
   $setCompositionKey,
 } from '../../core/OutlineUtils';
@@ -434,7 +434,7 @@ describe('OutlineTextNode tests', () => {
         $setCompositionKey(textNode.getKey());
 
         const [, splitNode2] = textNode.splitText(1);
-        expect(getCompositionKey()).toBe(splitNode2.getKey());
+        expect($getCompositionKey()).toBe(splitNode2.getKey());
       });
     });
 

@@ -220,7 +220,7 @@ export function $setCompositionKey(compositionKey: null | NodeKey): void {
   }
 }
 
-export function getCompositionKey(): null | NodeKey {
+export function $getCompositionKey(): null | NodeKey {
   const editor = getActiveEditor();
   return editor._compositionKey;
 }

@@ -37,7 +37,7 @@ import {
 import {
   scheduleMicroTask,
   $getNodeByKey,
-  getCompositionKey,
+  $getCompositionKey,
   $setCompositionKey,
   getNearestNodeFromDOMNode,
   getEditorStateTextContent,
@@ -84,7 +84,7 @@ export const state: State = {
   setSelection: $setSelection,
   getPreviousSelection: $getPreviousSelection,
   setCompositionKey: $setCompositionKey,
-  getCompositionKey,
+  getCompositionKey: $getCompositionKey,
   getNearestNodeFromDOMNode,
   flushMutations,
 };
@@ -205,7 +205,7 @@ function applyAllTransforms(
   const dirtyLeaves = editor._dirtyLeaves;
   const dirtyElements = editor._dirtyElements;
   const nodeMap = editorState._nodeMap;
-  const compositionKey = getCompositionKey();
+  const compositionKey = $getCompositionKey();
   const transformsCache = new Map();
 
   let untransformedDirtyLeaves = dirtyLeaves;

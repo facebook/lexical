@@ -50,7 +50,7 @@ import {
   flushMutations,
   $setSelection,
   $setCompositionKey,
-  getCompositionKey,
+  $getCompositionKey,
 } from './OutlineUtils';
 import {
   createEmptySelection as createSelection,
@@ -87,7 +87,7 @@ export {
   $clearSelection,
   $setSelection,
   $setCompositionKey,
-  getCompositionKey,
+  $getCompositionKey,
   getNearestNodeFromDOMNode,
   flushMutations,
   log,

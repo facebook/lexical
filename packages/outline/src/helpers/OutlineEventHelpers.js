@@ -51,7 +51,7 @@ import {
   $getSelection,
   $getRoot,
   $setCompositionKey,
-  getCompositionKey,
+  $getCompositionKey,
   getNearestNodeFromDOMNode,
   flushMutations,
   otlnCreateLineBreakNode,
@@ -705,7 +705,7 @@ function updateTextNodeFromDOMContent(
       }
       if (
         isImmutableOrInert(node) ||
-        (getCompositionKey() !== null && !isComposing)
+        ($getCompositionKey() !== null && !isComposing)
       ) {
         node.markDirty();
         return;

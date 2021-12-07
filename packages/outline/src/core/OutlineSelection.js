@@ -31,7 +31,7 @@ import {
   otlnCreateLineBreakNode,
 } from '.';
 import {
-  getCompositionKey,
+  $getCompositionKey,
   $getNodeByKey,
   isSelectionWithinEditor,
   $setCompositionKey,
@@ -124,7 +124,7 @@ class Point {
     this.offset = offset;
     this.type = type;
     if (!isCurrentlyReadOnlyMode()) {
-      if (getCompositionKey() === oldKey) {
+      if ($getCompositionKey() === oldKey) {
         $setCompositionKey(key);
       }
       if (

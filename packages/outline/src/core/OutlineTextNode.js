@@ -19,7 +19,7 @@ import {
   adjustPointOffsetForMergedSibling,
 } from './OutlineSelection';
 import {
-  getCompositionKey,
+  $getCompositionKey,
   $setCompositionKey,
   toggleTextFormatType,
 } from './OutlineUtils';
@@ -399,7 +399,7 @@ export class TextNode extends OutlineNode {
     if (selection === null) {
       return makeSelection(key, anchorOffset, key, focusOffset, 'text', 'text');
     } else {
-      const compositionKey = getCompositionKey();
+      const compositionKey = $getCompositionKey();
       if (
         compositionKey === selection.anchor.key ||
         compositionKey === selection.focus.key
@@ -464,7 +464,7 @@ export class TextNode extends OutlineNode {
     }
     const textContent = this.getTextContent();
     const key = this.__key;
-    const compositionKey = getCompositionKey();
+    const compositionKey = $getCompositionKey();
     const offsetsSet = new Set(splitOffsets);
     const parts = [];
     const textLength = textContent.length;
@@ -589,7 +589,7 @@ export class TextNode extends OutlineNode {
     const targetKey = target.__key;
     const text = this.__text;
     const textLength = text.length;
-    const compositionKey = getCompositionKey();
+    const compositionKey = $getCompositionKey();
 
     if (compositionKey === targetKey) {
       $setCompositionKey(key);

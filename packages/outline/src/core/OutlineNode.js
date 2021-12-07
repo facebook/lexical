@@ -24,7 +24,7 @@ import {
 } from './OutlineUpdates';
 import {
   generateKey,
-  getCompositionKey,
+  $getCompositionKey,
   $getNodeByKey,
   internallyMarkNodeAsDirty,
   markParentElementsAsDirty,
@@ -473,7 +473,7 @@ export class OutlineNode {
   }
   // TODO remove this and move to TextNode
   isComposing(): boolean {
-    return this.__key === getCompositionKey();
+    return this.__key === $getCompositionKey();
   }
   getLatest<N: OutlineNode>(): N {
     const latest = $getNodeByKey<N>(this.__key);
@@ -628,7 +628,7 @@ export class OutlineNode {
         moveSelectionPointToEnd(focus, writableReplaceWith);
       }
     }
-    if (getCompositionKey() === toReplaceKey) {
+    if ($getCompositionKey() === toReplaceKey) {
       $setCompositionKey(newKey);
     }
     return writableReplaceWith;

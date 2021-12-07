@@ -14,14 +14,12 @@ import type {OutlineRef} from './OutlineReference';
 
 import {OutlineNode} from './OutlineNode';
 import invariant from 'shared/invariant';
-import {IS_IMMUTABLE} from './OutlineConstants';
 
 export class DecoratorNode extends OutlineNode {
   __ref: null | OutlineRef;
 
   constructor(ref?: null | OutlineRef, key?: NodeKey) {
     super(key);
-    this.__flags = IS_IMMUTABLE;
     this.__ref = ref || null;
 
     // ensure custom nodes implement required methods

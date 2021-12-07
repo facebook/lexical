@@ -63,8 +63,8 @@ module.exports = {
           '<rootDir>/packages/outline/src/helpers/OutlineRootHelpers.js',
         '^shared/getDOMTextNodeFromElement$':
           '<rootDir>/packages/shared/src/getDOMTextNodeFromElement.js',
-        '^shared/isImmutableOrInert$':
-          '<rootDir>/packages/shared/src/isImmutableOrInert.js',
+        '^shared/isTokenOrInert$':
+          '<rootDir>/packages/shared/src/isTokenOrInert.js',
         '^shared/invariant$': '<rootDir>/packages/shared/src/invariant.js',
         '^shared/environment$': '<rootDir>/packages/shared/src/environment.js',
         '^shared/getPossibleDecoratorNode$':

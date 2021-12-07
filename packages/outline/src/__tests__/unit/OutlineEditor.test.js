@@ -778,7 +778,6 @@ describe('OutlineEditor tests', () => {
           __cachedText: '',
           __children: [paragraph.getKey()],
           __dir: null,
-          __flags: 0,
           __format: 0,
           __indent: 0,
           __key: 'root',
@@ -788,7 +787,6 @@ describe('OutlineEditor tests', () => {
         expect(paragraph).toEqual({
           __children: [],
           __dir: null,
-          __flags: 0,
           __format: 0,
           __indent: 0,
           __key: paragraph.getKey(),
@@ -837,7 +835,6 @@ describe('OutlineEditor tests', () => {
         __cachedText: null,
         __children: [paragraphKey],
         __dir: 'ltr',
-        __flags: 0,
         __format: 0,
         __indent: 0,
         __key: 'root',
@@ -847,7 +844,6 @@ describe('OutlineEditor tests', () => {
       expect(parsedParagraph).toEqual({
         __children: [textKey],
         __dir: 'ltr',
-        __flags: 0,
         __format: 0,
         __indent: 0,
         __key: paragraphKey,
@@ -855,8 +851,9 @@ describe('OutlineEditor tests', () => {
         __type: 'paragraph',
       });
       expect(parsedText).toEqual({
+        __mode: 0,
+        __detail: 0,
         __text: 'Hello world',
-        __flags: 0,
         __format: 0,
         __key: textKey,
         __parent: paragraphKey,

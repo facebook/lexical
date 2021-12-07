@@ -99,8 +99,8 @@ export function getTextDirection(text: string): 'ltr' | 'rtl' | null {
   return null;
 }
 
-export function isImmutableOrInertOrSegmented(node: OutlineNode): boolean {
-  return node.isImmutable() || node.isInert() || node.isSegmented();
+export function isTokenOrInertOrSegmented(node: TextNode): boolean {
+  return node.isToken() || node.isInert() || node.isSegmented();
 }
 
 export function getDOMTextNode(element: Node | null): Text | null {

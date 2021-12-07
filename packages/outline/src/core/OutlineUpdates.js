@@ -163,11 +163,7 @@ function isNodeValidForTransform(
     node !== undefined &&
     // We don't want to transform nodes being composed
     node.__key !== compositionKey &&
-    node.isAttached() &&
-    // You shouldn't be able to transform these types of
-    // nodes.
-    !node.isImmutable() &&
-    !node.isSegmented()
+    node.isAttached()
   );
 }
 

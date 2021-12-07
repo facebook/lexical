@@ -14,7 +14,7 @@ import type {TextNode} from './OutlineTextNode';
 import {isTextNode, isDecoratorNode, $getSelection, $setSelection} from '.';
 import {triggerListeners, updateEditor} from './OutlineUpdates';
 import {
-  getNearestNodeFromDOMNode,
+  $getNearestNodeFromDOMNode,
   getNodeFromDOMNode,
   pushLogEntry,
 } from './OutlineUtils';
@@ -90,7 +90,7 @@ export function flushMutations(
           const mutation = mutations[i];
           const type = mutation.type;
           const target = mutation.target;
-          const targetNode = getNearestNodeFromDOMNode(target);
+          const targetNode = $getNearestNodeFromDOMNode(target);
 
           if (isDecoratorNode(targetNode)) {
             continue;

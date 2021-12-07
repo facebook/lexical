@@ -82,7 +82,7 @@ export function isSelectionWithinEditor(
       // If selection is inside a decorator, then we treat it as
       // if the focus is not in Outline.
       anchorDOM != null &&
-      !isDecoratorNode(getNearestNodeFromDOMNode(anchorDOM))
+      !isDecoratorNode($getNearestNodeFromDOMNode(anchorDOM))
     );
   } catch (error) {
     return false;
@@ -244,7 +244,7 @@ export function getNodeFromDOMNode(dom: Node): OutlineNode | null {
   return null;
 }
 
-export function getNearestNodeFromDOMNode(
+export function $getNearestNodeFromDOMNode(
   startingDOM: Node,
 ): OutlineNode | null {
   let dom = startingDOM;

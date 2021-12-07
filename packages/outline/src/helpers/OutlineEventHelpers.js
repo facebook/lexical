@@ -52,7 +52,7 @@ import {
   $getRoot,
   $setCompositionKey,
   $getCompositionKey,
-  getNearestNodeFromDOMNode,
+  $getNearestNodeFromDOMNode,
   flushMutations,
   otlnCreateLineBreakNode,
 } from 'outline';
@@ -949,7 +949,7 @@ function updateSelectedTextFromDOM(
   }
   const {anchorNode, anchorOffset, focusOffset} = domSelection;
   if (anchorNode !== null && anchorNode.nodeType === 3) {
-    const node = getNearestNodeFromDOMNode(anchorNode);
+    const node = $getNearestNodeFromDOMNode(anchorNode);
     if (isTextNode(node)) {
       updateTextNodeFromDOMContent(
         node,

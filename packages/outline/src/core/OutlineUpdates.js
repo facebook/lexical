@@ -39,7 +39,7 @@ import {
   $getNodeByKey,
   $getCompositionKey,
   $setCompositionKey,
-  getNearestNodeFromDOMNode,
+  $getNearestNodeFromDOMNode,
   getEditorStateTextContent,
   flushMutations,
   $setSelection,
@@ -85,7 +85,7 @@ export const state: State = {
   getPreviousSelection: $getPreviousSelection,
   setCompositionKey: $setCompositionKey,
   getCompositionKey: $getCompositionKey,
-  getNearestNodeFromDOMNode,
+  getNearestNodeFromDOMNode: $getNearestNodeFromDOMNode,
   flushMutations,
 };
 

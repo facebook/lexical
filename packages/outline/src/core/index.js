@@ -54,7 +54,7 @@ import {
 } from './OutlineUtils';
 import {
   createEmptySelection as createSelection,
-  getSelection,
+  otlnGetSelection,
   getPreviousSelection,
 } from './OutlineSelection';
 import {createNodeFromParse} from './OutlineParsing';
@@ -82,7 +82,7 @@ export {
   createSelection,
   otlnGetRoot,
   otlnGetNodeByKey,
-  getSelection,
+  otlnGetSelection,
   getPreviousSelection,
   clearSelection,
   setSelection,

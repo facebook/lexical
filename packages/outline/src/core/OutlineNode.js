@@ -38,7 +38,7 @@ import {
   IS_SEGMENTED,
 } from './OutlineConstants';
 import {
-  getSelection,
+  otlnGetSelection,
   moveSelectionPointToEnd,
   updateElementSelectionOnCreateDeleteNode,
   moveSelectionPointToSibling,
@@ -56,7 +56,7 @@ export function removeNode(
   if (parent === null) {
     return;
   }
-  const selection = getSelection();
+  const selection = otlnGetSelection();
   let selectionMoved = false;
   if (selection !== null && restoreSelection) {
     const anchor = selection.anchor;
@@ -168,7 +168,7 @@ export class OutlineNode {
     return false;
   }
   isSelected(): boolean {
-    const selection = getSelection();
+    const selection = otlnGetSelection();
     if (selection == null) {
       return false;
     }
@@ -617,7 +617,7 @@ export class OutlineNode {
     children.splice(index, 0, newKey);
     writableReplaceWith.__parent = newParent.__key;
     removeNode(this, false);
-    const selection = getSelection();
+    const selection = otlnGetSelection();
     if (selection !== null) {
       const anchor = selection.anchor;
       const focus = selection.focus;
@@ -656,7 +656,7 @@ export class OutlineNode {
       invariant(false, 'Node is not a child of its parent');
     }
     children.splice(index + 1, 0, insertKey);
-    const selection = getSelection();
+    const selection = otlnGetSelection();
     if (selection !== null) {
       updateElementSelectionOnCreateDeleteNode(
         selection,
@@ -689,7 +689,7 @@ export class OutlineNode {
       invariant(false, 'Node is not a child of its parent');
     }
     children.splice(index, 0, insertKey);
-    const selection = getSelection();
+    const selection = otlnGetSelection();
     if (selection !== null) {
       updateElementSelectionOnCreateDeleteNode(
         selection,

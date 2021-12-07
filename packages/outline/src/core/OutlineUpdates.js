@@ -22,7 +22,7 @@ import type {ParsedNode, NodeParserState} from './OutlineParsing';
 import {updateEditorState} from './OutlineReconciler';
 import {
   createSelection,
-  getSelection,
+  otlnGetSelection,
   getPreviousSelection,
   createSelectionFromParse,
 } from './OutlineSelection';
@@ -79,7 +79,7 @@ export type State = {
 export const state: State = {
   getRoot: otlnGetRoot,
   getNodeByKey: otlnGetNodeByKey,
-  getSelection,
+  getSelection: otlnGetSelection,
   clearSelection,
   setSelection,
   getPreviousSelection,

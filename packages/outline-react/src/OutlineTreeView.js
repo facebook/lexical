@@ -9,7 +9,12 @@
 
 import type {ElementNode, EditorState, OutlineEditor, Selection} from 'outline';
 
-import {isElementNode, isTextNode, otlnGetRoot, getSelection} from 'outline';
+import {
+  isElementNode,
+  isTextNode,
+  otlnGetRoot,
+  otlnGetSelection,
+} from 'outline';
 
 import * as React from 'react';
 import {useState, useEffect, useRef} from 'react';
@@ -192,7 +197,7 @@ function generateContent(editorState: EditorState): string {
   let res = ' root\n';
 
   const selectionString = editorState.read(() => {
-    const selection = getSelection();
+    const selection = otlnGetSelection();
 
     visitTree(otlnGetRoot(), (node, indent) => {
       const nodeKey = node.getKey();
@@ -317,7 +322,7 @@ function printSelectedCharsLine({
     return '';
   }
 
-  const [start, end] = getSelectionStartEnd(node, selection);
+  const [start, end] = otlnGetSelectionStartEnd(node, selection);
 
   if (start === end) {
     return '';
@@ -348,7 +353,7 @@ function printSelectedCharsLine({
   );
 }
 
-function getSelectionStartEnd(node, selection): [number, number] {
+function otlnGetSelectionStartEnd(node, selection): [number, number] {
   const anchor = selection.anchor;
   const focus = selection.focus;
   const textContent = node.getTextContent(true);

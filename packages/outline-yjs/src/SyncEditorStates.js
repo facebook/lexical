@@ -18,7 +18,7 @@ import type {Binding, Provider, YjsEvent} from '.';
 import {YTextEvent, YMapEvent, YXmlEvent} from 'yjs';
 import {
   isTextNode,
-  getSelection,
+  otlnGetSelection,
   otlnGetRoot,
   setSelection,
   otlnGetNodeByKey,
@@ -90,7 +90,7 @@ export function syncYjsChangesToOutline(
         syncEvent(binding, event);
       }
 
-      const selection = getSelection();
+      const selection = otlnGetSelection();
       if (selection !== null) {
         // We can't use Yjs's cursor position here, as it doesn't always
         // handle selection recovery correctly – especially on elements that
@@ -130,7 +130,7 @@ export function syncYjsChangesToOutline(
             binding,
             provider,
             prevSelection,
-            getSelection(),
+            otlnGetSelection(),
           );
         } else {
           syncLocalCursorPosition(binding, provider);
@@ -231,7 +231,7 @@ export function syncOutlineUpdateToYjs(
           dirtyLeaves,
         );
       }
-      const selection = getSelection();
+      const selection = otlnGetSelection();
       const prevSelection = prevEditorState._selection;
       syncOutlineSelectionToYjs(binding, provider, prevSelection, selection);
     });

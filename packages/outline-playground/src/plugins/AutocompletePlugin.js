@@ -17,7 +17,7 @@ import {
   TextNode,
   log,
   otlnGetNodeByKey,
-  getSelection,
+  otlnGetSelection,
   otlnGetRoot,
 } from 'outline';
 import {useEffect, useRef, useState, useCallback, useMemo} from 'react';
@@ -58,7 +58,7 @@ function useTypeahead(editor: OutlineEditor): void {
 
         function maybeRemoveTypeahead() {
           if (currentTypeaheadNode !== null) {
-            const selection = getSelection();
+            const selection = otlnGetSelection();
             if (selection !== null) {
               const anchor = selection.anchor;
               const focus = selection.focus;
@@ -114,7 +114,7 @@ function useTypeahead(editor: OutlineEditor): void {
           }
         }
 
-        const selection = getSelection();
+        const selection = otlnGetSelection();
         const anchorNode = selection?.anchor.getNode();
         const anchorOffset = selection?.anchor.offset;
         const anchorLength = anchorNode?.getTextContentSize();

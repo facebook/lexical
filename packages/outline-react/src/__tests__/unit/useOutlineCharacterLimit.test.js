@@ -12,7 +12,7 @@ import type {OutlineEditor, NodeKey} from 'outline';
 import {initializeUnitTest} from '../../../../outline/src/__tests__/utils';
 import {
   otlnCreateTextNode,
-  getSelection,
+  otlnGetSelection,
   otlnGetNodeByKey,
   otlnGetRoot,
 } from 'outline';
@@ -75,7 +75,7 @@ describe('OutlineNodeHelpers tests', () => {
           mergePrevious(overflowRight);
           expect(paragraph.getChildrenSize()).toBe(1);
           expect(isOverflowNode(paragraph.getFirstChild())).toBe(true);
-          const selection = getSelection();
+          const selection = otlnGetSelection();
           if (selection === null) {
             throw new Error('Lost selection');
           }
@@ -112,7 +112,7 @@ describe('OutlineNodeHelpers tests', () => {
           mergePrevious(overflowRight);
           expect(paragraph.getChildrenSize()).toBe(1);
           expect(isOverflowNode(paragraph.getFirstChild())).toBe(true);
-          const selection = getSelection();
+          const selection = otlnGetSelection();
           if (selection === null) {
             throw new Error('Lost selection');
           }
@@ -146,7 +146,7 @@ describe('OutlineNodeHelpers tests', () => {
           text4.toggleFormat('bold'); // Prevent merging with text3
 
           overflowLeft.select(1, 1);
-          const selection = getSelection();
+          const selection = otlnGetSelection();
           selection.focus.set(overflowRightKey, 1, 'block');
         });
         await editor.update(() => {
@@ -155,7 +155,7 @@ describe('OutlineNodeHelpers tests', () => {
           mergePrevious(overflowRight);
           expect(paragraph.getChildrenSize()).toBe(1);
           expect(isOverflowNode(paragraph.getFirstChild())).toBe(true);
-          const selection = getSelection();
+          const selection = otlnGetSelection();
           if (selection === null) {
             throw new Error('Lost selection');
           }

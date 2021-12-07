@@ -22,7 +22,7 @@ import {wrapLeafNodesInElements} from 'outline/selection';
 import {useEffect, useRef, useState} from 'react';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
-import {log, getSelection} from 'outline';
+import {log, otlnGetSelection} from 'outline';
 
 const supportedBlockTypes = new Set([
   'paragraph',
@@ -84,7 +84,7 @@ function DropdownList({
     if (blockType !== 'paragraph') {
       editor.update(() => {
         log('formatParagraph');
-        const selection = getSelection();
+        const selection = otlnGetSelection();
 
         if (selection !== null) {
           wrapLeafNodesInElements(selection, () => otlnCreateParagraphNode());
@@ -98,7 +98,7 @@ function DropdownList({
     if (blockType !== 'h1') {
       editor.update(() => {
         log('formatLargeHeading');
-        const selection = getSelection();
+        const selection = otlnGetSelection();
 
         if (selection !== null) {
           wrapLeafNodesInElements(selection, () => otlnCreateHeadingNode('h1'));
@@ -112,7 +112,7 @@ function DropdownList({
     if (blockType !== 'h2') {
       editor.update((state) => {
         log('formatSmallHeading');
-        const selection = getSelection();
+        const selection = otlnGetSelection();
 
         if (selection !== null) {
           wrapLeafNodesInElements(selection, () => otlnCreateHeadingNode('h2'));
@@ -126,7 +126,7 @@ function DropdownList({
     if (blockType !== 'ul') {
       editor.update((state) => {
         log('formatBulletList');
-        const selection = getSelection();
+        const selection = otlnGetSelection();
 
         if (selection !== null) {
           wrapLeafNodesInElements(
@@ -144,7 +144,7 @@ function DropdownList({
     if (blockType !== 'ol') {
       editor.update((state) => {
         log('formatNumberedList');
-        const selection = getSelection();
+        const selection = otlnGetSelection();
 
         if (selection !== null) {
           wrapLeafNodesInElements(
@@ -162,7 +162,7 @@ function DropdownList({
     if (blockType !== 'quote') {
       editor.update((state) => {
         log('formatQuote');
-        const selection = getSelection();
+        const selection = otlnGetSelection();
 
         if (selection !== null) {
           wrapLeafNodesInElements(selection, () => otlnCreateQuoteNode());
@@ -176,7 +176,7 @@ function DropdownList({
     if (blockType !== 'code') {
       editor.update((state) => {
         log('formatCode');
-        const selection = getSelection();
+        const selection = otlnGetSelection();
 
         if (selection !== null) {
           wrapLeafNodesInElements(selection, () => otlnCreateCodeNode());
@@ -239,7 +239,7 @@ export default function BlockControlsPlugin(): React$Node {
   useEffect(() => {
     return editor.addListener('update', ({editorState}) => {
       editorState.read(() => {
-        const selection = getSelection();
+        const selection = otlnGetSelection();
         if (selection !== null) {
           const anchorNode = selection.anchor.getNode();
           const element =

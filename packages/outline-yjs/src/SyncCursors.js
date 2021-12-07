@@ -26,7 +26,7 @@ import {
   isTextNode,
   isElementNode,
   otlnGetNodeByKey,
-  getSelection,
+  otlnGetSelection,
 } from 'outline';
 import {CollabTextNode} from './CollabTextNode';
 import {CollabElementNode} from './CollabElementNode';
@@ -324,7 +324,7 @@ export function syncLocalCursorPosition(
         const anchorKey = anchorCollabNode.getKey();
         const focusKey = focusCollabNode.getKey();
 
-        const selection = getSelection();
+        const selection = otlnGetSelection();
         if (selection === null) {
           throw new Error('TODO: syncLocalCursorPosition');
         }

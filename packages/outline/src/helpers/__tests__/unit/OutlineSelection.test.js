@@ -10,7 +10,7 @@ import {
   otlnCreateLineBreakNode,
   otlnCreateTextNode,
   Selection,
-  getSelection,
+  otlnGetSelection,
   otlnGetRoot,
 } from 'outline';
 
@@ -910,7 +910,7 @@ describe('OutlineSelection tests', () => {
       paragraph.append(elementNode);
       elementNode.append(text);
 
-      const selectedNodes = getSelection().getNodes();
+      const selectedNodes = otlnGetSelection().getNodes();
       expect(selectedNodes.length).toBe(1);
       expect(selectedNodes[0].getKey()).toBe(text.getKey());
     });
@@ -1426,7 +1426,7 @@ describe('OutlineSelection tests', () => {
               const textNode = otlnCreateTextNode('foo');
               // Note: line break can't be selected by the DOM
               const linebreak = otlnCreateLineBreakNode();
-              const selection: Selection = getSelection();
+              const selection: Selection = otlnGetSelection();
               const anchor = selection.anchor;
               const focus = selection.focus;
 
@@ -1470,7 +1470,7 @@ describe('OutlineSelection tests', () => {
       const textNodeKey = textNode.getKey();
       // Note: line break can't be selected by the DOM
       const linebreak = otlnCreateLineBreakNode();
-      const selection: Selection = getSelection();
+      const selection: Selection = otlnGetSelection();
       const anchor = selection.anchor;
       const focus = selection.focus;
 

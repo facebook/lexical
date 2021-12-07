@@ -11,7 +11,7 @@ import type {OutlineEditor} from './OutlineEditor';
 import type {Selection} from './OutlineSelection';
 import type {TextNode} from './OutlineTextNode';
 
-import {isTextNode, isDecoratorNode, getSelection, setSelection} from '.';
+import {isTextNode, isDecoratorNode, otlnGetSelection, setSelection} from '.';
 import {triggerListeners, updateEditor} from './OutlineUpdates';
 import {
   getNearestNodeFromDOMNode,
@@ -48,7 +48,7 @@ function isManagedLineBreak(dom: Node, target: Node): boolean {
 
 function getLastSelection(editor: OutlineEditor): null | Selection {
   return editor.getEditorState().read(() => {
-    const selection = getSelection();
+    const selection = otlnGetSelection();
     return selection !== null ? selection.clone() : null;
   });
 }
@@ -192,7 +192,7 @@ export function flushMutations(
           observer.takeRecords();
         }
         if (shouldRevertSelection) {
-          const selection = getSelection() || getLastSelection(editor);
+          const selection = otlnGetSelection() || getLastSelection(editor);
           if (selection !== null) {
             selection.dirty = true;
             setSelection(selection);

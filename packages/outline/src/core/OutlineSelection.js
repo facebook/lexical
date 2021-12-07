@@ -118,7 +118,7 @@ class Point {
     return node;
   }
   set(key: NodeKey, offset: number, type: 'text' | 'element'): void {
-    const selection = getSelection();
+    const selection = otlnGetSelection();
     const oldKey = this.key;
     this.key = key;
     this.offset = offset;
@@ -1612,7 +1612,7 @@ export function createSelection(editor: OutlineEditor): null | Selection {
   );
 }
 
-export function getSelection(): null | Selection {
+export function otlnGetSelection(): null | Selection {
   const editorState = getActiveEditorState();
   return editorState._selection;
 }

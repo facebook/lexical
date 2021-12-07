@@ -15,7 +15,7 @@ import type {
 } from 'outline';
 import type {InputEvents} from 'outline-react/useOutlineEditorEvents';
 
-import {log, getSelection, otlnGetRoot} from 'outline';
+import {log, otlnGetSelection, otlnGetRoot} from 'outline';
 import useOutlineEditorEvents from '../useOutlineEditorEvents';
 import {HeadingNode} from 'outline/HeadingNode';
 import {ListNode} from 'outline/ListNode';
@@ -67,7 +67,7 @@ if (CAN_USE_BEFORE_INPUT) {
 function shouldSelectParagraph(editor: OutlineEditor): boolean {
   const activeElement = document.activeElement;
   return (
-    getSelection() !== null ||
+    otlnGetSelection() !== null ||
     (activeElement !== null && activeElement === editor.getRootElement())
   );
 }
@@ -129,7 +129,7 @@ export function useRichTextSetup(
       editor.addListener(
         'command',
         (type, payload): boolean => {
-          const selection = getSelection();
+          const selection = otlnGetSelection();
           if (selection === null) {
             return false;
           }

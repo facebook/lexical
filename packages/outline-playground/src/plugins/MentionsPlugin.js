@@ -13,7 +13,7 @@ import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
 
 // $FlowFixMe
 import {createPortal} from 'react-dom';
-import {log, getSelection} from 'outline';
+import {log, otlnGetSelection} from 'outline';
 import React, {useCallback, useLayoutEffect, useMemo, useRef} from 'react';
 import {startTransition, useEffect, useState} from 'react';
 import {MentionNode, otlnCreateMentionNode} from '../nodes/MentionNode';
@@ -845,7 +845,7 @@ function tryToPositionRange(match: MentionMatch, range: Range): boolean {
 function getMentionsTextToSearch(editor: OutlineEditor): string | null {
   let text = null;
   editor.getEditorState().read(() => {
-    const selection = getSelection();
+    const selection = otlnGetSelection();
     if (selection == null) {
       return;
     }
@@ -888,7 +888,7 @@ function createMentionNodeFromSearchResult(
 ): void {
   editor.update(() => {
     log('createMentionNodeFromSearchResult');
-    const selection = getSelection();
+    const selection = otlnGetSelection();
     if (selection == null || !selection.isCollapsed()) {
       return;
     }

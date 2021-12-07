@@ -6,7 +6,7 @@
  *
  */
 
-import {otlnCreateTextNode, isTextNode, getSelection} from 'outline';
+import {otlnCreateTextNode, isTextNode, otlnGetSelection} from 'outline';
 
 Object.defineProperty(HTMLElement.prototype, 'contentEditable', {
   get() {
@@ -589,7 +589,7 @@ export async function applySelectionInputs(inputs, update, editor) {
 
     for (let j = 0; j < times; j++) {
       await update(() => {
-        const selection = getSelection();
+        const selection = otlnGetSelection();
 
         switch (input.type) {
           case 'insert_text': {

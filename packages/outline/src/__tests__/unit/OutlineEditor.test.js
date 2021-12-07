@@ -18,7 +18,7 @@ import {
   ElementNode,
   otlnGetRoot,
   setCompositionKey,
-  getSelection,
+  otlnGetSelection,
   otlnGetNodeByKey,
   isTextNode,
 } from 'outline';
@@ -828,7 +828,7 @@ describe('OutlineEditor tests', () => {
         paragraphKey = parsedParagraph.getKey();
         parsedText = parsedParagraph.getFirstChild();
         textKey = parsedText.getKey();
-        parsedSelection = getSelection();
+        parsedSelection = otlnGetSelection();
       });
     });
 

@@ -25,11 +25,11 @@ import {useCallback, useEffect, useRef, useState, useMemo} from 'react';
 // $FlowFixMe
 import {unstable_batchedUpdates, createPortal} from 'react-dom';
 import {
-  getSelectionStyleValueForProperty,
+  otlnGetSelectionStyleValueForProperty,
   patchStyleText,
   isAtNodeEnd,
 } from 'outline/selection';
-import {log, getSelection, setSelection} from 'outline';
+import {log, otlnGetSelection, setSelection} from 'outline';
 import {otlnCreateLinkNode, isLinkNode, LinkNode} from 'outline/LinkNode';
 
 function positionToolbar(toolbar, rect) {
@@ -223,7 +223,7 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
 
   useEffect(() => {
     editor.getEditorState().read(() => {
-      const selection = getSelection();
+      const selection = otlnGetSelection();
       moveToolbar(selection);
     });
   });
@@ -240,10 +240,14 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
           const node = getSelectedNode(selection);
           unstable_batchedUpdates(() => {
             setFontSize(
-              getSelectionStyleValueForProperty(selection, 'font-size', '15px'),
+              otlnGetSelectionStyleValueForProperty(
+                selection,
+                'font-size',
+                '15px',
+              ),
             );
             setFontFamily(
-              getSelectionStyleValueForProperty(
+              otlnGetSelectionStyleValueForProperty(
                 selection,
                 'font-family',
                 'Arial',
@@ -272,14 +276,14 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
 
       const selectionChangeHandler = () => {
         editor.getEditorState().read(() => {
-          const selection = getSelection();
+          const selection = otlnGetSelection();
           updateButtonStates(selection);
           moveToolbar(selection);
         });
       };
       const checkForChanges = () => {
         editor.getEditorState().read(() => {
-          const selection = getSelection();
+          const selection = otlnGetSelection();
           updateButtonStates(selection);
           moveToolbar(selection);
         });
@@ -290,7 +294,7 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
       const mouseUpHandler = () => {
         mouseDownRef.current = false;
         editor.getEditorState().read(() => {
-          const selection = getSelection();
+          const selection = otlnGetSelection();
           moveToolbar(selection);
         });
       };
@@ -318,7 +322,7 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
         if (selection !== null) {
           setSelection(selection);
         }
-        const sel = getSelection();
+        const sel = otlnGetSelection();
         if (sel !== null) {
           const nodes = sel.extract();
           if (url === null) {
@@ -400,7 +404,7 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
     (formatType: TextFormatType) => {
       editor.update(() => {
         log('applyFormatText');
-        const selection = getSelection();
+        const selection = otlnGetSelection();
         if (selection !== null) {
           selection.formatText(formatType);
         }
@@ -413,7 +417,7 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
     (styles: {[string]: string}) => {
       editor.update(() => {
         log('applyStyleText');
-        const selection = getSelection();
+        const selection = otlnGetSelection();
         if (selection !== null) {
           patchStyleText(selection, styles);
         }

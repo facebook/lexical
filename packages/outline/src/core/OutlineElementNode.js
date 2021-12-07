@@ -12,7 +12,11 @@ import type {Selection} from './OutlineSelection';
 
 import {isTextNode, TextNode} from '.';
 import {OutlineNode} from './OutlineNode';
-import {makeSelection, getSelection, setPointValues} from './OutlineSelection';
+import {
+  makeSelection,
+  otlnGetSelection,
+  setPointValues,
+} from './OutlineSelection';
 import {errorOnReadOnly, getActiveEditor} from './OutlineUpdates';
 import {ELEMENT_TYPE_TO_FORMAT} from './OutlineConstants';
 import {otlnGetNodeByKey} from './OutlineUtils';
@@ -198,7 +202,7 @@ export class ElementNode extends OutlineNode {
 
   select(_anchorOffset?: number, _focusOffset?: number): Selection {
     errorOnReadOnly();
-    const selection = getSelection();
+    const selection = otlnGetSelection();
     let anchorOffset = _anchorOffset;
     let focusOffset = _focusOffset;
     const childrenCount = this.getChildrenSize();

@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {TextNode, otlnGetRoot, getSelection} from 'outline';
+import {TextNode, otlnGetRoot, otlnGetSelection} from 'outline';
 import {ParagraphNode} from 'outline/ParagraphNode';
 import {OutlineNode} from '../../core/OutlineNode';
 
@@ -161,7 +161,7 @@ describe('OutlineNode tests', () => {
       await editor.update(() => {
         textNode.select(0, 0);
 
-        const selection = getSelection();
+        const selection = otlnGetSelection();
         expect(selection).not.toBe(null);
 
         selection.anchor.type = 'text';
@@ -176,7 +176,7 @@ describe('OutlineNode tests', () => {
       await Promise.resolve().then();
 
       await editor.update(() => {
-        const selection = getSelection();
+        const selection = otlnGetSelection();
 
         expect(selection.anchor.key).toBe(textNode.getKey());
         expect(selection.focus.key).toBe(newTextNode.getKey());

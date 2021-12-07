@@ -8,7 +8,7 @@
 
 import {otlnCreateCodeNode} from 'outline/CodeNode';
 import {otlnCreateParagraphNode} from 'outline/ParagraphNode';
-import {otlnCreateTextNode, otlnGetRoot, getSelection} from 'outline';
+import {otlnCreateTextNode, otlnGetRoot, otlnGetSelection} from 'outline';
 import {initializeUnitTest} from '../utils';
 
 const editorConfig = Object.freeze({
@@ -65,7 +65,7 @@ describe('OutlineCodeNode tests', () => {
         paragraphNode.append(textNode);
         root.append(paragraphNode);
         textNode.select(0, 0);
-        const selection = getSelection();
+        const selection = otlnGetSelection();
         expect(selection).toEqual({
           anchorKey: '_2',
           anchorOffset: 0,
@@ -80,7 +80,7 @@ describe('OutlineCodeNode tests', () => {
       );
       await editor.update(() => {
         const codeNode = otlnCreateCodeNode();
-        const selection = getSelection();
+        const selection = otlnGetSelection();
         codeNode.insertNewAfter(selection);
       });
     });

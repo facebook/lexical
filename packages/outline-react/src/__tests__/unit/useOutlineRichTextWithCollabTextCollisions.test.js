@@ -8,7 +8,7 @@
  */
 
 import {createTestConnection, waitForReact} from './utils';
-import {otlnGetRoot, otlnCreateTextNode, getSelection} from 'outline';
+import {otlnGetRoot, otlnCreateTextNode, otlnGetSelection} from 'outline';
 import {otlnCreateParagraphNode} from 'outline/ParagraphNode';
 
 function createAndStartClients(
@@ -128,7 +128,7 @@ describe('useOutlineRichTextWithCollabLists', () => {
         const paragraph2 = paragraph1.getNextSibling();
         const textNode = paragraph1.getFirstChild();
         textNode.select(0, 0);
-        const selection = getSelection();
+        const selection = otlnGetSelection();
         selection.anchor.set(paragraph1.getFirstChild().getKey(), 5, 'text');
         selection.focus.set(paragraph2.getFirstChild().getKey(), 6, 'text');
         selection.removeText();

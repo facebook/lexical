@@ -12,7 +12,7 @@ import type {Binding} from '.';
 import type {CollabElementNode} from './CollabElementNode';
 import type {Map as YMap} from 'yjs';
 
-import {getSelection, isTextNode, otlnGetNodeByKey} from 'outline';
+import {otlnGetSelection, isTextNode, otlnGetNodeByKey} from 'outline';
 import {syncPropertiesFromOutline, syncPropertiesFromYjs} from './Utils';
 
 function simpleDiffWithCursor(
@@ -63,7 +63,7 @@ function diffTextContentAndApplyDelta(
   prevText: string,
   nextText: string,
 ): void {
-  const selection = getSelection();
+  const selection = otlnGetSelection();
   let cursorOffset = nextText.length;
   if (selection !== null && selection.isCollapsed()) {
     const anchor = selection.anchor;

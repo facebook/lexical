@@ -16,7 +16,7 @@ import {
   isTextNode,
   TextNode,
   isElementNode,
-  getSelection,
+  otlnGetSelection,
 } from 'outline';
 import {
   KeywordNode,
@@ -50,7 +50,7 @@ function textTransform(node: TextNode, state: State): void {
     }
     adjacentTextNode = adjacentTextNode.getNextSibling();
   }
-  const selection = getSelection();
+  const selection = otlnGetSelection();
 
   if (!isCharacterBetweenValid(text[0])) {
     // Handle when a text node occurs after a keyword, but doesn't include a space.

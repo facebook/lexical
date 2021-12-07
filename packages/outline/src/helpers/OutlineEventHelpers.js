@@ -48,7 +48,7 @@ import {
   isElementNode,
   isDecoratorNode,
   log,
-  getSelection,
+  otlnGetSelection,
   otlnGetRoot,
   setCompositionKey,
   getCompositionKey,
@@ -305,7 +305,7 @@ export function onKeyDown(event: KeyboardEvent, editor: OutlineEditor): void {
   }
   editor.update((state) => {
     log('onKeyDown');
-    const selection = getSelection();
+    const selection = otlnGetSelection();
     if (selection === null) {
       return;
     }
@@ -392,7 +392,7 @@ export function onPasteForPlainText(
   event.preventDefault();
   editor.update((state) => {
     log('onPasteForPlainText');
-    const selection = getSelection();
+    const selection = otlnGetSelection();
     const clipboardData = event.clipboardData;
     if (clipboardData != null && selection !== null) {
       insertDataTransferForPlainText(clipboardData, selection);
@@ -407,7 +407,7 @@ export function onPasteForRichText(
   event.preventDefault();
   editor.update((state) => {
     log('onPasteForRichText');
-    const selection = getSelection();
+    const selection = otlnGetSelection();
     const clipboardData = event.clipboardData;
     if (clipboardData != null && selection !== null) {
       insertDataTransferForRichText(clipboardData, selection, editor);
@@ -439,7 +439,7 @@ export function onCutForPlainText(
   onCopyForPlainText(event, editor);
   editor.update((state) => {
     log('onCutForPlainText');
-    const selection = getSelection();
+    const selection = otlnGetSelection();
     if (selection !== null) {
       selection.removeText();
     }
@@ -453,7 +453,7 @@ export function onCutForRichText(
   onCopyForRichText(event, editor);
   editor.update((state) => {
     log('onCutForRichText');
-    const selection = getSelection();
+    const selection = otlnGetSelection();
     if (selection !== null) {
       selection.removeText();
     }
@@ -468,7 +468,7 @@ export function onCopyForPlainText(
   editor.update((state) => {
     log('onCopyForPlainText');
     const clipboardData = event.clipboardData;
-    const selection = getSelection();
+    const selection = otlnGetSelection();
     if (selection !== null) {
       if (clipboardData != null) {
         const domSelection = window.getSelection();
@@ -497,7 +497,7 @@ export function onCopyForRichText(
   editor.update((state) => {
     log('onCopyForRichText');
     const clipboardData = event.clipboardData;
-    const selection = getSelection();
+    const selection = otlnGetSelection();
     if (selection !== null) {
       if (clipboardData != null) {
         const domSelection = window.getSelection();
@@ -528,7 +528,7 @@ export function onCompositionStart(
 ): void {
   editor.update((state) => {
     log('onCompositionStart');
-    const selection = getSelection();
+    const selection = otlnGetSelection();
     if (selection !== null && !editor.isComposing()) {
       const anchor = selection.anchor;
       setCompositionKey(anchor.key);
@@ -578,7 +578,7 @@ export function onCompositionEnd(
 }
 
 function getLastSelection(editor: OutlineEditor): null | Selection {
-  return editor.getEditorState().read(() => getSelection());
+  return editor.getEditorState().read(() => otlnGetSelection());
 }
 
 // This is a work-around is mainly Chrome specific bug where if you select
@@ -589,7 +589,7 @@ function getLastSelection(editor: OutlineEditor): null | Selection {
 export function onClick(event: MouseEvent, editor: OutlineEditor): void {
   editor.update(() => {
     log('onClick');
-    const selection = getSelection();
+    const selection = otlnGetSelection();
     if (selection === null) {
       return;
     }
@@ -623,7 +623,7 @@ export function onSelectionChange(event: Event, editor: OutlineEditor): void {
   // to a good selection.
   editor.update(() => {
     log('onSelectionChange');
-    const selection = getSelection();
+    const selection = otlnGetSelection();
     // Update the selection format
     if (selection !== null && selection.isCollapsed()) {
       const anchor = selection.anchor;
@@ -710,7 +710,7 @@ function updateTextNodeFromDOMContent(
         node.markDirty();
         return;
       }
-      const selection = getSelection();
+      const selection = otlnGetSelection();
 
       if (selection === null || anchorOffset === null || focusOffset === null) {
         node.setTextContent(normalizedTextContent);
@@ -789,7 +789,7 @@ export function onBeforeInput(event: InputEvent, editor: OutlineEditor): void {
 
   editor.update(() => {
     log('onBeforeInputForRichText');
-    const selection = getSelection();
+    const selection = otlnGetSelection();
 
     if (selection === null) {
       return;
@@ -967,7 +967,7 @@ export function onInput(event: InputEvent, editor: OutlineEditor): void {
   event.stopPropagation();
   editor.update(() => {
     log('onInput');
-    const selection = getSelection();
+    const selection = otlnGetSelection();
     const data = event.data;
     if (
       data != null &&

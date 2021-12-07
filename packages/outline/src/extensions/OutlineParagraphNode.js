@@ -39,7 +39,7 @@ export class ParagraphNode extends ElementNode {
   // Mutation
 
   insertNewAfter(): ParagraphNode {
-    const newElement = createParagraphNode();
+    const newElement = $createParagraphNode();
     const direction = this.getDirection();
     newElement.setDirection(direction);
     this.insertAfter(newElement);
@@ -70,7 +70,7 @@ export class ParagraphNode extends ElementNode {
   }
 }
 
-export function createParagraphNode(): ParagraphNode {
+export function $createParagraphNode(): ParagraphNode {
   return new ParagraphNode();
 }
 

@@ -19,11 +19,11 @@ import type {
 import {addClassNamesToElement} from 'outline/elements';
 import {
   ElementNode,
-  getNearestNodeFromDOMNode,
+  $getNearestNodeFromDOMNode,
   isElementNode,
   createSelection,
-  getSelection,
-  setSelection,
+  $getSelection,
+  $setSelection,
 } from 'outline';
 
 type Cell = {
@@ -222,7 +222,7 @@ function applyCellSelection(
                   return true;
                 }
                 highlightedCells.forEach(({elem}) => {
-                  const cellNode = getNearestNodeFromDOMNode(elem);
+                  const cellNode = $getNearestNodeFromDOMNode(elem);
                   if (isElementNode(cellNode)) {
                     cellNode.clear();
                   }
@@ -279,7 +279,7 @@ function applyCellSelection(
   });
 
   const formatCells = (type: TextFormatType) => {
-    let selection = getSelection();
+    let selection = $getSelection();
     if (selection === null) {
       selection = createSelection();
     }
@@ -288,7 +288,7 @@ function applyCellSelection(
     const anchor = formatSelection.anchor;
     const focus = formatSelection.focus;
     highlightedCells.forEach((highlightedCell) => {
-      const cellNode = getNearestNodeFromDOMNode(highlightedCell.elem);
+      const cellNode = $getNearestNodeFromDOMNode(highlightedCell.elem);
       if (isElementNode(cellNode)) {
         anchor.set(cellNode.getKey(), 0, 'element');
         focus.set(cellNode.getKey(), cellNode.getChildrenSize(), 'element');
@@ -306,7 +306,7 @@ function applyCellSelection(
       selection.anchor.offset,
       selection.anchor.type,
     );
-    setSelection(selection);
+    $setSelection(selection);
   };
 
   let deleteCharacterListener = null;
@@ -385,7 +385,7 @@ export class TableNode extends ElementNode {
   }
 }
 
-export function createTableNode(): TableNode {
+export function $createTableNode(): TableNode {
   return new TableNode();
 }
 

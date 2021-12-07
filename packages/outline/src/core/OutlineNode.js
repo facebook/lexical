@@ -24,11 +24,11 @@ import {
 } from './OutlineUpdates';
 import {
   generateKey,
-  getCompositionKey,
-  getNodeByKey,
+  $getCompositionKey,
+  $getNodeByKey,
   internallyMarkNodeAsDirty,
   markParentElementsAsDirty,
-  setCompositionKey,
+  $setCompositionKey,
 } from './OutlineUtils';
 import invariant from 'shared/invariant';
 import {
@@ -38,7 +38,7 @@ import {
   IS_SEGMENTED,
 } from './OutlineConstants';
 import {
-  getSelection,
+  $getSelection,
   moveSelectionPointToEnd,
   updateElementSelectionOnCreateDeleteNode,
   moveSelectionPointToSibling,
@@ -56,7 +56,7 @@ export function removeNode(
   if (parent === null) {
     return;
   }
-  const selection = getSelection();
+  const selection = $getSelection();
   let selectionMoved = false;
   if (selection !== null && restoreSelection) {
     const anchor = selection.anchor;
@@ -158,7 +158,7 @@ export class OutlineNode {
       if (nodeKey === 'root') {
         return true;
       }
-      const node = getNodeByKey(nodeKey);
+      const node = $getNodeByKey(nodeKey);
 
       if (node === null) {
         break;
@@ -168,7 +168,7 @@ export class OutlineNode {
     return false;
   }
   isSelected(): boolean {
-    const selection = getSelection();
+    const selection = $getSelection();
     if (selection == null) {
       return false;
     }
@@ -211,7 +211,7 @@ export class OutlineNode {
     if (parent === null) {
       return null;
     }
-    return getNodeByKey<ElementNode>(parent);
+    return $getNodeByKey<ElementNode>(parent);
   }
   getParentOrThrow(): ElementNode {
     const parent = this.getParent();
@@ -270,7 +270,7 @@ export class OutlineNode {
     if (index <= 0) {
       return null;
     }
-    return getNodeByKey<OutlineNode>(children[index - 1]);
+    return $getNodeByKey<OutlineNode>(children[index - 1]);
   }
   getPreviousSiblings(): Array<OutlineNode> {
     const parent = this.getParent();
@@ -281,7 +281,7 @@ export class OutlineNode {
     const index = children.indexOf(this.__key);
     return children
       .slice(0, index)
-      .map((childKey) => getNodeByKeyOrThrow<OutlineNode>(childKey));
+      .map((childKey) => $getNodeByKeyOrThrow<OutlineNode>(childKey));
   }
   getNextSibling(): OutlineNode | null {
     const parent = this.getParent();
@@ -294,7 +294,7 @@ export class OutlineNode {
     if (index >= childrenLength - 1) {
       return null;
     }
-    return getNodeByKey<OutlineNode>(children[index + 1]);
+    return $getNodeByKey<OutlineNode>(children[index + 1]);
   }
   getNextSiblings(): Array<OutlineNode> {
     const parent = this.getParent();
@@ -305,7 +305,7 @@ export class OutlineNode {
     const index = children.indexOf(this.__key);
     return children
       .slice(index + 1)
-      .map((childKey) => getNodeByKeyOrThrow<OutlineNode>(childKey));
+      .map((childKey) => $getNodeByKeyOrThrow<OutlineNode>(childKey));
   }
   getCommonAncestor(node: OutlineNode): ElementNode | null {
     const a = this.getParents();
@@ -473,10 +473,10 @@ export class OutlineNode {
   }
   // TODO remove this and move to TextNode
   isComposing(): boolean {
-    return this.__key === getCompositionKey();
+    return this.__key === $getCompositionKey();
   }
   getLatest<N: OutlineNode>(): N {
-    const latest = getNodeByKey<N>(this.__key);
+    const latest = $getNodeByKey<N>(this.__key);
     if (latest === null) {
       invariant(false, 'getLatest: node not found');
     }
@@ -617,7 +617,7 @@ export class OutlineNode {
     children.splice(index, 0, newKey);
     writableReplaceWith.__parent = newParent.__key;
     removeNode(this, false);
-    const selection = getSelection();
+    const selection = $getSelection();
     if (selection !== null) {
       const anchor = selection.anchor;
       const focus = selection.focus;
@@ -628,8 +628,8 @@ export class OutlineNode {
         moveSelectionPointToEnd(focus, writableReplaceWith);
       }
     }
-    if (getCompositionKey() === toReplaceKey) {
-      setCompositionKey(newKey);
+    if ($getCompositionKey() === toReplaceKey) {
+      $setCompositionKey(newKey);
     }
     return writableReplaceWith;
   }
@@ -656,7 +656,7 @@ export class OutlineNode {
       invariant(false, 'Node is not a child of its parent');
     }
     children.splice(index + 1, 0, insertKey);
-    const selection = getSelection();
+    const selection = $getSelection();
     if (selection !== null) {
       updateElementSelectionOnCreateDeleteNode(
         selection,
@@ -689,7 +689,7 @@ export class OutlineNode {
       invariant(false, 'Node is not a child of its parent');
     }
     children.splice(index, 0, insertKey);
-    const selection = getSelection();
+    const selection = $getSelection();
     if (selection !== null) {
       updateElementSelectionOnCreateDeleteNode(
         selection,
@@ -735,8 +735,8 @@ export class OutlineNode {
   }
 }
 
-function getNodeByKeyOrThrow<N: OutlineNode>(key: NodeKey): N {
-  const node = getNodeByKey<N>(key);
+function $getNodeByKeyOrThrow<N: OutlineNode>(key: NodeKey): N {
+  const node = $getNodeByKey<N>(key);
   if (node === null) {
     invariant(
       false,

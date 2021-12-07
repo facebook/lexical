@@ -20,12 +20,12 @@ import {
   isLeafNode,
   isTextNode,
   log,
-  getSelection,
-  getRoot,
-  setSelection,
+  $getSelection,
+  $getRoot,
+  $setSelection,
 } from 'outline';
 import {dfs} from 'outline/nodes';
-import {textContentCurry} from 'outline/root';
+import {$textContentCurry} from 'outline/root';
 import {useEffect} from 'react';
 
 type OptionalProps = {
@@ -48,7 +48,7 @@ export function useCharacterLimit(
   }, [editor]);
 
   useEffect(() => {
-    let text = editor.getEditorState().read(textContentCurry);
+    let text = editor.getEditorState().read($textContentCurry);
     let lastComputedTextLength = 0;
     const textContentListener = editor.addListener(
       'textcontent',
@@ -74,7 +74,7 @@ export function useCharacterLimit(
         editor.update(
           () => {
             log('CharacterLimit');
-            wrapOverflowedNodes(offset);
+            $wrapOverflowedNodes(offset);
           },
           {
             tag: 'without-history',
@@ -126,8 +126,8 @@ function findOffset(
   return offsetUtf16;
 }
 
-function wrapOverflowedNodes(offset: number) {
-  const root = getRoot();
+function $wrapOverflowedNodes(offset: number) {
+  const root = $getRoot();
   let accumulatedLength = 0;
 
   let previousNode = root;
@@ -139,8 +139,8 @@ function wrapOverflowedNodes(offset: number) {
         const parent = node.getParent();
         const previousSibling = node.getPreviousSibling();
         const nextSibling = node.getNextSibling();
-        unwrapNode(node);
-        const selection = getSelection();
+        $unwrapNode(node);
+        const selection = $getSelection();
         // Restore selection when the overflow children are removed
         if (
           selection !== null &&
@@ -168,7 +168,7 @@ function wrapOverflowedNodes(offset: number) {
         const firstDescendantDoesNotOverflow =
           previousPlusDescendantLength <= offset;
         if (firstDescendantIsSimpleText || firstDescendantDoesNotOverflow) {
-          unwrapNode(node);
+          $unwrapNode(node);
           return previousNode;
         }
       }
@@ -176,7 +176,7 @@ function wrapOverflowedNodes(offset: number) {
       const previousAccumulatedLength = accumulatedLength;
       accumulatedLength += node.getTextContentSize();
       if (accumulatedLength > offset && !isOverflowNode(node.getParent())) {
-        const previousSelection = getSelection();
+        const previousSelection = $getSelection();
         let overflowNode;
         // For simple text we can improve the limit accuracy by splitting the TextNode
         // on the split point
@@ -188,12 +188,12 @@ function wrapOverflowedNodes(offset: number) {
           const [, overflowedText] = node.splitText(
             offset - previousAccumulatedLength,
           );
-          overflowNode = wrapNode(overflowedText);
+          overflowNode = $wrapNode(overflowedText);
         } else {
-          overflowNode = wrapNode(node);
+          overflowNode = $wrapNode(node);
         }
         if (previousSelection !== null) {
-          setSelection(previousSelection);
+          $setSelection(previousSelection);
         }
         mergePrevious(overflowNode);
       }
@@ -240,7 +240,7 @@ export class OverflowNode extends ElementNode {
   }
 }
 
-export function createOverflowNode(): OverflowNode {
+export function $createOverflowNode(): OverflowNode {
   return new OverflowNode();
 }
 
@@ -248,14 +248,14 @@ export function isOverflowNode(node: ?OutlineNode): boolean %checks {
   return node instanceof OverflowNode;
 }
 
-function wrapNode(node: OutlineNode): OverflowNode {
-  const overflowNode = createOverflowNode();
+function $wrapNode(node: OutlineNode): OverflowNode {
+  const overflowNode = $createOverflowNode();
   node.insertBefore(overflowNode);
   overflowNode.append(node);
   return overflowNode;
 }
 
-function unwrapNode(node: OverflowNode): OutlineNode | null {
+function $unwrapNode(node: OverflowNode): OutlineNode | null {
   const children = node.getChildren();
   const childrenLength = children.length;
   for (let i = 0; i < childrenLength; i++) {
@@ -282,7 +282,7 @@ export function mergePrevious(overflowNode: OverflowNode) {
     }
   }
 
-  const selection = getSelection();
+  const selection = $getSelection();
   if (selection !== null) {
     const anchor = selection.anchor;
     const anchorNode = anchor.getNode();

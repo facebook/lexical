@@ -13,14 +13,14 @@ import type {EditorConfig, TextNodeThemeClasses} from './OutlineEditor';
 
 import {OutlineNode} from './OutlineNode';
 import {
-  getSelection,
+  $getSelection,
   makeSelection,
   updateElementSelectionOnCreateDeleteNode,
   adjustPointOffsetForMergedSibling,
 } from './OutlineSelection';
 import {
-  getCompositionKey,
-  setCompositionKey,
+  $getCompositionKey,
+  $setCompositionKey,
   toggleTextFormatType,
 } from './OutlineUtils';
 import invariant from 'shared/invariant';
@@ -381,7 +381,7 @@ export class TextNode extends OutlineNode {
     errorOnReadOnly();
     let anchorOffset = _anchorOffset;
     let focusOffset = _focusOffset;
-    const selection = getSelection();
+    const selection = $getSelection();
     const text = this.getTextContent();
     const key = this.__key;
     if (typeof text === 'string') {
@@ -399,12 +399,12 @@ export class TextNode extends OutlineNode {
     if (selection === null) {
       return makeSelection(key, anchorOffset, key, focusOffset, 'text', 'text');
     } else {
-      const compositionKey = getCompositionKey();
+      const compositionKey = $getCompositionKey();
       if (
         compositionKey === selection.anchor.key ||
         compositionKey === selection.focus.key
       ) {
-        setCompositionKey(key);
+        $setCompositionKey(key);
       }
       selection.setTextNodeRange(this, anchorOffset, this, focusOffset);
     }
@@ -433,7 +433,7 @@ export class TextNode extends OutlineNode {
         index = 0;
       }
     }
-    const selection = getSelection();
+    const selection = $getSelection();
     if (moveSelection && selection !== null) {
       const newOffset = offset + handledTextLength;
       selection.setTextNodeRange(
@@ -464,7 +464,7 @@ export class TextNode extends OutlineNode {
     }
     const textContent = this.getTextContent();
     const key = this.__key;
-    const compositionKey = getCompositionKey();
+    const compositionKey = $getCompositionKey();
     const offsetsSet = new Set(splitOffsets);
     const parts = [];
     const textLength = textContent.length;
@@ -495,7 +495,7 @@ export class TextNode extends OutlineNode {
 
     if (this.isSegmented()) {
       // Create a new TextNode
-      writableNode = createTextNode(firstPart);
+      writableNode = $createTextNode(firstPart);
       writableNode.__parent = parentKey;
       writableNode.__format = format;
       writableNode.__style = style;
@@ -507,7 +507,7 @@ export class TextNode extends OutlineNode {
     }
 
     // Handle selection
-    const selection = getSelection();
+    const selection = $getSelection();
 
     // Then handle all other parts
     const splitNodes = [writableNode];
@@ -515,7 +515,7 @@ export class TextNode extends OutlineNode {
     for (let i = 1; i < partsLength; i++) {
       const part = parts[i];
       const partSize = part.length;
-      const sibling = createTextNode(part).getWritable();
+      const sibling = $createTextNode(part).getWritable();
       sibling.__format = format;
       sibling.__style = style;
       const siblingKey = sibling.__key;
@@ -547,7 +547,7 @@ export class TextNode extends OutlineNode {
         }
       }
       if (compositionKey === key) {
-        setCompositionKey(siblingKey);
+        $setCompositionKey(siblingKey);
       }
       textSize = nextTextSize;
       sibling.__parent = parentKey;
@@ -589,12 +589,12 @@ export class TextNode extends OutlineNode {
     const targetKey = target.__key;
     const text = this.__text;
     const textLength = text.length;
-    const compositionKey = getCompositionKey();
+    const compositionKey = $getCompositionKey();
 
     if (compositionKey === targetKey) {
-      setCompositionKey(key);
+      $setCompositionKey(key);
     }
-    const selection = getSelection();
+    const selection = $getSelection();
 
     if (selection !== null) {
       const anchor = selection.anchor;
@@ -625,7 +625,7 @@ export class TextNode extends OutlineNode {
   }
 }
 
-export function createTextNode(text?: string = ''): TextNode {
+export function $createTextNode(text?: string = ''): TextNode {
   return new TextNode(text);
 }
 

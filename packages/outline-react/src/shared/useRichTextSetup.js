@@ -15,7 +15,7 @@ import type {
 } from 'outline';
 import type {InputEvents} from 'outline-react/useOutlineEditorEvents';
 
-import {log, getSelection, getRoot} from 'outline';
+import {log, $getSelection, $getRoot} from 'outline';
 import useOutlineEditorEvents from '../useOutlineEditorEvents';
 import {HeadingNode} from 'outline/HeadingNode';
 import {ListNode} from 'outline/ListNode';
@@ -23,7 +23,7 @@ import {QuoteNode} from 'outline/QuoteNode';
 import {CodeNode} from 'outline/CodeNode';
 import {ParagraphNode} from 'outline/ParagraphNode';
 import {ListItemNode} from 'outline/ListItemNode';
-import {createParagraphNode} from 'outline/ParagraphNode';
+import {$createParagraphNode} from 'outline/ParagraphNode';
 import {CAN_USE_BEFORE_INPUT} from 'shared/environment';
 import useOutlineDragonSupport from './useOutlineDragonSupport';
 import {
@@ -67,13 +67,13 @@ if (CAN_USE_BEFORE_INPUT) {
 function shouldSelectParagraph(editor: OutlineEditor): boolean {
   const activeElement = document.activeElement;
   return (
-    getSelection() !== null ||
+    $getSelection() !== null ||
     (activeElement !== null && activeElement === editor.getRootElement())
   );
 }
 
 function initParagraph(root: RootNode, editor: OutlineEditor): void {
-  const paragraph = createParagraphNode();
+  const paragraph = $createParagraphNode();
   root.append(paragraph);
   if (shouldSelectParagraph(editor)) {
     paragraph.select();
@@ -83,7 +83,7 @@ function initParagraph(root: RootNode, editor: OutlineEditor): void {
 export function initEditor(editor: OutlineEditor): void {
   editor.update(() => {
     log('initEditor');
-    const root = getRoot();
+    const root = $getRoot();
     const firstChild = root.getFirstChild();
     if (firstChild === null) {
       initParagraph(root, editor);
@@ -98,7 +98,7 @@ function clearEditor(
   editor.update(
     () => {
       log('clearEditor');
-      const root = getRoot();
+      const root = $getRoot();
       root.clear();
       initParagraph(root, editor);
     },
@@ -129,7 +129,7 @@ export function useRichTextSetup(
       editor.addListener(
         'command',
         (type, payload): boolean => {
-          const selection = getSelection();
+          const selection = $getSelection();
           if (selection === null) {
             return false;
           }

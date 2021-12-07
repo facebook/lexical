@@ -46,7 +46,7 @@ export class TableRowNode extends ElementNode {
   }
 }
 
-export function createTableRowNode(): TableRowNode {
+export function $createTableRowNode(): TableRowNode {
   return new TableRowNode();
 }
 

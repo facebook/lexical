@@ -57,7 +57,7 @@ export class TableCellNode extends ElementNode {
   }
 }
 
-export function createTableCellNode(isHeader: boolean): TableCellNode {
+export function $createTableCellNode(isHeader: boolean): TableCellNode {
   return new TableCellNode(isHeader);
 }
 

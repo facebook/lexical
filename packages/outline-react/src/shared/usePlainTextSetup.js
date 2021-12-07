@@ -14,9 +14,9 @@ import type {
   CommandListenerEditorPriority,
 } from 'outline';
 
-import {log, getRoot, getSelection} from 'outline';
+import {log, $getRoot, $getSelection} from 'outline';
 import useOutlineEditorEvents from '../useOutlineEditorEvents';
-import {createParagraphNode, ParagraphNode} from 'outline/ParagraphNode';
+import {$createParagraphNode, ParagraphNode} from 'outline/ParagraphNode';
 import {CAN_USE_BEFORE_INPUT} from 'shared/environment';
 import useOutlineDragonSupport from './useOutlineDragonSupport';
 import {
@@ -60,13 +60,13 @@ if (CAN_USE_BEFORE_INPUT) {
 function shouldSelectParagraph(editor: OutlineEditor): boolean {
   const activeElement = document.activeElement;
   return (
-    getSelection() !== null ||
+    $getSelection() !== null ||
     (activeElement !== null && activeElement === editor.getRootElement())
   );
 }
 
 function initParagraph(root: RootNode, editor: OutlineEditor): void {
-  const paragraph = createParagraphNode();
+  const paragraph = $createParagraphNode();
   root.append(paragraph);
   if (shouldSelectParagraph(editor)) {
     paragraph.select();
@@ -76,7 +76,7 @@ function initParagraph(root: RootNode, editor: OutlineEditor): void {
 function initEditor(editor: OutlineEditor): void {
   editor.update(() => {
     log('initEditor');
-    const root = getRoot();
+    const root = $getRoot();
     const firstChild = root.getFirstChild();
     if (firstChild === null) {
       initParagraph(root, editor);
@@ -91,7 +91,7 @@ function clearEditor(
   editor.update(
     () => {
       log('clearEditor');
-      const root = getRoot();
+      const root = $getRoot();
       root.clear();
       initParagraph(root, editor);
     },
@@ -115,7 +115,7 @@ export default function usePlainTextSetup(
       editor.addListener(
         'command',
         (type, payload): boolean => {
-          const selection = getSelection();
+          const selection = $getSelection();
           if (selection === null) {
             return false;
           }

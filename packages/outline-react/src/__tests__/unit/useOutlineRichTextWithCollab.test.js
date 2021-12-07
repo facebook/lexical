@@ -8,7 +8,7 @@
  */
 
 import {createTestConnection, waitForReact} from './utils';
-import {getRoot, createTextNode} from 'outline';
+import {$getRoot, $createTextNode} from 'outline';
 
 describe('useOutlineRichTextWithCollab', () => {
   let container = null;
@@ -53,9 +53,9 @@ describe('useOutlineRichTextWithCollab', () => {
     // Insert a text node on client 1
     await waitForReact(() => {
       client1.update(() => {
-        const root = getRoot();
+        const root = $getRoot();
         const paragraph = root.getFirstChild();
-        const text = createTextNode('Hello world');
+        const text = $createTextNode('Hello world');
         paragraph.append(text);
       });
     });
@@ -69,7 +69,7 @@ describe('useOutlineRichTextWithCollab', () => {
     // Insert some text on client 2
     await waitForReact(() => {
       client2.update(() => {
-        const root = getRoot();
+        const root = $getRoot();
         const paragraph = root.getFirstChild();
         const text = paragraph.getFirstChild();
         text.spliceText(6, 5, 'metaverse');
@@ -101,9 +101,9 @@ describe('useOutlineRichTextWithCollab', () => {
     // Insert some a text node on client 1
     await waitForReact(() => {
       client1.update(() => {
-        const root = getRoot();
+        const root = $getRoot();
         const paragraph = root.getFirstChild();
-        const text = createTextNode('Hello world');
+        const text = $createTextNode('Hello world');
         paragraph.append(text);
       });
     });
@@ -118,9 +118,9 @@ describe('useOutlineRichTextWithCollab', () => {
     // Insert some a text node on client 1
     await waitForReact(() => {
       client2.update(() => {
-        const root = getRoot();
+        const root = $getRoot();
         const paragraph = root.getFirstChild();
-        const text = createTextNode('Hello world');
+        const text = $createTextNode('Hello world');
         paragraph.append(text);
       });
     });
@@ -147,7 +147,7 @@ describe('useOutlineRichTextWithCollab', () => {
 
     await waitForReact(() => {
       client1.update(() => {
-        const root = getRoot();
+        const root = $getRoot();
         const paragraph = root.getFirstChild();
         const text = paragraph.getFirstChild();
         text.spliceText(11, 11, '');
@@ -163,7 +163,7 @@ describe('useOutlineRichTextWithCollab', () => {
 
     await waitForReact(() => {
       client2.update(() => {
-        const root = getRoot();
+        const root = $getRoot();
         const paragraph = root.getFirstChild();
         const text = paragraph.getFirstChild();
         text.spliceText(11, 11, '!');

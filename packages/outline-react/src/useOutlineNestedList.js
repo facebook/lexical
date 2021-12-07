@@ -11,9 +11,9 @@ import type {OutlineEditor, OutlineNode} from 'outline';
 import type {ListItemNode} from 'outline/ListItemNode';
 
 import {useCallback, useEffect, useMemo} from 'react';
-import {log, getSelection} from 'outline';
-import {createListItemNode, isListItemNode} from 'outline/ListItemNode';
-import {createListNode, isListNode} from 'outline/ListNode';
+import {log, $getSelection} from 'outline';
+import {$createListItemNode, isListItemNode} from 'outline/ListItemNode';
+import {$createListNode, isListNode} from 'outline/ListNode';
 
 function maybeIndentOrOutdent(
   editor: OutlineEditor,
@@ -22,7 +22,7 @@ function maybeIndentOrOutdent(
   let hasHandledIndention = false;
   editor.update(() => {
     log('useNestedList.maybeIndent');
-    const selection = getSelection();
+    const selection = $getSelection();
     if (selection === null) {
       return;
     }
@@ -104,8 +104,8 @@ function handleIndent(listItemNodes: Array<ListItemNode>): void {
       // otherwise, we need to create a new nested ListNode
       const parent = listItemNode.getParent();
       if (isListNode(parent)) {
-        const newListItem = createListItemNode();
-        const newList = createListNode(parent.getTag());
+        const newListItem = $createListItemNode();
+        const newList = $createListNode(parent.getTag());
         newListItem.append(newList);
         newList.append(listItemNode);
         if (previousSibling) {
@@ -153,14 +153,14 @@ function handleOutdent(listItemNodes: Array<ListItemNode>): void {
       } else {
         // otherwise, we need to split the siblings into two new nested lists
         const tag = parentList.getTag();
-        const previousSiblingsListItem = createListItemNode();
-        const previousSiblingsList = createListNode(tag);
+        const previousSiblingsListItem = $createListItemNode();
+        const previousSiblingsList = $createListNode(tag);
         previousSiblingsListItem.append(previousSiblingsList);
         listItemNode
           .getPreviousSiblings()
           .forEach((sibling) => previousSiblingsList.append(sibling));
-        const nextSiblingsListItem = createListItemNode();
-        const nextSiblingsList = createListNode(tag);
+        const nextSiblingsListItem = $createListItemNode();
+        const nextSiblingsList = $createListNode(tag);
         nextSiblingsListItem.append(nextSiblingsList);
         nextSiblingsList.append(...listItemNode.getNextSiblings());
         // put the sibling nested lists on either side of the grandparent list item in the great grandparent.

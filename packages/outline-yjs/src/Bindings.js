@@ -16,7 +16,7 @@ import type {CollabTextNode} from './CollabTextNode';
 import type {CollabDecoratorNode} from './CollabDecoratorNode';
 import type {CollabLineBreakNode} from './CollabLineBreakNode';
 
-import {createCollabElementNode} from './CollabElementNode';
+import {$createCollabElementNode} from './CollabElementNode';
 import {XmlText} from 'yjs';
 
 export type ClientID = string;
@@ -52,7 +52,7 @@ export function createBinding(
 
   // $FlowFixMe: this will work
   const rootXmlText: XmlText = doc.get('root', XmlText);
-  const root: CollabElementNode = createCollabElementNode(
+  const root: CollabElementNode = $createCollabElementNode(
     rootXmlText,
     null,
     'root',

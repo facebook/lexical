@@ -42,27 +42,27 @@ import {
 import isImmutableOrInert from 'shared/isImmutableOrInert';
 import {cloneContents, insertRichText, moveCharacter} from 'outline/selection';
 import {
-  createTextNode,
+  $createTextNode,
   createNodeFromParse,
   isTextNode,
   isElementNode,
   isDecoratorNode,
   log,
-  getSelection,
-  getRoot,
-  setCompositionKey,
-  getCompositionKey,
-  getNearestNodeFromDOMNode,
-  flushMutations,
-  createLineBreakNode,
+  $getSelection,
+  $getRoot,
+  $setCompositionKey,
+  $getCompositionKey,
+  $getNearestNodeFromDOMNode,
+  $flushMutations,
+  $createLineBreakNode,
 } from 'outline';
 import {IS_FIREFOX} from 'shared/environment';
 import getPossibleDecoratorNode from 'shared/getPossibleDecoratorNode';
-import {createListNode} from 'outline/ListNode';
-import {createListItemNode} from 'outline/ListItemNode';
-import {createParagraphNode} from 'outline/ParagraphNode';
-import {createHeadingNode} from 'outline/HeadingNode';
-import {createLinkNode} from 'outline/LinkNode';
+import {$createListNode} from 'outline/ListNode';
+import {$createListItemNode} from 'outline/ListItemNode';
+import {$createParagraphNode} from 'outline/ParagraphNode';
+import {$createHeadingNode} from 'outline/HeadingNode';
+import {$createLinkNode} from 'outline/LinkNode';
 import type {TextFormatType} from 'outline';
 // TODO we shouldn't really be importing from core here.
 import {TEXT_TYPE_TO_FORMAT} from '../core/OutlineConstants';
@@ -88,22 +88,22 @@ type DOMTransformOutput = {
 };
 
 const DOM_NODE_NAME_TO_OUTLINE_NODE: DOMTransformerMap = {
-  ul: () => ({node: createListNode('ul')}),
-  ol: () => ({node: createListNode('ol')}),
-  li: () => ({node: createListItemNode()}),
-  h1: () => ({node: createHeadingNode('h1')}),
-  h2: () => ({node: createHeadingNode('h2')}),
-  h3: () => ({node: createHeadingNode('h3')}),
-  h4: () => ({node: createHeadingNode('h4')}),
-  h5: () => ({node: createHeadingNode('h5')}),
-  p: () => ({node: createParagraphNode()}),
-  br: () => ({node: createLineBreakNode()}),
+  ul: () => ({node: $createListNode('ul')}),
+  ol: () => ({node: $createListNode('ol')}),
+  li: () => ({node: $createListItemNode()}),
+  h1: () => ({node: $createHeadingNode('h1')}),
+  h2: () => ({node: $createHeadingNode('h2')}),
+  h3: () => ({node: $createHeadingNode('h3')}),
+  h4: () => ({node: $createHeadingNode('h4')}),
+  h5: () => ({node: $createHeadingNode('h5')}),
+  p: () => ({node: $createParagraphNode()}),
+  br: () => ({node: $createLineBreakNode()}),
   a: (domNode: Node) => {
     let node;
     if (domNode instanceof HTMLAnchorElement) {
-      node = createLinkNode(domNode.href);
+      node = $createLinkNode(domNode.href);
     } else {
-      node = createTextNode(domNode.textContent);
+      node = $createTextNode(domNode.textContent);
     }
     return {node};
   },
@@ -122,7 +122,7 @@ const DOM_NODE_NAME_TO_OUTLINE_NODE: DOMTransformerMap = {
   em: (domNode: Node) => {
     return {node: null, format: 'italic'};
   },
-  '#text': (domNode: Node) => ({node: createTextNode(domNode.textContent)}),
+  '#text': (domNode: Node) => ({node: $createTextNode(domNode.textContent)}),
 };
 
 function updateAndroidSoftKeyFlagIfAny(event: KeyboardEvent): void {
@@ -260,7 +260,7 @@ function insertDataTransferForRichText(
       const node = nodes[i];
       if (!isElementNode(node) || node.isInline()) {
         if (currentBlock === null) {
-          currentBlock = createParagraphNode();
+          currentBlock = $createParagraphNode();
           topLevelBlocks.push(currentBlock);
         }
         if (currentBlock !== null) {
@@ -305,7 +305,7 @@ export function onKeyDown(event: KeyboardEvent, editor: OutlineEditor): void {
   }
   editor.update((state) => {
     log('onKeyDown');
-    const selection = getSelection();
+    const selection = $getSelection();
     if (selection === null) {
       return;
     }
@@ -392,7 +392,7 @@ export function onPasteForPlainText(
   event.preventDefault();
   editor.update((state) => {
     log('onPasteForPlainText');
-    const selection = getSelection();
+    const selection = $getSelection();
     const clipboardData = event.clipboardData;
     if (clipboardData != null && selection !== null) {
       insertDataTransferForPlainText(clipboardData, selection);
@@ -407,7 +407,7 @@ export function onPasteForRichText(
   event.preventDefault();
   editor.update((state) => {
     log('onPasteForRichText');
-    const selection = getSelection();
+    const selection = $getSelection();
     const clipboardData = event.clipboardData;
     if (clipboardData != null && selection !== null) {
       insertDataTransferForRichText(clipboardData, selection, editor);
@@ -439,7 +439,7 @@ export function onCutForPlainText(
   onCopyForPlainText(event, editor);
   editor.update((state) => {
     log('onCutForPlainText');
-    const selection = getSelection();
+    const selection = $getSelection();
     if (selection !== null) {
       selection.removeText();
     }
@@ -453,7 +453,7 @@ export function onCutForRichText(
   onCopyForRichText(event, editor);
   editor.update((state) => {
     log('onCutForRichText');
-    const selection = getSelection();
+    const selection = $getSelection();
     if (selection !== null) {
       selection.removeText();
     }
@@ -468,7 +468,7 @@ export function onCopyForPlainText(
   editor.update((state) => {
     log('onCopyForPlainText');
     const clipboardData = event.clipboardData;
-    const selection = getSelection();
+    const selection = $getSelection();
     if (selection !== null) {
       if (clipboardData != null) {
         const domSelection = window.getSelection();
@@ -497,7 +497,7 @@ export function onCopyForRichText(
   editor.update((state) => {
     log('onCopyForRichText');
     const clipboardData = event.clipboardData;
-    const selection = getSelection();
+    const selection = $getSelection();
     if (selection !== null) {
       if (clipboardData != null) {
         const domSelection = window.getSelection();
@@ -528,10 +528,10 @@ export function onCompositionStart(
 ): void {
   editor.update((state) => {
     log('onCompositionStart');
-    const selection = getSelection();
+    const selection = $getSelection();
     if (selection !== null && !editor.isComposing()) {
       const anchor = selection.anchor;
-      setCompositionKey(anchor.key);
+      $setCompositionKey(anchor.key);
       const data = event.data;
       if (
         data != null &&
@@ -555,7 +555,7 @@ function onCompositionEndInternal(
 ) {
   editor.update(() => {
     log('onCompositionEnd');
-    setCompositionKey(null);
+    $setCompositionKey(null);
     updateSelectedTextFromDOM(editor, true);
   });
 }
@@ -578,7 +578,7 @@ export function onCompositionEnd(
 }
 
 function getLastSelection(editor: OutlineEditor): null | Selection {
-  return editor.getEditorState().read(() => getSelection());
+  return editor.getEditorState().read(() => $getSelection());
 }
 
 // This is a work-around is mainly Chrome specific bug where if you select
@@ -589,7 +589,7 @@ function getLastSelection(editor: OutlineEditor): null | Selection {
 export function onClick(event: MouseEvent, editor: OutlineEditor): void {
   editor.update(() => {
     log('onClick');
-    const selection = getSelection();
+    const selection = $getSelection();
     if (selection === null) {
       return;
     }
@@ -598,7 +598,7 @@ export function onClick(event: MouseEvent, editor: OutlineEditor): void {
       anchor.type === 'element' &&
       anchor.offset === 0 &&
       selection.isCollapsed() &&
-      getRoot().getChildrenSize() === 1 &&
+      $getRoot().getChildrenSize() === 1 &&
       anchor.getNode().getTopLevelElementOrThrow().isEmpty()
     ) {
       const lastSelection = getLastSelection(editor);
@@ -623,7 +623,7 @@ export function onSelectionChange(event: Event, editor: OutlineEditor): void {
   // to a good selection.
   editor.update(() => {
     log('onSelectionChange');
-    const selection = getSelection();
+    const selection = $getSelection();
     // Update the selection format
     if (selection !== null && selection.isCollapsed()) {
       const anchor = selection.anchor;
@@ -698,19 +698,19 @@ function updateTextNodeFromDOMContent(
     if (compositionEnd || normalizedTextContent !== node.getTextContent()) {
       if (normalizedTextContent === '') {
         if (isComposing) {
-          setCompositionKey(null);
+          $setCompositionKey(null);
         }
         node.remove();
         return;
       }
       if (
         isImmutableOrInert(node) ||
-        (getCompositionKey() !== null && !isComposing)
+        ($getCompositionKey() !== null && !isComposing)
       ) {
         node.markDirty();
         return;
       }
-      const selection = getSelection();
+      const selection = $getSelection();
 
       if (selection === null || anchorOffset === null || focusOffset === null) {
         node.setTextContent(normalizedTextContent);
@@ -720,7 +720,7 @@ function updateTextNodeFromDOMContent(
 
       if (node.isSegmented()) {
         const originalTextContent = node.getTextContent();
-        const replacement = createTextNode(originalTextContent);
+        const replacement = $createTextNode(originalTextContent);
         node.replace(replacement);
         node = replacement;
       }
@@ -789,7 +789,7 @@ export function onBeforeInput(event: InputEvent, editor: OutlineEditor): void {
 
   editor.update(() => {
     log('onBeforeInputForRichText');
-    const selection = getSelection();
+    const selection = $getSelection();
 
     if (selection === null) {
       return;
@@ -797,7 +797,7 @@ export function onBeforeInput(event: InputEvent, editor: OutlineEditor): void {
 
     if (inputType === 'deleteContentBackward') {
       // Used for Android
-      setCompositionKey(null);
+      $setCompositionKey(null);
       event.preventDefault();
       editor.execCommand('deleteCharacter', true);
       return;
@@ -843,20 +843,20 @@ export function onBeforeInput(event: InputEvent, editor: OutlineEditor): void {
       case 'insertFromComposition': {
         if (data) {
           // This is the end of composition
-          setCompositionKey(null);
+          $setCompositionKey(null);
           editor.execCommand('insertText', data);
         }
         break;
       }
       case 'insertLineBreak': {
         // Used for Android
-        setCompositionKey(null);
+        $setCompositionKey(null);
         editor.execCommand('insertLineBreak');
         break;
       }
       case 'insertParagraph': {
         // Used for Android
-        setCompositionKey(null);
+        $setCompositionKey(null);
         editor.execCommand('insertParagraph');
         break;
       }
@@ -949,7 +949,7 @@ function updateSelectedTextFromDOM(
   }
   const {anchorNode, anchorOffset, focusOffset} = domSelection;
   if (anchorNode !== null && anchorNode.nodeType === 3) {
-    const node = getNearestNodeFromDOMNode(anchorNode);
+    const node = $getNearestNodeFromDOMNode(anchorNode);
     if (isTextNode(node)) {
       updateTextNodeFromDOMContent(
         node,
@@ -967,7 +967,7 @@ export function onInput(event: InputEvent, editor: OutlineEditor): void {
   event.stopPropagation();
   editor.update(() => {
     log('onInput');
-    const selection = getSelection();
+    const selection = $getSelection();
     const data = event.data;
     if (
       data != null &&
@@ -980,7 +980,7 @@ export function onInput(event: InputEvent, editor: OutlineEditor): void {
     }
     // Also flush any other mutations that might have occured
     // since the change.
-    flushMutations();
+    $flushMutations();
   });
 }
 

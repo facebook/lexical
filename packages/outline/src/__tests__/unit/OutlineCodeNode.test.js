@@ -6,9 +6,9 @@
  *
  */
 
-import {createCodeNode} from 'outline/CodeNode';
-import {createParagraphNode} from 'outline/ParagraphNode';
-import {createTextNode, getRoot, getSelection} from 'outline';
+import {$createCodeNode} from 'outline/CodeNode';
+import {$createParagraphNode} from 'outline/ParagraphNode';
+import {$createTextNode, $getRoot, $getSelection} from 'outline';
 import {initializeUnitTest} from '../utils';
 
 const editorConfig = Object.freeze({
@@ -22,18 +22,18 @@ describe('OutlineCodeNode tests', () => {
     test('CodeNode.constructor', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const codeNode = createCodeNode();
+        const codeNode = $createCodeNode();
         expect(codeNode.getFlags()).toBe(0);
         expect(codeNode.getType()).toBe('code');
         expect(codeNode.getTextContent()).toBe('');
       });
-      expect(() => createCodeNode()).toThrow();
+      expect(() => $createCodeNode()).toThrow();
     });
 
     test('CodeNode.createDOM()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const codeNode = createCodeNode();
+        const codeNode = $createCodeNode();
         expect(codeNode.createDOM(editorConfig).outerHTML).toBe(
           '<code class="my-code-class" spellcheck="false"></code>',
         );
@@ -46,8 +46,8 @@ describe('OutlineCodeNode tests', () => {
     test('CodeNode.updateDOM()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const newCodeNode = createCodeNode();
-        const codeNode = createCodeNode();
+        const newCodeNode = $createCodeNode();
+        const codeNode = $createCodeNode();
         const domElement = codeNode.createDOM({theme: {}});
         expect(domElement.outerHTML).toBe('<code spellcheck="false"></code>');
         const result = newCodeNode.updateDOM(codeNode, domElement);
@@ -59,13 +59,13 @@ describe('OutlineCodeNode tests', () => {
     test.skip('CodeNode.insertNewAfter()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const root = getRoot();
-        const paragraphNode = createParagraphNode();
-        const textNode = createTextNode('foo');
+        const root = $getRoot();
+        const paragraphNode = $createParagraphNode();
+        const textNode = $createTextNode('foo');
         paragraphNode.append(textNode);
         root.append(paragraphNode);
         textNode.select(0, 0);
-        const selection = getSelection();
+        const selection = $getSelection();
         expect(selection).toEqual({
           anchorKey: '_2',
           anchorOffset: 0,
@@ -79,8 +79,8 @@ describe('OutlineCodeNode tests', () => {
         '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span>foo</span></p></div>',
       );
       await editor.update(() => {
-        const codeNode = createCodeNode();
-        const selection = getSelection();
+        const codeNode = $createCodeNode();
+        const selection = $getSelection();
         codeNode.insertNewAfter(selection);
       });
     });
@@ -88,16 +88,16 @@ describe('OutlineCodeNode tests', () => {
     test('CodeNode.canInsertTab()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const codeNode = createCodeNode();
+        const codeNode = $createCodeNode();
         expect(codeNode.canInsertTab()).toBe(true);
       });
     });
 
-    test('createCodeNode()', async () => {
+    test('$createCodeNode()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const codeNode = createCodeNode();
-        const createdCodeNode = createCodeNode();
+        const codeNode = $createCodeNode();
+        const createdCodeNode = $createCodeNode();
         expect(codeNode.__type).toEqual(createdCodeNode.__type);
         expect(codeNode.__flags).toEqual(createdCodeNode.__flags);
         expect(codeNode.__parent).toEqual(createdCodeNode.__parent);

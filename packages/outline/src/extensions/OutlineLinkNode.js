@@ -61,7 +61,7 @@ export class LinkNode extends ElementNode {
   insertNewAfter(selection: Selection): null | ElementNode {
     const element = this.getParentOrThrow().insertNewAfter(selection);
     if (element !== null) {
-      const linkNode = createLinkNode(this.__url);
+      const linkNode = $createLinkNode(this.__url);
       element.append(linkNode);
       return linkNode;
     }
@@ -85,7 +85,7 @@ export class LinkNode extends ElementNode {
   }
 }
 
-export function createLinkNode(url: string): LinkNode {
+export function $createLinkNode(url: string): LinkNode {
   return new LinkNode(url);
 }
 

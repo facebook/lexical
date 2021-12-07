@@ -15,9 +15,14 @@ import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
 import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
-import {OutlineNode, createTextNode} from 'outline';
-import {TableRowNode, createTableRowNode} from 'outline/TableRowNode';
-import {createTableCellNode} from 'outline/TableCellNode';
+import {
+  OutlineNode,
+  $createTextNode,
+  $getSelection,
+  $clearSelection,
+} from 'outline';
+import {TableRowNode, $createTableRowNode} from 'outline/TableRowNode';
+import {$createTableCellNode} from 'outline/TableCellNode';
 import {TableNode} from 'outline/TableNode';
 import {findMatchingParent} from 'outline/nodes';
 
@@ -131,12 +136,12 @@ export function insertTableRow(
   if (targetRow instanceof TableRowNode) {
     const tableColumnCount = targetRow.getChildren()?.length;
 
-    const newTableRow = createTableRowNode();
+    const newTableRow = $createTableRowNode();
 
     for (let i = 0; i < tableColumnCount; i++) {
-      const tableCell = createTableCellNode(false);
+      const tableCell = $createTableCellNode(false);
 
-      tableCell.append(createTextNode());
+      tableCell.append($createTextNode());
       newTableRow.append(tableCell);
     }
 
@@ -163,9 +168,9 @@ export function insertTableColumn(
     const currentTableRow = tableRows[i];
 
     if (currentTableRow instanceof TableRowNode) {
-      const newTableCell = createTableCellNode(i === 0);
+      const newTableCell = $createTableCellNode(i === 0);
 
-      newTableCell.append(createTextNode());
+      newTableCell.append($createTextNode());
 
       const tableRowChildren = currentTableRow.getChildren();
 
@@ -276,7 +281,7 @@ function TableActionMenu({
 
         insertTableRow(tableNode, tableRowIndex, shouldInsertAfter);
 
-        state.clearSelection();
+        $clearSelection();
 
         onClose();
       });
@@ -319,7 +324,7 @@ function TableActionMenu({
 
       removeTableRowAtIndex(tableNode, tableRowIndex);
 
-      state.clearSelection();
+      $clearSelection();
 
       onClose();
     });
@@ -334,7 +339,7 @@ function TableActionMenu({
 
       tableNode.remove();
 
-      state.clearSelection();
+      $clearSelection();
 
       onClose();
     });
@@ -354,7 +359,7 @@ function TableActionMenu({
 
       deleteTableColumn(tableNode, tableColumnIndex);
 
-      state.clearSelection();
+      $clearSelection();
 
       onClose();
     });
@@ -365,8 +370,7 @@ function TableActionMenu({
       {!tableCellNode.__isHeader && (
         <button
           className="item"
-          onClick={() => insertTableRowAtSelection(false)}
-        >
+          onClick={() => insertTableRowAtSelection(false)}>
           <span className="text">Insert row above</span>
         </button>
       )}
@@ -376,14 +380,12 @@ function TableActionMenu({
       <hr />
       <button
         className="item"
-        onClick={() => insertTableColumnAtSelection(false)}
-      >
+        onClick={() => insertTableColumnAtSelection(false)}>
         <span className="text">Insert column left</span>
       </button>
       <button
         className="item"
-        onClick={() => insertTableColumnAtSelection(true)}
-      >
+        onClick={() => insertTableColumnAtSelection(true)}>
         <span className="text">Insert column right</span>
       </button>
       <hr />
@@ -415,7 +417,7 @@ function TableCellActionMenuContainer(): React.MixedElement {
   const moveMenu = useCallback(
     (state: State) => {
       const menu = menuButtonRef.current;
-      const selection = state.getSelection();
+      const selection = $getSelection();
       const nativeSelection = window.getSelection();
       const activeElement = document.activeElement;
 
@@ -518,8 +520,7 @@ function TableCellActionMenuContainer(): React.MixedElement {
             onClick={() => {
               setIsMenuOpen(!isMenuOpen);
             }}
-            ref={menuRootRef}
-          >
+            ref={menuRootRef}>
             <i className="chevron-down" />
           </button>
           {isMenuOpen && (

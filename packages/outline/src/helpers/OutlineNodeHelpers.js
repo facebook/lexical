@@ -15,10 +15,10 @@ import type {TableNode} from 'outline/TableNode';
 import {isListNode} from 'outline/ListNode';
 import {isListItemNode} from 'outline/ListItemNode';
 import invariant from 'shared/invariant';
-import {isElementNode, createTextNode} from 'outline';
-import {createTableNode} from 'outline/TableNode';
-import {createTableRowNode} from 'outline/TableRowNode';
-import {createTableCellNode} from 'outline/TableCellNode';
+import {isElementNode, $createTextNode, $getRoot} from 'outline';
+import {$createTableNode} from 'outline/TableNode';
+import {$createTableRowNode} from 'outline/TableRowNode';
+import {$createTableCellNode} from 'outline/TableCellNode';
 
 export function dfs(
   startingNode: OutlineNode,
@@ -85,7 +85,7 @@ export type DOMNodeToOutlineConversionMap = {
   [string]: DOMNodeToOutlineConversion,
 };
 
-export function createOutlineNodeFromDOMNode(
+export function $createOutlineNodeFromDOMNode(
   node: Node,
   conversionMap: DOMNodeToOutlineConversionMap,
 ): OutlineNode | null {
@@ -96,7 +96,7 @@ export function createOutlineNodeFromDOMNode(
     if (isElementNode(outlineNode)) {
       const children = node.childNodes;
       for (let i = 0; i < children.length; i++) {
-        const child = createOutlineNodeFromDOMNode(children[i], conversionMap);
+        const child = $createOutlineNodeFromDOMNode(children[i], conversionMap);
         if (child !== null) {
           outlineNode.append(child);
         }
@@ -106,19 +106,19 @@ export function createOutlineNodeFromDOMNode(
   return outlineNode;
 }
 
-export function createTableNodeWithDimensions(
+export function $createTableNodeWithDimensions(
   rowCount: number,
   columnCount: number,
   includeHeader?: boolean = true,
 ): TableNode {
-  const tableNode = createTableNode();
+  const tableNode = $createTableNode();
 
   for (let iRow = 0; iRow < rowCount; iRow++) {
-    const tableRow = createTableRowNode();
+    const tableRow = $createTableRowNode();
 
     for (let iColumn = 0; iColumn < columnCount; iColumn++) {
-      const tableCell = createTableCellNode(iRow === 0 && includeHeader);
-      tableCell.append(createTextNode());
+      const tableCell = $createTableCellNode(iRow === 0 && includeHeader);
+      tableCell.append($createTextNode());
       tableRow.append(tableCell);
     }
 
@@ -135,7 +135,7 @@ export function findMatchingParent(
 ): OutlineNode | null {
   let curr = startingNode;
 
-  while (curr !== state.getRoot() && curr != null) {
+  while (curr !== $getRoot() && curr != null) {
     if (findFn(curr)) {
       return curr;
     }

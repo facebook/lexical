@@ -8,8 +8,8 @@
  */
 
 import {createTestConnection, waitForReact} from './utils';
-import {getRoot, createTextNode, getSelection} from 'outline';
-import {createParagraphNode} from 'outline/ParagraphNode';
+import {$getRoot, $createTextNode, $getSelection} from 'outline';
+import {$createParagraphNode} from 'outline/ParagraphNode';
 
 function createAndStartClients(
   connector: TestConnection,
@@ -45,18 +45,18 @@ function stopClients(clients: Array<Client>) {
 }
 
 function removeInitialParagraph() {
-  const root = getRoot();
+  const root = $getRoot();
   const paragraph = root.getFirstChild();
   paragraph.remove();
 }
 
 function createSampleParagraphsWithClient(client: Client, count: number) {
-  const root = getRoot();
+  const root = $getRoot();
   for (let i = 0; i < count; ++i) {
-    const paragraph = createParagraphNode();
+    const paragraph = $createParagraphNode();
     const text = `Hello world ${i + 1}.`;
 
-    paragraph.append(createTextNode(text));
+    paragraph.append($createTextNode(text));
     root.append(paragraph);
   }
 }
@@ -123,12 +123,12 @@ describe('useOutlineRichTextWithCollabLists', () => {
     let clientIndex = 0;
     await waitForReact(() => {
       clients[clientIndex].update(() => {
-        const root = getRoot();
+        const root = $getRoot();
         const paragraph1 = root.getFirstChild();
         const paragraph2 = paragraph1.getNextSibling();
         const textNode = paragraph1.getFirstChild();
         textNode.select(0, 0);
-        const selection = getSelection();
+        const selection = $getSelection();
         selection.anchor.set(paragraph1.getFirstChild().getKey(), 5, 'text');
         selection.focus.set(paragraph2.getFirstChild().getKey(), 6, 'text');
         selection.removeText();
@@ -139,7 +139,7 @@ describe('useOutlineRichTextWithCollabLists', () => {
     clientIndex = 1;
     await waitForReact(() => {
       clients[clientIndex].update(() => {
-        const root = getRoot();
+        const root = $getRoot();
         const paragraph = root.getFirstChild();
         paragraph.remove();
       });

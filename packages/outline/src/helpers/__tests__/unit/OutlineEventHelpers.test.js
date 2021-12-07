@@ -5,7 +5,7 @@ import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
 import useOutlineRichText from 'outline-react/useOutlineRichText';
-import {createTextNode} from 'outline';
+import {$createTextNode} from 'outline';
 import {LinkNode} from 'outline/LinkNode';
 
 jest.mock('shared/environment', () => {
@@ -71,7 +71,7 @@ describe('OutlineEventHelpers', () => {
             code: 'editor-code',
           },
           htmlTransforms: {
-            testhtmltagname: () => ({node: createTextNode('Hello world!')}),
+            testhtmltagname: () => ({node: $createTextNode('Hello world!')}),
           },
         }),
       [],

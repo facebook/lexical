@@ -19,7 +19,7 @@ import {
   triggerListeners,
   updateEditor,
 } from './OutlineUpdates';
-import {TextNode, getSelection, getRoot} from '.';
+import {TextNode, $getSelection, $getRoot} from '.';
 import {createEmptyEditorState} from './OutlineEditorState';
 import {LineBreakNode} from './OutlineLineBreakNode';
 import {NO_DIRTY_NODES, FULL_RECONCILE} from './OutlineConstants';
@@ -502,8 +502,8 @@ class BaseOutlineEditor {
       updateEditor(
         getSelf(this),
         () => {
-          const selection = getSelection();
-          const root = getRoot();
+          const selection = $getSelection();
+          const root = $getRoot();
           if (selection !== null) {
             // Marking the selection dirty will force the selection back to it
             selection.dirty = true;

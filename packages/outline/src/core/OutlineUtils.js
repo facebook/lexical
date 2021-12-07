@@ -310,7 +310,7 @@ export function $clearSelection(): void {
   editorState._selection = null;
 }
 
-export function setSelection(selection: Selection): void {
+export function $setSelection(selection: Selection): void {
   const editorState = getActiveEditorState();
   editorState._selection = selection;
 }

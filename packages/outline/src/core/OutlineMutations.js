@@ -11,7 +11,7 @@ import type {OutlineEditor} from './OutlineEditor';
 import type {Selection} from './OutlineSelection';
 import type {TextNode} from './OutlineTextNode';
 
-import {isTextNode, isDecoratorNode, $getSelection, setSelection} from '.';
+import {isTextNode, isDecoratorNode, $getSelection, $setSelection} from '.';
 import {triggerListeners, updateEditor} from './OutlineUpdates';
 import {
   getNearestNodeFromDOMNode,
@@ -195,7 +195,7 @@ export function flushMutations(
           const selection = $getSelection() || getLastSelection(editor);
           if (selection !== null) {
             selection.dirty = true;
-            setSelection(selection);
+            $setSelection(selection);
           }
         }
       },

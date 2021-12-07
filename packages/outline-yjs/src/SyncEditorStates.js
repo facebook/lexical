@@ -20,7 +20,7 @@ import {
   isTextNode,
   $getSelection,
   $getRoot,
-  setSelection,
+  $setSelection,
   $getNodeByKey,
 } from 'outline';
 import {CollabElementNode} from './CollabElementNode';
@@ -116,7 +116,7 @@ export function syncYjsChangesToOutline(
               prevOffsetView,
             );
             if (nextSelection !== null) {
-              setSelection(nextSelection);
+              $setSelection(nextSelection);
             } else {
               // Fallback is to use the Yjs cursor position
               syncLocalCursorPosition(binding, provider);

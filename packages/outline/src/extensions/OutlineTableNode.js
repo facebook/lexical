@@ -23,7 +23,7 @@ import {
   isElementNode,
   createSelection,
   $getSelection,
-  setSelection,
+  $setSelection,
 } from 'outline';
 
 type Cell = {
@@ -285,7 +285,7 @@ function applyCellSelection(
         formatSelection.formatText(type);
       }
     });
-    setSelection(selection);
+    $setSelection(selection);
   };
 
   let deleteCharacterListener = null;

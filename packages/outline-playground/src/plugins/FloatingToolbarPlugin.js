@@ -29,7 +29,7 @@ import {
   patchStyleText,
   isAtNodeEnd,
 } from 'outline/selection';
-import {log, $getSelection, setSelection} from 'outline';
+import {log, $getSelection, $setSelection} from 'outline';
 import {otlnCreateLinkNode, isLinkNode, LinkNode} from 'outline/LinkNode';
 
 function positionToolbar(toolbar, rect) {
@@ -320,7 +320,7 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
       editor.update(() => {
         log('useToolbar');
         if (selection !== null) {
-          setSelection(selection);
+          $setSelection(selection);
         }
         const sel = $getSelection();
         if (sel !== null) {

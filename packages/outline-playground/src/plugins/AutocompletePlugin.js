@@ -28,7 +28,7 @@ function useTypeahead(editor: OutlineEditor): void {
   const [text, setText] = useState<string>(
     editor.getEditorState().read(textContentCurry),
   );
-  const [selectionCollapsed, setSelectionCollapsed] = useState<boolean>(false);
+  const [selectionCollapsed, $setSelectionCollapsed] = useState<boolean>(false);
   const server = useMemo(() => new TypeaheadServer(), []);
   const suggestion = useTypeaheadSuggestion(text, server.query);
 
@@ -192,7 +192,7 @@ function useTypeahead(editor: OutlineEditor): void {
     const handleEvent = () => {
       const selection = window.getSelection();
 
-      setSelectionCollapsed(selection.isCollapsed);
+      $setSelectionCollapsed(selection.isCollapsed);
     };
     document.addEventListener('selectionchange', handleEvent);
     return () => {

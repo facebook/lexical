@@ -22,7 +22,7 @@ import {
   log,
   $getSelection,
   $getRoot,
-  setSelection,
+  $setSelection,
 } from 'outline';
 import {dfs} from 'outline/nodes';
 import {textContentCurry} from 'outline/root';
@@ -193,7 +193,7 @@ function otlnWrapOverflowedNodes(offset: number) {
           overflowNode = otlnWrapNode(node);
         }
         if (previousSelection !== null) {
-          setSelection(previousSelection);
+          $setSelection(previousSelection);
         }
         mergePrevious(overflowNode);
       }

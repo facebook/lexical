@@ -75,10 +75,10 @@ export function removeNode(
   const writableParent = parent.getWritable();
   const parentChildren = writableParent.__children;
   const index = parentChildren.indexOf(key);
-  // TODO: we probably need an invariant here
-  if (index > -1) {
-    parentChildren.splice(index, 1);
+  if (index === -1) {
+    invariant(false, 'Node is not a child of its parent');
   }
+  parentChildren.splice(index, 1);
   const writableNodeToRemove = nodeToRemove.getWritable();
   writableNodeToRemove.__parent = null;
 
@@ -607,18 +607,20 @@ export class OutlineNode {
       const writableParent = oldParent.getWritable();
       const children = writableParent.__children;
       const index = children.indexOf(writableReplaceWith.__key);
-      if (index > -1) {
-        children.splice(index, 1);
+      if (index === -1) {
+        invariant(false, 'Node is not a child of its parent');
       }
+      children.splice(index, 1);
     }
     const newParent = this.getParentOrThrow();
     const writableParent = newParent.getWritable();
     const children = writableParent.__children;
     const index = children.indexOf(this.__key);
     const newKey = writableReplaceWith.__key;
-    if (index > -1) {
-      children.splice(index, 0, newKey);
+    if (index === -1) {
+      invariant(false, 'Node is not a child of its parent');
     }
+    children.splice(index, 0, newKey);
     writableReplaceWith.__parent = newParent.__key;
     removeNode(this, false);
     const flags = writableReplaceWith.__flags;
@@ -655,20 +657,20 @@ export class OutlineNode {
       const writableParent = oldParent.getWritable();
       const children = writableParent.__children;
       const index = children.indexOf(writableNodeToInsert.__key);
-      if (index > -1) {
-        children.splice(index, 1);
+      if (index === -1) {
+        invariant(false, 'Node is not a child of its parent');
       }
+      children.splice(index, 1);
     }
     const writableParent = this.getParentOrThrow().getWritable();
     const insertKey = writableNodeToInsert.__key;
     writableNodeToInsert.__parent = writableSelf.__parent;
     const children = writableParent.__children;
     const index = children.indexOf(writableSelf.__key);
-    if (index > -1) {
-      children.splice(index + 1, 0, insertKey);
-    } else {
-      children.push(insertKey);
+    if (index === -1) {
+      invariant(false, 'Node is not a child of its parent');
     }
+    children.splice(index + 1, 0, insertKey);
     const flags = writableNodeToInsert.__flags;
     // Handle direction if node is directionless
     if (flags & IS_DIRECTIONLESS) {
@@ -693,20 +695,20 @@ export class OutlineNode {
       const writableParent = oldParent.getWritable();
       const children = writableParent.__children;
       const index = children.indexOf(writableNodeToInsert.__key);
-      if (index > -1) {
-        children.splice(index, 1);
+      if (index === -1) {
+        invariant(false, 'Node is not a child of its parent');
       }
+      children.splice(index, 1);
     }
     const writableParent = this.getParentOrThrow().getWritable();
     const insertKey = writableNodeToInsert.__key;
     writableNodeToInsert.__parent = writableSelf.__parent;
     const children = writableParent.__children;
     const index = children.indexOf(writableSelf.__key);
-    if (index > -1) {
-      children.splice(index, 0, insertKey);
-    } else {
-      children.push(insertKey);
+    if (index === -1) {
+      invariant(false, 'Node is not a child of its parent');
     }
+    children.splice(index, 0, insertKey);
     const flags = writableNodeToInsert.__flags;
     // Handle direction if node is directionless
     if (flags & IS_DIRECTIONLESS) {

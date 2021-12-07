@@ -952,34 +952,43 @@ describe('OutlineEditor tests', () => {
         );
 
         // Next editor state
-        const previousSet = new Set(previous);
+        const nextSet = new Set(next);
         await update(() => {
           const writableParagraph: ParagraphNode = getRoot()
             .getFirstChild()
             .getWritable();
-          writableParagraph.__children = [];
+          // Remove prev that are not in next
+          for (let i = 0; i < previous.length; i++) {
+            const previousText = previous[i];
+            if (!nextSet.has(previousText)) {
+              const previousKey = textToKey.get(previousText);
+              const previousNode = getNodeByKey(previousKey);
+              previousNode.remove();
+              textToKey.delete(previousText);
+            }
+          }
           for (let i = 0; i < next.length; i++) {
             const nextText = next[i];
             const nextKey = textToKey.get(nextText);
             let textNode;
             if (nextKey === undefined) {
+              // New node; append at the end
               textNode = new TextNode(nextText).toggleUnmergeable();
               textNode.__parent = writableParagraph.__key;
               expect(getNodeByKey(nextKey)).toBe(null);
               textToKey.set(nextText, textNode.__key);
+              writableParagraph.__children.push(textNode.__key);
             } else {
+              // Node exists in prev; reorder it
               textNode = getNodeByKey(nextKey);
               expect(textNode.__text).toBe(nextText);
+              writableParagraph.__children.splice(
+                writableParagraph.__children.indexOf(nextKey),
+                1,
+              );
+              writableParagraph.__children.push(textNode.__key);
             }
-            writableParagraph.__children.push(textNode.__key);
-            previousSet.delete(nextText);
           }
-          previousSet.forEach((previousText) => {
-            const previousKey = textToKey.get(previousText);
-            const textNode = getNodeByKey(previousKey);
-            expect(textNode.__text).toBe(previousText);
-            textNode.remove();
-          });
         });
         // Expect text content + HTML to be correct
         expect(getEditorStateTextContent(editor.getEditorState())).toBe(
@@ -1003,11 +1012,8 @@ describe('OutlineEditor tests', () => {
             const nextKey = textToKey.get(nextText);
             expect(getNodeByKey(nextKey)).not.toBe(null);
           }
-          previousSet.forEach((previousText) => {
-            const previousKey = textToKey.get(previousText);
-            expect(getNodeByKey(previousKey)).toBe(null);
-          });
         });
+        expect(editor.getEditorState()._nodeMap.size).toBe(next.length + 2);
       }
 
       const permutations = generatePermutations(4);

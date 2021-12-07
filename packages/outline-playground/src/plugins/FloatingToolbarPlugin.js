@@ -402,13 +402,7 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
 
   const applyFormatText = useCallback(
     (formatType: TextFormatType) => {
-      editor.update(() => {
-        log('applyFormatText');
-        const selection = $getSelection();
-        if (selection !== null) {
-          selection.formatText(formatType);
-        }
-      });
+      editor.execCommand('formatText', formatType);
     },
     [editor],
   );

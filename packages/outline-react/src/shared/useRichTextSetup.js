@@ -15,7 +15,7 @@ import type {
 } from 'outline';
 import type {InputEvents} from 'outline-react/useOutlineEditorEvents';
 
-import {log, getSelection, getRoot} from 'outline';
+import {log, getSelection, otlnGetRoot} from 'outline';
 import useOutlineEditorEvents from '../useOutlineEditorEvents';
 import {HeadingNode} from 'outline/HeadingNode';
 import {ListNode} from 'outline/ListNode';
@@ -83,7 +83,7 @@ function initParagraph(root: RootNode, editor: OutlineEditor): void {
 export function initEditor(editor: OutlineEditor): void {
   editor.update(() => {
     log('initEditor');
-    const root = getRoot();
+    const root = otlnGetRoot();
     const firstChild = root.getFirstChild();
     if (firstChild === null) {
       initParagraph(root, editor);
@@ -98,7 +98,7 @@ function clearEditor(
   editor.update(
     () => {
       log('clearEditor');
-      const root = getRoot();
+      const root = otlnGetRoot();
       root.clear();
       initParagraph(root, editor);
     },

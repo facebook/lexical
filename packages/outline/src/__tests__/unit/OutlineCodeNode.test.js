@@ -8,7 +8,7 @@
 
 import {otlnCreateCodeNode} from 'outline/CodeNode';
 import {otlnCreateParagraphNode} from 'outline/ParagraphNode';
-import {otlnCreateTextNode, getRoot, getSelection} from 'outline';
+import {otlnCreateTextNode, otlnGetRoot, getSelection} from 'outline';
 import {initializeUnitTest} from '../utils';
 
 const editorConfig = Object.freeze({
@@ -59,7 +59,7 @@ describe('OutlineCodeNode tests', () => {
     test.skip('CodeNode.insertNewAfter()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const root = getRoot();
+        const root = otlnGetRoot();
         const paragraphNode = otlnCreateParagraphNode();
         const textNode = otlnCreateTextNode('foo');
         paragraphNode.append(textNode);

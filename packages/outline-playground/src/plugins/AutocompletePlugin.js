@@ -18,7 +18,7 @@ import {
   log,
   getNodeByKey,
   getSelection,
-  getRoot,
+  otlnGetRoot,
 } from 'outline';
 import {useEffect, useRef, useState, useCallback, useMemo} from 'react';
 import {textContentCurry} from 'outline/root';
@@ -103,7 +103,7 @@ function useTypeahead(editor: OutlineEditor): void {
             return;
           }
           // Add
-          const lastParagraph = getRoot().getLastChild();
+          const lastParagraph = otlnGetRoot().getLastChild();
           if (isElementNode(lastParagraph)) {
             const lastTextNode = lastParagraph.getLastChild();
             if (isTextNode(lastTextNode)) {
@@ -145,8 +145,7 @@ function useTypeahead(editor: OutlineEditor): void {
   useEffect(() => {
     return editor.addListener('update', ({editorState}) => {
       editorState.read((state) => {
-        const typeaheadNode = state
-          .getRoot()
+        const typeaheadNode = otlnGetRoot()
           .getAllTextNodes(true)
           .find((textNode) => textNode instanceof TypeaheadNode);
         if (typeaheadNode instanceof TypeaheadNode) {

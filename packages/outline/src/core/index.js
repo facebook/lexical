@@ -43,7 +43,7 @@ import {DecoratorNode, isDecoratorNode} from './OutlineDecoratorNode';
 import {
   isLeafNode,
   pushLogEntry as log,
-  getRoot,
+  otlnGetRoot,
   getNodeByKey,
   clearSelection,
   getNearestNodeFromDOMNode,
@@ -80,7 +80,7 @@ export {
   otlnCreateTextNode,
   createNodeFromParse,
   createSelection,
-  getRoot,
+  otlnGetRoot,
   getNodeByKey,
   getSelection,
   getPreviousSelection,

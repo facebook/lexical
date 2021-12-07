@@ -15,7 +15,7 @@ import type {TableNode} from 'outline/TableNode';
 import {isListNode} from 'outline/ListNode';
 import {isListItemNode} from 'outline/ListItemNode';
 import invariant from 'shared/invariant';
-import {isElementNode, otlnCreateTextNode} from 'outline';
+import {isElementNode, otlnCreateTextNode, otlnGetRoot} from 'outline';
 import {otlnCreateTableNode} from 'outline/TableNode';
 import {otlnCreateTableRowNode} from 'outline/TableRowNode';
 import {otlnCreateTableCellNode} from 'outline/TableCellNode';
@@ -138,7 +138,7 @@ export function findMatchingParent(
 ): OutlineNode | null {
   let curr = startingNode;
 
-  while (curr !== state.getRoot() && curr != null) {
+  while (curr !== otlnGetRoot() && curr != null) {
     if (findFn(curr)) {
       return curr;
     }

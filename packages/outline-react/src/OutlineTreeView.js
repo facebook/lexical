@@ -9,7 +9,7 @@
 
 import type {ElementNode, EditorState, OutlineEditor, Selection} from 'outline';
 
-import {isElementNode, isTextNode, getRoot, getSelection} from 'outline';
+import {isElementNode, isTextNode, otlnGetRoot, getSelection} from 'outline';
 
 import * as React from 'react';
 import {useState, useEffect, useRef} from 'react';
@@ -194,7 +194,7 @@ function generateContent(editorState: EditorState): string {
   const selectionString = editorState.read(() => {
     const selection = getSelection();
 
-    visitTree(getRoot(), (node, indent) => {
+    visitTree(otlnGetRoot(), (node, indent) => {
       const nodeKey = node.getKey();
       const nodeKeyDisplay = `(${nodeKey})`;
       const typeDisplay = node.getType() || '';

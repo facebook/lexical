@@ -19,7 +19,7 @@ import {YTextEvent, YMapEvent, YXmlEvent} from 'yjs';
 import {
   isTextNode,
   getSelection,
-  getRoot,
+  otlnGetRoot,
   setSelection,
   getNodeByKey,
 } from 'outline';
@@ -122,7 +122,7 @@ export function syncYjsChangesToOutline(
               syncLocalCursorPosition(binding, provider);
               if (doesSelectionNeedRecovering(selection)) {
                 // Fallback
-                getRoot().selectEnd();
+                otlnGetRoot().selectEnd();
               }
             }
           }
@@ -216,7 +216,7 @@ export function syncOutlineUpdateToYjs(
       }
       if (dirtyElements.has('root')) {
         const prevNodeMap = prevEditorState._nodeMap;
-        const nextOutlineRoot = getRoot();
+        const nextOutlineRoot = otlnGetRoot();
         const collabRoot = binding.root;
         collabRoot.syncPropertiesFromOutline(
           binding,

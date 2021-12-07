@@ -49,7 +49,7 @@ import {
   isDecoratorNode,
   log,
   getSelection,
-  getRoot,
+  otlnGetRoot,
   setCompositionKey,
   getCompositionKey,
   getNearestNodeFromDOMNode,
@@ -598,7 +598,7 @@ export function onClick(event: MouseEvent, editor: OutlineEditor): void {
       anchor.type === 'element' &&
       anchor.offset === 0 &&
       selection.isCollapsed() &&
-      getRoot().getChildrenSize() === 1 &&
+      otlnGetRoot().getChildrenSize() === 1 &&
       anchor.getNode().getTopLevelElementOrThrow().isEmpty()
     ) {
       const lastSelection = getLastSelection(editor);

@@ -12,7 +12,7 @@ import {
   isParagraphNode,
 } from 'outline/ParagraphNode';
 import {initializeUnitTest} from '../utils';
-import {getRoot} from 'outline';
+import {otlnGetRoot} from 'outline';
 
 const editorConfig = Object.freeze({
   theme: {
@@ -61,7 +61,7 @@ describe('OutlineParagraphNode tests', () => {
       const {editor} = testEnv;
       let paragraphNode;
       await editor.update(() => {
-        const root = getRoot();
+        const root = otlnGetRoot();
         paragraphNode = new ParagraphNode();
         root.append(paragraphNode);
       });

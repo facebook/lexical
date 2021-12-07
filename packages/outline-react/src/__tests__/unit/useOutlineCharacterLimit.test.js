@@ -10,7 +10,12 @@
 import type {OutlineEditor, NodeKey} from 'outline';
 
 import {initializeUnitTest} from '../../../../outline/src/__tests__/utils';
-import {otlnCreateTextNode, getSelection, getNodeByKey, getRoot} from 'outline';
+import {
+  otlnCreateTextNode,
+  getSelection,
+  getNodeByKey,
+  otlnGetRoot,
+} from 'outline';
 import {otlnCreateParagraphNode} from 'outline/ParagraphNode';
 import {
   otlnCreateOverflowNode,
@@ -36,7 +41,7 @@ describe('OutlineNodeHelpers tests', () => {
         let overflowLeftKey;
         let overflowRightKey;
         await editor.update(() => {
-          const root = getRoot();
+          const root = otlnGetRoot();
           const paragraph = otlnCreateParagraphNode();
           const overflowLeft = otlnCreateOverflowNode();
           const overflowRight = otlnCreateOverflowNode();
@@ -65,7 +70,7 @@ describe('OutlineNodeHelpers tests', () => {
           overflowLeft.select();
         });
         await editor.update(() => {
-          const paragraph: ParagraphNode = getRoot().getFirstChild();
+          const paragraph: ParagraphNode = otlnGetRoot().getFirstChild();
           const overflowRight = getNodeByKey(overflowRightKey);
           mergePrevious(overflowRight);
           expect(paragraph.getChildrenSize()).toBe(1);
@@ -102,7 +107,7 @@ describe('OutlineNodeHelpers tests', () => {
           overflowLeft.select(1, 1);
         });
         await editor.update(() => {
-          const paragraph: ParagraphNode = getRoot().getFirstChild();
+          const paragraph: ParagraphNode = otlnGetRoot().getFirstChild();
           const overflowRight = getNodeByKey(overflowRightKey);
           mergePrevious(overflowRight);
           expect(paragraph.getChildrenSize()).toBe(1);
@@ -145,7 +150,7 @@ describe('OutlineNodeHelpers tests', () => {
           selection.focus.set(overflowRightKey, 1, 'block');
         });
         await editor.update(() => {
-          const paragraph: ParagraphNode = getRoot().getFirstChild();
+          const paragraph: ParagraphNode = otlnGetRoot().getFirstChild();
           const overflowRight = getNodeByKey(overflowRightKey);
           mergePrevious(overflowRight);
           expect(paragraph.getChildrenSize()).toBe(1);

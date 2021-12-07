@@ -8,7 +8,7 @@
 
 import type {State} from 'outline';
 
-import {otlnCreateTextNode, TextNode, getSelection} from 'outline';
+import {otlnCreateTextNode, TextNode, getSelection, otlnGetRoot} from 'outline';
 import {otlnCreateParagraphNode} from 'outline/ParagraphNode';
 import {cloneContents} from 'outline/selection';
 import {
@@ -70,7 +70,7 @@ describe('OutlineSelectionHelpers tests', () => {
         });
 
         editor.update((state) => {
-          const root = state.getRoot();
+          const root = otlnGetRoot();
           const element = createParagraphWithNodes(editor, [
             {text: 'a', key: 'a', mergeable: false},
             {text: 'b', key: 'b', mergeable: false},
@@ -211,7 +211,7 @@ describe('OutlineSelectionHelpers tests', () => {
       editor.setRootElement(domElement);
 
       editor.update((state) => {
-        const root = state.getRoot();
+        const root = otlnGetRoot();
         element = createParagraphWithNodes(
           editor,
           [
@@ -266,7 +266,7 @@ describe('OutlineSelectionHelpers tests', () => {
       editor.setRootElement(domElement);
 
       editor.update((state) => {
-        const root = state.getRoot();
+        const root = otlnGetRoot();
         element = createParagraphWithNodes(
           editor,
           [
@@ -320,7 +320,7 @@ describe('OutlineSelectionHelpers tests', () => {
       editor.setRootElement(domElement);
 
       editor.update((state) => {
-        const root = state.getRoot();
+        const root = otlnGetRoot();
         element = createParagraphWithNodes(
           editor,
           [{text: '', key: 'a', mergeable: true}],
@@ -369,7 +369,7 @@ describe('OutlineSelectionHelpers tests', () => {
       editor.setRootElement(domElement);
 
       editor.update((state) => {
-        const root = state.getRoot();
+        const root = otlnGetRoot();
         element = createParagraphWithNodes(
           editor,
           [
@@ -421,7 +421,7 @@ describe('OutlineSelectionHelpers tests', () => {
       editor.setRootElement(domElement);
 
       editor.update((state) => {
-        const root = state.getRoot();
+        const root = otlnGetRoot();
         element = createParagraphWithNodes(
           editor,
           [
@@ -475,7 +475,7 @@ describe('OutlineSelectionHelpers tests', () => {
       editor.setRootElement(domElement);
 
       editor.update((state) => {
-        const root = state.getRoot();
+        const root = otlnGetRoot();
         element = createParagraphWithNodes(
           editor,
           [
@@ -525,7 +525,7 @@ describe('OutlineSelectionHelpers tests', () => {
         });
 
         editor.update((state) => {
-          const root = state.getRoot();
+          const root = otlnGetRoot();
           const element = createParagraphWithNodes(editor, []);
           root.append(element);
           setAnchorPoint(state, {
@@ -643,7 +643,7 @@ describe('OutlineSelectionHelpers tests', () => {
         });
 
         editor.update((state) => {
-          const root = state.getRoot();
+          const root = otlnGetRoot();
           const element = createParagraphWithNodes(editor, [
             {text: 'a', key: 'a', mergeable: false},
             {text: 'b', key: 'b', mergeable: false},
@@ -768,7 +768,7 @@ describe('OutlineSelectionHelpers tests', () => {
         });
 
         editor.update((state) => {
-          const root = state.getRoot();
+          const root = otlnGetRoot();
           const element = createParagraphWithNodes(editor, [
             {text: 'a', key: 'a', mergeable: false},
             {text: 'b', key: 'b', mergeable: false},
@@ -898,7 +898,7 @@ describe('OutlineSelectionHelpers tests', () => {
       editor.setRootElement(domElement);
 
       editor.update((state) => {
-        const root = state.getRoot();
+        const root = otlnGetRoot();
         element = createParagraphWithNodes(editor, [
           {text: 'a', key: 'a', mergeable: true},
           {text: 'b', key: 'b', mergeable: true},
@@ -947,7 +947,7 @@ describe('OutlineSelectionHelpers tests', () => {
       editor.setRootElement(domElement);
 
       editor.update((state) => {
-        const root = state.getRoot();
+        const root = otlnGetRoot();
         element = createParagraphWithNodes(editor, [
           {text: 'a', key: 'a', mergeable: true},
           {text: 'b', key: 'b', mergeable: true},
@@ -994,7 +994,7 @@ describe('OutlineSelectionHelpers tests', () => {
         });
 
         editor.update((state) => {
-          const root = state.getRoot();
+          const root = otlnGetRoot();
           const element = createParagraphWithNodes(editor, [
             {text: 'a', key: 'a', mergeable: false},
             {text: 'b', key: 'b', mergeable: false},
@@ -1135,7 +1135,7 @@ describe('OutlineSelectionHelpers tests', () => {
         });
 
         editor.update((state) => {
-          const root = state.getRoot();
+          const root = otlnGetRoot();
           const element = createParagraphWithNodes(editor, [
             {text: 'a', key: 'a', mergeable: false},
             {text: 'b', key: 'b', mergeable: false},
@@ -1265,7 +1265,7 @@ describe('OutlineSelectionHelpers tests', () => {
         });
 
         editor.update((state) => {
-          const root = state.getRoot();
+          const root = otlnGetRoot();
           const element = createParagraphWithNodes(editor, [
             {text: 'a', key: 'a', mergeable: false},
             {text: 'b', key: 'b', mergeable: false},
@@ -1406,7 +1406,7 @@ describe('OutlineSelectionHelpers tests', () => {
     editor.setRootElement(element);
 
     await editor.update((state: State) => {
-      const root = state.getRoot();
+      const root = otlnGetRoot();
       const paragraph1 = otlnCreateParagraphNode();
       const paragraph2 = otlnCreateParagraphNode();
       const paragraph3 = otlnCreateParagraphNode();
@@ -1465,7 +1465,7 @@ describe('OutlineSelectionHelpers tests', () => {
     editor.setRootElement(element);
 
     await editor.update((state: State) => {
-      const root = state.getRoot();
+      const root = otlnGetRoot();
       const paragraph = otlnCreateParagraphNode();
       root.append(paragraph);
 
@@ -1543,7 +1543,7 @@ describe('OutlineSelectionHelpers tests', () => {
         editor.setRootElement(element);
 
         await editor.update((state: State) => {
-          const root = state.getRoot();
+          const root = otlnGetRoot();
           const paragraph = otlnCreateParagraphNode();
           root.append(paragraph);
 
@@ -1576,7 +1576,7 @@ describe('OutlineSelectionHelpers tests', () => {
         editor.setRootElement(element);
 
         await editor.update((state: State) => {
-          const root = state.getRoot();
+          const root = otlnGetRoot();
           const paragraph = otlnCreateParagraphNode();
           root.append(paragraph);
 
@@ -1612,7 +1612,7 @@ describe('OutlineSelectionHelpers tests', () => {
         editor.setRootElement(element);
 
         await editor.update((state: State) => {
-          const root = state.getRoot();
+          const root = otlnGetRoot();
           const paragraph = otlnCreateParagraphNode();
           root.append(paragraph);
 
@@ -1648,7 +1648,7 @@ describe('OutlineSelectionHelpers tests', () => {
         editor.setRootElement(element);
 
         await editor.update((state: State) => {
-          const root = state.getRoot();
+          const root = otlnGetRoot();
           const paragraph = otlnCreateParagraphNode();
           root.append(paragraph);
 
@@ -1688,7 +1688,7 @@ describe('OutlineSelectionHelpers tests', () => {
         editor.setRootElement(element);
 
         await editor.update((state: State) => {
-          const root = state.getRoot();
+          const root = otlnGetRoot();
           const paragraph = otlnCreateParagraphNode();
           const text = otlnCreateTextNode('Existing text...');
           paragraph.append(text);
@@ -1723,7 +1723,7 @@ describe('OutlineSelectionHelpers tests', () => {
         editor.setRootElement(element);
 
         await editor.update((state: State) => {
-          const root = state.getRoot();
+          const root = otlnGetRoot();
           const paragraph = otlnCreateParagraphNode();
           const text = otlnCreateTextNode('Existing text...');
           paragraph.append(text);
@@ -1761,7 +1761,7 @@ describe('OutlineSelectionHelpers tests', () => {
         editor.setRootElement(element);
 
         await editor.update((state: State) => {
-          const root = state.getRoot();
+          const root = otlnGetRoot();
           const paragraph = otlnCreateParagraphNode();
           const text = otlnCreateTextNode('Existing text...');
           paragraph.append(text);
@@ -1799,7 +1799,7 @@ describe('OutlineSelectionHelpers tests', () => {
         editor.setRootElement(element);
 
         await editor.update((state: State) => {
-          const root = state.getRoot();
+          const root = otlnGetRoot();
           const paragraph = otlnCreateParagraphNode();
           const text = otlnCreateTextNode('Existing text...');
           paragraph.append(text);

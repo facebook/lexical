@@ -271,7 +271,7 @@ export function pushLogEntry(entry: string): void {
 }
 
 export function getEditorStateTextContent(editorState: EditorState): string {
-  return editorState.read((view) => view.getRoot().getTextContent());
+  return editorState.read((view) => otlnGetRoot().getTextContent());
 }
 
 export function markAllNodesAsDirty(editor: OutlineEditor, type: string): void {
@@ -284,7 +284,7 @@ export function markAllNodesAsDirty(editor: OutlineEditor, type: string): void {
         return;
       }
       if (type === 'root') {
-        getRoot().markDirty();
+        otlnGetRoot().markDirty();
         return;
       }
       const nodeMap = editorState._nodeMap;
@@ -300,7 +300,7 @@ export function markAllNodesAsDirty(editor: OutlineEditor, type: string): void {
   );
 }
 
-export function getRoot(): RootNode {
+export function otlnGetRoot(): RootNode {
   // $FlowFixMe: root is always in our Map
   return ((getActiveEditorState()._nodeMap.get('root'): any): RootNode);
 }

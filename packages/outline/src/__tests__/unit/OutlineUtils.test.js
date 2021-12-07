@@ -6,7 +6,7 @@
  *
  */
 
-import {otlnCreateTextNode} from 'outline';
+import {otlnCreateTextNode, otlnGetRoot} from 'outline';
 
 import {
   emptyFunction,
@@ -87,7 +87,7 @@ describe('OutlineUtils tests', () => {
       const {editor} = testEnv;
       let textNode;
       await editor.update((state) => {
-        const root = state.getRoot();
+        const root = otlnGetRoot();
         const paragraph = otlnCreateParagraphNode();
         textNode = otlnCreateTextNode('foo');
         paragraph.append(textNode);
@@ -172,7 +172,7 @@ describe('OutlineUtils tests', () => {
       let textNode;
 
       await editor.update((state) => {
-        const rootNode = state.getRoot();
+        const rootNode = otlnGetRoot();
         paragraphNode = new ParagraphNode();
         textNode = new TextNode('foo');
         paragraphNode.append(textNode);

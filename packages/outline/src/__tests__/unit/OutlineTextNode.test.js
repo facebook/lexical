@@ -20,7 +20,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import {otlnCreateTextNode} from 'outline';
+import {otlnCreateTextNode, otlnGetRoot} from 'outline';
 
 import {otlnCreateParagraphNode} from 'outline/ParagraphNode';
 import {
@@ -97,7 +97,7 @@ describe('OutlineTextNode tests', () => {
       const text = otlnCreateTextNode();
       text.toggleUnmergeable();
       paragraph.append(text);
-      state.getRoot().append(paragraph);
+      otlnGetRoot().append(paragraph);
     });
   }
 
@@ -112,11 +112,11 @@ describe('OutlineTextNode tests', () => {
         expect(textNode.getTextContent(true)).toBe('Text');
         expect(textNode.__text).toBe('Text');
 
-        state.getRoot().getFirstChild().append(textNode);
+        otlnGetRoot().getFirstChild().append(textNode);
       });
       expect(
         editor.getEditorState().read((state: State) => {
-          const root = state.getRoot();
+          const root = otlnGetRoot();
           return root.__cachedText;
         }),
       );
@@ -139,7 +139,7 @@ describe('OutlineTextNode tests', () => {
         expect(textNode.getTextContent(true)).toBe('Inert text');
         expect(textNode.__text).toBe('Inert text');
 
-        state.getRoot().getFirstChild().append(textNode);
+        otlnGetRoot().getFirstChild().append(textNode);
       });
 
       expect(getEditorStateTextContent(editor.getEditorState())).toBe('');
@@ -154,15 +154,12 @@ describe('OutlineTextNode tests', () => {
     test('prepend node', async () => {
       await update((state) => {
         const textNode = otlnCreateTextNode('World').toggleUnmergeable();
-        state.getRoot().getFirstChild().append(textNode);
+        otlnGetRoot().getFirstChild().append(textNode);
       });
 
       await update((state) => {
         const textNode = otlnCreateTextNode('Hello ').toggleUnmergeable();
-        const previousTextNode = state
-          .getRoot()
-          .getFirstChild()
-          .getFirstChild();
+        const previousTextNode = otlnGetRoot().getFirstChild().getFirstChild();
         previousTextNode.insertBefore(textNode);
       });
 
@@ -239,7 +236,7 @@ describe('OutlineTextNode tests', () => {
   ])('%s flag', (formatFlag, stateFormat, flagPredicate, flagToggle) => {
     test(`getFormatFlags(${formatFlag})`, async () => {
       await update((state) => {
-        const root = state.getRoot();
+        const root = otlnGetRoot();
         const paragraphNode = root.getFirstChild();
         const textNode = paragraphNode.getFirstChild();
 
@@ -254,7 +251,7 @@ describe('OutlineTextNode tests', () => {
 
     test(`predicate for ${formatFlag}`, async () => {
       await update((state) => {
-        const root = state.getRoot();
+        const root = otlnGetRoot();
         const paragraphNode = root.getFirstChild();
         const textNode = paragraphNode.getFirstChild();
 
@@ -270,7 +267,7 @@ describe('OutlineTextNode tests', () => {
       }
 
       await update((state) => {
-        const root = state.getRoot();
+        const root = otlnGetRoot();
         const paragraphNode = root.getFirstChild();
         const textNode = paragraphNode.getFirstChild();
 
@@ -290,7 +287,7 @@ describe('OutlineTextNode tests', () => {
       const textNode2 = otlnCreateTextNode('Goodbye Earth');
 
       paragraphNode.append(textNode, textNode2);
-      state.getRoot().append(paragraphNode);
+      otlnGetRoot().append(paragraphNode);
 
       let selection = textNode2.selectPrevious();
 
@@ -312,7 +309,7 @@ describe('OutlineTextNode tests', () => {
       const textNode2 = otlnCreateTextNode('Goodbye Earth');
 
       paragraphNode.append(textNode, textNode2);
-      state.getRoot().append(paragraphNode);
+      otlnGetRoot().append(paragraphNode);
 
       let selection = textNode.selectNext(1, 3);
 
@@ -359,7 +356,7 @@ describe('OutlineTextNode tests', () => {
           const paragraphNode = otlnCreateParagraphNode();
           const textNode = otlnCreateTextNode('Hello World');
           paragraphNode.append(textNode);
-          state.getRoot().append(paragraphNode);
+          otlnGetRoot().append(paragraphNode);
 
           const selection = textNode.select(anchorOffset, focusOffset);
 
@@ -542,7 +539,7 @@ describe('OutlineTextNode tests', () => {
           const paragraphNode = otlnCreateParagraphNode();
           const textNode = otlnCreateTextNode(initialString);
           paragraphNode.append(textNode);
-          state.getRoot().append(paragraphNode);
+          otlnGetRoot().append(paragraphNode);
 
           const selection = textNode.select(...selectionOffsets);
           const childrenNodes = textNode.splitText(...splitOffsets);

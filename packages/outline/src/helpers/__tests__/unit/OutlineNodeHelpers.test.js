@@ -15,7 +15,7 @@ import {
 } from '../../../__tests__/utils';
 import {dfs, getTopListNode, isLastItemInList} from 'outline/nodes';
 import {otlnCreateParagraphNode, isParagraphNode} from 'outline/ParagraphNode';
-import {otlnCreateTextNode} from 'outline';
+import {otlnCreateTextNode, otlnGetRoot} from 'outline';
 import {otlnCreateListNode} from 'outline/ListNode';
 import {otlnCreateListItemNode} from 'outline/ListItemNode';
 
@@ -33,7 +33,7 @@ describe('OutlineNodeHelpers tests', () => {
       const editor: OutlineEditor = testEnv.editor;
       let expectedKeys: Array<NodeKey> = [];
       await editor.update((state: State) => {
-        const root = state.getRoot();
+        const root = otlnGetRoot();
         const paragraph1 = otlnCreateParagraphNode();
         const paragraph2 = otlnCreateParagraphNode();
         const block1 = otlnCreateTestElementNode();
@@ -73,7 +73,7 @@ describe('OutlineNodeHelpers tests', () => {
 
       const dfsKeys = [];
       await editor.update((state: State) => {
-        const root = state.getRoot();
+        const root = otlnGetRoot();
         dfs(root, (node: OutlineNode) => {
           dfsKeys.push(node.getKey());
           return node;
@@ -86,7 +86,7 @@ describe('OutlineNodeHelpers tests', () => {
       const editor: OutlineEditor = testEnv.editor;
       let expectedKeys: Array<NodeKey> = [];
       await editor.update((state: State) => {
-        const root = state.getRoot();
+        const root = otlnGetRoot();
         const paragraph1 = otlnCreateParagraphNode();
         const block1 = otlnCreateTestElementNode();
         const block2 = otlnCreateTestElementNode();
@@ -99,7 +99,7 @@ describe('OutlineNodeHelpers tests', () => {
 
       const dfsKeys = [];
       await editor.update((state: State) => {
-        const root = state.getRoot();
+        const root = otlnGetRoot();
         dfs(root, (node: OutlineNode) => {
           dfsKeys.push(node.getKey());
           if (isParagraphNode(node)) {
@@ -122,7 +122,7 @@ describe('OutlineNodeHelpers tests', () => {
         //         |- ListItemNode
         //         |- ListNode
         //               |- ListItemNode
-        const root = state.getRoot();
+        const root = otlnGetRoot();
         const topListNode = otlnCreateListNode('ul');
         const secondLevelListNode = otlnCreateListNode('ul');
         const listItem1 = otlnCreateListItemNode();
@@ -148,7 +148,7 @@ describe('OutlineNodeHelpers tests', () => {
         //        |- ListItemNode
         //           |- ListNode
         //              |- ListItemNode
-        const root = state.getRoot();
+        const root = otlnGetRoot();
         const paragraphNode = otlnCreateParagraphNode();
         const topListNode = otlnCreateListNode('ul');
         const secondLevelListNode = otlnCreateListNode('ul');
@@ -178,7 +178,7 @@ describe('OutlineNodeHelpers tests', () => {
         //                  |- ListNode
         //                      |- ListItemNode
         //        |- ListItemNode
-        const root = state.getRoot();
+        const root = otlnGetRoot();
         const paragraphNode = otlnCreateParagraphNode();
         const topListNode = otlnCreateListNode('ul');
         const secondLevelListNode = otlnCreateListNode('ul');
@@ -210,7 +210,7 @@ describe('OutlineNodeHelpers tests', () => {
         //            |- ListItemNode
         //                |- ListNode
         //                    |- ListItemNode
-        const root = state.getRoot();
+        const root = otlnGetRoot();
         const topListNode = otlnCreateListNode('ul');
         const secondLevelListNode = otlnCreateListNode('ul');
         const thirdLevelListNode = otlnCreateListNode('ul');
@@ -235,7 +235,7 @@ describe('OutlineNodeHelpers tests', () => {
         //   |- ListNode
         //      |- ListItemNode
         //      |- ListItemNode
-        const root = state.getRoot();
+        const root = otlnGetRoot();
         const topListNode = otlnCreateListNode('ul');
         const listItem1 = otlnCreateListItemNode();
         const listItem2 = otlnCreateListItemNode();
@@ -257,7 +257,7 @@ describe('OutlineNodeHelpers tests', () => {
         //            |- ListItemNode
         //                |- ListNode
         //                    |- ListItemNode
-        const root = state.getRoot();
+        const root = otlnGetRoot();
         const topListNode = otlnCreateListNode('ul');
         const secondLevelListNode = otlnCreateListNode('ul');
         const thirdLevelListNode = otlnCreateListNode('ul');
@@ -282,7 +282,7 @@ describe('OutlineNodeHelpers tests', () => {
         //   |- ListNode
         //      |- ListItemNode
         //      |- ListItemNode
-        const root = state.getRoot();
+        const root = otlnGetRoot();
         const topListNode = otlnCreateListNode('ul');
         const listItem1 = otlnCreateListItemNode();
         const listItem2 = otlnCreateListItemNode();

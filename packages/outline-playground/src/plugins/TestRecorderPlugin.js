@@ -12,7 +12,7 @@ import type {OutlineEditor} from 'outline';
 import * as React from 'react';
 import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
 
-import {otlnCreateTextNode, log, getRoot} from 'outline';
+import {otlnCreateTextNode, log, otlnGetRoot} from 'outline';
 import {otlnCreateParagraphNode} from 'outline/ParagraphNode';
 import {useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {IS_APPLE} from 'shared/environment';
@@ -343,7 +343,7 @@ ${steps.map(formatStep).join(`\n`)}
       if (!isRecording) {
         currentEditor.update(() => {
           log('useStepRecorder');
-          const root = getRoot();
+          const root = otlnGetRoot();
           root.clear();
           const text = otlnCreateTextNode();
           root.append(otlnCreateParagraphNode().append(text));

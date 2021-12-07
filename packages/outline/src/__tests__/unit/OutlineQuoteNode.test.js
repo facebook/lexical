@@ -8,7 +8,7 @@
 
 import {otlnCreateQuoteNode} from 'outline/QuoteNode';
 import {ParagraphNode} from 'outline/ParagraphNode';
-import {getRoot} from 'outline';
+import {otlnGetRoot} from 'outline';
 import {initializeUnitTest} from '../utils';
 
 const editorConfig = Object.freeze({
@@ -64,7 +64,7 @@ describe('OutlineQuoteNode tests', () => {
       const {editor} = testEnv;
       let quoteNode;
       await editor.update(() => {
-        const root = getRoot();
+        const root = otlnGetRoot();
         quoteNode = otlnCreateQuoteNode();
         root.append(quoteNode);
       });

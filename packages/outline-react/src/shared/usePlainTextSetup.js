@@ -14,7 +14,7 @@ import type {
   CommandListenerEditorPriority,
 } from 'outline';
 
-import {log, getRoot, getSelection} from 'outline';
+import {log, otlnGetRoot, getSelection} from 'outline';
 import useOutlineEditorEvents from '../useOutlineEditorEvents';
 import {otlnCreateParagraphNode, ParagraphNode} from 'outline/ParagraphNode';
 import {CAN_USE_BEFORE_INPUT} from 'shared/environment';
@@ -76,7 +76,7 @@ function initParagraph(root: RootNode, editor: OutlineEditor): void {
 function initEditor(editor: OutlineEditor): void {
   editor.update(() => {
     log('initEditor');
-    const root = getRoot();
+    const root = otlnGetRoot();
     const firstChild = root.getFirstChild();
     if (firstChild === null) {
       initParagraph(root, editor);
@@ -91,7 +91,7 @@ function clearEditor(
   editor.update(
     () => {
       log('clearEditor');
-      const root = getRoot();
+      const root = otlnGetRoot();
       root.clear();
       initParagraph(root, editor);
     },

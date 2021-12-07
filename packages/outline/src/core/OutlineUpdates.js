@@ -44,7 +44,7 @@ import {
   flushMutations,
   setSelection,
   clearSelection,
-  getRoot,
+  otlnGetRoot,
   getRegisteredNodeOrThrow,
 } from './OutlineUtils';
 import {
@@ -77,7 +77,7 @@ export type State = {
 };
 
 export const state: State = {
-  getRoot,
+  getRoot: otlnGetRoot,
   getNodeByKey,
   getSelection,
   clearSelection,

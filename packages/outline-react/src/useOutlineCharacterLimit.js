@@ -21,7 +21,7 @@ import {
   isTextNode,
   log,
   getSelection,
-  getRoot,
+  otlnGetRoot,
   setSelection,
 } from 'outline';
 import {dfs} from 'outline/nodes';
@@ -127,7 +127,7 @@ function findOffset(
 }
 
 function otlnWrapOverflowedNodes(offset: number) {
-  const root = getRoot();
+  const root = otlnGetRoot();
   let accumulatedLength = 0;
 
   let previousNode = root;

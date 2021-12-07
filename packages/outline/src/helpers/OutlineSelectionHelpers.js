@@ -38,6 +38,7 @@ function cloneWithProperties<T: OutlineNode>(node: T): T {
     clone.__children = Array.from(latest.__children);
     clone.__format = latest.__format;
     clone.__indent = latest.__indent;
+    clone.__dir = latest.__dir;
   } else if (isTextNode(latest)) {
     clone.__format = latest.__format;
     clone.__style = latest.__style;

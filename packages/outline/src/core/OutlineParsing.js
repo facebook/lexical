@@ -118,6 +118,7 @@ export function internalCreateNodeFromParse(
     }
     node.__indent = parsedNode.__indent;
     node.__format = parsedNode.__format;
+    node.__dir = parsedNode.__dir;
   } else if (isTextNode(node)) {
     node.__format = parsedNode.__format;
     node.__style = parsedNode.__style;

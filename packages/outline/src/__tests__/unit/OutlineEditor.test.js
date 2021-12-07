@@ -836,7 +836,7 @@ describe('OutlineEditor tests', () => {
       expect(parsedRoot).toEqual({
         __cachedText: null,
         __children: [paragraphKey],
-        __dir: null,
+        __dir: 'ltr',
         __flags: 0,
         __format: 0,
         __indent: 0,
@@ -846,7 +846,7 @@ describe('OutlineEditor tests', () => {
       });
       expect(parsedParagraph).toEqual({
         __children: [textKey],
-        __dir: null,
+        __dir: 'ltr',
         __flags: 0,
         __format: 0,
         __indent: 0,

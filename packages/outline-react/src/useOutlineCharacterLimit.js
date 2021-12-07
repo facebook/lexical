@@ -20,8 +20,8 @@ import {
   isLeafNode,
   isTextNode,
   log,
-  otlnGetSelection,
-  otlnGetRoot,
+  $getSelection,
+  $getRoot,
   setSelection,
 } from 'outline';
 import {dfs} from 'outline/nodes';
@@ -127,7 +127,7 @@ function findOffset(
 }
 
 function otlnWrapOverflowedNodes(offset: number) {
-  const root = otlnGetRoot();
+  const root = $getRoot();
   let accumulatedLength = 0;
 
   let previousNode = root;
@@ -140,7 +140,7 @@ function otlnWrapOverflowedNodes(offset: number) {
         const previousSibling = node.getPreviousSibling();
         const nextSibling = node.getNextSibling();
         otlnUnwrapNode(node);
-        const selection = otlnGetSelection();
+        const selection = $getSelection();
         // Restore selection when the overflow children are removed
         if (
           selection !== null &&
@@ -176,7 +176,7 @@ function otlnWrapOverflowedNodes(offset: number) {
       const previousAccumulatedLength = accumulatedLength;
       accumulatedLength += node.getTextContentSize();
       if (accumulatedLength > offset && !isOverflowNode(node.getParent())) {
-        const previousSelection = otlnGetSelection();
+        const previousSelection = $getSelection();
         let overflowNode;
         // For simple text we can improve the limit accuracy by splitting the TextNode
         // on the split point
@@ -282,7 +282,7 @@ export function mergePrevious(overflowNode: OverflowNode) {
     }
   }
 
-  const selection = otlnGetSelection();
+  const selection = $getSelection();
   if (selection !== null) {
     const anchor = selection.anchor;
     const anchorNode = anchor.getNode();

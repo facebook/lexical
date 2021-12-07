@@ -207,13 +207,13 @@ export function setCompositionKey(compositionKey: null | NodeKey): void {
   const previousCompositionKey = editor._compositionKey;
   editor._compositionKey = compositionKey;
   if (previousCompositionKey !== null) {
-    const node = otlnGetNodeByKey(previousCompositionKey);
+    const node = $getNodeByKey(previousCompositionKey);
     if (node !== null) {
       node.getWritable();
     }
   }
   if (compositionKey !== null) {
-    const node = otlnGetNodeByKey(compositionKey);
+    const node = $getNodeByKey(compositionKey);
     if (node !== null) {
       node.getWritable();
     }
@@ -225,7 +225,7 @@ export function getCompositionKey(): null | NodeKey {
   return editor._compositionKey;
 }
 
-export function otlnGetNodeByKey<N: OutlineNode>(key: NodeKey): N | null {
+export function $getNodeByKey<N: OutlineNode>(key: NodeKey): N | null {
   const editorState = getActiveEditorState();
   const node = editorState._nodeMap.get(key);
   if (node === undefined) {
@@ -239,7 +239,7 @@ export function getNodeFromDOMNode(dom: Node): OutlineNode | null {
   // $FlowFixMe: internal field
   const key: NodeKey | undefined = dom['__outlineKey_' + editor._key];
   if (key !== undefined) {
-    return otlnGetNodeByKey(key);
+    return $getNodeByKey(key);
   }
   return null;
 }
@@ -271,7 +271,7 @@ export function pushLogEntry(entry: string): void {
 }
 
 export function getEditorStateTextContent(editorState: EditorState): string {
-  return editorState.read((view) => otlnGetRoot().getTextContent());
+  return editorState.read((view) => $getRoot().getTextContent());
 }
 
 export function markAllNodesAsDirty(editor: OutlineEditor, type: string): void {
@@ -284,7 +284,7 @@ export function markAllNodesAsDirty(editor: OutlineEditor, type: string): void {
         return;
       }
       if (type === 'root') {
-        otlnGetRoot().markDirty();
+        $getRoot().markDirty();
         return;
       }
       const nodeMap = editorState._nodeMap;
@@ -300,7 +300,7 @@ export function markAllNodesAsDirty(editor: OutlineEditor, type: string): void {
   );
 }
 
-export function otlnGetRoot(): RootNode {
+export function $getRoot(): RootNode {
   // $FlowFixMe: root is always in our Map
   return ((getActiveEditorState()._nodeMap.get('root'): any): RootNode);
 }
@@ -327,11 +327,11 @@ export function getNodeFromDOM(dom: Node): null | OutlineNode {
   if (nodeKey === null) {
     const rootElement = editor.getRootElement();
     if (dom === rootElement) {
-      return otlnGetNodeByKey('root');
+      return $getNodeByKey('root');
     }
     return null;
   }
-  return otlnGetNodeByKey(nodeKey);
+  return $getNodeByKey(nodeKey);
 }
 
 export function domIsElement(dom: Node): boolean {

@@ -8,7 +8,7 @@
  */
 
 import {createTestConnection, waitForReact} from './utils';
-import {otlnGetRoot, otlnCreateTextNode, otlnGetSelection} from 'outline';
+import {$getRoot, otlnCreateTextNode, $getSelection} from 'outline';
 import {otlnCreateParagraphNode} from 'outline/ParagraphNode';
 
 function createAndStartClients(
@@ -45,13 +45,13 @@ function stopClients(clients: Array<Client>) {
 }
 
 function removeInitialParagraph() {
-  const root = otlnGetRoot();
+  const root = $getRoot();
   const paragraph = root.getFirstChild();
   paragraph.remove();
 }
 
 function createSampleParagraphsWithClient(client: Client, count: number) {
-  const root = otlnGetRoot();
+  const root = $getRoot();
   for (let i = 0; i < count; ++i) {
     const paragraph = otlnCreateParagraphNode();
     const text = `Hello world ${i + 1}.`;
@@ -123,12 +123,12 @@ describe('useOutlineRichTextWithCollabLists', () => {
     let clientIndex = 0;
     await waitForReact(() => {
       clients[clientIndex].update(() => {
-        const root = otlnGetRoot();
+        const root = $getRoot();
         const paragraph1 = root.getFirstChild();
         const paragraph2 = paragraph1.getNextSibling();
         const textNode = paragraph1.getFirstChild();
         textNode.select(0, 0);
-        const selection = otlnGetSelection();
+        const selection = $getSelection();
         selection.anchor.set(paragraph1.getFirstChild().getKey(), 5, 'text');
         selection.focus.set(paragraph2.getFirstChild().getKey(), 6, 'text');
         selection.removeText();
@@ -139,7 +139,7 @@ describe('useOutlineRichTextWithCollabLists', () => {
     clientIndex = 1;
     await waitForReact(() => {
       clients[clientIndex].update(() => {
-        const root = otlnGetRoot();
+        const root = $getRoot();
         const paragraph = root.getFirstChild();
         paragraph.remove();
       });

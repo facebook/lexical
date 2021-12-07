@@ -11,7 +11,7 @@ import type {NodeKey, OutlineNode, TextNode, Selection} from 'outline';
 import type {YjsNode, Binding} from '.';
 
 import {
-  otlnGetNodeByKey,
+  $getNodeByKey,
   isElementNode,
   isTextNode,
   isLineBreakNode,
@@ -64,8 +64,8 @@ export function getIndexOfYjsNode(
   return i;
 }
 
-export function otlnGetNodeByKeyOrThrow(key: NodeKey): OutlineNode {
-  const node = otlnGetNodeByKey(key);
+export function $getNodeByKeyOrThrow(key: NodeKey): OutlineNode {
+  const node = $getNodeByKey(key);
   if (node === null) {
     throw new Error('Should never happen');
   }

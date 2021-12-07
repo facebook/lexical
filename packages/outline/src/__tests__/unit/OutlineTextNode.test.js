@@ -20,7 +20,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import {otlnCreateTextNode, otlnGetRoot, otlnGetNodeByKey} from 'outline';
+import {otlnCreateTextNode, $getRoot, $getNodeByKey} from 'outline';
 
 import {otlnCreateParagraphNode} from 'outline/ParagraphNode';
 import {
@@ -97,7 +97,7 @@ describe('OutlineTextNode tests', () => {
       const text = otlnCreateTextNode();
       text.toggleUnmergeable();
       paragraph.append(text);
-      otlnGetRoot().append(paragraph);
+      $getRoot().append(paragraph);
     });
   }
 
@@ -112,11 +112,11 @@ describe('OutlineTextNode tests', () => {
         expect(textNode.getTextContent(true)).toBe('Text');
         expect(textNode.__text).toBe('Text');
 
-        otlnGetRoot().getFirstChild().append(textNode);
+        $getRoot().getFirstChild().append(textNode);
       });
       expect(
         editor.getEditorState().read((state: State) => {
-          const root = otlnGetRoot();
+          const root = $getRoot();
           return root.__cachedText;
         }),
       );
@@ -124,7 +124,7 @@ describe('OutlineTextNode tests', () => {
 
       // Make sure that the editor content is still set after further reconciliations
       await update((state) => {
-        otlnGetNodeByKey(nodeKey).markDirty();
+        $getNodeByKey(nodeKey).markDirty();
       });
       expect(getEditorStateTextContent(editor.getEditorState())).toBe('Text');
     });
@@ -139,14 +139,14 @@ describe('OutlineTextNode tests', () => {
         expect(textNode.getTextContent(true)).toBe('Inert text');
         expect(textNode.__text).toBe('Inert text');
 
-        otlnGetRoot().getFirstChild().append(textNode);
+        $getRoot().getFirstChild().append(textNode);
       });
 
       expect(getEditorStateTextContent(editor.getEditorState())).toBe('');
 
       // Make sure that the editor content is still empty after further reconciliations
       await update((state) => {
-        otlnGetNodeByKey(nodeKey).markDirty();
+        $getNodeByKey(nodeKey).markDirty();
       });
       expect(getEditorStateTextContent(editor.getEditorState())).toBe('');
     });
@@ -154,12 +154,12 @@ describe('OutlineTextNode tests', () => {
     test('prepend node', async () => {
       await update((state) => {
         const textNode = otlnCreateTextNode('World').toggleUnmergeable();
-        otlnGetRoot().getFirstChild().append(textNode);
+        $getRoot().getFirstChild().append(textNode);
       });
 
       await update((state) => {
         const textNode = otlnCreateTextNode('Hello ').toggleUnmergeable();
-        const previousTextNode = otlnGetRoot().getFirstChild().getFirstChild();
+        const previousTextNode = $getRoot().getFirstChild().getFirstChild();
         previousTextNode.insertBefore(textNode);
       });
 
@@ -236,7 +236,7 @@ describe('OutlineTextNode tests', () => {
   ])('%s flag', (formatFlag, stateFormat, flagPredicate, flagToggle) => {
     test(`getFormatFlags(${formatFlag})`, async () => {
       await update((state) => {
-        const root = otlnGetRoot();
+        const root = $getRoot();
         const paragraphNode = root.getFirstChild();
         const textNode = paragraphNode.getFirstChild();
 
@@ -251,7 +251,7 @@ describe('OutlineTextNode tests', () => {
 
     test(`predicate for ${formatFlag}`, async () => {
       await update((state) => {
-        const root = otlnGetRoot();
+        const root = $getRoot();
         const paragraphNode = root.getFirstChild();
         const textNode = paragraphNode.getFirstChild();
 
@@ -267,7 +267,7 @@ describe('OutlineTextNode tests', () => {
       }
 
       await update((state) => {
-        const root = otlnGetRoot();
+        const root = $getRoot();
         const paragraphNode = root.getFirstChild();
         const textNode = paragraphNode.getFirstChild();
 
@@ -287,7 +287,7 @@ describe('OutlineTextNode tests', () => {
       const textNode2 = otlnCreateTextNode('Goodbye Earth');
 
       paragraphNode.append(textNode, textNode2);
-      otlnGetRoot().append(paragraphNode);
+      $getRoot().append(paragraphNode);
 
       let selection = textNode2.selectPrevious();
 
@@ -309,7 +309,7 @@ describe('OutlineTextNode tests', () => {
       const textNode2 = otlnCreateTextNode('Goodbye Earth');
 
       paragraphNode.append(textNode, textNode2);
-      otlnGetRoot().append(paragraphNode);
+      $getRoot().append(paragraphNode);
 
       let selection = textNode.selectNext(1, 3);
 
@@ -356,7 +356,7 @@ describe('OutlineTextNode tests', () => {
           const paragraphNode = otlnCreateParagraphNode();
           const textNode = otlnCreateTextNode('Hello World');
           paragraphNode.append(textNode);
-          otlnGetRoot().append(paragraphNode);
+          $getRoot().append(paragraphNode);
 
           const selection = textNode.select(anchorOffset, focusOffset);
 
@@ -539,7 +539,7 @@ describe('OutlineTextNode tests', () => {
           const paragraphNode = otlnCreateParagraphNode();
           const textNode = otlnCreateTextNode(initialString);
           paragraphNode.append(textNode);
-          otlnGetRoot().append(paragraphNode);
+          $getRoot().append(paragraphNode);
 
           const selection = textNode.select(...selectionOffsets);
           const childrenNodes = textNode.splitText(...splitOffsets);

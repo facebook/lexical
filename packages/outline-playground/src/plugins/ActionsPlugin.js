@@ -13,12 +13,7 @@ import * as React from 'react';
 import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
 import {useCollaborationContext} from '../context/CollaborationContext';
 import {useEffect, useState} from 'react';
-import {
-  log,
-  isElementNode,
-  otlnGetSelection,
-  createEditorStateRef,
-} from 'outline';
+import {log, isElementNode, $getSelection, createEditorStateRef} from 'outline';
 import {isListItemNode} from 'outline/ListItemNode';
 import {ImageNode, otlnCreateImageNode} from '../nodes/ImageNode';
 import yellowFlowerImage from '../images/image/yellow-flower.jpg';
@@ -75,7 +70,7 @@ export default function ActionsPlugins({
   const handleAddImage = () => {
     editor.update(() => {
       log('handleAddImage');
-      const selection = otlnGetSelection();
+      const selection = $getSelection();
       if (selection !== null) {
         const ref = createEditorStateRef(createUID(), null);
         const imageNode = otlnCreateImageNode(
@@ -91,7 +86,7 @@ export default function ActionsPlugins({
   const handleAddTable = () => {
     editor.update(() => {
       log('handleAddTable');
-      const selection = otlnGetSelection();
+      const selection = $getSelection();
       if (selection === null) {
         return;
       }
@@ -112,7 +107,7 @@ export default function ActionsPlugins({
 
   const setAlignment = (alignment: 'left' | 'right' | 'center' | 'justify') => {
     editor.update(() => {
-      const selection = otlnGetSelection();
+      const selection = $getSelection();
       if (selection !== null) {
         const node = selection.anchor.getNode();
         const element = isElementNode(node) ? node : node.getParentOrThrow();
@@ -139,7 +134,7 @@ export default function ActionsPlugins({
 
   const applyOutdent = () => {
     editor.update(() => {
-      const selection = otlnGetSelection();
+      const selection = $getSelection();
       if (selection !== null) {
         const node = selection.anchor.getNode();
         const element = isElementNode(node) ? node : node.getParentOrThrow();
@@ -156,7 +151,7 @@ export default function ActionsPlugins({
 
   const applyIndent = () => {
     editor.update(() => {
-      const selection = otlnGetSelection();
+      const selection = $getSelection();
       if (selection !== null) {
         const node = selection.anchor.getNode();
         const element = isElementNode(node) ? node : node.getParentOrThrow();

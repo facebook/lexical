@@ -13,7 +13,7 @@ import {
 } from 'outline/HeadingNode';
 import {ParagraphNode} from 'outline/ParagraphNode';
 import {initializeUnitTest} from '../utils';
-import {otlnCreateTextNode, otlnGetRoot} from 'outline';
+import {otlnCreateTextNode, $getRoot} from 'outline';
 
 const editorConfig = Object.freeze({
   theme: {
@@ -72,7 +72,7 @@ describe('OutlineHeadingNode tests', () => {
       const {editor} = testEnv;
       let headingNode;
       await editor.update(() => {
-        const root = otlnGetRoot();
+        const root = $getRoot();
         headingNode = new HeadingNode('h1');
         root.append(headingNode);
       });
@@ -122,7 +122,7 @@ describe('OutlineHeadingNode tests', () => {
       let headingNode;
       const text = 'hello world';
       await editor.update(() => {
-        const root = otlnGetRoot();
+        const root = $getRoot();
         headingNode = new HeadingNode('h2');
         root.append(headingNode);
         const textNode = otlnCreateTextNode(text);

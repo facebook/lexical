@@ -15,7 +15,7 @@ import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
 import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
-import {OutlineNode, otlnCreateTextNode, otlnGetSelection} from 'outline';
+import {OutlineNode, otlnCreateTextNode, $getSelection} from 'outline';
 import {TableRowNode, otlnCreateTableRowNode} from 'outline/TableRowNode';
 import {otlnCreateTableCellNode} from 'outline/TableCellNode';
 import {TableNode} from 'outline/TableNode';
@@ -412,7 +412,7 @@ function TableCellActionMenuContainer(): React.MixedElement {
   const moveMenu = useCallback(
     (state: State) => {
       const menu = menuButtonRef.current;
-      const selection = otlnGetSelection();
+      const selection = $getSelection();
       const nativeSelection = window.getSelection();
       const activeElement = document.activeElement;
 

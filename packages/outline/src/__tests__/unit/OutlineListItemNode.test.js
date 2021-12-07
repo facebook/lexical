@@ -12,7 +12,7 @@ import {
   otlnCreateListItemNode,
   isListItemNode,
 } from 'outline/ListItemNode';
-import {TextNode, otlnGetRoot} from 'outline';
+import {TextNode, $getRoot} from 'outline';
 import {initializeUnitTest} from '../utils';
 
 const editorConfig = Object.freeze({
@@ -105,7 +105,7 @@ describe('OutlineListItemNode tests', () => {
       beforeEach(async () => {
         const {editor} = testEnv;
         await editor.update((state) => {
-          const root = otlnGetRoot();
+          const root = $getRoot();
           listNode = new ListNode('ul', 1);
           listItemNode1 = new ListItemNode();
           listItemNode1.append(new TextNode('one'));
@@ -131,7 +131,7 @@ describe('OutlineListItemNode tests', () => {
           '<div contenteditable="true" data-outline-editor="true"></div>',
         );
         await editor.update(() => {
-          const root = otlnGetRoot();
+          const root = $getRoot();
           listItemNode = new ListItemNode();
           root.append(listItemNode);
         });
@@ -224,7 +224,7 @@ describe('OutlineListItemNode tests', () => {
       beforeEach(async () => {
         const {editor} = testEnv;
         await editor.update(() => {
-          const root = otlnGetRoot();
+          const root = $getRoot();
           listNode = new ListNode('ul', 1);
           listItemNode1 = new ListItemNode();
           listItemNode2 = new ListItemNode();
@@ -297,7 +297,7 @@ describe('OutlineListItemNode tests', () => {
       beforeEach(async () => {
         const {editor} = testEnv;
         await editor.update(() => {
-          const root = otlnGetRoot();
+          const root = $getRoot();
           listNode = new ListNode('ul', 1);
           listItemNode1 = new ListItemNode();
           listItemNode2 = new ListItemNode();

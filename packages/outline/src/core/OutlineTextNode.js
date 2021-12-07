@@ -13,7 +13,7 @@ import type {EditorConfig, TextNodeThemeClasses} from './OutlineEditor';
 
 import {OutlineNode} from './OutlineNode';
 import {
-  otlnGetSelection,
+  $getSelection,
   makeSelection,
   updateElementSelectionOnCreateDeleteNode,
   adjustPointOffsetForMergedSibling,
@@ -381,7 +381,7 @@ export class TextNode extends OutlineNode {
     errorOnReadOnly();
     let anchorOffset = _anchorOffset;
     let focusOffset = _focusOffset;
-    const selection = otlnGetSelection();
+    const selection = $getSelection();
     const text = this.getTextContent();
     const key = this.__key;
     if (typeof text === 'string') {
@@ -433,7 +433,7 @@ export class TextNode extends OutlineNode {
         index = 0;
       }
     }
-    const selection = otlnGetSelection();
+    const selection = $getSelection();
     if (moveSelection && selection !== null) {
       const newOffset = offset + handledTextLength;
       selection.setTextNodeRange(
@@ -507,7 +507,7 @@ export class TextNode extends OutlineNode {
     }
 
     // Handle selection
-    const selection = otlnGetSelection();
+    const selection = $getSelection();
 
     // Then handle all other parts
     const splitNodes = [writableNode];
@@ -594,7 +594,7 @@ export class TextNode extends OutlineNode {
     if (compositionKey === targetKey) {
       setCompositionKey(key);
     }
-    const selection = otlnGetSelection();
+    const selection = $getSelection();
 
     if (selection !== null) {
       const anchor = selection.anchor;

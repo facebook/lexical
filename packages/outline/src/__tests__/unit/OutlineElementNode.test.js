@@ -12,7 +12,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import {otlnCreateTextNode, otlnGetRoot} from 'outline';
+import {otlnCreateTextNode, $getRoot} from 'outline';
 import {otlnCreateTestElementNode, createTestEditor} from '../utils';
 
 describe('OutlineElementNode tests', () => {
@@ -76,7 +76,7 @@ describe('OutlineElementNode tests', () => {
       // we make a selection in the setup code.
       text.select(0, 0);
       block.append(text, text2, text3);
-      otlnGetRoot().append(block);
+      $getRoot().append(block);
     });
   }
 
@@ -92,7 +92,7 @@ describe('OutlineElementNode tests', () => {
 
     test('some children', async () => {
       await update(() => {
-        const children = otlnGetRoot().getFirstChild().getChildren();
+        const children = $getRoot().getFirstChild().getChildren();
         expect(children).toHaveLength(3);
       });
     });
@@ -101,7 +101,7 @@ describe('OutlineElementNode tests', () => {
   describe('getAllTextNodes()', () => {
     test('basic', async () => {
       await update(() => {
-        const textNodes = otlnGetRoot().getFirstChild().getAllTextNodes();
+        const textNodes = $getRoot().getFirstChild().getAllTextNodes();
         expect(textNodes).toHaveLength(3);
       });
     });
@@ -132,7 +132,7 @@ describe('OutlineElementNode tests', () => {
         const children2 = block.getAllTextNodes();
         expect(children2).toHaveLength(6);
         expect(children2).toEqual([text, text2, text3, text5, text6, text4]);
-        otlnGetRoot().append(block);
+        $getRoot().append(block);
       });
     });
 
@@ -143,7 +143,7 @@ describe('OutlineElementNode tests', () => {
     test('basic', async () => {
       await update(() => {
         expect(
-          otlnGetRoot().getFirstChild().getFirstChild().getTextContent(),
+          $getRoot().getFirstChild().getFirstChild().getTextContent(),
         ).toBe('Foo');
       });
     });
@@ -159,9 +159,9 @@ describe('OutlineElementNode tests', () => {
   describe('getLastChild()', () => {
     test('basic', async () => {
       await update(() => {
-        expect(
-          otlnGetRoot().getFirstChild().getLastChild().getTextContent(),
-        ).toBe('Baz');
+        expect($getRoot().getFirstChild().getLastChild().getTextContent()).toBe(
+          'Baz',
+        );
       });
     });
 
@@ -176,9 +176,7 @@ describe('OutlineElementNode tests', () => {
   describe('getTextContent()', () => {
     test('basic', async () => {
       await update(() => {
-        expect(otlnGetRoot().getFirstChild().getTextContent()).toBe(
-          'FooBarBaz',
-        );
+        expect($getRoot().getFirstChild().getTextContent()).toBe('FooBarBaz');
       });
     });
 
@@ -215,7 +213,7 @@ describe('OutlineElementNode tests', () => {
 
         expect(block.getTextContent()).toEqual('FooBarStuff\n\nQux');
         expect(block.getTextContent(true)).toEqual('FooBarBazMoreStuff\n\nQux');
-        otlnGetRoot().append(block);
+        $getRoot().append(block);
       });
     });
   });

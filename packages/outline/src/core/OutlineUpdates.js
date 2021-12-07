@@ -22,7 +22,7 @@ import type {ParsedNode, NodeParserState} from './OutlineParsing';
 import {updateEditorState} from './OutlineReconciler';
 import {
   createSelection,
-  otlnGetSelection,
+  $getSelection,
   getPreviousSelection,
   createSelectionFromParse,
 } from './OutlineSelection';
@@ -36,7 +36,7 @@ import {
 } from './OutlineEditorState';
 import {
   scheduleMicroTask,
-  otlnGetNodeByKey,
+  $getNodeByKey,
   getCompositionKey,
   setCompositionKey,
   getNearestNodeFromDOMNode,
@@ -44,7 +44,7 @@ import {
   flushMutations,
   setSelection,
   clearSelection,
-  otlnGetRoot,
+  $getRoot,
   getRegisteredNodeOrThrow,
 } from './OutlineUtils';
 import {
@@ -77,9 +77,9 @@ export type State = {
 };
 
 export const state: State = {
-  getRoot: otlnGetRoot,
-  getNodeByKey: otlnGetNodeByKey,
-  getSelection: otlnGetSelection,
+  getRoot: $getRoot,
+  getNodeByKey: $getNodeByKey,
+  getSelection: $getSelection,
   clearSelection,
   setSelection,
   getPreviousSelection,

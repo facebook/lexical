@@ -11,7 +11,7 @@ import type {OutlineEditor, OutlineNode} from 'outline';
 import type {ListItemNode} from 'outline/ListItemNode';
 
 import {useCallback, useEffect, useMemo} from 'react';
-import {log, otlnGetSelection} from 'outline';
+import {log, $getSelection} from 'outline';
 import {otlnCreateListItemNode, isListItemNode} from 'outline/ListItemNode';
 import {otlnCreateListNode, isListNode} from 'outline/ListNode';
 
@@ -22,7 +22,7 @@ function maybeIndentOrOutdent(
   let hasHandledIndention = false;
   editor.update(() => {
     log('useNestedList.maybeIndent');
-    const selection = otlnGetSelection();
+    const selection = $getSelection();
     if (selection === null) {
       return;
     }

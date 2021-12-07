@@ -14,7 +14,7 @@ import type {
   CommandListenerEditorPriority,
 } from 'outline';
 
-import {log, otlnGetRoot, otlnGetSelection} from 'outline';
+import {log, $getRoot, $getSelection} from 'outline';
 import useOutlineEditorEvents from '../useOutlineEditorEvents';
 import {otlnCreateParagraphNode, ParagraphNode} from 'outline/ParagraphNode';
 import {CAN_USE_BEFORE_INPUT} from 'shared/environment';
@@ -60,7 +60,7 @@ if (CAN_USE_BEFORE_INPUT) {
 function shouldSelectParagraph(editor: OutlineEditor): boolean {
   const activeElement = document.activeElement;
   return (
-    otlnGetSelection() !== null ||
+    $getSelection() !== null ||
     (activeElement !== null && activeElement === editor.getRootElement())
   );
 }
@@ -76,7 +76,7 @@ function initParagraph(root: RootNode, editor: OutlineEditor): void {
 function initEditor(editor: OutlineEditor): void {
   editor.update(() => {
     log('initEditor');
-    const root = otlnGetRoot();
+    const root = $getRoot();
     const firstChild = root.getFirstChild();
     if (firstChild === null) {
       initParagraph(root, editor);
@@ -91,7 +91,7 @@ function clearEditor(
   editor.update(
     () => {
       log('clearEditor');
-      const root = otlnGetRoot();
+      const root = $getRoot();
       root.clear();
       initParagraph(root, editor);
     },
@@ -115,7 +115,7 @@ export default function usePlainTextSetup(
       editor.addListener(
         'command',
         (type, payload): boolean => {
-          const selection = otlnGetSelection();
+          const selection = $getSelection();
           if (selection === null) {
             return false;
           }

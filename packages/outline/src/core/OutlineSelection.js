@@ -32,7 +32,7 @@ import {
 } from '.';
 import {
   getCompositionKey,
-  otlnGetNodeByKey,
+  $getNodeByKey,
   isSelectionWithinEditor,
   setCompositionKey,
   toggleTextFormatType,
@@ -111,14 +111,14 @@ class Point {
   }
   getNode() {
     const key = this.key;
-    const node = otlnGetNodeByKey(key);
+    const node = $getNodeByKey(key);
     if (node === null) {
       invariant(false, 'Point.getNode: node not found');
     }
     return node;
   }
   set(key: NodeKey, offset: number, type: 'text' | 'element'): void {
-    const selection = otlnGetSelection();
+    const selection = $getSelection();
     const oldKey = this.key;
     this.key = key;
     this.offset = offset;
@@ -1612,7 +1612,7 @@ export function createSelection(editor: OutlineEditor): null | Selection {
   );
 }
 
-export function otlnGetSelection(): null | Selection {
+export function $getSelection(): null | Selection {
   const editorState = getActiveEditorState();
   return editorState._selection;
 }

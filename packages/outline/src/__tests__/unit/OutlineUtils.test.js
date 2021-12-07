@@ -6,7 +6,7 @@
  *
  */
 
-import {otlnCreateTextNode, otlnGetRoot} from 'outline';
+import {otlnCreateTextNode, $getRoot} from 'outline';
 
 import {
   emptyFunction,
@@ -19,7 +19,7 @@ import {
 } from '../../core/OutlineUtils';
 
 import {initializeUnitTest} from '../utils';
-import {otlnGetNodeByKey} from '../../core/OutlineUtils';
+import {$getNodeByKey} from '../../core/OutlineUtils';
 import {otlnCreateParagraphNode, ParagraphNode} from 'outline/ParagraphNode';
 import {TextNode} from 'outline';
 
@@ -87,7 +87,7 @@ describe('OutlineUtils tests', () => {
       const {editor} = testEnv;
       let textNode;
       await editor.update((state) => {
-        const root = otlnGetRoot();
+        const root = $getRoot();
         const paragraph = otlnCreateParagraphNode();
         textNode = otlnCreateTextNode('foo');
         paragraph.append(textNode);
@@ -166,24 +166,24 @@ describe('OutlineUtils tests', () => {
       });
     });
 
-    test('otlnGetNodeByKey', async () => {
+    test('$getNodeByKey', async () => {
       const {editor} = testEnv;
       let paragraphNode;
       let textNode;
 
       await editor.update((state) => {
-        const rootNode = otlnGetRoot();
+        const rootNode = $getRoot();
         paragraphNode = new ParagraphNode();
         textNode = new TextNode('foo');
         paragraphNode.append(textNode);
         rootNode.append(paragraphNode);
       });
       await editor.getEditorState().read(() => {
-        expect(otlnGetNodeByKey('1')).toBe(paragraphNode);
-        expect(otlnGetNodeByKey('2')).toBe(textNode);
-        expect(otlnGetNodeByKey('3')).toBe(null);
+        expect($getNodeByKey('1')).toBe(paragraphNode);
+        expect($getNodeByKey('2')).toBe(textNode);
+        expect($getNodeByKey('3')).toBe(null);
       });
-      expect(() => otlnGetNodeByKey()).toThrow();
+      expect(() => $getNodeByKey()).toThrow();
     });
   });
 });

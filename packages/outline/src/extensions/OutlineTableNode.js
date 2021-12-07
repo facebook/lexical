@@ -22,7 +22,7 @@ import {
   getNearestNodeFromDOMNode,
   isElementNode,
   createSelection,
-  otlnGetSelection,
+  $getSelection,
   setSelection,
 } from 'outline';
 
@@ -269,7 +269,7 @@ function applyCellSelection(
   });
 
   const formatCells = (type: TextFormatType) => {
-    let selection = otlnGetSelection();
+    let selection = $getSelection();
     if (selection === null) {
       selection = createSelection();
     }

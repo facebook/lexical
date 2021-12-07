@@ -43,8 +43,8 @@ import {DecoratorNode, isDecoratorNode} from './OutlineDecoratorNode';
 import {
   isLeafNode,
   pushLogEntry as log,
-  otlnGetRoot,
-  otlnGetNodeByKey,
+  $getRoot,
+  $getNodeByKey,
   clearSelection,
   getNearestNodeFromDOMNode,
   flushMutations,
@@ -54,7 +54,7 @@ import {
 } from './OutlineUtils';
 import {
   createEmptySelection as createSelection,
-  otlnGetSelection,
+  $getSelection,
   getPreviousSelection,
 } from './OutlineSelection';
 import {createNodeFromParse} from './OutlineParsing';
@@ -80,9 +80,9 @@ export {
   otlnCreateTextNode,
   createNodeFromParse,
   createSelection,
-  otlnGetRoot,
-  otlnGetNodeByKey,
-  otlnGetSelection,
+  $getRoot,
+  $getNodeByKey,
+  $getSelection,
   getPreviousSelection,
   clearSelection,
   setSelection,

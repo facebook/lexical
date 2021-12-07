@@ -333,7 +333,7 @@ export function patchStyleText(
   }
 }
 
-export function otlnGetSelectionStyleValueForProperty(
+export function $getSelectionStyleValueForProperty(
   selection: Selection,
   styleProperty: string,
   defaultValue: string = '',

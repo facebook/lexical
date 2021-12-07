@@ -6,7 +6,7 @@
  *
  */
 
-import {otlnCreateTextNode, otlnGetRoot} from 'outline';
+import {otlnCreateTextNode, $getRoot} from 'outline';
 import {otlnCreateParagraphNode} from 'outline/ParagraphNode';
 import {EditorState} from '../../core/OutlineEditorState';
 import {initializeUnitTest} from '../utils';
@@ -29,14 +29,14 @@ describe('OutlineEditorState tests', () => {
         const paragraph = otlnCreateParagraphNode();
         const text = otlnCreateTextNode('foo');
         paragraph.append(text);
-        otlnGetRoot().append(paragraph);
+        $getRoot().append(paragraph);
       });
 
       let root = null;
       let paragraph = null;
       let text = null;
       editor.getEditorState().read(() => {
-        root = otlnGetRoot();
+        root = $getRoot();
         paragraph = root.getFirstChild();
         text = paragraph.getFirstChild();
       });
@@ -80,7 +80,7 @@ describe('OutlineEditorState tests', () => {
         const text = otlnCreateTextNode('Hello world');
         text.select(6, 11);
         paragraph.append(text);
-        otlnGetRoot().append(paragraph);
+        $getRoot().append(paragraph);
       });
       expect(JSON.stringify(editor.getEditorState().toJSON())).toEqual(
         `{\"_nodeMap\":[[\"root\",{\"__type\":\"root\",\"__flags\":0,\"__key\":\"root\",\"__parent\":null,\"__children\":[\"1\"],\"__format\":0,\"__indent\":0,\"__dir\":\"ltr\",\"__cachedText\":\"Hello world\"}],[\"1\",{\"__type\":\"paragraph\",\"__flags\":0,\"__key\":\"1\",\"__parent\":\"root\",\"__children\":[\"2\"],\"__format\":0,\"__indent\":0,\"__dir\":\"ltr\"}],[\"2\",{\"__type\":\"text\",\"__flags\":0,\"__key\":\"2\",\"__parent\":\"1\",\"__text\":\"Hello world\",\"__format\":0,\"__style\":\"\"}]],\"_selection\":{\"anchor\":{\"key\":\"2\",\"offset\":6,\"type\":\"text\"},\"focus\":{\"key\":\"2\",\"offset\":11,\"type\":\"text\"}}}`,
@@ -93,12 +93,12 @@ describe('OutlineEditorState tests', () => {
         const paragraph = otlnCreateParagraphNode();
         const text = otlnCreateTextNode('foo');
         paragraph.append(text);
-        otlnGetRoot().append(paragraph);
+        $getRoot().append(paragraph);
       });
 
       // Remove the first node, which should cause a GC for everything
       await editor.update(() => {
-        otlnGetRoot().getFirstChild().remove();
+        $getRoot().getFirstChild().remove();
       });
 
       expect(editor.getEditorState()._nodeMap).toEqual(

@@ -10,8 +10,8 @@ import {
   otlnCreateLineBreakNode,
   otlnCreateTextNode,
   Selection,
-  otlnGetSelection,
-  otlnGetRoot,
+  $getSelection,
+  $getRoot,
 } from 'outline';
 
 import React from 'react';
@@ -903,14 +903,14 @@ describe('OutlineSelection tests', () => {
 
   test('getNodes resolves nested block nodes', async () => {
     await editor.update(() => {
-      const root = otlnGetRoot();
+      const root = $getRoot();
       const paragraph = root.getFirstChild();
       const elementNode = otlnCreateTestElementNode();
       const text = otlnCreateTextNode();
       paragraph.append(elementNode);
       elementNode.append(text);
 
-      const selectedNodes = otlnGetSelection().getNodes();
+      const selectedNodes = $getSelection().getNodes();
       expect(selectedNodes.length).toBe(1);
       expect(selectedNodes[0].getKey()).toBe(text.getKey());
     });
@@ -1421,12 +1421,12 @@ describe('OutlineSelection tests', () => {
           const test_ = only === true ? test.only : test;
           test_(name, async () => {
             await editor.update(() => {
-              const root = otlnGetRoot();
+              const root = $getRoot();
               const paragraph = root.getFirstChild();
               const textNode = otlnCreateTextNode('foo');
               // Note: line break can't be selected by the DOM
               const linebreak = otlnCreateLineBreakNode();
-              const selection: Selection = otlnGetSelection();
+              const selection: Selection = $getSelection();
               const anchor = selection.anchor;
               const focus = selection.focus;
 
@@ -1463,14 +1463,14 @@ describe('OutlineSelection tests', () => {
 
   test('isBackward', async () => {
     await editor.update(() => {
-      const root = otlnGetRoot();
+      const root = $getRoot();
       const paragraph = root.getFirstChild();
       const paragraphKey = paragraph.getKey();
       const textNode = otlnCreateTextNode('foo');
       const textNodeKey = textNode.getKey();
       // Note: line break can't be selected by the DOM
       const linebreak = otlnCreateLineBreakNode();
-      const selection: Selection = otlnGetSelection();
+      const selection: Selection = $getSelection();
       const anchor = selection.anchor;
       const focus = selection.focus;
 

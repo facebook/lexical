@@ -9,10 +9,10 @@
 
 import type {State} from 'outline';
 
-import {isElementNode, isTextNode, otlnGetRoot} from 'outline';
+import {isElementNode, isTextNode, $getRoot} from 'outline';
 
 export function textContent(state: State): string {
-  const root = otlnGetRoot();
+  const root = $getRoot();
   return root.getTextContent();
 }
 
@@ -51,7 +51,7 @@ export function canShowPlaceholder(
   if (!isTextContentEmpty(state, isComposing, false)) {
     return false;
   }
-  const root = otlnGetRoot();
+  const root = $getRoot();
   const children = root.getChildren();
   const childrenLength = children.length;
   if (childrenLength > 1) {

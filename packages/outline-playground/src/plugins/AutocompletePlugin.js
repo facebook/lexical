@@ -16,9 +16,9 @@ import {
   isElementNode,
   TextNode,
   log,
-  otlnGetNodeByKey,
-  otlnGetSelection,
-  otlnGetRoot,
+  $getNodeByKey,
+  $getSelection,
+  $getRoot,
 } from 'outline';
 import {useEffect, useRef, useState, useCallback, useMemo} from 'react';
 import {textContentCurry} from 'outline/root';
@@ -36,7 +36,7 @@ function useTypeahead(editor: OutlineEditor): void {
     if (typeaheadNodeKey.current === null) {
       return null;
     }
-    const node = otlnGetNodeByKey(typeaheadNodeKey.current);
+    const node = $getNodeByKey(typeaheadNodeKey.current);
     if (!isTextNode(node)) {
       return null;
     }
@@ -58,7 +58,7 @@ function useTypeahead(editor: OutlineEditor): void {
 
         function maybeRemoveTypeahead() {
           if (currentTypeaheadNode !== null) {
-            const selection = otlnGetSelection();
+            const selection = $getSelection();
             if (selection !== null) {
               const anchor = selection.anchor;
               const focus = selection.focus;
@@ -103,7 +103,7 @@ function useTypeahead(editor: OutlineEditor): void {
             return;
           }
           // Add
-          const lastParagraph = otlnGetRoot().getLastChild();
+          const lastParagraph = $getRoot().getLastChild();
           if (isElementNode(lastParagraph)) {
             const lastTextNode = lastParagraph.getLastChild();
             if (isTextNode(lastTextNode)) {
@@ -114,7 +114,7 @@ function useTypeahead(editor: OutlineEditor): void {
           }
         }
 
-        const selection = otlnGetSelection();
+        const selection = $getSelection();
         const anchorNode = selection?.anchor.getNode();
         const anchorOffset = selection?.anchor.offset;
         const anchorLength = anchorNode?.getTextContentSize();
@@ -145,7 +145,7 @@ function useTypeahead(editor: OutlineEditor): void {
   useEffect(() => {
     return editor.addListener('update', ({editorState}) => {
       editorState.read((state) => {
-        const typeaheadNode = otlnGetRoot()
+        const typeaheadNode = $getRoot()
           .getAllTextNodes(true)
           .find((textNode) => textNode instanceof TypeaheadNode);
         if (typeaheadNode instanceof TypeaheadNode) {

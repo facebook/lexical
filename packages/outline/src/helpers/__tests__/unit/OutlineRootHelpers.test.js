@@ -9,7 +9,7 @@
 
 import type {State} from 'outline';
 
-import {otlnCreateTextNode, otlnGetRoot} from 'outline';
+import {otlnCreateTextNode, $getRoot} from 'outline';
 import {otlnCreateParagraphNode} from 'outline/ParagraphNode';
 import {isTextContentEmpty, textContent} from 'outline/root';
 import {initializeUnitTest} from '../../../__tests__/utils';
@@ -20,7 +20,7 @@ describe('OutlineRootHelpers tests', () => {
       const editor = testEnv.editor;
       expect(editor.getEditorState().read(textContent)).toBe('');
       await editor.update((state: State) => {
-        const root = otlnGetRoot();
+        const root = $getRoot();
         const paragraph = otlnCreateParagraphNode();
         const text = otlnCreateTextNode('foo');
         root.append(paragraph);
@@ -38,7 +38,7 @@ describe('OutlineRootHelpers tests', () => {
           .read((state) => isTextContentEmpty(state, editor.isComposing())),
       ).toBe(true);
       await editor.update((state: State) => {
-        const root = otlnGetRoot();
+        const root = $getRoot();
         const paragraph = otlnCreateParagraphNode();
         const text = otlnCreateTextNode('foo');
         root.append(paragraph);

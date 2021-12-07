@@ -315,7 +315,7 @@ export function $setSelection(selection: Selection): void {
   editorState._selection = selection;
 }
 
-export function flushMutations(): void {
+export function $flushMutations(): void {
   errorOnReadOnly();
   const editor = getActiveEditor();
   flushRootMutations(editor);

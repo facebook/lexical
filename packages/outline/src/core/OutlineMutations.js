@@ -71,7 +71,7 @@ function handleTextMutation(
   triggerListeners('textmutation', editor, false, textMutation);
 }
 
-export function flushMutations(
+export function $flushMutations(
   editor: OutlineEditor,
   mutations: Array<MutationRecord>,
   observer: MutationObserver,
@@ -210,7 +210,7 @@ export function flushRootMutations(editor: OutlineEditor): void {
   const observer = editor._observer;
   if (observer !== null) {
     const mutations = observer.takeRecords();
-    flushMutations(editor, mutations, observer);
+    $flushMutations(editor, mutations, observer);
   }
 }
 
@@ -218,7 +218,7 @@ export function initMutationObserver(editor: OutlineEditor): void {
   initTextEntryListener();
   editor._observer = new MutationObserver(
     (mutations: Array<MutationRecord>, observer: MutationObserver) => {
-      flushMutations(editor, mutations, observer);
+      $flushMutations(editor, mutations, observer);
     },
   );
 }

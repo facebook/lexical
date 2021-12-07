@@ -53,7 +53,7 @@ import {
   $setCompositionKey,
   $getCompositionKey,
   $getNearestNodeFromDOMNode,
-  flushMutations,
+  $flushMutations,
   otlnCreateLineBreakNode,
 } from 'outline';
 import {IS_FIREFOX} from 'shared/environment';
@@ -980,7 +980,7 @@ export function onInput(event: InputEvent, editor: OutlineEditor): void {
     }
     // Also flush any other mutations that might have occured
     // since the change.
-    flushMutations();
+    $flushMutations();
   });
 }
 

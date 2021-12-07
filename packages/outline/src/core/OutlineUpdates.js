@@ -41,7 +41,7 @@ import {
   $setCompositionKey,
   $getNearestNodeFromDOMNode,
   getEditorStateTextContent,
-  flushMutations,
+  $flushMutations,
   $setSelection,
   $clearSelection,
   $getRoot,
@@ -86,7 +86,7 @@ export const state: State = {
   setCompositionKey: $setCompositionKey,
   getCompositionKey: $getCompositionKey,
   getNearestNodeFromDOMNode: $getNearestNodeFromDOMNode,
-  flushMutations,
+  flushMutations: $flushMutations,
 };
 
 export function isCurrentlyReadOnlyMode(): boolean {

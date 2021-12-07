@@ -47,7 +47,7 @@ import {
   $getNodeByKey,
   $clearSelection,
   $getNearestNodeFromDOMNode,
-  flushMutations,
+  $flushMutations,
   $setSelection,
   $setCompositionKey,
   $getCompositionKey,
@@ -89,6 +89,6 @@ export {
   $setCompositionKey,
   $getCompositionKey,
   $getNearestNodeFromDOMNode,
-  flushMutations,
+  $flushMutations,
   log,
 };

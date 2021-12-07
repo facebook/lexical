@@ -8,7 +8,7 @@
 
 import {
   ParagraphNode,
-  otlnCreateParagraphNode,
+  $createParagraphNode,
   isParagraphNode,
 } from 'outline/ParagraphNode';
 import {initializeUnitTest} from '../utils';
@@ -86,11 +86,11 @@ describe('OutlineParagraphNode tests', () => {
       });
     });
 
-    test('otlnCreateParagraphNode()', async () => {
+    test('$createParagraphNode()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const paragraphNode = new ParagraphNode();
-        const createdParagraphNode = otlnCreateParagraphNode();
+        const createdParagraphNode = $createParagraphNode();
         expect(paragraphNode.__type).toEqual(createdParagraphNode.__type);
         expect(paragraphNode.__flags).toEqual(createdParagraphNode.__flags);
         expect(paragraphNode.__parent).toEqual(createdParagraphNode.__parent);

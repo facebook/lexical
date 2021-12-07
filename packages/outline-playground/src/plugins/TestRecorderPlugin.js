@@ -12,8 +12,8 @@ import type {OutlineEditor} from 'outline';
 import * as React from 'react';
 import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
 
-import {otlnCreateTextNode, log, $getRoot} from 'outline';
-import {otlnCreateParagraphNode} from 'outline/ParagraphNode';
+import {$createTextNode, log, $getRoot} from 'outline';
+import {$createParagraphNode} from 'outline/ParagraphNode';
 import {useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {IS_APPLE} from 'shared/environment';
 
@@ -345,8 +345,8 @@ ${steps.map(formatStep).join(`\n`)}
           log('useStepRecorder');
           const root = $getRoot();
           root.clear();
-          const text = otlnCreateTextNode();
-          root.append(otlnCreateParagraphNode().append(text));
+          const text = $createTextNode();
+          root.append($createParagraphNode().append(text));
           text.select();
         });
         setSteps([]);

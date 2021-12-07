@@ -38,7 +38,7 @@ export function isEmojiNode(node: OutlineNode): boolean %checks {
   return node instanceof EmojiNode;
 }
 
-export function otlnCreateEmojiNode(
+export function $createEmojiNode(
   className: string,
   emojiText: string,
 ): EmojiNode {

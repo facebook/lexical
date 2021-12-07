@@ -6,7 +6,7 @@
  *
  */
 
-import {otlnCreateTextNode, isTextNode, $getSelection} from 'outline';
+import {$createTextNode, isTextNode, $getSelection} from 'outline';
 
 Object.defineProperty(HTMLElement.prototype, 'contentEditable', {
   get() {
@@ -646,27 +646,27 @@ export async function applySelectionInputs(inputs, update, editor) {
             break;
           }
           case 'insert_immutable_node': {
-            const text = otlnCreateTextNode(input.text);
+            const text = $createTextNode(input.text);
             text.makeImmutable();
             selection.insertNodes([text]);
             break;
           }
           case 'insert_segmented_node': {
-            const text = otlnCreateTextNode(input.text);
+            const text = $createTextNode(input.text);
             text.makeSegmented();
             selection.insertNodes([text]);
             text.selectNext();
             break;
           }
           case 'covert_to_immutable_node': {
-            const text = otlnCreateTextNode(selection.getTextContent());
+            const text = $createTextNode(selection.getTextContent());
             text.makeImmutable();
             selection.insertNodes([text]);
             text.selectNext();
             break;
           }
           case 'covert_to_segmented_node': {
-            const text = otlnCreateTextNode(selection.getTextContent());
+            const text = $createTextNode(selection.getTextContent());
             text.makeSegmented();
             selection.insertNodes([text]);
             text.selectNext();

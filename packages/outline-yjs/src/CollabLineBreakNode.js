@@ -59,7 +59,7 @@ export class CollabLineBreakNode {
   }
 }
 
-export function otlnCreateCollabLineBreakNode(
+export function $createCollabLineBreakNode(
   map: YMap,
   parent: CollabElementNode,
 ): CollabLineBreakNode {

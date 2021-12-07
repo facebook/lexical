@@ -12,7 +12,7 @@ import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
 import type {OutlineEditor, State, ElementNode} from 'outline';
 import {useEffect} from 'react';
 import {
-  otlnCreateTextNode,
+  $createTextNode,
   isTextNode,
   TextNode,
   isElementNode,
@@ -21,7 +21,7 @@ import {
 import {
   KeywordNode,
   isKeywordNode,
-  otlnCreateKeywordNode,
+  $createKeywordNode,
 } from '../nodes/KeywordNode';
 import {ParagraphNode, isParagraphNode} from 'outline/ParagraphNode';
 
@@ -102,7 +102,7 @@ function textTransform(node: TextNode, state: State): void {
     }
     const keywordText = targetNode.getTextContent();
 
-    const keywordNode = otlnCreateKeywordNode(keywordText);
+    const keywordNode = $createKeywordNode(keywordText);
     targetNode.replace(keywordNode);
     targetNode = keywordNode;
   }
@@ -160,7 +160,7 @@ function useKeywords(editor: OutlineEditor): void {
 }
 
 function convertKeywordNodeToPlainTextNode(node: KeywordNode): void {
-  const textNode = otlnCreateTextNode(node.getTextContent());
+  const textNode = $createTextNode(node.getTextContent());
   node.replace(textNode);
 }
 

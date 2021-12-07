@@ -114,7 +114,7 @@ export class TestElementNode extends ElementNode {
   }
 }
 
-export function otlnCreateTestElementNode(): TestElementNode {
+export function $createTestElementNode(): TestElementNode {
   return new TestElementNode();
 }
 
@@ -127,7 +127,7 @@ export class TestSegmentedNode extends TextNode {
   }
 }
 
-export function otlnCreateTestSegmentedNode(text): TestSegmentedNode {
+export function $createTestSegmentedNode(text): TestSegmentedNode {
   return new TestSegmentedNode(text).makeSegmented();
 }
 
@@ -149,7 +149,7 @@ export class TestExcludeFromCopyElementNode extends ElementNode {
   }
 }
 
-export function otlnCreateTestExcludeFromCopyElementNode(): TestExcludeFromCopyElementNode {
+export function $createTestExcludeFromCopyElementNode(): TestExcludeFromCopyElementNode {
   return new TestExcludeFromCopyElementNode();
 }
 
@@ -175,6 +175,6 @@ function Decorator({text}): React.MixedElement {
   return <span>{text}</span>;
 }
 
-export function otlnCreateTestDecoratorNode(): TestDecoratorNode {
+export function $createTestDecoratorNode(): TestDecoratorNode {
   return new TestDecoratorNode();
 }

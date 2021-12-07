@@ -28,7 +28,7 @@ export class KeywordNode extends TextNode {
   }
 }
 
-export function otlnCreateKeywordNode(keyword: string): KeywordNode {
+export function $createKeywordNode(keyword: string): KeywordNode {
   return new KeywordNode(keyword).makeSegmented();
 }
 

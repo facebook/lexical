@@ -10,7 +10,7 @@
 import type {NodeKey, OutlineNode, EditorConfig} from 'outline';
 
 import {addClassNamesToElement} from 'outline/elements';
-import {TextNode, isTextNode, otlnCreateTextNode} from 'outline';
+import {TextNode, isTextNode, $createTextNode} from 'outline';
 
 export class HashtagNode extends TextNode {
   static getType(): string {
@@ -72,13 +72,13 @@ export class HashtagNode extends TextNode {
 export function toggleHashtag(node: TextNode): TextNode {
   const text = node.getTextContent();
   const replacement = !isHashtagNode(node)
-    ? otlnCreateHashtagNode(text)
-    : otlnCreateTextNode(text);
+    ? $createHashtagNode(text)
+    : $createTextNode(text);
   node.replace(replacement);
   return replacement;
 }
 
-export function otlnCreateHashtagNode(text?: string = ''): TextNode {
+export function $createHashtagNode(text?: string = ''): TextNode {
   return new HashtagNode(text);
 }
 

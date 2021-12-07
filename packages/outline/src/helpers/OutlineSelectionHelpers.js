@@ -17,12 +17,12 @@ import type {
 } from 'outline';
 
 import {
-  otlnCreateLineBreakNode,
+  $createLineBreakNode,
   isDecoratorNode,
   isLeafNode,
   isTextNode,
   isElementNode,
-  otlnCreateTextNode,
+  $createTextNode,
   isRootNode,
 } from 'outline';
 
@@ -424,10 +424,10 @@ export function insertRichText(selection: Selection, text: string): void {
     for (let i = 0; i < length; i++) {
       const part = parts[i];
       if (part !== '') {
-        nodes.push(otlnCreateTextNode(part));
+        nodes.push($createTextNode(part));
       }
       if (i !== length - 1) {
-        nodes.push(otlnCreateLineBreakNode());
+        nodes.push($createLineBreakNode());
       }
     }
     selection.insertNodes(nodes);

@@ -23,7 +23,7 @@ import {QuoteNode} from 'outline/QuoteNode';
 import {CodeNode} from 'outline/CodeNode';
 import {ParagraphNode} from 'outline/ParagraphNode';
 import {ListItemNode} from 'outline/ListItemNode';
-import {otlnCreateParagraphNode} from 'outline/ParagraphNode';
+import {$createParagraphNode} from 'outline/ParagraphNode';
 import {CAN_USE_BEFORE_INPUT} from 'shared/environment';
 import useOutlineDragonSupport from './useOutlineDragonSupport';
 import {
@@ -73,7 +73,7 @@ function shouldSelectParagraph(editor: OutlineEditor): boolean {
 }
 
 function initParagraph(root: RootNode, editor: OutlineEditor): void {
-  const paragraph = otlnCreateParagraphNode();
+  const paragraph = $createParagraphNode();
   root.append(paragraph);
   if (shouldSelectParagraph(editor)) {
     paragraph.select();

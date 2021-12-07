@@ -17,12 +17,12 @@ import {createPortal} from 'react-dom';
 import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
 import {
   OutlineNode,
-  otlnCreateTextNode,
+  $createTextNode,
   $getSelection,
   $clearSelection,
 } from 'outline';
-import {TableRowNode, otlnCreateTableRowNode} from 'outline/TableRowNode';
-import {otlnCreateTableCellNode} from 'outline/TableCellNode';
+import {TableRowNode, $createTableRowNode} from 'outline/TableRowNode';
+import {$createTableCellNode} from 'outline/TableCellNode';
 import {TableNode} from 'outline/TableNode';
 import {findMatchingParent} from 'outline/nodes';
 
@@ -136,12 +136,12 @@ export function insertTableRow(
   if (targetRow instanceof TableRowNode) {
     const tableColumnCount = targetRow.getChildren()?.length;
 
-    const newTableRow = otlnCreateTableRowNode();
+    const newTableRow = $createTableRowNode();
 
     for (let i = 0; i < tableColumnCount; i++) {
-      const tableCell = otlnCreateTableCellNode(false);
+      const tableCell = $createTableCellNode(false);
 
-      tableCell.append(otlnCreateTextNode());
+      tableCell.append($createTextNode());
       newTableRow.append(tableCell);
     }
 
@@ -168,9 +168,9 @@ export function insertTableColumn(
     const currentTableRow = tableRows[i];
 
     if (currentTableRow instanceof TableRowNode) {
-      const newTableCell = otlnCreateTableCellNode(i === 0);
+      const newTableCell = $createTableCellNode(i === 0);
 
-      newTableCell.append(otlnCreateTextNode());
+      newTableCell.append($createTextNode());
 
       const tableRowChildren = currentTableRow.getChildren();
 

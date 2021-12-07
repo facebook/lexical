@@ -15,12 +15,12 @@ import {useCollaborationContext} from '../context/CollaborationContext';
 import {useEffect, useState} from 'react';
 import {log, isElementNode, $getSelection, createEditorStateRef} from 'outline';
 import {isListItemNode} from 'outline/ListItemNode';
-import {ImageNode, otlnCreateImageNode} from '../nodes/ImageNode';
+import {ImageNode, $createEmojiNode} from '../nodes/ImageNode';
 import yellowFlowerImage from '../images/image/yellow-flower.jpg';
 import useOutlineNestedList from 'outline-react/useOutlineNestedList';
 import TablesPlugin from './TablesPlugin';
-import {otlnCreateTableNodeWithDimensions} from 'outline/nodes';
-import {otlnCreateParagraphNode} from 'outline/ParagraphNode';
+import {$createTableNodeWithDimensions} from 'outline/nodes';
+import {$createParagraphNode} from 'outline/ParagraphNode';
 import TableCellActionMenuPlugin from './TableCellActionMenuPlugin';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
@@ -73,7 +73,7 @@ export default function ActionsPlugins({
       const selection = $getSelection();
       if (selection !== null) {
         const ref = createEditorStateRef(createUID(), null);
-        const imageNode = otlnCreateImageNode(
+        const imageNode = $createEmojiNode(
           yellowFlowerImage,
           'Yellow flower in tilt shift lens',
           ref,
@@ -94,9 +94,9 @@ export default function ActionsPlugins({
 
       if (focusNode !== null) {
         const topLevelNode = focusNode.getTopLevelElementOrThrow();
-        const tableNode = otlnCreateTableNodeWithDimensions(3, 3);
+        const tableNode = $createTableNodeWithDimensions(3, 3);
         topLevelNode.insertAfter(tableNode);
-        tableNode.insertAfter(otlnCreateParagraphNode());
+        tableNode.insertAfter($createParagraphNode());
         const firstCell = tableNode
           .getFirstChildOrThrow<ElementNode>()
           .getFirstChildOrThrow<ElementNode>();

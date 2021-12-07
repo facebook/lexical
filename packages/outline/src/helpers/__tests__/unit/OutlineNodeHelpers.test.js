@@ -11,13 +11,13 @@ import type {OutlineEditor, State, NodeKey, OutlineNode} from 'outline';
 
 import {
   initializeUnitTest,
-  otlnCreateTestElementNode,
+  $createTestElementNode,
 } from '../../../__tests__/utils';
 import {dfs, getTopListNode, isLastItemInList} from 'outline/nodes';
-import {otlnCreateParagraphNode, isParagraphNode} from 'outline/ParagraphNode';
-import {otlnCreateTextNode, $getRoot} from 'outline';
-import {otlnCreateListNode} from 'outline/ListNode';
-import {otlnCreateListItemNode} from 'outline/ListItemNode';
+import {$createParagraphNode, isParagraphNode} from 'outline/ParagraphNode';
+import {$createTextNode, $getRoot} from 'outline';
+import {$createListNode} from 'outline/ListNode';
+import {$createListItemNode} from 'outline/ListItemNode';
 
 describe('OutlineNodeHelpers tests', () => {
   initializeUnitTest((testEnv) => {
@@ -34,17 +34,17 @@ describe('OutlineNodeHelpers tests', () => {
       let expectedKeys: Array<NodeKey> = [];
       await editor.update((state: State) => {
         const root = $getRoot();
-        const paragraph1 = otlnCreateParagraphNode();
-        const paragraph2 = otlnCreateParagraphNode();
-        const block1 = otlnCreateTestElementNode();
-        const block2 = otlnCreateTestElementNode();
-        const block3 = otlnCreateTestElementNode();
-        const text1 = otlnCreateTextNode('text1');
-        const text2 = otlnCreateTextNode('text2');
-        const text3 = otlnCreateTextNode('text3');
-        const text4 = otlnCreateTextNode('text4');
-        const text5 = otlnCreateTextNode('text5');
-        const text6 = otlnCreateTextNode('text6');
+        const paragraph1 = $createParagraphNode();
+        const paragraph2 = $createParagraphNode();
+        const block1 = $createTestElementNode();
+        const block2 = $createTestElementNode();
+        const block3 = $createTestElementNode();
+        const text1 = $createTextNode('text1');
+        const text2 = $createTextNode('text2');
+        const text3 = $createTextNode('text3');
+        const text4 = $createTextNode('text4');
+        const text5 = $createTextNode('text5');
+        const text6 = $createTextNode('text6');
         root.append(paragraph1, paragraph2);
         paragraph1.append(block1, block2);
         paragraph2.append(text4, text5);
@@ -87,10 +87,10 @@ describe('OutlineNodeHelpers tests', () => {
       let expectedKeys: Array<NodeKey> = [];
       await editor.update((state: State) => {
         const root = $getRoot();
-        const paragraph1 = otlnCreateParagraphNode();
-        const block1 = otlnCreateTestElementNode();
-        const block2 = otlnCreateTestElementNode();
-        const block3 = otlnCreateTestElementNode();
+        const paragraph1 = $createParagraphNode();
+        const block1 = $createTestElementNode();
+        const block2 = $createTestElementNode();
+        const block3 = $createTestElementNode();
         root.append(paragraph1);
         paragraph1.append(block1, block2, block3);
 
@@ -123,11 +123,11 @@ describe('OutlineNodeHelpers tests', () => {
         //         |- ListNode
         //               |- ListItemNode
         const root = $getRoot();
-        const topListNode = otlnCreateListNode('ul');
-        const secondLevelListNode = otlnCreateListNode('ul');
-        const listItem1 = otlnCreateListItemNode();
-        const listItem2 = otlnCreateListItemNode();
-        const listItem3 = otlnCreateListItemNode();
+        const topListNode = $createListNode('ul');
+        const secondLevelListNode = $createListNode('ul');
+        const listItem1 = $createListItemNode();
+        const listItem2 = $createListItemNode();
+        const listItem3 = $createListItemNode();
         root.append(topListNode);
         topListNode.append(listItem1);
         topListNode.append(listItem2);
@@ -149,12 +149,12 @@ describe('OutlineNodeHelpers tests', () => {
         //           |- ListNode
         //              |- ListItemNode
         const root = $getRoot();
-        const paragraphNode = otlnCreateParagraphNode();
-        const topListNode = otlnCreateListNode('ul');
-        const secondLevelListNode = otlnCreateListNode('ul');
-        const listItem1 = otlnCreateListItemNode();
-        const listItem2 = otlnCreateListItemNode();
-        const listItem3 = otlnCreateListItemNode();
+        const paragraphNode = $createParagraphNode();
+        const topListNode = $createListNode('ul');
+        const secondLevelListNode = $createListNode('ul');
+        const listItem1 = $createListItemNode();
+        const listItem2 = $createListItemNode();
+        const listItem3 = $createListItemNode();
         root.append(paragraphNode);
         paragraphNode.append(topListNode);
         topListNode.append(listItem1);
@@ -179,14 +179,14 @@ describe('OutlineNodeHelpers tests', () => {
         //                      |- ListItemNode
         //        |- ListItemNode
         const root = $getRoot();
-        const paragraphNode = otlnCreateParagraphNode();
-        const topListNode = otlnCreateListNode('ul');
-        const secondLevelListNode = otlnCreateListNode('ul');
-        const thirdLevelListNode = otlnCreateListNode('ul');
-        const listItem1 = otlnCreateListItemNode();
-        const listItem2 = otlnCreateListItemNode();
-        const listItem3 = otlnCreateListItemNode();
-        const listItem4 = otlnCreateListItemNode();
+        const paragraphNode = $createParagraphNode();
+        const topListNode = $createListNode('ul');
+        const secondLevelListNode = $createListNode('ul');
+        const thirdLevelListNode = $createListNode('ul');
+        const listItem1 = $createListItemNode();
+        const listItem2 = $createListItemNode();
+        const listItem3 = $createListItemNode();
+        const listItem4 = $createListItemNode();
         root.append(paragraphNode);
         paragraphNode.append(topListNode);
         topListNode.append(listItem1);
@@ -211,12 +211,12 @@ describe('OutlineNodeHelpers tests', () => {
         //                |- ListNode
         //                    |- ListItemNode
         const root = $getRoot();
-        const topListNode = otlnCreateListNode('ul');
-        const secondLevelListNode = otlnCreateListNode('ul');
-        const thirdLevelListNode = otlnCreateListNode('ul');
-        const listItem1 = otlnCreateListItemNode();
-        const listItem2 = otlnCreateListItemNode();
-        const listItem3 = otlnCreateListItemNode();
+        const topListNode = $createListNode('ul');
+        const secondLevelListNode = $createListNode('ul');
+        const thirdLevelListNode = $createListNode('ul');
+        const listItem1 = $createListItemNode();
+        const listItem2 = $createListItemNode();
+        const listItem3 = $createListItemNode();
         root.append(topListNode);
         topListNode.append(listItem1);
         listItem1.append(secondLevelListNode);
@@ -236,9 +236,9 @@ describe('OutlineNodeHelpers tests', () => {
         //      |- ListItemNode
         //      |- ListItemNode
         const root = $getRoot();
-        const topListNode = otlnCreateListNode('ul');
-        const listItem1 = otlnCreateListItemNode();
-        const listItem2 = otlnCreateListItemNode();
+        const topListNode = $createListNode('ul');
+        const listItem1 = $createListItemNode();
+        const listItem2 = $createListItemNode();
         root.append(topListNode);
         topListNode.append(listItem1);
         topListNode.append(listItem2);
@@ -258,12 +258,12 @@ describe('OutlineNodeHelpers tests', () => {
         //                |- ListNode
         //                    |- ListItemNode
         const root = $getRoot();
-        const topListNode = otlnCreateListNode('ul');
-        const secondLevelListNode = otlnCreateListNode('ul');
-        const thirdLevelListNode = otlnCreateListNode('ul');
-        const listItem1 = otlnCreateListItemNode();
-        const listItem2 = otlnCreateListItemNode();
-        const listItem3 = otlnCreateListItemNode();
+        const topListNode = $createListNode('ul');
+        const secondLevelListNode = $createListNode('ul');
+        const thirdLevelListNode = $createListNode('ul');
+        const listItem1 = $createListItemNode();
+        const listItem2 = $createListItemNode();
+        const listItem3 = $createListItemNode();
         root.append(topListNode);
         topListNode.append(listItem1);
         listItem1.append(secondLevelListNode);
@@ -283,9 +283,9 @@ describe('OutlineNodeHelpers tests', () => {
         //      |- ListItemNode
         //      |- ListItemNode
         const root = $getRoot();
-        const topListNode = otlnCreateListNode('ul');
-        const listItem1 = otlnCreateListItemNode();
-        const listItem2 = otlnCreateListItemNode();
+        const topListNode = $createListNode('ul');
+        const listItem1 = $createListItemNode();
+        const listItem2 = $createListItemNode();
         root.append(topListNode);
         topListNode.append(listItem1);
         topListNode.append(listItem2);

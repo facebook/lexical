@@ -37,7 +37,7 @@ export class LineBreakNode extends OutlineNode {
   }
 }
 
-export function otlnCreateLineBreakNode(): LineBreakNode {
+export function $createLineBreakNode(): LineBreakNode {
   return new LineBreakNode();
 }
 

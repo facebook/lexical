@@ -16,7 +16,7 @@ import type {
 
 import {log, $getRoot, $getSelection} from 'outline';
 import useOutlineEditorEvents from '../useOutlineEditorEvents';
-import {otlnCreateParagraphNode, ParagraphNode} from 'outline/ParagraphNode';
+import {$createParagraphNode, ParagraphNode} from 'outline/ParagraphNode';
 import {CAN_USE_BEFORE_INPUT} from 'shared/environment';
 import useOutlineDragonSupport from './useOutlineDragonSupport';
 import {
@@ -66,7 +66,7 @@ function shouldSelectParagraph(editor: OutlineEditor): boolean {
 }
 
 function initParagraph(root: RootNode, editor: OutlineEditor): void {
-  const paragraph = otlnCreateParagraphNode();
+  const paragraph = $createParagraphNode();
   root.append(paragraph);
   if (shouldSelectParagraph(editor)) {
     paragraph.select();

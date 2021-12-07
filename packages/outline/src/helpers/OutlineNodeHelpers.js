@@ -15,10 +15,10 @@ import type {TableNode} from 'outline/TableNode';
 import {isListNode} from 'outline/ListNode';
 import {isListItemNode} from 'outline/ListItemNode';
 import invariant from 'shared/invariant';
-import {isElementNode, otlnCreateTextNode, $getRoot} from 'outline';
-import {otlnCreateTableNode} from 'outline/TableNode';
-import {otlnCreateTableRowNode} from 'outline/TableRowNode';
-import {otlnCreateTableCellNode} from 'outline/TableCellNode';
+import {isElementNode, $createTextNode, $getRoot} from 'outline';
+import {$createTableNode} from 'outline/TableNode';
+import {$createTableRowNode} from 'outline/TableRowNode';
+import {$createTableCellNode} from 'outline/TableCellNode';
 
 export function dfs(
   startingNode: OutlineNode,
@@ -85,7 +85,7 @@ export type DOMNodeToOutlineConversionMap = {
   [string]: DOMNodeToOutlineConversion,
 };
 
-export function otlnCreateOutlineNodeFromDOMNode(
+export function $createOutlineNodeFromDOMNode(
   node: Node,
   conversionMap: DOMNodeToOutlineConversionMap,
 ): OutlineNode | null {
@@ -96,10 +96,7 @@ export function otlnCreateOutlineNodeFromDOMNode(
     if (isElementNode(outlineNode)) {
       const children = node.childNodes;
       for (let i = 0; i < children.length; i++) {
-        const child = otlnCreateOutlineNodeFromDOMNode(
-          children[i],
-          conversionMap,
-        );
+        const child = $createOutlineNodeFromDOMNode(children[i], conversionMap);
         if (child !== null) {
           outlineNode.append(child);
         }
@@ -109,19 +106,19 @@ export function otlnCreateOutlineNodeFromDOMNode(
   return outlineNode;
 }
 
-export function otlnCreateTableNodeWithDimensions(
+export function $createTableNodeWithDimensions(
   rowCount: number,
   columnCount: number,
   includeHeader?: boolean = true,
 ): TableNode {
-  const tableNode = otlnCreateTableNode();
+  const tableNode = $createTableNode();
 
   for (let iRow = 0; iRow < rowCount; iRow++) {
-    const tableRow = otlnCreateTableRowNode();
+    const tableRow = $createTableRowNode();
 
     for (let iColumn = 0; iColumn < columnCount; iColumn++) {
-      const tableCell = otlnCreateTableCellNode(iRow === 0 && includeHeader);
-      tableCell.append(otlnCreateTextNode());
+      const tableCell = $createTableCellNode(iRow === 0 && includeHeader);
+      tableCell.append($createTextNode());
       tableRow.append(tableCell);
     }
 

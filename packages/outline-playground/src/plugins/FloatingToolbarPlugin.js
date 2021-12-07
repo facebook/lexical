@@ -30,7 +30,7 @@ import {
   isAtNodeEnd,
 } from 'outline/selection';
 import {log, $getSelection, $setSelection} from 'outline';
-import {otlnCreateLinkNode, isLinkNode, LinkNode} from 'outline/LinkNode';
+import {$createLinkNode, isLinkNode, LinkNode} from 'outline/LinkNode';
 
 function positionToolbar(toolbar, rect) {
   if (rect === null) {
@@ -368,7 +368,7 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
               }
               if (!parent.is(prevParent)) {
                 prevParent = parent;
-                linkNode = otlnCreateLinkNode(url);
+                linkNode = $createLinkNode(url);
                 if (isLinkNode(parent)) {
                   if (node.getPreviousSibling() === null) {
                     parent.insertBefore(linkNode);

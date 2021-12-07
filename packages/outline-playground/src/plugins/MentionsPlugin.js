@@ -16,7 +16,7 @@ import {createPortal} from 'react-dom';
 import {log, $getSelection} from 'outline';
 import React, {useCallback, useLayoutEffect, useMemo, useRef} from 'react';
 import {startTransition, useEffect, useState} from 'react';
-import {MentionNode, otlnCreateMentionNode} from '../nodes/MentionNode';
+import {MentionNode, $createMentionNode} from '../nodes/MentionNode';
 
 type MentionMatch = {
   leadOffset: number,
@@ -926,7 +926,7 @@ function createMentionNodeFromSearchResult(
       [, nodeToReplace] = anchorNode.splitText(startOffset, selectionOffset);
     }
 
-    const mentionNode = otlnCreateMentionNode(entryText);
+    const mentionNode = $createMentionNode(entryText);
     nodeToReplace.replace(mentionNode);
     mentionNode.select();
   });

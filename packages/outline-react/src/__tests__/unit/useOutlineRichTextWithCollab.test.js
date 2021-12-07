@@ -8,7 +8,7 @@
  */
 
 import {createTestConnection, waitForReact} from './utils';
-import {$getRoot, otlnCreateTextNode} from 'outline';
+import {$getRoot, $createTextNode} from 'outline';
 
 describe('useOutlineRichTextWithCollab', () => {
   let container = null;
@@ -55,7 +55,7 @@ describe('useOutlineRichTextWithCollab', () => {
       client1.update(() => {
         const root = $getRoot();
         const paragraph = root.getFirstChild();
-        const text = otlnCreateTextNode('Hello world');
+        const text = $createTextNode('Hello world');
         paragraph.append(text);
       });
     });
@@ -103,7 +103,7 @@ describe('useOutlineRichTextWithCollab', () => {
       client1.update(() => {
         const root = $getRoot();
         const paragraph = root.getFirstChild();
-        const text = otlnCreateTextNode('Hello world');
+        const text = $createTextNode('Hello world');
         paragraph.append(text);
       });
     });
@@ -120,7 +120,7 @@ describe('useOutlineRichTextWithCollab', () => {
       client2.update(() => {
         const root = $getRoot();
         const paragraph = root.getFirstChild();
-        const text = otlnCreateTextNode('Hello world');
+        const text = $createTextNode('Hello world');
         paragraph.append(text);
       });
     });

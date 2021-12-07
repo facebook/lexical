@@ -155,7 +155,7 @@ export class CollabDecoratorNode {
   }
 }
 
-export function otlnCreateCollabDecoratorNode(
+export function $createCollabDecoratorNode(
   xmlElem: XmlElement,
   parent: CollabElementNode,
   type: string,

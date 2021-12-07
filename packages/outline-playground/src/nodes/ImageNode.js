@@ -476,7 +476,7 @@ export class ImageNode extends DecoratorNode {
   }
 }
 
-export function otlnCreateImageNode(
+export function $createEmojiNode(
   src: string,
   altText: string,
   ref: EditorStateRef,

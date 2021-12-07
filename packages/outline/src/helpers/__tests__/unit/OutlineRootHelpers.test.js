@@ -11,23 +11,28 @@ import type {State} from 'outline';
 
 import {$createTextNode, $getRoot} from 'outline';
 import {$createParagraphNode} from 'outline/ParagraphNode';
-import {isTextContentEmpty, textContent} from 'outline/root';
+import {
+  $isTextContentEmpty,
+  $isTextContentEmptyCurry,
+  $textContent,
+  $textContentCurry,
+} from 'outline/root';
 import {initializeUnitTest} from '../../../__tests__/utils';
 
 describe('OutlineRootHelpers tests', () => {
   initializeUnitTest((testEnv) => {
     it('textContent', async () => {
       const editor = testEnv.editor;
-      expect(editor.getEditorState().read(textContent)).toBe('');
+      expect(editor.getEditorState().read($textContentCurry)).toBe('');
       await editor.update((state: State) => {
         const root = $getRoot();
         const paragraph = $createParagraphNode();
         const text = $createTextNode('foo');
         root.append(paragraph);
         paragraph.append(text);
-        expect(textContent(state)).toBe('foo');
+        expect($textContent()).toBe('foo');
       });
-      expect(editor.getEditorState().read(textContent)).toBe('foo');
+      expect(editor.getEditorState().read($textContentCurry)).toBe('foo');
     });
 
     it('isBlank', async () => {
@@ -35,7 +40,7 @@ describe('OutlineRootHelpers tests', () => {
       expect(
         editor
           .getEditorState()
-          .read((state) => isTextContentEmpty(state, editor.isComposing())),
+          .read($isTextContentEmptyCurry(editor.isComposing())),
       ).toBe(true);
       await editor.update((state: State) => {
         const root = $getRoot();
@@ -43,12 +48,12 @@ describe('OutlineRootHelpers tests', () => {
         const text = $createTextNode('foo');
         root.append(paragraph);
         paragraph.append(text);
-        expect(isTextContentEmpty(state, editor.isComposing())).toBe(false);
+        expect($isTextContentEmpty(editor.isComposing())).toBe(false);
       });
       expect(
         editor
           .getEditorState()
-          .read((state) => isTextContentEmpty(state, editor.isComposing())),
+          .read($isTextContentEmptyCurry(editor.isComposing())),
       ).toBe(false);
     });
   });

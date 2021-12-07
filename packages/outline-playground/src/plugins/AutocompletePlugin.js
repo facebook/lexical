@@ -21,12 +21,12 @@ import {
   $getRoot,
 } from 'outline';
 import {useEffect, useRef, useState, useCallback, useMemo} from 'react';
-import {textContentCurry} from 'outline/root';
+import {$textContentCurry} from 'outline/root';
 
 function useTypeahead(editor: OutlineEditor): void {
   const typeaheadNodeKey = useRef<NodeKey | null>(null);
   const [text, setText] = useState<string>(
-    editor.getEditorState().read(textContentCurry),
+    editor.getEditorState().read($textContentCurry),
   );
   const [selectionCollapsed, $setSelectionCollapsed] = useState<boolean>(false);
   const server = useMemo(() => new TypeaheadServer(), []);

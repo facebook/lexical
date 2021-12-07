@@ -25,7 +25,7 @@ import {
   $setSelection,
 } from 'outline';
 import {dfs} from 'outline/nodes';
-import {textContentCurry} from 'outline/root';
+import {$textContentCurry} from 'outline/root';
 import {useEffect} from 'react';
 
 type OptionalProps = {
@@ -48,7 +48,7 @@ export function useCharacterLimit(
   }, [editor]);
 
   useEffect(() => {
-    let text = editor.getEditorState().read(textContentCurry);
+    let text = editor.getEditorState().read($textContentCurry);
     let lastComputedTextLength = 0;
     const textContentListener = editor.addListener(
       'textcontent',

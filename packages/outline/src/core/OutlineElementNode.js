@@ -274,9 +274,10 @@ export class ElementNode extends OutlineNode {
         const writableParent = oldParent.getWritable();
         const children = writableParent.__children;
         const index = children.indexOf(writableNodeToAppend.__key);
-        if (index > -1) {
-          children.splice(index, 1);
+        if (index === -1) {
+          invariant(false, 'Node is not a child of its parent');
         }
+        children.splice(index, 1);
       }
       // Set child parent to self
       writableNodeToAppend.__parent = writableSelfKey;

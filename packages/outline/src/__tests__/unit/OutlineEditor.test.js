@@ -459,6 +459,121 @@ describe('OutlineEditor tests', () => {
     );
   });
 
+  it('text transform runs when node is removed', async () => {
+    init();
+    const executeTransform = jest.fn();
+    let hasBeenRemoved = false;
+    const removeListener = editor.addTransform(TextNode, (node) => {
+      if (hasBeenRemoved) {
+        executeTransform();
+      }
+    });
+    await editor.update(() => {
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
+      root.append(paragraph);
+      paragraph.append(
+        $createTextNode('Foo').toggleUnmergeable(),
+        $createTextNode('Bar').toggleUnmergeable(),
+      );
+    });
+    await editor.update(() => {
+      $getRoot().getLastDescendant().remove();
+      hasBeenRemoved = true;
+    });
+    expect(executeTransform).toHaveBeenCalledTimes(1);
+
+    removeListener();
+  });
+
+  describe('transforms on siblings', () => {
+    let textNodeKeys;
+    let textTransformCount;
+    let removeTransform;
+
+    beforeEach(async () => {
+      init();
+      textNodeKeys = [];
+      textTransformCount = [];
+      await editor.update(() => {
+        const root = $getRoot();
+        const paragraph0 = $createParagraphNode();
+        const paragraph1 = $createParagraphNode();
+        const textNodes = [];
+        for (let i = 0; i < 6; i++) {
+          const node = $createTextNode(i).toggleUnmergeable();
+          textNodes.push(node);
+          textNodeKeys.push(node.getKey());
+          textTransformCount[i] = 0;
+        }
+        root.append(paragraph0, paragraph1);
+        paragraph0.append(...textNodes.slice(0, 3));
+        paragraph1.append(...textNodes.slice(3));
+      });
+      removeTransform = editor.addTransform(TextNode, (node) => {
+        textTransformCount[node.__text]++;
+      });
+    });
+
+    afterEach(() => {
+      removeTransform();
+    });
+
+    it('on remove', async () => {
+      await editor.update(() => {
+        const textNode1 = $getNodeByKey(textNodeKeys[1]);
+        textNode1.remove();
+      });
+      expect(textTransformCount).toEqual([2, 1, 2, 1, 1, 1]);
+    });
+
+    it('on replace', async () => {
+      await editor.update(() => {
+        const textNode1 = $getNodeByKey(textNodeKeys[1]);
+        const textNode4 = $getNodeByKey(textNodeKeys[4]);
+        textNode4.replace(textNode1);
+      });
+      expect(textTransformCount).toEqual([2, 2, 2, 2, 1, 2]);
+    });
+
+    it('on insertBefore', async () => {
+      await editor.update(() => {
+        const textNode1 = $getNodeByKey(textNodeKeys[1]);
+        const textNode4 = $getNodeByKey(textNodeKeys[4]);
+        textNode4.insertBefore(textNode1);
+      });
+      expect(textTransformCount).toEqual([2, 2, 2, 2, 2, 1]);
+    });
+
+    it('on insertAfter', async () => {
+      await editor.update(() => {
+        const textNode1 = $getNodeByKey(textNodeKeys[1]);
+        const textNode4 = $getNodeByKey(textNodeKeys[4]);
+        textNode4.insertAfter(textNode1);
+      });
+      expect(textTransformCount).toEqual([2, 2, 2, 1, 2, 2]);
+    });
+
+    it('on splitText', async () => {
+      await editor.update(() => {
+        const textNode1 = $getNodeByKey(textNodeKeys[1]);
+        textNode1.setTextContent('67');
+        textNode1.splitText(1);
+        textTransformCount.push(0, 0);
+      });
+      expect(textTransformCount).toEqual([2, 1, 2, 1, 1, 1, 1, 1]);
+    });
+
+    it('on append', async () => {
+      await editor.update(() => {
+        const paragraph1 = $getRoot().getFirstChild();
+        paragraph1.append($createTextNode('6').toggleUnmergeable());
+        textTransformCount.push(0);
+      });
+      expect(textTransformCount).toEqual([1, 1, 2, 1, 1, 1, 1]);
+    });
+  });
+
   it('Detects infinite recursivity on transforms', async () => {
     const errorListener = jest.fn();
     init(errorListener);

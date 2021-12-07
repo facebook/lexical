@@ -15,7 +15,7 @@ import {OutlineNode} from './OutlineNode';
 import {makeSelection, $getSelection, setPointValues} from './OutlineSelection';
 import {errorOnReadOnly, getActiveEditor} from './OutlineUpdates';
 import {ELEMENT_TYPE_TO_FORMAT} from './OutlineConstants';
-import {$getNodeByKey} from './OutlineUtils';
+import {$getNodeByKey, internallyMarkNodeAsDirty} from './OutlineUtils';
 import invariant from 'shared/invariant';
 
 export type ElementFormatType = 'left' | 'center' | 'right' | 'justify';
@@ -254,6 +254,10 @@ export class ElementNode extends OutlineNode {
     const writableSelfKey = writableSelf.__key;
     const writableSelfChildren = writableSelf.__children;
     const nodesToAppendLength = nodesToAppend.length;
+    const lastChild = this.getLastChild();
+    if (lastChild !== null) {
+      internallyMarkNodeAsDirty(lastChild);
+    }
     for (let i = 0; i < nodesToAppendLength; i++) {
       const nodeToAppend = nodesToAppend[i];
       const writableNodeToAppend = nodeToAppend.getWritable();

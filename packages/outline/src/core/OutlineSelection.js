@@ -179,10 +179,12 @@ export function moveSelectionPointToEnd(
 function transferStartingElementPointToTextPoint(
   start: ElementPointType,
   end: PointType,
+  format: number,
 ) {
   const element = start.getNode();
   const placementNode = element.getChildAtIndex(start.offset);
   const textNode = createTextNode();
+  textNode.setFormat(format);
   if (placementNode === null) {
     element.append(textNode);
   } else {
@@ -372,15 +374,15 @@ export class Selection {
     const anchor = this.anchor;
     const focus = this.focus;
     const isBefore = this.isCollapsed() || anchor.isBefore(focus);
+    const format = this.format;
 
     if (isBefore && anchor.type === 'element') {
-      transferStartingElementPointToTextPoint(anchor, focus);
+      transferStartingElementPointToTextPoint(anchor, focus, format);
     } else if (!isBefore && focus.type === 'element') {
-      transferStartingElementPointToTextPoint(focus, anchor);
+      transferStartingElementPointToTextPoint(focus, anchor, format);
     }
     const selectedNodes = this.getNodes();
     const selectedNodesLength = selectedNodes.length;
-    const format = this.format;
     const firstPoint = isBefore ? anchor : focus;
     const endPoint = isBefore ? focus : anchor;
     const startOffset = firstPoint.offset;

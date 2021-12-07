@@ -43,7 +43,7 @@ import {
   getEditorStateTextContent,
   flushMutations,
   setSelection,
-  clearSelection,
+  $clearSelection,
   $getRoot,
   getRegisteredNodeOrThrow,
 } from './OutlineUtils';
@@ -80,7 +80,7 @@ export const state: State = {
   getRoot: $getRoot,
   getNodeByKey: $getNodeByKey,
   getSelection: $getSelection,
-  clearSelection,
+  clearSelection: $clearSelection,
   setSelection,
   getPreviousSelection,
   setCompositionKey,

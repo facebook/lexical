@@ -15,7 +15,12 @@ import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
 import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
-import {OutlineNode, otlnCreateTextNode, $getSelection} from 'outline';
+import {
+  OutlineNode,
+  otlnCreateTextNode,
+  $getSelection,
+  $clearSelection,
+} from 'outline';
 import {TableRowNode, otlnCreateTableRowNode} from 'outline/TableRowNode';
 import {otlnCreateTableCellNode} from 'outline/TableCellNode';
 import {TableNode} from 'outline/TableNode';
@@ -276,7 +281,7 @@ function TableActionMenu({
 
         insertTableRow(tableNode, tableRowIndex, shouldInsertAfter);
 
-        state.clearSelection();
+        $clearSelection();
 
         onClose();
       });
@@ -319,7 +324,7 @@ function TableActionMenu({
 
       removeTableRowAtIndex(tableNode, tableRowIndex);
 
-      state.clearSelection();
+      $clearSelection();
 
       onClose();
     });
@@ -334,7 +339,7 @@ function TableActionMenu({
 
       tableNode.remove();
 
-      state.clearSelection();
+      $clearSelection();
 
       onClose();
     });
@@ -354,7 +359,7 @@ function TableActionMenu({
 
       deleteTableColumn(tableNode, tableColumnIndex);
 
-      state.clearSelection();
+      $clearSelection();
 
       onClose();
     });

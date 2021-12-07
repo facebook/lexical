@@ -305,7 +305,7 @@ export function $getRoot(): RootNode {
   return ((getActiveEditorState()._nodeMap.get('root'): any): RootNode);
 }
 
-export function clearSelection(): void {
+export function $clearSelection(): void {
   const editorState = getActiveEditorState();
   editorState._selection = null;
 }

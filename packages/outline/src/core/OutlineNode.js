@@ -28,6 +28,7 @@ import {
   getNodeByKey,
   getTextDirection,
   internallyMarkNodeAsDirty,
+  internallyMarkSiblingsAsDirty,
   markParentElementsAsDirty,
   setCompositionKey,
 } from './OutlineUtils';
@@ -78,6 +79,7 @@ export function removeNode(
   if (index === -1) {
     invariant(false, 'Node is not a child of its parent');
   }
+  internallyMarkSiblingsAsDirty(nodeToRemove);
   parentChildren.splice(index, 1);
   const writableNodeToRemove = nodeToRemove.getWritable();
   writableNodeToRemove.__parent = null;
@@ -610,6 +612,7 @@ export class OutlineNode {
       if (index === -1) {
         invariant(false, 'Node is not a child of its parent');
       }
+      internallyMarkSiblingsAsDirty(writableReplaceWith);
       children.splice(index, 1);
     }
     const newParent = this.getParentOrThrow();
@@ -623,6 +626,7 @@ export class OutlineNode {
     children.splice(index, 0, newKey);
     writableReplaceWith.__parent = newParent.__key;
     removeNode(this, false);
+    internallyMarkSiblingsAsDirty(writableReplaceWith);
     const flags = writableReplaceWith.__flags;
     // Handle direction if node is directionless
     if (flags & IS_DIRECTIONLESS) {
@@ -660,6 +664,7 @@ export class OutlineNode {
       if (index === -1) {
         invariant(false, 'Node is not a child of its parent');
       }
+      internallyMarkSiblingsAsDirty(writableNodeToInsert);
       children.splice(index, 1);
     }
     const writableParent = this.getParentOrThrow().getWritable();
@@ -671,6 +676,7 @@ export class OutlineNode {
       invariant(false, 'Node is not a child of its parent');
     }
     children.splice(index + 1, 0, insertKey);
+    internallyMarkSiblingsAsDirty(writableNodeToInsert);
     const flags = writableNodeToInsert.__flags;
     // Handle direction if node is directionless
     if (flags & IS_DIRECTIONLESS) {
@@ -698,6 +704,7 @@ export class OutlineNode {
       if (index === -1) {
         invariant(false, 'Node is not a child of its parent');
       }
+      internallyMarkSiblingsAsDirty(writableNodeToInsert);
       children.splice(index, 1);
     }
     const writableParent = this.getParentOrThrow().getWritable();
@@ -709,6 +716,7 @@ export class OutlineNode {
       invariant(false, 'Node is not a child of its parent');
     }
     children.splice(index, 0, insertKey);
+    internallyMarkSiblingsAsDirty(writableNodeToInsert);
     const flags = writableNodeToInsert.__flags;
     // Handle direction if node is directionless
     if (flags & IS_DIRECTIONLESS) {

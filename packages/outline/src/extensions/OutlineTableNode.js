@@ -296,11 +296,15 @@ function applyCellSelection(
       }
     });
     // Collapse selection
-    selection.setTextNodeRange(
-      selection.anchor.getNode(),
-      0,
-      selection.focus.getNode(),
-      0,
+    selection.anchor.set(
+      selection.anchor.key,
+      selection.anchor.offset,
+      selection.anchor.type,
+    );
+    selection.focus.set(
+      selection.anchor.key,
+      selection.anchor.offset,
+      selection.anchor.type,
     );
     setSelection(selection);
   };

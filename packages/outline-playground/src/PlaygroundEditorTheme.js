@@ -10,6 +10,8 @@
 import type {EditorThemeClasses} from 'outline';
 
 const theme: EditorThemeClasses = {
+  ltr: 'ltr',
+  rtl: 'rtl',
   paragraph: 'editor-paragraph',
   quote: 'editor-quote',
   heading: {

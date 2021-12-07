@@ -29,7 +29,7 @@ describe('Hashtags', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span class="editor-text-hashtag" data-outline-text="true">#yolo</span></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><span class="editor-text-hashtag" data-outline-text="true">#yolo</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -42,7 +42,7 @@ describe('Hashtags', () => {
       await page.keyboard.type('once');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span class="editor-text-hashtag" data-outline-text="true">#yolonce</span></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><span class="editor-text-hashtag" data-outline-text="true">#yolonce</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -57,7 +57,7 @@ describe('Hashtags', () => {
       await page.keyboard.press('Delete');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">yolonce</span></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">yolonce</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -77,7 +77,7 @@ describe('Hashtags', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span class="editor-text-hashtag" data-outline-text="true">#hello</span><span data-outline-text="true"> world</span></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><span class="editor-text-hashtag" data-outline-text="true">#hello</span><span data-outline-text="true"> world</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
@@ -99,7 +99,7 @@ describe('Hashtags', () => {
       await page.keyboard.press('Backspace');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span class="editor-text-hashtag" data-outline-text="true">#helloworld</span></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><span class="editor-text-hashtag" data-outline-text="true">#helloworld</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -111,7 +111,7 @@ describe('Hashtags', () => {
       await page.keyboard.press('Space');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span class="editor-text-hashtag" data-outline-text="true">#hello</span><span data-outline-text="true"> world</span></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><span class="editor-text-hashtag" data-outline-text="true">#hello</span><span data-outline-text="true"> world</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
@@ -140,7 +140,7 @@ describe('Hashtags', () => {
       await page.keyboard.press('Delete');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span class="editor-text-hashtag" data-outline-text="true">#helloworld</span></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><span class="editor-text-hashtag" data-outline-text="true">#helloworld</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -162,7 +162,7 @@ describe('Hashtags', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span class="editor-text-hashtag" data-outline-text="true">#hello</span><span data-outline-text="true"> world foo </span><span class="editor-text-hashtag" data-outline-text="true">#lol</span><span data-outline-text="true"> </span><span class="editor-text-hashtag" data-outline-text="true">#lol</span><span data-outline-text="true"> asdasd </span><span class="editor-text-hashtag" data-outline-text="true">#lol</span><span data-outline-text="true"> test this </span><span class="editor-text-hashtag" data-outline-text="true">#asdas</span><span data-outline-text="true"> </span><span class="editor-text-hashtag" data-outline-text="true">#asdas</span><span data-outline-text="true"> lasdasd asdasd</span></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><span class="editor-text-hashtag" data-outline-text="true">#hello</span><span data-outline-text="true"> world foo </span><span class="editor-text-hashtag" data-outline-text="true">#lol</span><span data-outline-text="true"> </span><span class="editor-text-hashtag" data-outline-text="true">#lol</span><span data-outline-text="true"> asdasd </span><span class="editor-text-hashtag" data-outline-text="true">#lol</span><span data-outline-text="true"> test this </span><span class="editor-text-hashtag" data-outline-text="true">#asdas</span><span data-outline-text="true"> </span><span class="editor-text-hashtag" data-outline-text="true">#asdas</span><span data-outline-text="true"> lasdasd asdasd</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 11, 0],
@@ -183,7 +183,7 @@ describe('Hashtags', () => {
       await repeat(20, async () => {
         await deleteNextWord(page);
       });
-      await assertHTML(page, '<p class="editor-paragraph" dir="ltr"><br></p>');
+      await assertHTML(page, '<p class="editor-paragraph"><br></p>');
       await assertSelection(page, {
         anchorPath: [0],
         anchorOffset: 0,

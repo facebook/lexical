@@ -199,7 +199,7 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
     await repeat(3, async () => await page.keyboard.press('Backspace'));
     await assertHTML(
       page,
-      '<ul class="editor-list-ul"><li class="editor-listitem"><span data-outline-text="true">1234</span></li><li class="editor-listitem"><span data-outline-text="true">5</span></li></ul>',
+      '<ul class="editor-list-ul"><li class="editor-listitem"><span data-outline-text="true">1234</span></li><li class="editor-listitem"><span data-outline-text="true">5</span></li></ul',
     );
   });
 
@@ -268,12 +268,12 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
       if (charset === 'UTF-16') {
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">👨‍👩</span><div class="editor-character-limit"><span data-outline-text="true">‍👦‍👦</span></div></p>',
+          '<p class="editor-paragraph"><span data-outline-text="true">👨‍👩</span><div class="editor-character-limit"><span data-outline-text="true">‍👦‍👦</span></div></p>',
         );
       } else {
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">👨</span><div class="editor-character-limit"><span data-outline-text="true">‍👩‍👦‍👦</span></div></p>',
+          '<p class="editor-paragraph"><span data-outline-text="true">👨</span><div class="editor-character-limit"><span data-outline-text="true">‍👩‍👦‍👦</span></div></p>',
         );
       }
     }

@@ -260,7 +260,7 @@ describe('OutlineNode tests', () => {
         expect(node.getParents()).toEqual([]);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">foo</span></p></div>',
       );
       await editor.getEditorState().read(() => {
         const rootNode = getRoot();
@@ -279,7 +279,7 @@ describe('OutlineNode tests', () => {
         paragraphNode.append(barTextNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span><span data-outline-text="true">bar</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">foo</span><span data-outline-text="true">bar</span></p></div>',
       );
       await editor.getEditorState().read(() => {
         expect(barTextNode.getPreviousSibling()).toEqual(textNode);
@@ -300,7 +300,7 @@ describe('OutlineNode tests', () => {
         paragraphNode.append(barTextNode, bazTextNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span><span data-outline-text="true">bar</span><span data-outline-text="true">baz</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">foo</span><span data-outline-text="true">bar</span><span data-outline-text="true">baz</span></p></div>',
       );
       await editor.getEditorState().read(() => {
         expect(bazTextNode.getPreviousSiblings()).toEqual([
@@ -322,7 +322,7 @@ describe('OutlineNode tests', () => {
         paragraphNode.append(barTextNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span><span data-outline-text="true">bar</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">foo</span><span data-outline-text="true">bar</span></p></div>',
       );
       await editor.getEditorState().read(() => {
         expect(barTextNode.getNextSibling()).toEqual(null);
@@ -343,7 +343,7 @@ describe('OutlineNode tests', () => {
         paragraphNode.append(barTextNode, bazTextNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span><span data-outline-text="true">bar</span><span data-outline-text="true">baz</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">foo</span><span data-outline-text="true">bar</span><span data-outline-text="true">baz</span></p></div>',
       );
       await editor.getEditorState().read(() => {
         expect(bazTextNode.getNextSiblings()).toEqual([]);
@@ -378,7 +378,7 @@ describe('OutlineNode tests', () => {
         rootNode.append(barParagraphNode, bazParagraphNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span><span data-outline-text="true">qux</span></p><p><span data-outline-text="true">bar</span></p><p><span data-outline-text="true">baz</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">foo</span><span data-outline-text="true">qux</span></p><p dir="ltr"><span data-outline-text="true">bar</span></p><p dir="ltr"><span data-outline-text="true">baz</span></p></div>',
       );
       await editor.getEditorState().read(() => {
         const rootNode = getRoot();
@@ -407,7 +407,7 @@ describe('OutlineNode tests', () => {
         paragraphNode.append(barTextNode, bazTextNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span><span data-outline-text="true">bar</span><span data-outline-text="true">baz</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">foo</span><span data-outline-text="true">bar</span><span data-outline-text="true">baz</span></p></div>',
       );
       await editor.getEditorState().read(() => {
         expect(textNode.isBefore(textNode)).toBe(false);
@@ -454,7 +454,7 @@ describe('OutlineNode tests', () => {
         newParagraphNode.append(quxTextNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span><span data-outline-text="true">bar</span><span data-outline-text="true">baz</span></p><p><span data-outline-text="true">qux</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">foo</span><span data-outline-text="true">bar</span><span data-outline-text="true">baz</span></p><p dir="ltr"><span data-outline-text="true">qux</span></p></div>',
       );
       await editor.getEditorState().read(() => {
         expect(textNode.getNodesBetween(textNode)).toEqual([textNode]);
@@ -487,7 +487,7 @@ describe('OutlineNode tests', () => {
         paragraphNode.append(immutableTextNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span><span data-outline-text="true">immutable</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">foo</span><span data-outline-text="true">immutable</span></p></div>',
       );
       await editor.getEditorState().read(() => {
         expect(textNode.isImmutable(textNode)).toBe(false);
@@ -506,7 +506,7 @@ describe('OutlineNode tests', () => {
         paragraphNode.append(segmentedTextNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span><span data-outline-text="true">segmented</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">foo</span><span data-outline-text="true">segmented</span></p></div>',
       );
       await editor.getEditorState().read(() => {
         expect(textNode.isSegmented(textNode)).toBe(false);
@@ -543,7 +543,7 @@ describe('OutlineNode tests', () => {
         paragraphNode.append(directionlessTextNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span><span data-outline-text="true">directionless</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">foo</span><span data-outline-text="true">directionless</span></p></div>',
       );
       await editor.getEditorState().read(() => {
         expect(textNode.isDirectionless(textNode)).toBe(false);
@@ -696,7 +696,7 @@ describe('OutlineNode tests', () => {
         expect(() => textNode.remove()).toThrow();
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">foo</span></p></div>',
       );
       await editor.update(() => {
         const node = new OutlineNode();
@@ -723,7 +723,7 @@ describe('OutlineNode tests', () => {
     test('OutlineNode.replace(): from another parent', async () => {
       const {editor} = testEnv;
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">foo</span></p></div>',
       );
       let barTextNode;
       await editor.update(() => {
@@ -734,48 +734,48 @@ describe('OutlineNode tests', () => {
         rootNode.append(barParagraphNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span></p><p><span data-outline-text="true">bar</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">foo</span></p><p dir="ltr"><span data-outline-text="true">bar</span></p></div>',
       );
       await editor.update(() => {
         textNode.replace(barTextNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">bar</span></p><p><br></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">bar</span></p><p dir="ltr"><br></p></div>',
       );
     });
 
     test('OutlineNode.replace(): text', async () => {
       const {editor} = testEnv;
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">foo</span></p></div>',
       );
       await editor.update(() => {
         const barTextNode = new TextNode('bar');
         textNode.replace(barTextNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">bar</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">bar</span></p></div>',
       );
     });
 
     test('OutlineNode.replace(): immutable', async () => {
       const {editor} = testEnv;
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">foo</span></p></div>',
       );
       await editor.update(() => {
         const barTextNode = new TextNode('bar').makeImmutable();
         textNode.replace(barTextNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">bar</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">bar</span></p></div>',
       );
     });
 
     test('OutlineNode.replace(): inert', async () => {
       const {editor} = testEnv;
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">foo</span></p></div>',
       );
       await editor.update(() => {
         const barTextNode = new TextNode('bar').makeInert();
@@ -789,21 +789,21 @@ describe('OutlineNode tests', () => {
     test('OutlineNode.replace(): segmented', async () => {
       const {editor} = testEnv;
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">foo</span></p></div>',
       );
       await editor.update(() => {
         const barTextNode = new TextNode('bar').makeSegmented();
         textNode.replace(barTextNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">bar</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">bar</span></p></div>',
       );
     });
 
     test('OutlineNode.replace(): directionless', async () => {
       const {editor} = testEnv;
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">foo</span></p></div>',
       );
       await editor.update(() => {
         const barTextNode = new TextNode(`bar`).makeDirectionless();
@@ -826,7 +826,7 @@ describe('OutlineNode tests', () => {
     test('OutlineNode.insertAfter(): text', async () => {
       const {editor} = testEnv;
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">foo</span></p></div>',
       );
       await editor.update(() => {
         const barTextNode = new TextNode('bar');
@@ -840,56 +840,56 @@ describe('OutlineNode tests', () => {
     test('OutlineNode.insertAfter(): immutable', async () => {
       const {editor} = testEnv;
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">foo</span></p></div>',
       );
       await editor.update(() => {
         const barTextNode = new TextNode('bar').makeImmutable();
         textNode.insertAfter(barTextNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span><span data-outline-text="true">bar</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">foo</span><span data-outline-text="true">bar</span></p></div>',
       );
     });
 
     test('OutlineNode.insertAfter(): segmented', async () => {
       const {editor} = testEnv;
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">foo</span></p></div>',
       );
       await editor.update(() => {
         const barTextNode = new TextNode('bar').makeSegmented();
         textNode.insertAfter(barTextNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span><span data-outline-text="true">bar</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">foo</span><span data-outline-text="true">bar</span></p></div>',
       );
     });
 
     test('OutlineNode.insertAfter(): inert', async () => {
       const {editor} = testEnv;
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">foo</span></p></div>',
       );
       await editor.update(() => {
         const barTextNode = new TextNode('bar').makeInert();
         textNode.insertAfter(barTextNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span><span data-outline-text="true" style="pointer-events: none; user-select: none;">bar</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">foo</span><span data-outline-text="true" style="pointer-events: none; user-select: none;">bar</span></p></div>',
       );
     });
 
     test('OutlineNode.insertAfter(): directionless', async () => {
       const {editor} = testEnv;
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">foo</span></p></div>',
       );
       await editor.update(() => {
         const barTextNode = new TextNode(`bar`).makeDirectionless();
         textNode.insertAfter(barTextNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span><span data-outline-text="true">bar</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">foo</span><span data-outline-text="true">bar</span></p></div>',
       );
       // TODO: add text direction validations
     });
@@ -912,13 +912,13 @@ describe('OutlineNode tests', () => {
         root.append(block1, block2, block3);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">A</span></p><p><span data-outline-text="true">B</span></p><p><span data-outline-text="true">C</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">A</span></p><p dir="ltr"><span data-outline-text="true">B</span></p><p dir="ltr"><span data-outline-text="true">C</span></p></div>',
       );
       await editor.update((state) => {
         text1.insertAfter(block2);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">A</span><p><span data-outline-text="true">B</span></p></p><p><span data-outline-text="true">C</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">A</span><p dir="ltr"><span data-outline-text="true">B</span></p></p><p dir="ltr"><span data-outline-text="true">C</span></p></div>',
       );
     });
 
@@ -945,14 +945,14 @@ describe('OutlineNode tests', () => {
         root.append(block3);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">A</span></p><p><span data-outline-text="true">B</span></p><p><span data-outline-text="true">C</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">A</span></p><p dir="ltr"><span data-outline-text="true">B</span></p><p dir="ltr"><span data-outline-text="true">C</span></p></div>',
       );
       await editor.update(() => {
         text3.insertAfter(text1);
         text3.insertAfter(text2);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><br></p><p><br></p><p><span data-outline-text="true">C</span><span data-outline-text="true">B</span><span data-outline-text="true">A</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p><br></p><p><br></p><p dir="ltr"><span data-outline-text="true">C</span><span data-outline-text="true">B</span><span data-outline-text="true">A</span></p></div>',
       );
     });
 
@@ -968,7 +968,7 @@ describe('OutlineNode tests', () => {
       const {editor} = testEnv;
 
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">foo</span></p></div>',
       );
 
       let barTextNode;
@@ -981,14 +981,14 @@ describe('OutlineNode tests', () => {
       });
 
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span></p><p><span data-outline-text="true">bar</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">foo</span></p><p dir="ltr"><span data-outline-text="true">bar</span></p></div>',
       );
     });
 
     test('OutlineNode.insertBefore(): text', async () => {
       const {editor} = testEnv;
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">foo</span></p></div>',
       );
       await editor.update(() => {
         const barTextNode = new TextNode('bar');
@@ -1002,56 +1002,56 @@ describe('OutlineNode tests', () => {
     test('OutlineNode.insertBefore(): immutable', async () => {
       const {editor} = testEnv;
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">foo</span></p></div>',
       );
       await editor.update(() => {
         const barTextNode = new TextNode('bar').makeImmutable();
         textNode.insertBefore(barTextNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">bar</span><span data-outline-text="true">foo</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">bar</span><span data-outline-text="true">foo</span></p></div>',
       );
     });
 
     test('OutlineNode.insertBefore(): segmented', async () => {
       const {editor} = testEnv;
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">foo</span></p></div>',
       );
       await editor.update(() => {
         const barTextNode = new TextNode('bar').makeSegmented();
         textNode.insertBefore(barTextNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">bar</span><span data-outline-text="true">foo</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">bar</span><span data-outline-text="true">foo</span></p></div>',
       );
     });
 
     test('OutlineNode.insertBefore(): inert', async () => {
       const {editor} = testEnv;
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">foo</span></p></div>',
       );
       await editor.update(() => {
         const barTextNode = new TextNode('bar').makeInert();
         textNode.insertBefore(barTextNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true" style="pointer-events: none; user-select: none;">bar</span><span data-outline-text="true">foo</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true" style="pointer-events: none; user-select: none;">bar</span><span data-outline-text="true">foo</span></p></div>',
       );
     });
 
     test('OutlineNode.insertBefore(): directionless', async () => {
       const {editor} = testEnv;
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">foo</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">foo</span></p></div>',
       );
       await editor.update(() => {
         const barTextNode = new TextNode(`bar`).makeDirectionless();
         textNode.insertBefore(barTextNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">bar</span><span data-outline-text="true">foo</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">bar</span><span data-outline-text="true">foo</span></p></div>',
       );
       // TODO: add text direction validations
     });

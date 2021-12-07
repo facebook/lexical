@@ -364,7 +364,7 @@ describe('OutlineSelection tests', () => {
       name: 'Creation of an immutable node',
       inputs: [insertImmutableNode('Dominic Gannaway')],
       expectedHTML:
-        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph">' +
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr">' +
         '<span data-outline-text="true">Dominic Gannaway</span>' +
         '</p></div>',
       expectedSelection: {
@@ -396,7 +396,7 @@ describe('OutlineSelection tests', () => {
       name: 'Creation of a segmented node',
       inputs: [insertSegmentedNode('Dominic Gannaway')],
       expectedHTML:
-        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph">' +
+        '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr">' +
         '<span data-outline-text="true">Dominic Gannaway</span>' +
         '</p></div>',
       expectedSelection: {

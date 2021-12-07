@@ -432,9 +432,7 @@ export class ImageNode extends DecoratorNode {
     this.__height = height || 'inherit';
     this.__caption = caption || false;
   }
-  getTextContent(): string {
-    return this.__altText;
-  }
+
   setWidthAndHeight(
     width: 'inherit' | number,
     height: 'inherit' | number,

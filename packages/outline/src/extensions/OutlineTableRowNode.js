@@ -9,6 +9,7 @@
 
 import type {EditorConfig, OutlineNode, NodeKey} from 'outline';
 
+import {addClassNamesToElement} from 'outline/elements';
 import {ElementNode} from 'outline';
 
 export class TableRowNode extends ElementNode {
@@ -27,9 +28,7 @@ export class TableRowNode extends ElementNode {
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
     const element = document.createElement('tr');
 
-    if (config.theme.tableRow != null) {
-      element.classList.add(config.theme.tableRow);
-    }
+    addClassNamesToElement(element, config.theme.tableRow);
 
     return element;
   }

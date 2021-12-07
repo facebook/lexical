@@ -16,6 +16,7 @@ import type {
   CommandListenerLowPriority,
 } from 'outline';
 
+import {addClassNamesToElement} from 'outline/elements';
 import {
   ElementNode,
   getNearestNodeFromDOMNode,
@@ -343,9 +344,8 @@ export class TableNode extends ElementNode {
   ): HTMLElement {
     const element = document.createElement('table');
 
-    if (config.theme.table != null) {
-      element.classList.add(config.theme.table);
-    }
+    addClassNamesToElement(element, config.theme.table);
+
     applyCellSelection(this, element, editor);
 
     return element;

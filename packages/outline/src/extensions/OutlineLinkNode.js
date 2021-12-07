@@ -9,6 +9,7 @@
 
 import type {NodeKey, EditorConfig, OutlineNode, Selection} from 'outline';
 
+import {addClassNamesToElement} from 'outline/elements';
 import {ElementNode} from 'outline';
 
 export class LinkNode extends ElementNode {
@@ -29,12 +30,8 @@ export class LinkNode extends ElementNode {
 
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
     const element = document.createElement('a');
-    const theme = config.theme;
-    const className = theme.link;
     element.href = this.__url;
-    if (className !== undefined) {
-      element.className = className;
-    }
+    addClassNamesToElement(element, config.theme.link);
     return element;
   }
 

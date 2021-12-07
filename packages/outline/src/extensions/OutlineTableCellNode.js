@@ -9,6 +9,7 @@
 
 import type {OutlineNode, NodeKey, EditorConfig} from 'outline';
 
+import {addClassNamesToElement} from 'outline/elements';
 import {ElementNode} from 'outline';
 
 export class TableCellNode extends ElementNode {
@@ -34,13 +35,11 @@ export class TableCellNode extends ElementNode {
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
     const element = document.createElement(this.getTag());
 
-    if (config.theme.tableCell != null) {
-      element.classList.add(config.theme.tableCell);
-    }
-
-    if (this.__isHeader === true && config.theme.tableCellHeader) {
-      element.classList.add(config.theme.tableCellHeader);
-    }
+    addClassNamesToElement(
+      element,
+      config.theme.tableCell,
+      this.__isHeader === true && config.theme.tableCellHeader,
+    );
 
     return element;
   }

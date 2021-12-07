@@ -9,6 +9,7 @@
 
 import type {OutlineNode, NodeKey, EditorConfig} from 'outline';
 
+import {addClassNamesToElement} from 'outline/elements';
 import {isElementNode, isTextNode, ElementNode} from 'outline';
 
 export class ParagraphNode extends ElementNode {
@@ -28,11 +29,7 @@ export class ParagraphNode extends ElementNode {
 
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
     const element = document.createElement('p');
-    const theme = config.theme;
-    const className = theme.paragraph;
-    if (className !== undefined) {
-      element.className = className;
-    }
+    addClassNamesToElement(element, config.theme.paragraph);
     return element;
   }
   updateDOM(prevNode: ParagraphNode, dom: HTMLElement): boolean {

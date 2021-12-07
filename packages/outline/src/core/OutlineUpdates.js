@@ -23,7 +23,7 @@ import {updateEditorState} from './OutlineReconciler';
 import {
   createSelection,
   $getSelection,
-  getPreviousSelection,
+  $getPreviousSelection,
   createSelectionFromParse,
 } from './OutlineSelection';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './OutlineConstants';
@@ -82,7 +82,7 @@ export const state: State = {
   getSelection: $getSelection,
   clearSelection: $clearSelection,
   setSelection: $setSelection,
-  getPreviousSelection,
+  getPreviousSelection: $getPreviousSelection,
   setCompositionKey,
   getCompositionKey,
   getNearestNodeFromDOMNode,

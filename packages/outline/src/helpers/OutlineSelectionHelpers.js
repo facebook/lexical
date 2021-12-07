@@ -17,12 +17,12 @@ import type {
 } from 'outline';
 
 import {
-  createLineBreakNode,
+  $createLineBreakNode,
   isDecoratorNode,
   isLeafNode,
   isTextNode,
   isElementNode,
-  createTextNode,
+  $createTextNode,
   isRootNode,
 } from 'outline';
 
@@ -333,7 +333,7 @@ export function patchStyleText(
   }
 }
 
-export function getSelectionStyleValueForProperty(
+export function $getSelectionStyleValueForProperty(
   selection: Selection,
   styleProperty: string,
   defaultValue: string = '',
@@ -424,10 +424,10 @@ export function insertRichText(selection: Selection, text: string): void {
     for (let i = 0; i < length; i++) {
       const part = parts[i];
       if (part !== '') {
-        nodes.push(createTextNode(part));
+        nodes.push($createTextNode(part));
       }
       if (i !== length - 1) {
-        nodes.push(createLineBreakNode());
+        nodes.push($createLineBreakNode());
       }
     }
     selection.insertNodes(nodes);

@@ -18,10 +18,10 @@ import type {Binding, Provider, YjsEvent} from '.';
 import {YTextEvent, YMapEvent, YXmlEvent} from 'yjs';
 import {
   isTextNode,
-  getSelection,
-  getRoot,
-  setSelection,
-  getNodeByKey,
+  $getSelection,
+  $getRoot,
+  $setSelection,
+  $getNodeByKey,
 } from 'outline';
 import {CollabElementNode} from './CollabElementNode';
 import {CollabTextNode} from './CollabTextNode';
@@ -90,7 +90,7 @@ export function syncYjsChangesToOutline(
         syncEvent(binding, event);
       }
 
-      const selection = getSelection();
+      const selection = $getSelection();
       if (selection !== null) {
         // We can't use Yjs's cursor position here, as it doesn't always
         // handle selection recovery correctly – especially on elements that
@@ -116,13 +116,13 @@ export function syncYjsChangesToOutline(
               prevOffsetView,
             );
             if (nextSelection !== null) {
-              setSelection(nextSelection);
+              $setSelection(nextSelection);
             } else {
               // Fallback is to use the Yjs cursor position
               syncLocalCursorPosition(binding, provider);
               if (doesSelectionNeedRecovering(selection)) {
                 // Fallback
-                getRoot().selectEnd();
+                $getRoot().selectEnd();
               }
             }
           }
@@ -130,7 +130,7 @@ export function syncYjsChangesToOutline(
             binding,
             provider,
             prevSelection,
-            getSelection(),
+            $getSelection(),
           );
         } else {
           syncLocalCursorPosition(binding, provider);
@@ -157,7 +157,7 @@ function handleNormalizationMergeConflicts(
   const mergedNodes = [];
   for (let i = 0; i < normalizedNodesKeys.length; i++) {
     const nodeKey = normalizedNodesKeys[i];
-    const outlineNode = getNodeByKey(nodeKey);
+    const outlineNode = $getNodeByKey(nodeKey);
     const collabNode = collabNodeMap.get(nodeKey);
     if (collabNode instanceof CollabTextNode) {
       if (isTextNode(outlineNode)) {
@@ -216,7 +216,7 @@ export function syncOutlineUpdateToYjs(
       }
       if (dirtyElements.has('root')) {
         const prevNodeMap = prevEditorState._nodeMap;
-        const nextOutlineRoot = getRoot();
+        const nextOutlineRoot = $getRoot();
         const collabRoot = binding.root;
         collabRoot.syncPropertiesFromOutline(
           binding,
@@ -231,7 +231,7 @@ export function syncOutlineUpdateToYjs(
           dirtyLeaves,
         );
       }
-      const selection = getSelection();
+      const selection = $getSelection();
       const prevSelection = prevEditorState._selection;
       syncOutlineSelectionToYjs(binding, provider, prevSelection, selection);
     });

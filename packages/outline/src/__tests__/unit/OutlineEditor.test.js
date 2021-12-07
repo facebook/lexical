@@ -13,21 +13,21 @@ import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
 import {
-  createTextNode,
+  $createTextNode,
   TextNode,
   ElementNode,
-  getRoot,
-  setCompositionKey,
-  getSelection,
-  getNodeByKey,
+  $getRoot,
+  $setCompositionKey,
+  $getSelection,
+  $getNodeByKey,
   isTextNode,
 } from 'outline';
-import {createParagraphNode, ParagraphNode} from 'outline/ParagraphNode';
+import {$createParagraphNode, ParagraphNode} from 'outline/ParagraphNode';
 import useOutlineRichText from 'outline-react/useOutlineRichText';
 import {getEditorStateTextContent} from '../../core/OutlineUtils';
 import {
-  createTestElementNode,
-  createTestDecoratorNode,
+  $createTestElementNode,
+  $createTestDecoratorNode,
   createTestEditor,
 } from '../utils';
 import {LineBreakNode} from '../../core/OutlineLineBreakNode';
@@ -108,9 +108,9 @@ describe('OutlineEditor tests', () => {
     const initialEditor = createTestEditor();
 
     initialEditor.update(() => {
-      const root = getRoot();
-      const paragraph = createParagraphNode();
-      const text = createTextNode('This works!');
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
+      const text = $createTextNode('This works!');
       root.append(paragraph);
       paragraph.append(text);
     });
@@ -145,9 +145,9 @@ describe('OutlineEditor tests', () => {
     let log = [];
 
     editor.update(() => {
-      const root = getRoot();
-      const paragraph = createParagraphNode();
-      const text = createTextNode('This works!');
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
+      const text = $createTextNode('This works!');
       root.append(paragraph);
       paragraph.append(text);
     });
@@ -156,7 +156,7 @@ describe('OutlineEditor tests', () => {
       () => {
         log.push('A1');
         // To enforce the update
-        getRoot().markDirty();
+        $getRoot().markDirty();
         editor.update(
           () => {
             log.push('B1');
@@ -195,7 +195,7 @@ describe('OutlineEditor tests', () => {
       () => {
         log.push('A2');
         // To enforce the update
-        getRoot().markDirty();
+        $getRoot().markDirty();
       },
       {
         onUpdate: () => {
@@ -203,7 +203,7 @@ describe('OutlineEditor tests', () => {
           editor.update(
             () => {
               // force flush sync
-              setCompositionKey('root');
+              $setCompositionKey('root');
               log.push('D2');
             },
             {
@@ -260,7 +260,7 @@ describe('OutlineEditor tests', () => {
     editor.update(
       () => {
         log.push('A3');
-        getRoot().getLastDescendant().markDirty();
+        $getRoot().getLastDescendant().markDirty();
       },
       {
         onUpdate: () => {
@@ -298,8 +298,8 @@ describe('OutlineEditor tests', () => {
   it('editor.focus() callback is called', async () => {
     init();
     await editor.update(() => {
-      const root = getRoot();
-      root.append(createParagraphNode());
+      const root = $getRoot();
+      root.append($createParagraphNode());
     });
 
     const fn = jest.fn();
@@ -336,10 +336,10 @@ describe('OutlineEditor tests', () => {
       }
     });
     await editor.update(() => {
-      const root = getRoot();
-      const paragraph = createParagraphNode();
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
       root.append(paragraph);
-      paragraph.append(createTextNode('foo'));
+      paragraph.append($createTextNode('foo'));
     });
     italicsListener();
     boldListener();
@@ -364,7 +364,7 @@ describe('OutlineEditor tests', () => {
           return;
         }
         if (paragraph.isEmpty()) {
-          paragraph.append(createTextNode('foo'));
+          paragraph.append($createTextNode('foo'));
         }
       },
     );
@@ -386,12 +386,12 @@ describe('OutlineEditor tests', () => {
       }
     });
     await editor.update(() => {
-      const root = getRoot();
-      const paragraph = createParagraphNode();
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
       root.append(paragraph);
     });
     await editor.update(() => {
-      const root = getRoot();
+      const root = $getRoot();
       const paragraph = root.getFirstChild();
       paragraph.markDirty();
     });
@@ -411,10 +411,10 @@ describe('OutlineEditor tests', () => {
     const fooListener = editor.addTransform(TextNode, (node) => {
       if (node.getTextContent() === 'Foo' && !hasRun[0]) {
         const [before, after] = node.splitText(2);
-        before.insertBefore(createTextNode(''));
-        after.insertAfter(createTextNode(''));
-        after.insertAfter(createTextNode('!'));
-        after.insertAfter(createTextNode(''));
+        before.insertBefore($createTextNode(''));
+        after.insertAfter($createTextNode(''));
+        after.insertAfter($createTextNode('!'));
+        after.insertAfter($createTextNode(''));
         hasRun[0] = true;
       }
     });
@@ -427,10 +427,10 @@ describe('OutlineEditor tests', () => {
         !hasRun[1]
       ) {
         const [before, after] = child.splitText(2);
-        before.insertBefore(createTextNode(''));
-        after.insertAfter(createTextNode(''));
-        after.insertAfter(createTextNode('!'));
-        after.insertAfter(createTextNode(''));
+        before.insertBefore($createTextNode(''));
+        after.insertAfter($createTextNode(''));
+        after.insertAfter($createTextNode('!'));
+        after.insertAfter($createTextNode(''));
         hasRun[1] = true;
       }
     });
@@ -439,16 +439,16 @@ describe('OutlineEditor tests', () => {
       if (node.getTextContent() === 'Foo!!' && !hasRun[2]) {
         node.toggleFormat('bold');
         const [before, after] = node.splitText(2);
-        before.insertBefore(createTextNode(''));
-        after.insertAfter(createTextNode(''));
+        before.insertBefore($createTextNode(''));
+        after.insertAfter($createTextNode(''));
         hasRun[2] = true;
       }
     });
     await editor.update(() => {
-      const root = getRoot();
-      const paragraph = createParagraphNode();
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
       root.append(paragraph);
-      paragraph.append(createTextNode('Foo'));
+      paragraph.append($createTextNode('Foo'));
     });
     fooListener();
     megaFooListener();
@@ -469,10 +469,10 @@ describe('OutlineEditor tests', () => {
 
     expect(errorListener).toHaveBeenCalledTimes(0);
     await editor.update(() => {
-      const root = getRoot();
-      const paragraph = createParagraphNode();
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
       root.append(paragraph);
-      paragraph.append(createTextNode('foo'));
+      paragraph.append($createTextNode('foo'));
     });
     expect(errorListener).toHaveBeenCalledTimes(1);
 
@@ -497,9 +497,9 @@ describe('OutlineEditor tests', () => {
     });
 
     editor.update(() => {
-      const root = getRoot();
-      const paragraph = createParagraphNode();
-      const text = createTextNode('This works!');
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
+      const text = $createTextNode('This works!');
       root.append(paragraph);
       paragraph.append(text);
     });
@@ -520,10 +520,10 @@ describe('OutlineEditor tests', () => {
     init(errorListener);
 
     editor.update(() => {
-      const root = getRoot();
+      const root = $getRoot();
       if (root.getFirstChild() === null) {
-        const paragraph = createParagraphNode();
-        const text = createTextNode('This works!');
+        const paragraph = $createParagraphNode();
+        const text = $createTextNode('This works!');
         root.append(paragraph);
         paragraph.append(text);
       }
@@ -539,7 +539,7 @@ describe('OutlineEditor tests', () => {
     expect(errorListener).toHaveBeenCalledTimes(0);
 
     editor.update(() => {
-      const root = getRoot();
+      const root = $getRoot();
       root
         .getFirstChild()
         .getFirstChild()
@@ -559,10 +559,10 @@ describe('OutlineEditor tests', () => {
     init(errorListener);
 
     editor.update(() => {
-      const root = getRoot();
+      const root = $getRoot();
       if (root.getFirstChild() === null) {
-        const paragraph = createParagraphNode();
-        const text = createTextNode('This works!');
+        const paragraph = $createParagraphNode();
+        const text = $createTextNode('This works!');
         root.append(paragraph);
         paragraph.append(text);
       }
@@ -578,7 +578,7 @@ describe('OutlineEditor tests', () => {
     expect(errorListener).toHaveBeenCalledTimes(0);
 
     editor.update(() => {
-      const root = getRoot();
+      const root = $getRoot();
       root.getFirstChild().getFirstChild().setTextContent('Foo');
     });
 
@@ -606,12 +606,12 @@ describe('OutlineEditor tests', () => {
 
       React.useEffect(() => {
         editor.update(() => {
-          const root = getRoot();
+          const root = $getRoot();
           const firstChild = root.getFirstChild();
           const text = changeElement ? 'Change successful' : 'Not changed';
           if (firstChild === null) {
-            const paragraph = createParagraphNode();
-            const textNode = createTextNode(text);
+            const paragraph = $createParagraphNode();
+            const textNode = $createTextNode(text);
             paragraph.append(textNode);
             root.append(paragraph);
           } else {
@@ -713,10 +713,10 @@ describe('OutlineEditor tests', () => {
       // Update the editor with the decorator
       await ReactTestUtils.act(async () => {
         await editor.update(() => {
-          const paragraph = createParagraphNode();
-          const test = createTestDecoratorNode();
+          const paragraph = $createParagraphNode();
+          const test = $createTestDecoratorNode();
           paragraph.append(test);
-          getRoot().append(paragraph);
+          $getRoot().append(paragraph);
         });
       });
 
@@ -771,7 +771,7 @@ describe('OutlineEditor tests', () => {
       await Promise.resolve().then();
 
       editor.getEditorState().read(() => {
-        const root = getRoot();
+        const root = $getRoot();
         const paragraph = root.getFirstChild();
 
         expect(root).toEqual({
@@ -812,23 +812,23 @@ describe('OutlineEditor tests', () => {
     beforeEach(async () => {
       init();
       await update((state) => {
-        const paragraph = createParagraphNode();
-        originalText = createTextNode('Hello world');
+        const paragraph = $createParagraphNode();
+        originalText = $createTextNode('Hello world');
         originalText.select(6, 11);
         paragraph.append(originalText);
-        getRoot().append(paragraph);
+        $getRoot().append(paragraph);
       });
       const stringifiedEditorState = JSON.stringify(
         editor.getEditorState().toJSON(),
       );
       parsedEditorState = editor.parseEditorState(stringifiedEditorState);
       parsedEditorState.read(() => {
-        parsedRoot = getRoot();
+        parsedRoot = $getRoot();
         parsedParagraph = parsedRoot.getFirstChild();
         paragraphKey = parsedParagraph.getKey();
         parsedText = parsedParagraph.getFirstChild();
         textKey = parsedText.getKey();
-        parsedSelection = getSelection();
+        parsedSelection = $getSelection();
       });
     });
 
@@ -866,8 +866,8 @@ describe('OutlineEditor tests', () => {
     });
 
     it('Parses the text content of the editor state', async () => {
-      expect(parsedEditorState.read(() => getRoot().__cachedText)).toBe(null);
-      expect(parsedEditorState.read(() => getRoot().getTextContent())).toBe(
+      expect(parsedEditorState.read(() => $getRoot().__cachedText)).toBe(null);
+      expect(parsedEditorState.read(() => $getRoot().getTextContent())).toBe(
         'Hello world',
       );
     });
@@ -894,8 +894,8 @@ describe('OutlineEditor tests', () => {
     async function reset() {
       init();
       await update(() => {
-        const root = getRoot();
-        const paragraph = createParagraphNode();
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
         root.append(paragraph);
       });
     }
@@ -938,8 +938,7 @@ describe('OutlineEditor tests', () => {
 
         // Previous editor state
         await update((state: State) => {
-          const writableParagraph: ParagraphNode = state
-            .getRoot()
+          const writableParagraph: ParagraphNode = $getRoot()
             .getFirstChild()
             .getWritable();
           writableParagraph.__children = [];
@@ -958,7 +957,7 @@ describe('OutlineEditor tests', () => {
         // Next editor state
         const nextSet = new Set(next);
         await update(() => {
-          const writableParagraph: ParagraphNode = getRoot()
+          const writableParagraph: ParagraphNode = $getRoot()
             .getFirstChild()
             .getWritable();
           // Remove previous that are not in next
@@ -966,7 +965,7 @@ describe('OutlineEditor tests', () => {
             const previousText = previous[i];
             if (!nextSet.has(previousText)) {
               const previousKey = textToKey.get(previousText);
-              const previousNode = getNodeByKey(previousKey);
+              const previousNode = $getNodeByKey(previousKey);
               previousNode.remove();
               textToKey.delete(previousText);
             }
@@ -979,12 +978,12 @@ describe('OutlineEditor tests', () => {
               // New node; append to the end
               textNode = new TextNode(nextText).toggleUnmergeable();
               textNode.__parent = writableParagraph.__key;
-              expect(getNodeByKey(nextKey)).toBe(null);
+              expect($getNodeByKey(nextKey)).toBe(null);
               textToKey.set(nextText, textNode.__key);
               writableParagraph.__children.push(textNode.__key);
             } else {
               // Node exists in previous; reorder it
-              textNode = getNodeByKey(nextKey);
+              textNode = $getNodeByKey(nextKey);
               expect(textNode.__text).toBe(nextText);
               writableParagraph.__children.splice(
                 writableParagraph.__children.indexOf(nextKey),
@@ -1016,7 +1015,7 @@ describe('OutlineEditor tests', () => {
           for (let i = 0; i < next.length; i++) {
             const nextText = next[i];
             const nextKey = textToKey.get(nextText);
-            expect(getNodeByKey(nextKey)).not.toBe(null);
+            expect($getNodeByKey(nextKey)).not.toBe(null);
           }
         });
         expect(editor.getEditorState()._nodeMap.size).toBe(next.length + 2);
@@ -1033,8 +1032,8 @@ describe('OutlineEditor tests', () => {
 
     it('moves node to different tree branches', async () => {
       function createElementNodeWithText(text: string) {
-        const elementNode = createTestElementNode();
-        const textNode = createTextNode(text);
+        const elementNode = $createTestElementNode();
+        const textNode = $createTextNode(text);
         elementNode.append(textNode);
         return [elementNode, textNode];
       }
@@ -1045,7 +1044,7 @@ describe('OutlineEditor tests', () => {
       let elementNode2Key;
       let textNode2Key;
       await update(() => {
-        const paragraph: ParagraphNode = getRoot().getFirstChild();
+        const paragraph: ParagraphNode = $getRoot().getFirstChild();
         paragraphNodeKey = paragraph.getKey();
 
         const [elementNode1, textNode1] = createElementNodeWithText('A');
@@ -1059,8 +1058,8 @@ describe('OutlineEditor tests', () => {
         paragraph.append(elementNode1, elementNode2);
       });
       await update(() => {
-        const elementNode1: ElementNode = getNodeByKey(elementNode1Key);
-        const elementNode2: TextNode = getNodeByKey(elementNode2Key);
+        const elementNode1: ElementNode = $getNodeByKey(elementNode1Key);
+        const elementNode2: TextNode = $getNodeByKey(elementNode2Key);
         elementNode1.append(elementNode2);
       });
       const keys = [
@@ -1083,8 +1082,8 @@ describe('OutlineEditor tests', () => {
 
     it('moves node to different tree branches (inverse)', async () => {
       function createElementNodeWithText(text: string) {
-        const elementNode = createTestElementNode();
-        const textNode = createTextNode(text);
+        const elementNode = $createTestElementNode();
+        const textNode = $createTextNode(text);
         elementNode.append(textNode);
         return elementNode;
       }
@@ -1092,7 +1091,7 @@ describe('OutlineEditor tests', () => {
       let elementNode1Key;
       let elementNode2Key;
       await update(() => {
-        const paragraph: ParagraphNode = getRoot().getFirstChild();
+        const paragraph: ParagraphNode = $getRoot().getFirstChild();
 
         const elementNode1 = createElementNodeWithText('A');
         elementNode1Key = elementNode1.getKey();
@@ -1103,8 +1102,8 @@ describe('OutlineEditor tests', () => {
         paragraph.append(elementNode1, elementNode2);
       });
       await update((state: State) => {
-        const elementNode1: ElementNode = getNodeByKey(elementNode1Key);
-        const elementNode2: TextNode = getNodeByKey(elementNode2Key);
+        const elementNode1: ElementNode = $getNodeByKey(elementNode1Key);
+        const elementNode2: TextNode = $getNodeByKey(elementNode2Key);
         elementNode2.append(elementNode1);
       });
       expect(container.innerHTML).toBe(
@@ -1114,8 +1113,8 @@ describe('OutlineEditor tests', () => {
 
     it('moves node to different tree branches (node appended twice in two different branches)', async () => {
       function createElementNodeWithText(text: string) {
-        const elementNode = createTestElementNode();
-        const textNode = createTextNode(text);
+        const elementNode = $createTestElementNode();
+        const textNode = $createTextNode(text);
         elementNode.append(textNode);
         return elementNode;
       }
@@ -1124,7 +1123,7 @@ describe('OutlineEditor tests', () => {
       let elementNode2Key;
       let elementNode3Key;
       await update(() => {
-        const paragraph: ParagraphNode = getRoot().getFirstChild();
+        const paragraph: ParagraphNode = $getRoot().getFirstChild();
 
         const elementNode1 = createElementNodeWithText('A');
         elementNode1Key = elementNode1.getKey();
@@ -1138,9 +1137,9 @@ describe('OutlineEditor tests', () => {
         paragraph.append(elementNode1, elementNode2, elementNode3);
       });
       await update((state: State) => {
-        const elementNode1: ElementNode = getNodeByKey(elementNode1Key);
-        const elementNode2: TextNode = getNodeByKey(elementNode2Key);
-        const elementNode3: TextNode = getNodeByKey(elementNode3Key);
+        const elementNode1: ElementNode = $getNodeByKey(elementNode1Key);
+        const elementNode2: TextNode = $getNodeByKey(elementNode2Key);
+        const elementNode3: TextNode = $getNodeByKey(elementNode3Key);
         elementNode2.append(elementNode3);
         elementNode1.append(elementNode3);
       });
@@ -1159,8 +1158,8 @@ describe('OutlineEditor tests', () => {
       emptyTransform,
     );
     await editor.update(() => {
-      const root = getRoot();
-      const paragraph = createParagraphNode();
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
       root.append(paragraph);
     });
     removeTextTransform();
@@ -1274,9 +1273,9 @@ describe('OutlineEditor tests', () => {
     init();
     const fn = jest.fn();
     editor.update(() => {
-      const root = getRoot();
-      const paragraph = createParagraphNode();
-      const textNode = createTextNode('foo');
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
+      const textNode = $createTextNode('foo');
       root.append(paragraph);
       paragraph.append(textNode);
     });
@@ -1285,9 +1284,9 @@ describe('OutlineEditor tests', () => {
       fn(text);
     });
     await editor.update(() => {
-      const root = getRoot();
+      const root = $getRoot();
       const child = root.getLastDescendant();
-      child.insertAfter(createTextNode('bar'));
+      child.insertAfter($createTextNode('bar'));
     });
     expect(fn).toHaveBeenCalledTimes(1);
     expect(fn).toHaveBeenCalledWith('foobar');

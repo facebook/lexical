@@ -6,7 +6,7 @@
  *
  */
 
-import {LinkNode, createLinkNode, isLinkNode} from 'outline/LinkNode';
+import {LinkNode, $createLinkNode, isLinkNode} from 'outline/LinkNode';
 import {initializeUnitTest} from '../utils';
 
 const editorConfig = Object.freeze({
@@ -115,11 +115,11 @@ describe('OutlineLinkNode tests', () => {
       });
     });
 
-    test('createLinkNode()', async () => {
+    test('$createLinkNode()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const linkNode = new LinkNode('https://example.com/foo');
-        const createdLinkNode = createLinkNode('https://example.com/foo');
+        const createdLinkNode = $createLinkNode('https://example.com/foo');
         expect(linkNode.__type).toEqual(createdLinkNode.__type);
         expect(linkNode.__flags).toEqual(createdLinkNode.__flags);
         expect(linkNode.__parent).toEqual(createdLinkNode.__parent);

@@ -22,8 +22,8 @@ import type {ParsedNode, NodeParserState} from './OutlineParsing';
 import {updateEditorState} from './OutlineReconciler';
 import {
   createSelection,
-  getSelection,
-  getPreviousSelection,
+  $getSelection,
+  $getPreviousSelection,
   createSelectionFromParse,
 } from './OutlineSelection';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './OutlineConstants';
@@ -36,15 +36,15 @@ import {
 } from './OutlineEditorState';
 import {
   scheduleMicroTask,
-  getNodeByKey,
-  getCompositionKey,
-  setCompositionKey,
-  getNearestNodeFromDOMNode,
+  $getNodeByKey,
+  $getCompositionKey,
+  $setCompositionKey,
+  $getNearestNodeFromDOMNode,
   getEditorStateTextContent,
-  flushMutations,
-  setSelection,
-  clearSelection,
-  getRoot,
+  $flushMutations,
+  $setSelection,
+  $clearSelection,
+  $getRoot,
   getRegisteredNodeOrThrow,
 } from './OutlineUtils';
 import {
@@ -77,16 +77,16 @@ export type State = {
 };
 
 export const state: State = {
-  getRoot,
-  getNodeByKey,
-  getSelection,
-  clearSelection,
-  setSelection,
-  getPreviousSelection,
-  setCompositionKey,
-  getCompositionKey,
-  getNearestNodeFromDOMNode,
-  flushMutations,
+  getRoot: $getRoot,
+  getNodeByKey: $getNodeByKey,
+  getSelection: $getSelection,
+  clearSelection: $clearSelection,
+  setSelection: $setSelection,
+  getPreviousSelection: $getPreviousSelection,
+  setCompositionKey: $setCompositionKey,
+  getCompositionKey: $getCompositionKey,
+  getNearestNodeFromDOMNode: $getNearestNodeFromDOMNode,
+  flushMutations: $flushMutations,
 };
 
 export function isCurrentlyReadOnlyMode(): boolean {
@@ -205,7 +205,7 @@ function applyAllTransforms(
   const dirtyLeaves = editor._dirtyLeaves;
   const dirtyElements = editor._dirtyElements;
   const nodeMap = editorState._nodeMap;
-  const compositionKey = getCompositionKey();
+  const compositionKey = $getCompositionKey();
   const transformsCache = new Map();
 
   let untransformedDirtyLeaves = dirtyLeaves;

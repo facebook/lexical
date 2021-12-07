@@ -16,7 +16,7 @@ import type {
 } from 'outline';
 
 import * as React from 'react';
-import {DecoratorNode, log, getNodeByKey} from 'outline';
+import {DecoratorNode, log, $getNodeByKey} from 'outline';
 import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
 import {useCollaborationContext} from '../context/CollaborationContext';
 import {Suspense, useCallback, useEffect, useRef, useState} from 'react';
@@ -291,7 +291,7 @@ function ImageComponent({
     if ((hasFocus && event.key === 'Backspace') || event.key === 'Delete') {
       editor.update(() => {
         log('Image.keyDown');
-        const node = getNodeByKey(nodeKey);
+        const node = $getNodeByKey(nodeKey);
         if (isImageNode(node)) {
           node.remove();
           event.stopPropagation();
@@ -313,7 +313,7 @@ function ImageComponent({
 
   const setShowCaption = useCallback(() => {
     editor.update(() => {
-      const node = getNodeByKey(nodeKey);
+      const node = $getNodeByKey(nodeKey);
       if (isImageNode(node)) {
         node.setCaption(true);
       }
@@ -329,7 +329,7 @@ function ImageComponent({
       setIsResizing(false);
       editor.update(() => {
         log('ImageNode.resize');
-        const node = getNodeByKey(nodeKey);
+        const node = $getNodeByKey(nodeKey);
         if (isImageNode(node)) {
           node.setWidthAndHeight(nextWidth, nextHeight);
         }
@@ -476,7 +476,7 @@ export class ImageNode extends DecoratorNode {
   }
 }
 
-export function createImageNode(
+export function $createEmojiNode(
   src: string,
   altText: string,
   ref: EditorStateRef,

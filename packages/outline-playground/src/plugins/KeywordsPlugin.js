@@ -12,16 +12,16 @@ import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
 import type {OutlineEditor, State, ElementNode} from 'outline';
 import {useEffect} from 'react';
 import {
-  createTextNode,
+  $createTextNode,
   isTextNode,
   TextNode,
   isElementNode,
-  getSelection,
+  $getSelection,
 } from 'outline';
 import {
   KeywordNode,
   isKeywordNode,
-  createKeywordNode,
+  $createKeywordNode,
 } from '../nodes/KeywordNode';
 import {ParagraphNode, isParagraphNode} from 'outline/ParagraphNode';
 
@@ -50,7 +50,7 @@ function textTransform(node: TextNode, state: State): void {
     }
     adjacentTextNode = adjacentTextNode.getNextSibling();
   }
-  const selection = getSelection();
+  const selection = $getSelection();
 
   if (!isCharacterBetweenValid(text[0])) {
     // Handle when a text node occurs after a keyword, but doesn't include a space.
@@ -102,7 +102,7 @@ function textTransform(node: TextNode, state: State): void {
     }
     const keywordText = targetNode.getTextContent();
 
-    const keywordNode = createKeywordNode(keywordText);
+    const keywordNode = $createKeywordNode(keywordText);
     targetNode.replace(keywordNode);
     targetNode = keywordNode;
   }
@@ -160,7 +160,7 @@ function useKeywords(editor: OutlineEditor): void {
 }
 
 function convertKeywordNodeToPlainTextNode(node: KeywordNode): void {
-  const textNode = createTextNode(node.getTextContent());
+  const textNode = $createTextNode(node.getTextContent());
   node.replace(textNode);
 }
 

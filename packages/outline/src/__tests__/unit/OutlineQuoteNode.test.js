@@ -6,9 +6,9 @@
  *
  */
 
-import {createQuoteNode} from 'outline/QuoteNode';
+import {$createQuoteNode} from 'outline/QuoteNode';
 import {ParagraphNode} from 'outline/ParagraphNode';
-import {getRoot} from 'outline';
+import {$getRoot} from 'outline';
 import {initializeUnitTest} from '../utils';
 
 const editorConfig = Object.freeze({
@@ -22,18 +22,18 @@ describe('OutlineQuoteNode tests', () => {
     test('QuoteNode.constructor', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const quoteNode = createQuoteNode();
+        const quoteNode = $createQuoteNode();
         expect(quoteNode.getFlags()).toBe(0);
         expect(quoteNode.getType()).toBe('quote');
         expect(quoteNode.getTextContent()).toBe('');
       });
-      expect(() => createQuoteNode()).toThrow();
+      expect(() => $createQuoteNode()).toThrow();
     });
 
     test('QuoteNode.createDOM()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const quoteNode = createQuoteNode();
+        const quoteNode = $createQuoteNode();
         expect(quoteNode.createDOM(editorConfig).outerHTML).toBe(
           '<blockquote class="my-quote-class"></blockquote>',
         );
@@ -46,12 +46,12 @@ describe('OutlineQuoteNode tests', () => {
     test('QuoteNode.updateDOM()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const quoteNode = createQuoteNode();
+        const quoteNode = $createQuoteNode();
         const domElement = quoteNode.createDOM(editorConfig);
         expect(domElement.outerHTML).toBe(
           '<blockquote class="my-quote-class"></blockquote>',
         );
-        const newQuoteNode = createQuoteNode();
+        const newQuoteNode = $createQuoteNode();
         const result = newQuoteNode.updateDOM(quoteNode, domElement);
         expect(result).toBe(false);
         expect(domElement.outerHTML).toBe(
@@ -64,8 +64,8 @@ describe('OutlineQuoteNode tests', () => {
       const {editor} = testEnv;
       let quoteNode;
       await editor.update(() => {
-        const root = getRoot();
-        quoteNode = createQuoteNode();
+        const root = $getRoot();
+        quoteNode = $createQuoteNode();
         root.append(quoteNode);
       });
       expect(testEnv.outerHTML).toBe(
@@ -84,16 +84,16 @@ describe('OutlineQuoteNode tests', () => {
     test('QuoteNode.canInsertTab()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const quoteNode = createQuoteNode();
+        const quoteNode = $createQuoteNode();
         expect(quoteNode.canInsertTab()).toBe(false);
       });
     });
 
-    test('createQuoteNode()', async () => {
+    test('$createQuoteNode()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const quoteNode = createQuoteNode();
-        const createdQuoteNode = createQuoteNode();
+        const quoteNode = $createQuoteNode();
+        const createdQuoteNode = $createQuoteNode();
         expect(quoteNode.__type).toEqual(createdQuoteNode.__type);
         expect(quoteNode.__flags).toEqual(createdQuoteNode.__flags);
         expect(quoteNode.__parent).toEqual(createdQuoteNode.__parent);

@@ -26,15 +26,15 @@ import {
   isDecoratorNode,
   isRootNode,
   TextNode,
-  createTextNode,
+  $createTextNode,
   isLeafNode,
-  createLineBreakNode,
+  $createLineBreakNode,
 } from '.';
 import {
-  getCompositionKey,
-  getNodeByKey,
+  $getCompositionKey,
+  $getNodeByKey,
   isSelectionWithinEditor,
-  setCompositionKey,
+  $setCompositionKey,
   toggleTextFormatType,
   getNodeFromDOM,
   domIsElement,
@@ -111,21 +111,21 @@ class Point {
   }
   getNode() {
     const key = this.key;
-    const node = getNodeByKey(key);
+    const node = $getNodeByKey(key);
     if (node === null) {
       invariant(false, 'Point.getNode: node not found');
     }
     return node;
   }
   set(key: NodeKey, offset: number, type: 'text' | 'element'): void {
-    const selection = getSelection();
+    const selection = $getSelection();
     const oldKey = this.key;
     this.key = key;
     this.offset = offset;
     this.type = type;
     if (!isCurrentlyReadOnlyMode()) {
-      if (getCompositionKey() === oldKey) {
-        setCompositionKey(key);
+      if ($getCompositionKey() === oldKey) {
+        $setCompositionKey(key);
       }
       if (
         selection !== null &&
@@ -183,7 +183,7 @@ function transferStartingElementPointToTextPoint(
 ) {
   const element = start.getNode();
   const placementNode = element.getChildAtIndex(start.offset);
-  const textNode = createTextNode();
+  const textNode = $createTextNode();
   textNode.setFormat(format);
   if (placementNode === null) {
     element.append(textNode);
@@ -410,7 +410,7 @@ export class Selection {
         isImmutableOrInert(nextSibling) ||
         nextSibling.isSegmented()
       ) {
-        nextSibling = createTextNode();
+        nextSibling = $createTextNode();
         if (!firstNodeParent.canInsertTextAfter()) {
           firstNodeParent.insertAfter(nextSibling);
         } else {
@@ -437,7 +437,7 @@ export class Selection {
         isImmutableOrInert(prevSibling) ||
         prevSibling.isSegmented()
       ) {
-        prevSibling = createTextNode();
+        prevSibling = $createTextNode();
         if (!firstNodeParent.canInsertTextBefore()) {
           firstNodeParent.insertBefore(prevSibling);
         } else {
@@ -451,7 +451,7 @@ export class Selection {
         return;
       }
     } else if (firstNode.isSegmented() && startOffset !== firstNodeTextLength) {
-      const textNode = createTextNode(firstNode.getTextContent());
+      const textNode = $createTextNode(firstNode.getTextContent());
       firstNode.replace(textNode);
       firstNode = textNode;
     }
@@ -467,7 +467,7 @@ export class Selection {
         if (firstNode.getTextContent() === '') {
           firstNode.setFormat(format);
         } else {
-          const textNode = createTextNode(text);
+          const textNode = $createTextNode(text);
           textNode.setFormat(format);
           textNode.select();
           if (startOffset === 0) {
@@ -514,7 +514,7 @@ export class Selection {
           endOffset !== lastNode.getTextContentSize()
         ) {
           if (lastNode.isSegmented()) {
-            const textNode = createTextNode(lastNode.getTextContent());
+            const textNode = $createTextNode(lastNode.getTextContent());
             lastNode.replace(textNode);
             lastNode = textNode;
           }
@@ -1036,7 +1036,7 @@ export class Selection {
   }
 
   insertLineBreak(selectStart?: boolean): void {
-    const lineBreakNode = createLineBreakNode();
+    const lineBreakNode = $createLineBreakNode();
     if (selectStart) {
       this.insertNodes([lineBreakNode], true);
     } else {
@@ -1612,12 +1612,12 @@ export function createSelection(editor: OutlineEditor): null | Selection {
   );
 }
 
-export function getSelection(): null | Selection {
+export function $getSelection(): null | Selection {
   const editorState = getActiveEditorState();
   return editorState._selection;
 }
 
-export function getPreviousSelection(): null | Selection {
+export function $getPreviousSelection(): null | Selection {
   const editor = getActiveEditor();
   return editor._editorState._selection;
 }

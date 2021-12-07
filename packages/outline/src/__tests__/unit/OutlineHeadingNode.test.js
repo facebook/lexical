@@ -8,12 +8,12 @@
 
 import {
   HeadingNode,
-  createHeadingNode,
+  $createHeadingNode,
   isHeadingNode,
 } from 'outline/HeadingNode';
 import {ParagraphNode} from 'outline/ParagraphNode';
 import {initializeUnitTest} from '../utils';
-import {createTextNode, getRoot} from 'outline';
+import {$createTextNode, $getRoot} from 'outline';
 
 const editorConfig = Object.freeze({
   theme: {
@@ -72,7 +72,7 @@ describe('OutlineHeadingNode tests', () => {
       const {editor} = testEnv;
       let headingNode;
       await editor.update(() => {
-        const root = getRoot();
+        const root = $getRoot();
         headingNode = new HeadingNode('h1');
         root.append(headingNode);
       });
@@ -97,11 +97,11 @@ describe('OutlineHeadingNode tests', () => {
       });
     });
 
-    test('createHeadingNode()', async () => {
+    test('$createHeadingNode()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const headingNode = new HeadingNode();
-        const createdHeadingNode = createHeadingNode();
+        const createdHeadingNode = $createHeadingNode();
         expect(headingNode.__type).toEqual(createdHeadingNode.__type);
         expect(headingNode.__flags).toEqual(createdHeadingNode.__flags);
         expect(headingNode.__parent).toEqual(createdHeadingNode.__parent);
@@ -122,10 +122,10 @@ describe('OutlineHeadingNode tests', () => {
       let headingNode;
       const text = 'hello world';
       await editor.update(() => {
-        const root = getRoot();
+        const root = $getRoot();
         headingNode = new HeadingNode('h2');
         root.append(headingNode);
-        const textNode = createTextNode(text);
+        const textNode = $createTextNode(text);
         headingNode.append(textNode);
       });
       expect(testEnv.outerHTML).toBe(

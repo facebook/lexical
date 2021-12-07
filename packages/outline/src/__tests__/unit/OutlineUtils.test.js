@@ -6,7 +6,7 @@
  *
  */
 
-import {createTextNode} from 'outline';
+import {$createTextNode, $getRoot} from 'outline';
 
 import {
   emptyFunction,
@@ -19,8 +19,8 @@ import {
 } from '../../core/OutlineUtils';
 
 import {initializeUnitTest} from '../utils';
-import {getNodeByKey} from '../../core/OutlineUtils';
-import {createParagraphNode, ParagraphNode} from 'outline/ParagraphNode';
+import {$getNodeByKey} from '../../core/OutlineUtils';
+import {$createParagraphNode, ParagraphNode} from 'outline/ParagraphNode';
 import {TextNode} from 'outline';
 
 describe('OutlineUtils tests', () => {
@@ -87,9 +87,9 @@ describe('OutlineUtils tests', () => {
       const {editor} = testEnv;
       let textNode;
       await editor.update((state) => {
-        const root = state.getRoot();
-        const paragraph = createParagraphNode();
-        textNode = createTextNode('foo');
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        textNode = $createTextNode('foo');
         paragraph.append(textNode);
         root.append(paragraph);
       });
@@ -152,38 +152,38 @@ describe('OutlineUtils tests', () => {
     test('isImmutableOrInertOrSegmented()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const node = createTextNode('foo');
+        const node = $createTextNode('foo');
         expect(isImmutableOrInertOrSegmented(node)).toBe(false);
 
-        const immutableNode = createTextNode().makeImmutable();
+        const immutableNode = $createTextNode().makeImmutable();
         expect(isImmutableOrInertOrSegmented(immutableNode)).toBe(true);
 
-        const inertNode = createTextNode('foo').makeInert();
+        const inertNode = $createTextNode('foo').makeInert();
         expect(isImmutableOrInertOrSegmented(inertNode)).toBe(true);
 
-        const segmentedNode = createTextNode('foo').makeSegmented();
+        const segmentedNode = $createTextNode('foo').makeSegmented();
         expect(isImmutableOrInertOrSegmented(segmentedNode)).toBe(true);
       });
     });
 
-    test('getNodeByKey', async () => {
+    test('$getNodeByKey', async () => {
       const {editor} = testEnv;
       let paragraphNode;
       let textNode;
 
       await editor.update((state) => {
-        const rootNode = state.getRoot();
+        const rootNode = $getRoot();
         paragraphNode = new ParagraphNode();
         textNode = new TextNode('foo');
         paragraphNode.append(textNode);
         rootNode.append(paragraphNode);
       });
       await editor.getEditorState().read(() => {
-        expect(getNodeByKey('1')).toBe(paragraphNode);
-        expect(getNodeByKey('2')).toBe(textNode);
-        expect(getNodeByKey('3')).toBe(null);
+        expect($getNodeByKey('1')).toBe(paragraphNode);
+        expect($getNodeByKey('2')).toBe(textNode);
+        expect($getNodeByKey('3')).toBe(null);
       });
-      expect(() => getNodeByKey()).toThrow();
+      expect(() => $getNodeByKey()).toThrow();
     });
   });
 });

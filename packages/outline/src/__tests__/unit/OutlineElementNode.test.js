@@ -12,8 +12,8 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import {createTextNode, getRoot} from 'outline';
-import {createTestElementNode, createTestEditor} from '../utils';
+import {$createTextNode, $getRoot} from 'outline';
+import {$createTestElementNode, createTestEditor} from '../utils';
 
 describe('OutlineElementNode tests', () => {
   let container = null;
@@ -65,25 +65,25 @@ describe('OutlineElementNode tests', () => {
 
     // Insert initial block
     await update(() => {
-      const block = createTestElementNode();
-      const text = createTextNode('Foo');
-      const text2 = createTextNode('Bar');
+      const block = $createTestElementNode();
+      const text = $createTextNode('Foo');
+      const text2 = $createTextNode('Bar');
       // Prevent text nodes from combining.
       text2.setFlags(IS_BOLD);
-      const text3 = createTextNode('Baz');
+      const text3 = $createTextNode('Baz');
 
       // Some operations require a selection to exist, hence
       // we make a selection in the setup code.
       text.select(0, 0);
       block.append(text, text2, text3);
-      getRoot().append(block);
+      $getRoot().append(block);
     });
   }
 
   describe('getChildren()', () => {
     test('no children', async () => {
       await update(() => {
-        const block = createTestElementNode();
+        const block = $createTestElementNode();
         const children = block.getChildren();
         expect(children).toHaveLength(0);
         expect(children).toEqual([]);
@@ -92,7 +92,7 @@ describe('OutlineElementNode tests', () => {
 
     test('some children', async () => {
       await update(() => {
-        const children = getRoot().getFirstChild().getChildren();
+        const children = $getRoot().getFirstChild().getChildren();
         expect(children).toHaveLength(3);
       });
     });
@@ -101,20 +101,20 @@ describe('OutlineElementNode tests', () => {
   describe('getAllTextNodes()', () => {
     test('basic', async () => {
       await update(() => {
-        const textNodes = getRoot().getFirstChild().getAllTextNodes();
+        const textNodes = $getRoot().getFirstChild().getAllTextNodes();
         expect(textNodes).toHaveLength(3);
       });
     });
 
     test('nested', async () => {
       await update(() => {
-        const block = createTestElementNode();
-        const innerBlock = createTestElementNode();
-        const text = createTextNode('Foo');
+        const block = $createTestElementNode();
+        const innerBlock = $createTestElementNode();
+        const text = $createTextNode('Foo');
         text.select(0, 0);
-        const text2 = createTextNode('Bar');
-        const text3 = createTextNode('Baz');
-        const text4 = createTextNode('Qux');
+        const text2 = $createTextNode('Bar');
+        const text3 = $createTextNode('Baz');
+        const text4 = $createTextNode('Qux');
 
         block.append(text, innerBlock, text4);
         innerBlock.append(text2, text3);
@@ -123,16 +123,16 @@ describe('OutlineElementNode tests', () => {
         expect(children).toHaveLength(4);
         expect(children).toEqual([text, text2, text3, text4]);
 
-        const innerInnerBlock = createTestElementNode();
-        const text5 = createTextNode('More');
-        const text6 = createTextNode('Stuff');
+        const innerInnerBlock = $createTestElementNode();
+        const text5 = $createTextNode('More');
+        const text6 = $createTextNode('Stuff');
         innerInnerBlock.append(text5, text6);
         innerBlock.append(innerInnerBlock);
 
         const children2 = block.getAllTextNodes();
         expect(children2).toHaveLength(6);
         expect(children2).toEqual([text, text2, text3, text5, text6, text4]);
-        getRoot().append(block);
+        $getRoot().append(block);
       });
     });
 
@@ -142,15 +142,15 @@ describe('OutlineElementNode tests', () => {
   describe('getFirstChild()', () => {
     test('basic', async () => {
       await update(() => {
-        expect(getRoot().getFirstChild().getFirstChild().getTextContent()).toBe(
-          'Foo',
-        );
+        expect(
+          $getRoot().getFirstChild().getFirstChild().getTextContent(),
+        ).toBe('Foo');
       });
     });
 
     test('empty', async () => {
       await update(() => {
-        const block = createTestElementNode();
+        const block = $createTestElementNode();
         expect(block.getFirstChild()).toBe(null);
       });
     });
@@ -159,7 +159,7 @@ describe('OutlineElementNode tests', () => {
   describe('getLastChild()', () => {
     test('basic', async () => {
       await update(() => {
-        expect(getRoot().getFirstChild().getLastChild().getTextContent()).toBe(
+        expect($getRoot().getFirstChild().getLastChild().getTextContent()).toBe(
           'Baz',
         );
       });
@@ -167,7 +167,7 @@ describe('OutlineElementNode tests', () => {
 
     test('empty', async () => {
       await update(() => {
-        const block = createTestElementNode();
+        const block = $createTestElementNode();
         expect(block.getLastChild()).toBe(null);
       });
     });
@@ -176,27 +176,27 @@ describe('OutlineElementNode tests', () => {
   describe('getTextContent()', () => {
     test('basic', async () => {
       await update(() => {
-        expect(getRoot().getFirstChild().getTextContent()).toBe('FooBarBaz');
+        expect($getRoot().getFirstChild().getTextContent()).toBe('FooBarBaz');
       });
     });
 
     test('empty', async () => {
       await update(() => {
-        const block = createTestElementNode();
+        const block = $createTestElementNode();
         expect(block.getTextContent()).toBe('');
       });
     });
 
     test('nested', async () => {
       await update(() => {
-        const block = createTestElementNode();
-        const innerBlock = createTestElementNode();
-        const text = createTextNode('Foo');
+        const block = $createTestElementNode();
+        const innerBlock = $createTestElementNode();
+        const text = $createTextNode('Foo');
         text.select(0, 0);
-        const text2 = createTextNode('Bar');
-        const text3 = createTextNode('Baz');
+        const text2 = $createTextNode('Bar');
+        const text3 = $createTextNode('Baz');
         text3.makeInert();
-        const text4 = createTextNode('Qux');
+        const text4 = $createTextNode('Qux');
 
         block.append(text, innerBlock, text4);
         innerBlock.append(text2, text3);
@@ -204,16 +204,16 @@ describe('OutlineElementNode tests', () => {
         expect(block.getTextContent()).toEqual('FooBar\n\nQux');
         expect(block.getTextContent(true)).toEqual('FooBarBaz\n\nQux');
 
-        const innerInnerBlock = createTestElementNode();
-        const text5 = createTextNode('More');
+        const innerInnerBlock = $createTestElementNode();
+        const text5 = $createTextNode('More');
         text5.makeInert();
-        const text6 = createTextNode('Stuff');
+        const text6 = $createTextNode('Stuff');
         innerInnerBlock.append(text5, text6);
         innerBlock.append(innerInnerBlock);
 
         expect(block.getTextContent()).toEqual('FooBarStuff\n\nQux');
         expect(block.getTextContent(true)).toEqual('FooBarBazMoreStuff\n\nQux');
-        getRoot().append(block);
+        $getRoot().append(block);
       });
     });
   });

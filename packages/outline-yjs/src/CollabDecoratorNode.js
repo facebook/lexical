@@ -12,7 +12,7 @@ import type {Binding} from '.';
 import type {CollabElementNode} from './CollabElementNode';
 import type {XmlElement} from 'yjs';
 
-import {createEditorStateRef, isDecoratorNode, getNodeByKey} from 'outline';
+import {createEditorStateRef, isDecoratorNode, $getNodeByKey} from 'outline';
 import {syncPropertiesFromOutline, syncPropertiesFromYjs} from './Utils';
 import {Doc} from 'yjs';
 
@@ -38,7 +38,7 @@ export class CollabDecoratorNode {
   }
 
   getNode(): null | DecoratorNode {
-    const node = getNodeByKey(this._key);
+    const node = $getNodeByKey(this._key);
     return isDecoratorNode(node) ? node : null;
   }
 
@@ -155,7 +155,7 @@ export class CollabDecoratorNode {
   }
 }
 
-export function createCollabDecoratorNode(
+export function $createCollabDecoratorNode(
   xmlElem: XmlElement,
   parent: CollabElementNode,
   type: string,

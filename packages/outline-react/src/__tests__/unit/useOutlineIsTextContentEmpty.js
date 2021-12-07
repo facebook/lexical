@@ -11,8 +11,8 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import {createEditor, createTextNode} from 'outline';
-import {createParagraphNode} from 'outline/ParagraphNode';
+import {createEditor, $createTextNode, $getRoot} from 'outline';
+import {$createParagraphNode} from 'outline/ParagraphNode';
 import useOutlineIsTextContentEmpty from '../../useOutlineIsTextContentEmpty';
 
 describe('useOutlineIsTextContentEmpty', () => {
@@ -65,9 +65,9 @@ describe('useOutlineIsTextContentEmpty', () => {
 
     await ReactTestUtils.act(async () => {
       await editor.update((state) => {
-        const root = state.getRoot();
-        const paragraph = createParagraphNode();
-        const text = createTextNode('foo');
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        const text = $createTextNode('foo');
         root.append(paragraph);
         paragraph.append(text);
         hasText = true;

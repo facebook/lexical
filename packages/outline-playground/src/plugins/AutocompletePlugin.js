@@ -16,19 +16,19 @@ import {
   isElementNode,
   TextNode,
   log,
-  getNodeByKey,
-  getSelection,
-  getRoot,
+  $getNodeByKey,
+  $getSelection,
+  $getRoot,
 } from 'outline';
 import {useEffect, useRef, useState, useCallback, useMemo} from 'react';
-import {textContentCurry} from 'outline/root';
+import {$textContentCurry} from 'outline/root';
 
 function useTypeahead(editor: OutlineEditor): void {
   const typeaheadNodeKey = useRef<NodeKey | null>(null);
   const [text, setText] = useState<string>(
-    editor.getEditorState().read(textContentCurry),
+    editor.getEditorState().read($textContentCurry),
   );
-  const [selectionCollapsed, setSelectionCollapsed] = useState<boolean>(false);
+  const [selectionCollapsed, $setSelectionCollapsed] = useState<boolean>(false);
   const server = useMemo(() => new TypeaheadServer(), []);
   const suggestion = useTypeaheadSuggestion(text, server.query);
 
@@ -36,7 +36,7 @@ function useTypeahead(editor: OutlineEditor): void {
     if (typeaheadNodeKey.current === null) {
       return null;
     }
-    const node = getNodeByKey(typeaheadNodeKey.current);
+    const node = $getNodeByKey(typeaheadNodeKey.current);
     if (!isTextNode(node)) {
       return null;
     }
@@ -58,7 +58,7 @@ function useTypeahead(editor: OutlineEditor): void {
 
         function maybeRemoveTypeahead() {
           if (currentTypeaheadNode !== null) {
-            const selection = getSelection();
+            const selection = $getSelection();
             if (selection !== null) {
               const anchor = selection.anchor;
               const focus = selection.focus;
@@ -103,7 +103,7 @@ function useTypeahead(editor: OutlineEditor): void {
             return;
           }
           // Add
-          const lastParagraph = getRoot().getLastChild();
+          const lastParagraph = $getRoot().getLastChild();
           if (isElementNode(lastParagraph)) {
             const lastTextNode = lastParagraph.getLastChild();
             if (isTextNode(lastTextNode)) {
@@ -114,7 +114,7 @@ function useTypeahead(editor: OutlineEditor): void {
           }
         }
 
-        const selection = getSelection();
+        const selection = $getSelection();
         const anchorNode = selection?.anchor.getNode();
         const anchorOffset = selection?.anchor.offset;
         const anchorLength = anchorNode?.getTextContentSize();
@@ -145,8 +145,7 @@ function useTypeahead(editor: OutlineEditor): void {
   useEffect(() => {
     return editor.addListener('update', ({editorState}) => {
       editorState.read((state) => {
-        const typeaheadNode = state
-          .getRoot()
+        const typeaheadNode = $getRoot()
           .getAllTextNodes(true)
           .find((textNode) => textNode instanceof TypeaheadNode);
         if (typeaheadNode instanceof TypeaheadNode) {
@@ -193,7 +192,7 @@ function useTypeahead(editor: OutlineEditor): void {
     const handleEvent = () => {
       const selection = window.getSelection();
 
-      setSelectionCollapsed(selection.isCollapsed);
+      $setSelectionCollapsed(selection.isCollapsed);
     };
     document.addEventListener('selectionchange', handleEvent);
     return () => {

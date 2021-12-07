@@ -8,11 +8,11 @@
 
 import {
   ParagraphNode,
-  createParagraphNode,
+  $createParagraphNode,
   isParagraphNode,
 } from 'outline/ParagraphNode';
 import {initializeUnitTest} from '../utils';
-import {getRoot} from 'outline';
+import {$getRoot} from 'outline';
 
 const editorConfig = Object.freeze({
   theme: {
@@ -61,7 +61,7 @@ describe('OutlineParagraphNode tests', () => {
       const {editor} = testEnv;
       let paragraphNode;
       await editor.update(() => {
-        const root = getRoot();
+        const root = $getRoot();
         paragraphNode = new ParagraphNode();
         root.append(paragraphNode);
       });
@@ -86,11 +86,11 @@ describe('OutlineParagraphNode tests', () => {
       });
     });
 
-    test('createParagraphNode()', async () => {
+    test('$createParagraphNode()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const paragraphNode = new ParagraphNode();
-        const createdParagraphNode = createParagraphNode();
+        const createdParagraphNode = $createParagraphNode();
         expect(paragraphNode.__type).toEqual(createdParagraphNode.__type);
         expect(paragraphNode.__flags).toEqual(createdParagraphNode.__flags);
         expect(paragraphNode.__parent).toEqual(createdParagraphNode.__parent);

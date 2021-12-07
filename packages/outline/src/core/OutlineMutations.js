@@ -11,10 +11,10 @@ import type {OutlineEditor} from './OutlineEditor';
 import type {Selection} from './OutlineSelection';
 import type {TextNode} from './OutlineTextNode';
 
-import {isTextNode, isDecoratorNode, getSelection, setSelection} from '.';
+import {isTextNode, isDecoratorNode, $getSelection, $setSelection} from '.';
 import {triggerListeners, updateEditor} from './OutlineUpdates';
 import {
-  getNearestNodeFromDOMNode,
+  $getNearestNodeFromDOMNode,
   getNodeFromDOMNode,
   pushLogEntry,
 } from './OutlineUtils';
@@ -48,7 +48,7 @@ function isManagedLineBreak(dom: Node, target: Node): boolean {
 
 function getLastSelection(editor: OutlineEditor): null | Selection {
   return editor.getEditorState().read(() => {
-    const selection = getSelection();
+    const selection = $getSelection();
     return selection !== null ? selection.clone() : null;
   });
 }
@@ -71,7 +71,7 @@ function handleTextMutation(
   triggerListeners('textmutation', editor, false, textMutation);
 }
 
-export function flushMutations(
+export function $flushMutations(
   editor: OutlineEditor,
   mutations: Array<MutationRecord>,
   observer: MutationObserver,
@@ -90,7 +90,7 @@ export function flushMutations(
           const mutation = mutations[i];
           const type = mutation.type;
           const target = mutation.target;
-          const targetNode = getNearestNodeFromDOMNode(target);
+          const targetNode = $getNearestNodeFromDOMNode(target);
 
           if (isDecoratorNode(targetNode)) {
             continue;
@@ -192,10 +192,10 @@ export function flushMutations(
           observer.takeRecords();
         }
         if (shouldRevertSelection) {
-          const selection = getSelection() || getLastSelection(editor);
+          const selection = $getSelection() || getLastSelection(editor);
           if (selection !== null) {
             selection.dirty = true;
-            setSelection(selection);
+            $setSelection(selection);
           }
         }
       },
@@ -210,7 +210,7 @@ export function flushRootMutations(editor: OutlineEditor): void {
   const observer = editor._observer;
   if (observer !== null) {
     const mutations = observer.takeRecords();
-    flushMutations(editor, mutations, observer);
+    $flushMutations(editor, mutations, observer);
   }
 }
 
@@ -218,7 +218,7 @@ export function initMutationObserver(editor: OutlineEditor): void {
   initTextEntryListener();
   editor._observer = new MutationObserver(
     (mutations: Array<MutationRecord>, observer: MutationObserver) => {
-      flushMutations(editor, mutations, observer);
+      $flushMutations(editor, mutations, observer);
     },
   );
 }

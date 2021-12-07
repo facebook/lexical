@@ -18,9 +18,9 @@ import type {
 import type {Binding} from '.';
 
 import {
-  getNodeByKeyOrThrow,
+  $getNodeByKeyOrThrow,
   syncPropertiesFromOutline,
-  createCollabNodeFromOutlineNode,
+  $createCollabNodeFromOutlineNode,
   getOrInitCollabNodeFromSharedType,
   createOutlineNodeFromCollabNode,
   getPositionFromElementAndOffset,
@@ -32,7 +32,7 @@ import {CollabLineBreakNode} from './CollabLineBreakNode';
 import {
   isElementNode,
   isTextNode,
-  getNodeByKey,
+  $getNodeByKey,
   isDecoratorNode,
 } from 'outline';
 import {CollabDecoratorNode} from './CollabDecoratorNode';
@@ -70,7 +70,7 @@ export class CollabElementNode {
   }
 
   getNode(): null | ElementNode {
-    const node = getNodeByKey(this._key);
+    const node = $getNodeByKey(this._key);
     return isElementNode(node) ? node : null;
   }
 
@@ -219,7 +219,7 @@ export class CollabElementNode {
       let outlineChildNode: null | OutlineNode =
         outlineChildKey === undefined
           ? null
-          : getNodeByKey(prevOutlineChildrenKeys[i]);
+          : $getNodeByKey(prevOutlineChildrenKeys[i]);
 
       if (
         outlineChildNode !== null &&
@@ -270,7 +270,7 @@ export class CollabElementNode {
       if (!visitedKeys.has(outlineChildKey)) {
         // Remove
         const outlineChildNode =
-          getNodeByKeyOrThrow(outlineChildKey).getWritable();
+          $getNodeByKeyOrThrow(outlineChildKey).getWritable();
         const collabNode = binding.collabNodeMap.get(outlineChildKey);
         if (collabNode !== undefined) {
           collabNode.destroy(binding);
@@ -324,7 +324,7 @@ export class CollabElementNode {
           (dirtyLeaves !== null && dirtyLeaves.has(nextChildKey))
         ) {
           // Update
-          const nextChildNode = getNodeByKeyOrThrow(nextChildKey);
+          const nextChildNode = $getNodeByKeyOrThrow(nextChildKey);
           if (
             childCollabNode instanceof CollabElementNode &&
             isElementNode(nextChildNode)
@@ -369,8 +369,8 @@ export class CollabElementNode {
           // Remove
           throw new Error('TODO: does this even happen?');
         } else {
-          const nextChildNode = getNodeByKeyOrThrow(nextChildKey);
-          const collabNode = createCollabNodeFromOutlineNode(
+          const nextChildNode = $getNodeByKeyOrThrow(nextChildKey);
+          const collabNode = $createCollabNodeFromOutlineNode(
             binding,
             nextChildNode,
             this,
@@ -522,7 +522,7 @@ function lazilyCloneElementNode(
   return writableOutlineNode;
 }
 
-export function createCollabElementNode(
+export function $createCollabElementNode(
   xmlText: XmlText,
   parent: null | CollabElementNode,
   type: string,

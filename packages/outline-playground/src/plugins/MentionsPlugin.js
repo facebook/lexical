@@ -13,10 +13,10 @@ import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
 
 // $FlowFixMe
 import {createPortal} from 'react-dom';
-import {log, getSelection} from 'outline';
+import {log, $getSelection} from 'outline';
 import React, {useCallback, useLayoutEffect, useMemo, useRef} from 'react';
 import {startTransition, useEffect, useState} from 'react';
-import {MentionNode, createMentionNode} from '../nodes/MentionNode';
+import {MentionNode, $createMentionNode} from '../nodes/MentionNode';
 
 type MentionMatch = {
   leadOffset: number,
@@ -845,7 +845,7 @@ function tryToPositionRange(match: MentionMatch, range: Range): boolean {
 function getMentionsTextToSearch(editor: OutlineEditor): string | null {
   let text = null;
   editor.getEditorState().read(() => {
-    const selection = getSelection();
+    const selection = $getSelection();
     if (selection == null) {
       return;
     }
@@ -888,7 +888,7 @@ function createMentionNodeFromSearchResult(
 ): void {
   editor.update(() => {
     log('createMentionNodeFromSearchResult');
-    const selection = getSelection();
+    const selection = $getSelection();
     if (selection == null || !selection.isCollapsed()) {
       return;
     }
@@ -926,7 +926,7 @@ function createMentionNodeFromSearchResult(
       [, nodeToReplace] = anchorNode.splitText(startOffset, selectionOffset);
     }
 
-    const mentionNode = createMentionNode(entryText);
+    const mentionNode = $createMentionNode(entryText);
     nodeToReplace.replace(mentionNode);
     mentionNode.select();
   });

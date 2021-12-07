@@ -12,7 +12,7 @@ import type {ParagraphNode} from 'outline/ParagraphNode';
 
 import {addClassNamesToElement} from 'outline/elements';
 import {ElementNode} from 'outline';
-import {createParagraphNode} from 'outline/ParagraphNode';
+import {$createParagraphNode} from 'outline/ParagraphNode';
 
 export class QuoteNode extends ElementNode {
   static getType(): string {
@@ -41,7 +41,7 @@ export class QuoteNode extends ElementNode {
   // Mutation
 
   insertNewAfter(): ParagraphNode {
-    const newBlock = createParagraphNode();
+    const newBlock = $createParagraphNode();
     const direction = this.getDirection();
     newBlock.setDirection(direction);
     this.insertAfter(newBlock);
@@ -49,7 +49,7 @@ export class QuoteNode extends ElementNode {
   }
 
   collapseAtStart(): true {
-    const paragraph = createParagraphNode();
+    const paragraph = $createParagraphNode();
     const children = this.getChildren();
     children.forEach((child) => paragraph.append(child));
     this.replace(paragraph);
@@ -57,6 +57,6 @@ export class QuoteNode extends ElementNode {
   }
 }
 
-export function createQuoteNode(): QuoteNode {
+export function $createQuoteNode(): QuoteNode {
   return new QuoteNode();
 }

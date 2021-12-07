@@ -25,12 +25,12 @@ import {useCallback, useEffect, useRef, useState, useMemo} from 'react';
 // $FlowFixMe
 import {unstable_batchedUpdates, createPortal} from 'react-dom';
 import {
-  getSelectionStyleValueForProperty,
+  $getSelectionStyleValueForProperty,
   patchStyleText,
   isAtNodeEnd,
 } from 'outline/selection';
-import {log, getSelection, setSelection} from 'outline';
-import {createLinkNode, isLinkNode, LinkNode} from 'outline/LinkNode';
+import {log, $getSelection, $setSelection} from 'outline';
+import {$createLinkNode, isLinkNode, LinkNode} from 'outline/LinkNode';
 
 function positionToolbar(toolbar, rect) {
   if (rect === null) {
@@ -223,7 +223,7 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
 
   useEffect(() => {
     editor.getEditorState().read(() => {
-      const selection = getSelection();
+      const selection = $getSelection();
       moveToolbar(selection);
     });
   });
@@ -240,10 +240,14 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
           const node = getSelectedNode(selection);
           unstable_batchedUpdates(() => {
             setFontSize(
-              getSelectionStyleValueForProperty(selection, 'font-size', '15px'),
+              $getSelectionStyleValueForProperty(
+                selection,
+                'font-size',
+                '15px',
+              ),
             );
             setFontFamily(
-              getSelectionStyleValueForProperty(
+              $getSelectionStyleValueForProperty(
                 selection,
                 'font-family',
                 'Arial',
@@ -272,14 +276,14 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
 
       const selectionChangeHandler = () => {
         editor.getEditorState().read(() => {
-          const selection = getSelection();
+          const selection = $getSelection();
           updateButtonStates(selection);
           moveToolbar(selection);
         });
       };
       const checkForChanges = () => {
         editor.getEditorState().read(() => {
-          const selection = getSelection();
+          const selection = $getSelection();
           updateButtonStates(selection);
           moveToolbar(selection);
         });
@@ -290,7 +294,7 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
       const mouseUpHandler = () => {
         mouseDownRef.current = false;
         editor.getEditorState().read(() => {
-          const selection = getSelection();
+          const selection = $getSelection();
           moveToolbar(selection);
         });
       };
@@ -316,9 +320,9 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
       editor.update(() => {
         log('useToolbar');
         if (selection !== null) {
-          setSelection(selection);
+          $setSelection(selection);
         }
-        const sel = getSelection();
+        const sel = $getSelection();
         if (sel !== null) {
           const nodes = sel.extract();
           if (url === null) {
@@ -364,7 +368,7 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
               }
               if (!parent.is(prevParent)) {
                 prevParent = parent;
-                linkNode = createLinkNode(url);
+                linkNode = $createLinkNode(url);
                 if (isLinkNode(parent)) {
                   if (node.getPreviousSibling() === null) {
                     parent.insertBefore(linkNode);
@@ -398,7 +402,6 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
 
   const applyFormatText = useCallback(
     (formatType: TextFormatType) => {
-      debugger
       editor.execCommand('formatText', formatType);
     },
     [editor],
@@ -408,7 +411,7 @@ function Toolbar({editor}: {editor: OutlineEditor}): React$Node {
     (styles: {[string]: string}) => {
       editor.update(() => {
         log('applyStyleText');
-        const selection = getSelection();
+        const selection = $getSelection();
         if (selection !== null) {
           patchStyleText(selection, styles);
         }

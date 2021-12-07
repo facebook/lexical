@@ -6,8 +6,8 @@
  *
  */
 
-import {createTextNode, getRoot} from 'outline';
-import {createParagraphNode} from 'outline/ParagraphNode';
+import {$createTextNode, $getRoot} from 'outline';
+import {$createParagraphNode} from 'outline/ParagraphNode';
 import {EditorState} from '../../core/OutlineEditorState';
 import {initializeUnitTest} from '../utils';
 import {createRootNode} from '../../core/OutlineRootNode';
@@ -26,17 +26,17 @@ describe('OutlineEditorState tests', () => {
       const {editor} = testEnv;
 
       await editor.update(() => {
-        const paragraph = createParagraphNode();
-        const text = createTextNode('foo');
+        const paragraph = $createParagraphNode();
+        const text = $createTextNode('foo');
         paragraph.append(text);
-        getRoot().append(paragraph);
+        $getRoot().append(paragraph);
       });
 
       let root = null;
       let paragraph = null;
       let text = null;
       editor.getEditorState().read(() => {
-        root = getRoot();
+        root = $getRoot();
         paragraph = root.getFirstChild();
         text = paragraph.getFirstChild();
       });
@@ -76,11 +76,11 @@ describe('OutlineEditorState tests', () => {
     test('toJSON()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const paragraph = createParagraphNode();
-        const text = createTextNode('Hello world');
+        const paragraph = $createParagraphNode();
+        const text = $createTextNode('Hello world');
         text.select(6, 11);
         paragraph.append(text);
-        getRoot().append(paragraph);
+        $getRoot().append(paragraph);
       });
       expect(JSON.stringify(editor.getEditorState().toJSON())).toEqual(
         `{\"_nodeMap\":[[\"root\",{\"__type\":\"root\",\"__flags\":0,\"__key\":\"root\",\"__parent\":null,\"__children\":[\"1\"],\"__format\":0,\"__indent\":0,\"__dir\":\"ltr\",\"__cachedText\":\"Hello world\"}],[\"1\",{\"__type\":\"paragraph\",\"__flags\":0,\"__key\":\"1\",\"__parent\":\"root\",\"__children\":[\"2\"],\"__format\":0,\"__indent\":0,\"__dir\":\"ltr\"}],[\"2\",{\"__type\":\"text\",\"__flags\":0,\"__key\":\"2\",\"__parent\":\"1\",\"__text\":\"Hello world\",\"__format\":0,\"__style\":\"\"}]],\"_selection\":{\"anchor\":{\"key\":\"2\",\"offset\":6,\"type\":\"text\"},\"focus\":{\"key\":\"2\",\"offset\":11,\"type\":\"text\"}}}`,
@@ -90,15 +90,15 @@ describe('OutlineEditorState tests', () => {
     test('ensure garbage collection works as expected', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const paragraph = createParagraphNode();
-        const text = createTextNode('foo');
+        const paragraph = $createParagraphNode();
+        const text = $createTextNode('foo');
         paragraph.append(text);
-        getRoot().append(paragraph);
+        $getRoot().append(paragraph);
       });
 
       // Remove the first node, which should cause a GC for everything
       await editor.update(() => {
-        getRoot().getFirstChild().remove();
+        $getRoot().getFirstChild().remove();
       });
 
       expect(editor.getEditorState()._nodeMap).toEqual(

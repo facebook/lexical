@@ -35,27 +35,27 @@ export type {LineBreakNode} from './OutlineLineBreakNode';
 export type {RootNode} from './OutlineRootNode';
 
 import {createEditor} from './OutlineEditor';
-import {createTextNode, isTextNode, TextNode} from './OutlineTextNode';
+import {$createTextNode, isTextNode, TextNode} from './OutlineTextNode';
 import {isElementNode, ElementNode} from './OutlineElementNode';
 import {isRootNode} from './OutlineRootNode';
-import {createLineBreakNode, isLineBreakNode} from './OutlineLineBreakNode';
+import {$createLineBreakNode, isLineBreakNode} from './OutlineLineBreakNode';
 import {DecoratorNode, isDecoratorNode} from './OutlineDecoratorNode';
 import {
   isLeafNode,
   pushLogEntry as log,
-  getRoot,
-  getNodeByKey,
-  clearSelection,
-  getNearestNodeFromDOMNode,
-  flushMutations,
-  setSelection,
-  setCompositionKey,
-  getCompositionKey,
+  $getRoot,
+  $getNodeByKey,
+  $clearSelection,
+  $getNearestNodeFromDOMNode,
+  $flushMutations,
+  $setSelection,
+  $setCompositionKey,
+  $getCompositionKey,
 } from './OutlineUtils';
 import {
   createEmptySelection as createSelection,
-  getSelection,
-  getPreviousSelection,
+  $getSelection,
+  $getPreviousSelection,
 } from './OutlineSelection';
 import {createNodeFromParse} from './OutlineParsing';
 import {createEditorStateRef, isEditorStateRef} from './OutlineReference';
@@ -76,19 +76,19 @@ export {
   isRootNode,
   isTextNode,
   // Used during read/update/transform
-  createLineBreakNode,
-  createTextNode,
+  $createLineBreakNode,
+  $createTextNode,
   createNodeFromParse,
   createSelection,
-  getRoot,
-  getNodeByKey,
-  getSelection,
-  getPreviousSelection,
-  clearSelection,
-  setSelection,
-  setCompositionKey,
-  getCompositionKey,
-  getNearestNodeFromDOMNode,
-  flushMutations,
+  $getRoot,
+  $getNodeByKey,
+  $getSelection,
+  $getPreviousSelection,
+  $clearSelection,
+  $setSelection,
+  $setCompositionKey,
+  $getCompositionKey,
+  $getNearestNodeFromDOMNode,
+  $flushMutations,
   log,
 };

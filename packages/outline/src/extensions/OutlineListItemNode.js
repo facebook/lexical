@@ -17,8 +17,8 @@ import type {
 import type {ParagraphNode} from 'outline/ParagraphNode';
 
 import {isElementNode, ElementNode} from 'outline';
-import {createParagraphNode} from 'outline/ParagraphNode';
-import {createListNode, isListNode} from 'outline/ListNode';
+import {$createParagraphNode} from 'outline/ParagraphNode';
+import {$createListNode, isListNode} from 'outline/ListNode';
 import invariant from 'shared/invariant';
 import {getTopListNode, isLastItemInList} from 'outline/nodes';
 import {
@@ -73,7 +73,7 @@ export class ListItemNode extends ElementNode {
         list.insertAfter(replaceWithNode);
       } else {
         // Split the list
-        const newList = createListNode(list.__tag);
+        const newList = $createListNode(list.__tag);
         const children = list.getChildren();
         for (let i = index + 1; i < childrenLength; i++) {
           const child = children[i];
@@ -119,7 +119,7 @@ export class ListItemNode extends ElementNode {
     const siblings = this.getNextSiblings();
     listNode.insertAfter(node);
     if (siblings.length !== 0) {
-      const newListNode = createListNode(listNode.getTag());
+      const newListNode = $createListNode(listNode.getTag());
       siblings.forEach((sibling) => newListNode.append(sibling));
       node.insertAfter(newListNode);
     }
@@ -141,11 +141,11 @@ export class ListItemNode extends ElementNode {
       isLast
     ) {
       if (nextSibling === null) {
-        newElement = createParagraphNode();
+        newElement = $createParagraphNode();
         list.insertAfter(newElement);
         this.remove();
       } else {
-        newElement = createParagraphNode();
+        newElement = $createParagraphNode();
         list.insertBefore(newElement);
         this.remove();
       }
@@ -153,7 +153,7 @@ export class ListItemNode extends ElementNode {
         list.remove();
       }
     } else {
-      newElement = createListItemNode();
+      newElement = $createListItemNode();
       this.insertAfter(newElement);
     }
 
@@ -161,7 +161,7 @@ export class ListItemNode extends ElementNode {
   }
 
   collapseAtStart(selection: Selection): true {
-    const paragraph = createParagraphNode();
+    const paragraph = $createParagraphNode();
     const children = this.getChildren();
     children.forEach((child) => paragraph.append(child));
     const listNode = this.getParentOrThrow();
@@ -239,7 +239,7 @@ function setListItemThemeClassNames(
   }
 }
 
-export function createListItemNode(): ListItemNode {
+export function $createListItemNode(): ListItemNode {
   return new ListItemNode();
 }
 

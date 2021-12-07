@@ -12,17 +12,17 @@ import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
 import type {OutlineEditor} from 'outline';
 import {isHeadingNode} from 'outline/HeadingNode';
 import {isListNode} from 'outline/ListNode';
-import {createParagraphNode} from 'outline/ParagraphNode';
-import {createHeadingNode} from 'outline/HeadingNode';
-import {createListNode} from 'outline/ListNode';
-import {createListItemNode} from 'outline/ListItemNode';
-import {createQuoteNode} from 'outline/QuoteNode';
-import {createCodeNode} from 'outline/CodeNode';
+import {$createParagraphNode} from 'outline/ParagraphNode';
+import {$createHeadingNode} from 'outline/HeadingNode';
+import {$createListNode} from 'outline/ListNode';
+import {$createListItemNode} from 'outline/ListItemNode';
+import {$createQuoteNode} from 'outline/QuoteNode';
+import {$createCodeNode} from 'outline/CodeNode';
 import {wrapLeafNodesInElements} from 'outline/selection';
 import {useEffect, useRef, useState} from 'react';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
-import {log, getSelection} from 'outline';
+import {log, $getSelection} from 'outline';
 
 const supportedBlockTypes = new Set([
   'paragraph',
@@ -84,10 +84,10 @@ function DropdownList({
     if (blockType !== 'paragraph') {
       editor.update(() => {
         log('formatParagraph');
-        const selection = getSelection();
+        const selection = $getSelection();
 
         if (selection !== null) {
-          wrapLeafNodesInElements(selection, () => createParagraphNode());
+          wrapLeafNodesInElements(selection, () => $createParagraphNode());
         }
       });
     }
@@ -98,10 +98,10 @@ function DropdownList({
     if (blockType !== 'h1') {
       editor.update(() => {
         log('formatLargeHeading');
-        const selection = getSelection();
+        const selection = $getSelection();
 
         if (selection !== null) {
-          wrapLeafNodesInElements(selection, () => createHeadingNode('h1'));
+          wrapLeafNodesInElements(selection, () => $createHeadingNode('h1'));
         }
       });
     }
@@ -112,10 +112,10 @@ function DropdownList({
     if (blockType !== 'h2') {
       editor.update((state) => {
         log('formatSmallHeading');
-        const selection = getSelection();
+        const selection = $getSelection();
 
         if (selection !== null) {
-          wrapLeafNodesInElements(selection, () => createHeadingNode('h2'));
+          wrapLeafNodesInElements(selection, () => $createHeadingNode('h2'));
         }
       });
     }
@@ -126,13 +126,13 @@ function DropdownList({
     if (blockType !== 'ul') {
       editor.update((state) => {
         log('formatBulletList');
-        const selection = getSelection();
+        const selection = $getSelection();
 
         if (selection !== null) {
           wrapLeafNodesInElements(
             selection,
-            () => createListItemNode(),
-            createListNode('ul'),
+            () => $createListItemNode(),
+            $createListNode('ul'),
           );
         }
       });
@@ -144,13 +144,13 @@ function DropdownList({
     if (blockType !== 'ol') {
       editor.update((state) => {
         log('formatNumberedList');
-        const selection = getSelection();
+        const selection = $getSelection();
 
         if (selection !== null) {
           wrapLeafNodesInElements(
             selection,
-            () => createListItemNode(),
-            createListNode('ol'),
+            () => $createListItemNode(),
+            $createListNode('ol'),
           );
         }
       });
@@ -162,10 +162,10 @@ function DropdownList({
     if (blockType !== 'quote') {
       editor.update((state) => {
         log('formatQuote');
-        const selection = getSelection();
+        const selection = $getSelection();
 
         if (selection !== null) {
-          wrapLeafNodesInElements(selection, () => createQuoteNode());
+          wrapLeafNodesInElements(selection, () => $createQuoteNode());
         }
       });
     }
@@ -176,10 +176,10 @@ function DropdownList({
     if (blockType !== 'code') {
       editor.update((state) => {
         log('formatCode');
-        const selection = getSelection();
+        const selection = $getSelection();
 
         if (selection !== null) {
-          wrapLeafNodesInElements(selection, () => createCodeNode());
+          wrapLeafNodesInElements(selection, () => $createCodeNode());
         }
       });
     }
@@ -239,7 +239,7 @@ export default function BlockControlsPlugin(): React$Node {
   useEffect(() => {
     return editor.addListener('update', ({editorState}) => {
       editorState.read(() => {
-        const selection = getSelection();
+        const selection = $getSelection();
         if (selection !== null) {
           const anchorNode = selection.anchor.getNode();
           const element =

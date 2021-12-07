@@ -9,9 +9,9 @@
 
 import type {OutlineEditor, Selection} from 'outline';
 
-import {createEmojiNode, EmojiNode} from '../nodes/EmojiNode';
+import {$createEmojiNode, EmojiNode} from '../nodes/EmojiNode';
 import {useEffect} from 'react';
-import {getSelection, TextNode} from 'outline';
+import {$getSelection, TextNode} from 'outline';
 import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
 
 const emojis: Map<string, [string, string]> = new Map([
@@ -41,7 +41,7 @@ function findAndTransformEmoji(
       } else {
         [, targetNode] = node.splitText(i, i + 2);
       }
-      const emojiNode = createEmojiNode(emojiStyle, emojiText);
+      const emojiNode = $createEmojiNode(emojiStyle, emojiText);
       targetNode.replace(emojiNode);
       return emojiNode;
     }
@@ -50,7 +50,7 @@ function findAndTransformEmoji(
 }
 
 function textNodeTransform(node: TextNode): void {
-  const selection = getSelection();
+  const selection = $getSelection();
   let targetNode = node;
 
   while (targetNode !== null) {

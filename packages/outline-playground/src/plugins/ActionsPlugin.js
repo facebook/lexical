@@ -13,14 +13,14 @@ import * as React from 'react';
 import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
 import {useCollaborationContext} from '../context/CollaborationContext';
 import {useEffect, useState} from 'react';
-import {log, isElementNode, getSelection, createEditorStateRef} from 'outline';
+import {log, isElementNode, $getSelection, createEditorStateRef} from 'outline';
 import {isListItemNode} from 'outline/ListItemNode';
-import {ImageNode, createImageNode} from '../nodes/ImageNode';
+import {ImageNode, $createEmojiNode} from '../nodes/ImageNode';
 import yellowFlowerImage from '../images/image/yellow-flower.jpg';
 import useOutlineNestedList from 'outline-react/useOutlineNestedList';
 import TablesPlugin from './TablesPlugin';
-import {createTableNodeWithDimensions} from 'outline/nodes';
-import {createParagraphNode} from 'outline/ParagraphNode';
+import {$createTableNodeWithDimensions} from 'outline/nodes';
+import {$createParagraphNode} from 'outline/ParagraphNode';
 import TableCellActionMenuPlugin from './TableCellActionMenuPlugin';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
@@ -70,10 +70,10 @@ export default function ActionsPlugins({
   const handleAddImage = () => {
     editor.update(() => {
       log('handleAddImage');
-      const selection = getSelection();
+      const selection = $getSelection();
       if (selection !== null) {
         const ref = createEditorStateRef(createUID(), null);
-        const imageNode = createImageNode(
+        const imageNode = $createEmojiNode(
           yellowFlowerImage,
           'Yellow flower in tilt shift lens',
           ref,
@@ -86,7 +86,7 @@ export default function ActionsPlugins({
   const handleAddTable = () => {
     editor.update(() => {
       log('handleAddTable');
-      const selection = getSelection();
+      const selection = $getSelection();
       if (selection === null) {
         return;
       }
@@ -94,9 +94,9 @@ export default function ActionsPlugins({
 
       if (focusNode !== null) {
         const topLevelNode = focusNode.getTopLevelElementOrThrow();
-        const tableNode = createTableNodeWithDimensions(3, 3);
+        const tableNode = $createTableNodeWithDimensions(3, 3);
         topLevelNode.insertAfter(tableNode);
-        tableNode.insertAfter(createParagraphNode());
+        tableNode.insertAfter($createParagraphNode());
         const firstCell = tableNode
           .getFirstChildOrThrow<ElementNode>()
           .getFirstChildOrThrow<ElementNode>();
@@ -107,7 +107,7 @@ export default function ActionsPlugins({
 
   const setAlignment = (alignment: 'left' | 'right' | 'center' | 'justify') => {
     editor.update(() => {
-      const selection = getSelection();
+      const selection = $getSelection();
       if (selection !== null) {
         const node = selection.anchor.getNode();
         const element = isElementNode(node) ? node : node.getParentOrThrow();
@@ -134,7 +134,7 @@ export default function ActionsPlugins({
 
   const applyOutdent = () => {
     editor.update(() => {
-      const selection = getSelection();
+      const selection = $getSelection();
       if (selection !== null) {
         const node = selection.anchor.getNode();
         const element = isElementNode(node) ? node : node.getParentOrThrow();
@@ -151,7 +151,7 @@ export default function ActionsPlugins({
 
   const applyIndent = () => {
     editor.update(() => {
-      const selection = getSelection();
+      const selection = $getSelection();
       if (selection !== null) {
         const node = selection.anchor.getNode();
         const element = isElementNode(node) ? node : node.getParentOrThrow();
@@ -184,8 +184,7 @@ export default function ActionsPlugins({
             </button>
             <button
               className="action-button center-align"
-              onClick={centerAlign}
-            >
+              onClick={centerAlign}>
               <i className="center-align" />
             </button>
             <button className="action-button right-align" onClick={rightAlign}>
@@ -193,20 +192,17 @@ export default function ActionsPlugins({
             </button>
             <button
               className="action-button justify-align"
-              onClick={justifyAlign}
-            >
+              onClick={justifyAlign}>
               <i className="justify-align" />
             </button>
             <button
               className="action-button insert-image"
-              onClick={handleAddImage}
-            >
+              onClick={handleAddImage}>
               <i className="image" />
             </button>
             <button
               className="action-button insert-table"
-              onClick={handleAddTable}
-            >
+              onClick={handleAddTable}>
               <i className="table" />
             </button>
           </>
@@ -216,16 +212,14 @@ export default function ActionsPlugins({
           onClick={() => {
             editor.execCommand('clear');
             editor.focus();
-          }}
-        >
+          }}>
           <i className="clear" />
         </button>
         <button
           className="action-button lock"
           onClick={() => {
             editor.execCommand('readOnly', !isReadOnly);
-          }}
-        >
+          }}>
           <i className={isReadOnly ? 'unlock' : 'lock'} />
         </button>
         {isCollab && (
@@ -233,8 +227,7 @@ export default function ActionsPlugins({
             className="action-button connect"
             onClick={() => {
               editor.execCommand('toggleConnect', !connected);
-            }}
-          >
+            }}>
             <i className={connected ? 'disconnect' : 'connect'} />
           </button>
         )}

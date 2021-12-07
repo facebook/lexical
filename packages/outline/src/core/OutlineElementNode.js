@@ -12,10 +12,10 @@ import type {Selection} from './OutlineSelection';
 
 import {isTextNode, TextNode} from '.';
 import {OutlineNode} from './OutlineNode';
-import {makeSelection, getSelection, setPointValues} from './OutlineSelection';
+import {makeSelection, $getSelection, setPointValues} from './OutlineSelection';
 import {errorOnReadOnly, getActiveEditor} from './OutlineUpdates';
 import {ELEMENT_TYPE_TO_FORMAT} from './OutlineConstants';
-import {getNodeByKey} from './OutlineUtils';
+import {$getNodeByKey} from './OutlineUtils';
 import invariant from 'shared/invariant';
 
 export type ElementFormatType = 'left' | 'center' | 'right' | 'justify';
@@ -47,7 +47,7 @@ export class ElementNode extends OutlineNode {
     const children = self.__children;
     const childrenNodes = [];
     for (let i = 0; i < children.length; i++) {
-      const childNode = getNodeByKey<OutlineNode>(children[i]);
+      const childNode = $getNodeByKey<OutlineNode>(children[i]);
       if (childNode !== null) {
         childrenNodes.push(childNode);
       }
@@ -74,7 +74,7 @@ export class ElementNode extends OutlineNode {
     const self = this.getLatest();
     const children = self.__children;
     for (let i = 0; i < children.length; i++) {
-      const childNode = getNodeByKey<OutlineNode>(children[i]);
+      const childNode = $getNodeByKey<OutlineNode>(children[i]);
       if (isTextNode(childNode) && (includeInert || !childNode.isInert())) {
         textNodes.push(childNode);
       } else if (isElementNode(childNode)) {
@@ -140,7 +140,7 @@ export class ElementNode extends OutlineNode {
     if (childrenLength === 0) {
       return null;
     }
-    return getNodeByKey<T>(children[0]);
+    return $getNodeByKey<T>(children[0]);
   }
   getFirstChildOrThrow<T: OutlineNode>(): T {
     const firstChild = this.getFirstChild<T>();
@@ -156,7 +156,7 @@ export class ElementNode extends OutlineNode {
     if (childrenLength === 0) {
       return null;
     }
-    return getNodeByKey<OutlineNode>(children[childrenLength - 1]);
+    return $getNodeByKey<OutlineNode>(children[childrenLength - 1]);
   }
   getChildAtIndex(index: number): null | OutlineNode {
     const self = this.getLatest();
@@ -165,7 +165,7 @@ export class ElementNode extends OutlineNode {
     if (key === undefined) {
       return null;
     }
-    return getNodeByKey(key);
+    return $getNodeByKey(key);
   }
   getTextContent(includeInert?: boolean, includeDirectionless?: false): string {
     if (
@@ -198,7 +198,7 @@ export class ElementNode extends OutlineNode {
 
   select(_anchorOffset?: number, _focusOffset?: number): Selection {
     errorOnReadOnly();
-    const selection = getSelection();
+    const selection = $getSelection();
     let anchorOffset = _anchorOffset;
     let focusOffset = _focusOffset;
     const childrenCount = this.getChildrenSize();

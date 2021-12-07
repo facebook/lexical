@@ -509,6 +509,7 @@ export class OutlineNode {
       mutableNode.__children = Array.from(latestNode.__children);
       mutableNode.__indent = latestNode.__indent;
       mutableNode.__format = latestNode.__format;
+      mutableNode.__dir = latestNode.__dir;
     } else if (isTextNode(mutableNode)) {
       mutableNode.__format = latestNode.__format;
       mutableNode.__style = latestNode.__style;

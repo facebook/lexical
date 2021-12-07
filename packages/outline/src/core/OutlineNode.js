@@ -25,7 +25,7 @@ import {
 import {
   generateKey,
   getCompositionKey,
-  getNodeByKey,
+  otlnGetNodeByKey,
   internallyMarkNodeAsDirty,
   markParentElementsAsDirty,
   setCompositionKey,
@@ -158,7 +158,7 @@ export class OutlineNode {
       if (nodeKey === 'root') {
         return true;
       }
-      const node = getNodeByKey(nodeKey);
+      const node = otlnGetNodeByKey(nodeKey);
 
       if (node === null) {
         break;
@@ -211,7 +211,7 @@ export class OutlineNode {
     if (parent === null) {
       return null;
     }
-    return getNodeByKey<ElementNode>(parent);
+    return otlnGetNodeByKey<ElementNode>(parent);
   }
   getParentOrThrow(): ElementNode {
     const parent = this.getParent();
@@ -270,7 +270,7 @@ export class OutlineNode {
     if (index <= 0) {
       return null;
     }
-    return getNodeByKey<OutlineNode>(children[index - 1]);
+    return otlnGetNodeByKey<OutlineNode>(children[index - 1]);
   }
   getPreviousSiblings(): Array<OutlineNode> {
     const parent = this.getParent();
@@ -281,7 +281,7 @@ export class OutlineNode {
     const index = children.indexOf(this.__key);
     return children
       .slice(0, index)
-      .map((childKey) => getNodeByKeyOrThrow<OutlineNode>(childKey));
+      .map((childKey) => otlnGetNodeByKeyOrThrow<OutlineNode>(childKey));
   }
   getNextSibling(): OutlineNode | null {
     const parent = this.getParent();
@@ -294,7 +294,7 @@ export class OutlineNode {
     if (index >= childrenLength - 1) {
       return null;
     }
-    return getNodeByKey<OutlineNode>(children[index + 1]);
+    return otlnGetNodeByKey<OutlineNode>(children[index + 1]);
   }
   getNextSiblings(): Array<OutlineNode> {
     const parent = this.getParent();
@@ -305,7 +305,7 @@ export class OutlineNode {
     const index = children.indexOf(this.__key);
     return children
       .slice(index + 1)
-      .map((childKey) => getNodeByKeyOrThrow<OutlineNode>(childKey));
+      .map((childKey) => otlnGetNodeByKeyOrThrow<OutlineNode>(childKey));
   }
   getCommonAncestor(node: OutlineNode): ElementNode | null {
     const a = this.getParents();
@@ -476,7 +476,7 @@ export class OutlineNode {
     return this.__key === getCompositionKey();
   }
   getLatest<N: OutlineNode>(): N {
-    const latest = getNodeByKey<N>(this.__key);
+    const latest = otlnGetNodeByKey<N>(this.__key);
     if (latest === null) {
       invariant(false, 'getLatest: node not found');
     }
@@ -735,8 +735,8 @@ export class OutlineNode {
   }
 }
 
-function getNodeByKeyOrThrow<N: OutlineNode>(key: NodeKey): N {
-  const node = getNodeByKey<N>(key);
+function otlnGetNodeByKeyOrThrow<N: OutlineNode>(key: NodeKey): N {
+  const node = otlnGetNodeByKey<N>(key);
   if (node === null) {
     invariant(
       false,

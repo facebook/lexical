@@ -22,7 +22,12 @@ import {
   createRelativePositionFromTypeIndex,
   createAbsolutePositionFromRelativePosition,
 } from 'yjs';
-import {isTextNode, isElementNode, getNodeByKey, getSelection} from 'outline';
+import {
+  isTextNode,
+  isElementNode,
+  otlnGetNodeByKey,
+  getSelection,
+} from 'outline';
 import {CollabTextNode} from './CollabTextNode';
 import {CollabElementNode} from './CollabElementNode';
 import {CollabDecoratorNode} from './CollabDecoratorNode';
@@ -327,7 +332,7 @@ export function syncLocalCursorPosition(
         const focus = selection.focus;
 
         if (anchor.key !== anchorKey || anchor.offset !== anchorOffset) {
-          const anchorNode = getNodeByKey(anchorKey);
+          const anchorNode = otlnGetNodeByKey(anchorKey);
           selection.anchor.set(
             anchorKey,
             anchorOffset,
@@ -335,7 +340,7 @@ export function syncLocalCursorPosition(
           );
         }
         if (focus.key !== focusKey || focus.offset !== focusOffset) {
-          const focusNode = getNodeByKey(focusKey);
+          const focusNode = otlnGetNodeByKey(focusKey);
           selection.focus.set(
             focusKey,
             focusOffset,

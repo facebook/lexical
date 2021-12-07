@@ -36,7 +36,7 @@ import {
 } from './OutlineEditorState';
 import {
   scheduleMicroTask,
-  getNodeByKey,
+  otlnGetNodeByKey,
   getCompositionKey,
   setCompositionKey,
   getNearestNodeFromDOMNode,
@@ -78,7 +78,7 @@ export type State = {
 
 export const state: State = {
   getRoot: otlnGetRoot,
-  getNodeByKey,
+  getNodeByKey: otlnGetNodeByKey,
   getSelection,
   clearSelection,
   setSelection,

@@ -16,7 +16,7 @@ import {
   isElementNode,
   TextNode,
   log,
-  getNodeByKey,
+  otlnGetNodeByKey,
   getSelection,
   otlnGetRoot,
 } from 'outline';
@@ -36,7 +36,7 @@ function useTypeahead(editor: OutlineEditor): void {
     if (typeaheadNodeKey.current === null) {
       return null;
     }
-    const node = getNodeByKey(typeaheadNodeKey.current);
+    const node = otlnGetNodeByKey(typeaheadNodeKey.current);
     if (!isTextNode(node)) {
       return null;
     }

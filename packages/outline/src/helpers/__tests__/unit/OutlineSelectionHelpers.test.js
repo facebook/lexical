@@ -8,7 +8,13 @@
 
 import type {State} from 'outline';
 
-import {otlnCreateTextNode, TextNode, getSelection, otlnGetRoot} from 'outline';
+import {
+  otlnCreateTextNode,
+  TextNode,
+  getSelection,
+  otlnGetRoot,
+  otlnGetNodeByKey,
+} from 'outline';
 import {otlnCreateParagraphNode} from 'outline/ParagraphNode';
 import {cloneContents} from 'outline/selection';
 import {
@@ -95,7 +101,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // getNodes
       setupTestCase((selection, state) => {
-        expect(selection.getNodes()).toEqual([state.getNodeByKey('a')]);
+        expect(selection.getNodes()).toEqual([otlnGetNodeByKey('a')]);
       });
 
       // getTextContent
@@ -106,7 +112,7 @@ describe('OutlineSelectionHelpers tests', () => {
       // insertText
       setupTestCase((selection, state) => {
         selection.insertText('Test');
-        expect(state.getNodeByKey('a').getTextContent()).toBe('Testa');
+        expect(otlnGetNodeByKey('a').getTextContent()).toBe('Testa');
         expect(selection.anchor).toEqual({
           type: 'text',
           offset: 4,
@@ -186,14 +192,14 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // Extract selection
       setupTestCase((selection, state) => {
-        expect(selection.extract()).toEqual([state.getNodeByKey('a')]);
+        expect(selection.extract()).toEqual([otlnGetNodeByKey('a')]);
       });
 
       // cloneContents
       setupTestCase((selection, state, element) => {
         expect(cloneContents(selection)).toEqual({
           range: ['a'],
-          nodeMap: [['a', {...state.getNodeByKey('a'), __text: ''}]],
+          nodeMap: [['a', {...otlnGetNodeByKey('a'), __text: ''}]],
         });
       });
     });
@@ -668,7 +674,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // getNodes
       setupTestCase((selection, state) => {
-        expect(selection.getNodes()).toEqual([state.getNodeByKey('a')]);
+        expect(selection.getNodes()).toEqual([otlnGetNodeByKey('a')]);
       });
 
       // getTextContent
@@ -744,7 +750,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // Extract selection
       setupTestCase((selection, state, element) => {
-        expect(selection.extract()).toEqual([state.getNodeByKey('a')]);
+        expect(selection.extract()).toEqual([otlnGetNodeByKey('a')]);
       });
 
       // cloneContents
@@ -752,7 +758,7 @@ describe('OutlineSelectionHelpers tests', () => {
         expect(cloneContents(selection)).toEqual({
           range: [element.getKey()],
           nodeMap: [
-            ['a', {...state.getNodeByKey('a'), __text: ''}],
+            ['a', {...otlnGetNodeByKey('a'), __text: ''}],
             [element.getKey(), {...element, __children: ['a']}],
           ],
         });
@@ -793,7 +799,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // getNodes
       setupTestCase((selection, state) => {
-        expect(selection.getNodes()).toEqual([state.getNodeByKey('c')]);
+        expect(selection.getNodes()).toEqual([otlnGetNodeByKey('c')]);
       });
 
       // getTextContent
@@ -837,7 +843,7 @@ describe('OutlineSelectionHelpers tests', () => {
       // insertLineBreak
       setupTestCase((selection, state, element) => {
         selection.insertLineBreak(true);
-        const thirdChild = state.getNodeByKey('c');
+        const thirdChild = otlnGetNodeByKey('c');
         expect(selection.anchor).toEqual({
           type: 'text',
           offset: 1,
@@ -870,7 +876,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // Extract selection
       setupTestCase((selection, state, element) => {
-        expect(selection.extract()).toEqual([state.getNodeByKey('c')]);
+        expect(selection.extract()).toEqual([otlnGetNodeByKey('c')]);
       });
 
       // cloneContents
@@ -878,7 +884,7 @@ describe('OutlineSelectionHelpers tests', () => {
         expect(cloneContents(selection)).toEqual({
           range: [element.getKey()],
           nodeMap: [
-            ['c', {...state.getNodeByKey('c'), __text: ''}],
+            ['c', {...otlnGetNodeByKey('c'), __text: ''}],
             [element.getKey(), {...element, __children: ['c']}],
           ],
         });
@@ -1020,8 +1026,8 @@ describe('OutlineSelectionHelpers tests', () => {
       // getNodes
       setupTestCase((selection, state) => {
         expect(selection.getNodes()).toEqual([
-          state.getNodeByKey('a'),
-          state.getNodeByKey('b'),
+          otlnGetNodeByKey('a'),
+          otlnGetNodeByKey('b'),
         ]);
       });
 
@@ -1033,7 +1039,7 @@ describe('OutlineSelectionHelpers tests', () => {
       // insertText
       setupTestCase((selection, state) => {
         selection.insertText('Test');
-        expect(state.getNodeByKey('a').getTextContent()).toBe('Test');
+        expect(otlnGetNodeByKey('a').getTextContent()).toBe('Test');
         expect(selection.anchor).toEqual({
           type: 'text',
           offset: 4,
@@ -1110,7 +1116,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // Extract selection
       setupTestCase((selection, state) => {
-        expect(selection.extract()).toEqual([{...state.getNodeByKey('a')}]);
+        expect(selection.extract()).toEqual([{...otlnGetNodeByKey('a')}]);
       });
 
       // cloneContents
@@ -1118,9 +1124,9 @@ describe('OutlineSelectionHelpers tests', () => {
         expect(cloneContents(selection)).toEqual({
           range: [element.getKey()],
           nodeMap: [
-            ['a', state.getNodeByKey('a')],
+            ['a', otlnGetNodeByKey('a')],
             [element.getKey(), {...element, __children: ['a', 'b']}],
-            ['b', {...state.getNodeByKey('b'), __text: ''}],
+            ['b', {...otlnGetNodeByKey('b'), __text: ''}],
           ],
         });
       });
@@ -1161,8 +1167,8 @@ describe('OutlineSelectionHelpers tests', () => {
       // getNodes
       setupTestCase((selection, state) => {
         expect(selection.getNodes()).toEqual([
-          state.getNodeByKey('a'),
-          state.getNodeByKey('b'),
+          otlnGetNodeByKey('a'),
+          otlnGetNodeByKey('b'),
         ]);
       });
 
@@ -1248,9 +1254,9 @@ describe('OutlineSelectionHelpers tests', () => {
         expect(cloneContents(selection)).toEqual({
           range: [element.getKey()],
           nodeMap: [
-            ['a', state.getNodeByKey('a')],
+            ['a', otlnGetNodeByKey('a')],
             [element.getKey(), {...element, __children: ['a', 'b']}],
-            ['b', {...state.getNodeByKey('b'), __text: ''}],
+            ['b', {...otlnGetNodeByKey('b'), __text: ''}],
           ],
         });
       });
@@ -1296,9 +1302,9 @@ describe('OutlineSelectionHelpers tests', () => {
       // getNodes
       setupTestCase((selection, state) => {
         expect(selection.getNodes()).toEqual([
-          state.getNodeByKey('a'),
-          state.getNodeByKey('b'),
-          state.getNodeByKey('c'),
+          otlnGetNodeByKey('a'),
+          otlnGetNodeByKey('b'),
+          otlnGetNodeByKey('c'),
         ]);
       });
 
@@ -1376,9 +1382,9 @@ describe('OutlineSelectionHelpers tests', () => {
       // Extract selection
       setupTestCase((selection, state, element) => {
         expect(selection.extract()).toEqual([
-          state.getNodeByKey('a'),
-          state.getNodeByKey('b'),
-          state.getNodeByKey('c'),
+          otlnGetNodeByKey('a'),
+          otlnGetNodeByKey('b'),
+          otlnGetNodeByKey('c'),
         ]);
       });
 
@@ -1387,10 +1393,10 @@ describe('OutlineSelectionHelpers tests', () => {
         expect(cloneContents(selection)).toEqual({
           range: [element.getKey()],
           nodeMap: [
-            ['a', state.getNodeByKey('a')],
+            ['a', otlnGetNodeByKey('a')],
             [element.getKey(), element],
-            ['b', state.getNodeByKey('b')],
-            ['c', state.getNodeByKey('c')],
+            ['b', otlnGetNodeByKey('b')],
+            ['c', otlnGetNodeByKey('c')],
           ],
         });
       });

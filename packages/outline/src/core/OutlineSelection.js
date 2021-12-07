@@ -32,7 +32,7 @@ import {
 } from '.';
 import {
   getCompositionKey,
-  getNodeByKey,
+  otlnGetNodeByKey,
   isSelectionWithinEditor,
   setCompositionKey,
   toggleTextFormatType,
@@ -111,7 +111,7 @@ class Point {
   }
   getNode() {
     const key = this.key;
-    const node = getNodeByKey(key);
+    const node = otlnGetNodeByKey(key);
     if (node === null) {
       invariant(false, 'Point.getNode: node not found');
     }

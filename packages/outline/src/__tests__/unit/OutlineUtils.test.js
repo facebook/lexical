@@ -19,7 +19,7 @@ import {
 } from '../../core/OutlineUtils';
 
 import {initializeUnitTest} from '../utils';
-import {getNodeByKey} from '../../core/OutlineUtils';
+import {otlnGetNodeByKey} from '../../core/OutlineUtils';
 import {otlnCreateParagraphNode, ParagraphNode} from 'outline/ParagraphNode';
 import {TextNode} from 'outline';
 
@@ -166,7 +166,7 @@ describe('OutlineUtils tests', () => {
       });
     });
 
-    test('getNodeByKey', async () => {
+    test('otlnGetNodeByKey', async () => {
       const {editor} = testEnv;
       let paragraphNode;
       let textNode;
@@ -179,11 +179,11 @@ describe('OutlineUtils tests', () => {
         rootNode.append(paragraphNode);
       });
       await editor.getEditorState().read(() => {
-        expect(getNodeByKey('1')).toBe(paragraphNode);
-        expect(getNodeByKey('2')).toBe(textNode);
-        expect(getNodeByKey('3')).toBe(null);
+        expect(otlnGetNodeByKey('1')).toBe(paragraphNode);
+        expect(otlnGetNodeByKey('2')).toBe(textNode);
+        expect(otlnGetNodeByKey('3')).toBe(null);
       });
-      expect(() => getNodeByKey()).toThrow();
+      expect(() => otlnGetNodeByKey()).toThrow();
     });
   });
 });

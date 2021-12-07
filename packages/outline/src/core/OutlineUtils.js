@@ -207,13 +207,13 @@ export function setCompositionKey(compositionKey: null | NodeKey): void {
   const previousCompositionKey = editor._compositionKey;
   editor._compositionKey = compositionKey;
   if (previousCompositionKey !== null) {
-    const node = getNodeByKey(previousCompositionKey);
+    const node = otlnGetNodeByKey(previousCompositionKey);
     if (node !== null) {
       node.getWritable();
     }
   }
   if (compositionKey !== null) {
-    const node = getNodeByKey(compositionKey);
+    const node = otlnGetNodeByKey(compositionKey);
     if (node !== null) {
       node.getWritable();
     }
@@ -225,7 +225,7 @@ export function getCompositionKey(): null | NodeKey {
   return editor._compositionKey;
 }
 
-export function getNodeByKey<N: OutlineNode>(key: NodeKey): N | null {
+export function otlnGetNodeByKey<N: OutlineNode>(key: NodeKey): N | null {
   const editorState = getActiveEditorState();
   const node = editorState._nodeMap.get(key);
   if (node === undefined) {
@@ -239,7 +239,7 @@ export function getNodeFromDOMNode(dom: Node): OutlineNode | null {
   // $FlowFixMe: internal field
   const key: NodeKey | undefined = dom['__outlineKey_' + editor._key];
   if (key !== undefined) {
-    return getNodeByKey(key);
+    return otlnGetNodeByKey(key);
   }
   return null;
 }
@@ -327,11 +327,11 @@ export function getNodeFromDOM(dom: Node): null | OutlineNode {
   if (nodeKey === null) {
     const rootElement = editor.getRootElement();
     if (dom === rootElement) {
-      return getNodeByKey('root');
+      return otlnGetNodeByKey('root');
     }
     return null;
   }
-  return getNodeByKey(nodeKey);
+  return otlnGetNodeByKey(nodeKey);
 }
 
 export function domIsElement(dom: Node): boolean {

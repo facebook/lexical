@@ -21,7 +21,7 @@ import {
   getSelection,
   otlnGetRoot,
   setSelection,
-  getNodeByKey,
+  otlnGetNodeByKey,
 } from 'outline';
 import {CollabElementNode} from './CollabElementNode';
 import {CollabTextNode} from './CollabTextNode';
@@ -157,7 +157,7 @@ function handleNormalizationMergeConflicts(
   const mergedNodes = [];
   for (let i = 0; i < normalizedNodesKeys.length; i++) {
     const nodeKey = normalizedNodesKeys[i];
-    const outlineNode = getNodeByKey(nodeKey);
+    const outlineNode = otlnGetNodeByKey(nodeKey);
     const collabNode = collabNodeMap.get(nodeKey);
     if (collabNode instanceof CollabTextNode) {
       if (isTextNode(outlineNode)) {

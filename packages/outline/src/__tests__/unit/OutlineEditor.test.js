@@ -19,7 +19,7 @@ import {
   otlnGetRoot,
   setCompositionKey,
   getSelection,
-  getNodeByKey,
+  otlnGetNodeByKey,
   isTextNode,
 } from 'outline';
 import {otlnCreateParagraphNode, ParagraphNode} from 'outline/ParagraphNode';
@@ -967,7 +967,7 @@ describe('OutlineEditor tests', () => {
             const previousText = previous[i];
             if (!nextSet.has(previousText)) {
               const previousKey = textToKey.get(previousText);
-              const previousNode = getNodeByKey(previousKey);
+              const previousNode = otlnGetNodeByKey(previousKey);
               previousNode.remove();
               textToKey.delete(previousText);
             }
@@ -980,12 +980,12 @@ describe('OutlineEditor tests', () => {
               // New node; append to the end
               textNode = new TextNode(nextText).toggleUnmergeable();
               textNode.__parent = writableParagraph.__key;
-              expect(getNodeByKey(nextKey)).toBe(null);
+              expect(otlnGetNodeByKey(nextKey)).toBe(null);
               textToKey.set(nextText, textNode.__key);
               writableParagraph.__children.push(textNode.__key);
             } else {
               // Node exists in previous; reorder it
-              textNode = getNodeByKey(nextKey);
+              textNode = otlnGetNodeByKey(nextKey);
               expect(textNode.__text).toBe(nextText);
               writableParagraph.__children.splice(
                 writableParagraph.__children.indexOf(nextKey),
@@ -1017,7 +1017,7 @@ describe('OutlineEditor tests', () => {
           for (let i = 0; i < next.length; i++) {
             const nextText = next[i];
             const nextKey = textToKey.get(nextText);
-            expect(getNodeByKey(nextKey)).not.toBe(null);
+            expect(otlnGetNodeByKey(nextKey)).not.toBe(null);
           }
         });
         expect(editor.getEditorState()._nodeMap.size).toBe(next.length + 2);
@@ -1060,8 +1060,8 @@ describe('OutlineEditor tests', () => {
         paragraph.append(elementNode1, elementNode2);
       });
       await update(() => {
-        const elementNode1: ElementNode = getNodeByKey(elementNode1Key);
-        const elementNode2: TextNode = getNodeByKey(elementNode2Key);
+        const elementNode1: ElementNode = otlnGetNodeByKey(elementNode1Key);
+        const elementNode2: TextNode = otlnGetNodeByKey(elementNode2Key);
         elementNode1.append(elementNode2);
       });
       const keys = [
@@ -1104,8 +1104,8 @@ describe('OutlineEditor tests', () => {
         paragraph.append(elementNode1, elementNode2);
       });
       await update((state: State) => {
-        const elementNode1: ElementNode = getNodeByKey(elementNode1Key);
-        const elementNode2: TextNode = getNodeByKey(elementNode2Key);
+        const elementNode1: ElementNode = otlnGetNodeByKey(elementNode1Key);
+        const elementNode2: TextNode = otlnGetNodeByKey(elementNode2Key);
         elementNode2.append(elementNode1);
       });
       expect(container.innerHTML).toBe(
@@ -1139,9 +1139,9 @@ describe('OutlineEditor tests', () => {
         paragraph.append(elementNode1, elementNode2, elementNode3);
       });
       await update((state: State) => {
-        const elementNode1: ElementNode = getNodeByKey(elementNode1Key);
-        const elementNode2: TextNode = getNodeByKey(elementNode2Key);
-        const elementNode3: TextNode = getNodeByKey(elementNode3Key);
+        const elementNode1: ElementNode = otlnGetNodeByKey(elementNode1Key);
+        const elementNode2: TextNode = otlnGetNodeByKey(elementNode2Key);
+        const elementNode3: TextNode = otlnGetNodeByKey(elementNode3Key);
         elementNode2.append(elementNode3);
         elementNode1.append(elementNode3);
       });

@@ -19,7 +19,7 @@ import {
   createSelection,
   isElementNode,
   isTextNode,
-  getNodeByKey,
+  otlnGetNodeByKey,
 } from 'outline';
 import invariant from 'shared/invariant';
 
@@ -128,8 +128,8 @@ class OffsetView {
 
     let startKey = startOffsetNode.key;
     let endKey = endOffsetNode.key;
-    const startNode = getNodeByKey(startKey);
-    const endNode = getNodeByKey(endKey);
+    const startNode = otlnGetNodeByKey(startKey);
+    const endNode = otlnGetNodeByKey(endKey);
     if (startNode === null || endNode === null) {
       return null;
     }

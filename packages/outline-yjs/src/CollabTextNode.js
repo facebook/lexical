@@ -12,7 +12,7 @@ import type {Binding} from '.';
 import type {CollabElementNode} from './CollabElementNode';
 import type {Map as YMap} from 'yjs';
 
-import {getSelection, isTextNode, getNodeByKey} from 'outline';
+import {getSelection, isTextNode, otlnGetNodeByKey} from 'outline';
 import {syncPropertiesFromOutline, syncPropertiesFromYjs} from './Utils';
 
 function simpleDiffWithCursor(
@@ -106,7 +106,7 @@ export class CollabTextNode {
   }
 
   getNode(): null | TextNode {
-    const node = getNodeByKey(this._key);
+    const node = otlnGetNodeByKey(this._key);
     return isTextNode(node) ? node : null;
   }
 

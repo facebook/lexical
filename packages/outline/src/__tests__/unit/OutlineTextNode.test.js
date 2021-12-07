@@ -20,7 +20,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import {otlnCreateTextNode, otlnGetRoot} from 'outline';
+import {otlnCreateTextNode, otlnGetRoot, otlnGetNodeByKey} from 'outline';
 
 import {otlnCreateParagraphNode} from 'outline/ParagraphNode';
 import {
@@ -124,7 +124,7 @@ describe('OutlineTextNode tests', () => {
 
       // Make sure that the editor content is still set after further reconciliations
       await update((state) => {
-        state.getNodeByKey(nodeKey).markDirty();
+        otlnGetNodeByKey(nodeKey).markDirty();
       });
       expect(getEditorStateTextContent(editor.getEditorState())).toBe('Text');
     });
@@ -146,7 +146,7 @@ describe('OutlineTextNode tests', () => {
 
       // Make sure that the editor content is still empty after further reconciliations
       await update((state) => {
-        state.getNodeByKey(nodeKey).markDirty();
+        otlnGetNodeByKey(nodeKey).markDirty();
       });
       expect(getEditorStateTextContent(editor.getEditorState())).toBe('');
     });

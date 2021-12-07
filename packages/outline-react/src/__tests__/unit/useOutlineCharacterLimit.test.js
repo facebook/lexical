@@ -13,7 +13,7 @@ import {initializeUnitTest} from '../../../../outline/src/__tests__/utils';
 import {
   otlnCreateTextNode,
   getSelection,
-  getNodeByKey,
+  otlnGetNodeByKey,
   otlnGetRoot,
 } from 'outline';
 import {otlnCreateParagraphNode} from 'outline/ParagraphNode';
@@ -60,8 +60,8 @@ describe('OutlineNodeHelpers tests', () => {
         const [overflowLeftKey, overflowRightKey] =
           await initializeEditorWithLeftRightOverflowNodes();
         await editor.update(() => {
-          const overflowLeft = getNodeByKey(overflowLeftKey);
-          const overflowRight = getNodeByKey(overflowRightKey);
+          const overflowLeft = otlnGetNodeByKey(overflowLeftKey);
+          const overflowRight = otlnGetNodeByKey(overflowRightKey);
           const text1 = otlnCreateTextNode('1');
           const text2 = otlnCreateTextNode('2');
           overflowRight.append(text1, text2);
@@ -71,7 +71,7 @@ describe('OutlineNodeHelpers tests', () => {
         });
         await editor.update(() => {
           const paragraph: ParagraphNode = otlnGetRoot().getFirstChild();
-          const overflowRight = getNodeByKey(overflowRightKey);
+          const overflowRight = otlnGetNodeByKey(overflowRightKey);
           mergePrevious(overflowRight);
           expect(paragraph.getChildrenSize()).toBe(1);
           expect(isOverflowNode(paragraph.getFirstChild())).toBe(true);
@@ -92,8 +92,8 @@ describe('OutlineNodeHelpers tests', () => {
           await initializeEditorWithLeftRightOverflowNodes();
         let text2Key: NodeKey;
         await editor.update(() => {
-          const overflowLeft = getNodeByKey(overflowLeftKey);
-          const overflowRight = getNodeByKey(overflowRightKey);
+          const overflowLeft = otlnGetNodeByKey(overflowLeftKey);
+          const overflowRight = otlnGetNodeByKey(overflowRightKey);
           const text1 = otlnCreateTextNode('1');
           const text2 = otlnCreateTextNode('2');
           const text3 = otlnCreateTextNode('3');
@@ -108,7 +108,7 @@ describe('OutlineNodeHelpers tests', () => {
         });
         await editor.update(() => {
           const paragraph: ParagraphNode = otlnGetRoot().getFirstChild();
-          const overflowRight = getNodeByKey(overflowRightKey);
+          const overflowRight = otlnGetNodeByKey(overflowRightKey);
           mergePrevious(overflowRight);
           expect(paragraph.getChildrenSize()).toBe(1);
           expect(isOverflowNode(paragraph.getFirstChild())).toBe(true);
@@ -130,8 +130,8 @@ describe('OutlineNodeHelpers tests', () => {
         let text2Key: NodeKey;
         let text4Key: NodeKey;
         await editor.update(() => {
-          const overflowLeft = getNodeByKey(overflowLeftKey);
-          const overflowRight = getNodeByKey(overflowRightKey);
+          const overflowLeft = otlnGetNodeByKey(overflowLeftKey);
+          const overflowRight = otlnGetNodeByKey(overflowRightKey);
           const text1 = otlnCreateTextNode('1');
           const text2 = otlnCreateTextNode('2');
           const text3 = otlnCreateTextNode('3');
@@ -151,7 +151,7 @@ describe('OutlineNodeHelpers tests', () => {
         });
         await editor.update(() => {
           const paragraph: ParagraphNode = otlnGetRoot().getFirstChild();
-          const overflowRight = getNodeByKey(overflowRightKey);
+          const overflowRight = otlnGetNodeByKey(overflowRightKey);
           mergePrevious(overflowRight);
           expect(paragraph.getChildrenSize()).toBe(1);
           expect(isOverflowNode(paragraph.getFirstChild())).toBe(true);

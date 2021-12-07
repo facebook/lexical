@@ -128,7 +128,7 @@ function keywordToPlainTextTransform(keyword: KeywordNode) {
     (isTextNode(nextSibling) &&
       nextSibling.isSimpleText() &&
       nextSibling.getTextContent().startsWith(' '));
-  if (previousIsNullOrSpace || nextIsNullOrSpace) {
+  if (!previousIsNullOrSpace || !nextIsNullOrSpace) {
     convertKeywordNodeToPlainTextNode(keyword);
   }
 }
@@ -137,19 +137,19 @@ function useKeywords(editor: OutlineEditor): void {
   useEffect(() => {
     const unregisterNodes = editor.registerNodes([KeywordNode]);
 
-    const removeTextTransform = editor.addTransform(
+    const removePlainTextToKeywordTransform = editor.addTransform(
       TextNode,
       plainTextToKeywordTransform,
     );
-    const removeRootTransform = editor.addTransform(
+    const removeKeywordToPlainTextTransform = editor.addTransform(
       KeywordNode,
       keywordToPlainTextTransform,
     );
 
     return () => {
       unregisterNodes();
-      removeTextTransform();
-      removeRootTransform();
+      removePlainTextToKeywordTransform();
+      removeKeywordToPlainTextTransform();
     };
   }, [editor]);
 }

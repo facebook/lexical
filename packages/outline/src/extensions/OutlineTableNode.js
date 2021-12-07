@@ -160,11 +160,13 @@ function updateCells(
         if (!cell.highlighted) {
           cell.highlighted = true;
           elemStyle.setProperty('background-color', 'rgb(163, 187, 255)');
+          elemStyle.setProperty('caret-color', 'transparent');
         }
         highlighted.push(cell);
       } else if (cell.highlighted) {
         cell.highlighted = false;
         elemStyle.removeProperty('background-color');
+        elemStyle.removeProperty('caret-color');
       }
     }
   }
@@ -197,6 +199,14 @@ function applyCellSelection(
         const cellX = cell.x;
         const cellY = cell.y;
         if (!isHighlightingCells && (startX !== cellX || startY !== cellY)) {
+          const windowSelection = window.getSelection();
+          // Collapse the selection
+          windowSelection.setBaseAndExtent(
+            windowSelection.anchorNode,
+            0,
+            windowSelection.anchorNode,
+            0,
+          );
           isHighlightingCells = true;
           if (document.body) {
             document.body.appendChild(removeHighlightStyle);
@@ -285,6 +295,17 @@ function applyCellSelection(
         formatSelection.formatText(type);
       }
     });
+    // Collapse selection
+    selection.anchor.set(
+      selection.anchor.key,
+      selection.anchor.offset,
+      selection.anchor.type,
+    );
+    selection.focus.set(
+      selection.anchor.key,
+      selection.anchor.offset,
+      selection.anchor.type,
+    );
     setSelection(selection);
   };
 

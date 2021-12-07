@@ -36,7 +36,7 @@ describe('History', () => {
       if (isRichText) {
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">hello world</span></p><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">hello world, again and again</span></p>',
+          '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">hello world</span></p><p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">hello world, again and again</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [1, 0, 0],
@@ -47,7 +47,7 @@ describe('History', () => {
       } else {
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">hello world</span><br><span data-outline-text="true">hello world, again and again</span></p>',
+          '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">hello world</span><br><span data-outline-text="true">hello world, again and again</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 2, 0],
@@ -62,7 +62,7 @@ describe('History', () => {
       if (isRichText) {
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">hello world</span></p><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">hello world again</span></p>',
+          '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">hello world</span></p><p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">hello world again</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [1, 0, 0],
@@ -73,7 +73,7 @@ describe('History', () => {
       } else {
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">hello world</span><br><span data-outline-text="true">hello world again</span></p>',
+          '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">hello world</span><br><span data-outline-text="true">hello world again</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 2, 0],
@@ -88,7 +88,7 @@ describe('History', () => {
       if (isRichText) {
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">hello world</span></p><p class="editor-paragraph" dir="ltr"><br></p>',
+          '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">hello world</span></p><p class="editor-paragraph ltr" dir="ltr"><br></p>',
         );
         await assertSelection(page, {
           anchorPath: [1],
@@ -99,7 +99,7 @@ describe('History', () => {
       } else {
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">hello world</span><br><br></p>',
+          '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">hello world</span><br><br></p>',
         );
         await assertSelection(page, {
           anchorPath: [0],
@@ -113,7 +113,7 @@ describe('History', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">hello world</span></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">hello world</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -136,7 +136,7 @@ describe('History', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">hello world</span></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">hello world</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -150,7 +150,7 @@ describe('History', () => {
       if (isRichText) {
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">hello world</span></p><p class="editor-paragraph" dir="ltr"><br></p>',
+          '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">hello world</span></p><p class="editor-paragraph"><br></p',
         );
         await assertSelection(page, {
           anchorPath: [1],
@@ -161,7 +161,7 @@ describe('History', () => {
       } else {
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">hello world</span><br><br></p>',
+          '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">hello world</span><br><br></p>',
         );
         await assertSelection(page, {
           anchorPath: [0],
@@ -176,7 +176,7 @@ describe('History', () => {
       if (isRichText) {
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">hello world</span></p><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">hello world again</span></p>',
+          '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">hello world</span></p><p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">hello world again</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [1, 0, 0],
@@ -187,7 +187,7 @@ describe('History', () => {
       } else {
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">hello world</span><br><span data-outline-text="true">hello world again</span></p>',
+          '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">hello world</span><br><span data-outline-text="true">hello world again</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 2, 0],
@@ -202,7 +202,7 @@ describe('History', () => {
       if (isRichText) {
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">hello world</span></p><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">hello world, again and again</span></p>',
+          '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">hello world</span></p><p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">hello world, again and again</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [1, 0, 0],
@@ -213,7 +213,7 @@ describe('History', () => {
       } else {
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">hello world</span><br><span data-outline-text="true">hello world, again and again</span></p>',
+          '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">hello world</span><br><span data-outline-text="true">hello world, again and again</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 2, 0],

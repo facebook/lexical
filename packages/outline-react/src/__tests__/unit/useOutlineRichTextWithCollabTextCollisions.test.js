@@ -66,7 +66,7 @@ function verifySampleParagraphsWithClient(client: Client, count: number) {
 
   for (let i = 0; i < count; ++i) {
     const text = `Hello world ${i + 1}.`;
-    expectedText += '<p><span data-outline-text="true">';
+    expectedText += '<p dir="ltr"><span data-outline-text="true">';
     expectedText += text;
     expectedText += '</span></p>';
   }

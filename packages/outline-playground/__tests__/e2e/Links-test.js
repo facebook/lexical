@@ -37,7 +37,7 @@ describe('Links', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello</span></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">Hello</span></p>',
       );
 
       // link
@@ -46,7 +46,7 @@ describe('Links', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><a href="http://" class="editor-text-link"><span data-outline-text="true">Hello</span></a></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><a href="http://" class="editor-text-link ltr" dir="ltr"><span data-outline-text="true">Hello</span></a></p>',
       );
 
       await assertSelection(page, {
@@ -64,7 +64,7 @@ describe('Links', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><a href="http://facebook.com" class="editor-text-link"><span data-outline-text="true">Hello</span></a></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><a href="http://facebook.com" class="editor-text-link ltr" dir="ltr"><span data-outline-text="true">Hello</span></a></p',
       );
 
       await assertSelection(page, {
@@ -80,7 +80,7 @@ describe('Links', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello</span></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">Hello</span></p>',
       );
 
       await assertSelection(page, {
@@ -109,14 +109,14 @@ describe('Links', () => {
       await selectAll(page);
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">An Awesome Website</span></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">An Awesome Website</span></p>',
       );
 
       await waitForSelector(page, '.link');
       await click(page, '.link');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><a href="http://" class="editor-text-link"><span data-outline-text="true">An Awesome Website</span></a></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><a href="http://" class="editor-text-link ltr" dir="ltr"><span data-outline-text="true">An Awesome Website</span></a></p>',
       );
 
       await page.keyboard.press('ArrowLeft');
@@ -126,7 +126,7 @@ describe('Links', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hey, check this out: </span><a href="http://" class="editor-text-link"><span data-outline-text="true">An Awesome Website</span></a><span data-outline-text="true">!</span></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">Hey, check this out: </span><a href="http://" class="editor-text-link ltr" dir="ltr"><span data-outline-text="true">An Awesome Website</span></a><span data-outline-text="true">!</span></p>',
       );
     });
 
@@ -142,7 +142,7 @@ describe('Links', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello world</span></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">Hello world</span></p>',
       );
 
       await moveLeft(page, 5);
@@ -154,7 +154,7 @@ describe('Links', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello </span><a href="http://" class="editor-text-link"><span data-outline-text="true">world</span></a></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">Hello </span><a href="http://" class="editor-text-link ltr" dir="ltr"><span data-outline-text="true">world</span></a></p>',
       );
       if (E2E_BROWSER === 'webkit') {
         await assertSelection(page, {
@@ -180,7 +180,7 @@ describe('Links', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello </span><a href="http://facebook.com" class="editor-text-link"><span data-outline-text="true">world</span></a></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">Hello </span><a href="http://facebook.com" class="editor-text-link ltr" dir="ltr"><span data-outline-text="true">world</span></a></p>',
       );
 
       if (E2E_BROWSER === 'webkit') {
@@ -205,7 +205,7 @@ describe('Links', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello world</span></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">Hello world</span></p>',
       );
 
       await assertSelection(page, {
@@ -228,7 +228,7 @@ describe('Links', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello world</span></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">Hello world</span></p>',
       );
 
       await selectCharacters(page, 'left', 5);
@@ -239,7 +239,7 @@ describe('Links', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello </span><a href="http://" class="editor-text-link"><span data-outline-text="true">world</span></a></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">Hello </span><a href="http://" class="editor-text-link ltr" dir="ltr"><span data-outline-text="true">world</span></a></p>',
       );
 
       if (E2E_BROWSER === 'webkit') {
@@ -266,7 +266,7 @@ describe('Links', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello </span><a href="http://facebook.com" class="editor-text-link"><span data-outline-text="true">world</span></a></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">Hello </span><a href="http://facebook.com" class="editor-text-link ltr" dir="ltr"><span data-outline-text="true">world</span></a></p>',
       );
 
       if (E2E_BROWSER === 'webkit') {
@@ -291,7 +291,7 @@ describe('Links', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello world</span></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">Hello world</span></p>',
       );
 
       await assertSelection(page, {

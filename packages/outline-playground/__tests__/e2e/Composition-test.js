@@ -28,7 +28,7 @@ describe('Composition', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">も</span></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">も</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -39,7 +39,7 @@ describe('Composition', () => {
 
       await page.keyboard.press('Backspace');
 
-      await assertHTML(page, '<p class="editor-paragraph" dir="ltr"><br></p>');
+      await assertHTML(page, '<p class="editor-paragraph"><br></p>');
       await assertSelection(page, {
         anchorPath: [0],
         anchorOffset: 0,
@@ -51,7 +51,7 @@ describe('Composition', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">もじ</span></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">もじ</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -69,7 +69,7 @@ describe('Composition', () => {
       await page.keyboard.type('هَ');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="rtl"><span data-outline-text="true">هَ</span></p>',
+        '<p class="editor-paragraph rtl" dir="rtl"><span data-outline-text="true">هَ</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -81,7 +81,7 @@ describe('Composition', () => {
       await page.keyboard.press('Backspace');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="rtl"><span data-outline-text="true">ه</span></p>',
+        '<p class="editor-paragraph rtl" dir="rtl"><span data-outline-text="true">ه</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -92,12 +92,12 @@ describe('Composition', () => {
 
       await page.keyboard.press('Backspace');
 
-      await assertHTML(page, '<p class="editor-paragraph" dir="rtl"><br></p>');
+      await assertHTML(page, '<p class="editor-paragraph"><br></p>');
 
       await page.keyboard.type('هَ');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="rtl"><span data-outline-text="true">هَ</span></p>',
+        '<p class="editor-paragraph rtl" dir="rtl"><span data-outline-text="true">هَ</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -117,7 +117,7 @@ describe('Composition', () => {
       await page.keyboard.press('Delete');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="rtl"><span data-outline-text="true">ه</span></p>',
+        '<p class="editor-paragraph rtl" dir="rtl"><span data-outline-text="true">ه</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -154,7 +154,7 @@ describe('Composition', () => {
 
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">すし もじあ</span></p>',
+          '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">すし もじあ</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 0, 0],
@@ -200,7 +200,7 @@ describe('Composition', () => {
 
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><br><span data-outline-text="true">すし もじあ</span><br><br></p>',
+          '<p class="editor-paragraph ltr" dir="ltr"><br><span data-outline-text="true">すし もじあ</span><br><br></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 1, 0],
@@ -240,7 +240,7 @@ describe('Composition', () => {
 
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span class="emoji happysmile" data-outline-text="true">🙂</span><span data-outline-text="true">すし もじあ</span><span class="emoji happysmile" data-outline-text="true">🙂</span></p>',
+          '<p class="editor-paragraph ltr" dir="ltr"><span class="emoji happysmile" data-outline-text="true">🙂</span><span data-outline-text="true">すし もじあ</span><span class="emoji happysmile" data-outline-text="true">🙂</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 1, 0],
@@ -282,7 +282,7 @@ describe('Composition', () => {
 
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true">すし もじあ</span></p>',
+          '<p class="editor-paragraph ltr" dir="ltr"><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true">すし もじあ</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 1, 0],
@@ -328,7 +328,7 @@ describe('Composition', () => {
 
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Luke すし もじあSkywalker</span></p>',
+          '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">Luke すし もじあSkywalker</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 0, 0],
@@ -367,7 +367,7 @@ describe('Composition', () => {
 
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span class="editor-text-hashtag" data-outline-text="true">#すし</span><span data-outline-text="true"> もじあ</span></p>',
+          '<p class="editor-paragraph ltr" dir="ltr"><span class="editor-text-hashtag" data-outline-text="true">#すし</span><span data-outline-text="true"> もじあ</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 1, 0],
@@ -387,7 +387,7 @@ describe('Composition', () => {
 
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">すし</span><span class="editor-text-hashtag" data-outline-text="true">#すし</span><span data-outline-text="true"> もじあ</span></p>',
+          '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">すし</span><span class="editor-text-hashtag" data-outline-text="true">#すし</span><span data-outline-text="true"> もじあ</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 0, 0],
@@ -417,10 +417,7 @@ describe('Composition', () => {
         // Escape would fire here
         await page.keyboard.insertText('');
 
-        await assertHTML(
-          page,
-          '<p class="editor-paragraph" dir="ltr"><br></p>',
-        );
+        await assertHTML(page, '<p class="editor-paragraph"><br></p>');
         await assertSelection(page, {
           anchorPath: [0],
           anchorOffset: 0,
@@ -443,7 +440,7 @@ describe('Composition', () => {
 
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true"> </span></p>',
+          '<p class="editor-paragraph"><span data-outline-text="true"> </span></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 0, 0],

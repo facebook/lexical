@@ -117,7 +117,7 @@ describe('OutlineListItemNode tests', () => {
           listNode.append(listItemNode1, listItemNode2, listItemNode3);
         });
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" data-outline-editor="true"><ul><li><span data-outline-text="true">one</span></li><li><span data-outline-text="true">two</span></li><li><span data-outline-text="true">three</span></li></ul></div>',
+          '<div contenteditable="true" data-outline-editor="true"><ul><li dir="ltr"><span data-outline-text="true">one</span></li><li dir="ltr"><span data-outline-text="true">two</span></li><li dir="ltr"><span data-outline-text="true">three</span></li></ul></div>',
         );
       });
 
@@ -155,7 +155,7 @@ describe('OutlineListItemNode tests', () => {
           listItemNode1.replace(newListItemNode);
         });
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" data-outline-editor="true"><ul><li><span data-outline-text="true">bar</span></li><li><span data-outline-text="true">two</span></li><li><span data-outline-text="true">three</span></li></ul></div>',
+          '<div contenteditable="true" data-outline-editor="true"><ul><li dir="ltr"><span data-outline-text="true">bar</span></li><li dir="ltr"><span data-outline-text="true">two</span></li><li dir="ltr"><span data-outline-text="true">three</span></li></ul></div>',
         );
       });
 
@@ -163,14 +163,14 @@ describe('OutlineListItemNode tests', () => {
         const {editor} = testEnv;
         await editor.update(() => {});
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" data-outline-editor="true"><ul><li><span data-outline-text="true">one</span></li><li><span data-outline-text="true">two</span></li><li><span data-outline-text="true">three</span></li></ul></div>',
+          '<div contenteditable="true" data-outline-editor="true"><ul><li dir="ltr"><span data-outline-text="true">one</span></li><li dir="ltr"><span data-outline-text="true">two</span></li><li dir="ltr"><span data-outline-text="true">three</span></li></ul></div>',
         );
         await editor.update(() => {
           const textNode = new TextNode('bar');
           listItemNode1.replace(textNode);
         });
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" data-outline-editor="true"><span data-outline-text="true">bar</span><ul><li><span data-outline-text="true">two</span></li><li><span data-outline-text="true">three</span></li></ul></div>',
+          '<div contenteditable="true" data-outline-editor="true"><span data-outline-text="true">bar</span><ul><li dir="ltr"><span data-outline-text="true">two</span></li><li dir="ltr"><span data-outline-text="true">three</span></li></ul></div>',
         );
       });
 
@@ -181,7 +181,7 @@ describe('OutlineListItemNode tests', () => {
           listItemNode3.replace(textNode);
         });
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" data-outline-editor="true"><ul><li><span data-outline-text="true">one</span></li><li><span data-outline-text="true">two</span></li></ul><span data-outline-text="true">bar</span></div>',
+          '<div contenteditable="true" data-outline-editor="true"><ul><li dir="ltr"><span data-outline-text="true">one</span></li><li dir="ltr"><span data-outline-text="true">two</span></li></ul><span data-outline-text="true">bar</span></div>',
         );
       });
 
@@ -192,7 +192,7 @@ describe('OutlineListItemNode tests', () => {
           listItemNode2.replace(textNode);
         });
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" data-outline-editor="true"><ul><li><span data-outline-text="true">one</span></li></ul><span data-outline-text="true">bar</span><ul><li><span data-outline-text="true">three</span></li></ul></div>',
+          '<div contenteditable="true" data-outline-editor="true"><ul><li dir="ltr"><span data-outline-text="true">one</span></li></ul><span data-outline-text="true">bar</span><ul><li dir="ltr"><span data-outline-text="true">three</span></li></ul></div>',
         );
       });
 
@@ -203,7 +203,7 @@ describe('OutlineListItemNode tests', () => {
           listItemNode3.remove();
         });
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" data-outline-editor="true"><ul><li><span data-outline-text="true">one</span></li></ul></div>',
+          '<div contenteditable="true" data-outline-editor="true"><ul><li dir="ltr"><span data-outline-text="true">one</span></li></ul></div>',
         );
         await editor.update(() => {
           const textNode = new TextNode('bar');
@@ -236,7 +236,7 @@ describe('OutlineListItemNode tests', () => {
           listItemNode3.append(new TextNode('three'));
         });
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" data-outline-editor="true"><ul><li><span data-outline-text="true">one</span></li><li><span data-outline-text="true">two</span></li><li><span data-outline-text="true">three</span></li></ul></div>',
+          '<div contenteditable="true" data-outline-editor="true"><ul><li dir="ltr"><span data-outline-text="true">one</span></li><li dir="ltr"><span data-outline-text="true">two</span></li><li dir="ltr"><span data-outline-text="true">three</span></li></ul></div>',
         );
       });
 
@@ -246,7 +246,7 @@ describe('OutlineListItemNode tests', () => {
           listItemNode1.insertNewAfter();
         });
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" data-outline-editor="true"><ul><li><span data-outline-text="true">one</span></li><li><br></li><li><span data-outline-text="true">two</span></li><li><span data-outline-text="true">three</span></li></ul></div>',
+          '<div contenteditable="true" data-outline-editor="true"><ul><li dir="ltr"><span data-outline-text="true">one</span></li><li><br></li><li dir="ltr"><span data-outline-text="true">two</span></li><li dir="ltr"><span data-outline-text="true">three</span></li></ul></div>',
         );
       });
 
@@ -256,7 +256,7 @@ describe('OutlineListItemNode tests', () => {
           listItemNode3.insertNewAfter();
         });
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" data-outline-editor="true"><ul><li><span data-outline-text="true">one</span></li><li><span data-outline-text="true">two</span></li><li><span data-outline-text="true">three</span></li><li><br></li></ul></div>',
+          '<div contenteditable="true" data-outline-editor="true"><ul><li dir="ltr"><span data-outline-text="true">one</span></li><li dir="ltr"><span data-outline-text="true">two</span></li><li dir="ltr"><span data-outline-text="true">three</span></li><li><br></li></ul></div>',
         );
       });
 
@@ -266,7 +266,7 @@ describe('OutlineListItemNode tests', () => {
           listItemNode3.insertNewAfter();
         });
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" data-outline-editor="true"><ul><li><span data-outline-text="true">one</span></li><li><span data-outline-text="true">two</span></li><li><span data-outline-text="true">three</span></li><li><br></li></ul></div>',
+          '<div contenteditable="true" data-outline-editor="true"><ul><li dir="ltr"><span data-outline-text="true">one</span></li><li dir="ltr"><span data-outline-text="true">two</span></li><li dir="ltr"><span data-outline-text="true">three</span></li><li><br></li></ul></div>',
         );
       });
 
@@ -277,13 +277,13 @@ describe('OutlineListItemNode tests', () => {
           listItemNode3.remove();
         });
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" data-outline-editor="true"><ul><li><span data-outline-text="true">one</span></li></ul></div>',
+          '<div contenteditable="true" data-outline-editor="true"><ul><li dir="ltr"><span data-outline-text="true">one</span></li></ul></div>',
         );
         await editor.update(() => {
           listItemNode1.insertNewAfter();
         });
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" data-outline-editor="true"><ul><li><span data-outline-text="true">one</span></li><li><br></li></ul></div>',
+          '<div contenteditable="true" data-outline-editor="true"><ul><li dir="ltr"><span data-outline-text="true">one</span></li><li><br></li></ul></div>',
         );
       });
     });

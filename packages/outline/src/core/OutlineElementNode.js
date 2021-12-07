@@ -11,15 +11,10 @@ import type {NodeKey} from './OutlineNode';
 import type {Selection} from './OutlineSelection';
 
 import {isTextNode, TextNode} from '.';
-import {OutlineNode, updateDirectionIfNeeded} from './OutlineNode';
+import {OutlineNode} from './OutlineNode';
 import {makeSelection, getSelection, setPointValues} from './OutlineSelection';
 import {errorOnReadOnly, getActiveEditor} from './OutlineUpdates';
-import {
-  IS_DIRECTIONLESS,
-  IS_LTR,
-  IS_RTL,
-  ELEMENT_TYPE_TO_FORMAT,
-} from './OutlineConstants';
+import {ELEMENT_TYPE_TO_FORMAT} from './OutlineConstants';
 import {getNodeByKey} from './OutlineUtils';
 import invariant from 'shared/invariant';
 
@@ -29,12 +24,14 @@ export class ElementNode extends OutlineNode {
   __children: Array<NodeKey>;
   __format: number;
   __indent: number;
+  __dir: 'ltr' | 'rtl' | null;
 
   constructor(key?: NodeKey) {
     super(key);
     this.__children = [];
     this.__format = 0;
     this.__indent = 0;
+    this.__dir = null;
   }
 
   getFormat(): number {
@@ -190,8 +187,7 @@ export class ElementNode extends OutlineNode {
     return textContent;
   }
   getDirection(): 'ltr' | 'rtl' | null {
-    const flags = this.__flags;
-    return flags & IS_LTR ? 'ltr' : flags & IS_RTL ? 'rtl' : null;
+    return this.__dir;
   }
   hasFormat(type: ElementFormatType): boolean {
     const formatFlag = ELEMENT_TYPE_TO_FORMAT[type];
@@ -284,29 +280,13 @@ export class ElementNode extends OutlineNode {
       // Append children.
       const newKey = writableNodeToAppend.__key;
       writableSelfChildren.push(newKey);
-      const flags = writableNodeToAppend.__flags;
-      // Handle direction if node is directionless
-      if (flags & IS_DIRECTIONLESS) {
-        updateDirectionIfNeeded(writableNodeToAppend);
-      }
     }
     return writableSelf;
   }
   setDirection(direction: 'ltr' | 'rtl' | null): this {
     errorOnReadOnly();
     const self = this.getWritable();
-    const flags = self.__flags;
-    if (flags & IS_LTR) {
-      self.__flags ^= IS_LTR;
-    }
-    if (flags & IS_RTL) {
-      self.__flags ^= IS_RTL;
-    }
-    if (direction === 'ltr') {
-      self.__flags |= IS_LTR;
-    } else if (direction === 'rtl') {
-      self.__flags |= IS_RTL;
-    }
+    self.__dir = direction;
     return self;
   }
   setFormat(type: ElementFormatType): this {

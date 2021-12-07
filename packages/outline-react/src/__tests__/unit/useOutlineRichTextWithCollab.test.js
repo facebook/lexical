@@ -61,7 +61,7 @@ describe('useOutlineRichTextWithCollab', () => {
     });
 
     expect(client1.getHTML()).toEqual(
-      '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">Hello world</span></p></div>',
+      '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">Hello world</span></p></div>',
     );
     expect(client1.getHTML()).toEqual(client2.getHTML());
     expect(client1.getDocJSON()).toEqual(client2.getDocJSON());
@@ -109,7 +109,7 @@ describe('useOutlineRichTextWithCollab', () => {
     });
 
     expect(client1.getHTML()).toEqual(
-      '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">Hello world</span></p></div>',
+      '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">Hello world</span></p></div>',
     );
     expect(client2.getHTML()).toEqual(
       '<div contenteditable="true" data-outline-editor="true"><p><br></p></div>',
@@ -126,7 +126,7 @@ describe('useOutlineRichTextWithCollab', () => {
     });
 
     expect(client2.getHTML()).toEqual(
-      '<div contenteditable="true" data-outline-editor="true"><p><span data-outline-text="true">Hello world</span></p></div>',
+      '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">Hello world</span></p></div>',
     );
     expect(client1.getHTML()).toEqual(client2.getHTML());
 

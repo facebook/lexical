@@ -73,7 +73,7 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
     await page.keyboard.type('1234:)56');
     await assertHTML(
       page,
-      '<p class="editor-paragraph"><span data-outline-text="true">1234</span><div class="editor-character-limit"><span class="emoji happysmile" data-outline-text="true">🙂</span><span data-outline-text="true">56</span></div></p>',
+      '<p class="editor-paragraph"><span data-outline-text="true">1234</span><div class="editor-character-limit ltr" dir="ltr"><span class="emoji happysmile" data-outline-text="true">🙂</span><span data-outline-text="true">56</span></div></p>',
     );
 
     await repeat(3, async () => await page.keyboard.press('Backspace'));
@@ -166,12 +166,12 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
     if (charset === 'UTF-16') {
       await assertHTML(
         page,
-        '<p class="editor-paragraph"><span data-outline-text="true">234</span><span class="emoji happysmile" data-outline-text="true">🙂</span><div class="editor-character-limit"><span data-outline-text="true">56</span></div></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">234</span><span class="emoji happysmile" data-outline-text="true">🙂</span><div class="editor-character-limit"><span data-outline-text="true">56</span></div></p>',
       );
     } else if (charset === 'UTF-8') {
       await assertHTML(
         page,
-        '<p class="editor-paragraph"><span data-outline-text="true">234</span><div class="editor-character-limit"><span class="emoji happysmile" data-outline-text="true">🙂</span><span data-outline-text="true">56</span></div></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">234</span><div class="editor-character-limit ltr" dir="ltr"><span class="emoji happysmile" data-outline-text="true">🙂</span><span data-outline-text="true">56</span></div></p>',
       );
     }
   });
@@ -199,7 +199,7 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
     await repeat(3, async () => await page.keyboard.press('Backspace'));
     await assertHTML(
       page,
-      '<ul class="editor-list-ul"><li class="editor-listitem"><span data-outline-text="true">1234</span></li><li class="editor-listitem"><span data-outline-text="true">5</span></li></ul>',
+      '<ul class="editor-list-ul"><li class="editor-listitem"><span data-outline-text="true">1234</span></li><li class="editor-listitem"><span data-outline-text="true">5</span></li></ul',
     );
   });
 
@@ -241,12 +241,12 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
     if (charset === 'UTF-16') {
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">ààààà</span><div class="editor-character-limit"><span data-outline-text="true">à</span></div></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">ààààà</span><div class="editor-character-limit ltr" dir="ltr"><span data-outline-text="true">à</span></div></p>',
       );
     } else {
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">àà</span><div class="editor-character-limit"><span data-outline-text="true">àààà</span></div></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">àà</span><div class="editor-character-limit ltr" dir="ltr"><span data-outline-text="true">àààà</span></div></p>',
       );
     }
   });
@@ -262,18 +262,18 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
     if (['chromium', 'webkit'].includes(E2E_BROWSER)) {
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><div class="editor-character-limit"><span data-outline-text="true">👨‍👩‍👦‍👦</span></div></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><div class="editor-character-limit ltr" dir="ltr"><span data-outline-text="true">👨‍👩‍👦‍👦</span></div></p>',
       );
     } else {
       if (charset === 'UTF-16') {
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">👨‍👩</span><div class="editor-character-limit"><span data-outline-text="true">‍👦‍👦</span></div></p>',
+          '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">👨‍👩</span><div class="editor-character-limit ltr" dir="ltr"><span data-outline-text="true">‍👦‍👦</span></div></p>',
         );
       } else {
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">👨</span><div class="editor-character-limit"><span data-outline-text="true">‍👩‍👦‍👦</span></div></p>',
+          '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">👨</span><div class="editor-character-limit ltr" dir="ltr"><span data-outline-text="true">‍👩‍👦‍👦</span></div></p>',
         );
       }
     }

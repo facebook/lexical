@@ -409,6 +409,7 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
     isReadOnlyMode = previousReadOnlyMode;
     activeEditor = previousActiveEditor;
   }
+  pendingEditorState._readOnly = true;
   if (__DEV__) {
     handleDEVOnlyPendingUpdateGuarantees(pendingEditorState);
   }
@@ -488,7 +489,7 @@ export function triggerListeners(
 export function triggerCommandListeners(
   editor: OutlineEditor,
   type: string,
-  payload: CommandPayload
+  payload: CommandPayload,
 ): void {
   if (editor._updating === false) {
     editor.update(() => {

@@ -1563,7 +1563,7 @@ describe('OutlineSelectionHelpers tests', () => {
         });
 
         expect(element.innerHTML).toBe(
-          '<p><span data-outline-text="true">foo</span></p>',
+          '<p dir="ltr"><span data-outline-text="true">foo</span></p>',
         );
       });
 
@@ -1632,7 +1632,7 @@ describe('OutlineSelectionHelpers tests', () => {
         });
 
         expect(element.innerHTML).toBe(
-          '<h1><span data-outline-text="true">foo</span></h1>',
+          '<h1 dir="ltr"><span data-outline-text="true">foo</span></h1>',
         );
       });
 
@@ -1670,7 +1670,7 @@ describe('OutlineSelectionHelpers tests', () => {
         });
 
         expect(element.innerHTML).toBe(
-          '<h1><span data-outline-text="true">foo</span></h1>',
+          '<h1 dir="ltr"><span data-outline-text="true">foo</span></h1>',
         );
       });
     });

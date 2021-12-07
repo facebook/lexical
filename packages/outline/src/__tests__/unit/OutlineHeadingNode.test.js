@@ -129,7 +129,7 @@ describe('OutlineHeadingNode tests', () => {
         headingNode.append(textNode);
       });
       expect(testEnv.outerHTML).toBe(
-        `<div contenteditable=\"true\" data-outline-editor=\"true\"><h2><span data-outline-text=\"true\">${text}</span></h2></div>`,
+        `<div contenteditable=\"true\" data-outline-editor=\"true\"><h2 dir=\"ltr\"><span data-outline-text=\"true\">${text}</span></h2></div>`,
       );
       await editor.update((state) => {
         const result = headingNode.insertNewAfter();
@@ -137,7 +137,7 @@ describe('OutlineHeadingNode tests', () => {
         expect(result.getDirection()).toEqual(headingNode.getDirection());
       });
       expect(testEnv.outerHTML).toBe(
-        `<div contenteditable=\"true\" data-outline-editor=\"true\"><h2><span data-outline-text=\"true\">${text}</span></h2><p><br></p></div>`,
+        `<div contenteditable=\"true\" data-outline-editor=\"true\"><h2 dir=\"ltr\"><span data-outline-text=\"true\">${text}</span></h2><p><br></p></div>`,
       );
     });
   });

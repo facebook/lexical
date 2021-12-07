@@ -35,7 +35,7 @@ describe('Mentions', () => {
       await waitForSelector(page, '#mentions-typeahead ul li');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Luke</span></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">Luke</span></p>',
       );
 
       await page.keyboard.press('Enter');
@@ -92,7 +92,7 @@ describe('Mentions', () => {
       await waitForSelector(page, '#mentions-typeahead ul li');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Luke</span></p',
+        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">Luke</span></p',
       );
 
       await page.keyboard.press('Enter');
@@ -120,7 +120,7 @@ describe('Mentions', () => {
       await page.keyboard.press('Delete');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Skywalker</span></p>',
+        '<p class="editor-paragraph"><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Skywalker</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -130,7 +130,7 @@ describe('Mentions', () => {
       });
 
       await page.keyboard.press('Delete');
-      await assertHTML(page, '<p class="editor-paragraph" dir="ltr"><br></p>');
+      await assertHTML(page, '<p class="editor-paragraph"><br></p>');
       await assertSelection(page, {
         anchorPath: [0],
         anchorOffset: 0,
@@ -154,7 +154,7 @@ describe('Mentions', () => {
       await waitForSelector(page, '#mentions-typeahead ul li');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Luke</span></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">Luke</span></p>',
       );
 
       await page.keyboard.press('Enter');
@@ -174,7 +174,7 @@ describe('Mentions', () => {
       await page.keyboard.press('Backspace');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke</span></p>',
+        '<p class="editor-paragraph"><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -184,7 +184,7 @@ describe('Mentions', () => {
       });
 
       await page.keyboard.press('Backspace');
-      await assertHTML(page, '<p class="editor-paragraph" dir="ltr"><br></p>');
+      await assertHTML(page, '<p class="editor-paragraph"><br></p>');
       await assertSelection(page, {
         anchorPath: [0],
         anchorOffset: 0,
@@ -200,7 +200,7 @@ describe('Mentions', () => {
       await page.keyboard.press('ArrowLeft');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">abc  def</span></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">abc  def</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -214,13 +214,13 @@ describe('Mentions', () => {
       await waitForSelector(page, '#mentions-typeahead ul li');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">abc Luke def</span></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">abc Luke def</span></p>',
       );
 
       await page.keyboard.press('Enter');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">abc </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> def</span></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">abc </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> def</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
@@ -232,7 +232,7 @@ describe('Mentions', () => {
       await page.keyboard.press('Backspace');
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">abc </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke</span><span data-outline-text="true"> def</span></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">abc </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke</span><span data-outline-text="true"> def</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
@@ -311,12 +311,12 @@ describe('Mentions', () => {
       if (IS_WINDOWS && E2E_BROWSER === 'chromium') {
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Skywalker </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span></p>',
+          '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">Skywalker </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span></p>',
         );
       } else {
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true"> Skywalker </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span></p>',
+          '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true"> Skywalker </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span></p>',
         );
       }
       await assertSelection(page, {
@@ -330,12 +330,12 @@ describe('Mentions', () => {
       if (IS_WINDOWS && E2E_BROWSER === 'chromium') {
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span></p>',
+          '<p class="editor-paragraph"><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span></p>',
         );
       } else {
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span></p>',
+          '<p class="editor-paragraph"><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span></p>',
         );
       }
       await assertSelection(page, {
@@ -349,12 +349,12 @@ describe('Mentions', () => {
       if (IS_WINDOWS && E2E_BROWSER === 'chromium') {
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Skywalker </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span></p>',
+          '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">Skywalker </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span></p>',
         );
       } else {
         await assertHTML(
           page,
-          '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true"> Skywalker </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span></p>',
+          '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true"> Skywalker </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> </span><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span></p>',
         );
       }
       await assertSelection(page, {
@@ -370,7 +370,7 @@ describe('Mentions', () => {
       await deleteNextWord(page);
       await deleteNextWord(page);
 
-      await assertHTML(page, '<p class="editor-paragraph" dir="ltr"><br></p>');
+      await assertHTML(page, '<p class="editor-paragraph"><br></p>');
       await assertSelection(page, {
         anchorPath: [0],
         anchorOffset: 0,
@@ -400,7 +400,7 @@ describe('Mentions', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> foo bar</span></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><span class="mention" data-outline-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-outline-text="true"> foo bar</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
@@ -437,7 +437,7 @@ describe('Mentions', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph" dir="ltr"><span data-outline-text="true"> bar</span></p>',
+        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true"> bar</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],

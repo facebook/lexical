@@ -391,18 +391,13 @@ function moveCaretSelection(
   isBackward: boolean,
   granularity: 'character' | 'word' | 'lineboundary',
 ): void {
-  selection.modify(
-    isHoldingShift ? 'extend' : 'move',
-    isBackward,
-    granularity,
-  );
+  selection.modify(isHoldingShift ? 'extend' : 'move', isBackward, granularity);
 }
 
-function isTopLevelElementRTL(selection: Selection): boolean {
+function isParentElementRTL(selection: Selection): boolean {
   const anchorNode = selection.anchor.getNode();
-  const topLevelElement = anchorNode.getTopLevelElementOrThrow();
-  const direction = topLevelElement.getDirection();
-  return direction === 'rtl';
+  const parent = anchorNode.getParentOrThrow();
+  return parent.getDirection() === 'rtl';
 }
 
 export function moveCharacter(
@@ -410,7 +405,7 @@ export function moveCharacter(
   isHoldingShift: boolean,
   isBackward: boolean,
 ): void {
-  const isRTL = isTopLevelElementRTL(selection);
+  const isRTL = isParentElementRTL(selection);
   moveCaretSelection(
     selection,
     isHoldingShift,

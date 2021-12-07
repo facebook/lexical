@@ -20,7 +20,6 @@ import {
 } from './OutlineSelection';
 import {
   getCompositionKey,
-  getTextDirection,
   setCompositionKey,
   toggleTextFormatType,
 } from './OutlineUtils';
@@ -375,32 +374,7 @@ export class TextNode extends OutlineNode {
       );
     }
     const writableSelf = this.getWritable();
-
-    // Handle text direction and update text content
-    const topElement = this.getTopLevelElement();
-    if (topElement !== null) {
-      const topElementWasEmpty =
-        text === '' || topElement.getTextContent(false, false) === '';
-
-      writableSelf.__text = text;
-      const prevDirection = topElement.getDirection();
-      // If the text content is only a single character, we may have just
-      // replaced all the text with a RTL/LTR character, so check that too.
-      if (prevDirection === null || text.length === 1 || topElementWasEmpty) {
-        const direction = getTextDirection(text);
-        if (direction !== null) {
-          topElement.setDirection(direction);
-        }
-      } else if (
-        prevDirection !== null &&
-        text === '' &&
-        topElement.getTextContent() === ''
-      ) {
-        topElement.setDirection(null);
-      }
-    } else {
-      writableSelf.__text = text;
-    }
+    writableSelf.__text = text;
     return writableSelf;
   }
   select(_anchorOffset?: number, _focusOffset?: number): Selection {

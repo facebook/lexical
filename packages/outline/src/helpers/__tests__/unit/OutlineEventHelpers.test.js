@@ -132,19 +132,19 @@ describe('OutlineEventHelpers', () => {
         name: 'onPasteForRichText should produce the correct editor state from a pasted HTML h1 element',
         inputs: [pasteHTML(`<meta charset='utf-8'><h1>Hello</h1>`)],
         expectedHTML:
-          '<div contenteditable="true" data-outline-editor="true"><h1 class="editor-heading-h1"><span data-outline-text="true">Hello</span></h1></div>',
+          '<div contenteditable="true" data-outline-editor="true"><h1 class="editor-heading-h1" dir="ltr"><span data-outline-text="true">Hello</span></h1></div>',
       },
       {
         name: 'onPasteForRichText should produce the correct editor state from a pasted HTML h2 element',
         inputs: [pasteHTML(`<meta charset='utf-8'><h2>From</h2>`)],
         expectedHTML:
-          '<div contenteditable="true" data-outline-editor="true"><h2 class="editor-heading-h2"><span data-outline-text="true">From</span></h2></div>',
+          '<div contenteditable="true" data-outline-editor="true"><h2 class="editor-heading-h2" dir="ltr"><span data-outline-text="true">From</span></h2></div>',
       },
       {
         name: 'onPasteForRichText should produce the correct editor state from a pasted HTML h3 element',
         inputs: [pasteHTML(`<meta charset='utf-8'><h3>The</h3>`)],
         expectedHTML:
-          '<div contenteditable="true" data-outline-editor="true"><h3 class="editor-heading-h3"><span data-outline-text="true">The</span></h3></div>',
+          '<div contenteditable="true" data-outline-editor="true"><h3 class="editor-heading-h3" dir="ltr"><span data-outline-text="true">The</span></h3></div>',
       },
       {
         name: 'onPasteForRichText should produce the correct editor state from a pasted HTML ul element',
@@ -154,7 +154,7 @@ describe('OutlineEventHelpers', () => {
           ),
         ],
         expectedHTML:
-          '<div contenteditable="true" data-outline-editor="true"><ul class="editor-list-ul"><li class="editor-listitem"><span data-outline-text="true">Other side</span></li><li class="editor-listitem"><span data-outline-text="true">I must have called</span></li></ul></div>',
+          '<div contenteditable="true" data-outline-editor="true"><ul class="editor-list-ul"><li class="editor-listitem" dir="ltr"><span data-outline-text="true">Other side</span></li><li class="editor-listitem" dir="ltr"><span data-outline-text="true">I must have called</span></li></ul></div>',
       },
       {
         name: 'onPasteForRichText should produce the correct editor state from pasted HTML ol element',
@@ -164,31 +164,31 @@ describe('OutlineEventHelpers', () => {
           ),
         ],
         expectedHTML:
-          '<div contenteditable="true" data-outline-editor="true"><ol class="editor-list-ol"><li class="editor-listitem"><span data-outline-text="true">To tell you</span></li><li class="editor-listitem"><span data-outline-text="true">I’m sorry</span></li></ol></div>',
+          '<div contenteditable="true" data-outline-editor="true"><ol class="editor-list-ol"><li class="editor-listitem" dir="ltr"><span data-outline-text="true">To tell you</span></li><li class="editor-listitem" dir="ltr"><span data-outline-text="true">I’m sorry</span></li></ol></div>',
       },
       {
         name: 'onPasteForRichText should produce the correct editor state from pasted DOM Text Node',
         inputs: [pasteHTML(`<meta charset='utf-8'>A thousand times`)],
         expectedHTML:
-          '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span data-outline-text="true">A thousand times</span></p></div>',
+          '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">A thousand times</span></p></div>',
       },
       {
         name: 'onPasteForRichText should produce the correct editor state from a pasted HTML b element',
         inputs: [pasteHTML(`<meta charset='utf-8'><b>Bold</b>`)],
         expectedHTML:
-          '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><strong class="editor-text-bold" data-outline-text="true">Bold</strong></p></div>',
+          '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><strong class="editor-text-bold" data-outline-text="true">Bold</strong></p></div>',
       },
       {
         name: 'onPasteForRichText should produce the correct editor state from a pasted HTML i element',
         inputs: [pasteHTML(`<meta charset='utf-8'><i>Italic</i>`)],
         expectedHTML:
-          '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><em class="editor-text-italic" data-outline-text="true">Italic</em></p></div>',
+          '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><em class="editor-text-italic" data-outline-text="true">Italic</em></p></div>',
       },
       {
         name: 'onPasteForRichText should produce the correct editor state from a pasted HTML u element',
         inputs: [pasteHTML(`<meta charset='utf-8'><u>Underline</u>`)],
         expectedHTML:
-          '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span class="editor-text-underline" data-outline-text="true">Underline</span></p></div>',
+          '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><span class="editor-text-underline" data-outline-text="true">Underline</span></p></div>',
       },
       {
         name: 'onPasteForRichText should produce the correct editor state from pasted heading node followed by a DOM Text Node',
@@ -198,7 +198,7 @@ describe('OutlineEventHelpers', () => {
           ),
         ],
         expectedHTML:
-          '<div contenteditable="true" data-outline-editor="true"><h1 class="editor-heading-h1"><span data-outline-text="true">Lyrics to Hello by Adele</span></h1><p class="editor-paragraph"><span data-outline-text="true">A thousand times</span></p></div>',
+          '<div contenteditable="true" data-outline-editor="true"><h1 class="editor-heading-h1" dir="ltr"><span data-outline-text="true">Lyrics to Hello by Adele</span></h1><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">A thousand times</span></p></div>',
       },
       {
         name: 'onPasteForRichText should produce the correct editor state from a pasted HTML anchor element',
@@ -208,7 +208,7 @@ describe('OutlineEventHelpers', () => {
           ),
         ],
         expectedHTML:
-          '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><a href="https://facebook.com/"><span data-outline-text="true">Facebook</span></a></p></div>',
+          '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><a href="https://facebook.com/" dir="ltr"><span data-outline-text="true">Facebook</span></a></p></div>',
       },
       {
         name: 'onPasteForRichText should produce the correct editor state from a pasted combination of an HTML text node followed by an anchor node',
@@ -218,7 +218,7 @@ describe('OutlineEventHelpers', () => {
           ),
         ],
         expectedHTML:
-          '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span data-outline-text="true">Welcome to</span><a href="https://facebook.com/"><span data-outline-text="true">Facebook!</span></a></p></div>',
+          '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Welcome to</span><a href="https://facebook.com/" dir="ltr"><span data-outline-text="true">Facebook!</span></a></p></div>',
       },
       {
         name: 'onPasteForRichText should produce the correct editor state from a pasted combination of HTML anchor elements and text nodes',
@@ -228,7 +228,7 @@ describe('OutlineEventHelpers', () => {
           ),
         ],
         expectedHTML:
-          '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span data-outline-text="true">Welcome to</span><a href="https://facebook.com/"><span data-outline-text="true">Facebook!</span></a><span data-outline-text="true">We hope you like it here.</span></p></div>',
+          '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Welcome to</span><a href="https://facebook.com/" dir="ltr"><span data-outline-text="true">Facebook!</span></a><span data-outline-text="true">We hope you like it here.</span></p></div>',
       },
       {
         name: 'onPasteForRichText should ignore DOM node types that do not have transformers, but still process their children.',
@@ -238,7 +238,7 @@ describe('OutlineEventHelpers', () => {
           ),
         ],
         expectedHTML:
-          '<div contenteditable="true" data-outline-editor="true"><ul class="editor-list-ul"><li class="editor-listitem"><span data-outline-text="true">Hello</span></li><li class="editor-listitem"><span data-outline-text="true">from the other</span></li><li class="editor-listitem"><span data-outline-text="true">side</span></li></ul></div>',
+          '<div contenteditable="true" data-outline-editor="true"><ul class="editor-list-ul"><li class="editor-listitem" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem" dir="ltr"><span data-outline-text="true">from the other</span></li><li class="editor-listitem" dir="ltr"><span data-outline-text="true">side</span></li></ul></div>',
       },
       {
         name: 'onPasteForRichText should ignore multiple levels of DOM node types that do not have transformers, but still process their children.',
@@ -248,7 +248,7 @@ describe('OutlineEventHelpers', () => {
           ),
         ],
         expectedHTML:
-          '<div contenteditable="true" data-outline-editor="true"><ul class="editor-list-ul"><li class="editor-listitem"><span data-outline-text="true">Hello</span></li><li class="editor-listitem"><span data-outline-text="true">from the other</span></li><li class="editor-listitem"><span data-outline-text="true">side</span></li></ul></div>',
+          '<div contenteditable="true" data-outline-editor="true"><ul class="editor-list-ul"><li class="editor-listitem" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem" dir="ltr"><span data-outline-text="true">from the other</span></li><li class="editor-listitem" dir="ltr"><span data-outline-text="true">side</span></li></ul></div>',
       },
       {
         name: 'onPasteForRichText should respect htmlTransforms passed in via the editor config.',
@@ -258,7 +258,7 @@ describe('OutlineEventHelpers', () => {
           ),
         ],
         expectedHTML:
-          '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span data-outline-text="true">Hello world!</span></p></div>',
+          '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Hello world!</span></p></div>',
       },
       {
         name: 'onPasteForRichText should preserve formatting from HTML tags on deeply nested text nodes.',
@@ -268,7 +268,7 @@ describe('OutlineEventHelpers', () => {
           ),
         ],
         expectedHTML:
-          '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span data-outline-text="true">Welcome to</span><a href="https://facebook.com/"><strong class="editor-text-bold" data-outline-text="true">Facebook!</strong></a><span data-outline-text="true">We hope you like it here.</span></p></div>',
+          '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Welcome to</span><a href="https://facebook.com/" dir="ltr"><strong class="editor-text-bold" data-outline-text="true">Facebook!</strong></a><span data-outline-text="true">We hope you like it here.</span></p></div>',
       },
       {
         name: 'onPasteForRichText should preserve formatting from HTML tags on deeply nested and top level text nodes.',
@@ -278,7 +278,7 @@ describe('OutlineEventHelpers', () => {
           ),
         ],
         expectedHTML:
-          '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span data-outline-text="true">Welcome to</span><a href="https://facebook.com/"><strong class="editor-text-bold" data-outline-text="true">Facebook!</strong></a><strong class="editor-text-bold" data-outline-text="true">We hope you like it here.</strong></p></div>',
+          '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Welcome to</span><a href="https://facebook.com/" dir="ltr"><strong class="editor-text-bold" data-outline-text="true">Facebook!</strong></a><strong class="editor-text-bold" data-outline-text="true">We hope you like it here.</strong></p></div>',
       },
       {
         name: 'onPasteForRichText should preserve multiple types of formatting on deeply nested text nodes and top level text nodes',
@@ -288,7 +288,7 @@ describe('OutlineEventHelpers', () => {
           ),
         ],
         expectedHTML:
-          '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph"><span data-outline-text="true">Welcome to</span><a href="https://facebook.com/"><strong class="editor-text-bold editor-text-italic" data-outline-text="true">Facebook!</strong></a><strong class="editor-text-bold editor-text-italic" data-outline-text="true">We hope you like it here.</strong></p></div>',
+          '<div contenteditable="true" data-outline-editor="true"><p class="editor-paragraph" dir="ltr"><span data-outline-text="true">Welcome to</span><a href="https://facebook.com/" dir="ltr"><strong class="editor-text-bold editor-text-italic" data-outline-text="true">Facebook!</strong></a><strong class="editor-text-bold editor-text-italic" data-outline-text="true">We hope you like it here.</strong></p></div>',
       },
     ];
     suite.forEach((testUnit, i) => {

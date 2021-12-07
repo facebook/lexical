@@ -24,10 +24,6 @@ export const IS_DIRECTIONLESS = 1 << 3;
 // Text nodes
 export const IS_UNMERGEABLE = 1 << 4;
 
-// Element nodes
-export const IS_LTR = 1 << 5;
-export const IS_RTL = 1 << 6;
-
 // Text node formatting
 export const IS_BOLD = 1;
 export const IS_ITALIC = 1 << 1;

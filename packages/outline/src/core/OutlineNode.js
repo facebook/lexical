@@ -26,7 +26,6 @@ import {
   generateKey,
   getCompositionKey,
   getNodeByKey,
-  getTextDirection,
   internallyMarkNodeAsDirty,
   markParentElementsAsDirty,
   setCompositionKey,
@@ -92,18 +91,6 @@ export function removeNode(
     parent.getChildrenSize() === 0
   ) {
     removeNode(parent, restoreSelection);
-  }
-}
-
-export function updateDirectionIfNeeded(node: OutlineNode): void {
-  const topElement = node.getTopLevelElementOrThrow();
-  const prevDirection = topElement.getDirection();
-  if (prevDirection !== null) {
-    const textContent = topElement.getTextContent(false, false);
-    const direction = getTextDirection(textContent);
-    if (direction === null) {
-      topElement.setDirection(null);
-    }
   }
 }
 
@@ -463,15 +450,19 @@ export class OutlineNode {
     }
     return nodes;
   }
+  // TODO remove this and move to TextNode
   isImmutable(): boolean {
     return (this.getLatest().__flags & IS_IMMUTABLE) !== 0;
   }
+  // TODO remove this and move to TextNode
   isSegmented(): boolean {
     return (this.getLatest().__flags & IS_SEGMENTED) !== 0;
   }
+  // TODO remove this and move to TextNode
   isInert(): boolean {
     return (this.getLatest().__flags & IS_INERT) !== 0;
   }
+  // TODO remove this and move to TextNode
   isDirectionless(): boolean {
     return (this.getLatest().__flags & IS_DIRECTIONLESS) !== 0;
   }
@@ -480,6 +471,7 @@ export class OutlineNode {
     const dirtyLeaves = editor._dirtyLeaves;
     return dirtyLeaves !== null && dirtyLeaves.has(this.__key);
   }
+  // TODO remove this and move to TextNode
   isComposing(): boolean {
     return this.__key === getCompositionKey();
   }
@@ -530,9 +522,11 @@ export class OutlineNode {
     nodeMap.set(key, mutableNode);
     return mutableNode;
   }
+  // TODO remove this completely
   getTextContent(includeInert?: boolean, includeDirectionless?: false): string {
     return '';
   }
+  // TODO remove this completely
   getTextContentSize(
     includeInert?: boolean,
     includeDirectionless?: false,
@@ -623,11 +617,6 @@ export class OutlineNode {
     children.splice(index, 0, newKey);
     writableReplaceWith.__parent = newParent.__key;
     removeNode(this, false);
-    const flags = writableReplaceWith.__flags;
-    // Handle direction if node is directionless
-    if (flags & IS_DIRECTIONLESS) {
-      updateDirectionIfNeeded(writableReplaceWith);
-    }
     const selection = getSelection();
     if (selection !== null) {
       const anchor = selection.anchor;
@@ -641,10 +630,6 @@ export class OutlineNode {
     }
     if (getCompositionKey() === toReplaceKey) {
       setCompositionKey(newKey);
-    }
-    // Handle direction if node is directionless
-    if (flags & IS_DIRECTIONLESS) {
-      updateDirectionIfNeeded(writableReplaceWith);
     }
     return writableReplaceWith;
   }
@@ -671,11 +656,6 @@ export class OutlineNode {
       invariant(false, 'Node is not a child of its parent');
     }
     children.splice(index + 1, 0, insertKey);
-    const flags = writableNodeToInsert.__flags;
-    // Handle direction if node is directionless
-    if (flags & IS_DIRECTIONLESS) {
-      updateDirectionIfNeeded(writableNodeToInsert);
-    }
     const selection = getSelection();
     if (selection !== null) {
       updateElementSelectionOnCreateDeleteNode(
@@ -709,11 +689,6 @@ export class OutlineNode {
       invariant(false, 'Node is not a child of its parent');
     }
     children.splice(index, 0, insertKey);
-    const flags = writableNodeToInsert.__flags;
-    // Handle direction if node is directionless
-    if (flags & IS_DIRECTIONLESS) {
-      updateDirectionIfNeeded(writableNodeToInsert);
-    }
     const selection = getSelection();
     if (selection !== null) {
       updateElementSelectionOnCreateDeleteNode(

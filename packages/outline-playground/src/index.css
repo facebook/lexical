@@ -1092,3 +1092,10 @@ i.chevron-down {
   text-align: start;
 }
 
+.ltr {
+  text-align: left;
+}
+
+.rtl {
+  text-align: right;
+}

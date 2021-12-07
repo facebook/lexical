@@ -76,7 +76,7 @@ describe('OutlineCodeNode tests', () => {
         });
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-outline-editor="true"><p><span>foo</span></p></div>',
+        '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span>foo</span></p></div>',
       );
       await editor.update(() => {
         const codeNode = createCodeNode();

@@ -9,6 +9,7 @@
 
 import type {NodeKey, OutlineNode, EditorConfig} from 'outline';
 
+import {addClassNamesToElement} from 'outline/elements';
 import {TextNode, isTextNode, createTextNode} from 'outline';
 
 export class HashtagNode extends TextNode {
@@ -26,10 +27,7 @@ export class HashtagNode extends TextNode {
 
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
     const element = super.createDOM(config);
-    const theme = config.theme;
-    if (theme.hashtag) {
-      element.className = theme.hashtag;
-    }
+    addClassNamesToElement(element, config.theme.hashtag);
     return element;
   }
 

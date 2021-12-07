@@ -30,6 +30,9 @@ async function prepareOutlinePackage() {
     `mv ./packages/outline/npm/OutlineNodeHelpers.js ./packages/outline/npm/nodes.js`,
   );
   await exec(
+    `mv ./packages/outline/npm/OutlineElementHelpers.js ./packages/outline/npm/elements.js`,
+  );
+  await exec(
     `mv ./packages/outline/npm/OutlineRootHelpers.js ./packages/outline/npm/validation.js`,
   );
   // Remap the node extensions to their short versions

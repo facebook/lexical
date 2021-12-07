@@ -53,6 +53,8 @@ module.exports = {
           '<rootDir>/packages/outline/src/helpers/OutlineKeyHelpers.js',
         '^outline/nodes$':
           '<rootDir>/packages/outline/src/helpers/OutlineNodeHelpers.js',
+        '^outline/elements$':
+          '<rootDir>/packages/outline/src/helpers/OutlineElementHelpers.js',
         '^outline/events$':
           '<rootDir>/packages/outline/src/helpers/OutlineEventHelpers.js',
         '^outline/offsets$':

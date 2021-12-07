@@ -10,6 +10,7 @@
 import type {OutlineNode, NodeKey, EditorConfig} from 'outline';
 import type {ParagraphNode} from 'outline/ParagraphNode';
 
+import {addClassNamesToElement} from 'outline/elements';
 import {ElementNode} from 'outline';
 import {createParagraphNode} from 'outline/ParagraphNode';
 
@@ -45,9 +46,7 @@ export class HeadingNode extends ElementNode {
     if (classNames !== undefined) {
       // $FlowFixMe: intentional cast
       const className = classNames[tag];
-      if (className !== undefined) {
-        element.className = className;
-      }
+      addClassNamesToElement(element, className);
     }
     return element;
   }

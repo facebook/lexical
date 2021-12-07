@@ -16,6 +16,10 @@ import type {
 
 import {createTextNode, ElementNode} from 'outline';
 import {createListItemNode, isListItemNode} from 'outline/ListItemNode';
+import {
+  addClassNamesToElement,
+  removeClassNamesFromElement,
+} from 'outline/elements';
 
 type ListNodeTagType = 'ul' | 'ol';
 
@@ -121,10 +125,10 @@ function setListThemeClassNames(
   }
 
   if (classesToAdd.length > 0) {
-    dom.classList.add(...classesToAdd);
+    addClassNamesToElement(dom, ...classesToAdd);
   }
   if (classesToRemove.length > 0) {
-    dom.classList.remove(...classesToRemove);
+    removeClassNamesFromElement(dom, ...classesToRemove);
   }
 }
 

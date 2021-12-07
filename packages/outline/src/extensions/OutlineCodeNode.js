@@ -10,6 +10,7 @@
 import type {NodeKey, EditorConfig, Selection} from 'outline';
 import type {ParagraphNode} from 'outline/ParagraphNode';
 
+import {addClassNamesToElement} from 'outline/elements';
 import {ElementNode} from 'outline';
 import {createParagraphNode} from 'outline/ParagraphNode';
 
@@ -30,11 +31,7 @@ export class CodeNode extends ElementNode {
 
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
     const element = document.createElement('code');
-    const theme = config.theme;
-    const className = theme.code;
-    if (className !== undefined) {
-      element.className = className;
-    }
+    addClassNamesToElement(element, config.theme.code);
     element.setAttribute('spellcheck', 'false');
     return element;
   }

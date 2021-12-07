@@ -34,7 +34,7 @@ import {
   getCompositionKey,
   $getNodeByKey,
   isSelectionWithinEditor,
-  setCompositionKey,
+  $setCompositionKey,
   toggleTextFormatType,
   getNodeFromDOM,
   domIsElement,
@@ -125,7 +125,7 @@ class Point {
     this.type = type;
     if (!isCurrentlyReadOnlyMode()) {
       if (getCompositionKey() === oldKey) {
-        setCompositionKey(key);
+        $setCompositionKey(key);
       }
       if (
         selection !== null &&

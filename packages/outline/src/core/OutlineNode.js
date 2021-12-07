@@ -28,7 +28,7 @@ import {
   $getNodeByKey,
   internallyMarkNodeAsDirty,
   markParentElementsAsDirty,
-  setCompositionKey,
+  $setCompositionKey,
 } from './OutlineUtils';
 import invariant from 'shared/invariant';
 import {
@@ -629,7 +629,7 @@ export class OutlineNode {
       }
     }
     if (getCompositionKey() === toReplaceKey) {
-      setCompositionKey(newKey);
+      $setCompositionKey(newKey);
     }
     return writableReplaceWith;
   }

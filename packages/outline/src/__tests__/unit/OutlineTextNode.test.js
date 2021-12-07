@@ -26,7 +26,7 @@ import {otlnCreateParagraphNode} from 'outline/ParagraphNode';
 import {
   getCompositionKey,
   getEditorStateTextContent,
-  setCompositionKey,
+  $setCompositionKey,
 } from '../../core/OutlineUtils';
 import {createTestEditor, otlnCreateTestSegmentedNode} from '../utils';
 
@@ -431,7 +431,7 @@ describe('OutlineTextNode tests', () => {
         const paragraphNode = otlnCreateParagraphNode();
         const textNode = otlnCreateTextNode('12345');
         paragraphNode.append(textNode);
-        setCompositionKey(textNode.getKey());
+        $setCompositionKey(textNode.getKey());
 
         const [, splitNode2] = textNode.splitText(1);
         expect(getCompositionKey()).toBe(splitNode2.getKey());

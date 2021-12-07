@@ -201,7 +201,7 @@ export function internallyMarkNodeAsDirty(node: OutlineNode): void {
   }
 }
 
-export function setCompositionKey(compositionKey: null | NodeKey): void {
+export function $setCompositionKey(compositionKey: null | NodeKey): void {
   errorOnReadOnly();
   const editor = getActiveEditor();
   const previousCompositionKey = editor._compositionKey;

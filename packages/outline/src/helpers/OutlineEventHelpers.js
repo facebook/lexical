@@ -50,7 +50,7 @@ import {
   log,
   $getSelection,
   $getRoot,
-  setCompositionKey,
+  $setCompositionKey,
   getCompositionKey,
   getNearestNodeFromDOMNode,
   flushMutations,
@@ -531,7 +531,7 @@ export function onCompositionStart(
     const selection = $getSelection();
     if (selection !== null && !editor.isComposing()) {
       const anchor = selection.anchor;
-      setCompositionKey(anchor.key);
+      $setCompositionKey(anchor.key);
       const data = event.data;
       if (
         data != null &&
@@ -555,7 +555,7 @@ function onCompositionEndInternal(
 ) {
   editor.update(() => {
     log('onCompositionEnd');
-    setCompositionKey(null);
+    $setCompositionKey(null);
     updateSelectedTextFromDOM(editor, true);
   });
 }
@@ -698,7 +698,7 @@ function updateTextNodeFromDOMContent(
     if (compositionEnd || normalizedTextContent !== node.getTextContent()) {
       if (normalizedTextContent === '') {
         if (isComposing) {
-          setCompositionKey(null);
+          $setCompositionKey(null);
         }
         node.remove();
         return;
@@ -797,7 +797,7 @@ export function onBeforeInput(event: InputEvent, editor: OutlineEditor): void {
 
     if (inputType === 'deleteContentBackward') {
       // Used for Android
-      setCompositionKey(null);
+      $setCompositionKey(null);
       event.preventDefault();
       editor.execCommand('deleteCharacter', true);
       return;
@@ -843,20 +843,20 @@ export function onBeforeInput(event: InputEvent, editor: OutlineEditor): void {
       case 'insertFromComposition': {
         if (data) {
           // This is the end of composition
-          setCompositionKey(null);
+          $setCompositionKey(null);
           editor.execCommand('insertText', data);
         }
         break;
       }
       case 'insertLineBreak': {
         // Used for Android
-        setCompositionKey(null);
+        $setCompositionKey(null);
         editor.execCommand('insertLineBreak');
         break;
       }
       case 'insertParagraph': {
         // Used for Android
-        setCompositionKey(null);
+        $setCompositionKey(null);
         editor.execCommand('insertParagraph');
         break;
       }

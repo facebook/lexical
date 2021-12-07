@@ -17,7 +17,7 @@ import {
   TextNode,
   ElementNode,
   $getRoot,
-  setCompositionKey,
+  $setCompositionKey,
   $getSelection,
   $getNodeByKey,
   isTextNode,
@@ -203,7 +203,7 @@ describe('OutlineEditor tests', () => {
           editor.update(
             () => {
               // force flush sync
-              setCompositionKey('root');
+              $setCompositionKey('root');
               log.push('D2');
             },
             {

@@ -49,7 +49,7 @@ import {
   getNearestNodeFromDOMNode,
   flushMutations,
   $setSelection,
-  setCompositionKey,
+  $setCompositionKey,
   getCompositionKey,
 } from './OutlineUtils';
 import {
@@ -86,7 +86,7 @@ export {
   $getPreviousSelection,
   $clearSelection,
   $setSelection,
-  setCompositionKey,
+  $setCompositionKey,
   getCompositionKey,
   getNearestNodeFromDOMNode,
   flushMutations,

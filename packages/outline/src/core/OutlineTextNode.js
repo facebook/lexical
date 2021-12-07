@@ -20,7 +20,7 @@ import {
 } from './OutlineSelection';
 import {
   getCompositionKey,
-  setCompositionKey,
+  $setCompositionKey,
   toggleTextFormatType,
 } from './OutlineUtils';
 import invariant from 'shared/invariant';
@@ -404,7 +404,7 @@ export class TextNode extends OutlineNode {
         compositionKey === selection.anchor.key ||
         compositionKey === selection.focus.key
       ) {
-        setCompositionKey(key);
+        $setCompositionKey(key);
       }
       selection.setTextNodeRange(this, anchorOffset, this, focusOffset);
     }
@@ -547,7 +547,7 @@ export class TextNode extends OutlineNode {
         }
       }
       if (compositionKey === key) {
-        setCompositionKey(siblingKey);
+        $setCompositionKey(siblingKey);
       }
       textSize = nextTextSize;
       sibling.__parent = parentKey;
@@ -592,7 +592,7 @@ export class TextNode extends OutlineNode {
     const compositionKey = getCompositionKey();
 
     if (compositionKey === targetKey) {
-      setCompositionKey(key);
+      $setCompositionKey(key);
     }
     const selection = $getSelection();
 

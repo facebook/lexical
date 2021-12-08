@@ -305,6 +305,7 @@ export function onKeyDown(event: KeyboardEvent, editor: OutlineEditor): void {
   }
   editor.update((state) => {
     log('onKeyDown');
+
     const selection = $getSelection();
     if (selection === null) {
       return;
@@ -357,23 +358,10 @@ export function onKeyDown(event: KeyboardEvent, editor: OutlineEditor): void {
       event.preventDefault();
       editor.execCommand('formatText', 'italic');
     } else if (isTab(event)) {
-      // Handle code blocks
-      const anchor = selection.anchor;
-      if (anchor.type === 'text') {
-        const anchorNode = anchor.getNode();
-        const parentBlock = anchorNode.getParentOrThrow();
-        if (parentBlock.canInsertTab()) {
-          if (event.shiftKey) {
-            const textContent = anchorNode.getTextContent();
-            const character = textContent[anchor.offset - 1];
-            if (character === '\t') {
-              editor.execCommand('deleteCharacter', true);
-            }
-          } else {
-            editor.execCommand('insertText', '\t');
-          }
-          event.preventDefault();
-        }
+      if (
+        editor.execCommand(event.shiftKey ? 'outdentContent' : 'indentContent')
+      ) {
+        event.preventDefault();
       }
     } else if (isUndo(event)) {
       event.preventDefault();

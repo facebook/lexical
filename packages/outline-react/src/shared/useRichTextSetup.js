@@ -167,6 +167,43 @@ export function useRichTextSetup(
             case 'insertParagraph':
               selection.insertParagraph();
               return true;
+            case 'indentContent': {
+              // Handle code blocks
+              const anchor = selection.anchor;
+              const parentBlock =
+                anchor.type === 'element'
+                  ? anchor.getNode()
+                  : anchor.getNode().getParentOrThrow();
+              if (parentBlock.canInsertTab()) {
+                editor.execCommand('insertText', '\t');
+              } else {
+                if (parentBlock.getIndent() !== 10) {
+                  parentBlock.setIndent(parentBlock.getIndent() + 1);
+                }
+              }
+              return true;
+            }
+            case 'outdentContent': {
+              // Handle code blocks
+              const anchor = selection.anchor;
+              const anchorNode = anchor.getNode();
+              const parentBlock =
+                anchor.type === 'element'
+                  ? anchor.getNode()
+                  : anchor.getNode().getParentOrThrow();
+              if (parentBlock.canInsertTab()) {
+                const textContent = anchorNode.getTextContent();
+                const character = textContent[anchor.offset - 1];
+                if (character === '\t') {
+                  editor.execCommand('deleteCharacter', true);
+                }
+              } else {
+                if (parentBlock.getIndent() !== 0) {
+                  parentBlock.setIndent(parentBlock.getIndent() - 1);
+                }
+              }
+              return true;
+            }
           }
           return false;
         },

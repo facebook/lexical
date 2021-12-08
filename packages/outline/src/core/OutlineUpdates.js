@@ -490,22 +490,24 @@ export function triggerCommandListeners(
   editor: OutlineEditor,
   type: string,
   payload: CommandPayload,
-): void {
+): boolean {
   if (editor._updating === false) {
+    let returnVal = false;
     editor.update(() => {
-      triggerCommandListeners(editor, type, payload);
+      returnVal = triggerCommandListeners(editor, type, payload);
     });
-    return;
+    return returnVal;
   }
   const commandListeners = editor._listeners.command;
-  propagation: for (let i = 4; i >= 0; i--) {
+  for (let i = 4; i >= 0; i--) {
     const listeners = Array.from(commandListeners[i]);
     for (let s = 0; s < listeners.length; s++) {
       if (listeners[s](type, payload) === true) {
-        break propagation;
+        return true;
       }
     }
   }
+  return false;
 }
 
 function triggerEnqueuedUpdates(editor: OutlineEditor): void {

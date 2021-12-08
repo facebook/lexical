@@ -14,7 +14,6 @@ import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
 import {useCollaborationContext} from '../context/CollaborationContext';
 import {useEffect, useState} from 'react';
 import {log, isElementNode, $getSelection, createEditorStateRef} from 'outline';
-import {isListItemNode} from 'outline/ListItemNode';
 import {ImageNode, $createEmojiNode} from '../nodes/ImageNode';
 import yellowFlowerImage from '../images/image/yellow-flower.jpg';
 import useOutlineNestedList from 'outline-react/useOutlineNestedList';
@@ -40,7 +39,7 @@ export default function ActionsPlugins({
   const [isReadOnly, setIsReadyOnly] = useState(false);
   const [connected, setConnected] = useState(false);
   const [editor] = useOutlineComposerContext();
-  const [indent, outdent] = useOutlineNestedList(editor);
+  useOutlineNestedList(editor);
   const {yjsDocMap} = useCollaborationContext();
   const isCollab = yjsDocMap.get('main') !== undefined;
 
@@ -133,37 +132,11 @@ export default function ActionsPlugins({
   };
 
   const applyOutdent = () => {
-    editor.update(() => {
-      const selection = $getSelection();
-      if (selection !== null) {
-        const node = selection.anchor.getNode();
-        const element = isElementNode(node) ? node : node.getParentOrThrow();
-        if (!isListItemNode(element)) {
-          if (element.getIndent() !== 0) {
-            element.setIndent(element.getIndent() - 1);
-          }
-        } else {
-          outdent();
-        }
-      }
-    });
+    editor.execCommand('outdentContent');
   };
 
   const applyIndent = () => {
-    editor.update(() => {
-      const selection = $getSelection();
-      if (selection !== null) {
-        const node = selection.anchor.getNode();
-        const element = isElementNode(node) ? node : node.getParentOrThrow();
-        if (!isListItemNode(element)) {
-          if (element.getIndent() !== 10) {
-            element.setIndent(element.getIndent() + 1);
-          }
-        } else {
-          indent();
-        }
-      }
-    });
+    editor.execCommand('indentContent');
   };
 
   return (

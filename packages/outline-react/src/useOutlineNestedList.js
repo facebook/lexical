@@ -7,50 +7,49 @@
  * @flow strict
  */
 
-import type {OutlineEditor, OutlineNode} from 'outline';
+import type {
+  OutlineEditor,
+  OutlineNode,
+  CommandListenerLowPriority,
+} from 'outline';
 import type {ListItemNode} from 'outline/ListItemNode';
 
-import {useCallback, useEffect, useMemo} from 'react';
-import {log, $getSelection} from 'outline';
+import {useEffect} from 'react';
+import {$getSelection} from 'outline';
 import {$createListItemNode, isListItemNode} from 'outline/ListItemNode';
 import {$createListNode, isListNode} from 'outline/ListNode';
 
-function maybeIndentOrOutdent(
-  editor: OutlineEditor,
-  direction: 'indent' | 'outdent',
-): boolean {
-  let hasHandledIndention = false;
-  editor.update(() => {
-    log('useNestedList.maybeIndent');
-    const selection = $getSelection();
-    if (selection === null) {
-      return;
+const LowPriority: CommandListenerLowPriority = 1;
+
+function maybeIndentOrOutdent(direction: 'indent' | 'outdent'): boolean {
+  const selection = $getSelection();
+  if (selection === null) {
+    return false;
+  }
+  const selectedNodes = selection.getNodes();
+  let listItemNodes = [];
+  if (selectedNodes.length === 0) {
+    selectedNodes.push(selection.anchor.getNode());
+  }
+  if (selectedNodes.length === 1) {
+    // Only 1 node selected. Selection may not contain the ListNodeItem so we traverse the tree to
+    // find whether this is part of a ListItemNode
+    const nearestListItemNode = findNearestListItemNode(selectedNodes[0]);
+    if (nearestListItemNode !== null) {
+      listItemNodes = [nearestListItemNode];
     }
-    const selectedNodes = selection.getNodes();
-    let listItemNodes = [];
-    if (selectedNodes.length === 0) {
-      selectedNodes.push(selection.anchor.getNode());
-    }
-    if (selectedNodes.length === 1) {
-      // Only 1 node selected. Selection may not contain the ListNodeItem so we traverse the tree to
-      // find whether this is part of a ListItemNode
-      const nearestListItemNode = findNearestListItemNode(selectedNodes[0]);
-      if (nearestListItemNode !== null) {
-        listItemNodes = [nearestListItemNode];
-      }
+  } else {
+    listItemNodes = getUniqueListItemNodes(selectedNodes);
+  }
+  if (listItemNodes.length > 0) {
+    if (direction === 'indent') {
+      handleIndent(listItemNodes);
     } else {
-      listItemNodes = getUniqueListItemNodes(selectedNodes);
+      handleOutdent(listItemNodes);
     }
-    if (listItemNodes.length > 0) {
-      if (direction === 'indent') {
-        handleIndent(listItemNodes);
-      } else {
-        handleOutdent(listItemNodes);
-      }
-      hasHandledIndention = true;
-    }
-  });
-  return hasHandledIndention;
+    return true;
+  }
+  return false;
 }
 
 function isNestedListNode(node: ?OutlineNode): boolean %checks {
@@ -173,47 +172,25 @@ function handleOutdent(listItemNodes: Array<ListItemNode>): void {
   });
 }
 
-function indent(editor: OutlineEditor): void {
-  maybeIndentOrOutdent(editor, 'indent');
-}
-
-function outdent(editor: OutlineEditor): void {
-  maybeIndentOrOutdent(editor, 'outdent');
-}
-
-export default function useOutlineNestedList(
-  editor: OutlineEditor,
-): [() => void, () => void] {
-  const handleKeydown = useCallback(
-    (e: KeyboardEvent) => {
-      // TAB
-      if (e.keyCode === 9) {
-        const direction = e.shiftKey ? 'outdent' : 'indent';
-        const hasHandledIndention = maybeIndentOrOutdent(editor, direction);
-        if (hasHandledIndention) {
-          e.preventDefault();
-        }
-      }
-    },
-    [editor],
-  );
-
+export default function useOutlineNestedList(editor: OutlineEditor): void {
   useEffect(() => {
     return editor.addListener(
-      'root',
-      (
-        rootElement: null | HTMLElement,
-        prevRootElement: null | HTMLElement,
-      ) => {
-        if (prevRootElement !== null) {
-          prevRootElement.removeEventListener('keydown', handleKeydown);
+      'command',
+      (type) => {
+        if (type === 'indentContent') {
+          const hasHandledIndention = maybeIndentOrOutdent('indent');
+          if (hasHandledIndention) {
+            return true;
+          }
+        } else if (type === 'outdentContent') {
+          const hasHandledIndention = maybeIndentOrOutdent('outdent');
+          if (hasHandledIndention) {
+            return true;
+          }
         }
-        if (rootElement !== null) {
-          rootElement.addEventListener('keydown', handleKeydown);
-        }
+        return false;
       },
+      LowPriority,
     );
-  }, [editor, handleKeydown]);
-
-  return useMemo(() => [() => indent(editor), () => outdent(editor)], [editor]);
+  }, [editor]);
 }

@@ -23,7 +23,6 @@ describe('OutlineQuoteNode tests', () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const quoteNode = $createQuoteNode();
-        expect(quoteNode.getFlags()).toBe(0);
         expect(quoteNode.getType()).toBe('quote');
         expect(quoteNode.getTextContent()).toBe('');
       });
@@ -95,7 +94,6 @@ describe('OutlineQuoteNode tests', () => {
         const quoteNode = $createQuoteNode();
         const createdQuoteNode = $createQuoteNode();
         expect(quoteNode.__type).toEqual(createdQuoteNode.__type);
-        expect(quoteNode.__flags).toEqual(createdQuoteNode.__flags);
         expect(quoteNode.__parent).toEqual(createdQuoteNode.__parent);
         expect(quoteNode.__key).not.toEqual(createdQuoteNode.__key);
       });

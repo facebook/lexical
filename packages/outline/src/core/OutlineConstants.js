@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {TextFormatType} from './OutlineTextNode';
+import type {TextFormatType, TextModeType} from './OutlineTextNode';
 import type {ElementFormatType} from './OutlineElementNode';
 
 // Reconciling
@@ -15,14 +15,11 @@ export const NO_DIRTY_NODES = 0;
 export const HAS_DIRTY_NODES = 1;
 export const FULL_RECONCILE = 2;
 
-// Nodes
-export const IS_IMMUTABLE = 1;
-export const IS_SEGMENTED = 1 << 1;
-export const IS_INERT = 1 << 2;
-export const IS_DIRECTIONLESS = 1 << 3;
-
-// Text nodes
-export const IS_UNMERGEABLE = 1 << 4;
+// Text node modes
+export const IS_NORMAL = 0;
+export const IS_TOKEN = 1;
+export const IS_SEGMENTED = 2;
+export const IS_INERT = 3;
 
 // Text node formatting
 export const IS_BOLD = 1;
@@ -32,6 +29,10 @@ export const IS_UNDERLINE = 1 << 3;
 export const IS_CODE = 1 << 4;
 export const IS_SUBSCRIPT = 1 << 5;
 export const IS_SUPERSCRIPT = 1 << 6;
+
+// Text node details
+export const IS_DIRECTIONLESS = 1;
+export const IS_UNMERGEABLE = 1 << 1;
 
 // Element node formatting
 export const IS_ALIGN_LEFT = 1;
@@ -57,6 +58,8 @@ export const TEXT_TYPE_TO_FORMAT: {[TextFormatType]: number} = {
   strikethrough: IS_STRIKETHROUGH,
   italic: IS_ITALIC,
   code: IS_CODE,
+  subscript: IS_SUBSCRIPT,
+  superscript: IS_SUPERSCRIPT,
 };
 
 export const ELEMENT_TYPE_TO_FORMAT: {[ElementFormatType]: number} = {
@@ -64,4 +67,11 @@ export const ELEMENT_TYPE_TO_FORMAT: {[ElementFormatType]: number} = {
   right: IS_ALIGN_RIGHT,
   center: IS_ALIGN_CENTER,
   justify: IS_ALIGN_JUSTIFY,
+};
+
+export const TEXT_MODE_TO_TYPE: {[TextModeType]: 0 | 1 | 2 | 3} = {
+  normal: IS_NORMAL,
+  token: IS_TOKEN,
+  segmented: IS_SEGMENTED,
+  inert: IS_INERT,
 };

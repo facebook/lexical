@@ -168,12 +168,6 @@ export class ElementNode extends OutlineNode {
     return $getNodeByKey(key);
   }
   getTextContent(includeInert?: boolean, includeDirectionless?: false): string {
-    if (
-      (!includeInert && this.isInert()) ||
-      (includeDirectionless === false && this.isDirectionless())
-    ) {
-      return '';
-    }
     let textContent = '';
     const children = this.getChildren();
     const childrenLength = children.length;

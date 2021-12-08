@@ -23,7 +23,6 @@ describe('OutlineCodeNode tests', () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const codeNode = $createCodeNode();
-        expect(codeNode.getFlags()).toBe(0);
         expect(codeNode.getType()).toBe('code');
         expect(codeNode.getTextContent()).toBe('');
       });
@@ -99,7 +98,6 @@ describe('OutlineCodeNode tests', () => {
         const codeNode = $createCodeNode();
         const createdCodeNode = $createCodeNode();
         expect(codeNode.__type).toEqual(createdCodeNode.__type);
-        expect(codeNode.__flags).toEqual(createdCodeNode.__flags);
         expect(codeNode.__parent).toEqual(createdCodeNode.__parent);
         expect(codeNode.__src).toEqual(createdCodeNode.__src);
         expect(codeNode.__altText).toEqual(createdCodeNode.__altText);

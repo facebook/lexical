@@ -219,7 +219,7 @@ class TypeaheadNode extends TextNode {
 }
 
 function createTypeaheadNode(text: string): TextNode {
-  return new TypeaheadNode(text).makeInert();
+  return new TypeaheadNode(text).setMode('inert');
 }
 
 function useTypeaheadSuggestion(

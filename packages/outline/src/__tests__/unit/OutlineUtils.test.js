@@ -15,7 +15,7 @@ import {
   isArray,
   isSelectionWithinEditor,
   getTextDirection,
-  isImmutableOrInertOrSegmented,
+  isTokenOrInertOrSegmented,
 } from '../../core/OutlineUtils';
 
 import {initializeUnitTest} from '../utils';
@@ -149,20 +149,20 @@ describe('OutlineUtils tests', () => {
       expect(getTextDirection(`\uFEFC`)).toBe('rtl');
     });
 
-    test('isImmutableOrInertOrSegmented()', async () => {
+    test('isTokenOrInertOrSegmented()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const node = $createTextNode('foo');
-        expect(isImmutableOrInertOrSegmented(node)).toBe(false);
+        expect(isTokenOrInertOrSegmented(node)).toBe(false);
 
-        const immutableNode = $createTextNode().makeImmutable();
-        expect(isImmutableOrInertOrSegmented(immutableNode)).toBe(true);
+        const tokenNode = $createTextNode().setMode('token');
+        expect(isTokenOrInertOrSegmented(tokenNode)).toBe(true);
 
-        const inertNode = $createTextNode('foo').makeInert();
-        expect(isImmutableOrInertOrSegmented(inertNode)).toBe(true);
+        const inertNode = $createTextNode('foo').setMode('inert');
+        expect(isTokenOrInertOrSegmented(inertNode)).toBe(true);
 
-        const segmentedNode = $createTextNode('foo').makeSegmented();
-        expect(isImmutableOrInertOrSegmented(segmentedNode)).toBe(true);
+        const segmentedNode = $createTextNode('foo').setMode('segmented');
+        expect(isTokenOrInertOrSegmented(segmentedNode)).toBe(true);
       });
     });
 

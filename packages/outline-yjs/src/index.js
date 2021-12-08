@@ -43,7 +43,7 @@ declare class Provider {
 
 export type Operation = {
   insert: string | {...},
-  attributes: {__type: string, __flags: number, ...},
+  attributes: {__type: string, ...},
 };
 
 export type Delta = Array<Operation>;

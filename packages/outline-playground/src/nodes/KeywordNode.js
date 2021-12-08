@@ -29,7 +29,7 @@ export class KeywordNode extends TextNode {
 }
 
 export function $createKeywordNode(keyword: string): KeywordNode {
-  return new KeywordNode(keyword).makeSegmented();
+  return new KeywordNode(keyword).setMode('segmented');
 }
 
 export function isKeywordNode(node: null | OutlineNode): boolean %checks {

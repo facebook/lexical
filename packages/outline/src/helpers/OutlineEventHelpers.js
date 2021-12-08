@@ -15,8 +15,6 @@ import type {
   NodeKey,
   TextNode,
   ElementNode,
-  LineBreakNode,
-  DecoratorNode,
   TextMutation,
 } from 'outline';
 
@@ -39,7 +37,7 @@ import {
   isUndo,
   isRedo,
 } from 'outline/keys';
-import isImmutableOrInert from 'shared/isImmutableOrInert';
+import isTokenOrInert from 'shared/isTokenOrInert';
 import {cloneContents, insertRichText, moveCharacter} from 'outline/selection';
 import {
   $createTextNode,
@@ -650,17 +648,13 @@ function shouldInsertTextAfterOrBeforeTextNode(
   }
   const offset = selection.anchor.offset;
   const parent = node.getParentOrThrow();
-  const isImmutable = node.isImmutable();
+  const isToken = node.isToken();
   const shouldInsertTextBefore =
     offset === 0 &&
-    (!node.canInsertTextBefore() ||
-      !parent.canInsertTextBefore() ||
-      isImmutable);
+    (!node.canInsertTextBefore() || !parent.canInsertTextBefore() || isToken);
   const shouldInsertTextAfter =
     node.getTextContentSize() === offset &&
-    (!node.canInsertTextBefore() ||
-      !parent.canInsertTextBefore() ||
-      isImmutable);
+    (!node.canInsertTextBefore() || !parent.canInsertTextBefore() || isToken);
   return shouldInsertTextBefore || shouldInsertTextAfter;
 }
 
@@ -692,7 +686,7 @@ function updateTextNodeFromDOMContent(
         return;
       }
       if (
-        isImmutableOrInert(node) ||
+        isTokenOrInert(node) ||
         ($getCompositionKey() !== null && !isComposing)
       ) {
         node.markDirty();
@@ -728,13 +722,15 @@ function applyTargetRange(selection: Selection, event: InputEvent): void {
 }
 
 function canRemoveText(
-  anchorNode: TextNode | ElementNode | LineBreakNode | DecoratorNode,
-  focusNode: TextNode | ElementNode | LineBreakNode | DecoratorNode,
+  anchorNode: TextNode | ElementNode,
+  focusNode: TextNode | ElementNode,
 ): boolean {
   return (
     anchorNode !== focusNode ||
-    !isImmutableOrInert(anchorNode) ||
-    !isImmutableOrInert(focusNode)
+    isElementNode(anchorNode) ||
+    isElementNode(focusNode) ||
+    !isTokenOrInert(anchorNode) ||
+    !isTokenOrInert(focusNode)
   );
 }
 

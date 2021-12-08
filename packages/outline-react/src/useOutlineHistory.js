@@ -107,7 +107,7 @@ function getMergeAction(
       prevDirtyNode !== undefined &&
       isTextNode(prevDirtyNode) &&
       isTextNode(nextDirtyNode) &&
-      prevDirtyNode.__flags === nextDirtyNode.__flags
+      prevDirtyNode.__mode === nextDirtyNode.__mode
     ) {
       const prevText = prevDirtyNode.__text;
       const nextText = nextDirtyNode.__text;

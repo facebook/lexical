@@ -32,7 +32,6 @@ function cloneWithProperties<T: OutlineNode>(node: T): T {
   const latest = node.getLatest();
   const constructor = latest.constructor;
   const clone = constructor.clone(latest);
-  clone.__flags = latest.__flags;
   clone.__parent = latest.__parent;
   if (isElementNode(latest)) {
     clone.__children = Array.from(latest.__children);
@@ -42,6 +41,8 @@ function cloneWithProperties<T: OutlineNode>(node: T): T {
   } else if (isTextNode(latest)) {
     clone.__format = latest.__format;
     clone.__style = latest.__style;
+    clone.__mode = latest.__mode;
+    clone.__detail = latest.__detail;
   } else if (isDecoratorNode(latest)) {
     clone.__ref = latest.__ref;
   }
@@ -92,7 +93,7 @@ function copyLeafNodeBranchToRoot(
         clone = cloneWithProperties<OutlineNode>(node);
         nodeMap.set(key, clone);
       }
-      if (isTextNode(clone) && !clone.isSegmented() && !clone.isImmutable()) {
+      if (isTextNode(clone) && !clone.isSegmented() && !clone.isToken()) {
         clone.__text = clone.__text.slice(
           isLeftSide ? offset : 0,
           isLeftSide ? undefined : offset,
@@ -326,7 +327,7 @@ export function patchStyleText(
         isTextNode(selectedNode) &&
         selectedNodeKey !== firstNode.getKey() &&
         selectedNodeKey !== lastNode.getKey() &&
-        !selectedNode.isImmutable()
+        !selectedNode.isToken()
       ) {
         patchNodeStyle(selectedNode, patch);
       }

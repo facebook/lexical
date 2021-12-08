@@ -33,7 +33,6 @@ describe('OutlineHeadingNode tests', () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const headingNode = new HeadingNode('h1');
-        expect(headingNode.getFlags()).toBe(0);
         expect(headingNode.getType()).toBe('heading');
         expect(headingNode.getTag()).toBe('h1');
         expect(headingNode.getTextContent()).toBe('');
@@ -103,7 +102,6 @@ describe('OutlineHeadingNode tests', () => {
         const headingNode = new HeadingNode();
         const createdHeadingNode = $createHeadingNode();
         expect(headingNode.__type).toEqual(createdHeadingNode.__type);
-        expect(headingNode.__flags).toEqual(createdHeadingNode.__flags);
         expect(headingNode.__parent).toEqual(createdHeadingNode.__parent);
         expect(headingNode.__key).not.toEqual(createdHeadingNode.__key);
       });

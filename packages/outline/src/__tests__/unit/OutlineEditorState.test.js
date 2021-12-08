@@ -47,7 +47,6 @@ describe('OutlineEditorState tests', () => {
         __indent: 0,
         __children: ['1'],
         __dir: 'ltr',
-        __flags: 0,
         __key: 'root',
         __parent: null,
         __type: 'root',
@@ -57,15 +56,15 @@ describe('OutlineEditorState tests', () => {
         __format: 0,
         __indent: 0,
         __dir: 'ltr',
-        __flags: 0,
         __key: '1',
         __parent: 'root',
         __type: 'paragraph',
       });
       expect(text).toEqual({
+        __detail: 0,
+        __mode: 0,
         __text: 'foo',
         __format: 0,
-        __flags: 0,
         __key: '2',
         __parent: '1',
         __style: '',
@@ -83,7 +82,7 @@ describe('OutlineEditorState tests', () => {
         $getRoot().append(paragraph);
       });
       expect(JSON.stringify(editor.getEditorState().toJSON())).toEqual(
-        `{\"_nodeMap\":[[\"root\",{\"__type\":\"root\",\"__flags\":0,\"__key\":\"root\",\"__parent\":null,\"__children\":[\"1\"],\"__format\":0,\"__indent\":0,\"__dir\":\"ltr\",\"__cachedText\":\"Hello world\"}],[\"1\",{\"__type\":\"paragraph\",\"__flags\":0,\"__key\":\"1\",\"__parent\":\"root\",\"__children\":[\"2\"],\"__format\":0,\"__indent\":0,\"__dir\":\"ltr\"}],[\"2\",{\"__type\":\"text\",\"__flags\":0,\"__key\":\"2\",\"__parent\":\"1\",\"__text\":\"Hello world\",\"__format\":0,\"__style\":\"\"}]],\"_selection\":{\"anchor\":{\"key\":\"2\",\"offset\":6,\"type\":\"text\"},\"focus\":{\"key\":\"2\",\"offset\":11,\"type\":\"text\"}}}`,
+        `{\"_nodeMap\":[[\"root\",{\"__type\":\"root\",\"__key\":\"root\",\"__parent\":null,\"__children\":[\"1\"],\"__format\":0,\"__indent\":0,\"__dir\":\"ltr\",\"__cachedText\":\"Hello world\"}],[\"1\",{\"__type\":\"paragraph\",\"__key\":\"1\",\"__parent\":\"root\",\"__children\":[\"2\"],\"__format\":0,\"__indent\":0,\"__dir\":\"ltr\"}],[\"2\",{\"__type\":\"text\",\"__key\":\"2\",\"__parent\":\"1\",\"__text\":\"Hello world\",\"__format\":0,\"__style\":\"\",\"__mode\":0,\"__detail\":0}]],\"_selection\":{\"anchor\":{\"key\":\"2\",\"offset\":6,\"type\":\"text\"},\"focus\":{\"key\":\"2\",\"offset\":11,\"type\":\"text\"}}}`,
       );
     });
 
@@ -109,7 +108,6 @@ describe('OutlineEditorState tests', () => {
               __cachedText: '',
               __dir: null,
               __children: [],
-              __flags: 0,
               __format: 0,
               __indent: 0,
               __key: 'root',

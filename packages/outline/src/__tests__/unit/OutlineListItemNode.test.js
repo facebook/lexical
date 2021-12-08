@@ -30,7 +30,6 @@ describe('OutlineListItemNode tests', () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const listItemNode = new ListItemNode();
-        expect(listItemNode.getFlags()).toBe(0);
         expect(listItemNode.getType()).toBe('listitem');
         expect(listItemNode.getTextContent()).toBe('');
       });
@@ -364,7 +363,6 @@ describe('OutlineListItemNode tests', () => {
         const listItemNode = new ListItemNode();
         const createdListItemNode = $createListItemNode();
         expect(listItemNode.__type).toEqual(createdListItemNode.__type);
-        expect(listItemNode.__flags).toEqual(createdListItemNode.__flags);
         expect(listItemNode.__parent).toEqual(createdListItemNode.__parent);
         expect(listItemNode.__key).not.toEqual(createdListItemNode.__key);
       });

@@ -42,5 +42,5 @@ export function $createEmojiNode(
   className: string,
   emojiText: string,
 ): EmojiNode {
-  return new EmojiNode(className, emojiText).makeImmutable();
+  return new EmojiNode(className, emojiText).setMode('token');
 }

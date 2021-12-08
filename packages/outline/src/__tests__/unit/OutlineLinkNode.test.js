@@ -30,7 +30,6 @@ describe('OutlineLinkNode tests', () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const linkNode = new LinkNode('/');
-        expect(linkNode.__flags).toBe(0);
         expect(linkNode.__type).toBe('link');
         expect(linkNode.__url).toBe('/');
       });
@@ -121,7 +120,6 @@ describe('OutlineLinkNode tests', () => {
         const linkNode = new LinkNode('https://example.com/foo');
         const createdLinkNode = $createLinkNode('https://example.com/foo');
         expect(linkNode.__type).toEqual(createdLinkNode.__type);
-        expect(linkNode.__flags).toEqual(createdLinkNode.__flags);
         expect(linkNode.__parent).toEqual(createdLinkNode.__parent);
         expect(linkNode.__url).toEqual(createdLinkNode.__url);
         expect(linkNode.__key).not.toEqual(createdLinkNode.__key);

@@ -7,8 +7,8 @@
  * @flow strict
  */
 
-import type {OutlineNode} from 'outline';
+import type {TextNode} from 'outline';
 
-export default function isImmutableOrInert(node: OutlineNode): boolean {
-  return node.isImmutable() || node.isInert();
+export default function isTokenOrInert(node: TextNode): boolean {
+  return node.isToken() || node.isInert();
 }

@@ -25,7 +25,6 @@ describe('OutlineRootNode tests', () => {
       const {editor} = testEnv;
       await editor.update(() => {
         expect(rootNode).toStrictEqual(createRootNode());
-        expect(rootNode.getFlags()).toBe(0);
         expect(rootNode.getType()).toBe('root');
         expect(rootNode.getTextContent()).toBe('');
       });

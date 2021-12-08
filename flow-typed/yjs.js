@@ -21,7 +21,7 @@ declare module 'yjs' {
   }
 
   declare export class XmlText {
-    doc: null | YDoc,
+    doc: null | YDoc;
     parent: null | XmlText | XmlElement;
     getAttributes(): {...};
     getAttribute(string): string | Object | void;
@@ -71,7 +71,7 @@ declare module 'yjs' {
 
   declare type Operation = {
     insert: string | {...},
-    attributes: {__type: string, __flags: number, ...},
+    attributes: {__type: string, ...},
   };
 
   declare type Delta = Array<Operation>;
@@ -672,10 +672,7 @@ declare module 'yjs' {
      * captureTimeout (defaults to 500ms). Set it to 0 to capture each change
      * individually.
      */
-    constructor(
-      scope: XmlText,
-      options?: YUndoManagerOptions,
-    ): this;
+    constructor(scope: XmlText, options?: YUndoManagerOptions): this;
 
     /**
      * Undo the last operation on the UndoManager stack. The reverse operation

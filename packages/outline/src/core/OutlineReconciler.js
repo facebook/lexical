@@ -25,7 +25,6 @@ import {
   getTextDirection,
 } from './OutlineUtils';
 import {
-  IS_INERT,
   FULL_RECONCILE,
   IS_ALIGN_LEFT,
   IS_ALIGN_CENTER,
@@ -122,8 +121,6 @@ function createNode(
     invariant(false, 'createNode: node does not exist in nodeMap');
   }
   const dom = node.createDOM(activeEditorConfig, activeEditor);
-  const flags = node.__flags;
-  const isInert = flags & IS_INERT;
   storeDOMWithKey(key, dom, activeEditor);
 
   // This helps preserve the text, and stops spell check tools from
@@ -133,15 +130,6 @@ function createNode(
     dom.setAttribute('data-outline-text', 'true');
   } else if (isDecoratorNode(node)) {
     dom.setAttribute('data-outline-decorator', 'true');
-  }
-
-  if (isInert) {
-    const domStyle = dom.style;
-    domStyle.pointerEvents = 'none';
-    domStyle.userSelect = 'none';
-    dom.contentEditable = 'false';
-    // To support Safari
-    domStyle.setProperty('-webkit-user-select', 'none');
   }
 
   if (isElementNode(node)) {
@@ -170,8 +158,18 @@ function createNode(
       dom.contentEditable = 'false';
     } else {
       const text = node.getTextContent();
-      if (!node.isDirectionless()) {
-        subTreeDirectionedTextContent += text;
+      if (isTextNode(node)) {
+        if (!node.isDirectionless()) {
+          subTreeDirectionedTextContent += text;
+        }
+        if (node.isInert()) {
+          const domStyle = dom.style;
+          domStyle.pointerEvents = 'none';
+          domStyle.userSelect = 'none';
+          dom.contentEditable = 'false';
+          // To support Safari
+          domStyle.setProperty('-webkit-user-select', 'none');
+        }
       }
       subTreeTextContent += text;
       editorTextContent += text;
@@ -420,7 +418,7 @@ function reconcileNode(
       }
     } else if (!isDecoratorNode(prevNode)) {
       const text = prevNode.getTextContent();
-      if (!nextNode.isDirectionless()) {
+      if (isTextNode(prevNode) && !prevNode.isDirectionless()) {
         subTreeDirectionedTextContent += text;
       }
       editorTextContent += text;
@@ -468,7 +466,7 @@ function reconcileNode(
     } else {
       // Handle text content, for LTR, LTR cases.
       const text = nextNode.getTextContent();
-      if (!nextNode.isDirectionless()) {
+      if (isTextNode(nextNode) && !nextNode.isDirectionless()) {
         subTreeDirectionedTextContent += text;
       }
       subTreeTextContent += text;

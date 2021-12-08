@@ -13,14 +13,14 @@ import {isTextNode} from './OutlineTextNode';
 import {getActiveEditor} from './OutlineUpdates';
 
 function canSimpleTextNodesBeMerged(node1: TextNode, node2: TextNode): boolean {
-  const node1Flags = node1.__flags;
+  const node1Mode = node1.__mode;
   const node1Format = node1.__format;
   const node1Style = node1.__style;
-  const node2Flags = node2.__flags;
+  const node2Mode = node2.__mode;
   const node2Format = node2.__format;
   const node2Style = node2.__style;
   return (
-    (node1Flags === null || node1Flags === node2Flags) &&
+    (node1Mode === null || node1Mode === node2Mode) &&
     (node1Format === null || node1Format === node2Format) &&
     (node1Style === null || node1Style === node2Style)
   );

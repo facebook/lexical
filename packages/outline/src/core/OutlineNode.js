@@ -32,12 +32,6 @@ import {
 } from './OutlineUtils';
 import invariant from 'shared/invariant';
 import {
-  IS_DIRECTIONLESS,
-  IS_IMMUTABLE,
-  IS_INERT,
-  IS_SEGMENTED,
-} from './OutlineConstants';
-import {
   $getSelection,
   moveSelectionPointToEnd,
   updateElementSelectionOnCreateDeleteNode,
@@ -98,7 +92,6 @@ export type NodeKey = string;
 
 export class OutlineNode {
   __type: string;
-  __flags: number;
   __key: NodeKey;
   __parent: null | NodeKey;
 
@@ -124,7 +117,6 @@ export class OutlineNode {
 
   constructor(key?: NodeKey) {
     this.__type = this.constructor.getType();
-    this.__flags = 0;
     this.__key = key || generateKey(this);
     this.__parent = null;
 
@@ -189,10 +181,6 @@ export class OutlineNode {
       return false;
     }
     return isSelected;
-  }
-  getFlags(): number {
-    const self = this.getLatest();
-    return self.__flags;
   }
   getKey(): NodeKey {
     // Key is stable between copies
@@ -450,22 +438,6 @@ export class OutlineNode {
     }
     return nodes;
   }
-  // TODO remove this and move to TextNode
-  isImmutable(): boolean {
-    return (this.getLatest().__flags & IS_IMMUTABLE) !== 0;
-  }
-  // TODO remove this and move to TextNode
-  isSegmented(): boolean {
-    return (this.getLatest().__flags & IS_SEGMENTED) !== 0;
-  }
-  // TODO remove this and move to TextNode
-  isInert(): boolean {
-    return (this.getLatest().__flags & IS_INERT) !== 0;
-  }
-  // TODO remove this and move to TextNode
-  isDirectionless(): boolean {
-    return (this.getLatest().__flags & IS_DIRECTIONLESS) !== 0;
-  }
   isDirty(): boolean {
     const editor = getActiveEditor();
     const dirtyLeaves = editor._dirtyLeaves;
@@ -504,7 +476,6 @@ export class OutlineNode {
     const constructor = latestNode.constructor;
     const mutableNode = constructor.clone(latestNode);
     mutableNode.__parent = parent;
-    mutableNode.__flags = latestNode.__flags;
     if (isElementNode(mutableNode)) {
       mutableNode.__children = Array.from(latestNode.__children);
       mutableNode.__indent = latestNode.__indent;
@@ -513,6 +484,8 @@ export class OutlineNode {
     } else if (isTextNode(mutableNode)) {
       mutableNode.__format = latestNode.__format;
       mutableNode.__style = latestNode.__style;
+      mutableNode.__mode = latestNode.__mode;
+      mutableNode.__detail = latestNode.__detail;
     } else if (isDecoratorNode(mutableNode)) {
       mutableNode.__ref = latestNode.__ref;
     }
@@ -556,39 +529,6 @@ export class OutlineNode {
 
   // Setters and mutators
 
-  setFlags(flags: number): this {
-    errorOnReadOnly();
-    if (this.isImmutable()) {
-      invariant(false, 'setFlags: can only be used on non-immutable nodes');
-    }
-    const self = this.getWritable();
-    this.getWritable().__flags = flags;
-    return self;
-  }
-  makeImmutable(): this {
-    errorOnReadOnly();
-    const self = this.getWritable();
-    self.__flags |= IS_IMMUTABLE;
-    return self;
-  }
-  makeSegmented(): this {
-    errorOnReadOnly();
-    const self = this.getWritable();
-    self.__flags |= IS_SEGMENTED;
-    return self;
-  }
-  makeInert(): this {
-    errorOnReadOnly();
-    const self = this.getWritable();
-    self.__flags |= IS_INERT;
-    return self;
-  }
-  makeDirectionless(): this {
-    errorOnReadOnly();
-    const self = this.getWritable();
-    self.__flags |= IS_DIRECTIONLESS;
-    return self;
-  }
   remove(): void {
     errorOnReadOnly();
     removeNode(this, true);

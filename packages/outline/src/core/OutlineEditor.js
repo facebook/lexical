@@ -420,8 +420,8 @@ class BaseOutlineEditor {
       transforms.delete(listener);
     };
   }
-  execCommand(type: string, payload?: CommandPayload): void {
-    triggerCommandListeners(getSelf(this), type, payload);
+  execCommand(type: string, payload?: CommandPayload): boolean {
+    return triggerCommandListeners(getSelf(this), type, payload);
   }
   getDecorators(): {[NodeKey]: ReactNode} {
     return this._decorators;
@@ -569,7 +569,7 @@ declare export class OutlineEditor {
     klass: Class<T>,
     listener: Transform<T>,
   ): () => void;
-  execCommand(type: string, payload: CommandPayload): void;
+  execCommand(type: string, payload: CommandPayload): boolean;
   getDecorators(): {[NodeKey]: ReactNode};
   getRootElement(): null | HTMLElement;
   setRootElement(rootElement: null | HTMLElement): void;

@@ -120,7 +120,7 @@ export function isRedo(event: KeyboardEvent): boolean {
 
 export function isTab(event: KeyboardEvent): boolean {
   return (
-    event.keyCode === 90 && !event.altKey && !event.ctrlKey && !event.metaKey
+    event.keyCode === 9 && !event.altKey && !event.ctrlKey && !event.metaKey
   );
 }
 

@@ -43,7 +43,7 @@ import {
 } from './OutlineUtils';
 import invariant from 'shared/invariant';
 import {TEXT_TYPE_TO_FORMAT} from './OutlineConstants';
-import isImmutableOrInert from 'shared/isImmutableOrInert';
+import isTokenOrInert from 'shared/isTokenOrInert';
 import getPossibleDecoratorNode from 'shared/getPossibleDecoratorNode';
 
 export type TextPointType = {
@@ -400,14 +400,14 @@ export class Selection {
       this.isCollapsed() &&
       startOffset === firstNodeTextLength &&
       (firstNode.isSegmented() ||
-        firstNode.isImmutable() ||
+        firstNode.isToken() ||
         !firstNode.canInsertTextAfter() ||
         !firstNodeParent.canInsertTextAfter())
     ) {
       let nextSibling = firstNode.getNextSibling();
       if (
         !isTextNode(nextSibling) ||
-        isImmutableOrInert(nextSibling) ||
+        isTokenOrInert(nextSibling) ||
         nextSibling.isSegmented()
       ) {
         nextSibling = $createTextNode();
@@ -427,14 +427,14 @@ export class Selection {
       this.isCollapsed() &&
       startOffset === 0 &&
       (firstNode.isSegmented() ||
-        firstNode.isImmutable() ||
+        firstNode.isToken() ||
         !firstNode.canInsertTextBefore() ||
         !firstNodeParent.canInsertTextBefore())
     ) {
       let prevSibling = firstNode.getPreviousSibling();
       if (
         !isTextNode(prevSibling) ||
-        isImmutableOrInert(prevSibling) ||
+        isTokenOrInert(prevSibling) ||
         prevSibling.isSegmented()
       ) {
         prevSibling = $createTextNode();
@@ -457,7 +457,7 @@ export class Selection {
     }
 
     if (selectedNodesLength === 1) {
-      if (isImmutableOrInert(firstNode)) {
+      if (isTokenOrInert(firstNode)) {
         firstNode.remove();
         return;
       }
@@ -510,7 +510,7 @@ export class Selection {
       ) {
         if (
           isTextNode(lastNode) &&
-          !isImmutableOrInert(lastNode) &&
+          !isTokenOrInert(lastNode) &&
           endOffset !== lastNode.getTextContentSize()
         ) {
           if (lastNode.isSegmented()) {
@@ -584,7 +584,7 @@ export class Selection {
 
       // Ensure we do splicing after moving of nodes, as splicing
       // can have side-effects (in the case of hashtags).
-      if (!isImmutableOrInert(firstNode)) {
+      if (!isTokenOrInert(firstNode)) {
         firstNode = firstNode.spliceText(
           startOffset,
           firstNodeTextLength - startOffset,
@@ -730,7 +730,7 @@ export class Selection {
           isTextNode(selectedNode) &&
           selectedNodeKey !== firstNode.getKey() &&
           selectedNodeKey !== lastNode.getKey() &&
-          !selectedNode.isImmutable()
+          !selectedNode.isToken()
         ) {
           const selectedNextFormat = selectedNode.getFormatFlags(
             formatType,
@@ -781,7 +781,7 @@ export class Selection {
         siblings.push(anchorNode);
       } else if (anchorOffset === textContentLength) {
         target = anchorNode;
-      } else if (isImmutableOrInert(anchorNode)) {
+      } else if (isTokenOrInert(anchorNode)) {
         // Do nothing if we're inside an immutable/inert node
         return false;
       } else {

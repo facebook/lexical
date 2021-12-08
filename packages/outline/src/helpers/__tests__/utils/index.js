@@ -647,27 +647,27 @@ export async function applySelectionInputs(inputs, update, editor) {
           }
           case 'insert_immutable_node': {
             const text = $createTextNode(input.text);
-            text.makeImmutable();
+            text.setMode('immutable');
             selection.insertNodes([text]);
             break;
           }
           case 'insert_segmented_node': {
             const text = $createTextNode(input.text);
-            text.makeSegmented();
+            text.setMode('segmented');
             selection.insertNodes([text]);
             text.selectNext();
             break;
           }
           case 'covert_to_immutable_node': {
             const text = $createTextNode(selection.getTextContent());
-            text.makeImmutable();
+            text.setMode('immutable');
             selection.insertNodes([text]);
             text.selectNext();
             break;
           }
           case 'covert_to_segmented_node': {
             const text = $createTextNode(selection.getTextContent());
-            text.makeSegmented();
+            text.setMode('segmented');
             selection.insertNodes([text]);
             text.selectNext();
             break;

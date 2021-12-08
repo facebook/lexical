@@ -6,8 +6,6 @@
  *
  */
 
-import {IS_BOLD} from '../../core/OutlineConstants';
-
 import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
@@ -69,7 +67,7 @@ describe('OutlineElementNode tests', () => {
       const text = $createTextNode('Foo');
       const text2 = $createTextNode('Bar');
       // Prevent text nodes from combining.
-      text2.setFlags(IS_BOLD);
+      text2.setMode('segmented');
       const text3 = $createTextNode('Baz');
 
       // Some operations require a selection to exist, hence
@@ -195,7 +193,7 @@ describe('OutlineElementNode tests', () => {
         text.select(0, 0);
         const text2 = $createTextNode('Bar');
         const text3 = $createTextNode('Baz');
-        text3.makeInert();
+        text3.setMode('inert');
         const text4 = $createTextNode('Qux');
 
         block.append(text, innerBlock, text4);
@@ -206,7 +204,7 @@ describe('OutlineElementNode tests', () => {
 
         const innerInnerBlock = $createTestElementNode();
         const text5 = $createTextNode('More');
-        text5.makeInert();
+        text5.setMode('inert');
         const text6 = $createTextNode('Stuff');
         innerInnerBlock.append(text5, text6);
         innerBlock.append(innerInnerBlock);

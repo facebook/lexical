@@ -26,7 +26,6 @@ describe('OutlineParagraphNode tests', () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const paragraphNode = new ParagraphNode();
-        expect(paragraphNode.getFlags()).toBe(0);
         expect(paragraphNode.getType()).toBe('paragraph');
         expect(paragraphNode.getTextContent()).toBe('');
       });
@@ -92,7 +91,6 @@ describe('OutlineParagraphNode tests', () => {
         const paragraphNode = new ParagraphNode();
         const createdParagraphNode = $createParagraphNode();
         expect(paragraphNode.__type).toEqual(createdParagraphNode.__type);
-        expect(paragraphNode.__flags).toEqual(createdParagraphNode.__flags);
         expect(paragraphNode.__parent).toEqual(createdParagraphNode.__parent);
         expect(paragraphNode.__key).not.toEqual(createdParagraphNode.__key);
       });

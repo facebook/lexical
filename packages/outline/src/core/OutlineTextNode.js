@@ -31,9 +31,14 @@ import {
   IS_ITALIC,
   IS_STRIKETHROUGH,
   IS_UNDERLINE,
-  IS_UNMERGEABLE,
+  IS_TOKEN,
+  IS_SEGMENTED,
+  IS_INERT,
   NO_BREAK_SPACE_CHAR,
   TEXT_TYPE_TO_FORMAT,
+  TEXT_MODE_TO_TYPE,
+  IS_DIRECTIONLESS,
+  IS_UNMERGEABLE,
 } from './OutlineConstants';
 
 export type TextFormatType =
@@ -41,7 +46,11 @@ export type TextFormatType =
   | 'underline'
   | 'strikethrough'
   | 'italic'
-  | 'code';
+  | 'code'
+  | 'subscript'
+  | 'superscript';
+
+export type TextModeType = 'normal' | 'token' | 'segmented' | 'inert';
 
 function getElementOuterTag(node: TextNode, format: number): string | null {
   if (format & IS_CODE) {
@@ -187,6 +196,8 @@ export class TextNode extends OutlineNode {
   __text: string;
   __format: number;
   __style: string;
+  __mode: 0 | 1 | 2 | 3;
+  __detail: number;
 
   static getType(): string {
     return 'text';
@@ -201,6 +212,8 @@ export class TextNode extends OutlineNode {
     this.__text = text;
     this.__format = 0;
     this.__style = '';
+    this.__mode = 0;
+    this.__detail = 0;
   }
 
   getFormat(): number {
@@ -211,20 +224,32 @@ export class TextNode extends OutlineNode {
     const self = this.getLatest();
     return self.__style;
   }
+  isToken(): boolean {
+    const self = this.getLatest();
+    return self.__mode === IS_TOKEN;
+  }
+  isSegmented(): boolean {
+    const self = this.getLatest();
+    return self.__mode === IS_SEGMENTED;
+  }
+  isInert(): boolean {
+    const self = this.getLatest();
+    return self.__mode === IS_INERT;
+  }
+  isDirectionless(): boolean {
+    const self = this.getLatest();
+    return (self.__detail & IS_DIRECTIONLESS) !== 0;
+  }
+  isUnmergeable(): boolean {
+    const self = this.getLatest();
+    return (self.__detail & IS_UNMERGEABLE) !== 0;
+  }
   hasFormat(type: TextFormatType): boolean {
     const formatFlag = TEXT_TYPE_TO_FORMAT[type];
     return (this.getFormat() & formatFlag) !== 0;
   }
-  isUnmergeable(): boolean {
-    return (this.getFlags() & IS_UNMERGEABLE) !== 0;
-  }
   isSimpleText(): boolean {
-    return (
-      this.__type === 'text' &&
-      !this.isImmutable() &&
-      !this.isInert() &&
-      !this.isSegmented()
-    );
+    return this.__type === 'text' && this.__mode === 0;
   }
   getTextContent(includeInert?: boolean, includeDirectionless?: false): string {
     if (
@@ -342,18 +367,12 @@ export class TextNode extends OutlineNode {
   ): void {}
   setFormat(format: number): this {
     errorOnReadOnly();
-    if (this.isImmutable()) {
-      invariant(false, 'setFormat: can only be used on non-immutable nodes');
-    }
     const self = this.getWritable();
     this.getWritable().__format = format;
     return self;
   }
   setStyle(style: string): this {
     errorOnReadOnly();
-    if (this.isImmutable()) {
-      invariant(false, 'setStyle: can only be used on non-immutable nodes');
-    }
     const self = this.getWritable();
     this.getWritable().__style = style;
     return self;
@@ -362,17 +381,24 @@ export class TextNode extends OutlineNode {
     const formatFlag = TEXT_TYPE_TO_FORMAT[type];
     return this.setFormat(this.getFormat() ^ formatFlag);
   }
-  toggleUnmergeable(): TextNode {
-    return this.setFlags(this.getFlags() ^ IS_UNMERGEABLE);
+  toggleDirectionless(): this {
+    const self = this.getWritable();
+    self.__detail ^= IS_DIRECTIONLESS;
+    return self;
+  }
+  toggleUnmergeable(): this {
+    const self = this.getWritable();
+    self.__detail ^= IS_UNMERGEABLE;
+    return self;
+  }
+  setMode(type: TextModeType): this {
+    const mode = TEXT_MODE_TO_TYPE[type];
+    const self = this.getWritable();
+    self.__mode = mode;
+    return self;
   }
   setTextContent(text: string): TextNode {
     errorOnReadOnly();
-    if (this.isImmutable()) {
-      invariant(
-        false,
-        'setTextContent: can only be used on non-immutable text nodes',
-      );
-    }
     const writableSelf = this.getWritable();
     writableSelf.__text = text;
     return writableSelf;
@@ -417,12 +443,6 @@ export class TextNode extends OutlineNode {
     moveSelection?: boolean,
   ): TextNode {
     errorOnReadOnly();
-    if (this.isImmutable()) {
-      invariant(
-        false,
-        'spliceText: can only be used on non-immutable text nodes',
-      );
-    }
     const writableSelf = this.getWritable();
     const text = writableSelf.__text;
     const handledTextLength = newText.length;
@@ -456,14 +476,9 @@ export class TextNode extends OutlineNode {
   }
   splitText(...splitOffsets: Array<number>): Array<TextNode> {
     errorOnReadOnly();
-    if (this.isImmutable()) {
-      invariant(
-        false,
-        'splitText: can only be used on non-immutable text nodes',
-      );
-    }
-    const textContent = this.getTextContent();
-    const key = this.__key;
+    const self = this.getLatest();
+    const textContent = self.getTextContent();
+    const key = self.__key;
     const compositionKey = $getCompositionKey();
     const offsetsSet = new Set(splitOffsets);
     const parts = [];
@@ -483,26 +498,28 @@ export class TextNode extends OutlineNode {
     if (partsLength === 0) {
       return [];
     } else if (parts[0] === textContent) {
-      return [this];
+      return [self];
     }
     const firstPart = parts[0];
-    const parent = this.getParentOrThrow();
+    const parent = self.getParentOrThrow();
     const parentKey = parent.__key;
     let writableNode;
-    const format = this.getFormat();
-    const style = this.getStyle();
+    const format = self.getFormat();
+    const style = self.getStyle();
+    const detail = self.__detail;
     let hasReplacedSelf = false;
 
-    if (this.isSegmented()) {
+    if (self.isSegmented()) {
       // Create a new TextNode
       writableNode = $createTextNode(firstPart);
       writableNode.__parent = parentKey;
       writableNode.__format = format;
       writableNode.__style = style;
+      writableNode.__detail = detail;
       hasReplacedSelf = true;
     } else {
       // For the first part, update the existing node
-      writableNode = this.getWritable();
+      writableNode = self.getWritable();
       writableNode.__text = firstPart;
     }
 
@@ -518,6 +535,7 @@ export class TextNode extends OutlineNode {
       const sibling = $createTextNode(part).getWritable();
       sibling.__format = format;
       sibling.__style = style;
+      sibling.__detail = detail;
       const siblingKey = sibling.__key;
       const nextTextSize = textSize + partSize;
 

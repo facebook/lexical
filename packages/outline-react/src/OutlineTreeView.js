@@ -272,7 +272,7 @@ function printNode(node) {
 const LABEL_PREDICATES = [
   (node) => node.hasFormat('bold') && 'Bold',
   (node) => node.hasFormat('code') && 'Code',
-  (node) => node.isImmutable() && 'Immutable',
+  (node) => node.isToken() && 'Token',
   (node) => node.hasFormat('italic') && 'Italic',
   (node) => node.isSegmented() && 'Segmented',
   (node) => node.hasFormat('strikethrough') && 'Strikethrough',

@@ -133,7 +133,7 @@ describe('OutlineTextNode tests', () => {
       let nodeKey;
 
       await update((state) => {
-        const textNode = $createTextNode('Inert text').makeInert();
+        const textNode = $createTextNode('Inert text').setMode('inert');
         nodeKey = textNode.getKey();
         expect(textNode.getTextContent()).toBe('');
         expect(textNode.getTextContent(true)).toBe('Inert text');
@@ -179,22 +179,10 @@ describe('OutlineTextNode tests', () => {
       });
     });
 
-    test('immutable nodes', async () => {
-      await update(() => {
-        const textNode = $createTextNode('My new text node');
-        textNode.makeImmutable();
-
-        expect(() => {
-          textNode.setTextContent('My newer text node');
-        }).toThrow();
-        expect(textNode.getTextContent()).toBe('My new text node');
-      });
-    });
-
     test('inert nodes', async () => {
       await update(() => {
         const textNode = $createTextNode('My inert text node');
-        textNode.makeInert();
+        textNode.setMode('inert');
 
         expect(textNode.getTextContent()).toBe('');
         expect(textNode.getTextContent(true)).toBe('My inert text node');
@@ -370,17 +358,6 @@ describe('OutlineTextNode tests', () => {
   });
 
   describe('splitText()', () => {
-    test('throw when immutable', async () => {
-      await update(() => {
-        const textNode = $createTextNode('Hello World');
-        textNode.makeImmutable();
-
-        expect(() => {
-          textNode.splitText(3);
-        }).toThrow();
-      });
-    });
-
     test('convert segmented node into plain text', async () => {
       await update((state) => {
         const segmentedNode = $createTestSegmentedNode('Hello World');
@@ -654,12 +631,12 @@ describe('OutlineTextNode tests', () => {
         'different tags',
         {
           text: 'My text node',
-          flags: 0,
+          mode: 'normal',
           format: IS_BOLD,
         },
         {
           text: 'My text node',
-          flags: 0,
+          mode: 'normal',
           format: IS_ITALIC,
         },
         {
@@ -671,12 +648,12 @@ describe('OutlineTextNode tests', () => {
         'no change in tags',
         {
           text: 'My text node',
-          flags: 0,
+          mode: 'normal',
           format: IS_BOLD,
         },
         {
           text: 'My text node',
-          flags: 0,
+          mode: 'normal',
           format: IS_BOLD,
         },
         {
@@ -688,12 +665,12 @@ describe('OutlineTextNode tests', () => {
         'change in text',
         {
           text: 'My text node',
-          flags: 0,
+          mode: 'normal',
           format: IS_BOLD,
         },
         {
           text: 'My new text node',
-          flags: 0,
+          mode: 'normal',
           format: IS_BOLD,
         },
         {
@@ -706,12 +683,12 @@ describe('OutlineTextNode tests', () => {
         'removing code block',
         {
           text: 'My text node',
-          flags: 0,
+          mode: 'normal',
           format: IS_CODE | IS_BOLD,
         },
         {
           text: 'My new text node',
-          flags: 0,
+          mode: 'normal',
           format: IS_BOLD,
         },
         {
@@ -723,18 +700,18 @@ describe('OutlineTextNode tests', () => {
       '%s',
       async (
         _desc,
-        {text: prevText, flags: prevFlags, format: prevFormat},
-        {text: nextText, flags: nextFlags, format: nextFormat},
+        {text: prevText, mode: prevMode, format: prevFormat},
+        {text: nextText, mode: nextMode, format: nextFormat},
         {result, expectedHTML},
       ) => {
         await update(() => {
           const prevTextNode = $createTextNode(prevText);
-          prevTextNode.setFlags(prevFlags);
+          prevTextNode.setMode(prevMode);
           prevTextNode.setFormat(prevFormat);
           const element = prevTextNode.createDOM(editorConfig);
 
           const textNode = $createTextNode(nextText);
-          textNode.setFlags(nextFlags);
+          textNode.setMode(nextMode);
           textNode.setFormat(nextFormat);
 
           expect(textNode.updateDOM(prevTextNode, element, editorConfig)).toBe(

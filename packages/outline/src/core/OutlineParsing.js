@@ -32,7 +32,6 @@ export type NodeParserState = {
 export type ParsedNode = {
   __key: NodeKey,
   __type: string,
-  __flags: number,
   __parent: null | NodeKey,
   ...
 };
@@ -40,11 +39,16 @@ export type ParsedNode = {
 export type ParsedElementNode = {
   ...ParsedNode,
   __children: Array<NodeKey>,
+  __format: number,
+  __dir: number,
+  __indent: number,
 };
 
 export type ParsedTextNode = {
   ...ParsedNode,
   __text: string,
+  __mode: number,
+  __format: number,
 };
 
 export type ParsedNodeMap = Map<NodeKey, ParsedNode>;
@@ -95,7 +99,6 @@ export function internalCreateNodeFromParse(
     const editorState = getActiveEditorState();
     editorState._nodeMap.set('root', node);
   }
-  node.__flags = parsedNode.__flags;
   node.__parent = parentKey;
   // We will need to recursively handle the children in the case
   // of a ElementNode.
@@ -122,6 +125,8 @@ export function internalCreateNodeFromParse(
   } else if (isTextNode(node)) {
     node.__format = parsedNode.__format;
     node.__style = parsedNode.__style;
+    node.__mode = parsedNode.__mode;
+    node.__detail = parsedNode.__detail;
   } else if (isDecoratorNode(node)) {
     const parsedRef = parsedNode.__ref;
     let ref = null;

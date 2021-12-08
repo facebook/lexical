@@ -128,7 +128,7 @@ export class TestSegmentedNode extends TextNode {
 }
 
 export function $createTestSegmentedNode(text): TestSegmentedNode {
-  return new TestSegmentedNode(text).makeSegmented();
+  return new TestSegmentedNode(text).setMode('segmented');
 }
 
 export class TestExcludeFromCopyElementNode extends ElementNode {

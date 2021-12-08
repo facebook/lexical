@@ -9,11 +9,32 @@
 
 import {useEffect} from 'react';
 
+const validInputTypes = new Set([
+  'insertText',
+  'insertCompositionText',
+  'insertFromComposition',
+  'insertLineBreak',
+  'insertParagraph',
+  'deleteCompositionText',
+  'deleteContentBackward',
+  'deleteByComposition',
+  'deleteContent',
+  'deleteContentForward',
+  'deleteWordBackward',
+  'deleteWordForward',
+  'deleteHardLineBackward',
+  'deleteSoftLineBackward',
+  'deleteHardLineForward',
+  'deleteSoftLineForward',
+]);
+
 export default function TypingPerfPlugin(): React$Node {
   useEffect(() => {
     let start = 0;
     let timerId = null;
     let log = [];
+    let invalidatingEvent = false;
+
     const report = () => {
       const total = log.reduce((a, b) => a + b, 0);
       const reportedText =
@@ -39,21 +60,53 @@ export default function TypingPerfPlugin(): React$Node {
       }
       log = [];
     };
-    const handleBeforeInput = (event) => {
+    const measureEvent = function measureEvent() {
       if (timerId != null) {
         clearTimeout(timerId);
         timerId = null;
       }
       start = performance.now();
-      setTimeout(() => {
+      // We use a setTimeout(0) instead of requestAnimationFrame, due to
+      // inconsistencies between the sequencing of rAF in different browsers.
+      window.setTimeout(() => {
+        if (invalidatingEvent) {
+          invalidatingEvent = false;
+          return;
+        }
         log.push(performance.now() - start);
       }, 0);
       timerId = setTimeout(report, 2000);
     };
-    window.addEventListener('beforeinput', handleBeforeInput, true);
+    const beforeInputHandler = function beforeInputHandler(event) {
+      if (!validInputTypes.has(event.inputType) || invalidatingEvent) {
+        invalidatingEvent = false;
+        return;
+      }
+      measureEvent();
+    };
+    const keyDownHandler = function keyDownHandler(event) {
+      const keyCode = event.keyCode;
+      if (keyCode === 8 || keyCode === 13) {
+        measureEvent();
+      }
+    };
+    const pasteHandler = function pasteHandler() {
+      invalidatingEvent = true;
+    };
+    const cutHandler = function cutHandler() {
+      invalidatingEvent = true;
+    };
+
+    window.addEventListener('keydown', keyDownHandler, true);
+    window.addEventListener('beforeinput', beforeInputHandler, true);
+    window.addEventListener('paste', pasteHandler, true);
+    window.addEventListener('cut', cutHandler, true);
 
     return () => {
-      window.removeEventListener('beforeinput', handleBeforeInput, true);
+      window.removeEventListener('keydown', keyDownHandler, true);
+      window.removeEventListener('beforeinput', beforeInputHandler, true);
+      window.removeEventListener('paste', pasteHandler, true);
+      window.removeEventListener('cut', cutHandler, true);
     };
   }, []);
   return null;

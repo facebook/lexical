@@ -929,6 +929,7 @@ function createMentionNodeFromSearchResult(
     const mentionNode = $createMentionNode(entryText);
     nodeToReplace.replace(mentionNode);
     mentionNode.select();
+    mentionNode.splitText(2);
   });
 }
 

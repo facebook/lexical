@@ -377,3 +377,13 @@ function getNodeKeyFromDOM(
 export function doesContainGrapheme(str: string): boolean {
   return /[\uD800-\uDBFF][\uDC00-\uDFFF]/g.test(str);
 }
+
+export function getEditorsToPropagate(editor: OutlineEditor): Array<OutlineEditor> {
+  const editorsToPropagate = [];
+  let currentEditor = editor;
+  while (currentEditor !== null) {
+    editorsToPropagate.push(currentEditor);
+    currentEditor = currentEditor._parentEditor;
+  }
+  return editorsToPropagate;
+}

@@ -673,6 +673,7 @@ export class Selection {
         if (anchor.type === 'element' && focus.type === 'element') {
           firstNode.setFormat(firstNextFormat);
           firstNode.select(startOffset, endOffset);
+          this.format = firstNextFormat;
           return;
         }
         startOffset = anchorOffset > focusOffset ? focusOffset : anchorOffset;
@@ -694,6 +695,7 @@ export class Selection {
           replacement.setFormat(firstNextFormat);
           replacement.select(0, endOffset - startOffset);
         }
+        this.format = firstNextFormat;
       }
       // multiple nodes selected.
     } else {

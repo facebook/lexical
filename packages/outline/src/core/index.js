@@ -33,6 +33,7 @@ export type {OutlineRef, EditorStateRef} from './OutlineReference';
 export type {TextFormatType} from './OutlineTextNode';
 export type {LineBreakNode} from './OutlineLineBreakNode';
 export type {RootNode} from './OutlineRootNode';
+export type {ElementFormatType} from './OutlineElementNode';
 
 import {createEditor} from './OutlineEditor';
 import {$createTextNode, isTextNode, TextNode} from './OutlineTextNode';

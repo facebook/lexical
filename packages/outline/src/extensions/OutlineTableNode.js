@@ -211,32 +211,34 @@ function applyCellSelection(
           if (document.body) {
             document.body.appendChild(removeHighlightStyle);
           }
-          deleteCharacterListener = editor.addListener(
-            'command',
-            (type, payload) => {
-              if (type === 'deleteCharacter') {
-                if (highlightedCells.length === grid.columns * grid.rows) {
-                  tableNode.selectPrevious();
-                  // Delete entire table
-                  tableNode.remove();
+          if (deleteCharacterListener === null) {
+            deleteCharacterListener = editor.addListener(
+              'command',
+              (type, payload) => {
+                if (type === 'deleteCharacter') {
+                  if (highlightedCells.length === grid.columns * grid.rows) {
+                    tableNode.selectPrevious();
+                    // Delete entire table
+                    tableNode.remove();
+                    clearHighlight();
+                    return true;
+                  }
+                  highlightedCells.forEach(({elem}) => {
+                    const cellNode = $getNearestNodeFromDOMNode(elem);
+                    if (isElementNode(cellNode)) {
+                      cellNode.clear();
+                    }
+                  });
+                  return true;
+                } else if (type === 'formatText') {
+                  formatCells(payload);
                   return true;
                 }
-                highlightedCells.forEach(({elem}) => {
-                  const cellNode = $getNearestNodeFromDOMNode(elem);
-                  if (isElementNode(cellNode)) {
-                    cellNode.clear();
-                  }
-                });
-                return true;
-              }
-              if (type === 'formatText') {
-                formatCells(payload);
-                return true;
-              }
-              return false;
-            },
-            LowPriority,
-          );
+                return false;
+              },
+              LowPriority,
+            );
+          }
         } else if (cellX === currentX && cellY === currentY) {
           return;
         }
@@ -267,8 +269,9 @@ function applyCellSelection(
       deleteCharacterListener();
       deleteCharacterListener = null;
     }
-    if (document.body && removeHighlightStyle.parentNode !== null) {
-      document.body.removeChild(removeHighlightStyle);
+    const parent = removeHighlightStyle.parentNode;
+    if (parent != null) {
+      parent.removeChild(removeHighlightStyle);
     }
   };
 
@@ -313,36 +316,34 @@ function applyCellSelection(
 
   tableElement.addEventListener('mousedown', (event: MouseEvent) => {
     if (isSelected) {
+      if (isHighlightingCells) {
+        clearHighlight();
+      }
       return;
     }
-    // $FlowFixMe: event.target is always a Node on the DOM
-    const cell = getCellFromTarget(event.target);
-    if (cell !== null) {
-      isSelected = true;
-      startX = cell.x;
-      startY = cell.y;
+    setTimeout(() => {
+      if (isHighlightingCells) {
+        clearHighlight();
+      }
+      // $FlowFixMe: event.target is always a Node on the DOM
+      const cell = getCellFromTarget(event.target);
+      if (cell !== null) {
+        isSelected = true;
+        startX = cell.x;
+        startY = cell.y;
 
-      document.addEventListener(
-        'mouseup',
-        () => {
-          isSelected = false;
-          document.addEventListener(
-            'mousedown',
-            () => {
-              clearHighlight();
-            },
-            {
-              capture: true,
-              once: true,
-            },
-          );
-        },
-        {
-          capture: true,
-          once: true,
-        },
-      );
-    }
+        document.addEventListener(
+          'mouseup',
+          () => {
+            isSelected = false;
+          },
+          {
+            capture: true,
+            once: true,
+          },
+        );
+      }
+    }, 0);
   });
 }
 

@@ -85,14 +85,8 @@ export async function moveToParagraphBeginning(page) {
   if (IS_MAC) {
     await keyDownCtrlOrAlt(page);
     await page.keyboard.press('ArrowUp');
-    // Firefox has a known bug with this key command, but if we press it again
-    // we can work around the bug.
-    if (E2E_BROWSER === 'firefox') {
-      await page.keyboard.press('ArrowUp');
-    }
     await keyUpCtrlOrAlt(page);
   } else {
-    await page.keyboard.press('ArrowUp');
     await page.keyboard.press('Home');
   }
 }
@@ -101,11 +95,6 @@ export async function moveToParagraphEnd(page) {
   if (IS_MAC) {
     await keyDownCtrlOrAlt(page);
     await page.keyboard.press('ArrowDown');
-    // Firefox has a known bug with this key command, but if we press it again
-    // we can work around the bug.
-    if (E2E_BROWSER === 'firefox') {
-      await page.keyboard.press('ArrowDown');
-    }
     await keyUpCtrlOrMeta(page);
   } else {
     await page.keyboard.press('End');

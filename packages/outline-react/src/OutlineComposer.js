@@ -31,16 +31,19 @@ export default function OutlineComposer({
   const composerContext = useMemo(
     () => {
       let composerTheme: EditorThemeClasses;
+      let parentEditor;
+      
       if (theme != null) {
         composerTheme = theme;
       } else if (parentContext != null) {
+        parentEditor = parentContext[0];
         const parentTheme = parentContext[1].getTheme();
         if (parentTheme != null) {
           composerTheme = parentTheme;
         }
       }
 
-      const config = {initialEditorState, theme: composerTheme};
+      const config = {initialEditorState, theme: composerTheme, parentEditor};
       const context: OutlineComposerContextType = createOutlineComposerContext(
         parentContext,
         composerTheme,

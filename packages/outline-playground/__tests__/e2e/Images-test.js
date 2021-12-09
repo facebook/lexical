@@ -26,9 +26,9 @@ describe('Images', () => {
 
       await focusEditor(page);
 
-      await waitForSelector(page, '.action-button.insert-image');
+      await waitForSelector(page, 'button .image');
 
-      await click(page, '.action-button.insert-image');
+      await click(page, 'button .image');
 
       await waitForSelector(page, '.editor-image img');
 
@@ -71,7 +71,7 @@ describe('Images', () => {
         focusOffset: 0,
       });
 
-      await click(page, '.action-button.insert-image');
+      await click(page, 'button .image');
 
       await waitForSelector(page, '.editor-image img');
 
@@ -87,7 +87,7 @@ describe('Images', () => {
 
       await assertHTML(page, '<p class="editor-paragraph"><br></p>');
 
-      await click(page, '.action-button.insert-image');
+      await click(page, 'button .image');
 
       await waitForSelector(page, '.editor-image img');
 
@@ -126,13 +126,13 @@ describe('Images', () => {
 
       await focusEditor(page);
 
-      await waitForSelector(page, '.action-button.insert-image');
+      await waitForSelector(page, 'button .image');
 
-      await click(page, '.action-button.insert-image');
+      await click(page, 'button .image');
 
       await waitForSelector(page, '.editor-image img');
 
-      await click(page, '.action-button.insert-image');
+      await click(page, 'button .image');
 
       await focusEditor(page);
       await page.keyboard.press('ArrowLeft');
@@ -171,8 +171,8 @@ describe('Images', () => {
       });
 
       await page.keyboard.type('Test');
-      await click(page, '.action-button.insert-image');
-      await click(page, '.action-button.insert-image');
+      await click(page, 'button .image');
+      await click(page, 'button .image');
 
       await focusEditor(page);
       await page.keyboard.press('ArrowLeft');

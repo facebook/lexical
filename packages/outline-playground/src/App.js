@@ -15,7 +15,6 @@ import {useCallback, useState} from 'react';
 import useSettings from './hooks/useSettings';
 import {DEFAULT_SETTINGS} from './appSettings';
 import Editor from './Editor';
-import TreeViewPlugin from './plugins/TreeViewPlugin';
 import TestRecorderPlugin from './plugins/TestRecorderPlugin';
 import TypingPerfPlugin from './plugins/TypingPerfPlugin';
 import {SharedHistoryContext} from './context/SharedHistoryContext';
@@ -76,9 +75,9 @@ function App(): React$Node {
             isAutocomplete={isAutocomplete}
             isRichText={isRichText}
             isCollab={isCollab}
+            showTreeView={showTreeView}
           />
         </div>
-        {showTreeView && <TreeViewPlugin />}
         {settingsSwitches}
         {settingsButton}
         <TestRecorderPlugin />

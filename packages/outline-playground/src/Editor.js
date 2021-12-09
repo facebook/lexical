@@ -19,8 +19,12 @@ import HashtagsPlugin from 'outline-react/HashtagsPlugin';
 import KeywordsPlugin from './plugins/KeywordsPlugin';
 import ActionsPlugin from './plugins/ActionsPlugin';
 import AutoFormatterPlugin from 'outline-react/AutoFormatterPlugin';
-import BlockControlsPlugin from 'outline-react/BlockControlsPlugin';
-import FloatingToolbarPlugin from './plugins/FloatingToolbarPlugin';
+import ToolbarPlugin from './plugins/ToolbarPlugin';
+import TreeViewPlugin from './plugins/TreeViewPlugin';
+import TablesPlugin from './plugins/TablesPlugin';
+import TableCellActionMenuPlugin from './plugins/TableCellActionMenuPlugin';
+import ImagesPlugin from './plugins/ImagesPlugin';
+import LinksPlugin from './plugins/LinksPlugin';
 
 type Props = {
   isCollab: boolean,
@@ -28,6 +32,7 @@ type Props = {
   isCharLimitUtf8: boolean,
   isAutocomplete: boolean,
   isRichText: boolean,
+  showTreeView: boolean,
 };
 
 export default function Editor({
@@ -36,28 +41,35 @@ export default function Editor({
   isCharLimit,
   isCharLimitUtf8,
   isRichText,
+  showTreeView,
 }: Props): React$Node {
   return (
-    <div className="editor-container">
-      <MentionsPlugin />
-      <EmojisPlugin />
-      <HashtagsPlugin />
-      <KeywordsPlugin />
-      {isRichText ? (
-        <>
-          {isCollab ? <RichTextCollabPlugin id="main" /> : <RichTextPlugin />}
-          <AutoFormatterPlugin />
-          <BlockControlsPlugin />
-          <FloatingToolbarPlugin />
-        </>
-      ) : (
-        <PlainTextPlugin />
-      )}
-      {(isCharLimit || isCharLimitUtf8) && (
-        <CharacterLimitPlugin charset={isCharLimit ? 'UTF-16' : 'UTF-8'} />
-      )}
-      {isAutocomplete && <AutocompletePlugin />}
-      <ActionsPlugin isRichText={isRichText} />
-    </div>
+    <>
+      {isRichText && <ToolbarPlugin />}
+      <div className={`editor-container ${showTreeView ? 'tree-view' : ''}`}>
+        <MentionsPlugin />
+        <TablesPlugin />
+        <TableCellActionMenuPlugin />
+        <ImagesPlugin />
+        <LinksPlugin />
+        <EmojisPlugin />
+        <HashtagsPlugin />
+        <KeywordsPlugin />
+        {isRichText ? (
+          <>
+            {isCollab ? <RichTextCollabPlugin id="main" /> : <RichTextPlugin />}
+            <AutoFormatterPlugin />
+          </>
+        ) : (
+          <PlainTextPlugin />
+        )}
+        {(isCharLimit || isCharLimitUtf8) && (
+          <CharacterLimitPlugin charset={isCharLimit ? 'UTF-16' : 'UTF-8'} />
+        )}
+        {isAutocomplete && <AutocompletePlugin />}
+        <ActionsPlugin isRichText={isRichText} />
+      </div>
+      {showTreeView && <TreeViewPlugin />}
+    </>
   );
 }

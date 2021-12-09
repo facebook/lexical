@@ -70,20 +70,16 @@ describe('Keyboard Navigation', () => {
       if (isRichText) {
         await assertSelection(page, {
           anchorPath: [2, 0, 0],
-          // Due to text rendering it can be in this range of offsets
-          anchorOffset: [68, 79],
+          anchorOffset: 0,
           focusPath: [2, 0, 0],
-          // Due to text rendering it can be in this range of offsets
-          focusOffset: [68, 79],
+          focusOffset: 0,
         });
       } else {
         await assertSelection(page, {
           anchorPath: [0, 4, 0],
-          // Due to text rendering it can be in this range of offsets
-          anchorOffset: [68, 79],
+          anchorOffset: 0,
           focusPath: [0, 4, 0],
-          // Due to text rendering it can be in this range of offsets
-          focusOffset: [68, 79],
+          focusOffset: 0,
         });
       }
       await moveToLineEnd(page);

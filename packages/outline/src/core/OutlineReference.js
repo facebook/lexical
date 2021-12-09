@@ -17,7 +17,7 @@ export interface Ref<Data> {
   _type: string;
 
   get(editor: OutlineEditor): null | Data;
-  set(data: Data): void;
+  set(editor: OutlineEditor, data: Data): void;
   toJSON(): {type: string, editorState: null | string};
   isEmpty(): boolean;
 }
@@ -32,11 +32,13 @@ export class EditorStateRef implements Ref<EditorState> {
   id: string;
   _type: string;
   _editorState: null | EditorState | string;
+  _editor: null | OutlineEditor;
 
   constructor(id: string, editorState: null | EditorState | string) {
     this.id = id;
     this._type = 'editorstate';
     this._editorState = editorState;
+    this._editor = null;
   }
 
   get(editor: OutlineEditor): null | EditorState {
@@ -48,8 +50,9 @@ export class EditorStateRef implements Ref<EditorState> {
     return editorState;
   }
 
-  set(editorState: EditorState): void {
+  set(editor: OutlineEditor, editorState: EditorState): void {
     this._editorState = editorState;
+    this._editor = editor;
   }
 
   toJSON(): {id: string, type: string, editorState: null | string} {

@@ -517,7 +517,7 @@ function beginUpdate(
   editor: OutlineEditor,
   updateFn: () => void,
   skipEmptyCheck: boolean,
-  options?: EditorUpdateOptions = {},
+  options?: EditorUpdateOptions,
 ): void {
   const deferred = editor._deferred;
   let onUpdate;

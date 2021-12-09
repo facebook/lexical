@@ -282,7 +282,9 @@ function ImageComponent({
     if (showCaption && !editorStateRef.isEmpty() && inlineEditor !== null) {
       const editorState = editorStateRef.get(inlineEditor);
       if (editorState !== null) {
-        inlineEditor.setEditorState(editorState);
+        inlineEditor.setEditorState(editorState, {
+          tag: 'without-history',
+        });
       }
     }
   }, [editorStateRef, inlineEditor, showCaption]);
@@ -305,7 +307,7 @@ function ImageComponent({
     (editorState, inlineEditor) => {
       setInlineEditor(inlineEditor);
       if (!editorState.isEmpty()) {
-        editorStateRef.set(editorState);
+        editorStateRef.set(inlineEditor, editorState);
       }
     },
     [editorStateRef],
@@ -365,7 +367,10 @@ function ImageComponent({
         />
         {showCaption && (
           <div className="image-caption-container">
-            <InlineEditor controlled={true} onChange={onChange}>
+            <InlineEditor
+              controlled={true}
+              onChange={onChange}
+              initialEditorStateRef={editorStateRef}>
               {isCollab ? (
                 <RichTextCollabPlugin
                   id={editorStateRef.id}

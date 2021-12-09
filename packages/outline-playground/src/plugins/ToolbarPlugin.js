@@ -136,8 +136,6 @@ function FloatingLinkEditor({editor}: {editor: OutlineEditor}): React$Node {
     }
     const rootElement = editor.getRootElement();
 
-    debugger
-
     if (
       selection !== null &&
       !nativeSelection.isCollapsed &&
@@ -595,14 +593,11 @@ export default function ToolbarPlugin(): React$Node {
   }, [activeEditor, selectedElementKey]);
 
   useEffect(() => {
-    return activeEditor.addListener(
-      'update',
-      ({editorState}) => {
-        editorState.read(() => {
-          updateToolbar();
-        });
-      },
-    );
+    return activeEditor.addListener('update', ({editorState}) => {
+      editorState.read(() => {
+        updateToolbar();
+      });
+    });
   }, [activeEditor, updateToolbar]);
 
   useEffect(() => {
@@ -831,7 +826,10 @@ export default function ToolbarPlugin(): React$Node {
         <i className="format link" />
       </button>
       {isLink &&
-        createPortal(<FloatingLinkEditor editor={activeEditor} />, document.body)}
+        createPortal(
+          <FloatingLinkEditor editor={activeEditor} />,
+          document.body,
+        )}
       <button
         onClick={insertImage}
         className="toolbar-item spaced"

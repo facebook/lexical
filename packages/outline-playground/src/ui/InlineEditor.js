@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {EditorState, OutlineEditor} from 'outline';
+import type {EditorState, OutlineEditor, EditorStateRef} from 'outline';
 
 import * as React from 'react';
 
@@ -28,6 +28,7 @@ type Props = {
   controlled: boolean,
   onChange?: (editorState: EditorState, editor: OutlineEditor) => void,
   placeholder?: string,
+  initialEditorStateRef?: EditorStateRef,
 };
 
 export default function InlineEditor({
@@ -35,10 +36,11 @@ export default function InlineEditor({
   controlled,
   onChange,
   placeholder,
+  initialEditorStateRef,
 }: Props): React$Node {
   return (
     <div className="inline-editor-container">
-      <OutlineComposer>
+      <OutlineComposer initialEditorStateRef={initialEditorStateRef}>
         {onChange && <OnChangePlugin onChange={onChange} />}
         <MentionsPlugin />
         <TablesPlugin />

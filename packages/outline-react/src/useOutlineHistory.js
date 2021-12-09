@@ -44,9 +44,6 @@ export type HistoryState = {
   current: null | HistoryStateEntry,
   redoStack: Array<HistoryStateEntry>,
   undoStack: Array<HistoryStateEntry>,
-  // Internal field indicating that history state is being applied to the editor (or nested editor)
-  // and history calculation logic does not need to be executed
-  _isApplying?: boolean,
 };
 
 function getDirtyNodes(
@@ -122,8 +119,9 @@ function getChangeType(
   // relying on selection change: anchor was within element, and after the change it'll be within newly
   // created text node with 1 char offset.
   if (dirtyNodes.length > 1) {
-    const elementNode = nextEditorState._nodeMap.get(prevSelection.anchor.key);
-    const textNode = nextEditorState._nodeMap.get(nextSelection.anchor.key);
+    const nextNodeMap = nextEditorState._nodeMap;
+    const elementNode = nextNodeMap.get(prevSelection.anchor.key);
+    const textNode = nextNodeMap.get(nextSelection.anchor.key);
     if (
       !$isTextNode(textNode) ||
       !$isElementNode(elementNode) ||
@@ -269,7 +267,7 @@ export function useOutlineHistory(
     }) => {
       // If applying changes from history stack there's no need
       // to run history logic again, as history entries already calculated
-      if (historyState._isApplying === true) {
+      if (tags.has('historic')) {
         return;
       }
       const current = historyState.current;
@@ -331,19 +329,12 @@ export function useOutlineHistory(
           editor.execCommand('canUndo', false);
         }
         historyState.current = historyStateEntry;
-        historyState._isApplying = true;
-        try {
-          historyStateEntry.editor.setEditorState(
-            historyStateEntry.editorState.clone(
-              historyStateEntry.undoSelection,
-            ),
-            {
-              tag: 'historic',
-            },
-          );
-        } finally {
-          historyState._isApplying = false;
-        }
+        historyStateEntry.editor.setEditorState(
+          historyStateEntry.editorState.clone(historyStateEntry.undoSelection),
+          {
+            tag: 'historic',
+          },
+        );
       }
     };
 
@@ -361,17 +352,9 @@ export function useOutlineHistory(
           editor.execCommand('canRedo', false);
         }
         historyState.current = historyStateEntry;
-        historyState._isApplying = true;
-        try {
-          historyStateEntry.editor.setEditorState(
-            historyStateEntry.editorState,
-            {
-              tag: 'historic',
-            },
-          );
-        } finally {
-          historyState._isApplying = false;
-        }
+        historyStateEntry.editor.setEditorState(historyStateEntry.editorState, {
+          tag: 'historic',
+        });
       }
     };
 

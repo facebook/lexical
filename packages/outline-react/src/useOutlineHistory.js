@@ -209,6 +209,7 @@ export function useOutlineHistory(
         }
         const historyStateEntry = undoStack.pop();
         historyState.current = historyStateEntry;
+        editor._updateTags.add('undo');
         historyStateEntry.editor.setEditorState(historyStateEntry.editorState);
       }
     };
@@ -224,6 +225,7 @@ export function useOutlineHistory(
         }
         const historyStateEntry = redoStack.pop();
         historyState.current = historyStateEntry;
+        editor._updateTags.add('redo');
         historyStateEntry.editor.setEditorState(historyStateEntry.editorState);
       }
     };

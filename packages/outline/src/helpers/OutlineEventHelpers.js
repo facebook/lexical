@@ -616,8 +616,11 @@ export function onSelectionChange(event: Event, editor: OutlineEditor): void {
       if (anchor.type === 'text') {
         const anchorNode = anchor.getNode();
         selection.format = anchorNode.getFormat();
+      } else if (anchor.type === 'element') {
+        selection.format = 0;
       }
     }
+    editor.execCommand('selectionChange');
   });
 }
 

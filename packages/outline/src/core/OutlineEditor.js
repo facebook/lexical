@@ -116,6 +116,7 @@ export type TextContentListener = (text: string) => void;
 export type CommandListener = (
   type: string,
   payload: CommandPayload,
+  editor: OutlineEditor,
 ) => boolean;
 
 export type CommandListenerEditorPriority = 0;
@@ -203,15 +204,17 @@ export function createEditor<EditorContext>(editorConfig?: {
   theme?: EditorThemeClasses,
   context?: EditorContext,
   htmlTransforms?: DOMTransformerMap,
+  parentEditor?: OutlineEditor,
 }): OutlineEditor {
   const config = editorConfig || {};
   const theme = config.theme || {};
   const context = config.context || {};
+  const parentEditor = config.parentEditor || null;
   const htmlTransforms = config.htmlTransforms || {};
   const editorState = createEmptyEditorState();
   const initialEditorState = config.initialEditorState;
   // $FlowFixMe: use our declared type instead
-  const editor: editor = new BaseOutlineEditor(editorState, {
+  const editor: editor = new BaseOutlineEditor(editorState, parentEditor, {
     // $FlowFixMe: we use our internal type to simpify the generics
     context,
     theme,
@@ -268,6 +271,7 @@ function registerNode<T: OutlineNode>(
 }
 
 class BaseOutlineEditor {
+  _parentEditor: null | OutlineEditor;
   _rootElement: null | HTMLElement;
   _editorState: EditorState;
   _pendingEditorState: null | EditorState;
@@ -292,7 +296,8 @@ class BaseOutlineEditor {
   _log: Array<string>;
   _key: string;
 
-  constructor(editorState: EditorState, config: EditorConfig<{...}>) {
+  constructor(editorState: EditorState, parentEditor: null | OutlineEditor, config: EditorConfig<{...}>) {
+    this._parentEditor = parentEditor
     // The root element associated with this editor
     this._rootElement = null;
     // The current editor state
@@ -529,6 +534,7 @@ class BaseOutlineEditor {
 // For some reason, we can't do this via an interface without
 // Flow messing up the types. It's hacky, but it improves DX.
 declare export class OutlineEditor {
+  _parentEditor: null | OutlineEditor;
   _rootElement: null | HTMLElement;
   _editorState: EditorState;
   _pendingEditorState: null | EditorState;

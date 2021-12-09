@@ -8,7 +8,7 @@
  */
 
 import type {OutlineComposerContextType} from './OutlineComposerContext';
-import type {EditorState, EditorThemeClasses} from 'outline';
+import type {EditorThemeClasses, EditorStateRef} from 'outline';
 import {createEditor} from 'outline';
 import {
   OutlineComposerContext,
@@ -19,20 +19,20 @@ import React, {useContext, useMemo} from 'react';
 type Props = {
   children: React$Node,
   theme?: EditorThemeClasses,
-  initialEditorState?: EditorState,
+  initialEditorStateRef?: EditorStateRef,
 };
 
 export default function OutlineComposer({
   children,
-  initialEditorState,
+  initialEditorStateRef,
   theme,
 }: Props): React$MixedElement {
   const parentContext = useContext(OutlineComposerContext);
   const composerContext = useMemo(
     () => {
-      let composerTheme: EditorThemeClasses;
+      let composerTheme: void | EditorThemeClasses;
       let parentEditor;
-      
+
       if (theme != null) {
         composerTheme = theme;
       } else if (parentContext != null) {
@@ -43,20 +43,33 @@ export default function OutlineComposer({
         }
       }
 
-      const config = {initialEditorState, theme: composerTheme, parentEditor};
+      const config = {theme: composerTheme || {}, parentEditor};
       const context: OutlineComposerContextType = createOutlineComposerContext(
         parentContext,
         composerTheme,
       );
-      const editor = createEditor<OutlineComposerContextType>({
-        ...config,
-        context,
-      });
+      let editor =
+        initialEditorStateRef !== undefined
+          ? initialEditorStateRef._editor
+          : null;
+
+      if (editor === null) {
+        editor = createEditor<OutlineComposerContextType>({
+          ...config,
+          context,
+        });
+      } else {
+        editor._config = {
+          ...config,
+          context,
+        };
+      }
+
       return [editor, context];
     },
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [theme, initialEditorState],
+    [theme],
   );
   return (
     <OutlineComposerContext.Provider value={composerContext}>

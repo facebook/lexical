@@ -47,6 +47,10 @@ export type EditorUpdateOptions = {
   skipTransforms?: true,
 };
 
+export type EditorSetOptions = {
+  tag?: string,
+};
+
 export type EditorThemeClasses = {
   ltr?: EditorThemeClassName,
   rtl?: EditorThemeClassName,
@@ -296,8 +300,12 @@ class BaseOutlineEditor {
   _log: Array<string>;
   _key: string;
 
-  constructor(editorState: EditorState, parentEditor: null | OutlineEditor, config: EditorConfig<{...}>) {
-    this._parentEditor = parentEditor
+  constructor(
+    editorState: EditorState,
+    parentEditor: null | OutlineEditor,
+    config: EditorConfig<{...}>,
+  ) {
+    this._parentEditor = parentEditor;
     // The root element associated with this editor
     this._rootElement = null;
     // The current editor state
@@ -454,6 +462,7 @@ class BaseOutlineEditor {
         nextRootElement.setAttribute('data-outline-editor', 'true');
         this._dirtyType = FULL_RECONCILE;
         initMutationObserver(getSelf(this));
+        this._updateTags.add('without-history');
         commitPendingUpdates(getSelf(this));
         // $FlowFixMe: internal field
         nextRootElement.__outlineEditor = this;
@@ -473,7 +482,7 @@ class BaseOutlineEditor {
   getEditorState(): EditorState {
     return this._editorState;
   }
-  setEditorState(editorState: EditorState): void {
+  setEditorState(editorState: EditorState, options?: EditorSetOptions): void {
     if (editorState.isEmpty()) {
       invariant(
         false,
@@ -482,12 +491,20 @@ class BaseOutlineEditor {
     }
     flushRootMutations(getSelf(this));
     const pendingEditorState = this._pendingEditorState;
+    const tags = getSelf(this)._updateTags;
+    const tag = options !== undefined ? options.tag : null;
     if (pendingEditorState !== null && !pendingEditorState.isEmpty()) {
+      if (tag != null) {
+        tags.add(tag);
+      }
       commitPendingUpdates(getSelf(this));
     }
     this._pendingEditorState = editorState;
     this._dirtyType = FULL_RECONCILE;
     this._compositionKey = null;
+    if (tag != null) {
+      tags.add(tag);
+    }
     commitPendingUpdates(getSelf(this));
   }
   parseEditorState(stringifiedEditorState: string): EditorState {
@@ -581,7 +598,7 @@ declare export class OutlineEditor {
   setRootElement(rootElement: null | HTMLElement): void;
   getElementByKey(key: NodeKey): null | HTMLElement;
   getEditorState(): EditorState;
-  setEditorState(editorState: EditorState): void;
+  setEditorState(editorState: EditorState, options?: EditorSetOptions): void;
   parseEditorState(stringifiedEditorState: string): EditorState;
   update(
     updateFn: (state: State) => void,

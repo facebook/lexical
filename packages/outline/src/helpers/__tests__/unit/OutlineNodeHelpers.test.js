@@ -13,7 +13,12 @@ import {
   initializeUnitTest,
   $createTestElementNode,
 } from '../../../__tests__/utils';
-import {dfs, getTopListNode, isLastItemInList} from 'outline/nodes';
+import {
+  dfs,
+  getTopListNode,
+  isLastItemInList,
+  areSiblingsNullOrSpace,
+} from 'outline/nodes';
 import {$createParagraphNode, isParagraphNode} from 'outline/ParagraphNode';
 import {$createTextNode, $getRoot} from 'outline';
 import {$createListNode} from 'outline/ListNode';
@@ -292,6 +297,53 @@ describe('OutlineNodeHelpers tests', () => {
         const result = isLastItemInList(listItem1);
         expect(result).toEqual(false);
       });
+    });
+
+    test('areSiblingsNullOrSpace', () => {
+      const testCases = [
+        ['foo ', ' bar', true],
+        [' ', ' bar', true],
+        ['foo ', ' ', true],
+        [null, ' bar', true],
+        ['foo ', null, true],
+        ['newline', null, true],
+        [null, 'newline', true],
+        ['foo', null, false],
+        [null, 'bar', false],
+        ['foo ', 'bar', false],
+        ['foo', 'bar', false],
+        ['newline', 'bar', false],
+      ];
+      const editor: OutlineEditor = testEnv.editor;
+      editor.update(() => {
+        const root = $getRoot();
+        root.append($createParagraphNode());
+      });
+      for (let i = 0; i < testCases.length; i++) {
+        const [left, right, expected] = testCases[i];
+        editor.update(() => {
+          const root = $getRoot();
+          const paragraph = root.getFirstChildOrThrow();
+          const middle = $createTextNode('middle');
+          paragraph.clear();
+          if (left === 'newline') {
+            editor.execCommand('insertLineBreak');
+          } else if (left !== null) {
+            paragraph.append($createTextNode(left));
+          }
+          paragraph.append(middle);
+          if (right === 'newline') {
+            editor.execCommand('insertLineBreak');
+          } else if (right !== null) {
+            paragraph.append($createTextNode(right));
+          }
+          expect([left, right, areSiblingsNullOrSpace(middle)]).toEqual([
+            left,
+            right,
+            expected,
+          ]);
+        });
+      }
     });
   });
 });

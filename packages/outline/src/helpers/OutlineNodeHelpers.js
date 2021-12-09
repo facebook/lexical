@@ -15,7 +15,13 @@ import type {TableNode} from 'outline/TableNode';
 import {isListNode} from 'outline/ListNode';
 import {isListItemNode} from 'outline/ListItemNode';
 import invariant from 'shared/invariant';
-import {isElementNode, $createTextNode, $getRoot} from 'outline';
+import {
+  isElementNode,
+  $createTextNode,
+  $getRoot,
+  isLineBreakNode,
+  isTextNode,
+} from 'outline';
 import {$createTableNode} from 'outline/TableNode';
 import {$createTableRowNode} from 'outline/TableRowNode';
 import {$createTableCellNode} from 'outline/TableCellNode';
@@ -144,4 +150,30 @@ export function findMatchingParent(
   }
 
   return null;
+}
+
+export function areSiblingsNullOrSpace(node: OutlineNode): boolean {
+  return isPreviousSiblingNullOrSpace(node) && isNextSiblingNullOrSpace(node);
+}
+
+export function isPreviousSiblingNullOrSpace(node: OutlineNode): boolean {
+  const previousSibling = node.getPreviousSibling();
+  return (
+    previousSibling === null ||
+    isLineBreakNode(previousSibling) ||
+    (isTextNode(previousSibling) &&
+      previousSibling.isSimpleText() &&
+      previousSibling.getTextContent().endsWith(' '))
+  );
+}
+
+export function isNextSiblingNullOrSpace(node: OutlineNode): boolean {
+  const nextSibling = node.getNextSibling();
+  return (
+    nextSibling === null ||
+    isLineBreakNode(nextSibling) ||
+    (isTextNode(nextSibling) &&
+      nextSibling.isSimpleText() &&
+      nextSibling.getTextContent().startsWith(' '))
+  );
 }

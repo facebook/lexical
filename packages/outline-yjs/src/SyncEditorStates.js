@@ -35,7 +35,7 @@ import {
   syncCursorPositions,
 } from './SyncCursors';
 import {CollabDecoratorNode} from './CollabDecoratorNode';
-import {createOffsetView} from 'outline/offsets';
+import {$createOffsetView} from 'outline/offsets';
 
 function syncEvent(binding: Binding, event: YTextEvent | YMapEvent): void {
   const {target} = event;
@@ -98,12 +98,12 @@ export function syncYjsChangesToOutline(
         if (doesSelectionNeedRecovering(selection)) {
           const prevSelection = currentEditorState._selection;
           if (prevSelection !== null) {
-            const prevOffsetView = createOffsetView(
+            const prevOffsetView = $createOffsetView(
               editor,
               0,
               currentEditorState,
             );
-            const nextOffsetView = createOffsetView(
+            const nextOffsetView = $createOffsetView(
               editor,
               0,
               pendingEditorState,

@@ -22,12 +22,12 @@ import {
 import {TableRowNode, $createTableRowNode} from 'outline/TableRowNode';
 import {$createTableCellNode} from 'outline/TableCellNode';
 import {TableNode} from 'outline/TableNode';
-import {findMatchingParent} from 'outline/nodes';
+import {$findMatchingParent} from 'outline/nodes';
 
 export function getTableCellNodeFromOutlineNode(
   startingNode: OutlineNode,
 ): TableCellNode | null {
-  const node = findMatchingParent(
+  const node = $findMatchingParent(
     startingNode,
     (n) => n instanceof TableCellNode,
   );
@@ -42,7 +42,7 @@ export function getTableCellNodeFromOutlineNode(
 export function getTableRowNodeFromTableCellNodeOrThrow(
   startingNode: OutlineNode,
 ): TableRowNode {
-  const node = findMatchingParent(
+  const node = $findMatchingParent(
     startingNode,
     (n) => n instanceof TableRowNode,
   );
@@ -57,7 +57,7 @@ export function getTableRowNodeFromTableCellNodeOrThrow(
 export function getTableNodeFromOutlineNodeOrThrow(
   startingNode: OutlineNode,
 ): TableNode {
-  const node = findMatchingParent(startingNode, (n) => n instanceof TableNode);
+  const node = $findMatchingParent(startingNode, (n) => n instanceof TableNode);
 
   if (node instanceof TableNode) {
     return node;

@@ -86,37 +86,37 @@ class OffsetView {
     }
     let start = originalStart;
     let end = originalEnd;
-    let startOffsetNode = searchForNodeWithOffset(
+    let startOffsetNode = $searchForNodeWithOffset(
       firstNode,
       start,
       this._blockOffsetSize,
     );
-    let endOffsetNode = searchForNodeWithOffset(
+    let endOffsetNode = $searchForNodeWithOffset(
       firstNode,
       end,
       this._blockOffsetSize,
     );
     if (diffOffsetView !== undefined) {
-      start = getAdjustedOffsetFromDiff(
+      start = $getAdjustedOffsetFromDiff(
         start,
         startOffsetNode,
         diffOffsetView,
         this,
         this._blockOffsetSize,
       );
-      startOffsetNode = searchForNodeWithOffset(
+      startOffsetNode = $searchForNodeWithOffset(
         firstNode,
         start,
         this._blockOffsetSize,
       );
-      end = getAdjustedOffsetFromDiff(
+      end = $getAdjustedOffsetFromDiff(
         end,
         endOffsetNode,
         diffOffsetView,
         this,
         this._blockOffsetSize,
       );
-      endOffsetNode = searchForNodeWithOffset(
+      endOffsetNode = $searchForNodeWithOffset(
         firstNode,
         end,
         this._blockOffsetSize,
@@ -216,7 +216,7 @@ class OffsetView {
   }
 }
 
-function getAdjustedOffsetFromDiff(
+function $getAdjustedOffsetFromDiff(
   offset: number,
   offsetNode: null | OffsetNode,
   prevOffsetView: OffsetView,
@@ -278,7 +278,7 @@ function getAdjustedOffsetFromDiff(
   // deleted).
   const prevFirstNode = prevOffsetView._firstNode;
   if (prevFirstNode !== null) {
-    currentNode = searchForNodeWithOffset(
+    currentNode = $searchForNodeWithOffset(
       prevFirstNode,
       offset,
       blockOffsetSize,
@@ -314,7 +314,7 @@ function getAdjustedOffsetFromDiff(
   return adjustedOffset;
 }
 
-function searchForNodeWithOffset(
+function $searchForNodeWithOffset(
   firstNode: OffsetNode,
   offset: number,
   blockOffsetSize: number,
@@ -341,7 +341,7 @@ function searchForNodeWithOffset(
   return null;
 }
 
-function createInternalOffsetNode<N>(
+function $createInternalOffsetNode<N>(
   child: null | OffsetNode,
   type: 'block' | 'text' | 'inline',
   start: number,
@@ -362,7 +362,7 @@ function createInternalOffsetNode<N>(
   };
 }
 
-function createOffsetNode(
+function $createOffsetNode(
   state: {offset: number, prevIsBlock: boolean},
   key: NodeKey,
   parent: null | OffsetElementNode,
@@ -382,7 +382,7 @@ function createOffsetNode(
 
     const child = blockIsEmpty
       ? null
-      : createOffsetChild(
+      : $createOffsetChild(
           state,
           childKeys,
           null,
@@ -396,7 +396,7 @@ function createOffsetNode(
       state.prevIsBlock = true;
       state.offset += blockOffsetSize;
     }
-    const offsetNode = createInternalOffsetNode<OffsetElementNode>(
+    const offsetNode = $createInternalOffsetNode<OffsetElementNode>(
       child,
       'block',
       start,
@@ -419,7 +419,7 @@ function createOffsetNode(
   const end = (state.offset += length);
 
   const offsetNode: OffsetTextNode | OffsetInlineNode =
-    createInternalOffsetNode<OffsetTextNode | OffsetInlineNode>(
+    $createInternalOffsetNode<OffsetTextNode | OffsetInlineNode>(
       null,
       isText ? 'text' : 'inline',
       start,
@@ -431,7 +431,7 @@ function createOffsetNode(
   return offsetNode;
 }
 
-function createOffsetChild(
+function $createOffsetChild(
   state: {offset: number, prevIsBlock: boolean},
   children: Array<NodeKey>,
   parent: null | OffsetElementNode,
@@ -444,7 +444,7 @@ function createOffsetChild(
   const childrenLength = children.length;
   for (let i = 0; i < childrenLength; i++) {
     const childKey = children[i];
-    const offsetNode = createOffsetNode(
+    const offsetNode = $createOffsetNode(
       state,
       childKey,
       parent,
@@ -463,7 +463,7 @@ function createOffsetChild(
   return firstNode;
 }
 
-export function createOffsetView(
+export function $createOffsetView(
   editor: OutlineEditor,
   blockOffsetSize?: number = 1,
   editorState?: EditorState,
@@ -475,7 +475,7 @@ export function createOffsetView(
   const root = ((nodeMap.get('root'): any): RootNode);
   const offsetMap = new Map();
   const state = {offset: 0, prevIsBlock: false};
-  const node = createOffsetChild(
+  const node = $createOffsetChild(
     state,
     root.__children,
     null,

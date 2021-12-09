@@ -11,7 +11,7 @@ import type {RootNode, TextNode} from 'outline';
 
 import {$isTextNode, $isElementNode} from 'outline';
 
-export function findTextIntersectionFromCharacters(
+export function $findTextIntersectionFromCharacters(
   root: RootNode,
   targetCharacters: number,
 ): null | {node: TextNode, offset: number} {

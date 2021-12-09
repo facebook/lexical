@@ -12,7 +12,7 @@ import type {OutlineEditor} from 'outline';
 import {useEffect} from 'react';
 import {$createTextNode, $isTextNode, TextNode, $getSelection} from 'outline';
 import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
-import {areSiblingsNullOrSpace} from 'outline/nodes';
+import {$areSiblingsNullOrSpace} from 'outline/nodes';
 import {
   KeywordNode,
   $isKeywordNode,
@@ -117,7 +117,7 @@ function plainTextToKeywordTransform(node: TextNode): void {
 }
 
 function keywordToPlainTextTransform(keyword: KeywordNode) {
-  if (!areSiblingsNullOrSpace(keyword)) {
+  if (!$areSiblingsNullOrSpace(keyword)) {
     convertKeywordNodeToPlainTextNode(keyword);
   }
 }

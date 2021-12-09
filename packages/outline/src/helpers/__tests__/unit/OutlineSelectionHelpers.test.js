@@ -16,7 +16,7 @@ import {
   $getNodeByKey,
 } from 'outline';
 import {$createParagraphNode} from 'outline/ParagraphNode';
-import {cloneContents} from 'outline/selection';
+import {$cloneContents} from 'outline/selection';
 import {
   createTestEditor,
   $createTestElementNode,
@@ -197,7 +197,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // cloneContents
       setupTestCase((selection, element) => {
-        expect(cloneContents(selection)).toEqual({
+        expect($cloneContents(selection)).toEqual({
           range: ['a'],
           nodeMap: [['a', {...$getNodeByKey('a'), __text: ''}]],
         });
@@ -633,7 +633,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // cloneContents
       setupTestCase((selection, element) => {
-        expect(cloneContents(selection)).toEqual({
+        expect($cloneContents(selection)).toEqual({
           range: [],
           nodeMap: [],
         });
@@ -755,7 +755,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // cloneContents
       setupTestCase((selection, element) => {
-        expect(cloneContents(selection)).toEqual({
+        expect($cloneContents(selection)).toEqual({
           range: [element.getKey()],
           nodeMap: [
             ['a', {...$getNodeByKey('a'), __text: ''}],
@@ -881,7 +881,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // cloneContents
       setupTestCase((selection, element) => {
-        expect(cloneContents(selection)).toEqual({
+        expect($cloneContents(selection)).toEqual({
           range: [element.getKey()],
           nodeMap: [
             ['c', {...$getNodeByKey('c'), __text: ''}],
@@ -1121,7 +1121,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // cloneContents
       setupTestCase((selection, element) => {
-        expect(cloneContents(selection)).toEqual({
+        expect($cloneContents(selection)).toEqual({
           range: [element.getKey()],
           nodeMap: [
             ['a', $getNodeByKey('a')],
@@ -1251,7 +1251,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // cloneContents
       setupTestCase((selection, element) => {
-        expect(cloneContents(selection)).toEqual({
+        expect($cloneContents(selection)).toEqual({
           range: [element.getKey()],
           nodeMap: [
             ['a', $getNodeByKey('a')],
@@ -1390,7 +1390,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       // cloneContents
       setupTestCase((selection, element) => {
-        expect(cloneContents(selection)).toEqual({
+        expect($cloneContents(selection)).toEqual({
           range: [element.getKey()],
           nodeMap: [
             ['a', $getNodeByKey('a')],
@@ -1427,7 +1427,7 @@ describe('OutlineSelectionHelpers tests', () => {
       text1.select(0, 0);
       const selection1 = $getSelection();
       selection1.focus.set(text3.getKey(), 1, 'text');
-      const selectedNodes1 = cloneContents($getSelection());
+      const selectedNodes1 = $cloneContents($getSelection());
       expect(selectedNodes1.range).toEqual([
         paragraph1.getKey(),
         paragraph2.getKey(),
@@ -1445,7 +1445,7 @@ describe('OutlineSelectionHelpers tests', () => {
       text1.select(1, 1);
       const selection2 = $getSelection();
       selection2.focus.set(text3.getKey(), 4, 'text');
-      const selectedNodes2 = cloneContents($getSelection());
+      const selectedNodes2 = $cloneContents($getSelection());
       expect(selectedNodes2.range).toEqual([
         paragraph1.getKey(),
         paragraph2.getKey(),
@@ -1478,23 +1478,23 @@ describe('OutlineSelectionHelpers tests', () => {
       const excludeElementNode1 = $createTestExcludeFromCopyElementNode();
       paragraph.append(excludeElementNode1);
       paragraph.select(0, 0);
-      const selectedNodes1 = cloneContents($getSelection());
+      const selectedNodes1 = $cloneContents($getSelection());
       expect(selectedNodes1.range).toEqual([]);
 
       const text1 = $createTextNode('1');
       excludeElementNode1.append(text1);
       excludeElementNode1.select(0, 0);
-      const selectedNodes2 = cloneContents($getSelection());
+      const selectedNodes2 = $cloneContents($getSelection());
       expect(selectedNodes2.range).toEqual([paragraph.getKey()]);
 
       paragraph.select(0, 0);
-      const selectedNodes3 = cloneContents($getSelection());
+      const selectedNodes3 = $cloneContents($getSelection());
       expect(selectedNodes3.range).toEqual([paragraph.getKey()]);
 
       const text2 = $createTextNode('2');
       excludeElementNode1.insertAfter(text2);
       paragraph.select(0, 2);
-      const selectedNodes4 = cloneContents($getSelection());
+      const selectedNodes4 = $cloneContents($getSelection());
       expect(selectedNodes4.range).toEqual([paragraph.getKey()]);
       expect(selectedNodes4.nodeMap[0][0]).toEqual(text1.getKey());
       expect(selectedNodes4.nodeMap[1][0]).toEqual(paragraph.getKey());
@@ -1503,7 +1503,7 @@ describe('OutlineSelectionHelpers tests', () => {
       const text3 = $createTextNode('3');
       excludeElementNode1.append(text3);
       paragraph.select(0, 2);
-      const selectedNodes5 = cloneContents($getSelection());
+      const selectedNodes5 = $cloneContents($getSelection());
       expect(selectedNodes5.range).toEqual([paragraph.getKey()]);
       expect(selectedNodes5.nodeMap[0][0]).toEqual(text1.getKey());
       expect(selectedNodes5.nodeMap[1][0]).toEqual(paragraph.getKey());
@@ -1517,7 +1517,7 @@ describe('OutlineSelectionHelpers tests', () => {
       testElementNode.append(excludeElementNode2);
       excludeElementNode2.append(text4);
       paragraph.select(0, 3);
-      const selectedNodes6 = cloneContents($getSelection());
+      const selectedNodes6 = $cloneContents($getSelection());
       expect(selectedNodes6.range).toEqual([paragraph.getKey()]);
       expect(selectedNodes6.nodeMap[0][0]).toEqual(text4.getKey());
       expect(selectedNodes6.nodeMap[1][0]).toEqual(testElementNode.getKey());
@@ -1528,7 +1528,7 @@ describe('OutlineSelectionHelpers tests', () => {
 
       text4.remove();
       paragraph.select(0, 3);
-      const selectedNodes7 = cloneContents($getSelection());
+      const selectedNodes7 = $cloneContents($getSelection());
       expect(selectedNodes7.range).toEqual([paragraph.getKey()]);
       expect(selectedNodes7.nodeMap[0][0]).toEqual(testElementNode.getKey());
       expect(selectedNodes7.nodeMap[1][0]).toEqual(paragraph.getKey());

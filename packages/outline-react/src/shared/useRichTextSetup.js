@@ -38,7 +38,7 @@ import {
   onPasteForRichText,
   onDropPolyfill,
   onDragStartPolyfill,
-  onTextMutation,
+  $onTextMutation,
   onInput,
   onClick,
 } from 'outline/events';
@@ -126,7 +126,7 @@ export function useRichTextSetup(
         ParagraphNode,
         ListItemNode,
       ]),
-      editor.addListener('textmutation', onTextMutation),
+      editor.addListener('textmutation', $onTextMutation),
       editor.addListener(
         'command',
         (type, payload): boolean => {

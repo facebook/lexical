@@ -201,6 +201,17 @@ export function internallyMarkNodeAsDirty(node: OutlineNode): void {
   }
 }
 
+export function internallyMarkSiblingsAsDirty(node: OutlineNode) {
+  const previousNode = node.getPreviousSibling();
+  const nextNode = node.getNextSibling();
+  if (previousNode !== null) {
+    internallyMarkNodeAsDirty(previousNode);
+  }
+  if (nextNode !== null) {
+    internallyMarkNodeAsDirty(nextNode);
+  }
+}
+
 export function $setCompositionKey(compositionKey: null | NodeKey): void {
   errorOnReadOnly();
   const editor = getActiveEditor();

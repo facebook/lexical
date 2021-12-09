@@ -53,6 +53,11 @@ header h1 {
   border-radius: 0;
 }
 
+.editor-shell .editor-container.plain-text {
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+}
+
 .editor-shell div.editor {
   min-height: 150px;
   border: 0;

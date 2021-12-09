@@ -46,7 +46,10 @@ export default function Editor({
   return (
     <>
       {isRichText && <ToolbarPlugin />}
-      <div className={`editor-container ${showTreeView ? 'tree-view' : ''}`}>
+      <div
+        className={`editor-container ${showTreeView ? 'tree-view' : ''} ${
+          !isRichText ? 'plain-text' : ''
+        }`}>
         <MentionsPlugin />
         <TablesPlugin />
         <TableCellActionMenuPlugin />

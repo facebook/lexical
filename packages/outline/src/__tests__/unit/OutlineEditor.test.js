@@ -463,7 +463,7 @@ describe('OutlineEditor tests', () => {
     init();
     const executeTransform = jest.fn();
     let hasBeenRemoved = false;
-    const listener = editor.addTransform(TextNode, (node) => {
+    const removeListener = editor.addTransform(TextNode, (node) => {
       if (hasBeenRemoved) {
         executeTransform();
       }
@@ -483,7 +483,7 @@ describe('OutlineEditor tests', () => {
     });
     expect(executeTransform).toHaveBeenCalledTimes(1);
 
-    listener();
+    removeListener();
   });
 
   describe('transforms on siblings', () => {

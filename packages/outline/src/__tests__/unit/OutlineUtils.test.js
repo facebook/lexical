@@ -86,14 +86,14 @@ describe('OutlineUtils tests', () => {
     test('isSelectionWithinEditor()', async () => {
       const {editor} = testEnv;
       let textNode;
-      await editor.update((state) => {
+      await editor.update(() => {
         const root = $getRoot();
         const paragraph = $createParagraphNode();
         textNode = $createTextNode('foo');
         paragraph.append(textNode);
         root.append(paragraph);
       });
-      await editor.update((state) => {
+      await editor.update(() => {
         const domSelection = window.getSelection();
         expect(
           isSelectionWithinEditor(
@@ -104,7 +104,7 @@ describe('OutlineUtils tests', () => {
         ).toBe(false);
         textNode.select(0, 0);
       });
-      await editor.update((state) => {
+      await editor.update(() => {
         const domSelection = window.getSelection();
         expect(
           isSelectionWithinEditor(
@@ -171,7 +171,7 @@ describe('OutlineUtils tests', () => {
       let paragraphNode;
       let textNode;
 
-      await editor.update((state) => {
+      await editor.update(() => {
         const rootNode = $getRoot();
         paragraphNode = new ParagraphNode();
         textNode = new TextNode('foo');

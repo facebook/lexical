@@ -67,7 +67,7 @@ describe('OutlineParagraphNode tests', () => {
       expect(testEnv.outerHTML).toBe(
         '<div contenteditable="true" data-outline-editor="true"><p><br></p></div>',
       );
-      await editor.update((state) => {
+      await editor.update(() => {
         const result = paragraphNode.insertNewAfter();
         expect(result).toBeInstanceOf(ParagraphNode);
         expect(result.getDirection()).toEqual(paragraphNode.getDirection());

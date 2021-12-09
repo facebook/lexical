@@ -10,7 +10,6 @@
 import type {OutlineEditor} from './OutlineEditor';
 import type {NodeKey, NodeMap, OutlineNode} from './OutlineNode';
 import type {Selection} from './OutlineSelection';
-import type {State} from './OutlineUpdates';
 import type {ParsedNode, ParsedSelection} from './OutlineParsing';
 
 import {createRootNode} from './OutlineRootNode';
@@ -77,7 +76,7 @@ export class EditorState {
   isEmpty(): boolean {
     return this._nodeMap.size === 1 && this._selection === null;
   }
-  read<V>(callbackFn: (state: State) => V): V {
+  read<V>(callbackFn: () => V): V {
     return readEditorState(this, callbackFn);
   }
   toJSON(space?: string | number): JSONEditorState {

@@ -70,7 +70,7 @@ describe('OutlineQuoteNode tests', () => {
       expect(testEnv.outerHTML).toBe(
         '<div contenteditable="true" data-outline-editor="true"><blockquote><br></blockquote></div>',
       );
-      await editor.update((state) => {
+      await editor.update(() => {
         const result = quoteNode.insertNewAfter();
         expect(result).toBeInstanceOf(ParagraphNode);
         expect(result.getDirection()).toEqual(quoteNode.getDirection());

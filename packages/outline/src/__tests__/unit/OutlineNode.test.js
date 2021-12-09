@@ -820,7 +820,7 @@ describe('OutlineNode tests', () => {
       expect(testEnv.outerHTML).toBe(
         '<div contenteditable="true" data-outline-editor="true"><p dir="ltr"><span data-outline-text="true">A</span></p><p dir="ltr"><span data-outline-text="true">B</span></p><p dir="ltr"><span data-outline-text="true">C</span></p></div>',
       );
-      await editor.update((state) => {
+      await editor.update(() => {
         text1.insertAfter(block2);
       });
       expect(testEnv.outerHTML).toBe(

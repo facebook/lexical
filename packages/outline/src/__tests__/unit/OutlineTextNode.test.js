@@ -92,7 +92,7 @@ describe('OutlineTextNode tests', () => {
     });
 
     // Insert initial block
-    await update((state) => {
+    await update(() => {
       const paragraph = $createParagraphNode();
       const text = $createTextNode();
       text.toggleUnmergeable();
@@ -105,7 +105,7 @@ describe('OutlineTextNode tests', () => {
     test('writable nodes', async () => {
       let nodeKey;
 
-      await update((state) => {
+      await update(() => {
         const textNode = $createTextNode('Text');
         nodeKey = textNode.getKey();
         expect(textNode.getTextContent()).toBe('Text');
@@ -123,7 +123,7 @@ describe('OutlineTextNode tests', () => {
       expect(getEditorStateTextContent(editor.getEditorState())).toBe('Text');
 
       // Make sure that the editor content is still set after further reconciliations
-      await update((state) => {
+      await update(() => {
         $getNodeByKey(nodeKey).markDirty();
       });
       expect(getEditorStateTextContent(editor.getEditorState())).toBe('Text');
@@ -132,7 +132,7 @@ describe('OutlineTextNode tests', () => {
     test('inert nodes', async () => {
       let nodeKey;
 
-      await update((state) => {
+      await update(() => {
         const textNode = $createTextNode('Inert text').setMode('inert');
         nodeKey = textNode.getKey();
         expect(textNode.getTextContent()).toBe('');
@@ -145,19 +145,19 @@ describe('OutlineTextNode tests', () => {
       expect(getEditorStateTextContent(editor.getEditorState())).toBe('');
 
       // Make sure that the editor content is still empty after further reconciliations
-      await update((state) => {
+      await update(() => {
         $getNodeByKey(nodeKey).markDirty();
       });
       expect(getEditorStateTextContent(editor.getEditorState())).toBe('');
     });
 
     test('prepend node', async () => {
-      await update((state) => {
+      await update(() => {
         const textNode = $createTextNode('World').toggleUnmergeable();
         $getRoot().getFirstChild().append(textNode);
       });
 
-      await update((state) => {
+      await update(() => {
         const textNode = $createTextNode('Hello ').toggleUnmergeable();
         const previousTextNode = $getRoot().getFirstChild().getFirstChild();
         previousTextNode.insertBefore(textNode);
@@ -223,7 +223,7 @@ describe('OutlineTextNode tests', () => {
     ],
   ])('%s flag', (formatFlag, stateFormat, flagPredicate, flagToggle) => {
     test(`getFormatFlags(${formatFlag})`, async () => {
-      await update((state) => {
+      await update(() => {
         const root = $getRoot();
         const paragraphNode = root.getFirstChild();
         const textNode = paragraphNode.getFirstChild();
@@ -238,7 +238,7 @@ describe('OutlineTextNode tests', () => {
     });
 
     test(`predicate for ${formatFlag}`, async () => {
-      await update((state) => {
+      await update(() => {
         const root = $getRoot();
         const paragraphNode = root.getFirstChild();
         const textNode = paragraphNode.getFirstChild();
@@ -254,7 +254,7 @@ describe('OutlineTextNode tests', () => {
         return;
       }
 
-      await update((state) => {
+      await update(() => {
         const root = $getRoot();
         const paragraphNode = root.getFirstChild();
         const textNode = paragraphNode.getFirstChild();
@@ -269,7 +269,7 @@ describe('OutlineTextNode tests', () => {
   });
 
   test('selectPrevious()', async () => {
-    await update((state) => {
+    await update(() => {
       const paragraphNode = $createParagraphNode();
       const textNode = $createTextNode('Hello World');
       const textNode2 = $createTextNode('Goodbye Earth');
@@ -291,7 +291,7 @@ describe('OutlineTextNode tests', () => {
   });
 
   test('selectNext()', async () => {
-    await update((state) => {
+    await update(() => {
       const paragraphNode = $createParagraphNode();
       const textNode = $createTextNode('Hello World');
       const textNode2 = $createTextNode('Goodbye Earth');
@@ -340,7 +340,7 @@ describe('OutlineTextNode tests', () => {
         [anchorOffset, focusOffset],
         [expectedAnchorOffset, expectedFocusOffset],
       ) => {
-        await update((state) => {
+        await update(() => {
           const paragraphNode = $createParagraphNode();
           const textNode = $createTextNode('Hello World');
           paragraphNode.append(textNode);
@@ -359,7 +359,7 @@ describe('OutlineTextNode tests', () => {
 
   describe('splitText()', () => {
     test('convert segmented node into plain text', async () => {
-      await update((state) => {
+      await update(() => {
         const segmentedNode = $createTestSegmentedNode('Hello World');
         const paragraphNode = $createParagraphNode();
         paragraphNode.append(segmentedNode);
@@ -388,7 +388,7 @@ describe('OutlineTextNode tests', () => {
     ])(
       '"%s" splitText(...%p)',
       async (initialString, splitOffsets, splitStrings) => {
-        await update((state) => {
+        await update(() => {
           const paragraphNode = $createParagraphNode();
           const textNode = $createTextNode(initialString);
           paragraphNode.append(textNode);
@@ -404,7 +404,7 @@ describe('OutlineTextNode tests', () => {
     );
 
     test('splitText moves composition key to last node', async () => {
-      await update((state) => {
+      await update(() => {
         const paragraphNode = $createParagraphNode();
         const textNode = $createTextNode('12345');
         paragraphNode.append(textNode);
@@ -512,7 +512,7 @@ describe('OutlineTextNode tests', () => {
         selectionOffsets,
         {anchorNodeIndex, anchorOffset, focusNodeIndex, focusOffset},
       ) => {
-        await update((state) => {
+        await update(() => {
           const paragraphNode = $createParagraphNode();
           const textNode = $createTextNode(initialString);
           paragraphNode.append(textNode);

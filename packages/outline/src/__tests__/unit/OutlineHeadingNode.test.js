@@ -78,7 +78,7 @@ describe('OutlineHeadingNode tests', () => {
       expect(testEnv.outerHTML).toBe(
         '<div contenteditable="true" data-outline-editor="true"><h1><br></h1></div>',
       );
-      await editor.update((state) => {
+      await editor.update(() => {
         const result = headingNode.insertNewAfter();
         expect(result).toBeInstanceOf(ParagraphNode);
         expect(result.getDirection()).toEqual(headingNode.getDirection());
@@ -129,7 +129,7 @@ describe('OutlineHeadingNode tests', () => {
       expect(testEnv.outerHTML).toBe(
         `<div contenteditable=\"true\" data-outline-editor=\"true\"><h2 dir=\"ltr\"><span data-outline-text=\"true\">${text}</span></h2></div>`,
       );
-      await editor.update((state) => {
+      await editor.update(() => {
         const result = headingNode.insertNewAfter();
         expect(result).toBeInstanceOf(ParagraphNode);
         expect(result.getDirection()).toEqual(headingNode.getDirection());

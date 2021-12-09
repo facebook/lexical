@@ -301,7 +301,7 @@ export function onKeyDown(event: KeyboardEvent, editor: OutlineEditor): void {
   if (editor.isComposing()) {
     return;
   }
-  editor.update((state) => {
+  editor.update(() => {
     log('onKeyDown');
 
     const selection = $getSelection();
@@ -376,7 +376,7 @@ export function onPasteForPlainText(
   editor: OutlineEditor,
 ): void {
   event.preventDefault();
-  editor.update((state) => {
+  editor.update(() => {
     log('onPasteForPlainText');
     const selection = $getSelection();
     const clipboardData = event.clipboardData;
@@ -391,7 +391,7 @@ export function onPasteForRichText(
   editor: OutlineEditor,
 ): void {
   event.preventDefault();
-  editor.update((state) => {
+  editor.update(() => {
     log('onPasteForRichText');
     const selection = $getSelection();
     const clipboardData = event.clipboardData;
@@ -423,7 +423,7 @@ export function onCutForPlainText(
   editor: OutlineEditor,
 ): void {
   onCopyForPlainText(event, editor);
-  editor.update((state) => {
+  editor.update(() => {
     log('onCutForPlainText');
     const selection = $getSelection();
     if (selection !== null) {
@@ -437,7 +437,7 @@ export function onCutForRichText(
   editor: OutlineEditor,
 ): void {
   onCopyForRichText(event, editor);
-  editor.update((state) => {
+  editor.update(() => {
     log('onCutForRichText');
     const selection = $getSelection();
     if (selection !== null) {
@@ -451,7 +451,7 @@ export function onCopyForPlainText(
   editor: OutlineEditor,
 ): void {
   event.preventDefault();
-  editor.update((state) => {
+  editor.update(() => {
     log('onCopyForPlainText');
     const clipboardData = event.clipboardData;
     const selection = $getSelection();
@@ -480,7 +480,7 @@ export function onCopyForRichText(
   editor: OutlineEditor,
 ): void {
   event.preventDefault();
-  editor.update((state) => {
+  editor.update(() => {
     log('onCopyForRichText');
     const clipboardData = event.clipboardData;
     const selection = $getSelection();
@@ -512,7 +512,7 @@ export function onCompositionStart(
   event: CompositionEvent,
   editor: OutlineEditor,
 ): void {
-  editor.update((state) => {
+  editor.update(() => {
     log('onCompositionStart');
     const selection = $getSelection();
     if (selection !== null && !editor.isComposing()) {

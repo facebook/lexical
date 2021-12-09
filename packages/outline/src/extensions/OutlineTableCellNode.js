@@ -61,6 +61,6 @@ export function $createTableCellNode(isHeader: boolean): TableCellNode {
   return new TableCellNode(isHeader);
 }
 
-export function $isTableCellNode(node: OutlineNode): boolean %checks {
+export function $isTableCellNode(node: ?OutlineNode): boolean %checks {
   return node instanceof TableCellNode;
 }

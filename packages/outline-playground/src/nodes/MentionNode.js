@@ -43,6 +43,6 @@ export function $createMentionNode(mentionName: string): MentionNode {
   return mentionNode;
 }
 
-export function $isMentionNode(node: null | OutlineNode): boolean %checks {
+export function $isMentionNode(node: ?OutlineNode): boolean %checks {
   return node instanceof MentionNode;
 }

@@ -14,10 +14,10 @@ import {
   $createTestElementNode,
 } from '../../../__tests__/utils';
 import {
-  dfs,
-  getTopListNode,
-  isLastItemInList,
-  areSiblingsNullOrSpace,
+  $dfs,
+  $getTopListNode,
+  $isLastItemInList,
+  $areSiblingsNullOrSpace,
 } from 'outline/nodes';
 import {$createParagraphNode, $isParagraphNode} from 'outline/ParagraphNode';
 import {$createTextNode, $getRoot} from 'outline';
@@ -79,7 +79,7 @@ describe('OutlineNodeHelpers tests', () => {
       const dfsKeys = [];
       await editor.update((state: State) => {
         const root = $getRoot();
-        dfs(root, (node: OutlineNode) => {
+        $dfs(root, (node: OutlineNode) => {
           dfsKeys.push(node.getKey());
           return node;
         });
@@ -105,7 +105,7 @@ describe('OutlineNodeHelpers tests', () => {
       const dfsKeys = [];
       await editor.update((state: State) => {
         const root = $getRoot();
-        dfs(root, (node: OutlineNode) => {
+        $dfs(root, (node: OutlineNode) => {
           dfsKeys.push(node.getKey());
           if ($isParagraphNode(node)) {
             return (
@@ -138,7 +138,7 @@ describe('OutlineNodeHelpers tests', () => {
         topListNode.append(listItem2);
         topListNode.append(secondLevelListNode);
         secondLevelListNode.append(listItem3);
-        const result = getTopListNode(listItem3);
+        const result = $getTopListNode(listItem3);
         expect(result.getKey()).toEqual(topListNode.getKey());
       });
     });
@@ -166,7 +166,7 @@ describe('OutlineNodeHelpers tests', () => {
         topListNode.append(listItem2);
         topListNode.append(secondLevelListNode);
         secondLevelListNode.append(listItem3);
-        const result = getTopListNode(listItem3);
+        const result = $getTopListNode(listItem3);
         expect(result.getKey()).toEqual(topListNode.getKey());
       });
     });
@@ -200,7 +200,7 @@ describe('OutlineNodeHelpers tests', () => {
         listItem2.append(thirdLevelListNode);
         thirdLevelListNode.append(listItem3);
         topListNode.append(listItem4);
-        const result = getTopListNode(listItem4);
+        const result = $getTopListNode(listItem4);
         expect(result.getKey()).toEqual(topListNode.getKey());
       });
     });
@@ -228,7 +228,7 @@ describe('OutlineNodeHelpers tests', () => {
         secondLevelListNode.append(listItem2);
         listItem2.append(thirdLevelListNode);
         thirdLevelListNode.append(listItem3);
-        const result = isLastItemInList(listItem3);
+        const result = $isLastItemInList(listItem3);
         expect(result).toEqual(true);
       });
     });
@@ -247,7 +247,7 @@ describe('OutlineNodeHelpers tests', () => {
         root.append(topListNode);
         topListNode.append(listItem1);
         topListNode.append(listItem2);
-        const result = isLastItemInList(listItem2);
+        const result = $isLastItemInList(listItem2);
         expect(result).toEqual(true);
       });
     });
@@ -275,7 +275,7 @@ describe('OutlineNodeHelpers tests', () => {
         secondLevelListNode.append(listItem2);
         listItem2.append(thirdLevelListNode);
         thirdLevelListNode.append(listItem3);
-        const result = isLastItemInList(listItem2);
+        const result = $isLastItemInList(listItem2);
         expect(result).toEqual(false);
       });
     });
@@ -294,7 +294,7 @@ describe('OutlineNodeHelpers tests', () => {
         root.append(topListNode);
         topListNode.append(listItem1);
         topListNode.append(listItem2);
-        const result = isLastItemInList(listItem1);
+        const result = $isLastItemInList(listItem1);
         expect(result).toEqual(false);
       });
     });
@@ -337,7 +337,7 @@ describe('OutlineNodeHelpers tests', () => {
           } else if (right !== null) {
             paragraph.append($createTextNode(right));
           }
-          expect([left, right, areSiblingsNullOrSpace(middle)]).toEqual([
+          expect([left, right, $areSiblingsNullOrSpace(middle)]).toEqual([
             left,
             right,
             expected,

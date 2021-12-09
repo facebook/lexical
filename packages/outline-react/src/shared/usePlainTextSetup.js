@@ -30,7 +30,7 @@ import {
   onPasteForPlainText,
   onDropPolyfill,
   onDragStartPolyfill,
-  onTextMutation,
+  $onTextMutation,
   onInput,
   onClick,
 } from 'outline/events';
@@ -111,7 +111,7 @@ export default function usePlainTextSetup(
   useLayoutEffect(() => {
     const teardown = [
       editor.registerNodes([ParagraphNode]),
-      editor.addListener('textmutation', onTextMutation),
+      editor.addListener('textmutation', $onTextMutation),
       editor.addListener(
         'command',
         (type, payload): boolean => {

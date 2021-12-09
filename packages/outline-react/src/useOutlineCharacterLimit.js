@@ -24,7 +24,7 @@ import {
   $getRoot,
   $setSelection,
 } from 'outline';
-import {dfs} from 'outline/nodes';
+import {$dfs} from 'outline/nodes';
 import {$textContentCurry} from 'outline/root';
 import {useEffect} from 'react';
 
@@ -131,7 +131,7 @@ function $wrapOverflowedNodes(offset: number) {
   let accumulatedLength = 0;
 
   let previousNode = root;
-  dfs(root, (node: OutlineNode) => {
+  $dfs(root, (node: OutlineNode) => {
     if (isOverflowNode(node)) {
       const previousLength = accumulatedLength;
       const nextLength = accumulatedLength + node.getTextContentSize();

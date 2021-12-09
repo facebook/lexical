@@ -38,7 +38,11 @@ import {
   isRedo,
 } from 'outline/keys';
 import isTokenOrInert from 'shared/isTokenOrInert';
-import {cloneContents, insertRichText, moveCharacter} from 'outline/selection';
+import {
+  $cloneContents,
+  $insertRichText,
+  $moveCharacter,
+} from 'outline/selection';
 import {
   $createTextNode,
   createNodeFromParse,
@@ -128,7 +132,7 @@ function updateAndroidSoftKeyFlagIfAny(event: KeyboardEvent): void {
     event.key === 'Unidentified' && event.keyCode === 229;
 }
 
-function generateNodes(nodeRange: {
+function $generateNodes(nodeRange: {
   range: Array<NodeKey>,
   nodeMap: ParsedNodeMap,
 }): Array<OutlineNode> {
@@ -146,7 +150,7 @@ function generateNodes(nodeRange: {
   return nodes;
 }
 
-export function createNodesFromDOM(
+export function $createNodesFromDOM(
   node: Node,
   conversionMap: DOMTransformerMap,
   editor: OutlineEditor,
@@ -184,7 +188,7 @@ export function createNodesFromDOM(
   // to do with it but we still need to process any childNodes.
   const children = node.childNodes;
   for (let i = 0; i < children.length; i++) {
-    const childOutlineNodes = createNodesFromDOM(
+    const childOutlineNodes = $createNodesFromDOM(
       children[i],
       conversionMap,
       editor,
@@ -203,7 +207,7 @@ export function createNodesFromDOM(
   return outlineNodes;
 }
 
-function generateNodesFromDOM(
+function $generateNodesFromDOM(
   dom: Document,
   conversionMap: DOMTransformerMap,
   editor: OutlineEditor,
@@ -212,7 +216,7 @@ function generateNodesFromDOM(
   const elements: Array<Node> = dom.body ? Array.from(dom.body.childNodes) : [];
   const elementsLength = elements.length;
   for (let i = 0; i < elementsLength; i++) {
-    const outlineNode = createNodesFromDOM(elements[i], conversionMap, editor);
+    const outlineNode = $createNodesFromDOM(elements[i], conversionMap, editor);
     if (outlineNode !== null) {
       outlineNodes = outlineNodes.concat(outlineNode);
     }
@@ -220,7 +224,7 @@ function generateNodesFromDOM(
   return outlineNodes;
 }
 
-function insertDataTransferForRichText(
+function $insertDataTransferForRichText(
   dataTransfer: DataTransfer,
   selection: Selection,
   editor: OutlineEditor,
@@ -232,7 +236,7 @@ function insertDataTransferForRichText(
   if (outlineNodesString) {
     try {
       const nodeRange = JSON.parse(outlineNodesString);
-      const nodes = generateNodes(nodeRange);
+      const nodes = $generateNodes(nodeRange);
       selection.insertNodes(nodes);
       return;
     } catch (e) {
@@ -246,7 +250,7 @@ function insertDataTransferForRichText(
   if (htmlString) {
     const parser = new DOMParser();
     const dom = parser.parseFromString(htmlString, textHtmlMimeType);
-    const nodes = generateNodesFromDOM(
+    const nodes = $generateNodesFromDOM(
       dom,
       DOM_NODE_NAME_TO_OUTLINE_NODE,
       editor,
@@ -272,20 +276,20 @@ function insertDataTransferForRichText(
     selection.insertNodes(topLevelBlocks);
     return;
   }
-  insertDataTransferForPlainText(dataTransfer, selection);
+  $insertDataTransferForPlainText(dataTransfer, selection);
 }
 
-function insertDataTransferForPlainText(
+function $insertDataTransferForPlainText(
   dataTransfer: DataTransfer,
   selection: Selection,
 ): void {
   const text = dataTransfer.getData('text/plain');
   if (text != null) {
-    insertRichText(selection, text);
+    $insertRichText(selection, text);
   }
 }
 
-function shouldOverrideDefaultCharacterSelection(
+function $shouldOverrideDefaultCharacterSelection(
   selection: Selection,
   isBackward: boolean,
 ): boolean {
@@ -310,14 +314,14 @@ export function onKeyDown(event: KeyboardEvent, editor: OutlineEditor): void {
     }
     const isHoldingShift = event.shiftKey;
     if (isMoveBackward(event)) {
-      if (shouldOverrideDefaultCharacterSelection(selection, true)) {
+      if ($shouldOverrideDefaultCharacterSelection(selection, true)) {
         event.preventDefault();
-        moveCharacter(selection, isHoldingShift, true);
+        $moveCharacter(selection, isHoldingShift, true);
       }
     } else if (isMoveForward(event)) {
-      if (shouldOverrideDefaultCharacterSelection(selection, false)) {
+      if ($shouldOverrideDefaultCharacterSelection(selection, false)) {
         event.preventDefault();
-        moveCharacter(selection, isHoldingShift, false);
+        $moveCharacter(selection, isHoldingShift, false);
       }
     } else if (isLineBreak(event)) {
       event.preventDefault();
@@ -381,7 +385,7 @@ export function onPasteForPlainText(
     const selection = $getSelection();
     const clipboardData = event.clipboardData;
     if (clipboardData != null && selection !== null) {
-      insertDataTransferForPlainText(clipboardData, selection);
+      $insertDataTransferForPlainText(clipboardData, selection);
     }
   });
 }
@@ -396,7 +400,7 @@ export function onPasteForRichText(
     const selection = $getSelection();
     const clipboardData = event.clipboardData;
     if (clipboardData != null && selection !== null) {
-      insertDataTransferForRichText(clipboardData, selection, editor);
+      $insertDataTransferForRichText(clipboardData, selection, editor);
     }
   });
 }
@@ -501,7 +505,7 @@ export function onCopyForRichText(
         clipboardData.setData('text/plain', selection.getTextContent());
         clipboardData.setData(
           'application/x-outline-nodes',
-          JSON.stringify(cloneContents(selection)),
+          JSON.stringify($cloneContents(selection)),
         );
       }
     }
@@ -542,7 +546,7 @@ function onCompositionEndInternal(
   editor.update(() => {
     log('onCompositionEnd');
     $setCompositionKey(null);
-    updateSelectedTextFromDOM(editor, true);
+    $updateSelectedTextFromDOM(editor, true);
   });
 }
 
@@ -639,7 +643,7 @@ export function checkForBadInsertion(
   );
 }
 
-function shouldInsertTextAfterOrBeforeTextNode(
+function $shouldInsertTextAfterOrBeforeTextNode(
   selection: Selection,
   node: TextNode,
 ): boolean {
@@ -661,7 +665,7 @@ function shouldInsertTextAfterOrBeforeTextNode(
   return shouldInsertTextBefore || shouldInsertTextAfter;
 }
 
-function updateTextNodeFromDOMContent(
+function $updateTextNodeFromDOMContent(
   textNode: TextNode,
   textContent: string,
   anchorOffset: null | number,
@@ -714,7 +718,7 @@ function updateTextNodeFromDOMContent(
   }
 }
 
-function applyTargetRange(selection: Selection, event: InputEvent): void {
+function $applyTargetRange(selection: Selection, event: InputEvent): void {
   if (event.getTargetRanges) {
     const targetRange = event.getTargetRanges()[0];
 
@@ -724,7 +728,7 @@ function applyTargetRange(selection: Selection, event: InputEvent): void {
   }
 }
 
-function canRemoveText(
+function $canRemoveText(
   anchorNode: TextNode | ElementNode,
   focusNode: TextNode | ElementNode,
 ): boolean {
@@ -737,7 +741,7 @@ function canRemoveText(
   );
 }
 
-function shouldPreventDefaultAndInsertText(
+function $shouldPreventDefaultAndInsertText(
   selection: Selection,
   text: string,
   isBeforeInput: boolean,
@@ -759,7 +763,7 @@ function shouldPreventDefaultAndInsertText(
     // Check if we're changing from bold to italics, or some other format.
     anchorNode.getFormat() !== selection.format ||
     // One last set of heuristics to check against.
-    shouldInsertTextAfterOrBeforeTextNode(selection, anchorNode)
+    $shouldInsertTextAfterOrBeforeTextNode(selection, anchorNode)
   );
 }
 
@@ -792,7 +796,7 @@ export function onBeforeInput(event: InputEvent, editor: OutlineEditor): void {
     const data = event.data;
 
     if (!selection.dirty && selection.isCollapsed()) {
-      applyTargetRange(selection, event);
+      $applyTargetRange(selection, event);
     }
     const anchor = selection.anchor;
     const focus = selection.focus;
@@ -810,10 +814,10 @@ export function onBeforeInput(event: InputEvent, editor: OutlineEditor): void {
         // Gets around a Safari text replacement bug.
         const text = event.dataTransfer.getData('text/plain');
         event.preventDefault();
-        insertRichText(selection, text);
+        $insertRichText(selection, text);
       } else if (
         data != null &&
-        shouldPreventDefaultAndInsertText(selection, data, true)
+        $shouldPreventDefaultAndInsertText(selection, data, true)
       ) {
         event.preventDefault();
         editor.execCommand('insertText', data);
@@ -853,7 +857,7 @@ export function onBeforeInput(event: InputEvent, editor: OutlineEditor): void {
       case 'insertFromPaste': {
         const dataTransfer = event.dataTransfer;
         if (dataTransfer != null) {
-          insertDataTransferForRichText(dataTransfer, selection, editor);
+          $insertDataTransferForRichText(dataTransfer, selection, editor);
         } else {
           if (data) {
             editor.execCommand('insertText', data);
@@ -862,7 +866,7 @@ export function onBeforeInput(event: InputEvent, editor: OutlineEditor): void {
         break;
       }
       case 'deleteByComposition': {
-        if (canRemoveText(anchorNode, focusNode)) {
+        if ($canRemoveText(anchorNode, focusNode)) {
           editor.execCommand('removeText');
         }
         break;
@@ -925,7 +929,7 @@ export function onBeforeInput(event: InputEvent, editor: OutlineEditor): void {
   });
 }
 
-function updateSelectedTextFromDOM(
+function $updateSelectedTextFromDOM(
   editor: OutlineEditor,
   compositionEnd: boolean,
 ) {
@@ -938,7 +942,7 @@ function updateSelectedTextFromDOM(
   if (anchorNode !== null && anchorNode.nodeType === 3) {
     const node = $getNearestNodeFromDOMNode(anchorNode);
     if ($isTextNode(node)) {
-      updateTextNodeFromDOMContent(
+      $updateTextNodeFromDOMContent(
         node,
         anchorNode.nodeValue,
         anchorOffset,
@@ -959,11 +963,11 @@ export function onInput(event: InputEvent, editor: OutlineEditor): void {
     if (
       data != null &&
       selection !== null &&
-      shouldPreventDefaultAndInsertText(selection, data, false)
+      $shouldPreventDefaultAndInsertText(selection, data, false)
     ) {
       editor.execCommand('insertText', data);
     } else {
-      updateSelectedTextFromDOM(editor, false);
+      $updateSelectedTextFromDOM(editor, false);
     }
     // Also flush any other mutations that might have occured
     // since the change.
@@ -971,12 +975,12 @@ export function onInput(event: InputEvent, editor: OutlineEditor): void {
   });
 }
 
-export function onTextMutation(mutation: TextMutation): void {
+export function $onTextMutation(mutation: TextMutation): void {
   // We attempt to merge any text mutations that have occured outside of Outline
   // back into Outline's editor state.
   const node = mutation.node;
   const anchorOffset = mutation.anchorOffset;
   const focusOffset = mutation.focusOffset;
   const text = mutation.text;
-  updateTextNodeFromDOMContent(node, text, anchorOffset, focusOffset, false);
+  $updateTextNodeFromDOMContent(node, text, anchorOffset, focusOffset, false);
 }

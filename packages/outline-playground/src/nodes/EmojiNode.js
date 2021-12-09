@@ -34,7 +34,7 @@ export class EmojiNode extends TextNode {
   }
 }
 
-export function $isEmojiNode(node: OutlineNode): boolean %checks {
+export function $isEmojiNode(node: ?OutlineNode): boolean %checks {
   return node instanceof EmojiNode;
 }
 

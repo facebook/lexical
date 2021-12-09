@@ -174,12 +174,16 @@ export default function TreeView({
 
 function printSelection(selection: Selection): string {
   let res = '';
+
+  const formatText = printFormatProperties(selection);
+  res += `${formatText !== '' ? ' - ' + formatText : ''}`;
+
   const anchor = selection.anchor;
   const focus = selection.focus;
   const anchorOffset = anchor.offset;
   const focusOffset = focus.offset;
 
-  res = `\n  ├ anchor { key: ${anchor.key}, offset: ${
+  res += `\n  ├ anchor { key: ${anchor.key}, offset: ${
     anchorOffset === null ? 'null' : anchorOffset
   }, type: ${anchor.type} }`;
   res += `\n  └ focus { key: ${focus.key}, offset: ${
@@ -259,31 +263,41 @@ function printNode(node) {
   if (isTextNode(node)) {
     const text = node.getTextContent(true);
     const title = text.length === 0 ? '(empty)' : `"${normalize(text)}"`;
-    const flagLabels = printTextNodeFlags(node);
-    return [title, flagLabels.length !== 0 ? `flags: ${flagLabels}` : null]
+    const properties = printAllProperties(node);
+    return [title, properties.length !== 0 ? `- ${properties}` : null]
       .filter(Boolean)
-      .join(', ')
+      .join(' ')
       .trim();
   }
 
   return '';
 }
 
-const LABEL_PREDICATES = [
+const FORMAT_PREDICATES = [
   (node) => node.hasFormat('bold') && 'Bold',
   (node) => node.hasFormat('code') && 'Code',
-  (node) => node.isToken() && 'Token',
   (node) => node.hasFormat('italic') && 'Italic',
-  (node) => node.isSegmented() && 'Segmented',
   (node) => node.hasFormat('strikethrough') && 'Strikethrough',
   (node) => node.hasFormat('underline') && 'Underline',
+];
+
+const TEXT_PREDICATES = [
+  (node) => node.isToken() && 'Token',
+  (node) => node.isSegmented() && 'Segmented',
   (node) => node.isInert() && 'Inert',
   (node) => node.isDirectionless() && 'Directionless',
   (node) => node.isUnmergeable() && 'Unmergeable',
 ];
 
-function printTextNodeFlags(node) {
-  return LABEL_PREDICATES.map((predicate) => predicate(node))
+function printAllProperties(node) {
+  return [...FORMAT_PREDICATES, ...TEXT_PREDICATES]
+    .map((predicate) => predicate(node))
+    .filter(Boolean)
+    .join(', ');
+}
+
+function printFormatProperties(nodeOrSelection) {
+  return FORMAT_PREDICATES.map((predicate) => predicate(nodeOrSelection))
     .filter(Boolean)
     .join(', ');
 }

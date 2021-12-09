@@ -186,6 +186,7 @@ export function useOutlineHistory(
         }
         if (current !== null) {
           undoStack.push(current);
+          editor.execCommand('canUndo', true);
         }
       } else if (mergeAction === DISCARD) {
         return;
@@ -203,14 +204,17 @@ export function useOutlineHistory(
       const undoStackLength = undoStack.length;
       if (undoStackLength !== 0) {
         const current = historyState.current;
-
-        if (current !== null) {
-          redoStack.push(current);
-        }
         const historyStateEntry = undoStack.pop();
         historyState.current = historyStateEntry;
         editor._updateTags.add('undo');
         historyStateEntry.editor.setEditorState(historyStateEntry.editorState);
+        if (current !== null) {
+          redoStack.push(current);
+          editor.execCommand('canRedo', true);
+        }
+        if (undoStack.length === 0) {
+          editor.execCommand('canUndo', false);
+        }
       }
     };
 
@@ -219,14 +223,17 @@ export function useOutlineHistory(
       const undoStack = historyState.undoStack;
       if (redoStack.length !== 0) {
         const current = historyState.current;
-
-        if (current !== null) {
-          undoStack.push(current);
-        }
         const historyStateEntry = redoStack.pop();
         historyState.current = historyStateEntry;
         editor._updateTags.add('redo');
         historyStateEntry.editor.setEditorState(historyStateEntry.editorState);
+        if (current !== null) {
+          undoStack.push(current);
+          editor.execCommand('canUndo', true);
+        }
+        if (redoStack.length === 0) {
+          editor.execCommand('canRedo', false);
+        }
       }
     };
 

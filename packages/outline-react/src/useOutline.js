@@ -24,6 +24,7 @@ export default function useOutline<EditorContext>(editorConfig?: {
   theme?: EditorThemeClasses,
   context?: EditorContext,
   htmlTransforms?: DOMTransformerMap,
+  parentEditor?: OutlineEditor,
 }): [OutlineEditor, (null | HTMLElement) => void, boolean] {
   const onError =
     (editorConfig !== undefined && editorConfig.onError) ||

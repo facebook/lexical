@@ -6,7 +6,7 @@
  *
  */
 
-import {$createTextNode, isTextNode, $getSelection} from 'outline';
+import {$createTextNode, $isTextNode, $getSelection} from 'outline';
 
 Object.defineProperty(HTMLElement.prototype, 'contentEditable', {
   get() {
@@ -76,10 +76,10 @@ if (!Selection.prototype.modify) {
     if (granularity === 'character') {
       let anchorNode = anchor.node;
       let anchorOffset = anchor.offset;
-      let _isTextNode = false;
+      let _$isTextNode = false;
 
       if (anchorNode.nodeType === 3) {
-        _isTextNode = true;
+        _$isTextNode = true;
         anchorNode = anchorNode.parentElement;
       } else if (anchorNode.nodeName === 'BR') {
         const parentNode = anchorNode.parentElement;
@@ -104,7 +104,7 @@ if (!Selection.prototype.modify) {
             anchor.node = prevSibling.firstChild;
             anchor.offset = anchor.node.nodeValue.length - 1;
           }
-        } else if (!_isTextNode) {
+        } else if (!_$isTextNode) {
           anchor.node = anchorNode.childNodes[anchorOffset - 1];
           anchor.offset = anchor.node.nodeValue.length - 1;
         } else {
@@ -112,8 +112,8 @@ if (!Selection.prototype.modify) {
         }
       } else {
         if (
-          (_isTextNode && anchorOffset === anchorNode.textContent.length) ||
-          (!_isTextNode &&
+          (_$isTextNode && anchorOffset === anchorNode.textContent.length) ||
+          (!_$isTextNode &&
             (anchorNode.childNodes.length === anchorOffset ||
               (anchorNode.childNodes.length === 1 &&
                 anchorNode.firstChild.nodeName === 'BR')))
@@ -610,7 +610,7 @@ export async function applySelectionInputs(inputs, update, editor) {
           }
           case 'move_end': {
             const anchorNode = selection.anchor.getNode();
-            if (isTextNode(anchorNode)) {
+            if ($isTextNode(anchorNode)) {
               anchorNode.select();
             }
             break;

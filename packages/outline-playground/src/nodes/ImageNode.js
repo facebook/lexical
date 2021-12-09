@@ -294,7 +294,7 @@ function ImageComponent({
       editor.update(() => {
         log('Image.keyDown');
         const node = $getNodeByKey(nodeKey);
-        if (isImageNode(node)) {
+        if ($isImageNode(node)) {
           node.remove();
           event.stopPropagation();
           event.preventDefault();
@@ -316,7 +316,7 @@ function ImageComponent({
   const setShowCaption = useCallback(() => {
     editor.update(() => {
       const node = $getNodeByKey(nodeKey);
-      if (isImageNode(node)) {
+      if ($isImageNode(node)) {
         node.setCaption(true);
       }
     });
@@ -332,7 +332,7 @@ function ImageComponent({
       editor.update(() => {
         log('ImageNode.resize');
         const node = $getNodeByKey(nodeKey);
-        if (isImageNode(node)) {
+        if ($isImageNode(node)) {
           node.setWidthAndHeight(nextWidth, nextHeight);
         }
       });
@@ -489,6 +489,6 @@ export function $createImageNode(
   return new ImageNode(src, altText, ref);
 }
 
-export function isImageNode(node: ?OutlineNode): boolean %checks {
+export function $isImageNode(node: ?OutlineNode): boolean %checks {
   return node instanceof ImageNode;
 }

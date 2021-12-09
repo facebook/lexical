@@ -12,8 +12,8 @@ import type {OutlineEditor, NodeKey, EditorConfig} from 'outline';
 import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
 
 import {
-  isTextNode,
-  isElementNode,
+  $isTextNode,
+  $isElementNode,
   TextNode,
   log,
   $getNodeByKey,
@@ -37,7 +37,7 @@ function useTypeahead(editor: OutlineEditor): void {
       return null;
     }
     const node = $getNodeByKey(typeaheadNodeKey.current);
-    if (!isTextNode(node)) {
+    if (!$isTextNode(node)) {
       return null;
     }
     return node;
@@ -72,7 +72,7 @@ function useTypeahead(editor: OutlineEditor): void {
                 let anchorNodeOffset = anchor.offset;
                 if (anchorNode.getKey() === currentTypeaheadNode.getKey()) {
                   anchorNode = anchorNode.getPreviousSibling();
-                  if (isTextNode(anchorNode)) {
+                  if ($isTextNode(anchorNode)) {
                     anchorNodeOffset = anchorNode.getTextContent().length;
                   }
                 }
@@ -80,11 +80,11 @@ function useTypeahead(editor: OutlineEditor): void {
                 let focusNodeOffset = focus.offset;
                 if (focusNode.getKey() === currentTypeaheadNode.getKey()) {
                   focusNode = focusNode.getPreviousSibling();
-                  if (isTextNode(focusNode)) {
+                  if ($isTextNode(focusNode)) {
                     focusNodeOffset = focusNode.getTextContent().length;
                   }
                 }
-                if (isTextNode(focusNode) && isTextNode(anchorNode)) {
+                if ($isTextNode(focusNode) && $isTextNode(anchorNode)) {
                   selection.setTextNodeRange(
                     anchorNode,
                     anchorNodeOffset,
@@ -109,9 +109,9 @@ function useTypeahead(editor: OutlineEditor): void {
           }
           // Add
           const lastParagraph = $getRoot().getLastChild();
-          if (isElementNode(lastParagraph)) {
+          if ($isElementNode(lastParagraph)) {
             const lastTextNode = lastParagraph.getLastChild();
-            if (isTextNode(lastTextNode)) {
+            if ($isTextNode(lastTextNode)) {
               const newTypeaheadNode = createTypeaheadNode(suggestion ?? '');
               lastTextNode.insertAfter(newTypeaheadNode);
               typeaheadNodeKey.current = newTypeaheadNode.getKey();
@@ -172,7 +172,7 @@ function useTypeahead(editor: OutlineEditor): void {
             const prevTextNode = typeaheadTextNode?.getPreviousSibling();
             // Make sure that the Typeahead is visible and previous child writable
             // before calling it a successfully handled event.
-            if (typeaheadTextNode !== null && isTextNode(prevTextNode)) {
+            if (typeaheadTextNode !== null && $isTextNode(prevTextNode)) {
               event.preventDefault();
               prevTextNode.setTextContent(
                 prevTextNode.getTextContent() +

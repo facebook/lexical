@@ -9,7 +9,7 @@
 
 import type {ElementNode, EditorState, OutlineEditor, Selection} from 'outline';
 
-import {isElementNode, isTextNode, $getRoot, $getSelection} from 'outline';
+import {$isElementNode, $isTextNode, $getRoot, $getSelection} from 'outline';
 
 import * as React from 'react';
 import {useState, useEffect, useRef} from 'react';
@@ -238,7 +238,7 @@ function visitTree(currentNode: ElementNode, visitor, indent = []) {
       ),
     );
 
-    if (isElementNode(childNode)) {
+    if ($isElementNode(childNode)) {
       visitTree(
         childNode,
         visitor,
@@ -260,7 +260,7 @@ function normalize(text) {
 }
 
 function printNode(node) {
-  if (isTextNode(node)) {
+  if ($isTextNode(node)) {
     const text = node.getTextContent(true);
     const title = text.length === 0 ? '(empty)' : `"${normalize(text)}"`;
     const properties = printAllProperties(node);
@@ -312,10 +312,10 @@ function printSelectedCharsLine({
 }) {
   // No selection or node is not selected.
   if (
-    !isTextNode(node) ||
+    !$isTextNode(node) ||
     selection === null ||
     !isSelected ||
-    isElementNode(node)
+    $isElementNode(node)
   ) {
     return '';
   }

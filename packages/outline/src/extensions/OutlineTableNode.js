@@ -20,7 +20,7 @@ import {addClassNamesToElement} from 'outline/elements';
 import {
   ElementNode,
   $getNearestNodeFromDOMNode,
-  isElementNode,
+  $isElementNode,
   createSelection,
   $getSelection,
   $setSelection,
@@ -225,7 +225,7 @@ function applyCellSelection(
                   }
                   highlightedCells.forEach(({elem}) => {
                     const cellNode = $getNearestNodeFromDOMNode(elem);
-                    if (isElementNode(cellNode)) {
+                    if ($isElementNode(cellNode)) {
                       cellNode.clear();
                     }
                   });
@@ -292,7 +292,7 @@ function applyCellSelection(
     const focus = formatSelection.focus;
     highlightedCells.forEach((highlightedCell) => {
       const cellNode = $getNearestNodeFromDOMNode(highlightedCell.elem);
-      if (isElementNode(cellNode)) {
+      if ($isElementNode(cellNode)) {
         anchor.set(cellNode.getKey(), 0, 'element');
         focus.set(cellNode.getKey(), cellNode.getChildrenSize(), 'element');
         formatSelection.formatText(type);
@@ -390,6 +390,6 @@ export function $createTableNode(): TableNode {
   return new TableNode();
 }
 
-export function isTableNode(node: OutlineNode): boolean %checks {
+export function $isTableNode(node: OutlineNode): boolean %checks {
   return node instanceof TableNode;
 }

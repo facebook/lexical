@@ -41,6 +41,6 @@ export function $createLineBreakNode(): LineBreakNode {
   return new LineBreakNode();
 }
 
-export function isLineBreakNode(node: ?OutlineNode): boolean %checks {
+export function $isLineBreakNode(node: ?OutlineNode): boolean %checks {
   return node instanceof LineBreakNode;
 }

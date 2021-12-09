@@ -42,8 +42,8 @@ import {cloneContents, insertRichText, moveCharacter} from 'outline/selection';
 import {
   $createTextNode,
   createNodeFromParse,
-  isTextNode,
-  isElementNode,
+  $isTextNode,
+  $isElementNode,
   isDecoratorNode,
   log,
   $getSelection,
@@ -173,7 +173,7 @@ export function createNodesFromDOM(
 
     if (currentOutlineNode !== null) {
       // If the transformed node is a a TextNode, apply text formatting
-      if (isTextNode(currentOutlineNode) && currentTextFormat !== undefined) {
+      if ($isTextNode(currentOutlineNode) && currentTextFormat !== undefined) {
         currentOutlineNode.setFormat(currentTextFormat);
       }
       outlineNodes.push(currentOutlineNode);
@@ -190,7 +190,7 @@ export function createNodesFromDOM(
       editor,
       currentTextFormat,
     );
-    if (isElementNode(currentOutlineNode)) {
+    if ($isElementNode(currentOutlineNode)) {
       // If the current node is a ElementNode after transformation,
       // we can append all the children to it.
       currentOutlineNode.append(...childOutlineNodes);
@@ -256,7 +256,7 @@ function insertDataTransferForRichText(
     let currentBlock = null;
     for (let i = 0; i < nodes.length; i++) {
       const node = nodes[i];
-      if (!isElementNode(node) || node.isInline()) {
+      if (!$isElementNode(node) || node.isInline()) {
         if (currentBlock === null) {
           currentBlock = $createParagraphNode();
           topLevelBlocks.push(currentBlock);
@@ -730,8 +730,8 @@ function canRemoveText(
 ): boolean {
   return (
     anchorNode !== focusNode ||
-    isElementNode(anchorNode) ||
-    isElementNode(focusNode) ||
+    $isElementNode(anchorNode) ||
+    $isElementNode(focusNode) ||
     !isTokenOrInert(anchorNode) ||
     !isTokenOrInert(focusNode)
   );
@@ -755,7 +755,7 @@ function shouldPreventDefaultAndInsertText(
     // been changed (thus is dirty).
     ((isBeforeInput || anchorNode.isDirty()) && text.length > 1) ||
     // If we're working with a non-text node.
-    !isTextNode(anchorNode) ||
+    !$isTextNode(anchorNode) ||
     // Check if we're changing from bold to italics, or some other format.
     anchorNode.getFormat() !== selection.format ||
     // One last set of heuristics to check against.
@@ -937,7 +937,7 @@ function updateSelectedTextFromDOM(
   const {anchorNode, anchorOffset, focusOffset} = domSelection;
   if (anchorNode !== null && anchorNode.nodeType === 3) {
     const node = $getNearestNodeFromDOMNode(anchorNode);
-    if (isTextNode(node)) {
+    if ($isTextNode(node)) {
       updateTextNodeFromDOMContent(
         node,
         anchorNode.nodeValue,

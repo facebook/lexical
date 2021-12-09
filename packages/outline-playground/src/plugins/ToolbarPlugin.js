@@ -19,8 +19,8 @@ import * as React from 'react';
 import {useCallback, useEffect, useRef, useState} from 'react';
 
 import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
-import {isHeadingNode} from 'outline/HeadingNode';
-import {isListNode} from 'outline/ListNode';
+import {$isHeadingNode} from 'outline/HeadingNode';
+import {$isListNode} from 'outline/ListNode';
 import {$createParagraphNode} from 'outline/ParagraphNode';
 import {$createHeadingNode} from 'outline/HeadingNode';
 import {$createListNode} from 'outline/ListNode';
@@ -29,7 +29,7 @@ import {$createQuoteNode} from 'outline/QuoteNode';
 import {$createCodeNode} from 'outline/CodeNode';
 import {log, $getSelection, $setSelection, createEditorStateRef} from 'outline';
 import {$createImageNode} from '../nodes/ImageNode';
-import {$createLinkNode, isLinkNode} from 'outline/LinkNode';
+import {$createLinkNode, $isLinkNode} from 'outline/LinkNode';
 import {
   wrapLeafNodesInElements,
   patchStyleText,
@@ -119,9 +119,9 @@ function FloatingLinkEditor({editor}: {editor: OutlineEditor}): React$Node {
     if (selection !== null) {
       const node = getSelectedNode(selection);
       const parent = node.getParent();
-      if (isLinkNode(parent)) {
+      if ($isLinkNode(parent)) {
         setLinkUrl(parent.getURL());
-      } else if (isLinkNode(node)) {
+      } else if ($isLinkNode(node)) {
         setLinkUrl(node.getURL());
       } else {
         setLinkUrl('');
@@ -134,8 +134,8 @@ function FloatingLinkEditor({editor}: {editor: OutlineEditor}): React$Node {
     if (editorElem === null) {
       return;
     }
-    const rootElement = editor.getRootElement();
 
+    const rootElement = editor.getRootElement();
     if (
       selection !== null &&
       !nativeSelection.isCollapsed &&
@@ -459,7 +459,7 @@ function toggleLinksOnSelection(editor: OutlineEditor, url: null | string) {
         nodes.forEach((node) => {
           const parent = node.getParent();
 
-          if (isLinkNode(parent)) {
+          if ($isLinkNode(parent)) {
             const children = parent.getChildren();
             for (let i = 0; i < children.length; i++) {
               parent.insertBefore(children[i]);
@@ -475,12 +475,12 @@ function toggleLinksOnSelection(editor: OutlineEditor, url: null | string) {
           const firstNode = nodes[0];
           // if the first node is a LinkNode or if its
           // parent is a LinkNode, we update the URL.
-          if (isLinkNode(firstNode)) {
+          if ($isLinkNode(firstNode)) {
             firstNode.setURL(url);
             return;
           } else {
             const parent = firstNode.getParent();
-            if (isLinkNode(parent)) {
+            if ($isLinkNode(parent)) {
               // set parent to be the current linkNode
               // so that other nodes in the same parent
               // aren't handled separately below.
@@ -498,7 +498,7 @@ function toggleLinksOnSelection(editor: OutlineEditor, url: null | string) {
           if (!parent.is(prevParent)) {
             prevParent = parent;
             linkNode = $createLinkNode(url);
-            if (isLinkNode(parent)) {
+            if ($isLinkNode(parent)) {
               if (node.getPreviousSibling() === null) {
                 parent.insertBefore(linkNode);
               } else {
@@ -508,7 +508,7 @@ function toggleLinksOnSelection(editor: OutlineEditor, url: null | string) {
               node.insertBefore(linkNode);
             }
           }
-          if (isLinkNode(node)) {
+          if ($isLinkNode(node)) {
             if (linkNode !== null) {
               const children = node.getChildren();
               for (let i = 0; i < children.length; i++) {
@@ -561,7 +561,7 @@ export default function ToolbarPlugin(): React$Node {
         if (elementDOM !== null) {
           setSelectedElementKey(elementKey);
           const type =
-            isHeadingNode(element) || isListNode(element)
+            $isHeadingNode(element) || $isListNode(element)
               ? element.getTag()
               : element.getType();
           setBlockType(type);
@@ -584,7 +584,7 @@ export default function ToolbarPlugin(): React$Node {
       // Update links
       const node = getSelectedNode(selection);
       const parent = node.getParent();
-      if (isLinkNode(parent) || isLinkNode(node)) {
+      if ($isLinkNode(parent) || $isLinkNode(node)) {
         setIsLink(true);
       } else {
         setIsLink(false);

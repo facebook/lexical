@@ -308,6 +308,11 @@ export function markAllNodesAsDirty(editor: OutlineEditor, type: string): void {
       }
     },
     true,
+    editor._pendingEditorState === null
+      ? {
+          tag: 'without-history',
+        }
+      : undefined,
   );
 }
 
@@ -378,7 +383,9 @@ export function doesContainGrapheme(str: string): boolean {
   return /[\uD800-\uDBFF][\uDC00-\uDFFF]/g.test(str);
 }
 
-export function getEditorsToPropagate(editor: OutlineEditor): Array<OutlineEditor> {
+export function getEditorsToPropagate(
+  editor: OutlineEditor,
+): Array<OutlineEditor> {
   const editorsToPropagate = [];
   let currentEditor = editor;
   while (currentEditor !== null) {

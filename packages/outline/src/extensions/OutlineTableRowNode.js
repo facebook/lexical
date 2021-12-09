@@ -50,6 +50,6 @@ export function $createTableRowNode(): TableRowNode {
   return new TableRowNode();
 }
 
-export function $isTableRowNode(node: OutlineNode): boolean %checks {
+export function $isTableRowNode(node: ?OutlineNode): boolean %checks {
   return node instanceof TableRowNode;
 }

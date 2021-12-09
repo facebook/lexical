@@ -390,6 +390,6 @@ export function $createTableNode(): TableNode {
   return new TableNode();
 }
 
-export function $isTableNode(node: OutlineNode): boolean %checks {
+export function $isTableNode(node: ?OutlineNode): boolean %checks {
   return node instanceof TableNode;
 }

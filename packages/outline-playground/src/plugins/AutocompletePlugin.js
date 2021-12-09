@@ -45,9 +45,14 @@ function useTypeahead(editor: OutlineEditor): void {
 
   // Monitor entered text
   useEffect(() => {
-    return editor.addListener('textcontent', (text) => {
+    const removeListener = editor.addListener('textcontent', (text) => {
       setText(text);
     });
+    const unregisterNodes = editor.registerNodes([TypeaheadNode]);
+    return () => {
+      removeListener();
+      unregisterNodes();
+    };
   }, [editor]);
 
   const renderTypeahead = useCallback(() => {
@@ -206,9 +211,8 @@ class TypeaheadNode extends TextNode {
     return new TypeaheadNode(node.__text, node.__key);
   }
 
-  constructor(text: string, key?: NodeKey) {
-    super(text, key);
-    this.__type = 'typeahead';
+  static getType(): 'typeahead' {
+    return 'typeahead';
   }
 
   createDOM<EditorContext>(config: EditorConfig<EditorContext>) {

@@ -30,8 +30,8 @@ import {
 import {CollabTextNode} from './CollabTextNode';
 import {CollabLineBreakNode} from './CollabLineBreakNode';
 import {
-  isElementNode,
-  isTextNode,
+  $isElementNode,
+  $isTextNode,
   $getNodeByKey,
   isDecoratorNode,
 } from 'outline';
@@ -66,12 +66,12 @@ export class CollabElementNode {
       return null;
     }
     const node = nodeMap.get(this._key);
-    return isElementNode(node) ? node : null;
+    return $isElementNode(node) ? node : null;
   }
 
   getNode(): null | ElementNode {
     const node = $getNodeByKey(this._key);
-    return isElementNode(node) ? node : null;
+    return $isElementNode(node) ? node : null;
   }
 
   getSharedType(): XmlText {
@@ -226,7 +226,8 @@ export class CollabElementNode {
         childCollabNode._type === outlineChildNode.__type
       ) {
         const childNeedsUpdating =
-          collabOutlineChildNode === null || isTextNode(collabOutlineChildNode);
+          collabOutlineChildNode === null ||
+          $isTextNode(collabOutlineChildNode);
         // Update
         visitedKeys.add(outlineChildKey);
         if (childNeedsUpdating) {
@@ -327,7 +328,7 @@ export class CollabElementNode {
           const nextChildNode = $getNodeByKeyOrThrow(nextChildKey);
           if (
             childCollabNode instanceof CollabElementNode &&
-            isElementNode(nextChildNode)
+            $isElementNode(nextChildNode)
           ) {
             childCollabNode.syncPropertiesFromOutline(
               binding,
@@ -343,7 +344,7 @@ export class CollabElementNode {
             );
           } else if (
             childCollabNode instanceof CollabTextNode &&
-            isTextNode(nextChildNode)
+            $isTextNode(nextChildNode)
           ) {
             childCollabNode.syncPropertiesAndTextFromOutline(
               binding,

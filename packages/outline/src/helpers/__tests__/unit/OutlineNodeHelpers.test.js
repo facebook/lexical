@@ -19,7 +19,7 @@ import {
   isLastItemInList,
   areSiblingsNullOrSpace,
 } from 'outline/nodes';
-import {$createParagraphNode, isParagraphNode} from 'outline/ParagraphNode';
+import {$createParagraphNode, $isParagraphNode} from 'outline/ParagraphNode';
 import {$createTextNode, $getRoot} from 'outline';
 import {$createListNode} from 'outline/ListNode';
 import {$createListItemNode} from 'outline/ListItemNode';
@@ -107,7 +107,7 @@ describe('OutlineNodeHelpers tests', () => {
         const root = $getRoot();
         dfs(root, (node: OutlineNode) => {
           dfsKeys.push(node.getKey());
-          if (isParagraphNode(node)) {
+          if ($isParagraphNode(node)) {
             return (
               node.getLastChild() && node.getLastChild().getPreviousSibling()
             );

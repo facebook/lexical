@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {NodeKey, EditorConfig} from 'outline';
+import type {NodeKey, EditorConfig, OutlineNode} from 'outline';
 import type {ParagraphNode} from 'outline/ParagraphNode';
 
 import {addClassNamesToElement} from 'outline/elements';
@@ -59,4 +59,8 @@ export class QuoteNode extends ElementNode {
 
 export function $createQuoteNode(): QuoteNode {
   return new QuoteNode();
+}
+
+export function $isQuoteNode(node: ?OutlineNode): boolean %checks {
+  return node instanceof QuoteNode;
 }

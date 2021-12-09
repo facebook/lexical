@@ -78,6 +78,6 @@ export function $createHeadingNode(headingTag: HeadingTagType): HeadingNode {
   return new HeadingNode(headingTag);
 }
 
-export function isHeadingNode(node: ?OutlineNode): boolean %checks {
+export function $isHeadingNode(node: ?OutlineNode): boolean %checks {
   return node instanceof HeadingNode;
 }

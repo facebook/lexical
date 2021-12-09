@@ -16,7 +16,7 @@ import type {
 } from 'outline';
 import type {InputEvents} from 'outline-react/useOutlineEditorEvents';
 
-import {log, $getSelection, $getRoot, isElementNode} from 'outline';
+import {log, $getSelection, $getRoot, $isElementNode} from 'outline';
 import useOutlineEditorEvents from '../useOutlineEditorEvents';
 import {HeadingNode} from 'outline/HeadingNode';
 import {ListNode} from 'outline/ListNode';
@@ -165,7 +165,7 @@ export function useRichTextSetup(
             case 'formatElement': {
               const format: ElementFormatType = payload;
               const node = selection.anchor.getNode();
-              const element = isElementNode(node)
+              const element = $isElementNode(node)
                 ? node
                 : node.getParentOrThrow();
               element.setFormat(format);

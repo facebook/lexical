@@ -9,7 +9,7 @@
 
 import type {TextNode} from './OutlineTextNode';
 
-import {isTextNode} from './OutlineTextNode';
+import {$isTextNode} from './OutlineTextNode';
 import {getActiveEditor} from './OutlineUpdates';
 
 function canSimpleTextNodesBeMerged(node1: TextNode, node2: TextNode): boolean {
@@ -45,7 +45,7 @@ export function normalizeTextNode(textNode: TextNode) {
 
   while (
     (previousNode = node.getPreviousSibling()) !== null &&
-    isTextNode(previousNode) &&
+    $isTextNode(previousNode) &&
     previousNode.isSimpleText() &&
     !previousNode.isUnmergeable()
   ) {
@@ -62,7 +62,7 @@ export function normalizeTextNode(textNode: TextNode) {
   let nextNode;
   while (
     (nextNode = node.getNextSibling()) !== null &&
-    isTextNode(nextNode) &&
+    $isTextNode(nextNode) &&
     nextNode.isSimpleText() &&
     !nextNode.isUnmergeable()
   ) {

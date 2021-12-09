@@ -40,7 +40,7 @@ import {
 } from './OutlineGC';
 import {internalCreateNodeFromParse} from './OutlineParsing';
 import {applySelectionTransforms} from './OutlineSelection';
-import {isTextNode} from '.';
+import {$isTextNode} from '.';
 import {normalizeTextNode} from './OutlineNormalization';
 import invariant from 'shared/invariant';
 
@@ -139,7 +139,7 @@ function normalizeAllDirtyTextNodes(
   for (let i = 0; i < dirtyLeavesLength; i++) {
     const nodeKey = dDirtyLeavesArr[i];
     const node = nodeMap.get(nodeKey);
-    if (isTextNode(node) && node.isSimpleText() && !node.isUnmergeable()) {
+    if ($isTextNode(node) && node.isSimpleText() && !node.isUnmergeable()) {
       normalizeTextNode(node);
     }
   }
@@ -180,7 +180,7 @@ function applyAllTransforms(
       for (let i = 0; i < untransformedDirtyLeavesLength; i++) {
         const nodeKey = untransformedDirtyLeavesArr[i];
         const node = nodeMap.get(nodeKey);
-        if (isTextNode(node) && node.isSimpleText() && !node.isUnmergeable()) {
+        if ($isTextNode(node) && node.isSimpleText() && !node.isUnmergeable()) {
           normalizeTextNode(node);
         }
         if (

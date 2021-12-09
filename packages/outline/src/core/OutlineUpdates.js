@@ -208,8 +208,10 @@ function applyAllTransforms(
       untransformedDirtyElements,
     );
     for (let i = 0; i < untransformedDirtyElementsLength; i++) {
-      const nodeKey = untransformedDirtyElementsArr[i][0];
-      if (nodeKey === 'root') {
+      const currentUntransformedDirtyElement = untransformedDirtyElementsArr[i];
+      const nodeKey = currentUntransformedDirtyElement[0];
+      const intentionallyMarkedAsDirty = currentUntransformedDirtyElement[1];
+      if (nodeKey === 'root' || !intentionallyMarkedAsDirty) {
         continue;
       }
       const nodeIntentionallyMarkedAsDirty =

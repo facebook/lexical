@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {OutlineEditor, State} from 'outline';
+import type {OutlineEditor} from 'outline';
 
 import {useEffect} from 'react';
 import {$createTextNode, isTextNode, TextNode, $getSelection} from 'outline';
@@ -27,7 +27,7 @@ function isCharacterBetweenValid(char: string): boolean {
   return /[\s\d.,\\/!$%^&*;:{}=\-`~()]/.test(char);
 }
 
-function plainTextToKeywordTransform(node: TextNode, state: State): void {
+function plainTextToKeywordTransform(node: TextNode): void {
   // Only allow keywords in paragraphs
   if (!isParagraphNode(node.getParentOrThrow())) {
     return;

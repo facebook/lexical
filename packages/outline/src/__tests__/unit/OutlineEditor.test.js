@@ -924,7 +924,7 @@ describe('OutlineEditor tests', () => {
 
     beforeEach(async () => {
       init();
-      await update((state) => {
+      await update(() => {
         const paragraph = $createParagraphNode();
         originalText = $createTextNode('Hello world');
         originalText.select(6, 11);

@@ -9,7 +9,6 @@
 
 import type {OutlineNode, NodeKey} from './OutlineNode';
 import type {Node as ReactNode} from 'react';
-import type {State} from './OutlineUpdates';
 import type {EditorState} from './OutlineEditorState';
 
 import {
@@ -94,7 +93,7 @@ export type RegisteredNode = {
   klass: Class<OutlineNode>,
   transforms: Set<Transform<OutlineNode>>,
 };
-export type Transform<T> = (node: T, state: State) => void;
+export type Transform<T> = (node: T) => void;
 
 export type ErrorListener = (error: Error, log: Array<string>) => void;
 export type UpdateListener = ({
@@ -278,7 +277,7 @@ class BaseOutlineEditor {
   _compositionKey: null | NodeKey;
   _deferred: Array<() => void>;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
-  _updates: Array<[(state: State) => void, void | EditorUpdateOptions]>;
+  _updates: Array<[() => void, void | EditorUpdateOptions]>;
   _updating: boolean;
   _listeners: Listeners;
   _registeredNodes: RegisteredNodes;
@@ -493,10 +492,7 @@ class BaseOutlineEditor {
   parseEditorState(stringifiedEditorState: string): EditorState {
     return parseEditorState(stringifiedEditorState, getSelf(this));
   }
-  update(
-    updateFn: (state: State) => void,
-    options?: EditorUpdateOptions,
-  ): void {
+  update(updateFn: () => void, options?: EditorUpdateOptions): void {
     updateEditor(getSelf(this), updateFn, false, options);
   }
   focus(callbackFn?: () => void): void {
@@ -540,7 +536,7 @@ declare export class OutlineEditor {
   _pendingEditorState: null | EditorState;
   _compositionKey: null | NodeKey;
   _deferred: Array<() => void>;
-  _updates: Array<[(state: State) => void, void | EditorUpdateOptions]>;
+  _updates: Array<[() => void, void | EditorUpdateOptions]>;
   _updating: boolean;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _listeners: Listeners;
@@ -583,9 +579,6 @@ declare export class OutlineEditor {
   getEditorState(): EditorState;
   setEditorState(editorState: EditorState): void;
   parseEditorState(stringifiedEditorState: string): EditorState;
-  update(
-    updateFn: (state: State) => void,
-    options?: EditorUpdateOptions,
-  ): boolean;
+  update(updateFn: () => void, options?: EditorUpdateOptions): boolean;
   focus(callbackFn?: () => void): void;
 }

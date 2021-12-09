@@ -8,7 +8,7 @@
  */
 
 import type {ListItemNode} from 'outline/ListItemNode';
-import type {State, OutlineNode} from 'outline';
+import type {OutlineNode} from 'outline';
 import type {ListNode} from 'outline/ListNode';
 import type {TableNode} from 'outline/TableNode';
 
@@ -135,7 +135,6 @@ export function $createTableNodeWithDimensions(
 }
 
 export function findMatchingParent(
-  state: State,
   startingNode: OutlineNode,
   findFn: (OutlineNode) => boolean,
 ): OutlineNode | null {

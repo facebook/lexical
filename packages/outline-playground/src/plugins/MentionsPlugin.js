@@ -1014,8 +1014,8 @@ function useMentions(editor: OutlineEditor): React$Node {
 
   useLayoutEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      editor.update((state) => {
-        onKeyDown(event, state);
+      editor.update(() => {
+        onKeyDown(event);
       });
     };
     return editor.addListener(

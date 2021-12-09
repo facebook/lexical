@@ -31,10 +31,10 @@ import {log, $getSelection, $setSelection, createEditorStateRef} from 'outline';
 import {$createImageNode} from '../nodes/ImageNode';
 import {$createLinkNode, $isLinkNode} from 'outline/LinkNode';
 import {
-  wrapLeafNodesInElements,
-  patchStyleText,
+  $wrapLeafNodesInElements,
+  $patchStyleText,
   $getSelectionStyleValueForProperty,
-  isAtNodeEnd,
+  $isAtNodeEnd,
 } from 'outline/selection';
 import {$createTableNodeWithDimensions} from 'outline/nodes';
 // $FlowFixMe
@@ -84,9 +84,9 @@ function getSelectedNode(selection: Selection): TextNode | ElementNode {
   }
   const isBackward = selection.isBackward();
   if (isBackward) {
-    return isAtNodeEnd(focus) ? anchorNode : focusNode;
+    return $isAtNodeEnd(focus) ? anchorNode : focusNode;
   } else {
-    return isAtNodeEnd(anchor) ? focusNode : anchorNode;
+    return $isAtNodeEnd(anchor) ? focusNode : anchorNode;
   }
 }
 
@@ -277,7 +277,7 @@ function BlockOptionsDropdownList({
         const selection = $getSelection();
 
         if (selection !== null) {
-          wrapLeafNodesInElements(selection, () => $createParagraphNode());
+          $wrapLeafNodesInElements(selection, () => $createParagraphNode());
         }
       });
     }
@@ -291,7 +291,7 @@ function BlockOptionsDropdownList({
         const selection = $getSelection();
 
         if (selection !== null) {
-          wrapLeafNodesInElements(selection, () => $createHeadingNode('h1'));
+          $wrapLeafNodesInElements(selection, () => $createHeadingNode('h1'));
         }
       });
     }
@@ -305,7 +305,7 @@ function BlockOptionsDropdownList({
         const selection = $getSelection();
 
         if (selection !== null) {
-          wrapLeafNodesInElements(selection, () => $createHeadingNode('h2'));
+          $wrapLeafNodesInElements(selection, () => $createHeadingNode('h2'));
         }
       });
     }
@@ -319,7 +319,7 @@ function BlockOptionsDropdownList({
         const selection = $getSelection();
 
         if (selection !== null) {
-          wrapLeafNodesInElements(
+          $wrapLeafNodesInElements(
             selection,
             () => $createListItemNode(),
             $createListNode('ul'),
@@ -337,7 +337,7 @@ function BlockOptionsDropdownList({
         const selection = $getSelection();
 
         if (selection !== null) {
-          wrapLeafNodesInElements(
+          $wrapLeafNodesInElements(
             selection,
             () => $createListItemNode(),
             $createListNode('ol'),
@@ -355,7 +355,7 @@ function BlockOptionsDropdownList({
         const selection = $getSelection();
 
         if (selection !== null) {
-          wrapLeafNodesInElements(selection, () => $createQuoteNode());
+          $wrapLeafNodesInElements(selection, () => $createQuoteNode());
         }
       });
     }
@@ -369,7 +369,7 @@ function BlockOptionsDropdownList({
         const selection = $getSelection();
 
         if (selection !== null) {
-          wrapLeafNodesInElements(selection, () => $createCodeNode());
+          $wrapLeafNodesInElements(selection, () => $createCodeNode());
         }
       });
     }
@@ -628,7 +628,7 @@ export default function ToolbarPlugin(): React$Node {
         log('applyStyleText');
         const selection = $getSelection();
         if (selection !== null) {
-          patchStyleText(selection, styles);
+          $patchStyleText(selection, styles);
         }
       });
     },

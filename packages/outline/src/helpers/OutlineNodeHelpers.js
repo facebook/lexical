@@ -26,7 +26,7 @@ import {$createTableNode} from 'outline/TableNode';
 import {$createTableRowNode} from 'outline/TableRowNode';
 import {$createTableCellNode} from 'outline/TableCellNode';
 
-export function dfs(
+export function $dfs(
   startingNode: OutlineNode,
   nextNode: (OutlineNode) => null | OutlineNode,
 ) {
@@ -53,7 +53,7 @@ export function dfs(
   }
 }
 
-export function getTopListNode(listItem: ListItemNode): ListNode {
+export function $getTopListNode(listItem: ListItemNode): ListNode {
   let list = listItem.getParent();
   if (!$isListNode(list)) {
     invariant(false, 'A ListItemNode must have a ListNode for a parent.');
@@ -68,7 +68,7 @@ export function getTopListNode(listItem: ListItemNode): ListNode {
   return list;
 }
 
-export function isLastItemInList(listItem: ListItemNode): boolean {
+export function $isLastItemInList(listItem: ListItemNode): boolean {
   let isLast = true;
   const firstChild = listItem.getFirstChild();
   if ($isListNode(firstChild)) {
@@ -134,7 +134,7 @@ export function $createTableNodeWithDimensions(
   return tableNode;
 }
 
-export function findMatchingParent(
+export function $findMatchingParent(
   startingNode: OutlineNode,
   findFn: (OutlineNode) => boolean,
 ): OutlineNode | null {
@@ -151,11 +151,11 @@ export function findMatchingParent(
   return null;
 }
 
-export function areSiblingsNullOrSpace(node: OutlineNode): boolean {
-  return isPreviousSiblingNullOrSpace(node) && isNextSiblingNullOrSpace(node);
+export function $areSiblingsNullOrSpace(node: OutlineNode): boolean {
+  return $isPreviousSiblingNullOrSpace(node) && $isNextSiblingNullOrSpace(node);
 }
 
-export function isPreviousSiblingNullOrSpace(node: OutlineNode): boolean {
+export function $isPreviousSiblingNullOrSpace(node: OutlineNode): boolean {
   const previousSibling = node.getPreviousSibling();
   return (
     previousSibling === null ||
@@ -166,7 +166,7 @@ export function isPreviousSiblingNullOrSpace(node: OutlineNode): boolean {
   );
 }
 
-export function isNextSiblingNullOrSpace(node: OutlineNode): boolean {
+export function $isNextSiblingNullOrSpace(node: OutlineNode): boolean {
   const nextSibling = node.getNextSibling();
   return (
     nextSibling === null ||

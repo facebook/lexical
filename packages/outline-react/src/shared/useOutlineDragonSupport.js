@@ -9,7 +9,7 @@
 
 import type {OutlineEditor} from 'outline';
 
-import {insertRichText} from 'outline/selection';
+import {$insertRichText} from 'outline/selection';
 
 import {useEffect} from 'react';
 import {$isTextNode, log, $getSelection} from 'outline';
@@ -72,7 +72,7 @@ export default function useOutlineDragonSupport(editor: OutlineEditor) {
                     }
                   }
                   if (setSelStart !== setSelEnd || text !== '') {
-                    insertRichText(selection, text);
+                    $insertRichText(selection, text);
                     anchorNode = anchor.getNode();
                   }
                   if ($isTextNode(anchorNode)) {

@@ -28,7 +28,7 @@ import {
 
 const cssToStyles: Map<string, {[string]: string}> = new Map();
 
-function cloneWithProperties<T: OutlineNode>(node: T): T {
+function $cloneWithProperties<T: OutlineNode>(node: T): T {
   const latest = node.getLatest();
   const constructor = latest.constructor;
   const clone = constructor.clone(latest);
@@ -49,7 +49,7 @@ function cloneWithProperties<T: OutlineNode>(node: T): T {
   return clone;
 }
 
-function getIndexFromPossibleClone(
+function $getIndexFromPossibleClone(
   node: OutlineNode,
   parent: ElementNode,
   nodeMap: Map<NodeKey, OutlineNode>,
@@ -61,7 +61,7 @@ function getIndexFromPossibleClone(
   return node.getIndexWithinParent();
 }
 
-function getParentAvoidingExcludedElements(
+function $getParentAvoidingExcludedElements(
   node: OutlineNode,
 ): ElementNode | null {
   let parent = node.getParent();
@@ -71,7 +71,7 @@ function getParentAvoidingExcludedElements(
   return parent;
 }
 
-function copyLeafNodeBranchToRoot(
+function $copyLeafNodeBranchToRoot(
   leaf: OutlineNode,
   startingOffset: number,
   isLeftSide: boolean,
@@ -81,7 +81,7 @@ function copyLeafNodeBranchToRoot(
   let node = leaf;
   let offset = startingOffset;
   while (node !== null) {
-    const parent = getParentAvoidingExcludedElements(node);
+    const parent = $getParentAvoidingExcludedElements(node);
     if (parent === null) {
       break;
     }
@@ -90,7 +90,7 @@ function copyLeafNodeBranchToRoot(
       let clone = nodeMap.get(key);
       const needsClone = clone === undefined;
       if (needsClone) {
-        clone = cloneWithProperties<OutlineNode>(node);
+        clone = $cloneWithProperties<OutlineNode>(node);
         nodeMap.set(key, clone);
       }
       if ($isTextNode(clone) && !clone.isSegmented() && !clone.isToken()) {
@@ -113,12 +113,12 @@ function copyLeafNodeBranchToRoot(
         break;
       }
     }
-    offset = getIndexFromPossibleClone(node, parent, nodeMap);
+    offset = $getIndexFromPossibleClone(node, parent, nodeMap);
     node = parent;
   }
 }
 
-export function cloneContents(selection: Selection): {
+export function $cloneContents(selection: Selection): {
   range: Array<NodeKey>,
   nodeMap: Array<[NodeKey, OutlineNode]>,
 } {
@@ -135,7 +135,7 @@ export function cloneContents(selection: Selection): {
     $isTextNode(anchorNode) &&
     (anchorNodeParent.canBeEmpty() || anchorNodeParent.getChildrenSize() > 1)
   ) {
-    const clonedFirstNode = cloneWithProperties<TextNode>(anchorNode);
+    const clonedFirstNode = $cloneWithProperties<TextNode>(anchorNode);
     const isBefore = focusOffset > anchorOffset;
     const startOffset = isBefore ? anchorOffset : focusOffset;
     const endOffset = isBefore ? focusOffset : anchorOffset;
@@ -179,7 +179,7 @@ export function cloneContents(selection: Selection): {
   const range = [];
 
   // Do first node to root
-  copyLeafNodeBranchToRoot(
+  $copyLeafNodeBranchToRoot(
     firstNode,
     isBefore ? anchorOffset : focusOffset,
     true,
@@ -194,7 +194,7 @@ export function cloneContents(selection: Selection): {
       !nodeMap.has(key) &&
       (!$isElementNode(node) || !node.excludeFromCopy())
     ) {
-      const clone = cloneWithProperties<OutlineNode>(node);
+      const clone = $cloneWithProperties<OutlineNode>(node);
       if (isRootNode(node.getParent())) {
         range.push(node.getKey());
       }
@@ -202,7 +202,7 @@ export function cloneContents(selection: Selection): {
     }
   }
   // Do last node to root
-  copyLeafNodeBranchToRoot(
+  $copyLeafNodeBranchToRoot(
     lastNode,
     isBefore ? focusOffset : anchorOffset,
     false,
@@ -226,7 +226,7 @@ function getCSSFromStyleObject(styles: {[string]: string}): string {
   return css;
 }
 
-function patchNodeStyle(node: TextNode, patch: {[string]: string}): void {
+function $patchNodeStyle(node: TextNode, patch: {[string]: string}): void {
   const prevStyles = getStyleObjectFromCSS(node.getStyle());
   const newStyles = prevStyles ? {...prevStyles, ...patch} : patch;
   const newCSSText = getCSSFromStyleObject(newStyles);
@@ -234,7 +234,7 @@ function patchNodeStyle(node: TextNode, patch: {[string]: string}): void {
   cssToStyles.set(newCSSText, newStyles);
 }
 
-export function patchStyleText(
+export function $patchStyleText(
   selection: Selection,
   patch: {[string]: string},
 ): void {
@@ -285,14 +285,14 @@ export function patchStyleText(
       }
       // The entire node is selected, so just format it
       if (startOffset === 0 && endOffset === firstNodeTextLength) {
-        patchNodeStyle(firstNode, patch);
+        $patchNodeStyle(firstNode, patch);
         firstNode.select(startOffset, endOffset);
       } else {
         // The node is partially selected, so split it into two nodes
         // and style the selected one.
         const splitNodes = firstNode.splitText(startOffset, endOffset);
         const replacement = startOffset === 0 ? splitNodes[0] : splitNodes[1];
-        patchNodeStyle(replacement, patch);
+        $patchNodeStyle(replacement, patch);
         replacement.select(0, endOffset - startOffset);
       }
     }
@@ -304,7 +304,7 @@ export function patchStyleText(
         [, firstNode] = firstNode.splitText(startOffset);
         startOffset = 0;
       }
-      patchNodeStyle(firstNode, patch);
+      $patchNodeStyle(firstNode, patch);
     }
 
     if ($isTextNode(lastNode)) {
@@ -315,7 +315,7 @@ export function patchStyleText(
         [lastNode] = lastNode.splitText(endOffset);
       }
       if (endOffset !== 0) {
-        patchNodeStyle(lastNode, patch);
+        $patchNodeStyle(lastNode, patch);
       }
     }
 
@@ -329,7 +329,7 @@ export function patchStyleText(
         selectedNodeKey !== lastNode.getKey() &&
         !selectedNode.isToken()
       ) {
-        patchNodeStyle(selectedNode, patch);
+        $patchNodeStyle(selectedNode, patch);
       }
     }
   }
@@ -356,7 +356,7 @@ export function $getSelectionStyleValueForProperty(
       continue;
     }
     if ($isTextNode(node)) {
-      const nodeStyleValue = getNodeStyleValueForProperty(
+      const nodeStyleValue = $getNodeStyleValueForProperty(
         node,
         styleProperty,
         defaultValue,
@@ -374,7 +374,7 @@ export function $getSelectionStyleValueForProperty(
   return styleValue === null ? defaultValue : styleValue;
 }
 
-function getNodeStyleValueForProperty(
+function $getNodeStyleValueForProperty(
   node: TextNode,
   styleProperty: string,
   defaultValue: string,
@@ -387,7 +387,7 @@ function getNodeStyleValueForProperty(
   return defaultValue;
 }
 
-function moveCaretSelection(
+function $moveCaretSelection(
   selection: Selection,
   isHoldingShift: boolean,
   isBackward: boolean,
@@ -402,13 +402,13 @@ function isParentElementRTL(selection: Selection): boolean {
   return parent.getDirection() === 'rtl';
 }
 
-export function moveCharacter(
+export function $moveCharacter(
   selection: Selection,
   isHoldingShift: boolean,
   isBackward: boolean,
 ): void {
   const isRTL = isParentElementRTL(selection);
-  moveCaretSelection(
+  $moveCaretSelection(
     selection,
     isHoldingShift,
     isBackward ? !isRTL : isRTL,
@@ -416,7 +416,7 @@ export function moveCharacter(
   );
 }
 
-export function insertRichText(selection: Selection, text: string): void {
+export function $insertRichText(selection: Selection, text: string): void {
   const parts = text.split(/\r?\n/);
   if (parts.length === 1) {
     selection.insertText(text);
@@ -436,7 +436,7 @@ export function insertRichText(selection: Selection, text: string): void {
   }
 }
 
-export function selectAll(selection: Selection): void {
+export function $selectAll(selection: Selection): void {
   const anchor = selection.anchor;
   const focus = selection.focus;
   const anchorNode = anchor.getNode();
@@ -466,7 +466,7 @@ export function selectAll(selection: Selection): void {
   }
 }
 
-function removeParentEmptyElements(startingNode: ElementNode): void {
+function $removeParentEmptyElements(startingNode: ElementNode): void {
   let node = startingNode;
   while (node !== null && !isRootNode(node)) {
     const latest = node.getLatest();
@@ -478,7 +478,7 @@ function removeParentEmptyElements(startingNode: ElementNode): void {
   }
 }
 
-export function wrapLeafNodesInElements(
+export function $wrapLeafNodesInElements(
   selection: Selection,
   createElement: () => ElementNode,
   wrappingElement?: ElementNode,
@@ -556,7 +556,7 @@ export function wrapLeafNodesInElements(
           targetElement.append(child);
           movedLeafNodes.add(child.getKey());
         });
-        removeParentEmptyElements(parent);
+        $removeParentEmptyElements(parent);
       }
     } else if (emptyElements.has(node.getKey())) {
       elements.push(createElement());
@@ -609,7 +609,7 @@ export function wrapLeafNodesInElements(
   selection.dirty = true;
 }
 
-export function isAtNodeEnd(point: Point): boolean {
+export function $isAtNodeEnd(point: Point): boolean {
   if (point.type === 'text') {
     return point.offset === point.getNode().getTextContentSize();
   }

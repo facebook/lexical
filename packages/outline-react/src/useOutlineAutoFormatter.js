@@ -11,7 +11,7 @@ import type {OutlineEditor} from 'outline';
 
 import {useEffect} from 'react';
 import {TextNode} from 'outline';
-import {isParagraphNode} from 'outline/ParagraphNode';
+import {$isParagraphNode} from 'outline/ParagraphNode';
 import {$createListItemNode} from 'outline/ListItemNode';
 import {$createHeadingNode} from 'outline/HeadingNode';
 import {$createListNode} from 'outline/ListNode';
@@ -31,7 +31,7 @@ function textNodeTransform(node: TextNode): void {
   if (
     element !== null &&
     node.getPreviousSibling() === null &&
-    isParagraphNode(element)
+    $isParagraphNode(element)
   ) {
     const textContent = node.getTextContent();
     const firstChar = textContent[0];

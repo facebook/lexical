@@ -20,9 +20,9 @@ import {
 } from './OutlineUpdates';
 import {getIsProcesssingMutations} from './OutlineMutations';
 import {
-  isTextNode,
-  isElementNode,
-  isLineBreakNode,
+  $isTextNode,
+  $isElementNode,
+  $isLineBreakNode,
   isDecoratorNode,
   isRootNode,
   TextNode,
@@ -95,10 +95,10 @@ class Point {
     const aOffset = this.offset;
     const bOffset = b.offset;
 
-    if (isElementNode(aNode)) {
+    if ($isElementNode(aNode)) {
       aNode = aNode.getDescendantByIndex(aOffset);
     }
-    if (isElementNode(bNode)) {
+    if ($isElementNode(bNode)) {
       bNode = bNode.getDescendantByIndex(bOffset);
     }
     if (aNode === bNode) {
@@ -150,7 +150,7 @@ function selectPointOnNode(point: PointType, node: OutlineNode): void {
   const key = node.getKey();
   let offset = point.offset;
   let type = 'element';
-  if (isTextNode(node)) {
+  if ($isTextNode(node)) {
     type = 'text';
     const textContentLength = node.getTextContentSize();
     if (offset > textContentLength) {
@@ -164,14 +164,14 @@ export function moveSelectionPointToEnd(
   point: PointType,
   node: OutlineNode,
 ): void {
-  if (isElementNode(node)) {
+  if ($isElementNode(node)) {
     const lastNode = node.getLastDescendant();
-    if (isElementNode(lastNode) || isTextNode(lastNode)) {
+    if ($isElementNode(lastNode) || $isTextNode(lastNode)) {
       selectPointOnNode(point, lastNode);
     } else {
       selectPointOnNode(point, node);
     }
-  } else if (isTextNode(node)) {
+  } else if ($isTextNode(node)) {
     selectPointOnNode(point, node);
   }
 }
@@ -241,14 +241,14 @@ export class Selection {
     let firstNode = anchor.getNode();
     let lastNode = focus.getNode();
 
-    if (isElementNode(firstNode)) {
+    if ($isElementNode(firstNode)) {
       firstNode = firstNode.getDescendantByIndex(anchor.offset);
     }
-    if (isElementNode(lastNode)) {
+    if ($isElementNode(lastNode)) {
       lastNode = lastNode.getDescendantByIndex(focus.offset);
     }
     if (firstNode.is(lastNode)) {
-      if (isElementNode(firstNode)) {
+      if ($isElementNode(firstNode)) {
         return [];
       }
       return [firstNode];
@@ -283,7 +283,7 @@ export class Selection {
     let prevWasElement = true;
     for (let i = 0; i < nodes.length; i++) {
       const node = nodes[i];
-      if (isElementNode(node)) {
+      if ($isElementNode(node)) {
         if (!prevWasElement) {
           textContent += '\n';
         }
@@ -294,7 +294,7 @@ export class Selection {
         }
       } else {
         prevWasElement = false;
-        if (isTextNode(node)) {
+        if ($isTextNode(node)) {
           let text = node.getTextContent();
           if (node === firstNode) {
             if (node === lastNode) {
@@ -313,7 +313,7 @@ export class Selection {
               : text.slice(0, anchorOffset);
           }
           textContent += text;
-        } else if (isLineBreakNode(node)) {
+        } else if ($isLineBreakNode(node)) {
           textContent += '\n';
         } else if (isDecoratorNode(node)) {
           textContent += node.getTextContent();
@@ -389,7 +389,7 @@ export class Selection {
     const endOffset = endPoint.offset;
     let firstNode: OutlineNode = selectedNodes[0];
 
-    if (!isTextNode(firstNode)) {
+    if (!$isTextNode(firstNode)) {
       invariant(false, 'insertText: first node is not a text node');
     }
     const firstNodeText = firstNode.getTextContent();
@@ -406,7 +406,7 @@ export class Selection {
     ) {
       let nextSibling = firstNode.getNextSibling();
       if (
-        !isTextNode(nextSibling) ||
+        !$isTextNode(nextSibling) ||
         isTokenOrInert(nextSibling) ||
         nextSibling.isSegmented()
       ) {
@@ -433,7 +433,7 @@ export class Selection {
     ) {
       let prevSibling = firstNode.getPreviousSibling();
       if (
-        !isTextNode(prevSibling) ||
+        !$isTextNode(prevSibling) ||
         isTokenOrInert(prevSibling) ||
         prevSibling.isSegmented()
       ) {
@@ -494,10 +494,10 @@ export class Selection {
         ...firstNode.getParentKeys(),
         ...lastNode.getParentKeys(),
       ]);
-      const firstElement = isElementNode(firstNode)
+      const firstElement = $isElementNode(firstNode)
         ? firstNode
         : firstNode.getParentOrThrow();
-      const lastElement = isElementNode(lastNode)
+      const lastElement = $isElementNode(lastNode)
         ? lastNode
         : lastNode.getParentOrThrow();
 
@@ -509,7 +509,7 @@ export class Selection {
           lastNode.getIndexWithinParent() < endOffset)
       ) {
         if (
-          isTextNode(lastNode) &&
+          $isTextNode(lastNode) &&
           !isTokenOrInert(lastNode) &&
           endOffset !== lastNode.getTextContentSize()
         ) {
@@ -608,7 +608,7 @@ export class Selection {
         const key = selectedNode.getKey();
         if (
           !markedNodeKeysForKeep.has(key) &&
-          (!isElementNode(selectedNode) || selectedNode.canSelectionRemove())
+          (!$isElementNode(selectedNode) || selectedNode.canSelectionRemove())
         ) {
           selectedNode.remove();
         }
@@ -640,7 +640,7 @@ export class Selection {
     let firstNextFormat = 0;
     for (let i = 0; i < selectedNodes.length; i++) {
       const selectedNode = selectedNodes[i];
-      if (isTextNode(selectedNode)) {
+      if ($isTextNode(selectedNode)) {
         firstNextFormat = selectedNode.getFormatFlags(formatType, null);
         break;
       }
@@ -658,7 +658,7 @@ export class Selection {
     if (startOffset === firstNode.getTextContentSize()) {
       const nextSibling = firstNode.getNextSibling();
 
-      if (isTextNode(nextSibling)) {
+      if ($isTextNode(nextSibling)) {
         // we basically make the second node the firstNode, changing offsets accordingly
         anchorOffset = 0;
         startOffset = 0;
@@ -669,7 +669,7 @@ export class Selection {
 
     // This is the case where we only selected a single node
     if (firstNode.is(lastNode)) {
-      if (isTextNode(firstNode)) {
+      if ($isTextNode(firstNode)) {
         if (anchor.type === 'element' && focus.type === 'element') {
           firstNode.setFormat(firstNextFormat);
           firstNode.select(startOffset, endOffset);
@@ -699,7 +699,7 @@ export class Selection {
       }
       // multiple nodes selected.
     } else {
-      if (isTextNode(firstNode)) {
+      if ($isTextNode(firstNode)) {
         if (startOffset !== 0) {
           // the entire first node isn't selected, so split it
           [, firstNode] = firstNode.splitText(startOffset);
@@ -709,7 +709,7 @@ export class Selection {
       }
       let lastNextFormat = firstNextFormat;
 
-      if (isTextNode(lastNode)) {
+      if ($isTextNode(lastNode)) {
         lastNextFormat = lastNode.getFormatFlags(formatType, firstNextFormat);
         const lastNodeText = lastNode.getTextContent();
         const lastNodeTextLength = lastNodeText.length;
@@ -729,7 +729,7 @@ export class Selection {
         const selectedNode = selectedNodes[i];
         const selectedNodeKey = selectedNode.getKey();
         if (
-          isTextNode(selectedNode) &&
+          $isTextNode(selectedNode) &&
           selectedNodeKey !== firstNode.getKey() &&
           selectedNodeKey !== lastNode.getKey() &&
           !selectedNode.isToken()
@@ -770,7 +770,7 @@ export class Selection {
     const nextSiblings = anchorNode.getNextSiblings();
     const topLevelElement = anchorNode.getTopLevelElementOrThrow();
 
-    if (isTextNode(anchorNode)) {
+    if ($isTextNode(anchorNode)) {
       const textContent = anchorNode.getTextContent();
       const textContentLength = textContent.length;
       if (anchorOffset === 0 && textContentLength !== 0) {
@@ -806,7 +806,7 @@ export class Selection {
     for (let i = 0; i < nodes.length; i++) {
       const node = nodes[i];
 
-      if (isElementNode(node)) {
+      if ($isElementNode(node)) {
         // -----
         // Heuristics for the replacment or merging of elements
         // -----
@@ -826,7 +826,7 @@ export class Selection {
 
         if (node.is(firstNode)) {
           if (
-            isElementNode(target) &&
+            $isElementNode(target) &&
             target.isEmpty() &&
             target.canReplaceWith(node)
           ) {
@@ -861,7 +861,7 @@ export class Selection {
             const element = firstDescendant.getParentOrThrow();
             const children = element.getChildren();
             const childrenLength = children.length;
-            if (isElementNode(target)) {
+            if ($isElementNode(target)) {
               for (let s = 0; s < childrenLength; s++) {
                 target.append(children[s]);
               }
@@ -878,7 +878,7 @@ export class Selection {
             }
           }
         }
-        if (isTextNode(target)) {
+        if ($isTextNode(target)) {
           target = topLevelElement;
         }
       } else if (didReplaceOrMerge && isRootNode(target.getParent())) {
@@ -888,8 +888,8 @@ export class Selection {
         );
       }
       didReplaceOrMerge = false;
-      if (isElementNode(target)) {
-        if (!isElementNode(node)) {
+      if ($isElementNode(target)) {
+        if (!$isElementNode(node)) {
           const firstChild = target.getFirstChild();
           if (firstChild !== null) {
             firstChild.insertBefore(node);
@@ -903,7 +903,7 @@ export class Selection {
           }
           target = target.insertAfter(node);
         }
-      } else if (!isElementNode(node)) {
+      } else if (!$isElementNode(node)) {
         target = target.insertAfter(node);
       } else {
         target = node.getParentOrThrow();
@@ -915,11 +915,11 @@ export class Selection {
 
     if (selectStart) {
       // Handle moving selection to start for all nodes
-      if (isTextNode(startingNode)) {
+      if ($isTextNode(startingNode)) {
         startingNode.select();
       } else {
         const prevSibling = target.getPreviousSibling();
-        if (isTextNode(prevSibling)) {
+        if ($isTextNode(prevSibling)) {
           prevSibling.select();
         } else {
           const index = target.getIndexWithinParent();
@@ -928,13 +928,13 @@ export class Selection {
       }
     }
 
-    if (isElementNode(target)) {
+    if ($isElementNode(target)) {
       const lastChild = target.getLastDescendant();
       if (!selectStart) {
         // Handle moving selection to end for elements
         if (lastChild === null) {
           target.select();
-        } else if (isTextNode(lastChild)) {
+        } else if ($isTextNode(lastChild)) {
           lastChild.select();
         } else {
           lastChild.selectNext();
@@ -945,13 +945,13 @@ export class Selection {
           const sibling = siblings[i];
           const prevParent = sibling.getParentOrThrow();
 
-          if (isElementNode(target) && !isElementNode(sibling)) {
+          if ($isElementNode(target) && !$isElementNode(sibling)) {
             target.append(sibling);
             target = sibling;
           } else {
-            if (isElementNode(sibling) && !sibling.canInsertAfter(target)) {
+            if ($isElementNode(sibling) && !sibling.canInsertAfter(target)) {
               const prevParentClone = prevParent.constructor.clone(prevParent);
-              if (!isElementNode(prevParentClone)) {
+              if (!$isElementNode(prevParentClone)) {
                 invariant(
                   false,
                   'insertNodes: cloned parent clone is not an element',
@@ -972,7 +972,7 @@ export class Selection {
       }
     } else if (!selectStart) {
       // Handle moving selection to end for other nodes
-      if (isTextNode(target)) {
+      if ($isTextNode(target)) {
         target.select();
       } else {
         const element = target.getParentOrThrow();
@@ -1013,7 +1013,7 @@ export class Selection {
     if (newElement === null) {
       // Handle as a line break insertion
       this.insertLineBreak();
-    } else if (isElementNode(newElement)) {
+    } else if ($isElementNode(newElement)) {
       const nodesToMoveLength = nodesToMove.length;
       let firstChild = null;
 
@@ -1062,7 +1062,7 @@ export class Selection {
     if (selectedNodesLength === 0) {
       return [];
     } else if (selectedNodesLength === 1) {
-      if (isTextNode(firstNode)) {
+      if ($isTextNode(firstNode)) {
         const startOffset =
           anchorOffset > focusOffset ? focusOffset : anchorOffset;
         const endOffset =
@@ -1075,7 +1075,7 @@ export class Selection {
     }
     const isBefore = anchor.isBefore(focus);
 
-    if (isTextNode(firstNode)) {
+    if ($isTextNode(firstNode)) {
       const startOffset = isBefore ? anchorOffset : focusOffset;
       if (startOffset === firstNode.getTextContentSize()) {
         selectedNodes.shift();
@@ -1084,7 +1084,7 @@ export class Selection {
         selectedNodes[0] = firstNode;
       }
     }
-    if (isTextNode(lastNode)) {
+    if ($isTextNode(lastNode)) {
       const lastNodeText = lastNode.getTextContent();
       const lastNodeTextLength = lastNodeText.length;
       const endOffset = isBefore ? focusOffset : anchorOffset;
@@ -1113,7 +1113,7 @@ export class Selection {
       const sibling = isBackward
         ? possibleDecoratorNode.getPreviousSibling()
         : possibleDecoratorNode.getNextSibling();
-      if (!isTextNode(sibling)) {
+      if (!$isTextNode(sibling)) {
         const elementKey = possibleDecoratorNode.getParentOrThrow().getKey();
         let offset = possibleDecoratorNode.getIndexWithinParent();
         if (!isBackward) {
@@ -1163,7 +1163,7 @@ export class Selection {
       const anchor = this.anchor;
       const focus = this.focus;
       let anchorNode = anchor.getNode();
-      if (isElementNode(anchorNode) && !anchorNode.canSelectionRemove()) {
+      if ($isElementNode(anchorNode) && !anchorNode.canSelectionRemove()) {
         return;
       } else if (
         !isBackward &&
@@ -1178,7 +1178,7 @@ export class Selection {
           anchorNode.getNextSibling() ||
           anchorNode.getParentOrThrow().getNextSibling();
 
-        if (isElementNode(nextSibling) && !nextSibling.canExtractContents()) {
+        if ($isElementNode(nextSibling) && !nextSibling.canExtractContents()) {
           return;
         }
       }
@@ -1273,19 +1273,19 @@ function updateCaretSelectionForAdjacentHashtags(selection: Selection): void {
 
   if (anchorOffset === 0 && anchorNode.isSimpleText()) {
     let sibling = anchorNode.getPreviousSibling();
-    if (isTextNode(sibling) && sibling.getType() === 'hashtag') {
+    if ($isTextNode(sibling) && sibling.getType() === 'hashtag') {
       sibling.select();
       const siblingTextContent = sibling.getTextContent();
       sibling = sibling.setTextContent(siblingTextContent + textContent);
       anchorNode.remove();
     }
   } else if (
-    isTextNode(anchorNode) &&
+    $isTextNode(anchorNode) &&
     anchorNode.getType() === 'hashtag' &&
     anchorOffset === anchorNode.getTextContentSize()
   ) {
     const sibling = anchorNode.getNextSibling();
-    if (isTextNode(sibling) && sibling.isSimpleText()) {
+    if ($isTextNode(sibling) && sibling.isSimpleText()) {
       const siblingTextContent = sibling.getTextContent();
       anchorNode = anchorNode.setTextContent(textContent + siblingTextContent);
       sibling.remove();
@@ -1378,7 +1378,7 @@ function resolveSelectionPoint(dom: Node, offset: number): null | PointType {
     const childDOM = childNodes[resolvedOffset];
     resolvedNode = getNodeFromDOM(childDOM);
 
-    if (isTextNode(resolvedNode)) {
+    if ($isTextNode(resolvedNode)) {
       resolvedOffset = getTextNodeOffset(resolvedNode, moveSelectionToEnd);
     } else {
       let resolvedElement = getNodeFromDOM(dom);
@@ -1386,9 +1386,9 @@ function resolveSelectionPoint(dom: Node, offset: number): null | PointType {
       if (resolvedElement === null) {
         return null;
       }
-      if (isElementNode(resolvedElement)) {
+      if ($isElementNode(resolvedElement)) {
         let child = resolvedElement.getChildAtIndex(resolvedOffset);
-        if (isElementNode(child)) {
+        if ($isElementNode(child)) {
           const descendant = moveSelectionToEnd
             ? child.getLastDescendant()
             : child.getFirstDescendant();
@@ -1400,7 +1400,7 @@ function resolveSelectionPoint(dom: Node, offset: number): null | PointType {
             resolvedElement = child.getParentOrThrow();
           }
         }
-        if (isTextNode(child)) {
+        if ($isTextNode(child)) {
           resolvedNode = child;
           resolvedElement = null;
           resolvedOffset = getTextNodeOffset(resolvedNode, moveSelectionToEnd);
@@ -1415,7 +1415,7 @@ function resolveSelectionPoint(dom: Node, offset: number): null | PointType {
       if (isRootNode(resolvedElement)) {
         return null;
       }
-      if (isElementNode(resolvedElement)) {
+      if ($isElementNode(resolvedElement)) {
         return createPoint(resolvedElement.__key, resolvedOffset, 'element');
       }
     }
@@ -1423,7 +1423,7 @@ function resolveSelectionPoint(dom: Node, offset: number): null | PointType {
     // TextNode or null
     resolvedNode = getNodeFromDOM(dom);
   }
-  if (!isTextNode(resolvedNode)) {
+  if (!$isTextNode(resolvedNode)) {
     return null;
   }
   return createPoint(resolvedNode.__key, resolvedOffset, 'text');
@@ -1468,7 +1468,7 @@ function resolveSelectionPoints(
     ) {
       if (anchorOffset === 0) {
         const prevSibling = resolvedAnchorNode.getPreviousSibling();
-        if (isTextNode(prevSibling) && !prevSibling.isInert()) {
+        if ($isTextNode(prevSibling) && !prevSibling.isInert()) {
           const offset = prevSibling.getTextContentSize();
           const key = prevSibling.__key;
           resolvedAnchorPoint.key = key;
@@ -1480,7 +1480,7 @@ function resolveSelectionPoints(
     } else {
       if (resolvedAnchorOffset === textContentSize) {
         const nextSibling = resolvedAnchorNode.getNextSibling();
-        if (isTextNode(nextSibling) && !nextSibling.isInert()) {
+        if ($isTextNode(nextSibling) && !nextSibling.isInert()) {
           resolvedAnchorPoint.key = nextSibling.__key;
           resolvedAnchorPoint.offset = 0;
         }
@@ -1669,7 +1669,7 @@ export function updateElementSelectionOnCreateDeleteNode(
     return;
   }
   // Flow
-  if (!isElementNode(anchorNode)) {
+  if (!$isElementNode(anchorNode)) {
     return;
   }
   const parentKey = parentNode.getKey();
@@ -1719,7 +1719,7 @@ function updateSelectionResolveTextNodes(selection: Selection) {
   const anchorNode = anchor.getNode();
   const focusNode = focus.getNode();
   if (selection.isCollapsed()) {
-    if (!isElementNode(anchorNode)) {
+    if (!$isElementNode(anchorNode)) {
       return;
     }
     const childSize = anchorNode.getChildrenSize();
@@ -1727,7 +1727,7 @@ function updateSelectionResolveTextNodes(selection: Selection) {
     const child = anchorOffsetAtEnd
       ? anchorNode.getChildAtIndex(childSize - 1)
       : anchorNode.getChildAtIndex(anchorOffset);
-    if (isTextNode(child)) {
+    if ($isTextNode(child)) {
       let newOffset = 0;
       if (anchorOffsetAtEnd) {
         newOffset = child.getTextContentSize();
@@ -1737,13 +1737,13 @@ function updateSelectionResolveTextNodes(selection: Selection) {
     }
     return;
   }
-  if (isElementNode(anchorNode)) {
+  if ($isElementNode(anchorNode)) {
     const childSize = anchorNode.getChildrenSize();
     const anchorOffsetAtEnd = anchorOffset >= childSize;
     const child = anchorOffsetAtEnd
       ? anchorNode.getChildAtIndex(childSize - 1)
       : anchorNode.getChildAtIndex(anchorOffset);
-    if (isTextNode(child)) {
+    if ($isTextNode(child)) {
       let newOffset = 0;
       if (anchorOffsetAtEnd) {
         newOffset = child.getTextContentSize();
@@ -1751,13 +1751,13 @@ function updateSelectionResolveTextNodes(selection: Selection) {
       anchor.set(child.getKey(), newOffset, 'text');
     }
   }
-  if (isElementNode(focusNode)) {
+  if ($isElementNode(focusNode)) {
     const childSize = focusNode.getChildrenSize();
     const focusOffsetAtEnd = focusOffset >= childSize;
     const child = focusOffsetAtEnd
       ? focusNode.getChildAtIndex(childSize - 1)
       : focusNode.getChildAtIndex(focusOffset);
-    if (isTextNode(child)) {
+    if ($isTextNode(child)) {
       let newOffset = 0;
       if (focusOffsetAtEnd) {
         newOffset = child.getTextContentSize();
@@ -1800,12 +1800,12 @@ export function moveSelectionPointToSibling(
   let siblingKey = null;
   let offset = 0;
   const prevSibling = node.getPreviousSibling();
-  if (isTextNode(prevSibling)) {
+  if ($isTextNode(prevSibling)) {
     siblingKey = prevSibling.__key;
     offset = prevSibling.getTextContentSize();
   } else {
     const nextSibling = node.getNextSibling();
-    if (isTextNode(nextSibling)) {
+    if ($isTextNode(nextSibling)) {
       siblingKey = nextSibling.__key;
     }
   }

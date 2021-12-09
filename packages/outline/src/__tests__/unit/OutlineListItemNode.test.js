@@ -10,7 +10,7 @@ import {ListNode} from 'outline/ListNode';
 import {
   ListItemNode,
   $createListItemNode,
-  isListItemNode,
+  $isListItemNode,
 } from 'outline/ListItemNode';
 import {TextNode, $getRoot} from 'outline';
 import {initializeUnitTest} from '../utils';
@@ -368,11 +368,11 @@ describe('OutlineListItemNode tests', () => {
       });
     });
 
-    test('isListItemNode()', async () => {
+    test('$isListItemNode()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const listItemNode = new ListItemNode();
-        expect(isListItemNode(listItemNode)).toBe(true);
+        expect($isListItemNode(listItemNode)).toBe(true);
       });
     });
   });

@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {NodeKey, EditorConfig} from 'outline';
+import type {NodeKey, EditorConfig, OutlineNode} from 'outline';
 
 import {TextNode} from 'outline';
 
@@ -41,4 +41,8 @@ export function $createMentionNode(mentionName: string): MentionNode {
   const mentionNode = new MentionNode(mentionName);
   mentionNode.setMode('segmented').toggleDirectionless();
   return mentionNode;
+}
+
+export function $isMentionNode(node: null | OutlineNode): boolean %checks {
+  return node instanceof MentionNode;
 }

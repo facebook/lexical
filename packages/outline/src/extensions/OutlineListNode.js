@@ -15,7 +15,7 @@ import type {
 } from 'outline';
 
 import {$createTextNode, ElementNode} from 'outline';
-import {$createListItemNode, isListItemNode} from 'outline/ListItemNode';
+import {$createListItemNode, $isListItemNode} from 'outline/ListItemNode';
 import {
   addClassNamesToElement,
   removeClassNamesFromElement,
@@ -76,11 +76,11 @@ export class ListNode extends ElementNode {
   append(...nodesToAppend: OutlineNode[]): ListNode {
     for (let i = 0; i < nodesToAppend.length; i++) {
       const currentNode = nodesToAppend[i];
-      if (isListItemNode(currentNode)) {
+      if ($isListItemNode(currentNode)) {
         super.append(currentNode);
       } else {
         const listItemNode = $createListItemNode();
-        if (isListNode(currentNode)) {
+        if ($isListNode(currentNode)) {
           listItemNode.append(currentNode);
         } else {
           const textNode = $createTextNode(currentNode.getTextContent());
@@ -116,7 +116,7 @@ function setListThemeClassNames(
 
     if (nestedListClassName !== undefined) {
       const nestedListItemClasses = nestedListClassName.split(' ');
-      if (isListItemNode(node.getParent())) {
+      if ($isListItemNode(node.getParent())) {
         classesToAdd.push(...nestedListItemClasses);
       } else {
         classesToRemove.push(...nestedListItemClasses);
@@ -139,6 +139,6 @@ export function $createListNode(
   return new ListNode(tag, start);
 }
 
-export function isListNode(node: ?OutlineNode): boolean %checks {
+export function $isListNode(node: ?OutlineNode): boolean %checks {
   return node instanceof ListNode;
 }

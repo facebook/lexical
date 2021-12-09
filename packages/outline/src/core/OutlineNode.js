@@ -11,8 +11,8 @@ import type {EditorConfig, OutlineEditor} from './OutlineEditor';
 import type {Selection} from './OutlineSelection';
 
 import {
-  isElementNode,
-  isTextNode,
+  $isElementNode,
+  $isTextNode,
   isRootNode,
   ElementNode,
   isDecoratorNode,
@@ -169,7 +169,7 @@ export class OutlineNode {
     const selectedNodeKeys = new Set(selection.getNodes().map((n) => n.__key));
     const isSelected = selectedNodeKeys.has(this.__key);
 
-    if (isTextNode(this)) {
+    if ($isTextNode(this)) {
       return isSelected;
     }
     // For inline images inside of element nodes.
@@ -214,7 +214,7 @@ export class OutlineNode {
     let node = this;
     while (node !== null) {
       const parent = node.getParent();
-      if (isRootNode(parent) && isElementNode(node)) {
+      if (isRootNode(parent) && $isElementNode(node)) {
         return node;
       }
       node = parent;
@@ -300,10 +300,10 @@ export class OutlineNode {
   getCommonAncestor(node: OutlineNode): ElementNode | null {
     const a = this.getParents();
     const b = node.getParents();
-    if (isElementNode(this)) {
+    if ($isElementNode(this)) {
       a.unshift(this);
     }
-    if (isElementNode(node)) {
+    if ($isElementNode(node)) {
       b.unshift(node);
     }
     const aLength = a.length;
@@ -385,7 +385,7 @@ export class OutlineNode {
       if (node === targetNode) {
         break;
       }
-      const child = isElementNode(node)
+      const child = $isElementNode(node)
         ? isBefore
           ? node.getFirstChild()
           : node.getLastChild()
@@ -478,12 +478,12 @@ export class OutlineNode {
     const constructor = latestNode.constructor;
     const mutableNode = constructor.clone(latestNode);
     mutableNode.__parent = parent;
-    if (isElementNode(mutableNode)) {
+    if ($isElementNode(mutableNode)) {
       mutableNode.__children = Array.from(latestNode.__children);
       mutableNode.__indent = latestNode.__indent;
       mutableNode.__format = latestNode.__format;
       mutableNode.__dir = latestNode.__dir;
-    } else if (isTextNode(mutableNode)) {
+    } else if ($isTextNode(mutableNode)) {
       mutableNode.__format = latestNode.__format;
       mutableNode.__style = latestNode.__style;
       mutableNode.__mode = latestNode.__mode;
@@ -655,9 +655,9 @@ export class OutlineNode {
     if (prevSibling === null) {
       return parent.select(0, 0);
     }
-    if (isElementNode(prevSibling)) {
+    if ($isElementNode(prevSibling)) {
       return prevSibling.select();
-    } else if (!isTextNode(prevSibling)) {
+    } else if (!$isTextNode(prevSibling)) {
       const index = prevSibling.getIndexWithinParent() + 1;
       return parent.select(index, index);
     }
@@ -670,9 +670,9 @@ export class OutlineNode {
     if (nextSibling === null) {
       return parent.select();
     }
-    if (isElementNode(nextSibling)) {
+    if ($isElementNode(nextSibling)) {
       return nextSibling.select(0, 0);
-    } else if (!isTextNode(nextSibling)) {
+    } else if (!$isTextNode(nextSibling)) {
       const index = nextSibling.getIndexWithinParent();
       return parent.select(index, index);
     }

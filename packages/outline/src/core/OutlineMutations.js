@@ -11,7 +11,7 @@ import type {OutlineEditor} from './OutlineEditor';
 import type {Selection} from './OutlineSelection';
 import type {TextNode} from './OutlineTextNode';
 
-import {isTextNode, isDecoratorNode, $getSelection, $setSelection} from '.';
+import {$isTextNode, isDecoratorNode, $getSelection, $setSelection} from '.';
 import {triggerListeners, updateEditor} from './OutlineUpdates';
 import {
   $getNearestNodeFromDOMNode,
@@ -101,7 +101,7 @@ export function $flushMutations(
             if (
               shouldFlushTextMutations &&
               target.nodeType === 3 &&
-              isTextNode(targetNode) &&
+              $isTextNode(targetNode) &&
               targetNode.isAttached()
             ) {
               handleTextMutation(

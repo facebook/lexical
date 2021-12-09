@@ -10,7 +10,7 @@
 import type {OutlineNode, NodeKey, EditorConfig} from 'outline';
 
 import {addClassNamesToElement} from 'outline/elements';
-import {isElementNode, isTextNode, ElementNode} from 'outline';
+import {$isElementNode, $isTextNode, ElementNode} from 'outline';
 
 export class ParagraphNode extends ElementNode {
   static getType(): string {
@@ -52,13 +52,14 @@ export class ParagraphNode extends ElementNode {
     // If we have an empty (trimmed) first paragraph and try and remove it,
     // delete the paragraph as long as we have another sibling to go to
     if (
-      isElementNode(sibling) &&
+      $isElementNode(sibling) &&
       this.getIndexWithinParent() === 0 &&
       (children.length === 0 ||
-        (isTextNode(children[0]) && children[0].getTextContent().trim() === ''))
+        ($isTextNode(children[0]) &&
+          children[0].getTextContent().trim() === ''))
     ) {
       const firstChild = sibling.getFirstChild();
-      if (isTextNode(firstChild)) {
+      if ($isTextNode(firstChild)) {
         firstChild.select(0, 0);
       } else {
         sibling.select(0, 0);
@@ -74,6 +75,6 @@ export function $createParagraphNode(): ParagraphNode {
   return new ParagraphNode();
 }
 
-export function isParagraphNode(node: ?OutlineNode): boolean %checks {
+export function $isParagraphNode(node: ?OutlineNode): boolean %checks {
   return node instanceof ParagraphNode;
 }

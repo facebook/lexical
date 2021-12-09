@@ -16,7 +16,7 @@ import type {
   CommandListenerEditorPriority,
 } from 'outline';
 
-import {isTextNode, isRootNode} from 'outline';
+import {$isTextNode, isRootNode} from 'outline';
 import {useCallback, useEffect, useMemo} from 'react';
 
 const MERGE = 0;
@@ -105,8 +105,8 @@ function getMergeAction(
     const prevDirtyNode = prevNodeMap.get(prevDirtyNodeKey);
     if (
       prevDirtyNode !== undefined &&
-      isTextNode(prevDirtyNode) &&
-      isTextNode(nextDirtyNode) &&
+      $isTextNode(prevDirtyNode) &&
+      $isTextNode(nextDirtyNode) &&
       prevDirtyNode.__mode === nextDirtyNode.__mode
     ) {
       const prevText = prevDirtyNode.__text;

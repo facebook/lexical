@@ -25,7 +25,12 @@ import {
   TEXT_TYPE_TO_FORMAT,
   HAS_DIRTY_NODES,
 } from './OutlineConstants';
-import {isTextNode, isElementNode, isLineBreakNode, isDecoratorNode} from '.';
+import {
+  $isTextNode,
+  $isElementNode,
+  $isLineBreakNode,
+  isDecoratorNode,
+} from '.';
 import {
   errorOnInfiniteTransforms,
   errorOnReadOnly,
@@ -138,7 +143,7 @@ export function toggleTextFormatType(
 }
 
 export function isLeafNode(node: ?OutlineNode): boolean %checks {
-  return isTextNode(node) || isLineBreakNode(node) || isDecoratorNode(node);
+  return $isTextNode(node) || $isLineBreakNode(node) || isDecoratorNode(node);
 }
 
 export function generateKey(node: OutlineNode): NodeKey {
@@ -149,7 +154,7 @@ export function generateKey(node: OutlineNode): NodeKey {
   const key = generateRandomKey();
   editorState._nodeMap.set(key, node);
   // TODO Split this function into leaf/element
-  if (isElementNode(node)) {
+  if ($isElementNode(node)) {
     editor._dirtyElements.set(key, true);
   } else {
     editor._dirtyLeaves.add(key);
@@ -193,7 +198,7 @@ export function internallyMarkNodeAsDirty(node: OutlineNode): void {
   }
   const key = latest.__key;
   editor._dirtyType = HAS_DIRTY_NODES;
-  if (isElementNode(node)) {
+  if ($isElementNode(node)) {
     dirtyElements.set(key, true);
   } else {
     // TODO split internally MarkNodeAsDirty into two dedicated Element/leave functions

@@ -89,6 +89,6 @@ export function $createLinkNode(url: string): LinkNode {
   return new LinkNode(url);
 }
 
-export function isLinkNode(node: ?OutlineNode): boolean %checks {
+export function $isLinkNode(node: ?OutlineNode): boolean %checks {
   return node instanceof LinkNode;
 }

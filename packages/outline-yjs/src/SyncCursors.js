@@ -22,7 +22,12 @@ import {
   createRelativePositionFromTypeIndex,
   createAbsolutePositionFromRelativePosition,
 } from 'yjs';
-import {isTextNode, isElementNode, $getNodeByKey, $getSelection} from 'outline';
+import {
+  $isTextNode,
+  $isElementNode,
+  $getNodeByKey,
+  $getSelection,
+} from 'outline';
 import {CollabTextNode} from './CollabTextNode';
 import {CollabElementNode} from './CollabElementNode';
 import {CollabDecoratorNode} from './CollabDecoratorNode';
@@ -213,10 +218,10 @@ function updateCursor(
   let anchorOffset = anchor.offset;
   let focusOffset = focus.offset;
 
-  if (isTextNode(anchorNode)) {
+  if ($isTextNode(anchorNode)) {
     anchorDOM = getDOMTextNode(anchorDOM);
   }
-  if (isTextNode(focusNode)) {
+  if ($isTextNode(focusNode)) {
     focusDOM = getDOMTextNode(focusDOM);
   }
   if (
@@ -331,7 +336,7 @@ export function syncLocalCursorPosition(
           selection.anchor.set(
             anchorKey,
             anchorOffset,
-            isElementNode(anchorNode) ? 'element' : 'text',
+            $isElementNode(anchorNode) ? 'element' : 'text',
           );
         }
         if (focus.key !== focusKey || focus.offset !== focusOffset) {
@@ -339,7 +344,7 @@ export function syncLocalCursorPosition(
           selection.focus.set(
             focusKey,
             focusOffset,
-            isElementNode(focusNode) ? 'element' : 'text',
+            $isElementNode(focusNode) ? 'element' : 'text',
           );
         }
       }

@@ -10,7 +10,7 @@
 import type {NodeKey, OutlineNode, EditorConfig} from 'outline';
 
 import {addClassNamesToElement} from 'outline/elements';
-import {TextNode, isTextNode, $createTextNode} from 'outline';
+import {TextNode, $isTextNode, $createTextNode} from 'outline';
 
 export class HashtagNode extends TextNode {
   static getType(): string {
@@ -43,7 +43,7 @@ export class HashtagNode extends TextNode {
         targetNode = toggleHashtag(targetNode);
       }
       // Check for invalid characters
-      if (isTextNode(targetNode) && targetNode.isAttached()) {
+      if ($isTextNode(targetNode) && targetNode.isAttached()) {
         const targetTextContent = targetNode.getTextContent().slice(1);
         const indexOfInvalidChar = targetTextContent.search(
           /[\s.,\\\/#!$%\^&\*;:{}=\-`~()@]/,
@@ -71,7 +71,7 @@ export class HashtagNode extends TextNode {
 
 export function toggleHashtag(node: TextNode): TextNode {
   const text = node.getTextContent();
-  const replacement = !isHashtagNode(node)
+  const replacement = !$isHashtagNode(node)
     ? $createHashtagNode(text)
     : $createTextNode(text);
   node.replace(replacement);
@@ -82,6 +82,6 @@ export function $createHashtagNode(text?: string = ''): TextNode {
   return new HashtagNode(text);
 }
 
-export function isHashtagNode(node: ?OutlineNode): boolean %checks {
+export function $isHashtagNode(node: ?OutlineNode): boolean %checks {
   return node instanceof HashtagNode;
 }

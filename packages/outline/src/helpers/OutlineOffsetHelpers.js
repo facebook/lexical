@@ -17,8 +17,8 @@ import type {
 
 import {
   createSelection,
-  isElementNode,
-  isTextNode,
+  $isElementNode,
+  $isTextNode,
   $getNodeByKey,
 } from 'outline';
 import invariant from 'shared/invariant';
@@ -148,7 +148,7 @@ class OffsetView {
       if (
         start !== end &&
         startOffset === startNode.getTextContentSize() &&
-        isTextNode(sibling)
+        $isTextNode(sibling)
       ) {
         startOffset = 0;
         startKey = sibling.__key;
@@ -376,7 +376,7 @@ function createOffsetNode(
   }
   const start = state.offset;
 
-  if (isElementNode(node)) {
+  if ($isElementNode(node)) {
     const childKeys = node.__children;
     const blockIsEmpty = childKeys.length === 0;
 
@@ -413,7 +413,7 @@ function createOffsetNode(
     return offsetNode;
   }
   state.prevIsBlock = false;
-  const isText = isTextNode(node);
+  const isText = $isTextNode(node);
   // $FlowFixMe: isText means __text is available
   const length = isText ? node.__text.length : 1;
   const end = (state.offset += length);

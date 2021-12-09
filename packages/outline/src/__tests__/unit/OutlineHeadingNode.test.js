@@ -9,7 +9,7 @@
 import {
   HeadingNode,
   $createHeadingNode,
-  isHeadingNode,
+  $isHeadingNode,
 } from 'outline/HeadingNode';
 import {ParagraphNode} from 'outline/ParagraphNode';
 import {initializeUnitTest} from '../utils';
@@ -107,11 +107,11 @@ describe('OutlineHeadingNode tests', () => {
       });
     });
 
-    test('isHeadingNode()', async () => {
+    test('$isHeadingNode()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const headingNode = new HeadingNode();
-        expect(isHeadingNode(headingNode)).toBe(true);
+        expect($isHeadingNode(headingNode)).toBe(true);
       });
     });
 

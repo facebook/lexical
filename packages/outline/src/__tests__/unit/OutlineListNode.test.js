@@ -6,9 +6,9 @@
  *
  */
 
-import {$createListNode, isListNode} from 'outline/ListNode';
+import {$createListNode, $isListNode} from 'outline/ListNode';
 import {initializeUnitTest} from '../utils';
-import {isListItemNode, ListItemNode} from 'outline/ListItemNode';
+import {$isListItemNode, ListItemNode} from 'outline/ListItemNode';
 import {TextNode} from 'outline';
 import {ParagraphNode} from '../../extensions/OutlineParagraphNode';
 import {ListNode} from '../../extensions/OutlineListNode';
@@ -109,7 +109,7 @@ describe('OutlineListNode tests', () => {
         nestedListNode.append(listItemNode);
         const nodesToAppend = [nestedListNode];
         expect(listNode.append(...nodesToAppend)).toBe(listNode);
-        expect(isListItemNode(listNode.getFirstChild())).toBe(true);
+        expect($isListItemNode(listNode.getFirstChild())).toBe(true);
         expect(listNode.getFirstChild().getFirstChild()).toBe(nestedListNode);
       });
     });
@@ -123,7 +123,7 @@ describe('OutlineListNode tests', () => {
         paragraph.append(textNode);
         const nodesToAppend = [paragraph];
         expect(listNode.append(...nodesToAppend)).toBe(listNode);
-        expect(isListItemNode(listNode.getFirstChild())).toBe(true);
+        expect($isListItemNode(listNode.getFirstChild())).toBe(true);
         expect(listNode.getFirstChild()?.getTextContent()).toBe('Hello');
       });
     });
@@ -140,11 +140,11 @@ describe('OutlineListNode tests', () => {
       });
     });
 
-    test('isListNode()', async () => {
+    test('$isListNode()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const listNode = $createListNode();
-        expect(isListNode(listNode)).toBe(true);
+        expect($isListNode(listNode)).toBe(true);
       });
     });
   });

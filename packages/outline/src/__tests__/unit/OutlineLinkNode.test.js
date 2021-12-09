@@ -6,7 +6,7 @@
  *
  */
 
-import {LinkNode, $createLinkNode, isLinkNode} from 'outline/LinkNode';
+import {LinkNode, $createLinkNode, $isLinkNode} from 'outline/LinkNode';
 import {initializeUnitTest} from '../utils';
 
 const editorConfig = Object.freeze({
@@ -126,11 +126,11 @@ describe('OutlineLinkNode tests', () => {
       });
     });
 
-    test('isLinkNode()', async () => {
+    test('$isLinkNode()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const linkNode = new LinkNode();
-        expect(isLinkNode(linkNode)).toBe(true);
+        expect($isLinkNode(linkNode)).toBe(true);
       });
     });
   });

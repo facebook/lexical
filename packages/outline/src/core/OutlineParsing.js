@@ -17,8 +17,8 @@ import {
 } from './OutlineUpdates';
 import {
   isRootNode,
-  isElementNode,
-  isTextNode,
+  $isElementNode,
+  $isTextNode,
   isDecoratorNode,
   createEditorStateRef,
 } from '.';
@@ -102,7 +102,7 @@ export function internalCreateNodeFromParse(
   node.__parent = parentKey;
   // We will need to recursively handle the children in the case
   // of a ElementNode.
-  if (isElementNode(node)) {
+  if ($isElementNode(node)) {
     const children = parsedNode.__children;
     for (let i = 0; i < children.length; i++) {
       const childKey = children[i];
@@ -122,7 +122,7 @@ export function internalCreateNodeFromParse(
     node.__indent = parsedNode.__indent;
     node.__format = parsedNode.__format;
     node.__dir = parsedNode.__dir;
-  } else if (isTextNode(node)) {
+  } else if ($isTextNode(node)) {
     node.__format = parsedNode.__format;
     node.__style = parsedNode.__style;
     node.__mode = parsedNode.__mode;

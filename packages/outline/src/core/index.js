@@ -35,10 +35,10 @@ export type {RootNode} from './OutlineRootNode';
 export type {ElementFormatType} from './OutlineElementNode';
 
 import {createEditor} from './OutlineEditor';
-import {$createTextNode, isTextNode, TextNode} from './OutlineTextNode';
-import {isElementNode, ElementNode} from './OutlineElementNode';
+import {$createTextNode, $isTextNode, TextNode} from './OutlineTextNode';
+import {$isElementNode, ElementNode} from './OutlineElementNode';
 import {isRootNode} from './OutlineRootNode';
-import {$createLineBreakNode, isLineBreakNode} from './OutlineLineBreakNode';
+import {$createLineBreakNode, $isLineBreakNode} from './OutlineLineBreakNode';
 import {DecoratorNode, isDecoratorNode} from './OutlineDecoratorNode';
 import {
   isLeafNode,
@@ -70,11 +70,11 @@ export {
   isEditorStateRef,
   // Node validation
   isLeafNode,
-  isElementNode,
+  $isElementNode,
   isDecoratorNode,
-  isLineBreakNode,
+  $isLineBreakNode,
   isRootNode,
-  isTextNode,
+  $isTextNode,
   // Used during read/update/transform
   $createLineBreakNode,
   $createTextNode,

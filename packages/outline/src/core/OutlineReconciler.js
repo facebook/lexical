@@ -32,9 +32,9 @@ import {
   IS_ALIGN_JUSTIFY,
 } from './OutlineConstants';
 import {isDecoratorNode} from './OutlineDecoratorNode';
-import {isElementNode} from './OutlineElementNode';
-import {isTextNode} from './OutlineTextNode';
-import {isLineBreakNode} from './OutlineLineBreakNode';
+import {$isElementNode} from './OutlineElementNode';
+import {$isTextNode} from './OutlineTextNode';
+import {$isLineBreakNode} from './OutlineLineBreakNode';
 import {isRootNode} from './OutlineRootNode';
 import invariant from 'shared/invariant';
 
@@ -64,7 +64,7 @@ function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
   if (!activeNextNodeMap.has(key)) {
     activeEditor._keyToDOMMap.delete(key);
   }
-  if (isElementNode(node)) {
+  if ($isElementNode(node)) {
     const children = node.__children;
     destroyChildren(children, 0, children.length - 1, null);
   }
@@ -126,13 +126,13 @@ function createNode(
   // This helps preserve the text, and stops spell check tools from
   // merging or break the spans (which happens if they are missing
   // this attribute).
-  if (isTextNode(node)) {
+  if ($isTextNode(node)) {
     dom.setAttribute('data-outline-text', 'true');
   } else if (isDecoratorNode(node)) {
     dom.setAttribute('data-outline-decorator', 'true');
   }
 
-  if (isElementNode(node)) {
+  if ($isElementNode(node)) {
     const indent = node.__indent;
     if (indent !== 0) {
       setElementIndent(dom, indent);
@@ -158,7 +158,7 @@ function createNode(
       dom.contentEditable = 'false';
     } else {
       const text = node.getTextContent();
-      if (isTextNode(node)) {
+      if ($isTextNode(node)) {
         if (!node.isDirectionless()) {
           subTreeDirectionedTextContent += text;
         }
@@ -232,7 +232,7 @@ function isLastChildLineBreakOrDecorator(
 ): boolean {
   const childKey = children[children.length - 1];
   const node = nodeMap.get(childKey);
-  return isLineBreakNode(node) || isDecoratorNode(node);
+  return $isLineBreakNode(node) || isDecoratorNode(node);
 }
 
 // If we end an element with a LinkBreakNode, then we need to add an additonal <br>
@@ -404,7 +404,7 @@ function reconcileNode(
   const dom = getElementByKeyOrThrow(activeEditor, key);
 
   if (prevNode === nextNode && !isDirty) {
-    if (isElementNode(prevNode)) {
+    if ($isElementNode(prevNode)) {
       // $FlowFixMe: internal field
       const previousSubTreeTextContent = dom.__outlineTextContent;
       if (previousSubTreeTextContent !== undefined) {
@@ -418,7 +418,7 @@ function reconcileNode(
       }
     } else if (!isDecoratorNode(prevNode)) {
       const text = prevNode.getTextContent();
-      if (isTextNode(prevNode) && !prevNode.isDirectionless()) {
+      if ($isTextNode(prevNode) && !prevNode.isDirectionless()) {
         subTreeDirectionedTextContent += text;
       }
       editorTextContent += text;
@@ -437,7 +437,7 @@ function reconcileNode(
     return replacementDOM;
   }
 
-  if (isElementNode(prevNode) && isElementNode(nextNode)) {
+  if ($isElementNode(prevNode) && $isElementNode(nextNode)) {
     // Reconcile element children
     const nextIndent = nextNode.__indent;
     if (nextIndent !== prevNode.__indent) {
@@ -466,7 +466,7 @@ function reconcileNode(
     } else {
       // Handle text content, for LTR, LTR cases.
       const text = nextNode.getTextContent();
-      if (isTextNode(nextNode) && !nextNode.isDirectionless()) {
+      if ($isTextNode(nextNode) && !nextNode.isDirectionless()) {
         subTreeDirectionedTextContent += text;
       }
       subTreeTextContent += text;

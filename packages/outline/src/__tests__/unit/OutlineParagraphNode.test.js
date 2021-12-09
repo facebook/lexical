@@ -9,7 +9,7 @@
 import {
   ParagraphNode,
   $createParagraphNode,
-  isParagraphNode,
+  $isParagraphNode,
 } from 'outline/ParagraphNode';
 import {initializeUnitTest} from '../utils';
 import {$getRoot} from 'outline';
@@ -96,11 +96,11 @@ describe('OutlineParagraphNode tests', () => {
       });
     });
 
-    test('isParagraphNode()', async () => {
+    test('$isParagraphNode()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const paragraphNode = new ParagraphNode();
-        expect(isParagraphNode(paragraphNode)).toBe(true);
+        expect($isParagraphNode(paragraphNode)).toBe(true);
       });
     });
   });

@@ -12,15 +12,15 @@ import type {OutlineNode} from 'outline';
 import type {ListNode} from 'outline/ListNode';
 import type {TableNode} from 'outline/TableNode';
 
-import {isListNode} from 'outline/ListNode';
-import {isListItemNode} from 'outline/ListItemNode';
+import {$isListNode} from 'outline/ListNode';
+import {$isListItemNode} from 'outline/ListItemNode';
 import invariant from 'shared/invariant';
 import {
-  isElementNode,
+  $isElementNode,
   $createTextNode,
   $getRoot,
-  isLineBreakNode,
-  isTextNode,
+  $isLineBreakNode,
+  $isTextNode,
 } from 'outline';
 import {$createTableNode} from 'outline/TableNode';
 import {$createTableRowNode} from 'outline/TableRowNode';
@@ -33,7 +33,7 @@ export function dfs(
   let node = startingNode;
   nextNode(node);
   while (node !== null) {
-    if (isElementNode(node) && node.getChildrenSize() > 0) {
+    if ($isElementNode(node) && node.getChildrenSize() > 0) {
       node = node.getFirstChild();
     } else {
       // Find immediate sibling or nearest parent sibling
@@ -55,13 +55,13 @@ export function dfs(
 
 export function getTopListNode(listItem: ListItemNode): ListNode {
   let list = listItem.getParent();
-  if (!isListNode(list)) {
+  if (!$isListNode(list)) {
     invariant(false, 'A ListItemNode must have a ListNode for a parent.');
   }
   let parent = list;
   while (parent !== null) {
     parent = parent.getParent();
-    if (isListNode(parent)) {
+    if ($isListNode(parent)) {
       list = parent;
     }
   }
@@ -71,12 +71,12 @@ export function getTopListNode(listItem: ListItemNode): ListNode {
 export function isLastItemInList(listItem: ListItemNode): boolean {
   let isLast = true;
   const firstChild = listItem.getFirstChild();
-  if (isListNode(firstChild)) {
+  if ($isListNode(firstChild)) {
     return false;
   }
   let parent = listItem;
   while (parent !== null) {
-    if (isListItemNode(parent)) {
+    if ($isListItemNode(parent)) {
       if (parent.getNextSiblings().length > 0) {
         isLast = false;
       }
@@ -99,7 +99,7 @@ export function $createOutlineNodeFromDOMNode(
   const createFunction = conversionMap[node.nodeName.toLowerCase()];
   if (createFunction) {
     outlineNode = createFunction(node);
-    if (isElementNode(outlineNode)) {
+    if ($isElementNode(outlineNode)) {
       const children = node.childNodes;
       for (let i = 0; i < children.length; i++) {
         const child = $createOutlineNodeFromDOMNode(children[i], conversionMap);
@@ -159,8 +159,8 @@ export function isPreviousSiblingNullOrSpace(node: OutlineNode): boolean {
   const previousSibling = node.getPreviousSibling();
   return (
     previousSibling === null ||
-    isLineBreakNode(previousSibling) ||
-    (isTextNode(previousSibling) &&
+    $isLineBreakNode(previousSibling) ||
+    ($isTextNode(previousSibling) &&
       previousSibling.isSimpleText() &&
       previousSibling.getTextContent().endsWith(' '))
   );
@@ -170,8 +170,8 @@ export function isNextSiblingNullOrSpace(node: OutlineNode): boolean {
   const nextSibling = node.getNextSibling();
   return (
     nextSibling === null ||
-    isLineBreakNode(nextSibling) ||
-    (isTextNode(nextSibling) &&
+    $isLineBreakNode(nextSibling) ||
+    ($isTextNode(nextSibling) &&
       nextSibling.isSimpleText() &&
       nextSibling.getTextContent().startsWith(' '))
   );

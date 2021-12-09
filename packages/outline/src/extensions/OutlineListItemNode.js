@@ -16,9 +16,9 @@ import type {
 } from 'outline';
 import type {ParagraphNode} from 'outline/ParagraphNode';
 
-import {isElementNode, ElementNode} from 'outline';
+import {$isElementNode, ElementNode} from 'outline';
 import {$createParagraphNode} from 'outline/ParagraphNode';
-import {$createListNode, isListNode} from 'outline/ListNode';
+import {$createListNode, $isListNode} from 'outline/ListNode';
 import invariant from 'shared/invariant';
 import {getTopListNode, isLastItemInList} from 'outline/nodes';
 import {
@@ -59,11 +59,11 @@ export class ListItemNode extends ElementNode {
   // Mutation
 
   replace<N: OutlineNode>(replaceWithNode: N): N {
-    if (isListItemNode(replaceWithNode)) {
+    if ($isListItemNode(replaceWithNode)) {
       return super.replace(replaceWithNode);
     }
     const list = this.getParentOrThrow();
-    if (isListNode(list)) {
+    if ($isListNode(list)) {
       const childrenKeys = list.__children;
       const childrenLength = childrenKeys.length;
       const index = childrenKeys.indexOf(this.__key);
@@ -91,12 +91,12 @@ export class ListItemNode extends ElementNode {
   }
 
   insertAfter(node: OutlineNode): OutlineNode {
-    if (isListItemNode(node)) {
+    if ($isListItemNode(node)) {
       return super.insertAfter(node);
     }
 
     const listNode = this.getParentOrThrow();
-    if (!isListNode(listNode)) {
+    if (!$isListNode(listNode)) {
       invariant(
         false,
         'insertAfter: list node is not parent of list item node',
@@ -104,7 +104,7 @@ export class ListItemNode extends ElementNode {
     }
 
     // Attempt to merge tables if the list is of the same type.
-    if (isListNode(node) && node.getTag() === listNode.getTag()) {
+    if ($isListNode(node) && node.getTag() === listNode.getTag()) {
       let child = node;
       const children = node.getChildren();
       for (let i = children.length - 1; i >= 0; i--) {
@@ -135,7 +135,7 @@ export class ListItemNode extends ElementNode {
     let newElement;
 
     if (
-      isElementNode(list) &&
+      $isElementNode(list) &&
       this.getTextContent() === '' &&
       (prevSibling === null || nextSibling === null) &&
       isLast
@@ -166,7 +166,7 @@ export class ListItemNode extends ElementNode {
     children.forEach((child) => paragraph.append(child));
     const listNode = this.getParentOrThrow();
     const listNodeParent = listNode.getParentOrThrow();
-    const isNested = isListItemNode(listNodeParent);
+    const isNested = $isListItemNode(listNodeParent);
     if (listNode.getChildrenSize() === 1) {
       if (isNested) {
         // if the list node is nested, we just want to remove it,
@@ -195,11 +195,11 @@ export class ListItemNode extends ElementNode {
   }
 
   canInsertAfter(node: OutlineNode): boolean {
-    return isListItemNode(node);
+    return $isListItemNode(node);
   }
 
   canReplaceWith(replacement: OutlineNode): boolean {
-    return isListItemNode(replacement);
+    return $isListItemNode(replacement);
   }
 }
 
@@ -223,7 +223,7 @@ function setListItemThemeClassNames(
 
   if (nestedListItemClassName !== undefined) {
     const nestedListItemClasses = nestedListItemClassName.split(' ');
-    if (node.getChildren().some((child) => isListNode(child))) {
+    if (node.getChildren().some((child) => $isListNode(child))) {
       classesToAdd.push(...nestedListItemClasses);
     } else {
       classesToRemove.push(...nestedListItemClasses);
@@ -243,6 +243,6 @@ export function $createListItemNode(): ListItemNode {
   return new ListItemNode();
 }
 
-export function isListItemNode(node: ?OutlineNode): boolean %checks {
+export function $isListItemNode(node: ?OutlineNode): boolean %checks {
   return node instanceof ListItemNode;
 }

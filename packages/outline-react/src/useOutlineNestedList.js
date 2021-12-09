@@ -16,8 +16,8 @@ import type {ListItemNode} from 'outline/ListItemNode';
 
 import {useEffect} from 'react';
 import {$getSelection} from 'outline';
-import {$createListItemNode, isListItemNode} from 'outline/ListItemNode';
-import {$createListNode, isListNode} from 'outline/ListNode';
+import {$createListItemNode, $isListItemNode} from 'outline/ListItemNode';
+import {$createListNode, $isListNode} from 'outline/ListNode';
 
 const LowPriority: CommandListenerLowPriority = 1;
 
@@ -53,13 +53,13 @@ function maybeIndentOrOutdent(direction: 'indent' | 'outdent'): boolean {
 }
 
 function isNestedListNode(node: ?OutlineNode): boolean %checks {
-  return isListItemNode(node) && isListNode(node.getFirstChild());
+  return $isListItemNode(node) && $isListNode(node.getFirstChild());
 }
 
 function findNearestListItemNode(node: OutlineNode): ListItemNode | null {
   let currentNode = node;
   while (currentNode !== null) {
-    if (isListItemNode(currentNode)) {
+    if ($isListItemNode(currentNode)) {
       return currentNode;
     }
     currentNode = currentNode.getParent();
@@ -73,7 +73,7 @@ function getUniqueListItemNodes(
   const keys = new Set<ListItemNode>();
   for (let i = 0; i < nodeList.length; i++) {
     const node = nodeList[i];
-    if (isListItemNode(node)) {
+    if ($isListItemNode(node)) {
       keys.add(node);
     }
   }
@@ -88,7 +88,7 @@ function handleIndent(listItemNodes: Array<ListItemNode>): void {
     // if the ListItemNode is next to a nested ListNode, merge them
     if (isNestedListNode(nextSibling)) {
       const innerList = nextSibling.getFirstChild();
-      if (isListNode(innerList)) {
+      if ($isListNode(innerList)) {
         const firstChild = innerList.getFirstChild();
         if (firstChild !== null) {
           firstChild.insertBefore(listItemNode);
@@ -96,13 +96,13 @@ function handleIndent(listItemNodes: Array<ListItemNode>): void {
       }
     } else if (isNestedListNode(previousSibling)) {
       const innerList = previousSibling.getFirstChild();
-      if (isListNode(innerList)) {
+      if ($isListNode(innerList)) {
         innerList.append(listItemNode);
       }
     } else {
       // otherwise, we need to create a new nested ListNode
       const parent = listItemNode.getParent();
-      if (isListNode(parent)) {
+      if ($isListNode(parent)) {
         const newListItem = $createListItemNode();
         const newList = $createListNode(parent.getTag());
         newListItem.append(newList);
@@ -129,9 +129,9 @@ function handleOutdent(listItemNodes: Array<ListItemNode>): void {
       : undefined;
     // If it doesn't have these ancestors, it's not indented.
     if (
-      isListNode(greatGrandparentList) &&
-      isListItemNode(grandparentListItem) &&
-      isListNode(parentList)
+      $isListNode(greatGrandparentList) &&
+      $isListItemNode(grandparentListItem) &&
+      $isListNode(parentList)
     ) {
       // if it's the first child in it's parent list, insert it into the
       // great grandparent list before the grandparent

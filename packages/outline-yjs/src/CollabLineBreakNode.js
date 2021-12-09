@@ -12,7 +12,7 @@ import type {CollabElementNode} from './CollabElementNode';
 import type {Map as YMap} from 'yjs';
 import type {Binding} from '.';
 
-import {isLineBreakNode, $getNodeByKey} from 'outline';
+import {$isLineBreakNode, $getNodeByKey} from 'outline';
 
 export class CollabLineBreakNode {
   _map: YMap;
@@ -29,7 +29,7 @@ export class CollabLineBreakNode {
 
   getNode(): null | LineBreakNode {
     const node = $getNodeByKey(this._key);
-    return isLineBreakNode(node) ? node : null;
+    return $isLineBreakNode(node) ? node : null;
   }
 
   getKey(): NodeKey {

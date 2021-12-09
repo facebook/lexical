@@ -32,6 +32,6 @@ export function $createKeywordNode(keyword: string): KeywordNode {
   return new KeywordNode(keyword).setMode('segmented');
 }
 
-export function isKeywordNode(node: null | OutlineNode): boolean %checks {
+export function $isKeywordNode(node: null | OutlineNode): boolean %checks {
   return node instanceof KeywordNode;
 }

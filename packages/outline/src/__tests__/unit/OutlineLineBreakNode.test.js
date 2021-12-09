@@ -6,7 +6,7 @@
  *
  */
 
-import {$createLineBreakNode, isLineBreakNode} from 'outline';
+import {$createLineBreakNode, $isLineBreakNode} from 'outline';
 import {initializeUnitTest} from '../utils';
 
 describe('OutlineLineBreakNode tests', () => {
@@ -37,11 +37,11 @@ describe('OutlineLineBreakNode tests', () => {
       });
     });
 
-    test('LineBreakNode.isLineBreakNode()', async () => {
+    test('LineBreakNode.$isLineBreakNode()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const lineBreakNode = $createLineBreakNode();
-        expect(isLineBreakNode(lineBreakNode)).toBe(true);
+        expect($isLineBreakNode(lineBreakNode)).toBe(true);
       });
     });
   });

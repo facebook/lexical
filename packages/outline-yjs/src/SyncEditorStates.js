@@ -17,7 +17,7 @@ import type {Binding, Provider, YjsEvent} from '.';
 // $FlowFixMe: need Flow typings for yjs
 import {YTextEvent, YMapEvent, YXmlEvent} from 'yjs';
 import {
-  isTextNode,
+  $isTextNode,
   $getSelection,
   $getRoot,
   $setSelection,
@@ -160,7 +160,7 @@ function handleNormalizationMergeConflicts(
     const outlineNode = $getNodeByKey(nodeKey);
     const collabNode = collabNodeMap.get(nodeKey);
     if (collabNode instanceof CollabTextNode) {
-      if (isTextNode(outlineNode)) {
+      if ($isTextNode(outlineNode)) {
         // We mutate the text collab nodes after removing
         // all the dead nodes first, otherwise offsets break.
         mergedNodes.push([collabNode, outlineNode.__text]);

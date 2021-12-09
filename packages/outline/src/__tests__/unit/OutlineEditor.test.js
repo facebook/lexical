@@ -20,7 +20,7 @@ import {
   $setCompositionKey,
   $getSelection,
   $getNodeByKey,
-  isTextNode,
+  $isTextNode,
 } from 'outline';
 import {$createParagraphNode, ParagraphNode} from 'outline/ParagraphNode';
 import useOutlineRichText from 'outline-react/useOutlineRichText';
@@ -422,7 +422,7 @@ describe('OutlineEditor tests', () => {
     const megaFooListener = editor.addTransform(ParagraphNode, (paragraph) => {
       const child = paragraph.getFirstChild();
       if (
-        isTextNode(child) &&
+        $isTextNode(child) &&
         child.getTextContent() === 'Foo!' &&
         !hasRun[1]
       ) {

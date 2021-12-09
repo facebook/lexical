@@ -10,7 +10,7 @@
 import type {OutlineEditor, State} from 'outline';
 
 import {useEffect} from 'react';
-import {TextNode} from 'outline';
+import {isTextNode, TextNode, $getRoot} from 'outline';
 import {isParagraphNode} from 'outline/ParagraphNode';
 import {$createListItemNode} from 'outline/ListItemNode';
 import {$createHeadingNode} from 'outline/HeadingNode';
@@ -84,8 +84,31 @@ function textNodeTransform(node: TextNode, state: State): void {
   }
 }
 
+function updateAutoFormatting(editor: OutlineEditor, tags): void {
+  if (tags.has('undo') || tags.has('redo')) {
+    return;
+  }
+
+  editor.update(() => {
+    const root = $getRoot();
+    const lastDescendant = root.getLastDescendant();
+    if (isTextNode(lastDescendant)) {
+      const textNode: TextNode = lastDescendant;
+      const text: string = textNode.getTextContent();
+      if (text[text.length - 1] === 'x') {
+        let newText = text.slice(0, text.length - 1);
+        newText += 'y';
+        textNode.setTextContent(newText);
+      }
+    }
+  });
+}
+
 export default function useOutlineAutoFormatter(editor: OutlineEditor): void {
   useEffect(() => {
+    editor.addListener('update', ({tags}) => {
+      updateAutoFormatting(editor, tags);
+    });
     return editor.addTransform(TextNode, textNodeTransform);
   }, [editor]);
 }

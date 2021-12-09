@@ -67,7 +67,7 @@ export default function Editor({
           <CharacterLimitPlugin charset={isCharLimit ? 'UTF-16' : 'UTF-8'} />
         )}
         {isAutocomplete && <AutocompletePlugin />}
-        <ActionsPlugin isRichText={isdfRichText} />
+        <ActionsPlugin isRichText={isRichText} />
       </div>
       {showTreeView && <TreeViewPlugin />}
     </>

@@ -46,6 +46,7 @@ import {
   $clearSelection,
   $getRoot,
   getRegisteredNodeOrThrow,
+  getEditorsToPropagate,
 } from './OutlineUtils';
 import {
   garbageCollectDetachedDecorators,
@@ -487,19 +488,23 @@ export function triggerCommandListeners(
   type: string,
   payload: CommandPayload,
 ): boolean {
-  if (editor._updating === false) {
+  if (editor._updating === false || activeEditor !== editor) {
     let returnVal = false;
     editor.update(() => {
       returnVal = triggerCommandListeners(editor, type, payload);
     });
     return returnVal;
   }
-  const commandListeners = editor._listeners.command;
+  const editors = getEditorsToPropagate(editor);
   for (let i = 4; i >= 0; i--) {
-    const listeners = Array.from(commandListeners[i]);
-    for (let s = 0; s < listeners.length; s++) {
-      if (listeners[s](type, payload) === true) {
-        return true;
+    for (let e = 0; e < editors.length; e++) {
+      const currentEditor = editors[e];
+      const commandListeners = currentEditor._listeners.command;
+      const listeners = Array.from(commandListeners[i]);
+      for (let s = 0; s < listeners.length; s++) {
+        if (listeners[s](type, payload, editor) === true) {
+          return true;
+        }
       }
     }
   }

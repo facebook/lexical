@@ -26,9 +26,9 @@ describe('Nested List', () => {
 
       await focusEditor(page);
 
-      await waitForSelector(page, '#block-controls button');
+      await waitForSelector(page, '.block-controls');
 
-      await click(page, '#block-controls button');
+      await click(page, '.block-controls');
 
       await waitForSelector(page, '.dropdown .icon.bullet-list');
 
@@ -40,9 +40,9 @@ describe('Nested List', () => {
       );
 
       // Should allow indenting an empty list item
-      await waitForSelector(page, 'button.action-button.indent');
-      await click(page, 'button.action-button.indent');
-      await click(page, 'button.action-button.indent');
+      await waitForSelector(page, 'button .indent');
+      await click(page, 'button .indent');
+      await click(page, 'button .indent');
 
       await assertHTML(
         page,
@@ -75,20 +75,20 @@ describe('Nested List', () => {
 
       await selectAll(page);
 
-      await waitForSelector(page, 'button.action-button.indent');
-      await click(page, 'button.action-button.indent');
-      await click(page, 'button.action-button.indent');
-      await click(page, 'button.action-button.indent');
+      await waitForSelector(page, 'button .indent');
+      await click(page, 'button .indent');
+      await click(page, 'button .indent');
+      await click(page, 'button .indent');
 
       await assertHTML(
         page,
         '<ul class="editor-list-ul"><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">the</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">other</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">side</span></li></ul></li></ul></li></ul></li></ul',
       );
 
-      await waitForSelector(page, 'button.action-button.outdent');
-      await click(page, 'button.action-button.outdent');
-      await click(page, 'button.action-button.outdent');
-      await click(page, 'button.action-button.outdent');
+      await waitForSelector(page, 'button .outdent');
+      await click(page, 'button .outdent');
+      await click(page, 'button .outdent');
+      await click(page, 'button .outdent');
 
       await assertHTML(
         page,
@@ -105,9 +105,9 @@ describe('Nested List', () => {
 
       await focusEditor(page);
 
-      await waitForSelector(page, '#block-controls button');
+      await waitForSelector(page, '.block-controls');
 
-      await click(page, '#block-controls button');
+      await click(page, '.block-controls');
       await waitForSelector(page, '.dropdown .icon.bullet-list');
       await click(page, '.dropdown .icon.bullet-list');
 
@@ -116,7 +116,7 @@ describe('Nested List', () => {
         '<ul class="editor-list-ul"><li class="editor-listitem"><br></li></ul>',
       );
 
-      await click(page, '#block-controls button');
+      await click(page, '.block-controls');
       await waitForSelector(page, '.dropdown .icon.numbered-list');
       await click(page, '.dropdown .icon.numbered-list');
 

@@ -476,7 +476,7 @@ export class ImageNode extends DecoratorNode {
   }
 }
 
-export function $createEmojiNode(
+export function $createImageNode(
   src: string,
   altText: string,
   ref: EditorStateRef,

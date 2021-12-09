@@ -17,8 +17,11 @@ import EmojisPlugin from '../plugins/EmojisPlugin';
 import HashtagsPlugin from 'outline-react/HashtagsPlugin';
 import KeywordsPlugin from '../plugins/KeywordsPlugin';
 import OnChangePlugin from '../plugins/OnChangePlugin';
-import FloatingToolbarPlugin from '../plugins/FloatingToolbarPlugin';
 import OutlineComposer from 'outline-react/OutlineComposer';
+import TablesPlugin from '../plugins/TablesPlugin';
+import TableCellActionMenuPlugin from '../plugins/TableCellActionMenuPlugin';
+import ImagesPlugin from '../plugins/ImagesPlugin';
+import LinksPlugin from '../plugins/LinksPlugin';
 
 type Props = {
   children?: React$Node,
@@ -38,11 +41,14 @@ export default function InlineEditor({
       <OutlineComposer>
         {onChange && <OnChangePlugin onChange={onChange} />}
         <MentionsPlugin />
+        <TablesPlugin />
+        <TableCellActionMenuPlugin />
+        <ImagesPlugin />
+        <LinksPlugin />
         <EmojisPlugin />
         <HashtagsPlugin />
         <KeywordsPlugin />
         {controlled ? children : <RichTextPlugin placeholder={placeholder} />}
-        <FloatingToolbarPlugin />
       </OutlineComposer>
     </div>
   );

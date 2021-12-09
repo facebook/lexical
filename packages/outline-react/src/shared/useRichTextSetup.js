@@ -12,10 +12,11 @@ import type {
   RootNode,
   CommandListenerEditorPriority,
   TextFormatType,
+  ElementFormatType,
 } from 'outline';
 import type {InputEvents} from 'outline-react/useOutlineEditorEvents';
 
-import {log, $getSelection, $getRoot} from 'outline';
+import {log, $getSelection, $getRoot, isElementNode} from 'outline';
 import useOutlineEditorEvents from '../useOutlineEditorEvents';
 import {HeadingNode} from 'outline/HeadingNode';
 import {ListNode} from 'outline/ListNode';
@@ -156,10 +157,20 @@ export function useRichTextSetup(
             case 'removeText':
               selection.removeText();
               return true;
-            case 'formatText':
+            case 'formatText': {
               const format: TextFormatType = payload;
               selection.formatText(format);
               return true;
+            }
+            case 'formatElement': {
+              const format: ElementFormatType = payload;
+              const node = selection.anchor.getNode();
+              const element = isElementNode(node)
+                ? node
+                : node.getParentOrThrow();
+              element.setFormat(format);
+              return true;
+            }
             case 'insertLineBreak':
               const selectStart: boolean = payload;
               selection.insertLineBreak(selectStart);

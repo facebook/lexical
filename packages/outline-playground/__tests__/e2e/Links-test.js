@@ -58,6 +58,7 @@ describe('Links', () => {
 
       // set url
       await waitForSelector(page, '.link-input');
+      await click(page, '.link-edit');
       await focus(page, '.link-input');
       await page.keyboard.type('facebook.com');
       await page.keyboard.press('Enter');
@@ -174,6 +175,7 @@ describe('Links', () => {
 
       // set url
       await waitForSelector(page, '.link-input');
+      await click(page, '.link-edit');
       await focus(page, '.link-input');
       await page.keyboard.type('facebook.com');
       await page.keyboard.press('Enter');
@@ -260,6 +262,7 @@ describe('Links', () => {
 
       // set url
       await waitForSelector(page, '.link-input');
+      await click(page, '.link-edit');
       await focus(page, '.link-input');
       await page.keyboard.type('facebook.com');
       await page.keyboard.press('Enter');

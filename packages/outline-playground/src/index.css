@@ -31,20 +31,26 @@ header h1 {
 }
 
 .editor-shell {
-  background: #fff;
   margin: 20px auto 20px auto;
   border-radius: 2px;
-  max-width: 600px;
+  width: 900px;
   color: #000;
   position: relative;
   line-height: 20px;
   font-weight: 400;
 }
 
-.editor-shell .editor-conainer {
+.editor-shell .editor-container {
+  background: #fff;
   position: relative;
   cursor: text;
   display: block;
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
+}
+
+.editor-shell .editor-container.tree-view {
+  border-radius: 0;
 }
 
 .editor-shell div.editor {
@@ -57,7 +63,6 @@ header h1 {
   caret-color: rgb(5, 5, 5);
   display: block;
   position: relative;
-  width: calc(100% - 90px);
   tab-size: 1;
 }
 
@@ -141,12 +146,14 @@ header h1 {
 
 .test-recorder-output {
   margin: 20px auto 20px auto;
-  max-width: 600px;
+  width: 900px;
 }
 
 pre {
+  line-height: 1.1;
   background: #222;
   color: #fff;
+  margin: 0;
   padding: 10px;
   font-size: 12px;
   overflow: auto;
@@ -156,16 +163,18 @@ pre {
 
 .tree-view-output {
   display: block;
-  border-radius: 2px;
   background: #222;
   color: #fff;
   padding: 0;
   font-size: 12px;
   white-space: pre-wrap;
-  margin: 20px auto 10px auto;
+  margin: 1px auto 10px auto;
   max-height: 250px;
-  max-width: 600px;
+  width: 900px;
   position: relative;
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
+  overflow: hidden;
 }
 
 pre::-webkit-scrollbar {
@@ -324,7 +333,7 @@ pre::-webkit-scrollbar-thumb {
   background: #ddd;
 }
 
-#toolbar {
+.link-editor {
   padding: 4px;
   position: absolute;
   z-index: 100;
@@ -339,7 +348,7 @@ pre::-webkit-scrollbar-thumb {
   display: flex;
 }
 
-#toolbar .button {
+.link-editor .button {
   width: 20px;
   height: 20px;
   display: inline-block;
@@ -349,14 +358,14 @@ pre::-webkit-scrollbar-thumb {
   margin: 0 2px;
 }
 
-#toolbar .button.hovered {
+.link-editor .button.hovered {
   width: 20px;
   height: 20px;
   display: inline-block;
   background-color: #eee;
 }
 
-#toolbar .button i, .actions i {
+.link-editor .button i, .actions i {
   background-size: contain;
   display: inline-block;
   height: 20px;
@@ -364,31 +373,75 @@ pre::-webkit-scrollbar-thumb {
   vertical-align: -0.25em;
 }
 
-#toolbar .button i.bold {
+i.bold {
   background-image: url(images/icons/type-bold.svg);
 }
 
-#toolbar .button i.italic {
+i.italic {
   background-image: url(images/icons/type-italic.svg);
 }
 
-#toolbar .button i.code {
+i.code {
   background-image: url(images/icons/code.svg);
 }
 
-#toolbar .button i.strikethrough {
+i.underline {
+  background-image: url(images/icons/type-underline.svg);
+}
+
+i.strikethrough {
   background-image: url(images/icons/type-strikethrough.svg);
 }
 
-#toolbar .button i.link {
+i.link {
   background-image: url(images/icons/link.svg);
 }
 
-#toolbar .button.active {
+i.image {
+  background-image: url(images/icons/file-image.svg);
+}
+
+i.table {
+  background-image: url(images/icons/table.svg);
+}
+
+i.left-align {
+  background-image: url(images/icons/text-left.svg);
+}
+
+i.center-align {
+  background-image: url(images/icons/text-center.svg);
+}
+
+i.right-align {
+  background-image: url(images/icons/text-right.svg);
+}
+
+i.justify-align {
+  background-image: url(images/icons/justify.svg);
+}
+
+i.indent {
+  background-image: url(images/icons/indent.svg);
+}
+
+i.outdent {
+  background-image: url(images/icons/outdent.svg);
+}
+
+i.undo {
+  background-image: url(images/icons/arrow-counterclockwise.svg);
+}
+
+i.redo {
+  background-image: url(images/icons/arrow-clockwise.svg);
+}
+
+.link-editor .button.active, .toolbar .button.active {
   background-color: rgb(223, 232, 250);
 }
 
-#toolbar .link-input {
+.link-editor .link-input {
   display: inline-block;
   margin: 0 2px;
   padding: 8px 12px;
@@ -402,7 +455,7 @@ pre::-webkit-scrollbar-thumb {
   position: relative;
 }
 
-#toolbar div.link-edit {
+.link-editor div.link-edit {
   background-image: url(images/icons/pencil-fill.svg);
   background-size: contain;
   display: inline-block;
@@ -415,22 +468,22 @@ pre::-webkit-scrollbar-thumb {
   cursor: pointer;
 }
 
-#toolbar .link-input a {
+.link-editor .link-input a {
   color: rgb(33, 111, 219);
   text-decoration: none;
   display: block;
 }
 
-#toolbar .link-input a:hover {
+.link-editor .link-input a:hover {
   text-decoration: underline;
 }
 
-#toolbar .font-size-wrapper, #toolbar .font-family-wrapper {
+.link-editor .font-size-wrapper, .link-editor .font-family-wrapper {
   display: flex;
   margin: 0 4px;
 }
 
-#toolbar select {
+.link-editor select {
   padding: 6px;
   border: none;
   background-color: rgba(0, 0, 0, 0.075);
@@ -633,31 +686,31 @@ pre::-webkit-scrollbar-thumb {
   background-size: contain;
 }
 
-.dropdown .item .icon.paragraph {
+.icon.paragraph {
   background-image: url(images/icons/text-paragraph.svg);
 }
 
-.dropdown .item .icon.large-heading {
+.icon.large-heading, .icon.h1 {
   background-image: url(images/icons/type-h1.svg);
 }
 
-.dropdown .item .icon.small-heading {
+.icon.small-heading, .icon.h2 {
   background-image: url(images/icons/type-h2.svg);
 }
 
-.dropdown .item .icon.bullet-list {
+.icon.bullet-list, .icon.ul {
   background-image: url(images/icons/list-ul.svg);
 }
 
-.dropdown .item .icon.numbered-list {
+.icon.numbered-list, .icon.ol {
   background-image: url(images/icons/list-ol.svg);
 }
 
-.dropdown .item .icon.quote {
+.icon.quote {
   background-image: url(images/icons/chat-square-quote.svg);
 }
 
-.dropdown .item .icon.code {
+.icon.code {
   background-image: url(images/icons/code.svg);
 }
 
@@ -991,7 +1044,7 @@ pre::-webkit-scrollbar-thumb {
 }
 
 i.chevron-down {
-  background-color: none;
+  background-color: transparent;
   background-size: contain;
   display: inline-block;
   height: 8px;
@@ -1020,7 +1073,7 @@ i.chevron-down {
   overflow: hidden;
   padding: 0 0 10px 0;
   margin: auto;
-  width: 580px;
+  width: 900px;
   display: flex;
 }
 
@@ -1098,4 +1151,122 @@ i.chevron-down {
 
 .rtl {
   text-align: right;
+}
+
+.toolbar {
+  display: flex;
+  margin-bottom: 1px;
+  background: #fff;
+  padding: 4px;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  vertical-align: middle;
+}
+
+.toolbar button.toolbar-item {
+  border: 0;
+  display: flex;
+  background: none;
+  border-radius: 10px;
+  padding: 8px;
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+.toolbar button.toolbar-item:disabled {
+  cursor: not-allowed;
+}
+
+.toolbar button.toolbar-item.spaced {
+  margin-right: 2px;
+}
+
+.toolbar button.toolbar-item i.format {
+  background-size: contain;
+  display: inline-block;
+  height: 18px;
+  width: 18px;
+  margin-top: 2px;
+  vertical-align: -0.25em;
+  display: flex;
+  opacity: 0.6;
+}
+
+.toolbar button.toolbar-item:disabled i.format {
+  opacity: 0.2;
+}
+
+.toolbar button.toolbar-item.active {
+  background-color: rgba(223, 232, 250, 0.3);
+}
+
+.toolbar button.toolbar-item.active i {
+  opacity: 1;
+}
+
+.toolbar .toolbar-item:hover:not([disabled]) {
+  background-color: #eee;
+}
+
+.toolbar select.toolbar-item {
+  border: 0;
+  display: flex;
+  background: none;
+  border-radius: 10px;
+  padding: 8px;
+  vertical-align: middle;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  width: 70px;
+  font-size: 14px;
+  color: #777;
+  text-overflow: ellipsis;
+}
+
+.toolbar .toolbar-item .text {
+  display: flex;
+  line-height: 20px;
+  width: 200px;
+  vertical-align: middle;
+  font-size: 14px;
+  color: #777;
+  text-overflow: ellipsis;
+  width: 70px;
+  overflow: hidden;
+  height: 20px;
+  text-align: left;
+}
+
+.toolbar .toolbar-item .icon {
+  display: flex;
+  width: 20px;
+  height: 20px;
+  user-select: none;
+  margin-right: 8px;
+  line-height: 16px;
+  background-size: contain;
+}
+
+.toolbar i.chevron-down {
+  margin-top: 3px;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  user-select: none;
+}
+
+.toolbar i.chevron-down.inside {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  margin-left: -25px;
+  margin-top: 11px;
+  margin-right: 10px;
+  pointer-events: none; 
+}
+
+.toolbar .divider {
+  width: 1px;
+  background-color: #eee;
+  margin: 0 4px;
 }

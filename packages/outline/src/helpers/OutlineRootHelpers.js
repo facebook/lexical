@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import {isElementNode, isTextNode, $getRoot} from 'outline';
+import {$isElementNode, $isTextNode, $getRoot} from 'outline';
 
 export function $textContent(): string {
   const root = $getRoot();
@@ -50,7 +50,7 @@ export function $canShowPlaceholder(isComposing: boolean): boolean {
   for (let i = 0; i < childrenLength; i++) {
     const topBlock = children[i];
 
-    if (isElementNode(topBlock)) {
+    if ($isElementNode(topBlock)) {
       if (topBlock.__type !== 'paragraph') {
         return false;
       }
@@ -61,7 +61,7 @@ export function $canShowPlaceholder(isComposing: boolean): boolean {
       const topBlockChildrenLength = topBlockChildren.length;
       for (let s = 0; s < topBlockChildrenLength; s++) {
         const child = topBlockChildren[i];
-        if (!isTextNode(child)) {
+        if (!$isTextNode(child)) {
           return false;
         }
       }

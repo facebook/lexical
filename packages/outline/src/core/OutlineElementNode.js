@@ -10,7 +10,7 @@
 import type {NodeKey} from './OutlineNode';
 import type {Selection} from './OutlineSelection';
 
-import {isTextNode, TextNode} from '.';
+import {$isTextNode, TextNode} from '.';
 import {OutlineNode} from './OutlineNode';
 import {makeSelection, $getSelection, setPointValues} from './OutlineSelection';
 import {errorOnReadOnly, getActiveEditor} from './OutlineUpdates';
@@ -75,9 +75,9 @@ export class ElementNode extends OutlineNode {
     const children = self.__children;
     for (let i = 0; i < children.length; i++) {
       const childNode = $getNodeByKey<OutlineNode>(children[i]);
-      if (isTextNode(childNode) && (includeInert || !childNode.isInert())) {
+      if ($isTextNode(childNode) && (includeInert || !childNode.isInert())) {
         textNodes.push(childNode);
-      } else if (isElementNode(childNode)) {
+      } else if ($isElementNode(childNode)) {
         const subChildrenNodes = childNode.getAllTextNodes(includeInert);
         textNodes.push(...subChildrenNodes);
       }
@@ -87,7 +87,7 @@ export class ElementNode extends OutlineNode {
   getFirstDescendant(): null | OutlineNode {
     let node = this.getFirstChild();
     while (node !== null) {
-      if (isElementNode(node)) {
+      if ($isElementNode(node)) {
         const child = node.getFirstChild();
         if (child !== null) {
           node = child;
@@ -101,7 +101,7 @@ export class ElementNode extends OutlineNode {
   getLastDescendant(): null | OutlineNode {
     let node = this.getLastChild();
     while (node !== null) {
-      if (isElementNode(node)) {
+      if ($isElementNode(node)) {
         const child = node.getLastChild();
         if (child !== null) {
           node = child;
@@ -123,13 +123,13 @@ export class ElementNode extends OutlineNode {
     if (index >= childrenLength) {
       const resolvedNode = children[childrenLength - 1];
       return (
-        (isElementNode(resolvedNode) && resolvedNode.getLastDescendant()) ||
+        ($isElementNode(resolvedNode) && resolvedNode.getLastDescendant()) ||
         resolvedNode
       );
     }
     const resolvedNode = children[index];
     return (
-      (isElementNode(resolvedNode) && resolvedNode.getFirstDescendant()) ||
+      ($isElementNode(resolvedNode) && resolvedNode.getFirstDescendant()) ||
       resolvedNode
     );
   }
@@ -174,7 +174,7 @@ export class ElementNode extends OutlineNode {
     for (let i = 0; i < childrenLength; i++) {
       const child = children[i];
       textContent += child.getTextContent(includeInert, includeDirectionless);
-      if (isElementNode(child) && i !== childrenLength - 1) {
+      if ($isElementNode(child) && i !== childrenLength - 1) {
         textContent += '\n\n';
       }
     }
@@ -221,7 +221,7 @@ export class ElementNode extends OutlineNode {
   }
   selectStart(): Selection {
     const firstNode = this.getFirstDescendant();
-    if (isElementNode(firstNode) || isTextNode(firstNode)) {
+    if ($isElementNode(firstNode) || $isTextNode(firstNode)) {
       return firstNode.select(0, 0);
     }
     // Decorator or LineBreak
@@ -232,7 +232,7 @@ export class ElementNode extends OutlineNode {
   }
   selectEnd(): Selection {
     const lastNode = this.getLastDescendant();
-    if (isElementNode(lastNode) || isTextNode(lastNode)) {
+    if ($isElementNode(lastNode) || $isTextNode(lastNode)) {
       return lastNode.select();
     }
     // Decorator or LineBreak
@@ -339,6 +339,6 @@ export class ElementNode extends OutlineNode {
   }
 }
 
-export function isElementNode(node: ?OutlineNode): boolean %checks {
+export function $isElementNode(node: ?OutlineNode): boolean %checks {
   return node instanceof ElementNode;
 }

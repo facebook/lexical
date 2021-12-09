@@ -18,7 +18,7 @@ import type {
 import {
   ElementNode,
   isLeafNode,
-  isTextNode,
+  $isTextNode,
   log,
   $getSelection,
   $getRoot,
@@ -147,9 +147,9 @@ function $wrapOverflowedNodes(offset: number) {
           (!selection.anchor.getNode().isAttached() ||
             !selection.focus.getNode().isAttached())
         ) {
-          if (isTextNode(previousSibling)) {
+          if ($isTextNode(previousSibling)) {
             previousSibling.select();
-          } else if (isTextNode(nextSibling)) {
+          } else if ($isTextNode(nextSibling)) {
             nextSibling.select();
           } else if (parent !== null) {
             parent.select();
@@ -164,7 +164,7 @@ function $wrapOverflowedNodes(offset: number) {
         // For simple text we can redimension the overflow into a smaller and more accurate
         // container
         const firstDescendantIsSimpleText =
-          isTextNode(descendant) && descendant.isSimpleText();
+          $isTextNode(descendant) && descendant.isSimpleText();
         const firstDescendantDoesNotOverflow =
           previousPlusDescendantLength <= offset;
         if (firstDescendantIsSimpleText || firstDescendantDoesNotOverflow) {
@@ -182,7 +182,7 @@ function $wrapOverflowedNodes(offset: number) {
         // on the split point
         if (
           previousAccumulatedLength < offset &&
-          isTextNode(node) &&
+          $isTextNode(node) &&
           node.isSimpleText()
         ) {
           const [, overflowedText] = node.splitText(

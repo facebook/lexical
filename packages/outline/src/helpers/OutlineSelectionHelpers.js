@@ -20,8 +20,8 @@ import {
   $createLineBreakNode,
   isDecoratorNode,
   isLeafNode,
-  isTextNode,
-  isElementNode,
+  $isTextNode,
+  $isElementNode,
   $createTextNode,
   isRootNode,
 } from 'outline';
@@ -33,12 +33,12 @@ function cloneWithProperties<T: OutlineNode>(node: T): T {
   const constructor = latest.constructor;
   const clone = constructor.clone(latest);
   clone.__parent = latest.__parent;
-  if (isElementNode(latest)) {
+  if ($isElementNode(latest)) {
     clone.__children = Array.from(latest.__children);
     clone.__format = latest.__format;
     clone.__indent = latest.__indent;
     clone.__dir = latest.__dir;
-  } else if (isTextNode(latest)) {
+  } else if ($isTextNode(latest)) {
     clone.__format = latest.__format;
     clone.__style = latest.__style;
     clone.__mode = latest.__mode;
@@ -55,7 +55,7 @@ function getIndexFromPossibleClone(
   nodeMap: Map<NodeKey, OutlineNode>,
 ): number {
   const parentClone = nodeMap.get(parent.getKey());
-  if (isElementNode(parentClone)) {
+  if ($isElementNode(parentClone)) {
     return parentClone.__children.indexOf(node.getKey());
   }
   return node.getIndexWithinParent();
@@ -85,7 +85,7 @@ function copyLeafNodeBranchToRoot(
     if (parent === null) {
       break;
     }
-    if (!isElementNode(node) || !node.excludeFromCopy()) {
+    if (!$isElementNode(node) || !node.excludeFromCopy()) {
       const key = node.getKey();
       let clone = nodeMap.get(key);
       const needsClone = clone === undefined;
@@ -93,12 +93,12 @@ function copyLeafNodeBranchToRoot(
         clone = cloneWithProperties<OutlineNode>(node);
         nodeMap.set(key, clone);
       }
-      if (isTextNode(clone) && !clone.isSegmented() && !clone.isToken()) {
+      if ($isTextNode(clone) && !clone.isSegmented() && !clone.isToken()) {
         clone.__text = clone.__text.slice(
           isLeftSide ? offset : 0,
           isLeftSide ? undefined : offset,
         );
-      } else if (isElementNode(clone)) {
+      } else if ($isElementNode(clone)) {
         clone.__children = clone.__children.slice(
           isLeftSide ? offset : 0,
           isLeftSide ? undefined : offset + 1,
@@ -132,7 +132,7 @@ export function cloneContents(selection: Selection): {
   // Handle a single text node extraction
   if (
     anchorNode === focusNode &&
-    isTextNode(anchorNode) &&
+    $isTextNode(anchorNode) &&
     (anchorNodeParent.canBeEmpty() || anchorNodeParent.getChildrenSize() > 1)
   ) {
     const clonedFirstNode = cloneWithProperties<TextNode>(anchorNode);
@@ -192,7 +192,7 @@ export function cloneContents(selection: Selection): {
     const key = node.getKey();
     if (
       !nodeMap.has(key) &&
-      (!isElementNode(node) || !node.excludeFromCopy())
+      (!$isElementNode(node) || !node.excludeFromCopy())
     ) {
       const clone = cloneWithProperties<OutlineNode>(node);
       if (isRootNode(node.getParent())) {
@@ -265,7 +265,7 @@ export function patchStyleText(
   if (startOffset === firstNode.getTextContentSize()) {
     const nextSibling = firstNode.getNextSibling();
 
-    if (isTextNode(nextSibling)) {
+    if ($isTextNode(nextSibling)) {
       // we basically make the second node the firstNode, changing offsets accordingly
       anchorOffset = 0;
       startOffset = 0;
@@ -275,7 +275,7 @@ export function patchStyleText(
 
   // This is the case where we only selected a single node
   if (firstNode.is(lastNode)) {
-    if (isTextNode(firstNode)) {
+    if ($isTextNode(firstNode)) {
       startOffset = anchorOffset > focusOffset ? focusOffset : anchorOffset;
       endOffset = anchorOffset > focusOffset ? anchorOffset : focusOffset;
 
@@ -298,7 +298,7 @@ export function patchStyleText(
     }
     // multiple nodes selected.
   } else {
-    if (isTextNode(firstNode)) {
+    if ($isTextNode(firstNode)) {
       if (startOffset !== 0) {
         // the entire first node isn't selected, so split it
         [, firstNode] = firstNode.splitText(startOffset);
@@ -307,7 +307,7 @@ export function patchStyleText(
       patchNodeStyle(firstNode, patch);
     }
 
-    if (isTextNode(lastNode)) {
+    if ($isTextNode(lastNode)) {
       const lastNodeText = lastNode.getTextContent();
       const lastNodeTextLength = lastNodeText.length;
       // if the entire last node isn't selected, split it
@@ -324,7 +324,7 @@ export function patchStyleText(
       const selectedNode = selectedNodes[i];
       const selectedNodeKey = selectedNode.getKey();
       if (
-        isTextNode(selectedNode) &&
+        $isTextNode(selectedNode) &&
         selectedNodeKey !== firstNode.getKey() &&
         selectedNodeKey !== lastNode.getKey() &&
         !selectedNode.isToken()
@@ -355,7 +355,7 @@ export function $getSelectionStyleValueForProperty(
     if (i !== 0 && endOffset === 0 && node.is(endNode)) {
       continue;
     }
-    if (isTextNode(node)) {
+    if ($isTextNode(node)) {
       const nodeStyleValue = getNodeStyleValueForProperty(
         node,
         styleProperty,
@@ -448,15 +448,15 @@ export function selectAll(selection: Selection): void {
   let lastType = 'element';
   let lastOffset = 0;
 
-  if (isTextNode(firstNode)) {
+  if ($isTextNode(firstNode)) {
     firstType = 'text';
-  } else if (!isElementNode(firstNode) && firstNode !== null) {
+  } else if (!$isElementNode(firstNode) && firstNode !== null) {
     firstNode = firstNode.getParentOrThrow();
   }
-  if (isTextNode(lastNode)) {
+  if ($isTextNode(lastNode)) {
     lastType = 'text';
     lastOffset = lastNode.getTextContentSize();
-  } else if (!isElementNode(lastNode) && lastNode !== null) {
+  } else if (!$isElementNode(lastNode) && lastNode !== null) {
     lastNode = lastNode.getParentOrThrow();
     lastOffset = lastNode.getChildrenSize();
   }
@@ -507,7 +507,7 @@ export function wrapLeafNodesInElements(
   // either insertAfter/insertBefore/append the corresponding
   // elements to. This is made more complicated due to nested
   // structures.
-  let target = isElementNode(firstNode)
+  let target = $isElementNode(firstNode)
     ? firstNode
     : firstNode.getParentOrThrow();
   while (target !== null) {
@@ -526,7 +526,7 @@ export function wrapLeafNodesInElements(
   // Find any top level empty elements
   for (let i = 0; i < nodesLength; i++) {
     const node = nodes[i];
-    if (isElementNode(node) && node.getChildrenSize() === 0) {
+    if ($isElementNode(node) && node.getChildrenSize() === 0) {
       emptyElements.add(node.getKey());
     }
   }
@@ -573,7 +573,7 @@ export function wrapLeafNodesInElements(
   // so that the target is the first child instead.
   if (isRootNode(target)) {
     const firstChild = target.getFirstChild();
-    if (isElementNode(firstChild)) {
+    if ($isElementNode(firstChild)) {
       target = firstChild;
     }
 

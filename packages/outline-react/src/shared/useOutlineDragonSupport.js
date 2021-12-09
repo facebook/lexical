@@ -12,7 +12,7 @@ import type {OutlineEditor} from 'outline';
 import {insertRichText} from 'outline/selection';
 
 import {useEffect} from 'react';
-import {isTextNode, log, $getSelection} from 'outline';
+import {$isTextNode, log, $getSelection} from 'outline';
 
 export default function useOutlineDragonSupport(editor: OutlineEditor) {
   useEffect(() => {
@@ -57,7 +57,7 @@ export default function useOutlineDragonSupport(editor: OutlineEditor) {
                   let anchorNode = anchor.getNode();
                   let setSelStart = 0;
                   let setSelEnd = 0;
-                  if (isTextNode(anchorNode)) {
+                  if ($isTextNode(anchorNode)) {
                     // set initial selection
                     if (elementStart >= 0 && elementLength >= 0) {
                       setSelStart = elementStart;
@@ -75,7 +75,7 @@ export default function useOutlineDragonSupport(editor: OutlineEditor) {
                     insertRichText(selection, text);
                     anchorNode = anchor.getNode();
                   }
-                  if (isTextNode(anchorNode)) {
+                  if ($isTextNode(anchorNode)) {
                     // set final selection
                     setSelStart = selStart;
                     setSelEnd = selStart + selLength;

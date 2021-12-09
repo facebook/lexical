@@ -15,7 +15,7 @@ import type {
 } from './OutlineEditor';
 import type {EditorState} from './OutlineEditorState';
 
-import {isElementNode} from '.';
+import {$isElementNode} from '.';
 import {cloneDecorators} from './OutlineUtils';
 
 export function garbageCollectDetachedDecorators(
@@ -50,7 +50,7 @@ function garbageCollectDetachedDeepChildNodes(
     const childKey = children[i];
     const child = nodeMap.get(childKey);
     if (child !== undefined && child.__parent === parentKey) {
-      if (isElementNode(child)) {
+      if ($isElementNode(child)) {
         garbageCollectDetachedDeepChildNodes(
           child,
           childKey,
@@ -101,7 +101,7 @@ export function garbageCollectDetachedNodes(
     if (node !== undefined) {
       // Garbage collect node and its children if they exist
       if (!node.isAttached()) {
-        if (isElementNode(node)) {
+        if ($isElementNode(node)) {
           garbageCollectDetachedDeepChildNodes(
             node,
             nodeKey,

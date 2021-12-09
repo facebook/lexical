@@ -12,9 +12,9 @@ import type {YjsNode, Binding} from '.';
 
 import {
   $getNodeByKey,
-  isElementNode,
-  isTextNode,
-  isLineBreakNode,
+  $isElementNode,
+  $isTextNode,
+  $isLineBreakNode,
   isDecoratorNode,
 } from 'outline';
 import {CollabElementNode, $createCollabElementNode} from './CollabElementNode';
@@ -80,12 +80,12 @@ export function $createCollabNodeFromOutlineNode(
   | CollabDecoratorNode {
   const nodeType = outlineNode.__type;
   let collabNode;
-  if (isElementNode(outlineNode)) {
+  if ($isElementNode(outlineNode)) {
     const xmlText = new XmlText();
     collabNode = $createCollabElementNode(xmlText, parent, nodeType);
     collabNode.syncPropertiesFromOutline(binding, outlineNode, null);
     collabNode.syncChildrenFromOutline(binding, outlineNode, null, null, null);
-  } else if (isTextNode(outlineNode)) {
+  } else if ($isTextNode(outlineNode)) {
     // TODO create a token text node for immutable, segmented or inert nodes.
     const map = new YMap();
     collabNode = $createCollabTextNode(
@@ -95,7 +95,7 @@ export function $createCollabNodeFromOutlineNode(
       nodeType,
     );
     collabNode.syncPropertiesAndTextFromOutline(binding, outlineNode, null);
-  } else if (isLineBreakNode(outlineNode)) {
+  } else if ($isLineBreakNode(outlineNode)) {
     const map = new YMap();
     map.set('__type', 'linebreak');
     collabNode = $createCollabLineBreakNode(map, parent);
@@ -339,9 +339,9 @@ export function doesSelectionNeedRecovering(selection: Selection): boolean {
       !anchorNode.isAttached() ||
       !focusNode.isAttached() ||
       // If we've split a node, then the offset might not be right
-      (isTextNode(anchorNode) &&
+      ($isTextNode(anchorNode) &&
         anchor.offset > anchorNode.getTextContentSize()) ||
-      (isTextNode(focusNode) && focus.offset > focusNode.getTextContentSize())
+      ($isTextNode(focusNode) && focus.offset > focusNode.getTextContentSize())
     ) {
       recoveryNeeded = true;
     }

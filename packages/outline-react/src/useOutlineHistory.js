@@ -207,7 +207,7 @@ export function useOutlineHistory(
         const historyStateEntry = undoStack.pop();
         historyState.current = historyStateEntry;
         historyStateEntry.editor.setEditorState(historyStateEntry.editorState, {
-          tags: 'historic',
+          tag: 'historic',
         });
         if (current !== null) {
           redoStack.push(current);
@@ -227,7 +227,7 @@ export function useOutlineHistory(
         const historyStateEntry = redoStack.pop();
         historyState.current = historyStateEntry;
         historyStateEntry.editor.setEditorState(historyStateEntry.editorState, {
-          tags: 'historic',
+          tag: 'historic',
         });
         if (current !== null) {
           undoStack.push(current);

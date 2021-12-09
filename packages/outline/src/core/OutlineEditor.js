@@ -41,15 +41,15 @@ export type TextNodeThemeClasses = {
   code?: EditorThemeClassName,
 };
 
-export type EditorUpdateOptions = {
+export type EditorUpdateOptions = {|
   onUpdate?: () => void,
   tag?: string,
   skipTransforms?: true,
-};
+|};
 
-export type EditorSetOptions = {
+export type EditorSetOptions = {|
   tag?: string,
-};
+|};
 
 export type EditorThemeClasses = {
   ltr?: EditorThemeClassName,

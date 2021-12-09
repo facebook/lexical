@@ -136,8 +136,6 @@ function FloatingLinkEditor({editor}: {editor: OutlineEditor}): React$Node {
     }
     const rootElement = editor.getRootElement();
 
-    debugger;
-
     if (
       selection !== null &&
       !nativeSelection.isCollapsed &&

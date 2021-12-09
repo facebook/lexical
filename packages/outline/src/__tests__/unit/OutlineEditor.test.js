@@ -486,6 +486,40 @@ describe('OutlineEditor tests', () => {
     removeListener();
   });
 
+  it('transforms only run on nodes that were explictly marked as dirty', async () => {
+    init();
+    let executeParagraphNodeTransform = () => {};
+    let executeTextNodeTransform = () => {};
+    const removeParagraphTransform = editor.addTransform(
+      ParagraphNode,
+      (node) => {
+        executeParagraphNodeTransform();
+      },
+    );
+    const removeTextNodeTransform = editor.addTransform(TextNode, (node) => {
+      executeTextNodeTransform();
+    });
+    await editor.update(() => {
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
+      root.append(paragraph);
+      paragraph.append($createTextNode('Foo'));
+    });
+    await editor.update(() => {
+      const root = $getRoot();
+      const paragraph = root.getFirstChild();
+      const textNode = paragraph.getFirstChild();
+      textNode.getWritable();
+      executeParagraphNodeTransform = jest.fn();
+      executeTextNodeTransform = jest.fn();
+    });
+    expect(executeParagraphNodeTransform).toHaveBeenCalledTimes(0);
+    expect(executeTextNodeTransform).toHaveBeenCalledTimes(1);
+
+    removeParagraphTransform();
+    removeTextNodeTransform();
+  });
+
   describe('transforms on siblings', () => {
     let textNodeKeys;
     let textTransformCount;

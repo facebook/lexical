@@ -7,8 +7,6 @@
  * @flow strict
  */
 
-import type {State} from 'outline';
-
 import {TableCellNode} from 'outline/TableCellNode';
 import * as React from 'react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
@@ -27,11 +25,9 @@ import {TableNode} from 'outline/TableNode';
 import {findMatchingParent} from 'outline/nodes';
 
 export function getTableCellNodeFromOutlineNode(
-  state: State,
   startingNode: OutlineNode,
 ): TableCellNode | null {
   const node = findMatchingParent(
-    state,
     startingNode,
     (n) => n instanceof TableCellNode,
   );
@@ -44,11 +40,9 @@ export function getTableCellNodeFromOutlineNode(
 }
 
 export function getTableRowNodeFromTableCellNodeOrThrow(
-  state: State,
   startingNode: OutlineNode,
 ): TableRowNode {
   const node = findMatchingParent(
-    state,
     startingNode,
     (n) => n instanceof TableRowNode,
   );
@@ -61,14 +55,9 @@ export function getTableRowNodeFromTableCellNodeOrThrow(
 }
 
 export function getTableNodeFromOutlineNodeOrThrow(
-  state: State,
   startingNode: OutlineNode,
 ): TableNode {
-  const node = findMatchingParent(
-    state,
-    startingNode,
-    (n) => n instanceof TableNode,
-  );
+  const node = findMatchingParent(startingNode, (n) => n instanceof TableNode);
 
   if (node instanceof TableNode) {
     return node;
@@ -78,27 +67,19 @@ export function getTableNodeFromOutlineNodeOrThrow(
 }
 
 export function getTableRowIndexFromTableCellNode(
-  state: State,
   tableCellNode: TableCellNode,
 ): number {
-  const tableRowNode = getTableRowNodeFromTableCellNodeOrThrow(
-    state,
-    tableCellNode,
-  );
+  const tableRowNode = getTableRowNodeFromTableCellNodeOrThrow(tableCellNode);
 
-  const tableNode = getTableNodeFromOutlineNodeOrThrow(state, tableRowNode);
+  const tableNode = getTableNodeFromOutlineNodeOrThrow(tableRowNode);
 
   return tableNode.getChildren().findIndex((n) => n.is(tableRowNode));
 }
 
 export function getTableColumnIndexFromTableCellNode(
-  state: State,
   tableCellNode: TableCellNode,
 ): number {
-  const tableRowNode = getTableRowNodeFromTableCellNodeOrThrow(
-    state,
-    tableCellNode,
-  );
+  const tableRowNode = getTableRowNodeFromTableCellNodeOrThrow(tableCellNode);
 
   return tableRowNode.getChildren().findIndex((n) => n.is(tableCellNode));
 }
@@ -268,16 +249,10 @@ function TableActionMenu({
 
   const insertTableRowAtSelection = useCallback(
     (shouldInsertAfter) => {
-      editor.update((state) => {
-        const tableNode = getTableNodeFromOutlineNodeOrThrow(
-          state,
-          tableCellNode,
-        );
+      editor.update(() => {
+        const tableNode = getTableNodeFromOutlineNodeOrThrow(tableCellNode);
 
-        const tableRowIndex = getTableRowIndexFromTableCellNode(
-          state,
-          tableCellNode,
-        );
+        const tableRowIndex = getTableRowIndexFromTableCellNode(tableCellNode);
 
         insertTableRow(tableNode, tableRowIndex, shouldInsertAfter);
 
@@ -291,16 +266,11 @@ function TableActionMenu({
 
   const insertTableColumnAtSelection = useCallback(
     (shouldInsertAfter) => {
-      editor.update((state) => {
-        const tableNode = getTableNodeFromOutlineNodeOrThrow(
-          state,
-          tableCellNode,
-        );
+      editor.update(() => {
+        const tableNode = getTableNodeFromOutlineNodeOrThrow(tableCellNode);
 
-        const tableColumnIndex = getTableColumnIndexFromTableCellNode(
-          state,
-          tableCellNode,
-        );
+        const tableColumnIndex =
+          getTableColumnIndexFromTableCellNode(tableCellNode);
 
         insertTableColumn(tableNode, tableColumnIndex, shouldInsertAfter);
 
@@ -311,16 +281,10 @@ function TableActionMenu({
   );
 
   const deleteTableRowAtSelection = useCallback(() => {
-    editor.update((state) => {
-      const tableNode = getTableNodeFromOutlineNodeOrThrow(
-        state,
-        tableCellNode,
-      );
+    editor.update(() => {
+      const tableNode = getTableNodeFromOutlineNodeOrThrow(tableCellNode);
 
-      const tableRowIndex = getTableRowIndexFromTableCellNode(
-        state,
-        tableCellNode,
-      );
+      const tableRowIndex = getTableRowIndexFromTableCellNode(tableCellNode);
 
       removeTableRowAtIndex(tableNode, tableRowIndex);
 
@@ -331,11 +295,8 @@ function TableActionMenu({
   }, [editor, onClose, tableCellNode]);
 
   const deleteTableAtSelection = useCallback(() => {
-    editor.update((state) => {
-      const tableNode = getTableNodeFromOutlineNodeOrThrow(
-        state,
-        tableCellNode,
-      );
+    editor.update(() => {
+      const tableNode = getTableNodeFromOutlineNodeOrThrow(tableCellNode);
 
       tableNode.remove();
 
@@ -346,16 +307,11 @@ function TableActionMenu({
   }, [editor, onClose, tableCellNode]);
 
   const deleteTableColumnAtSelection = useCallback(() => {
-    editor.update((state) => {
-      const tableNode = getTableNodeFromOutlineNodeOrThrow(
-        state,
-        tableCellNode,
-      );
+    editor.update(() => {
+      const tableNode = getTableNodeFromOutlineNodeOrThrow(tableCellNode);
 
-      const tableColumnIndex = getTableColumnIndexFromTableCellNode(
-        state,
-        tableCellNode,
-      );
+      const tableColumnIndex =
+        getTableColumnIndexFromTableCellNode(tableCellNode);
 
       deleteTableColumn(tableNode, tableColumnIndex);
 
@@ -414,56 +370,52 @@ function TableCellActionMenuContainer(): React.MixedElement {
     null,
   );
 
-  const moveMenu = useCallback(
-    (state: State) => {
-      const menu = menuButtonRef.current;
-      const selection = $getSelection();
-      const nativeSelection = window.getSelection();
-      const activeElement = document.activeElement;
+  const moveMenu = useCallback(() => {
+    const menu = menuButtonRef.current;
+    const selection = $getSelection();
+    const nativeSelection = window.getSelection();
+    const activeElement = document.activeElement;
 
-      if (selection == null || menu == null) {
+    if (selection == null || menu == null) {
+      setTableMenuCellNode(null);
+      return;
+    }
+
+    const rootElement = editor.getRootElement();
+
+    if (
+      selection !== null &&
+      rootElement !== null &&
+      rootElement.contains(nativeSelection.anchorNode)
+    ) {
+      const tableCellNodeFromSelection = getTableCellNodeFromOutlineNode(
+        selection.anchor.getNode(),
+      );
+
+      if (tableCellNodeFromSelection == null) {
         setTableMenuCellNode(null);
         return;
       }
 
-      const rootElement = editor.getRootElement();
+      const tableCellParentNodeDOM = editor.getElementByKey(
+        tableCellNodeFromSelection.getKey(),
+      );
 
-      if (
-        selection !== null &&
-        rootElement !== null &&
-        rootElement.contains(nativeSelection.anchorNode)
-      ) {
-        const tableCellNodeFromSelection = getTableCellNodeFromOutlineNode(
-          state,
-          selection.anchor.getNode(),
-        );
-
-        if (tableCellNodeFromSelection == null) {
-          setTableMenuCellNode(null);
-          return;
-        }
-
-        const tableCellParentNodeDOM = editor.getElementByKey(
-          tableCellNodeFromSelection.getKey(),
-        );
-
-        if (tableCellParentNodeDOM == null) {
-          setTableMenuCellNode(null);
-          return;
-        }
-
-        setTableMenuCellNode(tableCellNodeFromSelection);
-      } else if (!activeElement) {
+      if (tableCellParentNodeDOM == null) {
         setTableMenuCellNode(null);
+        return;
       }
-    },
-    [editor],
-  );
+
+      setTableMenuCellNode(tableCellNodeFromSelection);
+    } else if (!activeElement) {
+      setTableMenuCellNode(null);
+    }
+  }, [editor]);
 
   useEffect(() => {
     const removeUpdateListener = editor.addListener('update', () => {
-      editor.getEditorState().read((state) => {
-        moveMenu(state);
+      editor.getEditorState().read(() => {
+        moveMenu();
       });
     });
 

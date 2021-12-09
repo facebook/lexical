@@ -20,7 +20,6 @@ export type {
   CommandListenerCriticalPriority,
 } from './OutlineEditor';
 export type {EditorState, ParsedEditorState} from './OutlineEditorState';
-export type {State} from './OutlineUpdates';
 export type {NodeKey, OutlineNode, NodeMap} from './OutlineNode';
 export type {ParsedNode, ParsedNodeMap} from './OutlineParsing';
 export type {

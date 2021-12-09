@@ -103,7 +103,7 @@ describe('OutlineListItemNode tests', () => {
 
       beforeEach(async () => {
         const {editor} = testEnv;
-        await editor.update((state) => {
+        await editor.update(() => {
           const root = $getRoot();
           listNode = new ListNode('ul', 1);
           listItemNode1 = new ListItemNode();

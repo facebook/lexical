@@ -418,6 +418,7 @@ function BlockOptionsDropdownList({
         }
         if (nodes.length > 0) {
           let currentListItem = null;
+          let isFirstBlock = true;
           const handled = new Set();
           for (let i = 0; i < nodes.length; i++) {
             const node = nodes[i];
@@ -428,21 +429,27 @@ function BlockOptionsDropdownList({
                 $isLeafNode(node) ||
                 ($isElementNode(node) && node.isInline())
               ) {
+                const parent = node.getParent();
                 if (currentListItem === null) {
                   currentListItem = $createListItemNode();
                   list.append(currentListItem);
                 }
                 currentListItem.append(node);
-                const parent = node.getParent();
+                if (parent && parent.getChildrenSize() === 0) {
+                  parent.remove();
+                }
                 handled.add(node);
                 if ($isElementNode(node)) {
                   handled.add(...node.getChildren());
                 }
-              } else if ($isElementNode(node)) {
-                currentListItem = $createListItemNode();
-                currentListItem.append(node);
-                list.append(currentListItem);
-                handled.add(node, ...node.getChildren());
+              } else {
+                if (isFirstBlock) {
+                  isFirstBlock = false;
+                } else {
+                  currentListItem = $createListItemNode();
+                  list.append(currentListItem);
+                  handled.add(node);
+                }
               }
             }
           }

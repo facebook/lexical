@@ -21,7 +21,7 @@ import {useCallback, useEffect, useRef, useState} from 'react';
 
 import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
 import {$isHeadingNode} from 'outline/HeadingNode';
-import {$createParagraphNode} from 'outline/ParagraphNode';
+import {$createParagraphNode, $isParagraphNode} from 'outline/ParagraphNode';
 import {$createHeadingNode} from 'outline/HeadingNode';
 import {$createListNode, $isListNode} from 'outline/ListNode';
 import {$createListItemNode, $isListItemNode} from 'outline/ListItemNode';
@@ -417,8 +417,7 @@ function BlockOptionsDropdownList({
           insertionPoint.insertAfter(list);
         }
         if (nodes.length > 0) {
-          let currentListItem = $createListItemNode();
-          list.append(currentListItem);
+          let currentListItem = null;
           const handled = new Set();
           for (let i = 0; i < nodes.length; i++) {
             const node = nodes[i];
@@ -429,14 +428,15 @@ function BlockOptionsDropdownList({
                 $isLeafNode(node) ||
                 ($isElementNode(node) && node.isInline())
               ) {
+                if (currentListItem === null) {
+                  currentListItem = $createListItemNode();
+                  list.append(currentListItem);
+                }
                 currentListItem.append(node);
                 const parent = node.getParent();
                 handled.add(node);
                 if ($isElementNode(node)) {
                   handled.add(...node.getChildren());
-                }
-                if (parent && parent.getChildrenSize() === 0) {
-                  parent.remove();
                 }
               } else if ($isElementNode(node)) {
                 currentListItem = $createListItemNode();

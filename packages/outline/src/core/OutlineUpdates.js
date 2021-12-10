@@ -95,7 +95,7 @@ export function getActiveEditor(): OutlineEditor {
   return activeEditor;
 }
 
-export function applyTransforms(
+export function $applyTransforms(
   editor: OutlineEditor,
   node: OutlineNode,
   transformsCache: Map<string, Array<Transform<OutlineNode>>>,
@@ -116,7 +116,7 @@ export function applyTransforms(
   }
 }
 
-function isNodeValidForTransform(
+function $isNodeValidForTransform(
   node: void | OutlineNode,
   compositionKey: null | string,
 ): boolean {
@@ -128,7 +128,7 @@ function isNodeValidForTransform(
   );
 }
 
-function normalizeAllDirtyTextNodes(
+function $normalizeAllDirtyTextNodes(
   editorState: EditorState,
   editor: OutlineEditor,
 ): void {
@@ -155,7 +155,7 @@ function normalizeAllDirtyTextNodes(
  * Note that to keep track of newly dirty nodes and subtress we leverage the editor._dirtyNodes and
  * editor._subtrees which we reset in every loop.
  */
-function applyAllTransforms(
+function $applyAllTransforms(
   editorState: EditorState,
   editor: OutlineEditor,
 ): void {
@@ -185,9 +185,9 @@ function applyAllTransforms(
         }
         if (
           node !== undefined &&
-          isNodeValidForTransform(node, compositionKey)
+          $isNodeValidForTransform(node, compositionKey)
         ) {
-          applyTransforms(editor, node, transformsCache);
+          $applyTransforms(editor, node, transformsCache);
         }
         dirtyLeaves.add(nodeKey);
       }
@@ -217,8 +217,11 @@ function applyAllTransforms(
       const nodeIntentionallyMarkedAsDirty =
         untransformedDirtyElementsArr[i][1];
       const node = nodeMap.get(nodeKey);
-      if (node !== undefined && isNodeValidForTransform(node, compositionKey)) {
-        applyTransforms(editor, node, transformsCache);
+      if (
+        node !== undefined &&
+        $isNodeValidForTransform(node, compositionKey)
+      ) {
+        $applyTransforms(editor, node, transformsCache);
       }
       dirtyElements.set(nodeKey, nodeIntentionallyMarkedAsDirty);
     }
@@ -573,9 +576,9 @@ function beginUpdate(
         );
       }
       if (skipTransforms) {
-        normalizeAllDirtyTextNodes(pendingEditorState, editor);
+        $normalizeAllDirtyTextNodes(pendingEditorState, editor);
       } else {
-        applyAllTransforms(pendingEditorState, editor);
+        $applyAllTransforms(pendingEditorState, editor);
       }
       processNestedUpdates(editor, deferred);
       $garbageCollectDetachedNodes(

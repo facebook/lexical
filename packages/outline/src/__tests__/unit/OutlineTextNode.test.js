@@ -20,7 +20,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import {$createTextNode, $getRoot, $getNodeByKey} from 'outline';
+import {$createTextNode, $getRoot, $getNodeByKey, $getSelection} from 'outline';
 
 import {$createParagraphNode} from 'outline/ParagraphNode';
 import {
@@ -725,5 +725,29 @@ describe('OutlineTextNode tests', () => {
         });
       },
     );
+  });
+
+  test('mergeWithSibling', async () => {
+    await update(() => {
+      const paragraph = $getRoot().getFirstChild();
+      const textNode1 = $createTextNode('1');
+      const textNode2 = $createTextNode('2');
+      const textNode3 = $createTextNode('3');
+      paragraph.append(textNode1, textNode2, textNode3);
+      textNode2.select();
+
+      const selection = $getSelection();
+      textNode2.mergeWithSibling(textNode1);
+      expect(selection.anchor.getNode()).toBe(textNode2);
+      expect(selection.anchor.offset).toBe(1);
+      expect(selection.focus.offset).toBe(1);
+
+      textNode2.mergeWithSibling(textNode3);
+      expect(selection.anchor.getNode()).toBe(textNode2);
+      expect(selection.anchor.offset).toBe(1);
+      expect(selection.focus.offset).toBe(1);
+    });
+
+    expect(getEditorStateTextContent(editor.getEditorState())).toBe('123');
   });
 });

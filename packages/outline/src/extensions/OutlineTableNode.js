@@ -196,6 +196,7 @@ function applyCellSelection(
       // $FlowFixMe: event.target is always a Node on the DOM
       const cell = getCellFromTarget(event.target);
       if (cell !== null) {
+        event.preventDefault();
         const cellX = cell.x;
         const cellY = cell.y;
         if (!isHighlightingCells && (startX !== cellX || startY !== cellY)) {

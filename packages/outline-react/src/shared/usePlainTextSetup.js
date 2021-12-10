@@ -142,6 +142,9 @@ export default function usePlainTextSetup(
             case 'removeText':
               selection.removeText();
               return true;
+            case 'formatText': {
+              return true;
+            }
             case 'insertLineBreak':
               const selectStart: boolean = payload;
               selection.insertLineBreak(selectStart);

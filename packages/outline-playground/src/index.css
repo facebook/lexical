@@ -1,3 +1,5 @@
+@import 'https://fonts.googleapis.com/css?family=Reenie+Beanie';
+
 body {
   margin: 0;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, '.SFNSText-Regular', sans-serif;
@@ -378,6 +380,14 @@ pre::-webkit-scrollbar-thumb {
   vertical-align: -0.25em;
 }
 
+i.palette {
+  background-image: url(images/icons/palette.svg);
+}
+
+i.bucket {
+  background-image: url(images/icons/paint-bucket.svg);
+}
+
 i.bold {
   background-image: url(images/icons/type-bold.svg);
 }
@@ -440,6 +450,10 @@ i.undo {
 
 i.redo {
   background-image: url(images/icons/arrow-clockwise.svg);
+}
+
+i.sticky {
+  background-image: url(images/icons/sticky.svg);
 }
 
 .link-editor .button.active, .toolbar .button.active {
@@ -1274,4 +1288,104 @@ i.chevron-down {
   width: 1px;
   background-color: #eee;
   margin: 0 4px;
+}
+
+.sticky-note {
+  line-height: 1;
+  text-align: left;     
+  width: 120px;    
+  margin: 25px;    
+  padding: 20px 10px;
+  position: absolute;   
+  border: 1px solid #E8E8E8;  
+  font-family: 'Reenie Beanie';    
+  font-size: 24px;      
+  border-bottom-right-radius: 60px 5px;
+  display: inline-block;    
+  cursor: move;
+}
+
+.sticky-note:after {     
+  content: "";
+  position: absolute;
+  z-index: -1;
+  right: -0px; bottom:20px;
+  width: 120px;
+  height: 25px;
+  background: rgba(0, 0, 0, 0.2);
+  box-shadow: 2px 15px 5px rgba(0, 0, 0, 0.40);
+  transform: matrix(-1, -0.1, 0, 1, 0, 0);       
+}
+
+.sticky-note .editor-paragraph {
+  margin: 0;
+}
+
+.sticky-note .editor-placeholder {
+  font-size: 24px;
+  color: #999;
+  overflow: hidden;
+  position: absolute;
+  top: 30px;
+  left: 20px;
+  user-select: none;
+  white-space: nowrap;
+  display: inline-block;
+  pointer-events: none;
+  width: 120px;  
+}
+
+.sticky-note.yellow {
+  border-top: 1px solid #fdfd86;
+  background: linear-gradient(135deg, #ffff88 81%,#ffff88 82%,#ffff88 82%,#ffffc6 100%);
+}
+
+.sticky-note.pink {
+  border-top: 1px solid #e7d1e4;
+  background: linear-gradient(135deg, #f7cbe8 81%,#f7cbe8 82%,#f7cbe8 82%,#e7bfe1 100%);
+}
+
+.sticky-note.dragging {
+  transition: none !important;
+}
+
+.sticky-note div {
+  cursor: text;
+}
+
+.sticky-note .delete {
+  border: 0;
+  background: none;
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  font-size: 10px;
+  cursor: pointer;
+  opacity: 0.5;
+}
+
+.sticky-note .delete:hover {
+  font-weight: bold;
+  opacity: 1;
+}
+
+.sticky-note .color {
+  border: 0;
+  background: none;
+  position: absolute;
+  top: 8px;
+  right: 25px;
+  cursor: pointer;
+  opacity: 0.5;
+}
+
+.sticky-note .color:hover {
+  opacity: 1;
+}
+
+.sticky-note .color i {
+  display: block;
+  width: 12px;
+  height: 12px;
+  background-size: contain;
 }

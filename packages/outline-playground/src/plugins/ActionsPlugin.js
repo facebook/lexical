@@ -12,10 +12,19 @@ import type {CommandListenerEditorPriority} from 'outline';
 import * as React from 'react';
 import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
 import {useCollaborationContext} from '../context/CollaborationContext';
-import {useEffect, useState} from 'react';
+import {useCallback, useEffect, useState} from 'react';
 import useOutlineNestedList from 'outline-react/useOutlineNestedList';
+import {$createStickyNode} from '../nodes/StickyNode';
+import {$log, $getSelection, $getRoot, createEditorStateRef} from 'outline';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
+
+function createUID(): string {
+  return Math.random()
+    .toString(36)
+    .replace(/[^a-z]+/g, '')
+    .substr(0, 5);
+}
 
 export default function ActionsPlugins({
   isRichText,
@@ -50,8 +59,24 @@ export default function ActionsPlugins({
     };
   }, [editor]);
 
+  const insertSticky = useCallback(() => {
+    editor.update(() => {
+      $log('insertSticky');
+      const selection = $getSelection();
+      if (selection !== null) {
+        const root = $getRoot();
+        const ref = createEditorStateRef(createUID(), null);
+        const imageNode = $createStickyNode(0, 0, ref);
+        root.append(imageNode);
+      }
+    });
+  }, [editor]);
+
   return (
     <div className="actions">
+      <button className="action-button sticky" onClick={insertSticky}>
+        <i className="sticky" />
+      </button>
       <button
         className="action-button clear"
         onClick={() => {

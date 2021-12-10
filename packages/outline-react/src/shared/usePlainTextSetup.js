@@ -14,7 +14,7 @@ import type {
   CommandListenerEditorPriority,
 } from 'outline';
 
-import {log, $getRoot, $getSelection} from 'outline';
+import {$log, $getRoot, $getSelection} from 'outline';
 import useOutlineEditorEvents from '../useOutlineEditorEvents';
 import {$createParagraphNode, ParagraphNode} from 'outline/ParagraphNode';
 import {CAN_USE_BEFORE_INPUT} from 'shared/environment';
@@ -75,7 +75,7 @@ function initParagraph(root: RootNode, editor: OutlineEditor): void {
 
 function initEditor(editor: OutlineEditor): void {
   editor.update(() => {
-    log('initEditor');
+    $log('initEditor');
     const root = $getRoot();
     const firstChild = root.getFirstChild();
     if (firstChild === null) {
@@ -90,7 +90,7 @@ function clearEditor(
 ): void {
   editor.update(
     () => {
-      log('clearEditor');
+      $log('clearEditor');
       const root = $getRoot();
       root.clear();
       initParagraph(root, editor);

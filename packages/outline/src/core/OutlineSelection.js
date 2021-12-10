@@ -23,11 +23,11 @@ import {
   $isTextNode,
   $isElementNode,
   $isLineBreakNode,
-  isDecoratorNode,
-  isRootNode,
+  $isDecoratorNode,
+  $isRootNode,
   TextNode,
   $createTextNode,
-  isLeafNode,
+  $isLeafNode,
   $createLineBreakNode,
 } from '.';
 import {
@@ -315,7 +315,7 @@ export class Selection {
           textContent += text;
         } else if ($isLineBreakNode(node)) {
           textContent += '\n';
-        } else if (isDecoratorNode(node)) {
+        } else if ($isDecoratorNode(node)) {
           textContent += node.getTextContent();
         }
       }
@@ -857,7 +857,7 @@ export class Selection {
           //
 
           const firstDescendant = node.getFirstDescendant();
-          if (isLeafNode(firstDescendant)) {
+          if ($isLeafNode(firstDescendant)) {
             const element = firstDescendant.getParentOrThrow();
             const children = element.getChildren();
             const childrenLength = children.length;
@@ -881,7 +881,7 @@ export class Selection {
         if ($isTextNode(target)) {
           target = topLevelElement;
         }
-      } else if (didReplaceOrMerge && isRootNode(target.getParent())) {
+      } else if (didReplaceOrMerge && $isRootNode(target.getParent())) {
         invariant(
           false,
           'insertNodes: cannot insert a non-element into a root node',
@@ -1109,7 +1109,7 @@ export class Selection {
 
     // Handle the selection movement around decorators.
     const possibleDecoratorNode = getPossibleDecoratorNode(focus, isBackward);
-    if (isDecoratorNode(possibleDecoratorNode)) {
+    if ($isDecoratorNode(possibleDecoratorNode)) {
       const sibling = isBackward
         ? possibleDecoratorNode.getPreviousSibling()
         : possibleDecoratorNode.getNextSibling();
@@ -1412,7 +1412,7 @@ function resolveSelectionPoint(dom: Node, offset: number): null | PointType {
         resolvedElement = resolvedElement.getParentOrThrow();
       }
       // You can't select root nodes
-      if (isRootNode(resolvedElement)) {
+      if ($isRootNode(resolvedElement)) {
         return null;
       }
       if ($isElementNode(resolvedElement)) {
@@ -1536,7 +1536,7 @@ export function makeSelection(
   return selection;
 }
 
-export function createEmptySelection(): Selection {
+export function $createEmptySelection(): Selection {
   const anchor = createPoint('root', 0, 'element');
   const focus = createPoint('root', 0, 'element');
   return new Selection(anchor, focus, 0);
@@ -1547,7 +1547,7 @@ function getActiveEventType(): string | void {
   return event && event.type;
 }
 
-export function createSelection(editor: OutlineEditor): null | Selection {
+export function $createSelection(editor: OutlineEditor): null | Selection {
   // When we create a selection, we try to use the previous
   // selection where possible, unless an actual user selection
   // change has occurred. When we do need to create a new selection

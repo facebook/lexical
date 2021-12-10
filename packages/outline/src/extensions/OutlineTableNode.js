@@ -21,7 +21,7 @@ import {
   ElementNode,
   $getNearestNodeFromDOMNode,
   $isElementNode,
-  createSelection,
+  $createSelection,
   $getSelection,
   $setSelection,
 } from 'outline';
@@ -284,7 +284,7 @@ function applyCellSelection(
   const formatCells = (type: TextFormatType) => {
     let selection = $getSelection();
     if (selection === null) {
-      selection = createSelection();
+      selection = $createSelection();
     }
     // This is to make Flow play ball.
     const formatSelection = selection;

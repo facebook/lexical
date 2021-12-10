@@ -17,9 +17,9 @@ import type {
 
 import {
   ElementNode,
-  isLeafNode,
+  $isLeafNode,
   $isTextNode,
-  log,
+  $log,
   $getSelection,
   $getRoot,
   $setSelection,
@@ -73,7 +73,7 @@ export function useCharacterLimit(
         const offset = findOffset(text, maxCharacters, strlen);
         editor.update(
           () => {
-            log('CharacterLimit');
+            $log('CharacterLimit');
             $wrapOverflowedNodes(offset);
           },
           {
@@ -172,7 +172,7 @@ function $wrapOverflowedNodes(offset: number) {
           return previousNode;
         }
       }
-    } else if (isLeafNode(node)) {
+    } else if ($isLeafNode(node)) {
       const previousAccumulatedLength = accumulatedLength;
       accumulatedLength += node.getTextContentSize();
       if (accumulatedLength > offset && !isOverflowNode(node.getParent())) {

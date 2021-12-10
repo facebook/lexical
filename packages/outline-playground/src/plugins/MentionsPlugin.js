@@ -13,7 +13,7 @@ import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
 
 // $FlowFixMe
 import {createPortal} from 'react-dom';
-import {log, $getSelection} from 'outline';
+import {$log, $getSelection} from 'outline';
 import React, {useCallback, useLayoutEffect, useMemo, useRef} from 'react';
 import {startTransition, useEffect, useState} from 'react';
 import {MentionNode, $createMentionNode} from '../nodes/MentionNode';
@@ -887,7 +887,7 @@ function createMentionNodeFromSearchResult(
   match: MentionMatch,
 ): void {
   editor.update(() => {
-    log('createMentionNodeFromSearchResult');
+    $log('createMentionNodeFromSearchResult');
     const selection = $getSelection();
     if (selection == null || !selection.isCollapsed()) {
       return;

@@ -12,7 +12,7 @@ import type {NodeKey, NodeMap, OutlineNode} from './OutlineNode';
 import type {Selection} from './OutlineSelection';
 import type {ParsedNode, ParsedSelection} from './OutlineParsing';
 
-import {createRootNode} from './OutlineRootNode';
+import {$createRootNode} from './OutlineRootNode';
 import {readEditorState} from './OutlineUpdates';
 
 export type ParsedEditorState = {
@@ -58,7 +58,7 @@ export function cloneEditorState(current: EditorState): EditorState {
 }
 
 export function createEmptyEditorState(): EditorState {
-  return new EditorState(new Map([['root', createRootNode()]]));
+  return new EditorState(new Map([['root', $createRootNode()]]));
 }
 
 export class EditorState {

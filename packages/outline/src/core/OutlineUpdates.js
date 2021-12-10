@@ -18,7 +18,7 @@ import type {OutlineNode} from './OutlineNode';
 import type {ParsedNode, NodeParserState} from './OutlineParsing';
 
 import {updateEditorState} from './OutlineReconciler';
-import {createSelection, createSelectionFromParse} from './OutlineSelection';
+import {$createSelection, createSelectionFromParse} from './OutlineSelection';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './OutlineConstants';
 import {resetEditor} from './OutlineEditor';
 import {initMutationObserver} from './OutlineMutations';
@@ -38,7 +38,7 @@ import {
   garbageCollectDetachedDecorators,
   garbageCollectDetachedNodes,
 } from './OutlineGC';
-import {internalCreateNodeFromParse} from './OutlineParsing';
+import {$internalCreateNodeFromParse} from './OutlineParsing';
 import {applySelectionTransforms} from './OutlineSelection';
 import {$isTextNode} from '.';
 import {normalizeTextNode} from './OutlineNormalization';
@@ -255,7 +255,7 @@ export function parseEditorState(
     const parsedNodeMap = new Map(parsedEditorState._nodeMap);
     // $FlowFixMe: root always exists in Map
     const parsedRoot = ((parsedNodeMap.get('root'): any): ParsedNode);
-    internalCreateNodeFromParse(
+    $internalCreateNodeFromParse(
       parsedRoot,
       parsedNodeMap,
       editor,
@@ -559,7 +559,7 @@ function beginUpdate(
 
   try {
     if (editorStateWasCloned) {
-      pendingEditorState._selection = createSelection(editor);
+      pendingEditorState._selection = $createSelection(editor);
     }
     const startingCompositionKey = editor._compositionKey;
     updateFn();

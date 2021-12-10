@@ -17,7 +17,7 @@ import type {
   CommandListenerEditorPriority,
 } from 'outline';
 
-import {$isTextNode, $isElementNode, isRootNode, $getSelection} from 'outline';
+import {$isTextNode, $isElementNode, $isRootNode, $getSelection} from 'outline';
 import {useCallback, useEffect, useMemo} from 'react';
 
 type MergeAction = 0 | 1 | 2;
@@ -71,7 +71,7 @@ function getDirtyNodes(
     }
     const dirtyElementKey = dirtyElements[i][0];
     const dirtyElement = nodeMap.get(dirtyElementKey);
-    if (dirtyElement !== undefined && !isRootNode(dirtyElement)) {
+    if (dirtyElement !== undefined && !$isRootNode(dirtyElement)) {
       nodes.push(dirtyElement);
     }
   }

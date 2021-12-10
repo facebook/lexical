@@ -13,9 +13,9 @@ import type {Selection} from './OutlineSelection';
 import {
   $isElementNode,
   $isTextNode,
-  isRootNode,
+  $isRootNode,
   ElementNode,
-  isDecoratorNode,
+  $isDecoratorNode,
 } from '.';
 import {
   getActiveEditorState,
@@ -82,7 +82,7 @@ export function removeNode(
   }
   if (
     parent !== null &&
-    !isRootNode(parent) &&
+    !$isRootNode(parent) &&
     !parent.canBeEmpty() &&
     parent.getChildrenSize() === 0
   ) {
@@ -214,7 +214,7 @@ export class OutlineNode {
     let node = this;
     while (node !== null) {
       const parent = node.getParent();
-      if (isRootNode(parent) && $isElementNode(node)) {
+      if ($isRootNode(parent) && $isElementNode(node)) {
         return node;
       }
       node = parent;
@@ -488,7 +488,7 @@ export class OutlineNode {
       mutableNode.__style = latestNode.__style;
       mutableNode.__mode = latestNode.__mode;
       mutableNode.__detail = latestNode.__detail;
-    } else if (isDecoratorNode(mutableNode)) {
+    } else if ($isDecoratorNode(mutableNode)) {
       mutableNode.__ref = latestNode.__ref;
     }
     cloneNotNeeded.add(key);

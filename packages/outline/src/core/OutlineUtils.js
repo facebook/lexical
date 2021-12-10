@@ -29,7 +29,7 @@ import {
   $isTextNode,
   $isElementNode,
   $isLineBreakNode,
-  isDecoratorNode,
+  $isDecoratorNode,
 } from '.';
 import {
   errorOnInfiniteTransforms,
@@ -87,7 +87,7 @@ export function isSelectionWithinEditor(
       // If selection is inside a decorator, then we treat it as
       // if the focus is not in Outline.
       anchorDOM != null &&
-      !isDecoratorNode($getNearestNodeFromDOMNode(anchorDOM))
+      !$isDecoratorNode($getNearestNodeFromDOMNode(anchorDOM))
     );
   } catch (error) {
     return false;
@@ -142,8 +142,8 @@ export function toggleTextFormatType(
   return format;
 }
 
-export function isLeafNode(node: ?OutlineNode): boolean %checks {
-  return $isTextNode(node) || $isLineBreakNode(node) || isDecoratorNode(node);
+export function $isLeafNode(node: ?OutlineNode): boolean %checks {
+  return $isTextNode(node) || $isLineBreakNode(node) || $isDecoratorNode(node);
 }
 
 export function generateKey(node: OutlineNode): NodeKey {
@@ -281,7 +281,7 @@ export function cloneDecorators(editor: OutlineEditor): {[NodeKey]: ReactNode} {
   return pendingDecorators;
 }
 
-export function pushLogEntry(entry: string): void {
+export function $pushLogEntry(entry: string): void {
   const editor = getActiveEditor();
   editor._log.push(entry);
 }

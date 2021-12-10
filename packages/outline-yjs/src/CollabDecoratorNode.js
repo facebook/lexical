@@ -12,7 +12,7 @@ import type {Binding} from '.';
 import type {CollabElementNode} from './CollabElementNode';
 import type {XmlElement} from 'yjs';
 
-import {createEditorStateRef, isDecoratorNode, $getNodeByKey} from 'outline';
+import {createEditorStateRef, $isDecoratorNode, $getNodeByKey} from 'outline';
 import {syncPropertiesFromOutline, syncPropertiesFromYjs} from './Utils';
 import {Doc} from 'yjs';
 
@@ -34,12 +34,12 @@ export class CollabDecoratorNode {
       return null;
     }
     const node = nodeMap.get(this._key);
-    return isDecoratorNode(node) ? node : null;
+    return $isDecoratorNode(node) ? node : null;
   }
 
   getNode(): null | DecoratorNode {
     const node = $getNodeByKey(this._key);
-    return isDecoratorNode(node) ? node : null;
+    return $isDecoratorNode(node) ? node : null;
   }
 
   getSharedType(): XmlElement {

@@ -251,7 +251,11 @@ export class CollabElementNode {
             }
           }
         }
-        if (outlineChildKey !== undefined && !collabKeys.has(outlineChildKey)) {
+        if (
+          collabOutlineChildNode !== null &&
+          outlineChildKey !== undefined &&
+          !collabKeys.has(outlineChildKey)
+        ) {
           i--;
           prevIndex++;
           continue;

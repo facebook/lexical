@@ -28,7 +28,6 @@ import {
   $getNodeByKey,
   $internallyMarkNodeAsDirty,
   $internallyMarkSiblingsAsDirty,
-  markParentElementsAsDirty,
   $setCompositionKey,
 } from './OutlineUtils';
 import invariant from 'shared/invariant';
@@ -465,10 +464,6 @@ export class OutlineNode {
     // Ensure we get the latest node from pending state
     const latestNode = this.getLatest();
     const parent = latestNode.__parent;
-    const dirtyElements = editor._dirtyElements;
-    if (parent !== null) {
-      markParentElementsAsDirty(parent, nodeMap, dirtyElements);
-    }
     const cloneNotNeeded = editor._cloneNotNeeded;
     if (cloneNotNeeded.has(key)) {
       // Transforms clear the dirty node set on each iteration to keep track on newly dirty nodes

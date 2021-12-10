@@ -26,7 +26,7 @@ import {$createTableNode} from 'outline/TableNode';
 import {$createTableRowNode} from 'outline/TableRowNode';
 import {$createTableCellNode} from 'outline/TableCellNode';
 
-export function $dfs(
+export function $dfs__DEPRECATED(
   startingNode: OutlineNode,
   nextNode: (OutlineNode) => null | OutlineNode,
 ) {

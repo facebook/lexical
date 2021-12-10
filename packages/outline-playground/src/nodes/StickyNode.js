@@ -232,6 +232,7 @@ function StickyComponent({
           stickContainer.classList.add('dragging');
           document.addEventListener('pointermove', handlePointerMove);
           document.addEventListener('pointerup', handlePointerUp);
+          event.preventDefault();
         }
       }}>
       <button onClick={handleDelete} className="delete">

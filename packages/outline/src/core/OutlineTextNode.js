@@ -14,15 +14,15 @@ import type {EditorConfig, TextNodeThemeClasses} from './OutlineEditor';
 import {OutlineNode} from './OutlineNode';
 import {
   $getSelection,
-  makeSelection,
-  updateElementSelectionOnCreateDeleteNode,
+  $makeSelection,
+  $updateElementSelectionOnCreateDeleteNode,
   adjustPointOffsetForMergedSibling,
 } from './OutlineSelection';
 import {
   $getCompositionKey,
   $setCompositionKey,
   toggleTextFormatType,
-  internallyMarkSiblingsAsDirty,
+  $internallyMarkSiblingsAsDirty,
 } from './OutlineUtils';
 import invariant from 'shared/invariant';
 import {errorOnReadOnly} from './OutlineUpdates';
@@ -424,7 +424,14 @@ export class TextNode extends OutlineNode {
       focusOffset = 0;
     }
     if (selection === null) {
-      return makeSelection(key, anchorOffset, key, focusOffset, 'text', 'text');
+      return $makeSelection(
+        key,
+        anchorOffset,
+        key,
+        focusOffset,
+        'text',
+        'text',
+      );
     } else {
       const compositionKey = $getCompositionKey();
       if (
@@ -574,7 +581,7 @@ export class TextNode extends OutlineNode {
     }
 
     // Insert the nodes into the parent's children
-    internallyMarkSiblingsAsDirty(this);
+    $internallyMarkSiblingsAsDirty(this);
     const writableParent = parent.getWritable();
     const writableParentChildren = writableParent.__children;
     const insertionIndex = writableParentChildren.indexOf(key);
@@ -587,7 +594,7 @@ export class TextNode extends OutlineNode {
     }
 
     if (selection !== null) {
-      updateElementSelectionOnCreateDeleteNode(
+      $updateElementSelectionOnCreateDeleteNode(
         selection,
         parent,
         insertionIndex,

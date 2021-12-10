@@ -15,7 +15,7 @@ import {
   $isElementNode,
   $isTextNode,
   $isLineBreakNode,
-  isDecoratorNode,
+  $isDecoratorNode,
 } from 'outline';
 import {CollabElementNode, $createCollabElementNode} from './CollabElementNode';
 import {CollabTextNode, $createCollabTextNode} from './CollabTextNode';
@@ -99,7 +99,7 @@ export function $createCollabNodeFromOutlineNode(
     const map = new YMap();
     map.set('__type', 'linebreak');
     collabNode = $createCollabLineBreakNode(map, parent);
-  } else if (isDecoratorNode(outlineNode)) {
+  } else if ($isDecoratorNode(outlineNode)) {
     const xmlElem = new XmlElement();
     collabNode = $createCollabDecoratorNode(xmlElem, parent, nodeType);
     collabNode.syncPropertiesFromOutline(binding, outlineNode, null);

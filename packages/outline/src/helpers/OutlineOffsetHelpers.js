@@ -16,7 +16,7 @@ import type {
 } from 'outline';
 
 import {
-  createSelection,
+  $createSelection,
   $isElementNode,
   $isTextNode,
   $getNodeByKey,
@@ -168,7 +168,7 @@ class OffsetView {
       endOffset =
         end > endOffsetNode.start ? endOffsetNode.end : endOffsetNode.start;
     }
-    const selection = createSelection();
+    const selection = $createSelection();
     if (selection === null) {
       return null;
     }

@@ -40,6 +40,6 @@ export class DecoratorNode extends OutlineNode {
   }
 }
 
-export function isDecoratorNode(node: ?OutlineNode): boolean %checks {
+export function $isDecoratorNode(node: ?OutlineNode): boolean %checks {
   return node instanceof DecoratorNode;
 }

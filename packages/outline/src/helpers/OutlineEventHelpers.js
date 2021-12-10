@@ -45,11 +45,11 @@ import {
 } from 'outline/selection';
 import {
   $createTextNode,
-  createNodeFromParse,
+  $createNodeFromParse,
   $isTextNode,
   $isElementNode,
-  isDecoratorNode,
-  log,
+  $isDecoratorNode,
+  $log,
   $getSelection,
   $getRoot,
   $setCompositionKey,
@@ -143,7 +143,7 @@ function $generateNodes(nodeRange: {
     const key = range[i];
     const parsedNode = parsedNodeMap.get(key);
     if (parsedNode !== undefined) {
-      const node = createNodeFromParse(parsedNode, parsedNodeMap);
+      const node = $createNodeFromParse(parsedNode, parsedNodeMap);
       nodes.push(node);
     }
   }
@@ -297,7 +297,7 @@ function $shouldOverrideDefaultCharacterSelection(
     selection.focus,
     isBackward,
   );
-  return isDecoratorNode(possibleDecoratorNode);
+  return $isDecoratorNode(possibleDecoratorNode);
 }
 
 export function onKeyDown(event: KeyboardEvent, editor: OutlineEditor): void {
@@ -306,7 +306,7 @@ export function onKeyDown(event: KeyboardEvent, editor: OutlineEditor): void {
     return;
   }
   editor.update(() => {
-    log('onKeyDown');
+    $log('onKeyDown');
 
     const selection = $getSelection();
     if (selection === null) {
@@ -381,7 +381,7 @@ export function onPasteForPlainText(
 ): void {
   event.preventDefault();
   editor.update(() => {
-    log('onPasteForPlainText');
+    $log('onPasteForPlainText');
     const selection = $getSelection();
     const clipboardData = event.clipboardData;
     if (clipboardData != null && selection !== null) {
@@ -396,7 +396,7 @@ export function onPasteForRichText(
 ): void {
   event.preventDefault();
   editor.update(() => {
-    log('onPasteForRichText');
+    $log('onPasteForRichText');
     const selection = $getSelection();
     const clipboardData = event.clipboardData;
     if (clipboardData != null && selection !== null) {
@@ -428,7 +428,7 @@ export function onCutForPlainText(
 ): void {
   onCopyForPlainText(event, editor);
   editor.update(() => {
-    log('onCutForPlainText');
+    $log('onCutForPlainText');
     const selection = $getSelection();
     if (selection !== null) {
       selection.removeText();
@@ -442,7 +442,7 @@ export function onCutForRichText(
 ): void {
   onCopyForRichText(event, editor);
   editor.update(() => {
-    log('onCutForRichText');
+    $log('onCutForRichText');
     const selection = $getSelection();
     if (selection !== null) {
       selection.removeText();
@@ -456,7 +456,7 @@ export function onCopyForPlainText(
 ): void {
   event.preventDefault();
   editor.update(() => {
-    log('onCopyForPlainText');
+    $log('onCopyForPlainText');
     const clipboardData = event.clipboardData;
     const selection = $getSelection();
     if (selection !== null) {
@@ -485,7 +485,7 @@ export function onCopyForRichText(
 ): void {
   event.preventDefault();
   editor.update(() => {
-    log('onCopyForRichText');
+    $log('onCopyForRichText');
     const clipboardData = event.clipboardData;
     const selection = $getSelection();
     if (selection !== null) {
@@ -517,7 +517,7 @@ export function onCompositionStart(
   editor: OutlineEditor,
 ): void {
   editor.update(() => {
-    log('onCompositionStart');
+    $log('onCompositionStart');
     const selection = $getSelection();
     if (selection !== null && !editor.isComposing()) {
       const anchor = selection.anchor;
@@ -544,7 +544,7 @@ function onCompositionEndInternal(
   editor: OutlineEditor,
 ) {
   editor.update(() => {
-    log('onCompositionEnd');
+    $log('onCompositionEnd');
     $setCompositionKey(null);
     $updateSelectedTextFromDOM(editor, true);
   });
@@ -557,7 +557,7 @@ export function onCompositionEnd(
   if (IS_FIREFOX) {
     // The order of onInput and onCompositionEnd is different
     // in FF. Given that onInput will fire after onCompositionEnd
-    // in FF, we need to defer the logic for onCompositionEnd to
+    // in FF, we need to defer the $logic for onCompositionEnd to
     // ensure that any possible onInput events fire before.
     setTimeout(() => {
       onCompositionEndInternal(event, editor);
@@ -578,7 +578,7 @@ function getLastSelection(editor: OutlineEditor): null | Selection {
 // really isn't.
 export function onClick(event: MouseEvent, editor: OutlineEditor): void {
   editor.update(() => {
-    log('onClick');
+    $log('onClick');
     const selection = $getSelection();
     if (selection === null) {
       return;
@@ -612,7 +612,7 @@ export function onSelectionChange(event: Event, editor: OutlineEditor): void {
   // This update functions as a way of reconciling a bad selection
   // to a good selection.
   editor.update(() => {
-    log('onSelectionChange');
+    $log('onSelectionChange');
     const selection = $getSelection();
     // Update the selection format
     if (selection !== null && selection.isCollapsed()) {
@@ -779,7 +779,7 @@ export function onBeforeInput(event: InputEvent, editor: OutlineEditor): void {
   }
 
   editor.update(() => {
-    log('onBeforeInputForRichText');
+    $log('onBeforeInputForRichText');
     const selection = $getSelection();
 
     if (selection === null) {
@@ -957,7 +957,7 @@ export function onInput(event: InputEvent, editor: OutlineEditor): void {
   // We don't want the onInput to bubble, in the case of nested editors.
   event.stopPropagation();
   editor.update(() => {
-    log('onInput');
+    $log('onInput');
     const selection = $getSelection();
     const data = event.data;
     if (

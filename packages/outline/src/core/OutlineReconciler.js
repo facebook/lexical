@@ -31,11 +31,11 @@ import {
   IS_ALIGN_RIGHT,
   IS_ALIGN_JUSTIFY,
 } from './OutlineConstants';
-import {isDecoratorNode} from './OutlineDecoratorNode';
+import {$isDecoratorNode} from './OutlineDecoratorNode';
 import {$isElementNode} from './OutlineElementNode';
 import {$isTextNode} from './OutlineTextNode';
 import {$isLineBreakNode} from './OutlineLineBreakNode';
-import {isRootNode} from './OutlineRootNode';
+import {$isRootNode} from './OutlineRootNode';
 import invariant from 'shared/invariant';
 
 let subTreeTextContent = '';
@@ -128,7 +128,7 @@ function createNode(
   // this attribute).
   if ($isTextNode(node)) {
     dom.setAttribute('data-outline-text', 'true');
-  } else if (isDecoratorNode(node)) {
+  } else if ($isDecoratorNode(node)) {
     dom.setAttribute('data-outline-decorator', 'true');
   }
 
@@ -149,7 +149,7 @@ function createNode(
     }
     reconcileElementTerminatingLineBreak(null, children, dom);
   } else {
-    if (isDecoratorNode(node)) {
+    if ($isDecoratorNode(node)) {
       const decorator = node.decorate(activeEditor);
       if (decorator !== null) {
         reconcileDecorator(key, decorator);
@@ -232,7 +232,7 @@ function isLastChildLineBreakOrDecorator(
 ): boolean {
   const childKey = children[children.length - 1];
   const node = nodeMap.get(childKey);
-  return $isLineBreakNode(node) || isDecoratorNode(node);
+  return $isLineBreakNode(node) || $isDecoratorNode(node);
 }
 
 // If we end an element with a LinkBreakNode, then we need to add an additonal <br>
@@ -416,7 +416,7 @@ function reconcileNode(
       if (previousSubTreeDirectionTextContent !== undefined) {
         subTreeDirectionedTextContent += previousSubTreeDirectionTextContent;
       }
-    } else if (!isDecoratorNode(prevNode)) {
+    } else if (!$isDecoratorNode(prevNode)) {
       const text = prevNode.getTextContent();
       if ($isTextNode(prevNode) && !prevNode.isDirectionless()) {
         subTreeDirectionedTextContent += text;
@@ -453,12 +453,12 @@ function reconcileNode(
 
     if (childrenAreDifferent || isDirty) {
       reconcileChildrenWithDirection(prevChildren, nextChildren, nextNode, dom);
-      if (!isRootNode(nextNode)) {
+      if (!$isRootNode(nextNode)) {
         reconcileElementTerminatingLineBreak(prevChildren, nextChildren, dom);
       }
     }
   } else {
-    if (isDecoratorNode(nextNode)) {
+    if ($isDecoratorNode(nextNode)) {
       const decorator = nextNode.decorate(activeEditor);
       if (decorator !== null) {
         reconcileDecorator(key, decorator);
@@ -473,7 +473,7 @@ function reconcileNode(
       editorTextContent += text;
     }
   }
-  if (isRootNode(nextNode) && nextNode.__cachedText !== editorTextContent) {
+  if ($isRootNode(nextNode) && nextNode.__cachedText !== editorTextContent) {
     // Cache the latest text content.
     nextNode = nextNode.getWritable();
     nextNode.__cachedText = editorTextContent;

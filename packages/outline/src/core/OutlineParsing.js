@@ -16,10 +16,10 @@ import {
   errorOnReadOnly,
 } from './OutlineUpdates';
 import {
-  isRootNode,
+  $isRootNode,
   $isElementNode,
   $isTextNode,
-  isDecoratorNode,
+  $isDecoratorNode,
   createEditorStateRef,
 } from '.';
 import invariant from 'shared/invariant';
@@ -66,16 +66,16 @@ export type ParsedSelection = {
   },
 };
 
-export function createNodeFromParse(
+export function $createNodeFromParse(
   parsedNode: ParsedNode,
   parsedNodeMap: ParsedNodeMap,
 ): OutlineNode {
   errorOnReadOnly();
   const editor = getActiveEditor();
-  return internalCreateNodeFromParse(parsedNode, parsedNodeMap, editor, null);
+  return $internalCreateNodeFromParse(parsedNode, parsedNodeMap, editor, null);
 }
 
-export function internalCreateNodeFromParse(
+export function $internalCreateNodeFromParse(
   parsedNode: $FlowFixMe,
   parsedNodeMap: ParsedNodeMap,
   editor: OutlineEditor,
@@ -95,7 +95,7 @@ export function internalCreateNodeFromParse(
   const node = NodeKlass.clone(parsedNode);
   parsedNode.__key = parsedKey;
   const key = node.__key;
-  if (isRootNode(node)) {
+  if ($isRootNode(node)) {
     const editorState = getActiveEditorState();
     editorState._nodeMap.set('root', node);
   }
@@ -108,7 +108,7 @@ export function internalCreateNodeFromParse(
       const childKey = children[i];
       const parsedChild = parsedNodeMap.get(childKey);
       if (parsedChild !== undefined) {
-        const child = internalCreateNodeFromParse(
+        const child = $internalCreateNodeFromParse(
           parsedChild,
           parsedNodeMap,
           editor,
@@ -127,7 +127,7 @@ export function internalCreateNodeFromParse(
     node.__style = parsedNode.__style;
     node.__mode = parsedNode.__mode;
     node.__detail = parsedNode.__detail;
-  } else if (isDecoratorNode(node)) {
+  } else if ($isDecoratorNode(node)) {
     const parsedRef = parsedNode.__ref;
     let ref = null;
     if (parsedRef !== null) {

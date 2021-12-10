@@ -23,11 +23,11 @@ import {
   $isTextNode,
   $isElementNode,
   $isLineBreakNode,
-  isDecoratorNode,
-  isRootNode,
+  $isDecoratorNode,
+  $isRootNode,
   TextNode,
   $createTextNode,
-  isLeafNode,
+  $isLeafNode,
   $createLineBreakNode,
 } from '.';
 import {
@@ -137,7 +137,7 @@ class Point {
   }
 }
 
-function createPoint(
+function $createPoint(
   key: NodeKey,
   offset: number,
   type: 'text' | 'element',
@@ -160,7 +160,7 @@ function selectPointOnNode(point: PointType, node: OutlineNode): void {
   point.set(key, offset, type);
 }
 
-export function moveSelectionPointToEnd(
+export function $moveSelectionPointToEnd(
   point: PointType,
   node: OutlineNode,
 ): void {
@@ -176,7 +176,7 @@ export function moveSelectionPointToEnd(
   }
 }
 
-function transferStartingElementPointToTextPoint(
+function $transferStartingElementPointToTextPoint(
   start: ElementPointType,
   end: PointType,
   format: number,
@@ -194,7 +194,7 @@ function transferStartingElementPointToTextPoint(
   start.set(textNode.getKey(), 0, 'text');
 }
 
-export function setPointValues(
+export function $setPointValues(
   point: PointType,
   key: NodeKey,
   offset: number,
@@ -262,8 +262,8 @@ export class Selection {
     focusNode: TextNode,
     focusOffset: number,
   ): void {
-    setPointValues(this.anchor, anchorNode.__key, anchorOffset, 'text');
-    setPointValues(this.focus, focusNode.__key, focusOffset, 'text');
+    $setPointValues(this.anchor, anchorNode.__key, anchorOffset, 'text');
+    $setPointValues(this.focus, focusNode.__key, focusOffset, 'text');
     this.dirty = true;
   }
 
@@ -315,7 +315,7 @@ export class Selection {
           textContent += text;
         } else if ($isLineBreakNode(node)) {
           textContent += '\n';
-        } else if (isDecoratorNode(node)) {
+        } else if ($isDecoratorNode(node)) {
           textContent += node.getTextContent();
         }
       }
@@ -325,7 +325,7 @@ export class Selection {
 
   applyDOMRange(range: StaticRange): void {
     const editor = getActiveEditor();
-    const resolvedSelectionPoints = resolveSelectionPoints(
+    const resolvedSelectionPoints = $resolveSelectionPoints(
       range.startContainer,
       range.startOffset,
       range.endContainer,
@@ -336,13 +336,13 @@ export class Selection {
       return;
     }
     const [anchorPoint, focusPoint] = resolvedSelectionPoints;
-    setPointValues(
+    $setPointValues(
       this.anchor,
       anchorPoint.key,
       anchorPoint.offset,
       anchorPoint.type,
     );
-    setPointValues(
+    $setPointValues(
       this.focus,
       focusPoint.key,
       focusPoint.offset,
@@ -354,8 +354,8 @@ export class Selection {
     const anchor = this.anchor;
     const focus = this.focus;
     return new Selection(
-      createPoint(anchor.key, anchor.offset, anchor.type),
-      createPoint(focus.key, focus.offset, focus.type),
+      $createPoint(anchor.key, anchor.offset, anchor.type),
+      $createPoint(focus.key, focus.offset, focus.type),
       this.format,
     );
   }
@@ -377,9 +377,9 @@ export class Selection {
     const format = this.format;
 
     if (isBefore && anchor.type === 'element') {
-      transferStartingElementPointToTextPoint(anchor, focus, format);
+      $transferStartingElementPointToTextPoint(anchor, focus, format);
     } else if (!isBefore && focus.type === 'element') {
-      transferStartingElementPointToTextPoint(focus, anchor, format);
+      $transferStartingElementPointToTextPoint(focus, anchor, format);
     }
     const selectedNodes = this.getNodes();
     const selectedNodesLength = selectedNodes.length;
@@ -857,7 +857,7 @@ export class Selection {
           //
 
           const firstDescendant = node.getFirstDescendant();
-          if (isLeafNode(firstDescendant)) {
+          if ($isLeafNode(firstDescendant)) {
             const element = firstDescendant.getParentOrThrow();
             const children = element.getChildren();
             const childrenLength = children.length;
@@ -881,7 +881,7 @@ export class Selection {
         if ($isTextNode(target)) {
           target = topLevelElement;
         }
-      } else if (didReplaceOrMerge && isRootNode(target.getParent())) {
+      } else if (didReplaceOrMerge && $isRootNode(target.getParent())) {
         invariant(
           false,
           'insertNodes: cannot insert a non-element into a root node',
@@ -1109,7 +1109,7 @@ export class Selection {
 
     // Handle the selection movement around decorators.
     const possibleDecoratorNode = getPossibleDecoratorNode(focus, isBackward);
-    if (isDecoratorNode(possibleDecoratorNode)) {
+    if ($isDecoratorNode(possibleDecoratorNode)) {
       const sibling = isBackward
         ? possibleDecoratorNode.getPreviousSibling()
         : possibleDecoratorNode.getNextSibling();
@@ -1134,7 +1134,7 @@ export class Selection {
     // from getTargetRanges(), and is also better than trying to do it ourselves
     // using Intl.Segmenter or other workarounds that struggle with word segments
     // and line segments (especially with word wrapping and non-Roman languages).
-    moveNativeSelection(
+    $moveNativeSelection(
       domSelection,
       alter,
       isBackward ? 'backward' : 'forward',
@@ -1153,7 +1153,7 @@ export class Selection {
         (domSelection.anchorNode !== range.startContainer ||
           domSelection.anchorOffset !== range.startOffset)
       ) {
-        swapPoints(this);
+        $swapPoints(this);
       }
     }
   }
@@ -1196,7 +1196,7 @@ export class Selection {
             (isBackward && offset !== textContentSize) ||
             (!isBackward && offset !== 0)
           ) {
-            removeSegment(focusNode, isBackward);
+            $removeSegment(focusNode, isBackward);
             return;
           }
         } else if (anchorNode !== null && anchorNode.isSegmented()) {
@@ -1207,11 +1207,11 @@ export class Selection {
             (isBackward && offset !== 0) ||
             (!isBackward && offset !== textContentSize)
           ) {
-            removeSegment(anchorNode, isBackward);
+            $removeSegment(anchorNode, isBackward);
             return;
           }
         }
-        updateCaretSelectionForUnicodeCharacter(this, isBackward);
+        $updateCaretSelectionForUnicodeCharacter(this, isBackward);
       } else if (isBackward && anchor.offset === 0) {
         // Special handling around rich text nodes
         const element =
@@ -1224,7 +1224,7 @@ export class Selection {
       }
     }
     this.removeText();
-    updateCaretSelectionForAdjacentHashtags(this);
+    $updateCaretSelectionForAdjacentHashtags(this);
   }
 
   deleteLine(isBackward: boolean): void {
@@ -1242,18 +1242,18 @@ export class Selection {
   }
 }
 
-function swapPoints(selection: Selection): void {
+function $swapPoints(selection: Selection): void {
   const focus = selection.focus;
   const anchor = selection.anchor;
   const anchorKey = anchor.key;
   const anchorOffset = anchor.offset;
   const anchorType = anchor.type;
 
-  setPointValues(anchor, focus.key, focus.offset, focus.type);
-  setPointValues(focus, anchorKey, anchorOffset, anchorType);
+  $setPointValues(anchor, focus.key, focus.offset, focus.type);
+  $setPointValues(focus, anchorKey, anchorOffset, anchorType);
 }
 
-function moveNativeSelection(
+function $moveNativeSelection(
   domSelection,
   alter: 'move' | 'extend',
   direction: 'backward' | 'forward' | 'left' | 'right',
@@ -1262,7 +1262,7 @@ function moveNativeSelection(
   domSelection.modify(alter, direction, granularity);
 }
 
-function updateCaretSelectionForAdjacentHashtags(selection: Selection): void {
+function $updateCaretSelectionForAdjacentHashtags(selection: Selection): void {
   const anchor = selection.anchor;
   if (anchor.type !== 'text') {
     return;
@@ -1293,7 +1293,7 @@ function updateCaretSelectionForAdjacentHashtags(selection: Selection): void {
   }
 }
 
-function updateCaretSelectionForUnicodeCharacter(
+function $updateCaretSelectionForUnicodeCharacter(
   selection: Selection,
   isBackward: boolean,
 ): void {
@@ -1330,7 +1330,7 @@ function updateCaretSelectionForUnicodeCharacter(
   }
 }
 
-function removeSegment(node: TextNode, isBackward: boolean): void {
+function $removeSegment(node: TextNode, isBackward: boolean): void {
   let textNode = node;
   const textContent = textNode.getTextContent();
   const split = textContent.split(/\s/g);
@@ -1354,7 +1354,7 @@ function removeSegment(node: TextNode, isBackward: boolean): void {
   }
 }
 
-function resolveSelectionPoint(dom: Node, offset: number): null | PointType {
+function $resolveSelectionPoint(dom: Node, offset: number): null | PointType {
   let resolvedOffset = offset;
   let resolvedNode: OutlineNode | null;
   // If we have selection on an element, we will
@@ -1412,11 +1412,11 @@ function resolveSelectionPoint(dom: Node, offset: number): null | PointType {
         resolvedElement = resolvedElement.getParentOrThrow();
       }
       // You can't select root nodes
-      if (isRootNode(resolvedElement)) {
+      if ($isRootNode(resolvedElement)) {
         return null;
       }
       if ($isElementNode(resolvedElement)) {
-        return createPoint(resolvedElement.__key, resolvedOffset, 'element');
+        return $createPoint(resolvedElement.__key, resolvedOffset, 'element');
       }
     }
   } else {
@@ -1426,10 +1426,10 @@ function resolveSelectionPoint(dom: Node, offset: number): null | PointType {
   if (!$isTextNode(resolvedNode)) {
     return null;
   }
-  return createPoint(resolvedNode.__key, resolvedOffset, 'text');
+  return $createPoint(resolvedNode.__key, resolvedOffset, 'text');
 }
 
-function resolveSelectionPoints(
+function $resolveSelectionPoints(
   anchorDOM: null | Node,
   anchorOffset: number,
   focusDOM: null | Node,
@@ -1443,11 +1443,11 @@ function resolveSelectionPoints(
   ) {
     return null;
   }
-  const resolvedAnchorPoint = resolveSelectionPoint(anchorDOM, anchorOffset);
+  const resolvedAnchorPoint = $resolveSelectionPoint(anchorDOM, anchorOffset);
   if (resolvedAnchorPoint === null) {
     return null;
   }
-  const resolvedFocusPoint = resolveSelectionPoint(focusDOM, focusOffset);
+  const resolvedFocusPoint = $resolveSelectionPoint(focusDOM, focusOffset);
   if (resolvedFocusPoint === null) {
     return null;
   }
@@ -1496,13 +1496,13 @@ function resolveSelectionPoints(
     ) {
       const lastAnchor = lastSelection.anchor;
       const lastFocus = lastSelection.focus;
-      setPointValues(
+      $setPointValues(
         resolvedAnchorPoint,
         lastAnchor.key,
         lastAnchor.offset,
         lastAnchor.type,
       );
-      setPointValues(
+      $setPointValues(
         resolvedFocusPoint,
         lastFocus.key,
         lastFocus.offset,
@@ -1517,7 +1517,7 @@ function resolveSelectionPoints(
 // This is used to make a selection when the existing
 // selection is null, i.e. forcing selection on the editor
 // when it current exists outside the editor.
-export function makeSelection(
+export function $makeSelection(
   anchorKey: NodeKey,
   anchorOffset: number,
   focusKey: NodeKey,
@@ -1527,8 +1527,8 @@ export function makeSelection(
 ): Selection {
   const editorState = getActiveEditorState();
   const selection = new Selection(
-    createPoint(anchorKey, anchorOffset, anchorType),
-    createPoint(focusKey, focusOffset, focusType),
+    $createPoint(anchorKey, anchorOffset, anchorType),
+    $createPoint(focusKey, focusOffset, focusType),
     0,
   );
   selection.dirty = true;
@@ -1536,9 +1536,9 @@ export function makeSelection(
   return selection;
 }
 
-export function createEmptySelection(): Selection {
-  const anchor = createPoint('root', 0, 'element');
-  const focus = createPoint('root', 0, 'element');
+export function $createEmptySelection(): Selection {
+  const anchor = $createPoint('root', 0, 'element');
+  const focus = $createPoint('root', 0, 'element');
   return new Selection(anchor, focus, 0);
 }
 
@@ -1547,7 +1547,7 @@ function getActiveEventType(): string | void {
   return event && event.type;
 }
 
-export function createSelection(editor: OutlineEditor): null | Selection {
+export function $createSelection(editor: OutlineEditor): null | Selection {
   // When we create a selection, we try to use the previous
   // selection where possible, unless an actual user selection
   // change has occurred. When we do need to create a new selection
@@ -1589,14 +1589,14 @@ export function createSelection(editor: OutlineEditor): null | Selection {
     const lastAnchor = lastSelection.anchor;
     const lastFocus = lastSelection.focus;
     return new Selection(
-      createPoint(lastAnchor.key, lastAnchor.offset, lastAnchor.type),
-      createPoint(lastFocus.key, lastFocus.offset, lastFocus.type),
+      $createPoint(lastAnchor.key, lastAnchor.offset, lastAnchor.type),
+      $createPoint(lastFocus.key, lastFocus.offset, lastFocus.type),
       lastSelection.format,
     );
   }
   // Let's resolve the text nodes from the offsets and DOM nodes we have from
   // native selection.
-  const resolvedSelectionPoints = resolveSelectionPoints(
+  const resolvedSelectionPoints = $resolveSelectionPoints(
     anchorDOM,
     anchorOffset,
     focusDOM,
@@ -1624,7 +1624,7 @@ export function $getPreviousSelection(): null | Selection {
   return editor._editorState._selection;
 }
 
-export function createSelectionFromParse(
+export function $createSelectionFromParse(
   parsedSelection: null | {
     anchor: {
       key: string,
@@ -1641,12 +1641,12 @@ export function createSelectionFromParse(
   return parsedSelection === null
     ? null
     : new Selection(
-        createPoint(
+        $createPoint(
           parsedSelection.anchor.key,
           parsedSelection.anchor.offset,
           parsedSelection.anchor.type,
         ),
-        createPoint(
+        $createPoint(
           parsedSelection.focus.key,
           parsedSelection.focus.offset,
           parsedSelection.focus.type,
@@ -1655,12 +1655,12 @@ export function createSelectionFromParse(
       );
 }
 
-export function updateElementSelectionOnCreateDeleteNode(
+export function $updateElementSelectionOnCreateDeleteNode(
   selection: Selection,
   parentNode: OutlineNode,
   nodeOffset: number,
   times: number = 1,
-) {
+): void {
   const anchor = selection.anchor;
   const focus = selection.focus;
   const anchorNode = anchor.getNode();
@@ -1681,7 +1681,7 @@ export function updateElementSelectionOnCreateDeleteNode(
       anchor.set(parentKey, newSelectionOffset, 'element');
       focus.set(parentKey, newSelectionOffset, 'element');
       // The new selection might point to text nodes, try to resolve them
-      updateSelectionResolveTextNodes(selection);
+      $updateSelectionResolveTextNodes(selection);
     }
     return;
   }
@@ -1708,10 +1708,10 @@ export function updateElementSelectionOnCreateDeleteNode(
     }
   }
   // The new selection might point to text nodes, try to resolve them
-  updateSelectionResolveTextNodes(selection);
+  $updateSelectionResolveTextNodes(selection);
 }
 
-function updateSelectionResolveTextNodes(selection: Selection) {
+function $updateSelectionResolveTextNodes(selection: Selection): void {
   const anchor = selection.anchor;
   const anchorOffset = anchor.offset;
   const focus = selection.focus;

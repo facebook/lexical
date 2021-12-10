@@ -15,7 +15,7 @@ import {
   $isTextNode,
   $isElementNode,
   TextNode,
-  log,
+  $log,
   $getNodeByKey,
   $getSelection,
   $getRoot,
@@ -58,7 +58,7 @@ function useTypeahead(editor: OutlineEditor): void {
   const renderTypeahead = useCallback(() => {
     editor.update(
       () => {
-        log('useTypeahead');
+        $log('useTypeahead');
         const currentTypeaheadNode = getTypeaheadTextNode();
 
         function maybeRemoveTypeahead() {
@@ -167,7 +167,7 @@ function useTypeahead(editor: OutlineEditor): void {
       const handleEvent = (event: KeyboardEvent) => {
         if (event.key === 'Tab' || event.key === 'ArrowRight') {
           editor.update(() => {
-            log('useTypeahead');
+            $log('useTypeahead');
             const typeaheadTextNode = getTypeaheadTextNode();
             const prevTextNode = typeaheadTextNode?.getPreviousSibling();
             // Make sure that the Typeahead is visible and previous child writable

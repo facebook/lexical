@@ -13,9 +13,9 @@ import type {Selection} from './OutlineSelection';
 import {
   $isElementNode,
   $isTextNode,
-  isRootNode,
+  $isRootNode,
   ElementNode,
-  isDecoratorNode,
+  $isDecoratorNode,
 } from '.';
 import {
   getActiveEditorState,
@@ -23,19 +23,19 @@ import {
   getActiveEditor,
 } from './OutlineUpdates';
 import {
-  generateKey,
+  $generateKey,
   $getCompositionKey,
   $getNodeByKey,
-  internallyMarkNodeAsDirty,
-  internallyMarkSiblingsAsDirty,
+  $internallyMarkNodeAsDirty,
+  $internallyMarkSiblingsAsDirty,
   markParentElementsAsDirty,
   $setCompositionKey,
 } from './OutlineUtils';
 import invariant from 'shared/invariant';
 import {
   $getSelection,
-  moveSelectionPointToEnd,
-  updateElementSelectionOnCreateDeleteNode,
+  $moveSelectionPointToEnd,
+  $updateElementSelectionOnCreateDeleteNode,
   moveSelectionPointToSibling,
 } from './OutlineSelection';
 
@@ -72,17 +72,17 @@ export function removeNode(
   if (index === -1) {
     invariant(false, 'Node is not a child of its parent');
   }
-  internallyMarkSiblingsAsDirty(nodeToRemove);
+  $internallyMarkSiblingsAsDirty(nodeToRemove);
   parentChildren.splice(index, 1);
   const writableNodeToRemove = nodeToRemove.getWritable();
   writableNodeToRemove.__parent = null;
 
   if (selection !== null && restoreSelection && !selectionMoved) {
-    updateElementSelectionOnCreateDeleteNode(selection, parent, index, -1);
+    $updateElementSelectionOnCreateDeleteNode(selection, parent, index, -1);
   }
   if (
     parent !== null &&
-    !isRootNode(parent) &&
+    !$isRootNode(parent) &&
     !parent.canBeEmpty() &&
     parent.getChildrenSize() === 0
   ) {
@@ -119,7 +119,7 @@ export class OutlineNode {
 
   constructor(key?: NodeKey) {
     this.__type = this.constructor.getType();
-    this.__key = key || generateKey(this);
+    this.__key = key || $generateKey(this);
     this.__parent = null;
 
     // Ensure custom nodes implement required methods.
@@ -214,7 +214,7 @@ export class OutlineNode {
     let node = this;
     while (node !== null) {
       const parent = node.getParent();
-      if (isRootNode(parent) && $isElementNode(node)) {
+      if ($isRootNode(parent) && $isElementNode(node)) {
         return node;
       }
       node = parent;
@@ -472,7 +472,7 @@ export class OutlineNode {
     const cloneNotNeeded = editor._cloneNotNeeded;
     if (cloneNotNeeded.has(key)) {
       // Transforms clear the dirty node set on each iteration to keep track on newly dirty nodes
-      internallyMarkNodeAsDirty(latestNode);
+      $internallyMarkNodeAsDirty(latestNode);
       return latestNode;
     }
     const constructor = latestNode.constructor;
@@ -488,12 +488,12 @@ export class OutlineNode {
       mutableNode.__style = latestNode.__style;
       mutableNode.__mode = latestNode.__mode;
       mutableNode.__detail = latestNode.__detail;
-    } else if (isDecoratorNode(mutableNode)) {
+    } else if ($isDecoratorNode(mutableNode)) {
       mutableNode.__ref = latestNode.__ref;
     }
     cloneNotNeeded.add(key);
     mutableNode.__key = key;
-    internallyMarkNodeAsDirty(mutableNode);
+    $internallyMarkNodeAsDirty(mutableNode);
     // Update reference in node map
     nodeMap.set(key, mutableNode);
     return mutableNode;
@@ -547,7 +547,7 @@ export class OutlineNode {
       if (index === -1) {
         invariant(false, 'Node is not a child of its parent');
       }
-      internallyMarkSiblingsAsDirty(writableReplaceWith);
+      $internallyMarkSiblingsAsDirty(writableReplaceWith);
       children.splice(index, 1);
     }
     const newParent = this.getParentOrThrow();
@@ -561,16 +561,16 @@ export class OutlineNode {
     children.splice(index, 0, newKey);
     writableReplaceWith.__parent = newParent.__key;
     removeNode(this, false);
-    internallyMarkSiblingsAsDirty(writableReplaceWith);
+    $internallyMarkSiblingsAsDirty(writableReplaceWith);
     const selection = $getSelection();
     if (selection !== null) {
       const anchor = selection.anchor;
       const focus = selection.focus;
       if (anchor.key === toReplaceKey) {
-        moveSelectionPointToEnd(anchor, writableReplaceWith);
+        $moveSelectionPointToEnd(anchor, writableReplaceWith);
       }
       if (focus.key === toReplaceKey) {
-        moveSelectionPointToEnd(focus, writableReplaceWith);
+        $moveSelectionPointToEnd(focus, writableReplaceWith);
       }
     }
     if ($getCompositionKey() === toReplaceKey) {
@@ -590,7 +590,7 @@ export class OutlineNode {
       if (index === -1) {
         invariant(false, 'Node is not a child of its parent');
       }
-      internallyMarkSiblingsAsDirty(writableNodeToInsert);
+      $internallyMarkSiblingsAsDirty(writableNodeToInsert);
       children.splice(index, 1);
     }
     const writableParent = this.getParentOrThrow().getWritable();
@@ -602,10 +602,10 @@ export class OutlineNode {
       invariant(false, 'Node is not a child of its parent');
     }
     children.splice(index + 1, 0, insertKey);
-    internallyMarkSiblingsAsDirty(writableNodeToInsert);
+    $internallyMarkSiblingsAsDirty(writableNodeToInsert);
     const selection = $getSelection();
     if (selection !== null) {
-      updateElementSelectionOnCreateDeleteNode(
+      $updateElementSelectionOnCreateDeleteNode(
         selection,
         writableParent,
         index + 1,
@@ -625,7 +625,7 @@ export class OutlineNode {
       if (index === -1) {
         invariant(false, 'Node is not a child of its parent');
       }
-      internallyMarkSiblingsAsDirty(writableNodeToInsert);
+      $internallyMarkSiblingsAsDirty(writableNodeToInsert);
       children.splice(index, 1);
     }
     const writableParent = this.getParentOrThrow().getWritable();
@@ -637,10 +637,10 @@ export class OutlineNode {
       invariant(false, 'Node is not a child of its parent');
     }
     children.splice(index, 0, insertKey);
-    internallyMarkSiblingsAsDirty(writableNodeToInsert);
+    $internallyMarkSiblingsAsDirty(writableNodeToInsert);
     const selection = $getSelection();
     if (selection !== null) {
-      updateElementSelectionOnCreateDeleteNode(
+      $updateElementSelectionOnCreateDeleteNode(
         selection,
         writableParent,
         index,

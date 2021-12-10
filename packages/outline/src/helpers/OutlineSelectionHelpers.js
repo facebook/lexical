@@ -18,12 +18,12 @@ import type {
 
 import {
   $createLineBreakNode,
-  isDecoratorNode,
-  isLeafNode,
+  $isDecoratorNode,
+  $isLeafNode,
   $isTextNode,
   $isElementNode,
   $createTextNode,
-  isRootNode,
+  $isRootNode,
 } from 'outline';
 
 const cssToStyles: Map<string, {[string]: string}> = new Map();
@@ -43,7 +43,7 @@ function $cloneWithProperties<T: OutlineNode>(node: T): T {
     clone.__style = latest.__style;
     clone.__mode = latest.__mode;
     clone.__detail = latest.__detail;
-  } else if (isDecoratorNode(latest)) {
+  } else if ($isDecoratorNode(latest)) {
     clone.__ref = latest.__ref;
   }
   return clone;
@@ -104,7 +104,7 @@ function $copyLeafNodeBranchToRoot(
           isLeftSide ? undefined : offset + 1,
         );
       }
-      if (isRootNode(parent)) {
+      if ($isRootNode(parent)) {
         if (needsClone) {
           // We only want to collect a range of top level nodes.
           // So if the parent is the root, we know this is a top level.
@@ -195,7 +195,7 @@ export function $cloneContents(selection: Selection): {
       (!$isElementNode(node) || !node.excludeFromCopy())
     ) {
       const clone = $cloneWithProperties<OutlineNode>(node);
-      if (isRootNode(node.getParent())) {
+      if ($isRootNode(node.getParent())) {
         range.push(node.getKey());
       }
       nodeMap.set(key, clone);
@@ -468,7 +468,7 @@ export function $selectAll(selection: Selection): void {
 
 function $removeParentEmptyElements(startingNode: ElementNode): void {
   let node = startingNode;
-  while (node !== null && !isRootNode(node)) {
+  while (node !== null && !$isRootNode(node)) {
     const latest = node.getLatest();
     const parentNode = node.getParent();
     if (latest.__children.length === 0) {
@@ -517,7 +517,7 @@ export function $wrapLeafNodesInElements(
       break;
     }
     target = target.getParentOrThrow();
-    if (isRootNode(target)) {
+    if ($isRootNode(target)) {
       break;
     }
   }
@@ -541,7 +541,7 @@ export function $wrapLeafNodesInElements(
     const parent = node.getParent();
     if (
       parent !== null &&
-      isLeafNode(node) &&
+      $isLeafNode(node) &&
       !movedLeafNodes.has(node.getKey())
     ) {
       const parentKey = parent.getKey();
@@ -571,7 +571,7 @@ export function $wrapLeafNodesInElements(
   }
   // If our target is the root, let's see if we can re-adjust
   // so that the target is the first child instead.
-  if (isRootNode(target)) {
+  if ($isRootNode(target)) {
     const firstChild = target.getFirstChild();
     if ($isElementNode(firstChild)) {
       target = firstChild;

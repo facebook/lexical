@@ -164,7 +164,7 @@ export function $generateKey(node: OutlineNode): NodeKey {
   return key;
 }
 
-export function markParentElementsAsDirty(
+function $internallyMarkParentElementsAsDirty(
   parentKey: NodeKey,
   nodeMap: NodeMap,
   dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
@@ -194,7 +194,7 @@ export function $internallyMarkNodeAsDirty(node: OutlineNode): void {
   const nodeMap = editorState._nodeMap;
   const dirtyElements = editor._dirtyElements;
   if (parent !== null) {
-    markParentElementsAsDirty(parent, nodeMap, dirtyElements);
+    $internallyMarkParentElementsAsDirty(parent, nodeMap, dirtyElements);
   }
   const key = latest.__key;
   editor._dirtyType = HAS_DIRTY_NODES;

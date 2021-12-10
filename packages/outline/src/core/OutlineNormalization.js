@@ -12,7 +12,10 @@ import type {TextNode} from './OutlineTextNode';
 import {$isTextNode} from './OutlineTextNode';
 import {getActiveEditor} from './OutlineUpdates';
 
-function canSimpleTextNodesBeMerged(node1: TextNode, node2: TextNode): boolean {
+function $canSimpleTextNodesBeMerged(
+  node1: TextNode,
+  node2: TextNode,
+): boolean {
   const node1Mode = node1.__mode;
   const node1Format = node1.__format;
   const node1Style = node1.__style;
@@ -26,7 +29,7 @@ function canSimpleTextNodesBeMerged(node1: TextNode, node2: TextNode): boolean {
   );
 }
 
-function mergeTextNodes(node1: TextNode, node2: TextNode) {
+function $mergeTextNodes(node1: TextNode, node2: TextNode): TextNode {
   node1.mergeWithSibling(node2);
   const normalizedNodes = getActiveEditor()._normalizedNodes;
   normalizedNodes.add(node1.__key);
@@ -34,7 +37,7 @@ function mergeTextNodes(node1: TextNode, node2: TextNode) {
   return node1.getLatest();
 }
 
-export function normalizeTextNode(textNode: TextNode) {
+export function $normalizeTextNode(textNode: TextNode): void {
   let node = textNode;
   if (node.__text === '' && node.isSimpleText() && !node.isUnmergeable()) {
     node.remove();
@@ -51,8 +54,8 @@ export function normalizeTextNode(textNode: TextNode) {
   ) {
     if (previousNode.__text === '') {
       previousNode.remove();
-    } else if (canSimpleTextNodesBeMerged(previousNode, node)) {
-      node = mergeTextNodes(previousNode, node);
+    } else if ($canSimpleTextNodesBeMerged(previousNode, node)) {
+      node = $mergeTextNodes(previousNode, node);
       break;
     } else {
       break;
@@ -68,8 +71,8 @@ export function normalizeTextNode(textNode: TextNode) {
   ) {
     if (nextNode.__text === '') {
       nextNode.remove();
-    } else if (canSimpleTextNodesBeMerged(node, nextNode)) {
-      node = mergeTextNodes(node, nextNode);
+    } else if ($canSimpleTextNodesBeMerged(node, nextNode)) {
+      node = $mergeTextNodes(node, nextNode);
       break;
     } else {
       break;

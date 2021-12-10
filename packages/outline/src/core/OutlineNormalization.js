@@ -30,11 +30,11 @@ function $canSimpleTextNodesBeMerged(
 }
 
 function $mergeTextNodes(node1: TextNode, node2: TextNode): TextNode {
-  node1.mergeWithSibling(node2);
+  const writableNode1 = node1.mergeWithSibling(node2);
   const normalizedNodes = getActiveEditor()._normalizedNodes;
   normalizedNodes.add(node1.__key);
   normalizedNodes.add(node2.__key);
-  return node1.getLatest();
+  return writableNode1;
 }
 
 export function $normalizeTextNode(textNode: TextNode): void {

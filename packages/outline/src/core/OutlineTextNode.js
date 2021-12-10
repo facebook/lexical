@@ -604,7 +604,7 @@ export class TextNode extends OutlineNode {
 
     return splitNodes;
   }
-  mergeWithSibling(target: TextNode): void {
+  mergeWithSibling(target: TextNode): TextNode {
     const isBefore = target === this.getPreviousSibling();
     if (!isBefore && target !== this.getNextSibling()) {
       invariant(
@@ -622,7 +622,6 @@ export class TextNode extends OutlineNode {
       $setCompositionKey(key);
     }
     const selection = $getSelection();
-
     if (selection !== null) {
       const anchor = selection.anchor;
       const focus = selection.focus;
@@ -647,8 +646,11 @@ export class TextNode extends OutlineNode {
         selection.dirty = true;
       }
     }
-    this.setTextContent(text + target.__text);
+    const newText = isBefore ? target.__text + text : text + target.__text;
+    this.setTextContent(newText);
+
     target.remove();
+    return this.getLatest();
   }
 }
 

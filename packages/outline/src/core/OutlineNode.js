@@ -34,8 +34,8 @@ import {
 import invariant from 'shared/invariant';
 import {
   $getSelection,
-  moveSelectionPointToEnd,
-  updateElementSelectionOnCreateDeleteNode,
+  $moveSelectionPointToEnd,
+  $updateElementSelectionOnCreateDeleteNode,
   moveSelectionPointToSibling,
 } from './OutlineSelection';
 
@@ -78,7 +78,7 @@ export function removeNode(
   writableNodeToRemove.__parent = null;
 
   if (selection !== null && restoreSelection && !selectionMoved) {
-    updateElementSelectionOnCreateDeleteNode(selection, parent, index, -1);
+    $updateElementSelectionOnCreateDeleteNode(selection, parent, index, -1);
   }
   if (
     parent !== null &&
@@ -567,10 +567,10 @@ export class OutlineNode {
       const anchor = selection.anchor;
       const focus = selection.focus;
       if (anchor.key === toReplaceKey) {
-        moveSelectionPointToEnd(anchor, writableReplaceWith);
+        $moveSelectionPointToEnd(anchor, writableReplaceWith);
       }
       if (focus.key === toReplaceKey) {
-        moveSelectionPointToEnd(focus, writableReplaceWith);
+        $moveSelectionPointToEnd(focus, writableReplaceWith);
       }
     }
     if ($getCompositionKey() === toReplaceKey) {
@@ -605,7 +605,7 @@ export class OutlineNode {
     internallyMarkSiblingsAsDirty(writableNodeToInsert);
     const selection = $getSelection();
     if (selection !== null) {
-      updateElementSelectionOnCreateDeleteNode(
+      $updateElementSelectionOnCreateDeleteNode(
         selection,
         writableParent,
         index + 1,
@@ -640,7 +640,7 @@ export class OutlineNode {
     internallyMarkSiblingsAsDirty(writableNodeToInsert);
     const selection = $getSelection();
     if (selection !== null) {
-      updateElementSelectionOnCreateDeleteNode(
+      $updateElementSelectionOnCreateDeleteNode(
         selection,
         writableParent,
         index,

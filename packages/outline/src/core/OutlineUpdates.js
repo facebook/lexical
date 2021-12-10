@@ -18,7 +18,7 @@ import type {OutlineNode} from './OutlineNode';
 import type {ParsedNode, NodeParserState} from './OutlineParsing';
 
 import {updateEditorState} from './OutlineReconciler';
-import {$createSelection, createSelectionFromParse} from './OutlineSelection';
+import {$createSelection, $createSelectionFromParse} from './OutlineSelection';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './OutlineConstants';
 import {resetEditor} from './OutlineEditor';
 import {initMutationObserver} from './OutlineMutations';
@@ -267,7 +267,7 @@ export function parseEditorState(
     isReadOnlyMode = previousReadOnlyMode;
     activeEditor = previousActiveEditor;
   }
-  editorState._selection = createSelectionFromParse(
+  editorState._selection = $createSelectionFromParse(
     nodeParserState.remappedSelection || nodeParserState.originalSelection,
   );
   return editorState;

@@ -12,7 +12,11 @@ import type {Selection} from './OutlineSelection';
 
 import {$isTextNode, TextNode} from '.';
 import {OutlineNode} from './OutlineNode';
-import {makeSelection, $getSelection, setPointValues} from './OutlineSelection';
+import {
+  $makeSelection,
+  $getSelection,
+  $setPointValues,
+} from './OutlineSelection';
 import {errorOnReadOnly, getActiveEditor} from './OutlineUpdates';
 import {ELEMENT_TYPE_TO_FORMAT} from './OutlineConstants';
 import {$getNodeByKey, internallyMarkNodeAsDirty} from './OutlineUtils';
@@ -204,7 +208,7 @@ export class ElementNode extends OutlineNode {
     }
     const key = this.__key;
     if (selection === null) {
-      return makeSelection(
+      return $makeSelection(
         key,
         anchorOffset,
         key,
@@ -213,8 +217,8 @@ export class ElementNode extends OutlineNode {
         'element',
       );
     } else {
-      setPointValues(selection.anchor, key, anchorOffset, 'element');
-      setPointValues(selection.focus, key, focusOffset, 'element');
+      $setPointValues(selection.anchor, key, anchorOffset, 'element');
+      $setPointValues(selection.focus, key, focusOffset, 'element');
       selection.dirty = true;
     }
     return selection;

@@ -43,6 +43,7 @@ module.name_mapper='^outline-react/useOutlineEditor' -> '<PROJECT_ROOT>/packages
 module.name_mapper='^outline-react/useOutlineRichText' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlineRichText.js'
 module.name_mapper='^outline-react/useOutlinePlainText' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlinePlainText.js'
 module.name_mapper='^outline-react/useOutlineRichTextWithCollab' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlineRichTextWithCollab.js'
+module.name_mapper='^outline-react/useOutlinePlainTextWithCollab' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlinePlainTextWithCollab.js'
 module.name_mapper='^outline-react/useOutlineEditorEvents' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlineEditorEvents.js'
 module.name_mapper='^outline-react/useOutlineAutoFormatter' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlineAutoFormatter.js'
 module.name_mapper='^outline-react/useOutlineDecorators' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlineDecorators.js'

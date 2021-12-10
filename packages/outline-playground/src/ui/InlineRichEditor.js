@@ -31,7 +31,7 @@ type Props = {
   initialEditorStateRef?: EditorStateRef,
 };
 
-export default function InlineEditor({
+export default function InlineRichEditor({
   children,
   controlled,
   onChange,

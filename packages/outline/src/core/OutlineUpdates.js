@@ -35,8 +35,8 @@ import {
   getEditorsToPropagate,
 } from './OutlineUtils';
 import {
-  garbageCollectDetachedDecorators,
-  garbageCollectDetachedNodes,
+  $garbageCollectDetachedDecorators,
+  $garbageCollectDetachedNodes,
 } from './OutlineGC';
 import {$internalCreateNodeFromParse} from './OutlineParsing';
 import {applySelectionTransforms} from './OutlineSelection';
@@ -387,7 +387,7 @@ export function commitPendingUpdates(editor: OutlineEditor): void {
     editor._normalizedNodes = new Set();
     editor._updateTags = new Set();
   }
-  garbageCollectDetachedDecorators(editor, pendingEditorState);
+  $garbageCollectDetachedDecorators(editor, pendingEditorState);
   const pendingDecorators = editor._pendingDecorators;
   if (pendingDecorators !== null) {
     editor._decorators = pendingDecorators;
@@ -578,7 +578,7 @@ function beginUpdate(
         applyAllTransforms(pendingEditorState, editor);
       }
       processNestedUpdates(editor, deferred);
-      garbageCollectDetachedNodes(
+      $garbageCollectDetachedNodes(
         currentEditorState,
         pendingEditorState,
         editor._dirtyLeaves,

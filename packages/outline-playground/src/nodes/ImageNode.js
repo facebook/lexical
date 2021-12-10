@@ -16,7 +16,7 @@ import type {
 } from 'outline';
 
 import * as React from 'react';
-import {DecoratorNode, log, $getNodeByKey} from 'outline';
+import {DecoratorNode, $log, $getNodeByKey} from 'outline';
 import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
 import {useCollaborationContext} from '../context/CollaborationContext';
 import {Suspense, useCallback, useEffect, useRef, useState} from 'react';
@@ -292,7 +292,7 @@ function ImageComponent({
   const handleKeyDown = (event) => {
     if ((hasFocus && event.key === 'Backspace') || event.key === 'Delete') {
       editor.update(() => {
-        log('Image.keyDown');
+        $log('Image.keyDown');
         const node = $getNodeByKey(nodeKey);
         if ($isImageNode(node)) {
           node.remove();
@@ -330,7 +330,7 @@ function ImageComponent({
       }
       setIsResizing(false);
       editor.update(() => {
-        log('ImageNode.resize');
+        $log('ImageNode.resize');
         const node = $getNodeByKey(nodeKey);
         if ($isImageNode(node)) {
           node.setWidthAndHeight(nextWidth, nextHeight);

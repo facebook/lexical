@@ -27,7 +27,12 @@ import {$createListNode} from 'outline/ListNode';
 import {$createListItemNode} from 'outline/ListItemNode';
 import {$createQuoteNode} from 'outline/QuoteNode';
 import {$createCodeNode} from 'outline/CodeNode';
-import {log, $getSelection, $setSelection, createEditorStateRef} from 'outline';
+import {
+  $log,
+  $getSelection,
+  $setSelection,
+  createEditorStateRef,
+} from 'outline';
 import {$createImageNode} from '../nodes/ImageNode';
 import {$createLinkNode, $isLinkNode} from 'outline/LinkNode';
 import {
@@ -273,7 +278,7 @@ function BlockOptionsDropdownList({
   const formatParagraph = () => {
     if (blockType !== 'paragraph') {
       editor.update(() => {
-        log('formatParagraph');
+        $log('formatParagraph');
         const selection = $getSelection();
 
         if (selection !== null) {
@@ -287,7 +292,7 @@ function BlockOptionsDropdownList({
   const formatLargeHeading = () => {
     if (blockType !== 'h1') {
       editor.update(() => {
-        log('formatLargeHeading');
+        $log('formatLargeHeading');
         const selection = $getSelection();
 
         if (selection !== null) {
@@ -301,7 +306,7 @@ function BlockOptionsDropdownList({
   const formatSmallHeading = () => {
     if (blockType !== 'h2') {
       editor.update((state) => {
-        log('formatSmallHeading');
+        $log('formatSmallHeading');
         const selection = $getSelection();
 
         if (selection !== null) {
@@ -315,7 +320,7 @@ function BlockOptionsDropdownList({
   const formatBulletList = () => {
     if (blockType !== 'ul') {
       editor.update((state) => {
-        log('formatBulletList');
+        $log('formatBulletList');
         const selection = $getSelection();
 
         if (selection !== null) {
@@ -333,7 +338,7 @@ function BlockOptionsDropdownList({
   const formatNumberedList = () => {
     if (blockType !== 'ol') {
       editor.update((state) => {
-        log('formatNumberedList');
+        $log('formatNumberedList');
         const selection = $getSelection();
 
         if (selection !== null) {
@@ -351,7 +356,7 @@ function BlockOptionsDropdownList({
   const formatQuote = () => {
     if (blockType !== 'quote') {
       editor.update((state) => {
-        log('formatQuote');
+        $log('formatQuote');
         const selection = $getSelection();
 
         if (selection !== null) {
@@ -365,7 +370,7 @@ function BlockOptionsDropdownList({
   const formatCode = () => {
     if (blockType !== 'code') {
       editor.update((state) => {
-        log('formatCode');
+        $log('formatCode');
         const selection = $getSelection();
 
         if (selection !== null) {
@@ -447,7 +452,7 @@ function Select({
 function toggleLinksOnSelection(editor: OutlineEditor, url: null | string) {
   editor.update(() => {
     const selection = $getSelection();
-    log('toggleLinksOnSelection');
+    $log('toggleLinksOnSelection');
     if (selection !== null) {
       $setSelection(selection);
     }
@@ -625,7 +630,7 @@ export default function ToolbarPlugin(): React$Node {
   const applyStyleText = useCallback(
     (styles: {[string]: string}) => {
       activeEditor.update(() => {
-        log('applyStyleText');
+        $log('applyStyleText');
         const selection = $getSelection();
         if (selection !== null) {
           $patchStyleText(selection, styles);
@@ -651,7 +656,7 @@ export default function ToolbarPlugin(): React$Node {
 
   const insertImage = useCallback(() => {
     activeEditor.update(() => {
-      log('handleAddImage');
+      $log('handleAddImage');
       const selection = $getSelection();
       if (selection !== null) {
         const ref = createEditorStateRef(createUID(), null);
@@ -667,7 +672,7 @@ export default function ToolbarPlugin(): React$Node {
 
   const insertTable = useCallback(() => {
     activeEditor.update(() => {
-      log('handleAddTable');
+      $log('handleAddTable');
       const selection = $getSelection();
       if (selection === null) {
         return;

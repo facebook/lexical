@@ -37,10 +37,10 @@ export class HashtagNode extends TextNode {
     if (targetNode.getParent() !== null && !targetNode.isComposing()) {
       const indexOfHash = text.indexOf('#');
       if (indexOfHash === -1 || targetNode.getTextContent() === '#') {
-        targetNode = toggleHashtag(targetNode);
+        targetNode = $toggleHashtag(targetNode);
       } else if (indexOfHash > 0) {
         [targetNode] = targetNode.splitText(indexOfHash);
-        targetNode = toggleHashtag(targetNode);
+        targetNode = $toggleHashtag(targetNode);
       }
       // Check for invalid characters
       if ($isTextNode(targetNode) && targetNode.isAttached()) {
@@ -49,10 +49,10 @@ export class HashtagNode extends TextNode {
           /[\s.,\\\/#!$%\^&\*;:{}=\-`~()@]/,
         );
         if (indexOfInvalidChar === 0) {
-          targetNode = toggleHashtag(targetNode);
+          targetNode = $toggleHashtag(targetNode);
         } else if (indexOfInvalidChar > 0) {
           [targetNode] = targetNode.splitText(indexOfInvalidChar + 1);
-          targetNode = toggleHashtag(targetNode);
+          targetNode = $toggleHashtag(targetNode);
         }
       }
       return targetNode;
@@ -69,7 +69,7 @@ export class HashtagNode extends TextNode {
   }
 }
 
-export function toggleHashtag(node: TextNode): TextNode {
+export function $toggleHashtag(node: TextNode): TextNode {
   const text = node.getTextContent();
   const replacement = !$isHashtagNode(node)
     ? $createHashtagNode(text)

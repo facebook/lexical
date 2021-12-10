@@ -11,12 +11,12 @@ import type {OutlineEditor} from './OutlineEditor';
 import type {Selection} from './OutlineSelection';
 import type {TextNode} from './OutlineTextNode';
 
-import {$isTextNode, isDecoratorNode, $getSelection, $setSelection} from '.';
+import {$isTextNode, $isDecoratorNode, $getSelection, $setSelection} from '.';
 import {triggerListeners, updateEditor} from './OutlineUpdates';
 import {
   $getNearestNodeFromDOMNode,
   getNodeFromDOMNode,
-  pushLogEntry,
+  $pushLogEntry,
 } from './OutlineUtils';
 
 // The time between a text entry event and the mutation observer firing.
@@ -83,7 +83,7 @@ export function $flushMutations(
     updateEditor(
       editor,
       () => {
-        pushLogEntry('onMutation');
+        $pushLogEntry('onMutation');
         let shouldRevertSelection = false;
 
         for (let i = 0; i < mutations.length; i++) {
@@ -92,7 +92,7 @@ export function $flushMutations(
           const target = mutation.target;
           const targetNode = $getNearestNodeFromDOMNode(target);
 
-          if (isDecoratorNode(targetNode)) {
+          if ($isDecoratorNode(targetNode)) {
             continue;
           }
           if (type === 'characterData') {

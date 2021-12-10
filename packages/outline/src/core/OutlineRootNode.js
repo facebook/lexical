@@ -95,10 +95,10 @@ export class RootNode extends ElementNode {
   }
 }
 
-export function createRootNode(): RootNode {
+export function $createRootNode(): RootNode {
   return new RootNode();
 }
 
-export function isRootNode(node: ?OutlineNode): boolean %checks {
+export function $isRootNode(node: ?OutlineNode): boolean %checks {
   return node instanceof RootNode;
 }

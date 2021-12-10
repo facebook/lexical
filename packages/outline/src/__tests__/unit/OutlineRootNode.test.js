@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {isRootNode} from 'outline';
-import {createRootNode, RootNode} from '../../core/OutlineRootNode';
+import {$isRootNode} from 'outline';
+import {$createRootNode} from '../../core/OutlineRootNode';
 
 import {initializeUnitTest} from '../utils';
 
@@ -17,14 +17,14 @@ describe('OutlineRootNode tests', () => {
     beforeEach(async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        rootNode = new RootNode();
+        rootNode = $createRootNode();
       });
     });
 
     test('RootNode.constructor', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        expect(rootNode).toStrictEqual(createRootNode());
+        expect(rootNode).toStrictEqual($createRootNode());
         expect(rootNode.getType()).toBe('root');
         expect(rootNode.getTextContent()).toBe('');
       });
@@ -49,7 +49,7 @@ describe('OutlineRootNode tests', () => {
     });
 
     test('RootNode.isRootNode()', () => {
-      expect(isRootNode(rootNode)).toBe(true);
+      expect($isRootNode(rootNode)).toBe(true);
     });
   });
 });

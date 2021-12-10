@@ -18,7 +18,7 @@ import type {EditorState} from './OutlineEditorState';
 import {$isElementNode} from '.';
 import {cloneDecorators} from './OutlineUtils';
 
-export function garbageCollectDetachedDecorators(
+export function $garbageCollectDetachedDecorators(
   editor: OutlineEditor,
   pendingEditorState: EditorState,
 ): void {
@@ -37,7 +37,7 @@ export function garbageCollectDetachedDecorators(
   }
 }
 
-function garbageCollectDetachedDeepChildNodes(
+function $garbageCollectDetachedDeepChildNodes(
   node: ElementNode,
   parentKey: NodeKey,
   prevNodeMap: NodeMap,
@@ -51,7 +51,7 @@ function garbageCollectDetachedDeepChildNodes(
     const child = nodeMap.get(childKey);
     if (child !== undefined && child.__parent === parentKey) {
       if ($isElementNode(child)) {
-        garbageCollectDetachedDeepChildNodes(
+        $garbageCollectDetachedDeepChildNodes(
           child,
           childKey,
           prevNodeMap,
@@ -69,7 +69,7 @@ function garbageCollectDetachedDeepChildNodes(
   }
 }
 
-export function garbageCollectDetachedNodes(
+export function $garbageCollectDetachedNodes(
   prevEditorState: EditorState,
   editorState: EditorState,
   dirtyLeaves: Set<NodeKey>,
@@ -102,7 +102,7 @@ export function garbageCollectDetachedNodes(
       // Garbage collect node and its children if they exist
       if (!node.isAttached()) {
         if ($isElementNode(node)) {
-          garbageCollectDetachedDeepChildNodes(
+          $garbageCollectDetachedDeepChildNodes(
             node,
             nodeKey,
             prevNodeMap,

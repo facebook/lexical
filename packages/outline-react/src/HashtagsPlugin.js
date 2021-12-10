@@ -12,7 +12,7 @@ import type {OutlineEditor} from 'outline';
 import {TextNode} from 'outline';
 import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
 import {useEffect} from 'react';
-import {HashtagNode, toggleHashtag} from 'outline/HashtagNode';
+import {HashtagNode, $toggleHashtag} from 'outline/HashtagNode';
 
 function getHashtagRegexStringChars(): $ReadOnly<{
   alpha: string,
@@ -274,7 +274,7 @@ function textNodeTransform(node: TextNode): void {
       );
     }
     adjustedOffset += endOffset;
-    toggleHashtag(targetNode);
+    $toggleHashtag(targetNode);
   }
 }
 

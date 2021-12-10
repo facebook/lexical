@@ -43,7 +43,7 @@ export class ListItemNode extends ElementNode {
 
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
     const element = document.createElement('li');
-    setListItemThemeClassNames(element, config.theme, this);
+    $setListItemThemeClassNames(element, config.theme, this);
     return element;
   }
 
@@ -52,7 +52,7 @@ export class ListItemNode extends ElementNode {
     dom: HTMLElement,
     config: EditorConfig<EditorContext>,
   ): boolean {
-    setListItemThemeClassNames(dom, config.theme, this);
+    $setListItemThemeClassNames(dom, config.theme, this);
     return false;
   }
 
@@ -203,7 +203,7 @@ export class ListItemNode extends ElementNode {
   }
 }
 
-function setListItemThemeClassNames(
+function $setListItemThemeClassNames(
   dom: HTMLElement,
   editorThemeClasses: EditorThemeClasses,
   node: ListItemNode,

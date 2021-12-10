@@ -33,7 +33,7 @@ import {
   $isElementNode,
   $isTextNode,
   $getNodeByKey,
-  isDecoratorNode,
+  $isDecoratorNode,
 } from 'outline';
 import {CollabDecoratorNode} from './CollabDecoratorNode';
 
@@ -353,7 +353,7 @@ export class CollabElementNode {
             );
           } else if (
             childCollabNode instanceof CollabDecoratorNode &&
-            isDecoratorNode(nextChildNode)
+            $isDecoratorNode(nextChildNode)
           ) {
             childCollabNode.syncPropertiesFromOutline(
               binding,

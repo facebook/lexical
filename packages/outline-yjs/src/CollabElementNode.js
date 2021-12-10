@@ -12,7 +12,6 @@ import type {
   ElementNode,
   NodeKey,
   IntentionallyMarkedAsDirtyElement,
-  OutlineNode,
   NodeMap,
 } from 'outline';
 import type {Binding} from '.';
@@ -196,11 +195,12 @@ export class CollabElementNode {
     const key = outlineNode.__key;
     const prevOutlineChildrenKeys = outlineNode.__children;
     const nextOutlineChildrenKeys = [];
-    const visitedKeys = new Set();
     const outlineChildrenKeysLength = prevOutlineChildrenKeys.length;
     const collabChildren = this._children;
     const collabChildrenLength = collabChildren.length;
     const collabNodeMap = binding.collabNodeMap;
+    const visitedKeys = new Set();
+    let collabKeys;
     // Assign the new children key array that we're about to mutate
     let writableOutlineNode;
 
@@ -211,23 +211,16 @@ export class CollabElementNode {
         nextOutlineChildrenKeys,
       );
     }
+    let prevIndex = 0;
 
     for (let i = 0; i < collabChildrenLength; i++) {
-      const outlineChildKey = prevOutlineChildrenKeys[i];
+      const outlineChildKey = prevOutlineChildrenKeys[prevIndex];
       const childCollabNode = collabChildren[i];
       const collabOutlineChildNode = childCollabNode.getNode();
-      let outlineChildNode: null | OutlineNode =
-        outlineChildKey === undefined
-          ? null
-          : $getNodeByKey(prevOutlineChildrenKeys[i]);
+      const collabKey = childCollabNode._key;
 
-      if (
-        outlineChildNode !== null &&
-        childCollabNode._type === outlineChildNode.__type
-      ) {
-        const childNeedsUpdating =
-          collabOutlineChildNode === null ||
-          $isTextNode(collabOutlineChildNode);
+      if (collabOutlineChildNode !== null && outlineChildKey === collabKey) {
+        const childNeedsUpdating = $isTextNode(collabOutlineChildNode);
         // Update
         visitedKeys.add(outlineChildKey);
         if (childNeedsUpdating) {
@@ -244,19 +237,36 @@ export class CollabElementNode {
           } else if (!(childCollabNode instanceof CollabLineBreakNode)) {
             throw new Error('Should never happen');
           }
-          if (outlineChildNode === null) {
-            collabNodeMap.set(outlineNode.__key, childCollabNode);
-          }
         }
         nextOutlineChildrenKeys[i] = outlineChildKey;
+        prevIndex++;
       } else {
+        if (collabKeys === undefined) {
+          collabKeys = new Set();
+          for (let s = 0; s < collabChildrenLength; s++) {
+            const child = collabChildren[s];
+            const childKey = child._key;
+            if (childKey !== '') {
+              collabKeys.add(childKey);
+            }
+          }
+        }
+        if (
+          collabOutlineChildNode !== null &&
+          outlineChildKey !== undefined &&
+          !collabKeys.has(outlineChildKey)
+        ) {
+          i--;
+          prevIndex++;
+          continue;
+        }
         writableOutlineNode = lazilyCloneElementNode(
           outlineNode,
           writableOutlineNode,
           nextOutlineChildrenKeys,
         );
         // Create/Replace
-        outlineChildNode = createOutlineNodeFromCollabNode(
+        const outlineChildNode = createOutlineNodeFromCollabNode(
           binding,
           childCollabNode,
           key,
@@ -294,6 +304,54 @@ export class CollabElementNode {
     );
   }
 
+  _syncChildFromOutline(
+    binding: Binding,
+    index: number,
+    key: NodeKey,
+    prevNodeMap: null | NodeMap,
+    dirtyElements: null | Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
+    dirtyLeaves: null | Set<NodeKey>,
+  ): void {
+    const childCollabNode = this._children[index];
+    // Update
+    const nextChildNode = $getNodeByKeyOrThrow(key);
+    if (
+      childCollabNode instanceof CollabElementNode &&
+      $isElementNode(nextChildNode)
+    ) {
+      childCollabNode.syncPropertiesFromOutline(
+        binding,
+        nextChildNode,
+        prevNodeMap,
+      );
+      childCollabNode.syncChildrenFromOutline(
+        binding,
+        nextChildNode,
+        prevNodeMap,
+        dirtyElements,
+        dirtyLeaves,
+      );
+    } else if (
+      childCollabNode instanceof CollabTextNode &&
+      $isTextNode(nextChildNode)
+    ) {
+      childCollabNode.syncPropertiesAndTextFromOutline(
+        binding,
+        nextChildNode,
+        prevNodeMap,
+      );
+    } else if (
+      childCollabNode instanceof CollabDecoratorNode &&
+      $isDecoratorNode(nextChildNode)
+    ) {
+      childCollabNode.syncPropertiesFromOutline(
+        binding,
+        nextChildNode,
+        prevNodeMap,
+      );
+    }
+  }
+
   syncChildrenFromOutline(
     binding: Binding,
     nextOutlineNode: ElementNode,
@@ -305,96 +363,79 @@ export class CollabElementNode {
     const prevChildren =
       prevOutlineNode === null ? [] : prevOutlineNode.__children;
     const nextChildren = nextOutlineNode.__children;
-    const visitedChildKeys = new Set();
-    const prevChildrenLength = prevChildren.length;
-    const nextChildrenLength = nextChildren.length;
-    const collabNodeMap = binding.collabNodeMap;
+    const prevEndIndex = prevChildren.length - 1;
+    const nextEndIndex = nextChildren.length - 1;
+    let prevChildrenSet: void | Set<NodeKey>;
+    let nextChildrenSet: void | Set<NodeKey>;
+    let prevIndex = 0;
+    let nextIndex = 0;
 
-    // This algorithm could be optimal, and do what the reconciler
-    // does, and try and match keys that might have moved. Otherwise,
-    // we end up doing lots of replace calls.
-    for (let i = 0; i < nextChildrenLength; i++) {
-      const prevChildKey = prevChildren[i];
-      const nextChildKey = nextChildren[i];
-      const childCollabNode = this._children[i];
+    while (prevIndex <= prevEndIndex && nextIndex <= nextEndIndex) {
+      const prevKey = prevChildren[prevIndex];
+      const nextKey = nextChildren[nextIndex];
 
-      if (prevChildKey === nextChildKey && childCollabNode !== undefined) {
-        visitedChildKeys.add(nextChildKey);
-        if (
-          (dirtyElements !== null && dirtyElements.has(nextChildKey)) ||
-          (dirtyLeaves !== null && dirtyLeaves.has(nextChildKey))
-        ) {
-          // Update
-          const nextChildNode = $getNodeByKeyOrThrow(nextChildKey);
-          if (
-            childCollabNode instanceof CollabElementNode &&
-            $isElementNode(nextChildNode)
-          ) {
-            childCollabNode.syncPropertiesFromOutline(
-              binding,
-              nextChildNode,
-              prevNodeMap,
-            );
-            childCollabNode.syncChildrenFromOutline(
-              binding,
-              nextChildNode,
-              prevNodeMap,
-              dirtyElements,
-              dirtyLeaves,
-            );
-          } else if (
-            childCollabNode instanceof CollabTextNode &&
-            $isTextNode(nextChildNode)
-          ) {
-            childCollabNode.syncPropertiesAndTextFromOutline(
-              binding,
-              nextChildNode,
-              prevNodeMap,
-            );
-          } else if (
-            childCollabNode instanceof CollabDecoratorNode &&
-            $isDecoratorNode(nextChildNode)
-          ) {
-            childCollabNode.syncPropertiesFromOutline(
-              binding,
-              nextChildNode,
-              prevNodeMap,
-            );
-          }
-        }
+      if (prevKey === nextKey) {
+        // Nove move, create or remove
+        this._syncChildFromOutline(
+          binding,
+          nextIndex,
+          nextKey,
+          prevNodeMap,
+          dirtyElements,
+          dirtyLeaves,
+        );
+        prevIndex++;
+        nextIndex++;
       } else {
-        if (nextChildKey === undefined) {
-          if (prevChildKey !== undefined) {
-            visitedChildKeys.add(prevChildKey);
-          }
+        if (prevChildrenSet === undefined) {
+          prevChildrenSet = new Set(prevChildren);
+        }
+        if (nextChildrenSet === undefined) {
+          nextChildrenSet = new Set(nextChildren);
+        }
+        const nextHasPrevKey = nextChildrenSet.has(prevKey);
+        const prevHasNextKey = prevChildrenSet.has(nextKey);
+
+        if (!nextHasPrevKey) {
           // Remove
-          throw new Error('TODO: does this even happen?');
+          this.splice(binding, nextIndex, 1);
+          prevIndex++;
         } else {
-          const nextChildNode = $getNodeByKeyOrThrow(nextChildKey);
+          // Create or replace
+          const nextChildNode = $getNodeByKeyOrThrow(nextKey);
           const collabNode = $createCollabNodeFromOutlineNode(
             binding,
             nextChildNode,
             this,
           );
-          if (prevChildKey === undefined) {
-            // Create
-            this.splice(binding, i, 0, collabNode);
+          if (prevHasNextKey) {
+            this.splice(binding, nextIndex, 1, collabNode);
+            prevIndex++;
+            nextIndex++;
           } else {
-            visitedChildKeys.add(prevChildKey);
-            // Replace
-            this.splice(binding, i, 1, collabNode);
+            this.splice(binding, nextIndex, 0, collabNode);
+            nextIndex++;
           }
-          collabNodeMap.set(nextChildKey, collabNode);
         }
       }
     }
-    let deletedIndex = 0;
-    for (let i = 0; i < prevChildrenLength; i++) {
-      const prevChildKey = prevChildren[i];
-      if (!visitedChildKeys.has(prevChildKey)) {
-        // Remove
-        this.splice(binding, i - deletedIndex, 1);
-        deletedIndex++;
+    const appendNewChildren = prevIndex > prevEndIndex;
+    const removeOldChildren = nextIndex > nextEndIndex;
+
+    if (appendNewChildren && !removeOldChildren) {
+      for (; nextIndex <= nextEndIndex; ++nextIndex) {
+        const key = nextChildren[nextIndex];
+        const nextChildNode = $getNodeByKeyOrThrow(key);
+        const collabNode = $createCollabNodeFromOutlineNode(
+          binding,
+          nextChildNode,
+          this,
+        );
+        this.append(collabNode);
+      }
+    } else if (removeOldChildren && !appendNewChildren) {
+      for (let i = prevEndIndex; i >= prevIndex; i--) {
+        this.splice(binding, i, 1);
       }
     }
   }

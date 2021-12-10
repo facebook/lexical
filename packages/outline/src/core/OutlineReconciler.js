@@ -528,7 +528,6 @@ function reconcileNodeChildren(
     const nextKey = nextChildren[nextIndex];
 
     if (prevKey === nextKey) {
-      // Nove move, create or remove
       siblingDOM = getNextSibling(reconcileNode(nextKey, dom));
       prevIndex++;
       nextIndex++;

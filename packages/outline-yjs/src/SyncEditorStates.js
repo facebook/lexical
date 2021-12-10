@@ -36,6 +36,7 @@ import {
 } from './SyncCursors';
 import {CollabDecoratorNode} from './CollabDecoratorNode';
 import {$createOffsetView} from 'outline/offsets';
+import {$createParagraphNode} from 'outline/ParagraphNode';
 
 function syncEvent(binding: Binding, event: YTextEvent | YMapEvent): void {
   const {target} = event;
@@ -121,6 +122,12 @@ export function syncYjsChangesToOutline(
               // Fallback is to use the Yjs cursor position
               syncLocalCursorPosition(binding, provider);
               if (doesSelectionNeedRecovering(selection)) {
+                const root = $getRoot();
+                // If there was a collision on the top level paragraph
+                // we need to re-add a paragraph
+                if (root.getChildrenSize() === 0) {
+                  root.append($createParagraphNode());
+                }
                 // Fallback
                 $getRoot().selectEnd();
               }

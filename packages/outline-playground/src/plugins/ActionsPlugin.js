@@ -15,7 +15,7 @@ import {useCollaborationContext} from '../context/CollaborationContext';
 import {useCallback, useEffect, useState} from 'react';
 import useOutlineNestedList from 'outline-react/useOutlineNestedList';
 import {$createStickyNode} from '../nodes/StickyNode';
-import {$log, $getSelection, $getRoot, createEditorStateRef} from 'outline';
+import {$log, $getRoot, createEditorStateRef} from 'outline';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
 
@@ -62,13 +62,10 @@ export default function ActionsPlugins({
   const insertSticky = useCallback(() => {
     editor.update(() => {
       $log('insertSticky');
-      const selection = $getSelection();
-      if (selection !== null) {
-        const root = $getRoot();
-        const ref = createEditorStateRef(createUID(), null);
-        const imageNode = $createStickyNode(0, 0, ref);
-        root.append(imageNode);
-      }
+      const root = $getRoot();
+      const ref = createEditorStateRef(createUID(), null);
+      const imageNode = $createStickyNode(0, 0, ref);
+      root.append(imageNode);
     });
   }, [editor]);
 
